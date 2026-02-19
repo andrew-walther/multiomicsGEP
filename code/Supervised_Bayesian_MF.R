@@ -175,7 +175,7 @@ fit_supervised_mf <- function(Y, time, status, K = 5, max_iter = 100, tol = 1e-5
     # 2. Sequential Factor Updates (Coordinate Ascent)
     for(k in 1:K) {
       
-      # --- Update Patient Loadings (L): Data Fusion ---
+      # --- Update Patient Loadings ***(L)***: Data Fusion ---
       # Precision A_L combines information from genomics (F^2) and survival relevance (Beta^2).
       A_L <- sum(Tau * EF2[,k]) + w * EBeta2[k]
       Y_hat <- EL %*% t(EF)
@@ -191,7 +191,7 @@ fit_supervised_mf <- function(Y, time, status, K = 5, max_iter = 100, tol = 1e-5
       EL[,k] <- res_L$posterior$mean
       EL2[,k] <- res_L$posterior$sd^2 + res_L$posterior$mean^2 # Incorporate variance for uncertainty.
       
-      # --- Update Biological Signatures (F) ---
+      # --- Update Biological Signatures ***(F)*** ---
       # Factors define the identity of the program and are updated via genomics signal.
       A_F <- Tau * sum(EL2[,k])
       B_F <- Tau * as.vector(t(R_k) %*% EL[,k])
@@ -199,7 +199,7 @@ fit_supervised_mf <- function(Y, time, status, K = 5, max_iter = 100, tol = 1e-5
       EF[,k] <- res_F$posterior$mean
       EF2[,k] <- res_F$posterior$sd^2 + res_F$posterior$mean^2
       
-      # --- Update Survival Coefficients (Beta) ---
+      # --- Update Survival Coefficients ***(Beta)*** ---
       # Using EL2 implements the "Uncertainty Penalty" (Error-in-Variables adjustment).
       A_Beta <- sum(w * EL2[,k]) 
       z_no_k_beta <- z - (EL %*% EBeta - (EL[,k] * EBeta[k]))
@@ -217,7 +217,7 @@ fit_supervised_mf <- function(Y, time, status, K = 5, max_iter = 100, tol = 1e-5
       EL2 <- EL^2; EF2 <- EF^2
     }
     
-    # 4. Precision Update (Tau): Feature-specific measurement noise estimation.
+    # 4. Precision Update ***(Tau)***: Feature-specific measurement noise estimation.
     Var_Term <- (EL2 %*% t(EF2)) - (EL^2 %*% t(EF^2))
     Tau <- n / colSums((Y - EL %*% t(EF))^2 + Var_Term)
     
@@ -337,8 +337,8 @@ if(DATA_MODE == "simulated") {
          L_true=L, F_true=F_mat, B_true=Beta)
   }
   
-  data <- sim_data_fn()
-  res <- fit_supervised_mf(data$Y, data$time, data$status, K=5)
+  data <- sim_data_fn() # data
+  res <- fit_supervised_mf(data$Y, data$time, data$status, K=5) # residuals
   
   cat("\n=== FACTOR SUMMARY TABLE (Log-rank & PVE) ===\n")
   print(get_factor_summary_table(res, data))
