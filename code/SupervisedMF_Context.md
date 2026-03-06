@@ -216,28 +216,36 @@ denominator is floored at `n * 1e-8`. This prevents:
 ## Next-Session Checklist
 
 ### High Priority
-- [ ] **Real data run:** Set `DATA_MODE <- "real"` and supply `real_genomics_mat`
-  (n×p matrix) and `real_clinical_df` (with time/status columns). Adjust
-  `real_time_col` / `real_status_col` as needed.
+- [ ] **Real data run:** Set `DATA_MODE <- "real"` in V2.R and supply:
+  - `real_genomics_mat` — n×p numeric matrix (rows=patients, cols=features)
+  - `real_clinical_df` — data frame with `time` and `status` columns
+  - Adjust `real_time_col` / `real_status_col` if column names differ
+  - Consider pre-processing: log-normalise RNA-seq; scale features
 - [ ] **Select K:** Implement cross-validated C-index or held-out log-likelihood
-  to choose the number of factors K. Currently set manually to 5.
+  to choose K objectively. Currently hardcoded to 5.
 
 ### Medium Priority
-- [ ] **Full ELBO:** Track the complete ELBO including survival likelihood
-  (Taylor approximation) and KL divergence terms — currently only the
-  genomics log-likelihood is tracked as `elbo_proxy`.
+- [ ] **Full ELBO:** Track the complete ELBO including the Cox survival
+  Taylor approximation term and all KL divergences. Currently only
+  the genomics log-likelihood is tracked as `elbo_proxy` (line 379).
 - [ ] **Alternative priors:** Try `prior_family = "point_laplace"` or
-  `"normal_scale_mixture"` in the EBNM calls for different sparsity structures.
-- [ ] **Scalability:** For large p (>10,000 features), profile and optimise
-  the n×p matrix operations (Var_Term, R_k construction).
+  `"normal_scale_mixture"` in the EBNM calls for different sparsity.
+- [ ] **Scalability:** For large p (>10,000 features), the main bottleneck
+  is the n×p `Var_Term` matrix and `R_k` construction — consider
+  batching over features or using sparse representations.
 
 ### Lower Priority
-- [ ] **Manuscript:** `paper/multiomicsGEP_manuscript.qmd` needs to be
-  updated to reference V2 results and the corrected derivations.
+- [ ] **Manuscript:** `paper/multiomicsGEP_manuscript.qmd` — update to
+  reference V2 results (RMSE=0.998, C-index comparison) and corrected
+  derivations.
 - [ ] **Bibliography:** Add `\bibliography{refs}` to REVISED.tex to resolve
-  the `\citep{wang2022}` undefined reference warning in the compiled PDF.
+  the `\citep{wang2022}` undefined-reference warning in the compiled PDF.
 - [ ] **CI/testing:** Add a minimal `testthat` suite that runs `sim_data_fn()`
   and checks RMSE < 2 and C-index > 0.55.
+- [ ] **Factor sparsity:** Simulation shows 100% sparsity on all GEPs (all
+  1,000 features get non-zero loadings with point-normal prior). For cleaner
+  GEP interpretation on real data, experiment with tighter EBNM priors or
+  post-hoc thresholding of small-weight features.
 
 ---
 
@@ -271,5 +279,25 @@ depending on convergence.
 
 | File | Purpose |
 |------|---------|
-| `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex/.pdf` | Corrected mathematical derivations (8 errors fixed: R1–R8) |
+| `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex/.pdf` | Corrected derivations (R1–R8 fixed) **+ full step-by-step algebra** (21 pages). Three tcolorbox types: gray `derivbox` = algebra steps, red `correctionbox` = R1–R8 fixes, blue `ebnmbox` = EBNM problem statements. |
 | `derivations/MF_UpdateDerivations/MF_V2_Companion.tex/.pdf` | Section-by-section math → V2.R code mapping (17 pages) |
+| `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_2_12_26.pdf` | **Original Feb 12 document — contains R1–R8 errors. Reference only.** |
+
+## Simulation Results (results/)
+
+Benchmark: n=250 patients, p=1000 features, K=5 factors.
+True β = (1.5, −1.2, 0.8, −0.5, 0), 5% feature sparsity, τ=1 noise.
+
+| Metric | Value |
+|--------|-------|
+| Final RMSE | 0.9978 (converged near true noise σ=1) |
+| Convergence | 45 iterations |
+| C-index (PCA top-5) | 0.827 |
+| C-index (Supervised MF) | 0.828 |
+| PH test p-value | 0.258 (no proportional-hazards violation) |
+| β recovery | Signs correct on GEPs 1–4; GEP5 (true β=0) correctly zeroed |
+| Loading sparsity | GEP1–5: 100% sparse (all 1000 features loaded) |
+
+Full report: `results/simulation_report.pdf` (23 pages) or `.md` source.
+Figures: `results/figures/fig1_rmse_trace.png` through `fig8_tau_distribution.png`.
+To reproduce: `source("results/run_simulation.R")`.
