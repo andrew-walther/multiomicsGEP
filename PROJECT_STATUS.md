@@ -39,8 +39,12 @@ multiomicsGEP/
 │   ├── SupervisedMF_Context.md      ← AI/collaborator quick-reference for V2 code
 │   ├── Supervised_Bayesian_MF.R     ← V1: Original CAVI implementation (reference only)
 │   ├── Supervised_Bayesian_MF_V2.R  ← V2: Corrected implementation (all fixes) ← USE THIS
+│   ├── update_beta.R                ← NEW (Session 3): Modular β update functions
 │   └── multiomicsGEP_code.Rmd       ← Earlier exploratory R Markdown notebook
 ├── derivations/
+│   ├── qB/                              ← NEW (Session 3): Self-contained β derivation
+│   │   ├── qBeta_update_derivation.tex  ← Full step-by-step q(β) derivation (11 pages)
+│   │   └── qBeta_update_derivation.pdf  ← Compiled PDF
 │   ├── EBMF/
 │   │   ├── EBMF_Derivations.pdf           ← Empirical Bayes MF theory notes
 │   │   └── EBMF_Derivations_Latex.pdf     ← LaTeX-compiled version
@@ -50,6 +54,7 @@ multiomicsGEP/
 │   │   ├── MF_Derivations_UpdateAlgo_1_29_26.pdf  ← Derivation v3 (Jan 29)
 │   │   ├── MF_Derivations_UpdateAlgo_2_5_26.pdf   ← Derivation v4 (Feb 5)
 │   │   ├── MF_Derivations_UpdateAlgo_2_12_26.pdf  ← Derivation v5 (Feb 12) — REVIEWED, HAS ERRORS
+│   │   ├── MF_Derivations_UpdateAlgo_3_6_26.pdf   ← March 6 draft (Section 6A: EBMF focus)
 │   │   ├── MF_Derivations_UpdateAlgo_REVISED.tex/.pdf  ← Corrected derivations (R1-R8)
 │   │   │                                                  + full step-by-step algebra (21 pages)
 │   │   └── MF_V2_Companion.tex/.pdf        ← V2 companion: math ↔ code mapping (17 pages)
@@ -72,6 +77,10 @@ multiomicsGEP/
 │   └── *.csv                        ← 11 numeric summary tables (beta, C-index,
 │                                       convergence history, factor summary, GEP top
 │                                       features, loading correlations, PH test)
+├── tests/                           ← NEW (Session 3): Test infrastructure
+│   ├── test_helpers.R               ← Lightweight assertion framework (assert_near, run_test, etc.)
+│   ├── test_update_beta.R           ← 24 tests for update_beta.R (9 groups, TDD)
+│   └── run_tests.R                  ← Master test runner (Rscript tests/run_tests.R)
 └── paper/
     └── multiomicsGEP_manuscript.qmd  ← Manuscript draft (Quarto)
 ```
@@ -212,6 +221,19 @@ pdflatex MF_Derivations_UpdateAlgo_REVISED.tex
 pdflatex MF_V2_Companion.tex
 # Run twice for cross-references:
 pdflatex MF_V2_Companion.tex
+
+# q(β) derivation (Session 3):
+cd derivations/qB/
+pdflatex qBeta_update_derivation.tex
+pdflatex qBeta_update_derivation.tex
+pdflatex qBeta_update_derivation.tex
+```
+
+### Running the Test Suite
+
+```r
+Rscript tests/run_tests.R
+# Expected: 24/24 tests passed
 ```
 
 ---
@@ -230,6 +252,9 @@ pdflatex MF_V2_Companion.tex
 - [x] Simulation validation: V2 runs end-to-end on synthetic data (n=250, p=1000, K=5)
 - [x] results/: Full simulation outputs — 8 figures, 11 CSV tables, console log
 - [x] results/simulation_report.md/.pdf: 12-section simulation report (23 pages)
+- [x] derivations/qB/qBeta_update_derivation.tex/.pdf: Self-contained q(β) derivation (11 pages)
+- [x] code/update_beta.R: Modular β update (`compute_z_no_k`, `update_beta_k`, `update_beta_all`)
+- [x] tests/: Test infrastructure + 24 tests for β update (9 groups, all passing)
 
 ### Potential Next Steps
 
@@ -247,6 +272,9 @@ pdflatex MF_V2_Companion.tex
   V2 results and corrected derivations
 - [ ] **Bibliography:** Add `\bibliography{refs}` to REVISED.tex to resolve
   the `\citep{wang2022}` undefined-reference warning in the compiled PDF
+- [ ] **Modular updates for L, F, τ:** Following the β update pattern, extract
+  `update_L.R`, `update_F.R`, `update_tau.R` with corresponding test files and
+  LaTeX derivations in `derivations/qL/`, `derivations/qF/`, `derivations/qTau/`
 
 ---
 
@@ -309,3 +337,65 @@ pdflatex MF_V2_Companion.tex
 4. **Rendered `results/simulation_report.pdf`** — 23 pages via pandoc + xelatex
 
 **Deliverables committed:** `5da14f3`, `e424d14` (pushed to `origin/main`)
+
+---
+
+### Session 3 (March 10, 2026)
+
+**q(β) derivation, modular implementation, and TDD test suite.**
+
+1. **Verified q(β) derivation** across REVISED.tex (Sec. 6) and March 6 PDF (Sec. 6A):
+   - Both agree on final result: A_k = Σᵢ Wᵢᵢ·E_q[l²ᵢₖ], B_k = Σᵢ Wᵢᵢ·z^{-k}ᵢ·l̄ᵢₖ
+   - Confirmed March 6 PDF Eq. 68 typo (missing β² exponent) is intermediate-step
+     only; already flagged as R5 in REVISED.tex; final Eqs. 92–93 are correct
+   - Confirmed V2.R omits 1/σ² prior term intentionally (EBNM handles it empirically)
+   - Proved z_no_k reuse is mathematically valid (does not depend on l_{ik} or β_k)
+   - Confirmed error-in-variables direction: larger EL2 → larger A_k → smaller x_k
+     (more shrinkage), and s_k = 1/√A_k is SMALLER (not larger) when A_k increases
+
+2. **Installed TDD and GSD skills** (Matt Pocock TDD skill, GSD v1.22.4):
+   - TDD enforces red-green-refactor discipline
+   - GSD provides discuss→plan→execute→verify workflow structure
+
+3. **Created test infrastructure** (`tests/` directory):
+   - `tests/test_helpers.R`: Lightweight assertion framework (assert_near, assert_true,
+     assert_equal, assert_length, assert_finite, assert_positive, run_test)
+   - `tests/run_tests.R`: Master runner; exits with status 1 if any tests fail
+
+4. **TDD Red phase**: Wrote 24 failing tests (`tests/test_update_beta.R`) first:
+   - T1: Mathematical identities (A_k, B_k, x_k, s_k, second moment)
+   - T2: WLS limit (when EL2 = EL², no posterior variance → reduces to WLS)
+   - T3: K=1 signal recovery
+   - T4: Multi-factor K=5 recovery (signs correct, zero shrunk)
+   - T5: Null factor shrinkage (β≈0 when z_no_k is pure noise)
+   - T6: Error-in-variables (higher EL2 → more shrinkage)
+   - T7: Numerical stability (w=0, extreme weights, n=1, floor test)
+   - T8: Gauss-Seidel ordering (updated β₁ propagates to β₂ computation)
+   - T9: V2.R consistency (modular function matches V2.R lines 356–361 exactly)
+
+5. **TDD Green phase**: Implemented `code/update_beta.R`:
+   - `compute_z_no_k(z, EL, EBeta, k)` — partial working response
+   - `update_beta_k(w, z_no_k, EL_k, EL2_k, prior_family, A_floor)` — single-factor update
+   - `update_beta_all(w, z, EL, EL2, EBeta, prior_family, A_floor)` — full Gauss-Seidel loop
+
+6. **Fixed 2 test logic errors** during green phase:
+   - T4.1: `assert_equal(length(res$details), K)` failed due to `5L ≠ 5` (int vs
+     numeric); fixed to `assert_length(res$details, K)`
+   - T6.1: Test incorrectly asserted `s_high > s_low`; since s_k = 1/√A_k, larger
+     A_k → smaller s_k; fixed assertion to `s_high < s_low`
+
+7. **24/24 tests pass** (`Rscript tests/run_tests.R`)
+
+8. **Created `derivations/qB/qBeta_update_derivation.tex`** (11-page LaTeX document):
+   - Full step-by-step derivation with same macros as REVISED.tex
+   - Same tcolorbox styles (derivbox/correctionbox/ebnmbox) + new verifybox (green)
+     for self-consistency checks and codebox (orange) for math→code mapping table
+   - Sections: Setup, Objective, Taylor, Partial Working Response, E_q[L] expansion,
+     Coordinate-Ascent, EBNM Problem, Verification Checks, Code Mapping, Algorithm
+   - Compiled cleanly: `pdflatex` 3× → 11 pages, no undefined references
+
+**Key decisions:**
+- Plain R test framework (no testthat/DESCRIPTION) — no external dependencies
+- `update_beta_k` is decoupled from CAVI loop: takes pre-computed vectors
+- Returns diagnostic fields (A, B, x, s) to enable white-box test assertions
+- Gauss-Seidel propagation in `update_beta_all`: `EBeta_curr[k]` updated immediately
