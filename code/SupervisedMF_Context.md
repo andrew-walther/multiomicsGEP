@@ -165,6 +165,64 @@ list(
 
 ---
 
+## Modular Update Functions (Session 3)
+
+`code/update_beta.R` extracts the β update from V2.R into testable, decoupled functions.
+Source it independently: `source("code/update_beta.R")`.
+
+### Function signatures
+
+```r
+# Partial working response (excludes factor k's contribution)
+compute_z_no_k(z, EL, EBeta, k)
+# Returns: length-n vector z^{-k}_i = z_i - Σ_{k'≠k} l̄_{ik'} β̄_{k'}
+
+# Single-factor β update — core EBNM call
+update_beta_k(w, z_no_k, EL_k, EL2_k,
+              prior_family = "point_normal", A_floor = 1e-10)
+# Returns: list(mean, second, sd, A, B, x, s, ebnm_result)
+#   A      = sum(w * EL2_k)       — precision (error-in-variables)
+#   B      = sum(w * z_no_k * EL_k)  — signal
+#   x, s   = B/A, 1/sqrt(A)       — EBNM inputs
+#   mean   = posterior$mean        — replaces EBeta[k]
+#   second = sd^2 + mean^2         — replaces EBeta2[k]
+
+# Full K-factor update with Gauss-Seidel ordering
+update_beta_all(w, z, EL, EL2, EBeta,
+                prior_family = "point_normal", A_floor = 1e-10)
+# Returns: list(EBeta, EBeta2, details)
+#   EBeta  = updated posterior means (K-vector)
+#   EBeta2 = updated posterior second moments (K-vector)
+#   details = list of K update_beta_k results (for diagnostics)
+```
+
+### Key properties
+- `update_beta_k` is a **drop-in replacement** for V2.R lines 356–361 (verified by T9.1)
+- `update_beta_all` propagates `EBeta_curr[k]` immediately (Gauss-Seidel), matching V2.R A1
+- `A_floor = 1e-10` matches V2.R A3 precision floor
+- `z_no_k` computed inside `update_beta_all` but also returned by `compute_z_no_k`
+  for reuse in the L update (when extracting `update_L.R`)
+
+### Test suite
+
+```r
+# Run all tests (24 tests, 9 groups):
+Rscript tests/run_tests.R
+
+# Test groups:
+# T1: Mathematical identities (A_k, B_k, x_k, s_k, second moment)
+# T2: WLS limit (EL2 = EL^2 → no posterior uncertainty → standard WLS)
+# T3: K=1 signal recovery
+# T4: Multi-factor K=5 (signs correct, null factor zeroed)
+# T5: Null factor shrinkage (z_no_k pure noise → β≈0)
+# T6: Error-in-variables (higher EL2 → larger A_k → smaller |x_k| → more shrinkage)
+# T7: Numerical stability (w=0, extreme weights, n=1, floor test)
+# T8: Gauss-Seidel ordering (updated β_1 propagates to z_no_k for β_2)
+# T9: V2.R consistency (matches V2.R lines 356-361 exactly to 1e-12)
+```
+
+---
+
 ## Known Issues & Design Decisions
 
 ### Why `orthogonalize = FALSE` (default)
@@ -240,8 +298,11 @@ denominator is floored at `n * 1e-8`. This prevents:
   derivations.
 - [ ] **Bibliography:** Add `\bibliography{refs}` to REVISED.tex to resolve
   the `\citep{wang2022}` undefined-reference warning in the compiled PDF.
-- [ ] **CI/testing:** Add a minimal `testthat` suite that runs `sim_data_fn()`
-  and checks RMSE < 2 and C-index > 0.55.
+- [x] **CI/testing (β):** `tests/` directory with 24 tests for β update —
+  all passing. Same pattern to extend for L, F, τ updates.
+- [ ] **Modular L/F/τ updates:** Extract `update_L.R`, `update_F.R`,
+  `update_tau.R` following `update_beta.R` pattern; add test files and
+  LaTeX derivations in `derivations/qL/`, `derivations/qF/`, `derivations/qTau/`
 - [ ] **Factor sparsity:** Simulation shows 100% sparsity on all GEPs (all
   1,000 features get non-zero loadings with point-normal prior). For cleaner
   GEP interpretation on real data, experiment with tighter EBNM priors or
@@ -279,6 +340,7 @@ depending on convergence.
 
 | File | Purpose |
 |------|---------|
+| `derivations/qB/qBeta_update_derivation.tex/.pdf` | **NEW (Session 3):** Self-contained q(β) derivation (11 pages). Sections: Setup, Objective, Taylor, Partial Working Response, E_q[L] expansion, Coordinate-Ascent, EBNM, Verification Checks, Code Mapping. Four tcolorbox types: gray `derivbox`, red `correctionbox`, blue `ebnmbox`, green `verifybox`. |
 | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex/.pdf` | Corrected derivations (R1–R8 fixed) **+ full step-by-step algebra** (21 pages). Three tcolorbox types: gray `derivbox` = algebra steps, red `correctionbox` = R1–R8 fixes, blue `ebnmbox` = EBNM problem statements. |
 | `derivations/MF_UpdateDerivations/MF_V2_Companion.tex/.pdf` | Section-by-section math → V2.R code mapping (17 pages) |
 | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_2_12_26.pdf` | **Original Feb 12 document — contains R1–R8 errors. Reference only.** |
