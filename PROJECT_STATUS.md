@@ -81,6 +81,10 @@ multiomicsGEP/
 │   ├── test_helpers.R               ← Lightweight assertion framework (assert_near, run_test, etc.)
 │   ├── test_update_beta.R           ← 24 tests for update_beta.R (9 groups, TDD)
 │   └── run_tests.R                  ← Master test runner (Rscript tests/run_tests.R)
+├── demos/                           ← NEW (Session 4): Interactive narrative demos
+│   └── demo_update_beta.R           ← 5 demos: anatomy, signal recovery, null shrinkage,
+│                                       error-in-variables, K=5 multi-factor
+│                                       (Rscript demos/demo_update_beta.R)
 └── paper/
     └── multiomicsGEP_manuscript.qmd  ← Manuscript draft (Quarto)
 ```
@@ -272,9 +276,21 @@ Rscript tests/run_tests.R
   V2 results and corrected derivations
 - [ ] **Bibliography:** Add `\bibliography{refs}` to REVISED.tex to resolve
   the `\citep{wang2022}` undefined-reference warning in the compiled PDF
-- [ ] **Modular updates for L, F, τ:** Following the β update pattern, extract
-  `update_L.R`, `update_F.R`, `update_tau.R` with corresponding test files and
-  LaTeX derivations in `derivations/qL/`, `derivations/qF/`, `derivations/qTau/`
+- [ ] **Modular update — q(L):** Extract `code/update_L.R` (update_L_k, update_L_all);
+  write `tests/test_update_L.R` (TDD, ~24 tests); write `demos/demo_update_L.R`;
+  write `derivations/qL/qL_update_derivation.tex/.pdf`.
+  *Key*: A_L, B_L are n-vectors (sample-dependent via Cox weights); vector EBNM call.
+  *Source*: V2.R lines 298–321.
+- [ ] **Modular update — q(F):** Extract `code/update_F.R` (update_F_k, update_F_all);
+  write `tests/test_update_F.R`; write `demos/demo_update_F.R`;
+  write `derivations/qF/qF_update_derivation.tex/.pdf`.
+  *Key*: A_F, B_F are p-vectors; purely genomics (no survival term); scalar sum(EL2_k).
+  *Source*: V2.R lines 323–340.
+- [ ] **Modular update — q(τ):** Extract `code/update_tau.R` (update_tau — single fn);
+  write `tests/test_update_tau.R`; write `demos/demo_update_tau.R`;
+  write `derivations/qTau/qTau_update_derivation.tex/.pdf`.
+  *Key*: Closed-form MLE; no EBNM; Var_Term correction (EL2⊗EF2 − EL²⊗EF²); p-vector output.
+  *Source*: V2.R lines 366–376.
 
 ---
 
