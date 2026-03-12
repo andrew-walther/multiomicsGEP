@@ -165,7 +165,75 @@ list(
 
 ---
 
-## Modular Update Functions (Session 3)
+## Modular Update Functions (Sessions 3–5)
+
+All four CAVI parameters now have standalone modular update files.
+Each module follows the same pattern: R code + test file + demo + LaTeX derivation.
+
+```r
+source("code/update_beta.R")    # β update (Session 3)
+source("code/update_L.R")       # q(L) update (Session 5)
+source("code/update_F.R")       # q(F) update (Session 5) — requires update_L.R for compute_R_k
+source("code/update_tau.R")     # q(τ) update (Session 5) — base R only, no EBNM
+```
+
+### update_L.R — Vector EBNM, dual-source
+
+```r
+compute_R_k(Y, EL, EF, k)
+# Returns: n×p partial residual R^{-k} = Y - EL%*%t(EF) + outer(EL[,k], EF[,k])
+# Shared between update_L.R and update_F.R
+
+update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k,
+           prior_family = "point_normal", A_floor = 1e-10)
+# Key: A_L[i] and B_L[i] are n-VECTORS (patient-specific via Cox weights W_ii)
+#   A_gen  = sum(Tau * EF2_k)              [SCALAR — same for all i]
+#   A_surv = w * EBeta2_k                  [n-vector — varies via W_ii]
+#   A_L    = pmax(A_gen + A_surv, floor)   [n-vector]
+#   B_gen  = R_k %*% (Tau * EF_k)         [n-vector]
+#   B_surv = w * z_no_k * EBeta_k         [n-vector]
+#   ebnm(x = B_L/A_L, s = 1/sqrt(A_L))  ← n-observation EBNM call
+# Returns: list(mean, second, sd, A, B, B_gen, B_surv, x, s, ebnm_result)
+
+update_L_all(Y, EL, EL2, EF, EF2, Tau, w, z, EBeta, EBeta2, ...)
+# Returns: list(EL, EL2, details)
+```
+
+### update_F.R — Pure genomics, τ cancellation
+
+```r
+update_F_k(Tau, EL_k, EL2_k, R_k,
+           prior_family = "point_normal", A_floor = 1e-10)
+# KEY PROPERTY: τ_j CANCELS in x_j = B_F[j]/A_F[j], does NOT cancel in s_j
+#   sum_EL2_k = sum(EL2_k)                [SCALAR]
+#   A_F = pmax(Tau * sum_EL2_k, floor)    [p-vector]
+#   B_F = Tau * t(R_k) %*% EL_k           [p-vector]
+#   x_j = B_F[j]/A_F[j] = ... / sum_EL2_k [tau-FREE]
+#   s_j = 1/sqrt(Tau * sum_EL2_k)         [tau-dependent]
+#   ebnm(x = x_F, s = s_F)              ← p-observation EBNM call
+# Returns: list(mean, second, sd, A, B, x, s, sum_EL2_k, ebnm_result)
+
+update_F_all(Y, EL, EL2, EF, EF2, Tau, ...)
+# Returns: list(EF, EF2, details)
+```
+
+### update_tau.R — Closed-form MLE, no EBNM
+
+```r
+compute_var_term(EL, EL2, EF, EF2)
+# Returns: n×p matrix V = EL2%*%t(EF2) - EL^2%*%t(EF^2)  [all entries >= 0]
+# This is the posterior variance correction preventing tau overestimation
+
+update_tau(Y, EL, EL2, EF, EF2, tau_floor = 1e-8)
+# NOT an EBNM problem — closed-form MLE with NO per-k loop
+#   Var_Term = compute_var_term(...)       [n×p]
+#   R2_bar   = (Y - EL%*%t(EF))^2 + Var_Term  [n×p]
+#   Tau      = n / pmax(colSums(R2_bar), n*tau_floor)  [p-vector]
+#   elbo_proxy = sum(n/2*log(Tau) - Tau/2*colSums(R2_bar))  [scalar]
+# Returns: list(Tau, R2_bar, Var_Term, elbo_proxy)
+```
+
+### β update (Session 3)
 
 `code/update_beta.R` extracts the β update from V2.R into testable, decoupled functions.
 Source it independently: `source("code/update_beta.R")`.
@@ -298,11 +366,9 @@ denominator is floored at `n * 1e-8`. This prevents:
   derivations.
 - [ ] **Bibliography:** Add `\bibliography{refs}` to REVISED.tex to resolve
   the `\citep{wang2022}` undefined-reference warning in the compiled PDF.
-- [x] **CI/testing (β):** `tests/` directory with 24 tests for β update —
-  all passing. Same pattern to extend for L, F, τ updates.
-- [ ] **Modular L/F/τ updates:** Extract `update_L.R`, `update_F.R`,
-  `update_tau.R` following `update_beta.R` pattern; add test files and
-  LaTeX derivations in `derivations/qL/`, `derivations/qF/`, `derivations/qTau/`
+- [x] **CI/testing (β):** 24 tests for β update — all passing.
+- [x] **Modular L/F/τ updates:** `update_L.R`, `update_F.R`, `update_tau.R` with
+  28+26+27 tests (105 total passing) and derivations in `derivations/qL/qF/qTau/`.
 - [ ] **Factor sparsity:** Simulation shows 100% sparsity on all GEPs (all
   1,000 features get non-zero loadings with point-normal prior). For cleaner
   GEP interpretation on real data, experiment with tighter EBNM priors or
@@ -340,7 +406,10 @@ depending on convergence.
 
 | File | Purpose |
 |------|---------|
-| `derivations/qB/qBeta_update_derivation.tex/.pdf` | **NEW (Session 3):** Self-contained q(β) derivation (11 pages). Sections: Setup, Objective, Taylor, Partial Working Response, E_q[L] expansion, Coordinate-Ascent, EBNM, Verification Checks, Code Mapping. Four tcolorbox types: gray `derivbox`, red `correctionbox`, blue `ebnmbox`, green `verifybox`. |
+| `derivations/qB/qBeta_update_derivation.tex/.pdf` | **(Session 3):** Self-contained q(β) derivation (11 pages). |
+| `derivations/qL/qL_update_derivation.tex/.pdf` | **(Session 5):** q(L) derivation — dual-source (genomics+survival), vector EBNM. |
+| `derivations/qF/qF_update_derivation.tex/.pdf` | **(Session 5):** q(F) derivation — τ cancellation proof, pure genomics. |
+| `derivations/qTau/qTau_update_derivation.tex/.pdf` | **(Session 5):** q(τ) derivation — variance correction, closed-form MLE vs EBNM. |
 | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex/.pdf` | Corrected derivations (R1–R8 fixed) **+ full step-by-step algebra** (21 pages). Three tcolorbox types: gray `derivbox` = algebra steps, red `correctionbox` = R1–R8 fixes, blue `ebnmbox` = EBNM problem statements. |
 | `derivations/MF_UpdateDerivations/MF_V2_Companion.tex/.pdf` | Section-by-section math → V2.R code mapping (17 pages) |
 | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_2_12_26.pdf` | **Original Feb 12 document — contains R1–R8 errors. Reference only.** |

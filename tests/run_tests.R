@@ -15,15 +15,18 @@ cat("============================================================\n\n")
 # Source shared test infrastructure
 source("tests/test_helpers.R")
 
-# Source modules under test (add new modules here as they are created)
+# Source modules under test
 source("code/update_beta.R")
+source("code/update_L.R")
+source("code/update_F.R")
+source("code/update_tau.R")
 
 # List all test files to run
 test_files <- c(
-  "tests/test_update_beta.R"
-  # future: "tests/test_update_L.R"
-  # future: "tests/test_update_F.R"
-  # future: "tests/test_update_tau.R"
+  "tests/test_update_beta.R",
+  "tests/test_update_L.R",
+  "tests/test_update_F.R",
+  "tests/test_update_tau.R"
 )
 
 # Run each test file
