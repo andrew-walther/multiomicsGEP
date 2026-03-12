@@ -1,0 +1,408 @@
+% =============================================================================
+% Derivation of the q(F) Variational Update
+% Self-Contained Reference for Supervised Bayesian MF Implementation
+%
+% Author:  Andrew Walther
+% Date:    March 2026
+%
+% PURPOSE:
+%   Derives the CAVI update for the biological factor matrix F.  Unlike the
+%   L update, F appears only in the genomics likelihood (not survival).
+%   A remarkable algebraic property: tau_j CANCELS in the EBNM pseudo-
+%   observation x_j, but does NOT cancel in the pseudo-noise s_j.
+%
+% COMPANION CODE: code/update_F.R
+% PARENT DOCUMENT: derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex
+% =============================================================================
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{cancel}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+% ---- Custom commands --------------------------------------------------------
+\newcommand{\lbar}[2]{\bar{l}_{#1#2}}
+\newcommand{\fbar}[2]{\bar{f}_{#1#2}}
+\newcommand{\lsec}[2]{\overline{l^2_{#1#2}}}
+\newcommand{\fsec}[2]{\overline{f^2_{#1#2}}}
+\newcommand{\Rk}[0]{R^{-k}}
+\newcommand{\revised}[1]{{\color{red}\textbf{[REVISED]:} #1}}
+
+% ---- Coloured boxes ---------------------------------------------------------
+\newtcolorbox{correctionbox}{
+  colback=red!5!white, colframe=red!50!black,
+  title=Correction Note, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{ebnmbox}{
+  colback=blue!5!white, colframe=blue!40!black,
+  title=EBNM Problem, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{derivbox}{
+  colback=gray!6!white, colframe=gray!50!black,
+  title=Derivation Steps, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{verifybox}{
+  colback=green!5!white, colframe=green!50!black,
+  title=Verification Check, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{codebox}{
+  colback=yellow!5!white, colframe=orange!50!black,
+  title=Code Mapping (\texttt{update\_F.R}), fonttitle=\bfseries\small, breakable
+}
+
+% ---- Document ---------------------------------------------------------------
+\title{\textbf{Derivation of the $q(F)$ Variational Update}\\[4pt]
+       \large Supervised Bayesian Matrix Factorization\\[4pt]
+       \normalsize Self-Contained Reference for \texttt{code/update\_F.R}}
+\author{Andrew Walther}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document derives the coordinate-ascent variational inference (CAVI)
+update for the biological factor matrix $F$ in the Supervised Bayesian Matrix
+Factorization model.  Unlike the $L$ update (which combines genomics and
+survival), $F$ appears \emph{only} in the genomics likelihood.  The update
+is a $p$-observation EBNM problem: each feature $j$ provides one pseudo-
+observation $x_j$ and pseudo-noise $s_j$.
+
+A central algebraic property is derived in Section~\ref{sec:cancellation}:
+the feature-specific noise precision $\tau_j$ \emph{cancels} in the EBNM
+pseudo-observation $x_j = B_F[j]/A_F[j]$, but does \emph{not} cancel in
+the pseudo-noise $s_j = 1/\sqrt{A_F[j]}$.  This means all features receive
+the same point estimate (weighted OLS) but features with higher precision
+$\tau_j$ are subject to less EBNM shrinkage.
+
+This is the third of four modular derivation documents
+(q$\beta \to$ qL $\to$ qF (this) $\to$ q$\tau$).
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Setup and Notation}\label{sec:setup}
+% =============================================================================
+
+\subsection{Model Summary}
+
+The genomics likelihood is:
+\begin{equation}
+  Y_{ij} = \sum_{k=1}^K l_{ik} f_{jk} + \varepsilon_{ij},
+  \qquad \varepsilon_{ij} \sim \mathcal{N}(0,\,\tau_j^{-1})
+  \label{eq:genomics}
+\end{equation}
+
+\textbf{$F$ does not appear in the Cox survival term.}  Therefore the entire
+$q(f_{jk})$ update is driven by the genomics likelihood alone.
+
+\subsection{Key Notation}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Definition} & \textbf{R variable} \\
+\midrule
+$\lbar{i}{k}$ & $\mathbb{E}_q[l_{ik}]$ & \texttt{EL[i,k]} \\
+$\lsec{i}{k}$ & $\mathbb{E}_q[l_{ik}^2]$ & \texttt{EL2[i,k]} \\
+$\fbar{j}{k}$ & $\mathbb{E}_q[f_{jk}]$ & \texttt{EF[j,k]} \\
+$\fsec{j}{k}$ & $\mathbb{E}_q[f_{jk}^2]$ & \texttt{EF2[j,k]} \\
+$\tau_j$ & Feature noise precision & \texttt{Tau[j]} \\
+$\Rk_{ij}$ & Partial residual (excl.\ factor $k$) & \texttt{R\_k[i,j]} \\
+$\Sigma_{EL2_k}$ & $\sum_i\lsec{i}{k}$ (scalar sum over samples) & \texttt{sum\_EL2\_k} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Partial Residual Matrix $\Rk$}
+
+\begin{equation}
+  \Rk_{ij} = Y_{ij} - \sum_{k'\neq k}\lbar{i}{k'}\fbar{j}{k'}
+  \label{eq:Rk}
+\end{equation}
+
+This quantity was defined and computed in the $L$ update; the same
+\texttt{compute\_R\_k} function is reused here.
+
+% =============================================================================
+\section{CAVI Objective for $q(f_{jk})$}\label{sec:objective}
+% =============================================================================
+
+The ELBO terms involving $f_{jk}$ are:
+\begin{equation}
+  \mathcal{F}[q(f_{jk})] \supset
+  \mathbb{E}_q\!\left[\log P(Y \mid L, F, \tau)\right]
+  + \mathbb{E}_{q_{f_k}}\!\left[\log\tfrac{g_{f_k}}{q_{f_k}}\right]
+  \label{eq:elbo}
+\end{equation}
+
+The genomics log-likelihood for feature $j$ and patient $i$:
+\begin{equation}
+  \log P(Y_{ij} \mid f_{jk}, \ldots)
+  \propto -\frac{\tau_j}{2}\mathbb{E}_q\!\left[(\Rk_{ij} - f_{jk}\lbar{i}{k})^2\right]
+  \label{eq:llik-ij}
+\end{equation}
+
+% =============================================================================
+\section{Derivation of $A_F$ and $B_F$}\label{sec:derivation}
+% =============================================================================
+
+\begin{derivbox}
+Expanding the expectation in \eqref{eq:llik-ij} and noting that
+$\mathbb{E}_q[l_{ik}^2] = \lsec{i}{k}$:
+
+\begin{align*}
+  \mathbb{E}_q\!\left[(\Rk_{ij} - f_{jk}l_{ik})^2\right]
+  &= (\Rk_{ij})^2 - 2\,f_{jk}\,\Rk_{ij}\,\mathbb{E}_q[l_{ik}]
+     + f_{jk}^2\,\mathbb{E}_q[l_{ik}^2] \\
+  &= (\Rk_{ij})^2 - 2\,f_{jk}\,\Rk_{ij}\,\lbar{i}{k}
+     + f_{jk}^2\,\lsec{i}{k}
+\end{align*}
+
+Multiply by $-\tau_j/2$ and sum over all samples $i = 1,\ldots,n$:
+\begin{align}
+  \sum_i -\frac{\tau_j}{2}\mathbb{E}_q[\cdots]
+  &= -\frac{f_{jk}^2}{2}
+       \underbrace{\tau_j\sum_i\lsec{i}{k}}_{A_F[j]}
+     + f_{jk}
+       \underbrace{\tau_j\sum_i\Rk_{ij}\lbar{i}{k}}_{B_F[j]}
+     + \text{const}
+  \label{eq:AF-BF}
+\end{align}
+\end{derivbox}
+
+Therefore:
+\begin{align}
+  A_F[j] &= \tau_j \sum_i \lsec{i}{k} = \tau_j\,\Sigma_{EL2_k}
+  \label{eq:AF} \\[4pt]
+  B_F[j] &= \tau_j \sum_i \Rk_{ij}\lbar{i}{k}
+           = \tau_j\,\bigl(R_k^\top\,\bar{\bm{l}}_k\bigr)_j
+  \label{eq:BF}
+\end{align}
+
+where $\Sigma_{EL2_k} = \sum_i\lsec{i}{k}$ is a \emph{scalar}.
+
+\begin{codebox}
+\begin{verbatim}
+sum_EL2_k <- sum(EL2_k)                         # scalar
+A_F  <- pmax(Tau * sum_EL2_k, A_floor)          # p-vector [floored]
+B_F  <- Tau * as.vector(t(R_k) %*% EL_k)        # p-vector
+\end{verbatim}
+\end{codebox}
+
+% =============================================================================
+\section{The $\tau$ Cancellation Property}\label{sec:cancellation}
+% =============================================================================
+
+This is a key structural property of the $F$ update.
+
+\subsection{Cancellation in $x_j$}
+
+The EBNM pseudo-observation is:
+\begin{align}
+  x_j &= \frac{B_F[j]}{A_F[j]}
+       = \frac{\tau_j\,\bigl(R_k^\top\bar{\bm{l}}_k\bigr)_j}
+              {\tau_j\,\Sigma_{EL2_k}}
+  \label{eq:xj-cancel}
+\end{align}
+
+\begin{equation}
+  \boxed{x_j = \frac{\bigl(R_k^\top\bar{\bm{l}}_k\bigr)_j}{\Sigma_{EL2_k}}
+  \quad\text{--- \emph{independent} of }\tau_j}
+  \label{eq:xj-final}
+\end{equation}
+
+\textbf{Interpretation:} $x_j$ is the weighted-least-squares estimate
+of $f_{jk}$ that one would obtain if $l_{ik}$ were known exactly (i.e.,
+in the OLS limit where $\lsec{i}{k} = \lbar{i}{k}^2$).  The noise level
+$\tau_j$ does not affect the estimate itself.
+
+\subsection{No Cancellation in $s_j$}
+
+The EBNM pseudo-noise is:
+\begin{equation}
+  s_j = \frac{1}{\sqrt{A_F[j]}} = \frac{1}{\sqrt{\tau_j\,\Sigma_{EL2_k}}}
+  \label{eq:sj}
+\end{equation}
+
+$\tau_j$ does \emph{not} cancel: features with higher precision $\tau_j$
+(lower noise) receive smaller pseudo-noise $s_j$ and hence \emph{less}
+EBNM shrinkage.
+
+\begin{verifybox}
+\textbf{Empirical check.}  With fixed $R_k$ and $EL_k$, compute
+\texttt{update\_F\_k} twice:\ once with \texttt{Tau = rep(1, p)} and once
+with \texttt{Tau = rep(1000, p)}.
+
+\begin{itemize}
+  \item \texttt{max|x(Tau=1) - x(Tau=1000)|} should be $\approx 0$ (machine epsilon).
+  \item \texttt{mean(s(Tau=1)) / mean(s(Tau=1000))} should be $\approx \sqrt{1000} \approx 31.6$.
+  \item Posterior means should differ (less shrinkage at $\tau=1000$).
+\end{itemize}
+This is verified in test T1.4 and T1.5 of \texttt{tests/test\_update\_F.R}
+and demonstrated in Demo~1 of \texttt{demos/demo\_update\_F.R}.
+\end{verifybox}
+
+\begin{correctionbox}
+\textbf{Correction R4} (from REVISED.tex): The EBNM subscript for the $F$
+update should be $j$ (feature-indexed), not $i$.  The update produces a
+$p$-vector of posterior means $\bar{f}_{jk}$ for $j = 1,\ldots,p$.
+This was a typographical error in the original derivation document.
+\end{correctionbox}
+
+% =============================================================================
+\section{Error-in-Variables: Loading Uncertainty in $A_F$}\label{sec:eiv}
+% =============================================================================
+
+The sum $\Sigma_{EL2_k} = \sum_i\lsec{i}{k}$ uses the \emph{full} second
+moment of each loading, not the squared posterior mean.  This is the
+error-in-variables correction for uncertain loadings:
+
+\begin{equation}
+  \sum_i\lsec{i}{k}
+  = \sum_i\bigl(\mathrm{Var}_q(l_{ik}) + \lbar{i}{k}^2\bigr)
+  = \underbrace{\sum_i\mathrm{Var}_q(l_{ik})}_{\geq 0}
+    + \sum_i\lbar{i}{k}^2
+  \geq \sum_i\lbar{i}{k}^2
+  \label{eq:second-moment}
+\end{equation}
+
+Using $\lbar{i}{k}^2$ (pretending zero loading variance) would
+underestimate $A_F$, overestimating the signal-to-noise ratio and
+causing less shrinkage than appropriate.
+
+% =============================================================================
+\section{EBNM Formulation}\label{sec:ebnm}
+% =============================================================================
+
+\begin{ebnmbox}
+\textbf{EBNM problem for $q(f_{\cdot k})$:}
+\begin{equation}
+  \mathrm{EBNM}\bigl(x_j = B_F[j]/A_F[j],\; s_j = 1/\sqrt{A_F[j]},\;
+    g = g_{f_k}\bigr)
+  \quad j = 1,\ldots,p
+  \label{eq:ebnm}
+\end{equation}
+Calling convention:\quad
+\texttt{ebnm(x = B\_F/A\_F, s = 1/sqrt(A\_F), prior\_family = "point\_normal")}\\[4pt]
+Returns:\quad \texttt{posterior\$mean} $\to$ $\bar{f}_{jk}$,\quad
+\texttt{posterior\$sd} $\to$ $\sigma_{jk}$\\
+Second moment:\quad $\overline{f^2_{jk}} = \sigma_{jk}^2 + \bar{f}_{jk}^2$
+\end{ebnmbox}
+
+\begin{codebox}
+\begin{verbatim}
+x_F <- B_F / A_F                                # p-vector (tau-free!)
+s_F <- 1.0 / sqrt(A_F)                          # p-vector (tau-dependent)
+res <- ebnm(x = x_F, s = s_F, prior_family = prior_family)
+f_mean   <- res$posterior$mean                  # p-vector
+f_sd     <- res$posterior$sd                    # p-vector
+f_second <- f_sd^2 + f_mean^2                   # p-vector
+\end{verbatim}
+\end{codebox}
+
+% =============================================================================
+\section{Gauss-Seidel Ordering in \texttt{update\_F\_all}}\label{sec:gauss-seidel}
+% =============================================================================
+
+The wrapper \texttt{update\_F\_all} iterates over $k = 1,\ldots,K$.
+After updating $EF[\,,k]$, the new values are used when computing $\Rk$
+for subsequent factors.  Importantly, the \emph{already-updated}
+$EL[\,,k]$ from the preceding $L$ step is used here (Gauss-Seidel
+across the L-then-F sequence).
+
+% =============================================================================
+\section{Verification Checks}\label{sec:verification}
+% =============================================================================
+
+\begin{verifybox}
+\textbf{V1: OLS limit.}  When $\lsec{i}{k} = \lbar{i}{k}^2$ (zero loading
+variance), $x_j = (R_k^\top\bar{\bm{l}}_k)_j / \sum_i\lbar{i}{k}^2$, which
+is the OLS estimate of $f_{jk}$.
+
+\textbf{V2: Null loading.}  When $\bar{l}_{ik} = 0$ and $\lsec{i}{k} = 0$
+for all $i$, then $\Sigma_{EL2_k} = 0$, so $A_F$ hits the floor and $B_F = 0$,
+yielding $\bar{f}_{jk} = 0$.
+
+\textbf{V3: Scalar $\Sigma_{EL2_k}$.}  The loading second moments are summed
+over all $n$ samples, giving a single scalar.  Therefore $A_F[j] = \tau_j
+\times \text{const}$ — the only feature-variation in $A_F$ comes from $\tau_j$.
+
+\textbf{V4: Second moment non-negativity.}  $\overline{f^2_{jk}} \geq
+\bar{f}_{jk}^2$ element-wise, with equality iff posterior variance is zero.
+\end{verifybox}
+
+% =============================================================================
+\section{Code Mapping}\label{sec:code}
+% =============================================================================
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Equation & Code & Type \\
+\midrule
+$\Sigma_{EL2_k} = \sum_i\lsec{i}{k}$ & \texttt{sum(EL2\_k)} & scalar \\
+$A_F[j] = \tau_j\,\Sigma_{EL2_k}$ & \texttt{Tau * sum\_EL2\_k} & $p$-vector \\
+$B_F[j] = \tau_j(R_k^\top\bar{\bm{l}}_k)_j$ & \texttt{Tau * t(R\_k) \%*\% EL\_k} & $p$-vector \\
+$x_j = B_F[j]/A_F[j]$ & \texttt{B\_F / A\_F} & $p$-vector ($\tau$-free) \\
+$s_j = 1/\sqrt{A_F[j]}$ & \texttt{1/sqrt(A\_F)} & $p$-vector ($\tau$-dependent) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =============================================================================
+\section{Algorithm Summary}\label{sec:algorithm}
+% =============================================================================
+
+\begin{enumerate}
+  \item For $k = 1, \ldots, K$ (Gauss-Seidel order):
+  \begin{enumerate}
+    \item Compute partial residual:
+      $\Rk = Y - EL\,EF^\top + \mathrm{outer}(EL[\,,k],\,EF[\,,k])$
+    \item Compute loading second-moment sum (scalar):
+      $\Sigma_{EL2_k} = \sum_i\lsec{i}{k}$
+    \item Precision ($p$-vector):
+      $A_F[j] = \max(\tau_j\,\Sigma_{EL2_k},\;\epsilon)$
+    \item Signal ($p$-vector):
+      $B_F[j] = \tau_j\,\bigl(R_k^\top\,\bar{\bm{l}}_k\bigr)_j$
+    \item EBNM pseudo-obs ($\tau$-free): $x_j = B_F[j]/A_F[j]$
+    \item EBNM pseudo-noise ($\tau$-dependent): $s_j = 1/\sqrt{A_F[j]}$
+    \item Solve EBNM:
+      $\mathrm{EBNM}(x_j, s_j)$ over $j = 1,\ldots,p$
+    \item Update $\bar{f}_{jk} \leftarrow$ posterior mean,\quad
+      $\overline{f^2_{jk}} \leftarrow \sigma_{jk}^2 + \bar{f}_{jk}^2$
+  \end{enumerate}
+\end{enumerate}
+
+% =============================================================================
+\appendix
+\section{Notation Index}
+% =============================================================================
+
+\begin{tabular}{lll}
+\toprule
+Symbol & Meaning & Dimensions \\
+\midrule
+$Y$ & Genomics data & $n \times p$ \\
+$L$ & Patient loadings & $n \times K$ \\
+$F$ & Biological factors & $p \times K$ \\
+$\tau_j$ & Feature noise precision & $p$-vector \\
+$\Rk$ & Partial residual (excl.\ $k$) & $n \times p$ \\
+$\Sigma_{EL2_k}$ & $\sum_i\lsec{i}{k}$ & scalar \\
+$A_F[j]$ & EBNM precision for feature $j$ & $p$-vector \\
+$B_F[j]$ & EBNM signal for feature $j$ & $p$-vector \\
+$x_j$ & EBNM pseudo-obs ($\tau$-free) & $p$-vector \\
+$s_j$ & EBNM pseudo-noise ($\tau$-dependent) & $p$-vector \\
+\bottomrule
+\end{tabular}
+
+\end{document}

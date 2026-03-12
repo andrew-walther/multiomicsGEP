@@ -40,11 +40,23 @@ multiomicsGEP/
 │   ├── Supervised_Bayesian_MF.R     ← V1: Original CAVI implementation (reference only)
 │   ├── Supervised_Bayesian_MF_V2.R  ← V2: Corrected implementation (all fixes) ← USE THIS
 │   ├── update_beta.R                ← NEW (Session 3): Modular β update functions
+│   ├── update_L.R                   ← NEW (Session 5): Modular q(L) update functions
+│   ├── update_F.R                   ← NEW (Session 5): Modular q(F) update functions
+│   ├── update_tau.R                 ← NEW (Session 5): Modular q(τ) update functions
 │   └── multiomicsGEP_code.Rmd       ← Earlier exploratory R Markdown notebook
 ├── derivations/
 │   ├── qB/                              ← NEW (Session 3): Self-contained β derivation
 │   │   ├── qBeta_update_derivation.tex  ← Full step-by-step q(β) derivation (11 pages)
 │   │   └── qBeta_update_derivation.pdf  ← Compiled PDF
+│   ├── qL/                              ← NEW (Session 5): Self-contained q(L) derivation
+│   │   ├── qL_update_derivation.tex     ← Vector EBNM, dual-source (genomics+survival)
+│   │   └── qL_update_derivation.pdf     ← Compiled PDF
+│   ├── qF/                              ← NEW (Session 5): Self-contained q(F) derivation
+│   │   ├── qF_update_derivation.tex     ← τ cancellation property, pure genomics
+│   │   └── qF_update_derivation.pdf     ← Compiled PDF
+│   ├── qTau/                            ← NEW (Session 5): Self-contained q(τ) derivation
+│   │   ├── qTau_update_derivation.tex   ← Closed-form MLE, variance correction
+│   │   └── qTau_update_derivation.pdf   ← Compiled PDF
 │   ├── EBMF/
 │   │   ├── EBMF_Derivations.pdf           ← Empirical Bayes MF theory notes
 │   │   └── EBMF_Derivations_Latex.pdf     ← LaTeX-compiled version
@@ -80,11 +92,15 @@ multiomicsGEP/
 ├── tests/                           ← NEW (Session 3): Test infrastructure
 │   ├── test_helpers.R               ← Lightweight assertion framework (assert_near, run_test, etc.)
 │   ├── test_update_beta.R           ← 24 tests for update_beta.R (9 groups, TDD)
-│   └── run_tests.R                  ← Master test runner (Rscript tests/run_tests.R)
-├── demos/                           ← NEW (Session 4): Interactive narrative demos
-│   └── demo_update_beta.R           ← 5 demos: anatomy, signal recovery, null shrinkage,
-│                                       error-in-variables, K=5 multi-factor
-│                                       (Rscript demos/demo_update_beta.R)
+│   ├── test_update_L.R              ← NEW (Session 5): 28 tests for update_L.R (9 groups)
+│   ├── test_update_F.R              ← NEW (Session 5): 26 tests for update_F.R (9 groups)
+│   ├── test_update_tau.R            ← NEW (Session 5): 27 tests for update_tau.R (9 groups)
+│   └── run_tests.R                  ← Master test runner — 105/105 tests passing
+├── demos/                           ← NEW (Session 4–5): Interactive demonstrations
+│   ├── demo_update_beta.R           ← 5 demos for update_beta.R
+│   ├── demo_update_L.R              ← NEW (Session 5): 5 demos for update_L.R
+│   ├── demo_update_F.R              ← NEW (Session 5): 5 demos for update_F.R
+│   └── demo_update_tau.R            ← NEW (Session 5): 5 demos for update_tau.R
 └── paper/
     └── multiomicsGEP_manuscript.qmd  ← Manuscript draft (Quarto)
 ```
@@ -237,7 +253,16 @@ pdflatex qBeta_update_derivation.tex
 
 ```r
 Rscript tests/run_tests.R
-# Expected: 24/24 tests passed
+# Expected: 105/105 tests passed (24 β + 28 L + 26 F + 27 τ)
+```
+
+### Running the Modular Update Demos
+
+```r
+Rscript demos/demo_update_beta.R   # β update: 5 demos
+Rscript demos/demo_update_L.R      # q(L) update: 5 demos
+Rscript demos/demo_update_F.R      # q(F) update: 5 demos — see τ cancellation
+Rscript demos/demo_update_tau.R    # q(τ) update: 5 demos — see variance correction
 ```
 
 ---
@@ -259,6 +284,20 @@ Rscript tests/run_tests.R
 - [x] derivations/qB/qBeta_update_derivation.tex/.pdf: Self-contained q(β) derivation (11 pages)
 - [x] code/update_beta.R: Modular β update (`compute_z_no_k`, `update_beta_k`, `update_beta_all`)
 - [x] tests/: Test infrastructure + 24 tests for β update (9 groups, all passing)
+- [x] demos/demo_update_beta.R: 5 interactive demos for β update (anatomy, recovery, shrinkage, error-in-variables, K=5)
+- [x] code/update_L.R: Modular q(L) update (`compute_R_k`, `update_L_k`, `update_L_all`) — vector EBNM, dual-source
+- [x] code/update_F.R: Modular q(F) update (`update_F_k`, `update_F_all`) — pure genomics, τ cancellation
+- [x] code/update_tau.R: Modular q(τ) update (`compute_var_term`, `compute_expected_residual_sq`, `update_tau`) — closed-form MLE
+- [x] tests/test_update_L.R: 28 tests for update_L.R (9 groups, all passing)
+- [x] tests/test_update_F.R: 26 tests for update_F.R (9 groups, τ cancellation verified)
+- [x] tests/test_update_tau.R: 27 tests for update_tau.R (9 groups, variance correction verified)
+- [x] tests/run_tests.R: Updated master runner — 105/105 tests passing
+- [x] demos/demo_update_L.R: 5 demos (anatomy, signal recovery, genomics vs combined, error-in-variables, K=5)
+- [x] demos/demo_update_F.R: 5 demos (τ cancellation, sparse recovery, differential shrinkage, sparsity, K=5)
+- [x] demos/demo_update_tau.R: 5 demos (anatomy, known noise, variance correction, heteroscedastic, ELBO proxy)
+- [x] derivations/qL/qL_update_derivation.tex/.pdf: Self-contained q(L) derivation
+- [x] derivations/qF/qF_update_derivation.tex/.pdf: Self-contained q(F) derivation
+- [x] derivations/qTau/qTau_update_derivation.tex/.pdf: Self-contained q(τ) derivation
 
 ### Potential Next Steps
 
@@ -415,3 +454,62 @@ Rscript tests/run_tests.R
 - `update_beta_k` is decoupled from CAVI loop: takes pre-computed vectors
 - Returns diagnostic fields (A, B, x, s) to enable white-box test assertions
 - Gauss-Seidel propagation in `update_beta_all`: `EBeta_curr[k]` updated immediately
+
+---
+
+### Session 4 (March 11, 2026)
+
+**Demo for β update + to-do setup for L/F/τ modules.**
+
+1. Created `demos/demo_update_beta.R` — 5 interactive scenarios demonstrating the β
+   update: anatomy of A_k/B_k, signal recovery K=1, sparsity/shrinkage, error-in-variables,
+   multi-factor K=5.  Format: sep/sec/val helpers, pure narrative output (no PASS/FAIL).
+2. Updated `PROJECT_STATUS.md` to add `demos/` to the repo map.
+3. Updated `code/SupervisedMF_Context.md` with expanded L/F/τ next-step details.
+4. Added explicit per-module to-dos for Sessions 5 in this status document.
+
+**Deliverables committed:** `ad80c4e` (pushed to `origin/main`)
+
+---
+
+### Session 5 (March 12, 2026)
+
+**Full implementation of modular updates for q(L), q(F), and q(τ).**
+
+1. **`code/update_L.R`** — Three functions:
+   - `compute_R_k(Y, EL, EF, k)`: Partial residual matrix (n×p), shared with F update
+   - `update_L_k(...)`: Vector EBNM — A_L[i] and B_L[i] are n-vectors due to
+     patient-specific Cox weights W_{ii}; two additive sources (genomics + survival)
+   - `update_L_all(...)`: Gauss-Seidel loop over K factors
+
+2. **`code/update_F.R`** — Two functions:
+   - `update_F_k(...)`: Pure genomics EBNM — A_F and B_F are p-vectors;
+     key property: τ_j **cancels** in x_j = B_F[j]/A_F[j] but does NOT cancel in s_j
+   - `update_F_all(...)`: Gauss-Seidel loop over K factors
+
+3. **`code/update_tau.R`** — Three functions:
+   - `compute_var_term(EL, EL2, EF, EF2)`: Variance correction (EL2⊗EF2ᵀ − EL²⊗EF²ᵀ)
+   - `compute_expected_residual_sq(...)`: R2_bar = naive residual² + Var_Term
+   - `update_tau(...)`: Closed-form MLE τ̂_j = n/colSums(R2_bar) + ELBO proxy
+
+4. **Tests** (9 groups each, all passing):
+   - `tests/test_update_L.R`: 28 tests (T9 verifies bit-for-bit match with V2.R lines 310–321)
+   - `tests/test_update_F.R`: 26 tests (T1.4/T1.5 verify τ cancellation numerically)
+   - `tests/test_update_tau.R`: 27 tests (T4 verifies variance correction direction)
+   - Updated `tests/run_tests.R`: 105/105 total tests passing
+
+5. **Demos** (5 scenarios each):
+   - `demos/demo_update_L.R`: anatomy, signal recovery, genomics vs combined, error-in-variables, K=5
+   - `demos/demo_update_F.R`: τ cancellation, sparse recovery, differential shrinkage, sparsity, K=5
+   - `demos/demo_update_tau.R`: anatomy, known noise recovery, correction comparison, heteroscedastic, ELBO proxy
+
+6. **LaTeX derivations** (compiled to PDF):
+   - `derivations/qL/qL_update_derivation.tex/.pdf`: dual-source vector EBNM
+   - `derivations/qF/qF_update_derivation.tex/.pdf`: τ cancellation proof
+   - `derivations/qTau/qTau_update_derivation.tex/.pdf`: variance correction + closed-form MLE
+
+**Key design decisions:**
+- `compute_R_k` is shared between update_L.R and update_F.R (F sources it from update_L.R)
+- τ does not appear in the survival term — F and τ updates are pure genomics
+- `update_tau` has NO per-k loop and NO ebnm dependency (only base R)
+- ELBO proxy computed inside `update_tau` as a convergence monitor
