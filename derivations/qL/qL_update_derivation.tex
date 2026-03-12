@@ -1,0 +1,505 @@
+% =============================================================================
+% Derivation of the q(L) Variational Update
+% Self-Contained Reference for Supervised Bayesian MF Implementation
+%
+% Author:  Andrew Walther
+% Date:    March 2026
+%
+% PURPOSE:
+%   Derives the CAVI update for the patient loading matrix L.  Unlike the
+%   beta update (scalar EBNM), the L update is a VECTOR EBNM problem because
+%   the precision and signal vary across patients i (due to Cox weights W_{ii}).
+%
+% COMPANION CODE: code/update_L.R
+% PARENT DOCUMENT: derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex
+% =============================================================================
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{cancel}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+% ---- Custom commands --------------------------------------------------------
+\newcommand{\lbar}[2]{\bar{l}_{#1#2}}
+\newcommand{\fbar}[2]{\bar{f}_{#1#2}}
+\newcommand{\betabar}[1]{\bar{\beta}_{#1}}
+\newcommand{\lsec}[2]{\overline{l^2_{#1#2}}}
+\newcommand{\fsec}[2]{\overline{f^2_{#1#2}}}
+\newcommand{\betasec}[1]{\overline{\beta^2_{#1}}}
+\newcommand{\Rk}[0]{R^{-k}}
+\newcommand{\zk}[0]{z^{-k}}
+\newcommand{\revised}[1]{{\color{red}\textbf{[REVISED]:} #1}}
+
+% ---- Coloured boxes ---------------------------------------------------------
+\newtcolorbox{correctionbox}{
+  colback=red!5!white, colframe=red!50!black,
+  title=Correction Note, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{ebnmbox}{
+  colback=blue!5!white, colframe=blue!40!black,
+  title=EBNM Problem, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{derivbox}{
+  colback=gray!6!white, colframe=gray!50!black,
+  title=Derivation Steps, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{verifybox}{
+  colback=green!5!white, colframe=green!50!black,
+  title=Verification Check, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{codebox}{
+  colback=yellow!5!white, colframe=orange!50!black,
+  title=Code Mapping (\texttt{update\_L.R}), fonttitle=\bfseries\small, breakable
+}
+
+% ---- Document ---------------------------------------------------------------
+\title{\textbf{Derivation of the $q(L)$ Variational Update}\\[4pt]
+       \large Supervised Bayesian Matrix Factorization\\[4pt]
+       \normalsize Self-Contained Reference for \texttt{code/update\_L.R}}
+\author{Andrew Walther}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document derives the coordinate-ascent variational inference (CAVI)
+update for the patient loading matrix $L$ in the Supervised Bayesian Matrix
+Factorization model.  Unlike the $\beta$ update (a one-dimensional EBNM
+problem), the $L$ update is a \emph{vector} EBNM because the precision
+$A_L[i]$ and signal $B_L[i]$ vary across patients $i$ — the Cox diagonal
+Hessian weights $W_{ii}$ are patient-specific.  The derivation shows that
+$l_{ik}$ receives signal from two independent sources: (1) the genomics
+residual (weighted by $\tau_j$) and (2) the survival working response
+(weighted by $W_{ii}$).  The result is an $n$-observation EBNM problem solved
+once per factor $k$ per CAVI sweep, using the \texttt{ebnm} R package with a
+\texttt{point\_normal} prior.
+
+This is the second of four modular derivation documents
+(q$\beta \to$ qL (this) $\to$ qF $\to$ q$\tau$).
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Setup and Notation}\label{sec:setup}
+% =============================================================================
+
+\subsection{Model Summary}
+
+\begin{align}
+  \text{Genomics:}\quad &
+  Y_{ij} = \sum_{k=1}^K l_{ik} f_{jk} + \varepsilon_{ij},
+  \quad \varepsilon_{ij} \sim \mathcal{N}(0,\,\tau_j^{-1})
+  \label{eq:genomics} \\[4pt]
+  \text{Survival:}\quad &
+  \eta_i = \sum_{k=1}^K l_{ik}\beta_k = \bm{l}_i^\top\bm{\beta},
+  \quad h(t_i) = h_0(t_i)\exp(\eta_i)
+  \label{eq:survival}
+\end{align}
+
+\subsection{Key Notation}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Definition} & \textbf{R variable} \\
+\midrule
+$\lbar{i}{k}$ & $\mathbb{E}_q[l_{ik}]$ & \texttt{EL[i,k]} \\
+$\lsec{i}{k}$ & $\mathbb{E}_q[l_{ik}^2] = \mathrm{Var}_q + \bar{l}_{ik}^2$ & \texttt{EL2[i,k]} \\
+$\fbar{j}{k}$ & $\mathbb{E}_q[f_{jk}]$ & \texttt{EF[j,k]} \\
+$\fsec{j}{k}$ & $\mathbb{E}_q[f_{jk}^2]$ & \texttt{EF2[j,k]} \\
+$\betabar{k}$ & $\mathbb{E}_q[\beta_k]$ & \texttt{EBeta[k]} \\
+$\betasec{k}$ & $\mathbb{E}_q[\beta_k^2]$ & \texttt{EBeta2[k]} \\
+$W_{ii}$ & Cox Hessian diagonal (positive) & \texttt{w[i]} \\
+$z_i$ & Cox working response & \texttt{z[i]} \\
+$\zk_i$ & Partial working response (excl.\ factor $k$) & \texttt{z\_no\_k[i]} \\
+$\Rk_{ij}$ & Partial residual matrix & \texttt{R\_k[i,j]} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Partial Residual Matrix $\Rk$}
+
+When updating factor $k$, the residual excluding the contribution of that
+factor is:
+\begin{equation}
+  \Rk_{ij} = Y_{ij} - \sum_{k'\neq k} \lbar{i}{k'}\fbar{j}{k'}
+           = Y_{ij} - \bm{l}_i^\top\bm{f}_j + \lbar{i}{k}\fbar{j}{k}
+  \label{eq:Rk}
+\end{equation}
+
+In matrix form: $\Rk = Y - EL\,EF^\top + \text{outer}(EL[\,,k],\, EF[\,,k])$.
+
+\subsection{Partial Working Response $\zk$}
+
+Similarly, the Cox working response excluding factor $k$:
+\begin{equation}
+  \zk_i = z_i - \betabar{k}\,\lbar{i}{k}
+  \label{eq:zk}
+\end{equation}
+
+This is the contribution to $z_i$ from all factors \emph{except} $k$.
+
+% =============================================================================
+\section{CAVI Objective for $q(l_{ik})$}\label{sec:objective}
+% =============================================================================
+
+The ELBO with respect to $q(l_{ik})$ (holding all other variational
+posteriors fixed) contains two relevant terms:
+
+\begin{equation}
+  \mathcal{F}[q(l_{ik})] \supset
+  \underbrace{\mathbb{E}_q\!\left[\log P(Y \mid L,F,\tau)\right]}_{\text{genomics}}
+  +
+  \underbrace{\mathbb{E}_q\!\left[\log P(t,\delta \mid L,\bm{\beta})\right]}_{\text{survival}}
+  +
+  \mathbb{E}_{q_{l_k}}\!\left[\log\tfrac{g_{l_k}}{q_{l_k}}\right]
+  \label{eq:elbo-lik}
+\end{equation}
+
+where the KL term $\mathbb{E}[\log g/q]$ is handled implicitly by the EBNM
+solver.  We focus on expanding both likelihood terms with respect to
+$l_{ik}$.
+
+% =============================================================================
+\section{Genomics Contribution to $A_L$ and $B_L$}\label{sec:genomics}
+% =============================================================================
+
+\subsection{Extracting the Quadratic in $l_{ik}$}
+
+The genomics log-likelihood for feature $j$ and patient $i$ is:
+\begin{equation}
+  \log P(Y_{ij} \mid l_{ik}, \ldots)
+  \propto -\frac{\tau_j}{2}\mathbb{E}_q\!\left[(Y_{ij} - \Rk_{ij} - l_{ik}f_{jk})^2\right]
+  \label{eq:genomics-lk}
+\end{equation}
+
+where we have substituted $Y_{ij} - \Rk_{ij} = \lbar{i}{k}\fbar{j}{k}$
+(the within-factor contribution at posterior means) and now treat $l_{ik}$
+as the variable.  Expanding:
+
+\begin{derivbox}
+\begin{align*}
+  \mathbb{E}_q\!\left[(\Rk_{ij} - l_{ik}f_{jk})^2\right]
+  &= \bigl(\Rk_{ij}\bigr)^2 - 2\,l_{ik}\,\Rk_{ij}\,\mathbb{E}_q[f_{jk}]
+     + l_{ik}^2\,\mathbb{E}_q[f_{jk}^2] \\
+  &= \bigl(\Rk_{ij}\bigr)^2 - 2\,l_{ik}\,\Rk_{ij}\,\fbar{j}{k}
+     + l_{ik}^2\,\fsec{j}{k}
+\end{align*}
+
+Summing over all features $j=1,\ldots,p$ and multiplying by $-\tau_j/2$:
+\begin{align}
+  \text{genomics contribution}
+  &= -\frac{l_{ik}^2}{2}\underbrace{\sum_j \tau_j\fsec{j}{k}}_{A_{L,\text{gen}}}
+     + l_{ik}\underbrace{\sum_j \tau_j\,\Rk_{ij}\,\fbar{j}{k}}_{B_{L,\text{gen}}[i]}
+     + \text{const}
+  \label{eq:genomics-AB}
+\end{align}
+\end{derivbox}
+
+\textbf{Key observations:}
+\begin{itemize}
+  \item $A_{L,\text{gen}} = \sum_j \tau_j\fsec{j}{k}$ is a \emph{scalar} — the same
+    for all patients $i$.  It uses the full second moment $\overline{f^2_{jk}}$
+    (not $\bar{f}_{jk}^2$) — this is the error-in-variables correction.
+  \item $B_{L,\text{gen}}[i] = \sum_j \tau_j\Rk_{ij}\fbar{j}{k}$ is an $n$-vector,
+    equal to the $i$-th entry of $(R_k)\,(\tau \odot EF_k)$ where $\tau \odot EF_k$
+    denotes element-wise multiplication.
+\end{itemize}
+
+\begin{codebox}
+\begin{verbatim}
+A_gen  <- sum(Tau * EF2_k)                      # scalar
+B_gen  <- as.vector(R_k %*% (Tau * EF_k))       # n-vector
+\end{verbatim}
+\end{codebox}
+
+% =============================================================================
+\section{Survival Contribution to $A_L$ and $B_L$}\label{sec:survival}
+% =============================================================================
+
+\subsection{Taylor Approximation of the Cox Likelihood}
+
+The Cox partial-likelihood is non-Gaussian.  The standard treatment (as in
+the parent document) applies a second-order Taylor expansion around the
+current linear predictor $\hat{\eta}_i$.  The resulting approximation has
+the form of a weighted least-squares objective:
+\begin{equation}
+  \log P(t_i, \delta_i \mid \bm{l}_i, \bm{\beta})
+  \approx -\frac{W_{ii}}{2}(\eta_i - z_i)^2 + \text{const}
+  \label{eq:cox-taylor}
+\end{equation}
+where $W_{ii} > 0$ is the diagonal element of the negative Hessian and
+$z_i$ is the working response.
+
+\subsection{Quadratic in $l_{ik}$}
+
+Substituting $\eta_i = l_{ik}\beta_k + \zk_i$ (where $\zk_i$ collects all
+other factors):
+
+\begin{derivbox}
+\begin{align*}
+  -\frac{W_{ii}}{2}\mathbb{E}_q\!\left[(l_{ik}\beta_k + \zk_i - z_i)^2\right]
+  &= -\frac{W_{ii}}{2}\mathbb{E}_q\!\left[(l_{ik}\beta_k - (\underbrace{z_i - \zk_i}_{\approx\betabar{k}\lbar{i}{k}}))^2\right]
+\end{align*}
+
+Expanding and collecting terms in $l_{ik}$:
+\begin{align}
+  \text{survival contribution}
+  &= -\frac{l_{ik}^2}{2}\underbrace{W_{ii}\,\betasec{k}}_{A_{L,\text{surv}}[i]}
+     + l_{ik}\underbrace{W_{ii}\,\zk_i\,\betabar{k}}_{B_{L,\text{surv}}[i]}
+     + \text{const}
+  \label{eq:survival-AB}
+\end{align}
+\end{derivbox}
+
+\textbf{Key observations:}
+\begin{itemize}
+  \item $A_{L,\text{surv}}[i] = W_{ii}\betasec{k}$ is an $n$-vector (varies
+    across patients through $W_{ii}$).  It uses the full second moment
+    $\overline{\beta_k^2}$, not $\bar{\beta}_k^2$.
+  \item $B_{L,\text{surv}}[i] = W_{ii}\,\zk_i\,\betabar{k}$ is also an
+    $n$-vector.
+\end{itemize}
+
+\begin{codebox}
+\begin{verbatim}
+A_surv <- w * EBeta2_k                           # n-vector
+B_surv <- w * z_no_k * EBeta_k                  # n-vector
+\end{verbatim}
+\end{codebox}
+
+% =============================================================================
+\section{Combined Update: Vector EBNM Problem}\label{sec:combined}
+% =============================================================================
+
+\subsection{Combining Both Sources}
+
+Adding the genomics and survival contributions (equations \ref{eq:genomics-AB}
+and \ref{eq:survival-AB}), the objective for $q(l_{ik})$ is:
+
+\begin{align}
+  \mathcal{F}[q(l_{ik})] &\supset
+  -\frac{l_{ik}^2}{2}
+    \underbrace{\bigl(A_{L,\text{gen}} + A_{L,\text{surv}}[i]\bigr)}_{A_L[i]}
+  + l_{ik}
+    \underbrace{\bigl(B_{L,\text{gen}}[i] + B_{L,\text{surv}}[i]\bigr)}_{B_L[i]}
+  + \mathbb{E}_{q_{l_k}}\!\left[\log\tfrac{g_{l_k}}{q_{l_k}}\right]
+  \label{eq:combined-obj}
+\end{align}
+
+where:
+\begin{align}
+  A_L[i] &= \sum_j \tau_j\fsec{j}{k} + W_{ii}\betasec{k}
+  \label{eq:AL} \\[4pt]
+  B_L[i] &= \sum_j \tau_j\Rk_{ij}\fbar{j}{k} + W_{ii}\,\zk_i\,\betabar{k}
+  \label{eq:BL}
+\end{align}
+
+\subsection{EBNM Formulation}
+
+Completing the square in $l_{ik}$ and recognising the Gaussian pseudo-likelihood:
+\begin{equation}
+  q^*(l_{ik}) \propto g_{l_k}(l_{ik})\,
+  \mathcal{N}\!\left(l_{ik}\;\Big|\;
+    \underbrace{B_L[i]/A_L[i]}_{x_i},\;
+    \underbrace{1/A_L[i]}_{s_i^2}
+  \right)
+  \label{eq:ebnm-form}
+\end{equation}
+
+This is an $n$-dimensional EBNM problem:\ for each factor $k$, all $n$
+patients share the same prior $g_{l_k}$ but each patient $i$ contributes
+one pseudo-observation $x_i = B_L[i]/A_L[i]$ with pseudo-noise
+$s_i = 1/\sqrt{A_L[i]}$.
+
+\begin{ebnmbox}
+\textbf{EBNM problem for $q(l_{\cdot k})$:}
+\begin{equation}
+  \mathrm{EBNM}\bigl(x_i = B_L[i]/A_L[i],\; s_i = 1/\sqrt{A_L[i]},\;
+    g = g_{l_k}\bigr)
+  \quad i = 1,\ldots,n
+  \label{eq:ebnm}
+\end{equation}
+Calling convention: \texttt{ebnm(x = B\_L/A\_L, s = 1/sqrt(A\_L), prior\_family = "point\_normal")}\\
+Returns: \texttt{posterior\$mean} $\to$ $\bar{l}_{ik}$,\quad
+\texttt{posterior\$sd} $\to$ $\sigma_{ik}$,\quad
+$\overline{l^2_{ik}} = \sigma_{ik}^2 + \bar{l}_{ik}^2$
+\end{ebnmbox}
+
+\begin{codebox}
+\begin{verbatim}
+A_L  <- pmax(A_gen + A_surv, A_floor)           # n-vector  [floored]
+B_L  <- B_gen + B_surv                          # n-vector
+res  <- ebnm(x = B_L / A_L, s = 1/sqrt(A_L), prior_family = prior_family)
+l_mean   <- res$posterior$mean                  # n-vector: E_q[l_{ik}]
+l_sd     <- res$posterior$sd                    # n-vector: SD_q[l_{ik}]
+l_second <- l_sd^2 + l_mean^2                   # n-vector: E_q[l_{ik}^2]
+\end{verbatim}
+\end{codebox}
+
+% =============================================================================
+\section{Error-in-Variables Interpretation}\label{sec:eiv}
+% =============================================================================
+
+The use of $\fsec{j}{k} = \mathrm{Var}_q(f_{jk}) + \fbar{j}{k}^2$ (rather
+than $\fbar{j}{k}^2$) in $A_{L,\text{gen}}$ is the \emph{error-in-variables}
+correction for uncertain factors:
+
+\begin{itemize}
+  \item If we used $\fbar{j}{k}^2$, we would treat the factor column as
+    known.  Any posterior uncertainty in $f_{jk}$ would be ignored.
+  \item Using $\fsec{j}{k}$ properly inflates the effective precision
+    $A_{L,\text{gen}}$, causing the posterior of $l_{ik}$ to shrink more.
+    This prevents loadings from chasing poorly estimated factors.
+\end{itemize}
+
+Similarly, $\betasec{k}$ (not $\betabar{k}^2$) inflates $A_{L,\text{surv}}$.
+
+\begin{verifybox}
+\textbf{Monotonicity check.}  For fixed signal $B_L$, larger $A_L$ means:
+(a) smaller pseudo-noise $s_i = 1/\sqrt{A_L[i]}$,
+(b) same pseudo-obs $x_i = B_L[i]/A_L[i]$ but interpreted as more precise,
+(c) EBNM shrinks less (posterior mean $\to x_i$) but posterior SD is smaller.
+Net effect: tighter posterior — not necessarily more shrinkage.
+\end{verifybox}
+
+% =============================================================================
+\section{Gauss-Seidel Ordering in \texttt{update\_L\_all}}\label{sec:gauss-seidel}
+% =============================================================================
+
+The wrapper \texttt{update\_L\_all} loops over $k = 1, \ldots, K$ in order.
+After updating column $k$, the new $\bar{l}_{ik}$ and $\overline{l^2_{ik}}$
+are immediately used when computing $\Rk$ for $k+1, \ldots, K$.  This
+Gauss-Seidel (sequential) CAVI approach converges faster than the
+Jacobi (synchronous) alternative.
+
+\begin{codebox}
+\begin{verbatim}
+for (k in seq_len(K)) {
+    R_k      <- compute_R_k(Y, EL_curr, EF, k)   # uses updated EL[,1..k-1]
+    res_k    <- update_L_k(Tau, EF[,k], EF2[,k], w, EBeta[k], EBeta2[k],
+                            R_k, z_no_k)
+    EL_curr[, k]  <- res_k$mean
+    EL2_curr[, k] <- res_k$second
+}
+\end{verbatim}
+\end{codebox}
+
+% =============================================================================
+\section{Verification Checks}\label{sec:verification}
+% =============================================================================
+
+\begin{verifybox}
+\textbf{V1: Genomics-only limit.}
+When $W_{ii} = 0$ for all $i$, the survival term drops out.
+$A_L[i] = A_{L,\text{gen}}$ (constant across $i$), and $B_L[i] = B_{L,\text{gen}}[i]$.
+All patients share the same posterior precision — the update reduces to a
+weighted regression on the factor column.
+
+\textbf{V2: Survival-only limit.}
+When $\tau_j = 0$ for all $j$ (or $p=0$),
+$A_{L,\text{gen}} = 0$, so $A_L[i] = W_{ii}\betasec{k}$.
+The update uses only the survival signal.
+
+\textbf{V3: Second moment non-negativity.}
+$\overline{l^2_{ik}} = \sigma_{ik}^2 + \bar{l}_{ik}^2 \geq \bar{l}_{ik}^2$,
+with equality iff the posterior is degenerate.
+In code: \texttt{min(EL2 - EL\^{}2) >= 0} (up to floating-point tolerance).
+
+\textbf{V4: Floor prevents degeneracy.}
+\texttt{pmax(A\_L, A\_floor)} ensures $A_L > 0$ even when $\tau_j = 0$ and
+$W_{ii} = 0$.  Without the floor, $s_i = 1/\sqrt{0} = \infty$ and the EBNM
+call would fail.
+\end{verifybox}
+
+% =============================================================================
+\section{Code Mapping}\label{sec:code}
+% =============================================================================
+
+\begin{codebox}
+Function \texttt{update\_L\_k} in \texttt{code/update\_L.R}:
+\begin{verbatim}
+update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
+                        R_k, z_no_k,
+                        prior_family = "point_normal", A_floor = 1e-10) {
+    A_gen  <- sum(Tau * EF2_k)                   # scalar
+    A_surv <- w * EBeta2_k                       # n-vector
+    A_L    <- pmax(A_gen + A_surv, A_floor)      # n-vector [floored]
+    B_gen  <- as.vector(R_k %*% (Tau * EF_k))   # n-vector
+    B_surv <- w * z_no_k * EBeta_k               # n-vector
+    B_L    <- B_gen + B_surv                     # n-vector
+    res    <- ebnm(x = B_L / A_L, s = 1/sqrt(A_L), prior_family = ...)
+    list(mean = res$posterior$mean,
+         second = res$posterior$sd^2 + res$posterior$mean^2, ...)
+}
+\end{verbatim}
+\end{codebox}
+
+| Equation | Code line | Variable |
+|----------|-----------|----------|
+| $A_{L,\text{gen}} = \sum_j\tau_j\fsec{j}{k}$ | \texttt{sum(Tau * EF2\_k)} | scalar |
+| $A_{L,\text{surv}}[i] = W_{ii}\betasec{k}$ | \texttt{w * EBeta2\_k} | \texttt{n}-vector |
+| $B_{L,\text{gen}}[i]$ | \texttt{R\_k \%*\% (Tau * EF\_k)} | \texttt{n}-vector |
+| $B_{L,\text{surv}}[i]$ | \texttt{w * z\_no\_k * EBeta\_k} | \texttt{n}-vector |
+| $x_i$ | \texttt{B\_L / A\_L} | \texttt{n}-vector |
+| $s_i$ | \texttt{1/sqrt(A\_L)} | \texttt{n}-vector |
+
+% =============================================================================
+\section{Algorithm Summary}\label{sec:algorithm}
+% =============================================================================
+
+\begin{enumerate}
+  \item For $k = 1, \ldots, K$ (Gauss-Seidel order):
+  \begin{enumerate}
+    \item Compute partial residual:
+      $\Rk = Y - EL\,EF^\top + \mathrm{outer}(EL[\,,k],\,EF[\,,k])$
+    \item Compute partial working response:
+      $\zk_i = z_i - \betabar{k}\,\lbar{i}{k}$
+    \item Genomics precision (scalar):
+      $A_{L,\text{gen}} = \sum_j \tau_j\fsec{j}{k}$
+    \item Survival precision ($n$-vector):
+      $A_{L,\text{surv}}[i] = W_{ii}\betasec{k}$
+    \item Combined precision:
+      $A_L[i] = \max(A_{L,\text{gen}} + A_{L,\text{surv}}[i],\;\epsilon)$
+    \item Signal ($n$-vector):
+      $B_L[i] = \sum_j\tau_j\Rk_{ij}\fbar{j}{k} + W_{ii}\,\zk_i\,\betabar{k}$
+    \item Solve EBNM:
+      $\mathrm{EBNM}(x_i = B_L[i]/A_L[i],\; s_i = 1/\sqrt{A_L[i]})$
+    \item Update $\bar{l}_{ik} \leftarrow$ posterior mean,\quad
+      $\overline{l^2_{ik}} \leftarrow \sigma_{ik}^2 + \bar{l}_{ik}^2$
+  \end{enumerate}
+\end{enumerate}
+
+% =============================================================================
+\appendix
+\section{Notation Index}
+% =============================================================================
+
+\begin{tabular}{lll}
+\toprule
+Symbol & Meaning & Dimensions \\
+\midrule
+$Y$ & Genomics data & $n \times p$ \\
+$L$ & Patient loadings & $n \times K$ \\
+$F$ & Biological factors & $p \times K$ \\
+$\bm{\beta}$ & Survival coefficients & $K$-vector \\
+$\tau_j$ & Feature noise precision & $p$-vector \\
+$W_{ii}$ & Cox Hessian diagonal & $n$-vector \\
+$z_i$ & Cox working response & $n$-vector \\
+$\Rk$ & Partial residual (excl.\ $k$) & $n \times p$ \\
+$A_L[i]$ & EBNM precision for patient $i$ & $n$-vector \\
+$B_L[i]$ & EBNM signal for patient $i$ & $n$-vector \\
+\bottomrule
+\end{tabular}
+
+\end{document}
