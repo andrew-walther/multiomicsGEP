@@ -1,0 +1,438 @@
+% =============================================================================
+% Derivation of the q(tau) Variational Update
+% Self-Contained Reference for Supervised Bayesian MF Implementation
+%
+% Author:  Andrew Walther
+% Date:    March 2026
+%
+% PURPOSE:
+%   Derives the tau (noise precision) update.  Unlike L, F, and beta — all
+%   EBNM problems — tau is updated via a CLOSED-FORM MLE that operates on the
+%   full matrices simultaneously (no per-k loop).  A critical variance
+%   correction term prevents systematic underestimation of noise.
+%
+% COMPANION CODE: code/update_tau.R
+% PARENT DOCUMENT: derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex
+% =============================================================================
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{cancel}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+% ---- Custom commands --------------------------------------------------------
+\newcommand{\lbar}[2]{\bar{l}_{#1#2}}
+\newcommand{\fbar}[2]{\bar{f}_{#1#2}}
+\newcommand{\lsec}[2]{\overline{l^2_{#1#2}}}
+\newcommand{\fsec}[2]{\overline{f^2_{#1#2}}}
+\newcommand{\revised}[1]{{\color{red}\textbf{[REVISED]:} #1}}
+
+% ---- Coloured boxes ---------------------------------------------------------
+\newtcolorbox{correctionbox}{
+  colback=red!5!white, colframe=red!50!black,
+  title=Correction Note, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{derivbox}{
+  colback=gray!6!white, colframe=gray!50!black,
+  title=Derivation Steps, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{verifybox}{
+  colback=green!5!white, colframe=green!50!black,
+  title=Verification Check, fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{codebox}{
+  colback=yellow!5!white, colframe=orange!50!black,
+  title=Code Mapping (\texttt{update\_tau.R}), fonttitle=\bfseries\small, breakable
+}
+\newtcolorbox{notebox}{
+  colback=blue!5!white, colframe=blue!40!black,
+  title=Key Property, fonttitle=\bfseries\small, breakable
+}
+
+% ---- Document ---------------------------------------------------------------
+\title{\textbf{Derivation of the $q(\tau)$ Variational Update}\\[4pt]
+       \large Supervised Bayesian Matrix Factorization\\[4pt]
+       \normalsize Self-Contained Reference for \texttt{code/update\_tau.R}}
+\author{Andrew Walther}
+\date{March 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document derives the update for the feature-specific noise precision
+parameters $\tau_j$ in the Supervised Bayesian Matrix Factorization model.
+Unlike the updates for $L$, $F$, and $\beta$ — which are all Empirical Bayes
+Normal Means (EBNM) problems solved via the \texttt{ebnm} R package — the
+$\tau$ update is a \emph{closed-form maximum likelihood estimate} (MLE).
+
+The key mathematical ingredient is the \emph{expected squared residual}
+$\bar{R}^2_{ij}$, which includes a variance correction term that accounts
+for posterior uncertainty in $L$ and $F$.  Ignoring this correction leads to
+systematic overestimation of $\tau_j$ (underestimation of noise).  The $\tau$
+update also produces the genomics ELBO proxy, used as a convergence monitor.
+
+This is the fourth and final modular derivation document
+(q$\beta \to$ qL $\to$ qF $\to$ q$\tau$ (this)).
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Setup and Notation}\label{sec:setup}
+% =============================================================================
+
+\subsection{Model and Role of $\tau$}
+
+\begin{equation}
+  Y_{ij} = \sum_{k=1}^K l_{ik}f_{jk} + \varepsilon_{ij},
+  \qquad \varepsilon_{ij} \sim \mathcal{N}(0,\,\tau_j^{-1})
+  \label{eq:genomics}
+\end{equation}
+
+Each feature $j$ has its own noise precision $\tau_j > 0$.  A flat
+(improper) prior is placed on $\tau_j$, so the update is a pure MLE.
+$\tau_j$ does \emph{not} appear in the Cox survival term.
+
+\subsection{Notation}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Definition} & \textbf{R variable} \\
+\midrule
+$\lbar{i}{k}$ & $\mathbb{E}_q[l_{ik}]$ & \texttt{EL[i,k]} \\
+$\lsec{i}{k}$ & $\mathbb{E}_q[l_{ik}^2]$ & \texttt{EL2[i,k]} \\
+$\fbar{j}{k}$ & $\mathbb{E}_q[f_{jk}]$ & \texttt{EF[j,k]} \\
+$\fsec{j}{k}$ & $\mathbb{E}_q[f_{jk}^2]$ & \texttt{EF2[j,k]} \\
+$\hat{Y}_{ij}$ & Predicted mean $\sum_k\lbar{i}{k}\fbar{j}{k}$ & \texttt{EL \%*\% t(EF)} \\
+$\bar{R}^2_{ij}$ & Expected squared residual & \texttt{R2\_bar[i,j]} \\
+$V_{ij}$ & Variance correction term & \texttt{Var\_Term[i,j]} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =============================================================================
+\section{ELBO Terms Involving $\tau_j$}\label{sec:elbo}
+% =============================================================================
+
+With a flat prior on $\tau_j$, the ELBO contribution from feature $j$ is:
+\begin{equation}
+  \mathcal{F}_j(\tau_j) =
+  \mathbb{E}_q\!\left[\log P(Y_{\cdot j} \mid L, F, \tau_j)\right]
+  = \mathbb{E}_q\!\left[\sum_{i=1}^n \left(\frac{1}{2}\log\tau_j
+    - \frac{\tau_j}{2}(Y_{ij} - \eta_{ij})^2\right)\right]
+  \label{eq:elbo-j}
+\end{equation}
+
+where $\eta_{ij} = \sum_k l_{ik}f_{jk}$.  Taking the expectation:
+\begin{equation}
+  \mathcal{F}_j(\tau_j) = \frac{n}{2}\log\tau_j
+  - \frac{\tau_j}{2}\sum_i\mathbb{E}_q\!\left[(Y_{ij} - \eta_{ij})^2\right]
+  \label{eq:elbo-j2}
+\end{equation}
+
+The expected squared residual $\bar{R}^2_{ij} = \mathbb{E}_q[(Y_{ij}-\eta_{ij})^2]$
+is derived in Section~\ref{sec:r2bar}.  Differentiating \eqref{eq:elbo-j2}
+with respect to $\tau_j$ and setting to zero:
+\begin{equation}
+  \frac{d\mathcal{F}_j}{d\tau_j} = \frac{n}{2\tau_j}
+  - \frac{1}{2}\sum_i\bar{R}^2_{ij} = 0
+  \quad\Rightarrow\quad
+  \boxed{\hat{\tau}_j = \frac{n}{\displaystyle\sum_{i=1}^n \bar{R}^2_{ij}}}
+  \label{eq:tau-mle}
+\end{equation}
+
+% =============================================================================
+\section{Expected Squared Residual $\bar{R}^2_{ij}$}\label{sec:r2bar}
+% =============================================================================
+
+\subsection{Naive Residual (Insufficient)}
+
+If we naively plugged in posterior means:
+\begin{equation}
+  (Y_{ij} - \hat{Y}_{ij})^2
+  = \left(Y_{ij} - \sum_k\lbar{i}{k}\fbar{j}{k}\right)^2
+  \label{eq:naive}
+\end{equation}
+this ignores posterior uncertainty in $L$ and $F$.
+
+\subsection{Full Expectation}
+
+The correct expected squared residual is:
+\begin{align}
+  \bar{R}^2_{ij}
+  &= \mathbb{E}_q\!\left[\left(Y_{ij} - \sum_k l_{ik}f_{jk}\right)^2\right]
+  \nonumber\\
+  &= \left(Y_{ij} - \sum_k\lbar{i}{k}\fbar{j}{k}\right)^2
+     + \mathbb{E}_q\!\left[\left(\sum_k(l_{ik}f_{jk} - \lbar{i}{k}\fbar{j}{k})\right)^2\right]
+  \label{eq:r2bar-split}
+\end{align}
+
+The second term (the variance correction) expands via independence of rows of $L$ and $F$ under $q$:
+
+\begin{derivbox}
+Assuming $q$ factorises over $(i,k)$ pairs (mean-field):
+\begin{align*}
+  \mathbb{E}_q\!\left[\left(\sum_k l_{ik}f_{jk}\right)^2\right]
+  &= \sum_k\mathbb{E}_q[l_{ik}^2]\,\mathbb{E}_q[f_{jk}^2]
+  \quad\text{(cross terms vanish by independence)}\\
+  &= \sum_k\lsec{i}{k}\,\fsec{j}{k}
+\end{align*}
+
+Meanwhile:
+\begin{align*}
+  \left(\mathbb{E}_q\!\left[\sum_k l_{ik}f_{jk}\right]\right)^2
+  &= \left(\sum_k\lbar{i}{k}\fbar{j}{k}\right)^2
+  = \sum_k\lbar{i}{k}^2\fbar{j}{k}^2
+    + 2\sum_{k<k'}\lbar{i}{k}\fbar{j}{k}\lbar{i}{k'}\fbar{j}{k'}
+\end{align*}
+
+Therefore the variance of the prediction is:
+\begin{align}
+  \mathrm{Var}_q(\eta_{ij})
+  &= \mathbb{E}_q[\eta_{ij}^2] - (\mathbb{E}_q[\eta_{ij}])^2
+  \nonumber\\
+  &= \sum_k\lsec{i}{k}\,\fsec{j}{k}
+     - \left(\sum_k\lbar{i}{k}\fbar{j}{k}\right)^2
+  \label{eq:var-pred}
+\end{align}
+
+But this is still not the right expansion.  Using the identity
+$\mathbb{E}[(X-c)^2] = \mathrm{Var}(X) + (\mathbb{E}[X]-c)^2$:
+
+\begin{align}
+  \bar{R}^2_{ij}
+  &= (Y_{ij} - \hat{Y}_{ij})^2 + \mathrm{Var}_q(\eta_{ij})
+  \nonumber\\
+  &= (Y_{ij} - \hat{Y}_{ij})^2
+     + \underbrace{\sum_k\lsec{i}{k}\,\fsec{j}{k}
+       - \sum_k\lbar{i}{k}^2\fbar{j}{k}^2}_{V_{ij}}
+  \label{eq:r2bar-final}
+\end{align}
+\end{derivbox}
+
+\subsection{Variance Correction Term $V_{ij}$}
+
+\begin{equation}
+  \boxed{V_{ij} = \sum_k \bigl(\lsec{i}{k}\,\fsec{j}{k}
+                              - \lbar{i}{k}^2\,\fbar{j}{k}^2\bigr)
+  = (EL2\,EF2^\top)_{ij} - (EL^2\,EF^{2\top})_{ij}}
+  \label{eq:var-term}
+\end{equation}
+
+\textbf{Non-negativity:} Each term $\lsec{i}{k}\,\fsec{j}{k} - \lbar{i}{k}^2\fbar{j}{k}^2 \geq 0$
+because $\mathbb{E}[X^2]\mathbb{E}[Y^2] \geq (\mathbb{E}[X]\mathbb{E}[Y])^2$ by
+independence and Jensen's inequality.  Therefore $V_{ij} \geq 0$ and
+$\bar{R}^2_{ij} \geq (Y_{ij}-\hat{Y}_{ij})^2$.
+
+\textbf{Consequence:} The variance correction \emph{inflates} the expected
+squared residual, which \emph{reduces} $\hat{\tau}_j$ relative to the naive
+estimate.  Omitting $V_{ij}$ causes systematic overestimation of precision
+(underestimation of noise).
+
+\begin{codebox}
+\begin{verbatim}
+compute_var_term <- function(EL, EL2, EF, EF2) {
+  (EL2 %*% t(EF2)) - (EL^2 %*% t(EF^2))
+}
+\end{verbatim}
+
+\textbf{Matrix form explanation:}
+\begin{itemize}
+  \item \texttt{EL2 \%*\% t(EF2)}: entry $(i,j)$ is $\sum_k\lsec{i}{k}\fsec{j}{k}$
+  \item \texttt{EL\^{}2 \%*\% t(EF\^{}2)}: entry $(i,j)$ is $\sum_k\lbar{i}{k}^2\fbar{j}{k}^2$
+\end{itemize}
+\end{codebox}
+
+\begin{correctionbox}
+\textbf{Corrections R7 and R8} (from REVISED.tex):
+\begin{itemize}
+  \item R7: Sign error — the variance correction term enters with a
+    \emph{positive} sign in $\bar{R}^2_{ij}$, not negative.
+    The original document had an erroneous minus sign.
+  \item R8: Subscript — the loading index should be $l_{ik}$ (sample $i$,
+    factor $k$), not $l_{jk}$ which refers to a feature.
+\end{itemize}
+Both are fixed in the REVISED document and reflected in \texttt{code/update\_tau.R}.
+\end{correctionbox}
+
+% =============================================================================
+\section{The Full Tau Update}\label{sec:update}
+% =============================================================================
+
+Combining \eqref{eq:tau-mle} and \eqref{eq:r2bar-final}:
+
+\begin{align}
+  \bar{R}^2_{ij} &= (Y_{ij} - \hat{Y}_{ij})^2 + V_{ij} \label{eq:r2bar-combined} \\[6pt]
+  \hat{\tau}_j &= \frac{n}{\sum_i \bar{R}^2_{ij}} \label{eq:tau-hat}
+\end{align}
+
+In matrix notation:
+\begin{equation}
+  R2\_bar = (Y - EL\,EF^\top)^2 + V
+  \qquad\text{(element-wise squared + correction)}
+  \label{eq:r2bar-matrix}
+\end{equation}
+\begin{equation}
+  \hat{\bm{\tau}} = n\,/\,\mathrm{colSums}(R2\_bar)
+  \qquad\text{(element-wise division)}
+  \label{eq:tau-vector}
+\end{equation}
+
+\begin{notebox}
+\textbf{Why this is NOT an EBNM problem.}
+
+The updates for $L$, $F$, and $\beta$ all involve placing a prior $g(\cdot)$
+on the parameter and running an EBNM solver.  The $\tau$ update is different:
+\begin{itemize}
+  \item $\tau_j$ has a flat (improper uniform) prior — no shrinkage.
+  \item The optimisation is unconstrained (no prior KL term).
+  \item The MLE has a closed form: $\hat{\tau}_j = n/\sum_i\bar{R}^2_{ij}$.
+  \item There is no per-$k$ loop: all $K$ factors contribute simultaneously
+    through $\hat{Y}_{ij} = \sum_k\lbar{i}{k}\fbar{j}{k}$ and $V_{ij}$.
+\end{itemize}
+\end{notebox}
+
+\begin{codebox}
+\begin{verbatim}
+update_tau <- function(Y, EL, EL2, EF, EF2, tau_floor = 1e-8) {
+    n        <- nrow(Y)
+    Var_Term <- compute_var_term(EL, EL2, EF, EF2)          # n x p
+    R2_bar   <- (Y - EL %*% t(EF))^2 + Var_Term             # n x p
+    col_sums <- colSums(R2_bar)                              # p-vector
+    Tau      <- n / pmax(col_sums, n * tau_floor)            # p-vector
+    ...
+}
+\end{verbatim}
+The \texttt{pmax} floor prevents $\hat{\tau}_j = \infty$ when the residual
+sum is near zero (perfect reconstruction).
+\end{codebox}
+
+% =============================================================================
+\section{ELBO Proxy as Convergence Monitor}\label{sec:elbo-proxy}
+% =============================================================================
+
+Substituting the MLE $\hat{\tau}_j$ back into \eqref{eq:elbo-j2}:
+
+\begin{equation}
+  \mathcal{F}_j(\hat{\tau}_j)
+  = \frac{n}{2}\log\hat{\tau}_j
+  - \frac{\hat{\tau}_j}{2}\sum_i\bar{R}^2_{ij}
+  = \frac{n}{2}\log\hat{\tau}_j - \frac{n}{2}
+  \label{eq:elbo-at-mle}
+\end{equation}
+
+The genomics \emph{ELBO proxy} (summed over all features) is:
+\begin{equation}
+  \boxed{\mathcal{E}_{\text{proxy}} = \sum_j\left[\frac{n}{2}\log\hat{\tau}_j
+  - \frac{\hat{\tau}_j}{2}\sum_i\bar{R}^2_{ij}\right]}
+  \label{eq:elbo-proxy}
+\end{equation}
+
+This is the genomics contribution $\mathbb{E}_q[\log P(Y \mid L, F, \tau)]$
+evaluated at the current posterior means and the updated $\tau$.  It is
+monotonically increasing (or at worst non-decreasing) across CAVI iterations
+if the algorithm is working correctly.
+
+\begin{codebox}
+\begin{verbatim}
+elbo_proxy <- sum(n / 2 * log(Tau) - Tau / 2 * col_sums)
+\end{verbatim}
+\end{codebox}
+
+% =============================================================================
+\section{Verification Checks}\label{sec:verification}
+% =============================================================================
+
+\begin{verifybox}
+\textbf{V1: Non-negativity.}
+$V_{ij} \geq 0$ (element-wise), therefore $\bar{R}^2_{ij} \geq (Y_{ij} -
+\hat{Y}_{ij})^2 \geq 0$.  If $V_{ij}$ contains negative entries, there is a
+sign error in the implementation.
+
+\textbf{V2: Perfect reconstruction.}
+When $Y = EL\,EF^\top$ exactly and $EL2 = EL^2$, $EF2 = EF^2$:
+$\bar{R}^2_{ij} = 0$, so $\hat{\tau}_j$ hits the ceiling $1/\tau_{\text{floor}}$.
+
+\textbf{V3: Correction direction.}
+Ignoring $V$ (using $EL2 = EL^2$, $EF2 = EF^2$) gives $V_{ij} = 0$ and
+hence a \emph{larger} $\hat{\tau}_j$ (overestimates precision).  The
+corrected estimate is always $\leq$ the biased estimate.
+
+\textbf{V4: ELBO increases.}
+Over a sequence of CAVI iterations (L update $\to$ F update $\to$ $\tau$
+update), the ELBO proxy should be non-decreasing.  A decrease signals a bug
+in one of the update equations.
+
+\textbf{V5: V2.R consistency.}
+The implementation should match V2.R lines 374--376 exactly:
+\begin{center}
+\texttt{Var\_Term = EL2 \%*\% t(EF2) - EL\^{}2 \%*\% t(EF\^{}2)}\\
+\texttt{Tau = n / pmax(colSums(R2\_bar), n * tau\_floor)}
+\end{center}
+\end{verifybox}
+
+% =============================================================================
+\section{Code Mapping}\label{sec:code}
+% =============================================================================
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Equation & Code & Type \\
+\midrule
+$V_{ij} = \sum_k(\lsec{i}{k}\fsec{j}{k} - \lbar{i}{k}^2\fbar{j}{k}^2)$ & \texttt{compute\_var\_term()} & $n\times p$ \\
+$\bar{R}^2_{ij} = (Y-\hat{Y})^2_{ij} + V_{ij}$ & \texttt{R2\_bar} & $n\times p$ \\
+$\hat{\tau}_j = n/\sum_i\bar{R}^2_{ij}$ & \texttt{n / pmax(col\_sums, ...)} & $p$-vector \\
+$\mathcal{E}_{\text{proxy}}$ & \texttt{elbo\_proxy} & scalar \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =============================================================================
+\section{Algorithm Summary}\label{sec:algorithm}
+% =============================================================================
+
+\begin{enumerate}
+  \item Compute variance correction (matrix operation, all $K$ factors at once):
+    \[V = EL2\,EF2^\top - EL^2\,(EF^2)^\top \quad[n\times p]\]
+  \item Compute expected squared residuals:
+    \[\bar{R}^2 = (Y - EL\,EF^\top)^{\odot 2} + V \quad[n\times p]\]
+  \item Compute column sums and update precision:
+    \[\hat{\tau}_j = \max\!\left(\frac{n}{\displaystyle\sum_i\bar{R}^2_{ij}},\;
+    \frac{1}{\tau_{\text{floor}}}\right)^{-1} \quad[p\text{-vector}]\]
+  \item Compute ELBO proxy for convergence monitoring:
+    \[\mathcal{E}_{\text{proxy}} = \sum_j\left[\frac{n}{2}\log\hat{\tau}_j
+      - \frac{\hat{\tau}_j}{2}\sum_i\bar{R}^2_{ij}\right]\]
+  \item Return $\hat{\bm{\tau}}$, $\bar{R}^2$, $V$, $\mathcal{E}_{\text{proxy}}$.
+\end{enumerate}
+
+% =============================================================================
+\appendix
+\section{Notation Index}
+% =============================================================================
+
+\begin{tabular}{lll}
+\toprule
+Symbol & Meaning & Dimensions \\
+\midrule
+$Y$ & Genomics data & $n \times p$ \\
+$\hat{Y}_{ij}$ & $\sum_k\lbar{i}{k}\fbar{j}{k}$ & $n \times p$ \\
+$V_{ij}$ & Variance correction term ($\geq 0$) & $n \times p$ \\
+$\bar{R}^2_{ij}$ & Expected squared residual & $n \times p$ \\
+$\hat{\tau}_j$ & Updated noise precision & $p$-vector \\
+$\mathcal{E}_{\text{proxy}}$ & Genomics ELBO proxy & scalar \\
+$\tau_{\text{floor}}$ & Precision floor (default $10^{-8}$) & scalar \\
+\bottomrule
+\end{tabular}
+
+\end{document}
