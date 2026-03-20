@@ -49,7 +49,7 @@ simulation are to:
 | C-index (PCA) | 0.827 | Strong unsupervised baseline |
 | C-index (Supervised) | 0.828 | Marginal improvement over PCA |
 | PH test (global p) | 0.258 | Proportional hazards assumption satisfied |
-| Factor sparsity | 100% all factors | EBNM did not induce exact zeros (see discussion) |
+| Factor density | 100% all factors (0% sparse) | EBNM did not induce exact zeros (see discussion) |
 | Convergence | Did not reach tol = 1e-5 in 100 iters | Slow drift phase; practically converged |
 
 ---
@@ -269,7 +269,7 @@ beta trace to confirm practical convergence.
 3. **Variance is distributed across factors:** PVE ranges from 25.96% (Factor 1)
    to 11.82% (Factor 5), with the top factor explaining about a quarter of
    the total variance.
-4. **100% sparsity is unexpected** and is discussed in Section 10.
+4. **0% sparsity (all features non-zero) is unexpected** and is discussed in Section 10.
 
 ---
 
@@ -552,9 +552,9 @@ matrix P gives an equally valid solution (L*P, F*P, P'*Beta). In practice, this 
   biological content (e.g., "immune GEP", "proliferation GEP") rather than their
   numerical index.
 
-#### 2. 100% Sparsity (No Exact Zeros)
+#### 2. 0% Sparsity (No Exact Zeros)
 
-All five factors show 100% sparsity — meaning every feature has a non-zero loading.
+All five factors are dense — every feature has a non-zero loading (NonZero_Pct = 100%).
 This is initially surprising, since the EBNM point-normal prior should shrink
 small loadings to exactly zero.
 
@@ -770,7 +770,7 @@ are possible:
 
 | File | Description |
 |------|-------------|
-| `factor_summary_table.csv` | Per-factor beta, log-rank p, sparsity, PVE |
+| `factor_summary_table.csv` | Per-factor beta, log-rank p, NonZero_Pct (% features with nonzero weight), PVE |
 | `beta_comparison_table.csv` | True vs estimated beta with posterior SDs |
 | `cindex_comparison.csv` | PCA vs supervised C-index |
 | `convergence_history.csv` | Per-iteration RMSE and ELBO proxy (100 rows) |

@@ -141,14 +141,16 @@ update_tau <- function(Y, EL, EL2, EF, EF2,
   # Accounts for posterior uncertainty: EL2*EF2 - EL^2*EF^2 >= 0
   # Without this, tau is systematically overestimated (noise underestimated).
   # See REVISED.tex correction R7 (sign error) and R8 (subscript fix).
+  # Computed explicitly here to retain Var_Term in the return list.
   # ------------------------------------------------------------------
   Var_Term <- compute_var_term(EL, EL2, EF, EF2)
 
   # ------------------------------------------------------------------
   # Expected squared residual (n x p)
-  # R2_bar = (Y - mean prediction)^2 + variance inflation
+  # Delegates to compute_expected_residual_sq(), which internally calls
+  # compute_var_term().  Var_Term is kept above for the return list.
   # ------------------------------------------------------------------
-  R2_bar <- (Y - EL %*% t(EF))^2 + Var_Term
+  R2_bar <- compute_expected_residual_sq(Y, EL, EL2, EF, EF2)
 
   # ------------------------------------------------------------------
   # Column-specific MLE  (p-vector)
