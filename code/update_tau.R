@@ -30,7 +30,7 @@
 #   and NO ebnm dependency.
 #
 # DEPENDENCIES:
-#   None (base R only)
+#   None (base R only — no ebnm import needed, unlike L/F/beta modules)
 # =============================================================================
 
 # =============================================================================
@@ -55,6 +55,8 @@
 #' @param EF   p x K matrix: posterior means of factors
 #' @param EF2  p x K matrix: posterior second moments of factors
 #' @return n x p matrix: variance correction (non-negative)
+#' @export
+#' @family tau_update
 compute_var_term <- function(EL, EL2, EF, EF2) {
   (EL2 %*% t(EF2)) - (EL^2 %*% t(EF^2))
 }
@@ -79,6 +81,8 @@ compute_var_term <- function(EL, EL2, EF, EF2) {
 #' @param EF   p x K matrix: posterior means of factors
 #' @param EF2  p x K matrix: posterior second moments of factors
 #' @return n x p matrix: expected squared residuals (non-negative)
+#' @export
+#' @family tau_update
 compute_expected_residual_sq <- function(Y, EL, EL2, EF, EF2) {
   mean_resid_sq <- (Y - EL %*% t(EF))^2             # n x p: (Y - prediction)^2
   Var_Term      <- compute_var_term(EL, EL2, EF, EF2)  # n x p: variance correction
@@ -114,6 +118,9 @@ compute_expected_residual_sq <- function(Y, EL, EL2, EF, EF2) {
 #'   $Var_Term    -- n x p matrix: variance correction term
 #'   $elbo_proxy  -- scalar: genomics ELBO proxy = E_q[log P(Y|L,F,tau)]
 #'
+#' @export
+#' @family tau_update
+#' @seealso \code{\link{update_L_k}}, \code{\link{update_F_k}} which use Tau in their precision terms
 #' @examples
 #' set.seed(1); n <- 50; p <- 100; K <- 3
 #' EL  <- matrix(rnorm(n * K), n, K)
@@ -149,6 +156,8 @@ update_tau <- function(Y, EL, EL2, EF, EF2,
   # Floor prevents division by zero when residuals are very small.
   # ------------------------------------------------------------------
   col_sums <- colSums(R2_bar)                         # p-vector
+  # Floor the denominator (not Tau directly) so that near-zero residuals
+  # produce Tau = 1/tau_floor instead of Tau = Inf.
   Tau <- n / pmax(col_sums, n * tau_floor)            # p-vector [A3]
 
   # ------------------------------------------------------------------

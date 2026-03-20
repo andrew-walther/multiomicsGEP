@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>update_F</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">update_F</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#update_f.r-companion-document"
+id="toc-update_f.r-companion-document">update_F.R — Companion
+Document</a>
+<ul>
+<li><a href="#table-of-contents" id="toc-table-of-contents">Table of
+Contents</a></li>
+<li><a href="#overview" id="toc-overview">Overview</a></li>
+<li><a href="#mathematical-background"
+id="toc-mathematical-background">Mathematical Background</a>
+<ul>
+<li><a href="#model-structure" id="toc-model-structure">Model
+Structure</a></li>
+<li><a href="#ebnm-sufficient-statistics-for-f_"
+id="toc-ebnm-sufficient-statistics-for-f_">EBNM Sufficient Statistics
+for f_</a></li>
+</ul></li>
+<li><a href="#the-tau-cancellation-property"
+id="toc-the-tau-cancellation-property">The Tau Cancellation Property</a>
+<ul>
+<li><a href="#tau-cancels-in-x_j-observation"
+id="toc-tau-cancels-in-x_j-observation">Tau Cancels in x_j
+(observation)</a></li>
+<li><a href="#tau-does-not-cancel-in-s_j-noise-level"
+id="toc-tau-does-not-cancel-in-s_j-noise-level">Tau Does NOT Cancel in
+s_j (noise level)</a></li>
+<li><a href="#consequence" id="toc-consequence">Consequence</a></li>
+</ul></li>
+<li><a href="#api-reference" id="toc-api-reference">API Reference</a>
+<ul>
+<li><a href="#update_f_ktau-el_k-el2_k-r_k-prior_family-a_floor"
+id="toc-update_f_ktau-el_k-el2_k-r_k-prior_family-a_floor"><code>update_F_k(Tau, EL_k, EL2_k, R_k, prior_family, A_floor)</code></a></li>
+<li><a href="#update_f_ally-el-el2-ef-ef2-tau-prior_family-a_floor"
+id="toc-update_f_ally-el-el2-ef-ef2-tau-prior_family-a_floor"><code>update_F_all(Y, EL, EL2, EF, EF2, Tau, prior_family, A_floor)</code></a></li>
+</ul></li>
+<li><a href="#test-suite" id="toc-test-suite">Test Suite</a>
+<ul>
+<li><a href="#t1-mathematical-identity-checks-6-tests"
+id="toc-t1-mathematical-identity-checks-6-tests">T1: Mathematical
+Identity Checks (6 tests)</a></li>
+<li><a href="#t2-wls-non-informative-limit-2-tests"
+id="toc-t2-wls-non-informative-limit-2-tests">T2: WLS / Non-Informative
+Limit (2 tests)</a></li>
+<li><a href="#t3-known-signal-recovery-k1-3-tests"
+id="toc-t3-known-signal-recovery-k1-3-tests">T3: Known Signal Recovery
+K=1 (3 tests)</a></li>
+<li><a href="#t4-multi-factor-k5-3-tests"
+id="toc-t4-multi-factor-k5-3-tests">T4: Multi-Factor K=5 (3
+tests)</a></li>
+<li><a href="#t5-null-factor-shrinkage-2-tests"
+id="toc-t5-null-factor-shrinkage-2-tests">T5: Null Factor Shrinkage (2
+tests)</a></li>
+<li><a href="#t6-tau-differential-shrinkage-3-tests"
+id="toc-t6-tau-differential-shrinkage-3-tests">T6: Tau Differential
+Shrinkage (3 tests)</a></li>
+<li><a href="#t7-numerical-stability-4-tests"
+id="toc-t7-numerical-stability-4-tests">T7: Numerical Stability (4
+tests)</a></li>
+<li><a href="#t8-r_k-and-gauss-seidel-2-tests"
+id="toc-t8-r_k-and-gauss-seidel-2-tests">T8: R_k and Gauss-Seidel (2
+tests)</a></li>
+<li><a href="#t9-v2.r-consistency-1-test"
+id="toc-t9-v2.r-consistency-1-test">T9: V2.R Consistency (1
+test)</a></li>
+</ul></li>
+<li><a href="#demos" id="toc-demos">Demos</a>
+<ul>
+<li><a href="#demo-1-tau-cancellation-property"
+id="toc-demo-1-tau-cancellation-property">Demo 1: Tau Cancellation
+Property</a></li>
+<li><a href="#demo-2-signal-recovery-k1"
+id="toc-demo-2-signal-recovery-k1">Demo 2: Signal Recovery K=1</a></li>
+<li><a href="#demo-3-tau-dependent-shrinkage"
+id="toc-demo-3-tau-dependent-shrinkage">Demo 3: Tau-Dependent
+Shrinkage</a></li>
+<li><a href="#demo-4-sparsity-recovery"
+id="toc-demo-4-sparsity-recovery">Demo 4: Sparsity Recovery</a></li>
+<li><a href="#demo-5-multi-factor-k5"
+id="toc-demo-5-multi-factor-k5">Demo 5: Multi-Factor K=5</a></li>
+</ul></li>
+<li><a href="#computational-notes"
+id="toc-computational-notes">Computational Notes</a>
+<ul>
+<li><a href="#scalar-broadcast" id="toc-scalar-broadcast">Scalar
+Broadcast</a></li>
+<li><a href="#shared-dependency-compute_r_k"
+id="toc-shared-dependency-compute_r_k">Shared Dependency:
+compute_R_k</a></li>
+<li><a href="#memory-layout" id="toc-memory-layout">Memory
+Layout</a></li>
+</ul></li>
+<li><a href="#related-files" id="toc-related-files">Related
+Files</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="update_f.r-companion-document">update_F.R — Companion
+Document</h1>
+<p><strong>Module:</strong> <code>code/update_F.R</code>
+<strong>Project:</strong> Supervised Bayesian Matrix Factorization
+(multiomicsGEP) <strong>Role:</strong> Variational update for the
+genomics loading matrix F (factor columns f_{.k})</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#overview">Overview</a></li>
+<li><a href="#mathematical-background">Mathematical Background</a></li>
+<li><a href="#the-tau-cancellation-property">The Tau Cancellation
+Property</a></li>
+<li><a href="#api-reference">API Reference</a></li>
+<li><a href="#test-suite">Test Suite</a></li>
+<li><a href="#demos">Demos</a></li>
+<li><a href="#related-files">Related Files</a></li>
+</ol>
+<hr />
+<h2 id="overview">Overview</h2>
+<p><code>update_F.R</code> implements the CAVI variational update for
+the factor loading matrix <strong>F</strong> (shape p × K) in the joint
+genomics + survival model. F appears <strong>only</strong> in the
+genomics likelihood and has no role in the Cox proportional hazards
+survival term — this structural fact drives the module’s key
+mathematical simplification.</p>
+<p>The update is a <strong>vector EBNM</strong> (Empirical Bayes Normal
+Means) problem solved independently for each factor column f_{.k}.
+Within each column, the p feature-wise posterior means and variances are
+computed in closed form, then passed to an EBNM solver that applies the
+chosen prior (default: point-normal) and returns posterior moments.</p>
+<p><strong>Depends on:</strong> <code>compute_R_k()</code> from
+<code>code/update_L.R</code> — source that file before this one.</p>
+<hr />
+<h2 id="mathematical-background">Mathematical Background</h2>
+<h3 id="model-structure">Model Structure</h3>
+<p>The genomics observations follow:</p>
+<pre><code>Y ≈ L F&#39;    (n × p matrix, L is n × K, F is p × K)</code></pre>
+<p>with feature-wise precision <code>Tau[j]</code> (heteroscedastic
+noise). The residual for factor k at feature j is:</p>
+<pre><code>R_k[i,j] = Y[i,j] - sum_{k&#39; != k} EL[i,k&#39;] * EF[j,k&#39;]</code></pre>
+<p>This is computed by <code>compute_R_k()</code> and excludes the
+current factor k (Gauss-Seidel schedule).</p>
+<h3 class="k" id="ebnm-sufficient-statistics-for-f_">EBNM Sufficient
+Statistics for f_</h3>
+<p>For each feature j, the ELBO contribution from factor k leads to the
+following normal sufficient statistics:</p>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 27%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr>
+<th>Quantity</th>
+<th>Formula</th>
+<th>Shape</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>A_F[j]</code></td>
+<td><code>Tau[j] * sum(EL2_k)</code></td>
+<td>p-vector</td>
+<td><code>sum(EL2_k)</code> is a <strong>scalar</strong> broadcast
+across all j</td>
+</tr>
+<tr>
+<td><code>B_F[j]</code></td>
+<td><code>Tau[j] * (t(R_k) %*% EL_k)[j]</code></td>
+<td>p-vector</td>
+<td>Inner product of residual column with L posterior</td>
+</tr>
+<tr>
+<td><code>x_F[j]</code></td>
+<td><code>B_F[j] / A_F[j]</code></td>
+<td>p-vector</td>
+<td>EBNM observation (“sufficient statistic”)</td>
+</tr>
+<tr>
+<td><code>s_F[j]</code></td>
+<td><code>1 / sqrt(A_F[j])</code></td>
+<td>p-vector</td>
+<td>EBNM noise standard deviation</td>
+</tr>
+</tbody>
+</table>
+<p><code>sum(EL2_k)</code> is the sum of the second moments of the k-th
+column of L across all n samples:</p>
+<pre><code>sum_EL2_k = sum_i EL2[i,k]   (scalar, includes Var_q(l_{ik}) + EL[i,k]^2)</code></pre>
+<hr />
+<h2 id="the-tau-cancellation-property">The Tau Cancellation
+Property</h2>
+<p>This is the <strong>central mathematical insight</strong> of the
+module.</p>
+<h3 id="tau-cancels-in-x_j-observation">Tau Cancels in x_j
+(observation)</h3>
+<pre><code>x_j = B_F[j] / A_F[j]
+    = (Tau[j] * (t(R_k) %*% EL_k)[j]) / (Tau[j] * sum_EL2_k)
+    = (t(R_k) %*% EL_k)[j] / sum_EL2_k</code></pre>
+<p>The <code>Tau[j]</code> factors in numerator and denominator cancel
+exactly. The EBNM observation <code>x_j</code> is <strong>identical
+regardless of feature precision</strong>.</p>
+<h3 id="tau-does-not-cancel-in-s_j-noise-level">Tau Does NOT Cancel in
+s_j (noise level)</h3>
+<pre><code>s_j = 1 / sqrt(A_F[j]) = 1 / sqrt(Tau[j] * sum_EL2_k)</code></pre>
+<p>Here <code>Tau[j]</code> remains under the square root. A feature
+with higher precision (larger <code>Tau[j]</code>) gets a
+<strong>smaller</strong> noise level <code>s_j</code>, which means the
+prior applies less shrinkage and the posterior mean stays closer to
+<code>x_j</code>.</p>
+<h3 id="consequence">Consequence</h3>
+<p>Features with the same residual signal <code>x_j</code> are
+differentially shrunk toward zero depending on their noise precision.
+Clean features (high Tau) are shrunk less; noisy features (low Tau) are
+shrunk more. This is the heteroscedastic shrinkage mechanism for F.</p>
+<table>
+<thead>
+<tr>
+<th>Tau</th>
+<th>x_j</th>
+<th>s_j</th>
+<th>Shrinkage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>same</td>
+<td>large</td>
+<td>strong</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>same</td>
+<td>small (~1/sqrt(1000) smaller)</td>
+<td>weak</td>
+</tr>
+</tbody>
+</table>
+<p>Demo 1 illustrates this with <code>max|x_j diff| ≈ 0</code> and
+<code>s_j ratio ≈ sqrt(1000)</code>.</p>
+<hr />
+<h2 id="api-reference">API Reference</h2>
+<h3
+id="update_f_ktau-el_k-el2_k-r_k-prior_family-a_floor"><code>update_F_k(Tau, EL_k, EL2_k, R_k, prior_family, A_floor)</code></h3>
+<p>Computes the variational posterior for a single factor column
+f_{.k}.</p>
+<p><strong>Arguments:</strong></p>
+<table>
+<colgroup>
+<col style="width: 36%" />
+<col style="width: 20%" />
+<col style="width: 43%" />
+</colgroup>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Tau</code></td>
+<td>numeric vector, length p</td>
+<td>Feature-wise noise precisions</td>
+</tr>
+<tr>
+<td><code>EL_k</code></td>
+<td>numeric vector, length n</td>
+<td>Posterior means of L column k: E_q[l_{.k}]</td>
+</tr>
+<tr>
+<td><code>EL2_k</code></td>
+<td>numeric vector, length n</td>
+<td>Posterior second moments of L column k: E_q[l_{.k}^2]</td>
+</tr>
+<tr>
+<td><code>R_k</code></td>
+<td>numeric matrix, n × p</td>
+<td>Residual matrix excluding factor k (from
+<code>compute_R_k</code>)</td>
+</tr>
+<tr>
+<td><code>prior_family</code></td>
+<td>character</td>
+<td>EBNM prior family; default <code>"point_normal"</code></td>
+</tr>
+<tr>
+<td><code>A_floor</code></td>
+<td>numeric</td>
+<td>Minimum value for A_F to avoid division by zero; default
+<code>1e-10</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> Named list</p>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 23%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mean</code></td>
+<td>numeric vector, length p</td>
+<td>Posterior mean E_q[f_{.k}]</td>
+</tr>
+<tr>
+<td><code>second</code></td>
+<td>numeric vector, length p</td>
+<td>Posterior second moment E_q[f_{.k}^2]</td>
+</tr>
+<tr>
+<td><code>sd</code></td>
+<td>numeric vector, length p</td>
+<td>Posterior standard deviation</td>
+</tr>
+<tr>
+<td><code>A</code></td>
+<td>numeric vector, length p</td>
+<td>EBNM precision A_F (after floor)</td>
+</tr>
+<tr>
+<td><code>B</code></td>
+<td>numeric vector, length p</td>
+<td>EBNM numerator B_F</td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td>numeric vector, length p</td>
+<td>EBNM sufficient statistic x_F = B/A</td>
+</tr>
+<tr>
+<td><code>s</code></td>
+<td>numeric vector, length p</td>
+<td>EBNM noise s_F = 1/sqrt(A)</td>
+</tr>
+<tr>
+<td><code>sum_EL2_k</code></td>
+<td>numeric scalar</td>
+<td>sum(EL2_k), shared across all features</td>
+</tr>
+<tr>
+<td><code>ebnm_result</code></td>
+<td>list</td>
+<td>Raw output from <code>ebnm()</code> call</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key implementation details:</strong></p>
+<ul>
+<li><code>A_F = pmax(Tau * sum(EL2_k), A_floor)</code> — the floor
+prevents NaN when Tau is zero</li>
+<li><code>B_F = Tau * (t(R_k) %*% EL_k)</code> — matrix-vector product
+gives p-vector</li>
+<li>Second moment satisfies:
+<code>second[j] = sd[j]^2 + mean[j]^2</code></li>
+</ul>
+<hr />
+<h3
+id="update_f_ally-el-el2-ef-ef2-tau-prior_family-a_floor"><code>update_F_all(Y, EL, EL2, EF, EF2, Tau, prior_family, A_floor)</code></h3>
+<p>Gauss-Seidel loop over all K factor columns.</p>
+<p><strong>Arguments:</strong></p>
+<table>
+<colgroup>
+<col style="width: 36%" />
+<col style="width: 20%" />
+<col style="width: 43%" />
+</colgroup>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Y</code></td>
+<td>numeric matrix, n × p</td>
+<td>Observed genomics data</td>
+</tr>
+<tr>
+<td><code>EL</code></td>
+<td>numeric matrix, n × K</td>
+<td>Posterior means of L (fully updated from L step)</td>
+</tr>
+<tr>
+<td><code>EL2</code></td>
+<td>numeric matrix, n × K</td>
+<td>Posterior second moments of L</td>
+</tr>
+<tr>
+<td><code>EF</code></td>
+<td>numeric matrix, p × K</td>
+<td>Current posterior means of F (updated in place)</td>
+</tr>
+<tr>
+<td><code>EF2</code></td>
+<td>numeric matrix, p × K</td>
+<td>Current posterior second moments of F</td>
+</tr>
+<tr>
+<td><code>Tau</code></td>
+<td>numeric vector, length p</td>
+<td>Feature-wise precisions</td>
+</tr>
+<tr>
+<td><code>prior_family</code></td>
+<td>character</td>
+<td>EBNM prior family; default <code>"point_normal"</code></td>
+</tr>
+<tr>
+<td><code>A_floor</code></td>
+<td>numeric</td>
+<td>Floor for A; default <code>1e-10</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> Named list</p>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 23%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EF</code></td>
+<td>numeric matrix, p × K</td>
+<td>Updated posterior means of F</td>
+</tr>
+<tr>
+<td><code>EF2</code></td>
+<td>numeric matrix, p × K</td>
+<td>Updated posterior second moments of F</td>
+</tr>
+<tr>
+<td><code>details</code></td>
+<td>list of length K</td>
+<td>Per-factor output from <code>update_F_k</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Important Gauss-Seidel note:</strong></p>
+<p><code>update_F_all</code> passes the <strong>fully updated</strong>
+<code>EL</code> (not a stale copy) because the L step completes before
+the F step in the CAVI schedule. Within the F loop, <code>EF_curr</code>
+is updated column-by-column so that each <code>compute_R_k</code> call
+sees the most recent estimates of all other F columns. This is the
+Gauss-Seidel (sequential) schedule, as opposed to a Jacobi (parallel)
+schedule.</p>
+<pre><code>for k in 1:K:
+    R_k  &lt;- compute_R_k(Y, EL, EF_curr, k)   # excludes column k
+    res  &lt;- update_F_k(Tau, EL[,k], EL2[,k], R_k, ...)
+    EF_curr[,k]  &lt;- res$mean
+    EF2_curr[,k] &lt;- res$second</code></pre>
+<hr />
+<h2 id="test-suite">Test Suite</h2>
+<p>File: <code>tests/test_update_F.R</code> Total: <strong>26 tests
+across 9 groups</strong> — all passing.</p>
+<h3 id="t1-mathematical-identity-checks-6-tests">T1: Mathematical
+Identity Checks (6 tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T1.1</td>
+<td><code>A_F[j] = Tau[j] * sum(EL2_k)</code> exactly</td>
+</tr>
+<tr>
+<td>T1.2</td>
+<td><code>B_F[j] = Tau[j] * (t(R_k) %*% EL_k)[j]</code> exactly</td>
+</tr>
+<tr>
+<td>T1.3</td>
+<td><code>x</code> is a p-vector (length p)</td>
+</tr>
+<tr>
+<td>T1.4</td>
+<td>Tau cancels in x_j: <code>Tau=1</code> vs <code>Tau=1000</code>
+produce identical <code>x_j</code></td>
+</tr>
+<tr>
+<td>T1.5</td>
+<td>Tau does NOT cancel in s_j: <code>s_j</code> ratio is significantly
+different</td>
+</tr>
+<tr>
+<td>T1.6</td>
+<td>Second moment identity:
+<code>second[j] = sd[j]^2 + mean[j]^2</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="t2-wls-non-informative-limit-2-tests">T2: WLS / Non-Informative
+Limit (2 tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T2.1</td>
+<td>When <code>EL2_k = EL_k^2</code> (zero posterior variance in L),
+<code>x_j</code> equals the OLS estimator</td>
+</tr>
+<tr>
+<td>T2.2</td>
+<td>Large Tau drives posterior mean close to the observation
+<code>x_j</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="t3-known-signal-recovery-k1-3-tests">T3: Known Signal Recovery
+K=1 (3 tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T3.1</td>
+<td>Dense factor: correlation between recovered and true f exceeds
+0.7</td>
+</tr>
+<tr>
+<td>T3.2</td>
+<td>Sparse factor (50/500 nonzero): active features have larger
+posterior mean than inactive</td>
+</tr>
+<tr>
+<td>T3.3</td>
+<td>Higher Tau → better recovery (monotone precision effect)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t4-multi-factor-k5-3-tests">T4: Multi-Factor K=5 (3 tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T4.1</td>
+<td>Output matrices EF, EF2 have shape p × K</td>
+</tr>
+<tr>
+<td>T4.2</td>
+<td>All second moments &gt;= squared means (<code>EF2 &gt;= EF^2</code>)
+component-wise</td>
+</tr>
+<tr>
+<td>T4.3</td>
+<td>All outputs are finite (no NaN or Inf)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t5-null-factor-shrinkage-2-tests">T5: Null Factor Shrinkage (2
+tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T5.1</td>
+<td>Pure-noise R_k produces factor near zero (point-normal shrinks to
+zero)</td>
+</tr>
+<tr>
+<td>T5.2</td>
+<td>Zero EL_k → A hits floor, B=0 → EF near zero</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t6-tau-differential-shrinkage-3-tests">T6: Tau Differential
+Shrinkage (3 tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T6.1</td>
+<td>High-tau features are shrunk less than low-tau features (same
+x_j)</td>
+</tr>
+<tr>
+<td>T6.2</td>
+<td>Larger EL2 → larger A → smaller s → less shrinkage for high-signal
+factors</td>
+</tr>
+<tr>
+<td>T6.3</td>
+<td>Uniform Tau → all <code>s_j</code> equal (homoscedastic limit, one
+shared noise level)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t7-numerical-stability-4-tests">T7: Numerical Stability (4
+tests)</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T7.1</td>
+<td>All-zero Tau → A hits floor, no NaN or Inf in output</td>
+</tr>
+<tr>
+<td>T7.2</td>
+<td>Extreme Tau=1e10 → no overflow in A, B, x, s</td>
+</tr>
+<tr>
+<td>T7.3</td>
+<td>Edge case p=1, n=1 → correct scalar outputs</td>
+</tr>
+<tr>
+<td>T7.4</td>
+<td>Custom A_floor value is respected (A &gt;= A_floor)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t8-r_k-and-gauss-seidel-2-tests">T8: R_k and Gauss-Seidel (2
+tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T8.1</td>
+<td>R_k correctly uses EL_k (not another factor’s column)</td>
+</tr>
+<tr>
+<td>T8.2</td>
+<td><code>update_F_all</code> produces finite results with valid second
+moments across all K</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t9-v2.r-consistency-1-test">T9: V2.R Consistency (1 test)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T9.1</td>
+<td><code>update_F_k</code> output matches the corresponding lines in
+<code>Supervised_Bayesian_MF_V2.R</code> (lines 334–340) exactly</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="demos">Demos</h2>
+<p>File: <code>demos/demo_update_F.R</code> Total: <strong>5
+scenarios</strong> — narrative output, no PASS/FAIL.</p>
+<h3 id="demo-1-tau-cancellation-property">Demo 1: Tau Cancellation
+Property</h3>
+<p><strong>Purpose:</strong> Demonstrate the core mathematical property
+that <code>tau_j</code> cancels in <code>x_j</code> but not in
+<code>s_j</code>.</p>
+<p><strong>Setup:</strong> Same Y, L, R_k. Run <code>update_F_k</code>
+twice — once with <code>Tau = rep(1, p)</code>, once with
+<code>Tau = rep(1000, p)</code>.</p>
+<p><strong>Expected output:</strong> -
+<code>max|x_j(Tau=1) - x_j(Tau=1000)| ≈ 0</code> (machine precision) -
+<code>s_j(Tau=1) / s_j(Tau=1000) ≈ sqrt(1000) ≈ 31.6</code> for all
+j</p>
+<p>This illustrates that the EBNM “data” is precision-free, while the
+EBNM “noise level” encodes the precision.</p>
+<hr />
+<h3 id="demo-2-signal-recovery-k1">Demo 2: Signal Recovery K=1</h3>
+<p><strong>Purpose:</strong> Confirm that the update recovers a sparse
+true factor from noisy observations.</p>
+<p><strong>Setup:</strong> n=150, p=200, K=1. True f_true is sparse
+(30/200 nonzero entries, drawn from N(0,1)). Y = L %*% t(f_true) +
+noise.</p>
+<p><strong>Reported metrics:</strong> - Pearson correlation between
+<code>EF[,1]</code> and <code>f_true</code> - Mean posterior mean for
+active vs inactive features (active should be larger)</p>
+<hr />
+<h3 id="demo-3-tau-dependent-shrinkage">Demo 3: Tau-Dependent
+Shrinkage</h3>
+<p><strong>Purpose:</strong> Show that heteroscedastic precision
+differentially regularizes features.</p>
+<p><strong>Setup:</strong> p=200 features split into two groups: first
+100 with <code>tau=10</code> (clean), last 100 with <code>tau=0.5</code>
+(noisy). Same true signal in both groups.</p>
+<p><strong>Reported metrics:</strong> - Mean absolute error (MAE) for
+clean vs noisy features - Posterior SDs for clean vs noisy features -
+Demonstrates that clean features (high Tau) stay closer to truth</p>
+<hr />
+<h3 id="demo-4-sparsity-recovery">Demo 4: Sparsity Recovery</h3>
+<p><strong>Purpose:</strong> Evaluate the point-normal prior’s ability
+to identify which features belong to a sparse factor.</p>
+<p><strong>Setup:</strong> n=100, p=250, true f is sparse (40/250
+nonzero). Threshold posterior means at 0.1 to classify
+active/inactive.</p>
+<p><strong>Reported metrics (confusion matrix):</strong></p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Predicted Active</th>
+<th>Predicted Inactive</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>True Active</strong></td>
+<td>TP</td>
+<td>FN</td>
+</tr>
+<tr>
+<td><strong>True Inactive</strong></td>
+<td>FP</td>
+<td>TN</td>
+</tr>
+</tbody>
+</table>
+<p>Also reports precision = TP/(TP+FP) and recall = TP/(TP+FN).</p>
+<hr />
+<h3 id="demo-5-multi-factor-k5">Demo 5: Multi-Factor K=5</h3>
+<p><strong>Purpose:</strong> Validate <code>update_F_all</code> on a
+structured 5-factor problem.</p>
+<p><strong>Setup:</strong> n=200, p=300, K=5. Each factor has a distinct
+sparse structure; F is initialized at zero.</p>
+<p><strong>Reported metrics:</strong> - Column-wise correlations:
+<code>cor(EF[,k], F_true[,k])</code> for each k - Number of active
+features per factor (posterior mean &gt; 0.1) - Confirms Gauss-Seidel
+within-loop updates do not break structure</p>
+<hr />
+<h2 id="computational-notes">Computational Notes</h2>
+<h3 id="scalar-broadcast">Scalar Broadcast</h3>
+<p><code>sum(EL2_k)</code> is computed once (a single scalar) and
+broadcast across all p features via element-wise multiplication with
+<code>Tau</code>. This avoids a p × n matrix multiply for A_F.</p>
+<h3 id="shared-dependency-compute_r_k">Shared Dependency:
+compute_R_k</h3>
+<p><code>compute_R_k</code> is defined in <code>code/update_L.R</code>.
+Always source <code>update_L.R</code> before <code>update_F.R</code>.
+The residual matrix R_k has shape n × p and represents the data with all
+other factors’ contributions removed. Because L is fully updated before
+the F step, the R_k computation here uses the most recent L
+posterior.</p>
+<h3 id="memory-layout">Memory Layout</h3>
+<table>
+<thead>
+<tr>
+<th>Matrix</th>
+<th>Shape</th>
+<th>Update order</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EL</td>
+<td>n × K</td>
+<td>Fixed (updated in L step)</td>
+</tr>
+<tr>
+<td>EL2</td>
+<td>n × K</td>
+<td>Fixed (updated in L step)</td>
+</tr>
+<tr>
+<td>EF</td>
+<td>p × K</td>
+<td>Updated column by column (Gauss-Seidel)</td>
+</tr>
+<tr>
+<td>EF2</td>
+<td>p × K</td>
+<td>Updated column by column</td>
+</tr>
+<tr>
+<td>R_k</td>
+<td>n × p</td>
+<td>Recomputed fresh for each k</td>
+</tr>
+</tbody>
+</table>
+<p>For large p, R_k (n × p) dominates memory. It is not cached between
+factor updates.</p>
+<hr />
+<h2 id="related-files">Related Files</h2>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 68%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Relationship</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code/update_L.R</code></td>
+<td>Defines <code>compute_R_k()</code> required by this module</td>
+</tr>
+<tr>
+<td><code>code/update_tau.R</code></td>
+<td>Provides Tau used as input here</td>
+</tr>
+<tr>
+<td><code>code/update_beta.R</code></td>
+<td>Beta update (survival); F does not appear there</td>
+</tr>
+<tr>
+<td><code>code/Supervised_Bayesian_MF_V2.R</code></td>
+<td>Main algorithm; lines 334–340 are the reference for T9.1</td>
+</tr>
+<tr>
+<td><code>tests/test_update_F.R</code></td>
+<td>26 tests, all passing</td>
+</tr>
+<tr>
+<td><code>demos/demo_update_F.R</code></td>
+<td>5 narrative demos</td>
+</tr>
+<tr>
+<td><code>derivations/qF/qF_update_derivation.tex/.pdf</code></td>
+<td>Full derivation including tau cancellation proof</td>
+</tr>
+<tr>
+<td><code>code/SupervisedMF_Context.md</code></td>
+<td>AI/code quick-reference for the full R implementation</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
