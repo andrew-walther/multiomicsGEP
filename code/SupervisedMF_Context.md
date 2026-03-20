@@ -66,7 +66,7 @@ Each update reduces to an **EBNM** (Empirical Bayes Normal Means) sub-problem.
 | `calc_cox_taylor(eta, time, status)` | Cox 2nd-order Taylor → returns `list(u, w)` (score & neg-Hessian). Sorts by time internally. Floor on `w` at `1e-6`. |
 | `get_cindex_comparison(EL, data)` | Harrell C-index: supervised L vs top-5 PCA |
 | `get_top_features(EF, n_top)` | Ranks features by absolute weight per factor |
-| `get_factor_summary_table(res, data)` | Per-factor: β, log-rank p, sparsity %, PVE % |
+| `get_factor_summary_table(res, data)` | Per-factor: β, log-rank p, NonZero_Pct (% features with nonzero weight), PVE % |
 
 ### Part 2 — `fit_supervised_mf()` (lines 171–424)
 
@@ -339,7 +339,7 @@ denominator is floored at `n * 1e-8`. This prevents:
 
 ---
 
-## Next-Session Checklist
+## Backlog
 
 ### High Priority
 - [ ] **Real data run:** Set `DATA_MODE <- "real"` in V2.R and supply:
@@ -369,10 +369,11 @@ denominator is floored at `n * 1e-8`. This prevents:
 - [x] **CI/testing (β):** 24 tests for β update — all passing.
 - [x] **Modular L/F/τ updates:** `update_L.R`, `update_F.R`, `update_tau.R` with
   28+26+27 tests (105 total passing) and derivations in `derivations/qL/qF/qTau/`.
-- [ ] **Factor sparsity:** Simulation shows 100% sparsity on all GEPs (all
-  1,000 features get non-zero loadings with point-normal prior). For cleaner
-  GEP interpretation on real data, experiment with tighter EBNM priors or
-  post-hoc thresholding of small-weight features.
+- [ ] **Factor density / sparsity tuning:** Simulation shows 0% sparsity (all
+  1,000 features have nonzero weight — `NonZero_Pct = 100`). The point-normal
+  prior did not induce exact zeros. For cleaner GEP interpretation on real data,
+  experiment with tighter EBNM priors or post-hoc thresholding of small-weight
+  features.
 
 ---
 
@@ -427,7 +428,7 @@ True β = (1.5, −1.2, 0.8, −0.5, 0), 5% feature sparsity, τ=1 noise.
 | C-index (Supervised MF) | 0.828 |
 | PH test p-value | 0.258 (no proportional-hazards violation) |
 | β recovery | Signs correct on GEPs 1–4; GEP5 (true β=0) correctly zeroed |
-| Loading sparsity | GEP1–5: 100% sparse (all 1000 features loaded) |
+| Factor density | GEP1–5: NonZero_Pct = 100 (all 1000 features have nonzero weight; 0% sparse) |
 
 Full report: `results/simulation_report.pdf` (23 pages) or `.md` source.
 Figures: `results/figures/fig1_rmse_trace.png` through `fig8_tau_distribution.png`.

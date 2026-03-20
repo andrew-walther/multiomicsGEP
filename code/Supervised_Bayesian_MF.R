@@ -101,7 +101,7 @@ get_top_features <- function(EF, n_top = 10) {
 
 #' Generate a Comprehensive Factor Summary Table
 #' 
-#' Aggregates Log-Rank P-values, biological sparsity, and Proportion 
+#' Aggregates Log-Rank P-values, fraction of nonzero features, and Proportion
 #' of Variance Explained (PVE) into a single summary view for the user.
 get_factor_summary_table <- function(res, data) {
   K <- ncol(res$L)
@@ -111,19 +111,19 @@ get_factor_summary_table <- function(res, data) {
     sd_test <- survdiff(Surv(data$time, data$status) ~ group)
     1 - pchisq(sd_test$chisq, length(sd_test$n) - 1)
   })
-  # Calculate sparsity: percentage of genomic features active in each factor.
-  sparsity <- colMeans(res$F != 0) * 100
+  # Calculate % nonzero features per factor (density, not sparsity).
+  nonzero_pct <- colMeans(res$F != 0) * 100
   # Calculate genomic PVE: how much variance in Y each factor explains.
   total_var <- sum(data$Y^2)
   pve <- sapply(1:K, function(k) {
     sum((res$L[,k] %*% t(res$F[,k]))^2) / total_var * 100
   })
-  
+
   data.frame(
-    Factor = 1:K, 
-    Beta = round(res$Beta, 3), 
+    Factor = 1:K,
+    Beta = round(res$Beta, 3),
     LogRank_P = round(unlist(p_vals), 4),
-    Sparsity_Pct = round(sparsity, 2), 
+    NonZero_Pct = round(nonzero_pct, 2),
     PVE_Pct = round(pve, 2)
   )
 }

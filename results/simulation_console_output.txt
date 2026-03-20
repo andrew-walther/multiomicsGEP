@@ -21,7 +21,7 @@ Censoring rate: 38.0%
   iter 100 | RMSE: 0.9978 | ELBO: -124937.9 | dL: 2.65e-04 | dB: 8.64e-05 | beta: [+0.16, +0.58, +0.00, +0.36, -1.15]
 
 === FACTOR SUMMARY TABLE ===
-   Factor   Beta LogRank_P Sparsity_Pct PVE_Pct
+   Factor   Beta LogRank_P NonZero_Pct PVE_Pct
 L1      1  0.163    0.3321          100   25.96
 L2      2  0.576    0.0001          100   21.68
 L3      3  0.000    0.7360          100   14.53

@@ -1,4 +1,4 @@
-"Factor","Beta","LogRank_P","Sparsity_Pct","PVE_Pct"
+"Factor","Beta","LogRank_P","NonZero_Pct","PVE_Pct"
 1,0.163,0.3321,100,25.96
 2,0.576,1e-04,100,21.68
 3,0,0.736,100,14.53
