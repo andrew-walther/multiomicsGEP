@@ -101,6 +101,12 @@ multiomicsGEP/
 │   ├── demo_update_L.R              ← NEW (Session 5): 5 demos for update_L.R
 │   ├── demo_update_F.R              ← NEW (Session 5): 5 demos for update_F.R
 │   └── demo_update_tau.R            ← NEW (Session 5): 5 demos for update_tau.R
+├── docs/                            ← NEW (Session 6): Companion documentation
+│   ├── Makefile                     ← `make all` renders .md → .pdf + .html
+│   ├── update_beta.md/.pdf/.html    ← Companion doc for update_beta.R
+│   ├── update_L.md/.pdf/.html       ← Companion doc for update_L.R
+│   ├── update_F.md/.pdf/.html       ← Companion doc for update_F.R
+│   └── update_tau.md/.pdf/.html     ← Companion doc for update_tau.R
 └── paper/
     └── multiomicsGEP_manuscript.qmd  ← Manuscript draft (Quarto)
 ```
@@ -298,6 +304,9 @@ Rscript demos/demo_update_tau.R    # q(τ) update: 5 demos — see variance corr
 - [x] derivations/qL/qL_update_derivation.tex/.pdf: Self-contained q(L) derivation
 - [x] derivations/qF/qF_update_derivation.tex/.pdf: Self-contained q(F) derivation
 - [x] derivations/qTau/qTau_update_derivation.tex/.pdf: Self-contained q(τ) derivation
+- [x] docs/: Companion documentation for all 4 modular update scripts (.md + .pdf + .html)
+- [x] roxygen2 @export/@family/@seealso tags added to all 11 functions
+- [x] Targeted inline comments added to all 4 R scripts
 
 ### Potential Next Steps
 
@@ -315,21 +324,6 @@ Rscript demos/demo_update_tau.R    # q(τ) update: 5 demos — see variance corr
   V2 results and corrected derivations
 - [ ] **Bibliography:** Add `\bibliography{refs}` to REVISED.tex to resolve
   the `\citep{wang2022}` undefined-reference warning in the compiled PDF
-- [ ] **Modular update — q(L):** Extract `code/update_L.R` (update_L_k, update_L_all);
-  write `tests/test_update_L.R` (TDD, ~24 tests); write `demos/demo_update_L.R`;
-  write `derivations/qL/qL_update_derivation.tex/.pdf`.
-  *Key*: A_L, B_L are n-vectors (sample-dependent via Cox weights); vector EBNM call.
-  *Source*: V2.R lines 298–321.
-- [ ] **Modular update — q(F):** Extract `code/update_F.R` (update_F_k, update_F_all);
-  write `tests/test_update_F.R`; write `demos/demo_update_F.R`;
-  write `derivations/qF/qF_update_derivation.tex/.pdf`.
-  *Key*: A_F, B_F are p-vectors; purely genomics (no survival term); scalar sum(EL2_k).
-  *Source*: V2.R lines 323–340.
-- [ ] **Modular update — q(τ):** Extract `code/update_tau.R` (update_tau — single fn);
-  write `tests/test_update_tau.R`; write `demos/demo_update_tau.R`;
-  write `derivations/qTau/qTau_update_derivation.tex/.pdf`.
-  *Key*: Closed-form MLE; no EBNM; Var_Term correction (EL2⊗EF2 − EL²⊗EF²); p-vector output.
-  *Source*: V2.R lines 366–376.
 
 ---
 
@@ -513,3 +507,33 @@ Rscript demos/demo_update_tau.R    # q(τ) update: 5 demos — see variance corr
 - τ does not appear in the survival term — F and τ updates are pure genomics
 - `update_tau` has NO per-k loop and NO ebnm dependency (only base R)
 - ELBO proxy computed inside `update_tau` as a convergence monitor
+
+---
+
+### Session 6 (March 20, 2026)
+
+**Comprehensive documentation: companion docs, roxygen2, and inline comments.**
+
+1. **Created `docs/` directory** with companion documentation for all four modular update scripts:
+   - `docs/update_beta.md` — Overview, math background, function reference, test explanations (24 tests), demo explanations (5 demos)
+   - `docs/update_L.md` — Dual-source precision/signal, compute_R_k shared dependency, test explanations (28 tests), demo explanations (5 demos)
+   - `docs/update_F.md` — τ cancellation property, pure genomics, test explanations (26 tests), demo explanations (5 demos)
+   - `docs/update_tau.md` — Closed-form MLE, variance correction, ELBO proxy, test explanations (27 tests), demo explanations (5 demos)
+
+2. **Created `docs/Makefile`** for rendering:
+   - `make all` renders all 4 `.md` files to both PDF (via xelatex) and HTML
+   - `make clean` removes generated outputs
+   - Uses Helvetica/Menlo fonts for Unicode Greek letter support
+
+3. **Added roxygen2 package-readiness tags** to all 11 functions across 4 R scripts:
+   - `@export` on every function
+   - `@family` tags: `beta_update`, `L_update`, `F_update`, `tau_update`
+   - `@seealso` cross-references between modules (e.g., compute_R_k → update_F_k)
+
+4. **Added targeted inline comments** (~3–5 per file) where "why" context was missing:
+   - `update_beta.R`: Floor trigger conditions, return list purpose, Gauss-Seidel mutable copy rationale
+   - `update_L.R`: A_gen scalar vs A_surv n-vector explanation, inline z_no_k rationale (module independence), dual-source diagnostics
+   - `update_F.R`: EL (not EL_curr) passed to R_k because L already updated, sum_EL2_k scalar broadcast
+   - `update_tau.R`: Denominator floor logic, no-ebnm dependency note
+
+5. **Verification:** 105/105 tests still passing; all 8 rendered outputs (4 PDF + 4 HTML) generated successfully

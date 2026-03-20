@@ -57,6 +57,9 @@ suppressPackageStartupMessages(library(ebnm))
 #' @param EBeta  K-vector: current posterior means of survival coefficients
 #' @param k      integer: factor index to exclude (1-based)
 #' @return n-vector: partial working response for factor k
+#' @export
+#' @family beta_update
+#' @seealso \code{\link{update_L_k}} which reuses z_no_k for the loading update
 compute_z_no_k <- function(z, EL, EBeta, k) {
   eta_no_k <- as.vector(EL %*% EBeta) - EL[, k] * EBeta[k]
   z - eta_no_k
@@ -102,6 +105,8 @@ compute_z_no_k <- function(z, EL, EBeta, k) {
 #'   $s           -- EBNM pseudo-noise s_k = 1/sqrt(A_k)
 #'   $ebnm_result -- raw ebnm() return object (for diagnostics)
 #'
+#' @export
+#' @family beta_update
 #' @examples
 #' library(ebnm)
 #' set.seed(1); n <- 100
@@ -122,6 +127,8 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
   # mean inflates the effective noise for beta_k, preventing overfitting
   # to uncertain loadings (Companion.tex Sec. 6.2, Eq. A_k).
   # ------------------------------------------------------------------
+  # Floor triggers when all weights are zero or all loadings are zero —
+  # degenerate inputs that would otherwise cause division by zero in x_k and s_k.
   A_k <- max(sum(w * EL2_k), A_floor)
 
   # ------------------------------------------------------------------
@@ -152,6 +159,8 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
   beta_sd     <- res$posterior$sd
   beta_second <- beta_sd^2 + beta_mean^2
 
+  # Pack all diagnostics for caller / test inspection.
+  # Returning A, B, x, s enables tests to verify math identities directly.
   list(
     mean        = beta_mean,
     second      = beta_second,
@@ -197,12 +206,16 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
 #'   $EBeta   -- K-vector of updated posterior means
 #'   $EBeta2  -- K-vector of updated posterior second moments
 #'   $details -- length-K list, each element is the full update_beta_k result
+#' @export
+#' @family beta_update
 update_beta_all <- function(w, z, EL, EL2, EBeta,
                             prior_family = "point_normal",
                             A_floor      = 1e-10) {
 
   K          <- ncol(EL)
-  EBeta_curr <- EBeta           # mutable copy for Gauss-Seidel updates
+  # Mutable copy: Gauss-Seidel requires updating beta_k in-place so that
+  # z_no_k for factor k' > k incorporates the freshly updated beta_k.
+  EBeta_curr <- EBeta
   EBeta2_new <- numeric(K)
   details    <- vector("list", K)
 
