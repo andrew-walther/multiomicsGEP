@@ -1,0 +1,650 @@
+%This is the preamble of settings
+\documentclass{article}[12pt]
+\usepackage[utf8]{inputenc}
+\usepackage{dirtytalk}
+\usepackage{amsthm,amssymb,amsmath}
+
+\usepackage[a4paper,margin=1.0in]{geometry}
+\linespread{1.15}
+\usepackage{fancybox}
+\usepackage{linegoal}
+\usepackage[shortlabels]{enumitem}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{tikz}
+\usepackage{mathrsfs}
+\usepackage{mathtools}
+\usepackage{cancel}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{makecell}
+\usepackage{fancyhdr}
+\usepackage{bm}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+    \lhead{Objective \& Update Algorithm}
+    \pagestyle{fancy}
+
+% ---- Black & white boxes for correction notes and algorithm -----------------
+\newtcolorbox{corrbox}{%
+  colback=gray!7!white, colframe=black!75,
+  boxrule=0.5pt, arc=1pt, sharp corners,
+  fonttitle=\small\bfseries,
+  title=Correction Note,
+  left=4pt, right=4pt, top=3pt, bottom=3pt}
+
+\newtcolorbox{algobox}[1]{%
+  colback=white, colframe=black,
+  boxrule=0.7pt, arc=0pt, sharp corners,
+  fonttitle=\normalsize\bfseries,
+  title=#1,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+  breakable}
+
+%enumerate alphabetically: a,b,c,...
+\usepackage[shortlabels]{enumitem}
+
+\renewcommand{\thesection}{\arabic{section}}
+\renewcommand{\thesubsection}{\thesection\Alph{subsection}}
+
+%This is the header
+\begin{document}
+\title{Survival MF Derivations}
+\author{Andrew Walther}
+\date{\today}
+\maketitle
+\tableofcontents
+\newpage
+
+%This is where the body begins
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+The following document presents derivations for matrix factorization \& survival
+expressions for supervised matrix factorization. Content includes an expression
+of the overall objective function to minimize as well as the procedure for
+updating the prior distributions for $L, F, \beta, \tau$. These updates are
+solved via the EBNM problem illustrated in the EBMF paper. This document
+incorporates corrections to the notation and derivations from the
+3/6/26 version.
+
+\subsection{Models}
+
+The following models are considered as part of this supervised matrix
+factorization task:
+
+\begin{itemize}
+    \item Genomics Data: $Y_{n \times p} = L_{n\times K}F_{K\times p}' + E_{n\times p}$, where $E_{ij} \overset{\mathrm{iid}}{\sim} N\left(0, \tau_{j}^{-1}\right)$
+
+    \item Survival Data: $h(t_i) = h_0(t_i)\text{exp}\left(\sum_k l_{ik}\beta_{k}\right)$
+\end{itemize}
+
+\subsection{Update Procedure}
+
+The general procedure for parameter (prior \& posterior distribution) updates is as follows.
+
+$\textbf{For b=1,$\cdots$, B}$
+
+\begin{enumerate}
+    \item Compute survival working quantities $\hat{\eta}_i$, $u_i$, $W_{ii}$, $z_i$
+          from the current posterior means.
+
+    \item Iterate over $k=1, \cdots K$ for each of the following.
+
+    \item update $q(l_k), g(l_k)$ with other parameters fixed (different from EBMF problem: combines genomics \& survival terms)
+
+    \item update $q(f_k), g(f_k)$ with other parameters fixed (identical to EBMF problem)
+
+    \item update $q(\beta_k), g(\beta_k)$ with other parameters fixed (survival term only; EBNM under mean-field independence)
+
+    \item update $\tau_{j}$ (identical to EBMF problem)
+\end{enumerate}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Objective Function}
+
+The objective function to minimize that considers priors $(g)$ \& posteriors $(q)$ for all parameters is
+
+\begin{multline}
+    F\left(\underbrace{q_{l}, q_{f}, q_{\beta}}_{posteriors}, \underbrace{g_{l}, g_{f}, g_{\beta}}_{priors}, \tau\right) = E_{q_{l}, q_{f}, q_{\beta}}\left[\log P\left(\underbrace{Y, t, \delta}_{observed} \vert \underbrace{L, F, \beta, \tau}_{unknown}\right)\right]\\
+    + \sum_{k}E_{q_{l_k}}\left[\log \frac{g_{l_k}(l_k)}{q_{l_k}(l_k)}\right] + \sum_{k}E_{q_{f_k}}\left[\log \frac{g_{f_k}(f_k)}{q_{f_k}(f_k)}\right] + \sum_{k}E_{q_{\beta}}\left[\log \frac{g_{\beta_k}(\beta_k)}{q_{\beta_k}(\beta_k)}\right]
+\end{multline}
+
+and the full data likelihood is expressed as
+
+\begin{equation}
+    \log P\left(\underbrace{Y}_{Genomics}, \underbrace{t, \delta}_{Survival} \vert L, F, \beta, \tau\right) = \underbrace{\log P\left(Y \vert L, F, \tau^{-1}\right)}_{Genomics} + \underbrace{\log P\left(t, \delta \vert L, \beta\right)}_{Survival}
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Taylor Series Approximation of Survival Likelihood}
+
+Now we consider a 2nd-Order Taylor Series Expansion of the survival data likelihood for the sake of finding a tractable solution.
+
+First, note that the 2nd-Order approximation takes the form
+
+\begin{equation}
+    f(x) = f(x_0) + \underbrace{f'(x_0)}_{gradient/score}(x-x_0) + \frac{1}{2}\underbrace{f''(x_0)}_{hessian/info}(x-x_0)^2
+\end{equation}
+
+and that the linear predictor for the survival data has the form
+
+\begin{equation}
+    \eta_i = l_i'\beta = \sum_{k}l_{ik}\beta_{k}
+\end{equation}
+
+Let $\hat{\bm{\eta}}$ denote the current expansion point, and define the score
+$u_i$ and negative diagonal Hessian $W_{ii}$ as
+
+\begin{equation}
+    u_i = \frac{\partial \ell}{\partial \eta_i}\Bigg|_{\hat{\eta}_i}, \qquad
+    W_{ii} = -\frac{\partial^2 \ell}{\partial \eta_i^2}\Bigg|_{\hat{\eta}_i} \geq 0
+\end{equation}
+
+Then the Approximation is as follows
+
+\begin{flalign}
+    & \log P\left(t, \delta \vert L, \beta\right) = \ell\left(\eta\right)\\
+    & \approx \ell\left(\hat{\eta}\right) + \left(\eta - \hat{\eta}\right)^{\top}\underbrace{\nabla \ell\left(\hat{\eta}\right)}_{\mathbf{U}} + \frac{1}{2}\left(\eta - \hat{\eta}\right)^{\top}\underbrace{\nabla^2 \ell\left(\hat{\eta}\right)}_{\mathbf{H = -W}}\left(\eta - \hat{\eta}\right)\\
+    &\approx \ell\left(\hat{\eta}\right) + \sum_{i}\left(\eta_i - \hat{\eta}_i\right)\mathbf{u_i} + \frac{1}{2}\sum_{i}\left(\eta_i - \hat{\eta}_i\right)^2 \mathbf{H}_{ii}\hspace{.25cm}\text{(quadratic form: $\sum_{i}ax_{i}^{2}+bx_{i}+c \rightarrow a=?, b=?$)}\\
+    &= \sum_{i}\left[\mathbf{u}_i\left(\eta_i - \hat{\eta}_i\right)-\frac{1}{2}\mathbf{W}_{ii}\left(\eta_{i}^{2}-2\eta_{i}\hat{\eta}_{i}+\hat{\eta}^{2}\right)\right]\\
+    &= \sum_{i}\left[\mathbf{u}_i\eta_i - \mathbf{u}_i\hat{\eta}_i-\frac{1}{2}\mathbf{W}_{ii}\eta_{i}^{2}+\mathbf{W}_{ii}\eta_{i}\hat{\eta}_{i} - \frac{1}{2}\mathbf{W}_{ii}\hat{\eta}^{2}\right]\hspace{0.25cm}\text{(keep only terms with $\eta_i$)}\\
+    & \text{where}\hspace{0.25cm}\sum_{i}\left(a_i\eta_{i}^{2} + b_i\eta_i\right)=\sum_{i}a_i\left(\eta_i + \frac{1}{2}\frac{b_i}{a_i}\right)^2\\
+    &= \sum_{i}\left[\left(\underbrace{-\frac{1}{2}\mathbf{W}_{ii}}_{A}\right)\eta_{i}^{2} + \left(\underbrace{\mathbf{u}_{i}+\mathbf{W}_{ii}\hat{\eta}_{i}}_{B}\right)\eta_i\right]\\
+    &= \sum_{i}\left(-\frac{1}{2}\mathbf{W}_{ii}\left(\eta_i - z_i\right)^2\right)\\
+    & \text{where}\hspace{0.25cm} B = \mathbf{W}_{ii}z_i = \mathbf{u}_i+\mathbf{W}_{ii}\hat{\eta}_i \Rightarrow \boxed{z_i = \frac{\mathbf{u}_i}{\mathbf{W}_{ii}} + \hat{\eta}_i}\\
+    &= \sum_{i}\left[-\frac{1}{2}\mathbf{W}_{ii}\left(\eta_i - \left(\underbrace{\frac{\mathbf{u}_i}{\mathbf{W}_{ii}}+\hat{\eta}_{i}}_{z_i}\right)\right)^2\right]
+\end{flalign}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Update for $q_{l}$}
+
+For the updates of $q_l$ \& $g_l$, we consider terms from $F$ that pertain to $l$. Therefore, we consider
+
+\begin{align}
+    F\left(q_l, g_l\right) &= E_{q_l, q_f, q_{\beta}}\left[\log P\left(Y, t, \delta \vert L, F, \beta, \tau\right)\right] + \sum_{k}E_{q_{l_k}}\left[\log \frac{g_{l_k}(l_k)}{q_{l_k}(l_k)}\right]\\
+    &= \underbrace{E_{q_l, q_f, q_{\beta}}\left[\log P\left(Y \vert L, F, \tau^{-1}\right)\right]}_{\text{Equation 1}} + \underbrace{E_{q_l, q_f, q_{\beta}}\left[\log P\left(t, \delta \vert L, \beta\right)\right]}_{\text{Equation 2}} + \underbrace{\sum_{k}E_{q_{l_k}}\left[\log \frac{g_{l_k}(l_k)}{q_{l_k}(l_k)}\right]}_{\text{Keep from above}}\\
+    &= \sum_{k}\left[\text{Terms from 1}(l_k) + \text{Terms from 2}(l_k) + E_{q_{l_k}}\left[\log \frac{g_{l_k}(l_k)}{q_{l_k}(l_k)}\right]\right]\label{SumTerm1:Term2}
+\end{align}
+
+Now, we need expressions for the terms of equations 1 \& 2 that are dependent on $l_k$ and/or $l_{k}^{2}$. To aid this process, we first consider the residuals for $y_{ij}$, denoted as $R_{ij}$.
+
+\begin{corrbox}
+\textbf{Items 1 \& 2:} The previous document defined $R^{k}_{ij}$ and $z^{k}_{i}$ without
+incorporating posterior expectations, and used inconsistent superscript notation
+($k$ vs.\ $-k$). The corrected definitions below evaluate residuals at
+posterior means, using the consistent superscript notation $R^{-k}_{ij}$
+and $z^{-k}_{i}$ throughout. Note also that $z^{-k}_{i}$ involves $\bm{\beta}$,
+not $F$ --- this corrects an inconsistency in the prior document where
+$f_{jk'}$ appeared in a per-sample survival quantity.
+\end{corrbox}
+
+\medskip
+The $k$-th genomics partial residual, evaluated at posterior means, is:
+
+\begin{equation}\label{eq:Rk}
+    R^{-k}_{ij} = y_{ij} - \sum_{k'\neq k}\overline{l_{ik'}}\,\overline{f_{jk'}}
+\end{equation}
+
+where the $k$-th residual is $R^{-k}_{ij} = y_{ij}-\sum_{k'\neq k} \overline{l_{ik'}}\,\overline{f_{jk'}}$, with posterior means used so that the resulting coefficients $A_{ik}$ and $B_{ik}$ are well-defined. Similarly, the $k$-th partial working response for the survival term is
+
+\begin{equation}\label{eq:zk}
+    z_{i}^{-k} = z_i - \sum_{k'\neq k}\overline{l_{ik'}}\,\overline{\beta_{k'}}
+\end{equation}
+
+\textit{Note: the EBMF paper uses $R_{ij}^{k}$ to represent the posterior first moment ($\overline{l_{ik'}}$ and $\overline{f_{jk'}}$) of the residual, but we use it to represent the residual itself (evaluated at posterior means)}.
+
+\medskip
+We can now use these results to simplify the procedure of identifying the necessary terms of equations 1 \& 2 to specify coefficients $A$ and $B$ attached to $l_{ik}$ and $l_{ik}^{2}$.
+
+First consider the log-likelihood term
+
+\begin{equation}
+    E_{q_l, q_f, q_{\beta}}\left[\log P\left(Y \vert L, F, \tau^{-1}\right)\right] = E_{q_l, q_f, q_{\beta}}\left[\log \left(\prod_{ij} \frac{\tau_{j}}{\sqrt{2\pi}}\text{exp}\left[-\frac{\tau_{j}}{2}\left(y_{ij}-\underbrace{\sum_{k}l_{ik}f_{jk}}_{\bar{Y}}\right)^2\right]\right)\right]
+\end{equation}
+
+where the observed values are $y_{ij} = \sum_{k}l_{ik}f_{jk} + \varepsilon_{ij}$ and $\varepsilon \sim N\left(0, \sigma^2 = \tau^{-1}\right)$
+
+Equation 1 is then expressed as
+
+\begin{align}
+    E_{q_l, q_f, q_{\beta}}\left[\log P\left(Y \vert L, F, \tau^{-1}\right)\right] &= E_{q_l, q_f, q_{\beta}}\left[\sum_{ij}\left[-\frac{1}{2}\tau_{j}\left(y_{ij}-\sum_{k}l_{ik}f_{jk}\right)^2\right]\right]\\
+    &= E_{q_l, q_f, q_{\beta}}\left[\sum_{ij}\left[-\frac{1}{2}\tau_{j}\left(R_{ij}^{-k} - l_{ik}f_{jk}\right)^2\right]\right]\\
+    &= E_{q_l, q_f, q_{\beta}}\left[\sum_{ij}\left[-\frac{1}{2}\tau_{j}\left(\bcancel{R_{ij}^{-k^2}} - 2R_{ij}^{-k}
+    \underline{l_{ik}}f_{jk}+\underline{l_{ik}^{2}}f_{jk}^{2}\right)\right]\right]
+\end{align}
+
+Similarly, equation 2 is expressed as
+
+\begin{align}
+    E_{q_l, q_f, q_{\beta}}\left[\log P\left(t, \delta \vert L, \beta\right)\right] &= E_{q_l, q_f, q_{\beta}}\left[\sum_{i}\left[-\frac{1}{2}\mathbf{W}_{ii}\left(\sum_{k}\underbrace{l_{ik}\beta_{k}}_{\eta_i}-\left(\underbrace{\frac{\mathbf{u}_{i}}{\mathbf{W}_{ii}}+\hat{\eta}_{i}}_{z_i}\right)\right)^2\right]\right]\\
+    &= E_{q_l, q_f, q_{\beta}}\left[\sum_{i}\left[-\frac{1}{2}\mathbf{W}_{ii}\left(z_{i} - \sum_{k}l_{ik}\beta_{k}\right)^2\right]\right]\\
+    &= E_{q_l, q_f, q_{\beta}}\left[\sum_{i}\left[-\frac{1}{2}\mathbf{W}_{ii}\left(z_{i}^{-k}-l_{ik}\beta_{k}\right)^2\right]\right]\\
+    &= E_{q_l, q_f, q_{\beta}}\left[\sum_{i}\left[-\frac{1}{2}\mathbf{W}_{ii}\left(\bcancel{z_{i}^{-k^2}}-2z_{i}^{-k}\underline{l_{ik}}\beta_{k}+\underline{l_{ik}^{2}}\beta_{k}^{2}\right)\right]\right]
+\end{align}
+
+Now, we want to sum these two results and identify the coefficients $A$ and $B$ for the terms $l_{ik}$ and $l_{ik}^2$ that satisfy the expression $A\cdot l_{ik}^{2} + B\cdot l_{ik}$. It follows that (considering the result of equation~\ref{SumTerm1:Term2})
+
+\begin{equation}
+\begin{aligned}
+F(q_l, g_l) = \sum_{k} \Biggl[ & E_{q_l, q_f, q_{\beta}} \Biggl[ \sum_{ij} \left[ -\frac{1}{2}\tau_{j} \left( \bcancel{R_{ij}^{-k^2}} - 2R_{ij}^{-k} l_{ik} f_{jk} + l_{ik}^{2} f_{jk}^{2} \right) \right] \\
+& + \sum_{i} \left[ -\frac{1}{2}\mathbf{W}_{ii} \left( \bcancel{z_{i}^{-k^2}} - 2z_{i}^{-k} l_{ik} \beta_{k} + l_{ik}^{2} \beta_{k}^{2} \right) \right] \Biggr] \\
+& + E_{q_{l_k}} \left[ \log \frac{g_{l_k}(l_k)}{q_{l_k}(l_k)} \right] \Biggr]
+\end{aligned}
+\end{equation}
+
+Then for the genomics data (equation 1), the coefficients are
+
+\begin{itemize}
+    \item $l_{ik}$ coefficient (B): $\tau_{j}R^{-k}_{ij}E\left[f_{jk}\right] = \tau_{j}R^{-k}_{ij}\overline{f_{jk}}$
+
+    \item $l_{ik}^{2}$ coefficient (A): $\tau_{j}E\left[f^{2}_{jk}\right] = \tau_{j}\overline{f^{2}_{jk}}$
+\end{itemize}
+
+and for the survival data (equation 2), the coefficients are
+
+\begin{itemize}
+    \item $l_{ik}$ coefficient (B): $\mathbf{W}_{ii}z^{-k}_{i}E\left[\beta_{k}\right] = \mathbf{W}_{ii}z^{-k}_{i}\overline{\beta_{k}}$
+
+    \item $l_{ik}^{2}$ coefficient (A): $\mathbf{W}_{ii}E\left[\beta^{2}_{k}\right] = \mathbf{W}_{ii}\overline{\beta^{2}_{k}}$
+\end{itemize}
+
+such that the combined coefficients are
+
+\begin{align}
+    \mathbf{A_{ik}} &= \sum_{j}\tau_{j}\overline{f^{2}_{jk}} + \mathbf{W}_{ii}\overline{\beta^{2}_{k}}\label{eq:A-L}\\
+    \mathbf{B_{ik}} &= \sum_{j}\tau_{j}R^{-k}_{ij}\overline{f_{jk}} + \mathbf{W}_{ii}z^{-k}_{i}\overline{\beta_{k}}\label{eq:B-L}
+\end{align}
+
+Then, for the EBNM problem with $EBNM(x,s)$ where $x_i = \frac{B_{ik}}{A_{ik}}$ and $s^{2}_{i} = \frac{1}{A_{ik}}$, we have that
+
+\begin{align}
+    x_i &= \frac{\sum_{j}\tau_{j}R^{-k}_{ij}\overline{f_{jk}} + \mathbf{W}_{ii}z^{-k}_{i}\overline{\beta_{k}}}{\sum_{j}\tau_{j}\overline{f^{2}_{jk}} + \mathbf{W}_{ii}\overline{\beta^{2}_{k}}}\label{eq:xi-L}\\
+    s^{2}_{i} &= \frac{1}{\sum_{j}\tau_{j}\overline{f^{2}_{jk}} + \mathbf{W}_{ii}\overline{\beta^{2}_{k}}}\label{eq:si-L}
+\end{align}
+
+and the EBNM problem can be solved via the EBNM R package.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Update for $q_{f}$}
+
+Updates for the prior \& posterior of $F$ follow the process as expressed in the EBMF paper. We want to find an update for the variational posterior $q_{f_k}(f_k)$ and prior $g_{f_k}$ that maximize the objective function $F(\cdot)$ with all other parameters held fixed. To write out the update for $q_f$, note that $F$ is only present in the term in the objective function for the genomics data (and isn't in the survival data term) such that we consider
+
+\begin{equation}
+    F\left(q_{f_k}\right) \approx E_{q_l, q_f, q_{\beta}}\left[\log P\left(Y \vert L, F, \tau\right)\right] + E_{q_l, q_f, q_{\beta}}\left[\log g_{f_k}(f_k) - \log q_{f_k}(f_k)\right].
+\end{equation}
+
+The genomics data model is
+\begin{equation}
+    Y_{ij} \sim N\left(\sum_{k}l_{ik}f_{jk}, \tau_{j}^{-1}\right).
+\end{equation}
+
+Then expand the log-likelihood to be
+\begin{equation}
+    E_{q_l, q_f, q_{\beta}}\left[\log P\left(Y \vert L, F, \tau\right)\right] = \sum_{ij}E_{q_l, q_f, q_{\beta}}\left[-\frac{1}{2}\tau_{j}\left(y_{ij} - \sum_{k}l_{ik}f_{jk}\right)^2\right]
+\end{equation}
+
+\begin{corrbox}
+\textbf{Item 2:} The partial residual for the $F$ update uses the same
+posterior-mean definition as for the $L$ update (Eq.~\ref{eq:Rk}), with the
+consistent $-k$ superscript notation. This ensures $R^{-k}_{ij}$ is evaluated
+at posterior means in both the $L$ and $F$ update equations.
+\end{corrbox}
+
+\medskip
+and isolate the $k$-th factor by defining the residual excluding factor $k$ (evaluated at posterior means) as
+\begin{equation}
+    R^{-k}_{ij} = y_{ij}-\sum_{k'\neq k}\overline{l_{ik'}}\,\overline{f_{jk'}}
+\end{equation}
+such that
+\begin{equation}
+    y_{ij} = \left(\underbrace{y_{ij}-\sum_{k'\neq k}\overline{l_{ik'}}\,\overline{f_{jk'}}}_{R^{-k}_{ij}}\right) - l_{ik}f_{jk} + l_{ik}f_{jk}
+    = R^{-k}_{ij} + l_{ik}f_{jk}.
+\end{equation}
+
+Then substitute this result back into the likelihood expression to get
+\begin{equation}
+    E_{q_l, q_f, q_{\beta}}\left[\log P\left(Y \vert L, F, \tau\right)\right] = \sum_{ij}E_{q_l, q_f, q_{\beta}}\left[-\frac{1}{2}\tau_{j}\left(R^{-k}_{ij}-l_{ik}f_{jk}\right)^2\right].
+\end{equation}
+
+We can then expand the squared term to isolate $f_{jk}$ in the likelihood
+\begin{equation}
+    E_{q_l, q_f, q_{\beta}}\left[\log P\left(Y \vert L, F, \tau\right)\right] = \sum_{ij}E_{q_l, q_f, q_{\beta}}\left[-\frac{1}{2}\tau_{j}\left(\left(R^{-k}_{ij}\right)^2-2R^{-k}_{ij}l_{ik}f_{jk}+l^{2}_{ik}f^{2}_{jk}\right)\right].
+\end{equation}
+
+and consider the expectation $E_{q}\left[\cdot\right]$ with respect to $L$, treating the residual $R^{-k}_{ij}$ as fixed, so that
+\begin{equation}
+    E_{q_l, q_f, q_{\beta}}\left[\log P\left(Y \vert L, F, \tau\right)\right] = \sum_{ij}E_{q_l, q_f, q_{\beta}}\left[-\frac{1}{2}\tau_{j}\left[\bcancel{\left(R^{-k}_{ij}\right)^2}-2R^{-k}_{ij}l_{ik}f_{jk}+l^{2}_{ik}f^{2}_{jk}\right]\right].
+\end{equation}
+
+Now, group terms to identify coefficients for $f$ and $f^2$ to get the quadratic form $-\frac{1}{2}Af^2+Bf$ (summing over $i$ for each $j$ to update $f_k$)
+
+\begin{equation}
+    F\left(q_{f_k}\right) \approx E_{q_l, q_f, q_{\beta}}\left[\sum_{j}\left[-\frac{1}{2}f^{2}_{jk}\left(\underbrace{\sum_{i}\tau_{j}\overline{l^{2}_{ik}}}_{A_{jk}}\right)+f_{jk}\left(\underbrace{\sum_{i}\tau_{j}R^{-k}_{ij}\overline{l_{ik}}}_{B_{jk}}\right)\right]\right]+E_{q_{f_k}}\left[\log \frac{g_{f_k}(f_k)}{q_{f_k}(f_k)}\right].
+\end{equation}
+
+Therefore, we have
+\begin{align}
+    \mathbf{A_{jk}} &= \sum_{i}\tau_{j}\overline{l^{2}_{ik}}\label{eq:A-F}\\
+    \mathbf{B_{jk}} &= \sum_{i} \tau_{j}R^{-k}_{ij}\overline{l_{ik}}\label{eq:B-F}
+\end{align}
+
+which yield the following inputs for the EBNM problem
+\begin{align}
+    x_j &= \frac{\mathbf{B_{jk}}}{\mathbf{A_{jk}}} = \frac{\sum_{i} \tau_{j}R^{-k}_{ij}\overline{l_{ik}}}{\sum_{i}\tau_{j}\overline{l^{2}_{ik}}}\label{eq:xj-F}\\
+    s^{2}_{j} &= \frac{1}{\mathbf{A_{jk}}} = \frac{1}{\sum_{i}\tau_{j}\overline{l^{2}_{ik}}}\label{eq:sj-F}
+\end{align}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Update for $q_{\beta}$}
+
+\begin{corrbox}
+\textbf{Item 3:} The previous document contained two approaches for updating $\beta$:
+a weighted least-squares (WLS) formulation and an EBNM formulation (formerly
+Sec.~6A). The key distinction is the \emph{posterior independence assumption}:
+the EBNM approach assumes $q(\beta) = \prod_k q(\beta_k)$, so that
+$E_q[\beta_k\beta_{k'}] = E_q[\beta_k]E_q[\beta_{k'}]$ for $k\neq k'$.
+This enables a coordinate-ascent EBNM update consistent with the $L$ and $F$
+updates. The WLS derivation has been \textbf{removed} to avoid confusion;
+only the EBNM approach is retained below.
+\end{corrbox}
+
+\subsection{Setting Up the Objective}
+
+First, note that $\beta$ appears only in the likelihood for the survival data, so we focus on that term. The objective function for $q_\beta$ is:
+
+\begin{equation}
+    F\left(q_{\beta}, g_{\beta}\right) = E_{q_l, q_{\beta}}\left[\log P\left(t, \delta \vert L, \beta\right)\right] + \sum_{k}E_{q_{\beta_k}}\left[\log \frac{g_{\beta_k}\left(\beta_k\right)}{q_{\beta_k}\left(\beta_k\right)}\right]
+\end{equation}
+
+Using the second-order Taylor approximation from Section 3, we substitute the working response $z_i$ and weights $\mathbf{W}_{ii}$:
+
+\begin{equation}
+    F(q_{\beta}, g_{\beta}) \approx E_{q_l, q_{\beta}} \left[ -\frac{1}{2}\sum_i \mathbf{W}_{ii}\left(z_i - \sum_k l_{ik}\beta_k\right)^2 \right] + \sum_k E_{q_{\beta_k}} \left[ \log \frac{g_{\beta_k}(\beta_k)}{q_{\beta_k}(\beta_k)} \right]\label{eq:Fqb-approx}
+\end{equation}
+
+We also note an expectation-variance equivalence as follows:
+
+\begin{equation}
+    E_{q_l}\left[l_{ik}^{2}\right] = \mathrm{Var}_{q_l}\left[l_{ik}\right] + \left(E_{q_l}\left[l_{ik}\right]\right)^2 \quad\Rightarrow\quad \overline{l_{ik}^{2}} = \mathrm{Var}_{q_l}\left[l_{ik}\right] + \left(\overline{l_{ik}}\right)^2
+\end{equation}
+
+\subsection{Coordinate-Ascent Update for $\beta_k$}
+
+By applying the mean-field independence assumption $q(\beta) = \prod_k q(\beta_k)$, we update a single coefficient $\beta_k$ by fixing all $\beta_{k'}$ for $k' \neq k$. The survival partial working response (consistent with Eq.~\ref{eq:zk}) is:
+
+\begin{equation}
+    z_i^{-k} = z_i - \sum_{k' \neq k} \overline{l_{ik'}} \,\overline{\beta}_{k'}
+    \quad\Rightarrow\quad z_i \approx z_i^{-k} + l_{ik}\beta_k
+\end{equation}
+
+Substituting this into equation~\ref{eq:Fqb-approx}:
+
+\begin{equation}
+    -\frac{1}{2}\sum_i \mathbf{W}_{ii}(z_i^{-k} - l_{ik}\beta_k)^2 = -\frac{1}{2}\sum_i \mathbf{W}_{ii} \left( \bcancel{(z_i^{-k})^2} - 2z_i^{-k}\underline{l_{ik}}\beta_k + \underline{l_{ik}^2}\beta_k^2 \right)
+\end{equation}
+
+Taking the expectation with respect to $q_l$, using $E_{q_l}[l_{ik}] = \overline{l_{ik}}$ and $E_{q_l}[l_{ik}^2] = \overline{l_{ik}^2}$:
+
+\begin{equation}
+\begin{aligned}
+    F(q_{\beta_k}) = {} & \sum_i \left[ \mathbf{W}_{ii} z_i^{-k} \overline{l_{ik}} \beta_k - \frac{1}{2} \mathbf{W}_{ii} \overline{l_{ik}^2} \beta_k^2 \right]
+    + E_{q_{\beta_k}} \left[ \log \frac{g_{\beta_k}(\beta_k)}{q_{\beta_k}(\beta_k)} \right] + C
+\end{aligned}\label{eq:Fqbk}
+\end{equation}
+
+\subsection{Formulating the EBNM Problem}
+
+\begin{corrbox}
+\textbf{Item 4:} The previous document (Sec.~6A, Eq.~91) included $+\,1/\sigma^2$
+in $A_k$, explicitly accounting for a fixed prior $g(\beta_k)\sim N(0,\sigma^2)$.
+However, the EBNM solver empirically fits $g_{\beta_k}$ directly from the data,
+so adding $1/\sigma^2$ to $A_k$ accounts for the prior \textbf{twice}---once
+through the EBNM prior estimation and again through the explicit term. The
+corrected $A_k$ omits the $1/\sigma^2$ term, and $x_k$ is updated accordingly.
+Note also that $\overline{l_{ik}}$ (posterior mean) appears in $B_k$, and
+$\overline{l_{ik}^2}$ (full posterior second moment) appears in $A_k$, encoding
+an error-in-variables correction: uncertainty in $L$ inflates the effective
+noise for $\beta_k$.
+\end{corrbox}
+
+\medskip
+Grouping equation~\ref{eq:Fqbk} into the standard quadratic form $-\frac{1}{2}A_k\beta_k^2 + B_k\beta_k$:
+
+\begin{align}
+    \mathbf{A_k} &= \sum_i \mathbf{W}_{ii} \overline{l_{ik}^2}\label{eq:A-beta}\\
+    \mathbf{B_k} &= \sum_i \mathbf{W}_{ii} z_i^{-k} \overline{l_{ik}}\label{eq:B-beta}
+\end{align}
+
+This yields the inputs for the 1D EBNM problem with a single pseudo-observation for factor $k$:
+
+\begin{align}
+    x_k &= \frac{B_k}{A_k} = \frac{\sum_i \mathbf{W}_{ii} z_i^{-k} \overline{l_{ik}}}{\sum_i \mathbf{W}_{ii} \overline{l_{ik}^2}}\label{eq:xk-beta} \\
+    s_k &= \frac{1}{\sqrt{A_k}}\label{eq:sk-beta}
+\end{align}
+
+For each factor $k$, we solve the EBNM problem:
+\begin{equation}
+    (\hat{g}_{\beta_k}, \hat{q}_{\beta_k}) = \text{EBNM}(x_k, s_k)
+\end{equation}
+
+\textit{Note: The EBNM solver empirically fits $g_{\beta_k}$ from the data, so no fixed $\sigma^2$ is required.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Update for $\tau$}
+
+\begin{corrbox}
+\textbf{Item 5:} This section is unchanged from the previous document. It follows
+Section A.1 of the EBMF paper (Equations A.5--A.11) exactly and has been
+confirmed correct.
+\end{corrbox}
+
+\medskip
+We derive updates to optimize the objective function $F$ over the precision parameters $\tau$ identically to the procedure defined in section $A.1$ of the EBMF paper (equations $(A.5)-(A.11)$). This update specifically focuses on the components of $F$ that depend on $\tau$ such that
+
+\begin{align}
+    F\left(\tau\right) &= E_{q_{l}}E_{q_{f}}\sum_{ij}\frac{1}{2}\log\left(\tau_{j}\right) - \frac{1}{2}\tau_{j}\left(Y_{ij}-\sum_{k}l_{ik}f_{jk}\right)^2 + C\\
+    &= \frac{1}{2}\sum_{ij}\left[\log\left(\tau_{j}\right) - \tau_{j}\overline{R^2}_{ij}\right] + C
+\end{align}
+
+where $\overline{R^2}_{ij}$ is defined by
+
+\begin{align}
+    \overline{R^2}_{ij} &\coloneq E_{q_l, q_f}\left[\left(Y_{ij} - \sum_{k=1}^{K}l_{ik}f_{jk}\right)^2\right]\\
+    &= \left(Y_{ij} - \sum_{k}\overline{l}_{ik}\overline{f}_{jk}\right)^2 - \sum_{k}\left(\overline{l}_{ik}\right)^2\left(\overline{f}_{jk}\right)^2 + \sum_{k}\overline{l^{2}}_{ik}\overline{f^{2}}_{jk}
+\end{align}
+
+If $\tau \in \mathcal{T}$ is constrained, we have
+
+\begin{equation}
+    \hat{\tau} = \arg\max_{\tau\in\mathcal{T}}\sum_{ij}\left[\log\left(\tau_{j}\right)-\tau_{j}\overline{R^2}_{ij}\right]
+\end{equation}
+
+Assuming constant precision $\tau_{ij} = \tau$ yields
+
+\begin{equation}\label{ConstantPrecision}
+    \hat{\tau} = \frac{N P}{\sum_{ij}\overline{R^2}_{ij}}
+\end{equation}
+
+and assuming column-specific precisions $\left(\tau_{ij} = \tau_j\right)$ yields
+
+\begin{equation}\label{ColumnPrecision}
+    \hat{\tau}_j = \frac{N}{\sum_{i}\overline{R^2}_{ij}}
+\end{equation}
+
+In equations~\ref{ConstantPrecision} and~\ref{ColumnPrecision}, the variables $N$ and $P$ refer to the following:
+\begin{itemize}
+    \item $N$: The number of samples/rows in the data matrix $Y$
+    \item $P$: The number of features/columns in the data matrix $Y$
+\end{itemize}
+
+Therefore, for equation~\ref{ConstantPrecision}, $NP$ refers to the total number of entries in the $n \times p$ matrix. This equation sets the precision to the inverse of the average expected squared residual across all $N$ rows and $P$ columns. Furthermore, for equation~\ref{ColumnPrecision}, $N$, the number of rows, is used because the precision for a specific column is estimated based on the $N$ observations within that column.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Algorithm}
+
+The following algorithm presents the complete coordinate-ascent variational
+inference (CAVI) procedure for the supervised matrix factorization model. The
+algorithm iterates over blocks for $L$, $F$, $\beta$, and $\tau$. Equation
+references are to the numbered expressions in the sections above.
+
+\bigskip
+
+\begin{algobox}{\textbf{Algorithm 1.} Supervised MF CAVI Update Procedure}
+
+\textbf{Require:} Genomics matrix $Y_{n\times p}$, survival data $(t_i, \delta_i)_{i=1}^n$,
+number of factors $K$, convergence tolerance $\varepsilon$.
+
+\medskip
+\textbf{Initialize ($b=0$):}
+\begin{itemize}[noitemsep, topsep=2pt, leftmargin=2em]
+    \item $\overline{L}^{(0)}$, $\overline{F}^{(0)}$ from rank-$K$ SVD of $Y$; set
+          $\overline{l_{ik}^2}^{(0)} \leftarrow \overline{l_{ik}}^{(0)^2}$,
+          $\overline{f_{jk}^2}^{(0)} \leftarrow \overline{f_{jk}}^{(0)^2}$
+    \item $\overline{\beta_k}^{(0)}$ from Cox PH on initial loadings $\overline{L}^{(0)}$; set
+          $\overline{\beta_k^2}^{(0)} \leftarrow \overline{\beta_k}^{(0)^2}$
+    \item $\hat{\tau}_j^{(0)}$ from column-wise sample variance of $Y$
+\end{itemize}
+
+\bigskip
+\textbf{For $b = 1, 2, \ldots$ until convergence:}
+
+\medskip
+\hrule
+\medskip
+
+\hspace{1em}\textbf{Step 1 --- Compute Survival Working Quantities}
+\quad\textit{(once per outer iteration, using posterior means from $b-1$)}
+
+\medskip
+\hspace{2em}\textbf{1.1}\hspace{0.5em} Compute the linear predictor for each sample $i$:
+\[
+    \hat{\eta}_i = \sum_{k=1}^{K} \overline{l_{ik}}\,\overline{\beta_k}
+\]
+
+\hspace{2em}\textbf{1.2}\hspace{0.5em} Evaluate Cox score $u_i$ and negative Hessian $W_{ii}$ at $\hat{\bm{\eta}}$:
+\[
+    u_i = \frac{\partial\ell_{\text{Cox}}}{\partial\eta_i}\Bigg|_{\hat{\eta}_i},
+    \qquad
+    \mathbf{W}_{ii} = -\frac{\partial^2\ell_{\text{Cox}}}{\partial\eta_i^2}\Bigg|_{\hat{\eta}_i} \geq 0
+\]
+
+\hspace{2em}\textbf{1.3}\hspace{0.5em} Compute the working response (Sec.~3):
+\[
+    z_i = \hat{\eta}_i + \frac{u_i}{\mathbf{W}_{ii}}
+\]
+
+\medskip
+\hrule
+\medskip
+
+\hspace{1em}\textbf{Step 2 --- Update Factors} \quad\textbf{for $k = 1,\ldots,K$:}
+
+\medskip
+\hspace{2em}\textbf{(a) Update $q(l_k)$, $g(l_k)$ --- Patient Loadings}
+\quad(Eqs.~\ref{eq:A-L}--\ref{eq:si-L})
+
+\medskip
+\hspace{3em}Compute partial residuals using current posterior means (Eqs.~\ref{eq:Rk}, \ref{eq:zk}):
+\[
+    R^{-k}_{ij} = y_{ij} - \sum_{k'\neq k}\overline{l_{ik'}}\,\overline{f_{jk'}},
+    \qquad
+    z_i^{-k} = z_i - \sum_{k'\neq k}\overline{l_{ik'}}\,\overline{\beta_{k'}}
+\]
+
+\hspace{3em}Compute EBNM coefficients (Eqs.~\ref{eq:A-L}--\ref{eq:B-L}), solve, and store:
+\begin{align*}
+    \mathbf{A_{ik}} &= \sum_j \hat{\tau}_j\,\overline{f^2_{jk}} + \mathbf{W}_{ii}\,\overline{\beta^2_k},
+    \qquad
+    \mathbf{B_{ik}} = \sum_j \hat{\tau}_j\,R^{-k}_{ij}\,\overline{f_{jk}}
+                    + \mathbf{W}_{ii}\,z_i^{-k}\,\overline{\beta_k}\\
+    \left(\hat{g}_{l_k},\,\hat{q}_{l_k}\right)
+    &= \mathrm{EBNM}\!\left(x_i = \tfrac{B_{ik}}{A_{ik}},\; s_i = \tfrac{1}{\sqrt{A_{ik}}}\right)
+    \;\Rightarrow\;\text{store } \overline{l_{ik}},\; \overline{l_{ik}^2}
+\end{align*}
+
+\medskip
+\hspace{2em}\textbf{(b) Update $q(f_k)$, $g(f_k)$ --- Biological Factors}
+\quad(Eqs.~\ref{eq:A-F}--\ref{eq:sj-F})
+
+\medskip
+\hspace{3em}Recompute $R^{-k}_{ij}$ using updated $\overline{l_{ik}}$.
+Compute EBNM coefficients (Eqs.~\ref{eq:A-F}--\ref{eq:B-F}), solve, and store:
+\begin{align*}
+    \mathbf{A_{jk}} &= \sum_i \hat{\tau}_j\,\overline{l^2_{ik}},
+    \qquad
+    \mathbf{B_{jk}} = \sum_i \hat{\tau}_j\,R^{-k}_{ij}\,\overline{l_{ik}}\\
+    \left(\hat{g}_{f_k},\,\hat{q}_{f_k}\right)
+    &= \mathrm{EBNM}\!\left(x_j = \tfrac{B_{jk}}{A_{jk}},\; s_j = \tfrac{1}{\sqrt{A_{jk}}}\right)
+    \;\Rightarrow\;\text{store } \overline{f_{jk}},\; \overline{f_{jk}^2}
+\end{align*}
+
+\medskip
+\hspace{2em}\textbf{(c) Update $q(\beta_k)$, $g(\beta_k)$ --- Survival Coefficients}
+\quad(Eqs.~\ref{eq:A-beta}--\ref{eq:sk-beta})
+
+\medskip
+\hspace{3em}Compute updated survival partial working response using current $\overline{l_{ik}}$, $\overline{\beta_k}$:
+\[
+    z_i^{-k} = z_i - \sum_{k'\neq k}\overline{l_{ik'}}\,\overline{\beta_{k'}}
+\]
+
+\hspace{3em}Compute EBNM coefficients (\textit{no $1/\sigma^2$ term in $A_k$}; Eqs.~\ref{eq:A-beta}--\ref{eq:B-beta}), solve, and store:
+\begin{align*}
+    \mathbf{A_k} &= \sum_i \mathbf{W}_{ii}\,\overline{l_{ik}^2},
+    \qquad
+    \mathbf{B_k} = \sum_i \mathbf{W}_{ii}\,z_i^{-k}\,\overline{l_{ik}}\\
+    \left(\hat{g}_{\beta_k},\,\hat{q}_{\beta_k}\right)
+    &= \mathrm{EBNM}\!\left(x_k = \tfrac{B_k}{A_k},\; s_k = \tfrac{1}{\sqrt{A_k}}\right)
+    \;\Rightarrow\;\text{store }\overline{\beta_k},\; \overline{\beta_k^2}
+\end{align*}
+
+\medskip
+\hspace{1em}\textbf{end for} (over $k = 1,\ldots,K$)
+
+\medskip
+\hrule
+\medskip
+
+\hspace{1em}\textbf{Step 3 --- Update $\hat{\tau}$}\quad(Eq.~\ref{ColumnPrecision})
+
+\medskip
+\hspace{2em}\textbf{3.1}\hspace{0.5em} Compute expected squared residual for each entry $(i,j)$:
+\[
+    \overline{R^2}_{ij} = \!\left(Y_{ij} - \sum_k \overline{l_{ik}}\,\overline{f_{jk}}\right)^{\!2}
+                         + \sum_k\!\left[\overline{l^{2}_{ik}}\,\overline{f^{2}_{jk}}
+                           - \overline{l_{ik}}^2\,\overline{f_{jk}}^2\right]
+\]
+
+\hspace{2em}\textbf{3.2}\hspace{0.5em} Update column-specific precision:
+\[
+    \hat{\tau}_j = \frac{N}{\displaystyle\sum_i \overline{R^2}_{ij}}
+\]
+
+\medskip
+\hrule
+\medskip
+
+\hspace{1em}\textbf{Step 4 --- Check Convergence}
+
+\medskip
+\hspace{2em}Compute maximum absolute change in loadings and survival coefficients:
+\[
+    \Delta_L = \max_{i,k}\left|\overline{l_{ik}}^{\,\text{new}} - \overline{l_{ik}}^{\,\text{old}}\right|,
+    \qquad
+    \Delta_\beta = \max_{k}\left|\overline{\beta_k}^{\,\text{new}} - \overline{\beta_k}^{\,\text{old}}\right|
+\]
+
+\hspace{2em}If $\max\!\left(\Delta_L,\,\Delta_\beta\right) < \varepsilon$: stop. \textbf{Else}: continue to $b+1$.
+
+\medskip
+\hrule
+\medskip
+
+\textbf{Return:} posterior means $\overline{L}$, $\overline{F}$, $\overline{\bm{\beta}}$;
+second moments $\overline{L^2}$, $\overline{F^2}$, $\overline{\bm{\beta}^2}$;
+noise precision $\hat{\tau}$
+
+\end{algobox}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}

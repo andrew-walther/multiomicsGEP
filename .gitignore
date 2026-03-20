@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Tool config directories
+.claude/
+.claire/
+.obsidian/
