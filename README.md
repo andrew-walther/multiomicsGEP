@@ -37,8 +37,26 @@ multiomicsGEP/
 ├── code/
 │   ├── Supervised_Bayesian_MF_V2.R   ← ✅ Current implementation (use this)
 │   ├── Supervised_Bayesian_MF.R      ← Original V1 (reference only)
+│   ├── update_beta.R                 ← Modular β update (scalar EBNM, Cox survival)
+│   ├── update_L.R                    ← Modular L update (vector EBNM, dual-source)
+│   ├── update_F.R                    ← Modular F update (vector EBNM, pure genomics)
+│   ├── update_tau.R                  ← Modular τ update (closed-form MLE)
 │   ├── SupervisedMF_Context.md       ← AI/developer quick-reference for the code
 │   └── multiomicsGEP_code.Rmd        ← Early exploratory notebook
+│
+├── docs/                              ← Companion documentation (PDF + HTML)
+│   ├── Makefile                       ← `make all` renders .md → .pdf + .html
+│   ├── update_beta.md/.pdf/.html      ← β update: code walkthrough, tests, demos
+│   ├── update_L.md/.pdf/.html         ← L update: code walkthrough, tests, demos
+│   ├── update_F.md/.pdf/.html         ← F update: code walkthrough, tests, demos
+│   └── update_tau.md/.pdf/.html       ← τ update: code walkthrough, tests, demos
+│
+├── tests/                             ← 105 tests (run: Rscript tests/run_tests.R)
+│   ├── run_tests.R                    ← Master test runner
+│   └── test_update_*.R                ← Per-module test suites
+│
+├── demos/                             ← Interactive demonstrations (5 per module)
+│   └── demo_update_*.R                ← Run: Rscript demos/demo_update_*.R
 │
 ├── derivations/
 │   ├── MF_UpdateDerivations/

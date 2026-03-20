@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>update_tau</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {  background-color: #f8f8f8; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ef2929; } /* Alert */
+    code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #204a87; } /* Attribute */
+    code span.bn { color: #0000cf; } /* BaseN */
+    code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4e9a06; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #8f5902; font-style: italic; } /* Comment */
+    code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+    code span.dt { color: #204a87; } /* DataType */
+    code span.dv { color: #0000cf; } /* DecVal */
+    code span.er { color: #a40000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #0000cf; } /* Float */
+    code span.fu { color: #204a87; font-weight: bold; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+    code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+    code span.ot { color: #8f5902; } /* Other */
+    code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+    code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+    code span.ss { color: #4e9a06; } /* SpecialString */
+    code span.st { color: #4e9a06; } /* String */
+    code span.va { color: #000000; } /* Variable */
+    code span.vs { color: #4e9a06; } /* VerbatimString */
+    code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">update_tau</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#update_tau.r-companion-document"
+id="toc-update_tau.r-companion-document">update_tau.R — Companion
+Document</a>
+<ul>
+<li><a href="#table-of-contents" id="toc-table-of-contents">Table of
+Contents</a></li>
+<li><a href="#overview" id="toc-overview">Overview</a></li>
+<li><a href="#mathematical-background"
+id="toc-mathematical-background">Mathematical Background</a>
+<ul>
+<li><a href="#the-cavi-objective-for-τ_j"
+id="toc-the-cavi-objective-for-τ_j">The CAVI Objective for τ_j</a></li>
+<li><a href="#expected-squared-residual"
+id="toc-expected-squared-residual">Expected Squared Residual</a></li>
+<li><a href="#variance-correction-var_term"
+id="toc-variance-correction-var_term">Variance Correction
+(Var_Term)</a></li>
+<li><a href="#why-ignoring-the-correction-is-dangerous"
+id="toc-why-ignoring-the-correction-is-dangerous">Why Ignoring the
+Correction Is Dangerous</a></li>
+<li><a href="#elbo-proxy" id="toc-elbo-proxy">ELBO Proxy</a></li>
+</ul></li>
+<li><a href="#function-reference" id="toc-function-reference">Function
+Reference</a>
+<ul>
+<li><a href="#compute_var_term"
+id="toc-compute_var_term">compute_var_term</a></li>
+<li><a href="#compute_expected_residual_sq"
+id="toc-compute_expected_residual_sq">compute_expected_residual_sq</a></li>
+<li><a href="#update_tau" id="toc-update_tau">update_tau</a></li>
+</ul></li>
+<li><a href="#key-properties" id="toc-key-properties">Key
+Properties</a></li>
+<li><a href="#test-suite-summary" id="toc-test-suite-summary">Test Suite
+Summary</a>
+<ul>
+<li><a href="#t1-mathematical-identities-5-tests"
+id="toc-t1-mathematical-identities-5-tests">T1: Mathematical Identities
+(5 tests)</a></li>
+<li><a href="#t2-perfect-reconstruction-3-tests"
+id="toc-t2-perfect-reconstruction-3-tests">T2: Perfect Reconstruction (3
+tests)</a></li>
+<li><a href="#t3-known-noise-recovery-3-tests"
+id="toc-t3-known-noise-recovery-3-tests">T3: Known Noise Recovery (3
+tests)</a></li>
+<li><a href="#t4-variance-correction-3-tests"
+id="toc-t4-variance-correction-3-tests">T4: Variance Correction (3
+tests)</a></li>
+<li><a href="#t5-elbo-proxy-3-tests" id="toc-t5-elbo-proxy-3-tests">T5:
+ELBO Proxy (3 tests)</a></li>
+<li><a href="#t6-dimension-shape-2-tests"
+id="toc-t6-dimension-shape-2-tests">T6: Dimension &amp; Shape (2
+tests)</a></li>
+<li><a href="#t7-numerical-stability-4-tests"
+id="toc-t7-numerical-stability-4-tests">T7: Numerical Stability (4
+tests)</a></li>
+<li><a href="#t8-pipeline-interaction-2-tests"
+id="toc-t8-pipeline-interaction-2-tests">T8: Pipeline Interaction (2
+tests)</a></li>
+<li><a href="#t9-v2.r-consistency-2-tests"
+id="toc-t9-v2.r-consistency-2-tests">T9: V2.R Consistency (2
+tests)</a></li>
+</ul></li>
+<li><a href="#demo-scenarios" id="toc-demo-scenarios">Demo Scenarios</a>
+<ul>
+<li><a href="#demo-1-anatomy-of-var_term-and-r2_bar"
+id="toc-demo-1-anatomy-of-var_term-and-r2_bar">Demo 1: Anatomy of
+Var_Term and R2_bar</a></li>
+<li><a href="#demo-2-known-noise-recovery"
+id="toc-demo-2-known-noise-recovery">Demo 2: Known Noise
+Recovery</a></li>
+<li><a href="#demo-3-variance-correction-matters"
+id="toc-demo-3-variance-correction-matters">Demo 3: Variance Correction
+Matters</a></li>
+<li><a href="#demo-4-heteroscedastic-noise"
+id="toc-demo-4-heteroscedastic-noise">Demo 4: Heteroscedastic
+Noise</a></li>
+<li><a href="#demo-5-elbo-as-convergence-monitor"
+id="toc-demo-5-elbo-as-convergence-monitor">Demo 5: ELBO as Convergence
+Monitor</a></li>
+</ul></li>
+<li><a href="#pipeline-context" id="toc-pipeline-context">Pipeline
+Context</a>
+<ul>
+<li><a href="#data-flow" id="toc-data-flow">Data Flow</a></li>
+<li><a href="#position-in-cavi-loop"
+id="toc-position-in-cavi-loop">Position in CAVI Loop</a></li>
+<li><a href="#v2.r-reference-lines" id="toc-v2.r-reference-lines">V2.R
+Reference Lines</a></li>
+</ul></li>
+<li><a href="#related-files" id="toc-related-files">Related
+Files</a></li>
+<li><a href="#quick-reference-card" id="toc-quick-reference-card">Quick
+Reference Card</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="update_tau.r-companion-document">update_tau.R — Companion
+Document</h1>
+<p><strong>Module:</strong> <code>code/update_tau.R</code>
+<strong>Project:</strong> Supervised Bayesian Matrix Factorization
+(multiomicsGEP) <strong>Role:</strong> Closed-form MLE update for
+per-feature noise precisions q(τ)</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#overview">Overview</a></li>
+<li><a href="#mathematical-background">Mathematical Background</a></li>
+<li><a href="#function-reference">Function Reference</a>
+<ul>
+<li><a href="#compute_var_term">compute_var_term</a></li>
+<li><a
+href="#compute_expected_residual_sq">compute_expected_residual_sq</a></li>
+<li><a href="#update_tau">update_tau</a></li>
+</ul></li>
+<li><a href="#key-properties">Key Properties</a></li>
+<li><a href="#test-suite-summary">Test Suite Summary</a></li>
+<li><a href="#demo-scenarios">Demo Scenarios</a></li>
+<li><a href="#pipeline-context">Pipeline Context</a></li>
+<li><a href="#related-files">Related Files</a></li>
+</ol>
+<hr />
+<h2 id="overview">Overview</h2>
+<p><code>update_tau.R</code> implements the variational update for τ =
+(τ₁, …, τ_p), the per-feature noise precisions in the model</p>
+<pre><code>Y = L F&#39; + E,    E_ij ~ N(0, 1/τ_j)</code></pre>
+<p>This module is <strong>unique among the four update modules</strong>
+in two important ways:</p>
+<ol type="1">
+<li><strong>No EBNM dependency</strong> — the update is a closed-form
+maximum likelihood estimate, not an empirical Bayes normal means
+problem. The module uses pure base R with no external packages.</li>
+<li><strong>No per-k loop</strong> — all K factors are handled
+simultaneously through matrix operations. The entire update is computed
+in a handful of matrix multiplications.</li>
+</ol>
+<p>The module exports three functions:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Function</th>
+<th>Returns</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>compute_var_term</code></td>
+<td>n × p matrix</td>
+<td>Posterior variance correction term</td>
+</tr>
+<tr>
+<td><code>compute_expected_residual_sq</code></td>
+<td>n × p matrix</td>
+<td>Expected squared residual under q</td>
+</tr>
+<tr>
+<td><code>update_tau</code></td>
+<td>list (Tau, R2_bar, Var_Term, elbo_proxy)</td>
+<td>Full τ update + ELBO proxy</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="mathematical-background">Mathematical Background</h2>
+<h3 id="the-cavi-objective-for-τ_j">The CAVI Objective for τ_j</h3>
+<p>Taking the variational expectation of the complete-data
+log-likelihood with respect to q(L) and q(F), the optimal q(τ_j) is
+Gamma-distributed. Under a flat (improper) prior on τ_j, the CAVI
+fixed-point reduces to a column-wise MLE:</p>
+<pre><code>τ_j = n / Σᵢ R̄²_ij</code></pre>
+<p>where R̄²_ij is the <strong>expected squared residual</strong> under
+the current posterior q(L) ⊗ q(F).</p>
+<h3 id="expected-squared-residual">Expected Squared Residual</h3>
+<p>The expected squared residual cannot be computed naively as (Y - EL
+EF’)². Posterior uncertainty in L and F inflates the true
+expectation:</p>
+<pre><code>R̄²_ij = E_q[(Y_ij - Σ_k L_ik F_jk)²]
+        = (Y_ij - Σ_k EL_ik · EF_jk)²  +  Var_Term_ij</code></pre>
+<p>The second term, <code>Var_Term</code>, accounts for the fact that
+E[(LF’)²] ≠ (EL · EF’)² when L and F have nonzero posterior
+variance.</p>
+<h3 id="variance-correction-var_term">Variance Correction
+(Var_Term)</h3>
+<p>Under the mean-field factorization q(L) ⊗ q(F) with independent
+factors:</p>
+<pre><code>Var_Term_ij = Σ_k E[L²_ik] E[F²_jk]  −  Σ_k (EL_ik)² (EF_jk)²
+            = (EL2 · EF2&#39;)_ij  −  (EL² · (EF²)&#39;)_ij</code></pre>
+<p>where EL2_ik = E[L²_ik] and EF2_jk = E[F²_jk] are posterior second
+moments (not squared means).</p>
+<p>This simplification uses independence across factors and across the
+q(L) ⊗ q(F) factorization. By Jensen’s inequality, E[X²] ≥ (E[X])² for
+any random variable X, so:</p>
+<pre><code>Var_Term_ij ≥ 0    for all i, j</code></pre>
+<p>Var_Term is exactly zero only when <strong>both</strong> EL2 = EL²
+<strong>and</strong> EF2 = EF² — i.e., all posterior variances are
+identically zero (a degenerate point-mass posterior).</p>
+<h3 id="why-ignoring-the-correction-is-dangerous">Why Ignoring the
+Correction Is Dangerous</h3>
+<p>If one naively substitutes EL2 → EL² and EF2 → EF² (ignoring
+posterior uncertainty), the effective R̄²_ij is
+<strong>underestimated</strong>, causing τ_j to be
+<strong>overestimated</strong> (noise underestimated). In practice this
+bias is 3–5× in typical simulations (see Demo 3).</p>
+<h3 id="elbo-proxy">ELBO Proxy</h3>
+<p>The module also computes an ELBO proxy (the τ-dependent terms of the
+evidence lower bound):</p>
+<pre><code>ELBO_proxy = Σ_j [ n/2 · log(τ_j)  −  τ_j/2 · Σᵢ R̄²_ij ]</code></pre>
+<p>At the MLE solution τ_j = n / Σᵢ R̄²_ij, this is maximized over τ.
+Monitoring ELBO_proxy across iterations provides a convergence
+diagnostic: it should be non-decreasing. A decrease signals a bug in the
+implementation.</p>
+<hr />
+<h2 id="function-reference">Function Reference</h2>
+<h3 id="compute_var_term">compute_var_term</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">compute_var_term</span>(EL, EL2, EF, EF2)</span></code></pre></div>
+<p><strong>Arguments</strong></p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Shape</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EL</code></td>
+<td>n × K</td>
+<td>Posterior means E[L]</td>
+</tr>
+<tr>
+<td><code>EL2</code></td>
+<td>n × K</td>
+<td>Posterior second moments E[L²]</td>
+</tr>
+<tr>
+<td><code>EF</code></td>
+<td>p × K</td>
+<td>Posterior means E[F]</td>
+</tr>
+<tr>
+<td><code>EF2</code></td>
+<td>p × K</td>
+<td>Posterior second moments E[F²]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns</strong> an n × p matrix.</p>
+<p><strong>Formula</strong></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>(EL2 <span class="sc">%*%</span> <span class="fu">t</span>(EF2)) <span class="sc">-</span> (EL<span class="sc">^</span><span class="dv">2</span> <span class="sc">%*%</span> <span class="fu">t</span>(EF<span class="sc">^</span><span class="dv">2</span>))</span></code></pre></div>
+<p><strong>Notes</strong> - All entries are ≥ 0 by Jensen’s inequality.
+- Entries are zero when the corresponding column of EL (or EF) has zero
+posterior variance, i.e., EL2[,k] = EL[,k]^2. - This function is a pure
+computation — no side effects, no floor applied.</p>
+<hr />
+<h3 id="compute_expected_residual_sq">compute_expected_residual_sq</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">compute_expected_residual_sq</span>(Y, EL, EL2, EF, EF2)</span></code></pre></div>
+<p><strong>Arguments</strong></p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Shape</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Y</code></td>
+<td>n × p</td>
+<td>Observed genomics matrix</td>
+</tr>
+<tr>
+<td><code>EL</code></td>
+<td>n × K</td>
+<td>Posterior means E[L]</td>
+</tr>
+<tr>
+<td><code>EL2</code></td>
+<td>n × K</td>
+<td>Posterior second moments E[L²]</td>
+</tr>
+<tr>
+<td><code>EF</code></td>
+<td>p × K</td>
+<td>Posterior means E[F]</td>
+</tr>
+<tr>
+<td><code>EF2</code></td>
+<td>p × K</td>
+<td>Posterior second moments E[F²]</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns</strong> an n × p matrix R̄².</p>
+<p><strong>Formula</strong></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>(Y <span class="sc">-</span> EL <span class="sc">%*%</span> <span class="fu">t</span>(EF))<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> <span class="fu">compute_var_term</span>(EL, EL2, EF, EF2)</span></code></pre></div>
+<p><strong>Notes</strong> - The first term is the squared residual at
+posterior means (what naive MLE would use). - The second term inflates
+it to account for posterior uncertainty. - All entries are ≥ 0 because
+both summands are non-negative.</p>
+<hr />
+<h3 id="update_tau">update_tau</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">update_tau</span>(Y, EL, EL2, EF, EF2, <span class="at">tau_floor =</span> <span class="fl">1e-8</span>)</span></code></pre></div>
+<p><strong>Arguments</strong></p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Shape</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Y</code></td>
+<td>n × p</td>
+<td>—</td>
+<td>Observed genomics matrix</td>
+</tr>
+<tr>
+<td><code>EL</code></td>
+<td>n × K</td>
+<td>—</td>
+<td>Posterior means E[L]</td>
+</tr>
+<tr>
+<td><code>EL2</code></td>
+<td>n × K</td>
+<td>—</td>
+<td>Posterior second moments E[L²]</td>
+</tr>
+<tr>
+<td><code>EF</code></td>
+<td>p × K</td>
+<td>—</td>
+<td>Posterior means E[F]</td>
+</tr>
+<tr>
+<td><code>EF2</code></td>
+<td>p × K</td>
+<td>—</td>
+<td>Posterior second moments E[F²]</td>
+</tr>
+<tr>
+<td><code>tau_floor</code></td>
+<td>scalar</td>
+<td>1e-8</td>
+<td>Minimum τ value (prevents Tau = Inf)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns</strong> a named list:</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Shape</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Tau</code></td>
+<td>p-vector</td>
+<td>Estimated noise precisions τ_1, …, τ_p</td>
+</tr>
+<tr>
+<td><code>R2_bar</code></td>
+<td>n × p</td>
+<td>Expected squared residuals</td>
+</tr>
+<tr>
+<td><code>Var_Term</code></td>
+<td>n × p</td>
+<td>Variance correction term</td>
+</tr>
+<tr>
+<td><code>elbo_proxy</code></td>
+<td>scalar</td>
+<td>ELBO proxy (τ-dependent terms)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Algorithm</strong></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>Var_Term <span class="ot">&lt;-</span> <span class="fu">compute_var_term</span>(EL, EL2, EF, EF2)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>R2_bar   <span class="ot">&lt;-</span> <span class="fu">compute_expected_residual_sq</span>(Y, EL, EL2, EF, EF2)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>RSS_j    <span class="ot">&lt;-</span> <span class="fu">colSums</span>(R2_bar)                          <span class="co"># length-p vector</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>Tau      <span class="ot">&lt;-</span> n <span class="sc">/</span> <span class="fu">pmax</span>(RSS_j, n <span class="sc">*</span> tau_floor)           <span class="co"># MLE with floor</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>elbo_proxy <span class="ot">&lt;-</span> <span class="fu">sum</span>(n<span class="sc">/</span><span class="dv">2</span> <span class="sc">*</span> <span class="fu">log</span>(Tau) <span class="sc">-</span> Tau<span class="sc">/</span><span class="dv">2</span> <span class="sc">*</span> RSS_j)</span></code></pre></div>
+<p><strong>Numerical stability</strong></p>
+<p><code>pmax(RSS_j, n * tau_floor)</code> prevents division by
+near-zero RSS when the reconstruction is nearly perfect. Without this
+floor, τ_j → ∞ (infinite precision), which can destabilize downstream L
+and F updates. The floor corresponds to a maximum τ of 1/tau_floor =
+1e8.</p>
+<p><strong>No per-k loop</strong></p>
+<p>Unlike <code>update_beta_all</code>, <code>update_L_all</code>, and
+<code>update_F_all</code>, this function processes all K factors in a
+single pair of matrix multiplications. The sum over k in the Var_Term
+formula collapses into matrix products.</p>
+<hr />
+<h2 id="key-properties">Key Properties</h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Statement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Update type</td>
+<td>Closed-form MLE (NOT EBNM)</td>
+</tr>
+<tr>
+<td>Loop structure</td>
+<td>No per-k loop; fully vectorized</td>
+</tr>
+<tr>
+<td>External dependencies</td>
+<td>None — pure base R</td>
+</tr>
+<tr>
+<td>Output positivity</td>
+<td>Tau &gt; 0 guaranteed by tau_floor</td>
+</tr>
+<tr>
+<td>Var_Term sign</td>
+<td>&gt;= 0 everywhere (Jensen’s inequality)</td>
+</tr>
+<tr>
+<td>ELBO monotonicity</td>
+<td>elbo_proxy non-decreasing at convergence</td>
+</tr>
+<tr>
+<td>Perfect reconstruction</td>
+<td>Tau hits ceiling 1/tau_floor when RSS ≈ 0</td>
+</tr>
+<tr>
+<td>Heteroscedastic noise</td>
+<td>Each τ_j estimated independently per column</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="test-suite-summary">Test Suite Summary</h2>
+<p><strong>File:</strong> <code>tests/test_update_tau.R</code>
+<strong>Total:</strong> 27 tests across 9 groups (all passing)</p>
+<h3 id="t1-mathematical-identities-5-tests">T1: Mathematical Identities
+(5 tests)</h3>
+<p>Verify that each formula is implemented exactly as derived.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T1.1</td>
+<td><code>Var_Term == EL2 %*% t(EF2) - EL^2 %*% t(EF^2)</code> (to
+machine precision)</td>
+</tr>
+<tr>
+<td>T1.2</td>
+<td><code>all(Var_Term &gt;= 0)</code></td>
+</tr>
+<tr>
+<td>T1.3</td>
+<td><code>R2_bar == (Y - EL %*% t(EF))^2 + Var_Term</code></td>
+</tr>
+<tr>
+<td>T1.4</td>
+<td><code>Tau == n / colSums(R2_bar)</code> (when above floor)</td>
+</tr>
+<tr>
+<td>T1.5</td>
+<td>ELBO proxy formula matches manual computation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t2-perfect-reconstruction-3-tests">T2: Perfect Reconstruction (3
+tests)</h3>
+<p>Edge case where Y is exactly reproduced by posterior means and
+posteriors collapse to point masses.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T2.1</td>
+<td>Var_Term = 0 when EL2 = EL^2 and EF2 = EF^2</td>
+</tr>
+<tr>
+<td>T2.2</td>
+<td>R2_bar ≈ 0 when Y = EL %*% t(EF) and no posterior variance</td>
+</tr>
+<tr>
+<td>T2.3</td>
+<td>Tau hits ceiling (1/tau_floor) for zero-residual case</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t3-known-noise-recovery-3-tests">T3: Known Noise Recovery (3
+tests)</h3>
+<p>Simulates Y = L F’ + N(0, 1/τ_j) with zero posterior variance; checks
+that estimated τ recovers truth.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T3.1</td>
+<td>cor(Tau_est, Tau_true) ≥ 0.9 (n = 200)</td>
+</tr>
+<tr>
+<td>T3.2</td>
+<td>Heteroscedastic columns separated correctly</td>
+</tr>
+<tr>
+<td>T3.3</td>
+<td>Larger n gives better recovery (consistency check)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t4-variance-correction-3-tests">T4: Variance Correction (3
+tests)</h3>
+<p>Demonstrates that the Var_Term matters quantitatively.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T4.1</td>
+<td>Var_Term inflates R2_bar relative to naive (Y - pred)^2</td>
+</tr>
+<tr>
+<td>T4.2</td>
+<td>Ignoring correction overestimates mean(Tau)</td>
+</tr>
+<tr>
+<td>T4.3</td>
+<td>Larger posterior variance → larger Var_Term</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t5-elbo-proxy-3-tests">T5: ELBO Proxy (3 tests)</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T5.1</td>
+<td>elbo_proxy matches manual formula</td>
+</tr>
+<tr>
+<td>T5.2</td>
+<td>elbo_proxy is finite (no NaN/Inf)</td>
+</tr>
+<tr>
+<td>T5.3</td>
+<td>MLE Tau maximizes elbo_proxy (ELBO_MLE ≥ ELBO_perturbed)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t6-dimension-shape-2-tests">T6: Dimension &amp; Shape (2
+tests)</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T6.1</td>
+<td>dim(Var_Term) == c(n, p)</td>
+</tr>
+<tr>
+<td>T6.2</td>
+<td>length(Tau) == p</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t7-numerical-stability-4-tests">T7: Numerical Stability (4
+tests)</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T7.1</td>
+<td>Y = 0 produces finite, positive Tau</td>
+</tr>
+<tr>
+<td>T7.2</td>
+<td>1×1×1 case (n=1, p=1, K=1) does not error</td>
+</tr>
+<tr>
+<td>T7.3</td>
+<td>Large entries (1e6 scale) do not overflow</td>
+</tr>
+<tr>
+<td>T7.4</td>
+<td>tau_floor prevents Tau = Inf</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t8-pipeline-interaction-2-tests">T8: Pipeline Interaction (2
+tests)</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T8.1</td>
+<td>Tau is positive, finite, length p (valid downstream input)</td>
+</tr>
+<tr>
+<td>T8.2</td>
+<td>Tau can be used in A_L computation without error</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t9-v2.r-consistency-2-tests">T9: V2.R Consistency (2 tests)</h3>
+<p>Compares output against the corresponding lines in
+<code>code/Supervised_Bayesian_MF_V2.R</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T9.1</td>
+<td>Var_Term and Tau match V2.R lines 374–376 to within 1e-12</td>
+</tr>
+<tr>
+<td>T9.2</td>
+<td>elbo_proxy matches V2.R line 379 to within 1e-12</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="demo-scenarios">Demo Scenarios</h2>
+<p><strong>File:</strong> <code>demos/demo_update_tau.R</code></p>
+<p>Each demo is a narrative scenario with printed output. There are no
+PASS/FAIL assertions — these are exploratory illustrations, not unit
+tests.</p>
+<h3 id="demo-1-anatomy-of-var_term-and-r2_bar">Demo 1: Anatomy of
+Var_Term and R2_bar</h3>
+<p><strong>Purpose:</strong> Decompose R2_bar into its two additive
+components and show that Var_Term is non-negligible.</p>
+<p><strong>Setup:</strong> Small n=20, p=10, K=3 example with realistic
+posterior variances.</p>
+<p><strong>Key output:</strong> Mean ratio Var_Term / R2_bar;
+illustrates that ignoring the correction would systematically bias τ
+upward.</p>
+<h3 id="demo-2-known-noise-recovery">Demo 2: Known Noise Recovery</h3>
+<p><strong>Purpose:</strong> Validate that update_tau recovers true
+per-feature precisions under controlled conditions.</p>
+<p><strong>Setup:</strong> Y = L F’ + noise with τ_j ~ Uniform(0.5, 5);
+point-mass posteriors (EL2 = EL^2, EF2 = EF^2); n=200.</p>
+<p><strong>Key output:</strong> cor(estimated Tau, true Tau) ≈ 0.9+;
+scatter plot of estimated vs. true.</p>
+<h3 id="demo-3-variance-correction-matters">Demo 3: Variance Correction
+Matters</h3>
+<p><strong>Purpose:</strong> Quantify the bias introduced by ignoring
+EL2 and EF2.</p>
+<p><strong>Setup:</strong> Same Y as Demo 2, but run update_tau twice —
+once with true second moments, once substituting EL2 ← EL^2 and EF2 ←
+EF^2.</p>
+<p><strong>Key output:</strong> mean(Tau_naive) / mean(Tau_correct) ≈
+3–5×; shows systematic overestimation of precision (underestimation of
+noise) when the correction is omitted.</p>
+<h3 id="demo-4-heteroscedastic-noise">Demo 4: Heteroscedastic Noise</h3>
+<p><strong>Purpose:</strong> Confirm that the column-wise MLE correctly
+separates features with different noise levels.</p>
+<p><strong>Setup:</strong> p=150 features split into two groups —
+high-precision (τ=5, low noise) and low-precision (τ=0.5, high
+noise).</p>
+<p><strong>Key output:</strong> Estimated Tau clearly bimodal; group
+means close to 5 and 0.5 respectively.</p>
+<h3 id="demo-5-elbo-as-convergence-monitor">Demo 5: ELBO as Convergence
+Monitor</h3>
+<p><strong>Purpose:</strong> Show that elbo_proxy is a valid convergence
+diagnostic that increases (or plateaus) across iterations.</p>
+<p><strong>Setup:</strong> 3 manual CAVI iterations — update L → update
+F → update τ — on a small example.</p>
+<p><strong>Key output:</strong> elbo_proxy at each iteration; should be
+non-decreasing. A decrease would indicate a bug in L or F update.</p>
+<hr />
+<h2 id="pipeline-context">Pipeline Context</h2>
+<h3 id="data-flow">Data Flow</h3>
+<pre><code>update_L_all  →  EL, EL2  ─┐
+                             ├─→  update_tau  →  Tau (p-vector)
+update_F_all  →  EF, EF2  ─┘</code></pre>
+<p><strong>Upstream:</strong> <code>update_tau</code> consumes posterior
+moments from <code>update_L.R</code> and <code>update_F.R</code>.
+Specifically, it requires both the posterior means (EL, EF) and the
+posterior second moments (EL2, EF2).</p>
+<p><strong>Downstream:</strong> The output <code>Tau</code> feeds back
+into: - <code>update_L_k</code> via the <code>A_L</code> precision
+accumulation: <code>A_L &lt;- A_L + Tau[j] * EF2[j, k]</code> -
+<code>update_F_k</code> via the <code>A_F</code> precision accumulation:
+<code>A_F &lt;- A_F + Tau[j] * EL2[i, k]</code></p>
+<h3 id="position-in-cavi-loop">Position in CAVI Loop</h3>
+<pre><code>Repeat until convergence:
+  1. update_beta_all(...)       # q(β) update — scalar EBNM per factor
+  2. update_L_all(...)          # q(L) update — vector EBNM, dual-source
+  3. update_F_all(...)          # q(F) update — vector EBNM, genomics only
+  4. update_tau(...)            # q(τ) update — closed-form MLE  &lt;-- THIS MODULE
+  5. Check convergence (ΔL + Δβ &lt; tol, ELBO non-decreasing)</code></pre>
+<h3 id="v2.r-reference-lines">V2.R Reference Lines</h3>
+<p>The logic in this module corresponds to the following lines in
+<code>code/Supervised_Bayesian_MF_V2.R</code>:</p>
+<table>
+<thead>
+<tr>
+<th>V2.R Lines</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>374–376</td>
+<td>Var_Term, R2_bar, Tau computation</td>
+</tr>
+<tr>
+<td>379</td>
+<td>ELBO proxy accumulation</td>
+</tr>
+</tbody>
+</table>
+<p>Tests T9.1 and T9.2 verify exact agreement (to 1e-12) between this
+module and those V2.R lines.</p>
+<hr />
+<h2 id="related-files">Related Files</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code/update_tau.R</code></td>
+<td>Source implementation</td>
+</tr>
+<tr>
+<td><code>tests/test_update_tau.R</code></td>
+<td>27-test suite (9 groups)</td>
+</tr>
+<tr>
+<td><code>demos/demo_update_tau.R</code></td>
+<td>5 narrative demo scenarios</td>
+</tr>
+<tr>
+<td><code>derivations/qTau/qTau_update_derivation.tex/.pdf</code></td>
+<td>Full mathematical derivation (variance correction proof)</td>
+</tr>
+<tr>
+<td><code>code/Supervised_Bayesian_MF_V2.R</code></td>
+<td>Main algorithm (lines 374–376, 379)</td>
+</tr>
+<tr>
+<td><code>code/update_L.R</code></td>
+<td>Upstream: produces EL, EL2</td>
+</tr>
+<tr>
+<td><code>code/update_F.R</code></td>
+<td>Upstream: produces EF, EF2</td>
+</tr>
+<tr>
+<td><code>code/SupervisedMF_Context.md</code></td>
+<td>AI/code quick-reference for the full R implementation</td>
+</tr>
+<tr>
+<td><code>PROJECT_STATUS.md</code></td>
+<td>Project-level documentation and session log</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="quick-reference-card">Quick Reference Card</h2>
+<pre><code># Minimal usage
+source(&quot;code/update_L.R&quot;)   # provides EL, EL2
+source(&quot;code/update_F.R&quot;)   # provides EF, EF2
+source(&quot;code/update_tau.R&quot;)
+
+result     &lt;- update_tau(Y, EL, EL2, EF, EF2)
+Tau        &lt;- result$Tau        # p-vector of noise precisions
+elbo_proxy &lt;- result$elbo_proxy # convergence monitor
+
+# Internals
+Var_Term &lt;- compute_var_term(EL, EL2, EF, EF2)         # n × p, &gt;= 0
+R2_bar   &lt;- compute_expected_residual_sq(Y, EL, EL2, EF, EF2)  # n × p
+
+# MLE formula (closed form, no EBNM, no per-k loop)
+Tau[j]   &lt;- n / sum(R2_bar[, j])
+
+# ELBO proxy
+elbo_proxy &lt;- sum(n/2 * log(Tau) - Tau/2 * colSums(R2_bar))</code></pre>
+<p><strong>Critical reminders</strong> - Var_Term uses <strong>second
+moments</strong> EL2, EF2 — not (EL)², (EF)². Confusing these is the
+most common implementation error and causes 3–5× overestimation of τ. -
+tau_floor is applied to RSS (not to Tau directly):
+<code>pmax(RSS_j, n * tau_floor)</code>. - ELBO_proxy should be
+<strong>non-decreasing</strong> across CAVI iterations. If it drops,
+check the L or F update first. - This is the <strong>only
+module</strong> with no EBNM call and no <code>ebnm</code> package
+dependency.</p>
+</body>
+</html>

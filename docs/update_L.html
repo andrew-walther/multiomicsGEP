@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>update_L</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {  background-color: #f8f8f8; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ef2929; } /* Alert */
+    code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #204a87; } /* Attribute */
+    code span.bn { color: #0000cf; } /* BaseN */
+    code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4e9a06; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #8f5902; font-style: italic; } /* Comment */
+    code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+    code span.dt { color: #204a87; } /* DataType */
+    code span.dv { color: #0000cf; } /* DecVal */
+    code span.er { color: #a40000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #0000cf; } /* Float */
+    code span.fu { color: #204a87; font-weight: bold; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+    code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+    code span.ot { color: #8f5902; } /* Other */
+    code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+    code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+    code span.ss { color: #4e9a06; } /* SpecialString */
+    code span.st { color: #4e9a06; } /* String */
+    code span.va { color: #000000; } /* Variable */
+    code span.vs { color: #4e9a06; } /* VerbatimString */
+    code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">update_L</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#update_l.r-companion-document"
+id="toc-update_l.r-companion-document">update_L.R — Companion
+Document</a>
+<ul>
+<li><a href="#table-of-contents" id="toc-table-of-contents">Table of
+Contents</a></li>
+<li><a href="#purpose-and-context" id="toc-purpose-and-context">1.
+Purpose and Context</a></li>
+<li><a href="#mathematical-background"
+id="toc-mathematical-background">2. Mathematical Background</a>
+<ul>
+<li><a href="#model" id="toc-model">Model</a></li>
+<li><a href="#cavi-update-for-l" id="toc-cavi-update-for-l">CAVI Update
+for L</a></li>
+</ul></li>
+<li><a href="#function-reference" id="toc-function-reference">3.
+Function Reference</a>
+<ul>
+<li><a href="#compute_r_k" id="toc-compute_r_k">3.1
+<code>compute_R_k</code></a></li>
+<li><a href="#update_l_k" id="toc-update_l_k">3.2
+<code>update_L_k</code></a></li>
+<li><a href="#update_l_all" id="toc-update_l_all">3.3
+<code>update_L_all</code></a></li>
+</ul></li>
+<li><a href="#dual-source-precision-and-signal"
+id="toc-dual-source-precision-and-signal">4. Dual-Source Precision and
+Signal</a></li>
+<li><a href="#test-suite" id="toc-test-suite">5. Test Suite</a>
+<ul>
+<li><a href="#t1-mathematical-identity-checks-6-tests"
+id="toc-t1-mathematical-identity-checks-6-tests">T1: Mathematical
+Identity Checks (6 tests)</a></li>
+<li><a href="#t2-survival-term-cancellation-3-tests"
+id="toc-t2-survival-term-cancellation-3-tests">T2: Survival Term
+Cancellation (3 tests)</a></li>
+<li><a href="#t3-signal-recovery-2-tests"
+id="toc-t3-signal-recovery-2-tests">T3: Signal Recovery (2
+tests)</a></li>
+<li><a href="#t4-multi-factor-k5-3-tests"
+id="toc-t4-multi-factor-k5-3-tests">T4: Multi-Factor K=5 (3
+tests)</a></li>
+<li><a href="#t5-null-factor-shrinkage-2-tests"
+id="toc-t5-null-factor-shrinkage-2-tests">T5: Null Factor Shrinkage (2
+tests)</a></li>
+<li><a href="#t6-precision-scaling-3-tests"
+id="toc-t6-precision-scaling-3-tests">T6: Precision Scaling (3
+tests)</a></li>
+<li><a href="#t7-numerical-stability-4-tests"
+id="toc-t7-numerical-stability-4-tests">T7: Numerical Stability (4
+tests)</a></li>
+<li><a href="#t8-compute_r_k-and-gauss-seidel-3-tests"
+id="toc-t8-compute_r_k-and-gauss-seidel-3-tests">T8: compute_R_k and
+Gauss-Seidel (3 tests)</a></li>
+<li><a href="#t9-v2.r-consistency-2-tests"
+id="toc-t9-v2.r-consistency-2-tests">T9: V2.R Consistency (2
+tests)</a></li>
+</ul></li>
+<li><a href="#demos" id="toc-demos">6. Demos</a>
+<ul>
+<li><a href="#demo-1-anatomy-of-a_l-and-b_l"
+id="toc-demo-1-anatomy-of-a_l-and-b_l">Demo 1: Anatomy of A_L and
+B_L</a></li>
+<li><a href="#demo-2-signal-recovery-k1"
+id="toc-demo-2-signal-recovery-k1">Demo 2: Signal Recovery K=1</a></li>
+<li><a href="#demo-3-genomics-only-vs.-genomics-survival"
+id="toc-demo-3-genomics-only-vs.-genomics-survival">Demo 3:
+Genomics-only vs. Genomics + Survival</a></li>
+<li><a href="#demo-4-error-in-variables-factor-uncertainty"
+id="toc-demo-4-error-in-variables-factor-uncertainty">Demo 4:
+Error-in-Variables — Factor Uncertainty</a></li>
+<li><a href="#demo-5-multi-factor-recovery-k5"
+id="toc-demo-5-multi-factor-recovery-k5">Demo 5: Multi-Factor Recovery
+K=5</a></li>
+</ul></li>
+<li><a href="#key-mathematical-properties"
+id="toc-key-mathematical-properties">7. Key Mathematical Properties</a>
+<ul>
+<li><a href="#vector-vs.-scalar-ebnm"
+id="toc-vector-vs.-scalar-ebnm">7.1 Vector vs. Scalar EBNM</a></li>
+<li><a href="#second-moment-identity"
+id="toc-second-moment-identity">7.2 Second Moment Identity</a></li>
+<li><a href="#a_floor-for-stability" id="toc-a_floor-for-stability">7.3
+A_floor for Stability</a></li>
+<li><a href="#gauss-seidel-vs.-jacobi"
+id="toc-gauss-seidel-vs.-jacobi">7.4 Gauss-Seidel vs. Jacobi</a></li>
+<li><a href="#tau_j-cancellation-does-not-apply-here"
+id="toc-tau_j-cancellation-does-not-apply-here">7.5 tau_j Cancellation
+Does NOT Apply Here</a></li>
+</ul></li>
+<li><a href="#connections-to-other-modules"
+id="toc-connections-to-other-modules">8. Connections to Other
+Modules</a></li>
+<li><a href="#common-pitfalls" id="toc-common-pitfalls">9. Common
+Pitfalls</a>
+<ul>
+<li><a href="#forgetting-el2-el2" id="toc-forgetting-el2-el2">9.1
+Forgetting EL2 != EL^2</a></li>
+<li><a href="#a_gen-is-scalar-a_l-is-a-vector"
+id="toc-a_gen-is-scalar-a_l-is-a-vector">9.2 A_gen is Scalar, A_L is a
+Vector</a></li>
+<li><a href="#z_no_k-computed-inline"
+id="toc-z_no_k-computed-inline">9.3 z_no_k Computed Inline</a></li>
+<li><a href="#sourcing-order-for-compute_r_k"
+id="toc-sourcing-order-for-compute_r_k">9.4 Sourcing Order for
+compute_R_k</a></li>
+<li><a href="#prior-family-selection"
+id="toc-prior-family-selection">9.5 Prior Family Selection</a></li>
+<li><a href="#cox-weights-w-must-be-non-negative"
+id="toc-cox-weights-w-must-be-non-negative">9.6 Cox Weights w Must Be
+Non-Negative</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="update_l.r-companion-document">update_L.R — Companion
+Document</h1>
+<p><strong>Module:</strong> <code>code/update_L.R</code>
+<strong>Project:</strong> Supervised Bayesian Matrix Factorization
+(multiomicsGEP) <strong>Role:</strong> Variational update for the
+loading matrix L in q(L) <strong>Last updated:</strong> 2026-03-20</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#1-purpose-and-context">Purpose and Context</a></li>
+<li><a href="#2-mathematical-background">Mathematical
+Background</a></li>
+<li><a href="#3-function-reference">Function Reference</a>
+<ul>
+<li><a href="#31-compute_r_k">compute_R_k</a></li>
+<li><a href="#32-update_l_k">update_L_k</a></li>
+<li><a href="#33-update_l_all">update_L_all</a></li>
+</ul></li>
+<li><a href="#4-dual-source-precision-and-signal">Dual-Source Precision
+and Signal</a></li>
+<li><a href="#5-test-suite">Test Suite</a></li>
+<li><a href="#6-demos">Demos</a></li>
+<li><a href="#7-key-mathematical-properties">Key Mathematical
+Properties</a></li>
+<li><a href="#8-connections-to-other-modules">Connections to Other
+Modules</a></li>
+<li><a href="#9-common-pitfalls">Common Pitfalls</a></li>
+</ol>
+<hr />
+<h2 id="purpose-and-context">1. Purpose and Context</h2>
+<p><code>update_L.R</code> implements the CAVI (Coordinate Ascent
+Variational Inference) update for the loading matrix <strong>L</strong>
+(n × K) in a supervised Bayesian matrix factorization model. The model
+jointly explains:</p>
+<ul>
+<li><strong>Genomics:</strong> Y ≈ L F’ (n × p matrix of expression
+data)</li>
+<li><strong>Survival:</strong> Cox PH hazard h(t|i) = h₀(t) exp(Lᵢ
+β)</li>
+</ul>
+<p>Because L appears in <strong>both</strong> the genomics likelihood
+and the survival likelihood, its posterior update receives signal from
+two sources simultaneously. This dual-source structure is the defining
+feature of this module and what distinguishes q(L) from q(F) (which only
+sees genomics).</p>
+<p>The update is a <strong>vector EBNM</strong> (Empirical Bayes Normal
+Means) problem: each sample i has its own effective precision A_L[i] and
+effective signal B_L[i], so we solve n EBNM problems simultaneously via
+the <code>ebnm</code> package.</p>
+<hr />
+<h2 id="mathematical-background">2. Mathematical Background</h2>
+<h3 id="model">Model</h3>
+<pre><code>Y_ij = sum_k L_ik F_jk + E_ij,   E_ij ~ N(0, 1/tau_j)
+log h(t|i) = log h_0(t) + sum_k L_ik beta_k</code></pre>
+<h3 id="cavi-update-for-l">CAVI Update for L</h3>
+<p>Taking the ELBO derivative with respect to q(l_{.k}) (the k-th
+loading column), the optimal variational distribution is Gaussian
+with:</p>
+<p><strong>Precision (A_L):</strong></p>
+<pre><code>A_L[i] = A_gen + A_surv[i]
+A_gen   = sum_j( tau_j * E[f_{jk}^2] )          # scalar, same for all i
+A_surv[i] = w[i] * E[beta_k^2]                   # n-vector, sample-specific</code></pre>
+<p>where <code>w[i] = W_ii</code> is the diagonal of the Cox
+partial-likelihood Hessian (sample-specific curvature).</p>
+<p><strong>Signal (B_L):</strong></p>
+<pre><code>B_L[i]      = B_gen[i] + B_surv[i]
+B_gen[i]    = sum_j( tau_j * E[f_{jk}] * R_k[i,j] )   # genomics contribution
+B_surv[i]   = w[i] * z_no_k[i] * E[beta_k]             # survival contribution</code></pre>
+<p>where <code>z_no_k[i] = z[i] - eta_no_k[i]</code> is the partial Cox
+residual after removing factor k’s contribution.</p>
+<p><strong>EBNM arguments:</strong></p>
+<pre><code>x_L[i] = B_L[i] / A_L[i]      # n-vector: effective observation
+s_L[i] = 1 / sqrt(A_L[i])     # n-vector: effective noise SD</code></pre>
+<p>The ebnm posterior gives: - <code>mean_L[i]</code> = E_q[l_{ik}] -
+<code>sd_L[i]</code> = SD_q(l_{ik}) - <code>EL2[i,k]</code> =
+Var_q(l_{ik}) + mean_L[i]^2 (second moment, not squared mean)</p>
+<p>The second moment EL2 is used in downstream updates for q(F) and q(τ)
+to correct for uncertainty in L (error-in-variables correction).</p>
+<hr />
+<h2 id="function-reference">3. Function Reference</h2>
+<h3 id="compute_r_k">3.1 <code>compute_R_k</code></h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">compute_R_k</span>(Y, EL, EF, k)</span></code></pre></div>
+<p><strong>Purpose:</strong> Compute the partial residual matrix with
+factor k removed.</p>
+<p><strong>Arguments:</strong></p>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 13%" />
+<col style="width: 16%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Type</th>
+<th>Dimension</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Y</code></td>
+<td>matrix</td>
+<td>n × p</td>
+<td>Observed genomics data</td>
+</tr>
+<tr>
+<td><code>EL</code></td>
+<td>matrix</td>
+<td>n × K</td>
+<td>Current posterior means E_q[L]</td>
+</tr>
+<tr>
+<td><code>EF</code></td>
+<td>matrix</td>
+<td>p × K</td>
+<td>Current posterior means E_q[F]</td>
+</tr>
+<tr>
+<td><code>k</code></td>
+<td>integer</td>
+<td>scalar</td>
+<td>Factor index to remove (1-based)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> n × p matrix</p>
+<p><strong>Formula:</strong></p>
+<pre><code>R_k = Y - EL %*% t(EF) + outer(EL[,k], EF[,k])
+    = Y - sum_{j != k} EL[,j] * EF[,j]&#39;</code></pre>
+<p>This removes all factors except k from Y, leaving only the residual
+that factor k should explain. The <code>outer(EL[,k], EF[,k])</code>
+term adds back factor k’s contribution that was over-subtracted by the
+full <code>EL %*% t(EF)</code>.</p>
+<p><strong>Shared dependency:</strong> <code>compute_R_k</code> is
+defined in <code>update_L.R</code> but is also used by
+<code>update_F.R</code>. When sourcing, <code>update_L.R</code> must be
+sourced first.</p>
+<hr />
+<h3 id="update_l_k">3.2 <code>update_L_k</code></h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">update_L_k</span>(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">prior_family =</span> <span class="st">&quot;point_normal&quot;</span>, <span class="at">A_floor =</span> <span class="fl">1e-10</span>)</span></code></pre></div>
+<p><strong>Purpose:</strong> Vector EBNM update for the k-th loading
+column l_{.k} (n observations).</p>
+<p><strong>Arguments:</strong></p>
+<table>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 9%" />
+<col style="width: 11%" />
+<col style="width: 61%" />
+</colgroup>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Type</th>
+<th>Dimension</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Tau</code></td>
+<td>vector</td>
+<td>p</td>
+<td>Posterior mean of noise precisions E_q[tau_j]</td>
+</tr>
+<tr>
+<td><code>EF_k</code></td>
+<td>vector</td>
+<td>p</td>
+<td>Posterior mean of factor k: E_q[f_{.k}]</td>
+</tr>
+<tr>
+<td><code>EF2_k</code></td>
+<td>vector</td>
+<td>p</td>
+<td>Posterior second moment of factor k: E_q[f_{.k}^2]</td>
+</tr>
+<tr>
+<td><code>w</code></td>
+<td>vector</td>
+<td>n</td>
+<td>Cox Hessian diagonal (survival weights W_ii)</td>
+</tr>
+<tr>
+<td><code>EBeta_k</code></td>
+<td>scalar</td>
+<td>1</td>
+<td>Posterior mean of beta_k: E_q[beta_k]</td>
+</tr>
+<tr>
+<td><code>EBeta2_k</code></td>
+<td>scalar</td>
+<td>1</td>
+<td>Posterior second moment of beta_k: E_q[beta_k^2]</td>
+</tr>
+<tr>
+<td><code>R_k</code></td>
+<td>matrix</td>
+<td>n × p</td>
+<td>Partial residual from <code>compute_R_k</code></td>
+</tr>
+<tr>
+<td><code>z_no_k</code></td>
+<td>vector</td>
+<td>n</td>
+<td>Partial Cox residual with factor k removed</td>
+</tr>
+<tr>
+<td><code>prior_family</code></td>
+<td>string</td>
+<td>—</td>
+<td>ebnm prior family (default: <code>"point_normal"</code>)</td>
+</tr>
+<tr>
+<td><code>A_floor</code></td>
+<td>numeric</td>
+<td>scalar</td>
+<td>Minimum precision floor (default: <code>1e-10</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> Named list</p>
+<table>
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 14%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr>
+<th>Element</th>
+<th>Dimension</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mean</code></td>
+<td>n-vector</td>
+<td>Posterior mean E_q[l_{.k}]</td>
+</tr>
+<tr>
+<td><code>second</code></td>
+<td>n-vector</td>
+<td>Posterior second moment E_q[l_{.k}^2]</td>
+</tr>
+<tr>
+<td><code>sd</code></td>
+<td>n-vector</td>
+<td>Posterior SD sqrt(Var_q(l_{.k}))</td>
+</tr>
+<tr>
+<td><code>A</code></td>
+<td>n-vector</td>
+<td>Total precision A_L = A_gen + A_surv</td>
+</tr>
+<tr>
+<td><code>B</code></td>
+<td>n-vector</td>
+<td>Total signal B_L = B_gen + B_surv</td>
+</tr>
+<tr>
+<td><code>B_gen</code></td>
+<td>n-vector</td>
+<td>Genomics contribution to signal</td>
+</tr>
+<tr>
+<td><code>B_surv</code></td>
+<td>n-vector</td>
+<td>Survival contribution to signal</td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td>n-vector</td>
+<td>EBNM input: x_L = B_L / A_L</td>
+</tr>
+<tr>
+<td><code>s</code></td>
+<td>n-vector</td>
+<td>EBNM input: s_L = 1 / sqrt(A_L)</td>
+</tr>
+<tr>
+<td><code>ebnm_result</code></td>
+<td>list</td>
+<td>Full ebnm() output object</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Internal computation:</strong></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Precision</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>A_gen   <span class="ot">&lt;-</span> <span class="fu">sum</span>(Tau <span class="sc">*</span> EF2_k)                    <span class="co"># scalar</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>A_surv  <span class="ot">&lt;-</span> w <span class="sc">*</span> EBeta2_k                        <span class="co"># n-vector</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>A_L     <span class="ot">&lt;-</span> <span class="fu">pmax</span>(A_gen <span class="sc">+</span> A_surv, A_floor)       <span class="co"># n-vector, floored</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Signal</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>B_gen   <span class="ot">&lt;-</span> R_k <span class="sc">%*%</span> (Tau <span class="sc">*</span> EF_k)               <span class="co"># n-vector (matrix-vector product)</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>B_surv  <span class="ot">&lt;-</span> w <span class="sc">*</span> z_no_k <span class="sc">*</span> EBeta_k               <span class="co"># n-vector</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>B_L     <span class="ot">&lt;-</span> B_gen <span class="sc">+</span> B_surv</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># EBNM arguments</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>x_L     <span class="ot">&lt;-</span> B_L <span class="sc">/</span> A_L</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>s_L     <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> <span class="fu">sqrt</span>(A_L)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="co"># EBNM call</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>fit     <span class="ot">&lt;-</span> <span class="fu">ebnm</span>(<span class="at">x =</span> x_L, <span class="at">s =</span> s_L, <span class="at">prior_family =</span> prior_family)</span></code></pre></div>
+<hr />
+<h3 id="update_l_all">3.3 <code>update_L_all</code></h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">update_L_all</span>(Y, EL, EL2, EF, EF2, Tau, w, z, EBeta, EBeta2,</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">prior_family =</span> <span class="st">&quot;point_normal&quot;</span>, <span class="at">A_floor =</span> <span class="fl">1e-10</span>)</span></code></pre></div>
+<p><strong>Purpose:</strong> Gauss-Seidel sweep over all K factors,
+updating L column by column.</p>
+<p><strong>Arguments:</strong></p>
+<table>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 9%" />
+<col style="width: 11%" />
+<col style="width: 61%" />
+</colgroup>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Type</th>
+<th>Dimension</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Y</code></td>
+<td>matrix</td>
+<td>n × p</td>
+<td>Observed genomics data</td>
+</tr>
+<tr>
+<td><code>EL</code></td>
+<td>matrix</td>
+<td>n × K</td>
+<td>Posterior means E_q[L] (read; updated copy returned)</td>
+</tr>
+<tr>
+<td><code>EL2</code></td>
+<td>matrix</td>
+<td>n × K</td>
+<td>Posterior second moments E_q[L^2]</td>
+</tr>
+<tr>
+<td><code>EF</code></td>
+<td>matrix</td>
+<td>p × K</td>
+<td>Posterior means E_q[F]</td>
+</tr>
+<tr>
+<td><code>EF2</code></td>
+<td>matrix</td>
+<td>p × K</td>
+<td>Posterior second moments E_q[F^2]</td>
+</tr>
+<tr>
+<td><code>Tau</code></td>
+<td>vector</td>
+<td>p</td>
+<td>Posterior mean noise precisions E_q[tau_j]</td>
+</tr>
+<tr>
+<td><code>w</code></td>
+<td>vector</td>
+<td>n</td>
+<td>Cox Hessian diagonal W_ii</td>
+</tr>
+<tr>
+<td><code>z</code></td>
+<td>vector</td>
+<td>n</td>
+<td>Full Cox working residual z</td>
+</tr>
+<tr>
+<td><code>EBeta</code></td>
+<td>vector</td>
+<td>K</td>
+<td>Posterior means E_q[beta]</td>
+</tr>
+<tr>
+<td><code>EBeta2</code></td>
+<td>vector</td>
+<td>K</td>
+<td>Posterior second moments E_q[beta^2]</td>
+</tr>
+<tr>
+<td><code>prior_family</code></td>
+<td>string</td>
+<td>—</td>
+<td>ebnm prior family (default: <code>"point_normal"</code>)</td>
+</tr>
+<tr>
+<td><code>A_floor</code></td>
+<td>numeric</td>
+<td>scalar</td>
+<td>Minimum precision floor (default: <code>1e-10</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> Named list</p>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 70%" />
+</colgroup>
+<thead>
+<tr>
+<th>Element</th>
+<th>Dimension</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EL</code></td>
+<td>n × K</td>
+<td>Updated posterior means</td>
+</tr>
+<tr>
+<td><code>EL2</code></td>
+<td>n × K</td>
+<td>Updated posterior second moments</td>
+</tr>
+<tr>
+<td><code>details</code></td>
+<td>K-list</td>
+<td>Per-factor output from <code>update_L_k</code> for each k</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Gauss-Seidel mechanism:</strong></p>
+<p>Each factor k is updated using the <em>most recent</em> values of all
+other factors. After updating column k, <code>EL_curr[,k]</code> and
+<code>EL2_curr[,k]</code> are immediately overwritten, so factor k+1
+sees the already-updated factor k. This improves convergence rate
+compared to a simultaneous (Jacobi) update.</p>
+<p><strong>z_no_k computed inline</strong> (no dependency on
+<code>update_beta.R</code>):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>eta_no_k  <span class="ot">&lt;-</span> EL_curr <span class="sc">%*%</span> EBeta <span class="sc">-</span> EL_curr[,k] <span class="sc">*</span> EBeta[k]</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>z_no_k    <span class="ot">&lt;-</span> z <span class="sc">-</span> eta_no_k</span></code></pre></div>
+<p>This computes the Cox linear predictor without factor k, then takes
+the residual.</p>
+<hr />
+<h2 id="dual-source-precision-and-signal">4. Dual-Source Precision and
+Signal</h2>
+<p>The following table summarizes the dual-source structure — the
+central feature of the q(L) update:</p>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 37%" />
+<col style="width: 31%" />
+</colgroup>
+<thead>
+<tr>
+<th>Component</th>
+<th>Source</th>
+<th>Dimension</th>
+<th>Formula</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>A_gen</code></td>
+<td>Genomics</td>
+<td>scalar</td>
+<td><code>sum(Tau * EF2_k)</code></td>
+<td>Same for all samples</td>
+</tr>
+<tr>
+<td><code>A_surv[i]</code></td>
+<td>Survival</td>
+<td>n-vector</td>
+<td><code>w[i] * EBeta2_k</code></td>
+<td>Sample-specific via Cox weights</td>
+</tr>
+<tr>
+<td><code>A_L[i]</code></td>
+<td>Combined</td>
+<td>n-vector</td>
+<td><code>pmax(A_gen + A_surv[i], A_floor)</code></td>
+<td>Floored for numerical stability</td>
+</tr>
+<tr>
+<td><code>B_gen[i]</code></td>
+<td>Genomics</td>
+<td>n-vector</td>
+<td><code>(R_k %*% (Tau * EF_k))[i]</code></td>
+<td>Weighted inner product with residual</td>
+</tr>
+<tr>
+<td><code>B_surv[i]</code></td>
+<td>Survival</td>
+<td>n-vector</td>
+<td><code>w[i] * z_no_k[i] * EBeta_k</code></td>
+<td>Survival residual signal</td>
+</tr>
+<tr>
+<td><code>B_L[i]</code></td>
+<td>Combined</td>
+<td>n-vector</td>
+<td><code>B_gen[i] + B_surv[i]</code></td>
+<td>Total signal</td>
+</tr>
+<tr>
+<td><code>x_L[i]</code></td>
+<td>EBNM in</td>
+<td>n-vector</td>
+<td><code>B_L[i] / A_L[i]</code></td>
+<td>Effective observation</td>
+</tr>
+<tr>
+<td><code>s_L[i]</code></td>
+<td>EBNM in</td>
+<td>n-vector</td>
+<td><code>1 / sqrt(A_L[i])</code></td>
+<td>Effective noise SD</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why A_L varies across samples:</strong> The Cox Hessian
+diagonal <code>w[i] = W_ii</code> reflects each patient’s contribution
+to the partial likelihood curvature. Patients at high risk (near their
+event time) have larger <code>w[i]</code>, so their survival signal
+pulls harder on their loading estimate. This is in contrast to
+<code>A_gen</code>, which applies equally to all samples because the
+genomics noise precision <code>tau_j</code> depends on genes, not
+patients.</p>
+<p><strong>Special cases:</strong></p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 47%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Effect on A_L</th>
+<th>Effect on B_L</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>w = 0</code> (all)</td>
+<td>A_L is constant (= A_gen, scalar)</td>
+<td>B_surv = 0</td>
+</tr>
+<tr>
+<td><code>EBeta_k = 0</code></td>
+<td>A_surv = 0 (pure genomics precision)</td>
+<td>B_surv = 0</td>
+</tr>
+<tr>
+<td><code>EBeta2_k = 0</code></td>
+<td>A_surv = 0</td>
+<td>B_surv = 0</td>
+</tr>
+<tr>
+<td><code>Tau = 0, w = 0</code></td>
+<td>A_L hits A_floor</td>
+<td>B = 0 → EL ≈ 0</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="test-suite">5. Test Suite</h2>
+<p><strong>File:</strong> <code>tests/test_update_L.R</code>
+<strong>Total tests:</strong> 28 across 9 groups
+<strong>Status:</strong> All passing (105/105 overall test suite)</p>
+<h3 id="t1-mathematical-identity-checks-6-tests">T1: Mathematical
+Identity Checks (6 tests)</h3>
+<p>Verifies the core formulas hold numerically to tolerance.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T1.1</td>
+<td><code>A_L[i] == sum(Tau * EF2_k) + w[i] * EBeta2_k</code> for each
+i</td>
+</tr>
+<tr>
+<td>T1.2</td>
+<td><code>B_gen[i] == (R_k %*% (Tau * EF_k))[i]</code> for each i</td>
+</tr>
+<tr>
+<td>T1.3</td>
+<td><code>B_surv[i] == w[i] * z_no_k[i] * EBeta_k</code> for each i</td>
+</tr>
+<tr>
+<td>T1.4</td>
+<td><code>x</code> is an n-vector (length n)</td>
+</tr>
+<tr>
+<td>T1.5</td>
+<td><code>s[i] == 1 / sqrt(A_L[i])</code> for each i</td>
+</tr>
+<tr>
+<td>T1.6</td>
+<td><code>second[i] == sd[i]^2 + mean[i]^2</code> (second moment
+identity)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t2-survival-term-cancellation-3-tests">T2: Survival Term
+Cancellation (3 tests)</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Condition</th>
+<th>Expected outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T2.1</td>
+<td><code>w = 0</code></td>
+<td><code>B_surv = 0</code>; pure genomics signal</td>
+</tr>
+<tr>
+<td>T2.2</td>
+<td><code>EBeta_k = 0</code></td>
+<td><code>B_surv = 0</code></td>
+</tr>
+<tr>
+<td>T2.3</td>
+<td><code>w = 0</code></td>
+<td><code>A_L</code> is constant across all i (scalar broadcast)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t3-signal-recovery-2-tests">T3: Signal Recovery (2 tests)</h3>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 31%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>Setup</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T3.1</td>
+<td>Simulate Y = L_true * F’ + noise; K=1</td>
+<td><code>cor(EL, L_true) &gt; 0.7</code></td>
+</tr>
+<tr>
+<td>T3.2</td>
+<td>Same but with survival signal added</td>
+<td>Survival tightens posterior; recovery at least as good</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t4-multi-factor-k5-3-tests">T4: Multi-Factor K=5 (3 tests)</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T4.1</td>
+<td>Output <code>EL</code> has dimensions n × K, <code>EL2</code> has
+dimensions n × K</td>
+</tr>
+<tr>
+<td>T4.2</td>
+<td>All <code>EL2[i,k] &gt;= EL[i,k]^2</code> (second moment &gt;=
+squared mean)</td>
+</tr>
+<tr>
+<td>T4.3</td>
+<td>All outputs finite (no NaN or Inf)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t5-null-factor-shrinkage-2-tests">T5: Null Factor Shrinkage (2
+tests)</h3>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 31%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>Setup</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T5.1</td>
+<td>Noisy R_k and z_no_k (no real signal)</td>
+<td>Posterior mean near zero (shrinkage)</td>
+</tr>
+<tr>
+<td>T5.2</td>
+<td><code>EF_k = 0</code>, <code>w = 0</code></td>
+<td>A hits floor, B = 0, EL = 0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t6-precision-scaling-3-tests">T6: Precision Scaling (3
+tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T6.1</td>
+<td>Larger <code>EF2</code> → larger <code>A_gen</code> → more shrinkage
+(smaller posterior mean)</td>
+</tr>
+<tr>
+<td>T6.2</td>
+<td>Larger <code>EBeta2</code> → larger <code>A_surv</code> → more
+shrinkage</td>
+</tr>
+<tr>
+<td>T6.3</td>
+<td>Combined genomics + survival: <code>|B_combined| &gt; |B_gen|</code>
+when signals align</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t7-numerical-stability-4-tests">T7: Numerical Stability (4
+tests)</h3>
+<table>
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>Condition</th>
+<th>Expected</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T7.1</td>
+<td><code>Tau = 0</code>, <code>w = 0</code></td>
+<td>A hits <code>A_floor</code>; no NaN/Inf in any output</td>
+</tr>
+<tr>
+<td>T7.2</td>
+<td><code>Tau = 1e8</code> (extreme)</td>
+<td>No overflow; outputs finite</td>
+</tr>
+<tr>
+<td>T7.3</td>
+<td><code>n = 1</code>, <code>p = 1</code> (edge case)</td>
+<td>Function runs without error</td>
+</tr>
+<tr>
+<td>T7.4</td>
+<td>Custom <code>A_floor = 1e-5</code></td>
+<td><code>min(A_L) &gt;= 1e-5</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="t8-compute_r_k-and-gauss-seidel-3-tests">T8: compute_R_k and
+Gauss-Seidel (3 tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T8.1</td>
+<td><code>compute_R_k</code> excludes factor k (R_k + outer(EL[,k],
+EF[,k]) ≈ Y - rest)</td>
+</tr>
+<tr>
+<td>T8.2</td>
+<td><code>compute_R_k</code> returns matrix of dimension n × p</td>
+</tr>
+<tr>
+<td>T8.3</td>
+<td><code>update_L_all</code> uses Gauss-Seidel: <code>EL[,1]</code>
+after update differs from initial before k=2’s R_k is computed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t9-v2.r-consistency-2-tests">T9: V2.R Consistency (2 tests)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T9.1</td>
+<td><code>update_L_k</code> output matches equivalent lines 310–321 of
+<code>Supervised_Bayesian_MF_V2.R</code></td>
+</tr>
+<tr>
+<td>T9.2</td>
+<td><code>compute_R_k</code> output matches equivalent lines 290–291 of
+<code>Supervised_Bayesian_MF_V2.R</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="demos">6. Demos</h2>
+<p><strong>File:</strong> <code>demos/demo_update_L.R</code>
+<strong>Structure:</strong> 5 scenarios; narrative output only (no
+PASS/FAIL)</p>
+<h3 id="demo-1-anatomy-of-a_l-and-b_l">Demo 1: Anatomy of A_L and
+B_L</h3>
+<p>Constructs a small synthetic problem (n=50, p=100, K=1) and displays
+the dual-source breakdown: - Prints <code>A_gen</code> (scalar) - Prints
+<code>range(A_surv)</code> (n-vector range due to Cox weight variation)
+- Prints <code>range(A_L)</code> (combined) - Prints
+<code>range(B_gen)</code>, <code>range(B_surv)</code>,
+<code>range(B_L)</code></p>
+<p><strong>Teaching point:</strong> Even though <code>A_gen</code> is
+the same for every sample, <code>A_surv</code> introduces per-sample
+variability. The effective observation <code>x_L = B_L / A_L</code> is
+therefore sample-specific.</p>
+<h3 id="demo-2-signal-recovery-k1">Demo 2: Signal Recovery K=1</h3>
+<p>Simulates a rank-1 model: -
+<code>Y = L_true * t(F_true) + noise</code> - Calls
+<code>update_L_k</code> with true F as EF - Reports
+<code>cor(result$mean, L_true)</code></p>
+<p><strong>Teaching point:</strong> Even a single update recovers the
+true loading direction with correlation &gt; 0.7 when signal-to-noise is
+reasonable.</p>
+<h3 id="demo-3-genomics-only-vs.-genomics-survival">Demo 3:
+Genomics-only vs. Genomics + Survival</h3>
+<p>Compares two runs: - Run 1: <code>w = rep(0, n)</code> (survival
+disabled) - Run 2: <code>w &gt; 0</code> (survival enabled, beta_k !=
+0)</p>
+<p>Reports posterior SDs under each regime.</p>
+<p><strong>Teaching point:</strong> Survival information tightens the
+posterior (smaller posterior SDs) because <code>A_surv &gt; 0</code>
+increases total precision. The dual-source update is strictly more
+informative than genomics alone.</p>
+<h3 id="demo-4-error-in-variables-factor-uncertainty">Demo 4:
+Error-in-Variables — Factor Uncertainty</h3>
+<p>Compares two settings: - <code>EF2_low</code>: factor second moments
+close to <code>EF^2</code> (low uncertainty) - <code>EF2_high</code>:
+factor second moments much larger than <code>EF^2</code> (high
+uncertainty)</p>
+<p>Reports <code>A_gen</code> and posterior shrinkage under each.</p>
+<p><strong>Teaching point:</strong> When factors are uncertain
+(<code>EF2 &gt;&gt; EF^2</code>), <code>A_gen</code> is inflated,
+increasing shrinkage on loadings. This is the error-in-variables
+correction: the model is appropriately conservative when factors are
+poorly estimated.</p>
+<h3 id="demo-5-multi-factor-recovery-k5">Demo 5: Multi-Factor Recovery
+K=5</h3>
+<p>Simulates a rank-5 model: - SVD initialization for EL and EF - Calls
+<code>update_L_all</code> - Reports column-wise correlations between
+<code>result$EL</code> and <code>L_true</code></p>
+<p><strong>Teaching point:</strong> The Gauss-Seidel loop recovers all 5
+factors simultaneously. Correlations are typically &gt; 0.6 after a
+single sweep, improving with CAVI iterations.</p>
+<hr />
+<h2 id="key-mathematical-properties">7. Key Mathematical Properties</h2>
+<h3 id="vector-vs.-scalar-ebnm">7.1 Vector vs. Scalar EBNM</h3>
+<p>Unlike <code>update_beta.R</code> (which solves a <em>scalar</em>
+EBNM — one observation per factor) and <code>update_F.R</code> (which
+solves <em>p</em> scalar EBNM problems — one per gene),
+<code>update_L.R</code> solves a <em>vector</em> EBNM with n
+observations simultaneously. The <code>ebnm</code> package accepts
+vector inputs (x, s) and fits a shared prior across all n entries.</p>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 44%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module</th>
+<th>EBNM type</th>
+<th>x dimension</th>
+<th>s dimension</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>update_beta</code></td>
+<td>Scalar</td>
+<td>1</td>
+<td>1</td>
+<td>One beta_k scalar per factor</td>
+</tr>
+<tr>
+<td><code>update_L</code></td>
+<td>Vector (n)</td>
+<td>n</td>
+<td>n</td>
+<td>L varies across samples; A_surv is per-sample</td>
+</tr>
+<tr>
+<td><code>update_F</code></td>
+<td>Vector (p)</td>
+<td>p</td>
+<td>p</td>
+<td>F varies across genes; A_F is per-gene</td>
+</tr>
+</tbody>
+</table>
+<h3 id="second-moment-identity">7.2 Second Moment Identity</h3>
+<p>For any posterior q:</p>
+<pre><code>EL2[i,k] = Var_q(l_{ik}) + (E_q[l_{ik}])^2
+           = sd[i]^2 + mean[i]^2</code></pre>
+<p>This is NOT <code>mean[i]^2</code>. Using <code>mean^2</code> in
+place of <code>second</code> is a common error (Correction R3 in the
+project’s error log) that underestimates posterior variance and
+introduces bias in q(F) and q(τ) updates.</p>
+<h3 id="a_floor-for-stability">7.3 A_floor for Stability</h3>
+<p>When both <code>Tau = 0</code> and <code>w = 0</code>, the precision
+A_L would be exactly zero, making <code>s_L = 1/sqrt(0)</code>
+undefined. The floor <code>A_floor = 1e-10</code> prevents this. When A
+hits the floor and B = 0, ebnm returns a degenerate posterior
+concentrated at 0 — correct behavior for an unidentified factor.</p>
+<h3 id="gauss-seidel-vs.-jacobi">7.4 Gauss-Seidel vs. Jacobi</h3>
+<p>The Gauss-Seidel update (each column updated sequentially with
+immediate propagation) is one of the V2 improvements (label A1 in
+<code>PROJECT_STATUS.md</code>). It typically converges faster than the
+simultaneous Jacobi update used in V1 because each update uses strictly
+more current information.</p>
+<h3 id="tau_j-cancellation-does-not-apply-here">7.5 tau_j Cancellation
+Does NOT Apply Here</h3>
+<p>In <code>update_F.R</code>, the per-gene precision <code>tau_j</code>
+cancels out of the effective observation <code>x_j</code> (though it
+remains in <code>s_j</code>). This cancellation does NOT occur in
+<code>update_L.R</code> because the genomics signal <code>B_gen</code>
+involves a sum over all genes j, weighted by <code>tau_j</code>.
+Different genes contribute different amounts of signal to each patient’s
+loading estimate.</p>
+<hr />
+<h2 id="connections-to-other-modules">8. Connections to Other
+Modules</h2>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module / File</th>
+<th>Relationship</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code/update_F.R</code></td>
+<td>Shares <code>compute_R_k</code> (defined here, must source
+<code>update_L.R</code> first)</td>
+</tr>
+<tr>
+<td><code>code/update_beta.R</code></td>
+<td>Provides <code>z_no_k</code> pattern (replicated inline in
+<code>update_L_all</code>)</td>
+</tr>
+<tr>
+<td><code>code/update_tau.R</code></td>
+<td>Consumes <code>EL2</code> (second moments computed here)</td>
+</tr>
+<tr>
+<td><code>code/Supervised_Bayesian_MF_V2.R</code></td>
+<td>Reference implementation; lines 290–291 (R_k), 310–321 (L_k
+update)</td>
+</tr>
+<tr>
+<td><code>derivations/qL/qL_update_derivation.tex</code></td>
+<td>Full derivation of dual-source ELBO gradient and EBNM reduction</td>
+</tr>
+<tr>
+<td><code>tests/test_update_L.R</code></td>
+<td>28-test suite; run with <code>Rscript tests/run_tests.R</code></td>
+</tr>
+<tr>
+<td><code>demos/demo_update_L.R</code></td>
+<td>5 narrative demos</td>
+</tr>
+<tr>
+<td><code>code/SupervisedMF_Context.md</code></td>
+<td>Project-wide quick-reference for AI/code context</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Source order dependency:</strong> When using
+<code>update_F.R</code>, always source <code>update_L.R</code>
+first:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;code/update_L.R&quot;</span>)   <span class="co"># defines compute_R_k</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;code/update_F.R&quot;</span>)   <span class="co"># uses compute_R_k</span></span></code></pre></div>
+<hr />
+<h2 id="common-pitfalls">9. Common Pitfalls</h2>
+<h3 id="forgetting-el2-el2">9.1 Forgetting EL2 != EL^2</h3>
+<p>The second moment <code>EL2[i,k] = sd^2 + mean^2</code> is
+<strong>not</strong> <code>mean^2</code>. Downstream modules
+(<code>update_tau</code>, <code>update_F</code>) use EL2 explicitly.
+Passing <code>EL^2</code> instead will underestimate the variance
+correction (Correction R3).</p>
+<h3 id="a_gen-is-scalar-a_l-is-a-vector">9.2 A_gen is Scalar, A_L is a
+Vector</h3>
+<p><code>A_gen = sum(Tau * EF2_k)</code> is a single scalar. It becomes
+part of the n-vector <code>A_L</code> only after adding
+<code>A_surv</code>. Broadcasting in R handles this automatically
+(<code>A_gen + A_surv</code> where A_surv is a vector), but it is worth
+being explicit: <code>A_L</code> always has length n.</p>
+<h3 id="z_no_k-computed-inline">9.3 z_no_k Computed Inline</h3>
+<p><code>update_L_all</code> does NOT call <code>compute_z_no_k</code>
+from <code>update_beta.R</code>. The equivalent computation is done
+inline to avoid a circular source dependency. Both implementations are
+mathematically equivalent.</p>
+<h3 id="sourcing-order-for-compute_r_k">9.4 Sourcing Order for
+compute_R_k</h3>
+<p><code>compute_R_k</code> lives in <code>update_L.R</code>. If
+<code>update_F.R</code> is sourced without first sourcing
+<code>update_L.R</code>, calls to <code>compute_R_k</code> will fail
+with “could not find function”. Always source <code>update_L.R</code>
+first.</p>
+<h3 id="prior-family-selection">9.5 Prior Family Selection</h3>
+<p>The default <code>prior_family = "point_normal"</code> imposes
+sparsity (exact zeros for inactive loadings). For dense loadings,
+consider <code>"normal"</code>. The choice affects both the posterior
+means and the estimated prior parameters — see the <code>ebnm</code>
+package documentation for alternatives.</p>
+<h3 id="cox-weights-w-must-be-non-negative">9.6 Cox Weights w Must Be
+Non-Negative</h3>
+<p>The Cox Hessian diagonal <code>w[i] = W_ii &gt;= 0</code> always.
+Negative values would make <code>A_surv</code> negative, potentially
+driving <code>A_L</code> below zero (before the floor). The floor
+catches this, but negative weights indicate a bug in the Cox weight
+computation upstream.</p>
+<hr />
+<p><em>This document corresponds to the implementation in
+<code>code/update_L.R</code> and its tests in
+<code>tests/test_update_L.R</code>. For the full mathematical
+derivation, see
+<code>derivations/qL/qL_update_derivation.pdf</code>.</em></p>
+</body>
+</html>

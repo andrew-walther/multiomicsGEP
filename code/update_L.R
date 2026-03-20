@@ -53,6 +53,9 @@ suppressPackageStartupMessages(library(ebnm))
 #' @param EF  p x K matrix: posterior means of all factors
 #' @param k   integer: factor index to isolate (1-based)
 #' @return n x p matrix: partial residual for factor k
+#' @export
+#' @family L_update
+#' @seealso \code{\link{update_F_k}} which also uses R_k from this function
 compute_R_k <- function(Y, EL, EF, k) {
   Y_hat <- EL %*% t(EF)                             # n x p: full reconstruction
   Y - Y_hat + outer(EL[, k], EF[, k])               # add back factor k
@@ -95,6 +98,8 @@ compute_R_k <- function(Y, EL, EF, k) {
 #'   $s           -- n-vector: EBNM pseudo-noise s_i = 1/sqrt(A_i)
 #'   $ebnm_result -- raw ebnm() return object
 #'
+#' @export
+#' @family L_update
 #' @examples
 #' library(ebnm)
 #' set.seed(1); n <- 100; p <- 50
@@ -121,7 +126,11 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   # correction: posterior uncertainty in F inflates the effective noise
   # for L, preventing overfitting to uncertain factor estimates.
   # ------------------------------------------------------------------
+  # A_gen is a SCALAR (constant across all patients) because the genomics
+  # precision sum_j(tau_j * EF2_jk) does not depend on sample i.
   A_gen  <- sum(Tau * EF2_k)                         # scalar
+  # A_surv is an n-VECTOR because Cox weights W_ii differ per patient.
+  # This is why L requires a vector EBNM (unlike beta's scalar EBNM).
   A_surv <- w * EBeta2_k                             # n-vector
   A_L    <- pmax(A_gen + A_surv, A_floor)            # n-vector [A3]
 
@@ -153,6 +162,8 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   l_sd     <- res$posterior$sd                       # n-vector
   l_second <- l_sd^2 + l_mean^2                     # n-vector
 
+  # Pack all diagnostics including both B_gen and B_surv components,
+  # enabling tests and demos to inspect the dual-source contributions.
   list(
     mean        = l_mean,
     second      = l_second,
@@ -201,6 +212,8 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
 #'   $EL      -- n x K matrix of updated posterior means
 #'   $EL2     -- n x K matrix of updated posterior second moments
 #'   $details -- length-K list, each element is the full update_L_k result
+#' @export
+#' @family L_update
 update_L_all <- function(Y, EL, EL2, EF, EF2, Tau, w, z,
                           EBeta, EBeta2,
                           prior_family = "point_normal",
@@ -216,8 +229,10 @@ update_L_all <- function(Y, EL, EL2, EF, EF2, Tau, w, z,
     # Partial residual R_k (uses current Gauss-Seidel EL)
     R_k <- compute_R_k(Y, EL_curr, EF, k)
 
-    # Partial working response z^{-k} (uses current EBeta — not updated here)
-    # NOTE: compute_z_no_k is defined in update_beta.R; inline equivalent here
+    # Partial working response z^{-k} (uses current EBeta — not updated here).
+    # Inlined rather than calling compute_z_no_k() from update_beta.R to avoid
+    # forcing a source-order dependency between modules. This keeps update_L.R
+    # self-contained for standalone use and testing.
     eta_no_k <- as.vector(EL_curr %*% EBeta) - EL_curr[, k] * EBeta[k]
     z_no_k   <- z - eta_no_k
 

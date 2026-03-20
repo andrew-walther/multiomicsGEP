@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>update_beta</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {  background-color: #f8f8f8; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ef2929; } /* Alert */
+    code span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #204a87; } /* Attribute */
+    code span.bn { color: #0000cf; } /* BaseN */
+    code span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4e9a06; } /* Char */
+    code span.cn { color: #8f5902; } /* Constant */
+    code span.co { color: #8f5902; font-style: italic; } /* Comment */
+    code span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+    code span.dt { color: #204a87; } /* DataType */
+    code span.dv { color: #0000cf; } /* DecVal */
+    code span.er { color: #a40000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #0000cf; } /* Float */
+    code span.fu { color: #204a87; font-weight: bold; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+    code span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+    code span.ot { color: #8f5902; } /* Other */
+    code span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+    code span.sc { color: #ce5c00; font-weight: bold; } /* SpecialChar */
+    code span.ss { color: #4e9a06; } /* SpecialString */
+    code span.st { color: #4e9a06; } /* String */
+    code span.va { color: #000000; } /* Variable */
+    code span.vs { color: #4e9a06; } /* VerbatimString */
+    code span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">update_beta</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#companion-document-codeupdate_beta.r"
+id="toc-companion-document-codeupdate_beta.r">Companion Document:
+<code>code/update_beta.R</code></a>
+<ul>
+<li><a href="#overview" id="toc-overview">Overview</a>
+<ul>
+<li><a href="#model-context" id="toc-model-context">Model
+Context</a></li>
+<li><a href="#cavi-update-order" id="toc-cavi-update-order">CAVI Update
+Order</a></li>
+</ul></li>
+<li><a href="#mathematical-background"
+id="toc-mathematical-background">Mathematical Background</a>
+<ul>
+<li><a href="#working-response-and-weights"
+id="toc-working-response-and-weights">Working Response and
+Weights</a></li>
+<li><a href="#partial-working-response-z-k"
+id="toc-partial-working-response-z-k">Partial Working Response
+z^{-k}</a></li>
+<li><a href="#precision-and-signal-error-in-variables-correction"
+id="toc-precision-and-signal-error-in-variables-correction">Precision
+and Signal (Error-in-Variables Correction)</a></li>
+<li><a href="#point-normal-prior-and-sparsity"
+id="toc-point-normal-prior-and-sparsity">Point-Normal Prior and
+Sparsity</a></li>
+<li><a href="#scalar-vs.-vector-ebnm"
+id="toc-scalar-vs.-vector-ebnm">Scalar vs. Vector EBNM</a></li>
+</ul></li>
+<li><a href="#source-code-codeupdate_beta.r"
+id="toc-source-code-codeupdate_beta.r">Source Code:
+<code>code/update_beta.R</code></a>
+<ul>
+<li><a href="#compute_z_no_kz-el-ebeta-k"
+id="toc-compute_z_no_kz-el-ebeta-k"><code>compute_z_no_k(z, EL, EBeta, k)</code></a></li>
+<li><a
+href="#update_beta_kw-z_no_k-el_k-el2_k-prior_familypoint_normal-a_floor1e-10"
+id="toc-update_beta_kw-z_no_k-el_k-el2_k-prior_familypoint_normal-a_floor1e-10"><code>update_beta_k(w, z_no_k, EL_k, EL2_k, prior_family="point_normal", A_floor=1e-10)</code></a></li>
+<li><a
+href="#update_beta_allw-z-el-el2-ebeta-prior_familypoint_normal-a_floor1e-10"
+id="toc-update_beta_allw-z-el-el2-ebeta-prior_familypoint_normal-a_floor1e-10"><code>update_beta_all(w, z, EL, EL2, EBeta, prior_family="point_normal", A_floor=1e-10)</code></a></li>
+</ul></li>
+<li><a href="#test-suite-teststest_update_beta.r"
+id="toc-test-suite-teststest_update_beta.r">Test Suite:
+<code>tests/test_update_beta.R</code></a>
+<ul>
+<li><a href="#t1-mathematical-identity-checks-6-tests"
+id="toc-t1-mathematical-identity-checks-6-tests">T1: Mathematical
+Identity Checks (6 tests)</a></li>
+<li><a href="#t2-non-informative-prior-wls-limit-2-tests"
+id="toc-t2-non-informative-prior-wls-limit-2-tests">T2: Non-Informative
+Prior / WLS Limit (2 tests)</a></li>
+<li><a href="#t3-known-signal-recovery-k1-2-tests"
+id="toc-t3-known-signal-recovery-k1-2-tests">T3: Known Signal Recovery
+K=1 (2 tests)</a></li>
+<li><a href="#t4-multi-factor-k5-3-tests"
+id="toc-t4-multi-factor-k5-3-tests">T4: Multi-Factor K=5 (3
+tests)</a></li>
+<li><a href="#t5-null-factor-shrinkage-2-tests"
+id="toc-t5-null-factor-shrinkage-2-tests">T5: Null Factor Shrinkage (2
+tests)</a></li>
+<li><a href="#t6-error-in-variables-1-test"
+id="toc-t6-error-in-variables-1-test">T6: Error-in-Variables (1
+test)</a></li>
+<li><a href="#t7-numerical-stability-5-tests"
+id="toc-t7-numerical-stability-5-tests">T7: Numerical Stability (5
+tests)</a></li>
+<li><a href="#t8-gauss-seidel-behaviour-2-tests"
+id="toc-t8-gauss-seidel-behaviour-2-tests">T8: Gauss-Seidel Behaviour (2
+tests)</a></li>
+<li><a href="#t9-v2.r-consistency-1-test"
+id="toc-t9-v2.r-consistency-1-test">T9: V2.R Consistency (1
+test)</a></li>
+</ul></li>
+<li><a href="#demos-demosdemo_update_beta.r"
+id="toc-demos-demosdemo_update_beta.r">Demos:
+<code>demos/demo_update_beta.R</code></a>
+<ul>
+<li><a href="#demo-1-anatomy-of-update_beta_k"
+id="toc-demo-1-anatomy-of-update_beta_k">Demo 1: Anatomy of
+<code>update_beta_k()</code></a></li>
+<li><a href="#demo-2-signal-recovery-k1"
+id="toc-demo-2-signal-recovery-k1">Demo 2: Signal Recovery K=1</a></li>
+<li><a href="#demo-3-null-factor-shrinkage"
+id="toc-demo-3-null-factor-shrinkage">Demo 3: Null Factor
+Shrinkage</a></li>
+<li><a href="#demo-4-error-in-variables-effect"
+id="toc-demo-4-error-in-variables-effect">Demo 4: Error-in-Variables
+Effect</a></li>
+<li><a href="#demo-5-multi-factor-k5"
+id="toc-demo-5-multi-factor-k5">Demo 5: Multi-Factor K=5</a></li>
+</ul></li>
+<li><a href="#design-decisions-and-v2-improvements"
+id="toc-design-decisions-and-v2-improvements">Design Decisions and V2
+Improvements</a>
+<ul>
+<li><a href="#gauss-seidel-vs.-jacobi-updates"
+id="toc-gauss-seidel-vs.-jacobi-updates">Gauss-Seidel vs. Jacobi
+Updates</a></li>
+<li><a href="#precision-floor" id="toc-precision-floor">Precision
+Floor</a></li>
+<li><a href="#separation-from-l-and-f-updates"
+id="toc-separation-from-l-and-f-updates">Separation from L and F
+Updates</a></li>
+</ul></li>
+<li><a href="#common-pitfalls" id="toc-common-pitfalls">Common
+Pitfalls</a></li>
+<li><a href="#related-files" id="toc-related-files">Related
+Files</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="companion-document-codeupdate_beta.r">Companion Document:
+<code>code/update_beta.R</code></h1>
+<p><strong>Project:</strong> Supervised Bayesian Matrix Factorization
+for Joint Genomics + Survival Modelling <strong>Module:</strong> q(β) —
+Variational Update for Cox Survival Coefficients <strong>Related
+files:</strong>
+<code>derivations/qB/qBeta_update_derivation.tex/.pdf</code>,
+<code>code/Supervised_Bayesian_MF_V2.R</code>,
+<code>code/SupervisedMF_Context.md</code></p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p><code>code/update_beta.R</code> implements the CAVI (Coordinate
+Ascent Variational Inference) update for the survival coefficients
+<strong>β</strong> in the Supervised Bayesian Matrix Factorization
+model. Each factor k has a scalar coefficient β_k linking the latent
+factor scores L to the Cox proportional hazards survival likelihood.</p>
+<h3 id="model-context">Model Context</h3>
+<p>The full model is:</p>
+<pre><code>Y = L F&#39; + E          (genomics observation model)
+h(t) = h0(t) exp(L β) (Cox PH survival model)</code></pre>
+<p>where: - <strong>Y</strong> is the n × p genomics matrix -
+<strong>L</strong> is the n × K latent factor score matrix -
+<strong>F</strong> is the p × K factor loading matrix -
+<strong>β</strong> is a K-vector of survival coefficients -
+<strong>E</strong> is Gaussian noise with precision τ</p>
+<p><strong>β_k appears exclusively in the survival likelihood.</strong>
+It does not enter the genomics reconstruction term. This clean
+separation means the β update depends only on the Cox partial likelihood
+signal, mediated through the working response z and the precision
+weights w derived from the current hazard.</p>
+<h3 id="cavi-update-order">CAVI Update Order</h3>
+<pre><code>β → L → F → τ → (repeat)</code></pre>
+<p>The β update is performed first in each CAVI sweep, using the current
+posterior moments of L.</p>
+<hr />
+<h2 id="mathematical-background">Mathematical Background</h2>
+<h3 id="working-response-and-weights">Working Response and Weights</h3>
+<p>The Cox PH likelihood is approximated via a quadratic
+(Laplace/Newton) expansion. This yields:</p>
+<ul>
+<li><strong>z</strong>: n-vector of working responses (current residuals
+in the linearised survival model)</li>
+<li><strong>w</strong>: n-vector of precision weights (curvature of the
+log-likelihood at current values)</li>
+</ul>
+<h3 id="partial-working-response-z-k">Partial Working Response
+z^{-k}</h3>
+<p>For updating β_k, the contribution of all other factors k’ ≠ k must
+be subtracted from z:</p>
+<pre><code>z^{-k}_i = z_i - Σ_{k&#39;≠k} l̄_{ik&#39;} β̄_{k&#39;}</code></pre>
+<p>This isolates the signal relevant to factor k alone. Critically,
+<strong>z^{-k} does not depend on l_{ik} or β_k</strong> — it uses only
+the remaining factors. This means the same z^{-k} can be reused for both
+the β_k update and the L_k update if needed.</p>
+<h3 id="precision-and-signal-error-in-variables-correction">Precision
+and Signal (Error-in-Variables Correction)</h3>
+<p>The EBNM pseudo-observation and noise for β_k are:</p>
+<pre><code>A_k = Σ_i w_i E[l²_{ik}]    (precision, using FULL second moment)
+B_k = Σ_i w_i z^{-k}_i l̄_{ik}   (signal)
+
+x_k = B_k / A_k             (EBNM pseudo-observation)
+s_k = 1 / √A_k              (EBNM noise level)</code></pre>
+<p><strong>Critical distinction:</strong> A_k uses
+<code>EL2_k = Var_q(l_k) + EL_k²</code>, the full posterior second
+moment, <strong>not</strong> <code>EL_k²</code>. This is the
+error-in-variables correction: when the latent scores L are uncertain,
+using only the squared posterior mean would underestimate the effective
+precision and bias the β estimate. Using EL2 accounts for posterior
+variance in L, propagating uncertainty correctly into the β update.</p>
+<h3 id="point-normal-prior-and-sparsity">Point-Normal Prior and
+Sparsity</h3>
+<p>β_k is given a point-normal prior:</p>
+<pre><code>β_k ~ π_0 δ(0) + (1 - π_0) N(0, σ²_β)</code></pre>
+<p>This prior promotes sparsity. Factors with weak survival signal are
+shrunk toward zero; factors with strong, consistent signal are retained
+with their estimated magnitude. The EBNM call handles this
+automatically, returning posterior mean, SD, and second moment.</p>
+<h3 id="scalar-vs.-vector-ebnm">Scalar vs. Vector EBNM</h3>
+<p>The β update is a <strong>scalar EBNM</strong>: each factor k yields
+a single pseudo-observation x_k. This contrasts with the L and F
+updates, which are vector EBNM problems (one pseudo-observation per
+sample or gene). The scalar nature follows from β_k being a single
+coefficient shared across all n samples.</p>
+<hr />
+<h2 id="source-code-codeupdate_beta.r">Source Code:
+<code>code/update_beta.R</code></h2>
+<p>The file contains three functions with a clean separation of
+concerns:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Function</th>
+<th>Role</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>compute_z_no_k</code></td>
+<td>Partial working response for factor k</td>
+<td>n-vector</td>
+</tr>
+<tr>
+<td><code>update_beta_k</code></td>
+<td>Single-factor EBNM update</td>
+<td>Named list with posterior moments</td>
+</tr>
+<tr>
+<td><code>update_beta_all</code></td>
+<td>Gauss-Seidel loop over all K factors</td>
+<td>Named list with K-vectors</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3
+id="compute_z_no_kz-el-ebeta-k"><code>compute_z_no_k(z, EL, EBeta, k)</code></h3>
+<p><strong>Purpose:</strong> Subtract the contributions of all factors
+except k from the working response, isolating the signal for β_k.</p>
+<p><strong>Implementation:</strong></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>z <span class="sc">-</span> (EL <span class="sc">%*%</span> EBeta) <span class="sc">+</span> EL[, k] <span class="sc">*</span> EBeta[k]</span></code></pre></div>
+<p>This is numerically efficient: rather than summing over all k’ ≠ k
+explicitly, it computes the full linear predictor
+<code>EL %*% EBeta</code> and then adds back the k-th term
+<code>EL[,k] * EBeta[k]</code>.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>z</code></td>
+<td>n-vector</td>
+<td>Working response from Cox likelihood</td>
+</tr>
+<tr>
+<td><code>EL</code></td>
+<td>n × K matrix</td>
+<td>Posterior means of factor scores</td>
+</tr>
+<tr>
+<td><code>EBeta</code></td>
+<td>K-vector</td>
+<td>Current posterior means of β</td>
+</tr>
+<tr>
+<td><code>k</code></td>
+<td>integer</td>
+<td>Factor index to exclude</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> n-vector z^{-k}</p>
+<p><strong>Key insight:</strong> Because z^{-k} uses only k’ ≠ k terms,
+it does not change when β_k or l_{ik} change. The same z^{-k} is safe to
+reuse across both the β_k and L_k updates within a single CAVI
+iteration.</p>
+<hr />
+<h3
+id="update_beta_kw-z_no_k-el_k-el2_k-prior_familypoint_normal-a_floor1e-10"><code>update_beta_k(w, z_no_k, EL_k, EL2_k, prior_family="point_normal", A_floor=1e-10)</code></h3>
+<p><strong>Purpose:</strong> Compute the CAVI update for a single
+survival coefficient β_k via scalar EBNM.</p>
+<p><strong>Implementation steps:</strong></p>
+<ol type="1">
+<li>Compute precision:
+<code>A_k = max(sum(w * EL2_k), A_floor)</code></li>
+<li>Compute signal: <code>B_k = sum(w * z_no_k * EL_k)</code></li>
+<li>Form pseudo-observation: <code>x_k = B_k / A_k</code></li>
+<li>Form noise level: <code>s_k = 1 / sqrt(A_k)</code></li>
+<li>Call EBNM:
+<code>ebnm(x = x_k, s = s_k, prior_family = prior_family)</code></li>
+<li>Extract posterior mean, SD, second moment</li>
+</ol>
+<p><strong>Parameters:</strong></p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>w</code></td>
+<td>n-vector</td>
+<td>—</td>
+<td>Cox precision weights</td>
+</tr>
+<tr>
+<td><code>z_no_k</code></td>
+<td>n-vector</td>
+<td>—</td>
+<td>Partial working response (from <code>compute_z_no_k</code>)</td>
+</tr>
+<tr>
+<td><code>EL_k</code></td>
+<td>n-vector</td>
+<td>—</td>
+<td>Posterior means of l_{ik} for factor k</td>
+</tr>
+<tr>
+<td><code>EL2_k</code></td>
+<td>n-vector</td>
+<td>—</td>
+<td>Posterior second moments E[l²_{ik}]</td>
+</tr>
+<tr>
+<td><code>prior_family</code></td>
+<td>string</td>
+<td><code>"point_normal"</code></td>
+<td>EBNM prior family</td>
+</tr>
+<tr>
+<td><code>A_floor</code></td>
+<td>scalar</td>
+<td><code>1e-10</code></td>
+<td>Minimum value for A_k (prevents division by zero)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> Named list</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mean</code></td>
+<td>Posterior mean E_q[β_k]</td>
+</tr>
+<tr>
+<td><code>second</code></td>
+<td>Posterior second moment E_q[β²_k] = sd² + mean²</td>
+</tr>
+<tr>
+<td><code>sd</code></td>
+<td>Posterior standard deviation</td>
+</tr>
+<tr>
+<td><code>A</code></td>
+<td>Precision A_k (after floor)</td>
+</tr>
+<tr>
+<td><code>B</code></td>
+<td>Signal B_k</td>
+</tr>
+<tr>
+<td><code>x</code></td>
+<td>EBNM pseudo-observation x_k = B_k / A_k</td>
+</tr>
+<tr>
+<td><code>s</code></td>
+<td>EBNM noise s_k = 1 / √A_k</td>
+</tr>
+<tr>
+<td><code>ebnm_result</code></td>
+<td>Full object returned by <code>ebnm()</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>A_floor rationale:</strong> When all weights w are zero
+(e.g., at initialisation or in degenerate cases), A_k would be zero and
+x_k, s_k would be undefined. The floor <code>1e-10</code> prevents
+NaN/Inf while keeping A_k negligibly small — the EBNM prior then
+dominates and shrinks β_k to zero, which is the correct behaviour.</p>
+<p><strong>s_k direction:</strong> Note that s_k = 1/√A_k is
+<strong>smaller</strong> when A_k is larger (more data precision →
+tighter pseudo-likelihood). This is the standard EBNM parameterisation:
+smaller s means the pseudo-observation is more reliable.</p>
+<hr />
+<h3
+id="update_beta_allw-z-el-el2-ebeta-prior_familypoint_normal-a_floor1e-10"><code>update_beta_all(w, z, EL, EL2, EBeta, prior_family="point_normal", A_floor=1e-10)</code></h3>
+<p><strong>Purpose:</strong> Update all K survival coefficients using a
+Gauss-Seidel sweep.</p>
+<p><strong>Implementation:</strong> For k = 1, …, K: 1. Compute z_no_k
+using the <strong>current</strong> EBeta (already updated for k’ &lt; k
+in this sweep) 2. Call <code>update_beta_k</code> 3. Immediately write
+the new posterior mean into <code>EBeta_curr[k]</code></p>
+<p>The Gauss-Seidel pattern (update-and-use within the loop, rather than
+batch update at the end) is one of the V2 improvements over V1. It
+accelerates convergence by propagating each β_k update immediately to
+subsequent factors within the same sweep.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>w</code></td>
+<td>n-vector</td>
+<td>Cox precision weights</td>
+</tr>
+<tr>
+<td><code>z</code></td>
+<td>n-vector</td>
+<td>Full working response</td>
+</tr>
+<tr>
+<td><code>EL</code></td>
+<td>n × K matrix</td>
+<td>Posterior means of L</td>
+</tr>
+<tr>
+<td><code>EL2</code></td>
+<td>n × K matrix</td>
+<td>Posterior second moments of L</td>
+</tr>
+<tr>
+<td><code>EBeta</code></td>
+<td>K-vector</td>
+<td>Current posterior means of β (initialisation for sweep)</td>
+</tr>
+<tr>
+<td><code>prior_family</code></td>
+<td>string</td>
+<td>EBNM prior family (passed through)</td>
+</tr>
+<tr>
+<td><code>A_floor</code></td>
+<td>scalar</td>
+<td>Precision floor (passed through)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Returns:</strong> Named list</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EBeta</code></td>
+<td>K-vector of updated posterior means</td>
+</tr>
+<tr>
+<td><code>EBeta2</code></td>
+<td>K-vector of updated posterior second moments</td>
+</tr>
+<tr>
+<td><code>details</code></td>
+<td>Length-K list; each element is the return value of
+<code>update_beta_k</code> for that factor</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="test-suite-teststest_update_beta.r">Test Suite:
+<code>tests/test_update_beta.R</code></h2>
+<p>24 tests across 9 groups. Run with:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">Rscript</span> tests/run_tests.R</span></code></pre></div>
+<p>All 24 tests pass as part of the 105-test suite.</p>
+<h3 id="t1-mathematical-identity-checks-6-tests">T1: Mathematical
+Identity Checks (6 tests)</h3>
+<p>Verifies that the raw computations match the mathematical formulas
+exactly.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T1.1</td>
+<td>A_k = sum(w * EL2_k) with floor applied correctly</td>
+</tr>
+<tr>
+<td>T1.2</td>
+<td>B_k = sum(w * z_no_k * EL_k)</td>
+</tr>
+<tr>
+<td>T1.3</td>
+<td>x_k = B_k / A_k</td>
+</tr>
+<tr>
+<td>T1.4</td>
+<td>s_k = 1 / sqrt(A_k)</td>
+</tr>
+<tr>
+<td>T1.5</td>
+<td>second moment = sd² + mean² (law of total variance identity)</td>
+</tr>
+<tr>
+<td>T1.6</td>
+<td>All returned values are finite (no NaN, no Inf)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t2-non-informative-prior-wls-limit-2-tests">T2: Non-Informative
+Prior / WLS Limit (2 tests)</h3>
+<p>When EL2_k = EL_k² (zero posterior variance in L), the EBNM problem
+reduces to a standard weighted least squares problem, and x_k equals the
+WLS estimator. With a large signal-to-noise ratio, the posterior mean
+should be close to x_k (minimal shrinkage).</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T2.1</td>
+<td>EL2 = EL² → x_k equals WLS estimator</td>
+</tr>
+<tr>
+<td>T2.2</td>
+<td>Large SNR → posterior mean ≈ x_k</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t3-known-signal-recovery-k1-2-tests">T3: Known Signal Recovery
+K=1 (2 tests)</h3>
+<p>Simulates Cox survival data with a known true β and checks that the
+update recovers it.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T3.1</td>
+<td>Recover positive β = 2.0 from simulated data</td>
+</tr>
+<tr>
+<td>T3.2</td>
+<td>Recover negative β = -1.5 from simulated data</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t4-multi-factor-k5-3-tests">T4: Multi-Factor K=5 (3 tests)</h3>
+<p>Exercises <code>update_beta_all</code> with K=5 factors.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T4.1</td>
+<td>Output vectors EBeta and EBeta2 have length K</td>
+</tr>
+<tr>
+<td>T4.2</td>
+<td>All second moments non-negative</td>
+</tr>
+<tr>
+<td>T4.3</td>
+<td>Signs of recovered β match true values (2, -1.5, 0) with strong
+signal</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t5-null-factor-shrinkage-2-tests">T5: Null Factor Shrinkage (2
+tests)</h3>
+<p>The point-normal prior should shrink noise factors toward zero.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T5.1</td>
+<td>Pure noise z_no_k → β_k shrunk toward zero</td>
+</tr>
+<tr>
+<td>T5.2</td>
+<td>EL_k = 0 → B_k = 0 → x_k = 0 → posterior mean = 0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t6-error-in-variables-1-test">T6: Error-in-Variables (1
+test)</h3>
+<p>Higher EL2 (more uncertainty about L) leads to higher A_k, which
+leads to smaller x_k and more shrinkage. Also confirms that s_k is
+smaller when A_k is larger.</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T6.1</td>
+<td>EL2_high &gt; EL2_low → A_high &gt; A_low →</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t7-numerical-stability-5-tests">T7: Numerical Stability (5
+tests)</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T7.1</td>
+<td>All-zero weights → A hits floor, no NaN/Inf returned</td>
+</tr>
+<tr>
+<td>T7.2</td>
+<td>Extreme w = 1e8 → no overflow</td>
+</tr>
+<tr>
+<td>T7.3</td>
+<td>n = 1 edge case (single observation) works correctly</td>
+</tr>
+<tr>
+<td>T7.4</td>
+<td>Custom A_floor value is respected</td>
+</tr>
+<tr>
+<td>T7.5</td>
+<td>Variance non-negative: second ≥ mean² always holds</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t8-gauss-seidel-behaviour-2-tests">T8: Gauss-Seidel Behaviour (2
+tests)</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T8.1</td>
+<td>compute_z_no_k correctly excludes factor k (z_no_k + EL[,k]*EBeta[k]
+reconstructs z - z_{-k})</td>
+</tr>
+<tr>
+<td>T8.2</td>
+<td>Within-loop updates propagate: β̄_1 updated before β̄_2 is
+computed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="t9-v2.r-consistency-1-test">T9: V2.R Consistency (1 test)</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T9.1</td>
+<td>update_beta_k output matches lines 356–361 of
+Supervised_Bayesian_MF_V2.R to within 1e-12</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="demos-demosdemo_update_beta.r">Demos:
+<code>demos/demo_update_beta.R</code></h2>
+<p>5 narrative scenarios illustrating the β update in isolation. No
+PASS/FAIL output — pure demonstration.</p>
+<h3 id="demo-1-anatomy-of-update_beta_k">Demo 1: Anatomy of
+<code>update_beta_k()</code></h3>
+<p>Sets up a single-factor problem with true β = 1.5, constructs w,
+z_no_k, EL_k, EL2_k by hand, and calls <code>update_beta_k</code>.
+Prints A_k, B_k, x_k, s_k, posterior mean, and posterior SD. Purpose:
+show every intermediate quantity and how they connect.</p>
+<h3 id="demo-2-signal-recovery-k1">Demo 2: Signal Recovery K=1</h3>
+<p>Generates z_no_k = β * EL_k + noise for two scenarios: β = 1.5 and β
+= -1.2. Shows that the posterior mean tracks the true β closely when the
+signal is strong relative to the noise.</p>
+<h3 id="demo-3-null-factor-shrinkage">Demo 3: Null Factor Shrinkage</h3>
+<p>Compares two z_no_k vectors: one with real signal (z_no_k correlated
+with EL_k) and one that is pure noise. Demonstrates that the
+point-normal prior shrinks the null factor’s posterior mean to
+approximately zero while leaving the signal factor’s mean near its true
+value.</p>
+<h3 id="demo-4-error-in-variables-effect">Demo 4: Error-in-Variables
+Effect</h3>
+<p>Holds the signal fixed and varies the second moment EL2_k between a
+low-uncertainty case (EL2 ≈ EL²) and a high-uncertainty case (EL2
+&gt;&gt; EL²). Shows that higher L uncertainty → higher A_k → smaller
+|x_k| → more posterior shrinkage. Confirms the direction of s_k as a
+function of A_k.</p>
+<h3 id="demo-5-multi-factor-k5">Demo 5: Multi-Factor K=5</h3>
+<p>Constructs a K=5 problem with true β = (1.5, -1.2, 0.8, -0.5, 0.0)
+and calls <code>update_beta_all</code>. Loops over the returned details
+list, printing the posterior mean for each factor and confirming sign
+recovery. Factor 5 (true β = 0) is shown to be shrunk near zero by the
+point-normal prior.</p>
+<hr />
+<h2 id="design-decisions-and-v2-improvements">Design Decisions and V2
+Improvements</h2>
+<h3 id="gauss-seidel-vs.-jacobi-updates">Gauss-Seidel vs. Jacobi
+Updates</h3>
+<p>V1 used Jacobi-style (batch) updates: compute all new β_k values
+using the old EBeta, then replace. V2 uses Gauss-Seidel: immediately
+write each updated β̄_k into EBeta_curr before computing z_no_k for the
+next factor. Gauss-Seidel is generally faster to converge and is
+implemented by passing EBeta_curr by reference within the loop.</p>
+<h3 id="precision-floor">Precision Floor</h3>
+<p>The <code>A_floor = 1e-10</code> default prevents numerical failure
+in degenerate cases (all-zero weights, all-zero loadings). It is exposed
+as a parameter so callers can tighten or loosen it for specific use
+cases.</p>
+<h3 id="separation-from-l-and-f-updates">Separation from L and F
+Updates</h3>
+<p>β_k appears only in the Cox survival likelihood, not in the genomics
+reconstruction. This means: - The β update does not depend on τ (the
+genomics noise precision) - F does not enter the β update at all - Only
+L, w, and z are needed</p>
+<p>This clean separation makes <code>update_beta.R</code> entirely
+self-contained given w, z, EL, and EL2.</p>
+<hr />
+<h2 id="common-pitfalls">Common Pitfalls</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Pitfall</th>
+<th>Correct behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Using EL² instead of EL2 for A_k</td>
+<td>EL2 = Var_q(l) + EL² — always use the full second moment</td>
+</tr>
+<tr>
+<td>Assuming s_k increases with A_k</td>
+<td>s_k = 1/√A_k — s_k <strong>decreases</strong> as A_k increases</td>
+</tr>
+<tr>
+<td>Batch (Jacobi) β updates</td>
+<td>Use Gauss-Seidel: update EBeta_curr[k] immediately after each
+factor</td>
+</tr>
+<tr>
+<td>Forgetting A_floor</td>
+<td>Without the floor, zero-weight cases produce NaN from 0/0</td>
+</tr>
+<tr>
+<td>Treating β EBNM as vector</td>
+<td>β update is scalar EBNM (single x_k, single s_k) — unlike L and F
+updates</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="related-files">Related Files</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code/update_beta.R</code></td>
+<td>This module</td>
+</tr>
+<tr>
+<td><code>code/Supervised_Bayesian_MF_V2.R</code></td>
+<td>Main algorithm; lines 356–361 are the inline β update matched by
+T9.1</td>
+</tr>
+<tr>
+<td><code>code/update_L.R</code></td>
+<td>q(L) update; shares <code>compute_z_no_k</code> concept (dual-source
+EBNM)</td>
+</tr>
+<tr>
+<td><code>code/update_F.R</code></td>
+<td>q(F) update; pure genomics, no β involvement</td>
+</tr>
+<tr>
+<td><code>code/update_tau.R</code></td>
+<td>q(τ) update; independent of β</td>
+</tr>
+<tr>
+<td><code>code/SupervisedMF_Context.md</code></td>
+<td>AI/code quick-reference for the full implementation</td>
+</tr>
+<tr>
+<td><code>tests/test_update_beta.R</code></td>
+<td>24-test suite for this module</td>
+</tr>
+<tr>
+<td><code>tests/test_helpers.R</code></td>
+<td>Lightweight assertion framework used by tests</td>
+</tr>
+<tr>
+<td><code>tests/run_tests.R</code></td>
+<td>Master test runner (105 tests total)</td>
+</tr>
+<tr>
+<td><code>demos/demo_update_beta.R</code></td>
+<td>5 narrative demonstration scenarios</td>
+</tr>
+<tr>
+<td><code>derivations/qB/qBeta_update_derivation.tex</code></td>
+<td>Self-contained 11-page derivation of q(β)</td>
+</tr>
+<tr>
+<td><code>derivations/qB/qBeta_update_derivation.pdf</code></td>
+<td>Compiled PDF of the derivation</td>
+</tr>
+<tr>
+<td><code>derivations/MF_UpdateDerivations/MF_V2_Companion.tex/.pdf</code></td>
+<td>Math ↔︎ code mapping (17 pages)</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

@@ -74,6 +74,8 @@ suppressPackageStartupMessages(library(ebnm))
 #'   $sum_EL2_k   -- scalar: sum_i E[l_{ik}^2] (diagnostic)
 #'   $ebnm_result -- raw ebnm() return object
 #'
+#' @export
+#' @family F_update
 #' @examples
 #' library(ebnm)
 #' set.seed(1); n <- 100; p <- 200
@@ -96,6 +98,9 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
   # second moment, not squared mean): posterior uncertainty in L
   # appropriately inflates the effective noise for F_k.
   # ------------------------------------------------------------------
+  # sum_EL2_k is a SCALAR that broadcasts across all p features.
+  # This is why A_F[j] = tau_j * sum_EL2_k: the loading contribution
+  # is the same for every feature, only tau_j varies.
   sum_EL2_k <- sum(EL2_k)                             # scalar
   A_F       <- pmax(Tau * sum_EL2_k, A_floor)         # p-vector [A3]
 
@@ -175,6 +180,8 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
 #'   $EF      -- p x K matrix of updated posterior means
 #'   $EF2     -- p x K matrix of updated posterior second moments
 #'   $details -- length-K list, each element is the full update_F_k result
+#' @export
+#' @family F_update
 update_F_all <- function(Y, EL, EL2, EF, EF2, Tau,
                           prior_family = "point_normal",
                           A_floor      = 1e-10) {
@@ -186,7 +193,9 @@ update_F_all <- function(Y, EL, EL2, EF, EF2, Tau,
   details  <- vector("list", K)
 
   for (k in seq_len(K)) {
-    # Partial residual R_k (uses current EL and Gauss-Seidel EF)
+    # Partial residual R_k (uses current EL and Gauss-Seidel EF).
+    # EL (not EL_curr) is passed because L is already fully updated from
+    # the L step — there is no mutable L copy in the F update loop.
     R_k <- compute_R_k(Y, EL, EF_curr, k)
 
     res_k <- update_F_k(
