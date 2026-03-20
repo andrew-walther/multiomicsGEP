@@ -133,13 +133,13 @@ get_factor_summary_table <- function(res, data) {
   pve <- sapply(1:K, function(k) {
     sum((outer(res$L[, k], res$F[, k]))^2) / total_var * 100
   })
-  sparsity <- colMeans(res$F != 0) * 100
+  nonzero_pct <- colMeans(res$F != 0) * 100
   data.frame(
-    Factor       = 1:K,
-    Beta         = round(res$Beta, 3),
-    LogRank_P    = round(p_vals, 4),
-    Sparsity_Pct = round(sparsity, 2),
-    PVE_Pct      = round(pve, 2)
+    Factor      = 1:K,
+    Beta        = round(res$Beta, 3),
+    LogRank_P   = round(p_vals, 4),
+    NonZero_Pct = round(nonzero_pct, 2),
+    PVE_Pct     = round(pve, 2)
   )
 }
 

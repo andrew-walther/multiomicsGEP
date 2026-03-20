@@ -39,22 +39,22 @@ multiomicsGEP/
 │   ├── SupervisedMF_Context.md      ← AI/collaborator quick-reference for V2 code
 │   ├── Supervised_Bayesian_MF.R     ← V1: Original CAVI implementation (reference only)
 │   ├── Supervised_Bayesian_MF_V2.R  ← V2: Corrected implementation (all fixes) ← USE THIS
-│   ├── update_beta.R                ← NEW (Session 3): Modular β update functions
-│   ├── update_L.R                   ← NEW (Session 5): Modular q(L) update functions
-│   ├── update_F.R                   ← NEW (Session 5): Modular q(F) update functions
-│   ├── update_tau.R                 ← NEW (Session 5): Modular q(τ) update functions
+│   ├── update_beta.R                ← Modular β update functions
+│   ├── update_L.R                   ← Modular q(L) update functions (vector EBNM, dual-source)
+│   ├── update_F.R                   ← Modular q(F) update functions (pure genomics, τ cancellation)
+│   ├── update_tau.R                 ← Modular q(τ) update functions (closed-form MLE)
 │   └── multiomicsGEP_code.Rmd       ← Earlier exploratory R Markdown notebook
 ├── derivations/
-│   ├── qB/                              ← NEW (Session 3): Self-contained β derivation
+│   ├── qB/                              ← Self-contained β derivation
 │   │   ├── qBeta_update_derivation.tex  ← Full step-by-step q(β) derivation (11 pages)
 │   │   └── qBeta_update_derivation.pdf  ← Compiled PDF
-│   ├── qL/                              ← NEW (Session 5): Self-contained q(L) derivation
+│   ├── qL/                              ← Self-contained q(L) derivation
 │   │   ├── qL_update_derivation.tex     ← Vector EBNM, dual-source (genomics+survival)
 │   │   └── qL_update_derivation.pdf     ← Compiled PDF
-│   ├── qF/                              ← NEW (Session 5): Self-contained q(F) derivation
+│   ├── qF/                              ← Self-contained q(F) derivation
 │   │   ├── qF_update_derivation.tex     ← τ cancellation property, pure genomics
 │   │   └── qF_update_derivation.pdf     ← Compiled PDF
-│   ├── qTau/                            ← NEW (Session 5): Self-contained q(τ) derivation
+│   ├── qTau/                            ← Self-contained q(τ) derivation
 │   │   ├── qTau_update_derivation.tex   ← Closed-form MLE, variance correction
 │   │   └── qTau_update_derivation.pdf   ← Compiled PDF
 │   ├── EBMF/
@@ -89,19 +89,19 @@ multiomicsGEP/
 │   └── *.csv                        ← 11 numeric summary tables (beta, C-index,
 │                                       convergence history, factor summary, GEP top
 │                                       features, loading correlations, PH test)
-├── tests/                           ← NEW (Session 3): Test infrastructure
+├── tests/                           ← Test infrastructure (105/105 passing)
 │   ├── test_helpers.R               ← Lightweight assertion framework (assert_near, run_test, etc.)
 │   ├── test_update_beta.R           ← 24 tests for update_beta.R (9 groups, TDD)
-│   ├── test_update_L.R              ← NEW (Session 5): 28 tests for update_L.R (9 groups)
-│   ├── test_update_F.R              ← NEW (Session 5): 26 tests for update_F.R (9 groups)
-│   ├── test_update_tau.R            ← NEW (Session 5): 27 tests for update_tau.R (9 groups)
+│   ├── test_update_L.R              ← 28 tests for update_L.R (9 groups)
+│   ├── test_update_F.R              ← 26 tests for update_F.R (9 groups)
+│   ├── test_update_tau.R            ← 27 tests for update_tau.R (9 groups)
 │   └── run_tests.R                  ← Master test runner — 105/105 tests passing
-├── demos/                           ← NEW (Session 4–5): Interactive demonstrations
+├── demos/                           ← Interactive demonstrations (5 per module)
 │   ├── demo_update_beta.R           ← 5 demos for update_beta.R
-│   ├── demo_update_L.R              ← NEW (Session 5): 5 demos for update_L.R
-│   ├── demo_update_F.R              ← NEW (Session 5): 5 demos for update_F.R
-│   └── demo_update_tau.R            ← NEW (Session 5): 5 demos for update_tau.R
-├── docs/                            ← NEW (Session 6): Companion documentation
+│   ├── demo_update_L.R              ← 5 demos for update_L.R
+│   ├── demo_update_F.R              ← 5 demos for update_F.R
+│   └── demo_update_tau.R            ← 5 demos for update_tau.R
+├── docs/                            ← Companion documentation (MD + PDF + HTML)
 │   ├── Makefile                     ← `make all` renders .md → .pdf + .html
 │   ├── update_beta.md/.pdf/.html    ← Companion doc for update_beta.R
 │   ├── update_L.md/.pdf/.html       ← Companion doc for update_L.R
