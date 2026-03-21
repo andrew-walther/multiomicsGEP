@@ -26,7 +26,7 @@ sink()  # stop capturing
 
 # Factor summary table
 factor_summary <- get_factor_summary_table(res, data)
-write.csv(factor_summary, "results/factor_summary_table.csv", row.names = FALSE)
+write.csv(factor_summary, "results/tables/full_sim/factor_summary_table.csv", row.names = FALSE)
 
 # Beta comparison table
 beta_comparison <- data.frame(
@@ -38,7 +38,7 @@ beta_comparison <- data.frame(
   Abs_Error = round(abs(res$Beta - data$B_true), 4),
   Sign_Match = sign(res$Beta) == sign(data$B_true) | data$B_true == 0
 )
-write.csv(beta_comparison, "results/beta_comparison_table.csv", row.names = FALSE)
+write.csv(beta_comparison, "results/tables/full_sim/beta_comparison_table.csv", row.names = FALSE)
 
 # C-index comparison
 perf <- get_cindex_comparison(res$L, data)
@@ -46,7 +46,7 @@ cindex_df <- data.frame(
   Method = c("Top-5 PCA", "Supervised Latent L"),
   C_Index = c(perf$c_original, perf$c_latent)
 )
-write.csv(cindex_df, "results/cindex_comparison.csv", row.names = FALSE)
+write.csv(cindex_df, "results/tables/full_sim/cindex_comparison.csv", row.names = FALSE)
 
 # Convergence history
 history_df <- data.frame(
@@ -54,19 +54,19 @@ history_df <- data.frame(
   RMSE       = res$history$rmse,
   ELBO_Proxy = res$history$elbo_proxy
 )
-write.csv(history_df, "results/convergence_history.csv", row.names = FALSE)
+write.csv(history_df, "results/tables/full_sim/convergence_history.csv", row.names = FALSE)
 
 # Top features per GEP
 top_feats <- get_top_features(res$F, 10)
 for (k in 1:length(top_feats)) {
   write.csv(top_feats[[k]],
-            sprintf("results/top_features_GEP%d.csv", k),
+            sprintf("results/tables/full_sim/top_features_GEP%d.csv", k),
             row.names = FALSE)
 }
 
 # Correlation between true and estimated loadings
 cors <- cor(data$L_true, res$L)
-write.csv(round(cors, 4), "results/loading_correlation_matrix.csv")
+write.csv(round(cors, 4), "results/tables/full_sim/loading_correlation_matrix.csv")
 
 # PH test
 ph_test <- cox.zph(coxph(Surv(data$time, data$status) ~ res$L))
@@ -76,7 +76,7 @@ ph_df <- data.frame(
   DF     = ph_test$table[, 2],
   P_Value = round(ph_test$table[, 3], 4)
 )
-write.csv(ph_df, "results/ph_test_results.csv", row.names = FALSE)
+write.csv(ph_df, "results/tables/full_sim/ph_test_results.csv", row.names = FALSE)
 
 cat("CSV tables saved to results/\n")
 
@@ -87,7 +87,7 @@ cat("CSV tables saved to results/\n")
 K <- ncol(res$L)
 
 # --- Figure 1: RMSE Convergence Trace ---
-pdf("results/figures/fig1_rmse_trace.pdf", width = 8, height = 5)
+pdf("results/figures/full_sim/fig1_rmse_trace.pdf", width = 8, height = 5)
 par(mar = c(5, 5, 4, 2))
 rmse_vals <- res$history$rmse
 plot(rmse_vals, type = "l", lwd = 2.5, col = "#1f77b4",
@@ -99,7 +99,7 @@ legend("topright", legend = c("RMSE", "True Noise SD = 1.0"),
 grid(col = "lightgray", lty = "dotted")
 dev.off()
 
-png("results/figures/fig1_rmse_trace.png", width = 800, height = 500, res = 120)
+png("results/figures/full_sim/fig1_rmse_trace.png", width = 800, height = 500, res = 120)
 par(mar = c(5, 5, 4, 2))
 plot(rmse_vals, type = "l", lwd = 2.5, col = "#1f77b4",
      main = "Figure 1: Reconstruction RMSE Across CAVI Iterations",
@@ -111,7 +111,7 @@ grid(col = "lightgray", lty = "dotted")
 dev.off()
 
 # --- Figure 2: ELBO Proxy Trace ---
-pdf("results/figures/fig2_elbo_proxy.pdf", width = 8, height = 5)
+pdf("results/figures/full_sim/fig2_elbo_proxy.pdf", width = 8, height = 5)
 par(mar = c(5, 5, 4, 2))
 elbo_vals <- res$history$elbo_proxy
 plot(elbo_vals, type = "l", lwd = 2.5, col = "#2ca02c",
@@ -121,7 +121,7 @@ plot(elbo_vals, type = "l", lwd = 2.5, col = "#2ca02c",
 grid(col = "lightgray", lty = "dotted")
 dev.off()
 
-png("results/figures/fig2_elbo_proxy.png", width = 800, height = 500, res = 120)
+png("results/figures/full_sim/fig2_elbo_proxy.png", width = 800, height = 500, res = 120)
 par(mar = c(5, 5, 4, 2))
 plot(elbo_vals, type = "l", lwd = 2.5, col = "#2ca02c",
      main = "Figure 2: Genomics ELBO Proxy Across Iterations",
@@ -131,7 +131,7 @@ grid(col = "lightgray", lty = "dotted")
 dev.off()
 
 # --- Figure 3: Beta Comparison (True vs Estimated) ---
-pdf("results/figures/fig3_beta_comparison.pdf", width = 8, height = 5.5)
+pdf("results/figures/full_sim/fig3_beta_comparison.pdf", width = 8, height = 5.5)
 par(mar = c(5, 5, 4, 2))
 beta_true <- data$B_true
 beta_est  <- res$Beta
@@ -157,7 +157,7 @@ legend("bottomleft",
 grid(col = "lightgray", lty = "dotted")
 dev.off()
 
-png("results/figures/fig3_beta_comparison.png", width = 800, height = 550, res = 120)
+png("results/figures/full_sim/fig3_beta_comparison.png", width = 800, height = 550, res = 120)
 par(mar = c(5, 5, 4, 2))
 plot(x_pos, beta_est, pch = 16, cex = 1.8, col = "#1f77b4",
      ylim = range(c(beta_true, beta_est + beta_sd, beta_est - beta_sd)) * 1.2,
@@ -177,7 +177,7 @@ grid(col = "lightgray", lty = "dotted")
 dev.off()
 
 # --- Figure 4: GEP Heatmap ---
-pdf("results/figures/fig4_gep_heatmap.pdf", width = 10, height = 6)
+pdf("results/figures/full_sim/fig4_gep_heatmap.pdf", width = 10, height = 6)
 n_features <- 50
 top_var_genes <- order(rowSums(abs(res$F)), decreasing = TRUE)[1:n_features]
 F_sub   <- res$F[top_var_genes, ]
@@ -201,7 +201,7 @@ mtext("Weight", side = 4, line = 2, cex = 0.8)
 layout(1)
 dev.off()
 
-png("results/figures/fig4_gep_heatmap.png", width = 1000, height = 600, res = 120)
+png("results/figures/full_sim/fig4_gep_heatmap.png", width = 1000, height = 600, res = 120)
 layout(matrix(1:2, ncol = 2), widths = c(5, 1))
 par(mar = c(6, 4, 4, 1))
 image(1:nrow(F_sub), 1:ncol(F_sub), F_sub,
@@ -220,7 +220,7 @@ layout(1)
 dev.off()
 
 # --- Figure 5: Kaplan-Meier Survival Curves per Factor ---
-pdf("results/figures/fig5_kaplan_meier.pdf", width = 12, height = 8)
+pdf("results/figures/full_sim/fig5_kaplan_meier.pdf", width = 12, height = 8)
 summary_tab <- get_factor_summary_table(res, data)
 par(mfrow = c(2, ceiling(K / 2)), mar = c(4, 4, 3, 1))
 for (k in 1:K) {
@@ -235,7 +235,7 @@ for (k in 1:K) {
 }
 dev.off()
 
-png("results/figures/fig5_kaplan_meier.png", width = 1200, height = 800, res = 120)
+png("results/figures/full_sim/fig5_kaplan_meier.png", width = 1200, height = 800, res = 120)
 par(mfrow = c(2, ceiling(K / 2)), mar = c(4, 4, 3, 1))
 for (k in 1:K) {
   groups  <- ifelse(res$L[, k] > median(res$L[, k]), "High Score", "Low Score")
@@ -250,7 +250,7 @@ for (k in 1:K) {
 dev.off()
 
 # --- Figure 6: Signal Recovery (Best-matched factor) ---
-pdf("results/figures/fig6_signal_recovery.pdf", width = 7, height = 7)
+pdf("results/figures/full_sim/fig6_signal_recovery.pdf", width = 7, height = 7)
 par(mar = c(5, 5, 4, 2))
 cors_mat    <- cor(data$L_true, res$L)
 best_match  <- apply(abs(cors_mat), 2, which.max)
@@ -272,7 +272,7 @@ legend("topleft", legend = c("Identity line", "Best fit"),
 grid(col = "lightgray", lty = "dotted")
 dev.off()
 
-png("results/figures/fig6_signal_recovery.png", width = 700, height = 700, res = 120)
+png("results/figures/full_sim/fig6_signal_recovery.png", width = 700, height = 700, res = 120)
 par(mar = c(5, 5, 4, 2))
 plot(data$L_true[, target_true], res$L[, target_est] * sign_corr,
      main = sprintf("Figure 6: Signal Recovery\n(Est Factor %d vs True Factor %d, r = %.3f)",
@@ -289,7 +289,7 @@ grid(col = "lightgray", lty = "dotted")
 dev.off()
 
 # --- Figure 7: Loading Correlation Heatmap (True vs Estimated) ---
-pdf("results/figures/fig7_loading_correlations.pdf", width = 7, height = 6)
+pdf("results/figures/full_sim/fig7_loading_correlations.pdf", width = 7, height = 6)
 par(mar = c(5, 5, 4, 5))
 cor_mat <- cor(data$L_true, res$L)
 palette2 <- colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(100)
@@ -307,7 +307,7 @@ for (i in 1:K) for (j in 1:K) {
 box()
 dev.off()
 
-png("results/figures/fig7_loading_correlations.png", width = 700, height = 600, res = 120)
+png("results/figures/full_sim/fig7_loading_correlations.png", width = 700, height = 600, res = 120)
 par(mar = c(5, 5, 4, 5))
 image(1:K, 1:K, abs(cor_mat),
       col = palette2, zlim = c(0, 1),
@@ -323,7 +323,7 @@ box()
 dev.off()
 
 # --- Figure 8: Noise Precision Recovery ---
-pdf("results/figures/fig8_tau_distribution.pdf", width = 8, height = 5)
+pdf("results/figures/full_sim/fig8_tau_distribution.pdf", width = 8, height = 5)
 par(mar = c(5, 5, 4, 2))
 hist(res$Tau, breaks = 50, col = "#1f77b4AA", border = "white",
      main = "Figure 8: Estimated Feature-Specific Noise Precision",
@@ -337,7 +337,7 @@ legend("topright",
        col = c("#d62728", "#2ca02c"), lty = c(2, 3), lwd = 2, bty = "n")
 dev.off()
 
-png("results/figures/fig8_tau_distribution.png", width = 800, height = 500, res = 120)
+png("results/figures/full_sim/fig8_tau_distribution.png", width = 800, height = 500, res = 120)
 par(mar = c(5, 5, 4, 2))
 hist(res$Tau, breaks = 50, col = "#1f77b4AA", border = "white",
      main = "Figure 8: Estimated Feature-Specific Noise Precision",
@@ -353,5 +353,5 @@ dev.off()
 
 cat("\nAll figures saved to results/figures/ (PDF + PNG)\n")
 cat(sprintf("Total files: %d CSVs + %d figure pairs\n",
-            length(list.files("results", pattern = "\\.csv$")),
-            length(list.files("results/figures", pattern = "\\.pdf$"))))
+            length(list.files("results/tables/full_sim", pattern = "\\.csv$")),
+            length(list.files("results/figures/full_sim", pattern = "\\.pdf$"))))

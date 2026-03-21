@@ -170,7 +170,7 @@ changing appreciably.
 
 ### Figure 1: RMSE Trace
 
-![RMSE Trace](figures/fig1_rmse_trace.png)
+![RMSE Trace](figures/full_sim/fig1_rmse_trace.png)
 
 The RMSE (Root Mean Squared Error) between Y and the reconstructed matrix
 L * F' measures how well the model captures the systematic signal in the data.
@@ -190,7 +190,7 @@ of 0.9978 represents near-perfect signal-noise separation.
 
 ### Figure 2: ELBO Proxy Trace
 
-![ELBO Proxy](figures/fig2_elbo_proxy.png)
+![ELBO Proxy](figures/full_sim/fig2_elbo_proxy.png)
 
 The ELBO proxy tracks the genomics data-fit term of the Evidence Lower Bound:
 
@@ -277,7 +277,7 @@ beta trace to confirm practical convergence.
 
 ### Figure 3: Beta Comparison (Estimated vs True)
 
-![Beta Comparison](figures/fig3_beta_comparison.png)
+![Beta Comparison](figures/full_sim/fig3_beta_comparison.png)
 
 This figure compares the estimated beta coefficients (with 95% posterior credible
 intervals) against the true values used in simulation.
@@ -292,7 +292,7 @@ True Factor 1.
 
 ### Figure 7: Loading Correlation Matrix
 
-![Loading Correlations](figures/fig7_loading_correlations.png)
+![Loading Correlations](figures/full_sim/fig7_loading_correlations.png)
 
 The loading correlation matrix reveals how estimated factors map to true factors.
 Each cell shows the Pearson correlation between a column of the true L matrix and
@@ -400,7 +400,7 @@ validates that the model specification is appropriate.
 
 ### Figure 5: Kaplan-Meier Curves
 
-![Kaplan-Meier Curves](figures/fig5_kaplan_meier.png)
+![Kaplan-Meier Curves](figures/full_sim/fig5_kaplan_meier.png)
 
 Kaplan-Meier curves stratify patients by the median loading score for each factor.
 Factors with significant log-rank p-values (Factors 2 and 5) show clear separation
@@ -413,7 +413,7 @@ meaningful survival heterogeneity.
 
 ### Figure 6: Signal Recovery (True vs Reconstructed)
 
-![Signal Recovery](figures/fig6_signal_recovery.png)
+![Signal Recovery](figures/full_sim/fig6_signal_recovery.png)
 
 This scatter plot compares the true signal matrix (L * F') against the model's
 reconstruction (E[L] * E[F]') for a random subset of matrix entries. Perfect
@@ -429,7 +429,7 @@ recovery would show all points on the diagonal.
 
 ### Figure 8: Tau (Noise Precision) Distribution
 
-![Tau Distribution](figures/fig8_tau_distribution.png)
+![Tau Distribution](figures/full_sim/fig8_tau_distribution.png)
 
 The model estimates a separate noise precision (tau_j = 1/sigma^2_j) for each of
 the 1,000 features. Since the true noise is homoscedastic (sigma = 1 for all
@@ -448,7 +448,7 @@ features), we expect tau_j ≈ 1.0 for all j.
 
 ### Figure 4: GEP Heatmap
 
-![GEP Heatmap](figures/fig4_gep_heatmap.png)
+![GEP Heatmap](figures/full_sim/fig4_gep_heatmap.png)
 
 The heatmap displays the top 10 features (by absolute weight) for each of the 5
 estimated factors. Each column represents a Gene Expression Program (GEP).
