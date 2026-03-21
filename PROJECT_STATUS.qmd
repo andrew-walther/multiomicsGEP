@@ -1,0 +1,567 @@
+---
+title: "multiomicsGEP — Project Status"
+subtitle: "Supervised Bayesian Matrix Factorization for Joint Genomics + Survival Modelling"
+author: "Andrew Walther"
+date: "March 2026"
+format:
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    geometry: "margin=1in"
+    mainfont: "Helvetica Neue"
+    monofont: "Menlo"
+    colorlinks: true
+    linkcolor: "NavyBlue"
+execute:
+  echo: false
+  message: false
+  warning: false
+---
+
+## Project Overview
+
+This project implements a **Supervised Bayesian Matrix Factorization** model
+that jointly decomposes high-dimensional genomics data (gene expression, DNA
+methylation, etc.) and models patient survival outcomes. The core idea is to
+find a shared latent space that simultaneously explains genomic variation *and*
+predicts clinical outcomes.
+
+**The model:**
+
+- **Genomics:** Y = L F' + E, where L (n x K) are patient loadings, F (p x K) are
+  biological factor weights, and E is Gaussian noise with feature-specific
+  precision tau_j.
+- **Survival:** Cox proportional hazards h(t_i) = h_0(t_i) exp(sum_k l_ik * beta_k),
+  linking the same latent loadings L to time-to-event data via survival
+  coefficients beta.
+
+**Inference:** Coordinate Ascent Variational Inference (CAVI), where each
+parameter update reduces to an Empirical Bayes Normal Means (EBNM) problem
+with point-normal priors.
+
+---
+
+## Repository Map
+
+```
+multiomicsGEP/
+|-- CLAUDE.md                        <- Claude Code entry point (thin; defers here)
+|-- PROJECT_STATUS.qmd/.pdf         <- This file (project documentation)
+|-- README.md                        <- GitHub front page
+|-- code/
+|   |-- SupervisedMF_Context.md      <- AI/collaborator quick-reference for V2 code
+|   |-- Supervised_Bayesian_MF.R     <- V1: Original CAVI implementation (reference only)
+|   |-- Supervised_Bayesian_MF_V2.R  <- V2: Corrected implementation (all fixes) -- USE THIS
+|   |-- update_beta.R                <- Modular beta update functions
+|   |-- update_L.R                   <- Modular q(L) update functions (vector EBNM, dual-source)
+|   |-- update_F.R                   <- Modular q(F) update functions (pure genomics, tau cancellation)
+|   |-- update_tau.R                 <- Modular q(tau) update functions (closed-form MLE)
+|   `-- multiomicsGEP_code.Rmd       <- Earlier exploratory R Markdown notebook
+|-- derivations/
+|   |-- qB/
+|   |   |-- qBeta_update_derivation.tex  <- Full step-by-step q(beta) derivation (11 pages)
+|   |   `-- qBeta_update_derivation.pdf
+|   |-- qL/
+|   |   |-- qL_update_derivation.tex     <- Vector EBNM, dual-source (genomics+survival)
+|   |   `-- qL_update_derivation.pdf
+|   |-- qF/
+|   |   |-- qF_update_derivation.tex     <- tau cancellation property, pure genomics
+|   |   `-- qF_update_derivation.pdf
+|   |-- qTau/
+|   |   |-- qTau_update_derivation.tex   <- Closed-form MLE, variance correction
+|   |   `-- qTau_update_derivation.pdf
+|   |-- EBMF/
+|   |   `-- EBMF_Derivations*.pdf        <- Empirical Bayes MF theory notes
+|   |-- MF_UpdateDerivations/
+|   |   |-- MF_Derivations_UpdateAlgo_2_12_26.pdf  <- Reviewed draft -- HAS ERRORS (R1-R8)
+|   |   |-- MF_Derivations_UpdateAlgo_REVISED.tex/.pdf  <- Corrected (21 pages)
+|   |   `-- MF_V2_Companion.tex/.pdf    <- Math <-> code mapping (17 pages)
+|   `-- SurvivalMF/
+|       `-- *.pdf                        <- Survival + MF background notes
+|-- results/
+|   |-- run_simulation.R             <- Reproduce V2 simulation (8 figs, 11 CSVs)
+|   |-- run_modular_simulation.R     <- Reproduce modular simulation (standalone)
+|   |-- simulation_report.qmd/.pdf  <- V2 simulation report (Quarto, ggplot2)
+|   |-- modular_sim_report.qmd/.pdf <- Modular simulation report (Quarto, per-fig commentary)
+|   |-- simulation_console_output.txt
+|   |-- figures/
+|   |   |-- full_sim/                <- 8 figure pairs from V2 simulation
+|   |   `-- modular_sim/             <- 8 figure pairs from modular simulation
+|   `-- tables/
+|       |-- full_sim/                <- 11 CSV tables from V2 simulation
+|       `-- modular_sim/             <- 11 CSV tables from modular simulation
+|-- tests/
+|   |-- test_helpers.R               <- Lightweight assertion framework
+|   |-- test_update_beta.R           <- 24 tests for update_beta.R (9 groups)
+|   |-- test_update_L.R              <- 28 tests for update_L.R (9 groups)
+|   |-- test_update_F.R              <- 26 tests for update_F.R (9 groups)
+|   |-- test_update_tau.R            <- 27 tests for update_tau.R (9 groups)
+|   `-- run_tests.R                  <- Master runner: 105/105 tests passing
+|-- demos/
+|   |-- demo_update_beta.R           <- 5 demos for update_beta.R
+|   |-- demo_update_L.R              <- 5 demos for update_L.R
+|   |-- demo_update_F.R              <- 5 demos for update_F.R
+|   `-- demo_update_tau.R            <- 5 demos for update_tau.R
+|-- docs/
+|   |-- Makefile                     <- `make all` renders .md -> .pdf + .html
+|   |-- update_beta.md/.pdf/.html    <- Companion doc for update_beta.R
+|   |-- update_L.md/.pdf/.html       <- Companion doc for update_L.R
+|   |-- update_F.md/.pdf/.html       <- Companion doc for update_F.R
+|   `-- update_tau.md/.pdf/.html     <- Companion doc for update_tau.R
+`-- paper/
+    `-- multiomicsGEP_manuscript.qmd  <- Manuscript draft (Quarto)
+```
+
+---
+
+## Mathematical Framework
+
+### Model Components
+
+| Symbol | Dimension | Meaning |
+|--------|-----------|---------|
+| Y      | n x p     | Observed genomics data matrix |
+| L      | n x K     | Patient loading matrix (shared latent space) |
+| F      | p x K     | Biological factor weight matrix |
+| beta   | K x 1     | Survival coefficient vector |
+| tau_j  | p-vector  | Feature-specific noise precision |
+| (t_i, delta_i) | n-vectors | Survival time and event indicator |
+
+### Inference Strategy
+
+1. **Mean-field factorisation:** q(L, F, beta) = q(L) q(F) q(beta)
+2. **CAVI loop:** For each factor k = 1, ..., K:
+   - Update q(l_k) via EBNM(x = B_L/A_L, s = 1/sqrt(A_L))
+   - Update q(f_k) via EBNM(x = B_F/A_F, s = 1/sqrt(A_F))
+   - Update q(beta_k) via EBNM(x = B_beta/A_beta, s = 1/sqrt(A_beta))
+3. **Update tau_j** from expected squared residuals
+4. **Cox Taylor expansion** linearises the non-conjugate survival likelihood
+   into a weighted Gaussian form with working response z_i and weight W_ii
+
+### Key Mathematical Concepts
+
+- **Posterior means vs second moments:** EL = E_q[l], EL2 = E_q[l^2] =
+  Var_q(l) + mean^2. This distinction is critical for the variance inflation
+  term in the tau update and the error-in-variables correction in the beta update.
+- **EBNM sub-problems:** Each coordinate update reduces to: given
+  pseudo-observations x with noise s, estimate a prior g and posterior q.
+- **Error-in-variables:** Using E[l^2] (not l-bar^2) in the beta precision prevents
+  overfitting to uncertain loadings.
+
+---
+
+## Derivation Review Summary
+
+A thorough review of `MF_Derivations_UpdateAlgo_2_12_26.pdf` identified **8 errors**,
+all corrected in `MF_Derivations_UpdateAlgo_REVISED.tex`.
+
+::: {.callout-warning}
+## Derivation errors in 2_12_26.pdf (R1--R8)
+The February 12 draft contains 8 errors listed below. Use **REVISED.pdf** for all reference.
+:::
+
+| ID | Location | Error | Correction |
+|----|----------|-------|------------|
+| R1 | Sec. 1A | Wrong dimension subscripts on Y, L, F, E | Fixed: Y_(nxp) = L_(nxK) F'_(Kxp) + E_(nxp) |
+| R2 | Eq. 22 | z^{-k}_i defined with f_{jk'} instead of beta_{k'} | Fixed: uses beta_{k'} (survival coefficient) |
+| R3 | Eqs. 32-35 | f^2_{jk}, beta^2_k where E_q second moments needed | Added explicit E_q notation |
+| R4 | Eqs. 47-48 | EBNM inputs subscripted i (sample) | Fixed to j (feature) for F update |
+| R5 | Eq. 62 | Missing exponent: beta_k should be beta^2_k | Added squared exponent |
+| R6 | Sec. 6 | beta update as generic WLS; no EBNM form | Derived full A_k, B_k for EBNM |
+| R7 | Eq. 83 | Sign error: log tau + tau * R-bar^2 | Fixed to log tau - tau * R-bar^2 |
+| R8 | Eq. 85 | l^2_{jk} wrong index (j should be i) | Fixed to l^2_{ik} |
+
+### Document Relationships
+
+- **2_12_26.pdf** --- reviewed document; contains errors R1--R8
+- **REVISED.tex/.pdf** --- corrected version with all 8 fixes + errata table (21 pages)
+- **MF_V2_Companion.tex/.pdf** --- comprehensive companion mapping math to V2 code (17 pages)
+
+---
+
+## Code Versions
+
+### V1: `Supervised_Bayesian_MF.R`
+
+The original implementation. Functionally correct but with several known issues:
+
+- Orthogonalisation always ON; resets EL2/EF2 to squared means (drops
+  posterior variance every 10 iterations)
+- z_no_k computed from start-of-iteration eta only (not true Gauss-Seidel)
+- No numerical floors on EBNM precision inputs
+- Convergence checks only delta-L (not delta-beta)
+- Only RMSE tracked (no ELBO monitoring)
+
+### V2: `Supervised_Bayesian_MF_V2.R`
+
+::: {.callout-tip}
+## Recommended implementation
+Use `code/Supervised_Bayesian_MF_V2.R` for all runs. V1 is retained for reference only.
+:::
+
+The corrected implementation with 6 algorithmic improvements:
+
+| ID | Change | Description |
+|----|--------|-------------|
+| A1 | Gauss-Seidel CAVI | z_no_k recomputed from current EL, EBeta inside k-loop |
+| A2 | Orthogonalisation flag | Behind `orthogonalize=FALSE` (default OFF) |
+| A3 | Precision floors | `pmax(..., 1e-10)` on A_L, A_F, A_Beta |
+| A4 | Dual convergence | Both mean|delta-L| and mean|delta-beta| must be < tol |
+| A5 | ELBO proxy | Genomics log-likelihood tracked per iteration |
+| A6 | Taylor refresh flag | `refresh_taylor=FALSE` for optional per-k recomputation |
+
+**Function signature:**
+
+```r
+fit_supervised_mf(Y, time, status, K=5, max_iter=100, tol=1e-5,
+                  orthogonalize=FALSE, refresh_taylor=FALSE, verbose=TRUE)
+# Returns: list(L, F, Beta, Beta2, Tau, history)
+```
+
+---
+
+## How to Run
+
+### Prerequisites
+
+```r
+install.packages(c("survival", "ebnm"))
+```
+
+### Running the Simulations
+
+**V2 (monolithic):**
+
+```r
+source("code/Supervised_Bayesian_MF_V2.R")
+```
+
+**Modular (standalone, recommended for understanding the algorithm):**
+
+```r
+Rscript results/run_modular_simulation.R
+```
+
+Both use the same parameters (n=250, p=1000, K=5, seed=42) and produce equivalent results.
+The modular script sources only the four standalone update modules; it does not depend on V2.R.
+
+### Expected Output
+
+- **RMSE** converges near 1.0 (the true noise SD)
+- **ELBO proxy** is non-decreasing
+- **Estimated beta** recovers sign pattern (+, -, +, -, 0)
+- **Supervised C-index** ~0.86 on held-out tertiles
+- **Censoring rate** ~30-40%
+
+### Compiling LaTeX Documents
+
+```bash
+cd derivations/MF_UpdateDerivations/
+pdflatex MF_Derivations_UpdateAlgo_REVISED.tex
+pdflatex MF_V2_Companion.tex
+pdflatex MF_V2_Companion.tex   # second pass for cross-references
+
+cd derivations/qB/
+pdflatex qBeta_update_derivation.tex  # run 3x for stable bookmarks
+```
+
+### Running the Test Suite
+
+::: {.callout-note}
+## Test suite status: 105/105 passing
+Run after any change to a modular update script: `Rscript tests/run_tests.R`
+:::
+
+```r
+Rscript tests/run_tests.R
+# Expected: 105/105 tests passed (24 beta + 28 L + 26 F + 27 tau)
+```
+
+### Running the Modular Update Demos
+
+```r
+Rscript demos/demo_update_beta.R   # beta update: 5 demos
+Rscript demos/demo_update_L.R      # q(L) update: 5 demos
+Rscript demos/demo_update_F.R      # q(F) update: 5 demos -- see tau cancellation
+Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance correction
+```
+
+---
+
+## Current Status & Next Steps
+
+### Completed
+
+- [x] Derivation review: 8 errors (R1-R8) identified and corrected
+- [x] REVISED.tex/PDF: Corrected derivation document with errata table (21 pages)
+- [x] REVISED.tex expanded: Full step-by-step algebra added throughout (Taylor,
+  L/F/beta/tau updates) with new `derivbox` gray-box environment for intermediate steps
+- [x] V2.R: Corrected R implementation with all 6 algorithmic fixes (A1-A6)
+- [x] V2_Companion.tex/PDF: Comprehensive math-to-code companion document (17 pages)
+- [x] PROJECT_STATUS + SupervisedMF_Context.md: Project documentation
+- [x] Simulation validation: V2 runs end-to-end on synthetic data (n=250, p=1000, K=5)
+- [x] results/: Full simulation outputs -- 8 figures, 11 CSV tables, console log
+- [x] derivations/qB/qBeta_update_derivation.tex/.pdf: Self-contained q(beta) derivation (11 pages)
+- [x] code/update_beta.R: Modular beta update (`compute_z_no_k`, `update_beta_k`, `update_beta_all`)
+- [x] tests/: Test infrastructure + 24 tests for beta update (9 groups, all passing)
+- [x] demos/demo_update_beta.R: 5 interactive demos for beta update
+- [x] code/update_L.R: Modular q(L) update -- vector EBNM, dual-source
+- [x] code/update_F.R: Modular q(F) update -- pure genomics, tau cancellation
+- [x] code/update_tau.R: Modular q(tau) update -- closed-form MLE
+- [x] tests/test_update_L.R: 28 tests (9 groups, all passing)
+- [x] tests/test_update_F.R: 26 tests (9 groups, tau cancellation verified)
+- [x] tests/test_update_tau.R: 27 tests (9 groups, variance correction verified)
+- [x] tests/run_tests.R: Updated master runner -- 105/105 tests passing
+- [x] demos/demo_update_L.R: 5 demos (anatomy, signal recovery, genomics vs combined, error-in-variables, K=5)
+- [x] demos/demo_update_F.R: 5 demos (tau cancellation, sparse recovery, differential shrinkage, sparsity, K=5)
+- [x] demos/demo_update_tau.R: 5 demos (anatomy, known noise, variance correction, heteroscedastic, ELBO proxy)
+- [x] derivations/qL/qL_update_derivation.tex/.pdf: Self-contained q(L) derivation
+- [x] derivations/qF/qF_update_derivation.tex/.pdf: Self-contained q(F) derivation
+- [x] derivations/qTau/qTau_update_derivation.tex/.pdf: Self-contained q(tau) derivation
+- [x] docs/: Companion documentation for all 4 modular update scripts (.md + .pdf + .html)
+- [x] roxygen2 @export/@family/@seealso tags added to all 11 functions
+- [x] Targeted inline comments added to all 4 R scripts
+- [x] results/ reorganized: figures/{full_sim,modular_sim}/ and tables/{full_sim,modular_sim}/
+- [x] results/run_modular_simulation.R: Standalone CAVI script sourcing only the 4 modular modules
+- [x] results/modular_sim_report.qmd/.pdf: Quarto simulation report for modular implementation
+- [x] results/simulation_report.qmd/.pdf: Quarto simulation report for V2 implementation
+- [x] CLAUDE.md created; PROJECT_STATUS converted to .qmd for PDF rendering
+
+### Potential Next Steps
+
+- [ ] **Real data application:** Apply V2 to actual genomics + survival datasets
+  (TCGA, GEO, etc.) using the `DATA_MODE = "real"` pathway in V2.R
+- [ ] **Select K:** Implement cross-validated C-index or held-out log-likelihood
+  to choose the number of factors K objectively (currently set to 5)
+- [ ] **Additional prior families:** Test `prior_family = "point_laplace"` or
+  `"normal_scale_mixture"` in EBNM calls for different sparsity structures
+- [ ] **Full ELBO:** Track the complete ELBO (survival Taylor term + all KL
+  divergences) instead of the genomics-only proxy currently used
+- [ ] **Scalability:** Profile and optimise for large p (e.g., p > 10,000)
+  -- focus on the n x p `Var_Term` and `R_k` matrix operations
+- [ ] **Manuscript:** Complete `paper/multiomicsGEP_manuscript.qmd`; reference
+  V2 results and corrected derivations
+- [ ] **Bibliography:** Add `\bibliography{refs}` to REVISED.tex to resolve
+  the `\citep{wang2022}` undefined-reference warning in the compiled PDF
+
+---
+
+## Session Log
+
+### Session 1 (March 4--5, 2026)
+
+**Derivation review and code correction session.**
+
+1. Reviewed `MF_Derivations_UpdateAlgo_2_12_26.pdf` against the code
+2. Identified 8 derivation errors (R1--R8)
+3. Created `MF_Derivations_UpdateAlgo_REVISED.tex` with all corrections + errata table
+4. Analysed V1 code against corrected derivations; identified 6 improvements
+5. Created `Supervised_Bayesian_MF_V2.R` with all algorithmic fixes (A1--A6)
+6. Created `MF_V2_Companion.tex` (math to code companion, 17 pages)
+7. Created `PROJECT_STATUS.md` and `SupervisedMF_Context.md`
+
+**Key decisions:**
+
+- Orthogonalisation defaults to OFF in V2 (Point-Normal EBNM promotes
+  sparsity/distinctness without rotation)
+- Taylor refresh defaults to OFF (standard IRLS-within-VI; more stable)
+- V1 preserved as-is for reference; V2 is the recommended implementation
+
+**Deliverables committed:** pushed to `origin/main`
+
+---
+
+### Session 2 (March 5, 2026)
+
+**Simulation validation, derivation expansion, and documentation session.**
+
+1. **Expanded `REVISED.tex`** from ~650 lines to 1,199 lines with full
+   intermediate algebra throughout every update section:
+   - Added new `derivbox` tcolorbox (gray) for algebra steps, distinct from
+     `correctionbox` (red) and `ebnmbox` (blue)
+   - **Taylor (Sec 3):** Full 15-step completing-the-square derivation
+   - **L update (Sec 4):** Explicit residual substitution, A/B identification
+     for genomics and survival terms separately then combined
+   - **F update (Sec 5):** Full quadratic grouping to A_jk, B_jk with R4 fix
+   - **beta update (Sec 6):** Variance-mean decomposition E[l^2] = Var(l) + l-bar^2
+     shown explicitly; error-in-variables correction A_k derived (R5, R6)
+   - **tau update (Sec 7):** Full R-bar^2_ij expansion; explicit optimisation step (R7, R8)
+   - Recompiled REVISED.pdf: **21 pages** (was 12)
+
+2. **Ran V2.R simulation** (n=250, p=1000, K=5):
+   - Key results: RMSE = 0.9978, C-index PCA = 0.827 vs Supervised = 0.828,
+     PH test p = 0.258 (no violation), convergence in 45 iterations
+
+3. **Wrote and rendered `results/simulation_report`** -- 12-section comprehensive report,
+   23 pages via pandoc + xelatex
+
+**Deliverables committed:** `5da14f3`, `e424d14` (pushed to `origin/main`)
+
+---
+
+### Session 3 (March 10, 2026)
+
+**q(beta) derivation, modular implementation, and TDD test suite.**
+
+1. **Verified q(beta) derivation** across REVISED.tex (Sec. 6) and March 6 PDF (Sec. 6A):
+   - Both agree: A_k = sum_i W_ii * E_q[l^2_ik], B_k = sum_i W_ii * z^{-k}_i * l-bar_ik
+   - Confirmed March 6 PDF Eq. 68 typo is intermediate-step only; flagged as R5 in REVISED
+   - Confirmed V2.R omits 1/sigma^2 prior term intentionally (EBNM handles it empirically)
+   - Proved z_no_k reuse is mathematically valid
+   - Confirmed: s_k = 1/sqrt(A_k) is SMALLER when A_k is larger (not larger)
+
+2. **Created test infrastructure** (`tests/` directory):
+   - `tests/test_helpers.R`: assert_near, assert_true, assert_equal, assert_length, etc.
+   - `tests/run_tests.R`: master runner; exits status 1 if any tests fail
+
+3. **TDD Red phase**: 24 failing tests first (9 groups: math identities, WLS limit,
+   K=1 recovery, K=5 recovery, null shrinkage, error-in-variables, numerical stability,
+   Gauss-Seidel ordering, V2 consistency)
+
+4. **TDD Green phase**: Implemented `code/update_beta.R`:
+   - `compute_z_no_k(z, EL, EBeta, k)` -- partial working response
+   - `update_beta_k(w, z_no_k, EL_k, EL2_k, ...)` -- single-factor update
+   - `update_beta_all(w, z, EL, EL2, EBeta, ...)` -- full Gauss-Seidel loop
+
+5. **Fixed 2 test logic errors** during green phase:
+   - T4.1: `length()` returns integer (5L != 5); fixed to `assert_length()`
+   - T6.1: s_high should be < s_low (not >); larger A_k -> smaller s_k
+
+6. **Created `derivations/qB/qBeta_update_derivation.tex`** (11 pages):
+   - tcolorbox styles: derivbox (gray), correctionbox (red), ebnmbox (blue),
+     verifybox (green), codebox (orange)
+
+**Key decisions:**
+
+- Plain R test framework (no testthat/DESCRIPTION) -- no external dependencies
+- `update_beta_k` decoupled from CAVI loop; returns diagnostic fields (A, B, x, s)
+- Gauss-Seidel propagation: EBeta_curr[k] updated immediately within the loop
+
+---
+
+### Session 4 (March 11, 2026)
+
+**Demo for beta update + to-do setup for L/F/tau modules.**
+
+1. Created `demos/demo_update_beta.R` -- 5 interactive scenarios: anatomy of A_k/B_k,
+   signal recovery K=1, sparsity/shrinkage, error-in-variables, multi-factor K=5.
+   Format: sep/sec/val helpers, pure narrative output (no PASS/FAIL).
+2. Updated `PROJECT_STATUS.md` to add `demos/` to the repo map.
+3. Updated `code/SupervisedMF_Context.md` with expanded L/F/tau next-step details.
+
+**Deliverables committed:** `ad80c4e` (pushed to `origin/main`)
+
+---
+
+### Session 5 (March 12, 2026)
+
+**Full implementation of modular updates for q(L), q(F), and q(tau).**
+
+1. **`code/update_L.R`** -- Three functions:
+   - `compute_R_k(Y, EL, EF, k)`: Partial residual matrix (n x p), shared with F update
+   - `update_L_k(...)`: Vector EBNM -- A_L[i] and B_L[i] are n-vectors (patient-specific
+     Cox weights W_ii); two additive sources (genomics + survival)
+   - `update_L_all(...)`: Gauss-Seidel loop over K factors
+
+2. **`code/update_F.R`** -- Two functions:
+   - `update_F_k(...)`: Pure genomics EBNM -- tau_j **cancels** in x_j = B_F[j]/A_F[j]
+     but does NOT cancel in s_j
+   - `update_F_all(...)`: Gauss-Seidel loop over K factors
+
+3. **`code/update_tau.R`** -- Three functions:
+   - `compute_var_term(EL, EL2, EF, EF2)`: Variance correction (EL2 x EF2' - EL^2 x EF'^2)
+   - `compute_expected_residual_sq(...)`: R2_bar = naive residual^2 + Var_Term
+   - `update_tau(...)`: Closed-form MLE tau-hat_j = n / colSums(R2_bar) + ELBO proxy
+
+4. **Tests** (9 groups each, all passing):
+   - 28 tests for update_L.R (T9 verifies bit-for-bit match with V2.R lines 310--321)
+   - 26 tests for update_F.R (T1.4/T1.5 verify tau cancellation numerically)
+   - 27 tests for update_tau.R (T4 verifies variance correction direction)
+   - Master runner: 105/105 total tests passing
+
+5. **Demos** (5 scenarios each) and **LaTeX derivations** (compiled to PDF) for all three modules.
+
+**Key design decisions:**
+
+- `compute_R_k` shared between update_L.R and update_F.R (F sources it from update_L.R)
+- tau does not appear in the survival term -- F and tau updates are pure genomics
+- `update_tau` has NO per-k loop and NO ebnm dependency (only base R)
+- ELBO proxy computed inside `update_tau` as a convergence monitor
+
+---
+
+### Session 6 (March 20, 2026)
+
+**Comprehensive documentation: companion docs, roxygen2, and inline comments.**
+
+1. **Created `docs/` directory** with companion documentation for all four modules:
+   - `docs/update_beta.md` -- Overview, math background, function reference, test + demo explanations
+   - `docs/update_L.md` -- Dual-source precision/signal, compute_R_k shared dependency
+   - `docs/update_F.md` -- tau cancellation property, pure genomics
+   - `docs/update_tau.md` -- Closed-form MLE, variance correction, ELBO proxy
+
+2. **Created `docs/Makefile`**: `make all` renders all 4 `.md` files to PDF + HTML
+   (Helvetica/Menlo fonts for Unicode Greek letter support).
+
+3. **Added roxygen2 package-readiness tags** to all 11 functions across 4 R scripts:
+   - `@export`, `@family` (beta_update / L_update / F_update / tau_update), `@seealso`
+
+4. **Added targeted inline comments** (~3--5 per file) explaining *why* at non-obvious points.
+
+5. **Verification:** 105/105 tests still passing; all 8 rendered outputs (4 PDF + 4 HTML) confirmed.
+
+---
+
+### Session 7 (March 20, 2026)
+
+**Modular simulation report, results/ reorganization, and Quarto conversion.**
+
+1. **Reorganized `results/`**:
+   - Created `figures/{full_sim,modular_sim}/` and `tables/{full_sim,modular_sim}/`
+   - Moved existing V2 figures/CSVs into `full_sim/` subfolders
+   - Updated `run_simulation.R` output paths accordingly
+
+2. **Created `results/run_modular_simulation.R`** (~340 lines):
+   - Completely standalone -- sources only the 4 modular update modules
+   - `calc_cox_taylor()` copied verbatim from V2.R; no other V2 dependency
+   - Block-by-type update ordering: all L -> all F -> all beta -> tau
+     (vs. V2's by-factor ordering; equivalent CAVI objective)
+   - Results: RMSE=0.9979, C-index=0.858, PH test p=0.44, null factor beta correctly zeroed
+
+3. **Created `results/modular_sim_report.qmd`** (863 lines):
+   - Self-contained Quarto PDF; CAVI runs inline with `#| cache: true`
+   - ggplot2 figures (theme_bw), kableExtra tables, Quarto callout blocks
+   - Per-figure commentary (~150--300 words each) with statistical insights
+
+4. **Created `results/simulation_report.qmd`** (786 lines):
+   - Sources V2.R inline with `pdf(NULL)` + `sink()` wrappers to suppress output
+
+5. Deleted `.md` report files; `.qmd` + `.pdf` are the canonical report artifacts.
+
+**Deliverables committed:** `9a59c3e` (pushed to `origin/main`)
+
+---
+
+### Session 8 (March 20, 2026)
+
+**Documentation housekeeping: CLAUDE.md, file role clarification, PROJECT_STATUS to Quarto.**
+
+1. **Created `CLAUDE.md`** -- thin Claude Code entry point (key instructions + quick-reference
+   table); defers to `PROJECT_STATUS` for full context.
+
+2. **Discussed file role separation:**
+   - `README.md` = GitHub front page (overview, quickstart, brief math)
+   - `PROJECT_STATUS.qmd/.pdf` = full internal working document (session log, derivation review,
+     algorithm design decisions, next steps)
+   - `CLAUDE.md` = lean Claude Code instructions pointing to PROJECT_STATUS
+
+3. **Converted `PROJECT_STATUS.md` to `PROJECT_STATUS.qmd`** for PDF rendering:
+   - Added Quarto YAML header (Helvetica Neue / Menlo, TOC, numbered sections)
+   - Added callout blocks for key notices (derivation errors warning, V2 recommended tip,
+     test suite status note)
+   - Deleted `PROJECT_STATUS.md`; `.qmd` + `.pdf` are now canonical
+
+4. Updated `MEMORY.md` documentation convention to reflect the three-file structure.
+
+**Deliverables committed:** pushed to `origin/main`

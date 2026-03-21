@@ -58,6 +58,18 @@ multiomicsGEP/
 ├── demos/                             ← Interactive demonstrations (5 per module)
 │   └── demo_update_*.R                ← Run: Rscript demos/demo_update_*.R
 │
+├── results/                           ← Simulation outputs
+│   ├── run_simulation.R               ← Reproduce V2 simulation (8 figs, 11 CSVs)
+│   ├── run_modular_simulation.R       ← Reproduce modular simulation (standalone)
+│   ├── simulation_report.qmd/.pdf     ← V2 simulation report (Quarto, ggplot2)
+│   ├── modular_sim_report.qmd/.pdf    ← Modular simulation report (Quarto, per-fig commentary)
+│   ├── figures/
+│   │   ├── full_sim/                  ← 8 figure pairs from V2 simulation
+│   │   └── modular_sim/               ← 8 figure pairs from modular simulation
+│   └── tables/
+│       ├── full_sim/                  ← 11 CSV tables from V2 simulation
+│       └── modular_sim/               ← 11 CSV tables from modular simulation
+│
 ├── derivations/
 │   ├── MF_UpdateDerivations/
 │   │   ├── MF_Derivations_UpdateAlgo_REVISED.pdf  ← ✅ Corrected derivations
@@ -86,11 +98,19 @@ install.packages(c("survival", "ebnm"))
 
 ### Run the Simulation Benchmark
 
+**V2 implementation (monolithic):**
 ```r
 source("code/Supervised_Bayesian_MF_V2.R")
 ```
 
-This generates a synthetic dataset (n=250 patients, p=1000 features, K=5 factors), fits the model, and prints:
+**Modular implementation (standalone, recommended for understanding the algorithm):**
+```r
+Rscript results/run_modular_simulation.R
+```
+
+Both scripts use the same parameters (n=250, p=1000, K=5, seed=42) and produce equivalent results. The modular script sources only the four standalone update modules; it does not depend on V2.R.
+
+The V2 run generates a synthetic dataset and prints:
 
 - Factor summary table (β estimates, log-rank p-values, sparsity, PVE)
 - Proportional hazards test (cox.zph)
@@ -148,7 +168,7 @@ On the simulated benchmark:
 | Reconstruction RMSE | Converges near **1.0** (true noise SD) |
 | ELBO proxy | **Non-decreasing** across iterations |
 | β sign recovery | **(+, −, +, −, 0)** — matches ground truth |
-| Supervised C-index | **Exceeds** top-5 PCA C-index |
+| C-index (modular) | ~**0.86** on held-out tertiles |
 | Factor 5 (β=0) | Correctly shrunk toward zero |
 
 ---
