@@ -3,8 +3,16 @@
 # Saves: text output, CSV tables, and PDF/PNG figures to results/
 # ==============================================================================
 
-# Set working directory to repo root
-setwd("/Users/ajwalther/GithubProjects/multiomicsGEP")
+# Set working directory to repo root (portable: works locally and on Longleaf)
+if (Sys.getenv("REPO_ROOT") != "") {
+  setwd(Sys.getenv("REPO_ROOT"))
+} else if (file.exists("code/update_L.R")) {
+  # Already at repo root (e.g., local RStudio)
+} else if (file.exists("../code/update_L.R")) {
+  setwd("..")
+} else {
+  stop("Cannot find repo root. Run from project root or set REPO_ROOT env var.")
+}
 
 # Source the V2 script in simulated mode — this runs the full pipeline
 # We capture the console output

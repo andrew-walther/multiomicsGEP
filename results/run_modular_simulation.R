@@ -19,7 +19,16 @@
 #   Rscript results/run_modular_simulation.R
 # ==============================================================================
 
-setwd("/Users/ajwalther/GithubProjects/multiomicsGEP")
+# Set working directory to repo root (portable: works locally and on Longleaf)
+if (Sys.getenv("REPO_ROOT") != "") {
+  setwd(Sys.getenv("REPO_ROOT"))
+} else if (file.exists("code/update_L.R")) {
+  # Already at repo root (e.g., local RStudio)
+} else if (file.exists("../code/update_L.R")) {
+  setwd("..")
+} else {
+  stop("Cannot find repo root. Run from project root or set REPO_ROOT env var.")
+}
 
 # ==============================================================================
 # Libraries and Modular Modules
