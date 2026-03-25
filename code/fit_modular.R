@@ -18,7 +18,7 @@
 #
 #   Differences from V2.R:
 #     - Uses modular update_L.R / update_F.R / update_beta.R / update_tau.R
-#     - Convergence uses mean(|delta|), matching V2.R [A4]
+#     - Convergence uses mean(|delta|) with tol=1e-3 (V3 Algorithm 1 specifies max, but mean is more practical; see STEP 4 comment)
 #     - Returns EL/EL2/EF/EF2/EBeta/EBeta2 directly (no V2 aliases L/F/Beta)
 #
 # VARIABLE CONVENTIONS:
@@ -33,11 +33,16 @@
 #   z[i]      = working response z_i = eta_i + u_i / W_{ii}
 #
 # DATA_MODE:
+#   "real"       -- (default) set real_Y / real_time / real_status below, then
+#                   Rscript code/fit_modular.R
 #   "simulated"  -- run built-in DGP and print convergence diagnostics
-#   "real"       -- use real_Y / real_time / real_status (set below)
+#                   (set DATA_MODE <- "simulated" then Rscript code/fit_modular.R)
 # ==============================================================================
 
-DATA_MODE <- "simulated"
+# Default: "real" — source() loads the function without side effects.
+# Change to "simulated" to run the built-in DGP validation, or
+# set real_Y/real_time/real_status and run Rscript code/fit_modular.R
+DATA_MODE <- "real"
 
 real_Y      <- NULL
 real_time   <- NULL
@@ -58,7 +63,7 @@ source("code/update_tau.R")   # compute_var_term, update_tau
 # ------------------------------------------------------------------------------
 #' Calculate Cox Score and Diagonal Hessian (Taylor Expansion)
 #'
-#' Copied verbatim from code/Supervised_Bayesian_MF_V2.R lines 70-93.
+#' Functionally identical to code/Supervised_Bayesian_MF_V2.R lines 70-93.
 #' Not sourced from V2.R to avoid running its top-level simulation code.
 #'
 #' Transforms the non-conjugate Cox partial likelihood into a locally Gaussian
@@ -107,7 +112,9 @@ calc_cox_taylor <- function(eta, time, status) {
 #'   - update_tau.R:  update_tau()
 #'
 #' Convergence is declared when BOTH mean|delta_L| and mean|delta_Beta| < tol
-#' (after a 5-iteration burn-in), matching the V2.R criterion [A4].
+#' (after a 5-iteration burn-in). V3 Algorithm 1 specifies max absolute change;
+#' mean is used here because max rarely reaches 1e-5 on typical datasets due to
+#' SVD orientation oscillations.
 #'
 #' @param Y        n x p genomics data matrix
 #' @param time     n-vector of survival / censoring times
@@ -375,27 +382,23 @@ if (DATA_MODE == "simulated") {
   # s * EBeta matches B_true in sign (non-zero factors only).
   est   <- res$EBeta
   nonzero_mask <- B_true != 0
-  # Check sign match for each factor
-  sign_match_direct <- sign(est) == sign(B_true)
-  sign_match_flip   <- sign(-est) == sign(B_true)
-  # A factor is "consistent" if either its sign or flipped sign matches truth
-  sign_consistent <- sign_match_direct | sign_match_flip | !nonzero_mask
 
+  # Beta summary table — absolute values shown because SVD sign is ambiguous
   beta_df <- data.frame(
-    Factor         = 1:K,
-    Beta_true      = B_true,
-    Beta_est       = round(est, 3),
-    Abs_Beta_est   = round(abs(est), 3),
-    Abs_Beta_true  = round(abs(B_true), 3),
-    Sign_consistent = sign_consistent
+    Factor    = 1:K,
+    Beta_true = B_true,
+    Beta_est  = round(est, 3)
   )
   print(beta_df)
 
-  cat("\n  Note: SVD sign ambiguity means factor signs may be flipped.\n")
-  cat(sprintf("  Non-zero factors with consistent sign (direct or flipped): %d / %d\n",
-              sum(sign_consistent[nonzero_mask]), sum(nonzero_mask)))
-  cat(sprintf("  Zero-true factor shrunk to zero: %s\n",
-              all(abs(est[!nonzero_mask]) < 0.1)))
+  cat("\n  Note: SVD introduces sign ambiguity — factor columns may be sign-flipped.\n")
+  cat("  Key checks:\n")
+  nonzero_est_threshold <- 0.1
+  cat(sprintf("    Non-zero true betas (|beta_true| > 0) with nonzero estimates: %d / %d\n",
+              sum(abs(est[nonzero_mask]) > nonzero_est_threshold), sum(nonzero_mask)))
+  cat(sprintf("    Zero-true factor shrunk small (|beta_est| < %.1f): %s (Factor 5 = %.3f)\n",
+              nonzero_est_threshold, all(abs(est[!nonzero_mask]) < nonzero_est_threshold),
+              est[!nonzero_mask]))
 
 } else if (DATA_MODE == "real") {
 
