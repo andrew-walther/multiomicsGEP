@@ -1,4 +1,12 @@
 # ==============================================================================
+# DEPRECATED — Block-Wise Modular Simulation (archived reference only)
+#
+# This script uses a block-wise update order (all-L -> all-F -> all-beta -> tau)
+# which is NOT true Gauss-Seidel CAVI. Use run_factor_modular_simulation.R
+# (results/modular_sim_factor/) instead, which implements the canonical
+# factor-wise order via fit_supervised_mf_modular() in code/fit_modular.R.
+# ==============================================================================
+#
 # Run Modular Simulation and Export All Results
 #
 # Standalone CAVI implementation using only the four modular update scripts:
