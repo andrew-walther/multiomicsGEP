@@ -1,25 +1,33 @@
-# update_tau.R — Companion Document
-
-**Module:** `code/update_tau.R`
-**Project:** Supervised Bayesian Matrix Factorization (multiomicsGEP)
-**Role:** Closed-form MLE update for per-feature noise precisions q(τ)
-
 ---
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Mathematical Background](#mathematical-background)
-3. [Function Reference](#function-reference)
-   - [compute_var_term](#compute_var_term)
-   - [compute_expected_residual_sq](#compute_expected_residual_sq)
-   - [update_tau](#update_tau)
-4. [Key Properties](#key-properties)
-5. [Test Suite Summary](#test-suite-summary)
-6. [Demo Scenarios](#demo-scenarios)
-7. [Pipeline Context](#pipeline-context)
-8. [Related Files](#related-files)
-
+title: "Companion Document: update_tau.R"
+subtitle: "q(τ) — Closed-Form MLE for Noise Precisions"
+author: "Andrew Walther"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
+    smooth-scroll: true
+    self-contained: true
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \usepackage{geometry}
+        \geometry{margin=1in}
+        \renewcommand{\familydefault}{\sfdefault}
 ---
 
 ## Overview

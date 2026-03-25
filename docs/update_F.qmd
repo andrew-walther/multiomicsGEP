@@ -1,21 +1,33 @@
-# update_F.R — Companion Document
-
-**Module:** `code/update_F.R`
-**Project:** Supervised Bayesian Matrix Factorization (multiomicsGEP)
-**Role:** Variational update for the genomics loading matrix F (factor columns f_{.k})
-
 ---
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Mathematical Background](#mathematical-background)
-3. [The Tau Cancellation Property](#the-tau-cancellation-property)
-4. [API Reference](#api-reference)
-5. [Test Suite](#test-suite)
-6. [Demos](#demos)
-7. [Related Files](#related-files)
-
+title: "Companion Document: update_F.R"
+subtitle: "q(F) — Variational Update for Genomics Loading Matrix"
+author: "Andrew Walther"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
+    smooth-scroll: true
+    self-contained: true
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \usepackage{geometry}
+        \geometry{margin=1in}
+        \renewcommand{\familydefault}{\sfdefault}
 ---
 
 ## Overview

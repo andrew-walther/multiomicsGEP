@@ -1,8 +1,17 @@
 ---
 title: "Supervised Bayesian Matrix Factorization (V2)"
 subtitle: "Simulation Study — Monolithic Implementation"
-date: "March 2026"
+author: "Andrew Walther"
+date: today
 format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
+    smooth-scroll: true
+    self-contained: true
   pdf:
     toc: true
     toc-depth: 3
@@ -15,6 +24,15 @@ format:
     tbl-cap-location: top
     keep-tex: false
     fig-pos: "H"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{float}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \floatplacement{figure}{H}
+        \floatplacement{table}{H}
 execute:
   echo: false
   message: false

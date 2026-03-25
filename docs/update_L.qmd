@@ -1,30 +1,36 @@
-# update_L.R — Companion Document
-
-**Module:** `code/update_L.R`
-**Project:** Supervised Bayesian Matrix Factorization (multiomicsGEP)
-**Role:** Variational update for the loading matrix L in q(L)
-**Last updated:** 2026-03-20
-
+---
+title: "Companion Document: update_L.R"
+subtitle: "q(L) — Variational Update for Loading Matrix"
+author: "Andrew Walther"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
+    smooth-scroll: true
+    self-contained: true
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \usepackage{geometry}
+        \geometry{margin=1in}
+        \renewcommand{\familydefault}{\sfdefault}
 ---
 
-## Table of Contents
-
-1. [Purpose and Context](#1-purpose-and-context)
-2. [Mathematical Background](#2-mathematical-background)
-3. [Function Reference](#3-function-reference)
-   - [compute_R_k](#31-compute_r_k)
-   - [update_L_k](#32-update_l_k)
-   - [update_L_all](#33-update_l_all)
-4. [Dual-Source Precision and Signal](#4-dual-source-precision-and-signal)
-5. [Test Suite](#5-test-suite)
-6. [Demos](#6-demos)
-7. [Key Mathematical Properties](#7-key-mathematical-properties)
-8. [Connections to Other Modules](#8-connections-to-other-modules)
-9. [Common Pitfalls](#9-common-pitfalls)
-
----
-
-## 1. Purpose and Context
+## Purpose and Context
 
 `update_L.R` implements the CAVI (Coordinate Ascent Variational Inference) update for the loading matrix **L** (n × K) in a supervised Bayesian matrix factorization model. The model jointly explains:
 
@@ -37,7 +43,7 @@ The update is a **vector EBNM** (Empirical Bayes Normal Means) problem: each sam
 
 ---
 
-## 2. Mathematical Background
+## Mathematical Background
 
 ### Model
 
@@ -86,9 +92,9 @@ The second moment EL2 is used in downstream updates for q(F) and q(τ) to correc
 
 ---
 
-## 3. Function Reference
+## Function Reference
 
-### 3.1 `compute_R_k`
+### `compute_R_k`
 
 ```r
 compute_R_k(Y, EL, EF, k)
@@ -120,7 +126,7 @@ This removes all factors except k from Y, leaving only the residual that factor 
 
 ---
 
-### 3.2 `update_L_k`
+### `update_L_k`
 
 ```r
 update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k,
@@ -182,7 +188,7 @@ fit     <- ebnm(x = x_L, s = s_L, prior_family = prior_family)
 
 ---
 
-### 3.3 `update_L_all`
+### `update_L_all`
 
 ```r
 update_L_all(Y, EL, EL2, EF, EF2, Tau, w, z, EBeta, EBeta2,
@@ -231,7 +237,7 @@ This computes the Cox linear predictor without factor k, then takes the residual
 
 ---
 
-## 4. Dual-Source Precision and Signal
+## Dual-Source Precision and Signal
 
 The following table summarizes the dual-source structure — the central feature of the q(L) update:
 
@@ -259,7 +265,7 @@ The following table summarizes the dual-source structure — the central feature
 
 ---
 
-## 5. Test Suite
+## Test Suite
 
 **File:** `tests/test_update_L.R`
 **Total tests:** 28 across 9 groups
@@ -342,7 +348,7 @@ Verifies the core formulas hold numerically to tolerance.
 
 ---
 
-## 6. Demos
+## Demos
 
 **File:** `demos/demo_update_L.R`
 **Structure:** 5 scenarios; narrative output only (no PASS/FAIL)
@@ -397,9 +403,9 @@ Simulates a rank-5 model:
 
 ---
 
-## 7. Key Mathematical Properties
+## Key Mathematical Properties
 
-### 7.1 Vector vs. Scalar EBNM
+### Vector vs. Scalar EBNM
 
 Unlike `update_beta.R` (which solves a *scalar* EBNM — one observation per factor) and `update_F.R` (which solves *p* scalar EBNM problems — one per gene), `update_L.R` solves a *vector* EBNM with n observations simultaneously. The `ebnm` package accepts vector inputs (x, s) and fits a shared prior across all n entries.
 
@@ -409,7 +415,7 @@ Unlike `update_beta.R` (which solves a *scalar* EBNM — one observation per fac
 | `update_L`    | Vector (n)    | n           | n           | L varies across samples; A_surv is per-sample |
 | `update_F`    | Vector (p)    | p           | p           | F varies across genes; A_F is per-gene      |
 
-### 7.2 Second Moment Identity
+### Second Moment Identity
 
 For any posterior q:
 
@@ -420,21 +426,21 @@ EL2[i,k] = Var_q(l_{ik}) + (E_q[l_{ik}])^2
 
 This is NOT `mean[i]^2`. Using `mean^2` in place of `second` is a common error (Correction R3 in the project's error log) that underestimates posterior variance and introduces bias in q(F) and q(τ) updates.
 
-### 7.3 A_floor for Stability
+### A_floor for Stability
 
 When both `Tau = 0` and `w = 0`, the precision A_L would be exactly zero, making `s_L = 1/sqrt(0)` undefined. The floor `A_floor = 1e-10` prevents this. When A hits the floor and B = 0, ebnm returns a degenerate posterior concentrated at 0 — correct behavior for an unidentified factor.
 
-### 7.4 Gauss-Seidel vs. Jacobi
+### Gauss-Seidel vs. Jacobi
 
 The Gauss-Seidel update (each column updated sequentially with immediate propagation) is one of the V2 improvements (label A1 in `PROJECT_STATUS.md`). It typically converges faster than the simultaneous Jacobi update used in V1 because each update uses strictly more current information.
 
-### 7.5 tau_j Cancellation Does NOT Apply Here
+### tau_j Cancellation Does NOT Apply Here
 
 In `update_F.R`, the per-gene precision `tau_j` cancels out of the effective observation `x_j` (though it remains in `s_j`). This cancellation does NOT occur in `update_L.R` because the genomics signal `B_gen` involves a sum over all genes j, weighted by `tau_j`. Different genes contribute different amounts of signal to each patient's loading estimate.
 
 ---
 
-## 8. Connections to Other Modules
+## Connections to Other Modules
 
 | Module / File                               | Relationship                                                              |
 |---------------------------------------------|---------------------------------------------------------------------------|
@@ -456,29 +462,29 @@ source("code/update_F.R")   # uses compute_R_k
 
 ---
 
-## 9. Common Pitfalls
+## Common Pitfalls
 
-### 9.1 Forgetting EL2 != EL^2
+### Forgetting EL2 != EL^2
 
 The second moment `EL2[i,k] = sd^2 + mean^2` is **not** `mean^2`. Downstream modules (`update_tau`, `update_F`) use EL2 explicitly. Passing `EL^2` instead will underestimate the variance correction (Correction R3).
 
-### 9.2 A_gen is Scalar, A_L is a Vector
+### A_gen is Scalar, A_L is a Vector
 
 `A_gen = sum(Tau * EF2_k)` is a single scalar. It becomes part of the n-vector `A_L` only after adding `A_surv`. Broadcasting in R handles this automatically (`A_gen + A_surv` where A_surv is a vector), but it is worth being explicit: `A_L` always has length n.
 
-### 9.3 z_no_k Computed Inline
+### z_no_k Computed Inline
 
 `update_L_all` does NOT call `compute_z_no_k` from `update_beta.R`. The equivalent computation is done inline to avoid a circular source dependency. Both implementations are mathematically equivalent.
 
-### 9.4 Sourcing Order for compute_R_k
+### Sourcing Order for compute_R_k
 
 `compute_R_k` lives in `update_L.R`. If `update_F.R` is sourced without first sourcing `update_L.R`, calls to `compute_R_k` will fail with "could not find function". Always source `update_L.R` first.
 
-### 9.5 Prior Family Selection
+### Prior Family Selection
 
 The default `prior_family = "point_normal"` imposes sparsity (exact zeros for inactive loadings). For dense loadings, consider `"normal"`. The choice affects both the posterior means and the estimated prior parameters — see the `ebnm` package documentation for alternatives.
 
-### 9.6 Cox Weights w Must Be Non-Negative
+### Cox Weights w Must Be Non-Negative
 
 The Cox Hessian diagonal `w[i] = W_ii >= 0` always. Negative values would make `A_surv` negative, potentially driving `A_L` below zero (before the floor). The floor catches this, but negative weights indicate a bug in the Cox weight computation upstream.
 

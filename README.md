@@ -45,11 +45,11 @@ multiomicsGEP/
 │   └── multiomicsGEP_code.Rmd        ← Early exploratory notebook
 │
 ├── docs/                              ← Companion documentation (PDF + HTML)
-│   ├── Makefile                       ← `make all` renders .md → .pdf + .html
-│   ├── update_beta.md/.pdf/.html      ← β update: code walkthrough, tests, demos
-│   ├── update_L.md/.pdf/.html         ← L update: code walkthrough, tests, demos
-│   ├── update_F.md/.pdf/.html         ← F update: code walkthrough, tests, demos
-│   └── update_tau.md/.pdf/.html       ← τ update: code walkthrough, tests, demos
+│   ├── Makefile                       ← `make all` renders .qmd → .pdf + .html via Quarto
+│   ├── update_beta.qmd/.pdf/.html     ← β update: code walkthrough, tests, demos
+│   ├── update_L.qmd/.pdf/.html        ← L update: code walkthrough, tests, demos
+│   ├── update_F.qmd/.pdf/.html        ← F update: code walkthrough, tests, demos
+│   └── update_tau.qmd/.pdf/.html      ← τ update: code walkthrough, tests, demos
 │
 ├── tests/                             ← 105 tests (run: Rscript tests/run_tests.R)
 │   ├── run_tests.R                    ← Master test runner

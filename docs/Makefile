@@ -1,19 +1,17 @@
-SRCS  := update_beta.md update_L.md update_F.md update_tau.md
-PDFS  := $(SRCS:.md=.pdf)
-HTMLS := $(SRCS:.md=.html)
+SRCS  := update_beta.qmd update_L.qmd update_F.qmd update_tau.qmd
+PDFS  := $(SRCS:.qmd=.pdf)
+HTMLS := $(SRCS:.qmd=.html)
 
 all: $(PDFS) $(HTMLS)
 
-%.pdf: %.md
-	pandoc $< --pdf-engine=xelatex -V geometry:margin=1in \
-	  -V mainfont="Helvetica" -V monofont="Menlo" \
-	  --toc --syntax-highlighting=tango -o $@
+%.pdf: %.qmd
+	quarto render $< --to pdf
 
-%.html: %.md
-	pandoc $< --standalone --toc --syntax-highlighting=tango \
-	  --metadata title="$*" -o $@
+%.html: %.qmd
+	quarto render $< --to html
 
 clean:
 	rm -f $(PDFS) $(HTMLS)
+	rm -rf *_files/
 
 .PHONY: all clean

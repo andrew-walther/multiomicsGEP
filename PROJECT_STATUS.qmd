@@ -104,11 +104,11 @@ multiomicsGEP/
 |   |-- demo_update_F.R              <- 5 demos for update_F.R
 |   `-- demo_update_tau.R            <- 5 demos for update_tau.R
 |-- docs/
-|   |-- Makefile                     <- `make all` renders .md -> .pdf + .html
-|   |-- update_beta.md/.pdf/.html    <- Companion doc for update_beta.R
-|   |-- update_L.md/.pdf/.html       <- Companion doc for update_L.R
-|   |-- update_F.md/.pdf/.html       <- Companion doc for update_F.R
-|   `-- update_tau.md/.pdf/.html     <- Companion doc for update_tau.R
+|   |-- Makefile                     <- `make all` renders .qmd -> .pdf + .html via Quarto
+|   |-- update_beta.qmd/.pdf/.html   <- Companion doc for update_beta.R
+|   |-- update_L.qmd/.pdf/.html      <- Companion doc for update_L.R
+|   |-- update_F.qmd/.pdf/.html      <- Companion doc for update_F.R
+|   `-- update_tau.qmd/.pdf/.html    <- Companion doc for update_tau.R
 `-- paper/
     `-- multiomicsGEP_manuscript.qmd  <- Manuscript draft (Quarto)
 ```
@@ -496,10 +496,10 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 **Comprehensive documentation: companion docs, roxygen2, and inline comments.**
 
 1. **Created `docs/` directory** with companion documentation for all four modules:
-   - `docs/update_beta.md` -- Overview, math background, function reference, test + demo explanations
-   - `docs/update_L.md` -- Dual-source precision/signal, compute_R_k shared dependency
-   - `docs/update_F.md` -- tau cancellation property, pure genomics
-   - `docs/update_tau.md` -- Closed-form MLE, variance correction, ELBO proxy
+   - `docs/update_beta.qmd` -- Overview, math background, function reference, test + demo explanations
+   - `docs/update_L.qmd` -- Dual-source precision/signal, compute_R_k shared dependency
+   - `docs/update_F.qmd` -- tau cancellation property, pure genomics
+   - `docs/update_tau.qmd` -- Closed-form MLE, variance correction, ELBO proxy
 
 2. **Created `docs/Makefile`**: `make all` renders all 4 `.md` files to PDF + HTML
    (Helvetica/Menlo fonts for Unicode Greek letter support).

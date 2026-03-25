@@ -1,9 +1,33 @@
-# Companion Document: `code/update_beta.R`
-
-**Project:** Supervised Bayesian Matrix Factorization for Joint Genomics + Survival Modelling
-**Module:** q(β) — Variational Update for Cox Survival Coefficients
-**Related files:** `derivations/qB/qBeta_update_derivation.tex/.pdf`, `code/Supervised_Bayesian_MF_V2.R`, `code/SupervisedMF_Context.md`
-
+---
+title: "Companion Document: update_beta.R"
+subtitle: "q(β) — Variational Update for Cox Survival Coefficients"
+author: "Andrew Walther"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
+    smooth-scroll: true
+    self-contained: true
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \usepackage{geometry}
+        \geometry{margin=1in}
+        \renewcommand{\familydefault}{\sfdefault}
 ---
 
 ## Overview
