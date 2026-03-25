@@ -45,8 +45,8 @@ execute:
 library(kableExtra)
 library(survival)
 
-tables_dir <- "tables/factor_modular_sim"
-figs_dir   <- "figures/factor_modular_sim"
+tables_dir <- "../tables/modular_sim_factor"
+figs_dir   <- "../figures/modular_sim_factor"
 ```
 
 # Executive Summary
@@ -187,13 +187,13 @@ CAVI loop per factor k:
 
 ## RMSE Trace
 
-![RMSE Convergence Trace](figures/factor_modular_sim/fig1_rmse_trace.png){width=90%}
+![RMSE Convergence Trace](../figures/modular_sim_factor/fig1_rmse_trace.png){width=90%}
 
 The reconstruction RMSE measures how well the expected low-rank approximation $\bar{L}\bar{F}^T$ reproduces the observed matrix $Y$. A value close to 1.0 indicates correct recovery of the true noise level. The factor-wise implementation converged at iteration `r n_iter` with RMSE = `r final_rmse`.
 
 ## ELBO Proxy Trace
 
-![ELBO Proxy Trace](figures/factor_modular_sim/fig2_elbo_proxy.png){width=90%}
+![ELBO Proxy Trace](../figures/modular_sim_factor/fig2_elbo_proxy.png){width=90%}
 
 The ELBO proxy tracks the genomics log-likelihood term, the dominant component of the full evidence lower bound. Monotone ascent (values becoming less negative) confirms that the factor-wise update ordering is a valid CAVI schedule.
 
@@ -230,7 +230,7 @@ kable(display_hist,
 
 # Survival Coefficient Recovery
 
-![Beta Comparison: True vs. Estimated](figures/factor_modular_sim/fig3_beta_comparison.png){width=90%}
+![Beta Comparison: True vs. Estimated](../figures/modular_sim_factor/fig3_beta_comparison.png){width=90%}
 
 ```{r beta-table}
 #| tbl-cap: "Survival regression coefficients: true values versus posterior estimates. Sign_Match indicates whether the estimated coefficient has the same sign as the true value (ignoring Factor 5, which has true beta = 0)."
@@ -261,7 +261,7 @@ kable(factor_df,
                 font_size = 9)
 ```
 
-![GEP Heatmap: Posterior Mean Factor Weights](figures/factor_modular_sim/fig4_gep_heatmap.png){width=90%}
+![GEP Heatmap: Posterior Mean Factor Weights](../figures/modular_sim_factor/fig4_gep_heatmap.png){width=90%}
 
 Each row of the heatmap corresponds to one of the $K = 5$ gene expression programs (GEPs), and each column to a gene. The sparse structure is clearly visible: only ~5% of genes have non-negligible weight in each factor, consistent with the simulation ground truth. Factor 3 (with estimated $\beta_3 \approx 0$) shows a distinct pattern from the survival-associated factors.
 
@@ -269,11 +269,11 @@ Each row of the heatmap corresponds to one of the $K = 5$ gene expression progra
 
 ## Reconstruction Quality
 
-![Signal Recovery: True vs. Reconstructed](figures/factor_modular_sim/fig6_signal_recovery.png){width=90%}
+![Signal Recovery: True vs. Reconstructed](../figures/modular_sim_factor/fig6_signal_recovery.png){width=90%}
 
 ## Loading Correlations
 
-![Loading Correlations: True vs. Estimated Factors](figures/factor_modular_sim/fig7_loading_correlations.png){width=90%}
+![Loading Correlations: True vs. Estimated Factors](../figures/modular_sim_factor/fig7_loading_correlations.png){width=90%}
 
 ```{r loading-cor-table}
 #| tbl-cap: "Absolute correlation matrix between true factor loadings (rows) and estimated loadings (columns). Each true factor should have one dominant estimated counterpart."
@@ -293,7 +293,7 @@ kable(cor_display, booktabs = TRUE, linesep = "") |>
 
 ## Kaplan-Meier Curves
 
-![Kaplan-Meier Survival Curves by GEP Score](figures/factor_modular_sim/fig5_kaplan_meier.png){width=90%}
+![Kaplan-Meier Survival Curves by GEP Score](../figures/modular_sim_factor/fig5_kaplan_meier.png){width=90%}
 
 Kaplan-Meier curves stratified by high/low loading on each estimated GEP. Survival-associated factors (those with large $|\hat{\beta}_k|$) show clear separation between high- and low-loading groups, confirming that the model has correctly identified the clinically relevant gene expression programs.
 
@@ -329,7 +329,7 @@ kable(cindex_df,
 
 # Noise Precision
 
-![Posterior Tau Distribution](figures/factor_modular_sim/fig8_tau_distribution.png){width=90%}
+![Posterior Tau Distribution](../figures/modular_sim_factor/fig8_tau_distribution.png){width=90%}
 
 The noise precision parameters $\tau_j$ are estimated per gene via closed-form MLE (no EBNM). In the simulation, all genes have true noise variance $\sigma^2 = 1$ (i.e., $\tau_j^{\text{true}} = 1$). The distribution of estimated $\hat{\tau}_j$ should be centred near 1.0 with gene-to-gene variation reflecting finite-sample estimation noise. The tau update includes a posterior variance correction term $\text{Var}(L) \otimes \text{Var}(F)$ that prevents systematic underestimation of the residual variance.
 

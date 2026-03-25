@@ -13,29 +13,10 @@
 # Outputs:
 #   results/tables/modular_sim/  -- 7 CSV tables
 #   results/figures/modular_sim/ -- 8 figures (PDF + PNG)
-#   results/modular_sim_report.qmd/.pdf/.html
+#   results/modular_sim_report.md/.pdf
 #
 # Run from repo root:
 #   Rscript results/run_modular_simulation.R
-#
-# ------------------------------------------------------------------------------
-# DEPRECATED — BLOCK-WISE UPDATES (kept for reference)
-#
-# This script uses BLOCK-WISE update variants (_all functions):
-#   all-L → all-F → all-beta → tau  (one complete sweep per iteration)
-#
-# Block-wise updates are not the canonical CAVI order for this model. In a
-# block sweep, all L columns are updated before F sees any of the changes;
-# this is less faithful to coordinate ascent than the factor-wise approach.
-#
-# The CANONICAL implementation is code/fit_modular.R, which uses FACTOR-WISE
-# updates (_k functions): for each k, L_k → F_k → beta_k, giving F_k
-# immediate access to the updated L_k (true Gauss-Seidel CAVI per V3
-# Algorithm 1).
-#
-# Results from this script are archived in results/figures/modular_sim/ and
-# results/tables/modular_sim/ and should not be confused with factor-wise
-# results in results/figures/factor_modular_sim/.
 # ==============================================================================
 
 # Set working directory to repo root (portable: works locally and on Longleaf)
