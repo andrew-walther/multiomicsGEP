@@ -1,4 +1,4 @@
-SRCS  := update_beta.qmd update_L.qmd update_F.qmd update_tau.qmd
+SRCS  := update_beta.qmd update_L.qmd update_F.qmd update_tau.qmd fit_modular.qmd
 PDFS  := $(SRCS:.qmd=.pdf)
 HTMLS := $(SRCS:.qmd=.html)
 
