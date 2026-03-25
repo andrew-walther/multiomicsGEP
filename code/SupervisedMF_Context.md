@@ -11,7 +11,7 @@ session log), see `PROJECT_STATUS.md` at the repo root.
 ## The Active Script
 
 **`Supervised_Bayesian_MF_V2.R`** is the current implementation.
-`Supervised_Bayesian_MF.R` is the original V1 — preserved for reference only.
+`code/legacy/Supervised_Bayesian_MF.R` is the original V1 — archived for reference only.
 
 ---
 

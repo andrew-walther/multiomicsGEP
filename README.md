@@ -35,14 +35,17 @@ multiomicsGEP/
 ├── PROJECT_STATUS.md                 ← Full project documentation & session log
 │
 ├── code/
-│   ├── Supervised_Bayesian_MF_V2.R   ← ✅ Current implementation (use this)
-│   ├── Supervised_Bayesian_MF.R      ← Original V1 (reference only)
+│   ├── fit_modular.R                 ← ✅ Canonical CAVI loop (factor-wise, calls update_*.R)
+│   ├── Supervised_Bayesian_MF_V2.R   ← ✅ Monolithic reference implementation (V2)
 │   ├── update_beta.R                 ← Modular β update (scalar EBNM, Cox survival)
 │   ├── update_L.R                    ← Modular L update (vector EBNM, dual-source)
 │   ├── update_F.R                    ← Modular F update (vector EBNM, pure genomics)
 │   ├── update_tau.R                  ← Modular τ update (closed-form MLE)
 │   ├── SupervisedMF_Context.md       ← AI/developer quick-reference for the code
-│   └── multiomicsGEP_code.Rmd        ← Early exploratory notebook
+│   └── legacy/                       ← Archived files (V1, early scripts)
+│       ├── Supervised_Bayesian_MF.R  ← V1 original (reference only, known issues)
+│       ├── execute_update_beta.R     ← Early demo (superseded by demos/)
+│       └── multiomicsGEP_code.Rmd    ← Early exploratory notebook
 │
 ├── docs/                              ← Companion documentation (PDF + HTML)
 │   ├── Makefile                       ← `make all` renders .qmd → .pdf + .html via Quarto
@@ -58,17 +61,24 @@ multiomicsGEP/
 ├── demos/                             ← Interactive demonstrations (5 per module)
 │   └── demo_update_*.R                ← Run: Rscript demos/demo_update_*.R
 │
-├── results/                           ← Simulation outputs
-│   ├── run_simulation.R               ← Reproduce V2 simulation (8 figs, 11 CSVs)
-│   ├── run_modular_simulation.R       ← Reproduce modular simulation (standalone)
-│   ├── simulation_report.qmd/.pdf     ← V2 simulation report (Quarto, ggplot2)
-│   ├── modular_sim_report.qmd/.pdf    ← Modular simulation report (Quarto, per-fig commentary)
+├── results/                           ← Simulation outputs (grouped by implementation)
+│   ├── modular_sim_factor/            ← ✅ Factor-wise CAVI (canonical)
+│   │   ├── run_factor_modular_simulation.R
+│   │   └── factor_modular_sim_report.qmd/.pdf/.html
+│   ├── full_sim/                      ← V2 monolithic simulation
+│   │   ├── run_simulation.R
+│   │   └── simulation_report.qmd/.pdf
+│   ├── modular_sim_block/             ← Block-wise modular (deprecated)
+│   │   ├── run_modular_simulation.R
+│   │   └── modular_sim_report.qmd/.pdf/.html
 │   ├── figures/
-│   │   ├── full_sim/                  ← 8 figure pairs from V2 simulation
-│   │   └── modular_sim/               ← 8 figure pairs from modular simulation
+│   │   ├── modular_sim_factor/        ← 8 figure pairs (factor-wise)
+│   │   ├── full_sim/                  ← 8 figure pairs (V2 monolithic)
+│   │   └── modular_sim/               ← 8 figure pairs (block-wise, deprecated)
 │   └── tables/
-│       ├── full_sim/                  ← 11 CSV tables from V2 simulation
-│       └── modular_sim/               ← 11 CSV tables from modular simulation
+│       ├── modular_sim_factor/        ← 11 CSV tables (factor-wise)
+│       ├── full_sim/                  ← 11 CSV tables (V2 monolithic)
+│       └── modular_sim/               ← 11 CSV tables (block-wise, deprecated)
 │
 ├── derivations/
 │   ├── MF_UpdateDerivations/
@@ -196,7 +206,7 @@ The key mathematical concepts are:
 
 | Version | File | Status | Notes |
 |---------|------|--------|-------|
-| V1 | `Supervised_Bayesian_MF.R` | Reference only | Original implementation; 6 known algorithmic issues |
+| V1 | `code/legacy/Supervised_Bayesian_MF.R` | Archived | Original implementation; 6 known algorithmic issues |
 | V2 | `Supervised_Bayesian_MF_V2.R` | ✅ **Current** | All issues corrected (A1–A6); recommended for all use |
 
 **V2 improvements over V1:**

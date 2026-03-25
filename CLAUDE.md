@@ -6,7 +6,7 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 
 ## Key Instructions
 
-- **Active implementation:** `code/Supervised_Bayesian_MF_V2.R` (V2). Do not modify `Supervised_Bayesian_MF.R` (V1 — reference only).
+- **Active implementation:** `code/Supervised_Bayesian_MF_V2.R` (V2). V1 is archived at `code/legacy/Supervised_Bayesian_MF.R` — do not modify.
 - **Modular updates:** `code/update_beta.R`, `code/update_L.R`, `code/update_F.R`, `code/update_tau.R`.
 - **No `CLAUDE.md` duplication:** Do not maintain a second copy of project status here — update `PROJECT_STATUS.md` instead.
 - **Commit style:** Detailed messages explaining what changed and why; no "Co-Authored-By" lines; no "Session N:" prefixes.

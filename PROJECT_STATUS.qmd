@@ -51,7 +51,7 @@ multiomicsGEP/
 |-- README.md                        <- GitHub front page
 |-- code/
 |   |-- SupervisedMF_Context.md      <- AI/collaborator quick-reference for V2 code
-|   |-- Supervised_Bayesian_MF.R     <- V1: Original CAVI implementation (reference only)
+|   |-- legacy/Supervised_Bayesian_MF.R <- V1: Original CAVI implementation (archived)
 |   |-- Supervised_Bayesian_MF_V2.R  <- V2: Corrected implementation (all fixes) -- USE THIS
 |   |-- update_beta.R                <- Modular beta update functions
 |   |-- update_L.R                   <- Modular q(L) update functions (vector EBNM, dual-source)
@@ -182,7 +182,7 @@ The February 12 draft contains 8 errors listed below. Use **REVISED.pdf** for al
 
 ## Code Versions
 
-### V1: `Supervised_Bayesian_MF.R`
+### V1: `code/legacy/Supervised_Bayesian_MF.R`
 
 The original implementation. Functionally correct but with several known issues:
 
