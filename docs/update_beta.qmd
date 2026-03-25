@@ -32,16 +32,18 @@ format:
 
 ## Overview
 
-`code/update_beta.R` implements the CAVI (Coordinate Ascent Variational Inference) update for the survival coefficients **β** in the Supervised Bayesian Matrix Factorization model. Each factor k has a scalar coefficient β_k linking the latent factor scores L to the Cox proportional hazards survival likelihood.
+`code/update_beta.R` implements the CAVI (Coordinate Ascent Variational Inference) update for the survival coefficients **β** in the Supervised Bayesian Matrix Factorization model. Each factor k has a scalar coefficient $\beta_k$ linking the latent factor scores L to the Cox proportional hazards survival likelihood.
 
 ### Model Context
 
 The full model is:
 
-```
-Y = L F' + E          (genomics observation model)
-h(t) = h0(t) exp(L β) (Cox PH survival model)
-```
+$$
+Y = LF^\top + E \qquad \text{(genomics observation model)}
+$$
+$$
+h(t) = h_0(t)\exp(L\beta) \qquad \text{(Cox PH survival model)}
+$$
 
 where:
 - **Y** is the n × p genomics matrix
@@ -50,13 +52,11 @@ where:
 - **β** is a K-vector of survival coefficients
 - **E** is Gaussian noise with precision τ
 
-**β_k appears exclusively in the survival likelihood.** It does not enter the genomics reconstruction term. This clean separation means the β update depends only on the Cox partial likelihood signal, mediated through the working response z and the precision weights w derived from the current hazard.
+**$\beta_k$ appears exclusively in the survival likelihood.** It does not enter the genomics reconstruction term. This clean separation means the β update depends only on the Cox partial likelihood signal, mediated through the working response z and the precision weights w derived from the current hazard.
 
 ### CAVI Update Order
 
-```
-β → L → F → τ → (repeat)
-```
+$\beta \to L \to F \to \tau \to \cdots$
 
 The β update is performed first in each CAVI sweep, using the current posterior moments of L.
 
@@ -71,47 +71,49 @@ The Cox PH likelihood is approximated via a quadratic (Laplace/Newton) expansion
 - **z**: n-vector of working responses (current residuals in the linearised survival model)
 - **w**: n-vector of precision weights (curvature of the log-likelihood at current values)
 
-### Partial Working Response z^{-k}
+### Partial Working Response $z^{(-k)}$
 
-For updating β_k, the contribution of all other factors k' ≠ k must be subtracted from z:
+For updating $\beta_k$, the contribution of all other factors k' ≠ k must be subtracted from z:
 
-```
-z^{-k}_i = z_i - Σ_{k'≠k} l̄_{ik'} β̄_{k'}
-```
+$$
+z_i^{(-k)} = z_i - \sum_{k' \neq k} \bar{l}_{ik'} \bar{\beta}_{k'}
+$$
 
-This isolates the signal relevant to factor k alone. Critically, **z^{-k} does not depend on l_{ik} or β_k** — it uses only the remaining factors. This means the same z^{-k} can be reused for both the β_k update and the L_k update if needed.
+This isolates the signal relevant to factor k alone. Critically, **$z^{(-k)}$ does not depend on $l_{ik}$ or $\beta_k$** — it uses only the remaining factors. This means the same $z^{(-k)}$ can be reused for both the $\beta_k$ update and the L_k update if needed.
 
 ### Precision and Signal (Error-in-Variables Correction)
 
-The EBNM pseudo-observation and noise for β_k are:
+The EBNM pseudo-observation and noise for $\beta_k$ are:
 
-```
-A_k = Σ_i w_i E[l²_{ik}]    (precision, using FULL second moment)
-B_k = Σ_i w_i z^{-k}_i l̄_{ik}   (signal)
+$$
+\begin{aligned}
+A_k &= \sum_i w_i \mathbb{E}[l_{ik}^2] \quad \text{(precision; full posterior second moment)} \\
+B_k &= \sum_i w_i z_i^{(-k)} \bar{l}_{ik} \quad \text{(signal)}
+\end{aligned}
+$$
+$$
+x_k = \frac{B_k}{A_k}, \qquad s_k = \frac{1}{\sqrt{A_k}}
+$$
 
-x_k = B_k / A_k             (EBNM pseudo-observation)
-s_k = 1 / √A_k              (EBNM noise level)
-```
-
-**Critical distinction:** A_k uses `EL2_k = Var_q(l_k) + EL_k²`, the full posterior second moment, **not** `EL_k²`. This is the error-in-variables correction: when the latent scores L are uncertain, using only the squared posterior mean would underestimate the effective precision and bias the β estimate. Using EL2 accounts for posterior variance in L, propagating uncertainty correctly into the β update.
+**Critical distinction:** $A_k$ uses `EL2_k = Var_q(l_k) + EL_k²`, the full posterior second moment, **not** `EL_k²`. This is the error-in-variables correction: when the latent scores L are uncertain, using only the squared posterior mean would underestimate the effective precision and bias the β estimate. Using `EL2_k` accounts for posterior variance in L, propagating uncertainty correctly into the β update.
 
 ### Point-Normal Prior and Sparsity
 
-β_k is given a point-normal prior:
+$\beta_k$ is given a point-normal prior:
 
-```
-β_k ~ π_0 δ(0) + (1 - π_0) N(0, σ²_β)
-```
+$$
+\beta_k \sim \pi_0 \delta(0) + (1-\pi_0)\,\mathcal{N}(0, \sigma^2_\beta)
+$$
 
 This prior promotes sparsity. Factors with weak survival signal are shrunk toward zero; factors with strong, consistent signal are retained with their estimated magnitude. The EBNM call handles this automatically, returning posterior mean, SD, and second moment.
 
 ### Scalar vs. Vector EBNM
 
-The β update is a **scalar EBNM**: each factor k yields a single pseudo-observation x_k. This contrasts with the L and F updates, which are vector EBNM problems (one pseudo-observation per sample or gene). The scalar nature follows from β_k being a single coefficient shared across all n samples.
+The β update is a **scalar EBNM**: each factor k yields a single pseudo-observation $x_k$. This contrasts with the L and F updates, which are vector EBNM problems (one pseudo-observation per sample or gene). The scalar nature follows from $\beta_k$ being a single coefficient shared across all n samples.
 
 ---
 
-## Source Code: `code/update_beta.R`
+## Function Reference
 
 The file contains three functions with a clean separation of concerns:
 
@@ -123,9 +125,13 @@ The file contains three functions with a clean separation of concerns:
 
 ---
 
-### `compute_z_no_k(z, EL, EBeta, k)`
+### `compute_z_no_k`
 
-**Purpose:** Subtract the contributions of all factors except k from the working response, isolating the signal for β_k.
+```r
+compute_z_no_k(z, EL, EBeta, k)
+```
+
+**Purpose:** Subtract the contributions of all factors except k from the working response, isolating the signal for $\beta_k$.
 
 **Implementation:**
 
@@ -144,22 +150,26 @@ This is numerically efficient: rather than summing over all k' ≠ k explicitly,
 | `EBeta` | K-vector | Current posterior means of β |
 | `k` | integer | Factor index to exclude |
 
-**Returns:** n-vector z^{-k}
+**Returns:** n-vector $z^{(-k)}$
 
-**Key insight:** Because z^{-k} uses only k' ≠ k terms, it does not change when β_k or l_{ik} change. The same z^{-k} is safe to reuse across both the β_k and L_k updates within a single CAVI iteration.
+**Key insight:** Because $z^{(-k)}$ uses only k' ≠ k terms, it does not change when $\beta_k$ or $l_{ik}$ change. The same $z^{(-k)}$ is safe to reuse across both the $\beta_k$ and L_k updates within a single CAVI iteration.
 
 ---
 
-### `update_beta_k(w, z_no_k, EL_k, EL2_k, prior_family="point_normal", A_floor=1e-10)`
+### `update_beta_k`
 
-**Purpose:** Compute the CAVI update for a single survival coefficient β_k via scalar EBNM.
+```r
+update_beta_k(w, z_no_k, EL_k, EL2_k, prior_family = "point_normal", A_floor = 1e-10)
+```
+
+**Purpose:** Compute the CAVI update for a single survival coefficient $\beta_k$ via scalar EBNM.
 
 **Implementation steps:**
 
-1. Compute precision: `A_k = max(sum(w * EL2_k), A_floor)`
-2. Compute signal: `B_k = sum(w * z_no_k * EL_k)`
-3. Form pseudo-observation: `x_k = B_k / A_k`
-4. Form noise level: `s_k = 1 / sqrt(A_k)`
+1. Compute precision: `A_k = max(sum(w * EL2_k), A_floor)` → $A_k$
+2. Compute signal: `B_k = sum(w * z_no_k * EL_k)` → $B_k$
+3. Form pseudo-observation: `x_k = B_k / A_k` → $x_k$
+4. Form noise level: `s_k = 1 / sqrt(A_k)` → $s_k$
 5. Call EBNM: `ebnm(x = x_k, s = s_k, prior_family = prior_family)`
 6. Extract posterior mean, SD, second moment
 
@@ -178,22 +188,26 @@ This is numerically efficient: rather than summing over all k' ≠ k explicitly,
 
 | Field | Description |
 |---|---|
-| `mean` | Posterior mean E_q[β_k] |
-| `second` | Posterior second moment E_q[β²_k] = sd² + mean² |
+| `mean` | Posterior mean $\mathbb{E}_q[\beta_k]$ |
+| `second` | Posterior second moment $\mathbb{E}_q[\beta_k^2] = \text{sd}^2 + \text{mean}^2$ |
 | `sd` | Posterior standard deviation |
-| `A` | Precision A_k (after floor) |
-| `B` | Signal B_k |
-| `x` | EBNM pseudo-observation x_k = B_k / A_k |
-| `s` | EBNM noise s_k = 1 / √A_k |
+| `A` | Precision $A_k$ (after floor) |
+| `B` | Signal $B_k$ |
+| `x` | EBNM pseudo-observation $x_k = B_k / A_k$ |
+| `s` | EBNM noise $s_k = 1/\sqrt{A_k}$ |
 | `ebnm_result` | Full object returned by `ebnm()` |
 
-**A_floor rationale:** When all weights w are zero (e.g., at initialisation or in degenerate cases), A_k would be zero and x_k, s_k would be undefined. The floor `1e-10` prevents NaN/Inf while keeping A_k negligibly small — the EBNM prior then dominates and shrinks β_k to zero, which is the correct behaviour.
+**A_floor rationale:** When all weights w are zero (e.g., at initialisation or in degenerate cases), $A_k$ would be zero and $x_k$, $s_k$ would be undefined. The floor `1e-10` prevents NaN/Inf while keeping $A_k$ negligibly small — the EBNM prior then dominates and shrinks $\beta_k$ to zero, which is the correct behaviour.
 
-**s_k direction:** Note that s_k = 1/√A_k is **smaller** when A_k is larger (more data precision → tighter pseudo-likelihood). This is the standard EBNM parameterisation: smaller s means the pseudo-observation is more reliable.
+**$s_k$ direction:** Note that $s_k = 1/\sqrt{A_k}$ is **smaller** when $A_k$ is larger (more data precision → tighter pseudo-likelihood). This is the standard EBNM parameterisation: smaller s means the pseudo-observation is more reliable.
 
 ---
 
-### `update_beta_all(w, z, EL, EL2, EBeta, prior_family="point_normal", A_floor=1e-10)`
+### `update_beta_all`
+
+```r
+update_beta_all(w, z, EL, EL2, EBeta, prior_family = "point_normal", A_floor = 1e-10)
+```
 
 **Purpose:** Update all K survival coefficients using a Gauss-Seidel sweep.
 
@@ -202,7 +216,7 @@ This is numerically efficient: rather than summing over all k' ≠ k explicitly,
 2. Call `update_beta_k`
 3. Immediately write the new posterior mean into `EBeta_curr[k]`
 
-The Gauss-Seidel pattern (update-and-use within the loop, rather than batch update at the end) is one of the V2 improvements over V1. It accelerates convergence by propagating each β_k update immediately to subsequent factors within the same sweep.
+The Gauss-Seidel pattern (update-and-use within the loop, rather than batch update at the end) is one of the V2 improvements over V1. It accelerates convergence by propagating each $\beta_k$ update immediately to subsequent factors within the same sweep.
 
 **Parameters:**
 
@@ -226,7 +240,7 @@ The Gauss-Seidel pattern (update-and-use within the loop, rather than batch upda
 
 ---
 
-## Test Suite: `tests/test_update_beta.R`
+## Test Suite
 
 24 tests across 9 groups. Run with:
 
@@ -242,21 +256,21 @@ Verifies that the raw computations match the mathematical formulas exactly.
 
 | Test | What is checked |
 |---|---|
-| T1.1 | A_k = sum(w * EL2_k) with floor applied correctly |
-| T1.2 | B_k = sum(w * z_no_k * EL_k) |
-| T1.3 | x_k = B_k / A_k |
-| T1.4 | s_k = 1 / sqrt(A_k) |
-| T1.5 | second moment = sd² + mean² (law of total variance identity) |
+| T1.1 | $A_k$ = `sum(w * EL2_k)` with floor applied correctly |
+| T1.2 | $B_k$ = `sum(w * z_no_k * EL_k)` |
+| T1.3 | $x_k = B_k / A_k$ |
+| T1.4 | $s_k = 1/\sqrt{A_k}$ |
+| T1.5 | second moment = $\text{sd}^2 + \text{mean}^2$ (law of total variance identity) |
 | T1.6 | All returned values are finite (no NaN, no Inf) |
 
 ### T2: Non-Informative Prior / WLS Limit (2 tests)
 
-When EL2_k = EL_k² (zero posterior variance in L), the EBNM problem reduces to a standard weighted least squares problem, and x_k equals the WLS estimator. With a large signal-to-noise ratio, the posterior mean should be close to x_k (minimal shrinkage).
+When `EL2_k` = `EL_k`² (zero posterior variance in L), the EBNM problem reduces to a standard weighted least squares problem, and $x_k$ equals the WLS estimator. With a large signal-to-noise ratio, the posterior mean should be close to $x_k$ (minimal shrinkage).
 
 | Test | What is checked |
 |---|---|
-| T2.1 | EL2 = EL² → x_k equals WLS estimator |
-| T2.2 | Large SNR → posterior mean ≈ x_k |
+| T2.1 | `EL2` = `EL`² → $x_k$ equals WLS estimator |
+| T2.2 | Large SNR → posterior mean ≈ $x_k$ |
 
 ### T3: Known Signal Recovery K=1 (2 tests)
 
@@ -283,16 +297,16 @@ The point-normal prior should shrink noise factors toward zero.
 
 | Test | What is checked |
 |---|---|
-| T5.1 | Pure noise z_no_k → β_k shrunk toward zero |
-| T5.2 | EL_k = 0 → B_k = 0 → x_k = 0 → posterior mean = 0 |
+| T5.1 | Pure noise z_no_k → $\beta_k$ shrunk toward zero |
+| T5.2 | `EL_k` = 0 → $B_k = 0$ → $x_k = 0$ → posterior mean = 0 |
 
 ### T6: Error-in-Variables (1 test)
 
-Higher EL2 (more uncertainty about L) leads to higher A_k, which leads to smaller x_k and more shrinkage. Also confirms that s_k is smaller when A_k is larger.
+Higher `EL2` (more uncertainty about L) leads to higher $A_k$, which leads to smaller $x_k$ and more shrinkage. Also confirms that $s_k$ is smaller when $A_k$ is larger.
 
 | Test | What is checked |
 |---|---|
-| T6.1 | EL2_high > EL2_low → A_high > A_low → |x_high| < |x_low|; and s_high < s_low |
+| T6.1 | `EL2_high` > `EL2_low` → $A_\text{high} > A_\text{low}$ → $|x_\text{high}| < |x_\text{low}|$; and $s_\text{high} < s_\text{low}$ |
 
 ### T7: Numerical Stability (5 tests)
 
@@ -302,14 +316,14 @@ Higher EL2 (more uncertainty about L) leads to higher A_k, which leads to smalle
 | T7.2 | Extreme w = 1e8 → no overflow |
 | T7.3 | n = 1 edge case (single observation) works correctly |
 | T7.4 | Custom A_floor value is respected |
-| T7.5 | Variance non-negative: second ≥ mean² always holds |
+| T7.5 | Variance non-negative: second ≥ $\text{mean}^2$ always holds |
 
 ### T8: Gauss-Seidel Behaviour (2 tests)
 
 | Test | What is checked |
 |---|---|
 | T8.1 | compute_z_no_k correctly excludes factor k (z_no_k + EL[,k]*EBeta[k] reconstructs z - z_{-k}) |
-| T8.2 | Within-loop updates propagate: β̄_1 updated before β̄_2 is computed |
+| T8.2 | Within-loop updates propagate: $\bar{\beta}_1$ updated before $\bar{\beta}_2$ is computed |
 
 ### T9: V2.R Consistency (1 test)
 
@@ -319,13 +333,13 @@ Higher EL2 (more uncertainty about L) leads to higher A_k, which leads to smalle
 
 ---
 
-## Demos: `demos/demo_update_beta.R`
+## Demos
 
 5 narrative scenarios illustrating the β update in isolation. No PASS/FAIL output — pure demonstration.
 
 ### Demo 1: Anatomy of `update_beta_k()`
 
-Sets up a single-factor problem with true β = 1.5, constructs w, z_no_k, EL_k, EL2_k by hand, and calls `update_beta_k`. Prints A_k, B_k, x_k, s_k, posterior mean, and posterior SD. Purpose: show every intermediate quantity and how they connect.
+Sets up a single-factor problem with true β = 1.5, constructs w, z_no_k, EL_k, EL2_k by hand, and calls `update_beta_k`. Prints $A_k$, $B_k$, $x_k$, $s_k$, posterior mean, and posterior SD. Purpose: show every intermediate quantity and how they connect.
 
 ### Demo 2: Signal Recovery K=1
 
@@ -337,7 +351,7 @@ Compares two z_no_k vectors: one with real signal (z_no_k correlated with EL_k) 
 
 ### Demo 4: Error-in-Variables Effect
 
-Holds the signal fixed and varies the second moment EL2_k between a low-uncertainty case (EL2 ≈ EL²) and a high-uncertainty case (EL2 >> EL²). Shows that higher L uncertainty → higher A_k → smaller |x_k| → more posterior shrinkage. Confirms the direction of s_k as a function of A_k.
+Holds the signal fixed and varies the second moment `EL2_k` between a low-uncertainty case (`EL2` ≈ `EL`²) and a high-uncertainty case (`EL2` >> `EL`²). Shows that higher L uncertainty → higher $A_k$ → smaller $|x_k|$ → more posterior shrinkage. Confirms the direction of $s_k$ as a function of $A_k$.
 
 ### Demo 5: Multi-Factor K=5
 
@@ -349,7 +363,7 @@ Constructs a K=5 problem with true β = (1.5, -1.2, 0.8, -0.5, 0.0) and calls `u
 
 ### Gauss-Seidel vs. Jacobi Updates
 
-V1 used Jacobi-style (batch) updates: compute all new β_k values using the old EBeta, then replace. V2 uses Gauss-Seidel: immediately write each updated β̄_k into EBeta_curr before computing z_no_k for the next factor. Gauss-Seidel is generally faster to converge and is implemented by passing EBeta_curr by reference within the loop.
+V1 used Jacobi-style (batch) updates: compute all new $\beta_k$ values using the old EBeta, then replace. V2 uses Gauss-Seidel: immediately write each updated $\bar{\beta}_k$ into EBeta_curr before computing z_no_k for the next factor. Gauss-Seidel is generally faster to converge and is implemented by passing EBeta_curr by reference within the loop.
 
 ### Precision Floor
 
@@ -357,7 +371,7 @@ The `A_floor = 1e-10` default prevents numerical failure in degenerate cases (al
 
 ### Separation from L and F Updates
 
-β_k appears only in the Cox survival likelihood, not in the genomics reconstruction. This means:
+$\beta_k$ appears only in the Cox survival likelihood, not in the genomics reconstruction. This means:
 - The β update does not depend on τ (the genomics noise precision)
 - F does not enter the β update at all
 - Only L, w, and z are needed
@@ -370,11 +384,11 @@ This clean separation makes `update_beta.R` entirely self-contained given w, z, 
 
 | Pitfall | Correct behaviour |
 |---|---|
-| Using EL² instead of EL2 for A_k | EL2 = Var_q(l) + EL² — always use the full second moment |
-| Assuming s_k increases with A_k | s_k = 1/√A_k — s_k **decreases** as A_k increases |
+| Using `EL`² instead of `EL2` for $A_k$ | `EL2` = Var_q(l) + `EL`² — always use the full second moment |
+| Assuming $s_k$ increases with $A_k$ | $s_k = 1/\sqrt{A_k}$ — $s_k$ **decreases** as $A_k$ increases |
 | Batch (Jacobi) β updates | Use Gauss-Seidel: update EBeta_curr[k] immediately after each factor |
 | Forgetting A_floor | Without the floor, zero-weight cases produce NaN from 0/0 |
-| Treating β EBNM as vector | β update is scalar EBNM (single x_k, single s_k) — unlike L and F updates |
+| Treating β EBNM as vector | β update is scalar EBNM (single $x_k$, single $s_k$) — unlike L and F updates |
 
 ---
 

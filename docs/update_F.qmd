@@ -34,7 +34,7 @@ format:
 
 `update_F.R` implements the CAVI variational update for the factor loading matrix **F** (shape p × K) in the joint genomics + survival model. F appears **only** in the genomics likelihood and has no role in the Cox proportional hazards survival term — this structural fact drives the module's key mathematical simplification.
 
-The update is a **vector EBNM** (Empirical Bayes Normal Means) problem solved independently for each factor column f_{.k}. Within each column, the p feature-wise posterior means and variances are computed in closed form, then passed to an EBNM solver that applies the chosen prior (default: point-normal) and returns posterior moments.
+The update is a **vector EBNM** (Empirical Bayes Normal Means) problem solved independently for each factor column $\mathbf{f}_k$. Within each column, the p feature-wise posterior means and variances are computed in closed form, then passed to an EBNM solver that applies the chosen prior (default: point-normal) and returns posterior moments.
 
 **Depends on:** `compute_R_k()` from `code/update_L.R` — source that file before this one.
 
@@ -46,34 +46,28 @@ The update is a **vector EBNM** (Empirical Bayes Normal Means) problem solved in
 
 The genomics observations follow:
 
-```
-Y ≈ L F'    (n × p matrix, L is n × K, F is p × K)
-```
+$$Y \approx LF^\top \quad (n \times p \text{ matrix, } L \text{ is } n \times K,\, F \text{ is } p \times K)$$
 
-with feature-wise precision `Tau[j]` (heteroscedastic noise). The residual for factor k at feature j is:
+with feature-wise precision $\tau_j$ (heteroscedastic noise). The residual for factor k at feature j is:
 
-```
-R_k[i,j] = Y[i,j] - sum_{k' != k} EL[i,k'] * EF[j,k']
-```
+$$R_k^{(i,j)} = Y_{ij} - \sum_{k' \neq k} \bar{L}_{ik'} \bar{F}_{jk'}$$
 
 This is computed by `compute_R_k()` and excludes the current factor k (Gauss-Seidel schedule).
 
-### EBNM Sufficient Statistics for f_{.k}
+### EBNM Sufficient Statistics for $\mathbf{f}_k$
 
 For each feature j, the ELBO contribution from factor k leads to the following normal sufficient statistics:
 
 | Quantity | Formula | Shape | Notes |
 |----------|---------|-------|-------|
-| `A_F[j]` | `Tau[j] * sum(EL2_k)` | p-vector | `sum(EL2_k)` is a **scalar** broadcast across all j |
+| `A_F[j]` | `Tau[j] * sum(EL2_k)` | p-vector | $\sum_i \mathbb{E}[l_{ik}^2]$ is a **scalar** broadcast across all j |
 | `B_F[j]` | `Tau[j] * (t(R_k) %*% EL_k)[j]` | p-vector | Inner product of residual column with L posterior |
 | `x_F[j]` | `B_F[j] / A_F[j]` | p-vector | EBNM observation ("sufficient statistic") |
 | `s_F[j]` | `1 / sqrt(A_F[j])` | p-vector | EBNM noise standard deviation |
 
 `sum(EL2_k)` is the sum of the second moments of the k-th column of L across all n samples:
 
-```
-sum_EL2_k = sum_i EL2[i,k]   (scalar, includes Var_q(l_{ik}) + EL[i,k]^2)
-```
+$$\widetilde{L}_k^{(2)} = \sum_i \mathbb{E}[l_{ik}^2] \quad \text{(scalar; includes } \text{Var}_q(l_{ik}) + \bar{l}_{ik}^2\text{)}$$
 
 ---
 
@@ -89,7 +83,7 @@ x_j = B_F[j] / A_F[j]
     = (t(R_k) %*% EL_k)[j] / sum_EL2_k
 ```
 
-The `Tau[j]` factors in numerator and denominator cancel exactly. The EBNM observation `x_j` is **identical regardless of feature precision**.
+The $\tau_j$ factors in numerator and denominator cancel exactly. The EBNM observation $x_j$ is **identical regardless of feature precision**.
 
 ### Tau Does NOT Cancel in s_j (noise level)
 
@@ -97,14 +91,14 @@ The `Tau[j]` factors in numerator and denominator cancel exactly. The EBNM obser
 s_j = 1 / sqrt(A_F[j]) = 1 / sqrt(Tau[j] * sum_EL2_k)
 ```
 
-Here `Tau[j]` remains under the square root. A feature with higher precision (larger `Tau[j]`) gets a **smaller** noise level `s_j`, which means the prior applies less shrinkage and the posterior mean stays closer to `x_j`.
+Here $\tau_j$ remains under the square root. A feature with higher precision (larger $\tau_j$) gets a **smaller** noise level $s_j$, which means the prior applies less shrinkage and the posterior mean stays closer to $x_j$.
 
 ### Consequence
 
-Features with the same residual signal `x_j` are differentially shrunk toward zero depending on their noise precision. Clean features (high Tau) are shrunk less; noisy features (low Tau) are shrunk more. This is the heteroscedastic shrinkage mechanism for F.
+Features with the same residual signal $x_j$ are differentially shrunk toward zero depending on their noise precision. Clean features (high $\tau_j$) are shrunk less; noisy features (low $\tau_j$) are shrunk more. This is the heteroscedastic shrinkage mechanism for F.
 
-| Tau | x_j | s_j | Shrinkage |
-|-----|-----|-----|-----------|
+| $\tau_j$ | $x_j$ | $s_j$ | Shrinkage |
+|----------|--------|--------|-----------|
 | 1 | same | large | strong |
 | 1000 | same | small (~1/sqrt(1000) smaller) | weak |
 
@@ -112,11 +106,15 @@ Demo 1 illustrates this with `max|x_j diff| ≈ 0` and `s_j ratio ≈ sqrt(1000)
 
 ---
 
-## API Reference
+## Function Reference
 
-### `update_F_k(Tau, EL_k, EL2_k, R_k, prior_family, A_floor)`
+### `update_F_k`
 
-Computes the variational posterior for a single factor column f_{.k}.
+```r
+update_F_k(Tau, EL_k, EL2_k, R_k, prior_family = "point_normal", A_floor = 1e-10)
+```
+
+Computes the variational posterior for a single factor column $\mathbf{f}_k$.
 
 **Arguments:**
 
@@ -151,7 +149,11 @@ Computes the variational posterior for a single factor column f_{.k}.
 
 ---
 
-### `update_F_all(Y, EL, EL2, EF, EF2, Tau, prior_family, A_floor)`
+### `update_F_all`
+
+```r
+update_F_all(Y, EL, EL2, EF, EF2, Tau, prior_family = "point_normal", A_floor = 1e-10)
+```
 
 Gauss-Seidel loop over all K factor columns.
 
@@ -275,7 +277,7 @@ Total: **5 scenarios** — narrative output, no PASS/FAIL.
 
 ### Demo 1: Tau Cancellation Property
 
-**Purpose:** Demonstrate the core mathematical property that `tau_j` cancels in `x_j` but not in `s_j`.
+**Purpose:** Demonstrate the core mathematical property that $\tau_j$ cancels in $x_j$ but not in $s_j$.
 
 **Setup:** Same Y, L, R_k. Run `update_F_k` twice — once with `Tau = rep(1, p)`, once with `Tau = rep(1000, p)`.
 
@@ -346,7 +348,7 @@ Also reports precision = TP/(TP+FP) and recall = TP/(TP+FN).
 
 ### Scalar Broadcast
 
-`sum(EL2_k)` is computed once (a single scalar) and broadcast across all p features via element-wise multiplication with `Tau`. This avoids a p × n matrix multiply for A_F.
+$\sum_i \mathbb{E}[l_{ik}^2]$ is computed once (a single scalar) and broadcast across all p features via element-wise multiplication with $\tau_j$. This avoids a p × n matrix multiply for $A_F$.
 
 ### Shared Dependency: compute_R_k
 

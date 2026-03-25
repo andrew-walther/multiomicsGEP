@@ -32,11 +32,9 @@ format:
 
 ## Overview
 
-`update_tau.R` implements the variational update for τ = (τ₁, …, τ_p), the per-feature noise precisions in the model
+`update_tau.R` implements the variational update for $\tau = (\tau_1, \ldots, \tau_p)$, the per-feature noise precisions in the model
 
-```
-Y = L F' + E,    E_ij ~ N(0, 1/τ_j)
-```
+$$Y = LF^\top + E, \quad E_{ij} \sim \mathcal{N}(0, \tau_j^{-1})$$
 
 This module is **unique among the four update modules** in two important ways:
 
@@ -55,59 +53,51 @@ The module exports three functions:
 
 ## Mathematical Background
 
-### The CAVI Objective for τ_j
+### The CAVI Objective for $\tau_j$
 
-Taking the variational expectation of the complete-data log-likelihood with respect to q(L) and q(F), the optimal q(τ_j) is Gamma-distributed. Under a flat (improper) prior on τ_j, the CAVI fixed-point reduces to a column-wise MLE:
+Taking the variational expectation of the complete-data log-likelihood with respect to q(L) and q(F), the optimal $q(\tau_j)$ is Gamma-distributed. Under a flat (improper) prior on $\tau_j$, the CAVI fixed-point reduces to a column-wise MLE:
 
-```
-τ_j = n / Σᵢ R̄²_ij
-```
+$$\tau_j = \frac{n}{\sum_i \bar{R}^2_{ij}}$$
 
-where R̄²_ij is the **expected squared residual** under the current posterior q(L) ⊗ q(F).
+where $\bar{R}^2_{ij}$ is the **expected squared residual** under the current posterior q(L) ⊗ q(F).
 
 ### Expected Squared Residual
 
-The expected squared residual cannot be computed naively as (Y - EL EF')². Posterior uncertainty in L and F inflates the true expectation:
+The expected squared residual cannot be computed naively as $(Y - \bar{L}\bar{F}^\top)^2$. Posterior uncertainty in L and F inflates the true expectation:
 
-```
-R̄²_ij = E_q[(Y_ij - Σ_k L_ik F_jk)²]
-        = (Y_ij - Σ_k EL_ik · EF_jk)²  +  Var_Term_ij
-```
+$$\bar{R}^2_{ij} = \mathbb{E}_q\!\left[\left(Y_{ij} - \sum_k L_{ik} F_{jk}\right)^2\right] = \left(Y_{ij} - \sum_k \bar{L}_{ik} \bar{F}_{jk}\right)^2 + \text{VT}_{ij}$$
+where $\text{VT}_{ij}$ is the variance correction term.
 
-The second term, `Var_Term`, accounts for the fact that E[(LF')²] ≠ (EL · EF')² when L and F have nonzero posterior variance.
+The second term, $\text{VT}$, accounts for the fact that $\mathbb{E}[(LF^\top)^2] \neq (\bar{L}\bar{F}^\top)^2$ when L and F have nonzero posterior variance.
 
 ### Variance Correction (Var_Term)
 
 Under the mean-field factorization q(L) ⊗ q(F) with independent factors:
 
-```
-Var_Term_ij = Σ_k E[L²_ik] E[F²_jk]  −  Σ_k (EL_ik)² (EF_jk)²
-            = (EL2 · EF2')_ij  −  (EL² · (EF²)')_ij
-```
+$$
+\begin{aligned}
+\text{VT}_{ij} &= \sum_k \mathbb{E}[L_{ik}^2]\,\mathbb{E}[F_{jk}^2] - \sum_k \bar{L}_{ik}^2 \, \bar{F}_{jk}^2 \\
+&= (\mathbb{E}[L^2]\,\mathbb{E}[F^2]^\top)_{ij} - (\bar{L}^2\,(\bar{F}^2)^\top)_{ij}
+\end{aligned}
+$$
 
-where EL2_ik = E[L²_ik] and EF2_jk = E[F²_jk] are posterior second moments (not squared means).
+where $\mathbb{E}[L_{ik}^2]$ and $\mathbb{E}[F_{jk}^2]$ are posterior second moments (not squared means).
 
-This simplification uses independence across factors and across the q(L) ⊗ q(F) factorization. By Jensen's inequality, E[X²] ≥ (E[X])² for any random variable X, so:
+This simplification uses independence across factors and across the q(L) ⊗ q(F) factorization. By Jensen's inequality, E[X²] ≥ (E[X])² for any random variable X, so $\text{VT}_{ij} \geq 0 \text{ for all } i, j$.
 
-```
-Var_Term_ij ≥ 0    for all i, j
-```
-
-Var_Term is exactly zero only when **both** EL2 = EL² **and** EF2 = EF² — i.e., all posterior variances are identically zero (a degenerate point-mass posterior).
+$\text{VT}$ is exactly zero only when **both** $\mathbb{E}[L^2] = \bar{L}^2$ **and** $\mathbb{E}[F^2] = \bar{F}^2$ — i.e., all posterior variances are identically zero (a degenerate point-mass posterior).
 
 ### Why Ignoring the Correction Is Dangerous
 
-If one naively substitutes EL2 → EL² and EF2 → EF² (ignoring posterior uncertainty), the effective R̄²_ij is **underestimated**, causing τ_j to be **overestimated** (noise underestimated). In practice this bias is 3–5× in typical simulations (see Demo 3).
+If one naively substitutes $\mathbb{E}[L^2] \to \bar{L}^2$ and $\mathbb{E}[F^2] \to \bar{F}^2$ (ignoring posterior uncertainty), the effective $\bar{R}^2_{ij}$ is **underestimated**, causing $\tau_j$ to be **overestimated** (noise underestimated). In practice this bias is 3–5× in typical simulations (see Demo 3).
 
 ### ELBO Proxy
 
-The module also computes an ELBO proxy (the τ-dependent terms of the evidence lower bound):
+The module also computes an ELBO proxy (the $\tau$-dependent terms of the evidence lower bound):
 
-```
-ELBO_proxy = Σ_j [ n/2 · log(τ_j)  −  τ_j/2 · Σᵢ R̄²_ij ]
-```
+$$\text{ELBO}_\text{proxy} = \sum_j \left[ \frac{n}{2}\log(\tau_j) - \frac{\tau_j}{2} \sum_i \bar{R}^2_{ij} \right]$$
 
-At the MLE solution τ_j = n / Σᵢ R̄²_ij, this is maximized over τ. Monitoring ELBO_proxy across iterations provides a convergence diagnostic: it should be non-decreasing. A decrease signals a bug in the implementation.
+At the MLE solution $\tau_j = n / \sum_i \bar{R}^2_{ij}$, this is maximized over $\tau$. Monitoring $\text{ELBO}_\text{proxy}$ across iterations provides a convergence diagnostic: it should be non-decreasing. A decrease signals a bug in the implementation.
 
 ---
 
@@ -159,7 +149,7 @@ compute_expected_residual_sq(Y, EL, EL2, EF, EF2)
 | `EF` | p × K | Posterior means E[F] |
 | `EF2` | p × K | Posterior second moments E[F²] |
 
-**Returns** an n × p matrix R̄².
+**Returns** an n × p matrix $\bar{R}^2$.
 
 **Formula**
 
@@ -189,13 +179,13 @@ update_tau(Y, EL, EL2, EF, EF2, tau_floor = 1e-8)
 | `EL2` | n × K | — | Posterior second moments E[L²] |
 | `EF` | p × K | — | Posterior means E[F] |
 | `EF2` | p × K | — | Posterior second moments E[F²] |
-| `tau_floor` | scalar | 1e-8 | Minimum τ value (prevents Tau = Inf) |
+| `tau_floor` | scalar | 1e-8 | Minimum $\tau$ value (prevents Tau = Inf) |
 
 **Returns** a named list:
 
 | Element | Shape | Description |
 |---|---|---|
-| `Tau` | p-vector | Estimated noise precisions τ_1, …, τ_p |
+| `Tau` | p-vector | Estimated noise precisions $\tau_1, \ldots, \tau_p$ |
 | `R2_bar` | n × p | Expected squared residuals |
 | `Var_Term` | n × p | Variance correction term |
 | `elbo_proxy` | scalar | ELBO proxy (τ-dependent terms) |
@@ -212,7 +202,7 @@ elbo_proxy <- sum(n/2 * log(Tau) - Tau/2 * RSS_j)
 
 **Numerical stability**
 
-`pmax(RSS_j, n * tau_floor)` prevents division by near-zero RSS when the reconstruction is nearly perfect. Without this floor, τ_j → ∞ (infinite precision), which can destabilize downstream L and F updates. The floor corresponds to a maximum τ of 1/tau_floor = 1e8.
+`pmax(RSS_j, n * tau_floor)` prevents division by near-zero RSS when the reconstruction is nearly perfect. Without this floor, $\tau_j \to \infty$ (infinite precision), which can destabilize downstream L and F updates. The floor corresponds to a maximum $\tau$ of 1/tau_floor = 1e8.
 
 **No per-k loop**
 
@@ -228,14 +218,14 @@ Unlike `update_beta_all`, `update_L_all`, and `update_F_all`, this function proc
 | Loop structure | No per-k loop; fully vectorized |
 | External dependencies | None — pure base R |
 | Output positivity | Tau > 0 guaranteed by tau_floor |
-| Var_Term sign | >= 0 everywhere (Jensen's inequality) |
-| ELBO monotonicity | elbo_proxy non-decreasing at convergence |
+| $\text{VT}$ sign | $\geq 0$ everywhere (Jensen's inequality) |
+| ELBO monotonicity | $\text{ELBO}_\text{proxy}$ non-decreasing at convergence |
 | Perfect reconstruction | Tau hits ceiling 1/tau_floor when RSS ≈ 0 |
-| Heteroscedastic noise | Each τ_j estimated independently per column |
+| Heteroscedastic noise | Each $\tau_j$ estimated independently per column |
 
 ---
 
-## Test Suite Summary
+## Test Suite
 
 **File:** `tests/test_update_tau.R`
 **Total:** 27 tests across 9 groups (all passing)
@@ -264,7 +254,7 @@ Edge case where Y is exactly reproduced by posterior means and posteriors collap
 
 ### T3: Known Noise Recovery (3 tests)
 
-Simulates Y = L F' + N(0, 1/τ_j) with zero posterior variance; checks that estimated τ recovers truth.
+Simulates $Y = LF^\top + \mathcal{N}(0, \tau_j^{-1})$ with zero posterior variance; checks that estimated $\tau$ recovers truth.
 
 | Test | Assertion |
 |---|---|
@@ -324,7 +314,7 @@ Compares output against the corresponding lines in `code/Supervised_Bayesian_MF_
 
 ---
 
-## Demo Scenarios
+## Demos
 
 **File:** `demos/demo_update_tau.R`
 
@@ -336,15 +326,15 @@ Each demo is a narrative scenario with printed output. There are no PASS/FAIL as
 
 **Setup:** Small n=20, p=10, K=3 example with realistic posterior variances.
 
-**Key output:** Mean ratio Var_Term / R2_bar; illustrates that ignoring the correction would systematically bias τ upward.
+**Key output:** Mean ratio $\text{VT}_{ij} / \bar{R}^2_{ij}$; illustrates that ignoring the correction would systematically bias $\tau$ upward.
 
 ### Demo 2: Known Noise Recovery
 
 **Purpose:** Validate that update_tau recovers true per-feature precisions under controlled conditions.
 
-**Setup:** Y = L F' + noise with τ_j ~ Uniform(0.5, 5); point-mass posteriors (EL2 = EL^2, EF2 = EF^2); n=200.
+**Setup:** $Y = LF^\top + E$ with $\tau_j \sim \text{Uniform}(0.5, 5)$; point-mass posteriors (EL2 = EL^2, EF2 = EF^2); n=200.
 
-**Key output:** cor(estimated Tau, true Tau) ≈ 0.9+; scatter plot of estimated vs. true.
+**Key output:** cor(estimated $\tau$, true $\tau$) ≈ 0.9+; scatter plot of estimated vs. true.
 
 ### Demo 3: Variance Correction Matters
 
@@ -352,15 +342,15 @@ Each demo is a narrative scenario with printed output. There are no PASS/FAIL as
 
 **Setup:** Same Y as Demo 2, but run update_tau twice — once with true second moments, once substituting EL2 ← EL^2 and EF2 ← EF^2.
 
-**Key output:** mean(Tau_naive) / mean(Tau_correct) ≈ 3–5×; shows systematic overestimation of precision (underestimation of noise) when the correction is omitted.
+**Key output:** mean($\tau_\text{naive}$) / mean($\tau_\text{correct}$) ≈ 3–5×; shows systematic overestimation of precision (underestimation of noise) when the correction is omitted.
 
 ### Demo 4: Heteroscedastic Noise
 
 **Purpose:** Confirm that the column-wise MLE correctly separates features with different noise levels.
 
-**Setup:** p=150 features split into two groups — high-precision (τ=5, low noise) and low-precision (τ=0.5, high noise).
+**Setup:** p=150 features split into two groups — high-precision ($\tau=5$, low noise) and low-precision ($\tau=0.5$, high noise).
 
-**Key output:** Estimated Tau clearly bimodal; group means close to 5 and 0.5 respectively.
+**Key output:** Estimated $\tau$ clearly bimodal; group means close to 5 and 0.5 respectively.
 
 ### Demo 5: ELBO as Convergence Monitor
 
@@ -368,7 +358,7 @@ Each demo is a narrative scenario with printed output. There are no PASS/FAIL as
 
 **Setup:** 3 manual CAVI iterations — update L → update F → update τ — on a small example.
 
-**Key output:** elbo_proxy at each iteration; should be non-decreasing. A decrease would indicate a bug in L or F update.
+**Key output:** $\text{ELBO}_\text{proxy}$ at each iteration; should be non-decreasing. A decrease would indicate a bug in L or F update.
 
 ---
 
@@ -452,7 +442,7 @@ elbo_proxy <- sum(n/2 * log(Tau) - Tau/2 * colSums(R2_bar))
 ```
 
 **Critical reminders**
-- Var_Term uses **second moments** EL2, EF2 — not (EL)², (EF)². Confusing these is the most common implementation error and causes 3–5× overestimation of τ.
+- $\text{VT}$ uses **second moments** $\mathbb{E}[L^2]$, $\mathbb{E}[F^2]$ — not $\bar{L}^2$, $\bar{F}^2$. Confusing these is the most common implementation error and causes 3–5× overestimation of $\tau$.
 - tau_floor is applied to RSS (not to Tau directly): `pmax(RSS_j, n * tau_floor)`.
-- ELBO_proxy should be **non-decreasing** across CAVI iterations. If it drops, check the L or F update first.
+- $\text{ELBO}_\text{proxy}$ should be **non-decreasing** across CAVI iterations. If it drops, check the L or F update first.
 - This is the **only module** with no EBNM call and no `ebnm` package dependency.

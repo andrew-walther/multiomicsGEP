@@ -39,7 +39,7 @@ format:
 
 Because L appears in **both** the genomics likelihood and the survival likelihood, its posterior update receives signal from two sources simultaneously. This dual-source structure is the defining feature of this module and what distinguishes q(L) from q(F) (which only sees genomics).
 
-The update is a **vector EBNM** (Empirical Bayes Normal Means) problem: each sample i has its own effective precision A_L[i] and effective signal B_L[i], so we solve n EBNM problems simultaneously via the `ebnm` package.
+The update is a **vector EBNM** (Empirical Bayes Normal Means) problem: each sample i has its own effective precision $A_L$ and effective signal $B_L$, so we solve n EBNM problems simultaneously via the `ebnm` package.
 
 ---
 
@@ -47,48 +47,53 @@ The update is a **vector EBNM** (Empirical Bayes Normal Means) problem: each sam
 
 ### Model
 
-```
-Y_ij = sum_k L_ik F_jk + E_ij,   E_ij ~ N(0, 1/tau_j)
-log h(t|i) = log h_0(t) + sum_k L_ik beta_k
-```
+$$
+Y_{ij} = \sum_k L_{ik} F_{jk} + E_{ij}, \quad E_{ij} \sim \mathcal{N}(0, \tau_j^{-1})
+$$
+$$
+\log h(t \mid i) = \log h_0(t) + \sum_k L_{ik} \beta_k
+$$
 
 ### CAVI Update for L
 
-Taking the ELBO derivative with respect to q(l_{.k}) (the k-th loading column), the optimal variational distribution is Gaussian with:
+Taking the ELBO derivative with respect to $q(\mathbf{l}_k)$ (the k-th loading column), the optimal variational distribution is Gaussian with:
 
-**Precision (A_L):**
+**Precision ($A_L$):**
 
-```
-A_L[i] = A_gen + A_surv[i]
-A_gen   = sum_j( tau_j * E[f_{jk}^2] )          # scalar, same for all i
-A_surv[i] = w[i] * E[beta_k^2]                   # n-vector, sample-specific
-```
+$$
+\begin{aligned}
+A_L^{(i)} &= A_\text{gen} + A_\text{surv}^{(i)} \\
+A_\text{gen} &= \sum_j \tau_j \, \mathbb{E}[f_{jk}^2] \quad \text{(scalar, same for all } i\text{)} \\
+A_\text{surv}^{(i)} &= w_i \, \mathbb{E}[\beta_k^2] \quad \text{(}n\text{-vector, sample-specific)}
+\end{aligned}
+$$
 
-where `w[i] = W_ii` is the diagonal of the Cox partial-likelihood Hessian (sample-specific curvature).
+where $w_i = W_{ii}$ is the diagonal of the Cox partial-likelihood Hessian (sample-specific curvature).
 
-**Signal (B_L):**
+**Signal ($B_L$):**
 
-```
-B_L[i]      = B_gen[i] + B_surv[i]
-B_gen[i]    = sum_j( tau_j * E[f_{jk}] * R_k[i,j] )   # genomics contribution
-B_surv[i]   = w[i] * z_no_k[i] * E[beta_k]             # survival contribution
-```
+$$
+\begin{aligned}
+B_L^{(i)} &= B_\text{gen}^{(i)} + B_\text{surv}^{(i)} \\
+B_\text{gen}^{(i)} &= \sum_j \tau_j \, \mathbb{E}[f_{jk}] \, R_k^{(i,j)} \quad \text{(genomics contribution)} \\
+B_\text{surv}^{(i)} &= w_i \, z_i^{(-k)} \, \mathbb{E}[\beta_k] \quad \text{(survival contribution)}
+\end{aligned}
+$$
 
-where `z_no_k[i] = z[i] - eta_no_k[i]` is the partial Cox residual after removing factor k's contribution.
+where `z_no_k[i] = z[i] - eta_no_k[i]` is the partial Cox residual after removing factor $k$'s contribution.
 
 **EBNM arguments:**
 
-```
-x_L[i] = B_L[i] / A_L[i]      # n-vector: effective observation
-s_L[i] = 1 / sqrt(A_L[i])     # n-vector: effective noise SD
-```
+$$
+x_L^{(i)} = \frac{B_L^{(i)}}{A_L^{(i)}}, \qquad s_L^{(i)} = \frac{1}{\sqrt{A_L^{(i)}}}
+$$
 
 The ebnm posterior gives:
-- `mean_L[i]` = E_q[l_{ik}]
-- `sd_L[i]` = SD_q(l_{ik})
-- `EL2[i,k]` = Var_q(l_{ik}) + mean_L[i]^2    (second moment, not squared mean)
+- `mean_L[i]` = $\mathbb{E}_q[l_{ik}]$
+- `sd_L[i]` = $\text{SD}_q(l_{ik})$
+- `EL2[i,k]` = $\text{Var}_q(l_{ik}) + \bar{l}_{ik}^2$ (second moment, not squared mean)
 
-The second moment EL2 is used in downstream updates for q(F) and q(τ) to correct for uncertainty in L (error-in-variables correction).
+The second moment $\mathbb{E}[L^2]$ is used in downstream updates for q(F) and q($\tau$) to correct for uncertainty in L (error-in-variables correction).
 
 ---
 
@@ -133,7 +138,7 @@ update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k,
            prior_family = "point_normal", A_floor = 1e-10)
 ```
 
-**Purpose:** Vector EBNM update for the k-th loading column l_{.k} (n observations).
+**Purpose:** Vector EBNM update for the k-th loading column $\mathbf{l}_k$ (n observations).
 
 **Arguments:**
 
@@ -252,7 +257,7 @@ The following table summarizes the dual-source structure — the central feature
 | `x_L[i]`     | EBNM in   | n-vector   | `B_L[i] / A_L[i]`                           | Effective observation                 |
 | `s_L[i]`     | EBNM in   | n-vector   | `1 / sqrt(A_L[i])`                          | Effective noise SD                    |
 
-**Why A_L varies across samples:** The Cox Hessian diagonal `w[i] = W_ii` reflects each patient's contribution to the partial likelihood curvature. Patients at high risk (near their event time) have larger `w[i]`, so their survival signal pulls harder on their loading estimate. This is in contrast to `A_gen`, which applies equally to all samples because the genomics noise precision `tau_j` depends on genes, not patients.
+**Why $A_L$ varies across samples:** The Cox Hessian diagonal $w_i = W_{ii}$ reflects each patient's contribution to the partial likelihood curvature. Patients at high risk (near their event time) have larger $w_i$, so their survival signal pulls harder on their loading estimate. This is in contrast to $A_\text{gen}$, which applies equally to all samples because the genomics noise precision $\tau_j$ depends on genes, not patients.
 
 **Special cases:**
 
@@ -353,7 +358,7 @@ Verifies the core formulas hold numerically to tolerance.
 **File:** `demos/demo_update_L.R`
 **Structure:** 5 scenarios; narrative output only (no PASS/FAIL)
 
-### Demo 1: Anatomy of A_L and B_L
+### Demo 1: Anatomy of $A_L$ and $B_L$
 
 Constructs a small synthetic problem (n=50, p=100, K=1) and displays the dual-source breakdown:
 - Prints `A_gen` (scalar)
@@ -361,7 +366,7 @@ Constructs a small synthetic problem (n=50, p=100, K=1) and displays the dual-so
 - Prints `range(A_L)` (combined)
 - Prints `range(B_gen)`, `range(B_surv)`, `range(B_L)`
 
-**Teaching point:** Even though `A_gen` is the same for every sample, `A_surv` introduces per-sample variability. The effective observation `x_L = B_L / A_L` is therefore sample-specific.
+**Teaching point:** Even though `A_gen` is the same for every sample, `A_surv` introduces per-sample variability. The effective observation $x_L = B_L / A_L$ is therefore sample-specific.
 
 ### Demo 2: Signal Recovery K=1
 
@@ -376,7 +381,7 @@ Simulates a rank-1 model:
 
 Compares two runs:
 - Run 1: `w = rep(0, n)` (survival disabled)
-- Run 2: `w > 0` (survival enabled, beta_k != 0)
+- Run 2: `w > 0` (survival enabled, $\beta_k \neq 0$)
 
 Reports posterior SDs under each regime.
 
@@ -390,7 +395,7 @@ Compares two settings:
 
 Reports `A_gen` and posterior shrinkage under each.
 
-**Teaching point:** When factors are uncertain (`EF2 >> EF^2`), `A_gen` is inflated, increasing shrinkage on loadings. This is the error-in-variables correction: the model is appropriately conservative when factors are poorly estimated.
+**Teaching point:** When factors are uncertain (`EF2 >> EF^2`), $A_\text{gen}$ is inflated, increasing shrinkage on loadings. This is the error-in-variables correction: the model is appropriately conservative when factors are poorly estimated.
 
 ### Demo 5: Multi-Factor Recovery K=5
 
@@ -419,28 +424,27 @@ Unlike `update_beta.R` (which solves a *scalar* EBNM — one observation per fac
 
 For any posterior q:
 
-```
-EL2[i,k] = Var_q(l_{ik}) + (E_q[l_{ik}])^2
-           = sd[i]^2 + mean[i]^2
-```
+$$
+\mathbb{E}_q[l_{ik}^2] = \text{Var}_q(l_{ik}) + (\mathbb{E}_q[l_{ik}])^2 = \text{sd}[i]^2 + \text{mean}[i]^2
+$$
 
-This is NOT `mean[i]^2`. Using `mean^2` in place of `second` is a common error (Correction R3 in the project's error log) that underestimates posterior variance and introduces bias in q(F) and q(τ) updates.
+This is NOT `mean[i]^2`. Using `mean^2` in place of `second` is a common error (Correction R3 in the project's error log) that underestimates posterior variance and introduces bias in q(F) and q($\tau$) updates.
 
 ### A_floor for Stability
 
-When both `Tau = 0` and `w = 0`, the precision A_L would be exactly zero, making `s_L = 1/sqrt(0)` undefined. The floor `A_floor = 1e-10` prevents this. When A hits the floor and B = 0, ebnm returns a degenerate posterior concentrated at 0 — correct behavior for an unidentified factor.
+When both `Tau = 0` and `w = 0`, the precision $A_L$ would be exactly zero, making $s_L = 1/\sqrt{0}$ undefined. The floor `A_floor = 1e-10` prevents this. When A hits the floor and B = 0, ebnm returns a degenerate posterior concentrated at 0 — correct behavior for an unidentified factor.
 
 ### Gauss-Seidel vs. Jacobi
 
 The Gauss-Seidel update (each column updated sequentially with immediate propagation) is one of the V2 improvements (label A1 in `PROJECT_STATUS.md`). It typically converges faster than the simultaneous Jacobi update used in V1 because each update uses strictly more current information.
 
-### tau_j Cancellation Does NOT Apply Here
+### $\tau_j$ Cancellation Does NOT Apply Here
 
-In `update_F.R`, the per-gene precision `tau_j` cancels out of the effective observation `x_j` (though it remains in `s_j`). This cancellation does NOT occur in `update_L.R` because the genomics signal `B_gen` involves a sum over all genes j, weighted by `tau_j`. Different genes contribute different amounts of signal to each patient's loading estimate.
+In `update_F.R`, the per-gene precision $\tau_j$ cancels out of the effective observation $x_j$ (though it remains in $s_j$). This cancellation does NOT occur in `update_L.R` because the genomics signal $B_\text{gen}$ involves a sum over all genes j, weighted by $\tau_j$. Different genes contribute different amounts of signal to each patient's loading estimate.
 
 ---
 
-## Connections to Other Modules
+## Related Files
 
 | Module / File                               | Relationship                                                              |
 |---------------------------------------------|---------------------------------------------------------------------------|
@@ -466,11 +470,11 @@ source("code/update_F.R")   # uses compute_R_k
 
 ### Forgetting EL2 != EL^2
 
-The second moment `EL2[i,k] = sd^2 + mean^2` is **not** `mean^2`. Downstream modules (`update_tau`, `update_F`) use EL2 explicitly. Passing `EL^2` instead will underestimate the variance correction (Correction R3).
+The second moment `EL2[i,k] = sd^2 + mean^2` is **not** `mean^2`. Downstream modules (`update_tau`, `update_F`) use $\mathbb{E}[L^2]$ explicitly. Passing `EL^2` instead will underestimate the variance correction (Correction R3).
 
-### A_gen is Scalar, A_L is a Vector
+### $A_\text{gen}$ is Scalar, $A_L$ is a Vector
 
-`A_gen = sum(Tau * EF2_k)` is a single scalar. It becomes part of the n-vector `A_L` only after adding `A_surv`. Broadcasting in R handles this automatically (`A_gen + A_surv` where A_surv is a vector), but it is worth being explicit: `A_L` always has length n.
+`A_gen = sum(Tau * EF2_k)` is a single scalar. It becomes part of the n-vector $A_L$ only after adding $A_\text{surv}$. Broadcasting in R handles this automatically (`A_gen + A_surv` where A_surv is a vector), but it is worth being explicit: `A_L` always has length n.
 
 ### z_no_k Computed Inline
 
@@ -486,7 +490,7 @@ The default `prior_family = "point_normal"` imposes sparsity (exact zeros for in
 
 ### Cox Weights w Must Be Non-Negative
 
-The Cox Hessian diagonal `w[i] = W_ii >= 0` always. Negative values would make `A_surv` negative, potentially driving `A_L` below zero (before the floor). The floor catches this, but negative weights indicate a bug in the Cox weight computation upstream.
+The Cox Hessian diagonal $w_i = W_{ii} \geq 0$ always. Negative values would make $A_\text{surv}$ negative, potentially driving $A_L$ below zero (before the floor). The floor catches this, but negative weights indicate a bug in the Cox weight computation upstream.
 
 ---
 
