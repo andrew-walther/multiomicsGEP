@@ -49,6 +49,7 @@ multiomicsGEP/
 │
 ├── docs/                              ← Companion documentation (PDF + HTML)
 │   ├── Makefile                       ← `make all` renders .qmd → .pdf + .html via Quarto
+│   ├── fit_modular.qmd/.pdf/.html     ← ✅ fit_modular.R walkthrough (full CAVI loop)
 │   ├── update_beta.qmd/.pdf/.html     ← β update: code walkthrough, tests, demos
 │   ├── update_L.qmd/.pdf/.html        ← L update: code walkthrough, tests, demos
 │   ├── update_F.qmd/.pdf/.html        ← F update: code walkthrough, tests, demos
@@ -113,12 +114,12 @@ install.packages(c("survival", "ebnm"))
 source("code/Supervised_Bayesian_MF_V2.R")
 ```
 
-**Modular implementation (standalone, recommended for understanding the algorithm):**
+**Modular implementation (canonical, recommended):**
 ```r
-Rscript results/run_modular_simulation.R
+Rscript results/modular_sim_factor/run_factor_modular_simulation.R
 ```
 
-Both scripts use the same parameters (n=250, p=1000, K=5, seed=42) and produce equivalent results. The modular script sources only the four standalone update modules; it does not depend on V2.R.
+Both scripts use the same parameters (n=250, p=1000, K=5, seed=42) and produce equivalent results. The modular script uses `fit_supervised_mf_modular()` from `code/fit_modular.R`, which implements factor-wise Gauss-Seidel CAVI via the four standalone update modules. Results are written to `results/tables/modular_sim_factor/` and `results/figures/modular_sim_factor/`; the rendered report is at `results/modular_sim_factor/factor_modular_sim_report.qmd`.
 
 The V2 run generates a synthetic dataset and prints:
 
@@ -132,36 +133,26 @@ It also renders a diagnostic dashboard: RMSE trace, ELBO proxy, GEP heatmap, Kap
 
 ### Apply to Real Data
 
-```r
-DATA_MODE         <- "real"
-real_genomics_mat <- your_matrix       # numeric matrix, n rows (patients) × p columns (features)
-real_clinical_df  <- your_dataframe    # data frame with at minimum: time, status columns
-real_time_col     <- "time"            # column name for survival/censoring time
-real_status_col   <- "status"         # column name for event indicator (1=event, 0=censored)
-
-source("code/Supervised_Bayesian_MF_V2.R")
-```
-
-### Advanced Options
+The recommended entry point for real data is `fit_supervised_mf_modular()` in `code/fit_modular.R`:
 
 ```r
-res <- fit_supervised_mf(
-  Y             = your_matrix,
-  time          = your_time,
-  status        = your_status,
-  K             = 5,               # number of latent factors
-  max_iter      = 100,             # maximum CAVI iterations
-  tol           = 1e-5,            # convergence threshold
-  orthogonalize = FALSE,           # SVD rotation every 10 iters (off by default)
-  refresh_taylor = FALSE,          # recompute Cox expansion per factor (off by default)
-  verbose       = TRUE
+source("code/fit_modular.R")   # also sources update_L/F/beta/tau.R automatically
+
+res <- fit_supervised_mf_modular(
+  Y      = your_matrix,    # numeric matrix: n patients × p genes (pre-normalised)
+  time   = your_time,      # numeric vector: survival/censoring time
+  status = your_status,    # integer vector: 1 = event, 0 = censored
+  K      = 5,              # number of latent factors (select via cross-validation)
+  max_iter = 100,
+  tol      = 1e-3,
+  verbose  = TRUE
 )
 
 # Access results
-res$L      # n×K patient loadings
-res$F      # p×K factor weights (GEP signatures)
-res$Beta   # K survival coefficients
-res$Beta2  # K posterior second moments (uncertainty)
+res$EL     # n×K posterior mean patient loadings
+res$EF     # p×K posterior mean factor weights (GEP signatures)
+res$EBeta  # K posterior mean survival coefficients
+res$EBeta2 # K posterior second moments (uncertainty)
 res$Tau    # p noise precision per feature
 res$history$rmse        # RMSE per iteration
 res$history$elbo_proxy  # genomics ELBO per iteration
@@ -207,7 +198,8 @@ The key mathematical concepts are:
 | Version | File | Status | Notes |
 |---------|------|--------|-------|
 | V1 | `code/legacy/Supervised_Bayesian_MF.R` | Archived | Original implementation; 6 known algorithmic issues |
-| V2 | `Supervised_Bayesian_MF_V2.R` | ✅ **Current** | All issues corrected (A1–A6); recommended for all use |
+| V2 | `code/Supervised_Bayesian_MF_V2.R` | Reference | Monolithic; all V1 issues corrected (A1–A6); kept for comparison |
+| Modular | `code/fit_modular.R` + `update_*.R` | ✅ **Current** | Factor-wise Gauss-Seidel CAVI; tested (105/105); recommended for all new work |
 
 **V2 improvements over V1:**
 
