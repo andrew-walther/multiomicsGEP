@@ -3432,7 +3432,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>Key findings.</strong> All 7 cohorts converge (14–259 iterations). Microarray cohorts reach lower RMSE (0.59–1.02) than RNA-seq cohorts (0.71–1.26), consistent with the smoother variance structure of log2-normalised array data. The supervised model improves C-index over PCA in 4/7 cohorts and is comparable in 3. Puleo_array (n=288) shows the strongest prognostic signal — three factors with <span class="math inline">\(\hat\beta \neq 0\)</span> and log-rank p &lt; 0.05. The pooled RNA-seq fit (TCGA_PAAD + Dijk + PACA_AU_seq; n=286, p=1,573 common genes) recovers three prognostic factors without batch correction.</p>
+<p><strong>Key findings.</strong> All 7 cohorts converge (14–259 iterations). Microarray cohorts reach lower RMSE (0.59–1.02) than RNA-seq cohorts (0.71–1.26), consistent with the smoother variance structure of log2-normalised array data. The supervised model improves C-index over PCA in 3/7 cohorts (Dijk $+$0.012, Moffitt_GEO_array $+$0.022, PACA_AU_seq $+$0.012); the PCA baseline is comparable or slightly stronger in the remaining 4. Puleo_array (n=288) shows the strongest prognostic signal — three factors with <span class="math inline">\(\hat\beta \neq 0\)</span> and log-rank p &lt; 0.05. The pooled RNA-seq fit (TCGA_PAAD + Dijk + PACA_AU_seq; n=286, p=1,573 common genes) recovers three prognostic factors without batch correction.</p>
 </div>
 </div>
 <hr>
@@ -3836,7 +3836,7 @@ NA
 <figcaption class="figure-caption">TCGA PAAD beta estimates</figcaption>
 </figure>
 </div>
-<p><em>Prognostic factors: GEP 1 (protective, (β̂) = -0.090); GEP 3 (protective, (β̂) = -0.115); GEP 5 (adverse, (β̂) = +0.128). Factors with (β̂ = 0) were not retained by the EBNM shrinkage prior.</em></p>
+<p><em>Prognostic factors: GEP 1 (protective, <span class="math inline">\(\hat\beta\)</span> = -0.090); GEP 3 (protective, <span class="math inline">\(\hat\beta\)</span> = -0.115); GEP 5 (adverse, <span class="math inline">\(\hat\beta\)</span> = +0.128). Factors with <span class="math inline">\(\hat\beta = 0\)</span> were not retained by the EBNM shrinkage prior.</em></p>
 <p><strong>Factor Summary Table</strong></p>
 
 <table class="table table-striped table-hover" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -3948,7 +3948,7 @@ PVE %
 </tbody>
 
 </table>
-<p><em>0 of 3 factor(s) with non-zero () show log-rank p &lt; 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.</em></p>
+<p><em>0 of 3 factor(s) with non-zero <span class="math inline">\(\hat\beta\)</span> show log-rank p &lt; 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.</em></p>
 <p><strong>Figure 4 — GEP Heatmap (top 50 genes by total absolute weight)</strong></p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -4727,7 +4727,7 @@ NA
 <figcaption class="figure-caption">CPTAC beta estimates</figcaption>
 </figure>
 </div>
-<p><em>Prognostic factors: GEP 2 (protective, (β̂) = -0.179); GEP 3 (protective, (β̂) = -0.435). Factors with (β̂ = 0) were not retained by the EBNM shrinkage prior.</em></p>
+<p><em>Prognostic factors: GEP 2 (protective, <span class="math inline">\(\hat\beta\)</span> = -0.179); GEP 3 (protective, <span class="math inline">\(\hat\beta\)</span> = -0.435). Factors with <span class="math inline">\(\hat\beta = 0\)</span> were not retained by the EBNM shrinkage prior.</em></p>
 <p><strong>Factor Summary Table</strong></p>
 
 <table class="table table-striped table-hover" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -4839,7 +4839,7 @@ PVE %
 </tbody>
 
 </table>
-<p><em>All 2 factor(s) with non-zero () also show log-rank p &lt; 0.1, confirming consistency between the parametric Cox estimate and the non-parametric survival test.</em></p>
+<p><em>All 2 factor(s) with non-zero <span class="math inline">\(\hat\beta\)</span> also show log-rank p &lt; 0.1, confirming consistency between the parametric Cox estimate and the non-parametric survival test.</em></p>
 <p><strong>Figure 4 — GEP Heatmap (top 50 genes by total absolute weight)</strong></p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -5618,7 +5618,7 @@ NA
 <figcaption class="figure-caption">Dijk beta estimates</figcaption>
 </figure>
 </div>
-<p><em>Prognostic factors: GEP 1 (protective, (β̂) = -0.164); GEP 2 (adverse, (β̂) = +0.099); GEP 4 (adverse, (β̂) = +0.092). Factors with (β̂ = 0) were not retained by the EBNM shrinkage prior.</em></p>
+<p><em>Prognostic factors: GEP 1 (protective, <span class="math inline">\(\hat\beta\)</span> = -0.164); GEP 2 (adverse, <span class="math inline">\(\hat\beta\)</span> = +0.099); GEP 4 (adverse, <span class="math inline">\(\hat\beta\)</span> = +0.092). Factors with <span class="math inline">\(\hat\beta = 0\)</span> were not retained by the EBNM shrinkage prior.</em></p>
 <p><strong>Factor Summary Table</strong></p>
 
 <table class="table table-striped table-hover" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -5730,7 +5730,7 @@ PVE %
 </tbody>
 
 </table>
-<p><em>1 of 3 factor(s) with non-zero () show log-rank p &lt; 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.</em></p>
+<p><em>1 of 3 factor(s) with non-zero <span class="math inline">\(\hat\beta\)</span> show log-rank p &lt; 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.</em></p>
 <p><strong>Figure 4 — GEP Heatmap (top 50 genes by total absolute weight)</strong></p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -6509,7 +6509,7 @@ NA
 <figcaption class="figure-caption">Moffitt GEO array beta estimates</figcaption>
 </figure>
 </div>
-<p><em>Prognostic factors: GEP 5 (protective, (β̂) = -0.258). Factors with (β̂ = 0) were not retained by the EBNM shrinkage prior.</em></p>
+<p><em>Prognostic factors: GEP 5 (protective, <span class="math inline">\(\hat\beta\)</span> = -0.258). Factors with <span class="math inline">\(\hat\beta = 0\)</span> were not retained by the EBNM shrinkage prior.</em></p>
 <p><strong>Factor Summary Table</strong></p>
 
 <table class="table table-striped table-hover" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -6621,7 +6621,7 @@ PVE %
 </tbody>
 
 </table>
-<p><em>All 1 factor(s) with non-zero () also show log-rank p &lt; 0.1, confirming consistency between the parametric Cox estimate and the non-parametric survival test.</em></p>
+<p><em>All 1 factor(s) with non-zero <span class="math inline">\(\hat\beta\)</span> also show log-rank p &lt; 0.1, confirming consistency between the parametric Cox estimate and the non-parametric survival test.</em></p>
 <p><strong>Figure 4 — GEP Heatmap (top 50 genes by total absolute weight)</strong></p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -7400,7 +7400,7 @@ NA
 <figcaption class="figure-caption">PACA AU array beta estimates</figcaption>
 </figure>
 </div>
-<p><em>Prognostic factors: GEP 1 (adverse, (β̂) = +0.120). Factors with (β̂ = 0) were not retained by the EBNM shrinkage prior.</em></p>
+<p><em>Prognostic factors: GEP 1 (adverse, <span class="math inline">\(\hat\beta\)</span> = +0.120). Factors with <span class="math inline">\(\hat\beta = 0\)</span> were not retained by the EBNM shrinkage prior.</em></p>
 <p><strong>Factor Summary Table</strong></p>
 
 <table class="table table-striped table-hover" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -7512,7 +7512,7 @@ PVE %
 </tbody>
 
 </table>
-<p><em>0 of 1 factor(s) with non-zero () show log-rank p &lt; 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.</em></p>
+<p><em>0 of 1 factor(s) with non-zero <span class="math inline">\(\hat\beta\)</span> show log-rank p &lt; 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.</em></p>
 <p><strong>Figure 4 — GEP Heatmap (top 50 genes by total absolute weight)</strong></p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -8291,7 +8291,7 @@ NA
 <figcaption class="figure-caption">PACA AU seq beta estimates</figcaption>
 </figure>
 </div>
-<p><em>Prognostic factors: GEP 1 (protective, (β̂) = -0.357); GEP 4 (adverse, (β̂) = +0.143); GEP 5 (protective, (β̂) = -0.395). Factors with (β̂ = 0) were not retained by the EBNM shrinkage prior.</em></p>
+<p><em>Prognostic factors: GEP 1 (protective, <span class="math inline">\(\hat\beta\)</span> = -0.357); GEP 4 (adverse, <span class="math inline">\(\hat\beta\)</span> = +0.143); GEP 5 (protective, <span class="math inline">\(\hat\beta\)</span> = -0.395). Factors with <span class="math inline">\(\hat\beta = 0\)</span> were not retained by the EBNM shrinkage prior.</em></p>
 <p><strong>Factor Summary Table</strong></p>
 
 <table class="table table-striped table-hover" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -8403,7 +8403,7 @@ PVE %
 </tbody>
 
 </table>
-<p><em>2 of 3 factor(s) with non-zero () show log-rank p &lt; 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.</em></p>
+<p><em>2 of 3 factor(s) with non-zero <span class="math inline">\(\hat\beta\)</span> show log-rank p &lt; 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.</em></p>
 <p><strong>Figure 4 — GEP Heatmap (top 50 genes by total absolute weight)</strong></p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -9182,7 +9182,7 @@ NA
 <figcaption class="figure-caption">Puleo array beta estimates</figcaption>
 </figure>
 </div>
-<p><em>Prognostic factors: GEP 1 (adverse, (β̂) = +0.256); GEP 3 (adverse, (β̂) = +0.348); GEP 4 (adverse, (β̂) = +0.223). Factors with (β̂ = 0) were not retained by the EBNM shrinkage prior.</em></p>
+<p><em>Prognostic factors: GEP 1 (adverse, <span class="math inline">\(\hat\beta\)</span> = +0.256); GEP 3 (adverse, <span class="math inline">\(\hat\beta\)</span> = +0.348); GEP 4 (adverse, <span class="math inline">\(\hat\beta\)</span> = +0.223). Factors with <span class="math inline">\(\hat\beta = 0\)</span> were not retained by the EBNM shrinkage prior.</em></p>
 <p><strong>Factor Summary Table</strong></p>
 
 <table class="table table-striped table-hover" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -9294,7 +9294,7 @@ PVE %
 </tbody>
 
 </table>
-<p><em>All 3 factor(s) with non-zero () also show log-rank p &lt; 0.1, confirming consistency between the parametric Cox estimate and the non-parametric survival test.</em></p>
+<p><em>All 3 factor(s) with non-zero <span class="math inline">\(\hat\beta\)</span> also show log-rank p &lt; 0.1, confirming consistency between the parametric Cox estimate and the non-parametric survival test.</em></p>
 <p><strong>Figure 4 — GEP Heatmap (top 50 genes by total absolute weight)</strong></p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">

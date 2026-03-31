@@ -113,10 +113,11 @@ kbl(display[, c("Dataset", "Platform", "n", "Censoring_Pct",
 **Key findings.** All 7 cohorts converge (14–259 iterations). Microarray cohorts reach lower
 RMSE (0.59–1.02) than RNA-seq cohorts (0.71–1.26), consistent with the smoother variance
 structure of log2-normalised array data. The supervised model improves C-index over PCA in
-4/7 cohorts and is comparable in 3. Puleo\_array (n=288) shows the strongest prognostic
-signal — three factors with $\hat\beta \neq 0$ and log-rank p < 0.05. The pooled RNA-seq fit
-(TCGA\_PAAD + Dijk + PACA\_AU\_seq; n=286, p=1,573 common genes) recovers three prognostic
-factors without batch correction.
+3/7 cohorts (Dijk $+$0.012, Moffitt\_GEO\_array $+$0.022, PACA\_AU\_seq $+$0.012); the PCA
+baseline is comparable or slightly stronger in the remaining 4. Puleo\_array (n=288) shows
+the strongest prognostic signal — three factors with $\hat\beta \neq 0$ and log-rank p < 0.05.
+The pooled RNA-seq fit (TCGA\_PAAD + Dijk + PACA\_AU\_seq; n=286, p=1,573 common genes)
+recovers three prognostic factors without batch correction.
 :::
 
 ---
@@ -519,9 +520,9 @@ for (ds in ALL_DATASETS) {
   } else {
     prog_desc <- sapply(prog_idx, function(k) {
       dir <- if (fs$Beta[k] > 0) "adverse" else "protective"
-      sprintf("GEP %d (%s, \\(\u03b2\u0302\\) = %+.3f)", k, dir, fs$Beta[k])
+      sprintf("GEP %d (%s, $\\hat\\beta$ = %+.3f)", k, dir, fs$Beta[k])
     })
-    cat(sprintf("*Prognostic factors: %s. Factors with \\(\u03b2\u0302 = 0\\) were not retained by the EBNM shrinkage prior.*\n\n",
+    cat(sprintf("*Prognostic factors: %s. Factors with $\\hat\\beta = 0$ were not retained by the EBNM shrinkage prior.*\n\n",
                 paste(prog_desc, collapse = "; ")))
   }
 
@@ -539,13 +540,13 @@ for (ds in ALL_DATASETS) {
   if (length(prog_idx) > 0) {
     n_consistent <- sum(fs$LogRank_P[prog_idx] < 0.1)
     if (n_consistent == length(prog_idx)) {
-      cat(sprintf("*All %d factor(s) with non-zero \\(\\hat\\beta\\) also show log-rank p < 0.1, confirming consistency between the parametric Cox estimate and the non-parametric survival test.*\n\n", length(prog_idx)))
+      cat(sprintf("*All %d factor(s) with non-zero $\\hat\\beta$ also show log-rank p < 0.1, confirming consistency between the parametric Cox estimate and the non-parametric survival test.*\n\n", length(prog_idx)))
     } else {
-      cat(sprintf("*%d of %d factor(s) with non-zero \\(\\hat\\beta\\) show log-rank p < 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.*\n\n", n_consistent, length(prog_idx)))
+      cat(sprintf("*%d of %d factor(s) with non-zero $\\hat\\beta$ show log-rank p < 0.1; the discrepancy may reflect non-linear survival relationships that the median-split log-rank test captures but the linear Cox model does not.*\n\n", n_consistent, length(prog_idx)))
     }
   } else {
     if (length(sig_lr_idx) > 0) {
-      cat(sprintf("*Although all \\(\\hat\\beta_k = 0\\), %d factor(s) show log-rank p < 0.1 — the median split detects a survival difference not captured by the Cox linear form. This may reflect non-proportional or non-linear effects.*\n\n", length(sig_lr_idx)))
+      cat(sprintf("*Although all $\\hat\\beta_k = 0$, %d factor(s) show log-rank p < 0.1 — the median split detects a survival difference not captured by the Cox linear form. This may reflect non-proportional or non-linear effects.*\n\n", length(sig_lr_idx)))
     }
   }
 
