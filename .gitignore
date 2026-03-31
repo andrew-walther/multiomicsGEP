@@ -11,3 +11,15 @@
 .claude/
 .claire/
 .obsidian/
+
+# PDAC data — stored locally in OneDrive, not in git
+# Local path: ~/Library/CloudStorage/OneDrive-UniversityofNorthCarolinaatChapelHill/UNC Dissertation (Liu)/PDAC_data/
+# Longleaf path: set via PDAC_DATA_ROOT env var
+**/PDAC_data/
+**/data/original/
+
+# LaTeX build artifacts from Quarto PDF rendering
+**/*.aux
+**/*.log
+**/*.toc
+**/*.tex

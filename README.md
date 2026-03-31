@@ -64,8 +64,11 @@ multiomicsGEP/
 │
 ├── results/                           ← Simulation outputs (grouped by implementation)
 │   ├── modular_sim_factor/            ← ✅ Factor-wise CAVI (canonical)
-│   │   ├── run_factor_modular_simulation.R
-│   │   └── factor_modular_sim_report.qmd/.pdf/.html
+│   │   ├── run_factor_modular_simulation.R  ← single runner: synthetic + 7 PDAC cohorts
+│   │   ├── synthetic/
+│   │   │   └── factor_modular_sim_report.qmd/.pdf/.html  ← synthetic benchmark report
+│   │   └── PDAC/
+│   │       └── factor_modular_sim_report_PDAC.qmd/.pdf/.html  ← real PDAC report
 │   ├── full_sim/                      ← V2 monolithic simulation
 │   │   ├── run_simulation.R
 │   │   └── simulation_report.qmd/.pdf
@@ -73,11 +76,17 @@ multiomicsGEP/
 │   │   ├── run_modular_simulation.R
 │   │   └── modular_sim_report.qmd/.pdf/.html
 │   ├── figures/
-│   │   ├── modular_sim_factor/        ← 8 figure pairs (factor-wise)
+│   │   ├── synthetic/                 ← 8 figure pairs (synthetic benchmark)
+│   │   ├── TCGA_PAAD/                 ← 6 figure pairs per PDAC dataset
+│   │   ├── CPTAC/ Dijk/ Moffitt_GEO_array/ PACA_AU_array/ PACA_AU_seq/ Puleo_array/
+│   │   ├── PDAC_pooled_rnaseq/        ← pooled RNA-seq fit
 │   │   ├── full_sim/                  ← 8 figure pairs (V2 monolithic)
 │   │   └── modular_sim/               ← 8 figure pairs (block-wise, deprecated)
 │   └── tables/
-│       ├── modular_sim_factor/        ← 11 CSV tables (factor-wise)
+│       ├── synthetic/                 ← 11 CSV tables (synthetic benchmark)
+│       ├── TCGA_PAAD/ CPTAC/ Dijk/ Moffitt_GEO_array/ PACA_AU_array/ PACA_AU_seq/ Puleo_array/
+│       ├── PDAC_cross_dataset/        ← cross_dataset_summary.csv
+│       ├── PDAC_pooled_rnaseq/        ← pooled RNA-seq tables
 │       ├── full_sim/                  ← 11 CSV tables (V2 monolithic)
 │       └── modular_sim/               ← 11 CSV tables (block-wise, deprecated)
 │
@@ -115,21 +124,45 @@ source("code/Supervised_Bayesian_MF_V2.R")
 ```
 
 **Modular implementation (canonical, recommended):**
-```r
+```bash
 Rscript results/modular_sim_factor/run_factor_modular_simulation.R
 ```
 
-Both scripts use the same parameters (n=250, p=1000, K=5, seed=42) and produce equivalent results. The modular script uses `fit_supervised_mf_modular()` from `code/fit_modular.R`, which implements factor-wise Gauss-Seidel CAVI via the four standalone update modules. Results are written to `results/tables/modular_sim_factor/` and `results/figures/modular_sim_factor/`; the rendered report is at `results/modular_sim_factor/factor_modular_sim_report.qmd`.
+Both scripts use the same parameters (n=250, p=1000, K=5, seed=42) and produce equivalent results. The modular script uses `fit_supervised_mf_modular()` from `code/fit_modular.R`. Results are written to `results/tables/synthetic/` and `results/figures/synthetic/`; the rendered report is at `results/modular_sim_factor/synthetic/factor_modular_sim_report.qmd`.
 
-The V2 run generates a synthetic dataset and prints:
+### Run the Real PDAC Analysis
 
-- Factor summary table (β estimates, log-rank p-values, sparsity, PVE)
-- Proportional hazards test (cox.zph)
-- C-index: supervised latent space vs. top-5 PCA
-- Estimated vs. true β coefficients
-- Top 5 features per GEP
+The runner supports 7 PDAC cohorts via environment variable control:
 
-It also renders a diagnostic dashboard: RMSE trace, ELBO proxy, GEP heatmap, Kaplan-Meier curves, and signal recovery plot.
+```bash
+# Single dataset
+DATA_MODE=real DATASET_NAME=TCGA_PAAD \
+  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
+
+# All 7 cohorts + pooled RNA-seq + cross-dataset summary
+DATA_MODE=real RUN_ALL=TRUE \
+  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
+
+# Longleaf HPC (override data path)
+export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC
+DATA_MODE=real RUN_ALL=TRUE \
+  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
+```
+
+**Available datasets:**
+
+| Dataset | Platform | n | Censoring |
+|---------|----------|---|-----------|
+| TCGA_PAAD | RNA-seq | 144 | 48% |
+| CPTAC | Proteomics | 129 | 50% |
+| Dijk | RNA-seq | 90 | 10% |
+| Moffitt_GEO_array | Microarray | 123 | 33% |
+| PACA_AU_array | Microarray | 63 | 40% |
+| PACA_AU_seq | RNA-seq | 52 | 40% |
+| Puleo_array | Microarray | 288 | 37% |
+
+**Note:** PDAC data files are stored locally (not in git). The default path is
+`~/Library/CloudStorage/OneDrive-.../PDAC_data`. Override with `PDAC_DATA_ROOT`.
 
 ### Apply to Real Data
 
@@ -139,11 +172,11 @@ The recommended entry point for real data is `fit_supervised_mf_modular()` in `c
 source("code/fit_modular.R")   # also sources update_L/F/beta/tau.R automatically
 
 res <- fit_supervised_mf_modular(
-  Y      = your_matrix,    # numeric matrix: n patients × p genes (pre-normalised)
+  Y      = your_matrix,    # numeric matrix: n patients × p genes (pre-normalised, column-centred)
   time   = your_time,      # numeric vector: survival/censoring time
   status = your_status,    # integer vector: 1 = event, 0 = censored
   K      = 5,              # number of latent factors (select via cross-validation)
-  max_iter = 100,
+  max_iter = 300,
   tol      = 1e-3,
   verbose  = TRUE
 )
