@@ -150,7 +150,7 @@ filter_top_genes <- function(Y, gene_names, top_n) {
     return(list(Y = Y, gene_names = gene_names))
   gene_var <- apply(Y, 2, var)
   keep_idx <- order(gene_var, decreasing = TRUE)[seq_len(top_n)]
-  list(Y = Y[, keep_idx], gene_names = gene_names[keep_idx])
+  list(Y = Y[, keep_idx, drop = FALSE], gene_names = gene_names[keep_idx])
 }
 
 #' Load a single PDAC dataset and prepare it for fit_supervised_mf_modular().

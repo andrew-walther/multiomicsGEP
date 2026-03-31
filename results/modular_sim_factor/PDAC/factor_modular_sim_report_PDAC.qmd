@@ -1,0 +1,513 @@
+---
+title: "Supervised Bayesian Matrix Factorization"
+subtitle: "Real PDAC Data Application — 7 Cohorts + Pooled RNA-seq"
+author: "Andrew Walther"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
+    smooth-scroll: true
+    self-contained: true
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    geometry: "margin=1in"
+    mainfont: "Helvetica Neue"
+    monofont: "Menlo"
+    colorlinks: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    keep-tex: false
+    fig-pos: "H"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{float}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \floatplacement{figure}{H}
+        \floatplacement{table}{H}
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: false
+---
+
+```{r setup}
+#| include: false
+library(kableExtra)
+library(survival)
+
+tables_root <- "../../tables"
+figs_root   <- "../../figures"
+
+# Helper: read a table for a given dataset
+tbl <- function(dataset, filename) {
+  read.csv(file.path(tables_root, dataset, filename))
+}
+
+# Helper: figure path for a given dataset
+fig <- function(dataset, filename) {
+  file.path(figs_root, dataset, filename)
+}
+
+# Cross-dataset summary
+cross <- read.csv(file.path(tables_root, "PDAC_cross_dataset",
+                             "cross_dataset_summary.csv"))
+
+# Convenience: drop pooled row for the 7-dataset comparisons
+cross7 <- cross[cross$Dataset != "PDAC_pooled_rnaseq", ]
+
+ALL_DATASETS <- c("TCGA_PAAD", "CPTAC", "Dijk",
+                  "Moffitt_GEO_array", "PACA_AU_array",
+                  "PACA_AU_seq", "Puleo_array")
+
+PLATFORM_MAP <- c(
+  TCGA_PAAD         = "RNA-seq",
+  CPTAC             = "Proteomics",
+  Dijk              = "RNA-seq",
+  Moffitt_GEO_array = "Microarray",
+  PACA_AU_array     = "Microarray",
+  PACA_AU_seq       = "RNA-seq",
+  Puleo_array       = "Microarray"
+)
+
+# Replace underscores with spaces for display in captions and section headers.
+# Underscores in LaTeX \caption{} are interpreted as math subscripts and
+# require escaping; using spaces avoids the issue entirely.
+ds_display <- function(x) gsub("_", " ", x, fixed = TRUE)
+```
+
+# Executive Summary
+
+This report applies the **Supervised Bayesian Matrix Factorization (SBMF)** model to seven
+pancreatic ductal adenocarcinoma (PDAC) cohorts spanning three assay platforms — RNA-seq,
+microarray, and proteomics — plus a horizontally integrated pooled RNA-seq analysis.
+All fits use the factor-wise modular CAVI implementation (`code/fit_modular.R`, K = 5
+factors, top 5,000 most-variable features per cohort).
+
+```{r exec-summary-table}
+#| tbl-cap: "Cross-dataset performance summary. C-index improvement = Supervised − PCA."
+
+display <- cross7
+display$C_Improvement <- round(display$C_Supervised - display$C_PCA, 3)
+display$Converged     <- ifelse(display$Converged, "Yes", "No")
+
+kbl(display[, c("Dataset", "Platform", "n", "Censoring_Pct",
+                "Converged", "N_Iter", "Final_RMSE",
+                "C_PCA", "C_Supervised", "C_Improvement")],
+    col.names = c("Dataset", "Platform", "n", "Censoring %",
+                  "Converged", "Iters", "RMSE",
+                  "C (PCA)", "C (Supervised)", "ΔC"),
+    digits = 3, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+**Key findings:**
+
+- All 7 cohorts converged (14–259 iterations depending on platform and sample size).
+- Microarray cohorts (Moffitt, Puleo, PACA_AU_array) reach lower RMSE (0.59–1.02)
+  than RNA-seq cohorts (1.07–1.26), consistent with the smoother variance structure
+  of log2-normalised array data.
+- The supervised model improves C-index over PCA in 4/7 cohorts; it is comparable
+  in 2 and slightly lower in 1 — typical for real data with moderate survival signal.
+- **Puleo_array** shows the strongest prognostic signal (3 factors with β ≠ 0,
+  log-rank p < 0.05), consistent with its large sample size (n = 288).
+- **PACA_AU_seq** (n = 52) has the highest C-index overall (0.788 supervised),
+  possibly reflecting the highly censored-to-event ratio (60% events).
+- The pooled RNA-seq fit (TCGA_PAAD + Dijk + PACA_AU_seq; n = 286, p = 1,573 common
+  genes) recovers 3 prognostic factors without batch correction applied.
+
+---
+
+# Data & Methods
+
+## Dataset Overview
+
+```{r dataset-table}
+#| tbl-cap: "PDAC cohorts used in this analysis."
+
+ds_info <- data.frame(
+  Dataset    = ALL_DATASETS,
+  Platform   = unname(PLATFORM_MAP[ALL_DATASETS]),
+  n          = cross7$n[match(ALL_DATASETS, cross7$Dataset)],
+  Raw_Genes  = c(20531, 28057, 49677, 19749, 21284, 24033, 20087),
+  Used_Genes = 5000,
+  Censoring  = cross7$Censoring_Pct[match(ALL_DATASETS, cross7$Dataset)],
+  stringsAsFactors = FALSE
+)
+kbl(ds_info,
+    col.names = c("Dataset", "Platform", "n", "Raw features",
+                  "Used (top var.)", "Censoring %"),
+    booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+## Preprocessing
+
+For each cohort, `load_data_internal.R` (located in the PDAC data root) applies
+dataset-specific quality filters (e.g., histology type, primary tumour only, valid
+survival times). The runner script then:
+
+1. Transposes the expression matrix from genes × samples to **patients × genes** ($n \times p$).
+2. Applies **variance-based gene filtering**: retains the top 5,000 most variable genes.
+3. **Column-centres** each gene: $\tilde{Y}_{ij} = Y_{ij} - \bar{Y}_{\cdot j}$.
+   This is essential — without centering, SVD initialisation captures the global
+   mean expression offset in Factor 1, causing RMSE to *increase* during CAVI.
+4. Strips row/column names from $Y$ to prevent ebnm failures from duplicate gene
+   symbols (e.g., unmapped genes labelled `?` in TCGA_PAAD).
+
+## Model
+
+$$Y = LF^\top + E, \quad h_i(t) = h_0(t)\exp(L_i \cdot \beta)$$
+
+- $L \in \mathbb{R}^{n \times K}$ — patient loading matrix (posterior mean $\hat{L}$)
+- $F \in \mathbb{R}^{p \times K}$ — factor weight matrix (GEP signatures)
+- $\beta \in \mathbb{R}^K$ — Cox survival coefficients; shrunk to zero by point-normal prior
+- $\tau \in \mathbb{R}^p$ — feature-specific noise precision
+
+Inference: factor-wise Gauss-Seidel CAVI (K = 5, max 300 iterations, tolerance 1e-3).
+Each update is an EBNM sub-problem solved via the `ebnm` R package.
+
+---
+
+# Per-Dataset Results
+
+```{r per-dataset-sections, results='asis'}
+for (ds in ALL_DATASETS) {
+
+  fs  <- tbl(ds, "factor_summary_table.csv")
+  ci  <- tbl(ds, "cindex_comparison.csv")
+  ph  <- tbl(ds, "ph_test_results.csv")
+  ch  <- tbl(ds, "convergence_history.csv")
+  row <- cross7[cross7$Dataset == ds, ]
+
+  # Count prognostic factors (|beta| > 0.05 AND log-rank p < 0.1)
+  n_prog <- sum(abs(fs$Beta) > 0.05 & fs$LogRank_P < 0.1)
+  ph_global_p <- ph$P_Value[ph$Factor == "GLOBAL"]
+
+  cat(sprintf("\n## %s (%s, n=%d)\n\n", ds_display(ds), row$Platform, row$n))
+  cat(sprintf(
+    "**Convergence:** %s at iteration %d | **Final RMSE:** %.4f | **Censoring:** %.1f%%\n\n",
+    ifelse(row$Converged, "Yes", "No"), row$N_Iter,
+    row$Final_RMSE, row$Censoring_Pct))
+  cat(sprintf(
+    "**C-index:** PCA = %.3f → Supervised = %.3f (Δ = %+.3f)\n\n",
+    row$C_PCA, row$C_Supervised, row$C_Supervised - row$C_PCA))
+  cat(sprintf(
+    "**Prognostic factors** (|β| > 0.05, log-rank p < 0.1): %d / 5\n\n",
+    n_prog))
+  cat(sprintf(
+    "**PH test (GLOBAL p):** %.4f%s\n\n",
+    ph_global_p,
+    ifelse(ph_global_p < 0.05, " ⚠ potential PH violation", "")))
+}
+```
+
+### Factor Summary Tables
+
+```{r factor-tables, results='asis'}
+for (ds in ALL_DATASETS) {
+  fs <- tbl(ds, "factor_summary_table.csv")
+  cat(sprintf("\n#### %s\n\n", ds_display(ds)))
+  print(kbl(fs,
+        col.names = c("Factor", "β̂", "Log-rank p", "Non-zero %", "PVE %"),
+        digits = 4, booktabs = TRUE, row.names = FALSE,
+        caption = sprintf("%s: factor summary (K=5)", ds_display(ds))) |>
+    kable_styling(latex_options = c("hold_position"),
+                  bootstrap_options = c("striped", "hover"),
+                  full_width = FALSE))
+  cat("\n")
+}
+```
+
+### Convergence Traces
+
+::: {layout-ncol=2}
+```{r conv-traces, results='asis', fig.show='hold'}
+for (ds in ALL_DATASETS) {
+  cat(sprintf("![ %s RMSE trace](%s){width=48%%}\n\n",
+              ds_display(ds), fig(ds, "fig1_rmse_trace.png")))
+}
+```
+:::
+
+### β Estimates
+
+::: {layout-ncol=2}
+```{r beta-figs, results='asis'}
+for (ds in ALL_DATASETS) {
+  cat(sprintf("![ %s β estimates](%s){width=48%%}\n\n",
+              ds_display(ds), fig(ds, "fig3_beta_comparison.png")))
+}
+```
+:::
+
+### GEP Heatmaps
+
+::: {layout-ncol=2}
+```{r heatmap-figs, results='asis'}
+for (ds in ALL_DATASETS) {
+  cat(sprintf("![ %s GEP heatmap](%s){width=48%%}\n\n",
+              ds_display(ds), fig(ds, "fig4_gep_heatmap.png")))
+}
+```
+:::
+
+### Kaplan-Meier Curves
+
+::: {layout-ncol=2}
+```{r km-figs, results='asis'}
+for (ds in ALL_DATASETS) {
+  cat(sprintf("![ %s Kaplan-Meier](%s){width=48%%}\n\n",
+              ds_display(ds), fig(ds, "fig5_kaplan_meier.png")))
+}
+```
+:::
+
+---
+
+# Cross-Dataset Performance Summary
+
+```{r cross-platform-table}
+#| tbl-cap: "Performance by platform. Δ C-index = Supervised − PCA."
+
+cross7$C_Improvement <- round(cross7$C_Supervised - cross7$C_PCA, 3)
+
+kbl(cross7[order(cross7$Platform, cross7$Dataset),
+           c("Dataset", "Platform", "n", "N_Iter",
+             "Final_RMSE", "C_PCA", "C_Supervised", "C_Improvement")],
+    col.names = c("Dataset", "Platform", "n", "Iters",
+                  "RMSE", "C (PCA)", "C (Supervised)", "ΔC"),
+    digits = 3, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE) |>
+  pack_rows("Microarray", 1, 3) |>
+  pack_rows("Proteomics", 4, 4) |>
+  pack_rows("RNA-seq", 5, 7)
+```
+
+**Platform-level observations:**
+
+- **Microarray** (n = 63–288): Fast convergence (14–83 iters), low RMSE (0.59–1.02).
+  Puleo_array is the standout — large n, strong signal, 3 prognostic factors.
+- **RNA-seq** (n = 52–144): Slower convergence (120–186 iters), RMSE ~1.1–1.2.
+  PACA_AU_seq is the highest-C-index cohort despite the smallest RNA-seq n.
+- **Proteomics** (CPTAC, n = 129): Slowest to converge (259 iters), highest RMSE (1.26).
+  Two strong prognostic factors (β₃ = −0.435, log-rank p < 0.001).
+
+---
+
+# Cross-Platform Comparison: PACA_AU Pair
+
+The PACA_AU cohort is profiled by both microarray (`PACA_AU_array`, n=63) and
+RNA-seq (`PACA_AU_seq`, n=52), providing a rare within-cohort cross-platform view.
+
+```{r paca-comparison}
+#| tbl-cap: "PACA_AU array vs. seq: factor summary comparison."
+
+arr <- tbl("PACA_AU_array", "factor_summary_table.csv")
+seq <- tbl("PACA_AU_seq",   "factor_summary_table.csv")
+arr$Dataset <- "PACA_AU_array"
+seq$Dataset <- "PACA_AU_seq"
+
+combined <- rbind(arr, seq)
+kbl(combined[, c("Dataset", "Factor", "Beta", "LogRank_P", "NonZero_Pct", "PVE_Pct")],
+    col.names = c("Dataset", "Factor", "β̂", "Log-rank p", "Non-zero %", "PVE %"),
+    digits = 4, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE) |>
+  pack_rows("PACA AU array (Microarray)", 1, 5) |>
+  pack_rows("PACA AU seq (RNA-seq)", 6, 10)
+```
+
+**Observations:**
+
+- Both platforms identify Factor 1 as the dominant variance-explaining factor (PVE ~8–13%).
+- `PACA_AU_array` yields one weakly prognostic factor (β₁ = 0.12);
+  `PACA_AU_seq` yields three factors with non-zero β, two of which are negative,
+  suggesting the RNA-seq data captures a richer prognostic signal despite smaller n.
+- C-index: array = 0.653 (PCA) vs 0.623 (supervised);
+  seq = 0.776 (PCA) vs 0.788 (supervised) — supervised wins only on the seq side.
+- Without sample-level alignment across the two assays, direct factor correspondence
+  cannot be established; this would require paired samples.
+
+---
+
+# Within-Modality Comparisons
+
+## RNA-seq Trio (TCGA_PAAD, Dijk, PACA_AU_seq)
+
+```{r rnaseq-comparison}
+#| tbl-cap: "RNA-seq cohort comparison."
+
+rnaseq_ds <- c("TCGA_PAAD", "Dijk", "PACA_AU_seq")
+rnaseq_cross <- cross7[cross7$Dataset %in% rnaseq_ds, ]
+rnaseq_cross$C_Improvement <- round(rnaseq_cross$C_Supervised - rnaseq_cross$C_PCA, 3)
+
+kbl(rnaseq_cross[, c("Dataset", "n", "Censoring_Pct", "N_Iter",
+                      "Final_RMSE", "C_PCA", "C_Supervised", "C_Improvement")],
+    col.names = c("Dataset", "n", "Censoring %", "Iters",
+                  "RMSE", "C (PCA)", "C (Supervised)", "ΔC"),
+    digits = 3, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+- PACA_AU_seq has the highest C-index and the highest event rate (60% events,
+  10% censoring in Dijk is the extreme — nearly all events observed).
+- TCGA_PAAD converges slower (171 iters) partly because n=144 with 48% censoring
+  provides a weaker Cox likelihood signal per iteration.
+
+## Microarray Trio (Moffitt_GEO_array, PACA_AU_array, Puleo_array)
+
+```{r array-comparison}
+#| tbl-cap: "Microarray cohort comparison."
+
+arr_ds <- c("Moffitt_GEO_array", "PACA_AU_array", "Puleo_array")
+arr_cross <- cross7[cross7$Dataset %in% arr_ds, ]
+arr_cross$C_Improvement <- round(arr_cross$C_Supervised - arr_cross$C_PCA, 3)
+
+kbl(arr_cross[, c("Dataset", "n", "Censoring_Pct", "N_Iter",
+                   "Final_RMSE", "C_PCA", "C_Supervised", "C_Improvement")],
+    col.names = c("Dataset", "n", "Censoring %", "Iters",
+                  "RMSE", "C (PCA)", "C (Supervised)", "ΔC"),
+    digits = 3, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+- Moffitt_GEO_array converges in just 14 iterations — the smoothest landscape of any cohort.
+- Puleo_array (n=288, the largest cohort) is the only dataset with multiple strongly
+  significant prognostic factors (β₁, β₃, β₄ all non-zero with log-rank p < 0.05),
+  reflecting the greater power available with larger n.
+
+---
+
+# CPTAC (Proteomics)
+
+CPTAC is the only non-transcriptomic cohort: protein abundance measured by mass
+spectrometry. It required the most iterations (259) to converge, likely reflecting
+the fundamentally different variance structure of protein abundance compared to
+transcript counts.
+
+```{r cptac-summary}
+#| tbl-cap: "CPTAC factor summary."
+fs <- tbl("CPTAC", "factor_summary_table.csv")
+kbl(fs, col.names = c("Factor", "β̂", "Log-rank p", "Non-zero %", "PVE %"),
+    digits = 4, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+**Observations:**
+
+- Factor 3 is the dominant prognostic program: β₃ = −0.435, log-rank p < 0.001.
+  Patients with high loading on this factor have substantially worse survival.
+- Factor 2 is borderline significant (p = 0.078) with β₂ = −0.179.
+- Factor 5 shows significant log-rank separation (p = 0.022) but β₅ = 0 —
+  suggesting a non-linear or non-proportional survival relationship that the
+  Cox model shrinks to zero.
+- C-index: PCA = 0.703, Supervised = 0.691; supervised is slightly lower,
+  possibly because the point-normal prior is conservative on small prognostic signals.
+
+```{r cptac-figures, fig.show='hold', out.width='48%'}
+knitr::include_graphics(fig("CPTAC", "fig1_rmse_trace.png"))
+knitr::include_graphics(fig("CPTAC", "fig3_beta_comparison.png"))
+```
+
+---
+
+# Horizontal Integration: Pooled RNA-seq
+
+Three RNA-seq cohorts (TCGA_PAAD, Dijk, PACA_AU_seq) share 1,573 common genes after
+top-5,000 variance filtering. These were pooled into a single matrix (n = 286) and
+fit with a single SBMF model.
+
+```{r pooled-summary}
+#| tbl-cap: "Pooled RNA-seq fit: factor summary (n=286, p=1573 common genes, K=5)."
+fs_pool <- tbl("PDAC_pooled_rnaseq", "factor_summary_table.csv")
+kbl(fs_pool, col.names = c("Factor", "β̂", "Log-rank p", "Non-zero %", "PVE %"),
+    digits = 4, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+```{r pooled-membership}
+#| tbl-cap: "Sample composition of the pooled RNA-seq dataset."
+mem <- tbl("PDAC_pooled_rnaseq", "pool_membership.csv")
+tab <- as.data.frame(table(mem$Dataset))
+colnames(tab) <- c("Cohort", "N samples")
+kbl(tab, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+**Observations:**
+
+- The pooled model converges quickly (67 iterations, RMSE = 1.225), suggesting
+  the shared gene set provides a coherent signal.
+- Factors 2, 3, 4 are prognostic (β ≠ 0, log-rank p < 0.03); Factors 1 and 5 are null.
+- Factor 1 (PVE = 16.1%) likely captures cohort-level mean differences — the largest
+  single source of variance in a pooled, non-batch-corrected matrix.
+- **Caveat:** No batch correction was applied. Factor 1 and possibly other factors
+  may partially reflect study-specific technical variation rather than biology.
+  Future work: apply ComBat or similar before pooling, or include cohort as a
+  covariate in the Cox model.
+
+```{r pooled-figures, fig.show='hold', out.width='48%'}
+knitr::include_graphics(fig("PDAC_pooled_rnaseq", "fig1_rmse_trace.png"))
+knitr::include_graphics(fig("PDAC_pooled_rnaseq", "fig3_beta_comparison.png"))
+```
+
+---
+
+# Conclusion & Future Directions
+
+The SBMF model successfully fits all 7 PDAC cohorts across three assay platforms,
+recovering sparse prognostic gene expression programs in each. Key results:
+
+| Cohort | Platform | Strongest finding |
+|--------|----------|-------------------|
+| Puleo_array | Microarray | 3 prognostic GEPs (n=288); largest single-dataset signal |
+| CPTAC | Proteomics | Factor 3: β = −0.435 (p < 0.001); proteomic programs drive survival |
+| PACA_AU_seq | RNA-seq | Highest overall C-index (0.788); 3 non-zero β factors |
+| Dijk | RNA-seq | Nearly fully observed (10% censoring); Factor 1 dominant |
+
+**Immediate next steps:**
+
+1. **K selection via cross-validation** — currently fixed at K = 5 for all cohorts;
+   optimal K likely varies by platform and sample size. Longleaf HPC recommended
+   for the CV grid search.
+
+2. **Batch correction before pooling** — apply ComBat to the RNA-seq trio before
+   pooling to separate biological from technical factors.
+
+3. **Top-gene interpretation** — run gene set enrichment analysis (GSEA/fgsea) on
+   the top-loaded genes per factor to assign biological pathway labels to each GEP.
+
+4. **Full ELBO tracking** — the current ELBO proxy tracks only the genomics
+   log-likelihood; adding the Cox likelihood and KL terms would give a proper
+   variational lower bound for model comparison across K.
+
+5. **Vertical multi-modal integration** — for cohorts with paired RNA + protein
+   data (e.g., CPTAC has both transcriptomics and proteomics), a shared-$L$ model
+   would allow factors to explain variance in both modalities simultaneously.

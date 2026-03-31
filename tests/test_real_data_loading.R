@@ -1,0 +1,297 @@
+# =============================================================================
+# tests/test_real_data_loading.R
+# Test suite for real-data helpers in run_factor_modular_simulation.R:
+#   filter_top_genes(), load_real_data(), pool_datasets()
+# Plus a regression test verifying synthetic RMSE has not regressed.
+#
+# Usage (from project root):
+#   Rscript tests/test_real_data_loading.R
+#
+# Data-dependent tests (T2, T3, T4) are auto-skipped when PDAC_DATA_ROOT
+# is not set or does not exist — safe to run in CI.
+# =============================================================================
+
+source("tests/test_helpers.R")
+
+# Source the helpers defined inside the runner script.
+# fit_modular.R has a runner block that errors when DATA_MODE="real" and
+# real_Y is NULL — we suppress it the same way the runner does.
+suppressMessages(tryCatch(
+  source("code/fit_modular.R"),
+  error = function(e) invisible(NULL)
+))
+# Source the runner to get filter_top_genes / load_real_data / pool_datasets.
+# DATA_MODE env var is not set, so execution falls through to the synthetic
+# branch (which sets seed, runs quickly, writes nothing if table/figure dirs
+# are not created — we only need the helper functions to be defined).
+suppressMessages(tryCatch(
+  source("results/modular_sim_factor/run_factor_modular_simulation.R"),
+  error = function(e) invisible(NULL)
+))
+
+# Determine whether real-data tests can run
+pdac_root <- Sys.getenv("PDAC_DATA_ROOT", unset = path.expand(
+  paste0("~/Library/CloudStorage/",
+         "OneDrive-UniversityofNorthCarolinaatChapelHill/",
+         "UNC Dissertation (Liu)/PDAC_data")
+))
+real_data_available <- dir.exists(pdac_root)
+
+ALL_DATASETS_LOCAL <- c("TCGA_PAAD", "CPTAC", "Dijk", "Moffitt_GEO_array",
+                         "PACA_AU_array", "PACA_AU_seq", "Puleo_array")
+
+# =============================================================================
+# T1: filter_top_genes() — pure unit tests, no data needed
+# =============================================================================
+
+cat("=== T1: filter_top_genes() ===\n")
+
+run_test("T1.1: selects top-N most variable genes", {
+  set.seed(1)
+  Y <- matrix(c(rnorm(50, sd = 10),   # first 5 cols: high variance
+                rnorm(50, sd = 0.01)), # last 5 cols: near-zero variance
+              nrow = 10, ncol = 10)
+  gnames <- paste0("gene", 1:10)
+  out <- filter_top_genes(Y, gnames, top_n = 5)
+  assert_equal(ncol(out$Y), 5L)
+  # All returned genes should be from the high-variance block (cols 1-5)
+  assert_true(all(out$gene_names %in% paste0("gene", 1:5)),
+              "expected only high-variance genes to be kept")
+})
+
+run_test("T1.2: passthrough when top_n >= p", {
+  set.seed(2)
+  Y <- matrix(rnorm(100), nrow = 10, ncol = 10)
+  gnames <- paste0("g", 1:10)
+  out <- filter_top_genes(Y, gnames, top_n = 10)
+  assert_equal(ncol(out$Y), 10L)
+  assert_equal(out$gene_names, gnames)
+})
+
+run_test("T1.3: passthrough when top_n = NULL", {
+  set.seed(3)
+  Y <- matrix(rnorm(100), nrow = 10, ncol = 10)
+  gnames <- paste0("g", 1:10)
+  out <- filter_top_genes(Y, gnames, top_n = NULL)
+  assert_equal(ncol(out$Y), 10L)
+  assert_equal(out$gene_names, gnames)
+})
+
+run_test("T1.4: top_n = 1 returns single gene", {
+  set.seed(4)
+  Y <- matrix(rnorm(50), nrow = 10, ncol = 5)
+  gnames <- paste0("g", 1:5)
+  out <- filter_top_genes(Y, gnames, top_n = 1)
+  assert_equal(ncol(out$Y), 1L)
+  assert_length(out$gene_names, 1L)
+})
+
+run_test("T1.5: gene_names length matches Y columns after filtering", {
+  set.seed(5)
+  Y <- matrix(rnorm(200), nrow = 20, ncol = 10)
+  gnames <- paste0("gene", 1:10)
+  out <- filter_top_genes(Y, gnames, top_n = 6)
+  assert_equal(length(out$gene_names), ncol(out$Y))
+})
+
+run_test("T1.6: output Y has correct nrow (unchanged)", {
+  set.seed(6)
+  Y <- matrix(rnorm(200), nrow = 20, ncol = 10)
+  gnames <- letters[1:10]
+  out <- filter_top_genes(Y, gnames, top_n = 4)
+  assert_equal(nrow(out$Y), 20L)
+})
+
+# =============================================================================
+# T2: load_real_data() — skipped if data unavailable
+# =============================================================================
+
+cat("\n=== T2: load_real_data() ===\n")
+
+if (!real_data_available) {
+  cat("  [SKIP] PDAC data root not found — skipping T2, T3, T4\n\n")
+} else {
+
+  for (ds in ALL_DATASETS_LOCAL) {
+
+    run_test(sprintf("T2.1 [%s]: loads without error", ds), {
+      d <- load_real_data(ds, pdac_root, top_n = 500)
+      assert_true(!is.null(d))
+    })
+
+    run_test(sprintf("T2.2 [%s]: n > 0, p == top_n", ds), {
+      d <- load_real_data(ds, pdac_root, top_n = 500)
+      assert_true(d$n > 0, "n must be positive")
+      assert_equal(d$p, 500L)
+    })
+
+    run_test(sprintf("T2.3 [%s]: no NAs in Y, time, status", ds), {
+      d <- load_real_data(ds, pdac_root, top_n = 500)
+      assert_false(anyNA(d$Y),      "Y contains NA")
+      assert_false(anyNA(d$time),   "time contains NA")
+      assert_false(anyNA(d$status), "status contains NA")
+    })
+
+    run_test(sprintf("T2.4 [%s]: time > 0", ds), {
+      d <- load_real_data(ds, pdac_root, top_n = 500)
+      assert_true(all(d$time > 0), "all times must be positive")
+    })
+
+    run_test(sprintf("T2.5 [%s]: status in {0, 1}", ds), {
+      d <- load_real_data(ds, pdac_root, top_n = 500)
+      assert_true(all(d$status %in% c(0L, 1L)), "status must be 0 or 1")
+    })
+
+    run_test(sprintf("T2.6 [%s]: Y is numeric matrix", ds), {
+      d <- load_real_data(ds, pdac_root, top_n = 500)
+      assert_true(is.numeric(d$Y),  "Y must be numeric")
+      assert_true(is.matrix(d$Y),   "Y must be a matrix")
+    })
+
+    run_test(sprintf("T2.7 [%s]: dimensions consistent (nrow Y == length time == length status)", ds), {
+      d <- load_real_data(ds, pdac_root, top_n = 500)
+      assert_equal(nrow(d$Y), length(d$time))
+      assert_equal(nrow(d$Y), length(d$status))
+    })
+
+    run_test(sprintf("T2.8 [%s]: Y is column-centred (colMeans ~ 0)", ds), {
+      d <- load_real_data(ds, pdac_root, top_n = 500)
+      max_col_mean <- max(abs(colMeans(d$Y)))
+      assert_true(max_col_mean < 1e-10,
+                  sprintf("max |colMean| = %.2e; Y must be column-centred", max_col_mean))
+    })
+
+    run_test(sprintf("T2.9 [%s]: gene_names length matches p", ds), {
+      d <- load_real_data(ds, pdac_root, top_n = 500)
+      assert_equal(length(d$gene_names), d$p)
+    })
+  }
+
+  # =============================================================================
+  # T3: pool_datasets() — RNA-seq trio
+  # =============================================================================
+
+  cat("\n=== T3: pool_datasets() ===\n")
+
+  rnaseq_names <- c("TCGA_PAAD", "Dijk", "PACA_AU_seq")
+
+  run_test("T3.1: gene intersection is non-empty for RNA-seq trio", {
+    ds_list <- lapply(rnaseq_names, load_real_data,
+                      pdac_root = pdac_root, top_n = 500)
+    names(ds_list) <- rnaseq_names
+    common <- Reduce(intersect, lapply(ds_list, "[[", "gene_names"))
+    assert_true(length(common) > 0, "no common genes across RNA-seq trio")
+  })
+
+  run_test("T3.2: pooled nrow == sum of individual n", {
+    ds_list <- lapply(rnaseq_names, load_real_data,
+                      pdac_root = pdac_root, top_n = 500)
+    names(ds_list) <- rnaseq_names
+    pooled   <- pool_datasets(ds_list)
+    expected <- sum(sapply(ds_list, "[[", "n"))
+    assert_equal(pooled$n, expected)
+    assert_equal(nrow(pooled$Y), expected)
+  })
+
+  run_test("T3.3: pooled ncol == length of gene intersection", {
+    ds_list <- lapply(rnaseq_names, load_real_data,
+                      pdac_root = pdac_root, top_n = 500)
+    names(ds_list) <- rnaseq_names
+    common <- Reduce(intersect, lapply(ds_list, "[[", "gene_names"))
+    pooled <- pool_datasets(ds_list)
+    assert_equal(pooled$p, length(common))
+    assert_equal(ncol(pooled$Y), length(common))
+  })
+
+  run_test("T3.4: pooled Y has no NAs", {
+    ds_list <- lapply(rnaseq_names, load_real_data,
+                      pdac_root = pdac_root, top_n = 500)
+    names(ds_list) <- rnaseq_names
+    pooled <- pool_datasets(ds_list)
+    assert_false(anyNA(pooled$Y), "pooled Y contains NA")
+  })
+
+  run_test("T3.5: dataset_labels length == pooled n", {
+    ds_list <- lapply(rnaseq_names, load_real_data,
+                      pdac_root = pdac_root, top_n = 500)
+    names(ds_list) <- rnaseq_names
+    pooled <- pool_datasets(ds_list)
+    assert_equal(length(pooled$dataset_labels), pooled$n)
+  })
+
+  run_test("T3.6: pool_datasets() errors on empty gene intersection", {
+    # Build two datasets with disjoint gene names
+    d1 <- list(Y = matrix(1:10, 2, 5), gene_names = letters[1:5], n = 2L)
+    d2 <- list(Y = matrix(1:10, 2, 5), gene_names = letters[6:10], n = 2L)
+    err <- tryCatch(pool_datasets(list(a = d1, b = d2)), error = function(e) e)
+    assert_true(inherits(err, "error"),
+                "expected an error when gene intersection is empty")
+  })
+
+  # =============================================================================
+  # T4: Synthetic regression — RMSE and convergence unchanged
+  # =============================================================================
+
+  cat("\n=== T4: Synthetic Regression ===\n")
+
+  run_test("T4.1: synthetic RMSE in [0.95, 1.05]", {
+    # Re-run the synthetic DGP with the canonical parameters (n=250, p=1000,
+    # K=5, seed=42) and verify RMSE is near 1.0 (true noise SD).
+    # This guards against accidental changes to fit_modular.R or update_*.R
+    # that would break the benchmark results.
+    set.seed(42)
+    n_s <- 250; p_s <- 1000; K_s <- 5
+    L_s <- matrix(rnorm(n_s * K_s), n_s, K_s)
+    F_s <- matrix(0, p_s, K_s)
+    for (k in 1:K_s) {
+      active <- sample(1:p_s, round(p_s * 0.05))
+      F_s[active, k] <- rnorm(length(active), 0, 5)
+    }
+    Y_s   <- L_s %*% t(F_s) + matrix(rnorm(n_s * p_s), n_s, p_s)
+    B_s   <- c(1.5, -1.2, 0.8, -0.5, 0.0)
+    eta_s <- as.vector(L_s %*% B_s)
+    raw_t <- (-log(runif(n_s)) / (0.01 * exp(eta_s)))^(1 / 1.5)
+    cen_t <- rexp(n_s, rate = 1 / 50)
+    t_s   <- pmin(raw_t, cen_t)
+    ev_s  <- as.integer(raw_t <= cen_t)
+
+    res_s <- fit_supervised_mf_modular(Y_s, t_s, ev_s, K = K_s,
+                                        max_iter = 300, tol = 1e-3,
+                                        verbose = FALSE)
+    final_rmse <- tail(res_s$history$rmse, 1)
+    assert_true(final_rmse >= 0.95 && final_rmse <= 1.05,
+                sprintf("RMSE = %.4f; expected in [0.95, 1.05]", final_rmse))
+  })
+
+  run_test("T4.2: synthetic run converges", {
+    set.seed(42)
+    n_s <- 250; p_s <- 1000; K_s <- 5
+    L_s <- matrix(rnorm(n_s * K_s), n_s, K_s)
+    F_s <- matrix(0, p_s, K_s)
+    for (k in 1:K_s) {
+      active <- sample(1:p_s, round(p_s * 0.05))
+      F_s[active, k] <- rnorm(length(active), 0, 5)
+    }
+    Y_s   <- L_s %*% t(F_s) + matrix(rnorm(n_s * p_s), n_s, p_s)
+    B_s   <- c(1.5, -1.2, 0.8, -0.5, 0.0)
+    eta_s <- as.vector(L_s %*% B_s)
+    raw_t <- (-log(runif(n_s)) / (0.01 * exp(eta_s)))^(1 / 1.5)
+    cen_t <- rexp(n_s, rate = 1 / 50)
+    t_s   <- pmin(raw_t, cen_t)
+    ev_s  <- as.integer(raw_t <= cen_t)
+
+    res_s <- fit_supervised_mf_modular(Y_s, t_s, ev_s, K = K_s,
+                                        max_iter = 300, tol = 1e-3,
+                                        verbose = FALSE)
+    assert_true(isTRUE(res_s$history$converged),
+                sprintf("expected convergence; got converged=%s after %d iters",
+                        res_s$history$converged, res_s$history$n_iter))
+  })
+
+}  # end if (real_data_available)
+
+# =============================================================================
+# Summary
+# =============================================================================
+
+report_results("tests/test_real_data_loading.R")
