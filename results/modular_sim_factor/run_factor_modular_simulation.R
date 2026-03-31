@@ -313,7 +313,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
   cat(sprintf("  Censoring rate: %.1f%%\n\n", 100 * mean(status == 0)))
 
   res <- fit_supervised_mf_modular(Y, time, status, K = K,
-                                    max_iter = 250, tol = 1e-3, verbose = TRUE)
+                                    max_iter = 300, tol = 1e-3, verbose = TRUE)
   EL     <- res$EL
   EL2    <- res$EL2
   EF     <- res$EF
