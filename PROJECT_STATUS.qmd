@@ -331,8 +331,9 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 ### Potential Next Steps
 
 ::: {.callout-note}
-**List maintenance:** Remove items once implemented, confirmed working, or explicitly deemed unnecessary.
-Do not let stale completed items accumulate here.
+**List maintenance:** Mark items `[x]` when implemented and confirmed, or explicitly dropped.
+Do not remove them — checked items are a record of accomplishments.
+Only remove true duplicates or items added in error.
 :::
 
 **Near-term (next 1–2 sessions):**
