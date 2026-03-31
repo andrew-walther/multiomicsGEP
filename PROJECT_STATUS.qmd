@@ -330,6 +330,11 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 
 ### Potential Next Steps
 
+::: {.callout-note}
+**List maintenance:** Remove items once implemented, confirmed working, or explicitly deemed unnecessary.
+Do not let stale completed items accumulate here.
+:::
+
 **Near-term (next 1–2 sessions):**
 
 - [ ] **Hold-out prediction task:** Train on 80% of each cohort, evaluate
