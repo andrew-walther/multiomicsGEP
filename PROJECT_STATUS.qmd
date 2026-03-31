@@ -330,20 +330,59 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 
 ### Potential Next Steps
 
-- [ ] **Real data application:** Apply V2 to actual genomics + survival datasets
-  (TCGA, GEO, etc.) using the `DATA_MODE = "real"` pathway in V2.R
-- [ ] **Select K:** Implement cross-validated C-index or held-out log-likelihood
-  to choose the number of factors K objectively (currently set to 5)
-- [ ] **Additional prior families:** Test `prior_family = "point_laplace"` or
-  `"normal_scale_mixture"` in EBNM calls for different sparsity structures
-- [ ] **Full ELBO:** Track the complete ELBO (survival Taylor term + all KL
-  divergences) instead of the genomics-only proxy currently used
-- [ ] **Scalability:** Profile and optimise for large p (e.g., p > 10,000)
-  -- focus on the n x p `Var_Term` and `R_k` matrix operations
-- [ ] **Manuscript:** Complete `paper/multiomicsGEP_manuscript.qmd`; reference
-  V2 results and corrected derivations
-- [ ] **Bibliography:** Add `\bibliography{refs}` to REVISED.tex to resolve
-  the `\citep{wang2022}` undefined-reference warning in the compiled PDF
+**Near-term (next 1–2 sessions):**
+
+- [ ] **Hold-out prediction task:** Train on 80% of each cohort, evaluate
+  C-index on 20% held-out. Requires `predict_supervised_mf()`: fix learned
+  F and β, run a single EBNM pass on Y_test to recover L_test, compute
+  L_test %*% EBeta as linear predictor. Highest-priority performance validation.
+
+- [ ] **K selection:** K=5 is fixed across all cohorts; likely suboptimal for
+  small-n cohorts (Dijk n=90, PACA_AU_seq n=52). Options, roughly by cost:
+  1. *Fit large K and prune* -- fit K=10, let EBNM zero uninformative factors;
+     count surviving non-zero factors as effective K. Free at inference time.
+  2. *Scree plot / PVE elbow* -- plot per-factor explained variance from existing
+     `factor_summary_table.csv`; identify natural elbow. Zero additional compute.
+  3. *Held-out C-index CV* -- k-fold over candidate K values; computationally
+     intensive, best run on Longleaf HPC.
+
+- [ ] **Lab meeting slide deck (April 9, 2026):** Convert PDAC report
+  to a Quarto revealjs presentation covering: model motivation, CAVI overview,
+  per-dataset results, cross-dataset summary, pooled fit, and future directions.
+
+**Medium-term:**
+
+- [ ] **Survival-aware feature selection:** Replace top-N-by-variance with
+  a univariate Cox pre-filter or survival-weighted variance metric, to bias
+  the input feature set toward prognostically relevant genes before factorization.
+
+- [ ] **Batch correction before pooling:** Apply ComBat or
+  `limma::removeBatchEffect` before `pool_datasets()` to reduce
+  dataset-of-origin effects in the pooled RNA-seq model.
+
+- [ ] **Prior family exploration:** Test `prior_family = "point_laplace"` or
+  `"normal_scale_mixture"` in EBNM calls; may recover denser or more graded
+  factor structures on real data vs. the default point-normal.
+
+- [ ] **Full ELBO tracking:** Currently only the genomics log-likelihood proxy
+  is tracked. Including the survival Taylor term and all KL divergences enables
+  proper model selection and tighter convergence monitoring.
+
+- [ ] **Multiple random initializations:** SVD initialization is deterministic.
+  Running from multiple random starts and selecting the best ELBO would reduce
+  sensitivity to local optima, at the cost of K× compute.
+
+**Longer-term:**
+
+- [ ] **Multi-dataset shared factor space:** Shared F and β with per-cohort L
+  and τ. Requires new update equations and extension of `fit_modular.R`.
+
+- [ ] **Multi-modal integration:** Each modality (RNA-seq, proteomics, methylation)
+  gets its own F^(m) and τ^(m) sharing a common L. Requires new `update_F_<m>.R`
+  and extended `update_L.R` accumulating signal across modalities.
+
+- [ ] **Manuscript:** Complete `paper/multiomicsGEP_manuscript.qmd` once
+  prediction results and K selection are in hand.
 
 ---
 
