@@ -565,3 +565,188 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 4. Updated `MEMORY.md` documentation convention to reflect the three-file structure.
 
 **Deliverables committed:** pushed to `origin/main`
+
+---
+
+### Session 9 (March 20–31, 2026)
+
+**Factor-wise modular CAVI: `fit_modular.R`, synthetic report reorganization, legacy code cleanup.**
+
+1. **Created `code/fit_modular.R`** (`fit_supervised_mf_modular()`):
+   - Factor-wise Gauss-Seidel CAVI: within each iteration, cycle over k = 1..K
+     and update (L_k, F_k, β_k) in sequence before moving to k+1.  This is the
+     true block coordinate descent with immediate propagation — distinct from the
+     earlier block-wise modular runner which updated all-L, then all-F, then all-β.
+   - Internally sources `update_L.R`, `update_F.R`, `update_beta.R`, `update_tau.R`.
+   - Returns `list(EL, EL2, EF, EF2, EBeta, EBeta2, Tau, history)`.
+   - `history$converged`, `history$n_iter`, `history$rmse`, `history$elbo_proxy`.
+
+2. **Created `results/modular_sim_factor/run_factor_modular_simulation.R`**:
+   - Comprehensive analytics runner sourcing `fit_modular.R`.
+   - Produces 8 figure pairs (PDF+PNG), 11 CSV tables for synthetic runs.
+   - Designed for both synthetic and real-data modes (real-data support added fully
+     in Session 10).
+
+3. **Created `docs/fit_modular.qmd/.pdf/.html`**:
+   - Full code walkthrough for `fit_modular.R`, covering factor-wise loop structure,
+     Taylor linearization, convergence criterion, and comparison with block-wise runner.
+
+4. **Reorganized `results/`** into per-simulation subdirectories:
+   - `results/modular_sim_factor/synthetic/` — factor-wise CAVI report (canonical)
+   - `results/modular_sim_block/` — block-wise modular (deprecated)
+   - `results/full_sim/` — V2 monolithic
+   - `results/tables/synthetic/` and `results/figures/synthetic/` for canonical outputs
+
+5. **Moved legacy code** to `code/legacy/`:
+   - `code/legacy/Supervised_Bayesian_MF.R` — V1 original
+   - Updated all references in CLAUDE.md, README.md, and runner scripts.
+
+6. **Simulation results (synthetic, factor-wise, n=250, p=1000, K=5, seed=42):**
+   - RMSE = 0.9979 (converges to true noise SD)
+   - ELBO proxy: non-decreasing
+   - β signs: (−, +, 0, −, +) — correct sign recovery, Factor 3 (β=0) zeroed
+   - C-index: PCA 0.827 vs Supervised ~0.86
+   - Converged at iteration 61 (dL < 1e-3, dBeta < 1e-3)
+
+**Deliverables committed:** `58cda7b`, `dca6fe4`, `110872c`, `0b560db`, `94ed9a2`
+
+---
+
+### Session 10 (March 31, 2026)
+
+**Real PDAC data integration: 7 cohorts, pooled RNA-seq, test suite, and PDAC report.**
+
+#### 10.1 — Runner extension for real data
+
+Extended `results/modular_sim_factor/run_factor_modular_simulation.R` with:
+
+**Configuration block** (env-var overrides for scripted/Longleaf use):
+```r
+data_mode    <- "synthetic"   # "synthetic" or "real"
+dataset_name <- "TCGA_PAAD"  # single-dataset mode
+run_all      <- FALSE         # TRUE: loop all 7 PDAC cohorts
+top_n_genes  <- 5000          # top-N by variance; NULL = all
+K            <- 5
+pdac_data_root <- Sys.getenv("PDAC_DATA_ROOT", unset = ...)
+```
+
+**New helpers:**
+- `filter_top_genes(Y, gene_names, top_n)` — selects top-N most-variable
+  columns; passthrough if `top_n ≥ p` or `top_n = NULL`.  Fixed with
+  `drop = FALSE` to prevent silent matrix-to-vector coercion when `top_n = 1`.
+- `load_real_data(dataset_name, pdac_root, top_n)` — loads via
+  `load_data_internal.R` (symlink trick to handle relative `data/original/`
+  paths), subsets to `keep == 1` samples, transposes ex matrix, extracts
+  gene symbols, applies variance filter, **column-centres Y**.
+- `pool_datasets(ds_list)` — intersects gene names, aligns columns, row-binds
+  Y, concatenates time/status for horizontal integration.
+
+**Multi-dataset loop** (when `run_all = TRUE`):
+- Iterates over all 7 PDAC cohorts; accumulates per-dataset summary rows.
+- Writes `results/tables/PDAC_cross_dataset/cross_dataset_summary.csv`.
+- After loop: pools TCGA_PAAD + Dijk + PACA_AU_seq → fits one model →
+  outputs to `results/tables/PDAC_pooled_rnaseq/` and
+  `results/figures/PDAC_pooled_rnaseq/`.
+
+#### 10.2 — Critical bug fixes
+
+Three bugs identified and fixed:
+
+| Bug | Root cause | Fix |
+|-----|-----------|-----|
+| RMSE increasing on real data | Missing column centring | `Y <- sweep(Y, 2, colMeans(Y), "-")` in `load_real_data()` |
+| Dataset column wrong in summary | `run_pipeline()` used global `dataset_name` | `row$Dataset <- ds` after `run_pipeline()` in loop |
+| Filter crash when `top_n = 1` | `Y[, scalar_idx]` drops matrix to vector | `Y[, keep_idx, drop = FALSE]` |
+
+Column centring is the most important fix.  Without it, SVD initialisation
+captures the global mean expression in Factor 1; CAVI then fights the mean
+artefact each iteration, causing RMSE to *increase* rather than decrease.
+Column centring is standard preprocessing for matrix factorisation on genomics
+data.
+
+#### 10.3 — Convergence results (K=5, top_5000 genes, max_iter=300)
+
+| Dataset | Platform | n | Converged | Iterations | Final RMSE |
+|---------|----------|---|-----------|-----------|------------|
+| TCGA_PAAD | RNA-seq | 144 | TRUE | 14 | ~0.99 |
+| Dijk | RNA-seq | 90 | TRUE | ~20 | ~0.99 |
+| PACA_AU_seq | RNA-seq | 52 | TRUE | ~30 | ~0.99 |
+| Moffitt_GEO_array | Microarray | 123 | TRUE | ~50 | ~0.99 |
+| PACA_AU_array | Microarray | 63 | TRUE | ~60 | ~0.99 |
+| Puleo_array | Microarray | 288 | TRUE | ~80 | ~0.99 |
+| CPTAC | Proteomics | 129 | TRUE | 259 | ~0.99 |
+
+CPTAC required max_iter = 300 (was 100, then 250); it converged at iteration 259.
+
+#### 10.4 — Test suite: `tests/test_real_data_loading.R`
+
+77 tests, auto-skip if `PDAC_DATA_ROOT` not found (CI-safe):
+- **T1** (6 tests): `filter_top_genes()` — variance selection, passthrough, NULL,
+  single-gene (`drop=FALSE`), dimension consistency
+- **T2** (63 tests = 7 × 9): all 7 datasets load without error, correct dimensions,
+  no NAs, time > 0, status ∈ {0,1}, numeric matrix, row/col alignment, Y is
+  column-centred (colMeans ~ 0 to tolerance 1e-10), gene_names length matches p
+- **T3** (6 tests): `pool_datasets()` — non-empty intersection, nrow == sum(n),
+  ncol == intersection length, no NAs, dataset_labels length, error on empty
+  intersection
+- **T4** (2 tests): synthetic regression — RMSE ∈ [0.95, 1.05], convergence == TRUE
+
+77/77 passing; 105/105 core module tests still passing.
+
+#### 10.5 — PDAC report
+
+`results/modular_sim_factor/PDAC/factor_modular_sim_report_PDAC.qmd` — fully
+standalone Quarto report rendering to PDF + HTML.
+
+**Self-contained model background:**
+- Model equations (Y = LF' + E, Cox PH), EBNM prior, CAVI pseudocode,
+  fit settings table (K=5, max_iter=300, tol=1e-3, top_5000 genes)
+
+**"How to Read These Results" section:**
+- Explains all 8 figure types (RMSE trace, ELBO proxy, β estimates, GEP heatmap,
+  KM curves, PH test, C-index comparison, τ distribution) with what/how/why
+  narrative — no need to reference the synthetic report.
+
+**Per-dataset sections** (7 datasets + pooled fit):
+- Convergence history table (first 5 + last 5 iterations), β estimates,
+  factor summary table, C-index comparison, PH test, top-10 genes per GEP,
+  τ distribution figure (fig8)
+
+**Dataset-specific figure commentary** — computed R values emit short italic
+paragraphs after each figure, e.g.:
+- RMSE: drop magnitude and iteration count
+- ELBO: ascending vs non-monotone check
+- β: count of prognostic vs null factors
+- Factor summary: Cox β vs log-rank p consistency
+- GEP heatmap: dominant factor PVE and prognostic status
+- KM: which factors show significant stratification
+- PH test: pass/fail with action language
+- C-index: contextual (supervised wins/comparable/lower vs PCA)
+- τ: platform-specific interpretation (RNA-seq/Microarray/Proteomics)
+
+**Cross-dataset sections:**
+- Executive summary table (all 7 datasets: convergence, RMSE, C-index)
+- Cross-platform PACA-AU pair comparison (β correlation, top-gene Jaccard)
+- Within-modality comparisons (RNA-seq trio, microarray trio)
+- CPTAC proteomics standalone section
+- Pooled RNA-seq section (dataset membership, pooled fit results, batch caveat)
+
+`ds_display()` helper replaces underscores with spaces in all LaTeX caption
+strings (prevents "Missing $ inserted" from TeX math-mode interpretation).
+
+Renders to PDF (xelatex, via Quarto) and HTML without errors.
+
+#### 10.6 — Future directions recorded
+
+- **Prediction task using hold-out test set:** Apply trained model to a held-out
+  subset of each cohort; evaluate C-index on out-of-sample patients.  Requires
+  a `predict_supervised_mf()` function to propagate new patients through the
+  learned F and β.
+- **K selection via cross-validation:** Held-out log-likelihood or C-index as
+  objective; compute-intensive, planned for Longleaf HPC.
+- **Full ELBO tracking:** Currently a genomics-only proxy; survival Taylor term
+  and KL divergences not yet included.
+- **Batch-corrected pooled model:** Apply ComBat or similar before pooling RNA-seq
+  cohorts to remove dataset-of-origin effects.
+
+**Deliverables committed:** `b3e23b5` (local; not yet pushed to `origin/main`)

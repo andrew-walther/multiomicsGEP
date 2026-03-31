@@ -23,3 +23,6 @@
 **/*.log
 **/*.toc
 **/*.tex
+
+# Quarto HTML build artifacts (self-contained HTML embeds these; folder not needed)
+**/*_files/
