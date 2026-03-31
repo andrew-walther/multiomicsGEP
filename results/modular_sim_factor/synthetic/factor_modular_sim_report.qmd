@@ -45,8 +45,8 @@ execute:
 library(kableExtra)
 library(survival)
 
-tables_dir <- "../tables/modular_sim_factor"
-figs_dir   <- "../figures/modular_sim_factor"
+tables_dir <- "../../tables/synthetic"
+figs_dir   <- "../../figures/synthetic"
 ```
 
 # Executive Summary
@@ -256,7 +256,7 @@ It measures how well the current posterior mean low-rank approximation $\bar{L}\
 
 **Why it matters.** A final RMSE near 1.0 tells us the model is neither underfitting (RMSE ≫ 1 would indicate missed signal) nor overfitting (RMSE ≪ 1 would indicate fitting noise). Convergence of the curve indicates parameter stability.
 
-![RMSE Convergence Trace](../figures/modular_sim_factor/fig1_rmse_trace.png){width=90%}
+![RMSE Convergence Trace](../../figures/synthetic/fig1_rmse_trace.png){width=90%}
 
 **Takeaway.** The factor-wise implementation converged at iteration `r n_iter` with RMSE = `r final_rmse`, within 0.002 of the unit-noise floor. The curve is smooth and monotone descending, with no sign of instability or oscillation — consistent with a well-conditioned CAVI schedule.
 
@@ -268,7 +268,7 @@ It measures how well the current posterior mean low-rank approximation $\bar{L}\
 
 **Why it matters.** While RMSE tells us about predictive fit, the ELBO provides theoretical grounding. Monotone ascent confirms the algorithm is performing valid coordinate ascent, not just any heuristic optimisation.
 
-![ELBO Proxy Trace](../figures/modular_sim_factor/fig2_elbo_proxy.png){width=90%}
+![ELBO Proxy Trace](../../figures/synthetic/fig2_elbo_proxy.png){width=90%}
 
 **Takeaway.** The ELBO proxy increases monotonically across all `r n_iter` iterations, confirming that the factor-wise update ordering constitutes a valid CAVI schedule. The absence of any step decrease validates the correctness of the modular update implementation.
 
@@ -315,7 +315,7 @@ The survival coefficients $\beta_k$ encode the prognostic relevance of each gene
 
 **Why it matters.** In a clinical setting, these coefficients determine which GEPs are used to stratify patients. A model that correctly zeroes the null factor and ranks the prognostic factors in the right order is fit for purpose as a biomarker discovery tool, even if absolute magnitudes are attenuated.
 
-![Beta Comparison: True vs. Estimated](../figures/modular_sim_factor/fig3_beta_comparison.png){width=90%}
+![Beta Comparison: True vs. Estimated](../../figures/synthetic/fig3_beta_comparison.png){width=90%}
 
 ```{r beta-table}
 #| tbl-cap: "Survival regression coefficients: true values versus posterior estimates. Sign_Match indicates whether the estimated coefficient has the same sign as the true value (ignoring Factor 5, which has true beta = 0)."
@@ -367,7 +367,7 @@ kable(factor_df,
 
 **Why it matters.** In a real-data application, these factor signatures are what gets biologically interpreted — submitted to gene set enrichment databases (e.g., MSigDB, KEGG) to identify pathways. A clean, sparse heatmap with distinct signatures per factor indicates the model has separated overlapping biological signals into interpretable programs rather than mixing them.
 
-![GEP Heatmap: Posterior Mean Factor Weights](../figures/modular_sim_factor/fig4_gep_heatmap.png){width=90%}
+![GEP Heatmap: Posterior Mean Factor Weights](../../figures/synthetic/fig4_gep_heatmap.png){width=90%}
 
 **Takeaway.** The heatmap shows a clearly sparse structure: each factor (column) is defined by a distinct, non-overlapping set of genes. Factor 5 (the null factor with $\hat{\beta}_5 \approx 0$) has a visible but weaker pattern compared to the survival-associated factors, consistent with its exclusion from the Cox model by the EBNM shrinkage prior.
 
@@ -383,7 +383,7 @@ Signal recovery assesses the quality of the estimated patient loadings $\hat{L}$
 
 **Why it matters.** In a real-data application, the patient loadings $L$ are the biomarker — they are what would be used to stratify patients into risk groups or cluster them by molecular subtype. If the model recovers loadings that correlate strongly with the true latent coordinates, it is extracting clinically actionable information from the expression data.
 
-![Signal Recovery: True vs. Reconstructed](../figures/modular_sim_factor/fig6_signal_recovery.png){width=90%}
+![Signal Recovery: True vs. Reconstructed](../../figures/synthetic/fig6_signal_recovery.png){width=90%}
 
 **Takeaway.** The scatter plot shows a tight linear relationship close to the identity line for the best-matched factor pair, confirming that the estimated patient loadings are faithful to the ground truth up to the expected EBNM attenuation. Patients' relative ordering in the latent space is well-preserved, which is what matters for survival stratification.
 
@@ -395,7 +395,7 @@ Signal recovery assesses the quality of the estimated patient loadings $\hat{L}$
 
 **Why it matters.** Factor mixing is the primary failure mode for matrix factorisation methods: two distinct biological programs get averaged together into a single estimated factor. The SBMF model avoids this through the sparsity-inducing EBNM prior on $F$, which penalises redundancy. This correlation matrix is the gold-standard check for that property in simulation.
 
-![Loading Correlations: True vs. Estimated Factors](../figures/modular_sim_factor/fig7_loading_correlations.png){width=90%}
+![Loading Correlations: True vs. Estimated Factors](../../figures/synthetic/fig7_loading_correlations.png){width=90%}
 
 ```{r loading-cor-table}
 #| tbl-cap: "Absolute correlation matrix between true factor loadings (rows) and estimated loadings (columns). Each true factor should have one dominant estimated counterpart."
@@ -425,7 +425,7 @@ The survival analysis results assess the model's clinical utility: do the estima
 
 **Why it matters.** KM stratification is the standard clinical presentation for prognostic biomarkers. In a real-data study, this is the figure that would appear in a manuscript to demonstrate clinical relevance — analogous to how established biomarkers like PAM50 subtypes are presented. The simulation here verifies that the model's estimated scores produce the correct stratification pattern relative to the ground-truth survival model.
 
-![Kaplan-Meier Survival Curves by GEP Score](../figures/modular_sim_factor/fig5_kaplan_meier.png){width=90%}
+![Kaplan-Meier Survival Curves by GEP Score](../../figures/synthetic/fig5_kaplan_meier.png){width=90%}
 
 **Takeaway.** Factors with large $|\hat{\beta}_k|$ (Factors 1 and 2 especially) show clear curve separation with small log-rank p-values, confirming that the model's survival-informed loadings stratify patients along the true prognostic axes. Factor 5 shows negligible curve separation, consistent with the model correctly zeroing its survival coefficient.
 
@@ -485,7 +485,7 @@ kable(cindex_df,
 
 An important technical note: the $\tau$ update includes a posterior variance correction term $\text{Var}(L) \otimes \text{Var}(F)$ that prevents systematic underestimation of the residual variance. Without this correction, ignoring the uncertainty in $L$ and $F$ would cause the model to over-estimate precision (underestimate noise) — a form of empirical Bayes optimism bias.
 
-![Posterior Tau Distribution](../figures/modular_sim_factor/fig8_tau_distribution.png){width=90%}
+![Posterior Tau Distribution](../../figures/synthetic/fig8_tau_distribution.png){width=90%}
 
 **Takeaway.** The estimated $\hat{\tau}_j$ distribution is centred close to the true value of 1.0 (see the figure legend for the exact sample median), with gene-to-gene variation consistent with finite-sample estimation noise. The variance correction term in `update_tau.R` prevents the distribution from being systematically shifted above 1.0, confirming the correctness of the closed-form update derivation.
 

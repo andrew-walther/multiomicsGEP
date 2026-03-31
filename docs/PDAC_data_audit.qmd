@@ -1,0 +1,431 @@
+---
+title: "PDAC Data Audit"
+subtitle: "Dataset Inventory and Integration Assessment for Supervised Bayesian Matrix Factorization"
+author: "Andrew Walther"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    number-sections: true
+    theme: cosmo
+    smooth-scroll: true
+    self-contained: true
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    geometry: "margin=1in"
+    mainfont: "Helvetica Neue"
+    monofont: "Menlo"
+    colorlinks: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    keep-tex: false
+    fig-pos: "H"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{float}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \floatplacement{figure}{H}
+        \floatplacement{table}{H}
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: false
+---
+
+# Executive Summary
+
+This document provides a structured inventory of the PDAC (Pancreatic Ductal Adenocarcinoma)
+datasets available for use with the supervised Bayesian matrix factorization model implemented
+in `multiomicsGEP`. Seven datasets are available, spanning RNA-seq, microarray, and proteomics
+platforms. Each dataset includes a gene expression matrix, survival data (time-to-event with
+censoring), and CAF (cancer-associated fibroblast) subtype annotations.
+
+All seven datasets are compatible with `fit_supervised_mf_modular()` after standardised
+preprocessing via the `load_data_internal()` function. With top-5000 variance-filtered genes,
+the estimated total compute time for all datasets is approximately one minute.
+
+# Data Location and File Structure
+
+## Source Directory
+
+```
+~/OneDrive/UNC Dissertation (Liu)/PDAC_data/
+├── load_data_internal.R          ← Standardised loader function
+└── original/                     ← Raw data files (7 datasets)
+```
+
+## Per-Dataset File Convention
+
+Each dataset `{name}` has four associated files:
+
+| File | Contents | Format |
+|------|----------|--------|
+| `{name}.rds` | Expression matrix + sample metadata + feature annotations | R list |
+| `{name}.survival_data.rds` | Survival times, event indicators, whitelist flags | R data.frame |
+| `{name}_subtype.csv` | CAF subtype classifications (SCISSORS, PurIST, etc.) | CSV |
+| `{name}.caf_subtype.rds` | Same subtype data in RDS format | R object |
+
+Additionally, `cmbSubtypes.RData` is present as an ancillary reference file for combined
+subtype analysis. It is not required for the matrix factorization pipeline.
+
+# Dataset Inventory
+
+```{r}
+#| label: tbl-inventory
+#| tbl-cap: "Summary of available PDAC datasets"
+
+inventory <- data.frame(
+  Dataset = c("TCGA_PAAD", "CPTAC", "Dijk", "Moffitt_GEO_array",
+              "PACA_AU_array", "PACA_AU_seq", "Puleo_array"),
+  Platform = c("RNA-seq", "Proteomics", "RNA-seq", "Microarray",
+               "Microarray", "RNA-seq", "Microarray"),
+  Genes = c(20531, 28057, 49677, 19749, 47265, 56206, 20087),
+  Samples_Total = c(181, 140, 90, 357, 131, 92, 309),
+  Samples_Valid = c(144, 134, 90, 123, 88, 69, 288),
+  Events = c(75, 68, 81, 83, 54, 41, 181),
+  Censored = c(69, 66, 9, 40, 34, 28, 107),
+  Censoring_Pct = c(47.9, 49.3, 10.0, 32.5, 38.6, 40.6, 37.2),
+  Time_Range = c("0.1 -- 76.2", "0.0 -- 45.5", "2.0 -- 119.8",
+                 "1.0 -- 59.0", "0.3 -- 47.0", "0.3 -- 50.4", "1.1 -- 146.4"),
+  Log2_Applied = c("Yes", "No", "Yes", "No", "No", "Yes", "No"),
+  stringsAsFactors = FALSE
+)
+
+knitr::kable(inventory, align = c("l", "l", "r", "r", "r", "r", "r", "r", "c", "c"))
+```
+
+**Notes:**
+
+- *Samples_Valid* reflects samples retained after survival validation (time > 0, non-missing
+  time and event) and dataset-specific filtering applied by `load_data_internal()`.
+- *Log2_Applied* indicates whether `load_data_internal()` applies a `log2(x + 1)` transformation
+  to the expression matrix. Datasets already on a log or normalised scale (microarray,
+  proteomics) are not re-transformed.
+- *Time_Range* is in months for all datasets.
+
+# Per-Dataset Profiles
+
+## TCGA_PAAD {#sec-tcga}
+
+**Source:** The Cancer Genome Atlas — Pancreatic Adenocarcinoma project.
+
+**Platform:** RNA-seq (raw counts → log2-transformed by loader).
+
+**Dimensions:** 20,531 genes × 181 samples (144 after filtering).
+
+**Expression range (raw):** 0 -- 6,699,497 (counts); after log2(x + 1): 0 -- 22.7.
+
+**Feature annotation:** `featInfo` is a data.frame with columns `SYMBOL` and `ENTREZID`.
+Gene symbols are set as row names by the loader.
+
+**Sample filtering:** Retains samples with non-missing tumour grade (`!is.na(Grade)`).
+
+**Survival:** 75 events / 69 censored (47.9% censoring). Follow-up range: 0.1 -- 76.2 months.
+
+**Sample metadata:** Rich clinical annotation (75 columns) including tumour grade, purity
+estimates, KRAS mutation status, molecular subtype classifications (Moffitt, Collisson, Bailey),
+staging, and treatment history.
+
+**Additional objects in `.rds`:** `decoderWeights`, `subTME` (tumour microenvironment scores).
+
+**Suitability:** Ideal starting dataset — widely studied, moderate size, comprehensive
+annotation. Recommended as the smoke-test target.
+
+## CPTAC
+
+**Source:** Clinical Proteomic Tumor Analysis Consortium — PDAC proteomics.
+
+**Platform:** Mass spectrometry proteomics (already normalised; not log-transformed).
+
+**Dimensions:** 28,057 proteins × 140 samples (134 after filtering).
+
+**Expression range:** 0 -- 24.8 (normalised abundance, likely log2-transformed upstream).
+
+**Feature annotation:** `featInfo` is a list of length 1 (minimal annotation).
+
+**Sample filtering:** Retains samples with `histology_diagnosis == "PDAC"`.
+
+**Survival:** 68 events / 66 censored (49.3%). Follow-up: 0 -- 45.5 months.
+
+**Note:** This is a *proteomics* dataset, not transcriptomics. The supervised MF model
+was derived for gene expression, but the mathematical framework (Y = LF' + E with Cox PH)
+applies to any continuous omics matrix. Results should be interpreted in the proteomics context
+(protein abundance programs rather than gene expression programs). Features are proteins, not
+genes — top-feature tables will report protein identifiers rather than gene symbols.
+
+## Dijk
+
+**Source:** Dijk et al. — PDAC RNA-seq cohort.
+
+**Platform:** RNA-seq (raw counts → log2-transformed by loader).
+
+**Dimensions:** 49,677 genes × 90 samples (90 after filtering — all retained).
+
+**Expression range (raw):** 0 -- 89,627 (counts); after log2(x + 1): 0 -- 16.5.
+
+**Feature annotation:** `featInfo` is a data.frame with `SYMBOL`, `GeneID`, `Biotype` —
+the richest feature annotation among the datasets.
+
+**Sample filtering:** No filtering applied (all 90 samples have valid survival).
+
+**Survival:** 81 events / 9 censored (10.0% censoring — very low). Follow-up: 2.0 -- 119.8
+months.
+
+**Note:** The very low censoring rate (10%) means nearly all patients experienced the event.
+This is unusual and may reflect the study design or patient population. High event rates
+provide strong signal for Cox model estimation but reduce generalisability.
+
+**Sample metadata:** Includes age, sex, lymph node metastasis ratio, organism part.
+The `.rds` also contains a `cnt` object (raw count matrix) in addition to `ex`.
+
+## Moffitt_GEO_array {#sec-moffitt}
+
+**Source:** Moffitt et al. — GEO microarray cohort.
+
+**Platform:** Microarray (already normalised; not log-transformed by loader).
+
+**Dimensions:** 19,749 genes × 357 samples (123 after filtering).
+
+**Expression range:** 0 -- 13.1 (log2-scale microarray intensities).
+
+**Feature annotation:** `featInfo` is a data.frame with column `SYMBOL`.
+
+**Sample filtering:** Retains primary tumour specimens only (`specimen_type == "Primary"`).
+The large reduction from 357 to 123 samples reflects exclusion of non-primary specimens
+(metastases, adjacent normal, stroma).
+
+**Survival:** 83 events / 40 censored (32.5%). Follow-up: 1.0 -- 59.0 months.
+
+**Sample metadata:** Includes Moffitt tumour/stroma classifications, GEO accession IDs.
+The `.rds` also contains `decoderWeights`.
+
+## PACA_AU_array {#sec-paca-array}
+
+**Source:** Pancreatic Cancer — Australia (ICGC) — microarray platform.
+
+**Platform:** Microarray (already normalised; not log-transformed by loader).
+
+**Dimensions:** 47,265 probes × 131 samples (88 after filtering).
+
+**Expression range:** 1.0 -- 14.1 (log2-scale microarray intensities).
+
+**Feature annotation:** `featInfo` is a data.frame with `PROBEID`, `ENTREZID`, `ENSEMBL`,
+`SYMBOL`. Multiple probes may map to the same gene — the loader resolves this by taking
+the median across duplicated gene symbols.
+
+**Sample filtering:** Retains primary PDAC tumours only (`Sample.type == "Primary tumour"`
+AND `HistoSubtype == "Pancreatic Ductal Adenocarcinoma"`). Also aggregates duplicate genes.
+
+**Survival:** 54 events / 34 censored (38.6%). Follow-up: 0.3 -- 47.0 months.
+
+**Sample metadata:** ICGC identifiers, qpure tumour purity scores, histological subtypes.
+
+## PACA_AU_seq {#sec-paca-seq}
+
+**Source:** Pancreatic Cancer — Australia (ICGC) — RNA-seq platform.
+
+**Platform:** RNA-seq (raw counts → log2-transformed by loader).
+
+**Dimensions:** 56,206 genes × 92 samples (69 after filtering).
+
+**Expression range (raw):** 0 -- 1,224,510 (counts); after log2(x + 1): 0 -- 20.2.
+
+**Feature annotation:** `featInfo` is a data.frame with `ENSEMBL`, `ENTREZID`, `SYMBOL`.
+Duplicate genes aggregated by median.
+
+**Sample filtering:** Same criteria as PACA_AU_array (primary PDAC tumours). Column names
+are suffixed with `_seq` to distinguish from the array cohort.
+
+**Survival:** 41 events / 28 censored (40.6%). Follow-up: 0.3 -- 50.4 months.
+
+**Note:** This is the same patient cohort as PACA_AU_array but profiled on a different
+platform. Paired analysis could compare factor recovery across platforms.
+
+## Puleo_array {#sec-puleo}
+
+**Source:** Puleo et al. — large European PDAC microarray cohort.
+
+**Platform:** Microarray (already normalised; not log-transformed by loader).
+
+**Dimensions:** 20,087 genes × 309 samples (288 after filtering).
+
+**Expression range:** 0.3 -- 14.3 (log2-scale microarray intensities).
+
+**Feature annotation:** `featInfo` is a data.frame with column `SYMBOL`.
+
+**Sample filtering:** All samples retained (no additional filtering beyond survival validation).
+
+**Survival:** 181 events / 107 censored (37.2%). Follow-up: 1.1 -- 146.4 months.
+
+**Note:** Largest dataset by valid sample count (n=288). Longest follow-up (>12 years).
+Provides the most statistical power for survival modelling. The rich sample metadata
+includes TNM grading, resection margin status, sex, and sampling site.
+
+# The `load_data_internal()` Function
+
+## Location
+
+```
+~/OneDrive/UNC Dissertation (Liu)/PDAC_data/load_data_internal.R
+```
+
+## Interface
+
+```r
+load_data_internal(dataname)
+# Returns: list(ex, sampInfo, featInfo, dataname)
+```
+
+**Input:** A dataset name string matching one of the supported datasets.
+
+**Output:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ex` | numeric matrix | Gene expression (genes × samples) |
+| `sampInfo` | data.frame | Sample metadata with `ID`, `time`, `event`, `keep` columns |
+| `featInfo` | character vector | Gene/feature symbols (row names of `ex`) |
+| `dataname` | character | Dataset name tag |
+
+## Processing Pipeline
+
+The function executes the following steps for each dataset:
+
+1. **Load raw data:** Read `.rds` (expression + metadata), `.survival_data.rds` (survival),
+   and `_subtype.csv` (CAF annotations) from `data/original/`.
+
+2. **Dataset-specific preprocessing:**
+
+```{r}
+#| label: tbl-preprocessing
+#| tbl-cap: "Dataset-specific preprocessing applied by load_data_internal()"
+
+preproc <- data.frame(
+  Dataset = c("Dijk", "CPTAC", "TCGA_PAAD", "Moffitt_GEO_array",
+              "PACA_AU_array", "PACA_AU_seq", "Puleo_array"),
+  Sample_Filter = c(
+    "None (all retained)",
+    "histology == PDAC",
+    "!is.na(Grade)",
+    "specimen_type == Primary",
+    "Primary tumour + PDAC histology",
+    "Primary tumour + PDAC histology",
+    "None (all retained)"
+  ),
+  Expression_Transform = c(
+    "log2(x + 1)",
+    "None",
+    "log2(x + 1); rownames set to SYMBOL",
+    "None",
+    "Median-aggregate duplicate genes; remove NA symbols",
+    "Median-aggregate duplicates; log2(x + 1); suffix _seq to IDs",
+    "None"
+  ),
+  stringsAsFactors = FALSE
+)
+
+knitr::kable(preproc, align = c("l", "l", "l"))
+```
+
+3. **Survival validation:** Retain samples where `time > 0`, `!is.na(time)`, and
+   `!is.na(event)`. The intersection of dataset-specific and survival-valid sample indices
+   defines the final `keep` flag.
+
+4. **Sample metadata assembly:** Left-join survival and CAF subtype data. Add `keep`
+   indicator column. Validate event indicators are 0/1, times are positive.
+
+5. **Data integrity checks:** Verify expression matrix has column names, `sampInfo` has
+   non-missing `ID`, no duplicate sample IDs, expression columns exactly match `sampInfo$ID`
+   (reorder if needed).
+
+## Datasets Referenced But Not Present
+
+The loader supports four additional datasets — `Grunwald`, `Hayashi`, `Linehan`, and `Olive` —
+but their `.rds` files are **not present** in the `original/` directory. These are skipped
+in the current analysis.
+
+# Integration with Supervised Bayesian MF
+
+## Input Contract
+
+`fit_supervised_mf_modular(Y, time, status, K, ...)` expects:
+
+| Parameter | Type | Shape | Description |
+|-----------|------|-------|-------------|
+| `Y` | numeric matrix | n × p | Patients (rows) × genes (columns) |
+| `time` | numeric vector | n | Survival/censoring time |
+| `status` | integer vector | n | Event indicator (1 = event, 0 = censored) |
+
+## Required Transformation
+
+`load_data_internal()` returns `ex` as **genes × samples** (rows = genes, columns = samples).
+The model expects **patients × genes**. Therefore:
+
+```r
+data    <- load_data_internal("TCGA_PAAD")
+keeps   <- which(data$sampInfo$keep == 1)
+Y       <- t(data$ex[, keeps])     # transpose: genes×samples → patients×genes
+time    <- data$sampInfo$time[keeps]
+status  <- as.integer(data$sampInfo$event[keeps])
+```
+
+## Gene Filtering Recommendation
+
+With 20K--56K genes per dataset, variance-based filtering to the top 5,000 most variable
+genes is recommended as the default. This is standard practice in genomics dimensionality
+reduction: it removes low-variance housekeeping genes that contribute noise without
+informative signal, and substantially reduces runtime. The filter should be configurable
+(including the option to disable it) to allow sensitivity analysis.
+
+## Estimated Compute Time
+
+```{r}
+#| label: tbl-runtime
+#| tbl-cap: "Estimated runtime per dataset (K=5, max_iter=100, top 5,000 genes)"
+
+runtime <- data.frame(
+  Dataset = c("Dijk", "CPTAC", "TCGA_PAAD", "Moffitt_GEO_array",
+              "PACA_AU_array", "PACA_AU_seq", "Puleo_array", "**Total**"),
+  n = c(90, 134, 144, 123, 88, 69, 288, NA),
+  p_filtered = c(5000, 5000, 5000, 5000, 5000, 5000, 5000, NA),
+  Est_Seconds = c(4, 6, 6, 5, 4, 3, 12, 40),
+  stringsAsFactors = FALSE
+)
+
+knitr::kable(runtime, align = c("l", "r", "r", "r"))
+```
+
+Benchmarked against the synthetic simulation (n=250, p=1000, K=5) which completes in ~2.6
+seconds on a 2024 MacBook Pro. Runtime scales linearly with n × p × K.
+
+# Recommendations
+
+1. **Primary smoke-test dataset:** TCGA_PAAD — well-studied, moderate dimensions, rich
+   clinical annotation, balanced censoring.
+
+2. **Run all seven datasets** sequentially in a single script invocation. Total compute
+   is approximately one minute with top-5000 gene filtering.
+
+3. **Cross-platform comparisons:** PACA_AU_array and PACA_AU_seq share the same patient
+   cohort on different platforms — factor recovery comparison is a natural future analysis.
+
+4. **CPTAC caveat:** This is a proteomics dataset. Results should be interpreted as protein
+   abundance programs rather than gene expression programs.
+
+5. **Dijk caveat:** Very low censoring (10%) — nearly all patients experienced the event.
+   Cox model estimation will be strong but generalisability may be limited.
+
+6. **Gene filtering:** Default to top 5,000 by variance, with a configurable `top_n_genes`
+   parameter that accepts `NULL` to disable filtering.
+
+7. **Longleaf future flag:** Data may also be accessible at `/proj/rashidlab/data/PDAC` on
+   the UNC Longleaf HPC cluster. A `PDAC_DATA_ROOT` environment variable should be added
+   in a future update to support both local and cluster paths.

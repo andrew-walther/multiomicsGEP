@@ -1,4 +1,4 @@
-SRCS  := update_beta.qmd update_L.qmd update_F.qmd update_tau.qmd fit_modular.qmd
+SRCS  := update_beta.qmd update_L.qmd update_F.qmd update_tau.qmd fit_modular.qmd PDAC_data_audit.qmd
 PDFS  := $(SRCS:.qmd=.pdf)
 HTMLS := $(SRCS:.qmd=.html)
 
