@@ -1,26 +1,60 @@
 # ==============================================================================
-# Factor-Wise Modular Simulation — Export All Results
-#
-# Uses fit_supervised_mf_modular() from code/fit_modular.R, which implements
-# V3 Algorithm 1: factor-wise Gauss-Seidel CAVI.
-#
-# Factor-wise updates (_k variants): for each k, L_k -> F_k -> beta_k.
-# This is the canonical coordinate ascent order: F_k sees the updated L_k
-# immediately, rather than waiting until the next outer iteration (block-wise).
-#
-# Compare with results/run_modular_simulation.R (DEPRECATED — block-wise):
-#   Block-wise: all-L -> all-F -> all-beta -> tau (one sweep per iteration)
-#   Factor-wise: for k in 1:K { L_k, F_k, beta_k } (Gauss-Seidel per V3)
-#
-# Outputs:
-#   results/tables/modular_sim_factor/  -- 7 CSV tables
-#   results/figures/modular_sim_factor/ -- 8 figures (PDF + PNG)
-#
-# Run from repo root:
-#   Rscript results/modular_sim_factor/run_factor_modular_simulation.R
+# Script:       run_factor_modular_simulation.R
+# Purpose:      Run the factor-wise Supervised Bayesian MF via fit_modular.R.
+#               Supports both synthetic data (default) and real PDAC datasets.
+#               When run_all = TRUE and data_mode = "real", loops over all 7
+#               PDAC cohorts and produces a cross-dataset summary table, then
+#               fits a pooled model on the RNA-seq trio.
+# Author:       Claude Code (reviewed by Andrew Walther)
+# Created:      2026-03-31
+# Dependencies: code/fit_modular.R (sources update_*.R internally);
+#               survival, ebnm (loaded by fit_modular.R)
+#               For real data: load_data_internal.R (in PDAC_data_root)
 # ==============================================================================
 
-# Set working directory to repo root (portable: works locally and on Longleaf)
+# ==============================================================================
+# Configuration
+# ==============================================================================
+
+data_mode    <- "synthetic"   # "synthetic" or "real"
+dataset_name <- "TCGA_PAAD"  # used when data_mode = "real" and run_all = FALSE
+run_all      <- FALSE         # TRUE: loop over all 7 PDAC datasets
+top_n_genes  <- 5000          # NULL = no filter; integer = top N most-variable genes
+K            <- 5             # number of latent factors
+
+# PDAC data root.  Override for Longleaf:
+#   export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC
+pdac_data_root <- Sys.getenv("PDAC_DATA_ROOT", unset = path.expand(
+  paste0("~/Library/CloudStorage/",
+         "OneDrive-UniversityofNorthCarolinaatChapelHill/",
+         "UNC Dissertation (Liu)/PDAC_data")
+))
+
+# Environment variable overrides (scripted / Longleaf use)
+if (Sys.getenv("DATA_MODE")    != "") data_mode    <- Sys.getenv("DATA_MODE")
+if (Sys.getenv("DATASET_NAME") != "") dataset_name <- Sys.getenv("DATASET_NAME")
+if (Sys.getenv("RUN_ALL")      != "") run_all      <- as.logical(Sys.getenv("RUN_ALL"))
+if (Sys.getenv("TOP_N_GENES")  != "") top_n_genes  <- as.integer(Sys.getenv("TOP_N_GENES"))
+
+# All 7 available PDAC cohorts (used when run_all = TRUE)
+ALL_DATASETS <- c("TCGA_PAAD", "CPTAC", "Dijk", "Moffitt_GEO_array",
+                   "PACA_AU_array", "PACA_AU_seq", "Puleo_array")
+
+# Platform labels for the cross-dataset summary table
+PLATFORM_MAP <- c(
+  TCGA_PAAD        = "RNA-seq",
+  CPTAC            = "Proteomics",
+  Dijk             = "RNA-seq",
+  Moffitt_GEO_array = "Microarray",
+  PACA_AU_array    = "Microarray",
+  PACA_AU_seq      = "RNA-seq",
+  Puleo_array      = "Microarray"
+)
+
+# ==============================================================================
+# Working Directory
+# ==============================================================================
+
 if (Sys.getenv("REPO_ROOT") != "") {
   setwd(Sys.getenv("REPO_ROOT"))
 } else if (file.exists("code/update_L.R")) {
@@ -46,19 +80,9 @@ suppressMessages(tryCatch(
   source("code/fit_modular.R"),
   error = function(e) invisible(NULL)
 ))
-# Now fit_supervised_mf_modular() is available, along with all its dependencies
-# (update_L.R, update_F.R, update_beta.R, update_tau.R, calc_cox_taylor, library(survival), library(ebnm))
-
-# ==============================================================================
-# Create Output Directories
-# ==============================================================================
-
-dir.create("results/tables/modular_sim_factor",  recursive = TRUE, showWarnings = FALSE)
-dir.create("results/figures/modular_sim_factor", recursive = TRUE, showWarnings = FALSE)
 
 # ==============================================================================
 # Analytics Helpers
-# (Functionally identical to helpers in results/run_modular_simulation.R)
 # ==============================================================================
 
 # C-index comparison: Supervised loadings vs. top-5 PCA components
@@ -72,15 +96,20 @@ get_cindex_comparison <- function(EL, data) {
   )
 }
 
-# Top n_top influential features per factor by |weight|
-get_top_features <- function(EF, n_top = 10) {
+# Top n_top influential features per factor by |weight|.
+# When gene_names is supplied, returns gene symbols; otherwise returns FeatureID.
+get_top_features <- function(EF, n_top = 10, gene_names = NULL) {
   lapply(1:ncol(EF), function(k) {
     weights   <- EF[, k]
     order_idx <- order(abs(weights), decreasing = TRUE)
-    data.frame(
-      FeatureID = order_idx[1:n_top],
-      Weight    = round(weights[order_idx[1:n_top]], 4)
-    )
+    idx       <- order_idx[1:n_top]
+    if (!is.null(gene_names)) {
+      data.frame(GeneName = gene_names[idx],
+                 Weight   = round(weights[idx], 4))
+    } else {
+      data.frame(FeatureID = idx,
+                 Weight    = round(weights[idx], 4))
+    }
   })
 }
 
@@ -107,338 +136,646 @@ get_factor_summary_table <- function(EL, EF, EBeta, data) {
 }
 
 # ==============================================================================
-# Data Generation (n=250, p=1000, K=5)
-# Same DGP as run_modular_simulation.R
+# Real-Data Helpers
 # ==============================================================================
 
-set.seed(42)
-
-n <- 250; p <- 1000; K <- 5
-
-L_true <- matrix(rnorm(n * K), n, K)
-F_true <- matrix(0, p, K)
-for (k in 1:K) {
-  active <- sample(1:p, round(p * 0.05))        # 5% sparse factor structure
-  F_true[active, k] <- rnorm(length(active), 0, 5)
-}
-Y <- L_true %*% t(F_true) + matrix(rnorm(n * p), n, p)
-
-B_true   <- c(1.5, -1.2, 0.8, -0.5, 0.0)
-eta_true <- as.vector(L_true %*% B_true)
-raw_times  <- (-log(runif(n)) / (0.01 * exp(eta_true)))^(1 / 1.5)
-cens_times <- rexp(n, rate = 1 / 50)
-time   <- pmin(raw_times, cens_times)
-status <- as.integer(raw_times <= cens_times)
-
-data <- list(Y = Y, time = time, status = status,
-             L_true = L_true, F_true = F_true, B_true = B_true)
-
-# ==============================================================================
-# Fit Model
-# ==============================================================================
-
-cat("=== Factor-Wise Modular Supervised MF — Simulation ===\n")
-cat(sprintf("  n=%d  p=%d  K=%d  seed=42  (factor-wise CAVI, V3 Algorithm 1)\n", n, p, K))
-cat(sprintf("  Censoring rate: %.1f%%\n\n", 100 * mean(status == 0)))
-
-res <- fit_supervised_mf_modular(Y, time, status, K = K,
-                                  max_iter = 100, tol = 1e-3, verbose = TRUE)
-
-# Unpack results (E-prefix naming from fit_modular.R)
-EL     <- res$EL
-EL2    <- res$EL2
-EF     <- res$EF
-EF2    <- res$EF2
-EBeta  <- res$EBeta
-EBeta2 <- res$EBeta2
-Tau    <- res$Tau
-history <- res$history
-
-beta_sd <- sqrt(pmax(EBeta2 - EBeta^2, 0))
-
-# ==============================================================================
-# Summary Printout
-# ==============================================================================
-
-cat("\n=== FACTOR SUMMARY TABLE ===\n")
-summary_tab <- get_factor_summary_table(EL, EF, EBeta, data)
-print(summary_tab)
-
-cat("\n=== ESTIMATED vs TRUE BETA ===\n")
-print(data.frame(
-  Factor    = 1:K,
-  Beta_true = B_true,
-  Beta_est  = round(EBeta, 3),
-  Abs_Error = round(abs(EBeta - B_true), 3),
-  Sign_Match = sign(EBeta) == sign(B_true) | B_true == 0
-))
-
-cat("\n=== MODEL PERFORMANCE (C-INDEX) ===\n")
-perf <- get_cindex_comparison(EL, data)
-cat(sprintf("  Top-5 PCA  C-index: %.3f\n", perf$c_original))
-cat(sprintf("  Supervised C-index: %.3f\n", perf$c_latent))
-
-cat("\n=== PROPORTIONAL HAZARDS TEST ===\n")
-print(cox.zph(coxph(Surv(time, status) ~ EL)))
-
-# ==============================================================================
-# Save CSV Tables  -->  results/tables/modular_sim_factor/
-# ==============================================================================
-
-# Factor summary
-write.csv(summary_tab,
-          "results/tables/modular_sim_factor/factor_summary_table.csv",
-          row.names = FALSE)
-
-# Beta comparison
-beta_df <- data.frame(
-  Factor       = 1:K,
-  Beta_true    = B_true,
-  Beta_est     = round(EBeta, 4),
-  Beta2_est    = round(EBeta2, 6),
-  Posterior_SD = round(beta_sd, 4),
-  Abs_Error    = round(abs(EBeta - B_true), 4),
-  Sign_Match   = sign(EBeta) == sign(B_true) | B_true == 0
-)
-write.csv(beta_df,
-          "results/tables/modular_sim_factor/beta_comparison_table.csv",
-          row.names = FALSE)
-
-# C-index comparison
-cindex_df <- data.frame(
-  Method  = c("Top-5 PCA", "Supervised Latent L"),
-  C_Index = c(perf$c_original, perf$c_latent)
-)
-write.csv(cindex_df,
-          "results/tables/modular_sim_factor/cindex_comparison.csv",
-          row.names = FALSE)
-
-# Convergence history
-history_df <- data.frame(
-  Iteration  = seq_along(history$rmse),
-  RMSE       = history$rmse,
-  ELBO_Proxy = history$elbo_proxy
-)
-write.csv(history_df,
-          "results/tables/modular_sim_factor/convergence_history.csv",
-          row.names = FALSE)
-
-# Top features per GEP
-top_feats <- get_top_features(EF, 10)
-for (k in seq_along(top_feats)) {
-  write.csv(top_feats[[k]],
-            sprintf("results/tables/modular_sim_factor/top_features_GEP%d.csv", k),
-            row.names = FALSE)
+#' Filter to top N most variable genes
+#'
+#' @param Y        numeric matrix (n x p)
+#' @param gene_names character vector length p
+#' @param top_n    integer or NULL (NULL = passthrough)
+#' @return list(Y, gene_names)
+filter_top_genes <- function(Y, gene_names, top_n) {
+  if (is.null(top_n) || top_n >= ncol(Y))
+    return(list(Y = Y, gene_names = gene_names))
+  gene_var <- apply(Y, 2, var)
+  keep_idx <- order(gene_var, decreasing = TRUE)[seq_len(top_n)]
+  list(Y = Y[, keep_idx], gene_names = gene_names[keep_idx])
 }
 
-# Loading correlations (true vs estimated)
-cors <- cor(L_true, EL)
-write.csv(round(cors, 4),
-          "results/tables/modular_sim_factor/loading_correlation_matrix.csv")
+#' Load a single PDAC dataset and prepare it for fit_supervised_mf_modular().
+#'
+#' Uses load_data_internal() from PDAC_data_root, subsets to valid samples,
+#' transposes the expression matrix (genes x samples -> patients x genes),
+#' and optionally applies variance-based gene filtering.
+#'
+#' @param dataset_name  string matching a dataset in load_data_internal.R
+#' @param pdac_root     path to the PDAC_data directory
+#' @param top_n         integer or NULL; passed to filter_top_genes()
+#' @return list(Y, time, status, gene_names, n, p, dataset_name, preprocessing_notes)
+load_real_data <- function(dataset_name, pdac_root, top_n = 5000) {
+  if (!dir.exists(pdac_root))
+    stop(sprintf("PDAC data root not found: %s\nSet PDAC_DATA_ROOT env var.", pdac_root))
 
-# PH test
-ph_test <- cox.zph(coxph(Surv(time, status) ~ EL))
-ph_df <- data.frame(
-  Factor  = rownames(ph_test$table),
-  Chisq   = round(ph_test$table[, 1], 4),
-  DF      = ph_test$table[, 2],
-  P_Value = round(ph_test$table[, 3], 4)
-)
-write.csv(ph_df,
-          "results/tables/modular_sim_factor/ph_test_results.csv",
-          row.names = FALSE)
+  # load_data_internal.R uses relative paths of the form "data/original/<name>.rds".
+  # It was written for a project root where the data folder is named "data/".
+  # Our data folder is named "PDAC_data/" (= pdac_root).
+  #
+  # Fix: work from a temp directory that contains a "data" symlink pointing to
+  # pdac_root, so that "data/original/..." resolves correctly.
+  tmp_wd    <- tempfile("pdac_wd_")
+  dir.create(tmp_wd, showWarnings = FALSE)
+  data_link <- file.path(tmp_wd, "data")
+  file.symlink(pdac_root, data_link)      # tmp_wd/data/ -> pdac_root/
 
-cat("\nCSV tables saved to results/tables/modular_sim_factor/\n")
+  old_wd <- getwd()
+  on.exit({
+    setwd(old_wd)
+    unlink(data_link)          # remove the symlink (leaves tmp_wd itself, cleaned by OS)
+  }, add = TRUE)
+
+  setwd(tmp_wd)
+  source(file.path(pdac_root, "load_data_internal.R"), local = TRUE)
+  result <- load_data_internal(dataset_name)
+  setwd(old_wd)
+
+  # Subset to keep == 1 samples
+  keeps <- which(result$sampInfo$keep == 1)
+  if (length(keeps) == 0)
+    stop(sprintf("No valid samples for dataset '%s' after filtering.", dataset_name))
+
+  # Transpose: genes x samples -> patients x genes.
+  # Strip dimension names: row/col names on Y can propagate into ebnm()
+  # and cause failures when gene symbols are duplicated or contain "?".
+  # Gene identifiers are stored separately in gene_names below.
+  Y <- t(result$ex[, keeps])
+  rownames(Y) <- NULL
+  colnames(Y) <- NULL
+
+  # Extract survival
+  time   <- result$sampInfo$time[keeps]
+  status <- as.integer(result$sampInfo$event[keeps])
+
+  # Extract gene names (SYMBOL column or character vector)
+  fi <- result$featInfo
+  if (is.data.frame(fi) && "SYMBOL" %in% names(fi)) {
+    gene_names <- fi$SYMBOL
+  } else if (is.character(fi)) {
+    gene_names <- fi
+  } else {
+    gene_names <- rownames(result$ex)
+  }
+  # Ensure gene_names length matches columns of Y (= rows of ex)
+  if (length(gene_names) != ncol(Y)) {
+    gene_names <- seq_len(ncol(Y))   # fallback to numeric indices
+    warning("gene_names length mismatch; falling back to integer indices.")
+  }
+
+  # Apply variance-based gene filter
+  filtered   <- filter_top_genes(Y, gene_names, top_n)
+  Y          <- filtered$Y
+  gene_names <- filtered$gene_names
+
+  # Centre each gene (column) to zero mean.
+  # Without centering, SVD initialisation captures the global expression mean
+  # in Factor 1; subsequent CAVI iterations fight this mean-shift artefact,
+  # causing RMSE to increase rather than decrease.  Column centering is standard
+  # preprocessing for matrix factorisation on genomics data and has no effect on
+  # the synthetic simulation (which already has zero-mean factors by construction).
+  Y <- sweep(Y, 2, colMeans(Y), "-")
+
+  # --- Validation ---
+  stopifnot(is.numeric(Y), !anyNA(Y))
+  stopifnot(length(time)   == nrow(Y), !anyNA(time),   all(time > 0))
+  stopifnot(length(status) == nrow(Y), !anyNA(status), all(status %in% c(0L, 1L)))
+
+  # Build preprocessing notes string
+  notes <- sprintf(
+    "Dataset: %s | n=%d | p=%d (from %d raw genes, top_%s by variance) | censoring=%.1f%%",
+    dataset_name, nrow(Y), ncol(Y), nrow(result$ex),
+    ifelse(is.null(top_n), "all", as.character(top_n)),
+    100 * mean(status == 0)
+  )
+
+  list(Y = Y, time = time, status = status,
+       gene_names = gene_names,
+       n = nrow(Y), p = ncol(Y),
+       dataset_name = dataset_name,
+       preprocessing_notes = notes)
+}
+
+#' Pool multiple load_real_data() results for horizontal integration.
+#'
+#' Finds the gene intersection, aligns columns, then row-binds Y and
+#' concatenates time/status.  The returned dataset_labels factor identifies
+#' which rows came from which cohort (for diagnostics only; not used in fitting).
+#'
+#' @param ds_list  named list of load_real_data() results
+#' @return list(Y, time, status, gene_names, n, p, dataset_labels, dataset_name)
+pool_datasets <- function(ds_list) {
+  common_genes <- Reduce(intersect, lapply(ds_list, "[[", "gene_names"))
+  if (length(common_genes) == 0)
+    stop("No common genes across the supplied datasets.")
+
+  Y_list      <- lapply(ds_list, function(d) d$Y[, match(common_genes, d$gene_names)])
+  time_vec    <- unlist(lapply(ds_list, "[[", "time"))
+  status_vec  <- unlist(lapply(ds_list, "[[", "status"))
+  label_vec   <- factor(rep(names(ds_list), sapply(ds_list, "[[", "n")))
+
+  Y_pool <- do.call(rbind, Y_list)
+  pool_name <- paste(names(ds_list), collapse = "_")
+
+  list(Y = Y_pool, time = time_vec, status = status_vec,
+       gene_names = common_genes,
+       n = nrow(Y_pool), p = ncol(Y_pool),
+       dataset_labels = label_vec,
+       dataset_name = pool_name)
+}
 
 # ==============================================================================
-# Generate Figures  -->  results/figures/modular_sim_factor/
+# Helper: run full pipeline for one dataset, write outputs, return summary row
 # ==============================================================================
 
-# --- Figure 1: RMSE Convergence Trace ---
-for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim_factor/fig1_rmse_trace.pdf",
-                        width = 8, height = 5)
-  else              png("results/figures/modular_sim_factor/fig1_rmse_trace.png",
-                        width = 800, height = 500, res = 120)
-  par(mar = c(5, 5, 4, 2))
-  plot(history$rmse, type = "l", lwd = 2.5, col = "#1f77b4",
-       main = "Figure 1: Reconstruction RMSE Across CAVI Iterations\n(Factor-Wise Modular CAVI)",
-       xlab = "Iteration", ylab = "RMSE", bty = "n",
-       cex.lab = 1.2, cex.main = 1.3)
-  abline(h = 1.0, col = "#d62728", lty = 2, lwd = 1.5)
-  legend("topright", legend = c("RMSE", "True Noise SD = 1.0"),
-         col = c("#1f77b4", "#d62728"), lty = c(1, 2), lwd = c(2.5, 1.5), bty = "n")
-  grid(col = "lightgray", lty = "dotted")
-  dev.off()
+#' Run the full pipeline for a single dataset.
+#'
+#' @param Y           numeric matrix n x p
+#' @param time        numeric vector n
+#' @param status      integer vector n (0/1)
+#' @param gene_names  character vector p or NULL
+#' @param data        list with at least Y, time, status; may include L_true etc.
+#' @param table_dir   output path for CSV tables
+#' @param figure_dir  output path for PDF/PNG figures
+#' @param run_label   string for cat() messages (e.g. dataset name)
+#' @param is_synthetic logical; if TRUE, write ground-truth comparisons
+#' @return data.frame with one summary row
+run_pipeline <- function(Y, time, status, gene_names, data,
+                         table_dir, figure_dir,
+                         run_label, is_synthetic = FALSE) {
+
+  dir.create(table_dir,  recursive = TRUE, showWarnings = FALSE)
+  dir.create(figure_dir, recursive = TRUE, showWarnings = FALSE)
+
+  # --------------------------------------------------------------------------
+  # Fit model
+  # --------------------------------------------------------------------------
+  cat(sprintf("\n=== %s  (n=%d, p=%d, K=%d) ===\n",
+              run_label, nrow(Y), ncol(Y), K))
+  cat(sprintf("  Censoring rate: %.1f%%\n\n", 100 * mean(status == 0)))
+
+  res <- fit_supervised_mf_modular(Y, time, status, K = K,
+                                    max_iter = 250, tol = 1e-3, verbose = TRUE)
+  EL     <- res$EL
+  EL2    <- res$EL2
+  EF     <- res$EF
+  EF2    <- res$EF2
+  EBeta  <- res$EBeta
+  EBeta2 <- res$EBeta2
+  Tau    <- res$Tau
+  history <- res$history
+  beta_sd <- sqrt(pmax(EBeta2 - EBeta^2, 0))
+
+  cat(sprintf("\n  Converged: %s  |  Iterations: %d  |  Final RMSE: %.4f\n",
+              history$converged, history$n_iter, tail(history$rmse, 1)))
+
+  # --------------------------------------------------------------------------
+  # Computed summaries (work for both synthetic and real)
+  # --------------------------------------------------------------------------
+  summary_tab <- get_factor_summary_table(EL, EF, EBeta, data)
+  perf        <- get_cindex_comparison(EL, data)
+  top_feats   <- get_top_features(EF, 10, gene_names)
+
+  ph_test <- cox.zph(coxph(Surv(time, status) ~ EL))
+  ph_df   <- data.frame(
+    Factor  = rownames(ph_test$table),
+    Chisq   = round(ph_test$table[, 1], 4),
+    DF      = ph_test$table[, 2],
+    P_Value = round(ph_test$table[, 3], 4)
+  )
+
+  history_df <- data.frame(
+    Iteration  = seq_along(history$rmse),
+    RMSE       = history$rmse,
+    ELBO_Proxy = history$elbo_proxy
+  )
+
+  cindex_df <- data.frame(
+    Method  = c("Top-5 PCA", "Supervised Latent L"),
+    C_Index = c(perf$c_original, perf$c_latent)
+  )
+
+  # --------------------------------------------------------------------------
+  # Save CSV tables
+  # --------------------------------------------------------------------------
+  write.csv(summary_tab,
+            file.path(table_dir, "factor_summary_table.csv"), row.names = FALSE)
+  write.csv(cindex_df,
+            file.path(table_dir, "cindex_comparison.csv"), row.names = FALSE)
+  write.csv(history_df,
+            file.path(table_dir, "convergence_history.csv"), row.names = FALSE)
+  write.csv(ph_df,
+            file.path(table_dir, "ph_test_results.csv"), row.names = FALSE)
+
+  for (k in seq_along(top_feats)) {
+    write.csv(top_feats[[k]],
+              file.path(table_dir, sprintf("top_features_GEP%d.csv", k)),
+              row.names = FALSE)
+  }
+
+  # Synthetic-only: beta comparison and loading correlations
+  if (is_synthetic) {
+    B_true  <- data$B_true
+    L_true  <- data$L_true
+    beta_df <- data.frame(
+      Factor       = 1:K,
+      Beta_true    = B_true,
+      Beta_est     = round(EBeta, 4),
+      Beta2_est    = round(EBeta2, 6),
+      Posterior_SD = round(beta_sd, 4),
+      Abs_Error    = round(abs(EBeta - B_true), 4),
+      Sign_Match   = sign(EBeta) == sign(B_true) | B_true == 0
+    )
+    write.csv(beta_df,
+              file.path(table_dir, "beta_comparison_table.csv"), row.names = FALSE)
+
+    cors <- cor(L_true, EL)
+    write.csv(round(cors, 4),
+              file.path(table_dir, "loading_correlation_matrix.csv"))
+  }
+
+  cat(sprintf("  CSV tables saved to %s\n", table_dir))
+
+  # --------------------------------------------------------------------------
+  # Save Figures
+  # --------------------------------------------------------------------------
+
+  # --- Figure 1: RMSE Convergence Trace ---
+  for (ext in c("pdf", "png")) {
+    fpath <- file.path(figure_dir, paste0("fig1_rmse_trace.", ext))
+    if (ext == "pdf") pdf(fpath, width = 8, height = 5)
+    else              png(fpath, width = 800, height = 500, res = 120)
+    par(mar = c(5, 5, 4, 2))
+    plot(history$rmse, type = "l", lwd = 2.5, col = "#1f77b4",
+         main = sprintf("Figure 1: Reconstruction RMSE Across CAVI Iterations\n(%s)", run_label),
+         xlab = "Iteration", ylab = "RMSE", bty = "n",
+         cex.lab = 1.2, cex.main = 1.3)
+    if (is_synthetic)
+      abline(h = 1.0, col = "#d62728", lty = 2, lwd = 1.5)
+    abline(h = tail(history$rmse, 1), col = "gray50", lty = 3, lwd = 1)
+    legd <- c("RMSE", sprintf("Final RMSE = %.4f", tail(history$rmse, 1)))
+    cols <- c("#1f77b4", "gray50"); ltys <- c(1, 3); lwds <- c(2.5, 1)
+    if (is_synthetic) {
+      legd <- c(legd, "True Noise SD = 1.0")
+      cols <- c(cols, "#d62728"); ltys <- c(ltys, 2); lwds <- c(lwds, 1.5)
+    }
+    legend("topright", legend = legd, col = cols, lty = ltys, lwd = lwds, bty = "n")
+    grid(col = "lightgray", lty = "dotted")
+    dev.off()
+  }
+
+  # --- Figure 2: ELBO Proxy Trace ---
+  for (ext in c("pdf", "png")) {
+    fpath <- file.path(figure_dir, paste0("fig2_elbo_proxy.", ext))
+    if (ext == "pdf") pdf(fpath, width = 8, height = 5)
+    else              png(fpath, width = 800, height = 500, res = 120)
+    par(mar = c(5, 5, 4, 2))
+    plot(history$elbo_proxy, type = "l", lwd = 2.5, col = "#2ca02c",
+         main = sprintf("Figure 2: Genomics ELBO Proxy Across Iterations\n(%s)", run_label),
+         xlab = "Iteration",
+         ylab = expression(E[q]*"[log P(Y | L, F, "*tau*")]"),
+         bty = "n", cex.lab = 1.2, cex.main = 1.3)
+    grid(col = "lightgray", lty = "dotted")
+    dev.off()
+  }
+
+  # --- Figure 3: Beta Estimates (with ground-truth overlay in synthetic mode) ---
+  for (ext in c("pdf", "png")) {
+    fpath <- file.path(figure_dir, paste0("fig3_beta_comparison.", ext))
+    if (ext == "pdf") pdf(fpath, width = 8, height = 5.5)
+    else              png(fpath, width = 800, height = 550, res = 120)
+    par(mar = c(5, 5, 4, 2))
+    x_pos <- 1:K
+    if (is_synthetic) {
+      B_true <- data$B_true
+      ylim_r <- range(c(B_true, EBeta + 1.96 * beta_sd, EBeta - 1.96 * beta_sd)) * 1.2
+    } else {
+      ylim_r <- range(c(EBeta + 1.96 * beta_sd, EBeta - 1.96 * beta_sd, 0)) * 1.2
+    }
+    plot(x_pos, EBeta, pch = 16, cex = 1.8, col = "#1f77b4",
+         ylim = ylim_r,
+         xlab = "Factor", ylab = expression(beta[k]),
+         main = sprintf("Figure 3: Estimated Survival Coefficients (95%% CI)\n(%s)", run_label),
+         bty = "n", cex.lab = 1.2, cex.main = 1.3, xaxt = "n")
+    axis(1, at = 1:K)
+    arrows(x_pos, EBeta - 1.96 * beta_sd, x_pos, EBeta + 1.96 * beta_sd,
+           angle = 90, code = 3, length = 0.08, col = "#1f77b4", lwd = 1.5)
+    abline(h = 0, col = "gray50", lty = 3)
+    if (is_synthetic) {
+      points(x_pos, B_true, pch = 4, cex = 2, col = "#d62728", lwd = 2.5)
+      legend("bottomleft", legend = c("Estimated (95% CI)", "True"),
+             col = c("#1f77b4", "#d62728"), pch = c(16, 4),
+             pt.cex = c(1.8, 2), pt.lwd = c(1, 2.5), bty = "n")
+    } else {
+      legend("bottomleft", legend = "Estimated (95% CI)",
+             col = "#1f77b4", pch = 16, pt.cex = 1.8, bty = "n")
+    }
+    grid(col = "lightgray", lty = "dotted")
+    dev.off()
+  }
+
+  # --- Figure 4: GEP Heatmap ---
+  n_features    <- min(50, nrow(EF))
+  top_var_genes <- order(rowSums(abs(EF)), decreasing = TRUE)[1:n_features]
+  F_sub         <- EF[top_var_genes, ]
+  palette_heat  <- colorRampPalette(c("blue", "white", "red"))(100)
+  max_val       <- max(abs(F_sub))
+  # Labels: gene symbols if available, else feature indices
+  feat_labels   <- if (!is.null(gene_names)) gene_names[top_var_genes] else top_var_genes
+
+  for (ext in c("pdf", "png")) {
+    fpath <- file.path(figure_dir, paste0("fig4_gep_heatmap.", ext))
+    if (ext == "pdf") pdf(fpath, width = 10, height = 6)
+    else              png(fpath, width = 1000, height = 600, res = 120)
+    layout(matrix(1:2, ncol = 2), widths = c(5, 1))
+    par(mar = c(6, 4, 4, 1))
+    image(1:nrow(F_sub), 1:ncol(F_sub), F_sub,
+          main = sprintf("Figure 4: GEP Feature Weights (Top %d Features)\n(%s)", n_features, run_label),
+          xlab = "Feature", ylab = "Latent Factor",
+          col = palette_heat, axes = FALSE, zlim = c(-max_val, max_val))
+    axis(1, at = 1:nrow(F_sub), labels = feat_labels, las = 2, cex.axis = 0.55)
+    axis(2, at = 1:ncol(F_sub), labels = paste0("F", 1:ncol(F_sub)), las = 1)
+    box()
+    par(mar = c(6, 1, 4, 3))
+    legend_image <- as.matrix(seq(-max_val, max_val, length.out = 100))
+    image(1, seq(-max_val, max_val, length.out = 100), t(legend_image),
+          col = palette_heat, axes = FALSE, xlab = "", ylab = "")
+    axis(4, las = 1, cex.axis = 0.8)
+    mtext("Weight", side = 4, line = 2, cex = 0.8)
+    layout(1)
+    dev.off()
+  }
+
+  # --- Figure 5: Kaplan-Meier Survival Curves per Factor ---
+  for (ext in c("pdf", "png")) {
+    fpath <- file.path(figure_dir, paste0("fig5_kaplan_meier.", ext))
+    if (ext == "pdf") pdf(fpath, width = 12, height = 8)
+    else              png(fpath, width = 1200, height = 800, res = 120)
+    par(mfrow = c(2, ceiling(K / 2)), mar = c(4, 4, 3, 1))
+    for (k in 1:K) {
+      groups  <- ifelse(EL[, k] > median(EL[, k]), "High Score", "Low Score")
+      km      <- survfit(Surv(time, status) ~ groups)
+      p_label <- sprintf("p = %.4f", summary_tab$LogRank_P[k])
+      plot(km, col = c("#d62728", "#1f77b4"), lwd = 2, bty = "n",
+           main = paste0("Factor ", k, " (beta = ", round(EBeta[k], 2), ")\n", p_label),
+           xlab = "Time", ylab = "Survival Probability")
+      legend("bottomleft", legend = c("High", "Low"),
+             col = c("#d62728", "#1f77b4"), lwd = 2, bty = "n", cex = 0.8)
+    }
+    dev.off()
+  }
+
+  # --- Figures 6 & 7: Signal recovery (synthetic only) ---
+  if (is_synthetic) {
+    L_true   <- data$L_true
+    cors_mat <- cor(L_true, EL)
+
+    # Figure 6: Best-matched factor loading scatter
+    best_match  <- apply(abs(cors_mat), 2, which.max)
+    target_est  <- which.max(abs(EBeta))
+    target_true <- best_match[target_est]
+    sign_corr   <- sign(cors_mat[target_true, target_est])
+    r_val       <- cors_mat[target_true, target_est]
+
+    for (ext in c("pdf", "png")) {
+      fpath <- file.path(figure_dir, paste0("fig6_signal_recovery.", ext))
+      if (ext == "pdf") pdf(fpath, width = 7, height = 7)
+      else              png(fpath, width = 700, height = 700, res = 120)
+      par(mar = c(5, 5, 4, 2))
+      plot(L_true[, target_true], EL[, target_est] * sign_corr,
+           main = sprintf("Figure 6: Signal Recovery\n(Est F%d vs True F%d, r = %.3f)",
+                          target_est, target_true, abs(r_val)),
+           xlab = "Ground Truth Loading",
+           ylab = "Estimated Loading (sign-corrected)",
+           col = rgb(0, 0, 0, 0.35), pch = 16, cex = 1.2, bty = "n",
+           cex.lab = 1.2, cex.main = 1.2)
+      abline(0, 1, col = "#d62728", lwd = 2, lty = 2)
+      abline(lm(I(EL[, target_est] * sign_corr) ~ L_true[, target_true]),
+             col = "#1f77b4", lwd = 2)
+      legend("topleft", legend = c("Identity line", "Best fit"),
+             col = c("#d62728", "#1f77b4"), lty = c(2, 1), lwd = 2, bty = "n")
+      grid(col = "lightgray", lty = "dotted")
+      dev.off()
+    }
+
+    # Figure 7: Loading correlation heatmap
+    palette2 <- colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(100)
+    for (ext in c("pdf", "png")) {
+      fpath <- file.path(figure_dir, paste0("fig7_loading_correlations.", ext))
+      if (ext == "pdf") pdf(fpath, width = 7, height = 6)
+      else              png(fpath, width = 700, height = 600, res = 120)
+      par(mar = c(5, 5, 4, 5))
+      image(1:K, 1:K, abs(cors_mat),
+            col = palette2, zlim = c(0, 1),
+            main = "Figure 7: |Correlation| Between True and Estimated Loadings",
+            xlab = "True Factor", ylab = "Estimated Factor",
+            axes = FALSE, cex.lab = 1.2, cex.main = 1.2)
+      axis(1, at = 1:K); axis(2, at = 1:K)
+      for (i in 1:K) for (j in 1:K)
+        text(i, j, sprintf("%.2f", cors_mat[i, j]), cex = 1.0,
+             col = if (abs(cors_mat[i, j]) > 0.5) "white" else "black")
+      box()
+      dev.off()
+    }
+  }
+
+  # --- Figure 8: Tau Distribution ---
+  for (ext in c("pdf", "png")) {
+    fpath <- file.path(figure_dir, paste0("fig8_tau_distribution.", ext))
+    if (ext == "pdf") pdf(fpath, width = 8, height = 5)
+    else              png(fpath, width = 800, height = 500, res = 120)
+    par(mar = c(5, 5, 4, 2))
+    hist(Tau, breaks = 50, col = "#1f77b4AA", border = "white",
+         main = sprintf("Figure 8: Estimated Feature-Specific Noise Precision\n(%s)", run_label),
+         xlab = expression(hat(tau)[j]), ylab = "Count",
+         cex.lab = 1.2, cex.main = 1.3)
+    if (is_synthetic)
+      abline(v = 1.0, col = "#d62728", lwd = 2, lty = 2)
+    abline(v = median(Tau), col = "#2ca02c", lwd = 2, lty = 3)
+    legd <- sprintf("Median est. (%.3f)", median(Tau))
+    cols <- "#2ca02c"; ltys <- 3; lwds <- 2
+    if (is_synthetic) {
+      legd <- c("True (tau = 1.0)", legd)
+      cols <- c("#d62728", cols); ltys <- c(2, ltys); lwds <- c(2, lwds)
+    }
+    legend("topright", legend = legd, col = cols, lty = ltys, lwd = lwds, bty = "n")
+    dev.off()
+  }
+
+  n_figs <- if (is_synthetic) 8L else 6L
+  cat(sprintf("  Figures saved to %s (%d figure pairs)\n", figure_dir, n_figs))
+
+  # --------------------------------------------------------------------------
+  # Return one-row summary for cross-dataset table
+  # --------------------------------------------------------------------------
+  data.frame(
+    Dataset      = dataset_name,
+    Platform     = PLATFORM_MAP[dataset_name],
+    n            = nrow(Y),
+    p            = ncol(Y),
+    K            = K,
+    Converged    = history$converged,
+    N_Iter       = history$n_iter,
+    Final_RMSE   = round(tail(history$rmse, 1), 4),
+    C_PCA        = perf$c_original,
+    C_Supervised = perf$c_latent,
+    Censoring_Pct = round(100 * mean(status == 0), 1),
+    stringsAsFactors = FALSE
+  )
 }
 
-# --- Figure 2: ELBO Proxy Trace ---
-for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim_factor/fig2_elbo_proxy.pdf",
-                        width = 8, height = 5)
-  else              png("results/figures/modular_sim_factor/fig2_elbo_proxy.png",
-                        width = 800, height = 500, res = 120)
-  par(mar = c(5, 5, 4, 2))
-  plot(history$elbo_proxy, type = "l", lwd = 2.5, col = "#2ca02c",
-       main = "Figure 2: Genomics ELBO Proxy Across Iterations\n(Factor-Wise Modular CAVI)",
-       xlab = "Iteration",
-       ylab = expression(E[q]*"[log P(Y | L, F, "*tau*")]"),
-       bty = "n", cex.lab = 1.2, cex.main = 1.3)
-  grid(col = "lightgray", lty = "dotted")
-  dev.off()
-}
+# ==============================================================================
+# Main Execution
+# ==============================================================================
 
-# --- Figure 3: Beta Comparison (True vs Estimated) ---
-for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim_factor/fig3_beta_comparison.pdf",
-                        width = 8, height = 5.5)
-  else              png("results/figures/modular_sim_factor/fig3_beta_comparison.png",
-                        width = 800, height = 550, res = 120)
-  par(mar = c(5, 5, 4, 2))
-  x_pos <- 1:K
-  plot(x_pos, EBeta, pch = 16, cex = 1.8, col = "#1f77b4",
-       ylim = range(c(B_true, EBeta + 1.96 * beta_sd, EBeta - 1.96 * beta_sd)) * 1.2,
-       xlab = "Factor", ylab = expression(beta[k]),
-       main = "Figure 3: Estimated vs. True Survival Coefficients\n(Factor-Wise Modular CAVI)",
-       bty = "n", cex.lab = 1.2, cex.main = 1.3, xaxt = "n")
-  axis(1, at = 1:K)
-  arrows(x_pos, EBeta - 1.96 * beta_sd, x_pos, EBeta + 1.96 * beta_sd,
-         angle = 90, code = 3, length = 0.08, col = "#1f77b4", lwd = 1.5)
-  points(x_pos, B_true, pch = 4, cex = 2, col = "#d62728", lwd = 2.5)
-  abline(h = 0, col = "gray50", lty = 3)
-  legend("bottomleft", legend = c("Estimated (95% CI)", "True"),
-         col = c("#1f77b4", "#d62728"), pch = c(16, 4),
-         pt.cex = c(1.8, 2), pt.lwd = c(1, 2.5), bty = "n")
-  grid(col = "lightgray", lty = "dotted")
-  dev.off()
-}
+if (data_mode == "synthetic") {
 
-# --- Figure 4: GEP Heatmap ---
-n_features    <- 50
-top_var_genes <- order(rowSums(abs(EF)), decreasing = TRUE)[1:n_features]
-F_sub <- EF[top_var_genes, ]
-palette <- colorRampPalette(c("blue", "white", "red"))(100)
-max_val <- max(abs(F_sub))
+  # --------------------------------------------------------------------------
+  # Synthetic data generation  (n=250, p=1000, K=5, seed=42)
+  # --------------------------------------------------------------------------
+  set.seed(42)
+  n <- 250; p <- 1000
 
-for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim_factor/fig4_gep_heatmap.pdf",
-                        width = 10, height = 6)
-  else              png("results/figures/modular_sim_factor/fig4_gep_heatmap.png",
-                        width = 1000, height = 600, res = 120)
-  layout(matrix(1:2, ncol = 2), widths = c(5, 1))
-  par(mar = c(6, 4, 4, 1))
-  image(1:nrow(F_sub), 1:ncol(F_sub), F_sub,
-        main = "Figure 4: GEP Feature Weights (Top 50 Features)\n(Factor-Wise Modular CAVI)",
-        xlab = "Feature ID", ylab = "Latent Factor",
-        col = palette, axes = FALSE, zlim = c(-max_val, max_val))
-  axis(1, at = 1:nrow(F_sub), labels = top_var_genes, las = 2, cex.axis = 0.55)
-  axis(2, at = 1:ncol(F_sub), labels = paste0("F", 1:ncol(F_sub)), las = 1)
-  box()
-  par(mar = c(6, 1, 4, 3))
-  legend_image <- as.matrix(seq(-max_val, max_val, length.out = 100))
-  image(1, seq(-max_val, max_val, length.out = 100), t(legend_image),
-        col = palette, axes = FALSE, xlab = "", ylab = "")
-  axis(4, las = 1, cex.axis = 0.8)
-  mtext("Weight", side = 4, line = 2, cex = 0.8)
-  layout(1)
-  dev.off()
-}
-
-# --- Figure 5: Kaplan-Meier Survival Curves per Factor ---
-for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim_factor/fig5_kaplan_meier.pdf",
-                        width = 12, height = 8)
-  else              png("results/figures/modular_sim_factor/fig5_kaplan_meier.png",
-                        width = 1200, height = 800, res = 120)
-  par(mfrow = c(2, ceiling(K / 2)), mar = c(4, 4, 3, 1))
+  L_true <- matrix(rnorm(n * K), n, K)
+  F_true <- matrix(0, p, K)
   for (k in 1:K) {
-    groups  <- ifelse(EL[, k] > median(EL[, k]), "High Score", "Low Score")
-    km      <- survfit(Surv(time, status) ~ groups)
-    p_label <- sprintf("p = %.4f", summary_tab$LogRank_P[k])
-    plot(km, col = c("#d62728", "#1f77b4"), lwd = 2, bty = "n",
-         main = paste0("Factor ", k, " (beta = ", round(EBeta[k], 2), ")\n", p_label),
-         xlab = "Time", ylab = "Survival Probability")
-    legend("bottomleft", legend = c("High", "Low"),
-           col = c("#d62728", "#1f77b4"), lwd = 2, bty = "n", cex = 0.8)
+    active <- sample(1:p, round(p * 0.05))
+    F_true[active, k] <- rnorm(length(active), 0, 5)
   }
-  dev.off()
-}
+  Y <- L_true %*% t(F_true) + matrix(rnorm(n * p), n, p)
 
-# --- Figure 6: Signal Recovery (Best-matched factor) ---
-cors_mat    <- cor(L_true, EL)
-best_match  <- apply(abs(cors_mat), 2, which.max)
-target_est  <- which.max(abs(EBeta))
-target_true <- best_match[target_est]
-sign_corr   <- sign(cors_mat[target_true, target_est])
-r_val       <- cors_mat[target_true, target_est]
+  B_true     <- c(1.5, -1.2, 0.8, -0.5, 0.0)
+  eta_true   <- as.vector(L_true %*% B_true)
+  raw_times  <- (-log(runif(n)) / (0.01 * exp(eta_true)))^(1 / 1.5)
+  cens_times <- rexp(n, rate = 1 / 50)
+  time   <- pmin(raw_times, cens_times)
+  status <- as.integer(raw_times <= cens_times)
 
-for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim_factor/fig6_signal_recovery.pdf",
-                        width = 7, height = 7)
-  else              png("results/figures/modular_sim_factor/fig6_signal_recovery.png",
-                        width = 700, height = 700, res = 120)
-  par(mar = c(5, 5, 4, 2))
-  plot(L_true[, target_true], EL[, target_est] * sign_corr,
-       main = sprintf("Figure 6: Signal Recovery (Factor-Wise Modular CAVI)\n(Est Factor %d vs True Factor %d, r = %.3f)",
-                      target_est, target_true, abs(r_val)),
-       xlab = "Ground Truth Loading",
-       ylab = "Estimated Loading (sign-corrected)",
-       col = rgb(0, 0, 0, 0.35), pch = 16, cex = 1.2, bty = "n",
-       cex.lab = 1.2, cex.main = 1.2)
-  abline(0, 1, col = "#d62728", lwd = 2, lty = 2)
-  abline(lm(I(EL[, target_est] * sign_corr) ~ L_true[, target_true]),
-         col = "#1f77b4", lwd = 2)
-  legend("topleft", legend = c("Identity line", "Best fit"),
-         col = c("#d62728", "#1f77b4"), lty = c(2, 1), lwd = 2, bty = "n")
-  grid(col = "lightgray", lty = "dotted")
-  dev.off()
-}
+  data <- list(Y = Y, time = time, status = status,
+               L_true = L_true, F_true = F_true, B_true = B_true)
 
-# --- Figure 7: Loading Correlation Heatmap (True vs Estimated) ---
-cor_mat  <- cor(L_true, EL)
-palette2 <- colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(100)
+  table_dir  <- "results/tables/synthetic/"
+  figure_dir <- "results/figures/synthetic/"
 
-for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim_factor/fig7_loading_correlations.pdf",
-                        width = 7, height = 6)
-  else              png("results/figures/modular_sim_factor/fig7_loading_correlations.png",
-                        width = 700, height = 600, res = 120)
-  par(mar = c(5, 5, 4, 5))
-  image(1:K, 1:K, abs(cor_mat),
-        col = palette2, zlim = c(0, 1),
-        main = "Figure 7: |Correlation| Between True and Estimated Loadings\n(Factor-Wise Modular CAVI)",
-        xlab = "True Factor", ylab = "Estimated Factor",
-        axes = FALSE, cex.lab = 1.2, cex.main = 1.2)
-  axis(1, at = 1:K); axis(2, at = 1:K)
-  for (i in 1:K) for (j in 1:K) {
-    text(i, j, sprintf("%.2f", cor_mat[i, j]), cex = 1.0,
-         col = if (abs(cor_mat[i, j]) > 0.5) "white" else "black")
+  cat("=== Factor-Wise Modular Supervised MF — Synthetic Simulation ===\n")
+  cat(sprintf("  n=%d  p=%d  K=%d  seed=42  (factor-wise CAVI, V3 Algorithm 1)\n", n, p, K))
+
+  run_pipeline(Y, time, status, gene_names = NULL, data,
+               table_dir, figure_dir,
+               run_label = "Synthetic (n=250, p=1000, K=5)",
+               is_synthetic = TRUE)
+
+  cat(sprintf("\nTotal: %d CSVs + 8 figure pairs written to results/tables/synthetic/ and results/figures/synthetic/\n",
+              length(list.files(table_dir, pattern = "\\.csv$"))))
+
+} else if (data_mode == "real") {
+
+  # --------------------------------------------------------------------------
+  # Real PDAC data: single dataset or loop over all 7
+  # --------------------------------------------------------------------------
+
+  datasets_to_run <- if (run_all) ALL_DATASETS else dataset_name
+  summary_rows    <- list()
+
+  for (ds in datasets_to_run) {
+
+    cat(sprintf("\n\n========================================\n"))
+    cat(sprintf("  Dataset: %s\n", ds))
+    cat(sprintf("========================================\n"))
+
+    # Load and prepare data
+    real <- tryCatch(
+      load_real_data(ds, pdac_data_root, top_n_genes),
+      error = function(e) {
+        cat(sprintf("  ERROR loading %s: %s\n  Skipping.\n", ds, conditionMessage(e)))
+        NULL
+      }
+    )
+    if (is.null(real)) next
+
+    cat(sprintf("  %s\n", real$preprocessing_notes))
+
+    data_real  <- list(Y = real$Y, time = real$time, status = real$status)
+    table_dir  <- paste0("results/tables/", ds, "/")
+    figure_dir <- paste0("results/figures/", ds, "/")
+
+    row <- run_pipeline(real$Y, real$time, real$status, real$gene_names,
+                        data_real, table_dir, figure_dir,
+                        run_label = ds, is_synthetic = FALSE)
+    row$Dataset  <- ds                # override global dataset_name used inside run_pipeline()
+    row$Platform <- PLATFORM_MAP[ds]
+    summary_rows[[ds]] <- row
   }
-  box()
-  dev.off()
+
+  # --------------------------------------------------------------------------
+  # Cross-dataset summary table
+  # --------------------------------------------------------------------------
+  if (length(summary_rows) > 1) {
+    cross_dir <- "results/tables/PDAC_cross_dataset/"
+    dir.create(cross_dir, recursive = TRUE, showWarnings = FALSE)
+    cross_df <- do.call(rbind, summary_rows)
+    write.csv(cross_df, file.path(cross_dir, "cross_dataset_summary.csv"),
+              row.names = FALSE)
+    cat(sprintf("\nCross-dataset summary written to %s\n", cross_dir))
+    print(cross_df[, c("Dataset", "Platform", "n", "p", "Converged",
+                       "N_Iter", "Final_RMSE", "C_PCA", "C_Supervised")])
+  }
+
+  # --------------------------------------------------------------------------
+  # Horizontal integration: pool RNA-seq trio and fit one model
+  # --------------------------------------------------------------------------
+  if (run_all) {
+    rnaseq_names <- c("TCGA_PAAD", "Dijk", "PACA_AU_seq")
+    cat(sprintf("\n\n========================================\n"))
+    cat(sprintf("  Horizontal Integration: Pooled RNA-seq\n"))
+    cat(sprintf("  Datasets: %s\n", paste(rnaseq_names, collapse = ", ")))
+    cat(sprintf("========================================\n"))
+
+    rnaseq_list <- lapply(rnaseq_names, function(ds) {
+      tryCatch(load_real_data(ds, pdac_data_root, top_n_genes),
+               error = function(e) { cat(sprintf("  Skip %s: %s\n", ds, conditionMessage(e))); NULL })
+    })
+    names(rnaseq_list) <- rnaseq_names
+    rnaseq_list <- Filter(Negate(is.null), rnaseq_list)
+
+    if (length(rnaseq_list) >= 2) {
+      pooled <- pool_datasets(rnaseq_list)
+      cat(sprintf("  Common genes: %d | Pooled n: %d\n", pooled$p, pooled$n))
+      cat("  NOTE: No batch correction applied. Factors may partially reflect cohort.\n")
+
+      data_pooled  <- list(Y = pooled$Y, time = pooled$time, status = pooled$status)
+      table_dir_p  <- "results/tables/PDAC_pooled_rnaseq/"
+      figure_dir_p <- "results/figures/PDAC_pooled_rnaseq/"
+
+      # Add dataset label column to cross-dataset summary
+      pool_row <- run_pipeline(pooled$Y, pooled$time, pooled$status,
+                                pooled$gene_names, data_pooled,
+                                table_dir_p, figure_dir_p,
+                                run_label = paste("Pooled RNA-seq:", paste(rnaseq_names, collapse = "+")),
+                                is_synthetic = FALSE)
+      pool_row$Dataset  <- "PDAC_pooled_rnaseq"
+      pool_row$Platform <- "RNA-seq (pooled)"
+
+      # Write dataset membership table for downstream use in the report
+      membership_df <- data.frame(
+        SampleIndex  = seq_len(pooled$n),
+        Dataset      = as.character(pooled$dataset_labels)
+      )
+      write.csv(membership_df,
+                file.path(table_dir_p, "pool_membership.csv"), row.names = FALSE)
+
+      # Append to cross-dataset summary
+      if (length(summary_rows) > 1) {
+        cross_dir <- "results/tables/PDAC_cross_dataset/"
+        cross_df  <- rbind(cross_df, pool_row)
+        write.csv(cross_df, file.path(cross_dir, "cross_dataset_summary.csv"),
+                  row.names = FALSE)
+      }
+    } else {
+      cat("  Fewer than 2 RNA-seq datasets loaded; skipping pooled fit.\n")
+    }
+  }
+
+} else {
+  stop(sprintf("Unknown data_mode: '%s'. Use 'synthetic' or 'real'.", data_mode))
 }
 
-# --- Figure 8: Tau (Noise Precision) Distribution ---
-for (ext in c("pdf", "png")) {
-  if (ext == "pdf") pdf("results/figures/modular_sim_factor/fig8_tau_distribution.pdf",
-                        width = 8, height = 5)
-  else              png("results/figures/modular_sim_factor/fig8_tau_distribution.png",
-                        width = 800, height = 500, res = 120)
-  par(mar = c(5, 5, 4, 2))
-  hist(Tau, breaks = 50, col = "#1f77b4AA", border = "white",
-       main = "Figure 8: Estimated Feature-Specific Noise Precision\n(Factor-Wise Modular CAVI)",
-       xlab = expression(hat(tau)[j]), ylab = "Count",
-       cex.lab = 1.2, cex.main = 1.3)
-  abline(v = 1.0, col = "#d62728", lwd = 2, lty = 2)
-  abline(v = median(Tau), col = "#2ca02c", lwd = 2, lty = 3)
-  legend("topright",
-         legend = c("True (tau = 1.0)",
-                    sprintf("Median est. (%.3f)", median(Tau))),
-         col = c("#d62728", "#2ca02c"), lty = c(2, 3), lwd = 2, bty = "n")
-  dev.off()
-}
-
-cat(sprintf("\nAll figures saved to results/figures/modular_sim_factor/ (PDF + PNG)\n"))
-cat(sprintf("Total: %d CSVs + %d figure pairs\n",
-            length(list.files("results/tables/modular_sim_factor", pattern = "\\.csv$")),
-            length(list.files("results/figures/modular_sim_factor", pattern = "\\.pdf$"))))
+cat("\n=== Done ===\n")

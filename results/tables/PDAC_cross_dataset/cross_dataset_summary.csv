@@ -1,0 +1,9 @@
+"Dataset","Platform","n","p","K","Converged","N_Iter","Final_RMSE","C_PCA","C_Supervised","Censoring_Pct"
+"TCGA_PAAD","RNA-seq",144,5000,5,TRUE,171,1.2043,0.64,0.62,47.9
+"CPTAC","Proteomics",129,5000,5,FALSE,250,1.2634,0.703,0.691,50.4
+"Dijk","RNA-seq",90,5000,5,TRUE,120,1.1222,0.61,0.622,10
+"Moffitt_GEO_array","Microarray",123,5000,5,TRUE,14,0.7249,0.571,0.593,32.5
+"PACA_AU_array","Microarray",63,5000,5,TRUE,83,1.0165,0.653,0.623,39.7
+"PACA_AU_seq","RNA-seq",52,5000,5,TRUE,186,0.7065,0.776,0.788,40.4
+"Puleo_array","Microarray",288,5000,5,TRUE,72,0.5882,0.664,0.65,37.2
+"PDAC_pooled_rnaseq","RNA-seq (pooled)",286,1573,5,TRUE,67,1.2248,0.634,0.609,34.6
