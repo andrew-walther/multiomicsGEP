@@ -10,7 +10,7 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 - **Modular updates:** `code/update_beta.R`, `code/update_L.R`, `code/update_F.R`, `code/update_tau.R`.
 - **No `CLAUDE.md` duplication:** Do not maintain a second copy of project status here — update `PROJECT_STATUS.md` instead.
 - **Commit style:** Detailed messages explaining what changed and why; no "Co-Authored-By" lines; no "Session N:" prefixes.
-- **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. Expected: 105/105 passing.
+- **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. Expected: 124/124 passing.
 - **Real-data tests:** `Rscript tests/test_real_data_loading.R` — 77/77 passing (auto-skips if `PDAC_DATA_ROOT` not set).
 - **Real data:** Not in git. Stored locally at `~/Library/CloudStorage/OneDrive-.../PDAC_data`. For Longleaf: `export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC`.
 

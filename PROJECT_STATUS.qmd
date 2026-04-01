@@ -794,4 +794,171 @@ Renders to PDF (xelatex, via Quarto) and HTML without errors.
 - **Batch-corrected pooled model:** Apply ComBat or similar before pooling RNA-seq
   cohorts to remove dataset-of-origin effects.
 
-**Deliverables committed:** `b3e23b5` (local; not yet pushed to `origin/main`)
+**Deliverables committed:** `b3e23b5`, pushed to `origin/main` as part of session 11.
+
+---
+
+### Session 11 (March 31, 2026)
+
+**Phases 1–7: Batch correction, multi-init, prior threading, hold-out prediction, feature selection, K selection, and report.**
+
+#### 11.1 — Phase 1: limma batch correction for pooled RNA-seq
+
+Added `apply_batch_correction(Y, batch_labels)` helper to
+`run_factor_modular_simulation.R`.  Uses `limma::removeBatchEffect()` applied
+after `pool_datasets()` for the pooled RNA-seq fit.  `limma` is a Bioconductor
+package (installed via `BiocManager::install("limma")`).  The function transposes
+Y before calling limma (which expects genes × samples) and transposes back.
+Controlled by `batch_correct = TRUE` (default) / `BATCH_CORRECT` env var.
+
+#### 11.2 — Phases 2 + 3: Multi-init and prior_family threading
+
+**Multi-init (`code/fit_modular.R`):**
+- New parameters: `prior_family` and `init_method` added to
+  `fit_supervised_mf_modular()`.
+- `init_method = "random"` initialises L and F with `rnorm(sd = 0.1 * sd(Y))`
+  (scaled to prevent Cox Taylor overflow at startup).
+- Multi-init loop in runner: when `n_init > 1` and `init_method = "random"`,
+  runs `n_init` independent restarts and keeps the fit with the highest final
+  ELBO proxy.  Results saved to `multi_init_elbos.csv`.
+
+**Prior threading:**
+- `prior_family` is now passed through to all three EBNM update calls inside
+  the factor loop: `update_L_k(..., prior_family)`, `update_F_k(..., prior_family)`,
+  `update_beta_k(..., prior_family)`.  Previously the argument existed in the
+  signature but was not forwarded (defaulted to `"point_normal"` everywhere).
+
+#### 11.3 — Phases 4–6: Hold-out prediction, feature selection, K selection
+
+**`code/predict.R` — `predict_supervised_mf(Y_test, EF, EBeta, lambda)`:**
+- Pseudo-inverse projection: $\hat L_\text{test} = Y_\text{test} \hat F (\hat F^\top \hat F + \lambda I)^{-1}$
+- Risk score: $\hat L_\text{test} \hat\beta$
+- `lambda = 1e-8` ridge regularisation to handle rank-deficient F.
+
+**`code/train_test_split.R` — `stratified_split(status, test_frac, seed)`:**
+- Splits events and censored patients separately, each at `test_frac` fraction.
+- Guarantees ≥ 1 event and ≥ 1 censored in both train and test.
+- Returns `list(train_idx, test_idx, n_train, n_test)`.
+
+**`code/feature_selection.R` — `cox_feature_selection(Y, time, status, p_thresh)`:**
+- Fits one univariate Cox model per gene; returns indices of genes with
+  `p < p_thresh`.  Applied to training data only to prevent survival leakage.
+
+**`code/select_K.R` — `auto_prune_K()` + `select_K_cv()` stub:**
+- `auto_prune_K(Y, time, status, K_max, beta_thresh, pve_thresh, ...)`: fits
+  with K_max, flags factor k as active if `|β_k| > beta_thresh` OR `PVE_k > pve_thresh`.
+  Returns `K_effective` and the full fit object.
+- `select_K_cv()`: errors by design with a message pointing to Longleaf HPC.
+
+**`tests/test_predict.R`:** 19 tests for `predict_supervised_mf()` and
+`stratified_split()`.  Total test count: 105 + 19 = **124/124 passing**.
+
+#### 11.4 — Phase 7: Report update, rendering, documentation
+
+PDAC report updated with:
+- Hold-out C-index section (PN K=5, stratified 80/20, 7 cohorts)
+- Conclusion table updated with feature status
+
+Runner updated with env-var overrides for all new parameters:
+`PRIOR_FAMILY`, `N_INIT`, `INIT_METHOD`, `BATCH_CORRECT`, `HOLDOUT_EVAL`,
+`FEATURE_SELECTION`, `K_SELECT`.
+
+**Hold-out results (PN K=5, 80/20 split, seed=42):**
+
+| Dataset | C Train | C Test (SBMF) | C Test (PCA) |
+|---------|---------|---------------|--------------|
+| TCGA_PAAD | 0.385 | 0.341 | 0.327 |
+| CPTAC | 0.315 | 0.389 | 0.371 |
+| Dijk | 0.383 | 0.381 | 0.424 |
+| Moffitt_GEO_array | 0.429 | 0.475 | 0.469 |
+| PACA_AU_array | 0.353 | 0.405 | 0.262 |
+| PACA_AU_seq | 0.210 | 0.185 | 0.178 |
+| Puleo_array | 0.340 | 0.396 | 0.374 |
+
+**Deliverables committed:** `89ff1ff`, `ff1a121`, `3262821`
+
+---
+
+### Session 12 (April 1, 2026)
+
+**Prior family comparison (executed), K auto-prune (executed on all 7 cohorts), PDAC report editorial review.**
+
+#### 12.1 — Prior family comparison: run_prior_k_comparison.R
+
+New script: `results/modular_sim_factor/run_prior_k_comparison.R`.  Standalone
+(no global-variable dependencies on main runner).  For each of the 7 datasets:
+
+1. Reads existing PN K=5 holdout results from CSVs (avoids redundant refit).
+2. Fits `point_laplace` K=5 with 80/20 hold-out; saves to `{dataset}_pl/`.
+3. Runs `auto_prune_K(K_max=10)` to identify K_effective; saves PVE table and
+   scree figure to `{dataset}/k_selection_pve.csv` and `figK_pve_scree.pdf/png`.
+4. Refits with K=K_effective (PN) + hold-out; saves to `{dataset}_Keff/`.
+5. Accumulates all results into two cross-dataset summary CSVs.
+
+#### 12.2 — Results: prior comparison
+
+`results/tables/PDAC_cross_dataset/prior_comparison.csv`
+
+**point_laplace K=5 vs. point_normal K=5 (hold-out C-index):**
+
+| Dataset | C Test PN K=5 | C Test PL K=5 | ΔC |
+|---------|--------------|--------------|-----|
+| TCGA_PAAD | 0.341 | 0.707* | +0.366 |
+| CPTAC | 0.389 | 0.605 | +0.216 |
+| Dijk | 0.381 | 0.483 | +0.102 |
+| Moffitt_GEO_array | 0.475 | 0.580* | +0.105 |
+| PACA_AU_array | 0.405 | 0.667 | +0.262 |
+| PACA_AU_seq | 0.185 | 0.889 | +0.704 |
+| Puleo_array | 0.396 | 0.594 | +0.198 |
+
+`*` = hit 300-iteration convergence limit.  `point_laplace` outperforms
+`point_normal` in all 7 cohorts.  This is the primary motivating finding for
+switching the default prior to `point_laplace` in future analyses.
+
+#### 12.3 — Results: K auto-prune
+
+`results/tables/PDAC_cross_dataset/k_selection_summary.csv`
+
+| Dataset | K_max | K_effective |
+|---------|-------|-------------|
+| TCGA_PAAD | 10 | 9 |
+| CPTAC | 10 | 8 |
+| Dijk | 10 | **10** (saturated) |
+| Moffitt_GEO_array | 10 | **10** (saturated) |
+| PACA_AU_array | 10 | 8 |
+| PACA_AU_seq | 10 | 9 |
+| Puleo_array | 10 | **10** (saturated) |
+
+K=5 was insufficient for every dataset.  Three cohorts saturate at K_max=10,
+suggesting their true dimensionality exceeds 10.  Re-running with K_max=15 on
+Longleaf HPC is recommended for these three.
+
+PN K_eff vs. PN K=5 hold-out C-index improvement was positive for all cohorts
+(largest: TCGA_PAAD +0.28, PACA_AU_array +0.33, PACA_AU_seq +0.56).
+
+#### 12.4 — PDAC report editorial review
+
+`results/modular_sim_factor/PDAC/factor_modular_sim_report_PDAC.qmd` overhauled:
+
+- **Executive Summary:** Expanded callout to cover all four key findings (convergence,
+  in-sample results, prior comparison, K selection).
+- **Fit Settings table:** Added notes that K is now data-driven and prior family is
+  compared in later sections.
+- **CPTAC section:** Removed duplicated factor summary table; replaced with concise
+  proteomics spotlight with cross-references to new sections.
+- **Prior Comparison section:** Fixed broken sentence fragment; quantified top gains;
+  noted the missing PL + K_eff experiment.
+- **K Selection section:** Moved CV runtime note after the tables; interpretation now
+  explicitly names the three saturating cohorts.
+- **Conclusion:** Completely rewritten as a narrative covering clinical motivation,
+  what SBMF does, four key findings, six current limitations, and six future directions.
+
+**Deliverables committed and pushed:** `49dd8f6`, `ab23228`
+
+#### 12.5 — Open items / next session priorities
+
+1. Run `point_laplace` at `K_effective` per dataset (the expected best configuration).
+2. Gene set enrichment analysis on top-loaded genes per GEP (fgsea / Enrichr).
+3. K selection via CV on Longleaf HPC (`select_K_cv()` stub is ready).
+4. Re-run Dijk, Moffitt, Puleo with K_max=15 to probe true dimensionality.
+5. Full ELBO tracking (add Cox likelihood and KL terms to ELBO proxy).

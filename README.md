@@ -41,6 +41,10 @@ multiomicsGEP/
 │   ├── update_L.R                    ← Modular L update (vector EBNM, dual-source)
 │   ├── update_F.R                    ← Modular F update (vector EBNM, pure genomics)
 │   ├── update_tau.R                  ← Modular τ update (closed-form MLE)
+│   ├── predict.R                     ← Hold-out prediction via pseudo-inverse projection
+│   ├── train_test_split.R            ← Stratified 80/20 split preserving event rate
+│   ├── feature_selection.R           ← Univariate Cox gene filtering (train-only)
+│   ├── select_K.R                    ← K selection: auto_prune_K() + select_K_cv() stub
 │   ├── SupervisedMF_Context.md       ← AI/developer quick-reference for the code
 │   └── legacy/                       ← Archived files (V1, early scripts)
 │       ├── Supervised_Bayesian_MF.R  ← V1 original (reference only, known issues)
@@ -55,9 +59,10 @@ multiomicsGEP/
 │   ├── update_F.qmd/.pdf/.html        ← F update: code walkthrough, tests, demos
 │   └── update_tau.qmd/.pdf/.html      ← τ update: code walkthrough, tests, demos
 │
-├── tests/                             ← 105 tests (run: Rscript tests/run_tests.R)
+├── tests/                             ← 124 tests (run: Rscript tests/run_tests.R)
 │   ├── run_tests.R                    ← Master test runner
-│   └── test_update_*.R                ← Per-module test suites
+│   ├── test_update_*.R                ← Per-module test suites (β, L, F, τ)
+│   └── test_predict.R                 ← Tests for predict.R + train_test_split.R (19 tests)
 │
 ├── demos/                             ← Interactive demonstrations (5 per module)
 │   └── demo_update_*.R                ← Run: Rscript demos/demo_update_*.R
@@ -65,6 +70,7 @@ multiomicsGEP/
 ├── results/                           ← Simulation outputs (grouped by implementation)
 │   ├── modular_sim_factor/            ← ✅ Factor-wise CAVI (canonical)
 │   │   ├── run_factor_modular_simulation.R  ← single runner: synthetic + 7 PDAC cohorts
+│   │   ├── run_prior_k_comparison.R   ← prior family & K auto-prune comparison runner
 │   │   ├── synthetic/
 │   │   │   └── factor_modular_sim_report.qmd/.pdf/.html  ← synthetic benchmark report
 │   │   └── PDAC/
@@ -84,8 +90,11 @@ multiomicsGEP/
 │   │   └── modular_sim/               ← 8 figure pairs (block-wise, deprecated)
 │   └── tables/
 │       ├── synthetic/                 ← 11 CSV tables (synthetic benchmark)
-│       ├── TCGA_PAAD/ CPTAC/ Dijk/ Moffitt_GEO_array/ PACA_AU_array/ PACA_AU_seq/ Puleo_array/
-│       ├── PDAC_cross_dataset/        ← cross_dataset_summary.csv
+│       ├── TCGA_PAAD/ CPTAC/ … Puleo_array/  ← per-dataset tables (K=5 baseline)
+│       ├── {dataset}_pl/              ← point_laplace K=5 results per dataset
+│       ├── {dataset}_Keff/            ← point_normal K_eff results per dataset
+│       ├── PDAC_cross_dataset/        ← cross_dataset_summary.csv,
+│       │                                 prior_comparison.csv, k_selection_summary.csv
 │       ├── PDAC_pooled_rnaseq/        ← pooled RNA-seq tables
 │       ├── full_sim/                  ← 11 CSV tables (V2 monolithic)
 │       └── modular_sim/               ← 11 CSV tables (block-wise, deprecated)
@@ -255,7 +264,7 @@ The key mathematical concepts are:
 |---------|------|--------|-------|
 | V1 | `code/legacy/Supervised_Bayesian_MF.R` | Archived | Original implementation; 6 known algorithmic issues |
 | V2 | `code/Supervised_Bayesian_MF_V2.R` | Reference | Monolithic; all V1 issues corrected (A1–A6); kept for comparison |
-| Modular | `code/fit_modular.R` + `update_*.R` | ✅ **Current** | Factor-wise Gauss-Seidel CAVI; tested (105/105); recommended for all new work |
+| Modular | `code/fit_modular.R` + `update_*.R` | ✅ **Current** | Factor-wise Gauss-Seidel CAVI; tested (124/124); recommended for all new work |
 
 **V2 improvements over V1:**
 
@@ -272,12 +281,21 @@ The key mathematical concepts are:
 
 ## Project Status
 
-The model derivation and V2 implementation are complete and validated on simulated data. See [`PROJECT_STATUS.md`](PROJECT_STATUS.md) for the full status including derivation review notes, session log, and prioritised next steps.
+The model is fully implemented, tested, and applied to 7 real PDAC cohorts. See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete session log, derivation review notes, and prioritised next steps.
 
-**Immediate next steps:**
-- Real data application (TCGA or similar)
-- Cross-validated selection of K (number of factors)
-- Full ELBO tracking (currently genomics-only proxy)
+**Completed:**
+- Modular CAVI implementation (124/124 tests passing)
+- Hold-out prediction, stratified splitting, Cox feature selection, K auto-prune
+- Prior family comparison: `point_laplace` outperforms `point_normal` in all 7 cohorts
+- K auto-prune: K_eff = 8–10 across all datasets (K=5 was too restrictive everywhere)
+- `limma` batch correction for pooled RNA-seq analysis
+- Full PDAC report with prior comparison, K selection, and hold-out sections
+
+**Highest-priority next steps:**
+- Run `point_laplace` at K_eff (the expected best configuration; not yet executed)
+- Gene set enrichment analysis on top-loaded genes per GEP
+- K selection via cross-validation on Longleaf HPC (`select_K_cv()` stub ready)
+- Full ELBO tracking (currently genomics log-likelihood proxy only)
 
 ---
 
