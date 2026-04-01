@@ -150,6 +150,34 @@ get_factor_summary_table <- function(EL, EF, EBeta, data) {
 }
 
 # ==============================================================================
+# Batch Correction Helper
+# ==============================================================================
+
+#' Apply limma::removeBatchEffect to remove cohort-of-origin effects.
+#'
+#' Used after pool_datasets() to correct for technical variation between
+#' cohorts before factorization.  limma expects genes-in-rows (p × n),
+#' so we transpose before and after.
+#'
+#' @param Y             numeric matrix (n × p) — patients in rows, genes in columns
+#' @param batch_labels  factor or character vector of length n identifying cohort
+#' @return numeric matrix (n × p) with batch effects removed; same dimensions as input
+apply_batch_correction <- function(Y, batch_labels) {
+  if (!requireNamespace("limma", quietly = TRUE))
+    stop("limma required for batch correction. Install via BiocManager::install('limma')")
+
+  # limma::removeBatchEffect expects a genes-in-rows matrix (p × n).
+  # Transpose Y (n × p) -> (p × n), apply correction, then transpose back.
+  Y_corrected <- t(limma::removeBatchEffect(t(Y), batch = batch_labels))
+
+  # Sanity checks: dimensions preserved, no NAs introduced
+  stopifnot(identical(dim(Y_corrected), dim(Y)))
+  stopifnot(!anyNA(Y_corrected))
+
+  Y_corrected
+}
+
+# ==============================================================================
 # Real-Data Helpers
 # ==============================================================================
 
@@ -785,7 +813,17 @@ if (data_mode == "synthetic") {
     if (length(rnaseq_list) >= 2) {
       pooled <- pool_datasets(rnaseq_list)
       cat(sprintf("  Common genes: %d | Pooled n: %d\n", pooled$p, pooled$n))
-      cat("  NOTE: No batch correction applied. Factors may partially reflect cohort.\n")
+
+      # Apply batch correction if toggled on.
+      # limma::removeBatchEffect removes cohort-of-origin mean differences
+      # while preserving the shared biological signal across cohorts.
+      if (batch_correct) {
+        cat("  Applying limma::removeBatchEffect (batch = cohort of origin)...\n")
+        pooled$Y <- apply_batch_correction(pooled$Y, pooled$dataset_labels)
+        cat("  Batch correction complete. Dimensions preserved.\n")
+      } else {
+        cat("  NOTE: No batch correction applied. Factors may partially reflect cohort.\n")
+      }
 
       data_pooled  <- list(Y = pooled$Y, time = pooled$time, status = pooled$status)
       table_dir_p  <- "results/tables/PDAC_pooled_rnaseq/"
