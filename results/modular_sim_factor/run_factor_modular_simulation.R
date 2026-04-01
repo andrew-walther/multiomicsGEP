@@ -94,6 +94,10 @@ suppressMessages(tryCatch(
   source("code/fit_modular.R"),
   error = function(e) invisible(NULL)
 ))
+source("code/predict.R")
+source("code/train_test_split.R")
+source("code/feature_selection.R")
+source("code/select_K.R")
 
 # ==============================================================================
 # Analytics Helpers
@@ -355,6 +359,66 @@ run_pipeline <- function(Y, time, status, gene_names, data,
   cat(sprintf("  Censoring rate: %.1f%%  |  prior=%s  |  init=%s  |  n_init=%d\n\n",
               100 * mean(status == 0), prior_family, init_method, n_init))
 
+  # --------------------------------------------------------------------------
+  # K selection (when k_select != "fixed")
+  # --------------------------------------------------------------------------
+  K_fit <- K   # effective K used for the main fit (may be updated below)
+
+  if (k_select == "auto_prune") {
+    cat("  [K selection] auto_prune: fitting K_max=10 to identify active factors...\n")
+    prune_res <- tryCatch(
+      auto_prune_K(Y, time, status, K_max = 10,
+                   prior_family = prior_family, init_method = init_method,
+                   max_iter = 200, tol = 1e-3, verbose = FALSE),
+      error = function(e) {
+        cat(sprintf("  [K selection] auto_prune failed: %s — using K=%d\n",
+                    conditionMessage(e), K))
+        NULL
+      }
+    )
+    if (!is.null(prune_res)) {
+      K_fit <- max(1L, prune_res$K_effective)
+      cat(sprintf("  [K selection] K_effective=%d (using K=%d for main fit)\n",
+                  prune_res$K_effective, K_fit))
+
+      # Save K selection diagnostics
+      k_sel_df <- data.frame(
+        Factor      = seq_len(10),
+        Abs_Beta    = round(prune_res$beta, 4),
+        PVE_Pct     = round(prune_res$pve * 100, 3),
+        Active      = prune_res$active,
+        stringsAsFactors = FALSE
+      )
+      write.csv(k_sel_df,
+                file.path(table_dir, "k_selection_pve.csv"), row.names = FALSE)
+
+      # Save PVE scree figure
+      for (ext in c("pdf", "png")) {
+        fpath <- file.path(figure_dir, paste0("figK_pve_scree.", ext))
+        if (ext == "pdf") pdf(fpath, width = 7, height = 5)
+        else              png(fpath, width = 700, height = 500, res = 120)
+        par(mar = c(5, 5, 4, 2))
+        bar_cols <- ifelse(prune_res$active, "#1f77b4", "#aec7e8")
+        barplot(prune_res$pve * 100,
+                names.arg = paste0("F", seq_len(10)),
+                col = bar_cols, border = "white",
+                main = sprintf("K Selection: PVE per Factor (K_max=10)\n%s", run_label),
+                xlab = "Factor", ylab = "PVE (%)",
+                cex.lab = 1.1, cex.main = 1.2, cex.names = 0.9)
+        abline(h = 1.0, col = "#d62728", lty = 2, lwd = 1.5)
+        legend("topright",
+               legend = c(sprintf("Active (K_eff=%d)", K_fit), "Pruned", "1% threshold"),
+               fill = c("#1f77b4", "#aec7e8", NA), border = NA,
+               lty = c(NA, NA, 2), lwd = c(NA, NA, 1.5),
+               col = c(NA, NA, "#d62728"), bty = "n")
+        dev.off()
+      }
+    }
+  } else if (k_select == "cv") {
+    select_K_cv(Y, time, status)   # errors with informative message
+  }
+  # "fixed": K_fit = K unchanged
+
   # Multi-init: run n_init random starts and keep the best-ELBO fit.
   # When n_init == 1 or init_method == "svd", run a single (deterministic) fit.
   if (n_init > 1 && init_method == "random") {
@@ -365,7 +429,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
       set.seed(42 + init_i)
       cat(sprintf("  [init %d/%d] ", init_i, n_init))
       res_i <- fit_supervised_mf_modular(
-        Y, time, status, K = K, max_iter = 300, tol = 1e-3,
+        Y, time, status, K = K_fit, max_iter = 300, tol = 1e-3,
         prior_family = prior_family, init_method = "random", verbose = FALSE)
       elbo_i <- tail(res_i$history$elbo_proxy, 1)
       elbo_vec[init_i] <- elbo_i
@@ -385,7 +449,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
               file.path(table_dir, "multi_init_elbos.csv"), row.names = FALSE)
   } else {
     res <- fit_supervised_mf_modular(
-      Y, time, status, K = K, max_iter = 300, tol = 1e-3,
+      Y, time, status, K = K_fit, max_iter = 300, tol = 1e-3,
       prior_family = prior_family, init_method = init_method, verbose = TRUE)
   }
   EL     <- res$EL
@@ -467,6 +531,140 @@ run_pipeline <- function(Y, time, status, gene_names, data,
   }
 
   cat(sprintf("  CSV tables saved to %s\n", table_dir))
+
+  # --------------------------------------------------------------------------
+  # Hold-Out Prediction Evaluation (when holdout_eval = TRUE)
+  #
+  # Fits the model on training patients only, projects test patients via
+  # pseudo-inverse (predict_supervised_mf), then evaluates C-index on the
+  # held-out test set.  Compares: Supervised SBMF vs PCA baseline vs Null.
+  #
+  # This evaluation is separate from the in-sample C-index computed above.
+  # The in-sample C-index (perf$c_latent) is optimistic; the hold-out C-index
+  # is the proper assessment of predictive generalisation.
+  #
+  # When feature_selection == "cox", Cox gene filtering is applied to
+  # Y_train only (before fitting), then the selected genes are applied
+  # to Y_test as well.  This prevents survival signal leakage.
+  # --------------------------------------------------------------------------
+  if (holdout_eval) {
+    cat("  [Hold-out evaluation] Splitting data...\n")
+
+    # Stratified 80/20 split preserving event rate
+    sp <- tryCatch(
+      stratified_split(status, test_frac = 0.2, seed = 42),
+      error = function(e) {
+        cat(sprintf("  [Hold-out] Split failed: %s — skipping.\n", conditionMessage(e)))
+        NULL
+      }
+    )
+
+    if (!is.null(sp)) {
+      train_idx <- sp$train_idx
+      test_idx  <- sp$test_idx
+
+      cat(sprintf("  [Hold-out] n_train=%d (events=%d), n_test=%d (events=%d)\n",
+                  sp$n_train, sum(status[train_idx] == 1),
+                  sp$n_test,  sum(status[test_idx]  == 1)))
+
+      Y_train      <- Y[train_idx, , drop = FALSE]
+      Y_test       <- Y[test_idx,  , drop = FALSE]
+      time_train   <- time[train_idx]
+      time_test    <- time[test_idx]
+      status_train <- status[train_idx]
+      status_test  <- status[test_idx]
+
+      # --- Feature selection on training data only ---
+      # "variance": use same genes already selected (no extra step)
+      # "cox":      fit univariate Cox per gene on Y_train, filter by p-value
+      if (feature_selection == "cox") {
+        cat("  [Hold-out] Cox feature selection on training data...\n")
+        selected_genes <- tryCatch(
+          cox_feature_selection(Y_train, time_train, status_train, p_thresh = 0.05),
+          error = function(e) {
+            cat(sprintf("  [Hold-out] Cox selection failed: %s — using all genes.\n",
+                        conditionMessage(e)))
+            seq_len(ncol(Y_train))
+          }
+        )
+        if (length(selected_genes) < 5) {
+          cat(sprintf("  [Hold-out] Only %d genes pass Cox filter; using all.\n",
+                      length(selected_genes)))
+          selected_genes <- seq_len(ncol(Y_train))
+        }
+        cat(sprintf("  [Hold-out] Cox selected %d / %d genes\n",
+                    length(selected_genes), ncol(Y_train)))
+        Y_train <- Y_train[, selected_genes, drop = FALSE]
+        Y_test  <- Y_test[,  selected_genes, drop = FALSE]
+      }
+
+      # --- Fit on training data ---
+      cat("  [Hold-out] Fitting model on training set...\n")
+      res_train <- tryCatch(
+        fit_supervised_mf_modular(
+          Y_train, time_train, status_train, K = K_fit,
+          max_iter = 300, tol = 1e-3,
+          prior_family = prior_family, init_method = init_method,
+          verbose = FALSE),
+        error = function(e) {
+          cat(sprintf("  [Hold-out] Training fit failed: %s\n", conditionMessage(e)))
+          NULL
+        }
+      )
+
+      if (!is.null(res_train)) {
+        # --- Project test patients via pseudo-inverse ---
+        pred_test <- predict_supervised_mf(Y_test, res_train$EF, res_train$EBeta)
+
+        # --- Evaluate held-out C-index ---
+        c_supervised_test <- tryCatch(
+          concordance(Surv(time_test, status_test) ~ pred_test$risk_scores)$concordance,
+          error = function(e) NA_real_
+        )
+
+        # --- PCA baseline: train PCA on Y_train, project Y_test ---
+        pca_train <- prcomp(Y_train, rank. = min(5, K))
+        # Project test: multiply Y_test by training rotation matrix
+        L_pca_test   <- Y_test %*% pca_train$rotation
+        fit_pca_test <- tryCatch(
+          coxph(Surv(time_train, status_train) ~ pca_train$x, x = FALSE),
+          error = function(e) NULL
+        )
+        c_pca_test <- if (!is.null(fit_pca_test)) {
+          pca_lp_test <- as.vector(L_pca_test %*% coef(fit_pca_test))
+          tryCatch(
+            concordance(Surv(time_test, status_test) ~ pca_lp_test)$concordance,
+            error = function(e) NA_real_
+          )
+        } else NA_real_
+
+        # --- Training set C-index (for comparison) ---
+        c_supervised_train <- tryCatch({
+          lp_train <- as.vector(res_train$EL %*% res_train$EBeta)
+          concordance(Surv(time_train, status_train) ~ lp_train)$concordance
+        }, error = function(e) NA_real_)
+
+        cat(sprintf("  [Hold-out] C-index: Supervised train=%.3f | test=%.3f | PCA test=%.3f\n",
+                    c_supervised_train, c_supervised_test, c_pca_test))
+
+        # Save hold-out results
+        holdout_df <- data.frame(
+          Method      = c("Null (0.5)", "PCA (test)", "Supervised (train)", "Supervised (test)"),
+          C_Index     = round(c(0.5, c_pca_test, c_supervised_train, c_supervised_test), 4),
+          Split       = c("—", "test", "train", "test"),
+          n_patients  = c(NA, sp$n_test, sp$n_train, sp$n_test),
+          n_events    = c(NA,
+                          sum(status_test == 1),
+                          sum(status_train == 1),
+                          sum(status_test == 1))
+        )
+        write.csv(holdout_df,
+                  file.path(table_dir, "holdout_cindex.csv"), row.names = FALSE)
+        cat(sprintf("  [Hold-out] Results saved to %s\n",
+                    file.path(table_dir, "holdout_cindex.csv")))
+      }
+    }
+  }
 
   # --------------------------------------------------------------------------
   # Save Figures
@@ -685,7 +883,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
     Platform     = PLATFORM_MAP[dataset_name],
     n            = nrow(Y),
     p            = ncol(Y),
-    K            = K,
+    K            = K_fit,
     Converged    = history$converged,
     N_Iter       = history$n_iter,
     Final_RMSE   = round(tail(history$rmse, 1), 4),

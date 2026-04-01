@@ -26,7 +26,8 @@ test_files <- c(
   "tests/test_update_beta.R",
   "tests/test_update_L.R",
   "tests/test_update_F.R",
-  "tests/test_update_tau.R"
+  "tests/test_update_tau.R",
+  "tests/test_predict.R"
 )
 
 # Run each test file
