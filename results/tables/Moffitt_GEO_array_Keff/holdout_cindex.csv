@@ -1,0 +1,4 @@
+"Method","Prior","K_fit","C_Index","Split","n_patients","n_events"
+"Null (0.5)","point_normal",10,0.5,"—",NA,NA
+"Supervised (train)","point_normal",10,0.6796,"train",98,66
+"Supervised (test)","point_normal",10,0.53,"test",25,17

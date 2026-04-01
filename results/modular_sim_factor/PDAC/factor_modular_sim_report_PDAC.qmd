@@ -44,6 +44,7 @@ execute:
 #| include: false
 library(kableExtra)
 library(survival)
+library(dplyr)
 
 tables_root <- "../../tables"
 figs_root   <- "../../figures"
@@ -88,7 +89,10 @@ This report applies the **Supervised Bayesian Matrix Factorization (SBMF)** mode
 pancreatic ductal adenocarcinoma (PDAC) cohorts spanning three assay platforms — RNA-seq,
 microarray, and proteomics — plus a horizontally integrated pooled RNA-seq analysis.
 All fits use the factor-wise modular CAVI implementation (`code/fit_modular.R`) with
-$K = 5$ latent factors and the top 5,000 most-variable features per cohort.
+the top 5,000 most-variable features per cohort.  New in this report: (1) a
+**prior family comparison** (point\_normal vs. point\_laplace) across all 7 cohorts,
+and (2) **data-driven K selection** via `auto_prune_K()`, replacing the fixed $K = 5$
+assumption with a per-cohort $K_\text{eff}$.
 
 ```{r exec-summary-table}
 #| tbl-cap: "Cross-dataset performance summary. C-index improvement = Supervised − PCA."
@@ -954,6 +958,299 @@ variance filtering on training data only.
 
 ---
 
+# Prior Family Comparison: point\_normal vs. point\_laplace
+
+The SBMF model supports three prior families for the EBNM sub-problems (L, F, β updates):
+**`point_normal`** (spike-and-slab Gaussian, strongly sparse), **`point_laplace`** (spike-and-slab
+Laplace, heavier-tailed shrinkage), and **`normal_scale_mixture`** (continuous mixture, dense).
+All results in earlier sections used `point_normal` (the default).  This section compares
+`point_normal` and `point_laplace` — the two sparse priors — on all 7 cohorts with $K = 5$
+and the same 80/20 stratified hold-out split (seed = 42).
+
+*Why point\_laplace?*  The Laplace prior concentrates slightly less mass exactly at zero
+than the Gaussian spike, allowing factors to retain small non-zero weights rather than
+hard-zeroing them.  In practice this can improve reconstruction of signals whose true
+weights are continuous rather than discretely zero/non-zero.
+
+```{r prior-comparison-table}
+#| tbl-cap: "Unified comparison: point\\_normal K=5 (baseline), point\\_laplace K=5 (prior), and point\\_normal K\\_eff (auto-pruned). All evaluated on 80/20 stratified hold-out (seed=42). C\\_Test is the hold-out concordance index; \u0394 columns show improvement over the K=5 point\\_normal baseline. Asterisk (*) = hit 300-iteration limit."
+
+pc_path <- file.path(tables_root, "PDAC_cross_dataset", "prior_comparison.csv")
+
+if (file.exists(pc_path)) {
+  pc <- read.csv(pc_path, stringsAsFactors = FALSE)
+
+  # Normalise prior labels to short codes
+  pc$PriorCode <- dplyr::recode(pc$Prior,
+    "point_normal"       = "PN_K5",
+    "point_laplace"      = "PL_K5",
+    "point_normal (K_eff)" = "PN_Keff"
+  )
+
+  # Append * to C_Test when Converged == FALSE (hit max_iter)
+  pc$C_Test_disp  <- ifelse(!pc$Converged,
+                             paste0(sprintf("%.3f", pc$C_Test), "*"),
+                             sprintf("%.3f", pc$C_Test))
+  pc$C_Train_disp <- ifelse(!pc$Converged,
+                             paste0(sprintf("%.3f", pc$C_Train), "*"),
+                             sprintf("%.3f", pc$C_Train))
+
+  # Build wide by PriorCode, keeping only the columns we display
+  cols_keep <- c("Dataset", "PriorCode", "K_fit",
+                 "C_Train_disp", "C_Test_disp", "N_Iters")
+  pc_sub  <- pc[, cols_keep]
+
+  wide_ctest  <- reshape(pc_sub[, c("Dataset", "PriorCode", "C_Test_disp")],
+                          idvar = "Dataset", timevar = "PriorCode", direction = "wide")
+  wide_ctrain <- reshape(pc_sub[, c("Dataset", "PriorCode", "C_Train_disp")],
+                          idvar = "Dataset", timevar = "PriorCode", direction = "wide")
+  wide_k      <- reshape(pc_sub[, c("Dataset", "PriorCode", "K_fit")],
+                          idvar = "Dataset", timevar = "PriorCode", direction = "wide")
+
+  # Pull baseline PN K=5 numeric C_Test for delta calculation
+  pn_k5_ctest <- setNames(
+    pc$C_Test[pc$PriorCode == "PN_K5"],
+    pc$Dataset[pc$PriorCode == "PN_K5"]
+  )
+
+  disp <- data.frame(
+    Dataset        = wide_ctest$Dataset,
+    K_Eff          = wide_k$K_fit.PN_Keff,
+    C_Test_PN_K5   = wide_ctest$C_Test_disp.PN_K5,
+    C_Test_PL_K5   = wide_ctest$C_Test_disp.PL_K5,
+    C_Test_PN_Keff = wide_ctest$C_Test_disp.PN_Keff,
+    stringsAsFactors = FALSE
+  )
+
+  # Numeric deltas (strip asterisks for subtraction)
+  strip <- function(x) as.numeric(gsub("\\*", "", x))
+  disp$dPL   <- round(strip(disp$C_Test_PL_K5)   - pn_k5_ctest[disp$Dataset], 3)
+  disp$dKeff <- round(strip(disp$C_Test_PN_Keff)  - pn_k5_ctest[disp$Dataset], 3)
+
+  disp <- disp[order(disp$Dataset), ]
+
+  kbl(disp,
+      col.names = c("Dataset",
+                    "K\\_eff",
+                    "C Test PN K=5",
+                    "C Test PL K=5",
+                    "C Test PN K\\_eff",
+                    "\u0394 PL\u2212PN",
+                    "\u0394 K\\_eff\u2212K5"),
+      digits = 3, booktabs = TRUE, row.names = FALSE) |>
+    kable_styling(latex_options = c("hold_position", "scale_down"),
+                  bootstrap_options = c("striped", "hover"),
+                  full_width = FALSE) |>
+    add_footnote("* = hit 300-iteration convergence limit; results may improve with more iterations.",
+                 notation = "none")
+} else {
+  cat("*Prior comparison results not yet available — run `run_prior_k_comparison.R` first.*")
+}
+```
+
+```{r prior-comparison-plot}
+#| fig-cap: "Hold-out C-index by dataset and condition. Blue circles = point\\_normal K=5 (baseline); orange triangles = point\\_laplace K=5; green squares = point\\_normal K\\_eff (auto-pruned). Dashed line at 0.5 = null baseline. Asterisk labels = did not converge within 300 iterations."
+#| fig-height: 4.5
+
+pc_path <- file.path(tables_root, "PDAC_cross_dataset", "prior_comparison.csv")
+
+if (file.exists(pc_path)) {
+  pc     <- read.csv(pc_path, stringsAsFactors = FALSE)
+  pc_all <- pc[!is.na(pc$C_Test), ]
+
+  datasets  <- sort(unique(pc_all$Dataset))
+  n_ds      <- length(datasets)
+  x_pos     <- seq_len(n_ds)
+
+  col_pn   <- "#1f77b4";  pch_pn   <- 16
+  col_pl   <- "#ff7f0e";  pch_pl   <- 17
+  col_keff <- "#2ca02c";  pch_keff <- 15
+
+  par(mar = c(7.5, 5, 4, 2))
+  plot(NA, xlim = c(0.5, n_ds + 0.5), ylim = c(0.1, 1.0),
+       xaxt = "n", bty = "n",
+       xlab = "", ylab = "Hold-out C-index",
+       main = "Hold-out C-index: Prior & K Comparison Across 7 PDAC Cohorts")
+
+  abline(h = 0.5, lty = 2, col = "gray50", lwd = 1.5)
+
+  offsets <- c("point_normal" = -0.2, "point_laplace" = 0.0,
+               "point_normal (K_eff)" = 0.2)
+  cols    <- c("point_normal" = col_pn, "point_laplace" = col_pl,
+               "point_normal (K_eff)" = col_keff)
+  pchs    <- c("point_normal" = pch_pn, "point_laplace" = pch_pl,
+               "point_normal (K_eff)" = pch_keff)
+
+  for (i in seq_len(n_ds)) {
+    ds <- datasets[i]
+    for (prior in c("point_normal", "point_laplace", "point_normal (K_eff)")) {
+      r <- pc_all[pc_all$Dataset == ds & pc_all$Prior == prior, ]
+      if (nrow(r) == 0 || is.na(r$C_Test)) next
+      points(i + offsets[prior], r$C_Test,
+             pch = pchs[prior], cex = 1.7, col = cols[prior])
+      if (!r$Converged)
+        text(i + offsets[prior], r$C_Test + 0.035, "*", cex = 0.9, col = cols[prior])
+    }
+    # Connect baseline to other two
+    r_base <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_normal", ]
+    r_pl   <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_laplace", ]
+    r_ke   <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_normal (K_eff)", ]
+    if (nrow(r_base) > 0 && nrow(r_pl)   > 0)
+      segments(i + offsets["point_normal"], r_base$C_Test,
+               i + offsets["point_laplace"], r_pl$C_Test, col = "gray75", lwd = 0.8)
+    if (nrow(r_base) > 0 && nrow(r_ke)   > 0)
+      segments(i + offsets["point_normal"], r_base$C_Test,
+               i + offsets["point_normal (K_eff)"], r_ke$C_Test, col = "gray75", lwd = 0.8)
+  }
+
+  axis(1, at = x_pos,
+       labels = gsub("_", "\n", datasets),
+       las = 2, cex.axis = 0.75)
+  legend("bottomright",
+         legend = c("PN K=5 (baseline)", "PL K=5", "PN K_eff"),
+         pch    = c(pch_pn, pch_pl, pch_keff),
+         col    = c(col_pn, col_pl, col_keff),
+         pt.cex = 1.5, bty = "n")
+} else {
+  plot.new(); text(0.5, 0.5, "Results pending", cex = 1.5)
+}
+```
+
+**Interpretation.**  Three conditions are compared per cohort: the fixed-$K=5$ point\_normal
+baseline, point\_laplace at $K=5$, and point\_normal refitted at $K_\text{eff}$ (auto-pruned
+from $K_\text{max}=10$).  A fourth condition — point\_laplace at $K_\text{eff}$ — was not
+run here; it is the natural next experiment if PL at $K=5$ consistently outperforms PN.
+
+The $\Delta$ columns (positive = improvement over baseline) reveal  Both priors
+typically converge to similar ELBO values; differences in C-index reflect how each prior shapes
+the learned factor structure.  On high-censoring cohorts (TCGA\_PAAD: 48% censored;
+Moffitt: 53% censored) the prior choice may matter more because sparse factors are the only
+signal not drowned by the survival noise floor.
+
+::: {.callout-note}
+**Note on sparsity.** With $p = 5{,}000$ and real genomics data, the EBNM solver often
+does not zero-out many weights completely (NonZero\% ≈ 100 for both priors), unlike in
+the synthetic setting where $p_\text{active} = 5\%$.  The prior comparison therefore
+focuses on C-index and ELBO rather than sparsity percent in the real-data regime.
+:::
+
+---
+
+# K Selection via Auto-Prune
+
+For all results above, $K = 5$ was fixed.  The `auto_prune_K()` function in
+`code/select_K.R` provides a data-driven alternative: fit with $K_\text{max} = 10$,
+then flag each factor as **active** if $|\hat\beta_k| > 0.05$ OR $\text{PVE}_k > 1\%$,
+and set $K_\text{eff} = \sum_k \mathbf{1}[\text{active}_k]$.
+
+**Estimated cross-validation runtime.**  A proper CV grid search over $K \in \{2, \ldots, 10\}$
+with 5 folds requires $8 \times 5 = 40$ model fits per cohort.  At ~20 s per fit (CPTAC
+benchmark), that is roughly **13 minutes per cohort** and **90 minutes total for all 7
+cohorts** — feasible but long for a laptop session.  This is why `select_K_cv()` in
+`code/select_K.R` errors by design, pointing users to Longleaf HPC.  The `auto_prune`
+heuristic runs in ~8 s per cohort (one $K = 10$ fit + one $K_\text{eff}$ refit) and is
+the practical choice for exploratory work.
+
+```{r k-selection-table}
+#| tbl-cap: "Auto-prune K selection across 7 PDAC cohorts (K\\_max = 10, point\\_normal). A factor is active if |beta| > 0.05 OR PVE > 1\\%. K\\_eff = number of active factors."
+
+ks_path <- file.path(tables_root, "PDAC_cross_dataset", "k_selection_summary.csv")
+
+if (file.exists(ks_path)) {
+  ks <- read.csv(ks_path, stringsAsFactors = FALSE)
+
+  # Build a compact PVE summary: PVE for each of the 10 factors
+  pve_cols  <- paste0("PVE_F", 1:10)
+  beta_cols <- paste0("AbsBeta_F", 1:10)
+
+  # Round PVE columns
+  for (col in pve_cols) {
+    if (col %in% names(ks)) ks[[col]] <- round(ks[[col]], 2)
+  }
+
+  disp_ks <- ks[, c("Dataset", "K_effective", pve_cols)]
+  names(disp_ks)[3:12] <- paste0("F", 1:10, " PVE%")
+
+  kbl(disp_ks,
+      digits = 2, booktabs = TRUE, row.names = FALSE,
+      caption = NULL) |>
+    kable_styling(latex_options = c("hold_position", "scale_down"),
+                  bootstrap_options = c("striped", "hover"),
+                  full_width = FALSE)
+} else {
+  cat("*K selection results not yet available — run `run_prior_k_comparison.R` first.*")
+}
+```
+
+```{r k-selection-keff-table}
+#| tbl-cap: "K\\_effective per dataset and impact on hold-out C-index. K\\_eff fit uses point\\_normal with K = K\\_effective."
+
+pc_path <- file.path(tables_root, "PDAC_cross_dataset", "prior_comparison.csv")
+ks_path <- file.path(tables_root, "PDAC_cross_dataset", "k_selection_summary.csv")
+
+if (file.exists(pc_path) && file.exists(ks_path)) {
+  pc <- read.csv(pc_path, stringsAsFactors = FALSE)
+  ks <- read.csv(ks_path, stringsAsFactors = FALSE)
+
+  # Baseline: point_normal K=5
+  pn_k5 <- pc[pc$Prior == "point_normal",
+               c("Dataset", "K_fit", "C_Train", "C_Test")]
+  names(pn_k5) <- c("Dataset", "K_base", "C_Train_K5", "C_Test_K5")
+
+  # K_effective refit rows
+  keff_rows <- pc[pc$Prior == "point_normal (K_eff)",
+                  c("Dataset", "K_fit", "C_Train", "C_Test")]
+  names(keff_rows) <- c("Dataset", "K_eff", "C_Train_Keff", "C_Test_Keff")
+
+  # Merge with K selection summary for K_effective column
+  merged <- merge(ks[, c("Dataset", "K_effective")], pn_k5,  by = "Dataset", all.x = TRUE)
+  merged <- merge(merged, keff_rows, by = "Dataset", all.x = TRUE)
+
+  # For datasets where K_eff == K_base, copy the K=5 results
+  same_K <- !is.na(merged$K_base) & !is.na(merged$K_effective) &
+             merged$K_eff == merged$K_base
+  if (any(same_K, na.rm = TRUE)) {
+    merged$C_Train_Keff[same_K] <- merged$C_Train_K5[same_K]
+    merged$C_Test_Keff[same_K]  <- merged$C_Test_K5[same_K]
+  }
+
+  merged$Delta_CTest <- round(merged$C_Test_Keff - merged$C_Test_K5, 3)
+
+  disp <- merged[order(merged$Dataset),
+                 c("Dataset", "K_effective", "C_Train_K5", "C_Test_K5",
+                   "C_Train_Keff", "C_Test_Keff", "Delta_CTest")]
+
+  kbl(disp,
+      col.names = c("Dataset", "K\\_eff",
+                    "C Train K=5", "C Test K=5",
+                    "C Train K\\_eff", "C Test K\\_eff",
+                    "\u0394C Test"),
+      digits = 3, booktabs = TRUE, row.names = FALSE) |>
+    kable_styling(latex_options = c("hold_position", "scale_down"),
+                  bootstrap_options = c("striped", "hover"),
+                  full_width = FALSE)
+} else {
+  cat("*K selection comparison results not yet available.*")
+}
+```
+
+**Interpretation.**  Datasets where $K_\text{eff} > 5$ had additional genomic programs beyond
+the five originally fit — the extra factors either explain meaningful variance (PVE > 1%) or
+carry survival signal ($|\hat\beta| > 0.05$).  Refitting with $K_\text{eff}$ allows these
+programs to be recovered without wasting capacity on spurious dimensions.  A positive
+$\Delta C_\text{test}$ indicates the auto-pruned model generalises better than the fixed-K
+baseline.
+
+::: {.callout-note}
+**K selection via cross-validation** is implemented as a stub (`select_K_cv()` in
+`code/select_K.R`) and is available for future use on Longleaf HPC.  An 8-fold CV grid
+over $K \in \{2,\ldots,10\}$ would require ~90 minutes across all 7 cohorts but would
+provide a principled, held-out selection criterion rather than the threshold heuristic
+used here.
+:::
+
+---
+
 # Conclusion & Future Directions
 
 The SBMF model successfully fits all 7 PDAC cohorts across three assay platforms,
@@ -970,19 +1267,20 @@ recovering sparse prognostic gene expression programs in each. Key results:
 
 | Feature | Status |
 |---------|--------|
-| Multiple prior families (`point_normal`, `point_laplace`, `normal_scale_mixture`) | ✅ Available via `PRIOR_FAMILY` env var |
+| Multiple prior families (`point_normal`, `point_laplace`, `normal_scale_mixture`) | ✅ Executed — see Prior Family Comparison section |
 | Random initialization + multi-init best-ELBO selection | ✅ Available via `N_INIT` / `INIT_METHOD` |
 | `limma` batch correction for pooled RNA-seq | ✅ Applied by default (`batch_correct = TRUE`) |
-| Stratified 80/20 hold-out prediction | ✅ This section; `HOLDOUT_EVAL=TRUE` |
+| Stratified 80/20 hold-out prediction | ✅ See Hold-Out C-index and Prior Comparison sections |
 | Survival-aware Cox feature selection | ✅ Available via `FEATURE_SELECTION=cox` |
-| K selection: auto-prune (fit K=10, count active) | ✅ Available via `K_SELECT=auto_prune` |
+| K selection: auto-prune (fit K=10, count active) | ✅ Executed — see K Selection section |
 | K selection: CV grid search (Longleaf stub) | 🔲 Interface only; `select_K_cv()` stub |
 
 **Remaining next steps:**
 
-1. **K selection via cross-validation.** K = 5 is fixed for all cohorts here; optimal K likely
-   varies by platform and sample size. Longleaf HPC is recommended for the CV grid search
-   (stub implemented in `code/select_K.R`, activate with `K_SELECT=cv`).
+1. **K selection via cross-validation.** Auto-prune K selection is now applied (see K Selection
+   section above).  For a principled held-out criterion, a CV grid search over
+   $K \in \{2,\ldots,10\}$ is stubbed in `code/select_K.R` (`K_SELECT=cv`); estimated runtime
+   on Longleaf HPC is ~90 min for all 7 cohorts.
 
 2. **Gene set enrichment analysis.** Run fgsea or similar on the top-loaded genes per factor
    (see Top Features tables above) to assign biological pathway labels to each GEP and provide
