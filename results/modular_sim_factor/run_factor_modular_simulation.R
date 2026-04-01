@@ -16,11 +16,18 @@
 # Configuration
 # ==============================================================================
 
-data_mode    <- "synthetic"   # "synthetic" or "real"
-dataset_name <- "TCGA_PAAD"  # used when data_mode = "real" and run_all = FALSE
-run_all      <- FALSE         # TRUE: loop over all 7 PDAC datasets
-top_n_genes  <- 5000          # NULL = no filter; integer = top N most-variable genes
-K            <- 5             # number of latent factors
+data_mode         <- "synthetic"     # "synthetic" or "real"
+dataset_name      <- "TCGA_PAAD"    # used when data_mode = "real" and run_all = FALSE
+run_all           <- FALSE           # TRUE: loop over all 7 PDAC datasets
+top_n_genes       <- 5000            # NULL = no filter; integer = top N most-variable genes
+K                 <- 5               # number of latent factors
+prior_family      <- "point_normal"  # "point_normal", "point_laplace", "normal_scale_mixture"
+n_init            <- 1               # >1 activates multi-init with best-ELBO selection
+init_method       <- "svd"           # "svd" (deterministic) or "random" (for multi-init)
+batch_correct     <- TRUE            # apply limma batch correction to pooled datasets
+holdout_eval      <- FALSE           # TRUE: 80/20 stratified train/test split evaluation
+feature_selection <- "variance"      # "variance" (top by var) or "cox" (univariate Cox p-val)
+k_select          <- "fixed"         # "fixed", "auto_prune", "cv" (cv = stub for Longleaf)
 
 # PDAC data root.  Override for Longleaf:
 #   export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC
@@ -31,10 +38,17 @@ pdac_data_root <- Sys.getenv("PDAC_DATA_ROOT", unset = path.expand(
 ))
 
 # Environment variable overrides (scripted / Longleaf use)
-if (Sys.getenv("DATA_MODE")    != "") data_mode    <- Sys.getenv("DATA_MODE")
-if (Sys.getenv("DATASET_NAME") != "") dataset_name <- Sys.getenv("DATASET_NAME")
-if (Sys.getenv("RUN_ALL")      != "") run_all      <- as.logical(Sys.getenv("RUN_ALL"))
-if (Sys.getenv("TOP_N_GENES")  != "") top_n_genes  <- as.integer(Sys.getenv("TOP_N_GENES"))
+if (Sys.getenv("DATA_MODE")          != "") data_mode         <- Sys.getenv("DATA_MODE")
+if (Sys.getenv("DATASET_NAME")      != "") dataset_name      <- Sys.getenv("DATASET_NAME")
+if (Sys.getenv("RUN_ALL")           != "") run_all           <- as.logical(Sys.getenv("RUN_ALL"))
+if (Sys.getenv("TOP_N_GENES")       != "") top_n_genes       <- as.integer(Sys.getenv("TOP_N_GENES"))
+if (Sys.getenv("PRIOR_FAMILY")      != "") prior_family      <- Sys.getenv("PRIOR_FAMILY")
+if (Sys.getenv("N_INIT")            != "") n_init            <- as.integer(Sys.getenv("N_INIT"))
+if (Sys.getenv("INIT_METHOD")       != "") init_method       <- Sys.getenv("INIT_METHOD")
+if (Sys.getenv("BATCH_CORRECT")     != "") batch_correct     <- as.logical(Sys.getenv("BATCH_CORRECT"))
+if (Sys.getenv("HOLDOUT_EVAL")      != "") holdout_eval      <- as.logical(Sys.getenv("HOLDOUT_EVAL"))
+if (Sys.getenv("FEATURE_SELECTION") != "") feature_selection <- Sys.getenv("FEATURE_SELECTION")
+if (Sys.getenv("K_SELECT")          != "") k_select          <- Sys.getenv("K_SELECT")
 
 # All 7 available PDAC cohorts (used when run_all = TRUE)
 ALL_DATASETS <- c("TCGA_PAAD", "CPTAC", "Dijk", "Moffitt_GEO_array",
@@ -310,10 +324,42 @@ run_pipeline <- function(Y, time, status, gene_names, data,
   # --------------------------------------------------------------------------
   cat(sprintf("\n=== %s  (n=%d, p=%d, K=%d) ===\n",
               run_label, nrow(Y), ncol(Y), K))
-  cat(sprintf("  Censoring rate: %.1f%%\n\n", 100 * mean(status == 0)))
+  cat(sprintf("  Censoring rate: %.1f%%  |  prior=%s  |  init=%s  |  n_init=%d\n\n",
+              100 * mean(status == 0), prior_family, init_method, n_init))
 
-  res <- fit_supervised_mf_modular(Y, time, status, K = K,
-                                    max_iter = 300, tol = 1e-3, verbose = TRUE)
+  # Multi-init: run n_init random starts and keep the best-ELBO fit.
+  # When n_init == 1 or init_method == "svd", run a single (deterministic) fit.
+  if (n_init > 1 && init_method == "random") {
+    best_elbo <- -Inf
+    best_res  <- NULL
+    elbo_vec  <- numeric(n_init)
+    for (init_i in seq_len(n_init)) {
+      set.seed(42 + init_i)
+      cat(sprintf("  [init %d/%d] ", init_i, n_init))
+      res_i <- fit_supervised_mf_modular(
+        Y, time, status, K = K, max_iter = 300, tol = 1e-3,
+        prior_family = prior_family, init_method = "random", verbose = FALSE)
+      elbo_i <- tail(res_i$history$elbo_proxy, 1)
+      elbo_vec[init_i] <- elbo_i
+      cat(sprintf("ELBO=%.1f  iters=%d  converged=%s\n",
+                  elbo_i, res_i$history$n_iter, res_i$history$converged))
+      if (elbo_i > best_elbo) {
+        best_elbo <- elbo_i
+        best_res  <- res_i
+      }
+    }
+    cat(sprintf("  Best init: ELBO=%.1f (range: %.1f to %.1f)\n",
+                best_elbo, min(elbo_vec), max(elbo_vec)))
+    res <- best_res
+    # Save ELBO distribution for report
+    write.csv(data.frame(Init = seq_len(n_init), Final_ELBO = round(elbo_vec, 2),
+                         Selected = elbo_vec == best_elbo),
+              file.path(table_dir, "multi_init_elbos.csv"), row.names = FALSE)
+  } else {
+    res <- fit_supervised_mf_modular(
+      Y, time, status, K = K, max_iter = 300, tol = 1e-3,
+      prior_family = prior_family, init_method = init_method, verbose = TRUE)
+  }
   EL     <- res$EL
   EL2    <- res$EL2
   EF     <- res$EF

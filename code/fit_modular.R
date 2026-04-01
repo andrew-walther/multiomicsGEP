@@ -124,6 +124,15 @@ calc_cox_taylor <- function(eta, time, status) {
 #' @param tol      Convergence threshold: both mean|dL| and mean|dBeta| < tol
 #'                 (default 1e-3; use 1e-5 for tighter but rarely achievable
 #'                 convergence with this Taylor-approximation scheme)
+#' @param prior_family character: EBNM prior family passed to update_L_k,
+#'                 update_F_k, and update_beta_k.  Valid values:
+#'                 "point_normal" (default — sparse, shrinks to zero),
+#'                 "point_laplace" (heavier tails than point-normal),
+#'                 "normal_scale_mixture" (broader, less sparse factors).
+#' @param init_method  character: initialization strategy.
+#'                 "svd" (default — deterministic SVD warm-start),
+#'                 "random" (random normal initialization, useful with
+#'                 multiple restarts to escape local optima).
 #' @param verbose  Logical: print iteration logs every 10 iters? (default TRUE)
 #'
 #' @return Named list:
@@ -136,24 +145,44 @@ calc_cox_taylor <- function(eta, time, status) {
 #'   $Tau      p-vector: noise precisions
 #'   $history  list(rmse, elbo_proxy, converged, n_iter)
 fit_supervised_mf_modular <- function(Y, time, status,
-                                      K        = 5,
-                                      max_iter = 100,
-                                      tol      = 1e-3,
-                                      verbose  = TRUE) {
+                                      K            = 5,
+                                      max_iter     = 100,
+                                      tol          = 1e-3,
+                                      prior_family = "point_normal",
+                                      init_method  = "svd",
+                                      verbose      = TRUE) {
 
   n <- nrow(Y); p <- ncol(Y)
 
   # --------------------------------------------------------------------------
-  # Initialization  (mirrors V2.R lines 187-218 and run_modular_simulation.R
-  # lines 162-187; same SVD + Cox warm-start strategy)
+  # Initialization
+  #
+  # Two strategies:
+  #   "svd"    — Deterministic SVD warm-start (mirrors V2.R lines 187-218).
+  #              EL = U sqrt(D), EF = V sqrt(D), so EL %*% t(EF) ≈ Y_rank-K.
+  #              Recommended default; gives reproducible results.
+  #   "random" — Random normal initialization.  Useful when running multiple
+
+  #              restarts (n_init > 1) to escape local optima.  The caller
+  #              should set a seed before each call for reproducibility.
   # --------------------------------------------------------------------------
 
-  # SVD of Y: deterministic high-variance starting subspace.
-  # EL = U sqrt(D),  EF = V sqrt(D)  so  EL %*% t(EF) ≈ Y_rank-K
-  svd_init <- svd(Y, nu = K, nv = K)
-  d_k <- sqrt(pmax(svd_init$d[1:K], 0))
-  EL  <- svd_init$u %*% diag(d_k, K, K)      # n x K
-  EF  <- svd_init$v %*% diag(d_k, K, K)      # p x K
+  if (init_method == "svd") {
+    # SVD of Y: deterministic high-variance starting subspace
+    svd_init <- svd(Y, nu = K, nv = K)
+    d_k <- sqrt(pmax(svd_init$d[1:K], 0))
+    EL  <- svd_init$u %*% diag(d_k, K, K)      # n x K
+    EF  <- svd_init$v %*% diag(d_k, K, K)      # p x K
+  } else if (init_method == "random") {
+    # Random normal initialization scaled by data magnitude.
+    # sd = 0.1 * overall SD of Y keeps initial reconstruction in a
+    # reasonable range; too large causes Cox Taylor expansion to diverge.
+    y_sd <- sd(Y)
+    EL   <- matrix(rnorm(n * K, sd = 0.1 * y_sd), n, K)
+    EF   <- matrix(rnorm(p * K, sd = 0.1 * y_sd), p, K)
+  } else {
+    stop(sprintf("Unknown init_method: '%s'. Use 'svd' or 'random'.", init_method))
+  }
 
   # Second moments initialised to squared means (zero posterior variance).
   # Posterior variance populated after the first EBNM call.
@@ -191,8 +220,10 @@ fit_supervised_mf_modular <- function(Y, time, status,
 
   if (verbose) {
     cat("=== Supervised Bayesian MF (Modular V3) — Factor-Wise CAVI ===\n")
-    cat(sprintf("    n=%d, p=%d, K=%d | max_iter=%d | tol=%.1e\n\n",
+    cat(sprintf("    n=%d, p=%d, K=%d | max_iter=%d | tol=%.1e\n",
                 n, p, K, max_iter, tol))
+    cat(sprintf("    prior_family=%s | init_method=%s\n\n",
+                prior_family, init_method))
   }
 
   # ==========================================================================
@@ -249,7 +280,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
       z_no_k <- compute_z_no_k(z, EL, EBeta, k)   # COMPUTE ONCE — reuse for (c)
 
       res_L   <- update_L_k(Tau, EF[, k], EF2[, k], w, EBeta[k], EBeta2[k],
-                             R_k, z_no_k)
+                             R_k, z_no_k, prior_family = prior_family)
       EL[, k]  <- res_L$mean
       EL2[, k] <- res_L$second
 
@@ -260,7 +291,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # from step (a).  This is the Gauss-Seidel property.
       # ----------------------------------------------------------------------
       R_k   <- compute_R_k(Y, EL, EF, k)
-      res_F <- update_F_k(Tau, EL[, k], EL2[, k], R_k)
+      res_F <- update_F_k(Tau, EL[, k], EL2[, k], R_k,
+                          prior_family = prior_family)
       EF[, k]  <- res_F$mean
       EF2[, k] <- res_F$second
 
@@ -271,7 +303,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # has not been updated in this inner iteration, and z_no_k excludes
       # factor k entirely.
       # ----------------------------------------------------------------------
-      res_beta  <- update_beta_k(w, z_no_k, EL[, k], EL2[, k])
+      res_beta  <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
+                                 prior_family = prior_family)
       EBeta[k]  <- res_beta$mean
       EBeta2[k] <- res_beta$second
 
