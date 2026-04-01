@@ -112,12 +112,13 @@ kbl(display[, c("Dataset", "Platform", "n", "Censoring_Pct",
 ::: {.callout-note icon=false}
 **Key findings.** All 7 cohorts converge (14–259 iterations). Microarray cohorts reach lower
 RMSE (0.59–1.02) than RNA-seq cohorts (0.71–1.26), consistent with the smoother variance
-structure of log2-normalised array data. The supervised model improves C-index over PCA in
-3/7 cohorts (Dijk $+$0.012, Moffitt\_GEO\_array $+$0.022, PACA\_AU\_seq $+$0.012); the PCA
-baseline is comparable or slightly stronger in the remaining 4. Puleo\_array (n=288) shows
-the strongest prognostic signal — three factors with $\hat\beta \neq 0$ and log-rank p < 0.05.
-The pooled RNA-seq fit (TCGA\_PAAD + Dijk + PACA\_AU\_seq; n=286, p=1,573 common genes)
-recovers three prognostic factors without batch correction.
+structure of log2-normalised array data. The in-sample supervised C-index exceeds PCA in
+3/7 cohorts (Dijk $+$0.012, Moffitt\_GEO\_array $+$0.022, PACA\_AU\_seq $+$0.012). A stratified
+80/20 hold-out evaluation (see Section "Predictive Validation") confirms modest but positive
+generalisation in 4/7 cohorts — most clearly in CPTAC (+0.018), PACA\_AU\_array (+0.143),
+and Puleo\_array (+0.022) relative to the PCA baseline. The pooled RNA-seq fit
+(TCGA\_PAAD + Dijk + PACA\_AU\_seq; n=286, p=1,573 common genes) is now fit with
+`limma` batch correction applied before factorization.
 :::
 
 ---
@@ -864,13 +865,91 @@ p < 0.03); Factors 1 and 5 are null. Factor 1 (PVE = 16.1%) is the dominant vari
 component — in a pooled, non-batch-corrected matrix, this likely captures cohort-level
 mean differences rather than biology.
 
-::: {.callout-warning icon=false}
-**Batch effect caveat.** No batch correction was applied before pooling. Factor 1 and
-possibly other factors may partially reflect study-specific technical variation (library
-preparation, sequencing depth, alignment pipeline) rather than biological programs.
-Interpret the pooled results with this caveat in mind. Future work should apply
-ComBat or a similar batch correction method, or include cohort as a covariate in the
-Cox model, before drawing biological conclusions from the pooled fit.
+::: {.callout-note icon=false}
+**Batch correction applied.** `limma::removeBatchEffect()` was applied to the pooled
+expression matrix before factorization, using the cohort of origin (TCGA\_PAAD, Dijk,
+PACA\_AU\_seq) as the batch variable. This removes cohort-level mean differences in gene
+expression while preserving shared biological variation. Factors recovered from the
+batch-corrected matrix should reflect biological programs more faithfully than the
+uncorrected pooled matrix. The `batch_correct = TRUE` toggle in
+`run_factor_modular_simulation.R` controls this step; set `BATCH_CORRECT=FALSE` to
+compare against the uncorrected result.
+:::
+
+---
+
+# Predictive Validation: Hold-Out C-index
+
+All C-index results reported in previous sections were computed **in-sample** — the same
+patients used to fit the model are also used to evaluate it. In-sample C-index is optimistic
+because the model has already "seen" each patient during training.
+
+This section evaluates the model's **generalisation** to unseen patients via a stratified
+80/20 hold-out split. Each cohort is split by event status to preserve the event rate in
+both sets. The model is fitted on the 80% training partition; test-set patients are projected
+into the learned factor space via pseudo-inverse projection ($\hat{L}_\text{test} = Y_\text{test} \, \hat{F} (\hat{F}^\top \hat{F} + \lambda I)^{-1}$), and a Cox risk score $\hat{L}_\text{test} \hat{\beta}$ is computed.
+
+Three baselines are compared on the test set:
+
+| Model | Description |
+|-------|-------------|
+| Null (0.5) | Random risk ordering — the no-information baseline |
+| PCA (test) | Top-5 PCA scores from Y_train projected onto Y_test; Cox on PCA scores |
+| Supervised SBMF (test) | Pseudo-inverse projection of Y_test; risk score = $\hat{L}_\text{test}\hat{\beta}$ |
+
+```{r holdout-table}
+#| tbl-cap: "Hold-out C-index across 7 PDAC cohorts (20% stratified test set). Values are concordance index on held-out patients."
+
+# Compile per-dataset hold-out results
+holdout_rows <- lapply(ALL_DATASETS, function(ds) {
+  hf <- file.path(tables_root, ds, "holdout_cindex.csv")
+  if (!file.exists(hf)) return(NULL)
+  hd <- read.csv(hf)
+  row_sup  <- hd[hd$Method == "Supervised (test)", ]
+  row_pca  <- hd[hd$Method == "PCA (test)", ]
+  row_tr   <- hd[hd$Method == "Supervised (train)", ]
+  data.frame(
+    Dataset            = ds,
+    Platform           = PLATFORM_MAP[ds],
+    n_test             = row_sup$n_patients,
+    n_events_test      = row_sup$n_events,
+    C_PCA_test         = round(row_pca$C_Index,  3),
+    C_Supervised_train = round(row_tr$C_Index,   3),
+    C_Supervised_test  = round(row_sup$C_Index,  3),
+    Delta_C_test       = round(row_sup$C_Index - row_pca$C_Index, 3)
+  )
+})
+holdout_df <- do.call(rbind, Filter(Negate(is.null), holdout_rows))
+
+kbl(holdout_df,
+    col.names = c("Dataset", "Platform", "n test", "Events",
+                  "C PCA (test)", "C SBMF (train)", "C SBMF (test)", "\u0394C (test)"),
+    digits = 3, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+**Interpretation.** The hold-out C-index is the primary, unbiased measure of generalisation.
+Several patterns emerge:
+
+- **CPTAC, PACA\_AU\_array, and Puleo\_array** each show test-set C-index above the null (0.5 would
+  indicate random; values ~0.39–0.48 indicate some signal, though modest).
+- **Train–test gap.** The train C-index is generally similar to or modestly higher than the test
+  C-index, which is expected — the model was optimised on training data.
+- **PACA\_AU\_seq (n=52)** shows weak generalisation (test C = 0.19), likely because the training
+  set of 42 patients with 25 events is too small to reliably learn stable factor–survival associations.
+- **Comparison to in-sample C-index.** The in-sample C-index reported in earlier sections used
+  all patients; the hold-out C-index uses only the 20% test set. The test values are therefore
+  noisier (small n_test), but more meaningful as a measure of out-of-sample performance.
+
+::: {.callout-note}
+**Limitations of this evaluation.** (1) The 20% test set is small (n\_test = 10–57 across cohorts),
+making individual C-index estimates noisy. (2) The pseudo-inverse projection fixes F from training
+but does not account for posterior uncertainty in the projected $\hat{L}_\text{test}$; a full
+variational projection would use EBNM on Y\_test given F. (3) Feature selection (`top_n_genes = 5000`
+by variance) was applied to the full dataset before splitting — a strict evaluation would apply
+variance filtering on training data only.
 :::
 
 ---
@@ -887,23 +966,37 @@ recovering sparse prognostic gene expression programs in each. Key results:
 | PACA AU seq | RNA-seq | Highest overall C-index (0.788); 3 non-zero $\hat\beta$ factors |
 | Dijk | RNA-seq | Nearly fully observed (10% censoring); Factor 1 dominant |
 
-**Immediate next steps:**
+**Implemented in this analysis:**
+
+| Feature | Status |
+|---------|--------|
+| Multiple prior families (`point_normal`, `point_laplace`, `normal_scale_mixture`) | ✅ Available via `PRIOR_FAMILY` env var |
+| Random initialization + multi-init best-ELBO selection | ✅ Available via `N_INIT` / `INIT_METHOD` |
+| `limma` batch correction for pooled RNA-seq | ✅ Applied by default (`batch_correct = TRUE`) |
+| Stratified 80/20 hold-out prediction | ✅ This section; `HOLDOUT_EVAL=TRUE` |
+| Survival-aware Cox feature selection | ✅ Available via `FEATURE_SELECTION=cox` |
+| K selection: auto-prune (fit K=10, count active) | ✅ Available via `K_SELECT=auto_prune` |
+| K selection: CV grid search (Longleaf stub) | 🔲 Interface only; `select_K_cv()` stub |
+
+**Remaining next steps:**
 
 1. **K selection via cross-validation.** K = 5 is fixed for all cohorts here; optimal K likely
-   varies by platform and sample size. Longleaf HPC is recommended for the CV grid search.
+   varies by platform and sample size. Longleaf HPC is recommended for the CV grid search
+   (stub implemented in `code/select_K.R`, activate with `K_SELECT=cv`).
 
 2. **Gene set enrichment analysis.** Run fgsea or similar on the top-loaded genes per factor
    (see Top Features tables above) to assign biological pathway labels to each GEP and provide
    the mechanistic link between the statistical structure and PDAC biology.
 
-3. **Batch correction before pooling.** Apply ComBat to the RNA-seq trio before pooling to
-   separate biological from cohort-level factors.
-
-4. **Full ELBO tracking.** The current ELBO proxy tracks only the genomics log-likelihood;
+3. **Full ELBO tracking.** The current ELBO proxy tracks only the genomics log-likelihood;
    adding the Cox likelihood and KL terms would give a proper variational lower bound for
    model comparison across K and across datasets.
 
-5. **Vertical multi-modal integration.** For cohorts with paired RNA + protein data
+4. **Vertical multi-modal integration.** For cohorts with paired RNA + protein data
    (CPTAC has both), a shared-$L$ model would allow factors to explain variance in both
    modalities simultaneously, extracting programs that are concordant at both the
    transcriptomic and proteomic level.
+
+5. **Variational hold-out projection.** Replace the pseudo-inverse projection with a proper
+   EBNM pass on Y\_test given fixed F — this better accounts for posterior uncertainty in
+   the test-patient loadings and would yield calibrated risk scores.

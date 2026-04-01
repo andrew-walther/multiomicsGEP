@@ -139,13 +139,36 @@ The runner supports 7 PDAC cohorts via environment variable control:
 DATA_MODE=real DATASET_NAME=TCGA_PAAD \
   Rscript results/modular_sim_factor/run_factor_modular_simulation.R
 
-# All 7 cohorts + pooled RNA-seq + cross-dataset summary
-DATA_MODE=real RUN_ALL=TRUE \
+# All 7 cohorts + pooled RNA-seq (with batch correction) + hold-out evaluation
+DATA_MODE=real RUN_ALL=TRUE HOLDOUT_EVAL=TRUE \
   Rscript results/modular_sim_factor/run_factor_modular_simulation.R
 
 # Longleaf HPC (override data path)
 export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC
 DATA_MODE=real RUN_ALL=TRUE \
+  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
+```
+
+**Advanced options** (all accept environment variable overrides):
+
+| Argument | Default | Options | Description |
+|----------|---------|---------|-------------|
+| `prior_family` | `"point_normal"` | `"point_laplace"`, `"normal_scale_mixture"` | EBNM prior for L, F, β |
+| `n_init` | `1` | any integer | Number of random restarts (best ELBO kept) |
+| `init_method` | `"svd"` | `"random"` | Initialization strategy |
+| `batch_correct` | `TRUE` | `FALSE` | limma batch correction for pooled data |
+| `holdout_eval` | `FALSE` | `TRUE` | 80/20 stratified hold-out prediction |
+| `feature_selection` | `"variance"` | `"cox"` | Gene selection method |
+| `k_select` | `"fixed"` | `"auto_prune"` | K selection strategy |
+
+```bash
+# Example: 3 random inits with point_laplace prior + hold-out evaluation
+DATA_MODE=real DATASET_NAME=CPTAC \
+  PRIOR_FAMILY=point_laplace N_INIT=3 INIT_METHOD=random HOLDOUT_EVAL=TRUE \
+  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
+
+# Example: K auto-pruning on Puleo array (fit K=10, prune to active)
+DATA_MODE=real DATASET_NAME=Puleo_array K_SELECT=auto_prune \
   Rscript results/modular_sim_factor/run_factor_modular_simulation.R
 ```
 

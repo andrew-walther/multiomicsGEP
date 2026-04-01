@@ -1,0 +1,5 @@
+"Method","C_Index","Split","n_patients","n_events"
+"Null (0.5)",0.5,"—",NA,NA
+"PCA (test)",0.4444,"test",10,6
+"Supervised (train)",0.2095,"train",42,25
+"Supervised (test)",0.1852,"test",10,6
