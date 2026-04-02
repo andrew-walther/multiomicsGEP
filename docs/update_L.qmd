@@ -274,7 +274,7 @@ The following table summarizes the dual-source structure — the central feature
 
 **File:** `tests/test_update_L.R`
 **Total tests:** 28 across 9 groups
-**Status:** All passing (105/105 overall test suite)
+**Status:** All passing (139/139 overall test suite)
 
 ### T1: Mathematical Identity Checks (6 tests)
 

@@ -248,7 +248,7 @@ The Gauss-Seidel pattern (update-and-use within the loop, rather than batch upda
 Rscript tests/run_tests.R
 ```
 
-All 24 tests pass as part of the 105-test suite.
+All 24 tests pass as part of the 139-test suite.
 
 ### T1: Mathematical Identity Checks (6 tests)
 
@@ -404,7 +404,7 @@ This clean separation makes `update_beta.R` entirely self-contained given w, z, 
 | `code/SupervisedMF_Context.md` | AI/code quick-reference for the full implementation |
 | `tests/test_update_beta.R` | 24-test suite for this module |
 | `tests/test_helpers.R` | Lightweight assertion framework used by tests |
-| `tests/run_tests.R` | Master test runner (105 tests total) |
+| `tests/run_tests.R` | Master test runner (139 tests total) |
 | `demos/demo_update_beta.R` | 5 narrative demonstration scenarios |
 | `derivations/qB/qBeta_update_derivation.tex` | Self-contained 11-page derivation of q(β) |
 | `derivations/qB/qBeta_update_derivation.pdf` | Compiled PDF of the derivation |
