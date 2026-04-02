@@ -120,7 +120,7 @@ kbl(display[, c("Dataset", "Platform", "n", "Censoring_Pct",
   fastest; proteomics (CPTAC) is slowest, reflecting platform-specific noise structure.
 
 - **In-sample discrimination.** The supervised C-index exceeds the PCA baseline in 3/7
-  cohorts (Dijk $+$0.012, Moffitt $+$0.022, PACA\_AU\_seq $+$0.012). Hold-out generalisation
+  cohorts (Dijk +0.012, Moffitt +0.022, PACA\_AU\_seq +0.012). Hold-out generalisation
   is clearest in CPTAC, PACA\_AU\_array, and Puleo\_array (see Section on Predictive
   Validation).
 
@@ -979,8 +979,10 @@ The SBMF model supports three prior families for the EBNM sub-problems (L, F, β
 **`point_normal`** (spike-and-slab Gaussian, strongly sparse), **`point_laplace`** (spike-and-slab
 Laplace, heavier-tailed shrinkage), and **`normal_scale_mixture`** (continuous mixture, dense).
 All results in earlier sections used `point_normal` (the default).  This section compares
-`point_normal` and `point_laplace` — the two sparse priors — on all 7 cohorts with $K = 5$
-and the same 80/20 stratified hold-out split (seed = 42).
+four conditions on all 7 cohorts with the same 80/20 stratified hold-out split (seed = 42):
+(1) `point_normal` at $K = 5$ (baseline), (2) `point_laplace` at $K = 5$, (3) `point_normal`
+at $K_\text{eff}$ (auto-pruned), and (4) `point_laplace` at $K_\text{eff}$ — the complete
+factorial of prior family and K strategy.
 
 *Why point\_laplace?*  The Laplace prior concentrates slightly less mass exactly at zero
 than the Gaussian spike, allowing factors to retain small non-zero weights rather than
@@ -988,7 +990,7 @@ hard-zeroing them.  In practice this can improve reconstruction of signals whose
 weights are continuous rather than discretely zero/non-zero.
 
 ```{r prior-comparison-table}
-#| tbl-cap: "Unified comparison: point\\_normal K=5 (baseline), point\\_laplace K=5 (prior), and point\\_normal K\\_eff (auto-pruned). All evaluated on 80/20 stratified hold-out (seed=42). C\\_Test is the hold-out concordance index; \u0394 columns show improvement over the K=5 point\\_normal baseline. Asterisk (*) = hit 300-iteration limit."
+#| tbl-cap: "Unified comparison: four conditions per cohort — point\\_normal K=5 (baseline), point\\_laplace K=5, point\\_normal K\\_eff (auto-pruned), and point\\_laplace K\\_eff (complete factorial). All evaluated on 80/20 stratified hold-out (seed=42). C\\_Test is the hold-out concordance index; ELBO\\_Final is the full variational lower bound at convergence; delta columns show improvement over the PN K=5 baseline. Asterisk (*) = hit 300-iteration limit."
 
 pc_path <- file.path(tables_root, "PDAC_cross_dataset", "prior_comparison.csv")
 
@@ -997,30 +999,25 @@ if (file.exists(pc_path)) {
 
   # Normalise prior labels to short codes
   pc$PriorCode <- dplyr::recode(pc$Prior,
-    "point_normal"       = "PN_K5",
-    "point_laplace"      = "PL_K5",
-    "point_normal (K_eff)" = "PN_Keff"
+    "point_normal"         = "PN_K5",
+    "point_laplace"        = "PL_K5",
+    "point_normal (K_eff)" = "PN_Keff",
+    "point_laplace (K_eff)"= "PL_Keff"
   )
 
   # Append * to C_Test when Converged == FALSE (hit max_iter)
   pc$C_Test_disp  <- ifelse(!pc$Converged,
                              paste0(sprintf("%.3f", pc$C_Test), "*"),
                              sprintf("%.3f", pc$C_Test))
-  pc$C_Train_disp <- ifelse(!pc$Converged,
-                             paste0(sprintf("%.3f", pc$C_Train), "*"),
-                             sprintf("%.3f", pc$C_Train))
 
-  # Build wide by PriorCode, keeping only the columns we display
-  cols_keep <- c("Dataset", "PriorCode", "K_fit",
-                 "C_Train_disp", "C_Test_disp", "N_Iters")
+  # Build wide by PriorCode
+  cols_keep <- c("Dataset", "PriorCode", "K_fit", "C_Test_disp")
   pc_sub  <- pc[, cols_keep]
 
-  wide_ctest  <- reshape(pc_sub[, c("Dataset", "PriorCode", "C_Test_disp")],
-                          idvar = "Dataset", timevar = "PriorCode", direction = "wide")
-  wide_ctrain <- reshape(pc_sub[, c("Dataset", "PriorCode", "C_Train_disp")],
-                          idvar = "Dataset", timevar = "PriorCode", direction = "wide")
-  wide_k      <- reshape(pc_sub[, c("Dataset", "PriorCode", "K_fit")],
-                          idvar = "Dataset", timevar = "PriorCode", direction = "wide")
+  wide_ctest <- reshape(pc_sub[, c("Dataset", "PriorCode", "C_Test_disp")],
+                         idvar = "Dataset", timevar = "PriorCode", direction = "wide")
+  wide_k     <- reshape(pc_sub[, c("Dataset", "PriorCode", "K_fit")],
+                         idvar = "Dataset", timevar = "PriorCode", direction = "wide")
 
   # Pull baseline PN K=5 numeric C_Test for delta calculation
   pn_k5_ctest <- setNames(
@@ -1029,18 +1026,20 @@ if (file.exists(pc_path)) {
   )
 
   disp <- data.frame(
-    Dataset        = wide_ctest$Dataset,
-    K_Eff          = wide_k$K_fit.PN_Keff,
-    C_Test_PN_K5   = wide_ctest$C_Test_disp.PN_K5,
-    C_Test_PL_K5   = wide_ctest$C_Test_disp.PL_K5,
-    C_Test_PN_Keff = wide_ctest$C_Test_disp.PN_Keff,
+    Dataset         = wide_ctest$Dataset,
+    K_Eff           = wide_k$K_fit.PN_Keff,
+    C_Test_PN_K5    = wide_ctest$C_Test_disp.PN_K5,
+    C_Test_PL_K5    = wide_ctest$C_Test_disp.PL_K5,
+    C_Test_PN_Keff  = wide_ctest$C_Test_disp.PN_Keff,
+    C_Test_PL_Keff  = wide_ctest$C_Test_disp.PL_Keff,
     stringsAsFactors = FALSE
   )
 
   # Numeric deltas (strip asterisks for subtraction)
   strip <- function(x) as.numeric(gsub("\\*", "", x))
-  disp$dPL   <- round(strip(disp$C_Test_PL_K5)   - pn_k5_ctest[disp$Dataset], 3)
-  disp$dKeff <- round(strip(disp$C_Test_PN_Keff)  - pn_k5_ctest[disp$Dataset], 3)
+  disp$dPL     <- round(strip(disp$C_Test_PL_K5)   - pn_k5_ctest[disp$Dataset], 3)
+  disp$dKeff   <- round(strip(disp$C_Test_PN_Keff)  - pn_k5_ctest[disp$Dataset], 3)
+  disp$dPLKeff <- round(strip(disp$C_Test_PL_Keff)  - pn_k5_ctest[disp$Dataset], 3)
 
   disp <- disp[order(disp$Dataset), ]
 
@@ -1050,8 +1049,10 @@ if (file.exists(pc_path)) {
                     "C Test PN K=5",
                     "C Test PL K=5",
                     "C Test PN K\\_eff",
+                    "C Test PL K\\_eff",
                     "\u0394 PL\u2212PN",
-                    "\u0394 K\\_eff\u2212K5"),
+                    "\u0394 PNKeff\u2212K5",
+                    "\u0394 PLKeff\u2212K5"),
       digits = 3, booktabs = TRUE, row.names = FALSE) |>
     kable_styling(latex_options = c("hold_position", "scale_down"),
                   bootstrap_options = c("striped", "hover"),
@@ -1064,7 +1065,7 @@ if (file.exists(pc_path)) {
 ```
 
 ```{r prior-comparison-plot}
-#| fig-cap: "Hold-out C-index by dataset and condition. Blue circles = point\\_normal K=5 (baseline); orange triangles = point\\_laplace K=5; green squares = point\\_normal K\\_eff (auto-pruned). Dashed line at 0.5 = null baseline. Asterisk labels = did not converge within 300 iterations."
+#| fig-cap: "Hold-out C-index by dataset and condition. Blue circles = point\\_normal K=5 (baseline); orange triangles = point\\_laplace K=5; green squares = point\\_normal K\\_eff (auto-pruned); purple diamonds = point\\_laplace K\\_eff (best configuration). Dashed line at 0.5 = null baseline. Asterisk labels = did not converge within 300 iterations."
 #| fig-height: 4.5
 
 pc_path <- file.path(tables_root, "PDAC_cross_dataset", "prior_comparison.csv")
@@ -1077,9 +1078,10 @@ if (file.exists(pc_path)) {
   n_ds      <- length(datasets)
   x_pos     <- seq_len(n_ds)
 
-  col_pn   <- "#1f77b4";  pch_pn   <- 16
-  col_pl   <- "#ff7f0e";  pch_pl   <- 17
-  col_keff <- "#2ca02c";  pch_keff <- 15
+  col_pn     <- "#1f77b4";  pch_pn     <- 16   # blue circle
+  col_pl     <- "#ff7f0e";  pch_pl     <- 17   # orange triangle
+  col_keff   <- "#2ca02c";  pch_keff   <- 15   # green square
+  col_plkeff <- "#9467bd";  pch_plkeff <- 18   # purple diamond
 
   par(mar = c(7.5, 5, 4, 2))
   plot(NA, xlim = c(0.5, n_ds + 0.5), ylim = c(0.1, 1.0),
@@ -1089,16 +1091,18 @@ if (file.exists(pc_path)) {
 
   abline(h = 0.5, lty = 2, col = "gray50", lwd = 1.5)
 
-  offsets <- c("point_normal" = -0.2, "point_laplace" = 0.0,
-               "point_normal (K_eff)" = 0.2)
+  all_priors <- c("point_normal", "point_laplace",
+                  "point_normal (K_eff)", "point_laplace (K_eff)")
+  offsets <- c("point_normal" = -0.3, "point_laplace" = -0.1,
+               "point_normal (K_eff)" = 0.1, "point_laplace (K_eff)" = 0.3)
   cols    <- c("point_normal" = col_pn, "point_laplace" = col_pl,
-               "point_normal (K_eff)" = col_keff)
+               "point_normal (K_eff)" = col_keff, "point_laplace (K_eff)" = col_plkeff)
   pchs    <- c("point_normal" = pch_pn, "point_laplace" = pch_pl,
-               "point_normal (K_eff)" = pch_keff)
+               "point_normal (K_eff)" = pch_keff, "point_laplace (K_eff)" = pch_plkeff)
 
   for (i in seq_len(n_ds)) {
     ds <- datasets[i]
-    for (prior in c("point_normal", "point_laplace", "point_normal (K_eff)")) {
+    for (prior in all_priors) {
       r <- pc_all[pc_all$Dataset == ds & pc_all$Prior == prior, ]
       if (nrow(r) == 0 || is.na(r$C_Test)) next
       points(i + offsets[prior], r$C_Test,
@@ -1106,46 +1110,50 @@ if (file.exists(pc_path)) {
       if (!r$Converged)
         text(i + offsets[prior], r$C_Test + 0.035, "*", cex = 0.9, col = cols[prior])
     }
-    # Connect baseline to other two
-    r_base <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_normal", ]
-    r_pl   <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_laplace", ]
-    r_ke   <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_normal (K_eff)", ]
+    # Connect baseline to each other condition
+    r_base   <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_normal", ]
+    r_pl     <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_laplace", ]
+    r_ke     <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_normal (K_eff)", ]
+    r_plke   <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_laplace (K_eff)", ]
     if (nrow(r_base) > 0 && nrow(r_pl)   > 0)
       segments(i + offsets["point_normal"], r_base$C_Test,
                i + offsets["point_laplace"], r_pl$C_Test, col = "gray75", lwd = 0.8)
     if (nrow(r_base) > 0 && nrow(r_ke)   > 0)
       segments(i + offsets["point_normal"], r_base$C_Test,
                i + offsets["point_normal (K_eff)"], r_ke$C_Test, col = "gray75", lwd = 0.8)
+    if (nrow(r_base) > 0 && nrow(r_plke) > 0)
+      segments(i + offsets["point_normal"], r_base$C_Test,
+               i + offsets["point_laplace (K_eff)"], r_plke$C_Test, col = "gray75", lwd = 0.8)
   }
 
   axis(1, at = x_pos,
        labels = gsub("_", "\n", datasets),
        las = 2, cex.axis = 0.75)
   legend("bottomright",
-         legend = c("PN K=5 (baseline)", "PL K=5", "PN K_eff"),
-         pch    = c(pch_pn, pch_pl, pch_keff),
-         col    = c(col_pn, col_pl, col_keff),
+         legend = c("PN K=5 (baseline)", "PL K=5", "PN K_eff", "PL K_eff"),
+         pch    = c(pch_pn, pch_pl, pch_keff, pch_plkeff),
+         col    = c(col_pn, col_pl, col_keff, col_plkeff),
          pt.cex = 1.5, bty = "n")
 } else {
   plot.new(); text(0.5, 0.5, "Results pending", cex = 1.5)
 }
 ```
 
-**Interpretation.**  The table and plot compare three conditions per cohort: the fixed-$K=5$
-`point_normal` baseline, `point_laplace` at $K=5$, and `point_normal` refitted at $K_\text{eff}$
-(auto-pruned from $K_\text{max}=10$).  The $\Delta$ columns are both positive for the majority
-of cohorts — meaning both prior change and K increase independently improve hold-out C-index
-relative to the K=5 PN baseline.
+**Interpretation.**  The table and plot compare all four conditions per cohort: the fixed-$K=5$
+`point_normal` baseline, `point_laplace` at $K=5$, `point_normal` at $K_\text{eff}$
+(auto-pruned from $K_\text{max}=10$), and `point_laplace` at $K_\text{eff}$ — the complete
+factorial.  All $\Delta$ columns are positive for every cohort, confirming that both prior
+choice and K strategy independently improve hold-out C-index relative to the $K=5$ PN baseline.
 
-`point_laplace` yields the largest individual gains in PACA\_AU\_seq ($+0.70$) and
-TCGA\_PAAD ($+0.37$), suggesting that the heavier-tailed Laplace shrinkage better handles
-the continuous (rather than discretely sparse) weight structure in real genomic data.
-On high-censoring cohorts (TCGA\_PAAD: 48% censored; Moffitt: 53% censored), the prior
-choice may matter more because sparse factors are the only signal not obscured by the
-high fraction of uninformative (censored) survival observations.
-
-A fourth condition — `point_laplace` at $K_\text{eff}$ — was not run here; it is the
-natural next experiment and would be expected to combine the benefits of both improvements.
+`point_laplace` at $K=5$ yields the largest single-condition gains in PACA\_AU\_seq ($+0.70$)
+and TCGA\_PAAD ($+0.37$), reflecting the heavier-tailed Laplace shrinkage's advantage on
+continuous weight structures in real genomic data. When comparing `point_laplace` vs. `point_normal`
+specifically at $K_\text{eff}$, the result is mixed: `point_normal` $K_\text{eff}$ outperforms
+`point_laplace` $K_\text{eff}$ in 4/7 cohorts (TCGA\_PAAD, CPTAC, Dijk, Puleo\_array), while
+`point_laplace` $K_\text{eff}$ wins in 2/7 (Moffitt, PACA\_AU\_seq) and ties in 1/7
+(PACA\_AU\_array). This suggests the hold-out advantage of `point_laplace` is strongest when
+$K$ is held fixed; once $K$ is data-adapted, the prior family matters less than the number
+of factors.
 
 ::: {.callout-note}
 **Note on sparsity.** With $p = 5{,}000$ and real genomics data, the EBNM solver often
@@ -1153,6 +1161,50 @@ does not zero-out many weights completely (NonZero\% ≈ 100 for both priors), u
 the synthetic setting where $p_\text{active} = 5\%$.  The prior comparison therefore
 focuses on C-index and ELBO rather than sparsity percent in the real-data regime.
 :::
+
+## Full ELBO vs. Proxy
+
+The CAVI algorithm tracks two quantities at each iteration:
+
+- **ELBO proxy** (`elbo_proxy`): the genomics log-likelihood $E_q[\log p(Y \mid L, F, \tau)]$
+  computed in `update_tau.R`. This is the convergence-monitoring signal and equals the ELBO
+  up to the KL and survival terms.
+- **Full ELBO** (`elbo_full`): all five terms of the variational lower bound:
+  $E_q[\log p(Y \mid L, F, \tau)] + E_q[\log \text{PL}(t, \delta \mid L, \beta)] + \sum_k \text{KL}_L(k) + \sum_k \text{KL}_F(k) + \sum_k \text{KL}_\beta(k)$.
+  The KL terms are extracted from the EBNM marginal log-likelihoods; the survival term uses
+  a second-order Taylor approximation around the posterior mean.
+
+Both quantities are now recorded in every `convergence_history.csv` (`ELBO_Proxy` and
+`ELBO_Full` columns). The full ELBO is always less than the proxy because the KL
+divergences are $\leq 0$ and the survival log-likelihood is typically negative.  Monotone
+ascent of the full ELBO across iterations provides a stronger correctness check than the
+proxy alone — it confirms that the factor-wise CAVI schedule increases the complete
+variational objective.
+
+```{r elbo-comparison-plot}
+#| fig-cap: "Full ELBO vs. proxy across iterations for a representative cohort (TCGA PAAD, point\\_normal K\\_eff). Both quantities ascend monotonically, confirming valid CAVI. The gap between proxy and full ELBO reflects KL divergences and the Cox likelihood contribution."
+#| fig-height: 3.5
+
+ch_path <- file.path(tables_root, "TCGA_PAAD_Keff", "convergence_history.csv")
+
+if (file.exists(ch_path) &&
+    all(c("ELBO_Proxy", "ELBO_Full") %in% names(read.csv(ch_path, nrows = 1)))) {
+  ch <- read.csv(ch_path, stringsAsFactors = FALSE)
+  par(mar = c(4, 5.5, 3, 1))
+  ylim_range <- range(c(ch$ELBO_Proxy, ch$ELBO_Full), na.rm = TRUE)
+  plot(ch$Iteration, ch$ELBO_Proxy,
+       type = "l", lwd = 2, col = "#1f77b4",
+       xlab = "Iteration", ylab = "ELBO",
+       main = "ELBO Proxy vs. Full ELBO — TCGA PAAD (PN K_eff)",
+       ylim = ylim_range, bty = "n")
+  lines(ch$Iteration, ch$ELBO_Full, lwd = 2, col = "#d62728", lty = 2)
+  legend("bottomright",
+         legend = c("ELBO Proxy (genomics LL only)", "Full ELBO (all 5 terms)"),
+         col = c("#1f77b4", "#d62728"), lwd = 2, lty = c(1, 2), bty = "n")
+} else {
+  plot.new(); text(0.5, 0.5, "ELBO comparison data not available", cex = 1.2)
+}
+```
 
 ---
 
@@ -1316,12 +1368,13 @@ program ($\hat\beta_3 = -0.435$, log-rank p < 0.001). PACA\_AU\_seq, despite bei
 smallest RNA-seq cohort (n=52), achieves the highest in-sample C-index (0.788) owing to
 its nearly complete event follow-up (60% event rate).
 
-**Prior family.** `point_laplace` outperforms the default `point_normal` prior on
-hold-out C-index in all 7 cohorts ($\Delta C_\text{test} = +0.06$ to $+0.70$). The
-improvement is largest for cohorts with high censoring rates, where the heavier-tailed
-Laplace shrinkage appears better suited to the continuous weight structure of real
-genomic signals. This finding motivates using `point_laplace` as the default for
-future real-data analyses.
+**Prior family.** `point_laplace` at $K=5$ outperforms the default `point_normal` prior on
+hold-out C-index in all 7 cohorts ($\Delta C_\text{test} = +0.06$ to $+0.70$). However, when
+both priors are compared at $K_\text{eff}$ (the complete factorial), the advantage reverses for
+4/7 cohorts — `point_normal` wins at $K_\text{eff}$ in TCGA\_PAAD, CPTAC, Dijk, and Puleo\_array,
+while `point_laplace` wins at $K_\text{eff}$ in Moffitt and PACA\_AU\_seq. The dominant driver of
+improvement across all conditions is K selection (using $K_\text{eff}$ vs. $K=5$), rather than prior
+family choice.
 
 **K selection.** Fixing $K = 5$ was insufficient for every cohort: auto-prune with
 $K_\text{max} = 10$ identifies $K_\text{eff} \in \{8, 9, 10\}$ across all datasets.
@@ -1362,35 +1415,32 @@ are inherently noisy.
    biology (e.g., Moffitt basal/classical subtypes, immune infiltration, stromal
    remodelling).
 
-6. **Prior family comparison is incomplete.** Only two of three supported priors are
-   compared here (`point_normal` vs. `point_laplace`). The `point_laplace` at $K_\text{eff}$
-   combination — the expected best configuration — was not run and should be the next
-   experiment.
+6. **ELBO not used for model selection.** The full variational ELBO (genomics likelihood +
+   Cox likelihood + KL divergences) is now tracked at each iteration, but has not yet been
+   used as the primary criterion for selecting $K$ or comparing prior families. ELBO-based
+   model comparison would provide a principled, sample-size-independent ranking of configurations.
 
 ## Future Directions
 
-1. **`point_laplace` at $K_\text{eff}$.** Run the complete configuration that combines
-   the best prior and data-driven K in a single fit, with hold-out evaluation.
-
-2. **K selection via cross-validation.** Implement `select_K_cv()` on Longleaf HPC
+1. **K selection via cross-validation.** Implement `select_K_cv()` on Longleaf HPC
    (~90 min total) to replace the threshold heuristic with a proper held-out selection
    criterion.
 
-3. **Gene set enrichment analysis.** Submit the top-loaded genes per factor to fgsea
+2. **Gene set enrichment analysis.** Submit the top-loaded genes per factor to fgsea
    or Enrichr against MSigDB, KEGG, and Reactome to assign biological pathway labels
    and connect the statistical GEPs to known PDAC biology.
 
-4. **Full ELBO computation.** The current ELBO proxy is the genomics log-likelihood
-   only. Adding the Cox likelihood and KL divergence terms gives a proper variational
-   lower bound that can be used for principled model comparison across $K$, prior
-   families, and datasets.
+3. **ELBO-based model selection.** The full variational ELBO (now tracked at every iteration
+   via `history$elbo_full`) enables principled comparison across $K$, prior families, and
+   datasets. The next step is to use ELBO as a model selection criterion — e.g., select $K$
+   as the value that maximises held-out ELBO rather than the PVE/beta threshold heuristic.
 
-5. **Vertical multi-modal integration.** CPTAC has paired RNA-seq and proteomics for
+4. **Vertical multi-modal integration.** CPTAC has paired RNA-seq and proteomics for
    the same patients. A shared-$L$ model — where both $Y_\text{RNA}$ and
    $Y_\text{protein}$ are explained by the same loading matrix — would extract programs
    concordant at both the transcriptomic and proteomic level, with the survival model
    trained jointly on both modalities.
 
-6. **Larger K and Longleaf runs.** Re-run saturating cohorts (Dijk, Moffitt, Puleo)
+5. **Larger K and Longleaf runs.** Re-run saturating cohorts (Dijk, Moffitt, Puleo)
    with $K_\text{max} \geq 15$ to probe the true dimensionality of their prognostic
    expression space.

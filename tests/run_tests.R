@@ -20,6 +20,15 @@ source("code/update_beta.R")
 source("code/update_L.R")
 source("code/update_F.R")
 source("code/update_tau.R")
+source("code/compute_elbo.R")   # compute_ebnm_kl, compute_survival_elbo
+# fit_modular.R resets DATA_MODE <- "real" and has a runner block at the bottom
+# that errors when real_Y is NULL.  Wrap in tryCatch: the function definition
+# (lines 1-395) completes before the runner block fires, so the error is
+# harmless — fit_supervised_mf_modular() is available after this call.
+suppressMessages(tryCatch(
+  source("code/fit_modular.R"),
+  error = function(e) invisible(NULL)
+))
 
 # List all test files to run
 test_files <- c(
@@ -27,7 +36,8 @@ test_files <- c(
   "tests/test_update_L.R",
   "tests/test_update_F.R",
   "tests/test_update_tau.R",
-  "tests/test_predict.R"
+  "tests/test_predict.R",
+  "tests/test_elbo.R"
 )
 
 # Run each test file

@@ -1,0 +1,4 @@
+"Method","Prior","K_fit","C_Index","Split","n_patients","n_events"
+"Null (0.5)","point_laplace",8,0.5,"—",NA,NA
+"Supervised (train)","point_laplace",8,0.7045,"train",103,51
+"Supervised (test)","point_laplace",8,0.6228,"test",26,13

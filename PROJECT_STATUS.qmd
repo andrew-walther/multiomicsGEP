@@ -957,8 +957,93 @@ PN K_eff vs. PN K=5 hold-out C-index improvement was positive for all cohorts
 
 #### 12.5 — Open items / next session priorities
 
-1. Run `point_laplace` at `K_effective` per dataset (the expected best configuration).
+1. ~~Run `point_laplace` at `K_effective` per dataset (the expected best configuration).~~ **Done in Session 13.**
 2. Gene set enrichment analysis on top-loaded genes per GEP (fgsea / Enrichr).
 3. K selection via CV on Longleaf HPC (`select_K_cv()` stub is ready).
 4. Re-run Dijk, Moffitt, Puleo with K_max=15 to probe true dimensionality.
-5. Full ELBO tracking (add Cox likelihood and KL terms to ELBO proxy).
+5. ~~Full ELBO tracking (add Cox likelihood and KL terms to ELBO proxy).~~ **Done in Session 13.**
+
+---
+
+### Session 13 (April 1–2, 2026)
+
+**Full ELBO tracking implemented; point_laplace at K_eff run for all 7 cohorts; all results re-run with consistent methodology; PDAC report updated.**
+
+#### 13.1 — Full ELBO implementation
+
+New file: `code/compute_elbo.R`.  Provides two functions:
+
+- **`compute_ebnm_kl(ebnm_log_lik, A, x, mean_q, second_q)`** — extracts the KL divergence
+  $E_q[\log g(\theta)] - E_q[\log q(\theta)]$ from one EBNM update by subtracting the
+  expected pseudo-log-likelihood from the returned marginal log-likelihood.  Works for
+  vectors (L, F updates) and scalars (β update).  Returns a scalar ≤ 0.
+
+- **`compute_survival_elbo(logPL, w, EL, EL2, EBeta, EBeta2)`** — computes
+  $E_q[\log \text{PL}(t, \delta \mid L, \beta)]$ via second-order Taylor approximation:
+  $\log \text{PL}(\eta_0) - \tfrac{1}{2} \sum_i w_i \cdot \text{Var}_q(\eta_i)$,
+  where $\text{Var}_q(\eta_i) = \sum_k [EL2_{ik} \cdot EBeta2_k - EL_{ik}^2 \cdot EBeta_k^2]$.
+
+**`code/fit_modular.R`** updated (7 edits):
+- `calc_cox_taylor()`: returns `$logPL` (Breslow partial log-likelihood at η₀)
+- `source("code/compute_elbo.R")` added alongside other sources
+- `history$elbo_full` initialized and populated each iteration
+- KL accumulators (`kl_L`, `kl_F`, `kl_beta`) filled inside the k-loop from EBNM outputs
+- Full ELBO = `elbo_proxy + surv_elbo + sum(kl_L) + sum(kl_F) + sum(kl_beta)`
+- Verbose print shows both ELBOs; convergence trim extended to `elbo_full`
+
+**`tests/test_elbo.R`** (new, 15 tests):
+
+- Section 1 (4 tests): `calc_cox_taylor` backward compat + new `$logPL` field
+- Section 2 (3 tests): `compute_ebnm_kl` — scalar output, scalar inputs, KL ≤ 0
+- Section 3 (3 tests): `compute_survival_elbo` — scalar output, zero-variance = logPL exactly, uncertainty reduces value
+- Section 4 (5 tests): integration via `fit_supervised_mf_modular` — `elbo_full` present, finite, all-iters tracking
+
+`Rscript tests/run_tests.R`: **139/139 passing** (24 β + 28 L + 26 F + 27 τ + 19 predict + 15 elbo).
+
+#### 13.2 — Complete 4-condition prior comparison
+
+`run_prior_k_comparison.R` updated to run all 4 conditions for all 7 datasets:
+
+1. point_normal K=5 (PN_K5)
+2. point_laplace K=5 (PL_K5)
+3. point_normal K_eff (PN_Keff)
+4. point_laplace K_eff (PL_Keff) — **new**
+
+All conditions re-run with consistent methodology (elbo_full as `ELBO_Final`).  New
+`{dataset}_pl_Keff/` directories created for all 7 datasets with `factor_summary_table.csv`,
+`holdout_cindex.csv`, and `convergence_history.csv` (ELBO_Proxy + ELBO_Full columns).
+
+**Key result — PL K_eff vs. PN K_eff:**
+
+| Dataset | PN K_eff C_Test | PL K_eff C_Test | Winner |
+|---------|-----------------|-----------------|--------|
+| TCGA_PAAD | 0.625 | 0.620 | PN |
+| CPTAC | 0.635 | 0.623 | PN |
+| Dijk | 0.544 | 0.510 | PN |
+| Moffitt_GEO_array | 0.530 | 0.550 | PL |
+| PACA_AU_array | 0.738 | 0.738 | Tie |
+| PACA_AU_seq | 0.741 | 0.778 | PL |
+| Puleo_array | 0.674 | 0.649 | PN |
+
+**Conclusion:** The dominant driver of improvement is K selection (K_eff vs K=5), not
+prior family.  At K_eff, `point_normal` wins in 4/7 cohorts, `point_laplace` wins in 2/7,
+tie in 1/7.  The advantage of `point_laplace` is strongest when K is fixed at 5.
+
+#### 13.3 — PDAC report updates
+
+- Fixed `$+$` LaTeX artifact in Key Findings (was rendering as literal `$+$0.012`)
+- Prior Family section: updated intro to mention 4 conditions; table extended to 4
+  conditions with new δ(PL K_eff − PN K=5) column; plot extended with 4th condition
+  (purple diamond); interpretation updated with actual PL K_eff results
+- New "Full ELBO vs. Proxy" subsection with convergence comparison plot (TCGA_PAAD)
+- Key Findings "Prior family": updated to reflect mixed PL K_eff result
+- Limitation 6: replaced "prior comparison incomplete" with "ELBO not yet used for model selection"
+- Future Directions: removed completed items (PL K_eff, full ELBO); renumbered remaining
+- Re-rendered: both PDF and HTML regenerated successfully
+
+#### 13.4 — Open items / next session priorities
+
+1. Gene set enrichment analysis on top-loaded genes per GEP (fgsea / Enrichr).
+2. K selection via CV on Longleaf HPC (`select_K_cv()` stub is ready).
+3. Re-run Dijk, Moffitt, Puleo with K_max=15 to probe true dimensionality.
+4. ELBO-based model selection: use `elbo_full` as criterion for K selection and prior comparison.

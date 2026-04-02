@@ -55,10 +55,11 @@ real_status <- NULL
 library(survival)
 library(ebnm)
 
-source("code/update_L.R")     # compute_R_k, update_L_k, update_L_all
-source("code/update_F.R")     # update_F_k, update_F_all  (uses compute_R_k from L)
-source("code/update_beta.R")  # compute_z_no_k, update_beta_k, update_beta_all
-source("code/update_tau.R")   # compute_var_term, update_tau
+source("code/update_L.R")      # compute_R_k, update_L_k, update_L_all
+source("code/update_F.R")      # update_F_k, update_F_all  (uses compute_R_k from L)
+source("code/update_beta.R")   # compute_z_no_k, update_beta_k, update_beta_all
+source("code/update_tau.R")    # compute_var_term, update_tau
+source("code/compute_elbo.R")  # compute_ebnm_kl, compute_survival_elbo
 
 # ------------------------------------------------------------------------------
 #' Calculate Cox Score and Diagonal Hessian (Taylor Expansion)
@@ -75,7 +76,8 @@ source("code/update_tau.R")   # compute_var_term, update_tau
 #' @param eta    n-vector: current linear predictor eta_i = sum_k l_bar_{ik} beta_bar_k
 #' @param time   n-vector: observed survival / censoring times
 #' @param status n-vector: event indicator (1 = event, 0 = censored)
-#' @return list(u = n-vector score, w = n-vector neg-diagonal Hessian)
+#' @return list(u = n-vector score, w = n-vector neg-diagonal Hessian,
+#'              logPL = scalar Breslow partial log-likelihood at eta)
 # ------------------------------------------------------------------------------
 calc_cox_taylor <- function(eta, time, status) {
   n   <- length(time)
@@ -92,7 +94,11 @@ calc_cox_taylor <- function(eta, time, status) {
   w_s[w_s < 1e-6] <- 1e-6
   u <- numeric(n); w <- numeric(n)
   u[ord] <- u_s;   w[ord] <- w_s
-  list(u = u, w = w)
+  # Breslow partial log-likelihood: sum_i delta_i * (eta_i - log R_i)
+  # where R_i = sum_{j: t_j >= t_i} exp(eta_j) (risk set cumulative sum).
+  # pmax guards against degenerate risk sets (shouldn't occur in practice).
+  logPL <- sum(status_s * (eta_s - log(pmax(risk_sum, 1e-300))))
+  list(u = u, w = w, logPL = logPL)
 }
 
 # ==============================================================================
@@ -214,6 +220,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
   history <- list(
     rmse       = numeric(max_iter),
     elbo_proxy = numeric(max_iter),
+    elbo_full  = numeric(max_iter),  # full ELBO: proxy + survival + KL terms
     converged  = FALSE,
     n_iter     = max_iter
   )
@@ -233,6 +240,14 @@ fit_supervised_mf_modular <- function(Y, time, status,
 
     EL_old    <- EL
     EBeta_old <- EBeta
+
+    # KL accumulators for full ELBO — reset each outer iteration.
+    # kl_L[k]    = E_q[log g_L(l_k)]    - E_q[log q_L(l_k)]    (<= 0)
+    # kl_F[k]    = E_q[log g_F(f_k)]    - E_q[log q_F(f_k)]    (<= 0)
+    # kl_beta[k] = E_q[log g_beta(b_k)] - E_q[log q_beta(b_k)] (<= 0)
+    kl_L    <- numeric(K)
+    kl_F    <- numeric(K)
+    kl_beta <- numeric(K)
 
     # ------------------------------------------------------------------------
     # STEP 1: Cox Taylor Expansion
@@ -283,6 +298,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
                              R_k, z_no_k, prior_family = prior_family)
       EL[, k]  <- res_L$mean
       EL2[, k] <- res_L$second
+      kl_L[k]  <- compute_ebnm_kl(res_L$ebnm_result$log_likelihood,
+                                   res_L$A, res_L$x, res_L$mean, res_L$second)
 
       # ----------------------------------------------------------------------
       # (b) Update q(f_k): Biological Factors
@@ -295,6 +312,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
                           prior_family = prior_family)
       EF[, k]  <- res_F$mean
       EF2[, k] <- res_F$second
+      kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
+                                   res_F$A, res_F$x, res_F$mean, res_F$second)
 
       # ----------------------------------------------------------------------
       # (c) Update q(beta_k): Survival Coefficient
@@ -303,10 +322,13 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # has not been updated in this inner iteration, and z_no_k excludes
       # factor k entirely.
       # ----------------------------------------------------------------------
-      res_beta  <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
-                                 prior_family = prior_family)
-      EBeta[k]  <- res_beta$mean
-      EBeta2[k] <- res_beta$second
+      res_beta    <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
+                                   prior_family = prior_family)
+      EBeta[k]    <- res_beta$mean
+      EBeta2[k]   <- res_beta$second
+      kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
+                                      res_beta$A, res_beta$x,
+                                      res_beta$mean, res_beta$second)
 
     }  # end k-loop
 
@@ -316,6 +338,14 @@ fit_supervised_mf_modular <- function(Y, time, status,
     res_tau              <- update_tau(Y, EL, EL2, EF, EF2)
     Tau                  <- res_tau$Tau
     history$elbo_proxy[iter] <- res_tau$elbo_proxy
+
+    # Full ELBO = proxy + survival likelihood + KL divergences for L, F, beta.
+    # surv_elbo: E_q[log PL(t,delta|L,beta)] via 2nd-order Taylor at eta_0.
+    # kl_*: E_q[log g(theta)] - E_q[log q(theta)] for each factor (each <= 0).
+    surv_elbo               <- compute_survival_elbo(taylor$logPL, w,
+                                                     EL, EL2, EBeta, EBeta2)
+    history$elbo_full[iter] <- res_tau$elbo_proxy + surv_elbo +
+                               sum(kl_L) + sum(kl_F) + sum(kl_beta)
 
     # ========================================================================
     # STEP 4: Convergence Check
@@ -330,8 +360,9 @@ fit_supervised_mf_modular <- function(Y, time, status,
     delta_Beta <- mean(abs(EBeta - EBeta_old))
 
     if (verbose && iter %% 10 == 0) {
-      cat(sprintf("  iter %3d | RMSE: %.4f | ELBO: %+.1f | dL: %.2e | dB: %.2e | beta: [%s]\n",
-                  iter, history$rmse[iter], history$elbo_proxy[iter],
+      cat(sprintf("  iter %3d | RMSE: %.4f | ELBO: %+.1f (full) %+.1f (proxy) | dL: %.2e | dB: %.2e | beta: [%s]\n",
+                  iter, history$rmse[iter],
+                  history$elbo_full[iter], history$elbo_proxy[iter],
                   delta_L, delta_Beta,
                   paste(sprintf("%+.2f", EBeta), collapse = ", ")))
     }
@@ -345,6 +376,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
       history$n_iter     <- iter
       history$rmse       <- history$rmse[1:iter]
       history$elbo_proxy <- history$elbo_proxy[1:iter]
+      history$elbo_full  <- history$elbo_full[1:iter]
       break
     }
 

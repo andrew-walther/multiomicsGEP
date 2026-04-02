@@ -176,7 +176,7 @@ fit_and_evaluate <- function(d, prior, K_val, holdout = TRUE,
   fit_cox_full   <- coxph(Surv(time, status) ~ EL_full)
   c_in_sample    <- round(summary(fit_cox_full)$concordance[1], 4)
 
-  elbo_final <- round(tail(history$elbo_proxy, 1), 2)
+  elbo_final <- round(tail(history$elbo_full, 1), 2)   # full ELBO (all 5 terms)
   n_iters    <- history$n_iter
   converged  <- history$converged
 
@@ -203,7 +203,8 @@ fit_and_evaluate <- function(d, prior, K_val, holdout = TRUE,
     conv_df <- data.frame(
       Iteration  = seq_along(history$rmse),
       RMSE       = history$rmse,
-      ELBO_Proxy = history$elbo_proxy
+      ELBO_Proxy = history$elbo_proxy,
+      ELBO_Full  = history$elbo_full
     )
     write.csv(conv_df,
               file.path(table_dir, "convergence_history.csv"), row.names = FALSE)
@@ -495,6 +496,28 @@ for (dsname in ALL_DATASETS) {
       }
     } else {
       cat(sprintf("  K_effective == K_fixed=%d — no separate refit needed\n", K_eff))
+    }
+
+    # --------------------------------------------------------------------------
+    # 4. Fit point_laplace at K_effective (the missing experiment:
+    #    best prior family at the data-driven number of factors)
+    # --------------------------------------------------------------------------
+    pl_keff_dir <- sprintf("results/tables/%s_pl_Keff", dsname)
+    cat(sprintf("  Fitting point_laplace K=%d (K_eff)...\n", K_eff))
+    pl_keff_row <- tryCatch(
+      fit_and_evaluate(d, prior = "point_laplace", K_val = K_eff, holdout = TRUE,
+                       table_dir = pl_keff_dir),
+      error = function(e) {
+        cat(sprintf("  point_laplace K_eff fit FAILED: %s\n", conditionMessage(e)))
+        NULL
+      }
+    )
+    if (!is.null(pl_keff_row)) {
+      pl_keff_row$Dataset  <- dsname
+      pl_keff_row$Platform <- PLATFORM_MAP[dsname]
+      pl_keff_row$n        <- d$n
+      pl_keff_row$Prior    <- "point_laplace (K_eff)"
+      prior_rows[[length(prior_rows) + 1]] <- pl_keff_row
     }
   }
 }
