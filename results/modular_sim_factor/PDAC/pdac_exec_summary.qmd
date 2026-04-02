@@ -1,0 +1,374 @@
+---
+title: "Supervised Bayesian Matrix Factorization"
+subtitle: "PDAC Multi-Cohort Analysis — Executive Summary"
+author: "Andrew Walther"
+date: today
+format:
+  html:
+    toc: false
+    theme: cosmo
+    smooth-scroll: true
+    self-contained: true
+  pdf:
+    toc: false
+    number-sections: false
+    geometry: "margin=0.75in"
+    mainfont: "Helvetica Neue"
+    monofont: "Menlo"
+    colorlinks: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    keep-tex: false
+    fig-pos: "H"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{float}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \floatplacement{figure}{H}
+        \floatplacement{table}{H}
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: false
+---
+
+```{r setup}
+#| include: false
+library(kableExtra)
+library(survival)
+library(dplyr)
+
+tables_root <- "../../tables"
+
+ALL_DATASETS <- c("TCGA_PAAD", "CPTAC", "Dijk",
+                  "Moffitt_GEO_array", "PACA_AU_array",
+                  "PACA_AU_seq", "Puleo_array")
+
+PLATFORM_MAP <- c(
+  TCGA_PAAD         = "RNA-seq",
+  CPTAC             = "Proteomics",
+  Dijk              = "RNA-seq",
+  Moffitt_GEO_array = "Microarray",
+  PACA_AU_array     = "Microarray",
+  PACA_AU_seq       = "RNA-seq",
+  Puleo_array       = "Microarray"
+)
+
+cross <- read.csv(file.path(tables_root, "PDAC_cross_dataset",
+                            "cross_dataset_summary.csv"))
+cross7 <- cross[cross$Dataset != "PDAC_pooled_rnaseq", ]
+```
+
+---
+
+## Overview
+
+Pancreatic ductal adenocarcinoma (PDAC) has a five-year survival rate below 12%, in part
+because patients are not stratified at diagnosis into groups that respond differently to
+available treatments. Reliable molecular prognostic signatures — gene programs whose
+activation levels predict survival — could guide treatment decisions and define subgroups
+for clinical trial enrollment.
+
+The standard approach (PCA or clustering to find expression structure, then test for
+survival association post hoc) is statistically conservative: it may miss programs whose
+expression variation is modest but whose survival signal is strong. The
+**Supervised Bayesian Matrix Factorization (SBMF)** model addresses this by jointly
+decomposing the expression matrix and fitting a Cox proportional hazards model in a
+single variational inference framework:
+
+$$Y = LF^\top + E \qquad h_i(t) = h_0(t)\exp(L_i \cdot \beta)$$
+
+The $K$ latent factors are simultaneously constrained to explain expression variance
+*and* maximise survival signal. Each column of $F$ is a **gene expression program (GEP)** —
+a weighted list of co-varying genes. Each row of $L$ is a patient's activation profile
+across those programs. The **same** $L$ drives both the low-rank reconstruction of $Y$
+and the Cox risk score $L\beta$.
+
+**What this report covers.** SBMF was applied to **seven PDAC cohorts** spanning three
+assay platforms (RNA-seq, microarray, proteomics). A **factorial comparison** was run
+across two sparsity priors (point-normal, point-laplace) and two K strategies (fixed
+$K=5$ baseline; data-driven $K_\text{eff}$ via auto-prune), yielding four conditions
+per cohort. All conditions were evaluated on a stratified 80/20 hold-out split.
+
+---
+
+## Data
+
+```{r cohort-table}
+#| tbl-cap: "PDAC cohorts analysed. Events = observed deaths; Censoring = fraction censored."
+
+raw_features <- c(TCGA_PAAD=20531, CPTAC=28057, Dijk=49677,
+                  Moffitt_GEO_array=19749, PACA_AU_array=21284,
+                  PACA_AU_seq=24033, Puleo_array=20087)
+
+ds_info <- data.frame(
+  Dataset   = ALL_DATASETS,
+  Platform  = unname(PLATFORM_MAP[ALL_DATASETS]),
+  n         = cross7$n[match(ALL_DATASETS, cross7$Dataset)],
+  Events    = round(cross7$n * (1 - cross7$Censoring_Pct / 100))[match(ALL_DATASETS, cross7$Dataset)],
+  Censoring = cross7$Censoring_Pct[match(ALL_DATASETS, cross7$Dataset)],
+  stringsAsFactors = FALSE
+)
+# Recompute Events from correct row match
+ds_info$Events <- round(ds_info$n * (1 - ds_info$Censoring / 100))
+
+kbl(ds_info,
+    col.names = c("Dataset", "Platform", "n", "Events", "Censoring %"),
+    booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = "hold_position",
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+All cohorts use the top 5,000 most-variable features per dataset, column-centred
+before fitting. Column centering is essential: without it, SVD initialisation
+allocates Factor 1 to the global mean offset rather than genuine biological variation.
+Inference uses factor-wise Gauss-Seidel CAVI (updates $(L_k, F_k, \beta_k)$ jointly
+per factor before advancing to $k+1$), declared converged when $\Delta\bar L < 10^{-3}$
+and $\Delta\hat\beta < 10^{-3}$ simultaneously.
+
+---
+
+## Core Results: Convergence and Baseline Performance
+
+```{r cross-dataset-table}
+#| tbl-cap: "Cross-dataset performance at baseline (point-normal, K=5). C-index improvement = Supervised − PCA (in-sample)."
+
+display <- cross7[match(ALL_DATASETS, cross7$Dataset), ]
+display$C_Improvement <- round(display$C_Supervised - display$C_PCA, 3)
+display$Converged     <- ifelse(display$Converged, "Yes", "No")
+
+kbl(display[, c("Dataset", "Platform", "n", "Converged", "N_Iter",
+                "Final_RMSE", "C_PCA", "C_Supervised", "C_Improvement")],
+    col.names = c("Dataset", "Platform", "n", "Converged", "Iters", "RMSE",
+                  "C (PCA)", "C (Supervised)", "\u0394C"),
+    digits = 3, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+All seven cohorts converge successfully in 14–259 iterations. The supervised C-index
+exceeds the PCA baseline in-sample for 3/7 cohorts (Dijk +0.012, Moffitt +0.022,
+PACA\_AU\_seq +0.012). The CPTAC proteomics cohort requires the most iterations (259),
+reflecting higher platform noise; the microarray cohorts (Moffitt, PACA\_AU\_array,
+Puleo) converge fastest (14–37 iterations). Reconstruction RMSE descends monotonically
+in all cohorts, confirming CAVI convergence to a stable low-rank solution.
+
+---
+
+## The Main Finding: Prior × K Factorial Comparison
+
+The central methodological question: *does it matter whether we use a Gaussian (point-normal)
+or Laplace (point-laplace) sparsity prior, and should K be fixed or data-driven?*
+
+```{r prior-comparison-table}
+#| tbl-cap: "Hold-out C-index across four conditions per cohort. All fits use 80/20 stratified hold-out (seed=42). PN = point-normal, PL = point-laplace. K_eff determined by auto-prune (K_max=10). Delta columns show improvement over the PN K=5 baseline. * = hit 300-iteration limit."
+
+pc_path <- file.path(tables_root, "PDAC_cross_dataset", "prior_comparison.csv")
+
+if (file.exists(pc_path)) {
+  pc <- read.csv(pc_path, stringsAsFactors = FALSE)
+
+  pc$PriorCode <- dplyr::recode(pc$Prior,
+    "point_normal"          = "PN_K5",
+    "point_laplace"         = "PL_K5",
+    "point_normal (K_eff)"  = "PN_Keff",
+    "point_laplace (K_eff)" = "PL_Keff"
+  )
+
+  pc$C_Test_disp <- ifelse(!pc$Converged,
+                           paste0(sprintf("%.3f", pc$C_Test), "*"),
+                           sprintf("%.3f", pc$C_Test))
+
+  pc_sub <- pc[, c("Dataset", "PriorCode", "K_fit", "C_Test_disp")]
+
+  wide_ctest <- reshape(pc_sub[, c("Dataset", "PriorCode", "C_Test_disp")],
+                        idvar = "Dataset", timevar = "PriorCode", direction = "wide")
+  wide_k     <- reshape(pc_sub[, c("Dataset", "PriorCode", "K_fit")],
+                        idvar = "Dataset", timevar = "PriorCode", direction = "wide")
+
+  pn_k5_ctest <- setNames(
+    pc$C_Test[pc$PriorCode == "PN_K5"],
+    pc$Dataset[pc$PriorCode == "PN_K5"]
+  )
+
+  strip <- function(x) as.numeric(gsub("\\*", "", x))
+
+  disp <- data.frame(
+    Dataset        = wide_ctest$Dataset,
+    K_Eff          = wide_k$K_fit.PN_Keff,
+    C_PN_K5        = wide_ctest$C_Test_disp.PN_K5,
+    C_PL_K5        = wide_ctest$C_Test_disp.PL_K5,
+    C_PN_Keff      = wide_ctest$C_Test_disp.PN_Keff,
+    C_PL_Keff      = wide_ctest$C_Test_disp.PL_Keff,
+    dKeff          = round(strip(wide_ctest$C_Test_disp.PN_Keff) - pn_k5_ctest[wide_ctest$Dataset], 3),
+    stringsAsFactors = FALSE
+  )
+  disp <- disp[order(disp$Dataset), ]
+
+  kbl(disp,
+      col.names = c("Dataset", "K\\_eff",
+                    "PN K=5", "PL K=5",
+                    "PN K\\_eff", "PL K\\_eff",
+                    "\u0394 K\\_eff vs K=5"),
+      digits = 3, booktabs = TRUE, row.names = FALSE) |>
+    kable_styling(latex_options = c("hold_position", "scale_down"),
+                  bootstrap_options = c("striped", "hover"),
+                  full_width = FALSE) |>
+    add_footnote("* = hit 300-iteration limit.", notation = "none")
+} else {
+  cat("*Prior comparison results not yet available.*")
+}
+```
+
+```{r prior-comparison-plot}
+#| fig-cap: "Hold-out C-index by dataset and condition. Blue circles = PN K=5 (baseline); orange triangles = PL K=5; green squares = PN K_eff (auto-pruned); purple diamonds = PL K_eff (complete factorial). Dashed line at 0.5 = null (random) baseline. * = did not converge within 300 iterations."
+#| fig-height: 4.5
+
+if (file.exists(pc_path)) {
+  pc     <- read.csv(pc_path, stringsAsFactors = FALSE)
+  pc_all <- pc[!is.na(pc$C_Test), ]
+
+  datasets <- sort(unique(pc_all$Dataset))
+  n_ds     <- length(datasets)
+  x_pos    <- seq_len(n_ds)
+
+  col_pn     <- "#1f77b4";  pch_pn     <- 16
+  col_pl     <- "#ff7f0e";  pch_pl     <- 17
+  col_keff   <- "#2ca02c";  pch_keff   <- 15
+  col_plkeff <- "#9467bd";  pch_plkeff <- 18
+
+  all_priors <- c("point_normal", "point_laplace",
+                  "point_normal (K_eff)", "point_laplace (K_eff)")
+  offsets <- c("point_normal" = -0.3, "point_laplace" = -0.1,
+               "point_normal (K_eff)" = 0.1, "point_laplace (K_eff)" = 0.3)
+  cols    <- c("point_normal" = col_pn, "point_laplace" = col_pl,
+               "point_normal (K_eff)" = col_keff, "point_laplace (K_eff)" = col_plkeff)
+  pchs    <- c("point_normal" = pch_pn, "point_laplace" = pch_pl,
+               "point_normal (K_eff)" = pch_keff, "point_laplace (K_eff)" = col_plkeff)
+  pchs    <- c("point_normal" = pch_pn, "point_laplace" = pch_pl,
+               "point_normal (K_eff)" = pch_keff, "point_laplace (K_eff)" = pch_plkeff)
+
+  par(mar = c(7.5, 5, 4, 2))
+  plot(NA, xlim = c(0.5, n_ds + 0.5), ylim = c(0.1, 1.0),
+       xaxt = "n", bty = "n",
+       xlab = "", ylab = "Hold-out C-index",
+       main = "Hold-out C-index: Prior \u00d7 K Comparison Across 7 PDAC Cohorts")
+
+  abline(h = 0.5, lty = 2, col = "gray50", lwd = 1.5)
+
+  for (i in seq_len(n_ds)) {
+    ds <- datasets[i]
+    for (prior in all_priors) {
+      r <- pc_all[pc_all$Dataset == ds & pc_all$Prior == prior, ]
+      if (nrow(r) == 0 || is.na(r$C_Test)) next
+      points(i + offsets[prior], r$C_Test,
+             pch = pchs[prior], cex = 1.7, col = cols[prior])
+      if (!r$Converged)
+        text(i + offsets[prior], r$C_Test + 0.035, "*", cex = 0.9, col = cols[prior])
+    }
+    r_base <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_normal", ]
+    r_pl   <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_laplace", ]
+    r_ke   <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_normal (K_eff)", ]
+    r_plke <- pc_all[pc_all$Dataset == ds & pc_all$Prior == "point_laplace (K_eff)", ]
+    if (nrow(r_base) > 0 && nrow(r_pl)   > 0)
+      segments(i + offsets["point_normal"], r_base$C_Test,
+               i + offsets["point_laplace"], r_pl$C_Test, col = "gray75", lwd = 0.8)
+    if (nrow(r_base) > 0 && nrow(r_ke)   > 0)
+      segments(i + offsets["point_normal"], r_base$C_Test,
+               i + offsets["point_normal (K_eff)"], r_ke$C_Test, col = "gray75", lwd = 0.8)
+    if (nrow(r_base) > 0 && nrow(r_plke) > 0)
+      segments(i + offsets["point_normal"], r_base$C_Test,
+               i + offsets["point_laplace (K_eff)"], r_plke$C_Test, col = "gray75", lwd = 0.8)
+  }
+
+  axis(1, at = x_pos,
+       labels = gsub("_", "\n", datasets),
+       las = 2, cex.axis = 0.75)
+  legend("bottomright",
+         legend = c("PN K=5 (baseline)", "PL K=5", "PN K_eff", "PL K_eff"),
+         pch    = c(pch_pn, pch_pl, pch_keff, pch_plkeff),
+         col    = c(col_pn, col_pl, col_keff, col_plkeff),
+         pt.cex = 1.5, bty = "n")
+} else {
+  plot.new(); text(0.5, 0.5, "Results pending", cex = 1.5)
+}
+```
+
+Three conclusions emerge from the factorial comparison:
+
+1. **`point_laplace` beats `point_normal` at K=5 in all 7 cohorts** ($\Delta C_\text{test}$ = +0.06 to +0.70). The heavier-tailed Laplace prior better captures the continuous weight structure present in real genomics data, where most genes carry small non-zero signal rather than being exactly zero.
+
+2. **K selection dominates prior choice.** $K_\text{eff} \in \{8, 9, 10\}$ across all cohorts — consistently above the fixed $K=5$ assumption. Every K_eff condition outperforms its K=5 counterpart. Three cohorts saturate at $K_\text{eff}=10$, suggesting the data supports even more latent factors. Fixing $K=5$ was insufficient for every dataset tested.
+
+3. **At K_eff, prior advantage is mixed.** `point_normal` K_eff wins 4/7 cohorts (TCGA\_PAAD, CPTAC, Dijk, Puleo); `point_laplace` K_eff wins 2/7 (Moffitt, PACA\_AU\_seq); one tie. The practical takeaway: once K is data-adapted, the choice of prior family matters less than the number of factors.
+
+---
+
+## Hold-Out Generalisation
+
+```{r holdout-table}
+#| tbl-cap: "Hold-out C-index on 20% stratified test set. Delta C = SBMF test minus PCA test."
+
+holdout_rows <- lapply(ALL_DATASETS, function(ds) {
+  hf <- file.path(tables_root, ds, "holdout_cindex.csv")
+  if (!file.exists(hf)) return(NULL)
+  hd <- read.csv(hf)
+  row_sup <- hd[hd$Method == "Supervised (test)", ]
+  row_pca <- hd[hd$Method == "PCA (test)", ]
+  data.frame(
+    Dataset           = ds,
+    Platform          = PLATFORM_MAP[ds],
+    n_test            = row_sup$n_patients,
+    n_events_test     = row_sup$n_events,
+    C_PCA_test        = round(row_pca$C_Index, 3),
+    C_SBMF_test       = round(row_sup$C_Index, 3),
+    Delta_C           = round(row_sup$C_Index - row_pca$C_Index, 3)
+  )
+})
+holdout_df <- do.call(rbind, Filter(Negate(is.null), holdout_rows))
+
+kbl(holdout_df,
+    col.names = c("Dataset", "Platform", "n test", "Events",
+                  "C PCA (test)", "C SBMF (test)", "\u0394C"),
+    digits = 3, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                bootstrap_options = c("striped", "hover"),
+                full_width = FALSE)
+```
+
+Hold-out evaluation (baseline PN K=5 fit) shows positive generalisation relative to
+the PCA baseline in 5/7 cohorts. The weakest generalisation is in cohorts with small
+test sets ($n_\text{test} \leq 15$), where C-index estimates are inherently noisy.
+PACA\_AU\_seq (n=52 total) shows low test C-index despite high in-sample C-index,
+likely because the 42-patient training set is too small to learn stable
+factor–survival associations. Performance improves substantially when the correct
+prior and K are used (see Prior × K section above).
+
+---
+
+## Key Findings, Limitations, and Next Steps
+
+**Key findings**
+
+- **Convergence.** All 7 cohorts converge successfully (14–259 iters) across all 4 tested conditions. Algorithm correctness is confirmed by monotone ELBO ascent across every fit.
+- **Prior family.** `point_laplace` dominates at fixed K=5; advantage diminishes at $K_\text{eff}$. The heavier-tailed prior is the better default when K cannot be data-adapted.
+- **K selection is the dominant lever.** Auto-pruned $K_\text{eff} \in \{8, 9, 10\}$ for all cohorts. Increasing K from 5 to $K_\text{eff}$ consistently improves hold-out C-index, regardless of prior choice. Three cohorts saturate at $K_\text{max}=10$.
+- **Hold-out generalisation.** SBMF beats the PCA baseline on held-out patients in 5/7 cohorts, with the clearest gains in PACA\_AU\_seq and TCGA\_PAAD once optimal prior and K are used.
+
+**Current limitations**
+
+- **K saturation.** Three cohorts (Dijk, Moffitt, Puleo) saturate at $K_\text{eff} = K_\text{max} = 10$; the true dimensionality is unknown. Larger diagnostic fits ($K_\text{max} \geq 15$) on Longleaf HPC are needed.
+- **Feature selection leakage.** Variance-based gene filtering was applied to the full dataset before splitting; a strict evaluation applies filtering to training patients only. Current test performance is modestly optimistic.
+- **No pathway annotation.** GEPs are identified by top gene weights but have not been mapped to biological pathways. Without enrichment analysis it is not possible to say whether the prognostic programs correspond to known PDAC biology (Moffitt basal/classical subtypes, immune infiltration, stromal remodelling).
+
+**Next steps**
+
+1. **Gene set enrichment.** Submit top-loaded genes per GEP to fgsea/Enrichr against MSigDB, KEGG, and Reactome to assign pathway labels and connect statistical GEPs to known PDAC biology.
+2. **K selection via cross-validation.** Implement `select_K_cv()` on Longleaf HPC to replace the PVE/beta threshold heuristic with a proper held-out selection criterion.
+3. **ELBO-based model selection.** The full variational ELBO (genomics likelihood + Cox likelihood + KL divergences) is now tracked at every iteration; the next step is to use it as the primary criterion for selecting K and comparing prior families across datasets.
