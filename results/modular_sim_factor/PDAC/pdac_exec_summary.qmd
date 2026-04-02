@@ -161,6 +161,25 @@ in all cohorts, confirming CAVI convergence to a stable low-rank solution.
 
 ---
 
+## What a Successful Fit Looks Like: Puleo Array (n=288)
+
+Puleo\_array (n=288, microarray) has the clearest factor structure: 3/5 GEPs are
+prognostically adverse; 2 are expression-coherent but survival-neutral.
+
+::: {layout-ncol=2}
+![**Survival coefficients per GEP.** GEPs 2 and 5 are shrunk to $\hat\beta=0$ by the sparsity prior despite carrying expression signal — the model separates prognostic from non-prognostic structure.](../../figures/Puleo_array/fig3_beta_comparison.png)
+
+![**PVE scree (K selection).** Each bar = one factor's proportion of variance explained. The auto-prune threshold (dashed) identifies $K_\text{eff}=9$ for Puleo — four more active factors than the fixed $K=5$ baseline.](../../figures/Puleo_array/figK_pve_scree.png)
+:::
+
+Factor 2 (PVE 8.9%, the single largest expression axis) has $\hat\beta = 0$: the model
+correctly classifies it as expression-dominant but survival-neutral. A post-hoc approach
+would have tested it indiscriminately alongside the three genuinely prognostic GEPs.
+The scree plot shows why $K=5$ is insufficient — the auto-prune threshold retains 9 active
+factors, each contributing distinct expression variance not captured at $K=5$.
+
+---
+
 ## The Main Finding: Prior × K Factorial Comparison
 
 The central methodological question: *does it matter whether we use a Gaussian (point-normal)
@@ -356,19 +375,19 @@ prior and K are used (see Prior × K section above).
 
 **Key findings**
 
-- **Convergence.** All 7 cohorts converge successfully (14–259 iters) across all 4 tested conditions. Algorithm correctness is confirmed by monotone ELBO ascent across every fit.
-- **Prior family.** `point_laplace` dominates at fixed K=5; advantage diminishes at $K_\text{eff}$. The heavier-tailed prior is the better default when K cannot be data-adapted.
-- **K selection is the dominant lever.** Auto-pruned $K_\text{eff} \in \{8, 9, 10\}$ for all cohorts. Increasing K from 5 to $K_\text{eff}$ consistently improves hold-out C-index, regardless of prior choice. Three cohorts saturate at $K_\text{max}=10$.
-- **Hold-out generalisation.** SBMF beats the PCA baseline on held-out patients in 5/7 cohorts, with the clearest gains in PACA\_AU\_seq and TCGA\_PAAD once optimal prior and K are used.
+- **Convergence.** All 7 cohorts × 4 conditions converge; monotone ELBO ascent confirms algorithm correctness throughout.
+- **Prior family.** `point_laplace` outperforms `point_normal` at $K=5$ in all 7 cohorts; advantage reverses or disappears at $K_\text{eff}$ in 4/7, showing the prior matters most when K is constrained.
+- **K selection is the dominant lever.** $K_\text{eff} \in \{8, 9, 10\}$ across all cohorts — fixed $K=5$ is insufficient for every dataset. Every K_eff condition outperforms its K=5 counterpart.
+- **Hold-out generalisation.** SBMF beats the PCA baseline on unseen patients in 5/7 cohorts; gains are largest in PACA\_AU\_seq and TCGA\_PAAD at optimal prior and K.
 
-**Current limitations**
+**Limitations**
 
-- **K saturation.** Three cohorts (Dijk, Moffitt, Puleo) saturate at $K_\text{eff} = K_\text{max} = 10$; the true dimensionality is unknown. Larger diagnostic fits ($K_\text{max} \geq 15$) on Longleaf HPC are needed.
-- **Feature selection leakage.** Variance-based gene filtering was applied to the full dataset before splitting; a strict evaluation applies filtering to training patients only. Current test performance is modestly optimistic.
-- **No pathway annotation.** GEPs are identified by top gene weights but have not been mapped to biological pathways. Without enrichment analysis it is not possible to say whether the prognostic programs correspond to known PDAC biology (Moffitt basal/classical subtypes, immune infiltration, stromal remodelling).
+- **K saturation.** Three cohorts hit $K_\text{max}=10$; the true dimensionality is unknown — fits with $K_\text{max} \geq 15$ on Longleaf HPC are needed.
+- **Feature selection leakage.** Variance filtering on the full dataset (not training-only) modestly inflates reported test performance.
+- **No pathway annotation.** GEPs have not been mapped to biological pathways; enrichment analysis is needed to connect statistical factors to known PDAC biology.
 
 **Next steps**
 
-1. **Gene set enrichment.** Submit top-loaded genes per GEP to fgsea/Enrichr against MSigDB, KEGG, and Reactome to assign pathway labels and connect statistical GEPs to known PDAC biology.
-2. **K selection via cross-validation.** Implement `select_K_cv()` on Longleaf HPC to replace the PVE/beta threshold heuristic with a proper held-out selection criterion.
-3. **ELBO-based model selection.** The full variational ELBO (genomics likelihood + Cox likelihood + KL divergences) is now tracked at every iteration; the next step is to use it as the primary criterion for selecting K and comparing prior families across datasets.
+1. **Gene set enrichment** — fgsea/Enrichr on top-loaded genes per GEP against MSigDB, KEGG, Reactome.
+2. **K selection via CV** — implement `select_K_cv()` on Longleaf HPC to replace the PVE/beta threshold heuristic.
+3. **ELBO-based model selection** — use the tracked full ELBO as the primary criterion for comparing K and prior families across datasets.
