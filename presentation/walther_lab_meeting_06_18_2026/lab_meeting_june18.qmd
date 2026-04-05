@@ -1,0 +1,80 @@
+---
+title: "Your Presentation Title"
+subtitle: "Subtitle Here"
+author: "Andrew Walther"
+institute: "Department of Biostatistics, UNC Gillings School of Global Public Health"
+date: "June 18, 2026"
+format:
+  revealjs:
+    theme: [default, ../resources/custom.css]
+    logo: ../resources/assets/RLlogoA.png
+    footer: "Rashid Lab · UNC Chapel Hill"
+    slide-number: true
+    transition: fade
+    width: 1920
+    height: 1080
+    incremental: false
+    chalkboard: false
+    preview-links: auto
+    embed-resources: true
+  pdf:
+    toc: false
+    number-sections: false
+    geometry: "margin=0.5in"
+    fontsize: 10pt
+    colorlinks: true
+    fig-pos: "H"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{float}
+        \floatplacement{figure}{H}
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: false
+---
+
+```{r setup}
+#| include: false
+library(kableExtra)
+library(dplyr)
+
+# ── Path definitions (relative to this file's location) ──
+# Adjust as needed based on where results live
+figures_root <- "../../results/figures"
+tables_root  <- "../../results/tables"
+```
+
+
+## Outline {.smaller}
+
+- Topic 1
+- Topic 2
+- Topic 3
+- Topic 4
+
+
+## Slide Title {.smaller}
+
+Content here.
+
+::: {.notes}
+Speaker notes here.
+:::
+
+
+## Discussion {.centered}
+
+### Thank You
+
+<br>
+
+**Questions, suggestions, and feedback welcome!**
+
+<br>
+
+[Andrew Walther]{style="color: #4B9CD3; font-weight: 600;"} · [ajwalther@unc.edu]{style="color: #13294B;"}
+
+Department of Biostatistics, UNC Gillings School of Global Public Health

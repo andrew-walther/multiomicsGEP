@@ -1,0 +1,857 @@
+---
+title: "Your Research Project Title"
+subtitle: "Rashid Lab — New Member Research Presentation"
+author: "Your Name"
+institute: "Department of Biostatistics, UNC Gillings School of Global Public Health"
+date: today
+format:
+  revealjs:
+    theme: [default, custom.css]
+    logo: assets/RLlogoA.png
+    footer: "Rashid Lab · UNC Chapel Hill"
+    slide-number: true
+    transition: fade
+    width: 1920
+    height: 1080
+    incremental: false
+    chalkboard: false
+    preview-links: auto
+    embed-resources: true
+---
+
+<!--
+========================================================================
+  F31 LAB MEETING PRESENTATION TEMPLATE — Rashid Lab
+========================================================================
+
+  PURPOSE:
+  This template is for new lab members to present their research to the
+  lab for the first time. The sections mirror the NIH F31 (Ruth L.
+  Kirschstein Predoctoral Individual NRSA) fellowship application to
+  help you organize your thinking early in your PhD.
+
+  UPDATED for FORMS-I (effective January 25, 2025). Section names and
+  structure reflect the revised fellowship application and review criteria.
+
+  HOW TO USE:
+  1. Copy this file into your project directory
+  2. Copy custom.css and the RLlogoA.png logo into the same directory
+     (available from lab-handbook/assets/branding/)
+  3. Replace placeholder text with your content
+  4. Read the speaker notes (press S in presentation mode) for F31 tips
+  5. Render with: quarto preview f31-lab-meeting-template.qmd
+
+  F31 SECTIONS MAPPED TO THIS TEMPLATE (FORMS-I):
+    Slide(s)                 → F31 Section (Page Limit)
+    ──────────────────────────────────────────────────────────────────
+    Title                    → Cover page
+    About Me                 → Candidate's Goals, Preparedness,
+                               and Potential (3 pp)
+    The Problem              → Significance (Research Training
+                               Project Strategy, 6 pp total)
+    What's Missing           → Significance (Knowledge Gaps)
+    Specific Aims            → Research Training Project Specific
+                               Aims (1 pp)
+    Aim Details              → Approach (Research Training Project
+                               Strategy, 6 pp total)
+    What's New               → Innovation (Research Training Project
+                               Strategy)
+    Preliminary Data         → Approach (Preliminary Studies)
+    Training Goals           → Training Activities and Timelines (3 pp)
+    Timeline                 → Training Activities and Timelines
+    Mentor & Environment     → Commitment to Candidate, Mentoring,
+                               and Training Environment (6 pp sponsors
+                               + 2 pp institutional environment)
+    Discussion               → (Presentation only)
+
+  NIH F31 RESOURCES:
+  - F31 Overview:         https://grants.nih.gov/funding/activity-codes/F31
+  - Parent F31 (PA-25-422): https://grants.nih.gov/grants/guide/pa-files/PA-25-422.html
+  - Application Guide:    https://grants.nih.gov/grants-process/write-application/how-to-apply-application-guide
+  - FORMS-I Instructions: https://grants.nih.gov/grants/how-to-apply-application-guide/forms-i/fellowship-forms-i.pdf
+  - Page Limits:          https://grants.nih.gov/grants-process/write-application/how-to-apply-application-guide/page-limits
+  - Section Changes:      https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-applications
+  - Review Criteria:      https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-review-criteria
+  - NIH Training Portal:  https://researchtraining.nih.gov/programs/fellowships
+
+  TIPS:
+  - Aim for 20-25 minutes of content (lab meeting is 90 min with discussion)
+  - Use speaker notes (press S) for your talking points and F31 guidance
+  - Keep slides visual — avoid walls of text
+  - It's OK if sections are incomplete; this is a thinking exercise
+========================================================================
+-->
+
+
+## About Me {.smaller}
+
+:::: {.columns}
+
+::: {.column width="60%"}
+
+### Background
+
+- **Program:** [PhD in Biostatistics / your program]
+- **Year:** [1st year, 2nd year, etc.]
+- **Prior training:** [Undergrad institution, degree, relevant experience]
+
+### Research Interests
+
+- [Interest area 1]
+- [Interest area 2]
+- [Interest area 3]
+
+:::
+
+::: {.column width="40%"}
+
+### Path to the Rashid Lab
+
+[1-2 sentences on what brought you to biostatistics and to this lab specifically. What excites you about the lab's research?]
+
+:::
+
+::::
+
+::: {.notes}
+**F31 Section → Candidate's Goals, Preparedness, and Potential** (3 pages)
+
+As of FORMS-I (Jan 2025), this section was renamed from "Applicant's Background
+and Goals for Fellowship Training." It now requires four distinct personal
+statements:
+
+  1. Professional and fellowship goals
+  2. Fellowship qualifications
+  3. Self-assessment of strengths and areas for growth
+  4. Scientific perspective — your unique viewpoint on the research problem
+
+For this lab talk, focus on introducing yourself and setting the stage for
+*why* you're the right person to tackle this problem.
+
+Think about: What skills from your prior training are relevant? What gaps in
+your training does this PhD fill? What's your unique scientific lens?
+
+READ MORE:
+  - What changed: https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-applications
+  - Full instructions (FORMS-I PDF): https://grants.nih.gov/grants/how-to-apply-application-guide/forms-i/fellowship-forms-i.pdf
+
+NOTE: Under the revised review criteria, grades are no longer required or
+allowed in the candidate biosketch. The emphasis has shifted toward
+evaluating your *potential* and *scientific perspective* rather than
+academic metrics.
+:::
+
+
+## The Problem {.smaller}
+
+### [Disease / Statistical Challenge / Scientific Question]
+
+[2-3 sentences framing the broad problem area. Why should anyone care?]
+
+### The Burden
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+- [Key statistic about disease burden, prevalence, or impact]
+- [Current standard of care or existing methods]
+- [Limitation of current approaches]
+
+:::
+
+::: {.column width="50%"}
+
+<!-- Replace with a relevant figure, diagram, or key data visualization -->
+<!-- ![](figures/problem-overview.png){fig-align="center" width="90%"} -->
+
+*[Placeholder: Add a figure illustrating the problem scope]*
+
+:::
+
+::::
+
+::: {.notes}
+**F31 Section → Significance (within Research Training Project Strategy)** (6 pages total for Significance + Innovation + Approach)
+
+The Research Training Project Strategy section was renamed from "Research
+Strategy" in FORMS-I. The Significance subsection answers: "Does this study
+address an important problem?"
+
+You need to explain the scientific premise — what's known, what current methods
+exist, and how they fall short. Reviewers want to see that you understand the
+landscape.
+
+Key questions to answer:
+  - What is the clinical/scientific impact if the problem remains unsolved?
+  - What existing methods or knowledge does your work build on?
+  - Who benefits from solving this problem?
+
+READ MORE:
+  - Page limits: https://grants.nih.gov/grants-process/write-application/how-to-apply-application-guide/page-limits
+  - Parent F31 announcement: https://grants.nih.gov/grants/guide/pa-files/PA-25-422.html
+:::
+
+
+## What's Missing {.smaller}
+
+### Gaps in Current Knowledge
+
+::: {.callout-note}
+**Central Gap:** [One sentence stating the critical knowledge gap or methodological
+limitation your research addresses]
+:::
+
+1. **Gap 1:** [Description of first gap in the literature or methodology]
+
+2. **Gap 2:** [Description of second gap]
+
+3. **Gap 3:** [Description of third gap, if applicable]
+
+### Why These Gaps Matter
+
+[1-2 sentences connecting the gaps back to patient outcomes, scientific understanding,
+or methodological needs]
+
+::: {.notes}
+**F31 Section → Significance (continued)**
+
+This is the "so what?" slide. Strong F31 applications create a clear narrative:
+"Here is the problem → here is what we know → here is what we DON'T know →
+and here is why that gap is consequential."
+
+The gaps you identify here should lead directly to your Specific Aims on the
+next slide. Each aim should address one or more of these gaps.
+
+Tip: Reviewers look for gaps that are *tractable* — not just important, but
+solvable within a PhD timeline with available data and methods.
+
+READ MORE:
+  - Review criteria (what reviewers score): https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-review-criteria
+:::
+
+
+## Specific Aims {.smaller}
+
+### Long-term Goal
+
+[One sentence: your broad career-level research goal]
+
+### Overall Objective
+
+[One sentence: what this specific project will accomplish]
+
+### Central Hypothesis
+
+[One sentence: the testable hypothesis driving your work]
+
+---
+
+**Aim 1:** [Aim title — action verb + what you will do]
+
+> [One sentence rationale and expected outcome]
+
+**Aim 2:** [Aim title — action verb + what you will do]
+
+> [One sentence rationale and expected outcome]
+
+**Aim 3 (if applicable):** [Aim title — action verb + what you will do]
+
+> [One sentence rationale and expected outcome]
+
+::: {.notes}
+**F31 Section → Research Training Project Specific Aims** (1 page)
+
+Renamed from "Specific Aims" in FORMS-I to emphasize the training context.
+This is still the single most important page of an F31 — it must stand alone.
+Reviewers read it first and form their initial impression here.
+
+Structure (classic format):
+  1. Opening paragraph: problem + significance (2-3 sentences)
+  2. "What is known" paragraph: current state of knowledge
+  3. "What is NOT known" paragraph: the gap (leads to your hypothesis)
+  4. Overall objective + central hypothesis
+  5. Aims (2-3, usually)
+  6. Impact statement: how the field changes if aims are achieved
+
+Tips:
+  - Each aim should be *independently achievable* — if Aim 1 fails, Aim 2
+    should still be feasible
+  - Aims should be related but not dependent on each other's outcomes
+  - Use strong action verbs: Develop, Evaluate, Characterize, Determine
+  - For biostatistics, aims often follow a pattern: (1) develop method,
+    (2) evaluate via simulation, (3) apply to real data
+
+READ MORE:
+  - F31 overview and eligibility: https://grants.nih.gov/funding/activity-codes/F31
+  - Full application instructions: https://grants.nih.gov/grants-process/write-application/how-to-apply-application-guide
+:::
+
+
+## Aim 1: [Short Title] {.smaller}
+
+### Rationale
+
+[Why is this aim necessary? What gap does it address?]
+
+### Approach
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+**Data**
+
+- [Data source(s)]
+- [Sample size / key characteristics]
+- [How data will be obtained]
+
+**Methods**
+
+- [Statistical method or model]
+- [Key assumptions]
+- [Software / implementation]
+
+:::
+
+::: {.column width="50%"}
+
+**Expected Outcomes**
+
+- [Primary expected result]
+- [Secondary expected result]
+
+**Potential Problems & Alternatives**
+
+- [What could go wrong?]
+- [Backup plan or alternative approach]
+
+:::
+
+::::
+
+::: {.notes}
+**F31 Section → Approach (within Research Training Project Strategy)** (6 pages shared with Significance and Innovation)
+
+The Approach subsection is where reviewers evaluate whether your plan is
+feasible and rigorous. For each aim, address:
+  - Rationale: Why this aim? How does it connect to the overall objective?
+  - Design: What's the study design, data source, and analytical approach?
+  - Expected outcomes: What do you expect to find?
+  - Potential problems: What might go wrong, and what's your backup?
+
+The "potential problems and alternative approaches" subsection is critical.
+It shows maturity and planning — reviewers worry about trainees who haven't
+considered failure modes.
+
+For biostatistics students: clearly describe the statistical methodology and
+how it improves on existing approaches. Include enough mathematical detail
+that a quantitative reviewer can assess rigor.
+
+READ MORE:
+  - FORMS-I fellowship instructions (PDF): https://grants.nih.gov/grants/how-to-apply-application-guide/forms-i/fellowship-forms-i.pdf
+  - NIAID tips on fellowship applications: https://www.niaid.nih.gov/grants-contracts/fellowship-grants
+:::
+
+
+## Aim 2: [Short Title] {.smaller}
+
+### Rationale
+
+[Why is this aim necessary? What gap does it address?]
+
+### Approach
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+**Data**
+
+- [Data source(s)]
+- [Sample size / key characteristics]
+- [How data will be obtained]
+
+**Methods**
+
+- [Statistical method or model]
+- [Key assumptions]
+- [Software / implementation]
+
+:::
+
+::: {.column width="50%"}
+
+**Expected Outcomes**
+
+- [Primary expected result]
+- [Secondary expected result]
+
+**Potential Problems & Alternatives**
+
+- [What could go wrong?]
+- [Backup plan or alternative approach]
+
+:::
+
+::::
+
+::: {.notes}
+**F31 Section → Approach (continued)**
+
+Same structure as Aim 1. Make sure to articulate how this aim complements
+Aim 1 without being dependent on it. If your aims use a shared data source,
+describe it in full under Aim 1 and reference it briefly here.
+
+Think about: Does each aim result in a distinct, publishable contribution?
+Strong F31 applications often map aims to dissertation chapters / papers.
+
+READ MORE:
+  - NCI F31 guidance (useful even for non-cancer applications): https://www.cancer.gov/grants-training/training/funding/f31
+:::
+
+
+<!--
+UNCOMMENT THIS SLIDE IF YOU HAVE A THIRD AIM:
+
+## Aim 3: [Short Title] {.smaller}
+
+### Rationale
+
+[Why is this aim necessary? What gap does it address?]
+
+### Approach
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+**Data / Methods**
+
+- [Data source(s) and methods]
+
+:::
+
+::: {.column width="50%"}
+
+**Expected Outcomes / Alternatives**
+
+- [Expected results and backup plans]
+
+:::
+
+::::
+
+::: {.notes}
+F31 Section → Approach (continued). Same principles apply. For
+biostatistics PhDs, 2-3 aims is typical. Don't feel obligated to have
+3 aims — 2 strong aims is better than 3 weak ones.
+:::
+
+-->
+
+
+## What's New About This Work {.smaller}
+
+### Innovation
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+**Methodological Innovation**
+
+- [Novel statistical method, model, or algorithm]
+- [New combination of existing approaches]
+- [Improved computational approach]
+
+:::
+
+::: {.column width="50%"}
+
+**Applied Innovation**
+
+- [New application domain for existing methods]
+- [Novel data source or integration]
+- [Clinical or translational impact]
+
+:::
+
+::::
+
+::: {.callout-tip}
+**How is this different from what exists?** [One sentence capturing the core
+novelty of your approach compared to the status quo]
+:::
+
+::: {.notes}
+**F31 Section → Innovation (within Research Training Project Strategy)**
+
+The Innovation subsection answers: "Does the project employ novel concepts,
+approaches, or methodologies?"
+
+NIH defines innovation along three axes:
+  1. Novel theoretical concepts or frameworks
+  2. Novel methodologies, tools, or technologies
+  3. Novel applications of existing tools to new problems
+
+You don't need to be novel on all three — but be specific about where your
+contribution lies. Avoid vague claims like "no one has done this before."
+Instead, explain *how* your approach shifts the current paradigm.
+
+For biostatistics: methodological novelty is often your strongest card.
+Clearly articulate what your method can do that existing methods cannot.
+
+READ MORE:
+  - Parent F31 announcement with full description: https://grants.nih.gov/grants/guide/pa-files/PA-25-422.html
+:::
+
+
+## Preliminary Data {.smaller}
+
+### Current Progress
+
+[Describe any preliminary work, pilot analyses, or initial results.
+It's perfectly fine if this is minimal — you're early in your PhD!]
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+<!-- Replace with your preliminary figure or table -->
+<!-- ![](figures/preliminary-result.png){fig-align="center" width="95%"} -->
+
+*[Placeholder: preliminary figure or simulation result]*
+
+:::
+
+::: {.column width="50%"}
+
+**Key Observations**
+
+- [What does the preliminary data suggest?]
+- [How does it support your hypothesis or approach?]
+- [What questions remain?]
+
+:::
+
+::::
+
+::: {.notes}
+**F31 Section → Approach (Preliminary Studies, within Research Training Project Strategy)**
+
+Preliminary data strengthens your application by demonstrating feasibility.
+For new students, this might be:
+  - A simulation study showing your method works in simple settings
+  - Exploratory data analysis of your data source
+  - A literature-based power analysis or sample size justification
+  - Replication of a key result from a prior paper
+
+Even a small pilot result is valuable. It shows reviewers you can execute
+the work and that the project is tractable.
+
+Don't worry if you have little to show yet — frame what you DO have as
+evidence of feasibility and your capability.
+
+READ MORE:
+  - NIH fellowship training portal: https://researchtraining.nih.gov/programs/fellowships
+:::
+
+
+## Training Goals {.smaller}
+
+### What I Need to Learn
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+**Methodological Skills**
+
+- [Statistical methodology area 1]
+- [Computational skill]
+- [Software or programming skill]
+
+**Domain Knowledge**
+
+- [Clinical or scientific domain knowledge]
+- [Relevant biology / epidemiology / etc.]
+
+:::
+
+::: {.column width="50%"}
+
+**Professional Development**
+
+- [Scientific communication (writing, presenting)]
+- [Teaching or mentoring experience]
+- [Grant writing]
+- [Responsible conduct of research]
+
+**Planned Coursework / Training**
+
+- [Specific courses]
+- [Workshops, seminars, or conferences]
+- [Collaborations or rotations]
+
+:::
+
+::::
+
+::: {.notes}
+**F31 Section → Training Activities and Timelines** (3 pages, NEW in FORMS-I)
+
+This is a new standalone section in FORMS-I, separated from the old
+"Applicant's Background" section. It now gets its own 3-page allocation,
+signaling that NIH wants more detail on your training plan.
+
+The F31 is a *training* grant — reviewers evaluate whether your proposed
+training plan will prepare you for an independent research career. This
+section should show self-awareness: what skills do you have, and what
+gaps need filling?
+
+Think about:
+  - Short-term goals (during the PhD): what skills will this project teach you?
+  - Long-term goals (career): where are you headed? (Academia, industry,
+    government — all are valid)
+  - How does *this specific project* serve your career trajectory?
+  - What activities (courses, workshops, collaborations) will fill your gaps?
+
+Concrete details matter: "Take BIOS 735 (Advanced Bayesian Methods)" is
+stronger than "learn advanced statistics."
+
+READ MORE:
+  - What changed in FORMS-I: https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-applications
+  - Review criteria changes: https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-review-criteria
+:::
+
+
+## Project Timeline {.smaller}
+
+| Phase | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 |
+|:------|:------:|:------:|:------:|:------:|:------:|
+| **Coursework** | ██████ | ████── | ────── | ────── | ────── |
+| **Aim 1** | ──████ | ██████ | ██──── | ────── | ────── |
+| **Aim 2** | ────── | ──████ | ██████ | ████── | ────── |
+| **Aim 3** | ────── | ────── | ──████ | ██████ | ────── |
+| **Dissertation writing** | ────── | ────── | ────── | ──████ | ██████ |
+| **Manuscripts** | ────── | ────── | ████── | ──████ | ████── |
+
+: {.striped}
+
+[Adjust the timeline to reflect your actual PhD stage and expected progression.
+Shade blocks to show overlap and concurrent activities.]
+
+::: {.notes}
+**F31 Section → Training Activities and Timelines (continued)**
+
+The timeline demonstrates feasibility. Reviewers want to see that you've
+thought through the order of operations and that the work is completable
+within the fellowship period (typically 2-3 years of F31 support).
+
+Tips:
+  - Show some aim overlap — sequential aims can raise concerns about delays
+  - Include milestones: qualifying exams, preliminary results, manuscripts
+  - Be realistic — ambitious but achievable
+  - F31 typically supports years 3-5 of a PhD in biostatistics
+  - Under FORMS-I, the training timeline is now part of a dedicated section —
+    reviewers expect a detailed mapping of activities to timepoints
+
+READ MORE:
+  - Page limits for all sections: https://grants.nih.gov/grants-process/write-application/how-to-apply-application-guide/page-limits
+:::
+
+
+## Mentoring & Environment {.smaller}
+
+### Mentor
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+**Primary Mentor: Dr. Naim Rashid**
+
+- Dept. of Biostatistics, UNC Chapel Hill
+- [Mentor's relevant expertise areas]
+- [How mentor's expertise aligns with your project]
+
+**Co-mentor(s) (if applicable):**
+
+- [Name, department, expertise]
+
+:::
+
+::: {.column width="50%"}
+
+**Training Environment**
+
+- UNC Gillings School of Global Public Health
+- [Relevant centers, institutes, or programs]
+- [Available data resources or collaborations]
+- [Computational resources (e.g., Longleaf HPC)]
+
+**Committee Members**
+
+- [Name — expertise area]
+- [Name — expertise area]
+
+:::
+
+::::
+
+::: {.notes}
+**F31 Section → Commitment to Candidate, Mentoring, and Training Environment**
+(6 pages for sponsor statements + 2 pages for institutional environment description)
+
+This entire section was renamed from "Sponsor(s), Collaborator(s), and
+Consultant(s)" in FORMS-I. The new structure requires sponsors to provide
+five required statements:
+
+  1. Mentoring Approach and Candidate Mentoring Plan
+  2. Prior Commitment to Training and Mentoring
+  3. Commitment to the Candidate's Research Training Plan
+  4. Research Training Environment
+  5. Candidate's Potential
+
+The renaming signals a shift: reviewers are now explicitly told to evaluate
+the *quality of the mentoring plan* rather than being influenced by the
+sponsor's or institution's reputation alone.
+
+For your lab talk, this is a chance to articulate what you hope to gain
+from the mentoring relationship and the department. Think about:
+  - What specific expertise does your mentor bring?
+  - What complementary expertise do co-mentors or committee members add?
+  - What institutional resources (data, computing, collaborations) are available?
+
+READ MORE:
+  - What changed for sponsors: https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-applications
+  - Full review criteria: https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-review-criteria
+:::
+
+
+## Summary {.smaller}
+
+::: {.callout-note}
+### Key Takeaways
+
+1. **Problem:** [One sentence — what problem are you solving?]
+
+2. **Approach:** [One sentence — how are you solving it?]
+
+3. **Innovation:** [One sentence — what's new?]
+
+4. **Impact:** [One sentence — why does it matter?]
+:::
+
+### Next Steps
+
+- [Immediate next step in your research]
+- [Key milestone in the next 3-6 months]
+- [What feedback would be most helpful from the lab?]
+
+::: {.notes}
+This summary slide is not part of the F31 per se, but it mirrors the
+"Impact" closing statement of the Specific Aims page. A strong closing
+ties everything together: problem → gap → your approach → expected impact.
+
+Use this slide to explicitly ask the lab for feedback. Good questions:
+  - "Does the framing of the problem make sense to non-experts?"
+  - "Are there methods I should consider for Aim 2?"
+  - "Does anyone have experience with [data source / software]?"
+:::
+
+
+## Discussion {.centered}
+
+### Thank You
+
+<br>
+
+**Questions, suggestions, and feedback welcome!**
+
+<br>
+
+[Your Name]{.text-carolina} · [your_email@unc.edu]{.text-navy}
+
+::: {.notes}
+Open the floor for discussion. Lab meetings are collaborative — encourage
+questions about methodology, framing, data sources, and training goals.
+
+Remember: the goal of this presentation is not to have everything figured
+out. It's to organize your thinking and get early feedback from the lab.
+:::
+
+
+<!--
+========================================================================
+  APPENDIX: Additional slides for Q&A or deeper dives
+  These won't appear in the main presentation flow.
+========================================================================
+-->
+
+## F31 Quick Reference {visibility="uncounted" .smaller}
+
+### Key NIH Links
+
+| Resource | URL |
+|:---------|:----|
+| **F31 Overview** | <https://grants.nih.gov/funding/activity-codes/F31> |
+| **Parent F31 (PA-25-422)** | <https://grants.nih.gov/grants/guide/pa-files/PA-25-422.html> |
+| **How to Apply** | <https://grants.nih.gov/grants-process/write-application/how-to-apply-application-guide> |
+| **FORMS-I Instructions (PDF)** | <https://grants.nih.gov/grants/how-to-apply-application-guide/forms-i/fellowship-forms-i.pdf> |
+| **Page Limits** | <https://grants.nih.gov/grants-process/write-application/how-to-apply-application-guide/page-limits> |
+| **FORMS-I Section Changes** | <https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-applications> |
+| **Revised Review Criteria** | <https://grants.nih.gov/policy-and-compliance/policy-topics/peer-review/revisions-nih-fellowship-application-review-process/changes-to-fellowship-review-criteria> |
+| **NIH Fellowship Portal** | <https://researchtraining.nih.gov/programs/fellowships> |
+| **NCI F31 Tips** | <https://www.cancer.gov/grants-training/training/funding/f31> |
+| **NIA F31 Tips** | <https://www.nia.nih.gov/research/training/f31-individual-fellowships-ph-d-students-award-nia> |
+| **NIAID Fellowship Tips** | <https://www.niaid.nih.gov/grants-contracts/fellowship-grants> |
+
+### F31 Page Limits (FORMS-I)
+
+| Section | Limit |
+|:--------|:-----:|
+| Research Training Project Specific Aims | 1 page |
+| Research Training Project Strategy | 6 pages |
+| Candidate's Goals, Preparedness, and Potential | 3 pages |
+| Training Activities and Timelines | 3 pages |
+| Sponsor(s) Commitment | 6 pages |
+| Description of Institutional Environment | 2 pages |
+
+::: {.notes}
+This reference slide collects all the NIH links and page limits in one place.
+Keep it handy as you start thinking about your F31 application.
+
+The page limits above are for FORMS-I (effective January 25, 2025). Always
+check the specific Notice of Funding Opportunity (NOFO) for your target
+institute, as some ICs have additional requirements.
+:::
+
+
+## References {visibility="uncounted" .smaller}
+
+<!-- Add your key references here -->
+
+1. [Author et al. (Year). Title. *Journal*. DOI]
+2. [Author et al. (Year). Title. *Journal*. DOI]
+3. [Author et al. (Year). Title. *Journal*. DOI]
+
+::: {.notes}
+Keep a reference slide for Q&A. You can also use Quarto's built-in
+citation support with a .bib file for automated references.
+:::
+
+
+## Backup: Detailed Methods {visibility="uncounted" .smaller}
+
+[Additional methodological details for anticipated questions]
+
+::: {.notes}
+Backup slides are common in academic presentations. Prepare 2-3 slides
+with deeper technical details for likely questions:
+  - Detailed model specification or likelihood
+  - Simulation design parameters
+  - Additional preliminary results
+  - Comparison with alternative methods
+:::

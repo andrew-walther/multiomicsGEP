@@ -1,0 +1,353 @@
+/*-- scss:defaults --*/
+
+/* UNC Brand Colors */
+$body-bg: #FFFFFF;
+$body-color: #13294B;
+$link-color: #007FAE;
+$presentation-heading-color: #13294B;
+
+/* Color Variables */
+$unc-carolina-blue: #4B9CD3;
+$unc-navy: #13294B;
+$unc-hyperlink-blue: #007FAE;
+$unc-teal: #00A5AD;
+$unc-light-gray: #F8F9FA;
+
+/*-- scss:rules --*/
+
+/* ============================================
+   TITLE SLIDE
+   ============================================ */
+
+#title-slide {
+  text-align: left;
+  padding-left: 5%;
+}
+
+#title-slide .title {
+  color: #13294B;
+  font-size: 2.5em;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.5em;
+}
+
+#title-slide .subtitle {
+  color: #4B9CD3;
+  font-size: 1.5em;
+  font-weight: 400;
+  margin-bottom: 1em;
+}
+
+#title-slide .author {
+  color: #13294B;
+  font-size: 1.2em;
+  font-weight: 500;
+}
+
+#title-slide .institute {
+  color: #6C757D;
+  font-size: 1em;
+}
+
+#title-slide .date {
+  color: #6C757D;
+  font-size: 0.9em;
+  margin-top: 2em;
+}
+
+/* ============================================
+   HEADINGS
+   ============================================ */
+
+.reveal h1 {
+  color: #13294B;
+  font-weight: 700;
+  border-bottom: 3px solid #4B9CD3;
+  padding-bottom: 0.3em;
+  margin-bottom: 0.8em;
+}
+
+.reveal h2 {
+  color: #13294B;
+  font-weight: 600;
+}
+
+.reveal h3 {
+  color: #4B9CD3;
+  font-weight: 600;
+}
+
+/* ============================================
+   TEXT & LINKS
+   ============================================ */
+
+.reveal p {
+  color: #13294B;
+  line-height: 1.6;
+}
+
+.reveal a {
+  color: #007FAE;
+  text-decoration: none;
+}
+
+.reveal a:hover {
+  color: #4B9CD3;
+  text-decoration: underline;
+}
+
+.reveal strong {
+  color: #13294B;
+  font-weight: 600;
+}
+
+.reveal em {
+  color: #4B9CD3;
+}
+
+/* ============================================
+   LISTS
+   ============================================ */
+
+.reveal ul,
+.reveal ol {
+  margin-left: 1em;
+}
+
+.reveal li {
+  color: #13294B;
+  margin-bottom: 0.5em;
+  line-height: 1.5;
+}
+
+.reveal li::marker {
+  color: #4B9CD3;
+}
+
+/* ============================================
+   CODE BLOCKS
+   ============================================ */
+
+.reveal pre {
+  background: #F8F9FA;
+  border-left: 4px solid #4B9CD3;
+  border-radius: 4px;
+  padding: 1em;
+  font-size: 0.85em;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.reveal code {
+  color: #13294B;
+  background: #F8F9FA;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-family: 'Fira Code', 'Monaco', monospace;
+}
+
+.reveal pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Syntax highlighting adjustments */
+.reveal .hljs-keyword {
+  color: #007FAE;
+}
+
+.reveal .hljs-string {
+  color: #00A5AD;
+}
+
+.reveal .hljs-comment {
+  color: #6C757D;
+}
+
+/* ============================================
+   TABLES
+   ============================================ */
+
+.reveal table {
+  border-collapse: collapse;
+  margin: 1.5em auto;
+  font-size: 0.9em;
+  width: auto;
+}
+
+.reveal table th {
+  background: #13294B;
+  color: white;
+  padding: 0.75em 1.25em;
+  font-weight: 600;
+  text-align: left;
+  border: none;
+}
+
+.reveal table td {
+  border: 1px solid #DEE2E6;
+  padding: 0.75em 1.25em;
+  color: #13294B;
+}
+
+.reveal table tr:nth-child(even) {
+  background: #F8F9FA;
+}
+
+.reveal table tr:hover {
+  background: #E8F4FC;
+}
+
+/* ============================================
+   CALLOUT BOXES
+   ============================================ */
+
+.callout {
+  border-radius: 4px;
+  padding: 1em;
+  margin: 1em 0;
+}
+
+.callout-note {
+  background: #E8F4FC;
+  border-left: 4px solid #4B9CD3;
+}
+
+.callout-warning {
+  background: #FFF9E6;
+  border-left: 4px solid #F8E71C;
+}
+
+.callout-important {
+  background: #FDEDED;
+  border-left: 4px solid #DC3545;
+}
+
+.callout-tip {
+  background: #E6F7F7;
+  border-left: 4px solid #00A5AD;
+}
+
+/* ============================================
+   IMAGES & FIGURES
+   ============================================ */
+
+.reveal img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.reveal figure {
+  margin: 1em auto;
+  text-align: center;
+}
+
+.reveal figcaption {
+  color: #6C757D;
+  font-size: 0.85em;
+  font-style: italic;
+  margin-top: 0.5em;
+}
+
+/* ============================================
+   BLOCKQUOTES
+   ============================================ */
+
+.reveal blockquote {
+  background: #F8F9FA;
+  border-left: 4px solid #4B9CD3;
+  padding: 1em 1.5em;
+  margin: 1em 0;
+  font-style: italic;
+  color: #13294B;
+}
+
+.reveal blockquote p {
+  margin: 0;
+}
+
+/* ============================================
+   FOOTER & SLIDE NUMBER
+   ============================================ */
+
+.reveal .slide-number {
+  color: #13294B;
+  font-size: 0.7em;
+  background: transparent;
+}
+
+.reveal footer {
+  color: #6C757D;
+  font-size: 0.7em;
+}
+
+/* ============================================
+   SPEAKER NOTES
+   ============================================ */
+
+.reveal .speaker-notes {
+  font-family: inherit;
+  font-size: 1em;
+  line-height: 1.5;
+}
+
+/* ============================================
+   COLUMNS
+   ============================================ */
+
+.reveal .columns {
+  display: flex;
+  gap: 2em;
+}
+
+.reveal .column {
+  flex: 1;
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+.reveal .progress {
+  background: #DEE2E6;
+  height: 4px;
+}
+
+.reveal .progress span {
+  background: #4B9CD3;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.text-carolina {
+  color: #4B9CD3;
+}
+
+.text-navy {
+  color: #13294B;
+}
+
+.bg-carolina {
+  background: #4B9CD3;
+  color: white;
+}
+
+.bg-navy {
+  background: #13294B;
+  color: white;
+}
+
+.centered {
+  text-align: center;
+}
+
+.smaller {
+  font-size: 0.85em;
+}
+
+.larger {
+  font-size: 1.15em;
+}
