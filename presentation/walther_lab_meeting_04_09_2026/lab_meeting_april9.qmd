@@ -437,47 +437,58 @@ how many to keep based on variance explained and survival relevance.
 :::
 
 
-## Seven PDAC Cohorts {.smaller}
+## Data Intro — PDAC Cohorts {.smaller}
 
 ### Independent Validation Across Three Platforms
 
-:::: {.columns}
-
-::: {.column width="58%"}
-
 ```{r cohort-table}
+# Define Dataset Descriptions
+DATASET_DESC <- c(
+  TCGA_PAAD         = "The Cancer Genome Atlas — Pancreatic Adenocarcinoma",
+  CPTAC             = "Clinical Proteomic Tumor Analysis Consortium",
+  Dijk              = "Dijk et al. (Dutch PDAC cohort)",
+  Moffitt_GEO_array = "Moffitt Cancer Center (Gene Expression Omnibus)",
+  PACA_AU_array     = "Pancreatic Cancer Australia (ICGC-APGI), array",
+  PACA_AU_seq       = "Pancreatic Cancer Australia (ICGC-APGI), RNA-seq",
+  Puleo_array       = "Puleo et al. 2018 (Gastroenterology), multi-centre"
+)
+
+# Assemble Data Frame
 ds_info <- data.frame(
-  Dataset   = ALL_DATASETS,
-  Platform  = unname(PLATFORM_MAP[ALL_DATASETS]),
-  n         = cross7$n[match(ALL_DATASETS, cross7$Dataset)],
+  Dataset     = ALL_DATASETS,
+  Description = unname(DATASET_DESC[ALL_DATASETS]),
+  Platform    = unname(PLATFORM_MAP[ALL_DATASETS]),
+  n           = cross7$n[match(ALL_DATASETS, cross7$Dataset)],
   stringsAsFactors = FALSE
 )
+
+# Calculate Survival Metadata
 ds_info$Events    <- round(ds_info$n * (1 - cross7$Censoring_Pct[match(ALL_DATASETS, cross7$Dataset)] / 100))
 ds_info$Censoring <- cross7$Censoring_Pct[match(ALL_DATASETS, cross7$Dataset)]
 
+# Render Centered Full-Width Table
 kbl(ds_info,
-    col.names = c("Dataset", "Platform", "n", "Events", "Censoring %"),
-    booktabs = TRUE, row.names = FALSE) |>
+    col.names = c("Dataset", "Description", "Platform", "n", "Events", "Censoring %"),
+    booktabs = TRUE, 
+    row.names = FALSE, 
+    align = c("l", "l", "c", "c", "c", "c")) |>
   kable_styling(bootstrap_options = c("striped", "hover"),
-                full_width = TRUE, font_size = 26)
+                full_width = TRUE, 
+                font_size = 24, 
+                position = "center") |>
+  # Explicitly widen the description to utilize the new horizontal space
+  column_spec(2, width = "25em") |>
+  column_spec(c(4, 5, 6), width = "5em")
 ```
-
-:::
-
-::: {.column width="4%"}
-:::
-
-::: {.column width="38%"}
 
 <br>
 
 - **RNA-seq** — mRNA transcript counts (TCGA, Dijk, PACA\_AU\_seq)
 - **Microarray** — hybridisation arrays (Moffitt, PACA\_AU\_array, Puleo)
 - **Proteomics** — mass spectrometry protein abundance (CPTAC)
+- **Why 7 datasets?** Independent validation across platforms; $n = 52$–$288$; top 5,000 most-variable features, column-centred
 
 <br>
-
-- **Why 7 datasets?** Independent validation across platforms; $n = 52$–$288$; top 5,000 most-variable features, column-centred
 
 :::
 
