@@ -24,7 +24,7 @@ format:
   pdf:
     toc: false
     number-sections: false
-    geometry: "margin=0.5in"
+    geometry: "landscape, margin=0.5in"
     fontsize: 10pt
     colorlinks: true
     fig-pos: "H"
@@ -84,41 +84,23 @@ ks <- read.csv(file.path(tables_root, "PDAC_cross_dataset",
 ```
 
 
-<!-- ============================================================
-     SLIDE 2 — OUTLINE
-     ============================================================ -->
+## Outline
 
-## Outline {.smaller}
+<br>
 
-:::: {.columns}
+**Motivation** &nbsp;·&nbsp; The PDAC challenge & why supervised factorisation matters
 
-::: {.column width="50%"}
+<br>
 
-### Motivation
-- The PDAC clinical challenge
-- Why supervised factorisation matters
+**Methods** &nbsp;·&nbsp; SBMF model · Dual-source objective · EBNM adaptive priors · CAVI inference
 
-### Methods
-- The SBMF model
-- Dual-source objective function
-- EBNM & adaptive shrinkage
-- Factor-wise CAVI inference
+<br>
 
-:::
+**Results** &nbsp;·&nbsp; Synthetic validation · Seven PDAC cohorts · Prior × K comparison · Deep dives
 
-::: {.column width="50%"}
+<br>
 
-### Results
-- Synthetic validation
-- Seven PDAC cohorts
-- Prior × K factorial comparison
-- Deep dives: Puleo & TCGA
-
-### Future Directions & Summary
-
-:::
-
-::::
+**Future Directions & Summary**
 
 ::: {.notes}
 Overview of today's talk. About 15 minutes of content, then open for discussion.
@@ -127,13 +109,11 @@ Bayesian model and inference, then present results on 7 independent cohorts.
 :::
 
 
-<!-- ============================================================
-     MOTIVATION
-     ============================================================ -->
-
 ## The PDAC Problem {.smaller}
 
 ### Pancreatic Ductal Adenocarcinoma
+
+<br>
 
 :::: {.columns}
 
@@ -174,6 +154,8 @@ that bulk expression mixes signals from tumour, stroma, and immune cells.
 ## Why Supervised > Unsupervised {.smaller}
 
 ### The PCA-Then-Test Gap
+
+<br>
 
 :::: {.columns}
 
@@ -222,6 +204,8 @@ shrinks its beta to zero — we get the separation for free.
 
 ### What Existing Supervised MF Approaches Are Missing
 
+<br>
+
 - **Data-adaptive shrinkage priors** — existing methods use fixed penalties; we let the prior learn from the data
 - **Automatic K selection** — no need to grid-search the number of factors
 - **Uncertainty quantification** — posterior inference gives us credible intervals, not just point estimates
@@ -246,13 +230,11 @@ critical for preventing overfitting when loadings are uncertain.
 :::
 
 
-<!-- ============================================================
-     METHODS
-     ============================================================ -->
-
 ## The SBMF Model {.smaller}
 
 ### Joint Genomics + Survival Factorisation
+
+<br>
 
 $$Y = LF^\top + E, \quad E_{ij} \sim N(0, \tau_j^{-1})$$
 
@@ -301,6 +283,8 @@ Each beta_k says whether that program is prognostically relevant.
 ## Dual-Source Objective Function {.smaller}
 
 ### How the Joint Objective Is Constructed
+
+<br>
 
 :::: {.columns}
 
@@ -351,6 +335,8 @@ must serve both masters simultaneously.
 
 ### From Penalised Regression to Empirical Bayes
 
+<br>
+
 :::: {.columns}
 
 ::: {.column width="50%"}
@@ -399,6 +385,8 @@ tails that preserve larger effects better.
 ## Inference: Factor-Wise CAVI {.smaller}
 
 ### Coordinate Ascent Variational Inference
+
+<br>
 
 :::: {.columns}
 
@@ -449,17 +437,15 @@ how many to keep based on variance explained and survival relevance.
 :::
 
 
-<!-- ============================================================
-     DATA
-     ============================================================ -->
-
 ## Seven PDAC Cohorts {.smaller}
 
 ### Independent Validation Across Three Platforms
 
-```{r cohort-table}
-#| tbl-cap: "PDAC cohorts analysed. Top 5,000 most-variable features per dataset, column-centred. Events = observed deaths."
+:::: {.columns}
 
+::: {.column width="58%"}
+
+```{r cohort-table}
 ds_info <- data.frame(
   Dataset   = ALL_DATASETS,
   Platform  = unname(PLATFORM_MAP[ALL_DATASETS]),
@@ -473,13 +459,29 @@ kbl(ds_info,
     col.names = c("Dataset", "Platform", "n", "Events", "Censoring %"),
     booktabs = TRUE, row.names = FALSE) |>
   kable_styling(bootstrap_options = c("striped", "hover"),
-                full_width = FALSE, font_size = 28)
+                full_width = TRUE, font_size = 26)
 ```
 
-- **RNA-seq:** mRNA sequencing (transcript counts) — TCGA, Dijk, PACA_AU_seq
-- **Microarray:** hybridisation arrays (gene expression probes) — Moffitt, PACA_AU_array, Puleo
-- **Proteomics:** mass spectrometry (protein abundance) — CPTAC
-- **Why 7 datasets?** Independent validation, robustness across platforms, range of sample sizes ($n = 52$–$288$)
+:::
+
+::: {.column width="4%"}
+:::
+
+::: {.column width="38%"}
+
+<br>
+
+- **RNA-seq** — mRNA transcript counts (TCGA, Dijk, PACA\_AU\_seq)
+- **Microarray** — hybridisation arrays (Moffitt, PACA\_AU\_array, Puleo)
+- **Proteomics** — mass spectrometry protein abundance (CPTAC)
+
+<br>
+
+- **Why 7 datasets?** Independent validation across platforms; $n = 52$–$288$; top 5,000 most-variable features, column-centred
+
+:::
+
+::::
 
 ::: {.notes}
 We applied the model to 7 independent PDAC cohorts spanning three platforms.
@@ -490,34 +492,34 @@ global mean offset before SVD initialisation.
 :::
 
 
-<!-- ============================================================
-     RESULTS
-     ============================================================ -->
-
 ## Synthetic Validation {.smaller}
 
-### Known Ground Truth Recovery
+### Known Ground Truth Recovery — $n = 200$, $p = 500$, $K_\text{true} = 5$
 
 :::: {.columns}
 
 ::: {.column width="50%"}
 
-![Loading correlations between true and estimated factors](../../results/figures/synthetic/fig7_loading_correlations.png){fig-align="center" width="95%"}
+![Loading correlations between true and estimated factors](../../results/figures/synthetic/fig7_loading_correlations.png){fig-align="center" width="90%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![True vs. estimated survival coefficients $\hat{\beta}$](../../results/figures/synthetic/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![True vs. estimated survival coefficients $\hat{\beta}$](../../results/figures/synthetic/fig3_beta_comparison.png){fig-align="center" width="90%"}
 
 :::
 
 ::::
 
-- **Simulated:** $n = 200$, $p = 500$, $K_\text{true} = 5$ (3 prognostic + 1 expression-only + 1 null)
-- **Factor recovery:** one-to-one correspondence between true and estimated factors (up to permutation)
-- **Null factor correctly zeroed:** $\hat{\beta}_5 \to 0$ — model separates prognostic from non-prognostic structure
-- **C-index:** Supervised 0.86 vs. PCA 0.83
+:::: {.columns}
+::: {.column width="50%"}
+**Factor recovery:** one-to-one correspondence between true and estimated factors (up to permutation)
+:::
+::: {.column width="50%"}
+**Null factor correctly zeroed:** $\hat{\beta}_5 \to 0$ · **C-index:** Supervised 0.86 vs. PCA 0.83
+:::
+::::
 
 ::: {.notes}
 Before moving to real data, we validate on synthetic data with known ground
@@ -614,6 +616,10 @@ kbl(disp,
                notation = "none")
 ```
 
+- **Hold-out C-index** — concordance between predicted risk scores and observed survival on 20% held-out patients (random chance = 0.50; higher is better)
+- **PN K=5** frequently falls below 0.50 (degenerate solutions); **PL K=5** reliably improves over point-normal
+- **K_eff** conditions (both PN and PL) consistently outperform fixed $K = 5$ — K selection is the dominant lever
+
 ::: {.notes}
 This is the central results table. Four conditions per dataset: point-normal
 or point-laplace prior, at fixed K=5 or data-driven K_eff. Two patterns jump
@@ -626,7 +632,7 @@ the K_eff conditions consistently outperform K=5 regardless of prior.
 ## Prior × K: Scatter Plot {.smaller}
 
 ```{r prior-comparison-plot}
-#| fig-height: 7
+#| fig-height: 5.5
 #| fig-width: 14
 #| fig-align: center
 
@@ -681,6 +687,10 @@ legend("topright",
        pt.cex = 2, cex = 1.1, bty = "n", ncol = 2)
 ```
 
+- Each point = one dataset × one condition; dashed line = random chance (C = 0.50); four colours = the four prior × K conditions
+- **Blue circles (PN K=5):** several datasets fall well below chance — degenerate fits where $\hat{\beta} \to 0$
+- **Moving right (PL → K_eff):** progressive improvement; K_eff conditions (green/purple) cluster above the dashed line across all cohorts
+
 ::: {.notes}
 The scatter plot makes the pattern visual. Blue circles at the bottom are the
 degenerate point-normal K=5 fits. Orange triangles show the improvement from
@@ -689,25 +699,26 @@ the green and purple points are consistently higher regardless of prior.
 :::
 
 
-## Two Key Findings {.smaller}
-
-### Finding 1: Point-Laplace Wins at K=5
-
-- Point-laplace **outperforms** point-normal in **all 7 cohorts** at $K = 5$
-- $\Delta C_\text{test}$ ranges from +0.06 (Moffitt) to +0.70 (PACA\_AU\_seq)
-- Point-normal at $K = 5$ converges to **degenerate solutions** in 4/7 cohorts ($C < 0.4$)
-- Laplace's heavier tails better capture the continuous, non-zero gene weight structure in real genomics data
-
-### Finding 2: K Selection Dominates Prior Choice
+## Key Findings: Prior × K Comparison {.smaller}
 
 :::: {.columns}
 
 ::: {.column width="55%"}
 
-- $K_\text{eff} \in \{8, 9, 10\}$ across all 7 cohorts — **always above** $K = 5$
-- **Every** $K_\text{eff}$ condition outperforms its $K = 5$ counterpart
-- At $K_\text{eff}$: prior advantage is **mixed** (PN wins 4/7, PL wins 2/7, tie 1/7)
-- Three cohorts saturate at $K_\text{max} = 10$, suggesting even more factors may be needed
+**Point-laplace preferred at fixed K**
+
+- Point-laplace **outperforms** point-normal in **all 7 cohorts** at $K = 5$
+- $\Delta C_\text{test}$ from +0.06 (Moffitt) to +0.70 (PACA\_AU\_seq)
+- Point-normal at $K = 5$ degenerates in 4/7 cohorts ($C < 0.4$)
+- Heavier tails better capture continuous, non-zero gene weight structure
+
+<br>
+
+**K selection dominates prior choice**
+
+- $K_\text{eff} \in \{8, 9, 10\}$ — **always above** $K = 5$; every $K_\text{eff}$ condition outperforms its $K = 5$ counterpart
+- At $K_\text{eff}$: prior advantage is **mixed** (PN wins 4/7)
+- Three cohorts saturate at $K_\text{max} = 10$
 
 > **Takeaway:** invest in K selection, not prior tuning.
 
@@ -715,7 +726,7 @@ the green and purple points are consistently higher regardless of prior.
 
 ::: {.column width="45%"}
 
-![PVE scree plot — Puleo array ($K_\text{eff} = 10$)](../../results/figures/Puleo_array/figK_pve_scree.png){fig-align="center" width="95%"}
+![PVE scree — Puleo ($K_\text{eff} = 10$)](../../results/figures/Puleo_array/figK_pve_scree.png){fig-align="center" width="90%"}
 
 :::
 
@@ -845,10 +856,6 @@ not just overfitting to the training data.
 :::
 
 
-<!-- ============================================================
-     FUTURE & CLOSING
-     ============================================================ -->
-
 ## Future Directions & Summary {.smaller}
 
 :::: {.columns}
@@ -867,14 +874,13 @@ not just overfitting to the training data.
 
 ::: {.column width="50%"}
 
-::: {.callout-note}
 ### Summary
+
 1. **SBMF** jointly learns gene expression programs and survival associations via Bayesian inference
 2. **K selection is the dominant lever** — $K_\text{eff} \in \{8, 9, 10\}$ vs. fixed $K = 5$
 3. **Point-laplace preferred** when K is constrained
 4. **Generalises** to held-out patients across 3 platforms (5/7 cohorts)
 5. **Codebase:** 139/139 tests passing, modular architecture
-:::
 
 :::
 
@@ -890,17 +896,13 @@ the main insight is that getting K right matters more than prior selection.
 :::
 
 
-## Discussion {.centered}
-
-### Thank You
-
-<br>
+## Discussion {.smaller}
 
 **Questions, suggestions, and feedback welcome!**
 
 <br>
 
-[Andrew Walther]{style="color: #4B9CD3; font-weight: 600;"} · [ajwalther@unc.edu]{style="color: #13294B;"}
+[Andrew Walther]{style="color: #4B9CD3; font-weight: 600;"} · [awalther@unc.edu]{style="color: #13294B;"}
 
 Department of Biostatistics, UNC Gillings School of Global Public Health
 
@@ -911,9 +913,6 @@ per-cohort results, ELBO traces, and technical details on EBNM.
 :::
 
 
-<!-- ============================================================
-     BACKUP SLIDES (uncounted, for Q&A)
-     ============================================================ -->
 
 ## Pooled RNA-seq Analysis {visibility="uncounted" .smaller}
 
