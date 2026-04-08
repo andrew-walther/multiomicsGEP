@@ -1,0 +1,1212 @@
+---
+title: "Supervised Bayesian Matrix Factorization"
+subtitle: "Joint Gene Expression Programs & Survival Modeling in PDAC"
+author: "Andrew Walther"
+institute: "Department of Biostatistics, UNC Gillings School of Global Public Health"
+date: "April 9, 2026"
+format:
+  revealjs:
+    theme: [default, ../resources/custom.css]
+    css: lab_meeting_april9_V2.css
+    html-math-method: katex
+    logo: ../resources/assets/RLlogoA.png
+    footer: "Rashid Lab · UNC Chapel Hill"
+    slide-number: true
+    transition: fade
+    width: 1920
+    height: 1080
+    incremental: false
+    chalkboard: false
+    preview-links: auto
+    embed-resources: true
+    # PDF Printing Optimization
+    pdf-max-pages-per-slide: 1
+    pdf-separate-fragments: false
+    print-background: true
+  pdf:
+    toc: false
+    number-sections: false
+    geometry: "landscape, margin=0.5in"
+    fontsize: 10pt
+    colorlinks: true
+    fig-pos: "H"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{float}
+        \floatplacement{figure}{H}
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: false
+---
+
+```{r setup}
+#| include: false
+library(kableExtra)
+library(dplyr)
+
+# ── Path definitions (relative to presentation/) ──
+figures_root <- "../../results/figures"
+tables_root  <- "../../results/tables"
+
+ALL_DATASETS <- c("TCGA_PAAD", "CPTAC", "Dijk",
+                  "Moffitt_GEO_array", "PACA_AU_array",
+                  "PACA_AU_seq", "Puleo_array")
+
+DATASET_SHORT <- c(
+  TCGA_PAAD         = "TCGA",
+  CPTAC             = "CPTAC",
+  Dijk              = "Dijk",
+  Moffitt_GEO_array = "Moffitt",
+  PACA_AU_array     = "PACA_AU array",
+  PACA_AU_seq       = "PACA_AU seq",
+  Puleo_array       = "Puleo"
+)
+
+PLATFORM_MAP <- c(
+  TCGA_PAAD         = "RNA-seq",
+  CPTAC             = "Proteomics",
+  Dijk              = "RNA-seq",
+  Moffitt_GEO_array = "Microarray",
+  PACA_AU_array     = "Microarray",
+  PACA_AU_seq       = "RNA-seq",
+  Puleo_array       = "Microarray"
+)
+
+PLATFORM_DESC <- c(
+  "RNA-seq"      = "mRNA sequencing (transcript counts)",
+  "Proteomics"   = "Mass spectrometry (protein abundance)",
+  "Microarray"   = "Hybridisation arrays (gene expression)"
+)
+
+# ── Read cross-dataset tables ──
+cross <- read.csv(file.path(tables_root, "PDAC_cross_dataset",
+                            "cross_dataset_summary.csv"))
+cross7 <- cross[cross$Dataset != "PDAC_pooled_rnaseq", ]
+
+pc <- read.csv(file.path(tables_root, "PDAC_cross_dataset",
+                         "prior_comparison.csv"),
+               stringsAsFactors = FALSE)
+
+ks <- read.csv(file.path(tables_root, "PDAC_cross_dataset",
+                         "k_selection_summary.csv"),
+               stringsAsFactors = FALSE)
+```
+
+
+## Outline
+
+<br>
+
+**Motivation** &nbsp;·&nbsp; The PDAC challenge & why supervised factorisation matters
+
+<br>
+
+**Methods** &nbsp;·&nbsp; SBMF model · Dual-source objective · EBNM adaptive priors · CAVI inference
+
+<br>
+
+**Results** &nbsp;·&nbsp; Synthetic validation · Seven PDAC cohorts · Prior × K comparison · Deep dives
+
+<br>
+
+**Future Directions & Summary**
+
+::: {.notes}
+Overview of today's talk. About 15 minutes of content, then open for discussion.
+I'll start with why we need supervised approaches for PDAC, walk through the
+Bayesian model and inference, then present results on 7 independent cohorts.
+:::
+
+
+## The PDAC Problem {.smaller}
+
+### Pancreatic Ductal Adenocarcinoma
+
+<br>
+
+:::: {.columns}
+
+::: {.column width="55%"}
+
+- **Five-year survival < 12%** — one of the most lethal solid tumours
+- Most patients diagnosed at advanced stage with limited treatment options
+- **No widely adopted molecular stratification** at diagnosis
+- Tumours are a complex mixture of malignant, stromal, and immune cells — gene expression signals are deeply interwoven
+- **Goal:** identify *gene expression programs* (GEPs) whose activation levels predict patient survival
+
+:::
+
+::: {.column width="45%"}
+
+::: {.callout-note}
+### The Clinical Need
+Reliable prognostic signatures could:
+
+- Stratify patients for targeted therapy
+- Define subgroups for clinical trial enrollment
+- Distinguish molecular features that *describe* tumour heterogeneity from those that *predict* disease course
+:::
+
+:::
+
+::::
+
+::: {.notes}
+PDAC is the most lethal major solid tumour. Unlike breast cancer where molecular
+subtypes dictate treatment, PDAC patients largely receive the same regimen.
+If we can identify gene programs that distinguish prognostic subgroups, we can
+stratify patients for targeted therapy and clinical trials. The complexity is
+that bulk expression mixes signals from tumour, stroma, and immune cells.
+:::
+
+
+## Why Supervised > Unsupervised {.smaller .dense-cols .tight-list .compact-callout}
+
+### The PCA-Then-Test Gap
+
+<br>
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+**Standard approach:**
+
+1. Apply PCA or NMF to expression data
+2. Find axes of greatest expression variance
+3. Test for survival association *post hoc*
+
+**The problem:**
+
+- Expression-dominant axes may reflect batch effects or housekeeping genes
+- Programs with **modest expression variance** but **strong survival signal** get missed
+- Post-hoc testing is statistically conservative
+
+:::
+
+::: {.column width="50%"}
+
+**Supervised approach:**
+
+1. Integrate survival into the factorisation objective *directly*
+2. Factors are simultaneously constrained to explain expression **and** predict survival
+3. If $\hat{\beta}_k = 0$, factor $k$ explains expression only — the model naturally separates prognostic from non-prognostic structure
+
+::: {.callout-tip}
+### Key Insight
+A factor explaining 15% of variance might be entirely batch effects. A factor explaining 3% might perfectly separate survivors from non-survivors. PCA prioritises the first and ignores the second.
+:::
+
+:::
+
+::::
+
+::: {.notes}
+PCA finds axes of greatest expression variance, not greatest clinical relevance.
+A survival-supervised approach forces factors to be useful for prediction.
+If a factor carries expression signal but no survival information, the model
+shrinks its beta to zero — we get the separation for free.
+:::
+
+
+## The Gap & Our Approach {.smaller .tight-list .compact-callout}
+
+### What Existing Supervised MF Approaches Are Missing
+
+<br>
+
+- **Data-adaptive shrinkage priors** — existing methods use fixed penalties; we let the prior learn from the data
+- **Automatic K selection** — no need to grid-search the number of factors
+- **Uncertainty quantification** — posterior inference gives us credible intervals, not just point estimates
+
+::: {.callout-note}
+### SBMF vs. Penalised Supervised Approaches
+Penalised approaches (e.g., deSurv from our lab) optimise a weighted objective $(1-\alpha)\mathcal{L}_\text{NMF} + \alpha\mathcal{L}_\text{Cox}$, requiring a tuning parameter $\alpha$ to balance the two terms. **SBMF** instead uses full Bayesian inference:
+
+- The **ELBO** naturally balances genomics and survival — no $\alpha$ needed
+- **EBNM** priors adapt their shrinkage to the data
+- Posterior second moments ($E[L^2] \neq \bar{L}^2$) prevent overfitting to uncertain loadings
+:::
+
+> **SBMF:** Learn gene expression programs and survival associations simultaneously, with the prior learning from the data.
+
+::: {.notes}
+This is the only slide where I reference deSurv — Amber's work from our lab.
+The key distinction is that SBMF is fully Bayesian: we use the ELBO which
+naturally balances both objectives without a tuning alpha, and EBNM priors
+that adapt their shrinkage to the data. The posterior second moments are
+critical for preventing overfitting when loadings are uncertain.
+:::
+
+
+## The SBMF Model {.smaller .compact-table .tight-list}
+
+### Joint Genomics + Survival Factorisation
+
+<br>
+
+$$Y = LF^\top + E, \quad E_{ij} \sim N(0, \tau_j^{-1})$$
+
+$$h_i(t) = h_0(t)\exp(L_i \cdot \beta)$$
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+| Quantity | Dimension | Meaning |
+|:---------|:---------:|:--------|
+| $Y$ | $n \times p$ | Gene expression matrix |
+| $L$ | $n \times K$ | Patient activation scores |
+| $F$ | $p \times K$ | Gene weights per program |
+| $\beta$ | $K \times 1$ | Survival coefficients |
+| $\tau_j$ | scalar | Gene-specific precision |
+
+:::
+
+::: {.column width="50%"}
+
+::: {.callout-note}
+### The Shared Latent Space
+The **same** $L$ drives both:
+
+- Low-rank reconstruction of gene expression ($LF^\top$)
+- Cox proportional hazards risk score ($L\beta$)
+
+This forces factors to explain expression variance **and** maximise survival signal simultaneously.
+:::
+
+:::
+
+::::
+
+::: {.notes}
+The model has two components sharing the latent loadings L. The first equation
+is standard matrix factorisation — Y is approximated by L times F-transpose
+plus gene-specific noise. The second is a Cox proportional hazards model where
+the same patient loadings L, multiplied by survival coefficients beta, give
+the log hazard ratio. Each column of F defines a gene expression program.
+Each beta_k says whether that program is prognostically relevant.
+:::
+
+
+## Dual-Source Objective Function {.smaller .dense-cols .compact-callout .small-math}
+
+### How the Joint Objective Is Constructed
+
+<br>
+
+:::: {.columns}
+
+::: {.column width="48%"}
+
+::: {.callout-note}
+### Genomics Likelihood
+$$\mathcal{L}_\text{genomics} = \sum_{j=1}^{p} \log p(Y_{\cdot j} \mid L, F_j, \tau_j)$$
+
+Gaussian reconstruction error — how well $LF^\top$ approximates $Y$
+:::
+
+:::
+
+::: {.column width="4%"}
+<!-- spacer -->
+:::
+
+::: {.column width="48%"}
+
+::: {.callout-important}
+### Survival Likelihood
+$$\mathcal{L}_\text{Cox} = \sum_{i:\delta_i=1} \left[ L_i\beta - \log \sum_{j \in \mathcal{R}_i} \exp(L_j\beta) \right]$$
+
+Cox partial log-likelihood — how well $L\beta$ predicts survival
+:::
+
+:::
+
+::::
+
+### Combined ELBO
+
+$$\text{ELBO} = \underbrace{E_q[\mathcal{L}_\text{genomics}]}_{\text{expression fit}} + \underbrace{E_q[\mathcal{L}_\text{Cox}]}_{\text{survival fit}} - \underbrace{D_\text{KL}(q \| \pi)}_{\text{prior regularisation}}$$
+
+The ELBO **naturally balances** both objectives — no tuning parameter $\alpha$ required. [The shared $L$]{style="color: #4B9CD3; font-weight: 600;"} appears in both terms.
+
+::: {.notes}
+The ELBO is the variational objective we maximise. It decomposes into three
+intuitive pieces: how well we reconstruct expression, how well we predict
+survival, and a KL penalty that keeps posteriors close to the prior. The
+shared L in both likelihood terms is what makes this supervised — the loadings
+must serve both masters simultaneously.
+:::
+
+
+## EBNM & Adaptive Shrinkage {.smaller .dense-cols .tight-list .compact-callout}
+
+### From Penalised Regression to Empirical Bayes
+
+<br>
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+**What you already know:**
+
+- **Ridge/LASSO** shrink coefficients toward zero with a *fixed* penalty $\lambda$
+- $\lambda$ controls how aggressively we regularise
+- Chosen by cross-validation — one $\lambda$ for all coefficients
+
+**The empirical Bayes step:**
+
+- What if the prior *learned from the data* how much to shrink?
+- **EBNM** (Empirical Bayes Normal Means): given noisy observations $x_j = \theta_j + \epsilon_j$, estimate the prior $g(\cdot)$ from the data, then compute posterior $E[\theta_j \mid x_j, \hat{g}]$
+- The shrinkage adapts *per factor* and *per gene*
+
+:::
+
+::: {.column width="50%"}
+
+**Two prior families tested:**
+
+- **Point-normal:** spike at zero + Gaussian slab (soft thresholding, similar to ridge)
+- **Point-laplace:** spike at zero + Laplace slab (heavier tails, similar to LASSO)
+
+::: {.callout-tip}
+### "The Prior Learns From the Data"
+Instead of choosing a penalty strength $\lambda$ by cross-validation, EBNM estimates the mixing proportion (how sparse?) and the scale (how large are the non-zero effects?) directly from the observed data. Implemented via the `ebnm` R package (Stephens lab, U. Chicago).
+:::
+
+:::
+
+::::
+
+::: {.notes}
+Most of you know penalised regression — LASSO, ridge — where lambda controls
+shrinkage. The key limitation is that lambda is fixed across all coefficients.
+EBNM generalises this: it estimates the prior from the data using empirical
+Bayes. The prior has two parts: a spike at zero (for truly zero effects) and
+a slab (for non-zero effects). The mixing proportion and slab scale are both
+estimated. Point-normal gives soft thresholding; point-laplace gives heavier
+tails that preserve larger effects better.
+:::
+
+
+## Inference: Factor-Wise CAVI {.smaller .dense-cols .tight-list .small-math}
+
+### Coordinate Ascent Variational Inference
+
+<br>
+
+:::: {.columns}
+
+::: {.column width="55%"}
+
+**Gauss-Seidel update order** (per iteration):
+
+For each factor $k = 1, \ldots, K$:
+
+1. **Update $q(L_k)$** — patient loadings via EBNM
+   - Precision: $A_{L,i} = \sum_j \tau_j E[F_{jk}^2] + W_{ii} E[\beta_k^2]$
+   - Pseudo-data: $x_i = B_{L,i} / A_{L,i}$, scale: $s_i = 1/\sqrt{A_{L,i}}$
+
+2. **Update $q(F_k)$** — gene weights via EBNM (pure genomics)
+
+3. **Update $q(\beta_k)$** — survival coefficient via EBNM (scalar)
+
+4. Deflate residual $R_k$ before proceeding to $k+1$
+
+:::
+
+::: {.column width="45%"}
+
+**Convergence criteria:**
+
+- $\Delta\bar{L} < 10^{-3}$ **AND** $\Delta\hat{\beta} < 10^{-3}$
+- Dual criterion prevents premature stopping
+
+**Automatic K selection:**
+
+- Initialise $K_\text{max} = 10$
+- Retain factors with either:
+  - PVE $> 1\%$ (non-trivial expression contribution), or
+  - $|\hat{\beta}| > 0.05$ (non-negligible survival signal)
+- Active factors define $K_\text{eff}$; this is a pragmatic screening rule before future CV-based K selection
+
+:::
+
+::::
+
+::: {.notes}
+CAVI updates one factor at a time in Gauss-Seidel order — this means each
+update sees the most recent values from all other factors. For each factor k,
+we update the loadings L, gene weights F, and survival coefficient beta, each
+via an EBNM call. The precision A captures how much information we have about
+each parameter. The auto-prune starts with 10 factors and lets the data decide
+how many to keep based on variance explained and survival relevance.
+:::
+
+
+## Data Intro — PDAC Cohorts {.smaller .compact-table .tight-list}
+
+### Independent Validation Across Three Platforms
+
+```{r cohort-table}
+# Define Dataset Descriptions
+DATASET_DESC <- c(
+  TCGA_PAAD         = "The Cancer Genome Atlas — Pancreatic Adenocarcinoma",
+  CPTAC             = "Clinical Proteomic Tumor Analysis Consortium",
+  Dijk              = "Dijk et al. (Dutch PDAC cohort)",
+  Moffitt_GEO_array = "Moffitt Cancer Center (Gene Expression Omnibus)",
+  PACA_AU_array     = "Pancreatic Cancer Australia (ICGC-APGI), array",
+  PACA_AU_seq       = "Pancreatic Cancer Australia (ICGC-APGI), RNA-seq",
+  Puleo_array       = "Puleo et al. 2018 (Gastroenterology), multi-centre"
+)
+
+# Assemble Data Frame
+ds_info <- data.frame(
+  Dataset     = ALL_DATASETS,
+  Description = unname(DATASET_DESC[ALL_DATASETS]),
+  Platform    = unname(PLATFORM_MAP[ALL_DATASETS]),
+  n           = cross7$n[match(ALL_DATASETS, cross7$Dataset)],
+  stringsAsFactors = FALSE
+)
+
+# Calculate Survival Metadata
+ds_info$Events    <- round(ds_info$n * (1 - cross7$Censoring_Pct[match(ALL_DATASETS, cross7$Dataset)] / 100))
+ds_info$Censoring <- cross7$Censoring_Pct[match(ALL_DATASETS, cross7$Dataset)]
+
+# Render Centered Full-Width Table
+kbl(ds_info,
+    col.names = c("Dataset", "Description", "Platform", "n", "Events", "Censoring %"),
+    booktabs = TRUE, 
+    row.names = FALSE, 
+    align = c("l", "l", "c", "c", "c", "c")) |>
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = TRUE, 
+                font_size = 19, 
+                position = "center") |>
+  column_spec(1, width = "9em") |>
+  column_spec(2, width = "20em") |>
+  column_spec(3, width = "7em") |>
+  column_spec(c(4, 5, 6), width = "4.5em")
+```
+
+<br>
+
+- **RNA-seq** — mRNA transcript counts (TCGA, Dijk, PACA\_AU\_seq)
+- **Microarray** — hybridisation arrays (Moffitt, PACA\_AU\_array, Puleo)
+- **Proteomics** — mass spectrometry protein abundance (CPTAC)
+- **Why 7 datasets?** Independent validation across platforms; $n = 52$–$288$; top 5,000 most-variable features, column-centred
+
+<br>
+
+::: {.notes}
+We applied the model to 7 independent PDAC cohorts spanning three platforms.
+This is important for showing that the method isn't overfitting to one dataset
+or one technology. Sample sizes range from 52 (PACA_AU_seq) to 288 (Puleo).
+The table makes the validation design concrete: we span RNA-seq, microarray,
+and proteomics, so success here means the method is not tied to one assay.
+All cohorts use the top 5,000 most-variable features and column centring before
+initialisation to put the datasets on a comparable footing.
+:::
+
+
+## Synthetic Validation {.smaller .paired-figures}
+
+### Known Ground Truth Recovery — $n = 200$, $p = 500$, $K_\text{true} = 5$
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+![Loading correlations between true and estimated factors](../../results/figures/synthetic/fig7_loading_correlations.png){fig-align="center" width="90%"}
+
+:::
+
+::: {.column width="50%"}
+
+![True vs. estimated survival coefficients $\hat{\beta}$](../../results/figures/synthetic/fig3_beta_comparison.png){fig-align="center" width="90%"}
+
+:::
+
+::::
+
+:::: {.columns}
+::: {.column width="50%"}
+**Factor recovery:** one-to-one correspondence between true and estimated factors (up to permutation)
+:::
+::: {.column width="50%"}
+**Null factor correctly zeroed:** $\hat{\beta}_5 \to 0$ · **C-index:** Supervised 0.86 vs. PCA 0.83
+:::
+::::
+
+::: {.notes}
+Before moving to real data, we validate on synthetic data with known ground
+truth. The correlation matrix shows clear one-to-one correspondence between
+true and estimated factors. The beta comparison shows that the model recovers
+the correct signs and magnitudes, and critically, the null factor (true beta=0)
+is correctly shrunk to zero. This is the EBNM prior doing its job.
+:::
+
+
+## Convergence & Baseline Performance {.smaller .paired-figures .rmse-large .tight-list}
+
+### All Seven Cohorts Converge
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+![RMSE trace — Puleo array ($n = 288$, converges in 72 iterations)](../../results/figures/Puleo_array/fig1_rmse_trace.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="50%"}
+
+![RMSE trace — CPTAC proteomics ($n = 129$, converges in 259 iterations)](../../results/figures/CPTAC/fig1_rmse_trace.png){fig-align="center" width="95%"}
+
+:::
+
+::::
+
+- **All 7 cohorts converge** — RMSE descends monotonically in every case
+- **Iteration range:** 14 (Moffitt, microarray) to 259 (CPTAC, proteomics)
+- Microarray datasets converge fastest; proteomics requires the most iterations (higher platform noise)
+- At baseline (point-normal, $K = 5$): supervised C-index $\geq$ PCA in 3/7 cohorts
+
+::: {.notes}
+RMSE descends monotonically in every cohort — the CAVI algorithm is reliably
+converging. Puleo is the largest cohort and converges in about 70 iterations.
+CPTAC proteomics needs 259 iterations, reflecting higher noise in protein
+abundance measurements. These baseline results use point-normal prior at K=5,
+which we'll see is actually the worst-case configuration.
+:::
+
+
+## Prior × K Factorial: The Central Result {.smaller .compact-table .prior-table-large .tight-list}
+
+### Hold-Out C-index Across Four Conditions
+
+```{r prior-comparison-table}
+pc$PriorCode <- dplyr::recode(pc$Prior,
+  "point_normal"          = "PN_K5",
+  "point_laplace"         = "PL_K5",
+  "point_normal (K_eff)"  = "PN_Keff",
+  "point_laplace (K_eff)" = "PL_Keff"
+)
+
+pc$C_Test_disp <- ifelse(!pc$Converged,
+                         paste0(sprintf("%.3f", pc$C_Test), "*"),
+                         sprintf("%.3f", pc$C_Test))
+
+pc_sub <- pc[, c("Dataset", "PriorCode", "K_fit", "C_Test_disp")]
+pc_sub$Dataset <- unname(DATASET_SHORT[pc_sub$Dataset])
+
+wide_ctest <- reshape(pc_sub[, c("Dataset", "PriorCode", "C_Test_disp")],
+                      idvar = "Dataset", timevar = "PriorCode", direction = "wide")
+wide_k     <- reshape(pc_sub[, c("Dataset", "PriorCode", "K_fit")],
+                      idvar = "Dataset", timevar = "PriorCode", direction = "wide")
+
+pn_k5_ctest <- setNames(
+  pc$C_Test[pc$PriorCode == "PN_K5"],
+  pc$Dataset[pc$PriorCode == "PN_K5"]
+)
+
+strip <- function(x) as.numeric(gsub("\\*", "", x))
+
+disp <- data.frame(
+  Dataset        = wide_ctest$Dataset,
+  K_Eff          = wide_k$K_fit.PN_Keff,
+  C_PN_K5        = wide_ctest$C_Test_disp.PN_K5,
+  C_PL_K5        = wide_ctest$C_Test_disp.PL_K5,
+  C_PN_Keff      = wide_ctest$C_Test_disp.PN_Keff,
+  C_PL_Keff      = wide_ctest$C_Test_disp.PL_Keff,
+  stringsAsFactors = FALSE
+)
+disp <- disp[order(disp$Dataset), ]
+
+kbl(disp,
+    col.names = c("Dataset", "K_eff",
+                  "PN K=5", "PL K=5",
+                  "PN K_eff", "PL K_eff"),
+    booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = FALSE, font_size = 20) |>
+  column_spec(1, width = "8.5em") |>
+  column_spec(2, width = "4.5em") |>
+  column_spec(3:6, width = "5.3em")
+```
+
+<div class="table-note">* = hit 300-iteration limit. PN = point-normal, PL = point-laplace. 80/20 stratified hold-out.</div>
+
+- **Hold-out C-index** — concordance between predicted risk scores and observed survival on 20% held-out patients (random chance = 0.50; higher is better)
+- **PN K=5** frequently falls below 0.50 (degenerate solutions); **PL K=5** reliably improves over point-normal
+- Moving to **K_eff** raises mean hold-out C-index from 0.507 to 0.640 overall; **PN K_eff** improves on **PN K=5** in all 7 cohorts
+
+::: {.notes}
+This is the central results table. Four conditions per dataset: point-normal
+or point-laplace prior, at fixed K=5 or data-driven K_eff. Two patterns jump
+out: point-normal at K=5 often gives C-index below chance (0.19 for PACA_AU_seq,
+0.34 for TCGA) — these are degenerate solutions where beta collapses. The
+cleanest improvement is when we let the model expand beyond K=5: point-normal
+with K_eff beats its K=5 counterpart in every cohort, and overall average
+performance is much higher once K is data-adapted.
+:::
+
+
+## Prior × K: Scatter Plot {.smaller}
+
+```{r prior-comparison-plot}
+#| fig-height: 5.5
+#| fig-width: 14
+#| fig-align: center
+
+pc_all <- pc[!is.na(pc$C_Test) & pc$Dataset != "PDAC_pooled_rnaseq", ]
+pc_all$DatasetLabel <- unname(DATASET_SHORT[pc_all$Dataset])
+
+datasets <- unique(pc_all$Dataset)
+n_ds     <- length(datasets)
+x_pos    <- seq_len(n_ds)
+
+col_pn     <- "#1f77b4";  pch_pn     <- 16
+col_pl     <- "#ff7f0e";  pch_pl     <- 17
+col_keff   <- "#2ca02c";  pch_keff   <- 15
+col_plkeff <- "#9467bd";  pch_plkeff <- 18
+
+all_priors <- c("point_normal", "point_laplace",
+                "point_normal (K_eff)", "point_laplace (K_eff)")
+offsets <- c("point_normal" = -0.3, "point_laplace" = -0.1,
+             "point_normal (K_eff)" = 0.1, "point_laplace (K_eff)" = 0.3)
+cols    <- c("point_normal" = col_pn, "point_laplace" = col_pl,
+             "point_normal (K_eff)" = col_keff, "point_laplace (K_eff)" = col_plkeff)
+pchs    <- c("point_normal" = pch_pn, "point_laplace" = pch_pl,
+             "point_normal (K_eff)" = pch_keff, "point_laplace (K_eff)" = pch_plkeff)
+
+par(mar = c(8, 5, 3, 2))
+plot(NA, xlim = c(0.5, n_ds + 0.5), ylim = c(0.1, 1.0),
+     xaxt = "n", bty = "n",
+     xlab = "", ylab = "Hold-out C-index",
+     main = "Hold-out C-index: Prior × K Comparison",
+     cex.main = 1.4, cex.lab = 1.2, cex.axis = 1.1)
+
+abline(h = 0.5, lty = 2, col = "gray50", lwd = 1.5)
+
+for (i in seq_len(n_ds)) {
+  ds <- datasets[i]
+  for (prior in all_priors) {
+    r <- pc_all[pc_all$Dataset == ds & pc_all$Prior == prior, ]
+    if (nrow(r) == 0 || is.na(r$C_Test)) next
+    points(i + offsets[prior], r$C_Test,
+           pch = pchs[prior], cex = 2.2, col = cols[prior])
+    if (!r$Converged)
+      text(i + offsets[prior], r$C_Test + 0.035, "*", cex = 1.1, col = cols[prior])
+  }
+}
+
+axis(1, at = x_pos,
+     labels = unname(DATASET_SHORT[datasets]),
+     las = 2, cex.axis = 0.95)
+
+legend("topright",
+       legend = c("PN K=5", "PL K=5", "PN K_eff", "PL K_eff"),
+       col = c(col_pn, col_pl, col_keff, col_plkeff),
+       pch = c(pch_pn, pch_pl, pch_keff, pch_plkeff),
+       pt.cex = 2, cex = 1.1, bty = "n", ncol = 2)
+```
+
+- Each point = one dataset × one condition; dashed line = random chance (C = 0.50); four colours = the four prior × K conditions
+- **Blue circles (PN K=5):** several datasets fall well below chance — degenerate fits where $\hat{\beta} \to 0$
+- **Moving right (PL → K_eff):** most datasets improve once K is data-adapted, with the biggest rescue coming from PN K=5 to PN K_eff
+
+::: {.notes}
+The scatter plot makes the pattern visual. Blue circles at the bottom are the
+degenerate point-normal K=5 fits. Orange triangles show the improvement from
+switching to point-laplace. The biggest pattern, though, is that allowing more
+factors moves most datasets upward. I would use this slide to emphasise trend
+and robustness, not to claim that every single condition improves in every cohort.
+:::
+
+
+## Key Findings: Prior × K Comparison {.smaller .tight-list .paired-figures}
+
+:::: {.columns}
+
+::: {.column width="55%"}
+
+**Point-laplace preferred at fixed K**
+
+- Point-laplace **outperforms** point-normal in **all 7 cohorts** at $K = 5$
+- $\Delta C_\text{test}$ from +0.06 (Moffitt) to +0.70 (PACA\_AU\_seq)
+- Point-normal at $K = 5$ degenerates in 4/7 cohorts ($C < 0.4$)
+- Heavier tails better capture continuous, non-zero gene weight structure
+
+<br>
+
+**K selection dominates prior choice**
+
+- $K_\text{eff} \in \{8, 9, 10\}$ — **always above** $K = 5$; **PN K_eff** beats **PN K=5** in 7/7 cohorts, while **PL K_eff** beats **PL K=5** in 4/7
+- Mean hold-out C-index increases from **0.507** at fixed $K = 5$ to **0.640** under K-adapted fits
+- At $K_\text{eff}$: prior advantage is **mixed** (PN wins 4/7)
+- Three cohorts saturate at $K_\text{max} = 10$
+
+> **Takeaway:** invest in K selection, not prior tuning.
+
+:::
+
+::: {.column width="45%"}
+
+![PVE scree — Puleo ($K_\text{eff} = 10$)](../../results/figures/Puleo_array/figK_pve_scree.png){fig-align="center" width="90%"}
+
+:::
+
+::::
+
+::: {.notes}
+Two main findings. First, point-laplace is clearly better than point-normal
+at K=5. The Gaussian prior over-shrinks in real data. But the second finding
+is more important: K selection dominates everything. Once you give the model
+enough factors, the prior advantage largely disappears. The scree plot shows
+Puleo needing 10 factors — our initial guess of 5 was way too conservative.
+Three cohorts actually saturate at our K_max of 10, meaning there may be even
+more structure to discover. The precise statement I want to make here is that
+data-adapted K clearly helps overall, not that every single prior-condition pair
+improves in every cohort.
+:::
+
+
+## Deep Dive: Puleo Array ($n = 288$) {.smaller .paired-figures .deep-dive .km-emphasis .tight-list}
+
+### The Clearest Factor Structure
+
+:::: {.columns}
+
+::: {.column width="40%"}
+
+![Survival coefficients $\hat{\beta}$ per GEP](../../results/figures/Puleo_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="60%"}
+
+![Kaplan-Meier survival curves by GEP activation](../../results/figures/Puleo_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+:::
+
+::::
+
+- **Factor 2:** highest PVE (9.05%) but $\hat{\beta} = 0$ — expression-dominant, survival-neutral
+- **Factors 3, 4, 9:** large $|\hat{\beta}|$ — prognostically informative
+- The model **separates prognostic from non-prognostic** structure — PCA would test all factors indiscriminately
+- $K_\text{eff} = 10$ via auto-prune (4 more factors than fixed $K = 5$)
+
+::: {.notes}
+Puleo is our best exemplar — largest cohort, clearest structure. The beta
+barplot shows factor 2 is shrunk to zero despite being the single largest
+expression axis. A post-hoc approach would have tested it alongside the
+genuinely prognostic factors, diluting statistical power. The KM curves
+show clear patient stratification by GEP activation. This is what supervised
+factorisation buys you.
+:::
+
+
+## Deep Dive: TCGA_PAAD {.smaller .paired-figures .deep-dive .km-emphasis .tight-list}
+
+### The Most Widely Studied PDAC Cohort
+
+:::: {.columns}
+
+::: {.column width="40%"}
+
+![Survival coefficients $\hat{\beta}$ per GEP](../../results/figures/TCGA_PAAD/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="60%"}
+
+![Kaplan-Meier survival curves by GEP activation](../../results/figures/TCGA_PAAD/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+:::
+
+::::
+
+- **TCGA_PAAD** ($n = 144$, RNA-seq) — the benchmark PDAC dataset
+- $K_\text{eff} = 9$; largest $K_\text{eff}$ improvement: $\Delta C_\text{test} = +0.28$ over $K = 5$ baseline
+- Consistent with Puleo: model identifies both prognostic and expression-only GEPs
+- Patient stratification visible in Kaplan-Meier curves
+
+::: {.notes}
+TCGA is the dataset most people in the room will have heard of. It shows the
+same pattern as Puleo: some factors are prognostic, others are expression-only.
+The K_eff improvement here is dramatic — going from K=5 to K=9 improves
+hold-out C-index by 0.28. This cohort is also where we see the most dramatic
+failure of point-normal at K=5 (C-index of 0.34 — below random).
+:::
+
+
+## Hold-Out Prediction {.smaller .compact-table .tight-list}
+
+### Generalisation to Unseen Patients
+
+```{r holdout-table}
+# Build best-condition hold-out table
+pc_best <- pc |>
+  filter(Dataset %in% ALL_DATASETS) |>
+  group_by(Dataset) |>
+  slice_max(C_Test, n = 1, with_ties = FALSE) |>
+  ungroup() |>
+  select(Dataset, Prior, K_fit, C_Test) |>
+  rename(Best_Prior = Prior, Best_K = K_fit, C_Best = C_Test)
+
+pc_best$Best_Prior <- dplyr::recode(
+  pc_best$Best_Prior,
+  "point_normal"          = "PN K=5",
+  "point_laplace"         = "PL K=5",
+  "point_normal (K_eff)"  = "PN K_eff",
+  "point_laplace (K_eff)" = "PL K_eff"
+)
+pc_best$Dataset <- unname(DATASET_SHORT[pc_best$Dataset])
+
+# Get PCA baseline from cross7
+pca_base <- cross7 |>
+  select(Dataset, C_PCA) |>
+  filter(Dataset %in% ALL_DATASETS)
+
+pca_base$Dataset <- unname(DATASET_SHORT[pca_base$Dataset])
+
+holdout_disp <- merge(pca_base, pc_best, by = "Dataset")
+holdout_disp$Delta <- round(holdout_disp$C_Best - holdout_disp$C_PCA, 3)
+holdout_disp <- holdout_disp[order(holdout_disp$Dataset), ]
+
+kbl(holdout_disp,
+    col.names = c("Dataset", "C (PCA)", "Best Condition", "K", "C (SBMF)", "\u0394C"),
+    digits = 3, booktabs = TRUE, row.names = FALSE) |>
+  kable_styling(bootstrap_options = c("striped", "hover"),
+                full_width = FALSE, font_size = 20) |>
+  column_spec(1, width = "8em") |>
+  column_spec(3, width = "8em") |>
+  column_spec(6, bold = TRUE)
+```
+
+- SBMF **beats PCA baseline on held-out patients in 5/7** cohorts
+- Improvements most reliable when test set is large enough ($n_\text{test} \geq 20$)
+- **Caveat:** small test sets ($n \leq 15$) produce noisy C-index estimates
+
+::: {.notes}
+On held-out data, SBMF generalises better than PCA in 5 of 7 cohorts. The
+improvements are most reliable in larger test sets. PACA_AU_seq has only
+about 10 test patients — that's too few for a reliable C-index estimate.
+This table is there to answer the practical question: does the method help on
+new patients, not just during training? The answer is usually yes, but I should
+also be upfront that the smallest cohorts produce noisy estimates.
+:::
+
+
+## Future Directions & Summary {.smaller .future-summary .tight-list}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+### Next Steps
+
+1. **Gene set enrichment** — fgsea / Enrichr on top-loaded genes per GEP (MSigDB, KEGG, Reactome)
+2. **CV-based K selection** — cross-validated C-index on Longleaf HPC ($K_\text{max} \geq 15$)
+3. **Multi-dataset shared factors** — identify GEPs replicating across cohorts
+4. **Full ELBO as model selection** — compare models by variational lower bound
+5. **Manuscript preparation**
+
+:::
+
+::: {.column width="50%"}
+
+### Summary
+
+1. **SBMF** jointly learns gene expression programs and survival associations via Bayesian inference
+2. **K selection is the dominant lever** — $K_\text{eff} \in \{8, 9, 10\}$ vs. fixed $K = 5$
+3. **Point-laplace preferred** when K is fixed at 5
+4. **Generalises** to held-out patients across 3 platforms (5/7 cohorts)
+5. **Codebase:** 139/139 tests passing, modular architecture
+
+:::
+
+::::
+
+::: {.notes}
+The most pressing next step is gene set enrichment to give biological names
+to the statistical factors. Second, proper cross-validated K selection on our
+HPC cluster with K_max of 15 or higher. Third, finding which GEPs replicate
+across independent cohorts would be the strongest biological validation.
+To summarise: the method works, converges reliably across platforms, and
+the main insight is that getting K right matters more than prior selection.
+:::
+
+
+## Discussion {.smaller}
+
+**Questions, suggestions, and feedback welcome!**
+
+<br>
+
+[Andrew Walther]{style="color: #4B9CD3; font-weight: 600;"} · [awalther@unc.edu]{style="color: #13294B;"}
+
+Department of Biostatistics, UNC Gillings School of Global Public Health
+
+::: {.notes}
+Open the floor for discussion. Happy to go deeper on any part of the
+methods, results, or future plans. I have backup slides with additional
+per-cohort results, ELBO traces, and technical details on EBNM.
+:::
+
+
+
+## Pooled RNA-seq Analysis {visibility="uncounted" .smaller}
+
+### Cross-Cohort Validation: TCGA + Dijk + PACA\_AU\_seq
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+![RMSE convergence — pooled RNA-seq ($n = 286$)](../../results/figures/PDAC_pooled_rnaseq/fig1_rmse_trace.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="50%"}
+
+![Survival coefficients $\hat{\beta}$ — pooled](../../results/figures/PDAC_pooled_rnaseq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+:::
+
+::::
+
+- **Pooled:** $n = 286$ patients, 1,573 common genes (intersection across 3 RNA-seq cohorts)
+- Converges in 67 iterations
+- Tests whether gene programs replicate when patients from different studies are combined
+
+::: {.notes}
+Use this backup slide if someone asks whether the model can find shared signal
+across studies instead of only within one cohort. The key message is that a
+pooled RNA-seq fit is feasible, converges cleanly, and gives a first pass at
+cross-cohort replication once we restrict to genes shared by all three studies.
+:::
+
+
+## EBNM Deep Dive {visibility="uncounted" .smaller .dense-cols .small-math .tight-list}
+
+### Empirical Bayes Normal Means — Full Detail
+
+Each CAVI update reduces to an EBNM sub-problem:
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+**Normal-means form**
+
+- Observed pseudo-data = signal + noise
+- Pseudo-data term: `x_j = B_j / A_j`
+- Scale term: `s_j = A_j^{-1/2}`
+- Noise model: `epsilon_j ~ Normal(0, s_j^2)`
+
+:::
+
+::: {.column width="50%"}
+
+**What EBNM estimates**
+
+- Learns the prior `g` by maximizing the marginal likelihood over candidate priors
+- Returns a posterior mean for each coordinate
+- Returns a posterior variance for each coordinate
+- Critical second moment = variance + mean squared
+
+:::
+
+::::
+
+This prevents overfitting to uncertain parameter estimates and gives the error-in-variables correction used in the SBMF updates.
+
+::: {.notes}
+This is the technical backup for anyone who wants to know what the EBNM calls
+are actually doing. I would focus on the pseudo-data view, then end on the
+second-moment correction because that is the main reason the Bayesian update is
+safer than plugging in posterior means alone.
+:::
+
+
+## GEP Heatmap: Puleo Array {visibility="uncounted" .smaller .hero-figure}
+
+![Gene expression program heatmap — patient loadings (rows) × GEPs (columns)](../../results/figures/Puleo_array/fig4_gep_heatmap.png){fig-align="center" width="80%"}
+
+Each column is a gene expression program. Distinct patient groups emerge from the loading patterns.
+
+::: {.notes}
+Use this slide if someone wants a visual sense of patient heterogeneity rather
+than a single performance number. The point is that the latent programs are not
+abstract artifacts: they produce structured loading patterns that group patients
+in biologically interpretable ways.
+:::
+
+
+## ELBO Convergence Traces {visibility="uncounted" .smaller .paired-figures}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+![ELBO trace — Puleo array](../../results/figures/Puleo_array/fig2_elbo_proxy.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="50%"}
+
+![ELBO trace — TCGA_PAAD](../../results/figures/TCGA_PAAD/fig2_elbo_proxy.png){fig-align="center" width="95%"}
+
+:::
+
+::::
+
+ELBO (variational lower bound) increases monotonically, confirming valid CAVI convergence.
+
+::: {.notes}
+This backup addresses the natural question of whether the optimiser is behaving
+properly. If asked, I would say the traces are a sanity check that the variational
+objective is moving in the right direction, complementing the RMSE plots in the
+main talk.
+:::
+
+
+## Tau/Precision Distribution {visibility="uncounted" .smaller .paired-figures}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+![Gene-specific precision $\hat{\tau}_j$ — Puleo array](../../results/figures/Puleo_array/fig8_tau_distribution.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="50%"}
+
+![Gene-specific precision $\hat{\tau}_j$ — CPTAC](../../results/figures/CPTAC/fig8_tau_distribution.png){fig-align="center" width="95%"}
+
+:::
+
+::::
+
+Heteroscedastic noise model: each gene has its own precision estimate. Some genes are precisely measured (high $\tau$), others are noisy (low $\tau$).
+
+::: {.notes}
+Use this slide if someone asks why the model includes gene-specific precision.
+The takeaway is that heteroscedasticity is visible in real data, especially
+across platforms, and estimating $\tau_j$ lets the model down-weight noisier
+features instead of treating every gene as equally reliable.
+:::
+
+
+## Per-Cohort Beta Comparisons {visibility="uncounted" .smaller .multi-panel}
+
+:::: {.columns}
+
+::: {.column width="33%"}
+
+![Dijk](../../results/figures/Dijk/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_array](../../results/figures/PACA_AU_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![Moffitt](../../results/figures/Moffitt_GEO_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_seq](../../results/figures/PACA_AU_seq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![CPTAC](../../results/figures/CPTAC/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+:::
+
+:::: 
+
+::: {.notes}
+This slide is useful when someone asks whether the prognostic-factor pattern is
+specific to Puleo and TCGA or visible elsewhere. I would use it to show that
+every cohort has its own mix of null and non-null factors, but the broader
+separation between prognostic and expression-only structure appears repeatedly.
+:::
+
+
+## Per-Cohort Kaplan-Meier Curves {visibility="uncounted" .smaller .multi-panel}
+
+:::: {.columns}
+
+::: {.column width="33%"}
+
+![Dijk](../../results/figures/Dijk/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_array](../../results/figures/PACA_AU_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![Moffitt](../../results/figures/Moffitt_GEO_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_seq](../../results/figures/PACA_AU_seq/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![CPTAC](../../results/figures/CPTAC/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+:::
+
+:::: 
+
+::: {.notes}
+Use this when the audience wants more direct survival visualisation across the
+full cohort set. The point is not that every curve is equally dramatic, but that
+the learned programs often translate into clinically meaningful patient
+stratification beyond the two highlighted cohorts in the main deck.
+:::
+
+
+## Signal Recovery: Synthetic Detail {visibility="uncounted" .smaller .hero-figure}
+
+![Detailed signal recovery — true vs. estimated factor structure](../../results/figures/synthetic/fig6_signal_recovery.png){fig-align="center" width="80%"}
+
+::: {.notes}
+This is the backup for anyone who wants more detail on the simulation setup or
+factor-recovery result. I would use it to reinforce that the method is recovering
+the intended latent structure, not just producing a good-looking survival metric.
+:::
+
+
+## Method Comparison {visibility="uncounted" .smaller .compact-table}
+
+### SBMF vs. Penalised Supervised MF Approaches
+
+| Feature | Penalised MF (e.g., deSurv) | SBMF (this work) |
+|:--------|:---------------------------|:-----------------|
+| **Inference** | Penalised optimisation | Full Bayesian (CAVI) |
+| **Objective balance** | Tuning parameter alpha | ELBO — natural balance |
+| **Priors** | Fixed penalty lambda | EBNM — prior learns from data |
+| **Uncertainty** | Point estimates only | Posterior mean + variance |
+| **K selection** | CV grid search | Auto-prune ($K_\text{eff}$) |
+| **Constraints** | Nonnegative (NMF) | Unconstrained (allows negative loadings) |
+| **Error-in-variables** | Not addressed | Uses Var($L$) + E($L$)$^2$ correction |
+| **Second moments** | N/A | Prevents overfitting to uncertain loadings |
+
+::: {.notes}
+Use this slide if the discussion turns to positioning SBMF relative to penalised
+supervised factorisation methods. The key message is not that one framework is
+universally better, but that SBMF gives us adaptive shrinkage, uncertainty-aware
+updates, and a more principled way to connect expression structure with survival.
+:::

@@ -1,0 +1,161 @@
+/* Deck-specific polish for the April 9 lab meeting V2 slides */
+
+.reveal .slides section {
+  padding-top: 0.15em;
+}
+
+.reveal .tight-list ul,
+.reveal .tight-list ol {
+  margin-top: 0.25em;
+  margin-bottom: 0.35em;
+}
+
+.reveal .tight-list li {
+  margin-bottom: 0.28em;
+  line-height: 1.3;
+}
+
+.reveal .dense-cols .columns {
+  gap: 1.3em;
+  align-items: flex-start;
+}
+
+.reveal .compact-callout .callout {
+  padding: 0.75em 0.95em;
+  margin: 0.65em 0;
+}
+
+.reveal .compact-callout .callout h3 {
+  margin-top: 0.1em;
+  margin-bottom: 0.35em;
+  font-size: 1em;
+}
+
+.reveal .small-math p,
+.reveal .small-math li,
+.reveal .small-math table {
+  line-height: 1.3;
+}
+
+.reveal .compact-table table {
+  font-size: 0.74em;
+  margin-top: 0.7em;
+  margin-bottom: 0.8em;
+}
+
+.reveal .compact-table table th,
+.reveal .compact-table table td {
+  padding: 0.45em 0.65em;
+}
+
+.reveal .compact-table .footnote {
+  font-size: 0.7em;
+}
+
+.reveal .table-note {
+  font-size: 0.62em;
+  color: #5f6b7a;
+  margin-top: -0.15em;
+  margin-bottom: 0.55em;
+}
+
+.reveal .paired-figures img {
+  max-height: 420px;
+  width: auto;
+}
+
+.reveal .paired-figures .columns {
+  align-items: flex-start;
+  gap: 1.25em;
+}
+
+.reveal .paired-figures figure {
+  margin: 0.35em auto 0.5em auto;
+}
+
+.reveal .deep-dive img {
+  max-height: 445px;
+}
+
+.reveal .rmse-large img {
+  max-height: 485px;
+}
+
+.reveal .rmse-large .columns {
+  gap: 1.6em;
+}
+
+.reveal .rmse-large figure {
+  margin-bottom: 0.15em;
+}
+
+.reveal .rmse-large li {
+  margin-bottom: 0.22em;
+}
+
+.reveal .prior-table-large table {
+  font-size: 0.82em;
+}
+
+.reveal .prior-table-large table th,
+.reveal .prior-table-large table td {
+  padding: 0.52em 0.75em;
+}
+
+.reveal .prior-table-large .table-note {
+  margin-top: 0.15em;
+  margin-bottom: 0.8em;
+}
+
+.reveal .km-emphasis .columns {
+  gap: 1em;
+}
+
+.reveal .km-emphasis .column:first-child img {
+  max-height: 410px;
+}
+
+.reveal .km-emphasis .column:last-child img {
+  max-height: 500px;
+}
+
+.reveal .future-summary .columns {
+  gap: 3em;
+  align-items: flex-start;
+}
+
+.reveal .future-summary h3 {
+  margin-bottom: 0.55em;
+  font-size: 1.18em;
+}
+
+.reveal .future-summary ol {
+  margin-top: 0.4em;
+  font-size: 1.08em;
+}
+
+.reveal .future-summary li {
+  margin-bottom: 0.72em;
+  line-height: 1.46;
+}
+
+.reveal .hero-figure img {
+  max-height: 610px;
+  width: auto;
+}
+
+.reveal .multi-panel img {
+  max-height: 215px;
+  width: auto;
+  display: block;
+  margin: 0.25em auto;
+}
+
+.reveal .multi-panel .columns {
+  gap: 0.8em;
+  align-items: flex-start;
+}
+
+.reveal .multi-panel figure {
+  margin: 0.25em auto;
+}
