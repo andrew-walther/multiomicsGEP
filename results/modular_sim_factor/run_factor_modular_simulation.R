@@ -513,21 +513,30 @@ run_pipeline <- function(Y, time, status, gene_names, data,
   if (is_synthetic) {
     B_true  <- data$B_true
     L_true  <- data$L_true
+
+    cors <- cor(L_true, EL)   # K_true x K_est
+    write.csv(round(cors, 4),
+              file.path(table_dir, "loading_correlation_matrix.csv"))
+
+    # Permutation + sign alignment for beta comparison table
+    # perm[k] = index of the true factor that best matches estimated factor k
+    perm_csv        <- apply(abs(cors), 2, which.max)
+    match_signs_csv <- sign(cors[cbind(perm_csv, seq_len(K))])
+    B_true_aligned_csv <- B_true[perm_csv] * match_signs_csv
+
     beta_df <- data.frame(
-      Factor       = 1:K,
-      Beta_true    = B_true,
-      Beta_est     = round(EBeta, 4),
-      Beta2_est    = round(EBeta2, 6),
-      Posterior_SD = round(beta_sd, 4),
-      Abs_Error    = round(abs(EBeta - B_true), 4),
-      Sign_Match   = sign(EBeta) == sign(B_true) | B_true == 0
+      Est_Factor        = seq_len(K),
+      Matched_True_Factor = perm_csv,
+      Loading_Corr      = round(cors[cbind(perm_csv, seq_len(K))], 4),
+      Beta_true_aligned = round(B_true_aligned_csv, 4),
+      Beta_est          = round(EBeta, 4),
+      Beta2_est         = round(EBeta2, 6),
+      Posterior_SD      = round(beta_sd, 4),
+      Abs_Error         = round(abs(EBeta - B_true_aligned_csv), 4),
+      Sign_Match        = sign(EBeta) == sign(B_true_aligned_csv) | B_true_aligned_csv == 0
     )
     write.csv(beta_df,
               file.path(table_dir, "beta_comparison_table.csv"), row.names = FALSE)
-
-    cors <- cor(L_true, EL)
-    write.csv(round(cors, 4),
-              file.path(table_dir, "loading_correlation_matrix.csv"))
   }
 
   cat(sprintf("  CSV tables saved to %s\n", table_dir))
@@ -718,22 +727,46 @@ run_pipeline <- function(Y, time, status, gene_names, data,
     x_pos <- 1:K
     if (is_synthetic) {
       B_true <- data$B_true
-      ylim_r <- range(c(B_true, EBeta + 1.96 * beta_sd, EBeta - 1.96 * beta_sd)) * 1.2
+
+      # ── Permutation + sign alignment ──────────────────────────────────────
+      # cors (K_true x K_est) was computed above: cor(L_true, EL).
+      # For each estimated factor k (column), find the best-matching true
+      # factor (row) by maximum |correlation|.  When that correlation is
+      # negative, L_est_k ≈ -L_true_j, so the corresponding true beta must
+      # also be sign-flipped (L·β is invariant to simultaneous sign flips).
+      perm          <- apply(abs(cors), 2, which.max)   # length K; perm[k] = true factor for est k
+      match_signs   <- sign(cors[cbind(perm, seq_len(K))])
+      B_true_aligned <- B_true[perm] * match_signs       # reordered + sign-corrected
+
+      ylim_r <- range(c(B_true_aligned,
+                        EBeta + 1.96 * beta_sd,
+                        EBeta - 1.96 * beta_sd)) * 1.2
+
+      # x-axis labels show estimated factor index and matched true factor
+      x_labels <- paste0("F", seq_len(K), " (T", perm, ")")
     } else {
-      ylim_r <- range(c(EBeta + 1.96 * beta_sd, EBeta - 1.96 * beta_sd, 0)) * 1.2
+      ylim_r   <- range(c(EBeta + 1.96 * beta_sd, EBeta - 1.96 * beta_sd, 0)) * 1.2
+      x_labels <- as.character(seq_len(K))
     }
+
+    fig3_title <- if (is_synthetic)
+      sprintf("Figure 3: Estimated Survival Coefficients (95%% CI)\n(%s, true beta permutation-aligned)", run_label)
+    else
+      sprintf("Figure 3: Estimated Survival Coefficients (95%% CI)\n(%s)", run_label)
+
     plot(x_pos, EBeta, pch = 16, cex = 1.8, col = "#1f77b4",
          ylim = ylim_r,
-         xlab = "Factor", ylab = expression(beta[k]),
-         main = sprintf("Figure 3: Estimated Survival Coefficients (95%% CI)\n(%s)", run_label),
-         bty = "n", cex.lab = 1.2, cex.main = 1.3, xaxt = "n")
-    axis(1, at = 1:K)
+         xlab = "Factor (estimated; true factor in parentheses)",
+         ylab = expression(beta[k]),
+         main = fig3_title,
+         bty = "n", cex.lab = 1.1, cex.main = 1.2, xaxt = "n")
+    axis(1, at = seq_len(K), labels = x_labels, cex.axis = 0.85)
     arrows(x_pos, EBeta - 1.96 * beta_sd, x_pos, EBeta + 1.96 * beta_sd,
            angle = 90, code = 3, length = 0.08, col = "#1f77b4", lwd = 1.5)
     abline(h = 0, col = "gray50", lty = 3)
     if (is_synthetic) {
-      points(x_pos, B_true, pch = 4, cex = 2, col = "#d62728", lwd = 2.5)
-      legend("bottomleft", legend = c("Estimated (95% CI)", "True"),
+      points(x_pos, B_true_aligned, pch = 4, cex = 2, col = "#d62728", lwd = 2.5)
+      legend("bottomleft", legend = c("Estimated (95% CI)", "True (permutation-aligned)"),
              col = c("#1f77b4", "#d62728"), pch = c(16, 4),
              pt.cex = c(1.8, 2), pt.lwd = c(1, 2.5), bty = "n")
     } else {

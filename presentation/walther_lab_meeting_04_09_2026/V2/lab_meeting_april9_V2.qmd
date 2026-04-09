@@ -131,10 +131,10 @@ Bayesian model and inference, then present results on 7 independent cohorts.
 
 ::: {.column width="55%"}
 
-- **Five-year survival < 12%** — one of the most lethal solid tumours
+- **Five-year survival < 12%** — one of the most lethal solid tumors
 - Most patients diagnosed at advanced stage with limited treatment options
 - **No widely adopted molecular stratification** at diagnosis
-- Tumours are a complex mixture of malignant, stromal, and immune cells — gene expression signals are deeply interwoven
+- Tumors are a complex mixture of malignant, stromal, and immune cells — gene expression signals are deeply interwoven
 - **Goal:** identify *gene expression programs* (GEPs) whose activation levels predict patient survival
 
 :::
@@ -147,7 +147,7 @@ Reliable prognostic signatures could:
 
 - Stratify patients for targeted therapy
 - Define subgroups for clinical trial enrollment
-- Distinguish molecular features that *describe* tumour heterogeneity from those that *predict* disease course
+- Distinguish molecular features that *describe* tumor heterogeneity from those that *predict* disease course
 :::
 
 :::
@@ -155,11 +155,11 @@ Reliable prognostic signatures could:
 ::::
 
 ::: {.notes}
-PDAC is the most lethal major solid tumour. Unlike breast cancer where molecular
+PDAC is the most lethal major solid tumor. Unlike breast cancer where molecular
 subtypes dictate treatment, PDAC patients largely receive the same regimen.
 If we can identify gene programs that distinguish prognostic subgroups, we can
 stratify patients for targeted therapy and clinical trials. The complexity is
-that bulk expression mixes signals from tumour, stroma, and immune cells.
+that bulk expression mixes signals from tumor, stroma, and immune cells.
 :::
 
 
