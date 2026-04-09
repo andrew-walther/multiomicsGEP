@@ -19,10 +19,11 @@
 **/data/original/
 
 # LaTeX build artifacts from Quarto PDF rendering
+# Note: .tex files are source documents and are NOT ignored
 **/*.aux
 **/*.log
 **/*.toc
-**/*.tex
+**/*.out
 
 # Quarto HTML build artifacts (self-contained HTML embeds these; folder not needed)
 **/*_files/
