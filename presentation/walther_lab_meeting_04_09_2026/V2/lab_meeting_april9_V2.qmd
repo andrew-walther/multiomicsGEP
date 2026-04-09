@@ -6,10 +6,10 @@ institute: "Department of Biostatistics, UNC Gillings School of Global Public He
 date: "April 9, 2026"
 format:
   revealjs:
-    theme: [default, ../resources/custom.css]
+    theme: [default, ../../resources/custom.css]
     css: lab_meeting_april9_V2.css
     html-math-method: katex
-    logo: ../resources/assets/RLlogoA.png
+    logo: ../../resources/assets/RLlogoA.png
     footer: "Rashid Lab · UNC Chapel Hill"
     slide-number: true
     transition: fade
@@ -47,9 +47,9 @@ execute:
 library(kableExtra)
 library(dplyr)
 
-# ── Path definitions (relative to presentation/) ──
-figures_root <- "../../results/figures"
-tables_root  <- "../../results/tables"
+# ── Path definitions (relative to V2/ subdirectory) ──
+figures_root <- "../../../../results/figures"
+tables_root  <- "../../../results/tables"
 
 ALL_DATASETS <- c("TCGA_PAAD", "CPTAC", "Dijk",
                   "Moffitt_GEO_array", "PACA_AU_array",
@@ -522,13 +522,13 @@ initialisation to put the datasets on a comparable footing.
 
 ::: {.column width="50%"}
 
-![Loading correlations between true and estimated factors](../../results/figures/synthetic/fig7_loading_correlations.png){fig-align="center" width="90%"}
+![Loading correlations between true and estimated factors](../../../results/figures/synthetic/fig7_loading_correlations.png){fig-align="center" width="90%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![True vs. estimated survival coefficients $\hat{\beta}$](../../results/figures/synthetic/fig3_beta_comparison.png){fig-align="center" width="90%"}
+![True vs. estimated survival coefficients $\hat{\beta}$](../../../results/figures/synthetic/fig3_beta_comparison.png){fig-align="center" width="90%"}
 
 :::
 
@@ -560,29 +560,33 @@ is correctly shrunk to zero. This is the EBNM prior doing its job.
 
 ::: {.column width="50%"}
 
-![RMSE trace — Puleo array ($n = 288$, converges in 72 iterations)](../../results/figures/Puleo_array/fig1_rmse_trace.png){fig-align="center" width="95%"}
+![RMSE trace — Puleo array ($n = 288$, converges in 72 iterations)](../../../results/figures/Puleo_array/fig1_rmse_trace.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![RMSE trace — CPTAC proteomics ($n = 129$, converges in 259 iterations)](../../results/figures/CPTAC/fig1_rmse_trace.png){fig-align="center" width="95%"}
+![RMSE trace — CPTAC proteomics ($n = 129$, up to 259 iterations in fixed-$K$ run)](../../../results/figures/CPTAC/fig1_rmse_trace.png){fig-align="center" width="95%"}
 
 :::
 
 ::::
 
-- **All 7 cohorts converge** — RMSE descends monotonically in every case
+- **All 7 cohorts converge** — RMSE stabilises to a plateau in every case
 - **Iteration range:** 14 (Moffitt, microarray) to 259 (CPTAC, proteomics)
 - Microarray datasets converge fastest; proteomics requires the most iterations (higher platform noise)
 - At baseline (point-normal, $K = 5$): supervised C-index $\geq$ PCA in 3/7 cohorts
 
 ::: {.notes}
-RMSE descends monotonically in every cohort — the CAVI algorithm is reliably
-converging. Puleo is the largest cohort and converges in about 70 iterations.
-CPTAC proteomics needs 259 iterations, reflecting higher noise in protein
-abundance measurements. These baseline results use point-normal prior at K=5,
-which we'll see is actually the worst-case configuration.
+RMSE converges to a stable plateau in every cohort — the CAVI algorithm is
+reliably settling. Note that RMSE increases slightly from the PCA initialisation
+as Bayesian regularisation trades a small amount of reconstruction accuracy for
+better-regularised, survival-relevant factors; the ELBO (the actual objective)
+is increasing throughout. Puleo is the largest cohort and converges in about 70
+iterations. CPTAC proteomics requires up to 259 iterations in the fixed-K
+configuration, reflecting higher noise in protein abundance measurements.
+These baseline results use point-normal prior at K=5, which we'll see is
+actually the worst-case configuration.
 :::
 
 
@@ -758,7 +762,7 @@ and robustness, not to claim that every single condition improves in every cohor
 
 ::: {.column width="45%"}
 
-![PVE scree — Puleo ($K_\text{eff} = 10$)](../../results/figures/Puleo_array/figK_pve_scree.png){fig-align="center" width="90%"}
+![PVE scree — Puleo ($K_\text{eff} = 10$)](../../../results/figures/Puleo_array/figK_pve_scree.png){fig-align="center" width="90%"}
 
 :::
 
@@ -785,20 +789,20 @@ improves in every cohort.
 
 ::: {.column width="40%"}
 
-![Survival coefficients $\hat{\beta}$ per GEP](../../results/figures/Puleo_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Survival coefficients $\hat{\beta}$ per GEP](../../../results/figures/Puleo_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="60%"}
 
-![Kaplan-Meier survival curves by GEP activation](../../results/figures/Puleo_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Kaplan-Meier survival curves by GEP activation](../../../results/figures/Puleo_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
 ::::
 
-- **Factor 2:** highest PVE (9.05%) but $\hat{\beta} = 0$ — expression-dominant, survival-neutral
-- **Factors 3, 4, 9:** large $|\hat{\beta}|$ — prognostically informative
+- **Factor 2:** highest PVE (9.05%) but $\hat{\beta} \approx 0$ — expression-dominant, survival-neutral (figures show $K = 5$ baseline)
+- **Factors 1, 3, 4:** large $|\hat{\beta}|$ — prognostically informative; in the full $K_\text{eff} = 10$ model, Factor 9 also emerges ($|\hat{\beta}| = 0.36$, PVE = 0.91\%)
 - The model **separates prognostic from non-prognostic** structure — PCA would test all factors indiscriminately
 - $K_\text{eff} = 10$ via auto-prune (4 more factors than fixed $K = 5$)
 
@@ -820,13 +824,13 @@ factorisation buys you.
 
 ::: {.column width="40%"}
 
-![Survival coefficients $\hat{\beta}$ per GEP](../../results/figures/TCGA_PAAD/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Survival coefficients $\hat{\beta}$ per GEP](../../../results/figures/TCGA_PAAD/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="60%"}
 
-![Kaplan-Meier survival curves by GEP activation](../../results/figures/TCGA_PAAD/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Kaplan-Meier survival curves by GEP activation](../../../results/figures/TCGA_PAAD/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
@@ -835,7 +839,7 @@ factorisation buys you.
 - **TCGA_PAAD** ($n = 144$, RNA-seq) — the benchmark PDAC dataset
 - $K_\text{eff} = 9$; largest $K_\text{eff}$ improvement: $\Delta C_\text{test} = +0.28$ over $K = 5$ baseline
 - Consistent with Puleo: model identifies both prognostic and expression-only GEPs
-- Patient stratification visible in Kaplan-Meier curves
+- Patient stratification trends visible in Kaplan-Meier curves; $n = 144$ limits per-factor statistical power
 
 ::: {.notes}
 TCGA is the dataset most people in the room will have heard of. It shows the
@@ -970,13 +974,13 @@ per-cohort results, ELBO traces, and technical details on EBNM.
 
 ::: {.column width="50%"}
 
-![RMSE convergence — pooled RNA-seq ($n = 286$)](../../results/figures/PDAC_pooled_rnaseq/fig1_rmse_trace.png){fig-align="center" width="95%"}
+![RMSE convergence — pooled RNA-seq ($n = 286$)](../../../results/figures/PDAC_pooled_rnaseq/fig1_rmse_trace.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![Survival coefficients $\hat{\beta}$ — pooled](../../results/figures/PDAC_pooled_rnaseq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Survival coefficients $\hat{\beta}$ — pooled](../../../results/figures/PDAC_pooled_rnaseq/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1038,7 +1042,7 @@ safer than plugging in posterior means alone.
 
 ## GEP Heatmap: Puleo Array {visibility="uncounted" .smaller .hero-figure}
 
-![Gene expression program heatmap — patient loadings (rows) × GEPs (columns)](../../results/figures/Puleo_array/fig4_gep_heatmap.png){fig-align="center" width="80%"}
+![Gene expression program heatmap — patient loadings (rows) × GEPs (columns)](../../../results/figures/Puleo_array/fig4_gep_heatmap.png){fig-align="center" width="80%"}
 
 Each column is a gene expression program. Distinct patient groups emerge from the loading patterns.
 
@@ -1056,13 +1060,13 @@ in biologically interpretable ways.
 
 ::: {.column width="50%"}
 
-![ELBO trace — Puleo array](../../results/figures/Puleo_array/fig2_elbo_proxy.png){fig-align="center" width="95%"}
+![ELBO trace — Puleo array](../../../results/figures/Puleo_array/fig2_elbo_proxy.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![ELBO trace — TCGA_PAAD](../../results/figures/TCGA_PAAD/fig2_elbo_proxy.png){fig-align="center" width="95%"}
+![ELBO trace — TCGA_PAAD](../../../results/figures/TCGA_PAAD/fig2_elbo_proxy.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1084,13 +1088,13 @@ main talk.
 
 ::: {.column width="50%"}
 
-![Gene-specific precision $\hat{\tau}_j$ — Puleo array](../../results/figures/Puleo_array/fig8_tau_distribution.png){fig-align="center" width="95%"}
+![Gene-specific precision $\hat{\tau}_j$ — Puleo array](../../../results/figures/Puleo_array/fig8_tau_distribution.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="50%"}
 
-![Gene-specific precision $\hat{\tau}_j$ — CPTAC](../../results/figures/CPTAC/fig8_tau_distribution.png){fig-align="center" width="95%"}
+![Gene-specific precision $\hat{\tau}_j$ — CPTAC](../../../results/figures/CPTAC/fig8_tau_distribution.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1112,23 +1116,23 @@ features instead of treating every gene as equally reliable.
 
 ::: {.column width="33%"}
 
-![Dijk](../../results/figures/Dijk/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Dijk](../../../results/figures/Dijk/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
-![PACA\_AU\_array](../../results/figures/PACA_AU_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
-
-:::
-
-::: {.column width="33%"}
-
-![Moffitt](../../results/figures/Moffitt_GEO_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
-
-![PACA\_AU\_seq](../../results/figures/PACA_AU_seq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![PACA\_AU\_array](../../../results/figures/PACA_AU_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="33%"}
 
-![CPTAC](../../results/figures/CPTAC/fig3_beta_comparison.png){fig-align="center" width="95%"}
+![Moffitt](../../../results/figures/Moffitt_GEO_array/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_seq](../../../results/figures/PACA_AU_seq/fig3_beta_comparison.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![CPTAC](../../../results/figures/CPTAC/fig3_beta_comparison.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1148,23 +1152,23 @@ separation between prognostic and expression-only structure appears repeatedly.
 
 ::: {.column width="33%"}
 
-![Dijk](../../results/figures/Dijk/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Dijk](../../../results/figures/Dijk/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
-![PACA\_AU\_array](../../results/figures/PACA_AU_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
-
-:::
-
-::: {.column width="33%"}
-
-![Moffitt](../../results/figures/Moffitt_GEO_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
-
-![PACA\_AU\_seq](../../results/figures/PACA_AU_seq/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![PACA\_AU\_array](../../../results/figures/PACA_AU_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
 ::: {.column width="33%"}
 
-![CPTAC](../../results/figures/CPTAC/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+![Moffitt](../../../results/figures/Moffitt_GEO_array/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+![PACA\_AU\_seq](../../../results/figures/PACA_AU_seq/fig5_kaplan_meier.png){fig-align="center" width="95%"}
+
+:::
+
+::: {.column width="33%"}
+
+![CPTAC](../../../results/figures/CPTAC/fig5_kaplan_meier.png){fig-align="center" width="95%"}
 
 :::
 
@@ -1180,7 +1184,7 @@ stratification beyond the two highlighted cohorts in the main deck.
 
 ## Signal Recovery: Synthetic Detail {visibility="uncounted" .smaller .hero-figure}
 
-![Detailed signal recovery — true vs. estimated factor structure](../../results/figures/synthetic/fig6_signal_recovery.png){fig-align="center" width="80%"}
+![Detailed signal recovery — true vs. estimated factor structure](../../../results/figures/synthetic/fig6_signal_recovery.png){fig-align="center" width="80%"}
 
 ::: {.notes}
 This is the backup for anyone who wants more detail on the simulation setup or
