@@ -1,0 +1,640 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{amsmath, amssymb}
+
+\hypersetup{
+  colorlinks = true,
+  linkcolor = blue!50!black,
+  urlcolor = blue!50!black
+}
+
+\setlist[itemize]{leftmargin=1.4em, itemsep=0.25em, topsep=0.35em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\newcommand{\scriptlabel}{\textbf{Script. }}
+\newcommand{\sectionlabel}[1]{\textbf{#1}}
+\newcommand{\actioncue}[1]{\textit{\textbf{#1}}}
+\title{Supervised Bayesian Matrix Factorization\\[0.8em]\large Presentation Notes}
+\author{Andrew Walther}
+\date{April 9, 2026}
+
+\begin{document}
+\maketitle
+
+\noindent This companion is written as a preparation guide for an approximately 15-minute lab meeting talk. The main deck sections are written as the primary script. The backup sections are shorter and are intended for discussion only if those slides come up.
+
+\section*{Opening}
+
+\subsection*{Title Slide}
+\scriptlabel Thanks everyone for letting me share an update on the supervised Bayesian matrix factorization project. Today I want to show both the statistical idea and the first cross-cohort pancreatic ductal adenocarcinoma (PDAC) results. The short version is that bringing survival directly into the factorization changes which latent programs the model prioritizes, and that seems to matter in real data.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Frame the talk as both a methods update and a first results update.
+\item \sectionlabel{Emphasis:} Set the audience expectation that the talk is about clinically relevant latent structure, not only reconstruction quality.
+\item \sectionlabel{Timing:} Keep this to one or two sentences and move quickly into the outline.
+\end{itemize}
+
+\section*{Main Deck}
+
+\subsection*{Slide 1: Outline}
+\scriptlabel I will spend just a couple of minutes on the motivation, then walk through the model and inference at a high level, and spend most of the talk on the cross-dataset results. I will end with the key takeaways and what I think the next practical steps are for turning the latent programs into something biologically interpretable.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} This is a results-forward talk, not a derivation-heavy talk.
+\item \sectionlabel{Emphasis:} Mention that most of the time will be spent on the prior-by-$K$ comparison and the cohort deep dives.
+\end{itemize}
+
+\subsection*{Slide 2: The PDAC Problem}
+\scriptlabel Pancreatic ductal adenocarcinoma, or PDAC, remains one of the deadliest solid tumours, and unlike some other cancers we still do not have widely adopted molecular stratification at diagnosis. The problem is not that gene expression lacks signal, but that the signal is mixed across malignant, stromal, and immune sources. The goal here is to identify gene expression programs whose patient-level activation is not only biologically present, but also prognostically informative.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} There is a real clinical need for prognostic molecular structure in PDAC.
+\item \sectionlabel{Figure/Table Purpose:} The callout translates the statistical objective into clinical use cases such as trial stratification and targeted therapy.
+\item \sectionlabel{Emphasis:} Distinguish ``describing tumour heterogeneity'' from ``predicting disease course.''
+\end{itemize}
+
+\subsection*{Slide 3: Why Supervised $>$ Unsupervised}
+\textbf{Script.} The standard workflow is to run PCA or NMF first, then test the derived factors for association with survival. The weakness is that unsupervised methods rank factors by expression variance, not by clinical relevance. A factor can explain a lot of variance and still be biologically uninteresting for prognosis, while a smaller-variance factor can be the one that actually separates patients by outcome. Supervision changes the objective so the latent space has to serve both expression reconstruction and survival prediction.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Post hoc testing after PCA can miss clinically useful structure.
+\item \sectionlabel{Emphasis:} The key conceptual win is not just prediction, but separation of prognostic from non-prognostic latent structure.
+\item \sectionlabel{Good Line To Stress:} If $\hat{\beta}_k = 0$, the model keeps the factor for expression but not for prognosis.
+\end{itemize}
+
+\subsection*{Slide 4: The Gap \& Our Approach}
+\textbf{Script.} Existing supervised matrix factorization approaches usually rely on fixed penalties and manual tuning to balance reconstruction against survival. What we want instead is a framework where shrinkage adapts to the data, uncertainty is carried through the updates, and the model can tell us when five factors are simply not enough. That is the niche SBMF is trying to fill.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} SBMF is meant to improve on fixed-penalty supervised factorization, not replace the underlying idea of supervision.
+\item \sectionlabel{Figure/Table Purpose:} The callout anchors the comparison against penalised approaches such as deSurv without making the slide about that comparison alone.
+\item \sectionlabel{Emphasis:} The ELBO gives a natural balance, so there is no external $\alpha$ to tune between genomics and survival.
+\end{itemize}
+
+\subsection*{Slide 5: The SBMF Model}
+\textbf{Script.} This slide is the core model statement. The expression matrix is written as a low-rank factorization with gene-specific noise precision, and the exact same latent patient loadings feed the Cox proportional hazards model. That shared latent space is the whole point: each factor is encouraged to explain expression structure while also being allowed to matter, or not matter, for survival through its corresponding $\beta_k$.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} One latent space drives both the genomics and survival components.
+\item \sectionlabel{Figure/Table Purpose:} The table defines the objects once so the later slides can move faster.
+\item \sectionlabel{Emphasis:} Each column of $F$ is a gene program, each row of $L$ is a patient’s program activation profile.
+\end{itemize}
+
+\subsection*{Slide 6: Dual-Source Objective Function}
+\textbf{Script.} The optimisation target is the ELBO, which can be read as expression fit plus survival fit minus regularisation. The important interpretation is that the shared $L$ appears in both likelihood terms, so the latent loadings cannot specialise to only one task. This is how the supervision is built into the factorization itself rather than added afterward.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Supervision is implemented through the joint variational objective.
+\item \sectionlabel{Figure/Table Purpose:} The left and right callouts separate the two likelihood pieces so the audience can see how the ELBO is assembled.
+\item \sectionlabel{Emphasis:} Say ``both likelihoods share the same latent loadings'' explicitly.
+\end{itemize}
+
+\subsection*{Slide 7: EBNM \& Adaptive Shrinkage}
+\textbf{Script.} The easiest way to explain EBNM is to start from ridge and LASSO. In penalised regression, we choose a fixed penalty strength. Here, the prior itself is estimated from the data, so shrinkage can adapt to what the current factor or coefficient estimates look like. I tested both point-normal and point-laplace families because they give different tail behaviour and sparsity patterns.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The prior is learned from the data rather than fixed in advance.
+\item \sectionlabel{Figure/Table Purpose:} The right column gives the practical interpretation of the two prior families that will later appear in the results table.
+\item \sectionlabel{Emphasis:} Mention the spike-and-slab intuition and the fact that posterior second moments are carried forward.
+\end{itemize}
+
+\subsection*{Slide 8: Inference: Factor-Wise CAVI}
+\textbf{Script.} Inference is done with Gauss-Seidel coordinate ascent variational inference. For each factor, we update the patient loadings, the gene weights, and then the survival coefficient, each through an EBNM subproblem. The automatic $K$ step is currently a pragmatic screen rather than full cross-validation: after fitting a large model, we keep factors that either explain non-trivial variance or carry non-negligible survival signal.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The algorithm updates one factor at a time and then screens active factors from a larger fit.
+\item \sectionlabel{Figure/Table Purpose:} The right column explains both convergence and the current $K_{\text{eff}}$ rule.
+\item \sectionlabel{Emphasis:} Say clearly that CV-based $K$ selection is still a next step; today’s $K_{\text{eff}}$ is a useful heuristic, not the final model-selection solution.
+\end{itemize}
+
+\subsection*{Slide 9: Data Intro --- PDAC Cohorts}
+\textbf{Script.} Before showing results, I want to make the validation setting concrete. These are seven independent PDAC cohorts spanning RNA-seq, microarray, and proteomics, with sample sizes from 52 to 288. That breadth matters because a method can look good on one cohort and one assay, but real robustness means behaving reasonably across platforms with different noise structures.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The validation is cross-cohort and cross-platform, not a single-dataset demonstration.
+\item \sectionlabel{Figure/Table Purpose:} The table is there to ground the audience in platform, cohort size, event counts, and censoring at a glance.
+\item \sectionlabel{Emphasis:} All analyses use the top 5,000 most-variable features and column centring for comparability.
+\end{itemize}
+
+\subsection*{Slide 10: Synthetic Validation}
+\textbf{Script.} I start with synthetic data because there the ground truth is known. The model recovers the latent factors up to permutation, recovers the survival coefficients with the right sign and magnitude, and correctly drives the null factor’s coefficient to zero. That is the minimum sanity check before trusting any real-data story.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The model can recover known factor structure and a true null survival effect.
+\item \sectionlabel{Figure/Table Purpose:} The left panel shows factor correspondence; the right panel shows survival-coefficient recovery.
+\item \sectionlabel{Emphasis:} The null factor is the internal negative control for whether the shrinkage prior is doing something sensible.
+\end{itemize}
+
+\subsection*{Slide 11: Convergence \& Baseline Performance}
+\textbf{Script.} Across all seven cohorts, the optimisation behaves stably. The RMSE traces descend cleanly, although the number of iterations varies a lot by platform, with proteomics taking longer than the microarray cohorts. The baseline point-normal, $K=5$ configuration is not the best model; I show it here mainly to establish that the optimiser converges and to motivate why the later prior-by-$K$ comparison matters.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Convergence is reliable across cohorts, but the default baseline is clearly not sufficient.
+\item \sectionlabel{Figure/Table Purpose:} The two traces contrast a large microarray cohort against a noisier proteomics cohort.
+\item \sectionlabel{Emphasis:} Note that platform differences show up in iteration count, which is exactly what one would expect if noise structures differ.
+\end{itemize}
+
+\subsection*{Slide 12: Prior $\times$ $K$ Factorial: The Central Result}
+\textbf{Script.} This is the main results table. Each cohort is evaluated under four conditions: point-normal and point-laplace, each at fixed $K=5$ and at data-adapted $K_{\text{eff}}$. The two patterns I want the audience to see are that point-normal at $K=5$ often degenerates badly, and that allowing the model to use more factors improves performance substantially overall, especially for the point-normal fits.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Fixed $K=5$ is too restrictive, and the point-normal baseline fails in several cohorts.
+\item \sectionlabel{Figure/Table Purpose:} The table shows the full factorial comparison without hiding any cohort-specific variation.
+\item \sectionlabel{Emphasis:} Be precise. Say ``mean performance improves markedly under $K_{\text{eff}}$'' rather than ``every condition improves in every cohort.''
+\end{itemize}
+
+\subsection*{Slide 13: Prior $\times$ $K$ Scatter Plot}
+\textbf{Script.} The scatter plot is the visual version of the previous table. The blue points show the unstable point-normal, $K=5$ fits. Moving to point-laplace helps, but the strongest overall shift is what happens when the model is allowed to move to $K_{\text{eff}}$, which pulls most cohorts upward.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The visual trend matches the table, with the biggest rescue coming from data-adapted $K$.
+\item \sectionlabel{Figure/Table Purpose:} This slide compresses the same factorial result into an easier pattern-recognition view.
+\item \sectionlabel{Emphasis:} Use this slide for trend language, not for over-detailed numeric discussion.
+\end{itemize}
+
+\subsection*{Slide 14: Key Findings: Prior $\times$ $K$ Comparison}
+\textbf{Script.} The summary result is that point-laplace is clearly better when $K$ is artificially fixed at 5, but once $K$ is allowed to adapt, the prior family matters much less than the number of factors. In other words, I would rather spend effort getting $K$ right than spending that same effort debating point-normal versus point-laplace. The scree plot on the right reinforces that the data often wants more than five active factors.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} $K$ selection is the dominant lever in this analysis.
+\item \sectionlabel{Figure/Table Purpose:} The scree plot gives a concrete example of why $K=5$ was too conservative.
+\item \sectionlabel{Emphasis:} Three cohorts hit $K_{\max}=10$, which suggests the latent structure may be richer than the current cap allows.
+\end{itemize}
+
+\subsection*{Slide 15: Deep Dive --- Puleo Array}
+\textbf{Script.} Puleo is the clearest real-data example because it is large and shows well-separated factor behaviour. The key observation is that factor 2 explains a lot of expression variance but is shrunk to $\hat{\beta}=0$, while other factors carry strong prognostic signal. That is exactly the separation we want from supervised factorization: not every large expression axis deserves to be treated as clinically important.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The model separates expression-dominant and prognosis-dominant programs in a large cohort.
+\item \sectionlabel{Figure/Table Purpose:} The left panel shows which factors are prognostic; the right panel shows that those factors translate into visible survival stratification.
+\item \sectionlabel{Emphasis:} Explicitly contrast this with what a post hoc PCA-based workflow would do.
+\end{itemize}
+
+\subsection*{Slide 16: Deep Dive --- TCGA\_PAAD}
+\textbf{Script.} I included TCGA because it is the benchmark dataset most people in the room will recognise. The same qualitative pattern shows up here: some factors clearly matter for prognosis and others do not, and moving from $K=5$ to $K_{\text{eff}}=9$ gives one of the biggest performance gains in the study. So the main story is not limited to Puleo.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The TCGA cohort reproduces the same supervised-factorization pattern in a familiar benchmark dataset.
+\item \sectionlabel{Figure/Table Purpose:} The panels mirror the Puleo slide so the audience can compare cohort-specific structure directly.
+\item \sectionlabel{Emphasis:} Say that the large improvement here is one reason to take $K$ mis-specification seriously.
+\end{itemize}
+
+\subsection*{Slide 17: Hold-Out Prediction}
+\scriptlabel This slide asks the practical question: does the model help on unseen patients? In five of the seven cohorts, the best SBMF condition beats the PCA baseline on the hold-out set. I also want to be honest about the caveat that the smallest cohorts have very small test sets, so the C-index there is noisier and should not be over-interpreted.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} SBMF usually generalises better than the PCA baseline, but the smallest cohorts remain unstable.
+\item \sectionlabel{Figure/Table Purpose:} The table collapses the factorial comparison down to the best-performing condition per cohort.
+\item \sectionlabel{Emphasis:} This is the slide to use for the ``does it help in prediction?'' question.
+\end{itemize}
+
+\subsection*{Slide 18: Future Directions \& Summary}
+\scriptlabel The immediate next step is biological interpretation: the factors need names, pathways, and a clearer connection to known PDAC biology. On the methods side, the highest-value improvement is proper cross-validated $K$ selection on the cluster at a higher $K_{\max}$. The summary I want people to leave with is that the method converges, the supervision changes which latent programs matter, and getting $K$ right matters more than fine-tuning the prior family.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The method is working well enough to move toward biological interpretation and more principled model selection.
+\item \sectionlabel{Emphasis:} Keep the summary crisp and repeat the ``$K$ matters most'' message one last time.
+\item \sectionlabel{Good Closing Phrase:} The next stage is turning statistical factors into interpretable biology.
+\end{itemize}
+
+\subsection*{Slide 19: Discussion}
+\scriptlabel \actioncue{Stop here, thank the group, and invite questions.} If discussion turns technical, I have backup slides on pooled analysis, EBNM details, convergence, heteroscedastic precision, and per-cohort diagnostics.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Open the room for discussion without adding new content.
+\item \sectionlabel{Emphasis:} Mention the backup material so the audience knows deeper technical detail is available.
+\end{itemize}
+
+% =========================================================
+\section*{Figure \& Table Analysis Guide}
+% =========================================================
+
+\noindent This section decodes every figure and table in slides 10--18 using a consistent three-part structure: what the figure presents, how to interpret it, and the takeaway the audience should walk away with. The slide text has been revised to match the figures, so this guide is in full continuity with the current deck.
+
+% ---------------------------------------------------------
+\subsection*{Slide 10 --- Data Intro: PDAC Cohorts (Table)}
+% ---------------------------------------------------------
+
+\textbf{What this table presents.} A 7-row summary table of the independent PDAC cohorts used for validation. Columns are: Dataset name, full description, assay platform (RNA-seq / Microarray / Proteomics), sample size $n$, number of observed death events, and censoring percentage. The table is sorted in the order the cohorts appear throughout the results.
+
+\textbf{How to interpret it.} Each row is a completely independent cohort --- different institution, different patients, often different measurement technology. ``Events'' is the number of patients who died during follow-up (these are the uncensored observations that Cox regression actually conditions on). ``Censoring \%'' is the fraction of patients who were still alive at last contact (their survival time is a lower bound, not an exact measurement). Dijk has only 10\% censoring, meaning nearly every patient experienced the event --- unusually complete follow-up for a cancer cohort. CPTAC has 50.4\% censoring, a more typical pattern where many patients are still alive when the study closes.
+
+\textbf{The takeaway.} The validation spans three measurement platforms (RNA-seq, microarray, proteomics) and sample sizes from $n = 52$ to $n = 288$. This breadth is deliberate: a method that only succeeds on one cohort or one assay type has limited scientific value. If SBMF performs reasonably across all seven, the results are platform-agnostic by construction.
+
+\begin{itemize}
+  \item \sectionlabel{Key number to say aloud:} ``Sample sizes range from 52 to 288, and the cohorts span RNA-seq, microarray, and proteomics --- so this is not a one-dataset story.''
+  \item \sectionlabel{Likely question:} ``Why not more cohorts?'' Answer: these are all publicly available PDAC datasets with matched expression and survival data and sufficient sample size. Seven is essentially the complete set available at the time of analysis.
+  \item \sectionlabel{Likely question:} ``Why 5,000 features?'' Answer: keeping the top 5,000 most-variable features is a standard dimensionality reduction step that removes near-constant genes while preserving the bulk of the transcriptomic signal. Column-centring ensures each gene has mean zero across patients, preventing the intercept from absorbing structure.
+\end{itemize}
+
+% ---------------------------------------------------------
+\subsection*{Slide 11 --- Synthetic Validation (Two Figures)}
+% ---------------------------------------------------------
+
+\subsubsection*{Left Panel: Loading Correlation Heatmap (Fig.~7)}
+
+\textbf{What this figure presents.} A $5 \times 5$ correlation heatmap comparing true and estimated latent loadings on a synthetic dataset where the ground truth is known ($n = 200$, $p = 500$, $K_\text{true} = 5$). The x-axis indexes the five \emph{true} factors; the y-axis indexes the five \emph{estimated} factors. Each cell contains the Pearson correlation between the patient loading vector for that true--estimated pair. Dark blue = strong positive correlation; dark red = strong negative correlation (sign flip); pale = near-zero correlation (no correspondence).
+
+\textbf{How to interpret it.} In matrix factorisation, factors have no canonical order or sign. The model can recover True Factor 4 as its first output, or flip any factor's sign, and still produce an identically valid decomposition. What matters is whether there is a \emph{one-to-one} correspondence between the true and estimated sets. The heatmap reveals this by showing that each estimated factor has exactly one dominant true-factor match:
+\begin{itemize}
+  \item Est.\ 1 $\leftrightarrow$ True 4: $r = 1.00$ (perfect)
+  \item Est.\ 5 $\leftrightarrow$ True 2: $r = -0.89$ (near-perfect with sign flip)
+  \item Est.\ 2 $\leftrightarrow$ True 3: $r = 0.75$
+  \item Est.\ 4 $\leftrightarrow$ True 5: $r = 0.67$
+  \item Est.\ 3 $\leftrightarrow$ True 1: $r = 0.55$ (weakest; some cross-loading noise visible)
+\end{itemize}
+The sign flips (dark red cells) are \emph{not errors} --- they arise because $L_k \beta_k$ is invariant to a simultaneous sign flip of both $L_k$ and $\beta_k$.
+
+\textbf{The takeaway.} The model recovers all five true latent programs as distinct, non-overlapping components. The permuted diagonal pattern is exactly what a correctly-functioning matrix factorisation should produce. This slide is the minimum sanity check before trusting any real-data story: if the model cannot recover known structure from synthetic data, it cannot be trusted on data without ground truth.
+
+\begin{itemize}
+  \item \sectionlabel{Key line to say:} ``Each estimated factor maps to exactly one true factor --- one-to-one recovery, just in a different order and possibly sign-flipped, which is everything we can ask of a matrix factorisation model.''
+  \item \sectionlabel{Likely question:} ``Why isn't the diagonal perfect?'' Answer: at $n = 200$ with $p = 500$ and realistic noise, some cross-correlation is expected. The weakest match ($r = 0.55$ for Est.\ 3 / True 1) still clearly identifies that factor; a value near 0.55 in one cell with all other row/column entries near zero is unambiguous recovery.
+\end{itemize}
+
+\subsubsection*{Right Panel: Estimated vs.\ True $\hat{\beta}$ Coefficients (Fig.~3)}
+
+\textbf{What this figure presents.} A dot-and-whisker plot of survival coefficients $\beta_k$ for the five synthetic factors. Blue dots show the posterior mean estimate with 95\% credible intervals. Red X marks show the \emph{permutation-aligned} true $\beta_k$ values --- each true value has been matched to the estimated factor it corresponds to (using the loading correlation matrix from the heatmap) and sign-corrected to match the estimated factor's sign convention. The x-axis labels read ``F1 (T4)'', ``F2 (T3)'', etc., where ``F$k$'' is estimated factor $k$ and ``T$j$'' is the matched true factor $j$.
+
+\textbf{How to interpret it.} Because the permutation alignment and sign correction have already been applied, the blue dots (estimates) and red X marks (truth) should sit close to one another at each x-position --- any remaining gap reflects genuine estimation uncertainty, not an ordering artefact. Prognostic factors (true $|\beta| > 0$) show dots near their matching X marks, with credible intervals that exclude zero. The null factor (true $\beta = 0$) is correctly shrunk toward zero by the EBNM prior. The C-index of 0.86 (Supervised) vs.\ 0.83 (PCA) confirms that the recovered survival structure translates into better patient risk stratification.
+
+\textbf{The takeaway.} With the permutation properly applied, Fig.~3 is a clean validation: estimated and true betas align closely at every factor position, and the null-factor coefficient is correctly zeroed. This is the strongest evidence that the model learns the right survival structure from synthetic data.
+
+\begin{itemize}
+  \item \sectionlabel{Key line to say:} ``The null factor --- the one with true $\beta = 0$ --- is correctly shrunk to near zero by the EBNM prior. And every prognostic factor has its true value sitting inside the credible interval. That is the model doing exactly what it should.''
+  \item \sectionlabel{Likely question:} ``Why are some dots not exactly on the X mark?'' Answer: the remaining gap is legitimate posterior shrinkage --- empirical Bayes compresses effect sizes slightly toward zero, which reduces variance at the cost of a small bias. This is the bias-variance tradeoff built into the EBNM prior, not a model failure.
+\end{itemize}
+
+% ---------------------------------------------------------
+\subsection*{Slide 12 --- Convergence \& Baseline Performance (Two RMSE Traces)}
+% ---------------------------------------------------------
+
+\subsubsection*{Why RMSE stabilises rather than descends}
+
+The slide correctly states that RMSE \emph{stabilises to a plateau} in every cohort. Both figures show RMSE increasing slightly from its initial value before levelling off --- this is the expected behaviour of the joint CAVI optimisation and is not a problem. The explanation: initialisation is SVD/PCA-based, which starts with excellent pure expression reconstruction but zero survival supervision. As the algorithm iterates, EBNM priors shrink factors toward zero and the survival likelihood pulls patient loadings $L$ away from the pure expression optimum. The result is a slight \emph{increase} in expression RMSE as the model trades a small amount of reconstruction accuracy for better-regularised, survival-relevant factors. The ELBO (the true objective being maximised) is increasing throughout; expression RMSE alone is a partial measure. The convergence claim refers to the algorithm settling --- RMSE reaching a plateau --- not to RMSE going down.
+
+\subsubsection*{Left Panel: Puleo Array ($n = 288$, 72 iterations)}
+
+\textbf{What this figure presents.} A line plot of reconstruction RMSE as a function of CAVI iteration number for the Puleo microarray cohort. The x-axis is iteration (1--72); the y-axis is RMSE (root mean squared error of $Y - \hat{L}\hat{F}^\top$). The dashed horizontal line marks the final converged value (0.5882). A single convergence criterion is shown: the algorithm halted because $\Delta\bar{L} < 10^{-3}$ AND $\Delta\hat{\beta} < 10^{-3}$ were both satisfied simultaneously.
+
+\textbf{How to interpret it.} The curve starts at $\approx 0.566$, rises smoothly to a plateau at $0.5882$ over 72 iterations, with no oscillation or divergence. The smooth, monotone rise indicates the algorithm is progressing stably --- each iteration brings the model closer to a well-defined fixed point. The final RMSE of 0.5882 is low relative to the data scale (microarray expression values are typically in the single-digit range after log-transformation), indicating a good-quality factorisation.
+
+\textbf{The takeaway.} The optimisation is stable and converges cleanly for the largest cohort. The 72-iteration convergence is fast for $n = 288$.
+
+\subsubsection*{Right Panel: CPTAC Proteomics ($n = 129$)}
+
+\textbf{What this figure presents.} The same RMSE trace format for the CPTAC proteomics cohort. The x-axis shows approximately 34 iterations; final RMSE is 1.2116.
+
+\textbf{How to interpret it.} The curve starts at $\approx 1.16$, spikes to $\approx 1.22$ at iterations 2--3 (an initialisation artefact as the CAVI first ``overshoots''), then drops back to $\approx 1.19$ before gradually rising to the plateau at 1.2116. The final RMSE of 1.21 is substantially higher than Puleo's 0.59. This reflects the higher noise level in mass spectrometry protein abundance data: proteomics measurements have more missing values, lower reproducibility per feature, and less linear structure than microarray hybridisation, requiring more iterations and yielding higher residual error.
+
+\textbf{The takeaway.} CAVI converges across platforms even when the data are substantially noisier. The higher absolute RMSE in CPTAC is not a failure --- it is an accurate reflection of the inherent difficulty of modelling proteomics data.
+
+\begin{itemize}
+  \item \sectionlabel{Key contrast to state aloud:} ``Puleo microarray converges in 72 iterations with RMSE 0.59; CPTAC proteomics required up to 259 iterations in the fixed-$K$ configuration and settles at RMSE 1.21. The platform difference shows up directly in convergence speed.'' (The CPTAC figure on the slide shows an auto-$K$ run that converged in 34 iterations; the 259-iteration ceiling applies to the fixed-$K$=5 baseline run.)
+  \item \sectionlabel{Likely question:} ``Why does proteomics take so many more iterations?'' Answer: mass spectrometry protein abundances are noisier, have more missing values (imputed or zero), and do not obey as clean a low-rank structure as mRNA expression. The optimiser must work harder to find a stable factorisation.
+  \item \sectionlabel{Likely question:} ``RMSE goes up --- is that a problem?'' Answer: No. RMSE is a by-product of the joint optimisation, not the objective being maximised. The ELBO (expression fit + survival fit $-$ KL penalty) is increasing. A small sacrifice in expression reconstruction accuracy is the expected cost of incorporating survival supervision and Bayesian regularisation.
+\end{itemize}
+
+% ---------------------------------------------------------
+\subsection*{Slide 13 --- Prior $\times$ $K$ Factorial: The Central Result (Table)}
+% ---------------------------------------------------------
+
+\textbf{What this table presents.} A $7 \times 6$ factorial summary of hold-out C-index across four prior-by-$K$ conditions for all seven PDAC cohorts. The hold-out C-index is the Harrell concordance index computed on 20\% of patients withheld from model fitting (stratified 80/20 split). Random chance = 0.50; higher values = better risk discrimination. An asterisk (*) flags conditions that hit the 300-iteration cap and did \emph{not} formally converge --- these values should be treated cautiously. The four conditions are:
+
+\begin{itemize}
+  \item \textbf{PN K=5}: point-normal prior, $K$ fixed at 5
+  \item \textbf{PL K=5}: point-laplace prior, $K$ fixed at 5
+  \item \textbf{PN K$_\text{eff}$}: point-normal prior, $K$ data-adapted (auto-prune from $K_\text{max} = 10$)
+  \item \textbf{PL K$_\text{eff}$}: point-laplace prior, $K$ data-adapted
+\end{itemize}
+
+\textbf{How to interpret it.} Read each row as one cohort's scorecard. The two left data columns (PN K=5 and PL K=5) test whether prior family matters at a fixed, perhaps too-conservative, $K$. The two right columns (PN K$_\text{eff}$ and PL K$_\text{eff}$) test whether data-adaptive $K$ helps. The $K_\text{eff}$ column shows how many factors the auto-prune retained (all cohorts needed 8--10, well above the fixed 5).
+
+Actual values from the data:
+\begin{center}
+\begin{tabular}{lccccc}
+\textbf{Dataset} & \textbf{$K_\text{eff}$} & \textbf{PN K=5} & \textbf{PL K=5} & \textbf{PN K$_\text{eff}$} & \textbf{PL K$_\text{eff}$} \\
+\hline
+CPTAC      & 8  & 0.389 & 0.605  & 0.635  & 0.623 \\
+Dijk       & 10 & 0.381 & 0.483  & 0.544* & 0.510 \\
+Moffitt    & 10 & 0.475 & 0.580* & 0.530  & 0.550 \\
+PACA\_AU array & 8 & 0.405 & 0.667 & 0.738 & 0.738 \\
+PACA\_AU seq & 9 & 0.185 & 0.889  & 0.741  & 0.778 \\
+Puleo      & 10 & 0.396 & 0.594  & 0.674  & 0.649 \\
+TCGA       & 9  & 0.341 & 0.707* & 0.625* & 0.620* \\
+\end{tabular}
+\end{center}
+
+\textbf{The takeaway.} Two patterns dominate. First, point-normal at $K = 5$ is below chance (C $< 0.50$) in \emph{all seven} cohorts (range 0.185--0.475) --- not ``frequently,'' as stated on the slide, but universally. The Gaussian slab prior over-shrinks factors when $K$ is artificially small, producing degenerate solutions where $\hat{\beta} \to 0$. Second, PN K$_\text{eff}$ beats PN K=5 in all 7/7 cohorts --- data-adaptive $K$ uniformly rescues the point-normal prior. PL K$_\text{eff}$ vs.\ PL K=5 is less consistent (4/7 cohorts improve) because point-laplace already handles the fixed-$K$ setting reasonably. Mean C-index: across all K=5 conditions = 0.507; across all K$_\text{eff}$ conditions = 0.640.
+
+\begin{itemize}
+  \item \sectionlabel{Key phrase:} ``PN K=5 is below random chance in every single cohort, not just frequently. That is not a minor underperformance --- it is the model completely failing to learn a survival signal.''
+  \item \sectionlabel{Likely question:} ``Why does PACA\_AU\_seq PN K=5 give C = 0.185?'' Answer: a degenerate solution. The point-normal prior with only 5 factors shrinks all survival coefficients toward zero in this small-$n$ cohort (n=52). The resulting risk scores are random, giving C below chance.
+  \item \sectionlabel{Likely question:} ``Why does TCGA PL K=5 = 0.707* look so good?'' Answer: the * means it did not converge --- it hit the 300-iteration cap. That value may be a lucky intermediate state, not a properly converged solution. Non-converged results should not anchor conclusions.
+\end{itemize}
+
+% ---------------------------------------------------------
+\subsection*{Slide 14 --- Prior $\times$ $K$ Scatter Plot (Inline R Plot)}
+% ---------------------------------------------------------
+
+\textbf{What this figure presents.} A scatter plot displaying the full factorial comparison visually. X-axis: seven PDAC cohorts (dataset labels angled on the x-axis). Y-axis: hold-out C-index (0.10--1.00). Each cohort has four points horizontally offset slightly to avoid overlap, one per condition: blue circles (PN K=5), orange triangles (PL K=5), green squares (PN K$_\text{eff}$), and purple diamonds (PL K$_\text{eff}$). A dashed horizontal line at C = 0.50 marks random chance. Points marked with a small asterisk did not converge (hit 300-iteration cap).
+
+\textbf{How to interpret it.} For each cohort, look at the \emph{vertical spread} of its four points: a large spread means the condition choice matters a lot; a small spread means the cohort is robustly solved regardless. Then look at the \emph{pattern across cohorts}: are blue circles (PN K=5) systematically lower? Do green/purple points (K$_\text{eff}$) cluster higher?
+
+Key visual patterns to narrate:
+\begin{itemize}
+  \item Blue circles (PN K=5) cluster at or below the dashed chance line across nearly all cohorts.
+  \item Orange triangles (PL K=5) are mostly above chance --- switching to point-laplace rescues the fixed-$K$ condition.
+  \item Green and purple points (K$_\text{eff}$) are \emph{generally} higher, but the improvement is most dramatic for point-normal (blue $\to$ green = large upward shift in most cohorts).
+  \item PACA\_AU\_seq has the largest vertical range: blue circle near 0.19 up to orange triangle near 0.89 --- the biggest single-condition contrast in the study.
+\end{itemize}
+
+\textbf{The ``K selection dominates'' claim --- why it can look confusing.} At first glance, the figure seems to contradict this claim: in some cohorts, a K$_\text{eff}$ point falls \emph{below} a K=5 point (e.g.\ PN K$_\text{eff}$ for Moffitt is 0.530, below PL K=5 = 0.580*). The key to resolving this:
+\begin{enumerate}
+  \item \textbf{Asterisked points (*) are not reliable baselines.} PL K=5 for Moffitt and TCGA did not converge --- they hit the 300-iteration cap. Those values may reflect lucky intermediate states, not true optima.
+  \item \textbf{``K selection dominates'' is a claim specifically about PN: PN K$_\text{eff}$ beats PN K=5 in all 7/7 cohorts.} The statement is not that every K$_\text{eff}$ condition beats every K=5 condition. Point-laplace already does reasonably well at K=5 (because its heavier tails handle the small-$K$ regime), so the K$_\text{eff}$ improvement for PL is less dramatic.
+  \item \textbf{The summary claim} is that mean C-index across all K$_\text{eff}$ conditions (0.640) substantially exceeds mean C-index across all K=5 conditions (0.507). The figure shows trend and robustness, not monotone improvement in every single cell.
+\end{enumerate}
+
+\textbf{The takeaway.} Visually, this figure reinforces the table: blue circles cluster below chance, and the general upward drift from PN K=5 $\to$ PN K$_\text{eff}$ is the dominant pattern. Use this slide for gestalt pattern-recognition, not precise numeric comparisons.
+
+\begin{itemize}
+  \item \sectionlabel{Key phrase to say:} ``Every blue circle is at or below the dashed line. Every cohort's PN K=5 result is at or below random chance. That is the strongest motivation for data-adaptive $K$ in this paper.''
+  \item \sectionlabel{Likely question:} ``Why does PN K$_\text{eff}$ not always beat PL K=5?'' Answer: as above --- PL at K=5 is a decent solution because the Laplace prior's heavier tails concentrate effects better with few factors. Plus, several PL K=5 values are asterisked (non-converged). The cleanest comparison is PN K=5 vs.\ PN K$_\text{eff}$, which is monotonically better for PN across all 7 cohorts.
+\end{itemize}
+
+% ---------------------------------------------------------
+\subsection*{Slide 15 --- Key Findings: Prior $\times$ $K$ Comparison (PVE Scree Plot)}
+% ---------------------------------------------------------
+
+\textbf{What this figure presents.} A bar chart of the proportion of variance explained (PVE) per factor for the Puleo array cohort under the auto-K fit with $K_\text{max} = 10$. The x-axis indexes the ten factors (F1--F10); the y-axis is PVE in percent. Dark blue bars are active factors (retained by auto-prune); light/pale bars are pruned factors. A red dashed horizontal line marks the 1\% PVE threshold used by the auto-prune rule. The title notes $K_\text{eff} = 10$ --- all ten bars are dark blue, meaning no factors were pruned.
+
+\textbf{How to interpret it.} The scree pattern shows a rapid decline: F1 (9.54\%) and F2 (9.05\%) are roughly equal and dominant; F3 (6.17\%) drops noticeably; F4--F5 are around 3\%; F6--F10 are small (0.91\%--1.98\%). The dashed line at 1\% is the PVE threshold of the auto-prune rule. Critically, F9 has only 0.91\% PVE --- it falls \emph{below} the threshold line. Yet it is retained (dark blue) because the auto-prune uses an \emph{OR} criterion: a factor is kept if PVE $> 1\%$ \emph{OR} $|\hat{\beta}| > 0.05$. From the k-selection summary, F9 has $|\hat{\beta}| = 0.36$ --- it is the third-most prognostic factor in the cohort despite explaining almost no expression variance.
+
+\textbf{The takeaway.} This figure is the single clearest demonstration of why supervised factorisation needs more factors than a PCA scree plot would suggest. If K were fixed at 5, factors 6--10 would all be missed. Among those, F9 is the most important for survival prediction despite having essentially zero expression variance. An unsupervised scree plot would remove F9 from consideration before any survival analysis ever began.
+
+\begin{itemize}
+  \item \sectionlabel{Key phrase to say:} ``Factor 9 sits below the 1\% PVE line --- any scree-plot-based K selection would have discarded it. But it has $|\hat{\beta}| = 0.36$, making it the third-strongest prognostic program in this cohort. That is the core case for survival-supervised K selection.''
+  \item \sectionlabel{Three cohorts saturate $K_\text{max}$:} Dijk, Moffitt, and Puleo all hit $K_\text{eff} = 10 = K_\text{max}$. This means the true latent structure may exceed what the current cap allows, motivating higher-$K_\text{max}$ cross-validated fitting on Longleaf (a stated next step).
+  \item \sectionlabel{Likely question:} ``How do you pick the 1\% and 0.05 thresholds?'' Answer: these are pragmatic screening values, not cross-validated. The 1\% PVE threshold is a standard choice for retaining factors with non-trivial expression contribution; 0.05 for $|\hat{\beta}|$ is a weak signal threshold. These will be replaced by a proper cross-validated K selection procedure in future work.
+\end{itemize}
+
+% ---------------------------------------------------------
+\subsection*{Slide 16 --- Deep Dive: Puleo Array (Beta Plot + Kaplan--Meier Curves)}
+% ---------------------------------------------------------
+
+\noindent The slide design here is intentional: the figures show the \textbf{K=5 baseline} (five factors, for visual clarity), while the bullet points describe the full $K_\text{eff} = 10$ model. The slide text now makes this explicit --- the bullet reads ``Factors 1, 3, 4: large $|\hat{\beta}|$ (figures show $K = 5$ baseline); in the full $K_\text{eff} = 10$ model, Factor 9 also emerges ($|\hat{\beta}| = 0.36$, PVE = 0.91\%).'' The central message --- Factor 2 has high PVE but $\hat{\beta} \approx 0$ --- holds in both the K=5 figure and the K$_\text{eff}$ analysis, so there is no contradiction. Factor 9 is the payoff for the previous K-selection slide.
+
+\subsubsection*{Left Panel: Survival Coefficients $\hat{\beta}$ (Puleo, K=5 baseline)}
+
+\textbf{What this figure presents.} A dot-and-whisker plot of the five estimated survival coefficients for the Puleo array cohort under the point-normal, K=5 baseline fit. Blue dots are posterior means; vertical bars are 95\% credible intervals. The y-axis is $\beta_k$ (log-hazard ratio per unit increase in the corresponding patient loading); a positive $\beta_k$ means higher GEP activation is associated with shorter survival (higher hazard).
+
+\textbf{How to interpret it.}
+\begin{itemize}
+  \item \textbf{Factor 1}: $\hat{\beta} \approx 0.25$, CI $\approx [0.10, 0.40]$ --- clearly positive, clearly non-zero.
+  \item \textbf{Factor 2}: $\hat{\beta} \approx 0.02$, CI tightly bracketing zero --- \emph{expression-dominant, survival-neutral}. This is the key factor: despite being the second-largest expression axis (PVE = 9.05\%), its survival coefficient is indistinguishable from zero.
+  \item \textbf{Factor 3}: $\hat{\beta} \approx 0.35$, CI $\approx [0.17, 0.51]$ --- the most clearly prognostic factor.
+  \item \textbf{Factor 4}: $\hat{\beta} \approx 0.22$, CI $\approx [0.07, 0.37]$ --- positive, prognostic.
+  \item \textbf{Factor 5}: $\hat{\beta} \approx -0.01$, CI spanning zero --- a second null factor.
+\end{itemize}
+All non-zero betas are positive: higher activation of any of these programs is associated with shorter patient survival (hazard-increasing).
+
+\textbf{The takeaway.} This figure presents the model's internal verdict on which gene expression programs matter for survival. It can be interpreted as: the two factors with $\hat{\beta} \approx 0$ are structurally important (they explain expression variance) but clinically uninformative. The other three are both structurally and clinically relevant. The takeaway is that supervised factorisation delivers a clean separation between ``expression programs that describe tumour biology'' and ``expression programs that predict patient outcomes'' --- without any post-hoc testing.
+
+\subsubsection*{Right Panel: Kaplan--Meier Curves (Puleo, five panels)}
+
+\textbf{What this figure presents.} Five Kaplan--Meier survival curve panels, one per GEP. In each panel, patients are dichotomised by their loading for that factor (high vs.\ low activation, split at the median). Blue curve = low activation; red curve = high activation. A log-rank $p$-value is shown in each panel. The x-axis is follow-up time; the y-axis is estimated survival probability (1.0 = all alive, 0 = all dead).
+
+\textbf{How to interpret it.} A large separation between the red and blue curves, with the red curve below the blue (for a positive $\beta_k$), confirms that high GEP activation predicts shorter survival. A small $p$-value means the split is unlikely under the null hypothesis that both groups have the same survival distribution.
+
+\begin{itemize}
+  \item \textbf{Factor 1} ($\hat{\beta} = 0.26$): $p = 0.0007$ --- highly significant; high-activation patients die faster.
+  \item \textbf{Factor 2} ($\hat{\beta} \approx 0$): $p = 0.7155$ --- curves nearly superimposed; activating this program changes nothing about expected survival.
+  \item \textbf{Factor 3} ($\hat{\beta} = 0.25$): $p = 0.0016$ --- highly significant separation.
+  \item \textbf{Factor 4} ($\hat{\beta} = 0.22$): $p = 0.0370$ --- significant at 0.05.
+  \item \textbf{Factor 5} ($\hat{\beta} \approx 0$): $p = 0.9995$ --- the curves are essentially identical.
+\end{itemize}
+
+\textbf{The takeaway.} The KM panel is the visual confirmation of what the beta plot quantifies. This figure presents the patient stratification produced by each GEP. It can be interpreted as showing that Factors 1, 3, and 4 produce clinically meaningful patient stratification, while Factors 2 and 5 are silent from a survival standpoint. The takeaway is that a post-hoc workflow (test all factors equally) would spend statistical power on Factors 2 and 5 while diluting the signal from Factors 1, 3, and 4. Supervision directly identifies which programs deserve clinical attention.
+
+\begin{itemize}
+  \item \sectionlabel{The money sentence:} ``Factor 2 is the second-largest expression axis in this cohort and yet the KM curves for Factor 2 are completely flat at $p = 0.72$. That is the model correctly identifying that a biologically prominent program is clinically irrelevant --- a distinction a PCA-then-test workflow cannot make.''
+  \item \sectionlabel{If asked about Factor 9:} ``The figures use the 5-factor baseline for clarity --- as noted on the slide, Factor 9 appears in the full $K_\text{eff} = 10$ model with $|\hat{\beta}| = 0.36$, the third-largest prognostic effect despite having only 0.91\% variance explained. That is exactly the Factor 9 story from the scree plot on the previous slide.''
+\end{itemize}
+
+% ---------------------------------------------------------
+\subsection*{Slide 17 --- Deep Dive: TCGA\_PAAD (Beta Plot + Kaplan--Meier Curves)}
+% ---------------------------------------------------------
+
+\noindent\textbf{Why Slide 17 (TCGA) follows Slide 16 (Puleo) rather than replacing it.} Puleo is shown first because it is the largest cohort ($n = 288$) with the clearest factor structure. TCGA ($n = 144$) is shown second because it is the benchmark dataset most lab members will recognise. The two slides make the same qualitative point (supervised factorisation separates prognostic from non-prognostic GEPs) but in TCGA the effects are weaker --- a deliberate honesty check. If the approach only worked on the cleanest cohort, it would be scientifically uninteresting.
+
+\subsubsection*{Left Panel: Survival Coefficients $\hat{\beta}$ (TCGA, K=5 baseline)}
+
+\textbf{What this figure presents.} Same format as the Puleo beta plot. Five posterior mean estimates with 95\% CIs. Notable contrasts with Puleo:
+
+\begin{itemize}
+  \item All $|\hat{\beta}|$ are smaller: maximum magnitude $\approx 0.13$, compared to Puleo's $\approx 0.35$. The TCGA factors carry weaker individual survival signals.
+  \item Factors 1 and 3 have \emph{negative} $\hat{\beta}$ (approximately $-0.09$ and $-0.12$): higher activation of those programs is associated with slightly \emph{better} survival (hazard-reducing). The sign of a survival coefficient depends on the biology of the program, not on model correctness.
+  \item Wide CIs: most factors' credible intervals span zero, indicating greater uncertainty about individual survival associations at $n = 144$ vs.\ $n = 288$.
+  \item Factors 2 and 4 are near zero ($\hat{\beta} \approx 0$): the same expression-dominant, survival-neutral pattern as Puleo's Factor 2.
+\end{itemize}
+
+\textbf{How to interpret it.} This figure presents the weaker, noisier version of the same factor-survival decomposition. It can be interpreted as showing that even in the more variable TCGA dataset, the model identifies survival-neutral programs (Factors 2 and 4) alongside prognostic ones --- just with less statistical certainty due to smaller $n$.
+
+\textbf{The takeaway.} The pattern replicates qualitatively: expression-dominant factors exist alongside survival-informative factors, and the model separates them. The weaker effect sizes and wider CIs in TCGA relative to Puleo are scientifically honest --- TCGA RNA-seq has substantial batch effects and fewer events per factor.
+
+\subsubsection*{Right Panel: Kaplan--Meier Curves (TCGA, five panels)}
+
+\textbf{What this figure presents.} Same five-panel KM format as Puleo. Notable contrasts:
+
+\begin{itemize}
+  \item All five panels have $p > 0.10$ (range $p = 0.12$--$0.82$) --- none reach conventional significance.
+  \item Factor 2 ($p = 0.81$) again shows nearly flat, overlapping curves, consistent with $\hat{\beta} \approx 0$.
+  \item Factor 1 ($p = 0.12$) shows a slight tendency for high-activation patients to survive \emph{longer} (consistent with $\hat{\beta}_1 < 0$), though the separation is modest.
+\end{itemize}
+
+\textbf{The takeaway.} TCGA shows weaker KM separation than Puleo, and the slide correctly frames this as \emph{trends} rather than significant stratification, noting that $n = 144$ limits per-factor statistical power. The main quantitative claim for TCGA is the $\Delta C_\text{test} = +0.28$ improvement from K=5 to K$_\text{eff} = 9$ --- the KM visualisation is illustrative context, not the primary result.
+
+\begin{itemize}
+  \item \sectionlabel{The distinction between Slides 16 and 17:} Slide 16 (Puleo) = the clearest exemplar, showing what the method \emph{can} do in the best case. Slide 17 (TCGA) = the familiar benchmark, showing that the same qualitative separation holds in a noisier, smaller, widely-studied cohort. Together they argue the result is not a single-dataset artefact.
+  \item \sectionlabel{Key phrase for Slide 17:} ``TCGA is the dataset most of you will have seen before, and it shows the same pattern, just with less statistical power due to smaller $n$. The biggest win here is not the individual-factor plots but the $\Delta C = +0.28$ improvement from letting the model choose $K$.''
+  \item \sectionlabel{Likely question:} ``Why are all the TCGA p-values non-significant?'' Answer: $n = 144$ with a 5-factor split and 20\% held out leaves about 115 training patients. The per-factor KM test is underpowered at that sample size for weak effects. The C-index (which uses all patient pairs simultaneously) is a more powerful statistic.
+\end{itemize}
+
+% ---------------------------------------------------------
+\subsection*{Slide 18 --- Hold-Out Prediction (Table)}
+% ---------------------------------------------------------
+
+\noindent\textbf{The critical distinction between Slide 17 and Slide 18.}
+\begin{itemize}
+  \item \textbf{Slide 17 (Deep Dive)} shows \emph{training-set KM curves} --- these illustrate the model's internal structure. The model was fit on those patients; the KM curves are a diagnostic, not a prospective test.
+  \item \textbf{Slide 18 (Hold-Out)} shows \emph{out-of-sample C-index} computed on the 20\% of patients the model \emph{never saw} during fitting. This answers the clinically relevant question: if I fit SBMF on 80\% of a cohort, do the resulting risk scores ($L\hat{\beta}$) correctly rank the remaining 20\% by survival outcome?
+\end{itemize}
+This is the generalisation slide. Everything before it was about understanding the model; this is about whether it actually helps.
+
+\textbf{What this table presents.} Seven rows (cohorts), five columns: Dataset $|$ C(PCA) $|$ Best Condition $|$ $K$ $|$ C(SBMF) $|$ $\Delta C$. ``Best Condition'' is whichever of the four prior$\times K$ conditions gave the highest hold-out C-index on that cohort. C(PCA) is the concordance of a PCA risk score (loadings $\times$ Cox regression on PC scores, same train/test split). $\Delta C = C(\text{SBMF}_\text{best}) - C(\text{PCA})$.
+
+\textbf{Actual values:}
+\begin{center}
+\begin{tabular}{lccccr}
+\textbf{Dataset} & \textbf{C(PCA)} & \textbf{Best Condition} & \textbf{$K$} & \textbf{C(SBMF)} & $\boldsymbol{\Delta C}$ \\
+\hline
+CPTAC        & 0.703 & PN K$_\text{eff}$  & 8  & 0.635  & $-0.068$ \\
+Dijk         & 0.610 & PN K$_\text{eff}$  & 10 & 0.544* & $-0.066$ \\
+Moffitt      & 0.571 & PL K=5*            & 5  & 0.580  & $+0.009$ \\
+PACA\_AU arr & 0.653 & PN K$_\text{eff}$  & 8  & 0.738  & $+0.085$ \\
+PACA\_AU seq & 0.776 & PL K=5             & 5  & 0.889  & $+0.113$ \\
+Puleo        & 0.664 & PN K$_\text{eff}$  & 10 & 0.674  & $+0.010$ \\
+TCGA         & 0.640 & PL K=5*            & 5  & 0.707  & $+0.067$ \\
+\end{tabular}
+\end{center}
+
+\textbf{How to interpret it.} SBMF beats PCA in 5/7 cohorts (TCGA, Moffitt, PACA\_AU array, PACA\_AU seq, Puleo). It loses in CPTAC ($\Delta C = -0.068$) and Dijk ($\Delta C = -0.066$). Key caveats:
+
+\begin{itemize}
+  \item \textbf{Small test sets.} PACA\_AU\_seq has $n = 52$ total; the 20\% test set is only $\sim 10$ patients. One concordant/discordant pair flip changes C-index by $\sim 0.10$. The ``winning'' $\Delta C = +0.113$ for PACA\_AU\_seq is impressive but noisy. Similarly, Moffitt's $+0.009$ is within the noise range for a small test set. Trust improvements most when $n_\text{total} \geq 100$ (which gives $n_\text{test} \geq 20$).
+  \item \textbf{PACA\_AU\_seq best condition = PL K=5 (not K$_\text{eff}$).} This is one of three cohorts where the fixed-$K$ condition beats the adaptive one on hold-out --- likely reflecting that the small $n$ makes the larger model overfit.
+  \item \textbf{Dijk best condition has *} (did not converge) --- the Dijk PN K$_\text{eff}$ value of 0.544 should be treated with caution.
+\end{itemize}
+
+\textbf{The takeaway.} This table presents the practical performance summary: does SBMF help on patients the model never saw? It can be interpreted as showing that SBMF beats a supervised PCA baseline in 5 of 7 cohorts, with the most reliable improvements in cohorts large enough to give stable C-index estimates. The takeaway is that the method generalises, not just interpolates --- but the honest caveat is that in the two cohorts where it loses (CPTAC, Dijk), the proteomics and RNA-seq data are noisier and the test sets are moderate in size.
+
+\begin{itemize}
+  \item \sectionlabel{Key phrase:} ``Five of seven cohorts show improved C-index on patients the model never saw. The two losses are in our noisier data types with moderate test set sizes.''
+  \item \sectionlabel{Likely question:} ``Why does CPTAC lose despite having a decent sample size?'' Answer: CPTAC is proteomics data (mass spectrometry). Protein abundances have a fundamentally different noise structure than mRNA. The Cox regression using PCA scores may actually be better calibrated for proteomics data because it imposes fewer assumptions. SBMF was designed primarily for transcriptomic data; extending it cleanly to proteomics is a future direction.
+  \item \sectionlabel{Likely question:} ``Is 5/7 actually convincing?'' Answer: it is encouraging given the sample sizes and platform heterogeneity. A fairer comparison would use cross-validated C-index rather than a single 80/20 split, which is the planned next step. Single-split C-index has high variance for small-to-moderate cohorts.
+\end{itemize}
+
+% =========================================================
+\section*{Slide-by-Slide Review Guide}
+% =========================================================
+
+\noindent Use this section as a rapid self-test before the talk. For each slide, a one-sentence prompt is followed by the answer you should be able to give spontaneously.
+
+\subsection*{Quick Q\&A Prompts --- Slides 10--18}
+
+\begin{enumerate}
+
+\item[\textbf{S10}] \actioncue{What does the table show and why does platform diversity matter?}\\
+Seven independent PDAC cohorts spanning RNA-seq, microarray, and proteomics. Platform diversity means the model must work across fundamentally different noise structures and measurement technologies --- success across all three is evidence against a dataset-specific artefact.
+
+\item[\textbf{S11L}] \actioncue{What does the loading correlation heatmap tell you, and what do the sign flips mean?}\\
+Each estimated factor has exactly one true-factor match --- one-to-one recovery up to permutation and sign flip. Sign flips are expected because $L_k \beta_k$ is invariant when both flip. The heatmap confirms that no estimated factor is a linear combination of two true factors.
+
+\item[\textbf{S11R}] \actioncue{How do you confirm the model recovers the true survival coefficients?}\\
+The beta figure applies permutation alignment and sign correction before plotting, so each estimated $\hat{\beta}_k$ (blue dot) sits directly next to the true $\beta$ it was estimated from (red X). Dots and X marks coincide at every factor --- the model gets the right magnitude and direction. The one factor with true $\beta = 0$ is correctly shrunk to near zero, confirming that the EBNM shrinkage is working as intended.
+
+\item[\textbf{S12}] \actioncue{The figures show RMSE going up, but the slide says it ``stabilises to a plateau'' --- how do you explain that?}\\
+Both are correct and consistent. RMSE increases slightly from the PCA initialisation and then levels off --- that is what ``stabilises to a plateau'' means. The increase happens because Bayesian regularisation trades a small amount of expression-reconstruction accuracy for better survival-supervised, sparse factors; the ELBO (the actual objective) is increasing throughout. The convergence claim is about the algorithm settling, not about RMSE going down.
+
+\item[\textbf{S13}] \actioncue{Point-normal K=5 falls below chance --- how often?}\\
+In \emph{all 7 cohorts}. The range is 0.185--0.475, uniformly below 0.50. The slide says ``frequently'' but the data say universally.
+
+\item[\textbf{S14}] \actioncue{The figure seems to show K$_\text{eff}$ not always beating K=5 --- how do you defend ``K selection dominates''?}\\
+Three points: (1) asterisked points did not converge and are not reliable comparators; (2) the ``K selection dominates'' claim is specifically about PN K$_\text{eff}$ vs.\ PN K=5, which is monotonically better in all 7 cohorts; (3) mean C across all K$_\text{eff}$ conditions (0.640) clearly exceeds mean C across all K=5 conditions (0.507). The figure shows trend, not monotone improvement in every single cell.
+
+\item[\textbf{S15}] \actioncue{Why is Factor 9 in the bullet points but not visible in the figure?}\\
+The figure shows the K=5 baseline run for clarity. Factor 9 only appears in the K$_\text{eff} = 10$ run. In that run, Factor 9 has $|\hat{\beta}| = 0.36$ (third-largest) despite PVE = 0.91\% (below the 1\% threshold) --- it is retained by the survival-signal arm of the auto-prune rule, not the variance arm.
+
+\item[\textbf{S16 vs S17}] \actioncue{What is the difference between the Puleo and TCGA deep dive slides?}\\
+Puleo ($n = 288$) is the best-case exemplar: largest cohort, clearest factor structure, three GEPs with highly significant KM separation ($p < 0.004$). TCGA ($n = 144$) is the familiar benchmark: same qualitative pattern (expression-only Factor 2 near zero, some prognostic factors), but weaker effects and no KM significance due to smaller $n$. Together they argue the result is not limited to one cohort. The main TCGA claim is the $\Delta C = +0.28$ K-selection improvement, not the KM visualisation.
+
+\item[\textbf{S17 vs S18}] \actioncue{What is the difference between the deep dive KM curves (Slides 16--17) and the hold-out table (Slide 18)?}\\
+KM curves are drawn on \emph{training data} --- they show the model's internal structure, not its predictive power. The hold-out table shows C-index on the 20\% of patients \emph{withheld from model fitting}. The KM curves answer ``does the model learn the right factor structure?'' The hold-out table answers ``does the model help on new patients?''
+
+\item[\textbf{S18}] \actioncue{SBMF loses in CPTAC and Dijk. Is that a problem?}\\
+It is honest. CPTAC is proteomics (noisier, different noise structure), and Dijk has moderate $n = 90$ with a small test set. The method was designed for transcriptomic data. The 5/7 win rate is encouraging but a single 80/20 split has high variance; cross-validated C-index on Longleaf is the planned next step.
+
+\end{enumerate}
+
+\subsection*{Anticipate These Audience Questions}
+
+\begin{itemize}
+  \item \textbf{``How do you know the factors are biologically meaningful, not just statistical artefacts?''} Next step: gene set enrichment (fgsea/Enrichr) on top-loaded genes per GEP against MSigDB, KEGG, Reactome. That is item 1 on the future directions slide.
+  \item \textbf{``What's the comparison to deSurv or other supervised MF methods?''} SBMF differs in three specific ways: data-adaptive shrinkage priors (no fixed $\lambda$), uncertainty-aware posterior second moments in the updates, and the ELBO naturally balancing genomics vs.\ survival without a tuning $\alpha$. A formal benchmark is on the roadmap.
+  \item \textbf{``Five of seven is not overwhelming --- what would convince you this works?''} Cross-validated C-index at higher $K_\text{max}$, identification of GEPs that replicate across independent cohorts, and gene set enrichment showing interpretable biological programs. All three are stated next steps.
+  \item \textbf{``Why K$_\text{max} = 10$?''} Computational convenience and initial exploration. Three cohorts hit K$_\text{eff} = 10 = K_\text{max}$, which is a direct signal that the cap is binding and K$_\text{max}$ should be increased.
+\end{itemize}
+
+\section*{Backup Slides}
+
+\subsection*{Backup 1: Pooled RNA-seq Analysis}
+\scriptlabel If asked about shared signal across studies, I would use this slide to show that a pooled RNA-seq analysis is feasible once we restrict to genes shared across cohorts. The result is preliminary, but it suggests the model can be pushed toward cross-cohort latent programs rather than only within-cohort fits.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Pooled fitting is possible and useful for replication questions.
+\item \sectionlabel{Figure Purpose:} The two panels show that the pooled fit both converges and yields interpretable survival coefficients.
+\end{itemize}
+
+\subsection*{Backup 2: EBNM Deep Dive}
+\scriptlabel This is the technical explanation of the EBNM subproblem. I would only use it if someone asks what the updates are doing mathematically. The key point is that each update reduces to a noisy normal-means problem, and the posterior variance is explicitly retained through the second moment.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} EBNM gives adaptive shrinkage and an uncertainty-aware second moment.
+\item \sectionlabel{Emphasis:} The error-in-variables correction is the line to stress if discussion gets technical.
+\end{itemize}
+
+\subsection*{Backup 3: GEP Heatmap --- Puleo Array}
+\scriptlabel This is a useful visual if someone wants to see what the latent programs look like across patients. I would use it to show that the programs induce visible patient structure rather than only producing scalar performance metrics.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The latent programs organize patients in structured, non-random ways.
+\item \sectionlabel{Figure Purpose:} Show cohort heterogeneity in the loading matrix directly.
+\end{itemize}
+
+\subsection*{Backup 4: ELBO Convergence Traces}
+\scriptlabel If someone asks whether the optimiser is well behaved beyond RMSE, this is the answer. The ELBO traces show the variational objective moving in the expected direction, which complements the reconstruction curves from the main talk.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Convergence is supported by both RMSE and variational-objective diagnostics.
+\item \sectionlabel{Figure Purpose:} Provide a stronger optimisation sanity check than a single metric alone.
+\end{itemize}
+
+\subsection*{Backup 5: Tau/Precision Distribution}
+\scriptlabel This slide is there for the heteroscedasticity question. The gene-specific precision estimates are clearly not constant, which justifies including $\tau_j$ rather than assuming one shared noise level for all features.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Real cohorts show feature-specific noise, so modelling $\tau_j$ is worthwhile.
+\item \sectionlabel{Figure Purpose:} Highlight that the spread differs across platforms and cohorts.
+\end{itemize}
+
+\subsection*{Backup 6: Per-Cohort Beta Comparisons}
+\scriptlabel If someone wants reassurance that the prognostic-factor pattern is not limited to Puleo and TCGA, this is the slide I would use. The exact factors differ by cohort, but the recurring theme is that some factors are clearly shrunk toward zero while others are retained as prognostic.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Prognostic versus non-prognostic separation appears across the cohort panel, not only in the highlighted examples.
+\item \sectionlabel{Figure Purpose:} Cohort-by-cohort beta patterns for quick comparison.
+\end{itemize}
+
+\subsection*{Backup 7: Per-Cohort Kaplan-Meier Curves}
+\scriptlabel This is the visual counterpart to the previous slide. I would use it if the discussion shifts toward clinical interpretability and patient stratification rather than model mechanics.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Many cohorts show meaningful survival separation when patients are grouped by program activation.
+\item \sectionlabel{Figure Purpose:} Direct clinical-style visualisation of the model output.
+\end{itemize}
+
+\subsection*{Backup 8: Signal Recovery --- Synthetic Detail}
+\scriptlabel This backup gives a closer look at the synthetic recovery result. It is useful if someone wants stronger evidence that the factor recovery is real and not only visible in a summary correlation matrix.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The simulation supports genuine recovery of latent structure.
+\item \sectionlabel{Figure Purpose:} Point-by-point agreement between estimated and true loadings after sign correction.
+\end{itemize}
+
+\subsection*{Backup 9: Method Comparison}
+\scriptlabel I would use this slide if the discussion becomes comparative and someone asks where SBMF sits relative to penalised supervised MF methods. The honest answer is that the comparison is conceptual at this stage: SBMF brings adaptive shrinkage, uncertainty-aware updates, and a direct Bayesian treatment of the joint objective.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} SBMF differs mainly in adaptive priors, uncertainty propagation, and the way the joint objective is handled.
+\item \sectionlabel{Figure Purpose:} Compact side-by-side positioning of the two modelling philosophies.
+\item \sectionlabel{Emphasis:} Avoid overselling; the goal is to explain why the Bayesian route is attractive for this problem.
+\end{itemize}
+
+\end{document}

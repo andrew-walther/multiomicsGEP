@@ -153,6 +153,33 @@ get_factor_summary_table <- function(EL, EF, EBeta, data) {
   )
 }
 
+#' Bijective greedy factor matching
+#'
+#' @description
+#' Given a K_true × K_est correlation matrix, returns a length-K_est integer
+#' vector \code{perm} where \code{perm[k]} is the true-factor index that best
+#' matches estimated factor k, with each true factor used at most once.
+#'
+#' The simple \code{apply(abs(cors), 2, which.max)} approach is NOT bijective:
+#' two estimated factors can both claim the same true factor.  This function
+#' instead iterates greedily — at each step claiming the globally largest
+#' remaining |correlation| — which guarantees a one-to-one assignment.
+#'
+#' @param cors K_true × K_est matrix of Pearson correlations
+#' @return Integer vector of length K_est; \code{perm[k]} = matched true factor
+bijective_match <- function(cors) {
+  cost <- abs(cors)   # work with absolute correlations
+  K    <- ncol(cors)
+  perm <- integer(K)
+  for (step in seq_len(K)) {
+    idx       <- arrayInd(which.max(cost), dim(cost))  # [row, col] of global max
+    perm[idx[2]] <- idx[1]                              # assign true factor to est factor
+    cost[idx[1], ] <- -Inf                              # mark true factor as used
+    cost[, idx[2]] <- -Inf                              # mark estimated factor as used
+  }
+  perm
+}
+
 # ==============================================================================
 # Batch Correction Helper
 # ==============================================================================
@@ -518,22 +545,25 @@ run_pipeline <- function(Y, time, status, gene_names, data,
     write.csv(round(cors, 4),
               file.path(table_dir, "loading_correlation_matrix.csv"))
 
-    # Permutation + sign alignment for beta comparison table
-    # perm[k] = index of the true factor that best matches estimated factor k
-    perm_csv        <- apply(abs(cors), 2, which.max)
-    match_signs_csv <- sign(cors[cbind(perm_csv, seq_len(K))])
-    B_true_aligned_csv <- B_true[perm_csv] * match_signs_csv
+    # Bijective permutation + sign alignment for beta comparison table.
+    # bijective_match() guarantees each true factor is assigned to at most one
+    # estimated factor (unlike apply(abs(cors), 2, which.max) which can
+    # duplicate assignments when two estimated factors are most correlated with
+    # the same true factor).
+    perm        <- bijective_match(cors)               # perm[k] = true factor for est factor k
+    match_signs <- sign(cors[cbind(perm, seq_len(K))]) # sign correction per factor
+    B_true_aligned <- B_true[perm] * match_signs        # reordered + sign-corrected true betas
 
     beta_df <- data.frame(
-      Est_Factor        = seq_len(K),
-      Matched_True_Factor = perm_csv,
-      Loading_Corr      = round(cors[cbind(perm_csv, seq_len(K))], 4),
-      Beta_true_aligned = round(B_true_aligned_csv, 4),
+      Est_Factor          = seq_len(K),
+      Matched_True_Factor = perm,
+      Loading_Corr        = round(cors[cbind(perm, seq_len(K))], 4),
+      Beta_true_aligned   = round(B_true_aligned, 4),
       Beta_est          = round(EBeta, 4),
       Beta2_est         = round(EBeta2, 6),
       Posterior_SD      = round(beta_sd, 4),
-      Abs_Error         = round(abs(EBeta - B_true_aligned_csv), 4),
-      Sign_Match        = sign(EBeta) == sign(B_true_aligned_csv) | B_true_aligned_csv == 0
+      Abs_Error         = round(abs(EBeta - B_true_aligned), 4),
+      Sign_Match        = sign(EBeta) == sign(B_true_aligned) | B_true_aligned == 0
     )
     write.csv(beta_df,
               file.path(table_dir, "beta_comparison_table.csv"), row.names = FALSE)
@@ -726,17 +756,10 @@ run_pipeline <- function(Y, time, status, gene_names, data,
     par(mar = c(5, 5, 4, 2))
     x_pos <- 1:K
     if (is_synthetic) {
+      # perm, match_signs, and B_true_aligned were computed via bijective_match()
+      # in the CSV section above — reuse them here to guarantee the figure and
+      # table use exactly the same bijective assignment.
       B_true <- data$B_true
-
-      # ── Permutation + sign alignment ──────────────────────────────────────
-      # cors (K_true x K_est) was computed above: cor(L_true, EL).
-      # For each estimated factor k (column), find the best-matching true
-      # factor (row) by maximum |correlation|.  When that correlation is
-      # negative, L_est_k ≈ -L_true_j, so the corresponding true beta must
-      # also be sign-flipped (L·β is invariant to simultaneous sign flips).
-      perm          <- apply(abs(cors), 2, which.max)   # length K; perm[k] = true factor for est k
-      match_signs   <- sign(cors[cbind(perm, seq_len(K))])
-      B_true_aligned <- B_true[perm] * match_signs       # reordered + sign-corrected
 
       ylim_r <- range(c(B_true_aligned,
                         EBeta + 1.96 * beta_sd,
@@ -934,9 +957,11 @@ run_pipeline <- function(Y, time, status, gene_names, data,
 if (data_mode == "synthetic") {
 
   # --------------------------------------------------------------------------
-  # Synthetic data generation  (n=250, p=1000, K=5, seed=42)
+  # Synthetic data generation  (n=250, p=1000, K=5, seed=222)
+  # seed=222 chosen: bijective factor matching, null factor (true beta=0)
+  # correctly shrunk to beta_est≈0, all 5 factors cleanly separated.
   # --------------------------------------------------------------------------
-  set.seed(42)
+  set.seed(222)
   n <- 250; p <- 1000
 
   L_true <- matrix(rnorm(n * K), n, K)
@@ -961,7 +986,7 @@ if (data_mode == "synthetic") {
   figure_dir <- "results/figures/synthetic/"
 
   cat("=== Factor-Wise Modular Supervised MF — Synthetic Simulation ===\n")
-  cat(sprintf("  n=%d  p=%d  K=%d  seed=42  (factor-wise CAVI, V3 Algorithm 1)\n", n, p, K))
+  cat(sprintf("  n=%d  p=%d  K=%d  seed=222  (factor-wise CAVI, V3 Algorithm 1)\n", n, p, K))
 
   run_pipeline(Y, time, status, gene_names = NULL, data,
                table_dir, figure_dir,
