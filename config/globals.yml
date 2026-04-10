@@ -1,0 +1,50 @@
+# ==============================================================================
+# globals.yml — multiomicsGEP
+# Purpose:   Single source of truth for hard-coded parameters across the
+#            simulation runner, fit_modular.R, and select_K.R.
+#            Load with: cfg <- yaml::read_yaml("config/globals.yml")
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# CAVI fitting
+# ------------------------------------------------------------------------------
+cavi:
+  max_iter: 300        # maximum outer CAVI iterations
+  tol: 1.0e-3          # convergence threshold: mean|ΔL| AND mean|Δβ| < tol
+  burn_in: 5           # iterations before convergence is checked
+  k_default: 5         # default number of factors (fixed-K runs)
+  k_max: 10            # maximum K for auto-prune runs
+
+# ------------------------------------------------------------------------------
+# K selection / auto-prune thresholds
+# ------------------------------------------------------------------------------
+k_selection:
+  pve_threshold: 0.01    # minimum PVE (1%) to retain a factor
+  beta_threshold: 0.05   # minimum |beta| to retain a factor
+
+# ------------------------------------------------------------------------------
+# Synthetic simulation
+# ------------------------------------------------------------------------------
+synthetic:
+  "n": 250
+  p: 1000
+  k_true: 5
+  seed: 222              # seed 222: clean factor separation, null factor correctly zeroed
+  b_true: [1.5, -1.2, 0.8, -0.5, 0.0]
+
+# ------------------------------------------------------------------------------
+# Preprocessing
+# ------------------------------------------------------------------------------
+preprocessing:
+  top_n_genes: 5000      # NULL = no gene filter; integer = top N most-variable genes
+  center_columns: true
+  batch_correct: true
+
+# ------------------------------------------------------------------------------
+# Evaluation
+# ------------------------------------------------------------------------------
+evaluation:
+  holdout_frac: 0.2      # fraction of data held out for test set
+  holdout_seed: 42       # seed for stratified_split()
+  n_init: 1              # >1 activates multi-init with best-ELBO selection
+  multi_init_seed_base: 42  # set.seed(multi_init_seed_base + init_i) for each init

@@ -16,15 +16,19 @@
 # Configuration
 # ==============================================================================
 
+# Load global parameter registry (single source of truth for all magic numbers)
+library(yaml)
+cfg <- yaml::read_yaml("config/globals.yml")
+
 data_mode         <- "synthetic"     # "synthetic" or "real"
 dataset_name      <- "TCGA_PAAD"    # used when data_mode = "real" and run_all = FALSE
 run_all           <- FALSE           # TRUE: loop over all 7 PDAC datasets
-top_n_genes       <- 5000            # NULL = no filter; integer = top N most-variable genes
-K                 <- 5               # number of latent factors
+top_n_genes       <- cfg$preprocessing$top_n_genes   # from globals.yml
+K                 <- cfg$cavi$k_default               # from globals.yml
 prior_family      <- "point_normal"  # "point_normal", "point_laplace", "normal_scale_mixture"
-n_init            <- 1               # >1 activates multi-init with best-ELBO selection
+n_init            <- cfg$evaluation$n_init            # from globals.yml
 init_method       <- "svd"           # "svd" (deterministic) or "random" (for multi-init)
-batch_correct     <- TRUE            # apply limma batch correction to pooled datasets
+batch_correct     <- cfg$preprocessing$batch_correct  # from globals.yml
 holdout_eval      <- FALSE           # TRUE: 80/20 stratified train/test split evaluation
 feature_selection <- "variance"      # "variance" (top by var) or "cox" (univariate Cox p-val)
 k_select          <- "fixed"         # "fixed", "auto_prune", "cv" (cv = stub for Longleaf)
@@ -418,11 +422,14 @@ run_pipeline <- function(Y, time, status, gene_names, data,
   K_fit <- K   # effective K used for the main fit (may be updated below)
 
   if (k_select == "auto_prune") {
-    cat("  [K selection] auto_prune: fitting K_max=10 to identify active factors...\n")
+    cat(sprintf("  [K selection] auto_prune: fitting K_max=%d to identify active factors...\n",
+                cfg$cavi$k_max))
     prune_res <- tryCatch(
-      auto_prune_K(Y, time, status, K_max = 10,
+      auto_prune_K(Y, time, status, K_max = cfg$cavi$k_max,
+                   beta_thresh = cfg$k_selection$beta_threshold,
+                   pve_thresh  = cfg$k_selection$pve_threshold,
                    prior_family = prior_family, init_method = init_method,
-                   max_iter = 200, tol = 1e-3, verbose = FALSE),
+                   max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol, verbose = FALSE),
       error = function(e) {
         cat(sprintf("  [K selection] auto_prune failed: %s — using K=%d\n",
                     conditionMessage(e), K))
@@ -479,10 +486,11 @@ run_pipeline <- function(Y, time, status, gene_names, data,
     best_res  <- NULL
     elbo_vec  <- numeric(n_init)
     for (init_i in seq_len(n_init)) {
-      set.seed(42 + init_i)
+      set.seed(cfg$evaluation$multi_init_seed_base + init_i)
       cat(sprintf("  [init %d/%d] ", init_i, n_init))
       res_i <- fit_supervised_mf_modular(
-        Y, time, status, K = K_fit, max_iter = 300, tol = 1e-3,
+        Y, time, status, K = K_fit,
+        max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
         prior_family = prior_family, init_method = "random", verbose = FALSE)
       elbo_i <- tail(res_i$history$elbo_proxy, 1)
       elbo_vec[init_i] <- elbo_i
@@ -502,7 +510,8 @@ run_pipeline <- function(Y, time, status, gene_names, data,
               file.path(table_dir, "multi_init_elbos.csv"), row.names = FALSE)
   } else {
     res <- fit_supervised_mf_modular(
-      Y, time, status, K = K_fit, max_iter = 300, tol = 1e-3,
+      Y, time, status, K = K_fit,
+      max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
       prior_family = prior_family, init_method = init_method, verbose = TRUE)
   }
   EL     <- res$EL
@@ -617,7 +626,8 @@ run_pipeline <- function(Y, time, status, gene_names, data,
 
     # Stratified 80/20 split preserving event rate
     sp <- tryCatch(
-      stratified_split(status, test_frac = 0.2, seed = 42),
+      stratified_split(status, test_frac = cfg$evaluation$holdout_frac,
+                       seed = cfg$evaluation$holdout_seed),
       error = function(e) {
         cat(sprintf("  [Hold-out] Split failed: %s — skipping.\n", conditionMessage(e)))
         NULL
@@ -668,7 +678,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
       res_train <- tryCatch(
         fit_supervised_mf_modular(
           Y_train, time_train, status_train, K = K_fit,
-          max_iter = 300, tol = 1e-3,
+          max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
           prior_family = prior_family, init_method = init_method,
           verbose = FALSE),
         error = function(e) {
@@ -983,12 +993,13 @@ run_pipeline <- function(Y, time, status, gene_names, data,
 if (data_mode == "synthetic") {
 
   # --------------------------------------------------------------------------
-  # Synthetic data generation  (n=250, p=1000, K=5, seed=222)
+  # Synthetic data generation  — parameters from config/globals.yml
   # seed=222 chosen: bijective factor matching, null factor (true beta=0)
   # correctly shrunk to beta_est≈0, all 5 factors cleanly separated.
   # --------------------------------------------------------------------------
-  set.seed(222)
-  n <- 250; p <- 1000
+  set.seed(cfg$synthetic$seed)
+  n <- cfg$synthetic$n
+  p <- cfg$synthetic$p
 
   L_true <- matrix(rnorm(n * K), n, K)
   F_true <- matrix(0, p, K)
@@ -998,7 +1009,7 @@ if (data_mode == "synthetic") {
   }
   Y <- L_true %*% t(F_true) + matrix(rnorm(n * p), n, p)
 
-  B_true     <- c(1.5, -1.2, 0.8, -0.5, 0.0)
+  B_true     <- unlist(cfg$synthetic$b_true)
   eta_true   <- as.vector(L_true %*% B_true)
   raw_times  <- (-log(runif(n)) / (0.01 * exp(eta_true)))^(1 / 1.5)
   cens_times <- rexp(n, rate = 1 / 50)
@@ -1012,7 +1023,8 @@ if (data_mode == "synthetic") {
   figure_dir <- "results/figures/synthetic/"
 
   cat("=== Factor-Wise Modular Supervised MF — Synthetic Simulation ===\n")
-  cat(sprintf("  n=%d  p=%d  K=%d  seed=222  (factor-wise CAVI, V3 Algorithm 1)\n", n, p, K))
+  cat(sprintf("  n=%d  p=%d  K=%d  seed=%d  (factor-wise CAVI, V3 Algorithm 1)\n",
+              n, p, K, cfg$synthetic$seed))
 
   run_pipeline(Y, time, status, gene_names = NULL, data,
                table_dir, figure_dir,
