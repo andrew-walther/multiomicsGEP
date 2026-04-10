@@ -111,10 +111,12 @@ source("code/select_K.R")
 # new Cox model on the loadings (which would use optimally re-fitted
 # coefficients and is therefore a different and less honest question).
 #
-# If C < 0.5 after using the model's beta, the risk direction is inverted
-# (the model's net beta is negative when it should be positive for the
-# chosen risk ordering).  We report max(C, 1-C) as the discriminative
-# capacity and flag the direction so the inversion is visible.
+# Convention note: concordance(Surv ~ predictor) treats HIGHER predictor as
+# LOWER risk (longer survival).  The Cox LP convention is the opposite: higher
+# LP = higher hazard = shorter survival = higher risk.  We therefore pass
+# I(-lp) so that higher -LP = lower LP = lower risk, aligning with the
+# concordance() convention.  This is equivalent to what summary(coxph(...))
+# reports and avoids a spurious apparent inversion.
 #
 # EBeta = NULL falls back to refitting coxph(Surv ~ EL) — kept for
 # back-compatibility with any legacy calls.
@@ -124,20 +126,17 @@ get_cindex_comparison <- function(EL, data, EBeta = NULL) {
   c_pca  <- round(summary(fit_pc)$concordance[1], 3)
 
   if (!is.null(EBeta)) {
-    lp     <- as.vector(EL %*% EBeta)
-    c_raw  <- round(concordance(Surv(data$time, data$status) ~ lp)$concordance, 3)
-    direction <- if (c_raw < 0.5) "inverted" else "normal"
-    c_sup  <- max(c_raw, 1 - c_raw)   # always report discriminative capacity
+    lp    <- as.vector(EL %*% EBeta)
+    # Negate LP: concordance() convention is higher = lower risk; Cox is opposite.
+    c_sup <- round(concordance(Surv(data$time, data$status) ~ I(-lp))$concordance, 3)
   } else {
-    fit_l     <- coxph(Surv(data$time, data$status) ~ EL)
-    c_sup     <- round(summary(fit_l)$concordance[1], 3)
-    direction <- "refitted"
+    fit_l <- coxph(Surv(data$time, data$status) ~ EL)
+    c_sup <- round(summary(fit_l)$concordance[1], 3)
   }
 
   list(
     c_original = c_pca,
-    c_latent   = c_sup,
-    direction  = direction
+    c_latent   = c_sup
   )
 }
 
@@ -541,9 +540,8 @@ run_pipeline <- function(Y, time, status, gene_names, data,
   )
 
   cindex_df <- data.frame(
-    Method    = c("Top-5 PCA", "Supervised (EL %*% EBeta)"),
-    C_Index   = c(perf$c_original, perf$c_latent),
-    Direction = c("normal", perf$direction)
+    Method  = c("Top-5 PCA", "Supervised (EL %*% EBeta)"),
+    C_Index = c(perf$c_original, perf$c_latent)
   )
 
   # --------------------------------------------------------------------------

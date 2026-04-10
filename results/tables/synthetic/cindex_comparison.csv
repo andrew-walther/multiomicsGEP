@@ -1,3 +1,3 @@
-"Method","C_Index","Direction"
-"Top-5 PCA",0.856,"normal"
-"Supervised (EL %*% EBeta)",0.855,"inverted"
+"Method","C_Index"
+"Top-5 PCA",0.856
+"Supervised (EL %*% EBeta)",0.855
