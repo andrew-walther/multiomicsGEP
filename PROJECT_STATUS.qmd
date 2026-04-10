@@ -1047,3 +1047,66 @@ tie in 1/7.  The advantage of `point_laplace` is strongest when K is fixed at 5.
 2. K selection via CV on Longleaf HPC (`select_K_cv()` stub is ready).
 3. Re-run Dijk, Moffitt, Puleo with K_max=15 to probe true dimensionality.
 4. ELBO-based model selection: use `elbo_full` as criterion for K selection and prior comparison.
+
+---
+
+### Session 14 (April 5–8, 2026)
+
+**Lab meeting preparation session.**
+
+#### 14.1 — Slide deck creation and revision
+
+1. Created V1 slide deck (`presentation/walther_lab_meeting_04_09_2026/V1/lab_meeting_april9_V1.qmd`) — initial draft covering model motivation, algorithm, synthetic validation, and PDAC results.
+2. Created V2 slide deck with revised slide text, tighter layout, and updated PDAC figures (`presentation/walther_lab_meeting_04_09_2026/V2/lab_meeting_april9_V2.qmd`).
+3. Added dataset description table on the PDAC cohorts slide to orient the audience.
+
+#### 14.2 — Slide-text corrections
+
+Fixed 4 factual discrepancies identified during review:
+
+1. CPTAC iteration count — corrected to match the value in the convergence table.
+2. RMSE direction — clarified that lower RMSE is better; phrasing was ambiguous.
+3. Puleo factor labels — aligned slide labels with the factor summary table output.
+4. TCGA KM language — softened "significant" to match actual PH test p-value.
+
+#### 14.3 — Companion document and repository hygiene
+
+1. Created companion LaTeX document (`presentation/walther_lab_meeting_04_09_2026/Notes/lab_meeting_april9_companion.tex`) — 21-page prep guide covering figure analysis, Q&A preparation, and review sections for each slide.
+2. Fixed `.gitignore`: removed the `**/*.tex` rule that was silently blocking `companion.tex` from being tracked; added `**/*.out` to suppress LaTeX auxiliary output files.
+3. Reorganized the presentation directory into V1/V2/Notes subdirectories for cleaner version management.
+
+---
+
+### Session 15 (April 9, 2026)
+
+**Post-lab-meeting fixes and feedback processing.**
+
+#### 15.1 — Lab meeting presentation
+
+1. Presented at Rashid lab meeting; received structured feedback from Naima Rashid and Tyler Humphreys covering model clarity, C-index computation, code organization, and research directions.
+
+#### 15.2 — Figure 3 permutation bug fix
+
+1. Fixed a non-bijective permutation bug in Figure 3 (synthetic β̂ comparison): `apply(abs(cors), 2, which.max)` was used to align estimated factors to true factors, but this can assign the same true factor to multiple estimated factors when two estimated factors are most correlated with the same true factor.
+2. Replaced with a `bijective_match()` helper implementing greedy global-maximum assignment: iteratively selects the (estimated, true) pair with the largest absolute correlation, assigns it, removes both from consideration, and repeats — guaranteeing a one-to-one mapping.
+
+#### 15.3 — Synthetic simulation seed fix
+
+1. Changed synthetic simulation seed from 42 → 222: seed 42 produced a data configuration where True F1 and True F5 (the null factor) were mixed after permutation alignment, causing the model to assign β̂_null = −0.77 to the null factor — an artifact of the seed, not the model.
+2. Seed 222 cleanly separates all 5 factors and correctly zeroes the null factor (β̂ ≈ 0), giving a cleaner validation of the supervised component.
+
+#### 15.4 — Companion document update
+
+1. Updated companion doc V2 (`presentation/walther_lab_meeting_04_09_2026/Notes/lab_meeting_april9_companion_V2.tex`) to reflect the corrected Figure 3 permutation alignment and seed change.
+
+#### 15.5 — Open items / next session priorities
+
+1. V3 slide deck — targeted clarifications on slides covering model specification, objective function, EBNM, CAVI, and synthetic validation, in response to lab meeting feedback.
+2. C-index code fix — use the model's own β (i.e., `EL %*% EBeta`) to form the linear predictor instead of refitting a new `coxph` on training data; this tests the model's survival predictions rather than a post-hoc re-fitted Cox model.
+3. Create `DECISIONS.md` — 12 architectural decision entries documenting key modelling and implementation choices made between Feb 12 and Apr 9 (e.g., Gauss-Seidel ordering, orthogonalization off, Taylor approximation for survival ELBO).
+4. Create `ROADMAP.md` — research directions: incorporating F'Y term in survival model (R1), adding λ scaling parameter (R2), cross-cohort validation (R3), inter-dataset normalization strategy (R4), K selection strategy (R5), `{targets}` workflow for reproducibility (R6).
+5. Create `config/globals.yml` — centralize hard-coded parameters (convergence thresholds, K_max defaults, simulation seeds) currently scattered across `fit_modular.R`, `select_K.R`, and the simulation runner.
+6. Repo architecture review — propose a cleaner directory layout without moving files yet; surface ambiguities in current structure for discussion.
+7. Re-render synthetic and PDAC simulation reports after the C-index fix to update all reported C-index values.
+
+---
