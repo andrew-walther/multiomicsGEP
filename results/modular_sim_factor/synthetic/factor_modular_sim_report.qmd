@@ -76,7 +76,8 @@ cindex_pca   <- cindex_df$C_Index[grep("PCA", cindex_df$Method)]
 cindex_sup   <- cindex_df$C_Index[grep("Supervised|Latent", cindex_df$Method)]
 
 # Factor 5 null check
-null_beta_est <- beta_df$Beta_est[beta_df$Factor == 5]
+# Null factor is the one matched to true factor 5 (true beta = 0)
+null_beta_est <- beta_df$Beta_est[beta_df$Matched_True_Factor == 5]
 null_zeroed   <- abs(null_beta_est) < 0.05
 
 exec_df <- data.frame(
@@ -320,9 +321,10 @@ The survival coefficients $\beta_k$ encode the prognostic relevance of each gene
 ```{r beta-table}
 #| tbl-cap: "Survival regression coefficients: true values versus posterior estimates. Sign_Match indicates whether the estimated coefficient has the same sign as the true value (ignoring Factor 5, which has true beta = 0)."
 
-kable(beta_df,
-      col.names = c("Factor", "Beta (true)", "Beta (est.)", "E[beta^2]",
-                    "Posterior SD", "|Error|", "Sign Match"),
+kable(beta_df[, c("Matched_True_Factor", "Beta_true_aligned", "Beta_est",
+                    "Beta2_est", "Posterior_SD", "Abs_Error", "Sign_Match")],
+      col.names = c("True Factor", "Beta (true)", "Beta (est.)",
+                    "E[beta^2]", "Posterior SD", "|Error|", "Sign Match"),
       booktabs = TRUE, linesep = "", digits = 4) |>
   kable_styling(bootstrap_options = c("striped", "hover"),
                 latex_options = c("striped", "HOLD_position"),
