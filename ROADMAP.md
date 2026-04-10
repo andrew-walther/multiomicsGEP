@@ -89,6 +89,35 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Longleaf HPC submission of individual targets as SLURM jobs.
   *Notes: Low priority — investigate feasibility and overhead before committing to a refactor. The `{targets}` package works best when the pipeline DAG is well-defined; this is approximately true for the current runner structure. See `results/modular_sim_factor/run_factor_modular_simulation.R` for the current monolithic runner.*
 
+- [ ] **Repository reorganisation** `[Priority: Low]` `[Effort: Small]`
+  The current directory layout has accumulated structural debt across three simulation generations.
+  Proposed clean structure (no file deletion — move and rename only):
+
+  ```
+  code/                     ← algorithm only (update_*.R, fit_modular.R, etc.)
+    legacy/                 ← V1, V2 monolithic (already there); ADD Supervised_Bayesian_MF_V2.R
+    demos/                  ← MOVE top-level demos/ here (executable examples per module)
+  docs/                     ← companion .qmd/.pdf/.html (already clean)
+    context/                ← MOVE code/SupervisedMF_Context.md, docs/PDAC_data_audit.qmd here
+  derivations/              ← mathematical derivations (already clean per-update)
+    archive/                ← MOVE derivations/EBMF/, derivations/SurvivalMF/ early sketches
+                               MOVE dated .tex drafts from MF_UpdateDerivations/ (keep only REVISED + Companion)
+  results/
+    reports/                ← MOVE .qmd/.pdf/.html report files out of modular_sim_factor/
+    figures/                ← figures by cohort (already structured)
+    tables/                 ← tables by cohort (already structured)
+    legacy/                 ← MOVE results/full_sim/, results/modular_sim_block/ here
+  tests/                    ← test suite (already clean)
+  presentation/             ← slide decks (already clean)
+  longleaf_setup/           ← HPC scripts (already clean)
+  paper/                    ← manuscript (already clean)
+  config/                   ← globals.yml (added in Session 15)
+  ```
+
+  Additional housekeeping: add `.obsidian/`, `.claire/`, `.claude/worktrees/` to `.gitignore`
+  (IDE/tool artifacts should not be tracked). Remove `.Rhistory` files scattered in subdirectories.
+  *Notes: Propose only — do not move files until a dedicated refactor commit. Flag as pending in `DECISIONS.md`. Coordinate with any active branches before moving paths that appear in runner scripts or `.qmd` files.*
+
 ---
 
 ## ✅ Completed

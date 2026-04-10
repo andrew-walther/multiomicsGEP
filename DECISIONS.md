@@ -5,6 +5,15 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-04-09 — Repository reorganisation [PENDING]
+
+- **Decision:** *Pending.* Propose a cleaner directory structure (documented in `ROADMAP.md` → Infrastructure section) but do not move any files until a dedicated refactor commit with no concurrent branch work.
+- **Reason:** The current layout has accumulated structural debt across three simulation generations: `results/full_sim/`, `results/modular_sim_block/`, and `results/modular_sim_factor/` coexist; `.qmd` reports are mixed with output tables/figures; `demos/` is a top-level sibling of `code/` rather than nested within it; `code/SupervisedMF_Context.md` is a doc file in the algorithm directory; `derivations/EBMF/` and `derivations/SurvivalMF/` are early-sketch folders now superseded by the per-update derivation subdirectories.
+- **Trade-offs:** Any file move invalidates hard-coded paths in runner scripts and `.qmd` `source()` calls — must audit before moving. Deferring keeps the repo stable while active development continues.
+- **Affected files:** `results/`, `code/`, `demos/`, `derivations/`, `.gitignore`
+
+---
+
 ## 2026-04-09 — Synthetic seed changed from 42 → 222
 
 - **Decision:** Changed the random seed for the synthetic data-generating process from 42 to 222.
