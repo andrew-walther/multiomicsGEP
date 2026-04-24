@@ -32,3 +32,5 @@
 # Annotated copies (local working copies, not version-controlled)
 **/annotated copies/
 .positai
+# Large binary model outputs
+results/**/*.rds
