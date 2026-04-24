@@ -31,94 +31,114 @@ Inference is performed via **Coordinate Ascent Variational Inference (CAVI)**, w
 ```
 multiomicsGEP/
 │
-├── README.md                         ← You are here
-├── PROJECT_STATUS.md                 ← Full project documentation & session log
+├── README.md                          ← You are here
+├── PROJECT_STATUS.qmd/.pdf           ← Full project documentation & session log
+├── DECISIONS.md                       ← Architectural/analytical decision log
+├── ROADMAP.md                         ← Prioritised next steps & completed items
+├── CLAUDE.md                          ← Claude Code entry point (thin; defers to above)
+│
+├── config/
+│   └── globals.yml                    ← Single source of truth for hyperparameters
+│                                         (K_max, alpha_grid, tol, synthetic DGP params)
 │
 ├── code/
-│   ├── fit_modular.R                 ← ✅ Canonical CAVI loop (factor-wise, calls update_*.R)
-│   ├── Supervised_Bayesian_MF_V2.R   ← ✅ Monolithic reference implementation (V2)
-│   ├── update_beta.R                 ← Modular β update (scalar EBNM, Cox survival)
-│   ├── update_L.R                    ← Modular L update (vector EBNM, dual-source)
-│   ├── update_F.R                    ← Modular F update (vector EBNM, pure genomics)
-│   ├── update_tau.R                  ← Modular τ update (closed-form MLE)
-│   ├── predict.R                     ← Hold-out prediction via pseudo-inverse projection
-│   ├── train_test_split.R            ← Stratified 80/20 split preserving event rate
-│   ├── feature_selection.R           ← Univariate Cox gene filtering (train-only)
-│   ├── select_K.R                    ← K selection: auto_prune_K() + select_K_cv() stub
-│   ├── SupervisedMF_Context.md       ← AI/developer quick-reference for the code
-│   └── legacy/                       ← Archived files (V1, early scripts)
-│       ├── Supervised_Bayesian_MF.R  ← V1 original (reference only, known issues)
-│       ├── execute_update_beta.R     ← Early demo (superseded by demos/)
-│       └── multiomicsGEP_code.Rmd    ← Early exploratory notebook
+│   ├── fit_modular.R                  ← ✅ Canonical CAVI loop (factor-wise Gauss-Seidel)
+│   ├── update_beta.R                  ← Modular β update (scalar EBNM, Cox survival)
+│   ├── update_L.R                     ← Modular L update (vector EBNM, dual-source)
+│   ├── update_F.R                     ← Modular F update (vector EBNM, pure genomics)
+│   ├── update_tau.R                   ← Modular τ update (closed-form MLE)
+│   ├── compute_elbo.R                 ← Full ELBO: genomics + survival + KL divergences
+│   ├── preprocess_desurv.R            ← DeSurv-aligned preprocessing (log2, top-2000, rank)
+│   ├── select_alpha_cv.R              ← Alpha mixing CV selection via 1-SE rule
+│   ├── predict.R                      ← Hold-out prediction (SVD pseudoinverse projection)
+│   ├── train_test_split.R             ← Stratified 80/20 split preserving event rate
+│   ├── feature_selection.R            ← Univariate Cox gene filtering (train-only)
+│   ├── select_K.R                     ← K selection: auto_prune_K() + select_K_cv() stub
+│   ├── Supervised_Bayesian_MF_V2.R    ← Monolithic reference implementation (V2, reference only)
+│   ├── SupervisedMF_Context.md        ← AI/developer quick-reference for the code
+│   └── legacy/                        ← Archived files (V1, early scripts)
+│       ├── Supervised_Bayesian_MF.R   ← V1 original (archived, known issues)
+│       ├── execute_update_beta.R      ← Early demo (superseded by demos/)
+│       └── multiomicsGEP_code.Rmd     ← Early exploratory notebook
 │
 ├── docs/                              ← Companion documentation (PDF + HTML)
 │   ├── Makefile                       ← `make all` renders .qmd → .pdf + .html via Quarto
-│   ├── fit_modular.qmd/.pdf/.html     ← ✅ fit_modular.R walkthrough (full CAVI loop)
-│   ├── update_beta.qmd/.pdf/.html     ← β update: code walkthrough, tests, demos
-│   ├── update_L.qmd/.pdf/.html        ← L update: code walkthrough, tests, demos
-│   ├── update_F.qmd/.pdf/.html        ← F update: code walkthrough, tests, demos
-│   └── update_tau.qmd/.pdf/.html      ← τ update: code walkthrough, tests, demos
+│   ├── fit_modular.qmd/.pdf/.html     ← fit_modular.R walkthrough (full CAVI loop)
+│   ├── update_beta.qmd/.pdf/.html     ← β update: derivation, code, tests, demos
+│   ├── update_L.qmd/.pdf/.html        ← L update: derivation, code, tests, demos
+│   ├── update_F.qmd/.pdf/.html        ← F update: derivation, code, tests, demos
+│   ├── update_tau.qmd/.pdf/.html      ← τ update: derivation, code, tests, demos
+│   ├── PDAC_data_audit.qmd/.pdf/.html ← Audit of available PDAC cohorts & data quality
+│   └── SSMF_DeSurv_Sim_Benchmark.md  ← DeSurv benchmark design notes
 │
 ├── tests/                             ← 171 tests (run: Rscript tests/run_tests.R)
 │   ├── run_tests.R                    ← Master test runner
-│   ├── test_update_*.R                ← Per-module test suites (β, L, F, τ)
-│   └── test_predict.R                 ← Tests for predict.R + train_test_split.R (19 tests)
+│   ├── test_helpers.R                 ← Lightweight assertion framework (no testthat)
+│   ├── test_update_beta.R             ← 24 tests for update_beta.R
+│   ├── test_update_L.R                ← 28 tests for update_L.R
+│   ├── test_update_F.R                ← 26 tests for update_F.R
+│   ├── test_update_tau.R              ← 27 tests for update_tau.R
+│   ├── test_predict.R                 ← 19 tests for predict.R + train_test_split.R
+│   ├── test_elbo.R                    ← 15 tests for compute_elbo.R
+│   ├── test_preprocess_desurv.R       ← Tests for preprocess_desurv.R
+│   ├── test_select_alpha_cv.R         ← Tests for select_alpha_cv.R
+│   └── test_real_data_loading.R       ← Real-data pipeline tests (auto-skip if data absent)
 │
 ├── demos/                             ← Interactive demonstrations (5 per module)
-│   └── demo_update_*.R                ← Run: Rscript demos/demo_update_*.R
+│   ├── demo_update_beta.R
+│   ├── demo_update_L.R
+│   ├── demo_update_F.R
+│   └── demo_update_tau.R
 │
-├── results/                           ← Simulation outputs (grouped by implementation)
-│   ├── benchmark_sim/                 ← ✅ DeSurv benchmark (current)
-│   │   ├── run_ssbmf_benchmark.R      ← entry point: synthetic + PDAC cross-cohort
-│   │   ├── ssbmf_summary_report.qmd/.pdf/.html  ← 24-page summary report
+├── results/
+│   ├── benchmark_sim/                 ← ✅ DeSurv benchmark (current, canonical)
+│   │   ├── run_ssbmf_benchmark.R      ← Entry point: synthetic + PDAC cross-cohort
+│   │   ├── ssbmf_summary_report.qmd/.pdf/.html  ← 24-page benchmark report
 │   │   └── outputs/
-│   │       ├── synthetic/{prior}/     ← point_normal/ + point_laplace/ (tables/ + figures/)
-│   │       └── real_data/{mode}/{prior}/  ← tcga_only/ cptac_only/ merged/ × point_normal/ point_laplace/
-│   ├── modular_sim_factor/            ← prior-family comparison (archived)
-│   │   ├── run_factor_modular_simulation.R  ← single runner: synthetic + 7 PDAC cohorts
-│   │   ├── run_prior_k_comparison.R   ← prior family & K auto-prune comparison runner
+│   │       ├── synthetic/
+│   │       │   ├── point_normal/      ← tables/ + figures/ (11 figure types)
+│   │       │   └── point_laplace/     ← tables/ + figures/
+│   │       └── real_data/
+│   │           ├── tcga_only/{prior}/ ← primary results (point_normal + point_laplace)
+│   │           ├── cptac_only/{prior}/
+│   │           └── merged/{prior}/    ← multi-modal failure case (all β̂=0)
+│   ├── modular_sim_factor/            ← Prior-family × K comparison (legacy, superseded)
+│   │   ├── run_factor_modular_simulation.R
+│   │   ├── run_prior_k_comparison.R
 │   │   ├── synthetic/
-│   │   │   └── factor_modular_sim_report.qmd/.pdf/.html  ← synthetic benchmark report
 │   │   └── PDAC/
-│   │       └── factor_modular_sim_report_PDAC.qmd/.pdf/.html  ← real PDAC report
-│   ├── full_sim/                      ← V2 monolithic simulation
+│   ├── full_sim/                      ← V2 monolithic simulation (legacy)
 │   │   ├── run_simulation.R
 │   │   └── simulation_report.qmd/.pdf
 │   ├── modular_sim_block/             ← Block-wise modular (deprecated)
-│   │   ├── run_modular_simulation.R
-│   │   └── modular_sim_report.qmd/.pdf/.html
-│   ├── figures/
-│   │   ├── synthetic/                 ← 8 figure pairs (synthetic benchmark)
-│   │   ├── TCGA_PAAD/                 ← 6 figure pairs per PDAC dataset
-│   │   ├── CPTAC/ Dijk/ Moffitt_GEO_array/ PACA_AU_array/ PACA_AU_seq/ Puleo_array/
-│   │   ├── PDAC_pooled_rnaseq/        ← pooled RNA-seq fit
-│   │   ├── full_sim/                  ← 8 figure pairs (V2 monolithic)
-│   │   └── modular_sim/               ← 8 figure pairs (block-wise, deprecated)
-│   └── tables/
-│       ├── synthetic/                 ← 11 CSV tables (synthetic benchmark)
-│       ├── TCGA_PAAD/ CPTAC/ … Puleo_array/  ← per-dataset tables (K=5 baseline)
-│       ├── {dataset}_pl/              ← point_laplace K=5 results per dataset
-│       ├── {dataset}_Keff/            ← point_normal K_eff results per dataset
-│       ├── PDAC_cross_dataset/        ← cross_dataset_summary.csv,
-│       │                                 prior_comparison.csv, k_selection_summary.csv
-│       ├── PDAC_pooled_rnaseq/        ← pooled RNA-seq tables
-│       ├── full_sim/                  ← 11 CSV tables (V2 monolithic)
-│       └── modular_sim/               ← 11 CSV tables (block-wise, deprecated)
+│   ├── figures/                       ← Legacy per-cohort figures (modular_sim_factor era)
+│   └── tables/                        ← Legacy per-cohort tables (modular_sim_factor era)
 │
 ├── derivations/
 │   ├── MF_UpdateDerivations/
-│   │   ├── MF_Derivations_UpdateAlgo_REVISED.pdf  ← ✅ Corrected derivations
-│   │   ├── MF_Derivations_UpdateAlgo_REVISED.tex  ←    LaTeX source
-│   │   ├── MF_V2_Companion.pdf                    ← ✅ Math ↔ code companion doc
-│   │   ├── MF_V2_Companion.tex                    ←    LaTeX source
-│   │   └── MF_Derivations_UpdateAlgo_*.pdf        ←    Historical derivation drafts
-│   ├── EBMF/
-│   │   └── EBMF_Derivations*.pdf     ← Empirical Bayes Matrix Factorization theory
-│   └── SurvivalMF/
-│       └── *.pdf                     ← Survival + MF background notes
+│   │   ├── MF_Derivations_UpdateAlgo_REVISED.pdf  ← ✅ Corrected derivations (21 pages)
+│   │   ├── MF_Derivations_UpdateAlgo_REVISED.tex
+│   │   ├── MF_V2_Companion.pdf        ← ✅ Math ↔ code companion (17 pages)
+│   │   ├── MF_V2_Companion.tex
+│   │   └── MF_Derivations_UpdateAlgo_*.pdf  ← Historical drafts (contain errors R1–R8)
+│   ├── qB/                            ← q(β) derivation (11 pages)
+│   ├── qL/                            ← q(L) derivation (vector EBNM, dual-source)
+│   ├── qF/                            ← q(F) derivation (τ cancellation property)
+│   ├── qTau/                          ← q(τ) derivation (variance correction)
+│   ├── EBMF/                          ← Empirical Bayes MF background theory
+│   └── SurvivalMF/                    ← Survival + MF background notes
+│
+├── presentation/                      ← Lab meeting slide decks
+│   └── walther_lab_meeting_04_09_2026/
+│
+├── longleaf_setup/                    ← UNC Longleaf HPC SLURM scripts
+│   ├── README.md
+│   ├── install_packages.R
+│   └── run_*.sl                       ← SLURM job scripts
 │
 └── paper/
-    └── multiomicsGEP_manuscript.qmd  ← Manuscript draft (in progress)
+    ├── multiomicsGEP_manuscript.qmd   ← Manuscript draft (in progress)
+    └── abstract_example.md
 ```
 
 ---
