@@ -1,0 +1,2 @@
+"Seed","n","p","K_true","K_max","prior_beta","alpha_opt","cv_rule","cv_mean_cindex","holdout_supervised_cindex","holdout_pca_cindex","K_effective","censoring_rate","converged","n_iter","final_elbo","final_rmse"
+222,300,1000,5,10,"point_laplace",0.7,"1se",0.795685387294592,0.795136330140015,0.756816507000737,4,0.3,TRUE,12,60321.9717876981,0.360493581175346

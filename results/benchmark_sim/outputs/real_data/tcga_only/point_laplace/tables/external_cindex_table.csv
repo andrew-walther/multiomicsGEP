@@ -1,0 +1,6 @@
+"Cohort","n","Platform","p_intersect","C_index","KM_logrank_p"
+"Dijk",90,"RNA-seq",327,0.6118,3.4719883939438e-05
+"Moffitt_GEO_array",123,"Microarray",330,0.5211,0.0877585806206121
+"PACA_AU_array",63,"Microarray",300,0.5793,0.0874633569456346
+"PACA_AU_seq",52,"RNA-seq",450,0.6114,0.0507161174073061
+"Puleo_array",288,"Microarray",175,0.5739,0.166889530304965

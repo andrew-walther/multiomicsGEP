@@ -1,0 +1,6 @@
+"training_mode","prior_beta","n_train","p_genes","alpha_opt","cv_rule","K_max","K_eff","converged","n_iter","final_elbo","median_ext_cindex"
+"tcga_only","point_normal",144,2000,0.5,"1se",10,4,TRUE,41,-935867.5692,0.6021
+"tcga_only","point_laplace",144,2000,0.5,"1se",10,4,TRUE,41,-935868.2039,0.5793
+"cptac_only","point_normal",129,2000,0.5,"1se",10,4,TRUE,58,-797110.996,0.6278
+"cptac_only","point_laplace",129,2000,0.5,"1se",10,4,TRUE,58,-797111.5255,0.6203
+"merged","point_normal",273,838,0.3,"1se",10,7,TRUE,66,-1020985.626,0.5
