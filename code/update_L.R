@@ -164,6 +164,9 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   # ------------------------------------------------------------------
   x_L <- B_L / A_L
   s_L <- 1.0 / sqrt(A_L)
+  x_L[!is.finite(x_L)] <- 0
+  s_L[!is.finite(s_L) | s_L <= 0] <- 1e5
+  s_L <- pmax(s_L, 1e-8)
 
   # ------------------------------------------------------------------
   # Solve the n-dimensional EBNM problem

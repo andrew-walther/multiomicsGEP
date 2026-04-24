@@ -154,6 +154,9 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
   # ------------------------------------------------------------------
   x_k <- B_k / A_k
   s_k <- 1.0 / sqrt(A_k)
+  x_k[!is.finite(x_k)] <- 0
+  s_k[!is.finite(s_k) | s_k <= 0] <- 1e5
+  s_k <- pmax(s_k, 1e-8)
 
   # ------------------------------------------------------------------
   # Solve the 1D EBNM problem: EBNM(x_k, s_k)

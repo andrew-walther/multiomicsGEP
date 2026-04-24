@@ -196,6 +196,9 @@ run_test("history tracks delta_L, delta_Beta, and delta_elbo_rel", {
                "delta_Beta length mismatch")
   assert_equal(length(res$history$delta_elbo_rel), length(res$history$elbo_full),
                "delta_elbo_rel length mismatch")
+  assert_true(!is.null(res$history$factor_pve), "factor_pve missing")
+  assert_equal(nrow(res$history$factor_pve), length(res$history$elbo_full),
+               "factor_pve row count mismatch")
 })
 
 run_test("history$elbo_full is all finite", {

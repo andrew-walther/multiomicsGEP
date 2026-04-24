@@ -138,6 +138,9 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
   # ------------------------------------------------------------------
   x_F <- B_F / A_F
   s_F <- 1.0 / sqrt(A_F)
+  x_F[!is.finite(x_F)] <- 0
+  s_F[!is.finite(s_F) | s_F <= 0] <- 1e5
+  s_F <- pmax(s_F, 1e-8)
 
   # ------------------------------------------------------------------
   # Solve the p-dimensional EBNM problem

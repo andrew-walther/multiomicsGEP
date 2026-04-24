@@ -49,6 +49,7 @@ select_alpha_cv <- function(Y, time, status,
                             K_max      = 10,
                             use_1se    = TRUE,
                             seed       = 42,
+                            verbose    = FALSE,
                             ...) {
 
   if (!exists("fit_supervised_mf_modular", mode = "function"))
@@ -96,7 +97,7 @@ select_alpha_cv <- function(Y, time, status,
         status[train_idx],
         K = K_max,
         alpha = alpha,
-        verbose = FALSE,
+        verbose = verbose,
         ...
       )
 

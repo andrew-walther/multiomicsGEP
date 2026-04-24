@@ -235,6 +235,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
 
   # Column-specific noise precision from sample variance of each column of Y.
   Tau <- 1.0 / pmax(apply(Y, 2, var), 1e-8)   # p-vector
+  y_frob2 <- sum(Y^2)
 
   # History tracking
   history <- list(
@@ -244,6 +245,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
     delta_L    = numeric(max_iter),
     delta_Beta = numeric(max_iter),
     delta_elbo_rel = rep(NA_real_, max_iter),
+    factor_pve = matrix(NA_real_, nrow = max_iter, ncol = K),
     converged  = FALSE,
     n_iter     = max_iter
   )
@@ -361,6 +363,10 @@ fit_supervised_mf_modular <- function(Y, time, status,
     res_tau              <- update_tau(Y, EL, EL2, EF, EF2)
     Tau                  <- res_tau$Tau
     history$elbo_proxy[iter] <- res_tau$elbo_proxy
+    factor_pve_iter <- vapply(seq_len(K), function(k) {
+      sum(EL[, k]^2) * sum(EF[, k]^2) / y_frob2
+    }, numeric(1))
+    history$factor_pve[iter, ] <- factor_pve_iter
 
     # Full ELBO = (1-alpha)*genomics + alpha*survival + KL divergences.
     # surv_elbo: E_q[log PL(t,delta|L,beta)] via 2nd-order Taylor at eta_0.
@@ -420,6 +426,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
       history$delta_L    <- history$delta_L[1:iter]
       history$delta_Beta <- history$delta_Beta[1:iter]
       history$delta_elbo_rel <- history$delta_elbo_rel[1:iter]
+      history$factor_pve <- history$factor_pve[1:iter, , drop = FALSE]
       break
     }
 
