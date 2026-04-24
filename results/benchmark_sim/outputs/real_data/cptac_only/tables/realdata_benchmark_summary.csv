@@ -1,0 +1,2 @@
+"n_train","p_genes","alpha_opt","cv_rule","K_max","K_eff","converged","n_iter","final_elbo","median_ext_cindex"
+129,2000,0.5,"1se",10,4,TRUE,58,-797110.996,0.6278
