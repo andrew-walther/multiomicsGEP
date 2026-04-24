@@ -216,7 +216,7 @@ plot_ard_shrinkage <- function(factor_pve, match_df, active, title_text) {
           col = cols, xlab = "Iteration", ylab = "log10(PVE + 1e-8)",
           main = title_text, bty = "n")
   abline(h = log10(0.01), col = "#444444", lty = 2)
-  legend("topright",
+  legend("bottomleft",
          legend = c("Matched true factors", "Unmatched factors", "1% threshold"),
          col = c("#1F77B4", "#BDBDBD", "#444444"),
          lty = c(1, 1, 2), lwd = c(2, 2, 1), bty = "n", cex = 0.8)
@@ -285,6 +285,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
                                 tol = 1e-4,
                                 seed = cfg$synthetic$seed,
                                 holdout_frac = 0.2,
+                                prior_beta = "point_normal",
                                 quick = FALSE) {
 
   if (quick) {
@@ -298,7 +299,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     tol <- 1e-4
   }
 
-  benchmark_root <- file.path(output_root, "synthetic")
+  benchmark_root <- file.path(output_root, "synthetic", prior_beta)
   table_dir  <- file.path(benchmark_root, "tables")
   figure_dir  <- file.path(benchmark_root, "figures")
   ensure_dir(table_dir)
@@ -326,7 +327,8 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     use_1se = TRUE,
     seed = seed,
     max_iter = max_iter,
-    tol = tol
+    tol = tol,
+    prior_beta = prior_beta
   )
   alpha_opt <- cv_res$alpha_opt
 
@@ -338,6 +340,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     alpha = alpha_opt,
     max_iter = max_iter,
     tol = tol,
+    prior_beta = prior_beta,
     verbose = FALSE
   )
   holdout_pred <- predict_supervised_mf(data$Y[test_idx, , drop = FALSE],
@@ -363,6 +366,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     alpha = alpha_opt,
     max_iter = max_iter,
     tol = tol,
+    prior_beta = prior_beta,
     verbose = FALSE
   )
 
@@ -427,6 +431,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     p = synthetic_p,
     K_true = K_true,
     K_max = K_max,
+    prior_beta = prior_beta,
     alpha_opt = alpha_opt,
     cv_rule = cv_res$selection_rule,
     cv_mean_cindex = cv_res$cv_table$mean_cindex[cv_res$cv_table$alpha == alpha_opt],
@@ -471,12 +476,11 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     plot_elbo_trace(elbo_df, "ELBO Convergence Trace")
   })
   save_plot_pair(file.path(figure_dir, "holdout_cindex"), 6.5, 4.5, 800, 500, function() {
-    par(mar = c(6, 5, 4, 1))
-    # Enhanced: add value labels above bars
+    par(mar = c(4, 5, 4, 1))
     bar_cols <- c("#1F77B4", "#FF7F0E")
     bp <- barplot(holdout_df$C_Index, names.arg = holdout_df$Method, col = bar_cols,
-                  ylim = c(0, 1), main = "Held-Out C-index", ylab = "C-index",
-                  las = 2, bty = "n")
+                  ylim = c(0, 1), main = "Held-Out C-index (80/20 split)",
+                  ylab = "C-index", las = 1, cex.names = 0.9, bty = "n")
     abline(h = 0.5, col = "#666666", lty = 2)
     text(bp, holdout_df$C_Index + 0.03, sprintf("%.3f", holdout_df$C_Index),
          cex = 0.9, font = 2)
@@ -496,15 +500,17 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     pve_final <- as.numeric(full_fit$history$factor_pve[nrow(full_fit$history$factor_pve), ])
     ord <- order(pve_final, decreasing = TRUE)
     active_ord <- final_k$active[ord]
+    factor_labels <- paste0("F", ord)
     bp <- barplot(pve_final[ord] * 100,
                   col = ifelse(active_ord, "#1F77B4", "#BDBDBD"),
+                  names.arg = factor_labels,
                   xlab = "Factor (sorted by PVE)", ylab = "PVE (%)",
                   main = sprintf("PVE Scree  (K_eff = %d / %d)", final_k$K_effective, K_max),
-                  bty = "n")
+                  las = 1, cex.names = 0.75, bty = "n")
     abline(h = 1, col = "#D62728", lty = 2)
-    legend("topright", legend = c("Active", "Pruned", "1% threshold"),
+    legend("topright", legend = c("Active (|β|>0.05 or PVE>1%)", "Pruned", "1% threshold"),
            fill = c("#1F77B4", "#BDBDBD", NA), border = NA,
-           lty = c(NA, NA, 2), col = c(NA, NA, "#D62728"), bty = "n", cex = 0.8)
+           lty = c(NA, NA, 2), col = c(NA, NA, "#D62728"), bty = "n", cex = 0.75)
   })
 
   # --- Alpha CV curve ---
@@ -538,8 +544,9 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
   })
 
   # --- GEP loading heatmap (top genes per matched factor) ---
-  save_plot_pair(file.path(figure_dir, "gep_loading_heatmap"), 8, 6, 900, 700, function() {
-    par(mar = c(5, 6, 4, 2))
+  save_plot_pair(file.path(figure_dir, "gep_loading_heatmap"), 9, 6, 1000, 700, function() {
+    layout(matrix(c(1, 2), nrow = 1), widths = c(5, 1))
+    par(mar = c(5, 6, 4, 1))
     n_match  <- nrow(match_df)
     ef_cols  <- est_order[seq_len(n_match)]
     ef_mat   <- full_fit$EF[, ef_cols, drop = FALSE]
@@ -547,14 +554,27 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     top_idx  <- unique(unlist(lapply(seq_len(ncol(ef_mat)), function(k)
       order(abs(ef_mat[, k]), decreasing = TRUE)[seq_len(top_per)])))
     mat      <- t(ef_mat[top_idx, , drop = FALSE])
+    pal      <- colorRampPalette(c("#08306B", "#F7FBFF", "#A50F15"))(100)
     image(seq_len(ncol(mat)), seq_len(nrow(mat)), t(mat),
-          col = colorRampPalette(c("#08306B", "#F7FBFF", "#A50F15"))(100),
-          axes = FALSE, xlab = sprintf("Top %d genes per factor", top_per),
+          col = pal, axes = FALSE,
+          xlab = sprintf("Gene index (top %d per factor)", top_per),
           ylab = "",
           main = "GEP Loading Heatmap (matched factors)")
+    axis(1, at = c(1, ncol(mat)), labels = c("1", as.character(ncol(mat))),
+         cex.axis = 0.8)
     axis(2, at = seq_len(nrow(mat)),
          labels = paste0("GEP", match_df$true_factor[order(match_df$true_factor)]),
          las = 1, cex.axis = 0.85)
+    box()
+    # Color scale panel
+    par(mar = c(5, 1, 4, 3))
+    scale_vals <- seq(min(mat), max(mat), length.out = 100)
+    image(1, scale_vals, matrix(scale_vals, nrow = 1),
+          col = pal, axes = FALSE, xlab = "", ylab = "")
+    axis(4, at = pretty(scale_vals, n = 4),
+         labels = formatC(pretty(scale_vals, n = 4), format = "f", digits = 2),
+         las = 1, cex.axis = 0.8)
+    mtext("Loading", side = 4, line = 2.5, cex = 0.8)
     box()
   })
 
@@ -562,7 +582,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
   lp_train <- as.vector(full_fit$EL %*% full_fit$EBeta)
   save_plot_pair(file.path(figure_dir, "km_3group_training"), 7, 5, 800, 560, function() {
     par(mar = c(5, 5, 4, 1))
-    plot_km_3group(lp_train, data$time, data$status,
+    plot_km_2group(lp_train, data$time, data$status,
                    title = sprintf("KM Stratification - Synthetic Training\n(n=%d, alpha=%.2f)",
                                    synthetic_n, alpha_opt))
   })
@@ -685,22 +705,27 @@ load_pdac_raw <- function(dataset_name, pdac_root) {
 #' @param time    numeric vector: follow-up time
 #' @param status  integer vector: event indicator
 #' @param title   plot title
-plot_km_3group <- function(lp, time, status, title = "") {
-  tertile_cut <- quantile(lp, probs = c(1/3, 2/3))
-  grp <- cut(lp, breaks = c(-Inf, tertile_cut, Inf),
-             labels = c("Low", "Mid", "High"), include.lowest = TRUE)
+plot_km_2group <- function(lp, time, status, title = "") {
+  if (diff(range(lp)) < 1e-10) {
+    plot.new()
+    title(sprintf("%s\n(constant risk score — no stratification possible)", title))
+    return(invisible(NULL))
+  }
+  med_cut <- quantile(lp, probs = 0.5)
+  grp <- cut(lp, breaks = c(-Inf, med_cut, Inf),
+             labels = c("Low risk", "High risk"), include.lowest = TRUE)
 
   km_fit  <- survfit(Surv(time, status) ~ grp)
   sd_test <- survdiff(Surv(time, status) ~ grp)
-  p_val   <- 1 - pchisq(sd_test$chisq, df = length(levels(grp)) - 1)
+  p_val   <- 1 - pchisq(sd_test$chisq, df = 1)
 
-  km_cols <- c("#2166AC", "#4DAF4A", "#D6604D")
+  km_cols <- c("#2166AC", "#D6604D")
   plot(km_fit, col = km_cols, lwd = 2, lty = 1,
-       xlab = "Time", ylab = "Survival probability",
+       xlab = "Time (days)", ylab = "Survival probability",
        main = sprintf("%s\nLog-rank p = %.4f", title, p_val),
-       bty = "n", mark.time = FALSE)
+       bty = "n", mark.time = TRUE)
   legend("topright",
-         legend = c("Low risk", "Mid risk", "High risk"),
+         legend = c("Low risk", "High risk"),
          col = km_cols, lwd = 2, bty = "n", cex = 0.85)
   invisible(list(km_fit = km_fit, p_val = p_val, groups = grp))
 }
@@ -720,7 +745,10 @@ plot_km_3group <- function(lp, time, status, title = "") {
 #' @param top_n        number of top-variable genes per cohort (DeSurv spec: 2000)
 #' @return invisibly: list with all results
 run_real_data_benchmark <- function(
-    output_root            = "results/benchmark_sim/outputs/real_data",
+    training_mode          = "merged",
+    prior_beta             = "point_normal",
+    output_root            = file.path("results/benchmark_sim/outputs/real_data",
+                                       training_mode, prior_beta),
     pdac_root              = PDAC_DATA_ROOT,
     alpha_grid             = c(0.1, 0.3, 0.5, 0.7, 0.9),
     n_folds                = 5,
@@ -737,6 +765,15 @@ run_real_data_benchmark <- function(
     return(invisible(NULL))
   }
 
+  # Determine training cohorts for this mode
+  active_train_cohorts <- switch(training_mode,
+    merged    = c("TCGA_PAAD", "CPTAC"),
+    tcga_only  = "TCGA_PAAD",
+    cptac_only = "CPTAC",
+    stop(sprintf("Unknown training_mode: '%s'. Use 'merged', 'tcga_only', or 'cptac_only'.",
+                 training_mode))
+  )
+
   table_dir  <- file.path(output_root, "tables")
   figure_dir <- file.path(output_root, "figures")
   ensure_dir(table_dir)
@@ -745,15 +782,15 @@ run_real_data_benchmark <- function(
   # ============================================================
   # 1. Load + preprocess training cohorts
   # ============================================================
-  cat("=== Phase 3B: PDAC Cross-Cohort Benchmark ===\n")
-  cat("  Loading training cohorts:", paste(TRAINING_COHORTS, collapse = " + "), "\n")
+  cat(sprintf("=== Phase 3B: PDAC Cross-Cohort Benchmark [mode: %s] ===\n", training_mode))
+  cat("  Loading training cohorts:", paste(active_train_cohorts, collapse = " + "), "\n")
 
-  train_raw <- lapply(setNames(TRAINING_COHORTS, TRAINING_COHORTS), function(ds) {
+  train_raw <- lapply(setNames(active_train_cohorts, active_train_cohorts), function(ds) {
     cat(sprintf("    Loading %s ...\n", ds))
     load_pdac_raw(ds, pdac_root)
   })
 
-  train_preproc <- lapply(TRAINING_COHORTS, function(ds) {
+  train_preproc <- lapply(active_train_cohorts, function(ds) {
     raw <- train_raw[[ds]]
     cat(sprintf("    Preprocessing %s (n=%d, p_raw=%d) ...\n", ds, raw$n, raw$p))
     preprocess_desurv_cohort(
@@ -764,16 +801,28 @@ run_real_data_benchmark <- function(
       cohort_name = ds
     )
   })
-  names(train_preproc) <- TRAINING_COHORTS
+  names(train_preproc) <- active_train_cohorts
 
-  # Intersect gene lists across training cohorts
-  train_intersected <- intersect_preprocessed_cohorts(train_preproc, reference = 1)
-  names(train_intersected) <- TRAINING_COHORTS
-  n_train_genes <- train_intersected[[1]]$p
-  training_gene_names <- train_intersected[[1]]$gene_names
-  cat(sprintf("  Training gene intersection: %d genes\n", n_train_genes))
+  # Assemble training gene list: intersect for merged, pass-through for single-cohort
+  if (length(active_train_cohorts) > 1) {
+    train_intersected <- intersect_preprocessed_cohorts(train_preproc, reference = 1)
+    names(train_intersected) <- active_train_cohorts
+    n_train_genes <- train_intersected[[1]]$p
+    training_gene_names <- train_intersected[[1]]$gene_names
+    cat(sprintf("  Training gene intersection: %d genes\n", n_train_genes))
+  } else {
+    ds_single <- active_train_cohorts[1]
+    n_train_genes <- train_preproc[[ds_single]]$p
+    training_gene_names <- train_preproc[[ds_single]]$gene_names
+    cat(sprintf("  Single-cohort training: %d genes\n", n_train_genes))
+  }
 
   if (gene_intersection_only) {
+    if (training_mode != "merged") {
+      cat(sprintf("  gene_intersection_only only applies to 'merged' mode (current: '%s').\n",
+                  training_mode))
+      return(invisible(NULL))
+    }
     cat(sprintf(
       "\n=== INTERSECTION CHECKPOINT ===\n  TCGA_PAAD: n=%d, p_raw=%d, p_after_top%d=%d\n  CPTAC:     n=%d, p_raw=%d, p_after_top%d=%d\n  Shared genes after intersection: %d\n  Event rates: TCGA=%.1f%%, CPTAC=%.1f%%\n=== Stopping here. Set gene_intersection_only=FALSE to proceed. ===\n",
       train_raw[["TCGA_PAAD"]]$n, train_raw[["TCGA_PAAD"]]$p, top_n, train_preproc[["TCGA_PAAD"]]$p,
@@ -783,33 +832,41 @@ run_real_data_benchmark <- function(
       100 * mean(train_raw[["CPTAC"]]$status)
     ))
     return(invisible(list(
-      n_intersect    = n_train_genes,
-      n_TCGA         = train_raw[["TCGA_PAAD"]]$n,
-      n_CPTAC        = train_raw[["CPTAC"]]$n,
-      p_TCGA_preproc = train_preproc[["TCGA_PAAD"]]$p,
+      n_intersect     = n_train_genes,
+      n_TCGA          = train_raw[["TCGA_PAAD"]]$n,
+      n_CPTAC         = train_raw[["CPTAC"]]$n,
+      p_TCGA_preproc  = train_preproc[["TCGA_PAAD"]]$p,
       p_CPTAC_preproc = train_preproc[["CPTAC"]]$p
     )))
   }
 
-  # Merge into single training matrix
-  merged_train <- merge_preprocessed_cohorts(train_intersected, dataset_labels = TRAINING_COHORTS)
-  Y_train    <- merged_train$Y
-  time_train <- c(train_raw[["TCGA_PAAD"]]$time, train_raw[["CPTAC"]]$time)
-  status_train <- c(train_raw[["TCGA_PAAD"]]$status, train_raw[["CPTAC"]]$status)
+  # Assemble final training matrices
+  if (length(active_train_cohorts) > 1) {
+    merged_train <- merge_preprocessed_cohorts(train_intersected,
+                                               dataset_labels = active_train_cohorts)
+    Y_train      <- merged_train$Y
+    time_train   <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$time))
+    status_train <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$status))
+  } else {
+    ds_single    <- active_train_cohorts[1]
+    Y_train      <- train_preproc[[ds_single]]$Y
+    time_train   <- train_raw[[ds_single]]$time
+    status_train <- train_raw[[ds_single]]$status
+  }
   n_train <- nrow(Y_train)
-  cat(sprintf("  Merged training set: n=%d, p=%d, event_rate=%.1f%%\n",
-              n_train, ncol(Y_train), 100 * mean(status_train)))
+  cat(sprintf("  Training set [%s]: n=%d, p=%d, event_rate=%.1f%%\n",
+              training_mode, n_train, ncol(Y_train), 100 * mean(status_train)))
 
   # Checkpoint 1: save training set summary
   write.csv(
     data.frame(
-      Cohort = TRAINING_COHORTS,
-      n = sapply(TRAINING_COHORTS, function(ds) train_raw[[ds]]$n),
-      p_raw = sapply(TRAINING_COHORTS, function(ds) train_raw[[ds]]$p),
-      p_preproc = sapply(TRAINING_COHORTS, function(ds) train_preproc[[ds]]$p),
-      log_transform = PLATFORM_LOG_TRANSFORM[TRAINING_COHORTS],
-      platform = PLATFORM_MAP[TRAINING_COHORTS],
-      event_rate = sapply(TRAINING_COHORTS, function(ds) mean(train_raw[[ds]]$status))
+      Cohort        = active_train_cohorts,
+      n             = sapply(active_train_cohorts, function(ds) train_raw[[ds]]$n),
+      p_raw         = sapply(active_train_cohorts, function(ds) train_raw[[ds]]$p),
+      p_preproc     = sapply(active_train_cohorts, function(ds) train_preproc[[ds]]$p),
+      log_transform = PLATFORM_LOG_TRANSFORM[active_train_cohorts],
+      platform      = PLATFORM_MAP[active_train_cohorts],
+      event_rate    = sapply(active_train_cohorts, function(ds) mean(train_raw[[ds]]$status))
     ),
     file.path(table_dir, "training_cohort_summary.csv"),
     row.names = FALSE
@@ -832,6 +889,7 @@ run_real_data_benchmark <- function(
     seed       = 42,
     max_iter   = max_iter,
     tol        = tol,
+    prior_beta = prior_beta,
     verbose    = FALSE
   )
   alpha_opt <- cv_res$alpha_opt
@@ -853,8 +911,8 @@ run_real_data_benchmark <- function(
          type = "b", pch = 16, col = "#1F77B4", lwd = 2,
          xlab = expression(alpha), ylab = "Mean C-index (CV)",
          ylim = y_lim,
-         main = sprintf("Alpha CV (TCGA+CPTAC, %d-fold)\nalpha_opt=%.2f",
-                        n_folds, alpha_opt),
+         main = sprintf("Alpha CV [%s, %d-fold]\nalpha_opt=%.2f",
+                        training_mode, n_folds, alpha_opt),
          bty = "n")
     arrows(cv_tbl$alpha,
            cv_tbl$mean_cindex - cv_tbl$se_cindex,
@@ -875,18 +933,19 @@ run_real_data_benchmark <- function(
   cat(sprintf("  Fitting final model: K=%d, alpha=%.2f ...\n", K_max, alpha_opt))
   final_fit <- fit_supervised_mf_modular(
     Y_train, time_train, status_train,
-    K        = K_max,
-    alpha    = alpha_opt,
-    max_iter = max_iter,
-    tol      = tol,
-    verbose  = FALSE
+    K          = K_max,
+    alpha      = alpha_opt,
+    max_iter   = max_iter,
+    tol        = tol,
+    prior_beta = prior_beta,
+    verbose    = FALSE
   )
   cat(sprintf("  Final fit: converged=%s, iter=%d, ELBO=%.4f\n",
               final_fit$history$converged, final_fit$history$n_iter,
               tail(final_fit$history$elbo_full, 1)))
 
   # Effective K (auto-prune thresholds)
-  final_pve   <- tail(final_fit$history$factor_pve, 1)
+  final_pve   <- as.numeric(tail(final_fit$history$factor_pve, 1))
   active_mask <- (abs(final_fit$EBeta) > 0.05) | (final_pve > 0.01)
   K_eff       <- sum(active_mask)
 
@@ -950,7 +1009,7 @@ run_real_data_benchmark <- function(
         km_stub <- file.path(figure_dir, sprintf("km_3group_%s", ds))
         save_plot_pair(km_stub, 7, 5, 800, 560, function() {
           par(mar = c(5, 5, 4, 1))
-          plot_km_3group(
+          plot_km_2group(
             lp     = pred$risk_scores,
             time   = raw$time,
             status = raw$status,
@@ -1002,12 +1061,12 @@ run_real_data_benchmark <- function(
   ext_ok <- ext_df[!is.na(ext_df$C_index), ]
   if (nrow(ext_ok) > 0) {
     save_plot_pair(file.path(figure_dir, "external_cindex_barchart"), 8, 5, 900, 570, function() {
-      par(mar = c(7, 5, 4, 2))
+      par(mar = c(9, 5, 4, 2))
       bp <- barplot(ext_ok$C_index,
                     names.arg = ext_ok$Cohort,
                     col = "#4292C6", ylim = c(0, 1),
                     main = "External cohort C-index (SSBMF)",
-                    ylab = "C-index", las = 2, bty = "n")
+                    ylab = "C-index", las = 2, cex.names = 0.75, bty = "n")
       abline(h = 0.5, col = "#666666", lty = 2)
       # DeSurv reference band (~0.60–0.65 per paper Fig 2B)
       rect(bp[1] - 0.6, 0.60, bp[nrow(bp)] + 0.6, 0.65,
@@ -1037,7 +1096,7 @@ run_real_data_benchmark <- function(
     SSBMF_ours       = c(
       as.character(K_eff),
       sprintf("%.2f (1SE rule)", alpha_opt),
-      sprintf("TCGA+CPTAC (n=%d)", n_train),
+      sprintf("%s (n=%d)", training_mode, n_train),
       sprintf("%.4f (alpha_opt fold mean)",
               cv_tbl$mean_cindex[cv_tbl$alpha == alpha_opt]),
       sprintf("Factor w/ most negative beta: %.3f",
@@ -1057,6 +1116,8 @@ run_real_data_benchmark <- function(
 
   # Overall summary row
   summary_df <- data.frame(
+    training_mode   = training_mode,
+    prior_beta      = prior_beta,
     n_train         = n_train,
     p_genes         = ncol(Y_train),
     alpha_opt       = alpha_opt,
@@ -1076,7 +1137,7 @@ run_real_data_benchmark <- function(
   cat("=== Phase 3B complete ===\n")
 
   invisible(list(
-    merged_train     = merged_train,
+    Y_train          = Y_train,
     cv               = cv_res,
     alpha_opt        = alpha_opt,
     final_fit        = final_fit,
@@ -1091,18 +1152,64 @@ run_real_data_benchmark <- function(
 # ==============================================================================
 
 if (sys.nframe() == 0) {
-  run_ssbmf_benchmark(
-    max_iter   = cfg$cavi$max_iter,
-    tol        = cfg$cavi$tol,
-    alpha_grid = cfg$cavi$alpha_grid,
-    K_max      = cfg$cavi$k_max,
-    seed       = cfg$synthetic$seed
+  PRIOR_GRID <- c("point_normal", "point_laplace")
+
+  # --- Synthetic benchmark: both priors ---
+  for (pb in PRIOR_GRID) {
+    cat(sprintf("\n\n===== Synthetic benchmark: prior_beta = %s =====\n\n", pb))
+    run_ssbmf_benchmark(
+      prior_beta = pb,
+      max_iter   = cfg$cavi$max_iter,
+      tol        = cfg$cavi$tol,
+      alpha_grid = cfg$cavi$alpha_grid,
+      K_max      = cfg$cavi$k_max,
+      seed       = cfg$synthetic$seed
+    )
+  }
+
+  # --- Real-data benchmark: tcga_only + cptac_only × both priors ---
+  # merged is kept for the multi-modal failure documentation (point_normal only)
+  run_real_data_benchmark(
+    training_mode = "merged",
+    prior_beta    = "point_normal",
+    max_iter      = cfg$cavi$max_iter,
+    tol           = cfg$cavi$tol,
+    alpha_grid    = cfg$cavi$alpha_grid,
+    K_max         = cfg$cavi$k_max
   )
 
-  run_real_data_benchmark(
-    max_iter   = cfg$cavi$max_iter,
-    tol        = cfg$cavi$tol,
-    alpha_grid = cfg$cavi$alpha_grid,
-    K_max      = cfg$cavi$k_max
+  for (mode in c("tcga_only", "cptac_only")) {
+    for (pb in PRIOR_GRID) {
+      cat(sprintf("\n\n===== Real-data benchmark: mode=%s prior=%s =====\n\n", mode, pb))
+      run_real_data_benchmark(
+        training_mode = mode,
+        prior_beta    = pb,
+        max_iter      = cfg$cavi$max_iter,
+        tol           = cfg$cavi$tol,
+        alpha_grid    = cfg$cavi$alpha_grid,
+        K_max         = cfg$cavi$k_max
+      )
+    }
+  }
+
+  # --- Cross-mode × cross-prior comparison table ---
+  all_combos <- rbind(
+    data.frame(mode = "merged",    pb = "point_normal", stringsAsFactors = FALSE),
+    expand.grid(mode = c("tcga_only", "cptac_only"),
+                pb   = PRIOR_GRID,
+                stringsAsFactors = FALSE)
   )
+  cmp_rows <- lapply(seq_len(nrow(all_combos)), function(i) {
+    f <- file.path("results/benchmark_sim/outputs/real_data",
+                   all_combos$mode[i], all_combos$pb[i],
+                   "tables", "realdata_benchmark_summary.csv")
+    if (file.exists(f)) read.csv(f, stringsAsFactors = FALSE) else NULL
+  })
+  cmp_rows <- do.call(rbind, Filter(Negate(is.null), cmp_rows))
+  if (!is.null(cmp_rows) && nrow(cmp_rows) > 0) {
+    write.csv(cmp_rows,
+              "results/benchmark_sim/outputs/real_data/training_mode_prior_comparison.csv",
+              row.names = FALSE)
+    cat("\nCross-mode × prior comparison table written.\n")
+  }
 }
