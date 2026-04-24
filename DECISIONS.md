@@ -5,6 +5,16 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-04-24 — Lambda survival-scaling parameter: kept at 1.0 after sandbox evaluation
+
+- **Decision:** The `lambda` parameter (scalar multiplier on survival precision terms in the L update) is retained in the codebase at the default value λ=1.0. No active λ tuning is performed.
+- **Reason:** A principled argument for λ=p/n exists: the genomics ELBO term sums over p features while the Cox term sums over n patients, so when p>>n the genomics gradient dominates. However, a controlled sandbox (n=250, p=1000, K=5, seed=222) comparing λ∈{1, p/n=5, 2p/n=10} showed no benefit from scaling: hold-out C-index was flat at ≈0.805 across all three conditions, and β RMSE was *worse* at λ=p/n (+0.25) and λ=2p/n (+0.43) than at λ=1. Increasing λ inflates β estimates rather than correcting them, because the dominant source of β scale error is the L–β scale indeterminacy (L can rescale freely), not gradient imbalance.
+- **Trade-offs:** The powered-likelihood approach (λ=p/n) is theoretically sound and used in robust Bayesian inference literature. It could become beneficial if the DGP changes (e.g., fewer features, stronger Cox signal). Keeping λ as an exposed parameter with default 1.0 costs nothing and preserves the ability to experiment.
+- **Implementation:** λ is a named parameter in `update_L_k()`, `update_L_all()`, and `fit_supervised_mf_modular()` (all default 1.0). It is also in `config/globals.yml` under `cavi.lambda` and threaded through `run_ssbmf_benchmark()` and `run_real_data_benchmark()`. To test λ=p/n, change `globals.yml` and re-run.
+- **Affected files:** `code/update_L.R`, `code/fit_modular.R`, `config/globals.yml`, `results/benchmark_sim/run_ssbmf_benchmark.R`, `results/benchmark_sim/sandbox_lambda_test.R`
+
+---
+
 ## 2026-04-24 — Proportional hazards diagnostics added to benchmark pipeline
 
 - **Decision:** `cox.zph()` (Grambsch–Therneau test) is now run on SSBMF risk scores for each external PDAC cohort and results are saved to `ph_diagnostics_table.csv` alongside the benchmark outputs.

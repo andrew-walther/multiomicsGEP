@@ -286,6 +286,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
                                 seed = cfg$synthetic$seed,
                                 holdout_frac = 0.2,
                                 prior_beta = "point_normal",
+                                lambda = 1.0,
                                 quick = FALSE) {
 
   if (quick) {
@@ -338,6 +339,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     data$status[train_idx],
     K = K_max,
     alpha = alpha_opt,
+    lambda = lambda,
     max_iter = max_iter,
     tol = tol,
     prior_beta = prior_beta,
@@ -364,6 +366,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
     data$status,
     K = K_max,
     alpha = alpha_opt,
+    lambda = lambda,
     max_iter = max_iter,
     tol = tol,
     prior_beta = prior_beta,
@@ -755,6 +758,7 @@ run_real_data_benchmark <- function(
     K_max                  = 10,
     max_iter               = 300,
     tol                    = 1e-5,
+    lambda                 = 1.0,
     top_n                  = 2000,
     gene_intersection_only = FALSE) {
 
@@ -935,6 +939,7 @@ run_real_data_benchmark <- function(
     Y_train, time_train, status_train,
     K          = K_max,
     alpha      = alpha_opt,
+    lambda     = lambda,
     max_iter   = max_iter,
     tol        = tol,
     prior_beta = prior_beta,
@@ -1208,7 +1213,8 @@ if (sys.nframe() == 0) {
       tol        = cfg$cavi$tol,
       alpha_grid = cfg$cavi$alpha_grid,
       K_max      = cfg$cavi$k_max,
-      seed       = cfg$synthetic$seed
+      seed       = cfg$synthetic$seed,
+      lambda     = cfg$cavi$lambda
     )
   }
 
@@ -1220,7 +1226,8 @@ if (sys.nframe() == 0) {
     max_iter      = cfg$cavi$max_iter,
     tol           = cfg$cavi$tol,
     alpha_grid    = cfg$cavi$alpha_grid,
-    K_max         = cfg$cavi$k_max
+    K_max         = cfg$cavi$k_max,
+    lambda        = cfg$cavi$lambda
   )
 
   for (mode in c("tcga_only", "cptac_only")) {
@@ -1232,7 +1239,8 @@ if (sys.nframe() == 0) {
         max_iter      = cfg$cavi$max_iter,
         tol           = cfg$cavi$tol,
         alpha_grid    = cfg$cavi$alpha_grid,
-        K_max         = cfg$cavi$k_max
+        K_max         = cfg$cavi$k_max,
+        lambda        = cfg$cavi$lambda
       )
     }
   }

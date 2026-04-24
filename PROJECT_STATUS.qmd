@@ -1230,3 +1230,49 @@ Major rewrite of `results/benchmark_sim/ssbmf_summary_report.qmd` across three r
 - Old flat `outputs/real_data/` structure preserved for backwards compatibility
 
 ---
+
+### Session 18 (April 24, 2026)
+
+PH diagnostics, training-mode × prior dot plot, and λ scaling sandbox evaluation.
+
+#### 18.1 — Proportional hazards diagnostics
+
+1. Created `results/benchmark_sim/compute_ph_diagnostics.R`: standalone re-fit at saved
+   `alpha_opt=0.5` (TCGA-only, point_normal), runs `cox.zph()` on all 5 external cohorts, saves
+   `ph_diagnostics_table.csv` to `outputs/real_data/tcga_only/point_normal/tables/`.
+2. Results: Dijk p=0.77, Moffitt p=0.72, PACA-AU array p=0.34, PACA-AU seq p=0.41 — all PASS.
+   Puleo_array p=0.026 — marginal FLAG, likely a power artefact at n=288.
+3. `cox.zph()` also wired into `run_real_data_benchmark()` external cohort loop for future runs.
+4. Added Section 4.3 (PH Diagnostics) to `ssbmf_summary_report.qmd`. PH item removed from Open Issues.
+5. `DECISIONS.md` entry added (2026-04-24).
+
+#### 18.2 — Training mode × prior dot plot
+
+Added Section 5.3 to `ssbmf_summary_report.qmd`: per-cohort C-index dot plot for all four conditions
+(TCGA/PN, TCGA/PL, CPTAC/PN, CPTAC/PL) × 5 external cohorts. Uses data already loaded in the report
+setup chunk — no new outputs required.
+
+#### 18.3 — Lambda (λ) survival-scaling sandbox
+
+1. Added `lambda = 1.0` parameter to `update_L_k()`, `update_L_all()`, and
+   `fit_supervised_mf_modular()`. λ scales both `A_surv` and `B_surv` in the L update.
+   Default 1.0 is backward-compatible; all 171 tests pass unchanged.
+2. Created `results/benchmark_sim/sandbox_lambda_test.R`: tests λ∈{1, p/n=5, 2p/n=10} on the
+   synthetic benchmark (n=250, p=1000, K=5, seed=222).
+3. **Results:** hold-out C-index flat at ≈0.805 across all three conditions. β RMSE *worse* at
+   λ=p/n (+0.25) and λ=2p/n (+0.43) than λ=1. β scale error dominated by L–β scale indeterminacy,
+   not gradient imbalance.
+4. **Decision:** λ=1.0 retained. Parameter kept exposed for future experimentation.
+5. Added `cavi.lambda: 1.0` to `config/globals.yml` (single source of truth).
+6. Wired `lambda = cfg$cavi$lambda` through all cfg-aware call sites:
+   `run_ssbmf_benchmark.R` (3 fit calls + 2 function signatures + 4 entry-point call sites) and
+   `run_factor_modular_simulation.R` (3 fit calls).
+7. `DECISIONS.md` entry added (2026-04-24). `ROADMAP.md` λ item marked complete.
+
+#### 18.4 — Results directory cleanup (to-do noted)
+
+`results/` mixes scripts, CSVs, figures, and reports in the same subdirectories. A dedicated
+refactor commit is needed to reorganise into `scripts/`, `reports/`, and `outputs/` subdirectories.
+Tracked in `ROADMAP.md` under Infrastructure.
+
+---

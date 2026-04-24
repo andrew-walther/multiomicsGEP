@@ -41,13 +41,13 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   validation.
   *Notes: High effort — requires new derivation and update to `code/update_L.R`. See `derivations/qL/qL_update_derivation.pdf` for current L update derivation.*
 
-- [ ] **Add λ scaling parameter to balance genomics vs. survival objectives** `[Priority: High]` `[Effort: Medium]`
-  Add a scalar λ to weight the Cox term relative to genomics: ELBO = E[L_gen] + λ·E[L_Cox] − KL.
-  The genomics likelihood sums over p features while Cox sums over n patients; since p >> n in all
-  cohorts, the genomics gradient dominates. λ addresses this gradient scale asymmetry without
-  normalising the raw likelihoods. Grid-search or CV for λ. Expected to stabilise β estimation and
-  reduce the factor sign-flip identifiability issue.
-  *Notes: Medium effort — λ enters the L and β update equations as a scalar multiplier on the survival precision terms. See `DECISIONS.md` entry 2026-02-12 for the gradient asymmetry discussion. Implement before R5 (K selection), as λ affects factor stability.*
+- [x] **Add λ scaling parameter to balance genomics vs. survival objectives** `[Priority: High]` `[Effort: Medium]` *(Implemented and evaluated — fixed at λ=1.0)*
+  λ is implemented as an exposed parameter in `update_L_k()`, `update_L_all()`, and
+  `fit_supervised_mf_modular()` (default 1.0), and registered in `config/globals.yml`.
+  A controlled sandbox (n=250, p=1000, K=5) tested λ∈{1, p/n=5, 2p/n=10}: hold-out C-index
+  was flat at ≈0.805 across all conditions; β RMSE was *worse* at λ=p/n (+0.25) and λ=2p/n (+0.43).
+  The dominant β scale error is L–β scale indeterminacy, not gradient imbalance. λ=1 retained.
+  *Notes: To experiment, change `cavi.lambda` in `config/globals.yml`. See `DECISIONS.md` entry 2026-04-24 for full analysis. Sandbox: `results/benchmark_sim/sandbox_lambda_test.R`.*
 
 ---
 

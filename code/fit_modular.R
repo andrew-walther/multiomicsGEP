@@ -170,6 +170,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                       prior_LF     = "point_exponential",
                                       prior_beta   = "point_normal",
                                       alpha        = 0.5,
+                                      lambda       = 1.0,
                                       init_method  = "svd",
                                       verbose      = TRUE) {
 
@@ -320,7 +321,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
       z_no_k <- compute_z_no_k(z, EL, EBeta, k)   # COMPUTE ONCE — reuse for (c)
 
       res_L   <- update_L_k(Tau, EF[, k], EF2[, k], w, EBeta[k], EBeta2[k],
-                             R_k, z_no_k, prior_family = prior_LF, alpha = alpha)
+                             R_k, z_no_k, prior_family = prior_LF, alpha = alpha,
+                             lambda = lambda)
       EL[, k]  <- res_L$mean
       EL2[, k] <- res_L$second
       kl_L[k]  <- compute_ebnm_kl(res_L$ebnm_result$log_likelihood,

@@ -123,6 +123,7 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
                         R_k, z_no_k,
                         prior_family = "point_exponential",
                         alpha        = 0.5,
+                        lambda       = 1.0,
                         A_floor      = 1e-10) {
 
   # ------------------------------------------------------------------
@@ -141,7 +142,7 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   A_gen  <- sum(Tau * EF2_k)                                     # scalar
   # A_surv is an n-VECTOR because Cox weights W_ii differ per patient.
   # This is why L requires a vector EBNM (unlike beta's scalar EBNM).
-  A_surv <- w * EBeta2_k                                         # n-vector
+  A_surv <- lambda * w * EBeta2_k                                # λ-scaled n-vector
   A_L    <- pmax((1 - alpha) * A_gen + alpha * A_surv, A_floor)  # n-vector [A3]
 
   # ------------------------------------------------------------------
@@ -156,7 +157,7 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   # The combined $B reflects the weighting: (1-alpha)*B_gen + alpha*B_surv.
   # ------------------------------------------------------------------
   B_gen  <- as.vector(R_k %*% (Tau * EF_k))                     # n-vector (raw)
-  B_surv <- w * z_no_k * EBeta_k                                 # n-vector (raw)
+  B_surv <- lambda * w * z_no_k * EBeta_k                        # λ-scaled n-vector (raw)
   B_L    <- (1 - alpha) * B_gen + alpha * B_surv                 # weighted combination
 
   # ------------------------------------------------------------------
@@ -236,6 +237,7 @@ update_L_all <- function(Y, EL, EL2, EF, EF2, Tau, w, z,
                           EBeta, EBeta2,
                           prior_family = "point_exponential",
                           alpha        = 0.5,
+                          lambda       = 1.0,
                           A_floor      = 1e-10) {
 
   n <- nrow(EL)
@@ -266,6 +268,7 @@ update_L_all <- function(Y, EL, EL2, EF, EF2, Tau, w, z,
       z_no_k     = z_no_k,
       prior_family = prior_family,
       alpha      = alpha,
+      lambda     = lambda,
       A_floor    = A_floor
     )
 

@@ -491,6 +491,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
       res_i <- fit_supervised_mf_modular(
         Y, time, status, K = K_fit,
         max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
+        lambda = cfg$cavi$lambda,
         prior_beta = prior_beta, init_method = "random", verbose = FALSE)
       elbo_i <- tail(res_i$history$elbo_proxy, 1)
       elbo_vec[init_i] <- elbo_i
@@ -512,6 +513,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
     res <- fit_supervised_mf_modular(
       Y, time, status, K = K_fit,
       max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
+      lambda = cfg$cavi$lambda,
       prior_beta = prior_beta, init_method = init_method, verbose = TRUE)
   }
   EL     <- res$EL
@@ -679,6 +681,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
         fit_supervised_mf_modular(
           Y_train, time_train, status_train, K = K_fit,
           max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
+          lambda = cfg$cavi$lambda,
           prior_beta = prior_beta, init_method = init_method,
           verbose = FALSE),
         error = function(e) {
