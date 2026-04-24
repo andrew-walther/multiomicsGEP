@@ -77,6 +77,7 @@ synth_holdout_pn  <- read_csv_safe(file.path(synth_tables_pn, "holdout_cindex.cs
 synth_holdout_pl  <- read_csv_safe(file.path(synth_tables_pl, "holdout_cindex.csv"))
 
 real_summary  <- read_csv_safe(file.path(real_tables, "realdata_benchmark_summary.csv"))
+ph_diag       <- read_csv_safe(file.path(real_tables, "ph_diagnostics_table.csv"))
 real_cv       <- read_csv_safe(file.path(real_tables, "alpha_cv_table.csv"))
 real_beta     <- read_csv_safe(file.path(real_tables, "training_beta_summary.csv"))
 real_ext      <- read_csv_safe(file.path(real_tables, "external_cindex_table.csv"))
@@ -132,9 +133,13 @@ all $\hat\beta_k = 0$; the ARD prior correctly diagnoses that no survival-associ
 factors exist in the platform-batch-dominated space.  A shared-$\mathbf{L}$
 multi-modal extension is identified as the path forward.
 
+**Proportional hazards.**
+Grambsch--Therneau test (`cox.zph()`) applied to SSBMF risk scores on all five
+external cohorts (Section 4.3).  Results tabulated; any flagged cohorts noted.
+
 **Open issues.**
-Gene set enrichment (biological factor annotation), formal proportional hazards testing,
-and multi-modal integration are flagged as required next steps before publication.
+Gene set enrichment (biological factor annotation) and multi-modal integration
+are flagged as next steps before publication.
 
 \newpage
 
@@ -483,6 +488,7 @@ if (!is.null(train_cohorts)) {
 }
 ```
 
+
 ## Alpha Cross-Validation
 
 **Takeaway:** The 1-SE rule selects $\hat\alpha = 0.5$ on the TCGA training set,
@@ -557,6 +563,33 @@ if (!is.null(real_ext)) {
 }
 ```
 
+
+## Proportional Hazards Diagnostics
+
+The Cox PH model assumes that the log hazard ratio between any two patients is
+constant over time.  Violations inflate Type I error for log-rank tests and
+can distort C-index estimates.  For each external cohort, the
+Grambsch--Therneau test (`cox.zph()`) regresses scaled Schoenfeld residuals
+against time; a significant p-value (< 0.05) flags a potential PH violation.
+
+```{r ph-table}
+if (!is.null(ph_diag)) {
+  disp <- ph_diag[, intersect(c("Cohort","n","Events","Platform",
+                                 "C_index","PH_chisq","PH_p","PH_flag"),
+                               names(ph_diag))]
+  names(disp)[names(disp) == "PH_chisq"] <- "chi^2"
+  names(disp)[names(disp) == "PH_p"]     <- "p-value"
+  names(disp)[names(disp) == "PH_flag"]  <- "Result"
+  kable(disp, booktabs = TRUE,
+        caption = "Proportional hazards diagnostic (Grambsch--Therneau test) for
+        SSBMF risk scores projected onto each external PDAC cohort.
+        H\\textsubscript{0}: log hazard ratio is constant over time.
+        FLAG = p < 0.05 (potential PH violation); PASS = no evidence of violation.",
+        digits = 3)
+} else {
+  cat("PH diagnostics not yet computed. Run compute_ph_diagnostics.R first.")
+}
+```
 
 ## Kaplan--Meier Stratification (External Cohorts)
 
@@ -860,8 +893,8 @@ if (!is.null(desurv_cmp)) {
 3. **Preprocessing.** Both methods apply log$_2$(+1) $\to$ top 2,000 genes $\to$
    rank-normalisation per subject to RNA-seq cohorts.
 
-4. **Proportional hazards.** Formal PH testing (`cox.zph`) on cluster-stratified models
-   was not performed here and is a **required next step** before publication.
+4. **Proportional hazards.** Grambsch--Therneau `cox.zph()` test applied to SSBMF
+   risk scores on all five external cohorts (Section 4.3).
 
 5. **Gene set enrichment.** Factor biological annotation (fgsea / gprofiler) was not
    computed; DeSurv's factor interpretation (immune, exocrine, basal) cannot yet be
@@ -872,8 +905,7 @@ if (!is.null(desurv_cmp)) {
 
 **Immediate (required before sharing widely):**
 
-1. **PH diagnostic.** Run `cox.zph()` on KM-stratified risk scores for each cohort
-   and report any violations of the proportional hazards assumption.
+1. ~~**PH diagnostic.**~~ Completed — see Section 4.3 (`cox.zph()` results per cohort).
 2. **Gene set enrichment.** Top-50 genes per active factor $\to$ fgsea/gprofiler
    $\to$ compare enriched pathways with DeSurv's immune/exocrine/basal annotation.
 

@@ -968,6 +968,14 @@ run_real_data_benchmark <- function(
   )
   write.csv(elbo_train_df, file.path(table_dir, "training_elbo_trace.csv"),
             row.names = FALSE)
+
+  # Save fitted factor matrices for downstream use (PH diagnostics, gene enrichment)
+  saveRDS(
+    list(EF = final_fit$EF, EBeta = final_fit$EBeta,
+         alpha_opt = alpha_opt, training_gene_names = training_gene_names,
+         training_mode = training_mode, prior_beta = prior_beta),
+    file.path(table_dir, "final_model.rds")
+  )
   cat(sprintf("  CHECKPOINT 3: Final model fit complete. K_eff=%d\n", K_eff))
 
   # ============================================================
@@ -1004,6 +1012,19 @@ run_real_data_benchmark <- function(
         Surv(raw$time, raw$status) ~ I(-pred$risk_scores)
       )$concordance)
 
+      # Proportional hazards diagnostic (Grambsch-Therneau test on risk score)
+      ph_result <- tryCatch({
+        lp_vec <- as.vector(pred$risk_scores)
+        coxfit  <- coxph(Surv(raw$time, raw$status) ~ lp_vec, ties = "efron")
+        zph     <- cox.zph(coxfit)
+        tbl     <- zph$table
+        list(
+          ph_chisq = round(tbl["lp_vec", "chisq"], 3),
+          ph_df    = as.integer(tbl["lp_vec", "df"]),
+          ph_p     = round(tbl["lp_vec", "p"], 4)
+        )
+      }, error = function(e) list(ph_chisq = NA_real_, ph_df = NA_integer_, ph_p = NA_real_))
+
       km_res <- NULL
       if (sum(raw$status) >= 10) {
         km_stub <- file.path(figure_dir, sprintf("km_3group_%s", ds))
@@ -1026,19 +1047,24 @@ run_real_data_benchmark <- function(
       }
 
       list(
-        dataset     = ds,
-        n           = raw$n,
-        p_intersect = sum(!is.na(common_idx)),
-        platform    = PLATFORM_MAP[[ds]],
-        c_index     = round(c_idx, 4),
+        dataset      = ds,
+        n            = raw$n,
+        events       = sum(raw$status),
+        p_intersect  = sum(!is.na(common_idx)),
+        platform     = PLATFORM_MAP[[ds]],
+        c_index      = round(c_idx, 4),
         km_logrank_p = km_res,
-        event_rate  = mean(raw$status),
-        status      = "ok"
+        event_rate   = mean(raw$status),
+        ph_chisq     = ph_result$ph_chisq,
+        ph_df        = ph_result$ph_df,
+        ph_p         = ph_result$ph_p,
+        status       = "ok"
       )
     }, error = function(e) {
       warning(sprintf("External cohort %s failed: %s", ds, conditionMessage(e)))
       list(dataset = ds, status = "error", error_msg = conditionMessage(e),
-           c_index = NA_real_, km_logrank_p = NA_real_)
+           c_index = NA_real_, km_logrank_p = NA_real_,
+           ph_chisq = NA_real_, ph_df = NA_integer_, ph_p = NA_real_)
     })
   })
   names(external_results) <- EXTERNAL_COHORTS
@@ -1056,6 +1082,25 @@ run_real_data_benchmark <- function(
     )
   }))
   write.csv(ext_df, file.path(table_dir, "external_cindex_table.csv"), row.names = FALSE)
+
+  # PH diagnostics table
+  ph_diag_df <- do.call(rbind, lapply(external_results, function(r) {
+    ph_p_val <- if (is.null(r$ph_p)) NA_real_ else r$ph_p
+    data.frame(
+      Cohort   = r$dataset,
+      n        = if (is.null(r$n))       NA_integer_ else r$n,
+      Events   = if (is.null(r$events))  NA_integer_ else r$events,
+      Platform = if (is.null(r$platform)) NA_character_ else r$platform,
+      C_index  = if (is.null(r$c_index)) NA_real_    else r$c_index,
+      PH_chisq = if (is.null(r$ph_chisq)) NA_real_   else r$ph_chisq,
+      PH_df    = if (is.null(r$ph_df))    NA_integer_ else r$ph_df,
+      PH_p     = ph_p_val,
+      PH_flag  = if (is.na(ph_p_val)) "ERROR"
+                 else if (ph_p_val < 0.05) "FLAG (p<0.05)" else "PASS",
+      stringsAsFactors = FALSE
+    )
+  }))
+  write.csv(ph_diag_df, file.path(table_dir, "ph_diagnostics_table.csv"), row.names = FALSE)
 
   # External C-index bar chart
   ext_ok <- ext_df[!is.na(ext_df$C_index), ]

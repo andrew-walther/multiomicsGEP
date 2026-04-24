@@ -3031,7 +3031,8 @@ vertical-align: -.125em;
   <li><a href="#alpha-cross-validation-1" id="toc-alpha-cross-validation-1" class="nav-link" data-scroll-target="#alpha-cross-validation-1"><span class="header-section-number">3.2</span> Alpha Cross-Validation</a></li>
   <li><a href="#final-training-model" id="toc-final-training-model" class="nav-link" data-scroll-target="#final-training-model"><span class="header-section-number">3.3</span> Final Training Model</a></li>
   <li><a href="#external-cohort-validation" id="toc-external-cohort-validation" class="nav-link" data-scroll-target="#external-cohort-validation"><span class="header-section-number">3.4</span> External Cohort Validation</a></li>
-  <li><a href="#kaplanmeier-stratification-external-cohorts" id="toc-kaplanmeier-stratification-external-cohorts" class="nav-link" data-scroll-target="#kaplanmeier-stratification-external-cohorts"><span class="header-section-number">3.5</span> Kaplan–Meier Stratification (External Cohorts)</a></li>
+  <li><a href="#proportional-hazards-diagnostics" id="toc-proportional-hazards-diagnostics" class="nav-link" data-scroll-target="#proportional-hazards-diagnostics"><span class="header-section-number">3.5</span> Proportional Hazards Diagnostics</a></li>
+  <li><a href="#kaplanmeier-stratification-external-cohorts" id="toc-kaplanmeier-stratification-external-cohorts" class="nav-link" data-scroll-target="#kaplanmeier-stratification-external-cohorts"><span class="header-section-number">3.6</span> Kaplan–Meier Stratification (External Cohorts)</a></li>
   </ul></li>
   <li><a href="#prior-sensitivity-point_normal-vs.-point_laplace" id="toc-prior-sensitivity-point_normal-vs.-point_laplace" class="nav-link" data-scroll-target="#prior-sensitivity-point_normal-vs.-point_laplace"><span class="header-section-number">4</span> Prior Sensitivity: point_normal vs. point_laplace</a>
   <ul class="collapse">
@@ -3047,7 +3048,7 @@ vertical-align: -.125em;
   <li><a href="#desurv-paper-comparison" id="toc-desurv-paper-comparison" class="nav-link" data-scroll-target="#desurv-paper-comparison"><span class="header-section-number">6</span> DeSurv Paper Comparison</a></li>
   <li><a href="#open-issues-next-steps" id="toc-open-issues-next-steps" class="nav-link" data-scroll-target="#open-issues-next-steps"><span class="header-section-number">7</span> Open Issues &amp; Next Steps</a></li>
   </ul>
-<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="ssbmf_summary_report.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../../ssbmf_summary_report.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
 </div>
 <main class="content" id="quarto-document-content">
 
@@ -3088,7 +3089,8 @@ vertical-align: -.125em;
 <p><strong>PDAC benchmark (TCGA-only training).</strong> External median C-index 0.60 across 5 independent cohorts, competitive with DeSurv’s reported 0.60–0.65 range (Fig. 2B, Young et al. 2025).</p>
 <p><strong>Prior sensitivity.</strong> <code>point_normal</code> and <code>point_laplace</code> beta priors are compared across synthetic and real-data settings (Section 5). <code>point_normal</code> is the recommended default as it performs comparably or better while being simpler to interpret.</p>
 <p><strong>Multi-modal failure (documented).</strong> Merging TCGA RNA-seq with CPTAC proteomics into a single feature matrix causes all <span class="math inline">\(\hat\beta_k = 0\)</span>; the ARD prior correctly diagnoses that no survival-associated factors exist in the platform-batch-dominated space. A shared-<span class="math inline">\(\mathbf{L}\)</span> multi-modal extension is identified as the path forward.</p>
-<p><strong>Open issues.</strong> Gene set enrichment (biological factor annotation), formal proportional hazards testing, and multi-modal integration are flagged as required next steps before publication.</p>
+<p><strong>Proportional hazards.</strong> Grambsch–Therneau test (<code>cox.zph()</code>) applied to SSBMF risk scores on all five external cohorts (Section 4.3). Results tabulated; any flagged cohorts noted.</p>
+<p><strong>Open issues.</strong> Gene set enrichment (biological factor annotation) and multi-modal integration are flagged as next steps before publication.</p>
 <div style="page-break-after: always;"></div>
 </section>
 <section id="model-method" class="level1" data-number="1">
@@ -3855,11 +3857,96 @@ Converged: TRUE in 41 iterations | Final ELBO: -935868</code></pre>
 </div>
 </div>
 </section>
-<section id="kaplanmeier-stratification-external-cohorts" class="level2" data-number="3.5">
-<h2 data-number="3.5" class="anchored" data-anchor-id="kaplanmeier-stratification-external-cohorts"><span class="header-section-number">3.5</span> Kaplan–Meier Stratification (External Cohorts)</h2>
+<section id="proportional-hazards-diagnostics" class="level2" data-number="3.5">
+<h2 data-number="3.5" class="anchored" data-anchor-id="proportional-hazards-diagnostics"><span class="header-section-number">3.5</span> Proportional Hazards Diagnostics</h2>
+<p>The Cox PH model assumes that the log hazard ratio between any two patients is constant over time. Violations inflate Type I error for log-rank tests and can distort C-index estimates. For each external cohort, the Grambsch–Therneau test (<code>cox.zph()</code>) regresses scaled Schoenfeld residuals against time; a significant p-value (&lt; 0.05) flags a potential PH violation.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Proportional hazards diagnostic (Grambsch–Therneau test) for SSBMF risk scores projected onto each external PDAC cohort. H: log hazard ratio is constant over time. FLAG = p &lt; 0.05 (potential PH violation); PASS = no evidence of violation.</caption>
+<colgroup>
+<col style="width: 23%">
+<col style="width: 5%">
+<col style="width: 9%">
+<col style="width: 14%">
+<col style="width: 10%">
+<col style="width: 7%">
+<col style="width: 10%">
+<col style="width: 18%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Cohort</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">Events</th>
+<th style="text-align: left;">Platform</th>
+<th style="text-align: right;">C_index</th>
+<th style="text-align: right;">chi^2</th>
+<th style="text-align: right;">p-value</th>
+<th style="text-align: left;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Dijk</td>
+<td style="text-align: right;">90</td>
+<td style="text-align: right;">81</td>
+<td style="text-align: left;">RNA-seq</td>
+<td style="text-align: right;">0.610</td>
+<td style="text-align: right;">0.088</td>
+<td style="text-align: right;">0.767</td>
+<td style="text-align: left;">PASS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Moffitt_GEO_array</td>
+<td style="text-align: right;">123</td>
+<td style="text-align: right;">83</td>
+<td style="text-align: left;">Microarray</td>
+<td style="text-align: right;">0.532</td>
+<td style="text-align: right;">0.131</td>
+<td style="text-align: right;">0.717</td>
+<td style="text-align: left;">PASS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PACA_AU_array</td>
+<td style="text-align: right;">63</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: left;">Microarray</td>
+<td style="text-align: right;">0.602</td>
+<td style="text-align: right;">0.920</td>
+<td style="text-align: right;">0.338</td>
+<td style="text-align: left;">PASS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PACA_AU_seq</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: left;">RNA-seq</td>
+<td style="text-align: right;">0.632</td>
+<td style="text-align: right;">0.669</td>
+<td style="text-align: right;">0.413</td>
+<td style="text-align: left;">PASS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Puleo_array</td>
+<td style="text-align: right;">288</td>
+<td style="text-align: right;">181</td>
+<td style="text-align: left;">Microarray</td>
+<td style="text-align: right;">0.592</td>
+<td style="text-align: right;">4.929</td>
+<td style="text-align: right;">0.026</td>
+<td style="text-align: left;">FLAG (p&lt;0.05)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="kaplanmeier-stratification-external-cohorts" class="level2" data-number="3.6">
+<h2 data-number="3.6" class="anchored" data-anchor-id="kaplanmeier-stratification-external-cohorts"><span class="header-section-number">3.6</span> Kaplan–Meier Stratification (External Cohorts)</h2>
 <p>Patients in each external cohort are stratified at the median SSBMF linear predictor into <strong>High-risk</strong> (above median) and <strong>Low-risk</strong> (below median) groups. A significant log-rank p-value indicates that the survival scores from the TCGA-trained model transfer prognostic signal to the external cohort.</p>
-<section id="dijk-cohort-rna-seq" class="level3" data-number="3.5.1">
-<h3 data-number="3.5.1" class="anchored" data-anchor-id="dijk-cohort-rna-seq"><span class="header-section-number">3.5.1</span> Dijk Cohort (RNA-seq)</h3>
+<section id="dijk-cohort-rna-seq" class="level3" data-number="3.6.1">
+<h3 data-number="3.6.1" class="anchored" data-anchor-id="dijk-cohort-rna-seq"><span class="header-section-number">3.6.1</span> Dijk Cohort (RNA-seq)</h3>
 <p>C-index = 0.61; log-rank p = 2.80e-04. The Dijk cohort is RNA-seq (matched platform to training), so factor projection is expected to be most faithful here.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
@@ -3872,8 +3959,8 @@ Converged: TRUE in 41 iterations | Final ELBO: -935868</code></pre>
 </div>
 </div>
 </section>
-<section id="moffitt-geo-microarray" class="level3" data-number="3.5.2">
-<h3 data-number="3.5.2" class="anchored" data-anchor-id="moffitt-geo-microarray"><span class="header-section-number">3.5.2</span> Moffitt (GEO Microarray)</h3>
+<section id="moffitt-geo-microarray" class="level3" data-number="3.6.2">
+<h3 data-number="3.6.2" class="anchored" data-anchor-id="moffitt-geo-microarray"><span class="header-section-number">3.6.2</span> Moffitt (GEO Microarray)</h3>
 <p>C-index = 0.532; log-rank p = 3.35e-01. Moffitt is a microarray cohort; RNA-seq-derived factor projections require cross-platform generalisation.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
@@ -3886,8 +3973,8 @@ Converged: TRUE in 41 iterations | Final ELBO: -935868</code></pre>
 </div>
 </div>
 </section>
-<section id="paca-au-array-microarray" class="level3" data-number="3.5.3">
-<h3 data-number="3.5.3" class="anchored" data-anchor-id="paca-au-array-microarray"><span class="header-section-number">3.5.3</span> PACA-AU Array (Microarray)</h3>
+<section id="paca-au-array-microarray" class="level3" data-number="3.6.3">
+<h3 data-number="3.6.3" class="anchored" data-anchor-id="paca-au-array-microarray"><span class="header-section-number">3.6.3</span> PACA-AU Array (Microarray)</h3>
 <p>C-index = 0.602; log-rank p = 8.56e-02.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
@@ -3900,8 +3987,8 @@ Converged: TRUE in 41 iterations | Final ELBO: -935868</code></pre>
 </div>
 </div>
 </section>
-<section id="paca-au-seq-rna-seq" class="level3" data-number="3.5.4">
-<h3 data-number="3.5.4" class="anchored" data-anchor-id="paca-au-seq-rna-seq"><span class="header-section-number">3.5.4</span> PACA-AU Seq (RNA-seq)</h3>
+<section id="paca-au-seq-rna-seq" class="level3" data-number="3.6.4">
+<h3 data-number="3.6.4" class="anchored" data-anchor-id="paca-au-seq-rna-seq"><span class="header-section-number">3.6.4</span> PACA-AU Seq (RNA-seq)</h3>
 <p>C-index = 0.632; log-rank p = 4.09e-02. As an RNA-seq cohort, PACA-AU Seq benefits from the same platform as training.</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
@@ -3914,8 +4001,8 @@ Converged: TRUE in 41 iterations | Final ELBO: -935868</code></pre>
 </div>
 </div>
 </section>
-<section id="puleo-array-microarray" class="level3" data-number="3.5.5">
-<h3 data-number="3.5.5" class="anchored" data-anchor-id="puleo-array-microarray"><span class="header-section-number">3.5.5</span> Puleo Array (Microarray)</h3>
+<section id="puleo-array-microarray" class="level3" data-number="3.6.5">
+<h3 data-number="3.6.5" class="anchored" data-anchor-id="puleo-array-microarray"><span class="header-section-number">3.6.5</span> Puleo Array (Microarray)</h3>
 <p>C-index = 0.592; log-rank p = 2.42e-02. Puleo is the largest external microarray cohort (288 patients).</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
@@ -4358,7 +4445,7 @@ Median external C-index: 0.5000 (expected ~0.50 -- flat risk scores)</code></pre
 <li><p><strong>K selection.</strong> DeSurv selects <span class="math inline">\(K\)</span> by grid search; SSBMF determines <span class="math inline">\(K_\text{eff}\)</span> automatically via ARD, eliminating one dimension of the hyperparameter search.</p></li>
 <li><p><strong>Hyperparameter search.</strong> DeSurv searches 4D (<span class="math inline">\(K, \alpha, \lambda, \xi\)</span>); SSBMF searches only <span class="math inline">\(\alpha\)</span>, as sparsity is controlled by the EBNM prior rather than explicit penalty parameters.</p></li>
 <li><p><strong>Preprocessing.</strong> Both methods apply log<span class="math inline">\(_2\)</span>(+1) <span class="math inline">\(\to\)</span> top 2,000 genes <span class="math inline">\(\to\)</span> rank-normalisation per subject to RNA-seq cohorts.</p></li>
-<li><p><strong>Proportional hazards.</strong> Formal PH testing (<code>cox.zph</code>) on cluster-stratified models was not performed here and is a <strong>required next step</strong> before publication.</p></li>
+<li><p><strong>Proportional hazards.</strong> Grambsch–Therneau <code>cox.zph()</code> test applied to SSBMF risk scores on all five external cohorts (Section 4.3).</p></li>
 <li><p><strong>Gene set enrichment.</strong> Factor biological annotation (fgsea / gprofiler) was not computed; DeSurv’s factor interpretation (immune, exocrine, basal) cannot yet be directly compared.</p></li>
 </ol>
 </section>
@@ -4366,7 +4453,7 @@ Median external C-index: 0.5000 (expected ~0.50 -- flat risk scores)</code></pre
 <h1 data-number="7"><span class="header-section-number">7</span> Open Issues &amp; Next Steps</h1>
 <p><strong>Immediate (required before sharing widely):</strong></p>
 <ol type="1">
-<li><strong>PH diagnostic.</strong> Run <code>cox.zph()</code> on KM-stratified risk scores for each cohort and report any violations of the proportional hazards assumption.</li>
+<li><del><strong>PH diagnostic.</strong></del> Completed — see Section 4.3 (<code>cox.zph()</code> results per cohort).</li>
 <li><strong>Gene set enrichment.</strong> Top-50 genes per active factor <span class="math inline">\(\to\)</span> fgsea/gprofiler <span class="math inline">\(\to\)</span> compare enriched pathways with DeSurv’s immune/exocrine/basal annotation.</li>
 </ol>
 <p><strong>Analytical:</strong></p>

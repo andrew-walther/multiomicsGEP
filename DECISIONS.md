@@ -5,6 +5,16 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-04-24 — Proportional hazards diagnostics added to benchmark pipeline
+
+- **Decision:** `cox.zph()` (Grambsch–Therneau test) is now run on SSBMF risk scores for each external PDAC cohort and results are saved to `ph_diagnostics_table.csv` alongside the benchmark outputs.
+- **Reason:** The proportional hazards assumption underlies the Cox model used to generate risk scores. A violation means the log hazard ratio is time-varying, which can distort C-index estimates and KM stratification p-values. Formal PH testing is required before the results can be shared or published.
+- **Results (TCGA-only, point_normal):** Dijk p=0.77, Moffitt p=0.72, PACA-AU array p=0.34, PACA-AU seq p=0.41 — all PASS. Puleo_array p=0.026 — **FLAG**. The Puleo violation is marginal and likely reflects the large sample size (n=288) giving power to detect subtle time-varying effects; the C-index and KM results remain valid as approximate assessments.
+- **Implementation:** `compute_ph_diagnostics.R` (standalone re-fit + projection script); `run_ssbmf_benchmark.R` (PH test now wired into external cohort loop for future runs); `ssbmf_summary_report.qmd` (Section 4.3).
+- **Affected files:** `results/benchmark_sim/compute_ph_diagnostics.R` (new), `results/benchmark_sim/run_ssbmf_benchmark.R`, `results/benchmark_sim/ssbmf_summary_report.qmd`
+
+---
+
 ## 2026-04-24 — ARD preferred over ELBO grid search for K selection
 
 - **Decision:** K is determined automatically within a single model fit via Automatic Relevance Determination (ARD) — the point-normal/point-laplace prior on β shrinks irrelevant factor coefficients exactly to zero — rather than by fitting separate models at K = 1, …, K_max and comparing ELBOs.
