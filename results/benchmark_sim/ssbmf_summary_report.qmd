@@ -789,6 +789,60 @@ if (!is.null(ext_rows) && nrow(ext_rows) > 0) {
 }
 ```
 
+## Training Mode × Prior: Per-Cohort C-index
+
+The dot plot below shows external C-index for all four benchmark conditions
+(TCGA-only vs.\ CPTAC-only training $\times$ `point_normal` vs.\ `point_laplace` prior)
+across each of the five independent PDAC cohorts.  This reveals which cohorts drive the
+median differences seen in the summary table above.
+
+```{r mode-prior-dotplot, fig.height=4.5, fig.cap="External C-index by cohort across four benchmark conditions: training mode (TCGA-only vs.\\ CPTAC-only) $\\times$ beta prior (point\\_normal vs.\\ point\\_laplace). Dashed line = C-index 0.5 (uninformative). CPTAC-only training consistently matches or exceeds TCGA-only, likely because its proteomics features project well onto the mixed external platforms."}
+# Assemble per-cohort data for all 4 conditions
+ext_all <- rbind(
+  if (!is.null(real_ext))      data.frame(Condition="TCGA / PN",   real_ext[, c("Cohort","C_index")]) else NULL,
+  if (!is.null(tcga_pl_ext))   data.frame(Condition="TCGA / PL",   tcga_pl_ext[, c("Cohort","C_index")]) else NULL,
+  if (!is.null(cptac_pn_ext))  data.frame(Condition="CPTAC / PN",  cptac_pn_ext[, c("Cohort","C_index")]) else NULL,
+  if (!is.null(cptac_pl_ext))  data.frame(Condition="CPTAC / PL",  cptac_pl_ext[, c("Cohort","C_index")]) else NULL
+)
+
+if (!is.null(ext_all) && nrow(ext_all) > 0) {
+  cohorts    <- c("Dijk","Moffitt_GEO_array","PACA_AU_array","PACA_AU_seq","Puleo_array")
+  conditions <- c("TCGA / PN","TCGA / PL","CPTAC / PN","CPTAC / PL")
+  cols <- c("TCGA / PN"="#1f77b4", "TCGA / PL"="#aec7e8",
+            "CPTAC / PN"="#d62728", "CPTAC / PL"="#f4a582")
+  pchs <- c("TCGA / PN"=16, "TCGA / PL"=1, "CPTAC / PN"=17, "CPTAC / PL"=2)
+  offsets <- c("TCGA / PN"=-0.3, "TCGA / PL"=-0.1, "CPTAC / PN"=0.1, "CPTAC / PL"=0.3)
+
+  n_c <- length(cohorts)
+  par(mar = c(8.5, 5, 4, 2))
+  plot(NA, xlim = c(0.5, n_c + 0.5), ylim = c(0.4, 0.85),
+       xaxt = "n", bty = "n", xlab = "",
+       ylab = "External C-index",
+       main = "Per-Cohort C-index: Training Mode \u00d7 Prior")
+  abline(h = 0.5, lty = 2, col = "gray50", lwd = 1.5)
+
+  for (i in seq_len(n_c)) {
+    co <- cohorts[i]
+    for (cond in conditions) {
+      r <- ext_all[ext_all$Condition == cond & ext_all$Cohort == co, ]
+      if (nrow(r) == 0 || is.na(r$C_index)) next
+      points(i + offsets[cond], r$C_index,
+             pch = pchs[cond], cex = 1.8, col = cols[cond], lwd = 1.5)
+    }
+  }
+
+  short_names <- c("Dijk\n(RNA-seq)", "Moffitt\n(Array)", "PACA-AU\n(Array)",
+                   "PACA-AU\n(Seq)", "Puleo\n(Array)")
+  axis(1, at = seq_len(n_c), labels = short_names, las = 2, cex.axis = 0.8)
+  legend("topright",
+         legend = conditions,
+         pch    = unname(pchs[conditions]),
+         col    = unname(cols[conditions]),
+         pt.cex = 1.5, pt.lwd = 1.5, bty = "n", cex = 0.85)
+} else {
+  plot.new(); text(0.5, 0.5, "Results not available.", cex = 1.2)
+}
+```
 
 
 # Multi-Modal Integration Challenge {#sec-multimodal}
@@ -905,8 +959,7 @@ if (!is.null(desurv_cmp)) {
 
 **Immediate (required before sharing widely):**
 
-1. ~~**PH diagnostic.**~~ Completed — see Section 4.3 (`cox.zph()` results per cohort).
-2. **Gene set enrichment.** Top-50 genes per active factor $\to$ fgsea/gprofiler
+1. **Gene set enrichment.** Top-50 genes per active factor $\to$ fgsea/gprofiler
    $\to$ compare enriched pathways with DeSurv's immune/exocrine/basal annotation.
 
 **Analytical:**
