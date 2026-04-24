@@ -25,7 +25,7 @@ dataset_name      <- "TCGA_PAAD"    # used when data_mode = "real" and run_all =
 run_all           <- FALSE           # TRUE: loop over all 7 PDAC datasets
 top_n_genes       <- cfg$preprocessing$top_n_genes   # from globals.yml
 K                 <- cfg$cavi$k_default               # from globals.yml
-prior_family      <- "point_normal"  # "point_normal", "point_laplace", "normal_scale_mixture"
+prior_beta        <- "point_normal"  # beta prior: "point_normal" or "point_laplace"; L/F always point_exponential
 n_init            <- cfg$evaluation$n_init            # from globals.yml
 init_method       <- "svd"           # "svd" (deterministic) or "random" (for multi-init)
 batch_correct     <- cfg$preprocessing$batch_correct  # from globals.yml
@@ -46,7 +46,7 @@ if (Sys.getenv("DATA_MODE")          != "") data_mode         <- Sys.getenv("DAT
 if (Sys.getenv("DATASET_NAME")      != "") dataset_name      <- Sys.getenv("DATASET_NAME")
 if (Sys.getenv("RUN_ALL")           != "") run_all           <- as.logical(Sys.getenv("RUN_ALL"))
 if (Sys.getenv("TOP_N_GENES")       != "") top_n_genes       <- as.integer(Sys.getenv("TOP_N_GENES"))
-if (Sys.getenv("PRIOR_FAMILY")      != "") prior_family      <- Sys.getenv("PRIOR_FAMILY")
+if (Sys.getenv("PRIOR_BETA")        != "") prior_beta        <- Sys.getenv("PRIOR_BETA")
 if (Sys.getenv("N_INIT")            != "") n_init            <- as.integer(Sys.getenv("N_INIT"))
 if (Sys.getenv("INIT_METHOD")       != "") init_method       <- Sys.getenv("INIT_METHOD")
 if (Sys.getenv("BATCH_CORRECT")     != "") batch_correct     <- as.logical(Sys.getenv("BATCH_CORRECT"))
@@ -414,7 +414,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
   cat(sprintf("\n=== %s  (n=%d, p=%d, K=%d) ===\n",
               run_label, nrow(Y), ncol(Y), K))
   cat(sprintf("  Censoring rate: %.1f%%  |  prior=%s  |  init=%s  |  n_init=%d\n\n",
-              100 * mean(status == 0), prior_family, init_method, n_init))
+              100 * mean(status == 0), prior_beta, init_method, n_init))
 
   # --------------------------------------------------------------------------
   # K selection (when k_select != "fixed")
@@ -428,7 +428,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
       auto_prune_K(Y, time, status, K_max = cfg$cavi$k_max,
                    beta_thresh = cfg$k_selection$beta_threshold,
                    pve_thresh  = cfg$k_selection$pve_threshold,
-                   prior_family = prior_family, init_method = init_method,
+                   prior_beta = prior_beta, init_method = init_method,
                    max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol, verbose = FALSE),
       error = function(e) {
         cat(sprintf("  [K selection] auto_prune failed: %s — using K=%d\n",
@@ -491,7 +491,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
       res_i <- fit_supervised_mf_modular(
         Y, time, status, K = K_fit,
         max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
-        prior_family = prior_family, init_method = "random", verbose = FALSE)
+        prior_beta = prior_beta, init_method = "random", verbose = FALSE)
       elbo_i <- tail(res_i$history$elbo_proxy, 1)
       elbo_vec[init_i] <- elbo_i
       cat(sprintf("ELBO=%.1f  iters=%d  converged=%s\n",
@@ -512,7 +512,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
     res <- fit_supervised_mf_modular(
       Y, time, status, K = K_fit,
       max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
-      prior_family = prior_family, init_method = init_method, verbose = TRUE)
+      prior_beta = prior_beta, init_method = init_method, verbose = TRUE)
   }
   EL     <- res$EL
   EL2    <- res$EL2
@@ -679,7 +679,7 @@ run_pipeline <- function(Y, time, status, gene_names, data,
         fit_supervised_mf_modular(
           Y_train, time_train, status_train, K = K_fit,
           max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
-          prior_family = prior_family, init_method = init_method,
+          prior_beta = prior_beta, init_method = init_method,
           verbose = FALSE),
         error = function(e) {
           cat(sprintf("  [Hold-out] Training fit failed: %s\n", conditionMessage(e)))

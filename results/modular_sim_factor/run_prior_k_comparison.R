@@ -166,7 +166,7 @@ fit_and_evaluate <- function(d, prior, K_val, holdout = TRUE,
   # --------------------------------------------------------------------------
   res_full <- fit_supervised_mf_modular(
     Y, time, status, K = K_val, max_iter = 300, tol = 1e-3,
-    prior_family = prior, init_method = "svd", verbose = FALSE
+    prior_beta = prior, init_method = "svd", verbose = FALSE
   )
   EL_full    <- res_full$EL
   EF_full    <- res_full$EF
@@ -238,7 +238,7 @@ fit_and_evaluate <- function(d, prior, K_val, holdout = TRUE,
       # Fit on training data
       res_train <- fit_supervised_mf_modular(
         Y_train, time_train, status_train, K = K_val, max_iter = 300, tol = 1e-3,
-        prior_family = prior, init_method = "svd", verbose = FALSE
+        prior_beta = prior, init_method = "svd", verbose = FALSE
       )
       EF_train    <- res_train$EF
       EBeta_train <- res_train$EBeta
@@ -415,7 +415,7 @@ for (dsname in ALL_DATASETS) {
 
   prune_res <- tryCatch(
     auto_prune_K(d$Y, d$time, d$status, K_max = K_MAX,
-                 prior_family = "point_normal", init_method = "svd",
+                 prior_beta = "point_normal", init_method = "svd",
                  max_iter = 200, tol = 1e-3, verbose = FALSE),
     error = function(e) {
       cat(sprintf("  auto_prune_K FAILED: %s\n", conditionMessage(e)))
