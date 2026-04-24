@@ -91,6 +91,23 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Longleaf HPC submission of individual targets as SLURM jobs.
   *Notes: Low priority — investigate feasibility and overhead before committing to a refactor. The `{targets}` package works best when the pipeline DAG is well-defined; this is approximately true for the current runner structure. See `results/modular_sim_factor/run_factor_modular_simulation.R` for the current monolithic runner.*
 
+- [ ] **`results/` directory cleanup** `[Priority: High]` `[Effort: Small]`
+  The `results/` directory now mixes code scripts, CSV tables, PNG/PDF figures, and
+  QMD/PDF/HTML reports within the same subdirectories, making it hard to navigate and
+  prone to path errors. Proposed split (within `results/benchmark_sim/`):
+  ```
+  results/benchmark_sim/
+    scripts/        ← MOVE run_ssbmf_benchmark.R, compute_ph_diagnostics.R
+    reports/        ← MOVE ssbmf_summary_report.qmd/.pdf/.html
+    outputs/        ← benchmark CSVs + figures (already structured by mode/prior)
+  results/modular_sim_factor/
+    scripts/        ← MOVE run_factor_modular_simulation.R, run_prior_k_comparison.R
+    reports/        ← MOVE .qmd/.pdf/.html out of PDAC/ and synthetic/ subdirs
+  ```
+  Update all `source()` calls, `quarto render` paths, and README references when moving.
+  *Notes: Dedicate a single refactor commit. Don't split across sessions. Update CLAUDE.md
+  quick-reference table after moving. Coordinate with any active Longleaf HPC paths.*
+
 - [ ] **Repository reorganisation** `[Priority: Low]` `[Effort: Small]`
   The current directory layout has accumulated structural debt across three simulation generations.
   Proposed clean structure (no file deletion — move and rename only):
