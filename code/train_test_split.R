@@ -86,3 +86,85 @@ stratified_split <- function(status, test_frac = 0.2, seed = 42) {
     event_rate_test  = mean(status[test_idx] == 1)
   )
 }
+
+# ============================================================
+# create_stratified_folds() ----
+# ============================================================
+
+#' Create stratified K-fold splits preserving event rate.
+#'
+#' Assigns each sample to one of `n_folds` folds while approximately
+#' preserving the event/censoring mix in every fold. This is intended for
+#' cross-validation workflows where each held-out fold should contain both
+#' events and censored samples so survival metrics remain well-defined.
+#'
+#' **Strategy:**
+#' 1. Separate indices into events and censored groups
+#' 2. Shuffle each group independently with the same seed
+#' 3. Distribute each shuffled group round-robin across folds
+#'
+#' @param status   integer vector of length n: event indicators (1 = event, 0 = censored)
+#' @param n_folds  integer >= 2: number of folds (default 5)
+#' @param seed     integer: random seed for reproducibility (default 42)
+#'
+#' @return Named list:
+#'   $folds              list of length n_folds; each element is a sorted integer vector
+#'                       of held-out sample indices for that fold
+#'   $fold_id            integer vector of length n assigning each sample to a fold
+#'   $event_rate_by_fold numeric vector of length n_folds with per-fold event rates
+#'
+#' @examples
+#' status <- c(rep(1, 10), rep(0, 10))
+#' fd <- create_stratified_folds(status, n_folds = 5, seed = 1)
+#' lengths(fd$folds)
+create_stratified_folds <- function(status, n_folds = 5, seed = 42) {
+
+  n <- length(status)
+  if (n < 4)
+    stop(sprintf("Need at least 4 samples for stratified folds (got %d).", n))
+  if (!all(status %in% c(0L, 1L)))
+    stop("status must contain only 0 and 1.")
+  if (length(n_folds) != 1 || !is.finite(n_folds) || n_folds < 2 || n_folds != as.integer(n_folds))
+    stop("n_folds must be an integer >= 2.")
+
+  n_folds <- as.integer(n_folds)
+  events   <- which(status == 1)
+  censored <- which(status == 0)
+
+  if (length(events) < n_folds) {
+    stop(sprintf("Need at least %d events to place >=1 event in every fold (got %d).",
+                 n_folds, length(events)))
+  }
+  if (length(censored) < n_folds) {
+    stop(sprintf("Need at least %d censored samples to place >=1 censored in every fold (got %d).",
+                 n_folds, length(censored)))
+  }
+
+  set.seed(seed)
+  events   <- sample(events, length(events))
+  censored <- sample(censored, length(censored))
+
+  folds <- vector("list", n_folds)
+  for (k in seq_len(n_folds)) folds[[k]] <- integer(0)
+
+  for (i in seq_along(events)) {
+    fold_k <- ((i - 1L) %% n_folds) + 1L
+    folds[[fold_k]] <- c(folds[[fold_k]], events[i])
+  }
+  for (i in seq_along(censored)) {
+    fold_k <- ((i - 1L) %% n_folds) + 1L
+    folds[[fold_k]] <- c(folds[[fold_k]], censored[i])
+  }
+
+  fold_id <- integer(n)
+  for (k in seq_len(n_folds)) {
+    folds[[k]] <- sort(folds[[k]])
+    fold_id[folds[[k]]] <- k
+  }
+
+  list(
+    folds = folds,
+    fold_id = fold_id,
+    event_rate_by_fold = vapply(folds, function(idx) mean(status[idx] == 1), numeric(1))
+  )
+}

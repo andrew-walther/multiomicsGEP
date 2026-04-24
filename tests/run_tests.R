@@ -21,6 +21,8 @@ source("code/update_L.R")
 source("code/update_F.R")
 source("code/update_tau.R")
 source("code/compute_elbo.R")   # compute_ebnm_kl, compute_survival_elbo
+source("code/train_test_split.R")
+source("code/predict.R")
 # fit_modular.R resets DATA_MODE <- "real" and has a runner block at the bottom
 # that errors when real_Y is NULL.  Wrap in tryCatch: the function definition
 # (lines 1-395) completes before the runner block fires, so the error is
@@ -29,6 +31,7 @@ suppressMessages(tryCatch(
   source("code/fit_modular.R"),
   error = function(e) invisible(NULL)
 ))
+source("code/select_alpha_cv.R")
 
 # List all test files to run
 test_files <- c(
@@ -37,7 +40,8 @@ test_files <- c(
   "tests/test_update_F.R",
   "tests/test_update_tau.R",
   "tests/test_predict.R",
-  "tests/test_elbo.R"
+  "tests/test_elbo.R",
+  "tests/test_select_alpha_cv.R"
 )
 
 # Run each test file

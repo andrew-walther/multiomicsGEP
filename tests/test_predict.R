@@ -226,4 +226,45 @@ run_test("T5.4: n < 4 errors", {
     msg = "Should error with n < 4")
 })
 
+# ==============================================================================
+# T6: create_stratified_folds — Basic Properties ----
+# ==============================================================================
+
+cat("\n=== T6: Stratified K-Fold Properties ===\n")
+
+run_test("T6.1: Fold indices are disjoint and cover all samples", {
+  status <- c(rep(1, 15), rep(0, 15))
+  fd <- create_stratified_folds(status, n_folds = 5, seed = 42)
+  combined <- sort(unlist(fd$folds))
+  assert_true(all(combined == seq_along(status)),
+              msg = "Folds should cover all samples exactly once")
+  sizes <- vapply(fd$folds, length, integer(1))
+  assert_true(sum(sizes) == length(status), msg = "Fold sizes should sum to n")
+})
+
+run_test("T6.2: Every fold contains both events and censored samples", {
+  status <- c(rep(1, 12), rep(0, 18))
+  fd <- create_stratified_folds(status, n_folds = 3, seed = 1)
+  for (idx in fd$folds) {
+    assert_true(sum(status[idx] == 1) >= 1, msg = "Each fold should contain an event")
+    assert_true(sum(status[idx] == 0) >= 1, msg = "Each fold should contain a censored sample")
+  }
+})
+
+run_test("T6.3: Reproducible with the same seed", {
+  status <- c(rep(1, 20), rep(0, 20))
+  fd1 <- create_stratified_folds(status, n_folds = 4, seed = 99)
+  fd2 <- create_stratified_folds(status, n_folds = 4, seed = 99)
+  assert_true(identical(fd1$fold_id, fd2$fold_id),
+              msg = "Same seed should give same fold assignments")
+})
+
+run_test("T6.4: Errors when there are too few events for the requested folds", {
+  status <- c(rep(1, 2), rep(0, 10))
+  err <- tryCatch(create_stratified_folds(status, n_folds = 3, seed = 1),
+                  error = function(e) conditionMessage(e))
+  assert_true(grepl("at least 3 events", err),
+              msg = "Should error when events < n_folds")
+})
+
 report_results("predict.R + train_test_split.R")
