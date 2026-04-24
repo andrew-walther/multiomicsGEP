@@ -9,9 +9,9 @@ format:
     toc: true
     toc-depth: 2
     number-sections: true
-    geometry: "top=1in, bottom=1in, left=1.1in, right=1.1in"
+    geometry: "top=0.85in, bottom=0.85in, left=1in, right=1in"
     fontsize: 11pt
-    linestretch: 1.2
+    linestretch: 1.1
     colorlinks: true
     linkcolor: "NavyBlue"
     include-in-header:
@@ -46,7 +46,7 @@ library(yaml)
 knitr::opts_chunk$set(
   fig.align  = "center",
   fig.pos    = "H",
-  out.width  = "90%",
+  out.width  = "72%",
   dpi        = 150
 )
 
@@ -137,10 +137,8 @@ multi-modal extension is identified as the path forward.
 Gene set enrichment (biological factor annotation), formal proportional hazards testing,
 and multi-modal integration are flagged as required next steps before publication.
 
-\FloatBarrier
 \newpage
 
----
 
 # Model & Method
 
@@ -239,10 +237,8 @@ if (!is.null(cfg)) {
 Convergence criterion: $|\text{ELBO}_t - \text{ELBO}_{t-1}|\,/\,|\text{ELBO}_{t-1}| < \texttt{tol}$,
 evaluated after a 5-iteration burn-in.
 
-\FloatBarrier
 \newpage
 
----
 
 # Synthetic Validation
 
@@ -293,7 +289,6 @@ img <- file.path(synth_figures_pn, "factor_recovery_heatmap.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ## ARD Shrinkage
 
@@ -318,7 +313,6 @@ if (!is.null(synth_ard_pn)) {
 }
 ```
 
-\FloatBarrier
 
 ## Beta Recovery
 
@@ -343,7 +337,6 @@ if (!is.null(synth_beta_pn)) {
 }
 ```
 
-\FloatBarrier
 
 ## ELBO Convergence
 
@@ -357,7 +350,6 @@ img <- file.path(synth_figures_pn, "elbo_trace.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ## Reconstruction RMSE
 
@@ -371,7 +363,6 @@ img <- file.path(synth_figures_pn, "rmse_trace.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ## Alpha Cross-Validation
 
@@ -386,7 +377,6 @@ img <- file.path(synth_figures_pn, "alpha_cv_curve.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ## Held-Out C-index
 
@@ -396,12 +386,11 @@ if (file.exists(img)) include_graphics(img)
 This confirms that supervising the factor decomposition with survival information
 extracts prognostic structure that pure variance decomposition (PCA) misses.
 
-```{r holdout-cindex, out.width="55%", fig.cap="Held-out C-index comparison (point\\_normal, 80/20 split). SSBMF (blue) outperforms PCA (orange). Dashed line = C-index 0.5 (random). Numeric labels show exact values."}
+```{r holdout-cindex, out.width="45%", fig.cap="Held-out C-index comparison (point\\_normal, 80/20 split). SSBMF (blue) outperforms PCA (orange). Dashed line = C-index 0.5 (random). Numeric labels show exact values."}
 img <- file.path(synth_figures_pn, "holdout_cindex.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ## PVE Scree
 
@@ -415,7 +404,6 @@ img <- file.path(synth_figures_pn, "pve_scree.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ## GEP Loading Heatmap
 
@@ -430,7 +418,6 @@ img <- file.path(synth_figures_pn, "gep_loading_heatmap.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ## KM Risk Stratification (Training)
 
@@ -440,12 +427,11 @@ The high-risk group shows significantly worse survival outcomes (log-rank $p < 0
 confirming that the recovered factors carry meaningful prognostic signal in the
 training data.
 
-```{r km-training, fig.cap="Kaplan--Meier curves for synthetic training set (point\\_normal). Patients are split at the median linear predictor into High-risk (above median, red) and Low-risk (below median, blue) groups. Log-rank p-value tests separation between groups."}
+```{r km-training, out.width="62%", fig.cap="Kaplan--Meier curves for synthetic training set (point\\_normal). Patients are split at the median linear predictor into High-risk (above median, red) and Low-risk (below median, blue) groups. Log-rank p-value tests separation between groups."}
 img <- file.path(synth_figures_pn, "km_3group_training.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ## Gene Precision Distribution
 
@@ -461,10 +447,8 @@ img <- file.path(synth_figures_pn, "tau_distribution.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 \newpage
 
----
 
 # PDAC Cross-Cohort Benchmark
 
@@ -511,7 +495,6 @@ if (!is.null(real_cv)) {
 }
 ```
 
-\FloatBarrier
 
 ## Final Training Model
 
@@ -539,7 +522,6 @@ if (!is.null(real_beta)) {
 }
 ```
 
-\FloatBarrier
 
 ## External Cohort Validation
 
@@ -566,7 +548,6 @@ if (!is.null(real_ext)) {
 }
 ```
 
-\FloatBarrier
 
 ## Kaplan--Meier Stratification (External Cohorts)
 
@@ -587,12 +568,11 @@ log-rank p = `r if(!is.na(p_dijk)) formatC(p_dijk, format="e", digits=2) else "N
 The Dijk cohort is RNA-seq (matched platform to training), so factor projection
 is expected to be most faithful here.
 
-```{r km-dijk-fig, fig.cap="Kaplan--Meier curves for Dijk cohort (RNA-seq). SSBMF risk scores from TCGA-only training projected onto this cohort. High-risk (red) vs.\\ Low-risk (blue) split at median linear predictor."}
+```{r km-dijk-fig, out.width="62%", fig.cap="Kaplan--Meier curves for Dijk cohort (RNA-seq). SSBMF risk scores from TCGA-only training projected onto this cohort. High-risk (red) vs.\\ Low-risk (blue) split at median linear predictor."}
 img <- file.path(real_figures, "km_3group_Dijk.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ### Moffitt (GEO Microarray)
 
@@ -606,12 +586,11 @@ log-rank p = `r if(!is.na(p_moffitt)) formatC(p_moffitt, format="e", digits=2) e
 Moffitt is a microarray cohort; RNA-seq-derived factor projections require
 cross-platform generalisation.
 
-```{r km-moffitt-fig, fig.cap="Kaplan--Meier curves for Moffitt GEO microarray cohort. SSBMF risk scores projected from TCGA RNA-seq training. High-risk (red) vs.\\ Low-risk (blue) split at median."}
+```{r km-moffitt-fig, out.width="62%", fig.cap="Kaplan--Meier curves for Moffitt GEO microarray cohort. SSBMF risk scores projected from TCGA RNA-seq training. High-risk (red) vs.\\ Low-risk (blue) split at median."}
 img <- file.path(real_figures, "km_3group_Moffitt_GEO_array.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ### PACA-AU Array (Microarray)
 
@@ -623,12 +602,11 @@ p_paca_arr <- get_ext(real_ext, "PACA_AU_array", "KM_logrank_p")
 C-index = `r round(c_paca_arr, 3)`;
 log-rank p = `r if(!is.na(p_paca_arr)) formatC(p_paca_arr, format="e", digits=2) else "N/A"`.
 
-```{r km-paca-array-fig, fig.cap="Kaplan--Meier curves for PACA-AU microarray cohort. High-risk (red) vs.\\ Low-risk (blue) split at median SSBMF linear predictor."}
+```{r km-paca-array-fig, out.width="62%", fig.cap="Kaplan--Meier curves for PACA-AU microarray cohort. High-risk (red) vs.\\ Low-risk (blue) split at median SSBMF linear predictor."}
 img <- file.path(real_figures, "km_3group_PACA_AU_array.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ### PACA-AU Seq (RNA-seq)
 
@@ -641,12 +619,11 @@ C-index = `r round(c_paca_seq, 3)`;
 log-rank p = `r if(!is.na(p_paca_seq)) formatC(p_paca_seq, format="e", digits=2) else "N/A"`.
 As an RNA-seq cohort, PACA-AU Seq benefits from the same platform as training.
 
-```{r km-paca-seq-fig, fig.cap="Kaplan--Meier curves for PACA-AU RNA-seq cohort. High-risk (red) vs.\\ Low-risk (blue) at median linear predictor. RNA-seq platform matches the TCGA training data."}
+```{r km-paca-seq-fig, out.width="62%", fig.cap="Kaplan--Meier curves for PACA-AU RNA-seq cohort. High-risk (red) vs.\\ Low-risk (blue) at median linear predictor. RNA-seq platform matches the TCGA training data."}
 img <- file.path(real_figures, "km_3group_PACA_AU_seq.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 
 ### Puleo Array (Microarray)
 
@@ -660,15 +637,13 @@ log-rank p = `r if(!is.na(p_puleo)) formatC(p_puleo, format="e", digits=2) else 
 Puleo is the largest external microarray cohort
 (`r if(!is.null(real_ext)) real_ext$n[real_ext$Cohort == "Puleo_array"]` patients).
 
-```{r km-puleo-fig, fig.cap="Kaplan--Meier curves for Puleo microarray cohort (largest external set). High-risk (red) vs.\\ Low-risk (blue) at median SSBMF linear predictor."}
+```{r km-puleo-fig, out.width="62%", fig.cap="Kaplan--Meier curves for Puleo microarray cohort (largest external set). High-risk (red) vs.\\ Low-risk (blue) at median SSBMF linear predictor."}
 img <- file.path(real_figures, "km_3group_Puleo_array.png")
 if (file.exists(img)) include_graphics(img)
 ```
 
-\FloatBarrier
 \newpage
 
----
 
 # Prior Sensitivity: point\_normal vs. point\_laplace
 
@@ -707,17 +682,13 @@ if (!is.null(synth_summary_pn) && !is.null(synth_summary_pl)) {
 }
 ```
 
-```{r prior-beta-pn, out.width="48%", fig.cap="Beta recovery, point\\_normal (left) and point\\_laplace (right). Both priors correctly recover all 4 prognostic factors with the right sign; the null factor is shrunk to zero."}
+```{r prior-beta-compare, fig.cap="Beta recovery: point\\_normal (top) and point\\_laplace (bottom). Both priors correctly recover all 4 prognostic factors with the right sign; the null factor is shrunk to zero.", fig.show='hold', out.width="48%"}
 pn_img <- file.path(synth_figures_pn, "beta_recovery.png")
 pl_img <- file.path(synth_figures_pl, "beta_recovery.png")
 if (file.exists(pn_img)) include_graphics(pn_img)
-```
-
-```{r prior-beta-pl, out.width="48%", fig.cap=" "}
 if (file.exists(pl_img)) include_graphics(pl_img)
 ```
 
-\FloatBarrier
 
 ## PDAC Results
 
@@ -764,10 +735,8 @@ if (!is.null(ext_rows) && nrow(ext_rows) > 0) {
 }
 ```
 
-\FloatBarrier
 \newpage
 
----
 
 # Multi-Modal Integration Challenge {#sec-multimodal}
 
@@ -836,10 +805,8 @@ about the shared patient embedding while $\mathbf{F}_k$ captures
 modality-specific feature structure.  This is architecturally analogous to DeSurv's
 separate encoders but within the CAVI/EBNM inference framework.
 
-\FloatBarrier
 \newpage
 
----
 
 # DeSurv Paper Comparison
 
@@ -880,7 +847,6 @@ if (!is.null(desurv_cmp)) {
    computed; DeSurv's factor interpretation (immune, exocrine, basal) cannot yet be
    directly compared.
 
----
 
 # Open Issues & Next Steps
 
@@ -906,7 +872,6 @@ if (!is.null(desurv_cmp)) {
 6. **Longleaf HPC runs.** Profiling at $n=500$--$1{,}000$ and full 300-iteration
    convergence deferred to HPC.
 
----
 
 \small
 \textit{Report generated by \texttt{results/benchmark\_sim/ssbmf\_summary\_report.qmd}.}\newline
