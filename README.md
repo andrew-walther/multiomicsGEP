@@ -59,7 +59,7 @@ multiomicsGEP/
 │   ├── update_F.qmd/.pdf/.html        ← F update: code walkthrough, tests, demos
 │   └── update_tau.qmd/.pdf/.html      ← τ update: code walkthrough, tests, demos
 │
-├── tests/                             ← 124 tests (run: Rscript tests/run_tests.R)
+├── tests/                             ← 171 tests (run: Rscript tests/run_tests.R)
 │   ├── run_tests.R                    ← Master test runner
 │   ├── test_update_*.R                ← Per-module test suites (β, L, F, τ)
 │   └── test_predict.R                 ← Tests for predict.R + train_test_split.R (19 tests)
@@ -70,10 +70,10 @@ multiomicsGEP/
 ├── results/                           ← Simulation outputs (grouped by implementation)
 │   ├── benchmark_sim/                 ← ✅ DeSurv benchmark (current)
 │   │   ├── run_ssbmf_benchmark.R      ← entry point: synthetic + PDAC cross-cohort
-│   │   ├── ssbmf_summary_report.qmd/.pdf/.html  ← summary report
+│   │   ├── ssbmf_summary_report.qmd/.pdf/.html  ← 24-page summary report
 │   │   └── outputs/
-│   │       ├── synthetic/             ← tables/ + figures/ (11 figure types)
-│   │       └── real_data/             ← tables/ + figures/ (external cohort results)
+│   │       ├── synthetic/{prior}/     ← point_normal/ + point_laplace/ (tables/ + figures/)
+│   │       └── real_data/{mode}/{prior}/  ← tcga_only/ cptac_only/ merged/ × point_normal/ point_laplace/
 │   ├── modular_sim_factor/            ← prior-family comparison (archived)
 │   │   ├── run_factor_modular_simulation.R  ← single runner: synthetic + 7 PDAC cohorts
 │   │   ├── run_prior_k_comparison.R   ← prior family & K auto-prune comparison runner
@@ -131,19 +131,18 @@ multiomicsGEP/
 install.packages(c("survival", "ebnm"))
 ```
 
-### Run the Simulation Benchmark
+### Run the DeSurv Benchmark (current entry point)
 
-**V2 implementation (monolithic):**
-```r
-source("code/Supervised_Bayesian_MF_V2.R")
-```
-
-**Modular implementation (canonical, recommended):**
 ```bash
-Rscript results/modular_sim_factor/run_factor_modular_simulation.R
+# Synthetic validation + PDAC cross-cohort benchmark (both priors)
+Rscript results/benchmark_sim/run_ssbmf_benchmark.R
 ```
 
-Both scripts use the same parameters (n=250, p=1000, K=5, seed=42) and produce equivalent results. The modular script uses `fit_supervised_mf_modular()` from `code/fit_modular.R`. Results are written to `results/tables/synthetic/` and `results/figures/synthetic/`; the rendered report is at `results/modular_sim_factor/synthetic/factor_modular_sim_report.qmd`.
+This runs: (1) synthetic benchmark at n=300, p=1000, K_true=5 for both `point_normal` and `point_laplace` priors; (2) PDAC cross-cohort benchmark for TCGA-only and CPTAC-only training modes. Outputs go to `results/benchmark_sim/outputs/`. Render the summary report with:
+
+```bash
+quarto render results/benchmark_sim/ssbmf_summary_report.qmd
+```
 
 ### Run the Real PDAC Analysis
 
@@ -287,24 +286,27 @@ The key mathematical concepts are:
 
 ## Project Status
 
-The model is fully implemented, tested, and applied to 7 real PDAC cohorts. See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete session log, derivation review notes, and prioritised next steps.
+The model is fully implemented, tested, benchmarked against DeSurv, and documented in a 24-page report. See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete session log.
 
 **Completed:**
-- Modular CAVI implementation (124/124 tests passing)
-- Hold-out prediction, stratified splitting, Cox feature selection, K auto-prune
-- Prior family comparison: `point_laplace` outperforms `point_normal` in all 7 cohorts
-- K auto-prune: K_eff = 8–10 across all datasets (K=5 was too restrictive everywhere)
-- `limma` batch correction for pooled RNA-seq analysis
-- Full PDAC report with prior comparison, K selection, and hold-out sections
+- Modular CAVI implementation (171/171 tests passing)
+- DeSurv-aligned preprocessing pipeline (`code/preprocess_desurv.R`)
+- Alpha CV selection via 1-SE rule (`code/select_alpha_cv.R`)
+- SVD pseudoinverse prediction fix (`code/predict.R`)
+- Synthetic validation: supervised C-index 0.79 > PCA 0.76 at n=300, p=1000
+- PDAC cross-cohort benchmark: TCGA-only median external C-index 0.60 (5 cohorts),
+  competitive with DeSurv's reported 0.60–0.65 range
+- Prior sensitivity: `point_normal` vs `point_laplace` compared; `point_normal` recommended
+- Multi-modal failure documented: TCGA+CPTAC merged → all β̂=0 (ARD diagnoses platform batch)
+- 24-page benchmark report (`results/benchmark_sim/ssbmf_summary_report.pdf`)
 
 **Highest-priority next steps:**
-- Run `point_laplace` at K_eff (the expected best configuration; not yet executed)
-- Gene set enrichment analysis on top-loaded genes per GEP
-- K selection via cross-validation on Longleaf HPC (`select_K_cv()` stub ready)
-- Full ELBO tracking (currently genomics log-likelihood proxy only)
+- Proportional hazards diagnostic (`cox.zph()`) on external cohort risk scores
+- Gene set enrichment: top-50 genes per active factor → fgsea/gprofiler
+- Shared-L multi-modal extension (proper joint RNA-seq + proteomics architecture)
 
 ---
 
 ## Author
 
-Andrew Walther — March 2026
+Andrew Walther — April 2026

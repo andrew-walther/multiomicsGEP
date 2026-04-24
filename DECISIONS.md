@@ -5,6 +5,33 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-04-24 — ARD preferred over ELBO grid search for K selection
+
+- **Decision:** K is determined automatically within a single model fit via Automatic Relevance Determination (ARD) — the point-normal/point-laplace prior on β shrinks irrelevant factor coefficients exactly to zero — rather than by fitting separate models at K = 1, …, K_max and comparing ELBOs.
+- **Reason:** Two complementary advantages. *Efficiency:* ARD determines K_eff as a byproduct of CAVI; a grid search requires K_max separate full fits and introduces an outer loop. *Bayesian coherence:* ARD performs continuous soft shrinkage within a single probabilistic model; ELBO-based model selection performs discrete hard comparison across models with different dimensionalities. Setting K_max generously large (10) and letting ARD prune is equivalent to an ELBO grid search in expectation, without the computational overhead.
+- **Trade-offs:** ARD can be conservative — correlated factors may collapse one even when both carry marginal survival signal. A full ELBO grid search would be more exhaustive but is 10× more expensive at K_max = 10. In practice, ARD + generous K_max matches published EBNM-based NMF standards (flash, flashier).
+- **Affected files:** `results/benchmark_sim/run_ssbmf_benchmark.R`, `config/globals.yml` (k_max), `results/benchmark_sim/ssbmf_summary_report.qmd` (Section 1.3)
+
+---
+
+## 2026-04-24 — point_normal chosen as default beta prior over point_laplace
+
+- **Decision:** `point_normal` is the recommended default prior on β for all future SSBMF runs.
+- **Reason:** Across synthetic and all PDAC training modes, `point_normal` matches or slightly outperforms `point_laplace` on external C-index (TCGA-only: 0.602 vs 0.579; CPTAC-only: 0.628 vs 0.620). `point_laplace` selects higher α̂ (0.7 vs 0.5 on synthetic), suggesting it compensates for over-shrinkage of small-to-moderate coefficients by drawing more heavily on the survival gradient. The Gaussian slab is also simpler to interpret — posterior SDs have a direct normal-distribution meaning, whereas the Laplace slab mixes two scale regimes.
+- **Trade-offs:** `point_laplace` has heavier tails and may outperform `point_normal` in settings with very sparse survival signal (few events, high censoring) where strong coefficient shrinkage is needed. Revisit if future larger-n runs show a consistent >0.02 C-index advantage for `point_laplace`.
+- **Affected files:** `results/benchmark_sim/run_ssbmf_benchmark.R` (default `prior_beta`), `config/globals.yml`, `results/benchmark_sim/ssbmf_summary_report.qmd`
+
+---
+
+## 2026-04-24 — Multi-modal TCGA+CPTAC merge documented as expected failure
+
+- **Decision:** The merged TCGA RNA-seq + CPTAC proteomics training mode (838-gene intersection, n=273) is documented as a known failure case rather than a valid benchmark condition. All β̂_k = 0 in both priors.
+- **Reason:** When RNA-seq and proteomics are intersected at gene symbols and rank-normalised, PC1 separates the two platforms rather than separating patients by biology. The ARD prior correctly diagnoses that none of the learned factors carry survival signal — they carry platform identity instead. This is not a model failure; it is the model correctly reporting that no prognostic structure exists in this feature space.
+- **Trade-offs:** Excluding merged results from the primary benchmark simplifies the comparison table. The failure case is retained in Section 6 of the report as a methodological lesson, motivating the shared-L multi-modal extension (separate F matrices per modality, shared L supervised by survival).
+- **Affected files:** `results/benchmark_sim/run_ssbmf_benchmark.R`, `results/benchmark_sim/ssbmf_summary_report.qmd` (Section 6)
+
+---
+
 ## 2026-04-24 — DeSurv-aligned preprocessing pipeline added
 
 - **Decision:** Added `code/preprocess_desurv.R` — a preprocessing module that matches the DeSurv paper (Young et al. 2025, PNAS) pipeline: log₂(counts+1) for RNA-seq → select top-2000 most-variable genes per cohort → rank-transform each subject's expression vector.
