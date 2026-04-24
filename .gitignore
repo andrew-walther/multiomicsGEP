@@ -1,5 +1,6 @@
 .Rproj.user
 .Rhistory
+.Rapp.history
 .RData
 .Ruserdata
 
@@ -30,3 +31,4 @@
 
 # Annotated copies (local working copies, not version-controlled)
 **/annotated copies/
+.positai
