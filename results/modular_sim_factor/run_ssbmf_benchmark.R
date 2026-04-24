@@ -29,6 +29,40 @@ suppressMessages(tryCatch(
   error = function(e) invisible(NULL)
 ))
 source("code/select_alpha_cv.R")
+source("code/preprocess_desurv.R")
+
+# Platform-specific log2+1 transform flag:
+#   RNA-seq (raw counts)  → TRUE  (log2(x+1) is appropriate)
+#   Proteomics / Microarray (already on log / normalized scale) → FALSE
+PLATFORM_LOG_TRANSFORM <- c(
+  TCGA_PAAD         = TRUE,
+  CPTAC             = FALSE,
+  Dijk              = TRUE,
+  Moffitt_GEO_array = FALSE,
+  PACA_AU_array     = FALSE,
+  PACA_AU_seq       = TRUE,
+  Puleo_array       = FALSE
+)
+
+# PDAC data root — same default as run_factor_modular_simulation.R
+PDAC_DATA_ROOT <- Sys.getenv("PDAC_DATA_ROOT", unset = path.expand(
+  paste0("~/Library/CloudStorage/",
+         "OneDrive-UniversityofNorthCarolinaatChapelHill/",
+         "UNC Dissertation (Liu)/PDAC_data")
+))
+
+TRAINING_COHORTS  <- c("TCGA_PAAD", "CPTAC")
+EXTERNAL_COHORTS  <- c("Dijk", "Moffitt_GEO_array", "PACA_AU_array", "PACA_AU_seq", "Puleo_array")
+
+PLATFORM_MAP <- c(
+  TCGA_PAAD         = "RNA-seq",
+  CPTAC             = "Proteomics",
+  Dijk              = "RNA-seq",
+  Moffitt_GEO_array = "Microarray",
+  PACA_AU_array     = "Microarray",
+  PACA_AU_seq       = "RNA-seq",
+  Puleo_array       = "Microarray"
+)
 
 ensure_dir <- function(path) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
@@ -446,6 +480,479 @@ run_ssbmf_benchmark <- function(output_root = "results/modular_sim_factor/ssbmf_
   ))
 }
 
+# ==============================================================================
+# Real-data helpers
+# ==============================================================================
+
+#' Load a PDAC cohort without any preprocessing.
+#'
+#' Replicates the symlink trick from run_factor_modular_simulation.R::load_real_data()
+#' but returns the raw expression matrix so that preprocess_desurv_cohort() can
+#' be applied separately.
+#'
+#' Gene names are deduplicated (first occurrence kept) to avoid intersection
+#' failures caused by duplicate SYMBOL entries in some platforms.
+#'
+#' @param dataset_name string: cohort name (must exist in PDAC data root)
+#' @param pdac_root    string: path to the PDAC_data directory
+#' @return list(Y, gene_names, time, status, n, p, dataset_name)
+load_pdac_raw <- function(dataset_name, pdac_root) {
+  if (!dir.exists(pdac_root))
+    stop(sprintf("PDAC data root not found: %s\nSet PDAC_DATA_ROOT env var.", pdac_root))
+
+  tmp_wd    <- tempfile("pdac_wd_")
+  dir.create(tmp_wd, showWarnings = FALSE)
+  data_link <- file.path(tmp_wd, "data")
+  file.symlink(pdac_root, data_link)
+
+  old_wd <- getwd()
+  on.exit({
+    setwd(old_wd)
+    unlink(data_link)
+  }, add = TRUE)
+
+  setwd(tmp_wd)
+  source(file.path(pdac_root, "load_data_internal.R"), local = TRUE)
+  result <- load_data_internal(dataset_name)
+  setwd(old_wd)
+
+  keeps <- which(result$sampInfo$keep == 1)
+  if (length(keeps) == 0)
+    stop(sprintf("No valid samples for dataset '%s' after keep filter.", dataset_name))
+
+  # Transpose: genes × samples → patients × genes (n × p)
+  Y <- t(result$ex[, keeps])
+
+  # Extract gene names
+  fi <- result$featInfo
+  if (is.data.frame(fi) && "SYMBOL" %in% names(fi)) {
+    gene_names <- fi$SYMBOL
+  } else if (is.character(fi)) {
+    gene_names <- fi
+  } else {
+    gene_names <- rownames(result$ex)
+  }
+  if (length(gene_names) != ncol(Y))
+    gene_names <- paste0("Gene", seq_len(ncol(Y)))
+
+  # Deduplicate gene names: keep first occurrence to avoid intersection failures
+  dup_mask  <- duplicated(gene_names)
+  if (any(dup_mask)) {
+    keep_cols  <- !dup_mask
+    Y          <- Y[, keep_cols, drop = FALSE]
+    gene_names <- gene_names[keep_cols]
+  }
+
+  colnames(Y) <- gene_names
+  rownames(Y) <- NULL
+
+  time   <- result$sampInfo$time[keeps]
+  status <- as.integer(result$sampInfo$event[keeps])
+
+  list(
+    Y = Y, gene_names = gene_names,
+    time = time, status = status,
+    n = nrow(Y), p = ncol(Y),
+    dataset_name = dataset_name
+  )
+}
+
+#' KM survival curve for a 3-group stratification.
+#'
+#' Splits patients into tertiles (Low / Mid / High) by linear predictor lp.
+#' Plots Kaplan–Meier curves and reports log-rank p-value.
+#'
+#' @param lp      numeric vector: linear predictor (L_test %*% beta)
+#' @param time    numeric vector: follow-up time
+#' @param status  integer vector: event indicator
+#' @param title   plot title
+plot_km_3group <- function(lp, time, status, title = "") {
+  tertile_cut <- quantile(lp, probs = c(1/3, 2/3))
+  grp <- cut(lp, breaks = c(-Inf, tertile_cut, Inf),
+             labels = c("Low", "Mid", "High"), include.lowest = TRUE)
+
+  km_fit  <- survfit(Surv(time, status) ~ grp)
+  sd_test <- survdiff(Surv(time, status) ~ grp)
+  p_val   <- 1 - pchisq(sd_test$chisq, df = length(levels(grp)) - 1)
+
+  km_cols <- c("#2166AC", "#4DAF4A", "#D6604D")
+  plot(km_fit, col = km_cols, lwd = 2, lty = 1,
+       xlab = "Time", ylab = "Survival probability",
+       main = sprintf("%s\nLog-rank p = %.4f", title, p_val),
+       bty = "n", mark.time = FALSE)
+  legend("topright",
+         legend = c("Low risk", "Mid risk", "High risk"),
+         col = km_cols, lwd = 2, bty = "n", cex = 0.85)
+  invisible(list(km_fit = km_fit, p_val = p_val, groups = grp))
+}
+
+#' Run the PDAC cross-cohort benchmark (Phase 3B).
+#'
+#' Training: TCGA-PAAD + CPTAC (DeSurv-preprocessed, intersected).
+#' External validation: Dijk, Moffitt, PACA-AU array/seq, Puleo.
+#'
+#' @param output_root  directory for outputs (tables/ + figures/ subdirs)
+#' @param pdac_root    path to PDAC_data directory
+#' @param alpha_grid   candidate alpha values for CV
+#' @param n_folds      number of CV folds
+#' @param K_max        number of factors
+#' @param max_iter     max CAVI iterations per fit
+#' @param tol          ELBO convergence tolerance
+#' @param top_n        number of top-variable genes per cohort (DeSurv spec: 2000)
+#' @return invisibly: list with all results
+run_real_data_benchmark <- function(
+    output_root = "results/modular_sim_factor/ssbmf_benchmark/real_data",
+    pdac_root   = PDAC_DATA_ROOT,
+    alpha_grid  = c(0.1, 0.3, 0.5, 0.7, 0.9),
+    n_folds     = 5,
+    K_max       = 10,
+    max_iter    = 200,
+    tol         = 1e-4,
+    top_n       = 2000) {
+
+  if (!dir.exists(pdac_root)) {
+    message(sprintf(
+      "PDAC data not found at '%s' — skipping real-data benchmark.\n",
+      pdac_root))
+    return(invisible(NULL))
+  }
+
+  table_dir  <- file.path(output_root, "tables")
+  figure_dir <- file.path(output_root, "figures")
+  ensure_dir(table_dir)
+  ensure_dir(figure_dir)
+
+  # ============================================================
+  # 1. Load + preprocess training cohorts
+  # ============================================================
+  cat("=== Phase 3B: PDAC Cross-Cohort Benchmark ===\n")
+  cat("  Loading training cohorts:", paste(TRAINING_COHORTS, collapse = " + "), "\n")
+
+  train_raw <- lapply(setNames(TRAINING_COHORTS, TRAINING_COHORTS), function(ds) {
+    cat(sprintf("    Loading %s ...\n", ds))
+    load_pdac_raw(ds, pdac_root)
+  })
+
+  train_preproc <- lapply(TRAINING_COHORTS, function(ds) {
+    raw <- train_raw[[ds]]
+    cat(sprintf("    Preprocessing %s (n=%d, p_raw=%d) ...\n", ds, raw$n, raw$p))
+    preprocess_desurv_cohort(
+      Y           = raw$Y,
+      gene_names  = raw$gene_names,
+      top_n       = top_n,
+      log_transform = PLATFORM_LOG_TRANSFORM[[ds]],
+      cohort_name = ds
+    )
+  })
+  names(train_preproc) <- TRAINING_COHORTS
+
+  # Intersect gene lists across training cohorts
+  train_intersected <- intersect_preprocessed_cohorts(train_preproc, reference = 1)
+  names(train_intersected) <- TRAINING_COHORTS
+  n_train_genes <- train_intersected[[1]]$p
+  training_gene_names <- train_intersected[[1]]$gene_names
+  cat(sprintf("  Training gene intersection: %d genes\n", n_train_genes))
+
+  # Merge into single training matrix
+  merged_train <- merge_preprocessed_cohorts(train_intersected, dataset_labels = TRAINING_COHORTS)
+  Y_train    <- merged_train$Y
+  time_train <- c(train_raw[["TCGA_PAAD"]]$time, train_raw[["CPTAC"]]$time)
+  status_train <- c(train_raw[["TCGA_PAAD"]]$status, train_raw[["CPTAC"]]$status)
+  n_train <- nrow(Y_train)
+  cat(sprintf("  Merged training set: n=%d, p=%d, event_rate=%.1f%%\n",
+              n_train, ncol(Y_train), 100 * mean(status_train)))
+
+  # Checkpoint 1: save training set summary
+  write.csv(
+    data.frame(
+      Cohort = TRAINING_COHORTS,
+      n = sapply(TRAINING_COHORTS, function(ds) train_raw[[ds]]$n),
+      p_raw = sapply(TRAINING_COHORTS, function(ds) train_raw[[ds]]$p),
+      p_preproc = sapply(TRAINING_COHORTS, function(ds) train_preproc[[ds]]$p),
+      log_transform = PLATFORM_LOG_TRANSFORM[TRAINING_COHORTS],
+      platform = PLATFORM_MAP[TRAINING_COHORTS],
+      event_rate = sapply(TRAINING_COHORTS, function(ds) mean(train_raw[[ds]]$status))
+    ),
+    file.path(table_dir, "training_cohort_summary.csv"),
+    row.names = FALSE
+  )
+  cat("  CHECKPOINT 1: Training cohort summary saved.\n")
+
+  # ============================================================
+  # 2. Alpha cross-validation on merged training set
+  # ============================================================
+  cat(sprintf("  Running %d-fold CV over alpha grid: %s\n",
+              n_folds, paste(alpha_grid, collapse = ", ")))
+  cat("  (This may take several minutes — one fit per alpha × fold)\n")
+
+  cv_res <- select_alpha_cv(
+    Y_train, time_train, status_train,
+    alpha_grid = alpha_grid,
+    n_folds    = n_folds,
+    K_max      = K_max,
+    use_1se    = TRUE,
+    seed       = 42,
+    max_iter   = max_iter,
+    tol        = tol,
+    verbose    = FALSE
+  )
+  alpha_opt <- cv_res$alpha_opt
+  cat(sprintf("  Alpha CV complete: alpha_opt = %.2f (rule: %s)\n",
+              alpha_opt, cv_res$selection_rule))
+
+  write.csv(cv_res$cv_table,
+            file.path(table_dir, "alpha_cv_table.csv"), row.names = FALSE)
+  write.csv(cv_res$fold_results,
+            file.path(table_dir, "alpha_cv_fold_results.csv"), row.names = FALSE)
+
+  # Alpha CV curve figure
+  cv_tbl <- cv_res$cv_table
+  save_plot_pair(file.path(figure_dir, "alpha_cv_curve"), 7, 5, 800, 550, function() {
+    par(mar = c(5, 5, 4, 2))
+    y_lim <- range(c(cv_tbl$mean_cindex - cv_tbl$se_cindex,
+                     cv_tbl$mean_cindex + cv_tbl$se_cindex), na.rm = TRUE)
+    plot(cv_tbl$alpha, cv_tbl$mean_cindex,
+         type = "b", pch = 16, col = "#1F77B4", lwd = 2,
+         xlab = expression(alpha), ylab = "Mean C-index (CV)",
+         ylim = y_lim,
+         main = sprintf("Alpha CV (TCGA+CPTAC, %d-fold)\nalpha_opt=%.2f",
+                        n_folds, alpha_opt),
+         bty = "n")
+    arrows(cv_tbl$alpha,
+           cv_tbl$mean_cindex - cv_tbl$se_cindex,
+           cv_tbl$alpha,
+           cv_tbl$mean_cindex + cv_tbl$se_cindex,
+           angle = 90, code = 3, length = 0.04, col = "#1F77B4", lwd = 1.2)
+    abline(v = alpha_opt, col = "#D62728", lty = 2, lwd = 1.5)
+    abline(h = 0.5, col = "#666666", lty = 3)
+    legend("bottomright",
+           legend = c(sprintf("alpha_opt = %.2f", alpha_opt), "C-index = 0.5"),
+           col = c("#D62728", "#666666"), lty = c(2, 3), lwd = 1.5, bty = "n")
+  })
+  cat("  CHECKPOINT 2: Alpha CV complete + curve saved.\n")
+
+  # ============================================================
+  # 3. Final model fit on full training set
+  # ============================================================
+  cat(sprintf("  Fitting final model: K=%d, alpha=%.2f ...\n", K_max, alpha_opt))
+  final_fit <- fit_supervised_mf_modular(
+    Y_train, time_train, status_train,
+    K        = K_max,
+    alpha    = alpha_opt,
+    max_iter = max_iter,
+    tol      = tol,
+    verbose  = FALSE
+  )
+  cat(sprintf("  Final fit: converged=%s, iter=%d, ELBO=%.4f\n",
+              final_fit$history$converged, final_fit$history$n_iter,
+              tail(final_fit$history$elbo_full, 1)))
+
+  # Effective K (auto-prune thresholds)
+  final_pve   <- tail(final_fit$history$factor_pve, 1)
+  active_mask <- (abs(final_fit$EBeta) > 0.05) | (final_pve > 0.01)
+  K_eff       <- sum(active_mask)
+
+  # Training beta table
+  beta_train_df <- data.frame(
+    Factor    = seq_len(K_max),
+    EBeta     = round(final_fit$EBeta, 4),
+    EBeta_SD  = round(sqrt(pmax(final_fit$EBeta2 - final_fit$EBeta^2, 0)), 4),
+    PVE_pct   = round(as.numeric(final_pve) * 100, 2),
+    Active    = active_mask
+  )
+  write.csv(beta_train_df, file.path(table_dir, "training_beta_summary.csv"),
+            row.names = FALSE)
+
+  # ELBO trace for training fit
+  elbo_train_df <- data.frame(
+    Iteration  = seq_along(final_fit$history$elbo_full),
+    ELBO_Full  = final_fit$history$elbo_full,
+    ELBO_Proxy = final_fit$history$elbo_proxy
+  )
+  write.csv(elbo_train_df, file.path(table_dir, "training_elbo_trace.csv"),
+            row.names = FALSE)
+  cat(sprintf("  CHECKPOINT 3: Final model fit complete. K_eff=%d\n", K_eff))
+
+  # ============================================================
+  # 4. External cohort validation
+  # ============================================================
+  cat("  Running external cohort projections ...\n")
+
+  external_results <- lapply(EXTERNAL_COHORTS, function(ds) {
+    cat(sprintf("    Projecting %s ...\n", ds))
+    tryCatch({
+      raw <- load_pdac_raw(ds, pdac_root)
+      preproc <- preprocess_desurv_cohort(
+        Y           = raw$Y,
+        gene_names  = raw$gene_names,
+        top_n       = top_n,
+        log_transform = PLATFORM_LOG_TRANSFORM[[ds]],
+        cohort_name = ds
+      )
+
+      # Subset to training gene intersection (genes in training set)
+      common_idx <- match(training_gene_names, preproc$gene_names)
+      missing    <- sum(is.na(common_idx))
+      if (missing > 0)
+        warning(sprintf("%s: %d training genes not found in external cohort (will be zero-filled).",
+                        ds, missing))
+
+      # Align external Y to training gene order (fill missing with column mean = 0 after rank-transform)
+      Y_ext <- matrix(0.0, nrow = raw$n, ncol = length(training_gene_names))
+      present <- !is.na(common_idx)
+      Y_ext[, present] <- preproc$Y[, common_idx[present], drop = FALSE]
+
+      pred <- predict_supervised_mf(Y_ext, final_fit$EF, final_fit$EBeta)
+      c_idx <- as.numeric(concordance(
+        Surv(raw$time, raw$status) ~ I(-pred$risk_scores)
+      )$concordance)
+
+      km_res <- NULL
+      if (sum(raw$status) >= 10) {
+        km_stub <- file.path(figure_dir, sprintf("km_3group_%s", ds))
+        save_plot_pair(km_stub, 7, 5, 800, 560, function() {
+          par(mar = c(5, 5, 4, 1))
+          plot_km_3group(
+            lp     = pred$risk_scores,
+            time   = raw$time,
+            status = raw$status,
+            title  = sprintf("%s (n=%d, %s)", ds, raw$n, PLATFORM_MAP[[ds]])
+          )
+        })
+        km_res <- tryCatch({
+          tertile_cut <- quantile(pred$risk_scores, probs = c(1/3, 2/3))
+          grp <- cut(pred$risk_scores, breaks = c(-Inf, tertile_cut, Inf),
+                     labels = c("Low", "Mid", "High"), include.lowest = TRUE)
+          sd_test <- survdiff(Surv(raw$time, raw$status) ~ grp)
+          1 - pchisq(sd_test$chisq, df = 2)
+        }, error = function(e) NA_real_)
+      }
+
+      list(
+        dataset     = ds,
+        n           = raw$n,
+        p_intersect = sum(!is.na(common_idx)),
+        platform    = PLATFORM_MAP[[ds]],
+        c_index     = round(c_idx, 4),
+        km_logrank_p = km_res,
+        event_rate  = mean(raw$status),
+        status      = "ok"
+      )
+    }, error = function(e) {
+      warning(sprintf("External cohort %s failed: %s", ds, conditionMessage(e)))
+      list(dataset = ds, status = "error", error_msg = conditionMessage(e),
+           c_index = NA_real_, km_logrank_p = NA_real_)
+    })
+  })
+  names(external_results) <- EXTERNAL_COHORTS
+
+  # External results table
+  ext_df <- do.call(rbind, lapply(external_results, function(r) {
+    data.frame(
+      Cohort      = r$dataset,
+      n           = if (is.null(r$n)) NA_integer_ else r$n,
+      Platform    = if (is.null(r$platform)) NA_character_ else r$platform,
+      p_intersect = if (is.null(r$p_intersect)) NA_integer_ else r$p_intersect,
+      C_index     = r$c_index,
+      KM_logrank_p = if (is.null(r$km_logrank_p)) NA_real_ else r$km_logrank_p,
+      stringsAsFactors = FALSE
+    )
+  }))
+  write.csv(ext_df, file.path(table_dir, "external_cindex_table.csv"), row.names = FALSE)
+
+  # External C-index bar chart
+  ext_ok <- ext_df[!is.na(ext_df$C_index), ]
+  if (nrow(ext_ok) > 0) {
+    save_plot_pair(file.path(figure_dir, "external_cindex_barchart"), 8, 5, 900, 570, function() {
+      par(mar = c(7, 5, 4, 2))
+      bp <- barplot(ext_ok$C_index,
+                    names.arg = ext_ok$Cohort,
+                    col = "#4292C6", ylim = c(0, 1),
+                    main = "External cohort C-index (SSBMF)",
+                    ylab = "C-index", las = 2, bty = "n")
+      abline(h = 0.5, col = "#666666", lty = 2)
+      # DeSurv reference band (~0.60–0.65 per paper Fig 2B)
+      rect(bp[1] - 0.6, 0.60, bp[nrow(bp)] + 0.6, 0.65,
+           col = adjustcolor("#D62728", 0.15), border = NA)
+      legend("topright",
+             legend = c("SSBMF", "DeSurv CV range (0.60–0.65)"),
+             fill = c("#4292C6", adjustcolor("#D62728", 0.15)),
+             border = NA, bty = "n", cex = 0.85)
+    })
+  }
+  cat("  CHECKPOINT 4: External cohort projections complete.\n")
+
+  # ============================================================
+  # 5. DeSurv comparison table (reading-based)
+  # ============================================================
+  desurv_compare <- data.frame(
+    Metric           = c("Optimal K", "Optimal alpha", "Training strategy",
+                         "CV C-index", "Factor 1 direction", "Factor 2 direction",
+                         "Factor 3 direction", "External KM log-rank"),
+    DeSurv_published = c("3", "0.7",
+                         "TCGA+CPTAC (n=273)",
+                         "~0.60–0.65 (Fig 2B)",
+                         "Protective (HR=0.37, immune/iCAF)",
+                         "Non-prognostic (HR=0.99, exocrine)",
+                         "Risky (HR=1.43, basal-like)",
+                         "p < 0.0001"),
+    SSBMF_ours       = c(
+      as.character(K_eff),
+      sprintf("%.2f (1SE rule)", alpha_opt),
+      sprintf("TCGA+CPTAC (n=%d)", n_train),
+      sprintf("%.4f (alpha_opt fold mean)",
+              cv_tbl$mean_cindex[cv_tbl$alpha == alpha_opt]),
+      sprintf("Factor w/ most negative beta: %.3f",
+              min(final_fit$EBeta)),
+      sprintf("Factor closest to 0: %.4f",
+              final_fit$EBeta[which.min(abs(final_fit$EBeta))]),
+      sprintf("Factor w/ most positive beta: %.3f",
+              max(final_fit$EBeta)),
+      if (all(is.na(ext_df$KM_logrank_p))) "Not computed"
+      else sprintf("%.4f (median across cohorts)",
+                   median(ext_df$KM_logrank_p, na.rm = TRUE))
+    ),
+    stringsAsFactors = FALSE
+  )
+  write.csv(desurv_compare,
+            file.path(table_dir, "desurv_comparison_table.csv"), row.names = FALSE)
+
+  # Overall summary row
+  summary_df <- data.frame(
+    n_train         = n_train,
+    p_genes         = ncol(Y_train),
+    alpha_opt       = alpha_opt,
+    cv_rule         = cv_res$selection_rule,
+    K_max           = K_max,
+    K_eff           = K_eff,
+    converged       = final_fit$history$converged,
+    n_iter          = final_fit$history$n_iter,
+    final_elbo      = round(tail(final_fit$history$elbo_full, 1), 4),
+    median_ext_cindex = round(median(ext_df$C_index, na.rm = TRUE), 4),
+    stringsAsFactors = FALSE
+  )
+  write.csv(summary_df, file.path(table_dir, "realdata_benchmark_summary.csv"),
+            row.names = FALSE)
+
+  cat(sprintf("  Outputs written to %s\n", output_root))
+  cat("=== Phase 3B complete ===\n")
+
+  invisible(list(
+    merged_train     = merged_train,
+    cv               = cv_res,
+    alpha_opt        = alpha_opt,
+    final_fit        = final_fit,
+    K_eff            = K_eff,
+    external_results = external_results,
+    desurv_compare   = desurv_compare
+  ))
+}
+
+# ==============================================================================
+# Entry point
+# ==============================================================================
+
 if (sys.nframe() == 0) {
   run_ssbmf_benchmark()
+  run_real_data_benchmark()
 }

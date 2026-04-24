@@ -1,0 +1,372 @@
+---
+title: "SSBMF: Simulation Validation & DeSurv Benchmark"
+subtitle: "Supervised Bayesian Matrix Factorization for Prognostic Gene Expression Programs"
+author: "Andrew Walther"
+date: today
+format:
+  pdf:
+    engine: xelatex
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    geometry: "margin=1in"
+    fontsize: 11pt
+    linestretch: 1.15
+    colorlinks: true
+    linkcolor: "blue"
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    embed-resources: true
+    self-contained: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(knitr)
+library(survival)
+library(yaml)
+
+# Benchmark output roots — set these to wherever run_ssbmf_benchmark.R wrote its outputs
+synth_root     <- "ssbmf_benchmark/synthetic"
+real_root      <- "ssbmf_benchmark/real_data"
+synth_tables   <- file.path(synth_root, "tables")
+synth_figures  <- file.path(synth_root, "figures")
+real_tables    <- file.path(real_root,  "tables")
+real_figures   <- file.path(real_root,  "figures")
+
+# Helper: load a CSV or return NULL with a note
+read_csv_safe <- function(path) {
+  if (file.exists(path)) read.csv(path, stringsAsFactors = FALSE) else NULL
+}
+
+synth_summary  <- read_csv_safe(file.path(synth_tables, "benchmark_summary.csv"))
+synth_beta     <- read_csv_safe(file.path(synth_tables, "beta_recovery_table.csv"))
+synth_alpha_cv <- read_csv_safe(file.path(synth_tables, "alpha_cv_table.csv"))
+synth_ard      <- read_csv_safe(file.path(synth_tables, "ard_summary.csv"))
+synth_elbo     <- read_csv_safe(file.path(synth_tables, "elbo_trace.csv"))
+synth_holdout  <- read_csv_safe(file.path(synth_tables, "holdout_cindex.csv"))
+
+real_summary   <- read_csv_safe(file.path(real_tables, "realdata_benchmark_summary.csv"))
+real_cv        <- read_csv_safe(file.path(real_tables, "alpha_cv_table.csv"))
+real_beta      <- read_csv_safe(file.path(real_tables, "training_beta_summary.csv"))
+real_ext       <- read_csv_safe(file.path(real_tables, "external_cindex_table.csv"))
+desurv_cmp     <- read_csv_safe(file.path(real_tables, "desurv_comparison_table.csv"))
+train_cohorts  <- read_csv_safe(file.path(real_tables, "training_cohort_summary.csv"))
+```
+
+# Model & Method
+
+## Mathematical Framework
+
+The Supervised Bayesian Matrix Factorization (SSBMF) model jointly decomposes
+genomics data and predicts survival outcomes through a shared latent factor space:
+
+$$\mathbf{Y}_{n \times p} = \mathbf{L}_{n \times K} \mathbf{F}_{p \times K}^\top + \mathbf{E}$$
+
+where $E_{ij} \sim \mathcal{N}(0, \tau_j^{-1})$, and survival follows a Cox
+proportional hazards model:
+
+$$h(t_i \mid \mathbf{l}_i) = h_0(t_i) \exp\!\left(\sum_{k=1}^K l_{ik} \beta_k\right)$$
+
+Inference is performed via **Coordinate Ascent Variational Inference (CAVI)**
+with EBNM (Empirical Bayes Normal Means) updates for each latent variable.
+
+## Alpha Mixing Parameter
+
+A key design choice is the **$\alpha$ mixing parameter** that balances the
+genomics and survival components of each factor update:
+
+$$A_L = (1-\alpha)\,A_\text{gen} + \alpha\,A_\text{surv}, \quad
+  B_L = (1-\alpha)\,B_\text{gen} + \alpha\,B_\text{surv}$$
+
+This addresses the gradient asymmetry arising from $p \gg n$: the genomics
+term sums over $n \times p$ entries while the survival term sums over only $n$.
+Without $\alpha$, the genomics term dominates and survival structure is
+suppressed.  The optimal $\alpha$ is selected by stratified 5-fold
+cross-validated C-index.
+
+## Prior Specification
+
+| Component | Prior family | Motivation |
+|-----------|-------------|-----------|
+| $\mathbf{L}$ (loadings) | `point_exponential` | Non-negative; sparse NMF-like |
+| $\mathbf{F}$ (factors) | `point_exponential` | Non-negative gene programs |
+| $\boldsymbol{\beta}$ (survival coefs) | `point_normal` | Signed; ARD sparsity |
+| $\boldsymbol{\tau}$ (noise precision) | MLE update | Closed-form |
+
+## Hyperparameter Summary
+
+```{r hyper-table}
+cfg <- tryCatch(yaml::read_yaml("../../config/globals.yml"), error = function(e) NULL)
+if (!is.null(cfg)) {
+  hyper_df <- data.frame(
+    Parameter    = c("Max CAVI iterations", "ELBO convergence tol", "Alpha grid",
+                     "CV folds", "PVE threshold (K prune)", "|β| threshold (K prune)"),
+    Value        = c(cfg$cavi$max_iter, cfg$cavi$tol,
+                     paste(cfg$cavi$alpha_grid, collapse = ", "),
+                     cfg$cavi$n_cv_folds,
+                     cfg$k_selection$pve_threshold, cfg$k_selection$beta_threshold),
+    stringsAsFactors = FALSE
+  )
+  kable(hyper_df, caption = "SSBMF hyperparameters (from config/globals.yml)")
+}
+```
+
+Convergence is based on relative ELBO change:
+$|\text{ELBO}_t - \text{ELBO}_{t-1}| / |\text{ELBO}_{t-1}| < \texttt{tol}$,
+checked after a 5-iteration burn-in.
+
+---
+
+# Synthetic Validation
+
+## Setup
+
+```{r synth-setup}
+if (!is.null(synth_summary)) {
+  cat(sprintf(
+    "n=%d, p=%d, K_true=%d, K_max=%d | censoring=%.1f%% | seed=%d\n",
+    synth_summary$n, synth_summary$p, synth_summary$K_true, synth_summary$K_max,
+    100 * synth_summary$censoring_rate, synth_summary$Seed
+  ))
+  cat(sprintf(
+    "alpha_opt=%.2f (%s) | converged=%s in %d iters\n",
+    synth_summary$alpha_opt, synth_summary$cv_rule,
+    synth_summary$converged, synth_summary$n_iter
+  ))
+}
+```
+
+Data-generating process:
+
+- $L_\text{true} \sim \text{Exp}(1)$ (non-negative, matching `point_exponential` prior)
+- $F_\text{true}$: 5% sparse binary, non-prognostic factors scaled 5×
+- $\beta_\text{true} = (1.0,\,-0.8,\,0,\,0,\,0)$ — factors 3–5 are null
+- Weibull survival with ~30% right-censoring
+
+## Factor Recovery
+
+```{r factor-recovery, fig.cap="Factor recovery heatmap. Absolute Pearson correlation between true and estimated loading columns after greedy bijective matching. Blue borders = prognostic factors; grey = null."}
+img_path <- file.path(synth_figures, "factor_recovery_heatmap.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+## ARD Shrinkage
+
+```{r ard-plot, fig.cap="ARD shrinkage trajectories. Per-factor PVE (log10 scale) across CAVI iterations. Null factors converge below the 1% threshold (dashed line); true factors stabilise above it."}
+img_path <- file.path(synth_figures, "ard_shrinkage.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+```{r ard-table}
+if (!is.null(synth_ard)) {
+  kable(synth_ard[order(-synth_ard$PVE_Pct), ],
+        caption = "ARD factor summary (final iteration)",
+        digits = 3)
+}
+```
+
+## $\beta$ Recovery
+
+```{r beta-recovery, fig.cap="Beta recovery with 95% credible intervals (blue dots ± CI bars) vs. true betas (red crosses). Factor alignment by greedy correlation matching."}
+img_path <- file.path(synth_figures, "beta_recovery.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+```{r beta-table}
+if (!is.null(synth_beta)) {
+  disp <- synth_beta[, c("label", "beta_true", "beta_est", "beta_sd", "ci_cover")]
+  names(disp) <- c("Factor", "β_true", "β_est", "β_SD", "95% CI covers")
+  kable(disp, caption = "Beta recovery table", digits = 3)
+}
+```
+
+## ELBO Convergence
+
+```{r elbo-trace, fig.cap="ELBO convergence trace. Full ELBO (solid blue) and genomics proxy (dashed green). The full ELBO should be non-decreasing; minor oscillations arise from the Taylor refresh of the survival term."}
+img_path <- file.path(synth_figures, "elbo_trace.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+## Held-Out C-index
+
+```{r holdout-cindex}
+img_path <- file.path(synth_figures, "holdout_cindex.png")
+if (file.exists(img_path)) include_graphics(img_path)
+if (!is.null(synth_holdout)) {
+  kable(synth_holdout, caption = "Held-out C-index (80/20 split)", digits = 4)
+}
+```
+
+```{r synth-summary-row}
+if (!is.null(synth_summary)) {
+  kable(t(synth_summary), col.names = "Value",
+        caption = "Synthetic benchmark run summary")
+}
+```
+
+---
+
+# PDAC Cross-Cohort Benchmark
+
+## Preprocessing (DeSurv-Matched)
+
+All cohorts preprocessed per the DeSurv protocol (Young et al. 2025):
+log~2~(counts+1) for RNA-seq → top 2000 most-variable genes per cohort →
+rank-transform per subject.  Proteomics and microarray data skip the
+log~2~(+1) step (already on a normalised log scale).
+
+```{r train-cohort-table}
+if (!is.null(train_cohorts)) {
+  kable(train_cohorts, caption = "Training cohort summary after DeSurv preprocessing")
+}
+```
+
+## Alpha Cross-Validation
+
+```{r alpha-cv-fig, fig.cap="5-fold CV C-index on merged TCGA-PAAD + CPTAC training set across candidate alpha values. Error bars show ±1 SE. Dashed red line marks the 1-SE selected alpha. Dashed grey line marks C-index = 0.5 (random)."}
+img_path <- file.path(real_figures, "alpha_cv_curve.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+```{r alpha-cv-table}
+if (!is.null(real_cv)) {
+  kable(real_cv, caption = "Alpha CV results (TCGA+CPTAC training)", digits = 4)
+}
+```
+
+## Final Training Model
+
+```{r final-model-summary}
+if (!is.null(real_summary)) {
+  cat(sprintf(
+    "Training: n=%d, p=%d genes | alpha_opt=%.2f (%s)\n",
+    real_summary$n_train, real_summary$p_genes,
+    real_summary$alpha_opt, real_summary$cv_rule
+  ))
+  cat(sprintf(
+    "K_max=%d → K_eff=%d (|β|>0.05 or PVE>1%%)\n",
+    real_summary$K_max, real_summary$K_eff
+  ))
+  cat(sprintf(
+    "Converged: %s in %d iterations | Final ELBO: %.4f\n",
+    real_summary$converged, real_summary$n_iter, real_summary$final_elbo
+  ))
+}
+```
+
+```{r beta-training-table}
+if (!is.null(real_beta)) {
+  kable(real_beta, caption = "Training model: per-factor beta estimates",
+        digits = 4)
+}
+```
+
+## External Cohort Validation
+
+```{r ext-cindex-fig, fig.cap="External cohort C-index (SSBMF). Grey band marks DeSurv CV C-index range ~0.60–0.65 (Fig 2B of Young et al. 2025). Dashed grey line marks C-index = 0.5."}
+img_path <- file.path(real_figures, "external_cindex_barchart.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+```{r ext-cindex-table}
+if (!is.null(real_ext)) {
+  kable(real_ext, caption = "External cohort C-index (SSBMF, projected from TCGA+CPTAC)",
+        digits = 4)
+}
+```
+
+## Kaplan–Meier Stratification
+
+```{r km-plots, results='asis'}
+# Render one KM figure per external cohort if available
+ext_cohorts <- c("Dijk", "Moffitt_GEO_array", "PACA_AU_array", "PACA_AU_seq", "Puleo_array")
+for (ds in ext_cohorts) {
+  km_path <- file.path(real_figures, sprintf("km_3group_%s.png", ds))
+  if (file.exists(km_path)) {
+    cat(sprintf("\n### %s\n\n", ds))
+    cat(sprintf("![](%s)\n\n", km_path))
+  }
+}
+```
+
+---
+
+# DeSurv Paper Comparison
+
+```{r desurv-table}
+if (!is.null(desurv_cmp)) {
+  kable(desurv_cmp, caption = "SSBMF vs. DeSurv (Young et al. 2025, PNAS) — reading-based comparison")
+} else {
+  kable(data.frame(
+    Metric = c("Optimal K", "Optimal alpha", "CV C-index", "External KM log-rank",
+               "Factor biology"),
+    DeSurv_published = c("3", "0.7", "~0.60–0.65 (Fig 2B)",
+                         "p < 0.0001 (5 cohorts)",
+                         "Immune (F1, HR=0.37), Exocrine (F2, HR=0.99), Basal (F3, HR=1.43)"),
+    SSBMF_ours = rep("(see real-data results above)", 5)
+  ), caption = "DeSurv vs. SSBMF comparison (DeSurv numbers from Young et al. 2025)")
+}
+```
+
+**Key differences to discuss:**
+
+1. **Hyperparameter search space.** DeSurv performs a 4D grid search
+   ($K, \alpha, \lambda, \xi$); SSBMF requires only a 1D search over $\alpha$
+   because $K$ is determined via ARD and there are no regularisation
+   penalties $\lambda, \xi$ (the EBNM prior handles sparsity).
+
+2. **K selection.** DeSurv selects $K = 3$; SSBMF's ARD returns
+   $K_\text{eff}$ factors with PVE > 1% or $|\beta| > 0.05$.
+   If $K_\text{eff} > 3$, this may reflect either a more expressive model
+   or miscalibrated ARD thresholds — investigate `beta_thresh` and
+   `pve_thresh` in `auto_prune_K()`.
+
+3. **Preprocessing.** Both methods use log~2~(+1) → top 2000 genes →
+   rank-transform per subject for RNA-seq cohorts.  SSBMF additionally
+   deduplicates gene symbols before intersection.
+
+4. **Assumptions and limitations.**
+   - PH assumption: run `cox.zph` on cluster-stratified models; report violations.
+   - Taylor approximation: the survival ELBO uses a second-order Taylor
+     expansion, which may introduce bias under heavy censoring.
+   - No gene set enrichment (ORA/fgsea) yet — factor biology comparison
+     is quantitative (β magnitudes) rather than biological annotation.
+
+---
+
+# Open Issues & Next Steps
+
+**Known limitations:**
+
+- Gene set enrichment (fgsea/Enrichr) comparison against DeSurv Fig 3A–C
+  (immune, exocrine, basal themes) not yet implemented.
+- DeSurv per-cohort C-index is not reported as a table in the paper —
+  quantitative comparison is restricted to CV C-index range (~0.60–0.65).
+- Scalability beyond $n=300, p=1000$ not profiled locally;
+  full 1000-iteration run deferred to Longleaf HPC.
+
+**Recommended next steps (priority order):**
+
+1. **Gene set enrichment:** top-50 genes per factor → fgsea/gprofiler →
+   compare enriched terms with DeSurv biological interpretation.
+2. **PH diagnostic:** `cox.zph()` on KM-stratified models for each external cohort.
+3. **K calibration:** if $K_\text{eff} \gg 3$, investigate tightening
+   `beta_thresh` to 0.10 and `pve_thresh` to 0.02.
+4. **F′Y linear predictor:** substitute $\hat{\mathbf{L}}\boldsymbol{\beta}$
+   with $\mathbf{Y}_\text{test}\mathbf{F}\boldsymbol{\beta}$ as a post-hoc
+   gene-weight score — larger change deferred to ROADMAP.
+5. **Multi-dataset shared factor space:** joint factorization across all 7
+   PDAC cohorts (rather than project-in) — architectural change, deferred.
+
+---
+
+*Report generated by `results/modular_sim_factor/ssbmf_summary_report.qmd`.*
+*Benchmark outputs from `results/modular_sim_factor/run_ssbmf_benchmark.R`.*
+*Run `Rscript results/modular_sim_factor/run_ssbmf_benchmark.R` from repo root to regenerate.*
