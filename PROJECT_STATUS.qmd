@@ -1175,3 +1175,58 @@ Added 6 new figure types to the synthetic benchmark (total: 11 figures per run):
 Tests still passing: `Rscript tests/run_tests.R` — expected 171/171 (unchanged from prior session).
 
 ---
+
+### Session 17 (April 24, 2026)
+
+Report polish and prior sensitivity comparison for the DeSurv benchmark report.
+
+#### 17.1 — Prior sensitivity: point_normal vs. point_laplace
+
+1. Added `prior_beta` parameter to `run_ssbmf_benchmark()` and `run_real_data_benchmark()` in
+   `results/benchmark_sim/run_ssbmf_benchmark.R`. Both now accept `prior_beta = "point_normal"`
+   or `"point_laplace"` and write outputs to subdirectories keyed by prior name.
+2. Ran all four PDAC benchmark combinations: `tcga_only/{point_normal, point_laplace}` and
+   `cptac_only/{point_normal, point_laplace}`. Results written to
+   `results/benchmark_sim/outputs/real_data/{mode}/{prior}/`.
+3. Key finding: `point_normal` matches or slightly outperforms `point_laplace` on external
+   C-index (TCGA-only: 0.602 pn vs. 0.579 pl; CPTAC-only: 0.628 vs. 0.620). `point_normal`
+   recommended as default.
+4. Multi-modal (TCGA+CPTAC merged): all β̂_k = 0 in both priors — ARD correctly diagnoses
+   platform-batch dominance. Documented in Section 6 of the report.
+
+#### 17.2 — Report overhaul (ssbmf_summary_report.qmd)
+
+Major rewrite of `results/benchmark_sim/ssbmf_summary_report.qmd` across three rounds:
+
+**Content additions:**
+- Executive Key Findings summary section
+- ARD vs. ELBO grid search justification in Prior Specification (Section 1.3):
+  single-pass efficiency + Bayesian coherence (soft vs. discrete model selection)
+- Interpretive **Takeaway** paragraph before every figure
+- Gradient notation for α mixing (∇L_genomics + ∇L_survival) replacing confusing A/B notation
+- EBeta and EBeta_SD defined explicitly in Methods
+- Prior sensitivity comparison (Section 5) with both synthetic and PDAC results
+- Multi-modal failure documented (Section 6) with path-forward (shared-L extension)
+- point_laplace over-shrinkage noted in beta recovery caption
+
+**Formatting fixes:**
+- `\floatplacement{figure}{H}` + `\floatplacement{figure}{H}` → figures stay inline
+- Removed all `\FloatBarrier` (redundant with H placement, caused blank gaps)
+- Removed `---` horizontal dividers (added LaTeX vertical space)
+- `linestretch` 1.2 → 1.1; margins tightened to 0.85in/1in
+- Global figure width 90% → 72%; diagnostic plots (ELBO, RMSE, alpha-CV, tau) → 60%;
+  KM figures → 62%; holdout bar → 45%
+- `\newpage` only at top-level section boundaries (removed from within sections)
+- Key Findings flows after TOC (no forced page break)
+- Prior comparison figures use Quarto `layout-ncol: 2` for true side-by-side layout
+- Collapsed double blank lines after `\newpage`
+
+**Final page count:** 24 pages (reduced from original ~34).
+
+#### 17.3 — Output structure reorganisation
+
+- Outputs restructured to `outputs/real_data/{training_mode}/{prior_beta}/` hierarchy
+- `training_mode_prior_comparison.csv` written summarising all mode × prior combinations
+- Old flat `outputs/real_data/` structure preserved for backwards compatibility
+
+---
