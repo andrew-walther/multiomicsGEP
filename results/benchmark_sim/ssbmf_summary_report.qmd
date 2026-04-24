@@ -32,9 +32,9 @@ library(knitr)
 library(survival)
 library(yaml)
 
-# Benchmark output roots — set these to wherever run_ssbmf_benchmark.R wrote its outputs
-synth_root     <- "ssbmf_benchmark/synthetic"
-real_root      <- "ssbmf_benchmark/real_data"
+# Benchmark output roots — relative to results/benchmark_sim/ (where this QMD lives)
+synth_root     <- "outputs/synthetic"
+real_root      <- "outputs/real_data"
 synth_tables   <- file.path(synth_root, "tables")
 synth_figures  <- file.path(synth_root, "figures")
 real_tables    <- file.path(real_root,  "tables")
@@ -103,7 +103,8 @@ cross-validated C-index.
 ## Hyperparameter Summary
 
 ```{r hyper-table}
-cfg <- tryCatch(yaml::read_yaml("../../config/globals.yml"), error = function(e) NULL)
+cfg <- tryCatch(yaml::read_yaml("../../config/globals.yml"), error = function(e)
+  tryCatch(yaml::read_yaml("config/globals.yml"), error = function(e2) NULL))
 if (!is.null(cfg)) {
   hyper_df <- data.frame(
     Parameter    = c("Max CAVI iterations", "ELBO convergence tol", "Alpha grid",

@@ -16,8 +16,12 @@ suppressPackageStartupMessages({
 
 if (Sys.getenv("REPO_ROOT") != "") {
   setwd(Sys.getenv("REPO_ROOT"))
-} else if (!file.exists("code/fit_modular.R") && file.exists("../code/fit_modular.R")) {
-  setwd("..")
+} else if (file.exists("code/fit_modular.R")) {
+  # already at repo root (e.g. invoked via Rscript from project root)
+} else if (file.exists("../../code/fit_modular.R")) {
+  setwd("../..")   # running from results/benchmark_sim/
+} else if (file.exists("../code/fit_modular.R")) {
+  setwd("..")      # running from results/
 }
 
 cfg <- yaml::read_yaml("config/globals.yml")
@@ -267,7 +271,7 @@ plot_holdout_cindex <- function(cindex_df, title_text) {
   abline(h = 0.5, col = "#666666", lty = 2)
 }
 
-run_ssbmf_benchmark <- function(output_root = "results/modular_sim_factor/ssbmf_benchmark",
+run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
                                 synthetic_n = 300,
                                 synthetic_p = 1000,
                                 K_true = 5,
@@ -601,7 +605,7 @@ plot_km_3group <- function(lp, time, status, title = "") {
 #' @param top_n        number of top-variable genes per cohort (DeSurv spec: 2000)
 #' @return invisibly: list with all results
 run_real_data_benchmark <- function(
-    output_root = "results/modular_sim_factor/ssbmf_benchmark/real_data",
+    output_root = "results/benchmark_sim/outputs/real_data",
     pdac_root   = PDAC_DATA_ROOT,
     alpha_grid  = c(0.1, 0.3, 0.5, 0.7, 0.9),
     n_folds     = 5,

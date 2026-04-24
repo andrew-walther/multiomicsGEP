@@ -70,14 +70,22 @@ predict_supervised_mf <- function(Y_test, EF, EBeta, lambda = 1e-8) {
     stop(sprintf("Dimension mismatch: EF has %d columns but EBeta has length %d.",
                  K, length(EBeta)))
 
-  # --- Pseudo-inverse projection ---
-  # L_test = Y_test (n_test × p)  %*%  EF (p × K)  %*%  (EF'EF + λI)^{-1} (K × K)
+  # --- Pseudo-inverse projection via SVD ---
+  # L_test = Y_test (n_test × p)  %*%  EF (p × K)  %*%  pinv(EF'EF)
   #
-  # The ridge term λI prevents singularity when some factors have near-zero
+  # We use the Moore-Penrose pseudoinverse (SVD-based) rather than solve().
+  # ARD can drive some factor columns to near-zero, making EF'EF near-singular
+  # even with a fixed ridge term.  SVD thresholds tiny singular values at
+  # max(d) * lambda (relative), so collapsed factors contribute zero to L_test
+  # without causing numerical errors.  Collapsed factors also have EBeta[k] ≈ 0
+  # by the same prior shrinkage, so their contribution to risk_scores is correct.
+  FtF  <- crossprod(EF)
+  sv   <- svd(FtF)
+  # Zero out singular values below lambda * max(d): treats collapsed factors as inert
+  d_inv <- ifelse(sv$d > lambda * max(sv$d), 1 / sv$d, 0)
+  FtF_pinv <- sv$v %*% diag(d_inv, nrow = K, ncol = K) %*% t(sv$u)
 
-  # weight columns in EF (e.g., factors driven to zero by the point-normal prior).
-  FtF_inv <- solve(crossprod(EF) + lambda * diag(K))
-  L_test  <- Y_test %*% EF %*% FtF_inv
+  L_test      <- Y_test %*% EF %*% FtF_pinv
 
   # --- Risk scores ---
   # Cox linear predictor: higher → worse prognosis
