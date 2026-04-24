@@ -198,6 +198,18 @@ slab.  Factors whose survival coefficient is not supported by the data are shrun
 exactly to $\hat\beta_k = 0$, automatically determining the effective number of
 active factors $K_\text{eff}$ without a grid search over $K$.
 
+ARD is preferred over an ELBO-based $K$ grid search for two reasons.  First,
+**computational efficiency**: a grid search would require fitting $K_\text{max}$
+separate models and comparing their marginal ELBOs, whereas ARD determines $K_\text{eff}$
+as a byproduct of a single CAVI run — the posterior over $\beta_k$ continuously
+concentrates at zero for null factors during the same optimisation that fits the
+prognostic ones.  Second, **Bayesian coherence**: ARD performs *soft*, continuous
+shrinkage within a single probabilistic model rather than discrete model comparison,
+so uncertainty about $K$ is propagated through the posterior rather than resolved
+by a hard selection step.  The practical consequence is that setting $K_\text{max}$
+generously large (here, 10) and letting ARD prune is equivalent to — and more
+efficient than — fitting models at $K = 1, 2, \ldots, 10$ and selecting by ELBO.
+
 | Component | Prior family | Motivation |
 |-----------|-------------|-----------|
 | $\mathbf{L}$ (patient loadings) | `point_exponential` | Non-negative; sparse NMF-like |
@@ -678,7 +690,12 @@ if (!is.null(synth_summary_pn) && !is.null(synth_summary_pl)) {
 }
 ```
 
-```{r prior-beta-compare, fig.cap="Beta recovery: point\\_normal (top) and point\\_laplace (bottom). Both priors correctly recover all 4 prognostic factors with the right sign; the null factor is shrunk to zero.", fig.show='hold', out.width="48%"}
+```{r prior-beta-compare}
+#| layout-ncol: 2
+#| fig-cap: "Beta recovery comparison: point\\_normal (left) vs.\\ point\\_laplace (right). Both priors recover all 4 prognostic factors with correct sign. point\\_laplace applies heavier-tailed shrinkage, which can over-shrink small-to-moderate coefficients ($\\beta_3 = 0.8$, $\\beta_4 = -0.5$) relative to point\\_normal, resulting in slightly compressed EBeta estimates and wider credible intervals. The null factor ($\\beta_5 = 0$) is correctly zeroed by both priors."
+#| fig-subcap:
+#|   - "point\\_normal ($\\hat\\alpha = 0.5$)"
+#|   - "point\\_laplace ($\\hat\\alpha = 0.7$)"
 pn_img <- file.path(synth_figures_pn, "beta_recovery.png")
 pl_img <- file.path(synth_figures_pl, "beta_recovery.png")
 if (file.exists(pn_img)) include_graphics(pn_img)
