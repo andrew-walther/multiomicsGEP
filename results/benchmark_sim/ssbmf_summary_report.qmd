@@ -690,13 +690,24 @@ if (!is.null(synth_summary_pn) && !is.null(synth_summary_pl)) {
 }
 ```
 
-```{r prior-beta-compare}
-#| layout-ncol: 2
-#| fig-cap: "**Beta recovery: prior sensitivity comparison.** **(a)** point\\_normal ($\\hat\\alpha = 0.5$): all 4 prognostic factors recovered with correct sign and magnitude; 95\\% credible intervals cover the true values. **(b)** point\\_laplace ($\\hat\\alpha = 0.7$): factors recovered with correct sign but heavier-tailed shrinkage compresses small-to-moderate coefficients ($\\beta_3 = 0.8$, $\\beta_4 = -0.5$), widening credible intervals relative to (a). The null factor ($\\beta_5 = 0$) is correctly zeroed by both priors via ARD. Blue dots = EBeta; vertical bars = 95\\% CI; red crosses = $\\beta_\\text{true}$."
+```{r prior-beta-compare, results='asis'}
 pn_img <- file.path(synth_figures_pn, "beta_recovery.png")
 pl_img <- file.path(synth_figures_pl, "beta_recovery.png")
-if (file.exists(pn_img)) include_graphics(pn_img)
-if (file.exists(pl_img)) include_graphics(pl_img)
+if (file.exists(pn_img) && file.exists(pl_img)) {
+  cat(sprintf(
+'\\begin{figure}[H]
+\\centering
+\\includegraphics[width=0.47\\textwidth]{%s}\\hfill
+\\includegraphics[width=0.47\\textwidth]{%s}
+\\caption{\\textbf{Beta recovery: prior sensitivity (Figure 19).}
+(a)~\\texttt{point\\_normal} ($\\hat{\\alpha}=0.5$): all four prognostic factors
+recovered with correct sign and magnitude; 95\\%% CIs cover true values.
+(b)~\\texttt{point\\_laplace} ($\\hat{\\alpha}=0.7$): correct signs recovered;
+heavier-tailed slab compresses small coefficients ($\\beta_3,\\,\\beta_4$) and
+widens CIs. Both priors zero the null factor ($\\beta_5=0$) via ARD.
+Blue dots~= EBeta; bars~= 95\\%% CI; red crosses~= $\\beta_{\\text{true}}$.}
+\\end{figure}', pn_img, pl_img))
+}
 ```
 
 
