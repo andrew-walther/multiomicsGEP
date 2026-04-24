@@ -32,6 +32,7 @@ suppressMessages(tryCatch(
   error = function(e) invisible(NULL)
 ))
 source("code/select_alpha_cv.R")
+source("code/preprocess_desurv.R")
 
 # List all test files to run
 test_files <- c(
@@ -41,7 +42,8 @@ test_files <- c(
   "tests/test_update_tau.R",
   "tests/test_predict.R",
   "tests/test_elbo.R",
-  "tests/test_select_alpha_cv.R"
+  "tests/test_select_alpha_cv.R",
+  "tests/test_preprocess_desurv.R"
 )
 
 # Run each test file
