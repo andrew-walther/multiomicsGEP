@@ -508,7 +508,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
                   main = sprintf("PVE Scree  (K_eff = %d / %d)", final_k$K_effective, K_max),
                   las = 1, cex.names = 0.75, bty = "n")
     abline(h = 1, col = "#D62728", lty = 2)
-    legend("topright", legend = c("Active (|β|>0.05 or PVE>1%)", "Pruned", "1% threshold"),
+    legend("topright", legend = c("Active (|b|>0.05 or PVE>1%)", "Pruned", "1% threshold"),
            fill = c("#1F77B4", "#BDBDBD", NA), border = NA,
            lty = c(NA, NA, 2), col = c(NA, NA, "#D62728"), bty = "n", cex = 0.75)
   })
