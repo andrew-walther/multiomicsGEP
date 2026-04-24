@@ -10,10 +10,12 @@
 # ------------------------------------------------------------------------------
 cavi:
   max_iter: 300        # maximum outer CAVI iterations
-  tol: 1.0e-3          # convergence threshold: mean|ΔL| AND mean|Δβ| < tol
+  tol: 1.0e-5          # convergence threshold: relative full-ELBO change < tol
   burn_in: 5           # iterations before convergence is checked
   k_default: 5         # default number of factors (fixed-K runs)
   k_max: 10            # maximum K for auto-prune runs
+  alpha_grid: [0.1, 0.3, 0.5, 0.7, 0.9]
+  n_cv_folds: 5
 
 # ------------------------------------------------------------------------------
 # K selection / auto-prune thresholds

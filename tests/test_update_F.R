@@ -44,7 +44,7 @@ suppressPackageStartupMessages(library(ebnm))
 
 cat("=== T1: Mathematical Identity Checks ===\n")
 
-run_test("T1.1: A_F[j] = Tau[j] * sum(EL2_k)", {
+run_test("T1.1: A_F[j] = (1-alpha)*Tau[j]*sum(EL2_k) with default alpha=0.5", {
   set.seed(1); n <- 5; p <- 8
   Tau   <- abs(rnorm(p)) + 0.1                   # p-vector
   EL_k  <- rnorm(n)
@@ -53,11 +53,11 @@ run_test("T1.1: A_F[j] = Tau[j] * sum(EL2_k)", {
 
   res <- update_F_k(Tau, EL_k, EL2_k, R_k)
   sum_EL2_k <- sum(EL2_k)
-  expected_A <- pmax(Tau * sum_EL2_k, 1e-10)     # p-vector
+  expected_A <- pmax(0.5 * Tau * sum_EL2_k, 1e-10)     # p-vector with alpha=0.5
   assert_near(res$A, expected_A, msg = "A_F[j] mismatch")
 })
 
-run_test("T1.2: B_F[j] = Tau[j] * (t(R_k) %*% EL_k)[j]", {
+run_test("T1.2: B_F[j] = (1-alpha)*Tau[j]*(t(R_k)%*%EL_k)[j] with default alpha=0.5", {
   set.seed(2); n <- 5; p <- 8
   Tau   <- abs(rnorm(p)) + 0.1
   EL_k  <- rnorm(n)
@@ -65,7 +65,7 @@ run_test("T1.2: B_F[j] = Tau[j] * (t(R_k) %*% EL_k)[j]", {
   R_k   <- matrix(rnorm(n * p), n, p)
 
   res <- update_F_k(Tau, EL_k, EL2_k, R_k)
-  expected_B <- Tau * as.vector(t(R_k) %*% EL_k)
+  expected_B <- 0.5 * Tau * as.vector(t(R_k) %*% EL_k)
   assert_near(res$B, expected_B, msg = "B_F[j] mismatch")
 })
 
@@ -152,16 +152,18 @@ run_test("T2.1: EL2_k = EL_k^2 (zero variance) -> x_j = OLS form", {
 
 run_test("T2.2: large Tau -> posterior mean close to x_j (less shrinkage)", {
   # With high precision (large Tau), the EBNM observation has very low noise
-  # s_j = 1/sqrt(Tau*sum_EL2), so the posterior mean should closely match x_j
+  # s_j = 1/sqrt(Tau*sum_EL2), so the posterior mean should closely match x_j.
+  # F_true is non-negative (abs(rnorm)) so x_j > 0; point_exponential prior
+  # is permissive for positive pseudo-obs, so the high-SNR limit holds.
   set.seed(11); n <- 50; p <- 30
   EL_k  <- rnorm(n, sd = 1)
   EL2_k <- EL_k^2 + 1e-4         # near-zero variance
-  F_true <- rnorm(p, mean = 0, sd = 2)  # true factor column
+  F_true <- abs(rnorm(p, sd = 2))  # non-negative true factor (matches point_exp prior)
   R_k   <- EL_k %o% F_true + matrix(rnorm(n * p, sd = 0.01), n, p)
   Tau   <- rep(1e6, p)            # extremely high precision
 
   res <- update_F_k(Tau, EL_k, EL2_k, R_k)
-  # With very low noise, posterior mean should be close to x_j
+  # With very low noise and positive x_j, posterior mean should be close to x_j
   diffs <- abs(res$mean - res$x)
   assert_true(max(diffs) < 1.0,
               sprintf("max|mean-x| = %.3f, expected close for large Tau", max(diffs)))
@@ -392,7 +394,7 @@ run_test("T7.2: extreme Tau=1e10 -> no overflow", {
   assert_finite(c(res$mean, res$second, res$sd, res$A, res$B))
 })
 
-run_test("T7.3: p=1, n=1 -> works correctly", {
+run_test("T7.3: p=1, n=1 -> works correctly with default alpha=0.5", {
   Tau   <- 2.0
   EL_k  <- 1.5
   EL2_k <- 1.5^2 + 0.1
@@ -400,8 +402,8 @@ run_test("T7.3: p=1, n=1 -> works correctly", {
 
   res <- update_F_k(Tau, EL_k, EL2_k, R_k)
   expected_sum_EL2 <- sum(EL2_k)
-  expected_A <- pmax(Tau * expected_sum_EL2, 1e-10)
-  expected_B <- Tau * as.vector(t(R_k) %*% EL_k)
+  expected_A <- pmax(0.5 * Tau * expected_sum_EL2, 1e-10)
+  expected_B <- 0.5 * Tau * as.vector(t(R_k) %*% EL_k)
   assert_near(res$A, expected_A, msg = "A mismatch for p=1,n=1")
   assert_near(res$B, expected_B, msg = "B mismatch for p=1,n=1")
   assert_length(res$mean, 1, "mean should have length 1")
@@ -422,7 +424,7 @@ run_test("T7.4: custom A_floor is respected", {
 
 cat("\n=== T8: R_k and Gauss-Seidel ===\n")
 
-run_test("T8.1: R_k uses correct EL_k (verify B_F computation)", {
+run_test("T8.1: R_k uses correct EL_k (verify B_F computation) with default alpha=0.5", {
   # Verify that update_F_k computes B_F using the correct residual
   set.seed(70); n <- 20; p <- 15; K <- 3
   Y   <- matrix(rnorm(n * p), n, p)
@@ -437,10 +439,10 @@ run_test("T8.1: R_k uses correct EL_k (verify B_F computation)", {
 
   res <- update_F_k(Tau, EL[, k], EL2_k, R_k)
 
-  # Verify B_F matches manual computation with this R_k
-  expected_B <- Tau * as.vector(t(R_k) %*% EL[, k])
+  # Verify B_F matches manual computation with this R_k (default alpha=0.5)
+  expected_B <- 0.5 * Tau * as.vector(t(R_k) %*% EL[, k])
   assert_near(res$B, expected_B, tol = 1e-12,
-              msg = "B_F should match manual R_k computation")
+              msg = "B_F should match manual R_k computation with alpha=0.5")
 })
 
 run_test("T8.2: update_F_all K columns all finite with valid second moments", {
@@ -463,30 +465,66 @@ run_test("T8.2: update_F_all K columns all finite with valid second moments", {
 
 cat("\n=== T9: V2.R Consistency ===\n")
 
-run_test("T9.1: update_F_k matches V2.R lines 334-340 exactly", {
-  # Replicate the exact V2.R computation with identical inputs
+run_test("T9.1: update_F_k with explicit alpha reproduces alpha-weighted reference exactly", {
+  # V2.R used the unscaled formula (alpha=0 in the new parameterisation).
+  # We verify with alpha=0.3: compute reference from scratch and confirm the
+  # modular function matches it. Note: x_j = B/A is alpha-independent (cancels).
   set.seed(888); n <- 50; p <- 100
   Tau   <- abs(rnorm(p)) + 0.5
   EL_k  <- rnorm(n)
   EL2_k <- EL_k^2 + runif(n, 0.01, 0.1)  # second moments
   R_k   <- matrix(rnorm(n * p), n, p)
+  test_alpha <- 0.3
 
-  # --- V2.R inline code (lines 334-340) ---
-  sum_EL2_k_v2 <- sum(EL2_k)                                     # scalar
-  A_F_v2 <- pmax(Tau * sum_EL2_k_v2, 1e-10)                      # p-vector [A3]
-  B_F_v2 <- Tau * as.vector(t(R_k) %*% EL_k)                     # p-vector
-  res_v2 <- ebnm(x = B_F_v2 / A_F_v2, s = 1 / sqrt(A_F_v2),
-                 prior_family = "point_normal")
-  EF_v2  <- res_v2$posterior$mean                                 # p-vector
-  EF2_v2 <- res_v2$posterior$sd^2 + res_v2$posterior$mean^2       # p-vector
+  # --- alpha-weighted reference ---
+  sum_EL2_k_ref <- sum(EL2_k)                                          # scalar
+  A_F_ref <- pmax((1 - test_alpha) * Tau * sum_EL2_k_ref, 1e-10)       # p-vector
+  B_F_ref <- (1 - test_alpha) * Tau * as.vector(t(R_k) %*% EL_k)       # p-vector
+  res_ref <- ebnm(x = B_F_ref / A_F_ref, s = 1 / sqrt(A_F_ref),
+                  prior_family = "point_normal")
+  EF_ref  <- res_ref$posterior$mean
+  EF2_ref <- res_ref$posterior$sd^2 + res_ref$posterior$mean^2
 
-  # --- Modular function ---
-  res_mod <- update_F_k(Tau, EL_k, EL2_k, R_k)
+  # --- Modular function with same alpha ---
+  res_mod <- update_F_k(Tau, EL_k, EL2_k, R_k, prior_family = "point_normal",
+                        alpha = test_alpha)
 
-  assert_near(res_mod$A,      A_F_v2,  tol = 1e-12, msg = "A_F mismatch vs V2.R")
-  assert_near(res_mod$B,      B_F_v2,  tol = 1e-12, msg = "B_F mismatch vs V2.R")
-  assert_near(res_mod$mean,   EF_v2,   tol = 1e-12, msg = "posterior mean mismatch vs V2.R")
-  assert_near(res_mod$second, EF2_v2,  tol = 1e-12, msg = "second moment mismatch vs V2.R")
-  assert_near(res_mod$sum_EL2_k, sum_EL2_k_v2, tol = 1e-15,
-              msg = "sum_EL2_k mismatch vs V2.R")
+  assert_near(res_mod$A,         A_F_ref,         tol = 1e-12, msg = "A_F mismatch vs reference")
+  assert_near(res_mod$B,         B_F_ref,         tol = 1e-12, msg = "B_F mismatch vs reference")
+  assert_near(res_mod$mean,      EF_ref,          tol = 1e-12, msg = "posterior mean mismatch vs reference")
+  assert_near(res_mod$second,    EF2_ref,         tol = 1e-12, msg = "second moment mismatch vs reference")
+  assert_near(res_mod$sum_EL2_k, sum_EL2_k_ref,   tol = 1e-15, msg = "sum_EL2_k mismatch vs reference")
+})
+
+cat("\n=== T_alpha: Alpha Mixing Parameter Edge Cases ===\n")
+
+run_test("T_alpha.1: alpha=1 -> A_F and B_F both zero (floor activates, F zeroed)", {
+  # alpha=1 means (1-alpha)=0, so A_F = pmax(0, floor) = floor and B_F = 0.
+  # The EBNM gets x=B/A=0 and the posterior mean should be ~0 (F is killed).
+  set.seed(801); n <- 20; p <- 15
+  Tau   <- abs(rnorm(p)) + 0.5
+  EL_k  <- rnorm(n)
+  EL2_k <- EL_k^2 + 0.1
+  R_k   <- matrix(rnorm(n * p), n, p)
+
+  res <- update_F_k(Tau, EL_k, EL2_k, R_k, alpha = 1)
+  assert_near(res$B, rep(0, p), tol = 1e-12, msg = "B_F should be 0 when alpha=1")
+  assert_near(res$A, rep(1e-10, p), tol = 1e-12, msg = "A_F should equal floor when alpha=1")
+  assert_near(res$mean, rep(0, p), tol = 1e-6, msg = "EF should be ~0 when alpha=1")
+})
+
+run_test("T_alpha.2: alpha=0 -> gives original unscaled formula (A = Tau*sum_EL2)", {
+  # alpha=0 means (1-alpha)=1, so A_F = pmax(Tau*sum_EL2_k, floor) and
+  # B_F = Tau*(t(R_k)%*%EL_k) — identical to V2.R.
+  set.seed(802); n <- 20; p <- 15
+  Tau   <- abs(rnorm(p)) + 0.5
+  EL_k  <- rnorm(n)
+  EL2_k <- EL_k^2 + 0.1
+  R_k   <- matrix(rnorm(n * p), n, p)
+
+  res <- update_F_k(Tau, EL_k, EL2_k, R_k, alpha = 0)
+  expected_A <- pmax(Tau * sum(EL2_k), 1e-10)
+  expected_B <- Tau * as.vector(t(R_k) %*% EL_k)
+  assert_near(res$A, expected_A, tol = 1e-12, msg = "alpha=0: A_F should equal unscaled formula")
+  assert_near(res$B, expected_B, tol = 1e-12, msg = "alpha=0: B_F should equal unscaled formula")
 })

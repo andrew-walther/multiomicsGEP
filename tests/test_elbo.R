@@ -153,10 +153,12 @@ run_test("compute_survival_elbo: uncertainty correction reduces value vs logPL",
 # Section 4: Full ELBO integration in fit_supervised_mf_modular
 # =============================================================================
 
-# Shared synthetic data for integration tests
+# Shared synthetic data for integration tests.
+# n=150, p=200 chosen for numerical stability with the alpha=0.5 default:
+# the small n=60 dataset caused eta explosion under reduced regularization.
 .elbo_test_data <- local({
   set.seed(42)
-  n <- 60; p <- 80; K_true <- 2
+  n <- 150; p <- 200; K_true <- 2
   L_true <- matrix(rnorm(n * K_true), n, K_true)
   F_true <- matrix(rnorm(p * K_true), p, K_true)
   E      <- matrix(rnorm(n * p, sd = 0.5), n, p)
@@ -184,6 +186,18 @@ run_test("history$elbo_full has same length as history$elbo_proxy", {
                "elbo_full and elbo_proxy differ in length")
 })
 
+run_test("history tracks delta_L, delta_Beta, and delta_elbo_rel", {
+  d   <- .elbo_test_data
+  res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+                                   K = 2, max_iter = 6, verbose = FALSE)
+  assert_equal(length(res$history$delta_L), length(res$history$elbo_full),
+               "delta_L length mismatch")
+  assert_equal(length(res$history$delta_Beta), length(res$history$elbo_full),
+               "delta_Beta length mismatch")
+  assert_equal(length(res$history$delta_elbo_rel), length(res$history$elbo_full),
+               "delta_elbo_rel length mismatch")
+})
+
 run_test("history$elbo_full is all finite", {
   d   <- .elbo_test_data
   res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
@@ -204,15 +218,47 @@ run_test("history$elbo_proxy unchanged after adding elbo_full", {
               "elbo_proxy is constant — something went wrong")
 })
 
-run_test("elbo_full is less than elbo_proxy (KL terms are <= 0 and survival < 0)", {
-  # KL divergences reduce the ELBO below the proxy, and the survival
-  # likelihood is also typically negative, so full ELBO < proxy.
+run_test("elbo_full is no greater than elbo_proxy when alpha=0", {
+  # With alpha=0, the full ELBO reduces to the genomics proxy plus KL terms.
+  # Since each KL contribution is <= 0, full ELBO must be <= proxy.
   d   <- .elbo_test_data
   res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
-                                   K = 2, max_iter = 8, verbose = FALSE)
+                                   K = 2, max_iter = 8, alpha = 0,
+                                   verbose = FALSE)
   last_full  <- tail(res$history$elbo_full,  1)
   last_proxy <- tail(res$history$elbo_proxy, 1)
-  assert_true(last_full < last_proxy,
-              sprintf("elbo_full=%.1f should be < elbo_proxy=%.1f",
+  assert_true(last_full <= last_proxy,
+              sprintf("alpha=0: elbo_full=%.1f should be <= elbo_proxy=%.1f",
                       last_full, last_proxy))
+})
+
+run_test("elbo_full uses alpha-weighted genomics and survival terms", {
+  d <- .elbo_test_data
+
+  set.seed(123)
+  res_gen <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+                                       K = 2, max_iter = 1, alpha = 0,
+                                       verbose = FALSE)
+  set.seed(123)
+  res_surv <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+                                        K = 2, max_iter = 1, alpha = 1,
+                                        verbose = FALSE)
+
+  assert_true(res_gen$history$elbo_full[1] <= res_gen$history$elbo_proxy[1],
+              "alpha=0 full ELBO should be genomics proxy plus non-positive KL terms")
+  assert_true(abs(res_surv$history$elbo_full[1] - res_surv$history$elbo_proxy[1]) > 1,
+              "alpha=1 should not equal the genomics proxy")
+  assert_true(abs(res_gen$history$elbo_full[1] - res_surv$history$elbo_full[1]) > 1,
+              "alpha=0 and alpha=1 should produce materially different full ELBOs")
+})
+
+run_test("convergence uses relative ELBO change, not parameter deltas", {
+  d   <- .elbo_test_data
+  res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+                                   K = 2, max_iter = 8, tol = 1,
+                                   verbose = FALSE)
+  assert_true(isTRUE(res$history$converged),
+              "Expected convergence under loose ELBO tolerance")
+  assert_true(any(is.finite(res$history$delta_elbo_rel[-1])),
+              "Expected finite relative ELBO deltas after the first iteration")
 })

@@ -51,7 +51,7 @@ suppressPackageStartupMessages(library(ebnm))
 
 cat("=== T1: Mathematical Identity Checks ===\n")
 
-run_test("T1.1: A_k = sum(w * EL2_k)", {
+run_test("T1.1: A_k = alpha * sum(w * EL2_k) with default alpha=0.5", {
   set.seed(1); n <- 5
   w    <- abs(rnorm(n)) + 0.1
   EL_k  <- rnorm(n)
@@ -59,11 +59,11 @@ run_test("T1.1: A_k = sum(w * EL2_k)", {
   z_no_k <- rnorm(n)
 
   res <- update_beta_k(w, z_no_k, EL_k, EL2_k)
-  expected_A <- max(sum(w * EL2_k), 1e-10)
+  expected_A <- max(0.5 * sum(w * EL2_k), 1e-10)
   assert_near(res$A, expected_A, msg = "A_k mismatch")
 })
 
-run_test("T1.2: B_k = sum(w * z_no_k * EL_k)", {
+run_test("T1.2: B_k = alpha * sum(w * z_no_k * EL_k) with default alpha=0.5", {
   set.seed(2); n <- 5
   w    <- abs(rnorm(n)) + 0.1
   EL_k  <- rnorm(n)
@@ -71,7 +71,7 @@ run_test("T1.2: B_k = sum(w * z_no_k * EL_k)", {
   z_no_k <- rnorm(n)
 
   res <- update_beta_k(w, z_no_k, EL_k, EL2_k)
-  expected_B <- sum(w * z_no_k * EL_k)
+  expected_B <- 0.5 * sum(w * z_no_k * EL_k)
   assert_near(res$B, expected_B, msg = "B_k mismatch")
 })
 
@@ -314,15 +314,15 @@ run_test("T7.2: extreme weights (w = 1e8) -> no overflow", {
   assert_finite(c(res$mean, res$second, res$sd, res$A, res$B))
 })
 
-run_test("T7.3: single observation (n=1)", {
+run_test("T7.3: single observation (n=1) with default alpha=0.5", {
   w     <- 2.0
   EL_k  <- 1.5
   EL2_k <- 1.5^2 + 0.1
   z_no_k <- 3.0
 
   res <- update_beta_k(w, z_no_k, EL_k, EL2_k)
-  expected_A <- max(w * EL2_k, 1e-10)
-  expected_B <- w * z_no_k * EL_k
+  expected_A <- max(0.5 * w * EL2_k, 1e-10)
+  expected_B <- 0.5 * w * z_no_k * EL_k
   assert_near(res$A, expected_A)
   assert_near(res$B, expected_B)
   assert_finite(c(res$mean, res$second))
@@ -388,8 +388,9 @@ run_test("T8.2: update_beta_all uses Gauss-Seidel (updates propagate within loop
 
 cat("\n=== T9: Consistency with V2.R Inline Code ===\n")
 
-run_test("T9.1: update_beta_k matches V2.R lines 356-361 exactly", {
-  # Replicate the exact V2.R computation with identical inputs
+run_test("T9.1: update_beta_k with alpha=1 matches V2.R lines 356-361 exactly", {
+  # V2.R uses the unscaled formula (equivalent to alpha=1.0 in the new parameterisation).
+  # Pass alpha=1.0 explicitly so the modular function reproduces V2.R's result.
   set.seed(80); n <- 30
   w      <- abs(rnorm(n)) + 0.5
   z_no_k <- rnorm(n)
@@ -404,11 +405,42 @@ run_test("T9.1: update_beta_k matches V2.R lines 356-361 exactly", {
   mean_v2   <- res_v2$posterior$mean
   sec_v2    <- res_v2$posterior$sd^2 + res_v2$posterior$mean^2
 
-  # Modular function:
-  res_mod <- update_beta_k(w, z_no_k, EL_k, EL2_k)
+  # Modular function with alpha=1.0 to match V2.R's unscaled formula:
+  res_mod <- update_beta_k(w, z_no_k, EL_k, EL2_k, alpha = 1.0)
 
   assert_near(res_mod$mean,   mean_v2, tol = 1e-12, msg = "posterior mean mismatch vs V2.R")
   assert_near(res_mod$second, sec_v2,  tol = 1e-12, msg = "second moment mismatch vs V2.R")
   assert_near(res_mod$A, A_Beta_v2,   tol = 1e-12, msg = "A_k mismatch vs V2.R")
   assert_near(res_mod$B, B_Beta_v2,   tol = 1e-12, msg = "B_k mismatch vs V2.R")
+})
+
+cat("\n=== T_alpha: Alpha Mixing Parameter Edge Cases ===\n")
+
+run_test("T_alpha.1: alpha=0 -> B_k=0 -> beta mean approx 0", {
+  # alpha=0 zeroes both A and B (floor takes over for A), so x_k=B/A=0
+  # and EBNM with x=0 under point_normal returns posterior mean ~0.
+  set.seed(90); n <- 30
+  w      <- abs(rnorm(n)) + 0.5
+  z_no_k <- EL_k <- rnorm(n)
+  EL2_k  <- EL_k^2 + 0.1
+
+  res <- update_beta_k(w, z_no_k, EL_k, EL2_k, alpha = 0)
+  assert_near(res$B, 0, tol = 1e-12, msg = "B_k should be 0 when alpha=0")
+  assert_near(res$x, 0, tol = 1e-6,  msg = "x_k should be 0 when alpha=0")
+  assert_near(res$mean, 0, tol = 1e-6, msg = "beta_mean should be ~0 when alpha=0")
+})
+
+run_test("T_alpha.2: alpha=1 -> gives original unscaled formula (A = sum(w*EL2_k))", {
+  # alpha=1 reproduces the V2.R formula: A_k = sum(w*EL2_k), B_k = sum(w*z*EL_k)
+  set.seed(91); n <- 20
+  w      <- abs(rnorm(n)) + 0.5
+  z_no_k <- rnorm(n)
+  EL_k   <- rnorm(n)
+  EL2_k  <- EL_k^2 + 0.05
+
+  res <- update_beta_k(w, z_no_k, EL_k, EL2_k, alpha = 1.0)
+  expected_A <- max(sum(w * EL2_k), 1e-10)
+  expected_B <- sum(w * z_no_k * EL_k)
+  assert_near(res$A, expected_A, msg = "A_k with alpha=1 should match unscaled formula")
+  assert_near(res$B, expected_B, msg = "B_k with alpha=1 should match unscaled formula")
 })

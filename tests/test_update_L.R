@@ -25,7 +25,7 @@ suppressPackageStartupMessages(library(ebnm))
 
 cat("=== T1: Mathematical Identity Checks ===\n")
 
-run_test("T1.1: A_L[i] = sum(Tau*EF2_k) + w[i]*EBeta2_k", {
+run_test("T1.1: A_L[i] = (1-alpha)*sum(Tau*EF2_k) + alpha*w[i]*EBeta2_k with default alpha=0.5", {
   set.seed(101); n <- 5; p <- 3
   Tau     <- abs(rnorm(p)) + 0.1       # p-vector
   EF_k    <- rnorm(p)
@@ -38,9 +38,9 @@ run_test("T1.1: A_L[i] = sum(Tau*EF2_k) + w[i]*EBeta2_k", {
 
   res <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k)
 
-  # Expected: A_L[i] = sum(Tau * EF2_k) + w[i] * EBeta2_k, then pmax(..., 1e-10)
+  # Default alpha=0.5: A_L[i] = 0.5*sum(Tau*EF2_k) + 0.5*w[i]*EBeta2_k, pmax(..., 1e-10)
   gen_scalar <- sum(Tau * EF2_k)
-  expected_A <- pmax(gen_scalar + w * EBeta2_k, 1e-10)
+  expected_A <- pmax(0.5 * gen_scalar + 0.5 * w * EBeta2_k, 1e-10)
   assert_near(res$A, expected_A, tol = 1e-10, msg = "A_L mismatch")
 })
 
@@ -126,7 +126,10 @@ run_test("T1.6: second moment = sd^2 + mean^2 (element-wise for all n)", {
 
 cat("\n=== T2: Genomics-Only Limit ===\n")
 
-run_test("T2.1: w=0 -> B_surv=0, L update is pure genomics", {
+run_test("T2.1: w=0 -> B_surv=0, combined B is (1-alpha)*B_gen", {
+  # With w=0, the raw survival signal B_surv = w*z*EBeta = 0.
+  # The combined B = (1-alpha)*B_gen + alpha*B_surv = (1-alpha)*B_gen.
+  # With default alpha=0.5: B = 0.5 * B_gen.
   set.seed(201); n <- 10; p <- 5
   Tau     <- abs(rnorm(p)) + 0.1
   EF_k    <- rnorm(p)
@@ -138,8 +141,11 @@ run_test("T2.1: w=0 -> B_surv=0, L update is pure genomics", {
   z_no_k  <- rnorm(n)
 
   res <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k)
+  # B_surv (raw, unweighted) must be 0 when w=0
   assert_near(res$B_surv, rep(0, n), tol = 1e-12, msg = "B_surv should be 0 when w=0")
-  assert_near(res$B, res$B_gen, tol = 1e-12, msg = "B should equal B_gen when w=0")
+  # B = (1-0.5)*B_gen + 0.5*0 = 0.5*B_gen with default alpha=0.5
+  expected_B <- 0.5 * res$B_gen
+  assert_near(res$B, expected_B, tol = 1e-12, msg = "B should equal (1-alpha)*B_gen when w=0")
 })
 
 run_test("T2.2: EBeta_k=0 -> B_surv=0", {
@@ -157,7 +163,7 @@ run_test("T2.2: EBeta_k=0 -> B_surv=0", {
   assert_near(res$B_surv, rep(0, n), tol = 1e-12, msg = "B_surv should be 0 when EBeta_k=0")
 })
 
-run_test("T2.3: w=0 -> A_L is constant across samples (scalar broadcast)", {
+run_test("T2.3: w=0 -> A_L is constant across samples (scalar broadcast) with default alpha=0.5", {
   set.seed(203); n <- 8; p <- 4
   Tau     <- abs(rnorm(p)) + 0.1
   EF_k    <- rnorm(p)
@@ -169,8 +175,8 @@ run_test("T2.3: w=0 -> A_L is constant across samples (scalar broadcast)", {
   z_no_k  <- rnorm(n)
 
   res <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k)
-  # When w=0, A_L = sum(Tau * EF2_k) for all i (constant)
-  expected_A_scalar <- sum(Tau * EF2_k)
+  # When w=0, A_L = (1-0.5)*sum(Tau*EF2_k) + 0 = 0.5*sum(Tau*EF2_k) for all i (constant)
+  expected_A_scalar <- 0.5 * sum(Tau * EF2_k)
   assert_near(res$A, rep(pmax(expected_A_scalar, 1e-10), n), tol = 1e-10,
               msg = "A_L should be constant across samples when w=0")
 })
@@ -382,7 +388,10 @@ run_test("T6.2: larger EBeta2 -> larger A_surv -> more shrinkage", {
               "Higher EBeta2 should yield larger A")
 })
 
-run_test("T6.3: genomics + survival reinforce: |B_combined| > |B_gen| when both contribute", {
+run_test("T6.3: B decomposition: B = (1-alpha)*B_gen + alpha*B_surv exactly", {
+  # Verify the weighted decomposition identity holds for any alpha.
+  # When genomics and survival signals reinforce, both B_gen and B_surv
+  # should have the same sign on average; the weighted sum B reflects both.
   set.seed(603); n <- 50; p <- 20
   L_true  <- abs(rnorm(n)) + 1.0       # positive loadings
   F_true  <- rnorm(p)
@@ -397,11 +406,22 @@ run_test("T6.3: genomics + survival reinforce: |B_combined| > |B_gen| when both 
   z_no_k   <- L_true * EBeta_k + rnorm(n, sd = 0.2)
   w        <- rep(2.0, n)
 
-  res <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k)
-  # |B_combined| should be >= |B_gen| on average when signals are aligned
-  assert_true(mean(abs(res$B)) > mean(abs(res$B_gen)) * 0.8,
-              sprintf("|B| = %.3f should exceed 0.8*|B_gen| = %.3f when signals reinforce",
-                      mean(abs(res$B)), 0.8 * mean(abs(res$B_gen))))
+  test_alpha <- 0.4
+  res <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k, alpha = test_alpha)
+
+  # The weighted decomposition identity must hold exactly:
+  # B = (1 - alpha)*B_gen + alpha*B_surv (raw unweighted components)
+  expected_B <- (1 - test_alpha) * res$B_gen + test_alpha * res$B_surv
+  assert_near(res$B, expected_B, tol = 1e-12,
+              msg = "B decomposition: B != (1-alpha)*B_gen + alpha*B_surv")
+
+  # With signals reinforcing and alpha=0.4, the combined x should have
+  # the same sign as both B_gen and B_surv on average (directional test).
+  # Check that the signs of x and B_gen agree for most samples.
+  sign_agree <- mean(sign(res$x) == sign(res$B_gen))
+  assert_true(sign_agree >= 0.6,
+              sprintf("Sign agreement of x and B_gen = %.2f, expected >= 0.6 when signals reinforce",
+                      sign_agree))
 })
 
 cat("\n=== T7: Numerical Stability ===\n")
@@ -439,7 +459,7 @@ run_test("T7.2: extreme Tau=1e8 with p=10 -> no overflow", {
                 "Non-finite values with extreme Tau")
 })
 
-run_test("T7.3: n=1, p=1 -> works correctly", {
+run_test("T7.3: n=1, p=1 -> works correctly with default alpha=0.5", {
   Tau     <- 3.0
   EF_k    <- 1.5
   EF2_k   <- 1.5^2 + 0.1
@@ -451,10 +471,10 @@ run_test("T7.3: n=1, p=1 -> works correctly", {
 
   res <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k)
 
-  expected_A <- pmax(sum(Tau * EF2_k) + w * EBeta2_k, 1e-10)
+  expected_A <- pmax(0.5 * sum(Tau * EF2_k) + 0.5 * w * EBeta2_k, 1e-10)
   expected_B_gen  <- as.vector(R_k %*% (Tau * EF_k))
   expected_B_surv <- w * z_no_k * EBeta_k
-  expected_B <- expected_B_gen + expected_B_surv
+  expected_B <- 0.5 * expected_B_gen + 0.5 * expected_B_surv
 
   assert_near(res$A, expected_A, tol = 1e-10, msg = "A wrong for n=1, p=1")
   assert_near(res$B, expected_B, tol = 1e-10, msg = "B wrong for n=1, p=1")
@@ -549,8 +569,11 @@ run_test("T8.3: update_L_all uses Gauss-Seidel (EL[,1] changes before k=2's R_k)
 
 cat("\n=== T9: V2.R Consistency ===\n")
 
-run_test("T9.1: update_L_k matches V2.R lines 310-321 exactly", {
-  # Replicate the exact V2.R computation with identical inputs
+run_test("T9.1: update_L_k with explicit alpha reproduces alpha-weighted reference exactly", {
+  # V2.R used alpha=1 (unweighted sum). With the new parameterisation, V2.R is NOT
+  # directly reproducible via alpha=1 because alpha=1 means pure survival (no genomics).
+  # Instead, we verify with alpha=0.7: compute the reference from scratch and confirm
+  # the modular function matches it exactly.
   set.seed(999); n <- 50; p <- 30
   Tau      <- abs(rnorm(p)) + 0.1
   EF_k     <- rnorm(p)
@@ -560,29 +583,36 @@ run_test("T9.1: update_L_k matches V2.R lines 310-321 exactly", {
   EBeta2_k <- EBeta_k^2 + runif(1, 0.01, 0.1)
   R_k      <- matrix(rnorm(n * p), n, p)
   z_no_k   <- rnorm(n)
+  test_alpha <- 0.7
 
-  # ---------- V2.R inline code (lines 310-321) ----------
-  A_L_v2 <- sum(Tau * EF2_k) + w * EBeta2_k            # n-vector
-  A_L_v2 <- pmax(A_L_v2, 1e-10)                         # [A3] floor
+  # ---------- alpha-weighted reference ----------
+  # $B_gen and $B_surv are the RAW (unweighted) components.
+  # $B is the weighted combination: (1-alpha)*B_gen + alpha*B_surv.
+  A_L_ref <- pmax((1 - test_alpha) * sum(Tau * EF2_k) + test_alpha * w * EBeta2_k, 1e-10)
+  B_L_gen_ref  <- as.vector(R_k %*% (Tau * EF_k))       # raw
+  B_L_surv_ref <- w * z_no_k * EBeta_k                  # raw
+  B_L_ref <- (1 - test_alpha) * B_L_gen_ref + test_alpha * B_L_surv_ref
 
-  B_L_gen_v2  <- as.vector(R_k %*% (Tau * EF_k))        # n-vector
-  B_L_surv_v2 <- w * z_no_k * EBeta_k                   # n-vector
-  B_L_v2      <- B_L_gen_v2 + B_L_surv_v2
-
-  res_v2 <- ebnm(x = B_L_v2 / A_L_v2, s = 1 / sqrt(A_L_v2),
+  res_ref <- ebnm(x = B_L_ref / A_L_ref, s = 1 / sqrt(A_L_ref),
                   prior_family = "point_normal")
-  mean_v2   <- res_v2$posterior$mean
-  second_v2 <- res_v2$posterior$sd^2 + res_v2$posterior$mean^2
+  mean_ref   <- res_ref$posterior$mean
+  second_ref <- res_ref$posterior$sd^2 + res_ref$posterior$mean^2
 
-  # ---------- Modular function ----------
-  res_mod <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k)
+  # ---------- Modular function with same alpha ----------
+  res_mod <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k,
+                        prior_family = "point_normal", alpha = test_alpha)
 
-  assert_near(res_mod$A,      A_L_v2,    tol = 1e-12, msg = "A mismatch vs V2.R")
-  assert_near(res_mod$B,      B_L_v2,    tol = 1e-12, msg = "B mismatch vs V2.R")
-  assert_near(res_mod$B_gen,  B_L_gen_v2,  tol = 1e-12, msg = "B_gen mismatch vs V2.R")
-  assert_near(res_mod$B_surv, B_L_surv_v2, tol = 1e-12, msg = "B_surv mismatch vs V2.R")
-  assert_near(res_mod$mean,   mean_v2,   tol = 1e-12, msg = "posterior mean mismatch vs V2.R")
-  assert_near(res_mod$second, second_v2, tol = 1e-12, msg = "second moment mismatch vs V2.R")
+  assert_near(res_mod$A,      A_L_ref,       tol = 1e-12, msg = "A mismatch vs reference")
+  assert_near(res_mod$B,      B_L_ref,       tol = 1e-12, msg = "B mismatch vs reference")
+  # $B_gen and $B_surv are raw unweighted components
+  assert_near(res_mod$B_gen,  B_L_gen_ref,   tol = 1e-12, msg = "B_gen mismatch (should be raw/unweighted)")
+  assert_near(res_mod$B_surv, B_L_surv_ref,  tol = 1e-12, msg = "B_surv mismatch (should be raw/unweighted)")
+  # Verify the weighted decomposition: B = (1-alpha)*B_gen + alpha*B_surv
+  assert_near(res_mod$B,
+              (1 - test_alpha) * res_mod$B_gen + test_alpha * res_mod$B_surv,
+              tol = 1e-12, msg = "B should equal (1-alpha)*B_gen + alpha*B_surv")
+  assert_near(res_mod$mean,   mean_ref,   tol = 1e-12, msg = "posterior mean mismatch vs reference")
+  assert_near(res_mod$second, second_ref, tol = 1e-12, msg = "second moment mismatch vs reference")
 })
 
 run_test("T9.2: compute_R_k matches V2.R lines 290-291 exactly", {
@@ -602,4 +632,54 @@ run_test("T9.2: compute_R_k matches V2.R lines 290-291 exactly", {
     assert_near(R_k_mod, R_k_v2, tol = 1e-12,
                 msg = sprintf("compute_R_k mismatch vs V2.R for k=%d", k))
   }
+})
+
+cat("\n=== T_alpha: Alpha Mixing Parameter Edge Cases ===\n")
+
+run_test("T_alpha.1: alpha=0 -> pure genomics (A_L=A_gen, B_L=B_gen)", {
+  # alpha=0 means no survival contribution: A = (1-0)*A_gen + 0*A_surv = A_gen
+  # and B = (1-0)*B_gen + 0*B_surv = B_gen (raw, unweighted).
+  set.seed(901); n <- 20; p <- 10
+  Tau     <- abs(rnorm(p)) + 0.1
+  EF_k    <- rnorm(p)
+  EF2_k   <- EF_k^2 + 0.1
+  w       <- abs(rnorm(n)) + 0.5
+  EBeta_k  <- 1.5
+  EBeta2_k <- EBeta_k^2 + 0.05
+  R_k     <- matrix(rnorm(n * p), n, p)
+  z_no_k  <- rnorm(n)
+
+  res <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k, alpha = 0)
+
+  A_gen_expected <- pmax(rep(sum(Tau * EF2_k), n), 1e-10)
+  B_gen_expected <- as.vector(R_k %*% (Tau * EF_k))
+
+  assert_near(res$A, A_gen_expected, tol = 1e-10, msg = "alpha=0: A_L should equal A_gen")
+  assert_near(res$B, B_gen_expected, tol = 1e-10, msg = "alpha=0: B_L should equal B_gen")
+  # $B_gen is the raw component and should equal $B when alpha=0
+  assert_near(res$B_gen, B_gen_expected, tol = 1e-10, msg = "B_gen should be unweighted")
+})
+
+run_test("T_alpha.2: alpha=1 -> pure survival (A_L=A_surv, B_L=B_surv)", {
+  # alpha=1 means no genomics contribution: A = 0*A_gen + 1*A_surv = A_surv
+  # and B = 0*B_gen + 1*B_surv = B_surv.
+  set.seed(902); n <- 20; p <- 10
+  Tau     <- abs(rnorm(p)) + 0.1
+  EF_k    <- rnorm(p)
+  EF2_k   <- EF_k^2 + 0.1
+  w       <- abs(rnorm(n)) + 0.5
+  EBeta_k  <- 1.5
+  EBeta2_k <- EBeta_k^2 + 0.05
+  R_k     <- matrix(rnorm(n * p), n, p)
+  z_no_k  <- rnorm(n)
+
+  res <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k, alpha = 1)
+
+  A_surv_expected <- pmax(w * EBeta2_k, 1e-10)
+  B_surv_expected <- w * z_no_k * EBeta_k
+
+  assert_near(res$A, A_surv_expected, tol = 1e-10, msg = "alpha=1: A_L should equal A_surv")
+  assert_near(res$B, B_surv_expected, tol = 1e-10, msg = "alpha=1: B_L should equal B_surv")
+  # $B_surv is the raw component and should equal $B when alpha=1
+  assert_near(res$B_surv, B_surv_expected, tol = 1e-10, msg = "B_surv should be unweighted")
 })

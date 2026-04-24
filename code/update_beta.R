@@ -92,6 +92,11 @@ compute_z_no_k <- function(z, EL, EBeta, k) {
 #' @param prior_family character: EBNM prior family (default "point_normal").
 #'                     "point_normal" promotes sparsity in beta.
 #'                     Use "normal" for a purely Gaussian prior.
+#' @param alpha        numeric in [0, 1]: mixing weight on the survival term.
+#'                     A_k = alpha * sum(w * EL2_k); B_k = alpha * sum(w * z_no_k * EL_k).
+#'                     alpha=0 zeroes beta (no survival contribution); alpha=1 gives the
+#'                     full unscaled formula (equivalent to the original V2.R update).
+#'                     Default 0.5 balances the gradient scale asymmetry (p >> n).
 #' @param A_floor      numeric: minimum value for A_k to prevent 0-division.
 #'                     Default 1e-10.  [A3 in V2.R]
 #'
@@ -118,24 +123,29 @@ compute_z_no_k <- function(z, EL, EBeta, k) {
 #' cat("beta estimate:", round(res$mean, 3), "\n")
 update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
                           prior_family = "point_normal",
+                          alpha        = 0.5,
                           A_floor      = 1e-10) {
 
   # ------------------------------------------------------------------
-  # Precision (A_k): error-in-variables correction
-  #   sum_i W_{ii} * E_q[l_{ik}^2]
+  # Precision (A_k): error-in-variables correction, scaled by alpha
+  #   alpha * sum_i W_{ii} * E_q[l_{ik}^2]
   # Using the full second moment (Var + mean^2) rather than the squared
   # mean inflates the effective noise for beta_k, preventing overfitting
   # to uncertain loadings (Companion.tex Sec. 6.2, Eq. A_k).
+  # The alpha scaling controls how much the survival term is emphasised
+  # relative to genomics. alpha=1 gives the original unscaled V2.R formula.
   # ------------------------------------------------------------------
   # Floor triggers when all weights are zero or all loadings are zero —
   # degenerate inputs that would otherwise cause division by zero in x_k and s_k.
-  A_k <- max(sum(w * EL2_k), A_floor)
+  A_k <- max(alpha * sum(w * EL2_k), A_floor)
 
   # ------------------------------------------------------------------
   # Signal (B_k): weighted inner product of partial response and loading
-  #   sum_i W_{ii} * z_i^{-k} * l_bar_{ik}
+  #   alpha * sum_i W_{ii} * z_i^{-k} * l_bar_{ik}
+  # Note: alpha cancels in x_k = B_k/A_k, so the EBNM pseudo-observation
+  # is alpha-independent.  Only s_k = 1/sqrt(A_k) is affected by alpha.
   # ------------------------------------------------------------------
-  B_k <- sum(w * z_no_k * EL_k)
+  B_k <- alpha * sum(w * z_no_k * EL_k)
 
   # ------------------------------------------------------------------
   # EBNM pseudo-observation and noise
@@ -200,6 +210,8 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
 #' @param EBeta        K-vector: current posterior means (warm start for
 #'                     computing z_no_k; will be updated in-place within loop)
 #' @param prior_family character: EBNM prior family (default "point_normal")
+#' @param alpha        numeric in [0, 1]: survival mixing weight, passed to
+#'                     update_beta_k() for each factor (default 0.5)
 #' @param A_floor      numeric: precision floor (default 1e-10)
 #'
 #' @return Named list:
@@ -210,6 +222,7 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
 #' @family beta_update
 update_beta_all <- function(w, z, EL, EL2, EBeta,
                             prior_family = "point_normal",
+                            alpha        = 0.5,
                             A_floor      = 1e-10) {
 
   K          <- ncol(EL)
@@ -229,6 +242,7 @@ update_beta_all <- function(w, z, EL, EL2, EBeta,
       EL_k       = EL[, k],
       EL2_k      = EL2[, k],
       prior_family = prior_family,
+      alpha      = alpha,
       A_floor    = A_floor
     )
 

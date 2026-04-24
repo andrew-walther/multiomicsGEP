@@ -61,6 +61,13 @@ suppressPackageStartupMessages(library(ebnm))
 #'                    NOTE: R_k is still valid after the L update because it
 #'                    excludes factor k — only EL[,k] changed, not EL[,k'].
 #' @param prior_family character: EBNM prior family (default "point_normal")
+#' @param alpha       numeric in [0, 1]: genomics de-emphasis weight.
+#'                    A_F = pmax((1-alpha)*Tau*sum_EL2_k, A_floor)
+#'                    B_F = (1-alpha)*Tau*(t(R_k) %*% EL_k)
+#'                    alpha=0 gives the original unscaled formula (full genomics);
+#'                    alpha=1 zeroes both A_F and B_F (floor activates), driving F to 0.
+#'                    Default 0.5. Note: tau still cancels in x_j = B_F/A_F because
+#'                    (1-alpha) also cancels in the ratio.
 #' @param A_floor     numeric: minimum value for each A_F[j] (default 1e-10)
 #'
 #' @return Named list:
@@ -85,45 +92,49 @@ suppressPackageStartupMessages(library(ebnm))
 #' res <- update_F_k(Tau, EL_k, EL2_k, R_k)
 #' cat("Factor estimates (first 5):", round(res$mean[1:5], 3), "\n")
 update_F_k <- function(Tau, EL_k, EL2_k, R_k,
-                        prior_family = "point_normal",
+                        prior_family = "point_exponential",
+                        alpha        = 0.5,
                         A_floor      = 1e-10) {
 
   # ------------------------------------------------------------------
   # Precision A_{jk}  (p-vector)
   #
-  #   A_F[j] = tau_j * sum_i E[l_{ik}^2]
+  #   A_F[j] = (1-alpha) * tau_j * sum_i E[l_{ik}^2]
   #
   # sum_i(EL2_k) is a SCALAR (total loading second moment across samples).
   # The error-in-variables correction enters through EL2_k (uses full
   # second moment, not squared mean): posterior uncertainty in L
   # appropriately inflates the effective noise for F_k.
+  # (1-alpha) scales the genomics contribution. alpha=0 is the original
+  # unscaled formula; alpha=1 drives A_F to the floor.
   # ------------------------------------------------------------------
   # sum_EL2_k is a SCALAR that broadcasts across all p features.
-  # This is why A_F[j] = tau_j * sum_EL2_k: the loading contribution
-  # is the same for every feature, only tau_j varies.
-  sum_EL2_k <- sum(EL2_k)                             # scalar
-  A_F       <- pmax(Tau * sum_EL2_k, A_floor)         # p-vector [A3]
+  # This is why A_F[j] = (1-alpha) * tau_j * sum_EL2_k.
+  sum_EL2_k <- sum(EL2_k)                                         # scalar
+  A_F       <- pmax((1 - alpha) * Tau * sum_EL2_k, A_floor)       # p-vector [A3]
 
   # ------------------------------------------------------------------
   # Signal B_{jk}  (p-vector)
   #
-  #   B_F[j] = tau_j * sum_i R^{-k}_{ij} * l_bar_{ik}
-  #          = tau_j * (t(R_k) %*% EL_k)[j]
+  #   B_F[j] = (1-alpha) * tau_j * sum_i R^{-k}_{ij} * l_bar_{ik}
+  #          = (1-alpha) * tau_j * (t(R_k) %*% EL_k)[j]
   #
   # The efficient form t(R_k) %*% EL_k gives a p-vector directly.
+  # Note: (1-alpha) cancels in x_j = B_F/A_F, so x is alpha-independent.
+  # Only s_j = 1/sqrt(A_F) changes with alpha.
   # ------------------------------------------------------------------
-  B_F <- Tau * as.vector(t(R_k) %*% EL_k)             # p-vector
+  B_F <- (1 - alpha) * Tau * as.vector(t(R_k) %*% EL_k)           # p-vector
 
   # ------------------------------------------------------------------
   # EBNM pseudo-observation and noise (p-vectors)
   #
   #   x_j = B_F[j] / A_F[j]
-  #       = (tau_j * (t(R_k) %*% EL_k)[j]) / (tau_j * sum_EL2_k)
+  #       = ((1-alpha)*tau_j*(t(R_k)%*%EL_k)[j]) / ((1-alpha)*tau_j*sum_EL2_k)
   #       = (t(R_k) %*% EL_k)[j] / sum_EL2_k
-  #   -> tau_j CANCELS in x_j!
+  #   -> both tau_j AND (1-alpha) CANCEL in x_j!
   #
-  #   s_j = 1 / sqrt(A_F[j]) = 1 / sqrt(tau_j * sum_EL2_k)
-  #   -> tau_j does NOT cancel in s_j
+  #   s_j = 1 / sqrt(A_F[j]) = 1 / sqrt((1-alpha) * tau_j * sum_EL2_k)
+  #   -> neither tau_j nor (1-alpha) cancel in s_j
   # ------------------------------------------------------------------
   x_F <- B_F / A_F
   s_F <- 1.0 / sqrt(A_F)
@@ -174,6 +185,8 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
 #' @param EF2         p x K matrix: posterior second moments of factors
 #' @param Tau         p-vector: feature-specific noise precision
 #' @param prior_family character: EBNM prior family (default "point_normal")
+#' @param alpha       numeric in [0, 1]: genomics de-emphasis weight, passed to
+#'                    update_F_k() for each factor (default 0.5)
 #' @param A_floor     numeric: precision floor (default 1e-10)
 #'
 #' @return Named list:
@@ -183,7 +196,8 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
 #' @export
 #' @family F_update
 update_F_all <- function(Y, EL, EL2, EF, EF2, Tau,
-                          prior_family = "point_normal",
+                          prior_family = "point_exponential",
+                          alpha        = 0.5,
                           A_floor      = 1e-10) {
 
   p <- nrow(EF)
@@ -204,6 +218,7 @@ update_F_all <- function(Y, EL, EL2, EF, EF2, Tau,
       EL2_k      = EL2[, k],
       R_k        = R_k,
       prior_family = prior_family,
+      alpha      = alpha,
       A_floor    = A_floor
     )
 

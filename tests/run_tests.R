@@ -41,20 +41,27 @@ test_files <- c(
 )
 
 # Run each test file
+total_passed <- 0L
+total_failed <- 0L
+all_errors <- character(0)
+
 for (tf in test_files) {
   cat(sprintf("--- Running: %s ---\n", tf))
   reset_counts()
   source(tf, local = FALSE)
-  report_results(tf)
+  file_results <- report_results(tf)
+  total_passed <- total_passed + file_results$passed
+  total_failed <- total_failed + file_results$failed
+  all_errors   <- c(all_errors, file_results$errors)
 }
 
 # Final summary across all files
 cat("============================================================\n")
 cat(sprintf(" FINAL: %d passed, %d failed\n",
-            .test_env$passed, .test_env$failed))
-if (.test_env$failed > 0) {
+            total_passed, total_failed))
+if (total_failed > 0) {
   cat("\nFailed tests:\n")
-  for (e in .test_env$errors) cat(" *", e, "\n")
+  for (e in all_errors) cat(" *", e, "\n")
   quit(status = 1)
 } else {
   cat(" All tests PASSED.\n")

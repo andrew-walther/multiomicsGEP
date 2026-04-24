@@ -117,24 +117,36 @@ calc_cox_taylor <- function(eta, time, status) {
 #'   - update_beta.R: update_beta_k(), compute_z_no_k()
 #'   - update_tau.R:  update_tau()
 #'
-#' Convergence is declared when BOTH mean|delta_L| and mean|delta_Beta| < tol
-#' (after a 5-iteration burn-in). V3 Algorithm 1 specifies max absolute change;
-#' mean is used here because max rarely reaches 1e-5 on typical datasets due to
-#' SVD orientation oscillations.
+#' Convergence is declared when the relative full-ELBO change drops below tol
+#' (after a 5-iteration burn-in):
+#'   abs(elbo_new - elbo_old) / abs(elbo_old) < tol
+#' Parameter deltas are still tracked in history for diagnostics, but no longer
+#' drive termination.
 #'
 #' @param Y        n x p genomics data matrix
 #' @param time     n-vector of survival / censoring times
 #' @param status   n-vector of event indicators (1=event, 0=censored)
 #' @param K        Number of latent factors (default 5)
 #' @param max_iter Maximum CAVI outer iterations (default 100)
-#' @param tol      Convergence threshold: both mean|dL| and mean|dBeta| < tol
-#'                 (default 1e-3; use 1e-5 for tighter but rarely achievable
-#'                 convergence with this Taylor-approximation scheme)
-#' @param prior_family character: EBNM prior family passed to update_L_k,
-#'                 update_F_k, and update_beta_k.  Valid values:
-#'                 "point_normal" (default — sparse, shrinks to zero),
-#'                 "point_laplace" (heavier tails than point-normal),
-#'                 "normal_scale_mixture" (broader, less sparse factors).
+#' @param tol      Convergence threshold on relative full-ELBO change
+#'                 (default 1e-5)
+#' @param prior_LF   character: EBNM prior family for loadings L and factors F.
+#'                 Default "point_exponential" — non-negative (NMF-style),
+#'                 appropriate when L and F represent expression magnitudes.
+#'                 Also accepts "point_normal", "point_laplace".
+#' @param prior_beta character: EBNM prior family for survival coefficients beta.
+#'                 Default "point_normal" — sparse, allows positive and negative
+#'                 coefficients (prognostic direction not constrained).
+#'                 Also accepts "point_laplace" for heavier-tailed sparsity.
+#' @param alpha      numeric in [0, 1]: survival/genomics mixing weight passed to
+#'                 update_L_k(), update_F_k(), and update_beta_k() at every iteration.
+#'                 Controls the relative emphasis of the survival likelihood vs.
+#'                 the genomics likelihood in the CAVI updates:
+#'                   L update:    (1-alpha)*A_gen + alpha*A_surv
+#'                   F update:    (1-alpha)*A_gen / (1-alpha)*B_gen
+#'                   beta update: alpha*A_beta / alpha*B_beta
+#'                 alpha=0: pure genomics (beta not updated); alpha=1: pure survival
+#'                 (F not updated). Default 0.5 balances the p >> n gradient asymmetry.
 #' @param init_method  character: initialization strategy.
 #'                 "svd" (default — deterministic SVD warm-start),
 #'                 "random" (random normal initialization, useful with
@@ -149,16 +161,24 @@ calc_cox_taylor <- function(eta, time, status) {
 #'   $EBeta    K-vector: posterior means of survival coefficients
 #'   $EBeta2   K-vector: posterior second moments of survival coefficients
 #'   $Tau      p-vector: noise precisions
-#'   $history  list(rmse, elbo_proxy, converged, n_iter)
+#'   $history  list(rmse, elbo_proxy, elbo_full, delta_L, delta_Beta,
+#'                  delta_elbo_rel, converged, n_iter)
 fit_supervised_mf_modular <- function(Y, time, status,
                                       K            = 5,
                                       max_iter     = 100,
-                                      tol          = 1e-3,
-                                      prior_family = "point_normal",
+                                      tol          = 1e-5,
+                                      prior_LF     = "point_exponential",
+                                      prior_beta   = "point_normal",
+                                      alpha        = 0.5,
                                       init_method  = "svd",
                                       verbose      = TRUE) {
 
   n <- nrow(Y); p <- ncol(Y)
+
+  if (!is.numeric(alpha) || length(alpha) != 1 || !is.finite(alpha) ||
+      alpha < 0 || alpha > 1) {
+    stop("alpha must be a finite scalar in [0, 1].")
+  }
 
   # --------------------------------------------------------------------------
   # Initialization
@@ -177,8 +197,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
     # SVD of Y: deterministic high-variance starting subspace
     svd_init <- svd(Y, nu = K, nv = K)
     d_k <- sqrt(pmax(svd_init$d[1:K], 0))
-    EL  <- svd_init$u %*% diag(d_k, K, K)      # n x K
-    EF  <- svd_init$v %*% diag(d_k, K, K)      # p x K
+    EL  <- pmax(svd_init$u %*% diag(d_k, K, K), 0)      # n x K; pmax ensures non-negative init matches point_exponential prior
+    EF  <- pmax(svd_init$v %*% diag(d_k, K, K), 0)      # p x K
   } else if (init_method == "random") {
     # Random normal initialization scaled by data magnitude.
     # sd = 0.1 * overall SD of Y keeps initial reconstruction in a
@@ -221,6 +241,9 @@ fit_supervised_mf_modular <- function(Y, time, status,
     rmse       = numeric(max_iter),
     elbo_proxy = numeric(max_iter),
     elbo_full  = numeric(max_iter),  # full ELBO: proxy + survival + KL terms
+    delta_L    = numeric(max_iter),
+    delta_Beta = numeric(max_iter),
+    delta_elbo_rel = rep(NA_real_, max_iter),
     converged  = FALSE,
     n_iter     = max_iter
   )
@@ -229,8 +252,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
     cat("=== Supervised Bayesian MF (Modular V3) — Factor-Wise CAVI ===\n")
     cat(sprintf("    n=%d, p=%d, K=%d | max_iter=%d | tol=%.1e\n",
                 n, p, K, max_iter, tol))
-    cat(sprintf("    prior_family=%s | init_method=%s\n\n",
-                prior_family, init_method))
+    cat(sprintf("    prior_LF=%s | prior_beta=%s | alpha=%.2f | init_method=%s\n\n",
+                prior_LF, prior_beta, alpha, init_method))
   }
 
   # ==========================================================================
@@ -295,7 +318,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
       z_no_k <- compute_z_no_k(z, EL, EBeta, k)   # COMPUTE ONCE — reuse for (c)
 
       res_L   <- update_L_k(Tau, EF[, k], EF2[, k], w, EBeta[k], EBeta2[k],
-                             R_k, z_no_k, prior_family = prior_family)
+                             R_k, z_no_k, prior_family = prior_LF, alpha = alpha)
       EL[, k]  <- res_L$mean
       EL2[, k] <- res_L$second
       kl_L[k]  <- compute_ebnm_kl(res_L$ebnm_result$log_likelihood,
@@ -309,7 +332,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # ----------------------------------------------------------------------
       R_k   <- compute_R_k(Y, EL, EF, k)
       res_F <- update_F_k(Tau, EL[, k], EL2[, k], R_k,
-                          prior_family = prior_family)
+                          prior_family = prior_LF, alpha = alpha)
       EF[, k]  <- res_F$mean
       EF2[, k] <- res_F$second
       kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
@@ -323,7 +346,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # factor k entirely.
       # ----------------------------------------------------------------------
       res_beta    <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
-                                   prior_family = prior_family)
+                                   prior_family = prior_beta, alpha = alpha)
       EBeta[k]    <- res_beta$mean
       EBeta2[k]   <- res_beta$second
       kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
@@ -339,44 +362,64 @@ fit_supervised_mf_modular <- function(Y, time, status,
     Tau                  <- res_tau$Tau
     history$elbo_proxy[iter] <- res_tau$elbo_proxy
 
-    # Full ELBO = proxy + survival likelihood + KL divergences for L, F, beta.
+    # Full ELBO = (1-alpha)*genomics + alpha*survival + KL divergences.
     # surv_elbo: E_q[log PL(t,delta|L,beta)] via 2nd-order Taylor at eta_0.
     # kl_*: E_q[log g(theta)] - E_q[log q(theta)] for each factor (each <= 0).
     surv_elbo               <- compute_survival_elbo(taylor$logPL, w,
                                                      EL, EL2, EBeta, EBeta2)
-    history$elbo_full[iter] <- res_tau$elbo_proxy + surv_elbo +
+    history$elbo_full[iter] <- (1 - alpha) * res_tau$elbo_proxy +
+                               alpha * surv_elbo +
                                sum(kl_L) + sum(kl_F) + sum(kl_beta)
 
     # ========================================================================
     # STEP 4: Convergence Check
     #
-    # Use mean (not max) of absolute changes — matches V2.R [A4].
-    # max() is ~5-10x larger than mean() due to a few high-variance EL
-    # entries that oscillate near factor orientation boundaries; using
-    # max() with tol=1e-5 never declares convergence on typical datasets.
-    # Guard with iter > 5 to allow burn-in before checking convergence.
+    # Track parameter deltas for diagnostics, but terminate on relative
+    # full-ELBO change after burn-in. Skip the check gracefully when the
+    # current/previous ELBO is non-finite or the denominator is zero.
     # ========================================================================
     delta_L    <- mean(abs(EL - EL_old))
     delta_Beta <- mean(abs(EBeta - EBeta_old))
+    history$delta_L[iter]    <- delta_L
+    history$delta_Beta[iter] <- delta_Beta
+
+    if (iter > 1) {
+      elbo_old <- history$elbo_full[iter - 1]
+      elbo_new <- history$elbo_full[iter]
+      if (is.finite(elbo_new) && is.finite(elbo_old) && elbo_old != 0) {
+        history$delta_elbo_rel[iter] <- abs((elbo_new - elbo_old) / abs(elbo_old))
+      }
+    }
 
     if (verbose && iter %% 10 == 0) {
-      cat(sprintf("  iter %3d | RMSE: %.4f | ELBO: %+.1f (full) %+.1f (proxy) | dL: %.2e | dB: %.2e | beta: [%s]\n",
+      delta_elbo_str <- if (is.finite(history$delta_elbo_rel[iter])) {
+        sprintf("%.2e", history$delta_elbo_rel[iter])
+      } else {
+        "NA"
+      }
+      cat(sprintf("  iter %3d | RMSE: %.4f | ELBO: %+.1f (full) %+.1f (proxy) | dELBO: %s | dL: %.2e | dB: %.2e | beta: [%s]\n",
                   iter, history$rmse[iter],
                   history$elbo_full[iter], history$elbo_proxy[iter],
+                  delta_elbo_str,
                   delta_L, delta_Beta,
                   paste(sprintf("%+.2f", EBeta), collapse = ", ")))
     }
 
-    if (iter > 5 && delta_L < tol && delta_Beta < tol) {
+    if (iter > 5 &&
+        is.finite(history$delta_elbo_rel[iter]) &&
+        history$delta_elbo_rel[iter] < tol) {
       if (verbose) {
-        cat(sprintf("\n  Converged at iteration %d  (dL=%.2e, dBeta=%.2e)\n",
-                    iter, delta_L, delta_Beta))
+        cat(sprintf("\n  Converged at iteration %d  (relative ELBO change = %.2e)\n",
+                    iter, history$delta_elbo_rel[iter]))
       }
       history$converged  <- TRUE
       history$n_iter     <- iter
       history$rmse       <- history$rmse[1:iter]
       history$elbo_proxy <- history$elbo_proxy[1:iter]
       history$elbo_full  <- history$elbo_full[1:iter]
+      history$delta_L    <- history$delta_L[1:iter]
+      history$delta_Beta <- history$delta_Beta[1:iter]
+      history$delta_elbo_rel <- history$delta_elbo_rel[1:iter]
       break
     }
 

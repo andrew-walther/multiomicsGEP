@@ -84,6 +84,14 @@ compute_R_k <- function(Y, EL, EF, k) {
 #' @param R_k         n x p matrix: partial residual R^{-k} (from compute_R_k)
 #' @param z_no_k      n-vector: partial working response z^{-k}_i
 #' @param prior_family character: EBNM prior family (default "point_normal")
+#' @param alpha       numeric in [0, 1]: mixing weight on the survival term.
+#'                    A_L = pmax((1-alpha)*A_gen + alpha*A_surv, A_floor)
+#'                    B_L = (1-alpha)*B_gen + alpha*B_surv
+#'                    alpha=0 gives pure-genomics EBNM (survival contribution zeroed);
+#'                    alpha=1 gives pure-survival EBNM (genomics contribution zeroed).
+#'                    Default 0.5. Note: $B_gen and $B_surv in the return list are
+#'                    always the unweighted raw components (before alpha scaling),
+#'                    so $B = (1-alpha)*$B_gen + alpha*$B_surv.
 #' @param A_floor     numeric: minimum value for each A_L[i] (default 1e-10)
 #'
 #' @return Named list:
@@ -91,9 +99,9 @@ compute_R_k <- function(Y, EL, EF, k) {
 #'   $second      -- n-vector: posterior 2nd moment E_q[l_{ik}^2]
 #'   $sd          -- n-vector: posterior SD sqrt(Var_q(l_{ik}))
 #'   $A           -- n-vector: precision A_{ik} [floored]
-#'   $B           -- n-vector: total signal B_{ik}
-#'   $B_gen       -- n-vector: genomics component of B
-#'   $B_surv      -- n-vector: survival component of B
+#'   $B           -- n-vector: total signal B_{ik} = (1-alpha)*B_gen + alpha*B_surv
+#'   $B_gen       -- n-vector: raw (unweighted) genomics component of B
+#'   $B_surv      -- n-vector: raw (unweighted) survival component of B
 #'   $x           -- n-vector: EBNM pseudo-obs x_i = B_i/A_i
 #'   $s           -- n-vector: EBNM pseudo-noise s_i = 1/sqrt(A_i)
 #'   $ebnm_result -- raw ebnm() return object
@@ -113,38 +121,43 @@ compute_R_k <- function(Y, EL, EF, k) {
 #' cat("Loading column estimates (first 5):", round(res$mean[1:5], 3), "\n")
 update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
                         R_k, z_no_k,
-                        prior_family = "point_normal",
+                        prior_family = "point_exponential",
+                        alpha        = 0.5,
                         A_floor      = 1e-10) {
 
   # ------------------------------------------------------------------
   # Precision A_{ik}  (n-vector)
   #
-  #   Genomics:  sum_j(tau_j * E[f^2_{jk}])      [scalar, same for all i]
-  #   Survival:  W_{ii} * E[beta_k^2]             [n-vector, sample-specific]
+  #   Genomics:  (1-alpha) * sum_j(tau_j * E[f^2_{jk}])  [scalar, same for all i]
+  #   Survival:  alpha * W_{ii} * E[beta_k^2]             [n-vector, sample-specific]
   #
   # The genomics term uses E[f^2] (not f_bar^2) for error-in-variables
   # correction: posterior uncertainty in F inflates the effective noise
   # for L, preventing overfitting to uncertain factor estimates.
+  # alpha controls the trade-off: alpha=0 is pure genomics, alpha=1 is pure survival.
   # ------------------------------------------------------------------
   # A_gen is a SCALAR (constant across all patients) because the genomics
   # precision sum_j(tau_j * EF2_jk) does not depend on sample i.
-  A_gen  <- sum(Tau * EF2_k)                         # scalar
+  A_gen  <- sum(Tau * EF2_k)                                     # scalar
   # A_surv is an n-VECTOR because Cox weights W_ii differ per patient.
   # This is why L requires a vector EBNM (unlike beta's scalar EBNM).
-  A_surv <- w * EBeta2_k                             # n-vector
-  A_L    <- pmax(A_gen + A_surv, A_floor)            # n-vector [A3]
+  A_surv <- w * EBeta2_k                                         # n-vector
+  A_L    <- pmax((1 - alpha) * A_gen + alpha * A_surv, A_floor)  # n-vector [A3]
 
   # ------------------------------------------------------------------
   # Signal B_{ik}  (n-vector)
   #
-  #   Genomics:  (R_k %*% (Tau * EF_k))[i]       [matrix-vector product]
-  #   Survival:  W_{ii} * z^{-k}_i * beta_bar_k  [element-wise]
+  #   Genomics:  (1-alpha) * (R_k %*% (Tau * EF_k))[i]   [matrix-vector product]
+  #   Survival:  alpha * W_{ii} * z^{-k}_i * beta_bar_k  [element-wise]
   #
   # The efficient form R_k %*% (Tau * EF_k) avoids an n x p sweep.
+  # NOTE: $B_gen and $B_surv in the return list are the RAW (unweighted)
+  # components — before alpha scaling — to preserve diagnostic utility.
+  # The combined $B reflects the weighting: (1-alpha)*B_gen + alpha*B_surv.
   # ------------------------------------------------------------------
-  B_gen  <- as.vector(R_k %*% (Tau * EF_k))         # n-vector
-  B_surv <- w * z_no_k * EBeta_k                     # n-vector
-  B_L    <- B_gen + B_surv
+  B_gen  <- as.vector(R_k %*% (Tau * EF_k))                     # n-vector (raw)
+  B_surv <- w * z_no_k * EBeta_k                                 # n-vector (raw)
+  B_L    <- (1 - alpha) * B_gen + alpha * B_surv                 # weighted combination
 
   # ------------------------------------------------------------------
   # EBNM pseudo-observation and noise (n-vectors)
@@ -206,6 +219,8 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
 #' @param EBeta       K-vector: posterior means of survival coefficients
 #' @param EBeta2      K-vector: posterior second moments of survival coefficients
 #' @param prior_family character: EBNM prior family (default "point_normal")
+#' @param alpha       numeric in [0, 1]: survival mixing weight, passed to
+#'                    update_L_k() for each factor (default 0.5)
 #' @param A_floor     numeric: precision floor (default 1e-10)
 #'
 #' @return Named list:
@@ -216,7 +231,8 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
 #' @family L_update
 update_L_all <- function(Y, EL, EL2, EF, EF2, Tau, w, z,
                           EBeta, EBeta2,
-                          prior_family = "point_normal",
+                          prior_family = "point_exponential",
+                          alpha        = 0.5,
                           A_floor      = 1e-10) {
 
   n <- nrow(EL)
@@ -246,6 +262,7 @@ update_L_all <- function(Y, EL, EL2, EF, EF2, Tau, w, z,
       R_k        = R_k,
       z_no_k     = z_no_k,
       prior_family = prior_family,
+      alpha      = alpha,
       A_floor    = A_floor
     )
 
