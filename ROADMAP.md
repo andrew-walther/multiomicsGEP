@@ -4,9 +4,10 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-04-09:** Core model implementation complete (modular CAVI, 139/139 tests
-> passing). Synthetic validation and 7-cohort PDAC benchmark complete. Presented at Rashid lab
-> meeting April 9, 2026.
+> **Status as of 2026-04-24:** Core model implementation complete (modular CAVI, 171/171 tests
+> passing). DeSurv-aligned benchmark (Phases 0–3B) implemented and running. Synthetic validation
+> shows supervised C-index (0.79) > PCA (0.76) after DGP fix. Real-data benchmark (TCGA+CPTAC
+> training, 5 external cohorts) in progress. See `results/benchmark_sim/` for current outputs.
 
 ---
 
@@ -51,7 +52,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🌍 Validation & Generalization
 
-- [ ] **Cross-cohort validation: train on CPTAC+TCGA, evaluate on remaining 5 cohorts** `[Priority: High]` `[Effort: Medium]`
+- [x] **Cross-cohort validation: train on CPTAC+TCGA, evaluate on remaining 5 cohorts** `[Priority: High]` `[Effort: Medium]` *(In progress — see `results/benchmark_sim/`)*
   Merge CPTAC and TCGA_PAAD (batch-corrected) as a training set and hold out Dijk,
   Moffitt_GEO_array, PACA_AU_array, PACA_AU_seq, and Puleo_array as independent test cohorts.
   This tests generalisation of learned gene expression programs across platforms (RNA-seq,
@@ -126,4 +127,5 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 - [x] **Hold-out prediction pipeline** — `code/predict.R` (`predict_supervised_mf()`), `code/train_test_split.R` (`stratified_split()`). 80/20 stratified hold-out. *(Completed March 2026)*
 - [x] **Prior family comparison (PN vs PL × K=5 vs K_eff)** — Four-condition benchmark across 7 PDAC cohorts. Point-laplace preferred at fixed K; K selection dominates prior choice. *(Completed April 2026)*
 - [x] **Full ELBO tracking** — Both proxy and full ELBO (genomics + survival + KL) tracked per iteration. `code/compute_elbo.R`. *(Completed April 2026)*
+- [x] **DeSurv benchmark (Phases 0–3B)** — DeSurv-aligned preprocessing (`code/preprocess_desurv.R`), alpha CV (`code/select_alpha_cv.R`), synthetic DGP fix (equal factor amplitudes + 4-signal β), SVD pseudoinverse in `predict.R`. Synthetic: supervised 0.79 > PCA 0.76. TCGA+CPTAC real-data run in progress. *(Completed April 2026)*
 - [x] **C-index honest reporting fix** — `get_cindex_comparison()` now uses model's own `EL %*% EBeta` instead of refitting coxph. Corrected `concordance()` convention mismatch: passing `I(-lp)` aligns with Cox direction (higher LP = higher risk). Synthetic C-index: Supervised 0.843 vs. PCA 0.842 with no direction workaround. Factor recovery diagnostic: factors 1, 3, 5 recover well; factor 2 correct sign but shrunk; factor 4 not recovered (b=-0.5 near-zero estimate). *(Completed April 9, 2026)*

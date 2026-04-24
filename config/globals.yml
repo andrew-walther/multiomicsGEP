@@ -14,7 +14,7 @@ cavi:
   burn_in: 5           # iterations before convergence is checked
   k_default: 5         # default number of factors (fixed-K runs)
   k_max: 10            # maximum K for auto-prune runs
-  alpha_grid: [0.1, 0.3, 0.5, 0.7, 0.9]
+  alpha_grid: [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
   n_cv_folds: 5
 
 # ------------------------------------------------------------------------------

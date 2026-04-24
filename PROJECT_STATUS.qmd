@@ -1109,4 +1109,69 @@ Fixed 4 factual discrepancies identified during review:
 6. Repo architecture review — propose a cleaner directory layout without moving files yet; surface ambiguities in current structure for discussion.
 7. Re-render synthetic and PDAC simulation reports after the C-index fix to update all reported C-index values.
 
+### Session 16 (April 23–24, 2026)
+
+DeSurv benchmark implementation (Phases 0–3B of `plans/DeSurv_Benchmark_4_23_26.md`). Initial Codex
+implementation (Phases 0–3A) followed by continued development in this session.
+
+#### 16.1 — DeSurv-aligned preprocessing
+
+1. Added `code/preprocess_desurv.R` with five helper functions: `log2_plus1_transform()`,
+   `select_top_variable_genes()`, `rank_transform_subjects()`, `preprocess_desurv_cohort()`,
+   `intersect_preprocessed_cohorts()`, `merge_preprocessed_cohorts()`.
+2. Pipeline matches DeSurv (Young et al. 2025): log₂(counts+1) for RNA-seq → top-2000 variable
+   genes → rank-transform per subject. Proteomics/microarray skip log₂ step.
+
+#### 16.2 — Alpha CV selection
+
+1. Added `code/select_alpha_cv.R` with `select_alpha_cv()`: stratified K-fold CV over a grid of
+   α values, returns optimal α via 1-SE rule.
+2. `config/globals.yml` alpha_grid expanded from [0.1, 0.3, 0.5, 0.7, 0.9] to
+   [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0] to include boundary conditions.
+
+#### 16.3 — predict.R SVD pseudoinverse fix
+
+1. `predict_supervised_mf()` in `code/predict.R` replaced `solve(crossprod(EF) + lambda*I)` with
+   SVD-based Moore-Penrose pseudoinverse. Fixes crash when ARD collapses factor columns during
+   early CV iterations (near-singular Gram matrix).
+
+#### 16.4 — Benchmark runner and outputs
+
+1. Scripts moved: `run_ssbmf_benchmark.R` and `ssbmf_summary_report.qmd` now live in
+   `results/benchmark_sim/`. Old outputs archived to `results/modular_sim_factor/archive/`.
+2. `run_ssbmf_benchmark.R` contains both synthetic benchmark (`run_ssbmf_benchmark()`) and
+   PDAC cross-cohort benchmark (`run_real_data_benchmark()`).
+3. Outputs written to `results/benchmark_sim/outputs/synthetic/` and `outputs/real_data/`.
+
+#### 16.5 — Synthetic DGP fix
+
+1. Removed 5× amplitude multiplier on null factors in `generate_synthetic_benchmark_data()`.
+   Equal amplitudes across all factors ensure PCA does not incidentally dominate via null factors.
+2. `beta_true` now read from `cfg$synthetic$b_true = [1.5, -1.2, 0.8, -0.5, 0.0]` (4 prognostic
+   + 1 null) rather than the old hardcoded [1.0, -0.8, 0, 0, 0].
+3. Post-fix synthetic results: supervised C-index 0.79 > PCA 0.76; converged in 13 iterations
+   at alpha_opt=0.5; K_effective=4/10; 3/4 prognostic factors recovered.
+
+#### 16.6 — Figure expansion (synthetic)
+
+Added 6 new figure types to the synthetic benchmark (total: 11 figures per run):
+- `rmse_trace`: Reconstruction RMSE over iterations
+- `pve_scree`: PVE scree with active/pruned colouring
+- `gep_loading_heatmap`: Top-gene loading heatmap for matched factors
+- `km_3group_training`: KM curves stratified by linear predictor tertile
+- `alpha_cv_curve`: Mean CV C-index vs. alpha with 1-SE selected value
+- `tau_distribution`: Gene precision histogram vs. true τ mean
+
+#### 16.7 — PDAC gene intersection and real-data benchmark
+
+1. TCGA_PAAD (n=144, RNA-seq) × CPTAC (n=129, proteomics): 838 shared genes after top-2000
+   filtering. Combined n_train=273, event rates ~52% (TCGA) / 50% (CPTAC).
+2. 5-fold CV over 7 alpha values running on PDAC data. External cohort projections to 5 cohorts
+   (Dijk, Moffitt_GEO_array, PACA_AU_array, PACA_AU_seq, Puleo_array) to follow.
+3. Summary report: `results/benchmark_sim/ssbmf_summary_report.qmd` → PDF + HTML.
+
+#### 16.8 — Test suite
+
+Tests still passing: `Rscript tests/run_tests.R` — expected 171/171 (unchanged from prior session).
+
 ---

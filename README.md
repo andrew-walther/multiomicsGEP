@@ -68,7 +68,13 @@ multiomicsGEP/
 │   └── demo_update_*.R                ← Run: Rscript demos/demo_update_*.R
 │
 ├── results/                           ← Simulation outputs (grouped by implementation)
-│   ├── modular_sim_factor/            ← ✅ Factor-wise CAVI (canonical)
+│   ├── benchmark_sim/                 ← ✅ DeSurv benchmark (current)
+│   │   ├── run_ssbmf_benchmark.R      ← entry point: synthetic + PDAC cross-cohort
+│   │   ├── ssbmf_summary_report.qmd/.pdf/.html  ← summary report
+│   │   └── outputs/
+│   │       ├── synthetic/             ← tables/ + figures/ (11 figure types)
+│   │       └── real_data/             ← tables/ + figures/ (external cohort results)
+│   ├── modular_sim_factor/            ← prior-family comparison (archived)
 │   │   ├── run_factor_modular_simulation.R  ← single runner: synthetic + 7 PDAC cohorts
 │   │   ├── run_prior_k_comparison.R   ← prior family & K auto-prune comparison runner
 │   │   ├── synthetic/

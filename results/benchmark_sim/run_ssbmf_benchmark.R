@@ -102,9 +102,12 @@ generate_synthetic_benchmark_data <- function(n = 300, p = 1000, K_true = 5,
                                               seed = 222, target_censoring = 0.30) {
   set.seed(seed)
 
-  beta_true <- c(1.0, -0.8, 0, 0, 0)
+  beta_true <- as.numeric(cfg$synthetic$b_true)
   if (length(beta_true) != K_true) {
-    stop("beta_true length must equal K_true.")
+    stop(sprintf(
+      "cfg$synthetic$b_true has length %d but K_true=%d. Update globals.yml.",
+      length(beta_true), K_true
+    ))
   }
 
   L_true <- matrix(rexp(n * K_true, rate = 1), n, K_true)
@@ -112,7 +115,7 @@ generate_synthetic_benchmark_data <- function(n = 300, p = 1000, K_true = 5,
   F_true <- matrix(0, p, K_true)
   for (k in seq_len(K_true)) {
     active <- sample.int(p, size = max(1L, round(0.05 * p)))
-    F_true[active, k] <- if (k <= 2) signal_scale else 5 * signal_scale
+    F_true[active, k] <- signal_scale
   }
   tau_true <- rgamma(p, shape = 2, rate = 2)
   E <- sweep(matrix(rnorm(n * p), n, p), 2, sqrt(tau_true), "/") * signal_scale
@@ -369,7 +372,7 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
                  setdiff(seq_len(K_max), match_df$est_factor))
   aligned_est <- full_fit$EBeta[est_order]
   aligned_sd  <- sqrt(pmax(full_fit$EBeta2[est_order] - full_fit$EBeta[est_order]^2, 0))
-  aligned_true <- c(data$beta_true[match_df$true_factor], rep(0, K_max - nrow(match_df)))
+  aligned_true <- c(data$beta_true[match_df$true_factor[order(match_df$true_factor)]], rep(0, K_max - nrow(match_df)))
   beta_labels <- c(paste0("T", match_df$true_factor[order(match_df$true_factor)]),
                    paste0("N", seq_len(K_max - nrow(match_df))))
   beta_df <- data.frame(
@@ -469,7 +472,119 @@ run_ssbmf_benchmark <- function(output_root = "results/benchmark_sim/outputs",
   })
   save_plot_pair(file.path(figure_dir, "holdout_cindex"), 6.5, 4.5, 800, 500, function() {
     par(mar = c(6, 5, 4, 1))
-    plot_holdout_cindex(holdout_df, "Held-Out C-index")
+    # Enhanced: add value labels above bars
+    bar_cols <- c("#1F77B4", "#FF7F0E")
+    bp <- barplot(holdout_df$C_Index, names.arg = holdout_df$Method, col = bar_cols,
+                  ylim = c(0, 1), main = "Held-Out C-index", ylab = "C-index",
+                  las = 2, bty = "n")
+    abline(h = 0.5, col = "#666666", lty = 2)
+    text(bp, holdout_df$C_Index + 0.03, sprintf("%.3f", holdout_df$C_Index),
+         cex = 0.9, font = 2)
+  })
+
+  # --- RMSE trace ---
+  save_plot_pair(file.path(figure_dir, "rmse_trace"), 8, 5, 900, 600, function() {
+    par(mar = c(5, 5, 4, 2))
+    plot(elbo_df$RMSE, type = "l", lwd = 2, col = "#1F77B4",
+         xlab = "Iteration", ylab = "RMSE",
+         main = "Genomics Reconstruction RMSE", bty = "n")
+  })
+
+  # --- PVE scree ---
+  save_plot_pair(file.path(figure_dir, "pve_scree"), 7, 5, 800, 570, function() {
+    par(mar = c(5, 5, 4, 2))
+    pve_final <- as.numeric(full_fit$history$factor_pve[nrow(full_fit$history$factor_pve), ])
+    ord <- order(pve_final, decreasing = TRUE)
+    active_ord <- final_k$active[ord]
+    bp <- barplot(pve_final[ord] * 100,
+                  col = ifelse(active_ord, "#1F77B4", "#BDBDBD"),
+                  xlab = "Factor (sorted by PVE)", ylab = "PVE (%)",
+                  main = sprintf("PVE Scree  (K_eff = %d / %d)", final_k$K_effective, K_max),
+                  bty = "n")
+    abline(h = 1, col = "#D62728", lty = 2)
+    legend("topright", legend = c("Active", "Pruned", "1% threshold"),
+           fill = c("#1F77B4", "#BDBDBD", NA), border = NA,
+           lty = c(NA, NA, 2), col = c(NA, NA, "#D62728"), bty = "n", cex = 0.8)
+  })
+
+  # --- Alpha CV curve ---
+  cv_tbl_synth <- cv_res$cv_table
+  save_plot_pair(file.path(figure_dir, "alpha_cv_curve"), 7, 5, 800, 550, function() {
+    par(mar = c(5, 5, 4, 2))
+    has_se <- !is.null(cv_tbl_synth$se_cindex) && any(!is.na(cv_tbl_synth$se_cindex))
+    y_lim  <- if (has_se)
+      range(c(cv_tbl_synth$mean_cindex - cv_tbl_synth$se_cindex,
+              cv_tbl_synth$mean_cindex + cv_tbl_synth$se_cindex), na.rm = TRUE)
+    else range(cv_tbl_synth$mean_cindex, na.rm = TRUE)
+    plot(cv_tbl_synth$alpha, cv_tbl_synth$mean_cindex,
+         type = "b", pch = 16, col = "#1F77B4", lwd = 2,
+         xlab = expression(alpha), ylab = "Mean CV C-index",
+         ylim = y_lim,
+         main = sprintf("Alpha CV - Synthetic (n=%d, p=%d)\nalpha_opt=%.2f",
+                        synthetic_n, synthetic_p, alpha_opt),
+         bty = "n")
+    if (has_se) {
+      lo <- cv_tbl_synth$mean_cindex - cv_tbl_synth$se_cindex
+      hi <- cv_tbl_synth$mean_cindex + cv_tbl_synth$se_cindex
+      draw_idx <- which(is.finite(lo) & is.finite(hi) & (hi - lo) > 1e-10)
+      if (length(draw_idx) > 0) {
+        arrows(cv_tbl_synth$alpha[draw_idx], lo[draw_idx],
+               cv_tbl_synth$alpha[draw_idx], hi[draw_idx],
+               angle = 90, code = 3, length = 0.04, col = "#1F77B4", lwd = 1.2)
+      }
+    }
+    abline(v = alpha_opt, col = "#D62728", lty = 2, lwd = 1.5)
+    abline(h = 0.5, col = "#666666", lty = 3)
+  })
+
+  # --- GEP loading heatmap (top genes per matched factor) ---
+  save_plot_pair(file.path(figure_dir, "gep_loading_heatmap"), 8, 6, 900, 700, function() {
+    par(mar = c(5, 6, 4, 2))
+    n_match  <- nrow(match_df)
+    ef_cols  <- est_order[seq_len(n_match)]
+    ef_mat   <- full_fit$EF[, ef_cols, drop = FALSE]
+    top_per  <- 20L
+    top_idx  <- unique(unlist(lapply(seq_len(ncol(ef_mat)), function(k)
+      order(abs(ef_mat[, k]), decreasing = TRUE)[seq_len(top_per)])))
+    mat      <- t(ef_mat[top_idx, , drop = FALSE])
+    image(seq_len(ncol(mat)), seq_len(nrow(mat)), t(mat),
+          col = colorRampPalette(c("#08306B", "#F7FBFF", "#A50F15"))(100),
+          axes = FALSE, xlab = sprintf("Top %d genes per factor", top_per),
+          ylab = "",
+          main = "GEP Loading Heatmap (matched factors)")
+    axis(2, at = seq_len(nrow(mat)),
+         labels = paste0("GEP", match_df$true_factor[order(match_df$true_factor)]),
+         las = 1, cex.axis = 0.85)
+    box()
+  })
+
+  # --- KM 3-group on synthetic training set ---
+  lp_train <- as.vector(full_fit$EL %*% full_fit$EBeta)
+  save_plot_pair(file.path(figure_dir, "km_3group_training"), 7, 5, 800, 560, function() {
+    par(mar = c(5, 5, 4, 1))
+    plot_km_3group(lp_train, data$time, data$status,
+                   title = sprintf("KM Stratification - Synthetic Training\n(n=%d, alpha=%.2f)",
+                                   synthetic_n, alpha_opt))
+  })
+
+  # --- Tau precision distribution ---
+  save_plot_pair(file.path(figure_dir, "tau_distribution"), 7, 5, 800, 550, function() {
+    par(mar = c(5, 5, 4, 2))
+    tau_est <- if (!is.null(full_fit$Tau)) full_fit$Tau else rep(NA_real_, synthetic_p)
+    if (any(!is.na(tau_est))) {
+      hist(log10(tau_est + 1e-8), breaks = 40,
+           col = "#9ECAE1", border = "white",
+           xlab = expression(log[10](hat(tau)[j])),
+           main = "Gene Precision Distribution  (estimated vs. true)",
+           bty = "n")
+      abline(v = mean(log10(data$tau_true + 1e-8)),
+             col = "#D62728", lwd = 2, lty = 2)
+      legend("topright", legend = "True tau mean",
+             col = "#D62728", lty = 2, lwd = 2, bty = "n")
+    } else {
+      plot.new()
+      title("Tau not available in this fit")
+    }
   })
 
   cat(sprintf("  Outputs written to %s\n", benchmark_root))
@@ -605,14 +720,15 @@ plot_km_3group <- function(lp, time, status, title = "") {
 #' @param top_n        number of top-variable genes per cohort (DeSurv spec: 2000)
 #' @return invisibly: list with all results
 run_real_data_benchmark <- function(
-    output_root = "results/benchmark_sim/outputs/real_data",
-    pdac_root   = PDAC_DATA_ROOT,
-    alpha_grid  = c(0.1, 0.3, 0.5, 0.7, 0.9),
-    n_folds     = 5,
-    K_max       = 10,
-    max_iter    = 200,
-    tol         = 1e-4,
-    top_n       = 2000) {
+    output_root            = "results/benchmark_sim/outputs/real_data",
+    pdac_root              = PDAC_DATA_ROOT,
+    alpha_grid             = c(0.1, 0.3, 0.5, 0.7, 0.9),
+    n_folds                = 5,
+    K_max                  = 10,
+    max_iter               = 300,
+    tol                    = 1e-5,
+    top_n                  = 2000,
+    gene_intersection_only = FALSE) {
 
   if (!dir.exists(pdac_root)) {
     message(sprintf(
@@ -656,6 +772,24 @@ run_real_data_benchmark <- function(
   n_train_genes <- train_intersected[[1]]$p
   training_gene_names <- train_intersected[[1]]$gene_names
   cat(sprintf("  Training gene intersection: %d genes\n", n_train_genes))
+
+  if (gene_intersection_only) {
+    cat(sprintf(
+      "\n=== INTERSECTION CHECKPOINT ===\n  TCGA_PAAD: n=%d, p_raw=%d, p_after_top%d=%d\n  CPTAC:     n=%d, p_raw=%d, p_after_top%d=%d\n  Shared genes after intersection: %d\n  Event rates: TCGA=%.1f%%, CPTAC=%.1f%%\n=== Stopping here. Set gene_intersection_only=FALSE to proceed. ===\n",
+      train_raw[["TCGA_PAAD"]]$n, train_raw[["TCGA_PAAD"]]$p, top_n, train_preproc[["TCGA_PAAD"]]$p,
+      train_raw[["CPTAC"]]$n,     train_raw[["CPTAC"]]$p,     top_n, train_preproc[["CPTAC"]]$p,
+      n_train_genes,
+      100 * mean(train_raw[["TCGA_PAAD"]]$status),
+      100 * mean(train_raw[["CPTAC"]]$status)
+    ))
+    return(invisible(list(
+      n_intersect    = n_train_genes,
+      n_TCGA         = train_raw[["TCGA_PAAD"]]$n,
+      n_CPTAC        = train_raw[["CPTAC"]]$n,
+      p_TCGA_preproc = train_preproc[["TCGA_PAAD"]]$p,
+      p_CPTAC_preproc = train_preproc[["CPTAC"]]$p
+    )))
+  }
 
   # Merge into single training matrix
   merged_train <- merge_preprocessed_cohorts(train_intersected, dataset_labels = TRAINING_COHORTS)
@@ -957,6 +1091,18 @@ run_real_data_benchmark <- function(
 # ==============================================================================
 
 if (sys.nframe() == 0) {
-  run_ssbmf_benchmark()
-  run_real_data_benchmark()
+  run_ssbmf_benchmark(
+    max_iter   = cfg$cavi$max_iter,
+    tol        = cfg$cavi$tol,
+    alpha_grid = cfg$cavi$alpha_grid,
+    K_max      = cfg$cavi$k_max,
+    seed       = cfg$synthetic$seed
+  )
+
+  run_real_data_benchmark(
+    max_iter   = cfg$cavi$max_iter,
+    tol        = cfg$cavi$tol,
+    alpha_grid = cfg$cavi$alpha_grid,
+    K_max      = cfg$cavi$k_max
+  )
 }

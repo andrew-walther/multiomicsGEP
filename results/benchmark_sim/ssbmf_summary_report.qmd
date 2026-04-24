@@ -147,8 +147,8 @@ if (!is.null(synth_summary)) {
 Data-generating process:
 
 - $L_\text{true} \sim \text{Exp}(1)$ (non-negative, matching `point_exponential` prior)
-- $F_\text{true}$: 5% sparse binary, non-prognostic factors scaled 5×
-- $\beta_\text{true} = (1.0,\,-0.8,\,0,\,0,\,0)$ — factors 3–5 are null
+- $F_\text{true}$: 5% sparse binary; all factors share the same amplitude (no null-factor inflation)
+- $\beta_\text{true} = (1.5,\,-1.2,\,0.8,\,-0.5,\,0.0)$ — 4 prognostic + 1 null factor
 - Weibull survival with ~30% right-censoring
 
 ## Factor Recovery
@@ -195,6 +195,26 @@ img_path <- file.path(synth_figures, "elbo_trace.png")
 if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
 ```
 
+## Reconstruction RMSE
+
+```{r rmse-trace, fig.cap="Genomics reconstruction RMSE across CAVI iterations."}
+img_path <- file.path(synth_figures, "rmse_trace.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+## Alpha Cross-Validation (Synthetic)
+
+```{r alpha-cv-synth, fig.cap="Mean CV C-index across alpha values on synthetic training data. Red dashed line marks selected alpha (1-SE rule)."}
+img_path <- file.path(synth_figures, "alpha_cv_curve.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+```{r alpha-cv-synth-table}
+if (!is.null(synth_alpha_cv)) {
+  kable(synth_alpha_cv, caption = "Alpha CV results (synthetic)", digits = 4)
+}
+```
+
 ## Held-Out C-index
 
 ```{r holdout-cindex}
@@ -203,6 +223,34 @@ if (file.exists(img_path)) include_graphics(img_path)
 if (!is.null(synth_holdout)) {
   kable(synth_holdout, caption = "Held-out C-index (80/20 split)", digits = 4)
 }
+```
+
+## PVE Scree
+
+```{r pve-scree, fig.cap="PVE scree plot. Blue bars = active factors (PVE>1% or |beta|>0.05); grey = ARD-pruned. Red dashed line marks 1% threshold."}
+img_path <- file.path(synth_figures, "pve_scree.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+## GEP Loading Heatmap
+
+```{r gep-heatmap, fig.cap="GEP loading heatmap. Rows = matched factors (GEP1-4 = prognostic); columns = top 20 genes per factor by absolute loading."}
+img_path <- file.path(synth_figures, "gep_loading_heatmap.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+## KM Risk Stratification
+
+```{r km-training, fig.cap="Kaplan-Meier curves for synthetic training set stratified into tertiles (Low/Mid/High) by SSBMF linear predictor."}
+img_path <- file.path(synth_figures, "km_3group_training.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
+```
+
+## Gene Precision Distribution
+
+```{r tau-dist, fig.cap="Estimated gene precision (tau) distribution on log10 scale. Red dashed line marks the true tau mean."}
+img_path <- file.path(synth_figures, "tau_distribution.png")
+if (file.exists(img_path)) include_graphics(img_path) else cat("(figure not yet generated)")
 ```
 
 ```{r synth-summary-row}
