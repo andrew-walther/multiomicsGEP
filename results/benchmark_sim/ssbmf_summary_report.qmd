@@ -692,10 +692,7 @@ if (!is.null(synth_summary_pn) && !is.null(synth_summary_pl)) {
 
 ```{r prior-beta-compare}
 #| layout-ncol: 2
-#| fig-cap: "Beta recovery comparison: point\\_normal (left) vs.\\ point\\_laplace (right). Both priors recover all 4 prognostic factors with correct sign. point\\_laplace applies heavier-tailed shrinkage, which can over-shrink small-to-moderate coefficients ($\\beta_3 = 0.8$, $\\beta_4 = -0.5$) relative to point\\_normal, resulting in slightly compressed EBeta estimates and wider credible intervals. The null factor ($\\beta_5 = 0$) is correctly zeroed by both priors."
-#| fig-subcap:
-#|   - "point\\_normal ($\\hat\\alpha = 0.5$)"
-#|   - "point\\_laplace ($\\hat\\alpha = 0.7$)"
+#| fig-cap: "**Beta recovery: prior sensitivity comparison.** **(a)** point\\_normal ($\\hat\\alpha = 0.5$): all 4 prognostic factors recovered with correct sign and magnitude; 95\\% credible intervals cover the true values. **(b)** point\\_laplace ($\\hat\\alpha = 0.7$): factors recovered with correct sign but heavier-tailed shrinkage compresses small-to-moderate coefficients ($\\beta_3 = 0.8$, $\\beta_4 = -0.5$), widening credible intervals relative to (a). The null factor ($\\beta_5 = 0$) is correctly zeroed by both priors via ARD. Blue dots = EBeta; vertical bars = 95\\% CI; red crosses = $\\beta_\\text{true}$."
 pn_img <- file.path(synth_figures_pn, "beta_recovery.png")
 pl_img <- file.path(synth_figures_pl, "beta_recovery.png")
 if (file.exists(pn_img)) include_graphics(pn_img)
