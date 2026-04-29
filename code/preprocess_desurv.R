@@ -109,6 +109,149 @@ intersect_preprocessed_cohorts <- function(cohort_list, reference = 1) {
   })
 }
 
+# ============================================================
+# v2 merged-cohort preprocessing (reordered pipeline)
+# ============================================================
+
+#' Quantile-normalize a merged expression matrix (genes × samples).
+#'
+#' Replaces each sample's gene distribution with the average quantile
+#' distribution computed across all samples. Operates on the full merged
+#' matrix blindly — no cohort labels required — so the correction does not
+#' bake in batch-group information that would prevent generalisation to new
+#' cohorts at prediction time.
+#'
+#' Thin wrapper around \code{preprocessCore::normalize.quantiles()}, which
+#' expects a genes × samples matrix (transposed relative to the n × p
+#' convention used elsewhere in the codebase).
+#'
+#' @param Y numeric matrix (n × p): samples in rows, genes in columns.
+#' @return numeric matrix (n × p) with quantile-normalised values; row/col
+#'   names preserved.
+#' @family v2 preprocessing
+quantile_normalize_merged <- function(Y) {
+  if (!requireNamespace("preprocessCore", quietly = TRUE))
+    stop("Package 'preprocessCore' is required. Install with:\n",
+         "  BiocManager::install('preprocessCore')")
+
+  if (!is.matrix(Y) || !is.numeric(Y))
+    stop("Y must be a numeric matrix (n x p).")
+
+  # preprocessCore expects genes × samples (p × n); transpose in/out
+  Y_qn <- preprocessCore::normalize.quantiles(t(Y))
+  Y_out <- t(Y_qn)
+  rownames(Y_out) <- rownames(Y)
+  colnames(Y_out) <- colnames(Y)
+  Y_out
+}
+
+#' v2 merged-cohort preprocessing: intersect first, then normalise jointly.
+#'
+#' Corrects the gene-selection order bug in the v1 pipeline. v1 runs
+#' \code{preprocess_desurv_cohort()} per cohort (log2 → top-N by per-cohort
+#' variance → rank), then intersects. Because TCGA top-2000 and CPTAC
+#' top-2000 are computed on different assay types, only ~838 genes overlap —
+#' and those genes are dominated by platform-level variation rather than
+#' biology.
+#'
+#' v2 pipeline order (7 steps):
+#' \enumerate{
+#'   \item Intersect raw gene universes across all training cohorts.
+#'   \item Log2(x + 1) transform per cohort (platform-aware: RNA-seq only).
+#'   \item Row-bind into a single merged matrix.
+#'   \item Quantile-normalize across all merged samples jointly
+#'         (\code{preprocessCore::normalize.quantiles}).
+#'   \item Compute per-gene variance across the full merged matrix.
+#'   \item Select the top \code{top_n} most-variable genes.
+#'   \item Rank-transform each subject within the selected gene set.
+#' }
+#'
+#' Steps 4–7 operate on the merged matrix, so variance reflects combined
+#' biological + residual batch variation rather than per-platform variance.
+#' Quantile normalisation (step 4) reduces platform-scale differences without
+#' requiring explicit cohort labels, preserving generalisability.
+#'
+#' @param cohort_raw_list   named list of raw cohort objects as returned by
+#'   \code{load_pdac_raw()}: each must contain \code{$Y} (n × p numeric
+#'   matrix) and \code{$gene_names} (character vector, length p).
+#' @param log_transform_flags named logical vector; TRUE entries trigger
+#'   log2(x + 1) for that cohort. Names must match \code{cohort_raw_list}.
+#' @param top_n             integer; number of most-variable genes to retain
+#'   after quantile normalisation. Default 2000.
+#' @param ties_method       ties method passed to \code{rank()}. Default
+#'   "average".
+#' @return list with components:
+#'   \describe{
+#'     \item{Y}{numeric matrix (n_total × top_n) — QN + rank-transformed.}
+#'     \item{gene_names}{character vector of retained gene names.}
+#'     \item{n}{total number of training samples.}
+#'     \item{p}{number of retained genes (= top_n or fewer if universe is
+#'       smaller).}
+#'     \item{dataset_labels}{factor of length n indicating cohort membership.}
+#'     \item{n_raw_intersect}{number of genes in the raw intersection (before
+#'       top-N selection) — use to verify Step 1 recovers substantially more
+#'       than 838.}
+#'   }
+#' @family v2 preprocessing
+#' @seealso \code{\link{preprocess_desurv_cohort}} (v1 single-cohort path),
+#'   \code{\link{quantile_normalize_merged}}
+preprocess_merged_cohorts <- function(cohort_raw_list,
+                                      log_transform_flags,
+                                      top_n       = 2000,
+                                      ties_method = "average") {
+  cohort_names <- names(cohort_raw_list)
+  stopifnot(!is.null(cohort_names), all(cohort_names %in% names(log_transform_flags)))
+
+  # Step 1: intersect raw gene universes (no preprocessing yet)
+  gene_lists   <- lapply(cohort_raw_list, function(x) x$gene_names)
+  common_genes <- Reduce(intersect, gene_lists)
+  if (length(common_genes) == 0)
+    stop("No common genes found across cohorts — check gene_names fields.")
+  cat(sprintf("  [v2] Raw gene intersection: %d genes across %s\n",
+              length(common_genes), paste(cohort_names, collapse = " + ")))
+
+  # Steps 2–3: log2 transform per cohort (platform-aware), then subset to
+  #            common genes and row-bind into a single n_total × p matrix.
+  cohort_matrices <- lapply(cohort_names, function(ds) {
+    raw <- cohort_raw_list[[ds]]
+    idx <- match(common_genes, raw$gene_names)
+    Y   <- raw$Y[, idx, drop = FALSE]
+    if (log_transform_flags[[ds]])
+      Y <- log2_plus1_transform(Y)
+    Y
+  })
+  Y_merged <- do.call(rbind, cohort_matrices)
+  colnames(Y_merged) <- common_genes
+
+  dataset_labels <- factor(
+    rep(cohort_names, vapply(cohort_raw_list, function(x) nrow(x$Y), integer(1))),
+    levels = cohort_names
+  )
+
+  # Step 4: quantile normalise across ALL merged samples jointly
+  cat(sprintf("  [v2] Quantile normalising merged matrix (%d x %d) ...\n",
+              nrow(Y_merged), ncol(Y_merged)))
+  Y_qn <- quantile_normalize_merged(Y_merged)
+
+  # Steps 5–6: per-gene variance on the QN matrix → top-N selection
+  selected <- select_top_variable_genes(Y_qn, common_genes, top_n = top_n)
+  cat(sprintf("  [v2] Genes retained after top-%d variance filter: %d\n",
+              top_n, length(selected$gene_names)))
+
+  # Step 7: rank-transform each subject within the selected gene set
+  Y_final <- rank_transform_subjects(selected$Y, ties_method = ties_method)
+  colnames(Y_final) <- selected$gene_names
+
+  list(
+    Y              = Y_final,
+    gene_names     = selected$gene_names,
+    n              = nrow(Y_final),
+    p              = ncol(Y_final),
+    dataset_labels = dataset_labels,
+    n_raw_intersect = length(common_genes)
+  )
+}
+
 merge_preprocessed_cohorts <- function(cohort_list, dataset_labels = names(cohort_list)) {
   if (!is.list(cohort_list) || length(cohort_list) < 1)
     stop("cohort_list must be a non-empty list.")
