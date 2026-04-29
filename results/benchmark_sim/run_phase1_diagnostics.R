@@ -53,6 +53,20 @@ plot_cohort_loading_heatmap <- function(EL, EBeta, cohort_labels,
   stopifnot(nrow(EL) == length(cohort_labels))
   stopifnot(ncol(EL) == length(EBeta))
 
+  # Guard: degenerate fit — EL is all-zero (entire loading matrix collapsed).
+  # pheatmap cannot build a color scale from a constant matrix.
+  # Write informative placeholder files and return early so the sweep continues.
+  if (all(EL == 0) || max(abs(EL)) < .Machine$double.eps * 100) {
+    msg <- sprintf(
+      "Degenerate fit: EL matrix is all-zero (max |EL| = %g).\n%s\n",
+      max(abs(EL)), "Model collapsed — no heatmap produced."
+    )
+    cat("[WARNING]", msg)
+    writeLines(msg, paste0(out_stub, "_DEGENERATE.txt"))
+    return(invisible(list(EL_sorted = EL, cohort_order = seq_len(nrow(EL)),
+                          beta_active_mask = rep(FALSE, length(EBeta)))))
+  }
+
   # Sort samples by cohort so the heatmap shows clean horizontal blocks
   cohort_order <- order(cohort_labels)
   EL_sorted    <- EL[cohort_order, , drop = FALSE]
@@ -67,13 +81,28 @@ plot_cohort_loading_heatmap <- function(EL, EBeta, cohort_labels,
   row_anno <- data.frame(Cohort = cohorts_ord)
   rownames(row_anno) <- rownames(EL_sorted)
 
-  # Column annotation: |β| (continuous) + active/inactive (categorical strip)
-  beta_active <- ifelse(abs(EBeta) > beta_thresh, "Active", "Shrunk")
-  col_anno <- data.frame(
-    Beta_Status = factor(beta_active, levels = c("Active", "Shrunk")),
-    Abs_Beta    = abs(EBeta)
-  )
-  rownames(col_anno) <- factor_labels
+  # Column annotation: |β| (continuous) + active/inactive (categorical strip).
+  # pheatmap converts the annotation data frame to a matrix internally; a
+  # constant column (all "Shrunk" or all identical numeric values) causes
+  # scale_vec_colours → cut() to crash with "breaks are not unique".
+  # Guard: only attach the column annotation when there is at least one Active
+  # factor OR the |EBeta| range is non-zero. When all factors are fully shrunk,
+  # the annotation conveys no information anyway, so we omit it cleanly.
+  beta_active  <- ifelse(abs(EBeta) > beta_thresh, "Active", "Shrunk")
+  any_active   <- any(beta_active == "Active")
+  has_beta_var <- diff(range(abs(EBeta))) > 0
+  use_col_anno <- any_active || has_beta_var
+
+  col_anno <- if (use_col_anno) {
+    df <- data.frame(
+      Beta_Status = factor(beta_active, levels = c("Active", "Shrunk")),
+      row.names   = factor_labels
+    )
+    if (has_beta_var) df$Abs_Beta <- abs(EBeta)
+    df
+  } else {
+    NULL
+  }
 
   cohort_levels <- levels(cohorts_ord)
   cohort_palette <- setNames(
@@ -81,11 +110,12 @@ plot_cohort_loading_heatmap <- function(EL, EBeta, cohort_labels,
       "#998EC3", "#80CDC1")[seq_along(cohort_levels)],
     cohort_levels
   )
-  anno_colors <- list(
-    Cohort      = cohort_palette,
-    Beta_Status = c(Active = "#D62728", Shrunk = "#BDBDBD"),
-    Abs_Beta    = c("#FFFFFF", "#08306B")
-  )
+  anno_colors <- list(Cohort = cohort_palette)
+  if (use_col_anno) {
+    anno_colors$Beta_Status <- c(Active = "#D62728", Shrunk = "#BDBDBD")
+    if (has_beta_var)
+      anno_colors$Abs_Beta <- c("#FFFFFF", "#08306B")
+  }
 
   # Cell color palette: white → red, mirroring meeting reference image
   heatmap_palette <- colorRampPalette(c("#FFFFFF", "#FCBBA1", "#FB6A4A", "#A50F15"))(100)

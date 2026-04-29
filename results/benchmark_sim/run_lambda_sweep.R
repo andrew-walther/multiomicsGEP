@@ -139,7 +139,21 @@ for (lam in LAMBDA_GRID) {
       next
     }
 
-    # ── lambda > 1: run new benchmark fit ─────────────────────────────────────
+    # ── lambda > 1: run new benchmark fit (skip if already completed) ────────
+    rds_done <- file.path(out_dir, "tables", "final_model.rds")
+    if (file.exists(rds_done)) {
+      cat(sprintf("  [lambda=%g, prior=%-14s] Already complete — regenerating heatmap only.\n",
+                  lam, prior))
+      run_phase1_diagnostic(
+        training_mode = "merged",
+        prior_beta    = prior,
+        base_dir      = out_dir,
+        label         = sweep_label
+      )
+      summary_rows[[sweep_label]] <- read_run_summary(out_dir, lam, prior)
+      next
+    }
+
     cat(sprintf("\n===== lambda=%g | prior=%s =====\n", lam, prior))
 
     run_real_data_benchmark(

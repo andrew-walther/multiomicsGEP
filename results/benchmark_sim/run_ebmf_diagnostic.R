@@ -126,11 +126,10 @@ cat(sprintf("\n=== Fitting EBMF (flashier, K_max=%d, var_type=2) ===\n", K_EBMF)
 # explain negligible variance.
 flash_fit <- flash(
   Y,
-  Kmax       = K_EBMF,
-  var_type   = 2,
+  var_type    = 2,
   greedy_Kmax = K_EBMF,
-  backfit    = TRUE,
-  verbose    = 1
+  backfit     = TRUE,
+  verbose     = 1
 )
 
 K_ebmf <- flash_fit$n_factors
