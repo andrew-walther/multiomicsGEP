@@ -143,14 +143,20 @@ plot_cohort_loading_heatmap <- function(EL, EBeta, cohort_labels,
 #' @param training_mode  "merged", "tcga_only", or "cptac_only"
 #' @param prior_beta     "point_normal", "point_laplace", or "normal"
 #' @param output_root    benchmark output root (matches run_real_data_benchmark)
+#' @param base_dir       optional override for the full directory containing
+#'   tables/ and figures/. When supplied, output_root/training_mode/prior_beta
+#'   is ignored. Useful for v2 preprocessing runs whose directory name differs
+#'   from the standard {mode}/{prior} pattern.
 #' @param beta_thresh    |β| threshold for "Active" vs "Shrunk" classification
 #' @return invisibly: list returned by plot_cohort_loading_heatmap()
 run_phase1_diagnostic <- function(training_mode = "merged",
                                   prior_beta    = "point_normal",
                                   output_root   = "results/benchmark_sim/outputs/real_data",
+                                  base_dir      = NULL,
                                   beta_thresh   = 0.05) {
 
-  base_dir <- file.path(output_root, training_mode, prior_beta)
+  if (is.null(base_dir))
+    base_dir <- file.path(output_root, training_mode, prior_beta)
   rds_path <- file.path(base_dir, "tables", "final_model.rds")
   fig_dir  <- file.path(base_dir, "figures")
 
