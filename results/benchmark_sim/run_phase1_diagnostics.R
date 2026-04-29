@@ -153,7 +153,8 @@ run_phase1_diagnostic <- function(training_mode = "merged",
                                   prior_beta    = "point_normal",
                                   output_root   = "results/benchmark_sim/outputs/real_data",
                                   base_dir      = NULL,
-                                  beta_thresh   = 0.05) {
+                                  beta_thresh   = 0.05,
+                                  label         = NULL) {
 
   if (is.null(base_dir))
     base_dir <- file.path(output_root, training_mode, prior_beta)
@@ -196,8 +197,11 @@ run_phase1_diagnostic <- function(training_mode = "merged",
   compare_dir <- file.path(output_root, "..", "diagnostic_heatmaps")
   compare_dir <- normalizePath(compare_dir, mustWork = FALSE)
   dir.create(compare_dir, recursive = TRUE, showWarnings = FALSE)
+  # label overrides the default {training_mode}_{prior_beta} stub so callers that
+  # embed extra tags (e.g. lambda value) can write a uniquely named comparison file.
+  compare_label <- if (!is.null(label)) label else sprintf("%s_%s", training_mode, prior_beta)
   compare_stub <- file.path(compare_dir,
-                            sprintf("%s_%s_phase1_loading_heatmap", training_mode, prior_beta))
+                            sprintf("%s_phase1_loading_heatmap", compare_label))
   file.copy(paste0(out_stub, ".pdf"), paste0(compare_stub, ".pdf"), overwrite = TRUE)
   file.copy(paste0(out_stub, ".png"), paste0(compare_stub, ".png"), overwrite = TRUE)
 

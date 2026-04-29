@@ -763,7 +763,8 @@ run_real_data_benchmark <- function(
     tol                    = 1e-5,
     lambda                 = 1.0,
     top_n                  = 2000,
-    gene_intersection_only = FALSE) {
+    gene_intersection_only = FALSE,
+    rank_transform         = TRUE) {
 
   preprocessing_version <- match.arg(preprocessing_version, c("v1", "v2"))
 
@@ -814,9 +815,10 @@ run_real_data_benchmark <- function(
     cat(sprintf("  Preprocessing version: v2 (intersect-first + QN)\n"))
     log_flags <- PLATFORM_LOG_TRANSFORM[active_train_cohorts]
     merged_v2 <- preprocess_merged_cohorts(
-      cohort_raw_list    = train_raw,
+      cohort_raw_list     = train_raw,
       log_transform_flags = log_flags,
-      top_n              = top_n
+      top_n               = top_n,
+      rank_transform      = rank_transform
     )
     Y_train          <- merged_v2$Y
     training_gene_names <- merged_v2$gene_names

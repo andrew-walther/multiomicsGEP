@@ -180,9 +180,16 @@ quantile_normalize_merged <- function(Y) {
 #'   after quantile normalisation. Default 2000.
 #' @param ties_method       ties method passed to \code{rank()}. Default
 #'   "average".
+#' @param rank_transform    logical; if TRUE (default) apply per-subject rank
+#'   transform (Step 7). Set FALSE for the no-rank sensitivity run: subjects
+#'   retain the raw quantile-normalised values on the selected gene set.
+#'   Rank transform forces all genes onto a uniform ordinal scale within each
+#'   subject; disabling it preserves absolute QN expression differences, which
+#'   may carry additional signal that rank-normalisation discards.
 #' @return list with components:
 #'   \describe{
-#'     \item{Y}{numeric matrix (n_total × top_n) — QN + rank-transformed.}
+#'     \item{Y}{numeric matrix (n_total × top_n) — QN-transformed, and
+#'       rank-transformed if \code{rank_transform = TRUE}.}
 #'     \item{gene_names}{character vector of retained gene names.}
 #'     \item{n}{total number of training samples.}
 #'     \item{p}{number of retained genes (= top_n or fewer if universe is
@@ -191,14 +198,17 @@ quantile_normalize_merged <- function(Y) {
 #'     \item{n_raw_intersect}{number of genes in the raw intersection (before
 #'       top-N selection) — use to verify Step 1 recovers substantially more
 #'       than 838.}
+#'     \item{rank_transform}{logical; echoes the input flag so downstream
+#'       callers can record which preprocessing variant was used.}
 #'   }
 #' @family v2 preprocessing
 #' @seealso \code{\link{preprocess_desurv_cohort}} (v1 single-cohort path),
 #'   \code{\link{quantile_normalize_merged}}
 preprocess_merged_cohorts <- function(cohort_raw_list,
                                       log_transform_flags,
-                                      top_n       = 2000,
-                                      ties_method = "average") {
+                                      top_n          = 2000,
+                                      ties_method    = "average",
+                                      rank_transform = TRUE) {
   cohort_names <- names(cohort_raw_list)
   stopifnot(!is.null(cohort_names), all(cohort_names %in% names(log_transform_flags)))
 
@@ -238,17 +248,25 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
   cat(sprintf("  [v2] Genes retained after top-%d variance filter: %d\n",
               top_n, length(selected$gene_names)))
 
-  # Step 7: rank-transform each subject within the selected gene set
-  Y_final <- rank_transform_subjects(selected$Y, ties_method = ties_method)
+  # Step 7 (optional): rank-transform each subject within the selected gene set.
+  # Disabled when rank_transform = FALSE for the no-rank sensitivity run.
+  if (rank_transform) {
+    Y_final <- rank_transform_subjects(selected$Y, ties_method = ties_method)
+    cat("  [v2] Rank-transforming subjects (Step 7).\n")
+  } else {
+    Y_final <- selected$Y
+    cat("  [v2] Skipping rank transform (rank_transform = FALSE).\n")
+  }
   colnames(Y_final) <- selected$gene_names
 
   list(
-    Y              = Y_final,
-    gene_names     = selected$gene_names,
-    n              = nrow(Y_final),
-    p              = ncol(Y_final),
-    dataset_labels = dataset_labels,
-    n_raw_intersect = length(common_genes)
+    Y               = Y_final,
+    gene_names      = selected$gene_names,
+    n               = nrow(Y_final),
+    p               = ncol(Y_final),
+    dataset_labels  = dataset_labels,
+    n_raw_intersect = length(common_genes),
+    rank_transform  = rank_transform
   )
 }
 
