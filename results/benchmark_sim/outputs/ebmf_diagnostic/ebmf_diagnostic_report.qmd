@@ -147,6 +147,47 @@ kable(
 knitr::include_graphics("figures/pca_loading_heatmap_coxannot.png")
 ```
 
+# Gene Loadings for Survival-Associated EBMF Factors
+
+The five survival-associated EBMF factors (EBMF3, 4, 6, 16, 17) were inspected for their top
+gene loadings to characterise the underlying biology. Table 3 lists the top 10 genes by absolute
+loading for each significant factor.
+
+```{r top-genes-table}
+tg <- read.csv("tables/ebmf_top_genes.csv")
+# Show top 10 per factor
+tg10 <- do.call(rbind, lapply(split(tg, tg$Factor), function(d) head(d[order(d$Abs_Loading, decreasing=TRUE), ], 10)))
+rownames(tg10) <- NULL
+
+kable(
+  tg10[, c("Factor","Rank","Gene","Loading")],
+  col.names = c("Factor", "Rank", "Gene", "Loading"),
+  digits    = c(0, 0, 0, 4),
+  booktabs  = TRUE,
+  caption   = "Top 10 genes by |loading| for each survival-associated EBMF factor (K = 5 significant factors shown)."
+) |>
+  kable_styling(font_size = 9, latex_options = "hold_position")
+```
+
+Several biologically coherent signals emerge:
+
+- **EBMF3** (HR $>$ 1, $p = 0.031$): Strongly negative loadings on *PTF1A*, *GUCA1C*, *FGL1*,
+  *GPHA2*, and *CELP* — exocrine pancreas markers. Higher scores (less exocrine character) associate
+  with worse survival, consistent with the known inverse relationship between exocrine differentiation
+  and PDAC aggressiveness.
+
+- **EBMF4** (HR $<$ 1, $p = 0.005$): Top genes *FCRL1*, *TCL1A*, *CR2*, *FCER2*, *CNR2* are
+  canonical B cell / immune markers. Higher factor scores associate with improved survival — a
+  tumour-infiltrating immune signal.
+
+- **EBMF6** (C-index = 0.63, $p = 3 \times 10^{-6}$, strongest factor): Top genes include
+  *A2ML1*, *CYP24A1*, *CSTA* — a mix of protease-inhibitor, vitamin-D metabolism, and epithelial
+  markers. The mechanism is not immediately interpretable; formal gene-set enrichment analysis
+  is warranted.
+
+- **EBMF16 / EBMF17**: Moderate associations ($p \approx 0.025$); top genes are more mixed,
+  suggesting these may capture subtype heterogeneity rather than a single pathway.
+
 # Takeaways
 
 The central question is answered: **survival signal exists in the merged v2

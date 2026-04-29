@@ -4,11 +4,12 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-04-24:** Core model complete (modular CAVI, 171/171 tests passing).
+> **Status as of 2026-04-29:** Core model complete (modular CAVI, 171/171 tests passing).
 > DeSurv benchmark complete: synthetic supervised C-index 0.79 > PCA 0.76; PDAC external median
-> C-index 0.60 across 5 cohorts (competitive with DeSurv 0.60–0.65). Prior sensitivity
-> (point_normal vs point_laplace) done — point_normal recommended. 24-page benchmark report
-> at `results/benchmark_sim/ssbmf_summary_report.pdf`. Next: PH diagnostics + gene set enrichment.
+> C-index 0.60 across 5 cohorts (competitive with DeSurv 0.60–0.65). v2 preprocessing implemented
+> (intersect → log₂ → QN → top-2000 → rank). EBMF diagnostic complete: survival signal confirmed
+> in merged data → SSBMF failure is a model problem. Lambda tuning ruled out (EL collapse at λ>1
+> for merged training). Normal prior ruled out. **Next priority: EBMF warm-start initialization.**
 
 ---
 
@@ -41,6 +42,15 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   validation.
   *Notes: High effort — requires new derivation and update to `code/update_L.R`. See `derivations/qL/qL_update_derivation.pdf` for current L update derivation.*
 
+- [ ] **EBMF warm-start initialization for SSBMF** `[Priority: High]` `[Effort: Medium]`
+  Initialize SSBMF L and F from an EBMF (`flashier::flash()`) solution on the same training data,
+  then run CAVI updating only β from that fixed starting point. This directly tests whether the
+  β CAVI update is capable of assigning non-zero coefficients to factors that are empirically
+  associated with survival (confirmed by EBMF diagnostic: 5/20 factors Cox-significant, strongest
+  C-index 0.629). If β becomes non-zero from the EBMF initialization, the bug is in the joint
+  L/F/β initialization or the early CAVI dynamics — not in the β update itself.
+  *Notes: EBMF fit and top-gene tables already exist at `results/benchmark_sim/outputs/ebmf_diagnostic/`. The EBMF run produced a 273×20 L matrix and 2000×20 F matrix via `ldf(flash_fit, type="2")`. SSBMF accepts initial L/F as arguments — confirm interface in `fit_modular.R`. This is the highest-value diagnostic next step after ruling out data problem (EBMF diagnostic), lambda tuning (EL collapse), and prior aggressiveness (normal prior tested). See DECISIONS.md 2026-04-29 entries.*
+
 - [x] **Add λ scaling parameter to balance genomics vs. survival objectives** `[Priority: High]` `[Effort: Medium]` *(Implemented and evaluated — fixed at λ=1.0)*
   λ is implemented as an exposed parameter in `update_L_k()`, `update_L_all()`, and
   `fit_supervised_mf_modular()` (default 1.0), and registered in `config/globals.yml`.
@@ -61,12 +71,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   within-cohort split. Requires R4 (inter-dataset normalisation) as a prerequisite.
   *Notes: `code/train_test_split.R` and `code/predict.R` are already in place for the projection step. Batch correction (ComBat or similar) not yet implemented — add to R4. See `results/modular_sim_factor/PDAC/` for current within-cohort results.*
 
-- [ ] **Inter-dataset normalisation before cohort merging** `[Priority: High]` `[Effort: Medium]`
+- [x] **Inter-dataset normalisation before cohort merging** `[Priority: High]` `[Effort: Medium]` *(Complete — v2 preprocessing, 2026-04-29)*
   Before merging cohorts (required for R3), apply quantile normalisation or z-score
   standardisation across datasets beyond the current per-cohort column-centring. Addresses
   platform-specific mean/variance shifts between RNA-seq, microarray, and proteomics. Essential
   for any analysis that combines data across assay types.
-  *Notes: Current preprocessing is per-cohort column-centring only (see `load_real_data()` in `results/modular_sim_factor/run_factor_modular_simulation.R`). R4 is a prerequisite for R3.*
+  *Notes: Implemented as `preprocess_merged_cohorts()` in `code/preprocess_desurv.R`. Pipeline: intersect raw gene universes → log₂(x+1) [RNA-seq only] → `preprocessCore::normalize.quantiles()` across all merged samples → top-2000 by merged-matrix variance → per-subject rank transform. Gated by `preprocessing_version = "v2"` in `run_real_data_benchmark()`. See DECISIONS.md 2026-04-29 entry.*
 
 ---
 
