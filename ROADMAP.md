@@ -42,14 +42,25 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   validation.
   *Notes: High effort — requires new derivation and update to `code/update_L.R`. See `derivations/qL/qL_update_derivation.pdf` for current L update derivation.*
 
-- [ ] **EBMF warm-start initialization for SSBMF** `[Priority: High]` `[Effort: Medium]`
-  Initialize SSBMF L and F from an EBMF (`flashier::flash()`) solution on the same training data,
-  then run CAVI updating only β from that fixed starting point. This directly tests whether the
-  β CAVI update is capable of assigning non-zero coefficients to factors that are empirically
-  associated with survival (confirmed by EBMF diagnostic: 5/20 factors Cox-significant, strongest
-  C-index 0.629). If β becomes non-zero from the EBMF initialization, the bug is in the joint
-  L/F/β initialization or the early CAVI dynamics — not in the β update itself.
-  *Notes: EBMF fit and top-gene tables already exist at `results/benchmark_sim/outputs/ebmf_diagnostic/`. The EBMF run produced a 273×20 L matrix and 2000×20 F matrix via `ldf(flash_fit, type="2")`. SSBMF accepts initial L/F as arguments — confirm interface in `fit_modular.R`. This is the highest-value diagnostic next step after ruling out data problem (EBMF diagnostic), lambda tuning (EL collapse), and prior aggressiveness (normal prior tested). See DECISIONS.md 2026-04-29 entries.*
+- [x] **EBMF warm-start initialization for SSBMF** `[Priority: High]` `[Effort: Medium]` *(Complete — 2026-04-29)*
+  Initialize SSBMF L and F from an EBMF solution and run CAVI from that starting point.
+  Two experiments run: (1) β-only with EL fixed → β non-zero at iter 1, 6/20 factors active,
+  confirms β update is functional. (2) Full CAVI warm-start → β collapses to zero in 23 iters,
+  L/F updates wash out EBMF structure. Root cause: `update_L_k()` A_surv dominated by A_gen.
+  See DECISIONS.md 2026-04-29 warm-start entry.
+  *Notes: `fit_modular.R` extended with `EL_init`/`EF_init` params. Driver: `run_ebmf_warmstart.R`.*
+
+- [ ] **Debug `update_L_k()`: A_surv / A_gen imbalance** `[Priority: High]` `[Effort: Medium]`
+  The warm-start diagnostic confirmed the L update drives EL away from survival-informative
+  directions. Most likely cause: A_surv (survival precision term) ≪ A_gen (genomics reconstruction
+  term) throughout CAVI — A_L[i] = (1-α)*A_gen[i] + α*A_surv[i], where A_gen sums over p=2000
+  genes while A_surv ∝ W_{ii} * EBeta[k]². When EBeta[k] ≈ 0 at init, A_surv ≈ 0 and the L
+  update is entirely genomics-driven — a chicken-and-egg cycle. Instrument `update_L_k()` to
+  log A_surv / A_gen per factor per iteration. Also verify: does the Cox β warm-start at
+  `fit_modular.R` line 224 actually produce non-zero EBeta before iteration 1's L update?
+  *Notes: Fix direction depends on what the instrumentation shows. If EBeta is zero at iter 1,
+  the Cox warm-start is failing (maybe convergence issue on the merged cohort). If EBeta > 0
+  but A_surv still ≪ A_gen, the survival precision term needs rescaling within update_L_k().*
 
 - [x] **Add λ scaling parameter to balance genomics vs. survival objectives** `[Priority: High]` `[Effort: Medium]` *(Implemented and evaluated — fixed at λ=1.0)*
   λ is implemented as an exposed parameter in `update_L_k()`, `update_L_all()`, and

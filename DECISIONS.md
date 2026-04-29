@@ -5,6 +5,18 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-04-29 — EBMF warm-start pinpoints bug to the L update, not the β update
+
+- **Decision:** The root cause of SSBMF's β=0 failure on the merged cohort is narrowed to `update_L_k()`. The β CAVI update is confirmed functional; the L/F updates are washing out the survival signal by prioritising the genomics reconstruction objective.
+- **Evidence:** Two warm-start experiments run on merged TCGA_PAAD + CPTAC (v2 preprocessing, n=273, p=2000, K=20):
+  1. **β-only experiment** — Fixed EL at the EBMF loading matrix and ran only `update_beta_k()` for 30 iterations. β moved non-zero at iteration 1, converged by iteration 7. **6/20 factors became active** (EBMF3/4/6/13/16/17), exactly matching the Cox-significant factors identified in the EBMF diagnostic. Max |β| = 6.04. Effective C-index ≈ 0.67 (raw concordance = 0.33, sign-inverted due to unit-norm L scaling). **Conclusion: β update is not broken.**
+  2. **Full CAVI warm-start** — Initialized EL and EF from EBMF posterior means (`flash_fit$L_pm`, `flash_fit$F_pm`), ran full CAVI. Converged in 23 iterations. **β collapsed back to near-zero** (max |β| = 0.026, 0/20 active). The L update undid the EBMF initialisation and drove the loading matrix toward genomics-reconstruction-optimal directions, where the survival signal disappears.
+- **Conclusion:** The β update is correct. The failure is that `update_L_k()`'s A_surv term (survival gradient contribution to the EBNM precision A) is dominated by A_gen (genomics reconstruction gradient) during CAVI. The model converges to a loadings solution that reconstructs Y well but is not informative for survival — then β has nothing informative to select.
+- **Next debugging step:** Inspect the magnitude ratio A_surv / A_gen inside `update_L_k()` during a training run. If A_surv ≪ A_gen for most samples, the survival objective is not contributing meaningfully to the L update, and some form of objective rebalancing (within the L update specifically, not at the λ level) is needed.
+- **Affected files:** `code/fit_modular.R` (EL_init/EF_init added), `results/benchmark_sim/run_ebmf_warmstart.R` (new)
+
+---
+
 ## 2026-04-29 — EBMF diagnostic confirms survival signal exists; SSBMF failure is a model problem
 
 - **Decision:** The β=0 failure on merged TCGA_PAAD + CPTAC training is classified as a **model problem**, not a data problem. Investigation via unsupervised EBMF + PCA diagnostic is now the official diagnostic path for cases where SSBMF produces all-zero β on a given dataset.
