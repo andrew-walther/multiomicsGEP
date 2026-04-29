@@ -183,6 +183,9 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                       init_method  = "svd",
                                       EL_init      = NULL,
                                       EF_init      = NULL,
+                                      N_burnin     = 0,
+                                      alpha_schedule = NULL,
+                                      normalize_AB = FALSE,
                                       verbose      = TRUE) {
 
   n <- nrow(Y); p <- ncol(Y)
@@ -190,6 +193,36 @@ fit_supervised_mf_modular <- function(Y, time, status,
   if (!is.numeric(alpha) || length(alpha) != 1 || !is.finite(alpha) ||
       alpha < 0 || alpha > 1) {
     stop("alpha must be a finite scalar in [0, 1].")
+  }
+
+  # ---- Progressive α schedule [A2 of docs/beta_zero_fix_design.md §4.4] ----
+  # alpha_schedule = list(warmup_iters, ramp_iters) ramps α from 0 (pure
+  # genomics) up to the target `alpha` over the ramp window, then holds.
+  # Lets L settle into reconstruction-meaningful directions before survival
+  # pressure is applied. Default NULL preserves existing behaviour
+  # (constant α from iter 1).
+  use_alpha_schedule <- !is.null(alpha_schedule)
+  if (use_alpha_schedule) {
+    if (!is.list(alpha_schedule) ||
+        !all(c("warmup_iters", "ramp_iters") %in% names(alpha_schedule)) ||
+        !is.numeric(alpha_schedule$warmup_iters) ||
+        !is.numeric(alpha_schedule$ramp_iters) ||
+        alpha_schedule$warmup_iters < 0 ||
+        alpha_schedule$ramp_iters   < 0) {
+      stop("alpha_schedule must be NULL or list(warmup_iters>=0, ramp_iters>=0).")
+    }
+  }
+  # Closure returning alpha at outer iteration `iter`. Branchless when off.
+  alpha_at <- function(iter) {
+    if (!use_alpha_schedule) return(alpha)
+    wu <- alpha_schedule$warmup_iters
+    rp <- alpha_schedule$ramp_iters
+    if (iter <= wu) return(0)
+    if (iter <= wu + rp) {
+      prog <- (iter - wu) / max(rp, 1)
+      return(alpha * prog)
+    }
+    alpha
   }
 
   # Auto-promote to "custom" init when caller supplies both EL_init and EF_init.
@@ -264,6 +297,50 @@ fit_supervised_mf_modular <- function(Y, time, status,
   }
   EBeta2 <- EBeta^2      # zero variance initially; updated at first EBNM call
 
+  # ---- Instrumentation [§4.1 of docs/beta_zero_fix_design.md] -----------
+  # Quantifies the Cox warm-start output. If max(|EBeta|) is already non-zero
+  # but the full CAVI still collapses β to zero, the cold-start is not the
+  # entry point — the A_surv/A_gen scale imbalance dominates. If ~0, the
+  # cycle starts at initialization and Fixes 1+2 (reorder + burn-in) are the
+  # natural first attempt.
+  if (verbose) {
+    cat(sprintf("    [init] Cox warm-start EBeta range: [%.3e, %.3e]\n",
+                min(EBeta), max(EBeta)))
+  }
+
+  # ==========================================================================
+  # β-only Burn-in [Fix 2 of docs/beta_zero_fix_design.md §4.3]
+  #
+  # Run N_burnin iterations of pure β-updates with EL held fixed at the
+  # SVD-initialized values. Treats L as a point estimate (EL2_init = EL^2,
+  # i.e., zero posterior variance). This directly replicates Warm-start
+  # Exp 1, which proved the β update produces non-zero coefficients when L
+  # is fixed. Goal: enter the joint CAVI loop with a non-zero EBeta so that
+  # A_surv = λ·w·E[β_k²] is non-trivial in the L update from iter 1.
+  #
+  # Backward compatibility: default N_burnin = 0 skips the block entirely.
+  # ==========================================================================
+  if (N_burnin > 0) {
+    EL2_init <- EL^2   # point estimate; zero posterior variance during burn-in
+    for (b in seq_len(N_burnin)) {
+      eta_b    <- as.vector(EL %*% EBeta)
+      taylor_b <- calc_cox_taylor(eta_b, time, status)
+      z_b      <- eta_b + taylor_b$u / taylor_b$w
+      w_b      <- taylor_b$w
+      for (k in seq_len(K)) {
+        z_no_k_b <- compute_z_no_k(z_b, EL, EBeta, k)
+        res_b    <- update_beta_k(w_b, z_no_k_b, EL[, k], EL2_init[, k],
+                                  prior_family = prior_beta, alpha = alpha)
+        EBeta[k]  <- res_b$mean
+        EBeta2[k] <- res_b$second
+      }
+    }
+    if (verbose) {
+      cat(sprintf("    [burnin] After %d β-only iterations, EBeta range: [%.3e, %.3e]\n",
+                  N_burnin, min(EBeta), max(EBeta)))
+    }
+  }
+
   # Column-specific noise precision from sample variance of each column of Y.
   Tau <- 1.0 / pmax(apply(Y, 2, var), 1e-8)   # p-vector
   y_frob2 <- sum(Y^2)
@@ -297,6 +374,13 @@ fit_supervised_mf_modular <- function(Y, time, status,
     EL_old    <- EL
     EBeta_old <- EBeta
 
+    # Per-iteration α (constant by default; ramped if alpha_schedule supplied)
+    alpha_iter <- alpha_at(iter)
+    if (use_alpha_schedule && verbose &&
+        (iter <= alpha_schedule$warmup_iters + alpha_schedule$ramp_iters + 1)) {
+      cat(sprintf("    [iter=%d] alpha_iter=%.3f\n", iter, alpha_iter))
+    }
+
     # KL accumulators for full ELBO — reset each outer iteration.
     # kl_L[k]    = E_q[log g_L(l_k)]    - E_q[log q_L(l_k)]    (<= 0)
     # kl_F[k]    = E_q[log g_F(f_k)]    - E_q[log q_F(f_k)]    (<= 0)
@@ -328,64 +412,100 @@ fit_supervised_mf_modular <- function(Y, time, status,
     # STEP 2: Factor-Wise Coordinate Ascent  k = 1, ..., K
     #
     # For each factor k, update in the order:
-    #   (a) q(l_k): patient loadings — uses both genomics and survival
-    #   (b) q(f_k): biological factors — genomics only; uses updated EL[,k]
-    #   (c) q(beta_k): survival coefficient — reuses z_no_k from (a)
+    #   (a) q(beta_k): survival coefficient — uses current EL[,k], EL2[,k]
+    #   (b) q(l_k):   patient loadings — uses freshly updated EBeta[k] in A_surv
+    #   (c) q(f_k):   biological factors — uses freshly updated EL[,k]
+    #
+    # Order rationale [Fix 1 of docs/beta_zero_fix_design.md §4.2]:
+    # update q(beta_k) FIRST so that q(l_k)'s A_surv = λ·w·E[β_k²] sees the
+    # freshest β value rather than a stale one from the previous outer
+    # iteration. This matters most at iter 1: β goes from the Cox-warm-start
+    # value into the L update immediately, breaking the chicken-and-egg cycle
+    # where A_surv ≈ 0 → L is genomics-only → β has no signal to find.
+    #
+    # SAFETY OF REUSE — z_no_k AND R_k are invariant in the current k:
+    #   z_no_k = z − Σ_{k'} EL[,k']·EBeta[k']  +  EL[,k]·EBeta[k]
+    #          = z − Σ_{k'≠k} EL[,k']·EBeta[k']
+    #   R_k    = Y − Σ_{k'≠k} EL[,k']·EF[,k']ᵀ
+    # Neither expression depends on EL[,k], EBeta[k], or EF[,k] for the
+    # current k. So the β update can fire first using z_no_k, then the L
+    # update can reuse the SAME z_no_k (now with the updated EBeta[k] flowing
+    # in via A_surv/B_surv only). Same number of compute_z_no_k() calls (1)
+    # and compute_R_k() calls (2 — one before L, one before F since the F
+    # update DOES need the post-L R_k via Gauss-Seidel).
+    # See Companion.tex Sec. 6 "z_no_k reuse rationale".
     #
     # Gauss-Seidel: each update sees the freshest values of all parameters.
     # ========================================================================
     for (k in 1:K) {
 
       # ----------------------------------------------------------------------
-      # (a) Update q(l_k): Patient Loadings
-      #
-      # Compute R_k and z_no_k once; reuse z_no_k for step (c).
-      #
-      # z_no_k does NOT depend on EL[,k] (EL[,k] cancels in the formula:
-      #   eta_no_k = EL %*% EBeta - EL[,k]*EBeta[k]; z_no_k = z - eta_no_k).
-      # It is therefore identical before/after the L_k update, so it is safe
-      # to reuse for step (c) without recomputing.
-      # See Companion.tex Sec. 6 "z_no_k reuse rationale".
+      # Compute R_k and z_no_k once. Both are invariant in EL[,k], EF[,k],
+      # and EBeta[k] for the current k, so they are valid for all three
+      # updates below.
       # ----------------------------------------------------------------------
       R_k    <- compute_R_k(Y, EL, EF, k)
-      z_no_k <- compute_z_no_k(z, EL, EBeta, k)   # COMPUTE ONCE — reuse for (c)
+      z_no_k <- compute_z_no_k(z, EL, EBeta, k)   # COMPUTE ONCE — used by β and L
 
+      # ---- Instrumentation [§4.1] ---------------------------------------
+      # At iter 1, log the genomics vs survival precision contributions for
+      # the first few factors. A_surv ≪ A_gen quantifies the structural
+      # scale imbalance that crippled merged-cohort training. Matches
+      # update_L_k() math: A_gen = sum_j(τ_j · E[f_jk²]) (scalar across i);
+      # A_surv = λ · w_i · E[β_k²] (n-vector — we report the mean for
+      # readability). Logged BEFORE the β update so the value reflects the
+      # state seen at the iteration boundary, not after β has been refreshed
+      # for the current k.
+      if (iter == 1 && verbose && k <= 3) {
+        A_gen_k  <- sum(Tau * EF2[, k])
+        A_surv_k <- mean(w) * EBeta2[k] * lambda
+        cat(sprintf("    [iter1, k=%d] A_gen=%.2e  A_surv=%.2e  ratio=%.4f\n",
+                    k, A_gen_k, A_surv_k, A_surv_k / (A_gen_k + 1e-30)))
+      }
+
+      # ----------------------------------------------------------------------
+      # (a) Update q(beta_k): Survival Coefficient — FIRST
+      #
+      # Uses current EL[,k] and EL2[,k] (from the previous outer iteration,
+      # or from initialization on iter 1). The freshly updated EBeta[k] then
+      # flows into the L update's A_surv / B_surv terms below.
+      # ----------------------------------------------------------------------
+      res_beta    <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
+                                   prior_family = prior_beta, alpha = alpha_iter)
+      EBeta[k]    <- res_beta$mean
+      EBeta2[k]   <- res_beta$second
+      kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
+                                      res_beta$A, res_beta$x,
+                                      res_beta$mean, res_beta$second)
+
+      # ----------------------------------------------------------------------
+      # (b) Update q(l_k): Patient Loadings — sees fresh EBeta[k]
+      #
+      # A_surv = λ·w·EBeta2[k] now reflects the just-updated β, so survival
+      # signal enters the L precision from iter 1 even when the Cox warm-start
+      # gave a small but non-zero β.
+      # ----------------------------------------------------------------------
       res_L   <- update_L_k(Tau, EF[, k], EF2[, k], w, EBeta[k], EBeta2[k],
-                             R_k, z_no_k, prior_family = prior_LF, alpha = alpha,
-                             lambda = lambda)
+                             R_k, z_no_k, prior_family = prior_LF, alpha = alpha_iter,
+                             lambda = lambda, normalize_AB = normalize_AB)
       EL[, k]  <- res_L$mean
       EL2[, k] <- res_L$second
       kl_L[k]  <- compute_ebnm_kl(res_L$ebnm_result$log_likelihood,
                                    res_L$A, res_L$x, res_L$mean, res_L$second)
 
       # ----------------------------------------------------------------------
-      # (b) Update q(f_k): Biological Factors
+      # (c) Update q(f_k): Biological Factors — sees fresh EL[,k]
       #
       # R_k depends on EL[,k], so recompute it using the updated EL[,k]
-      # from step (a).  This is the Gauss-Seidel property.
+      # from step (b).  This is the Gauss-Seidel property.
       # ----------------------------------------------------------------------
       R_k   <- compute_R_k(Y, EL, EF, k)
       res_F <- update_F_k(Tau, EL[, k], EL2[, k], R_k,
-                          prior_family = prior_LF, alpha = alpha)
+                          prior_family = prior_LF, alpha = alpha_iter)
       EF[, k]  <- res_F$mean
       EF2[, k] <- res_F$second
       kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
                                    res_F$A, res_F$x, res_F$mean, res_F$second)
-
-      # ----------------------------------------------------------------------
-      # (c) Update q(beta_k): Survival Coefficient
-      #
-      # Reuse z_no_k from step (a) — unchanged since EL[,k'] for k' != k
-      # has not been updated in this inner iteration, and z_no_k excludes
-      # factor k entirely.
-      # ----------------------------------------------------------------------
-      res_beta    <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
-                                   prior_family = prior_beta, alpha = alpha)
-      EBeta[k]    <- res_beta$mean
-      EBeta2[k]   <- res_beta$second
-      kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
-                                      res_beta$A, res_beta$x,
-                                      res_beta$mean, res_beta$second)
 
     }  # end k-loop
 
