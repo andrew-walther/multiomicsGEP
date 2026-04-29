@@ -186,6 +186,15 @@ run_phase1_diagnostic <- function(training_mode = "merged",
     beta_thresh   = beta_thresh
   )
 
+  # Copy to shared comparison folder with {mode}_{prior} prefix for easy side-by-side review
+  compare_dir <- file.path(output_root, "..", "diagnostic_heatmaps")
+  compare_dir <- normalizePath(compare_dir, mustWork = FALSE)
+  dir.create(compare_dir, recursive = TRUE, showWarnings = FALSE)
+  compare_stub <- file.path(compare_dir,
+                            sprintf("%s_%s_phase1_loading_heatmap", training_mode, prior_beta))
+  file.copy(paste0(out_stub, ".pdf"), paste0(compare_stub, ".pdf"), overwrite = TRUE)
+  file.copy(paste0(out_stub, ".png"), paste0(compare_stub, ".png"), overwrite = TRUE)
+
   # Save a small summary CSV
   beta_summary <- data.frame(
     Factor       = paste0("GEP", seq_along(m$EBeta)),
@@ -198,6 +207,7 @@ run_phase1_diagnostic <- function(training_mode = "merged",
             row.names = FALSE)
 
   cat(sprintf("  Heatmap written: %s.{pdf,png}\n", out_stub))
+  cat(sprintf("  Comparison copy: %s.{pdf,png}\n", compare_stub))
   cat(sprintf("  Beta summary:    %s/tables/phase1_beta_summary.csv\n", base_dir))
   invisible(result)
 }

@@ -1,0 +1,2 @@
+"training_mode","prior_beta","n_train","p_genes","alpha_opt","cv_rule","K_max","K_eff","converged","n_iter","final_elbo","median_ext_cindex"
+"tcga_only","normal",144,2000,0.5,"1se",10,4,TRUE,41,-935867.5692,0.6021
