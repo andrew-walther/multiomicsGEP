@@ -69,7 +69,8 @@ multiomicsGEP/
 │   ├── update_F.qmd/.pdf/.html        ← F update: derivation, code, tests, demos
 │   ├── update_tau.qmd/.pdf/.html      ← τ update: derivation, code, tests, demos
 │   ├── PDAC_data_audit.qmd/.pdf/.html ← Audit of available PDAC cohorts & data quality
-│   └── SSMF_DeSurv_Sim_Benchmark.md  ← DeSurv benchmark design notes
+│   ├── SSMF_DeSurv_Sim_Benchmark.md  ← DeSurv benchmark design notes
+│   └── update_L_fix.md               ← Debugging guide: A_surv/A_gen imbalance → β=0 fix
 │
 ├── tests/                             ← 171 tests (run: Rscript tests/run_tests.R)
 │   ├── run_tests.R                    ← Master test runner
@@ -98,10 +99,15 @@ multiomicsGEP/
 │   │       ├── synthetic/
 │   │       │   ├── point_normal/      ← tables/ + figures/ (11 figure types)
 │   │       │   └── point_laplace/     ← tables/ + figures/
-│   │       └── real_data/
-│   │           ├── tcga_only/{prior}/ ← primary results (point_normal + point_laplace)
-│   │           ├── cptac_only/{prior}/
-│   │           └── merged/{prior}/    ← multi-modal failure case (all β̂=0)
+│   │       ├── real_data/
+│   │       │   ├── tcga_only/{prior}/    ← primary single-cohort results
+│   │       │   ├── cptac_only/{prior}/
+│   │       │   └── merged/
+│   │       │       ├── v2_{prior}/        ← v2 preprocessing (QN, intersect-first)
+│   │       │       └── v2_lambda{X}_{prior}/ ← λ-sweep results
+│   │       ├── diagnostic_heatmaps/       ← Phase 1 loading heatmaps (all modes × priors)
+│   │       ├── ebmf_diagnostic/           ← EBMF Cox survival check (confirms data has signal)
+│   │       └── ebmf_warmstart/            ← Warm-start experiments (β-only + full CAVI)
 │   ├── modular_sim_factor/            ← Prior-family × K comparison (legacy, superseded)
 │   │   ├── run_factor_modular_simulation.R
 │   │   ├── run_prior_k_comparison.R
@@ -219,7 +225,8 @@ DATA_MODE=real DATASET_NAME=Puleo_array K_SELECT=auto_prune \
 | Puleo_array | Microarray | 288 | 37% |
 
 **Note:** PDAC data files are stored locally (not in git). The default path is
-`~/Library/CloudStorage/OneDrive-.../PDAC_data`. Override with `PDAC_DATA_ROOT`.
+`~/Library/CloudStorage/OneDrive-UniversityofNorthCarolinaatChapelHill/UNC Dissertation (Liu)/PDAC_data`.
+Override with `PDAC_DATA_ROOT` (e.g. `export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC` on Longleaf).
 
 ### Apply to Real Data
 
@@ -317,13 +324,20 @@ The model is fully implemented, tested, benchmarked against DeSurv, and document
 - PDAC cross-cohort benchmark: TCGA-only median external C-index 0.60 (5 cohorts),
   competitive with DeSurv's reported 0.60–0.65 range
 - Prior sensitivity: `point_normal` vs `point_laplace` compared; `point_normal` recommended
-- Multi-modal failure documented: TCGA+CPTAC merged → all β̂=0 (ARD diagnoses platform batch)
+- v2 preprocessing for merged cohort: intersect-first → log₂ → quantile normalization →
+  top-2000 by merged variance → rank transform; fixes 838-gene selection bug
+- Lambda sweep (λ ∈ {1, 5, 10, 20} × 3 priors): all β=0; λ≥5 collapses EL matrix — λ tuning ruled out
+- EBMF diagnostic: 5/20 unsupervised factors are Cox-significant (C-index up to 0.63);
+  confirms survival signal exists in merged data — failure is a **model problem, not data**
+- EBMF warm-start experiments: β-only (EL fixed) → 6/20 factors active ✓; full CAVI → β
+  collapses in 23 iters ✗. Root cause localised to `update_L_k()` A\_surv/A\_gen imbalance
 - 24-page benchmark report (`results/benchmark_sim/ssbmf_summary_report.pdf`)
 
-**Highest-priority next steps:**
-- Proportional hazards diagnostic (`cox.zph()`) on external cohort risk scores
-- Gene set enrichment: top-50 genes per active factor → fgsea/gprofiler
-- Shared-L multi-modal extension (proper joint RNA-seq + proteomics architecture)
+**Highest-priority next step:**
+- Fix `update_L_k()` A\_surv/A\_gen scale imbalance so survival signal survives the joint CAVI.
+  Full debugging plan in `docs/update_L_fix.md`. Four candidate fixes in priority order:
+  (1) reorder β before L in inner loop, (2) β-only burn-in, (3) ridge Cox warm-start,
+  (4) normalise A\_surv/A\_gen to comparable scales.
 
 ---
 
