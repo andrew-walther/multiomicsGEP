@@ -16,7 +16,7 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 - **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. Expected: 171/171 passing.
 - **Real-data tests:** `Rscript tests/test_real_data_loading.R` — 77/77 passing (auto-skips if `PDAC_DATA_ROOT` not set).
 - **Real data:** Not in git. Stored locally at `~/Library/CloudStorage/OneDrive-.../UNC Dissertation (Liu)/PDAC_data`. For Longleaf: `export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC`.
-- **Active debugging target:** β=0 on merged TCGA+CPTAC training. Root cause identified: `update_L_k()` A\_surv/A\_gen imbalance. See `docs/update_L_fix.md` before starting any work on this.
+- **Active research target:** Cluster B — Cox-on-YF reformulation (Phase 4 of `docs/beta_zero_fix_design.md` §5). Cluster A is complete on branch `fix-L-update-beta-cycle`: training-side β=0 on merged TCGA+CPTAC is resolved (2/20 factors active, ELBO monotone) via inner-loop reorder + `N_burnin` + `normalize_AB`, but external generalization is mixed (1/5 cohorts improved vs. baseline; 4/5 regressed). The cross-cohort gap motivates Cluster B. Read `docs/beta_zero_fix_design.md` and `docs/update_L_fix.md` before any related work.
 
 ## Quick Reference
 
@@ -37,7 +37,10 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 | Phase 1 loading heatmaps | `results/benchmark_sim/run_phase1_diagnostics.R` |
 | EBMF unsupervised diagnostic | `results/benchmark_sim/run_ebmf_diagnostic.R` |
 | EBMF warm-start experiments | `results/benchmark_sim/run_ebmf_warmstart.R` |
-| **L-update debugging guide** | `docs/update_L_fix.md` — read before any β=0 fix work |
+| Cluster A smoke fit (Step 5)  | `results/benchmark_sim/run_cluster_a_smoke.R` |
+| Cluster A external C-index    | `results/benchmark_sim/run_cluster_a_external.R` |
+| **β=0 design doc (Cluster A/B)** | `docs/beta_zero_fix_design.md` — five-phase plan |
+| **L-update debugging guide** | `docs/update_L_fix.md` — read before any L-update work |
 | Exploratory simulation runner | `results/modular_sim_factor/run_factor_modular_simulation.R` |
 | Alpha CV selection | `code/select_alpha_cv.R` |
 | DeSurv preprocessing | `code/preprocess_desurv.R` |
