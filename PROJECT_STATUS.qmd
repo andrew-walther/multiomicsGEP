@@ -1231,6 +1231,103 @@ Major rewrite of `results/benchmark_sim/ssbmf_summary_report.qmd` across three r
 
 ---
 
+### Session 19 (April 29, 2026)
+
+Multi-platform merged training diagnostics: v2 preprocessing, lambda sweep, EBMF diagnostic,
+and EBMF warm-start. Root cause of β=0 failure on merged TCGA\_PAAD + CPTAC identified.
+
+#### 19.1 — v2 Preprocessing (intersect-first pipeline)
+
+Root cause of the 838-gene problem diagnosed: v1 preprocessing applied per-cohort top-2000
+selection *before* intersecting gene universes, leaving only ~838 common genes. New v2 pipeline
+added to `code/preprocess_desurv.R` (`preprocess_merged_cohorts()`):
+
+1. Intersect raw gene universes across all training cohorts (→ ~17,900 genes for TCGA+CPTAC)
+2. log₂(x+1) transform [RNA-seq only; proteomics skipped]
+3. Quantile normalization across all merged samples (`preprocessCore::normalize.quantiles()`)
+4. Select top-2,000 genes by merged-matrix variance
+5. Per-subject rank transform (optional; toggled via `rank_transform` parameter)
+
+Gated by `preprocessing_version = "v2"` in `run_real_data_benchmark()`. v1 pipeline untouched;
+both coexist. External cohorts still use v1 single-cohort preprocessing.
+
+#### 19.2 — Lambda sweep (λ ∈ {1,5,10,20} × 3 priors, merged v2)
+
+**Script:** `results/benchmark_sim/run_lambda_sweep.R`
+**Results:** `results/benchmark_sim/outputs/real_data/lambda_sweep_summary.csv`
+
+Motivated by p/n ≈ 10 scale imbalance between genomics and survival objectives. Tested all
+12 combinations on the merged v2 training set (n=273, p=2000).
+
+**Key findings:**
+
+- β = 0 for **all 12 combinations** — lambda tuning does not help
+- λ ≥ 5 causes a new failure: the **entire EL matrix collapses to zero** (not just β), making the
+  model fully degenerate. Amplifying the survival gradient overshoots and destabilizes the
+  loading updates
+- Only λ=5 point_laplace showed max|β|=0.032, still below the active threshold of 0.05
+- **Decision:** λ=1 retained as default; lambda tuning ruled out for merged training
+
+#### 19.3 — EBMF diagnostic (data vs. model problem)
+
+**Script:** `results/benchmark_sim/run_ebmf_diagnostic.R`
+**Report:** `results/benchmark_sim/outputs/ebmf_diagnostic/ebmf_diagnostic_report.{pdf,html}`
+
+Ran `flashier::flash()` (K=20, var_type=2) and PCA (K=20) on the same merged v2 training
+matrix used by SSBMF, with no survival objective. Tested each factor for Cox association.
+
+**Key findings:**
+
+- **5/20 EBMF factors** Cox-significant (p < 0.05); strongest: EBMF6 C-index=0.629, p=3×10⁻⁶
+- **4/20 PCA components** also significant — consistent evidence across methods
+- **Conclusion: survival signal EXISTS in the merged data** → SSBMF's β=0 is a model problem,
+  not a data problem
+
+Top gene analysis: EBMF3/17 = exocrine pancreas markers (PTF1A, GUCA1C); EBMF4 = B cell/immune
+(FCRL1, TCL1A, CR2); EBMF6 = metabolic (A2ML1, CYP24A1).
+
+#### 19.4 — EBMF warm-start (root cause localization)
+
+**Script:** `results/benchmark_sim/run_ebmf_warmstart.R`
+
+Two experiments to distinguish β-update bug from initialization/L-update bug.
+
+**Experiment 1 — β-only, EL fixed at EBMF loadings:**
+- β moved off zero at iteration 1; converged to 6/20 active factors by iteration 7
+- Active: EBMF3/4/6/13/16/17 — exactly matching the Cox-significant factors
+- **Conclusion: the β CAVI update is not broken**
+
+**Experiment 2 — Full CAVI warm-start from EBMF init:**
+- β collapsed back to near-zero (max|β|=0.026) in 23 iterations
+- L/F updates washed out the EBMF initialization despite it being survival-informative
+- **Conclusion: the L update is the root cause**
+
+**Root cause:** In `update_L_k()`, the survival precision term A\_surv = λ·W_ii·E[β_k²] is
+structurally negligible when EBeta ≈ 0 at initialization (A\_gen sums over p=2000 genes and
+dominates). The update converges to genomics-reconstruction-optimal factors where β has nothing
+to select. This is a chicken-and-egg cycle that λ tuning cannot break.
+
+**`fit_modular.R` extended** with `EL_init` / `EF_init` parameters (init_method="custom") for
+injecting external initializations. 171/171 tests still passing.
+
+#### 19.5 — Documentation
+
+- `DECISIONS.md`: four new entries (v2 preprocessing, lambda collapse, EBMF diagnostic, normal
+  prior ruled out, warm-start root cause localization)
+- `ROADMAP.md`: status updated, inter-dataset normalisation marked complete, EBMF warm-start
+  marked complete, new "Debug update_L_k()" item added as next priority
+- `docs/update_L_fix.md` (new): full debugging guide for the L-update fix — mechanism, four
+  candidate fixes (reorder inner loop, β burn-in, ridge Cox init, A\_surv/A\_gen normalization),
+  recommended investigation sequence, success criteria
+
+#### 19.6 — Current branch status
+
+All session 19 work lives on branch `preprocessing-reorder`. Ready to merge to `main` — all
+code changes are backward-compatible, 171/171 tests pass, and the L-update fix is scoped to
+a separate new branch (`fix-L-update-beta-cycle` or similar).
+
+---
+
 ### Session 18 (April 24, 2026)
 
 PH diagnostics, training-mode × prior dot plot, and λ scaling sandbox evaluation.

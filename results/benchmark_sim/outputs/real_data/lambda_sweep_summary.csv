@@ -1,0 +1,13 @@
+"lambda","prior_beta","ELBO","n_active_beta","max_abs_beta"
+1,"point_normal",-342624.47,0,0
+1,"point_laplace",-996571.49,0,0
+1,"normal",-2927019.6,0,0
+5,"point_normal",-665.04,0,0
+5,"point_laplace",-997133.48,0,0.031603
+5,"normal",-2927018.28,0,0
+10,"point_normal",-665.04,0,0
+10,"point_laplace",-1002290.45,0,1.1e-05
+10,"normal",-2927017.8,0,0
+20,"point_normal",-665.04,0,0
+20,"point_laplace",-999322.02,0,0
+20,"normal",-2927014.05,0,0
