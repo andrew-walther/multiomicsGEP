@@ -1,0 +1,6 @@
+"Cohort","n","Events","Platform","C_index","PH_chisq","PH_df","PH_p","PH_flag"
+"Dijk",90,81,"RNA-seq",0.6275,0.152,1,0.6966,"PASS"
+"Moffitt_GEO_array",123,83,"Microarray",0.5422,0.059,1,0.8088,"PASS"
+"PACA_AU_array",63,38,"Microarray",0.6307,2.637,1,0.1044,"PASS"
+"PACA_AU_seq",52,31,"RNA-seq",0.6585,0.353,1,0.5524,"PASS"
+"Puleo_array",288,181,"Microarray",0.614,6.618,1,0.0101,"FLAG (p<0.05)"

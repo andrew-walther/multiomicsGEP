@@ -1,2 +1,2 @@
-"n_train","p_genes","alpha_opt","cv_rule","K_max","K_eff","converged","n_iter","final_elbo","median_ext_cindex","training_mode","prior_beta"
-273,838,0.3,"1se",10,7,TRUE,66,-1020985.626,0.5,"merged","point_normal"
+"training_mode","prior_beta","n_train","p_genes","alpha_opt","cv_rule","K_max","K_eff","converged","n_iter","final_elbo","median_ext_cindex"
+"merged","point_normal",273,838,0.3,"1se",10,7,TRUE,66,-1020985.626,0.5

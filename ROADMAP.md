@@ -4,11 +4,12 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-04-24:** Core model complete (modular CAVI, 171/171 tests passing).
+> **Status as of 2026-04-29:** Core model complete (modular CAVI, 171/171 tests passing).
 > DeSurv benchmark complete: synthetic supervised C-index 0.79 > PCA 0.76; PDAC external median
-> C-index 0.60 across 5 cohorts (competitive with DeSurv 0.60–0.65). Prior sensitivity
-> (point_normal vs point_laplace) done — point_normal recommended. 24-page benchmark report
-> at `results/benchmark_sim/ssbmf_summary_report.pdf`. Next: PH diagnostics + gene set enrichment.
+> C-index 0.60 across 5 cohorts (competitive with DeSurv 0.60–0.65). v2 preprocessing implemented
+> (intersect → log₂ → QN → top-2000 → rank). EBMF diagnostic complete: survival signal confirmed
+> in merged data → SSBMF failure is a model problem. Lambda tuning ruled out (EL collapse at λ>1
+> for merged training). Normal prior ruled out. **Next priority: EBMF warm-start initialization.**
 
 ---
 
@@ -41,6 +42,26 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   validation.
   *Notes: High effort — requires new derivation and update to `code/update_L.R`. See `derivations/qL/qL_update_derivation.pdf` for current L update derivation.*
 
+- [x] **EBMF warm-start initialization for SSBMF** `[Priority: High]` `[Effort: Medium]` *(Complete — 2026-04-29)*
+  Initialize SSBMF L and F from an EBMF solution and run CAVI from that starting point.
+  Two experiments run: (1) β-only with EL fixed → β non-zero at iter 1, 6/20 factors active,
+  confirms β update is functional. (2) Full CAVI warm-start → β collapses to zero in 23 iters,
+  L/F updates wash out EBMF structure. Root cause: `update_L_k()` A_surv dominated by A_gen.
+  See DECISIONS.md 2026-04-29 warm-start entry.
+  *Notes: `fit_modular.R` extended with `EL_init`/`EF_init` params. Driver: `run_ebmf_warmstart.R`.*
+
+- [ ] **Debug `update_L_k()`: A_surv / A_gen imbalance** `[Priority: High]` `[Effort: Medium]`
+  The warm-start diagnostic confirmed the L update drives EL away from survival-informative
+  directions. Most likely cause: A_surv (survival precision term) ≪ A_gen (genomics reconstruction
+  term) throughout CAVI — A_L[i] = (1-α)*A_gen[i] + α*A_surv[i], where A_gen sums over p=2000
+  genes while A_surv ∝ W_{ii} * EBeta[k]². When EBeta[k] ≈ 0 at init, A_surv ≈ 0 and the L
+  update is entirely genomics-driven — a chicken-and-egg cycle. Instrument `update_L_k()` to
+  log A_surv / A_gen per factor per iteration. Also verify: does the Cox β warm-start at
+  `fit_modular.R` line 224 actually produce non-zero EBeta before iteration 1's L update?
+  *Notes: Fix direction depends on what the instrumentation shows. If EBeta is zero at iter 1,
+  the Cox warm-start is failing (maybe convergence issue on the merged cohort). If EBeta > 0
+  but A_surv still ≪ A_gen, the survival precision term needs rescaling within update_L_k().*
+
 - [x] **Add λ scaling parameter to balance genomics vs. survival objectives** `[Priority: High]` `[Effort: Medium]` *(Implemented and evaluated — fixed at λ=1.0)*
   λ is implemented as an exposed parameter in `update_L_k()`, `update_L_all()`, and
   `fit_supervised_mf_modular()` (default 1.0), and registered in `config/globals.yml`.
@@ -61,12 +82,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   within-cohort split. Requires R4 (inter-dataset normalisation) as a prerequisite.
   *Notes: `code/train_test_split.R` and `code/predict.R` are already in place for the projection step. Batch correction (ComBat or similar) not yet implemented — add to R4. See `results/modular_sim_factor/PDAC/` for current within-cohort results.*
 
-- [ ] **Inter-dataset normalisation before cohort merging** `[Priority: High]` `[Effort: Medium]`
+- [x] **Inter-dataset normalisation before cohort merging** `[Priority: High]` `[Effort: Medium]` *(Complete — v2 preprocessing, 2026-04-29)*
   Before merging cohorts (required for R3), apply quantile normalisation or z-score
   standardisation across datasets beyond the current per-cohort column-centring. Addresses
   platform-specific mean/variance shifts between RNA-seq, microarray, and proteomics. Essential
   for any analysis that combines data across assay types.
-  *Notes: Current preprocessing is per-cohort column-centring only (see `load_real_data()` in `results/modular_sim_factor/run_factor_modular_simulation.R`). R4 is a prerequisite for R3.*
+  *Notes: Implemented as `preprocess_merged_cohorts()` in `code/preprocess_desurv.R`. Pipeline: intersect raw gene universes → log₂(x+1) [RNA-seq only] → `preprocessCore::normalize.quantiles()` across all merged samples → top-2000 by merged-matrix variance → per-subject rank transform. Gated by `preprocessing_version = "v2"` in `run_real_data_benchmark()`. See DECISIONS.md 2026-04-29 entry.*
 
 ---
 

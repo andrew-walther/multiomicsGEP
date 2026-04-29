@@ -148,9 +148,18 @@ calc_cox_taylor <- function(eta, time, status) {
 #'                 alpha=0: pure genomics (beta not updated); alpha=1: pure survival
 #'                 (F not updated). Default 0.5 balances the p >> n gradient asymmetry.
 #' @param init_method  character: initialization strategy.
-#'                 "svd" (default — deterministic SVD warm-start),
+#'                 "svd"    (default — deterministic SVD warm-start),
 #'                 "random" (random normal initialization, useful with
-#'                 multiple restarts to escape local optima).
+#'                 multiple restarts to escape local optima),
+#'                 "custom" (supply EL_init and EF_init directly; set
+#'                 automatically when both are non-NULL).
+#' @param EL_init  Optional n x K numeric matrix: custom initial loadings.
+#'                 When both EL_init and EF_init are non-NULL, init_method is
+#'                 overridden to "custom". Intended for EBMF warm-start
+#'                 experiments — supply ldf(flash_fit)$L scaled by D, or
+#'                 flash_fit$L_pm, to initialize CAVI from an EBMF solution.
+#' @param EF_init  Optional p x K numeric matrix: custom initial factors.
+#'                 Must be supplied together with EL_init.
 #' @param verbose  Logical: print iteration logs every 10 iters? (default TRUE)
 #'
 #' @return Named list:
@@ -172,6 +181,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                       alpha        = 0.5,
                                       lambda       = 1.0,
                                       init_method  = "svd",
+                                      EL_init      = NULL,
+                                      EF_init      = NULL,
                                       verbose      = TRUE) {
 
   n <- nrow(Y); p <- ncol(Y)
@@ -180,6 +191,10 @@ fit_supervised_mf_modular <- function(Y, time, status,
       alpha < 0 || alpha > 1) {
     stop("alpha must be a finite scalar in [0, 1].")
   }
+
+  # Auto-promote to "custom" init when caller supplies both EL_init and EF_init.
+  # This avoids requiring the caller to pass init_method = "custom" explicitly.
+  if (!is.null(EL_init) && !is.null(EF_init)) init_method <- "custom"
 
   # --------------------------------------------------------------------------
   # Initialization
@@ -207,8 +222,23 @@ fit_supervised_mf_modular <- function(Y, time, status,
     y_sd <- sd(Y)
     EL   <- matrix(rnorm(n * K, sd = 0.1 * y_sd), n, K)
     EF   <- matrix(rnorm(p * K, sd = 0.1 * y_sd), p, K)
+  } else if (init_method == "custom") {
+    # Custom warm-start: caller supplies EL_init (n x K) and EF_init (p x K).
+    # Primary use case: EBMF warm-start diagnostic — initialise from a
+    # flashier solution to test whether CAVI can develop non-zero β when
+    # started from factors already associated with survival.
+    if (is.null(EL_init) || is.null(EF_init))
+      stop("init_method='custom' requires both EL_init (n x K) and EF_init (p x K).")
+    if (!isTRUE(all.equal(dim(EL_init), c(n, K))))
+      stop(sprintf("EL_init must be n x K = %d x %d; got %d x %d.",
+                   n, K, nrow(EL_init), ncol(EL_init)))
+    if (!isTRUE(all.equal(dim(EF_init), c(p, K))))
+      stop(sprintf("EF_init must be p x K = %d x %d; got %d x %d.",
+                   p, K, nrow(EF_init), ncol(EF_init)))
+    EL <- EL_init
+    EF <- EF_init
   } else {
-    stop(sprintf("Unknown init_method: '%s'. Use 'svd' or 'random'.", init_method))
+    stop(sprintf("Unknown init_method: '%s'. Use 'svd', 'random', or 'custom'.", init_method))
   }
 
   # Second moments initialised to squared means (zero posterior variance).

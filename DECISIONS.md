@@ -5,6 +5,57 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-04-29 — EBMF warm-start pinpoints bug to the L update, not the β update
+
+- **Decision:** The root cause of SSBMF's β=0 failure on the merged cohort is narrowed to `update_L_k()`. The β CAVI update is confirmed functional; the L/F updates are washing out the survival signal by prioritising the genomics reconstruction objective.
+- **Evidence:** Two warm-start experiments run on merged TCGA_PAAD + CPTAC (v2 preprocessing, n=273, p=2000, K=20):
+  1. **β-only experiment** — Fixed EL at the EBMF loading matrix and ran only `update_beta_k()` for 30 iterations. β moved non-zero at iteration 1, converged by iteration 7. **6/20 factors became active** (EBMF3/4/6/13/16/17), exactly matching the Cox-significant factors identified in the EBMF diagnostic. Max |β| = 6.04. Effective C-index ≈ 0.67 (raw concordance = 0.33, sign-inverted due to unit-norm L scaling). **Conclusion: β update is not broken.**
+  2. **Full CAVI warm-start** — Initialized EL and EF from EBMF posterior means (`flash_fit$L_pm`, `flash_fit$F_pm`), ran full CAVI. Converged in 23 iterations. **β collapsed back to near-zero** (max |β| = 0.026, 0/20 active). The L update undid the EBMF initialisation and drove the loading matrix toward genomics-reconstruction-optimal directions, where the survival signal disappears.
+- **Conclusion:** The β update is correct. The failure is that `update_L_k()`'s A_surv term (survival gradient contribution to the EBNM precision A) is dominated by A_gen (genomics reconstruction gradient) during CAVI. The model converges to a loadings solution that reconstructs Y well but is not informative for survival — then β has nothing informative to select.
+- **Next debugging step:** Inspect the magnitude ratio A_surv / A_gen inside `update_L_k()` during a training run. If A_surv ≪ A_gen for most samples, the survival objective is not contributing meaningfully to the L update, and some form of objective rebalancing (within the L update specifically, not at the λ level) is needed.
+- **Affected files:** `code/fit_modular.R` (EL_init/EF_init added), `results/benchmark_sim/run_ebmf_warmstart.R` (new)
+
+---
+
+## 2026-04-29 — EBMF diagnostic confirms survival signal exists; SSBMF failure is a model problem
+
+- **Decision:** The β=0 failure on merged TCGA_PAAD + CPTAC training is classified as a **model problem**, not a data problem. Investigation via unsupervised EBMF + PCA diagnostic is now the official diagnostic path for cases where SSBMF produces all-zero β on a given dataset.
+- **Reason:** Running `flashier::flash()` (EBMF, K=20) on the same v2-preprocessed merged training matrix used for SSBMF yielded 5/20 factors univariately associated with overall survival at p < 0.05. The strongest, EBMF6, has C-index = 0.629 and p = 3×10⁻⁶ using raw factor loadings alone. PCA confirmed: 4/20 components were also significant. Since unsupervised factorization — with no survival objective whatsoever — finds survival signal, the merged data contains recoverable signal. SSBMF's failure to surface non-zero β must originate in the model's CAVI objective, prior, or update equations, not in data quality.
+- **Key result:** EBMF survival-associated factors (EBMF3, 4, 6, 16, 17) have the following top biological signals: EBMF3/EBMF17 = exocrine pancreas markers (PTF1A, GUCA1C, FGL1); EBMF4 = B cell / immune markers (FCRL1, TCL1A, CR2, FCER2); EBMF6 = metabolic / CYP (A2ML1, CYP24A1). Top gene tables at `results/benchmark_sim/outputs/ebmf_diagnostic/tables/ebmf_top_genes.csv`.
+- **Trade-offs:** The EBMF diagnostic only tests whether signal is *detectable* by a purely unsupervised method. It does not guarantee SSBMF can recover the same factors — SSBMF imposes additional constraints (joint L/F/β optimisation, CAVI coordinate descent) that could prevent convergence to the EBMF solution even when the signal exists. The EBMF result rules out the data hypothesis; it does not pinpoint the model bug.
+- **Recommended follow-on:** EBMF warm-start — initialise SSBMF L and F from the EBMF solution and optimise only β. This directly tests whether the β CAVI update is capable of assigning non-zero coefficients to factors that are empirically associated with survival.
+- **Affected files:** `results/benchmark_sim/run_ebmf_diagnostic.R` (new), `results/benchmark_sim/outputs/ebmf_diagnostic/` (tables, figures, report)
+
+---
+
+## 2026-04-29 — Lambda increase ruled out for merged-cohort training (EL collapse)
+
+- **Decision:** Amplifying the survival objective via λ > 1 is ruled out as a strategy for recovering non-zero β in the merged TCGA_PAAD + CPTAC training setting. The default λ=1.0 is retained. For merged training, λ tuning is actively harmful.
+- **Reason:** A full λ × prior sweep (λ ∈ {1, 5, 10, 20} × {point_normal, point_laplace, normal}, v2 preprocessing) was run on the merged cohort. At λ=5, the CAVI degenerates completely: the entire L loading matrix collapses to zero (max|EL| < machine epsilon), not merely β. At λ=10 and λ=20, the same collapse occurs. The root cause is that amplifying the survival gradient in the L update overwhelms the genomics reconstruction signal; CAVI responds by driving L to zero (zeroing out the entire linear predictor) rather than shifting weight toward survival-informative directions.
+- **Context:** The earlier sandbox (n=250, p=1000, K=5 synthetic data) found λ=1 flat vs. λ=p/n. The merged-cohort collapse is a qualitatively different, more severe failure: EL→0, not just β→0. The batch structure of the merged matrix (RNA-seq vs. proteomics platform factor) likely amplifies the instability.
+- **Trade-offs:** λ remains in the codebase as an exposed parameter (default 1.0) for future experiments on single-platform cohorts or after batch effects are addressed. The λ=1 default is safe for all current benchmark runs.
+- **Affected files:** `results/benchmark_sim/run_lambda_sweep.R` (new), `results/benchmark_sim/outputs/real_data/lambda_sweep_summary.csv`
+
+---
+
+## 2026-04-29 — v2 preprocessing adopted for merged-cohort benchmark; v1 preserved for single-cohort
+
+- **Decision:** All merged-cohort (TCGA_PAAD + CPTAC) benchmark runs use **v2 preprocessing**: (1) intersect raw gene universes, (2) log₂(x+1) [RNA-seq only], (3) quantile normalization across all merged samples (`preprocessCore::normalize.quantiles()`), (4) top-2000 genes by merged-matrix variance, (5) per-subject rank transform. Single-cohort runs (tcga_only, cptac_only) continue to use v1 (per-cohort pipeline with `preprocess_desurv_cohort()`).
+- **Reason:** Under v1, per-cohort top-2000 selection was applied *before* intersecting gene universes, yielding only ~838 common genes — far fewer than the ~2000+ expected. The preprocessing-order bug consumed most of the gene set before cohort merging. v2 fixes the order: intersect first, select top-2000 from the merged variance distribution. Quantile normalization aligns sample-level distributions across RNA-seq and proteomics platforms without introducing explicit batch labels (which would prevent generalisation to new cohorts at prediction time).
+- **Trade-offs:** v1 is preserved under `preprocessing_version = "v1"` flag for backward compatibility. v2 output directories carry a `v2_` prefix (e.g., `outputs/real_data/merged/v2_point_normal/`) so v1 and v2 results coexist without overwriting. External cohorts still use v1 single-cohort preprocessing — they are never seen during training, so no joint quantile distribution to normalize against.
+- **Affected files:** `code/preprocess_desurv.R` (`preprocess_merged_cohorts()`, `quantile_normalize_merged()`), `results/benchmark_sim/run_ssbmf_benchmark.R` (`run_real_data_benchmark()` `preprocessing_version` param)
+
+---
+
+## 2026-04-29 — Normal prior ruled out for merged-cohort β; point_normal remains default
+
+- **Decision:** The `"normal"` prior for β (soft Gaussian shrinkage, no spike) is not adopted as the default. `"point_normal"` remains the canonical prior.
+- **Reason:** The lambda sweep (above) ran all three priors at λ∈{1,5,10,20} on the merged cohort. Under the normal prior, β remains at zero just as with point_normal and point_laplace — the failure is not prior aggressiveness but the fundamental issue identified by the EBMF diagnostic (model/CAVI problem). Adding the normal prior to the benchmark sweep confirmed it does not rescue the merged-cohort fit and adds no new information. It may be revisited after the CAVI L-update issue is diagnosed.
+- **Trade-offs:** The normal prior remains available in `update_beta.R` via `ebnm::ebnm_normal` and can be specified via `prior_beta = "normal"` in any benchmark call. It is not removed from the codebase.
+- **Affected files:** `results/benchmark_sim/run_lambda_sweep.R`, `results/benchmark_sim/run_ssbmf_benchmark.R`
+
+---
+
 ## 2026-04-24 — Lambda survival-scaling parameter: kept at 1.0 after sandbox evaluation
 
 - **Decision:** The `lambda` parameter (scalar multiplier on survival precision terms in the L update) is retained in the codebase at the default value λ=1.0. No active λ tuning is performed.

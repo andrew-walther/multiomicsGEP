@@ -1,0 +1,3 @@
+Degenerate fit: EL matrix is all-zero (max |EL| = 0).
+Model collapsed — no heatmap produced.
+

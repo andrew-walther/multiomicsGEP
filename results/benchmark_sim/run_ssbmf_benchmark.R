@@ -750,8 +750,11 @@ plot_km_2group <- function(lp, time, status, title = "") {
 run_real_data_benchmark <- function(
     training_mode          = "merged",
     prior_beta             = "point_normal",
+    preprocessing_version  = "v1",
     output_root            = file.path("results/benchmark_sim/outputs/real_data",
-                                       training_mode, prior_beta),
+                                       training_mode,
+                                       if (preprocessing_version == "v1") prior_beta
+                                       else paste0("v2_", prior_beta)),
     pdac_root              = PDAC_DATA_ROOT,
     alpha_grid             = c(0.1, 0.3, 0.5, 0.7, 0.9),
     n_folds                = 5,
@@ -760,7 +763,10 @@ run_real_data_benchmark <- function(
     tol                    = 1e-5,
     lambda                 = 1.0,
     top_n                  = 2000,
-    gene_intersection_only = FALSE) {
+    gene_intersection_only = FALSE,
+    rank_transform         = TRUE) {
+
+  preprocessing_version <- match.arg(preprocessing_version, c("v1", "v2"))
 
   if (!dir.exists(pdac_root)) {
     message(sprintf(
@@ -794,80 +800,134 @@ run_real_data_benchmark <- function(
     load_pdac_raw(ds, pdac_root)
   })
 
-  train_preproc <- lapply(active_train_cohorts, function(ds) {
-    raw <- train_raw[[ds]]
-    cat(sprintf("    Preprocessing %s (n=%d, p_raw=%d) ...\n", ds, raw$n, raw$p))
-    preprocess_desurv_cohort(
-      Y           = raw$Y,
-      gene_names  = raw$gene_names,
-      top_n       = top_n,
-      log_transform = PLATFORM_LOG_TRANSFORM[[ds]],
-      cohort_name = ds
+  # ============================================================
+  # v1 vs v2 preprocessing branch
+  #   v1 (default): per-cohort log2 → top-N → rank, then intersect
+  #   v2 (reordered): intersect raw → log2 → QN → merged variance →
+  #                   top-N → rank  (preprocess_merged_cohorts)
+  # Single-cohort modes always use the v1 per-cohort path regardless of
+  # preprocessing_version (QN across a single cohort is a no-op and the
+  # bug being fixed only affects the merged intersection step).
+  # ============================================================
+
+  if (preprocessing_version == "v2" && length(active_train_cohorts) > 1) {
+    # v2 merged path ------------------------------------------------
+    cat(sprintf("  Preprocessing version: v2 (intersect-first + QN)\n"))
+    log_flags <- PLATFORM_LOG_TRANSFORM[active_train_cohorts]
+    merged_v2 <- preprocess_merged_cohorts(
+      cohort_raw_list     = train_raw,
+      log_transform_flags = log_flags,
+      top_n               = top_n,
+      rank_transform      = rank_transform
     )
-  })
-  names(train_preproc) <- active_train_cohorts
+    Y_train          <- merged_v2$Y
+    training_gene_names <- merged_v2$gene_names
+    n_train_genes    <- merged_v2$p
+    time_train       <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$time))
+    status_train     <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$status))
+    cohort_labels    <- merged_v2$dataset_labels
 
-  # Assemble training gene list: intersect for merged, pass-through for single-cohort
-  if (length(active_train_cohorts) > 1) {
-    train_intersected <- intersect_preprocessed_cohorts(train_preproc, reference = 1)
-    names(train_intersected) <- active_train_cohorts
-    n_train_genes <- train_intersected[[1]]$p
-    training_gene_names <- train_intersected[[1]]$gene_names
-    cat(sprintf("  Training gene intersection: %d genes\n", n_train_genes))
-  } else {
-    ds_single <- active_train_cohorts[1]
-    n_train_genes <- train_preproc[[ds_single]]$p
-    training_gene_names <- train_preproc[[ds_single]]$gene_names
-    cat(sprintf("  Single-cohort training: %d genes\n", n_train_genes))
-  }
+    # expose intersection count for the checkpoint below
+    train_preproc    <- NULL  # not used in v2 merged path
+    n_raw_intersect  <- merged_v2$n_raw_intersect
 
-  if (gene_intersection_only) {
-    if (training_mode != "merged") {
-      cat(sprintf("  gene_intersection_only only applies to 'merged' mode (current: '%s').\n",
-                  training_mode))
-      return(invisible(NULL))
+    if (gene_intersection_only) {
+      cat(sprintf(
+        "\n=== INTERSECTION CHECKPOINT (v2) ===\n  Raw gene intersection: %d genes\n  After top-%d selection: %d genes\n=== Stopping here (gene_intersection_only=TRUE). ===\n",
+        n_raw_intersect, top_n, n_train_genes
+      ))
+      return(invisible(list(n_raw_intersect = n_raw_intersect,
+                            n_genes_selected = n_train_genes)))
     }
-    cat(sprintf(
-      "\n=== INTERSECTION CHECKPOINT ===\n  TCGA_PAAD: n=%d, p_raw=%d, p_after_top%d=%d\n  CPTAC:     n=%d, p_raw=%d, p_after_top%d=%d\n  Shared genes after intersection: %d\n  Event rates: TCGA=%.1f%%, CPTAC=%.1f%%\n=== Stopping here. Set gene_intersection_only=FALSE to proceed. ===\n",
-      train_raw[["TCGA_PAAD"]]$n, train_raw[["TCGA_PAAD"]]$p, top_n, train_preproc[["TCGA_PAAD"]]$p,
-      train_raw[["CPTAC"]]$n,     train_raw[["CPTAC"]]$p,     top_n, train_preproc[["CPTAC"]]$p,
-      n_train_genes,
-      100 * mean(train_raw[["TCGA_PAAD"]]$status),
-      100 * mean(train_raw[["CPTAC"]]$status)
-    ))
-    return(invisible(list(
-      n_intersect     = n_train_genes,
-      n_TCGA          = train_raw[["TCGA_PAAD"]]$n,
-      n_CPTAC         = train_raw[["CPTAC"]]$n,
-      p_TCGA_preproc  = train_preproc[["TCGA_PAAD"]]$p,
-      p_CPTAC_preproc = train_preproc[["CPTAC"]]$p
-    )))
-  }
 
-  # Assemble final training matrices
-  if (length(active_train_cohorts) > 1) {
-    merged_train <- merge_preprocessed_cohorts(train_intersected,
-                                               dataset_labels = active_train_cohorts)
-    Y_train      <- merged_train$Y
-    time_train   <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$time))
-    status_train <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$status))
   } else {
-    ds_single    <- active_train_cohorts[1]
-    Y_train      <- train_preproc[[ds_single]]$Y
-    time_train   <- train_raw[[ds_single]]$time
-    status_train <- train_raw[[ds_single]]$status
+    # v1 path (per-cohort preprocess then intersect) ----------------
+    if (preprocessing_version == "v2")
+      cat("  preprocessing_version=v2 ignored for single-cohort mode; using v1.\n")
+
+    train_preproc <- lapply(active_train_cohorts, function(ds) {
+      raw <- train_raw[[ds]]
+      cat(sprintf("    Preprocessing %s (n=%d, p_raw=%d) ...\n", ds, raw$n, raw$p))
+      preprocess_desurv_cohort(
+        Y             = raw$Y,
+        gene_names    = raw$gene_names,
+        top_n         = top_n,
+        log_transform = PLATFORM_LOG_TRANSFORM[[ds]],
+        cohort_name   = ds
+      )
+    })
+    names(train_preproc) <- active_train_cohorts
+
+    if (length(active_train_cohorts) > 1) {
+      train_intersected   <- intersect_preprocessed_cohorts(train_preproc, reference = 1)
+      names(train_intersected) <- active_train_cohorts
+      n_train_genes       <- train_intersected[[1]]$p
+      training_gene_names <- train_intersected[[1]]$gene_names
+      cat(sprintf("  Training gene intersection: %d genes\n", n_train_genes))
+    } else {
+      ds_single           <- active_train_cohorts[1]
+      n_train_genes       <- train_preproc[[ds_single]]$p
+      training_gene_names <- train_preproc[[ds_single]]$gene_names
+      cat(sprintf("  Single-cohort training: %d genes\n", n_train_genes))
+    }
+
+    if (gene_intersection_only) {
+      if (training_mode != "merged") {
+        cat(sprintf("  gene_intersection_only only applies to 'merged' mode (current: '%s').\n",
+                    training_mode))
+        return(invisible(NULL))
+      }
+      cat(sprintf(
+        "\n=== INTERSECTION CHECKPOINT ===\n  TCGA_PAAD: n=%d, p_raw=%d, p_after_top%d=%d\n  CPTAC:     n=%d, p_raw=%d, p_after_top%d=%d\n  Shared genes after intersection: %d\n  Event rates: TCGA=%.1f%%, CPTAC=%.1f%%\n=== Stopping here. Set gene_intersection_only=FALSE to proceed. ===\n",
+        train_raw[["TCGA_PAAD"]]$n, train_raw[["TCGA_PAAD"]]$p, top_n, train_preproc[["TCGA_PAAD"]]$p,
+        train_raw[["CPTAC"]]$n,     train_raw[["CPTAC"]]$p,     top_n, train_preproc[["CPTAC"]]$p,
+        n_train_genes,
+        100 * mean(train_raw[["TCGA_PAAD"]]$status),
+        100 * mean(train_raw[["CPTAC"]]$status)
+      ))
+      return(invisible(list(
+        n_intersect     = n_train_genes,
+        n_TCGA          = train_raw[["TCGA_PAAD"]]$n,
+        n_CPTAC         = train_raw[["CPTAC"]]$n,
+        p_TCGA_preproc  = train_preproc[["TCGA_PAAD"]]$p,
+        p_CPTAC_preproc = train_preproc[["CPTAC"]]$p
+      )))
+    }
+
+    # Assemble final training matrices
+    # cohort_labels persisted to final_model.rds for cohort-stratified heatmaps.
+    if (length(active_train_cohorts) > 1) {
+      merged_train  <- merge_preprocessed_cohorts(train_intersected,
+                                                   dataset_labels = active_train_cohorts)
+      Y_train       <- merged_train$Y
+      time_train    <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$time))
+      status_train  <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$status))
+      cohort_labels <- merged_train$dataset_labels
+    } else {
+      ds_single     <- active_train_cohorts[1]
+      Y_train       <- train_preproc[[ds_single]]$Y
+      time_train    <- train_raw[[ds_single]]$time
+      status_train  <- train_raw[[ds_single]]$status
+      cohort_labels <- factor(rep(ds_single, nrow(Y_train)), levels = ds_single)
+    }
   }
   n_train <- nrow(Y_train)
   cat(sprintf("  Training set [%s]: n=%d, p=%d, event_rate=%.1f%%\n",
               training_mode, n_train, ncol(Y_train), 100 * mean(status_train)))
 
   # Checkpoint 1: save training set summary
+  # p_preproc: for v2, all cohorts share the merged p (no per-cohort preproc object).
+  p_preproc_vals <- if (!is.null(train_preproc)) {
+    sapply(active_train_cohorts, function(ds) train_preproc[[ds]]$p)
+  } else {
+    rep(n_train_genes, length(active_train_cohorts))
+  }
   write.csv(
     data.frame(
       Cohort        = active_train_cohorts,
       n             = sapply(active_train_cohorts, function(ds) train_raw[[ds]]$n),
       p_raw         = sapply(active_train_cohorts, function(ds) train_raw[[ds]]$p),
-      p_preproc     = sapply(active_train_cohorts, function(ds) train_preproc[[ds]]$p),
+      p_preproc     = p_preproc_vals,
       log_transform = PLATFORM_LOG_TRANSFORM[active_train_cohorts],
       platform      = PLATFORM_MAP[active_train_cohorts],
       event_rate    = sapply(active_train_cohorts, function(ds) mean(train_raw[[ds]]$status))
@@ -974,9 +1034,13 @@ run_real_data_benchmark <- function(
   write.csv(elbo_train_df, file.path(table_dir, "training_elbo_trace.csv"),
             row.names = FALSE)
 
-  # Save fitted factor matrices for downstream use (PH diagnostics, gene enrichment)
+  # Save fitted factor matrices for downstream use (PH diagnostics, gene enrichment,
+  # cohort-stratified loading heatmap). EL and cohort_labels added so Phase 1
+  # diagnostic plots can be regenerated from the RDS without re-fitting.
   saveRDS(
     list(EF = final_fit$EF, EBeta = final_fit$EBeta,
+         EL = final_fit$EL, cohort_labels = cohort_labels,
+         time_train = time_train, status_train = status_train,
          alpha_opt = alpha_opt, training_gene_names = training_gene_names,
          training_mode = training_mode, prior_beta = prior_beta),
     file.path(table_dir, "final_model.rds")
