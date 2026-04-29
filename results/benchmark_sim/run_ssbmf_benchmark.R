@@ -845,17 +845,23 @@ run_real_data_benchmark <- function(
   }
 
   # Assemble final training matrices
+  # cohort_labels: factor vector of length n_train indicating which cohort each
+  #                row originated from. Persisted to final_model.rds so downstream
+  #                diagnostic plots (e.g. cohort-stratified L heatmap) can group
+  #                samples without re-loading the raw cohort data.
   if (length(active_train_cohorts) > 1) {
     merged_train <- merge_preprocessed_cohorts(train_intersected,
                                                dataset_labels = active_train_cohorts)
-    Y_train      <- merged_train$Y
-    time_train   <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$time))
-    status_train <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$status))
+    Y_train       <- merged_train$Y
+    time_train    <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$time))
+    status_train  <- unlist(lapply(active_train_cohorts, function(ds) train_raw[[ds]]$status))
+    cohort_labels <- merged_train$dataset_labels
   } else {
-    ds_single    <- active_train_cohorts[1]
-    Y_train      <- train_preproc[[ds_single]]$Y
-    time_train   <- train_raw[[ds_single]]$time
-    status_train <- train_raw[[ds_single]]$status
+    ds_single     <- active_train_cohorts[1]
+    Y_train       <- train_preproc[[ds_single]]$Y
+    time_train    <- train_raw[[ds_single]]$time
+    status_train  <- train_raw[[ds_single]]$status
+    cohort_labels <- factor(rep(ds_single, nrow(Y_train)), levels = ds_single)
   }
   n_train <- nrow(Y_train)
   cat(sprintf("  Training set [%s]: n=%d, p=%d, event_rate=%.1f%%\n",
@@ -974,9 +980,13 @@ run_real_data_benchmark <- function(
   write.csv(elbo_train_df, file.path(table_dir, "training_elbo_trace.csv"),
             row.names = FALSE)
 
-  # Save fitted factor matrices for downstream use (PH diagnostics, gene enrichment)
+  # Save fitted factor matrices for downstream use (PH diagnostics, gene enrichment,
+  # cohort-stratified loading heatmap). EL and cohort_labels added so Phase 1
+  # diagnostic plots can be regenerated from the RDS without re-fitting.
   saveRDS(
     list(EF = final_fit$EF, EBeta = final_fit$EBeta,
+         EL = final_fit$EL, cohort_labels = cohort_labels,
+         time_train = time_train, status_train = status_train,
          alpha_opt = alpha_opt, training_gene_names = training_gene_names,
          training_mode = training_mode, prior_beta = prior_beta),
     file.path(table_dir, "final_model.rds")
