@@ -6,9 +6,12 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 
 ## Key Instructions
 
-- **Active implementation:** `code/Supervised_Bayesian_MF_V2.R` (V2). V1 is archived at `code/legacy/Supervised_Bayesian_MF.R` — do not modify.
+- **Canonical CAVI loop:** `code/fit_modular.R`. `Supervised_Bayesian_MF_V2.R` is reference-only — do not extend. V1 (`code/legacy/`) — do not modify. (`full_sim/` and `modular_sim_block/` are legacy/deprecated.)
+- **Formal benchmark pipeline:** `results/benchmark_sim/` — alpha CV, external validation, DeSurv comparison. For exploratory/development fits, use `results/modular_sim_factor/`.
 - **Modular updates:** `code/update_beta.R`, `code/update_L.R`, `code/update_F.R`, `code/update_tau.R`.
+- **Global constants:** `config/globals.yml` — all hyperparameters (lambda, alpha grid, K thresholds, DGP params). Never hardcode values defined here.
 - **No `CLAUDE.md` duplication:** Do not maintain a second copy of project status here — update `PROJECT_STATUS.md` instead.
+- **Living documents:** Update `DECISIONS.md` when making any architectural choice (algorithm variant, hyperparameter decision, design tradeoff). Update `ROADMAP.md` when completing a milestone or identifying a new priority.
 - **Commit style:** Detailed messages explaining what changed and why; no "Co-Authored-By" lines; no "Session N:" prefixes.
 - **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. Expected: 139/139 passing.
 - **Real-data tests:** `Rscript tests/test_real_data_loading.R` — 77/77 passing (auto-skips if `PDAC_DATA_ROOT` not set).
@@ -27,9 +30,14 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 | K selection | `code/select_K.R` — `auto_prune_K()`, `select_K_cv()` stub |
 | Full ELBO computation | `code/compute_elbo.R` — `compute_ebnm_kl()`, `compute_survival_elbo()` |
 | Companion doc for fit_modular.R | `docs/fit_modular.qmd` |
-| **Synthetic simulation report (canonical)** | `results/modular_sim_factor/synthetic/factor_modular_sim_report.qmd` |
-| **PDAC real-data report** | `results/modular_sim_factor/PDAC/factor_modular_sim_report_PDAC.qmd` |
-| **Simulation runner (synthetic + real)** | `results/modular_sim_factor/run_factor_modular_simulation.R` |
+| Global hyperparameter registry | `config/globals.yml` |
+| **Formal benchmark runner** | `results/benchmark_sim/run_ssbmf_benchmark.R` |
+| **Formal benchmark report** | `results/benchmark_sim/ssbmf_summary_report.qmd` |
+| Exploratory simulation runner | `results/modular_sim_factor/run_factor_modular_simulation.R` |
+| Alpha CV selection | `code/select_alpha_cv.R` |
+| DeSurv preprocessing | `code/preprocess_desurv.R` |
 | Test suite (core + predict) | `tests/run_tests.R` (139/139) |
 | Real-data test suite | `tests/test_real_data_loading.R` (77/77, local-only) |
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |
+| Architectural decisions log | `DECISIONS.md` |
+| Prioritized next steps | `ROADMAP.md` |
