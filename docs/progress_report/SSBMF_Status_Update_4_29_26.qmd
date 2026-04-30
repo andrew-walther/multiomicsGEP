@@ -1,0 +1,140 @@
+---
+title: "SSBMF Status Update: Merged TCGA + CPTAC Fit (April 30, 2026)"
+author: "Andrew Walther"
+format:
+  pdf:
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{enumitem}
+        \usepackage{booktabs}
+        \usepackage{geometry}
+        \usepackage{titling}
+        \geometry{margin=0.45in}
+        \renewcommand{\familydefault}{\sfdefault}
+        \setlist[itemize]{leftmargin=1.1em, topsep=0.1em, itemsep=0.05em, parsep=0em, partopsep=0em}
+        \setlength{\parskip}{0.05em}
+        \RedeclareSectionCommand[beforeskip=0.28em,afterskip=0.14em]{section}
+        \renewcommand{\arraystretch}{0.92}
+        \setlength{\droptitle}{-1.8em}
+        \pretitle{\begin{center}\large\bfseries}
+        \posttitle{\par\end{center}\vspace{-0.7em}}
+fontsize: 8pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## 1. Original Problem and Proposed Solution
+
+On the merged **TCGA_PAAD RNA-seq + CPTAC proteomics** training cohort
+($n = 273$), SSBMF repeatedly returned **$\hat{\beta}_k = 0$ for all factors**.
+The model reconstructed the expression matrix but learned no survival signal, so
+risk prediction reduced to a constant hazard.
+
+The first proposed fix was a **pre-processing reorder**. The original merged
+workflow selected the top 2,000 variable genes within each cohort *before*
+intersecting gene universes, leaving only about **838 shared genes**. The v2
+pipeline instead intersected raw gene universes first, applied log\(_2(x+1)\)
+to RNA-seq only, quantile-normalized the merged samples, selected the top 2,000
+genes by merged variance, and then rank-transformed each sample. This increased
+the shared analyzed feature set from **838 to 2,000 genes**.
+
+Additional methods were then tested to determine whether the failure was caused
+by weak signal, poor initialization, or a structural issue in the CAVI updates.
+
+| Method tested | Quantitative result | Interpretation |
+|---|---:|---|
+| $\lambda$ sweep | 12 combinations tested; no informative non-zero $\beta$ recovered | Not a useful rescue path |
+| High $\lambda$ | At $\lambda \ge 5$, entire loading matrix collapsed | Over-amplified survival term |
+| EBMF diagnostic | 5/20 factors survival-associated; top C-index 0.629 | Signal exists in merged data |
+| EBMF warm-start, $\beta$ only | 6/20 active factors | $\beta$ update is functional |
+| EBMF warm-start, full CAVI | 0/20 active after 23 iterations | Joint updates erase signal |
+
+**Interpretation.** Taken together, these tests showed that the merged failure was **not** caused
+by missing survival signal and **not** fixed by simple $\lambda$ or prior
+tuning. Cluster A therefore focused on four in-model updates: (1) inner-loop
+reorder ($\beta \rightarrow L \rightarrow F$), (2) $\beta$-only burn-in
+(`N_burnin = 10` in the smoke fit), (3) an $\alpha$ warmup/ramp schedule, and
+(4) survival/genomics rebalancing in the $L$ update (`normalize_AB`).
+
+## 2. Current Results and Issues Resolved
+
+- **Pre-processing bug fixed:** the merged v2 pipeline increased the shared
+  feature set from **838 to 2,000 genes** and quantile-normalized the merged
+  cohort before variance filtering.
+- **Training-side $\beta = 0$ collapse fixed:** Cluster A modifications produced a
+  stable smoke fit with **2/20 active factors**, **max $|\hat{\beta}| = 0.0588$**,
+  **non-collapsed loadings** (max $|EL| = 1.83 \times 10^3$), and **monotone ELBO**
+  over 60 iterations.
+
+**Model behavior.** This is an important change in model behavior. Before Cluster A, the merged fit
+converged to a degenerate solution with no prognostic factors at all. After
+Cluster A, the model no longer collapses immediately to the all-zero survival
+solution, and the ELBO remains well-behaved throughout the smoke fit.
+
+**Benchmark context.** The existing **single-cohort** models already show that
+SSBMF can generalize externally when trained on one platform at a time. With
+the `point_normal` prior, **TCGA-only** training ($n = 144$) reached median
+external **C-index 0.602**, and **CPTAC-only** training ($n = 129$) reached
+median external **C-index 0.628**. The strongest single-cohort external result
+was on **PACA_AU_seq**, with **0.632** for TCGA-only training and **0.667** for
+CPTAC-only training. These results are not the joint-platform solution we want,
+but they provide a concrete benchmark for useful cross-cohort performance.
+
+Why Cluster A worked:
+
+- The **inner-loop reorder** lets the survival coefficient update fire before the
+  loading update, so the survival term is no longer forced to start from a
+  stale zero state.
+- **Burn-in** gives $\beta$ a chance to move away from zero before the joint CAVI
+  loop can wash out survival information.
+- **`normalize_AB`** addresses the key scale imbalance in `update_L_k()`: on the
+  merged cohort, the survival precision term was roughly **0 to $2 \times 10^{-4}$**
+  of the genomics term at iteration 1, so survival had almost no leverage on
+  the loading update without rescaling.
+
+**Signal check.** Unsupervised EBMF on the same merged matrix found **5/20 survival-associated
+factors**; the strongest achieved **C-index 0.629** with
+**$p = 3 \times 10^{-6}$**. The data therefore contain recoverable signal, and
+the failure is in the current SSBMF optimization path rather than in data
+quality alone.
+
+## 3. Persisting Issues and Next Steps
+
+The main unresolved issue is **generalization**. Although Cluster A recovered
+non-zero $\beta$ during training, external validation was weaker than the
+**pre-Cluster A baseline fit** on most cohorts. Here, "baseline" refers to the
+merged v2 model **before** the Cluster A updates, i.e. the earlier fit without
+the new burn-in and `normalize_AB` changes:
+
+- Improved on **1/5** external cohorts: Moffitt (**0.541 vs. 0.529; +0.012**).
+- Regressed on **4/5** cohorts: Dijk (**0.606 vs. 0.626; -0.019**),
+  PACA-AU array (**0.576 vs. 0.636; -0.060**), PACA-AU seq
+  (**0.629 vs. 0.653; -0.024**), Puleo (**0.550 vs. 0.626; -0.076**).
+
+**Interpretation.** This suggests the fix recovered factors aligned to the training Cox objective,
+but not factors that transport robustly across cohorts or platforms.
+
+**Practical implication.** Cluster A solved the **training-side optimization failure**
+but did not solve the **cross-cohort generalization problem**. The current model
+can now produce non-zero survival coefficients on the merged training set, but
+those coefficients do not yet improve external prognostic performance
+consistently. The practical goal for merged TCGA+CPTAC training is therefore to
+retain the broader training set while moving external performance toward the
+single-cohort benchmark range of roughly **0.60 to 0.63 median C-index**.
+
+Recommended next steps:
+
+- Move the next development cycle to a new **`cox-on-YF-reformulation`** branch.
+- Implement **Cluster B: Cox-on-$YF$**, replacing the survival predictor
+  $\eta = L\beta$ with $\eta = (YF)\beta$, so training and prediction use the
+  same observed-data projection.
+- Derive and test the updated $q(F)$, $q(L)$, and $q(\beta)$ updates before
+  additional benchmark runs.
+
+Current blocker: Cluster B requires fresh derivations and new tests, so the
+next phase is a model reformulation rather than a tuning exercise.
