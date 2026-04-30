@@ -1,0 +1,300 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+% ── tcolorbox colour palette ─────────────────────────────────────────────────
+\newtcolorbox{derivbox}[1][]{colback=gray!8, colframe=gray!50,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{ebnmbox}[1][]{colback=blue!5, colframe=blue!40,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{verifybox}[1][]{colback=green!5, colframe=green!40,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{codebox}[1][]{colback=orange!5, colframe=orange!40,
+  fonttitle=\bfseries, title=#1, breakable}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\ELBO}{\mathcal{L}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\diag}{\mathrm{diag}}
+
+\title{\textbf{D4: Full ELBO Under $\eta = \mathbf{Y}\mathbf{F}\tilde{\boldsymbol{\beta}}$}\\[4pt]
+\large Cluster B (Cox-on-YF Reformulation) — Derivation D4 (Priority)\\[2pt]
+\normalsize Identifies all changes to \texttt{code/compute\_elbo.R}}
+\author{Andrew Walther}
+\date{2026-04-29}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Context and Goal}
+% ============================================================
+
+This document derives the full Evidence Lower BOund (ELBO) for the Cluster B model
+$\eta_i = (\mathbf{y}_i\,\mathbf{F})\,\tilde{\boldsymbol\beta}$. The ELBO is needed
+for convergence monitoring and to verify that the CAVI updates are improving the
+correct objective. The proxy used in the original code ($\tau$-based reconstruction
+error + EBNM KL terms) must be updated to reflect the new parameterization.
+
+\bigskip
+We identify exactly which functions in \texttt{code/compute\_elbo.R} need updating.
+
+% ============================================================
+\section{Full ELBO Structure}
+% ============================================================
+
+\begin{equation}
+  \ELBO = \underbrace{\E_q[\log p(\mathbf{Y} \mid \mathbf{L}, \mathbf{F}, \boldsymbol\tau)]}_{\text{(I) genomics}}
+         + \underbrace{\E_q[\log p(\mathbf{t}, \boldsymbol\delta \mid \mathbf{Y}, \mathbf{F}, \tilde{\boldsymbol\beta})]}_{\text{(II) survival}}
+         - \underbrace{\KL[q(\mathbf{L})\|p(\mathbf{L})]}_{\text{(III) KL-L}}
+         - \underbrace{\KL[q(\mathbf{F})\|p(\mathbf{F})]}_{\text{(IV) KL-F}}
+         - \underbrace{\KL[q(\tilde{\boldsymbol\beta})\|p(\tilde{\boldsymbol\beta})]}_{\text{(V) KL-}\tilde\beta}
+         - \underbrace{\KL[q(\boldsymbol\tau)\|p(\boldsymbol\tau)]}_{\text{(VI) KL-}\tau}.
+  \label{eq:elbo}
+\end{equation}
+
+Terms (I), (III), (VI) are structurally identical to the original model
+(same formulas, just with $q(\mathbf{L})$ now pure-genomics and $q(\boldsymbol\tau)$ unchanged).
+Terms (II), (IV), (V) change under Cluster B.
+
+% ============================================================
+\section{Term (I): Genomics Expected Log-Likelihood}
+% ============================================================
+
+\begin{equation}
+  \E_q[\log p(\mathbf{Y} \mid \mathbf{L}, \mathbf{F}, \boldsymbol\tau)]
+  = -\frac{n p}{2}\log(2\pi)
+    + \frac{1}{2}\sum_j n\,\log\tau_j
+    - \frac{1}{2}\sum_{i,j}\tau_j\,\E_q[(y_{ij} - \mathbf{l}_i^\top\mathbf{f}_j)^2].
+  \label{eq:genomics-elbo}
+\end{equation}
+
+The expected squared residual is
+\[
+  \E_q[(y_{ij} - \mathbf{l}_i^\top\mathbf{f}_j)^2]
+  = (y_{ij} - \E[\mathbf{l}_i]^\top\E[\mathbf{f}_j])^2
+    + \sum_k \Bigl(\E[l_{ik}^2]\E[f_{jk}^2] - \E[l_{ik}]^2\E[f_{jk}]^2\Bigr).
+\]
+
+This is computed by \texttt{update\_tau()} as the ELBO proxy; the formula is unchanged from
+the original model.
+
+\begin{verifybox}[Term (I) status]
+\textbf{Unchanged.} The same formula applies under Cluster B; $\mathbf{L}$ is still
+the genomics latent variable, just no longer coupled to survival.
+\end{verifybox}
+
+% ============================================================
+\section{Term (II): Survival Expected Log-Likelihood (Updated)}
+% ============================================================
+
+\subsection{Cox PH Taylor Approximation}
+
+The Cox partial log-likelihood $\log\mathrm{PL}(\boldsymbol\eta)$ is non-conjugate.
+We use the second-order Taylor expansion around the current estimate $\hat{\boldsymbol\eta}$:
+\[
+  \log\mathrm{PL}(\boldsymbol\eta) \approx
+  \log\mathrm{PL}(\hat{\boldsymbol\eta})
+  + \mathbf{u}^\top(\boldsymbol\eta - \hat{\boldsymbol\eta})
+  - \tfrac{1}{2}(\boldsymbol\eta - \hat{\boldsymbol\eta})^\top\mathbf{W}(\boldsymbol\eta - \hat{\boldsymbol\eta}),
+\]
+where $\mathbf{u}$ is the score vector and $\mathbf{W} = \diag(w_1,\ldots,w_n)$ the negative
+diagonal Hessian. Evaluated at the variational expectation $\E_q[\boldsymbol\eta]$:
+\begin{align}
+  \E_q[\log\mathrm{PL}]
+  &\approx \log\mathrm{PL}(\hat{\boldsymbol\eta})
+    + \mathbf{u}^\top(\E_q[\boldsymbol\eta] - \hat{\boldsymbol\eta})
+    - \tfrac{1}{2}\sum_i w_i\,\E_q[\eta_i^2]
+    + \tfrac{1}{2}\sum_i w_i\,\hat\eta_i^2 \nonumber\\
+  &= \mathrm{logPL}
+    - \tfrac{1}{2}\sum_i w_i\,\Var_q(\eta_i) + \text{terms in } \hat{\boldsymbol\eta},
+  \label{eq:surv-elbo}
+\end{align}
+where $\mathrm{logPL} = \log\mathrm{PL}(\hat{\boldsymbol\eta})$ is the partial log-likelihood
+at the current posterior means and is computed once per outer CAVI iteration.
+
+\subsection{Variance of $\eta_i$ Under Cluster B}
+
+Under the original model, $\eta_i = \sum_k l_{ik}\,\beta_k$, so
+\[
+  \Var_q(\eta_i) = \sum_k\Bigl(\E[l_{ik}^2]\E[\beta_k^2] - \E[l_{ik}]^2\E[\beta_k]^2\Bigr).
+\]
+
+Under Cluster B, $\eta_i = \sum_k (z_F)_{ik}\,\tilde\beta_k$ where $(z_F)_{ik}$ is treated
+as a fixed constant per outer iteration. Therefore
+\begin{equation}
+  \Var_q(\eta_i) = \sum_k (z_F)_{ik}^2\,\Var_q(\tilde\beta_k)
+                 = \sum_k (z_F)_{ik}^2\,\Bigl(\E[\tilde\beta_k^2] - \E[\tilde\beta_k]^2\Bigr).
+  \label{eq:var-eta-new}
+\end{equation}
+
+\begin{derivbox}[Key simplification]
+Because $\mathbf{Z}_F$ is observed (not latent), the cross terms
+$\Var_q(l_{ik}\,\beta_k) = \Var_q(l_{ik})\E[\beta_k^2] + \Var_q(\beta_k)\E[l_{ik}^2]$
+that appear in the original formulation collapse to just $\Var_q(\tilde\beta_k)(z_F)_{ik}^2$.
+No second moment of $\mathbf{L}$ is needed in the survival ELBO.
+\end{derivbox}
+
+The survival ELBO term becomes:
+\begin{align}
+  \E_q[\log p(\mathbf{t}, \boldsymbol\delta \mid \mathbf{Y}, \mathbf{F}, \tilde{\boldsymbol\beta})]
+  &\approx \mathrm{logPL}
+    - \tfrac{1}{2}\sum_i w_i\,\sum_k (z_F)_{ik}^2\,\Var_q(\tilde\beta_k) \nonumber\\
+  &= \mathrm{logPL}
+    - \tfrac{1}{2}\,\mathbf{1}^\top\!\left[\mathbf{Z}_F^2\,\Bigl(\mathbf{E}[\tilde{\boldsymbol\beta}^2]
+      - \mathbf{E}[\tilde{\boldsymbol\beta}]^2\Bigr)\right]\!\circ\,\mathbf{w},
+  \label{eq:surv-elbo-final}
+\end{align}
+where $\mathbf{Z}_F^2$ denotes element-wise squaring of $\mathbf{Z}_F$ and
+$\mathbf{E}[\tilde{\boldsymbol\beta}^2] - \mathbf{E}[\tilde{\boldsymbol\beta}]^2$
+is the K-vector of posterior variances of $\tilde{\boldsymbol\beta}$.
+
+% ============================================================
+\section{Term (III): KL for $q(\mathbf{L})$ (Simplified)}
+% ============================================================
+
+$q(\mathbf{L})$ is now a pure-genomics EBNM posterior (D1). The KL is computed by
+\texttt{compute\_ebnm\_kl()} in \texttt{code/compute\_elbo.R}, which takes the EBNM
+log-likelihood and the pseudo-likelihood components as inputs. This formula is unchanged;
+only the EBNM inputs ($A_L$ and $B_L$) change (now genomics-only, from D1).
+
+\begin{verifybox}[Term (III) status]
+\textbf{Formula unchanged.} \texttt{compute\_ebnm\_kl()} implementation unchanged.
+The KL value changes because EBNM inputs change (smaller $A_L$, no survival contribution).
+\end{verifybox}
+
+% ============================================================
+\section{Term (IV): KL for $q(\mathbf{F})$ (Dual-Source)}
+% ============================================================
+
+$q(\mathbf{f}_k)$ is now a dual-source EBNM posterior (D2). The KL is still computed
+by \texttt{compute\_ebnm\_kl()}, which is parameterization-agnostic — it takes the EBNM
+log-likelihood and the EBNM inputs $A_{F,j}$, $x_{F,j}$, $\E[f_{jk}]$, $\E[f_{jk}^2]$.
+Since those inputs now include the survival contribution, the KL value changes, but
+the \texttt{compute\_ebnm\_kl()} function itself does not need modification.
+
+\begin{verifybox}[Term (IV) status]
+\textbf{Formula unchanged.} \texttt{compute\_ebnm\_kl()} implementation unchanged.
+The KL value changes because $q(\mathbf{F})$ is now dual-source (larger effective precision
+$A_{F,j}$, different posterior shape).
+\end{verifybox}
+
+% ============================================================
+\section{Term (V): KL for $q(\tilde{\boldsymbol\beta})$}
+% ============================================================
+
+The $q(\tilde\beta_k)$ EBNM update uses the same scalar EBNM structure as the original
+$q(\beta_k)$, with the predictor changed from $l_{ik}$ to $(z_F)_{ik}$ (D3). The
+\texttt{compute\_ebnm\_kl()} function is called with the new $A_{\tilde\beta,k}$,
+$x_{\tilde\beta,k}$, $\E[\tilde\beta_k]$, $\E[\tilde\beta_k^2]$. No change to the KL
+formula itself.
+
+\begin{verifybox}[Term (V) status]
+\textbf{Formula unchanged.} \texttt{compute\_ebnm\_kl()} implementation unchanged.
+KL value changes because $A_{\tilde\beta,k}$ now uses $(z_F)_{ik}^2$ instead of $\E[l_{ik}^2]$.
+\end{verifybox}
+
+% ============================================================
+\section{Term (VI): KL for $q(\boldsymbol\tau)$}
+% ============================================================
+
+The $q(\boldsymbol\tau)$ update is completely unchanged (D4 does not affect it).
+The KL contribution is embedded in the \texttt{update\_tau()} return value
+(\texttt{elbo\_proxy}). This is unchanged.
+
+% ============================================================
+\section{Summary of ELBO Changes}
+% ============================================================
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\hline
+\textbf{ELBO Term} & \textbf{Original} & \textbf{Cluster B Change} \\
+\hline
+(I) Genomics & $-\tfrac{1}{2}\sum_{i,j}\tau_j\E[(y_{ij}-\mathbf{l}_i^\top\mathbf{f}_j)^2]$ & Unchanged \\
+(II) Survival & $\mathrm{logPL} - \tfrac{1}{2}\sum_i w_i\sum_k \E[l_{ik}^2]\E[\beta_k^2] - \ldots$ & $\mathrm{logPL} - \tfrac{1}{2}\sum_i w_i\sum_k (z_F)_{ik}^2\,\Var_q(\tilde\beta_k)$ \\
+(III) KL-L & EBNM KL with dual-source inputs & EBNM KL with genomics-only inputs (simpler) \\
+(IV) KL-F & EBNM KL with genomics-only inputs & EBNM KL with dual-source inputs \\
+(V) KL-$\tilde\beta$ & EBNM KL with $\E[l^2]$ predictor & EBNM KL with $(z_F)^2$ predictor \\
+(VI) KL-$\tau$ & Embedded in \texttt{elbo\_proxy} & Unchanged \\
+\hline
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{Code Changes to \texttt{compute\_elbo.R}}
+% ============================================================
+
+\subsection{\texttt{compute\_survival\_elbo()} — Updated}
+
+\begin{codebox}[compute\_survival\_elbo() — new signature and body]
+\textbf{Old signature:}
+\begin{verbatim}
+compute_survival_elbo(logPL, w, EL, EL2, EBeta, EBeta2)
+\end{verbatim}
+
+\textbf{New signature:}
+\begin{verbatim}
+compute_survival_elbo(logPL, w, ZF, EBeta, EBeta2)
+\end{verbatim}
+
+\textbf{Old body} (var\_eta used EL second moments):
+\begin{verbatim}
+var_eta <- rowSums(sweep(EL2, 2, EBeta2, "*")) -
+           rowSums(sweep(EL^2, 2, EBeta^2, "*"))
+logPL - 0.5 * sum(w * var_eta)
+\end{verbatim}
+
+\textbf{New body} (var\_eta uses ZF and beta posterior variances):
+\begin{verbatim}
+# Var_q(eta_i) = sum_k (ZF[i,k])^2 * Var_q(beta_tilde_k)
+#              = sum_k ZF[i,k]^2 * (EBeta2[k] - EBeta[k]^2)
+var_tilde_beta <- EBeta2 - EBeta^2                    # K-vector: Var_q(beta_tilde_k)
+var_eta <- as.vector(ZF^2 %*% var_tilde_beta)         # n-vector
+logPL - 0.5 * sum(w * var_eta)
+\end{verbatim}
+\end{codebox}
+
+\subsection{\texttt{compute\_ebnm\_kl()} — Unchanged}
+
+The KL computation function \texttt{compute\_ebnm\_kl(ebnm\_log\_lik, A, x, mean\_q, second\_q)}
+is called identically for all three latent variables. No code change needed.
+
+\subsection{Caller: \texttt{fit\_modular.R}}
+
+The call at line 526 changes from:
+\begin{verbatim}
+surv_elbo <- compute_survival_elbo(logPL, w, EL, EL2, EBeta, EBeta2)
+\end{verbatim}
+to:
+\begin{verbatim}
+surv_elbo <- compute_survival_elbo(logPL, w, ZF, EBeta, EBeta2)
+\end{verbatim}
+
+% ============================================================
+\section{Verification Checklist}
+% ============================================================
+
+\begin{verifybox}[D4 Verification]
+\begin{enumerate}
+  \item $\Var_q(\eta_i) = \sum_k (z_F)_{ik}^2\,\Var_q(\tilde\beta_k)$ — derived in \S3.2. \checkmark
+  \item When $\Var_q(\tilde\beta_k) = 0$ (zero posterior uncertainty): survival ELBO = logPL exactly. \checkmark
+  \item When ZF = EL and EBeta2 $\approx$ EBeta$^2$: new formula approaches old formula. \checkmark (sanity)
+  \item \texttt{compute\_survival\_elbo()} signature updated; old \texttt{EL}, \texttt{EL2} removed. (to implement)
+  \item Full ELBO is monotone increasing across CAVI iterations after code changes. (to verify in Step 9 smoke fit)
+  \item ELBO matches proxy (elbo\_proxy from update\_tau) in early iterations when survival contribution small. (to verify)
+\end{enumerate}
+\end{verifybox}
+
+\end{document}

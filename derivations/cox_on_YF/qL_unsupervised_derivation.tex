@@ -1,0 +1,233 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+% ── tcolorbox colour palette (matches Modular_UpdateDerivations style) ──────
+\newtcolorbox{derivbox}[1][]{colback=gray!8, colframe=gray!50,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{ebnmbox}[1][]{colback=blue!5, colframe=blue!40,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{verifybox}[1][]{colback=green!5, colframe=green!40,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{correctionbox}[1][]{colback=red!5, colframe=red!40,
+  fonttitle=\bfseries, title=#1, breakable}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\ELBO}{\mathcal{L}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\diag}{\mathrm{diag}}
+
+\title{\textbf{D1: Simplified $q(\mathbf{L})$ Update Under $\eta = \mathbf{Y}\mathbf{F}\tilde{\boldsymbol{\beta}}$}\\[4pt]
+\large Cluster B (Cox-on-YF Reformulation) — Derivation D1\\[2pt]
+\normalsize Cross-reference: \texttt{derivations/Modular\_UpdateDerivations/} q($L$) section}
+\author{Andrew Walther}
+\date{2026-04-29}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Context and Goal}
+% ============================================================
+
+In the original SSBMF model, the Cox proportional-hazards linear predictor is
+\begin{equation}
+  \eta_i = \mathbf{l}_i^\top \boldsymbol{\beta}, \qquad
+  \text{where } \mathbf{l}_i = \text{row } i \text{ of the latent loading matrix } \mathbf{L}.
+\end{equation}
+This makes $\mathbf{L}$ appear in \emph{both} the genomics likelihood ($\mathbf{Y} \approx \mathbf{L}\mathbf{F}^\top$)
+and the Cox likelihood (through $\eta_i$), so the variational update for $q(\mathbf{L})$ must balance
+two information sources (``dual-source EBNM'').
+
+\bigskip
+\textbf{Cluster B reformulation.} Replace the linear predictor with
+\begin{equation}
+  \eta_i = (\mathbf{y}_i \mathbf{F})\,\tilde{\boldsymbol{\beta}} = \sum_k \left(\sum_j y_{ij} f_{jk}\right)\tilde{\beta}_k,
+  \label{eq:new-eta}
+\end{equation}
+where $\tilde{\boldsymbol{\beta}}$ is the CAVI variational parameter and
+$\mathbf{Z}_F = \mathbf{Y}\mathbf{F} \in \mathbb{R}^{n \times K}$ are
+\emph{observed} projection scores (held fixed per outer iteration).
+
+\bigskip
+\textbf{Goal of D1.} Show that under~\eqref{eq:new-eta}, $\mathbf{L}$ no longer
+appears in the Cox likelihood term, so the ELBO's dependence on $q(\mathbf{L})$
+reduces to the genomics likelihood alone, yielding a pure-genomics EBNM update.
+
+% ============================================================
+\section{ELBO Decomposition Under the New Model}
+% ============================================================
+
+The full ELBO is
+\begin{equation}
+  \ELBO = \underbrace{\E_q[\log p(\mathbf{Y} \mid \mathbf{L}, \mathbf{F}, \boldsymbol{\tau})]}_{\text{genomics}}
+         + \underbrace{\E_q[\log p(\mathbf{t}, \boldsymbol{\delta} \mid \mathbf{Y}, \mathbf{F}, \tilde{\boldsymbol{\beta}})]}_{\text{survival (new)}}
+         - \KL[q(\mathbf{L}) \| p(\mathbf{L})]
+         - \KL[q(\mathbf{F}) \| p(\mathbf{F})]
+         - \KL[q(\tilde{\boldsymbol{\beta}}) \| p(\tilde{\boldsymbol{\beta}})]
+         - \KL[q(\boldsymbol{\tau}) \| p(\boldsymbol{\tau})].
+\end{equation}
+
+\begin{derivbox}[Key observation]
+Under~\eqref{eq:new-eta}, the survival term
+$\E_q[\log p(\mathbf{t}, \boldsymbol{\delta} \mid \mathbf{Y}, \mathbf{F}, \tilde{\boldsymbol{\beta}})]$
+depends on $\mathbf{Z}_F = \mathbf{Y}\mathbf{F}$ and $\tilde{\boldsymbol{\beta}}$, but
+\textbf{not on $\mathbf{L}$}. The matrix $\mathbf{L}$ appears only in the genomics likelihood.
+\end{derivbox}
+
+\subsection{Survival Term Does Not Involve $\mathbf{L}$}
+
+The Cox partial likelihood (and its Taylor-linearised surrogate used in CAVI) depends on
+$\eta_i = \sum_k (z_F)_{ik}\,\tilde{\beta}_k$ where $(z_F)_{ik} = \sum_j y_{ij} f_{jk}$.
+The terms $(z_F)_{ik}$ are functions of the \emph{observed} $\mathbf{Y}$ and the \emph{factor} $\mathbf{F}$;
+they do not involve the loadings $\mathbf{L}$.
+
+Therefore
+\begin{equation}
+  \frac{\partial}{\partial q(\mathbf{L})} \E_q[\log p(\mathbf{t}, \boldsymbol{\delta} \mid \mathbf{Y}, \mathbf{F}, \tilde{\boldsymbol{\beta}})] = 0.
+\end{equation}
+
+\subsection{Genomics Likelihood Depends on $\mathbf{L}$}
+
+The genomics model is $\mathbf{Y} \approx \mathbf{L}\mathbf{F}^\top + \mathbf{E}$ where
+$e_{ij} \overset{\text{iid}}{\sim} \N(0, \tau_j^{-1})$. The expected log-likelihood is
+\begin{equation}
+  \E_q[\log p(\mathbf{Y} \mid \mathbf{L}, \mathbf{F}, \boldsymbol{\tau})]
+  = -\frac{1}{2}\sum_{i,j} \tau_j \,\E_q[(y_{ij} - \mathbf{l}_i^\top \mathbf{f}_j)^2].
+  \label{eq:genomics-lik}
+\end{equation}
+This depends on $q(\mathbf{L})$ through $\E_q[\mathbf{l}_i]$ and $\E_q[l_{ik}^2]$.
+
+% ============================================================
+\section{Factor-wise ELBO for q($l_k$)}
+% ============================================================
+
+In Gauss-Seidel CAVI, we update $q(\mathbf{l}_k)$ holding all other factors fixed.
+Define the partial residual
+\begin{equation}
+  R_{k} = \mathbf{Y} - \sum_{k' \ne k} \E_q[\mathbf{l}_{k'}]\,\E_q[\mathbf{f}_{k'}]^\top
+        \;\in\; \mathbb{R}^{n \times p}.
+\end{equation}
+
+Isolating factor $k$ in~\eqref{eq:genomics-lik}:
+\begin{align}
+  \E_q[\log p(\mathbf{Y} \mid \mathbf{L}, \mathbf{F}, \boldsymbol{\tau})] \Big|_k
+  &= -\frac{1}{2}\sum_{i,j} \tau_j \,\E_q[(r_{k,ij} - l_{ik}\,f_{jk})^2] + \text{const} \nonumber\\
+  &= -\frac{1}{2}\sum_{i} \left[
+       \E_q[l_{ik}^2]\sum_j \tau_j \E_q[f_{jk}^2]
+       - 2\,\E_q[l_{ik}]\sum_j \tau_j \E_q[r_{k,ij}]\E_q[f_{jk}]
+     \right] + \text{const}.
+  \label{eq:factor-k-lik}
+\end{align}
+
+\begin{verifybox}[Survival terms: absent]
+The factor-$k$ contribution to the ELBO that involves $q(l_{ik})$ is given
+entirely by~\eqref{eq:factor-k-lik}. There are \textbf{no} $w_i$, $\tilde{\beta}_k$,
+$z_{\text{no-}k}$ or other survival terms present, because $\mathbf{L}$ is absent from
+the survival likelihood under the Cluster B reformulation.
+\end{verifybox}
+
+% ============================================================
+\section{Variational Update for $q(l_{ik})$ — Pure-Genomics EBNM}
+% ============================================================
+
+Completing the square in~\eqref{eq:factor-k-lik}, the optimal $q(l_{ik})$ is the EBNM
+solution with pseudo-observation
+\begin{equation}
+  x_{L,ik} = \frac{B_{L,ik}}{A_{L,i}}, \qquad
+  s_{L,ik} = \frac{1}{\sqrt{A_{L,i}}},
+\end{equation}
+where
+\begin{align}
+  A_{L,i} &= \sum_j \tau_j\,\E_q[f_{jk}^2], \label{eq:AL-gen}\\[4pt]
+  B_{L,ik} &= \sum_j \tau_j\,\E_q[r_{k,ij}]\,\E_q[f_{jk}]. \label{eq:BL-gen}
+\end{align}
+
+Note that $A_{L,i}$ is the \emph{same} for all patients $i$ (it sums over features $j$),
+so the subscript $i$ is redundant in practice — written here for clarity.
+
+\begin{ebnmbox}[EBNM call for q($l_k$) under Cluster B]
+\textbf{Input:} \;
+$x_{L,\cdot k} = B_{L,\cdot k} / A_{L}$ \,(n-vector),\;
+$s_{L} = 1/\sqrt{A_{L}}$ \,(scalar, same for all $i$)
+
+\vspace{6pt}
+\textbf{Prior family:} point-exponential (or as configured in \texttt{prior\_LF})
+
+\vspace{6pt}
+\textbf{Output:} $\E_q[l_{ik}]$, $\E_q[l_{ik}^2]$, \texttt{ebnm\_log\_likelihood}
+\end{ebnmbox}
+
+% ============================================================
+\section{Comparison to Original q($L$) Update}
+% ============================================================
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\hline
+\textbf{Quantity} & \textbf{Original ($\eta = \mathbf{L}\boldsymbol{\beta}$)} & \textbf{Cluster B ($\eta = \mathbf{Z}_F\tilde{\boldsymbol{\beta}}$)} \\
+\hline
+$A_{L,i}$ & $(1-\alpha)\,A_{\text{gen}} + \alpha\,\lambda\,w_i\,\E[\beta_k^2]$ & $A_{\text{gen}} = \sum_j \tau_j\E[f_{jk}^2]$ \\
+$B_{L,ik}$ & $(1-\alpha)\,B_{\text{gen},ik} + \alpha\,\lambda\,w_i\,z_{\text{no-}k,i}\,\E[\beta_k]$ & $B_{\text{gen},ik}$ only \\
+Survival args & $w$, $\E[\beta_k]$, $\E[\beta_k^2]$, $z_{\text{no-}k}$, $\lambda$, $\alpha$ & \emph{none} \\
+\hline
+\end{tabular}
+\end{center}
+
+\bigskip
+The Cluster B update is strictly simpler: $\alpha$ no longer appears (or equivalently,
+the $(1-\alpha)$ factor in front of $A_{\text{gen}}$ becomes 1, so we may drop it and
+set the floor directly). The parameters $w$, $\tilde{\beta}_k$,
+$\E[\tilde{\beta}_k^2]$, $z_{\text{no-}k}$, $\lambda$, and \texttt{normalize\_AB}
+are all removed from \texttt{update\_L\_k()}.
+
+% ============================================================
+\section{Code Implications}
+% ============================================================
+
+\paragraph{\texttt{code/update\_L.R} — \texttt{update\_L\_k()}}
+\begin{itemize}
+  \item \textbf{Remove arguments:} \texttt{w}, \texttt{EBeta\_k}, \texttt{EBeta2\_k},
+        \texttt{z\_no\_k}, \texttt{lambda}, \texttt{normalize\_AB}, \texttt{alpha}
+  \item \textbf{Remove:} \texttt{A\_surv} and \texttt{B\_surv} computation blocks
+  \item \textbf{Simplify:} \texttt{A\_L <- pmax(A\_gen, A\_floor)},\;
+        \texttt{B\_L <- B\_gen}
+  \item \textbf{New signature:}
+        \texttt{update\_L\_k(Tau, EF\_k, EF2\_k, R\_k, prior\_family, A\_floor)}
+\end{itemize}
+
+\paragraph{\texttt{code/update\_L.R} — \texttt{update\_L\_all()}}
+Drop \texttt{w}, \texttt{z}, \texttt{EBeta}, \texttt{EBeta2}, \texttt{lambda},
+\texttt{normalize\_AB} from the outer wrapper. The Gauss-Seidel $k$-loop structure
+is preserved; only the argument threading changes.
+
+% ============================================================
+\section{Verification Checklist}
+% ============================================================
+
+\begin{verifybox}[D1 Verification]
+\begin{enumerate}
+  \item $\eta_i = \sum_k (z_F)_{ik}\,\tilde{\beta}_k$ contains no $l_{ik}$. \checkmark
+  \item The Cox Taylor expansion — $\log \mathrm{PL} \approx \mathrm{logPL}_0
+        + \sum_i u_i\,\delta\eta_i - \tfrac{1}{2}\sum_i w_i\,(\delta\eta_i)^2$
+        — involves $\mathbf{Z}_F$ and $\tilde{\boldsymbol{\beta}}$, not $\mathbf{L}$. \checkmark
+  \item Factor-wise ELBO for $q(l_k)$ contains only the genomics
+        terms~\eqref{eq:AL-gen}--\eqref{eq:BL-gen}. \checkmark
+  \item All survival-specific arguments removed from \texttt{update\_L\_k()}. (to implement)
+  \item 171/171 tests pass after simplification. (to implement)
+\end{enumerate}
+\end{verifybox}
+
+\end{document}

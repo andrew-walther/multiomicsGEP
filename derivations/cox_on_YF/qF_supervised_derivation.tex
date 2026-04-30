@@ -1,0 +1,316 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+% ── tcolorbox colour palette ─────────────────────────────────────────────────
+\newtcolorbox{derivbox}[1][]{colback=gray!8, colframe=gray!50,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{ebnmbox}[1][]{colback=blue!5, colframe=blue!40,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{verifybox}[1][]{colback=green!5, colframe=green!40,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{correctionbox}[1][]{colback=red!5, colframe=red!40,
+  fonttitle=\bfseries, title=#1, breakable}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\ELBO}{\mathcal{L}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\diag}{\mathrm{diag}}
+
+\title{\textbf{D2: Dual-Source $q(\mathbf{F})$ Update Under $\eta = \mathbf{Y}\mathbf{F}\tilde{\boldsymbol{\beta}}$}\\[4pt]
+\large Cluster B (Cox-on-YF Reformulation) — Derivation D2 (Primary)\\[2pt]
+\normalsize Cross-reference: \texttt{derivations/Modular\_UpdateDerivations/} q($L$) section (n$\leftrightarrow$p symmetry)}
+\author{Andrew Walther}
+\date{2026-04-29}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Context and Goal}
+% ============================================================
+
+Under the Cluster B reformulation $\eta_i = (\mathbf{y}_i \mathbf{F})\,\tilde{\boldsymbol{\beta}}$,
+the factor matrix $\mathbf{F} \in \mathbb{R}^{p \times K}$ appears in \emph{both}:
+\begin{enumerate}
+  \item the genomics likelihood $\mathbf{Y} \approx \mathbf{L}\mathbf{F}^\top$, and
+  \item the Cox PH likelihood through $\eta_i = \sum_k \bigl(\sum_j y_{ij} f_{jk}\bigr)\,\tilde{\beta}_k$.
+\end{enumerate}
+
+This is analogous to how $\mathbf{L}$ had a dual role in the original model. The derivation
+follows the same structure as the original $q(\mathbf{L})$ derivation
+(\texttt{Modular\_UpdateDerivations/} q($L$) section), with the $n$- and $p$-dimensional
+roles swapped.
+
+\bigskip
+\textbf{Goal of D2.} Derive the factor-wise ELBO for $q(f_{jk})$, identify the dual-source
+EBNM inputs $A_{F,j}$ and $B_{F,j}$ for both sources, and establish that the scale imbalance
+between survival and genomics is resolved under this formulation.
+
+% ============================================================
+\section{Model Recap}
+% ============================================================
+
+\paragraph{Generative model.}
+\[
+  y_{ij} \mid \mathbf{l}_i, \mathbf{f}_j, \tau_j
+  \;\sim\; \N\!\left(\mathbf{l}_i^\top \mathbf{f}_j,\; \tau_j^{-1}\right),
+  \qquad
+  h_i(t) = h_0(t)\,e^{\eta_i}, \quad
+  \eta_i = \sum_k \underbrace{\left(\sum_j y_{ij} f_{jk}\right)}_{(z_F)_{ik}}\,\tilde{\beta}_k.
+\]
+
+\paragraph{Notation.}
+\begin{itemize}
+  \item $\mathbf{Z}_F = \mathbf{Y}\mathbf{E}[\mathbf{F}] \in \mathbb{R}^{n\times K}$: projection
+        scores held fixed per outer CAVI iteration.
+  \item $w_i = W_{ii}$: negative diagonal Hessian weights from the Cox Taylor expansion.
+  \item $z_{\text{no-}k,i} = z_i - \sum_{k'\ne k}(z_F)_{ik'}\,\E[\tilde\beta_{k'}]$:
+        partial working response with factor $k$ removed.
+  \item $R_k = \mathbf{Y} - \sum_{k'\ne k}\E[\mathbf{l}_{k'}]\E[\mathbf{f}_{k'}]^\top$:
+        partial genomics residual.
+\end{itemize}
+
+\paragraph{CAVI update frequency.}
+$\mathbf{Z}_F$ is recomputed once per outer CAVI iteration (before the Cox Taylor expansion).
+Within the $k$-loop, $(z_F)_{ik} = \sum_j y_{ij}\,\E[f_{jk}]$ — so after $\E[\mathbf{f}_k]$
+is updated, $\mathbf{Z}_F$ is stale. However, the standard Gauss-Seidel contract holds
+$\mathbf{Z}_F$ fixed for the duration of the inner $k$-loop; it is refreshed at the start
+of the next outer iteration. This matches how $\eta$ is treated in the original model.
+
+% ============================================================
+\section{Factor-wise ELBO for $q(f_{jk})$}
+% ============================================================
+
+In Gauss-Seidel CAVI, we update $q(\mathbf{f}_k)$ holding all other quantities fixed.
+
+\subsection{Genomics Contribution}
+
+Expanding the squared error for gene $j$, factor $k$:
+\begin{align}
+  \E_q[\log p(\mathbf{Y} \mid \mathbf{L}, \mathbf{F}, \boldsymbol{\tau})] \Big|_{j,k}
+  &= -\frac{\tau_j}{2}\sum_i \E_q[(r_{k,ij} - l_{ik}\,f_{jk})^2] + \text{const}\nonumber\\
+  &= -\frac{\tau_j}{2}\!\left[\E_q[f_{jk}^2]\!\sum_i \E_q[l_{ik}^2]
+     - 2\,\E_q[f_{jk}]\!\sum_i \E_q[r_{k,ij}]\E_q[l_{ik}]\right] + \text{const}.
+\end{align}
+
+Reading off the coefficient of $\E_q[f_{jk}^2]$ and $\E_q[f_{jk}]$:
+\begin{align}
+  A_{F,\text{gen},j} &= \tau_j \sum_i \E_q[l_{ik}^2], \label{eq:AFgen}\\
+  B_{F,\text{gen},j} &= \tau_j \sum_i \E_q[r_{k,ij}]\,\E_q[l_{ik}] = \tau_j\,[\mathbf{R}_k^\top \E[\mathbf{l}_k]]_j. \label{eq:BFgen}
+\end{align}
+
+\subsection{Survival Contribution}
+
+The Cox PH likelihood enters via the Taylor-linearised surrogate.
+The relevant expected log-likelihood (up to constants in $q(\mathbf{f}_k)$) is
+\begin{equation}
+  \E_q[\log p(\mathbf{t}, \boldsymbol{\delta} \mid \mathbf{Y}, \mathbf{F}, \tilde{\boldsymbol{\beta}})]
+  \approx \sum_i \Bigl[u_i\,\eta_i - \tfrac{1}{2}w_i\,\eta_i^2\Bigr] + \text{const},
+  \label{eq:cox-surrog}
+\end{equation}
+where $u_i$ is the score residual and the term in $\eta_i^2$ is the Taylor quadratic.
+
+Substituting $\eta_i = \sum_{k'}(z_F)_{ik'}\,\E[\tilde\beta_{k'}]$ and isolating the
+contribution from $f_{jk}$ (through $(z_F)_{ik} = \sum_{j'} y_{ij'} f_{j'k}$):
+
+\begin{derivbox}[Isolating $f_{jk}$ in the survival term]
+Write $\eta_i = y_{ij}\,f_{jk}\,\E[\tilde\beta_k] + \tilde\eta_{\text{no-}j,i}$
+where $\tilde\eta_{\text{no-}j,i}$ collects all terms that do not depend on $f_{jk}$.
+Then~\eqref{eq:cox-surrog} contributes, for gene $j$, factor $k$:
+\begin{align}
+  &-\tfrac{1}{2}\sum_i w_i\,\E_q[\eta_i^2] \Big|_{f_{jk}} \nonumber\\
+  &\quad= -\tfrac{1}{2}\E_q[f_{jk}^2]\,\E[\tilde\beta_k^2]\sum_i w_i\,y_{ij}^2
+          + \E_q[f_{jk}]\,\E[\tilde\beta_k]\sum_i w_i\,z_{\text{no-}k,i}\,y_{ij} + \text{const},
+\end{align}
+where $z_{\text{no-}k,i}$ is the partial working response
+($\eta_{\text{no-}k,i} + u_i/w_i - \sum_{j'} y_{ij'}\E[f_{j'k}]\E[\tilde\beta_k]$
+simplifies to $z_i - (z_F)_{\cdot,-k}\,\E[\tilde\boldsymbol{\beta}_{-k}]$, cancelling
+the contribution of factor $k$).
+\end{derivbox}
+
+Reading off the coefficients:
+\begin{align}
+  A_{F,\text{surv},j} &= \E[\tilde\beta_k^2]\,\sum_i w_i\,y_{ij}^2
+                       = \E[\tilde\beta_k^2]\,[\diag(\mathbf{Y}^\top\diag(\mathbf{w})\mathbf{Y})]_j,
+                       \label{eq:AFsurv}\\
+  B_{F,\text{surv},j} &= \E[\tilde\beta_k]\,\sum_i w_i\,z_{\text{no-}k,i}\,y_{ij}
+                       = \E[\tilde\beta_k]\,[\mathbf{Y}^\top(\mathbf{w} \circ \mathbf{z}_{\text{no-}k})]_j.
+                       \label{eq:BFsurv}
+\end{align}
+
+\subsection{Combined EBNM Inputs}
+
+Mixing the two sources with weight $\alpha \in [0,1]$:
+\begin{align}
+  A_{F,j} &= (1-\alpha)\,A_{F,\text{gen},j} + \alpha\,A_{F,\text{surv},j}, \label{eq:AF}\\
+  B_{F,j} &= (1-\alpha)\,B_{F,\text{gen},j} + \alpha\,B_{F,\text{surv},j}. \label{eq:BF}
+\end{align}
+
+\begin{ebnmbox}[EBNM call for $q(f_k)$ under Cluster B]
+\textbf{Inputs (p-vectors):}
+\[
+  x_{F,j} = \frac{B_{F,j}}{A_{F,j}}, \qquad
+  s_{F,j} = \frac{1}{\sqrt{A_{F,j}}}.
+\]
+
+\textbf{Note on $\tau_j$ cancellation:} In the pure-genomics limit ($\alpha=0$),
+$x_{F,j} = B_{F,\text{gen},j}/A_{F,\text{gen},j}$, and $\tau_j$ cancels in $x_{F,j}$
+(divides numerator and denominator equally) but \emph{not} in $s_{F,j}$
+(which has $A_{F,\text{gen},j}^{-1/2} \propto \tau_j^{-1/2}$). This is the same
+$\tau$-cancellation property as in the original $q(\mathbf{F})$ derivation. When $\alpha > 0$,
+$\tau_j$ does not cancel globally (survival and genomics $A$ terms have different $\tau$ dependencies),
+but numerically the expression in \eqref{eq:AF} is well-defined.
+
+\vspace{6pt}
+\textbf{Prior family:} point-exponential (or as configured in \texttt{prior\_LF})
+\end{ebnmbox}
+
+% ============================================================
+\section{Scale Imbalance Audit}
+% ============================================================
+
+A key question: does the Cluster B formulation fix the scale imbalance that plagued the
+original $q(\mathbf{L})$ update?
+
+\subsection{Original Problem (for reference)}
+
+In the original model ($\eta = \mathbf{L}\boldsymbol{\beta}$), the $q(\mathbf{L})$ precision was:
+\[
+  A_{L,\text{gen}} = \sum_j \tau_j\,\E[f_{jk}^2] \approx p\,\bar\tau\,\E[f^2]
+  \qquad \text{vs.} \qquad
+  A_{L,\text{surv},i} = \lambda\,w_i\,\E[\beta_k^2] \approx O(1).
+\]
+The ratio $A_{L,\text{surv}}/A_{L,\text{gen}} \approx 1/(p\,\bar\tau) \approx 1/2000$
+for PDAC-scale data — survival cannot compete.
+
+\subsection{Cluster B Scaling for $q(\mathbf{F})$}
+
+\paragraph{Genomics precision.}
+\[
+  A_{F,\text{gen},j} = \tau_j\,\sum_i \E[l_{ik}^2].
+\]
+This sums over $n$ patients ($n \approx 200$--$500$). Typical values: $\tau_j \approx 0.1$--$10$,
+$\sum_i \E[l_{ik}^2] \approx n\,\sigma_l^2 \approx n \cdot 0.01$. So $A_{F,\text{gen},j} \approx n\,\tau_j\,\sigma_l^2$.
+
+\paragraph{Survival precision.}
+\[
+  A_{F,\text{surv},j} = \E[\tilde\beta_k^2]\,\sum_i w_i\,y_{ij}^2.
+\]
+Typical values: $w_i \approx 0.05$--$0.2$ (Cox weight), $y_{ij}^2 \approx 1$ (standardised expression),
+$\E[\tilde\beta_k^2] \approx 0.01$--$0.1$. So
+$A_{F,\text{surv},j} \approx n\,\bar w\,\bar y^2\,\E[\tilde\beta^2] \approx n \cdot 0.1 \cdot 1 \cdot 0.05$.
+
+\paragraph{Ratio.}
+\[
+  \frac{A_{F,\text{surv},j}}{A_{F,\text{gen},j}}
+  \approx \frac{\bar w\,\bar y^2\,\E[\tilde\beta^2]}{\tau_j\,\sigma_l^2}
+  \approx \frac{0.1 \cdot 1 \cdot 0.05}{1 \cdot 0.01}
+  = 0.5.
+\]
+
+\begin{verifybox}[Scale imbalance resolved]
+The $n$ factors cancel in the ratio — both $A_{F,\text{gen}}$ and $A_{F,\text{surv}}$ scale with $n$.
+The ratio is $O(1)$ rather than $O(1/p)$. Survival and genomics contributions to $q(\mathbf{F})$
+are now comparable in magnitude, which is the structural fix Cluster B was designed to achieve.
+\end{verifybox}
+
+% ============================================================
+\section{Identifiability Under $\eta = \mathbf{Z}_F\tilde{\boldsymbol{\beta}}$}
+% ============================================================
+
+\begin{derivbox}[Scaling ambiguity]
+Under $\eta_i = \sum_k \bigl(\sum_j y_{ij}f_{jk}\bigr)\tilde\beta_k$, there is a scaling
+ambiguity: scaling $f_{jk} \to c\,f_{jk}$ and $\tilde\beta_k \to \tilde\beta_k/c$
+leaves $\eta_i$ unchanged. This is equivalent to the $\mathbf{L}$--$\boldsymbol{\beta}$
+scaling ambiguity in the original model.
+\end{derivbox}
+
+The EBNM prior on $q(\mathbf{f}_k)$ breaks this ambiguity by imposing sparsity. Specifically:
+\begin{itemize}
+  \item The point-exponential prior shrinks small $|f_{jk}|$ to zero and sets a characteristic
+        scale via the estimated $\sigma_k$ in the EBNM family. This anchors the scale of $f_{jk}$.
+  \item Given the anchored scale of $\mathbf{F}$, $\tilde\beta_k$ is identified through the
+        EBNM prior on $q(\tilde\beta_k)$ (point-normal with EBNM-estimated scale).
+\end{itemize}
+
+\textbf{Practical consequence.} No additional orthogonality or normalization constraint is needed.
+The Gauss-Seidel updates cycle between $q(\mathbf{F})$ and $q(\tilde{\boldsymbol{\beta}})$, and
+the joint EBNM shrinkage provides implicit identification. This is the same mechanism as the
+original model (where $q(\mathbf{L})$ and $q(\boldsymbol{\beta})$ are jointly identified through EBNM).
+
+% ============================================================
+\section{Train/Test Consistency}
+% ============================================================
+
+\begin{verifybox}[Train = Test formula]
+\textbf{Training:}
+\[
+  \hat\eta_i = \sum_k (z_F)_{ik}\,\E[\tilde\beta_k]
+             = \bigl(\mathbf{y}_i\,\E[\mathbf{F}]\bigr)\,\E[\tilde{\boldsymbol{\beta}}].
+\]
+
+\textbf{Test:}
+\[
+  \hat\eta_i^{\text{test}} = \bigl(\mathbf{y}_i^{\text{test}}\,\E[\mathbf{F}]\bigr)\,\E[\tilde{\boldsymbol{\beta}}].
+\]
+
+\textbf{Identical formula.} No matrix inverse, no OLS projection, no special-case logic.
+The learned $\E[\mathbf{F}]$ and $\E[\tilde{\boldsymbol{\beta}}]$ transfer directly.
+\end{verifybox}
+
+% ============================================================
+\section{Code Implications}
+% ============================================================
+
+\paragraph{\texttt{code/update\_F.R} — \texttt{update\_F\_k()}}
+\begin{itemize}
+  \item \textbf{New arguments:} \texttt{w} (n-vector), \texttt{EBeta\_k} (scalar),
+        \texttt{EBeta2\_k} (scalar), \texttt{YtWY\_diag} (p-vector, pre-computed),
+        \texttt{YtWz\_no\_k} (p-vector, pre-computed per $k$)
+  \item \textbf{New computation:}
+    \begin{verbatim}
+A_F_surv <- EBeta2_k * YtWY_diag       # p-vector: eq. (5)
+B_F_surv <- EBeta_k  * YtWz_no_k       # p-vector: eq. (6)
+A_F <- (1-alpha)*A_F_gen + alpha*pmax(A_F_surv, A_floor)
+B_F <- (1-alpha)*B_F_gen + alpha*B_F_surv
+    \end{verbatim}
+  \item \textbf{Pre-computation in caller (\texttt{fit\_modular.R}):}
+    \begin{verbatim}
+YtWY_diag   <- colSums(sweep(Y^2, 1, w, "*"))         # once per outer iter
+YtWz_no_k_k <- as.vector(t(Y) %*% (w * z_no_k))      # once per k
+    \end{verbatim}
+\end{itemize}
+
+\paragraph{\texttt{code/update\_F.R} — \texttt{update\_F\_all()}}
+Add \texttt{w}, \texttt{EBeta}, \texttt{EBeta2}, \texttt{Y}, \texttt{z} to signature.
+Pre-compute \texttt{YtWY\_diag} once per call; compute \texttt{YtWz\_no\_k} per $k$.
+
+% ============================================================
+\section{Verification Checklist}
+% ============================================================
+
+\begin{verifybox}[D2 Verification]
+\begin{enumerate}
+  \item $A_{F,\text{surv},j}$ formula matches \eqref{eq:AFsurv}: $\E[\tilde\beta_k^2]\cdot\sum_i w_i y_{ij}^2$. \checkmark
+  \item $B_{F,\text{surv},j}$ formula matches \eqref{eq:BFsurv}: $\E[\tilde\beta_k]\cdot\sum_i w_i z_{\text{no-}k,i} y_{ij}$. \checkmark
+  \item Scale ratio $A_{F,\text{surv}}/A_{F,\text{gen}} \approx O(1)$ (not $O(1/p)$). \checkmark
+  \item $\tau_j$ cancels in $x_{F,j}$ in the pure-genomics limit ($\alpha=0$). \checkmark
+  \item When $\alpha=0$: $A_F = A_{F,\text{gen}}$, $B_F = B_{F,\text{gen}}$ (reduces to original). (to test)
+  \item When \texttt{w}=0: $A_{F,\text{surv}}=0$, $B_{F,\text{surv}}=0$. (to test)
+  \item When \texttt{EBeta\_k}=0: $B_{F,\text{surv}}=0$. (to test)
+  \item All F tests pass including 6 new dual-source tests. (to implement)
+\end{enumerate}
+\end{verifybox}
+
+\end{document}
