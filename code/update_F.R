@@ -73,6 +73,16 @@ suppressPackageStartupMessages(library(ebnm))
 #'                    alpha=0: pure genomics (original formula); alpha=1: pure survival.
 #'                    Default 0.5.
 #' @param A_floor     numeric: minimum value for each A_F[j] (default 1e-10)
+#' @param normalize_AB logical: if TRUE, rescale A_surv and B_surv so that
+#'                    mean(A_surv) matches mean(A_gen) before alpha-mixing.
+#'                    Addresses the structural ~p/n scale imbalance where A_gen
+#'                    (genomics precision, sums over n subjects) typically exceeds
+#'                    A_surv (survival precision, = EBeta2 * YtWY_diag) by
+#'                    orders of magnitude when EBeta is small.  Same mechanism as
+#'                    the Cluster A normalize_AB fix applied to update_L_k().
+#'                    Skipped automatically when mean(A_surv) <= 1e-12 (pure-zero
+#'                    EBeta case) to avoid amplifying numerical noise.
+#'                    Default FALSE for backward compatibility.
 #'
 #' @return Named list:
 #'   $mean        -- p-vector: posterior mean E_q[f_{jk}]
@@ -106,7 +116,8 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
                         YtWz_no_k    = NULL,
                         prior_family = "point_exponential",
                         alpha        = 0.5,
-                        A_floor      = 1e-10) {
+                        A_floor      = 1e-10,
+                        normalize_AB = FALSE) {
 
   p <- length(Tau)
 
@@ -143,10 +154,44 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
   B_surv <- EBeta_k  * YtWz_no_k                          # p-vector (raw)
 
   # ------------------------------------------------------------------
+  # Optional A/B rescaling  [Cluster B analogue of Cluster A Fix 4]
+  #
+  # A_gen = Tau * sum_EL2_k sums over n subjects; A_surv = EBeta2 * YtWY_diag
+  # is bounded by EBeta2 (tiny at initialisation).  The structural ratio
+  # A_gen / A_surv can exceed 10^3, making alpha effectively zero even when
+  # set to 0.5.  Rescaling A_surv (and B_surv consistently) so that
+  # mean(A_surv) approaches mean(A_gen) restores alpha as a true mixing knob.
+  # The pseudo-observation direction B_surv/A_surv is unchanged by the
+  # rescaling; only its weight relative to the genomics term changes.
+  #
+  # CAP at 100: Full normalisation (scale = m_gen/m_surv) can reach 10^3+
+  # when EBeta is small but non-zero (warm-start ~ 0.01).  The corresponding
+  # x_surv = EBeta/EBeta2 * (YtWz/YtWY) can then be O(100), swamping x_gen
+  # and causing a catastrophic EF update that collapses the L decomposition
+  # for the other factors.  Capping at 100 limits the survival-to-genomics
+  # signal ratio to at most ~100×, keeping the update stable while still
+  # providing meaningful survival guidance.
+  #
+  # Guard: skip when mean(A_surv) <= 1e-12 (EBeta = 0 exactly) or means are
+  # non-finite (can arise from EBeta2 = 0 exactly and Inf in YtWY_diag).
+  # ------------------------------------------------------------------
+  A_surv_eff <- A_surv
+  B_surv_eff <- B_surv
+  if (normalize_AB) {
+    m_surv <- mean(A_surv)
+    m_gen  <- mean(A_gen)
+    if (is.finite(m_surv) && is.finite(m_gen) && m_surv > 1e-12 && m_gen > 1e-12) {
+      scale_surv <- min(m_gen / m_surv, 100)
+      A_surv_eff <- A_surv * scale_surv
+      B_surv_eff <- B_surv * scale_surv
+    }
+  }
+
+  # ------------------------------------------------------------------
   # Alpha-weighted combination and precision floor
   # ------------------------------------------------------------------
-  A_F <- pmax((1 - alpha) * A_gen + alpha * A_surv, A_floor)
-  B_F <- (1 - alpha) * B_gen + alpha * B_surv
+  A_F <- pmax((1 - alpha) * A_gen + alpha * A_surv_eff, A_floor)
+  B_F <- (1 - alpha) * B_gen + alpha * B_surv_eff
 
   # ------------------------------------------------------------------
   # EBNM pseudo-observation and noise (p-vectors)
@@ -212,6 +257,7 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
 #' @param prior_family character: EBNM prior family (default "point_exponential")
 #' @param alpha       numeric in [0, 1]: survival mixing weight (default 0.5)
 #' @param A_floor     numeric: precision floor (default 1e-10)
+#' @param normalize_AB logical: passed through to update_F_k (default FALSE)
 #'
 #' @return Named list:
 #'   $EF      -- p x K matrix of updated posterior means
@@ -226,7 +272,8 @@ update_F_all <- function(Y, EL, EL2, EF, EF2, Tau,
                           EBeta2     = NULL,
                           prior_family = "point_exponential",
                           alpha        = 0.5,
-                          A_floor      = 1e-10) {
+                          A_floor      = 1e-10,
+                          normalize_AB = FALSE) {
 
   K        <- ncol(EF)
   EF_curr  <- EF
@@ -263,7 +310,8 @@ update_F_all <- function(Y, EL, EL2, EF, EF2, Tau,
       YtWz_no_k    = YtWz_no_k,
       prior_family = prior_family,
       alpha        = alpha,
-      A_floor      = A_floor
+      A_floor      = A_floor,
+      normalize_AB = normalize_AB
     )
 
     EF_curr[, k]  <- res_k$mean

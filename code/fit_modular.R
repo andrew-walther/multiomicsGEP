@@ -511,7 +511,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
                           YtWY_diag    = YtWY_diag,
                           YtWz_no_k    = YtWz_no_k,
                           prior_family = prior_LF,
-                          alpha        = alpha_iter)
+                          alpha        = alpha_iter,
+                          normalize_AB = normalize_AB)
       EF[, k]  <- res_F$mean
       EF2[, k] <- res_F$second
       kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
