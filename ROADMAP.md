@@ -143,8 +143,9 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   quick-reference table after moving. Coordinate with any active Longleaf HPC paths.*
 
 - [ ] **Repository reorganisation** `[Priority: Low]` `[Effort: Small]`
-  The current directory layout has accumulated structural debt across three simulation generations.
-  Proposed clean structure (no file deletion — move and rename only):
+  The current directory layout has accumulated structural debt across three simulation generations. 
+  Need to clean up the results/ directory as multiple stages of tables/figures/reports are floating 
+  around without clear structure Proposed clean structure (no file deletion — move and rename only):
 
   ```
   code/                     ← algorithm only (update_*.R, fit_modular.R, etc.)
