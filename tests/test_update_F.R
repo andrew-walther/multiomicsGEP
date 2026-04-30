@@ -528,3 +528,138 @@ run_test("T_alpha.2: alpha=0 -> gives original unscaled formula (A = Tau*sum_EL2
   assert_near(res$A, expected_A, tol = 1e-12, msg = "alpha=0: A_F should equal unscaled formula")
   assert_near(res$B, expected_B, tol = 1e-12, msg = "alpha=0: B_F should equal unscaled formula")
 })
+
+cat("\n=== T_surv: Dual-Source Survival Terms (Cluster B) ===\n")
+
+run_test("T_surv.1: A_surv[j] = EBeta2_k * YtWY_diag[j]", {
+  # Under Cluster B, the survival precision for feature j is E[beta_tilde_k^2]
+  # times the pre-computed diagonal of Y'diag(w)Y.
+  set.seed(901); n <- 30; p <- 20
+  Tau       <- rep(1.0, p)
+  EL_k      <- rnorm(n)
+  EL2_k     <- EL_k^2 + 0.1
+  R_k       <- matrix(rnorm(n * p), n, p)
+  EBeta2_k  <- 0.8
+  YtWY_diag <- abs(rnorm(p)) + 0.5    # simulated diag(Y'diag(w)Y)
+
+  res <- update_F_k(Tau, EL_k, EL2_k, R_k,
+                    EBeta2_k  = EBeta2_k,
+                    YtWY_diag = YtWY_diag)
+  expected_A_surv <- EBeta2_k * YtWY_diag
+  assert_near(res$A_surv, expected_A_surv, tol = 1e-12,
+              msg = "A_surv[j] != EBeta2_k * YtWY_diag[j]")
+})
+
+run_test("T_surv.2: B_surv[j] = EBeta_k * YtWz_no_k[j]", {
+  # The survival signal for feature j is E[beta_tilde_k] times the
+  # pre-computed Y'(w * z_no_k).
+  set.seed(902); n <- 30; p <- 20
+  Tau       <- rep(1.0, p)
+  EL_k      <- rnorm(n)
+  EL2_k     <- EL_k^2 + 0.1
+  R_k       <- matrix(rnorm(n * p), n, p)
+  EBeta_k   <- 1.3
+  YtWz_no_k <- rnorm(p)
+
+  res <- update_F_k(Tau, EL_k, EL2_k, R_k,
+                    EBeta_k   = EBeta_k,
+                    YtWz_no_k = YtWz_no_k)
+  expected_B_surv <- EBeta_k * YtWz_no_k
+  assert_near(res$B_surv, expected_B_surv, tol = 1e-12,
+              msg = "B_surv[j] != EBeta_k * YtWz_no_k[j]")
+})
+
+run_test("T_surv.3: alpha=0 with non-zero survival args -> A_F = A_gen (survival suppressed)", {
+  # When alpha=0, the (1-alpha) weight on genomics is 1 and alpha weight on
+  # survival is 0, so survival terms drop out regardless of EBeta2_k / YtWY_diag.
+  set.seed(903); n <- 25; p <- 15
+  Tau       <- abs(rnorm(p)) + 0.5
+  EL_k      <- rnorm(n)
+  EL2_k     <- EL_k^2 + 0.1
+  R_k       <- matrix(rnorm(n * p), n, p)
+  EBeta2_k  <- 5.0
+  YtWY_diag <- abs(rnorm(p)) + 1.0   # non-zero, would inflate A if alpha > 0
+
+  res_surv <- update_F_k(Tau, EL_k, EL2_k, R_k,
+                          EBeta2_k  = EBeta2_k,
+                          YtWY_diag = YtWY_diag,
+                          alpha = 0)
+  res_base <- update_F_k(Tau, EL_k, EL2_k, R_k, alpha = 0)
+
+  assert_near(res_surv$A, res_base$A, tol = 1e-12,
+              msg = "alpha=0: A_F should equal A_gen regardless of survival args")
+  assert_near(res_surv$B, res_base$B, tol = 1e-12,
+              msg = "alpha=0: B_F should equal B_gen regardless of survival args")
+})
+
+run_test("T_surv.4: alpha>0 with EBeta2_k>0 -> A_F > (1-alpha)*A_gen (survival inflates A)", {
+  # With alpha > 0 and a non-zero EBeta2_k, the survival term adds positive
+  # mass to A_F, so A_F should exceed the genomics-only contribution.
+  set.seed(904); n <- 30; p <- 20
+  Tau       <- rep(2.0, p)
+  EL_k      <- rnorm(n)
+  EL2_k     <- EL_k^2 + 0.1
+  R_k       <- matrix(rnorm(n * p), n, p)
+  EBeta2_k  <- 2.0
+  YtWY_diag <- rep(1.0, p)   # each feature contributes equally
+
+  res <- update_F_k(Tau, EL_k, EL2_k, R_k,
+                    EBeta2_k  = EBeta2_k,
+                    YtWY_diag = YtWY_diag,
+                    alpha = 0.5)
+
+  # Genomics-only A (alpha = 0 baseline)
+  res_gen <- update_F_k(Tau, EL_k, EL2_k, R_k, alpha = 0)
+  A_gen_contrib <- 0.5 * res_gen$A   # (1-alpha) * A_gen
+
+  # A_F should be strictly greater because A_surv > 0
+  assert_true(all(res$A > A_gen_contrib - 1e-10),
+              "alpha=0.5, EBeta2>0: A_F should exceed (1-alpha)*A_gen")
+  assert_true(mean(res$A) > mean(A_gen_contrib),
+              "mean A_F should exceed mean (1-alpha)*A_gen with survival")
+})
+
+run_test("T_surv.5: YtWY_diag=0 -> A_surv=0 -> A_F = (1-alpha)*A_gen", {
+  # When there is no survival weight on any feature (YtWY_diag=0), the
+  # survival precision term is zero and A_F reduces to (1-alpha)*A_gen.
+  set.seed(905); n <- 20; p <- 12
+  Tau       <- rep(1.5, p)
+  EL_k      <- rnorm(n)
+  EL2_k     <- EL_k^2 + 0.1
+  R_k       <- matrix(rnorm(n * p), n, p)
+  EBeta2_k  <- 3.0
+  alpha     <- 0.5
+
+  res <- update_F_k(Tau, EL_k, EL2_k, R_k,
+                    EBeta2_k  = EBeta2_k,
+                    YtWY_diag = rep(0, p),   # zero survival weights
+                    alpha = alpha)
+
+  expected_A <- pmax((1 - alpha) * Tau * sum(EL2_k), 1e-10)
+  assert_near(res$A, expected_A, tol = 1e-12,
+              msg = "YtWY_diag=0: A_F should equal (1-alpha)*A_gen")
+  assert_near(res$A_surv, rep(0, p), tol = 1e-15,
+              msg = "A_surv should be zero when YtWY_diag=0")
+})
+
+run_test("T_surv.6: EBeta_k=0 -> B_surv=0 -> B_F = (1-alpha)*B_gen", {
+  # When the posterior mean of beta_tilde_k is zero, the survival signal
+  # B_surv vanishes and B_F is driven entirely by genomics.
+  set.seed(906); n <- 20; p <- 12
+  Tau       <- abs(rnorm(p)) + 0.5
+  EL_k      <- rnorm(n)
+  EL2_k     <- EL_k^2 + 0.1
+  R_k       <- matrix(rnorm(n * p), n, p)
+  alpha     <- 0.5
+
+  res <- update_F_k(Tau, EL_k, EL2_k, R_k,
+                    EBeta_k   = 0,
+                    YtWz_no_k = rnorm(p),   # non-zero, but zeroed by EBeta_k=0
+                    alpha = alpha)
+
+  expected_B <- (1 - alpha) * Tau * as.vector(t(R_k) %*% EL_k)
+  assert_near(res$B, expected_B, tol = 1e-12,
+              msg = "EBeta_k=0: B_F should equal (1-alpha)*B_gen")
+  assert_near(res$B_surv, rep(0, p), tol = 1e-15,
+              msg = "B_surv should be zero when EBeta_k=0")
+})
