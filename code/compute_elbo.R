@@ -106,45 +106,42 @@ compute_ebnm_kl <- function(ebnm_log_lik, A, x, mean_q, second_q) {
 #'
 #' The linear term vanishes because u is evaluated at eta_0 = E_q[eta].
 #'
-#' Under the mean-field factorization (l_ik, beta_k independent across k and i):
+#' Under Cluster B (Cox-on-YF, eta_i = ZF_i · beta_tilde):
 #'
-#'   Var_q(eta_i) = E_q[eta_i^2] - (E_q[eta_i])^2
-#'                = sum_k E_q[l_ik^2] * E_q[beta_k^2]
-#'                  + (E_q[eta_i])^2
-#'                  - sum_k E_q[l_ik]^2 * E_q[beta_k]^2
-#'                  - (E_q[eta_i])^2
-#'                = sum_k EL2[i,k] * EBeta2[k] - sum_k EL[i,k]^2 * EBeta[k]^2
+#'   ZF = Y · E[F]  (n × K observed projection scores, fixed per CAVI iteration)
 #'
-#' (The (E_q[eta_i])^2 terms cancel; the residual is the sum of per-factor
-#' variance contributions, i.e. Var_q(l_ik * beta_k) = EL2[i,k]*EBeta2[k]
-#' - EL[i,k]^2 * EBeta[k]^2 summed over k.)
+#'   Var_q(eta_i) = sum_k ZF_{ik}^2 * Var_q(beta_tilde_k)
+#'                = sum_k ZF_{ik}^2 * (EBeta2[k] - EBeta[k]^2)
+#'                = (ZF^2 %*% (EBeta2 - EBeta^2))[i]
 #'
-#' When all posterior variances are zero (EL2 = EL^2, EBeta2 = EBeta^2) this
-#' returns logPL exactly — the uncertainty correction vanishes.
+#' Because ZF is treated as a fixed observed quantity per CAVI iteration, there
+#' is no EL second-moment term.  All posterior uncertainty enters through
+#' Var_q(beta_tilde_k) = EBeta2[k] - EBeta[k]^2.
+#'
+#' When all posterior variances are zero (EBeta2 = EBeta^2) this returns
+#' logPL exactly — the uncertainty correction vanishes.
 #'
 #' @param logPL   scalar: Cox partial log-likelihood at current posterior means,
 #'                computed by calc_cox_taylor()
 #' @param w       n-vector: Cox diagonal Hessian (negative, positive values)
-#' @param EL      n x K matrix: posterior means E_q[l_{ik}]
-#' @param EL2     n x K matrix: posterior 2nd moments E_q[l_{ik}^2]
-#' @param EBeta   K-vector: posterior means E_q[beta_k]
-#' @param EBeta2  K-vector: posterior 2nd moments E_q[beta_k^2]
+#' @param ZF      n x K matrix: observed projection scores Y · E[F]
+#' @param EBeta   K-vector: posterior means E_q[beta_tilde_k]
+#' @param EBeta2  K-vector: posterior 2nd moments E_q[beta_tilde_k^2]
 #'
-#' @return scalar: E_q[log PL(t, delta | L, beta)] (approximate)
+#' @return scalar: E_q[log PL(t, delta | F, beta_tilde)] (approximate)
 #'
 #' @examples
 #' # Zero-variance case: should return logPL exactly
-#' EL <- matrix(c(1, 2), 2, 1); EBeta <- 0.5
-#' compute_survival_elbo(-3.0, w = c(0.1, 0.2), EL, EL^2, EBeta, EBeta^2)
+#' ZF <- matrix(c(1, 2), 2, 1); EBeta <- 0.5
+#' compute_survival_elbo(-3.0, w = c(0.1, 0.2), ZF, EBeta, EBeta^2)
 #'
-#' @seealso fit_modular.R (caller), derivations/MF_UpdateDerivations/
+#' @seealso fit_modular.R (caller), derivations/cox_on_YF/ELBO_YF_derivation.tex
 # ------------------------------------------------------------------------------
-compute_survival_elbo <- function(logPL, w, EL, EL2, EBeta, EBeta2) {
+compute_survival_elbo <- function(logPL, w, ZF, EBeta, EBeta2) {
 
-  # Var_q(eta_i) = sum_k [EL2[i,k]*EBeta2[k] - EL[i,k]^2 * EBeta[k]^2]
-  # sweep(EL2, 2, EBeta2, "*"):  each col k of EL2 multiplied by EBeta2[k]
-  var_eta <- rowSums(sweep(EL2, 2, EBeta2, "*")) -
-             rowSums(sweep(EL^2, 2, EBeta^2, "*"))
+  # Var_q(eta_i) = sum_k ZF_{ik}^2 * (EBeta2[k] - EBeta[k]^2)
+  # ZF^2 %*% (EBeta2 - EBeta^2) gives an n-vector of per-patient variances.
+  var_eta <- as.vector(ZF^2 %*% (EBeta2 - EBeta^2))
 
   # Uncertainty correction: subtract (1/2) * sum_i w_i * Var_q(eta_i)
   logPL - 0.5 * sum(w * var_eta)
