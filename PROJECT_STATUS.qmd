@@ -1373,3 +1373,94 @@ refactor commit is needed to reorganise into `scripts/`, `reports/`, and `output
 Tracked in `ROADMAP.md` under Infrastructure.
 
 ---
+
+### Session 20 (April 29, 2026)
+
+Cluster A implementation on branch `fix-L-update-beta-cycle`. Resolves training-side β=0
+failure on merged TCGA_PAAD + CPTAC; external generalization is mixed.
+
+#### 20.1 — Branch + design doc
+
+- Created branch `fix-L-update-beta-cycle` from `main`.
+- Committed `docs/beta_zero_fix_design.md` (420 lines) as the source-of-truth for Cluster A
+  / B / C: diagnostic chain, root-cause analysis (chicken-and-egg cycle + scale imbalance),
+  five-phase plan with explicit session boundaries.
+
+#### 20.2 — Code changes (`code/fit_modular.R`, `code/update_L.R`)
+
+1. **Instrumentation** (`fit_modular.R`): logs Cox warm-start `EBeta` range and per-factor
+   A_gen / A_surv / ratio at iter 1 (k ≤ 3). Confirmed structural imbalance: ratios at iter 1
+   are 0, 0, 2e-4 for k = 1, 2, 3 — survival precision is ~5000× smaller than genomics.
+2. **Fix 1 — inner-loop reorder** β → L → F (was L → F → β). Justified by symmetric `z_no_k`
+   / `R_k` invariance in the current k. Same number of `compute_z_no_k()` and `compute_R_k()`
+   calls; no extra computation. Now canonical (no opt-in flag).
+3. **Fix 2 — `N_burnin` parameter** (default 0): pre-CAVI loop runs N_burnin iterations of
+   β-only updates with EL fixed at SVD init. Replicates Warm-start Exp 1 to seed non-zero β
+   before joint CAVI begins.
+4. **A2 — `alpha_schedule` parameter** (default NULL): `list(warmup_iters, ramp_iters)` ramps
+   α from 0 to target over the warmup+ramp window. Curriculum lets L settle into
+   reconstruction-meaningful directions before survival pressure is applied.
+5. **Fix 4 — `normalize_AB` parameter** in `update_L_k` (default FALSE): rescales A_surv
+   (and B_surv consistently) up to match A_gen's magnitude. **Reformulated** from
+   `docs/beta_zero_fix_design.md` §4.8 — the original "divide both by their means" formula
+   collapsed L to zero in the smoke fit (verified: inflated 1/√A_L noise scale, over-shrunk
+   EBNM). The retained reformulation preserves the original EBNM noise interpretation.
+6. **All four threaded** through `fit_supervised_mf_modular()` with backward-compatible
+   defaults.
+
+#### 20.3 — Smoke fit on merged TCGA+CPTAC v2 (Step 5 / decision gate)
+
+- Configuration: n=273, p=2000, K=20, alpha=0.5, lambda=1.0, prior_LF=`point_normal`,
+  prior_beta=`point_normal`, N_burnin=10, normalize_AB=TRUE, max_iter=60.
+- Cox warm-start EBeta range: [-0.048, 0.061].
+- Post-burn-in EBeta range: [-0.034, 0.046] (point_normal prior shrinks slightly during
+  pure-β fitting; not the failure mode).
+- Final EBeta range: **[-0.0588, 0.0580]** — **2/20 factors active** (|β| > 0.05); k=4
+  positively associated, k=6 negatively associated.
+- ELBO monotone non-decreasing across 60 iterations; max|EL| = 1.83e3 (well above 0.01).
+- Decision gate: **PASS** — proceed to Step 5b.
+
+Without `normalize_AB`, the same fit converged with all factors below the |β| > 0.05
+threshold (final range [-0.014, 0.024]), confirming Fix 4 is the load-bearing change.
+
+#### 20.4 — External-cohort C-index (Step 5b)
+
+Compared Cluster A (`N_burnin=10, normalize_AB=TRUE`) vs. baseline (`N_burnin=0,
+normalize_AB=FALSE`, both with the unconditional Fix 1 reorder) on the same merged
+training set, projected via `predict_supervised_mf()` to 5 external cohorts:
+
+| Cohort | Cluster A | Baseline | Δ |
+|---|---|---|---|
+| Dijk              | 0.6061 | 0.6255 | −0.019 |
+| Moffitt_GEO_array | 0.5413 | 0.5294 | **+0.012** |
+| PACA_AU_array     | 0.5756 | 0.6358 | −0.060 |
+| PACA_AU_seq       | 0.6293 | 0.6529 | −0.024 |
+| Puleo_array       | 0.5501 | 0.6258 | −0.076 |
+
+Cluster A improves on **1/5** cohorts. Baseline wins on 4/5. The recovered β reflects
+training-Cox-favored L directions that don't transport. This is the design doc's
+predicted Cluster B trigger (§3 row "EBeta non-zero but unstable").
+
+#### 20.5 — Living docs + commit
+
+- `tests/run_tests.R`: 171/171 passing after every step.
+- `DECISIONS.md`: 2026-04-29 Cluster A entry.
+- `ROADMAP.md`: marked "Debug update_L_k() A_surv/A_gen imbalance" complete; added
+  "Cluster B — Cox-on-YF reformulation" as new High-priority item.
+- `CLAUDE.md`: active debugging target updated from "β=0 on merged" to "Cluster B
+  reformulation (external generalization gap)".
+- New diagnostic scripts: `results/benchmark_sim/run_cluster_a_smoke.R`,
+  `run_cluster_a_external.R`. Outputs in
+  `results/benchmark_sim/outputs/cluster_a_smoke/` and `cluster_a_external/`.
+- Branch `fix-L-update-beta-cycle` commits: `12b0424` (design doc), `55500fd` (Cluster A
+  implementation + smoke + external).
+
+#### 20.6 — Implication for Phase 4 (Cluster B)
+
+The training-side β=0 failure is solved as a *recoverability* problem, but not as a
+*generalization* problem. The Cox-on-YF reformulation (`docs/beta_zero_fix_design.md` §5)
+addresses both the cold-start cycle (no A_surv ≈ 0 trap on F) and the train/test mismatch
+(prediction uses the same `Y · F · β̃` formula as training). Phase 4 work begins with
+derivations in `derivations/qF_supervised/` per design doc §5.5.
+
+---

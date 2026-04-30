@@ -124,7 +124,8 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
                         prior_family = "point_exponential",
                         alpha        = 0.5,
                         lambda       = 1.0,
-                        A_floor      = 1e-10) {
+                        A_floor      = 1e-10,
+                        normalize_AB = FALSE) {
 
   # ------------------------------------------------------------------
   # Precision A_{ik}  (n-vector)
@@ -143,7 +144,6 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   # A_surv is an n-VECTOR because Cox weights W_ii differ per patient.
   # This is why L requires a vector EBNM (unlike beta's scalar EBNM).
   A_surv <- lambda * w * EBeta2_k                                # λ-scaled n-vector
-  A_L    <- pmax((1 - alpha) * A_gen + alpha * A_surv, A_floor)  # n-vector [A3]
 
   # ------------------------------------------------------------------
   # Signal B_{ik}  (n-vector)
@@ -158,7 +158,38 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   # ------------------------------------------------------------------
   B_gen  <- as.vector(R_k %*% (Tau * EF_k))                     # n-vector (raw)
   B_surv <- lambda * w * z_no_k * EBeta_k                        # λ-scaled n-vector (raw)
-  B_L    <- (1 - alpha) * B_gen + alpha * B_surv                 # weighted combination
+
+  # ------------------------------------------------------------------
+  # Optional rescaling [Fix 4 of docs/beta_zero_fix_design.md §4.8]
+  #
+  # Without rescaling, A_gen ≈ sum_j(τ_j · E[f_jk²]) ~ p · scale, while
+  # A_surv ~ O(1) per subject — a structural ~p× imbalance that makes the
+  # survival term negligible regardless of EBeta. With normalize_AB = TRUE,
+  # rescale A_surv (and B_surv consistently) so its typical magnitude
+  # matches A_gen. This keeps the EBNM noise interpretation intact
+  # (s_L = 1/sqrt(A_L) stays in original units, avoiding over-shrinkage)
+  # while making α a meaningful fraction-of-influence knob between the
+  # two sources.
+  #
+  # Departs from strict ELBO maximization — verify ELBO is monotone
+  # empirically. When mean(A_surv) is at or below the floor (e.g., when
+  # EBeta_k ≈ 0 at init), the rescale is skipped to avoid amplifying
+  # numerical noise.
+  # ------------------------------------------------------------------
+  A_surv_eff <- A_surv
+  B_surv_eff <- B_surv
+  if (normalize_AB) {
+    m_surv <- mean(A_surv)
+    if (m_surv > 1e-12 && A_gen > 1e-12) {
+      scale_surv <- A_gen / m_surv
+      A_surv_eff <- A_surv * scale_surv
+      B_surv_eff <- B_surv * scale_surv
+    }
+    # else: skip — survival term is effectively zero this iteration; let
+    # the genomics term drive the update unmodified.
+  }
+  A_L <- pmax((1 - alpha) * A_gen + alpha * A_surv_eff, A_floor)    # n-vector [A3]
+  B_L <- (1 - alpha) * B_gen + alpha * B_surv_eff                   # weighted combination
 
   # ------------------------------------------------------------------
   # EBNM pseudo-observation and noise (n-vectors)

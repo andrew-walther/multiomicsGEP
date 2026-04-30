@@ -1,0 +1,6 @@
+"dataset","n","events","p_intersect","c_cluster_a","c_baseline","delta"
+"Dijk",90,81,407,0.6061,0.6255,-0.0194
+"Moffitt_GEO_array",123,83,427,0.5413,0.5294,0.0119
+"PACA_AU_array",63,38,463,0.5756,0.6358,-0.0602
+"PACA_AU_seq",52,31,644,0.6293,0.6529,-0.0236
+"Puleo_array",288,181,322,0.5501,0.6258,-0.0757

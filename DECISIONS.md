@@ -5,6 +5,60 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-04-29 — Cluster A in-model fixes resolve training-side β=0; external generalization mixed
+
+- **Decision:** Adopt the four Cluster A fixes from `docs/beta_zero_fix_design.md` §4 in
+  `code/fit_modular.R` and `code/update_L.R`. Specifically:
+  1. **Inner-loop reorder** β → L → F is now **canonical** (previously L → F → β). No new
+     parameter — the reorder is unconditional. Justified by the symmetric `z_no_k` /
+     `R_k` invariance argument: both expressions cancel in the current k's `EL[,k]` and
+     `EBeta[k]`, so β can fire first using `z_no_k`, then L can reuse the same `z_no_k`
+     with the freshly updated `EBeta[k]` flowing in via A_surv/B_surv.
+  2. **`N_burnin` parameter** (default 0) — runs N_burnin iterations of β-only updates with
+     EL fixed at SVD init (EL2 = EL^2). Replicates Warm-start Exp 1 to break the A_surv ≈ 0
+     cycle at the very start.
+  3. **`alpha_schedule` parameter** (default NULL) — `list(warmup_iters, ramp_iters)` ramps α
+     from 0 to target over the warmup+ramp window. Curriculum lets L settle before survival
+     pressure is applied.
+  4. **`normalize_AB` parameter** in `update_L_k` (default FALSE) — when TRUE, rescales A_surv
+     up to match A_gen's magnitude (and applies the same scale to B_surv) so α actually
+     controls the fraction of influence between sources. **Reformulated** from the design
+     doc's original §4.8 prescription, which divided both A_gen and A_surv by their means
+     — that formula collapsed L to zero in the smoke fit (verified empirically; the rescale
+     inflated 1/√A_L noise scale and over-shrunk EBNM). The retained reformulation preserves
+     the original EBNM noise interpretation while still rebalancing the contributions.
+- **Why:** The existing failure mode (β=0 on merged TCGA+CPTAC v2 training) was localized in
+  Phase 1 to a chicken-and-egg + scale-imbalance trap inside `update_L_k()`. Instrumentation
+  on the new branch confirmed the imbalance quantitatively: A_surv / A_gen ratios at iter 1
+  for k = 1, 2, 3 are 0, 0, and 2e-4 respectively — survival precision is ~5000× smaller than
+  genomics, so the survival term cannot pull L until the rescale is applied.
+- **Smoke fit result (merged TCGA+CPTAC, n=273, p=2000, K=20, N_burnin=10, normalize_AB=TRUE):**
+  Cox warm-start EBeta range [-0.048, 0.061]; post-burn-in [-0.034, 0.046]; final
+  [-0.0588, 0.0580]; **2/20 factors active** (|β| > 0.05 — k=4 +0.058, k=6 -0.059); ELBO
+  monotone non-decreasing across 60 iterations; max|EL| = 1.83e3.
+- **External-cohort C-index (5 held-out cohorts vs. baseline N_burnin=0, normalize_AB=FALSE):**
+  Improved on 1/5 (Moffitt_GEO_array +0.012). Regressed on 4/5 (Dijk -0.019, PACA_AU_array
+  -0.060, PACA_AU_seq -0.024, Puleo_array -0.076). The recovered β favors training-Cox-aligned
+  L directions that don't transport to held-out cohorts.
+- **Trade-offs:** Fix 1 is a permanent change to the canonical CAVI ordering — backward-
+  compatibility for any analysis that depended on the L → F → β trajectory is broken (no
+  test asserts that trajectory, so 171/171 tests still pass). The `normalize_AB` rescale
+  departs from strict ELBO maximization (verified empirically that ELBO is still monotone
+  on the merged training set). The Fix 4 reformulation diverges from the design doc text;
+  the design doc's §4.8 formula is documented as "reviewed and adopted with empirical
+  reformulation" rather than rewritten.
+- **Implication:** Cluster A solves the immediate training-side failure but does not deliver
+  cross-cohort generalization. This is the design doc's predicted Cluster B trigger
+  (`docs/beta_zero_fix_design.md` §3 row "EBeta non-zero but unstable"). Phase 4 (Cluster
+  B — Cox-on-YF reformulation, `derivations/qF_supervised/`) is now the next priority.
+- **Affected files:** `code/fit_modular.R` (instrumentation, reorder, N_burnin, alpha_schedule,
+  normalize_AB threading); `code/update_L.R` (normalize_AB rescale of A_surv/B_surv);
+  `results/benchmark_sim/run_cluster_a_smoke.R` (new); `results/benchmark_sim/run_cluster_a_external.R`
+  (new); `results/benchmark_sim/outputs/cluster_a_smoke/`, `cluster_a_external/` (new).
+- **Branch:** `fix-L-update-beta-cycle` (commits 12b0424, 55500fd).
+
+---
+
 ## 2026-04-29 — EBMF warm-start pinpoints bug to the L update, not the β update
 
 - **Decision:** The root cause of SSBMF's β=0 failure on the merged cohort is narrowed to `update_L_k()`. The β CAVI update is confirmed functional; the L/F updates are washing out the survival signal by prioritising the genomics reconstruction objective.

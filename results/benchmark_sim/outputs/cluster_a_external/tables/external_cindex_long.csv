@@ -1,0 +1,11 @@
+"dataset","model","n","events","p_intersect","c_index","constant_risk"
+"Dijk","cluster_a",90,81,407,0.6061,FALSE
+"Dijk","baseline",90,81,407,0.6255,FALSE
+"Moffitt_GEO_array","cluster_a",123,83,427,0.5413,FALSE
+"Moffitt_GEO_array","baseline",123,83,427,0.5294,FALSE
+"PACA_AU_array","cluster_a",63,38,463,0.5756,FALSE
+"PACA_AU_array","baseline",63,38,463,0.6358,FALSE
+"PACA_AU_seq","cluster_a",52,31,644,0.6293,FALSE
+"PACA_AU_seq","baseline",52,31,644,0.6529,FALSE
+"Puleo_array","cluster_a",288,181,322,0.5501,FALSE
+"Puleo_array","baseline",288,181,322,0.6258,FALSE

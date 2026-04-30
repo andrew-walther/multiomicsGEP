@@ -7,9 +7,11 @@
 > **Status as of 2026-04-29:** Core model complete (modular CAVI, 171/171 tests passing).
 > DeSurv benchmark complete: synthetic supervised C-index 0.79 > PCA 0.76; PDAC external median
 > C-index 0.60 across 5 cohorts (competitive with DeSurv 0.60–0.65). v2 preprocessing implemented
-> (intersect → log₂ → QN → top-2000 → rank). EBMF diagnostic complete: survival signal confirmed
-> in merged data → SSBMF failure is a model problem. Lambda tuning ruled out (EL collapse at λ>1
-> for merged training). Normal prior ruled out. **Next priority: EBMF warm-start initialization.**
+> (intersect → log₂ → QN → top-2000 → rank). **Cluster A complete** (`fix-L-update-beta-cycle`):
+> training-side β=0 failure on merged TCGA+CPTAC resolved (2/20 factors active, ELBO monotone)
+> via instrumentation + inner-loop reorder + N_burnin + normalize_AB. External generalization
+> mixed (1/5 cohorts improved vs. baseline). **Next priority: Cluster B — Cox-on-YF
+> reformulation** (`docs/beta_zero_fix_design.md` §5).
 
 ---
 
@@ -50,17 +52,28 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   See DECISIONS.md 2026-04-29 warm-start entry.
   *Notes: `fit_modular.R` extended with `EL_init`/`EF_init` params. Driver: `run_ebmf_warmstart.R`.*
 
-- [ ] **Debug `update_L_k()`: A_surv / A_gen imbalance** `[Priority: High]` `[Effort: Medium]`
-  The warm-start diagnostic confirmed the L update drives EL away from survival-informative
-  directions. Most likely cause: A_surv (survival precision term) ≪ A_gen (genomics reconstruction
-  term) throughout CAVI — A_L[i] = (1-α)*A_gen[i] + α*A_surv[i], where A_gen sums over p=2000
-  genes while A_surv ∝ W_{ii} * EBeta[k]². When EBeta[k] ≈ 0 at init, A_surv ≈ 0 and the L
-  update is entirely genomics-driven — a chicken-and-egg cycle. Instrument `update_L_k()` to
-  log A_surv / A_gen per factor per iteration. Also verify: does the Cox β warm-start at
-  `fit_modular.R` line 224 actually produce non-zero EBeta before iteration 1's L update?
-  *Notes: Fix direction depends on what the instrumentation shows. If EBeta is zero at iter 1,
-  the Cox warm-start is failing (maybe convergence issue on the merged cohort). If EBeta > 0
-  but A_surv still ≪ A_gen, the survival precision term needs rescaling within update_L_k().*
+- [x] **Debug `update_L_k()`: A_surv / A_gen imbalance** `[Priority: High]` `[Effort: Medium]` *(Complete — Cluster A, 2026-04-29)*
+  Cluster A (`docs/beta_zero_fix_design.md` §4) implemented on branch `fix-L-update-beta-cycle`:
+  instrumentation confirmed A_surv/A_gen ~ 0–2e-4 at iter 1 (structural imbalance, ~5000× gap);
+  inner-loop reorder β → L → F (unconditional); β-only burn-in (`N_burnin`) and progressive α
+  schedule (`alpha_schedule`) added as opt-in parameters; `normalize_AB` rescale of A_surv up to
+  match A_gen (Fix 4, reformulated from design doc §4.8 — original formula over-shrunk L). On the
+  merged TCGA+CPTAC v2 set: 2/20 factors active (|β|>0.05), ELBO monotone, max|EL| = 1.83e3.
+  Training-side β=0 failure resolved.
+  *Notes: External-cohort C-index is mixed (1/5 cohorts improved vs. baseline; 4/5 regressed).
+  The recovered β favors training-Cox-aligned directions that don't transport. See new entry
+  "Cluster B / Cox-on-YF reformulation" below — this is the design doc's structural alternative.*
+
+- [ ] **Cluster B — Cox-on-YF reformulation** `[Priority: High]` `[Effort: Large]`
+  Replace the survival linear predictor `η = Lβ` with `η = (YF)β`. `YF` depends on observed Y
+  (fixed) and learned F, so survival supervision uses the observed-data projection rather than
+  the latent EBNM posterior — sidesteps both the cold-start cycle (no A_surv ≈ 0 trap on F) and
+  the train/test mismatch (training and prediction both use the same `(Y · F · (F'F)⁻¹) · β`
+  formula). Phase 4 of `docs/beta_zero_fix_design.md` (§5) — derivations first
+  (`derivations/qF_supervised/`), then implementation on a new branch.
+  *Notes: Triggered by Cluster A external generalization being weaker than baseline on 4/5 cohorts.
+  Required derivations: new dual-source q(F), reduced-source q(L), q(β) with z_no_k redefined,
+  full ELBO under reformulation. See `docs/beta_zero_fix_design.md` §5.5.*
 
 - [x] **Add λ scaling parameter to balance genomics vs. survival objectives** `[Priority: High]` `[Effort: Medium]` *(Implemented and evaluated — fixed at λ=1.0)*
   λ is implemented as an exposed parameter in `update_L_k()`, `update_L_all()`, and
