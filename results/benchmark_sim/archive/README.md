@@ -11,6 +11,8 @@ by the permanent benchmark runners in `results/benchmark_sim/`.
 | `run_cluster_a_smoke.R` | `run_LB_benchmark.R` |
 | `run_cluster_a_external.R` | `run_LB_benchmark.R` |
 | `run_cox_on_yf_benchmark.R` | `run_YFB_benchmark.R` |
+| `run_ssbmf_benchmark.R` | `run_LB_benchmark.R` + `run_YFB_benchmark.R` (unified runner split into LB/YFB pair) |
+| `run_lambda_sweep.R` | N/A — one-off evaluation; lambda ∈ {1, p/n, 2p/n} tested; lambda=1 retained as default |
 
 ## One-off diagnostics (β=0 investigation)
 

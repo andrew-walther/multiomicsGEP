@@ -7,7 +7,7 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 ## Key Instructions
 
 - **Canonical CAVI loop:** `code/fit_modular.R`. `Supervised_Bayesian_MF_V2.R` is reference-only — do not extend. V1 (`code/legacy/`) — do not modify. (`full_sim/` and `modular_sim_block/` are legacy/deprecated.)
-- **Formal benchmark pipeline:** `results/benchmark_sim/` — alpha CV, external validation, DeSurv comparison. For exploratory/development fits, use `results/modular_sim_factor/`.
+- **Formal benchmark pipeline:** `results/benchmark_sim/` — alpha CV, external validation, DeSurv comparison. Exploratory/development fits lived in `results/modular_sim_factor/` (now archived to `results/legacy/modular_sim_factor/`).
 - **Modular updates:** `code/update_beta.R`, `code/update_L.R`, `code/update_F.R`, `code/update_tau.R`.
 - **Global constants:** `config/globals.yml` — all hyperparameters (lambda, alpha grid, K thresholds, DGP params). Never hardcode values defined here.
 - **No `CLAUDE.md` duplication:** Do not maintain a second copy of project status here — update `PROJECT_STATUS.md` instead.
@@ -32,16 +32,14 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 | Full ELBO computation | `code/compute_elbo.R` — `compute_ebnm_kl()`, `compute_survival_elbo()` |
 | Companion doc for fit_modular.R | `docs/fit_modular.qmd` |
 | Global hyperparameter registry | `config/globals.yml` |
-| **Formal benchmark runner** | `results/benchmark_sim/run_ssbmf_benchmark.R` |
-| **Formal benchmark report** | `results/benchmark_sim/ssbmf_summary_report.qmd` |
+| **Cluster A benchmark runner** | `results/benchmark_sim/run_LB_benchmark.R` |
+| **Cluster B benchmark runner** | `results/benchmark_sim/run_YFB_benchmark.R` |
+| **Benchmark reports (dated)** | `docs/reports/ssbmf_summary_report_MM_DD_YY.{qmd,pdf,html}` — DeSurv record: `_04_29_26` |
 | Phase 1 loading heatmaps | `results/benchmark_sim/run_phase1_diagnostics.R` |
-| EBMF unsupervised diagnostic | `results/benchmark_sim/run_ebmf_diagnostic.R` |
-| EBMF warm-start experiments | `results/benchmark_sim/run_ebmf_warmstart.R` |
-| Cluster A smoke fit (Step 5)  | `results/benchmark_sim/run_cluster_a_smoke.R` |
-| Cluster A external C-index    | `results/benchmark_sim/run_cluster_a_external.R` |
+| Archived benchmark runners | `results/benchmark_sim/archive/` — 9 retired scripts (see archive/README.md) |
 | **β=0 design doc (Cluster A/B)** | `docs/beta_zero_fix_design.md` — five-phase plan |
 | **L-update debugging guide** | `docs/update_L_fix.md` — read before any L-update work |
-| Exploratory simulation runner | `results/modular_sim_factor/run_factor_modular_simulation.R` |
+| Exploratory simulation runner (legacy) | `results/legacy/modular_sim_factor/run_factor_modular_simulation.R` |
 | Alpha CV selection | `code/select_alpha_cv.R` |
 | DeSurv preprocessing | `code/preprocess_desurv.R` |
 | Test suite (core + predict) | `tests/run_tests.R` (171/171) |

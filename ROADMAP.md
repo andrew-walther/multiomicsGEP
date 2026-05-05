@@ -160,7 +160,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Longleaf HPC submission of individual targets as SLURM jobs.
   *Notes: Low priority — investigate feasibility and overhead before committing to a refactor. The `{targets}` package works best when the pipeline DAG is well-defined; this is approximately true for the current runner structure. See `results/modular_sim_factor/run_factor_modular_simulation.R` for the current monolithic runner.*
 
-- [ ] **`results/` directory cleanup** `[Priority: High]` `[Effort: Small]`
+- [x] **`results/` directory cleanup** `[Priority: High]` `[Effort: Small]` *(complete 2026-05-05)*
   The `results/` directory now mixes code scripts, CSV tables, PNG/PDF figures, and
   QMD/PDF/HTML reports within the same subdirectories, making it hard to navigate and
   prone to path errors. Proposed split (within `results/benchmark_sim/`):
@@ -177,7 +177,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   *Notes: Dedicate a single refactor commit. Don't split across sessions. Update CLAUDE.md
   quick-reference table after moving. Coordinate with any active Longleaf HPC paths.*
 
-- [ ] **Repository reorganisation** `[Priority: Low]` `[Effort: Small]`
+- [x] **Repository reorganisation** `[Priority: Low]` `[Effort: Small]` *(results/ portion complete 2026-05-05; code/ and derivations/ portions deferred — low priority)*
   The current directory layout has accumulated structural debt across three simulation generations. 
   Need to clean up the results/ directory as multiple stages of tables/figures/reports are floating 
   around without clear structure Proposed clean structure (no file deletion — move and rename only):

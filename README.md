@@ -92,33 +92,22 @@ multiomicsGEP/
 │   └── demo_update_tau.R
 │
 ├── results/
-│   ├── benchmark_sim/                 ← ✅ DeSurv benchmark (current, canonical)
-│   │   ├── run_ssbmf_benchmark.R      ← Entry point: synthetic + PDAC cross-cohort
-│   │   ├── ssbmf_summary_report.qmd/.pdf/.html  ← 24-page benchmark report
+│   ├── benchmark_sim/                 ← ✅ Formal benchmark pipeline (canonical)
+│   │   ├── run_LB_benchmark.R         ← Cluster A runner (Lβ linear predictor)
+│   │   ├── run_YFB_benchmark.R        ← Cluster B runner (YFβ / Cox-on-YF)
+│   │   ├── run_phase1_diagnostics.R   ← Loading heatmaps
+│   │   ├── archive/                   ← 9 retired scripts (see archive/README.md)
 │   │   └── outputs/
-│   │       ├── synthetic/
-│   │       │   ├── point_normal/      ← tables/ + figures/ (11 figure types)
-│   │       │   └── point_laplace/     ← tables/ + figures/
-│   │       ├── real_data/
-│   │       │   ├── tcga_only/{prior}/    ← primary single-cohort results
-│   │       │   ├── cptac_only/{prior}/
-│   │       │   └── merged/
-│   │       │       ├── v2_{prior}/        ← v2 preprocessing (QN, intersect-first)
-│   │       │       └── v2_lambda{X}_{prior}/ ← λ-sweep results
-│   │       ├── diagnostic_heatmaps/       ← Phase 1 loading heatmaps (all modes × priors)
-│   │       ├── ebmf_diagnostic/           ← EBMF Cox survival check (confirms data has signal)
-│   │       └── ebmf_warmstart/            ← Warm-start experiments (β-only + full CAVI)
-│   ├── modular_sim_factor/            ← Prior-family × K comparison (legacy, superseded)
-│   │   ├── run_factor_modular_simulation.R
-│   │   ├── run_prior_k_comparison.R
-│   │   ├── synthetic/
-│   │   └── PDAC/
-│   ├── full_sim/                      ← V2 monolithic simulation (legacy)
-│   │   ├── run_simulation.R
-│   │   └── simulation_report.qmd/.pdf
-│   ├── modular_sim_block/             ← Block-wise modular (deprecated)
-│   ├── figures/                       ← Legacy per-cohort figures (modular_sim_factor era)
-│   └── tables/                        ← Legacy per-cohort tables (modular_sim_factor era)
+│   │       ├── LB_benchmark/          ← Cluster A outputs
+│   │       └── YFB_benchmark/         ← Cluster B outputs
+│   ├── figures/                       ← Active per-cohort figure outputs
+│   ├── tables/                        ← Active per-cohort table outputs
+│   └── legacy/                        ← Retired simulation generations
+│       ├── full_sim/                  ← V2 monolithic simulation
+│       ├── modular_sim_block/         ← Block-wise modular (deprecated)
+│       ├── modular_sim_factor/        ← Factor-wise exploratory runner + PDAC/synthetic reports
+│       ├── figures/                   ← Legacy figure outputs (full_sim, modular_sim, synthetic)
+│       └── tables/                    ← Legacy table outputs
 │
 ├── derivations/
 │   ├── MF_UpdateDerivations/
@@ -157,60 +146,21 @@ multiomicsGEP/
 install.packages(c("survival", "ebnm"))
 ```
 
-### Run the DeSurv Benchmark (current entry point)
+### Run the Formal Benchmark (current entry point)
 
 ```bash
-# Synthetic validation + PDAC cross-cohort benchmark (both priors)
-Rscript results/benchmark_sim/run_ssbmf_benchmark.R
+# Cluster A benchmark (Lβ linear predictor, alpha CV, external validation)
+Rscript results/benchmark_sim/run_LB_benchmark.R
+
+# Cluster B benchmark (Cox-on-YF / YFβ reformulation)
+Rscript results/benchmark_sim/run_YFB_benchmark.R
 ```
 
-This runs: (1) synthetic benchmark at n=300, p=1000, K_true=5 for both `point_normal` and `point_laplace` priors; (2) PDAC cross-cohort benchmark for TCGA-only and CPTAC-only training modes. Outputs go to `results/benchmark_sim/outputs/`. Render the summary report with:
-
-```bash
-quarto render results/benchmark_sim/ssbmf_summary_report.qmd
-```
+Outputs go to `results/benchmark_sim/outputs/LB_benchmark/` and `outputs/YFB_benchmark/` respectively. Benchmark reports are versioned by date and live in `docs/reports/` (e.g., `docs/reports/ssbmf_summary_report_04_29_26.pdf` for the archived DeSurv benchmark).
 
 ### Run the Real PDAC Analysis
 
-The runner supports 7 PDAC cohorts via environment variable control:
-
-```bash
-# Single dataset
-DATA_MODE=real DATASET_NAME=TCGA_PAAD \
-  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
-
-# All 7 cohorts + pooled RNA-seq (with batch correction) + hold-out evaluation
-DATA_MODE=real RUN_ALL=TRUE HOLDOUT_EVAL=TRUE \
-  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
-
-# Longleaf HPC (override data path)
-export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC
-DATA_MODE=real RUN_ALL=TRUE \
-  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
-```
-
-**Advanced options** (all accept environment variable overrides):
-
-| Argument | Default | Options | Description |
-|----------|---------|---------|-------------|
-| `prior_family` | `"point_normal"` | `"point_laplace"`, `"normal_scale_mixture"` | EBNM prior for L, F, β |
-| `n_init` | `1` | any integer | Number of random restarts (best ELBO kept) |
-| `init_method` | `"svd"` | `"random"` | Initialization strategy |
-| `batch_correct` | `TRUE` | `FALSE` | limma batch correction for pooled data |
-| `holdout_eval` | `FALSE` | `TRUE` | 80/20 stratified hold-out prediction |
-| `feature_selection` | `"variance"` | `"cox"` | Gene selection method |
-| `k_select` | `"fixed"` | `"auto_prune"` | K selection strategy |
-
-```bash
-# Example: 3 random inits with point_laplace prior + hold-out evaluation
-DATA_MODE=real DATASET_NAME=CPTAC \
-  PRIOR_FAMILY=point_laplace N_INIT=3 INIT_METHOD=random HOLDOUT_EVAL=TRUE \
-  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
-
-# Example: K auto-pruning on Puleo array (fit K=10, prune to active)
-DATA_MODE=real DATASET_NAME=Puleo_array K_SELECT=auto_prune \
-  Rscript results/modular_sim_factor/run_factor_modular_simulation.R
-```
+For real PDAC data, use `fit_supervised_mf_modular()` in `code/fit_modular.R` directly, or use the archived exploratory runner `results/legacy/modular_sim_factor/run_factor_modular_simulation.R`. The active benchmark runners (`run_LB_benchmark.R`, `run_YFB_benchmark.R`) are the canonical entry points for formal evaluation.
 
 **Available datasets:**
 
@@ -331,7 +281,7 @@ The model is fully implemented, tested, benchmarked against DeSurv, and document
   confirms survival signal exists in merged data — failure is a **model problem, not data**
 - EBMF warm-start experiments: β-only (EL fixed) → 6/20 factors active ✓; full CAVI → β
   collapses in 23 iters ✗. Root cause localised to `update_L_k()` A\_surv/A\_gen imbalance
-- 24-page benchmark report (`results/benchmark_sim/ssbmf_summary_report.pdf`)
+- 24-page DeSurv benchmark report (`docs/reports/ssbmf_summary_report_04_29_26.pdf`)
 
 **Highest-priority next step:**
 - Fix `update_L_k()` A\_surv/A\_gen scale imbalance so survival signal survives the joint CAVI.
