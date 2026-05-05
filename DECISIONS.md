@@ -25,15 +25,30 @@ Each entry records what was decided, why, what was traded away, and which files 
   YFB runner still uses fixed alpha=0.50 (alpha CV calls `fit_supervised_mf_modular` internally,
   which is not compatible with `fit_cox_on_yf` — YFB alpha CV requires a separate implementation).
 
-- **Empirical findings from 2026-05-05 benchmark runs:**
-  - **A_surv/A_gen imbalance confirmed across all modes:** LB iter-1 ratio = 0.0000–0.0069
-    (tcga_only) / 0.0000–0.0011 (merged). The L update is structurally dominated by genomics,
-    reducing the model to approximately unsupervised PCA followed by a post-hoc Cox fit.
-  - **YFB β→0 collapse on all PDAC modes:** Both point_normal (EBeta exactly 0) and normal
-    (EBeta ~1e-16, machine epsilon) give K_eff=0 on merged and single-cohort PDAC. The ZF
-    scale (‖Y·EF_k‖²) is large (p=2000 genes summed), driving the posterior mean to zero.
-  - **LB tcga_only with K=20:** K_eff=1, C=0.37–0.50. Fixed by k_pdac_single=10.
-  - **LB merged with K=20:** K_eff=1, C≈0.38. Not fixed — structural A_surv/A_gen issue.
+- **Empirical findings from 2026-05-05 benchmark runs (all 6 modes, both K corrections applied):**
+  - **A_surv/A_gen imbalance confirmed across all modes:** LB iter-1 ratio = 0.0000–0.0097
+    (cptac_only k=3), 0.0000–0.0033 (tcga_only), 0.0000–0.0011 (merged). The L update is
+    structurally dominated by genomics, reducing the model to approximately unsupervised PCA.
+  - **YFB β→0 collapse on all PDAC modes at both K=10 and K=20:** K_eff=0 regardless of K
+    or prior. The ZF scale (‖Y·EF_k‖², sum over p=2000 genes) is enormous, driving EBeta
+    to zero. Structural — not fixable by K tuning.
+  - **LB tcga_only K=10:** K_eff=2, but external C=0.34–0.43 — worse than K=20 run (C=0.47–0.50).
+    Two active factors are anti-concordant with external prognosis. K=10 does NOT recover
+    archived 0.63–0.65 baseline. The archived baseline was a lucky PCA direction alignment,
+    not a stable property of the model. A_surv/A_gen imbalance is the root cause.
+  - **LB cptac_only K=10:** K_eff=3, C=0.32–0.45. Worse than K=20. Same pattern — more active
+    factors that are anti-concordant externally.
+  - **LB merged K=20:** K_eff=1, C=0.35–0.44. Unchanged from first run.
+  - **LB synthetic K=5:** C=0.1353, K_eff=3 — SAME as K=8. ARD pruned both K=5 and K=8 to
+    the same 3 active factors. Fixing K_SYN had no empirical effect. The archived C=0.828
+    synthetic result was from a different script (exploratory runner) — not the benchmark
+    runner's `generate_synthetic_benchmark_data()` function.
+  - **YFB synthetic K=5:** C=0.092, K_eff=4, non-zero EBeta. Anti-concordance persists at
+    K=5 — sign-direction inversion is structural to the YFB formulation (ZF = Y·EF mixes
+    factors via Gram matrix EF'EF, can invert prognosis direction).
+  - **Conclusion:** K tuning does not fix any of the observed failures. The root cause is
+    the A_surv/A_gen structural imbalance in the L update. All further fixes must address
+    the scale imbalance directly.
 
 - **Affected files:** `config/globals.yml` (k_pdac_single, k_pdac_synthetic),
   `results/benchmark_sim/run_LB_benchmark.R` (alpha CV block, K assignment),

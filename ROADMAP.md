@@ -47,11 +47,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   merged→0.30, tcga_only→0.70. YFB runner still uses fixed alpha=0.50 (requires separate
   implementation — YFB-compatible alpha CV not yet implemented).
 
-- [ ] **Fix K overfitting and re-run single-cohort benchmarks to recover archived baseline** `[Priority: High]` `[Effort: Small]`
-  `k_pdac_single=10` added to globals.yml; both runners updated to use it for tcga_only and
-  cptac_only. Need to re-run tcga_only (LB and YFB) to confirm LB recovers C ≈ 0.63–0.65 and
-  YFB recovers non-zero betas. Also need to re-run k_pdac_synthetic=5 benchmark.
-  *Files: `results/benchmark_sim/run_LB_benchmark.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
+- [x] **Fix K overfitting and re-run benchmarks** *(complete 2026-05-05)*
+  `k_pdac_single=10` added; all 6 modes re-run. **K tuning did not recover archived baseline.**
+  LB tcga_only K=10: K_eff=2, external C=0.34–0.43 (worse than K=20 which gave 0.47–0.50).
+  More active factors → more anti-concordant external predictions. The archived 0.63–0.65 was
+  a lucky PCA direction alignment, not a stable property. Root cause is A_surv/A_gen structural
+  imbalance — must be addressed directly. See DECISIONS.md 2026-05-05.
 
 - [ ] **Diagnose and fix β→0 collapse on merged TCGA+CPTAC** `[Priority: High]` `[Effort: Large]`
   Core unresolved problem confirmed by 2026-05-05 benchmark runs. Both LB and YFB collapse
