@@ -244,8 +244,12 @@ fit_cox_on_yf <- function(Y, time, status,
   # ==========================================================================
   if (N_burnin > 0) {
     for (b in seq_len(N_burnin)) {
-      # Cluster B: ZF = Y · EF (observed projection scores)
-      ZF_b     <- Y %*% EF
+      # Normalize EF columns before projection so A_beta = sum(w * ZF_k^2)
+      # is O(n) not O(n*p). Without normalization, ‖ZF_k‖ ≈ O(√(p·n)) drives
+      # EBeta to zero via spike-and-slab shrinkage.
+      EF_norms_b <- sqrt(colSums(EF^2) + 1e-10)
+      EF_norm_b  <- sweep(EF, 2, EF_norms_b, "/")
+      ZF_b     <- Y %*% EF_norm_b
       eta_b    <- as.vector(ZF_b %*% EBeta)
       taylor_b <- calc_cox_taylor_yf(eta_b, time, status)
       z_b      <- eta_b + taylor_b$u / taylor_b$w
@@ -305,12 +309,15 @@ fit_cox_on_yf <- function(Y, time, status,
     # ------------------------------------------------------------------------
     # STEP 1: Cox Taylor Expansion
     #
-    # Cluster B: ZF = Y · EF is the n×K matrix of OBSERVED projection scores.
-    # Under eta = ZF · beta_tilde, ZF replaces EL as the survival predictor.
-    # ZF is observed (Y is fixed data), so A_beta = sum(w * ZF_k^2) is
-    # non-zero from SVD initialization — no chicken-and-egg for beta.
+    # Cluster B: ZF = Y · EF_norm where EF_norm has unit-L2-norm columns.
+    # Normalizing EF before projection keeps A_beta = sum(w * ZF_k^2) at
+    # O(n) scale rather than O(n*p). Without normalization, ‖EF_k‖ ≈ O(√p)
+    # makes ‖ZF_k‖ ≈ O(√(p*n)), causing spike-and-slab to drive EBeta → 0.
+    # EF_norms stored in model object so prediction applies identical scaling.
     # ------------------------------------------------------------------------
-    ZF     <- Y %*% EF                          # n × K: observed projection scores
+    EF_norms <- sqrt(colSums(EF^2) + 1e-10)    # K-vector: per-column L2 norms
+    EF_norm  <- sweep(EF, 2, EF_norms, "/")     # p × K, unit-norm columns
+    ZF       <- Y %*% EF_norm                   # n × K: normalized projection scores
     eta    <- as.vector(ZF %*% EBeta)           # eta = ZF * beta_tilde
     taylor <- calc_cox_taylor_yf(eta, time, status)
     z      <- eta + taylor$u / taylor$w    # working response z_i
@@ -445,15 +452,36 @@ fit_cox_on_yf <- function(Y, time, status,
 
   }  # end CAVI loop
 
+  # Phase C: Check training concordance; flip EBeta sign if anti-concordant.
+  # With YFB (eta = ZF·beta), the Gram matrix EF'EF and the pmax(SVD) initialization
+  # (which discards sign information from F_true) can invert the relationship between
+  # ZF[:,k] and the true survival direction. A global sign flip of EBeta corrects this:
+  # risk_score_new = ZF * (-EBeta) = -(risk_score_original), yielding 1 - C_train.
+  # Deviation from Plan option A (PC1 correlation): training concordance check is more
+  # direct and correct for any dataset, not just synthetic.
+  ZF_final  <- Y %*% sweep(EF, 2, EF_norms, "/")
+  eta_final <- as.vector(ZF_final %*% EBeta)
+  c_train   <- as.numeric(
+    concordance(Surv(time, status) ~ eta_final)$concordance
+  )
+  if (c_train < 0.5) {
+    if (verbose) {
+      cat(sprintf("    [Phase C] Training C=%.4f < 0.5 — flipping EBeta sign\n", c_train))
+    }
+    EBeta  <- -EBeta
+    EBeta2 <- EBeta^2
+  }
+
   list(
-    EL     = EL,
-    EL2    = EL2,
-    EF     = EF,
-    EF2    = EF2,
-    EBeta  = EBeta,
-    EBeta2 = EBeta2,
-    Tau    = Tau,
-    history = history
+    EL       = EL,
+    EL2      = EL2,
+    EF       = EF,
+    EF2      = EF2,
+    EBeta    = EBeta,
+    EBeta2   = EBeta2,
+    Tau      = Tau,
+    EF_norms = EF_norms,   # K-vector: final iteration column norms for prediction
+    history  = history
   )
 }
 

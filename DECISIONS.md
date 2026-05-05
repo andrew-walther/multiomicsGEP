@@ -5,6 +5,37 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-05 — YFB Phase B+C: EF normalization + training concordance sign correction
+
+- **Decision (Phase B — EF normalization):** In `code/fit_cox_on_yf.R`, normalize EF columns
+  to unit L2 norm before computing ZF = Y·EF_norm. Store EF_norms (K-vector) in the model
+  object and apply matching normalization in `code/predict_cox_on_yf.R`.
+  **Rationale:** Without normalization, ‖EF_k‖ ≈ O(√p) makes ‖ZF_k‖ ≈ O(√(p·n)), driving
+  A_beta = sum(w·ZF_k²) ≈ O(p·n). Spike-and-slab EBNM then pins EBeta → 0 because the
+  signal-to-noise ratio B/A is suppressed. With unit-norm EF columns, ZF is O(1)-scale.
+
+- **Decision (Phase C — sign correction):** After CAVI convergence, compute training
+  concordance. If C_train < 0.5, negate all EBeta values. pmax(SVD) initialization discards
+  sign information (negative EF elements set to 0), so ZF can be systematically anti-correlated
+  with the true survival direction.
+  **Deviation from Plan:** Plan suggested PC1 correlation flip (Option A). Training concordance
+  check is used instead — more direct, works for any dataset, and doesn't require PC1 to align
+  with survival. The fix is a global risk-score sign flip (consistent at training and test time).
+
+- **Empirical results (2026-05-05, tcga_only full run, K=10):**
+  - Synthetic (K=5): C-index=0.881 (up from 0.119 before Phase C) ✓
+  - PDAC tcga_only, normal prior: external C=0.55–0.63 (Dijk=0.55, PACA_AU_seq=0.63,
+    PACA_AU_array=0.59) — outperforms LB on these cohorts
+  - PDAC tcga_only, point_normal prior: K_eff=0, all betas→0 (spike pin — expected)
+  - PDAC merged (quick): K_eff=0 still — ZF from merged multi-platform data doesn't
+    correlate with survival; pure-genomics F update (alpha_F=0) is dominated by platform
+    effects, not biological prognostic signal
+
+- **Files changed:** `code/fit_cox_on_yf.R`, `code/predict_cox_on_yf.R`,
+  `results/benchmark_sim/run_YFB_benchmark.R`
+
+---
+
 ## 2026-05-05 — Revert CAVI inner loop from β→L→F back to L→F→β (Gauss-Seidel)
 
 - **Decision:** Reverted the CAVI inner loop update order in `code/fit_modular.R` from β→L→F

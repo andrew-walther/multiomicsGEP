@@ -106,7 +106,7 @@ if (RUN_SYNTHETIC) {
       cox_warmstart = COX_WARMSTART, normalize_AB = NORM_AB,
       verbose = FALSE
     )
-    pred  <- predict_cox_on_yf(Y_te, fit$EF, fit$EBeta)
+    pred  <- predict_cox_on_yf(Y_te, fit$EF, fit$EBeta, fit$EF_norms)
     c_idx <- as.numeric(concordance(Surv(t_te, s_te) ~ pred$risk_scores)$concordance)
     k_eff <- sum(abs(fit$EBeta) > BETA_THRESH)
     cat(sprintf("      C-index=%.4f | K_eff=%d | EBeta: %s\n",
@@ -254,8 +254,8 @@ if (!pdac_available || length(fit_yfb) == 0) {
         Y_ext   <- ext_pre$Y[, ext_idx, drop = FALSE]
         EF_sub  <- fit_obj$EF[tr_idx, , drop = FALSE]
 
-        # Cluster B prediction: Y_ext · EF_sub · beta_tilde
-        pred  <- predict_cox_on_yf(Y_ext, EF_sub, fit_obj$EBeta)
+        # Cluster B prediction: Y_ext · (EF_sub / EF_norms) · beta_tilde
+        pred  <- predict_cox_on_yf(Y_ext, EF_sub, fit_obj$EBeta, fit_obj$EF_norms)
         c_idx <- as.numeric(concordance(Surv(raw$time, raw$status) ~ pred$risk_scores)$concordance)
         cat(sprintf("    %s (n=%d, genes=%d): C-index=%.4f\n",
                     cohort, raw$n, length(common), c_idx))
