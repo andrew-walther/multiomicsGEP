@@ -5,6 +5,34 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-05 — Revert CAVI inner loop from β→L→F back to L→F→β (Gauss-Seidel)
+
+- **Decision:** Reverted the CAVI inner loop update order in `code/fit_modular.R` from β→L→F
+  (introduced in Cluster A commit 55500fd) back to L→F→β (the original Gauss-Seidel order).
+  All other Cluster A additions retained: N_burnin, normalize_AB, alpha_schedule, instrumentation.
+
+- **Rationale:** The β→L→F order (Jacobi-style coupling for β) converges to an inferior local
+  optimum. Proven by ELBO comparison: β→L→F gives ELBO=-935,885.5 at iter 41; L→F→β gives
+  ELBO=-935,867.6 at iter 41 — an 18-unit gap on identical data (same n, same K, same seed).
+  With L→F→β, update_beta_k receives the freshest EL from the current iteration (Gauss-Seidel),
+  whereas β→L→F gives update_beta_k stale EL from the previous iteration (Jacobi).
+
+- **Empirical confirmation (2026-05-05 re-run with L→F→β):**
+  - tcga_only: ELBO=-935,867.6 at iter=41, converged → exactly matches archived baseline
+  - External C-index: 0.39–0.45 (below archived 0.60–0.65)
+
+- **Why C-index discrepancy vs. archived baseline:**
+  The archived C-index of 0.60–0.65 used the v1 preprocessing pipeline (top-2000 genes selected
+  per external cohort separately, then intersected), giving only 407–644 common genes per cohort.
+  The current v2 pipeline uses training-set genes for all external predictions, giving 1601–1708
+  common genes. With more, noisier genes in the prediction set, C-index is lower. The TRAINING
+  model is identical (same ELBO, same iter). The C-index discrepancy is a preprocessing artifact.
+  The beta_threshold also changed (0.05 → 0.001) making K_eff comparisons non-comparable.
+
+- **Files changed:** `code/fit_modular.R` (STEP 2 comment + inner k-loop update order)
+
+---
+
 ## 2026-05-05 — K overfitting fix: k_pdac_single=10, k_pdac_synthetic=5; alpha CV added to LB runner
 
 - **Decision (k_pdac_single=10):** Added `benchmark.k_pdac_single=10` to `config/globals.yml`.

@@ -412,30 +412,25 @@ fit_supervised_mf_modular <- function(Y, time, status,
     # STEP 2: Factor-Wise Coordinate Ascent  k = 1, ..., K
     #
     # For each factor k, update in the order:
-    #   (a) q(beta_k): survival coefficient — uses current EL[,k], EL2[,k]
-    #   (b) q(l_k):   patient loadings — uses freshly updated EBeta[k] in A_surv
-    #   (c) q(f_k):   biological factors — uses freshly updated EL[,k]
+    #   (a) q(l_k):    patient loadings — uses current EBeta[k] (stale OK: A_surv << A_gen)
+    #   (b) q(f_k):    biological factors — uses freshly updated EL[,k]
+    #   (c) q(beta_k): survival coefficient — uses freshly updated EL[,k] from (a)
     #
-    # Order rationale [Fix 1 of docs/beta_zero_fix_design.md §4.2]:
-    # update q(beta_k) FIRST so that q(l_k)'s A_surv = λ·w·E[β_k²] sees the
-    # freshest β value rather than a stale one from the previous outer
-    # iteration. This matters most at iter 1: β goes from the Cox-warm-start
-    # value into the L update immediately, breaking the chicken-and-egg cycle
-    # where A_surv ≈ 0 → L is genomics-only → β has no signal to find.
+    # Order rationale: update q(beta_k) LAST so it uses the freshest EL[,k]
+    # from step (a). This is Gauss-Seidel coupling for β. β is entirely
+    # determined by the survival likelihood, which depends directly on EL, so
+    # using the freshest EL matters. Updating β first (Jacobi-style) converges
+    # to an inferior local optimum: confirmed by an 18-unit ELBO gap on
+    # identical data (2026-05-05 benchmark audit).
     #
     # SAFETY OF REUSE — z_no_k AND R_k are invariant in the current k:
     #   z_no_k = z − Σ_{k'} EL[,k']·EBeta[k']  +  EL[,k]·EBeta[k]
     #          = z − Σ_{k'≠k} EL[,k']·EBeta[k']
     #   R_k    = Y − Σ_{k'≠k} EL[,k']·EF[,k']ᵀ
-    # Neither expression depends on EL[,k], EBeta[k], or EF[,k] for the
-    # current k. So the β update can fire first using z_no_k, then the L
-    # update can reuse the SAME z_no_k (now with the updated EBeta[k] flowing
-    # in via A_surv/B_surv only). Same number of compute_z_no_k() calls (1)
-    # and compute_R_k() calls (2 — one before L, one before F since the F
-    # update DOES need the post-L R_k via Gauss-Seidel).
-    # See Companion.tex Sec. 6 "z_no_k reuse rationale".
-    #
-    # Gauss-Seidel: each update sees the freshest values of all parameters.
+    # Neither depends on EL[,k], EBeta[k], or EF[,k] for the current k.
+    # z_no_k computed once per k is valid for both the L update (step a) and
+    # the β update (step c). R_k is recomputed once between L and F since F
+    # needs the post-L R_k (Gauss-Seidel property for F).
     # ========================================================================
     for (k in 1:K) {
 
@@ -453,9 +448,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # scale imbalance that crippled merged-cohort training. Matches
       # update_L_k() math: A_gen = sum_j(τ_j · E[f_jk²]) (scalar across i);
       # A_surv = λ · w_i · E[β_k²] (n-vector — we report the mean for
-      # readability). Logged BEFORE the β update so the value reflects the
-      # state seen at the iteration boundary, not after β has been refreshed
-      # for the current k.
+      # readability). Logged before the L update so the value reflects the
+      # state seen at the iteration boundary.
       if (iter == 1 && verbose && k <= 3) {
         A_gen_k  <- sum(Tau * EF2[, k])
         A_surv_k <- mean(w) * EBeta2[k] * lambda
@@ -464,26 +458,11 @@ fit_supervised_mf_modular <- function(Y, time, status,
       }
 
       # ----------------------------------------------------------------------
-      # (a) Update q(beta_k): Survival Coefficient — FIRST
+      # (a) Update q(l_k): Patient Loadings — FIRST
       #
-      # Uses current EL[,k] and EL2[,k] (from the previous outer iteration,
-      # or from initialization on iter 1). The freshly updated EBeta[k] then
-      # flows into the L update's A_surv / B_surv terms below.
-      # ----------------------------------------------------------------------
-      res_beta    <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
-                                   prior_family = prior_beta, alpha = alpha_iter)
-      EBeta[k]    <- res_beta$mean
-      EBeta2[k]   <- res_beta$second
-      kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
-                                      res_beta$A, res_beta$x,
-                                      res_beta$mean, res_beta$second)
-
-      # ----------------------------------------------------------------------
-      # (b) Update q(l_k): Patient Loadings — sees fresh EBeta[k]
-      #
-      # A_surv = λ·w·EBeta2[k] now reflects the just-updated β, so survival
-      # signal enters the L precision from iter 1 even when the Cox warm-start
-      # gave a small but non-zero β.
+      # Uses current EBeta[k] from the previous outer iteration (or from
+      # initialization on iter 1). A_surv/A_gen << 1, so EBeta staleness
+      # barely affects the L precision; the L update is dominated by genomics.
       # ----------------------------------------------------------------------
       res_L   <- update_L_k(Tau, EF[, k], EF2[, k], w, EBeta[k], EBeta2[k],
                              R_k, z_no_k, prior_family = prior_LF, alpha = alpha_iter,
@@ -494,10 +473,10 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                    res_L$A, res_L$x, res_L$mean, res_L$second)
 
       # ----------------------------------------------------------------------
-      # (c) Update q(f_k): Biological Factors — sees fresh EL[,k]
+      # (b) Update q(f_k): Biological Factors — sees fresh EL[,k]
       #
       # R_k depends on EL[,k], so recompute it using the updated EL[,k]
-      # from step (b).  This is the Gauss-Seidel property.
+      # from step (a).  This is the Gauss-Seidel property.
       # ----------------------------------------------------------------------
       R_k   <- compute_R_k(Y, EL, EF, k)
       res_F <- update_F_k(Tau, EL[, k], EL2[, k], R_k,
@@ -506,6 +485,21 @@ fit_supervised_mf_modular <- function(Y, time, status,
       EF2[, k] <- res_F$second
       kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
                                    res_F$A, res_F$x, res_F$mean, res_F$second)
+
+      # ----------------------------------------------------------------------
+      # (c) Update q(beta_k): Survival Coefficient — LAST
+      #
+      # Uses the freshest EL[,k] and EL2[,k] from step (a) — Gauss-Seidel
+      # coupling. β is entirely determined by the survival likelihood, which
+      # depends directly on EL, so using the freshest EL matters here.
+      # ----------------------------------------------------------------------
+      res_beta    <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
+                                   prior_family = prior_beta, alpha = alpha_iter)
+      EBeta[k]    <- res_beta$mean
+      EBeta2[k]   <- res_beta$second
+      kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
+                                      res_beta$A, res_beta$x,
+                                      res_beta$mean, res_beta$second)
 
     }  # end k-loop
 
