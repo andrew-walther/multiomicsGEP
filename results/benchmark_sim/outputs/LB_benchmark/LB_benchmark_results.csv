@@ -1,0 +1,15 @@
+"section","model","prior_beta","cohort","c_index","k_eff","beta_max","n_iters"
+"1_synthetic","LB","point_normal","synthetic_holdout",0.1353,3,2.6431,11
+"1_synthetic","LB","normal","synthetic_holdout",0.1353,3,2.6431,11
+"2_pdac_train","LB","point_normal","merged_TCGA_CPTAC",NA,0,0,30
+"2_pdac_train","LB","normal","merged_TCGA_CPTAC",NA,0,0,30
+"3_external","LB","point_normal","Dijk",0.5,0,0,30
+"3_external","LB","point_normal","Moffitt_GEO_array",0.5,0,0,30
+"3_external","LB","point_normal","PACA_AU_array",0.5,0,0,30
+"3_external","LB","point_normal","PACA_AU_seq",0.5,0,0,30
+"3_external","LB","point_normal","Puleo_array",0.5,0,0,30
+"3_external","LB","normal","Dijk",0.4313,0,0,30
+"3_external","LB","normal","Moffitt_GEO_array",0.5073,0,0,30
+"3_external","LB","normal","PACA_AU_array",0.4493,0,0,30
+"3_external","LB","normal","PACA_AU_seq",0.4323,0,0,30
+"3_external","LB","normal","Puleo_array",0.4251,0,0,30

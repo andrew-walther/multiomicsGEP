@@ -5,6 +5,37 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-05 — Benchmark train-mode support, benchmark_helpers.R, top_n_genes reverted to 2000
+
+- **Decision (--train-mode):** Both benchmark runners now accept `--train-mode merged|tcga_only|cptac_only`.
+  Single-cohort modes skip Section 1 (synthetic). Single-cohort training uses `preprocess_desurv_cohort()`
+  (v1, per-cohort); merged uses `preprocess_merged_cohorts()` (v2). Output CSVs are mode-specific
+  (`LB_benchmark_results_merged.csv`, etc.) and include a `train_mode` column.
+
+- **Decision (benchmark_helpers.R):** Created `results/benchmark_sim/benchmark_helpers.R` to
+  hold shared constants (`PDAC_DATA_ROOT`, `PLATFORM_LOG_TRANSFORM`, `EXTERNAL_COHORTS`) and
+  functions (`load_pdac_raw`, `generate_synthetic_benchmark_data`) previously only in the archived
+  `run_ssbmf_benchmark.R`. Both runners now source this file instead of the archive. PDAC cohort
+  constants also added to `config/globals.yml` under `pdac:`.
+
+- **Decision (top_n_genes reverted to 2000):** `preprocessing.top_n_genes` changed from 5000
+  back to 2000 (DeSurv spec). Investigation of why current benchmark results (C ≈ 0.39–0.49)
+  were far below the archived baseline (C ≈ 0.60–0.65) revealed three discrepancies: (1) top_n
+  was 5000 vs 2000, (2) no alpha CV (fixed at 0.5 vs CV-selected), (3) K_max was 20 vs 10.
+  Reverted top_n to 2000. Alpha CV and K_max alignment are deferred to the next session.
+  **Tradeoff:** 2000 genes matches DeSurv and recovered the baseline. 5000 was expected to
+  improve genomic reconstruction but in practice added noise that drowned survival signal.
+
+- **Key empirical finding (2026-05-05):** Merged TCGA+CPTAC training has NEVER produced
+  C-index > 0.50. The archived 0.60–0.65 results were entirely from tcga_only training (v1
+  preprocessing, K=10, alpha CV, point_normal prior). Merged training gives median_ext ≈ 0.50
+  even with the best archived settings (v1, K=10, alpha CV, K_eff=7). The β→0 collapse on
+  merged data is structural and unresolved. Cluster A fixed training-side β=0 but external
+  generalization regressed. Cluster B (YFB) also collapses on all train modes. This is the
+  primary open problem.
+
+---
+
 ## 2026-05-04 — Benchmark consolidation: K_max=10, prior comparison, cox_warmstart=FALSE, beta_threshold=0.001
 
 - **Decision (K_max):** Canonical benchmark uses K_max=10 (from `cfg$cavi$k_max`). K=20 was

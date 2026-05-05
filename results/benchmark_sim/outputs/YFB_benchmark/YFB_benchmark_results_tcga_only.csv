@@ -1,0 +1,13 @@
+"train_mode","section","model","prior_beta","cohort","c_index","k_eff","beta_max","n_iters"
+"tcga_only","2_pdac_train","YFB","point_normal","TCGA_PAAD",NA,0,0,26
+"tcga_only","2_pdac_train","YFB","normal","TCGA_PAAD",NA,0,0,26
+"tcga_only","3_external","YFB","point_normal","Dijk",0.5,0,0,26
+"tcga_only","3_external","YFB","point_normal","Moffitt_GEO_array",0.5,0,0,26
+"tcga_only","3_external","YFB","point_normal","PACA_AU_array",0.5,0,0,26
+"tcga_only","3_external","YFB","point_normal","PACA_AU_seq",0.5,0,0,26
+"tcga_only","3_external","YFB","point_normal","Puleo_array",0.5,0,0,26
+"tcga_only","3_external","YFB","normal","Dijk",0.4246,0,0,26
+"tcga_only","3_external","YFB","normal","Moffitt_GEO_array",0.4532,0,0,26
+"tcga_only","3_external","YFB","normal","PACA_AU_array",0.3708,0,0,26
+"tcga_only","3_external","YFB","normal","PACA_AU_seq",0.3774,0,0,26
+"tcga_only","3_external","YFB","normal","Puleo_array",0.4062,0,0,26

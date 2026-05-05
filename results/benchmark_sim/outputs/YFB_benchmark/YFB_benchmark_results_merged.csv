@@ -1,0 +1,15 @@
+"train_mode","section","model","prior_beta","cohort","c_index","k_eff","beta_max","n_iters"
+"merged","1_synthetic","YFB","point_normal","synthetic_holdout",0.092,4,0.2045,69
+"merged","1_synthetic","YFB","normal","synthetic_holdout",0.092,4,0.2045,69
+"merged","2_pdac_train","YFB","point_normal","merged_TCGA_CPTAC",NA,0,0,104
+"merged","2_pdac_train","YFB","normal","merged_TCGA_CPTAC",NA,0,0,104
+"merged","3_external","YFB","point_normal","Dijk",0.5,0,0,104
+"merged","3_external","YFB","point_normal","Moffitt_GEO_array",0.5,0,0,104
+"merged","3_external","YFB","point_normal","PACA_AU_array",0.5,0,0,104
+"merged","3_external","YFB","point_normal","PACA_AU_seq",0.5,0,0,104
+"merged","3_external","YFB","point_normal","Puleo_array",0.5,0,0,104
+"merged","3_external","YFB","normal","Dijk",0.4512,0,0,104
+"merged","3_external","YFB","normal","Moffitt_GEO_array",0.4804,0,0,104
+"merged","3_external","YFB","normal","PACA_AU_array",0.4794,0,0,104
+"merged","3_external","YFB","normal","PACA_AU_seq",0.4591,0,0,104
+"merged","3_external","YFB","normal","Puleo_array",0.4499,0,0,104

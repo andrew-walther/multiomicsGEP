@@ -8,8 +8,8 @@
 # Created:      2026-05-04
 # Dependencies: code/fit_cox_on_yf.R, code/predict_cox_on_yf.R,
 #               code/train_test_split.R, code/preprocess_desurv.R,
-#               results/benchmark_sim/run_ssbmf_benchmark.R
-# Usage:        Rscript results/benchmark_sim/run_YFB_benchmark.R [--quick]
+#               results/benchmark_sim/benchmark_helpers.R
+# Usage:        Rscript results/benchmark_sim/run_YFB_benchmark.R [--quick] [--train-mode merged|tcga_only|cptac_only]
 # ============================================================
 
 # --------------------------------------------------------------------------
@@ -17,6 +17,13 @@
 # --------------------------------------------------------------------------
 args <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
+
+TRAIN_MODE <- "merged"
+if ("--train-mode" %in% args) {
+  TRAIN_MODE <- args[which(args == "--train-mode") + 1]
+}
+stopifnot(TRAIN_MODE %in% c("merged", "tcga_only", "cptac_only"))
+RUN_SYNTHETIC <- (TRAIN_MODE == "merged")
 
 if (Sys.getenv("REPO_ROOT") != "") {
   setwd(Sys.getenv("REPO_ROOT"))
@@ -34,14 +41,8 @@ suppressPackageStartupMessages({
 
 cfg <- yaml::read_yaml("config/globals.yml")
 
-# Source data-loading hub (load_pdac_raw, preprocess_merged_cohorts, EXTERNAL_COHORTS,
-# PLATFORM_LOG_TRANSFORM, PDAC_DATA_ROOT, generate_synthetic_benchmark_data).
-# The hub also sources fit_modular.R via tryCatch — we don't need it here, but it's harmless.
-suppressMessages(source("results/benchmark_sim/run_ssbmf_benchmark.R"))
-
-# Source Cluster B fit and predict functions via tryCatch so their runner blocks
-# (which require real_Y to be set) do not execute during source().
-tryCatch(source("code/fit_cox_on_yf.R"),   error = function(e) invisible(NULL))
+source("results/benchmark_sim/benchmark_helpers.R")  # PDAC constants + load_pdac_raw + generate_synthetic_benchmark_data
+tryCatch(source("code/fit_cox_on_yf.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/predict_cox_on_yf.R"), error = function(e) invisible(NULL))
 
 source("code/train_test_split.R")
@@ -65,91 +66,115 @@ cat(sprintf("    K=%d (synthetic K=%d) | alpha=%.2f | alpha_F=%.2f | lambda=%.2f
             K, K_SYN, ALPHA, ALPHA_F, LAMBDA, N_BURNIN))
 cat(sprintf("    cox_warmstart=%s | normalize_AB=%s\n", COX_WARMSTART, NORM_AB))
 cat(sprintf("    Priors: %s\n", paste(PRIORS, collapse = " vs ")))
-cat(sprintf("    Quick mode: %s\n\n", QUICK_MODE))
+cat(sprintf("    Train mode: %s | Quick mode: %s\n\n", TRAIN_MODE, QUICK_MODE))
 
 OUT_DIR <- "results/benchmark_sim/outputs/YFB_benchmark"
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 results_rows <- list()
+ebeta_rows   <- list()
 
 # ============================================================
 # Section 1 — Synthetic Validation
 # ============================================================
-cat("--- Section 1: Synthetic Validation ---\n")
+if (RUN_SYNTHETIC) {
+  cat("--- Section 1: Synthetic Validation ---\n")
 
-syn <- generate_synthetic_benchmark_data(
-  n = cfg$synthetic$n, p = cfg$synthetic$p,
-  K_true = cfg$synthetic$k_true, seed = cfg$synthetic$seed
-)
-cat(sprintf("    DGP: n=%d, p=%d, K_true=%d, censoring=%.1f%%\n",
-            syn$n, syn$p, syn$K_true, 100 * syn$censoring_rate))
-
-set.seed(cfg$evaluation$holdout_seed)
-split_idx <- stratified_split(syn$status,
-                              test_frac = cfg$evaluation$holdout_frac,
-                              seed      = cfg$evaluation$holdout_seed)
-Y_tr <- syn$Y[split_idx$train, ]
-Y_te <- syn$Y[split_idx$test,  ]
-t_tr <- syn$time[split_idx$train];   s_tr <- syn$status[split_idx$train]
-t_te <- syn$time[split_idx$test];    s_te <- syn$status[split_idx$test]
-
-for (pr in PRIORS) {
-  cat(sprintf("    Fitting YFB synthetic — prior_beta='%s' ...\n", pr))
-  fit <- fit_cox_on_yf(
-    Y_tr, t_tr, s_tr,
-    K = K_SYN, max_iter = MAX_ITER, tol = cfg$cavi$tol,
-    prior_LF = "point_exponential", prior_beta = pr,
-    alpha = ALPHA, lambda = LAMBDA, N_burnin = N_BURNIN,
-    cox_warmstart = COX_WARMSTART, normalize_AB = NORM_AB,
-    verbose = FALSE
+  syn <- generate_synthetic_benchmark_data(
+    n = cfg$synthetic$n, p = cfg$synthetic$p,
+    K_true = cfg$synthetic$k_true, seed = cfg$synthetic$seed
   )
-  pred  <- predict_cox_on_yf(Y_te, fit$EF, fit$EBeta)
-  c_idx <- as.numeric(concordance(Surv(t_te, s_te) ~ pred$risk_scores)$concordance)
-  k_eff <- sum(abs(fit$EBeta) > BETA_THRESH)
-  cat(sprintf("      C-index=%.4f | K_eff=%d | EBeta: %s\n",
-              c_idx, k_eff, paste(sprintf("%.4f", fit$EBeta), collapse = " ")))
-  results_rows[[length(results_rows) + 1]] <- data.frame(
-    section    = "1_synthetic",
-    model      = "YFB",
-    prior_beta = pr,
-    cohort     = "synthetic_holdout",
-    c_index    = round(c_idx, 4),
-    k_eff      = k_eff,
-    beta_max   = round(max(abs(fit$EBeta)), 4),
-    n_iters    = fit$history$n_iter,
-    stringsAsFactors = FALSE
-  )
+  cat(sprintf("    DGP: n=%d, p=%d, K_true=%d, censoring=%.1f%%\n",
+              syn$n, syn$p, syn$K_true, 100 * syn$censoring_rate))
+
+  set.seed(cfg$evaluation$holdout_seed)
+  split_idx <- stratified_split(syn$status,
+                                test_frac = cfg$evaluation$holdout_frac,
+                                seed      = cfg$evaluation$holdout_seed)
+  Y_tr <- syn$Y[split_idx$train, ]
+  Y_te <- syn$Y[split_idx$test,  ]
+  t_tr <- syn$time[split_idx$train];   s_tr <- syn$status[split_idx$train]
+  t_te <- syn$time[split_idx$test];    s_te <- syn$status[split_idx$test]
+
+  for (pr in PRIORS) {
+    cat(sprintf("    Fitting YFB synthetic — prior_beta='%s' ...\n", pr))
+    fit <- fit_cox_on_yf(
+      Y_tr, t_tr, s_tr,
+      K = K_SYN, max_iter = MAX_ITER, tol = cfg$cavi$tol,
+      prior_LF = "point_exponential", prior_beta = pr,
+      alpha = ALPHA, lambda = LAMBDA, N_burnin = N_BURNIN,
+      cox_warmstart = COX_WARMSTART, normalize_AB = NORM_AB,
+      verbose = FALSE
+    )
+    pred  <- predict_cox_on_yf(Y_te, fit$EF, fit$EBeta)
+    c_idx <- as.numeric(concordance(Surv(t_te, s_te) ~ pred$risk_scores)$concordance)
+    k_eff <- sum(abs(fit$EBeta) > BETA_THRESH)
+    cat(sprintf("      C-index=%.4f | K_eff=%d | EBeta: %s\n",
+                c_idx, k_eff, paste(sprintf("%.4f", fit$EBeta), collapse = " ")))
+    results_rows[[length(results_rows) + 1]] <- data.frame(
+      train_mode = TRAIN_MODE,
+      section    = "1_synthetic",
+      model      = "YFB",
+      prior_beta = pr,
+      cohort     = "synthetic_holdout",
+      c_index    = round(c_idx, 4),
+      k_eff      = k_eff,
+      beta_max   = round(max(abs(fit$EBeta)), 4),
+      n_iters    = fit$history$n_iter,
+      stringsAsFactors = FALSE
+    )
+  }
+} else {
+  cat("--- Section 1: Skipped (synthetic only runs for --train-mode merged) ---\n")
 }
 
 # ============================================================
-# Section 2 — PDAC Training (merged TCGA_PAAD + CPTAC)
+# Section 2 — PDAC Training
 # ============================================================
-cat("\n--- Section 2: PDAC Training (merged TCGA_PAAD + CPTAC) ---\n")
+cat(sprintf("\n--- Section 2: PDAC Training (%s) ---\n", TRAIN_MODE))
 
 pdac_available <- dir.exists(PDAC_DATA_ROOT)
 if (!pdac_available) {
   cat("    [SKIP] PDAC_DATA_ROOT not found — set PDAC_DATA_ROOT env var to run.\n")
   fit_yfb <- list()
 } else {
-  cat("    Loading training cohorts ...\n")
-  train_cohorts <- c("TCGA_PAAD", "CPTAC")
-  train_raw <- lapply(setNames(train_cohorts, train_cohorts), function(ds) {
-    cat(sprintf("      Loading %s ...\n", ds))
-    load_pdac_raw(ds, PDAC_DATA_ROOT)
-  })
-
-  cat("    Preprocessing (v2: intersect-first + QN) ...\n")
-  log_flags <- PLATFORM_LOG_TRANSFORM[train_cohorts]
-  merged    <- preprocess_merged_cohorts(
-    cohort_raw_list     = train_raw,
-    log_transform_flags = log_flags,
-    top_n               = cfg$preprocessing$top_n_genes,
-    rank_transform      = TRUE
-  )
-  Y_train      <- merged$Y
-  time_train   <- unlist(lapply(train_cohorts, function(ds) train_raw[[ds]]$time))
-  status_train <- unlist(lapply(train_cohorts, function(ds) train_raw[[ds]]$status))
-  train_genes  <- merged$gene_names
+  if (TRAIN_MODE == "merged") {
+    cat("    Loading training cohorts ...\n")
+    train_cohorts <- c("TCGA_PAAD", "CPTAC")
+    train_raw <- lapply(setNames(train_cohorts, train_cohorts), function(ds) {
+      cat(sprintf("      Loading %s ...\n", ds))
+      load_pdac_raw(ds, PDAC_DATA_ROOT)
+    })
+    cat("    Preprocessing (v2: intersect-first + QN) ...\n")
+    log_flags <- PLATFORM_LOG_TRANSFORM[train_cohorts]
+    merged    <- preprocess_merged_cohorts(
+      cohort_raw_list     = train_raw,
+      log_transform_flags = log_flags,
+      top_n               = cfg$preprocessing$top_n_genes,
+      rank_transform      = TRUE
+    )
+    Y_train      <- merged$Y
+    time_train   <- unlist(lapply(train_cohorts, function(ds) train_raw[[ds]]$time))
+    status_train <- unlist(lapply(train_cohorts, function(ds) train_raw[[ds]]$status))
+    train_genes  <- merged$gene_names
+    train_cohort_label <- "merged_TCGA_CPTAC"
+  } else {
+    ds <- if (TRAIN_MODE == "tcga_only") "TCGA_PAAD" else "CPTAC"
+    cat(sprintf("    Loading single cohort: %s ...\n", ds))
+    raw <- load_pdac_raw(ds, PDAC_DATA_ROOT)
+    pre <- preprocess_desurv_cohort(
+      Y             = raw$Y,
+      gene_names    = raw$gene_names,
+      top_n         = cfg$preprocessing$top_n_genes,
+      log_transform = PLATFORM_LOG_TRANSFORM[[ds]],
+      cohort_name   = ds
+    )
+    Y_train      <- pre$Y
+    time_train   <- raw$time
+    status_train <- raw$status
+    train_genes  <- pre$gene_names
+    train_cohort_label <- ds
+  }
 
   cat(sprintf("    Training matrix: n=%d, p=%d\n", nrow(Y_train), ncol(Y_train)))
 
@@ -172,14 +197,24 @@ if (!pdac_available) {
                 fit$history$n_iter, k_eff,
                 paste(sprintf("%.4f", fit$EBeta), collapse = " ")))
     results_rows[[length(results_rows) + 1]] <- data.frame(
+      train_mode = TRAIN_MODE,
       section    = "2_pdac_train",
       model      = "YFB",
       prior_beta = pr,
-      cohort     = "merged_TCGA_CPTAC",
+      cohort     = train_cohort_label,
       c_index    = NA_real_,
       k_eff      = k_eff,
       beta_max   = round(max(abs(fit$EBeta)), 4),
       n_iters    = fit$history$n_iter,
+      stringsAsFactors = FALSE
+    )
+    ebeta_rows[[length(ebeta_rows) + 1]] <- data.frame(
+      train_mode = TRAIN_MODE,
+      section    = "2_pdac_train",
+      prior_beta = pr,
+      cohort     = NA_character_,
+      factor_k   = seq_along(fit$EBeta),
+      ebeta      = fit$EBeta,
       stringsAsFactors = FALSE
     )
   }
@@ -225,6 +260,7 @@ if (!pdac_available || length(fit_yfb) == 0) {
         cat(sprintf("    %s (n=%d, genes=%d): C-index=%.4f\n",
                     cohort, raw$n, length(common), c_idx))
         results_rows[[length(results_rows) + 1]] <- data.frame(
+          train_mode = TRAIN_MODE,
           section    = "3_external",
           model      = "YFB",
           prior_beta = pr,
@@ -233,6 +269,15 @@ if (!pdac_available || length(fit_yfb) == 0) {
           k_eff      = sum(abs(fit_obj$EBeta) > BETA_THRESH),
           beta_max   = round(max(abs(fit_obj$EBeta)), 4),
           n_iters    = fit_obj$history$n_iter,
+          stringsAsFactors = FALSE
+        )
+        ebeta_rows[[length(ebeta_rows) + 1]] <- data.frame(
+          train_mode = TRAIN_MODE,
+          section    = "3_external",
+          prior_beta = pr,
+          cohort     = cohort,
+          factor_k   = seq_along(fit_obj$EBeta),
+          ebeta      = fit_obj$EBeta,
           stringsAsFactors = FALSE
         )
       }, error = function(e) {
@@ -248,10 +293,19 @@ if (!pdac_available || length(fit_yfb) == 0) {
 cat("\n--- Section 4: Summary ---\n")
 
 if (length(results_rows) > 0) {
-  summary_df <- do.call(rbind, results_rows)
-  csv_path   <- file.path(OUT_DIR, "YFB_benchmark_results.csv")
+  summary_df     <- do.call(rbind, results_rows)
+  csv_path       <- file.path(OUT_DIR, sprintf("YFB_benchmark_results_%s.csv", TRAIN_MODE))
+  ebeta_csv_path <- file.path(OUT_DIR, sprintf("YFB_ebeta_detail_%s.csv",      TRAIN_MODE))
+
   write.csv(summary_df, csv_path, row.names = FALSE)
-  cat(sprintf("  Results saved to: %s\n\n", csv_path))
+  cat(sprintf("  Results saved to: %s\n", csv_path))
+
+  if (length(ebeta_rows) > 0) {
+    ebeta_df <- do.call(rbind, ebeta_rows)
+    write.csv(ebeta_df, ebeta_csv_path, row.names = FALSE)
+    cat(sprintf("  EBeta detail saved to: %s\n", ebeta_csv_path))
+  }
+  cat("\n")
 
   ext_rows <- summary_df[summary_df$section == "3_external", ]
   if (nrow(ext_rows) > 0) {

@@ -4,20 +4,13 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-05-04:** Core model complete (modular CAVI, 171/171 tests passing).
-> DeSurv benchmark complete: synthetic supervised C-index 0.79 > PCA 0.76; PDAC external median
-> C-index 0.60 across 5 cohorts (competitive with DeSurv 0.60–0.65). v2 preprocessing implemented
-> (intersect → log₂ → QN → top-2000 → rank). **Cluster A complete** (`fix-L-update-beta-cycle`):
-> training-side β=0 failure on merged TCGA+CPTAC resolved (2/20 factors active, ELBO monotone)
-> via instrumentation + inner-loop reorder + N_burnin + normalize_AB. External generalization
-> mixed (1/5 cohorts improved vs. baseline).
->
-> **Cluster B (Cox-on-YF) merged to `main`:** `fit_cox_on_yf.R`, `predict_cox_on_yf.R`,
-> `update_L_surv_YFB.R`, `update_F_surv_YFB.R`, smoke test 3/3 PASS. Benchmark infrastructure
-> consolidated: `run_LB_benchmark.R` (Cluster A) + `run_YFB_benchmark.R` (Cluster B), both with
-> side-by-side point_normal vs normal prior comparison. **Real-data β=0 collapse persists on PDAC
-> for point_normal prior in both models.** Normal prior shows non-zero betas; external C-index
-> comparison is the next empirical question. Next priority: run full PDAC benchmarks and compare.
+> **Status as of 2026-05-05:** Core model complete (modular CAVI, 171/171 tests passing).
+> Benchmark runners (`run_LB_benchmark.R`, `run_YFB_benchmark.R`) now support `--train-mode
+> merged|tcga_only|cptac_only`. All 6 full benchmark runs completed. **Key finding:** merged
+> training has never produced C-index > 0.50 (β→0 collapse). The archived 0.60–0.65 results
+> were from tcga_only training (v1 preprocessing, K=10, alpha CV) — not merged. Both LB and
+> YFB collapse β→0 on merged data. YFB collapses on single-cohort too. The β→0 collapse on
+> merged TCGA+CPTAC is the core unresolved problem. **Immediate priorities below.**
 
 ---
 
@@ -41,23 +34,38 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
-- [ ] **Run full PDAC benchmarks: LB vs YFB, point_normal vs normal** `[Priority: High]` `[Effort: Small]`
-  Quick-mode benchmarks confirm: point_normal prior collapses to β=0 on real PDAC for both
-  LB (Cluster A) and YFB (Cluster B). Normal prior produces non-zero EBeta. Outcome of
-  external C-index is the key empirical question. Run full benchmarks (K=10, max_iter=300)
-  on Longleaf or locally and inspect the CSV output tables.
+- [ ] **Re-run benchmarks with top_n=2000 to restore single-cohort baseline** `[Priority: High]` `[Effort: Small]`
+  `top_n_genes` was inadvertently raised to 5000. The archived 0.60–0.65 results used the DeSurv
+  spec of 2000 genes. Reverted in this session; need a clean run to confirm tcga_only/cptac_only
+  recover to C ≈ 0.60 with normal prior. Merged training expected to remain ~0.50 regardless.
   *Files: `results/benchmark_sim/run_LB_benchmark.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
 
-- [ ] **Prior comparison (normal vs point_normal): follow-up experiments** `[Priority: High]` `[Effort: Medium]`
-  Based on full benchmark results, decide on the best prior and consider:
-  (1) `prior_beta="point_laplace"` — heavier-tailed slab than point_normal, promotes sparsity
-  without a hard spike; may avoid β=0 while retaining more factor selectivity than normal.
-  (2) `cox_warmstart=TRUE` in Cluster B — Cox-init sets EBeta at the correct scale before CAVI;
-  test whether it helps normal prior converge faster.
-  (3) `N_burnin=5` or `10` — holds EL/EF fixed while beta stabilizes after first joint iteration.
-  (4) `alpha_F=0.1–0.3` (Cluster B only) — partial survival signal to F update; needs
-  `normalize_AB=TRUE` to balance scales (see DECISIONS.md 2026-04-30 for instability warning).
-  *Files: `code/fit_cox_on_yf.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
+- [ ] **Restore alpha CV to benchmark runners** `[Priority: High]` `[Effort: Small]`
+  Archived strong baseline used 5-fold CV to select alpha (0.5 for single-cohort, 0.3 for merged).
+  Current runners use fixed `alpha=0.5`. Re-adding `select_alpha_cv()` is low effort and ensures
+  merged training isn't penalized by a suboptimal fixed alpha.
+  *Files: `results/benchmark_sim/run_LB_benchmark.R`, `code/select_alpha_cv.R`*
+
+- [ ] **Diagnose and fix β→0 collapse on merged TCGA+CPTAC** `[Priority: High]` `[Effort: Large]`
+  Core unresolved problem. Both LB and YFB collapse β→0 on merged data regardless of prior, K,
+  or preprocessing. Cluster A resolved training-side β=0 but external generalization regressed
+  (4/5 cohorts). Cluster B (YFB) also collapses on all train modes including single-cohort.
+  Candidate next steps:
+  (1) **Instrument YFB A_surv/A_gen ratio** — add the `[iter1, k=?] ratio` printout from Cluster A
+  to `fit_cox_on_yf.R` and compare to LB on merged data. Determines if YFB has the same structural
+  imbalance, which would mean the reformulation didn't fix the root cause.
+  (2) **Cox warm-start for YFB** (`cox_warmstart=TRUE`) — initializes EBeta from a Cox fit on YF
+  scores; may prevent early β collapse if CAVI starts near a non-zero solution.
+  (3) **Understand single-cohort YFB collapse** — LB gets K_eff=2–4 on tcga_only but YFB collapses
+  there too. The problem is in the YF reformulation itself, not just merged-data batch effects.
+  The YF matrix scale (ZF = Y·F, sd ~ 10–100×) shrinks effective beta to ~0.003–0.008, making
+  even the normal prior place most mass near zero.
+  *Files: `code/fit_cox_on_yf.R`, `docs/beta_zero_fix_design.md`, `docs/update_L_fix.md`*
+
+- [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
+  Once β→0 collapse is fixed, compare point_normal vs normal vs point_laplace on the recovered
+  baseline. N_burnin=5 is worth re-testing with normal prior (Cluster A showed modest benefit).
+  *Files: `results/benchmark_sim/run_LB_benchmark.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
 
 ---
 
