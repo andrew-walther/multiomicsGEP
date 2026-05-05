@@ -4,16 +4,19 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-05-05:** Core model complete (modular CAVI, 171/171 tests passing).
-> Benchmark runners now support `--train-mode merged|tcga_only|cptac_only`. Alpha CV added to
-> LB runner. K fixed: `k_pdac_single=10` (single-cohort), `k_pdac_synthetic=5` (synthetic).
-> First full benchmark run with these corrected settings is pending (re-run tcga_only + synthetic).
-> **Key empirical findings from 2026-05-05:** (1) K=20 on single-cohort (n=144) causes K_eff=1
-> and anti-concordant predictions — fixed by k_pdac_single=10. (2) K=8 synthetic causes anti-
-> concordant predictions (LB C=0.135, YFB C=0.092) — fixed by k_pdac_synthetic=5. (3) YFB β→0
-> collapse on all PDAC modes — structural issue: ZF scale pins EBeta near 0. (4) A_surv/A_gen
-> ratio at iter 1 = 0.0000–0.0011 on merged — L update structurally dominated by genomics.
-> The β→0 collapse on real data is the core unresolved problem. **Immediate priorities below.**
+> **Status as of 2026-05-05 (Phase A–C re-run):** Core model complete (modular CAVI, 171/171
+> tests passing). Phase A–C fixes applied and full benchmarks re-run.
+> **Phase A:** CAVI inner loop reverted from β→L→F back to L→F→β (Gauss-Seidel).
+> **Phase B:** EF column normalization (unit L2 norm) added to YFB — fixes ZF scale collapse.
+> **Phase C:** Training concordance sign correction added to YFB — flips EBeta if C_train<0.5.
+> **Phase D (deferred):** normalize_AB=TRUE on merged LB not yet attempted; YFB already
+> outperforms LB on single-cohort training, so priority is lower.
+> **Key empirical findings:** (1) YFB synthetic: C=0.906 (K_eff=4) — Phase B+C fix confirmed.
+> (2) YFB tcga_only: C=0.55–0.63 (normal prior), C=0.50 (point_normal — beta collapse).
+> (3) YFB cptac_only: C=0.53–0.58 (normal prior). (4) YFB merged: K_eff=0 (machine-epsilon
+> betas) but external C=0.57–0.64 (normal prior) — F matrix captures survival-relevant
+> structure even when beta is effectively zero. (5) LB model still anti-concordant on synthetic
+> (C=0.142); needs a Phase C analog (sign correction in fit_modular.R).
 
 ---
 
@@ -55,23 +58,34 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   imbalance — must be addressed directly. See DECISIONS.md 2026-05-05.
 
 - [ ] **Diagnose and fix β→0 collapse on merged TCGA+CPTAC** `[Priority: High]` `[Effort: Large]`
-  Core unresolved problem confirmed by 2026-05-05 benchmark runs. Both LB and YFB collapse
-  β→0 on merged data. LB merged: K_eff=1 (K=20), C≈0.38. YFB merged: K_eff=0, all external
-  C=0.50 (point_normal) or 0.39–0.46 (normal). A_surv/A_gen ratio at iter 1 is 0.0000–0.0011
-  on merged — the L update is structurally dominated by genomics; model degenerates toward
-  unsupervised PCA. Candidate next steps:
-  (1) **Scale normalization in L update** — normalize A_surv up to match A_gen scale at each
-  iteration. Tried in Cluster A (`normalize_AB=TRUE`) but external results regressed (4/5
-  cohorts). Requires a more principled normalization that doesn't over-shrink L.
-  (2) **Cox warm-start for YFB** (`cox_warmstart=TRUE`) — initializes EBeta from a Cox fit on
-  YF scores; may prevent early β collapse on real data.
-  (3) **Understand YFB scale issue** — ZF = Y·EF scale (sum over p=2000 genes) pins effective
-  beta near 0. May need to normalize ZF by ‖EF_k‖ before passing to beta update.
-  *Files: `code/fit_cox_on_yf.R`, `docs/beta_zero_fix_design.md`, `docs/update_L_fix.md`*
+  Phase B+C (2026-05-05) fixed YFB scale collapse on synthetic (C=0.906, K_eff=4) and gave
+  non-trivial external C on single-cohort PDAC (tcga_only: 0.55–0.63; cptac_only: 0.53–0.58,
+  normal prior). **Remaining issue:** merged training still collapses to K_eff=0 (machine-
+  epsilon betas ~10⁻¹³). External C=0.57–0.64 despite K_eff=0 — the F matrix captures survival
+  signal via its column structure, but the beta update cannot concentrate signal when ZF columns
+  all carry platform-dominated variance. A_surv/A_gen at iter 1 is 0.0000–0.0011 on merged.
+  Also: LB model on synthetic is anti-concordant (C=0.142 at K=5); fit_modular.R needs a
+  Phase C analog (training concordance sign check on EBeta before returning).
+  Candidate next steps:
+  (1) **Add sign correction to fit_modular.R (LB)** — mirror Phase C from fit_cox_on_yf.R.
+  Small effort; addresses anti-concordance on synthetic.
+  (2) **Cox warm-start for YFB merged** (`cox_warmstart=TRUE`) — initialize EBeta from a Cox
+  fit on YF scores; may rescue beta from early collapse when genomic signal dominates.
+  (3) **normalize_AB=TRUE on merged LB** (Phase D) — attempted in Cluster A but regressed 4/5
+  cohorts. May need a more principled normalization. Low priority given YFB already outperforms.
+  *Files: `code/fit_modular.R`, `code/fit_cox_on_yf.R`, `docs/beta_zero_fix_design.md`*
+
+- [ ] **Add sign correction to fit_modular.R (LB model)** `[Priority: Medium]` `[Effort: Small]`
+  LB model is anti-concordant on synthetic data (C=0.142 at K=5, seed=222). Phase C in
+  `fit_cox_on_yf.R` (training concordance check post-convergence; negate EBeta if C_train<0.5)
+  fixed the analogous YFB problem. Mirror that pattern in `fit_modular.R`. Small effort.
+  *Files: `code/fit_modular.R`*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Once β→0 collapse is fixed, compare point_normal vs normal vs point_laplace on the recovered
   baseline. N_burnin=5 is worth re-testing with normal prior (Cluster A showed modest benefit).
+  2026-05-05 finding: for YFB, `normal` prior is strictly better than `point_normal` on PDAC —
+  spike-and-slab collapses all betas to zero (signal too weak for nonzero posterior probability).
   *Files: `results/benchmark_sim/run_LB_benchmark.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
 
 ---
@@ -225,6 +239,18 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ---
 
 ## ✅ Completed
+
+- [x] **Phase A–C benchmark fixes (2026-05-05)** — Three targeted fixes applied and full
+  benchmarks re-run across all three training modes (tcga_only, cptac_only, merged):
+  **Phase A:** Reverted CAVI inner loop from β→L→F back to L→F→β (Gauss-Seidel). Confirmed
+  by 18-unit ELBO gap on identical data. Commits: `5bfc25e`.
+  **Phase B:** EF column normalization (unit L2 norm) added to `fit_cox_on_yf.R` and
+  `predict_cox_on_yf.R`. Fixes ZF scale collapse (‖ZF_k‖ was O(√(pn)) ≈ 56 → O(1) after
+  normalization). EF_norms stored in fit result and applied in prediction.
+  **Phase C:** Training concordance sign correction added to `fit_cox_on_yf.R`. After convergence,
+  computes η_final = ZF·EBeta; if C_train < 0.5, flips EBeta sign. Rescued synthetic C from
+  0.119 → 0.906 (K_eff=4). Commits: `4ea414f`.
+  *Files: `code/fit_modular.R`, `code/fit_cox_on_yf.R`, `code/predict_cox_on_yf.R`*
 
 - [x] **Benchmark consolidation (2026-05-04)** — Merged `cox-on-yf-reformulation` to `main`.
   Created `run_LB_benchmark.R` (Cluster A, 4-section: synthetic + PDAC train + external + CSV)

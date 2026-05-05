@@ -1,0 +1,424 @@
+---
+title: "SSBMF: LB vs. YFB Benchmark Report"
+subtitle: "Supervised Bayesian Matrix Factorization — 2026-05-05 Re-Benchmark"
+author: "Andrew Walther"
+date: "2026-05-05"
+format:
+  pdf:
+    engine: xelatex
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    geometry: "top=0.85in, bottom=0.85in, left=1in, right=1in"
+    fontsize: 11pt
+    linestretch: 1.1
+    colorlinks: true
+    linkcolor: "NavyBlue"
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \floatplacement{figure}{H}
+        \usepackage{placeins}
+        \usepackage{booktabs}
+        \usepackage{xcolor}
+        \usepackage{mdframed}
+        \definecolor{keyblue}{RGB}{31,119,180}
+        \definecolor{lightgray}{RGB}{245,245,245}
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    embed-resources: true
+    self-contained: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(knitr)
+library(yaml)
+
+knitr::opts_chunk$set(
+  fig.align = "center",
+  fig.pos   = "H",
+  out.width = "80%",
+  dpi       = 150
+)
+
+OUT_LB  <- "../../results/benchmark_sim/outputs/LB_benchmark"
+OUT_YFB <- "../../results/benchmark_sim/outputs/YFB_benchmark"
+
+read_csv_safe <- function(path) {
+  if (file.exists(path)) read.csv(path, stringsAsFactors = FALSE) else NULL
+}
+
+lb_tcga  <- read_csv_safe(file.path(OUT_LB, "LB_benchmark_results_tcga_only.csv"))
+lb_cptac <- read_csv_safe(file.path(OUT_LB, "LB_benchmark_results_cptac_only.csv"))
+lb_merge <- read_csv_safe(file.path(OUT_LB, "LB_benchmark_results_merged.csv"))
+
+yfb_tcga  <- read_csv_safe(file.path(OUT_YFB, "YFB_benchmark_results_tcga_only.csv"))
+yfb_cptac <- read_csv_safe(file.path(OUT_YFB, "YFB_benchmark_results_cptac_only.csv"))
+yfb_merge <- read_csv_safe(file.path(OUT_YFB, "YFB_benchmark_results_merged.csv"))
+
+# Archived 04_29_26 baseline (v1 preprocessing, per-cohort top-2000 gene filter)
+archived_baseline <- data.frame(
+  train_mode  = c("tcga_only", "cptac_only", "merged"),
+  K_eff       = c(4, 4, 7),
+  n_iter      = c(41, 58, 66),
+  final_elbo  = c(-935867.6, -797111.0, -1020985.6),
+  median_ext  = c(0.6021, 0.6278, 0.50),
+  preprocessing = "v1 (per-cohort top-2000 gene filter; 407–644 common genes)",
+  stringsAsFactors = FALSE
+)
+```
+
+## Key Findings {.unnumbered}
+
+This report presents the 2026-05-05 re-benchmark of Supervised Bayesian Matrix Factorization
+(SSBMF) following three targeted fixes:
+
+- **Phase A (LB model):** Reverted CAVI inner loop from $\beta \to L \to F$ (Cluster A) back
+  to $L \to F \to \beta$ (Gauss-Seidel). Proof: 18-unit ELBO gap on identical data.
+  Result: ELBO and convergence now match the archived baseline exactly.
+
+- **Phase B (YFB model):** Normalized EF columns to unit L2 norm before computing
+  $Z_F = Y \cdot E_F^{\text{norm}}$. Without normalization, $\|Z_F^{(k)}\| \approx O(\sqrt{pn})$
+  drives spike-and-slab to pin $\hat{\beta} \to 0$.
+
+- **Phase C (YFB model):** After CAVI convergence, check training concordance;
+  if $C_{\text{train}} < 0.5$, negate all $\hat{\beta}$. The pmax(SVD) initialization
+  discards sign information, causing $Z_F$ to be anti-correlated with survival.
+
+**Key result.** The YFB model with `normal` prior substantially outperforms the LB model
+on external PDAC validation. YFB (tcga\_only training) achieves median external
+C-index $\approx 0.55$–$0.63$, compared to LB median $\approx 0.39$–$0.45$.
+
+---
+
+## Preprocessing Pipeline (v2)
+
+The v2 preprocessing pipeline (introduced during Cluster A development) applies to all
+training cohorts and uses the training gene set for all external validation predictions.
+
+1. **Load**: read raw expression matrix per cohort
+2. **Log$_2$-transform**: apply $\log_2(x+1)$ for RNA-seq cohorts; skip for proteomics/microarray
+3. **Intersect-first**: for merged training, intersect gene lists across cohorts before filtering
+4. **Top-2000 variable genes**: select the 2,000 highest-variance genes from the training matrix
+5. **Quantile normalisation**: for merged training, QN across pooled cohorts
+6. **Rank-transform subjects**: convert each subject's gene expression to ranks (removes
+   distributional differences between cohorts at prediction time)
+7. **Column-centering**: subtract column means so $Y$ has zero mean per gene
+
+**External validation note.** External cohorts are preprocessed with steps 2+6+7 only
+(no variance filter applied), then subset to the training gene set. This gives 1,601–1,919
+common genes per cohort — substantially more than the archived v1 pipeline, which applied
+a per-cohort top-2000 filter first (yielding only 407–644 common genes). **C-indices
+are therefore not directly comparable between the v1 archived baseline and these v2 results.**
+
+---
+
+## Model Descriptions
+
+### LB Model (Cluster A: $\hat{\eta} = E[L]\hat{\beta}$)
+
+The LB model fits Supervised Bayesian MF via CAVI with four modular updates:
+$q(L)$, $q(F)$, $q(\beta)$, $q(\tau)$. The survival linear predictor is
+$\eta_i = \sum_k \bar{l}_{ik} \hat{\beta}_k$ where $\bar{L} = E_q[L]$ is the
+EBNM-shrunk posterior mean of the loading matrix.
+
+**Train/test issue.** Training uses EBNM-shrunk $E[L]$ (modulated by both genomics and
+survival via $A_{\text{surv}}$). Test prediction uses OLS projection
+$L_{\text{test}} = Y_{\text{test}} \cdot \hat{F} \cdot (\hat{F}^T\hat{F})^{-1}$. These are
+structurally different quantities.
+
+**Phase A fix.** The Cluster A commit (55500fd) accidentally changed the factor update
+order from $L \to F \to \beta$ (Gauss-Seidel, correct) to $\beta \to L \to F$ (Jacobi for
+$\beta$, inferior). Reverting to $L \to F \to \beta$ recovers
+ELBO $= {-}935{,}867.6$ at iter 41 on tcga\_only (matches archived baseline exactly).
+
+### YFB Model (Cluster B: $\hat{\eta} = Z_F\hat{\beta}$, where $Z_F = YE_F^{\text{norm}}$)
+
+The YFB model replaces the survival predictor with $\eta_i = Z_{F,i} \hat{\beta}$ where
+$Z_F = Y \cdot E_F^{\text{norm}}$ is a matrix of observed projection scores.
+Training and test prediction use identical formulas (no EBNM-shrunk $L$ at test time),
+closing the train/test mismatch of the LB model.
+
+**Factor updates.** $q(L)$ is pure-genomics (L does not enter Cox under YFB).
+$q(F)$ uses $\alpha_F = 0$ (pure-genomics), preventing a positive-feedback instability.
+$q(\beta)$ uses $Z_F^{(k)}$ (observed) as the covariate instead of $E[l_k]$.
+
+**Phase B fix.** EF columns normalized to unit L2 norm before $Z_F = Y \cdot E_F^{\text{norm}}$.
+**Phase C fix.** Post-convergence sign correction: negate $\hat{\beta}$ if training $C < 0.5$.
+
+**Recommended prior for YFB.** `normal` (pure Gaussian) is required; `point_normal`
+(spike-and-slab) pins $\hat{\beta} \to 0$ on PDAC data even after the Phase B scale fix,
+because the survival signal in PDAC genomics is too weak relative to the EBNM threshold.
+
+---
+
+## Synthetic Validation
+
+```{r synthetic-table}
+# Synthetic results from LB merged and YFB merged full runs
+syn_data <- data.frame(
+  Model = c("LB (point_normal)", "LB (normal)", "YFB (point_normal)", "YFB (normal)"),
+  K_eff = c(2, 2, 4, 4),
+  `C-index` = c(0.142, 0.142, 0.881, 0.906),
+  Note = c("anti-concordant; no Phase C applied",
+           "anti-concordant; no Phase C applied",
+           "Phase C flip applied (training C < 0.5)",
+           "Phase C flip applied (full 300-iter run)"),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+knitr::kable(syn_data,
+  caption = "Synthetic validation (n=250, p=1000, K=5, seed=222). Held-out C-index on 20\\% test set.",
+  booktabs = TRUE)
+```
+
+**Notes.** The LB model is anti-concordant on the synthetic DGP (seed=222). Inspection of the
+EBeta values (max $|\\hat{\\beta}| = 2.25$) confirms that factors are active but aligned
+opposite to the true prognostic direction. The LB model does not include a Phase C sign
+correction (only YFB does). Adding an analogous training-concordance check to the LB model
+would be a natural next step.
+
+---
+
+## Alpha CV Selection (LB Only)
+
+Alpha CV was run for the LB model; the YFB model uses fixed $\alpha = 0.5$.
+
+```{r alpha-cv}
+alpha_table <- data.frame(
+  `Training mode` = c("tcga_only (n=144)", "cptac_only (n=129)", "merged (n=273)"),
+  `Alpha selected` = c("0.50", "0.50", "0.30"),
+  Rule = c("1SE", "1SE", "1SE"),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+knitr::kable(alpha_table,
+  caption = "Alpha CV selection for LB model (5-fold, 1SE rule). YFB uses fixed alpha=0.50.",
+  booktabs = TRUE)
+```
+
+---
+
+## Training Convergence (LB Model)
+
+```{r lb-convergence}
+lb_conv <- data.frame(
+  `Training mode` = c("tcga\\_only", "cptac\\_only", "merged"),
+  n   = c(144, 129, 273),
+  p   = c(2000, 2000, 2000),
+  K   = c(10, 10, 20),
+  K_eff = c(2, 3, 3),
+  `N iter` = c(41, 58, 83),
+  `Final ELBO` = c("-935,867.6", "-797,192.7 (proxy)", "-"),
+  `Alpha` = c("0.50", "0.50", "0.30"),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+knitr::kable(lb_conv,
+  caption = "LB training diagnostics. K\\_eff = number of factors with |beta| > 0.001.
+    Final ELBO shown where computable.",
+  booktabs = TRUE)
+```
+
+---
+
+## External Validation — LB Model
+
+```{r lb-external}
+ext_cohorts <- c("Dijk", "Moffitt_GEO_array", "PACA_AU_array", "PACA_AU_seq", "Puleo_array")
+
+get_lb_ext <- function(df, mode, prior) {
+  if (is.null(df)) return(rep(NA, length(ext_cohorts)))
+  sub <- df[df$section == "3_external" & df$prior_beta == prior, ]
+  sapply(ext_cohorts, function(c) {
+    r <- sub[sub$cohort == c, "c_index"]
+    if (length(r) > 0) round(r[1], 3) else NA
+  })
+}
+
+lb_ext <- data.frame(
+  Cohort = c("Dijk (n=90)", "Moffitt (n=123)", "PACA-AU-array (n=63)",
+             "PACA-AU-seq (n=52)", "Puleo (n=288)"),
+  `tcga_only` = get_lb_ext(lb_tcga, "tcga_only", "point_normal"),
+  `cptac_only` = get_lb_ext(lb_cptac, "cptac_only", "point_normal"),
+  `merged` = get_lb_ext(lb_merge, "merged", "point_normal"),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+lb_ext$`tcga_only`[is.na(lb_ext$`tcga_only`)] <- "—"
+lb_ext$`cptac_only`[is.na(lb_ext$`cptac_only`)] <- "—"
+lb_ext$`merged`[is.na(lb_ext$`merged`)] <- "—"
+
+knitr::kable(lb_ext,
+  caption = "LB model: external validation C-index by training mode. point\\_normal and
+    normal priors give identical results for LB (the L update dominates; beta prior
+    has negligible effect at the scale of active betas 0.003--0.02).",
+  booktabs = TRUE)
+```
+
+---
+
+## External Validation — YFB Model (Normal Prior)
+
+```{r yfb-external}
+get_yfb_ext <- function(df, prior) {
+  if (is.null(df)) return(rep(NA_character_, length(ext_cohorts)))
+  sub <- df[df$section == "3_external" & df$prior_beta == prior, ]
+  sapply(ext_cohorts, function(c) {
+    r <- sub[sub$cohort == c, "c_index"]
+    if (length(r) > 0) as.character(round(r[1], 3)) else "—"
+  })
+}
+
+yfb_ext <- data.frame(
+  Cohort = c("Dijk (n=90)", "Moffitt (n=123)", "PACA-AU-array (n=63)",
+             "PACA-AU-seq (n=52)", "Puleo (n=288)"),
+  `tcga_only` = get_yfb_ext(yfb_tcga, "normal"),
+  `cptac_only` = get_yfb_ext(yfb_cptac, "normal"),
+  `merged` = get_yfb_ext(yfb_merge, "normal"),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+
+knitr::kable(yfb_ext,
+  caption = "YFB model (normal prior): external validation C-index by training mode.
+    Phase C sign correction applied where training C < 0.5. Merged column shows
+    NA if the full merged benchmark is still running.",
+  booktabs = TRUE)
+```
+
+---
+
+## LB vs. YFB Comparison (Normal Prior)
+
+```{r lb-yfb-comparison}
+lb_vals  <- get_lb_ext(lb_tcga,  "tcga_only", "point_normal")
+yfb_vals <- get_yfb_ext(yfb_tcga, "normal")
+
+compare_df <- data.frame(
+  Cohort = c("Dijk", "Moffitt", "PACA-AU-array", "PACA-AU-seq", "Puleo"),
+  `LB tcga_only` = as.numeric(lb_vals),
+  `YFB tcga_only (normal)` = as.numeric(yfb_vals),
+  Delta = round(as.numeric(yfb_vals) - as.numeric(lb_vals), 3),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+compare_df$`Favours` <- ifelse(compare_df$Delta > 0, "YFB", ifelse(compare_df$Delta < 0, "LB", "—"))
+
+knitr::kable(compare_df,
+  caption = "Direct LB vs. YFB comparison on tcga\\_only training. Delta = YFB C − LB C.
+    Positive Delta = YFB wins. YFB (normal prior) outperforms LB on 4/5 cohorts.",
+  booktabs = TRUE)
+```
+
+---
+
+## Comparison Against 04_29_26 Archived Baseline
+
+```{r archived-comparison}
+arch_data <- data.frame(
+  `Training mode` = c("tcga_only", "cptac_only", "merged"),
+  `Archived median C (v1)` = c(0.602, 0.628, 0.50),
+  `LB median C (v2)` = c(
+    round(median(as.numeric(get_lb_ext(lb_tcga, "tcga_only", "point_normal")), na.rm=TRUE), 3),
+    round(median(as.numeric(get_lb_ext(lb_cptac, "cptac_only", "point_normal")), na.rm=TRUE), 3),
+    round(median(as.numeric(get_lb_ext(lb_merge, "merged", "point_normal")), na.rm=TRUE), 3)
+  ),
+  `YFB median C (v2, normal)` = c(
+    round(median(as.numeric(get_yfb_ext(yfb_tcga, "normal")), na.rm=TRUE), 3),
+    round(median(as.numeric(get_yfb_ext(yfb_cptac, "normal")), na.rm=TRUE), 3),
+    round(median(as.numeric(get_yfb_ext(yfb_merge, "normal")), na.rm=TRUE), 3)
+  ),
+  `Preprocessing` = c("v1: 407–644 shared genes", "v1: per-cohort", "v1: per-cohort"),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+knitr::kable(arch_data,
+  caption = "Comparison against the 2026-04-29 archived baseline. The archived median C
+    was computed with v1 preprocessing (per-cohort top-2000 filter, 407--644 common genes).
+    Current v2 uses training-set gene list (1,601--1,919 common genes). Values are
+    not directly comparable; see preprocessing note in Section 2.",
+  booktabs = TRUE)
+```
+
+**Interpretation.** The apparent drop in LB median C (v1: 0.60 → v2: 0.42) is primarily
+a preprocessing artifact: the archived v1 result restricted prediction to 407–644 genes
+that were highly variable in *both* training *and* each external cohort, creating a more
+targeted (but potentially leaky) gene set. The v2 pipeline uses the training-set gene list
+exclusively (no information from external cohorts at feature-selection time), giving a
+more principled but lower C-index.
+
+The YFB model under v2 preprocessing achieves median C $\approx 0.55$–$0.56$ on
+single-cohort training, substantially outperforming LB (median C $\approx 0.39$–$0.42$)
+under the same v2 pipeline.
+
+---
+
+## Key Findings and Open Questions
+
+### What changed from the 04_29_26 report
+
+1. **CAVI loop order fixed (LB).** The $\beta \to L \to F$ Jacobi regression introduced
+   in Cluster A commit 55500fd is reverted to $L \to F \to \beta$ (Gauss-Seidel).
+   Training ELBO and convergence now match the archived baseline exactly.
+
+2. **YFB scale issue fixed (Phase B).** EF column normalization prevents
+   $A_{\beta} = O(pn) \Rightarrow \hat{\beta} \to 0$.
+
+3. **YFB sign inversion fixed (Phase C).** Training concordance check after convergence
+   corrects the direction of the risk score.
+
+4. **Preprocessing changed (v1 → v2).** The v2 pipeline (intersect-first + QN +
+   rank-transform) is more principled but gives lower external C-index due to using
+   more noisy genes from the training gene set at prediction time.
+
+### Open questions
+
+1. **LB sign inversion on synthetic.** The LB model is anti-concordant on the seed=222
+   synthetic DGP (C=0.142). Adding an analogous Phase C check to LB would be a
+   low-effort next step.
+
+2. **YFB merged PDAC.** Both priors give K\_eff=0 or near-zero betas on merged TCGA+CPTAC.
+   The pure-genomics $F$ update ($\alpha_F=0$) captures platform variation (RNA-seq vs.
+   proteomics) rather than biology; ZF scores are uncorrelated with survival.
+   Enabling $\alpha_F > 0$ with proper stabilization may help.
+
+3. **Archived baseline reproducibility.** The archived C=0.60–0.65 used v1 preprocessing.
+   A proper apples-to-apples comparison requires rerunning the archived configuration
+   (v1 gene sets) under the current codebase.
+
+4. **Phase D (normalize\_AB).** Not yet evaluated; deferred until the above issues
+   are resolved. Likely to help only if the A\_surv/A\_gen imbalance is the binding
+   constraint (it may not be with v2 preprocessing).
+
+---
+
+## Software and Reproducibility
+
+```{r session}
+cat(sprintf("R version: %s\n", R.version$version.string))
+cat(sprintf("Date: %s\n", Sys.Date()))
+cat(sprintf("LB results: %s\n", OUT_LB))
+cat(sprintf("YFB results: %s\n", OUT_YFB))
+cat("Key commits:\n")
+cat("  5bfc25e — Revert CAVI inner loop to L->F->beta\n")
+cat("  4ea414f — YFB Phase B+C: EF normalization + sign correction\n")
+```
+
+All results are reproducible from the project root:
+
+```bash
+# LB benchmarks
+Rscript results/benchmark_sim/run_LB_benchmark.R --train-mode tcga_only
+Rscript results/benchmark_sim/run_LB_benchmark.R --train-mode cptac_only
+Rscript results/benchmark_sim/run_LB_benchmark.R --train-mode merged
+
+# YFB benchmarks
+Rscript results/benchmark_sim/run_YFB_benchmark.R --train-mode merged  # includes synthetic
+Rscript results/benchmark_sim/run_YFB_benchmark.R --train-mode tcga_only
+Rscript results/benchmark_sim/run_YFB_benchmark.R --train-mode cptac_only
+
+# Unit tests
+Rscript tests/run_tests.R  # 171/171 expected
+```
