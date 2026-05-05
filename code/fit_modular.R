@@ -279,13 +279,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
   EL2 <- EL^2
   EF2 <- EF^2
 
-  # Warm-start beta via Cox regression on ZF = Y·EF (Cluster B predictor).
-  # Under the new formulation eta_i = ZF_i · beta_tilde, the warm-start must
-  # regress survival on ZF (observed projection scores), not on EL.  Using EL
-  # would give coefficients calibrated to the wrong-scaled predictor, causing
-  # eta to blow up in the first CAVI iteration.
-  ZF_init <- Y %*% EF                              # n × K; held fixed for warm-start
-  df_cox <- as.data.frame(ZF_init)
+  # Warm-start beta via Cox regression on SVD loadings.
+  df_cox <- as.data.frame(EL)
   colnames(df_cox) <- paste0("L", 1:K)
   df_cox$time   <- time
   df_cox$status <- status
@@ -326,15 +321,15 @@ fit_supervised_mf_modular <- function(Y, time, status,
   # Backward compatibility: default N_burnin = 0 skips the block entirely.
   # ==========================================================================
   if (N_burnin > 0) {
+    EL2_init <- EL^2   # point estimate; zero posterior variance during burn-in
     for (b in seq_len(N_burnin)) {
-      ZF_b     <- Y %*% EF                          # n × K; observed projection scores
-      eta_b    <- as.vector(ZF_b %*% EBeta)
+      eta_b    <- as.vector(EL %*% EBeta)
       taylor_b <- calc_cox_taylor(eta_b, time, status)
       z_b      <- eta_b + taylor_b$u / taylor_b$w
       w_b      <- taylor_b$w
       for (k in seq_len(K)) {
-        z_no_k_b <- compute_z_no_k(z_b, ZF_b, EBeta, k)
-        res_b    <- update_beta_k(w_b, z_no_k_b, ZF_b[, k],
+        z_no_k_b <- compute_z_no_k(z_b, EL, EBeta, k)
+        res_b    <- update_beta_k(w_b, z_no_k_b, EL[, k], EL2_init[, k],
                                   prior_family = prior_beta, alpha = alpha)
         EBeta[k]  <- res_b$mean
         EBeta2[k] <- res_b$second
@@ -405,12 +400,10 @@ fit_supervised_mf_modular <- function(Y, time, status,
     #
     # (z, w) are held FIXED for this outer iteration across all k.
     # ------------------------------------------------------------------------
-    ZF     <- Y %*% EF                          # n × K: observed projection scores
-    eta    <- as.vector(ZF %*% EBeta)
+    eta    <- as.vector(EL %*% EBeta)
     taylor <- calc_cox_taylor(eta, time, status)
     z      <- eta + taylor$u / taylor$w    # n-vector: working response z_i
     w      <- taylor$w                     # n-vector: W_{ii}
-    YtWY_diag <- as.vector(t(Y^2) %*% w)  # p-vector: diag(Y'diag(w)Y), once per iter
 
     # Reconstruction RMSE at posterior means (monitoring only).
     history$rmse[iter] <- sqrt(mean((Y - EL %*% t(EF))^2))
@@ -452,29 +445,32 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # updates below.
       # ----------------------------------------------------------------------
       R_k    <- compute_R_k(Y, EL, EF, k)
-      z_no_k <- compute_z_no_k(z, ZF, EBeta, k)   # COMPUTE ONCE — used by β and F
+      z_no_k <- compute_z_no_k(z, EL, EBeta, k)   # COMPUTE ONCE — used by β and L
 
-      # ---- Instrumentation [Cluster B] ----------------------------------
+      # ---- Instrumentation [§4.1] ---------------------------------------
       # At iter 1, log the genomics vs survival precision contributions for
-      # the F update (q(F) is now dual-source under Cluster B).
-      # A_gen_F = tau_j * sum_EL2_k (scalar, same for all j — we report the
-      # mean-Tau version for comparison); A_surv_F = EBeta2[k] * YtWY_diag[j]
-      # (p-vector — we report the mean for readability).
+      # the first few factors. A_surv ≪ A_gen quantifies the structural
+      # scale imbalance that crippled merged-cohort training. Matches
+      # update_L_k() math: A_gen = sum_j(τ_j · E[f_jk²]) (scalar across i);
+      # A_surv = λ · w_i · E[β_k²] (n-vector — we report the mean for
+      # readability). Logged BEFORE the β update so the value reflects the
+      # state seen at the iteration boundary, not after β has been refreshed
+      # for the current k.
       if (iter == 1 && verbose && k <= 3) {
-        A_gen_F  <- mean(Tau) * sum(EF2[, k])
-        A_surv_F <- EBeta2[k] * mean(YtWY_diag)
-        cat(sprintf("    [iter1, k=%d] A_gen_F=%.2e  A_surv_F=%.2e  ratio=%.4f\n",
-                    k, A_gen_F, A_surv_F, A_surv_F / (A_gen_F + 1e-30)))
+        A_gen_k  <- sum(Tau * EF2[, k])
+        A_surv_k <- mean(w) * EBeta2[k] * lambda
+        cat(sprintf("    [iter1, k=%d] A_gen=%.2e  A_surv=%.2e  ratio=%.4f\n",
+                    k, A_gen_k, A_surv_k, A_surv_k / (A_gen_k + 1e-30)))
       }
 
       # ----------------------------------------------------------------------
       # (a) Update q(beta_k): Survival Coefficient — FIRST
       #
-      # Under Cluster B, the predictor is ZF[,k] = (Y·EF)[,k], an observed
-      # quantity — no second-moment correction needed.  The freshly updated
-      # EBeta[k] then flows into q(F)'s dual-source A_surv / B_surv terms.
+      # Uses current EL[,k] and EL2[,k] (from the previous outer iteration,
+      # or from initialization on iter 1). The freshly updated EBeta[k] then
+      # flows into the L update's A_surv / B_surv terms below.
       # ----------------------------------------------------------------------
-      res_beta    <- update_beta_k(w, z_no_k, ZF[, k],
+      res_beta    <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
                                    prior_family = prior_beta, alpha = alpha_iter)
       EBeta[k]    <- res_beta$mean
       EBeta2[k]   <- res_beta$second
@@ -483,36 +479,29 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                       res_beta$mean, res_beta$second)
 
       # ----------------------------------------------------------------------
-      # (b) Update q(l_k): Patient Loadings — PURE GENOMICS under Cluster B
+      # (b) Update q(l_k): Patient Loadings — sees fresh EBeta[k]
       #
-      # Under η = (YF)β̃, L appears only in the genomics likelihood Y ≈ LF'.
-      # All survival arguments have been removed from update_L_k().
+      # A_surv = λ·w·EBeta2[k] now reflects the just-updated β, so survival
+      # signal enters the L precision from iter 1 even when the Cox warm-start
+      # gave a small but non-zero β.
       # ----------------------------------------------------------------------
-      res_L   <- update_L_k(Tau, EF[, k], EF2[, k], R_k,
-                             prior_family = prior_LF)
+      res_L   <- update_L_k(Tau, EF[, k], EF2[, k], w, EBeta[k], EBeta2[k],
+                             R_k, z_no_k, prior_family = prior_LF, alpha = alpha_iter,
+                             lambda = lambda, normalize_AB = normalize_AB)
       EL[, k]  <- res_L$mean
       EL2[, k] <- res_L$second
       kl_L[k]  <- compute_ebnm_kl(res_L$ebnm_result$log_likelihood,
                                    res_L$A, res_L$x, res_L$mean, res_L$second)
 
       # ----------------------------------------------------------------------
-      # (c) Update q(f_k): Biological Factors — DUAL-SOURCE under Cluster B
+      # (c) Update q(f_k): Biological Factors — sees fresh EL[,k]
       #
-      # R_k depends on EL[,k] (updated in step b); recompute before F update.
-      # F appears in both Y ≈ LF' (genomics) and via ZF = YF in Cox likelihood.
-      # YtWz_no_k = Y'(w * z_no_k) is computed per k (z_no_k changes each k).
-      # YtWY_diag = diag(Y'diag(w)Y) is fixed for this outer iteration.
+      # R_k depends on EL[,k], so recompute it using the updated EL[,k]
+      # from step (b).  This is the Gauss-Seidel property.
       # ----------------------------------------------------------------------
-      R_k        <- compute_R_k(Y, EL, EF, k)
-      YtWz_no_k  <- as.vector(t(Y) %*% (w * z_no_k))  # p-vector, per-k
+      R_k   <- compute_R_k(Y, EL, EF, k)
       res_F <- update_F_k(Tau, EL[, k], EL2[, k], R_k,
-                          EBeta_k      = EBeta[k],
-                          EBeta2_k     = EBeta2[k],
-                          YtWY_diag    = YtWY_diag,
-                          YtWz_no_k    = YtWz_no_k,
-                          prior_family = prior_LF,
-                          alpha        = alpha_iter,
-                          normalize_AB = normalize_AB)
+                          prior_family = prior_LF, alpha = alpha_iter)
       EF[, k]  <- res_F$mean
       EF2[, k] <- res_F$second
       kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
@@ -535,7 +524,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
     # surv_elbo: E_q[log PL(t,delta|L,beta)] via 2nd-order Taylor at eta_0.
     # kl_*: E_q[log g(theta)] - E_q[log q(theta)] for each factor (each <= 0).
     surv_elbo               <- compute_survival_elbo(taylor$logPL, w,
-                                                     ZF, EBeta, EBeta2)
+                                                     EL, EL2, EBeta, EBeta2)
     history$elbo_full[iter] <- (1 - alpha) * res_tau$elbo_proxy +
                                alpha * surv_elbo +
                                sum(kl_L) + sum(kl_F) + sum(kl_beta)

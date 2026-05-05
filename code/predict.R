@@ -13,21 +13,20 @@
 
 #' Project new patients into the learned factor space and compute risk scores.
 #'
-#' Given a trained Cluster B SBMF model (factor weights EF and survival
-#' coefficients EBeta from training), computes the observed projection scores
-#' ZF_test = Y_test · EF and then the Cox linear predictor.
+#' Given a trained SBMF model (factor weights EF and survival coefficients
+#' EBeta from training), projects new patients' genomics data Y_test into
+#' the K-dimensional latent space via pseudo-inverse projection, then
+#' computes Cox linear predictor risk scores.
 #'
-#' **Projection (Cluster B):**
-#'   ZF_test = Y_test %*% EF
+#' **Projection method:**
+#'   L_test = Y_test %*% EF %*% (EF'EF + λI)^{-1}
 #'
-#' This is the same formula used during training (eta = ZF · beta_tilde).
-#' No pseudo-inverse is needed: training and test both use the direct
-#' Y · EF projection, eliminating the train/test formula mismatch that
-#' motivated the Cox-on-YF reformulation.
+#' This is the least-squares projection: find L that minimises
+#' ||Y_test - L %*% t(EF)||² subject to regularisation λ = 1e-8
+#' (for numerical stability when EF columns are near-collinear).
 #'
 #' **Risk score:**
-#'   risk_i = sum_k ZF_test[i,k] * EBeta[k]
-#'          = (Y_test %*% EF %*% EBeta)[i]
+#'   risk_i = sum_k L_test[i,k] * EBeta[k]
 #'
 #' Higher risk score → higher predicted hazard → worse prognosis.
 #'
@@ -38,17 +37,19 @@
 #'                from a trained SBMF model (fit_supervised_mf_modular()$EF).
 #' @param EBeta   numeric vector of length K: posterior mean survival
 #'                coefficients (fit_supervised_mf_modular()$EBeta).
+#' @param lambda  numeric scalar: ridge regularisation for (EF'EF)^{-1}.
+#'                Default 1e-8; increase if EF has near-zero singular values.
 #'
 #' @return Named list:
-#'   $L_test       n_test × K matrix of observed projection scores ZF_test = Y_test %*% EF
-#'   $risk_scores  n_test-vector of Cox linear predictor values (ZF_test %*% EBeta)
+#'   $L_test       n_test × K matrix of projected patient loadings
+#'   $risk_scores  n_test-vector of Cox linear predictor values (L_test %*% EBeta)
 #'
 #' @examples
 #' # After training:
 #' # res <- fit_supervised_mf_modular(Y_train, time_train, status_train, K=5)
 #' # pred <- predict_supervised_mf(Y_test, res$EF, res$EBeta)
 #' # cindex <- concordance(Surv(time_test, status_test) ~ pred$risk_scores)
-predict_supervised_mf <- function(Y_test, EF, EBeta) {
+predict_supervised_mf <- function(Y_test, EF, EBeta, lambda = 1e-8) {
 
   # --- Input validation ---
   if (!is.matrix(Y_test) || !is.numeric(Y_test))
@@ -58,9 +59,9 @@ predict_supervised_mf <- function(Y_test, EF, EBeta) {
   if (!is.numeric(EBeta))
     stop("EBeta must be a numeric vector.")
 
-  p_test  <- ncol(Y_test)
+  p_test <- ncol(Y_test)
   p_train <- nrow(EF)
-  K       <- ncol(EF)
+  K <- ncol(EF)
 
   if (p_test != p_train)
     stop(sprintf("Dimension mismatch: Y_test has %d columns but EF has %d rows (p).",
@@ -69,10 +70,22 @@ predict_supervised_mf <- function(Y_test, EF, EBeta) {
     stop(sprintf("Dimension mismatch: EF has %d columns but EBeta has length %d.",
                  K, length(EBeta)))
 
-  # --- Direct projection (Cluster B: same formula as training) ---
-  # ZF_test = Y_test · EF  (n_test × K observed projection scores)
-  # No pseudo-inverse needed: eta_test = ZF_test · beta_tilde matches training.
-  L_test <- Y_test %*% EF
+  # --- Pseudo-inverse projection via SVD ---
+  # L_test = Y_test (n_test × p)  %*%  EF (p × K)  %*%  pinv(EF'EF)
+  #
+  # We use the Moore-Penrose pseudoinverse (SVD-based) rather than solve().
+  # ARD can drive some factor columns to near-zero, making EF'EF near-singular
+  # even with a fixed ridge term.  SVD thresholds tiny singular values at
+  # max(d) * lambda (relative), so collapsed factors contribute zero to L_test
+  # without causing numerical errors.  Collapsed factors also have EBeta[k] ≈ 0
+  # by the same prior shrinkage, so their contribution to risk_scores is correct.
+  FtF  <- crossprod(EF)
+  sv   <- svd(FtF)
+  # Zero out singular values below lambda * max(d): treats collapsed factors as inert
+  d_inv <- ifelse(sv$d > lambda * max(sv$d), 1 / sv$d, 0)
+  FtF_pinv <- sv$v %*% diag(d_inv, nrow = K, ncol = K) %*% t(sv$u)
+
+  L_test      <- Y_test %*% EF %*% FtF_pinv
 
   # --- Risk scores ---
   # Cox linear predictor: higher → worse prognosis

@@ -5,6 +5,49 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-04 — Cluster B architecture: dedicated files, alpha_F=0, interface reuse
+
+- **Decision (file structure):** Cluster B (η = (YF)β̃) lives entirely in three dedicated files:
+  `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R`, `code/fit_cox_on_yf.R`. Prediction
+  in `code/predict_cox_on_yf.R`. The Cluster A files (`fit_modular.R`, `update_L.R`,
+  `update_F.R`, `predict.R`, `update_beta.R`, `compute_elbo.R`) are restored to exact main-branch
+  versions. No cross-cluster coupling.
+
+- **Reason:** Cluster A and Cluster B must coexist without risk of regression. Separate files
+  mean: (1) the 171/171 Cluster A test suite validates Cluster A code unchanged; (2) Cluster B
+  bugs cannot corrupt Cluster A runs. Interface reuse (`update_beta.R`, `compute_elbo.R`) is
+  achieved by passing `ZF[,k]` as `EL_k` and `ZF[,k]^2` as `EL2_k` — observed projections
+  have zero posterior variance, so the existing signatures work without modification.
+
+- **Decision (alpha_F=0):** The Cluster B F update (`update_F_surv_YFB_k`) defaults to
+  `alpha=0` (pure-genomics only; no survival contribution to the F precision or pseudo-obs).
+
+- **Reason:** With η = ZF·β̃ (ZF = Y·EF), A_beta = Σ w_i ZF_ik². If EBeta ≈ 0, the Cox
+  Hessian w_i ≈ 0 at a stable equilibrium but ZF is non-zero (EF initialized from SVD). So
+  A_beta is non-zero, and the β update can escape zero. The root cause of the "normalize_AB"
+  instability (see below) was that A_surv in the F precision depended on EBeta², creating a
+  chicken-and-egg: EBeta≈0 → A_surv≈0 → x_F biased → EF grows → EL shrinks → positive
+  feedback. With alpha_F=0, A_F = A_gen (τ * sum EL²); no survival term in denominator.
+  EF is determined purely by genomics (same as unsupervised EBMF), and ZF can deliver
+  non-zero signal to the beta update regardless of EBeta.
+
+- **Trade-off:** With alpha_F=0, the loadings F are not jointly optimized for survival —
+  they reflect genomic variance only. Survival signal enters only through the beta update. 
+  This is less expressive than full joint optimization, but is numerically stable.
+
+- **Diagnostic finding (2026-05-04):** On synthetic data (n=120, p=300), alpha_F=0 gives
+  C-index=0.605 vs PCA=0.471 (3/8 active factors, converges in 11 iters). On merged PDAC
+  training (TCGA_PAAD+CPTAC, n=273, p=2000), EBeta collapses to ~4.7e-7 (0 active factors).
+  The β=0 collapse on real data persists even with alpha_F=0. Likely cause: on real data the
+  survival signal is weaker relative to noise, and the point-normal spike-and-slab EBNM
+  prior shrinks all betas to the spike component at the natural ZF scale (~sd(Y)·||EF_k||).
+
+- **Affected files:** `code/fit_cox_on_yf.R`, `code/update_F_surv_YFB.R`,
+  `code/update_L_surv_YFB.R`, `code/predict_cox_on_yf.R`,
+  `results/benchmark_sim/run_cox_on_yf_benchmark.R`, `tests/test_cox_on_yf_smoke.R`
+
+---
+
 ## 2026-04-30 — normalize_AB added to F update (Cluster B); positive-feedback instability discovered
 
 - **Decision:** Added `normalize_AB` parameter to `update_F_k()` and `update_F_all()` in

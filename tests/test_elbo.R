@@ -106,43 +106,45 @@ run_test("compute_ebnm_kl: when posterior = Gaussian N(mu, 1/A) and g = N(0,1) K
 # =============================================================================
 
 run_test("compute_survival_elbo returns a finite scalar", {
-  # Under Cluster B: ZF = Y·EF (observed projection scores, n x K)
   set.seed(4)
   n <- 20; K <- 3
-  ZF     <- matrix(rnorm(n * K), n, K)
-  EBeta  <- rnorm(K)
+  EL    <- matrix(rnorm(n * K), n, K)
+  EL2   <- EL^2 + 0.01  # add small variance
+  EBeta <- rnorm(K)
   EBeta2 <- EBeta^2 + 0.01
-  w      <- runif(n, 0.01, 0.5)
-  logPL  <- -5.0
-  res    <- compute_survival_elbo(logPL, w, ZF, EBeta, EBeta2)
+  w     <- runif(n, 0.01, 0.5)
+  logPL <- -5.0
+  res   <- compute_survival_elbo(logPL, w, EL, EL2, EBeta, EBeta2)
   assert_length(res, 1)
   assert_finite(res)
 })
 
 run_test("compute_survival_elbo with zero posterior variance returns logPL exactly", {
-  # When EBeta2 = EBeta^2 (no uncertainty in beta_tilde), Var_q(eta) = 0
+  # When EL2 = EL^2 and EBeta2 = EBeta^2 (no uncertainty), Var_q(eta) = 0
   # and the correction term vanishes: result should equal logPL.
   set.seed(5)
   n <- 15; K <- 2
-  ZF    <- matrix(rnorm(n * K), n, K)
+  EL    <- matrix(rnorm(n * K), n, K)
   EBeta <- rnorm(K)
   w     <- runif(n, 0.01, 0.3)
   logPL <- -8.5
-  res   <- compute_survival_elbo(logPL, w, ZF, EBeta, EBeta^2)
+  res   <- compute_survival_elbo(logPL, w, EL, EL^2, EBeta, EBeta^2)
   assert_near(res, logPL, tol = 1e-10, "should equal logPL when no variance")
 })
 
 run_test("compute_survival_elbo: uncertainty correction reduces value vs logPL", {
-  # With positive posterior variance in beta_tilde the correction term is > 0,
-  # so E_q[log PL] < logPL(eta_0).
+  # With positive posterior variance the correction term is > 0, so
+  # E_q[log PL] < logPL(eta_0).
   set.seed(6)
   n <- 20; K <- 2
-  ZF    <- matrix(rnorm(n * K), n, K)
+  EL    <- matrix(rnorm(n * K), n, K)
   EBeta <- rnorm(K)
   w     <- runif(n, 0.1, 1.0)
   logPL <- -6.0
+  # Add real variance: second moment > mean^2
+  EL2   <- EL^2 + 0.5
   EBeta2 <- EBeta^2 + 0.5
-  res   <- compute_survival_elbo(logPL, w, ZF, EBeta, EBeta2)
+  res   <- compute_survival_elbo(logPL, w, EL, EL2, EBeta, EBeta2)
   assert_true(res < logPL,
               sprintf("surv_elbo=%.4f should be < logPL=%.4f", res, logPL))
 })
