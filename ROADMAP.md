@@ -5,12 +5,15 @@
 > as the project evolves.
 >
 > **Status as of 2026-05-05:** Core model complete (modular CAVI, 171/171 tests passing).
-> Benchmark runners (`run_LB_benchmark.R`, `run_YFB_benchmark.R`) now support `--train-mode
-> merged|tcga_only|cptac_only`. All 6 full benchmark runs completed. **Key finding:** merged
-> training has never produced C-index > 0.50 (β→0 collapse). The archived 0.60–0.65 results
-> were from tcga_only training (v1 preprocessing, K=10, alpha CV) — not merged. Both LB and
-> YFB collapse β→0 on merged data. YFB collapses on single-cohort too. The β→0 collapse on
-> merged TCGA+CPTAC is the core unresolved problem. **Immediate priorities below.**
+> Benchmark runners now support `--train-mode merged|tcga_only|cptac_only`. Alpha CV added to
+> LB runner. K fixed: `k_pdac_single=10` (single-cohort), `k_pdac_synthetic=5` (synthetic).
+> First full benchmark run with these corrected settings is pending (re-run tcga_only + synthetic).
+> **Key empirical findings from 2026-05-05:** (1) K=20 on single-cohort (n=144) causes K_eff=1
+> and anti-concordant predictions — fixed by k_pdac_single=10. (2) K=8 synthetic causes anti-
+> concordant predictions (LB C=0.135, YFB C=0.092) — fixed by k_pdac_synthetic=5. (3) YFB β→0
+> collapse on all PDAC modes — structural issue: ZF scale pins EBeta near 0. (4) A_surv/A_gen
+> ratio at iter 1 = 0.0000–0.0011 on merged — L update structurally dominated by genomics.
+> The β→0 collapse on real data is the core unresolved problem. **Immediate priorities below.**
 
 ---
 
@@ -34,32 +37,35 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
-- [ ] **Re-run benchmarks with top_n=2000 to restore single-cohort baseline** `[Priority: High]` `[Effort: Small]`
-  `top_n_genes` was inadvertently raised to 5000. The archived 0.60–0.65 results used the DeSurv
-  spec of 2000 genes. Reverted in this session; need a clean run to confirm tcga_only/cptac_only
-  recover to C ≈ 0.60 with normal prior. Merged training expected to remain ~0.50 regardless.
+- [x] **Re-run benchmarks with top_n=2000 to restore single-cohort baseline** *(complete 2026-05-05)*
+  `top_n_genes` was inadvertently raised to 5000. Reverted to 2000. K=20 on single-cohort
+  data (tcga_only n=144) still gave K_eff=1 and C=0.37–0.50 — K overfitting, not top_n.
+  Fixed by adding `k_pdac_single=10` and re-running. See DECISIONS.md 2026-05-05.
+
+- [x] **Restore alpha CV to benchmark runners** *(complete 2026-05-05)*
+  `select_alpha_cv()` added to `run_LB_benchmark.R`. CV-selected alpha per train mode:
+  merged→0.30, tcga_only→0.70. YFB runner still uses fixed alpha=0.50 (requires separate
+  implementation — YFB-compatible alpha CV not yet implemented).
+
+- [ ] **Fix K overfitting and re-run single-cohort benchmarks to recover archived baseline** `[Priority: High]` `[Effort: Small]`
+  `k_pdac_single=10` added to globals.yml; both runners updated to use it for tcga_only and
+  cptac_only. Need to re-run tcga_only (LB and YFB) to confirm LB recovers C ≈ 0.63–0.65 and
+  YFB recovers non-zero betas. Also need to re-run k_pdac_synthetic=5 benchmark.
   *Files: `results/benchmark_sim/run_LB_benchmark.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
 
-- [ ] **Restore alpha CV to benchmark runners** `[Priority: High]` `[Effort: Small]`
-  Archived strong baseline used 5-fold CV to select alpha (0.5 for single-cohort, 0.3 for merged).
-  Current runners use fixed `alpha=0.5`. Re-adding `select_alpha_cv()` is low effort and ensures
-  merged training isn't penalized by a suboptimal fixed alpha.
-  *Files: `results/benchmark_sim/run_LB_benchmark.R`, `code/select_alpha_cv.R`*
-
 - [ ] **Diagnose and fix β→0 collapse on merged TCGA+CPTAC** `[Priority: High]` `[Effort: Large]`
-  Core unresolved problem. Both LB and YFB collapse β→0 on merged data regardless of prior, K,
-  or preprocessing. Cluster A resolved training-side β=0 but external generalization regressed
-  (4/5 cohorts). Cluster B (YFB) also collapses on all train modes including single-cohort.
-  Candidate next steps:
-  (1) **Instrument YFB A_surv/A_gen ratio** — add the `[iter1, k=?] ratio` printout from Cluster A
-  to `fit_cox_on_yf.R` and compare to LB on merged data. Determines if YFB has the same structural
-  imbalance, which would mean the reformulation didn't fix the root cause.
-  (2) **Cox warm-start for YFB** (`cox_warmstart=TRUE`) — initializes EBeta from a Cox fit on YF
-  scores; may prevent early β collapse if CAVI starts near a non-zero solution.
-  (3) **Understand single-cohort YFB collapse** — LB gets K_eff=2–4 on tcga_only but YFB collapses
-  there too. The problem is in the YF reformulation itself, not just merged-data batch effects.
-  The YF matrix scale (ZF = Y·F, sd ~ 10–100×) shrinks effective beta to ~0.003–0.008, making
-  even the normal prior place most mass near zero.
+  Core unresolved problem confirmed by 2026-05-05 benchmark runs. Both LB and YFB collapse
+  β→0 on merged data. LB merged: K_eff=1 (K=20), C≈0.38. YFB merged: K_eff=0, all external
+  C=0.50 (point_normal) or 0.39–0.46 (normal). A_surv/A_gen ratio at iter 1 is 0.0000–0.0011
+  on merged — the L update is structurally dominated by genomics; model degenerates toward
+  unsupervised PCA. Candidate next steps:
+  (1) **Scale normalization in L update** — normalize A_surv up to match A_gen scale at each
+  iteration. Tried in Cluster A (`normalize_AB=TRUE`) but external results regressed (4/5
+  cohorts). Requires a more principled normalization that doesn't over-shrink L.
+  (2) **Cox warm-start for YFB** (`cox_warmstart=TRUE`) — initializes EBeta from a Cox fit on
+  YF scores; may prevent early β collapse on real data.
+  (3) **Understand YFB scale issue** — ZF = Y·EF scale (sum over p=2000 genes) pins effective
+  beta near 0. May need to normalize ZF by ‖EF_k‖ before passing to beta update.
   *Files: `code/fit_cox_on_yf.R`, `docs/beta_zero_fix_design.md`, `docs/update_L_fix.md`*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`

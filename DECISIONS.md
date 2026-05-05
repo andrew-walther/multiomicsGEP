@@ -5,6 +5,42 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-05 — K overfitting fix: k_pdac_single=10, k_pdac_synthetic=5; alpha CV added to LB runner
+
+- **Decision (k_pdac_single=10):** Added `benchmark.k_pdac_single=10` to `config/globals.yml`.
+  Both `run_LB_benchmark.R` and `run_YFB_benchmark.R` now use `K=20` for merged training
+  (n=273) and `K=10` for single-cohort training (tcga_only n=144, cptac_only n=129).
+  **Rationale:** K=20 on single-cohort data gives K/n≈0.14 — too many factors for the sample
+  size. The archived baseline (C=0.63–0.65 on tcga_only) used K=10. Empirical confirmation:
+  running K=20 on tcga_only (2026-05-05) gives K_eff=1 and C=0.37–0.50 — worse than random.
+
+- **Decision (k_pdac_synthetic=5):** Changed `benchmark.k_pdac_synthetic` from 8 to 5 to
+  match `synthetic.k_true=5`. **Rationale:** K=8 on synthetic DGP with K_true=5 gives
+  LB C=0.135 and YFB C=0.092 — both anti-concordant. ARD with K>K_true absorbs signal variance
+  into null factors, causing the model to miss survival-relevant directions. K_SYN must equal
+  K_true to avoid this.
+
+- **Decision (alpha CV in LB runner):** `run_LB_benchmark.R` now calls `select_alpha_cv()`
+  before fitting each train mode. Alpha is CV-selected per mode and saved in the log and CSV.
+  YFB runner still uses fixed alpha=0.50 (alpha CV calls `fit_supervised_mf_modular` internally,
+  which is not compatible with `fit_cox_on_yf` — YFB alpha CV requires a separate implementation).
+
+- **Empirical findings from 2026-05-05 benchmark runs:**
+  - **A_surv/A_gen imbalance confirmed across all modes:** LB iter-1 ratio = 0.0000–0.0069
+    (tcga_only) / 0.0000–0.0011 (merged). The L update is structurally dominated by genomics,
+    reducing the model to approximately unsupervised PCA followed by a post-hoc Cox fit.
+  - **YFB β→0 collapse on all PDAC modes:** Both point_normal (EBeta exactly 0) and normal
+    (EBeta ~1e-16, machine epsilon) give K_eff=0 on merged and single-cohort PDAC. The ZF
+    scale (‖Y·EF_k‖²) is large (p=2000 genes summed), driving the posterior mean to zero.
+  - **LB tcga_only with K=20:** K_eff=1, C=0.37–0.50. Fixed by k_pdac_single=10.
+  - **LB merged with K=20:** K_eff=1, C≈0.38. Not fixed — structural A_surv/A_gen issue.
+
+- **Affected files:** `config/globals.yml` (k_pdac_single, k_pdac_synthetic),
+  `results/benchmark_sim/run_LB_benchmark.R` (alpha CV block, K assignment),
+  `results/benchmark_sim/run_YFB_benchmark.R` (K assignment)
+
+---
+
 ## 2026-05-05 — Benchmark train-mode support, benchmark_helpers.R, top_n_genes reverted to 2000
 
 - **Decision (--train-mode):** Both benchmark runners now accept `--train-mode merged|tcga_only|cptac_only`.

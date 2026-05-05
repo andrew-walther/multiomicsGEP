@@ -44,9 +44,10 @@ tryCatch(source("code/fit_modular.R"), error = function(e) invisible(NULL))  # f
 source("code/predict.R")
 source("code/train_test_split.R")
 source("code/preprocess_desurv.R")
+source("code/select_alpha_cv.R")  # select_alpha_cv() — LB-only alpha CV via 5-fold stratified CV
 
 # Benchmark defaults from globals.yml
-K          <- if (QUICK_MODE) 5 else cfg$benchmark$k_pdac
+K          <- if (QUICK_MODE) 5 else if (TRAIN_MODE == "merged") cfg$benchmark$k_pdac else cfg$benchmark$k_pdac_single
 K_SYN      <- if (QUICK_MODE) 5 else cfg$benchmark$k_pdac_synthetic
 ALPHA      <- cfg$benchmark$alpha
 LAMBDA     <- cfg$benchmark$lambda
@@ -57,8 +58,10 @@ BETA_THRESH <- cfg$k_selection$beta_threshold
 MAX_ITER   <- if (QUICK_MODE) 30 else cfg$cavi$max_iter
 
 cat("=== LB Benchmark (Cluster A — eta = L·beta) ===\n")
-cat(sprintf("    K=%d (synthetic K=%d) | alpha=%.2f | lambda=%.2f | N_burnin=%d\n",
-            K, K_SYN, ALPHA, LAMBDA, N_BURNIN))
+cat(sprintf("    K=%d (synthetic K=%d) | alpha=%s | lambda=%.2f | N_burnin=%d\n",
+            K, K_SYN,
+            if (QUICK_MODE) sprintf("%.2f (fixed)", ALPHA) else sprintf("%.2f (CV-selected per mode)", ALPHA),
+            LAMBDA, N_BURNIN))
 cat(sprintf("    Priors: %s\n", paste(PRIORS, collapse = " vs ")))
 cat(sprintf("    Train mode: %s | Quick mode: %s\n\n", TRAIN_MODE, QUICK_MODE))
 
@@ -173,6 +176,30 @@ if (!pdac_available) {
   }
 
   cat(sprintf("    Training matrix: n=%d, p=%d\n", nrow(Y_train), ncol(Y_train)))
+
+  # Alpha CV — skip in QUICK_MODE to keep smoke runs fast
+  if (!QUICK_MODE) {
+    cat("    Running alpha CV (5-fold) ...\n")
+    cv_res <- select_alpha_cv(
+      Y_train, time_train, status_train,
+      alpha_grid   = cfg$cavi$alpha_grid,
+      n_folds      = cfg$cavi$n_cv_folds,
+      K_max        = K,
+      max_iter     = MAX_ITER,
+      tol          = cfg$cavi$tol,
+      prior_LF     = "point_exponential",
+      lambda       = LAMBDA,
+      N_burnin     = N_BURNIN,
+      normalize_AB = NORM_AB,
+      verbose      = FALSE
+    )
+    ALPHA <- cv_res$alpha_opt
+    cat(sprintf("    Alpha CV selected: %.2f (rule: %s)\n", ALPHA, cv_res$selection_rule))
+    cat("    CV table:\n")
+    print(cv_res$cv_table)
+  } else {
+    cat(sprintf("    Alpha CV skipped (QUICK_MODE) — using fixed alpha=%.2f\n", ALPHA))
+  }
 
   fit_lb <- list()   # store one fit per prior for Section 3
   for (pr in PRIORS) {

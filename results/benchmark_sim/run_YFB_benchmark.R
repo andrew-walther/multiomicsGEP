@@ -49,7 +49,7 @@ source("code/train_test_split.R")
 source("code/preprocess_desurv.R")
 
 # Benchmark defaults from globals.yml
-K            <- if (QUICK_MODE) 5 else cfg$benchmark$k_pdac
+K            <- if (QUICK_MODE) 5 else if (TRAIN_MODE == "merged") cfg$benchmark$k_pdac else cfg$benchmark$k_pdac_single
 K_SYN        <- if (QUICK_MODE) 5 else cfg$benchmark$k_pdac_synthetic
 ALPHA        <- cfg$benchmark$alpha
 LAMBDA       <- cfg$benchmark$lambda
