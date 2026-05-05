@@ -98,6 +98,7 @@ select_alpha_cv <- function(Y, time, status,
         K = K_max,
         alpha = alpha,
         verbose = verbose,
+        sign_correction = FALSE,   # Phase C must not run in CV folds
         ...
       )
 

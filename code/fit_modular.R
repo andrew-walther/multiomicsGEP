@@ -173,20 +173,21 @@ calc_cox_taylor <- function(eta, time, status) {
 #'   $history  list(rmse, elbo_proxy, elbo_full, delta_L, delta_Beta,
 #'                  delta_elbo_rel, converged, n_iter)
 fit_supervised_mf_modular <- function(Y, time, status,
-                                      K            = 5,
-                                      max_iter     = 100,
-                                      tol          = 1e-5,
-                                      prior_LF     = "point_exponential",
-                                      prior_beta   = "point_normal",
-                                      alpha        = 0.5,
-                                      lambda       = 1.0,
-                                      init_method  = "svd",
-                                      EL_init      = NULL,
-                                      EF_init      = NULL,
-                                      N_burnin     = 0,
-                                      alpha_schedule = NULL,
-                                      normalize_AB = FALSE,
-                                      verbose      = TRUE) {
+                                      K               = 5,
+                                      max_iter        = 100,
+                                      tol             = 1e-5,
+                                      prior_LF        = "point_exponential",
+                                      prior_beta      = "point_normal",
+                                      alpha           = 0.5,
+                                      lambda          = 1.0,
+                                      init_method     = "svd",
+                                      EL_init         = NULL,
+                                      EF_init         = NULL,
+                                      N_burnin        = 0,
+                                      alpha_schedule  = NULL,
+                                      normalize_AB    = FALSE,
+                                      sign_correction = TRUE,
+                                      verbose         = TRUE) {
 
   n <- nrow(Y); p <- ncol(Y)
 
@@ -577,6 +578,31 @@ fit_supervised_mf_modular <- function(Y, time, status,
     }
 
   }  # end CAVI loop
+
+  # Phase C: Check training concordance; flip EBeta sign if anti-concordant.
+  # The pmax(SVD) initialisation discards sign information: EL[:,k] may be
+  # anti-correlated with the true survival direction, causing EL·EBeta to be
+  # inversely related to risk. A global sign flip of EBeta corrects this:
+  #   eta_new = EL · (-EBeta) = -(eta_original)  ⟹  C_new = 1 - C_train.
+  # This is identical in spirit to Phase C in fit_cox_on_yf.R. The fix is
+  # applied post-convergence so the CAVI path and ELBO are unaffected.
+  #
+  # sign_correction = FALSE during cross-validation (select_alpha_cv), because
+  # per-fold sign flips would introduce fold-to-fold inconsistency and corrupt
+  # alpha selection. CV already handles sign via I(-pred$risk_scores).
+  if (sign_correction) {
+    eta_train <- as.vector(EL %*% EBeta)
+    c_train   <- as.numeric(
+      concordance(Surv(time, status) ~ eta_train)$concordance
+    )
+    if (c_train < 0.5) {
+      if (verbose) {
+        cat(sprintf("    [Phase C] Training C=%.4f < 0.5 — flipping EBeta sign\n", c_train))
+      }
+      EBeta  <- -EBeta
+      EBeta2 <- EBeta^2
+    }
+  }
 
   list(
     EL     = EL,

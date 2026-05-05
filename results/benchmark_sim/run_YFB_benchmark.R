@@ -55,7 +55,7 @@ ALPHA        <- cfg$benchmark$alpha
 LAMBDA       <- cfg$benchmark$lambda
 N_BURNIN     <- cfg$benchmark$n_burnin
 NORM_AB      <- cfg$benchmark$normalize_ab
-COX_WARMSTART <- cfg$benchmark$cox_warmstart
+COX_WARMSTART <- "--cox-warmstart" %in% args || cfg$benchmark$cox_warmstart
 PRIORS       <- cfg$benchmark$prior_beta_compare
 BETA_THRESH  <- cfg$k_selection$beta_threshold
 MAX_ITER     <- if (QUICK_MODE) 30 else cfg$cavi$max_iter
@@ -71,8 +71,9 @@ cat(sprintf("    Train mode: %s | Quick mode: %s\n\n", TRAIN_MODE, QUICK_MODE))
 OUT_DIR <- "results/benchmark_sim/outputs/YFB_benchmark"
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
-results_rows <- list()
-ebeta_rows   <- list()
+results_rows    <- list()
+ebeta_rows      <- list()
+riskscores_rows <- list()   # per-subject: time, status, risk_score (for KM curves)
 
 # ============================================================
 # Section 1 — Synthetic Validation
@@ -111,6 +112,12 @@ if (RUN_SYNTHETIC) {
     k_eff <- sum(abs(fit$EBeta) > BETA_THRESH)
     cat(sprintf("      C-index=%.4f | K_eff=%d | EBeta: %s\n",
                 c_idx, k_eff, paste(sprintf("%.4f", fit$EBeta), collapse = " ")))
+    riskscores_rows[[length(riskscores_rows) + 1]] <- data.frame(
+      train_mode = TRAIN_MODE, model = "YFB", prior_beta = pr,
+      cohort = "synthetic_holdout",
+      time = t_te, status = s_te, risk_score = pred$risk_scores,
+      stringsAsFactors = FALSE
+    )
     results_rows[[length(results_rows) + 1]] <- data.frame(
       train_mode = TRAIN_MODE,
       section    = "1_synthetic",
@@ -259,6 +266,12 @@ if (!pdac_available || length(fit_yfb) == 0) {
         c_idx <- as.numeric(concordance(Surv(raw$time, raw$status) ~ pred$risk_scores)$concordance)
         cat(sprintf("    %s (n=%d, genes=%d): C-index=%.4f\n",
                     cohort, raw$n, length(common), c_idx))
+        riskscores_rows[[length(riskscores_rows) + 1]] <- data.frame(
+          train_mode = TRAIN_MODE, model = "YFB", prior_beta = pr,
+          cohort = cohort,
+          time = raw$time, status = raw$status, risk_score = pred$risk_scores,
+          stringsAsFactors = FALSE
+        )
         results_rows[[length(results_rows) + 1]] <- data.frame(
           train_mode = TRAIN_MODE,
           section    = "3_external",
@@ -304,6 +317,13 @@ if (length(results_rows) > 0) {
     ebeta_df <- do.call(rbind, ebeta_rows)
     write.csv(ebeta_df, ebeta_csv_path, row.names = FALSE)
     cat(sprintf("  EBeta detail saved to: %s\n", ebeta_csv_path))
+  }
+
+  if (length(riskscores_rows) > 0) {
+    rs_df       <- do.call(rbind, riskscores_rows)
+    rs_csv_path <- file.path(OUT_DIR, sprintf("YFB_riskscores_%s.csv", TRAIN_MODE))
+    write.csv(rs_df, rs_csv_path, row.names = FALSE)
+    cat(sprintf("  Risk scores saved to: %s\n", rs_csv_path))
   }
   cat("\n")
 

@@ -69,8 +69,9 @@ OUT_DIR <- "results/benchmark_sim/outputs/LB_benchmark"
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 # Accumulate one-row results for each (section, prior) combination
-results_rows <- list()
-ebeta_rows   <- list()
+results_rows    <- list()
+ebeta_rows      <- list()
+riskscores_rows <- list()   # per-subject: time, status, risk_score (for KM curves)
 
 # ============================================================
 # Section 1 — Synthetic Validation
@@ -110,6 +111,12 @@ if (RUN_SYNTHETIC) {
     beta_rng <- range(fit$EBeta)
     cat(sprintf("      C-index=%.4f | K_eff=%d | EBeta range [%.3e, %.3e]\n",
                 c_idx, k_eff, beta_rng[1], beta_rng[2]))
+    riskscores_rows[[length(riskscores_rows) + 1]] <- data.frame(
+      train_mode = TRAIN_MODE, model = "LB", prior_beta = pr,
+      cohort = "synthetic_holdout",
+      time = t_te, status = s_te, risk_score = pred$risk_scores,
+      stringsAsFactors = FALSE
+    )
     results_rows[[length(results_rows) + 1]] <- data.frame(
       train_mode = TRAIN_MODE,
       section    = "1_synthetic",
@@ -283,6 +290,12 @@ if (!pdac_available || length(fit_lb) == 0) {
         c_idx <- as.numeric(concordance(Surv(raw$time, raw$status) ~ pred$risk_scores)$concordance)
         cat(sprintf("    %s (n=%d, genes=%d): C-index=%.4f\n",
                     cohort, raw$n, length(common), c_idx))
+        riskscores_rows[[length(riskscores_rows) + 1]] <- data.frame(
+          train_mode = TRAIN_MODE, model = "LB", prior_beta = pr,
+          cohort = cohort,
+          time = raw$time, status = raw$status, risk_score = pred$risk_scores,
+          stringsAsFactors = FALSE
+        )
         results_rows[[length(results_rows) + 1]] <- data.frame(
           train_mode = TRAIN_MODE,
           section    = "3_external",
@@ -328,6 +341,13 @@ if (length(results_rows) > 0) {
     ebeta_df <- do.call(rbind, ebeta_rows)
     write.csv(ebeta_df, ebeta_csv_path, row.names = FALSE)
     cat(sprintf("  EBeta detail saved to: %s\n", ebeta_csv_path))
+  }
+
+  if (length(riskscores_rows) > 0) {
+    rs_df      <- do.call(rbind, riskscores_rows)
+    rs_csv_path <- file.path(OUT_DIR, sprintf("LB_riskscores_%s.csv", TRAIN_MODE))
+    write.csv(rs_df, rs_csv_path, row.names = FALSE)
+    cat(sprintf("  Risk scores saved to: %s\n", rs_csv_path))
   }
   cat("\n")
 

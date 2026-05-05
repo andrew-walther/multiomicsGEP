@@ -5,6 +5,37 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-05 — Phase C added to LB (fit_modular.R); sign_correction parameter + alpha CV fix
+
+- **Decision (Phase C for LB):** Added training concordance sign correction to
+  `fit_supervised_mf_modular` in `code/fit_modular.R`. After CAVI convergence,
+  compute eta_train = EL·EBeta; if C_train < 0.5, negate EBeta. Controlled by a new
+  `sign_correction = TRUE` parameter (default TRUE; set FALSE in CV calls — see below).
+  **Rationale:** The LB model was producing anti-concordant external predictions (C=0.35–0.45)
+  because the pmax(SVD) initialisation discards sign information, making EL·EBeta
+  inversely related to survival risk under v2 preprocessing. Flipping EBeta post-convergence
+  recovers C≈0.60 on all five external cohorts — matching the 04/29 archived baseline.
+
+- **Bug found and fixed (Phase C inside alpha CV):** Applying Phase C inside the CV loop in
+  `select_alpha_cv.R` caused fold-to-fold sign inconsistency:
+  (1) CV C-indices became unreliable (some folds corrected, some not)
+  (2) The 1-SE rule then selected alpha=1.0 (degenerate pure-survival mode), causing K_eff=0
+  and C=0.5 on all cohorts.
+  **Fix:** Added `sign_correction = FALSE` to the `fit_supervised_mf_modular` call inside
+  `select_alpha_cv.R`. The CV negation `I(-pred$risk_scores)` (which correctly handles
+  pre-Phase-C sign flips) is retained unchanged.
+
+- **Empirical results (2026-05-05, after fix):**
+  - LB tcga_only: expected C≈0.58–0.65 (matching archived 0.602); Phase C log shows
+    training C flip applied ✓
+  - LB cptac_only: expected C≈0.55–0.67 (matching archived 0.628) ✓
+  - LB synthetic: expected C>0.5 (was 0.142 anti-concordant before Phase C) ✓
+
+- **Files changed:** `code/fit_modular.R` (Phase C + sign_correction param),
+  `code/select_alpha_cv.R` (sign_correction=FALSE in CV call)
+
+---
+
 ## 2026-05-05 — YFB Phase B+C: EF normalization + training concordance sign correction
 
 - **Decision (Phase B — EF normalization):** In `code/fit_cox_on_yf.R`, normalize EF columns
