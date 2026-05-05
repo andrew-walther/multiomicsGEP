@@ -5,6 +5,41 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-04 — Benchmark consolidation: K_max=10, prior comparison, cox_warmstart=FALSE, beta_threshold=0.001
+
+- **Decision (K_max):** Canonical benchmark uses K_max=10 (from `cfg$cavi$k_max`). K=20 was
+  used only for Cluster A/B diagnostic runs to test whether β=0 was a K-saturation artifact.
+  It is not: on merged PDAC (n=273, p=2000), K=20 gave 0–2 active factors, same as K=10.
+  K_max=10 gives K_eff ≈ 4 in practice (ARD pruning).
+
+- **Decision (prior comparison):** Both benchmark runners (`run_LB_benchmark.R`,
+  `run_YFB_benchmark.R`) run `prior_beta="point_normal"` AND `prior_beta="normal"` in a
+  single pass for side-by-side comparison. Rationale: point_normal (spike-and-slab) collapses
+  all EBeta to zero on real PDAC data for both Cluster A and Cluster B (point_normal EBNM
+  shrinks to the spike component when survival signal is weak relative to ZF scale). Normal
+  prior avoids this collapse at the cost of potentially retaining too many active factors.
+  Outcome of external C-index comparison is an open empirical question — running both avoids
+  having to re-fit to investigate.
+
+- **Decision (cox_warmstart=FALSE as Cluster B baseline):** `fit_cox_on_yf()` now defaults
+  to `cox_warmstart=FALSE` (EBeta initialized to 0). Rationale: matches Cluster A behavior
+  for apples-to-apples comparison. Cox warm-start calibrates EBeta to the ZF scale from
+  iteration 1, but with normal prior the CAVI itself can escape zero — warm-start may be
+  unnecessary. Toggleable via `cox_warmstart=TRUE` if normal prior produces unstable initial betas.
+
+- **Decision (beta_threshold=0.001):** Lowered from 0.05 in `config/globals.yml`. Under the
+  YFB reformulation (η = ZF·β̃ where ZF = Y·EF), the natural EBeta scale is
+  beta_true / sd(ZF) ≈ 0.003–0.008. A threshold of 0.05 would classify all YFB betas as
+  inactive even when they are clearly non-zero. 0.001 distinguishes spike-shrunk zeros from
+  non-zero betas in both LB and YFB models.
+
+- **Affected files:** `config/globals.yml` (benchmark section, beta_threshold), `code/fit_cox_on_yf.R`
+  (prior_beta="normal", N_burnin=0, cox_warmstart=FALSE, normalize_AB=FALSE defaults),
+  `results/benchmark_sim/run_LB_benchmark.R` (new), `results/benchmark_sim/run_YFB_benchmark.R` (new),
+  `results/benchmark_sim/archive/` (7 one-off scripts archived)
+
+---
+
 ## 2026-05-04 — Cluster B architecture: dedicated files, alpha_F=0, interface reuse
 
 - **Decision (file structure):** Cluster B (η = (YF)β̃) lives entirely in three dedicated files:

@@ -118,8 +118,15 @@ calc_cox_taylor_yf <- function(eta, time, status) {
 #' @param init_method character: "svd" (default), "random", or "custom"
 #' @param EL_init  Optional n x K matrix: custom initial loadings
 #' @param EF_init  Optional p x K matrix: custom initial factors
-#' @param N_burnin integer: beta-only burn-in iterations before joint CAVI (default 5).
-#'                 Ensures EBeta is non-zero before L and F updates see survival signal.
+#' @param N_burnin integer: beta-only burn-in iterations before joint CAVI (default 0).
+#'                 0 = off (Cluster A baseline). N_burnin=5 or 10 may help if betas
+#'                 collapse after the first joint CAVI iteration.
+#' @param cox_warmstart logical: initialize EBeta via Cox regression on ZF before CAVI
+#'                 (default FALSE). FALSE = matches Cluster A behavior (EBeta starts at 0).
+#'                 TRUE may help if normal prior produces unstable initial betas.
+#' @param normalize_AB logical: rescale survival vs. genomics contributions in F update
+#'                 (default FALSE). No-op when alpha_F=0 (current default; F update is
+#'                 pure-genomics). Forward-compatible when alpha_F > 0 is enabled.
 #' @param alpha_schedule NULL or list(warmup_iters, ramp_iters): ramp alpha from 0
 #'                 up to `alpha` over warmup+ramp iterations.
 #' @param verbose  Logical: print iteration logs? (default TRUE)
@@ -131,13 +138,15 @@ fit_cox_on_yf <- function(Y, time, status,
                            max_iter     = 100,
                            tol          = 1e-5,
                            prior_LF     = "point_exponential",
-                           prior_beta   = "point_normal",
+                           prior_beta   = "normal",
                            alpha        = 0.5,
                            lambda       = 1.0,
                            init_method  = "svd",
                            EL_init      = NULL,
                            EF_init      = NULL,
-                           N_burnin     = 5,
+                           N_burnin     = 0,
+                           cox_warmstart  = FALSE,
+                           normalize_AB   = FALSE,
                            alpha_schedule = NULL,
                            verbose      = TRUE) {
 
@@ -193,30 +202,37 @@ fit_cox_on_yf <- function(Y, time, status,
   EL2 <- EL^2
   EF2 <- EF^2
 
-  # Warm-start beta via Cox regression on ZF = Y·EF (Cluster B predictor).
-  # Under eta = ZF · beta_tilde, using ZF for the warm-start ensures EBeta
-  # is calibrated to the correct scale from iteration 1.
-  ZF_init <- Y %*% EF                              # n × K
-  df_cox <- as.data.frame(ZF_init)
-  colnames(df_cox) <- paste0("L", 1:K)
-  df_cox$time   <- time
-  df_cox$status <- status
-  cox_init <- tryCatch(
-    coxph(as.formula("Surv(time, status) ~ ."), data = df_cox, x = FALSE),
-    error = function(e) NULL
-  )
-  if (!is.null(cox_init)) {
-    cx_coef <- coef(cox_init)
-    cx_coef[is.na(cx_coef)] <- 0
-    EBeta <- cx_coef
+  # Optionally warm-start beta via Cox regression on ZF = Y·EF.
+  # cox_warmstart=FALSE (default) matches Cluster A behavior: EBeta starts at 0.
+  # cox_warmstart=TRUE calibrates EBeta to the ZF scale before CAVI begins.
+  if (cox_warmstart) {
+    ZF_init <- Y %*% EF                              # n × K
+    df_cox <- as.data.frame(ZF_init)
+    colnames(df_cox) <- paste0("L", 1:K)
+    df_cox$time   <- time
+    df_cox$status <- status
+    cox_init <- tryCatch(
+      coxph(as.formula("Surv(time, status) ~ ."), data = df_cox, x = FALSE),
+      error = function(e) NULL
+    )
+    if (!is.null(cox_init)) {
+      cx_coef <- coef(cox_init)
+      cx_coef[is.na(cx_coef)] <- 0
+      EBeta <- cx_coef
+    } else {
+      EBeta <- rep(0, K)
+    }
+    if (verbose) {
+      cat(sprintf("    [init] Cox warm-start EBeta range: [%.3e, %.3e]\n",
+                  min(EBeta), max(EBeta)))
+    }
   } else {
     EBeta <- rep(0, K)
   }
   EBeta2 <- EBeta^2
 
-  if (verbose) {
-    cat(sprintf("    [init] Cox warm-start EBeta range: [%.3e, %.3e]\n",
-                min(EBeta), max(EBeta)))
+  if (verbose && !cox_warmstart) {
+    cat(sprintf("    [init] EBeta initialized to 0 (cox_warmstart=FALSE)\n"))
   }
 
   # ==========================================================================

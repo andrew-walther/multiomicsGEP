@@ -26,7 +26,10 @@ cavi:
 # ------------------------------------------------------------------------------
 k_selection:
   pve_threshold: 0.01    # minimum PVE (1%) to retain a factor
-  beta_threshold: 0.05   # minimum |beta| to retain a factor
+  beta_threshold: 0.001  # minimum |beta| to retain a factor. Lowered from 0.05: under YFB
+                         # (eta = ZF * beta_tilde), natural EBeta scale is ~0.003–0.008
+                         # (beta_true / sd(ZF)) — 0.05 would count all YFB betas as inactive.
+                         # 0.001 distinguishes non-zero from spike-shrunk betas in both models.
 
 # ------------------------------------------------------------------------------
 # Synthetic simulation
@@ -45,6 +48,35 @@ preprocessing:
   top_n_genes: 5000      # NULL = no gene filter; integer = top N most-variable genes
   center_columns: true
   batch_correct: true
+
+# ------------------------------------------------------------------------------
+# Benchmark runner defaults (run_LB_benchmark.R, run_YFB_benchmark.R)
+# ------------------------------------------------------------------------------
+benchmark:
+  k_pdac: 10             # K_max for PDAC fits. Canonical benchmark value (k_max=10 from
+                         # globals cavi section); ARD pruning selects K_eff ≈ 4 in practice.
+                         # K=20 was used only for Cluster A/B β=0 diagnostics — not for results.
+  k_pdac_synthetic: 8    # K_max for synthetic validation in benchmark runners.
+                         # K_true=5 in DGP; K_max=8 gives ARD room to prune correctly.
+  n_burnin: 0            # Beta-only burn-in iterations before joint CAVI. 0 = off (baseline).
+                         # Tried: N_burnin=10 (Cluster A smoke); marginal or negative effect
+                         # on external C-index vs. baseline. Keep 0 for clean comparison.
+  normalize_ab: false    # Rescale survival vs. genomics contributions in L update (Cluster A)
+                         # or F update (Cluster B, only effective when alpha_F > 0).
+                         # Tried: TRUE in Cluster A smoke — mixed external results, 4/5 cohorts
+                         # regressed. Keep FALSE for baseline.
+  cox_warmstart: false   # Cox-based EBeta initialization in Cluster B (fit_cox_on_yf).
+                         # FALSE = matches Cluster A behavior (EBeta starts at 0). Toggleable
+                         # for experiments; effect unclear with normal prior.
+  prior_beta_compare:    # Both priors run in each benchmark for side-by-side comparison.
+    - "point_normal"     # Spike-and-slab: promotes sparsity; collapses to beta=0 when ZF
+                         # scale is large and signal is weak (observed on merged PDAC data).
+    - "normal"           # Pure Gaussian: no spike; avoids beta=0 collapse but may retain
+                         # too many active factors. Trade-off unclear — run both and compare.
+  alpha: 0.5             # Survival mixing weight. 0.5 validated as best by CV; alpha grid
+                         # tested: [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0].
+  lambda: 1.0            # Survival-term scale multiplier. lambda=1 matches or beats p/n and
+                         # 2p/n on C-index and beta RMSE (sandbox test 2026-04-24).
 
 # ------------------------------------------------------------------------------
 # Evaluation

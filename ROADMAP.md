@@ -12,11 +12,12 @@
 > via instrumentation + inner-loop reorder + N_burnin + normalize_AB. External generalization
 > mixed (1/5 cohorts improved vs. baseline).
 >
-> **Cluster B (Cox-on-YF, `cox-on-yf` branch) infrastructure complete:** `fit_cox_on_yf.R`,
-> `predict_cox_on_yf.R`, `update_L_surv_YFB.R`, `update_F_surv_YFB.R`, benchmark runner
-> `run_cox_on_yf_benchmark.R`, smoke test 3/3 PASS. Synthetic: C-index 0.605 vs PCA 0.471,
-> 3 active factors. **Real-data β=0 collapse persists on PDAC (0 active factors).**
-> Next priority: fix β=0 on real PDAC data for Cluster B.
+> **Cluster B (Cox-on-YF) merged to `main`:** `fit_cox_on_yf.R`, `predict_cox_on_yf.R`,
+> `update_L_surv_YFB.R`, `update_F_surv_YFB.R`, smoke test 3/3 PASS. Benchmark infrastructure
+> consolidated: `run_LB_benchmark.R` (Cluster A) + `run_YFB_benchmark.R` (Cluster B), both with
+> side-by-side point_normal vs normal prior comparison. **Real-data β=0 collapse persists on PDAC
+> for point_normal prior in both models.** Normal prior shows non-zero betas; external C-index
+> comparison is the next empirical question. Next priority: run full PDAC benchmarks and compare.
 
 ---
 
@@ -38,20 +39,25 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ---
 
-## 🔥 Immediate Priorities (Cluster B real-data β=0)
+## 🔥 Immediate Priorities
 
-- [ ] **Fix β=0 collapse in Cox-on-YF on real PDAC data** `[Priority: High]` `[Effort: Medium]`
-  `fit_cox_on_yf()` with alpha_F=0 works on synthetic data (C-index 0.605 vs PCA 0.471, 3
-  active factors) but produces EBeta≈0 (0 active factors) on merged PDAC (n=273, p=2000,
-  TCGA_PAAD+CPTAC, 80 iters). The difference: synthetic signal-to-noise is high (beta_true=0.8),
-  while PDAC survival signal is weak relative to the ZF scale (~sd(Y)·||EF_k||). The point-normal
-  EBNM prior shrinks all betas to the spike component at the natural ZF scale. Candidate fixes:
-  (1) **Rescale ZF at each iteration** — normalize each ZF[:,k] to unit variance before the beta
-  update (so beta operates at the clinical-effect scale, not ~1/300); (2) **Warm-start beta from
-  univariate Cox on each ZF[:,k]** before starting CAVI; (3) **Widen beta prior** (e.g., normal
-  instead of point-normal spike-and-slab, using alpha=0 to disable spike);
-  (4) **Increase N_burnin** (more pure-beta iterations before F/L updates disturb ZF structure).
-  *Files: `code/fit_cox_on_yf.R`, `results/benchmark_sim/run_cox_on_yf_benchmark.R`*
+- [ ] **Run full PDAC benchmarks: LB vs YFB, point_normal vs normal** `[Priority: High]` `[Effort: Small]`
+  Quick-mode benchmarks confirm: point_normal prior collapses to β=0 on real PDAC for both
+  LB (Cluster A) and YFB (Cluster B). Normal prior produces non-zero EBeta. Outcome of
+  external C-index is the key empirical question. Run full benchmarks (K=10, max_iter=300)
+  on Longleaf or locally and inspect the CSV output tables.
+  *Files: `results/benchmark_sim/run_LB_benchmark.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
+
+- [ ] **Prior comparison (normal vs point_normal): follow-up experiments** `[Priority: High]` `[Effort: Medium]`
+  Based on full benchmark results, decide on the best prior and consider:
+  (1) `prior_beta="point_laplace"` — heavier-tailed slab than point_normal, promotes sparsity
+  without a hard spike; may avoid β=0 while retaining more factor selectivity than normal.
+  (2) `cox_warmstart=TRUE` in Cluster B — Cox-init sets EBeta at the correct scale before CAVI;
+  test whether it helps normal prior converge faster.
+  (3) `N_burnin=5` or `10` — holds EL/EF fixed while beta stabilizes after first joint iteration.
+  (4) `alpha_F=0.1–0.3` (Cluster B only) — partial survival signal to F update; needs
+  `normalize_AB=TRUE` to balance scales (see DECISIONS.md 2026-04-30 for instability warning).
+  *Files: `code/fit_cox_on_yf.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
 
 ---
 
@@ -86,16 +92,8 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   The recovered β favors training-Cox-aligned directions that don't transport. See new entry
   "Cluster B / Cox-on-YF reformulation" below — this is the design doc's structural alternative.*
 
-- [ ] **Cluster B — Cox-on-YF reformulation** `[Priority: High]` `[Effort: Large]`
-  Replace the survival linear predictor `η = Lβ` with `η = (YF)β`. `YF` depends on observed Y
-  (fixed) and learned F, so survival supervision uses the observed-data projection rather than
-  the latent EBNM posterior — sidesteps both the cold-start cycle (no A_surv ≈ 0 trap on F) and
-  the train/test mismatch (training and prediction both use the same `(Y · F · (F'F)⁻¹) · β`
-  formula). Phase 4 of `docs/beta_zero_fix_design.md` (§5) — derivations first
-  (`derivations/qF_supervised/`), then implementation on a new branch.
-  *Notes: Triggered by Cluster A external generalization being weaker than baseline on 4/5 cohorts.
-  Required derivations: new dual-source q(F), reduced-source q(L), q(β) with z_no_k redefined,
-  full ELBO under reformulation. See `docs/beta_zero_fix_design.md` §5.5.*
+- [x] **Cluster B — Cox-on-YF reformulation** *(Complete — 2026-05-04, merged to `main`)*
+  See completed section below.
 
 - [x] **Add λ scaling parameter to balance genomics vs. survival objectives** `[Priority: High]` `[Effort: Medium]` *(Implemented and evaluated — fixed at λ=1.0)*
   λ is implemented as an exposed parameter in `update_L_k()`, `update_L_all()`, and
@@ -128,12 +126,21 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 📐 Model Selection
 
-- [ ] **Revisit K selection strategy after λ scaling is implemented** `[Priority: Medium]` `[Effort: Medium]`
-  The current auto-prune (PVE > 1% or |β| > 0.05) uses a pragmatic screening rule. Three cohorts
-  saturate at K_max = 10, suggesting more factors may be present. Revisiting K selection after R2
-  (λ) is implemented will give a more stable signal for K, since the survival term will be properly
-  scaled. The `select_K_cv()` stub in `code/select_K.R` is the target implementation path.
-  *Notes: Depends on R2. The ELBO-based CV stub (`select_K_cv()`) exists at `code/select_K.R` lines 125–127. Three cohorts saturate K_max=10: investigate K_max=15 on Longleaf HPC.*
+- [ ] **K selection via cross-validation** `[Priority: Medium]` `[Effort: Medium]`
+  K_max=10 with ARD pruning is the current approach (K_eff ≈ 4 in practice on merged PDAC).
+  beta_threshold=0.001 is now used (lowered from 0.05; natural YFB EBeta scale is ~0.003–0.008).
+  Cross-validation over K is needed to balance biological interpretability (factors with shrunk
+  betas may still be relevant for factorization quality) vs. survival prediction. Goal: select K
+  for factorization first, then apply beta shrinkage for the survival model.
+  The `select_K_cv()` stub exists in `code/select_K.R`. Consider K_max=15 on Longleaf if K_eff
+  saturates at 10.
+  *Notes: `code/select_K.R` lines 125–127 has the CV stub. beta_threshold lowered in globals.yml 2026-05-04.*
+
+- [ ] **Move `load_pdac_raw` and `plot_cohort_loading_heatmap` to `code/`** `[Priority: Low]` `[Effort: Small]`
+  Both functions currently live in `results/benchmark_sim/run_ssbmf_benchmark.R` (the data-loading
+  hub). They are general enough to belong in `code/` for reuse across runner scripts without
+  sourcing the full hub. Requires updating all `source()` calls in runner scripts.
+  *Notes: Do in a dedicated commit; coordinate with any active Longleaf paths.*
 
 ---
 
@@ -198,7 +205,20 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## ✅ Completed
 
-- [x] **Cluster B (Cox-on-YF) infrastructure** — `code/fit_cox_on_yf.R`, `code/predict_cox_on_yf.R`, `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R`, smoke test 3/3 PASS, benchmark runner `results/benchmark_sim/run_cox_on_yf_benchmark.R`. Synthetic C-index 0.605 vs PCA 0.471 with alpha_F=0. Real-data β=0 collapse on PDAC remains open (see Immediate Priorities). *(Completed 2026-05-04)*
+- [x] **Benchmark consolidation (2026-05-04)** — Merged `cox-on-yf-reformulation` to `main`.
+  Created `run_LB_benchmark.R` (Cluster A, 4-section: synthetic + PDAC train + external + CSV)
+  and `run_YFB_benchmark.R` (Cluster B, same structure). Both runners test point_normal vs normal
+  side-by-side. Archived 7 one-off diagnostic scripts to `results/benchmark_sim/archive/`.
+  Updated `config/globals.yml` with `benchmark` section (K=10, N_burnin=0, normalize_AB=FALSE,
+  cox_warmstart=FALSE, alpha=0.5, lambda=1.0) and lowered `beta_threshold` from 0.05 to 0.001.
+  Updated `code/fit_cox_on_yf.R` defaults: prior_beta="normal", N_burnin=0, cox_warmstart=FALSE,
+  normalize_AB=FALSE.
+
+- [x] **Cluster B — Cox-on-YF reformulation** *(Completed 2026-05-04)* — `code/fit_cox_on_yf.R`,
+  `code/predict_cox_on_yf.R`, `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R`,
+  derivations in `derivations/cox_on_YF/`, smoke test 3/3 PASS. Synthetic: C-index 0.605 vs
+  PCA 0.471 (3 active factors, alpha_F=0). Real-data β=0 collapse on PDAC with point_normal prior
+  (same pattern as Cluster A). Normal prior gives non-zero EBeta — full benchmark comparison pending.
 - [x] **Core modular CAVI implementation** — `code/fit_modular.R` with four independently-tested update modules. 171/171 tests passing. *(Completed March 2026)*
 - [x] **Hold-out prediction pipeline** — `code/predict.R` (`predict_supervised_mf()`), `code/train_test_split.R` (`stratified_split()`). 80/20 stratified hold-out. *(Completed March 2026)*
 - [x] **Prior family comparison (PN vs PL × K=5 vs K_eff)** — Four-condition benchmark across 7 PDAC cohorts. Point-laplace preferred at fixed K; K selection dominates prior choice. *(Completed April 2026)*
