@@ -5,6 +5,136 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-04 — Cluster B architecture: dedicated files, alpha_F=0, interface reuse
+
+- **Decision (file structure):** Cluster B (η = (YF)β̃) lives entirely in three dedicated files:
+  `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R`, `code/fit_cox_on_yf.R`. Prediction
+  in `code/predict_cox_on_yf.R`. The Cluster A files (`fit_modular.R`, `update_L.R`,
+  `update_F.R`, `predict.R`, `update_beta.R`, `compute_elbo.R`) are restored to exact main-branch
+  versions. No cross-cluster coupling.
+
+- **Reason:** Cluster A and Cluster B must coexist without risk of regression. Separate files
+  mean: (1) the 171/171 Cluster A test suite validates Cluster A code unchanged; (2) Cluster B
+  bugs cannot corrupt Cluster A runs. Interface reuse (`update_beta.R`, `compute_elbo.R`) is
+  achieved by passing `ZF[,k]` as `EL_k` and `ZF[,k]^2` as `EL2_k` — observed projections
+  have zero posterior variance, so the existing signatures work without modification.
+
+- **Decision (alpha_F=0):** The Cluster B F update (`update_F_surv_YFB_k`) defaults to
+  `alpha=0` (pure-genomics only; no survival contribution to the F precision or pseudo-obs).
+
+- **Reason:** With η = ZF·β̃ (ZF = Y·EF), A_beta = Σ w_i ZF_ik². If EBeta ≈ 0, the Cox
+  Hessian w_i ≈ 0 at a stable equilibrium but ZF is non-zero (EF initialized from SVD). So
+  A_beta is non-zero, and the β update can escape zero. The root cause of the "normalize_AB"
+  instability (see below) was that A_surv in the F precision depended on EBeta², creating a
+  chicken-and-egg: EBeta≈0 → A_surv≈0 → x_F biased → EF grows → EL shrinks → positive
+  feedback. With alpha_F=0, A_F = A_gen (τ * sum EL²); no survival term in denominator.
+  EF is determined purely by genomics (same as unsupervised EBMF), and ZF can deliver
+  non-zero signal to the beta update regardless of EBeta.
+
+- **Trade-off:** With alpha_F=0, the loadings F are not jointly optimized for survival —
+  they reflect genomic variance only. Survival signal enters only through the beta update. 
+  This is less expressive than full joint optimization, but is numerically stable.
+
+- **Diagnostic finding (2026-05-04):** On synthetic data (n=120, p=300), alpha_F=0 gives
+  C-index=0.605 vs PCA=0.471 (3/8 active factors, converges in 11 iters). On merged PDAC
+  training (TCGA_PAAD+CPTAC, n=273, p=2000), EBeta collapses to ~4.7e-7 (0 active factors).
+  The β=0 collapse on real data persists even with alpha_F=0. Likely cause: on real data the
+  survival signal is weaker relative to noise, and the point-normal spike-and-slab EBNM
+  prior shrinks all betas to the spike component at the natural ZF scale (~sd(Y)·||EF_k||).
+
+- **Affected files:** `code/fit_cox_on_yf.R`, `code/update_F_surv_YFB.R`,
+  `code/update_L_surv_YFB.R`, `code/predict_cox_on_yf.R`,
+  `results/benchmark_sim/run_cox_on_yf_benchmark.R`, `tests/test_cox_on_yf_smoke.R`
+
+---
+
+## 2026-04-30 — normalize_AB added to F update (Cluster B); positive-feedback instability discovered
+
+- **Decision:** Added `normalize_AB` parameter to `update_F_k()` and `update_F_all()` in
+  `code/update_F.R`, and wired it through from `fit_supervised_mf_modular()` in
+  `code/fit_modular.R`. This is the Cluster B analogue of the Cluster A normalize_AB fix that
+  was applied to `update_L_k()`. The parameter is backward-compatible (default FALSE).
+  171/171 tests pass with the addition.
+
+- **Motivation:** Under the Cox-on-YF reformulation (η = (YF)β̃), the F update is dual-source
+  (genomics + survival). The scale imbalance between A_gen = Tau * sum_i(EL²_{ik}) and
+  A_surv = EBeta²_k * Σ_i(w_i y²_{ij}) is structural: at initialisation A_gen/A_surv ≈ 10⁴.
+  This is invariant under any reparameterisation of ZF by a constant (proven algebraically:
+  EBeta scales inversely, leaving A_surv = EBeta² * YtWY unchanged). normalize_AB was the
+  same fix that worked for Cluster A's L update.
+
+- **What was implemented:** In `update_F_k()`, after computing A_surv and B_surv:
+  ```r
+  if (normalize_AB) {
+    m_surv <- mean(A_surv); m_gen <- mean(A_gen)
+    if (is.finite(m_surv) && is.finite(m_gen) && m_surv > 1e-12 && m_gen > 1e-12) {
+      scale_surv <- min(m_gen / m_surv, 100)   # cap at 100
+      A_surv_eff <- A_surv * scale_surv;  B_surv_eff <- B_surv * scale_surv
+    }
+  }
+  ```
+  The cap at 100 was added after observing that the uncapped version (scale ≈ 10,000)
+  caused immediate catastrophic EF inflation even when EBeta was small.
+
+- **Instability discovered (open issue):** Even with cap=100, `normalize_AB=TRUE` causes a
+  runaway positive-feedback collapse of EL and EF by iteration 6-7 in synthetic smoke fits.
+  The mechanism (traced per-iteration):
+
+  1. After N_burnin=10 + Cox warm-start, EBeta ≈ 0.05 for one factor. A_gen/A_surv ≈ 89,000;
+     cap=100 limits scale to 100, so A_surv_eff/A_gen ≈ 0.1%. Survival contribution to x_F
+     is negligible but slightly biased toward the survival direction.
+  2. This tiny bias causes EF[:,k] to grow slowly (+50-80% per iter for the active factor).
+  3. Larger EF[:,k] → larger sum(EF²[:,k]) → larger A_L = Tau * sum(EF²[:,k]) in the L update
+     of the NEXT iteration → smaller x_L = B_L/A_L → EBNM shrinks EL[:,k].
+  4. Smaller EL[:,k] → smaller A_gen = Tau * sum(EL²[:,k]) in the F update → survival fraction
+     of A_F grows → survival bias in x_F grows → EF grows faster.
+  5. Positive feedback loop: EF doubles every few iters, reaching max|EF| = 68,000 by iter 6,
+     then EBNM assigns A_L → Inf → EL → 0 → everything collapses.
+
+  This feedback is structurally different from the Cluster A case (where normalize_AB in the
+  L update was stable) because in the L update, A_gen = sum_j(Tau * EF²) depends on EF (not
+  EL), so EL shrinkage doesn't feed back into A_gen. In the F update, A_gen = Tau * sum(EL²)
+  depends on EL, creating the destabilizing loop.
+
+  **Additional complication:** Factors k=4 and k=5 immediately collapse at iter=1 because SVD
+  init with positive-part clipping (`EL[EL<0] <- 0`) leaves EL[:,4-5] ≈ 0. When A_gen ≈ 0,
+  the normalize_AB guard (m_gen > 1e-12) prevents rescaling, but A_F ≈ alpha * A_surv (tiny),
+  and x_F = B_surv / A_surv = x_surv. With EBeta[4] = −0.033 (negative) and point_exponential
+  prior on F, EBNM zeros EF[:,4] immediately, from which F[:,4] never recovers.
+
+- **Cap value rationale:** cap=100 gives A_surv_eff/A_gen ≈ 0.1% (far from 50-50 balance).
+  This is not enough to deliver survival signal, yet is still enough to trigger the feedback.
+  No safe cap exists in the range [1, A_gen/A_surv]: small caps are too weak; large caps
+  amplify x_surv to catastrophic levels via the EBeta/EBeta2 ratio.
+
+- **Next debugging directions (to be pursued in the next session):**
+  1. **Decouple precision from signal**: Replace the current (A_gen + A_surv_eff, B_gen + B_surv_eff)
+     formulation with a fixed-precision approach: A_F = A_gen (no survival in denominator);
+     B_F = B_gen + gamma * B_surv_eff. This keeps A_F tethered to the genomics structure
+     (preventing the feedback) while injecting survival direction. Requires a principled choice
+     for gamma (ELBO justification unclear).
+  2. **Pure-genomics F, survival via β only**: Use alpha=0 for the F update (F is purely
+     genomic) and rely on the β update alone to select survival-relevant factors from ZF = Y*EF.
+     Eliminates the feedback entirely. Sacrifices the "jointly supervised F" advantage of
+     Cluster B but preserves the train/test consistency fix (prediction still uses ZF = Y*EF).
+     This is the simplest stable path and may be sufficient for the dissertation.
+  3. **Block coordinate descent for F × β**: Run a few extra β updates after each F update
+     within the k-loop, so EBeta tracks the updated EF before the next k. May reduce the lag
+     that allows the feedback to compound.
+  4. **Alternative normalization**: Instead of scaling A_surv to match A_gen, scale both A_gen
+     and B_gen DOWN by their magnitude so x_gen occupies the same scale as x_surv. This changes
+     s_F but not x_F direction, and avoids inflating A_F.
+
+- **Affected files:** `code/update_F.R` (normalize_AB logic + cap); `code/fit_modular.R`
+  (normalize_AB argument wired to update_F_k call at line ~515).
+
+- **Status:** Committed on branch `cox-on-yf-reformulation`. normalize_AB=FALSE (default)
+  is stable and correct. normalize_AB=TRUE compiles and passes tests but is not yet usable
+  due to the instability. The Cluster B framework (Steps 1-11) is fully implemented and
+  correct; the remaining work is the scale-balancing mechanism for the F update.
+
+---
+
 ## 2026-04-29 — Cluster A in-model fixes resolve training-side β=0; external generalization mixed
 
 - **Decision:** Adopt the four Cluster A fixes from `docs/beta_zero_fix_design.md` §4 in

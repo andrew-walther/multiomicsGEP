@@ -4,14 +4,19 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-04-29:** Core model complete (modular CAVI, 171/171 tests passing).
+> **Status as of 2026-05-04:** Core model complete (modular CAVI, 171/171 tests passing).
 > DeSurv benchmark complete: synthetic supervised C-index 0.79 > PCA 0.76; PDAC external median
 > C-index 0.60 across 5 cohorts (competitive with DeSurv 0.60–0.65). v2 preprocessing implemented
 > (intersect → log₂ → QN → top-2000 → rank). **Cluster A complete** (`fix-L-update-beta-cycle`):
 > training-side β=0 failure on merged TCGA+CPTAC resolved (2/20 factors active, ELBO monotone)
 > via instrumentation + inner-loop reorder + N_burnin + normalize_AB. External generalization
-> mixed (1/5 cohorts improved vs. baseline). **Next priority: Cluster B — Cox-on-YF
-> reformulation** (`docs/beta_zero_fix_design.md` §5).
+> mixed (1/5 cohorts improved vs. baseline).
+>
+> **Cluster B (Cox-on-YF, `cox-on-yf` branch) infrastructure complete:** `fit_cox_on_yf.R`,
+> `predict_cox_on_yf.R`, `update_L_surv_YFB.R`, `update_F_surv_YFB.R`, benchmark runner
+> `run_cox_on_yf_benchmark.R`, smoke test 3/3 PASS. Synthetic: C-index 0.605 vs PCA 0.471,
+> 3 active factors. **Real-data β=0 collapse persists on PDAC (0 active factors).**
+> Next priority: fix β=0 on real PDAC data for Cluster B.
 
 ---
 
@@ -30,6 +35,23 @@ Each item follows this format:
 **Effort:** Rough implementation cost (Small = hours; Medium = days; Large = weeks or HPC run)
 
 Move completed items to the [Completed](#-completed) section at the bottom.
+
+---
+
+## 🔥 Immediate Priorities (Cluster B real-data β=0)
+
+- [ ] **Fix β=0 collapse in Cox-on-YF on real PDAC data** `[Priority: High]` `[Effort: Medium]`
+  `fit_cox_on_yf()` with alpha_F=0 works on synthetic data (C-index 0.605 vs PCA 0.471, 3
+  active factors) but produces EBeta≈0 (0 active factors) on merged PDAC (n=273, p=2000,
+  TCGA_PAAD+CPTAC, 80 iters). The difference: synthetic signal-to-noise is high (beta_true=0.8),
+  while PDAC survival signal is weak relative to the ZF scale (~sd(Y)·||EF_k||). The point-normal
+  EBNM prior shrinks all betas to the spike component at the natural ZF scale. Candidate fixes:
+  (1) **Rescale ZF at each iteration** — normalize each ZF[:,k] to unit variance before the beta
+  update (so beta operates at the clinical-effect scale, not ~1/300); (2) **Warm-start beta from
+  univariate Cox on each ZF[:,k]** before starting CAVI; (3) **Widen beta prior** (e.g., normal
+  instead of point-normal spike-and-slab, using alpha=0 to disable spike);
+  (4) **Increase N_burnin** (more pure-beta iterations before F/L updates disturb ZF structure).
+  *Files: `code/fit_cox_on_yf.R`, `results/benchmark_sim/run_cox_on_yf_benchmark.R`*
 
 ---
 
@@ -143,8 +165,9 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   quick-reference table after moving. Coordinate with any active Longleaf HPC paths.*
 
 - [ ] **Repository reorganisation** `[Priority: Low]` `[Effort: Small]`
-  The current directory layout has accumulated structural debt across three simulation generations.
-  Proposed clean structure (no file deletion — move and rename only):
+  The current directory layout has accumulated structural debt across three simulation generations. 
+  Need to clean up the results/ directory as multiple stages of tables/figures/reports are floating 
+  around without clear structure Proposed clean structure (no file deletion — move and rename only):
 
   ```
   code/                     ← algorithm only (update_*.R, fit_modular.R, etc.)
@@ -175,6 +198,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## ✅ Completed
 
+- [x] **Cluster B (Cox-on-YF) infrastructure** — `code/fit_cox_on_yf.R`, `code/predict_cox_on_yf.R`, `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R`, smoke test 3/3 PASS, benchmark runner `results/benchmark_sim/run_cox_on_yf_benchmark.R`. Synthetic C-index 0.605 vs PCA 0.471 with alpha_F=0. Real-data β=0 collapse on PDAC remains open (see Immediate Priorities). *(Completed 2026-05-04)*
 - [x] **Core modular CAVI implementation** — `code/fit_modular.R` with four independently-tested update modules. 171/171 tests passing. *(Completed March 2026)*
 - [x] **Hold-out prediction pipeline** — `code/predict.R` (`predict_supervised_mf()`), `code/train_test_split.R` (`stratified_split()`). 80/20 stratified hold-out. *(Completed March 2026)*
 - [x] **Prior family comparison (PN vs PL × K=5 vs K_eff)** — Four-condition benchmark across 7 PDAC cohorts. Point-laplace preferred at fixed K; K selection dominates prior choice. *(Completed April 2026)*

@@ -1,0 +1,224 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+
+% ── tcolorbox colour palette ─────────────────────────────────────────────────
+\newtcolorbox{derivbox}[1][]{colback=gray!8, colframe=gray!50,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{ebnmbox}[1][]{colback=blue!5, colframe=blue!40,
+  fonttitle=\bfseries, title=#1, breakable}
+\newtcolorbox{verifybox}[1][]{colback=green!5, colframe=green!40,
+  fonttitle=\bfseries, title=#1, breakable}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\ELBO}{\mathcal{L}}
+\newcommand{\N}{\mathcal{N}}
+
+\title{\textbf{D3: Scalar $q(\tilde{\boldsymbol{\beta}})$ Update Under $\eta = \mathbf{Y}\mathbf{F}\tilde{\boldsymbol{\beta}}$}\\[4pt]
+\large Cluster B (Cox-on-YF Reformulation) — Derivation D3\\[2pt]
+\normalsize Cross-reference: \texttt{derivations/Modular\_UpdateDerivations/} q($\beta$) section}
+\author{Andrew Walther}
+\date{2026-04-29}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Context and Goal}
+% ============================================================
+
+In the original model, the Cox linear predictor for factor $k$ uses the latent loading:
+$\eta_{\text{no-}k,i} + l_{ik}\,\beta_k$. The $q(\beta_k)$ update therefore has EBNM
+precision involving $\E[l_{ik}^2]$ (the second moment of the posterior, which includes
+shrinkage uncertainty).
+
+\bigskip
+Under Cluster B, the linear predictor becomes $\eta_i = \sum_k (z_F)_{ik}\,\tilde\beta_k$
+where $(z_F)_{ik} = \sum_j y_{ij}\,\E[f_{jk}]$ is an \emph{observed} projection score.
+Because $\mathbf{Z}_F$ is treated as fixed (held at $\mathbf{Y}\E[\mathbf{F}]$) per outer
+CAVI iteration, there is \textbf{no second-moment correction needed for the predictor} —
+$\mathbf{Z}_F$ has zero posterior variance from $q(\tilde\beta_k)$'s perspective.
+
+\bigskip
+\textbf{Goal of D3.} Derive the EBNM inputs $A_{\tilde\beta,k}$ and $B_{\tilde\beta,k}$,
+show that $\alpha$ cancels in the pseudo-observation $x_{\tilde\beta,k} = B/A$, and
+confirm the connection to the original $q(\beta)$ derivation.
+
+% ============================================================
+\section{Derivation}
+% ============================================================
+
+\subsection{Isolating Factor $k$ in the Survival ELBO}
+
+The Taylor-linearised Cox surrogate (evaluated at the current $\eta$) is
+\[
+  \E_q[\log p(\mathbf{t}, \boldsymbol{\delta})] \approx
+  \sum_i \Bigl[ u_i\,\eta_i - \tfrac{1}{2}w_i\,\eta_i^2 \Bigr] + \text{const}.
+\]
+
+Write $\eta_i = (z_F)_{ik}\,\tilde\beta_k + z_{\text{no-}k,i}$, where
+\[
+  z_{\text{no-}k,i} = z_i - \sum_{k'\ne k}(z_F)_{ik'}\,\E[\tilde\beta_{k'}]
+\]
+is the partial working response with factor $k$ removed. Expanding $\eta_i^2$:
+\begin{align}
+  \sum_i \Bigl[u_i\,\eta_i - \tfrac{1}{2}w_i\,\eta_i^2\Bigr] \Big|_{\tilde\beta_k}
+  &= \sum_i \Bigl[
+     \underbrace{u_i\,(z_F)_{ik}\,\tilde\beta_k}_{\propto B}
+     - \tfrac{1}{2}\underbrace{w_i\,(z_F)_{ik}^2\,\tilde\beta_k^2}_{\propto A}
+     + w_i\,(z_F)_{ik}\,z_{\text{no-}k,i}\,\tilde\beta_k
+     \Bigr] + \text{const}\nonumber\\
+  &= -\tfrac{1}{2}\,\tilde\beta_k^2 \underbrace{\sum_i w_i\,(z_F)_{ik}^2}_{A_{\tilde\beta,k}/\alpha}
+     + \tilde\beta_k \underbrace{\sum_i w_i\,z_{\text{no-}k,i}\,(z_F)_{ik}}_{B_{\tilde\beta,k}/\alpha}
+     + \text{const},
+     \label{eq:beta-quad}
+\end{align}
+where the working response identity $z_i = \eta_i + u_i/w_i$ gives
+$u_i = w_i(z_i - \eta_i)$, so $u_i\,(z_F)_{ik} + w_i\,(z_F)_{ik}\,z_{\text{no-}k,i}$
+combines to $w_i\,(z_F)_{ik}\,z_{\text{no-}k,i}$ after absorbing the $\eta_i$ term.
+
+\subsection{EBNM Precision and Pseudo-Observation}
+
+Including the mixing weight $\alpha$, the factor-$k$ ELBO terms for $q(\tilde\beta_k)$ are
+proportional to:
+\begin{align}
+  A_{\tilde\beta,k} &= \alpha\,\sum_i w_i\,(z_F)_{ik}^2, \label{eq:Abeta}\\
+  B_{\tilde\beta,k} &= \alpha\,\sum_i w_i\,z_{\text{no-}k,i}\,(z_F)_{ik}. \label{eq:Bbeta}
+\end{align}
+
+The EBNM pseudo-observation and scale are:
+\begin{equation}
+  x_{\tilde\beta,k} = \frac{B_{\tilde\beta,k}}{A_{\tilde\beta,k}}
+  = \frac{\sum_i w_i\,z_{\text{no-}k,i}\,(z_F)_{ik}}{\sum_i w_i\,(z_F)_{ik}^2},
+  \qquad
+  s_{\tilde\beta,k} = \frac{1}{\sqrt{A_{\tilde\beta,k}}} = \frac{1}{\sqrt{\alpha\,\sum_i w_i\,(z_F)_{ik}^2}}.
+  \label{eq:x-s-beta}
+\end{equation}
+
+\begin{verifybox}[$\alpha$ cancellation in $x_{\tilde\beta,k}$]
+$\alpha$ appears in both $A_{\tilde\beta,k}$ and $B_{\tilde\beta,k}$ with the same factor,
+so it cancels in the ratio:
+\[
+  x_{\tilde\beta,k} = \frac{\alpha\,\sum_i w_i\,z_{\text{no-}k,i}\,(z_F)_{ik}}
+                           {\alpha\,\sum_i w_i\,(z_F)_{ik}^2}
+  = \frac{\sum_i w_i\,z_{\text{no-}k,i}\,(z_F)_{ik}}{\sum_i w_i\,(z_F)_{ik}^2}.
+\]
+The point estimate (posterior mode) is $\alpha$-invariant.
+$\alpha$ only controls the scale $s_{\tilde\beta,k} = (\alpha\,\sum w_i(z_F)_{ik}^2)^{-1/2}$,
+which governs the amount of shrinkage toward zero.
+This is identical to the $\alpha$-cancellation in the original $q(\beta)$ derivation,
+with $(z_F)_{ik}$ replacing $l_{ik}$.
+\end{verifybox}
+
+% ============================================================
+\section{Key Differences from Original $q(\beta)$}
+% ============================================================
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\hline
+\textbf{Quantity} & \textbf{Original ($\eta = \mathbf{L}\boldsymbol{\beta}$)} & \textbf{Cluster B ($\eta = \mathbf{Z}_F\tilde{\boldsymbol{\beta}}$)} \\
+\hline
+Predictor & $l_{ik} = \E_q[L_{ik}]$ (latent, shrunk) & $(z_F)_{ik} = \sum_j y_{ij}\E[f_{jk}]$ (observed) \\
+$A_k$ & $\alpha\,\sum_i w_i\,\E[l_{ik}^2]$ & $\alpha\,\sum_i w_i\,(z_F)_{ik}^2$ \\
+$B_k$ & $\alpha\,\sum_i w_i\,z_{\text{no-}k,i}\,\E[l_{ik}]$ & $\alpha\,\sum_i w_i\,z_{\text{no-}k,i}\,(z_F)_{ik}$ \\
+2nd moment & $\E[l_{ik}^2] = \Var_q(l_{ik}) + \E[l_{ik}]^2$ needed & $(z_F)_{ik}^2$ — exact, no second moment \\
+\hline
+\end{tabular}
+\end{center}
+
+\bigskip
+\textbf{Why no second moment for $(z_F)_{ik}$:} The original $A_k$ used $\E[l_{ik}^2]$
+because $l_{ik}$ is a latent quantity with posterior uncertainty. The projection score
+$(z_F)_{ik} = \sum_j y_{ij}\,\E[f_{jk}]$ treats $\E[\mathbf{f}_k]$ as a fixed constant
+(Gauss-Seidel contract) and $y_{ij}$ as observed data — there is no posterior variance
+to account for from $q(\tilde\beta_k)$'s perspective. This simplifies the computation
+and removes the \texttt{EL2\_k} (or \texttt{EL2} matrix) argument from \texttt{update\_beta\_k()}.
+
+\bigskip
+\textbf{Compute z\_no\_k:} The function \texttt{compute\_z\_no\_k} changes from
+\[
+  z_{\text{no-}k,i} = z_i - (\mathbf{L}\,\boldsymbol\beta)_i + l_{ik}\,\beta_k
+\]
+to
+\[
+  z_{\text{no-}k,i} = z_i - (\mathbf{Z}_F\,\tilde{\boldsymbol\beta})_i + (z_F)_{ik}\,\tilde\beta_k.
+\]
+Same algebraic structure; $\mathbf{Z}_F$ replaces $\mathbf{L}$ and $\tilde{\boldsymbol\beta}$
+replaces $\boldsymbol\beta$.
+
+% ============================================================
+\section{EBNM Call}
+% ============================================================
+
+\begin{ebnmbox}[EBNM call for $q(\tilde\beta_k)$]
+\textbf{Inputs (scalars):}
+\[
+  x_{\tilde\beta,k} = \frac{\sum_i w_i\,z_{\text{no-}k,i}\,(z_F)_{ik}}{\sum_i w_i\,(z_F)_{ik}^2},
+  \qquad
+  s_{\tilde\beta,k} = \frac{1}{\sqrt{\alpha\,\sum_i w_i\,(z_F)_{ik}^2}}.
+\]
+
+\textbf{Prior family:} point-normal (or as configured in \texttt{prior\_beta})
+
+\vspace{6pt}
+\textbf{Outputs:} $\E[\tilde\beta_k]$, $\E[\tilde\beta_k^2]$, \texttt{ebnm\_log\_likelihood}
+\end{ebnmbox}
+
+% ============================================================
+\section{Code Implications}
+% ============================================================
+
+\paragraph{\texttt{code/update\_beta.R} — \texttt{compute\_z\_no\_k()}}
+\begin{itemize}
+  \item Old: \texttt{compute\_z\_no\_k(z, EL, EBeta, k)}
+  \item New: \texttt{compute\_z\_no\_k(z, ZF, EBeta, k)}
+  \item Body: \texttt{z - (ZF \%*\% EBeta) + ZF[, k] * EBeta[k]}
+\end{itemize}
+
+\paragraph{\texttt{code/update\_beta.R} — \texttt{update\_beta\_k()}}
+\begin{itemize}
+  \item \textbf{Remove argument:} \texttt{EL2\_k} (no second moment needed)
+  \item \textbf{Rename argument:} \texttt{EL\_k} $\to$ \texttt{ZF\_k} (n-vector of projection scores)
+  \item \textbf{New signature:} \texttt{update\_beta\_k(w, z\_no\_k, ZF\_k, prior\_family, alpha, A\_floor)}
+  \item \textbf{New computation:}
+    \begin{verbatim}
+A_k <- max(alpha * sum(w * ZF_k^2), A_floor)   # ZF_k^2 exact (no second moment)
+B_k <- alpha * sum(w * z_no_k * ZF_k)
+    \end{verbatim}
+\end{itemize}
+
+\paragraph{\texttt{code/update\_beta.R} — \texttt{update\_beta\_all()}}
+\begin{itemize}
+  \item Replace \texttt{EL}, \texttt{EL2} with \texttt{ZF} (n$\times$K matrix) in signature
+  \item Remove all \texttt{EL2} threading
+\end{itemize}
+
+% ============================================================
+\section{Verification Checklist}
+% ============================================================
+
+\begin{verifybox}[D3 Verification]
+\begin{enumerate}
+  \item $A_{\tilde\beta,k} = \alpha\,\sum_i w_i\,(z_F)_{ik}^2$ — matches \eqref{eq:Abeta}. \checkmark
+  \item $B_{\tilde\beta,k} = \alpha\,\sum_i w_i\,z_{\text{no-}k,i}\,(z_F)_{ik}$ — matches \eqref{eq:Bbeta}. \checkmark
+  \item $\alpha$ cancels in $x_{\tilde\beta,k}$ — pseudo-observation is $\alpha$-invariant. \checkmark
+  \item No \texttt{EL2\_k} / second moment needed for the predictor. \checkmark
+  \item \texttt{compute\_z\_no\_k} uses \texttt{ZF} instead of \texttt{EL}. (to implement)
+  \item \texttt{update\_beta\_k} signature reduced: \texttt{EL2\_k} removed. (to implement)
+  \item All $\beta$ tests pass with ZF predictor. (to implement)
+\end{enumerate}
+\end{verifybox}
+
+\end{document}
