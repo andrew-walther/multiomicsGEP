@@ -126,15 +126,21 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 📐 Model Selection
 
-- [ ] **K selection via cross-validation** `[Priority: Medium]` `[Effort: Medium]`
-  K_max=10 with ARD pruning is the current approach (K_eff ≈ 4 in practice on merged PDAC).
-  beta_threshold=0.001 is now used (lowered from 0.05; natural YFB EBeta scale is ~0.003–0.008).
-  Cross-validation over K is needed to balance biological interpretability (factors with shrunk
-  betas may still be relevant for factorization quality) vs. survival prediction. Goal: select K
-  for factorization first, then apply beta shrinkage for the survival model.
-  The `select_K_cv()` stub exists in `code/select_K.R`. Consider K_max=15 on Longleaf if K_eff
-  saturates at 10.
-  *Notes: `code/select_K.R` lines 125–127 has the CV stub. beta_threshold lowered in globals.yml 2026-05-04.*
+- [ ] **K selection via cross-validation** `[Priority: High]` `[Effort: Medium]`
+  ARD pruning (PVE > 1% OR |β| > 0.001) is fragile: K=10 collapses betas to 0 on merged PDAC
+  while K=20 does not — the threshold-based criterion gives no principled way to choose K_max.
+  Replace with CV over K ∈ {2, 4, 6, 8, 10, 15, 20}: fit each K, evaluate on a held-out 20%
+  split, pick the K that maximizes the criterion.
+
+  **Preferred criterion: held-out genomic reconstruction MSE** (‖Y_test − L_test·EF'‖²).
+  This selects K for factorization quality alone, then EBNM beta shrinkage handles which of
+  those K factors are survival-relevant. Cleaner separation of concerns than optimizing C-index
+  over K (which conflates factorization quality with prior choice and is noisy on small cohorts).
+  Held-out C-index over K is a secondary metric to report but not the primary selection criterion.
+
+  The `select_K_cv()` stub exists in `code/select_K.R` — implement it.
+  *Notes: 5-fold CV over 7 K values = 35 fits; feasible locally or trivially parallelizable on
+  Longleaf. Do not implement until prior comparison benchmarks (LB/YFB at K=20) are complete.*
 
 - [ ] **Move `load_pdac_raw` and `plot_cohort_loading_heatmap` to `code/`** `[Priority: Low]` `[Effort: Small]`
   Both functions currently live in `results/benchmark_sim/run_ssbmf_benchmark.R` (the data-loading

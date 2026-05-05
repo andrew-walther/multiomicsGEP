@@ -53,9 +53,10 @@ preprocessing:
 # Benchmark runner defaults (run_LB_benchmark.R, run_YFB_benchmark.R)
 # ------------------------------------------------------------------------------
 benchmark:
-  k_pdac: 10             # K_max for PDAC fits. Canonical benchmark value (k_max=10 from
-                         # globals cavi section); ARD pruning selects K_eff ≈ 4 in practice.
-                         # K=20 was used only for Cluster A/B β=0 diagnostics — not for results.
+  k_pdac: 20             # K_max for PDAC fits. K=20 is the setting under which the LB baseline
+                         # produced non-zero betas and C=0.53–0.65 on external cohorts (merged
+                         # TCGA_PAAD+CPTAC, n=273). K=10 collapsed betas to 0 on merged data.
+                         # ARD pruning selects K_eff ≈ 7 in practice; K=20 gives it room.
   k_pdac_synthetic: 8    # K_max for synthetic validation in benchmark runners.
                          # K_true=5 in DGP; K_max=8 gives ARD room to prune correctly.
   n_burnin: 0            # Beta-only burn-in iterations before joint CAVI. 0 = off (baseline).
