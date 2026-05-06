@@ -56,9 +56,11 @@ preprocessing:
 # ------------------------------------------------------------------------------
 benchmark:
   k_pdac: 20             # K_max for PDAC merged-cohort fits (TCGA_PAAD + CPTAC, n=273).
-                         # K=20 gave non-zero betas on merged data (K=10 collapsed to β=0).
-                         # Single-cohort runs (n=129–144) should use k_pdac_single=10; K=20
-                         # is too many factors for those sample sizes (K/n≈0.14 → overfitting).
+                         # LB merged uses K=20 (ARD prunes to K_eff=2-4).
+  k_pdac_yfb_merged: 3   # K for YFB merged-cohort fits (rank_transform=FALSE).
+                         # Diagnostic sweep (2026-05-06): K=3 gives highest median external C
+                         # (0.644); K_eff=3 across K=3-14, all factors survive at K=3.
+                         # Consistent with DeSurv (Young et al. 2025) K=3 and prior 1-SE CV.
   k_pdac_single: 10      # K_max for single-cohort PDAC fits (tcga_only, cptac_only).
                          # Archived baseline (C=0.63-0.65 on tcga_only) used K=10.
                          # K=20 on tcga_only (n=144) gives K_eff=1 and C=0.37-0.50 (2026-05-05).

@@ -10,6 +10,9 @@
 #               code/train_test_split.R, code/preprocess_desurv.R,
 #               results/benchmark_sim/benchmark_helpers.R
 # Usage:        Rscript results/benchmark_sim/run_YFB_benchmark.R [--quick] [--train-mode merged|tcga_only|cptac_only]
+#               [--per-platform-norm] [--no-rank]
+#               --no-rank: disable per-subject rank transform (Phase 1 fix for merged YFB;
+#                          use with --per-platform-norm for canonical K=3 result)
 # ============================================================
 
 # --------------------------------------------------------------------------
@@ -18,6 +21,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE          <- "--quick" %in% args
 PER_PLATFORM_NORM   <- "--per-platform-norm" %in% args
+NO_RANK             <- "--no-rank" %in% args   # Phase 1: rank_transform=FALSE for merged YFB
 
 TRAIN_MODE <- "merged"
 if ("--train-mode" %in% args) {
@@ -50,7 +54,7 @@ source("code/train_test_split.R")
 source("code/preprocess_desurv.R")
 
 # Benchmark defaults from globals.yml
-K            <- if (QUICK_MODE) 5 else if (TRAIN_MODE == "merged") cfg$benchmark$k_pdac else cfg$benchmark$k_pdac_single
+K            <- if (QUICK_MODE) 5 else if (TRAIN_MODE == "merged" && NO_RANK) cfg$benchmark$k_pdac_yfb_merged else if (TRAIN_MODE == "merged") cfg$benchmark$k_pdac else cfg$benchmark$k_pdac_single
 K_SYN        <- if (QUICK_MODE) 5 else cfg$benchmark$k_pdac_synthetic
 ALPHA        <- cfg$benchmark$alpha
 LAMBDA       <- cfg$benchmark$lambda
@@ -65,8 +69,8 @@ ALPHA_F      <- 0   # Cluster B baseline: F update is pure-genomics (see DECISIO
 cat("=== YFB Benchmark (Cluster B — eta = YF·beta) ===\n")
 cat(sprintf("    K=%d (synthetic K=%d) | alpha=%.2f | alpha_F=%.2f | lambda=%.2f | N_burnin=%d\n",
             K, K_SYN, ALPHA, ALPHA_F, LAMBDA, N_BURNIN))
-cat(sprintf("    cox_warmstart=%s | normalize_AB=%s | per_platform_norm=%s\n",
-            COX_WARMSTART, NORM_AB, PER_PLATFORM_NORM))
+cat(sprintf("    cox_warmstart=%s | normalize_AB=%s | per_platform_norm=%s | no_rank=%s\n",
+            COX_WARMSTART, NORM_AB, PER_PLATFORM_NORM, NO_RANK))
 cat(sprintf("    Priors: %s\n", paste(PRIORS, collapse = " vs ")))
 cat(sprintf("    Train mode: %s | Quick mode: %s\n\n", TRAIN_MODE, QUICK_MODE))
 
@@ -166,7 +170,7 @@ if (!pdac_available) {
       cohort_raw_list          = train_raw,
       log_transform_flags      = log_flags,
       top_n                    = cfg$preprocessing$top_n_genes,
-      rank_transform           = TRUE,
+      rank_transform           = !NO_RANK,
       per_platform_standardize = PER_PLATFORM_NORM
     )
     Y_train      <- merged$Y
