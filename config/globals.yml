@@ -93,7 +93,7 @@ pdac:
   training_cohorts: ["TCGA_PAAD", "CPTAC"]
   external_cohorts: ["Dijk", "Moffitt_GEO_array", "PACA_AU_array", "PACA_AU_seq", "Puleo_array"]
   # Default local path; override with PDAC_DATA_ROOT env var
-  data_root_default: "~/Library/CloudStorage/OneDrive-UniversityofNorthCarolinaatChapelHill/UNC Dissertation (Liu)/PDAC_data"
+  data_root_default: "~/OneDrive - University of North Carolina at Chapel Hill/UNC Dissertation (Liu)/PDAC_data"
   # TRUE = RNA-seq (raw counts → apply log2(x+1)); FALSE = Proteomics/Microarray (already normalised)
   platform_log_transform:
     TCGA_PAAD: true

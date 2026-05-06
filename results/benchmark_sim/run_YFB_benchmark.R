@@ -16,7 +16,8 @@
 # Setup — working directory and config
 # --------------------------------------------------------------------------
 args <- commandArgs(trailingOnly = TRUE)
-QUICK_MODE <- "--quick" %in% args
+QUICK_MODE          <- "--quick" %in% args
+PER_PLATFORM_NORM   <- "--per-platform-norm" %in% args
 
 TRAIN_MODE <- "merged"
 if ("--train-mode" %in% args) {
@@ -64,11 +65,17 @@ ALPHA_F      <- 0   # Cluster B baseline: F update is pure-genomics (see DECISIO
 cat("=== YFB Benchmark (Cluster B — eta = YF·beta) ===\n")
 cat(sprintf("    K=%d (synthetic K=%d) | alpha=%.2f | alpha_F=%.2f | lambda=%.2f | N_burnin=%d\n",
             K, K_SYN, ALPHA, ALPHA_F, LAMBDA, N_BURNIN))
-cat(sprintf("    cox_warmstart=%s | normalize_AB=%s\n", COX_WARMSTART, NORM_AB))
+cat(sprintf("    cox_warmstart=%s | normalize_AB=%s | per_platform_norm=%s\n",
+            COX_WARMSTART, NORM_AB, PER_PLATFORM_NORM))
 cat(sprintf("    Priors: %s\n", paste(PRIORS, collapse = " vs ")))
 cat(sprintf("    Train mode: %s | Quick mode: %s\n\n", TRAIN_MODE, QUICK_MODE))
 
-OUT_DIR <- "results/benchmark_sim/outputs/YFB_benchmark"
+# Separate output directory so per-platform-norm results never overwrite default baseline
+OUT_DIR <- if (PER_PLATFORM_NORM) {
+  "results/benchmark_sim/outputs/YFB_benchmark_perplatform"
+} else {
+  "results/benchmark_sim/outputs/YFB_benchmark"
+}
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 results_rows    <- list()
@@ -152,13 +159,15 @@ if (!pdac_available) {
       cat(sprintf("      Loading %s ...\n", ds))
       load_pdac_raw(ds, PDAC_DATA_ROOT)
     })
-    cat("    Preprocessing (v2: intersect-first + QN) ...\n")
+    cat(sprintf("    Preprocessing (v2: intersect-first + QN%s) ...\n",
+                if (PER_PLATFORM_NORM) " + per-platform z-norm" else ""))
     log_flags <- PLATFORM_LOG_TRANSFORM[train_cohorts]
     merged    <- preprocess_merged_cohorts(
-      cohort_raw_list     = train_raw,
-      log_transform_flags = log_flags,
-      top_n               = cfg$preprocessing$top_n_genes,
-      rank_transform      = TRUE
+      cohort_raw_list          = train_raw,
+      log_transform_flags      = log_flags,
+      top_n                    = cfg$preprocessing$top_n_genes,
+      rank_transform           = TRUE,
+      per_platform_standardize = PER_PLATFORM_NORM
     )
     Y_train      <- merged$Y
     time_train   <- unlist(lapply(train_cohorts, function(ds) train_raw[[ds]]$time))

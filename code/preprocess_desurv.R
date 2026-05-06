@@ -113,6 +113,32 @@ intersect_preprocessed_cohorts <- function(cohort_list, reference = 1) {
 # v2 merged-cohort preprocessing (reordered pipeline)
 # ============================================================
 
+#' Z-standardize each cohort's gene columns independently.
+#'
+#' Applied before the merged row-bind so that each platform's per-gene
+#' mean and SD are removed prior to joint quantile normalisation. This
+#' addresses the A_surv/A_gen ≈ 10⁻³ imbalance observed in YFB merged
+#' training: cross-platform QN equalises marginal distributions but not
+#' per-platform variance contributions to A_k = Σᵢ wᵢ · ZF_ik².
+#'
+#' Operates independently per cohort — cohorts may have different nrow.
+#' Only ncol must be identical (common gene set already intersected).
+#'
+#' @param cohort_matrices named list of numeric matrices (each n_c × p),
+#'   already log-transformed and subsetted to the common gene universe.
+#' @return named list of the same structure; each matrix has per-gene
+#'   colMean ≈ 0 and colSD ≈ 1 (SD floored at 1e-8 to handle constant
+#'   gene columns without crashing).
+#' @family v2 preprocessing
+per_platform_standardize_cohorts <- function(cohort_matrices) {
+  lapply(cohort_matrices, function(Y) {
+    gene_means <- colMeans(Y)
+    gene_sds   <- apply(Y, 2, stats::sd)
+    gene_sds   <- pmax(gene_sds, 1e-8)   # floor: constant genes stay finite
+    sweep(sweep(Y, 2, gene_means, "-"), 2, gene_sds, "/")
+  })
+}
+
 #' Quantile-normalize a merged expression matrix (genes × samples).
 #'
 #' Replaces each sample's gene distribution with the average quantile
@@ -206,9 +232,10 @@ quantile_normalize_merged <- function(Y) {
 #'   \code{\link{quantile_normalize_merged}}
 preprocess_merged_cohorts <- function(cohort_raw_list,
                                       log_transform_flags,
-                                      top_n          = 2000,
-                                      ties_method    = "average",
-                                      rank_transform = TRUE) {
+                                      top_n                    = 2000,
+                                      ties_method              = "average",
+                                      rank_transform           = TRUE,
+                                      per_platform_standardize = FALSE) {
   cohort_names <- names(cohort_raw_list)
   stopifnot(!is.null(cohort_names), all(cohort_names %in% names(log_transform_flags)))
 
@@ -230,6 +257,16 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
       Y <- log2_plus1_transform(Y)
     Y
   })
+  names(cohort_matrices) <- cohort_names
+
+  # Optional: per-platform z-standardisation before row-bind.
+  # Removes cohort-specific gene mean and SD so that no single platform's
+  # variance scale dominates the merged survival precision A_k.
+  if (per_platform_standardize) {
+    cat("  [v2] Per-platform z-standardization (colMean=0, colSD=1 per cohort) ...\n")
+    cohort_matrices <- per_platform_standardize_cohorts(cohort_matrices)
+  }
+
   Y_merged <- do.call(rbind, cohort_matrices)
   colnames(Y_merged) <- common_genes
 
@@ -260,13 +297,14 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
   colnames(Y_final) <- selected$gene_names
 
   list(
-    Y               = Y_final,
-    gene_names      = selected$gene_names,
-    n               = nrow(Y_final),
-    p               = ncol(Y_final),
-    dataset_labels  = dataset_labels,
-    n_raw_intersect = length(common_genes),
-    rank_transform  = rank_transform
+    Y                        = Y_final,
+    gene_names               = selected$gene_names,
+    n                        = nrow(Y_final),
+    p                        = ncol(Y_final),
+    dataset_labels           = dataset_labels,
+    n_raw_intersect          = length(common_genes),
+    rank_transform           = rank_transform,
+    per_platform_standardize = per_platform_standardize
   )
 }
 
