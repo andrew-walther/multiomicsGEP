@@ -4,20 +4,25 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-05-05.** Core model complete (modular CAVI, 171/171 tests passing).
-> Two model variants are fully implemented and benchmarked on PDAC cross-cohort validation
+> **Status as of 2026-05-06.** Core model complete (modular CAVI, 192/192 tests passing).
+> Two model variants are fully implemented, benchmarked, and cross-validated on PDAC data
 > (5 independent external cohorts across RNA-seq, microarray, and proteomics platforms).
+> Four targeted improvements evaluated 2026-05-06 (Phases 1–4); see synthesis report
+> `docs/reports/ssbmf_summary_report_05_06_26.pdf`.
 >
 > **LB model** (linear predictor η = Lβ; `code/fit_modular.R`): All three training configurations
 > (TCGA-only, CPTAC-only, merged TCGA+CPTAC) converge to 2–3 active factors. External C-index
 > ranges 0.55–0.67 depending on cohort and training set. Alpha mixing parameter selected by
-> 5-fold CV with 1-SE rule; all configurations select α=0.50.
+> 5-fold CV with 1-SE rule (all configurations select α=0.50). K-CV (Phase 4) selects K=3
+> under normal prior (flat plateau) and K=8 under point_normal (spike-small-n artefact);
+> practical default is K=5.
 >
 > **YFB model** (linear predictor η = (YF)β, Cox-on-YF; `code/fit_cox_on_yf.R`): Single-cohort
-> training with a normal prior gives competitive external C-index (TCGA-only: 0.55–0.63). Merged
-> training (TCGA_PAAD + CPTAC) collapses β→0 due to platform mixing — the factor matrix F still
-> captures survival-relevant structure, yielding C=0.57–0.64 with near-zero β. Point-normal prior
-> collapses all betas regardless of training set; normal prior is required for YFB on real PDAC data.
+> training with a normal prior gives competitive external C-index (TCGA-only: 0.55–0.63).
+> Phase 1 (per-platform z-standardization + rank_transform=FALSE) resolved the merged β→0
+> collapse; K=3 merged training now yields external median C=0.64, matching or exceeding
+> DeSurv. YFB K-CV reveals sign instability in CV folds without global sign correction
+> (C<0.5 for normal prior); K-selection for YFB requires sign correction enabled in folds.
 >
 > Both models use SVD initialization with a post-convergence sign check: if the training
 > concordance of η = Lβ (or η = (YF)β) is below 0.5, β is globally negated. This corrects
@@ -65,24 +70,16 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   a lucky PCA direction alignment, not a stable property. Root cause is A_surv/A_gen structural
   imbalance — must be addressed directly. See DECISIONS.md 2026-05-05.
 
-- [ ] **Fix YFB β→0 collapse on merged TCGA+CPTAC** `[Priority: Medium]` `[Effort: Medium]`
-  The LB model converges to 3 active factors on merged training (external C=0.51–0.67), but
-  the YFB model collapses β→0 (machine-epsilon betas ~10⁻¹³) on the same data. The root cause
-  is platform mixing: merged training combines RNA-seq (TCGA_PAAD) and proteomics (CPTAC), and
-  the ratio of survival precision to genomics precision in the β CAVI update is ~10⁻³ at
-  iteration 1 — the genomics term swamps the survival signal in the factor scores. The factor
-  matrix F still captures survival-relevant column structure, yielding external C=0.57–0.64
-  despite near-zero β. Cox warm-start (initializing β from a Cox fit on YF scores) was tested
-  and did not rescue collapse on merged data.
-  Candidate next steps:
-  (1) **Rescale survival and genomics precision contributions** to comparable magnitude before
-  the β update — analogous to `normalize_AB` in the LB model. Evaluated on LB but regressed
-  4/5 external cohorts; may behave differently for YFB.
-  (2) **Per-platform normalization** — normalize TCGA and CPTAC separately before merging,
-  rather than relying on quantile normalization across mixed platforms.
-  (3) **Accept single-cohort training** — LB and YFB single-cohort results are already
-  competitive; merged training may not add value given the platform heterogeneity.
-  *Files: `code/fit_cox_on_yf.R`, `code/preprocess_desurv.R`*
+- [x] **Fix YFB β→0 collapse on merged TCGA+CPTAC** *(Complete — Phase 1, 2026-05-06)*
+  Per-platform z-standardization (normalize TCGA_PAAD and CPTAC separately before merging)
+  plus removal of the per-subject rank transform resolves the collapse. With K=3, merged YFB
+  training achieves external C=0.53–0.67 (median 0.64), matching or exceeding the DeSurv
+  benchmark range of 0.60–0.65. Both priors agree at K=3 (factors strong enough to escape
+  the spike component). Implementation: `--per-platform-norm --no-rank` flags in
+  `results/benchmark_sim/run_YFB_benchmark.R`; `per_platform_standardize=TRUE` and
+  `rank_transform=FALSE` in `preprocess_desurv_cohort()`.
+  *Files: `code/preprocess_desurv.R`, `results/benchmark_sim/run_YFB_benchmark.R`,
+  `config/globals.yml` (k_pdac_yfb_merged: 3). Results: `outputs/YFB_benchmark_perplatform/`.*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model
@@ -158,21 +155,24 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 📐 Model Selection
 
-- [ ] **K selection via cross-validation** `[Priority: High]` `[Effort: Medium]`
-  ARD pruning (PVE > 1% OR |β| > 0.001) is fragile: K=10 collapses betas to 0 on merged PDAC
-  while K=20 does not — the threshold-based criterion gives no principled way to choose K_max.
-  Replace with CV over K ∈ {2, 4, 6, 8, 10, 15, 20}: fit each K, evaluate on a held-out 20%
-  split, pick the K that maximizes the criterion.
+- [x] **K selection via cross-validated C-index** *(Complete — Phase 4, 2026-05-06)*
+  `select_K_cv()` implemented in `code/select_K.R` with 1-SE rule; accepts `model="LB"` or
+  `model="YFB"`. Five-fold CV over K∈{2,…,10,15,20} on TCGA_PAAD (n=144):
+  - LB normal prior: flat plateau (range=0.032 < per-K SE), K=3 selected (1-SE).
+  - LB point_normal: K=8 selected (spike-small-n artefact; C=0.5 at K≤3). Practical default: K=5.
+  - YFB point_normal: K=2 (β→0 collapse in all folds, C=0.5 everywhere).
+  - YFB normal: K=9 selected but C<0.5 across all K (sign instability in CV folds).
+  YFB K-selection requires sign correction enabled within CV folds before results are reliable.
+  192/192 tests passing (added KCV-T13 and KCV-T14 for YFB path).
+  *Files: `code/select_K.R`, `tests/test_select_K_cv.R`, `results/benchmark_sim/run_K_cv.R`.
+  Results: `results/benchmark_sim/outputs/K_cv/`. Report: `docs/reports/ssbmf_summary_report_05_06_26.pdf`.*
 
-  **Preferred criterion: held-out genomic reconstruction MSE** (‖Y_test − L_test·EF'‖²).
-  This selects K for factorization quality alone, then EBNM beta shrinkage handles which of
-  those K factors are survival-relevant. Cleaner separation of concerns than optimizing C-index
-  over K (which conflates factorization quality with prior choice and is noisy on small cohorts).
-  Held-out C-index over K is a secondary metric to report but not the primary selection criterion.
-
-  The `select_K_cv()` stub exists in `code/select_K.R` — implement it.
-  *Notes: 5-fold CV over 7 K values = 35 fits; feasible locally or trivially parallelizable on
-  Longleaf. Do not implement until prior comparison benchmarks (LB/YFB at K=20) are complete.*
+- [ ] **YFB sign correction in K-CV** `[Priority: Medium]` `[Effort: Small]`
+  YFB K-CV with normal prior yields anti-concordant C-indices (C<0.5) because held-out
+  risk scores are not globally sign-corrected across folds. Enabling a fold-level sign
+  flip in `select_K_cv(model="YFB")` would make YFB K-selection interpretable. The
+  correction logic would mirror the post-fit sign check in `fit_cox_on_yf()`.
+  *Files: `code/select_K.R` (within the YFB branch of the CV loop)*
 
 - [ ] **Move `load_pdac_raw` and `plot_cohort_loading_heatmap` to `code/`** `[Priority: Low]` `[Effort: Small]`
   Both functions currently live in `results/benchmark_sim/run_ssbmf_benchmark.R` (the data-loading

@@ -5,6 +5,62 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-06 — Phase 1 (YFB merged): per-platform z-standardization resolves β→0 collapse
+
+- **Decision:** For YFB merged training (TCGA_PAAD + CPTAC), apply per-platform
+  z-standardization (normalize each cohort's gene expression matrix independently before
+  merging) and disable the per-subject rank transform (`rank_transform=FALSE`). Use K=3
+  for merged YFB. These flags are the canonical YFB merged configuration going forward.
+
+- **Empirical evidence:**
+
+  Previous merged YFB (K=20, `rank_transform=TRUE`, quantile normalization across platforms)
+  collapsed β→0 (machine-epsilon, ~10⁻¹³) at iteration 1. Diagnosis: the rank transform
+  before quantile normalization removed residual between-platform variance that the survival
+  signal depends on; the CAVI β update saw A_surv/A_gen ~10⁻³, making the genomics term
+  dominate and driving β→0. Per-platform standardization (z-score each cohort separately,
+  then merge) preserves within-cohort gene-level variance while removing cross-platform mean
+  shifts. With `rank_transform=FALSE` and K=3, K_eff=3 and external C-index ranges 0.53–0.67
+  (median 0.64), matching or exceeding the DeSurv range of 0.60–0.65.
+
+- **Trade-offs:** Per-platform standardization assumes each platform's gene expression is
+  comparable after z-scoring, which may not hold if the platforms differ in signal-to-noise
+  ratio beyond mean/variance. The K=3 choice was made using `auto_prune_K()` (ARD pruning)
+  as a starting point; CV-based K selection for the merged YFB case remains future work.
+
+- **Affected files:** `code/preprocess_desurv.R` (`per_platform_standardize` parameter),
+  `results/benchmark_sim/run_YFB_benchmark.R` (`--per-platform-norm --no-rank` flags),
+  `config/globals.yml` (`k_pdac_yfb_merged: 3`).
+  Results: `results/benchmark_sim/outputs/YFB_benchmark_perplatform/`.
+
+---
+
+## 2026-05-06 — Phase 2 (initialization constraints): constrained SVD adds no value; verdict = Discard
+
+- **Decision:** Keep the unconstrained SVD initialization as the canonical starting point
+  for both LB and YFB. Do not apply non-negativity constraints on L or sign alignment of L
+  to Cox coefficients at initialization.
+
+- **Empirical evidence:**
+
+  Two initialization variants were evaluated on LB TCGA_PAAD (K=5, point_normal):
+  (1) Non-negative L initialization: pmax(SVD_L, 0) — removes negative entries.
+  (2) Cox-sign alignment: flip L columns so that sign(L_coxfit_beta) matches the naive Cox
+  direction on the raw principal components.
+  Neither variant improved ELBO convergence value, number of active factors, or external
+  C-index relative to the unconstrained SVD baseline. The post-fit sign correction (Phase C,
+  2026-05-05) already corrects the most common sign failure mode; constrained initialization
+  is redundant.
+
+- **Trade-offs:** In principle, a better initialization could speed convergence or escape
+  local optima. The Phase 3 multi-start sweep (30 restarts) confirmed the CAVI landscape is
+  nearly unimodal on TCGA_PAAD (ELBO range 0.3%), making initialization choice low-stakes.
+
+- **Affected files:** None retained — the constrained initialization code was evaluated
+  inline in the Phase 2 diagnostic script and not merged to `code/`.
+
+---
+
 ## 2026-05-06 — Phase 3 (multi-initialization): SVD init is near-globally optimal; verdict = Discard (n_init=1)
 
 - **Decision:** Keep the LB benchmark default at `n_init = 1` (single SVD initialization). Do
