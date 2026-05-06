@@ -25,15 +25,13 @@ suppressMessages(tryCatch(
 # branch (which sets seed, runs quickly, writes nothing if table/figure dirs
 # are not created — we only need the helper functions to be defined).
 suppressMessages(tryCatch(
-  source("results/modular_sim_factor/run_factor_modular_simulation.R"),
+  source("results/legacy/modular_sim_factor/run_factor_modular_simulation.R"),
   error = function(e) invisible(NULL)
 ))
 
 # Determine whether real-data tests can run
 pdac_root <- Sys.getenv("PDAC_DATA_ROOT", unset = path.expand(
-  paste0("~/Library/CloudStorage/",
-         "OneDrive-UniversityofNorthCarolinaatChapelHill/",
-         "UNC Dissertation (Liu)/PDAC_data")
+  "~/OneDrive - University of North Carolina at Chapel Hill/UNC Dissertation (Liu)/PDAC_data"
 ))
 real_data_available <- dir.exists(pdac_root)
 
@@ -289,6 +287,67 @@ if (!real_data_available) {
   })
 
 }  # end if (real_data_available)
+
+# =============================================================================
+# T5: per_platform_standardize_cohorts() — pure unit tests, no data needed
+# =============================================================================
+
+cat("\n=== T5: per_platform_standardize_cohorts() ===\n")
+
+suppressMessages(tryCatch(
+  source("code/preprocess_desurv.R"),
+  error = function(e) invisible(NULL)
+))
+
+run_test("T5.1: per-platform colMeans ≈ 0 after standardization", {
+  set.seed(10)
+  # Two cohorts with very different location scales to verify each is centred
+  Y1 <- matrix(rnorm(50 * 20, mean = 100, sd = 10), nrow = 50, ncol = 20)
+  Y2 <- matrix(rnorm(30 * 20, mean = -5,  sd = 0.5), nrow = 30, ncol = 20)
+  out <- per_platform_standardize_cohorts(list(cohort1 = Y1, cohort2 = Y2))
+  max_mean1 <- max(abs(colMeans(out$cohort1)))
+  max_mean2 <- max(abs(colMeans(out$cohort2)))
+  assert_true(max_mean1 < 1e-10,
+              sprintf("cohort1 max |colMean| = %.2e; expected < 1e-10", max_mean1))
+  assert_true(max_mean2 < 1e-10,
+              sprintf("cohort2 max |colMean| = %.2e; expected < 1e-10", max_mean2))
+})
+
+run_test("T5.2: per-platform colSDs ≈ 1 after standardization", {
+  set.seed(11)
+  Y1 <- matrix(rnorm(50 * 20, mean = 100, sd = 10), nrow = 50, ncol = 20)
+  Y2 <- matrix(rnorm(30 * 20, mean = -5,  sd = 0.5), nrow = 30, ncol = 20)
+  out <- per_platform_standardize_cohorts(list(cohort1 = Y1, cohort2 = Y2))
+  sds1 <- apply(out$cohort1, 2, sd)
+  sds2 <- apply(out$cohort2, 2, sd)
+  assert_true(max(abs(sds1 - 1)) < 1e-10,
+              sprintf("cohort1 max |colSD - 1| = %.2e", max(abs(sds1 - 1))))
+  assert_true(max(abs(sds2 - 1)) < 1e-10,
+              sprintf("cohort2 max |colSD - 1| = %.2e", max(abs(sds2 - 1))))
+})
+
+run_test("T5.3: constant-gene columns handled without error (SD floor)", {
+  # A cohort where some columns are constant — SD = 0 before floor
+  Y_const <- matrix(0, nrow = 10, ncol = 5)          # all zeros: SD = 0
+  Y_norm  <- matrix(rnorm(10 * 5), nrow = 10, ncol = 5)
+  out <- tryCatch(
+    per_platform_standardize_cohorts(list(const = Y_const, norm = Y_norm)),
+    error = function(e) NULL
+  )
+  assert_false(is.null(out), "function must not error on constant-column cohort")
+  assert_false(anyNA(out$const), "output for constant cohort must not contain NA")
+})
+
+run_test("T5.4: output dimensions are unchanged", {
+  set.seed(12)
+  Y1 <- matrix(rnorm(50 * 20), nrow = 50, ncol = 20)
+  Y2 <- matrix(rnorm(30 * 20), nrow = 30, ncol = 20)
+  out <- per_platform_standardize_cohorts(list(a = Y1, b = Y2))
+  assert_equal(nrow(out$a), 50L)
+  assert_equal(ncol(out$a), 20L)
+  assert_equal(nrow(out$b), 30L)
+  assert_equal(ncol(out$b), 20L)
+})
 
 # =============================================================================
 # Summary
