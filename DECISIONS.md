@@ -5,6 +5,54 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-06 — Phase 4 (K selection): implement select_K_cv() with 1-SE rule over K ∈ {2,…,10,15,20}
+
+- **Decision:** Implement `select_K_cv()` in `code/select_K.R`, replacing the previous stub.
+  Default K_grid = {2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20} with 5-fold stratified CV and the
+  1-SE rule: select the **smallest K** whose mean held-out C-index is within one SE of the
+  maximum. This prefers parsimony over marginal C-index gains.
+
+- **Why cross-validate over K (even though K=3 is the current point estimate)**
+
+  The K=3 selection for YFB merged came from K_eff counting on a single full-data fit, not
+  from a held-out criterion. Single-fit pruning cannot distinguish between "K=3 is the true
+  rank" and "K=3 is where EBNM ran out of signal on this particular sample." Cross-validation
+  over K provides an independent held-out estimate of generalisation for each K, making the
+  selection defensible under peer review.
+
+- **Design choices**
+
+  *Held-out C-index as CV criterion:* The survival C-index directly measures what we care
+  about (risk stratification), making it the natural selection criterion. Held-out MSE on Y
+  would optimise genomic reconstruction, not prognosis — the wrong objective for a supervised
+  model.
+
+  *1-SE rule for parsimony:* A smaller K model is more interpretable, faster to fit, and less
+  prone to identifying noise GEPs as prognostic. The 1-SE rule protects against overfitting
+  to the CV estimates themselves by selecting the most parsimonious model that is statistically
+  indistinguishable from the best.
+
+  *sign_correction disabled inside CV folds:* Fold-level sign correction produces
+  fold-to-fold sign inconsistency — the same CAVI solution may be corrected in one fold but
+  not another, inflating apparent C-index variance. Sign correction is applied post-hoc on
+  the winning full-data fit (same rationale as in select_alpha_cv).
+
+  *Shared fold assignment across K values:* The same stratified folds are used for every
+  K in K_grid (seed fixed at function call). This makes per-K comparisons paired — fold-level
+  variance is cancelled across K values — and ensures results are fully reproducible.
+
+- **Computational cost and HPC path**
+
+  n_folds × |K_grid| = 5 × 11 = 55 model fits per call. On TCGA_PAAD (n=144, p=2000,
+  max_iter=300), each fit takes ~15–30 s on a single core. Total: ~15–30 min locally.
+  On Longleaf, parallelise across K values with SLURM array jobs (one job per K, 5 folds
+  per job). A future `run_K_cv_benchmark.R` runner with `--K N` dispatching will enable this.
+
+- **Affected files:** `code/select_K.R` (select_K_cv() implemented, replacing stub),
+  `tests/test_select_K_cv.R` (new, 12 tests), `tests/run_tests.R` (test_select_K_cv.R added)
+
+---
+
 ## 2026-05-05 — Phase C added to LB (fit_modular.R); sign_correction parameter + alpha CV fix
 
 - **Decision (Phase C for LB):** Added training concordance sign correction to

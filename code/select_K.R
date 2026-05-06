@@ -98,37 +98,204 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 }
 
 # ============================================================
-# select_K_cv() stub ----
+# select_K_cv() ----
 # ============================================================
 
-#' K selection via cross-validated held-out C-index (STUB — Longleaf HPC only).
+#' K selection via cross-validated held-out C-index with the 1-SE rule.
 #'
-#' For each candidate K in K_grid:
-#'   1. Do n_folds-fold CV: fit on (n_folds-1)/n_folds of data
-#'   2. Evaluate C-index on the held-out fold via predict_supervised_mf()
-#'   3. Select K that maximises mean held-out C-index
+#' For each candidate K in K_grid, runs n_folds-fold stratified CV:
+#'   1. Fit the SBMF model on the (n_folds-1)/n_folds training portion.
+#'   2. Project the held-out fold via predict_supervised_mf().
+#'   3. Compute held-out C-index: concordance(Surv(time, status) ~ I(-risk)).
 #'
-#' This is the most principled K selection approach but is compute-intensive:
-#'   n_folds × |K_grid| model fits, each up to max_iter=300 iterations.
-#' Intended for Longleaf HPC with SLURM parallelisation.
+#' After collecting all fold-level C-indices, summarises by mean ± SE per K.
+#' The 1-SE rule (use_1se = TRUE) selects the **smallest K** whose mean C-index
+#' is within one SE of the maximum — preferring parsimony when evidence for a
+#' larger K is weak.  Set use_1se = FALSE to select the maximising K directly.
 #'
-#' **Status:** Interface stub only.  Call auto_prune_K() for immediate use.
+#' **Computational cost:** n_folds × |K_grid| full SBMF fits.
+#' For K_grid = 2:10 + 15 + 20 (11 values) and n_folds = 5, that is 55 fits.
+#' Each fit runs up to max_iter iterations on (n_folds-1)/n_folds of n subjects.
+#' On Longleaf HPC, parallelise over K values with SLURM array jobs; locally,
+#' expect ~15–30 min for n ~ 150, p = 2000, K_max = 20.
 #'
-#' @param Y       numeric matrix (n × p)
-#' @param time    numeric vector (n)
-#' @param status  integer vector (n)
-#' @param K_grid  integer vector: candidate K values (default c(2, 3, 5, 8, 10))
-#' @param n_folds integer: number of cross-validation folds (default 5)
-#' @param ...     additional arguments passed to fit_supervised_mf_modular()
+#' sign_correction is always disabled inside CV folds (same rationale as in
+#' select_alpha_cv): fold-level sign correction produces inconsistent signs
+#' across folds and inflates apparent C-index variance.
 #'
-#' @return (not implemented — errors with informative message)
+#' @param Y          numeric matrix (n × p)
+#' @param time       numeric vector length n: survival/censoring times
+#' @param status     integer vector length n: event indicators (1=event, 0=censored)
+#' @param K_grid     integer vector: candidate K values
+#'                   (default c(2,3,4,5,6,7,8,9,10,15,20))
+#' @param n_folds    integer >= 2: number of CV folds (default 5)
+#' @param use_1se    logical: apply 1-SE rule (default TRUE)
+#' @param seed       integer: RNG seed for stratified fold creation (default 42)
+#' @param verbose    logical: print per-fold progress (default FALSE)
+#' @param ...        additional arguments passed to fit_supervised_mf_modular()
+#'                   (alpha, lambda, prior_LF, prior_beta, max_iter, tol, etc.)
+#'                   Do NOT pass K — it is overridden for each candidate in K_grid.
+#'
+#' @return Named list:
+#'   $K_opt         integer: selected K (1-SE rule or max)
+#'   $cv_table      data.frame with K, mean_cindex, se_cindex, n_folds
+#'   $fold_results  data.frame with K, fold, n_train, n_test, n_event_test,
+#'                  n_censored_test, cindex — one row per (K, fold) combination
+#'   $selection_rule character: "1se" or "max"
+#'
+#' @examples
+#' \dontrun{
+#' source("code/fit_modular.R"); source("code/predict.R")
+#' source("code/train_test_split.R"); source("code/select_K.R")
+#' res <- select_K_cv(Y, time, status,
+#'                    K_grid = c(2,3,5,8,10), n_folds = 3,
+#'                    alpha = 0.5, prior_beta = "point_normal")
+#' res$K_opt      # selected K
+#' res$cv_table   # mean C-index ± SE per K
+#' }
+#'
+#' @seealso \code{\link{auto_prune_K}} for a cheaper single-fit alternative.
 select_K_cv <- function(Y, time, status,
-                         K_grid  = c(2, 3, 5, 8, 10),
-                         n_folds = 5, ...) {
-  stop(paste0(
-    "select_K_cv() is not yet implemented.\n",
-    "This function is intended for Longleaf HPC with SLURM parallelisation.\n",
-    "Use k_select = 'auto_prune' for immediate local use.\n",
-    "See project_future_direction.md for K selection roadmap."
-  ))
+                         K_grid   = c(2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 15L, 20L),
+                         n_folds  = 5L,
+                         use_1se  = TRUE,
+                         seed     = 42L,
+                         verbose  = FALSE,
+                         ...) {
+
+  # --- dependency checks ---
+  if (!exists("fit_supervised_mf_modular", mode = "function"))
+    stop("fit_supervised_mf_modular() must be sourced before select_K_cv().")
+  if (!exists("predict_supervised_mf", mode = "function"))
+    stop("predict_supervised_mf() must be sourced before select_K_cv().")
+  if (!exists("create_stratified_folds", mode = "function"))
+    stop("create_stratified_folds() must be sourced before select_K_cv().")
+
+  # --- input validation ---
+  if (!is.matrix(Y) || !is.numeric(Y))
+    stop("Y must be a numeric matrix.")
+  n <- nrow(Y)
+  if (length(time) != n)
+    stop(sprintf("time must have length %d (nrow(Y)).", n))
+  if (length(status) != n)
+    stop(sprintf("status must have length %d (nrow(Y)).", n))
+  if (!all(status %in% c(0, 1)))
+    stop("status must contain only 0 and 1.")
+  K_grid <- as.integer(sort(unique(K_grid)))
+  if (any(K_grid < 1))
+    stop("K_grid values must be positive integers.")
+  n_folds <- as.integer(n_folds)
+  if (n_folds < 2)
+    stop("n_folds must be >= 2.")
+
+  # Grab any user-supplied extra args; strip K if accidentally passed
+  extra <- list(...)
+  extra[["K"]] <- NULL
+
+  # --- create stratified folds once (shared across all K) ---
+  fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
+
+  n_combos  <- length(K_grid) * n_folds
+  fold_rows <- vector("list", n_combos)
+  row_idx   <- 1L
+
+  for (K in K_grid) {
+    if (verbose)
+      cat(sprintf("  [select_K_cv] K = %d ...\n", K))
+
+    for (fold_id in seq_len(n_folds)) {
+      test_idx  <- fold_obj$folds[[fold_id]]
+      train_idx <- setdiff(seq_len(n), test_idx)
+
+      # Fit on training fold — sign_correction disabled for consistent fold signs
+      fit_args <- c(
+        list(Y      = Y[train_idx, , drop = FALSE],
+             time   = time[train_idx],
+             status = status[train_idx],
+             K      = K,
+             sign_correction = FALSE,
+             verbose = FALSE),
+        extra
+      )
+      fit <- do.call(fit_supervised_mf_modular, fit_args)
+
+      # Project held-out fold and score
+      pred   <- predict_supervised_mf(Y[test_idx, , drop = FALSE],
+                                      fit$EF, fit$EBeta)
+      cindex <- tryCatch(
+        as.numeric(survival::concordance(
+          survival::Surv(time[test_idx], status[test_idx]) ~ I(-pred$risk_scores)
+        )$concordance),
+        error = function(e) NA_real_
+      )
+
+      if (verbose)
+        cat(sprintf("    fold %d/%d: n_train=%d, n_test=%d, C=%.3f\n",
+                    fold_id, n_folds,
+                    length(train_idx), length(test_idx),
+                    ifelse(is.na(cindex), -1, cindex)))
+
+      fold_rows[[row_idx]] <- data.frame(
+        K               = K,
+        fold            = fold_id,
+        n_train         = length(train_idx),
+        n_test          = length(test_idx),
+        n_event_test    = sum(status[test_idx] == 1),
+        n_censored_test = sum(status[test_idx] == 0),
+        cindex          = cindex,
+        stringsAsFactors = FALSE
+      )
+      row_idx <- row_idx + 1L
+    }
+  }
+
+  fold_results <- do.call(rbind, fold_rows)
+  rownames(fold_results) <- NULL
+
+  # --- summarise per K ---
+  cv_table <- do.call(rbind, lapply(K_grid, function(K) {
+    cidx <- fold_results$cindex[fold_results$K == K]
+    cidx_obs <- cidx[!is.na(cidx)]
+    data.frame(
+      K           = K,
+      mean_cindex = if (length(cidx_obs) > 0) mean(cidx_obs) else NA_real_,
+      se_cindex   = if (length(cidx_obs) > 1)
+                      stats::sd(cidx_obs) / sqrt(length(cidx_obs))
+                    else NA_real_,
+      n_folds     = length(cidx_obs),
+      stringsAsFactors = FALSE
+    )
+  }))
+  rownames(cv_table) <- NULL
+
+  # --- K selection ---
+  # Only consider K values with complete fold results
+  complete <- !is.na(cv_table$mean_cindex)
+  if (!any(complete))
+    stop("All K values produced NA C-indices — check data and model arguments.")
+
+  best_idx <- which.max(cv_table$mean_cindex[complete])
+  best_K   <- cv_table$K[complete][best_idx]
+  best_c   <- cv_table$mean_cindex[complete][best_idx]
+
+  if (use_1se) {
+    # SE at the best K (may be NA if only one non-NA fold)
+    se_best   <- cv_table$se_cindex[cv_table$K == best_K]
+    se_best   <- ifelse(is.na(se_best), 0, se_best)
+    threshold <- best_c - se_best
+    # Smallest K whose mean C-index >= threshold
+    eligible  <- cv_table$K[complete & cv_table$mean_cindex >= threshold]
+    K_opt     <- min(eligible)
+    selection_rule <- "1se"
+  } else {
+    K_opt <- best_K
+    selection_rule <- "max"
+  }
+
+  list(
+    K_opt          = K_opt,
+    cv_table       = cv_table,
+    fold_results   = fold_results,
+    selection_rule = selection_rule
+  )
 }
