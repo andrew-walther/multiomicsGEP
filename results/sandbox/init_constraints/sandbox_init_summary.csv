@@ -1,0 +1,7 @@
+"init_y_normalize","init_constraint","final_elbo","k_eff","beta_max","c_index","n_iters","converged"
+FALSE,"none",69356,2,2.2488,0.8582,9,TRUE
+FALSE,"col_l_sum1",68255.5,2,43.9554,0.54,21,TRUE
+FALSE,"col_f_sum1",68205.81,2,1.0114,0.7976,24,TRUE
+TRUE,"none",66240.14,0,0,0.5,6,TRUE
+TRUE,"col_l_sum1",66240.14,0,0,0.5,6,TRUE
+TRUE,"col_f_sum1",66240.14,0,0,0.5,6,TRUE

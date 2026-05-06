@@ -5,6 +5,69 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-06 — Phase 2 verdict: DeSurv-style init constraints are harmful; SVD init is optimal
+
+- **Decision (verdict = Discard):** Branch `phase2-init-constraints` is left unmerged.
+  The `init_y_normalize` and `init_constraint` parameters are retained in
+  `code/fit_modular.R` (default FALSE/"none" preserves existing behavior) so the
+  experiment is reproducible, but defaults are not changed.
+
+- **What was tried:** Two DeSurv-inspired initialization modifications implemented on
+  a branch off `baseline-05_05_26`:
+  1. `init_y_normalize=TRUE`: divide each column of Y by |colSums(Y)| + ε before
+     computing the SVD warm-start. Applied only at initialization; CAVI uses original Y.
+  2. `init_constraint ∈ {"col_l_sum1", "col_f_sum1"}`: after SVD init, normalize columns
+     of EL (or EF) so they sum to 1. Constraint is initialization-only; CAVI updates
+     are unconstrained.
+
+- **Empirical result (2026-05-06, synthetic DGP, n=250, p=1000, K_true=5, seed=222):**
+
+  | init_y_normalize | init_constraint | ELBO | ΔELBO | K_eff | C-index |
+  |---|---|---|---|---|---|
+  | FALSE | none (baseline) | 69356 | 0 | 2 | 0.858 |
+  | FALSE | col_l_sum1 | 68255 | −1101 | 2 | 0.540 |
+  | FALSE | col_f_sum1 | 68206 | −1150 | 2 | 0.798 |
+  | TRUE | none | 66240 | −3116 | 0 | 0.500 |
+  | TRUE | col_l_sum1 | 66240 | −3116 | 0 | 0.500 |
+  | TRUE | col_f_sum1 | 66240 | −3116 | 0 | 0.500 |
+
+  All six conditions perform at or below the baseline. No condition improves ELBO or
+  C-index over the default SVD initialization.
+
+- **Root cause analysis:**
+  - `init_y_normalize=TRUE` destroys scale information — the same mechanism that makes
+    rank transform collapse YFB beta. Dividing Y by |colSums| re-normalizes columns to
+    a proportional scale; since Y has both positive and negative values (after z-norm),
+    the SVD of the rescaled Y finds very different leading subspaces than the natural Y,
+    leading to EL/EF that are misaligned with the CAVI objective. CAVI then spends
+    iterations correcting back toward the unconstrained solution, landing at a much
+    lower ELBO.
+  - `col_l_sum1` forces EL columns to sum to 1 at initialization. The natural SVD
+    EL columns have magnitudes on the order of √n · σ_Y; sum-to-1 shrinks them by
+    ~1/500, making the initial β CAVI update receive negligible survival signal (A_surv
+    ≈ 0) and converging to a suboptimal solution.
+  - `col_f_sum1` is less harmful but still regresses — EF column normalization distorts
+    the relationship between EL·EF' and Y, and CAVI starts from an inconsistent
+    approximation.
+  - **The SVD warm-start** (pmax(U√D, 0), pmax(V√D, 0)) is already well-calibrated:
+    it initializes EL·EF' ≈ Y and provides a high-quality starting subspace. No init
+    constraint improves on this.
+
+- **Implication:** The meeting's suggestion to apply DeSurv-style column constraints
+  was motivated by NMF practice, where sum-to-1 column normalization is useful for
+  non-negative bounded data. Our model operates on z-normalized or rank-transformed
+  data with signed values, and uses EBNM priors rather than NMF updates. The SVD init
+  is already consistent with the CAVI objective; adding constraints disrupts this
+  alignment without benefit.
+
+- **Files:** `code/fit_modular.R` (parameters retained with default FALSE/"none"),
+  `tests/test_init_constraints.R` (8/8 passing), `code/fit_modular.R` (sys.nframe()
+  guard on runner block),
+  `results/sandbox/init_constraints/run_init_constraint_sweep.R`,
+  `results/sandbox/init_constraints/sandbox_init_summary.csv`
+
+---
+
 ## 2026-05-05 — Phase C added to LB (fit_modular.R); sign_correction parameter + alpha CV fix
 
 - **Decision (Phase C for LB):** Added training concordance sign correction to

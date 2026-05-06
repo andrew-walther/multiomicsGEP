@@ -160,6 +160,21 @@ calc_cox_taylor <- function(eta, time, status) {
 #'                 flash_fit$L_pm, to initialize CAVI from an EBMF solution.
 #' @param EF_init  Optional p x K numeric matrix: custom initial factors.
 #'                 Must be supplied together with EL_init.
+#' @param init_y_normalize  Logical (default FALSE): if TRUE, divide each column
+#'                 of Y by its column sum (+ 1e-8) before computing the SVD
+#'                 warm-start. This is a DeSurv-inspired initialization trick
+#'                 that bounds the SVD input to a roughly proportional scale.
+#'                 Applied only for the SVD used in initialization; CAVI still
+#'                 operates on the original Y. No-op when init_method != "svd".
+#' @param init_constraint  character (default "none"): column-sum-to-1 constraint
+#'                 applied to the initial EL or EF matrices after SVD init:
+#'                 "none"       — no constraint (current default behavior)
+#'                 "col_l_sum1" — each column of EL is divided by its sum so
+#'                                that colSums(EL) = 1 at initialization
+#'                 "col_f_sum1" — each column of EF is divided by its sum so
+#'                                that colSums(EF) = 1 at initialization
+#'                 The constraint is enforced only at initialization; CAVI
+#'                 updates may break it in subsequent iterations.
 #' @param verbose  Logical: print iteration logs every 10 iters? (default TRUE)
 #'
 #' @return Named list:
@@ -187,6 +202,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                       alpha_schedule  = NULL,
                                       normalize_AB    = FALSE,
                                       sign_correction = TRUE,
+                                      init_y_normalize  = FALSE,
+                                      init_constraint   = "none",
                                       verbose         = TRUE) {
 
   n <- nrow(Y); p <- ncol(Y)
@@ -243,9 +260,22 @@ fit_supervised_mf_modular <- function(Y, time, status,
   #              should set a seed before each call for reproducibility.
   # --------------------------------------------------------------------------
 
+  # Validate init_constraint before entering init block.
+  if (!init_constraint %in% c("none", "col_l_sum1", "col_f_sum1"))
+    stop(sprintf("init_constraint must be 'none', 'col_l_sum1', or 'col_f_sum1'; got '%s'.",
+                 init_constraint))
+
   if (init_method == "svd") {
-    # SVD of Y: deterministic high-variance starting subspace
-    svd_init <- svd(Y, nu = K, nv = K)
+    # When init_y_normalize=TRUE, divide each column by its sum before SVD.
+    # Bounds columns to a proportional scale; CAVI still uses the original Y.
+    Y_svd <- if (init_y_normalize) {
+      col_sums <- colSums(Y)
+      sweep(Y, 2, pmax(abs(col_sums), 1e-8), "/")
+    } else {
+      Y
+    }
+    # SVD of Y (or Y_svd): deterministic high-variance starting subspace
+    svd_init <- svd(Y_svd, nu = K, nv = K)
     d_k <- sqrt(pmax(svd_init$d[1:K], 0))
     EL  <- pmax(svd_init$u %*% diag(d_k, K, K), 0)      # n x K; pmax ensures non-negative init matches point_exponential prior
     EF  <- pmax(svd_init$v %*% diag(d_k, K, K), 0)      # p x K
@@ -273,6 +303,16 @@ fit_supervised_mf_modular <- function(Y, time, status,
     EF <- EF_init
   } else {
     stop(sprintf("Unknown init_method: '%s'. Use 'svd', 'random', or 'custom'.", init_method))
+  }
+
+  # Optional column-sum-to-1 constraint on EL or EF at initialization.
+  # Enforced only here; CAVI updates are unconstrained.
+  if (init_constraint == "col_l_sum1") {
+    cs <- colSums(EL); cs[cs < 1e-10] <- 1e-10
+    EL <- sweep(EL, 2, cs, "/")
+  } else if (init_constraint == "col_f_sum1") {
+    cs <- colSums(EF); cs[cs < 1e-10] <- 1e-10
+    EF <- sweep(EF, 2, cs, "/")
   }
 
   # Second moments initialised to squared means (zero posterior variance).
@@ -620,7 +660,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
 # PART 3 — DATA_MODE Runner Block
 # ==============================================================================
 
-if (DATA_MODE == "simulated") {
+if (sys.nframe() == 0 && DATA_MODE == "simulated") {
 
   # DGP identical to results/run_modular_simulation.R lines 131-152:
   # same seed (42), same B_true, same Weibull survival model.
@@ -687,7 +727,7 @@ if (DATA_MODE == "simulated") {
               nonzero_est_threshold, all(abs(est[!nonzero_mask]) < nonzero_est_threshold),
               est[!nonzero_mask]))
 
-} else if (DATA_MODE == "real") {
+} else if (sys.nframe() == 0 && DATA_MODE == "real") {
 
   stopifnot(
     !is.null(real_Y),
