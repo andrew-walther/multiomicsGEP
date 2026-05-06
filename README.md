@@ -263,34 +263,33 @@ The key mathematical concepts are:
 
 ## Project Status
 
-The model is fully implemented, tested, benchmarked against DeSurv, and documented in a 24-page report. See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete session log.
+The model is fully implemented, tested, and benchmarked. Two model variants are evaluated:
+**Cluster A (LB)** uses η = Lβ; **Cluster B (YFB)** uses η = (YF)β (Cox-on-YF reformulation).
+See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete session log.
 
 **Completed:**
 - Modular CAVI implementation (171/171 tests passing)
+- Cox-on-YF reformulation (Cluster B): `code/fit_cox_on_yf.R`, `code/predict_cox_on_yf.R`
 - DeSurv-aligned preprocessing pipeline (`code/preprocess_desurv.R`)
 - Alpha CV selection via 1-SE rule (`code/select_alpha_cv.R`)
+- Phase C sign correction for both LB (`code/fit_modular.R`) and YFB (`code/fit_cox_on_yf.R`):
+  post-convergence training concordance check; flips EBeta if C_train < 0.5
 - SVD pseudoinverse prediction fix (`code/predict.R`)
-- Synthetic validation: supervised C-index 0.79 > PCA 0.76 at n=300, p=1000
-- PDAC cross-cohort benchmark: TCGA-only median external C-index 0.60 (5 cohorts),
-  competitive with DeSurv's reported 0.60–0.65 range
-- Prior sensitivity: `point_normal` vs `point_laplace` compared; `point_normal` recommended
+- Synthetic validation: LB supervised C-index 0.79 > PCA 0.76; YFB C=0.906 (K_eff=4)
+- PDAC cross-cohort benchmark (Phase C fixed): LB external C=0.55–0.67 across all training
+  modes (tcga_only, cptac_only, merged); YFB external C=0.55–0.63 (single-cohort, normal prior)
+- Prior sensitivity: `point_normal` vs `point_laplace` vs `normal` compared across both models;
+  `normal` prior needed for YFB on real PDAC (spike-and-slab collapses beta when signal is weak)
 - v2 preprocessing for merged cohort: intersect-first → log₂ → quantile normalization →
-  top-2000 by merged variance → rank transform; fixes 838-gene selection bug
-- Lambda sweep (λ ∈ {1, 5, 10, 20} × 3 priors): all β=0; λ≥5 collapses EL matrix — λ tuning ruled out
-- EBMF diagnostic: 5/20 unsupervised factors are Cox-significant (C-index up to 0.63);
-  confirms survival signal exists in merged data — failure is a **model problem, not data**
-- EBMF warm-start experiments: β-only (EL fixed) → 6/20 factors active ✓; full CAVI → β
-  collapses in 23 iters ✗. Root cause localised to `update_L_k()` A\_surv/A\_gen imbalance
-- 24-page DeSurv benchmark report (`docs/reports/ssbmf_summary_report_04_29_26.pdf`)
+  top-2000 by merged variance → rank transform
+- DeSurv benchmark report (`docs/reports/ssbmf_summary_report_04_29_26.pdf`) and full
+  Phase A–C re-benchmark report (`docs/reports/ssbmf_summary_report_05_05_26.pdf`)
 
-**Highest-priority next step:**
-- Fix `update_L_k()` A\_surv/A\_gen scale imbalance so survival signal survives the joint CAVI.
-  Full debugging plan in `docs/update_L_fix.md`. Four candidate fixes in priority order:
-  (1) reorder β before L in inner loop, (2) β-only burn-in, (3) ridge Cox warm-start,
-  (4) normalise A\_surv/A\_gen to comparable scales.
+**Current priorities:** K selection via CV (`code/select_K.R` stub); YFB merged beta collapse
+(K_eff=0 for YFB on mixed RNA-seq + proteomics); prior comparison follow-up. See `ROADMAP.md`.
 
 ---
 
 ## Author
 
-Andrew Walther — April 2026
+Andrew Walther — May 2026

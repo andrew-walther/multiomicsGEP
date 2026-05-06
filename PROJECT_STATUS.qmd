@@ -1464,3 +1464,93 @@ addresses both the cold-start cycle (no A_surv ≈ 0 trap on F) and the train/te
 derivations in `derivations/qF_supervised/` per design doc §5.5.
 
 ---
+
+### Session 21 (May 4–5, 2026)
+
+Cluster B implementation completed and merged; benchmark pipeline consolidated; Phase A–C fixes
+fully applied to both LB and YFB; full benchmark re-run and 05/05 report rendered.
+
+#### 21.1 — Cluster B implementation (`code/fit_cox_on_yf.R`, merged to `main`)
+
+Cox-on-YF reformulation (Cluster B) implemented and merged from branch
+`cox-on-yf-reformulation`. Core components:
+
+- `code/fit_cox_on_yf.R` — main CAVI loop; linear predictor η = (Y·EF_norm)·β
+- `code/predict_cox_on_yf.R` — hold-out projection using stored EF_norms and EBeta
+- `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R` — YFB-specific update variants
+- `derivations/cox_on_YF/` — full parameter derivations (LaTeX)
+- Smoke test: 3/3 PASS; synthetic: C-index 0.605 vs PCA 0.471 (3 active factors)
+
+#### 21.2 — Benchmark consolidation
+
+Created two canonical benchmark runners (replacing 7+ one-off diagnostic scripts):
+
+- `results/benchmark_sim/run_LB_benchmark.R` — Cluster A; 4 sections: synthetic + PDAC
+  train + external validation + CSV output; tests point_normal vs normal side-by-side
+- `results/benchmark_sim/run_YFB_benchmark.R` — Cluster B; same structure
+- Archived retired scripts to `results/benchmark_sim/archive/`
+- `config/globals.yml` updated with `benchmark` section: K=10, K_merged=20, N_burnin=0,
+  normalize_AB=FALSE, cox_warmstart=FALSE, alpha=0.5, lambda=1.0, beta_threshold=0.001
+
+#### 21.3 — Phase A–C fixes (both LB and YFB)
+
+**Phase A** (confirmed correct): CAVI inner loop is L→F→β (Gauss-Seidel), not β→L→F.
+18-unit ELBO gap verified on identical data.
+
+**Phase B** (YFB only): EF column normalization added to `fit_cox_on_yf.R` and
+`predict_cox_on_yf.R`. Without normalization ‖EF_k‖ ≈ O(√p), driving A_beta ≈ O(p·n)
+and collapsing EBeta to zero via spike-and-slab. With unit-norm EF, ZF is O(1)-scale.
+YFB synthetic result: C rescued from 0.119 → 0.906 (K_eff=4).
+
+**Phase C** (both models): Training concordance sign correction implemented in both
+`fit_cox_on_yf.R` (YFB) and `fit_supervised_mf_modular()` in `fit_modular.R` (LB).
+After CAVI convergence, η_train = EL·EBeta (LB) or ZF·EBeta (YFB); if C_train < 0.5,
+negate EBeta. Root cause: pmax(SVD) initialisation discards sign information. Controlled
+by `sign_correction=TRUE` parameter (default TRUE).
+
+**Alpha CV bug fixed**: Applying Phase C inside CV folds in `select_alpha_cv.R` caused
+fold-to-fold sign inconsistency — some folds corrected, others not — making all CV
+C-indices unreliable. 1-SE rule then selected alpha=1.0 (degenerate), yielding K_eff=0
+and C≈0.5 everywhere. Fix: `sign_correction=FALSE` in the `fit_supervised_mf_modular()`
+call inside `select_alpha_cv.R`. The existing `I(-pred$risk_scores)` negation (pre-Phase-C
+convention) is retained unchanged.
+
+#### 21.4 — LB benchmark re-run results (2026-05-05)
+
+All three LB training modes re-run with Phase C fix. Alpha CV (5-fold, 1-SE) selects
+alpha=0.50 for all modes. Risk scores saved per-subject to `LB_riskscores_*.csv`.
+
+| Mode | n_train | K_eff | alpha | External C-index range |
+|---|---|---|---|---|
+| tcga_only  | 144 | 2 | 0.50 | 0.55–0.66 (Dijk=0.584, PACA_AU_seq=0.656, Puleo=0.615) |
+| cptac_only | 129 | 3 | 0.50 | 0.55–0.67 (Dijk=0.624, PACA_AU_seq=0.673, Puleo=0.625) |
+| merged     | 273 | 3 | 0.50 | 0.51–0.67 (Dijk=0.571, PACA_AU_seq=0.671, Puleo=0.644) |
+
+All results above 0.5 and broadly consistent with the 04/29 DeSurv archived baseline
+(~0.60–0.65). Both point_normal and normal priors give identical results for LB — the
+spike-and-slab collapses to the same active set as the normal prior at these signal levels.
+
+#### 21.5 — YFB benchmark status (2026-05-05)
+
+YFB single-cohort modes with normal prior are functional (C=0.55–0.63, tcga_only). YFB
+merged still collapses to K_eff=0 — platform mixing (RNA-seq + proteomics) suppresses
+A_surv/A_gen to 0.0000–0.0011 at iter 1. The F matrix still captures survival-relevant
+column structure, yielding external C=0.57–0.64 despite K_eff=0 (beta effectively zero).
+Cox warm-start (`cox_warmstart=TRUE`) was tested on merged and did not rescue beta.
+
+#### 21.6 — 05/05 benchmark report
+
+`docs/reports/ssbmf_summary_report_05_05_26.qmd` rendered to PDF and HTML. Report covers:
+alpha CV tables, training convergence, LB and YFB bar charts (external C-index by cohort),
+LB vs YFB vs archived-baseline comparison, full external validation tables for all modes,
+KM curves (high/low risk stratification) for both models, cox warm-start diagnostic table,
+and archived baseline comparison. Commit: `2a6ad99`.
+
+#### 21.7 — Living docs updated
+
+- `ROADMAP.md`: preamble updated; "Add sign correction to LB" moved to Completed; "Diagnose
+  β→0 collapse" narrowed to YFB merged only; alpha CV stale numbers corrected.
+- `DECISIONS.md`: 2026-05-05 entries for Phase C (LB) and Phase B+C (YFB).
+- `README.md`: Project Status section updated to reflect both model variants and Phase C fix.
+
+---
