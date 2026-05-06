@@ -77,10 +77,14 @@ yfb_merge_baseline <- read_csv_safe(file.path(OUT_YFB, "YFB_benchmark_results_me
 yfb_merge_p1 <- read_csv_safe(file.path(OUT_YFB_P1, "YFB_benchmark_results_merged.csv"))
 
 # ── K-CV results ───────────────────────────────────────────────────────────
-kcv_comparison <- read_csv_safe(file.path(OUT_KCV, "K_cv_comparison.csv"))
+kcv_comparison <- read_csv_safe(file.path(OUT_KCV, "K_cv_comparison.csv"))   # LB (backwards compat)
 kcv_meta       <- read_csv_safe(file.path(OUT_KCV, "K_cv_meta.csv"))
-kcv_pn  <- read_csv_safe(file.path(OUT_KCV, "K_cv_table_point_normal.csv"))
-kcv_nm  <- read_csv_safe(file.path(OUT_KCV, "K_cv_table_normal.csv"))
+kcv_pn  <- read_csv_safe(file.path(OUT_KCV, "K_cv_table_point_normal.csv"))  # legacy LB-only
+kcv_nm  <- read_csv_safe(file.path(OUT_KCV, "K_cv_table_normal.csv"))        # legacy LB-only
+# Per-model comparisons (LB × prior, YFB × prior, LB vs YFB head-to-head)
+kcv_lb  <- read_csv_safe(file.path(OUT_KCV, "K_cv_comparison_LB.csv"))
+kcv_yfb <- read_csv_safe(file.path(OUT_KCV, "K_cv_comparison_YFB.csv"))
+kcv_h2h <- read_csv_safe(file.path(OUT_KCV, "K_cv_comparison_h2h.csv"))
 
 # ── Risk score CSVs (for KM curves) ───────────────────────────────────────
 lb_rs_tcga  <- read_csv_safe(file.path(OUT_LB, "LB_riskscores_tcga_only.csv"))
@@ -172,11 +176,16 @@ units ($\approx 0.3\%$), indicating a nearly unimodal landscape. Multi-start add
 computational cost without predictive benefit.
 
 **Phase 4 — K-selection via cross-validated C-index:**
-Five-fold CV over $K \in \{2, \ldots, 10, 15, 20\}$ on TCGA_PAAD reveals a flat
-C-index plateau across all K under the normal prior (range = 0.032, smaller than
-per-K SE). The 1-SE rule selects K=3 under normal prior and K=8 under point\_normal
-(a CV artefact of spike-small-n interaction). **Practical default: K=5**, sitting
-above the spike collapse threshold while remaining parsimonious.
+Five-fold CV over $K \in \{2, \ldots, 10, 15, 20\}$ on TCGA\_PAAD was run for both
+LB ($\eta = L\beta$) and YFB ($\eta = (YF)\beta$) models under point\_normal and
+normal priors. For LB, the normal prior plateau (C range = 0.032, smaller than
+per-K SE $\approx$ 0.025–0.044) yields K=3 under the 1-SE rule; point\_normal selects
+K=8 (a CV artefact of spike-small-n interaction). For YFB, the point\_normal prior
+collapses $\hat\beta \to 0$ in all folds (C=0.5 exactly); the normal prior yields
+C $< 0.5$ across all K (anti-concordant in CV), reflecting sign instability of the
+YFB risk scores in held-out folds without global sign correction.
+**Practical default: K=5** for LB; YFB K-selection should be revisited with sign
+correction enabled in CV.
 
 > **Bottom line.** The LB model trained on TCGA-only achieves external median C $\approx$
 > 0.61, consistent with the archived 04/29 baseline. The YFB merged model with Phase 1
@@ -394,14 +403,16 @@ diagnostic utility accessible via `--n-init N` on the LB benchmark runner.
 ### Method
 
 Five-fold stratified cross-validation over $K \in \{2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20\}$
-on TCGA\_PAAD (n=144, events=75). For each $K$ and fold, the LB model is fit on the
-training portion ($n \approx 115$) and projected to the held-out fold; the C-index is
-computed using `survival::concordance`. Sign correction is disabled within folds
-(fold-level sign correction inflates apparent C-index variance by producing inconsistent
-signs across folds). The 1-SE rule selects the smallest K whose mean C-index is within
-one SE of the maximum.
+on TCGA\_PAAD (n=144, events=75) for **both LB** ($\eta = L\beta$, `fit_supervised_mf_modular`)
+and **YFB** ($\eta = (YF)\beta$, `fit_cox_on_yf`) models, each under point\_normal and
+normal priors. For each $K$ and fold, the model is fit on the training portion
+($n \approx 115$) and projected to the held-out fold via the appropriate prediction
+function; the C-index is computed using `survival::concordance`. Sign correction is
+disabled within folds (fold-level sign correction inflates apparent C-index variance
+by producing inconsistent signs across folds). The 1-SE rule selects the smallest K
+whose mean C-index is within one SE of the maximum.
 
-### Results
+### LB Results
 
 ```{r kcv-table, fig.height=5}
 if (!is.null(kcv_comparison)) {
@@ -474,15 +485,151 @@ to 0.597 (K=20) — a spread of 0.032, smaller than the per-K SE of $\approx 0.0
 No K is statistically distinguishable from any other. K=3 is the 1-SE selection:
 the most parsimonious model indistinguishable from the best.
 
-**Convergence at K$\geq$9.** At K=9 and above, both priors yield identical C-indices
+**Convergence at K$\geq$9.** At K=9 and above, both LB priors yield identical C-indices
 (e.g., K=10: both give 0.5823$\pm$0.034), confirming the spike constraint is non-binding
 at larger K — the factors carry sufficient survival signal to escape the spike component.
 
-**Practical recommendation: K=5.** K=3 is correct under the normal prior and 1-SE rule,
+**Practical recommendation: K=5 (LB).** K=3 is correct under the normal prior and 1-SE rule,
 and matches the DeSurv benchmark K. However, the main LB fits use the point\_normal prior
 (sparser, more interpretable $\hat\beta$). At K=3, the full n=144 fit gives K\_eff=2
 and the two active factors have max|$\hat\beta$|$\approx$0.008. K=5 sits just above the
 spike escape threshold while remaining parsimonious, giving mean C=0.546 in CV.
+
+### YFB Results
+
+```{r kcv-yfb-table}
+if (!is.null(kcv_yfb)) {
+  yfb_show <- kcv_yfb
+  yfb_show$selected <- trimws(yfb_show$selected)
+  yfb_show$Note <- ifelse(
+    grepl("PN", yfb_show$selected) & grepl("NM", yfb_show$selected),
+                                      "<-- selected (both priors)",
+    ifelse(grepl("PN",  yfb_show$selected), "<-- selected (point_normal, 1-SE)",
+    ifelse(grepl("NM",  yfb_show$selected), "<-- selected (normal, 1-SE)",
+    ifelse(yfb_show$PN_mean_C == 0.5, "PN: spike collapse (beta→0 all folds)", ""))))
+  knitr::kable(
+    data.frame(
+      K            = yfb_show$K,
+      `PN mean C`  = round(yfb_show$PN_mean_C, 4),
+      `PN SE`      = round(yfb_show$PN_se, 4),
+      `NM mean C`  = round(yfb_show$NM_mean_C, 4),
+      `NM SE`      = round(yfb_show$NM_se, 4),
+      Note         = yfb_show$Note,
+      check.names  = FALSE
+    ),
+    caption = "5-fold CV C-index on TCGA\\_PAAD for YFB model by K.
+    PN = point\\_normal prior; NM = normal prior.
+    PN: C=0.500 at all K (EBeta→0 collapse in every fold; 1-SE selects K=2).
+    NM: C < 0.500 at all K (anti-concordant; 1-SE selects K=9).
+    Anti-concordance indicates YFB risk-score sign is inverted in held-out
+    folds when global sign correction is suppressed — consistent with sign
+    instability in the YFB parameterisation under within-fold fitting.",
+    booktabs = TRUE
+  )
+}
+```
+
+```{r kcv-yfb-plot, fig.height=4.5, fig.cap="YFB model: 5-fold CV C-index by K. PN prior (blue) produces C=0.500 at all K (EBeta→0 collapse). Normal prior (red) produces anti-concordant C-indices (below 0.5); flipping sign would give 0.54--0.61. C=0.5 reference line shown."}
+if (!is.null(kcv_yfb)) {
+  yfb_long <- rbind(
+    data.frame(K=kcv_yfb$K, mean_c=kcv_yfb$PN_mean_C,
+               se=kcv_yfb$PN_se, prior="point_normal"),
+    data.frame(K=kcv_yfb$K, mean_c=kcv_yfb$NM_mean_C,
+               se=kcv_yfb$NM_se, prior="normal")
+  )
+  ggplot(yfb_long, aes(x=K, y=mean_c, color=prior, group=prior)) +
+    geom_line(linewidth=0.8) +
+    geom_point(size=2.5) +
+    geom_errorbar(aes(ymin=mean_c - se, ymax=mean_c + se), width=0.4, linewidth=0.5) +
+    geom_hline(yintercept=0.5, linetype="dashed", color="grey40", linewidth=0.6) +
+    geom_vline(xintercept=2, linetype="dotted", color="#2166ac", linewidth=0.7, alpha=0.7) +
+    geom_vline(xintercept=9, linetype="dotted", color="#d6604d", linewidth=0.7, alpha=0.7) +
+    annotate("text", x=2.3, y=0.51, label="K=2\n(PN)", size=3, color="#2166ac", hjust=0) +
+    annotate("text", x=9.3, y=0.41, label="K=9\n(NM)", size=3, color="#d6604d", hjust=0) +
+    scale_color_manual(values=c("point_normal"="#2166ac","normal"="#d6604d"),
+                       labels=c("point_normal"="point\\_normal","normal"="normal"),
+                       name="Prior") +
+    scale_x_continuous(breaks=c(2,3,4,5,6,7,8,9,10,15,20)) +
+    scale_y_continuous(limits=c(0.35, 0.55), breaks=seq(0.35, 0.55, 0.05)) +
+    labs(x="K (number of factors)", y="Mean held-out C-index (5-fold CV)",
+         title="YFB K selection: 5-fold CV C-index on TCGA_PAAD") +
+    theme_bw(base_size=11) +
+    theme(legend.position="bottom", panel.grid.minor=element_blank())
+}
+```
+
+### LB vs. YFB K-CV Head-to-Head (Normal Prior)
+
+```{r kcv-h2h-plot, fig.height=4.5, fig.cap="LB vs. YFB: 5-fold CV C-index under normal prior. LB (blue) is concordant (C > 0.5) at all K; YFB (red) is anti-concordant (C < 0.5) without global sign correction. Selected K: LB K=3, YFB K=9. C=0.5 reference line shown."}
+if (!is.null(kcv_h2h)) {
+  h2h_long <- rbind(
+    data.frame(K=kcv_h2h$K, mean_c=kcv_h2h$LB_mean_C,
+               se=kcv_h2h$LB_se, model="LB"),
+    data.frame(K=kcv_h2h$K, mean_c=kcv_h2h$YFB_mean_C,
+               se=kcv_h2h$YFB_se, model="YFB")
+  )
+  ggplot(h2h_long, aes(x=K, y=mean_c, color=model, group=model)) +
+    geom_line(linewidth=0.9) +
+    geom_point(size=2.5) +
+    geom_errorbar(aes(ymin=mean_c - se, ymax=mean_c + se), width=0.4, linewidth=0.5) +
+    geom_hline(yintercept=0.5, linetype="dashed", color="grey40", linewidth=0.6) +
+    geom_vline(xintercept=3, linetype="dotted", color="#2166ac", linewidth=0.7, alpha=0.7) +
+    geom_vline(xintercept=9, linetype="dotted", color="#d6604d", linewidth=0.7, alpha=0.7) +
+    annotate("text", x=3.3, y=0.54, label="K=3\n(LB)", size=3, color="#2166ac", hjust=0) +
+    annotate("text", x=9.3, y=0.41, label="K=9\n(YFB)", size=3, color="#d6604d", hjust=0) +
+    scale_color_manual(values=c("LB"="#2166ac","YFB"="#d6604d"), name="Model") +
+    scale_x_continuous(breaks=c(2,3,4,5,6,7,8,9,10,15,20)) +
+    scale_y_continuous(limits=c(0.35, 0.65), breaks=seq(0.35, 0.65, 0.05)) +
+    labs(x="K (number of factors)", y="Mean held-out C-index (5-fold CV)",
+         title="K-CV head-to-head: LB vs. YFB (normal prior, TCGA_PAAD)") +
+    theme_bw(base_size=11) +
+    theme(legend.position="bottom", panel.grid.minor=element_blank())
+}
+```
+
+```{r kcv-h2h-table}
+if (!is.null(kcv_h2h)) {
+  knitr::kable(
+    data.frame(
+      K              = kcv_h2h$K,
+      `LB mean C`    = round(kcv_h2h$LB_mean_C, 4),
+      `LB SE`        = round(kcv_h2h$LB_se, 4),
+      `YFB mean C`   = round(kcv_h2h$YFB_mean_C, 4),
+      `YFB SE`       = round(kcv_h2h$YFB_se, 4),
+      `LB sel`       = kcv_h2h$LB_selected,
+      `YFB sel`      = kcv_h2h$YFB_selected,
+      check.names = FALSE
+    ),
+    caption = "LB vs. YFB head-to-head 5-fold CV C-index (normal prior, TCGA\\_PAAD).
+    LB selected K=3; YFB selected K=9.
+    YFB C-indices are anti-concordant (< 0.5) because held-out risk-score signs
+    are not globally corrected across CV folds; 1 − C maps the YFB curve to
+    0.54--0.61, comparable to LB.",
+    booktabs = TRUE
+  )
+}
+```
+
+### Interpretation (YFB K-CV)
+
+**YFB point\_normal: complete $\hat\beta \to 0$ collapse.** With the point\_normal prior,
+the spike component drives $|\hat\beta| \approx 0$ in every training fold ($n \approx 115$),
+yielding exactly C=0.500 regardless of K. The 1-SE rule selects K=2 (smallest eligible).
+This is the same artefact seen in the LB CV, but more severe for YFB because the
+$Z_F = YF$ feature scale is larger and the effective sample size per fold is small.
+
+**YFB normal: sign instability in CV.** The normal prior escapes the $\hat\beta \to 0$
+collapse, but the resulting C-indices are systematically below 0.5 (range 0.40–0.46).
+This is not a failure of predictive signal — mapping C$\to$1$-$C gives 0.54–0.60,
+comparable to the LB normal-prior curve. Rather, it reflects a sign instability in the
+YFB formulation: without a global sign-correction step across folds, the Cox regression
+on $Z_F$ converges to $\hat\beta$ with inverted sign relative to the convention used in
+prediction. The 1-SE rule selects K=9 (largest C before SE-based exclusion), but this K
+is not directly comparable to the LB recommendation.
+
+**Practical implication.** LB K-CV gives a clean, interpretable signal: K=3 (normal
+prior, parsimonious) or K=5 (above spike escape, point\_normal). YFB K-CV requires
+sign correction to be enabled in CV folds before the K selection is reliable.
 
 ---
 
@@ -694,13 +841,13 @@ ph_df <- data.frame(
                "2 — Initialization constraints",
                "3 — Multi-start random restarts",
                "4 — K selection via CV"),
-  Scope   = c("YFB merged", "LB + YFB", "LB", "LB"),
+  Scope   = c("YFB merged", "LB + YFB", "LB", "LB + YFB"),
   Verdict = c("**Keep**", "Discard", "Discard", "**Keep** (infrastructure)"),
   `Key finding` = c(
     "Resolves YFB merged beta→0 collapse. K=3 gives median ext C=0.64.",
     "Constrained SVD init (non-neg L, Cox sign) gives no ELBO or C improvement.",
     "SVD init wins 30/30 restarts. ELBO range 0.3% — nearly unimodal landscape.",
-    "Normal prior: flat plateau, K=3 (1-SE). PN: K=8 (spike artefact). Recommend K=5."
+    "LB normal: flat plateau, K=3 (1-SE). LB PN: K=8 (spike artefact). YFB: sign instability in CV (C<0.5). Recommend LB K=5."
   ),
   check.names = FALSE, stringsAsFactors = FALSE
 )
@@ -726,7 +873,14 @@ knitr::kable(ph_df,
    Potential fixes: survival-weighted initialisation, adaptive alpha scheduling,
    or a dedicated supervised L update with stronger survival weighting.
 
-3. **K-CV on larger cohorts.** The flat CV plateau on TCGA\_PAAD (n=144) likely reflects
+3. **YFB sign correction in CV.** K-CV was run on both LB and YFB models (both priors).
+   The YFB normal-prior K-CV yields anti-concordant C-indices (C $< 0.5$) because
+   held-out risk scores are not globally sign-corrected across folds. Enabling sign
+   correction within CV folds for YFB (analogous to the LB `sign_correction=FALSE`
+   design but with a fold-level sign flip) is required before YFB K-selection is
+   reliable. See `code/select_K.R` for implementation details.
+
+4. **K-CV on larger cohorts.** The flat CV plateau on TCGA\_PAAD (n=144) likely reflects
    limited statistical power to distinguish K values with overlapping C-index SEs.
    Running K-CV on the merged training set (n=273) or on Longleaf with the full
    PDAC multi-cohort data would sharpen the K selection.

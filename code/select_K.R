@@ -104,8 +104,9 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 #' K selection via cross-validated held-out C-index with the 1-SE rule.
 #'
 #' For each candidate K in K_grid, runs n_folds-fold stratified CV:
-#'   1. Fit the SBMF model on the (n_folds-1)/n_folds training portion.
-#'   2. Project the held-out fold via predict_supervised_mf().
+#'   1. Fit the model on the (n_folds-1)/n_folds training portion.
+#'   2. Project the held-out fold (LB: predict_supervised_mf;
+#'      YFB: predict_cox_on_yf).
 #'   3. Compute held-out C-index: concordance(Surv(time, status) ~ I(-risk)).
 #'
 #' After collecting all fold-level C-indices, summarises by mean ± SE per K.
@@ -113,7 +114,7 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 #' is within one SE of the maximum — preferring parsimony when evidence for a
 #' larger K is weak.  Set use_1se = FALSE to select the maximising K directly.
 #'
-#' **Computational cost:** n_folds × |K_grid| full SBMF fits.
+#' **Computational cost:** n_folds × |K_grid| full fits.
 #' For K_grid = 2:10 + 15 + 20 (11 values) and n_folds = 5, that is 55 fits.
 #' Each fit runs up to max_iter iterations on (n_folds-1)/n_folds of n subjects.
 #' On Longleaf HPC, parallelise over K values with SLURM array jobs; locally,
@@ -132,9 +133,13 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 #' @param use_1se    logical: apply 1-SE rule (default TRUE)
 #' @param seed       integer: RNG seed for stratified fold creation (default 42)
 #' @param verbose    logical: print per-fold progress (default FALSE)
-#' @param ...        additional arguments passed to fit_supervised_mf_modular()
-#'                   (alpha, lambda, prior_LF, prior_beta, max_iter, tol, etc.)
-#'                   Do NOT pass K — it is overridden for each candidate in K_grid.
+#' @param model      character: "LB" (default, calls fit_supervised_mf_modular +
+#'                   predict_supervised_mf) or "YFB" (calls fit_cox_on_yf +
+#'                   predict_cox_on_yf).  Both models must be sourced before
+#'                   calling; see dependency checks below.
+#' @param ...        additional arguments passed to the fitting function.
+#'                   Do NOT pass K (overridden per candidate) or sign_correction
+#'                   (disabled inside folds for both models).
 #'
 #' @return Named list:
 #'   $K_opt         integer: selected K (1-SE rule or max)
@@ -142,16 +147,19 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 #'   $fold_results  data.frame with K, fold, n_train, n_test, n_event_test,
 #'                  n_censored_test, cindex — one row per (K, fold) combination
 #'   $selection_rule character: "1se" or "max"
+#'   $model         character: "LB" or "YFB" (echoed for caller bookkeeping)
 #'
 #' @examples
 #' \dontrun{
+#' # LB model
 #' source("code/fit_modular.R"); source("code/predict.R")
 #' source("code/train_test_split.R"); source("code/select_K.R")
-#' res <- select_K_cv(Y, time, status,
-#'                    K_grid = c(2,3,5,8,10), n_folds = 3,
-#'                    alpha = 0.5, prior_beta = "point_normal")
-#' res$K_opt      # selected K
-#' res$cv_table   # mean C-index ± SE per K
+#' res_lb  <- select_K_cv(Y, time, status, model = "LB",
+#'                         K_grid = c(2,3,5,8,10), n_folds = 3)
+#' # YFB model
+#' source("code/fit_cox_on_yf.R"); source("code/predict_cox_on_yf.R")
+#' res_yfb <- select_K_cv(Y, time, status, model = "YFB",
+#'                         K_grid = c(2,3,5,8,10), n_folds = 3)
 #' }
 #'
 #' @seealso \code{\link{auto_prune_K}} for a cheaper single-fit alternative.
@@ -161,13 +169,24 @@ select_K_cv <- function(Y, time, status,
                          use_1se  = TRUE,
                          seed     = 42L,
                          verbose  = FALSE,
+                         model    = "LB",
                          ...) {
 
-  # --- dependency checks ---
-  if (!exists("fit_supervised_mf_modular", mode = "function"))
-    stop("fit_supervised_mf_modular() must be sourced before select_K_cv().")
-  if (!exists("predict_supervised_mf", mode = "function"))
-    stop("predict_supervised_mf() must be sourced before select_K_cv().")
+  # --- model validation ---
+  model <- match.arg(model, c("LB", "YFB"))
+
+  # --- dependency checks (branch on model) ---
+  if (model == "LB") {
+    if (!exists("fit_supervised_mf_modular", mode = "function"))
+      stop("fit_supervised_mf_modular() must be sourced before select_K_cv(model='LB').")
+    if (!exists("predict_supervised_mf", mode = "function"))
+      stop("predict_supervised_mf() must be sourced before select_K_cv(model='LB').")
+  } else {
+    if (!exists("fit_cox_on_yf", mode = "function"))
+      stop("fit_cox_on_yf() must be sourced before select_K_cv(model='YFB').")
+    if (!exists("predict_cox_on_yf", mode = "function"))
+      stop("predict_cox_on_yf() must be sourced before select_K_cv(model='YFB').")
+  }
   if (!exists("create_stratified_folds", mode = "function"))
     stop("create_stratified_folds() must be sourced before select_K_cv().")
 
@@ -188,8 +207,8 @@ select_K_cv <- function(Y, time, status,
   if (n_folds < 2)
     stop("n_folds must be >= 2.")
 
-  # Grab any user-supplied extra args; strip K and sign_correction —
-  # K is overridden per candidate, sign_correction is hardcoded FALSE inside folds
+  # Strip K (overridden per candidate) and sign_correction (disabled in folds
+  # for LB; not a formal arg in fit_cox_on_yf, so must be stripped for YFB too).
   extra <- list(...)
   extra[["K"]]               <- NULL
   extra[["sign_correction"]] <- NULL
@@ -209,21 +228,41 @@ select_K_cv <- function(Y, time, status,
       test_idx  <- fold_obj$folds[[fold_id]]
       train_idx <- setdiff(seq_len(n), test_idx)
 
-      # Fit on training fold — sign_correction disabled for consistent fold signs
-      fit_args <- c(
-        list(Y      = Y[train_idx, , drop = FALSE],
-             time   = time[train_idx],
-             status = status[train_idx],
-             K      = K,
-             sign_correction = FALSE,
-             verbose = FALSE),
-        extra
-      )
-      fit <- do.call(fit_supervised_mf_modular, fit_args)
+      # --- fit on training fold ---
+      if (model == "LB") {
+        # LB: sign_correction=FALSE hardcoded — consistent fold signs
+        fit_args <- c(
+          list(Y      = Y[train_idx, , drop = FALSE],
+               time   = time[train_idx],
+               status = status[train_idx],
+               K      = K,
+               sign_correction = FALSE,
+               verbose = FALSE),
+          extra
+        )
+        fit <- do.call(fit_supervised_mf_modular, fit_args)
 
-      # Project held-out fold and score
-      pred   <- predict_supervised_mf(Y[test_idx, , drop = FALSE],
+        # Project held-out fold
+        pred <- predict_supervised_mf(Y[test_idx, , drop = FALSE],
                                       fit$EF, fit$EBeta)
+      } else {
+        # YFB: fit_cox_on_yf does not have sign_correction; verbose=FALSE
+        fit_args <- c(
+          list(Y      = Y[train_idx, , drop = FALSE],
+               time   = time[train_idx],
+               status = status[train_idx],
+               K      = K,
+               verbose = FALSE),
+          extra
+        )
+        fit <- do.call(fit_cox_on_yf, fit_args)
+
+        # Project held-out fold; pass EF_norms so column scaling is consistent
+        pred <- predict_cox_on_yf(Y[test_idx, , drop = FALSE],
+                                  fit$EF, fit$EBeta,
+                                  EF_norms = fit$EF_norms)
+      }
+
       cindex <- tryCatch(
         as.numeric(survival::concordance(
           survival::Surv(time[test_idx], status[test_idx]) ~ I(-pred$risk_scores)
@@ -298,6 +337,7 @@ select_K_cv <- function(Y, time, status,
     K_opt          = K_opt,
     cv_table       = cv_table,
     fold_results   = fold_results,
-    selection_rule = selection_rule
+    selection_rule = selection_rule,
+    model          = model
   )
 }

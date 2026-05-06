@@ -186,3 +186,45 @@ run_test("KCV-T12: C-index values in fold_results lie in [0, 1]", {
   assert_true(all(c_obs >= 0 & c_obs <= 1),
               "All observed C-indices should lie in [0, 1]")
 })
+
+# ============================================================
+# T5: YFB model path ----
+# ============================================================
+
+# Source YFB functions if not already available
+if (!exists("fit_cox_on_yf", mode = "function")) {
+  tryCatch(source("code/fit_cox_on_yf.R"),    error = function(e) invisible(NULL))
+  tryCatch(source("code/predict_cox_on_yf.R"), error = function(e) invisible(NULL))
+}
+
+if (exists("fit_cox_on_yf", mode = "function") &&
+    exists("predict_cox_on_yf", mode = "function")) {
+
+  run_test("KCV-T13: model='YFB' returns valid structure with model field", {
+    d <- .kcv_dat
+    res <- select_K_cv(d$Y, d$time, d$status,
+                       K_grid = c(2L, 3L), n_folds = 3L,
+                       model = "YFB", max_iter = 8L)
+    assert_true(!is.null(res$K_opt),         "K_opt missing")
+    assert_true(!is.null(res$cv_table),       "cv_table missing")
+    assert_true(!is.null(res$fold_results),   "fold_results missing")
+    assert_equal(res$model, "YFB",            "model field should echo 'YFB'")
+    assert_true(res$K_opt %in% c(2L, 3L),    "K_opt must be in K_grid")
+  })
+
+  run_test("KCV-T14: model='YFB' fold_results has correct row count", {
+    d <- .kcv_dat
+    res <- select_K_cv(d$Y, d$time, d$status,
+                       K_grid = c(2L, 3L), n_folds = 3L,
+                       model = "YFB", max_iter = 8L)
+    # 2 K values × 3 folds = 6 rows
+    assert_equal(nrow(res$fold_results), 6L,
+                 sprintf("Expected 6 fold rows, got %d", nrow(res$fold_results)))
+    c_obs <- res$fold_results$cindex[!is.na(res$fold_results$cindex)]
+    assert_true(all(c_obs >= 0 & c_obs <= 1),
+                "All YFB C-indices should lie in [0, 1]")
+  })
+
+} else {
+  cat("  [KCV-T13, T14] Skipped: fit_cox_on_yf not available\n")
+}
