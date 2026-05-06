@@ -10,19 +10,26 @@ This project implements a **Supervised Bayesian Matrix Factorization** model tha
 
 The core insight is that standard unsupervised factorization (e.g. PCA, NMF) finds latent structure that explains genomic variance, but has no reason to recover factors that are *clinically meaningful*. By supervising the factorization with survival data, this model discovers **Gene Expression Programs (GEPs)** that are both genomically coherent and prognostically relevant.
 
-**The model in one equation:**
+**The model:**
 
 ```
-Y (n×p) = L (n×K) × F' (K×p) + E        ← genomics
-h(t_i)  = h₀(t_i) exp(Lᵢ · β)           ← survival (Cox PH)
+Y (n×p) = L (n×K) × F' (K×p) + E        ← matrix factorization (genomics)
+h(t_i)  = h₀(t_i) exp(ηᵢ)               ← Cox proportional hazards (survival)
 ```
 
-- **L** — patient loading matrix: where each patient sits in the latent space
-- **F** — factor weight matrix: which genes/features define each program
-- **β** — survival coefficients: how much each program contributes to prognosis
+- **L** — patient loading matrix: coordinates of each patient in the latent factor space
+- **F** — factor weight matrix: gene loadings that define each program
+- **β** — survival coefficients: prognostic weight of each factor
 - **τ** — feature-specific noise precision
 
-Inference is performed via **Coordinate Ascent Variational Inference (CAVI)**, where each update is solved as an **Empirical Bayes Normal Means (EBNM)** problem with point-normal priors — naturally promoting sparsity in both F and β.
+Two parameterizations of the linear predictor η are implemented and benchmarked:
+
+| Model | Linear predictor | Key property |
+|-------|-----------------|--------------|
+| LB    | η = Lβ          | Factor scores learned jointly with survival; `code/fit_modular.R` |
+| YFB   | η = (YF)β       | Predictor computed directly from observed expression; eliminates train/test mismatch in projection; `code/fit_cox_on_yf.R` |
+
+Inference is performed via **Coordinate Ascent Variational Inference (CAVI)**, where each variational update is solved as an **Empirical Bayes Normal Means (EBNM)** problem — promoting sparsity in both F and β through point-normal or normal priors.
 
 ---
 
@@ -93,13 +100,13 @@ multiomicsGEP/
 │
 ├── results/
 │   ├── benchmark_sim/                 ← ✅ Formal benchmark pipeline (canonical)
-│   │   ├── run_LB_benchmark.R         ← Cluster A runner (Lβ linear predictor)
-│   │   ├── run_YFB_benchmark.R        ← Cluster B runner (YFβ / Cox-on-YF)
+│   │   ├── run_LB_benchmark.R         ← LB model runner (η = Lβ, alpha CV, external validation)
+│   │   ├── run_YFB_benchmark.R        ← YFB model runner (η = (YF)β, Cox-on-YF)
 │   │   ├── run_phase1_diagnostics.R   ← Loading heatmaps
 │   │   ├── archive/                   ← 9 retired scripts (see archive/README.md)
 │   │   └── outputs/
-│   │       ├── LB_benchmark/          ← Cluster A outputs
-│   │       └── YFB_benchmark/         ← Cluster B outputs
+│   │       ├── LB_benchmark/          ← LB model outputs
+│   │       └── YFB_benchmark/         ← YFB model outputs
 │   ├── figures/                       ← Active per-cohort figure outputs
 │   ├── tables/                        ← Active per-cohort table outputs
 │   └── legacy/                        ← Retired simulation generations
@@ -149,14 +156,14 @@ install.packages(c("survival", "ebnm"))
 ### Run the Formal Benchmark (current entry point)
 
 ```bash
-# Cluster A benchmark (Lβ linear predictor, alpha CV, external validation)
+# LB model benchmark (η = Lβ; alpha mixing CV-selected per training set)
 Rscript results/benchmark_sim/run_LB_benchmark.R
 
-# Cluster B benchmark (Cox-on-YF / YFβ reformulation)
+# YFB model benchmark (η = (YF)β; Cox-on-YF reformulation)
 Rscript results/benchmark_sim/run_YFB_benchmark.R
 ```
 
-Outputs go to `results/benchmark_sim/outputs/LB_benchmark/` and `outputs/YFB_benchmark/` respectively. Benchmark reports are versioned by date and live in `docs/reports/` (e.g., `docs/reports/ssbmf_summary_report_04_29_26.pdf` for the archived DeSurv benchmark).
+Outputs go to `results/benchmark_sim/outputs/LB_benchmark/` and `outputs/YFB_benchmark/` respectively. Benchmark reports are versioned by date in `docs/reports/` — the most recent is `ssbmf_summary_report_05_05_26.pdf`.
 
 ### Run the Real PDAC Analysis
 

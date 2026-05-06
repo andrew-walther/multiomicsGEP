@@ -4,19 +4,25 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-05-05 (Phase A–C re-run, complete):** Core model complete (modular CAVI,
-> 171/171 tests passing). Phase A–C fixes fully applied to both Cluster A (LB) and Cluster B (YFB).
-> **Phase A:** CAVI inner loop reverted from β→L→F back to L→F→β (Gauss-Seidel).
-> **Phase B:** EF column normalization (unit L2 norm) added to YFB — fixes ZF scale collapse.
-> **Phase C:** Training concordance sign correction added to both `fit_cox_on_yf.R` (YFB) and
-> `fit_modular.R` (LB) — flips EBeta if C_train<0.5. Alpha CV bug also fixed (sign_correction=FALSE
-> in CV folds prevents fold-to-fold inconsistency that caused 1-SE to select degenerate alpha=1.0).
-> **Phase D (deferred):** normalize_AB=TRUE on merged LB; lower priority now that both models work.
-> **Key empirical findings (LB, Phase C fixed):** tcga_only K_eff=2, external C=0.55–0.66;
-> cptac_only K_eff=3, external C=0.55–0.67; merged K_eff=3, external C=0.51–0.67. All modes
-> alpha CV selects 0.50. **(YFB):** tcga_only: C=0.55–0.63 (normal), C=0.50 (point_normal);
-> cptac_only: C=0.53–0.58 (normal); merged: K_eff=0 (YFB only — platform mixing collapses
-> beta), external C=0.57–0.64 via F matrix structure. LB merged K_eff=3 with Phase C fix.
+> **Status as of 2026-05-05.** Core model complete (modular CAVI, 171/171 tests passing).
+> Two model variants are fully implemented and benchmarked on PDAC cross-cohort validation
+> (5 independent external cohorts across RNA-seq, microarray, and proteomics platforms).
+>
+> **LB model** (linear predictor η = Lβ; `code/fit_modular.R`): All three training configurations
+> (TCGA-only, CPTAC-only, merged TCGA+CPTAC) converge to 2–3 active factors. External C-index
+> ranges 0.55–0.67 depending on cohort and training set. Alpha mixing parameter selected by
+> 5-fold CV with 1-SE rule; all configurations select α=0.50.
+>
+> **YFB model** (linear predictor η = (YF)β, Cox-on-YF; `code/fit_cox_on_yf.R`): Single-cohort
+> training with a normal prior gives competitive external C-index (TCGA-only: 0.55–0.63). Merged
+> training (TCGA_PAAD + CPTAC) collapses β→0 due to platform mixing — the factor matrix F still
+> captures survival-relevant structure, yielding C=0.57–0.64 with near-zero β. Point-normal prior
+> collapses all betas regardless of training set; normal prior is required for YFB on real PDAC data.
+>
+> Both models use SVD initialization with a post-convergence sign check: if the training
+> concordance of η = Lβ (or η = (YF)β) is below 0.5, β is globally negated. This corrects
+> sign ambiguity from the SVD initialization, which uses only the positive part of the singular
+> vectors and can produce an inversely-oriented linear predictor.
 
 ---
 
@@ -46,10 +52,11 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Fixed by adding `k_pdac_single=10` and re-running. See DECISIONS.md 2026-05-05.
 
 - [x] **Restore alpha CV to benchmark runners** *(complete 2026-05-05)*
-  `select_alpha_cv()` added to `run_LB_benchmark.R`. After Phase C alpha CV bug fix (Phase C
-  must not run inside CV folds — set `sign_correction=FALSE`), all three LB modes select
-  alpha=0.50 via 1-SE rule. YFB runner uses fixed alpha=0.50 (YFB-compatible alpha CV not
-  yet implemented).
+  `select_alpha_cv()` added to `run_LB_benchmark.R`. The sign correction must not run inside
+  CV folds — doing so causes fold-to-fold sign inconsistency that inflates apparent concordance
+  and causes the 1-SE rule to select α=1.0 (degenerate pure-survival mode). Fix: set
+  `sign_correction=FALSE` in CV fold fits. All three LB training modes select α=0.50 via 1-SE
+  rule. YFB runner uses fixed α=0.50 (YFB-compatible alpha CV not yet implemented).
 
 - [x] **Fix K overfitting and re-run benchmarks** *(complete 2026-05-05)*
   `k_pdac_single=10` added; all 6 modes re-run. **K tuning did not recover archived baseline.**
@@ -59,26 +66,31 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   imbalance — must be addressed directly. See DECISIONS.md 2026-05-05.
 
 - [ ] **Fix YFB β→0 collapse on merged TCGA+CPTAC** `[Priority: Medium]` `[Effort: Medium]`
-  Phase C (2026-05-05) fixed LB merged (K_eff=3, external C=0.51–0.67) but YFB merged still
-  collapses to K_eff=0 (machine-epsilon betas ~10⁻¹³). External C=0.57–0.64 despite K_eff=0 —
-  the F matrix captures survival-relevant structure, but the beta update cannot concentrate
-  signal when ZF columns all carry platform-dominated variance. A_surv/A_gen at iter 1 is
-  0.0000–0.0011 on merged TCGA+CPTAC. Cox warm-start (`cox_warmstart=TRUE`) was tested but
-  did not rescue beta collapse on merged.
+  The LB model converges to 3 active factors on merged training (external C=0.51–0.67), but
+  the YFB model collapses β→0 (machine-epsilon betas ~10⁻¹³) on the same data. The root cause
+  is platform mixing: merged training combines RNA-seq (TCGA_PAAD) and proteomics (CPTAC), and
+  the ratio of survival precision to genomics precision in the β CAVI update is ~10⁻³ at
+  iteration 1 — the genomics term swamps the survival signal in the factor scores. The factor
+  matrix F still captures survival-relevant column structure, yielding external C=0.57–0.64
+  despite near-zero β. Cox warm-start (initializing β from a Cox fit on YF scores) was tested
+  and did not rescue collapse on merged data.
   Candidate next steps:
-  (1) **normalize_AB=TRUE on merged YFB** — analogous to LB Phase D; may bring A_surv/A_gen
-  into comparable scale. Evaluated on LB in Cluster A but regressed 4/5 external cohorts.
+  (1) **Rescale survival and genomics precision contributions** to comparable magnitude before
+  the β update — analogous to `normalize_AB` in the LB model. Evaluated on LB but regressed
+  4/5 external cohorts; may behave differently for YFB.
   (2) **Per-platform normalization** — normalize TCGA and CPTAC separately before merging,
   rather than relying on quantile normalization across mixed platforms.
-  (3) **Train on single cohort only** — current LB and YFB single-cohort results (alpha=0.50,
-  K=10) are already competitive; merged may not add value.
-  *Files: `code/fit_cox_on_yf.R`, `code/preprocess_desurv.R`, `docs/beta_zero_fix_design.md`*
+  (3) **Accept single-cohort training** — LB and YFB single-cohort results are already
+  competitive; merged training may not add value given the platform heterogeneity.
+  *Files: `code/fit_cox_on_yf.R`, `code/preprocess_desurv.R`*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
-  Once β→0 collapse is fixed, compare point_normal vs normal vs point_laplace on the recovered
-  baseline. N_burnin=5 is worth re-testing with normal prior (Cluster A showed modest benefit).
-  2026-05-05 finding: for YFB, `normal` prior is strictly better than `point_normal` on PDAC —
-  spike-and-slab collapses all betas to zero (signal too weak for nonzero posterior probability).
+  Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model
+  on real PDAC data, the normal prior is strictly necessary — the spike-and-slab (point_normal)
+  collapses all β to zero because the survival signal is too weak to exceed the spike threshold.
+  For the LB model, both priors give identical results at the current signal level. A fuller
+  comparison should include point_laplace and evaluate whether a β-only warm-up (fitting β while
+  holding L fixed) helps the spike-and-slab prior find the active set.
   *Files: `results/benchmark_sim/run_LB_benchmark.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
 
 ---
@@ -102,19 +114,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   See DECISIONS.md 2026-04-29 warm-start entry.
   *Notes: `fit_modular.R` extended with `EL_init`/`EF_init` params. Driver: `run_ebmf_warmstart.R`.*
 
-- [x] **Debug `update_L_k()`: A_surv / A_gen imbalance** `[Priority: High]` `[Effort: Medium]` *(Complete — Cluster A, 2026-04-29)*
-  Cluster A (`docs/beta_zero_fix_design.md` §4) implemented on branch `fix-L-update-beta-cycle`:
-  instrumentation confirmed A_surv/A_gen ~ 0–2e-4 at iter 1 (structural imbalance, ~5000× gap);
-  inner-loop reorder β → L → F (unconditional); β-only burn-in (`N_burnin`) and progressive α
-  schedule (`alpha_schedule`) added as opt-in parameters; `normalize_AB` rescale of A_surv up to
-  match A_gen (Fix 4, reformulated from design doc §4.8 — original formula over-shrunk L). On the
-  merged TCGA+CPTAC v2 set: 2/20 factors active (|β|>0.05), ELBO monotone, max|EL| = 1.83e3.
-  Training-side β=0 failure resolved.
-  *Notes: External-cohort C-index is mixed (1/5 cohorts improved vs. baseline; 4/5 regressed).
-  The recovered β favors training-Cox-aligned directions that don't transport. See new entry
-  "Cluster B / Cox-on-YF reformulation" below — this is the design doc's structural alternative.*
+- [x] **Investigate and resolve β=0 collapse in LB model** *(Complete — 2026-04-29)*
+  Instrumentation confirmed a ~5000× scale imbalance between survival and genomics precision
+  contributions to the L update at iteration 1 (A_surv/A_gen ~ 0–2e-4). Three fixes were
+  implemented and evaluated: (1) Gauss-Seidel update ordering (β before L in the inner loop);
+  (2) β-only warm-up iterations with L held fixed; (3) rescaling survival and genomics
+  precision contributions to comparable magnitude. On merged TCGA+CPTAC: 2/20 factors active,
+  ELBO monotone. Training-side β=0 resolved. External C-index was mixed (1/5 cohorts improved),
+  motivating the Cox-on-YF reformulation below.
+  *Files: `code/fit_modular.R`, `code/update_L.R`*
 
-- [x] **Cluster B — Cox-on-YF reformulation** *(Complete — 2026-05-04, merged to `main`)*
+- [x] **Cox-on-YF (YFB) reformulation** *(Complete — 2026-05-04, merged to `main`)*
   See completed section below.
 
 - [x] **Add λ scaling parameter to balance genomics vs. survival objectives** `[Priority: High]` `[Effort: Medium]` *(Implemented and evaluated — fixed at λ=1.0)*
@@ -233,38 +243,34 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## ✅ Completed
 
-- [x] **Phase A–C benchmark fixes + LB sign correction (2026-05-05)** — Fixes applied to both
-  Cluster A (LB, `fit_modular.R`) and Cluster B (YFB, `fit_cox_on_yf.R`); full benchmarks re-run.
-  **Phase A:** Reverted CAVI inner loop from β→L→F back to L→F→β (Gauss-Seidel). Confirmed
-  by 18-unit ELBO gap on identical data.
-  **Phase B (YFB only):** EF column normalization (unit L2 norm) added to `fit_cox_on_yf.R` and
-  `predict_cox_on_yf.R`. Fixes ZF scale collapse (‖ZF_k‖ was O(√(pn)) ≈ 56 → O(1) after
-  normalization). EF_norms stored in fit result and applied in prediction.
-  **Phase C (both LB and YFB):** Training concordance sign correction added to `fit_cox_on_yf.R`
-  (YFB) and `fit_supervised_mf_modular()` in `fit_modular.R` (LB), gated by `sign_correction=TRUE`
-  parameter. After convergence, if C_train < 0.5, flips EBeta sign. YFB: rescued synthetic C
-  from 0.119 → 0.906 (K_eff=4). LB: rescued from anti-concordant (C≈0.35–0.45) to C=0.55–0.67
-  on all external cohorts. Alpha CV bug also fixed: `sign_correction=FALSE` in CV folds prevents
-  fold-to-fold sign inconsistency that caused 1-SE to select degenerate alpha=1.0.
-  **LB results (all modes, alpha=0.50):** tcga_only K_eff=2, ext C=0.55–0.66; cptac_only K_eff=3,
-  ext C=0.55–0.67; merged K_eff=3, ext C=0.51–0.67.
+- [x] **Training concordance sign correction + alpha CV fix (2026-05-05)** — Both LB and YFB
+  were producing anti-concordant predictions (C < 0.5) due to sign ambiguity in SVD initialization:
+  the positive-part truncation of the SVD can produce factor loadings whose inner product with β
+  is inversely related to survival risk. Fix: after CAVI convergence, compute training concordance;
+  if C_train < 0.5, negate β globally. Implemented as `sign_correction=TRUE` parameter in both
+  `fit_supervised_mf_modular()` (LB) and `fit_cox_on_yf()` (YFB).
+  A related bug in the alpha CV routine was fixed in the same pass: applying the sign correction
+  inside CV folds caused fold-to-fold inconsistency, making the 1-SE rule select α=1.0 (pure-
+  survival, degenerate). Fix: `sign_correction=FALSE` in fold fits.
+  YFB synthetic result: C-index 0.12 → 0.91 (K_eff=4). LB external results (all modes, α=0.50):
+  TCGA-only K_eff=2, C=0.55–0.66; CPTAC-only K_eff=3, C=0.55–0.67; merged K_eff=3, C=0.51–0.67.
   *Files: `code/fit_modular.R`, `code/select_alpha_cv.R`, `code/fit_cox_on_yf.R`,
   `code/predict_cox_on_yf.R`. Report: `docs/reports/ssbmf_summary_report_05_05_26.pdf`.*
 
-- [x] **Benchmark consolidation (2026-05-04)** — Merged `cox-on-yf-reformulation` to `main`.
-  Created `run_LB_benchmark.R` (Cluster A, 4-section: synthetic + PDAC train + external + CSV)
-  and `run_YFB_benchmark.R` (Cluster B, same structure). Both runners test point_normal vs normal
-  side-by-side. Archived 7 one-off diagnostic scripts to `results/benchmark_sim/archive/`.
-  Updated `config/globals.yml` with `benchmark` section (K=10, N_burnin=0, normalize_AB=FALSE,
-  cox_warmstart=FALSE, alpha=0.5, lambda=1.0) and lowered `beta_threshold` from 0.05 to 0.001.
-  Updated `code/fit_cox_on_yf.R` defaults: prior_beta="normal", N_burnin=0, cox_warmstart=FALSE,
-  normalize_AB=FALSE.
+- [x] **Benchmark pipeline consolidation (2026-05-04)** — Replaced scattered diagnostic scripts
+  with two canonical benchmark runners: `run_LB_benchmark.R` (LB model, η = Lβ) and
+  `run_YFB_benchmark.R` (YFB model, η = (YF)β). Both follow a 4-section structure (synthetic
+  validation + PDAC training + external validation + CSV output) and test point_normal vs normal
+  prior side-by-side. Archived 7 retired scripts to `results/benchmark_sim/archive/`. Updated
+  `config/globals.yml` with benchmark defaults (K=10, α=0.5, λ=1.0, beta_threshold=0.001).
 
-- [x] **Cluster B — Cox-on-YF reformulation** *(Completed 2026-05-04)* — `code/fit_cox_on_yf.R`,
+- [x] **Cox-on-YF (YFB) model implementation (2026-05-04)** — Reformulated linear predictor to
+  η = (Y·F)·β, replacing η = L·β. Training and prediction both use the observed expression matrix
+  projected onto the factor space, eliminating the train/test mismatch where training used
+  EBNM-shrunk loadings but prediction used OLS-projected loadings. Implementation: `code/fit_cox_on_yf.R`,
   `code/predict_cox_on_yf.R`, `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R`,
-  derivations in `derivations/cox_on_YF/`, smoke test 3/3 PASS. Synthetic: C-index 0.605 vs
-  PCA 0.471 (3 active factors, alpha_F=0). Real-data β=0 collapse on PDAC with point_normal prior
-  (same pattern as Cluster A). Normal prior gives non-zero EBeta — full benchmark comparison pending.
+  derivations in `derivations/cox_on_YF/`. Synthetic: C-index 0.605 vs PCA 0.471 (3 active factors).
+  Full PDAC benchmark comparison in `docs/reports/ssbmf_summary_report_05_05_26.pdf`.
 - [x] **Core modular CAVI implementation** — `code/fit_modular.R` with four independently-tested update modules. 171/171 tests passing. *(Completed March 2026)*
 - [x] **Hold-out prediction pipeline** — `code/predict.R` (`predict_supervised_mf()`), `code/train_test_split.R` (`stratified_split()`). 80/20 stratified hold-out. *(Completed March 2026)*
 - [x] **Prior family comparison (PN vs PL × K=5 vs K_eff)** — Four-condition benchmark across 7 PDAC cohorts. Point-laplace preferred at fixed K; K selection dominates prior choice. *(Completed April 2026)*
