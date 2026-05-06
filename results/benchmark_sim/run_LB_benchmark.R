@@ -41,6 +41,7 @@ cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")  # PDAC constants + load_pdac_raw + generate_synthetic_benchmark_data
 tryCatch(source("code/fit_modular.R"), error = function(e) invisible(NULL))  # fit_supervised_mf_modular
+source("code/fit_modular_multistart.R")  # fit_supervised_mf_modular_multistart
 source("code/predict.R")
 source("code/train_test_split.R")
 source("code/preprocess_desurv.R")
@@ -57,13 +58,22 @@ PRIORS     <- cfg$benchmark$prior_beta_compare
 BETA_THRESH <- cfg$k_selection$beta_threshold
 MAX_ITER   <- if (QUICK_MODE) 30 else cfg$cavi$max_iter
 
+# Multi-init: --n-init N activates multistart (default 1 = single SVD init)
+N_INIT <- 1L
+if ("--n-init" %in% args) {
+  n_init_val <- suppressWarnings(as.integer(args[which(args == "--n-init") + 1]))
+  if (!is.na(n_init_val) && n_init_val >= 1) N_INIT <- n_init_val
+}
+MULTISTART <- N_INIT > 1
+
 cat("=== LB Benchmark (Cluster A — eta = L·beta) ===\n")
 cat(sprintf("    K=%d (synthetic K=%d) | alpha=%s | lambda=%.2f | N_burnin=%d\n",
             K, K_SYN,
             if (QUICK_MODE) sprintf("%.2f (fixed)", ALPHA) else sprintf("%.2f (CV-selected per mode)", ALPHA),
             LAMBDA, N_BURNIN))
 cat(sprintf("    Priors: %s\n", paste(PRIORS, collapse = " vs ")))
-cat(sprintf("    Train mode: %s | Quick mode: %s\n\n", TRAIN_MODE, QUICK_MODE))
+cat(sprintf("    Train mode: %s | Quick mode: %s | n_init: %d\n\n",
+            TRAIN_MODE, QUICK_MODE, N_INIT))
 
 OUT_DIR <- "results/benchmark_sim/outputs/LB_benchmark"
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -209,16 +219,33 @@ if (!pdac_available) {
   }
 
   fit_lb <- list()   # store one fit per prior for Section 3
+  restart_rows <- list()
   for (pr in PRIORS) {
-    cat(sprintf("    Fitting LB PDAC — prior_beta='%s' (K=%d, max_iter=%d) ...\n",
-                pr, K, MAX_ITER))
-    fit <- fit_supervised_mf_modular(
+    cat(sprintf("    Fitting LB PDAC — prior_beta='%s' (K=%d, max_iter=%d, n_init=%d) ...\n",
+                pr, K, MAX_ITER, N_INIT))
+    fit_args <- list(
       Y_train, time_train, status_train,
       K = K, max_iter = MAX_ITER, tol = cfg$cavi$tol,
       prior_LF = "point_exponential", prior_beta = pr,
       alpha = ALPHA, lambda = LAMBDA, N_burnin = N_BURNIN,
-      normalize_AB = NORM_AB, verbose = TRUE
+      normalize_AB = NORM_AB
     )
+    if (MULTISTART) {
+      ms <- do.call(fit_supervised_mf_modular_multistart,
+                    c(fit_args, list(n_init = N_INIT,
+                                     init_seed_base = cfg$evaluation$multi_init_seed_base,
+                                     beta_threshold = BETA_THRESH)))
+      fit <- ms$best
+      cat(sprintf("      Multistart: best restart=%d/%d | ELBO range=[%.1f, %.1f]\n",
+                  ms$best_idx, N_INIT,
+                  min(ms$restarts$final_elbo), max(ms$restarts$final_elbo)))
+      # Save restart landscape
+      ms$restarts$train_mode <- TRAIN_MODE
+      ms$restarts$prior_beta <- pr
+      restart_rows[[length(restart_rows) + 1]] <- ms$restarts
+    } else {
+      fit <- do.call(fit_supervised_mf_modular, c(fit_args, list(verbose = TRUE)))
+    }
     fit_lb[[pr]] <- list(fit = fit, train_genes = train_genes)
 
     k_eff    <- sum(abs(fit$EBeta) > BETA_THRESH)
@@ -348,6 +375,22 @@ if (length(results_rows) > 0) {
     rs_csv_path <- file.path(OUT_DIR, sprintf("LB_riskscores_%s.csv", TRAIN_MODE))
     write.csv(rs_df, rs_csv_path, row.names = FALSE)
     cat(sprintf("  Risk scores saved to: %s\n", rs_csv_path))
+  }
+
+  if (MULTISTART && length(restart_rows) > 0) {
+    restart_df  <- do.call(rbind, restart_rows)
+    restart_csv <- file.path(OUT_DIR, sprintf("LB_restart_diagnostics_%s.csv", TRAIN_MODE))
+    write.csv(restart_df, restart_csv, row.names = FALSE)
+    cat(sprintf("  Restart diagnostics saved to: %s\n", restart_csv))
+    # ELBO-vs-C agreement: flag if best ELBO and best C disagree
+    for (pr in unique(restart_df$prior_beta)) {
+      sub <- restart_df[restart_df$prior_beta == pr, ]
+      elbo_best <- sub$init_id[which.max(sub$final_elbo)]
+      c_best    <- sub$init_id[which.max(sub$train_cindex)]
+      agree     <- elbo_best == c_best
+      cat(sprintf("  [%s] ELBO-best=restart%d, C-best=restart%d → %s\n",
+                  pr, elbo_best, c_best, if (agree) "AGREE" else "DISAGREE"))
+    }
   }
   cat("\n")
 

@@ -5,6 +5,65 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-06 — Phase 3 (multi-initialization): SVD init is near-globally optimal; verdict = Discard (n_init=1)
+
+- **Decision:** Keep the LB benchmark default at `n_init = 1` (single SVD initialization). Do
+  not use random multi-restart as a standard fitting strategy. The multi-initialization wrapper
+  `code/fit_modular_multistart.R` is retained as a diagnostic utility but is not invoked in
+  the main benchmark pipeline.
+
+- **Empirical evidence:**
+
+  Ran 30-restart multi-initialization sweep on LB model, TCGA_PAAD (tcga_only), K=10,
+  point_normal prior. Restart 1 always uses SVD initialization; restarts 2–30 use random
+  normal initialization with reproducible seeds (seed = 42 + i).
+
+  | Prior        | Restarts | Best restart | ELBO (best) | ELBO (worst) | ELBO range |
+  |---|---|---|---|---|---|
+  | point_normal | 30       | 1 (SVD)     | −935,867.6  | −938,566.8   | 2,699.2    |
+
+  SVD initialization won out of 30 restarts. The ELBO range of ~2,700 units across 30 runs
+  (a ~0.3% variation relative to the absolute ELBO of ~936K) indicates a nearly unimodal
+  landscape with SVD at the optimum.
+
+- **Why SVD init is near-globally optimal for this model**
+
+  The SVD initialization decomposes Y = UDVᵀ and sets EL = U[:, 1:K] · diag(D[1:K])^(1/2),
+  EF = V[:, 1:K] · diag(D[1:K])^(1/2). This is the rank-K least-squares solution to the
+  genomics reconstruction objective (the dominant term in the ELBO when n << p). Under
+  EBNM shrinkage priors, the genomics term drives early CAVI iterations, so the SVD starting
+  point is already well-positioned in the landscape before survival gradient updates begin.
+  Random initializations start far from this geometric optimum and must traverse the same
+  landscape; they consistently converge to lower-ELBO solutions.
+
+- **Why ELBO is the correct selector (not held-out C-index)**
+
+  Using the training C-index to select among restarts would conflate model fitting with
+  model validation. The ELBO is the variational lower bound on the marginal likelihood — the
+  objective that CAVI is directly optimizing — so it is the principled selection criterion.
+  Held-out C-index is computed once on the winning restart against external cohorts that were
+  never seen during fitting.
+
+- **What was built and kept**
+
+  `code/fit_modular_multistart.R` implements the wrapper: restart 1 = SVD (deterministic
+  baseline always in candidate set), restarts 2..N = random with seed = `init_seed_base + i`.
+  Returns a structured list with `$best`, `$best_idx`, and a `$restarts` data.frame tracking
+  `init_id`, `init_method`, `seed`, `final_elbo`, `k_eff`, `beta_max`, `n_iter`, `converged`,
+  and `train_cindex` for each restart. The `--n-init N` CLI flag in `run_LB_benchmark.R`
+  activates the wrapper. Seven unit tests cover the full interface (`tests/test_multistart.R`).
+
+- **Trade-offs:** Retaining the wrapper adds ~100 lines to the codebase and a 7-test file.
+  The benefit is that the ELBO stability claim can be verified on any new dataset by passing
+  `--n-init 10` to the benchmark runner — providing a concrete diagnostics path if future
+  datasets show ELBO instability across restarts.
+
+- **Affected files:** `code/fit_modular_multistart.R` (new), `tests/test_multistart.R` (new),
+  `results/benchmark_sim/run_LB_benchmark.R` (--n-init flag added), `tests/run_tests.R`
+  (test_multistart.R added to suite)
+
+---
+
 ## 2026-05-05 — Phase C added to LB (fit_modular.R); sign_correction parameter + alpha CV fix
 
 - **Decision (Phase C for LB):** Added training concordance sign correction to

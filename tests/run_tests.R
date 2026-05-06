@@ -43,7 +43,8 @@ test_files <- c(
   "tests/test_predict.R",
   "tests/test_elbo.R",
   "tests/test_select_alpha_cv.R",
-  "tests/test_preprocess_desurv.R"
+  "tests/test_preprocess_desurv.R",
+  "tests/test_multistart.R"
 )
 
 # Run each test file
