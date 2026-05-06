@@ -253,8 +253,12 @@ if (!real_data_available) {
     t_s   <- pmin(raw_t, cen_t)
     ev_s  <- as.integer(raw_t <= cen_t)
 
+    # prior_LF = "point_normal" matches the DGP (L ~ N(0,1), both signs).
+    # The default "point_exponential" constrains loadings to be non-negative,
+    # which prevents recovery of this DGP and inflates RMSE to ~2.4.
     res_s <- fit_supervised_mf_modular(Y_s, t_s, ev_s, K = K_s,
                                         max_iter = 300, tol = 1e-3,
+                                        prior_LF = "point_normal",
                                         verbose = FALSE)
     final_rmse <- tail(res_s$history$rmse, 1)
     assert_true(final_rmse >= 0.95 && final_rmse <= 1.05,
@@ -280,6 +284,7 @@ if (!real_data_available) {
 
     res_s <- fit_supervised_mf_modular(Y_s, t_s, ev_s, K = K_s,
                                         max_iter = 300, tol = 1e-3,
+                                        prior_LF = "point_normal",
                                         verbose = FALSE)
     assert_true(isTRUE(res_s$history$converged),
                 sprintf("expected convergence; got converged=%s after %d iters",
