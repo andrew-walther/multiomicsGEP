@@ -188,9 +188,11 @@ select_K_cv <- function(Y, time, status,
   if (n_folds < 2)
     stop("n_folds must be >= 2.")
 
-  # Grab any user-supplied extra args; strip K if accidentally passed
+  # Grab any user-supplied extra args; strip K and sign_correction —
+  # K is overridden per candidate, sign_correction is hardcoded FALSE inside folds
   extra <- list(...)
-  extra[["K"]] <- NULL
+  extra[["K"]]               <- NULL
+  extra[["sign_correction"]] <- NULL
 
   # --- create stratified folds once (shared across all K) ---
   fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
