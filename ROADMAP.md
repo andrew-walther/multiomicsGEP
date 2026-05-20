@@ -4,11 +4,11 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-05-06.** Core model complete (modular CAVI, 192/192 tests passing).
+> **Status as of 2026-05-20.** Core model complete (modular CAVI, 193/193 tests passing).
 > Two model variants are fully implemented, benchmarked, and cross-validated on PDAC data
 > (5 independent external cohorts across RNA-seq, microarray, and proteomics platforms).
-> Four targeted improvements evaluated 2026-05-06 (Phases 1–4); see synthesis report
-> `docs/reports/ssbmf_summary_report_05_06_26.pdf`.
+> Four targeted improvements evaluated 2026-05-06 (Phases 1–4); YFB K-CV sign fix completed
+> 2026-05-20. See synthesis report `docs/reports/ssbmf_summary_report_05_06_26.pdf`.
 >
 > **LB model** (linear predictor η = Lβ; `code/fit_modular.R`): All three training configurations
 > (TCGA-only, CPTAC-only, merged TCGA+CPTAC) converge to 2–3 active factors. External C-index
@@ -21,8 +21,10 @@
 > training with a normal prior gives competitive external C-index (TCGA-only: 0.55–0.63).
 > Phase 1 (per-platform z-standardization + rank_transform=FALSE) resolved the merged β→0
 > collapse; K=3 merged training now yields external median C=0.64, matching or exceeding
-> DeSurv. YFB K-CV reveals sign instability in CV folds without global sign correction
-> (C<0.5 for normal prior); K-selection for YFB requires sign correction enabled in folds.
+> DeSurv. YFB K-CV sign fix (2026-05-20): `sign_correction=FALSE` in CV folds + `I(-risk)`
+> evaluation resolves the C<0.5 problem; normal prior now yields C=0.56–0.61 across K, with
+> K=5 selected by 1-SE rule on TCGA_PAAD. YFB point_normal K-CV remains C=0.5 for all K
+> (spike-small-n collapse; open item).
 >
 > Both models use SVD initialization with a post-convergence sign check: if the training
 > concordance of η = Lβ (or η = (YF)β) is below 0.5, β is globally negated. This corrects
@@ -80,6 +82,21 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   `rank_transform=FALSE` in `preprocess_desurv_cohort()`.
   *Files: `code/preprocess_desurv.R`, `results/benchmark_sim/run_YFB_benchmark.R`,
   `config/globals.yml` (k_pdac_yfb_merged: 3). Results: `outputs/YFB_benchmark_perplatform/`.*
+
+- [ ] **Cohort dummy-variable extension: shared L with cohort-specific F columns** `[Priority: High]` `[Effort: Large]`
+  Augment the factor model with cohort indicators: L = [L_global | L_cohort] where L_cohort
+  columns are fixed indicator variables identifying cohort membership, paired with cohort-specific
+  factor loadings F_cohort. The survival model uses only global columns (β_cohort = 0 by
+  construction). This is a Bayesian linear mixed model (LMM) formulation — L_global captures
+  shared biological programs; F_cohort columns absorb platform-specific mean shifts without
+  distorting prognostic signal. Motivated by the merged β→0 collapse on multi-platform
+  TCGA+CPTAC data (platform factor dominates PC1, washing out survival signal).
+  Requires: (1) literature review of Bayesian LMM with matrix factorization structure;
+  (2) derivation of modified q(L) and q(F) updates; (3) implementation in `code/fit_modular.R`
+  or a new `code/fit_lmm.R`; (4) benchmark on merged PDAC data.
+  *Notes: A two-part QMD document (`docs/reports/cohort_lmm_review_plan.qmd`) covering the
+  literature review and implementation proposal is the recommended starting point.*
+  *Files: `code/fit_modular.R` (or new `code/fit_lmm.R`), `code/update_L.R`, `code/update_F.R`*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model
@@ -161,18 +178,44 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   - LB normal prior: flat plateau (range=0.032 < per-K SE), K=3 selected (1-SE).
   - LB point_normal: K=8 selected (spike-small-n artefact; C=0.5 at K≤3). Practical default: K=5.
   - YFB point_normal: K=2 (β→0 collapse in all folds, C=0.5 everywhere).
-  - YFB normal: K=9 selected but C<0.5 across all K (sign instability in CV folds).
-  YFB K-selection requires sign correction enabled within CV folds before results are reliable.
-  192/192 tests passing (added KCV-T13 and KCV-T14 for YFB path).
+  - YFB normal: K=5 selected (1-SE; C=0.56–0.61 across all K) after sign fix (2026-05-20).
+  - YFB point_normal: C=0.5 for all K (β→0 collapse in folds; open item).
+  193/193 tests passing (KCV-T15 added for YFB sign fix verification).
   *Files: `code/select_K.R`, `tests/test_select_K_cv.R`, `results/benchmark_sim/run_K_cv.R`.
   Results: `results/benchmark_sim/outputs/K_cv/`. Report: `docs/reports/ssbmf_summary_report_05_06_26.pdf`.*
 
-- [ ] **YFB sign correction in K-CV** `[Priority: Medium]` `[Effort: Small]`
-  YFB K-CV with normal prior yields anti-concordant C-indices (C<0.5) because held-out
-  risk scores are not globally sign-corrected across folds. Enabling a fold-level sign
-  flip in `select_K_cv(model="YFB")` would make YFB K-selection interpretable. The
-  correction logic would mirror the post-fit sign check in `fit_cox_on_yf()`.
-  *Files: `code/select_K.R` (within the YFB branch of the CV loop)*
+- [x] **YFB sign correction in K-CV** *(Complete — 2026-05-20)*
+  `sign_correction=FALSE` parameter added to `fit_cox_on_yf()`; passed in YFB branch of
+  `select_K_cv()`. CV folds deliver raw SVD-oriented EBeta; concordance evaluated via
+  `I(-pred$risk_scores)`. After fix: normal prior yields C=0.56–0.61, K=5 selected (1-SE).
+  *Files: `code/fit_cox_on_yf.R`, `code/select_K.R`, `tests/test_select_K_cv.R` (KCV-T15).
+  Results: `results/benchmark_sim/outputs/K_cv/K_cv_table_YFB_normal.csv`.*
+
+- [ ] **YFB point_normal K-CV collapse** `[Priority: Medium]` `[Effort: Medium]`
+  Under the spike-and-slab (point_normal) prior, YFB β→0 in all CV folds regardless of K
+  (C=0.5 for all K ∈ {2,…,20}). The reduced training fold size (~115 subjects) is insufficient
+  to escape the spike component. This is a separate issue from the sign fix. Possible
+  approaches: β-only warm-up iterations before the spike prior activates; adaptive spike
+  weight schedule; or accepting that point_normal is not viable for YFB K-CV on small-n data.
+  *Files: `code/fit_cox_on_yf.R`, `code/select_K.R`*
+
+- [ ] **YFB preprocessing alignment** `[Priority: Medium]` `[Effort: Medium]`
+  Single-cohort and merged YFB training use different preprocessing contracts:
+  single-cohort uses the per-cohort DeSurv pipeline (`preprocess_desurv_cohort()`);
+  merged uses per-platform z-standardization (`per_platform_standardize=TRUE`,
+  `rank_transform=FALSE`). These are not interchangeable — a model trained in single-cohort
+  mode cannot be applied with merged-mode preprocessing at prediction time. A unified
+  preprocessing API that makes the contract explicit and enforces train/test consistency
+  would reduce downstream errors.
+  *Files: `code/preprocess_desurv.R`, `results/benchmark_sim/run_YFB_benchmark.R`*
+
+- [ ] **Per-platform noise variance (τ) investigation** `[Priority: Low]` `[Effort: Medium]`
+  The current model uses a single shared noise precision τ (estimated per gene, shared across
+  subjects and cohorts). In merged multi-platform training (TCGA RNA-seq + CPTAC proteomics),
+  the true noise variance almost certainly differs between platforms. A per-platform τ would
+  better reflect the generative structure and may reduce the genomics-term scale imbalance
+  that drives β→0 in the L update. Requires a new q(τ) derivation for the grouped case.
+  *Files: `code/update_tau.R`, `code/fit_modular.R`, `code/fit_cox_on_yf.R`*
 
 - [ ] **Move `load_pdac_raw` and `plot_cohort_loading_heatmap` to `code/`** `[Priority: Low]` `[Effort: Small]`
   Both functions currently live in `results/benchmark_sim/run_ssbmf_benchmark.R` (the data-loading
@@ -242,6 +285,14 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ---
 
 ## ✅ Completed
+
+- [x] **YFB K-CV sign fix (2026-05-20)** — `sign_correction=FALSE` parameter added to
+  `fit_cox_on_yf()` and passed in `select_K_cv(model="YFB")`. Before fix: C<0.5 for all K
+  (Phase C oriented EBeta, then `I(-.)` re-flipped, producing anti-concordant predictions).
+  After fix: YFB normal prior yields C=0.56–0.61 across K ∈ {2,…,20}; K=5 selected by 1-SE
+  rule on TCGA_PAAD. YFB point_normal remains C=0.5 (spike-small-n collapse; separate open
+  item). 193/193 tests passing.
+  *Files: `code/fit_cox_on_yf.R`, `code/select_K.R`, `tests/test_select_K_cv.R`.*
 
 - [x] **Training concordance sign correction + alpha CV fix (2026-05-05)** — Both LB and YFB
   were producing anti-concordant predictions (C < 0.5) due to sign ambiguity in SVD initialization:

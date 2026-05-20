@@ -5,6 +5,58 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-20 — YFB K-CV sign fix: sign_correction=FALSE in CV folds resolves C<0.5 for normal prior
+
+- **Decision:** Added a `sign_correction` parameter (default TRUE) to `fit_cox_on_yf()` in
+  `code/fit_cox_on_yf.R`. Inside `select_K_cv(model="YFB")`, pass `sign_correction = FALSE`
+  in the per-fold fit args. Concordance is evaluated via `I(-pred$risk_scores)` — the same
+  convention as the LB model.
+
+- **Problem diagnosed:** YFB K-CV produced C < 0.5 for every K value under the normal prior.
+  Root cause: a sign double-flip. `fit_cox_on_yf()` previously applied Phase C unconditionally
+  (if training C < 0.5, negate EBeta). Inside CV folds, Phase C corrected the sign of EBeta,
+  orienting it concordantly with training survival. The concordance evaluation then applied
+  `I(-pred$risk_scores)` — expecting anti-concordant raw predictions. With Phase C correction
+  in place, the negation produced anti-concordant predictions, giving C < 0.5 universally.
+
+- **Fix:** Wrapped the Phase C block in `if (sign_correction) { ... }`. In the YFB branch of
+  `select_K_cv()`, `sign_correction = FALSE` is now passed explicitly (same approach as LB).
+  CV folds deliver raw SVD-oriented EBeta; concordance is evaluated via `I(-pred$risk_scores)`.
+  This is consistent with LB convention: both models use raw orientation in folds, both evaluate
+  via the negated risk score.
+
+- **Empirical results after fix (5-fold CV on TCGA_PAAD, K ∈ {2,…,10,15,20}, normal prior):**
+
+  | K  | Mean C | SE    | Note |
+  |----|--------|-------|------|
+  | 2  | 0.565  | 0.025 | |
+  | 3  | 0.585  | 0.008 | |
+  | 5  | 0.601  | 0.011 | **selected (1-SE)** |
+  | 6  | 0.605  | 0.012 | best mean C |
+  | 7  | 0.593  | 0.028 | |
+  | 8–20 | 0.535–0.600 | | |
+
+  1-SE rule: threshold = 0.605 − 0.012 = 0.593; smallest K with mean C ≥ 0.593 is **K=5**.
+
+- **YFB point_normal K-CV remains C=0.5 for all K.** The spike-and-slab prior collapses β→0
+  inside CV folds (training fold n≈115 insufficient to escape the spike component). This is
+  a separate issue from the sign fix — point_normal K-selection for YFB is an open item.
+
+- **Convention rationale:** sign_correction=FALSE inside CV folds is correct for both LB and
+  YFB because per-fold Phase C produces orientation inconsistency across folds (the same CAVI
+  solution may be corrected in one fold but not another, inflating apparent C-index variance).
+  `I(-pred$risk_scores)` handles the sign convention consistently regardless of SVD orientation.
+
+- **Test added:** KCV-T15 verifies that YFB K-CV with high-SNR data (n=100, K_true=2, sd=0.1,
+  β=3.0, ~30% censoring) yields mean C ≥ 0.5 for all K under normal prior. 193/193 tests passing.
+
+- **Affected files:** `code/fit_cox_on_yf.R` (sign_correction parameter, Phase C wrapped in
+  `if (sign_correction)`), `code/select_K.R` (sign_correction=FALSE in YFB fit_args with
+  explanatory comment), `tests/test_select_K_cv.R` (KCV-T15 added),
+  `results/benchmark_sim/outputs/K_cv/K_cv_table_YFB_normal.csv` (regenerated after fix).
+
+---
+
 ## 2026-05-06 — Phase 1 (YFB merged): per-platform z-standardization resolves β→0 collapse
 
 - **Decision:** For YFB merged training (TCGA_PAAD + CPTAC), apply per-platform
