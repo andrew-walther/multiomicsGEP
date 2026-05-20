@@ -14,7 +14,10 @@ suppressPackageStartupMessages({
 if (!exists("fit_supervised_mf_modular")) {
   source("code/update_beta.R"); source("code/update_L.R")
   source("code/update_F.R");    source("code/update_tau.R")
-  source("code/compute_elbo.R"); source("code/fit_modular.R")
+  source("code/compute_elbo.R")
+  # fit_modular.R has a DATA_MODE runner block that stops when real_Y is NULL;
+  # tryCatch ensures the function definition above the block is captured.
+  suppressMessages(tryCatch(source("code/fit_modular.R"), error = function(e) invisible(NULL)))
 }
 if (!exists("predict_supervised_mf"))
   source("code/predict.R")
@@ -225,6 +228,36 @@ if (exists("fit_cox_on_yf", mode = "function") &&
                 "All YFB C-indices should lie in [0, 1]")
   })
 
+  run_test("KCV-T15: model='YFB' mean C-indices are >= 0.5 (sign correction disabled in folds)", {
+    # Before fix: fit_cox_on_yf always applied Phase C sign correction, orienting
+    # EBeta so ZF·EBeta is concordant (C>0.5 on training). select_K_cv then evaluated
+    # I(-risk_scores), double-flipping sign → C<0.5 in all folds.
+    # After fix: sign_correction=FALSE inside folds. Raw SVD orientation keeps EBeta
+    # in the anti-concordant direction, so I(-risk_scores) yields C>=0.5.
+    # Use a high-SNR dataset (sd=0.1, beta=3, all events, n=100) so YFB reliably
+    # recovers the factor in few iterations.
+    d_t15 <- local({
+      set.seed(31)
+      n <- 100L; p <- 40L
+      L  <- matrix(rexp(n * 2L), n, 2L)
+      F2 <- matrix(rexp(p * 2L), p, 2L)
+      Y  <- L %*% t(F2) + matrix(rnorm(n * p, sd = 0.1), n, p)
+      Y  <- scale(Y, center = TRUE, scale = FALSE)
+      lp <- 3.0 * scale(L[, 1L])[, 1L]   # strong signal: beta=3 on factor 1
+      tv <- rexp(n, rate = exp(lp))
+      ct <- rexp(n, rate = 0.5)           # random censoring (~30% censored)
+      list(Y = Y, time = pmin(tv, ct), status = as.integer(tv <= ct))
+    })
+    res <- select_K_cv(d_t15$Y, d_t15$time, d_t15$status,
+                       K_grid = c(2L, 3L), n_folds = 3L,
+                       model = "YFB", max_iter = 40L)
+    c_obs <- res$cv_table$mean_cindex[!is.na(res$cv_table$mean_cindex)]
+    assert_true(length(c_obs) > 0, "No non-NA mean C-indices returned")
+    assert_true(all(c_obs >= 0.5),
+                sprintf("YFB mean C-indices should be >= 0.5 after sign fix; got: %s",
+                        paste(round(c_obs, 3), collapse = ", ")))
+  })
+
 } else {
-  cat("  [KCV-T13, T14] Skipped: fit_cox_on_yf not available\n")
+  cat("  [KCV-T13, T14, T15] Skipped: fit_cox_on_yf not available\n")
 }

@@ -129,6 +129,10 @@ calc_cox_taylor_yf <- function(eta, time, status) {
 #'                 pure-genomics). Forward-compatible when alpha_F > 0 is enabled.
 #' @param alpha_schedule NULL or list(warmup_iters, ramp_iters): ramp alpha from 0
 #'                 up to `alpha` over warmup+ramp iterations.
+#' @param sign_correction logical: apply post-convergence Phase C sign check — flip
+#'                 EBeta if training concordance of ZF·EBeta is < 0.5 (default TRUE).
+#'                 Set FALSE inside cross-validation folds so fold-to-fold EBeta
+#'                 orientation stays consistent; CV evaluates via I(-risk_scores).
 #' @param verbose  Logical: print iteration logs? (default TRUE)
 #'
 #' @return Named list:
@@ -145,9 +149,10 @@ fit_cox_on_yf <- function(Y, time, status,
                            EL_init      = NULL,
                            EF_init      = NULL,
                            N_burnin     = 0,
-                           cox_warmstart  = FALSE,
-                           normalize_AB   = FALSE,
-                           alpha_schedule = NULL,
+                           cox_warmstart    = FALSE,
+                           normalize_AB     = FALSE,
+                           alpha_schedule   = NULL,
+                           sign_correction  = TRUE,
                            verbose      = TRUE) {
 
   n <- nrow(Y); p <- ncol(Y)
@@ -459,17 +464,25 @@ fit_cox_on_yf <- function(Y, time, status,
   # risk_score_new = ZF * (-EBeta) = -(risk_score_original), yielding 1 - C_train.
   # Deviation from Plan option A (PC1 correlation): training concordance check is more
   # direct and correct for any dataset, not just synthetic.
-  ZF_final  <- Y %*% sweep(EF, 2, EF_norms, "/")
-  eta_final <- as.vector(ZF_final %*% EBeta)
-  c_train   <- as.numeric(
-    concordance(Surv(time, status) ~ eta_final)$concordance
-  )
-  if (c_train < 0.5) {
-    if (verbose) {
-      cat(sprintf("    [Phase C] Training C=%.4f < 0.5 — flipping EBeta sign\n", c_train))
+  #
+  # sign_correction = FALSE during cross-validation (select_K_cv), because
+  # per-fold sign flips produce fold-to-fold EBeta orientation inconsistency that
+  # inflates apparent C-index variance and corrupts K selection. CV evaluates
+  # held-out concordance via I(-pred$risk_scores), which implicitly assumes the
+  # raw SVD-initialized EBeta orientation — consistent with the LB model convention.
+  if (sign_correction) {
+    ZF_final  <- Y %*% sweep(EF, 2, EF_norms, "/")
+    eta_final <- as.vector(ZF_final %*% EBeta)
+    c_train   <- as.numeric(
+      concordance(Surv(time, status) ~ eta_final)$concordance
+    )
+    if (c_train < 0.5) {
+      if (verbose) {
+        cat(sprintf("    [Phase C] Training C=%.4f < 0.5 — flipping EBeta sign\n", c_train))
+      }
+      EBeta  <- -EBeta
+      EBeta2 <- EBeta^2
     }
-    EBeta  <- -EBeta
-    EBeta2 <- EBeta^2
   }
 
   list(

@@ -246,12 +246,15 @@ select_K_cv <- function(Y, time, status,
         pred <- predict_supervised_mf(Y[test_idx, , drop = FALSE],
                                       fit$EF, fit$EBeta)
       } else {
-        # YFB: fit_cox_on_yf does not have sign_correction; verbose=FALSE
+        # YFB: sign_correction=FALSE — same convention as LB. Per-fold sign
+        # flips produce orientation inconsistency across folds; concordance is
+        # evaluated via I(-pred$risk_scores) using the raw SVD orientation.
         fit_args <- c(
           list(Y      = Y[train_idx, , drop = FALSE],
                time   = time[train_idx],
                status = status[train_idx],
                K      = K,
+               sign_correction = FALSE,
                verbose = FALSE),
           extra
         )
