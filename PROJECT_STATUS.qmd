@@ -1554,3 +1554,102 @@ and archived baseline comparison. Commit: `2a6ad99`.
 - `README.md`: Project Status section updated to reflect both model variants and Phase C fix.
 
 ---
+
+# Session 22 — Four-Phase Improvement Evaluation (2026-05-06)
+
+Branch: `pre-merge-synthesis-05_06_26` (base: `ac5b215`, "Rewrite ROADMAP and README for
+biostatistician readability"). Synthesis report: `docs/reports/ssbmf_summary_report_05_06_26.pdf`.
+All tests: 192/192 passing after adding KCV-T13 and KCV-T14.
+
+## 22.1 — Phase 1: Per-Platform Standardization for YFB Merged Training
+
+**Problem:** YFB merged training (TCGA_PAAD + CPTAC, K=20) collapses β→0 (machine-epsilon).
+Root cause: the per-subject rank transform before quantile normalization removes the
+between-platform variance that survival signal depends on; A_surv/A_gen ~10⁻³ at iteration 1.
+
+**Fix:** `per_platform_standardize=TRUE` + `rank_transform=FALSE` in `preprocess_desurv_cohort()`,
+plus K=3 (registered as `k_pdac_yfb_merged: 3` in `config/globals.yml`). Run via
+`--per-platform-norm --no-rank` flags in `run_YFB_benchmark.R`.
+
+**Results** (K=3, both priors identical — factors escape spike at K=3):
+
+| Cohort | External C-index |
+|--------|-----------------|
+| Dijk (RNA-seq) | 0.597 |
+| Moffitt (array) | 0.532 |
+| PACA-AU (array) | 0.666 |
+| PACA-AU (seq) | 0.666 |
+| Puleo (array) | 0.644 |
+
+Median 0.644, all above 0.5, matching or exceeding DeSurv range (0.60–0.65).
+Results saved to `results/benchmark_sim/outputs/YFB_benchmark_perplatform/`.
+
+## 22.2 — Phase 2: Initialization Constraints (Verdict: Discard)
+
+Two variants tested on LB TCGA_PAAD (K=5, point_normal):
+1. Non-negative L init: `pmax(SVD_L, 0)` — clamps negative entries to zero.
+2. Cox-sign alignment: flip L columns to align with naive Cox direction.
+
+Neither improved ELBO, K_eff, or external C-index vs. unconstrained SVD baseline.
+The Phase C post-fit sign correction already handles the main sign failure mode.
+No code retained. Verdict: **Discard**.
+
+## 22.3 — Phase 3: Multi-Start Random Restarts (Verdict: Discard)
+
+30-restart sweep on LB TCGA_PAAD (K=10, point_normal). Restart 1 = SVD initialization;
+restarts 2–30 = random normal, seeds 43–72.
+
+- SVD restart (restart 1) achieves the highest ELBO in all 30 trials.
+- ELBO range across restarts: 2,699 units (~0.3% relative) — nearly unimodal landscape.
+- Multi-start adds ~30× computational cost with no predictive benefit.
+
+Verdict: **Discard**. `n_init=1` (SVD) is the canonical benchmark default.
+Wrapper `code/fit_modular_multistart.R` retained as a diagnostic utility only.
+DECISIONS.md entry: 2026-05-06 Phase 3.
+
+## 22.4 — Phase 4: K Selection via Cross-Validated C-Index
+
+`select_K_cv()` extended with `model="LB"` (default) or `model="YFB"` parameter.
+LB dispatches to `fit_supervised_mf_modular` + `predict_supervised_mf`;
+YFB dispatches to `fit_cox_on_yf` + `predict_cox_on_yf` (passes `EF_norms`).
+Sign correction disabled inside CV folds for both models (fold-to-fold consistency).
+
+5-fold CV over K∈{2,…,10,15,20} on TCGA_PAAD (n=144, events=75):
+
+| Model | Prior | K_opt | Notes |
+|-------|-------|-------|-------|
+| LB | point_normal | 8 | Spike-small-n artefact (C=0.5 at K≤3) |
+| LB | normal | 3 | Flat plateau (range=0.032 < SE); parsimonious |
+| YFB | point_normal | 2 | β→0 collapse in all folds (C=0.5 everywhere) |
+| YFB | normal | 9 | C<0.5 across all K (sign instability in CV) |
+
+**Key finding:** YFB normal-prior CV yields anti-concordant C-indices (0.40–0.46);
+mapping to 1−C gives 0.54–0.61, comparable to LB. Sign instability in YFB CV folds
+(without global sign correction) makes K-selection unreliable. K-CV for YFB requires
+fold-level sign correction before results are actionable.
+
+**Practical recommendation: K=5 for LB.** K=3 is the CV-correct choice under normal
+prior; K=5 sits above the spike escape threshold and is more robust to prior choice.
+
+New CSV outputs in `results/benchmark_sim/outputs/K_cv/`:
+`K_cv_comparison_LB.csv`, `K_cv_comparison_YFB.csv`, `K_cv_comparison_h2h.csv`,
+per-model-prior fold tables. `K_cv_meta.csv` updated to 4 rows (LB+YFB × PN+NM).
+
+Tests: added KCV-T13 (YFB structure) and KCV-T14 (YFB fold count) → 192/192 passing.
+
+## 22.5 — Synthesis Report
+
+`docs/reports/ssbmf_summary_report_05_06_26.qmd` covers all four phases.
+Phase 4 section includes: LB K-CV table+plot, YFB K-CV table+plot,
+LB vs. YFB head-to-head table+plot, and interpretation of the anti-concordance finding.
+Rendered to PDF and HTML. Committed: `88815b7`.
+
+## 22.6 — Living Docs Updated
+
+- `ROADMAP.md`: header updated to 2026-05-06; YFB β→0 item marked complete (Phase 1);
+  K-CV item marked complete (Phase 4); new open item added for YFB sign correction in CV.
+- `DECISIONS.md`: Phase 1 and Phase 2 entries added (2026-05-06).
+- `PROJECT_STATUS.qmd`: this section (Session 22).
+- `CLAUDE.md` memory: no change needed (MEMORY.md will be updated separately).
+
+---

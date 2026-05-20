@@ -1,0 +1,310 @@
+---
+title: "SSBMF Status Update - May 8, 2026"
+author: "Andrew Walther"
+format:
+  pdf:
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{enumitem}
+        \usepackage{booktabs}
+        \usepackage{geometry}
+        \usepackage{titling}
+        \usepackage{array}
+        \geometry{margin=0.42in}
+        \renewcommand{\familydefault}{\sfdefault}
+        \setlist[itemize]{leftmargin=1.1em, topsep=0.1em, itemsep=0.06em, parsep=0em, partopsep=0em}
+        \setlength{\parskip}{0.05em}
+        \RedeclareSectionCommand[beforeskip=0.28em,afterskip=0.14em]{section}
+        \renewcommand{\arraystretch}{0.9}
+        \setlength{\droptitle}{-1.8em}
+        \pretitle{\begin{center}\large\bfseries}
+        \posttitle{\par\end{center}\vspace{-0.7em}}
+fontsize: 9pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(knitr)
+library(ggplot2)
+library(patchwork)
+
+read_csv_safe <- function(path) {
+  if (file.exists(path)) read.csv(path, stringsAsFactors = FALSE) else NULL
+}
+
+median_ext <- function(df, prior) {
+  sub <- df[df$section == "3_external" & df$prior_beta == prior, "c_index"]
+  round(median(sub, na.rm = TRUE), 3)
+}
+
+train_row <- function(df, prior) {
+  df[df$section == "2_pdac_train" & df$prior_beta == prior, ][1, ]
+}
+
+OUT_LB <- "../../results/benchmark_sim/outputs/LB_benchmark"
+OUT_YFB <- "../../results/benchmark_sim/outputs/YFB_benchmark"
+OUT_YFB_P1 <- "../../results/benchmark_sim/outputs/YFB_benchmark_perplatform"
+OUT_KCV <- "../../results/benchmark_sim/outputs/K_cv"
+
+lb_tcga  <- read_csv_safe(file.path(OUT_LB, "LB_benchmark_results_tcga_only.csv"))
+lb_cptac <- read_csv_safe(file.path(OUT_LB, "LB_benchmark_results_cptac_only.csv"))
+lb_merge <- read_csv_safe(file.path(OUT_LB, "LB_benchmark_results_merged.csv"))
+
+yfb_tcga  <- read_csv_safe(file.path(OUT_YFB, "YFB_benchmark_results_tcga_only.csv"))
+yfb_cptac <- read_csv_safe(file.path(OUT_YFB, "YFB_benchmark_results_cptac_only.csv"))
+yfb_merge_p1 <- read_csv_safe(file.path(OUT_YFB_P1, "YFB_benchmark_results_merged.csv"))
+
+kcv_lb  <- read_csv_safe(file.path(OUT_KCV, "K_cv_comparison_LB.csv"))
+kcv_yfb <- read_csv_safe(file.path(OUT_KCV, "K_cv_comparison_YFB.csv"))
+
+lb_tcga_row  <- train_row(lb_tcga, "point_normal")
+lb_cptac_row <- train_row(lb_cptac, "point_normal")
+lb_merge_row <- train_row(lb_merge, "point_normal")
+yfb_tcga_row  <- train_row(yfb_tcga, "normal")
+yfb_cptac_row <- train_row(yfb_cptac, "normal")
+yfb_merge_row <- train_row(yfb_merge_p1, "normal")
+```
+
+## 1. Recent Improvements: Problems Addressed and Resolved
+
+- **Risk direction is now corrected.** The 2026-05-05 Phase C sign correction
+  fixed a major anti-concordance problem in both LB and YFB. This is now a
+  resolved issue and the basis for interpreting all current external results.
+- **Merged YFB collapse was resolved on 2026-05-06.** The 2026-05-05 report
+  still showed merged YFB as effectively collapsed; the later 2026-05-06
+  update supersedes that result. Per-platform z-standardization plus removal of
+  the rank transform recovered non-zero prognostic coefficients for merged
+  TCGA+CPTAC.
+- **Initialization constraints were tested and discarded.** Constrained
+  singular value decomposition initialization and Cox-sign alignment did not
+  improve ELBO or external prognosis.
+- **Multi-start was tested and discarded.** A 30-restart sweep showed the
+  standard singular value decomposition initialization already wins on ELBO, so
+  routine restarts are not the current bottleneck.
+- **K-selection is now a clearer methodological decision.** The 2026-05-06 work
+  added an implemented K-fold CV pipeline and clarified what is currently
+  reliable for LB versus still unresolved for YFB.
+
+**Brief note on YFB model development.**
+
+- **LB formulation:** prognosis enters through the latent loading matrix,
+  $\eta = L\beta$.
+- **YFB reformulation:** prognosis instead uses observed factor scores,
+  $\eta = (YF)\beta$, which removes the LB train/test mismatch.
+- **Derivation impact:** the survival term no longer acts through the original
+  $L$-based predictor, so YFB required a separate Cox-on-YF derivation and
+  YFB-specific update rules.
+
+## 2. Current Results and Value Add: LB and YFB
+
+```{r key-results-table}
+key_results <- data.frame(
+  Model = c("LB", "LB", "LB", "YFB", "YFB", "YFB"),
+  `Training set` = c(
+    "TCGA-only",
+    "CPTAC-only",
+    "Merged TCGA+CPTAC",
+    "TCGA-only",
+    "CPTAC-only",
+    "Merged TCGA+CPTAC"
+  ),
+  `Prior(s)` = c(
+    "normal / point_normal",
+    "normal / point_normal",
+    "normal / point_normal",
+    "normal / point_normal",
+    "normal / point_normal",
+    "normal / point_normal"
+  ),
+  `Median external C by prior` = c(
+    sprintf("normal %.3f / point_normal %.3f",
+            median_ext(lb_tcga, "normal"), median_ext(lb_tcga, "point_normal")),
+    sprintf("normal %.3f / point_normal %.3f",
+            median_ext(lb_cptac, "normal"), median_ext(lb_cptac, "point_normal")),
+    sprintf("normal %.3f / point_normal %.3f",
+            median_ext(lb_merge, "normal"), median_ext(lb_merge, "point_normal")),
+    sprintf("normal %.3f / point_normal %.3f",
+            median_ext(yfb_tcga, "normal"), median_ext(yfb_tcga, "point_normal")),
+    sprintf("normal %.3f / point_normal %.3f",
+            median_ext(yfb_cptac, "normal"), median_ext(yfb_cptac, "point_normal")),
+    sprintf("normal %.3f / point_normal %.3f",
+            median_ext(yfb_merge_p1, "normal"), median_ext(yfb_merge_p1, "point_normal"))
+  ),
+  `Factor / beta summary` = c(
+    "LB priors agree; 2 active; max|beta|=0.0085",
+    "LB priors agree; 3 active; max|beta|=0.0152",
+    "LB priors agree; 3 active; max|beta|=0.0213",
+    "point_normal collapses; normal has near-zero betas",
+    "point_normal collapses; normal has near-zero betas",
+    "both priors agree; 3 active; max|beta|=0.0677"
+  ),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+knitr::kable(key_results, booktabs = TRUE, digits = 3)
+```
+
+Notes: LB gives the same current external predictions under `normal` and
+`point_normal`. For YFB single-cohort fits, `point_normal` collapses to
+beta approximately zero, so the `normal` prior gives the only non-degenerate
+single-cohort result. Merged YFB uses the same TCGA+CPTAC training set, with
+per-platform standardization and no rank transform; under those settings, both
+priors agree.
+
+- **LB is now the stable benchmark model.**
+  - Median external C-index is **0.610** for TCGA-only, **0.625** for
+    CPTAC-only, and **0.644** for merged training.
+  - Best cohort result is **PACA-AU seq: 0.656-0.673**.
+  - LB consistently identifies **2-3 active factors**.
+- **Why only one prior is emphasized for LB.**
+  - In the current LB benchmarks, **point-normal and normal give effectively
+    identical external predictions**, so showing both is redundant; the document
+    reports point-normal because it is the current default prior.
+- **YFB remains mixed in single-cohort mode.**
+  - With the normal prior, median external C-index is **0.553** for TCGA-only
+    and **0.561** for CPTAC-only.
+  - In the current single-cohort fits, the reported betas are effectively
+    near-zero, so these models are not yet giving a convincing activated-factor
+    solution even though some external C-indices are above 0.5.
+- **Why only the normal prior is emphasized for single-cohort YFB.**
+  - In the current YFB single-cohort benchmarks, the **point-normal prior
+    collapses to beta≈0**, so the normal prior is the only interpretable
+    single-cohort YFB result. On the merged TCGA+CPTAC fit with the working
+    preprocessing settings, **both priors agree**.
+- **Merged YFB is currently the strongest “value add” result.**
+  - On the same merged **TCGA+CPTAC** training set, using
+    **per-platform standardization and no rank transform**, YFB achieves
+    **$K = 3$**, **$K_{\mathrm{eff}} = 3$**, **max$|\hat\beta| = 0.0677$**, and
+    external C-index **0.532-0.666** across all five cohorts.
+  - Median external C-index is **0.644**, matching merged LB.
+
+\newpage
+
+## 3. Open Questions and Decisions
+
+```{r k-options}
+k_options <- data.frame(
+  `K-selection path` = c("ARD from K_max", "Bayesian cross-validation", "K-fold CV grid search"),
+  `Current status in repo` = c(
+    "Partially present via shrinkage and K_eff behavior",
+    "Not yet implemented in a decision-ready form",
+    "Implemented; currently the only operational selection workflow"
+  ),
+  `What recent results suggest` = c(
+    "Useful regularization, but not yet a sufficient standalone decision rule in PDAC",
+    "Methodologically appealing, but currently a future development path",
+    "Reliable for LB; still unreliable for YFB because of fold-level sign instability"
+  ),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+knitr::kable(k_options, booktabs = TRUE)
+```
+
+- **Current LB recommendation.**
+  - Under the 2026-05-06 K-CV sweep, the **normal prior selects $K=3$** under
+    the 1-SE rule.
+  - The **point-normal prior selects $K=8$**, but this is interpreted as a
+    shrinkage/small-$n$ artifact rather than strong evidence that 8 factors are
+    biologically necessary.
+  - The current practical compromise is **$K=5$ for LB**.
+- **Current YFB limitation.**
+  - YFB K-CV is **not yet decision-ready**.
+  - Point-normal collapses to **C = 0.5** in all folds; normal prior gives
+    **anti-concordant C-index** across K because held-out folds do not yet have
+    stable sign correction.
+- **Main decisions for discussion.**
+  - Should **K-fold CV remain the operational rule for LB** while YFB
+    K-selection remains open?
+  - Should the next methodological push be **Bayesian CV** or **ARD-style
+    large-$K_{\max}$ shrinkage**?
+
+- **Other open issues.**
+  - **Single-cohort YFB still needs a scale-aware fix** analogous to the merged
+    preprocessing fix that worked on the merged TCGA+CPTAC training set.
+  - **LB still appears genomics-dominated in the loading update**, so survival
+    influence on $L$ may remain too weak even after sign correction.
+
+```{r summary-figure, fig.height=4.8, fig.cap="Current evidence across synthetic validation, PDAC external performance, and K-selection. Dashed lines mark selected K values from the 2026-05-06 sweep."}
+# Panel A: synthetic
+syn_df <- data.frame(
+  Model = c("LB", "LB", "YFB", "YFB"),
+  Prior = c("point_normal", "normal", "point_normal", "normal"),
+  C_index = c(
+    lb_merge[lb_merge$section == "1_synthetic" & lb_merge$prior_beta == "point_normal", "c_index"][1],
+    lb_merge[lb_merge$section == "1_synthetic" & lb_merge$prior_beta == "normal", "c_index"][1],
+    yfb_merge_p1[yfb_merge_p1$section == "1_synthetic" & yfb_merge_p1$prior_beta == "point_normal", "c_index"][1],
+    yfb_merge_p1[yfb_merge_p1$section == "1_synthetic" & yfb_merge_p1$prior_beta == "normal", "c_index"][1]
+  )
+)
+
+p_syn <- ggplot(syn_df, aes(x = Model, y = C_index, fill = Prior)) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.6, color = "white") +
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "grey40") +
+  scale_fill_manual(values = c("point_normal" = "#4c78a8", "normal" = "#f58518")) +
+  coord_cartesian(ylim = c(0.5, 1.0)) +
+  labs(title = "Synthetic", x = NULL, y = "C-index") +
+  theme_bw(base_size = 8) +
+  theme(legend.position = "top", panel.grid.minor = element_blank())
+
+# Panel B: median external results
+ext_df <- data.frame(
+  Model = c(rep("LB", 6), rep("YFB", 6)),
+  Mode = c("TCGA-only", "TCGA-only", "CPTAC-only", "CPTAC-only", "Merged", "Merged",
+           "TCGA-only", "TCGA-only", "CPTAC-only", "CPTAC-only", "Merged", "Merged"),
+  Prior = c("point_normal", "normal", "point_normal", "normal", "point_normal", "normal",
+            "point_normal", "normal", "point_normal", "normal", "point_normal", "normal"),
+  Median = c(
+    median_ext(lb_tcga, "point_normal"), median_ext(lb_tcga, "normal"),
+    median_ext(lb_cptac, "point_normal"), median_ext(lb_cptac, "normal"),
+    median_ext(lb_merge, "point_normal"), median_ext(lb_merge, "normal"),
+    median_ext(yfb_tcga, "point_normal"), median_ext(yfb_tcga, "normal"),
+    median_ext(yfb_cptac, "point_normal"), median_ext(yfb_cptac, "normal"),
+    median_ext(yfb_merge_p1, "point_normal"), median_ext(yfb_merge_p1, "normal")
+  )
+)
+
+p_ext <- ggplot(ext_df, aes(x = Mode, y = Median, fill = Prior)) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.62, color = "white") +
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "grey40") +
+  facet_wrap(~Model, nrow = 1) +
+  scale_fill_manual(values = c("point_normal" = "#4c78a8", "normal" = "#f58518")) +
+  coord_cartesian(ylim = c(0.45, 0.7)) +
+  labs(title = "Median External C-index", x = NULL, y = "Median C") +
+  theme_bw(base_size = 8) +
+  theme(legend.position = "none", panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 7))
+
+# Panel C: K-CV
+kcv_plot_df <- rbind(
+  data.frame(Model = "LB", Prior = "point_normal", K = kcv_lb$K, MeanC = kcv_lb$PN_mean_C),
+  data.frame(Model = "LB", Prior = "normal", K = kcv_lb$K, MeanC = kcv_lb$NM_mean_C),
+  data.frame(Model = "YFB", Prior = "point_normal", K = kcv_yfb$K, MeanC = kcv_yfb$PN_mean_C),
+  data.frame(Model = "YFB", Prior = "normal", K = kcv_yfb$K, MeanC = kcv_yfb$NM_mean_C)
+)
+
+sel_df <- data.frame(
+  Model = c("LB", "LB", "YFB", "YFB"),
+  Prior = c("point_normal", "normal", "point_normal", "normal"),
+  K = c(8, 3, 2, 9)
+)
+
+p_kcv <- ggplot(kcv_plot_df, aes(x = K, y = MeanC, color = Prior)) +
+  geom_line(linewidth = 0.55) +
+  geom_point(size = 1.2) +
+  geom_vline(data = sel_df, aes(xintercept = K, color = Prior),
+             linetype = "dashed", linewidth = 0.45, show.legend = FALSE) +
+  geom_hline(yintercept = 0.5, linetype = "dotted", color = "grey40") +
+  facet_wrap(~Model, nrow = 1) +
+  scale_color_manual(values = c("point_normal" = "#4c78a8", "normal" = "#f58518")) +
+  coord_cartesian(ylim = c(0.38, 0.62)) +
+  labs(title = "K-fold CV", x = "K", y = "Mean C") +
+  theme_bw(base_size = 8) +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+
+p_syn / p_ext / p_kcv + plot_layout(heights = c(0.9, 1.05, 1.05))
+```
