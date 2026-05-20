@@ -1,0 +1,1431 @@
+---
+title: "Cohort Dummy-Variable Extension to L: A Bayesian Linear Mixed Model Framework for SSBMF"
+author: "Andrew Walther"
+date: "2026-05-20"
+bibliography: references.bib
+format:
+  pdf:
+    engine: xelatex
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    geometry: "top=0.85in, bottom=0.85in, left=1in, right=1in"
+    fontsize: 11pt
+    linestretch: 1.1
+    colorlinks: true
+    linkcolor: "NavyBlue"
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \floatplacement{figure}{H}
+        \usepackage{placeins}
+        \usepackage{booktabs}
+        \usepackage{xcolor}
+        \usepackage{mdframed}
+        \definecolor{keyblue}{RGB}{31,119,180}
+        \definecolor{lightgray}{RGB}{245,245,245}
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    embed-resources: true
+    self-contained: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(knitr)
+
+knitr::opts_chunk$set(
+  fig.align = "center",
+  fig.pos   = "H",
+  out.width = "90%",
+  dpi       = 150
+)
+```
+
+## Abstract {.unnumbered}
+
+When Supervised Sparse Bayesian Matrix Factorization (SSBMF) is trained on
+merged multi-platform cohorts (e.g., TCGA RNA-seq and CPTAC proteomics), the
+dominant principal component reflects platform-level technical variation rather
+than biology.  The result is a collapsed survival linear predictor ($\beta \to 0$)
+that renders prognostic scoring useless.  The standard workaround — per-platform
+z-score normalization before pooling — reduces but does not eliminate the problem
+and discards cohort-specific information.
+
+This document proposes an explicit Bayesian linear mixed model (LMM) extension
+to the SSBMF L-matrix: appending $C$ cohort indicator columns to $L$ so that the
+genomics reconstruction absorbs platform-specific mean shifts through a new
+factor matrix $F_{\text{cohort}}$, while the survival linear predictor is
+protected by fixing $\beta_{\text{cohort}} \equiv 0$.  The augmented model
+$Y = L_{\text{global}} F_{\text{global}}' + L_{\text{cohort}} F_{\text{cohort}}' + E$
+retains closed-form CAVI updates for all components, requiring only modest
+modifications to the existing modular update pipeline.
+
+This document is organized in three parts: (1) a literature review of Bayesian
+LMMs with emphasis on prior specifications and batch-effect corrections in
+genomics; (2) a detailed implementation proposal covering the model extension,
+CAVI update changes, prior choices, and API design; and (3) a concrete execution
+procedure with module-order implementation plan, test suite additions, synthetic
+and real-data validation criteria, rollback gates, and session-sized timeline.
+No model code is written or modified in this session; this document is the
+formal pre-implementation artifact.
+
+\newpage
+
+# Part 1: Bayesian Linear Mixed Models — Literature Review
+
+## Standard Model Formulation
+
+The linear mixed model (LMM) is the foundational framework for jointly modelling
+fixed population-level effects and random subject- or group-level deviations.
+In its standard form,
+
+$$
+\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{u} + \boldsymbol{\varepsilon},
+\qquad \mathbf{u} \sim \mathcal{N}(\mathbf{0}, \mathbf{G}), \quad
+\boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}),
+$$
+
+where $\mathbf{y} \in \mathbb{R}^n$ is the response vector, $\mathbf{X} \in
+\mathbb{R}^{n \times q}$ is the fixed-effects design matrix with coefficient
+vector $\boldsymbol{\beta} \in \mathbb{R}^q$, $\mathbf{Z} \in \mathbb{R}^{n \times r}$
+is the random-effects design matrix with random vector $\mathbf{u} \in \mathbb{R}^r$,
+and $\mathbf{G} = \sigma_u^2 \mathbf{I}_r$ is the random-effect covariance.
+The key structural distinction is that $\boldsymbol{\beta}$ captures global,
+estimable contrasts of interest (e.g., treatment vs. control), while $\mathbf{u}$
+absorbs group-specific deviations that are treated as exchangeable draws from
+a common population distribution.
+
+**Frequentist vs. Bayesian framing.** In the frequentist tradition, the variance
+components $(\sigma_u^2, \sigma^2)$ are estimated by restricted maximum likelihood
+(REML), which maximises the marginal likelihood after integrating out $\boldsymbol{\beta}$.
+REML corrects for the degrees of freedom consumed by fixed effects and is unbiased
+for variance components in balanced designs [@Chen2003].  In a fully Bayesian
+treatment, both $\boldsymbol{\beta}$ and $\mathbf{u}$ receive prior distributions;
+what distinguishes $\mathbf{u}$ as *random* is the hierarchical prior with an
+*estimated* (or given a hyperprior) variance component $\sigma_u^2$, whereas
+$\boldsymbol{\beta}$ typically receives a fixed-scale weakly informative prior.
+The Bayesian posterior is
+
+$$
+p(\boldsymbol{\beta}, \mathbf{u}, \sigma_u^2, \sigma^2 \mid \mathbf{y})
+\propto p(\mathbf{y} \mid \boldsymbol{\beta}, \mathbf{u}, \sigma^2)\,
+p(\mathbf{u} \mid \sigma_u^2)\, p(\sigma_u^2)\, p(\boldsymbol{\beta})\, p(\sigma^2).
+$$
+
+Full posterior inference is obtained via MCMC (Gibbs sampler for conjugate
+Normal–Inverse-Gamma models) or Variational Bayes (as in our SSBMF CAVI framework).
+
+> **Bottom line.** The LMM separates signal ($\boldsymbol{\beta}$) from structured
+> noise ($\mathbf{u}$) through a hierarchical prior on $\mathbf{u}$.  This
+> separation is precisely what the cohort dummy-variable extension exploits:
+> cohort membership enters $\mathbf{Z}$ (or equivalently, as additional columns
+> of $L$) and the corresponding $F_{\text{cohort}}$ plays the role of $\mathbf{u}$
+> — absorbing platform-specific mean shifts without contaminating the survival
+> linear predictor.
+
+## Prior Specifications Used in Practice
+
+The choice of prior on the random-effect coefficients and their variance
+components has substantial impact on inference, particularly in low-to-moderate
+sample size settings such as ours ($n \approx 150$–$300$ per cohort).
+
+**Normal priors with fixed scale** are the default in probabilistic programming
+frameworks (`brms`, `rstanarm`).  For a random effect $u \sim \mathcal{N}(0, \sigma_u^2)$,
+a half-Normal or weakly informative Normal prior is placed on $\sigma_u$.
+@Gelman2008 proposed scaling all predictors to have mean 0 and standard
+deviation 0.5, then placing independent Cauchy(0, 2.5) priors on regression
+coefficients — a practical default that avoids both over-shrinkage of large
+effects and improper posteriors under separation.  These priors are
+computationally tractable and lead to conjugate Gibbs updates when the data
+model is Normal — directly relevant to the CAVI updates in `code/update_F.R`.
+
+**Half-Cauchy for variance components.**  @Gelman2006 critiqued Inverse-Gamma
+priors for variance parameters in hierarchical models on the grounds that they
+can be highly informative at small scales and recommended the half-Cauchy
+distribution as a default weakly informative prior for $\sigma_u$.  The key
+property is that $\text{half-Cauchy}(0, s)$ has a heavy tail that permits large
+group-level variation while still regularizing near zero — important when some
+cohorts are small.
+
+**Sparsity-inducing priors.** When the number of random effects is large
+relative to the sample size, shrinkage priors accelerate convergence and
+improve estimation:
+
+- *Horseshoe* [@Carvalho2010]: places a half-Cauchy prior on each local
+  shrinkage parameter $\lambda_k$ and a global shrinkage $\tau$, yielding a
+  bimodal marginal that aggressively shrinks near-zero coefficients while
+  leaving large signals intact.  The horseshoe has been shown to be
+  asymptotically minimax-rate optimal for sparse Normal means.
+
+- *Regularized horseshoe* [@Piironen2017]: addresses a practical limitation
+  of the original horseshoe — the slab is infinitely wide, causing numerical
+  instability for weakly identified parameters.  The regularized variant
+  introduces a finite slab width $c^2$, truncating the largest coefficients
+  and improving posterior geometry for MCMC and variational methods.
+
+- *Spike-and-slab* [@George1993]: a two-component mixture with a point mass
+  at zero (spike) and a diffuse Normal component (slab).  This provides exact
+  posterior sparsity and was historically the first Bayesian variable selection
+  method to be computationally tractable via Gibbs sampling.  It remains the
+  conceptual foundation for continuous relaxations such as the horseshoe.
+
+**Empirical Bayes Normal Means (EBNM) and EBMF.**  @Stephens2017 introduced a
+flexible framework for the Normal means problem $\hat{\mu}_i = \mu_i +
+\varepsilon_i$, $\varepsilon_i \sim \mathcal{N}(0, s_i^2)$, in which the prior
+on $\mu_i$ is estimated by marginal maximum likelihood from the data (empirical
+Bayes) rather than fixed in advance.  The family of admissible priors includes
+Normal, point-Normal, point-Laplace, and non-parametric unimodal distributions.
+The `ebnm` R package [@Willwerscheid2025] implements this framework efficiently.
+@Wang2021 extended this to matrix factorization, introducing Empirical Bayes
+Matrix Factorization (EBMF): the model $Y = LF' + E$ is fit by a variational
+algorithm that reduces each factor update to an EBNM problem, estimating the
+appropriate amount of sparsity *from the data* rather than fixing a prior
+family in advance.  SSBMF is a direct supervised extension of EBMF, adding a
+Cox partial likelihood on the linear predictor $\eta = L\beta$; the CAVI
+updates in `code/update_L.R`, `code/update_F.R`, and `code/update_beta.R`
+are all derived from the EBMF framework.
+
+> **Bottom line.** For the cohort extension, the relevant prior choice is on
+> $F_{\text{cohort}}$: a symmetric Normal prior (not point-Normal or
+> point-Laplace) because cohort shifts can be positive or negative and are not
+> expected to be sparse across genes.  The Normal family is conjugate to the
+> Normal genomics likelihood, giving a closed-form posterior — no EBNM
+> optimisation loop required, just a scalar linear update.
+
+## Identifiability and Centering
+
+Mixing fixed and random effects for the same grouping factor raises
+identifiability concerns that are particularly acute in small-$C$ settings
+(our case: $C = 2$ for TCGA + CPTAC).
+
+**Centered vs. non-centered parameterizations.** @Betancourt2015 showed that
+for hierarchical models with small group sample sizes, the *centered*
+parameterization ($u_c \sim \mathcal{N}(0, \sigma_u^2)$, marginalised
+$\sigma_u^2$) creates a funnel geometry in the posterior that degrades MCMC
+mixing.  The *non-centered* reparameterization ($u_c = \sigma_u \tilde{u}_c$,
+$\tilde{u}_c \sim \mathcal{N}(0, 1)$) decouples the scale from the direction and
+is preferred for small groups.  In our CAVI setting the distinction is less
+critical — variational inference with a Normal approximation does not suffer
+from the HMC funnel problem — but the non-centered perspective is useful for
+understanding the Gaussian posterior update form.
+
+**Sum-to-zero vs. corner-point constraints.** When $L_{\text{cohort}}$ is a
+full rank $n \times C$ indicator matrix (one column per cohort, each entry
+$\in \{0, 1\}$), the column space contains the all-ones vector $\mathbf{1}_n$
+if and only if every patient belongs to exactly one cohort.  If $Y$ is
+**column-centred** (zero gene mean across all patients), then $\mathbf{1}_n$ is
+projected out of $Y$ by construction, and the augmented design matrix
+$[L_{\text{global}} \mid L_{\text{cohort}}]$ is not collinear with an
+intercept.  This is precisely the case in SSBMF: `load_real_data()` applies
+`Y <- sweep(Y, 2, colMeans(Y), "-")` before fitting.  With column-centred $Y$,
+corner-point identification (one reference cohort column dropped) is
+*not* required; all $C$ indicator columns are included and their corresponding
+$F_{\text{cohort}}$ rows are identified up to the prior.
+
+**Marginal vs. conditional gene means.** Including all $C$ cohort columns
+without a sum-to-zero constraint means that $F_{\text{cohort},c}$ estimates
+the *conditional* gene mean for cohort $c$ given $L_{\text{global}}
+F_{\text{global}}'$, not a *contrast* against a reference cohort.  This is
+the desired interpretation: each cohort's baseline expression level (after
+removing shared biology) is estimated independently, and their sum is
+naturally constrained by the column-centring of $Y$.
+
+> **Bottom line.** With column-centred $Y$ (the current SSBMF default),
+> including all $C$ cohort indicator columns is identifiable.  No
+> sum-to-zero constraint or corner-point parameterization is required,
+> simplifying the implementation.
+
+## Batch Effects in Genomics via Mixed Models
+
+The problem of unwanted technical variation in multi-cohort genomics data has
+a long methodological history.  Four broad families of methods are relevant to
+SSBMF.
+
+**ComBat (empirical Bayes location-scale adjustment).** @Johnson2007 proposed
+ComBat, which models each gene's expression in batch $b$ as
+$y_{ib} = \alpha_i + X_{ib}\beta_i + \gamma_{ib} + \delta_{ib}\varepsilon_{ib}$,
+where $\gamma_{ib}$ is an additive batch shift and $\delta_{ib}$ a
+multiplicative scale factor.  Empirical Bayes shrinkage of the batch parameters
+toward a common prior (estimated across genes) stabilizes estimates for genes
+with few samples per batch.  ComBat has become the de-facto standard for
+pre-processing microarray and bulk RNA-seq data before downstream analysis.
+An extension for count data, ComBat-seq [@Zhang2020], uses a negative-binomial
+regression model that preserves integer counts compatible with standard
+differential expression pipelines.
+
+**Surrogate Variable Analysis (SVA).** @Leek2007 proposed a factor model for
+unmeasured confounders: estimate *surrogate variables* — latent factors
+capturing heterogeneity not explained by the primary variable of interest —
+by a two-step iterative SVD procedure, then include them as covariates in
+downstream models.  SVA is designed for cases where batch labels are unknown
+or imprecise; it recovers latent structure rather than correcting known-batch
+effects.
+
+**Remove Unwanted Variation (RUV).** @Risso2014 proposed RUV-g and RUV-s,
+which use control genes (e.g., ERCC spike-ins) or replicate samples to
+estimate unwanted technical factors by factor analysis.  The approach
+explicitly leverages negative control genes whose expression is known a priori
+to be unaffected by the biological factor of interest.
+
+**Supervised multi-omics integration.** DIABLO [@Singh2019] is a supervised
+multi-omics method based on sparse generalized canonical correlation analysis
+(sGCCA): it finds latent components that maximise cross-modality covariance
+while being predictive of a phenotype group.  DIABLO is the most direct
+supervised competitor to SSBMF in the multi-omics literature, but it does not
+model batch membership, does not use a survival outcome (it targets categorical
+phenotypes), and has no principled way to exclude cohort effects from
+prediction — the latent components are free to exploit batch-level covariance
+if it correlates with the phenotype.
+
+**Matrix factorization approaches: MOFA, Harmony, and scVI.**  Multi-Omics
+Factor Analysis [@Argelaguet2018] learns a shared low-dimensional
+representation across multiple omics layers using variational Bayes inference
+with ARD (spike-and-slab) priors — the architecturally closest method to
+SSBMF in the literature.  MOFA decomposes each modality $Y^{(m)}$ as
+$L Z^{(m)'} + E^{(m)}$ where $L$ is shared across modalities and $Z^{(m)}$
+are modality-specific loadings; sparsity is induced on both.  MOFA+ extends
+this to handle multiple sample groups, with separate
+$L^{(\text{group})}$ per batch [@Argelaguet2020] — conceptually analogous to
+our $L_{\text{cohort}}$ approach, but without a survival outcome and without
+an explicit $\beta_{\text{cohort}} = 0$ constraint to protect prognostic
+scores.  Harmony [@Korsunsky2019] iteratively adjusts PCA coordinates by
+soft-clustering cells and centering cluster centroids across batches.  scVI
+[@Lopez2018] uses a variational autoencoder with batch as a conditioning
+covariate, learning a latent code from which batch effects are explicitly
+decoded.  Both operate in embedding space rather than correcting the raw data
+matrix.
+
+**Key distinction from SSBMF.**  The methods above treat batch correction
+as either a preprocessing step decoupled from downstream analysis (ComBat,
+SVA, RUV, Harmony), or as an unsupervised inference problem without an
+outcome (MOFA, MOFA+, scVI).  None jointly optimize a survival objective
+while simultaneously separating batch from biological variation.
+The cohort dummy-variable extension proposed here performs **joint inference**:
+$F_{\text{cohort}}$ is estimated within the CAVI iteration alongside the
+biological factors and the Cox partial likelihood, so the survival signal in
+$L_{\text{global}}$ is continuously shielded from cohort contamination.  The
+constraint $\beta_{\text{cohort}} \equiv 0$ makes this shielding exact and
+recoverable even when cohort effects dominate the first principal component —
+precisely the failure mode observed in merged TCGA + CPTAC training.
+
+> **Bottom line.** MOFA+ [@Argelaguet2020] is the closest architectural
+> ancestor — shared variational Bayes matrix factorization with group
+> structure — but it lacks supervision by a survival outcome.  ComBat
+> [@Johnson2007] is the closest analogue to the $F_{\text{cohort}}$ update
+> as a gene-mean correction, but is a preprocessing step, not a
+> jointly-estimated quantity.  Our extension combines both ideas within
+> the SSBMF CAVI framework.
+
+## Relevance to the SSBMF Setting
+
+The literature review above motivates three design decisions that distinguish
+the proposed cohort extension from generic LMM implementations.
+
+**Why a Bayesian LMM framing fits SSBMF.** SSBMF is a supervised extension of
+EBMF [@Wang2021], which already places it within the Bayesian hierarchical
+framework: each factor update reduces to an EBNM problem, and the prior family
+(point-Normal, point-exponential, etc.) is estimated from the data.  Adding
+cohort indicator columns to $L$ with a *different* prior (Normal rather than
+point-Normal or point-exponential) is a natural extension of the same
+variational message-passing infrastructure — the update for $F_{\text{cohort}}$
+will be a closed-form Gaussian posterior rather than an EBNM optimisation,
+taking advantage of Normal-Normal conjugacy.
+
+**Why fixed (not random) cohort effects.** With $C = 2$ to $C = 7$ cohorts in
+our PDAC data, the number of groups is small and there is no reason to *borrow
+strength* across cohorts via a common hyperprior on $\sigma_u^2$.  In the
+random-effects sense, borrowing strength is most beneficial when $C \gg 1$ and
+many groups have few observations [@Chen2003; @Gelman2006].  With $C = 2$
+(TCGA: $n_1 \approx 150$, CPTAC: $n_2 \approx 100$), both cohorts have
+ample data to estimate their own $F_{\text{cohort}}$ row reliably; a shared
+hyperprior would add computational overhead without improving estimation.
+The prior variance $\sigma_c^2$ can simply be fixed (e.g., $\sigma_c^2 = 1$)
+or estimated as a single scalar EM-step on the Normal marginal likelihood,
+analogous to how EBNM estimates the prior scale.
+
+**Why $\beta_{\text{cohort}} = 0$ is principled, not a hack.**  The survival
+linear predictor $\eta_i = L_{\text{global},i} \boldsymbol{\beta}_{\text{global}}$
+should capture biological prognostic information — gene expression programs
+that predict patient outcome.  Cohort membership is a *platform nuisance*:
+it encodes whether a patient was sequenced on an Illumina RNA-seq platform
+(TCGA) or profiled by mass spectrometry (CPTAC), not any intrinsic biology.
+Allowing $\beta_{\text{cohort}} \neq 0$ would permit the Cox partial
+likelihood to exploit cohort-level survival differences (which exist, if
+TCGA and CPTAC have different censoring rates or follow-up times), inflating
+the apparent C-index and producing a score that generalises poorly to
+new cohorts.  Fixing $\beta_{\text{cohort}} = 0$ by construction enforces
+the interpretability and portability of the prognostic score.
+
+> **Bottom line.** The cohort dummy-variable extension is a minimal, principled
+> modification that fits naturally within the existing CAVI infrastructure.
+> It adds $C \times p$ Normal posterior parameters ($F_{\text{cohort}}$), each
+> with closed-form updates, and zero structural changes to the survival
+> component.  Section 2 specifies the model and all required CAVI
+> modifications in detail.
+
+\newpage
+
+# Part 2: Implementation Proposal
+
+## Model Specification
+
+### Current model (baseline)
+
+The current SSBMF model jointly fits a genomics factor model and a Cox
+proportional hazards survival model:
+
+$$
+Y_{n \times p} = L_{n \times K}\, F_{K \times p}' + E, \qquad
+E_{ij} \sim \mathcal{N}(0,\, \tau_j^{-1})
+$$
+$$
+h_i(t) = h_0(t)\exp(\eta_i), \qquad
+\eta_i = \sum_{k=1}^K L_{ik}\,\beta_k = (L\boldsymbol{\beta})_i
+$$
+
+Inference is by CAVI; each update reduces to an EBNM problem
+[@Wang2021; @Stephens2017] for $q(L)$, $q(F)$, and $q(\boldsymbol{\beta})$,
+and to a closed-form precision MLE for $q(\boldsymbol{\tau})$.
+
+### Extended model (cohort dummy-variable)
+
+Append $C$ cohort indicator columns to $L$:
+
+$$
+\underbrace{Y}_{n \times p}
+= \underbrace{L_{\text{global}}}_{n \times K}
+  \underbrace{F_{\text{global}}'}_{K \times p}
++ \underbrace{L_{\text{cohort}}}_{n \times C}
+  \underbrace{F_{\text{cohort}}'}_{C \times p}
++ E
+$$
+
+where
+
+- $L_{\text{cohort}} \in \{0,1\}^{n \times C}$ is the **fixed** cohort indicator
+  matrix: $L_{\text{cohort},ic} = 1$ iff patient $i$ belongs to cohort $c$,
+  else 0.  Each row has exactly one nonzero entry.
+- $F_{\text{cohort}} \in \mathbb{R}^{C \times p}$ is **estimated**; row $c$ is
+  the cohort-$c$ gene expression offset (positive or negative) that is
+  absorbed by the genomics likelihood.
+
+The survival linear predictor is **unchanged**:
+
+$$
+\eta_i = (L_{\text{global}}\,\boldsymbol{\beta}_{\text{global}})_i,
+\qquad \boldsymbol{\beta}_{\text{cohort}} \equiv \mathbf{0}
+$$
+
+Equivalently, stacking $[L_{\text{global}} \mid L_{\text{cohort}}]$ into an
+$n \times (K+C)$ augmented matrix and $\boldsymbol{\beta}$ as a
+$(K+C)$-vector fixed at zero in the last $C$ positions recovers the same
+formulation in a notation consistent with `fit_modular.R`.
+
+> **Bottom line.** The genomics likelihood sees all $K + C$ columns; the Cox
+> partial likelihood sees only the first $K$.  This is the entire structural
+> change.
+
+## What Changes in the ELBO and CAVI Updates
+
+Let $\mathbf{M} = L_{\text{cohort}}\,F_{\text{cohort}}'$ denote the cohort
+mean matrix ($n \times p$; row $i$ equals $F_{\text{cohort},\text{cohort}(i)}$).
+
+### $q(L_{\text{global}})$ — partial residual gains a cohort term {.unnumbered}
+
+The partial residual $R^{-k}$ currently computed by `compute_R_k`
+(`code/update_L.R:59`) is
+
+$$
+R^{-k}_{ij} = Y_{ij} - \sum_{\ell \neq k} L_{i\ell}\,\bar{F}_{\ell j}
+$$
+
+With the cohort extension it becomes
+
+$$
+R^{-k}_{ij}
+= Y_{ij} - \sum_{\ell \neq k} L_{i\ell}\,\bar{F}_{\ell j}
+        - \underbrace{F_{\text{cohort},\,\text{cohort}(i),\,j}}_{\mathbf{M}_{ij}}
+$$
+
+In practice this means subtracting the precomputed matrix $\mathbf{M}$ from
+$Y$ before (or inside) the call to `compute_R_k`, or passing
+$Y - \mathbf{M}$ as the working response.  The remainder of `update_L_k`
+(`code/update_L.R:122`) — the dual-source $A_L$, $B_L$ construction and the
+EBNM call — is **unchanged**.
+
+### $q(L_{\text{cohort}})$ — point mass, no update {.unnumbered}
+
+$L_{\text{cohort}}$ is a fixed indicator matrix with zero posterior variance.
+No CAVI update is needed; it is constructed once from `cohort_id` before the
+iteration loop.
+
+### $q(F_{\text{global}})$ — same as current {.unnumbered}
+
+`update_F_k` (`code/update_F.R:94`) computes
+
+$$
+A_{F,j}^{(k)} = \tau_j \sum_i E[l_{ik}^2], \qquad
+B_{F,j}^{(k)} = \tau_j \sum_i R^{-k}_{ij}\,\bar{l}_{ik}
+$$
+
+With the modified $R^{-k}$ (cohort mean subtracted, as above), the
+computation is structurally identical.
+
+### $q(F_{\text{cohort}})$ — new closed-form Normal posterior {.unnumbered}
+
+For cohort $c$ and gene $j$, the genomics log-likelihood contribution
+(treating $L_{\text{cohort}}$ as fixed) is
+
+$$
+\sum_{i:\,\text{cohort}(i)=c} \frac{\tau_j}{2}\left(
+  R_{\text{cohort},ij} - F_{\text{cohort},cj}
+\right)^2
+$$
+
+where $R_{\text{cohort},ij} = Y_{ij} - (L_{\text{global}}\,\bar{F}_{\text{global}}')_{ij}$
+is the full global-factor residual.  Under a Normal prior
+$F_{\text{cohort},cj} \sim \mathcal{N}(0, \sigma_c^2)$, the posterior is
+Normal with natural parameters
+
+$$
+\boxed{
+A_{\text{cohort},cj}
+  = \tau_j\,n_c + \sigma_c^{-2},
+\qquad
+B_{\text{cohort},cj}
+  = \tau_j \sum_{i:\,\text{cohort}(i)=c} R_{\text{cohort},ij}
+}
+$$
+
+Posterior mean and second moment:
+
+$$
+\bar{F}_{\text{cohort},cj} = \frac{B_{cj}}{A_{cj}},
+\qquad
+E[F_{\text{cohort},cj}^2] = A_{cj}^{-1} + \bar{F}_{\text{cohort},cj}^2
+$$
+
+In matrix form (all cohorts and genes simultaneously):
+
+```
+R_cohort  <- Y - EL_global %*% t(EF_global)         # n x p
+B_cohort  <- t(L_cohort) %*% R_cohort * rep_tau      # C x p  (element-wise)
+A_cohort  <- n_c_vec %*% t(Tau) + 1/sigma_c^2        # C x p
+EF_cohort <- B_cohort / A_cohort
+EF2_cohort <- 1/A_cohort + EF_cohort^2
+```
+
+where `rep_tau` broadcasts $\boldsymbol{\tau}$ across cohort rows, and
+`n_c_vec` is the $C$-vector of cohort sizes.  This is $O(np + Cp)$ per
+iteration — negligible relative to the $O(npK)$ cost of the global factor
+updates.
+
+### q(tau) — Var_Term gains a cohort contribution {.unnumbered}
+
+`compute_var_term` (`code/update_tau.R:60`) currently computes
+
+$$
+\text{Var\_Term}_{ij}
+= \sum_k \bigl(E[l_{ik}^2]\,E[f_{jk}^2] - \bar{l}_{ik}^2\,\bar{f}_{jk}^2\bigr)
+$$
+
+Because $L_{\text{cohort}}$ is a fixed indicator (zero posterior variance),
+$E[L_{\text{cohort},ic}^2] = L_{\text{cohort},ic}^2$ and the only new
+variance comes from $F_{\text{cohort}}$:
+
+$$
+\text{Var\_Term}^{\text{cohort}}_{ij}
+= \sum_c L_{\text{cohort},ic}^2\,\text{Var}_q(F_{\text{cohort},cj})
+= \text{Var}_q\!\left(F_{\text{cohort},\,\text{cohort}(i),\,j}\right)
+= A_{\text{cohort},\,\text{cohort}(i),\,j}^{-1}
+$$
+
+In matrix form:
+
+```
+Var_cohort  <- 1 / A_cohort             # C x p
+Var_cohort_n <- L_cohort %*% Var_cohort # n x p: broadcast to patients
+```
+
+This matrix is added to the existing `Var_Term` before computing the
+precision MLE in `update_tau` (`code/update_tau.R:86`).
+
+### ELBO — Normal KL term for $q(F_{\text{cohort}})$ {.unnumbered}
+
+`compute_ebnm_kl` (`code/compute_elbo.R:78`) handles KL terms for EBNM
+components.  The cohort factors have an explicit Normal prior, so the KL is
+closed-form:
+
+$$
+\text{KL}\bigl[q(F_{\text{cohort},cj}) \,\|\, \mathcal{N}(0,\sigma_c^2)\bigr]
+= \frac{1}{2}\left(
+  \frac{E[F_{\text{cohort},cj}^2]}{\sigma_c^2}
+  + \log(A_{\text{cohort},cj}\,\sigma_c^2)
+  - 1
+\right)
+$$
+
+Summed over all $c$ and $j$, this becomes the new `compute_normal_kl`
+function to be added to `code/compute_elbo.R`, integrated into
+`compute_total_elbo`.
+
+> **Bottom line.** Five targeted modifications are needed: (1) subtract
+> $\mathbf{M}$ from $Y$ in `compute_R_k`; (2) add `update_F_cohort_all` as a
+> new module; (3) extend `compute_var_term` to include cohort variance; (4)
+> add `compute_normal_kl` to `compute_elbo.R`; (5) orchestrate in
+> `fit_modular.R`.  The $q(L_{\text{global}})$, $q(F_{\text{global}})$, and
+> $q(\boldsymbol{\beta})$ update *forms* are unchanged.
+
+## Prior Choice for $F_{\text{cohort}}$
+
+**Recommended: $\mathcal{N}(0, \sigma_c^2)$ with shared fixed scale.**
+
+The Normal prior is preferred for three reasons:
+
+1. **Sign symmetry.**  A cohort may have systematically higher *or* lower
+   expression than average for any gene.  The one-sided priors used for
+   $F_{\text{global}}$ (point-exponential) are inappropriate here because
+   they cannot represent negative cohort offsets.
+
+2. **Conjugacy.**  Normal prior + Normal likelihood = closed-form Normal
+   posterior, avoiding the EBNM optimisation loop.  This is computationally
+   cheap and numerically stable.
+
+3. **Column-centring compatibility.**  With column-centred $Y$, the prior
+   mean of zero is natural: the cohort offset is measured relative to the
+   population gene mean (already removed), so $E[F_{\text{cohort},cj}] = 0$
+   a priori is correctly calibrated.
+
+**Scale choice.** Two options:
+
+| Option | Formula | Pros | Cons |
+|--------|---------|------|------|
+| Fixed $\sigma_c^2 = 1$ | Global default | No estimation step | May over- or under-shrink |
+| Empirical Bayes $\hat\sigma_c^2$ | $\hat\sigma_c^2 = \frac{1}{p}\sum_j E[F_{cj}^2]$ | Adapts to cohort effect size | One extra scalar EM step per cohort per iteration |
+
+The fixed default $\sigma_c^2 = 1$ is recommended for a first implementation.
+With column-centred, unit-variance-scaled gene expression, cohort offsets of
+order $\pm 1$ standard deviation are the expected range for platform effects,
+so $\sigma_c^2 = 1$ is neither too tight nor too diffuse.  The empirical
+Bayes option can be explored if fixed-scale shrinkage proves misspecified on
+real data (e.g., if CPTAC–TCGA offsets are consistently larger than 1 SD).
+
+**Alternative considered.**  A gene-specific prior $\sigma_j^2$ would allow
+some genes to have larger cohort variability than others.  This is biologically
+motivated (housekeeping genes should have small cohort offsets; metabolic genes
+may have large ones) but introduces $p$ additional parameters.  Adding this as
+an optional `prior_F_cohort = "normal_genewise"` flag is left as future work
+and flagged as an open question for advisor review.
+
+## Why $\beta_{\text{cohort}} = 0$ Simplifies the Survival Update
+
+Setting $\boldsymbol{\beta}_{\text{cohort}} \equiv \mathbf{0}$ has three
+concrete consequences for the implementation:
+
+**1. `update_beta_all` loop length is unchanged.**
+`update_beta_all` (`code/fit_modular.R:436`) loops over $k = 1, \ldots, K$.
+With $\beta_{\text{cohort}} = 0$ fixed, the loop still runs $K$ iterations
+and returns a $K$-vector — no structural change.
+
+**2. Cox partial likelihood is unaffected.**
+The working response $z^{-k}$ and the Cox weights $W_{ii}$ are computed from
+$\eta = L_{\text{global}}\boldsymbol{\beta}_{\text{global}}$, which uses only
+the first $K$ columns of the augmented $L$.  No modification to
+`compute_z_no_k` or `compute_survival_elbo`
+(`code/compute_elbo.R:142`) is required.
+
+**3. Prognostic score portability.**
+At prediction time (`code/predict.R`), the score for a new patient is
+$\hat\eta = \bar{L}_{\text{global}}\,\hat{\boldsymbol{\beta}}_{\text{global}}$,
+projecting only onto the global factors.  A new patient from an unseen cohort
+does not need a cohort label — the score is defined purely by their biology.
+This is the desired behaviour for external validation.
+
+> **Bottom line.** $\beta_{\text{cohort}} = 0$ is not a constraint that
+> requires special handling in the optimiser — it is simply the absence of a
+> $q(\boldsymbol{\beta}_{\text{cohort}})$ update step.  Cohort membership is
+> baked into $L_{\text{cohort}}$, but never allowed to reach the Cox
+> likelihood.
+
+## Initialization Strategy
+
+The key challenge is avoiding initialization collapse: if $F_{\text{cohort}}$
+starts at zero, the first CAVI pass for $q(L_{\text{global}})$ sees
+unresidualised $Y$ and may assign the platform PC to $L_{\text{global},1}$
+before $F_{\text{cohort}}$ has a chance to absorb it.
+
+**Recommended two-pass initialization:**
+
+1. **$F_{\text{cohort}}^{(0)}$: per-cohort gene means** (closed-form,
+   no iteration):
+   $$
+   F_{\text{cohort},cj}^{(0)}
+   = \frac{1}{n_c}\sum_{i:\,\text{cohort}(i)=c} Y_{ij}
+   $$
+   This is the ComBat-style starting point: absorb the raw per-cohort mean
+   before factorisation begins.  In R:
+   ```r
+   EF_cohort <- t(L_cohort) %*% Y / n_c_vec  # C x p
+   ```
+
+2. **$Y_{\text{resid}}^{(0)}$: cohort-mean-subtracted matrix**:
+   $$
+   Y_{\text{resid},ij}^{(0)} = Y_{ij} - F_{\text{cohort},\text{cohort}(i),j}^{(0)}
+   $$
+   In R: `Y_resid <- Y - L_cohort %*% EF_cohort`
+
+3. **$L_{\text{global}}^{(0)}$, $F_{\text{global}}^{(0)}$: SVD of
+   $Y_{\text{resid}}^{(0)}$**, following the existing `svd` initialization
+   in `fit_modular.R:248`.
+
+4. **$\boldsymbol{\beta}^{(0)} = \mathbf{0}$**: unchanged.
+
+This ensures the platform PC is largely captured by $F_{\text{cohort}}^{(0)}$
+before the first CAVI sweep, giving $L_{\text{global}}$ a clean start on
+residual biological variation.
+
+## API Changes to `fit_modular.R`
+
+The public interface of `fit_modular` gains three new arguments (all optional;
+defaults preserve existing behaviour exactly):
+
+| Argument | Type | Default | Description |
+|----------|------|---------|-------------|
+| `cohort_id` | character/factor, length $n$ | `NULL` | Cohort membership vector; `NULL` disables extension |
+| `prior_F_cohort` | character | `"normal"` | Prior family for $F_{\text{cohort}}$ (currently only `"normal"` supported) |
+| `sigma_F_cohort` | numeric scalar | `1.0` | Prior standard deviation $\sigma_c$ (shared across cohorts and genes) |
+
+**Internal logic (when `cohort_id` is non-NULL):**
+
+```r
+# Build fixed indicator matrix
+L_cohort <- model.matrix(~ cohort_id - 1)   # n x C, no intercept
+n_c      <- colSums(L_cohort)               # C-vector of cohort sizes
+
+# Initialise F_cohort (per-cohort gene means)
+EF_cohort  <- t(L_cohort) %*% Y / n_c      # C x p
+EF2_cohort <- EF_cohort^2 + sigma_F_cohort^2  # moment initialisation
+
+# Residualised Y for SVD init
+Y_init <- Y - L_cohort %*% EF_cohort
+
+# CAVI loop: insert between L-update and F-update
+M        <- L_cohort %*% EF_cohort           # n x p cohort mean
+Y_adj    <- Y - M                            # adjusted working response
+R_cohort <- Y_adj                            # global-factor residual
+B_cohort <- (t(L_cohort) %*% R_cohort) *    # C x p
+            matrix(Tau, C, p, byrow = TRUE)
+A_cohort <- n_c %*% t(Tau) +                # C x p
+            1 / sigma_F_cohort^2
+EF_cohort  <- B_cohort / A_cohort
+EF2_cohort <- 1/A_cohort + EF_cohort^2
+```
+
+*Note: `Y_adj` is recomputed each iteration as the global-factor estimates
+improve; `R_cohort` used above is the full global-factor residual
+(after subtracting all $K$ global components), not just the partial
+$k$-residual.*
+
+**Return object** gains three new fields:
+
+```r
+list(
+  ...,                          # existing fields unchanged
+  L_cohort    = L_cohort,       # n x C indicator (fixed)
+  EF_cohort   = EF_cohort,      # C x p posterior means
+  EF2_cohort  = EF2_cohort      # C x p posterior second moments
+)
+```
+
+**Backward compatibility:** when `cohort_id = NULL`, every new code path is
+skipped entirely and the function produces bit-identical results to the
+current implementation.  A regression test (`tests/test_fit_modular_cohort.R`)
+will verify this against a frozen ELBO trajectory.
+
+## Validation Plan
+
+Validation proceeds in three stages of increasing realism.
+
+### Stage 1 — Synthetic data {.unnumbered}
+
+**Setup:** $n = 200$, $p = 500$, $K_{\text{true}} = 3$, $C = 2$ balanced
+cohorts ($n_1 = n_2 = 100$).
+
+- True $L_{\text{global}} \sim \text{point\_normal}(0.7,\, 0,\, 1)$
+- True $F_{\text{global}} \sim \text{point\_exp}(0.7,\, 1)$
+- True $F_{\text{cohort}}$: non-zero on first 100 genes only,
+  $F_{\text{cohort},c,j} \sim \mathcal{N}(0,1)$; zero elsewhere
+- True $\boldsymbol{\beta} = (1.5,\, -1.0,\, 0.5)'$; Cox times from
+  `simsurv`
+
+**Three models fit on the same data:**
+
+| Label | Model |
+|-------|-------|
+| Baseline | `fit_modular(Y, cohort_id = NULL)` |
+| Extended | `fit_modular(Y, cohort_id = cohort)` |
+| Z-score | Per-cohort z-score + `fit_modular(Y_z, cohort_id = NULL)` |
+
+**Acceptance criteria (all must pass to advance):**
+
+| Criterion | Threshold |
+|-----------|-----------|
+| $\hat{\boldsymbol{\beta}}$ recovery | $\text{cor}(\hat{\boldsymbol{\beta}}, \boldsymbol{\beta}_{\text{true}}) > 0.9$ |
+| $F_{\text{global}}$ RMSE | Extended $<$ Baseline |
+| $F_{\text{cohort}}$ recovery | $\text{cor}(\text{vec}(\hat{F}_{\text{cohort}}), \text{vec}(F_{\text{cohort,true}})) > 0.8$ |
+| Held-out C-index | Extended $\geq$ Baseline and Extended $\geq$ Z-score |
+| ELBO monotonicity | Non-decreasing across all iterations |
+
+### Stage 2 — Real TCGA + CPTAC merged {.unnumbered}
+
+Run extended model with
+`cohort_id = c(rep("TCGA", n_tcga), rep("CPTAC", n_cptac))`.
+Compare to frozen `outputs/YFB_benchmark_perplatform/` numbers.
+
+**Acceptance criteria:**
+
+| Criterion | Threshold |
+|-----------|-----------|
+| $\hat{\boldsymbol{\beta}}$ non-collapse | $\geq 2$ of $K$ components have $|\hat\beta_k| > 0.1$ |
+| External C-index | $\geq 0.60$ on $\geq 2$ of 4 held-out cohorts |
+| $F_{\text{cohort}}$ separation | TCGA and CPTAC rows visually separate on PCA of $\hat{F}_{\text{cohort}}$ |
+
+### Stage 3 — All 7-cohort PDAC compendium {.unnumbered}
+
+Extend to full 7-cohort PDAC dataset ($C = 7$): TCGA, CPTAC, Dijk,
+Moffitt, PACA-AU-seq, PACA-AU-array, Puleo.
+Evaluate factor stability via leave-one-cohort-out subsampling.
+No formal acceptance criteria at this stage — exploratory.
+
+## Open Questions and Risks
+
+Eight issues are flagged for advisor discussion before implementation:
+
+**Q1 — Identifiability of $F_{\text{cohort}}$ vs. $F_{\text{global}}$
+intercept.**  Column-centring of $Y$ should suffice (see §1.3), but this
+requires verifying that `load_real_data()` applies centering before cohort
+indicators are appended.  *Resolution: confirm centering in preprocessing
+pipeline; add assertion.*
+
+**Q2 — Prior scale $\sigma_c^2$ sensitivity.**  On real TCGA + CPTAC data,
+the platform offset may exceed 1 SD on many genes; an empirical Bayes
+$\hat\sigma_c^2$ update (single EM step per cohort) could be valuable.
+*Resolution: run fixed-$\sigma_c^2$ first; add EB option if Stage 2 shows
+systematic under-shrinkage.*
+
+**Q3 — Interaction with the $\alpha$ schedule.**  The mixing weight $\alpha$
+in `update_L_k` (`code/update_L.R:87`) controls genomics vs.\ survival
+weighting.  $F_{\text{cohort}}$ enters only the genomics side
+($\beta_{\text{cohort}} = 0$); it should therefore be computed from the
+fully-genomics residual, not the $\alpha$-weighted partial residual.
+*Resolution: compute `R_cohort` from $Y - L_{\text{global}}\bar{F}_{\text{global}}'$
+directly, bypassing $\alpha$.*
+
+**Q4 — Sign correction compatibility.**  The existing post-fit sign correction
+(`code/fit_modular.R:590`) operates on $(L_{\text{global}},
+F_{\text{global}}, \boldsymbol{\beta})$ columns.  $L_{\text{cohort}}$ is a
+fixed non-negative indicator, so the sign flip logic must explicitly skip
+cohort columns.  *Resolution: add a guard `if (k <= K)` around the sign flip
+loop.*
+
+**Q5 — Prediction for unseen cohorts.**  At test time, a new patient from a
+cohort not in the training set has no $L_{\text{cohort}}$ column.
+Two options: (a) project using only $L_{\text{global}}$ (ignore cohort
+entirely), or (b) estimate $F_{\text{cohort}}^{\text{new}}$ from the
+test patient's residual and use it for reconstruction but not prediction.
+Option (a) is recommended for the prognostic score; option (b) may be
+useful for reconstruction quality diagnostics.
+
+**Q6 — Unbalanced cohorts.**  Small cohorts (e.g., Puleo, $n_c \approx 50$)
+will have higher posterior variance on $F_{\text{cohort},c}$; the Normal
+prior will shrink them more than large cohorts.  This is desirable
+behaviour, but should be verified empirically.
+
+**Q7 — Computational cost.**  The $F_{\text{cohort}}$ update is $O(np)$ per
+iteration (dominated by `t(L_cohort) %*% R_cohort`).  With $K = 5$ global
+factors each requiring an $O(np)$ EBNM solve, the overhead is roughly
+$C/K \approx 40\%$ for $C = 2$.  Acceptable for $n \leq 500$, $p \leq 2000$.
+
+**Q8 — Gene-specific prior $\sigma_j^2$.**  Allowing heterogeneous gene-level
+shrinkage would let the model learn that housekeeping genes have small
+platform offsets while metabolic or platform-specific genes have large ones.
+This adds $p$ parameters but may improve $F_{\text{cohort}}$ recovery.
+Flagged for advisor discussion; deferred to post-Stage-2 evaluation.
+
+\newpage
+
+# Part 3: Execution Procedure
+
+This section translates the conceptual proposal in Part 2 into a concrete,
+step-numbered procedure.  Each stage has defined acceptance criteria;
+failure at any gate blocks advancement to the next stage.
+
+## Derivation Document (Prerequisite, No Code)
+
+Before any R code is written, produce
+`derivations/qF_cohort/qF_cohort_update_derivation.tex`, matching the
+structure of `derivations/qF/qF_update_derivation.tex`.
+
+**Required content:**
+
+1. Augmented model written out with explicit indices ($i$, $j$, $c$, $k$).
+2. Variational factorization assumption, including the new factor
+   $q(F_{\text{cohort}})$ as a product of independent Normal distributions
+   over $(c, j)$.
+3. Derivation of $A_{\text{cohort},cj}$ and $B_{\text{cohort},cj}$ under a
+   $\mathcal{N}(0, \sigma_c^2)$ prior, showing all algebra from the ELBO
+   gradient to the closed-form posterior.
+4. KL divergence term $\text{KL}[q(F_{\text{cohort},cj}) \| \mathcal{N}(0,\sigma_c^2)]$
+   and its contribution to the total ELBO.
+5. Cohort contribution to the $\text{Var\_Term}$ in $q(\boldsymbol{\tau})$,
+   showing why $L_{\text{cohort}}$ has zero posterior variance and the
+   simplification to $A_{\text{cohort},cj}^{-1}$.
+6. Sign/identifiability discussion: why column-centred $Y$ renders the
+   all-cohorts parameterization identifiable (no sum-to-zero constraint
+   required; see §1.3).
+
+**Acceptance criterion:** PDF compiles via `pdflatex × 3` without errors;
+advisor mathematical review signs off before Session B begins.
+
+## Code Implementation — Module Order
+
+Implement modular updates in strict dependency order.  Each module follows
+the established pattern: one R source file + one test file + one demo script
++ one Quarto companion doc (see `MEMORY.md`, Modular Update Pattern).  No
+module proceeds to the next until its tests pass.
+
+### 2a. `code/update_F_cohort.R` — new file {.unnumbered}
+
+Two exported functions:
+
+```r
+update_F_cohort_k(cohort_k_idx, R_cohort, Tau, sigma_c, ...)
+```
+- `cohort_k_idx`: integer vector of row indices for cohort $c$
+- `R_cohort`: $n \times p$ global-factor residual (precomputed)
+- Returns `EF_cohort_k` ($p$-vector of posterior means) and
+  `EF2_cohort_k` ($p$-vector of posterior second moments)
+
+```r
+update_F_cohort_all(L_cohort, R_cohort, Tau, sigma_c)
+```
+- Loops over $c = 1, \ldots, C$, calling `update_F_cohort_k`
+- Returns `EF_cohort` ($C \times p$) and `EF2_cohort` ($C \times p$)
+
+**Closed-form update (see §2.2 for derivation):**
+```r
+B <- colSums(R_cohort[cohort_k_idx, ]) * Tau     # p-vector
+A <- length(cohort_k_idx) * Tau + 1/sigma_c^2   # p-vector
+EF_cohort_k  <- B / A
+EF2_cohort_k <- 1/A + EF_cohort_k^2
+```
+
+### 2b. `code/update_L.R` — modify `compute_R_k` (line 59) {.unnumbered}
+
+Add optional arguments `EF_cohort = NULL` and `L_cohort = NULL` to
+`compute_R_k`.  When non-NULL, subtract the cohort mean matrix before
+returning:
+
+```r
+compute_R_k <- function(Y, EL, EF, k, L_cohort = NULL, EF_cohort = NULL) {
+  R <- Y - EL[, -k, drop = FALSE] %*% t(EF[, -k, drop = FALSE])
+  if (!is.null(L_cohort))
+    R <- R - L_cohort %*% EF_cohort
+  R
+}
+```
+
+Default values of `NULL` preserve existing caller behaviour exactly — no
+changes required to `update_L_all` (`code/update_L.R:267`) or any test
+relying on the current two-argument signature.
+
+### 2c. `code/update_F.R` — pass cohort args to `compute_R_k` {.unnumbered}
+
+`update_F_all` (`code/update_F.R:201`) calls `compute_R_k` internally.
+Thread the new `L_cohort` / `EF_cohort` arguments through from
+`update_F_all`'s signature to its `compute_R_k` call:
+
+```r
+update_F_all <- function(Y, EL, EL2, EF, EF2, Tau,
+                         L_cohort = NULL, EF_cohort = NULL, ...) {
+  ...
+  R_k <- compute_R_k(Y, EL, EF, k, L_cohort, EF_cohort)
+  ...
+}
+```
+
+Again, default `NULL` preserves backward compatibility.
+
+### 2d. `code/update_tau.R` — extend `compute_var_term` (line 60) {.unnumbered}
+
+```r
+compute_var_term <- function(EL, EL2, EF, EF2,
+                             L_cohort = NULL, A_cohort = NULL) {
+  base <- (EL2 %*% t(EF2)) - (EL^2 %*% t(EF^2))
+  if (!is.null(L_cohort))
+    base <- base + L_cohort %*% (1/A_cohort)   # n x p cohort variance term
+  base
+}
+```
+
+`A_cohort` ($C \times p$) is the posterior precision matrix from
+`update_F_cohort_all`; $1/A_{\text{cohort}}$ is the per-cell posterior
+variance.  Broadcasting via `L_cohort %*% (1/A_cohort)` maps each patient
+to their cohort's variance row ($O(np)$ sparse matmul).
+
+### 2e. `code/compute_elbo.R` — add `compute_normal_kl` {.unnumbered}
+
+New function:
+
+```r
+compute_normal_kl <- function(EF_cohort, EF2_cohort, sigma_c) {
+  # KL[ N(mu, v) || N(0, sigma^2) ] = 0.5*(EF2/sigma^2 + log(A*sigma^2) - 1)
+  # where A = 1/v (posterior precision) and EF2 = v + mu^2
+  A <- 1 / (EF2_cohort - EF_cohort^2)          # C x p posterior precision
+  kl_matrix <- 0.5 * (EF2_cohort / sigma_c^2
+                       + log(A * sigma_c^2) - 1)
+  sum(kl_matrix)                                 # scalar
+}
+```
+
+Integrate this into `compute_total_elbo` (when `EF_cohort` is non-NULL) as
+an additive KL penalty term.
+
+### 2f. `code/fit_modular.R` — orchestration {.unnumbered}
+
+Six targeted changes to the existing canonical CAVI loop:
+
+| Step | Location | Change |
+|------|----------|--------|
+| New args | Function signature | Add `cohort_id`, `prior_F_cohort`, `sigma_F_cohort` |
+| Build indicator | Pre-iteration | `L_cohort <- model.matrix(~ cohort_id - 1)` |
+| Init | Pre-iteration | Two-pass init: per-cohort means → residualised SVD |
+| F\_cohort update | Inside k-loop, after L-update | Call `update_F_cohort_all(L_cohort, R_cohort, Tau, sigma_F_cohort)` |
+| Return | Return list | Append `L_cohort`, `EF_cohort`, `EF2_cohort` |
+| Backward compat | All new blocks | Guard with `if (!is.null(cohort_id))` |
+
+The `update_F_cohort_all` call is placed **between** the $q(L)$ sweep and
+the $q(F_{\text{global}})$ sweep: after $L_{\text{global}}$ is updated but
+before $F_{\text{global}}$ is refreshed, so both updates see the most recent
+estimate of the other.  The precomputed global-factor residual
+$R_{\text{cohort}} = Y - \bar{L}_{\text{global}}\bar{F}_{\text{global}}'$
+is passed directly (bypassing the $\alpha$ weighting, per §2.8 Q3).
+
+## Test Suite Additions
+
+### `tests/test_update_F_cohort.R` (~15 tests) {.unnumbered}
+
+| # | Test | Checks |
+|---|------|--------|
+| T1 | Closed-form correctness, balanced 2-cohort 3-gene toy | $\hat{F}_{cj} = B/A$ to machine precision |
+| T2 | Posterior variance correct | $E[F^2] - E[F]^2 = 1/A$ |
+| T3 | Symmetric shifts cancel under tight prior | $\sigma_c^2 \to 0$: posterior mean $\to 0$ |
+| T4 | Large data limit | $n_c \to \infty$: posterior mean $\to$ sample mean |
+| T5 | Prior dominates under weak data | $n_c = 1$, tight prior: shrinkage toward zero |
+| T6 | Single cohort equals intercept | $C = 1$: $\hat{F}_{1j} = \bar{Y}_j$ (column mean) |
+| T7 | Output dimensions | `EF_cohort` is $C \times p$; `EF2_cohort` same |
+| T8 | `EF2 >= EF^2` everywhere | Posterior second moment $\geq$ squared mean |
+| T9 | `update_F_cohort_all` agrees with manual loop | Vectorized vs.\ scalar loop |
+| T10 | Zero residual input | All residuals zero: posterior mean $\to 0$ |
+| T11 | Different `sigma_c` values | Larger prior variance $\to$ less shrinkage |
+| T12 | Large $p$ correctness | $p = 500$: no dimension mismatch |
+| T13 | Non-negative `EF2_cohort` | All entries strictly positive |
+| T14 | Tau scaling | Doubling `Tau` halves posterior variance |
+| T15 | `cohort_k_idx` respects patient ordering | Permuting patients gives same answer |
+
+### `tests/test_fit_modular_cohort.R` (~10 tests) {.unnumbered}
+
+| # | Test | Checks |
+|---|------|--------|
+| T1 | `cohort_id = NULL` reproduces current results | ELBO trajectory matches frozen baseline to tolerance $10^{-6}$ |
+| T2 | Single-cohort `cohort_id = rep("A", n)` converges | No error; ELBO non-decreasing |
+| T3 | 2-cohort synthetic: `EF_cohort` recovers known shifts | $\text{cor} > 0.8$ against ground truth |
+| T4 | `L_cohort` columns equal indicator matrix | `all(L_cohort %in% c(0, 1))` and row sums $= 1$ |
+| T5 | `beta` stays length $K$ | `length(fit$EBeta) == K` regardless of $C$ |
+| T6 | ELBO is non-decreasing | Across all iterations for synthetic data |
+| T7 | Return object has new fields | `$L_cohort`, `$EF_cohort`, `$EF2_cohort` present |
+| T8 | `EF_cohort` rows sum near zero | Column-centred $Y$: cohort offsets cancel |
+| T9 | Var\_Term augmented correctly | `sum(Var_Term_cohort) > 0` when cohort effects present |
+| T10 | `sigma_F_cohort` argument respected | Tighter prior produces smaller `mean(abs(EF_cohort))` |
+
+**Run command:**
+
+```bash
+Rscript tests/run_tests.R
+```
+
+Target: 193 (existing) + ~25 (new) = **~218 tests passing**.
+
+## Demo Scripts
+
+`demos/demo_update_F_cohort.R` — five scenarios following the established
+narrative pattern (see `demos/demo_update_F.R` for style):
+
+| Scenario | Setup | Illustrates |
+|----------|-------|-------------|
+| 1 | Single cohort ($C = 1$) | Degenerates to column-mean correction |
+| 2 | Two balanced cohorts with known shift | Point-by-point recovery of $F_{\text{cohort}}$ |
+| 3 | Unbalanced cohorts ($n_1 = 200$, $n_2 = 20$) | Differential shrinkage; small cohort pulled toward prior |
+| 4 | Prior strength sweep ($\sigma_c^2 \in \{0.1, 1, 10\}$) | Effect of prior specification on posterior mean magnitude |
+| 5 | Real TCGA + CPTAC subset ($n = 50$ per cohort) | Illustrative application; not a validation |
+
+## Documentation
+
+Three documentation artifacts are required before the implementation is
+considered complete:
+
+1. **`docs/update_F_cohort.qmd`** — Companion document following the
+   established pattern (`docs/update_F.qmd` as template).  Sections:
+   code walkthrough, math-to-code mapping, test descriptions, demo
+   walkthroughs.  Rendered to PDF (xelatex) and HTML (cosmo) via
+   `make -C docs all`.
+
+2. **`code/SupervisedMF_Context.md`** — Add new symbols
+   ($L_{\text{cohort}}$, $F_{\text{cohort}}$, $A_{\text{cohort}}$,
+   $B_{\text{cohort}}$, $\mathbf{M}$) and update the CAVI call sequence
+   diagram to show where `update_F_cohort_all` sits in the loop.
+
+3. **`CLAUDE.md` quick-reference table** — Add rows for
+   `code/update_F_cohort.R`, `tests/test_update_F_cohort.R`,
+   `tests/test_fit_modular_cohort.R`, and
+   `demos/demo_update_F_cohort.R`.
+
+## Verification Procedure — Synthetic Validation (Stage 1)
+
+Create `results/cohort_lmm_sim/run_synthetic.R`.
+
+**Data-generating process:**
+
+```r
+set.seed(42)
+n <- 200; p <- 500; K_true <- 3; C <- 2
+n_c <- c(100, 100)
+cohort <- rep(1:C, n_c)
+L_cohort <- model.matrix(~ factor(cohort) - 1)  # 200 x 2
+
+# Global factors
+L_global <- matrix(rbinom(n*K_true, 1, 0.7) * rnorm(n*K_true), n, K_true)
+F_global <- matrix(rbinom(p*K_true, 1, 0.7) * rexp(p*K_true), p, K_true)
+
+# Cohort shifts: non-zero on first 100 genes only
+F_cohort_true <- matrix(0, C, p)
+F_cohort_true[, 1:100] <- matrix(rnorm(C * 100), C, 100)
+
+# Assemble Y
+E <- matrix(rnorm(n * p, sd = 0.5), n, p)
+Y <- L_global %*% t(F_global) + L_cohort %*% F_cohort_true + E
+Y <- sweep(Y, 2, colMeans(Y), "-")  # column-centre
+
+# True survival times (simsurv)
+beta_true <- c(1.5, -1.0, 0.5)
+eta_true  <- L_global %*% beta_true
+# ... simulate Cox times with simsurv::simsurv(...)
+```
+
+**Three models:**
+
+```r
+fit_base <- fit_modular(Y, w, z, K = 3)
+fit_ext  <- fit_modular(Y, w, z, K = 3, cohort_id = factor(cohort))
+Y_z      <- scale_per_cohort(Y, cohort)  # per-cohort z-score
+fit_z    <- fit_modular(Y_z, w, z, K = 3)
+```
+
+**Acceptance criteria table (all must pass to advance to Stage 2):**
+
+| Criterion | Model | Threshold | Pass/Fail |
+|-----------|-------|-----------|-----------|
+| $\hat{\boldsymbol{\beta}}$ recovery | Extended | $\text{cor}(\hat{\boldsymbol{\beta}}, \boldsymbol{\beta}_{\text{true}}) > 0.9$ | TBD |
+| $F_{\text{global}}$ RMSE | Extended vs.\ Baseline | Extended RMSE $<$ Baseline RMSE | TBD |
+| $F_{\text{cohort}}$ recovery | Extended | $\text{cor}(\text{vec}(\hat{F}_{\text{cohort}}), \text{vec}(F_{\text{cohort,true}})) > 0.8$ | TBD |
+| Held-out C-index | Extended vs.\ Baseline | Extended $\geq$ Baseline | TBD |
+| Held-out C-index | Extended vs.\ Z-score | Extended $\geq$ Z-score | TBD |
+| ELBO monotonicity | Extended | Non-decreasing all iterations | TBD |
+
+## Verification Procedure — Real Data (Stage 2: TCGA + CPTAC)
+
+Create `results/benchmark_sim/run_cohort_lmm_benchmark.R`, mirroring
+`run_LB_benchmark.R`.
+
+**Setup:**
+
+```r
+# Load and merge TCGA_PAAD + CPTAC (existing load_real_data() pipeline)
+cohort_id <- c(rep("TCGA", n_tcga), rep("CPTAC", n_cptac))
+
+# Fit with alpha CV on log-lambda grid
+fit <- fit_modular(Y_merged, w, z, K = K_selected,
+                   cohort_id = cohort_id,
+                   lambda = lambda_cv)
+
+# External validation: project held-out cohorts using L_global factors only
+C_ext <- sapply(ext_cohorts, function(cohort_data) {
+  L_new  <- project_to_L(cohort_data$Y, fit)   # predict.R
+  eta    <- L_new %*% fit$EBeta
+  concordance(cohort_data$surv ~ eta)$concordance
+})
+```
+
+**Acceptance criteria:**
+
+| Criterion | Threshold | Notes |
+|-----------|-----------|-------|
+| $\hat{\boldsymbol{\beta}}$ non-collapse | $\geq 2$ of $K$ have $|\hat\beta_k| > 0.1$ | vs.\ current merged collapse to $\approx 0$ |
+| External C-index | $\geq 0.60$ on $\geq 2$ of 4 held-out cohorts | Target: DeSurv range |
+| $F_{\text{cohort}}$ PC separation | TCGA and CPTAC visually separate on PC1-2 | Visual diagnostic only |
+| ELBO monotonicity | Non-decreasing | Sanity check |
+
+**Comparison baseline:** frozen
+`outputs/YFB_benchmark_perplatform/YFB_benchmark_results_merged.csv` and
+`outputs/LB_benchmark/LB_benchmark_results_merged.csv`.
+
+## Evaluation Procedure — Reporting
+
+Write `docs/reports/ssbmf_cohort_lmm_results_MM_DD_YY.qmd` capturing:
+
+1. **Synthetic validation tables** — $\hat{\boldsymbol{\beta}}$ recovery
+   correlation, $F_{\text{global}}$ RMSE comparison, $F_{\text{cohort}}$
+   correlation, C-index for all three models.  One table per criterion.
+2. **Real-data benchmark tables** — Per-cohort external C-index for
+   Extended, LB-merged baseline, and z-score workaround.  Training cohort
+   C-index as a sanity check (should not be the primary metric).
+3. **Loading heatmaps** — $\bar{L}_{\text{global}}$ columns ordered by
+   $|\hat\beta_k|$; $\hat{F}_{\text{cohort}}$ rows (one per cohort) as a
+   gene-wise barplot or heatmap.
+4. **PCA of $\hat{F}_{\text{cohort}}$** — Visual diagnostic showing
+   TCGA vs.\ CPTAC separation on the first two PCs of the cohort offset
+   matrix.
+5. **PH diagnostics** — Schoenfeld residual test for the cohort-adjusted
+   $\eta = \bar{L}_{\text{global}}\hat{\boldsymbol{\beta}}_{\text{global}}$;
+   verify PH assumption holds after batch removal.
+6. **Discussion** — When does the LMM extension help vs.\ when is
+   preprocessing sufficient?  Key variables: imbalance severity, cohort
+   sample size, platform distance.
+
+## Rollback and Risk Gates
+
+At each stage, defined exit criteria prevent bad results from propagating.
+
+| Stage | Gate condition | If fails → action |
+|-------|---------------|-------------------|
+| 1 (Derivation) | PDF compiles; advisor sign-off | Pause; revise math before any code |
+| 2a (F\_cohort module) | All 15 tests pass | Debug; do not proceed to 2b |
+| 2b–2e (Modifications) | Each module's existing tests still pass | No regressions allowed; fix before continuing |
+| 2f (fit\_modular) | `cohort_id = NULL` reproduces frozen ELBO to $10^{-6}$ | Backward compat broken; must fix before synthetic run |
+| 3 (Synthetic Stage 1) | All 6 acceptance criteria pass | If $\hat{\boldsymbol{\beta}}$ recovery $< 0.9$: debug update order / $\alpha$ interaction; do not advance to real data |
+| 4 (TCGA + CPTAC) | $\hat{\boldsymbol{\beta}}$ non-collapse + C-index $\geq 0.60$ | If $\hat{\boldsymbol{\beta}}$ still collapses: consider random-effect prior on $\sigma_c^2$ or stronger pre-centering |
+| 5 (7-cohort) | No numerical errors; ELBO converges | If unbalanced cohorts cause instability: revisit `sigma_F_cohort` or add cohort-specific prior |
+
+## Timeline and Session Decomposition
+
+The implementation is decomposed into five session-sized chunks.  Each
+session corresponds to a single focused PR against `main`.
+
+| Session | Deliverable | Acceptance gate |
+|---------|-------------|-----------------|
+| **A** (1 session) | `derivations/qF_cohort/` — LaTeX derivation + PDF | Advisor mathematical review sign-off |
+| **B** (1 session) | `code/update_F_cohort.R` + `tests/test_update_F_cohort.R` + `demos/demo_update_F_cohort.R` + `docs/update_F_cohort.qmd` | 15/15 new tests pass |
+| **C** (1 session) | Modifications to `compute_R_k`, `update_F_all`, `compute_var_term`, `compute_elbo.R`, `fit_modular.R` + `tests/test_fit_modular_cohort.R` | 193 + ~25 = ~218 tests; backward-compat regression passes |
+| **D** (1 session) | `results/cohort_lmm_sim/run_synthetic.R` — Stage 1 synthetic validation | All 6 Stage-1 acceptance criteria green |
+| **E** (1–2 sessions) | `results/benchmark_sim/run_cohort_lmm_benchmark.R` — Stage 2 real-data + `docs/reports/ssbmf_cohort_lmm_results_MM_DD_YY.qmd` | Stage-2 acceptance criteria; report rendered |
+
+Sessions B and C together cover the full implementation of §2.2–2.6 and
+constitute the highest-risk work.  Session A (derivation) is the prerequisite
+gate that must close before B can begin.
+
+\newpage
+
+# References {.unnumbered}
+
+::: {#refs}
+:::
+
+\newpage
+
+# Appendix A: Closed-Form Derivation of $q(F_{\text{cohort}})$ {.unnumbered}
+
+We derive the optimal variational factor $q^*(F_{\text{cohort},cj})$ under a
+mean-field factorization over $(c, j)$.
+
+**Setup.** The augmented genomics likelihood for a single gene $j$ is
+
+$$
+\log p(Y_{\cdot j} \mid L_{\text{global}}, F_{\text{global},\cdot j},
+  L_{\text{cohort}}, F_{\text{cohort},\cdot j}, \tau_j)
+= \frac{\tau_j}{2}\sum_i \left(
+  Y_{ij} - \sum_k L_{ik}F_{kj} - \sum_c L_{\text{cohort},ic}F_{\text{cohort},cj}
+\right)^2 + \text{const}
+$$
+
+For a fixed cohort $c$ and gene $j$, the terms involving $F_{\text{cohort},cj}$
+isolate to patients in cohort $c$ (since $L_{\text{cohort},ic} = 0$ for
+$\text{cohort}(i) \neq c$).  Define the global-factor residual for patient $i$:
+
+$$
+R_{\text{cohort},ij} = Y_{ij} - \sum_k \bar{L}_{ik}\,\bar{F}_{kj}
+$$
+
+The ELBO contribution involving $F_{\text{cohort},cj}$ is
+
+$$
+\mathcal{L}_{cj}
+= \mathbb{E}_q\left[
+  \frac{\tau_j}{2}\sum_{i \in c}
+  \left(R_{\text{cohort},ij} - F_{\text{cohort},cj}\right)^2
+\right]
+- \text{KL}\bigl[q(F_{\text{cohort},cj}) \| p(F_{\text{cohort},cj})\bigr]
+$$
+
+**Gradient w.r.t. $q(F_{\text{cohort},cj})$.**  Taking the functional
+derivative and setting to zero, the optimal $q^*$ satisfies
+
+$$
+\log q^*(F_{\text{cohort},cj}) \propto
+  -\frac{1}{2}\left[
+    \tau_j n_c + \sigma_c^{-2}
+  \right] F_{\text{cohort},cj}^2
+  + \left[
+    \tau_j \sum_{i \in c} R_{\text{cohort},ij}
+  \right] F_{\text{cohort},cj}
+$$
+
+This is a Normal log-density in $F_{\text{cohort},cj}$ with natural parameters
+
+$$
+A_{\text{cohort},cj} = \tau_j n_c + \sigma_c^{-2},
+\qquad
+B_{\text{cohort},cj} = \tau_j \sum_{i \in c} R_{\text{cohort},ij}
+$$
+
+so $q^*(F_{\text{cohort},cj}) = \mathcal{N}(\mu_{cj},\, v_{cj})$ with
+
+$$
+\mu_{cj} = \frac{B_{\text{cohort},cj}}{A_{\text{cohort},cj}},
+\qquad
+v_{cj} = A_{\text{cohort},cj}^{-1}
+$$
+
+**Posterior second moment** (needed for $q(\boldsymbol{\tau})$):
+
+$$
+E_q[F_{\text{cohort},cj}^2] = v_{cj} + \mu_{cj}^2
+  = A_{\text{cohort},cj}^{-1} + \mu_{cj}^2
+$$
+
+**KL divergence** $\text{KL}[\mathcal{N}(\mu,v) \| \mathcal{N}(0,\sigma_c^2)]$:
+
+$$
+\text{KL}_{cj}
+= \frac{1}{2}\left(
+  \frac{\mu_{cj}^2 + v_{cj}}{\sigma_c^2}
+  + \log\frac{\sigma_c^2}{v_{cj}} - 1
+\right)
+= \frac{1}{2}\left(
+  \frac{E_q[F_{\text{cohort},cj}^2]}{\sigma_c^2}
+  + \log(A_{\text{cohort},cj}\,\sigma_c^2) - 1
+\right)
+$$
+
+This is summed over all $c \in \{1,\ldots,C\}$ and $j \in \{1,\ldots,p\}$ to
+obtain the total cohort KL contribution to the ELBO.
+
+**Special case: $n_c \to \infty$.**  As $n_c \to \infty$,
+$A_{\text{cohort},cj} \to \infty$ and the posterior concentrates:
+$\mu_{cj} \to \frac{1}{n_c}\sum_{i\in c} R_{\text{cohort},ij}$ (the
+sample mean residual), $v_{cj} \to 0$.  This is the MLE, confirming that
+the prior becomes irrelevant with sufficient data.
+
+**Special case: $\sigma_c^2 \to 0$.**  $A_{\text{cohort},cj} \to \infty$
+(prior dominates), $\mu_{cj} \to 0$, $v_{cj} \to 0$.  The cohort effect is
+shrunk entirely to zero — equivalent to the no-cohort baseline.
+
+# Appendix B: Augmented CAVI Pseudocode {.unnumbered}
+
+The following pseudocode shows the full CAVI loop for the extended model,
+with new cohort steps highlighted.  Compare to `code/fit_modular.R` for
+the current implementation.
+
+```
+Input: Y (n x p), w (n-vector Cox weights), z (n-vector working response),
+       K, cohort_id (n-vector or NULL), sigma_F_cohort
+
+# ── Pre-iteration setup ───────────────────────────────────────────────────
+if cohort_id is not NULL:
+    L_cohort  <- model.matrix(~ cohort_id - 1)          # n x C  [NEW]
+    n_c       <- colSums(L_cohort)                       # C-vector [NEW]
+    EF_cohort <- t(L_cohort) %*% Y / n_c                # C x p init [NEW]
+    Y_for_svd <- Y - L_cohort %*% EF_cohort             # residualised [NEW]
+else:
+    Y_for_svd <- Y
+
+EL, EF  <- svd_init(Y_for_svd, K)
+EBeta   <- rep(0, K)
+Tau     <- rep(1, p)
+EL2, EF2, EBeta2 <- second_moments_from_init(EL, EF, EBeta)
+
+# ── CAVI iteration ────────────────────────────────────────────────────────
+repeat until convergence (delta_ELBO < tol):
+
+    # Cohort mean matrix [NEW]
+    if cohort_id is not NULL:
+        M <- L_cohort %*% EF_cohort     # n x p
+
+    # Step 1: Update q(beta) — unchanged
+    for k = 1..K:
+        z_no_k  <- compute_z_no_k(EL, EBeta, k)
+        EBeta[k], EBeta2[k] <- update_beta_k(w, EL[,k], EL2[,k], z_no_k)
+
+    # Step 2: Update q(L_global) — subtract cohort mean from Y [MODIFIED]
+    for k = 1..K:
+        Y_adj <- Y - M  (if cohort active, else Y)       # [NEW] subtract M
+        R_k   <- compute_R_k(Y_adj, EL, EF, k)
+        EL[,k], EL2[,k] <- update_L_k(Tau, EF[,k], EF2[,k], w,
+                                        EBeta[k], EBeta2[k], R_k, z_no_k)
+
+    # Step 3: Update q(F_cohort) — NEW block
+    if cohort_id is not NULL:
+        R_cohort <- Y - EL %*% t(EF)                    # global residual
+        EF_cohort, EF2_cohort, A_cohort <-
+            update_F_cohort_all(L_cohort, R_cohort, Tau, sigma_F_cohort)
+        M <- L_cohort %*% EF_cohort                     # refresh M
+
+    # Step 4: Update q(F_global) — uses updated M [MODIFIED]
+    for k = 1..K:
+        Y_adj <- Y - M  (if cohort active, else Y)       # [MODIFIED]
+        R_k   <- compute_R_k(Y_adj, EL, EF, k)
+        EF[,k], EF2[,k] <- update_F_k(Tau, EL[,k], EL2[,k], R_k)
+
+    # Step 5: Update q(tau) — Var_Term augmented [MODIFIED]
+    Var_cohort <- L_cohort %*% (1/A_cohort)  (if cohort active)
+    EL2_R, EF2_R <- second_moments(EL, EL2, EF, EF2)
+    Tau <- update_tau(Y - M, EL, EL2_R, EF, EF2_R,
+                      extra_var = Var_cohort)
+
+    # Step 6: ELBO (proxy) — add cohort KL [MODIFIED]
+    ELBO <- compute_survival_elbo(...)
+           + sum_k [compute_ebnm_kl(L_k) + compute_ebnm_kl(F_k)
+                    + compute_ebnm_kl(beta_k)]
+           + compute_normal_kl(EF_cohort, EF2_cohort, sigma_F_cohort)  # [NEW]
+           + compute_tau_elbo(Tau, Y - M, EL, EL2_R, EF, EF2_R)
+
+    check convergence
+
+# ── Post-iteration ─────────────────────────────────────────────────────────
+apply sign_correction to (EL[,1..K], EF[,1..K], EBeta)  # cohort cols skipped
+
+return list(EL, EL2, EF, EF2, EBeta, EBeta2, Tau,
+            L_cohort, EF_cohort, EF2_cohort)             # [NEW fields]
+```
+
+Lines marked `[NEW]` are additions; lines marked `[MODIFIED]` are changes to
+existing logic.  All unmarked lines are structurally unchanged from the
+current `fit_modular.R`.  The total number of new lines in the CAVI loop is
+approximately 15–20, concentrated in Steps 3 and the cohort-mean subtractions
+in Steps 2 and 4.
