@@ -1,0 +1,158 @@
+---
+title: "Cohort Batch Correction in SSBMF: Literature Summary and Implementation Outline"
+author: "Andrew Walther"
+date: "2026-05-20"
+bibliography: references.bib
+suppress-bibliography: true
+format:
+  pdf:
+    engine: xelatex
+    toc: false
+    number-sections: false
+    geometry: "top=0.85in, bottom=0.85in, left=1in, right=1in"
+    fontsize: 10pt
+    linestretch: 1.1
+    colorlinks: true
+    linkcolor: "NavyBlue"
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 2
+    number-sections: false
+    embed-resources: true
+    self-contained: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## The Problem
+
+Supervised Sparse Bayesian Matrix Factorization (SSBMF) jointly fits a
+low-rank genomics factor model and a Cox proportional hazards survival model.
+The genomics reconstruction is $Y = LF' + E$ and the survival linear predictor
+is $\eta = L\beta$.  When the model is trained on a single cohort — TCGA or
+CPTAC individually — prognostic factors are recovered and external C-indices
+reach 0.55–0.67.
+
+When training data from TCGA (RNA-seq) and CPTAC (proteomics) are pooled,
+the dominant axis of variation in $Y$ is platform technology, not biology.
+This platform factor captures the first principal component, and the survival
+signal is too weak to compete: the CAVI algorithm converges with
+$\hat{\beta} \approx 0$, producing a prognostic score of no clinical value.
+Per-platform z-score normalization mitigates but does not eliminate the
+collapse, and discards cohort-specific information in the process.  A
+principled solution requires modeling platform effects *within* the inference
+procedure, not as a preprocessing step.
+
+## Literature Context
+
+**Mixed models for batch effects.**  The linear mixed model (LMM) is the
+standard framework for separating signal from structured nuisance variation.
+In the frequentist tradition, restricted maximum likelihood (REML) estimates
+variance components after marginalizing over fixed effects [@Chen2003].
+Bayesian formulations place priors directly on variance components;
+@Gelman2006 recommended half-Cauchy priors as a weakly informative default
+that avoids the well-known pathologies of inverse-gamma priors near zero.
+@George1993 introduced spike-and-slab selection for random effects;
+@Carvalho2010 and @Piironen2017 developed the horseshoe and regularized
+horseshoe as continuous relaxations with better numerical behavior.  For our
+setting — $C = 2$ to $7$ cohorts with $n_c \approx 50$–$300$ patients each —
+the relevant message from this literature is that borrowing strength across
+groups via a shared variance hyperprior is most beneficial when $C \gg 1$ and
+group sample sizes are small.  With only two cohorts and $\geq 100$ patients
+per cohort, independent Normal priors on the cohort offset parameters are
+well-identified and require no hyperprior.
+
+**EBNM and EBMF — the SSBMF methodological ancestor.**  @Stephens2017
+introduced the Empirical Bayes Normal Means (EBNM) framework, in which the
+prior on a set of unknowns is estimated from the marginal likelihood rather
+than fixed in advance.  @Wang2021 extended this to Empirical Bayes Matrix
+Factorization (EBMF): the model $Y = LF' + E$ is fit by coordinate ascent
+variational inference in which each factor update reduces to an EBNM problem,
+automatically selecting the appropriate amount of sparsity.  The `ebnm` R
+package [@Willwerscheid2025] provides the computational backend.  SSBMF is
+a supervised extension of EBMF that adds a Cox partial likelihood on
+$\eta = L\beta$; all existing update functions call EBNM internally.  The
+proposed cohort extension fits naturally within this infrastructure — the
+cohort offset factors have a simple Normal prior, giving a closed-form
+Gaussian posterior that requires no EBNM optimization.
+
+**Genomics batch-effect correction methods.**  ComBat [@Johnson2007] corrects
+additive batch shifts gene-by-gene via empirical Bayes shrinkage and is the de
+facto standard preprocessing method for bulk RNA-seq; ComBat-seq [@Zhang2020]
+extends this to count data.  SVA [@Leek2007] estimates latent confounders when
+batch labels are unknown; RUV [@Risso2014] uses control genes to identify
+technical factors.  All four are preprocessing steps that transform $Y$ before
+downstream analysis, decoupling batch correction from the survival inference
+objective.
+
+Among multi-omics factor analysis methods, MOFA [@Argelaguet2018] is the
+architecturally closest to SSBMF: it learns a shared low-dimensional
+representation across omics layers via variational Bayes with ARD sparsity
+priors.  MOFA+ [@Argelaguet2020] extends this to multiple sample groups with
+separate loading matrices per batch.  Harmony [@Korsunsky2019] and scVI
+[@Lopez2018] perform batch integration in embedding space.  DIABLO [@Singh2019]
+performs supervised multi-omics integration but targets categorical phenotypes
+and cannot constrain cohort effects out of a continuous prediction score.
+
+**Why existing methods are insufficient.**  Every method above either decouples
+batch correction from the survival objective (ComBat, SVA, RUV), targets an
+unsupervised objective (MOFA, MOFA+, Harmony, scVI), or cannot exclude cohort
+effects from prediction (DIABLO).  None jointly optimizes a survival objective
+while estimating platform-specific offsets within the same iteration.  MOFA+
+is the closest relative but has no survival component and no $\beta_{\text{cohort}}
+\equiv 0$ constraint.
+
+## Proposed Solution
+
+The proposed extension appends $C$ cohort indicator columns to $L$, giving
+$Y = L_{\text{global}} F_{\text{global}}' + L_{\text{cohort}} F_{\text{cohort}}' + E$
+where $L_{\text{cohort}}$ is a fixed binary indicator matrix and
+$F_{\text{cohort}}$ (estimated) absorbs platform-specific mean expression
+offsets.  The survival linear predictor remains $\eta = L_{\text{global}}\beta_{\text{global}}$
+with $\beta_{\text{cohort}} \equiv 0$ fixed.  Three design principles motivate
+this formulation:
+
+1. **Closed-form updates.** Because $L_{\text{cohort}}$ is fixed and the
+   Normal prior is conjugate to the Normal genomics likelihood, the posterior
+   $q(F_{\text{cohort},cj})$ has an explicit Gaussian form — no EBNM
+   optimization is required.  The computational overhead is $O(np)$ per
+   iteration, roughly 40% of a single global factor update for $C=2, K=5$.
+
+2. **Sign symmetry.** A cohort may have systematically higher or lower
+   expression than average for any gene.  The one-sided sparsity priors
+   (point-Normal, point-exponential) used for global factors are inappropriate
+   here; a symmetric Normal prior centered at zero is correct, particularly
+   because $Y$ is column-centered before fitting.
+
+3. **Protected prognostic score.** Fixing $\beta_{\text{cohort}} = 0$ is not a
+   computational shortcut — it is a deliberate constraint that prevents the Cox
+   likelihood from exploiting cohort-level survival differences (which may
+   reflect censoring patterns or follow-up length rather than biology).  The
+   resulting score depends only on global biological factors and generalizes to
+   patients from cohorts not seen at training time.
+
+## Implementation Outline
+
+The extension requires five targeted modifications to the existing modular code
+pipeline, organized as five sessions:
+
+| Session | Deliverable | Gate |
+|---------|-------------|------|
+| **A** | LaTeX derivation (`derivations/qF_cohort/`) | Advisor math review |
+| **B** | New module `code/update_F_cohort.R` + tests + demo | 15/15 new tests pass |
+| **C** | Modifications to `compute_R_k`, `update_F_all`, `compute_var_term`, `compute_elbo.R`, `fit_modular.R` + integration tests | ~218 tests pass; `cohort_id=NULL` reproduces current results exactly |
+| **D** | Synthetic validation (`results/cohort_lmm_sim/`) — known ground truth, three-model comparison | $\hat\beta$ recovery $r > 0.9$; $F_{\text{cohort}}$ recovery $r > 0.8$; C-index $\geq$ baseline |
+| **E** | Real TCGA + CPTAC benchmark + results report | $\hat\beta$ non-collapse; external C-index $\geq 0.60$ on $\geq 2$ of 4 held-out cohorts |
+
+The existing 193 passing tests are unaffected by design — backward
+compatibility is verified in Session C before any validation is run.
+The full three-part planning document with mathematical derivations,
+complete R pseudocode, and detailed acceptance criteria is in
+[`cohort_lmm_review_plan.pdf`](cohort_lmm_review_plan.pdf).
+
+---
+
+*Full bibliography and mathematical derivations in `cohort_lmm_review_plan.pdf`.*
