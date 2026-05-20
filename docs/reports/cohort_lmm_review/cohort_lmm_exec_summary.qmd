@@ -32,126 +32,154 @@ execute:
 Supervised Sparse Bayesian Matrix Factorization (SSBMF) jointly fits a
 low-rank genomics factor model and a Cox proportional hazards survival model.
 The genomics reconstruction is $Y = LF' + E$ and the survival linear predictor
-is $\eta = L\beta$.  When the model is trained on a single cohort — TCGA or
-CPTAC individually — prognostic factors are recovered and external C-indices
-reach 0.55–0.67.
+is $\eta = L\beta$.  When trained on a single cohort — TCGA or CPTAC
+individually — prognostic factors are recovered and external C-indices reach
+0.55–0.67.
 
-When training data from TCGA (RNA-seq) and CPTAC (proteomics) are pooled,
-the dominant axis of variation in $Y$ is platform technology, not biology.
-This platform factor captures the first principal component, and the survival
-signal is too weak to compete: the CAVI algorithm converges with
-$\hat{\beta} \approx 0$, producing a prognostic score of no clinical value.
-Per-platform z-score normalization mitigates but does not eliminate the
-collapse, and discards cohort-specific information in the process.  A
-principled solution requires modeling platform effects *within* the inference
-procedure, not as a preprocessing step.
+When TCGA (RNA-seq) and CPTAC (proteomics) are pooled, the dominant axis of
+variation in $Y$ is platform technology, not biology.  This technical factor
+captures the first principal component, and the survival signal is too weak to
+compete: CAVI converges with $\hat{\beta} \approx 0$, producing a prognostic
+score of no clinical value.  Per-platform z-score normalization reduces but
+does not eliminate the collapse.  A principled solution requires modeling the
+platform offset *within* the CAVI iteration so the survival component is
+shielded from it throughout inference.
 
 ## Literature Context
 
-**Mixed models for batch effects.**  The linear mixed model (LMM) is the
-standard framework for separating signal from structured nuisance variation.
-In the frequentist tradition, restricted maximum likelihood (REML) estimates
-variance components after marginalizing over fixed effects [@Chen2003].
-Bayesian formulations place priors directly on variance components;
-@Gelman2006 recommended half-Cauchy priors as a weakly informative default
-that avoids the well-known pathologies of inverse-gamma priors near zero.
-@George1993 introduced spike-and-slab selection for random effects;
-@Carvalho2010 and @Piironen2017 developed the horseshoe and regularized
-horseshoe as continuous relaxations with better numerical behavior.  For our
-setting — $C = 2$ to $7$ cohorts with $n_c \approx 50$–$300$ patients each —
-the relevant message from this literature is that borrowing strength across
-groups via a shared variance hyperprior is most beneficial when $C \gg 1$ and
-group sample sizes are small.  With only two cohorts and $\geq 100$ patients
-per cohort, independent Normal priors on the cohort offset parameters are
-well-identified and require no hyperprior.
+**Bayesian linear mixed models.**  The linear mixed model separates signal
+from structured nuisance variation through a hierarchical prior on group-level
+deviations.  In the frequentist tradition, restricted maximum likelihood
+(REML) estimates variance components [@Chen2003].  In Bayesian formulations,
+@Gelman2006 recommended half-Cauchy priors on variance parameters to avoid
+the pathologies of inverse-gamma priors at small scales.  More flexible
+sparsity-inducing priors include spike-and-slab [@George1993], the horseshoe
+[@Carvalho2010], and its regularized variant [@Piironen2017], which truncates
+the slab to improve numerical stability for weakly identified parameters.
+These priors are most beneficial when borrowing strength across many groups
+($C \gg 1$ with small group sizes); with $C = 2$ and $n_c \geq 100$, a
+simple Normal prior is well-identified and requires no hyperprior.
 
-**EBNM and EBMF — the SSBMF methodological ancestor.**  @Stephens2017
-introduced the Empirical Bayes Normal Means (EBNM) framework, in which the
-prior on a set of unknowns is estimated from the marginal likelihood rather
-than fixed in advance.  @Wang2021 extended this to Empirical Bayes Matrix
-Factorization (EBMF): the model $Y = LF' + E$ is fit by coordinate ascent
-variational inference in which each factor update reduces to an EBNM problem,
-automatically selecting the appropriate amount of sparsity.  The `ebnm` R
-package [@Willwerscheid2025] provides the computational backend.  SSBMF is
-a supervised extension of EBMF that adds a Cox partial likelihood on
-$\eta = L\beta$; all existing update functions call EBNM internally.  The
-proposed cohort extension fits naturally within this infrastructure — the
-cohort offset factors have a simple Normal prior, giving a closed-form
-Gaussian posterior that requires no EBNM optimization.
+**EBNM and EBMF — the methodological foundation of SSBMF.**  @Stephens2017
+introduced the Empirical Bayes Normal Means (EBNM) framework, which estimates
+the prior family from the marginal likelihood rather than fixing it in
+advance.  @Wang2021 extended this to Empirical Bayes Matrix Factorization
+(EBMF): $Y = LF' + E$ is fit by coordinate ascent variational inference in
+which each column update reduces to an EBNM problem, selecting the
+appropriate level of sparsity automatically.  The `ebnm` R package
+[@Willwerscheid2025] provides the computational backend.  SSBMF is a
+supervised extension of EBMF that adds a Cox partial likelihood on
+$\eta = L\beta$.  The cohort column extension proposed here fits naturally
+within this infrastructure: the cohort column uses a simple Normal prior
+rather than EBNM (conjugate to the Normal likelihood, so the posterior is
+closed-form), and the fixed indicator values have zero posterior variance,
+bypassing the L-update entirely.
 
 **Genomics batch-effect correction methods.**  ComBat [@Johnson2007] corrects
-additive batch shifts gene-by-gene via empirical Bayes shrinkage and is the de
-facto standard preprocessing method for bulk RNA-seq; ComBat-seq [@Zhang2020]
-extends this to count data.  SVA [@Leek2007] estimates latent confounders when
-batch labels are unknown; RUV [@Risso2014] uses control genes to identify
-technical factors.  All four are preprocessing steps that transform $Y$ before
-downstream analysis, decoupling batch correction from the survival inference
-objective.
+additive batch shifts gene-by-gene via empirical Bayes shrinkage and is the
+de facto standard for bulk RNA-seq preprocessing; ComBat-seq [@Zhang2020]
+extends this to count data.  SVA [@Leek2007] estimates latent confounders
+when batch labels are unknown; RUV [@Risso2014] uses control genes to
+identify technical factors.  All four operate as preprocessing steps,
+transforming $Y$ before downstream analysis and decoupling batch correction
+from the survival inference objective.
 
-Among multi-omics factor analysis methods, MOFA [@Argelaguet2018] is the
+Among multi-omics factor analysis methods, MOFA [@Argelaguet2018] is
 architecturally closest to SSBMF: it learns a shared low-dimensional
 representation across omics layers via variational Bayes with ARD sparsity
-priors.  MOFA+ [@Argelaguet2020] extends this to multiple sample groups with
-separate loading matrices per batch.  Harmony [@Korsunsky2019] and scVI
-[@Lopez2018] perform batch integration in embedding space.  DIABLO [@Singh2019]
-performs supervised multi-omics integration but targets categorical phenotypes
-and cannot constrain cohort effects out of a continuous prediction score.
+priors.  MOFA+ [@Argelaguet2020] extends this to multiple sample groups.
+Harmony [@Korsunsky2019] and scVI [@Lopez2018] perform batch integration
+in embedding space.  DIABLO [@Singh2019] is supervised but targets
+categorical phenotypes and cannot constrain cohort effects out of a
+continuous survival score.
 
 **Why existing methods are insufficient.**  Every method above either decouples
 batch correction from the survival objective (ComBat, SVA, RUV), targets an
-unsupervised objective (MOFA, MOFA+, Harmony, scVI), or cannot exclude cohort
-effects from prediction (DIABLO).  None jointly optimizes a survival objective
-while estimating platform-specific offsets within the same iteration.  MOFA+
-is the closest relative but has no survival component and no $\beta_{\text{cohort}}
-\equiv 0$ constraint.
+unsupervised objective (MOFA, MOFA+, Harmony, scVI), or cannot prevent cohort
+effects from entering a prognostic score (DIABLO).  None jointly optimizes a
+survival objective while estimating platform offsets within the same iteration.
+MOFA+ is the closest relative but has no survival component and no constraint
+equivalent to $\beta_{\text{cohort}} \equiv 0$.
 
 ## Proposed Solution
 
-The proposed extension appends $C$ cohort indicator columns to $L$, giving
-$Y = L_{\text{global}} F_{\text{global}}' + L_{\text{cohort}} F_{\text{cohort}}' + E$
-where $L_{\text{cohort}}$ is a fixed binary indicator matrix and
-$F_{\text{cohort}}$ (estimated) absorbs platform-specific mean expression
-offsets.  The survival linear predictor remains $\eta = L_{\text{global}}\beta_{\text{global}}$
-with $\beta_{\text{cohort}} \equiv 0$ fixed.  Three design principles motivate
-this formulation:
+**Model.**  The cohort indicator column is appended directly to the existing
+$L$ matrix, keeping a single $L$ and $F$ throughout:
 
-1. **Closed-form updates.** Because $L_{\text{cohort}}$ is fixed and the
-   Normal prior is conjugate to the Normal genomics likelihood, the posterior
-   $q(F_{\text{cohort},cj})$ has an explicit Gaussian form — no EBNM
-   optimization is required.  The computational overhead is $O(np)$ per
-   iteration, roughly 40% of a single global factor update for $C=2, K=5$.
+$$L_{\text{aug}} = \bigl[\underbrace{L}_{n \times K} \mid \underbrace{\mathbf{c}}_{n \times 1}\bigr],
+\qquad
+F_{\text{aug}} = \bigl[\underbrace{F}_{K \times p} \mid \underbrace{\mathbf{f}_c}_{1 \times p}\bigr]$$
 
-2. **Sign symmetry.** A cohort may have systematically higher or lower
-   expression than average for any gene.  The one-sided sparsity priors
-   (point-Normal, point-exponential) used for global factors are inappropriate
-   here; a symmetric Normal prior centered at zero is correct, particularly
-   because $Y$ is column-centered before fitting.
+where $\mathbf{c} \in \{0, 1\}^n$ is the fixed cohort indicator (e.g., 0 =
+TCGA, 1 = CPTAC) and $\mathbf{f}_c \in \mathbb{R}^p$ is the estimated
+platform offset across all genes.  With $C = 2$ cohorts this requires one
+extra column; for $C$ cohorts, $C - 1$ indicator columns (corner-point
+parameterization against a reference cohort) or $C$ columns (all cohorts,
+identifiable because $Y$ is column-centred before fitting).  The survival
+linear predictor $\eta = L\beta$ uses only the original $K$ columns:
 
-3. **Protected prognostic score.** Fixing $\beta_{\text{cohort}} = 0$ is not a
-   computational shortcut — it is a deliberate constraint that prevents the Cox
-   likelihood from exploiting cohort-level survival differences (which may
-   reflect censoring patterns or follow-up length rather than biology).  The
-   resulting score depends only on global biological factors and generalizes to
-   patients from cohorts not seen at training time.
+$$\eta_i = \sum_{k=1}^{K} L_{ik}\,\beta_k, \qquad \beta_{\text{cohort}} \equiv 0$$
 
-## Implementation Outline
+The cohort column enters the genomics likelihood but never reaches the Cox
+partial likelihood.  A patient from a new cohort at test time needs no cohort
+label — the prognostic score is defined purely by their projection onto the
+$K$ biological factors.
 
-The extension requires five targeted modifications to the existing modular code
-pipeline, organized as five sessions:
+## Implementation
 
-| Session | Deliverable | Gate |
-|---------|-------------|------|
-| **A** | LaTeX derivation (`derivations/qF_cohort/`) | Advisor math review |
-| **B** | New module `code/update_F_cohort.R` + tests + demo | 15/15 new tests pass |
-| **C** | Modifications to `compute_R_k`, `update_F_all`, `compute_var_term`, `compute_elbo.R`, `fit_modular.R` + integration tests | ~218 tests pass; `cohort_id=NULL` reproduces current results exactly |
-| **D** | Synthetic validation (`results/cohort_lmm_sim/`) — known ground truth, three-model comparison | $\hat\beta$ recovery $r > 0.9$; $F_{\text{cohort}}$ recovery $r > 0.8$; C-index $\geq$ baseline |
-| **E** | Real TCGA + CPTAC benchmark + results report | $\hat\beta$ non-collapse; external C-index $\geq 0.60$ on $\geq 2$ of 4 held-out cohorts |
+The key insight is that $\mathbf{c}$ is a **fixed** column of $L$ (not
+estimated) with a **different prior** on the corresponding row of $F$
+(Normal, not point-Normal or point-exponential).  This requires three
+targeted changes to the existing modular pipeline and leaves all other update
+functions structurally unchanged.
 
-The existing 193 passing tests are unaffected by design — backward
-compatibility is verified in Session C before any validation is run.
-The full three-part planning document with mathematical derivations,
-complete R pseudocode, and detailed acceptance criteria is in
-[`cohort_lmm_review_plan.pdf`](cohort_lmm_review_plan.pdf).
+**1. L-update: skip the cohort column.**  `update_L_all`
+(`code/update_L.R:267`) loops over $k = 1, \ldots, K$.  The cohort column
+$\mathbf{c}$ is fixed with zero posterior variance, so the loop simply does
+not include it — no change to `update_L_k` or the EBNM call.
+
+**2. F-update: Normal prior for the cohort row.**  Each global row of $F$ is
+updated via EBNM through `update_F_k` (`code/update_F.R:94`).  For the cohort
+row, the Normal prior $f_{cj} \sim \mathcal{N}(0, \sigma^2)$ is conjugate to
+the Normal likelihood, giving a closed-form posterior without any EBNM
+optimization: $A_{cj} = \tau_j n_c + \sigma^{-2}$,
+$B_{cj} = \tau_j \sum_{i:\,c_i=1} R_{ij}$,
+$\bar{f}_{cj} = B_{cj}/A_{cj}$, and $E[f_{cj}^2] = A_{cj}^{-1} + \bar{f}_{cj}^2$,
+where $R_{ij} = Y_{ij} - \sum_k L_{ik}\bar{F}_{kj}$ is the global-factor
+residual.  In R this is `A <- n_c * Tau + 1/sigma^2` and
+`EF_cohort <- (t(c_vec) %*% R) * Tau / A`, operating on all $p$ genes
+simultaneously.  When computing the partial residual $R^{-k}$ inside
+`compute_R_k` (`code/update_L.R:59`) for global factor updates, the cohort
+contribution must be subtracted first: `Y_adj <- Y - c %*% EF_cohort` is
+passed as the working response, with no structural change to `compute_R_k`.
+
+**3. tau-update: add cohort variance to Var_Term.**  `compute_var_term`
+(`code/update_tau.R:60`) accumulates posterior variance across all estimated
+components.  Because $\mathbf{c}$ is fixed, the only new variance is
+$A_{cj}^{-1}$ for patients in the indicator-positive cohort, added as
+`Var_cohort_n <- c %*% matrix(1/A_cohort, 1, p)` before the precision MLE.
+
+**4. beta-update and ELBO: no change.**  `update_beta_all`
+(`code/fit_modular.R:436`) loops over $k = 1, \ldots, K$ and returns a
+$K$-vector — the cohort column has no $\beta$ entry.  The ELBO gains one
+closed-form Normal KL term summed over genes:
+$\frac{1}{2}\sum_j(E[f_{cj}^2]/\sigma^2 + \log(A_{cj}\sigma^2) - 1)$.
+
+**5. Initialization.**  To prevent the platform PC from being absorbed by a
+global factor before the cohort row can claim it: (i) initialize
+$\bar{f}_{cj}^{(0)}$ as the differential gene mean between cohorts
+(`colMeans(Y[c==1,]) - colMeans(Y[c==0,])`), then (ii) initialize $L$ and
+$F$ from SVD of the cohort-mean-subtracted $Y$.
+
+## Session Plan
+
+| Session | Deliverable | Acceptance gate |
+|---------|-------------|-----------------|
+| **A** | `derivations/qF_cohort/` — closed-form derivation (LaTeX + PDF) | Advisor math review |
+| **B** | `code/update_F_cohort.R` + 15 unit tests + demo | 15/15 tests pass |
+| **C** | Modifications to `compute_R_k`, `compute_var_term`, `compute_elbo.R`, `fit_modular.R` + integration tests | ~218 tests pass; `cohort_id=NULL` reproduces current results to $10^{-6}$ |
+| **D** | Synthetic validation ($n=200$, $p=500$, $K=3$, $C=2$, known ground truth) | $\hat\beta$ recovery $r > 0.9$; C-index $\geq$ baseline and $\geq$ z-score |
+| **E** | Real TCGA + CPTAC benchmark + results report | $\hat\beta$ non-collapse ($\geq 2$ components $> 0.1$); external C-index $\geq 0.60$ on $\geq 2$ of 4 held-out cohorts |
 
 ---
 
