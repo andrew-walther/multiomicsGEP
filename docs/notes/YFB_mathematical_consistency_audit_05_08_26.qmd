@@ -1,0 +1,403 @@
+---
+title: "Mathematical Consistency Audit for the YFB Model"
+author: "OpenAI Codex"
+date: "May 8, 2026"
+format:
+  pdf:
+    documentclass: article
+    geometry:
+      - margin=1in
+    number-sections: true
+    colorlinks: true
+    toc: true
+fontsize: 11pt
+header-includes:
+  - \usepackage{amsthm}
+  - \allowdisplaybreaks
+  - \setlength{\emergencystretch}{3em}
+  - \newtheorem{proposition}{Proposition}
+  - \theoremstyle{remark}
+  - \newtheorem*{remarkblock}{Audit Remark}
+---
+
+# Purpose
+
+This document audits the consistency between:
+
+1. the **mathematical YFB model**
+2. the **current YFB implementation**
+
+The goal is not to propose code changes. The goal is to state precisely which theoretical claims are already represented by the current algorithm, which are represented only after a reparameterization or approximation, and which are not yet implemented exactly.
+
+This audit should be completed **before** major code revisions, because it establishes the baseline relationship between theory and implementation.
+
+# Reference Formulations
+
+## Mathematical YFB Model
+
+The intended YFB formulation is:
+
+$$
+Y_{ij} \mid L,F,\tau \sim N\left(\sum_{k=1}^K l_{ik}f_{jk},\tau_j^{-1}\right),
+$$
+
+and
+
+$$
+\eta_i = \sum_{k=1}^K (YF)_{ik}\,\tilde\beta_k.
+$$
+
+The corresponding mean-field variational family is
+
+$$
+q(L,F,\tilde\beta,\tau)
+=
+q(L)\,q(F)\,q(\tilde\beta)\,q(\tau).
+$$
+
+## Implemented YFB Algorithm
+
+The implementation in $\texttt{code/fit\_cox\_on\_yf.R}$ uses the same reconstruction model, but operationally defines the survival predictor through **normalized** factor columns:
+
+$$
+F_{\mathrm{norm}}
+=
+F D_F^{-1},
+\qquad
+D_F = \mathrm{diag}(\|f_{\cdot 1}\|_2,\dots,\|f_{\cdot K}\|_2),
+$$
+
+and then
+
+$$
+Z_F^{\mathrm{norm}} = YF_{\mathrm{norm}},
+\qquad
+\eta = Z_F^{\mathrm{norm}} \tilde\beta.
+$$
+
+Thus the implemented survival predictor is not exactly $YF\tilde\beta$, but rather $YF_{\mathrm{norm}}\tilde\beta$.
+
+# Audit Definitions
+
+For each claim below, the verdict will be one of:
+
+- **Exact Match:** the implementation realizes the claim exactly
+- **Equivalent Reparameterization:** the implementation differs algebraically, but can be interpreted as the same claim after a deterministic change of variables
+- **Approximate / Partial Match:** the implementation captures only part of the theoretical claim
+- **Divergence:** the implementation does not realize the theoretical claim as stated
+
+# Claim 1: YFB Preserves Train/Test Consistency
+
+```{=latex}
+\begin{proposition}[Train/Test Consistency]
+The current YFB implementation preserves the theoretical train/test consistency claim, although it does so for the normalized predictor $YF_{\mathrm{norm}}\tilde\beta$ rather than the unnormalized predictor $YF\tilde\beta$.
+\end{proposition}
+\begin{proof}
+At training time, the implementation computes
+\[
+F_{\mathrm{norm}} = F D_F^{-1},
+\qquad
+Z_F^{\mathrm{norm}} = YF_{\mathrm{norm}},
+\qquad
+\eta_{\mathrm{train}} = Z_F^{\mathrm{norm}}\tilde\beta.
+\]
+This is explicit in $\texttt{code/fit\_cox\_on\_yf.R}$.
+
+At prediction time, the implementation applies the same stored normalization constants $D_F$ through the stored vector $EF\_norms$ and computes
+\[
+Z_{F,\mathrm{test}}^{\mathrm{norm}} = Y_{\mathrm{test}}F_{\mathrm{norm}},
+\qquad
+\eta_{\mathrm{test}} = Z_{F,\mathrm{test}}^{\mathrm{norm}}\tilde\beta.
+\]
+This is explicit in $\texttt{code/predict\_cox\_on\_yf.R}$.
+
+Therefore the functional form used at training and test time is identical. The only difference from the idealized mathematical statement is that the common predictor is $YF_{\mathrm{norm}}\tilde\beta$ rather than $YF\tilde\beta$.
+\end{proof}
+\begin{remarkblock}
+\textbf{Verdict: Equivalent Reparameterization.}
+
+The theoretical consistency claim is retained exactly at the level that matters operationally: the same predictor form is used at train and test time. The implementation simply chooses a normalized factor parameterization.
+\end{remarkblock}
+```
+
+# Claim 2: `q(L_k)` Decouples From Survival
+
+```{=latex}
+\begin{proposition}[Decoupling of \texorpdfstring{$q(L_k)$}{q(L\_k)} From Survival]
+The current YFB implementation realizes the theoretical claim that $q(L_k)$ depends only on the genomics likelihood and not on the survival likelihood.
+\end{proposition}
+\begin{proof}
+Under the mathematical YFB model, the survival predictor depends on $F$ and $\tilde\beta$, but not on $L$. Therefore the theoretical coordinate update for $q(L_k)$ is pure-genomics.
+
+The implementation uses $\texttt{update\_L\_surv\_YFB\_k}$ in $\texttt{code/update\_L\_surv\_YFB.R}$, whose arguments are:
+\[
+(\tau,\ EF_k,\ EF2_k,\ R_k,\ \text{prior family},\ A_{\mathrm{floor}}).
+\]
+No survival quantities appear in the function signature: there is no dependence on $w$, $z^{-k}$, $\tilde\beta_k$, or $\tilde\beta_k^2$.
+
+Inside the implementation, the update is
+\[
+A_{L,k} = \sum_j \tau_j E[f_{jk}^2],
+\qquad
+B_{L,k}(i) = \sum_j \tau_j r_{k,ij} E[f_{jk}],
+\]
+which is exactly the pure-genomics formula.
+
+Hence the implemented $q(L_k)$ update matches the theoretical YFB decoupling claim.
+\end{proof}
+\begin{remarkblock}
+\textbf{Verdict: Exact Match.}
+\end{remarkblock}
+```
+
+# Claim 3: The YFB `q(\tilde\beta_k)` Update Uses Projection Scores Rather Than Latent Loadings
+
+```{=latex}
+\begin{proposition}[Projection-Score Form of \texorpdfstring{$q(\tilde\beta_k)$}{q(beta~k)}]
+The current YFB implementation realizes the theoretical claim that the survival coefficient update is driven by projection scores rather than latent loadings.
+\end{proposition}
+\begin{proof}
+The theoretical YFB update uses the covariate
+\[
+Z_{F,\cdot k} = (YF)_{\cdot k}.
+\]
+
+The implementation forms
+\[
+Z_{F,\cdot k}^{\mathrm{norm}} = (YF_{\mathrm{norm}})_{\cdot k}
+\]
+at each outer iteration in $\texttt{code/fit\_cox\_on\_yf.R}$, then computes
+\[
+z^{-k} = z - Z_F^{\mathrm{norm}}\tilde\beta + Z_{F,\cdot k}^{\mathrm{norm}}\tilde\beta_k
+\]
+through $\texttt{compute\_z\_no\_k}(z, ZF, EBeta, k)$; see $\texttt{code/update\_beta.R}$.
+
+The beta update is then called with
+\[
+EL_k = Z_{F,\cdot k}^{\mathrm{norm}},
+\qquad
+EL2_k = (Z_{F,\cdot k}^{\mathrm{norm}})^2,
+\]
+in $\texttt{code/fit\_cox\_on\_yf.R}$.
+
+Thus the implemented update has precision
+\[
+A_k = \alpha \sum_i w_i (Z_{F,ik}^{\mathrm{norm}})^2
+\]
+and signal
+\[
+B_k = \alpha \sum_i w_i z_i^{-k} Z_{F,ik}^{\mathrm{norm}},
+\]
+which is the normalized-score analog of the theoretical YFB update.
+\end{proof}
+\begin{remarkblock}
+\textbf{Verdict: Equivalent Reparameterization.}
+
+The implementation uses normalized projection scores rather than raw projection scores, but it still follows the defining YFB principle that the survival coefficient update is built on projected observed data rather than latent $L$.
+\end{remarkblock}
+```
+
+# Claim 4: The YFB `q(\tilde\beta_k)` Update Is an Exact Implementation of the Theoretical Formula
+
+```{=latex}
+\begin{proposition}[Mismatch in the Exact \texorpdfstring{$q(\tilde\beta_k)$}{q(beta~k)} Formula]
+The current YFB implementation does not realize the exact mathematical YFB $\,q(\tilde\beta_k)\,$ formula as originally written with $YF$. It realizes the formula after replacing $F$ by $F_{\mathrm{norm}}$.
+\end{proposition}
+\begin{proof}
+The mathematical YFB formula states
+\[
+A_{\tilde\beta,k}^{\mathrm{theory}} = \alpha \sum_i w_i (YF)_{ik}^2,
+\qquad
+B_{\tilde\beta,k}^{\mathrm{theory}} = \alpha \sum_i w_i z_i^{-k}(YF)_{ik}.
+\]
+
+The implemented formula is
+\[
+A_{\tilde\beta,k}^{\mathrm{impl}} = \alpha \sum_i w_i (YF_{\mathrm{norm}})_{ik}^2,
+\qquad
+B_{\tilde\beta,k}^{\mathrm{impl}} = \alpha \sum_i w_i z_i^{-k}(YF_{\mathrm{norm}})_{ik}.
+\]
+
+Since
+\[
+F_{\mathrm{norm}} = F D_F^{-1},
+\]
+we have
+\[
+YF_{\mathrm{norm}} = YF D_F^{-1}.
+\]
+Thus the $k$-th predictor column is rescaled by $1/\|f_{\cdot k}\|_2$. Unless every factor column already has unit Euclidean norm, the two formulas are not literally equal.
+
+Therefore the implementation is not an exact realization of the unnormalized theoretical formula. It is instead the exact realization of a normalized reparameterized version of that formula.
+\end{proof}
+\begin{remarkblock}
+\textbf{Verdict: Divergence from the original unnormalized statement; exact match to a normalized reparameterization.}
+\end{remarkblock}
+```
+
+# Claim 5: The Theoretical YFB `q(F_k)` Update Is Dual-Source
+
+```{=latex}
+\begin{proposition}[Theoretical-Implementation Gap for \texorpdfstring{$q(F_k)$}{q(F\_k)}]
+The current YFB implementation does not realize the fully coupled dual-source theoretical update for $q(F_k)$. It realizes only the genomics component.
+\end{proposition}
+\begin{proof}
+The theoretical YFB update for $q(F_k)$ has
+\[
+A_{F,k}(j) =
+(1-\alpha)\tau_j \sum_i E[l_{ik}^2]
+\;+\;
+\alpha E[\tilde\beta_k^2]\sum_i w_i y_{ij}^2
+\]
+and
+\[
+B_{F,k}(j) =
+(1-\alpha)\tau_j \sum_i r_{k,ij}E[l_{ik}]
+\;+\;
+\alpha E[\tilde\beta_k]\sum_i w_i z_i^{-k}y_{ij}.
+\]
+
+The implementation is capable of forming both pieces in $\texttt{code/update\_F\_surv\_YFB.R}$:
+\[
+A_{\mathrm{gen}},\ B_{\mathrm{gen}},\ A_{\mathrm{surv}},\ B_{\mathrm{surv}}.
+\]
+However, the call site in $\texttt{code/fit\_cox\_on\_yf.R}$ explicitly passes
+\[
+\alpha_F = 0.
+\]
+Therefore the implemented update reduces to
+\[
+A_{F,k}^{\mathrm{impl}}(j) = A_{\mathrm{gen}}(j),
+\qquad
+B_{F,k}^{\mathrm{impl}}(j) = B_{\mathrm{gen}}(j).
+\]
+
+Since the survival-side terms are multiplied by zero, they do not influence the update. Hence the implemented $q(F_k)$ update is not dual-source in the mathematical sense.
+\end{proof}
+\begin{remarkblock}
+\textbf{Verdict: Divergence.}
+
+This is the single most important theoretical gap between the intended YFB model and the current working algorithm.
+\end{remarkblock}
+```
+
+# Claim 6: The Implemented YFB Algorithm Still Preserves the Main YFB Survival Mechanism
+
+```{=latex}
+\begin{proposition}[Partial Preservation of the YFB Mechanism]
+Even though the current implementation does not use the theoretical dual-source $q(F_k)$ update, it still preserves the central YFB survival mechanism: survival acts on projected observed scores rather than on latent $L$.
+\end{proposition}
+\begin{proof}
+The defining survival mechanism of YFB is that the Cox predictor is built from $YF$-type scores rather than from $L\beta$.
+
+In the implementation:
+\begin{enumerate}
+\item $q(L_k)$ is pure genomics;
+\item $q(\tilde\beta_k)$ is updated from projected scores $ZF = YF_{\mathrm{norm}}$;
+\item prediction uses the same projected-score form at training and test time.
+\end{enumerate}
+All three statements follow directly from $\texttt{code/fit\_cox\_on\_yf.R}$ and $\texttt{code/predict\_cox\_on\_yf.R}$.
+
+Therefore the implementation preserves the core YFB survival parameterization even though it suppresses the survival contribution inside the $F$-update block.
+\end{proof}
+\begin{remarkblock}
+\textbf{Verdict: Approximate / Partial Match.}
+
+The full theoretical coupling is not present, but the defining prognostic parameterization of YFB is present.
+\end{remarkblock}
+```
+
+# Claim 7: The Implemented YFB ELBO Exactly Matches the Theoretical YFB ELBO
+
+```{=latex}
+\begin{proposition}[ELBO Consistency]
+The current YFB ELBO calculation is consistent with the normalized implemented predictor $YF_{\mathrm{norm}}\tilde\beta$, but not with the original unnormalized statement $YF\tilde\beta$.
+\end{proposition}
+\begin{proof}
+The implementation computes
+\[
+ZF = YF_{\mathrm{norm}}
+\]
+before calling the survival ELBO routine in $\texttt{code/fit\_cox\_on\_yf.R}$.
+
+It then evaluates the survival ELBO contribution using
+\[
+\mathrm{compute\_survival\_elbo}( \log PL,\ w,\ ZF,\ ZF^2,\ \tilde\beta,\ \tilde\beta^2).
+\]
+Thus the survival ELBO is built from the normalized score matrix $ZF = YF_{\mathrm{norm}}$, not from the raw score matrix $YF$.
+
+Therefore the implemented ELBO is internally consistent with the implemented normalized predictor, but not literally equal to the ELBO that would be obtained by substituting the unnormalized predictor $YF\tilde\beta$ into the theoretical formulas.
+\end{proof}
+\begin{remarkblock}
+\textbf{Verdict: Equivalent Reparameterization at the implemented level; divergence from the original unnormalized statement.}
+\end{remarkblock}
+```
+
+# Claim 8: The Current Sign Correction Is Part of the YFB Optimization Problem
+
+```{=latex}
+\begin{proposition}[Status of the Sign Correction]
+The current post-fit sign correction is not part of the variational optimization problem itself.
+\end{proposition}
+\begin{proof}
+The main YFB iterative optimization loop terminates before the sign correction is evaluated; see the convergence check and loop exit in $\texttt{code/fit\_cox\_on\_yf.R}$.
+
+Only after the fitting loop finishes does the implementation compute training concordance and possibly transform
+\[
+\tilde\beta \mapsto -\tilde\beta.
+\]
+This logic appears in $\texttt{code/fit\_cox\_on\_yf.R}$.
+
+Since the sign decision is applied after the iterative maximization loop rather than as an explicit variational block update within that loop, it is not part of the variational optimization problem as currently encoded.
+\end{proof}
+\begin{remarkblock}
+\textbf{Verdict: Divergence from a fully internalized optimization-based orientation rule.}
+\end{remarkblock}
+```
+
+# Claim 9: The Surrogate-Level Coordinate-Ascent Claim Applies to the Implemented Inner Updates
+
+```{=latex}
+\begin{proposition}[Applicability of the Surrogate-Level Monotonicity Claim]
+The surrogate-level coordinate-ascent monotonicity proposition applies directly to the implemented inner updates only after fixing the normalized predictor and the choice $\alpha_F=0$ as part of the surrogate problem definition.
+\end{proposition}
+\begin{proof}
+The implemented inner updates optimize with respect to the blocks:
+\[
+q(L),\ q(F),\ q(\tilde\beta),\ q(\tau),
+\]
+but the actual block objectives are those induced by:
+\begin{enumerate}
+\item the normalized predictor $YF_{\mathrm{norm}}\tilde\beta$,
+\item the pure-genomics $F$-update obtained by setting $\alpha_F=0$,
+\item the fixed Taylor surrogate computed at the start of the outer iteration.
+\end{enumerate}
+
+Once these implementation-level choices are taken as part of the surrogate objective, the inner-loop monotonicity proposition is the correct formal statement. Without including those choices explicitly, the proposition would refer to a different optimization problem from the one currently implemented.
+\end{proof}
+\begin{remarkblock}
+\textbf{Verdict: Exact Match only after the implemented surrogate is stated correctly.}
+\end{remarkblock}
+```
+
+# Audit Summary
+
+The mathematically cleanest summary is:
+
+1. **Exact matches**
+   - `q(L_k)` decouples from survival
+
+2. **Equivalent reparameterizations**
+   - train/test consistency
+   - `q(\tilde\beta_k)` uses projected observed scores
+   - survival ELBO is consistent with the normalized implemented predictor
+
+3. **Genuine divergences**
+   - the implemented predictor uses $F_{\mathrm{norm}}$, not raw $F$
+   - the implemented $q(F_k)$ update is genomics-only, not dual-source
+   - the sign correction is post hoc, not an internal optimization block
+
+4. **Partial matches**
+   - the implementation preserves the core YFB prognostic mechanism even though it does not yet realize the full theoretical coupling through $F$
+
+In short: the current algorithm is not the full theoretical YFB model, but it is not a different model either. It is best described as a **normalized, stabilized implementation of the YFB survival parameterization with a genomics-only factor update**.

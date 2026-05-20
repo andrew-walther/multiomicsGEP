@@ -1,0 +1,689 @@
+---
+title: "Detailed YFB Update Derivations"
+author: "OpenAI Codex"
+date: "May 8, 2026"
+format:
+  pdf:
+    documentclass: article
+    geometry:
+      - margin=1in
+    number-sections: true
+    colorlinks: true
+    toc: true
+fontsize: 11pt
+---
+
+# Purpose
+
+This note works through the YFB update derivations at the algebra level, starting from the ELBO and ending at the EBNM inputs used by the implementation.
+
+The main goal is to make it clear why the three YFB updates are now structurally different:
+
+- `q(\tilde\beta_k)` changes because the survival covariate is now the observed projection score $(YF)_{ik}$
+- `q(L_k)` changes because `L` is no longer in the survival linear predictor
+- `q(F_k)` changes because `F` now affects both reconstruction and prognosis
+
+Throughout, I will distinguish between:
+
+- the **mathematical YFB derivation**
+- the **current implemented YFB algorithm**
+
+That distinction matters most for `q(F_k)`.
+
+# Model Setup
+
+The genomics model remains
+
+$$
+Y_{ij} \mid L,F,\tau \sim N\left(\sum_{k=1}^K l_{ik} f_{jk}, \tau_j^{-1}\right),
+$$
+
+or in matrix form,
+
+$$
+Y \approx L F^\top.
+$$
+
+The YFB survival model replaces the LB predictor `L beta` with a projection-based predictor:
+
+$$
+\eta_i = \sum_{k=1}^K (z_F)_{ik}\,\tilde\beta_k,
+\qquad
+Z_F = YF,
+\qquad
+(z_F)_{ik} = \sum_{j=1}^p y_{ij} f_{jk}.
+$$
+
+So the Cox model becomes
+
+$$
+h(t_i \mid y_i, F, \tilde\beta) = h_0(t_i)\exp(\eta_i).
+$$
+
+Under mean-field variational inference we still write
+
+$$
+q(L,F,\tilde\beta,\tau)
+= q(L)\,q(F)\,q(\tilde\beta)\,q(\tau).
+$$
+
+The ELBO is
+
+$$
+\mathcal L
+=
+E_q[\log p(Y \mid L,F,\tau)]
++
+E_q[\log p(t,\delta \mid Y,F,\tilde\beta)]
+- \mathrm{KL}\{q(L)\|p(L)\}
+- \mathrm{KL}\{q(F)\|p(F)\}
+- \mathrm{KL}\{q(\tilde\beta)\|p(\tilde\beta)\}
+- \mathrm{KL}\{q(\tau)\|p(\tau)\}.
+$$
+
+The key structural fact is:
+
+- the survival term depends on `F` and `tilde beta`
+- the survival term does **not** depend on `L`
+
+That one fact drives almost all of the downstream simplification.
+
+# Cox Taylor Expansion
+
+As in the LB model, the Cox partial likelihood is handled by a second-order Taylor expansion around the current linear predictor.
+
+Let:
+
+- `u_i` be the Cox score
+- `w_i` be the negative diagonal Hessian term
+- `z_i = \eta_i + u_i / w_i` be the working response
+
+Then, up to constants,
+
+$$
+\log p(t,\delta \mid \eta)
+\approx
+-\frac12 \sum_i w_i (z_i - \eta_i)^2.
+$$
+
+This is the form that makes each factor update look like a weighted quadratic regression problem.
+
+In YFB, the predictor is
+
+$$
+\eta_i = \sum_{k=1}^K (z_F)_{ik}\,\tilde\beta_k.
+$$
+
+So every YFB survival update is ultimately derived by isolating one factor-specific contribution inside this quadratic expression.
+
+# Derivation of `q(\tilde\beta_k)`
+
+This is the cleanest YFB update, because the survival covariate is now explicit.
+
+## Step 1: isolate factor `k`
+
+Write the YFB linear predictor as
+
+$$
+\eta_i
+=
+(z_F)_{ik}\tilde\beta_k + \eta^{-k}_i,
+$$
+
+where `eta^{-k}` collects the contribution of all factors except `k`.
+
+Equivalently, using the working-response notation used in the code,
+
+$$
+z_i^{-k}
+=
+z_i - \sum_{k' \ne k} (z_F)_{ik'} E[\tilde\beta_{k'}].
+$$
+
+In plain language: `z^{-k}` is the part of the working response that factor `k` still needs to explain.
+
+## Step 2: plug into the quadratic Cox surrogate
+
+The relevant part of the survival objective is
+
+$$
+-\frac12 \sum_i w_i (z_i - \eta_i)^2.
+$$
+
+Substitute
+
+$$
+\eta_i = (z_F)_{ik}\tilde\beta_k + \eta_i^{-k}.
+$$
+
+Then
+
+$$
+z_i - \eta_i
+=
+z_i - \eta_i^{-k} - (z_F)_{ik}\tilde\beta_k
+=
+z_i^{-k} - (z_F)_{ik}\tilde\beta_k.
+$$
+
+So the factor-`k` part becomes
+
+$$
+-\frac12 \sum_i w_i \left(z_i^{-k} - (z_F)_{ik}\tilde\beta_k\right)^2.
+$$
+
+Expand the square:
+
+$$
+\left(z_i^{-k} - (z_F)_{ik}\tilde\beta_k\right)^2
+=
+(z_i^{-k})^2
+- 2 z_i^{-k}(z_F)_{ik}\tilde\beta_k
++ (z_F)_{ik}^2 \tilde\beta_k^2.
+$$
+
+Therefore
+
+$$
+-\frac12 \sum_i w_i (z_i^{-k})^2
++
+\sum_i w_i z_i^{-k}(z_F)_{ik}\tilde\beta_k
+-\frac12 \sum_i w_i (z_F)_{ik}^2 \tilde\beta_k^2.
+$$
+
+The first term does not depend on `tilde beta_k`, so it is absorbed into the constant.
+
+What remains is
+
+$$
+-\frac12
+\left(
+\sum_i w_i (z_F)_{ik}^2
+\right)\tilde\beta_k^2
++
+\left(
+\sum_i w_i z_i^{-k}(z_F)_{ik}
+\right)\tilde\beta_k
++
+\text{const}.
+$$
+
+## Step 3: read off the EBNM quadratic coefficients
+
+This has the standard form
+
+$$
+-\frac12 A_{\tilde\beta,k}\tilde\beta_k^2 + B_{\tilde\beta,k}\tilde\beta_k + \text{const},
+$$
+
+so
+
+$$
+A_{\tilde\beta,k} = \alpha \sum_i w_i (z_F)_{ik}^2
+$$
+
+$$
+B_{\tilde\beta,k} = \alpha \sum_i w_i z_i^{-k}(z_F)_{ik}.
+$$
+
+The pseudo-observation and pseudo-noise are therefore
+
+$$
+x_{\tilde\beta,k}
+=
+\frac{B_{\tilde\beta,k}}{A_{\tilde\beta,k}}
+=
+\frac{\sum_i w_i z_i^{-k}(z_F)_{ik}}
+     {\sum_i w_i (z_F)_{ik}^2},
+$$
+
+$$
+s_{\tilde\beta,k}
+=
+\frac{1}{\sqrt{A_{\tilde\beta,k}}}
+=
+\frac{1}{\sqrt{\alpha \sum_i w_i (z_F)_{ik}^2}}.
+$$
+
+## Plain-language interpretation
+
+This is just a one-dimensional weighted regression of the Cox working response onto the factor-`k` projection score.
+
+- the denominator `A` is the weighted size of the predictor
+- the numerator `B` is the weighted alignment between the residual response and the predictor
+- the ratio `B/A` is the least-squares coefficient
+- EBNM then shrinks that coefficient toward zero using the chosen prior
+
+## Why this differs from LB
+
+In LB, the survival covariate was latent `l_{ik}`, so the update needed
+
+$$
+E[l_{ik}^2]
+$$
+
+rather than just `l_{ik}^2`.
+
+That was an error-in-variables correction: uncertainty in `L` propagates into uncertainty in `beta`.
+
+In YFB, the covariate is treated as the fixed observed score `(z_F)_{ik}` at the current outer iteration. So the derivation uses
+
+$$
+(z_F)_{ik}^2
+$$
+
+directly.
+
+This is why YFB `q(beta_k)` is conceptually simpler than LB `q(beta_k)`.
+
+## Code mapping
+
+The code reuses the generic beta update in [update_beta.R](/Users/ajwalther/GithubProjects/multiomicsGEP/code/update_beta.R:124), but in YFB it passes:
+
+- `EL_k <- ZF[,k]`
+- `EL2_k <- ZF[,k]^2`
+
+from [fit_cox_on_yf.R](/Users/ajwalther/GithubProjects/multiomicsGEP/code/fit_cox_on_yf.R:344).
+
+So mathematically the derivation is cleaner than the API, but the implementation is equivalent.
+
+# Derivation of `q(L_k)`
+
+This one changes the most structurally from LB.
+
+## Step 1: identify which ELBO terms contain `L_k`
+
+Under YFB,
+
+$$
+\eta_i = (y_i^\top F)\tilde\beta
+$$
+
+contains `F` and `tilde beta`, but it does **not** contain `L`.
+
+Therefore:
+
+$$
+\frac{\partial}{\partial q(L_k)}
+E_q[\log p(t,\delta \mid Y,F,\tilde\beta)]
+= 0.
+$$
+
+So the `q(L_k)` update comes entirely from:
+
+$$
+E_q[\log p(Y \mid L,F,\tau)] - \mathrm{KL}\{q(L_k)\|p(L_k)\}.
+$$
+
+This is the key simplification.
+
+## Step 2: isolate factor `k` in the reconstruction
+
+Define the partial residual with factor `k` removed:
+
+$$
+R_k
+=
+Y - \sum_{k' \ne k} E[l_{k'}]E[f_{k'}]^\top.
+$$
+
+Then the reconstruction for factor `k` is
+
+$$
+R_k \approx l_k f_k^\top.
+$$
+
+At the element level,
+
+$$
+r_{k,ij} \approx l_{ik} f_{jk}.
+$$
+
+The genomics log-likelihood contribution is
+
+$$
+-\frac12 \sum_{i,j} \tau_j E\left[(r_{k,ij} - l_{ik}f_{jk})^2\right].
+$$
+
+Expand the square:
+
+$$
+(r_{k,ij} - l_{ik}f_{jk})^2
+=
+r_{k,ij}^2 - 2 r_{k,ij} l_{ik}f_{jk} + l_{ik}^2 f_{jk}^2.
+$$
+
+Take expectations under mean-field:
+
+$$
+E[r_{k,ij} l_{ik} f_{jk}]
+\approx
+r_{k,ij} E[l_{ik}] E[f_{jk}]
+$$
+
+and
+
+$$
+E[l_{ik}^2 f_{jk}^2]
+=
+E[l_{ik}^2] E[f_{jk}^2].
+$$
+
+So the factor-`k` contribution becomes
+
+$$
+-\frac12 \sum_{i,j} \tau_j
+\left(
+r_{k,ij}^2
+- 2 r_{k,ij} E[l_{ik}]E[f_{jk}]
++ E[l_{ik}^2]E[f_{jk}^2]
+\right).
+$$
+
+Now isolate the terms involving a particular `l_{ik}`:
+
+$$
+-\frac12
+\left(
+E[l_{ik}^2]\sum_j \tau_j E[f_{jk}^2]
+- 2 E[l_{ik}] \sum_j \tau_j r_{k,ij} E[f_{jk}]
+\right)
++
+\text{const}.
+$$
+
+## Step 3: read off the EBNM coefficients
+
+This again has the standard quadratic form
+
+$$
+-\frac12 A_{L,k} E[l_{ik}^2] + B_{L,k}(i) E[l_{ik}] + \text{const},
+$$
+
+with
+
+$$
+A_{L,k} = \sum_j \tau_j E[f_{jk}^2]
+$$
+
+$$
+B_{L,k}(i) = \sum_j \tau_j r_{k,ij} E[f_{jk}].
+$$
+
+Therefore
+
+$$
+x_{L,ik} = \frac{B_{L,k}(i)}{A_{L,k}},
+\qquad
+s_{L,k} = \frac{1}{\sqrt{A_{L,k}}}.
+$$
+
+## Plain-language interpretation
+
+This is ordinary weighted matrix-factorization algebra.
+
+For each patient `i`, the update asks:
+
+- given the current factor column `f_k`
+- and given the residual matrix after removing all other factors
+- what value of `l_{ik}` best explains the remaining reconstruction error?
+
+The answer is turned into an EBNM pseudo-observation and then shrunk according to the prior on `L`.
+
+## Why this differs from LB
+
+In LB, `L_k` was supervised. Its update had:
+
+- a genomics contribution
+- a survival contribution involving `w_i`, `z_i^{-k}`, `E[beta_k]`, and `E[beta_k^2]`
+
+In YFB, all of those disappear because `L` is no longer inside the Cox predictor.
+
+So YFB `q(L_k)` is much simpler than LB `q(L_k)`.
+
+## Code mapping
+
+This derivation is implemented directly in [update_L_surv_YFB.R](/Users/ajwalther/GithubProjects/multiomicsGEP/code/update_L_surv_YFB.R:39).
+
+The code computes:
+
+- `A_gen <- sum(Tau * EF2_k)`
+- `B_L <- R_k %*% (Tau * EF_k)`
+
+which are exactly the expressions above.
+
+# Derivation of `q(F_k)` — Mathematical YFB Version
+
+This is the most important derivation because `F_k` is the bridge between reconstruction and prognosis.
+
+## Step 1: identify which ELBO terms contain `F_k`
+
+Unlike `L_k`, the factor column `F_k` appears in both:
+
+1. the genomics reconstruction `Y \approx LF^\top`
+2. the survival predictor `\eta = YF\tilde\beta`
+
+So the `q(F_k)` update is dual-source in the mathematical YFB model.
+
+## Step 2: genomics contribution
+
+Using the same residual definition `R_k`, the genomics term is
+
+$$
+-\frac12 \sum_{i,j} \tau_j E[(r_{k,ij} - l_{ik}f_{jk})^2].
+$$
+
+Expanding and isolating terms involving `f_{jk}` gives
+
+$$
+-\frac12
+\left(
+E[f_{jk}^2]\tau_j \sum_i E[l_{ik}^2]
+- 2 E[f_{jk}] \tau_j \sum_i r_{k,ij}E[l_{ik}]
+\right)
++
+\text{const}.
+$$
+
+So the genomics-side coefficients are
+
+$$
+A_{F,\mathrm{gen},k}(j)
+=
+\tau_j \sum_i E[l_{ik}^2]
+$$
+
+$$
+B_{F,\mathrm{gen},k}(j)
+=
+\tau_j \sum_i r_{k,ij} E[l_{ik}].
+$$
+
+## Step 3: survival contribution
+
+Now use the YFB predictor
+
+$$
+\eta_i = \sum_{k'} (z_F)_{ik'}\tilde\beta_{k'}.
+$$
+
+For factor `k`,
+
+$$
+(z_F)_{ik} = \sum_j y_{ij} f_{jk}.
+$$
+
+So each `f_{jk}` enters linearly into the survival predictor.
+
+Write
+
+$$
+\eta_i = y_{ij} f_{jk}\tilde\beta_k + \eta^{-j,k}_i,
+$$
+
+where `eta^{-j,k}` collects all parts of the predictor that do not depend on the specific coefficient `f_{jk}`.
+
+The Cox quadratic surrogate contributes
+
+$$
+-\frac12 \sum_i w_i \left(z_i^{-k} - y_{ij} f_{jk}\tilde\beta_k\right)^2.
+$$
+
+Expand the square:
+
+$$
+\left(z_i^{-k} - y_{ij} f_{jk}\tilde\beta_k\right)^2
+=
+(z_i^{-k})^2
+- 2 z_i^{-k} y_{ij} f_{jk}\tilde\beta_k
++ y_{ij}^2 f_{jk}^2 \tilde\beta_k^2.
+$$
+
+Taking expectations under mean-field gives
+
+$$
+-\frac12
+\left(
+E[f_{jk}^2] E[\tilde\beta_k^2] \sum_i w_i y_{ij}^2
+- 2 E[f_{jk}] E[\tilde\beta_k] \sum_i w_i z_i^{-k} y_{ij}
+\right)
++
+\text{const}.
+$$
+
+So the survival-side coefficients are
+
+$$
+A_{F,\mathrm{surv},k}(j)
+=
+E[\tilde\beta_k^2]\sum_i w_i y_{ij}^2
+$$
+
+$$
+B_{F,\mathrm{surv},k}(j)
+=
+E[\tilde\beta_k]\sum_i w_i z_i^{-k} y_{ij}.
+$$
+
+## Step 4: combine the two information sources
+
+With mixing weight `alpha`,
+
+$$
+A_{F,k}(j)
+=
+(1-\alpha)A_{F,\mathrm{gen},k}(j)
++
+\alpha A_{F,\mathrm{surv},k}(j)
+$$
+
+$$
+B_{F,k}(j)
+=
+(1-\alpha)B_{F,\mathrm{gen},k}(j)
++
+\alpha B_{F,\mathrm{surv},k}(j).
+$$
+
+Then the EBNM inputs are
+
+$$
+x_{F,jk} = \frac{B_{F,k}(j)}{A_{F,k}(j)},
+\qquad
+s_{F,jk} = \frac{1}{\sqrt{A_{F,k}(j)}}.
+$$
+
+## Plain-language interpretation
+
+This update asks:
+
+- which genes should define factor `k` so that it still reconstructs the data well,
+- while also making the projection score `Y f_k` prognostic?
+
+That is the clean theoretical heart of YFB.
+
+This is the derivation that makes YFB different from simply "fit an unsupervised factorization and then do Cox regression afterward."
+
+# Derivation of `q(F_k)` — Current Implemented Version
+
+The current implementation does **not** use the full dual-source `F` update.
+
+Instead, it sets
+
+$$
+\alpha_F = 0.
+$$
+
+So the actual update used in fitting is
+
+$$
+A_{F,k}(j) = A_{F,\mathrm{gen},k}(j)
+=
+\tau_j \sum_i E[l_{ik}^2]
+$$
+
+$$
+B_{F,k}(j) = B_{F,\mathrm{gen},k}(j)
+=
+\tau_j \sum_i r_{k,ij} E[l_{ik}].
+$$
+
+This means the implemented `q(F_k)` is genomics-only, even though the mathematical YFB derivation says it should be dual-source.
+
+## Why this was done
+
+The survival contribution to `F` created a positive-feedback instability:
+
+- `F` determines `ZF = YF`
+- `ZF` determines `beta`
+- `beta` then pushes back on `F`
+
+Empirically, this was unstable, so the current implementation keeps the YFB survival parameterization but stabilizes the factor update by learning `F` from genomics alone.
+
+## Code mapping
+
+This is exactly what [update_F_surv_YFB.R](/Users/ajwalther/GithubProjects/multiomicsGEP/code/update_F_surv_YFB.R:100) implements.
+
+The function computes both:
+
+- `A_gen`, `B_gen`
+- `A_surv`, `B_surv`
+
+but [fit_cox_on_yf.R](/Users/ajwalther/GithubProjects/multiomicsGEP/code/fit_cox_on_yf.R:374) calls it with `alpha = 0`, so only the genomics terms are active.
+
+# Why the Three Updates Differ So Much
+
+It is worth stating this plainly, because it is the main conceptual change from LB.
+
+## `q(\tilde\beta_k)`
+
+The survival coefficient is now regressed on the observed projection score `ZF_k`.  
+That makes the update more direct than in LB.
+
+## `q(L_k)`
+
+`L` no longer enters the survival predictor at all.  
+That makes the update simpler than in LB.
+
+## `q(F_k)`
+
+`F` now determines both:
+
+- reconstruction quality
+- the prognostic score basis `ZF = YF`
+
+So `F` becomes the central object in the YFB derivation.
+
+# Final Summary
+
+The detailed YFB derivational story is:
+
+1. Replace the LB survival predictor `L beta` with the projection-based predictor `YF \tilde\beta`.
+2. That makes `q(\tilde\beta_k)` a Cox-on-observed-score update rather than Cox-on-latent-score.
+3. That removes survival entirely from `q(L_k)`.
+4. That moves the dual-source supervision burden onto `q(F_k)`.
+5. The current implementation keeps steps 1–3, but uses a stabilized genomics-only version of step 4.
+
+So the mathematically intended YFB model and the current working implementation are close, but not identical.
+
+That is the most important distinction to keep in mind when explaining the model.

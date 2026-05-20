@@ -1,0 +1,675 @@
+---
+title: "Supplemental Material - Proofs for the YFB Model"
+author: "OpenAI Codex"
+date: "May 8, 2026"
+format:
+  pdf:
+    documentclass: article
+    geometry:
+      - margin=1in
+    number-sections: true
+    colorlinks: true
+    toc: true
+fontsize: 11pt
+header-includes:
+  - \usepackage{amsthm}
+  - \allowdisplaybreaks
+  - \setlength{\emergencystretch}{3em}
+  - \newtheorem{proposition}{Proposition}
+  - \newtheorem{corollary}{Corollary}
+  - \theoremstyle{remark}
+  - \newtheorem*{remarkblock}{Commentary}
+---
+
+# Purpose
+
+This document collects several proofs and proof sketches that are useful for explaining the YFB formulation of the SSBMF model.
+
+The focus is on the most relevant structural claims:
+
+1. **train/test consistency of YFB**
+2. **decoupling of `q(L_k)` from survival**
+3. **scalar EBNM form of the YFB `q(\tilde\beta_k)` update**
+4. **dual-source form of the YFB `q(F_k)` update**
+5. **scale comparison between the original LB supervision path and the YFB supervision path**
+6. **sign/orientation invariance**
+7. **what can and cannot currently be proved about convergence of the CAVI algorithm**
+
+The last section is intentionally careful. Some convergence statements are well-supported; others would require assumptions or algorithmic cleanup that are not yet fully encoded in the current implementation.
+
+# Model Setup
+
+The shared genomics model is
+
+$$
+Y_{ij} \mid L,F,\tau \sim N\left(\sum_{k=1}^K l_{ik} f_{jk}, \tau_j^{-1}\right).
+$$
+
+Equivalently,
+
+$$
+Y \approx LF^\top.
+$$
+
+Under the YFB formulation, the Cox linear predictor is
+
+$$
+\eta_i = \sum_{k=1}^K (z_F)_{ik}\,\tilde\beta_k,
+\qquad
+Z_F = YF,
+\qquad
+(z_F)_{ik} = \sum_{j=1}^p y_{ij} f_{jk}.
+$$
+
+So the survival model becomes
+
+$$
+h(t_i \mid y_i, F, \tilde\beta)
+=
+h_0(t_i)\exp(\eta_i).
+$$
+
+The mean-field variational family is
+
+$$
+q(L,F,\tilde\beta,\tau)
+=
+q(L)\,q(F)\,q(\tilde\beta)\,q(\tau).
+$$
+
+The ELBO is
+
+$$
+\begin{aligned}
+\mathcal L
+=\;&
+E_q[\log p(Y \mid L,F,\tau)]
++ E_q[\log p(t,\delta \mid Y,F,\tilde\beta)] \\
+&- \mathrm{KL}\{q(L)\|p(L)\}
+- \mathrm{KL}\{q(F)\|p(F)\} \\
+&- \mathrm{KL}\{q(\tilde\beta)\|p(\tilde\beta)\}
+- \mathrm{KL}\{q(\tau)\|p(\tau)\}.
+\end{aligned}
+$$
+
+```{=latex}
+\begin{proposition}[Train/Test Consistency of YFB]
+Under the YFB formulation, the prognostic score used at training time and the score used at test time have the same functional form:
+\[
+\eta_{\mathrm{train}} = Y_{\mathrm{train}}F\tilde\beta,
+\qquad
+\eta_{\mathrm{test}} = Y_{\mathrm{test}}F\tilde\beta.
+\]
+By contrast, under LB the training and test predictors are not literally the same object.
+\end{proposition}
+\begin{proof}
+By definition, the YFB Cox predictor is
+\[
+\eta_i = (y_i^\top F)\tilde\beta.
+\]
+If the training data matrix is \(Y_{\mathrm{train}}\), then stacking all training samples gives
+\[
+\eta_{\mathrm{train}} = Y_{\mathrm{train}}F\tilde\beta.
+\]
+For a new test sample \(y_i^{\mathrm{test}}\), the model prescribes the same predictor:
+\[
+\eta_i^{\mathrm{test}}
+=
+\left((y_i^{\mathrm{test}})^\top F\right)\tilde\beta.
+\]
+Stacking test samples gives
+\[
+\eta_{\mathrm{test}} = Y_{\mathrm{test}}F\tilde\beta.
+\]
+The formula is identical except for replacing the training matrix with the test matrix. Therefore the predictor form is the same at train and test time.
+\end{proof}
+\begin{remarkblock}
+This is one of the cleanest conceptual motivations for YFB.
+
+In LB, training uses latent \(L\), but prediction on new data cannot use the same latent quantity directly. In YFB, both training and testing use the same observable projection mechanism.
+\end{remarkblock}
+```
+
+```{=latex}
+\begin{proposition}[\texorpdfstring{$q(L_k)$}{q(L\_k)} Decouples From Survival in YFB]
+Under the YFB predictor
+\[
+\eta = YF\tilde\beta,
+\]
+the survival term of the ELBO is constant with respect to \(q(L_k)\). Therefore the variational update for \(q(L_k)\) depends only on the genomics likelihood and the prior on \(L_k\).
+\end{proposition}
+\begin{proof}
+The YFB survival term is
+\[
+E_q[\log p(t,\delta \mid Y,F,\tilde\beta)].
+\]
+Its arguments are the observed matrix \(Y\), the factor matrix \(F\), and the survival coefficients \(\tilde\beta\). There is no dependence on \(L\).
+
+Therefore, for any factor \(k\),
+\[
+\frac{\partial}{\partial q(L_k)}
+E_q[\log p(t,\delta \mid Y,F,\tilde\beta)]
+=
+0.
+\]
+So the \(q(L_k)\)-dependent part of the ELBO reduces to
+\[
+E_q[\log p(Y \mid L,F,\tau)]
+- \mathrm{KL}\{q(L_k)\|p(L_k)\}
++ \text{const}.
+\]
+Hence the optimal update for \(q(L_k)\) is obtained from the genomics term alone.
+\end{proof}
+\begin{remarkblock}
+This proposition explains why the YFB \(L\) update is so much simpler than the LB \(L\) update.
+
+In LB, \(L_k\) was a supervised object. In YFB, \(L_k\) becomes a reconstruction-only object.
+\end{remarkblock}
+```
+
+```{=latex}
+\begin{proposition}[\texorpdfstring{Scalar EBNM Form of the YFB $q(\tilde\beta_k)$ Update}{Scalar EBNM Form of the YFB q(beta~k) Update}]
+Under the second-order Cox Taylor surrogate, the variational update for \(q(\tilde\beta_k)\) reduces to a one-dimensional normal-means problem with
+\[
+A_{\tilde\beta,k} = \alpha \sum_i w_i (z_F)_{ik}^2
+\]
+and
+\[
+B_{\tilde\beta,k} = \alpha \sum_i w_i z_i^{-k}(z_F)_{ik}.
+\]
+\end{proposition}
+\begin{proof}
+Start from the quadratic Cox surrogate
+\[
+\log p(t,\delta \mid \eta)
+\approx
+-\frac12 \sum_i w_i (z_i - \eta_i)^2 + \text{const}.
+\]
+Now isolate factor \(k\):
+\[
+\eta_i = (z_F)_{ik}\tilde\beta_k + \eta_i^{-k}.
+\]
+Define the partial working response
+\[
+z_i^{-k} = z_i - \eta_i^{-k}.
+\]
+Then
+\[
+z_i - \eta_i
+=
+z_i^{-k} - (z_F)_{ik}\tilde\beta_k.
+\]
+Substitute into the surrogate:
+\[
+-\frac12 \sum_i w_i \left(z_i^{-k} - (z_F)_{ik}\tilde\beta_k\right)^2.
+\]
+Expand the square:
+\[
+\left(z_i^{-k} - (z_F)_{ik}\tilde\beta_k\right)^2
+=
+(z_i^{-k})^2
+- 2 z_i^{-k}(z_F)_{ik}\tilde\beta_k
++ (z_F)_{ik}^2\tilde\beta_k^2.
+\]
+So the \(\tilde\beta_k\)-dependent part becomes
+\[
+-\frac12
+\sum_i w_i (z_F)_{ik}^2 \tilde\beta_k^2
++
+\sum_i w_i z_i^{-k}(z_F)_{ik}\tilde\beta_k
++
+\text{const}.
+\]
+Introducing the mixing weight \(\alpha\), this becomes
+\[
+-\frac12 A_{\tilde\beta,k}\tilde\beta_k^2 + B_{\tilde\beta,k}\tilde\beta_k + \text{const},
+\]
+with
+\[
+A_{\tilde\beta,k} = \alpha \sum_i w_i (z_F)_{ik}^2,
+\qquad
+B_{\tilde\beta,k} = \alpha \sum_i w_i z_i^{-k}(z_F)_{ik}.
+\]
+This is exactly the quadratic form underlying a scalar normal-means likelihood with pseudo-observation
+\[
+x_{\tilde\beta,k} = \frac{B_{\tilde\beta,k}}{A_{\tilde\beta,k}}
+\]
+and pseudo-noise
+\[
+s_{\tilde\beta,k} = \frac{1}{\sqrt{A_{\tilde\beta,k}}}.
+\]
+Therefore the update is an EBNM problem.
+\end{proof}
+\begin{remarkblock}
+This is one of the most attractive properties of YFB. The survival update becomes regression on an observed factor score, instead of regression on a latent uncertain quantity.
+\end{remarkblock}
+```
+
+```{=latex}
+\begin{proposition}[\texorpdfstring{Dual-Source Form of the YFB $q(F_k)$ Update}{Dual-Source Form of the YFB q(F~k) Update}]
+In the mathematical YFB model, the update for \(q(F_k)\) receives one contribution from reconstruction and one contribution from survival. The combined quadratic coefficients are
+\[
+\begin{aligned}
+A_{F,k}(j)
+=
+(1-\alpha)\tau_j \sum_i E[l_{ik}^2]
++
+\alpha E[\tilde\beta_k^2]\sum_i w_i y_{ij}^2
+\end{aligned}
+\]
+and
+\[
+\begin{aligned}
+B_{F,k}(j)
+=
+(1-\alpha)\tau_j \sum_i r_{k,ij}E[l_{ik}]
++
+\alpha E[\tilde\beta_k]\sum_i w_i z_i^{-k} y_{ij}.
+\end{aligned}
+\]
+\end{proposition}
+\begin{proof}
+\textbf{Genomics contribution.}
+
+The factor-\(k\) reconstruction term is
+\[
+-\frac12 \sum_{i,j}\tau_j E[(r_{k,ij} - l_{ik}f_{jk})^2].
+\]
+Expand the square:
+\[
+r_{k,ij}^2 - 2r_{k,ij}l_{ik}f_{jk} + l_{ik}^2 f_{jk}^2.
+\]
+Take expectations under mean-field:
+\[
+E[l_{ik}f_{jk}] = E[l_{ik}]E[f_{jk}],
+\qquad
+E[l_{ik}^2 f_{jk}^2] = E[l_{ik}^2]E[f_{jk}^2].
+\]
+Collecting the terms involving a fixed \(f_{jk}\) gives
+\[
+-\frac12
+\left(
+\tau_j E[f_{jk}^2]\sum_i E[l_{ik}^2]
+- 2\tau_j E[f_{jk}]\sum_i r_{k,ij}E[l_{ik}]
+\right)
++
+\text{const}.
+\]
+So
+\[
+A_{F,\mathrm{gen},k}(j) = \tau_j \sum_i E[l_{ik}^2],
+\qquad
+B_{F,\mathrm{gen},k}(j) = \tau_j \sum_i r_{k,ij}E[l_{ik}].
+\]
+
+\textbf{Survival contribution.}
+
+Now isolate the dependence of the YFB predictor on \(f_{jk}\). Since
+\[
+(z_F)_{ik} = \sum_j y_{ij} f_{jk},
+\]
+the predictor contains the term
+\[
+y_{ij}f_{jk}\tilde\beta_k.
+\]
+So, holding all other terms fixed,
+\[
+\eta_i = y_{ij}f_{jk}\tilde\beta_k + \eta_i^{-j,k}.
+\]
+Using the quadratic Cox surrogate,
+\[
+-\frac12 \sum_i w_i (z_i^{-k} - y_{ij}f_{jk}\tilde\beta_k)^2.
+\]
+Expanding the square gives
+\[
+-\frac12 \sum_i w_i
+\left[
+(z_i^{-k})^2
+- 2 z_i^{-k} y_{ij}f_{jk}\tilde\beta_k
++ y_{ij}^2 f_{jk}^2 \tilde\beta_k^2
+\right].
+\]
+The terms depending on \(f_{jk}\) are
+\[
+-\frac12
+\left(
+E[f_{jk}^2]E[\tilde\beta_k^2]\sum_i w_i y_{ij}^2
+- 2 E[f_{jk}]E[\tilde\beta_k]\sum_i w_i z_i^{-k}y_{ij}
+\right)
++
+\text{const}.
+\]
+Therefore
+\[
+A_{F,\mathrm{surv},k}(j)
+=
+E[\tilde\beta_k^2]\sum_i w_i y_{ij}^2,
+\qquad
+B_{F,\mathrm{surv},k}(j)
+=
+E[\tilde\beta_k]\sum_i w_i z_i^{-k}y_{ij}.
+\]
+
+\textbf{Combined update.}
+
+Combine the two sources with mixing weight \(\alpha\):
+\[
+A_{F,k}(j)
+=
+(1-\alpha)A_{F,\mathrm{gen},k}(j)
++
+\alpha A_{F,\mathrm{surv},k}(j),
+\]
+\[
+B_{F,k}(j)
+=
+(1-\alpha)B_{F,\mathrm{gen},k}(j)
++
+\alpha B_{F,\mathrm{surv},k}(j).
+\]
+Thus the update is again a normal-means / EBNM problem with
+\[
+x_{F,jk} = \frac{B_{F,k}(j)}{A_{F,k}(j)},
+\qquad
+s_{F,jk} = \frac{1}{\sqrt{A_{F,k}(j)}}.
+\]
+\end{proof}
+\begin{remarkblock}
+This is arguably the main theoretical proposition of YFB.
+
+It formalizes the claim that YFB moves supervision from \(L\) to \(F\).
+\end{remarkblock}
+```
+
+```{=latex}
+\begin{proposition}[Scale Comparison Between LB and YFB]
+Assume there exist positive constants \(c_\tau,C_\tau,c_f,C_f,c_l,C_l,c_w,C_w,c_y,C_y,c_\beta,C_\beta\), independent of \(n\) and \(p\), such that for the factor \(k\) under consideration:
+\[
+0<c_\tau \le \tau_j \le C_\tau,\qquad
+0<c_f \le E[f_{jk}^2] \le C_f,
+\]
+\[
+0<c_l \le E[l_{ik}^2] \le C_l,\qquad
+0<c_w \le w_i \le C_w,
+\]
+\[
+0<c_y \le y_{ij}^2 \le C_y,\qquad
+0<c_\beta \le E[\tilde\beta_k^2],\,E[\beta_k^2] \le C_\beta
+\]
+for all relevant \(i,j\). Then:
+\begin{enumerate}
+\item the LB ratio \(A_{L,\mathrm{surv},i}/A_{L,\mathrm{gen}}\) is \(O(p^{-1})\) uniformly in \(i\);
+\item the intended YFB ratio \(A_{F,\mathrm{surv},k}(j)/A_{F,\mathrm{gen},k}(j)\) is \(O(1)\) uniformly in \(j\).
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+\textbf{LB.}
+
+In LB, the \(L\)-update precision has
+
+$$
+A_{L,\mathrm{gen}} = \sum_{j=1}^p \tau_j E[f_{jk}^2].
+$$
+
+Using the lower and upper bounds,
+\[
+\sum_{j=1}^p c_\tau c_f
+\le
+A_{L,\mathrm{gen}}
+\le
+\sum_{j=1}^p C_\tau C_f,
+\]
+so
+\[
+p\,c_\tau c_f \le A_{L,\mathrm{gen}} \le p\,C_\tau C_f.
+\]
+Hence \(A_{L,\mathrm{gen}} = \Theta(p)\).
+
+The survival precision term is
+
+$$
+A_{L,\mathrm{surv},i} = w_i E[\beta_k^2].
+$$
+
+Again by the bounds,
+\[
+c_w c_\beta \le A_{L,\mathrm{surv},i} \le C_w C_\beta
+\]
+uniformly in \(i\). Hence \(A_{L,\mathrm{surv},i} = \Theta(1)\).
+
+Therefore
+\[
+\frac{c_w c_\beta}{p\,C_\tau C_f}
+\le
+\frac{A_{L,\mathrm{surv},i}}{A_{L,\mathrm{gen}}}
+\le
+\frac{C_w C_\beta}{p\,c_\tau c_f},
+\]
+uniformly in \(i\). This proves
+\[
+\frac{A_{L,\mathrm{surv},i}}{A_{L,\mathrm{gen}}} = \Theta(p^{-1}),
+\]
+hence in particular it is \(O(p^{-1})\).
+
+\textbf{YFB.}
+
+In the intended YFB \(F\) update, the genomics precision is
+
+$$
+A_{F,\mathrm{gen},k}(j) = \tau_j \sum_{i=1}^n E[l_{ik}^2].
+$$
+
+Using the bounds,
+\[
+\tau_j\, n c_l \le A_{F,\mathrm{gen},k}(j) \le \tau_j\, n C_l,
+\]
+and since \(c_\tau \le \tau_j \le C_\tau\),
+\[
+n c_\tau c_l \le A_{F,\mathrm{gen},k}(j) \le n C_\tau C_l.
+\]
+Hence \(A_{F,\mathrm{gen},k}(j) = \Theta(n)\) uniformly in \(j\).
+
+The survival precision is
+
+$$
+A_{F,\mathrm{surv},k}(j) = E[\tilde\beta_k^2]\sum_{i=1}^n w_i y_{ij}^2.
+$$
+
+Using the bounds,
+\[
+E[\tilde\beta_k^2]\,n c_w c_y
+\le
+A_{F,\mathrm{surv},k}(j)
+\le
+E[\tilde\beta_k^2]\,n C_w C_y,
+\]
+and since \(c_\beta \le E[\tilde\beta_k^2] \le C_\beta\),
+\[
+n c_\beta c_w c_y
+\le
+A_{F,\mathrm{surv},k}(j)
+\le
+n C_\beta C_w C_y.
+\]
+Hence \(A_{F,\mathrm{surv},k}(j) = \Theta(n)\) uniformly in \(j\).
+
+Therefore
+\[
+\frac{c_\beta c_w c_y}{C_\tau C_l}
+\le
+\frac{A_{F,\mathrm{surv},k}(j)}{A_{F,\mathrm{gen},k}(j)}
+\le
+\frac{C_\beta C_w C_y}{c_\tau c_l},
+\]
+uniformly in \(j\). Thus
+\[
+\frac{A_{F,\mathrm{surv},k}(j)}{A_{F,\mathrm{gen},k}(j)} = \Theta(1),
+\]
+hence in particular it is \(O(1)\).
+\end{proof}
+\begin{remarkblock}
+This is not a full asymptotic theorem, but it is the right structural scaling argument.
+
+It explains why YFB was attractive in the first place: it relocates supervision onto a quantity where the survival and genomics terms operate on comparable sample-level scale.
+\end{remarkblock}
+```
+
+```{=latex}
+\begin{proposition}[Sign/Orientation Invariance]
+For either LB or YFB, a coupled sign flip of a factor score and its corresponding survival coefficient leaves the linear predictor unchanged. Therefore the sign of the prognostic axis is not uniquely identified by the factorization itself.
+\end{proposition}
+\begin{proof}
+\textbf{LB.}
+
+The predictor is
+
+$$
+\eta = L\beta.
+$$
+
+If factor \(k\) and coefficient \(\beta_k\) are both sign-flipped:
+
+$$
+l_{\cdot k} \to -l_{\cdot k},
+\qquad
+\beta_k \to -\beta_k,
+$$
+
+then
+
+$$
+(-l_{\cdot k})(-\beta_k) = l_{\cdot k}\beta_k.
+$$
+
+So the predictor is unchanged.
+
+\textbf{YFB.}
+
+The predictor is
+
+$$
+\eta = Z_F \tilde\beta,
+\qquad
+Z_F = YF.
+$$
+
+If \(f_{\cdot k} \to -f_{\cdot k}\), then \(Z_{F,\cdot k} \to -Z_{F,\cdot k}\).
+
+If we also flip \(\tilde\beta_k \to -\tilde\beta_k\), then
+
+$$
+(-Z_{F,\cdot k})(-\tilde\beta_k) = Z_{F,\cdot k}\tilde\beta_k.
+$$
+
+So the predictor is again unchanged.
+\end{proof}
+\begin{remarkblock}
+This proposition is why the post-fit sign/orientation issue is not purely a bug. It is a real identifiability feature of the model family.
+\end{remarkblock}
+```
+
+```{=latex}
+\begin{proposition}[Surrogate-Level Coordinate-Ascent Monotonicity]
+Fix one outer-iteration Taylor expansion of the Cox likelihood. Suppose:
+\begin{enumerate}
+\item the surrogate objective is used as the optimization target for that outer iteration,
+\item each block update solves its EBNM subproblem exactly,
+\item all other blocks are held fixed during that coordinate update.
+\end{enumerate}
+Then each block update is non-decreasing in the surrogate objective.
+\end{proposition}
+\begin{proof}
+Let the fixed surrogate objective at a given outer iteration be denoted by
+\[
+\mathcal S(q_L,q_F,q_{\tilde\beta},q_\tau).
+\]
+Write the four variational blocks abstractly as
+\[
+\mathbf q = (q_1,q_2,q_3,q_4),
+\]
+where \(q_1=q_L\), \(q_2=q_F\), \(q_3=q_{\tilde\beta}\), and \(q_4=q_\tau\). Let \(\mathbf q^{(m,r)}\) denote the state after outer iteration \(m\) and after the first \(r\) block updates of the inner loop, with \(r\in\{0,1,2,3,4\}\). Thus \(\mathbf q^{(m,0)}\) is the state before the inner loop and \(\mathbf q^{(m,4)}\) is the state after all four blocks have been updated.
+
+Fix a block index \(b\in\{1,2,3,4\}\). By assumption, the \(b\)-th block update is the exact solution of
+\[
+q_b^{(m,b)}
+\in
+\arg\max_{q_b}
+\mathcal S\!\left(
+q_1^{(m,b-1)},\ldots,q_{b-1}^{(m,b-1)},q_b,q_{b+1}^{(m,b-1)},\ldots,q_4^{(m,b-1)}
+\right).
+\]
+Therefore, evaluating the surrogate objective at the maximizing block value cannot produce a smaller value than evaluating it at the previous block value \(q_b^{(m,b-1)}\). Hence
+\[
+\mathcal S(\mathbf q^{(m,b)})
+\ge
+\mathcal S(\mathbf q^{(m,b-1)}).
+\]
+Since this argument holds for every block \(b\), each block update is non-decreasing in the fixed surrogate objective.
+\end{proof}
+```
+
+```{=latex}
+\begin{corollary}[Convergence of Surrogate Objective Values]
+Assume, in addition to the hypotheses of Proposition 7, that:
+\begin{enumerate}
+\item the fixed surrogate objective is bounded above,
+\item every block update is well-defined,
+\item the sequence of iterates remains in a region where the block maximizers exist.
+\end{enumerate}
+Then the sequence of surrogate-objective values generated by the inner coordinate-ascent loop is monotone non-decreasing and convergent.
+\end{corollary}
+\begin{proof}
+Let
+\[
+s_r = \mathcal S(\mathbf q^{(m,r)}),\qquad r=0,1,2,3,4,\ldots
+\]
+denote the surrogate-objective values generated by the inner coordinate-ascent loop for the fixed outer-iteration surrogate. By Proposition 7,
+\[
+s_{r+1}\ge s_r
+\qquad\text{for all }r.
+\]
+Thus \(\{s_r\}_{r\ge 0}\) is monotone non-decreasing. By assumption, the surrogate objective is bounded above on the region visited by the iterates, so there exists \(M<\infty\) such that
+\[
+s_r \le M
+\qquad\text{for all }r.
+\]
+Therefore \(\{s_r\}\) is a bounded monotone sequence in \(\mathbb R\). By the monotone convergence theorem for real sequences, \(\{s_r\}\) converges.
+\end{proof}
+\begin{remarkblock}
+This corollary concerns convergence of objective values for a \emph{fixed} Taylor surrogate, not yet the full outer algorithm.
+\end{remarkblock}
+```
+
+```{=latex}
+\begin{proposition}[Limits of a Full Global Convergence Claim]
+A full global convergence theorem for the current practical YFB fitting pipeline does not follow directly from Proposition 7 or Corollary 1.
+\end{proposition}
+\begin{proof}
+The current practical algorithm differs from textbook block coordinate ascent on a single fixed objective in several respects.
+
+First, the Cox quadratic surrogate is recomputed at each outer iteration, so the objective optimized by the inner loop changes with the current predictor.
+
+Second, the post-fit sign correction is applied after the main iterative fitting loop rather than encoded as an explicit block of the optimization problem.
+
+Third, the implemented YFB update for \(F\) uses the stabilized choice \(\alpha_F = 0\) rather than the fully coupled theoretical dual-source update.
+
+Because of these features, a theorem establishing global convergence of the complete practical pipeline would require a more detailed treatment of the outer-majorization step, the interaction between refreshed surrogates and inner solves, and the role of the orientation rule. Those ingredients are not supplied by the present propositions alone.
+\end{proof}
+\begin{remarkblock}
+The appropriate formal claim at the current stage is surrogate-level coordinate-ascent monotonicity, not global optimality or a guaranteed iteration bound for the full practical algorithm.
+\end{remarkblock}
+```
+
+# Final Summary
+
+The most useful proofs for YFB right now are:
+
+1. YFB uses the same predictor form at train and test time.
+2. `q(L_k)` decouples completely from survival.
+3. `q(\tilde\beta_k)` is a scalar EBNM update on projection scores.
+4. `q(F_k)` is theoretically dual-source.
+5. YFB fixes the structural scale mismatch that hurt the original LB supervision path.
+6. Sign ambiguity is a genuine identifiability issue, not just a coding mistake.
+7. The implemented CAVI algorithm supports a meaningful surrogate-level coordinate-ascent convergence argument, but a stronger full global theorem would require additional formal cleanup.
+
+That set of results gives a solid theoretical backbone for discussing the YFB model rigorously without overstating what has or has not yet been proved.

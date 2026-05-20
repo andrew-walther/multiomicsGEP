@@ -1,0 +1,299 @@
+---
+title: "Sign and Orientation Issue in LB and YFB"
+author: "OpenAI Codex"
+date: "May 8, 2026"
+format:
+  pdf:
+    documentclass: article
+    geometry:
+      - margin=1in
+    number-sections: true
+    colorlinks: true
+    toc: true
+fontsize: 11pt
+---
+
+# Purpose
+
+This note explains the sign/orientation issue in the LB and YFB models.
+
+The main goal is to separate three different ideas that can easily get conflated:
+
+1. a **true mathematical sign indeterminacy** in the factorization
+2. a **risk-score orientation convention** for Cox prediction
+3. the **current implementation fix**, which flips the sign of the fitted survival coefficients when the training concordance is below 0.5
+
+The key point is that the current sign flip is not changing the fitted subspace or inventing new signal. It is choosing an orientation for a predictor whose sign is not fully identified by the factorization alone.
+
+# The Core Mathematical Issue
+
+Both LB and YFB inherit sign indeterminacy from matrix factorization.
+
+## LB
+
+The genomics model is
+
+$$
+Y \approx L F^\top.
+$$
+
+For any factor `k`, if we flip the sign of both:
+
+$$
+l_{\cdot k} \to -l_{\cdot k}, \qquad f_{\cdot k} \to -f_{\cdot k},
+$$
+
+then the product is unchanged:
+
+$$
+(-l_{\cdot k})(-f_{\cdot k})^\top = l_{\cdot k} f_{\cdot k}^\top.
+$$
+
+So the reconstruction does not determine the sign of a factor uniquely.
+
+## YFB
+
+YFB still uses the same reconstruction
+
+$$
+Y \approx L F^\top,
+$$
+
+so the same factor-sign indeterminacy remains.
+
+In addition, the YFB predictor uses
+
+$$
+Z_F = YF.
+$$
+
+If a factor column flips sign,
+
+$$
+f_{\cdot k} \to -f_{\cdot k},
+$$
+
+then the corresponding projected score also flips:
+
+$$
+Z_{F,\cdot k} \to -Z_{F,\cdot k}.
+$$
+
+So YFB inherits the same orientation ambiguity, just expressed through the projected score rather than through latent `L`.
+
+# Why Survival Does Not Automatically Fix the Sign
+
+At first glance, it may seem like the Cox model should determine the correct sign, because hazard depends on the linear predictor.
+
+But in both LB and YFB, the relevant factor/sign pair can be re-expressed with an equal and opposite coefficient sign:
+
+## LB
+
+If
+
+$$
+\eta = L\beta,
+$$
+
+then flipping one factor column and its corresponding coefficient gives
+
+$$
+(-l_{\cdot k})(-\beta_k) = l_{\cdot k}\beta_k.
+$$
+
+So the predictor is unchanged.
+
+## YFB
+
+If
+
+$$
+\eta = Z_F \tilde\beta,
+$$
+
+and
+
+$$
+Z_{F,\cdot k} \to -Z_{F,\cdot k},
+$$
+
+then
+
+$$
+(-Z_{F,\cdot k})(-\tilde\beta_k) = Z_{F,\cdot k}\tilde\beta_k.
+$$
+
+Again, the predictor is unchanged.
+
+So the survival model does not eliminate the sign ambiguity by itself. It only identifies the **product**.
+
+# The Additional Practical Issue: Risk-Score Convention
+
+Separate from factor-sign indeterminacy, there is a simpler convention issue:
+
+- should a **larger** risk score mean **worse** prognosis?
+- or should a larger score mean **better** prognosis?
+
+A Cox linear predictor is only meaningful up to monotone interpretation unless the codebase enforces a convention.
+
+In practice, the project wants:
+
+$$
+\text{larger risk score} \Rightarrow \text{larger hazard} \Rightarrow \text{worse prognosis}.
+$$
+
+That is a reasonable and standard convention. But it must be applied consistently.
+
+If some code paths evaluate concordance using `risk_score` and others use `-risk_score`, then part of the apparent “sign problem” is really a bookkeeping problem rather than a modeling problem.
+
+# Why the Issue Appears in Current Fits
+
+The most important implementation-level reason is the initialization and factorization geometry.
+
+## LB
+
+The singular value decomposition initialization and nonnegative truncation can recover a useful low-rank structure while discarding the original biological sign orientation.
+
+So the learned factor may span the right axis of variation but point in the opposite direction.
+
+## YFB
+
+The same issue appears, but now it propagates through
+
+$$
+Z_F = YF.
+$$
+
+So if `F_k` has the opposite orientation from the one that aligns with higher hazard, then the projected score `Z_{F,\cdot k}` also has the opposite orientation, and the fitted beta may inherit that reversal.
+
+This is why the sign issue is not “specific to YFB,” though it can be more obvious there.
+
+# What the Current Code Does
+
+Both fitting functions apply a post-convergence sign correction based on training concordance.
+
+## LB
+
+In [fit_modular.R](/Users/ajwalther/GithubProjects/multiomicsGEP/code/fit_modular.R:582), the code computes the training concordance using the final predictor. If concordance is below 0.5, it flips the sign of `EBeta`.
+
+That changes
+
+$$
+\eta \to -\eta
+$$
+
+and therefore changes concordance from approximately
+
+$$
+C \to 1 - C.
+$$
+
+## YFB
+
+In [fit_cox_on_yf.R](/Users/ajwalther/GithubProjects/multiomicsGEP/code/fit_cox_on_yf.R:456), the code does the same thing using the YFB predictor
+
+$$
+\eta = Z_F \tilde\beta.
+$$
+
+If training concordance is below 0.5, it flips the sign of `EBeta`.
+
+# Why This Is Not Purely Ad Hoc
+
+The sign flip can feel ad hoc, but there is a principled reason it works:
+
+- the fitted reconstruction/factor space is already in place
+- the issue is the orientation of the predictor
+- global sign reversal preserves the factor space but changes the hazard ordering
+
+So the current fix is not creating a new model. It is selecting one of two equivalent orientations of the fitted predictor.
+
+That said, the current implementation is still not the cleanest possible formulation.
+
+# Why It Still Feels Unsatisfying
+
+The discomfort is valid for two reasons.
+
+## 1. The orientation rule is external to the model definition
+
+Right now, the model is fit first, then the sign is flipped afterward if concordance is below 0.5.
+
+That makes the orientation decision look like a patch rather than an explicit part of the model.
+
+## 2. The convention is not unified everywhere
+
+If cross-validation, benchmarking, and prediction utilities do not all use the same orientation convention, then the sign issue gets mixed up with evaluation inconsistency.
+
+That is one reason the current CV behavior is hard to interpret.
+
+# A More Principled Formulation
+
+The cleanest future approach would be:
+
+1. define one global convention:
+   - larger score means larger hazard
+2. treat orientation as part of the fitted model object
+3. determine orientation during fitting using one explicit rule
+4. apply the same rule in full-data fitting, external prediction, and cross-validation folds
+
+Two reasonable orientation rules are:
+
+## Option A: training concordance rule
+
+Choose the sign so that training concordance is at least 0.5.
+
+This is close to what the current code already does.
+
+## Option B: training Cox objective rule
+
+Choose between `eta` and `-eta` by whichever yields the larger Cox partial log-likelihood on the training set.
+
+This is arguably slightly more model-aligned because it uses the survival objective itself rather than concordance alone.
+
+# How to Explain This to Advisors
+
+The cleanest explanation is:
+
+- the factorization is sign-indeterminate
+- survival depends on the product of score and coefficient, so sign is only identified up to orientation
+- the current implementation chooses the orientation that makes the risk score point in the clinically meaningful direction
+
+That is different from saying “we changed a bad result into a good one by cheating.”
+
+What really happened is:
+
+- the low-rank structure was learned
+- the prognostic axis was learned
+- the sign convention for that axis was not fully fixed by the factorization
+- a global orientation choice was then applied
+
+# Relation to the YFB Derivation
+
+This issue is orthogonal to the main YFB derivation.
+
+The YFB derivation changes:
+
+- what variable enters survival
+- how `q(beta_k)`, `q(L_k)`, and `q(F_k)` are derived
+
+The sign/orientation issue is a separate identifiability and interpretation issue that sits on top of either LB or YFB.
+
+So when explaining YFB, it is helpful to say:
+
+- the derivation defines the model structure
+- the orientation issue concerns how the fitted prognostic axis is signed and interpreted
+
+# Final Summary
+
+The sign/orientation issue has three layers:
+
+1. **Mathematical factor-sign indeterminacy**
+   - inherited from matrix factorization
+2. **Prediction-orientation convention**
+   - larger score should mean larger hazard
+3. **Current implementation fix**
+   - if training concordance is below 0.5, flip the sign of the survival coefficient vector
+
+So the current sign flip is best viewed as a pragmatic orientation-selection step, not as a change to the learned low-rank structure itself.
+
+The long-term improvement is to make that orientation rule explicit, unified, and part of the fitted model definition.
