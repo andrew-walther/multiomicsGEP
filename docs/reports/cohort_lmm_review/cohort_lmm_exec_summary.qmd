@@ -21,6 +21,8 @@ format:
     number-sections: false
     embed-resources: true
     self-contained: true
+    link-citations: true
+    link-bibliography: true
 execute:
   echo: false
   warning: false
@@ -80,9 +82,13 @@ additive batch shifts gene-by-gene via empirical Bayes shrinkage and is the
 de facto standard for bulk RNA-seq preprocessing; ComBat-seq [@Zhang2020]
 extends this to count data.  SVA [@Leek2007] estimates latent confounders
 when batch labels are unknown; RUV [@Risso2014] uses control genes to
-identify technical factors.  All four operate as preprocessing steps,
-transforming $Y$ before downstream analysis and decoupling batch correction
-from the survival inference objective.
+identify technical factors.  PEER [@Stegle2010] is the closest published
+architectural precedent for the proposed approach: it models gene expression
+as a sum of *known* covariate effects (fixed indicator loadings, estimated
+gene-level magnitudes) and *unknown* latent factors within a single Bayesian
+factor model — exactly the structure of a fixed cohort column in $L$ paired
+with an estimated $F$ row.  All five methods operate as preprocessing steps
+decoupled from the survival inference objective.
 
 Among multi-omics factor analysis methods, MOFA [@Argelaguet2018] is
 architecturally closest to SSBMF: it learns a shared low-dimensional
@@ -94,12 +100,13 @@ categorical phenotypes and cannot constrain cohort effects out of a
 continuous survival score.
 
 **Why existing methods are insufficient.**  Every method above either decouples
-batch correction from the survival objective (ComBat, SVA, RUV), targets an
-unsupervised objective (MOFA, MOFA+, Harmony, scVI), or cannot prevent cohort
-effects from entering a prognostic score (DIABLO).  None jointly optimizes a
-survival objective while estimating platform offsets within the same iteration.
-MOFA+ is the closest relative but has no survival component and no constraint
-equivalent to $\beta_{\text{cohort}} \equiv 0$.
+batch correction from the survival objective (ComBat, SVA, RUV, PEER), targets
+an unsupervised objective (MOFA, MOFA+, Harmony, scVI), or cannot prevent
+cohort effects from entering a prognostic score (DIABLO).  None jointly
+optimizes a survival objective while estimating platform offsets within the
+same iteration.  PEER is the closest architectural precedent but has no
+survival component; MOFA+ is the closest variational Bayes ancestor but has
+no equivalent of $\beta_{\text{cohort}} \equiv 0$.
 
 ## Proposed Solution
 

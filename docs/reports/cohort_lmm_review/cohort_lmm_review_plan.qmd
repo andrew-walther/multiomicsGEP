@@ -3,6 +3,8 @@ title: "Cohort Dummy-Variable Extension to L: A Bayesian Linear Mixed Model Fram
 author: "Andrew Walther"
 date: "2026-05-20"
 bibliography: references.bib
+link-citations: true
+link-bibliography: true
 format:
   pdf:
     engine: xelatex
@@ -268,6 +270,25 @@ downstream models.  SVA is designed for cases where batch labels are unknown
 or imprecise; it recovers latent structure rather than correcting known-batch
 effects.
 
+**Probabilistic Estimation of Expression Residuals (PEER).** @Stegle2010
+introduced PEER, a Bayesian latent factor model for gene expression that
+explicitly accommodates *known* covariates alongside estimated latent factors.
+The expression of gene $j$ in sample $i$ is modelled as $y_{ij} =
+\sum_k \alpha_k X_{ik} + \sum_r \beta_r Z_{ir} + \varepsilon_{ij}$, where
+$X$ contains known covariates (e.g., batch, platform, sex) with *fixed*
+indicator loadings and estimated gene-level weights $\alpha_k$, and $Z$
+contains latent confounders with both loadings and weights estimated from
+data.  This is the published precedent most directly analogous to the proposed
+cohort column extension: the known cohort indicator plays the role of $X$
+(fixed loading), the corresponding $F_{\text{cohort}}$ row plays the role of
+$\alpha$ (estimated gene-level offset), and the global factors $L$ and $F$
+play the role of the latent $Z$ and $\beta$.  PEER has been widely adopted in
+eQTL studies — including the GTEx consortium — as the standard method for
+controlling technical variation when batch labels are known.  The key
+distinctions from the proposed approach are that PEER is unsupervised (no
+survival objective) and treats known-covariate estimation as a preprocessing
+step rather than integrating it jointly within CAVI.
+
 **Remove Unwanted Variation (RUV).** @Risso2014 proposed RUV-g and RUV-s,
 which use control genes (e.g., ERCC spike-ins) or replicate samples to
 estimate unwanted technical factors by factor analysis.  The approach
@@ -315,13 +336,18 @@ constraint $\beta_{\text{cohort}} \equiv 0$ makes this shielding exact and
 recoverable even when cohort effects dominate the first principal component —
 precisely the failure mode observed in merged TCGA + CPTAC training.
 
-> **Bottom line.** MOFA+ [@Argelaguet2020] is the closest architectural
-> ancestor — shared variational Bayes matrix factorization with group
-> structure — but it lacks supervision by a survival outcome.  ComBat
-> [@Johnson2007] is the closest analogue to the $F_{\text{cohort}}$ update
-> as a gene-mean correction, but is a preprocessing step, not a
-> jointly-estimated quantity.  Our extension combines both ideas within
-> the SSBMF CAVI framework.
+> **Bottom line.** PEER [@Stegle2010] is the closest published architectural
+> precedent: a Bayesian factor model that treats known covariates as fixed
+> loadings with estimated gene-level magnitudes alongside latent factors —
+> exactly the proposed cohort column structure.  MOFA+ [@Argelaguet2020] is
+> the closest variational Bayes ancestor with group structure, but lacks a
+> survival objective.  ComBat [@Johnson2007] is the closest analogue to
+> $F_{\text{cohort}}$ as a gene-mean correction, but operates as a
+> preprocessing step.  The proposed extension combines all three ideas —
+> PEER's known-covariate architecture, MOFA+'s group-aware factor model, and
+> ComBat's additive offset — within the SSBMF CAVI framework, with the
+> addition of a Cox partial likelihood and the $\beta_{\text{cohort}} \equiv 0$
+> constraint.
 
 ## Relevance to the SSBMF Setting
 
