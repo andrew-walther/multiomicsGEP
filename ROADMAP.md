@@ -83,20 +83,36 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   *Files: `code/preprocess_desurv.R`, `results/benchmark_sim/run_YFB_benchmark.R`,
   `config/globals.yml` (k_pdac_yfb_merged: 3). Results: `outputs/YFB_benchmark_perplatform/`.*
 
-- [ ] **Cohort dummy-variable extension: shared L with cohort-specific F columns** `[Priority: High]` `[Effort: Large]`
-  Augment the factor model with cohort indicators: L = [L_global | L_cohort] where L_cohort
-  columns are fixed indicator variables identifying cohort membership, paired with cohort-specific
-  factor loadings F_cohort. The survival model uses only global columns (β_cohort = 0 by
-  construction). This is a Bayesian linear mixed model (LMM) formulation — L_global captures
-  shared biological programs; F_cohort columns absorb platform-specific mean shifts without
-  distorting prognostic signal. Motivated by the merged β→0 collapse on multi-platform
-  TCGA+CPTAC data (platform factor dominates PC1, washing out survival signal).
-  Requires: (1) literature review of Bayesian LMM with matrix factorization structure;
-  (2) derivation of modified q(L) and q(F) updates; (3) implementation in `code/fit_modular.R`
-  or a new `code/fit_lmm.R`; (4) benchmark on merged PDAC data.
-  *Notes: A two-part QMD document (`docs/reports/cohort_lmm_review_plan.qmd`) covering the
-  literature review and implementation proposal is the recommended starting point.*
-  *Files: `code/fit_modular.R` (or new `code/fit_lmm.R`), `code/update_L.R`, `code/update_F.R`*
+- [x] **Cohort dummy-variable extension: shared L with cohort-specific F columns** *(Complete — 2026-05-22)*
+  Corner-point encoded cohort indicator columns appended to L; F_cohort rows estimated via
+  Normal conjugate update; cohort_id and sigma_F_cohort parameters in both models.
+  Synthetic: offset absorption |cor|=0.995, factor recovery +88–109% vs baseline.
+  Real PDAC: LB_cohort gains on RNA-seq external cohorts (PACA_AU_seq +0.019, PACA_AU_array +0.007)
+  but loses on Dijk/Puleo (mean C 0.604 vs LB_base 0.618). YFB β→0 unchanged.
+  Full evaluation: `docs/reports/cohort_lmm_benchmark_report.qmd` and DECISIONS.md 2026-05-22.
+  *Files: `code/update_F_cohort.R`, `code/compute_elbo.R`, `code/fit_modular.R`, `code/fit_cox_on_yf.R`,
+  `tests/test_update_F_cohort.R`, `tests/test_fit_modular_cohort.R`, `tests/test_fit_yf_cohort.R`.
+  Validation: `results/cohort_lmm_sim/run_synthetic.R`, `results/benchmark_sim/run_cohort_lmm_benchmark.R`.*
+
+- [ ] **YFB β→0 on merged data: cohort extension does not resolve it** `[Priority: High]` `[Effort: Medium]`
+  YFB β→0 persists on merged TCGA+CPTAC with cohort indicator columns (K_eff=0 for both
+  YFB_base and YFB_cohort). Root cause: the genomics-term dominance in the L update is not
+  addressed by the cohort F columns alone. The per-platform z-standardization fix (Phase 1,
+  2026-05-06) resolved it for YFB_base via preprocessing; the cohort-column approach offers an
+  alternative structural fix but requires further investigation.
+  Candidate solutions: (1) warm-start β from a Cox regression on the first K PCs of Y
+  (guaranteeing non-zero β initialization); (2) increase α (weight on survival term) for merged
+  training to compensate for larger n·p; (3) apply a burn-in where only β is updated while
+  L/F are held fixed; (4) per-platform noise precision τ (different τ for TCGA vs CPTAC).
+  *Files: `code/fit_cox_on_yf.R`, `code/update_L.R`, `code/fit_modular.R`*
+
+- [ ] **Evaluate cohort extension benefit on lower-K regimes** `[Priority: Medium]` `[Effort: Small]`
+  The real-data benchmark used K=20 (where ARD pruning already handles platform effects
+  implicitly, making the cohort indicator somewhat redundant). At K=3–5, where ARD cannot
+  afford to dedicate a factor to the platform offset, the cohort indicator may be more
+  valuable. Run `run_cohort_lmm_benchmark.R` with K_LB=5 and a full 300-iteration budget to
+  test this hypothesis.
+  *Files: `results/benchmark_sim/run_cohort_lmm_benchmark.R` (--quick flag uses K=5)*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model

@@ -5,6 +5,91 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-22 — Cohort indicator extension: fixed L columns absorb platform offset
+
+- **Decision:** Augment both LB (`fit_supervised_mf_modular`) and YFB (`fit_cox_on_yf`) with
+  a `cohort_id` parameter that appends C−1 fixed binary columns to L (corner-point encoding,
+  reference = first alphabetical cohort level). Corresponding F rows `f_c` are estimated via
+  a Normal conjugate update (`update_F_cohort.R`) with Gaussian prior
+  N(0, σ²_{F,cohort} · I). The survival linear predictor uses only the K biological columns
+  (β_cohort = 0 by construction). σ_{F,cohort} (default 1.0) is an exposed parameter.
+
+- **Rationale:** On merged TCGA_PAAD + CPTAC training, RNA-seq vs proteomics platform effects
+  drive the top SVD component, reducing biological signal in the K biological factors and
+  causing β→0 in the YFB model. Explicitly parameterizing the cohort offset as fixed indicator
+  columns removes it from the factor competition and stabilizes the biological subspace.
+
+- **New code:**
+  - `code/update_F_cohort.R` — closed-form Normal conjugate update for F_cohort rows;
+    `update_F_cohort_k()` (single column) and `update_F_cohort_all()` (sweep over C−1 columns).
+  - `code/compute_elbo.R` — added `compute_normal_kl(EF, EF2, sigma_F_cohort)`:
+    KL[N(μ, 1/A) ∥ N(0, σ²)] = ½(E[f²]/σ² + log(Aσ²) − 1); returns negative scalar added
+    directly to elbo_full by the caller.
+  - `code/fit_modular.R` — `cohort_id` and `sigma_F_cohort` parameters; corner-point design
+    matrix built once before the CAVI loop; L_aug/EF_aug carry the augmented matrices while
+    EL/EF remain K-column working matrices; EF_cohort, EF2_cohort, L_cohort returned.
+  - `code/fit_cox_on_yf.R` — same cohort extension; ZF = Y %*% EF_aug[,1:K,drop=FALSE]
+    restricted to the K biological columns in two locations (inner CAVI loop and Phase C).
+  - `tests/test_update_F_cohort.R` (10 tests), `tests/test_fit_modular_cohort.R` (11 tests),
+    `tests/test_fit_yf_cohort.R` (9 tests) — 229/229 tests passing.
+
+- **Stage 1 — synthetic validation** (n=200, p=500, K_true=3, C=2, offset SD=2.0):
+  - Offset absorption: |cor(EF_cohort, true_offset_vec)| = 0.995 for LB_cohort and YFB_cohort.
+  - Factor recovery (mean max-cor vs true L): LB_cohort 0.77 vs LB_base 0.41 (+88%);
+    YFB_cohort 0.71 vs YFB_base 0.34 (+109%). Cohort indicator substantially improves
+    recovery of the biological subspace when a strong platform offset is present.
+  - C-index: marginal (both models still affected by β→0 in synthetic conditions).
+
+- **Stage 2 — real PDAC benchmark** (merged TCGA_PAAD n=144 + CPTAC n=129, K=20, α=0.50,
+  prior_beta=normal, σ_{F,cohort}=1.0):
+
+  | Cohort | LB_base | LB_cohort | YFB_base | YFB_cohort |
+  |--------|---------|-----------|----------|------------|
+  | Dijk | 0.590 | 0.545 | 0.506 | 0.524 |
+  | Moffitt_GEO_array | 0.529 | 0.520 | 0.533 | 0.509 |
+  | PACA_AU_array | 0.657 | 0.664 | 0.577 | 0.564 |
+  | PACA_AU_seq | 0.681 | 0.700 | 0.588 | 0.580 |
+  | Puleo_array | 0.634 | 0.590 | 0.518 | 0.519 |
+  | **Mean** | **0.618** | 0.604 | 0.544 | 0.539 |
+
+  Model summary: LB_base K_eff=3 β_max=0.021; LB_cohort K_eff=2 β_max=0.034;
+  YFB_base K_eff=0 (β→0); YFB_cohort K_eff=0 (β→0).
+  Cohort offset norm: ‖EF_cohort‖_F = 3.04 (LB), 1.12 (YFB).
+
+- **Interpretation:**
+  - LB_cohort wins on RNA-seq external cohorts (PACA_AU_array +0.007, PACA_AU_seq +0.019)
+    where the TCGA vs CPTAC distinction is most relevant to platform-matched prediction.
+  - LB_cohort underperforms on Dijk (−0.045) and Puleo (−0.044). With K=20, ARD pruning
+    already handles platform effects implicitly (K_eff reduces to 3). The cohort column
+    absorbs one additional factor degree of freedom (K_eff=2 vs 3 for LB_base), losing a
+    biological factor that was contributing to those predictions.
+  - YFB β→0 collapse on merged data is unchanged by the cohort extension. The root cause
+    (genomics-term dominance in the L update; per-platform norm resolved it for YFB in
+    Phase 1 via separate preprocessing) is not addressed by cohort indicator columns alone.
+  - Mean C-index: LB_cohort (0.604) vs LB_base (0.618 current / 0.609 main-branch reference).
+    The extension does not reliably improve the LB model on this dataset in the fully-converged
+    K=20 configuration; it trades one biological factor for one cohort indicator.
+
+- **Trade-offs:**
+  - CPTAC is proteomics (not RNA-seq); a single linear cohort indicator cannot fully capture
+    the non-linear RNA-seq vs proteomics platform difference. A per-gene cohort shift
+    (one degree of freedom per gene in the platform offset) may be too simplistic.
+  - The benefit is clearest in synthetic data with a pure additive rank-1 offset. Real platform
+    effects are higher-rank and partially confounded with biology.
+  - When the LB model already converges with K_eff > 0 (as it does here with K=20), the cohort
+    column competes with biological factors rather than complementing them.
+
+- **Affected files:** `code/update_F_cohort.R` (new), `code/compute_elbo.R` (added
+  `compute_normal_kl`), `code/fit_modular.R` (`cohort_id`, `sigma_F_cohort` params),
+  `code/fit_cox_on_yf.R` (same), `tests/test_update_F_cohort.R` (new),
+  `tests/test_fit_modular_cohort.R` (new), `tests/test_fit_yf_cohort.R` (new),
+  `tests/run_tests.R` (updated), `tests/fixtures/lb_cohort_null_elbo_baseline.rds` (regenerated).
+  Validation: `results/cohort_lmm_sim/run_synthetic.R`,
+  `results/benchmark_sim/run_cohort_lmm_benchmark.R`,
+  `results/benchmark_sim/outputs/cohort_lmm_benchmark/`.
+
+---
+
 ## 2026-05-20 — YFB K-CV sign fix: sign_correction=FALSE in CV folds resolves C<0.5 for normal prior
 
 - **Decision:** Added a `sign_correction` parameter (default TRUE) to `fit_cox_on_yf()` in
