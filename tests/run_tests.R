@@ -53,7 +53,9 @@ test_files <- c(
   "tests/test_preprocess_desurv.R",
   "tests/test_multistart.R",
   "tests/test_select_K_cv.R",
-  "tests/test_update_F_cohort.R"
+  "tests/test_update_F_cohort.R",
+  "tests/test_fit_modular_cohort.R",
+  "tests/test_fit_yf_cohort.R"
 )
 
 # Run each test file
