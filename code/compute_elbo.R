@@ -149,3 +149,38 @@ compute_survival_elbo <- function(logPL, w, EL, EL2, EBeta, EBeta2) {
   # Uncertainty correction: subtract (1/2) * sum_i w_i * Var_q(eta_i)
   logPL - 0.5 * sum(w * var_eta)
 }
+
+# ==============================================================================
+# KL divergence for cohort f_c — Normal posterior vs Normal prior
+# ==============================================================================
+
+#' KL divergence for q(f_c) vs N(0, sigma^2) prior
+#'
+#' Computes the negative KL divergence (i.e. the ELBO contribution from the
+#' cohort F rows) in closed form.
+#'
+#' KL[N(mu, 1/A) || N(0, sigma^2)] = (1/2) * (E[f^2]/sigma^2 + log(A*sigma^2) - 1)
+#'
+#' SIGN CONVENTION: Returns a NEGATIVE scalar, matching the compute_ebnm_kl()
+#' convention (KL terms are subtracted from the ELBO by adding a negative value).
+#' The caller uses:
+#'   elbo_full <- elbo_full + compute_normal_kl(...)
+#' which correctly penalises the ELBO.  NEVER write:
+#'   elbo_full <- elbo_full - compute_normal_kl(...)
+#' that double-negates and would increase the ELBO with stronger divergence.
+#'
+#' @param EF_cohort      p x (C-1) matrix: posterior means E[f_cj]
+#' @param EF2_cohort     p x (C-1) matrix: posterior second moments E[f_cj^2]
+#'                       Must satisfy EF2_cohort > EF_cohort^2 element-wise.
+#' @param sigma_F_cohort scalar: prior SD (must match the value used in update_F_cohort_col)
+#'
+#' @return scalar <= 0: negative total KL summed over all genes and cohort columns
+#'
+#' @seealso update_F_cohort_all, fit_modular.R
+compute_normal_kl <- function(EF_cohort, EF2_cohort, sigma_F_cohort) {
+  sigma2  <- sigma_F_cohort^2
+  # Posterior precision recovered from second moment and mean:  A = 1/Var = 1/(EF2 - EF^2)
+  A       <- 1.0 / (EF2_cohort - EF_cohort^2)          # p x (C-1), all > 0
+  kl_mat  <- 0.5 * (EF2_cohort / sigma2 + log(A * sigma2) - 1.0)  # p x (C-1), all >= 0
+  -sum(kl_mat)    # negative: KL >= 0, so -KL <= 0
+}

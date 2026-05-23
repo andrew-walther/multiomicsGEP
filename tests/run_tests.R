@@ -20,7 +20,8 @@ source("code/update_beta.R")
 source("code/update_L.R")
 source("code/update_F.R")
 source("code/update_tau.R")
-source("code/compute_elbo.R")   # compute_ebnm_kl, compute_survival_elbo
+source("code/compute_elbo.R")   # compute_ebnm_kl, compute_survival_elbo, compute_normal_kl
+source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
 # fit_modular.R resets DATA_MODE <- "real" and has a runner block at the bottom
@@ -45,7 +46,8 @@ test_files <- c(
   "tests/test_select_alpha_cv.R",
   "tests/test_preprocess_desurv.R",
   "tests/test_multistart.R",
-  "tests/test_select_K_cv.R"
+  "tests/test_select_K_cv.R",
+  "tests/test_update_F_cohort.R"
 )
 
 # Run each test file
