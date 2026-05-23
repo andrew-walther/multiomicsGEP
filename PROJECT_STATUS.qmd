@@ -1555,6 +1555,146 @@ and archived baseline comparison. Commit: `2a6ad99`.
 
 ---
 
+# Session 23 — Cohort Extension & YFB β→0 Exhaustive Diagnostic (2026-05-22)
+
+Branch: `cohort-cols-L`. All tests: 230/230 passing.
+
+## 23.1 — Cohort Indicator Extension (both models)
+
+Added a `cohort_id` parameter to both `fit_supervised_mf_modular()` (LB) and `fit_cox_on_yf()`
+(YFB). When supplied, C−1 binary indicator columns (corner-point encoding, reference = first
+alphabetical cohort) are appended to L. The corresponding F rows (`F_cohort`) are estimated via
+a closed-form Normal conjugate update (`update_F_cohort.R`, σ_F_cohort prior). The survival linear
+predictor uses only the K biological columns (β_cohort = 0 by construction).
+
+**New code:**
+- `code/update_F_cohort.R` — `update_F_cohort_k()` and `update_F_cohort_all()`
+- `code/compute_elbo.R` — added `compute_normal_kl(EF, EF2, sigma_F_cohort)` for cohort prior KL
+- `code/fit_modular.R` and `code/fit_cox_on_yf.R` — `cohort_id` and `sigma_F_cohort` parameters
+- Tests: `tests/test_update_F_cohort.R` (10 tests), `tests/test_fit_modular_cohort.R` (11 tests),
+  `tests/test_fit_yf_cohort.R` (9 tests); total 229/229 → 230/230 with later additions
+
+**Synthetic validation** (`results/cohort_lmm_sim/run_synthetic.R`):
+- Offset absorption: |cor(estimated offset, true offset)| = 0.995
+- Factor recovery: +88–109% improvement in correlation vs. baseline (no cohort_id)
+- Survival concordance: correctly preserved at the biological-factor level
+
+**Real-data benchmark** (`results/benchmark_sim/run_cohort_lmm_benchmark.R`):
+4-way comparison: LB_base vs LB_cohort vs YFB_base vs YFB_cohort on merged TCGA+CPTAC training,
+evaluated on 5 external cohorts. Results in `results/benchmark_sim/outputs/cohort_lmm_benchmark/`.
+
+| Model | Mean external C (5 cohorts) | Notes |
+|-------|---------------------------|-------|
+| LB_base | 0.618 | K_eff=3 |
+| LB_cohort | 0.604 | K_eff=2; slightly lower on average |
+| YFB_base | 0.543 | K_eff=0, β→0 on merged |
+| YFB_cohort | 0.533 | K_eff=0, β→0 unchanged |
+
+**LB cohort result:** Gains on RNA-seq external cohorts (PACA_AU_seq +0.019, PACA_AU_array +0.007),
+losses on Dijk/Puleo (−0.042, −0.044). The cohort indicator absorbs the platform offset but also
+consumes a biological factor, reducing K_eff from 3 to 2. The K=20 regime already has ARD pruning
+to handle platform effects implicitly; cohort columns may be more valuable at lower K.
+
+**YFB result:** Cohort extension does not resolve YFB β→0 — platform mixing drives this at the
+F-update level, not the L-update level.
+
+Full evaluation report: `docs/reports/cohort_lmm_benchmark_report.{qmd,pdf,html}`.
+
+## 23.2 — YFB β→0 on Merged Data: Exhaustive Diagnostic
+
+`results/benchmark_sim/run_yfb_beta_fix_diagnostic.R` tested 9 strategies (V0–V8) on merged
+TCGA+CPTAC (n=273, K=4 via 1-SE K-CV, max_iter=150). Two genuine bugs fixed in `fit_cox_on_yf.R`
+along the way; all fix strategies ultimately fail on merged data.
+
+**Bug fix 1 — SVD initialization (`pmax` → `abs`):**
+`pmax(svd_init$v %*% diag(d_k, K, K), 0)` zeros entire EF columns when the SVD vector points
+all-negative. On merged K=2 data, EF[:,1] norm was identically 0, making ZF[:,1]=0 and β_1=0
+trivially. Fixed to `abs()` (equally valid for non-negative `point_exponential` prior). After fix:
+K-CV becomes informative (K=4 selected, mean C=0.593 vs uninformative 0.52–0.56 before).
+
+**Bug fix 2 — Cox warm-start normalization:**
+Warm-start used `Y %*% EF` (un-normalized), giving β_ws ≈ 5.99e-9 at CAVI scale (machine
+epsilon). Fixed to normalize EF before Cox regression. After fix: β_ws ≈ [−4.5e-4, 1.3e-4].
+
+**alpha_F parameter:**
+Wired the pre-existing `update_F_surv_YFB.R` dual-source F update through an `alpha_F` parameter
+(default 0, backward compatible). Previously the call was hardcoded to `alpha=0`.
+
+**Diagnostic results (V0–V8):**
+
+| Strategy | K_eff | C_dijk | Notes |
+|----------|-------|--------|-------|
+| V0: Baseline | 0 | 0.526 | β→0 |
+| V1: Cox warm-start | 0 | 0.521 | β decays despite non-zero init |
+| V2: β burn-in (N=10) | 0 | 0.526 | no help |
+| V3: Warm-start + burn-in | 0 | 0.521 | no help |
+| V4: High α=0.75 | 0 | 0.505 | no help |
+| V5: High α=0.75 + warm-start | 0 | 0.521 | no help |
+| V6: Dual-F α_F=0.1 | 0 | 0.502 | RMSE→751 (EF instability) |
+| V7: Dual-F α_F=0.3 | 0 | 0.504 | RMSE→783 (EF instability) |
+| V8: Dual-F α_F=0.5 | 0 | 0.505 | RMSE→790 (EF instability) |
+
+**Root cause of V6–V8 failure (chicken-and-egg trap):** With EBeta≈0, the survival gradient
+contribution to A_F/B_F in `update_F_surv_YFB_k()` is proportional to E[β_k²] ≈ 0, so enabling
+alpha_F simply adds EBNM noise to the F update without injecting survival signal. EF grows freely
+(instability), but β stays zero.
+
+**Conclusion:** All CAVI-local fixes are exhausted on merged TCGA+CPTAC for YFB. The structural
+trap is β=0 ↔ B_beta=0: no CAVI iteration can exit unless EF already encodes survival-relevant
+directions, which requires β≠0 to create.
+
+**Practical landscape as of 2026-05-22:**
+
+| Approach | C_dijk | K_eff |
+|----------|--------|-------|
+| LB_merged | 0.590 | 3 |
+| YFB_perplatform (Phase 1 preprocessing) | 0.573 | 3 |
+| YFB_merged (any CAVI-local fix) | ~0.52 | 0 |
+
+**Remaining candidate (not yet implemented):** Frozen-F β pre-conditioning — freeze EF for
+N_frozen iterations, let β grow freely against SVD-initialized factors (breaking the β=0 fixed
+point), then unfreeze F. Avoids instability because EF doesn't move during β initialization.
+
+## 23.3 — Open Items Entering Next Session
+
+1. **Frozen-F β pre-conditioning** `[Priority: Medium]` — implement `N_frozen` parameter in
+   `fit_cox_on_yf.R`: freeze EF for first N_frozen iters, update only β and L, then unfreeze.
+   This is the one structural fix that could break the CAVI fixed-point without causing
+   EF instability. Test on merged TCGA+CPTAC with `run_yfb_beta_fix_diagnostic.R`.
+
+2. **Low-K cohort extension test** `[Priority: Medium]` — run `run_cohort_lmm_benchmark.R`
+   with K_LB=5 (not K=20). At lower K, ARD cannot spare factors for platform offset absorption,
+   so the cohort indicator may add more value. `--quick` flag in the benchmark runner uses K=5.
+
+3. **Merge cohort-cols-L to main** — branch is in a clean state (230/230 tests, full
+   benchmark evaluated). Decision pending on whether low-K test should run first.
+
+4. **Re-run YFB benchmark on main** — main-branch `run_YFB_benchmark.R` used `alpha_F=0`
+   (hardcoded). The `alpha_F` parameter is now available; consider whether any single-cohort
+   YFB results should be updated with a small alpha_F value for stability insurance.
+
+## 23.4 — Files Changed This Session
+
+| File | Change |
+|------|--------|
+| `code/fit_cox_on_yf.R` | abs() SVD init fix; warm-start normalization fix; alpha_F param; verbose header fix |
+| `code/update_F_cohort.R` | New — Normal conjugate cohort F update |
+| `code/compute_elbo.R` | Added compute_normal_kl() for cohort prior KL |
+| `code/fit_modular.R` | cohort_id / sigma_F_cohort params; Normal KL in ELBO |
+| `tests/test_update_F_cohort.R` | 10 new tests |
+| `tests/test_fit_modular_cohort.R` | 11 new integration tests |
+| `tests/test_fit_yf_cohort.R` | 9 new integration tests |
+| `results/cohort_lmm_sim/run_synthetic.R` | Stage 1 synthetic validation |
+| `results/benchmark_sim/run_cohort_lmm_benchmark.R` | Stage 2 real-data 4-way benchmark |
+| `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R` | YFB β→0 exhaustive diagnostic (V0–V8) |
+| `results/benchmark_sim/outputs/cohort_lmm_benchmark/` | Benchmark CSVs and RDS |
+| `results/benchmark_sim/outputs/yfb_beta_fix/` | Diagnostic CSVs |
+| `docs/reports/cohort_lmm_benchmark_report.{qmd,pdf,html}` | Comprehensive cohort extension report |
+| `DECISIONS.md` | Three new entries (cohort extension, YFB β→0 diagnosis, dual-source F) |
+| `ROADMAP.md` | Open items updated; YFB β→0 CAVI-local exhausted; frozen-F noted |
+
+---
+
 # Session 22 — Four-Phase Improvement Evaluation (2026-05-06)
 
 Branch: `pre-merge-synthesis-05_06_26` (base: `ac5b215`, "Rewrite ROADMAP and README for
