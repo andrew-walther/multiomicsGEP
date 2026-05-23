@@ -212,6 +212,11 @@ select_K_cv <- function(Y, time, status,
   extra <- list(...)
   extra[["K"]]               <- NULL
   extra[["sign_correction"]] <- NULL
+  # Extract cohort_id separately — must be row-subsetted per fold.
+  # Leaving it in extra would pass a full-length vector to a fold fit whose Y
+  # only has n_train rows, causing a dimension mismatch.
+  cohort_id_full <- extra[["cohort_id"]]
+  extra[["cohort_id"]] <- NULL
 
   # --- create stratified folds once (shared across all K) ---
   fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
@@ -228,6 +233,11 @@ select_K_cv <- function(Y, time, status,
       test_idx  <- fold_obj$folds[[fold_id]]
       train_idx <- setdiff(seq_len(n), test_idx)
 
+      # Subset cohort_id to training rows if supplied (prevents dimension mismatch).
+      extra_fold <- extra
+      if (!is.null(cohort_id_full))
+        extra_fold[["cohort_id"]] <- cohort_id_full[train_idx]
+
       # --- fit on training fold ---
       if (model == "LB") {
         # LB: sign_correction=FALSE hardcoded — consistent fold signs
@@ -238,7 +248,7 @@ select_K_cv <- function(Y, time, status,
                K      = K,
                sign_correction = FALSE,
                verbose = FALSE),
-          extra
+          extra_fold
         )
         fit <- do.call(fit_supervised_mf_modular, fit_args)
 
@@ -256,7 +266,7 @@ select_K_cv <- function(Y, time, status,
                K      = K,
                sign_correction = FALSE,
                verbose = FALSE),
-          extra
+          extra_fold
         )
         fit <- do.call(fit_cox_on_yf, fit_args)
 

@@ -261,3 +261,33 @@ if (exists("fit_cox_on_yf", mode = "function") &&
 } else {
   cat("  [KCV-T13, T14, T15] Skipped: fit_cox_on_yf not available\n")
 }
+
+# ---------------------------------------------------------------------------
+# T16: cohort_id is subsetted per fold — no dimension mismatch
+# ---------------------------------------------------------------------------
+run_test("KCV-T16: cohort_id in ... is correctly row-subsetted per fold (LB)", {
+  set.seed(21)
+  n <- 60L; p <- 20L
+  Y      <- matrix(rnorm(n * p), n, p)
+  time   <- rexp(n, 0.1)
+  status <- rbinom(n, 1, 0.7)
+  cid    <- rep(c("A", "B"), each = n / 2)   # length n — would mismatch without fix
+
+  # If cohort_id is NOT row-subsetted, fit_supervised_mf_modular sees n_fold rows in Y
+  # but n rows in cohort_id → error. The fix extracts cohort_id and passes
+  # cohort_id[train_idx] to each fold fit.
+  res <- tryCatch(
+    select_K_cv(Y, time, status,
+                K_grid  = c(2L, 3L),
+                n_folds = 3L,
+                model   = "LB",
+                max_iter = 5L,
+                cohort_id = cid),
+    error = function(e) e
+  )
+  assert_true(!inherits(res, "error"),
+              msg = sprintf("select_K_cv with cohort_id should not error; got: %s",
+                            if (inherits(res, "error")) conditionMessage(res) else "ok"))
+  assert_true(is.data.frame(res$cv_table),
+              msg = "cv_table should be a data.frame when cohort_id is supplied")
+})
