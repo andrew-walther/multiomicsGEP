@@ -32,6 +32,12 @@ suppressMessages(tryCatch(
   source("code/fit_modular.R"),
   error = function(e) invisible(NULL)
 ))
+# fit_cox_on_yf.R has the same runner-block pattern as fit_modular.R
+suppressMessages(tryCatch(
+  source("code/fit_cox_on_yf.R"),
+  error = function(e) invisible(NULL)
+))
+source("code/predict_cox_on_yf.R")
 source("code/select_alpha_cv.R")
 source("code/preprocess_desurv.R")
 

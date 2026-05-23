@@ -50,7 +50,8 @@ source("code/update_F_surv_YFB.R")  # update_F_surv_YFB_k, update_F_surv_YFB_all
 # Shared update files (same interface, different inputs vs. Cluster A)
 source("code/update_beta.R")        # compute_z_no_k, update_beta_k, update_beta_all
 source("code/update_tau.R")         # compute_var_term, update_tau
-source("code/compute_elbo.R")       # compute_ebnm_kl, compute_survival_elbo
+source("code/compute_elbo.R")       # compute_ebnm_kl, compute_survival_elbo, compute_normal_kl
+source("code/update_F_cohort.R")    # update_F_cohort_col, update_F_cohort_all
 
 # compute_R_k is defined in update_L.R (Cluster A); re-source just that function
 # by sourcing update_L.R here. The Cluster B update files use only compute_R_k,
@@ -153,7 +154,9 @@ fit_cox_on_yf <- function(Y, time, status,
                            normalize_AB     = FALSE,
                            alpha_schedule   = NULL,
                            sign_correction  = TRUE,
-                           verbose      = TRUE) {
+                           verbose      = TRUE,
+                           cohort_id       = NULL,
+                           sigma_F_cohort  = 1.0) {
 
   n <- nrow(Y); p <- ncol(Y)
 
@@ -184,10 +187,40 @@ fit_cox_on_yf <- function(Y, time, status,
   if (!is.null(EL_init) && !is.null(EF_init)) init_method <- "custom"
 
   # --------------------------------------------------------------------------
+  # Cohort indicator pre-initialisation (cohort-cols-L extension)
+  # Identical logic to fit_modular.R; see that file for full commentary.
+  # --------------------------------------------------------------------------
+  if (!is.null(cohort_id)) {
+    cohort_id <- factor(cohort_id)
+    if (nlevels(cohort_id) < 2) {
+      L_cohort <- matrix(0.0, n, 0)
+      C_cols   <- 0L
+    } else {
+      L_cohort <- model.matrix(~ cohort_id)[, -1, drop = FALSE]
+      C_cols   <- ncol(L_cohort)
+    }
+    n_c_vec <- if (C_cols > 0) colSums(L_cohort) else numeric(0)
+
+    if (C_cols > 0) {
+      EF_cohort_init  <- t(t(L_cohort) %*% Y / n_c_vec)
+      EF2_cohort_init <- EF_cohort_init^2 + sigma_F_cohort^2
+      Y_for_svd       <- Y - L_cohort %*% t(EF_cohort_init)
+    } else {
+      EF_cohort_init  <- matrix(0.0, p, 0)
+      EF2_cohort_init <- matrix(0.0, p, 0)
+      Y_for_svd       <- Y
+    }
+  } else {
+    Y_for_svd <- Y
+    L_cohort  <- NULL
+    C_cols    <- 0L
+  }
+
+  # --------------------------------------------------------------------------
   # Initialization
   # --------------------------------------------------------------------------
   if (init_method == "svd") {
-    svd_init <- svd(Y, nu = K, nv = K)
+    svd_init <- svd(Y_for_svd, nu = K, nv = K)
     d_k <- sqrt(pmax(svd_init$d[1:K], 0))
     EL  <- pmax(svd_init$u %*% diag(d_k, K, K), 0)
     EF  <- pmax(svd_init$v %*% diag(d_k, K, K), 0)
@@ -206,6 +239,16 @@ fit_cox_on_yf <- function(Y, time, status,
 
   EL2 <- EL^2
   EF2 <- EF^2
+
+  # Augment EL/EF matrices with cohort indicator columns (same as fit_modular.R).
+  if (!is.null(cohort_id) && C_cols > 0) {
+    EL_aug  <- cbind(EL,  L_cohort)
+    EL2_aug <- cbind(EL2, L_cohort)
+    EF_aug  <- cbind(EF,  EF_cohort_init)
+    EF2_aug <- cbind(EF2, EF2_cohort_init)
+  } else {
+    EL_aug <- EL; EL2_aug <- EL2; EF_aug <- EF; EF2_aug <- EF2
+  }
 
   # Optionally warm-start beta via Cox regression on ZF = Y·EF.
   # cox_warmstart=FALSE (default) matches Cluster A behavior: EBeta starts at 0.
@@ -320,16 +363,21 @@ fit_cox_on_yf <- function(Y, time, status,
     # makes ‖ZF_k‖ ≈ O(√(p*n)), causing spike-and-slab to drive EBeta → 0.
     # EF_norms stored in model object so prediction applies identical scaling.
     # ------------------------------------------------------------------------
-    EF_norms <- sqrt(colSums(EF^2) + 1e-10)    # K-vector: per-column L2 norms
-    EF_norm  <- sweep(EF, 2, EF_norms, "/")     # p × K, unit-norm columns
-    ZF       <- Y %*% EF_norm                   # n × K: normalized projection scores
+    # Location 1: ZF must use only the K global-factor columns of EF_aug.
+    # If augmented, EF_aug has K+C_cols columns; restricting to 1:K keeps ZF
+    # n x K so ZF %*% EBeta (EBeta is K-vector) is well-defined.
+    # With cohort_id=NULL, EF_aug = EF (K columns), so this is a no-op.
+    EF_global <- EF_aug[, 1:K, drop = FALSE]          # p x K
+    EF_norms  <- sqrt(colSums(EF_global^2) + 1e-10)   # K-vector
+    EF_norm   <- sweep(EF_global, 2, EF_norms, "/")    # p x K, unit-norm columns
+    ZF        <- Y %*% EF_norm                         # n x K: normalized projection scores
     eta    <- as.vector(ZF %*% EBeta)           # eta = ZF * beta_tilde
     taylor <- calc_cox_taylor_yf(eta, time, status)
     z      <- eta + taylor$u / taylor$w    # working response z_i
     w      <- taylor$w                     # W_{ii} diagonal Hessian weights
     YtWY_diag <- as.vector(t(Y^2) %*% w)  # p-vector: diag(Y'diag(w)Y)
 
-    history$rmse[iter] <- sqrt(mean((Y - EL %*% t(EF))^2))
+    history$rmse[iter] <- sqrt(mean((Y - EL_aug %*% t(EF_aug))^2))
 
     # ========================================================================
     # STEP 2: Factor-Wise Coordinate Ascent  k = 1, ..., K
@@ -341,7 +389,7 @@ fit_cox_on_yf <- function(Y, time, status,
     # ========================================================================
     for (k in 1:K) {
 
-      R_k    <- compute_R_k(Y, EL, EF, k)
+      R_k    <- compute_R_k(Y, EL_aug, EF_aug, k)
       # Cluster B: z_no_k computed w.r.t. ZF (not EL as in Cluster A)
       z_no_k <- compute_z_no_k(z, ZF, EBeta, k)
 
@@ -362,10 +410,12 @@ fit_cox_on_yf <- function(Y, time, status,
       # ---- (b) Update q(l_k): Patient Loadings — PURE GENOMICS ----
       # L does not appear in the Cox likelihood under eta = ZF * beta_tilde.
       # Uses update_L_surv_YFB_k() (NOT update_L_k from Cluster A).
-      res_L   <- update_L_surv_YFB_k(Tau, EF[, k], EF2[, k], R_k,
+      res_L   <- update_L_surv_YFB_k(Tau, EF_aug[, k], EF2_aug[, k], R_k,
                                       prior_family = prior_LF)
-      EL[, k]  <- res_L$mean
-      EL2[, k] <- res_L$second
+      EL[, k]      <- res_L$mean
+      EL2[, k]     <- res_L$second
+      EL_aug[, k]  <- res_L$mean    # keep augmented matrix in sync
+      EL2_aug[, k] <- res_L$second
       kl_L[k]  <- compute_ebnm_kl(res_L$ebnm_result$log_likelihood,
                                    res_L$A, res_L$x, res_L$mean, res_L$second)
 
@@ -374,32 +424,47 @@ fit_cox_on_yf <- function(Y, time, status,
       # update_F_surv_YFB_k() defaults to alpha=0 (pure genomics), preventing
       # the positive-feedback instability from the dual-source F update.
       # YtWz_no_k passed for completeness but receives zero weight at alpha=0.
-      R_k        <- compute_R_k(Y, EL, EF, k)
+      R_k        <- compute_R_k(Y, EL_aug, EF_aug, k)
       YtWz_no_k  <- as.vector(t(Y) %*% (w * z_no_k))  # p-vector
-      res_F <- update_F_surv_YFB_k(Tau, EL[, k], EL2[, k], R_k,
+      res_F <- update_F_surv_YFB_k(Tau, EL_aug[, k], EL2_aug[, k], R_k,
                                     EBeta_k      = EBeta[k],
                                     EBeta2_k     = EBeta2[k],
                                     YtWY_diag    = YtWY_diag,
                                     YtWz_no_k    = YtWz_no_k,
                                     prior_family = prior_LF,
                                     alpha        = 0)   # alpha_F=0: pure genomics
-      EF[, k]  <- res_F$mean
-      EF2[, k] <- res_F$second
+      EF[, k]      <- res_F$mean
+      EF2[, k]     <- res_F$second
+      EF_aug[, k]  <- res_F$mean    # keep augmented matrix in sync
+      EF2_aug[, k] <- res_F$second
       kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
                                    res_F$A, res_F$x, res_F$mean, res_F$second)
 
     }  # end k-loop
 
+    # Cohort F update — identical block to fit_modular.R.
+    if (!is.null(cohort_id) && C_cols > 0) {
+      Y_hat_global <- EL %*% t(EF)
+      res_cohort   <- update_F_cohort_all(
+        L_cohort, Y - Y_hat_global, Tau, sigma_F_cohort
+      )
+      EF_aug[,  K + seq_len(C_cols)] <- res_cohort$EF_cohort
+      EF2_aug[, K + seq_len(C_cols)] <- res_cohort$EF2_cohort
+    }
+
     # ========================================================================
     # STEP 3: Noise Precision Update
     # ========================================================================
-    res_tau              <- update_tau(Y, EL, EL2, EF, EF2)
+    res_tau              <- update_tau(Y, EL_aug, EL2_aug, EF_aug, EF2_aug)
     Tau                  <- res_tau$Tau
     history$elbo_proxy[iter] <- res_tau$elbo_proxy
     factor_pve_iter <- vapply(seq_len(K), function(k) {
       sum(EL[, k]^2) * sum(EF[, k]^2) / y_frob2
     }, numeric(1))
     history$factor_pve[iter, ] <- factor_pve_iter
+
+    # Development guard: ZF must be n x K; EBeta must be K-vector.
+    stopifnot(ncol(ZF) == K, length(EBeta) == K)
 
     # Full ELBO under Cluster B: ZF = Y·EF is the survival predictor.
     # Pass ZF^2 as EL2 (element-wise squared): ZF is observed, so its
@@ -409,6 +474,14 @@ fit_cox_on_yf <- function(Y, time, status,
     history$elbo_full[iter] <- (1 - alpha) * res_tau$elbo_proxy +
                                alpha * surv_elbo +
                                sum(kl_L) + sum(kl_F) + sum(kl_beta)
+    if (!is.null(cohort_id) && C_cols > 0) {
+      history$elbo_full[iter] <- history$elbo_full[iter] +
+        compute_normal_kl(
+          EF_aug[,  K + seq_len(C_cols), drop = FALSE],
+          EF2_aug[, K + seq_len(C_cols), drop = FALSE],
+          sigma_F_cohort
+        )
+    }
 
     # ========================================================================
     # STEP 4: Convergence Check
@@ -471,7 +544,9 @@ fit_cox_on_yf <- function(Y, time, status,
   # held-out concordance via I(-pred$risk_scores), which implicitly assumes the
   # raw SVD-initialized EBeta orientation — consistent with the LB model convention.
   if (sign_correction) {
-    ZF_final  <- Y %*% sweep(EF, 2, EF_norms, "/")
+    # Location 2: restrict to K global-factor columns before computing ZF_final.
+    # EF_norms was computed from EF_global (K columns) earlier in this iteration.
+    ZF_final  <- Y %*% sweep(EF_aug[, 1:K, drop = FALSE], 2, EF_norms, "/")
     eta_final <- as.vector(ZF_final %*% EBeta)
     c_train   <- as.numeric(
       concordance(Surv(time, status) ~ eta_final)$concordance
@@ -485,7 +560,9 @@ fit_cox_on_yf <- function(Y, time, status,
     }
   }
 
-  list(
+  stopifnot(length(EF_norms) == K)  # guard: must be K-vector for prediction
+
+  result <- list(
     EL       = EL,
     EL2      = EL2,
     EF       = EF,
@@ -496,6 +573,13 @@ fit_cox_on_yf <- function(Y, time, status,
     EF_norms = EF_norms,   # K-vector: final iteration column norms for prediction
     history  = history
   )
+  if (!is.null(cohort_id) && C_cols > 0) {
+    result$L_cohort   <- L_cohort
+    result$EF_cohort  <- EF_aug[, K + seq_len(C_cols), drop = FALSE]
+    result$EF2_cohort <- EF2_aug[, K + seq_len(C_cols), drop = FALSE]
+    result$cohort_id  <- cohort_id
+  }
+  result
 }
 
 # ==============================================================================
