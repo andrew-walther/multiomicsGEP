@@ -94,17 +94,18 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   `tests/test_update_F_cohort.R`, `tests/test_fit_modular_cohort.R`, `tests/test_fit_yf_cohort.R`.
   Validation: `results/cohort_lmm_sim/run_synthetic.R`, `results/benchmark_sim/run_cohort_lmm_benchmark.R`.*
 
-- [ ] **YFB β→0 on merged data: cohort extension does not resolve it** `[Priority: High]` `[Effort: Medium]`
-  YFB β→0 persists on merged TCGA+CPTAC with cohort indicator columns (K_eff=0 for both
-  YFB_base and YFB_cohort). Root cause: the genomics-term dominance in the L update is not
-  addressed by the cohort F columns alone. The per-platform z-standardization fix (Phase 1,
-  2026-05-06) resolved it for YFB_base via preprocessing; the cohort-column approach offers an
-  alternative structural fix but requires further investigation.
-  Candidate solutions: (1) warm-start β from a Cox regression on the first K PCs of Y
-  (guaranteeing non-zero β initialization); (2) increase α (weight on survival term) for merged
-  training to compensate for larger n·p; (3) apply a burn-in where only β is updated while
-  L/F are held fixed; (4) per-platform noise precision τ (different τ for TCGA vs CPTAC).
-  *Files: `code/fit_cox_on_yf.R`, `code/update_L.R`, `code/fit_modular.R`*
+- [ ] **YFB β→0 on merged data: all CAVI-local fixes exhausted** `[Priority: Medium]` `[Effort: Large]`
+  Comprehensive diagnostic (2026-05-22, V0–V8 in `run_yfb_beta_fix_diagnostic.R`) tested every
+  CAVI-local strategy: Cox warm-start, β burn-in, high α (0.75), cohort_id, and dual-source F
+  (alpha_F ∈ {0.1, 0.3, 0.5}). All fail. Dual-source F additionally causes RMSE instability
+  (→750–800) without rescuing β — the chicken-and-egg trap: with EBeta≈0, the survival gradient
+  contribution to A_F/B_F is ≈0, so enabling alpha_F simply adds noise.
+  The per-platform YFB (Phase 1, C_dijk≈0.573) and LB_merged (C_dijk=0.590) are the practical
+  solutions. The one structural fix that could escape the CAVI fixed-point: **frozen-F β
+  pre-conditioning** — freeze EF for N_frozen iters, let β grow freely against the SVD-initialized
+  factors, then unfreeze F to adapt. This breaks the β=0 ↔ B_beta=0 trap without triggering
+  EF instability. Not yet implemented.
+  *Files: `code/fit_cox_on_yf.R`, `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R`, DECISIONS.md 2026-05-22*
 
 - [ ] **Evaluate cohort extension benefit on lower-K regimes** `[Priority: Medium]` `[Effort: Small]`
   The real-data benchmark used K=20 (where ARD pruning already handles platform effects

@@ -152,6 +152,7 @@ fit_cox_on_yf <- function(Y, time, status,
                            N_burnin     = 0,
                            cox_warmstart    = FALSE,
                            normalize_AB     = FALSE,
+                           alpha_F          = 0,
                            alpha_schedule   = NULL,
                            sign_correction  = TRUE,
                            verbose      = TRUE,
@@ -345,8 +346,8 @@ fit_cox_on_yf <- function(Y, time, status,
     cat("=== Cox-on-YF (Cluster B) — Factor-Wise CAVI ===\n")
     cat(sprintf("    n=%d, p=%d, K=%d | max_iter=%d | tol=%.1e\n",
                 n, p, K, max_iter, tol))
-    cat(sprintf("    prior_LF=%s | prior_beta=%s | alpha=%.2f | alpha_F=0\n\n",
-                prior_LF, prior_beta, alpha))
+    cat(sprintf("    prior_LF=%s | prior_beta=%s | alpha=%.2f | alpha_F=%.2f\n\n",
+                prior_LF, prior_beta, alpha, alpha_F))
   }
 
   # ==========================================================================
@@ -428,11 +429,14 @@ fit_cox_on_yf <- function(Y, time, status,
       kl_L[k]  <- compute_ebnm_kl(res_L$ebnm_result$log_likelihood,
                                    res_L$A, res_L$x, res_L$mean, res_L$second)
 
-      # ---- (c) Update q(f_k): Biological Factors — alpha_F=0 ----
+      # ---- (c) Update q(f_k): Biological Factors ----
       # R_k depends on EL[,k] (updated above); recompute before F update.
-      # update_F_surv_YFB_k() defaults to alpha=0 (pure genomics), preventing
-      # the positive-feedback instability from the dual-source F update.
-      # YtWz_no_k passed for completeness but receives zero weight at alpha=0.
+      # alpha_F=0 (default): pure genomics — prevents positive-feedback instability
+      #   documented in DECISIONS.md 2026-04-30.
+      # alpha_F>0: dual-source — survival gradient stabilises ZF on merged
+      #   multi-platform data where genomics-only EF drifts to platform contrast.
+      #   The instability required degenerate zero-column SVD init (pmax bug, now
+      #   fixed with abs()). Test stability empirically before raising alpha_F.
       R_k        <- compute_R_k(Y, EL_aug, EF_aug, k)
       YtWz_no_k  <- as.vector(t(Y) %*% (w * z_no_k))  # p-vector
       res_F <- update_F_surv_YFB_k(Tau, EL_aug[, k], EL2_aug[, k], R_k,
@@ -441,7 +445,7 @@ fit_cox_on_yf <- function(Y, time, status,
                                     YtWY_diag    = YtWY_diag,
                                     YtWz_no_k    = YtWz_no_k,
                                     prior_family = prior_LF,
-                                    alpha        = 0)   # alpha_F=0: pure genomics
+                                    alpha        = alpha_F)
       EF[, k]      <- res_F$mean
       EF2[, k]     <- res_F$second
       EF_aug[, k]  <- res_F$mean    # keep augmented matrix in sync

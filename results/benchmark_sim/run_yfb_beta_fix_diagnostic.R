@@ -160,17 +160,24 @@ write.csv(kcv_ref$cv_table,
 
 variants <- list(
   V0 = list(label = "Baseline",
-            cox_warmstart = FALSE, N_burnin = 0L,  alpha = ALPHA_BASE),
+            cox_warmstart = FALSE, N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0),
   V1 = list(label = "Cox warm-start",
-            cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_BASE),
+            cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0),
   V2 = list(label = "β burn-in (N=10)",
-            cox_warmstart = FALSE, N_burnin = 10L, alpha = ALPHA_BASE),
+            cox_warmstart = FALSE, N_burnin = 10L, alpha = ALPHA_BASE, alpha_F = 0),
   V3 = list(label = "Warm-start + burn-in",
-            cox_warmstart = TRUE,  N_burnin = 10L, alpha = ALPHA_BASE),
+            cox_warmstart = TRUE,  N_burnin = 10L, alpha = ALPHA_BASE, alpha_F = 0),
   V4 = list(label = "High α=0.75",
-            cox_warmstart = FALSE, N_burnin = 0L,  alpha = ALPHA_HIGH),
+            cox_warmstart = FALSE, N_burnin = 0L,  alpha = ALPHA_HIGH, alpha_F = 0),
   V5 = list(label = "High α=0.75 + warm-start",
-            cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_HIGH)
+            cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_HIGH, alpha_F = 0),
+  # Dual-source F variants (alpha_F > 0 activates survival gradient in F update)
+  V6 = list(label = "Dual-F α_F=0.1 + warm-start",
+            cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0.1),
+  V7 = list(label = "Dual-F α_F=0.3 + warm-start",
+            cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0.3),
+  V8 = list(label = "Dual-F α_F=0.5 + warm-start",
+            cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0.5)
 )
 
 # --------------------------------------------------------------------------
@@ -197,8 +204,8 @@ for (vi in seq_along(variants)) {
   v    <- variants[[vi]]
   vname <- names(variants)[vi]
   cat(sprintf("--- %s: %s ---\n", vname, v$label))
-  cat(sprintf("    cox_warmstart=%s | N_burnin=%d | alpha=%.2f\n",
-              v$cox_warmstart, v$N_burnin, v$alpha))
+  cat(sprintf("    cox_warmstart=%s | N_burnin=%d | alpha=%.2f | alpha_F=%.2f\n",
+              v$cox_warmstart, v$N_burnin, v$alpha, v$alpha_F))
 
   set.seed(42L)
   fit <- suppressMessages(
@@ -210,6 +217,7 @@ for (vi in seq_along(variants)) {
                   alpha         = v$alpha,
                   cox_warmstart = v$cox_warmstart,
                   N_burnin      = v$N_burnin,
+                  alpha_F       = v$alpha_F,
                   verbose       = TRUE)
   )
   fits[[vname]] <- fit
@@ -245,6 +253,7 @@ for (vi in seq_along(variants)) {
     K_eff         = k_eff_val,
     beta_max      = round(beta_max_val, 4),
     alpha         = v$alpha,
+    alpha_F       = v$alpha_F,
     cox_warmstart = v$cox_warmstart,
     N_burnin      = v$N_burnin,
     iters         = n_iters,
@@ -269,14 +278,14 @@ cat(sprintf(" K_cv (1-SE rule on merged data) = %d\n", K_cv))
 cat(sprintf(" Training: n=%d (TCGA=%d, CPTAC=%d), p=%d\n",
             nrow(Y_train), n_tcga, n_cptac, ncol(Y_train)))
 cat("============================================================\n")
-cat(sprintf("%-6s %-28s %5s %5s %8s %7s %7s %5s\n",
-            "Var", "Label", "K_eff", "β_max", "C_train", "C_Dijk", "α", "Brnin"))
-cat(strrep("-", 72), "\n")
+cat(sprintf("%-6s %-32s %5s %5s %8s %7s %5s %5s %5s\n",
+            "Var", "Label", "K_eff", "β_max", "C_train", "C_Dijk", "α", "α_F", "Brnin"))
+cat(strrep("-", 78), "\n")
 for (i in seq_len(nrow(res_tbl))) {
   r <- res_tbl[i, ]
-  cat(sprintf("%-6s %-28s %5d %5.4f %7.3f %7.3f %5.2f %5d\n",
+  cat(sprintf("%-6s %-32s %5d %5.4f %7.3f %7.3f %5.2f %5.2f %5d\n",
               r$variant, r$label, r$K_eff, r$beta_max,
-              r$C_train, r$C_dijk, r$alpha, r$N_burnin))
+              r$C_train, r$C_dijk, r$alpha, r$alpha_F, r$N_burnin))
 }
 cat("============================================================\n")
 
