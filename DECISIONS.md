@@ -5,6 +5,19 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-22 — YFB β→0 on merged data: structural diagnosis and two bug fixes
+
+- **Finding:** The β→0 collapse in YFB (η = ZF·β) on merged TCGA+CPTAC is a structural property of the model, not fixable by initialization strategies (Cox warm-start, burn-in, higher α). Diagnosis via `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R`.
+- **Root cause:** The YFB F update is genomics-only (`update_F_k` uses only Y reconstruction; survival signal does not flow to F). On merged multi-platform data, the genomics-optimal EF captures platform contrast (RNA-seq vs proteomics), giving ZF factors with no survival correlation (Cox p≈0.8). With B_beta ≈ 0 in every iteration, β converges to 0 regardless of initialization. LB escapes this because EL is dual-source (genomics + α·w·β² survival term), pulling EL toward survival-predictive directions.
+- **Two genuine bugs fixed in `fit_cox_on_yf.R`:**
+  1. SVD initialization used `pmax(..., 0)`, which zeros out entire EF columns when the SVD vector points all-negative. With K=2 on merged data, EF[:,1] was identically 0, making ZF[:,1]=0 and β_1=0 trivially. Fixed to `abs()`, which is equally valid for the non-negative point_exponential prior.
+  2. Cox warm-start used un-normalized ZF (Y %*% EF), giving β_ws ≈ 5.99e-9 on the huge ZF scale — machine epsilon on the CAVI scale. Fixed to normalize EF before Cox regression (consistent with how CAVI computes ZF). After fix, warm-start produces β_ws ≈ [-4.5e-4, 1.3e-4] — still small but on the correct scale.
+- **Effect of fixes:** K-CV is now informative (K=4 selected, mean C=0.593 vs uninformative C=0.524–0.557 before). β_max reaches 0.0004 with warm-start (up from 0). But CAVI still drives β→0 as EF evolves toward platform-dominated genomics optimum. Training dB decays as 7e-7/iter (V1) vs 3e-16 (V0).
+- **Path forward:** Survival-informed F updates (dual-source for YFB) would fix this structurally but require new derivations. Near-term: (1) use LB_merged for production (K_eff=3, mean external C≈0.62), (2) test YFB with cohort_id at K≥5 on merged data, (3) YFB single-cohort performs well (C=0.57–0.67) and is unaffected.
+- **Affected files:** `code/fit_cox_on_yf.R` (two bug fixes); `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R`; `results/benchmark_sim/outputs/yfb_beta_fix/`
+
+---
+
 ## 2026-05-22 — Cohort indicator extension: fixed L columns absorb platform offset
 
 - **Decision:** Augment both LB (`fit_supervised_mf_modular`) and YFB (`fit_cox_on_yf`) with

@@ -222,8 +222,12 @@ fit_cox_on_yf <- function(Y, time, status,
   if (init_method == "svd") {
     svd_init <- svd(Y_for_svd, nu = K, nv = K)
     d_k <- sqrt(pmax(svd_init$d[1:K], 0))
-    EL  <- pmax(svd_init$u %*% diag(d_k, K, K), 0)
-    EF  <- pmax(svd_init$v %*% diag(d_k, K, K), 0)
+    # Use abs() rather than pmax(..., 0): pmax zeros out entire columns when the
+    # SVD vector points all-negative, giving degenerate ZF = Y·EF columns of all
+    # zeros. Under point_exponential prior (non-negative), abs() is equally valid
+    # and prevents the degenerate column pathology.
+    EL  <- abs(svd_init$u %*% diag(d_k, K, K))
+    EF  <- abs(svd_init$v %*% diag(d_k, K, K))
   } else if (init_method == "random") {
     y_sd <- sd(Y)
     EL   <- matrix(rnorm(n * K, sd = 0.1 * y_sd), n, K)
@@ -254,7 +258,12 @@ fit_cox_on_yf <- function(Y, time, status,
   # cox_warmstart=FALSE (default) matches Cluster A behavior: EBeta starts at 0.
   # cox_warmstart=TRUE calibrates EBeta to the ZF scale before CAVI begins.
   if (cox_warmstart) {
-    ZF_init <- Y %*% EF                              # n × K
+    # Normalize EF before projecting: CAVI uses ZF = Y·EF_norm (unit-L2-norm columns).
+    # Without normalization, ‖ZF‖ ~ O(√(p·n)) and Cox returns β ~ 1e-9 — machine
+    # epsilon on the CAVI scale — so the warm-start has no effect.
+    EF_norms_ws  <- sqrt(colSums(EF^2) + 1e-10)
+    EF_norm_ws   <- sweep(EF, 2, EF_norms_ws, "/")
+    ZF_init <- Y %*% EF_norm_ws                      # n × K, normalized scale
     df_cox <- as.data.frame(ZF_init)
     colnames(df_cox) <- paste0("L", 1:K)
     df_cox$time   <- time

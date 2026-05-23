@@ -67,7 +67,7 @@ source("code/preprocess_desurv.R")
 # Parameters
 # --------------------------------------------------------------------------
 
-K_GRID    <- if (QUICK_MODE) 2L:5L else 2L:8L
+K_GRID    <- if (QUICK_MODE) 2L:5L else 2L:10L
 N_FOLDS   <- if (QUICK_MODE) 3L else 5L
 MAX_ITER  <- if (QUICK_MODE) 50L else 150L
 PRIOR_BETA <- "normal"
@@ -233,13 +233,17 @@ for (vi in seq_along(variants)) {
   c_dijk <- oriented_cindex(pred_dijk$risk_scores,
                              dijk_raw$time, dijk_raw$status)
 
+  # fit_cox_on_yf does not return K_eff; derive from |EBeta| > 0.01 threshold
+  k_eff_val <- sum(abs(fit$EBeta) > 0.01)
+  beta_max_val <- if (length(fit$EBeta) > 0) max(abs(fit$EBeta)) else 0.0
+
   n_iters <- sum(fit$history$elbo_full != 0)
   results[[vi]] <- data.frame(
     variant       = vname,
     label         = v$label,
     K_cv          = K_cv,
-    K_eff         = fit$K_eff,
-    beta_max      = round(max(abs(fit$EBeta)), 4),
+    K_eff         = k_eff_val,
+    beta_max      = round(beta_max_val, 4),
     alpha         = v$alpha,
     cox_warmstart = v$cox_warmstart,
     N_burnin      = v$N_burnin,
@@ -250,7 +254,7 @@ for (vi in seq_along(variants)) {
   )
 
   cat(sprintf("  → K_eff=%d | beta_max=%.4f | iters=%d | C_train=%.3f | C_dijk=%.3f\n\n",
-              fit$K_eff, max(abs(fit$EBeta)), n_iters, c_train, c_dijk))
+              k_eff_val, beta_max_val, n_iters, c_train, c_dijk))
 }
 
 # --------------------------------------------------------------------------
@@ -287,9 +291,10 @@ write.csv(res_tbl,
           row.names = FALSE)
 
 # Compact RDS: save EBeta and convergence history only
+# K_eff derived from |EBeta| threshold (fit_cox_on_yf does not return K_eff)
 fits_compact <- lapply(fits, function(f)
   list(EBeta = f$EBeta, EBeta2 = f$EBeta2, EF_norms = f$EF_norms,
-       K_eff = f$K_eff, history = f$history))
+       K_eff = sum(abs(f$EBeta) > 0.01), history = f$history))
 saveRDS(fits_compact,
         file.path(OUT_DIR, "yfb_beta_fix_fits_compact.rds"))
 
