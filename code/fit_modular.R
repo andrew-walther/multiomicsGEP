@@ -59,7 +59,8 @@ source("code/update_L.R")      # compute_R_k, update_L_k, update_L_all
 source("code/update_F.R")      # update_F_k, update_F_all  (uses compute_R_k from L)
 source("code/update_beta.R")   # compute_z_no_k, update_beta_k, update_beta_all
 source("code/update_tau.R")    # compute_var_term, update_tau
-source("code/compute_elbo.R")  # compute_ebnm_kl, compute_survival_elbo
+source("code/compute_elbo.R")  # compute_ebnm_kl, compute_survival_elbo, compute_normal_kl
+source("code/update_F_cohort.R")  # update_F_cohort_col, update_F_cohort_all
 
 # ------------------------------------------------------------------------------
 #' Calculate Cox Score and Diagonal Hessian (Taylor Expansion)
@@ -187,7 +188,9 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                       alpha_schedule  = NULL,
                                       normalize_AB    = FALSE,
                                       sign_correction = TRUE,
-                                      verbose         = TRUE) {
+                                      verbose         = TRUE,
+                                      cohort_id       = NULL,
+                                      sigma_F_cohort  = 1.0) {
 
   n <- nrow(Y); p <- ncol(Y)
 
@@ -231,6 +234,49 @@ fit_supervised_mf_modular <- function(Y, time, status,
   if (!is.null(EL_init) && !is.null(EF_init)) init_method <- "custom"
 
   # --------------------------------------------------------------------------
+  # Cohort indicator pre-initialisation (cohort-cols-L extension)
+  #
+  # When cohort_id is supplied, append C-1 fixed binary indicator columns to L
+  # (corner-point encoding; reference = first cohort level).  Only the
+  # corresponding F rows (f_c) are estimated — c is never updated during CAVI.
+  # Residualise Y before SVD so biological factors are not dominated by the
+  # platform offset.
+  # When cohort_id = NULL, Y_for_svd = Y and all augmented matrices alias the
+  # K-factor matrices unchanged — bit-identical behaviour to the base model.
+  # --------------------------------------------------------------------------
+  if (!is.null(cohort_id)) {
+    cohort_id <- factor(cohort_id)
+    # model.matrix requires >= 2 levels; single-cohort is a no-op (C_cols=0).
+    if (nlevels(cohort_id) < 2) {
+      L_cohort <- matrix(0.0, n, 0)
+      C_cols   <- 0L
+    } else {
+      L_cohort <- model.matrix(~ cohort_id)[, -1, drop = FALSE]  # n x (C-1)
+      C_cols   <- ncol(L_cohort)
+    }
+    n_c_vec   <- if (C_cols > 0) colSums(L_cohort) else numeric(0)
+
+    if (C_cols > 0) {
+      # Per-cohort gene mean differences: (C-1) x p matrix; dividing by n_c
+      # broadcasts row-wise.  t(L_cohort) %*% Y gives (C-1) x p.
+      EF_cohort_init  <- t(t(L_cohort) %*% Y / n_c_vec)         # p x (C-1)
+      # Include prior variance in initial EF2 — NEVER set EF2 = EF^2 here,
+      # which would zero out posterior variance and inflate tau on iteration 1.
+      EF2_cohort_init <- EF_cohort_init^2 + sigma_F_cohort^2    # p x (C-1)
+      Y_for_svd       <- Y - L_cohort %*% t(EF_cohort_init)     # residualised
+    } else {
+      # Single cohort (C=1): no indicator column; treat as no-op.
+      EF_cohort_init  <- matrix(0.0, p, 0)
+      EF2_cohort_init <- matrix(0.0, p, 0)
+      Y_for_svd       <- Y
+    }
+  } else {
+    Y_for_svd <- Y
+    L_cohort  <- NULL
+    C_cols    <- 0L
+  }
+
+  # --------------------------------------------------------------------------
   # Initialization
   #
   # Two strategies:
@@ -244,8 +290,10 @@ fit_supervised_mf_modular <- function(Y, time, status,
   # --------------------------------------------------------------------------
 
   if (init_method == "svd") {
-    # SVD of Y: deterministic high-variance starting subspace
-    svd_init <- svd(Y, nu = K, nv = K)
+    # SVD of Y_for_svd: deterministic high-variance starting subspace.
+    # When cohort_id is supplied, Y_for_svd has the cohort mean removed so
+    # the leading singular vectors capture biology, not platform offset.
+    svd_init <- svd(Y_for_svd, nu = K, nv = K)
     d_k <- sqrt(pmax(svd_init$d[1:K], 0))
     EL  <- pmax(svd_init$u %*% diag(d_k, K, K), 0)      # n x K; pmax ensures non-negative init matches point_exponential prior
     EF  <- pmax(svd_init$v %*% diag(d_k, K, K), 0)      # p x K
@@ -279,6 +327,20 @@ fit_supervised_mf_modular <- function(Y, time, status,
   # Posterior variance populated after the first EBNM call.
   EL2 <- EL^2
   EF2 <- EF^2
+
+  # Augment EL/EF matrices with cohort indicator columns.
+  # EL_aug (n x K+C_cols): cbind(EL, L_cohort) — L_cohort is fixed binary.
+  # EL2 cohort columns = L_cohort (binary: 0²=0, 1²=1 → zero L-variance).
+  # EF2 cohort columns include 1/A_c term (non-zero posterior F-variance).
+  # When C_cols = 0, all aug matrices alias the K-factor matrices: no copies.
+  if (!is.null(cohort_id) && C_cols > 0) {
+    EL_aug  <- cbind(EL,  L_cohort)
+    EL2_aug <- cbind(EL2, L_cohort)       # binary: L^2 = L -> zero L-variance
+    EF_aug  <- cbind(EF,  EF_cohort_init)
+    EF2_aug <- cbind(EF2, EF2_cohort_init)
+  } else {
+    EL_aug <- EL; EL2_aug <- EL2; EF_aug <- EF; EF2_aug <- EF2
+  }
 
   # Warm-start beta via Cox regression on SVD loadings.
   df_cox <- as.data.frame(EL)
@@ -407,7 +469,10 @@ fit_supervised_mf_modular <- function(Y, time, status,
     w      <- taylor$w                     # n-vector: W_{ii}
 
     # Reconstruction RMSE at posterior means (monitoring only).
-    history$rmse[iter] <- sqrt(mean((Y - EL %*% t(EF))^2))
+    # Use augmented matrices so the cohort contribution is included in the
+    # residual; without this, RMSE reflects only K-factor error and is not
+    # comparable to the base model.
+    history$rmse[iter] <- sqrt(mean((Y - EL_aug %*% t(EF_aug))^2))
 
     # ========================================================================
     # STEP 2: Factor-Wise Coordinate Ascent  k = 1, ..., K
@@ -440,7 +505,9 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # and EBeta[k] for the current k, so they are valid for all three
       # updates below.
       # ----------------------------------------------------------------------
-      R_k    <- compute_R_k(Y, EL, EF, k)
+      # compute_R_k receives augmented EL_aug/EF_aug so it automatically subtracts
+      # the cohort contribution from the partial residual for k = 1..K.
+      R_k    <- compute_R_k(Y, EL_aug, EF_aug, k)
       z_no_k <- compute_z_no_k(z, EL, EBeta, k)   # COMPUTE ONCE — used by β and L
 
       # ---- Instrumentation [§4.1] ---------------------------------------
@@ -465,11 +532,13 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # initialization on iter 1). A_surv/A_gen << 1, so EBeta staleness
       # barely affects the L precision; the L update is dominated by genomics.
       # ----------------------------------------------------------------------
-      res_L   <- update_L_k(Tau, EF[, k], EF2[, k], w, EBeta[k], EBeta2[k],
+      res_L   <- update_L_k(Tau, EF_aug[, k], EF2_aug[, k], w, EBeta[k], EBeta2[k],
                              R_k, z_no_k, prior_family = prior_LF, alpha = alpha_iter,
                              lambda = lambda, normalize_AB = normalize_AB)
-      EL[, k]  <- res_L$mean
-      EL2[, k] <- res_L$second
+      EL[, k]      <- res_L$mean
+      EL2[, k]     <- res_L$second
+      EL_aug[, k]  <- res_L$mean    # keep augmented matrix in sync
+      EL2_aug[, k] <- res_L$second
       kl_L[k]  <- compute_ebnm_kl(res_L$ebnm_result$log_likelihood,
                                    res_L$A, res_L$x, res_L$mean, res_L$second)
 
@@ -479,11 +548,13 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # R_k depends on EL[,k], so recompute it using the updated EL[,k]
       # from step (a).  This is the Gauss-Seidel property.
       # ----------------------------------------------------------------------
-      R_k   <- compute_R_k(Y, EL, EF, k)
-      res_F <- update_F_k(Tau, EL[, k], EL2[, k], R_k,
+      R_k   <- compute_R_k(Y, EL_aug, EF_aug, k)
+      res_F <- update_F_k(Tau, EL_aug[, k], EL2_aug[, k], R_k,
                           prior_family = prior_LF, alpha = alpha_iter)
-      EF[, k]  <- res_F$mean
-      EF2[, k] <- res_F$second
+      EF[, k]      <- res_F$mean
+      EF2[, k]     <- res_F$second
+      EF_aug[, k]  <- res_F$mean    # keep augmented matrix in sync
+      EF2_aug[, k] <- res_F$second
       kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
                                    res_F$A, res_F$x, res_F$mean, res_F$second)
 
@@ -505,9 +576,28 @@ fit_supervised_mf_modular <- function(Y, time, status,
     }  # end k-loop
 
     # ========================================================================
+    # Cohort F update — closed-form Normal conjugate for platform loading f_c
+    #
+    # Runs AFTER the k=1..K EBNM loop, BEFORE tau.  Uses Tau from the prior
+    # iteration (same one-iteration lag as all CAVI updates — standard
+    # Gauss-Seidel, does not violate ELBO monotonicity).
+    # ========================================================================
+    if (!is.null(cohort_id) && C_cols > 0) {
+      Y_hat_global <- EL %*% t(EF)   # n x p: K-factor reconstruction only
+      res_cohort   <- update_F_cohort_all(
+        L_cohort, Y - Y_hat_global, Tau, sigma_F_cohort
+      )
+      # Use seq_len(C_cols) — never (K+1):(K+C_cols).
+      # In R, when C_cols=0, (K+1):K yields c(K+1,K), a two-element decreasing
+      # sequence that silently corrupts the assignment.  seq_len(0) is empty.
+      EF_aug[,  K + seq_len(C_cols)] <- res_cohort$EF_cohort
+      EF2_aug[, K + seq_len(C_cols)] <- res_cohort$EF2_cohort
+    }
+
+    # ========================================================================
     # STEP 3: Noise Precision Update (closed-form MLE; no EBNM)
     # ========================================================================
-    res_tau              <- update_tau(Y, EL, EL2, EF, EF2)
+    res_tau              <- update_tau(Y, EL_aug, EL2_aug, EF_aug, EF2_aug)
     Tau                  <- res_tau$Tau
     history$elbo_proxy[iter] <- res_tau$elbo_proxy
     factor_pve_iter <- vapply(seq_len(K), function(k) {
@@ -523,6 +613,16 @@ fit_supervised_mf_modular <- function(Y, time, status,
     history$elbo_full[iter] <- (1 - alpha) * res_tau$elbo_proxy +
                                alpha * surv_elbo +
                                sum(kl_L) + sum(kl_F) + sum(kl_beta)
+    # compute_normal_kl returns a NEGATIVE value (-KL <= 0); adding it
+    # correctly penalises the ELBO.  Never subtract — that double-negates.
+    if (!is.null(cohort_id) && C_cols > 0) {
+      history$elbo_full[iter] <- history$elbo_full[iter] +
+        compute_normal_kl(
+          EF_aug[,  K + seq_len(C_cols), drop = FALSE],
+          EF2_aug[, K + seq_len(C_cols), drop = FALSE],
+          sigma_F_cohort
+        )
+    }
 
     # ========================================================================
     # STEP 4: Convergence Check
@@ -604,7 +704,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
     }
   }
 
-  list(
+  result <- list(
     EL     = EL,
     EL2    = EL2,
     EF     = EF,
@@ -614,6 +714,15 @@ fit_supervised_mf_modular <- function(Y, time, status,
     Tau    = Tau,
     history = history
   )
+  # Expose cohort fields when the extension is active.
+  # Global EL/EF (K-factor only) are unchanged for backward compatibility.
+  if (!is.null(cohort_id) && C_cols > 0) {
+    result$L_cohort   <- L_cohort
+    result$EF_cohort  <- EF_aug[, K + seq_len(C_cols), drop = FALSE]
+    result$EF2_cohort <- EF2_aug[, K + seq_len(C_cols), drop = FALSE]
+    result$cohort_id  <- cohort_id
+  }
+  result
 }
 
 # ==============================================================================
