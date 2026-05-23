@@ -1,0 +1,518 @@
+---
+title: "Cohort Indicator Column: Model Comparison"
+subtitle: "Current SSBMF vs. Augmented L-matrix Design"
+author: "Andrew Walther"
+date: "2026-05-22"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    embed-resources: true
+    code-fold: true
+    code-summary: "Show R code"
+    fig-width: 9
+    fig-height: 5
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| include: false
+# Set working directory to repo root so all source() paths are relative to root.
+# This is needed because Quarto renders from the document's directory by default.
+proj_root <- normalizePath(file.path(getwd(), "../../.."))
+knitr::opts_knit$set(root.dir = proj_root)
+```
+
+```{r load-libs}
+#| include: false
+library(ggplot2)
+library(patchwork)
+library(DT)
+source("code/update_beta.R")
+source("code/update_L.R")
+source("code/update_F.R")
+source("code/update_tau.R")
+source("code/compute_elbo.R")
+source("code/train_test_split.R")
+source("code/predict.R")
+suppressMessages(tryCatch(source("code/fit_modular.R"),
+                          error = function(e) invisible(NULL)))
+theme_set(theme_bw(base_size = 13))
+```
+
+## The β→0 Collapse Problem {#sec-collapse}
+
+When TCGA (RNA-seq) and CPTAC (proteomics) data are trained together, the
+dominant axis of variation in Y is **platform technology**, not biology.
+The CAVI algorithm locks onto that axis and produces β→0 — a useless prognostic
+score.
+
+```{r collapse-sim}
+set.seed(7)
+n <- 100; p <- 200; K_bio <- 2
+cohort <- rep(c("TCGA", "CPTAC"), each = n / 2)
+
+# Biological factors (shared across cohorts)
+L_bio  <- matrix(rnorm(n * K_bio), n, K_bio)
+F_bio  <- matrix(rnorm(p * K_bio) * rbinom(p * K_bio, 1, 0.3), p, K_bio)
+
+# Platform offset: strong signal on all genes for CPTAC
+platform_offset <- rnorm(p, mean = 4, sd = 0.5)  # large shift
+c_vec   <- as.integer(cohort == "CPTAC")
+Y_clean <- L_bio %*% t(F_bio) + matrix(rnorm(n * p, sd = 0.5), n, p)
+Y_dirty <- Y_clean + outer(c_vec, platform_offset)
+
+# Column-centre both (as done in the real pipeline)
+Y_clean <- sweep(Y_clean, 2, colMeans(Y_clean), "-")
+Y_dirty <- sweep(Y_dirty, 2, colMeans(Y_dirty), "-")
+
+# PCA on Y_dirty
+pca_dirty <- prcomp(Y_dirty, center = FALSE)
+pca_df <- data.frame(
+  PC1    = pca_dirty$x[, 1],
+  PC2    = pca_dirty$x[, 2],
+  Cohort = cohort
+)
+var_exp <- round(summary(pca_dirty)$importance[2, 1:2] * 100, 1)
+```
+
+```{r collapse-plots, fig.width=11, fig.height=4.5}
+# --- Heatmap: Y without vs with platform offset ---
+# Sample 50 genes and 60 patients for display
+gene_idx    <- sample(p, 50)
+patient_idx <- c(sample(which(cohort == "TCGA"), 30),
+                 sample(which(cohort == "CPTAC"), 30))
+
+make_heatmap_df <- function(Y, label) {
+  mat <- Y[patient_idx, gene_idx]
+  df  <- as.data.frame(as.table(mat))
+  colnames(df) <- c("Patient", "Gene", "Expression")
+  df$Patient  <- as.integer(df$Patient)
+  df$Cohort   <- ifelse(df$Patient <= 30, "TCGA", "CPTAC")
+  df$Dataset  <- label
+  df
+}
+hm_df <- rbind(make_heatmap_df(Y_clean, "Biological signal only"),
+               make_heatmap_df(Y_dirty, "With platform offset (σ=4)"))
+
+p_heat <- ggplot(hm_df, aes(Gene, Patient, fill = Expression)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "#2166ac", mid = "white", high = "#d73027",
+                       midpoint = 0, limits = c(-8, 8), oob = scales::squish) +
+  facet_wrap(~ Dataset) +
+  geom_hline(yintercept = 30.5, colour = "black", linewidth = 0.8) +
+  annotate("text", x = 50, y = 15, label = "TCGA", size = 3.5, colour = "white") +
+  annotate("text", x = 50, y = 45, label = "CPTAC", size = 3.5, colour = "white") +
+  labs(x = "Gene (sample)", y = "Patient", fill = "Expr.",
+       title = "Gene expression heatmap") +
+  theme(axis.text = element_blank(), axis.ticks = element_blank(),
+        strip.text = element_text(size = 11))
+
+# --- PCA scatter ---
+p_pca <- ggplot(pca_df, aes(PC1, PC2, colour = Cohort)) +
+  geom_point(alpha = 0.8, size = 2) +
+  scale_colour_manual(values = c(TCGA = "#1f78b4", CPTAC = "#e31a1c")) +
+  labs(title = "PCA of Y with platform offset",
+       x = sprintf("PC1 (%.1f%% var)", var_exp[1]),
+       y = sprintf("PC2 (%.1f%% var)", var_exp[2])) +
+  theme(legend.position = "bottom")
+
+p_heat + p_pca + plot_layout(widths = c(2, 1))
+```
+
+**Interpretation:** PC1 captures `r var_exp[1]`% of variance and is entirely
+driven by cohort membership. Any supervised factorisation that fits a single
+shared L matrix will burn its first (and dominant) factor on this axis,
+crowding out the biological signal and forcing β→0.
+
+## Current Model {#sec-current}
+
+```{=html}
+<div style="font-family:monospace; background:#f8f9fa; border:1px solid #dee2e6;
+            border-radius:6px; padding:20px; line-height:1.8; font-size:0.92em;">
+<strong style="font-size:1.05em;">Current SSBMF</strong>
+<hr style="border-color:#dee2e6; margin:8px 0;">
+
+<table style="border-collapse:collapse; width:100%;">
+<tr>
+  <td style="color:#1a6ea8; font-weight:bold; padding:4px 12px 4px 0;">Genomics:</td>
+  <td><span style="color:#1a6ea8;">Y</span> &nbsp;=&nbsp;
+      <span style="color:#2ca02c;">L</span> &times;
+      <span style="color:#9467bd;">F'</span> &nbsp;+&nbsp;
+      <span style="color:#7f7f7f;">E</span>
+  </td>
+  <td style="color:#888; padding-left:30px; font-size:0.9em;">
+    Y (n&times;p) &nbsp;&nbsp;
+    <span style="color:#2ca02c;">L (n&times;K)</span> &nbsp;&nbsp;
+    <span style="color:#9467bd;">F (p&times;K)</span> &nbsp;&nbsp;
+    <span style="color:#7f7f7f;">E (n&times;p)</span>
+  </td>
+</tr>
+<tr>
+  <td style="color:#1a6ea8; font-weight:bold; padding:4px 12px 4px 0;">Survival:</td>
+  <td>&eta; &nbsp;=&nbsp;
+      <span style="color:#2ca02c;">L</span> &times;
+      <span style="color:#d62728;">&beta;</span>
+  </td>
+  <td style="color:#888; padding-left:30px; font-size:0.9em;">
+    &eta; (n&times;1) &nbsp;&nbsp;
+    <span style="color:#2ca02c;">L (n&times;K)</span> &nbsp;&nbsp;
+    <span style="color:#d62728;">&beta; (K&times;1)</span>
+  </td>
+</tr>
+</table>
+
+<div style="margin-top:14px; background:#e9ecef; border-radius:4px; padding:10px 14px;">
+<strong>CAVI update order (each iteration):</strong><br>
+&nbsp;&nbsp;<em>k = 1..K:</em>&nbsp;&nbsp;
+  <span style="color:#2ca02c;">update q(L<sub>k</sub>)</span> &rarr;
+  <span style="color:#9467bd;">update q(F<sub>k</sub>)</span> &rarr;
+  <span style="color:#d62728;">update q(&beta;<sub>k</sub>)</span>
+  &nbsp;&nbsp;<span style="color:#888;">[EBNM for L, F and &beta;]</span><br>
+&nbsp;&nbsp;<em>then:</em>&nbsp;&nbsp;
+  update q(&tau;)
+  &nbsp;&nbsp;<span style="color:#888;">[closed-form MLE]</span>
+</div>
+
+<div style="margin-top:10px; color:#666; font-size:0.88em;">
+  Priors: L, F, &beta; all use EBNM (point-normal default). &tau; ~ Gamma.
+</div>
+</div>
+```
+
+## Proposed Augmented Model {#sec-augmented}
+
+The fix appends **C−1 fixed cohort indicator columns** to L (corner-point
+encoding). For two cohorts (TCGA + CPTAC) this is exactly one binary column.
+The corresponding F row f_c is estimated with a Normal(0, σ²) prior via a
+**closed-form conjugate update** — no EBNM call needed. β_cohort ≡ 0 by
+construction: the cohort column never enters the Cox partial likelihood.
+
+```{=html}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:10px;">
+
+<!-- LEFT: Current model (abbreviated) -->
+<div style="font-family:monospace; background:#fff3cd; border:1px solid #ffc107;
+            border-radius:6px; padding:18px; line-height:1.8; font-size:0.9em;">
+<strong>Current SSBMF</strong>
+<hr style="border-color:#ffc107; margin:6px 0;">
+Y &nbsp;=&nbsp; <span style="color:#2ca02c;">L</span> &times; <span style="color:#9467bd;">F'</span> + E<br>
+&eta; =&nbsp; <span style="color:#2ca02c;">L</span> &times; <span style="color:#d62728;">&beta;</span>
+<div style="margin-top:12px; font-size:0.88em; color:#666;">
+  L (n&times;K) — latent factors<br>
+  F (p&times;K) — gene loadings (EBNM)
+</div>
+</div>
+
+<!-- RIGHT: Augmented model -->
+<div style="font-family:monospace; background:#d4edda; border:1px solid #28a745;
+            border-radius:6px; padding:18px; line-height:1.8; font-size:0.9em;">
+<strong>Augmented SSBMF (cohort-cols-L)</strong>
+<hr style="border-color:#28a745; margin:6px 0;">
+Y &nbsp;=&nbsp; [<span style="color:#2ca02c;">L</span> | <span style="color:#e67e22; font-weight:bold;">c</span>] &times; [<span style="color:#9467bd;">F'</span>] + E<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[<span style="color:#e67e22; font-weight:bold;">f_c'</span>]<br>
+&eta; =&nbsp; <span style="color:#2ca02c;">L</span> &times; <span style="color:#d62728;">&beta;</span> &nbsp;&nbsp;<em>(c never enters &eta;)</em>
+<div style="margin-top:12px; font-size:0.88em; color:#666;">
+  L (n&times;K) — latent factors (unchanged)<br>
+  <span style="color:#e67e22; font-weight:bold;">c (n&times;1) — FIXED binary indicator (not updated)</span><br>
+  F (p&times;K) — gene loadings (EBNM, unchanged)<br>
+  <span style="color:#e67e22; font-weight:bold;">f_c (p&times;1) — platform loadings (Normal conjugate)</span>
+</div>
+</div>
+
+</div>
+
+<div style="font-family:monospace; background:#f8f9fa; border:1px solid #dee2e6;
+            border-radius:6px; padding:14px 18px; margin-top:14px; line-height:1.8; font-size:0.9em;">
+<strong>Augmented CAVI update order (each iteration):</strong><br>
+&nbsp;&nbsp;<em>k = 1..K:</em>&nbsp;&nbsp;
+  <span style="color:#2ca02c;">update q(L<sub>k</sub>)</span> &rarr;
+  <span style="color:#9467bd;">update q(F<sub>k</sub>)</span> &rarr;
+  <span style="color:#d62728;">update q(&beta;<sub>k</sub>)</span>
+  &nbsp;&nbsp;<span style="color:#888;">[EBNM — unchanged]</span><br>
+&nbsp;&nbsp;<em>then:</em>&nbsp;&nbsp;
+  <span style="color:#e67e22; font-weight:bold;">update q(f_c)</span>
+  &nbsp;&nbsp;<span style="color:#888;">[NEW: Normal conjugate, closed-form]</span><br>
+&nbsp;&nbsp;<em>then:</em>&nbsp;&nbsp;
+  update q(&tau;)
+  &nbsp;&nbsp;<span style="color:#888;">[passes augmented matrices — unchanged function]</span>
+</div>
+```
+
+## CAVI Loop Change Summary {#sec-changes}
+
+```{r change-table}
+#| echo: false
+changes <- data.frame(
+  Component = c(
+    "compute_R_k", "update_L_k (EBNM)", "update_F_k (EBNM)",
+    "update_beta_k", "compute_var_term", "predict_*",
+    "update_F_cohort_col", "compute_normal_kl",
+    "fit_modular.R", "fit_cox_on_yf.R"
+  ),
+  Status = c(
+    "Unchanged", "Unchanged", "Unchanged",
+    "Unchanged", "Unchanged", "Unchanged",
+    "New", "New",
+    "Modified", "Modified"
+  ),
+  Notes = c(
+    "Augmented EL_aug/EF_aug passed in; cohort contribution subtracted automatically",
+    "Loop k=1..K only; c is a fixed design column — never updated",
+    "Loop k=1..K only; f_c uses new closed-form function",
+    "beta is a K-vector; cohort never enters the Cox partial likelihood",
+    "Binary EL: EL²=EL → zero cohort L-variance; passes through correctly",
+    "Returns global EF (p×K) only; cohort fields optional in return list",
+    "Closed-form Normal conjugate update for f_c; ~20 lines",
+    "ELBO KL term for Normal posterior vs N(0,σ²); returns negative scalar",
+    "~50 new lines, all guarded by if(!is.null(cohort_id))",
+    "Same as fit_modular.R + ZF dimension guard (two locations)"
+  ),
+  stringsAsFactors = FALSE
+)
+
+status_colours <- c(
+  Unchanged = "#d4edda",
+  New       = "#cce5ff",
+  Modified  = "#fff3cd"
+)
+
+DT::datatable(
+  changes,
+  options  = list(dom = "t", pageLength = 15, ordering = FALSE),
+  rownames = FALSE,
+  class    = "compact stripe"
+) |>
+  DT::formatStyle(
+    "Status",
+    backgroundColor = DT::styleEqual(
+      names(status_colours), unname(status_colours)
+    ),
+    fontWeight = "bold"
+  )
+```
+
+## Mathematical Derivation of q(f_c) {#sec-math}
+
+The cohort indicator column c is **fixed** (observed, not estimated). Only
+the corresponding row of F — the platform loading vector f_c — is inferred.
+
+**Likelihood** (rows in cohort B, i.e., c_i = 1):
+
+$$
+p(\mathbf{R}_c \mid \mathbf{f}_c, \tau) = \prod_{i:\, c_i=1} \prod_{j=1}^{p}
+\mathcal{N}\!\left(R_{ij};\; f_{cj},\; \tau_j^{-1}\right)
+$$
+
+where $R_{ij} = Y_{ij} - \sum_{k=1}^{K} E[l_{ik}] E[f_{kj}]$ is the global-factor
+residual (Y minus the K biological factors).
+
+**Prior:** $f_{cj} \overset{\text{ind}}{\sim} \mathcal{N}(0, \sigma^2)$
+
+**Posterior precision and mean** — conjugate Gaussian update:
+
+$$
+A_{cj} = n_c \,\tau_j + \sigma^{-2}, \qquad
+B_{cj} = \tau_j \sum_{i:\,c_i=1} R_{ij}
+$$
+
+$$
+\bar{f}_{cj} = \frac{B_{cj}}{A_{cj}}, \qquad
+\text{Var}_q(f_{cj}) = A_{cj}^{-1}, \qquad
+E_q[f_{cj}^2] = A_{cj}^{-1} + \bar{f}_{cj}^2
+$$
+
+This is the **p-vector** update (one scalar per gene):
+
+```
+n_c   <- sum(c_vec)                          # scalar: number of cohort-B patients
+B_c   <- colSums(R_cohort * c_vec) * Tau     # p-vector
+A_c   <- n_c * Tau + 1 / sigma_F_cohort^2   # p-vector
+EF_c  <- B_c / A_c                           # p-vector (posterior means)
+EF2_c <- 1 / A_c + EF_c^2                   # p-vector (posterior second moments)
+```
+
+**KL divergence** (contribution to ELBO):
+
+$$
+\text{KL}\!\left[\mathcal{N}(\bar{\mathbf{f}}_c, A_c^{-1}) \;\|\;
+\mathcal{N}(\mathbf{0}, \sigma^2 I)\right]
+= \frac{1}{2} \sum_{j=1}^{p}
+\left(\frac{E[f_{cj}^2]}{\sigma^2} + \log(A_{cj}\,\sigma^2) - 1\right)
+$$
+
+**Sign convention:** `compute_normal_kl()` returns **−KL ≤ 0** (matching the
+existing `compute_ebnm_kl()` convention). The caller adds it:
+
+```r
+elbo_full <- elbo_full + compute_normal_kl(EF_cohort, EF2_cohort, sigma_F_cohort)
+```
+
+> **Contrast with EBNM factors:** EBNM requires numerical optimisation of an
+> adaptive shrinkage prior. The cohort f_c update is exact in closed form —
+> no `ebnm()` call needed. This is why it can be implemented in ~20 lines and
+> runs in negligible time even for p = 10,000.
+
+## Before/After ELBO Equations {#sec-elbo}
+
+```{=html}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:10px;">
+
+<div style="font-family:monospace; background:#f8f9fa; border:1px solid #dee2e6;
+            border-radius:6px; padding:16px; font-size:0.88em; line-height:2;">
+<strong>Current ELBO</strong>
+<hr style="border-color:#dee2e6; margin:6px 0;">
+E[log p(Y | L, F, &tau;)]<br>
++ E[log p(L)]<br>
++ E[log p(F)]<br>
++ E[log p(&beta;)]<br>
++ E[log p(&tau;)]<br>
++ E[log PL(&beta;, L)]<br>
+&minus; KL[q(L) &Vert; p(L)]<br>
+&minus; KL[q(F) &Vert; p(F)]<br>
+&minus; KL[q(&beta;) &Vert; p(&beta;)]<br>
+&nbsp;
+</div>
+
+<div style="font-family:monospace; background:#d4edda; border:1px solid #28a745;
+            border-radius:6px; padding:16px; font-size:0.88em; line-height:2;">
+<strong>Augmented ELBO</strong>
+<hr style="border-color:#28a745; margin:6px 0;">
+E[log p(Y | L<sub>aug</sub>, F<sub>aug</sub>, &tau;)] &nbsp;<span style="color:#888;">(aug. L,F)</span><br>
++ E[log p(L)] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">(unchanged)</span><br>
++ E[log p(F)] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">(unchanged)</span><br>
++ E[log p(&beta;)] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">(unchanged)</span><br>
++ E[log p(&tau;)] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">(unchanged)</span><br>
++ E[log PL(&beta;, L)] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">(unchanged)</span><br>
+&minus; KL[q(L) &Vert; p(L)] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">(unchanged)</span><br>
+&minus; KL[q(F) &Vert; p(F)] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">(unchanged)</span><br>
+&minus; KL[q(&beta;) &Vert; p(&beta;)] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#888;">(unchanged)</span><br>
+<span style="color:#28a745; font-weight:bold;">&minus; KL[q(f_c) &Vert; N(0,&sigma;²)] &larr; NEW (one scalar)</span>
+</div>
+
+</div>
+```
+
+The genomics likelihood term automatically incorporates the cohort contribution
+because $L_\text{aug}$ and $F_\text{aug}$ now include the cohort column. All other
+terms are structurally unchanged — the only genuinely new term is the KL for f_c,
+computed by `compute_normal_kl()` in a single `sum()` call.
+
+## Simulation: Platform PC Absorption {#sec-sim}
+
+A small controlled experiment (n=80, p=100, K=2 biological factors,
+σ_platform = 3) to verify that the augmented model absorbs the platform PC into
+f_c, leaving the biological factors uncontaminated.
+
+```{r absorption-sim}
+set.seed(42)
+n_sim   <- 80
+p_sim   <- 100
+K_sim   <- 2
+
+cohort_sim <- rep(c("A", "B"), each = n_sim / 2)
+c_sim      <- as.integer(cohort_sim == "B")
+
+# Biological factors
+L_bio_sim <- matrix(rnorm(n_sim * K_sim), n_sim, K_sim)
+F_bio_sim <- matrix(rnorm(p_sim * K_sim) * rbinom(p_sim * K_sim, 1, 0.4),
+                    p_sim, K_sim)
+
+# Strong platform offset
+F_plat_true <- rnorm(p_sim, mean = 3, sd = 0.3)
+Y_sim <- L_bio_sim %*% t(F_bio_sim) +
+         outer(c_sim, F_plat_true) +
+         matrix(rnorm(n_sim * p_sim, sd = 0.4), n_sim, p_sim)
+Y_sim <- sweep(Y_sim, 2, colMeans(Y_sim), "-")
+
+tt_sim <- rexp(n_sim, 0.1)
+ss_sim <- rbinom(n_sim, 1, 0.7)
+
+# --- Fit base model (no cohort correction) ---
+fit_base_sim <- fit_supervised_mf_modular(
+  Y_sim, tt_sim, ss_sim, K = K_sim,
+  max_iter = 60, alpha = 0.5, verbose = FALSE
+)
+
+# --- Proxy for augmented model: subtract per-cohort column means from Y ---
+# This is mathematically equivalent to the full cohort-cols-L model in the
+# weak-prior limit (sigma_F_cohort -> Inf), and demonstrates the platform
+# absorption property. The full augmented fit_supervised_mf_modular(cohort_id=...)
+# is implemented in Steps 3-8 of this branch.
+Y_corrected <- Y_sim
+for (g in unique(cohort_sim)) {
+  idx <- cohort_sim == g
+  Y_corrected[idx, ] <- sweep(Y_sim[idx, , drop = FALSE], 2,
+                               colMeans(Y_sim[idx, , drop = FALSE]), "-")
+}
+
+fit_aug_sim <- fit_supervised_mf_modular(
+  Y_corrected, tt_sim, ss_sim, K = K_sim,
+  max_iter = 60, alpha = 0.5, verbose = FALSE
+)
+```
+
+```{r absorption-plots, fig.width=11, fig.height=4.5}
+make_loading_df <- function(fit, cohort, label) {
+  data.frame(
+    PC1    = fit$EL[, 1],
+    PC2    = fit$EL[, 2],
+    Cohort = cohort,
+    Model  = label
+  )
+}
+
+df_base <- make_loading_df(fit_base_sim, cohort_sim, "Base (no cohort column)")
+df_aug  <- make_loading_df(fit_aug_sim,  cohort_sim, "Augmented (cohort-cols-L)")
+plot_df <- rbind(df_base, df_aug)
+
+violin_df <- rbind(
+  data.frame(Loading = fit_base_sim$EL[, 1], Cohort = cohort_sim,
+             Model = "Base"),
+  data.frame(Loading = fit_aug_sim$EL[, 1],  Cohort = cohort_sim,
+             Model = "Augmented")
+)
+
+p_scatter <- ggplot(plot_df, aes(PC1, PC2, colour = Cohort)) +
+  geom_point(alpha = 0.8, size = 2) +
+  facet_wrap(~ Model) +
+  scale_colour_manual(values = c(A = "#1f78b4", B = "#e31a1c")) +
+  labs(title = "Factor 1 vs Factor 2 scores", x = "Factor 1", y = "Factor 2") +
+  theme(legend.position = "bottom")
+
+p_violin <- ggplot(violin_df, aes(Cohort, Loading, fill = Cohort)) +
+  geom_violin(alpha = 0.7, trim = FALSE) +
+  geom_jitter(width = 0.1, size = 0.8, alpha = 0.5) +
+  facet_wrap(~ Model) +
+  scale_fill_manual(values = c(A = "#1f78b4", B = "#e31a1c")) +
+  labs(title = "Factor 1 scores by cohort",
+       subtitle = "Split = residual platform effect",
+       y = "Factor 1 loading") +
+  theme(legend.position = "none")
+
+p_scatter / p_violin
+```
+
+```{r absorption-summary}
+#| echo: false
+sep_base <- abs(mean(fit_base_sim$EL[cohort_sim == "B", 1]) -
+                mean(fit_base_sim$EL[cohort_sim == "A", 1]))
+sep_aug  <- abs(mean(fit_aug_sim$EL[cohort_sim == "B", 1]) -
+                mean(fit_aug_sim$EL[cohort_sim == "A", 1]))
+cat(sprintf("Mean Factor-1 cohort separation (base model):      %.3f\n", sep_base))
+cat(sprintf("Mean Factor-1 cohort separation (augmented model): %.3f\n", sep_aug))
+```
+
+**Interpretation:** In the base model, Factor 1 is dominated by the platform
+offset: cohort-B patients have systematically higher scores. The augmented
+proxy (cohort-mean-subtracted Y, mathematically equivalent to cohort-cols-L in
+the weak-prior limit) shows the same factor no longer separated by cohort —
+the platform signal is absorbed, leaving the biological factors free. The cohort
+separation drops from `r round(sep_base, 2)` to `r round(sep_aug, 2)`.
+Once `fit_supervised_mf_modular(cohort_id=...)` is implemented in Steps 3–8,
+this section will be updated to use the full augmented model directly.
