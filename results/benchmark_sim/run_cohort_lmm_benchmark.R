@@ -27,6 +27,7 @@
 
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
+LOW_K_MODE <- "--low-k" %in% args
 
 if (Sys.getenv("REPO_ROOT") != "") {
   setwd(Sys.getenv("REPO_ROOT"))
@@ -58,8 +59,8 @@ source("code/preprocess_desurv.R")
 # Parameters
 # --------------------------------------------------------------------------
 
-K_LB       <- if (QUICK_MODE) 5L  else cfg$benchmark$k_pdac       # 20
-K_YFB      <- if (QUICK_MODE) 2L  else cfg$benchmark$k_pdac_yfb_merged  # 3
+K_LB       <- if (QUICK_MODE) 5L  else if (LOW_K_MODE) 5L  else cfg$benchmark$k_pdac       # 20
+K_YFB      <- if (QUICK_MODE) 2L  else if (LOW_K_MODE) 3L  else cfg$benchmark$k_pdac_yfb_merged  # 3
 ALPHA      <- cfg$benchmark$alpha        # 0.5
 LAMBDA     <- cfg$benchmark$lambda
 MAX_ITER   <- if (QUICK_MODE) 30L else cfg$cavi$max_iter           # 300
@@ -70,10 +71,11 @@ BETA_THRESH <- cfg$k_selection$beta_threshold
 cat("=== Cohort LMM Benchmark — 4-way comparison ===\n")
 cat(sprintf("    K_LB=%d | K_YFB=%d | alpha=%.2f | prior_beta=%s\n",
             K_LB, K_YFB, ALPHA, PRIOR_BETA))
-cat(sprintf("    max_iter=%d | sigma_F_cohort=%.1f | QUICK=%s\n\n",
-            MAX_ITER, SIGMA_COH, QUICK_MODE))
+cat(sprintf("    max_iter=%d | sigma_F_cohort=%.1f | QUICK=%s | LOW_K=%s\n\n",
+            MAX_ITER, SIGMA_COH, QUICK_MODE, LOW_K_MODE))
 
-OUT_DIR <- "results/benchmark_sim/outputs/cohort_lmm_benchmark"
+OUT_DIR <- if (LOW_K_MODE) "results/benchmark_sim/outputs/cohort_lmm_benchmark_low_k" else
+                            "results/benchmark_sim/outputs/cohort_lmm_benchmark"
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 # --------------------------------------------------------------------------

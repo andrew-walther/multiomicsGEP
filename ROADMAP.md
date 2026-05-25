@@ -94,26 +94,28 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   `tests/test_update_F_cohort.R`, `tests/test_fit_modular_cohort.R`, `tests/test_fit_yf_cohort.R`.
   Validation: `results/cohort_lmm_sim/run_synthetic.R`, `results/benchmark_sim/run_cohort_lmm_benchmark.R`.*
 
-- [ ] **YFB β→0 on merged data: all CAVI-local fixes exhausted** `[Priority: Medium]` `[Effort: Large]`
-  Comprehensive diagnostic (2026-05-22, V0–V8 in `run_yfb_beta_fix_diagnostic.R`) tested every
-  CAVI-local strategy: Cox warm-start, β burn-in, high α (0.75), cohort_id, and dual-source F
-  (alpha_F ∈ {0.1, 0.3, 0.5}). All fail. Dual-source F additionally causes RMSE instability
-  (→750–800) without rescuing β — the chicken-and-egg trap: with EBeta≈0, the survival gradient
-  contribution to A_F/B_F is ≈0, so enabling alpha_F simply adds noise.
-  The per-platform YFB (Phase 1, C_dijk≈0.573) and LB_merged (C_dijk=0.590) are the practical
-  solutions. The one structural fix that could escape the CAVI fixed-point: **frozen-F β
-  pre-conditioning** — freeze EF for N_frozen iters, let β grow freely against the SVD-initialized
-  factors, then unfreeze F to adapt. This breaks the β=0 ↔ B_beta=0 trap without triggering
-  EF instability. Not yet implemented.
-  *Files: `code/fit_cox_on_yf.R`, `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R`, DECISIONS.md 2026-05-22*
+- [x] **YFB β→0 on merged data: all CAVI-local fixes exhausted — formally closed** *(2026-05-25)*
+  Frozen-F β pre-conditioning (N_frozen parameter, V9–V11) tested as the final CAVI-local
+  strategy. All three frozen-F variants converge at iteration 9 — during the frozen phase,
+  before EF unfreezes. Root cause: SVD initialization on merged TCGA+CPTAC is itself
+  platform-dominated, so ZF_SVD has no survival correlation and β→0 during the frozen phase.
+  Exhaustive record: V0 (baseline) through V11 (frozen-F N=30+warm-start) all fail.
+  Practical solutions: (1) per-platform YFB (Phase 1, C_dijk≈0.573); (2) LB_cohort K=5
+  (mean C=0.614); (3) LB_base K=20 (mean C=0.618). Possible future fix: initialize EF
+  from a single-cohort TCGA-only YFB fit (not platform-dominated SVD) and freeze during
+  merge training. Not implemented — deferred as low-priority.
+  *Files: `code/fit_cox_on_yf.R` (N_frozen param, backward compat), `tests/test_fit_yf_frozen_f.R` (8 tests),
+  `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R` (V9–V11 added). DECISIONS.md 2026-05-25.*
 
-- [ ] **Evaluate cohort extension benefit on lower-K regimes** `[Priority: Medium]` `[Effort: Small]`
-  The real-data benchmark used K=20 (where ARD pruning already handles platform effects
-  implicitly, making the cohort indicator somewhat redundant). At K=3–5, where ARD cannot
-  afford to dedicate a factor to the platform offset, the cohort indicator may be more
-  valuable. Run `run_cohort_lmm_benchmark.R` with K_LB=5 and a full 300-iteration budget to
-  test this hypothesis.
-  *Files: `results/benchmark_sim/run_cohort_lmm_benchmark.R` (--quick flag uses K=5)*
+- [x] **Evaluate cohort extension benefit on lower-K regimes** *(2026-05-25)*
+  Run `run_cohort_lmm_benchmark.R --low-k` (K_LB=5, K_YFB=3, 300 iters).
+  Key finding: at K=5, LB_base also collapses to β→0 (K_eff=0). LB_cohort at K=5 rescues
+  β (K_eff=3, mean C=0.614), nearly matching LB_base K=20 (mean C=0.618) with 4× fewer
+  biological factors. The cohort extension is *essential* in the interpretable low-K regime
+  and *neutral to marginal* at K=20 where ARD handles platform effects implicitly.
+  Practical recommendation: for merged multi-platform PDAC analysis, use K=5 + cohort_id.
+  *Files: `results/benchmark_sim/run_cohort_lmm_benchmark.R` (--low-k flag added),
+  `results/benchmark_sim/outputs/cohort_lmm_benchmark_low_k/`. DECISIONS.md 2026-05-25.*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model

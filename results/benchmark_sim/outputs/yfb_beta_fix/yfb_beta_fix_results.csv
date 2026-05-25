@@ -1,10 +1,13 @@
-"variant","label","K_cv","K_eff","beta_max","alpha","alpha_F","cox_warmstart","N_burnin","iters","C_train","C_dijk"
-"V0","Baseline",4,0,0,0.5,0,FALSE,0,50,0.554,0.526
-"V1","Cox warm-start",4,0,4e-04,0.5,0,TRUE,0,50,0.579,0.521
-"V2","β burn-in (N=10)",4,0,0,0.5,0,FALSE,10,50,0.554,0.526
-"V3","Warm-start + burn-in",4,0,4e-04,0.5,0,TRUE,10,50,0.578,0.521
-"V4","High α=0.75",4,0,0,0.75,0,FALSE,0,9,0.544,0.505
-"V5","High α=0.75 + warm-start",4,0,4e-04,0.75,0,TRUE,0,9,0.577,0.521
-"V6","Dual-F α_F=0.1 + warm-start",4,0,4e-04,0.5,0.1,TRUE,0,17,0.522,0.502
-"V7","Dual-F α_F=0.3 + warm-start",4,0,4e-04,0.5,0.3,TRUE,0,50,0.562,0.504
-"V8","Dual-F α_F=0.5 + warm-start",4,0,4e-04,0.5,0.5,TRUE,0,50,0.55,0.505
+"variant","label","K_cv","K_eff","beta_max","alpha","alpha_F","cox_warmstart","N_burnin","N_frozen","iters","C_train","C_dijk"
+"V0","Baseline",4,0,0,0.5,0,FALSE,0,0,50,0.554,0.526
+"V1","Cox warm-start",4,0,4e-04,0.5,0,TRUE,0,0,50,0.579,0.521
+"V2","β burn-in (N=10)",4,0,0,0.5,0,FALSE,10,0,50,0.554,0.526
+"V3","Warm-start + burn-in",4,0,4e-04,0.5,0,TRUE,10,0,50,0.578,0.521
+"V4","High α=0.75",4,0,0,0.75,0,FALSE,0,0,9,0.544,0.505
+"V5","High α=0.75 + warm-start",4,0,4e-04,0.75,0,TRUE,0,0,9,0.577,0.521
+"V6","Dual-F α_F=0.1 + warm-start",4,0,4e-04,0.5,0.1,TRUE,0,0,17,0.522,0.502
+"V7","Dual-F α_F=0.3 + warm-start",4,0,4e-04,0.5,0.3,TRUE,0,0,50,0.562,0.504
+"V8","Dual-F α_F=0.5 + warm-start",4,0,4e-04,0.5,0.5,TRUE,0,0,50,0.55,0.505
+"V9","Frozen-F N=10",4,0,0,0.5,0,FALSE,0,10,9,0.529,0.512
+"V10","Frozen-F N=20",4,0,0,0.5,0,FALSE,0,20,9,0.529,0.512
+"V11","Frozen-F N=30 + warm-start",4,0,4e-04,0.5,0,TRUE,0,30,9,0.586,0.525

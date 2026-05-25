@@ -106,6 +106,91 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-25 — Frozen-F β pre-conditioning: N_frozen parameter added to fit_cox_on_yf()
+
+- **Decision:** Added `N_frozen` parameter (default 0, backward compatible) to
+  `fit_cox_on_yf()`. During the first `N_frozen` CAVI iterations, EF is held fixed
+  at its SVD initialization while β and L update freely. After `N_frozen` iterations,
+  EF unfreezes and full joint CAVI proceeds.
+
+- **Rationale:** Breaks the β=0 ↔ B_beta=0 CAVI fixed-point that causes YFB to
+  collapse on merged multi-platform data. With EF frozen at SVD init (non-degenerate
+  via the abs() fix), ZF = Y·EF_init is fixed and non-zero, so A_beta = sum(w·ZF_k²)
+  > 0 from iteration 1 and β can grow freely. Unlike dual-source F (V6–V8), this does
+  not risk EF instability because EF does not update during the frozen phase.
+
+- **Implementation:** Surgical: `freeze_F <- iter <= N_frozen` flag; F update in step
+  (c) and cohort F update both gated on `!freeze_F`. Validation message logged at
+  freeze/unfreeze boundary. Input validation: N_frozen must be non-negative numeric.
+
+- **Tests:** 8 new tests in `tests/test_fit_yf_frozen_f.R` (238/238 total passing):
+  backward compat (N_frozen=0), valid output with N_frozen=3/5/100, ELBO finite,
+  N_frozen=-1/"a" raise errors, N_frozen=0 vs 5 produce different EF, works with
+  cohort_id.
+
+- **Effectiveness on merged TCGA+CPTAC:** Tested via `run_yfb_beta_fix_diagnostic.R
+  --quick` (V9: N_frozen=10, V10: N_frozen=20, V11: N_frozen=30 + warm-start).
+  All three frozen-F variants converge at iteration 9 — during the frozen phase, before EF
+  ever unfreezes. Root cause: SVD initialization on merged TCGA+CPTAC is itself
+  platform-dominated (RNA-seq vs proteomics contrast is the top SVD component), so
+  ZF_SVD = Y·EF_SVD has no survival correlation. With B_beta ≈ 0, β→0 during the
+  frozen phase, ELBO stabilizes quickly, and the convergence criterion fires at iter 9
+  before the unfreeze point. The "Unfreezing EF" message never appears.
+  Frozen-F does NOT rescue β→0 on merged TCGA+CPTAC. This is the last untested
+  CAVI-local fix — ALL strategies (V0–V11) are now exhausted.
+  One potential future fix not yet implemented: initialize EF from a TCGA-only (single-cohort)
+  YFB fit rather than SVD on the merged matrix. TCGA-only EF would not be platform-dominated,
+  and frozen-F from that starting point could allow β to grow before platform contrast dominates.
+  This requires running a single-cohort fit first (additional overhead) and is not yet tested.
+  See diagnostic output in `results/benchmark_sim/outputs/yfb_beta_fix/`.
+
+- **Affected files:** `code/fit_cox_on_yf.R` (N_frozen parameter + logic),
+  `tests/test_fit_yf_frozen_f.R` (new), `tests/run_tests.R` (updated),
+  `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R` (V9/V10/V11 variants added).
+
+---
+
+## 2026-05-25 — Low-K cohort benchmark: cohort_id is essential at K=5 for LB on merged data
+
+- **Finding:** At K=5, the LB model (η = Lβ) also collapses to β→0 on merged TCGA+CPTAC
+  (K_eff=0), not just the YFB model. At K=20, ARD has enough capacity to simultaneously
+  absorb the RNA-seq vs. proteomics platform contrast and learn 2–3 biological factors.
+  At K=5, it cannot — the platform contrast monopolizes the available factors and biological
+  signal is lost.
+
+- **Cohort extension effect at K=5:**
+
+  | Cohort | LB_base K=5 | LB_cohort K=5 | LB_base K=20 | LB_cohort K=20 |
+  |--------|-------------|---------------|--------------|----------------|
+  | Dijk | 0.544 | 0.601 | 0.590 | 0.545 |
+  | Moffitt | 0.543 | 0.537 | 0.529 | 0.520 |
+  | PACA_AU_array | 0.521 | 0.643 | 0.657 | 0.664 |
+  | PACA_AU_seq | 0.507 | 0.672 | 0.681 | 0.700 |
+  | Puleo | 0.504 | 0.617 | 0.634 | 0.590 |
+  | **Mean** | 0.524 | **0.614** | **0.618** | 0.604 |
+
+  LB_cohort K=5 achieves mean C=0.614, nearly matching LB_base K=20 (0.618) with
+  4× fewer biological factors. K_eff=3 (vs K_eff=0 for LB_base at K=5).
+
+- **Interpretation:** The cohort extension is beneficial in two distinct regimes:
+  1. **Low-K regime (K ≤ 5):** *Essential* — LB_base β→0 without cohort_id. Cohort
+     column absorbs platform offset, freeing all K biological factors for survival signal.
+  2. **High-K regime (K=20):** *Neutral to marginal* — ARD absorbs platform effects
+     implicitly by zeroing out factors with low biological signal. Cohort column competes
+     with biological factors and may reduce K_eff from 3 to 2.
+
+- **Practical recommendation:** For merged multi-platform PDAC analysis, prefer
+  K=5 + cohort_id over K=20 without cohort_id. Equivalent predictive performance,
+  far more interpretable (5 factors vs 3 non-zero out of 20).
+
+- **YFB β→0 unchanged:** LB_base K=5 K_eff=0 and YFB K=5 K_eff=0 both still collapse.
+  YFB frozen-F fix (N_frozen parameter) is the next diagnostic.
+
+- **Files:** `results/benchmark_sim/run_cohort_lmm_benchmark.R` (--low-k flag added),
+  `results/benchmark_sim/outputs/cohort_lmm_benchmark_low_k/` (results).
+
+---
+
 ## 2026-05-20 — YFB K-CV sign fix: sign_correction=FALSE in CV folds resolves C<0.5 for normal prior
 
 - **Decision:** Added a `sign_correction` parameter (default TRUE) to `fit_cox_on_yf()` in

@@ -122,6 +122,14 @@ calc_cox_taylor_yf <- function(eta, time, status) {
 #' @param N_burnin integer: beta-only burn-in iterations before joint CAVI (default 0).
 #'                 0 = off (Cluster A baseline). N_burnin=5 or 10 may help if betas
 #'                 collapse after the first joint CAVI iteration.
+#' @param N_frozen integer: number of CAVI iterations during which EF is held fixed at
+#'                 its SVD initialization while beta and L update freely (default 0 = off).
+#'                 Breaks the beta=0 ↔ B_beta=0 CAVI fixed-point without triggering the
+#'                 EF instability from dual-source F: EF is SVD-initialized (non-degenerate),
+#'                 ZF = Y·EF_init is fixed and non-zero, so A_beta = sum(w·ZF_k^2) > 0
+#'                 and beta can grow to a non-zero value. After N_frozen iters, EF unfreezes
+#'                 and the full joint CAVI proceeds from a non-zero beta starting point.
+#'                 Try N_frozen=10–30 for merged multi-platform data where beta->0 occurs.
 #' @param cox_warmstart logical: initialize EBeta via Cox regression on ZF before CAVI
 #'                 (default FALSE). FALSE = matches Cluster A behavior (EBeta starts at 0).
 #'                 TRUE may help if normal prior produces unstable initial betas.
@@ -150,6 +158,7 @@ fit_cox_on_yf <- function(Y, time, status,
                            EL_init      = NULL,
                            EF_init      = NULL,
                            N_burnin     = 0,
+                           N_frozen     = 0,
                            cox_warmstart    = FALSE,
                            normalize_AB     = FALSE,
                            alpha_F          = 0,
@@ -165,6 +174,11 @@ fit_cox_on_yf <- function(Y, time, status,
       alpha < 0 || alpha > 1) {
     stop("alpha must be a finite scalar in [0, 1].")
   }
+  if (!is.numeric(N_frozen) || length(N_frozen) != 1 || !is.finite(N_frozen) ||
+      N_frozen < 0) {
+    stop("N_frozen must be a non-negative integer.")
+  }
+  N_frozen <- as.integer(N_frozen)
 
   # ---- Progressive α schedule ----
   use_alpha_schedule <- !is.null(alpha_schedule)
@@ -350,6 +364,11 @@ fit_cox_on_yf <- function(Y, time, status,
                 prior_LF, prior_beta, alpha, alpha_F))
   }
 
+  if (verbose && N_frozen > 0) {
+    cat(sprintf("    [frozen-F] EF frozen for first %d iters — beta and L update freely\n",
+                N_frozen))
+  }
+
   # ==========================================================================
   # Main CAVI Loop
   # ==========================================================================
@@ -357,6 +376,15 @@ fit_cox_on_yf <- function(Y, time, status,
 
     EL_old    <- EL
     EBeta_old <- EBeta
+
+    # TRUE during the frozen phase: EF is held at SVD init, only beta and L update.
+    # This breaks the beta=0 ↔ B_beta=0 CAVI fixed-point: ZF = Y·EF_init is non-zero
+    # from SVD, so A_beta = sum(w·ZF_k^2) > 0 and beta can grow freely before F adapts.
+    freeze_F <- iter <= N_frozen
+    if (verbose && N_frozen > 0 && iter == N_frozen + 1L) {
+      cat(sprintf("    [frozen-F] Unfreezing EF at iter %d — beta_max=%.4e\n",
+                  iter, max(abs(EBeta))))
+    }
 
     alpha_iter <- alpha_at(iter)
 
@@ -430,6 +458,7 @@ fit_cox_on_yf <- function(Y, time, status,
                                    res_L$A, res_L$x, res_L$mean, res_L$second)
 
       # ---- (c) Update q(f_k): Biological Factors ----
+      # Skipped during frozen-F phase (iter <= N_frozen): EF held at SVD init.
       # R_k depends on EL[,k] (updated above); recompute before F update.
       # alpha_F=0 (default): pure genomics — prevents positive-feedback instability
       #   documented in DECISIONS.md 2026-04-30.
@@ -437,26 +466,29 @@ fit_cox_on_yf <- function(Y, time, status,
       #   multi-platform data where genomics-only EF drifts to platform contrast.
       #   The instability required degenerate zero-column SVD init (pmax bug, now
       #   fixed with abs()). Test stability empirically before raising alpha_F.
-      R_k        <- compute_R_k(Y, EL_aug, EF_aug, k)
-      YtWz_no_k  <- as.vector(t(Y) %*% (w * z_no_k))  # p-vector
-      res_F <- update_F_surv_YFB_k(Tau, EL_aug[, k], EL2_aug[, k], R_k,
-                                    EBeta_k      = EBeta[k],
-                                    EBeta2_k     = EBeta2[k],
-                                    YtWY_diag    = YtWY_diag,
-                                    YtWz_no_k    = YtWz_no_k,
-                                    prior_family = prior_LF,
-                                    alpha        = alpha_F)
-      EF[, k]      <- res_F$mean
-      EF2[, k]     <- res_F$second
-      EF_aug[, k]  <- res_F$mean    # keep augmented matrix in sync
-      EF2_aug[, k] <- res_F$second
-      kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
-                                   res_F$A, res_F$x, res_F$mean, res_F$second)
+      if (!freeze_F) {
+        R_k        <- compute_R_k(Y, EL_aug, EF_aug, k)
+        YtWz_no_k  <- as.vector(t(Y) %*% (w * z_no_k))  # p-vector
+        res_F <- update_F_surv_YFB_k(Tau, EL_aug[, k], EL2_aug[, k], R_k,
+                                      EBeta_k      = EBeta[k],
+                                      EBeta2_k     = EBeta2[k],
+                                      YtWY_diag    = YtWY_diag,
+                                      YtWz_no_k    = YtWz_no_k,
+                                      prior_family = prior_LF,
+                                      alpha        = alpha_F)
+        EF[, k]      <- res_F$mean
+        EF2[, k]     <- res_F$second
+        EF_aug[, k]  <- res_F$mean    # keep augmented matrix in sync
+        EF2_aug[, k] <- res_F$second
+        kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
+                                     res_F$A, res_F$x, res_F$mean, res_F$second)
+      }
 
     }  # end k-loop
 
     # Cohort F update — identical block to fit_modular.R.
-    if (!is.null(cohort_id) && C_cols > 0) {
+    # Also frozen during the N_frozen phase to keep EF_aug fully fixed.
+    if (!is.null(cohort_id) && C_cols > 0 && !freeze_F) {
       Y_hat_global <- EL %*% t(EF)
       res_cohort   <- update_F_cohort_all(
         L_cohort, Y - Y_hat_global, Tau, sigma_F_cohort

@@ -177,7 +177,18 @@ variants <- list(
   V7 = list(label = "Dual-F α_F=0.3 + warm-start",
             cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0.3),
   V8 = list(label = "Dual-F α_F=0.5 + warm-start",
-            cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0.5)
+            cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0.5),
+  # Frozen-F β pre-conditioning: EF held at SVD init for N_frozen iters,
+  # then unfrozen. Breaks the β=0 ↔ B_beta=0 trap without EF instability.
+  V9  = list(label = "Frozen-F N=10",
+             cox_warmstart = FALSE, N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0,
+             N_frozen = 10L),
+  V10 = list(label = "Frozen-F N=20",
+             cox_warmstart = FALSE, N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0,
+             N_frozen = 20L),
+  V11 = list(label = "Frozen-F N=30 + warm-start",
+             cox_warmstart = TRUE,  N_burnin = 0L,  alpha = ALPHA_BASE, alpha_F = 0,
+             N_frozen = 30L)
 )
 
 # --------------------------------------------------------------------------
@@ -203,9 +214,10 @@ fits    <- list()
 for (vi in seq_along(variants)) {
   v    <- variants[[vi]]
   vname <- names(variants)[vi]
+  v_N_frozen <- if (!is.null(v$N_frozen)) v$N_frozen else 0L
   cat(sprintf("--- %s: %s ---\n", vname, v$label))
-  cat(sprintf("    cox_warmstart=%s | N_burnin=%d | alpha=%.2f | alpha_F=%.2f\n",
-              v$cox_warmstart, v$N_burnin, v$alpha, v$alpha_F))
+  cat(sprintf("    cox_warmstart=%s | N_burnin=%d | alpha=%.2f | alpha_F=%.2f | N_frozen=%d\n",
+              v$cox_warmstart, v$N_burnin, v$alpha, v$alpha_F, v_N_frozen))
 
   set.seed(42L)
   fit <- suppressMessages(
@@ -217,6 +229,7 @@ for (vi in seq_along(variants)) {
                   alpha         = v$alpha,
                   cox_warmstart = v$cox_warmstart,
                   N_burnin      = v$N_burnin,
+                  N_frozen      = v_N_frozen,
                   alpha_F       = v$alpha_F,
                   verbose       = TRUE)
   )
@@ -256,6 +269,7 @@ for (vi in seq_along(variants)) {
     alpha_F       = v$alpha_F,
     cox_warmstart = v$cox_warmstart,
     N_burnin      = v$N_burnin,
+    N_frozen      = v_N_frozen,
     iters         = n_iters,
     C_train       = round(c_train, 3),
     C_dijk        = round(c_dijk, 3),
