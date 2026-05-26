@@ -90,4 +90,85 @@ run_test("T1.8: merge_preprocessed_cohorts errors on mismatched gene ordering", 
   assert_true(inherits(err, "error"), "Expected merge_preprocessed_cohorts to error")
 })
 
+# ---------------------------------------------------------------------------
+# Tests for normalize_method parameter in preprocess_merged_cohorts()
+# ---------------------------------------------------------------------------
+
+# Minimal synthetic merged input: 2 cohorts, 4 subjects, 6 genes
+make_synthetic_raw_list <- function() {
+  set.seed(1L)
+  gene_names <- paste0("G", 1:6)
+  list(
+    CohortA = list(
+      Y          = matrix(round(2^(matrix(runif(12, 2, 8), 4, 6)), 1),
+                          nrow = 4, dimnames = list(NULL, gene_names)),
+      gene_names = gene_names,
+      n          = 4L,
+      time       = c(1.0, 2.0, 3.0, 4.0),
+      status     = c(1L, 0L, 1L, 0L)
+    ),
+    CohortB = list(
+      Y          = matrix(round(2^(matrix(runif(12, 1, 9), 4, 6)), 1) * 0.5,
+                          nrow = 4, dimnames = list(NULL, gene_names)),
+      gene_names = gene_names,
+      n          = 4L,
+      time       = c(0.5, 1.5, 2.5, 3.5),
+      status     = c(0L, 1L, 0L, 1L)
+    )
+  )
+}
+
+run_test("T1.9: normalize_method='quantile' (default) matches prior behavior", {
+  raw <- make_synthetic_raw_list()
+  flags <- c(CohortA = TRUE, CohortB = FALSE)
+  out_q   <- preprocess_merged_cohorts(raw, flags, top_n = 6L,
+                                       normalize_method = "quantile",
+                                       rank_transform = FALSE)
+  out_def <- preprocess_merged_cohorts(raw, flags, top_n = 6L,
+                                       rank_transform = FALSE)
+  # quantile is the default — outputs must be identical
+  assert_near(out_q$Y, out_def$Y, tol = 1e-12)
+})
+
+run_test("T1.10: normalize_method='z_score' gives column means ~0 and SDs ~1", {
+  raw   <- make_synthetic_raw_list()
+  flags <- c(CohortA = TRUE, CohortB = FALSE)
+  out   <- preprocess_merged_cohorts(raw, flags, top_n = 6L,
+                                     normalize_method = "z_score",
+                                     rank_transform   = FALSE)
+  col_means <- colMeans(out$Y)
+  col_sds   <- apply(out$Y, 2, sd)
+  # Each gene column should be centered and scaled across all 8 subjects
+  assert_near(col_means, rep(0, ncol(out$Y)), tol = 1e-10)
+  assert_near(col_sds,   rep(1, ncol(out$Y)), tol = 1e-10)
+})
+
+run_test("T1.11: normalize_method='none' preserves log-transformed values (no QN distortion)", {
+  raw   <- make_synthetic_raw_list()
+  flags <- c(CohortA = TRUE, CohortB = FALSE)
+  out_none <- preprocess_merged_cohorts(raw, flags, top_n = 6L,
+                                        normalize_method = "none",
+                                        rank_transform   = FALSE)
+  out_q    <- preprocess_merged_cohorts(raw, flags, top_n = 6L,
+                                        normalize_method = "quantile",
+                                        rank_transform   = FALSE)
+  # 'none' and 'quantile' must produce DIFFERENT matrices
+  assert_equal(identical(out_none$Y, out_q$Y), FALSE)
+  # 'none' matrix gene names and dimensions must still be correct
+  assert_equal(ncol(out_none$Y), 6L)
+  assert_equal(nrow(out_none$Y), 8L)
+  assert_equal(out_none$gene_names, out_q$gene_names)
+})
+
+run_test("T1.12: normalize_method invalid argument is caught", {
+  raw   <- make_synthetic_raw_list()
+  flags <- c(CohortA = TRUE, CohortB = FALSE)
+  result <- tryCatch(
+    preprocess_merged_cohorts(raw, flags, top_n = 6L,
+                              normalize_method = "bad_method"),
+    error = function(e) e
+  )
+  assert_equal(inherits(result, "error"), TRUE)
+})
+
 report_results("preprocess_desurv.R")

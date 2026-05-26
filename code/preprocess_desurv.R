@@ -235,7 +235,9 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
                                       top_n                    = 2000,
                                       ties_method              = "average",
                                       rank_transform           = TRUE,
-                                      per_platform_standardize = FALSE) {
+                                      per_platform_standardize = FALSE,
+                                      normalize_method         = c("quantile", "z_score", "none")) {
+  normalize_method <- match.arg(normalize_method)
   cohort_names <- names(cohort_raw_list)
   stopifnot(!is.null(cohort_names), all(cohort_names %in% names(log_transform_flags)))
 
@@ -275,13 +277,28 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
     levels = cohort_names
   )
 
-  # Step 4: quantile normalise across ALL merged samples jointly
-  cat(sprintf("  [v2] Quantile normalising merged matrix (%d x %d) ...\n",
-              nrow(Y_merged), ncol(Y_merged)))
-  Y_qn <- quantile_normalize_merged(Y_merged)
+  # Step 4: distribution normalization across merged samples (method-dependent)
+  if (normalize_method == "quantile") {
+    cat(sprintf("  [v2] Quantile normalising merged matrix (%d x %d) ...\n",
+                nrow(Y_merged), ncol(Y_merged)))
+    Y_norm <- quantile_normalize_merged(Y_merged)
+  } else if (normalize_method == "z_score") {
+    cat(sprintf("  [v2] Joint z-standardizing merged matrix (%d x %d, colMean=0, colSD=1) ...\n",
+                nrow(Y_merged), ncol(Y_merged)))
+    Y_norm <- scale(Y_merged, center = TRUE, scale = TRUE)
+    colnames(Y_norm) <- common_genes
+  } else {
+    # normalize_method == "none": skip normalization; pass log-transformed matrix directly.
+    # Gene-level mean differences across platforms are NOT removed here.
+    # Downstream column-centering inside fit_modular/fit_cox_on_yf provides
+    # partial correction, but platform-scale differences remain.
+    cat(sprintf("  [v2] Skipping normalization (log-transform only; %d x %d) ...\n",
+                nrow(Y_merged), ncol(Y_merged)))
+    Y_norm <- Y_merged
+  }
 
-  # Steps 5–6: per-gene variance on the QN matrix → top-N selection
-  selected <- select_top_variable_genes(Y_qn, common_genes, top_n = top_n)
+  # Steps 5–6: per-gene variance on the normalized matrix → top-N selection
+  selected <- select_top_variable_genes(Y_norm, common_genes, top_n = top_n)
   cat(sprintf("  [v2] Genes retained after top-%d variance filter: %d\n",
               top_n, length(selected$gene_names)))
 
@@ -304,7 +321,8 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
     dataset_labels           = dataset_labels,
     n_raw_intersect          = length(common_genes),
     rank_transform           = rank_transform,
-    per_platform_standardize = per_platform_standardize
+    per_platform_standardize = per_platform_standardize,
+    normalize_method         = normalize_method
   )
 }
 
