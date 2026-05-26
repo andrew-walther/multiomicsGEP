@@ -5,6 +5,44 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-25 — Merged-cohort benchmark: 6-configuration apples-to-apples comparison
+
+- **Design:** Six model configurations (2 models × 2 preprocessing × 2 cohort indicator settings)
+  evaluated on merged TCGA_PAAD + CPTAC training with K selected by cross-validated C-index (1-SE rule,
+  K_grid=2:10, 5 folds). Prior: normal throughout — point_normal is excluded because it produces β→0
+  on merged data regardless of model or preprocessing (confirmed on prior runs). YFB × joint
+  quantile+rank preprocessing is excluded (structural β→0, all V0–V11 strategies exhausted,
+  see 2026-05-22 entry).
+
+| ID | Model | Preprocessing | cohort_id | K (1-SE CV) |
+|----|-------|---------------|-----------|-------------|
+| M1 | LB (η = Lβ) | Joint quantile+rank | No | 6 |
+| M2 | LB | Joint quantile+rank | Yes | 6 |
+| M3 | LB | Per-platform z-std | No | 3 |
+| M4 | LB | Per-platform z-std | Yes | 3 |
+| M5 | YFB (η = (YF)β) | Per-platform z-std | No | 2 |
+| M6 | YFB | Per-platform z-std | Yes | 2 |
+
+- **K-CV findings:** LB joint peaks at K=6 (mean C=0.589), non-monotone with poor K=3 (0.439).
+  LB per-platform peaks at K=3 (mean C=0.558) and is nearly flat K=3–8 — parsimonious.
+  YFB per-platform peaks at K=7 (mean C=0.644) but 1-SE selects K=2 (mean C=0.625 is within
+  1 SE of the peak); the 1-SE rule strongly favors parsimony here given high fold-to-fold variance
+  in YFB folds.
+
+- **Recommended configuration:** *(To be filled after full benchmark results.)*
+  - Which of M1–M6 wins on mean external C-index?
+  - Which configurations achieve K_eff > 0?
+  - Does per-platform preprocessing improve over joint for LB?
+  - Does cohort indicator help beyond per-platform preprocessing alone?
+  - Recommended configuration for manuscript analysis?
+
+- **Files:** `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
+  `docs/reports/merged_benchmark_report.{qmd,pdf}`,
+  `results/benchmark_sim/outputs/merged_benchmark/`
+
+
+---
+
 ## 2026-05-22 — YFB β→0 on merged data: structural diagnosis and two bug fixes
 
 - **Finding:** The β→0 collapse in YFB (η = ZF·β) on merged TCGA+CPTAC is a structural property of the model, not fixable by initialization strategies (Cox warm-start, burn-in, higher α). Diagnosis via `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R`.

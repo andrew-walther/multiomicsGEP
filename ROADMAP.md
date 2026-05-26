@@ -117,6 +117,13 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   *Files: `results/benchmark_sim/run_cohort_lmm_benchmark.R` (--low-k flag added),
   `results/benchmark_sim/outputs/cohort_lmm_benchmark_low_k/`. DECISIONS.md 2026-05-25.*
 
+- [ ] **Merged-cohort 6-configuration benchmark** `[Priority: High]` `[Effort: Medium]` *(In progress — 2026-05-25)*
+  Apples-to-apples comparison of LB vs. YFB × joint vs. per-platform preprocessing × ±cohort_id,
+  with K selected by CV throughout (replacing previous K=20+ARD approach). CV K values:
+  LB_joint=6, LB_perplatform=3, YFB_perplatform=2. Full benchmark running; report pending.
+  *Files: `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
+  `docs/reports/merged_benchmark_report.qmd`. DECISIONS.md 2026-05-25.*
+
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model
   on real PDAC data, the normal prior is strictly necessary — the spike-and-slab (point_normal)
