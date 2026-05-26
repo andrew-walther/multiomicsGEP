@@ -117,12 +117,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   *Files: `results/benchmark_sim/run_cohort_lmm_benchmark.R` (--low-k flag added),
   `results/benchmark_sim/outputs/cohort_lmm_benchmark_low_k/`. DECISIONS.md 2026-05-25.*
 
-- [ ] **Merged-cohort 6-configuration benchmark** `[Priority: High]` `[Effort: Medium]` *(In progress — 2026-05-25)*
+- [x] **Merged-cohort 6-configuration benchmark** *(Complete — 2026-05-25)*
   Apples-to-apples comparison of LB vs. YFB × joint vs. per-platform preprocessing × ±cohort_id,
-  with K selected by CV throughout (replacing previous K=20+ARD approach). CV K values:
-  LB_joint=6, LB_perplatform=3, YFB_perplatform=2. Full benchmark running; report pending.
+  with K selected by CV throughout (K_grid=2:10, 5 folds, 1-SE rule).
+  Winner: M5 (YFB × per-platform × no cohort_id, K=2), mean external C=0.625, K_eff=2.
+  Runner-up: M4 (LB × per-platform × cohort_id, K=3), mean C=0.624.
+  Key findings: (1) per-platform preprocessing improves LB over joint (+0.021); (2) cohort indicator
+  helps LB when combined with joint preprocessing but is marginally helpful / harmful at low K;
+  (3) YFB without cohort indicator at K=2 is the best single configuration for multi-cohort generalization.
+  Recommended for manuscript: M5. Sensitivity check: M4.
   *Files: `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
-  `docs/reports/merged_benchmark_report.qmd`. DECISIONS.md 2026-05-25.*
+  `docs/reports/merged_benchmark_report.qmd`. Results: `outputs/merged_benchmark/`. DECISIONS.md 2026-05-25.*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model

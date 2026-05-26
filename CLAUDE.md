@@ -16,7 +16,7 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 - **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. Expected: 229/229 passing.
 - **Real-data tests:** `Rscript tests/test_real_data_loading.R` — 77/77 passing (auto-skips if `PDAC_DATA_ROOT` not set).
 - **Real data:** Not in git. Stored locally at `~/Library/CloudStorage/OneDrive-.../UNC Dissertation (Liu)/PDAC_data`. For Longleaf: `export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC`.
-- **Current model status:** Both LB (`code/fit_modular.R`, η = Lβ) and YFB (`code/fit_cox_on_yf.R`, η = (YF)β) are fully implemented with training concordance sign correction. Both support a `cohort_id` parameter (corner-point encoding) to absorb platform offsets. LB external C-index: 0.51–0.67 (tcga_only, cptac_only); merged with cohort extension: 0.52–0.70. YFB external C-index: 0.55–0.63 on single-cohort modes (normal prior); merged training collapses β→0 for YFB (platform mixing, RNA-seq + proteomics; see ROADMAP open items). See `ROADMAP.md` for open items.
+- **Current model status:** Both LB (`code/fit_modular.R`, η = Lβ) and YFB (`code/fit_cox_on_yf.R`, η = (YF)β) are fully implemented with training concordance sign correction. Both support a `cohort_id` parameter (corner-point encoding) to absorb platform offsets. **Recommended configuration (merged multi-platform training):** YFB × per-platform z-std × no cohort indicator, K=2 (CV-selected), mean external C=0.625 across 5 held-out PDAC cohorts — see `DECISIONS.md` 2026-05-25 and `docs/reports/merged_benchmark_report.qmd`. LB external C-index: single-cohort 0.51–0.67; merged at CV-selected K: 0.599–0.624 depending on preprocessing and cohort indicator. YFB external C-index: 0.55–0.63 (single-cohort, normal prior); merged at K=2 (per-platform z-std): mean 0.625. YFB with joint quantile+rank preprocessing collapses β→0 on merged data (structural, all fixes exhausted — see DECISIONS.md 2026-05-22). See `ROADMAP.md` for open items.
 - **Documentation audience:** Write ROADMAP.md, DECISIONS.md, PROJECT_STATUS.qmd, and README.md for biostatistician collaborators reading the project cold — not as implementation logs. Avoid internal session terminology (e.g. "Phase A/B/C", "Cluster A/B", "Session N") in prose descriptions; use those labels only in commit messages or as lookup keys. Describe methods and findings in terms a statistical reader would recognize: model variant, prior, training set, metric, result.
 
 ## Quick Reference
@@ -46,6 +46,9 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 | DeSurv preprocessing | `code/preprocess_desurv.R` |
 | Cohort extension benchmark | `results/benchmark_sim/run_cohort_lmm_benchmark.R` — 4-way comparison (LB/YFB × base/cohort) |
 | Cohort extension report | `docs/reports/cohort_lmm_benchmark_report.{qmd,pdf,html}` |
+| **Merged 6-config K-CV** | `results/benchmark_sim/run_merged_kcv.R` — CV K selection for M1–M6 (fills globals.yml) |
+| **Merged 6-config benchmark** | `results/benchmark_sim/run_merged_benchmark.R` — 6-model fit + external validation |
+| **Merged benchmark report** | `docs/reports/merged_benchmark_report.{qmd,pdf}` — recommended config findings |
 | Test suite (core + predict) | `tests/run_tests.R` (229/229) |
 | Real-data test suite | `tests/test_real_data_loading.R` (77/77, local-only) |
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |

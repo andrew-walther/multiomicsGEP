@@ -129,10 +129,59 @@ if (!is.null(top_genes)) {
 
 ## Conclusions
 
-*(To be filled in after results are available. Key questions to address:)*
+### Winner: M5 (YFB × per-platform z-std × no cohort indicator, K=2)
 
-- *Which configuration achieves the highest mean external C-index?*
-- *Does per-platform preprocessing consistently improve over joint preprocessing for LB?*
-- *Does the cohort indicator help on top of per-platform preprocessing, or is it redundant?*
-- *Which configuration produces the most biologically coherent top genes per factor?*
-- *What is the recommended configuration for the manuscript?*
+M5 achieves the highest mean external C-index (0.625) across 5 independent PDAC cohorts, with
+both CV-selected factors active (K_eff=2 = K_total). This configuration is also the most
+parsimonious: K=2 means every factor contributes to survival prediction, with no null factors
+consuming model capacity.
+
+### Per-platform preprocessing consistently improves LB over joint normalization
+
+Comparing M1 and M3 (both LB, neither with a cohort indicator), per-platform z-standardization
+improves mean external C-index by 0.021 (0.599 → 0.620). Joint quantile+rank normalization
+merges RNA-seq and proteomics samples into a common distribution, but cannot fully remove the
+between-platform directional differences that drive the top SVD components. Per-platform z-scoring
+normalizes each cohort's mean and variance separately before merging, allowing biological signal
+to dominate the shared factor space.
+
+### Cohort indicator: helpful for LB + joint preprocessing; neutral-to-harmful at low K
+
+Adding a cohort indicator to LB with joint preprocessing (M1 → M2) yields a substantial +0.020
+improvement (0.599 → 0.619) and triples the number of active factors (K_eff=1 → 3). The cohort
+column explicitly absorbs the platform offset, freeing the biological factors from competing with
+it. In contrast, adding a cohort indicator to LB with per-platform preprocessing (M3 → M4) is
+nearly neutral (+0.004; 0.620 → 0.624): per-platform normalization already largely removes the
+bulk platform difference. For YFB (M5 → M6), the cohort indicator is harmful (−0.015), because
+at K=2, the cohort column competes with the biological factors for genomic variance in the factor
+scores ZF = YF, degrading the survival signal captured by β.
+
+### LB vs. YFB at per-platform preprocessing
+
+M5 (YFB, mean C=0.625) slightly outperforms M4 (LB + cohort, mean C=0.624) and M3 (LB, mean
+C=0.620). YFB's direct factor projection — constructing risk scores as η = (YF)β, where ZF = YF
+projects each patient's gene expression onto the learned factor directions — appears slightly
+better calibrated for external generalization at low K on merged multi-platform data. At K=2,
+both YFB factors are survival-relevant (K_eff=2), whereas LB at K=3 identifies only one active
+factor (K_eff=1).
+
+### Note on M3 beta scale
+
+M3 (LB × per-platform × no cohort, K=3) has beta_max=0.627, substantially larger than other
+LB results (~0.02–0.03). At K=3 with per-platform preprocessing, a single factor absorbs all
+survival-predictive variance, yielding one highly-weighted factor on the z-score scale. This is
+not a numerical instability — the fit is interpretable — but it suggests K=3 may be near the
+lower bound of LB model capacity on this data. The cohort indicator (M4) redistributes variance,
+yielding beta_max=0.482 with a comparable C-index.
+
+### Recommended configuration for manuscript
+
+**Primary: M5** — YFB × per-platform z-standardization × no cohort indicator, K=2 (CV-selected).
+This achieves the highest generalization across platforms and patient populations, uses the fewest
+factors, and maintains all factors as biologically active.
+
+**Sensitivity check: M4** — LB × per-platform z-standardization × cohort indicator, K=3. Nearly
+identical mean C-index (0.624 vs 0.625); explicitly models the RNA-seq vs. proteomics platform
+offset via the cohort column; one fewer active factor (K_eff=1).
+
+**Not recommended:** M1 (lowest mean C=0.599); M6 (cohort indicator harmful for YFB at low K).

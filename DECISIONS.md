@@ -29,12 +29,49 @@ Each entry records what was decided, why, what was traded away, and which files 
   1 SE of the peak); the 1-SE rule strongly favors parsimony here given high fold-to-fold variance
   in YFB folds.
 
-- **Recommended configuration:** *(To be filled after full benchmark results.)*
-  - Which of M1–M6 wins on mean external C-index?
-  - Which configurations achieve K_eff > 0?
-  - Does per-platform preprocessing improve over joint for LB?
-  - Does cohort indicator help beyond per-platform preprocessing alone?
-  - Recommended configuration for manuscript analysis?
+- **Full benchmark results** (5 external cohorts, prior=normal, max_iter=300):
+
+  | Model | Dijk | Moffitt | PACA_AU_arr | PACA_AU_seq | Puleo | Mean C | K_eff | beta_max |
+  |-------|------|---------|-------------|-------------|-------|--------|-------|----------|
+  | M1 LB joint | 0.569 | 0.515 | 0.645 | 0.667 | 0.600 | 0.599 | 1 | 0.016 |
+  | M2 LB joint + cohort | 0.587 | 0.537 | 0.659 | 0.686 | 0.626 | 0.619 | 3 | 0.031 |
+  | M3 LB per-platform | 0.615 | 0.547 | 0.649 | 0.644 | 0.645 | 0.620 | 1 | 0.627 |
+  | M4 LB per-platform + cohort | 0.624 | 0.549 | 0.656 | 0.638 | 0.650 | 0.624 | 1 | 0.482 |
+  | **M5 YFB per-platform** | 0.621 | 0.537 | 0.662 | 0.655 | 0.650 | **0.625** | 2 | 0.052 |
+  | M6 YFB per-platform + cohort | 0.578 | 0.519 | 0.655 | 0.645 | 0.652 | 0.610 | 2 | 0.052 |
+
+- **Key comparisons:**
+  - **LB joint vs. LB per-platform (no cohort_id):** M1→M3 mean C 0.599→0.620 (+0.021). Per-platform
+    preprocessing consistently improves LB on merged data. Joint quantile normalization cannot fully
+    remove the RNA-seq vs. proteomics scale difference; per-platform z-standardization achieves better
+    biological signal separation.
+  - **Cohort indicator effect (matched preprocessing):**
+    - LB joint: M1→M2 +0.020 (3 active factors vs 1 — cohort column frees factors from absorbing platform contrast).
+    - LB per-platform: M3→M4 +0.004 (marginal; preprocessing already removed bulk platform effects).
+    - YFB per-platform: M5→M6 −0.015 (cohort indicator hurts at K=2 — the cohort column competes with
+      the 2 biological factors for the limited genomic variance, reducing biological signal in ZF).
+  - **LB vs. YFB at per-platform preprocessing:** M5 (YFB, mean C=0.625) edges out M4 (LB+cohort,
+    0.624) and M3 (LB, 0.620). YFB's direct factor projection (η = (YF)β) appears slightly better
+    calibrated for external generalization at low K.
+  - **M3 beta_max anomaly:** beta_max=0.627 for M3 (K_eff=1) is large compared to prior LB results
+    (~0.02). At K=3 with per-platform preprocessing, a single factor absorbs all survival-predictive
+    variance. The high beta magnitude reflects that the single active factor is on a small (z-score)
+    scale — not a numerical instability, but it signals that K=3 is below the biological signal
+    dimensionality for the LB model on this data.
+
+- **Recommended configuration for manuscript:**
+  - **Primary: M5 — YFB × per-platform z-std × no cohort indicator, K=2**
+    - Highest mean external C-index (0.625) across 5 independent cohorts.
+    - Both factors are active (K_eff=2 = K_total), no dead factors.
+    - Most parsimonious model overall (K=2).
+    - Beta scale is on the natural YFB scale (~0.05); readily interpretable.
+    - YFB predictor (η = (YF)β) maps observed gene expression directly onto factor scores,
+      giving biologically transparent risk scores.
+  - **Sensitivity check: M4 — LB × per-platform z-std × cohort indicator, K=3**
+    - Mean C=0.624, effectively tied with M5.
+    - Cohort indicator explicitly models the RNA-seq vs. proteomics offset (recoverable quantity).
+    - K_eff=1 limits multi-program interpretation — only one prognostic factor identified.
+  - **Not recommended: M1 (lowest mean C=0.599); M6 (cohort indicator hurts YFB at low K).**
 
 - **Files:** `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
   `docs/reports/merged_benchmark_report.{qmd,pdf}`,
