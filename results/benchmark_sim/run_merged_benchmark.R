@@ -1,60 +1,45 @@
 # ============================================================
 # Script:  results/benchmark_sim/run_merged_benchmark.R
-# Purpose: Comprehensive merged-cohort benchmark (TCGA_PAAD + CPTAC).
-#          Fits 6 model configurations at CV-selected K and evaluates
-#          external C-index on 5 held-out PDAC cohorts.
+# Purpose: Comprehensive merged-cohort benchmark — all preprocessing options.
+#          Fits 18 model configurations at CV-selected K (biological floor K>=3)
+#          and evaluates external C-index on 5 held-out PDAC cohorts.
 #
-#          Configurations (all prior_beta="normal"):
-#            M1: LB  x joint quantile+rank  x no cohort_id
-#            M2: LB  x joint quantile+rank  x cohort_id
-#            M3: LB  x per-platform z-std   x no cohort_id
-#            M4: LB  x per-platform z-std   x cohort_id
-#            M5: YFB x per-platform z-std   x no cohort_id
-#            M6: YFB x per-platform z-std   x cohort_id
+#          Model IDs:
+#            M1–M6:   existing (joint_quantile_rank, perplatform_zstd) x LB/YFB x +-cohort
+#            M7–M18:  new (joint_quantile_norank, joint_zstd, log_only) x LB/YFB x +-cohort
 #
-#          K for each configuration is read from globals.yml
-#          (benchmark.k_merged_lb_joint, k_merged_lb_perplatform,
-#           k_merged_yfb_perplatform). Run run_merged_kcv.R first.
-#
-#          Excluded (documented beta->0 structural failure, all V0-V11 exhausted):
-#            YFB x joint quantile+rank x No/Yes
+#          K values read from globals.yml. Run run_merged_kcv.R first.
+#          YFB x joint QN excluded (structural beta->0, DECISIONS.md 2026-05-22).
 #
 # Author:  Claude Code (reviewed by Andrew Walther)
 # Created: 2026-05-25
 # Usage:   Rscript results/benchmark_sim/run_merged_benchmark.R [--quick]
-#          --quick: max_iter=30, skips interpretability output (smoke test)
+#          --quick: max_iter=30, skip top-gene table (smoke test)
 # ============================================================
 
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (file.exists("code/fit_modular.R")) {
-} else if (file.exists("../../code/fit_modular.R")) {
+if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
   setwd("../../")
-}
 
-suppressPackageStartupMessages({
-  library(yaml)
-  library(survival)
-})
+suppressPackageStartupMessages({ library(yaml); library(survival) })
 
 cfg <- yaml::read_yaml("config/globals.yml")
+b   <- cfg$benchmark
 
-# Guard: K values must be filled by run_merged_kcv.R first
-k_lb_joint        <- cfg$benchmark$k_merged_lb_joint
-k_lb_perplatform  <- cfg$benchmark$k_merged_lb_perplatform
-k_yfb_perplatform <- cfg$benchmark$k_merged_yfb_perplatform
+# --------------------------------------------------------------------------
+# Guard: all K values must be filled
+# --------------------------------------------------------------------------
 
-if (is.null(k_lb_joint) || is.null(k_lb_perplatform) || is.null(k_yfb_perplatform)) {
-  missing <- c(
-    if (is.null(k_lb_joint))        "k_merged_lb_joint",
-    if (is.null(k_lb_perplatform))  "k_merged_lb_perplatform",
-    if (is.null(k_yfb_perplatform)) "k_merged_yfb_perplatform"
-  )
-  stop(sprintf(
-    "K values not yet set in globals.yml: %s\nRun: Rscript results/benchmark_sim/run_merged_kcv.R",
-    paste(missing, collapse = ", ")
-  ))
+REQUIRED_KEYS <- c("k_merged_lb_joint", "k_merged_lb_perplatform",
+                   "k_merged_yfb_perplatform", "k_merged_lb_joint_norank",
+                   "k_merged_yfb_joint_norank", "k_merged_lb_zstd",
+                   "k_merged_yfb_zstd", "k_merged_lb_logonly", "k_merged_yfb_logonly")
+missing_keys <- REQUIRED_KEYS[sapply(REQUIRED_KEYS, function(k) is.null(b[[k]]))]
+if (length(missing_keys) > 0) {
+  stop(sprintf("K values not set: %s\nRun: Rscript results/benchmark_sim/run_merged_kcv.R",
+               paste(missing_keys, collapse = ", ")))
 }
 
 source("results/benchmark_sim/benchmark_helpers.R")
@@ -67,24 +52,18 @@ tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 
-ALPHA      <- cfg$benchmark$alpha
-LAMBDA     <- cfg$benchmark$lambda
-MAX_ITER   <- if (QUICK_MODE) 30L else cfg$cavi$max_iter
-PRIOR_BETA <- "normal"
-SIGMA_COH  <- 1.0
+ALPHA       <- b$alpha
+LAMBDA      <- b$lambda
+MAX_ITER    <- if (QUICK_MODE) 30L else cfg$cavi$max_iter
+PRIOR_BETA  <- "normal"
+SIGMA_COH   <- 1.0
 BETA_THRESH <- cfg$k_selection$beta_threshold
 
 OUT_DIR <- "results/benchmark_sim/outputs/merged_benchmark"
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
-cat("=== Merged Cohort Benchmark - 6-way comparison ===\n")
-cat(sprintf("    alpha=%.2f | prior_beta=%s | max_iter=%d | QUICK=%s\n",
-            ALPHA, PRIOR_BETA, MAX_ITER, QUICK_MODE))
-cat(sprintf("    K: LB_joint=%d | LB_perplatform=%d | YFB_perplatform=%d\n\n",
-            k_lb_joint, k_lb_perplatform, k_yfb_perplatform))
-
 # --------------------------------------------------------------------------
-# 1. Load and preprocess training data -- both versions
+# 1. Load training data
 # --------------------------------------------------------------------------
 
 cat("--- Loading TCGA_PAAD + CPTAC ---\n")
@@ -97,100 +76,116 @@ n_cptac <- train_raw$CPTAC$n
 cohort_labels <- c(rep("TCGA", n_tcga), rep("CPTAC", n_cptac))
 time_train   <- unlist(lapply(TRAIN_COHORTS, function(ds) train_raw[[ds]]$time))
 status_train <- unlist(lapply(TRAIN_COHORTS, function(ds) train_raw[[ds]]$status))
-
-merged_joint <- preprocess_merged_cohorts(
-  train_raw, PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
-  top_n = cfg$preprocessing$top_n_genes,
-  rank_transform = TRUE, per_platform_standardize = FALSE
-)
-
-merged_perplatform <- preprocess_merged_cohorts(
-  train_raw, PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
-  top_n = cfg$preprocessing$top_n_genes,
-  rank_transform = FALSE, per_platform_standardize = TRUE
-)
-
-cat(sprintf("  joint: n=%d, p=%d\n", nrow(merged_joint$Y), ncol(merged_joint$Y)))
-cat(sprintf("  perplatform: n=%d, p=%d\n\n", nrow(merged_perplatform$Y),
-            ncol(merged_perplatform$Y)))
+cat(sprintf("  n=%d (TCGA=%d, CPTAC=%d), events=%d\n\n",
+            n_tcga + n_cptac, n_tcga, n_cptac, sum(status_train)))
 
 # --------------------------------------------------------------------------
-# Helper: oriented C-index (always >= 0.5 by flipping sign if needed)
+# 2. Model configuration table
+#    Each row: model ID, model type, preprocessing params, cohort_id flag, K key
 # --------------------------------------------------------------------------
+
+MODEL_CONFIGS <- list(
+  # --- existing (joint_quantile_rank) ---
+  list(id="M1",  model="LB",  per_plat=FALSE, norm="quantile", rank=TRUE,  cohort=FALSE, k_key="k_merged_lb_joint"),
+  list(id="M2",  model="LB",  per_plat=FALSE, norm="quantile", rank=TRUE,  cohort=TRUE,  k_key="k_merged_lb_joint"),
+  # --- existing (perplatform_zstd); M5/M6 re-run at K=3 floor ---
+  list(id="M3",  model="LB",  per_plat=TRUE,  norm="quantile", rank=FALSE, cohort=FALSE, k_key="k_merged_lb_perplatform"),
+  list(id="M4",  model="LB",  per_plat=TRUE,  norm="quantile", rank=FALSE, cohort=TRUE,  k_key="k_merged_lb_perplatform"),
+  list(id="M5",  model="YFB", per_plat=TRUE,  norm="quantile", rank=FALSE, cohort=FALSE, k_key="k_merged_yfb_perplatform"),
+  list(id="M6",  model="YFB", per_plat=TRUE,  norm="quantile", rank=FALSE, cohort=TRUE,  k_key="k_merged_yfb_perplatform"),
+  # --- new (joint_quantile_norank) ---
+  list(id="M7",  model="LB",  per_plat=FALSE, norm="quantile", rank=FALSE, cohort=FALSE, k_key="k_merged_lb_joint_norank"),
+  list(id="M8",  model="LB",  per_plat=FALSE, norm="quantile", rank=FALSE, cohort=TRUE,  k_key="k_merged_lb_joint_norank"),
+  list(id="M13", model="YFB", per_plat=FALSE, norm="quantile", rank=FALSE, cohort=FALSE, k_key="k_merged_yfb_joint_norank"),
+  list(id="M14", model="YFB", per_plat=FALSE, norm="quantile", rank=FALSE, cohort=TRUE,  k_key="k_merged_yfb_joint_norank"),
+  # --- new (joint_zstd) ---
+  list(id="M9",  model="LB",  per_plat=FALSE, norm="z_score",  rank=FALSE, cohort=FALSE, k_key="k_merged_lb_zstd"),
+  list(id="M10", model="LB",  per_plat=FALSE, norm="z_score",  rank=FALSE, cohort=TRUE,  k_key="k_merged_lb_zstd"),
+  list(id="M15", model="YFB", per_plat=FALSE, norm="z_score",  rank=FALSE, cohort=FALSE, k_key="k_merged_yfb_zstd"),
+  list(id="M16", model="YFB", per_plat=FALSE, norm="z_score",  rank=FALSE, cohort=TRUE,  k_key="k_merged_yfb_zstd"),
+  # --- new (log_only) ---
+  list(id="M11", model="LB",  per_plat=FALSE, norm="none",     rank=FALSE, cohort=FALSE, k_key="k_merged_lb_logonly"),
+  list(id="M12", model="LB",  per_plat=FALSE, norm="none",     rank=FALSE, cohort=TRUE,  k_key="k_merged_lb_logonly"),
+  list(id="M17", model="YFB", per_plat=FALSE, norm="none",     rank=FALSE, cohort=FALSE, k_key="k_merged_yfb_logonly"),
+  list(id="M18", model="YFB", per_plat=FALSE, norm="none",     rank=FALSE, cohort=TRUE,  k_key="k_merged_yfb_logonly")
+)
+
+# --------------------------------------------------------------------------
+# Helper: oriented C-index
+# --------------------------------------------------------------------------
+
 oriented_cindex <- function(risk, time, status) {
   c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
   max(c_raw, 1 - c_raw)
 }
 
 # --------------------------------------------------------------------------
-# 2. Fit all 6 configurations
+# 3. Preprocess training data — cache by (per_plat, norm, rank) combo
 # --------------------------------------------------------------------------
 
-fits      <- list()
-gene_sets <- list()   # store gene_names per preprocessing type for external validation
+cat("--- Preprocessing training data (all modes) ---\n")
+preproc_cache  <- list()
+gene_set_cache <- list()
 
-fit_lb <- function(Y, time, status, K, cohort_id = NULL, label = "") {
-  cat(sprintf("--- Fitting %s (K=%d) ---\n", label, K))
+for (mcfg in MODEL_CONFIGS) {
+  cache_key <- paste(mcfg$per_plat, mcfg$norm, mcfg$rank, sep = "_")
+  if (!cache_key %in% names(preproc_cache)) {
+    cat(sprintf("  Preprocessing: per_plat=%s, norm=%s, rank=%s ...\n",
+                mcfg$per_plat, mcfg$norm, mcfg$rank))
+    pp <- preprocess_merged_cohorts(
+      train_raw, PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
+      top_n = cfg$preprocessing$top_n_genes,
+      rank_transform = mcfg$rank, per_platform_standardize = mcfg$per_plat,
+      normalize_method = mcfg$norm
+    )
+    preproc_cache[[cache_key]]  <- pp$Y
+    gene_set_cache[[cache_key]] <- pp$gene_names
+    cat(sprintf("    n=%d, p=%d\n", nrow(pp$Y), ncol(pp$Y)))
+  }
+}
+
+# --------------------------------------------------------------------------
+# 4. Fit all configurations
+# --------------------------------------------------------------------------
+
+cat("\n=== Fitting all 18 configurations ===\n\n")
+fits <- list()
+
+for (mcfg in MODEL_CONFIGS) {
+  cache_key <- paste(mcfg$per_plat, mcfg$norm, mcfg$rank, sep = "_")
+  Y_train   <- preproc_cache[[cache_key]]
+  K         <- b[[mcfg$k_key]]
+  cohort_id <- if (mcfg$cohort) cohort_labels else NULL
+
+  cat(sprintf("--- Fitting %s [%s, per_plat=%s, norm=%s, rank=%s, cohort=%s, K=%d] ---\n",
+              mcfg$id, mcfg$model, mcfg$per_plat, mcfg$norm, mcfg$rank, mcfg$cohort, K))
   set.seed(42L)
+
   fit <- suppressMessages(
-    fit_supervised_mf_modular(Y, time, status,
-                              K          = K,
-                              max_iter   = MAX_ITER,
-                              alpha      = ALPHA,
-                              lambda     = LAMBDA,
-                              prior_beta = PRIOR_BETA,
-                              verbose    = TRUE,
-                              cohort_id  = cohort_id,
-                              sigma_F_cohort = SIGMA_COH)
+    if (mcfg$model == "LB")
+      fit_supervised_mf_modular(Y_train, time_train, status_train,
+                                K = K, max_iter = MAX_ITER, alpha = ALPHA,
+                                lambda = LAMBDA, prior_beta = PRIOR_BETA,
+                                verbose = TRUE, cohort_id = cohort_id,
+                                sigma_F_cohort = SIGMA_COH)
+    else
+      fit_cox_on_yf(Y_train, time_train, status_train,
+                   K = K, max_iter = MAX_ITER, alpha = ALPHA,
+                   lambda = LAMBDA, prior_beta = PRIOR_BETA,
+                   verbose = TRUE, cohort_id = cohort_id,
+                   sigma_F_cohort = SIGMA_COH)
   )
   k_eff <- sum(abs(fit$EBeta) > BETA_THRESH)
   cat(sprintf("  K_eff=%d | beta_max=%.4f | iters=%d\n\n",
               k_eff, max(abs(fit$EBeta)), fit$history$n_iter))
-  fit
+  fits[[mcfg$id]] <- fit
 }
-
-fit_yfb <- function(Y, time, status, K, cohort_id = NULL, label = "") {
-  cat(sprintf("--- Fitting %s (K=%d) ---\n", label, K))
-  set.seed(42L)
-  fit <- suppressMessages(
-    fit_cox_on_yf(Y, time, status,
-                  K          = K,
-                  max_iter   = MAX_ITER,
-                  alpha      = ALPHA,
-                  lambda     = LAMBDA,
-                  prior_beta = PRIOR_BETA,
-                  verbose    = TRUE,
-                  cohort_id  = cohort_id,
-                  sigma_F_cohort = SIGMA_COH)
-  )
-  k_eff <- sum(abs(fit$EBeta) > BETA_THRESH)
-  cat(sprintf("  K_eff=%d | beta_max=%.4f | iters=%d\n\n",
-              k_eff, max(abs(fit$EBeta)), fit$history$n_iter))
-  fit
-}
-
-fits$M1 <- fit_lb(merged_joint$Y,       time_train, status_train, k_lb_joint,
-                   cohort_id = NULL,         label = "M1 LB joint no-cohort")
-fits$M2 <- fit_lb(merged_joint$Y,       time_train, status_train, k_lb_joint,
-                   cohort_id = cohort_labels, label = "M2 LB joint cohort_id")
-fits$M3 <- fit_lb(merged_perplatform$Y, time_train, status_train, k_lb_perplatform,
-                   cohort_id = NULL,         label = "M3 LB perplatform no-cohort")
-fits$M4 <- fit_lb(merged_perplatform$Y, time_train, status_train, k_lb_perplatform,
-                   cohort_id = cohort_labels, label = "M4 LB perplatform cohort_id")
-fits$M5 <- fit_yfb(merged_perplatform$Y, time_train, status_train, k_yfb_perplatform,
-                    cohort_id = NULL,         label = "M5 YFB perplatform no-cohort")
-fits$M6 <- fit_yfb(merged_perplatform$Y, time_train, status_train, k_yfb_perplatform,
-                    cohort_id = cohort_labels, label = "M6 YFB perplatform cohort_id")
-
-gene_sets$joint       <- merged_joint$gene_names
-gene_sets$perplatform <- merged_perplatform$gene_names
 
 # --------------------------------------------------------------------------
-# 3. External validation on 5 held-out cohorts
+# 5. External validation on 5 held-out cohorts
 # --------------------------------------------------------------------------
 
 cat("--- External validation (5 cohorts) ---\n")
-
 EXTERNAL_COHORTS <- cfg$pdac$external_cohorts
 results_rows <- list()
 
@@ -198,106 +193,104 @@ for (ext_cohort in EXTERNAL_COHORTS) {
   cat(sprintf("  %s ...\n", ext_cohort))
   raw_ext <- load_pdac_raw(ext_cohort, PDAC_DATA_ROOT)
   pre_ext <- preprocess_desurv_cohort(
-    Y             = raw_ext$Y,
-    gene_names    = raw_ext$gene_names,
-    top_n         = cfg$preprocessing$top_n_genes,
+    Y = raw_ext$Y, gene_names = raw_ext$gene_names,
+    top_n = cfg$preprocessing$top_n_genes,
     log_transform = PLATFORM_LOG_TRANSFORM[[ext_cohort]],
-    cohort_name   = ext_cohort
+    cohort_name = ext_cohort
   )
 
-  # For each training gene set, intersect and evaluate all models using that set
-  for (prep_type in c("joint", "perplatform")) {
-    train_genes <- gene_sets[[prep_type]]
+  for (mcfg in MODEL_CONFIGS) {
+    cache_key   <- paste(mcfg$per_plat, mcfg$norm, mcfg$rank, sep = "_")
+    train_genes <- gene_set_cache[[cache_key]]
     common      <- intersect(train_genes, pre_ext$gene_names)
-    if (length(common) < 100) next
+    if (length(common) < 100) {
+      cat(sprintf("    Skipping %s x %s: only %d common genes\n",
+                  mcfg$id, ext_cohort, length(common)))
+      next
+    }
+
     Y_ext     <- pre_ext$Y[, match(common, pre_ext$gene_names), drop = FALSE]
     train_idx <- match(common, train_genes)
+    fit       <- fits[[mcfg$id]]
+    EF_sub    <- fit$EF[train_idx, , drop = FALSE]
 
-    models_for_prep <- if (prep_type == "joint") c("M1", "M2") else c("M3", "M4", "M5", "M6")
-    for (mid in models_for_prep) {
-      fit    <- fits[[mid]]
-      is_yfb <- mid %in% c("M5", "M6")
-      if (!is_yfb) {
-        EF_sub <- fit$EF[train_idx, , drop = FALSE]
-        pred   <- predict_supervised_mf(Y_ext, EF_sub, fit$EBeta)
-        c_val  <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
-      } else {
-        EF_sub <- fit$EF[train_idx, , drop = FALSE]
-        pred   <- predict_cox_on_yf(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
-        c_val  <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
-      }
-      results_rows[[length(results_rows) + 1]] <- data.frame(
-        model      = mid,
-        cohort     = ext_cohort,
-        c_index    = round(c_val, 4),
-        k_eff      = sum(abs(fit$EBeta) > BETA_THRESH),
-        beta_max   = round(max(abs(fit$EBeta)), 4),
-        n_iters    = fit$history$n_iter,
-        preprocess = prep_type,
-        has_cohort = mid %in% c("M2", "M4", "M6"),
-        stringsAsFactors = FALSE
-      )
-    }
+    pred  <- if (mcfg$model == "LB")
+      predict_supervised_mf(Y_ext, EF_sub, fit$EBeta)
+    else
+      predict_cox_on_yf(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
+
+    c_val <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
+
+    results_rows[[length(results_rows) + 1]] <- data.frame(
+      model      = mcfg$id,
+      model_type = mcfg$model,
+      preprocess = paste(mcfg$norm, if(mcfg$per_plat) "perplat" else "joint",
+                         if(mcfg$rank) "rank" else "norank", sep = "_"),
+      has_cohort = mcfg$cohort,
+      K          = b[[mcfg$k_key]],
+      cohort     = ext_cohort,
+      c_index    = round(c_val, 4),
+      k_eff      = sum(abs(fit$EBeta) > BETA_THRESH),
+      beta_max   = round(max(abs(fit$EBeta)), 4),
+      n_iters    = fit$history$n_iter,
+      stringsAsFactors = FALSE
+    )
   }
 }
 
 results_df <- do.call(rbind, results_rows)
 
 # --------------------------------------------------------------------------
-# 4. Summary table
+# 6. Print summary
 # --------------------------------------------------------------------------
 
 cat("\n============================================================\n")
-cat(" Merged Benchmark Results - External C-index\n")
+cat(" Merged Benchmark Results - Mean External C-index by Model\n")
 cat("============================================================\n")
-
-model_ids    <- c("M1","M2","M3","M4","M5","M6")
-model_labels <- c("LB_joint","LB_joint_coh","LB_perplat","LB_perplat_coh",
-                  "YFB_perplat","YFB_perplat_coh")
-
-for (i in seq_along(model_ids)) {
-  mid <- model_ids[i]
+model_order <- c("M1","M2","M3","M4","M5","M6","M7","M8","M9","M10",
+                 "M11","M12","M13","M14","M15","M16","M17","M18")
+for (mid in model_order) {
   sub <- results_df[results_df$model == mid, ]
   if (nrow(sub) == 0) next
-  cat(sprintf("  %s (%s):\n", mid, model_labels[i]))
-  for (j in seq_len(nrow(sub))) {
-    cat(sprintf("    %-22s C=%.3f\n", sub$cohort[j], sub$c_index[j]))
-  }
-  cat(sprintf("    %-22s C=%.3f  (K_eff=%d, beta_max=%.4f)\n\n",
-              "MEAN", mean(sub$c_index), sub$k_eff[1], sub$beta_max[1]))
+  cat(sprintf("  %s [%s, %s, cohort=%s, K=%d]: mean C=%.3f | K_eff=%d | beta_max=%.4f\n",
+              mid, sub$model_type[1], sub$preprocess[1], sub$has_cohort[1],
+              sub$K[1], mean(sub$c_index), sub$k_eff[1], sub$beta_max[1]))
 }
 
 # --------------------------------------------------------------------------
-# 5. Factor top-20 gene table (interpretability)
+# 7. Top-20 gene table (skipped in quick mode)
 # --------------------------------------------------------------------------
 
 if (!QUICK_MODE) {
-  cat("--- Factor top-20 genes per configuration ---\n")
-  top_genes_list <- list()
-  for (mid in model_ids) {
-    fit <- fits[[mid]]
-    K_fit <- ncol(fit$EF)
-    prep_type <- if (mid %in% c("M1","M2")) "joint" else "perplatform"
-    genes <- gene_sets[[prep_type]]
-    top_genes_list[[mid]] <- lapply(seq_len(K_fit), function(k) {
+  cat("\n--- Factor top-20 genes ---\n")
+  top_genes_rows <- list()
+  for (mcfg in MODEL_CONFIGS) {
+    cache_key <- paste(mcfg$per_plat, mcfg$norm, mcfg$rank, sep = "_")
+    genes     <- gene_set_cache[[cache_key]]
+    fit       <- fits[[mcfg$id]]
+    for (k in seq_len(ncol(fit$EF))) {
       idx <- order(abs(fit$EF[, k]), decreasing = TRUE)[1:min(20, nrow(fit$EF))]
-      data.frame(model = mid, factor = k, gene = genes[idx],
-                 loading = round(fit$EF[idx, k], 4))
-    })
+      top_genes_rows[[length(top_genes_rows) + 1]] <- data.frame(
+        model = mcfg$id, factor = k, gene = genes[idx],
+        loading = round(fit$EF[idx, k], 4), stringsAsFactors = FALSE
+      )
+    }
   }
-  top_genes_df <- do.call(rbind, lapply(top_genes_list, function(x) do.call(rbind, x)))
+  top_genes_df <- do.call(rbind, top_genes_rows)
   write.csv(top_genes_df,
-            file.path(OUT_DIR, "merged_benchmark_top_genes.csv"),
+            file.path(OUT_DIR, "merged_benchmark_top_genes_extended.csv"),
             row.names = FALSE)
-  cat(sprintf("  Top genes saved: %s\n\n",
-              file.path(OUT_DIR, "merged_benchmark_top_genes.csv")))
+  cat(sprintf("  Saved: %s\n",
+              file.path(OUT_DIR, "merged_benchmark_top_genes_extended.csv")))
 }
 
 # --------------------------------------------------------------------------
-# 6. Save results
+# 8. Save results
 # --------------------------------------------------------------------------
 
-write.csv(results_df, file.path(OUT_DIR, "merged_benchmark_results.csv"), row.names = FALSE)
+write.csv(results_df,
+          file.path(OUT_DIR, "merged_benchmark_results_extended.csv"),
+          row.names = FALSE)
 
 compact_fits <- lapply(fits, function(f) list(
   EBeta      = f$EBeta,
@@ -310,14 +303,10 @@ compact_fits <- lapply(fits, function(f) list(
 ))
 saveRDS(list(fits      = compact_fits,
              results   = results_df,
-             gene_sets = gene_sets,
-             params    = list(k_lb_joint        = k_lb_joint,
-                              k_lb_perplatform  = k_lb_perplatform,
-                              k_yfb_perplatform = k_yfb_perplatform,
-                              ALPHA      = ALPHA,
-                              PRIOR_BETA = PRIOR_BETA),
-             date = Sys.time()),
-        file.path(OUT_DIR, "merged_benchmark_fits.rds"))
+             gene_sets = gene_set_cache,
+             params    = list(ALPHA = ALPHA, PRIOR_BETA = PRIOR_BETA, K_floor = 3L),
+             date      = Sys.time()),
+        file.path(OUT_DIR, "merged_benchmark_fits_extended.rds"))
 
-cat(sprintf("Results saved to: %s\n", OUT_DIR))
+cat(sprintf("\nResults saved to: %s\n", OUT_DIR))
 cat("============================================================\n")
