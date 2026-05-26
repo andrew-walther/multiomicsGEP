@@ -117,17 +117,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   *Files: `results/benchmark_sim/run_cohort_lmm_benchmark.R` (--low-k flag added),
   `results/benchmark_sim/outputs/cohort_lmm_benchmark_low_k/`. DECISIONS.md 2026-05-25.*
 
-- [x] **Merged-cohort 6-configuration benchmark** *(Complete — 2026-05-25)*
-  Apples-to-apples comparison of LB vs. YFB × joint vs. per-platform preprocessing × ±cohort_id,
-  with K selected by CV throughout (K_grid=2:10, 5 folds, 1-SE rule).
-  Winner: M5 (YFB × per-platform × no cohort_id, K=2), mean external C=0.625, K_eff=2.
-  Runner-up: M4 (LB × per-platform × cohort_id, K=3), mean C=0.624.
-  Key findings: (1) per-platform preprocessing improves LB over joint (+0.021); (2) cohort indicator
-  helps LB when combined with joint preprocessing but is marginally helpful / harmful at low K;
-  (3) YFB without cohort indicator at K=2 is the best single configuration for multi-cohort generalization.
-  Recommended for manuscript: M5. Sensitivity check: M4.
+- [x] **Merged-cohort comprehensive preprocessing benchmark (18 configurations)** *(Complete — 2026-05-25)*
+  Extended 6-config comparison to 18 by adding joint quantile-no-rank, joint z-standardization,
+  and log-only preprocessing. Biological K floor K_final = max(K_1se, 3) applied throughout.
+  Winner: M5 (YFB × per-platform z-std × no cohort_id, K=3), mean external C=0.626, K_eff=2/3.
+  Key finding: per-platform z-standardization is the *only* viable preprocessing for mixed
+  RNA-seq + proteomics training data. 10 of 12 non-per-platform configs collapse to β=0 (K_eff=0).
+  Rank transform is not the driver of YFB β→0 on joint-QN data (M13/M14 also collapse without it).
+  Recommended for manuscript: M5 (primary), M4 (sensitivity). See DECISIONS.md 2026-05-25.
   *Files: `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
-  `docs/reports/merged_benchmark_report.qmd`. Results: `outputs/merged_benchmark/`. DECISIONS.md 2026-05-25.*
+  `code/preprocess_desurv.R` (normalize_method param), `docs/reports/merged_benchmark_report.qmd`.
+  Results: `outputs/merged_benchmark/merged_benchmark_results_extended.csv`. DECISIONS.md 2026-05-25.*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model

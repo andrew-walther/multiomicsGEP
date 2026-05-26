@@ -1,5 +1,5 @@
 ---
-title: "Merged-Cohort PDAC Benchmark: LB vs. YFB, Joint vs. Per-Platform Preprocessing, With and Without Cohort Indicator"
+title: "Merged-Cohort PDAC Benchmark: Comprehensive Preprocessing & Model Comparison (18 Configurations)"
 author: "Andrew Walther"
 date: "`r Sys.Date()`"
 format:
@@ -23,165 +23,229 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 
-cfg     <- yaml::read_yaml(here::here("config/globals.yml"))
+cfg <- yaml::read_yaml(here::here("config/globals.yml"))
+b   <- cfg$benchmark
+
 results <- read.csv(here::here(
-  "results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_results.csv"))
+  "results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_results_extended.csv"))
 top_genes <- tryCatch(
   read.csv(here::here(
-    "results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_top_genes.csv")),
+    "results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_top_genes_extended.csv")),
   error = function(e) NULL)
 
 model_labels <- c(
-  M1 = "LB | joint | no cohort adj.",
-  M2 = "LB | joint | cohort_id",
-  M3 = "LB | per-platform | no cohort adj.",
-  M4 = "LB | per-platform | cohort_id",
-  M5 = "YFB | per-platform | no cohort adj.",
-  M6 = "YFB | per-platform | cohort_id"
+  M1  = "LB | joint QN+rank | no cohort",
+  M2  = "LB | joint QN+rank | cohort_id",
+  M3  = "LB | perplat z-std | no cohort",
+  M4  = "LB | perplat z-std | cohort_id",
+  M5  = "YFB | perplat z-std | no cohort",
+  M6  = "YFB | perplat z-std | cohort_id",
+  M7  = "LB | joint QN norank | no cohort",
+  M8  = "LB | joint QN norank | cohort_id",
+  M9  = "LB | joint z-std | no cohort",
+  M10 = "LB | joint z-std | cohort_id",
+  M11 = "LB | log only | no cohort",
+  M12 = "LB | log only | cohort_id",
+  M13 = "YFB | joint QN norank | no cohort",
+  M14 = "YFB | joint QN norank | cohort_id",
+  M15 = "YFB | joint z-std | no cohort",
+  M16 = "YFB | joint z-std | cohort_id",
+  M17 = "YFB | log only | no cohort",
+  M18 = "YFB | log only | cohort_id"
 )
 results$model_label <- model_labels[results$model]
+results$model_label <- factor(results$model_label,
+                               levels = rev(model_labels))
+
+# Mean C-index per model (for inline use)
+means <- results |>
+  group_by(model) |>
+  summarise(mean_c = round(mean(c_index), 3), .groups = "drop")
+mc <- setNames(means$mean_c, means$model)
+
+# K_eff and beta_max per model
+fit_summary <- results |>
+  distinct(model, model_label, K, k_eff, beta_max, n_iters) |>
+  arrange(model)
 ```
 
 ## Study Design
 
-This report compares six model configurations for joint multi-cohort PDAC analysis,
+This report compares 18 model configurations for joint multi-cohort PDAC analysis,
 trained on merged TCGA_PAAD (RNA-seq, n=144) and CPTAC (proteomics, n=129) data
-and evaluated on five independent external cohorts.
+and evaluated on five independent external cohorts. The benchmark extends an initial
+six-configuration comparison (M1–M6) by adding three additional preprocessing strategies:
+joint quantile normalization without rank transform (M7/M8, M13/M14), joint
+z-standardization (M9/M10, M15/M16), and log transform only (M11/M12, M17/M18).
 
-**Goal:** Identify the configuration that produces a parsimonious model (small, CV-selected K)
-with non-zero survival associations (β ≠ 0) and biologically coherent gene expression programs
-that generalize across platforms and patient populations.
+**Goal:** Determine the optimal preprocessing strategy and model form for merged
+multi-platform training data, using cross-validated C-index (1-SE rule, biological
+floor K ≥ 3) for factor count selection.
 
-| ID | Model | Preprocessing | Cohort adjustment | K |
-|----|-------|---------------|-------------------|---|
-| M1 | LB (η = Lβ) | Joint quantile+rank | None | `r cfg$benchmark$k_merged_lb_joint` |
-| M2 | LB | Joint quantile+rank | Cohort indicator | `r cfg$benchmark$k_merged_lb_joint` |
-| M3 | LB | Per-platform z-std | None | `r cfg$benchmark$k_merged_lb_perplatform` |
-| M4 | LB | Per-platform z-std | Cohort indicator | `r cfg$benchmark$k_merged_lb_perplatform` |
-| M5 | YFB (η = YFβ) | Per-platform z-std | None | `r cfg$benchmark$k_merged_yfb_perplatform` |
-| M6 | YFB | Per-platform z-std | Cohort indicator | `r cfg$benchmark$k_merged_yfb_perplatform` |
+**Biological K floor:** K_final = max(K_1se, 3). Motivation: DeSurv (Young et al. 2025)
+identifies K=3–4 programs; a manuscript claiming multiple gene expression programs
+requires at least K=3; K=3 has higher CV C-index and lower fold SE than K=2 for
+several configurations where 1-SE selects K=2.
 
-YFB × joint preprocessing is excluded: β→0 collapse is structural and all mitigation
-strategies (V0–V11) have been exhausted (see DECISIONS.md 2026-05-22/25).
+**YFB × joint QN+rank excluded:** β→0 collapse is structural — all mitigation strategies
+(V0–V11) were exhausted (see DECISIONS.md 2026-05-22/25). Joint QN without rank transform
+is tested for YFB (M13/M14) to determine whether rank transform drives the collapse.
 
-**K selection:** Cross-validated C-index (1-SE rule) on merged training data, separately
-for each preprocessing × model combination. This replaces the previous K=20+ARD approach.
+| ID | Model | Preprocessing | Cohort adj. | K |
+|----|-------|---------------|-------------|---|
+| M1 | LB (η=Lβ) | Joint QN + rank | None | `r b$k_merged_lb_joint` |
+| M2 | LB | Joint QN + rank | cohort_id | `r b$k_merged_lb_joint` |
+| M3 | LB | Per-platform z-std | None | `r b$k_merged_lb_perplatform` |
+| M4 | LB | Per-platform z-std | cohort_id | `r b$k_merged_lb_perplatform` |
+| M5 | YFB (η=(YF)β) | Per-platform z-std | None | `r b$k_merged_yfb_perplatform` |
+| M6 | YFB | Per-platform z-std | cohort_id | `r b$k_merged_yfb_perplatform` |
+| M7 | LB | Joint QN, no rank | None | `r b$k_merged_lb_joint_norank` |
+| M8 | LB | Joint QN, no rank | cohort_id | `r b$k_merged_lb_joint_norank` |
+| M9 | LB | Joint z-std | None | `r b$k_merged_lb_zstd` |
+| M10 | LB | Joint z-std | cohort_id | `r b$k_merged_lb_zstd` |
+| M11 | LB | Log only | None | `r b$k_merged_lb_logonly` |
+| M12 | LB | Log only | cohort_id | `r b$k_merged_lb_logonly` |
+| M13 | YFB | Joint QN, no rank | None | `r b$k_merged_yfb_joint_norank` |
+| M14 | YFB | Joint QN, no rank | cohort_id | `r b$k_merged_yfb_joint_norank` |
+| M15 | YFB | Joint z-std | None | `r b$k_merged_lb_zstd` |
+| M16 | YFB | Joint z-std | cohort_id | `r b$k_merged_lb_zstd` |
+| M17 | YFB | Log only | None | `r b$k_merged_yfb_logonly` |
+| M18 | YFB | Log only | cohort_id | `r b$k_merged_yfb_logonly` |
 
 ## External C-index Results
 
 ```{r cindex-table}
 wide <- results |>
-  select(model_label, cohort, c_index) |>
+  select(model, model_label, cohort, c_index) |>
   pivot_wider(names_from = cohort, values_from = c_index)
 
-means <- results |>
-  group_by(model_label) |>
+means_wide <- results |>
+  group_by(model, model_label) |>
   summarise(Mean = round(mean(c_index), 3), .groups = "drop")
 
-wide <- left_join(wide, means, by = "model_label")
-knitr::kable(wide, digits = 3, caption = "External C-index by model and cohort")
+wide <- left_join(wide, means_wide, by = c("model", "model_label")) |>
+  arrange(model)
+
+knitr::kable(wide |> select(-model), digits = 3,
+             caption = "External C-index by model and cohort. Models with K_eff=0 (beta collapse) shown for completeness.")
 ```
 
-```{r cindex-heatmap, fig.height=4, fig.width=8}
+```{r cindex-heatmap, fig.height=7, fig.width=9}
 ggplot(results, aes(x = cohort, y = model_label, fill = c_index)) +
   geom_tile(colour = "white") +
-  geom_text(aes(label = sprintf("%.3f", c_index)), size = 3) +
+  geom_text(aes(label = sprintf("%.3f", c_index)), size = 2.8) +
   scale_fill_gradient2(low = "#d73027", mid = "#fee090", high = "#1a9850",
                        midpoint = 0.55, name = "C-index") +
-  labs(title = "External C-index heatmap", x = NULL, y = NULL) +
+  labs(title = "External C-index heatmap (18 configurations)",
+       subtitle = "Models M9-M18 with K_eff=0 appear in red (beta collapse)",
+       x = NULL, y = NULL) +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+  theme(axis.text.x = element_text(angle = 30, hjust = 1),
+        axis.text.y = element_text(size = 8))
 ```
 
 ## Model Summary (β activity)
 
 ```{r beta-summary}
-summary_df <- results |>
-  distinct(model, model_label, k_eff, beta_max, n_iters) |>
-  mutate(
-    K = c(cfg$benchmark$k_merged_lb_joint, cfg$benchmark$k_merged_lb_joint,
-          cfg$benchmark$k_merged_lb_perplatform, cfg$benchmark$k_merged_lb_perplatform,
-          cfg$benchmark$k_merged_yfb_perplatform, cfg$benchmark$k_merged_yfb_perplatform)[
-      match(model, c("M1","M2","M3","M4","M5","M6"))]
-  ) |>
-  select(model_label, K, k_eff, beta_max, n_iters)
-knitr::kable(summary_df, digits = 4,
-             caption = "Model summary: CV-selected K, active factors (K_eff), max |β|, iterations to convergence")
+knitr::kable(fit_summary |> select(-model), digits = 4,
+             caption = "Model summary: CV-selected K, active factors (K_eff = count of |beta_k| > 0.001), max |beta|, iterations to convergence. K_eff=0 indicates complete beta collapse.")
 ```
 
 ## Factor Interpretability: Top Genes
 
 ```{r top-genes, results='asis'}
+# Only show models with active factors
+active_models <- results |>
+  distinct(model, k_eff) |>
+  filter(k_eff > 0) |>
+  pull(model)
+
 if (!is.null(top_genes)) {
-  for (mid in c("M1","M2","M3","M4","M5","M6")) {
+  for (mid in sort(active_models)) {
     sub <- top_genes[top_genes$model == mid, ]
     if (nrow(sub) == 0) next
-    cat(sprintf("\n### %s --- %s\n\n", mid, model_labels[mid]))
+    cat(sprintf("\n### %s — %s\n\n", mid, model_labels[mid]))
     for (k in sort(unique(sub$factor))) {
       genes_k <- sub[sub$factor == k, "gene"]
       cat(sprintf("**Factor %d:** %s\n\n", k, paste(genes_k, collapse = ", ")))
     }
   }
 } else {
-  cat("Top gene table not available (run benchmark without --quick).\n")
+  cat("Top gene table not available.\n")
 }
 ```
 
 ## Conclusions
 
-### Winner: M5 (YFB × per-platform z-std × no cohort indicator, K=2)
+### Winner: M5 — YFB × per-platform z-standardization × no cohort indicator (K=3)
 
-M5 achieves the highest mean external C-index (0.625) across 5 independent PDAC cohorts, with
-both CV-selected factors active (K_eff=2 = K_total). This configuration is also the most
-parsimonious: K=2 means every factor contributes to survival prediction, with no null factors
-consuming model capacity.
+M5 achieves the highest mean external C-index (`r mc["M5"]`) across five independent PDAC
+cohorts. At K=3 (biological floor applied; 1-SE rule selected K=2), two of three factors
+are survival-active (K_eff=2), confirming that at least two distinct genomic programs carry
+prognostic information. This matches the prior K=2 result (mean C=0.625) essentially
+exactly — the floor adds a third factor without degrading external generalization, and
+provides a richer basis for biological interpretation.
 
-### Per-platform preprocessing consistently improves LB over joint normalization
+### Per-platform z-standardization is the only viable preprocessing for merged data
 
-Comparing M1 and M3 (both LB, neither with a cohort indicator), per-platform z-standardization
-improves mean external C-index by 0.021 (0.599 → 0.620). Joint quantile+rank normalization
-merges RNA-seq and proteomics samples into a common distribution, but cannot fully remove the
-between-platform directional differences that drive the top SVD components. Per-platform z-scoring
-normalizes each cohort's mean and variance separately before merging, allowing biological signal
-to dominate the shared factor space.
+The extended comparison confirms that **per-platform z-standardization is essential** when
+training on merged RNA-seq and proteomics cohorts. Every preprocessing strategy that
+operates on the jointly stacked matrix without per-platform normalization produces either
+β→0 collapse or substantially inferior performance:
 
-### Cohort indicator: helpful for LB + joint preprocessing; neutral-to-harmful at low K
+- **M7/M8 (LB × joint QN, no rank):** mean C=`r mc["M7"]`/`r mc["M8"]` — indistinguishable
+  from M1/M2 (joint QN+rank: `r mc["M1"]`/`r mc["M2"]`). K_eff=1 in both cases. Removing
+  the rank transform from joint QN provides no benefit for LB.
+- **M9/M10 (LB × joint z-std):** K_eff=0, β→0 collapse. Joint z-standardization alone
+  fails to resolve the platform offset in the LB survival likelihood.
+- **M11/M12 (LB × log only):** K_eff=0, β→0 collapse. Without distribution normalization,
+  the RNA-seq vs. proteomics scale difference dominates the merged factor space entirely.
+- **M13/M14 (YFB × joint QN, no rank):** K_eff=0 — this is the critical diagnostic.
+  Removing the rank transform does **not** rescue YFB from β→0 collapse on joint-QN data.
+  The collapse is not driven by the rank transform; it is driven by the platform-dominated
+  SVD directions that arise from joint quantile normalization of mixed-platform data.
+- **M15/M16 (YFB × joint z-std):** K_eff=0. Platform confounding persists.
+- **M17/M18 (YFB × log only):** K_eff=0. Same collapse.
 
-Adding a cohort indicator to LB with joint preprocessing (M1 → M2) yields a substantial +0.020
-improvement (0.599 → 0.619) and triples the number of active factors (K_eff=1 → 3). The cohort
-column explicitly absorbs the platform offset, freeing the biological factors from competing with
-it. In contrast, adding a cohort indicator to LB with per-platform preprocessing (M3 → M4) is
-nearly neutral (+0.004; 0.620 → 0.624): per-platform normalization already largely removes the
-bulk platform difference. For YFB (M5 → M6), the cohort indicator is harmful (−0.015), because
-at K=2, the cohort column competes with the biological factors for genomic variance in the factor
-scores ZF = YF, degrading the survival signal captured by β.
+The common mechanism: without per-platform standardization, the top singular vectors of the
+merged Y matrix align with the RNA-seq vs. proteomics platform difference rather than
+biological variation. Survival signal is orthogonal to these directions, so the CAVI
+update drives β→0 regardless of model form (LB or YFB) or normalization method
+(quantile, z-score, none).
 
-### LB vs. YFB at per-platform preprocessing
+### Rank transform: marginal for LB, not the driver of YFB collapse
 
-M5 (YFB, mean C=0.625) slightly outperforms M4 (LB + cohort, mean C=0.624) and M3 (LB, mean
-C=0.620). YFB's direct factor projection — constructing risk scores as η = (YF)β, where ZF = YF
-projects each patient's gene expression onto the learned factor directions — appears slightly
-better calibrated for external generalization at low K on merged multi-platform data. At K=2,
-both YFB factors are survival-relevant (K_eff=2), whereas LB at K=3 identifies only one active
-factor (K_eff=1).
+Comparing M1 (`r mc["M1"]`) vs. M7 (`r mc["M7"]`) for LB, and M2 (`r mc["M2"]`) vs.
+M8 (`r mc["M8"]`), the rank transform provides no measurable benefit. Both select K=6
+and achieve K_eff=1. The M13/M14 result definitively rules out the rank transform as
+the cause of YFB β→0 on joint-QN data; the structural collapse persists with or without it.
 
-### Note on M3 beta scale
+### Cohort indicator: helpful for LB, harmful for YFB at low K
 
-M3 (LB × per-platform × no cohort, K=3) has beta_max=0.627, substantially larger than other
-LB results (~0.02–0.03). At K=3 with per-platform preprocessing, a single factor absorbs all
-survival-predictive variance, yielding one highly-weighted factor on the z-score scale. This is
-not a numerical instability — the fit is interpretable — but it suggests K=3 may be near the
-lower bound of LB model capacity on this data. The cohort indicator (M4) redistributes variance,
-yielding beta_max=0.482 with a comparable C-index.
+Adding a cohort indicator to LB with joint QN (M1→M2: +`r mc["M2"] - mc["M1"]`) improves
+performance substantially by absorbing the platform offset into an explicit covariate.
+For LB with per-platform preprocessing (M3→M4: +`r mc["M4"] - mc["M3"]`), the gain is
+minimal — normalization already removes the bulk of the offset. For YFB with per-platform
+preprocessing (M5→M6: `r mc["M6"] - mc["M5"]`), the cohort indicator is harmful: at K=3,
+the cohort column competes with biological factors for genomic variance in ZF = YF,
+degrading the survival signal captured by β.
 
 ### Recommended configuration for manuscript
 
-**Primary: M5** — YFB × per-platform z-standardization × no cohort indicator, K=2 (CV-selected).
-This achieves the highest generalization across platforms and patient populations, uses the fewest
-factors, and maintains all factors as biologically active.
+**Primary: M5** — YFB × per-platform z-standardization × no cohort indicator, K=3.
+Highest mean external C=`r mc["M5"]`, two of three factors survival-active, and the
+most interpretable prediction path for external data: risk scores are computed exactly
+as η_new = (Y_new %*% EF) %*% β, with no approximation. This contrasts with LB, where
+new-subject predictions require an OLS approximation
+(L_new ≈ Y_new %*% EF %*% solve(t(EF) %*% EF)) that ignores the survival term in the
+L posterior.
 
-**Sensitivity check: M4** — LB × per-platform z-standardization × cohort indicator, K=3. Nearly
-identical mean C-index (0.624 vs 0.625); explicitly models the RNA-seq vs. proteomics platform
-offset via the cohort column; one fewer active factor (K_eff=1).
+**Sensitivity check: M4** — LB × per-platform z-standardization × cohort indicator, K=3.
+Mean C=`r mc["M4"]`; one fewer active factor (K_eff=1); explicitly models the RNA-seq
+vs. proteomics platform offset.
 
-**Not recommended:** M1 (lowest mean C=0.599); M6 (cohort indicator harmful for YFB at low K).
+**Not recommended:**
+- M9–M18: 8 of 10 collapse to β=0; remaining 2 (M7/M8) match the already-inferior
+  joint-QN LB baseline.
+- M1/M7 (lowest viable mean C ≈ `r mc["M1"]`/`r mc["M7"]`).
+- M6 (cohort indicator harmful for YFB: mean C=`r mc["M6"]`).

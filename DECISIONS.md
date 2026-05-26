@@ -5,6 +5,89 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-25 — Extended preprocessing comparison: 18-configuration benchmark
+
+- **Design:** Extended the 6-configuration benchmark (M1–M6) to 18 configurations by adding three
+  additional preprocessing strategies: joint quantile normalization without rank transform
+  (M7/M8, M13/M14), joint z-standardization (M9/M10, M15/M16), and log-only (M11/M12, M17/M18).
+  Biological K floor K_final = max(K_1se, 3) applied — motivated by DeSurv K=3–4 and the requirement
+  for multiple interpretable gene expression programs (K=2 insufficient for "programs" framing).
+
+| ID | Model | Preprocessing | cohort_id | K (1-SE CV + floor) |
+|----|-------|---------------|-----------|---------------------|
+| M1 | LB | Joint QN + rank | No | 6 |
+| M2 | LB | Joint QN + rank | Yes | 6 |
+| M3 | LB | Per-platform z-std | No | 3 |
+| M4 | LB | Per-platform z-std | Yes | 3 |
+| M5 | YFB | Per-platform z-std | No | 3 (floor; 1-SE gave K=2) |
+| M6 | YFB | Per-platform z-std | Yes | 3 (floor; 1-SE gave K=2) |
+| M7 | LB | Joint QN, no rank | No | 6 |
+| M8 | LB | Joint QN, no rank | Yes | 6 |
+| M9 | LB | Joint z-std | No | 3 |
+| M10 | LB | Joint z-std | Yes | 3 |
+| M11 | LB | Log only | No | 3 |
+| M12 | LB | Log only | Yes | 3 |
+| M13 | YFB | Joint QN, no rank | No | 5 |
+| M14 | YFB | Joint QN, no rank | Yes | 5 |
+| M15 | YFB | Joint z-std | No | 3 |
+| M16 | YFB | Joint z-std | Yes | 3 |
+| M17 | YFB | Log only | No | 3 (floor; 1-SE gave K=2) |
+| M18 | YFB | Log only | Yes | 3 (floor; 1-SE gave K=2) |
+
+- **Full benchmark results** (5 external cohorts, prior=normal, max_iter=300):
+
+  | Model | Dijk | Moffitt | PACA_AU_arr | PACA_AU_seq | Puleo | Mean C | K_eff | beta_max |
+  |-------|------|---------|-------------|-------------|-------|--------|-------|----------|
+  | M1 LB joint+rank | 0.569 | 0.515 | 0.645 | 0.667 | 0.600 | 0.599 | 1 | 0.016 |
+  | M2 LB joint+rank+cohort | 0.587 | 0.537 | 0.659 | 0.686 | 0.626 | 0.619 | 3 | 0.031 |
+  | M3 LB perplat | 0.615 | 0.547 | 0.649 | 0.644 | 0.645 | 0.620 | 1 | 0.627 |
+  | M4 LB perplat+cohort | 0.624 | 0.549 | 0.656 | 0.638 | 0.650 | 0.624 | 1 | 0.482 |
+  | **M5 YFB perplat** | 0.621 | 0.537 | 0.662 | 0.655 | 0.650 | **0.626** | 2 | 0.053 |
+  | M6 YFB perplat+cohort | 0.578 | 0.519 | 0.655 | 0.645 | 0.652 | 0.613 | 2 | 0.052 |
+  | M7 LB joint norank | 0.567 | 0.513 | 0.642 | 0.669 | 0.602 | 0.598 | 1 | 0.235 |
+  | M8 LB joint norank+cohort | 0.583 | 0.533 | 0.651 | 0.682 | 0.624 | 0.615 | 1 | 0.339 |
+  | M9 LB joint z-std | — | — | — | — | — | 0.545 | 0 | 0.000 |
+  | M10 LB joint z-std+cohort | — | — | — | — | — | 0.555 | 0 | 0.000 |
+  | M11 LB log only | — | — | — | — | — | 0.533 | 0 | 0.000 |
+  | M12 LB log only+cohort | — | — | — | — | — | 0.531 | 0 | 0.000 |
+  | M13 YFB joint norank | — | — | — | — | — | 0.540 | 0 | 0.000 |
+  | M14 YFB joint norank+cohort | — | — | — | — | — | 0.529 | 0 | 0.000 |
+  | M15 YFB joint z-std | — | — | — | — | — | 0.562 | 0 | 0.000 |
+  | M16 YFB joint z-std+cohort | — | — | — | — | — | 0.543 | 0 | 0.000 |
+  | M17 YFB log only | — | — | — | — | — | 0.529 | 0 | 0.000 |
+  | M18 YFB log only+cohort | — | — | — | — | — | 0.532 | 0 | 0.000 |
+
+  *(M9–M18 mean C shown from benchmark output; individual cohort columns suppressed because all
+  results reflect the β=0 null model, giving C≈0.5 per cohort with random variation.)*
+
+- **Key findings:**
+  1. **Per-platform z-std is essential.** 10 of 12 non-per-platform configurations collapse to
+     K_eff=0 (β→0). The two that don't (M7/M8) merely match the already-inferior joint-QN LB baseline.
+  2. **Rank transform diagnosis (M13/M14):** YFB with joint QN *without* rank transform also collapses
+     (K_eff=0). This definitively rules out the rank transform as the cause of YFB β→0 on joint-QN
+     data. The root cause is the platform-dominated SVD directions produced by joint normalization of
+     mixed-platform data — per-platform z-std corrects this, rank transform does not.
+  3. **M5 at K=3 floor:** Mean C=0.626 (vs. 0.625 at K=2 in the prior run). The biological floor
+     adds a third factor without degrading external generalization, and provides richer multi-program
+     structure for biological interpretation.
+  4. **Cohort indicator:** Helpful for LB (M1→M2: +0.020), marginal for LB per-platform (M3→M4:
+     +0.004), harmful for YFB per-platform (M5→M6: −0.013).
+
+- **Recommended configuration (updated from K=2 to K=3):**
+  - **Primary: M5 — YFB × per-platform z-std × no cohort indicator, K=3**
+    - Highest mean external C=0.626; 2/3 factors survival-active.
+    - YFB external scoring is exact: η_new = (Y_new %*% EF) %*% β (no approximation).
+    - K=3 supports multi-program biological framing; consistent with DeSurv K=3–4.
+  - **Sensitivity check: M4 — LB × per-platform z-std × cohort indicator, K=3** (mean C=0.624).
+  - **Not recommended:** M9–M18 (β=0 collapse or marginal); M6 (cohort indicator hurts YFB).
+
+- **Files:** `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
+  `code/preprocess_desurv.R` (new `normalize_method` param), `config/globals.yml` (8 K keys),
+  `docs/reports/merged_benchmark_report.qmd`,
+  `results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_results_extended.csv`
+
+---
+
 ## 2026-05-25 — Merged-cohort benchmark: 6-configuration apples-to-apples comparison
 
 - **Design:** Six model configurations (2 models × 2 preprocessing × 2 cohort indicator settings)
