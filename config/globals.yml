@@ -66,12 +66,12 @@ benchmark:
                                 # NOTE: 1-SE selected K=2; biological floor (K>=3) applied.
                                 # K=3 has higher CV mean C (0.634 vs 0.625) and lower SE.
   # New preprocessing options — filled by run_merged_kcv.R (biological floor K>=3 applied)
-  k_merged_lb_joint_norank:     null  # LB,  joint quantile, no rank transform (M7, M8)
-  k_merged_yfb_joint_norank:    null  # YFB, joint quantile, no rank transform (M13, M14)
-  k_merged_lb_zstd:             null  # LB,  joint z-standardization (M9, M10)
-  k_merged_yfb_zstd:            null  # YFB, joint z-standardization (M15, M16)
-  k_merged_lb_logonly:          null  # LB,  log transform only (M11, M12)
-  k_merged_yfb_logonly:         null  # YFB, log transform only (M17, M18)
+  k_merged_lb_joint_norank:     6  # LB,  joint quantile, no rank transform (M7, M8)
+  k_merged_yfb_joint_norank:    5  # YFB, joint quantile, no rank transform (M13, M14)
+  k_merged_lb_zstd:             3  # LB,  joint z-standardization (M9, M10)
+  k_merged_yfb_zstd:            3  # YFB, joint z-standardization (M15, M16)
+  k_merged_lb_logonly:          3  # LB,  log transform only (M11, M12)
+  k_merged_yfb_logonly:         3  # YFB, log transform only (M17, M18)
   k_pdac_yfb_merged: 3   # K for YFB merged-cohort fits (rank_transform=FALSE).
                          # Diagnostic sweep (2026-05-06): K=3 gives highest median external C
                          # (0.644); K_eff=3 across K=3-14, all factors survive at K=3.
