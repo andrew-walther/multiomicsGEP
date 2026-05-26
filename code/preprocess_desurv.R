@@ -286,6 +286,12 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
     cat(sprintf("  [v2] Joint z-standardizing merged matrix (%d x %d, colMean=0, colSD=1) ...\n",
                 nrow(Y_merged), ncol(Y_merged)))
     Y_norm <- scale(Y_merged, center = TRUE, scale = TRUE)
+    # Constant-variance genes (SD=0) produce NaN after scaling; replace with 0.
+    # These genes carry no information and will be deprioritized in variance selection.
+    n_nan <- sum(is.nan(Y_norm))
+    if (n_nan > 0)
+      cat(sprintf("  [v2] Note: %d NaN entries from zero-variance genes replaced with 0.\n", n_nan))
+    Y_norm[is.nan(Y_norm)] <- 0
     colnames(Y_norm) <- common_genes
   } else {
     # normalize_method == "none": skip normalization; pass log-transformed matrix directly.
