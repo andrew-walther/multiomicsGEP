@@ -45,10 +45,10 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 | Alpha CV selection | `code/select_alpha_cv.R` |
 | DeSurv preprocessing | `code/preprocess_desurv.R` |
 | Cohort extension benchmark | `results/benchmark_sim/run_cohort_lmm_benchmark.R` — 4-way comparison (LB/YFB × base/cohort) |
-| Cohort extension report | `docs/reports/cohort_lmm_benchmark_report.{qmd,pdf,html}` |
+| Cohort extension report | `docs/reports/cohort_lmm_benchmark_report_5_22_26.{qmd,pdf,html}` |
 | **Merged K-CV (all preprocessing)** | `results/benchmark_sim/run_merged_kcv.R` — CV K selection for all 5 preprocessing configs; K floor K≥3; fills globals.yml |
 | **Merged 18-config benchmark** | `results/benchmark_sim/run_merged_benchmark.R` — 18-model fit + external validation (5 preprocessing × 2 models × ±cohort) |
-| **Merged benchmark report** | `docs/reports/merged_benchmark_report.{qmd,pdf}` — 18-config results, recommended configuration |
+| **Merged benchmark report** | `docs/reports/merged_benchmark_report_5_25_26.{qmd,pdf,html}` — 18-config results, recommended configuration |
 | Test suite (core + predict) | `tests/run_tests.R` (242/242) |
 | Real-data test suite | `tests/test_real_data_loading.R` (77/77, local-only) |
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |

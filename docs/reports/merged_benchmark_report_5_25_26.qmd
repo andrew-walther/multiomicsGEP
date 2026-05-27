@@ -23,14 +23,14 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 
-cfg <- yaml::read_yaml(here::here("config/globals.yml"))
+cfg <- yaml::read_yaml("../../config/globals.yml")
 b   <- cfg$benchmark
 
-results <- read.csv(here::here(
-  "results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_results_extended.csv"))
+results <- read.csv(
+  "../../results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_results_extended.csv")
 top_genes <- tryCatch(
-  read.csv(here::here(
-    "results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_top_genes_extended.csv")),
+  read.csv(
+    "../../results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_top_genes_extended.csv"),
   error = function(e) NULL)
 
 model_labels <- c(

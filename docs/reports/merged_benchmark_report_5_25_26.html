@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Andrew Walther">
+<meta name="dcterms.date" content="2026-05-27">
+
+<title>Merged-Cohort PDAC Benchmark: Comprehensive Preprocessing &amp; Model Comparison (18 Configurations)</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="merged_benchmark_report_files/libs/clipboard/clipboard.min.js"></script>
+<script src="merged_benchmark_report_files/libs/quarto-html/quarto.js"></script>
+<script src="merged_benchmark_report_files/libs/quarto-html/popper.min.js"></script>
+<script src="merged_benchmark_report_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="merged_benchmark_report_files/libs/quarto-html/anchor.min.js"></script>
+<link href="merged_benchmark_report_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="merged_benchmark_report_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="merged_benchmark_report_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="merged_benchmark_report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="merged_benchmark_report_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#study-design" id="toc-study-design" class="nav-link active" data-scroll-target="#study-design">Study Design</a></li>
+  <li><a href="#external-c-index-results" id="toc-external-c-index-results" class="nav-link" data-scroll-target="#external-c-index-results">External C-index Results</a></li>
+  <li><a href="#model-summary-β-activity" id="toc-model-summary-β-activity" class="nav-link" data-scroll-target="#model-summary-β-activity">Model Summary (β activity)</a></li>
+  <li><a href="#factor-interpretability-top-genes" id="toc-factor-interpretability-top-genes" class="nav-link" data-scroll-target="#factor-interpretability-top-genes">Factor Interpretability: Top Genes</a>
+  <ul class="collapse">
+  <li><a href="#m1-lb-joint-qnrank-no-cohort" id="toc-m1-lb-joint-qnrank-no-cohort" class="nav-link" data-scroll-target="#m1-lb-joint-qnrank-no-cohort">M1 — LB | joint QN+rank | no cohort</a></li>
+  <li><a href="#m2-lb-joint-qnrank-cohort_id" id="toc-m2-lb-joint-qnrank-cohort_id" class="nav-link" data-scroll-target="#m2-lb-joint-qnrank-cohort_id">M2 — LB | joint QN+rank | cohort_id</a></li>
+  <li><a href="#m3-lb-perplat-z-std-no-cohort" id="toc-m3-lb-perplat-z-std-no-cohort" class="nav-link" data-scroll-target="#m3-lb-perplat-z-std-no-cohort">M3 — LB | perplat z-std | no cohort</a></li>
+  <li><a href="#m4-lb-perplat-z-std-cohort_id" id="toc-m4-lb-perplat-z-std-cohort_id" class="nav-link" data-scroll-target="#m4-lb-perplat-z-std-cohort_id">M4 — LB | perplat z-std | cohort_id</a></li>
+  <li><a href="#m5-yfb-perplat-z-std-no-cohort" id="toc-m5-yfb-perplat-z-std-no-cohort" class="nav-link" data-scroll-target="#m5-yfb-perplat-z-std-no-cohort">M5 — YFB | perplat z-std | no cohort</a></li>
+  <li><a href="#m6-yfb-perplat-z-std-cohort_id" id="toc-m6-yfb-perplat-z-std-cohort_id" class="nav-link" data-scroll-target="#m6-yfb-perplat-z-std-cohort_id">M6 — YFB | perplat z-std | cohort_id</a></li>
+  <li><a href="#m7-lb-joint-qn-norank-no-cohort" id="toc-m7-lb-joint-qn-norank-no-cohort" class="nav-link" data-scroll-target="#m7-lb-joint-qn-norank-no-cohort">M7 — LB | joint QN norank | no cohort</a></li>
+  <li><a href="#m8-lb-joint-qn-norank-cohort_id" id="toc-m8-lb-joint-qn-norank-cohort_id" class="nav-link" data-scroll-target="#m8-lb-joint-qn-norank-cohort_id">M8 — LB | joint QN norank | cohort_id</a></li>
+  </ul></li>
+  <li><a href="#conclusions" id="toc-conclusions" class="nav-link" data-scroll-target="#conclusions">Conclusions</a>
+  <ul class="collapse">
+  <li><a href="#winner-m5-yfb-per-platform-z-standardization-no-cohort-indicator-k3" id="toc-winner-m5-yfb-per-platform-z-standardization-no-cohort-indicator-k3" class="nav-link" data-scroll-target="#winner-m5-yfb-per-platform-z-standardization-no-cohort-indicator-k3">Winner: M5 — YFB × per-platform z-standardization × no cohort indicator (K=3)</a></li>
+  <li><a href="#per-platform-z-standardization-is-the-only-viable-preprocessing-for-merged-data" id="toc-per-platform-z-standardization-is-the-only-viable-preprocessing-for-merged-data" class="nav-link" data-scroll-target="#per-platform-z-standardization-is-the-only-viable-preprocessing-for-merged-data">Per-platform z-standardization is the only viable preprocessing for merged data</a></li>
+  <li><a href="#rank-transform-marginal-for-lb-not-the-driver-of-yfb-collapse" id="toc-rank-transform-marginal-for-lb-not-the-driver-of-yfb-collapse" class="nav-link" data-scroll-target="#rank-transform-marginal-for-lb-not-the-driver-of-yfb-collapse">Rank transform: marginal for LB, not the driver of YFB collapse</a></li>
+  <li><a href="#cohort-indicator-helpful-for-lb-harmful-for-yfb-at-low-k" id="toc-cohort-indicator-helpful-for-lb-harmful-for-yfb-at-low-k" class="nav-link" data-scroll-target="#cohort-indicator-helpful-for-lb-harmful-for-yfb-at-low-k">Cohort indicator: helpful for LB, harmful for YFB at low K</a></li>
+  <li><a href="#recommended-configuration-for-manuscript" id="toc-recommended-configuration-for-manuscript" class="nav-link" data-scroll-target="#recommended-configuration-for-manuscript">Recommended configuration for manuscript</a></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../../merged_benchmark_report.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Merged-Cohort PDAC Benchmark: Comprehensive Preprocessing &amp; Model Comparison (18 Configurations)</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Andrew Walther </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 27, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="study-design" class="level2">
+<h2 class="anchored" data-anchor-id="study-design">Study Design</h2>
+<p>This report compares 18 model configurations for joint multi-cohort PDAC analysis, trained on merged TCGA_PAAD (RNA-seq, n=144) and CPTAC (proteomics, n=129) data and evaluated on five independent external cohorts. The benchmark extends an initial six-configuration comparison (M1–M6) by adding three additional preprocessing strategies: joint quantile normalization without rank transform (M7/M8, M13/M14), joint z-standardization (M9/M10, M15/M16), and log transform only (M11/M12, M17/M18).</p>
+<p><strong>Goal:</strong> Determine the optimal preprocessing strategy and model form for merged multi-platform training data, using cross-validated C-index (1-SE rule, biological floor K ≥ 3) for factor count selection.</p>
+<p><strong>Biological K floor:</strong> K_final = max(K_1se, 3). Motivation: DeSurv (Young et al.&nbsp;2025) identifies K=3–4 programs; a manuscript claiming multiple gene expression programs requires at least K=3; K=3 has higher CV C-index and lower fold SE than K=2 for several configurations where 1-SE selects K=2.</p>
+<p><strong>YFB × joint QN+rank excluded:</strong> β→0 collapse is structural — all mitigation strategies (V0–V11) were exhausted (see DECISIONS.md 2026-05-22/25). Joint QN without rank transform is tested for YFB (M13/M14) to determine whether rank transform drives the collapse.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>ID</th>
+<th>Model</th>
+<th>Preprocessing</th>
+<th>Cohort adj.</th>
+<th>K</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>M1</td>
+<td>LB (η=Lβ)</td>
+<td>Joint QN + rank</td>
+<td>None</td>
+<td>6</td>
+</tr>
+<tr class="even">
+<td>M2</td>
+<td>LB</td>
+<td>Joint QN + rank</td>
+<td>cohort_id</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<td>M3</td>
+<td>LB</td>
+<td>Per-platform z-std</td>
+<td>None</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>M4</td>
+<td>LB</td>
+<td>Per-platform z-std</td>
+<td>cohort_id</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td>M5</td>
+<td>YFB (η=(YF)β)</td>
+<td>Per-platform z-std</td>
+<td>None</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>M6</td>
+<td>YFB</td>
+<td>Per-platform z-std</td>
+<td>cohort_id</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td>M7</td>
+<td>LB</td>
+<td>Joint QN, no rank</td>
+<td>None</td>
+<td>6</td>
+</tr>
+<tr class="even">
+<td>M8</td>
+<td>LB</td>
+<td>Joint QN, no rank</td>
+<td>cohort_id</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<td>M9</td>
+<td>LB</td>
+<td>Joint z-std</td>
+<td>None</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>M10</td>
+<td>LB</td>
+<td>Joint z-std</td>
+<td>cohort_id</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td>M11</td>
+<td>LB</td>
+<td>Log only</td>
+<td>None</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>M12</td>
+<td>LB</td>
+<td>Log only</td>
+<td>cohort_id</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td>M13</td>
+<td>YFB</td>
+<td>Joint QN, no rank</td>
+<td>None</td>
+<td>5</td>
+</tr>
+<tr class="even">
+<td>M14</td>
+<td>YFB</td>
+<td>Joint QN, no rank</td>
+<td>cohort_id</td>
+<td>5</td>
+</tr>
+<tr class="odd">
+<td>M15</td>
+<td>YFB</td>
+<td>Joint z-std</td>
+<td>None</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>M16</td>
+<td>YFB</td>
+<td>Joint z-std</td>
+<td>cohort_id</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td>M17</td>
+<td>YFB</td>
+<td>Log only</td>
+<td>None</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>M18</td>
+<td>YFB</td>
+<td>Log only</td>
+<td>cohort_id</td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="external-c-index-results" class="level2">
+<h2 class="anchored" data-anchor-id="external-c-index-results">External C-index Results</h2>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>External C-index by model and cohort. Models with K_eff=0 (beta collapse) shown for completeness.</caption>
+<colgroup>
+<col style="width: 39%">
+<col style="width: 5%">
+<col style="width: 16%">
+<col style="width: 12%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">model_label</th>
+<th style="text-align: right;">Dijk</th>
+<th style="text-align: right;">Moffitt_GEO_array</th>
+<th style="text-align: right;">PACA_AU_array</th>
+<th style="text-align: right;">PACA_AU_seq</th>
+<th style="text-align: right;">Puleo_array</th>
+<th style="text-align: right;">Mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">LB | joint QN+rank | no cohort</td>
+<td style="text-align: right;">0.569</td>
+<td style="text-align: right;">0.515</td>
+<td style="text-align: right;">0.645</td>
+<td style="text-align: right;">0.667</td>
+<td style="text-align: right;">0.600</td>
+<td style="text-align: right;">0.599</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | joint z-std | cohort_id</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.534</td>
+<td style="text-align: right;">0.562</td>
+<td style="text-align: right;">0.581</td>
+<td style="text-align: right;">0.541</td>
+<td style="text-align: right;">0.555</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LB | log only | no cohort</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.521</td>
+<td style="text-align: right;">0.554</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.522</td>
+<td style="text-align: right;">0.533</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | log only | cohort_id</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.518</td>
+<td style="text-align: right;">0.564</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.512</td>
+<td style="text-align: right;">0.531</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">YFB | joint QN norank | no cohort</td>
+<td style="text-align: right;">0.535</td>
+<td style="text-align: right;">0.518</td>
+<td style="text-align: right;">0.541</td>
+<td style="text-align: right;">0.579</td>
+<td style="text-align: right;">0.526</td>
+<td style="text-align: right;">0.540</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">YFB | joint QN norank | cohort_id</td>
+<td style="text-align: right;">0.560</td>
+<td style="text-align: right;">0.512</td>
+<td style="text-align: right;">0.502</td>
+<td style="text-align: right;">0.521</td>
+<td style="text-align: right;">0.548</td>
+<td style="text-align: right;">0.529</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">YFB | joint z-std | no cohort</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.538</td>
+<td style="text-align: right;">0.570</td>
+<td style="text-align: right;">0.622</td>
+<td style="text-align: right;">0.519</td>
+<td style="text-align: right;">0.562</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">YFB | joint z-std | cohort_id</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.558</td>
+<td style="text-align: right;">0.507</td>
+<td style="text-align: right;">0.536</td>
+<td style="text-align: right;">0.571</td>
+<td style="text-align: right;">0.543</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">YFB | log only | no cohort</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.518</td>
+<td style="text-align: right;">0.555</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.514</td>
+<td style="text-align: right;">0.529</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">YFB | log only | cohort_id</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.506</td>
+<td style="text-align: right;">0.548</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.541</td>
+<td style="text-align: right;">0.532</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LB | joint QN+rank | cohort_id</td>
+<td style="text-align: right;">0.587</td>
+<td style="text-align: right;">0.537</td>
+<td style="text-align: right;">0.659</td>
+<td style="text-align: right;">0.686</td>
+<td style="text-align: right;">0.626</td>
+<td style="text-align: right;">0.619</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | perplat z-std | no cohort</td>
+<td style="text-align: right;">0.615</td>
+<td style="text-align: right;">0.547</td>
+<td style="text-align: right;">0.649</td>
+<td style="text-align: right;">0.644</td>
+<td style="text-align: right;">0.645</td>
+<td style="text-align: right;">0.620</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LB | perplat z-std | cohort_id</td>
+<td style="text-align: right;">0.624</td>
+<td style="text-align: right;">0.549</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">0.638</td>
+<td style="text-align: right;">0.650</td>
+<td style="text-align: right;">0.624</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">YFB | perplat z-std | no cohort</td>
+<td style="text-align: right;">0.619</td>
+<td style="text-align: right;">0.544</td>
+<td style="text-align: right;">0.661</td>
+<td style="text-align: right;">0.657</td>
+<td style="text-align: right;">0.650</td>
+<td style="text-align: right;">0.626</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">YFB | perplat z-std | cohort_id</td>
+<td style="text-align: right;">0.579</td>
+<td style="text-align: right;">0.523</td>
+<td style="text-align: right;">0.653</td>
+<td style="text-align: right;">0.657</td>
+<td style="text-align: right;">0.655</td>
+<td style="text-align: right;">0.613</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | joint QN norank | no cohort</td>
+<td style="text-align: right;">0.577</td>
+<td style="text-align: right;">0.505</td>
+<td style="text-align: right;">0.646</td>
+<td style="text-align: right;">0.661</td>
+<td style="text-align: right;">0.601</td>
+<td style="text-align: right;">0.598</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LB | joint QN norank | cohort_id</td>
+<td style="text-align: right;">0.627</td>
+<td style="text-align: right;">0.556</td>
+<td style="text-align: right;">0.639</td>
+<td style="text-align: right;">0.640</td>
+<td style="text-align: right;">0.610</td>
+<td style="text-align: right;">0.615</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | joint z-std | no cohort</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.510</td>
+<td style="text-align: right;">0.626</td>
+<td style="text-align: right;">0.546</td>
+<td style="text-align: right;">0.500</td>
+<td style="text-align: right;">0.545</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="merged_benchmark_report_files/figure-html/cindex-heatmap-1.png" class="img-fluid" width="864"></p>
+</div>
+</div>
+</section>
+<section id="model-summary-β-activity" class="level2">
+<h2 class="anchored" data-anchor-id="model-summary-β-activity">Model Summary (β activity)</h2>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Model summary: CV-selected K, active factors (K_eff = count of |beta_k| &gt; 0.001), max |beta|, iterations to convergence. K_eff=0 indicates complete beta collapse.</caption>
+<colgroup>
+<col style="width: 62%">
+<col style="width: 4%">
+<col style="width: 8%">
+<col style="width: 12%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">model_label</th>
+<th style="text-align: right;">K</th>
+<th style="text-align: right;">k_eff</th>
+<th style="text-align: right;">beta_max</th>
+<th style="text-align: right;">n_iters</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">LB | joint QN+rank | no cohort</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0160</td>
+<td style="text-align: right;">76</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | joint z-std | cohort_id</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">135</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LB | log only | no cohort</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">300</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | log only | cohort_id</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">300</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">YFB | joint QN norank | no cohort</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">230</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">YFB | joint QN norank | cohort_id</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">300</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">YFB | joint z-std | no cohort</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">21</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">YFB | joint z-std | cohort_id</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">119</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">YFB | log only | no cohort</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">154</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">YFB | log only | cohort_id</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">300</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LB | joint QN+rank | cohort_id</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.0311</td>
+<td style="text-align: right;">68</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | perplat z-std | no cohort</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.6266</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LB | perplat z-std | cohort_id</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.4823</td>
+<td style="text-align: right;">16</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">YFB | perplat z-std | no cohort</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0532</td>
+<td style="text-align: right;">19</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">YFB | perplat z-std | cohort_id</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0518</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | joint QN norank | no cohort</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.2345</td>
+<td style="text-align: right;">92</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LB | joint QN norank | cohort_id</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.3391</td>
+<td style="text-align: right;">300</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LB | joint z-std | no cohort</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">26</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="factor-interpretability-top-genes" class="level2">
+<h2 class="anchored" data-anchor-id="factor-interpretability-top-genes">Factor Interpretability: Top Genes</h2>
+<section id="m1-lb-joint-qnrank-no-cohort" class="level3">
+<h3 class="anchored" data-anchor-id="m1-lb-joint-qnrank-no-cohort">M1 — LB | joint QN+rank | no cohort</h3>
+<p><strong>Factor 1:</strong> ADAM6, TMEM212, ANXA2P2, SCARNA5, RMRP, SCARNA10, RPPH1, SNORA48, XIST, SNORA54, SNORA63, RGPD8, PNLIP, CELA2A, SNORD97, SNORA68, SNORD17, RPS4Y1, SNORA70, SNORA49</p>
+<p><strong>Factor 2:</strong> RMRP, RPPH1, SCARNA10, SNORD17, RPS27, ZBTB20, SCARNA7, PARP15, RPL21, SCARNA5, SCARNA2, SNORA63, RPL36A, TMEM212, UHMK1, DDR2, DGKH, HIST1H1E, KCNQ1OT1, LPP</p>
+<p><strong>Factor 3:</strong> ADAM6, ANXA2P2, EIF5AL1, MFRP, LOC388692, HLA-DRB6, SMN2, UQCRHL, TBC1D3B, GTF2H2C, H3F3C, MAP1LC3B2, H3F3A, FAM156A, PABPC3, HSPB6, SPHAR, NACA2, SERF1A, JMJD7-PLA2G4B</p>
+<p><strong>Factor 4:</strong> CELA2B, SYCN, PNLIPRP1, REG3G, CELA2A, SERPINI2, RBPJL, AQP8, CELA3B, CLPS, PNLIPRP2, CELP, PLA2G1B, CPA2, REG1B, CTRC, CTRB1, CELA3A, PNLIP, CTRB2</p>
+<p><strong>Factor 5:</strong> CFC1B, CRYBA2, KCNK16, GJD2, G6PC2, GPR119, GAD2, SLC17A6, RFX6, CRH, FFAR1, FSTL5, NEUROD1, MAFA, MYT1L, NKX2-2, SH3GL2, ACTL6B, CALY, SIM1</p>
+<p><strong>Factor 6:</strong> BTNL3, PHGR1, ITLN1, BTNL8, CLCA1, TM4SF20, ALPI, CREB3L3, SLC13A2, PSAPL1, MOGAT3, SLC26A3, FABP1, SI, APOBEC1, HMGCS2, PGC, CCL15, MUC17, CYP4F2</p>
+</section>
+<section id="m2-lb-joint-qnrank-cohort_id" class="level3">
+<h3 class="anchored" data-anchor-id="m2-lb-joint-qnrank-cohort_id">M2 — LB | joint QN+rank | cohort_id</h3>
+<p><strong>Factor 1:</strong> SCARNA5, TMEM212, SCARNA10, SNORA63, RMRP, SNORD17, ZBTB20, RPPH1, SNORA48, SCARNA7, SCARNA6, KCNQ1OT1, IL6ST, SNORD10, RPL21, SNORD97, LPP, UHMK1, SCARNA2, MALAT1</p>
+<p><strong>Factor 2:</strong> ADAM6, ANXA2P2, SMN2, LOC388692, MFRP, EIF5AL1, RNF5P1, HLA-DRB6, H3F3A, TBC1D3B, TM4SF4, OLFM4, UQCRHL, JMJD7-PLA2G4B, NOMO3, SERF1A, MUC6, CFTR, HLA-DRB5, DUOX2</p>
+<p><strong>Factor 3:</strong> TCL1A, FCER2, FCRL1, ADIPOQ, FAM129C, CNR2, PAX5, CR2, CD19, CIDEA, BLK, TNFRSF13B, MS4A1, FCRLA, CLEC17A, VPREB3, FCRL2, KLHL14, CXCL13, BEND4</p>
+<p><strong>Factor 4:</strong> BTNL3, PHGR1, ITLN1, BTNL8, MOGAT3, ALPI, CLCA1, PSAPL1, CREB3L3, SLC26A3, TM4SF20, SI, FABP1, APOBEC1, HMGCS2, PRAP1, SLC13A2, CCL15, DQX1, MOGAT2</p>
+<p><strong>Factor 5:</strong> PNCK, HOXD10, IGFL3, TMEM40, TNNT1, WFDC3, TNNI3, BARX1, NTF4, DRD4, METTL11B, EN1, UPK2, TERT, HAPLN1, GUCA1A, PAEP, LY6G6C, DMRT3, SLAMF9</p>
+<p><strong>Factor 6:</strong> CFC1B, KCNK16, CRYBA2, G6PC2, GAD2, GJD2, MAFA, RFX6, GPR119, NKX2-2, FFAR1, NEUROD1, SIM1, DLK1, CALY, FSTL5, MYT1L, UCN3, SCGN, TMEM132D</p>
+</section>
+<section id="m3-lb-perplat-z-std-no-cohort" class="level3">
+<h3 class="anchored" data-anchor-id="m3-lb-perplat-z-std-no-cohort">M3 — LB | perplat z-std | no cohort</h3>
+<p><strong>Factor 1:</strong> OR5AU1, BPY2, PFN3, OR5AN1, OR52B2, DEFB119, HPVC1, FERD3L, OR11H4, APOL5, CDY2B, C3orf22, C10orf120, MS4A12, SFTPC, PRR23B, PCNAP1, CTAG2, WFDC9, TAS2R1</p>
+<p><strong>Factor 2:</strong> LPCAT4, ASPHD2, OSBPL2, MAPK3, ADAP1, KCNK1, PAK1, FHDC1, RETSAT, CYP2S1, RAB25, FA2H, NQO1, DBNDD2, SH2D4A, KPNA7, HR, SLC9A1, LDLR, TCF7L2</p>
+<p><strong>Factor 3:</strong> LDHA, SLC2A1, ADM, ALDOA, NDRG1, PTTG1IP, ALDOC, APLN, PTGES, CSTB, FGF23, EGLN3, TNNT1, PDK1, HK2, VEGFA, APOL1, PFKP, ESM1, LIPK</p>
+</section>
+<section id="m4-lb-perplat-z-std-cohort_id" class="level3">
+<h3 class="anchored" data-anchor-id="m4-lb-perplat-z-std-cohort_id">M4 — LB | perplat z-std | cohort_id</h3>
+<p><strong>Factor 1:</strong> OR5AU1, BPY2, PFN3, OR5AN1, OR52B2, DEFB119, HPVC1, FERD3L, OR11H4, APOL5, CDY2B, C3orf22, C10orf120, MS4A12, SFTPC, PRR23B, PCNAP1, CTAG2, WFDC9, TAS2R1</p>
+<p><strong>Factor 2:</strong> RAB25, LPCAT4, KCNK1, OSBPL2, ADAP1, MAPK3, FA2H, NQO1, PAK1, ASPHD2, BAIAP2L1, LAD1, PTK6, DBNDD2, FHDC1, SIRT7, TCF7L2, RNF39, STK39, LSR</p>
+<p><strong>Factor 3:</strong> LDHA, SLC2A1, PTGES, ADM, NDRG1, KCMF1, RALA, APLN, ALDOA, TMEM41A, FGF23, ESM1, MNAT1, PTTG1IP, PDK1, ARF6, TNNT1, CASP14, FAM25A, ALDOC</p>
+</section>
+<section id="m5-yfb-perplat-z-std-no-cohort" class="level3">
+<h3 class="anchored" data-anchor-id="m5-yfb-perplat-z-std-no-cohort">M5 — YFB | perplat z-std | no cohort</h3>
+<p><strong>Factor 1:</strong> LDHA, SLC2A1, ADM, ALDOA, NDRG1, ALDOC, PTTG1IP, EGLN3, APLN, PTGES, FGF23, HK2, PDK1, APOL1, TNNT1, VEGFA, PFKP, ARF6, ESM1, ANGPTL4</p>
+<p><strong>Factor 2:</strong> ASPHD2, LPCAT4, FHDC1, OSBPL2, KCNK1, RETSAT, PAK1, CYP2S1, SH2D4A, NQO1, LDLR, KPNA7, BFAR, AKAP1, ADAP1, ELOVL6, DNMBP, FA2H, RAB25, SLC9A1</p>
+<p><strong>Factor 3:</strong> HIST2H3C, HIST1H2BE, HIST1H2BL, SLC1A5, HIST1H4H, HIST1H2BN, HIST1H2BC, HIST1H2AJ, HIST1H2BO, HIST1H3J, TBX4, HIST1H3B, CSTL1, HIST1H2BD, DEDD2, HIST1H1E, NOXO1, RPL28, ZC3H12A, IER2</p>
+</section>
+<section id="m6-yfb-perplat-z-std-cohort_id" class="level3">
+<h3 class="anchored" data-anchor-id="m6-yfb-perplat-z-std-cohort_id">M6 — YFB | perplat z-std | cohort_id</h3>
+<p><strong>Factor 1:</strong> HK2, LDHA, ALDOA, RAC1, SLC2A1, PFKP, ADM, ITGA6, CSTB, EPHA2, MAL2, SEMA4B, NR1D1, EGLN3, B3GNT3, TAGLN2, MAFF, TMEM159, ALDOC, CAMK2N1</p>
+<p><strong>Factor 2:</strong> CYP2S1, FHDC1, LPCAT4, ASPHD2, AKAP1, HR, RETSAT, OSBPL2, SLC37A1, ADAP1, CYMP, NQO1, XRCC4, SLC9A1, PREP, PAK1, GHRHR, MAPK3, GKN1, TMEM171</p>
+<p><strong>Factor 3:</strong> HRG, NOXO1, UQCRHL, OR2B6, LYPD2, F2, SLC1A5, HIST1H4H, F9, SPERT, KRTAP4-1, RGS14, NDUFV2, PRSS30P, HIST1H2AJ, HIST1H2BL, APOA2, CDK16, HOXB7, RPL28</p>
+</section>
+<section id="m7-lb-joint-qn-norank-no-cohort" class="level3">
+<h3 class="anchored" data-anchor-id="m7-lb-joint-qn-norank-no-cohort">M7 — LB | joint QN norank | no cohort</h3>
+<p><strong>Factor 1:</strong> ADAM6, TMEM212, ANXA2P2, SCARNA5, RMRP, SCARNA10, RPPH1, SNORA48, XIST, SNORA54, SNORA63, RGPD8, PNLIP, CELA2A, SNORD97, SNORA68, SNORD17, RPS4Y1, SNORA70, SNORA49</p>
+<p><strong>Factor 2:</strong> RPPH1, RMRP, MALAT1, KCNQ1OT1, LPP, RPL9, RPS27, SCARNA10, SNORD17, PARP15, RPL21, ZBTB20, SCARNA7, IL6ST, SCARNA5, RPL39, SHISA9, LOC646214, ABCC9, SCARNA2</p>
+<p><strong>Factor 3:</strong> ADAM6, ANXA2P2, KRT17, RPSAP58, H3F3A, MUC5B, HLA-H, MALAT1, MFRP, KLK10, HLA-DRB5, PSCA, CEACAM5, GABRP, EIF5AL1, MMP1, BCAS4, CXCL5, CST1, MUC4</p>
+<p><strong>Factor 4:</strong> PNLIP, CELA2A, CELA3B, CELA2B, CTRB2, CTRB1, CLPS, PNLIPRP1, CELA3A, CPA1, CPA2, CTRC, SYCN, REG1B, PLA2G1B, REG3G, AMY2A, CPB1, PNLIPRP2, REG3A</p>
+<p><strong>Factor 5:</strong> GCG, INS, TTR, CFC1B, G6PC2, KCNK16, SLC30A8, CRYBA2, PCSK2, SCGN, GAD2, GJD2, NEUROD1, ABCC8, SST, CHGA, RFX6, NKX2-2, CHGB, CPLX2</p>
+<p><strong>Factor 6:</strong> REG4, PGC, MUC17, PHGR1, BTNL3, BTNL8, ITLN1, CLDN18, CLCA1, HMGCS2, TFF1, TM4SF20, MYO1A, PSAPL1, SLC13A2, CREB3L3, ALPI, APOBEC1, IHH, SI</p>
+</section>
+<section id="m8-lb-joint-qn-norank-cohort_id" class="level3">
+<h3 class="anchored" data-anchor-id="m8-lb-joint-qn-norank-cohort_id">M8 — LB | joint QN norank | cohort_id</h3>
+<p><strong>Factor 1:</strong> RPPH1, RMRP, MALAT1, KCNQ1OT1, LPP, RPS27, SCARNA10, RPL9, ZBTB20, IL6ST, SNORD17, RPL21, SHISA9, SCARNA5, LOC646214, PARP15, ABCC9, RPL39, SCARNA7, TAOK1</p>
+<p><strong>Factor 2:</strong> PNLIP, CELA2A, CTRB2, CTRB1, CELA3A, CELA2B, CELA3B, CLPS, PNLIPRP1, CPA1, CPA2, REG1B, SYCN, CTRC, CPB1, PLA2G1B, REG3G, AMY2A, PNLIPRP2, REG3A</p>
+<p><strong>Factor 3:</strong> REG4, BTNL8, PGC, PHGR1, CLDN18, MUC17, TFF1, MYO1A, BTNL3, HMGCS2, MYO7B, ITLN1, PSAPL1, APOBEC1, SLC13A2, CREB3L3, IHH, CCL15, TM4SF5, TM4SF20</p>
+<p><strong>Factor 4:</strong> CR2, TCL1A, FCER2, MS4A1, FCRL1, ADIPOQ, CD19, PAX5, FAM129C, BLK, CNR2, VPREB3, CXCL13, FCRLA, FCRL2, CLEC17A, TNFRSF13B, CCL19, SCARA5, CIDEA</p>
+<p><strong>Factor 5:</strong> KRT6A, A2ML1, LY6D, KRT5, KRT13, SERPINB3, IVL, TMEM40, MUC21, MUC16, KRT14, KRT6C, SPRR1B, S100A2, TNNT1, PADI3, PADI1, CYP24A1, KRT16, CASP14</p>
+<p><strong>Factor 6:</strong> GCG, INS, TTR, CFC1B, G6PC2, SLC30A8, KCNK16, CRYBA2, PCSK2, SCGN, GAD2, NEUROD1, GJD2, SST, ABCC8, CHGA, GPR119, RFX6, CHGB, NKX2-2</p>
+</section>
+</section>
+<section id="conclusions" class="level2">
+<h2 class="anchored" data-anchor-id="conclusions">Conclusions</h2>
+<section id="winner-m5-yfb-per-platform-z-standardization-no-cohort-indicator-k3" class="level3">
+<h3 class="anchored" data-anchor-id="winner-m5-yfb-per-platform-z-standardization-no-cohort-indicator-k3">Winner: M5 — YFB × per-platform z-standardization × no cohort indicator (K=3)</h3>
+<p>M5 achieves the highest mean external C-index (0.626) across five independent PDAC cohorts. At K=3 (biological floor applied; 1-SE rule selected K=2), two of three factors are survival-active (K_eff=2), confirming that at least two distinct genomic programs carry prognostic information. This matches the prior K=2 result (mean C=0.625) essentially exactly — the floor adds a third factor without degrading external generalization, and provides a richer basis for biological interpretation.</p>
+</section>
+<section id="per-platform-z-standardization-is-the-only-viable-preprocessing-for-merged-data" class="level3">
+<h3 class="anchored" data-anchor-id="per-platform-z-standardization-is-the-only-viable-preprocessing-for-merged-data">Per-platform z-standardization is the only viable preprocessing for merged data</h3>
+<p>The extended comparison confirms that <strong>per-platform z-standardization is essential</strong> when training on merged RNA-seq and proteomics cohorts. Every preprocessing strategy that operates on the jointly stacked matrix without per-platform normalization produces either β→0 collapse or substantially inferior performance:</p>
+<ul>
+<li><strong>M7/M8 (LB × joint QN, no rank):</strong> mean C=0.598/0.615 — indistinguishable from M1/M2 (joint QN+rank: 0.599/0.619). K_eff=1 in both cases. Removing the rank transform from joint QN provides no benefit for LB.</li>
+<li><strong>M9/M10 (LB × joint z-std):</strong> K_eff=0, β→0 collapse. Joint z-standardization alone fails to resolve the platform offset in the LB survival likelihood.</li>
+<li><strong>M11/M12 (LB × log only):</strong> K_eff=0, β→0 collapse. Without distribution normalization, the RNA-seq vs.&nbsp;proteomics scale difference dominates the merged factor space entirely.</li>
+<li><strong>M13/M14 (YFB × joint QN, no rank):</strong> K_eff=0 — this is the critical diagnostic. Removing the rank transform does <strong>not</strong> rescue YFB from β→0 collapse on joint-QN data. The collapse is not driven by the rank transform; it is driven by the platform-dominated SVD directions that arise from joint quantile normalization of mixed-platform data.</li>
+<li><strong>M15/M16 (YFB × joint z-std):</strong> K_eff=0. Platform confounding persists.</li>
+<li><strong>M17/M18 (YFB × log only):</strong> K_eff=0. Same collapse.</li>
+</ul>
+<p>The common mechanism: without per-platform standardization, the top singular vectors of the merged Y matrix align with the RNA-seq vs.&nbsp;proteomics platform difference rather than biological variation. Survival signal is orthogonal to these directions, so the CAVI update drives β→0 regardless of model form (LB or YFB) or normalization method (quantile, z-score, none).</p>
+</section>
+<section id="rank-transform-marginal-for-lb-not-the-driver-of-yfb-collapse" class="level3">
+<h3 class="anchored" data-anchor-id="rank-transform-marginal-for-lb-not-the-driver-of-yfb-collapse">Rank transform: marginal for LB, not the driver of YFB collapse</h3>
+<p>Comparing M1 (0.599) vs.&nbsp;M7 (0.598) for LB, and M2 (0.619) vs. M8 (0.615), the rank transform provides no measurable benefit. Both select K=6 and achieve K_eff=1. The M13/M14 result definitively rules out the rank transform as the cause of YFB β→0 on joint-QN data; the structural collapse persists with or without it.</p>
+</section>
+<section id="cohort-indicator-helpful-for-lb-harmful-for-yfb-at-low-k" class="level3">
+<h3 class="anchored" data-anchor-id="cohort-indicator-helpful-for-lb-harmful-for-yfb-at-low-k">Cohort indicator: helpful for LB, harmful for YFB at low K</h3>
+<p>Adding a cohort indicator to LB with joint QN (M1→M2: +0.02) improves performance substantially by absorbing the platform offset into an explicit covariate. For LB with per-platform preprocessing (M3→M4: +0.004), the gain is minimal — normalization already removes the bulk of the offset. For YFB with per-platform preprocessing (M5→M6: -0.013), the cohort indicator is harmful: at K=3, the cohort column competes with biological factors for genomic variance in ZF = YF, degrading the survival signal captured by β.</p>
+</section>
+<section id="recommended-configuration-for-manuscript" class="level3">
+<h3 class="anchored" data-anchor-id="recommended-configuration-for-manuscript">Recommended configuration for manuscript</h3>
+<p><strong>Primary: M5</strong> — YFB × per-platform z-standardization × no cohort indicator, K=3. Highest mean external C=0.626, two of three factors survival-active, and the most interpretable prediction path for external data: risk scores are computed exactly as η_new = (Y_new %<em>% EF) %</em>% β, with no approximation. This contrasts with LB, where new-subject predictions require an OLS approximation (L_new ≈ Y_new %<em>% EF %</em>% solve(t(EF) %*% EF)) that ignores the survival term in the L posterior.</p>
+<p><strong>Sensitivity check: M4</strong> — LB × per-platform z-standardization × cohort indicator, K=3. Mean C=0.624; one fewer active factor (K_eff=1); explicitly models the RNA-seq vs.&nbsp;proteomics platform offset.</p>
+<p><strong>Not recommended:</strong> - M9–M18: 8 of 10 collapse to β=0; remaining 2 (M7/M8) match the already-inferior joint-QN LB baseline. - M1/M7 (lowest viable mean C ≈ 0.599/0.598). - M6 (cohort indicator harmful for YFB: mean C=0.613).</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

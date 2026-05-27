@@ -109,12 +109,19 @@ tab <- data.frame(
   ),
   stringsAsFactors = FALSE
 )
+# Sort: LB first, then YFB; within each, by ID number
+tab$sort_model <- ifelse(tab$Model == "LB", 0, 1)
+tab$sort_id    <- as.integer(sub("M", "", tab$ID))
+tab <- tab[order(tab$sort_model, tab$sort_id), ]
+tab$sort_model <- NULL; tab$sort_id <- NULL
+
 tab$Mean_C <- ifelse(tab$K_eff == 0,
-                     sprintf("%.3f (\\textbf{\\textit{collapsed}})", tab$Mean_C),
+                     sprintf("%.3f (\\textit{collapsed})", tab$Mean_C),
                      sprintf("%.3f", tab$Mean_C))
-knitr::kable(tab, booktabs = TRUE, escape = FALSE,
-             col.names = c("ID","Model","Preprocessing","Cohort","K","K\\_eff","Mean C"),
-             caption = "18-configuration benchmark. K\\_eff = active factors ($|\\hat{\\beta}_k| > 0.001$) after convergence. 'Collapsed' = $\\hat{\\beta} = 0$ for all factors.")
+knitr::kable(tab, booktabs = TRUE, escape = FALSE, row.names = FALSE,
+             align  = c("l","l","l","c","c","c","r"),
+             col.names = c("ID","Model","Preprocessing","Cohort","K","$K_{\\text{eff}}$","Mean C"),
+             caption = "18-configuration benchmark sorted by model form (LB then YFB). $K_{\\text{eff}}$ = active factors ($|\\hat{\\beta}_k| > 0.001$) after convergence. \\textit{Collapsed} = $\\hat{\\beta} = 0$ for all factors.")
 ```
 
 **Critical finding:** 10 of 12 non-per-platform configurations produce $\hat{\beta} = 0$
