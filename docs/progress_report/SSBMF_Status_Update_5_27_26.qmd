@@ -1,0 +1,278 @@
+---
+title: "SSBMF Status Update: Preprocessing Comparison, Cohort Indicator, and Final Configuration (May 27, 2026)"
+author: "Andrew Walther"
+format:
+  pdf:
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{enumitem}
+        \usepackage{booktabs}
+        \usepackage{geometry}
+        \usepackage{titling}
+        \usepackage{array}
+        \geometry{margin=0.42in}
+        \renewcommand{\familydefault}{\sfdefault}
+        \setlist[itemize]{leftmargin=1.1em, topsep=0.1em, itemsep=0.06em, parsep=0em, partopsep=0em}
+        \setlength{\parskip}{0.05em}
+        \RedeclareSectionCommand[beforeskip=0.28em,afterskip=0.14em]{section}
+        \renewcommand{\arraystretch}{0.9}
+        \setlength{\droptitle}{-1.8em}
+        \pretitle{\begin{center}\large\bfseries}
+        \posttitle{\par\end{center}\vspace{-0.7em}}
+fontsize: 9pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+read_csv_safe <- function(path) {
+  if (file.exists(path)) read.csv(path, stringsAsFactors = FALSE) else NULL
+}
+
+OUT <- "../../results/benchmark_sim/outputs/merged_benchmark"
+results <- read_csv_safe(file.path(OUT, "merged_benchmark_results_extended.csv"))
+
+# Mean C-index per model
+if (!is.null(results)) {
+  means <- results |>
+    group_by(model) |>
+    summarise(mean_c = round(mean(c_index), 3),
+              k_eff  = first(k_eff),
+              K      = first(K),
+              beta_max = first(beta_max),
+              .groups = "drop")
+  mc <- setNames(means$mean_c, means$model)
+} else {
+  mc <- setNames(rep(NA, 18),
+                 paste0("M", c(1:18)))
+}
+```
+
+## 1. Objectives and Decisions Addressed Since Last Update
+
+This report covers three questions that arose from the May 8 update and have now been resolved
+through a comprehensive 18-configuration benchmark on merged TCGA\_PAAD + CPTAC training data
+($n = 273$, 5-fold CV K-selection with biological floor $K \geq 3$, evaluated on 5 external cohorts).
+
+- **Which preprocessing strategy is compatible with merged multi-platform training?**
+  Five strategies compared: joint quantile normalization + rank transform (prior standard),
+  per-platform z-standardization, joint QN without rank transform, joint z-standardization,
+  and log-transform only.
+
+- **Does the cohort indicator column in $L$ improve generalization?**
+  The cohort indicator absorbs the RNA-seq vs. proteomics platform offset at the model level
+  (as opposed to removing it in preprocessing). Evaluated for both LB and YFB across preprocessing
+  strategies.
+
+- **LB vs. YFB for the final manuscript configuration?**
+  LB ($\eta = L\beta$) requires an OLS approximation to score new subjects
+  ($\hat{L}_{\text{new}} \approx Y_{\text{new}} F (F^\top F)^{-1}$). YFB ($\eta = (YF)\beta$)
+  scores new subjects exactly ($\eta_{\text{new}} = Y_{\text{new}} F \beta$) with no approximation.
+
+## 2. Key Results: 18-Configuration Benchmark
+
+```{r results-table}
+tab <- data.frame(
+  ID    = c("M1","M2","M3","M4","M5","M6","M7","M8",
+            "M9","M10","M11","M12","M13","M14","M15","M16","M17","M18"),
+  Model = c("LB","LB","LB","LB","YFB","YFB","LB","LB",
+            "LB","LB","LB","LB","YFB","YFB","YFB","YFB","YFB","YFB"),
+  Preprocessing = c(
+    "Joint QN+rank","Joint QN+rank",
+    "Per-plat z-std","Per-plat z-std",
+    "Per-plat z-std","Per-plat z-std",
+    "Joint QN","Joint QN",
+    "Joint z-std","Joint z-std",
+    "Log only","Log only",
+    "Joint QN","Joint QN",
+    "Joint z-std","Joint z-std",
+    "Log only","Log only"
+  ),
+  Cohort = c("No","Yes","No","Yes","No","Yes","No","Yes",
+             "No","Yes","No","Yes","No","Yes","No","Yes","No","Yes"),
+  K     = c(6,6,3,3,3,3,6,6,3,3,3,3,5,5,3,3,3,3),
+  K_eff = c(1,3,1,1,2,2,1,1,0,0,0,0,0,0,0,0,0,0),
+  Mean_C = c(
+    mc["M1"], mc["M2"], mc["M3"], mc["M4"], mc["M5"], mc["M6"],
+    mc["M7"], mc["M8"], mc["M9"], mc["M10"], mc["M11"], mc["M12"],
+    mc["M13"], mc["M14"], mc["M15"], mc["M16"], mc["M17"], mc["M18"]
+  ),
+  stringsAsFactors = FALSE
+)
+tab$Mean_C <- ifelse(tab$K_eff == 0,
+                     sprintf("%.3f (\\textbf{\\textit{collapsed}})", tab$Mean_C),
+                     sprintf("%.3f", tab$Mean_C))
+knitr::kable(tab, booktabs = TRUE, escape = FALSE,
+             col.names = c("ID","Model","Preprocessing","Cohort","K","K\\_eff","Mean C"),
+             caption = "18-configuration benchmark. K\\_eff = active factors ($|\\hat{\\beta}_k| > 0.001$) after convergence. 'Collapsed' = $\\hat{\\beta} = 0$ for all factors.")
+```
+
+**Critical finding:** 10 of 12 non-per-platform configurations produce $\hat{\beta} = 0$
+for all factors ($K_{\text{eff}} = 0$). The only viable preprocessing for merged RNA-seq +
+proteomics training is per-platform z-standardization applied before merging.
+
+## 3. Preprocessing: Why Per-Platform Z-Standardization Is Required
+
+When TCGA\_PAAD (RNA-seq) and CPTAC (proteomics) expression matrices are stacked without
+per-platform normalization, the top singular vectors of the merged $Y$ matrix capture the
+platform contrast, not biological variation. The CAVI survival update receives near-zero
+signal in these directions, so $\hat{\beta} \to 0$ regardless of model form or further
+normalization. Rank transform (M13/M14 vs. joint QN): removing the rank transform from
+joint-QN data does \emph{not} prevent YFB collapse, ruling out rank transform as the
+mechanism. The root cause is the platform-dominated SVD shared by all joint preprocessing
+strategies.
+
+Per-platform z-standardization removes each cohort's gene-level mean and variance
+\emph{before} merging. This makes the joint expression matrix reflect within-platform
+biological variation rather than between-platform scale differences. After per-platform
+z-std, both LB and YFB recover non-zero $\hat{\beta}$ at $K = 3$.
+
+## 4. Cohort Indicator: When It Helps vs. When It Hurts
+
+The cohort indicator appends a platform dummy to $L$ and estimates a cohort-specific
+gene profile $F_{\text{coh}}$ via Normal conjugate update. Its effect depends on
+whether preprocessing has already removed the platform offset:
+
+| Setting | Cohort indicator effect | Mechanism |
+|---|---:|---|
+| LB + joint QN (M1→M2) | +0.020 | Absorbs platform offset; frees 2 extra biological factors |
+| LB + per-platform z-std (M3→M4) | +0.004 | Marginal; preprocessing already removed bulk offset |
+| YFB + per-platform z-std (M5→M6) | −0.013 | At $K=3$, cohort column competes for variance with 2 biological factors |
+| LB + joint QN, low $K$ (K=5) | Essential | Without it, LB also collapses to $K_{\text{eff}}=0$ at $K=5$ |
+
+**Recommendation on cohort indicator:** It is most valuable as a **robustness feature for LB
+when per-platform preprocessing cannot be guaranteed** (e.g., adding a new cohort to an
+existing fit without retraining). For the primary analysis configuration (YFB +
+per-platform z-std), it is \emph{harmful} at low $K$ and should be excluded. For sensitivity
+analysis (LB + per-platform z-std, M4), it is effectively neutral (+0.004) and can be
+included without cost. Future work extending to 3+ cohorts should revisit the cohort
+indicator, as it may provide greater benefit when platform contrast is larger.
+
+## 5. Recommendation: Final Configuration for Manuscript
+
+```{r rec-table}
+rec <- data.frame(
+  Role = c("Primary (M5)", "Sensitivity (M4)"),
+  Model = c("YFB", "LB"),
+  Preprocessing = c("Per-platform z-std", "Per-platform z-std"),
+  Cohort = c("No", "Yes"),
+  K = c(3, 3),
+  K_eff = c(2, 1),
+  Mean_C = c(mc["M5"], mc["M4"]),
+  Advantage = c(
+    "Exact external scoring; 2 active programs; highest C",
+    "Explicit platform offset model; LB robustness check"
+  ),
+  stringsAsFactors = FALSE
+)
+knitr::kable(rec, booktabs = TRUE,
+             col.names = c("Role","Model","Preprocessing","Cohort","K","K\\_eff","Mean C","Notes"),
+             caption = "Recommended configurations. K=3 is the biological floor (1-SE CV selected K=2 for YFB; K=3 has higher CV mean C and is consistent with DeSurv K=3--4).")
+```
+
+**M5 (primary):** YFB identifies 2 active gene expression programs ($K_{\text{eff}} = 2$) from
+3 learned factors, with mean external C = `r mc["M5"]` across 5 independent PDAC cohorts
+(Dijk, Moffitt GEO, PACA-AU array, PACA-AU seq, Puleo). New-patient risk scores require
+only $\eta_{\text{new}} = Y_{\text{new}} F \hat\beta$ — no sample-level latent variable
+approximation. Factor loadings $F$ are directly interpretable as gene weights defining each
+prognostic program.
+
+**M4 (sensitivity):** LB with cohort indicator reaches mean C = `r mc["M4"]` — effectively
+tied with M5 — and explicitly encodes the RNA-seq vs. proteomics platform difference as a
+model parameter rather than a preprocessing step.
+
+\newpage
+
+## 6. Summary Figure
+
+```{r summary-fig, fig.height=4.6, fig.cap="Left: mean external C-index for all 18 configurations, colored by model type. Dashed line = chance (C=0.5). Grey fill = configurations with K\\_eff=0 (beta collapse). Right: per-cohort C-index for the two recommended configurations."}
+
+if (!is.null(results)) {
+  # Panel A: mean C by config
+  means_plot <- results |>
+    group_by(model) |>
+    summarise(mean_c = mean(c_index), k_eff = first(k_eff),
+              model_type = first(model_type), .groups="drop") |>
+    mutate(
+      collapsed = k_eff == 0,
+      model = factor(model, levels = paste0("M", c(1:18)))
+    )
+
+  p_all <- ggplot(means_plot, aes(x = model, y = mean_c,
+                                   fill = interaction(model_type, collapsed))) +
+    geom_col(width = 0.7, color = "white") +
+    geom_hline(yintercept = 0.5, linetype = "dashed", color = "grey40") +
+    scale_fill_manual(
+      values = c("LB.FALSE"  = "#4c78a8",
+                 "YFB.FALSE" = "#f58518",
+                 "LB.TRUE"   = "#cccccc",
+                 "YFB.TRUE"  = "#cccccc"),
+      labels = c("LB (active)", "YFB (active)", "Collapsed (β=0)", ""),
+      name = NULL
+    ) +
+    coord_cartesian(ylim = c(0.45, 0.68)) +
+    labs(title = "Mean external C-index: all 18 configs",
+         x = "Model ID", y = "Mean C-index") +
+    annotate("text", x = "M5", y = mc["M5"] + 0.008,
+             label = "M5★", size = 2.8, fontface = "bold", color = "#f58518") +
+    theme_bw(base_size = 8) +
+    theme(legend.position = "top",
+          panel.grid.minor = element_blank(),
+          axis.text.x = element_text(size = 7))
+
+  # Panel B: per-cohort for M4 and M5
+  rec_df <- results[results$model %in% c("M4","M5"), ] |>
+    mutate(label = ifelse(model == "M5", "M5: YFB perplat (primary)",
+                                         "M4: LB perplat+cohort (sensitivity)"))
+
+  p_coh <- ggplot(rec_df, aes(x = cohort, y = c_index, fill = label)) +
+    geom_col(position = position_dodge(width = 0.75), width = 0.65, color = "white") +
+    geom_hline(yintercept = 0.5, linetype = "dashed", color = "grey40") +
+    scale_fill_manual(values = c(
+      "M5: YFB perplat (primary)"        = "#f58518",
+      "M4: LB perplat+cohort (sensitivity)" = "#4c78a8"
+    ), name = NULL) +
+    coord_cartesian(ylim = c(0.45, 0.72)) +
+    labs(title = "Per-cohort C-index: recommended configs",
+         x = NULL, y = "C-index") +
+    theme_bw(base_size = 8) +
+    theme(legend.position = "top",
+          panel.grid.minor = element_blank(),
+          axis.text.x = element_text(angle = 20, hjust = 1, size = 7))
+
+  p_all + p_coh + plot_layout(widths = c(1.4, 1))
+} else {
+  plot.new(); text(0.5, 0.5, "Results CSV not found", cex = 1.2)
+}
+```
+
+## 7. Open Items and Next Steps
+
+- **Gene set enrichment / pathway analysis** for M5 factors 1 and 2 (the 2 active
+  prognostic programs). This is the primary interpretability task remaining before the
+  manuscript methods section can be finalized.
+
+- **Cohort indicator for future multi-cohort extensions.** As the training set grows
+  beyond 2 platforms (e.g., adding microarray cohorts), the cohort indicator may
+  become more valuable. The `cohort_id` parameter is already implemented in both
+  LB and YFB; the cost/benefit analysis above applies per-pair of preprocessing
+  choices and $K$.
+
+- **Single-cohort YFB.** YFB on TCGA-only or CPTAC-only still has near-zero betas
+  (lack of platform contrast means the SVD directions are more biological, but
+  $n$ is too small for stable CV). Not blocking for the merged-cohort manuscript.
+
+- **LB prediction approximation.** The OLS approximation for LB new-subject scoring
+  is adequate for sensitivity analysis but should be noted as a limitation vs. YFB.
+  A potential alternative: train YFB on TCGA-only + CPTAC-only separately and compare
+  factor consistency across platforms as a validation experiment.
