@@ -263,11 +263,12 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
 
   # Step 1: intersect raw gene universes (no preprocessing yet)
   gene_lists   <- lapply(cohort_raw_list, function(x) x$gene_names)
-  common_genes <- Reduce(intersect, gene_lists)
-  if (length(common_genes) == 0)
+  common_genes    <- Reduce(intersect, gene_lists)
+  n_raw_intersect <- length(common_genes)
+  if (n_raw_intersect == 0)
     stop("No common genes found across cohorts — check gene_names fields.")
   cat(sprintf("  [v2] Raw gene intersection: %d genes across %s\n",
-              length(common_genes), paste(cohort_names, collapse = " + ")))
+              n_raw_intersect, paste(cohort_names, collapse = " + ")))
 
   # Steps 2–3: log2 transform per cohort (platform-aware), subset to common genes.
   cohort_matrices <- lapply(cohort_names, function(ds) {
@@ -370,8 +371,7 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
     n                        = nrow(Y_final),
     p                        = ncol(Y_final),
     dataset_labels           = dataset_labels,
-    n_raw_intersect          = length(Reduce(intersect,
-                                             lapply(cohort_raw_list, function(x) x$gene_names))),
+    n_raw_intersect          = n_raw_intersect,
     rank_transform           = rank_transform,
     per_platform_standardize = per_platform_standardize,
     normalize_method         = normalize_method,

@@ -216,10 +216,9 @@ run_test("T1.15: selection_per_cohort=TRUE runs and returns selection metadata",
     normalize_method     = "none",
     rank_transform       = FALSE
   )
-  # Gene selection per cohort (top 4 of 6) then intersect: intersection should
-  # be >= 2 and <= 4 genes; matrix dimensions must be consistent.
-  assert_true(out$p >= 2L && out$p <= 4L,
-              "Intersection of two top-4-of-6 sets should be 2–4 genes")
+  # Fixture uses set.seed(1L): CohortA top-4 = {G1,G2,G4,G5}, CohortB = {G2,G3,G5,G6}.
+  # Intersection = {G2, G5} → p=2 (deterministic).
+  assert_equal(out$p, 2L)
   assert_equal(out$selection_per_cohort, TRUE)
   assert_equal(out$selection_method, "combined_rank")
   assert_equal(nrow(out$Y), 8L)  # 4 + 4 subjects
