@@ -274,26 +274,13 @@ The model is fully implemented, tested, and benchmarked. Two model variants are 
 **Cluster A (LB)** uses η = Lβ; **Cluster B (YFB)** uses η = (YF)β (Cox-on-YF reformulation).
 See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete session log.
 
-**Completed:**
-- Modular CAVI implementation (171/171 tests passing)
-- Cox-on-YF reformulation (Cluster B): `code/fit_cox_on_yf.R`, `code/predict_cox_on_yf.R`
-- DeSurv-aligned preprocessing pipeline (`code/preprocess_desurv.R`)
-- Alpha CV selection via 1-SE rule (`code/select_alpha_cv.R`)
-- Phase C sign correction for both LB (`code/fit_modular.R`) and YFB (`code/fit_cox_on_yf.R`):
-  post-convergence training concordance check; flips EBeta if C_train < 0.5
-- SVD pseudoinverse prediction fix (`code/predict.R`)
-- Synthetic validation: LB supervised C-index 0.79 > PCA 0.76; YFB C=0.906 (K_eff=4)
-- PDAC cross-cohort benchmark (Phase C fixed): LB external C=0.55–0.67 across all training
-  modes (tcga_only, cptac_only, merged); YFB external C=0.55–0.63 (single-cohort, normal prior)
-- Prior sensitivity: `point_normal` vs `point_laplace` vs `normal` compared across both models;
-  `normal` prior needed for YFB on real PDAC (spike-and-slab collapses beta when signal is weak)
-- v2 preprocessing for merged cohort: intersect-first → log₂ → quantile normalization →
-  top-2000 by merged variance → rank transform
-- DeSurv benchmark report (`docs/reports/ssbmf_summary_report_04_29_26.pdf`) and full
-  Phase A–C re-benchmark report (`docs/reports/ssbmf_summary_report_05_05_26.pdf`)
+**Current state (2026-05-28):** 246/246 tests passing. Recommended configuration: YFB with
+DeSurv-aligned gene selection (combined mean+variance rank, top-3000 per cohort, 2064 genes),
+per-platform z-standardization, K=7 — mean external C-index 0.636 across 5 held-out PDAC
+cohorts. Two active prognostic programs identified (one adverse, one protective); signal
+replicates across RNA-seq, microarray, and proteomics platforms.
 
-**Current priorities:** K selection via CV (`code/select_K.R` stub); YFB merged beta collapse
-(K_eff=0 for YFB on mixed RNA-seq + proteomics); prior comparison follow-up. See `ROADMAP.md`.
+**Next:** pathway enrichment on active factor gene weights; merge to main. See `ROADMAP.md`.
 
 ---
 
