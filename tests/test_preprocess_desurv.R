@@ -200,4 +200,45 @@ run_test("T1.14: combined_rank top_n=1 picks the gene with lowest rank_mean+rank
   assert_equal(ncol(out$Y), 1L)
 })
 
+# ---------------------------------------------------------------------------
+# Tests for selection_per_cohort parameter in preprocess_merged_cohorts()
+# ---------------------------------------------------------------------------
+
+run_test("T1.15: selection_per_cohort=TRUE runs and returns selection metadata", {
+  raw   <- make_synthetic_raw_list()  # 2 cohorts, 4 subjects each, 6 genes
+  flags <- c(CohortA = TRUE, CohortB = FALSE)
+  out   <- preprocess_merged_cohorts(
+    raw, flags,
+    top_n                = 4L,
+    selection_per_cohort = TRUE,
+    selection_method     = "combined_rank",
+    per_platform_standardize = FALSE,
+    normalize_method     = "none",
+    rank_transform       = FALSE
+  )
+  # Gene selection per cohort (top 4 of 6) then intersect: intersection should
+  # be >= 2 and <= 4 genes; matrix dimensions must be consistent.
+  assert_true(out$p >= 2L && out$p <= 4L,
+              "Intersection of two top-4-of-6 sets should be 2–4 genes")
+  assert_equal(out$selection_per_cohort, TRUE)
+  assert_equal(out$selection_method, "combined_rank")
+  assert_equal(nrow(out$Y), 8L)  # 4 + 4 subjects
+  assert_finite(out$Y)
+})
+
+run_test("T1.16: selection_per_cohort=FALSE (default) still works and returns FALSE in output", {
+  raw   <- make_synthetic_raw_list()
+  flags <- c(CohortA = TRUE, CohortB = FALSE)
+  out   <- preprocess_merged_cohorts(
+    raw, flags, top_n = 6L,
+    selection_per_cohort = FALSE,
+    normalize_method     = "none",
+    rank_transform       = FALSE
+  )
+  assert_equal(out$selection_per_cohort, FALSE)
+  assert_equal(out$selection_method, "variance")  # default
+  assert_equal(nrow(out$Y), 8L)
+  assert_equal(out$p, 6L)  # all 6 genes kept (top_n=6 = ncol)
+})
+
 report_results("preprocess_desurv.R")
