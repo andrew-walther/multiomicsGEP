@@ -107,7 +107,65 @@ The survival directions are internally consistent: $\hat{\beta}$ sign predicts w
 
 **D3 (sensitivity):** LB, same DeSurv gene set, $K = 7$. Mean external C = `r mean_c("D3")`. Reproduces the same two-program, adverse+protective structure as D4, confirming the finding is not specific to the YFB parameterization. LB $\hat{\beta}$ magnitudes are on a more natural per-factor scale ($\hat{\beta}_2 = -0.44$, $\hat{\beta}_3 = +0.21$) and may aid interpretability, at the cost of an OLS approximation for new-patient scoring.
 
-## 6. Open Items
+## 6. Results Figures
+
+```{r fig-cohort, fig.height=3.2, fig.cap="Per-cohort external concordance index for the three YFB configurations: D2 (original M5 baseline), D4 (DeSurv-aligned, recommended), and D5 (DeSurv-aligned + cohort indicator). Dashed line = chance (C = 0.5). DeSurv selection (D4) improves over the baseline in 4 of 5 cohorts; the cohort indicator (D5) consistently reduces performance, with the largest regressions in PACA-AU-seq and PACA-AU-array."}
+if (!is.null(res)) {
+  plot_df <- res[res$model %in% c("D2", "D4", "D5"), ] |>
+    mutate(
+      label = factor(model,
+        levels = c("D2", "D4", "D5"),
+        labels = c("D2: YFB orig (M5, C=0.624)",
+                   "D4: YFB DeSurv (recommended, C=0.636)",
+                   "D5: YFB DeSurv + cohort (C=0.614)")),
+      cohort = factor(cohort,
+        levels = c("Dijk","Moffitt_GEO_array","PACA_AU_array","PACA_AU_seq","Puleo_array"),
+        labels = c("Dijk","Moffitt\nGEO","PACA-AU\narray","PACA-AU\nseq","Puleo"))
+    )
+  ggplot(plot_df, aes(x = cohort, y = c_index, fill = label)) +
+    geom_col(position = position_dodge(0.75), width = 0.65, color = "white") +
+    geom_hline(yintercept = 0.5, linetype = "dashed", color = "grey40") +
+    scale_fill_manual(
+      values = c("D2: YFB orig (M5, C=0.624)"               = "#f58518",
+                 "D4: YFB DeSurv (recommended, C=0.636)"    = "#e45756",
+                 "D5: YFB DeSurv + cohort (C=0.614)"        = "#b279a2"),
+      name = NULL) +
+    coord_cartesian(ylim = c(0.45, 0.72)) +
+    labs(x = NULL, y = "C-index") +
+    theme_bw(base_size = 8) +
+    theme(legend.position = "top",
+          legend.text     = element_text(size = 7),
+          panel.grid.minor = element_blank(),
+          axis.text.x     = element_text(size = 8))
+} else {
+  plot.new(); text(0.5, 0.5, "Results CSV not found")
+}
+```
+
+```{r fig-beta, fig.height=2.6, fig.cap="Posterior mean survival coefficients for D4 (YFB DeSurv-aligned, K = 7). Red bars = adverse programs (positive beta-hat, high loading predicts worse survival); blue bars = protective (negative beta-hat); grey = inactive factors shrunk to near-zero by the empirical Bayes prior. Only Factors 3 and 7 survive shrinkage; the remaining five factors capture expression variation that is not prognostically informative in the training cohort."}
+beta_d4 <- data.frame(
+  Factor    = 1:7,
+  Beta      = c(0, 0, 0.0113, 0, 0, 0, -0.0408),
+  Active    = c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE)
+)
+beta_d4$Direction <- ifelse(!beta_d4$Active, "Inactive",
+                     ifelse(beta_d4$Beta > 0, "Adverse", "Protective"))
+
+ggplot(beta_d4, aes(x = factor(Factor), y = Beta, fill = Direction)) +
+  geom_col(width = 0.65) +
+  geom_hline(yintercept = 0, linewidth = 0.3, color = "black") +
+  scale_fill_manual(
+    values = c("Adverse" = "#d62728", "Protective" = "#1f77b4", "Inactive" = "#cccccc"),
+    name = NULL) +
+  labs(x = "Factor", y = expression(hat(beta)[k]),
+       title = "D4 survival coefficients: 2 active programs from K = 7 factors") +
+  theme_bw(base_size = 8) +
+  theme(legend.position  = "right",
+        plot.title       = element_text(size = 8, face = "bold"),
+        panel.grid.minor = element_blank())
+```
+
+## 7. Open Items
 
 - **Pathway enrichment on D4 Factors 3 and 7.** Submit top-weighted genes to MSigDB / GSEA hallmark gene sets; cross-reference with Moffitt basal/classical and Bailey et al. (2016) four-subtype annotations in TCGA to assess whether the two programs correspond to established PDAC molecular axes.
 - **Compare patient loadings $\hat{L}_{i,3}$ and $\hat{L}_{i,7}$ to Moffitt subtype scores** available in TCGA\_PAAD to quantify concordance with classical vs. basal subtypes.
