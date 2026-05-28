@@ -938,6 +938,12 @@ aggregate(c_index ~ model + label, data = res, FUN = mean)
 
 Expected: D3/D4 should show non-zero K_eff (per-platform z-std is the viable preprocessing).
 
+**Note on D1/D2 baseline numbers:** D1/D2 use `top_n=NULL` for external cohort preprocessing
+(keep all genes, then intersect with training genes). The original benchmark used `top_n=2000`
+for external cohorts. D1/D2 C-index values may differ slightly from the published M4=0.622,
+M5=0.626 — this is expected and does not indicate an error. What matters is the D1 vs D3 and
+D2 vs D4 deltas, which are computed under identical external preprocessing for all four configs.
+
 - [ ] **Step 4.4: Re-read globals.yml to confirm K was written**
 
 ```r
@@ -972,6 +978,36 @@ EOF
 **Files:**
 - Create: `docs/reports/desurv_alignment_report_05_27_26.qmd`
 - Modify: `ROADMAP.md`, `DECISIONS.md`, `CLAUDE.md`
+- Conditionally modify: `docs/progress_report/SSBMF_Status_Update_5_27_26.qmd` (if DeSurv wins)
+
+### Decision rule (apply before writing any documentation)
+
+After reading `desurv_comparison_results.csv`, compute:
+
+```r
+res  <- read.csv("results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv")
+agg  <- aggregate(c_index ~ model, data = res, FUN = mean)
+d2   <- agg$c_index[agg$model == "D2"]   # YFB original (≈ M5)
+d4   <- agg$c_index[agg$model == "D4"]   # YFB DeSurv-aligned
+delta_yfb <- d4 - d2
+cat(sprintf("YFB delta: %.4f (D4 - D2)\n", delta_yfb))
+```
+
+Apply this rule:
+
+| Result | Decision | What to do in documentation |
+|--------|----------|-----------------------------|
+| delta_yfb > +0.005 | **Adopt DeSurv** | D4 becomes new primary config; update CLAUDE.md, DECISIONS.md, progress report; flag pathway enrichment needed |
+| −0.005 ≤ delta_yfb ≤ +0.005 | **Neutral — keep M5** | Document as negative result; note both are equivalent; keep M5 as primary |
+| delta_yfb < −0.005 | **Reject DeSurv** | Document as negative result; retain M5 as primary; note DeSurv gene selection does not transfer to SSBMF |
+
+The threshold ±0.005 corresponds to roughly half the cohort-to-cohort variability in the 18-config
+benchmark and is large enough to be practically meaningful for a 5-cohort average C-index.
+
+Check D1 vs D3 (LB) using the same rule for completeness, but the **YFB comparison is the
+primary decision driver** since D2/M5 is the recommended manuscript configuration.
+
+---
 
 - [ ] **Step 5.1: Create `docs/reports/desurv_alignment_report_05_27_26.qmd`**
 
@@ -1125,6 +1161,37 @@ quarto render docs/reports/desurv_alignment_report_05_27_26.qmd --to html
 ```
 Expected: no LaTeX errors; PDF and HTML written to `docs/reports/`.
 
+- [ ] **Step 5.4b: If DeSurv wins (delta_yfb > +0.005) — update the progress report**
+
+Open `docs/progress_report/SSBMF_Status_Update_5_27_26.qmd` and update Section 5
+("Recommendation: Final Configuration for Manuscript"). Change the primary config row
+from M5 to D4 and add a note:
+
+```
+Role: Primary (D4)
+Model: YFB
+Preprocessing: Per-platform z-std + DeSurv gene selection (combined_rank, top-3000 per cohort)
+Cohort: No
+K: <K from globals.yml k_merged_yfb_desurv>
+K_eff: <from results>
+Mean_C: <mc["D4"] value>
+Notes: Supersedes M5; DeSurv-aligned gene selection gains +<delta> mean C
+```
+
+Re-render both PDF and HTML:
+```bash
+quarto render docs/progress_report/SSBMF_Status_Update_5_27_26.qmd --to pdf
+quarto render docs/progress_report/SSBMF_Status_Update_5_27_26.qmd --to html
+```
+
+Also add a flag at the end of Section 7 (Open Items):
+```
+- **Pathway enrichment on D4 factors.** DeSurv-aligned gene selection changes the training
+  gene set (~1970 genes vs 2000); re-run GSEA/ORA on D4 factor loadings once adopted.
+```
+
+If DeSurv does NOT win: skip this step entirely — the progress report is already correct.
+
 - [ ] **Step 5.5: Update `ROADMAP.md`**
 
 Mark the DeSurv gene selection item complete:
@@ -1171,7 +1238,10 @@ selection (top-2000 on merged normalized matrix)?
 | D3 (DeSurv LB) | LB + aligned | [fill] | [fill] | ~1970 |
 | D4 (DeSurv YFB) | YFB + aligned | [fill] | [fill] | ~1970 |
 
-**Decision:** [State: adopt D4/D3 as new primary OR keep M5/M4 if no improvement.]
+**Decision:** Apply the rule from the plan: delta_yfb = mean_C(D4) − mean_C(D2).
+If delta_yfb > +0.005: adopt D4 as new primary config; update CLAUDE.md recommended config line.
+If |delta_yfb| ≤ 0.005: keep M5 as primary; DeSurv gene selection is neutral for SSBMF.
+If delta_yfb < −0.005: retain M5; DeSurv gene selection is harmful; note in manuscript limitations.
 ```
 
 - [ ] **Step 5.7: Update `CLAUDE.md`**
