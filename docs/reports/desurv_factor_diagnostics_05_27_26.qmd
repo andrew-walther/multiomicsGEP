@@ -85,26 +85,30 @@ status_train <- c(train_raw$TCGA_PAAD$status, train_raw$CPTAC$status)
 # --------------------------------------------------------------------------
 # Preprocessing: original (variance-top-2000) and DeSurv-aligned
 # --------------------------------------------------------------------------
-pp_orig <- preprocess_merged_cohorts(
-  cohort_raw_list          = train_raw,
-  log_transform_flags      = PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
-  top_n                    = TOP_N_ORIG,
-  rank_transform           = FALSE,
-  per_platform_standardize = TRUE,
-  normalize_method         = "quantile",
-  selection_per_cohort     = FALSE,
-  selection_method         = "variance"
-)
-pp_desurv <- preprocess_merged_cohorts(
-  cohort_raw_list          = train_raw,
-  log_transform_flags      = PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
-  top_n                    = TOP_N_DESURV,
-  rank_transform           = FALSE,
-  per_platform_standardize = TRUE,
-  normalize_method         = "none",
-  selection_per_cohort     = TRUE,
-  selection_method         = "combined_rank"
-)
+invisible(capture.output(
+  pp_orig <- preprocess_merged_cohorts(
+    cohort_raw_list          = train_raw,
+    log_transform_flags      = PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
+    top_n                    = TOP_N_ORIG,
+    rank_transform           = FALSE,
+    per_platform_standardize = TRUE,
+    normalize_method         = "quantile",
+    selection_per_cohort     = FALSE,
+    selection_method         = "variance"
+  ), type = "output"
+))
+invisible(capture.output(
+  pp_desurv <- preprocess_merged_cohorts(
+    cohort_raw_list          = train_raw,
+    log_transform_flags      = PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
+    top_n                    = TOP_N_DESURV,
+    rank_transform           = FALSE,
+    per_platform_standardize = TRUE,
+    normalize_method         = "none",
+    selection_per_cohort     = TRUE,
+    selection_method         = "combined_rank"
+  ), type = "output"
+))
 
 Y_orig       <- pp_orig$Y
 Y_desurv     <- pp_desurv$Y
@@ -354,7 +358,7 @@ knitr::kable(overview, booktabs = TRUE, row.names = FALSE,
   caption = "Summary of all five configurations fit on the merged TCGA + CPTAC training cohort (n = 273). K = total factors requested; K-eff = factors with |beta-hat| > 0.001 after sign correction. Active betas are reported after sign correction so that positive beta-hat corresponds to adverse prognosis (high loading predicts worse survival). RMSE = final training reconstruction error. Mean ext. C = mean concordance index across five held-out PDAC cohorts.") |>
   kable_styling(latex_options = c("hold_position", "scale_down"),
                 bootstrap_options = c("striped", "hover"),
-                full_width = FALSE, font_size = 8)
+                full_width = FALSE)
 ```
 
 The overview table reveals several patterns. The DeSurv-aligned configurations (D3, D4, D5) use considerably more factors ($K = 7$ or $8$) yet achieve sparse solutions with $K_{\text{eff}} = 2$ in all cases, reflecting the ARD-like shrinkage behavior of the empirical Bayes prior. The recommended configuration D4 (YFB DeSurv-aligned) achieves the highest mean external concordance at 0.636, an improvement of 0.012 over the M5 baseline (D2, 0.624). Adding a cohort indicator (D5) modestly reduces external performance to 0.614, suggesting the per-platform z-standardization already absorbs most platform effects and the additional cohort term may slightly overfit on the training data. D3 and D4 are directly comparable (same gene set, same $K$, differing only in the linear predictor), and the 0.014 advantage of D4 over D3 supports the YFB formulation for this application.
@@ -423,7 +427,7 @@ knitr::kable(d4_fs[, c("Factor", "Beta", "Status", "LogRank_P", "PVE_Pct")],
   caption = "Factor summary for D4 (YFB DeSurv-aligned, K = 7). Active factors have |beta-hat| > 0.001 after sign correction. Log-rank p tests whether median-split survival curves differ significantly. PVE = percentage of total expression variance explained by the rank-1 component Lk Fk-transpose.") |>
   kable_styling(latex_options = c("hold_position"),
                 bootstrap_options = c("striped", "hover"),
-                full_width = FALSE, font_size = 8)
+                full_width = FALSE)
 ```
 
 Among the seven factors fit by D4, factors 3 and 7 are active. Factor 3 carries a positive coefficient ($\hat{\beta}_3 = +0.0113$), identifying it as an adverse GEP — high loading on this program is associated with worse survival. Factor 7 carries a negative coefficient ($\hat{\beta}_7 = -0.0408$), marking it as a protective program. The remaining five factors are shrunk to $\hat{\beta} \approx 0$ by the EBNM prior, indicating they capture expression variation that is not prognostically informative in the training data. The proportion of expression variance explained by individual factors (PVE) is modest for each component, as expected in a high-dimensional ($p = 2{,}064$) setting with a relatively small training cohort.
@@ -466,6 +470,7 @@ make_heatmap("D4", n_genes = 40)
 The heatmap reveals that active factors 3 and 7 have distinct gene weight signatures with minimal overlap, confirming they capture independent molecular programs. Inactive factors also show structured gene patterns — they are not random noise but reflect expression variation that does not correlate with survival in this training cohort. The ARD prior has concentrated the survival signal into two factors while preserving the reconstruction accuracy of the full seven-factor decomposition.
 
 ```{r d4-genes}
+#| results: asis
 d4_active <- which(factor_summaries$D4$Active)
 for (k in d4_active) {
   beta_k    <- factor_summaries$D4$Beta[k]
@@ -479,7 +484,7 @@ for (k in d4_active) {
     col.names = c("Rank", "Gene", "Posterior weight")) |>
     kable_styling(latex_options = c("hold_position"),
                   bootstrap_options = c("striped", "hover"),
-                  full_width = FALSE, font_size = 8))
+                  full_width = FALSE))
 }
 ```
 
@@ -500,7 +505,7 @@ knitr::kable(d5_fs[, c("Factor", "Beta", "Status", "LogRank_P", "PVE_Pct")],
   caption = "Factor summary for D5 (YFB DeSurv-aligned + cohort indicator, K = 8). Active factors have |hat-beta| > 0.001 after sign correction. The cohort indicator occupies an additional column in L but does not participate in EBNM shrinkage; only the seven non-cohort factors are subject to ARD-like pruning.") |>
   kable_styling(latex_options = c("hold_position"),
                 bootstrap_options = c("striped", "hover"),
-                full_width = FALSE, font_size = 8)
+                full_width = FALSE)
 ```
 
 In D5, factors 7 and 8 are active. The shift in active factor indices relative to D4 (where factors 3 and 7 were active) reflects the model's redistribution of variance when a cohort term competes for explanatory power. The mean external concordance for D5 is 0.614 — lower than D4's 0.636 by 0.022. This drop is consistent with moderate overfitting: by absorbing inter-cohort variation during training, D5 may fail to generalize to external cohorts that have their own distinct platform characteristics.
@@ -535,6 +540,7 @@ make_heatmap("D5", n_genes = 40)
 ```
 
 ```{r d5-genes}
+#| results: asis
 d5_active <- which(factor_summaries$D5$Active)
 for (k in d5_active) {
   beta_k    <- factor_summaries$D5$Beta[k]
@@ -548,7 +554,7 @@ for (k in d5_active) {
     col.names = c("Rank", "Gene", "Posterior weight")) |>
     kable_styling(latex_options = c("hold_position"),
                   bootstrap_options = c("striped", "hover"),
-                  full_width = FALSE, font_size = 8))
+                  full_width = FALSE))
 }
 ```
 
@@ -567,7 +573,7 @@ knitr::kable(d3_fs[, c("Factor", "Beta", "Status", "LogRank_P", "PVE_Pct")],
   caption = "Factor summary for D3 (LB DeSurv-aligned, K = 7). Active factors have |hat-beta| > 0.001. The LB coefficient magnitudes are substantially larger than YFB (factors are on the raw loading scale rather than the normalized YF scale), reflecting the difference in the linear predictor parameterization.") |>
   kable_styling(latex_options = c("hold_position"),
                 bootstrap_options = c("striped", "hover"),
-                full_width = FALSE, font_size = 8)
+                full_width = FALSE)
 ```
 
 In D3, factors 2 and 3 are active, with $\hat{\beta}_2 = -0.4394$ (protective) and $\hat{\beta}_3 = +0.2051$ (adverse). The substantially larger magnitude relative to D4 reflects the LB parameterization: the loading values $l_{ik}$ are on the original posterior scale (roughly unit-variance across patients), so the $\hat{\beta}$ values must be large to produce meaningful variation in the linear predictor. The mean external concordance for D3 is 0.622 — intermediate between D2 (0.624) and D4 (0.636). This suggests the DeSurv gene selection helps (D3 $>$ D1 = 0.614) but the YFB formulation provides additional benefit beyond gene selection alone.
@@ -602,6 +608,7 @@ make_heatmap("D3", n_genes = 40)
 ```
 
 ```{r d3-genes}
+#| results: asis
 d3_active <- which(factor_summaries$D3$Active)
 for (k in d3_active) {
   beta_k    <- factor_summaries$D3$Beta[k]
@@ -615,7 +622,7 @@ for (k in d3_active) {
     col.names = c("Rank", "Gene", "Posterior weight")) |>
     kable_styling(latex_options = c("hold_position"),
                   bootstrap_options = c("striped", "hover"),
-                  full_width = FALSE, font_size = 8))
+                  full_width = FALSE))
 }
 ```
 
@@ -634,7 +641,7 @@ knitr::kable(d2_fs[, c("Factor", "Beta", "Status", "LogRank_P", "PVE_Pct")],
   caption = "Factor summary for D2 (YFB original baseline / M5, K = 3). This configuration uses top-2,000 variance-selected genes with per-platform z-standardization and quantile normalization. Mean external C = 0.624.") |>
   kable_styling(latex_options = c("hold_position"),
                 bootstrap_options = c("striped", "hover"),
-                full_width = FALSE, font_size = 8)
+                full_width = FALSE)
 ```
 
 ### 7.2 Survival Stratification
@@ -667,6 +674,7 @@ make_heatmap("D2", n_genes = 40)
 ```
 
 ```{r d2-genes}
+#| results: asis
 d2_active <- which(factor_summaries$D2$Active)
 for (k in d2_active) {
   beta_k    <- factor_summaries$D2$Beta[k]
@@ -680,7 +688,7 @@ for (k in d2_active) {
     col.names = c("Rank", "Gene", "Posterior weight")) |>
     kable_styling(latex_options = c("hold_position"),
                   bootstrap_options = c("striped", "hover"),
-                  full_width = FALSE, font_size = 8))
+                  full_width = FALSE))
 }
 ```
 
@@ -716,7 +724,7 @@ knitr::kable(overlap_df, booktabs = TRUE, row.names = FALSE,
   caption = sprintf("Gene overlap between D4 and D5 active factors (top-%d genes by |EF| weight). Jaccard = |intersection| / |union|. A Jaccard above 0.5 indicates the configurations identify the same molecular program; a low value indicates the cohort indicator has redirected the survival signal toward different genes.", top_n_genes)) |>
   kable_styling(latex_options = c("hold_position"),
                 bootstrap_options = c("striped", "hover"),
-                full_width = FALSE, font_size = 8)
+                full_width = FALSE)
 ```
 
 The Jaccard overlap table reveals the degree to which D4 and D5 agree on the molecular content of their active programs. A Jaccard near zero for any pair indicates that the cohort indicator in D5 has absorbed expression variation that D4 attributes to a survival-associated program, effectively identifying a different biological signal. Conversely, high overlap would suggest the two configurations are biologically consistent and the cohort indicator merely reorganizes which factor index carries the survival signal.
@@ -757,7 +765,7 @@ if (!is.null(ph_d4)) {
     caption = "Schoenfeld residual test for proportional hazards — D4 (YFB DeSurv-aligned). Each row tests one covariate; the GLOBAL row tests all active factors jointly. A p-value below 0.05 indicates evidence of non-proportional hazards.") |>
     kable_styling(latex_options = c("hold_position"),
                   bootstrap_options = c("striped", "hover"),
-                  full_width = FALSE, font_size = 8)
+                  full_width = FALSE)
 }
 ```
 
@@ -774,7 +782,7 @@ if (!is.null(ph_d5)) {
     caption = "Schoenfeld residual test for proportional hazards — D5 (YFB DeSurv-aligned + cohort indicator).") |>
     kable_styling(latex_options = c("hold_position"),
                   bootstrap_options = c("striped", "hover"),
-                  full_width = FALSE, font_size = 8)
+                  full_width = FALSE)
 }
 ```
 
@@ -789,7 +797,7 @@ if (!is.null(ph_d3)) {
     caption = "Schoenfeld residual test for proportional hazards — D3 (LB DeSurv-aligned). The LB formulation uses the raw loading L as the covariate; PH violations may differ from YFB because the loading scale and within-patient variance structure differ between the two formulations.") |>
     kable_styling(latex_options = c("hold_position"),
                   bootstrap_options = c("striped", "hover"),
-                  full_width = FALSE, font_size = 8)
+                  full_width = FALSE)
 }
 ```
 
