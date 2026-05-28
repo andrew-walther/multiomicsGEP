@@ -1,0 +1,471 @@
+---
+title: "DeSurv Factor Diagnostics: Convergence, Survival Associations, and Gene Programs"
+author: "Andrew Walther"
+date: "2026-05-27"
+format:
+  pdf:
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{geometry}
+        \usepackage{titling}
+        \geometry{margin=0.42in}
+        \renewcommand{\familydefault}{\sfdefault}
+        \setlength{\droptitle}{-1.8em}
+        \pretitle{\begin{center}\large\bfseries}
+        \posttitle{\par\end{center}\vspace{-0.7em}}
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    theme: cosmo
+fontsize: 9pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+#| cache: false
+library(yaml)
+library(survival)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(knitr)
+
+# Navigate to project root from docs/reports/
+ROOT <- normalizePath(file.path(getwd(), "../../"))
+knitr::opts_knit$set(root.dir = ROOT)
+```
+
+```{r load-all}
+#| cache: true
+#| cache.extra: !expr tools::md5sum("../../results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds")
+
+setwd(ROOT)
+cfg  <- yaml::read_yaml("config/globals.yml")  # must come before benchmark_helpers.R
+source("results/benchmark_sim/benchmark_helpers.R")
+source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
+source("code/update_tau.R");  source("code/compute_elbo.R"); source("code/update_F_cohort.R")
+tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+source("code/preprocess_desurv.R")
+b    <- cfg$benchmark
+p    <- cfg$preprocessing
+
+BETA_THRESH <- cfg$k_selection$beta_threshold
+TOP_N_ORIG  <- p$top_n_genes
+TOP_N_DESURV <- p$top_n_genes_desurv
+
+# Load raw training data
+TRAIN_COHORTS <- cfg$pdac$training_cohorts
+train_raw <- lapply(setNames(TRAIN_COHORTS, TRAIN_COHORTS), function(ds)
+  load_pdac_raw(ds, PDAC_DATA_ROOT))
+n_tcga  <- train_raw$TCGA_PAAD$n
+n_cptac <- train_raw$CPTAC$n
+time_train   <- c(train_raw$TCGA_PAAD$time,   train_raw$CPTAC$time)
+status_train <- c(train_raw$TCGA_PAAD$status, train_raw$CPTAC$status)
+cohort_labels <- c(rep("TCGA", n_tcga), rep("CPTAC", n_cptac))
+
+# Preprocessing: two gene sets
+pp_orig <- preprocess_merged_cohorts(
+  cohort_raw_list          = train_raw,
+  log_transform_flags      = PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
+  top_n                    = TOP_N_ORIG,
+  rank_transform           = FALSE,
+  per_platform_standardize = TRUE,
+  normalize_method         = "quantile",
+  selection_per_cohort     = FALSE,
+  selection_method         = "variance"
+)
+pp_desurv <- preprocess_merged_cohorts(
+  cohort_raw_list          = train_raw,
+  log_transform_flags      = PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
+  top_n                    = TOP_N_DESURV,
+  rank_transform           = FALSE,
+  per_platform_standardize = TRUE,
+  normalize_method         = "none",
+  selection_per_cohort     = TRUE,
+  selection_method         = "combined_rank"
+)
+
+Y_orig   <- pp_orig$Y
+Y_desurv <- pp_desurv$Y
+genes_orig   <- pp_orig$gene_names
+genes_desurv <- pp_desurv$gene_names
+
+# Load fit objects
+fits <- readRDS("results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds")
+res  <- read.csv("results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv",
+                 stringsAsFactors = FALSE)
+
+# Config metadata
+CONFIGS <- list(
+  D1 = list(id="D1", label="LB orig (M4)",            model="LB",  genes=genes_orig,   Y=Y_orig,
+            K=b$k_merged_lb_perplatform,  cohort_id=TRUE),
+  D2 = list(id="D2", label="YFB orig (M5)",           model="YFB", genes=genes_orig,   Y=Y_orig,
+            K=b$k_merged_yfb_perplatform, cohort_id=FALSE),
+  D3 = list(id="D3", label="LB DeSurv-aligned",       model="LB",  genes=genes_desurv, Y=Y_desurv,
+            K=b$k_merged_lb_desurv,       cohort_id=TRUE),
+  D4 = list(id="D4", label="YFB DeSurv-aligned",      model="YFB", genes=genes_desurv, Y=Y_desurv,
+            K=b$k_merged_yfb_desurv,      cohort_id=FALSE),
+  D5 = list(id="D5", label="YFB DeSurv + cohort",     model="YFB", genes=genes_desurv, Y=Y_desurv,
+            K=b$k_merged_yfb_desurv_cohort, cohort_id=TRUE)
+)
+
+# Helper: compute PVE per factor
+compute_pve_local <- function(EL, EF, Y) {
+  K <- ncol(EL); tv <- sum(Y^2)
+  if (tv == 0) return(rep(0, K))
+  sapply(seq_len(K), function(k) sum(outer(EL[,k], EF[,k])^2) / tv * 100)
+}
+
+# Helper: log-rank p for median split on loading k
+logrank_p <- function(EL_k, time, status) {
+  grp <- ifelse(EL_k > median(EL_k), "High", "Low")
+  if (length(unique(grp)) < 2) return(NA_real_)
+  lr  <- tryCatch(survdiff(Surv(time, status) ~ grp), error = function(e) NULL)
+  if (is.null(lr)) return(NA_real_)
+  1 - pchisq(lr$chisq, df = 1)
+}
+
+# Helper: external mean C for a config
+mean_c <- function(id) round(mean(res$c_index[res$model == id]), 3)
+
+# Build factor summary for each config
+make_factor_summary <- function(id) {
+  fit  <- fits[[id]]
+  cfg_  <- CONFIGS[[id]]
+  Y_   <- cfg_$Y
+  EL   <- fit$EL; EF <- fit$EF; EBeta <- fit$EBeta
+  K    <- ncol(EL)
+  pve  <- compute_pve_local(EL, EF, Y_)
+  lrp  <- sapply(seq_len(K), function(k) logrank_p(EL[,k], time_train, status_train))
+  active <- abs(EBeta) > BETA_THRESH
+  data.frame(
+    Factor   = seq_len(K),
+    Beta     = round(EBeta, 4),
+    Active   = active,
+    LogRank_P = round(lrp, 4),
+    PVE_Pct  = round(pve, 2),
+    stringsAsFactors = FALSE
+  )
+}
+
+factor_summaries <- lapply(names(CONFIGS), function(id) make_factor_summary(id))
+names(factor_summaries) <- names(CONFIGS)
+```
+
+## 1. Configuration Overview
+
+```{r overview-table}
+overview <- do.call(rbind, lapply(names(CONFIGS), function(id) {
+  fs      <- factor_summaries[[id]]
+  active  <- fs[fs$Active, ]
+  cfg_    <- CONFIGS[[id]]
+  fit     <- fits[[id]]
+  betas_str <- if (nrow(active) > 0)
+    paste(sprintf("k%d: %+.3f", active$Factor, active$Beta), collapse = "; ")
+  else "(none)"
+  data.frame(
+    ID         = id,
+    Label      = cfg_$label,
+    Model      = cfg_$model,
+    K          = cfg_$K,
+    K_eff      = sum(fs$Active),
+    Active_Beta = betas_str,
+    Iters      = fit$history$n_iter,
+    Final_RMSE = round(tail(fit$history$rmse, 1), 4),
+    Mean_Ext_C = mean_c(id),
+    stringsAsFactors = FALSE
+  )
+}))
+
+knitr::kable(overview, booktabs = TRUE, row.names = FALSE,
+  col.names = c("ID","Label","Model","K","$K_{\\text{eff}}$",
+                "Active $\\hat{\\beta}$ (by factor)","Iters","RMSE","Mean ext. C"),
+  escape = FALSE,
+  caption = "Summary of all five configurations. K\\_eff = factors with |β| > 0.001. Betas reported after sign correction (so positive β = adverse prognosis). RMSE = final training reconstruction error. Mean ext. C = mean concordance across 5 held-out PDAC cohorts.")
+```
+
+---
+
+## 2. Convergence Traces
+
+```{r rmse-traces, fig.height=3, fig.cap="Training RMSE by iteration for all five configurations. Each line represents one configuration; convergence is declared when the relative ELBO change falls below 1e-5. DeSurv-aligned LB (D3) takes the most iterations to converge; YFB models with DeSurv preprocessing converge rapidly."}
+rmse_df <- do.call(rbind, lapply(names(CONFIGS), function(id) {
+  h <- fits[[id]]$history$rmse
+  data.frame(Config = id, Label = CONFIGS[[id]]$label,
+             Iter = seq_along(h), RMSE = h)
+}))
+
+ggplot(rmse_df, aes(x = Iter, y = RMSE, color = Label)) +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = c(
+    "LB orig (M4)"         = "#4c78a8",
+    "YFB orig (M5)"        = "#f58518",
+    "LB DeSurv-aligned"    = "#72b7b2",
+    "YFB DeSurv-aligned"   = "#e45756",
+    "YFB DeSurv + cohort"  = "#b279a2"
+  ), name = NULL) +
+  labs(x = "Iteration", y = "Training RMSE") +
+  theme_bw(base_size = 9) +
+  theme(legend.position = "right", legend.text = element_text(size = 7))
+```
+
+---
+
+## 3. Survival Coefficients
+
+```{r beta-plots, fig.height=4.5, fig.cap="Posterior mean survival coefficients β̂ for each factor within each configuration. Active factors (|β| > 0.001) are coloured; inactive are grey. Positive β = adverse prognosis (high loading → worse survival); negative β = protective. YFB β values are on a smaller scale (~0.01–0.05) than LB (~0.2–0.5) because YFB normalises factor columns, compressing the coefficient scale."}
+beta_df <- do.call(rbind, lapply(names(CONFIGS), function(id) {
+  fs <- factor_summaries[[id]]
+  data.frame(Config = id, Label = CONFIGS[[id]]$label,
+             Factor = fs$Factor, Beta = fs$Beta, Active = fs$Active)
+}))
+
+beta_df$Label <- factor(beta_df$Label, levels = sapply(CONFIGS, `[[`, "label"))
+
+ggplot(beta_df, aes(x = factor(Factor), y = Beta,
+                    fill = ifelse(Active, ifelse(Beta > 0, "Adverse", "Protective"), "Inactive"))) +
+  geom_col(width = 0.7) +
+  geom_hline(yintercept = 0, linetype = "solid", color = "black", linewidth = 0.3) +
+  scale_fill_manual(
+    values = c("Adverse" = "#d62728", "Protective" = "#1f77b4", "Inactive" = "#cccccc"),
+    name = NULL) +
+  facet_wrap(~ Label, scales = "free_x", ncol = 3) +
+  labs(x = "Factor", y = expression(hat(beta)[k])) +
+  theme_bw(base_size = 8) +
+  theme(legend.position = "bottom", strip.text = element_text(size = 7))
+```
+
+---
+
+## 4. Per-Configuration Factor Analysis
+
+```{r per-config-analysis, results='asis', fig.height=3.8}
+DEEP_DIVE <- c("D3","D4","D5","D2")  # LB DeSurv, YFB DeSurv, YFB+cohort, YFB baseline
+
+for (id in DEEP_DIVE) {
+  cfg_  <- CONFIGS[[id]]
+  fit   <- fits[[id]]
+  fs    <- factor_summaries[[id]]
+  genes <- cfg_$genes
+  EL    <- fit$EL; EF <- fit$EF; EBeta <- fit$EBeta
+  K     <- ncol(EL)
+  active_k <- which(fs$Active)
+
+  cat(sprintf("\n### %s — %s\n\n", id, cfg_$label))
+  cat(sprintf("**K=%d, K\\_eff=%d** | Converged in %d iterations | Final RMSE = %.4f | Mean ext. C = %.3f\n\n",
+    K, length(active_k), fit$history$n_iter,
+    round(tail(fit$history$rmse, 1), 4), mean_c(id)))
+
+  # Factor summary table
+  fs_disp <- fs
+  fs_disp$Status <- ifelse(fs_disp$Active, "active", "—")
+  cat("**Factor summary:**\n\n")
+  print(knitr::kable(
+    fs_disp[, c("Factor","Beta","Status","LogRank_P","PVE_Pct")],
+    col.names = c("Factor", "β̂", "Status", "Log-rank p", "PVE (%)"),
+    digits = 4, booktabs = TRUE, row.names = FALSE,
+    caption = NULL))
+  cat("\n")
+
+  if (length(active_k) == 0) {
+    cat("*No active factors — all β shrunk to zero.*\n\n")
+    next
+  }
+
+  # K-M plots for active factors
+  cat(sprintf("**Kaplan-Meier stratification (training cohort, n=273) — %d active factor(s):**\n\n",
+              length(active_k)))
+
+  old_par <- par(no.readonly = TRUE)
+  par(mfrow = c(1, length(active_k)), mar = c(4, 4, 3, 1), cex = 0.8)
+
+  for (k in active_k) {
+    grp  <- ifelse(EL[,k] > median(EL[,k]), "High", "Low")
+    km   <- survfit(Surv(time_train, status_train) ~ grp)
+    lrp  <- fs$LogRank_P[fs$Factor == k]
+    beta_k <- round(fs$Beta[fs$Factor == k], 4)
+    direction <- if (beta_k > 0) "adverse" else "protective"
+
+    plot(km,
+         col      = c("firebrick","steelblue"),
+         lwd      = 2,
+         xlab     = "Time",
+         ylab     = "Survival probability",
+         main     = sprintf("Factor %d  (β̂=%+.4f, %s)\nLog-rank p=%.4f",
+                            k, beta_k, direction, lrp),
+         cex.main = 0.85, cex.axis = 0.75, cex.lab = 0.8)
+    legend("topright",
+           legend = c("High loading","Low loading"),
+           col    = c("firebrick","steelblue"),
+           lwd    = 2, cex = 0.7, bty = "n")
+  }
+  par(old_par)
+  cat("\n\n")
+
+  # Top genes per active factor
+  cat("**Top 15 genes per active factor (by |posterior weight|):**\n\n")
+  for (k in active_k) {
+    beta_k <- round(fs$Beta[fs$Factor == k], 4)
+    direction <- if (beta_k > 0) "adverse" else "protective"
+    cat(sprintf("*Factor %d — β̂ = %+.4f (%s), PVE = %.2f%%, log-rank p = %.4f*\n\n",
+                k, beta_k, direction,
+                fs$PVE_Pct[fs$Factor == k], fs$LogRank_P[fs$Factor == k]))
+    top_idx <- order(abs(EF[,k]), decreasing = TRUE)[1:15]
+    top_df  <- data.frame(
+      Gene   = genes[top_idx],
+      Weight = round(EF[top_idx, k], 5),
+      stringsAsFactors = FALSE
+    )
+    print(knitr::kable(top_df, booktabs = TRUE, row.names = FALSE,
+      col.names = c("Gene","Posterior weight"),
+      caption = NULL))
+    cat("\n")
+  }
+  cat("---\n\n")
+}
+```
+
+---
+
+## 5. GEP Loading Heatmaps
+
+For each DeSurv-aligned configuration, the heatmap shows posterior mean gene weights $\hat{F}_{jk}$ for the top 40 genes (by maximum $|\hat{F}_{jk}|$ across all factors). Rows are genes; columns are factors. Colour encodes the weight (blue = negative / low expression associated with high loading, red = positive).
+
+```{r heatmaps, fig.height=5.5, fig.cap="GEP loading heatmaps for D3, D4, and D5 (top 40 genes by max absolute weight across all factors). Columns = factors; rows = genes. Active factors (|β| > 0.001) are underlined in the column labels. Each column is the molecular signature of one gene expression program."}
+heatmap_configs <- c("D3","D4","D5")
+
+plots <- lapply(heatmap_configs, function(id) {
+  cfg_   <- CONFIGS[[id]]
+  fit    <- fits[[id]]
+  genes  <- cfg_$genes
+  EF     <- fit$EF
+  fs     <- factor_summaries[[id]]
+  K      <- ncol(EF)
+  active_k <- which(fs$Active)
+
+  # Select top 40 genes by max |EF| across all factors
+  max_ef  <- apply(abs(EF), 1, max)
+  top_idx <- order(max_ef, decreasing = TRUE)[1:min(40, length(genes))]
+  top_genes <- genes[top_idx]
+  EF_sub  <- EF[top_idx, , drop = FALSE]
+
+  # Build long data frame
+  df <- as.data.frame(EF_sub)
+  colnames(df) <- paste0("F", seq_len(K))
+  df$Gene <- top_genes
+  df_long <- pivot_longer(df, -Gene, names_to = "Factor", values_to = "Weight")
+  df_long$Factor <- factor(df_long$Factor, levels = paste0("F", seq_len(K)))
+  df_long$Gene   <- factor(df_long$Gene, levels = rev(top_genes))
+
+  # Label active factors with asterisk
+  flabels <- setNames(paste0("F", seq_len(K)), paste0("F", seq_len(K)))
+  flabels[paste0("F", active_k)] <- paste0("F", active_k, "*")
+
+  wmax <- max(abs(df_long$Weight), na.rm = TRUE)
+
+  ggplot(df_long, aes(x = Factor, y = Gene, fill = Weight)) +
+    geom_tile(color = "white", linewidth = 0.15) +
+    scale_fill_gradient2(low = "#2166ac", mid = "white", high = "#d6604d",
+                         midpoint = 0, limits = c(-wmax, wmax),
+                         name = "Weight") +
+    scale_x_discrete(labels = flabels) +
+    labs(title = sprintf("%s — %s", id, cfg_$label),
+         x = NULL, y = NULL) +
+    theme_bw(base_size = 7) +
+    theme(axis.text.x = element_text(size = 6,
+                        face = ifelse(levels(df_long$Factor) %in% paste0("F", active_k),
+                                      "bold", "plain")),
+          axis.text.y = element_text(size = 5),
+          plot.title  = element_text(size = 8, face = "bold"),
+          legend.key.height = unit(0.5, "cm"),
+          legend.text = element_text(size = 6))
+})
+
+# Print heatmaps in a row
+gridExtra::grid.arrange(grobs = plots, ncol = 3)
+```
+
+*Asterisked factor labels (\*) mark active factors (|β̂| > 0.001). The column width and visual complexity increase with K; for D3/D4 (K=7) and D5 (K=8), ARD prunes most factors to near-zero, leaving a sparse set of biologically relevant programs.*
+
+---
+
+## 6. D4 vs D5 Active Gene Overlap
+
+Both D4 and D5 use the same 2,064-gene input set. Here we compare the top-50 genes in each active factor between configurations to assess whether the cohort indicator changes what biological programs are identified.
+
+```{r gene-overlap}
+top_n_genes <- 50
+
+overlap_rows <- list()
+for (k4 in which(factor_summaries$D4$Active)) {
+  genes_d4 <- CONFIGS$D4$genes[order(abs(fits$D4$EF[,k4]), decreasing=TRUE)[1:top_n_genes]]
+  for (k5 in which(factor_summaries$D5$Active)) {
+    genes_d5 <- CONFIGS$D5$genes[order(abs(fits$D5$EF[,k5]), decreasing=TRUE)[1:top_n_genes]]
+    n_shared <- length(intersect(genes_d4, genes_d5))
+    overlap_rows[[length(overlap_rows)+1]] <- data.frame(
+      D4_Factor = sprintf("D4 F%d (β=%+.4f)", k4, fits$D4$EBeta[k4]),
+      D5_Factor = sprintf("D5 F%d (β=%+.4f)", k5, fits$D5$EBeta[k5]),
+      Shared_top50 = n_shared,
+      Jaccard = round(n_shared / (2*top_n_genes - n_shared), 3),
+      stringsAsFactors = FALSE
+    )
+  }
+}
+overlap_df <- do.call(rbind, overlap_rows)
+
+knitr::kable(overlap_df, booktabs = TRUE, row.names = FALSE,
+  col.names = c("D4 factor","D5 factor","Shared top-50 genes","Jaccard"),
+  caption = sprintf("Gene overlap between D4 and D5 active factors (top-%d genes by |EF| weight). Jaccard = shared / union. High overlap indicates the cohort indicator changed the survival weighting but not the gene program structure.", top_n_genes))
+```
+
+---
+
+## 7. Proportional Hazards Check (Active Factors)
+
+```{r ph-test, results='asis'}
+for (id in DEEP_DIVE) {
+  cfg_   <- CONFIGS[[id]]
+  fit    <- fits[[id]]
+  fs     <- factor_summaries[[id]]
+  EL     <- fit$EL
+  active_k <- which(fs$Active)
+  if (length(active_k) == 0) next
+
+  cat(sprintf("\n**%s — %s:**\n\n", id, cfg_$label))
+
+  EL_active <- EL[, active_k, drop = FALSE]
+  colnames(EL_active) <- paste0("F", active_k)
+  cox_fit <- tryCatch(
+    coxph(Surv(time_train, status_train) ~ ., data = as.data.frame(EL_active)),
+    error = function(e) NULL
+  )
+  if (is.null(cox_fit)) { cat("*Cox fit failed.*\n\n"); next }
+
+  ph <- tryCatch(cox.zph(cox_fit), error = function(e) NULL)
+  if (is.null(ph)) { cat("*PH test failed.*\n\n"); next }
+
+  ph_df <- as.data.frame(ph$table)
+  ph_df <- round(ph_df, 4)
+  ph_df$Term <- rownames(ph_df)
+  rownames(ph_df) <- NULL
+  ph_df <- ph_df[, c("Term","chisq","df","p")]
+
+  global_p <- ph_df$p[ph_df$Term == "GLOBAL"]
+  print(knitr::kable(ph_df, booktabs = TRUE, row.names = FALSE,
+    col.names = c("Term","χ²","df","p"),
+    caption = NULL))
+  cat(sprintf("\n*Global PH p = %.4f — %s*\n\n", global_p,
+    ifelse(global_p < 0.05,
+      "evidence of a PH violation; interpret Cox coefficients cautiously.",
+      "no evidence of a PH violation.")))
+}
+```

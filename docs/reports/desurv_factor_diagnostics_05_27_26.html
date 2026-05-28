@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Andrew Walther">
+<meta name="dcterms.date" content="2026-05-27">
+
+<title>DeSurv Factor Diagnostics: Convergence, Survival Associations, and Gene Programs</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/clipboard/clipboard.min.js"></script>
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/quarto.js"></script>
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/popper.min.js"></script>
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/anchor.min.js"></script>
+<link href="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="desurv_factor_diagnostics_05_27_26_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="desurv_factor_diagnostics_05_27_26_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#configuration-overview" id="toc-configuration-overview" class="nav-link active" data-scroll-target="#configuration-overview">1. Configuration Overview</a></li>
+  <li><a href="#convergence-traces" id="toc-convergence-traces" class="nav-link" data-scroll-target="#convergence-traces">2. Convergence Traces</a></li>
+  <li><a href="#survival-coefficients" id="toc-survival-coefficients" class="nav-link" data-scroll-target="#survival-coefficients">3. Survival Coefficients</a></li>
+  <li><a href="#per-configuration-factor-analysis" id="toc-per-configuration-factor-analysis" class="nav-link" data-scroll-target="#per-configuration-factor-analysis">4. Per-Configuration Factor Analysis</a>
+  <ul class="collapse">
+  <li><a href="#d3-lb-desurv-aligned" id="toc-d3-lb-desurv-aligned" class="nav-link" data-scroll-target="#d3-lb-desurv-aligned">D3 — LB DeSurv-aligned</a></li>
+  <li><a href="#d4-yfb-desurv-aligned" id="toc-d4-yfb-desurv-aligned" class="nav-link" data-scroll-target="#d4-yfb-desurv-aligned">D4 — YFB DeSurv-aligned</a></li>
+  <li><a href="#d5-yfb-desurv-cohort" id="toc-d5-yfb-desurv-cohort" class="nav-link" data-scroll-target="#d5-yfb-desurv-cohort">D5 — YFB DeSurv + cohort</a></li>
+  <li><a href="#d2-yfb-orig-m5" id="toc-d2-yfb-orig-m5" class="nav-link" data-scroll-target="#d2-yfb-orig-m5">D2 — YFB orig (M5)</a></li>
+  </ul></li>
+  <li><a href="#gep-loading-heatmaps" id="toc-gep-loading-heatmaps" class="nav-link" data-scroll-target="#gep-loading-heatmaps">5. GEP Loading Heatmaps</a></li>
+  <li><a href="#d4-vs-d5-active-gene-overlap" id="toc-d4-vs-d5-active-gene-overlap" class="nav-link" data-scroll-target="#d4-vs-d5-active-gene-overlap">6. D4 vs D5 Active Gene Overlap</a></li>
+  <li><a href="#proportional-hazards-check-active-factors" id="toc-proportional-hazards-check-active-factors" class="nav-link" data-scroll-target="#proportional-hazards-check-active-factors">7. Proportional Hazards Check (Active Factors)</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../../desurv_factor_diagnostics_05_27_26.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">DeSurv Factor Diagnostics: Convergence, Survival Associations, and Gene Programs</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Andrew Walther </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 27, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<div class="cell" data-cache.extra="NA" data-hash="desurv_factor_diagnostics_05_27_26_cache/html/load-all_032181431667eb4cde2d89ee4b0a3229">
+<div class="cell-output cell-output-stdout">
+<pre><code>  [v2] Raw gene intersection: 17900 genes across TCGA_PAAD + CPTAC
+  [v2] Per-platform z-standardization (colMean=0, colSD=1 per cohort) ...
+  [v2] Quantile normalising merged matrix (273 x 17900) ...
+  [v2] Genes retained after top-2000 variance filter: 2000
+  [v2] Skipping rank transform (rank_transform = FALSE).</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  [v2] Raw gene intersection: 17900 genes across TCGA_PAAD + CPTAC
+  [v2] Per-cohort gene selection (top-3000, method=combined_rank) before normalization ...
+  [v2] Genes after per-cohort selection and intersection: 2064
+  [v2] Per-platform z-standardization (colMean=0, colSD=1 per cohort) ...
+  [v2] Skipping normalization (log-transform only; 273 x 2064) ...
+  [v2] Skipping rank transform (rank_transform = FALSE).</code></pre>
+</div>
+</div>
+<section id="configuration-overview" class="level2">
+<h2 class="anchored" data-anchor-id="configuration-overview">1. Configuration Overview</h2>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Summary of all five configurations. K_eff = factors with |β| &gt; 0.001. Betas reported after sign correction (so positive β = adverse prognosis). RMSE = final training reconstruction error. Mean ext. C = mean concordance across 5 held-out PDAC cohorts.</caption>
+<colgroup>
+<col style="width: 2%">
+<col style="width: 18%">
+<col style="width: 5%">
+<col style="width: 2%">
+<col style="width: 15%">
+<col style="width: 30%">
+<col style="width: 5%">
+<col style="width: 6%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">ID</th>
+<th style="text-align: left;">Label</th>
+<th style="text-align: left;">Model</th>
+<th style="text-align: right;">K</th>
+<th style="text-align: right;"><span class="math inline">\(K_{\text{eff}}\)</span></th>
+<th style="text-align: left;">Active <span class="math inline">\(\hat{\beta}\)</span> (by factor)</th>
+<th style="text-align: right;">Iters</th>
+<th style="text-align: right;">RMSE</th>
+<th style="text-align: right;">Mean ext. C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">D1</td>
+<td style="text-align: left;">LB orig (M4)</td>
+<td style="text-align: left;">LB</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">k3: -0.482</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">1.0157</td>
+<td style="text-align: right;">0.616</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D2</td>
+<td style="text-align: left;">YFB orig (M5)</td>
+<td style="text-align: left;">YFB</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">k1: -0.053; k2: +0.026</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">1.0252</td>
+<td style="text-align: right;">0.624</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">D3</td>
+<td style="text-align: left;">LB DeSurv-aligned</td>
+<td style="text-align: left;">LB</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">k2: -0.439; k3: +0.205</td>
+<td style="text-align: right;">105</td>
+<td style="text-align: right;">0.8671</td>
+<td style="text-align: right;">0.622</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D4</td>
+<td style="text-align: left;">YFB DeSurv-aligned</td>
+<td style="text-align: left;">YFB</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">k3: +0.011; k7: -0.041</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">0.9330</td>
+<td style="text-align: right;">0.636</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">D5</td>
+<td style="text-align: left;">YFB DeSurv + cohort</td>
+<td style="text-align: left;">YFB</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">k7: -0.028; k8: +0.010</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: right;">0.8669</td>
+<td style="text-align: right;">0.614</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<hr>
+</section>
+<section id="convergence-traces" class="level2">
+<h2 class="anchored" data-anchor-id="convergence-traces">2. Convergence Traces</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/rmse-traces-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Training RMSE by iteration for all five configurations. Each line represents one configuration; convergence is declared when the relative ELBO change falls below 1e-5. DeSurv-aligned LB (D3) takes the most iterations to converge; YFB models with DeSurv preprocessing converge rapidly.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="survival-coefficients" class="level2">
+<h2 class="anchored" data-anchor-id="survival-coefficients">3. Survival Coefficients</h2>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/beta-plots-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Posterior mean survival coefficients β̂ for each factor within each configuration. Active factors (|β| &gt; 0.001) are coloured; inactive are grey. Positive β = adverse prognosis (high loading → worse survival); negative β = protective. YFB β values are on a smaller scale (~0.01–0.05) than LB (~0.2–0.5) because YFB normalises factor columns, compressing the coefficient scale.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="per-configuration-factor-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="per-configuration-factor-analysis">4. Per-Configuration Factor Analysis</h2>
+<section id="d3-lb-desurv-aligned" class="level3">
+<h3 class="anchored" data-anchor-id="d3-lb-desurv-aligned">D3 — LB DeSurv-aligned</h3>
+<p><strong>K=7, K_eff=2</strong> | Converged in 105 iterations | Final RMSE = 0.8671 | Mean ext. C = 0.622</p>
+<p><strong>Factor summary:</strong></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Factor</th>
+<th style="text-align: right;">β̂</th>
+<th style="text-align: left;">Status</th>
+<th style="text-align: right;">Log-rank p</th>
+<th style="text-align: right;">PVE (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.5694</td>
+<td style="text-align: right;">16.12</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">-0.4394</td>
+<td style="text-align: left;">active</td>
+<td style="text-align: right;">0.0095</td>
+<td style="text-align: right;">7.64</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.2051</td>
+<td style="text-align: left;">active</td>
+<td style="text-align: right;">0.1201</td>
+<td style="text-align: right;">17.68</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.5733</td>
+<td style="text-align: right;">6.33</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.9517</td>
+<td style="text-align: right;">23.44</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Kaplan-Meier stratification (training cohort, n=273) — 2 active factor(s):</strong></p>
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/per-config-analysis-1.png" class="img-fluid" width="672"></p>
+<p><strong>Top 15 genes per active factor (by |posterior weight|):</strong></p>
+<p><em>Factor 2 — β̂ = -0.4394 (protective), PVE = 7.64%, log-rank p = 0.0095</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Gene</th>
+<th style="text-align: right;">Posterior weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">MET</td>
+<td style="text-align: right;">1.04296</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ITGA2</td>
+<td style="text-align: right;">0.94124</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ITGA3</td>
+<td style="text-align: right;">0.93744</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CDCP1</td>
+<td style="text-align: right;">0.90915</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ANLN</td>
+<td style="text-align: right;">0.90835</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">EGFR</td>
+<td style="text-align: right;">0.90044</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PGK1</td>
+<td style="text-align: right;">0.89091</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ASPH</td>
+<td style="text-align: right;">0.88957</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AP1S3</td>
+<td style="text-align: right;">0.88534</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FAM3C</td>
+<td style="text-align: right;">0.88468</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">RASA1</td>
+<td style="text-align: right;">0.87624</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ASAP2</td>
+<td style="text-align: right;">0.87481</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">TMOD3</td>
+<td style="text-align: right;">0.86808</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SLC2A1</td>
+<td style="text-align: right;">0.86644</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BCAR3</td>
+<td style="text-align: right;">0.86397</td>
+</tr>
+</tbody>
+</table>
+<p><em>Factor 3 — β̂ = +0.2051 (adverse), PVE = 17.68%, log-rank p = 0.1201</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Gene</th>
+<th style="text-align: right;">Posterior weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">CAPN5</td>
+<td style="text-align: right;">1.14815</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PLEKHA6</td>
+<td style="text-align: right;">1.05733</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">FMO5</td>
+<td style="text-align: right;">1.05348</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">TJP3</td>
+<td style="text-align: right;">1.04867</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">C9orf152</td>
+<td style="text-align: right;">1.04318</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MLPH</td>
+<td style="text-align: right;">1.04290</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">KCNE3</td>
+<td style="text-align: right;">1.03135</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PIP5K1B</td>
+<td style="text-align: right;">1.02971</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CAPN8</td>
+<td style="text-align: right;">1.01895</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PLA2G10</td>
+<td style="text-align: right;">1.01821</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">TSPAN3</td>
+<td style="text-align: right;">1.01788</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FUT2</td>
+<td style="text-align: right;">1.00512</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LPCAT4</td>
+<td style="text-align: right;">1.00287</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">RBM47</td>
+<td style="text-align: right;">0.99375</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BCAS1</td>
+<td style="text-align: right;">0.98665</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="d4-yfb-desurv-aligned" class="level3">
+<h3 class="anchored" data-anchor-id="d4-yfb-desurv-aligned">D4 — YFB DeSurv-aligned</h3>
+<p><strong>K=7, K_eff=2</strong> | Converged in 13 iterations | Final RMSE = 0.9330 | Mean ext. C = 0.636</p>
+<p><strong>Factor summary:</strong></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Factor</th>
+<th style="text-align: right;">β̂</th>
+<th style="text-align: left;">Status</th>
+<th style="text-align: right;">Log-rank p</th>
+<th style="text-align: right;">PVE (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.0113</td>
+<td style="text-align: left;">active</td>
+<td style="text-align: right;">0.0123</td>
+<td style="text-align: right;">2.92</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.3850</td>
+<td style="text-align: right;">2.95</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.3645</td>
+<td style="text-align: right;">2.88</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">-0.0408</td>
+<td style="text-align: left;">active</td>
+<td style="text-align: right;">0.0003</td>
+<td style="text-align: right;">1.90</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Kaplan-Meier stratification (training cohort, n=273) — 2 active factor(s):</strong></p>
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/per-config-analysis-2.png" class="img-fluid" width="672"></p>
+<p><strong>Top 15 genes per active factor (by |posterior weight|):</strong></p>
+<p><em>Factor 3 — β̂ = +0.0113 (adverse), PVE = 2.92%, log-rank p = 0.0123</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Gene</th>
+<th style="text-align: right;">Posterior weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">CAPN5</td>
+<td style="text-align: right;">2.63664</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LPCAT4</td>
+<td style="text-align: right;">2.62750</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">MLPH</td>
+<td style="text-align: right;">2.54719</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SLC45A3</td>
+<td style="text-align: right;">2.46790</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">TJP3</td>
+<td style="text-align: right;">2.44992</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PLEKHA6</td>
+<td style="text-align: right;">2.39411</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">MTMR11</td>
+<td style="text-align: right;">2.38587</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">GALNT6</td>
+<td style="text-align: right;">2.38010</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CAPN8</td>
+<td style="text-align: right;">2.32556</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">TSPAN3</td>
+<td style="text-align: right;">2.32296</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CYP2S1</td>
+<td style="text-align: right;">2.32198</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PAK1</td>
+<td style="text-align: right;">2.31960</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">FAM83E</td>
+<td style="text-align: right;">2.30680</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">KCNK1</td>
+<td style="text-align: right;">2.30463</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">KCNE3</td>
+<td style="text-align: right;">2.30441</td>
+</tr>
+</tbody>
+</table>
+<p><em>Factor 7 — β̂ = -0.0408 (protective), PVE = 1.90%, log-rank p = 0.0003</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Gene</th>
+<th style="text-align: right;">Posterior weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ITGA3</td>
+<td style="text-align: right;">2.58918</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MET</td>
+<td style="text-align: right;">2.55010</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BCAR3</td>
+<td style="text-align: right;">2.48200</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FAM3C</td>
+<td style="text-align: right;">2.44707</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GAPDH</td>
+<td style="text-align: right;">2.40522</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ENO1</td>
+<td style="text-align: right;">2.40133</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">TPI1</td>
+<td style="text-align: right;">2.32039</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PGK1</td>
+<td style="text-align: right;">2.30881</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">CDCP1</td>
+<td style="text-align: right;">2.29102</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LDHA</td>
+<td style="text-align: right;">2.28484</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SLC16A3</td>
+<td style="text-align: right;">2.26966</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ITGB4</td>
+<td style="text-align: right;">2.24910</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SLC2A1</td>
+<td style="text-align: right;">2.24869</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">TGM2</td>
+<td style="text-align: right;">2.21551</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">S100A2</td>
+<td style="text-align: right;">2.21543</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="d5-yfb-desurv-cohort" class="level3">
+<h3 class="anchored" data-anchor-id="d5-yfb-desurv-cohort">D5 — YFB DeSurv + cohort</h3>
+<p><strong>K=8, K_eff=2</strong> | Converged in 52 iterations | Final RMSE = 0.8669 | Mean ext. C = 0.614</p>
+<p><strong>Factor summary:</strong></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Factor</th>
+<th style="text-align: right;">β̂</th>
+<th style="text-align: left;">Status</th>
+<th style="text-align: right;">Log-rank p</th>
+<th style="text-align: right;">PVE (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.9492</td>
+<td style="text-align: right;">36.08</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.2541</td>
+<td style="text-align: right;">13.43</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">-0.0281</td>
+<td style="text-align: left;">active</td>
+<td style="text-align: right;">0.0029</td>
+<td style="text-align: right;">12.65</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.0099</td>
+<td style="text-align: left;">active</td>
+<td style="text-align: right;">0.1135</td>
+<td style="text-align: right;">17.14</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Kaplan-Meier stratification (training cohort, n=273) — 2 active factor(s):</strong></p>
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/per-config-analysis-3.png" class="img-fluid" width="672"></p>
+<p><strong>Top 15 genes per active factor (by |posterior weight|):</strong></p>
+<p><em>Factor 7 — β̂ = -0.0281 (protective), PVE = 12.65%, log-rank p = 0.0029</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Gene</th>
+<th style="text-align: right;">Posterior weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ITGA3</td>
+<td style="text-align: right;">2.54520</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SLC16A3</td>
+<td style="text-align: right;">2.48983</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">FSCN1</td>
+<td style="text-align: right;">2.38915</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SLC2A1</td>
+<td style="text-align: right;">2.38543</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PLAU</td>
+<td style="text-align: right;">2.38268</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MMP14</td>
+<td style="text-align: right;">2.35920</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ANXA1</td>
+<td style="text-align: right;">2.31564</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LAMB3</td>
+<td style="text-align: right;">2.31383</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">P4HA1</td>
+<td style="text-align: right;">2.28331</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ALDOA</td>
+<td style="text-align: right;">2.28205</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">KRT19</td>
+<td style="text-align: right;">2.28175</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CDCP1</td>
+<td style="text-align: right;">2.27363</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LDHA</td>
+<td style="text-align: right;">2.25637</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ITGB4</td>
+<td style="text-align: right;">2.24328</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">MET</td>
+<td style="text-align: right;">2.21003</td>
+</tr>
+</tbody>
+</table>
+<p><em>Factor 8 — β̂ = +0.0099 (adverse), PVE = 17.14%, log-rank p = 0.1135</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Gene</th>
+<th style="text-align: right;">Posterior weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">CAPN5</td>
+<td style="text-align: right;">1.55063</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MLPH</td>
+<td style="text-align: right;">1.42236</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">TJP3</td>
+<td style="text-align: right;">1.41188</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SYTL2</td>
+<td style="text-align: right;">1.40946</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">KIAA1211</td>
+<td style="text-align: right;">1.39554</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LPCAT4</td>
+<td style="text-align: right;">1.38417</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PLEKHA6</td>
+<td style="text-align: right;">1.37616</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PLA2G10</td>
+<td style="text-align: right;">1.37444</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">C9orf152</td>
+<td style="text-align: right;">1.36992</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CAPN8</td>
+<td style="text-align: right;">1.36946</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">TSPAN3</td>
+<td style="text-align: right;">1.36449</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FUT2</td>
+<td style="text-align: right;">1.34713</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">KALRN</td>
+<td style="text-align: right;">1.34462</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">BCAS1</td>
+<td style="text-align: right;">1.34323</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">KCNE3</td>
+<td style="text-align: right;">1.34278</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+<section id="d2-yfb-orig-m5" class="level3">
+<h3 class="anchored" data-anchor-id="d2-yfb-orig-m5">D2 — YFB orig (M5)</h3>
+<p><strong>K=3, K_eff=2</strong> | Converged in 19 iterations | Final RMSE = 1.0252 | Mean ext. C = 0.624</p>
+<p><strong>Factor summary:</strong></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Factor</th>
+<th style="text-align: right;">β̂</th>
+<th style="text-align: left;">Status</th>
+<th style="text-align: right;">Log-rank p</th>
+<th style="text-align: right;">PVE (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-0.0532</td>
+<td style="text-align: left;">active</td>
+<td style="text-align: right;">0.0003</td>
+<td style="text-align: right;">0.93</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0259</td>
+<td style="text-align: left;">active</td>
+<td style="text-align: right;">0.3516</td>
+<td style="text-align: right;">1.05</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.3132</td>
+<td style="text-align: right;">0.37</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Kaplan-Meier stratification (training cohort, n=273) — 2 active factor(s):</strong></p>
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/per-config-analysis-4.png" class="img-fluid" width="672"></p>
+<p><strong>Top 15 genes per active factor (by |posterior weight|):</strong></p>
+<p><em>Factor 1 — β̂ = -0.0532 (protective), PVE = 0.93%, log-rank p = 0.0003</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Gene</th>
+<th style="text-align: right;">Posterior weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">LDHA</td>
+<td style="text-align: right;">2.58444</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SLC2A1</td>
+<td style="text-align: right;">2.55696</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ADM</td>
+<td style="text-align: right;">2.45985</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ALDOA</td>
+<td style="text-align: right;">2.29922</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">NDRG1</td>
+<td style="text-align: right;">2.16013</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ALDOC</td>
+<td style="text-align: right;">2.15481</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PTTG1IP</td>
+<td style="text-align: right;">2.11143</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">EGLN3</td>
+<td style="text-align: right;">2.06470</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">APLN</td>
+<td style="text-align: right;">2.06385</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PTGES</td>
+<td style="text-align: right;">2.05615</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">FGF23</td>
+<td style="text-align: right;">2.04261</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">HK2</td>
+<td style="text-align: right;">2.00464</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PDK1</td>
+<td style="text-align: right;">1.98567</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">APOL1</td>
+<td style="text-align: right;">1.97216</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">TNNT1</td>
+<td style="text-align: right;">1.96028</td>
+</tr>
+</tbody>
+</table>
+<p><em>Factor 2 — β̂ = +0.0259 (adverse), PVE = 1.05%, log-rank p = 0.3516</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Gene</th>
+<th style="text-align: right;">Posterior weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ASPHD2</td>
+<td style="text-align: right;">2.86254</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LPCAT4</td>
+<td style="text-align: right;">2.81252</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">FHDC1</td>
+<td style="text-align: right;">2.68463</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">OSBPL2</td>
+<td style="text-align: right;">2.63090</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">KCNK1</td>
+<td style="text-align: right;">2.62386</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">RETSAT</td>
+<td style="text-align: right;">2.57970</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PAK1</td>
+<td style="text-align: right;">2.57536</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CYP2S1</td>
+<td style="text-align: right;">2.48637</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SH2D4A</td>
+<td style="text-align: right;">2.44926</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">NQO1</td>
+<td style="text-align: right;">2.36951</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LDLR</td>
+<td style="text-align: right;">2.35274</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">KPNA7</td>
+<td style="text-align: right;">2.28373</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BFAR</td>
+<td style="text-align: right;">2.27430</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">AKAP1</td>
+<td style="text-align: right;">2.24522</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ADAP1</td>
+<td style="text-align: right;">2.24416</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<hr>
+</section>
+</section>
+<section id="gep-loading-heatmaps" class="level2">
+<h2 class="anchored" data-anchor-id="gep-loading-heatmaps">5. GEP Loading Heatmaps</h2>
+<p>For each DeSurv-aligned configuration, the heatmap shows posterior mean gene weights <span class="math inline">\(\hat{F}_{jk}\)</span> for the top 40 genes (by maximum <span class="math inline">\(|\hat{F}_{jk}|\)</span> across all factors). Rows are genes; columns are factors. Colour encodes the weight (blue = negative / low expression associated with high loading, red = positive).</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/heatmaps-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">GEP loading heatmaps for D3, D4, and D5 (top 40 genes by max absolute weight across all factors). Columns = factors; rows = genes. Active factors (|β| &gt; 0.001) are underlined in the column labels. Each column is the molecular signature of one gene expression program.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><em>Asterisked factor labels (*) mark active factors (|β̂| &gt; 0.001). The column width and visual complexity increase with K; for D3/D4 (K=7) and D5 (K=8), ARD prunes most factors to near-zero, leaving a sparse set of biologically relevant programs.</em></p>
+<hr>
+</section>
+<section id="d4-vs-d5-active-gene-overlap" class="level2">
+<h2 class="anchored" data-anchor-id="d4-vs-d5-active-gene-overlap">6. D4 vs D5 Active Gene Overlap</h2>
+<p>Both D4 and D5 use the same 2,064-gene input set. Here we compare the top-50 genes in each active factor between configurations to assess whether the cohort indicator changes what biological programs are identified.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Gene overlap between D4 and D5 active factors (top-50 genes by |EF| weight). Jaccard = shared / union. High overlap indicates the cohort indicator changed the survival weighting but not the gene program structure.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">D4 factor</th>
+<th style="text-align: left;">D5 factor</th>
+<th style="text-align: right;">Shared top-50 genes</th>
+<th style="text-align: right;">Jaccard</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">D4 F3 (β=+0.0113)</td>
+<td style="text-align: left;">D5 F7 (β=-0.0281)</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D4 F3 (β=+0.0113)</td>
+<td style="text-align: left;">D5 F8 (β=+0.0099)</td>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">0.639</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">D4 F7 (β=-0.0408)</td>
+<td style="text-align: left;">D5 F7 (β=-0.0281)</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">0.389</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D4 F7 (β=-0.0408)</td>
+<td style="text-align: left;">D5 F8 (β=+0.0099)</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<hr>
+</section>
+<section id="proportional-hazards-check-active-factors" class="level2">
+<h2 class="anchored" data-anchor-id="proportional-hazards-check-active-factors">7. Proportional Hazards Check (Active Factors)</h2>
+<p><strong>D3 — LB DeSurv-aligned:</strong></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Term</th>
+<th style="text-align: right;">χ²</th>
+<th style="text-align: right;">df</th>
+<th style="text-align: right;">p</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">F2</td>
+<td style="text-align: right;">1.5489</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.2133</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">F3</td>
+<td style="text-align: right;">1.1199</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.2900</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GLOBAL</td>
+<td style="text-align: right;">3.9940</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.1357</td>
+</tr>
+</tbody>
+</table>
+<p><em>Global PH p = 0.1357 — no evidence of a PH violation.</em></p>
+<p><strong>D4 — YFB DeSurv-aligned:</strong></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Term</th>
+<th style="text-align: right;">χ²</th>
+<th style="text-align: right;">df</th>
+<th style="text-align: right;">p</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">F3</td>
+<td style="text-align: right;">0.4446</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.5049</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">F7</td>
+<td style="text-align: right;">0.2642</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.6072</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GLOBAL</td>
+<td style="text-align: right;">0.6022</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.7400</td>
+</tr>
+</tbody>
+</table>
+<p><em>Global PH p = 0.7400 — no evidence of a PH violation.</em></p>
+<p><strong>D5 — YFB DeSurv + cohort:</strong></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Term</th>
+<th style="text-align: right;">χ²</th>
+<th style="text-align: right;">df</th>
+<th style="text-align: right;">p</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">F7</td>
+<td style="text-align: right;">2.1376</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.1437</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">F8</td>
+<td style="text-align: right;">1.4036</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.2361</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GLOBAL</td>
+<td style="text-align: right;">4.9960</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0822</td>
+</tr>
+</tbody>
+</table>
+<p><em>Global PH p = 0.0822 — no evidence of a PH violation.</em></p>
+<p><strong>D2 — YFB orig (M5):</strong></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Term</th>
+<th style="text-align: right;">χ²</th>
+<th style="text-align: right;">df</th>
+<th style="text-align: right;">p</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">F1</td>
+<td style="text-align: right;">0.1265</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.7221</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">F2</td>
+<td style="text-align: right;">0.0178</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.8940</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GLOBAL</td>
+<td style="text-align: right;">0.1588</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.9237</td>
+</tr>
+</tbody>
+</table>
+<p><em>Global PH p = 0.9237 — no evidence of a PH violation.</em></p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
