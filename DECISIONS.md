@@ -20,17 +20,25 @@ selection (top-2000 on merged normalized matrix)?
 
 **Result:**
 
-| Config | Model | Mean external C | K_eff | Gene set |
-|--------|-------|----------------|-------|---------|
-| D1 (= M4) | LB + orig | 0.616 | 1 | 2000 |
-| D2 (= M5) | YFB + orig | 0.624 | 2 | 2000 |
-| D3 (DeSurv LB) | LB + aligned | 0.622 | 2 | 2064 |
-| D4 (DeSurv YFB) | YFB + aligned | 0.636 | 2 | 2064 |
+| Config | Model | Cohort ID | Mean external C | K_eff | Gene set |
+|--------|-------|-----------|----------------|-------|---------|
+| D1 (= M4) | LB + orig | Yes | 0.616 | 1 | 2000 |
+| D2 (= M5) | YFB + orig | No | 0.624 | 2 | 2000 |
+| D3 (DeSurv LB) | LB + aligned | Yes | 0.622 | 2 | 2064 |
+| D4 (DeSurv YFB) | YFB + aligned | No | 0.636 | 2 | 2064 |
+| D5 (DeSurv YFB + cohort) | YFB + aligned | Yes | 0.614 | 2 | 2064 |
 
 **Decision:** delta_yfb = +0.012 (D4 − D2) > +0.005 threshold. Adopting D4 as
 new primary configuration. Per-cohort C-index: D4 improves over D2 in 4/5 cohorts
 (PACA_AU_array is the exception: D4=0.650 vs D2=0.670). LB also improves:
 delta_lb = +0.006 (D3 − D1).
+
+**Cohort indicator with YFB DeSurv-aligned (D5):** Adding a cohort indicator to D4
+reduces mean C to 0.614 (−0.022 vs D4, −0.010 vs M5 baseline). Per-platform
+z-standardization already removes the platform offset; the cohort indicator absorbs
+factor capacity that would otherwise capture survival signal. Cohort indicator
+provides no benefit for YFB with DeSurv preprocessing — D4 (no cohort indicator)
+remains the primary configuration.
 
 **New primary config:** YFB + per-platform z-std + DeSurv gene selection
 (combined_rank, top-3000 per cohort before normalization) + no cohort indicator, K=7.

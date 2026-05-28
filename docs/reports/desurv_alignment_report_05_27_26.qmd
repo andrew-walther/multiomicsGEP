@@ -49,9 +49,9 @@ if (!is.null(res)) {
   ke <- setNames(means$k_eff,  means$model)
   Kv <- setNames(means$K,      means$model)
 } else {
-  mc <- setNames(rep(NA_real_, 4), c("D1","D2","D3","D4"))
-  ke <- setNames(rep(NA_integer_, 4), c("D1","D2","D3","D4"))
-  Kv <- setNames(rep(NA_integer_, 4), c("D1","D2","D3","D4"))
+  mc <- setNames(rep(NA_real_, 5), c("D1","D2","D3","D4","D5"))
+  ke <- setNames(rep(NA_integer_, 5), c("D1","D2","D3","D4","D5"))
+  Kv <- setNames(rep(NA_integer_, 5), c("D1","D2","D3","D4","D5"))
 }
 ```
 
@@ -70,45 +70,50 @@ the external concordance of the recommended manuscript configurations.
 
 ```{r config-table}
 tab <- data.frame(
-  ID     = c("D1","D2","D3","D4"),
+  ID     = c("D1","D2","D3","D4","D5"),
   Label  = c("LB orig (M4)","YFB orig (M5)",
-             "LB DeSurv-aligned","YFB DeSurv-aligned"),
-  Model  = c("LB","YFB","LB","YFB"),
-  top_n  = c(2000, 2000, 3000, 3000),
-  Method = c("variance","variance","combined\\_rank","combined\\_rank"),
-  Selection = c("post-norm","post-norm","per-cohort","per-cohort"),
-  Cohort = c("Yes","No","Yes","No"),
-  Mean_C = c(mc["D1"], mc["D2"], mc["D3"], mc["D4"]),
-  K      = c(Kv["D1"], Kv["D2"], Kv["D3"], Kv["D4"]),
-  K_eff  = c(ke["D1"], ke["D2"], ke["D3"], ke["D4"])
+             "LB DeSurv-aligned","YFB DeSurv-aligned",
+             "YFB DeSurv-aligned + cohort"),
+  Model  = c("LB","YFB","LB","YFB","YFB"),
+  top_n  = c(2000, 2000, 3000, 3000, 3000),
+  Method = c("variance","variance","combined\\_rank","combined\\_rank","combined\\_rank"),
+  Selection = c("post-norm","post-norm","per-cohort","per-cohort","per-cohort"),
+  Cohort = c("Yes","No","Yes","No","Yes"),
+  Mean_C = c(mc["D1"], mc["D2"], mc["D3"], mc["D4"], mc["D5"]),
+  K      = c(Kv["D1"], Kv["D2"], Kv["D3"], Kv["D4"], Kv["D5"]),
+  K_eff  = c(ke["D1"], ke["D2"], ke["D3"], ke["D4"], ke["D5"])
 )
 knitr::kable(tab, booktabs = TRUE, row.names = FALSE,
              col.names = c("ID","Label","Model","top\\_n","Method",
                            "Selection","Cohort","Mean C","K","$K_{\\text{eff}}$"),
              escape = FALSE,
-             caption = "Four configurations compared. D1/D2 reproduce M4/M5 exactly. D3/D4 apply DeSurv gene selection (combined mean+variance rank, top-3000 per cohort before normalization).")
+             caption = "Five configurations compared. D1/D2 reproduce M4/M5 exactly. D3/D4 apply DeSurv gene selection (combined mean+variance rank, top-3000 per cohort before normalization). D5 adds a cohort indicator to D4 to test whether it provides additional benefit over per-platform z-standardization alone.")
 ```
 
 ## 3. Per-Cohort C-Index
 
-```{r cohort-fig, fig.height=3.2, fig.cap="Per-cohort external C-index for D1–D4. Dashed line = chance (C=0.5). D1/D2 are the original manuscript configs; D3/D4 are DeSurv-aligned."}
+```{r cohort-fig, fig.height=3.5, fig.cap="Per-cohort external C-index for D1–D5. Dashed line = chance (C=0.5). D1/D2 are the original manuscript configs; D3–D5 are DeSurv-aligned. D5 adds a cohort indicator to D4."}
 if (!is.null(res)) {
   res_plot <- res |>
-    mutate(type = ifelse(model %in% c("D1","D2"), "Original", "DeSurv-aligned"),
-           label_short = sub(" \\(.*", "", label))
+    mutate(label = factor(label, levels = c(
+      "LB orig (M4)", "YFB orig (M5)",
+      "LB DeSurv-aligned", "YFB DeSurv-aligned",
+      "YFB DeSurv-aligned + cohort")))
   ggplot(res_plot, aes(x = cohort, y = c_index, fill = label)) +
-    geom_col(position = position_dodge(0.75), width = 0.65, color = "white") +
+    geom_col(position = position_dodge(0.72), width = 0.62, color = "white") +
     geom_hline(yintercept = 0.5, linetype = "dashed", color = "grey40") +
     scale_fill_manual(
-      values = c("LB orig (M4)"        = "#4c78a8",
-                 "YFB orig (M5)"       = "#f58518",
-                 "LB DeSurv-aligned"   = "#72b7b2",
-                 "YFB DeSurv-aligned"  = "#e45756"),
+      values = c("LB orig (M4)"                  = "#4c78a8",
+                 "YFB orig (M5)"                 = "#f58518",
+                 "LB DeSurv-aligned"             = "#72b7b2",
+                 "YFB DeSurv-aligned"            = "#e45756",
+                 "YFB DeSurv-aligned + cohort"   = "#b279a2"),
       name = NULL) +
     coord_cartesian(ylim = c(0.45, 0.75)) +
     labs(x = NULL, y = "C-index") +
     theme_bw(base_size = 8) +
     theme(legend.position = "top",
+          legend.text = element_text(size = 7),
           axis.text.x = element_text(angle = 20, hjust = 1, size = 7))
 } else {
   plot.new(); text(0.5, 0.5, "Results CSV not found", cex = 1.2)
@@ -122,10 +127,22 @@ cohort, K=7) achieves a mean external C-index of 0.636 across 5 held-out PDAC
 cohorts, compared to 0.624 for the original YFB configuration (M5/D2). The
 delta of +0.012 exceeds the pre-specified ±0.005 practical threshold. D4
 improves over D2 in 4 of 5 cohorts (PACA\_AU\_array is the one exception,
-0.650 vs 0.670). The recommended primary configuration for the manuscript is
-**D4 (YFB DeSurv-aligned, K=7)**, with D3 (LB DeSurv-aligned, K=7, mean
-C=0.622) as sensitivity. DeSurv-aligned gene selection also improves LB:
-delta = +0.006 (D3 vs D1).
+0.650 vs 0.670). DeSurv-aligned gene selection also improves LB: delta = +0.006
+(D3 vs D1).
+
+**Cohort indicator with YFB DeSurv-aligned (D5).** Adding a corner-point cohort
+indicator to D4 (D5, K=8) reduces mean external C-index to 0.614 — 0.022 below
+D4 and 0.010 below the original M5 baseline. The loss is consistent across
+cohorts, with the largest regressions in PACA\_AU\_seq (0.626 vs 0.675) and
+PACA\_AU\_array (0.628 vs 0.650). Per-platform z-standardization already removes
+the platform offset prior to fitting; the cohort indicator absorbs degrees of
+freedom that the model would otherwise allocate to survival-relevant factor
+structure, producing a lower-performing model at higher K. The cohort indicator
+provides no benefit for YFB with DeSurv preprocessing.
+
+The recommended primary configuration for the manuscript remains
+**D4 (YFB DeSurv-aligned, K=7, no cohort indicator)**, with D3 (LB DeSurv-aligned,
+K=7, mean C=0.622) as sensitivity.
 
 ## 5. Gene Set Comparison
 

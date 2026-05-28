@@ -3,19 +3,24 @@
 "D2","YFB orig (M5)","YFB","Dijk",0.612,3,2,0.0532,2000,"variance",FALSE,1908
 "D3","LB DeSurv-aligned","LB","Dijk",0.6407,7,2,0.4394,3000,"combined_rank",TRUE,2038
 "D4","YFB DeSurv-aligned","YFB","Dijk",0.6569,7,2,0.0408,3000,"combined_rank",TRUE,2038
+"D5","YFB DeSurv-aligned + cohort","YFB","Dijk",0.6518,8,2,0.0281,3000,"combined_rank",TRUE,2038
 "D1","LB orig (M4)","LB","Moffitt_GEO_array",0.5454,3,1,0.4823,2000,"variance",FALSE,1548
 "D2","YFB orig (M5)","YFB","Moffitt_GEO_array",0.5439,3,2,0.0532,2000,"variance",FALSE,1548
 "D3","LB DeSurv-aligned","LB","Moffitt_GEO_array",0.5226,7,2,0.4394,3000,"combined_rank",TRUE,2000
 "D4","YFB DeSurv-aligned","YFB","Moffitt_GEO_array",0.5502,7,2,0.0408,3000,"combined_rank",TRUE,2000
+"D5","YFB DeSurv-aligned + cohort","YFB","Moffitt_GEO_array",0.5282,8,2,0.0281,3000,"combined_rank",TRUE,2000
 "D1","LB orig (M4)","LB","PACA_AU_array",0.6549,3,1,0.4823,2000,"variance",FALSE,1932
 "D2","YFB orig (M5)","YFB","PACA_AU_array",0.6703,3,2,0.0532,2000,"variance",FALSE,1932
 "D3","LB DeSurv-aligned","LB","PACA_AU_array",0.6439,7,2,0.4394,3000,"combined_rank",TRUE,2050
 "D4","YFB DeSurv-aligned","YFB","PACA_AU_array",0.6505,7,2,0.0408,3000,"combined_rank",TRUE,2050
+"D5","YFB DeSurv-aligned + cohort","YFB","PACA_AU_array",0.6285,8,2,0.0281,3000,"combined_rank",TRUE,2050
 "D1","LB orig (M4)","LB","PACA_AU_seq",0.645,3,1,0.4823,2000,"variance",FALSE,1843
 "D2","YFB orig (M5)","YFB","PACA_AU_seq",0.6562,3,2,0.0532,2000,"variance",FALSE,1843
 "D3","LB DeSurv-aligned","LB","PACA_AU_seq",0.6719,7,2,0.4394,3000,"combined_rank",TRUE,2040
 "D4","YFB DeSurv-aligned","YFB","PACA_AU_seq",0.6753,7,2,0.0408,3000,"combined_rank",TRUE,2040
+"D5","YFB DeSurv-aligned + cohort","YFB","PACA_AU_seq",0.626,8,2,0.0281,3000,"combined_rank",TRUE,2040
 "D1","LB orig (M4)","LB","Puleo_array",0.6252,3,1,0.4823,2000,"variance",FALSE,1715
 "D2","YFB orig (M5)","YFB","Puleo_array",0.6379,3,2,0.0532,2000,"variance",FALSE,1715
 "D3","LB DeSurv-aligned","LB","Puleo_array",0.6322,7,2,0.4394,3000,"combined_rank",TRUE,1989
 "D4","YFB DeSurv-aligned","YFB","Puleo_array",0.6447,7,2,0.0408,3000,"combined_rank",TRUE,1989
+"D5","YFB DeSurv-aligned + cohort","YFB","Puleo_array",0.6356,8,2,0.0281,3000,"combined_rank",TRUE,1989

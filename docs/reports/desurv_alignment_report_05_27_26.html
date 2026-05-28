@@ -97,18 +97,18 @@ ul.task-list li input[type="checkbox"] {
 <div class="cell">
 <div class="cell-output-display">
 <table class="table table-sm table-striped small">
-<caption>Four configurations compared. D1/D2 reproduce M4/M5 exactly. D3/D4 apply DeSurv gene selection (combined mean+variance rank, top-3000 per cohort before normalization).</caption>
+<caption>Five configurations compared. D1/D2 reproduce M4/M5 exactly. D3/D4 apply DeSurv gene selection (combined mean+variance rank, top-3000 per cohort before normalization). D5 adds a cohort indicator to D4 to test whether it provides additional benefit over per-platform z-standardization alone.</caption>
 <colgroup>
-<col style="width: 3%">
-<col style="width: 20%">
+<col style="width: 2%">
+<col style="width: 26%">
+<col style="width: 5%">
 <col style="width: 6%">
-<col style="width: 7%">
-<col style="width: 15%">
-<col style="width: 11%">
-<col style="width: 7%">
-<col style="width: 7%">
-<col style="width: 3%">
-<col style="width: 17%">
+<col style="width: 14%">
+<col style="width: 10%">
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 2%">
+<col style="width: 16%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -173,6 +173,18 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: right;">7</td>
 <td style="text-align: right;">2</td>
 </tr>
+<tr class="odd">
+<td style="text-align: left;">D5</td>
+<td style="text-align: left;">YFB DeSurv-aligned + cohort</td>
+<td style="text-align: left;">YFB</td>
+<td style="text-align: right;">3000</td>
+<td style="text-align: left;">combined_rank</td>
+<td style="text-align: left;">per-cohort</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: right;">0.614</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">2</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -185,7 +197,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="desurv_alignment_report_05_27_26_files/figure-html/cohort-fig-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Per-cohort external C-index for D1–D4. Dashed line = chance (C=0.5). D1/D2 are the original manuscript configs; D3/D4 are DeSurv-aligned.</figcaption>
+<figcaption class="figure-caption">Per-cohort external C-index for D1–D5. Dashed line = chance (C=0.5). D1/D2 are the original manuscript configs; D3–D5 are DeSurv-aligned. D5 adds a cohort indicator to D4.</figcaption>
 </figure>
 </div>
 </div>
@@ -193,7 +205,9 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="findings-and-recommendation" class="level2">
 <h2 class="anchored" data-anchor-id="findings-and-recommendation">4. Findings and Recommendation</h2>
-<p>DeSurv-aligned preprocessing (D4, YFB + combined mean+variance rank, top-3000 per cohort, K=7) achieves a mean external C-index of 0.636 across 5 held-out PDAC cohorts, compared to 0.624 for the original YFB configuration (M5/D2). The delta of +0.012 exceeds the pre-specified ±0.005 practical threshold. D4 improves over D2 in 4 of 5 cohorts (PACA_AU_array is the one exception, 0.650 vs 0.670). The recommended primary configuration for the manuscript is <strong>D4 (YFB DeSurv-aligned, K=7)</strong>, with D3 (LB DeSurv-aligned, K=7, mean C=0.622) as sensitivity. DeSurv-aligned gene selection also improves LB: delta = +0.006 (D3 vs D1).</p>
+<p>DeSurv-aligned preprocessing (D4, YFB + combined mean+variance rank, top-3000 per cohort, K=7) achieves a mean external C-index of 0.636 across 5 held-out PDAC cohorts, compared to 0.624 for the original YFB configuration (M5/D2). The delta of +0.012 exceeds the pre-specified ±0.005 practical threshold. D4 improves over D2 in 4 of 5 cohorts (PACA_AU_array is the one exception, 0.650 vs 0.670). DeSurv-aligned gene selection also improves LB: delta = +0.006 (D3 vs D1).</p>
+<p><strong>Cohort indicator with YFB DeSurv-aligned (D5).</strong> Adding a corner-point cohort indicator to D4 (D5, K=8) reduces mean external C-index to 0.614 — 0.022 below D4 and 0.010 below the original M5 baseline. The loss is consistent across cohorts, with the largest regressions in PACA_AU_seq (0.626 vs 0.675) and PACA_AU_array (0.628 vs 0.650). Per-platform z-standardization already removes the platform offset prior to fitting; the cohort indicator absorbs degrees of freedom that the model would otherwise allocate to survival-relevant factor structure, producing a lower-performing model at higher K. The cohort indicator provides no benefit for YFB with DeSurv preprocessing.</p>
+<p>The recommended primary configuration for the manuscript remains <strong>D4 (YFB DeSurv-aligned, K=7, no cohort indicator)</strong>, with D3 (LB DeSurv-aligned, K=7, mean C=0.622) as sensitivity.</p>
 </section>
 <section id="gene-set-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="gene-set-comparison">5. Gene Set Comparison</h2>

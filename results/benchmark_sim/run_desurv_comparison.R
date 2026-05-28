@@ -6,9 +6,10 @@
 #   D2: YFB + per-platform z-std + variance + top-2000 + post-norm selection (= M5)
 #   D3: LB  + per-platform z-std + combined_rank + top-3000 + per-cohort selection
 #   D4: YFB + per-platform z-std + combined_rank + top-3000 + per-cohort selection
+#   D5: YFB + per-platform z-std + combined_rank + top-3000 + per-cohort + cohort_id
 #
 #   D1/D2 reproduce the recommended manuscript configs using the same K already
-#   stored in globals.yml.  D3/D4 run K-CV (K_final = max(K_1se, 3)) and store
+#   stored in globals.yml.  D3/D4/D5 run K-CV (K_final = max(K_1se, 3)) and store
 #   K values in globals.yml before fitting.
 #
 #   Output: results/benchmark_sim/outputs/desurv_comparison/
@@ -124,7 +125,15 @@ DESURV_CONFIGS <- list(
        per_cohort   = TRUE,
        norm_method  = "none",
        cohort_id    = FALSE,
-       k_key        = "k_merged_yfb_desurv")
+       k_key        = "k_merged_yfb_desurv"),
+  list(id = "D5", label = "YFB DeSurv-aligned + cohort",
+       model        = "YFB",
+       top_n        = TOP_N_DESURV,
+       sel_method   = "combined_rank",
+       per_cohort   = TRUE,
+       norm_method  = "none",
+       cohort_id    = TRUE,
+       k_key        = "k_merged_yfb_desurv_cohort")
 )
 
 # --------------------------------------------------------------------------
@@ -188,10 +197,10 @@ for (dcfg in DESURV_CONFIGS) {
 # 4. K-CV for D3 and D4 (D1/D2 reuse K from existing globals.yml entries)
 # --------------------------------------------------------------------------
 
-cat("\n--- K-CV for DeSurv-aligned configs (D3, D4) ---\n")
+cat("\n--- K-CV for DeSurv-aligned configs (D3, D4, D5) ---\n")
 cfg <- yaml::read_yaml(YML_PATH); b <- cfg$benchmark  # re-read after preprocessing
 
-for (dcfg in DESURV_CONFIGS[3:4]) {
+for (dcfg in DESURV_CONFIGS[3:5]) {
   if (!is.null(b[[dcfg$k_key]])) {
     cat(sprintf("  %s: K=%d already set — skipping CV\n", dcfg$id, b[[dcfg$k_key]]))
     next
@@ -199,6 +208,7 @@ for (dcfg in DESURV_CONFIGS[3:4]) {
   cat(sprintf("  Running K-CV for %s (%s) ...\n", dcfg$id, dcfg$label))
   ckey    <- paste(dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, dcfg$norm_method, sep = "_")
   Y_train <- preproc_cache[[ckey]]
+  cid_cv  <- if (dcfg$cohort_id) cohort_labels else NULL
 
   set.seed(42L)
   cv_res  <- select_K_cv(
@@ -214,6 +224,7 @@ for (dcfg in DESURV_CONFIGS[3:4]) {
     prior_beta = PRIOR_BETA,
     alpha      = ALPHA,
     lambda     = LAMBDA,
+    cohort_id  = cid_cv,
     sign_correction = FALSE
   )
   K_opt   <- cv_res$K_opt
@@ -229,7 +240,7 @@ cfg <- yaml::read_yaml(YML_PATH); b <- cfg$benchmark  # re-read after K-CV write
 # 5. Fit all 4 configurations
 # --------------------------------------------------------------------------
 
-cat("\n=== Fitting 4 configurations ===\n\n")
+cat("\n=== Fitting 5 configurations ===\n\n")
 fits <- list()
 
 for (dcfg in DESURV_CONFIGS) {
