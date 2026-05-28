@@ -48,6 +48,9 @@ preprocessing:
   top_n_genes: 2000      # DeSurv spec: top-2000 most variable genes per cohort.
                          # Reverted from 5000: archived baseline (C=0.60-0.65, tcga_only) used
                          # 2000 genes; 5000 added noise that degraded single-cohort performance.
+  top_n_genes_desurv: 3000   # DeSurv (Young et al. 2025): top-3000 per cohort by combined
+                              # mean+variance rank, then intersect. Yields ~1970 after intersection
+                              # (vs 2000 variance-only). See DECISIONS.md 2026-05-27.
   center_columns: true
   batch_correct: true
 
@@ -72,6 +75,9 @@ benchmark:
   k_merged_yfb_zstd:            3  # YFB, joint z-standardization (M15, M16)
   k_merged_lb_logonly:          3  # LB,  log transform only (M11, M12)
   k_merged_yfb_logonly:         3  # YFB, log transform only (M17, M18)
+  # DeSurv-aligned configs — filled by run_desurv_comparison.R
+  k_merged_lb_desurv:  4   # LB  + per-platform z-std + combined_rank + top-3000 per-cohort
+  k_merged_yfb_desurv: 3   # YFB + per-platform z-std + combined_rank + top-3000 per-cohort
   k_pdac_yfb_merged: 3   # K for YFB merged-cohort fits (rank_transform=FALSE).
                          # Diagnostic sweep (2026-05-06): K=3 gives highest median external C
                          # (0.644); K_eff=3 across K=3-14, all factors survive at K=3.
