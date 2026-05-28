@@ -129,6 +129,20 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   `code/preprocess_desurv.R` (normalize_method param), `docs/reports/merged_benchmark_report.qmd`.
   Results: `outputs/merged_benchmark/merged_benchmark_results_extended.csv`. DECISIONS.md 2026-05-25.*
 
+- [ ] **Align gene selection with DeSurv: combined mean+variance ranking, top-3000** `[Priority: High]` `[Effort: Small]`
+  Our current pipeline selects top-2,000 genes by variance only (`stats::var`). DeSurv (Young et al. 2025)
+  ranks genes independently by mean expression and by variance, then keeps the top 3,000 with the lowest
+  sum of the two ranks — selecting genes that are both highly expressed and highly variable. This is a
+  more principled filter: variance-only can retain lowly-expressed noisy genes near the detection floor.
+  DeSurv's intersection across training cohorts yielded 1,970 genes; our current approach yields 2,000.
+  Changes required: (1) update `select_top_variable_genes()` in `code/preprocess_desurv.R` to accept a
+  `method = c("variance", "combined_rank")` argument and implement the rank-sum criterion;
+  (2) update `config/globals.yml`: `top_n_genes: 3000`; (3) re-run the merged benchmark at the new
+  setting to confirm the recommended configuration (M5) is stable or improves.
+  *Rationale: better DeSurv alignment makes the manuscript methods comparison exact; combined ranking is
+  biologically better motivated. Low implementation risk — one function, ~20 lines.*
+  *Files: `code/preprocess_desurv.R`, `config/globals.yml`, `tests/test_preprocess_desurv.R`*
+
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model
   on real PDAC data, the normal prior is strictly necessary — the spike-and-slab (point_normal)
