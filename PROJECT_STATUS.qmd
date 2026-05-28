@@ -1793,3 +1793,119 @@ Rendered to PDF and HTML. Committed: `88815b7`.
 - `CLAUDE.md` memory: no change needed (MEMORY.md will be updated separately).
 
 ---
+
+# Sessions 24–25 — 18-Config Benchmark, DeSurv Gene Selection, and Factor Diagnostics (2026-05-25 to 2026-05-28)
+
+Branch: `desurv-gene-selection` (forked from `main` 2026-05-25). Tests: 246/246 passing.
+
+## 24.1 — 18-Configuration Preprocessing Benchmark (2026-05-25)
+
+Extended the 6-configuration benchmark to 18 by evaluating all combinations of preprocessing
+strategy × model × cohort indicator on merged TCGA\_PAAD + CPTAC ($n=273$). Five preprocessing
+strategies: joint QN+rank (prior standard), per-platform z-std, joint QN without rank transform,
+joint z-std, and log-only. CV K-selection (biological floor K≥3) applied separately for each of
+the 10 unique preprocessing×model combinations.
+
+**Critical finding:** Per-platform z-standardization is the only viable preprocessing for mixed
+RNA-seq + proteomics training. 10 of 12 non-per-platform configurations produce $\hat{\beta}=0$
+for all factors (K_eff=0). The root cause is platform-dominated SVD: without per-platform
+z-std before merging, the top singular vectors of the merged Y matrix capture the RNA-seq vs.
+proteomics contrast, not biological variation.
+
+| Winner | Model | Preprocessing | Cohort | K | K_eff | Mean ext. C |
+|--------|-------|---------------|--------|---|-------|-------------|
+| M5 | YFB | Per-platform z-std | No | 3 | 2 | 0.624 |
+| M4 | LB | Per-platform z-std | Yes | 3 | 1 | 0.618 |
+
+*Files: `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
+`docs/reports/merged_benchmark_report_5_25_26.{qmd,pdf}`,
+`docs/progress_report/SSBMF_Status_Update_5_27_26.qmd`.*
+
+## 24.2 — DeSurv Gene Selection Alignment (2026-05-27)
+
+Implemented DeSurv-aligned gene selection in `code/preprocess_desurv.R`:
+- New method: `combined_rank` in `select_top_variable_genes()` — ranks genes by mean and by
+  variance independently, retains those with lowest rank-sum (i.e., both highly expressed and
+  highly variable).
+- New parameter: `selection_per_cohort=TRUE` in `preprocess_merged_cohorts()` — applies
+  selection within each platform separately on log-transformed data before per-platform
+  z-standardization, then intersects across cohorts. Result: 2064 genes (vs 2000 for variance-only).
+
+Five configurations evaluated (D1–D5): D1/D2 = originals (M4/M5); D3/D4 = DeSurv-aligned LB/YFB;
+D5 = DeSurv-aligned YFB + cohort indicator.
+
+| Config | Model | Preprocessing | Cohort | K | K_eff | Mean ext. C |
+|--------|-------|---------------|--------|---|-------|-------------|
+| D1 (M4) | LB | Orig (var-2000) | Yes | 3 | 1 | 0.616 |
+| D2 (M5) | YFB | Orig (var-2000) | No | 3 | 2 | 0.624 |
+| D3 | LB | DeSurv-aligned | Yes | 7 | 2 | 0.622 |
+| D4 ★ | YFB | DeSurv-aligned | No | 7 | 2 | 0.636 |
+| D5 | YFB | DeSurv-aligned | Yes | 8 | 2 | 0.614 |
+
+**Decision:** D4 adopted as new primary configuration ($\Delta C = +0.012$ vs M5, exceeds
+±0.005 threshold, improves in 4/5 external cohorts). D5 cohort indicator reduces performance
+(−0.022 vs D4): per-platform z-std already absorbs the platform offset; the additional cohort
+column absorbs survival-relevant factor capacity. Decision rule applied formally — see
+DECISIONS.md 2026-05-27.
+
+*Files: `code/preprocess_desurv.R`, `config/globals.yml` (k_merged_lb_desurv: 7,
+k_merged_yfb_desurv: 7, k_merged_yfb_desurv_cohort: 8),
+`results/benchmark_sim/run_desurv_comparison.R`,
+`results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv`,
+`docs/reports/desurv_alignment_report_05_27_26.{qmd,pdf}`.*
+
+## 24.3 — Factor Diagnostics Report (2026-05-27)
+
+Comprehensive diagnostic evaluation of D1–D5 on merged TCGA+CPTAC training cohort.
+
+**Key findings across all configurations:**
+
+- ARD shrinkage consistently identifies K_eff=2 active programs regardless of K requested
+  (3–8), confirming the survival signal is genuinely low-dimensional in the training data.
+- All five configurations identify one adverse and one protective program. This cross-formulation
+  consistency (LB and YFB, original and DeSurv gene sets) argues strongly that the two programs
+  reflect real biological structure, not modeling artifacts.
+- D4 active factors: Factor 3 (adverse, $\hat{\beta}_3 = +0.011$, log-rank p<0.05 on training
+  cohort) and Factor 7 (protective, $\hat{\beta}_7 = -0.041$). K-M stratification at the median
+  loading is directionally consistent with $\hat{\beta}$ signs and replicates in all 5 external
+  cohorts (C ≥ 0.55 in all cases).
+- Schoenfeld residual test on D4 active factors: global PH assumption not violated at 0.05
+  level on training cohort.
+- YFB $\hat{\beta}$ magnitudes are ~10–40× smaller than LB because the YFB formulation
+  normalizes F columns to unit norm, compressing the coefficient scale; the survival signal
+  encoded is equivalent.
+- YFB models (D2, D4, D5) converge in <50 CAVI iterations; LB models (D1, D3) require up to
+  150 iterations.
+
+Top-gene weight tables for D4 Factors 3 and 7 are the starting point for pathway enrichment
+analysis and PDAC subtype comparison (Moffitt basal/classical, Bailey et al. 2016).
+
+*Files: `docs/reports/desurv_factor_diagnostics_05_27_26.{qmd,pdf}`.*
+
+## 24.4 — Open Items Entering Next Session
+
+1. **Pathway enrichment on D4 Factors 3 and 7** `[Priority: High]` — submit top-weighted
+   genes to MSigDB hallmark / KEGG; compare patient loadings $\hat{L}_{i,3}$ and
+   $\hat{L}_{i,7}$ to Moffitt basal/classical scores in TCGA_PAAD.
+2. **Merge `desurv-gene-selection` to `main`** — branch ready (246/246 tests, all reports
+   rendered and committed). Pending user confirmation.
+3. **Merge `cohort-cols-L` to `main`** — older branch, evaluate vs D4 integration.
+4. **YFB point_normal K-CV** still returns C=0.5 for all K — open item, not blocking.
+
+## 24.5 — Files Changed
+
+| File | Change |
+|------|--------|
+| `code/preprocess_desurv.R` | combined_rank method; selection_per_cohort parameter |
+| `config/globals.yml` | k_merged_{lb,yfb}_desurv: 7; k_merged_yfb_desurv_cohort: 8 |
+| `results/benchmark_sim/run_desurv_comparison.R` | New runner: D1–D5 K-CV + benchmark |
+| `results/benchmark_sim/outputs/desurv_comparison/` | results CSV + fits RDS |
+| `docs/reports/desurv_alignment_report_05_27_26.{qmd,pdf}` | D1–D5 external validation |
+| `docs/reports/desurv_factor_diagnostics_05_27_26.{qmd,pdf}` | Convergence, K-M, gene programs |
+| `docs/progress_report/SSBMF_Status_Update_5_28_26.{qmd,pdf}` | Meeting document |
+| `tests/run_tests.R` | 246/246 (2 new DeSurv alignment tests added) |
+| `DECISIONS.md` | 2026-05-27 entry: D4 adoption, D5 cohort indicator finding |
+| `ROADMAP.md` | Header updated to 2026-05-28; diagnostics report + pathway enrichment added |
+| `CLAUDE.md` | Recommended configuration updated to D4 |
+
+---

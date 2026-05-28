@@ -4,32 +4,30 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-05-20.** Core model complete (modular CAVI, 193/193 tests passing).
-> Two model variants are fully implemented, benchmarked, and cross-validated on PDAC data
-> (5 independent external cohorts across RNA-seq, microarray, and proteomics platforms).
-> Four targeted improvements evaluated 2026-05-06 (Phases 1–4); YFB K-CV sign fix completed
-> 2026-05-20. See synthesis report `docs/reports/ssbmf_summary_report_05_06_26.pdf`.
+> **Status as of 2026-05-28.** Core model complete (modular CAVI, 246/246 tests passing).
+> Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
+> cohorts across RNA-seq, microarray, and proteomics platforms). Recommended configuration
+> finalized: **D4 (YFB + DeSurv gene selection, K=7, mean external C=0.636)**. See
+> `docs/reports/desurv_alignment_report_05_27_26.pdf` and
+> `docs/reports/desurv_factor_diagnostics_05_27_26.pdf`.
 >
-> **LB model** (linear predictor η = Lβ; `code/fit_modular.R`): All three training configurations
-> (TCGA-only, CPTAC-only, merged TCGA+CPTAC) converge to 2–3 active factors. External C-index
-> ranges 0.55–0.67 depending on cohort and training set. Alpha mixing parameter selected by
-> 5-fold CV with 1-SE rule (all configurations select α=0.50). K-CV (Phase 4) selects K=3
-> under normal prior (flat plateau) and K=8 under point_normal (spike-small-n artefact);
-> practical default is K=5.
+> **Recommended configuration — D4:** YFB (η = (YF)β), DeSurv-aligned gene selection
+> (combined mean+variance rank, top-3000 per cohort before per-platform z-standardization,
+> 2064 genes after intersection), K=7 (CV-selected with biological floor K≥3), no cohort
+> indicator. Mean external C=0.636 across 5 held-out PDAC cohorts. Identifies 2 active gene
+> expression programs (K_eff=2): one adverse (β̂₃=+0.011) and one protective (β̂₇=−0.041).
+> New-patient scoring: η_new = Y_new F β̂ (exact, no approximation). Factor weight matrix F
+> provides directly interpretable gene signatures for pathway enrichment.
 >
-> **YFB model** (linear predictor η = (YF)β, Cox-on-YF; `code/fit_cox_on_yf.R`): Single-cohort
-> training with a normal prior gives competitive external C-index (TCGA-only: 0.55–0.63).
-> Phase 1 (per-platform z-standardization + rank_transform=FALSE) resolved the merged β→0
-> collapse; K=3 merged training now yields external median C=0.64, matching or exceeding
-> DeSurv. YFB K-CV sign fix (2026-05-20): `sign_correction=FALSE` in CV folds + `I(-risk)`
-> evaluation resolves the C<0.5 problem; normal prior now yields C=0.56–0.61 across K, with
-> K=5 selected by 1-SE rule on TCGA_PAAD. YFB point_normal K-CV remains C=0.5 for all K
-> (spike-small-n collapse; open item).
+> **Sensitivity — D3:** LB (η = Lβ), same DeSurv gene set, K=7, mean external C=0.622.
+> Reproduces the same 2-program adverse/protective structure, confirming the finding is not
+> specific to the YFB parameterization.
 >
-> Both models use SVD initialization with a post-convergence sign check: if the training
-> concordance of η = Lβ (or η = (YF)β) is below 0.5, β is globally negated. This corrects
-> sign ambiguity from the SVD initialization, which uses only the positive part of the singular
-> vectors and can produce an inversely-oriented linear predictor.
+> **Key preprocessing finding:** Per-platform z-standardization applied before merging is
+> required for mixed RNA-seq + proteomics training. 10 of 12 non-per-platform preprocessing
+> configurations collapse to β=0 (K_eff=0). YFB point_normal K-CV still returns C=0.5 for
+> all K (spike-small-n collapse; open item). Both models use SVD initialization with
+> post-convergence sign check (global β negation if training C<0.5).
 
 ---
 
@@ -133,9 +131,32 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Implemented combined_rank method in select_top_variable_genes() and per-cohort
   selection (before normalization) in preprocess_merged_cohorts(). D4 (YFB DeSurv-aligned)
   mean external C=0.636 vs M5=0.624 (delta=+0.012, 5 cohorts). DeSurv gene selection
-  adopted as new primary config. See DECISIONS.md 2026-05-27.
+  adopted as new primary config. Also evaluated D5 (YFB DeSurv + cohort indicator, K=8):
+  mean C=0.614 (−0.022 vs D4); per-platform z-std already absorbs the platform offset,
+  making the cohort indicator counterproductive at K=7–8. See DECISIONS.md 2026-05-27.
   *Files: code/preprocess_desurv.R, results/benchmark_sim/run_desurv_comparison.R,
-  docs/reports/desurv_alignment_report_05_27_26.qmd*
+  docs/reports/desurv_alignment_report_05_27_26.qmd,
+  docs/progress_report/SSBMF_Status_Update_5_28_26.qmd*
+
+- [x] **Factor diagnostics report: convergence, survival associations, gene programs** *(Complete — 2026-05-27)*
+  Full diagnostic evaluation of D1–D5 on merged TCGA+CPTAC training cohort. All five
+  configurations converge to K_eff=2 (two active programs) regardless of K requested (3–8),
+  confirming the ARD prior concentrates survival signal into at most 2 directions. D4 active
+  factors: Factor 3 (adverse, β̂=+0.011, log-rank p<0.05) and Factor 7 (protective,
+  β̂=−0.041). Kaplan-Meier stratification consistent with β directions in training cohort;
+  signal replicates across all 5 external cohorts. Proportional hazards assumption not
+  violated (Schoenfeld global p>0.05). Heatmaps and top-gene tables for all active factors
+  provided as starting point for pathway enrichment.
+  *Files: docs/reports/desurv_factor_diagnostics_05_27_26.{qmd,pdf}*
+
+- [ ] **Pathway enrichment on D4 active factors** `[Priority: High]` `[Effort: Small]`
+  Submit top-weighted genes from D4 Factor 3 (adverse) and Factor 7 (protective) to MSigDB
+  hallmark gene sets / KEGG / GSEA. Cross-reference with Moffitt basal/classical scores and
+  Bailey et al. (2016) four-subtype annotations in TCGA_PAAD to assess concordance with
+  established PDAC molecular axes. Patient loadings L̂_{i,3} and L̂_{i,7} serve as continuous
+  molecular scores for subtype comparison. This is the primary interpretability task remaining
+  before the manuscript methods section can be finalized.
+  *Files: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds (D4 fit)*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model
