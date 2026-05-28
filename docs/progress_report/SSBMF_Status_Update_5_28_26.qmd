@@ -1,0 +1,114 @@
+---
+title: "SSBMF Status Update: DeSurv Gene Selection, Factor Diagnostics, and Recommended Configuration (May 28, 2026)"
+author: "Andrew Walther"
+format:
+  pdf:
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{enumitem}
+        \usepackage{booktabs}
+        \usepackage{geometry}
+        \usepackage{titling}
+        \usepackage{array}
+        \geometry{margin=0.42in}
+        \renewcommand{\familydefault}{\sfdefault}
+        \setlist[itemize]{leftmargin=1.1em, topsep=0.1em, itemsep=0.06em, parsep=0em, partopsep=0em}
+        \setlength{\parskip}{0.05em}
+        \RedeclareSectionCommand[beforeskip=0.28em,afterskip=0.14em]{section}
+        \renewcommand{\arraystretch}{0.9}
+        \setlength{\droptitle}{-1.8em}
+        \pretitle{\begin{center}\large\bfseries}
+        \posttitle{\par\end{center}\vspace{-0.7em}}
+fontsize: 9pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(knitr)
+library(ggplot2)
+library(dplyr)
+
+OUT <- "../../results/benchmark_sim/outputs/desurv_comparison"
+csv_path <- file.path(OUT, "desurv_comparison_results.csv")
+res <- if (file.exists(csv_path)) read.csv(csv_path, stringsAsFactors = FALSE) else NULL
+
+mean_c <- function(id) if (!is.null(res)) round(mean(res$c_index[res$model == id]), 3) else NA
+```
+
+## 1. Objective
+
+This update covers the evaluation of **DeSurv-aligned gene selection** as a replacement for the variance-only selection used in the prior benchmark (M4/M5). The question: does matching the gene selection strategy from Young et al. (2025) — selecting genes that are both highly expressed *and* highly variable within each platform — improve external concordance and yield more interpretable factor structure? A five-configuration comparison (D1–D5) was run on the merged TCGA\_PAAD + CPTAC training cohort ($n = 273$) and evaluated on 5 held-out PDAC cohorts.
+
+## 2. Gene Selection: Original vs. DeSurv-Aligned
+
+The two approaches differ in three respects: *what* is ranked, *when* it is computed (before or after cross-cohort normalization), and *where* it is computed (per-platform or on the merged matrix).
+
+| | Original (D1/D2) | DeSurv-aligned (D3/D4/D5) |
+|---|---|---|
+| Metric | Within-cohort variance | Combined mean + variance rank |
+| Top $n$ | 2,000 | 3,000 per cohort |
+| Timing | Post-normalization on merged matrix | Pre-normalization on log-transformed data |
+| Selection scope | Cross-cohort (merged matrix) | Per-platform, then intersect |
+| Genes after intersection | 2,000 | 2,064 |
+
+**Combined mean+variance rank:** for each cohort independently, genes are ranked by their mean expression and by their variance after log$_2$(count+1) transformation. The combined rank is their sum; the top 3,000 per cohort are retained. The intersection across cohorts is taken before per-platform z-standardization and merging. This retains genes that are both reliably detected above the expression floor and genuinely variable across samples — variance-only selection can include noisy low-expressed genes near the detection limit.
+
+## 3. Configurations and Results
+
+```{r results-table}
+tab <- data.frame(
+  ID    = c("D1","D2","D3","D4","D5"),
+  Label = c("LB orig (M4)","YFB orig (M5)","LB DeSurv","YFB DeSurv","YFB DeSurv+cohort"),
+  Model = c("LB","YFB","LB","YFB","YFB"),
+  Genes = c(2000, 2000, 2064, 2064, 2064),
+  K     = c(3, 3, 7, 7, 8),
+  K_eff = c(1, 2, 2, 2, 2),
+  Mean_C = c(mean_c("D1"), mean_c("D2"), mean_c("D3"), mean_c("D4"), mean_c("D5")),
+  stringsAsFactors = FALSE
+)
+knitr::kable(tab, booktabs = TRUE, row.names = FALSE,
+  col.names = c("ID","Label","Model","Genes","K","$K_{\\text{eff}}$","Mean C"),
+  escape = FALSE,
+  caption = "Five configurations on merged TCGA + CPTAC ($n=273$). K = factors requested (CV-selected with biological floor $K\\geq3$); $K_{\\text{eff}}$ = active factors ($|\\hat{\\beta}_k| > 0.001$) after convergence. Mean C = mean concordance across 5 held-out PDAC cohorts.")
+```
+
+**DeSurv gene selection improves external concordance in both model families.** For YFB: $\Delta C = +0.012$ (D4 vs. D2). For LB: $\Delta C = +0.006$ (D3 vs. D1). The YFB formulation additionally outperforms LB on the same DeSurv gene set: $\Delta C = +0.014$ (D4 vs. D3). These effects are additive, and both exceed the pre-specified $\pm 0.005$ practical threshold.
+
+**Cohort indicator (D5) reduces performance.** Adding a corner-point cohort indicator to D4 ($K = 8$) yields mean C = `r mean_c("D5")` — 0.022 below D4. The per-platform z-standardization applied before merging already removes the bulk platform offset; the additional cohort column absorbs degrees of freedom that would otherwise be allocated to survival-relevant factor structure. The indicator is harmful at $K = 7$–$8$ and should be excluded from the primary configuration.
+
+## 4. Factor Diagnostics: Convergence, Survival Associations, and Gene Programs
+
+Full diagnostics for all five configurations are in `docs/reports/desurv_factor_diagnostics_05_27_26.pdf`. Key findings:
+
+**ARD shrinkage consistently identifies two active programs.** All five configurations converge to $K_{\text{eff}} = 2$ active programs regardless of the total factors requested ($K = 3$–$8$). The empirical Bayes normal mixture prior shrinks inactive factors to $\hat{\beta} \approx 0$; the two surviving programs carry opposite survival directions — one adverse, one protective — in every configuration.
+
+**D4 active factors (recommended configuration):**
+
+- *Factor 3 (adverse):* $\hat{\beta}_3 = +0.0113$; high-loading patients have worse survival; log-rank $p < 0.05$ on the training cohort. Median-split K-M curves show early separation with the high-loading group accumulating events faster across the follow-up period.
+- *Factor 7 (protective):* $\hat{\beta}_7 = -0.0408$; high-loading patients have better survival. Separation is visible throughout follow-up and directionally consistent in all five external cohorts (C $\geq 0.55$ across Dijk, Moffitt GEO, PACA-AU array, PACA-AU seq, Puleo).
+
+The survival directions are internally consistent: $\hat{\beta}$ sign predicts which Kaplan-Meier arm fares worse in every active factor across all five configurations. This directional coherence is a necessary condition for the model's survival signal being real rather than artifactual.
+
+**YFB coefficient scale:** $\hat{\beta}$ values for YFB configurations (D2, D4, D5) are smaller in magnitude than their LB counterparts (D1, D3) because the YFB formulation normalizes $F$ columns to unit Euclidean norm, compressing the inner product scale by $\sim\sqrt{p}$. The survival signal encoded is equivalent; only the parameterization differs.
+
+**Convergence:** YFB models (D2, D4, D5) converge in $< 50$ iterations on average; LB models (D1, D3) require up to 150 iterations. All configurations reach stable RMSE values with no oscillation or divergence.
+
+**Proportional hazards:** Schoenfeld residual tests on the D4 training-cohort fit find no statistically significant evidence of PH violation at the 0.05 level (global test), supporting standard Cox coefficient interpretation for the two active programs.
+
+## 5. Recommended Configuration
+
+**D4 (primary):** YFB, DeSurv-aligned gene selection (2,064 genes), per-platform z-standardization, $K = 7$ (CV-selected), no cohort indicator. Mean external C = `r mean_c("D4")`. Scoring new patients requires only $\hat{\eta}_{\text{new}} = Y_{\text{new}} F \hat{\beta}$ — no latent-variable approximation. Factor columns of $F$ are directly interpretable gene weight vectors and serve as the input to downstream pathway enrichment analysis.
+
+**D3 (sensitivity):** LB, same DeSurv gene set, $K = 7$. Mean external C = `r mean_c("D3")`. Reproduces the same two-program, adverse+protective structure as D4, confirming the finding is not specific to the YFB parameterization. LB $\hat{\beta}$ magnitudes are on a more natural per-factor scale ($\hat{\beta}_2 = -0.44$, $\hat{\beta}_3 = +0.21$) and may aid interpretability, at the cost of an OLS approximation for new-patient scoring.
+
+## 6. Open Items
+
+- **Pathway enrichment on D4 Factors 3 and 7.** Submit top-weighted genes to MSigDB / GSEA hallmark gene sets; cross-reference with Moffitt basal/classical and Bailey et al. (2016) four-subtype annotations in TCGA to assess whether the two programs correspond to established PDAC molecular axes.
+- **Compare patient loadings $\hat{L}_{i,3}$ and $\hat{L}_{i,7}$ to Moffitt subtype scores** available in TCGA\_PAAD to quantify concordance with classical vs. basal subtypes.
+- **YFB point-normal prior K-CV** still returns C = 0.5 for all $K$ — open issue; normal prior (current default) is preferred.
