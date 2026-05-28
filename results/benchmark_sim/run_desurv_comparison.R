@@ -90,11 +90,13 @@ cat(sprintf("  n=%d (TCGA=%d, CPTAC=%d), events=%d\n\n",
 # --------------------------------------------------------------------------
 
 DESURV_CONFIGS <- list(
+  # D1/D2 replicate M4/M5 exactly: per-platform z-std + quantile normalization.
   list(id = "D1", label = "LB orig (M4)",
        model        = "LB",
        top_n        = TOP_N_ORIG,
        sel_method   = "variance",
        per_cohort   = FALSE,
+       norm_method  = "quantile",
        cohort_id    = TRUE,
        k_key        = "k_merged_lb_perplatform"),
   list(id = "D2", label = "YFB orig (M5)",
@@ -102,13 +104,17 @@ DESURV_CONFIGS <- list(
        top_n        = TOP_N_ORIG,
        sel_method   = "variance",
        per_cohort   = FALSE,
+       norm_method  = "quantile",
        cohort_id    = FALSE,
        k_key        = "k_merged_yfb_perplatform"),
+  # D3/D4 use per-platform z-std only (no quantile QN on top) — per-cohort
+  # selection runs before normalization, so variance signal is preserved.
   list(id = "D3", label = "LB DeSurv-aligned",
        model        = "LB",
        top_n        = TOP_N_DESURV,
        sel_method   = "combined_rank",
        per_cohort   = TRUE,
+       norm_method  = "none",
        cohort_id    = TRUE,
        k_key        = "k_merged_lb_desurv"),
   list(id = "D4", label = "YFB DeSurv-aligned",
@@ -116,6 +122,7 @@ DESURV_CONFIGS <- list(
        top_n        = TOP_N_DESURV,
        sel_method   = "combined_rank",
        per_cohort   = TRUE,
+       norm_method  = "none",
        cohort_id    = FALSE,
        k_key        = "k_merged_yfb_desurv")
 )
@@ -158,17 +165,17 @@ preproc_cache  <- list()
 gene_set_cache <- list()
 
 for (dcfg in DESURV_CONFIGS) {
-  ckey <- paste(dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, sep = "_")
+  ckey <- paste(dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, dcfg$norm_method, sep = "_")
   if (ckey %in% names(preproc_cache)) next
-  cat(sprintf("  top_n=%d, method=%s, per_cohort=%s ...\n",
-              dcfg$top_n, dcfg$sel_method, dcfg$per_cohort))
+  cat(sprintf("  top_n=%d, method=%s, per_cohort=%s, norm=%s ...\n",
+              dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, dcfg$norm_method))
   pp <- preprocess_merged_cohorts(
     cohort_raw_list          = train_raw,
     log_transform_flags      = PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS],
     top_n                    = dcfg$top_n,
-    rank_transform           = FALSE,          # per-platform z-std handles scale
+    rank_transform           = FALSE,
     per_platform_standardize = TRUE,
-    normalize_method         = "none",         # z-std IS the normalization
+    normalize_method         = dcfg$norm_method,
     selection_per_cohort     = dcfg$per_cohort,
     selection_method         = dcfg$sel_method
   )
@@ -190,7 +197,7 @@ for (dcfg in DESURV_CONFIGS[3:4]) {
     next
   }
   cat(sprintf("  Running K-CV for %s (%s) ...\n", dcfg$id, dcfg$label))
-  ckey    <- paste(dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, sep = "_")
+  ckey    <- paste(dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, dcfg$norm_method, sep = "_")
   Y_train <- preproc_cache[[ckey]]
 
   set.seed(42L)
@@ -226,7 +233,7 @@ cat("\n=== Fitting 4 configurations ===\n\n")
 fits <- list()
 
 for (dcfg in DESURV_CONFIGS) {
-  ckey      <- paste(dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, sep = "_")
+  ckey      <- paste(dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, dcfg$norm_method, sep = "_")
   Y_train   <- preproc_cache[[ckey]]
   K         <- b[[dcfg$k_key]]
   cohort_id <- if (dcfg$cohort_id) cohort_labels else NULL
@@ -278,7 +285,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
   )
 
   for (dcfg in DESURV_CONFIGS) {
-    ckey        <- paste(dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, sep = "_")
+    ckey        <- paste(dcfg$top_n, dcfg$sel_method, dcfg$per_cohort, dcfg$norm_method, sep = "_")
     train_genes <- gene_set_cache[[ckey]]
     fit         <- fits[[dcfg$id]]
     K           <- b[[dcfg$k_key]]
@@ -323,13 +330,20 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 # 7. Save and report
 # --------------------------------------------------------------------------
 
+if (length(results_rows) == 0)
+  stop("No external validation rows: all cohort x config pairs had < 100 common genes.")
+
 results <- do.call(rbind, results_rows)
 out_csv <- file.path(OUT_DIR, "desurv_comparison_results.csv")
 write.csv(results, out_csv, row.names = FALSE)
 
+# Save fit objects for post-hoc analysis (factor loadings, pathway enrichment).
+saveRDS(fits, file.path(OUT_DIR, "desurv_comparison_fits.rds"))
+
 cat(sprintf("\n=== Results saved: %s ===\n\n", out_csv))
 cat("Mean C-index by configuration:\n")
-agg <- aggregate(c_index ~ model + label + K + k_eff, data = results, FUN = mean)
+agg <- aggregate(c_index ~ model + label + K, data = results, FUN = mean)
+agg$k_eff <- sapply(agg$model, function(m) unique(results$k_eff[results$model == m]))
 agg <- agg[order(agg$c_index, decreasing = TRUE), ]
 for (i in seq_len(nrow(agg))) {
   cat(sprintf("  %s (%s): mean C=%.3f | K=%d | K_eff=%d\n",
