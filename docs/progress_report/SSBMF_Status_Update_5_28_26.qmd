@@ -142,28 +142,6 @@ if (!is.null(res)) {
 }
 ```
 
-```{r fig-beta, fig.height=2.6, fig.cap="Posterior mean survival coefficients for D4 (YFB DeSurv-aligned, K = 7). Red bars = adverse programs (positive beta-hat, high loading predicts worse survival); blue bars = protective (negative beta-hat); grey = inactive factors shrunk to near-zero by the empirical Bayes prior. Only Factors 3 and 7 survive shrinkage; the remaining five factors capture expression variation that is not prognostically informative in the training cohort."}
-beta_d4 <- data.frame(
-  Factor    = 1:7,
-  Beta      = c(0, 0, 0.0113, 0, 0, 0, -0.0408),
-  Active    = c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE)
-)
-beta_d4$Direction <- ifelse(!beta_d4$Active, "Inactive",
-                     ifelse(beta_d4$Beta > 0, "Adverse", "Protective"))
-
-ggplot(beta_d4, aes(x = factor(Factor), y = Beta, fill = Direction)) +
-  geom_col(width = 0.65) +
-  geom_hline(yintercept = 0, linewidth = 0.3, color = "black") +
-  scale_fill_manual(
-    values = c("Adverse" = "#d62728", "Protective" = "#1f77b4", "Inactive" = "#cccccc"),
-    name = NULL) +
-  labs(x = "Factor", y = expression(hat(beta)[k]),
-       title = "D4 survival coefficients: 2 active programs from K = 7 factors") +
-  theme_bw(base_size = 8) +
-  theme(legend.position  = "right",
-        plot.title       = element_text(size = 8, face = "bold"),
-        panel.grid.minor = element_blank())
-```
 
 ## 7. Open Items
 
