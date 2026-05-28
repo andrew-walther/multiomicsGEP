@@ -13,10 +13,10 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 - **No `CLAUDE.md` duplication:** Do not maintain a second copy of project status here — update `PROJECT_STATUS.md` instead.
 - **Living documents:** Update `DECISIONS.md` when making any architectural choice (algorithm variant, hyperparameter decision, design tradeoff). Update `ROADMAP.md` when completing a milestone or identifying a new priority.
 - **Commit style:** Detailed messages explaining what changed and why; no "Co-Authored-By" lines; no "Session N:" prefixes.
-- **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. Expected: 242/242 passing.
+- **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. Expected: 246/246 passing.
 - **Real-data tests:** `Rscript tests/test_real_data_loading.R` — 77/77 passing (auto-skips if `PDAC_DATA_ROOT` not set).
 - **Real data:** Not in git. Stored locally at `~/Library/CloudStorage/OneDrive-.../UNC Dissertation (Liu)/PDAC_data`. For Longleaf: `export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC`.
-- **Current model status:** Both LB (`code/fit_modular.R`, η = Lβ) and YFB (`code/fit_cox_on_yf.R`, η = (YF)β) are fully implemented with training concordance sign correction. Both support a `cohort_id` parameter (corner-point encoding) to absorb platform offsets. **Recommended configuration (merged multi-platform training):** YFB × per-platform z-std × no cohort indicator, K=3 (biological floor; 1-SE CV selected K=2), mean external C=0.626 across 5 held-out PDAC cohorts — see `DECISIONS.md` 2026-05-25 and `docs/reports/merged_benchmark_report.qmd`. Per-platform z-standardization is essential: 10 of 12 non-per-platform configurations collapse to β=0 in the 18-config extended benchmark. LB external C-index: merged at CV-selected K: 0.598–0.624. YFB external C-index: merged per-platform K=3: mean 0.626. Any preprocessing that does not normalize per-platform before merging (joint z-std, log-only, or joint QN without rank transform) collapses β→0 for both LB and YFB. See `ROADMAP.md` for open items.
+- **Current model status:** Both LB (`code/fit_modular.R`, η = Lβ) and YFB (`code/fit_cox_on_yf.R`, η = (YF)β) are fully implemented with training concordance sign correction. Both support a `cohort_id` parameter (corner-point encoding) to absorb platform offsets. **Recommended configuration (DeSurv-aligned, D4):** YFB × per-platform z-std × DeSurv gene selection (combined_rank, top-3000 per cohort before normalization) × no cohort indicator, K=7 (1-SE CV), mean external C=0.636 across 5 held-out PDAC cohorts — see `DECISIONS.md` 2026-05-27. Supersedes M5 (C=0.624, K=3). DeSurv gene selection yields 2064 genes vs 2000; delta_yfb = +0.012. Per-platform z-standardization remains essential: 10 of 12 non-per-platform configurations collapse to β=0 in the 18-config extended benchmark. Any preprocessing that does not normalize per-platform before merging (joint z-std, log-only, or joint QN without rank transform) collapses β→0 for both LB and YFB. See `ROADMAP.md` for open items.
 - **Documentation audience:** Write ROADMAP.md, DECISIONS.md, PROJECT_STATUS.qmd, and README.md for biostatistician collaborators reading the project cold — not as implementation logs. Avoid internal session terminology (e.g. "Phase A/B/C", "Cluster A/B", "Session N") in prose descriptions; use those labels only in commit messages or as lookup keys. Describe methods and findings in terms a statistical reader would recognize: model variant, prior, training set, metric, result.
 
 ## Quick Reference
@@ -49,7 +49,10 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 | **Merged K-CV (all preprocessing)** | `results/benchmark_sim/run_merged_kcv.R` — CV K selection for all 5 preprocessing configs; K floor K≥3; fills globals.yml |
 | **Merged 18-config benchmark** | `results/benchmark_sim/run_merged_benchmark.R` — 18-model fit + external validation (5 preprocessing × 2 models × ±cohort) |
 | **Merged benchmark report** | `docs/reports/merged_benchmark_report_5_25_26.{qmd,pdf,html}` — 18-config results, recommended configuration |
-| Test suite (core + predict) | `tests/run_tests.R` (242/242) |
+| **DeSurv comparison runner** | `results/benchmark_sim/run_desurv_comparison.R` |
+| **DeSurv comparison results** | `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv` |
+| **DeSurv comparison report** | `docs/reports/desurv_alignment_report_05_27_26.{qmd,pdf,html}` |
+| Test suite (core + predict) | `tests/run_tests.R` (246/246) |
 | Real-data test suite | `tests/test_real_data_loading.R` (77/77, local-only) |
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |
 | Architectural decisions log | `DECISIONS.md` |

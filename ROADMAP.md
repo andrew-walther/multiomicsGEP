@@ -129,16 +129,13 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   `code/preprocess_desurv.R` (normalize_method param), `docs/reports/merged_benchmark_report.qmd`.
   Results: `outputs/merged_benchmark/merged_benchmark_results_extended.csv`. DECISIONS.md 2026-05-25.*
 
-- [ ] **Align gene selection with DeSurv and compare against M4/M5** `[Priority: High]` `[Effort: Small]`
-  Three changes to align with DeSurv (Young et al. 2025): (1) combined mean+variance rank criterion
-  (`method="combined_rank"` in `select_top_variable_genes()`); (2) top-3000 genes per cohort before
-  normalization (`selection_per_cohort=TRUE` in `preprocess_merged_cohorts()`); (3) per-cohort
-  selection runs on log-transformed data *before* per-platform z-standardization (avoids selecting
-  genes on variance-equalized data). Focused comparison: D1/D2 (original M4/M5) vs. D3/D4 (DeSurv-
-  aligned LB/YFB), 5 external PDAC cohorts. Expected gene set after intersection: ~1,970.
-  *Plan: `docs/superpowers/plans/2026-05-27-desurv-aligned-preprocessing.md`*
-  *Files: `code/preprocess_desurv.R`, `config/globals.yml`, `tests/test_preprocess_desurv.R`,
-  `results/benchmark_sim/run_desurv_comparison.R`, `docs/reports/desurv_alignment_report_05_27_26.qmd`*
+- [x] **Align gene selection with DeSurv: combined mean+variance ranking, top-3000** *(Complete — 2026-05-27)*
+  Implemented combined_rank method in select_top_variable_genes() and per-cohort
+  selection (before normalization) in preprocess_merged_cohorts(). D4 (YFB DeSurv-aligned)
+  mean external C=0.636 vs M5=0.624 (delta=+0.012, 5 cohorts). DeSurv gene selection
+  adopted as new primary config. See DECISIONS.md 2026-05-27.
+  *Files: code/preprocess_desurv.R, results/benchmark_sim/run_desurv_comparison.R,
+  docs/reports/desurv_alignment_report_05_27_26.qmd*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model
