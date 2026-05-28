@@ -171,4 +171,33 @@ run_test("T1.12: normalize_method invalid argument is caught", {
   assert_equal(inherits(result, "error"), TRUE)
 })
 
+# ---------------------------------------------------------------------------
+# Tests for method="combined_rank" in select_top_variable_genes()
+# ---------------------------------------------------------------------------
+
+run_test("T1.13: combined_rank selects the gene with highest mean+variance and excludes lowest", {
+  # g_hm_hv: high mean (250), high variance — should always be selected
+  # g_lm_lv: low mean (~1.5), low variance — should never be selected at top_n=2
+  Y <- cbind(
+    g_hm_hv = c(100, 200, 300, 400),   # mean=250, var=16667
+    g_lm_hv = c(  1,   2, 100, 200),   # mean=75.75, var=6823
+    g_hm_lv = c(100, 101, 100, 101),   # mean=100.5, var=0.33
+    g_lm_lv = c(  1,   1,   2,   2)    # mean=1.5, var=0.33
+  )
+  out <- select_top_variable_genes(Y, colnames(Y), top_n = 2L, method = "combined_rank")
+  assert_equal("g_hm_hv" %in% out$gene_names, TRUE)
+  assert_equal("g_lm_lv" %in% out$gene_names, FALSE)
+})
+
+run_test("T1.14: combined_rank top_n=1 picks the gene with lowest rank_mean+rank_var sum", {
+  Y <- cbind(
+    g_hm_hv = c(100, 200, 300, 400),
+    g_lm_hv = c(  1,   2, 100, 200),
+    g_hm_lv = c(100, 101, 100, 101)
+  )
+  out <- select_top_variable_genes(Y, colnames(Y), top_n = 1L, method = "combined_rank")
+  assert_equal(out$gene_names, "g_hm_hv")
+  assert_equal(ncol(out$Y), 1L)
+})
+
 report_results("preprocess_desurv.R")

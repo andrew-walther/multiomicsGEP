@@ -20,8 +20,24 @@ log2_plus1_transform <- function(Y) {
   log2(Y + 1)
 }
 
-select_top_variable_genes <- function(Y, gene_names, top_n = 2000) {
+#' Select the top-N most informative genes from an expression matrix.
+#'
+#' @param Y          numeric matrix (n × p), rows = subjects, columns = genes.
+#' @param gene_names character vector of length p; gene identifiers.
+#' @param top_n      integer or NULL. If NULL or >= ncol(Y), all genes are returned.
+#' @param method     "variance" (default) ranks by variance only.
+#'                   "combined_rank" ranks each gene by mean expression and by
+#'                   variance independently (highest = rank 1), sums the two ranks,
+#'                   and retains the top_n genes with the smallest rank sum.
+#'                   This matches the DeSurv (Young et al. 2025) gene selection
+#'                   criterion: genes that are both highly expressed AND highly
+#'                   variable receive the lowest combined rank.
+#' @return list with components Y (n × top_n), gene_names (length top_n), gene_var.
+#' @family v2 preprocessing
+select_top_variable_genes <- function(Y, gene_names, top_n = 2000,
+                                       method = c("variance", "combined_rank")) {
   validate_expression_inputs(Y, gene_names)
+  method <- match.arg(method)
 
   if (is.null(top_n) || top_n >= ncol(Y)) {
     return(list(Y = Y, gene_names = gene_names, gene_var = apply(Y, 2, stats::var)))
@@ -29,14 +45,32 @@ select_top_variable_genes <- function(Y, gene_names, top_n = 2000) {
   if (length(top_n) != 1 || !is.finite(top_n) || top_n < 1 || top_n != as.integer(top_n))
     stop("top_n must be NULL or an integer >= 1.")
 
-  gene_var <- apply(Y, 2, stats::var)
-  ord <- order(gene_var, decreasing = TRUE, na.last = NA)
-  keep <- ord[seq_len(min(as.integer(top_n), length(ord)))]
+  if (method == "variance") {
+    # Original behaviour: order by variance descending, keep top top_n.
+    gene_var <- apply(Y, 2, stats::var)
+    ord      <- order(gene_var, decreasing = TRUE, na.last = NA)
+  } else {
+    # combined_rank (DeSurv criterion):
+    # rank_mean = rank of negative mean (rank 1 = highest mean expression).
+    # rank_var  = rank of negative variance (rank 1 = highest variance).
+    # Select genes with the smallest combined rank_mean + rank_var.
+    gene_mean <- colMeans(Y)
+    gene_var  <- apply(Y, 2, stats::var)
+    rank_mean <- rank(-gene_mean, ties.method = "average", na.last = "keep")
+    rank_var  <- rank(-gene_var,  ties.method = "average", na.last = "keep")
+    rank_sum  <- rank_mean + rank_var
+    # order ascending: rank_sum=2 (rank 1 in both) is the best gene.
+    ord <- order(rank_sum, na.last = NA)
+  }
+
+  keep         <- ord[seq_len(min(as.integer(top_n), length(ord)))]
+  Y_keep       <- Y[, keep, drop = FALSE]
+  gene_var_out <- apply(Y_keep, 2, stats::var)
 
   list(
-    Y = Y[, keep, drop = FALSE],
+    Y          = Y_keep,
     gene_names = gene_names[keep],
-    gene_var = gene_var[keep]
+    gene_var   = gene_var_out
   )
 }
 
