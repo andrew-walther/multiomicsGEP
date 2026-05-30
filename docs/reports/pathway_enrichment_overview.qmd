@@ -1,0 +1,910 @@
+---
+title: "Pathway Enrichment for Active Prognostic Programs"
+subtitle: "What it is, why it matters, and what to expect — illustrated with the D4 factor weight vectors"
+author: "Andrew Walther"
+date: "2026-05-30"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    toc-title: "Contents"
+    code-fold: true
+    code-summary: "Show code"
+    self-contained: true
+    fig-width: 9
+    fig-height: 5
+    fig-dpi: 150
+    highlight-style: github
+    css: |
+      body { font-size: 14px; }
+      h1 { color: #2c3e50; border-bottom: 2px solid #e45756; padding-bottom: 6px; }
+      h2 { color: #2c3e50; margin-top: 2em; }
+      h3 { color: #555; }
+      .callout-note { border-left: 4px solid #4e79a7; }
+      .callout-tip  { border-left: 4px solid #59a14f; }
+      .callout-warning { border-left: 4px solid #e45756; }
+      .badge-adverse   { background:#e45756; color:white; padding:2px 8px; border-radius:4px; font-weight:bold; }
+      .badge-protective{ background:#4e79a7; color:white; padding:2px 8px; border-radius:4px; font-weight:bold; }
+      .step-box { background:#f8f9fa; border:1px solid #dee2e6; border-radius:6px;
+                  padding:12px 16px; margin:8px 0; }
+      table.kable { font-size:13px; }
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# ── Load D4 fit ──────────────────────────────────────────────────────────────
+fits       <- readRDS("../../results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds")
+d4         <- fits[["D4"]]
+gene_names <- readRDS("../../results/benchmark_sim/outputs/desurv_comparison/d4_gene_names.rds")
+
+EF    <- d4$EF          # 2064 × 7 factor weight matrix
+EBeta <- d4$EBeta       # length-7 survival coefficients
+
+# Attach gene names
+rownames(EF) <- gene_names
+
+# Convenience: factor indices with active beta
+active_factors <- which(abs(EBeta) > 0.001)   # factors 3 and 7
+
+# Colour palette
+COL_ADV  <- "#e45756"   # adverse  (Factor 3, β > 0)
+COL_PROT <- "#4e79a7"   # protective (Factor 7, β < 0)
+COL_NEUT <- "#bab0ac"   # neutral
+
+# ── Helper: pull top-N genes for factor k ────────────────────────────────────
+top_genes_df <- function(k, n = 30, label = paste0("Factor ", k)) {
+  w <- EF[, k]
+  idx <- order(abs(w), decreasing = TRUE)[seq_len(n)]
+  data.frame(
+    gene   = gene_names[idx],
+    weight = w[idx],
+    factor = label,
+    stringsAsFactors = FALSE
+  ) |>
+    arrange(desc(weight)) |>
+    mutate(gene = factor(gene, levels = rev(gene)))
+}
+```
+
+---
+
+## 1 · Why Pathway Enrichment?
+
+The **D4 model** identifies two latent gene expression programs that together predict patient survival across five independent PDAC cohorts (mean C = 0.636). These programs are encoded as columns of the factor weight matrix **F** (2,064 genes × 7 factors):
+
+```{r factor-summary-table}
+beta_df <- data.frame(
+  Factor     = paste0("Factor ", 1:7),
+  `β̂`       = round(EBeta, 4),
+  Direction  = ifelse(EBeta > 0.001, "Adverse ▲",
+               ifelse(EBeta < -0.001, "Protective ▼", "Inactive (shrunk)")),
+  Status     = ifelse(abs(EBeta) > 0.001, "Active", "Inactive"),
+  check.names = FALSE
+)
+
+kable(beta_df, align = c("l","r","l","l"),
+      caption = "D4 survival coefficients. ARD shrinkage concentrates survival signal into exactly 2 of 7 factors.") |>
+  kable_styling(bootstrap_options = c("striped","hover","condensed"), full_width = FALSE) |>
+  row_spec(3, bold = TRUE, background = "#fdecea") |>   # Factor 3 adverse
+  row_spec(7, bold = TRUE, background = "#eaf1fb")       # Factor 7 protective
+```
+
+Each column $\mathbf{f}_k$ is a 2,064-dimensional vector of gene weights. We know **Factor 3** is adverse (β̂ = +0.011) and **Factor 7** is protective (β̂ = −0.041) — but we don't yet know *what biological process* each represents.
+
+**Pathway enrichment answers that question.** Given the gene weight vector $\mathbf{f}_k$, it asks: are genes from a known biological pathway concentrated at the top (or bottom) of the ranking? If EMT genes all rank near the top of Factor 3, that factor likely captures an epithelial-to-mesenchymal transition program.
+
+::: {.callout-note}
+**Why this matters beyond prediction.** A C-index of 0.636 is a statistical claim. Pathway enrichment turns the result into a biological claim: *"the model identifies a basal-like EMT program associated with worse survival and a classical secretory program associated with better survival."* That's what makes the finding scientifically meaningful — and what differentiates a methods paper from a scientific one.
+:::
+
+---
+
+## 2 · The Raw Material: Factor Weight Vectors
+
+Each factor weight vector $\mathbf{f}_k$ assigns a real-valued score to every gene. High-magnitude weights (positive *or* negative) indicate genes that strongly define that program. Low-weight genes are irrelevant to the factor. These vectors are the direct input to pathway enrichment.
+
+### Factor 3 — Adverse Program (β̂ = +0.011)
+
+Patients with high loadings on Factor 3 ($\hat{L}_{i,3}$) have worse survival. The genes driving this factor are:
+
+```{r factor3-weights, fig.height=6.5, fig.cap="Top 30 genes by absolute weight in Factor 3 (adverse program). Positive weights push patients toward higher scores on this factor; gene weight sign reflects the direction of expression associated with adverse prognosis."}
+df3 <- top_genes_df(k = 3, n = 30)
+
+ggplot(df3, aes(x = weight, y = gene, fill = weight > 0)) +
+  geom_col(width = 0.75, show.legend = FALSE) +
+  geom_vline(xintercept = 0, linewidth = 0.4, colour = "grey40") +
+  scale_fill_manual(values = c("FALSE" = "#aec6e8", "TRUE" = COL_ADV)) +
+  scale_x_continuous(expand = expansion(mult = 0.05)) +
+  labs(
+    x = "Factor weight  (EF[gene, 3])",
+    y = NULL,
+    title = "Factor 3 — Adverse program (β̂ = +0.011)",
+    subtitle = "Top 30 genes by |weight| · Red = positive weight, Blue = negative weight"
+  ) +
+  theme_bw(base_size = 11) +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 9, face = "italic"),
+        plot.title = element_text(colour = COL_ADV, face = "bold"),
+        plot.subtitle = element_text(size = 9, colour = "grey50"))
+```
+
+### Factor 7 — Protective Program (β̂ = −0.041)
+
+Patients with high loadings on Factor 7 have better survival. The genes driving this factor are:
+
+```{r factor7-weights, fig.height=6.5, fig.cap="Top 30 genes by absolute weight in Factor 7 (protective program)."}
+df7 <- top_genes_df(k = 7, n = 30)
+
+ggplot(df7, aes(x = weight, y = gene, fill = weight > 0)) +
+  geom_col(width = 0.75, show.legend = FALSE) +
+  geom_vline(xintercept = 0, linewidth = 0.4, colour = "grey40") +
+  scale_fill_manual(values = c("FALSE" = "#f4a582", "TRUE" = COL_PROT)) +
+  scale_x_continuous(expand = expansion(mult = 0.05)) +
+  labs(
+    x = "Factor weight  (EF[gene, 7])",
+    y = NULL,
+    title = "Factor 7 — Protective program (β̂ = −0.041)",
+    subtitle = "Top 30 genes by |weight| · Blue = positive weight, Orange = negative weight"
+  ) +
+  theme_bw(base_size = 11) +
+  theme(panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 9, face = "italic"),
+        plot.title = element_text(colour = COL_PROT, face = "bold"),
+        plot.subtitle = element_text(size = 9, colour = "grey50"))
+```
+
+```{r side-by-side-scatter, fig.height=4.5, fig.cap="Factor 3 vs Factor 7 gene weights. Each point is one of 2,064 genes. Genes that strongly define one factor tend to be near-zero in the other, consistent with the two programs capturing distinct biological signals."}
+scatter_df <- data.frame(
+  gene  = gene_names,
+  f3    = EF[, 3],
+  f7    = EF[, 7],
+  top3  = abs(EF[, 3]) > quantile(abs(EF[, 3]), 0.95),
+  top7  = abs(EF[, 7]) > quantile(abs(EF[, 7]), 0.95)
+) |>
+  mutate(highlight = case_when(
+    top3 & !top7 ~ "Factor 3 top 5%",
+    top7 & !top3 ~ "Factor 7 top 5%",
+    top3 & top7  ~ "Both",
+    TRUE         ~ "Background"
+  ))
+
+ggplot(scatter_df, aes(x = f3, y = f7, colour = highlight, alpha = highlight)) +
+  geom_point(size = 0.9) +
+  geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey60") +
+  geom_vline(xintercept = 0, linewidth = 0.3, colour = "grey60") +
+  scale_colour_manual(values = c(
+    "Background"      = "grey75",
+    "Factor 3 top 5%" = COL_ADV,
+    "Factor 7 top 5%" = COL_PROT,
+    "Both"            = "#9467bd"
+  )) +
+  scale_alpha_manual(values = c("Background" = 0.25, "Factor 3 top 5%" = 0.9,
+                                "Factor 7 top 5%" = 0.9, "Both" = 0.9)) +
+  labs(
+    x = "Factor 3 weight (adverse)",
+    y = "Factor 7 weight (protective)",
+    title = "Gene weight landscape: Factor 3 vs Factor 7",
+    subtitle = "Top-5% genes in each factor are highlighted",
+    colour = NULL, alpha = NULL
+  ) +
+  theme_bw(base_size = 11) +
+  theme(legend.position = "bottom",
+        panel.grid.minor = element_blank())
+```
+
+---
+
+## 3 · How Pathway Enrichment Works
+
+Two complementary methods are used together. Both take the gene weight vector as input and a database of known biological pathway gene sets (e.g., MSigDB Hallmark — 50 curated gene sets covering key cancer-relevant processes).
+
+### Method A: Over-Representation Analysis (ORA)
+
+::: {.step-box}
+**Step 1 · Select a hit list.** Take the top-N genes by |weight|, e.g., the top 100 genes from |$\mathbf{f}_k$|.
+**Step 2 · Test each pathway.** For each pathway gene set, ask: is this gene set over-represented in our hit list relative to the 2,064-gene background? Tested with a hypergeometric (Fisher's exact) test.
+**Step 3 · Multiple testing correction.** Apply Benjamini-Hochberg FDR across all pathways tested.
+**Output.** A ranked list of pathways with odds ratio, p-value, and adjusted p-value.
+:::
+
+ORA is fast and intuitive but requires a hard threshold on "hit" genes. Choosing the threshold affects results.
+
+### Method B: Gene Set Enrichment Analysis (GSEA)
+
+::: {.step-box}
+**Step 1 · Rank all genes.** Sort all 2,064 genes by their signed factor weight (most positive → most negative).
+**Step 2 · Walk the ranked list.** For each pathway, compute a running enrichment score: increment when you encounter a pathway gene, decrement otherwise.
+**Step 3 · Assess significance.** The peak score (Normalized Enrichment Score, NES) is compared to a null distribution from gene-set permutation.
+**Output.** NES and FDR-adjusted p-value for each pathway. NES > 0 means pathway genes cluster near the top of the ranked list (positively associated with the factor); NES < 0 means they cluster near the bottom.
+:::
+
+GSEA is the preferred method because it uses the full weight distribution rather than a hard threshold. Genes with moderate but consistent weights contribute information that ORA discards.
+
+```{r gsea-schematic, fig.height=3.2, fig.cap="Schematic of GSEA logic for a hypothetical pathway of 15 genes (red ticks) applied to Factor 3's weight ranking. When pathway genes cluster at the top of the ranking (left panel), the running enrichment score peaks high — evidence that this pathway is associated with the factor. When pathway genes are randomly distributed (right panel), the score fluctuates near zero."}
+set.seed(42)
+n_genes <- 200
+n_path  <- 15
+
+# Enriched: pathway genes clustered in top 30%
+path_pos_enriched <- sort(sample(1:60, n_path))
+# Null: pathway genes uniformly distributed
+path_pos_null     <- sort(sample(1:n_genes, n_path))
+
+running_es <- function(path_pos, n_total, n_path) {
+  hit_score  <-  sqrt((n_total - n_path) / n_path)
+  miss_score <- -sqrt(n_path / (n_total - n_path))
+  es <- numeric(n_total)
+  cur <- 0
+  for (i in seq_len(n_total)) {
+    cur <- cur + if (i %in% path_pos) hit_score else miss_score
+    es[i] <- cur
+  }
+  es
+}
+
+es_enrich <- running_es(path_pos_enriched, n_genes, n_path)
+es_null   <- running_es(path_pos_null,     n_genes, n_path)
+
+schematic_df <- data.frame(
+  rank   = rep(1:n_genes, 2),
+  es     = c(es_enrich, es_null),
+  panel  = rep(c("Enriched (NES ≈ +2.1)", "Null (NES ≈ 0)"), each = n_genes)
+)
+
+tick_df <- data.frame(
+  rank  = c(path_pos_enriched, path_pos_null),
+  panel = rep(c("Enriched (NES ≈ +2.1)", "Null (NES ≈ 0)"), each = n_path)
+)
+
+ggplot(schematic_df, aes(x = rank, y = es)) +
+  geom_line(colour = "#2c3e50", linewidth = 0.9) +
+  geom_hline(yintercept = 0, linewidth = 0.35, colour = "grey50", linetype = "dashed") +
+  geom_segment(data = tick_df, aes(x = rank, xend = rank, y = -0.35, yend = -0.15),
+               colour = COL_ADV, linewidth = 0.6, alpha = 0.8) +
+  facet_wrap(~panel, ncol = 2) +
+  labs(
+    x = "Gene rank (by factor weight, high → low)",
+    y = "Running enrichment score",
+    title = "GSEA schematic",
+    subtitle = "Red ticks = pathway gene positions in the ranked list"
+  ) +
+  theme_bw(base_size = 11) +
+  theme(panel.grid.minor = element_blank(),
+        strip.text = element_text(face = "bold", size = 10),
+        plot.subtitle = element_text(size = 9, colour = "grey50"))
+```
+
+---
+
+## 4 · Expected Results — Illustrative Output
+
+The following figures illustrate **what pathway enrichment output looks like** and **what we would expect to find** given the top genes in each factor and their alignment with known PDAC biology. These are *representative examples*, not actual results — the actual analysis is the next task.
+
+### What PDAC biology predicts
+
+PDAC has two well-established molecular subtypes (Moffitt et al. 2015):
+
+| Subtype | Survival | Key biology |
+|---------|----------|-------------|
+| **Basal-like** | Worse | Squamous features, EMT, stem-cell markers, hypoxia, stromal activation |
+| **Classical** | Better | Glandular differentiation, pancreatic identity genes, secretory function |
+
+The two active programs from D4 match this structure precisely:
+
+- **Factor 3 (adverse)** → candidates: basal-like / EMT / hypoxia programs
+- **Factor 7 (protective)** → candidates: classical / secretory / pancreatic differentiation programs
+
+```{r mock-enrichment-bubble, fig.height=6.5, fig.cap="Illustrative pathway enrichment results (representative output). Each point is one MSigDB Hallmark pathway. NES > 0 means pathway genes are positively associated with the factor weight vector; NES < 0 means negatively associated. Point size encodes statistical significance. This plot format is standard output from `fgsea`. Actual NES values will be computed from the D4 F matrix."}
+mock_pathways <- data.frame(
+  pathway  = c(
+    # Factor 3: adverse / basal
+    "HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION",
+    "HALLMARK_HYPOXIA",
+    "HALLMARK_INFLAMMATORY_RESPONSE",
+    "HALLMARK_KRAS_SIGNALING_UP",
+    "HALLMARK_IL6_JAK_STAT3_SIGNALING",
+    "HALLMARK_ANGIOGENESIS",
+    "HALLMARK_TNFA_SIGNALING_VIA_NFKB",
+    "Moffitt Basal-like signature",
+    # Factor 7: protective / classical
+    "HALLMARK_PROTEIN_SECRETION",
+    "HALLMARK_FATTY_ACID_METABOLISM",
+    "HALLMARK_PEROXISOME",
+    "HALLMARK_BILE_ACID_METABOLISM",
+    "HALLMARK_OXIDATIVE_PHOSPHORYLATION",
+    "HALLMARK_PANCREAS_BETA_CELLS",
+    "Moffitt Classical signature",
+    "HALLMARK_MYC_TARGETS_V1"
+  ),
+  factor_label = c(
+    rep("Factor 3 (adverse)", 8),
+    rep("Factor 7 (protective)", 8)
+  ),
+  NES      = c(2.15, 1.82, 1.69, 1.61, 1.54, 1.38, 1.31, 2.34,
+               2.08, 1.91, 1.74, 1.58, 1.45, 2.28, 2.51, 1.22),
+  neg_log10_fdr = c(3.8, 3.1, 2.9, 2.7, 2.4, 2.1, 1.9, 4.2,
+                    3.5, 3.2, 2.8, 2.5, 2.2, 3.9, 4.5, 1.7),
+  stringsAsFactors = FALSE
+) |>
+  # Shorten names for display
+  mutate(pathway_short = gsub("HALLMARK_", "", pathway) |>
+           gsub("_", " ", x = _) |>
+           tools::toTitleCase())
+
+# Dodge NES slightly for visual clarity between factors at similar scores
+mock_pathways <- mock_pathways |>
+  mutate(NES_plot = ifelse(factor_label == "Factor 3 (adverse)", NES, NES + 0.05))
+
+ggplot(mock_pathways, aes(
+    x    = NES_plot,
+    y    = reorder(pathway_short, NES_plot),
+    size = neg_log10_fdr,
+    colour = factor_label
+  )) +
+  geom_point(alpha = 0.85) +
+  geom_vline(xintercept = 1.5, linetype = "dashed", colour = "grey60", linewidth = 0.4) +
+  scale_colour_manual(values = c("Factor 3 (adverse)" = COL_ADV,
+                                  "Factor 7 (protective)" = COL_PROT),
+                      name = NULL) +
+  scale_size_continuous(name = "−log₁₀(FDR)", range = c(3, 9), breaks = c(2, 3, 4)) +
+  labs(
+    x = "Normalized Enrichment Score (NES)",
+    y = NULL,
+    title = "Illustrative pathway enrichment results",
+    subtitle = "Representative output from fgsea · MSigDB Hallmark gene sets + Moffitt signatures"
+  ) +
+  theme_bw(base_size = 11) +
+  theme(legend.position = "bottom",
+        panel.grid.minor = element_blank(),
+        axis.text.y = element_text(size = 9),
+        plot.subtitle = element_text(size = 9, colour = "grey50")) +
+  annotate("text", x = 1.52, y = 0.6, label = "NES = 1.5\n(suggested threshold)",
+           hjust = 0, size = 2.8, colour = "grey50")
+```
+
+### GSEA enrichment plot for one pathway (illustrative)
+
+The canonical GSEA visualization shows the running enrichment score and the gene positions in the ranked list. Here is an example for what the EMT pathway might look like against Factor 3:
+
+```{r mock-gsea-emt, fig.height=4.0, fig.cap="Illustrative GSEA enrichment plot for HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION against the Factor 3 weight ranking. Top panel: running enrichment score. Bottom panel: gene hit positions (ticks) in the ranked list. The score peaks early, indicating EMT genes cluster strongly at the top of the Factor 3 ranking — consistent with Factor 3 capturing a basal-like / mesenchymal program."}
+set.seed(7)
+n_genes  <- 2064
+n_emt    <- 200   # EMT hallmark gene set has ~200 genes
+
+# Simulate EMT genes concentrated in top 25% of factor 3 ranking
+path_pos <- sort(c(
+  sample(1:300,  130, replace = FALSE),   # most EMT genes in top 300
+  sample(301:700, 40, replace = FALSE),   # some in mid-range
+  sample(701:n_genes, 30, replace = FALSE) # few at bottom
+))
+
+es_emt <- running_es(path_pos, n_genes, n_emt)
+peak_i <- which.max(es_emt)
+
+es_df   <- data.frame(rank = 1:n_genes, es = es_emt)
+tick_df <- data.frame(rank = path_pos, y = -0.12)
+
+# Top panel: running ES
+p_top <- ggplot(es_df, aes(x = rank, y = es)) +
+  geom_area(aes(y = ifelse(es > 0, es, 0)), fill = COL_ADV, alpha = 0.25) +
+  geom_line(colour = COL_ADV, linewidth = 0.8) +
+  geom_vline(xintercept = peak_i, linetype = "dashed", colour = "#333", linewidth = 0.5) +
+  geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey40") +
+  annotate("text", x = peak_i + 40, y = max(es_emt) * 0.95,
+           label = sprintf("NES ≈ +2.1\nFDR < 0.001"), hjust = 0, size = 3.2,
+           colour = COL_ADV, fontface = "bold") +
+  labs(x = NULL, y = "Enrichment score",
+       title = "HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION  ×  Factor 3 (adverse)",
+       subtitle = "Illustrative · actual values computed from D4 EF matrix") +
+  theme_bw(base_size = 10) +
+  theme(panel.grid.minor = element_blank(),
+        axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        plot.subtitle = element_text(colour = "grey55", size = 8))
+
+# Bottom panel: gene hit positions
+p_bot <- ggplot(tick_df, aes(x = rank, xend = rank, y = 0, yend = 0.18)) +
+  geom_segment(colour = COL_ADV, linewidth = 0.35, alpha = 0.6) +
+  scale_x_continuous(limits = c(1, n_genes), expand = c(0, 0),
+                     labels = scales::comma) +
+  scale_y_continuous(limits = c(0, 0.22)) +
+  labs(x = "Gene rank in Factor 3 (high weight → low weight)", y = NULL) +
+  theme_bw(base_size = 10) +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+        panel.grid = element_blank())
+
+# Combine vertically
+gridExtra::grid.arrange(p_top, p_bot, ncol = 1, heights = c(3, 1))
+```
+
+---
+
+## 5 · Subtype Comparison: Patient Loadings vs Moffitt Scores
+
+Beyond enrichment of gene sets, patient loadings $\hat{L}_{i,k}$ serve as continuous molecular scores that can be compared directly to established subtype classifications.
+
+```{r subtype-schematic, fig.height=3.8, fig.cap="Illustrative comparison of patient loading scores against Moffitt subtype labels. If Factor 7 (protective) recovers the classical program, classical patients should score high on L̂_{i,7} and basal-like patients low. This analysis requires Moffitt subtype annotations from TCGA_PAAD (available via cBioPortal)."}
+set.seed(42)
+n_basal    <- 70
+n_classical <- 74
+
+mock_patients <- data.frame(
+  subtype = c(rep("Basal-like", n_basal), rep("Classical", n_classical)),
+  L3 = c(rnorm(n_basal, mean =  0.42, sd = 0.18),
+          rnorm(n_classical, mean = -0.12, sd = 0.15)),
+  L7 = c(rnorm(n_basal, mean = -0.18, sd = 0.14),
+          rnorm(n_classical, mean =  0.35, sd = 0.17))
+)
+
+p1 <- ggplot(mock_patients, aes(x = subtype, y = L3, fill = subtype)) +
+  geom_boxplot(width = 0.5, outlier.size = 1, alpha = 0.85) +
+  geom_jitter(width = 0.15, size = 0.8, alpha = 0.4) +
+  scale_fill_manual(values = c("Basal-like" = COL_ADV, "Classical" = COL_PROT)) +
+  labs(x = NULL, y = "L̂ᵢ₃  (adverse loading)",
+       title = "Factor 3 loading by subtype") +
+  theme_bw(base_size = 11) +
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(colour = COL_ADV, face = "bold", size = 10))
+
+p2 <- ggplot(mock_patients, aes(x = subtype, y = L7, fill = subtype)) +
+  geom_boxplot(width = 0.5, outlier.size = 1, alpha = 0.85) +
+  geom_jitter(width = 0.15, size = 0.8, alpha = 0.4) +
+  scale_fill_manual(values = c("Basal-like" = COL_ADV, "Classical" = COL_PROT)) +
+  labs(x = NULL, y = "L̂ᵢ₇  (protective loading)",
+       title = "Factor 7 loading by subtype") +
+  theme_bw(base_size = 11) +
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(colour = COL_PROT, face = "bold", size = 10))
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
+```
+
+::: {.callout-tip}
+**What a positive result looks like.** If basal-like patients score significantly higher on Factor 3 and classical patients score higher on Factor 7, the model has recovered the canonical PDAC molecular axis from survival data alone — without ever seeing subtype labels. This is the key scientific claim that situates the work within the PDAC literature.
+:::
+
+---
+
+## 6 · Implementation Sketch
+
+The actual analysis requires ~30–60 minutes of coding:
+
+```{r impl-table}
+steps <- data.frame(
+  Step = c("1", "2", "3", "4", "5"),
+  Task = c(
+    "Extract F matrix and attach gene names",
+    "Run GSEA on Factor 3 and Factor 7 (MSigDB Hallmark + Moffitt signatures)",
+    "Run ORA as secondary confirmation (top-100 genes per factor)",
+    "Plot enrichment results (bubble chart, top-pathway GSEA plots)",
+    "Correlate patient loadings L̂_{i,3} and L̂_{i,7} with Moffitt subtype calls in TCGA_PAAD"
+  ),
+  Package  = c("`—`", "`fgsea`", "`clusterProfiler`", "`ggplot2`", "`survival`, `ggplot2`"),
+  Input    = c(
+    "desurv_comparison_fits.rds + d4_gene_names.rds",
+    "EF[,3], EF[,7] ranked gene lists; msigdbr()",
+    "Top-100 genes from |EF[,3]|, |EF[,7]|",
+    "fgsea / enrichResult objects",
+    "EL[,3], EL[,7] + TCGA_PAAD Moffitt annotations"
+  ),
+  stringsAsFactors = FALSE
+)
+
+kable(steps, align = c("c","l","l","l"),
+      caption = "Implementation steps for pathway enrichment analysis.") |>
+  kable_styling(bootstrap_options = c("striped","condensed","hover"), full_width = TRUE) |>
+  column_spec(1, bold = TRUE, width = "2em") |>
+  column_spec(3, monospace = TRUE, width = "9em")
+```
+
+**Packages to install (if not already present):**
+
+```r
+install.packages("fgsea")          # fast GSEA
+install.packages("clusterProfiler") # ORA
+install.packages("msigdbr")         # MSigDB gene sets in R
+```
+
+**Core GSEA call (Factor 3):**
+
+```r
+library(fgsea)
+library(msigdbr)
+
+# Load Hallmark gene sets
+hallmark_sets <- msigdbr(species = "Homo sapiens", category = "H") |>
+  split(x = .$gene_symbol, f = .$gs_name)
+
+# Ranked gene list for Factor 3
+ranks_f3 <- setNames(EF[, 3], gene_names)
+ranks_f3 <- sort(ranks_f3, decreasing = TRUE)
+
+# Run GSEA
+gsea_f3 <- fgsea(
+  pathways = hallmark_sets,
+  stats    = ranks_f3,
+  eps      = 0,           # exact p-values
+  nPermSimple = 10000
+)
+
+# View top pathways
+gsea_f3 |> arrange(padj) |> head(10)
+```
+
+---
+
+## 7 · Codebase Integration Plan
+
+The pathway enrichment analysis will be implemented as a self-contained module following the conventions established throughout the codebase: a reusable `code/` module with documented functions, a dedicated runner script under `results/benchmark_sim/`, structured outputs in a versioned subdirectory, and a dated report in `docs/reports/`.
+
+### 7.1 New files
+
+```{r new-files-table}
+new_files <- data.frame(
+  File = c(
+    "`code/pathway_enrichment.R`",
+    "`results/benchmark_sim/run_pathway_enrichment.R`",
+    "`docs/reports/pathway_enrichment_report_MM_DD_YY.qmd`"
+  ),
+  Role = c(
+    "Reusable functions — gene ranking, GSEA, ORA, plotting, subtype comparison",
+    "Runner script — loads D4 fit, calls module functions, writes outputs",
+    "Formal report — reads saved outputs, renders figures and tables"
+  ),
+  Pattern = c(
+    "Same as `code/update_beta.R`, `code/preprocess_desurv.R`, etc.",
+    "Same as `run_desurv_comparison.R`, `run_LB_benchmark.R`, etc.",
+    "Same as `desurv_alignment_report_05_27_26.qmd`, etc."
+  ),
+  stringsAsFactors = FALSE
+)
+
+kable(new_files, align = c("l","l","l"),
+      caption = "New files to be created.") |>
+  kable_styling(bootstrap_options = c("striped","condensed","hover"), full_width = TRUE) |>
+  column_spec(1, monospace = TRUE) |>
+  column_spec(3, color = "grey55", italic = TRUE)
+```
+
+### 7.2 Pipeline data flow
+
+```{r pipeline-diagram, fig.height=4.2, fig.cap="Data flow for the pathway enrichment pipeline. Boxes in grey are existing files; boxes in colour are new. Arrows show data dependencies."}
+library(grid)
+
+# Build a simple annotated flowchart using ggplot2 annotation layers
+nodes <- data.frame(
+  x     = c(1.0, 1.0, 1.0, 3.2, 3.2, 5.4, 5.4, 7.6),
+  y     = c(4.0, 2.8, 1.6, 3.4, 2.2, 4.0, 2.2, 3.1),
+  label = c(
+    "desurv_comparison\n_fits.rds",
+    "d4_gene_names.rds",
+    "TCGA_PAAD\nMoffitt annotations",
+    "code/pathway\n_enrichment.R\n(functions)",
+    "run_pathway\n_enrichment.R\n(runner)",
+    "outputs/pathway\n_enrichment/\n*.csv + *.rds",
+    "TCGA_PAAD raw\ndata (sampInfo)",
+    "pathway_enrichment\n_report_MM_DD_YY\n.qmd → .html"
+  ),
+  existing = c(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE),
+  is_code  = c(FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE),
+  stringsAsFactors = FALSE
+)
+
+nodes$fill <- ifelse(nodes$existing, "#e8e8e8",
+              ifelse(nodes$is_code,  "#d4e8d4", "#d4e0f0"))
+nodes$border <- ifelse(nodes$existing, "#999999",
+                ifelse(nodes$is_code, "#59a14f", "#4e79a7"))
+
+# Arrows: from → to (by row index)
+arrows_df <- data.frame(
+  x    = c(nodes$x[1], nodes$x[2], nodes$x[3], nodes$x[4], nodes$x[5], nodes$x[6], nodes$x[7]),
+  xend = c(nodes$x[5], nodes$x[5], nodes$x[5], nodes$x[5], nodes$x[6], nodes$x[8], nodes$x[5]),
+  y    = c(nodes$y[1], nodes$y[2], nodes$y[3], nodes$y[4], nodes$y[5], nodes$y[6], nodes$y[7]),
+  yend = c(nodes$y[5], nodes$y[5], nodes$y[5], nodes$y[5], nodes$y[6], nodes$y[8], nodes$y[5])
+)
+
+ggplot() +
+  # Arrows
+  geom_segment(data = arrows_df,
+               aes(x=x, xend=xend, y=y, yend=yend),
+               arrow = arrow(length=unit(0.18,"cm"), type="closed"),
+               colour = "grey50", linewidth = 0.55) +
+  # Node boxes
+  geom_tile(data = nodes,
+            aes(x=x, y=y, fill=fill, colour=border),
+            width = 1.9, height = 0.85, linewidth = 0.8) +
+  scale_fill_identity() +
+  scale_colour_identity() +
+  # Labels
+  geom_text(data = nodes, aes(x=x, y=y, label=label),
+            size = 2.5, lineheight = 1.15, fontface = "bold") +
+  # Legend annotation
+  annotate("tile", x=1.0, y=0.4, width=0.35, height=0.3, fill="#e8e8e8", colour="#999999") +
+  annotate("text", x=1.22, y=0.4, label="Existing file", hjust=0, size=2.8, colour="grey40") +
+  annotate("tile", x=3.0, y=0.4, width=0.35, height=0.3, fill="#d4e8d4", colour="#59a14f") +
+  annotate("text", x=3.22, y=0.4, label="New: code module", hjust=0, size=2.8, colour="grey40") +
+  annotate("tile", x=5.0, y=0.4, width=0.35, height=0.3, fill="#d4e0f0", colour="#4e79a7") +
+  annotate("text", x=5.22, y=0.4, label="New: script / output / report", hjust=0, size=2.8, colour="grey40") +
+  scale_x_continuous(limits=c(0, 8.6)) +
+  scale_y_continuous(limits=c(0.1, 4.8)) +
+  theme_void()
+```
+
+### 7.3 Module design: `code/pathway_enrichment.R`
+
+Six functions, each with a single responsibility, matching the roxygen documentation style of the existing `code/` modules:
+
+```r
+# ============================================================
+# Script: pathway_enrichment.R
+# Purpose: Reusable functions for GSEA, ORA, and subtype
+#          comparison of SSBMF factor weight vectors.
+# Author:  Claude Code (reviewed by Andrew Walther)
+# Dependencies: fgsea, msigdbr, clusterProfiler, ggplot2, dplyr
+# ============================================================
+
+#' Rank genes by their signed weight in factor k.
+#'
+#' Returns a named numeric vector suitable as input to fgsea().
+#' Ties (exact zeros) are broken by row index.
+#'
+#' @param EF         numeric matrix (p × K); factor weight matrix from SSBMF fit.
+#' @param gene_names character vector length p; gene symbols, one per row of EF.
+#' @param k          integer; column index of the factor to rank.
+#' @return Named numeric vector, sorted descending by weight.
+rank_genes_by_factor <- function(EF, gene_names, k) { ... }
+
+
+#' Run GSEA against MSigDB Hallmark gene sets.
+#'
+#' Wraps fgsea::fgsea() with project defaults (eps=0 for exact p-values;
+#' nPermSimple=10000). Returns the full fgsea result data.table.
+#'
+#' @param ranked_genes  Named numeric vector from rank_genes_by_factor().
+#' @param species       Character; passed to msigdbr(). Default "Homo sapiens".
+#' @param n_perm        Integer; permutations for p-value estimation. Default 10000.
+#' @param collection    MSigDB collection code. Default "H" (Hallmark).
+#' @return data.table with columns: pathway, pval, padj, NES, size, leadingEdge.
+run_gsea_hallmark <- function(ranked_genes, species = "Homo sapiens",
+                              n_perm = 10000, collection = "H") { ... }
+
+
+#' Run GSEA against a custom list of gene sets.
+#'
+#' Used for Moffitt basal/classical signatures and Bailey et al. four subtypes,
+#' which are not in MSigDB but can be supplied as a named list of character vectors.
+#'
+#' @param ranked_genes Named numeric vector from rank_genes_by_factor().
+#' @param gene_sets    Named list of character vectors; each element is a gene set.
+#' @param n_perm       Integer; default 10000.
+#' @return data.table with same columns as run_gsea_hallmark().
+run_gsea_custom <- function(ranked_genes, gene_sets, n_perm = 10000) { ... }
+
+
+#' Run over-representation analysis (ORA) using the top-N genes by |weight|.
+#'
+#' Secondary method to confirm GSEA findings. Uses clusterProfiler::enricher()
+#' against Hallmark gene sets. Returns an enrichResult object.
+#'
+#' @param EF         Numeric matrix (p × K).
+#' @param gene_names Character vector length p.
+#' @param k          Factor column index.
+#' @param top_n      Number of top genes to use as the "hit list". Default 100.
+#' @param gene_sets  Named list of gene sets (same format as run_gsea_custom()).
+#' @return enrichResult object from clusterProfiler.
+run_ora <- function(EF, gene_names, k, top_n = 100, gene_sets) { ... }
+
+
+#' Plot a bubble chart of GSEA results across two factors.
+#'
+#' x = NES, y = pathway (ordered by NES), size = -log10(padj),
+#' colour = factor label. Designed for side-by-side comparison of
+#' an adverse and a protective factor.
+#'
+#' @param results_list Named list of fgsea result data.tables, one per factor.
+#'   Names become the colour legend labels (e.g. list("Factor 3"=..., "Factor 7"=...)).
+#' @param nes_threshold Vertical line at this NES value. Default 1.5.
+#' @param top_n_pathways Show this many top pathways per factor. Default 10.
+#' @return ggplot object.
+plot_enrichment_bubble <- function(results_list, nes_threshold = 1.5,
+                                   top_n_pathways = 10) { ... }
+
+
+#' Compare patient factor loadings against Moffitt subtype labels.
+#'
+#' Produces side-by-side boxplots of L̂_{i,k} stratified by subtype,
+#' and returns a Wilcoxon test p-value and AUC for each factor.
+#'
+#' @param EL             Numeric matrix (n × K); posterior mean patient loadings.
+#' @param subtype_labels Character vector length n; Moffitt subtype per patient
+#'   ("Basal-like" / "Classical" / NA for unlabelled).
+#' @param factor_indices Integer vector; which columns of EL to compare.
+#' @param factor_names   Character vector same length as factor_indices; display labels.
+#' @return List with: \code{plot} (ggplot), \code{stats} (data.frame with p-values and AUC).
+compare_loadings_to_subtypes <- function(EL, subtype_labels, factor_indices,
+                                         factor_names = NULL) { ... }
+```
+
+### 7.4 Runner script: `results/benchmark_sim/run_pathway_enrichment.R`
+
+```r
+# ============================================================
+# run_pathway_enrichment.R
+# Usage: Rscript results/benchmark_sim/run_pathway_enrichment.R
+# ============================================================
+
+source("code/pathway_enrichment.R")
+source("results/benchmark_sim/benchmark_helpers.R")
+
+cfg           <- yaml::read_yaml("config/globals.yml")
+PDAC_DATA_ROOT <- Sys.getenv("PDAC_DATA_ROOT", unset = "~/...OneDrive.../PDAC_data")
+OUT_DIR        <- "results/benchmark_sim/outputs/pathway_enrichment"
+dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
+
+# ── 1. Load D4 fit ──────────────────────────────────────────
+fits       <- readRDS("results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds")
+d4         <- fits[["D4"]]
+gene_names <- readRDS("results/benchmark_sim/outputs/desurv_comparison/d4_gene_names.rds")
+EF         <- d4$EF
+EL         <- d4$EL
+
+# ── 2. Rank genes for active factors (3 and 7) ─────────────
+ranks_f3 <- rank_genes_by_factor(EF, gene_names, k = 3)
+ranks_f7 <- rank_genes_by_factor(EF, gene_names, k = 7)
+
+# ── 3. GSEA — MSigDB Hallmark ───────────────────────────────
+gsea_f3_hallmark <- run_gsea_hallmark(ranks_f3)
+gsea_f7_hallmark <- run_gsea_hallmark(ranks_f7)
+
+# ── 4. GSEA — Moffitt basal/classical signatures ────────────
+moffitt_sets <- load_moffitt_signatures()   # reads from PDAC data root
+gsea_f3_moffitt <- run_gsea_custom(ranks_f3, moffitt_sets)
+gsea_f7_moffitt <- run_gsea_custom(ranks_f7, moffitt_sets)
+
+# ── 5. ORA — secondary confirmation ─────────────────────────
+hallmark_sets <- msigdbr_as_list("H")
+ora_f3 <- run_ora(EF, gene_names, k = 3, top_n = 100, gene_sets = hallmark_sets)
+ora_f7 <- run_ora(EF, gene_names, k = 7, top_n = 100, gene_sets = hallmark_sets)
+
+# ── 6. Subtype comparison (TCGA_PAAD only) ──────────────────
+tcga        <- load_pdac_raw("TCGA_PAAD", PDAC_DATA_ROOT)
+moffitt_lab <- load_moffitt_labels(tcga)   # extracts sampInfo$moffitt_subtype
+tcga_idx    <- which(d4_dataset_labels == "TCGA_PAAD")
+subtype_cmp <- compare_loadings_to_subtypes(
+  EL[tcga_idx, ], moffitt_lab,
+  factor_indices = c(3, 7),
+  factor_names   = c("Factor 3 (adverse)", "Factor 7 (protective)")
+)
+
+# ── 7. Save outputs ─────────────────────────────────────────
+write.csv(gsea_f3_hallmark, file.path(OUT_DIR, "gsea_f3_hallmark.csv"), row.names = FALSE)
+write.csv(gsea_f7_hallmark, file.path(OUT_DIR, "gsea_f7_hallmark.csv"), row.names = FALSE)
+write.csv(gsea_f3_moffitt,  file.path(OUT_DIR, "gsea_f3_moffitt.csv"),  row.names = FALSE)
+write.csv(gsea_f7_moffitt,  file.path(OUT_DIR, "gsea_f7_moffitt.csv"),  row.names = FALSE)
+write.csv(subtype_cmp$stats, file.path(OUT_DIR, "subtype_comparison.csv"), row.names = FALSE)
+saveRDS(list(gsea_f3_hallmark = gsea_f3_hallmark, gsea_f7_hallmark = gsea_f7_hallmark,
+             gsea_f3_moffitt  = gsea_f3_moffitt,  gsea_f7_moffitt  = gsea_f7_moffitt,
+             ora_f3 = ora_f3, ora_f7 = ora_f7, subtype_cmp = subtype_cmp),
+        file.path(OUT_DIR, "pathway_enrichment_results.rds"))
+cat("Done. Results in", OUT_DIR, "\n")
+```
+
+### 7.5 Output structure
+
+```{r output-tree-table}
+outputs <- data.frame(
+  File = c(
+    "`outputs/pathway_enrichment/gsea_f3_hallmark.csv`",
+    "`outputs/pathway_enrichment/gsea_f7_hallmark.csv`",
+    "`outputs/pathway_enrichment/gsea_f3_moffitt.csv`",
+    "`outputs/pathway_enrichment/gsea_f7_moffitt.csv`",
+    "`outputs/pathway_enrichment/subtype_comparison.csv`",
+    "`outputs/pathway_enrichment/pathway_enrichment_results.rds`"
+  ),
+  Contents = c(
+    "GSEA results for Factor 3 against MSigDB Hallmark (50 gene sets)",
+    "GSEA results for Factor 7 against MSigDB Hallmark",
+    "GSEA results for Factor 3 against Moffitt basal/classical signatures",
+    "GSEA results for Factor 7 against Moffitt signatures",
+    "Wilcoxon p-values and AUC: loading scores by subtype, per factor",
+    "All result objects (for report rendering without re-running)"
+  ),
+  Columns = c(
+    "pathway, pval, padj, NES, size, leadingEdge",
+    "pathway, pval, padj, NES, size, leadingEdge",
+    "pathway, pval, padj, NES, size, leadingEdge",
+    "pathway, pval, padj, NES, size, leadingEdge",
+    "factor, subtype_a, subtype_b, wilcox_p, auc",
+    "named list of all above objects"
+  ),
+  stringsAsFactors = FALSE
+)
+
+kable(outputs, align = c("l","l","l"),
+      caption = "Output files written by run_pathway_enrichment.R.") |>
+  kable_styling(bootstrap_options = c("striped","condensed","hover"), full_width = TRUE) |>
+  column_spec(1, monospace = TRUE) |>
+  column_spec(3, monospace = TRUE, color = "grey55")
+```
+
+### 7.6 Connections to existing infrastructure
+
+```{r connections-table}
+conn <- data.frame(
+  `Existing file` = c(
+    "`desurv_comparison_fits.rds`",
+    "`d4_gene_names.rds`",
+    "`benchmark_helpers.R`",
+    "`config/globals.yml`",
+    "`DECISIONS.md`",
+    "`docs/reports/`"
+  ),
+  `Role in pathway enrichment` = c(
+    "Primary input — D4 EF matrix (factor weights) and EL matrix (patient loadings)",
+    "Maps EF rows to HGNC gene symbols; required for gene set matching",
+    "Provides `load_pdac_raw()` for loading TCGA_PAAD Moffitt annotations",
+    "Will store pathway enrichment K and FDR threshold parameters",
+    "Decision log entry added after analysis confirming or revising biological interpretation",
+    "Home for the dated enrichment report (`pathway_enrichment_report_MM_DD_YY.qmd`)"
+  ),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+
+kable(conn, align = c("l","l"),
+      caption = "How the pathway enrichment module connects to the existing codebase.") |>
+  kable_styling(bootstrap_options = c("striped","condensed","hover"), full_width = TRUE) |>
+  column_spec(1, monospace = TRUE)
+```
+
+::: {.callout-note}
+**No changes to existing code required.** The pathway enrichment module reads from existing outputs (`desurv_comparison_fits.rds`, `d4_gene_names.rds`) and writes to a new subdirectory. Nothing in `code/fit_modular.R`, `code/fit_cox_on_yf.R`, or any existing runner script needs to be modified.
+:::
+
+---
+
+## 8 · What This Adds to the Project
+
+```{r impact-table}
+impact <- data.frame(
+  Without = c(
+    "Factor 3 is adverse (β̂ = +0.011)",
+    "Mean external C = 0.636",
+    "Two programs identified",
+    "Statistical prediction"
+  ),
+  `With Pathway Enrichment` = c(
+    "Factor 3 is an EMT/basal-like program — consistent with Moffitt basal subtype",
+    "The model recovers established PDAC molecular axes from survival signal alone",
+    "Adverse = basal-like (worse survival); Protective = classical (better survival)",
+    "Biological interpretation, subtype concordance, therapeutic relevance"
+  ),
+  check.names = FALSE
+)
+
+kable(impact,
+      col.names = c("Current state", "After pathway enrichment"),
+      caption = "Scientific value added by pathway enrichment.") |>
+  kable_styling(bootstrap_options = c("striped","hover"), full_width = TRUE) |>
+  column_spec(1, color = "grey50") |>
+  column_spec(2, bold = TRUE)
+```
+
+::: {.callout-warning}
+**Manuscript readiness.** The results section currently reports prediction performance (C-index, convergence, external replication). Pathway enrichment provides the biological interpretation paragraph that connects the statistical factors to named molecular programs — a prerequisite for the methods-to-science narrative in the Discussion. Without it, reviewers will ask "but what *are* these factors?"
+:::
+
+---
+
+*Document generated* `r Sys.Date()` *· Data: D4 fit (YFB, DeSurv-aligned, K=7) trained on TCGA_PAAD + CPTAC (n=273) · Gene weight visualizations use actual D4 EF matrix values · Enrichment results and subtype comparisons are illustrative pending analysis.*
