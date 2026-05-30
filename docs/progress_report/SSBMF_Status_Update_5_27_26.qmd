@@ -169,30 +169,36 @@ indicator, as it may provide greater benefit when platform contrast is larger.
 
 ```{r rec-table}
 rec <- data.frame(
-  Role = c("Primary (M5)", "Sensitivity (M4)"),
+  Role = c("Primary (D4)", "Sensitivity (M4)"),
   Model = c("YFB", "LB"),
-  Preprocessing = c("Per-platform z-std", "Per-platform z-std"),
+  Preprocessing = c("Per-platform z-std + DeSurv gene selection", "Per-platform z-std"),
   Cohort = c("No", "Yes"),
-  K = c(3, 3),
+  K = c(7, 3),
   K_eff = c(2, 1),
-  Mean_C = c(mc["M5"], mc["M4"]),
+  Mean_C = c(0.636, mc["M4"]),
   Advantage = c(
-    "Exact external scoring; 2 active programs; highest C",
+    "DeSurv-aligned gene selection (+0.012 vs M5); 2 active programs; highest C",
     "Explicit platform offset model; LB robustness check"
   ),
   stringsAsFactors = FALSE
 )
 knitr::kable(rec, booktabs = TRUE,
              col.names = c("Role","Model","Preprocessing","Cohort","K","K\\_eff","Mean C","Notes"),
-             caption = "Recommended configurations. K=3 is the biological floor (1-SE CV selected K=2 for YFB; K=3 has higher CV mean C and is consistent with DeSurv K=3--4).")
+             caption = "Recommended configurations. D4 (primary) uses K=7 (CV-selected) with DeSurv-aligned gene selection; M4 (sensitivity) uses K=3 (biological floor).")
 ```
 
-**M5 (primary):** YFB identifies 2 active gene expression programs ($K_{\text{eff}} = 2$) from
-3 learned factors, with mean external C = `r mc["M5"]` across 5 independent PDAC cohorts
-(Dijk, Moffitt GEO, PACA-AU array, PACA-AU seq, Puleo). New-patient risk scores require
-only $\eta_{\text{new}} = Y_{\text{new}} F \hat\beta$ — no sample-level latent variable
+**D4 (primary; supersedes M5):** YFB with DeSurv-aligned gene selection (combined
+mean+variance rank, top-3000 genes per cohort selected on log-transformed data before
+per-platform z-standardization) identifies 2 active gene expression programs
+($K_{\text{eff}} = 2$) from 7 learned factors, with mean external C = 0.636 across 5
+independent PDAC cohorts (Dijk, Moffitt GEO, PACA-AU array, PACA-AU seq, Puleo). This
+supersedes M5 (mean C = `r mc["M5"]`, K=3): the DeSurv gene selection yields
+$\Delta C = +0.012$, exceeding the pre-specified $\pm 0.005$ practical threshold, with
+improvement in 4 of 5 external cohorts. New-patient risk scores require only
+$\eta_{\text{new}} = Y_{\text{new}} F \hat\beta$ — no sample-level latent variable
 approximation. Factor loadings $F$ are directly interpretable as gene weights defining each
-prognostic program.
+prognostic program. See `docs/reports/desurv_alignment_report_05_27_26.pdf` for the full
+D1–D4 comparison.
 
 **M4 (sensitivity):** LB with cohort indicator reaches mean C = `r mc["M4"]` — effectively
 tied with M5 — and explicitly encodes the RNA-seq vs. proteomics platform difference as a
@@ -265,7 +271,10 @@ if (!is.null(results)) {
 
 ## 7. Open Items and Next Steps
 
-- **Gene set enrichment / pathway analysis** for M5 factors 1 and 2 (the 2 active
+- **Pathway enrichment on D4 factors.** DeSurv-aligned gene selection changes the training
+  gene set (2064 genes vs 2000); re-run GSEA/ORA on D4 factor loadings once adopted.
+
+- **Gene set enrichment / pathway analysis** for D4 (formerly M5) factors 1 and 2 (the 2 active
   prognostic programs). This is the primary interpretability task remaining before the
   manuscript methods section can be finalized.
 

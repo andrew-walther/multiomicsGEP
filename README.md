@@ -55,7 +55,7 @@ multiomicsGEP/
 │   ├── update_F.R                     ← Modular F update (vector EBNM, pure genomics)
 │   ├── update_tau.R                   ← Modular τ update (closed-form MLE)
 │   ├── compute_elbo.R                 ← Full ELBO: genomics + survival + KL divergences
-│   ├── preprocess_desurv.R            ← DeSurv-aligned preprocessing (log2, top-2000, rank)
+│   ├── preprocess_desurv.R            ← Gene selection + preprocessing (log2, combined rank, per-platform z-std)
 │   ├── select_alpha_cv.R              ← Alpha mixing CV selection via 1-SE rule
 │   ├── predict.R                      ← Hold-out prediction (SVD pseudoinverse projection)
 │   ├── train_test_split.R             ← Stratified 80/20 split preserving event rate
@@ -79,7 +79,7 @@ multiomicsGEP/
 │   ├── SSMF_DeSurv_Sim_Benchmark.md  ← DeSurv benchmark design notes
 │   └── update_L_fix.md               ← Debugging guide: A_surv/A_gen imbalance → β=0 fix
 │
-├── tests/                             ← 171 tests (run: Rscript tests/run_tests.R)
+├── tests/                             ← 246 tests (run: Rscript tests/run_tests.R)
 │   ├── run_tests.R                    ← Master test runner
 │   ├── test_helpers.R                 ← Lightweight assertion framework (no testthat)
 │   ├── test_update_beta.R             ← 24 tests for update_beta.R
@@ -163,7 +163,7 @@ Rscript results/benchmark_sim/run_LB_benchmark.R
 Rscript results/benchmark_sim/run_YFB_benchmark.R
 ```
 
-Outputs go to `results/benchmark_sim/outputs/LB_benchmark/` and `outputs/YFB_benchmark/` respectively. Benchmark reports are versioned by date in `docs/reports/` — the most recent is `ssbmf_summary_report_05_05_26.pdf`.
+Outputs go to `results/benchmark_sim/outputs/`. Reports are versioned by date in `docs/reports/` — see `desurv_alignment_report_05_27_26.pdf` for the most recent external validation results.
 
 ### Run the Real PDAC Analysis
 
@@ -253,7 +253,7 @@ The key mathematical concepts are:
 |---------|------|--------|-------|
 | V1 | `code/legacy/Supervised_Bayesian_MF.R` | Archived | Original implementation; 6 known algorithmic issues |
 | V2 | `code/Supervised_Bayesian_MF_V2.R` | Reference | Monolithic; all V1 issues corrected (A1–A6); kept for comparison |
-| Modular | `code/fit_modular.R` + `update_*.R` | ✅ **Current** | Factor-wise Gauss-Seidel CAVI; tested (124/124); recommended for all new work |
+| Modular | `code/fit_modular.R` + `update_*.R` | ✅ **Current** | Factor-wise Gauss-Seidel CAVI; tested (246/246); recommended for all new work |
 
 **V2 improvements over V1:**
 
@@ -270,30 +270,11 @@ The key mathematical concepts are:
 
 ## Project Status
 
-The model is fully implemented, tested, and benchmarked. Two model variants are evaluated:
-**Cluster A (LB)** uses η = Lβ; **Cluster B (YFB)** uses η = (YF)β (Cox-on-YF reformulation).
-See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete session log.
+The model is fully implemented, tested, and benchmarked. See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete development log.
 
-**Completed:**
-- Modular CAVI implementation (171/171 tests passing)
-- Cox-on-YF reformulation (Cluster B): `code/fit_cox_on_yf.R`, `code/predict_cox_on_yf.R`
-- DeSurv-aligned preprocessing pipeline (`code/preprocess_desurv.R`)
-- Alpha CV selection via 1-SE rule (`code/select_alpha_cv.R`)
-- Phase C sign correction for both LB (`code/fit_modular.R`) and YFB (`code/fit_cox_on_yf.R`):
-  post-convergence training concordance check; flips EBeta if C_train < 0.5
-- SVD pseudoinverse prediction fix (`code/predict.R`)
-- Synthetic validation: LB supervised C-index 0.79 > PCA 0.76; YFB C=0.906 (K_eff=4)
-- PDAC cross-cohort benchmark (Phase C fixed): LB external C=0.55–0.67 across all training
-  modes (tcga_only, cptac_only, merged); YFB external C=0.55–0.63 (single-cohort, normal prior)
-- Prior sensitivity: `point_normal` vs `point_laplace` vs `normal` compared across both models;
-  `normal` prior needed for YFB on real PDAC (spike-and-slab collapses beta when signal is weak)
-- v2 preprocessing for merged cohort: intersect-first → log₂ → quantile normalization →
-  top-2000 by merged variance → rank transform
-- DeSurv benchmark report (`docs/reports/ssbmf_summary_report_04_29_26.pdf`) and full
-  Phase A–C re-benchmark report (`docs/reports/ssbmf_summary_report_05_05_26.pdf`)
+**Current state (2026-05-28):** 246/246 tests passing. The recommended configuration uses the YFB linear predictor (η = (YF)β) with DeSurv-aligned gene selection — genes ranked jointly by mean expression and variance within each platform, top 3,000 per cohort selected before normalization, yielding ~2,064 genes after intersection. Applied to 273 PDAC patients (TCGA + CPTAC training), the model identifies two active prognostic programs: one associated with worse survival and one with better survival. Mean external concordance index = 0.636 across five independent PDAC cohorts spanning RNA-seq, microarray, and proteomics platforms.
 
-**Current priorities:** K selection via CV (`code/select_K.R` stub); YFB merged beta collapse
-(K_eff=0 for YFB on mixed RNA-seq + proteomics); prior comparison follow-up. See `ROADMAP.md`.
+**Next:** pathway enrichment on active factor gene weights. See `ROADMAP.md`.
 
 ---
 

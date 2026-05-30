@@ -5,6 +5,47 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-05-27 — DeSurv Gene Selection Alignment
+
+**Question:** Does adopting DeSurv's gene selection (combined mean+variance rank, top-3000 per
+cohort before normalization) improve external C-index relative to the current variance-only
+selection (top-2000 on merged normalized matrix)?
+
+**Implementation:**
+- `select_top_variable_genes()` gains `method="combined_rank"`: rank_mean + rank_var,
+  lowest rank-sum genes retained. Default "variance" unchanged.
+- `preprocess_merged_cohorts()` gains `selection_per_cohort=TRUE`: per-cohort top-N
+  selection on log-transformed data, then intersect, before per-platform z-std.
+- New comparison configs: D3 (LB DeSurv-aligned) and D4 (YFB DeSurv-aligned).
+
+**Result:**
+
+| Config | Model | Cohort ID | Mean external C | K_eff | Gene set |
+|--------|-------|-----------|----------------|-------|---------|
+| D1 (= M4) | LB + orig | Yes | 0.616 | 1 | 2000 |
+| D2 (= M5) | YFB + orig | No | 0.624 | 2 | 2000 |
+| D3 (DeSurv LB) | LB + aligned | Yes | 0.622 | 2 | 2064 |
+| D4 (DeSurv YFB) | YFB + aligned | No | 0.636 | 2 | 2064 |
+| D5 (DeSurv YFB + cohort) | YFB + aligned | Yes | 0.614 | 2 | 2064 |
+
+**Decision:** delta_yfb = +0.012 (D4 − D2) > +0.005 threshold. Adopting D4 as
+new primary configuration. Per-cohort C-index: D4 improves over D2 in 4/5 cohorts
+(PACA_AU_array is the exception: D4=0.650 vs D2=0.670). LB also improves:
+delta_lb = +0.006 (D3 − D1).
+
+**Cohort indicator with YFB DeSurv-aligned (D5):** Adding a cohort indicator to D4
+reduces mean C to 0.614 (−0.022 vs D4, −0.010 vs M5 baseline). Per-platform
+z-standardization already removes the platform offset; the cohort indicator absorbs
+factor capacity that would otherwise capture survival signal. Cohort indicator
+provides no benefit for YFB with DeSurv preprocessing — D4 (no cohort indicator)
+remains the primary configuration.
+
+**New primary config:** YFB + per-platform z-std + DeSurv gene selection
+(combined_rank, top-3000 per cohort before normalization) + no cohort indicator, K=7.
+Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds (D4).
+
+---
+
 ## 2026-05-25 — Extended preprocessing comparison: 18-configuration benchmark
 
 - **Design:** Extended the 6-configuration benchmark (M1–M6) to 18 configurations by adding three

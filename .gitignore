@@ -29,6 +29,9 @@
 # Quarto HTML build artifacts (self-contained HTML embeds these; folder not needed)
 **/*_files/
 
+# Quarto render cache directories
+**/*_cache/
+
 # Annotated copies (local working copies, not version-controlled)
 **/annotated copies/
 .positai

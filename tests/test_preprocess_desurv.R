@@ -171,4 +171,73 @@ run_test("T1.12: normalize_method invalid argument is caught", {
   assert_equal(inherits(result, "error"), TRUE)
 })
 
+# ---------------------------------------------------------------------------
+# Tests for method="combined_rank" in select_top_variable_genes()
+# ---------------------------------------------------------------------------
+
+run_test("T1.13: combined_rank selects the gene with highest mean+variance and excludes lowest", {
+  # g_hm_hv: high mean (250), high variance — should always be selected
+  # g_lm_lv: low mean (~1.5), low variance — should never be selected at top_n=2
+  Y <- cbind(
+    g_hm_hv = c(100, 200, 300, 400),   # mean=250, var=16667
+    g_lm_hv = c(  1,   2, 100, 200),   # mean=75.75, var=6823
+    g_hm_lv = c(100, 101, 100, 101),   # mean=100.5, var=0.33
+    g_lm_lv = c(  1,   1,   2,   2)    # mean=1.5, var=0.33
+  )
+  out <- select_top_variable_genes(Y, colnames(Y), top_n = 2L, method = "combined_rank")
+  assert_equal("g_hm_hv" %in% out$gene_names, TRUE)
+  assert_equal("g_lm_lv" %in% out$gene_names, FALSE)
+})
+
+run_test("T1.14: combined_rank top_n=1 picks the gene with lowest rank_mean+rank_var sum", {
+  Y <- cbind(
+    g_hm_hv = c(100, 200, 300, 400),
+    g_lm_hv = c(  1,   2, 100, 200),
+    g_hm_lv = c(100, 101, 100, 101)
+  )
+  out <- select_top_variable_genes(Y, colnames(Y), top_n = 1L, method = "combined_rank")
+  assert_equal(out$gene_names, "g_hm_hv")
+  assert_equal(ncol(out$Y), 1L)
+})
+
+# ---------------------------------------------------------------------------
+# Tests for selection_per_cohort parameter in preprocess_merged_cohorts()
+# ---------------------------------------------------------------------------
+
+run_test("T1.15: selection_per_cohort=TRUE runs and returns selection metadata", {
+  raw   <- make_synthetic_raw_list()  # 2 cohorts, 4 subjects each, 6 genes
+  flags <- c(CohortA = TRUE, CohortB = FALSE)
+  out   <- preprocess_merged_cohorts(
+    raw, flags,
+    top_n                = 4L,
+    selection_per_cohort = TRUE,
+    selection_method     = "combined_rank",
+    per_platform_standardize = FALSE,
+    normalize_method     = "none",
+    rank_transform       = FALSE
+  )
+  # Fixture uses set.seed(1L): CohortA top-4 = {G1,G2,G4,G5}, CohortB = {G2,G3,G5,G6}.
+  # Intersection = {G2, G5} → p=2 (deterministic).
+  assert_equal(out$p, 2L)
+  assert_equal(out$selection_per_cohort, TRUE)
+  assert_equal(out$selection_method, "combined_rank")
+  assert_equal(nrow(out$Y), 8L)  # 4 + 4 subjects
+  assert_finite(out$Y)
+})
+
+run_test("T1.16: selection_per_cohort=FALSE (default) still works and returns FALSE in output", {
+  raw   <- make_synthetic_raw_list()
+  flags <- c(CohortA = TRUE, CohortB = FALSE)
+  out   <- preprocess_merged_cohorts(
+    raw, flags, top_n = 6L,
+    selection_per_cohort = FALSE,
+    normalize_method     = "none",
+    rank_transform       = FALSE
+  )
+  assert_equal(out$selection_per_cohort, FALSE)
+  assert_equal(out$selection_method, "variance")  # default
+  assert_equal(nrow(out$Y), 8L)
+  assert_equal(out$p, 6L)  # all 6 genes kept (top_n=6 = ncol)
+})
+
 report_results("preprocess_desurv.R")

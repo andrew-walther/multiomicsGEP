@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Andrew Walther">
+<meta name="dcterms.date" content="2026-05-27">
+
+<title>DeSurv Factor Diagnostics: Convergence, Survival Associations, and Gene Programs</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/clipboard/clipboard.min.js"></script>
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/quarto.js"></script>
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/popper.min.js"></script>
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/anchor.min.js"></script>
+<link href="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="desurv_factor_diagnostics_05_27_26_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="desurv_factor_diagnostics_05_27_26_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="desurv_factor_diagnostics_05_27_26_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+<script src="desurv_factor_diagnostics_05_27_26_files/libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="desurv_factor_diagnostics_05_27_26_files/libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a>
+  <ul class="collapse">
+  <li><a href="#configurations-compared" id="toc-configurations-compared" class="nav-link" data-scroll-target="#configurations-compared">1. Configurations Compared</a></li>
+  <li><a href="#algorithm-convergence" id="toc-algorithm-convergence" class="nav-link" data-scroll-target="#algorithm-convergence">2. Algorithm Convergence</a></li>
+  <li><a href="#survival-coefficient-estimates" id="toc-survival-coefficient-estimates" class="nav-link" data-scroll-target="#survival-coefficient-estimates">3. Survival Coefficient Estimates</a></li>
+  <li><a href="#d4-yfb-desurv-aligned-recommended-configuration" id="toc-d4-yfb-desurv-aligned-recommended-configuration" class="nav-link" data-scroll-target="#d4-yfb-desurv-aligned-recommended-configuration">4. D4 — YFB DeSurv-Aligned (Recommended Configuration)</a>
+  <ul class="collapse">
+  <li><a href="#factor-summary" id="toc-factor-summary" class="nav-link" data-scroll-target="#factor-summary">4.1 Factor Summary</a></li>
+  <li><a href="#survival-stratification" id="toc-survival-stratification" class="nav-link" data-scroll-target="#survival-stratification">4.2 Survival Stratification</a></li>
+  <li><a href="#gene-expression-program-signatures" id="toc-gene-expression-program-signatures" class="nav-link" data-scroll-target="#gene-expression-program-signatures">4.3 Gene Expression Program Signatures</a></li>
+  </ul></li>
+  <li><a href="#d5-yfb-desurv-aligned-cohort-indicator" id="toc-d5-yfb-desurv-aligned-cohort-indicator" class="nav-link" data-scroll-target="#d5-yfb-desurv-aligned-cohort-indicator">5. D5 — YFB DeSurv-Aligned + Cohort Indicator</a>
+  <ul class="collapse">
+  <li><a href="#factor-summary-1" id="toc-factor-summary-1" class="nav-link" data-scroll-target="#factor-summary-1">5.1 Factor Summary</a></li>
+  <li><a href="#survival-stratification-1" id="toc-survival-stratification-1" class="nav-link" data-scroll-target="#survival-stratification-1">5.2 Survival Stratification</a></li>
+  <li><a href="#gene-expression-program-signatures-1" id="toc-gene-expression-program-signatures-1" class="nav-link" data-scroll-target="#gene-expression-program-signatures-1">5.3 Gene Expression Program Signatures</a></li>
+  </ul></li>
+  <li><a href="#d3-lb-desurv-aligned-sensitivity" id="toc-d3-lb-desurv-aligned-sensitivity" class="nav-link" data-scroll-target="#d3-lb-desurv-aligned-sensitivity">6. D3 — LB DeSurv-Aligned (Sensitivity)</a>
+  <ul class="collapse">
+  <li><a href="#factor-summary-2" id="toc-factor-summary-2" class="nav-link" data-scroll-target="#factor-summary-2">6.1 Factor Summary</a></li>
+  <li><a href="#survival-stratification-2" id="toc-survival-stratification-2" class="nav-link" data-scroll-target="#survival-stratification-2">6.2 Survival Stratification</a></li>
+  <li><a href="#gene-expression-program-signatures-2" id="toc-gene-expression-program-signatures-2" class="nav-link" data-scroll-target="#gene-expression-program-signatures-2">6.3 Gene Expression Program Signatures</a></li>
+  </ul></li>
+  <li><a href="#d2-yfb-original-baseline-m5" id="toc-d2-yfb-original-baseline-m5" class="nav-link" data-scroll-target="#d2-yfb-original-baseline-m5">7. D2 — YFB Original Baseline (M5)</a>
+  <ul class="collapse">
+  <li><a href="#factor-summary-3" id="toc-factor-summary-3" class="nav-link" data-scroll-target="#factor-summary-3">7.1 Factor Summary</a></li>
+  <li><a href="#survival-stratification-3" id="toc-survival-stratification-3" class="nav-link" data-scroll-target="#survival-stratification-3">7.2 Survival Stratification</a></li>
+  <li><a href="#gene-expression-program-signatures-3" id="toc-gene-expression-program-signatures-3" class="nav-link" data-scroll-target="#gene-expression-program-signatures-3">7.3 Gene Expression Program Signatures</a></li>
+  </ul></li>
+  <li><a href="#cross-configuration-comparison" id="toc-cross-configuration-comparison" class="nav-link" data-scroll-target="#cross-configuration-comparison">8. Cross-Configuration Comparison</a>
+  <ul class="collapse">
+  <li><a href="#d4-vs.-d5-gene-program-overlap" id="toc-d4-vs.-d5-gene-program-overlap" class="nav-link" data-scroll-target="#d4-vs.-d5-gene-program-overlap">8.1 D4 vs.&nbsp;D5: Gene Program Overlap</a></li>
+  <li><a href="#gep-heatmap-comparison" id="toc-gep-heatmap-comparison" class="nav-link" data-scroll-target="#gep-heatmap-comparison">8.2 GEP Heatmap Comparison</a></li>
+  </ul></li>
+  <li><a href="#proportional-hazards-assumption" id="toc-proportional-hazards-assumption" class="nav-link" data-scroll-target="#proportional-hazards-assumption">9. Proportional Hazards Assumption</a>
+  <ul class="collapse">
+  <li><a href="#d4" id="toc-d4" class="nav-link" data-scroll-target="#d4">9.1 D4</a></li>
+  <li><a href="#d5" id="toc-d5" class="nav-link" data-scroll-target="#d5">9.2 D5</a></li>
+  <li><a href="#d3" id="toc-d3" class="nav-link" data-scroll-target="#d3">9.3 D3</a></li>
+  </ul></li>
+  <li><a href="#discussion-and-recommendations" id="toc-discussion-and-recommendations" class="nav-link" data-scroll-target="#discussion-and-recommendations">10. Discussion and Recommendations</a></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../../desurv_factor_diagnostics_05_27_26.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">DeSurv Factor Diagnostics: Convergence, Survival Associations, and Gene Programs</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Andrew Walther </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 27, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<div class="cell" data-hash="desurv_factor_diagnostics_05_27_26_cache/html/load-all_ff6aad28696f0083261db7d0c5f063f9">
+<div class="cell-output cell-output-stdout">
+<pre><code>  [v2] Raw gene intersection: 17900 genes across TCGA_PAAD + CPTAC
+  [v2] Per-platform z-standardization (colMean=0, colSD=1 per cohort) ...
+  [v2] Quantile normalising merged matrix (273 x 17900) ...
+  [v2] Genes retained after top-2000 variance filter: 2000
+  [v2] Skipping rank transform (rank_transform = FALSE).</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  [v2] Raw gene intersection: 17900 genes across TCGA_PAAD + CPTAC
+  [v2] Per-cohort gene selection (top-3000, method=combined_rank) before normalization ...
+  [v2] Genes after per-cohort selection and intersection: 2064
+  [v2] Per-platform z-standardization (colMean=0, colSD=1 per cohort) ...
+  [v2] Skipping normalization (log-transform only; 273 x 2064) ...
+  [v2] Skipping rank transform (rank_transform = FALSE).</code></pre>
+</div>
+</div>
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Supervised Bayesian Matrix Factorization (SSBMF) is a joint genomics-survival model that simultaneously decomposes a gene expression matrix and fits a Cox proportional hazards model. The model assumes the expression data <span class="math inline">\(Y \in \mathbb{R}^{n \times p}\)</span> arises from a low-rank structure <span class="math inline">\(Y = LF^\top + E\)</span>, where <span class="math inline">\(L \in \mathbb{R}^{n \times K}\)</span> is a matrix of patient loadings, <span class="math inline">\(F \in \mathbb{R}^{p \times K}\)</span> contains gene weights, and <span class="math inline">\(E\)</span> is noise. Each of the <span class="math inline">\(K\)</span> columns represents a gene expression program (GEP): a coherent set of co-expressed genes that together define a molecular pattern active in some subset of patients. Survival is modeled through a Cox PH model with linear predictor <span class="math inline">\(\eta = L\hat{\beta}\)</span> (the LB formulation) or <span class="math inline">\(\eta = (YF^*)\hat{\beta}\)</span> (the YFB formulation, where <span class="math inline">\(F^*\)</span> has unit-norm columns). Bayesian inference via coordinate ascent variational inference (CAVI) with empirical Bayes normal mixture priors on <span class="math inline">\(L\)</span>, <span class="math inline">\(F\)</span>, and <span class="math inline">\(\beta\)</span> allows the model to adaptively prune irrelevant factors to near-zero.</p>
+<p>This diagnostic report examines five configurations (D1–D5) fit on the merged TCGA_PAAD and CPTAC training cohort (<span class="math inline">\(n = 273\)</span> patients; 144 from TCGA, 129 from CPTAC). The configurations span two model types (LB, YFB), two gene-selection schemes (variance top-2000 vs.&nbsp;DeSurv combined-rank top-3000 per cohort), and the presence or absence of a cohort indicator in the loading matrix. For each configuration, we evaluate (1) algorithm convergence as measured by reconstruction root mean squared error (RMSE), (2) the posterior survival coefficients <span class="math inline">\(\hat{\beta}_k\)</span> and their direction of risk association, (3) Kaplan-Meier survival stratification by factor loading, and (4) the gene-weight signatures that define each active program. The central question is whether the identified GEPs carry interpretable biological and survival signals that are stable across model variants.</p>
+<section id="configurations-compared" class="level2">
+<h2 class="anchored" data-anchor-id="configurations-compared">1. Configurations Compared</h2>
+<p>The five configurations represent a designed comparison across two dimensions: gene-selection strategy and linear predictor formulation. Configurations D1 and D2 use the original preprocessing (top-2,000 genes by within-cohort variance, per-platform z-standardization, quantile normalization). Configurations D3, D4, and D5 use DeSurv-aligned preprocessing: genes are selected by a combined mean-plus-variance rank within each platform separately, retaining the top 3,000 per cohort before taking the intersection, yielding 2,064 genes after merging. This selection strategy is designed to capture genes that are both highly expressed and highly variable, following the approach of Young et al.&nbsp;(2025). All DeSurv configurations apply per-platform z-standardization without cross-cohort quantile normalization. Configuration D5 additionally includes a cohort indicator in the loading matrix to absorb platform-level expression offsets.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-hover table-sm small" data-quarto-postprocess="true">
+<caption>Summary of all five configurations fit on the merged TCGA + CPTAC training cohort (n = 273). K = total factors requested; K-eff = factors with |beta-hat| &gt; 0.001 after sign correction. Active betas are reported after sign correction so that positive beta-hat corresponds to adverse prognosis (high loading predicts worse survival). RMSE = final training reconstruction error. Mean ext. C = mean concordance index across five held-out PDAC cohorts.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">ID</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Label</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Model</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">K</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">K-eff</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Active beta-hat (by factor)</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Iters</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">RMSE</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Mean ext. C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">D1</td>
+<td style="text-align: left;">LB orig (M4)</td>
+<td style="text-align: left;">LB</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">k3: -0.482</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">1.0157</td>
+<td style="text-align: right;">0.616</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D2</td>
+<td style="text-align: left;">YFB orig (M5)</td>
+<td style="text-align: left;">YFB</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">k1: -0.053; k2: +0.026</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">1.0252</td>
+<td style="text-align: right;">0.624</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">D3</td>
+<td style="text-align: left;">LB DeSurv-aligned</td>
+<td style="text-align: left;">LB</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">k2: -0.439; k3: +0.205</td>
+<td style="text-align: right;">105</td>
+<td style="text-align: right;">0.8671</td>
+<td style="text-align: right;">0.622</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D4</td>
+<td style="text-align: left;">YFB DeSurv-aligned</td>
+<td style="text-align: left;">YFB</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">k3: +0.011; k7: -0.041</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">0.9330</td>
+<td style="text-align: right;">0.636</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">D5</td>
+<td style="text-align: left;">YFB DeSurv + cohort</td>
+<td style="text-align: left;">YFB</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">k7: -0.028; k8: +0.010</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: right;">0.8669</td>
+<td style="text-align: right;">0.614</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>The overview table reveals several patterns. The DeSurv-aligned configurations (D3, D4, D5) use considerably more factors (<span class="math inline">\(K = 7\)</span> or <span class="math inline">\(8\)</span>) yet achieve sparse solutions with <span class="math inline">\(K_{\text{eff}} = 2\)</span> in all cases, reflecting the ARD-like shrinkage behavior of the empirical Bayes prior. The recommended configuration D4 (YFB DeSurv-aligned) achieves the highest mean external concordance at 0.636, an improvement of 0.012 over the M5 baseline (D2, 0.624). Adding a cohort indicator (D5) modestly reduces external performance to 0.614, suggesting the per-platform z-standardization already absorbs most platform effects and the additional cohort term may slightly overfit on the training data. D3 and D4 are directly comparable (same gene set, same <span class="math inline">\(K\)</span>, differing only in the linear predictor), and the 0.014 advantage of D4 over D3 supports the YFB formulation for this application.</p>
+</section>
+<section id="algorithm-convergence" class="level2">
+<h2 class="anchored" data-anchor-id="algorithm-convergence">2. Algorithm Convergence</h2>
+<p>The RMSE reported here measures how well the rank-<span class="math inline">\(K\)</span> reconstruction <span class="math inline">\(\hat{Y} = \hat{L}\hat{F}^\top\)</span> approximates the observed gene expression matrix <span class="math inline">\(Y\)</span>. Lower values indicate a better fit to the training data, and the trace over CAVI iterations should decrease monotonically as the algorithm refines the variational posterior. Convergence is declared when the relative change in the evidence lower bound (ELBO) falls below <span class="math inline">\(10^{-5}\)</span>. Note that RMSE is a function of the data scale after preprocessing; the DeSurv configurations operate on z-standardized data and therefore have a different baseline RMSE than configurations using quantile-normalized data.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/rmse-traces-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Training RMSE by CAVI iteration for all five configurations. Convergence is declared when the relative change in the evidence lower bound falls below 1e-5. DeSurv-aligned LB (D3) requires the most iterations to converge; YFB models with DeSurv preprocessing converge rapidly, typically within 50 iterations.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The convergence traces illustrate that YFB models (D2, D4, D5) converge substantially faster than their LB counterparts. This is expected: in the YFB formulation, the gene factors <span class="math inline">\(F\)</span> are normalized to unit columns before computing the linear predictor, which conditions the coefficient scale and accelerates <span class="math inline">\(\beta\)</span> updates. The LB DeSurv-aligned configuration (D3) converges most slowly among the DeSurv configurations, reflecting the larger gene set (2,064 vs.&nbsp;2,000) and the interaction between the <span class="math inline">\(L\)</span>-update dual-source EBNM (which incorporates both reconstruction and survival signals simultaneously) and the larger latent dimension (<span class="math inline">\(K = 7\)</span>). All configurations reach stable RMSE values well before 200 iterations, and none show evidence of oscillation or divergence.</p>
+</section>
+<section id="survival-coefficient-estimates" class="level2">
+<h2 class="anchored" data-anchor-id="survival-coefficient-estimates">3. Survival Coefficient Estimates</h2>
+<p>The survival coefficient <span class="math inline">\(\hat{\beta}_k\)</span> for factor <span class="math inline">\(k\)</span> quantifies whether patients with high loading on GEP <span class="math inline">\(k\)</span> have better or worse survival outcomes. All <span class="math inline">\(\hat{\beta}\)</span> values reported here have been sign-corrected: when a model’s training concordance index was below 0.5 (indicating that the raw <span class="math inline">\(\hat{\beta}\)</span> directions predicted the wrong risk ordering), all <span class="math inline">\(\hat{\beta}\)</span> signs were globally flipped. After correction, a positive <span class="math inline">\(\hat{\beta}_k\)</span> consistently indicates an adverse GEP — patients who express program <span class="math inline">\(k\)</span> at high levels have worse survival — and a negative <span class="math inline">\(\hat{\beta}_k\)</span> indicates a protective GEP.</p>
+<p>The LB and YFB formulations differ in the scale of <span class="math inline">\(\hat{\beta}\)</span>. In the LB model, <span class="math inline">\(\eta_i = \sum_k l_{ik}\hat{\beta}_k\)</span> where <span class="math inline">\(l_{ik}\)</span> is on the raw loading scale (approximately unit-variance across patients). In the YFB model, <span class="math inline">\(\eta_i = \sum_k (\tilde{y}_i^\top \hat{f}_k)\hat{\beta}_k\)</span> where <span class="math inline">\(\hat{f}_k\)</span> has unit Euclidean norm; the inner product scales with the square root of the number of genes, compressing the <span class="math inline">\(\hat{\beta}\)</span> magnitudes relative to LB. Both formulations encode the same biological signal; only the coefficient scale differs.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/beta-plots-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Posterior mean survival coefficients for each factor within each configuration. Active factors (|beta-hat| &gt; 0.001) are coloured red (adverse, beta-hat &gt; 0) or blue (protective, beta-hat &lt; 0); inactive factors are grey. YFB coefficients (D2, D4, D5) are on a compressed scale relative to LB (D1, D3) because the YFB formulation normalizes factor columns, reducing the coefficient magnitude. Positive values correspond to adverse prognosis (high loading predicts worse survival) after sign correction.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The coefficient plot confirms that the ARD-like prior is effective: across all five configurations, at most two factors receive non-negligible <span class="math inline">\(\hat{\beta}\)</span> values, despite initializing with <span class="math inline">\(K = 3\)</span>–<span class="math inline">\(8\)</span> factors. This sparsity is a desirable property — it indicates the model does not overfit the survival signal to many uncorrelated noise factors. The DeSurv configurations (D3, D4, D5) identify survival-associated programs at different factor indices than the original configurations (D1, D2), reflecting the distinct gene set and how the combined-rank selection reshuffles the effective input signal. The coexistence of both adverse and protective GEPs (e.g., D2 factors 1 and 2) suggests the model has partitioned the molecular space into at least two clinically distinct patient subgroups.</p>
+</section>
+<section id="d4-yfb-desurv-aligned-recommended-configuration" class="level2">
+<h2 class="anchored" data-anchor-id="d4-yfb-desurv-aligned-recommended-configuration">4. D4 — YFB DeSurv-Aligned (Recommended Configuration)</h2>
+<p>D4 is the recommended configuration for downstream analysis and manuscript reporting. It combines the YFB linear predictor, DeSurv-aligned preprocessing (2,064 genes, combined-rank selection per cohort), and no cohort indicator. The rationale for this selection is threefold. First, YFB yields faster convergence and more stable <span class="math inline">\(\hat{\beta}\)</span> updates than LB at the same <span class="math inline">\(K\)</span>. Second, DeSurv-aligned gene selection captures genes that are both highly expressed and highly variable — more biologically interpretable than variance alone. Third, omitting the cohort indicator avoids the risk of absorbing genuine inter-cohort biology into a nuisance term, which is particularly important given the modest number of training samples (<span class="math inline">\(n = 273\)</span>). External validation confirms D4’s advantage: mean concordance of 0.636 across five held-out PDAC cohorts, the highest among all five configurations.</p>
+<section id="factor-summary" class="level3">
+<h3 class="anchored" data-anchor-id="factor-summary">4.1 Factor Summary</h3>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-hover table-sm small" data-quarto-postprocess="true">
+<caption>Factor summary for D4 (YFB DeSurv-aligned, K = 7). Active factors have |beta-hat| &gt; 0.001 after sign correction. Log-rank p tests whether median-split survival curves differ significantly. PVE = percentage of total expression variance explained by the rank-1 component Lk Fk-transpose.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">Factor</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Beta-hat</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Status</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Log-rank p</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">PVE (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.0113</td>
+<td style="text-align: left;">Active</td>
+<td style="text-align: right;">0.0123</td>
+<td style="text-align: right;">2.92</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.3850</td>
+<td style="text-align: right;">2.95</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.3645</td>
+<td style="text-align: right;">2.88</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">-0.0408</td>
+<td style="text-align: left;">Active</td>
+<td style="text-align: right;">0.0003</td>
+<td style="text-align: right;">1.90</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>Among the seven factors fit by D4, factors 3 and 7 are active. Factor 3 carries a positive coefficient (<span class="math inline">\(\hat{\beta}_3 = +0.0113\)</span>), identifying it as an adverse GEP — high loading on this program is associated with worse survival. Factor 7 carries a negative coefficient (<span class="math inline">\(\hat{\beta}_7 = -0.0408\)</span>), marking it as a protective program. The remaining five factors are shrunk to <span class="math inline">\(\hat{\beta} \approx 0\)</span> by the EBNM prior, indicating they capture expression variation that is not prognostically informative in the training data. The proportion of expression variance explained by individual factors (PVE) is modest for each component, as expected in a high-dimensional (<span class="math inline">\(p = 2{,}064\)</span>) setting with a relatively small training cohort.</p>
+</section>
+<section id="survival-stratification" class="level3">
+<h3 class="anchored" data-anchor-id="survival-stratification">4.2 Survival Stratification</h3>
+<p>To assess the survival signal carried by each active factor, patients are divided into high-loading and low-loading groups at the median value of the posterior mean loading <span class="math inline">\(\hat{L}_{ik}\)</span>. A log-rank test quantifies whether the resulting Kaplan-Meier curves differ significantly in the training cohort. Because the model was fit on these same data, training-set log-rank <span class="math inline">\(p\)</span>-values are optimistic — they should be interpreted as evidence that the factor discriminates survival rather than as unbiased estimates of population-level separation.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d4-km-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Kaplan-Meier survival curves for D4 active factors, stratified at the median posterior loading. Red = high loading (above median); blue = low loading (below median). Factor 3 (adverse, beta-hat &gt; 0) shows high-loading patients with worse survival; Factor 7 (protective, beta-hat &lt; 0) shows high-loading patients with better survival. Log-rank p values are computed on the n = 273 training cohort.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The Kaplan-Meier plots demonstrate that both active factors separate patient survival in a direction consistent with their <span class="math inline">\(\hat{\beta}\)</span> signs. For Factor 3, high-loading patients show earlier events, consistent with its adverse designation. For Factor 7, the pattern reverses: high-loading patients have more favorable survival trajectories, consistent with its protective designation. This internal consistency between <span class="math inline">\(\hat{\beta}\)</span> direction and observed survival separation is a necessary (though not sufficient) validation of the model’s coherence. External cohort concordance indices (<span class="math inline">\(\geq 0.55\)</span> across all five held-out datasets) confirm that these loading directions generalize beyond the training data.</p>
+</section>
+<section id="gene-expression-program-signatures" class="level3">
+<h3 class="anchored" data-anchor-id="gene-expression-program-signatures">4.3 Gene Expression Program Signatures</h3>
+<p>The posterior mean gene weights <span class="math inline">\(\hat{F}_{jk}\)</span> define the molecular signature of each GEP. Genes with large positive weights are highly expressed in patients with high loading on program <span class="math inline">\(k\)</span>; genes with large negative weights are expressed in low-loading patients. These weight vectors provide the primary biological interpretation of the model and represent the starting point for pathway enrichment analysis (e.g., via MSigDB hallmark gene sets or KEGG pathways) and comparison with established PDAC molecular subtypes, such as the Moffitt basal and classical subtypes or the Bailey et al.&nbsp;(2016) four-subtype classification.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d4-heatmap-1.png" class="img-fluid figure-img" width="576"></p>
+<figcaption class="figure-caption">GEP weight heatmap for D4 (YFB DeSurv-aligned). Rows = top 40 genes by maximum |weight| across all seven factors; columns = factors. Cell color encodes the posterior mean weight (blue = negative, red = positive; white = near-zero). Asterisked column labels mark active factors (|beta-hat| &gt; 0.001). Distinct stripe patterns across columns indicate that the seven factors capture non-redundant transcriptional programs, even though only two carry survival signal.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The heatmap reveals that active factors 3 and 7 have distinct gene weight signatures with minimal overlap, confirming they capture independent molecular programs. Inactive factors also show structured gene patterns — they are not random noise but reflect expression variation that does not correlate with survival in this training cohort. The ARD prior has concentrated the survival signal into two factors while preserving the reconstruction accuracy of the full seven-factor decomposition.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**D4 Factor 3** (beta-hat = +0.0113, adverse, PVE = 2.92%, log-rank p = 0.0123)
+
+&lt;table class="table table-striped table-hover" style="font-size: 8px; width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; Rank &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Gene &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Posterior weight &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CAPN5 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.63664 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 2 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; LPCAT4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.62750 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 3 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; MLPH &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.54719 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 4 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; SLC45A3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.46790 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TJP3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.44992 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 6 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PLEKHA6 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.39411 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 7 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; MTMR11 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.38587 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 8 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; GALNT6 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.38010 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 9 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CAPN8 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.32556 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 10 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TSPAN3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.32296 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 11 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CYP2S1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.32198 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 12 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PAK1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.31960 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 13 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; FAM83E &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.30680 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 14 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; KCNK1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.30463 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 15 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; KCNE3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.30441 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+**D4 Factor 7** (beta-hat = -0.0408, protective, PVE = 1.90%, log-rank p = 0.0003)
+
+&lt;table class="table table-striped table-hover" style="font-size: 8px; width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; Rank &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Gene &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Posterior weight &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ITGA3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.58918 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 2 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; MET &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.55010 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 3 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; BCAR3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.48200 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 4 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; FAM3C &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.44707 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; GAPDH &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.40522 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 6 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ENO1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.40133 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 7 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TPI1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.32039 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 8 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PGK1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.30881 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 9 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CDCP1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.29102 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 10 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; LDHA &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.28484 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 11 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; SLC16A3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.26966 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 12 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ITGB4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.24910 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 13 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; SLC2A1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.24869 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 14 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TGM2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.21551 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 15 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; S100A2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.21543 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+</div>
+</div>
+<p>The top-weighted genes for each active factor provide the initial biological hypotheses. Genes with the largest positive weights in Factor 3 (adverse) may correspond to pathways associated with tumor aggressiveness or poor prognosis in PDAC — such as basal-like gene programs, MYC targets, or stromal activation signatures. Genes driving the protective Factor 7 signal may reflect classical differentiation markers, immune cell infiltration, or metabolic programs associated with better outcomes. Definitive pathway assignment requires external enrichment analysis and is beyond the scope of this diagnostic report.</p>
+</section>
+</section>
+<section id="d5-yfb-desurv-aligned-cohort-indicator" class="level2">
+<h2 class="anchored" data-anchor-id="d5-yfb-desurv-aligned-cohort-indicator">5. D5 — YFB DeSurv-Aligned + Cohort Indicator</h2>
+<p>D5 extends D4 by incorporating a cohort indicator in the loading matrix. Specifically, the model includes <span class="math inline">\(C - 1 = 1\)</span> additional loading column encoding TCGA vs.&nbsp;CPTAC membership under a corner-point parameterization, with the cohort factor fixed in the gene weight matrix and not subject to EBNM shrinkage. This design absorbs systematic mean-expression differences between RNA-seq platforms, which can otherwise inflate or deflate linear predictor values for one platform relative to the other. The cost of this extension is a more complex model with one additional free dimension (<span class="math inline">\(K = 8\)</span>) and the risk that the cohort factor absorbs biologically relevant inter-cohort variation in addition to technical artifacts.</p>
+<section id="factor-summary-1" class="level3">
+<h3 class="anchored" data-anchor-id="factor-summary-1">5.1 Factor Summary</h3>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-hover table-sm small" data-quarto-postprocess="true">
+<caption>Factor summary for D5 (YFB DeSurv-aligned + cohort indicator, K = 8). Active factors have |hat-beta| &gt; 0.001 after sign correction. The cohort indicator occupies an additional column in L but does not participate in EBNM shrinkage; only the seven non-cohort factors are subject to ARD-like pruning.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">Factor</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Beta-hat</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Status</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Log-rank p</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">PVE (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.9492</td>
+<td style="text-align: right;">36.08</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.2541</td>
+<td style="text-align: right;">13.43</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">-0.0281</td>
+<td style="text-align: left;">Active</td>
+<td style="text-align: right;">0.0029</td>
+<td style="text-align: right;">12.65</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.0099</td>
+<td style="text-align: left;">Active</td>
+<td style="text-align: right;">0.1135</td>
+<td style="text-align: right;">17.14</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>In D5, factors 7 and 8 are active. The shift in active factor indices relative to D4 (where factors 3 and 7 were active) reflects the model’s redistribution of variance when a cohort term competes for explanatory power. The mean external concordance for D5 is 0.614 — lower than D4’s 0.636 by 0.022. This drop is consistent with moderate overfitting: by absorbing inter-cohort variation during training, D5 may fail to generalize to external cohorts that have their own distinct platform characteristics.</p>
+</section>
+<section id="survival-stratification-1" class="level3">
+<h3 class="anchored" data-anchor-id="survival-stratification-1">5.2 Survival Stratification</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d5-km-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Kaplan-Meier survival curves for D5 active factors. Stratification, color coding, and interpretation follow the same conventions as Figure 4.2. The two active factors in D5 carry opposite directions of survival association, indicating the model has again partitioned the training data into adverse and protective molecular programs.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="gene-expression-program-signatures-1" class="level3">
+<h3 class="anchored" data-anchor-id="gene-expression-program-signatures-1">5.3 Gene Expression Program Signatures</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d5-heatmap-1.png" class="img-fluid figure-img" width="576"></p>
+<figcaption class="figure-caption">GEP weight heatmap for D5 (YFB DeSurv-aligned + cohort indicator, K = 8). Rows = top 40 genes by maximum |weight| across all factors; columns = factors; asterisked columns are active factors. The cohort term is absorbed into the loading matrix and does not appear directly in EF.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**D5 Factor 7** (beta-hat = -0.0281, protective, PVE = 12.65%, log-rank p = 0.0029)
+
+&lt;table class="table table-striped table-hover" style="font-size: 8px; width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; Rank &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Gene &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Posterior weight &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ITGA3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.54520 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 2 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; SLC16A3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.48983 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 3 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; FSCN1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.38915 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 4 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; SLC2A1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.38543 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PLAU &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.38268 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 6 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; MMP14 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.35920 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 7 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ANXA1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.31564 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 8 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; LAMB3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.31383 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 9 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; P4HA1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.28331 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 10 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ALDOA &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.28205 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 11 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; KRT19 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.28175 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 12 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CDCP1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.27363 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 13 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; LDHA &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.25637 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 14 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ITGB4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.24328 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 15 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; MET &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.21003 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+**D5 Factor 8** (beta-hat = +0.0099, adverse, PVE = 17.14%, log-rank p = 0.1135)
+
+&lt;table class="table table-striped table-hover" style="font-size: 8px; width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; Rank &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Gene &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Posterior weight &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CAPN5 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.55063 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 2 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; MLPH &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.42236 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 3 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TJP3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.41188 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 4 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; SYTL2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.40946 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; KIAA1211 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.39554 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 6 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; LPCAT4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.38417 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 7 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PLEKHA6 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.37616 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 8 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PLA2G10 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.37444 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 9 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; C9orf152 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.36992 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 10 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CAPN8 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.36946 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 11 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TSPAN3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.36449 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 12 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; FUT2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.34713 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 13 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; KALRN &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.34462 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 14 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; BCAS1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.34323 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 15 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; KCNE3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.34278 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="d3-lb-desurv-aligned-sensitivity" class="level2">
+<h2 class="anchored" data-anchor-id="d3-lb-desurv-aligned-sensitivity">6. D3 — LB DeSurv-Aligned (Sensitivity)</h2>
+<p>D3 provides a direct sensitivity check for the linear predictor choice: it uses identical preprocessing to D4 (2,064 DeSurv-selected genes, per-platform z-standardization, <span class="math inline">\(K = 7\)</span>) but applies the LB formulation (<span class="math inline">\(\eta = L\hat{\beta}\)</span>) rather than YFB. The comparison between D3 and D4 isolates the effect of the linear predictor on the identified gene programs and survival associations, holding gene selection constant.</p>
+<section id="factor-summary-2" class="level3">
+<h3 class="anchored" data-anchor-id="factor-summary-2">6.1 Factor Summary</h3>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-hover table-sm small" data-quarto-postprocess="true">
+<caption>Factor summary for D3 (LB DeSurv-aligned, K = 7). Active factors have |hat-beta| &gt; 0.001. The LB coefficient magnitudes are substantially larger than YFB (factors are on the raw loading scale rather than the normalized YF scale), reflecting the difference in the linear predictor parameterization.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">Factor</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Beta-hat</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Status</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Log-rank p</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">PVE (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.5694</td>
+<td style="text-align: right;">16.12</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">-0.4394</td>
+<td style="text-align: left;">Active</td>
+<td style="text-align: right;">0.0095</td>
+<td style="text-align: right;">7.64</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.2051</td>
+<td style="text-align: left;">Active</td>
+<td style="text-align: right;">0.1201</td>
+<td style="text-align: right;">17.68</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.5733</td>
+<td style="text-align: right;">6.33</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.9517</td>
+<td style="text-align: right;">23.44</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>In D3, factors 2 and 3 are active, with <span class="math inline">\(\hat{\beta}_2 = -0.4394\)</span> (protective) and <span class="math inline">\(\hat{\beta}_3 = +0.2051\)</span> (adverse). The substantially larger magnitude relative to D4 reflects the LB parameterization: the loading values <span class="math inline">\(l_{ik}\)</span> are on the original posterior scale (roughly unit-variance across patients), so the <span class="math inline">\(\hat{\beta}\)</span> values must be large to produce meaningful variation in the linear predictor. The mean external concordance for D3 is 0.622 — intermediate between D2 (0.624) and D4 (0.636). This suggests the DeSurv gene selection helps (D3 <span class="math inline">\(&gt;\)</span> D1 = 0.614) but the YFB formulation provides additional benefit beyond gene selection alone.</p>
+</section>
+<section id="survival-stratification-2" class="level3">
+<h3 class="anchored" data-anchor-id="survival-stratification-2">6.2 Survival Stratification</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d3-km-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Kaplan-Meier survival curves for D3 active factors (LB DeSurv-aligned). The LB model identifies two active programs with opposite survival associations. Factor 2 is protective (high loading predicts better survival) and Factor 3 is adverse (high loading predicts worse survival).</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="gene-expression-program-signatures-2" class="level3">
+<h3 class="anchored" data-anchor-id="gene-expression-program-signatures-2">6.3 Gene Expression Program Signatures</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d3-heatmap-1.png" class="img-fluid figure-img" width="576"></p>
+<figcaption class="figure-caption">GEP weight heatmap for D3 (LB DeSurv-aligned, K = 7). Same gene set as D4 (2,064 DeSurv-selected genes). Comparing this heatmap with D4 reveals whether LB and YFB identify the same biological programs when applied to the same input data.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**D3 Factor 2** (beta-hat = -0.4394, protective, PVE = 7.64%, log-rank p = 0.0095)
+
+&lt;table class="table table-striped table-hover" style="font-size: 8px; width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; Rank &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Gene &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Posterior weight &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; MET &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.04296 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 2 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ITGA2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.94124 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 3 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ITGA3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.93744 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 4 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CDCP1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.90915 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ANLN &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.90835 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 6 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; EGFR &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.90044 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 7 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PGK1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.89091 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 8 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ASPH &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.88957 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 9 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; AP1S3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.88534 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 10 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; FAM3C &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.88468 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 11 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; RASA1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.87624 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 12 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ASAP2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.87481 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 13 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TMOD3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.86808 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 14 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; SLC2A1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.86644 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 15 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; BCAR3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.86397 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+**D3 Factor 3** (beta-hat = +0.2051, adverse, PVE = 17.68%, log-rank p = 0.1201)
+
+&lt;table class="table table-striped table-hover" style="font-size: 8px; width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; Rank &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Gene &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Posterior weight &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CAPN5 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.14815 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 2 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PLEKHA6 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.05733 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 3 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; FMO5 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.05348 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 4 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TJP3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.04867 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; C9orf152 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.04318 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 6 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; MLPH &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.04290 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 7 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; KCNE3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.03135 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 8 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PIP5K1B &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.02971 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 9 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CAPN8 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.01895 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 10 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PLA2G10 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.01821 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 11 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TSPAN3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.01788 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 12 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; FUT2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.00512 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 13 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; LPCAT4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.00287 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 14 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; RBM47 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.99375 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 15 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; BCAS1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.98665 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="d2-yfb-original-baseline-m5" class="level2">
+<h2 class="anchored" data-anchor-id="d2-yfb-original-baseline-m5">7. D2 — YFB Original Baseline (M5)</h2>
+<p>Configuration D2 is the pre-DeSurv YFB baseline, using the top-2,000 most variable genes (per-cohort variance, quantile normalization). It serves as the primary reference point for evaluating the benefit of DeSurv gene selection. With <span class="math inline">\(K = 3\)</span> and two active factors (<span class="math inline">\(\hat{\beta}_1 = -0.0532\)</span>, <span class="math inline">\(\hat{\beta}_2 = +0.0259\)</span>), D2 achieves a mean external concordance of 0.624. This is the M5 configuration referenced throughout the project documentation.</p>
+<section id="factor-summary-3" class="level3">
+<h3 class="anchored" data-anchor-id="factor-summary-3">7.1 Factor Summary</h3>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-hover table-sm small" data-quarto-postprocess="true">
+<caption>Factor summary for D2 (YFB original baseline / M5, K = 3). This configuration uses top-2,000 variance-selected genes with per-platform z-standardization and quantile normalization. Mean external C = 0.624.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">Factor</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Beta-hat</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Status</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Log-rank p</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">PVE (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-0.0532</td>
+<td style="text-align: left;">Active</td>
+<td style="text-align: right;">0.0003</td>
+<td style="text-align: right;">0.93</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0259</td>
+<td style="text-align: left;">Active</td>
+<td style="text-align: right;">0.3516</td>
+<td style="text-align: right;">1.05</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">0.3132</td>
+<td style="text-align: right;">0.37</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="survival-stratification-3" class="level3">
+<h3 class="anchored" data-anchor-id="survival-stratification-3">7.2 Survival Stratification</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d2-km-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Kaplan-Meier survival curves for D2 active factors (YFB original baseline, M5). Factors 1 and 2 carry opposite risk directions: Factor 1 is protective, Factor 2 is adverse.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="gene-expression-program-signatures-3" class="level3">
+<h3 class="anchored" data-anchor-id="gene-expression-program-signatures-3">7.3 Gene Expression Program Signatures</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d2-heatmap-1.png" class="img-fluid figure-img" width="576"></p>
+<figcaption class="figure-caption">GEP weight heatmap for D2 (YFB original baseline, K = 3, top-2,000 genes by variance). With only three factors, this configuration captures a more parsimonious decomposition than the DeSurv configurations. Both active factors (1 and 2) are visible with distinct gene signatures.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**D2 Factor 1** (beta-hat = -0.0532, protective, PVE = 0.93%, log-rank p = 0.0003)
+
+&lt;table class="table table-striped table-hover" style="font-size: 8px; width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; Rank &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Gene &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Posterior weight &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; LDHA &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.58444 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 2 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; SLC2A1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.55696 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 3 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ADM &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.45985 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 4 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ALDOA &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.29922 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; NDRG1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.16013 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 6 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ALDOC &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.15481 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 7 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PTTG1IP &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.11143 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 8 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; EGLN3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.06470 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 9 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; APLN &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.06385 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 10 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PTGES &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.05615 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 11 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; FGF23 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.04261 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 12 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; HK2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.00464 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 13 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PDK1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.98567 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 14 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; APOL1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.97216 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 15 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; TNNT1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.96028 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+**D2 Factor 2** (beta-hat = +0.0259, adverse, PVE = 1.05%, log-rank p = 0.3516)
+
+&lt;table class="table table-striped table-hover" style="font-size: 8px; width: auto !important; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:right;"&gt; Rank &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Gene &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Posterior weight &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ASPHD2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.86254 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 2 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; LPCAT4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.81252 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 3 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; FHDC1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.68463 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 4 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; OSBPL2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.63090 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 5 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; KCNK1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.62386 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 6 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; RETSAT &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.57970 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 7 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; PAK1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.57536 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 8 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; CYP2S1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.48637 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 9 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; SH2D4A &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.44926 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 10 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; NQO1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.36951 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 11 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; LDLR &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.35274 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 12 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; KPNA7 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.28373 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 13 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; BFAR &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.27430 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 14 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; AKAP1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.24522 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:right;"&gt; 15 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; ADAP1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 2.24416 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="cross-configuration-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="cross-configuration-comparison">8. Cross-Configuration Comparison</h2>
+<section id="d4-vs.-d5-gene-program-overlap" class="level3">
+<h3 class="anchored" data-anchor-id="d4-vs.-d5-gene-program-overlap">8.1 D4 vs.&nbsp;D5: Gene Program Overlap</h3>
+<p>D4 and D5 use the same 2,064-gene input set and the same YFB formulation, differing only in the presence of a cohort indicator. Comparing the top-50 genes in each active factor between configurations reveals whether the addition of a cohort term changes which biological programs are identified, or merely reweights the same programs across factors. A Jaccard index above 0.5 would indicate substantial overlap (the same program captured by different factor indices); a low Jaccard indicates that the cohort indicator has led the model to discover fundamentally different programs.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-hover table-sm small" data-quarto-postprocess="true">
+<caption>Gene overlap between D4 and D5 active factors (top-50 genes by |EF| weight). Jaccard = |intersection| / |union|. A Jaccard above 0.5 indicates the configurations identify the same molecular program; a low value indicates the cohort indicator has redirected the survival signal toward different genes.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">D4 factor</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">D5 factor</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Shared top-50 genes</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Jaccard</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">D4 F3 (β=+0.0113)</td>
+<td style="text-align: left;">D5 F7 (β=-0.0281)</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D4 F3 (β=+0.0113)</td>
+<td style="text-align: left;">D5 F8 (β=+0.0099)</td>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">0.639</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">D4 F7 (β=-0.0408)</td>
+<td style="text-align: left;">D5 F7 (β=-0.0281)</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">0.389</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">D4 F7 (β=-0.0408)</td>
+<td style="text-align: left;">D5 F8 (β=+0.0099)</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>The Jaccard overlap table reveals the degree to which D4 and D5 agree on the molecular content of their active programs. A Jaccard near zero for any pair indicates that the cohort indicator in D5 has absorbed expression variation that D4 attributes to a survival-associated program, effectively identifying a different biological signal. Conversely, high overlap would suggest the two configurations are biologically consistent and the cohort indicator merely reorganizes which factor index carries the survival signal.</p>
+</section>
+<section id="gep-heatmap-comparison" class="level3">
+<h3 class="anchored" data-anchor-id="gep-heatmap-comparison">8.2 GEP Heatmap Comparison</h3>
+<p>The heatmaps below place D4 and D5 side by side for visual comparison. Both use the same 2,064-gene set, so differences in column structure reflect the model’s different partitioning of gene expression variance when a cohort term is present.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d4-heatmap-comp-1.png" class="img-fluid figure-img" width="576"></p>
+<figcaption class="figure-caption">GEP weight heatmap for D4 (YFB DeSurv-aligned, no cohort indicator). Top 40 genes by maximum absolute weight across all seven factors. Asterisked columns are active factors (3 and 7).</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="desurv_factor_diagnostics_05_27_26_files/figure-html/d5-heatmap-comp-1.png" class="img-fluid figure-img" width="576"></p>
+<figcaption class="figure-caption">GEP weight heatmap for D5 (YFB DeSurv-aligned + cohort indicator). Top 40 genes by maximum absolute weight across all eight factors. Asterisked columns are active factors (7 and 8). Comparing with D4 reveals whether the cohort indicator changes the biological content of the identified programs.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Differences in the heatmap stripe patterns between D4 and D5 indicate regions of the gene expression space that the two configurations partition differently. Factors that appear visually similar across configurations likely capture the same underlying biology; factors that are structurally distinct reflect the model’s response to the cohort covariate. Given D5’s lower external concordance, any D5-unique programs should be interpreted with additional caution — they may reflect platform-specific artifacts rather than generalizable survival biology.</p>
+</section>
+</section>
+<section id="proportional-hazards-assumption" class="level2">
+<h2 class="anchored" data-anchor-id="proportional-hazards-assumption">9. Proportional Hazards Assumption</h2>
+<p>The Cox PH model assumes that the hazard ratio between any two patients is constant over follow-up time — that is, the log-hazard curves are parallel on the log scale. When this assumption is violated, <span class="math inline">\(\hat{\beta}\)</span> coefficients represent some time-averaged effect and standard errors may be biased. We assess the PH assumption using the scaled Schoenfeld residual test (Grambsch and Therneau, 1994), implemented in the <code>cox.zph</code> function from the <code>survival</code> package. A significant <span class="math inline">\(p\)</span>-value (<span class="math inline">\(&lt; 0.05\)</span>) indicates evidence of time-varying hazard ratios. Note that this test is conducted on the training cohort only (<span class="math inline">\(n = 273\)</span>), and with modest sample sizes, statistical power to detect PH violations is limited.</p>
+<section id="d4" class="level3">
+<h3 class="anchored" data-anchor-id="d4">9.1 D4</h3>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-hover table-sm small" data-quarto-postprocess="true">
+<caption>Schoenfeld residual test for proportional hazards — D4 (YFB DeSurv-aligned). Each row tests one covariate; the GLOBAL row tests all active factors jointly. A p-value below 0.05 indicates evidence of non-proportional hazards.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">chisq</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">df</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">F3</td>
+<td style="text-align: right;">0.4446</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.5049</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">F7</td>
+<td style="text-align: right;">0.2642</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.6072</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GLOBAL</td>
+<td style="text-align: right;">0.6022</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.7400</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>For D4, the global PH test <span class="math inline">\(p\)</span>-value of 0.74 indicates no statistically significant evidence of a proportional hazards violation at the 0.05 level, supporting the use of standard Cox PH coefficient estimates..</p>
+</section>
+<section id="d5" class="level3">
+<h3 class="anchored" data-anchor-id="d5">9.2 D5</h3>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-hover table-sm small" data-quarto-postprocess="true">
+<caption>Schoenfeld residual test for proportional hazards — D5 (YFB DeSurv-aligned + cohort indicator).</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">chisq</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">df</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">F7</td>
+<td style="text-align: right;">2.1376</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.1437</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">F8</td>
+<td style="text-align: right;">1.4036</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.2361</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GLOBAL</td>
+<td style="text-align: right;">4.9960</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0822</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="d3" class="level3">
+<h3 class="anchored" data-anchor-id="d3">9.3 D3</h3>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-striped table-hover table-sm small" data-quarto-postprocess="true">
+<caption>Schoenfeld residual test for proportional hazards — D3 (LB DeSurv-aligned). The LB formulation uses the raw loading L as the covariate; PH violations may differ from YFB because the loading scale and within-patient variance structure differ between the two formulations.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">chisq</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">df</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">F2</td>
+<td style="text-align: right;">1.5489</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.2133</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">F3</td>
+<td style="text-align: right;">1.1199</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.2900</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">GLOBAL</td>
+<td style="text-align: right;">3.9940</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.1357</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+</section>
+<section id="discussion-and-recommendations" class="level2">
+<h2 class="anchored" data-anchor-id="discussion-and-recommendations">10. Discussion and Recommendations</h2>
+<p>This report evaluated five configurations of the supervised Bayesian matrix factorization model on 273 PDAC patients from the merged TCGA_PAAD and CPTAC training cohort, with external validation on five held-out PDAC cohorts. Across all configurations, the empirical Bayes prior effectively prunes the latent space to two active gene expression programs (<span class="math inline">\(K_{\text{eff}} = 2\)</span>) regardless of the initial number of factors requested (<span class="math inline">\(K = 3\)</span>–<span class="math inline">\(8\)</span>). This consistent sparsity is a key property of the model: it suggests the survival signal in the training data is genuinely low-dimensional, captured by at most two independent molecular programs, rather than being diffusely distributed across many correlated factors.</p>
+<p>The recommended configuration D4 (YFB DeSurv-aligned, <span class="math inline">\(K = 7\)</span>, no cohort indicator) achieves the highest mean external concordance at 0.636, representing a meaningful improvement over the variance-based baseline D2 (0.624). The gain attributable to DeSurv gene selection alone — comparing D3 (0.622) to D1 (0.614) within the LB family — is 0.008. The additional gain from switching to the YFB formulation — comparing D4 to D3 within the DeSurv gene set — is 0.014. These additive improvements suggest that both gene selection strategy and linear predictor formulation contribute independently to generalization performance, and their combination in D4 provides the best available configuration.</p>
+<p>The two programs identified by D4 carry opposite survival associations: an adverse program (Factor 3, <span class="math inline">\(\hat{\beta}_3 = +0.0113\)</span>) whose high-loading patients have worse outcomes, and a protective program (Factor 7, <span class="math inline">\(\hat{\beta}_7 = -0.0408\)</span>) whose high-loading patients fare better. The Kaplan-Meier stratification in the training cohort is consistent with these directions, and the fact that this signal replicates across five external cohorts with diverse platform types (array and RNA-seq) and geographic origins (Australia, Netherlands, USA) suggests genuine biological rather than technical signal. Future work should focus on characterizing these programs through pathway enrichment analysis and cross-referencing with established PDAC molecular subtypes (Moffitt basal/classical, Bailey et al.&nbsp;2016 four subtypes) to determine whether they correspond to known biological axes or represent novel programs.</p>
+<p>Configuration D5 (YFB DeSurv-aligned + cohort indicator, 0.614) underperforms D4 despite using a richer model. This result, combined with the observation that per-platform z-standardization alone was sufficient to prevent <span class="math inline">\(\beta \to 0\)</span> collapse across 10 of 12 benchmark preprocessing configurations, argues against including a cohort indicator in the primary analysis. The indicator may absorb genuine inter-cohort biology — including any real expression differences between TCGA (fresh-frozen tissue) and CPTAC (formalin-fixed paraffin-embedded tissue) — that D4 correctly preserves and leverages for prediction. The cohort-indicator configuration may be revisited if additional training cohorts with known platform artifacts are incorporated.</p>
+<p>The LB sensitivity analysis (D3) demonstrates that the qualitative finding — two active programs, one adverse and one protective — is reproducible across linear predictor formulations. The specific gene weights differ between D3 and D4 (because LB and YFB optimize slightly different variational objectives), but the survival separation and directional consistency are preserved. This cross-formulation agreement increases confidence that the identified programs reflect real molecular structure rather than artifacts of the specific parameterization. From a practical standpoint, D4 is preferred for prediction tasks (higher external C-index), while D3 provides a useful robustness check and may be of independent interest for interpretability analysis because the LB coefficients have a more natural scale.</p>
+<p>For next steps, the top-weighted genes from D4 Factors 3 and 7 should be submitted to a gene set enrichment analysis platform such as MSigDB or the Broad GSEA tool, using hallmark gene sets, KEGG pathways, and PDAC-specific gene sets as reference libraries. The patient loading values <span class="math inline">\(\hat{L}_{i,3}\)</span> and <span class="math inline">\(\hat{L}_{i,7}\)</span> represent continuous molecular scores that could be compared to available PDAC subtype annotations (Moffitt basal/classical scores in TCGA) to assess concordance. Finally, the concordance results across the five external cohorts should be examined for cohort-specific patterns — a configuration that performs consistently across all five cohorts is preferable to one with high mean performance but high variance across settings.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

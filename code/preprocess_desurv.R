@@ -20,8 +20,24 @@ log2_plus1_transform <- function(Y) {
   log2(Y + 1)
 }
 
-select_top_variable_genes <- function(Y, gene_names, top_n = 2000) {
+#' Select the top-N most informative genes from an expression matrix.
+#'
+#' @param Y          numeric matrix (n × p), rows = subjects, columns = genes.
+#' @param gene_names character vector of length p; gene identifiers.
+#' @param top_n      integer or NULL. If NULL or >= ncol(Y), all genes are returned.
+#' @param method     "variance" (default) ranks by variance only.
+#'                   "combined_rank" ranks each gene by mean expression and by
+#'                   variance independently (highest = rank 1), sums the two ranks,
+#'                   and retains the top_n genes with the smallest rank sum.
+#'                   This matches the DeSurv (Young et al. 2025) gene selection
+#'                   criterion: genes that are both highly expressed AND highly
+#'                   variable receive the lowest combined rank.
+#' @return list with components Y (n × top_n), gene_names (length top_n), gene_var.
+#' @family v2 preprocessing
+select_top_variable_genes <- function(Y, gene_names, top_n = 2000,
+                                       method = c("variance", "combined_rank")) {
   validate_expression_inputs(Y, gene_names)
+  method <- match.arg(method)
 
   if (is.null(top_n) || top_n >= ncol(Y)) {
     return(list(Y = Y, gene_names = gene_names, gene_var = apply(Y, 2, stats::var)))
@@ -29,14 +45,32 @@ select_top_variable_genes <- function(Y, gene_names, top_n = 2000) {
   if (length(top_n) != 1 || !is.finite(top_n) || top_n < 1 || top_n != as.integer(top_n))
     stop("top_n must be NULL or an integer >= 1.")
 
-  gene_var <- apply(Y, 2, stats::var)
-  ord <- order(gene_var, decreasing = TRUE, na.last = NA)
-  keep <- ord[seq_len(min(as.integer(top_n), length(ord)))]
+  if (method == "variance") {
+    # Original behaviour: order by variance descending, keep top top_n.
+    gene_var <- apply(Y, 2, stats::var)
+    ord      <- order(gene_var, decreasing = TRUE, na.last = NA)
+  } else {
+    # combined_rank (DeSurv criterion):
+    # rank_mean = rank of negative mean (rank 1 = highest mean expression).
+    # rank_var  = rank of negative variance (rank 1 = highest variance).
+    # Select genes with the smallest combined rank_mean + rank_var.
+    gene_mean <- colMeans(Y)
+    gene_var  <- apply(Y, 2, stats::var)
+    rank_mean <- rank(-gene_mean, ties.method = "average", na.last = "keep")
+    rank_var  <- rank(-gene_var,  ties.method = "average", na.last = "keep")
+    rank_sum  <- rank_mean + rank_var
+    # order ascending: rank_sum=2 (rank 1 in both) is the best gene.
+    ord <- order(rank_sum, na.last = NA)
+  }
+
+  keep         <- ord[seq_len(min(as.integer(top_n), length(ord)))]
+  Y_keep       <- Y[, keep, drop = FALSE]
+  gene_var_out <- apply(Y_keep, 2, stats::var)
 
   list(
-    Y = Y[, keep, drop = FALSE],
+    Y          = Y_keep,
     gene_names = gene_names[keep],
-    gene_var = gene_var[keep]
+    gene_var   = gene_var_out
   )
 }
 
@@ -173,84 +207,70 @@ quantile_normalize_merged <- function(Y) {
 
 #' v2 merged-cohort preprocessing: intersect first, then normalise jointly.
 #'
-#' Corrects the gene-selection order bug in the v1 pipeline. v1 runs
-#' \code{preprocess_desurv_cohort()} per cohort (log2 → top-N by per-cohort
-#' variance → rank), then intersects. Because TCGA top-2000 and CPTAC
-#' top-2000 are computed on different assay types, only ~838 genes overlap —
-#' and those genes are dominated by platform-level variation rather than
-#' biology.
+#' Now supports two gene selection strategies:
 #'
-#' v2 pipeline order (7 steps):
+#' \strong{selection_per_cohort = FALSE (default, original behavior):}
+#' Gene selection runs AFTER normalization on the merged matrix (Steps 5-6).
+#' top_n genes are selected by \code{selection_method} on the normalized data.
+#'
+#' \strong{selection_per_cohort = TRUE (DeSurv-aligned):}
+#' Gene selection runs PER COHORT before normalization (Step 2b).
+#' Each cohort independently selects its top-\code{top_n} genes, then the
+#' intersection of those gene sets is carried forward. This avoids selecting
+#' genes on data where variance has been equalized by z-standardization
+#' (which defeats variance-based filtering).
+#'
+#' DeSurv-aligned pipeline (selection_per_cohort=TRUE):
 #' \enumerate{
 #'   \item Intersect raw gene universes across all training cohorts.
-#'   \item Log2(x + 1) transform per cohort (platform-aware: RNA-seq only).
-#'   \item Row-bind into a single merged matrix.
-#'   \item Quantile-normalize across all merged samples jointly
-#'         (\code{preprocessCore::normalize.quantiles}).
-#'   \item Compute per-gene variance across the full merged matrix.
-#'   \item Select the top \code{top_n} most-variable genes.
-#'   \item Rank-transform each subject within the selected gene set.
+#'   \item Log2(x+1) transform per cohort (RNA-seq only).
+#'   \item Per-cohort: select top-N genes by combined_rank, then intersect.
+#'   \item Per-platform z-standardization on the intersected gene set.
+#'   \item Row-bind into merged matrix.
+#'   \item (Optional) rank-transform each subject.
 #' }
 #'
-#' Steps 4–7 operate on the merged matrix, so variance reflects combined
-#' biological + residual batch variation rather than per-platform variance.
-#' Quantile normalisation (step 4) reduces platform-scale differences without
-#' requiring explicit cohort labels, preserving generalisability.
-#'
-#' @param cohort_raw_list   named list of raw cohort objects as returned by
-#'   \code{load_pdac_raw()}: each must contain \code{$Y} (n × p numeric
-#'   matrix) and \code{$gene_names} (character vector, length p).
-#' @param log_transform_flags named logical vector; TRUE entries trigger
-#'   log2(x + 1) for that cohort. Names must match \code{cohort_raw_list}.
-#' @param top_n             integer; number of most-variable genes to retain
-#'   after quantile normalisation. Default 2000.
-#' @param ties_method       ties method passed to \code{rank()}. Default
-#'   "average".
-#' @param rank_transform    logical; if TRUE (default) apply per-subject rank
-#'   transform (Step 7). Set FALSE for the no-rank sensitivity run: subjects
-#'   retain the raw quantile-normalised values on the selected gene set.
-#'   Rank transform forces all genes onto a uniform ordinal scale within each
-#'   subject; disabling it preserves absolute QN expression differences, which
-#'   may carry additional signal that rank-normalisation discards.
-#' @return list with components:
-#'   \describe{
-#'     \item{Y}{numeric matrix (n_total × top_n) — QN-transformed, and
-#'       rank-transformed if \code{rank_transform = TRUE}.}
-#'     \item{gene_names}{character vector of retained gene names.}
-#'     \item{n}{total number of training samples.}
-#'     \item{p}{number of retained genes (= top_n or fewer if universe is
-#'       smaller).}
-#'     \item{dataset_labels}{factor of length n indicating cohort membership.}
-#'     \item{n_raw_intersect}{number of genes in the raw intersection (before
-#'       top-N selection) — use to verify Step 1 recovers substantially more
-#'       than 838.}
-#'     \item{rank_transform}{logical; echoes the input flag so downstream
-#'       callers can record which preprocessing variant was used.}
-#'   }
+#' @param cohort_raw_list        named list of raw cohort objects with \code{$Y}
+#'   and \code{$gene_names}.
+#' @param log_transform_flags    named logical vector; TRUE = apply log2(x+1).
+#' @param top_n                  integer; number of genes to select. Default 2000.
+#' @param ties_method            ties method for rank(). Default "average".
+#' @param rank_transform         logical; apply per-subject rank transform. Default TRUE.
+#' @param per_platform_standardize logical; z-standardize each cohort before merging. Default FALSE.
+#' @param normalize_method       "quantile", "z_score", or "none". Default "quantile".
+#' @param selection_per_cohort   logical; if TRUE, gene selection runs per cohort
+#'   before normalization (DeSurv-aligned). Default FALSE.
+#' @param selection_method       "variance" or "combined_rank"; passed to
+#'   \code{select_top_variable_genes()}. Default "variance".
+#' @return list with Y, gene_names, n, p, dataset_labels, n_raw_intersect,
+#'   rank_transform, per_platform_standardize, normalize_method,
+#'   selection_per_cohort, selection_method.
 #' @family v2 preprocessing
-#' @seealso \code{\link{preprocess_desurv_cohort}} (v1 single-cohort path),
-#'   \code{\link{quantile_normalize_merged}}
+#' @seealso \code{\link{select_top_variable_genes}}
 preprocess_merged_cohorts <- function(cohort_raw_list,
                                       log_transform_flags,
                                       top_n                    = 2000,
                                       ties_method              = "average",
                                       rank_transform           = TRUE,
                                       per_platform_standardize = FALSE,
-                                      normalize_method         = c("quantile", "z_score", "none")) {
+                                      normalize_method         = c("quantile", "z_score", "none"),
+                                      selection_per_cohort     = FALSE,
+                                      selection_method         = c("variance", "combined_rank")) {
   normalize_method <- match.arg(normalize_method)
+  selection_method <- match.arg(selection_method)
   cohort_names <- names(cohort_raw_list)
   stopifnot(!is.null(cohort_names), all(cohort_names %in% names(log_transform_flags)))
 
   # Step 1: intersect raw gene universes (no preprocessing yet)
   gene_lists   <- lapply(cohort_raw_list, function(x) x$gene_names)
-  common_genes <- Reduce(intersect, gene_lists)
-  if (length(common_genes) == 0)
+  common_genes    <- Reduce(intersect, gene_lists)
+  n_raw_intersect <- length(common_genes)
+  if (n_raw_intersect == 0)
     stop("No common genes found across cohorts — check gene_names fields.")
   cat(sprintf("  [v2] Raw gene intersection: %d genes across %s\n",
-              length(common_genes), paste(cohort_names, collapse = " + ")))
+              n_raw_intersect, paste(cohort_names, collapse = " + ")))
 
-  # Steps 2–3: log2 transform per cohort (platform-aware), then subset to
-  #            common genes and row-bind into a single n_total × p matrix.
+  # Steps 2–3: log2 transform per cohort (platform-aware), subset to common genes.
   cohort_matrices <- lapply(cohort_names, function(ds) {
     raw <- cohort_raw_list[[ds]]
     idx <- match(common_genes, raw$gene_names)
@@ -260,6 +280,33 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
     Y
   })
   names(cohort_matrices) <- cohort_names
+
+  # Step 2b (DeSurv-aligned, optional): per-cohort gene selection BEFORE normalization.
+  # Selects top-N genes within each cohort independently on the log-transformed data,
+  # then intersects the selected sets. This prevents variance-equalization from
+  # neutralizing the variance signal used for gene selection.
+  if (selection_per_cohort) {
+    cat(sprintf("  [v2] Per-cohort gene selection (top-%d, method=%s) before normalization ...\n",
+                top_n, selection_method))
+    selected_per_cohort <- lapply(cohort_names, function(ds) {
+      sel <- select_top_variable_genes(cohort_matrices[[ds]], common_genes,
+                                       top_n = top_n, method = selection_method)
+      sel$gene_names
+    })
+    names(selected_per_cohort) <- cohort_names
+    selected_genes <- Reduce(intersect, selected_per_cohort)
+    if (length(selected_genes) == 0)
+      stop("Per-cohort gene selection produced no common genes. Reduce top_n or check inputs.")
+    cat(sprintf("  [v2] Genes after per-cohort selection and intersection: %d\n",
+                length(selected_genes)))
+    # Subset cohort matrices to the intersected gene set
+    cohort_matrices <- lapply(cohort_names, function(ds) {
+      idx <- match(selected_genes, common_genes)
+      cohort_matrices[[ds]][, idx, drop = FALSE]
+    })
+    names(cohort_matrices) <- cohort_names
+    common_genes <- selected_genes
+  }
 
   # Optional: per-platform z-standardisation before row-bind.
   # Removes cohort-specific gene mean and SD so that no single platform's
@@ -277,7 +324,7 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
     levels = cohort_names
   )
 
-  # Step 4: distribution normalization across merged samples (method-dependent)
+  # Step 4: distribution normalization across merged samples (method-dependent).
   if (normalize_method == "quantile") {
     cat(sprintf("  [v2] Quantile normalising merged matrix (%d x %d) ...\n",
                 nrow(Y_merged), ncol(Y_merged)))
@@ -286,30 +333,29 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
     cat(sprintf("  [v2] Joint z-standardizing merged matrix (%d x %d, colMean=0, colSD=1) ...\n",
                 nrow(Y_merged), ncol(Y_merged)))
     Y_norm <- scale(Y_merged, center = TRUE, scale = TRUE)
-    # Constant-variance genes (SD=0) produce NaN after scaling; replace with 0.
-    # These genes carry no information and will be deprioritized in variance selection.
-    n_nan <- sum(is.nan(Y_norm))
+    n_nan  <- sum(is.nan(Y_norm))
     if (n_nan > 0)
       cat(sprintf("  [v2] Note: %d NaN entries from zero-variance genes replaced with 0.\n", n_nan))
     Y_norm[is.nan(Y_norm)] <- 0
     colnames(Y_norm) <- common_genes
   } else {
-    # normalize_method == "none": skip normalization; pass log-transformed matrix directly.
-    # Gene-level mean differences across platforms are NOT removed here.
-    # Downstream column-centering inside fit_modular/fit_cox_on_yf provides
-    # partial correction, but platform-scale differences remain.
     cat(sprintf("  [v2] Skipping normalization (log-transform only; %d x %d) ...\n",
                 nrow(Y_merged), ncol(Y_merged)))
     Y_norm <- Y_merged
   }
 
-  # Steps 5–6: per-gene variance on the normalized matrix → top-N selection
-  selected <- select_top_variable_genes(Y_norm, common_genes, top_n = top_n)
-  cat(sprintf("  [v2] Genes retained after top-%d variance filter: %d\n",
-              top_n, length(selected$gene_names)))
+  # Steps 5–6: post-normalization gene selection (only when NOT using per-cohort selection).
+  # When selection_per_cohort=TRUE the gene set was fixed in Step 2b; skip here.
+  if (!selection_per_cohort) {
+    selected <- select_top_variable_genes(Y_norm, common_genes, top_n = top_n,
+                                          method = selection_method)
+    cat(sprintf("  [v2] Genes retained after top-%d %s filter: %d\n",
+                top_n, selection_method, length(selected$gene_names)))
+  } else {
+    selected <- list(Y = Y_norm, gene_names = common_genes)
+  }
 
   # Step 7 (optional): rank-transform each subject within the selected gene set.
-  # Disabled when rank_transform = FALSE for the no-rank sensitivity run.
   if (rank_transform) {
     Y_final <- rank_transform_subjects(selected$Y, ties_method = ties_method)
     cat("  [v2] Rank-transforming subjects (Step 7).\n")
@@ -325,10 +371,12 @@ preprocess_merged_cohorts <- function(cohort_raw_list,
     n                        = nrow(Y_final),
     p                        = ncol(Y_final),
     dataset_labels           = dataset_labels,
-    n_raw_intersect          = length(common_genes),
+    n_raw_intersect          = n_raw_intersect,
     rank_transform           = rank_transform,
     per_platform_standardize = per_platform_standardize,
-    normalize_method         = normalize_method
+    normalize_method         = normalize_method,
+    selection_per_cohort     = selection_per_cohort,
+    selection_method         = selection_method
   )
 }
 
