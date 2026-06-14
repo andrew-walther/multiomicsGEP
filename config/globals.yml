@@ -42,6 +42,31 @@ synthetic:
   b_true: [1.5, -1.2, 0.8, -0.5, 0.0]
 
 # ------------------------------------------------------------------------------
+# Multi-cohort simulation (shared vs. study-specific factor recovery)
+#   Used by results/multi_cohort_sim/run_multicohort_sim.R
+#   Three scenarios differ only in the shared/specific factor partition.
+# ------------------------------------------------------------------------------
+synthetic_multicohort:
+  C: 2                    # primary number of cohorts (2 = matches real training data)
+  n_per: [150, 150]       # patients per cohort
+  p: 1000                 # genes
+  active_rate: 0.05       # synthetic-F fallback sparsity (frac genes active per factor)
+  a_shared: 12.0          # amplitude of shared F columns. With unit-norm F columns and
+                          # per-gene noise SD ~1 (tau~Gamma(2,2)), a=12 gives recoverable
+                          # SNR (tuned 2026-06-14: rec_shared~0.83-1.0, C~0.85). a<=4 collapses.
+  a_specific: 12.0        # amplitude of specific F columns (variance ratio = (a_shared/a_specific)^2)
+  offset_sd: 0.0          # explicit platform offset SD (0 = off; batch is a specific factor)
+  target_censoring: 0.30  # target censoring fraction (bisection-calibrated)
+  seeds: [1, 2, 3, 4, 5]  # replicate seeds
+  ebmf_kmax: 20           # greedy_Kmax for EBMF template build / benchmark fits
+  k_fit: 6                # K passed to model fits (= total true K in primary scenarios)
+  # Scenario partitions: K_shared and per-cohort K_specific (length C).
+  scenarios:
+    all_shared:     { K_shared: 6, K_specific: [0, 0] }
+    hybrid:         { K_shared: 2, K_specific: [2, 2] }
+    nothing_shared: { K_shared: 0, K_specific: [3, 3] }
+
+# ------------------------------------------------------------------------------
 # Preprocessing
 # ------------------------------------------------------------------------------
 preprocessing:

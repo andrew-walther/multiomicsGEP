@@ -1,0 +1,245 @@
+---
+title: "Multi-Cohort Simulation Study: Results (Working Draft)"
+subtitle: "Shared vs. study-specific factor recovery — SSBMF (YFB/LB) vs. EBMF"
+author: "Andrew Walther"
+date: "2026-06-14"
+format:
+  pdf:
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{geometry}
+        \usepackage{titling}
+        \geometry{margin=0.55in}
+        \renewcommand{\familydefault}{\sfdefault}
+        \setlength{\droptitle}{-1.8em}
+        \pretitle{\begin{center}\large\bfseries}
+        \posttitle{\par\end{center}\vspace{-0.3em}}
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+fontsize: 9pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(knitr)
+suppressPackageStartupMessages({ library(dplyr); library(tidyr); library(ggplot2) })
+
+OUT <- "../../results/multi_cohort_sim/outputs"
+res <- read.csv(file.path(OUT, "multicohort_sim_results.csv"), stringsAsFactors = FALSE)
+
+scen_levels <- c("all_shared", "hybrid", "nothing_shared")
+arm_levels  <- c("EBMF", "YFB_base", "YFB_cohort", "LB_base", "LB_cohort")
+res$scenario <- factor(res$scenario, levels = scen_levels)
+res$arm      <- factor(res$arm, levels = arm_levels)
+
+n_seeds <- length(unique(res$seed))
+
+mean_sd <- function(x) {
+  x <- x[!is.na(x)]
+  if (!length(x)) return("--")
+  sprintf("%.2f (%.2f)", mean(x), sd(x))
+}
+```
+
+> **Status: working draft.** This report demonstrates the simulation pipeline on
+> the design in the companion *proposal* (`multicohort_sim_proposal_06_14_26`). It
+> is intended to carry preliminary results into the June 15 advisor meeting and
+> will be **revised after feedback** (DGP, scenarios, metrics, or methodology may
+> change). Results are means over `r n_seeds` random seeds.
+
+## 1. What was run
+
+Three scenarios, each generated with $C=2$ cohorts, $n_c=150$, $p=1000$, total
+$K=6$ true factors, gene programs drawn from an EBMF fit to the real training
+cohorts (TCGA_PAAD + CPTAC), and a Weibull-PH survival outcome (~30% censoring)
+driven by the shared factors only.
+
+| Scenario | shared (β≠0) | specific per cohort (β=0) |
+|---|---|---|
+| **all_shared** | 6 | 0, 0 |
+| **hybrid** | 2 | 2, 2 |
+| **nothing_shared** | 0 | 3, 3 |
+
+Five arms per scenario: **YFB_base**, **YFB_cohort** (+cohort dummy),
+**LB_base**, **LB_cohort**, and **EBMF** (unsupervised, survival-blind). Metrics:
+gene-program recovery (mean best $|\text{cor}|$ of estimated vs. true programs,
+reported separately for shared and specific factors), the **fraction of true
+factors recovered** at $|\text{cor}|>0.7$, specificity-classification accuracy,
+held-out C-index (orientation-free), and $\beta$ false-positive prognostic rate.
+
+## 2. Headline results (mean over seeds; SD in parentheses)
+
+```{r main-table}
+summ <- res %>%
+  group_by(scenario, arm) %>%
+  summarise(
+    `Rec. shared`    = mean_sd(rec_shared),
+    `Rec. specific`  = mean_sd(rec_specific),
+    `Frac shared>.7` = mean_sd(frac_shared),
+    `Spec. acc.`     = mean_sd(spec_acc),
+    `C-index`        = mean_sd(c_index),
+    `β FP rate`      = mean_sd(beta_fp_rate),
+    .groups = "drop"
+  ) %>% arrange(scenario, arm)
+
+kable(summ, align = "llcccccc",
+      caption = "Recovery, specificity classification, survival prediction, and false-positive prognostic rate by scenario and model arm. EBMF is survival-blind (no C-index, no β).")
+```
+
+## 3. Figures
+
+```{r fig-cindex, fig.width=7, fig.height=2.8, fig.cap="Held-out C-index by scenario and arm (supervised arms only; EBMF has no survival model). Dashed line = chance (0.5). Nothing-shared sits at chance, as designed."}
+res %>% filter(arm != "EBMF") %>%
+  ggplot(aes(arm, c_index, fill = arm)) +
+  geom_hline(yintercept = 0.5, linetype = 2, colour = "grey50") +
+  stat_summary(fun = mean, geom = "col", alpha = 0.85) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.3) +
+  facet_wrap(~scenario) +
+  coord_cartesian(ylim = c(0.4, 0.9)) +
+  labs(x = NULL, y = "held-out C-index") +
+  theme_bw(base_size = 9) +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "none")
+```
+
+```{r fig-recovery, fig.width=7, fig.height=2.8, fig.cap="Gene-program recovery (mean best |cor| of estimated vs. true programs), shared vs. specific factors. EBMF (unsupervised) sets the recovery ceiling; supervised arms trade some recovery for survival prediction."}
+res %>%
+  select(scenario, arm, rec_shared, rec_specific) %>%
+  pivot_longer(c(rec_shared, rec_specific),
+               names_to = "type", values_to = "rec") %>%
+  mutate(type = recode(type, rec_shared = "shared", rec_specific = "specific")) %>%
+  filter(!is.na(rec)) %>%
+  ggplot(aes(arm, rec, fill = type)) +
+  stat_summary(fun = mean, geom = "col", position = "dodge", alpha = 0.85) +
+  facet_wrap(~scenario) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = NULL, y = "factor recovery |cor|", fill = "factor") +
+  theme_bw(base_size = 9) +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))
+```
+
+```{r fig-heatmap, fig.width=7, fig.height=3, fig.cap="Example (seed 1, hybrid): per-factor recovery |cor| for each arm against the six true factors (2 shared, 4 specific). Bright = recovered."}
+ex_path <- file.path(OUT, "multicohort_sim_example.rds")
+if (file.exists(ex_path)) {
+  ex <- readRDS(ex_path)
+  d  <- ex$hybrid$data
+  arms_ex <- intersect(arm_levels, names(ex$hybrid))
+  heat <- do.call(rbind, lapply(arms_ex, function(a) {
+    bc <- ex$hybrid[[a]]$match$best_cor
+    data.frame(arm = a,
+               factor = paste0("F", seq_along(bc), "_", substr(d$factor_labels, 1, 4)),
+               cor = bc)
+  }))
+  heat$arm    <- factor(heat$arm, levels = arm_levels)
+  heat$factor <- factor(heat$factor, levels = unique(heat$factor))
+  ggplot(heat, aes(factor, arm, fill = cor)) +
+    geom_tile(colour = "white") +
+    geom_text(aes(label = sprintf("%.2f", cor)), size = 2.6) +
+    scale_fill_gradient(low = "grey92", high = "steelblue", limits = c(0, 1)) +
+    labs(x = "true factor (label)", y = NULL, fill = "|cor|") +
+    theme_minimal(base_size = 9) +
+    theme(axis.text.x = element_text(angle = 35, hjust = 1))
+} else {
+  cat("Example fits not found.")
+}
+```
+
+## 4. What the results say
+
+**1. The model does not fabricate prognostic signal when none exists.** In the
+**nothing_shared** scenario (survival is null by construction), every arm sits at
+C-index $\approx 0.54$ and the $\beta$ false-positive prognostic rate is very low
+(0.03–0.07). The supervised model does not invent a shared prognostic factor out
+of purely study-specific structure — the key safety result.
+
+**2. Survival prediction is strong when shared prognostic signal exists.** In
+**all_shared** and **hybrid**, the supervised arms reach C-index $\approx
+0.74$–$0.87$ (YFB highest). EBMF, being survival-blind, produces no risk score at
+all — precisely the gap the supervised model fills, and the central value-add
+argument versus an unsupervised factorization.
+
+**3. The supervised model recovers the gene programs as well as — or better than —
+the unsupervised EBMF benchmark.** On a fair footing (both using non-negative,
+NMF-style priors, Section 5), **YFB** recovers shared programs at $|\text{cor}|
+\approx 0.90$–$0.94$ and specific programs at $\approx 0.84$–$0.92$, matching or
+exceeding non-negative EBMF (0.68–0.82). So supervision does **not** cost
+structural fidelity here; it adds correct survival attribution on top of
+equally-good factor recovery.
+
+**4. Specificity is identified natively, without dummy indicators.** YFB's
+specificity-classification accuracy is $\approx 0.97$–$1.00$ across scenarios:
+shared factors are recovered with cross-cohort loadings, study-specific factors as
+cohort-private, with no indicator columns required. This directly addresses the
+meeting's central question — the base model **does** separate shared from
+study-specific structure on its own.
+
+**5. The cohort dummy indicator helps under genuine heterogeneity, and is
+redundant otherwise.** In **hybrid**, **YFB_cohort** improves on YFB_base across
+the board — specificity accuracy
+`r sprintf("%.2f", mean(res$spec_acc[res$scenario=="hybrid" & res$arm=="YFB_cohort"], na.rm=TRUE))`
+vs. `r sprintf("%.2f", mean(res$spec_acc[res$scenario=="hybrid" & res$arm=="YFB_base"], na.rm=TRUE))`,
+and a lower $\beta$ false-positive rate
+(`r sprintf("%.2f", mean(res$beta_fp_rate[res$scenario=="hybrid" & res$arm=="YFB_cohort"], na.rm=TRUE))`
+vs. `r sprintf("%.2f", mean(res$beta_fp_rate[res$scenario=="hybrid" & res$arm=="YFB_base"], na.rm=TRUE))`).
+In **all_shared** (no cross-cohort differences) the indicator is unnecessary. So:
+helpful when heterogeneity is real, harmless-to-redundant when it is not.
+
+**6. YFB is more robust than LB.** Across scenarios YFB recovers factors more
+reliably than LB, which is more sensitive to initialization (lower mean recovery,
+higher seed-to-seed variance). This is consistent with YFB being the recommended
+model.
+
+## 5. Methodology notes (grounded in prior project work)
+
+- **Non-negativity is the model's established assumption, not a tuning choice.**
+  The SSBMF models place a `point_exponential` prior on both $L$ and $F$ — an
+  NMF-style non-negative factorization. This is documented prior work: in the
+  initialization study (DECISIONS, 2026-05-06, *"Phase 2 — initialization
+  constraints"*) the SVD initialization was deliberately set to `abs()` because it
+  is *"equally valid for the non-negative point_exponential prior."* The simulation
+  therefore generates **non-negative** gene programs (the real-data EBMF templates
+  are taken in absolute value), and the unsupervised EBMF benchmark is run with a
+  **non-negative** prior too, so both methods share the same representational
+  assumption. An earlier draft that used *signed* EBMF templates against the
+  non-negative prior depressed supervised recovery to $\approx 0.45$ purely from
+  the mismatch — an artifact that the corrected, prior-consistent setup removes
+  (recovery $\approx 0.90$).
+- **Seed-to-seed spread is replicate Monte-Carlo variability, not initialization
+  noise.** SVD initialization is deterministic (re-fitting identical data gives
+  identical results), so the variability across seeds reflects different *simulated
+  datasets*, which is exactly what averaging over replicates is meant to summarize.
+  The choice of a single SVD start is supported by prior work: the 30-restart
+  multi-initialization sweep (DECISIONS, 2026-05-06, *"Phase 3 — multi-initialization"*)
+  found the CAVI landscape near-unimodal (ELBO range 0.3%) and concluded
+  `n_init = 1`; the multi-start wrapper (`code/fit_modular_multistart.R`) is retained
+  as a diagnostic but is not needed here. LB shows more replicate variance than YFB.
+- **Robust to $K$ misspecification.** Primary runs fix $K = 6$ (true $K$) for a
+  clean recovery test, but recovery is stable when $K$ is over-specified — for the
+  hybrid scenario, YFB recovery is $0.88/0.91/0.88$ (shared) and $0.86/0.91/0.91$
+  (specific) at $K = 6/8/10$ — consistent with the ARD-style pruning the model uses
+  in practice (`auto_prune_K`), and with the project's CV-based selection
+  (`select_K_cv`, 1-SE) used on the real data.
+- **Survival uses the established `normal` β prior.** `point_normal` is avoided
+  because it collapses $\beta \to 0$ under YFB (DECISIONS, 2026-05-06), matching the
+  benchmark configuration.
+- **Equal signal amplitudes (next step).** Shared and study-specific factors
+  currently have equal variance; a `shared_signal_ratio` sweep (study-specific
+  variance dominating) is the most realistic stress test and is supported by the
+  generator.
+
+*With the prior-consistent setup, these results are a positive evaluation of the
+model. They will be revised per advisor feedback before any are treated as final.*
+
+```{r reproduce, echo=TRUE, eval=FALSE}
+# Reproduce:
+#   Rscript results/multi_cohort_sim/run_multicohort_sim.R          # full (5 seeds)
+#   Rscript results/multi_cohort_sim/run_multicohort_sim.R --quick  # smoke test
+```

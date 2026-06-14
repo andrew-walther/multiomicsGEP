@@ -1,0 +1,396 @@
+---
+title: "Multi-Cohort Simulation Study: Shared vs. Study-Specific Factors (Proposal)"
+subtitle: "Data-generating process and evaluation design for the SSBMF (YFB) model"
+author: "Andrew Walther"
+date: "2026-06-14"
+format:
+  pdf:
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{geometry}
+        \usepackage{titling}
+        \geometry{margin=0.55in}
+        \renewcommand{\familydefault}{\sfdefault}
+        \setlength{\droptitle}{-1.8em}
+        \pretitle{\begin{center}\large\bfseries}
+        \posttitle{\par\end{center}\vspace{-0.3em}}
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+fontsize: 10pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## 1. Purpose and Background
+
+Prior synthetic validation of the Supervised Bayesian Matrix Factorization
+(SSBMF) model was carried out only in a **single-cohort** setting. The real
+application pools several PDAC cohorts that differ both by **platform**
+(RNA-seq, microarray, proteomics) and by **biology**. In that setting the latent
+factors fall into two kinds:
+
+- **Shared factors** — gene-expression programs present across *all* studies.
+  These are the cross-cohort biological signal we want to detect and, where they
+  are prognostic, to use for survival prediction.
+- **Study-specific factors** — programs private to a *single* study. These absorb
+  platform/batch effects and cohort-private biology that should *not* be mistaken
+  for shared, generalizable signal.
+
+This proposal specifies a simulation that generates data with a **known**
+shared / study-specific factor structure, so we can test whether the current
+model **natively** recovers that distinction — the same goal the previously
+discussed cohort dummy-indicator approach was meant to serve. If the base model
+already separates shared from study-specific factors, the dummy indicator columns
+may be unnecessary (meeting notes, May 29 2026).
+
+The design follows three decisions from the May 29 meeting:
+
+1. **EBMF-grounded ground truth.** Realistic gene programs are taken from an
+   Empirical Bayes Matrix Factorization (`flashier`) fit to the merged real
+   training cohorts. EBMF is also our **unsupervised benchmark** (Section 6).
+2. **Shared factors carry survival signal; study-specific factors do not**
+   ($\beta \neq 0$ on shared, $\beta = 0$ on specific). Survival is generated
+   from the shared component only.
+3. **The signal-strength of shared vs. study-specific structure is tunable**
+   through the magnitude of the $F$ columns, which defines the three scenarios.
+
+---
+
+## 2. Notation
+
+| Symbol | Meaning | Shape |
+|---|---|---|
+| $C$ | number of cohorts (studies) | scalar |
+| $n_c$ | patients in cohort $c$; $n = \sum_c n_c$ | scalar |
+| $p$ | number of genes | scalar |
+| $K$ | total number of latent factors | scalar |
+| $\mathcal{S}$ | index set of **shared** factors | $|\mathcal{S}|$ |
+| $\mathcal{P}_c$ | index set of factors **specific** to cohort $c$ | $|\mathcal{P}_c|$ |
+| $L$ | patient loadings | $n \times K$ |
+| $F$ | gene programs (factors) | $p \times K$ |
+| $\beta$ | log-hazard coefficients | $K$ |
+| $Y$ | observed genomics matrix | $n \times p$ |
+
+Rows of $Y$ (and $L$) are **stacked by cohort**: rows $1..n_1$ are cohort 1, the
+next $n_2$ rows are cohort 2, and so on. Factors partition disjointly:
+$K = |\mathcal{S}| + \sum_{c} |\mathcal{P}_c|$.
+
+---
+
+## 3. Data-Generating Process
+
+### 3.1 Loadings $L$ ($n \times K$) — block structure encodes specificity
+
+Every loading is drawn non-negative,
+$$ L_{ik} \sim \text{Exponential}(\text{rate}=1), \qquad \mathbb{E}[L]=1,\ \mathbb{E}[L^2]=2, $$
+matching the `point_exponential` prior used by the fitters. Specificity is then
+imposed by **zeroing out-of-cohort loadings**:
+
+- **Shared factor** $k \in \mathcal{S}$: keep $L_{ik}$ for *all* patients $i$.
+- **Cohort-$c$-specific factor** $k \in \mathcal{P}_c$: set
+  $$ L_{ik} = 0 \quad \text{for every } i \notin \text{cohort } c . $$
+
+A study-specific factor therefore contributes to $Y$ **only in its own cohort's
+rows** — this *is* the operational definition of "study-specific." The resulting
+$L$ is block-sparse: shared columns are dense, specific columns are zero outside
+one cohort block.
+
+### 3.2 Gene programs $F$ ($p \times K$) — realism + the signal knob
+
+Each column $F_{\cdot k}$ is a **gene program**, normalized to unit $L_2$ norm so
+its scale is set explicitly by an amplitude (below):
+
+- **Preferred (EBMF-grounded):** a column of $\texttt{ldf(flash\_fit, type=2)}\$F$
+  fit to the merged real training cohorts (realistic sparse programs), made
+  **non-negative** (absolute value) to match the model's non-negative
+  `point_exponential` factor prior. When $K$ exceeds the EBMF rank, columns are
+  recycled by index. *Matching the prior to the data sign structure is essential
+  for a fair test:* signed programs against a non-negative prior artificially
+  depress recovery. The EBMF benchmark is likewise run with a non-negative prior.
+- **Synthetic fallback** (no real data / no `flashier`): for each factor pick
+  $\lceil \text{active\_rate}\cdot p \rceil$ active genes (default 5%) and set
+  their weight to $1/\sqrt{\#\text{active}}$ (unit-norm column).
+
+**Signal-strength knob.** Multiply each column by an amplitude $a_k$:
+$a_{\text{shared}}$ for shared columns, $a_{\text{specific}}$ for specific ones.
+Since the variance factor $k$ contributes to $Y$ is
+$\mathbb{E}[L_{\cdot k}^2]\,\|F_{\cdot k}\|^2\, a_k^2$ and $\|F_{\cdot k}\|^2 = 1$,
+the **variance ratio scales as $(a_{\text{shared}}/a_{\text{specific}})^2$**. We
+call $\texttt{shared\_signal\_ratio} = a_{\text{shared}}/a_{\text{specific}}$ the
+continuous dial behind the scenarios in Section 4.
+
+### 3.3 Genomics model (Gaussian)
+
+$$ Y = L F^{\top} + \text{offset} + E, \qquad
+   E_{ij} \sim \mathcal{N}(0,\ 1/\tau_j),\quad
+   \tau_j \sim \text{Gamma}(\text{shape}=2,\ \text{rate}=2). $$
+
+- Per-gene precision $\tau_j$ gives gene $j$ noise SD $1/\sqrt{\tau_j}$
+  ($\mathbb{E}[\tau_j]=1$), matching the established single-cohort DGP.
+- $\text{offset}$ (default **0**): per the meeting notes, batch effects are
+  absorbed by the study-specific component by construction, so an explicit offset
+  is usually unnecessary. When enabled, one vector per cohort
+  $o_c \sim \mathcal{N}(0, \sigma_{\text{offset}}^2 I_p)$ is added to that cohort's
+  rows (a pure platform shift) for stress-testing.
+- $Y$ is **column-centered** before fitting (standard preprocessing).
+
+### 3.4 Survival model (Weibull proportional hazards) — shared factors only
+
+$$ \eta_i = \sum_{k \in \mathcal{S}} L_{ik}\,\beta_k
+   \qquad (\beta_k = 0 \text{ for every specific factor}), $$
+$$ T_i = \left( \frac{-\log U_i}{\text{scale0}\cdot \exp(\eta_i)} \right)^{1/\text{shape}},
+   \quad U_i \sim \text{Unif}(0,1),\ \text{shape}=1.5,\ \text{scale0}=0.01. $$
+
+The baseline cumulative hazard is Weibull, $H_0(t) = (t\cdot\text{scale0})^{\text{shape}}$.
+The default shared coefficients cycle the established pattern
+$(1.5, -1.2, 0.8, -0.5)$ to length $|\mathcal{S}|$. **Censoring** is calibrated to
+$\approx 30\%$ by bisection: $\text{censor\_base} \sim \text{Exp}(1)$,
+$\text{time} = \min(\text{event}, \text{censor})$,
+$\text{status} = \mathbf{1}\{\text{event} \le \text{censor}\}$.
+
+> **Anchoring caveat (meeting notes).** Because the survival outcome is linked
+> only to shared factors, the supervision "anchors" those factors into the shared
+> component. This is exactly the intended mechanism; the results report discusses
+> whether it produces cleaner shared/specific separation.
+
+---
+
+## 4. The Three Scenarios
+
+The scenarios differ only in how the $K$ factors are partitioned into shared vs.
+specific (and, optionally, in `shared_signal_ratio`). For the primary setting
+$C=2$, $n_c=150$, $p=1000$, $K=6$:
+
+| Scenario | $|\mathcal{S}|$ shared ($\beta\neq 0$) | specific per cohort ($\beta=0$) | Interpretation |
+|---|---|---|---|
+| **All shared** | 6 | 0, 0 | Studies effectively one cohort |
+| **Hybrid** | 2 | 2, 2 | Both shared and private structure |
+| **Nothing shared** | 0 | 3, 3 | No cross-cohort structure |
+
+**Nothing-shared is a deliberate false-positive control.** With $\mathcal{S} =
+\varnothing$, $\eta \equiv 0$ and survival carries no factor signal. The correct
+result is C-index $\approx 0.5$ and all $|\hat\beta|$ below threshold — the model
+should *not* fabricate a shared prognostic factor. An optional knob
+(`specific_prognostic`, default off) can give each cohort a within-cohort
+prognostic factor if we later want survival signal in this regime.
+
+### Worked example — Hybrid, $C=2$, $n_c=150$, $p=1000$, $K=6$
+
+- **Dimensions:** $n=300$; $Y$ is $300\times1000$, $L$ is $300\times6$, $F$ is
+  $1000\times6$, $\beta$ is length 6. Rows 1–150 = cohort 1; 151–300 = cohort 2.
+- **Factor labels:** `[shared, shared, specific_1, specific_1, specific_2, specific_2]`.
+- **Loadings $L$:** columns 1–2 dense (all 300 patients). Columns 3–4 zero for
+  rows 151–300 (private to cohort 1). Columns 5–6 zero for rows 1–150 (private to
+  cohort 2). $L$ shows a visible block-sparse pattern.
+- **Coefficients:** $\beta = [1.5,\ -1.2,\ 0,\ 0,\ 0,\ 0]$ — only the two shared
+  factors drive survival.
+- **What a correct model should find:** factors 1–2 with loadings across *both*
+  cohorts *and* nonzero $\hat\beta$; factors 3–6 cohort-private with
+  $\hat\beta \approx 0$. The unsupervised EBMF benchmark should recover the same
+  six gene programs but cannot say which two are prognostic.
+
+**Secondary sensitivity:** a 3-cohort hybrid (2 shared + 1 private per cohort) and
+a `shared_signal_ratio` sweep within the hybrid regime.
+
+---
+
+## 5. Integration with the SSBMF (YFB) Model
+
+The DGP emits exactly the inputs the fitters expect — $Y$ ($n\times p$,
+column-centered), `time`, `status`, and `cohort_id` (a factor). These map directly
+onto:
+
+- **`fit_cox_on_yf()`** — the **YFB** model, linear predictor $\eta = (YF)\beta$.
+  This is the recommended model; `EF_norms` from the fit must be passed to
+  `predict_cox_on_yf()` for consistent train/test scaling.
+- **`fit_supervised_mf_modular()`** — the **LB** model, $\eta = L\beta$ (retained
+  for comparison).
+
+**Best-practice configuration (D4-aligned):** `prior_beta = "normal"` (avoids the
+$\beta\to0$ collapse), `alpha = 0.5`, `lambda = 1.0`. Per-platform normalization —
+the single most important preprocessing step on real merged data — is implicitly
+satisfied here because every cohort block is generated on a common scale; a
+per-cohort-centering ("z-score") arm is retained as a reference. The cohort dummy
+indicator (`cohort_id`) uses **corner-point encoding** ($C-1$ fixed binary columns
+that absorb per-cohort gene means and never enter the Cox predictor).
+
+**The native-identification test.** The headline analysis fits **without** the
+dummy indicator (`cohort_id = NULL`) and asks whether the fitted factors separate
+into shared vs. study-specific on their own. The $\pm$dummy comparison then
+quantifies whether the indicator adds anything.
+
+---
+
+## 6. Supervised vs. Unsupervised (EBMF) Benchmark
+
+EBMF (`flashier`, greedy + backfit) is fit to the **same simulated $Y$** with **no
+survival information**, and scored on the *identical* factor-recovery and
+specificity-classification metrics as the supervised fits. Because EBMF is
+survival-blind, it has **no $\beta$**. The comparison answers two questions:
+
+1. Does the supervised model recover the shared/study-specific structure *as well
+   as* the unsupervised gold standard (i.e., supervision does not hurt the
+   factorization)?
+2. Does survival supervision *additionally* yield correct $\beta$ — flagging which
+   recovered factors are prognostic — which EBMF fundamentally cannot?
+
+This is the value-add argument for the paper: same structural recovery, plus
+correct survival attribution.
+
+> Note: two distinct EBMF uses. The **template-building** EBMF (Section 3.2) is fit
+> to *real* data to manufacture realistic ground-truth gene programs. The
+> **benchmark** EBMF here is fit to each *simulated* $Y$ and scored as a competing
+> method. They do not share a fit.
+
+---
+
+## 7. Evaluation Metrics
+
+For each (scenario × model arm × seed) we record:
+
+- **Shared-factor recovery** — mean best $|\text{cor}|$ between estimated and true
+  gene programs ($F$ columns, gene space, comparable across LB/YFB/EBMF), over the
+  *true shared* factors.
+- **Specific-factor recovery** — same, over the *true study-specific* factors.
+- **Specificity-classification accuracy** — label each *estimated* factor
+  shared/specific from its per-cohort loading energy, compare to the truth. This
+  is the direct test of "does the model natively identify the distinction?"
+- **Survival-effect recovery** — $|\hat\beta|$ on factors matched to true shared
+  (expect $> $ threshold) vs. true specific (expect $\approx 0$). Reported as
+  true-positive and **false-positive prognostic rates** (the latter is the
+  anchoring / nothing-shared check). Threshold from
+  `globals.yml: k_selection$beta_threshold`.
+- **C-index** — orientation-free held-out concordance, $\max(C, 1-C)$.
+
+**Comparisons reported:** (i) YFB vs. LB; (ii) base vs. $+$cohort-dummy ($\Delta$
+in each metric — "are dummies necessary?"); (iii) supervised vs. unsupervised
+EBMF.
+
+---
+
+## 8. Reference Data-Generating Code
+
+The following is the complete, self-contained DGP (the project implementation
+wraps this same logic with configuration and seeds). A reader can run it directly
+given the small `.calibrate` helper.
+
+```{r dgp-reference, eval=FALSE, echo=TRUE}
+# Bisection calibration of censoring scale to a target censoring fraction.
+.calibrate <- function(ev, base, target = 0.30, n_iter = 40) {
+  lo <- 1e-3; hi <- max(ev) * 10
+  for (i in seq_len(n_iter)) {
+    mid <- sqrt(lo * hi)
+    if (mean(base * mid < ev) > target) lo <- mid else hi <- mid
+  }
+  hi
+}
+
+generate_multicohort_data <- function(
+    C            = 2L,                 # number of cohorts
+    n_per        = rep(150L, C),       # patients per cohort (rows stacked by cohort)
+    p            = 1000L,              # genes
+    K_shared     = 2L,                 # # shared factors      (beta != 0)
+    K_specific   = rep(2L, C),         # # specific factors per cohort (beta = 0)
+    F_templates  = NULL,               # p x K_ebmf EBMF programs; NULL -> synthetic sparse
+    a_shared     = 1.0,                # amplitude of shared  F columns
+    a_specific   = 1.0,                # amplitude of specific F columns
+    active_rate  = 0.05,               # synthetic-fallback sparsity
+    beta_shared  = NULL,               # length K_shared; NULL -> recycle c(1.5,-1.2,0.8,-0.5)
+    offset_sd    = 0.0,                # explicit platform offset SD (0 = off)
+    shape        = 1.5, scale0 = 0.01, # Weibull-PH baseline
+    target_cens  = 0.30,               # target censoring fraction
+    seed         = 1L) {
+
+  set.seed(seed)
+  n  <- sum(n_per)
+  K  <- K_shared + sum(K_specific)
+  cohort_id <- factor(rep(seq_len(C), times = n_per))
+
+  # label + owner per column (owner 0 = shared)
+  labels <- c(rep("shared", K_shared),
+              unlist(lapply(seq_len(C), function(cc) rep(paste0("specific_", cc), K_specific[cc]))))
+  owner  <- c(rep(0L, K_shared),
+              unlist(lapply(seq_len(C), function(cc) rep(cc, K_specific[cc]))))
+
+  # L (n x K): Exponential(1), block-zeroed outside owner cohort
+  L <- matrix(rexp(n * K, rate = 1), n, K)
+  for (k in seq_len(K)) if (owner[k] != 0L) L[cohort_id != owner[k], k] <- 0
+
+  # F (p x K): EBMF templates (unit-norm) or synthetic sparse (unit-norm)
+  Fm <- matrix(0, p, K)
+  if (!is.null(F_templates)) {
+    idx <- ((seq_len(K) - 1L) %% ncol(F_templates)) + 1L
+    Fm  <- F_templates[, idx, drop = FALSE]
+    Fm  <- sweep(Fm, 2, sqrt(colSums(Fm^2)) + 1e-10, "/")
+  } else {
+    for (k in seq_len(K)) {
+      active <- sample.int(p, max(1L, round(active_rate * p)))
+      Fm[active, k] <- 1 / sqrt(length(active))
+    }
+  }
+  amp <- ifelse(labels == "shared", a_shared, a_specific)   # signal-strength knob
+  Fm  <- sweep(Fm, 2, amp, "*")
+
+  # per-gene Gaussian noise: tau_j ~ Gamma(2,2)
+  tau <- rgamma(p, shape = 2, rate = 2)
+  E   <- sweep(matrix(rnorm(n * p), n, p), 2, sqrt(tau), "/")
+
+  # optional explicit platform offset (off by default)
+  offset <- matrix(0, n, p)
+  if (offset_sd > 0) for (cc in seq_len(C)) {
+    ov <- rnorm(p, 0, offset_sd)
+    offset[cohort_id == cc, ] <- matrix(ov, sum(cohort_id == cc), p, byrow = TRUE)
+  }
+
+  # assemble + column-center
+  Y <- L %*% t(Fm) + offset + E
+  Y <- sweep(Y, 2, colMeans(Y), "-")
+
+  # survival from SHARED factors only
+  if (is.null(beta_shared))
+    beta_shared <- if (K_shared > 0) rep_len(c(1.5, -1.2, 0.8, -0.5), K_shared) else numeric(0)
+  beta <- numeric(K); beta[labels == "shared"] <- beta_shared
+  eta  <- as.vector(L %*% beta)                  # == 0 in the "nothing shared" scenario
+
+  event <- (-log(runif(n)) / (scale0 * exp(eta)))^(1 / shape)
+  cb    <- rexp(n, rate = 1)
+  cs    <- .calibrate(event, cb, target = target_cens)
+  ctime <- cb * cs
+  time   <- pmin(event, ctime)
+  status <- as.integer(event <= ctime)
+
+  list(Y = Y, time = time, status = status, cohort_id = cohort_id,
+       L_true = L, F_true = Fm, beta_true = beta,
+       factor_labels = labels, factor_owner = owner)
+}
+```
+
+---
+
+## 9. Open Questions for Discussion (Rashid / Yusha)
+
+1. **Specificity definition.** We encode study-specific factors via block-zero
+   loadings (a factor is active in exactly one cohort). Is this the structure you
+   intend, or should specific factors also have *non-overlapping gene programs*
+   per cohort?
+2. **Nothing-shared survival.** Default leaves survival null in the nothing-shared
+   scenario (false-positive control). Do you prefer instead a within-cohort
+   prognostic specific factor so each cohort has its own survival signal?
+3. **Cohort count.** Primary is $C=2$ (matches the real training data and the
+   fixed-effects rationale); a $C=3$ hybrid is included as sensitivity. Is 2
+   sufficient for the methods claim, or should 3 be primary?
+4. **Signal ratio.** Default $a_{\text{shared}} = a_{\text{specific}}$. Should the
+   hybrid scenario stress a regime where study-specific variance *dominates*
+   shared variance (the harder, more realistic case)?
+
+*This is the design to be reviewed before the implementation results are
+finalized. The accompanying results report (working draft) demonstrates the
+pipeline on this design and will be revised per feedback.*

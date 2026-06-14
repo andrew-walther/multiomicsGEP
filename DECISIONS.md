@@ -5,6 +5,45 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-06-14 — Multi-Cohort Simulation: non-negative ground truth + fair EBMF benchmark
+
+**Question:** How should a multi-cohort simulation (shared vs. study-specific factors) be
+generated so that recovery of the SSBMF (YFB/LB) model is tested *fairly*, and so that the
+unsupervised EBMF benchmark is a like-for-like comparator?
+
+**Decision:**
+- Generate **non-negative** ground-truth loadings $L$ and gene programs $F$. This matches the
+  models' `point_exponential` (NMF-style) prior on $L$ and $F$ — the established model
+  assumption (see 2026-05-06 "Phase 2 — initialization constraints", where the SVD init was set
+  to `abs()` as "equally valid for the non-negative point_exponential prior").
+- Real-data EBMF templates (`flashier ldf$F`, ~48% negative) are taken in **absolute value** to
+  obtain non-negative programs; the synthetic-fallback programs are non-negative by construction.
+- The unsupervised **EBMF benchmark arm** is run with a **non-negative** prior
+  (`ebnm_point_exponential` on $L$ and $F$) so it shares the same representational assumption.
+
+**Why:** An initial draft used signed EBMF templates against the non-negative model prior. This
+depressed supervised gene-program recovery to ~0.45 — a pure prior/data mismatch artifact.
+Matching priors to the data sign structure raises recovery to ~0.90, equal to or better than the
+(non-negative) EBMF benchmark. The flaw was in the simulation, not the model.
+
+**Result (mean over 5 seeds, K=6, a=12):** YFB recovers shared programs at 0.90–0.94 and
+specific at 0.84–0.92 (>= EBMF), specificity-classification accuracy 0.97–1.00, held-out
+C-index 0.81–0.87 where shared prognostic signal exists and ~0.54 (beta FP rate 0.03–0.07) in the
+null "nothing-shared" scenario. The cohort dummy indicator helps under heterogeneity (hybrid)
+and is redundant when cohorts are homogeneous (all-shared). YFB > LB on recovery and stability.
+
+**Robustness (grounded in prior work):** fits are deterministic given data (single SVD start;
+near-unimodal landscape per the 2026-05-06 "Phase 3 — multi-initialization" 30-restart sweep, so
+`n_init=1`); recovery is stable to $K$ over-specification ($K=6/8/10$); `normal` beta prior used
+(`point_normal` collapses beta->0 under YFB).
+
+**Status:** Working draft for the 2026-06-15 advisor meeting; subject to revision after feedback.
+
+**Files:** `results/multi_cohort_sim/{generate_multicohort_data,build_ebmf_templates,sim_scoring,run_multicohort_sim}.R`,
+`config/globals.yml` (`synthetic_multicohort`), `docs/reports/multicohort_sim_{proposal,results}_06_14_26.qmd`.
+
+---
+
 ## 2026-05-27 — DeSurv Gene Selection Alignment
 
 **Question:** Does adopting DeSurv's gene selection (combined mean+variance rank, top-3000 per
