@@ -70,7 +70,8 @@ driven by the shared factors only.
 | **nothing_shared** | 0 | 3, 3 |
 
 Five arms per scenario: **YFB_base**, **YFB_cohort** (+cohort dummy),
-**LB_base**, **LB_cohort**, and **EBMF** (unsupervised, survival-blind). Metrics:
+**LB_base**, **LB_cohort**, and **EBMF→Cox** (two-stage baseline: unsupervised
+factorization, then a Cox model on the EBMF factor scores). Metrics:
 gene-program recovery (mean best $|\text{cor}|$ of estimated vs. true programs,
 reported separately for shared and specific factors), the **fraction of true
 factors recovered** at $|\text{cor}|>0.7$, specificity-classification accuracy,
@@ -92,7 +93,7 @@ summ <- res %>%
   ) %>% arrange(scenario, arm)
 
 kable(summ, align = "llcccccc",
-      caption = "Recovery, specificity classification, survival prediction, and false-positive prognostic rate by scenario and model arm. EBMF is survival-blind (no C-index, no β).")
+      caption = "Recovery, specificity classification, survival prediction, and false-positive prognostic rate by scenario and model arm. The EBMF arm is the two-stage baseline (unsupervised factorization, then a downstream Cox on the EBMF factor scores): it has a C-index for comparison but no β FP rate, since its factors are not selected for prognostic relevance.")
 ```
 
 **Column definitions.**
@@ -100,7 +101,8 @@ kable(summ, align = "llcccccc",
 - **Scenario** — which factor partition was simulated (all_shared / hybrid /
   nothing_shared; see Section 1).
 - **Arm** — the fitted model: YFB or LB, each with (`_cohort`) or without
-  (`_base`) a cohort indicator, plus the unsupervised EBMF benchmark.
+  (`_base`) a cohort indicator, plus the two-stage EBMF→Cox baseline (unsupervised
+  factorization followed by a Cox model on the EBMF factor scores).
 - **Rec. shared / Rec. specific** — gene-program recovery: mean best
   $|\text{correlation}|$ between each estimated and true gene program ($F$ column),
   averaged over the *true shared* / *true study-specific* factors. 1.0 = perfect
@@ -196,7 +198,7 @@ gridExtra::grid.arrange(p_true$gtable, p_hat$gtable, ncol = 2)
 
 ### 3.2 Factor recovery: estimated gene programs match the truth
 
-```{r fig-heatmap, fig.width=7, fig.height=3, eval=have_ex, fig.cap="Per-factor recovery |cor| (seed 1, hybrid) for each arm against the six true factors (2 shared, 4 specific). Bright = recovered. The supervised arms (especially YFB) recover all six; EBMF recovers most but with no survival attribution."}
+```{r fig-heatmap, fig.width=7, fig.height=3, eval=have_ex, fig.cap="Per-factor recovery |cor| (seed 1, hybrid) for each arm against the six true factors (2 shared, 4 specific). Bright = recovered. The supervised arms (especially YFB) recover all six; the unsupervised EBMF factorization recovers most, but its two-stage Cox cannot match the joint model on survival prediction (see Figure, Section 3.4)."}
 d  <- ex$hybrid$data
 arms_ex <- intersect(arm_levels, names(ex$hybrid))
 heat <- do.call(rbind, lapply(arms_ex, function(a) {
@@ -249,17 +251,21 @@ res %>%
 
 ### 3.4 External validation: held-out survival prediction
 
-```{r fig-cindex, fig.width=7, fig.height=2.8, fig.cap="Held-out C-index by scenario and arm (supervised arms only; EBMF has no survival model). Dashed line = chance (0.5). Nothing-shared sits at chance, as designed; the signal scenarios reach 0.74-0.87."}
-res %>% filter(arm != "EBMF") %>%
-  ggplot(aes(arm, c_index, fill = arm)) +
+```{r fig-cindex, fig.width=7, fig.height=2.8, fig.cap="Held-out C-index by scenario and arm. The supervised arms use the joint model's beta; EBMF→Cox is the two-stage baseline (unsupervised EBMF factorization, then a Cox model on the EBMF factor scores). Dashed line = chance (0.5). In hybrid, the joint YFB leads the two-stage EBMF→Cox by ~0.09 (0.81 vs 0.72); in all_shared the two-stage baseline nearly matches (every factor prognostic); nothing_shared sits at chance, as designed."}
+res %>%
+  mutate(arm = recode(arm, EBMF = "EBMF→Cox")) %>%
+  mutate(arm = factor(arm, levels = c("YFB_base","YFB_cohort","LB_base","LB_cohort","EBMF→Cox")),
+         is_baseline = arm == "EBMF→Cox") %>%
+  ggplot(aes(arm, c_index, fill = is_baseline)) +
   geom_hline(yintercept = 0.5, linetype = 2, colour = "grey50") +
   stat_summary(fun = mean, geom = "col", alpha = 0.85) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.3) +
   facet_wrap(~scenario) +
+  scale_fill_manual(values = c(`FALSE` = "#1f77b4", `TRUE` = "#d62728"), guide = "none") +
   coord_cartesian(ylim = c(0.4, 0.9)) +
   labs(x = NULL, y = "held-out C-index") +
   theme_bw(base_size = 9) +
-  theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "none")
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))
 ```
 
 ```{r fig-km, fig.width=5.2, fig.height=3.2, eval=have_ex, fig.cap="Held-out Kaplan-Meier curves for the hybrid scenario (YFB_base), test patients split at the median predicted risk. The model's risk score cleanly separates survival on data it never saw during fitting — direct external-validation evidence."}
@@ -331,11 +337,18 @@ C-index $\approx 0.54$ and the $\beta$ false-positive prognostic rate is very lo
 (0.03–0.07). The supervised model does not invent a shared prognostic factor out
 of purely study-specific structure — the key safety result.
 
-**2. Survival prediction is strong when shared prognostic signal exists.** In
-**all_shared** and **hybrid**, the supervised arms reach C-index $\approx
-0.74$–$0.87$ (YFB highest). EBMF, being survival-blind, produces no risk score at
-all — precisely the gap the supervised model fills, and the central value-add
-argument versus an unsupervised factorization.
+**2. The joint model outperforms the two-stage EBMF→Cox baseline where it matters
+most.** The sharpest comparison is against "factorize first, attach survival
+second": an unsupervised EBMF factorization followed by a Cox model on the EBMF
+factor scores (held-out patients projected onto the EBMF programs). In **hybrid**
+— only some factors prognostic, the realistic case — the joint **YFB** reaches
+C-index 0.81 vs. **0.72** for EBMF→Cox, a $\approx 0.09$ gain. Because EBMF
+selects its factors without seeing the outcome, it cannot preferentially sharpen
+the prognostic ones; jointly modelling genomics and survival can. In
+**all_shared** (every factor prognostic) the two-stage baseline nearly matches
+(0.86 vs. 0.87), and in **nothing_shared** both sit at chance ($\approx 0.55$) —
+exactly where the gap should and should not appear. This is the central value-add
+of supervision over an unsupervised factorization.
 
 **3. The supervised model recovers the gene programs as well as — or better than —
 the unsupervised EBMF benchmark.** On a fair footing (both using non-negative,

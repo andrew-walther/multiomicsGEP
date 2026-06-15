@@ -161,31 +161,57 @@ fit_arm <- function(arm, d, spl) {
          EF_cohort = f$EF_cohort, n_iter = f$history$n_iter)
 
   } else if (arm == "EBMF") {
-    # Unsupervised benchmark: survival-blind factorization of training Y.
-    # Use NON-NEGATIVE EBMF (point_exponential on L and F) so the benchmark shares
-    # the same NMF-style prior as the supervised models — otherwise a signed EBMF
-    # is mismatched to the non-negative ground truth and the comparison is unfair.
+    # Unsupervised benchmark, extended to a TWO-STAGE baseline:
+    #   stage 1 — survival-blind non-negative EBMF factorization of training Y;
+    #   stage 2 — a Cox model fit on the EBMF factor scores.
+    # This is the "factorize first, attach survival afterward" pipeline that the
+    # joint SSBMF model is meant to outperform: EBMF chooses its factors WITHOUT
+    # seeing the outcome, so it cannot preferentially sharpen the prognostic ones.
+    # Non-negative priors (point_exponential on L and F) match the supervised arms,
+    # so the only difference being tested is joint vs. two-stage supervision.
     ebnm_args <- if (requireNamespace("ebnm", quietly = TRUE))
       list(ebnm_fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_exponential))
     else list()
     f <- do.call(flashier::flash,
                  c(list(Ytr, var_type = 2, greedy_Kmax = K_FIT,
                         backfit = TRUE, verbose = 0), ebnm_args))
-    l <- flashier::ldf(f, type = "2")
-    list(EF = as.matrix(l$F), EL = as.matrix(l$L), EBeta = NULL,
+    l  <- flashier::ldf(f, type = "2")
+    EF <- as.matrix(l$F)                 # p × K unit-norm gene programs
+    EL <- as.matrix(l$L)                 # n_tr × K loadings (for structural scoring)
+    # Stage 2: project training Y onto the EBMF programs and fit a downstream Cox.
+    # Using the least-squares projection (rather than ldf's L) keeps the train and
+    # test factor scores on the SAME scale, because the held-out scores in
+    # predict_test() are obtained by the identical projection operator.
+    Ltr_proj <- Ytr %*% EF %*% solve(crossprod(EF) + diag(1e-8, ncol(EF)))
+    cox_coef <- tryCatch(
+      as.numeric(coef(survival::coxph(survival::Surv(ttr, str_) ~ Ltr_proj))),
+      error = function(e) rep(NA_real_, ncol(EF)))
+    list(EF = EF, EL = EL, EBeta = NULL, cox_coef = cox_coef,
          EF_norms = NULL, EF_cohort = NULL, n_iter = f$n_factors)
   }
 }
 
-#' Held-out test predictions for an arm.  EBMF returns NULL (no native survival
-#' predictor — precisely the gap the supervised model fills).  Returns the test
-#' risk scores together with their survival outcome and cohort so the report can
+#' Held-out test predictions for an arm.  Supervised arms use the joint model's
+#' β; the EBMF arm uses its TWO-STAGE downstream Cox (stage 2) on held-out scores
+#' obtained by projecting test Y onto the EBMF programs.  Returns the test risk
+#' scores together with their survival outcome and cohort so the report can
 #' compute the C-index AND draw a held-out risk-stratified Kaplan-Meier curve.
 predict_test <- function(arm, fit, d, spl) {
-  if (arm == "EBMF") return(NULL)
   Yte <- d$Y[spl$test_idx, , drop = FALSE]
   tte <- d$time[spl$test_idx]
   ste <- d$status[spl$test_idx]
+
+  if (arm == "EBMF") {
+    # Two-stage baseline: project held-out Y onto the EBMF programs (same
+    # projection used to build the training scores in fit_arm), then score with
+    # the downstream Cox coefficients.  NA coefficients (rank-deficient fit) -> 0.
+    if (is.null(fit$cox_coef) || all(is.na(fit$cox_coef))) return(NULL)
+    EF <- fit$EF
+    cc <- fit$cox_coef; cc[is.na(cc)] <- 0
+    Lte_proj <- Yte %*% EF %*% solve(crossprod(EF) + diag(1e-8, ncol(EF)))
+    return(list(risk = as.vector(Lte_proj %*% cc), time = tte, status = ste,
+                cohort = d$cohort_id[spl$test_idx]))
+  }
 
   # subtract estimated per-cohort offset for cohort arms (matches run_synthetic.R)
   if (!is.null(fit$EF_cohort) && ncol(fit$EF_cohort) > 0) {

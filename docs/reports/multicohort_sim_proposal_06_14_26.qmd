@@ -459,15 +459,15 @@ this proposal is discussed.**
 | all_shared | YFB_base | 0.92 | — | 1.00 | 0.87 | — |
 | all_shared | YFB_cohort | 0.94 | — | 0.90 | 0.86 | — |
 | all_shared | LB_base | 0.53 | — | 1.00 | 0.74 | — |
-| all_shared | EBMF | 0.82 | — | 0.90 | — | — |
+| all_shared | EBMF→Cox | 0.82 | — | 0.90 | 0.86 | — |
 | hybrid | YFB_base | 0.90 | 0.84 | 0.97 | 0.81 | 0.50 |
 | hybrid | YFB_cohort | 0.92 | 0.92 | 1.00 | 0.81 | 0.20 |
 | hybrid | LB_base | 0.72 | 0.67 | 0.83 | 0.76 | 0.20 |
-| hybrid | EBMF | 0.68 | 0.78 | 0.80 | — | — |
+| hybrid | EBMF→Cox | 0.68 | 0.78 | 0.80 | **0.72** | — |
 | nothing_shared | YFB_base | — | 0.89 | 1.00 | 0.55 | 0.03 |
 | nothing_shared | YFB_cohort | — | 0.91 | 1.00 | 0.54 | 0.03 |
 | nothing_shared | LB_base | — | 0.78 | 0.87 | 0.54 | 0.07 |
-| nothing_shared | EBMF | — | 0.70 | 0.80 | — | — |
+| nothing_shared | EBMF→Cox | — | 0.70 | 0.80 | 0.55 | — |
 
 *Mean over 5 seeds; LB_cohort omitted for brevity. **Column definitions:**
 **Rec. shared / Rec. specific** — gene-program recovery, the mean best
@@ -477,8 +477,15 @@ specificity-classification accuracy, the fraction of estimated factors correctly
 labeled shared vs. study-specific from their per-cohort loading energy.
 **C-index** — held-out (external) concordance on the 25% test split (0.5 = chance).
 **$\beta$ FP** — false-positive prognostic rate: fraction of true study-specific
-factors ($\beta = 0$) wrongly given a survival effect (lower is better). EBMF is
-survival-blind (no C-index, no $\beta$).*
+factors ($\beta = 0$) wrongly given a survival effect (lower is better).
+**EBMF→Cox** is the two-stage baseline: an unsupervised (survival-blind) EBMF
+factorization followed by a Cox model fit on the EBMF factor scores. It has no
+$\beta$ false-positive rate (its factors are not chosen for prognostic relevance);
+its C-index quantifies how well the "factorize first, predict second" pipeline
+generalizes, for direct comparison against the joint supervised model. In the
+hybrid scenario the joint model leads by $\approx 0.09$ (0.81 vs.\ 0.72); in
+all_shared the two-stage baseline nearly matches (every factor is prognostic), and
+in nothing_shared both sit at chance.*
 
 ```{r proposal-fig-setup}
 #| include: false
@@ -487,10 +494,15 @@ OUT_MC  <- "../../results/multi_cohort_sim/outputs"
 ex_path <- file.path(OUT_MC, "multicohort_sim_example.rds")
 have_ex <- file.exists(ex_path)
 if (have_ex) ex <- readRDS(ex_path)
+res_path <- file.path(OUT_MC, "multicohort_sim_results.csv")
+have_res <- file.exists(res_path)
+if (have_res) res <- read.csv(res_path, stringsAsFactors = FALSE)
 ```
 
-```{r fig-loadings-proposal, fig.width=9, fig.height=5.5, eval=have_ex, fig.cap="Patient loading heatmaps for the hybrid scenario (seed 1, training split). Rows = patients grouped by cohort (left sidebar: blue = cohort 1, salmon = cohort 2); columns = factors F1-F6. Top annotation: true factor type (Active = shared/prognostic; Shrunk = study-specific/non-prognostic) and estimated |beta-hat| from YFB_base. Cell colour: white (zero) to red (high loading). LEFT: true L showing the ground-truth block-sparse structure. RIGHT: estimated L from YFB_base — the model recovers the same block structure with no indicator columns."}
-suppressPackageStartupMessages({ library(pheatmap); library(gridExtra) })
+```{r fig-loadings-proposal, fig.width=9, fig.height=7.8, eval=have_ex && have_res, fig.cap="TOP — Patient loading heatmaps for the hybrid scenario (seed 1, training split). Rows = patients grouped by cohort (left sidebar: blue = cohort 1, salmon = cohort 2); columns = factors F1-F6. Top annotation: true factor type (Active = shared/prognostic; Shrunk = study-specific/non-prognostic) and estimated |beta-hat| from YFB. LEFT: true L (ground-truth block-sparse structure); RIGHT: estimated L from YFB recovering the same structure with no indicator columns. BOTTOM — Held-out C-index by scenario and arm (mean +/- SE over 5 seeds; dashed line = chance 0.5). The joint supervised model (YFB) and the two-stage EBMF->Cox baseline differ most in the hybrid scenario: when only some factors are prognostic, jointly modelling genomics and survival recovers the prognostic structure that the survival-blind EBMF factorization cannot preferentially sharpen. In all_shared (every factor prognostic) the two-stage baseline nearly matches; in nothing_shared both sit at chance, as designed."}
+suppressPackageStartupMessages({ library(pheatmap); library(gridExtra); library(grid) })
+
+# ---- Top: True vs Estimated L heatmaps ----
 d    <- ex$hybrid$data
 spl  <- ex$hybrid$split
 cid  <- droplevels(d$cohort_id[spl$train_idx])
@@ -518,8 +530,38 @@ ph_args  <- list(cluster_rows=FALSE, cluster_cols=FALSE, show_rownames=FALSE,
                  gaps_row=gap_row, border_color=NA, fontsize_col=9, fontsize=9,
                  legend=TRUE, annotation_legend=TRUE, silent=TRUE)
 p_true <- do.call(pheatmap, c(list(Ltrue, main="True L"), ph_args))
-p_hat  <- do.call(pheatmap, c(list(Lhat,  main="Estimated L (YFB_base, no indicator)"), ph_args))
-gridExtra::grid.arrange(p_true$gtable, p_hat$gtable, ncol = 2)
+p_hat  <- do.call(pheatmap, c(list(Lhat,  main="Estimated L (YFB, no indicator)"), ph_args))
+
+# ---- Bottom: held-out C-index — joint model vs. two-stage EBMF->Cox ----
+arm_disp <- c(YFB_base="YFB", YFB_cohort="YFB +cohort",
+              LB_base="LB", LB_cohort="LB +cohort", EBMF="EBMF→Cox")
+cidx <- res %>%
+  filter(arm %in% names(arm_disp)) %>%
+  group_by(scenario, arm) %>%
+  summarise(C = mean(c_index, na.rm=TRUE),
+            se = sd(c_index, na.rm=TRUE)/sqrt(sum(!is.na(c_index))), .groups="drop") %>%
+  mutate(arm = factor(arm_disp[arm], levels = unname(arm_disp)),
+         scenario = factor(scenario, levels=c("all_shared","hybrid","nothing_shared")))
+bar_fill <- c("YFB"="#1f77b4", "YFB +cohort"="#4c9bd4",
+              "LB"="#7f7f7f", "LB +cohort"="#bcbcbc", "EBMF→Cox"="#d62728")
+p_cidx <- ggplot(cidx, aes(arm, C, fill = arm)) +
+  geom_hline(yintercept = 0.5, linetype = 2, colour = "grey50") +
+  geom_col(alpha = 0.9) +
+  geom_errorbar(aes(ymin = C - se, ymax = C + se), width = 0.25) +
+  facet_wrap(~scenario) +
+  scale_fill_manual(values = bar_fill, guide = "none") +
+  coord_cartesian(ylim = c(0.4, 0.9)) +
+  labs(x = NULL, y = "held-out C-index",
+       title = "Survival validation: joint SSBMF vs. two-stage EBMF→Cox") +
+  theme_bw(base_size = 9) +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1),
+        plot.title = element_text(size = 9, face = "bold"))
+
+# ---- Assemble: heatmaps (top), C-index panel (bottom) ----
+gridExtra::grid.arrange(
+  p_true$gtable, p_hat$gtable, ggplotGrob(p_cidx),
+  layout_matrix = rbind(c(1, 2), c(3, 3)),
+  heights = c(1.55, 1))
 ```
 
 **The headline findings:**
@@ -533,9 +575,15 @@ gridExtra::grid.arrange(p_true$gtable, p_hat$gtable, ncol = 2)
    ($\eta \equiv 0$ by construction), every arm sits at C-index $\approx 0.54$ and
    the $\beta$ false-positive rate is 0.03–0.07 — the model does not invent a
    shared prognostic factor out of purely study-specific structure.
-3. **Survival prediction is strong where shared prognostic signal exists**
-   (C-index 0.81–0.87, YFB highest), and EBMF — being survival-blind — produces no
-   risk score at all. This is the value-add of supervision.
+3. **The joint model beats the two-stage EBMF→Cox baseline where it matters most.**
+   In the hybrid scenario — only some factors prognostic, the realistic case — the
+   joint YFB reaches C-index 0.81 vs. 0.72 for "factorize first, fit Cox second"
+   ($\approx 0.09$ gain). Because EBMF chooses its factors without seeing the
+   outcome, it cannot preferentially sharpen the prognostic ones; jointly modelling
+   genomics and survival can. In all_shared (every factor prognostic) the two-stage
+   baseline nearly matches (0.86 vs. 0.87), and in nothing_shared both sit at chance
+   — exactly where the gap should and should not appear. This is the core value-add
+   of supervision.
 4. **Supervision does not cost structural fidelity.** YFB recovers shared programs
    at $|\text{cor}| \approx 0.90$–0.94 and specific programs at 0.84–0.92, matching
    or exceeding the non-negative EBMF benchmark (0.68–0.82).
