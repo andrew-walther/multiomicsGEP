@@ -22,6 +22,7 @@ format:
     toc: true
     code-fold: true
     theme: cosmo
+    html-math-method: mathjax
 fontsize: 10pt
 execute:
   echo: false
@@ -49,9 +50,9 @@ shared / study-specific factor structure, so we can test whether the current
 model **natively** recovers that distinction — the same goal the previously
 discussed cohort dummy-indicator approach was meant to serve. If the base model
 already separates shared from study-specific factors, the dummy indicator columns
-may be unnecessary (meeting notes, May 29 2026).
+may be unnecessary.
 
-The design follows three decisions from the May 29 meeting:
+The design incorporates the plan from a prior meeting, with three key elements:
 
 1. **EBMF-grounded ground truth.** Realistic gene programs are taken from an
    Empirical Bayes Matrix Factorization (`flashier`) fit to the merged real
@@ -103,7 +104,7 @@ rows** — this *is* the operational definition of "study-specific." The resulti
 $L$ is block-sparse: shared columns are dense, specific columns are zero outside
 one cohort block.
 
-### 3.2 Gene programs $F$ ($p \times K$) — realism + the signal knob
+### 3.2 Gene Programs / Factors $F$ ($p \times K$)
 
 Each column $F_{\cdot k}$ is a **gene program**, normalized to unit $L_2$ norm so
 its scale is set explicitly by an amplitude (below):
@@ -146,10 +147,12 @@ $$ Y = L F^{\top} + \text{offset} + E, \qquad
 
 $$ \eta_i = \sum_{k \in \mathcal{S}} L_{ik}\,\beta_k
    \qquad (\beta_k = 0 \text{ for every specific factor}), $$
-$$ T_i = \left( \frac{-\log U_i}{\text{scale0}\cdot \exp(\eta_i)} \right)^{1/\text{shape}},
-   \quad U_i \sim \text{Unif}(0,1),\ \text{shape}=1.5,\ \text{scale0}=0.01. $$
+$$ T_i = \left( \frac{-\log U_i}{\lambda_0\cdot \exp(\eta_i)} \right)^{1/\alpha},
+   \quad U_i \sim \text{Unif}(0,1), $$
 
-The baseline cumulative hazard is Weibull, $H_0(t) = (t\cdot\text{scale0})^{\text{shape}}$.
+where $\alpha = 1.5$ is the Weibull shape and $\lambda_0 = 0.01$ is the baseline scale
+(controls the overall event rate). The baseline cumulative hazard is
+$H_0(t) = (\lambda_0\, t)^{\alpha}$.
 The default shared coefficients cycle the established pattern
 $(1.5, -1.2, 0.8, -0.5)$ to length $|\mathcal{S}|$. **Censoring** is calibrated to
 $\approx 30\%$ by bisection: $\text{censor\_base} \sim \text{Exp}(1)$,
@@ -214,8 +217,9 @@ onto:
 - **`fit_supervised_mf_modular()`** — the **LB** model, $\eta = L\beta$ (retained
   for comparison).
 
-**Best-practice configuration (D4-aligned):** `prior_beta = "normal"` (avoids the
-$\beta\to0$ collapse), `alpha = 0.5`, `lambda = 1.0`. Per-platform normalization —
+**Model configuration.** Both fitters use `prior_beta = "normal"` (avoids the
+$\beta\to0$ collapse under YFB), `alpha = 0.5`, `lambda = 1.0`, and a
+`point_exponential` (non-negative) prior on $L$ and $F$. Per-platform normalization —
 the single most important preprocessing step on real merged data — is implicitly
 satisfied here because every cohort block is generated on a common scale; a
 per-cohort-centering ("z-score") arm is retained as a reference. The cohort dummy
@@ -375,7 +379,7 @@ generate_multicohort_data <- function(
 
 ---
 
-## 9. Open Questions for Discussion (Rashid / Yusha)
+## 9. Open Questions for Discussion
 
 1. **Specificity definition.** We encode study-specific factors via block-zero
    loadings (a factor is active in exactly one cohort). Is this the structure you
@@ -391,6 +395,9 @@ generate_multicohort_data <- function(
    hybrid scenario stress a regime where study-specific variance *dominates*
    shared variance (the harder, more realistic case)?
 
-*This is the design to be reviewed before the implementation results are
-finalized. The accompanying results report (working draft) demonstrates the
-pipeline on this design and will be revised per feedback.*
+*The working implementation and preliminary results are in
+`results/multi_cohort_sim/` (runner: `run_multicohort_sim.R`; outputs:
+`outputs/multicohort_sim_results.csv`). A summary results report is available at
+`docs/reports/multicohort_sim_results_06_14_26.{pdf,html}`. Both the
+implementation and the results report can be updated based on feedback to this
+proposal.*
