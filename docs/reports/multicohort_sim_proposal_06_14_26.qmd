@@ -418,19 +418,19 @@ d    <- ex$hybrid$data
 spl  <- ex$hybrid$split
 cid  <- droplevels(d$cohort_id[spl$train_idx])
 fit  <- ex$hybrid$YFB_base
-col_idx <- fit$match$match; inv_map <- order(col_idx)
+col_idx <- fit$match$match          # col_idx[j] = estimated col for true factor j
 labs    <- d$factor_labels; flab <- paste0("F", seq_along(labs))
 ord     <- order(cid); cid_ord <- cid[ord]
 gap_row <- which(diff(as.integer(cid_ord)) != 0)
 Ltrue <- d$L_true[spl$train_idx, , drop = FALSE][ord, , drop = FALSE]
-Lhat  <- fit$EL[ord, inv_map, drop = FALSE]
+Lhat  <- fit$EL[ord, col_idx, drop = FALSE]   # select estimated cols in true-factor order
 rownames(Ltrue) <- rownames(Lhat) <- paste0("P", seq_len(nrow(Ltrue)))
 colnames(Ltrue) <- colnames(Lhat) <- flab
 row_anno  <- data.frame(Cohort = cid_ord, row.names = rownames(Ltrue))
 cohort_pal <- setNames(c("#2166AC", "#D6604D"), levels(cid_ord))
 col_anno  <- data.frame(
   Type     = factor(ifelse(labs == "shared", "Active", "Shrunk"), levels = c("Active","Shrunk")),
-  Abs_Beta = abs(fit$EBeta[inv_map]), row.names = flab)
+  Abs_Beta = abs(fit$EBeta[col_idx]), row.names = flab)   # |β̂| in true factor order
 anno_colors <- list(Cohort = cohort_pal,
                     Type   = c(Active = "#D62728", Shrunk = "#BDBDBD"),
                     Abs_Beta = c("#FFFFFF", "#08306B"))

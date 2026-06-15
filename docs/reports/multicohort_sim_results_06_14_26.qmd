@@ -135,9 +135,10 @@ spl  <- ex$hybrid$split
 cid  <- droplevels(d$cohort_id[spl$train_idx])
 fit  <- ex$hybrid$YFB_base
 
-# Reorder columns to match true factor order (shared first, then specific)
-col_idx <- fit$match$match          # estimated col j maps to true factor col_idx[j]
-inv_map <- order(col_idx)           # reorder estimated cols so they align to true order
+# match$match[j] = which estimated column corresponds to true factor j.
+# Using it directly as a column index reorders estimated L so column k lines up
+# with true factor k — giving the same left-to-right ordering in both panels.
+col_idx <- fit$match$match          # length K_true; col_idx[j] = estimated col for true factor j
 labs    <- d$factor_labels          # "shared", "specific_1", "specific_2", ...
 flab    <- paste0("F", seq_along(labs))
 
@@ -148,7 +149,7 @@ gap_row <- which(diff(as.integer(cid_ord)) != 0)  # horizontal gap at cohort bou
 
 # Build true and estimated L matrices (rows sorted by cohort, cols in true order)
 Ltrue <- d$L_true[spl$train_idx, , drop = FALSE][ord, , drop = FALSE]
-Lhat  <- fit$EL[ord, inv_map, drop = FALSE]
+Lhat  <- fit$EL[ord, col_idx, drop = FALSE]       # select estimated cols in true-factor order
 rownames(Ltrue) <- rownames(Lhat) <- paste0("P", seq_len(nrow(Ltrue)))
 colnames(Ltrue) <- colnames(Lhat) <- flab
 
@@ -159,10 +160,9 @@ cohort_pal <- setNames(c("#2166AC", "#D6604D"), levels(cid_ord))
 # Column annotation: true factor type (Active = shared, Shrunk = specific)
 # and estimated |beta-hat| from YFB_base
 true_status <- ifelse(labs == "shared", "Active", "Shrunk")
-ebeta_abs   <- abs(fit$EBeta[inv_map])
 col_anno    <- data.frame(
   Type     = factor(true_status, levels = c("Active", "Shrunk")),
-  Abs_Beta = ebeta_abs,
+  Abs_Beta = abs(fit$EBeta[col_idx]),   # |β̂| aligned to true factor order
   row.names = flab
 )
 
