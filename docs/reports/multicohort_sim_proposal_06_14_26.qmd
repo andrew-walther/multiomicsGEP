@@ -392,10 +392,56 @@ this proposal is discussed.**
 | nothing_shared | LB_base | — | 0.78 | 0.87 | 0.54 | 0.07 |
 | nothing_shared | EBMF | — | 0.70 | 0.80 | — | — |
 
-*Mean over 5 seeds. Recovery = best $|\text{cor}|$ of estimated vs. true gene
-programs; Spec. acc. = specificity-classification accuracy; $\beta$ FP =
-false-positive prognostic rate on true-specific factors. EBMF is survival-blind
-(no C-index, no $\beta$). LB_cohort omitted from the table for brevity.*
+*Mean over 5 seeds; LB_cohort omitted for brevity. **Column definitions:**
+**Rec. shared / Rec. specific** — gene-program recovery, the mean best
+$|\text{correlation}|$ between estimated and true gene programs over the true
+shared / study-specific factors (1 = perfect). **Spec. acc.** —
+specificity-classification accuracy, the fraction of estimated factors correctly
+labeled shared vs. study-specific from their per-cohort loading energy.
+**C-index** — held-out (external) concordance on the 25% test split (0.5 = chance).
+**$\beta$ FP** — false-positive prognostic rate: fraction of true study-specific
+factors ($\beta = 0$) wrongly given a survival effect (lower is better). EBMF is
+survival-blind (no C-index, no $\beta$).*
+
+```{r proposal-fig-setup}
+#| include: false
+suppressPackageStartupMessages({ library(ggplot2); library(dplyr); library(tidyr) })
+OUT_MC  <- "../../results/multi_cohort_sim/outputs"
+ex_path <- file.path(OUT_MC, "multicohort_sim_example.rds")
+have_ex <- file.exists(ex_path)
+if (have_ex) ex <- readRDS(ex_path)
+```
+
+```{r fig-loadings-proposal, fig.width=7, fig.height=4.2, eval=have_ex, fig.cap="Patient loadings in the hybrid scenario (training patients grouped by cohort; red line = cohort boundary). Left: true loadings. Right: estimated loadings from YFB without a cohort indicator, columns reordered to the matched true factors; each column scaled to its own maximum. Shared factors (F1-F2) load across BOTH cohorts; cohort-1-specific factors (F3-F4) light up only the top block, cohort-2-specific (F5-F6) only the bottom. The estimate reproduces the true block-sparse pattern — the model identifies shared vs. cohort-private factors with no indicator columns."}
+d   <- ex$hybrid$data
+spl <- ex$hybrid$split
+cid <- d$cohort_id[spl$train_idx]
+ord <- order(cid); cid_ord <- cid[ord]
+labs <- d$factor_labels
+flab <- paste0("F", seq_along(labs), " (", labs, ")")
+fit  <- ex$hybrid$YFB_base
+Ltrue <- d$L_true[spl$train_idx, , drop = FALSE][ord, , drop = FALSE]
+Lhat  <- fit$EL[ord, fit$match$match, drop = FALSE]
+scale01 <- function(M) apply(M, 2, function(x) { r <- max(abs(x)); if (r < 1e-12) abs(x) else abs(x) / r })
+mk <- function(M, src) {
+  M <- scale01(M); colnames(M) <- flab
+  df <- as.data.frame(M); df$patient <- seq_len(nrow(M))
+  tidyr::pivot_longer(df, -patient, names_to = "factor", values_to = "val") %>% dplyr::mutate(source = src)
+}
+hl <- rbind(mk(Ltrue, "True L"), mk(Lhat, "Estimated L (YFB_base)"))
+hl$factor <- factor(hl$factor, levels = flab)
+hl$source <- factor(hl$source, levels = c("True L", "Estimated L (YFB_base)"))
+bnd <- sum(cid_ord == levels(cid_ord)[1])
+ggplot(hl, aes(factor, patient, fill = val)) +
+  geom_raster() +
+  geom_hline(yintercept = bnd + 0.5, colour = "red", linewidth = 0.4) +
+  facet_wrap(~source) +
+  scale_y_reverse() +                            # patient 1 (cohort 1) at top
+  scale_fill_gradient(low = "white", high = "steelblue") +
+  labs(x = NULL, y = "patient (top = cohort 1, bottom = cohort 2)", fill = "loading\n(col-scaled)") +
+  theme_minimal(base_size = 9) +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1), panel.grid = element_blank())
+```
 
 **The headline findings:**
 

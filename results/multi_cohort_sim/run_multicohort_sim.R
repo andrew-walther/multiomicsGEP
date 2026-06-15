@@ -177,10 +177,12 @@ fit_arm <- function(arm, d, spl) {
   }
 }
 
-#' Held-out C-index for an arm.  EBMF returns NA (no native survival predictor —
-#' precisely the gap the supervised model fills).
-cindex_for <- function(arm, fit, d, spl) {
-  if (arm == "EBMF") return(NA_real_)
+#' Held-out test predictions for an arm.  EBMF returns NULL (no native survival
+#' predictor — precisely the gap the supervised model fills).  Returns the test
+#' risk scores together with their survival outcome and cohort so the report can
+#' compute the C-index AND draw a held-out risk-stratified Kaplan-Meier curve.
+predict_test <- function(arm, fit, d, spl) {
+  if (arm == "EBMF") return(NULL)
   Yte <- d$Y[spl$test_idx, , drop = FALSE]
   tte <- d$time[spl$test_idx]
   ste <- d$status[spl$test_idx]
@@ -198,7 +200,8 @@ cindex_for <- function(arm, fit, d, spl) {
   else
     predict_supervised_mf(Yte, fit$EF, fit$EBeta)
 
-  oriented_cindex(pr$risk_scores, tte, ste)
+  list(risk = pr$risk_scores, time = tte, status = ste,
+       cohort = d$cohort_id[spl$test_idx])
 }
 
 # --------------------------------------------------------------------------
@@ -229,11 +232,13 @@ for (sc in names(SCENARIOS)) {
                       error = function(e) { message(arm, " failed: ", e$message); NULL })
       if (is.null(fit)) next
 
-      mf  <- match_factors(fit$EF, d$F_true)
-      est <- classify_specificity(fit$EL, cid_tr)
-      sa  <- specificity_accuracy(est, mf$match, d$factor_labels)
-      br  <- beta_recovery(fit$EBeta, mf$match, d$factor_labels, BETA_THRESH)
-      ci  <- cindex_for(arm, fit, d, spl)
+      mf   <- match_factors(fit$EF, d$F_true)
+      est  <- classify_specificity(fit$EL, cid_tr)
+      sa   <- specificity_accuracy(est, mf$match, d$factor_labels)
+      br   <- beta_recovery(fit$EBeta, mf$match, d$factor_labels, BETA_THRESH)
+      pred <- predict_test(arm, fit, d, spl)
+      ci   <- if (is.null(pred)) NA_real_
+              else oriented_cindex(pred$risk, pred$time, pred$status)
 
       is_sh <- d$factor_labels == "shared"
       REC_CUT <- 0.7   # |cor| above which a true factor counts as "recovered"
@@ -255,12 +260,14 @@ for (sc in names(SCENARIOS)) {
         stringsAsFactors = FALSE
       )
 
-      # keep one example per scenario/arm (first seed) for report figures
+      # keep one example per scenario/arm (first seed) for report figures.
+      # store the split (so EL rows align to cohorts for the loading heatmap) and
+      # the held-out predictions (for the risk-stratified Kaplan-Meier figure).
       if (s == SEEDS[1]) {
-        if (is.null(example_fit[[sc]])) example_fit[[sc]] <- list(data = d)
+        if (is.null(example_fit[[sc]])) example_fit[[sc]] <- list(data = d, split = spl)
         example_fit[[sc]][[arm]] <- list(EF = fit$EF, EL = fit$EL,
                                          EBeta = fit$EBeta, match = mf,
-                                         est_labels = est)
+                                         est_labels = est, pred = pred)
       }
     }
     cat(sprintf("  seed %d done.\n", s))

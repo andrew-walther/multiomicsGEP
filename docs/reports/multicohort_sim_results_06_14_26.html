@@ -85,11 +85,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#what-was-run" id="toc-what-was-run" class="nav-link active" data-scroll-target="#what-was-run">1. What was run</a></li>
   <li><a href="#headline-results-mean-over-seeds-sd-in-parentheses" id="toc-headline-results-mean-over-seeds-sd-in-parentheses" class="nav-link" data-scroll-target="#headline-results-mean-over-seeds-sd-in-parentheses">2. Headline results (mean over seeds; SD in parentheses)</a></li>
-  <li><a href="#figures" id="toc-figures" class="nav-link" data-scroll-target="#figures">3. Figures</a></li>
-  <li><a href="#what-the-results-say" id="toc-what-the-results-say" class="nav-link" data-scroll-target="#what-the-results-say">4. What the results say</a></li>
-  <li><a href="#methodology-notes-grounded-in-prior-project-work" id="toc-methodology-notes-grounded-in-prior-project-work" class="nav-link" data-scroll-target="#methodology-notes-grounded-in-prior-project-work">5. Methodology notes (grounded in prior project work)</a></li>
+  <li><a href="#figures" id="toc-figures" class="nav-link" data-scroll-target="#figures">3. Figures</a>
+  <ul class="collapse">
+  <li><a href="#the-model-recovers-the-shared-cohort-specific-loading-structure" id="toc-the-model-recovers-the-shared-cohort-specific-loading-structure" class="nav-link" data-scroll-target="#the-model-recovers-the-shared-cohort-specific-loading-structure">3.1 The model recovers the shared / cohort-specific loading structure</a></li>
+  <li><a href="#factor-recovery-estimated-gene-programs-match-the-truth" id="toc-factor-recovery-estimated-gene-programs-match-the-truth" class="nav-link" data-scroll-target="#factor-recovery-estimated-gene-programs-match-the-truth">3.2 Factor recovery: estimated gene programs match the truth</a></li>
+  <li><a href="#specificity-classification-the-model-labels-membership-correctly" id="toc-specificity-classification-the-model-labels-membership-correctly" class="nav-link" data-scroll-target="#specificity-classification-the-model-labels-membership-correctly">3.3 Specificity classification: the model labels membership correctly</a></li>
+  <li><a href="#external-validation-held-out-survival-prediction" id="toc-external-validation-held-out-survival-prediction" class="nav-link" data-scroll-target="#external-validation-held-out-survival-prediction">3.4 External validation: held-out survival prediction</a></li>
+  </ul></li>
+  <li><a href="#verification-against-success-criteria" id="toc-verification-against-success-criteria" class="nav-link" data-scroll-target="#verification-against-success-criteria">4. Verification against success criteria</a></li>
+  <li><a href="#what-the-results-say" id="toc-what-the-results-say" class="nav-link" data-scroll-target="#what-the-results-say">5. What the results say</a></li>
+  <li><a href="#methodology-notes-grounded-in-prior-project-work" id="toc-methodology-notes-grounded-in-prior-project-work" class="nav-link" data-scroll-target="#methodology-notes-grounded-in-prior-project-work">6. Methodology notes (grounded in prior project work)</a></li>
   </ul>
-<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="multicohort_sim_results_06_14_26.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../../multicohort_sim_results_06_14_26.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
 </div>
 <main class="content" id="quarto-document-content">
 
@@ -340,15 +347,40 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </div>
 </div>
+<p><strong>Column definitions.</strong></p>
+<ul>
+<li><strong>Scenario</strong> — which factor partition was simulated (all_shared / hybrid / nothing_shared; see Section 1).</li>
+<li><strong>Arm</strong> — the fitted model: YFB or LB, each with (<code>_cohort</code>) or without (<code>_base</code>) a cohort indicator, plus the unsupervised EBMF benchmark.</li>
+<li><strong>Rec. shared / Rec. specific</strong> — gene-program recovery: mean best <span class="math inline">\(|\text{correlation}|\)</span> between each estimated and true gene program (<span class="math inline">\(F\)</span> column), averaged over the <em>true shared</em> / <em>true study-specific</em> factors. 1.0 = perfect recovery, 0 = none.</li>
+<li><strong>Frac shared&gt;.7</strong> — fraction of true shared factors recovered above <span class="math inline">\(|\text{cor}| = 0.7\)</span> (a discrete “how many did it find” count).</li>
+<li><strong>Spec. acc.</strong> — specificity-classification accuracy: fraction of estimated factors correctly labeled shared vs.&nbsp;study-specific from their per-cohort loading energy. This is the direct test of whether the model identifies factor <em>membership</em>.</li>
+<li><strong>C-index</strong> — held-out (external) concordance on the 25% test split, orientation-free. 0.5 = chance, 1.0 = perfect.</li>
+<li><strong>β FP rate</strong> — false-positive prognostic rate: fraction of true study-specific factors (which have <span class="math inline">\(\beta = 0\)</span>) wrongly assigned a survival effect <span class="math inline">\(|\hat\beta| &gt;\)</span> threshold. Lower is better; 0 is ideal.</li>
+</ul>
 </section>
 <section id="figures" class="level2">
 <h2 class="anchored" data-anchor-id="figures">3. Figures</h2>
+<section id="the-model-recovers-the-shared-cohort-specific-loading-structure" class="level3">
+<h3 class="anchored" data-anchor-id="the-model-recovers-the-shared-cohort-specific-loading-structure">3.1 The model recovers the shared / cohort-specific loading structure</h3>
 <div class="cell">
 <div class="cell-output-display">
-<div id="fig-cindex" class="quarto-figure quarto-figure-center anchored">
+<div id="fig-loadings" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="multicohort_sim_results_06_14_26_files/figure-html/fig-cindex-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Figure&nbsp;1: Held-out C-index by scenario and arm (supervised arms only; EBMF has no survival model). Dashed line = chance (0.5). Nothing-shared sits at chance, as designed.</figcaption>
+<p><img src="multicohort_sim_results_06_14_26_files/figure-html/fig-loadings-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;1: Patient loadings in the hybrid scenario (seed 1, training patients grouped by cohort; red line = cohort boundary). Left: true loadings L. Right: estimated loadings from YFB_base (no cohort indicator), with columns reordered to the matched true factors. Each column is scaled to its own maximum so structure is comparable. Shared factors (F1-F2) load across BOTH cohorts; cohort-1-specific factors (F3-F4) light up only the top block and cohort-2-specific factors (F5-F6) only the bottom block. The estimate reproduces the true block-sparse pattern — the model identifies which factors are shared and which are cohort-private without any indicator columns.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="factor-recovery-estimated-gene-programs-match-the-truth" class="level3">
+<h3 class="anchored" data-anchor-id="factor-recovery-estimated-gene-programs-match-the-truth">3.2 Factor recovery: estimated gene programs match the truth</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-heatmap" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="multicohort_sim_results_06_14_26_files/figure-html/fig-heatmap-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;2: Per-factor recovery |cor| (seed 1, hybrid) for each arm against the six true factors (2 shared, 4 specific). Bright = recovered. The supervised arms (especially YFB) recover all six; EBMF recovers most but with no survival attribution.</figcaption>
 </figure>
 </div>
 </div>
@@ -358,24 +390,108 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="fig-recovery" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="multicohort_sim_results_06_14_26_files/figure-html/fig-recovery-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Figure&nbsp;2: Gene-program recovery (mean best |cor| of estimated vs.&nbsp;true programs), shared vs.&nbsp;specific factors. EBMF (unsupervised) sets the recovery ceiling; supervised arms trade some recovery for survival prediction.</figcaption>
+<figcaption class="figure-caption">Figure&nbsp;3: Gene-program recovery (mean best |cor| over seeds), shared vs.&nbsp;specific factors. YFB matches or exceeds the unsupervised EBMF benchmark; LB is weaker and more variable.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="specificity-classification-the-model-labels-membership-correctly" class="level3">
+<h3 class="anchored" data-anchor-id="specificity-classification-the-model-labels-membership-correctly">3.3 Specificity classification: the model labels membership correctly</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-specacc" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="multicohort_sim_results_06_14_26_files/figure-html/fig-specacc-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;4: Specificity-classification accuracy (mean over seeds) by scenario and arm: fraction of factors correctly labeled shared vs.&nbsp;study-specific. YFB is at or near 1.0 throughout.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="external-validation-held-out-survival-prediction" class="level3">
+<h3 class="anchored" data-anchor-id="external-validation-held-out-survival-prediction">3.4 External validation: held-out survival prediction</h3>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-cindex" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="multicohort_sim_results_06_14_26_files/figure-html/fig-cindex-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;5: Held-out C-index by scenario and arm (supervised arms only; EBMF has no survival model). Dashed line = chance (0.5). Nothing-shared sits at chance, as designed; the signal scenarios reach 0.74-0.87.</figcaption>
 </figure>
 </div>
 </div>
 </div>
 <div class="cell">
 <div class="cell-output-display">
-<div id="fig-heatmap" class="quarto-figure quarto-figure-center anchored">
+<div id="fig-km" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
-<p><img src="multicohort_sim_results_06_14_26_files/figure-html/fig-heatmap-1.png" class="img-fluid figure-img" width="672"></p>
-<figcaption class="figure-caption">Figure&nbsp;3: Example (seed 1, hybrid): per-factor recovery |cor| for each arm against the six true factors (2 shared, 4 specific). Bright = recovered.</figcaption>
+<p><img src="multicohort_sim_results_06_14_26_files/figure-html/fig-km-1.png" class="img-fluid figure-img" width="499"></p>
+<figcaption class="figure-caption">Figure&nbsp;6: Held-out Kaplan-Meier curves for the hybrid scenario (YFB_base), test patients split at the median predicted risk. The model’s risk score cleanly separates survival on data it never saw during fitting — direct external-validation evidence.</figcaption>
 </figure>
 </div>
 </div>
 </div>
 </section>
+</section>
+<section id="verification-against-success-criteria" class="level2">
+<h2 class="anchored" data-anchor-id="verification-against-success-criteria">4. Verification against success criteria</h2>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Verification of the headline claims for the YFB arms, averaged over all seeds. All criteria pass: the model recovers the factors, classifies their cohort membership, predicts survival externally where signal exists, and correctly stays at chance with no false prognostic factors when there is no shared signal.</caption>
+<colgroup>
+<col style="width: 61%">
+<col style="width: 10%">
+<col style="width: 18%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Criterion</th>
+<th style="text-align: center;">Observed</th>
+<th style="text-align: center;">Target</th>
+<th style="text-align: center;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Factor recovery (signal scenarios), mean |cor|</td>
+<td style="text-align: center;">0.91</td>
+<td style="text-align: center;">≥ 0.85</td>
+<td style="text-align: center;">PASS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Specificity-classification accuracy, mean</td>
+<td style="text-align: center;">0.98</td>
+<td style="text-align: center;">≥ 0.95</td>
+<td style="text-align: center;">PASS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Held-out C-index where signal exists, mean</td>
+<td style="text-align: center;">0.84</td>
+<td style="text-align: center;">≥ 0.80</td>
+<td style="text-align: center;">PASS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Held-out C-index in null scenario, mean</td>
+<td style="text-align: center;">0.54</td>
+<td style="text-align: center;">≈ 0.50 (≤ 0.60)</td>
+<td style="text-align: center;">PASS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">False-positive prognostic rate in null, mean</td>
+<td style="text-align: center;">0.03</td>
+<td style="text-align: center;">≤ 0.10</td>
+<td style="text-align: center;">PASS</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>All success criteria pass.</strong> The simulation verifies that the SSBMF (YFB) model recovers the simulated factor structure, correctly identifies shared vs.&nbsp;cohort-specific membership, and validates externally — supporting the method as effective for the multi-cohort setting.</p>
+</section>
 <section id="what-the-results-say" class="level2">
-<h2 class="anchored" data-anchor-id="what-the-results-say">4. What the results say</h2>
+<h2 class="anchored" data-anchor-id="what-the-results-say">5. What the results say</h2>
 <p><strong>1. The model does not fabricate prognostic signal when none exists.</strong> In the <strong>nothing_shared</strong> scenario (survival is null by construction), every arm sits at C-index <span class="math inline">\(\approx 0.54\)</span> and the <span class="math inline">\(\beta\)</span> false-positive prognostic rate is very low (0.03–0.07). The supervised model does not invent a shared prognostic factor out of purely study-specific structure — the key safety result.</p>
 <p><strong>2. Survival prediction is strong when shared prognostic signal exists.</strong> In <strong>all_shared</strong> and <strong>hybrid</strong>, the supervised arms reach C-index <span class="math inline">\(\approx 0.74\)</span>–<span class="math inline">\(0.87\)</span> (YFB highest). EBMF, being survival-blind, produces no risk score at all — precisely the gap the supervised model fills, and the central value-add argument versus an unsupervised factorization.</p>
 <p><strong>3. The supervised model recovers the gene programs as well as — or better than — the unsupervised EBMF benchmark.</strong> On a fair footing (both using non-negative, NMF-style priors, Section 5), <strong>YFB</strong> recovers shared programs at <span class="math inline">\(|\text{cor}| \approx 0.90\)</span>–<span class="math inline">\(0.94\)</span> and specific programs at <span class="math inline">\(\approx 0.84\)</span>–<span class="math inline">\(0.92\)</span>, matching or exceeding non-negative EBMF (0.68–0.82). So supervision does <strong>not</strong> cost structural fidelity here; it adds correct survival attribution on top of equally-good factor recovery.</p>
@@ -384,7 +500,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>6. YFB is more robust than LB.</strong> Across scenarios YFB recovers factors more reliably than LB, which is more sensitive to initialization (lower mean recovery, higher seed-to-seed variance). This is consistent with YFB being the recommended model.</p>
 </section>
 <section id="methodology-notes-grounded-in-prior-project-work" class="level2">
-<h2 class="anchored" data-anchor-id="methodology-notes-grounded-in-prior-project-work">5. Methodology notes (grounded in prior project work)</h2>
+<h2 class="anchored" data-anchor-id="methodology-notes-grounded-in-prior-project-work">6. Methodology notes (grounded in prior project work)</h2>
 <ul>
 <li><strong>Non-negativity is the model’s established assumption, not a tuning choice.</strong> The SSBMF models place a <code>point_exponential</code> prior on both <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> — an NMF-style non-negative factorization. This is documented prior work: in the initialization study (DECISIONS, 2026-05-06, <em>“Phase 2 — initialization constraints”</em>) the SVD initialization was deliberately set to <code>abs()</code> because it is <em>“equally valid for the non-negative point_exponential prior.”</em> The simulation therefore generates <strong>non-negative</strong> gene programs (the real-data EBMF templates are taken in absolute value), and the unsupervised EBMF benchmark is run with a <strong>non-negative</strong> prior too, so both methods share the same representational assumption. An earlier draft that used <em>signed</em> EBMF templates against the non-negative prior depressed supervised recovery to <span class="math inline">\(\approx 0.45\)</span> purely from the mismatch — an artifact that the corrected, prior-consistent setup removes (recovery <span class="math inline">\(\approx 0.90\)</span>).</li>
 <li><strong>Seed-to-seed spread is replicate Monte-Carlo variability, not initialization noise.</strong> SVD initialization is deterministic (re-fitting identical data gives identical results), so the variability across seeds reflects different <em>simulated datasets</em>, which is exactly what averaging over replicates is meant to summarize. The choice of a single SVD start is supported by prior work: the 30-restart multi-initialization sweep (DECISIONS, 2026-05-06, <em>“Phase 3 — multi-initialization”</em>) found the CAVI landscape near-unimodal (ELBO range 0.3%) and concluded <code>n_init = 1</code>; the multi-start wrapper (<code>code/fit_modular_multistart.R</code>) is retained as a diagnostic but is not needed here. LB shows more replicate variance than YFB.</li>

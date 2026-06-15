@@ -620,7 +620,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p><em>Mean over 5 seeds. Recovery = best <span class="math inline">\(|\text{cor}|\)</span> of estimated vs.&nbsp;true gene programs; Spec. acc. = specificity-classification accuracy; <span class="math inline">\(\beta\)</span> FP = false-positive prognostic rate on true-specific factors. EBMF is survival-blind (no C-index, no <span class="math inline">\(\beta\)</span>). LB_cohort omitted from the table for brevity.</em></p>
+<p><em>Mean over 5 seeds; LB_cohort omitted for brevity. <strong>Column definitions:</strong> <strong>Rec. shared / Rec. specific</strong> — gene-program recovery, the mean best <span class="math inline">\(|\text{correlation}|\)</span> between estimated and true gene programs over the true shared / study-specific factors (1 = perfect). <strong>Spec. acc.</strong> — specificity-classification accuracy, the fraction of estimated factors correctly labeled shared vs.&nbsp;study-specific from their per-cohort loading energy. <strong>C-index</strong> — held-out (external) concordance on the 25% test split (0.5 = chance). <strong><span class="math inline">\(\beta\)</span> FP</strong> — false-positive prognostic rate: fraction of true study-specific factors (<span class="math inline">\(\beta = 0\)</span>) wrongly given a survival effect (lower is better). EBMF is survival-blind (no C-index, no <span class="math inline">\(\beta\)</span>).</em></p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-loadings-proposal" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="multicohort_sim_proposal_06_14_26_files/figure-html/fig-loadings-proposal-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;1: Patient loadings in the hybrid scenario (training patients grouped by cohort; red line = cohort boundary). Left: true loadings. Right: estimated loadings from YFB without a cohort indicator, columns reordered to the matched true factors; each column scaled to its own maximum. Shared factors (F1-F2) load across BOTH cohorts; cohort-1-specific factors (F3-F4) light up only the top block, cohort-2-specific (F5-F6) only the bottom. The estimate reproduces the true block-sparse pattern — the model identifies shared vs.&nbsp;cohort-private factors with no indicator columns.</figcaption>
+</figure>
+</div>
+</div>
+</div>
 <p><strong>The headline findings:</strong></p>
 <ol type="1">
 <li><strong>The model natively identifies the shared / study-specific distinction.</strong> In the hybrid scenario, YFB classifies factors as shared vs.&nbsp;specific with accuracy 0.97 (base) to 1.00 (+cohort indicator), purely from per-cohort loading energy — no indicator columns required. This directly answers the central question.</li>
