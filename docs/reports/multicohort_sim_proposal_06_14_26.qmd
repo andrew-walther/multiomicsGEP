@@ -89,78 +89,155 @@ first appear in Section 3.
 
 ## 3. Data-Generating Process
 
-### 3.1 Loadings $L$ ($n \times K$) — block structure encodes specificity
+We *specify* the latent quantities $L$, $F$, and $\beta$ — building in exactly
+which factors are shared and which are cohort-specific, and which carry survival
+signal — then *generate* the observed data $(Y,\ \text{time},\ \text{status})$
+from them. The model is given only the observed data and tasked with recovering
+the latent structure; because we know the ground truth, every recovery error is
+directly measurable.
 
-Every loading is drawn non-negative,
-$$ L_{ik} \sim \text{Exponential}(\text{rate}=1), \qquad \mathbb{E}[L]=1,\ \mathbb{E}[L^2]=2, $$
-matching the `point_exponential` prior used by the fitters. Specificity is then
-imposed by **zeroing out-of-cohort loadings**:
+**Specified (ground truth):** $F$ (gene programs), $L$ (patient loadings with the
+shared/specific block structure), $\beta$ (which factors are prognostic).
+**Generated (model input):** $Y$ (expression matrix), and the survival outcomes
+$\text{time}$ and $\text{status}$. **Model's task:** recover $\hat F$, $\hat L$,
+and $\hat\beta$ from $(Y, \text{time}, \text{status})$ alone.
 
-- **Shared factor** $k \in \mathcal{S}$: keep $L_{ik}$ for *all* patients $i$.
-- **Cohort-$c$-specific factor** $k \in \mathcal{P}_c$: set
-  $$ L_{ik} = 0 \quad \text{for every } i \notin \text{cohort } c . $$
+The components are described below in the order they are constructed.
 
-A study-specific factor therefore contributes to $Y$ **only in its own cohort's
-rows** — this *is* the operational definition of "study-specific." The resulting
-$L$ is block-sparse: shared columns are dense, specific columns are zero outside
-one cohort block.
+### 3.1 Gene Programs $F$ ($p \times K$) — what each factor "looks like" in gene space
 
-### 3.2 Gene Programs / Factors $F$ ($p \times K$)
+$F$ is specified first because it defines what each latent factor *means*
+biologically: column $k$ is a $p$-vector of gene weights describing the $k$-th
+gene expression program.
 
-Each column $F_{\cdot k}$ is a **gene program**: a vector of gene weights,
-normalized to unit $L_2$ norm. Two sources are supported:
+**Construction.** We use real PDAC gene programs as ground truth rather than
+arbitrary synthetic ones.
+Concretely, we fit an Empirical Bayes Matrix Factorization (EBMF; `flashier`,
+`var_type = 2`, greedy + backfit) to the merged real PDAC training cohorts and
+extract the resulting gene-loading matrix — $p \times K_\text{EBMF}$ columns,
+each a sparse, data-grounded gene program. These columns are then used as the
+$K$ columns of $F$ (recycled by index if $K > K_\text{EBMF}$).
 
-- **Preferred (EBMF-grounded):** real gene programs from a `flashier` fit to the
-  merged training cohorts (realistic, sparse). When $K$ exceeds the EBMF rank (the
-  number of programs the `flashier` fit returns), columns are recycled by index.
-- **Synthetic fallback** (no real data / no `flashier`): for each factor, pick 5%
-  of genes at random and give them equal weight.
+Two adjustments are made before use:
 
-Each column is then scaled by an amplitude — $a_{\text{shared}}$ for shared
-factors, $a_{\text{specific}}$ for specific ones — which sets how strongly each
-factor type contributes signal relative to the noise.
+1. **Unit normalization.** Each column is divided by its $L_2$ norm so that
+   $\|F_{\cdot k}\| = 1$. This decouples program *shape* from program
+   *amplitude*, letting a separate scalar $a_k$ control how strongly factor $k$
+   appears in $Y$.
+2. **Non-negativity.** The SSBMF model places a non-negative
+   (`point_exponential`) prior on $F$ — the same NMF-style assumption used at
+   initialization. The EBMF programs are signed; taking their absolute value
+   gives non-negative programs consistent with the model's representational
+   assumption. The EBMF benchmark arm is run non-negative for the same reason.
 
-> **Non-negativity must match the prior.** The SSBMF models place a non-negative
-> (`point_exponential`) prior on $F$, so the ground-truth programs are made
-> non-negative (absolute value) and the EBMF benchmark is run non-negative too.
-> Feeding signed programs to a non-negative-prior model is a prior/data mismatch
-> that artificially depresses recovery — so both are kept non-negative for a fair
-> test.
+Each column is then multiplied by an amplitude scalar: $a_\text{shared}$ for
+columns assigned to shared factors and $a_\text{specific}$ for cohort-specific
+ones. Because $\|F_{\cdot k}\| = 1$, the variance contributed by factor $k$ to
+$Y$ scales as $a_k^2$, making the amplitude the direct signal-strength dial.
 
-### 3.3 Genomics model (Gaussian)
+A synthetic fallback is used when real data are unavailable: each column is a
+random sparse vector (5% of genes active, equal weights), unit-normalized and
+sign-adjusted the same way.
+
+### 3.2 Patient Loadings $L$ ($n \times K$) — who expresses each factor, and how much
+
+$L$ encodes how strongly each patient expresses each gene program. The entry
+$L_{ik}$ is the *loading* of patient $i$ on factor $k$: large values mean
+patient $i$'s expression profile is strongly shaped by program $k$.
+
+**Distribution.** Every entry is drawn independently from an Exponential
+distribution with rate 1:
+$$ L_{ik} \sim \text{Exponential}(\text{rate}=1), \qquad
+   \mathbb{E}[L_{ik}] = 1, \quad \mathbb{E}[L_{ik}^2] = 2. $$
+The Exponential is non-negative and right-skewed: most patients have a moderate
+loading near 1, a minority have high loadings, and none are negative. This
+matches the `point_exponential` prior the model places on $L$ during inference —
+the ground truth and the prior are on the same scale and in the same family.
+
+**Shared vs. specific structure.** After drawing all entries, specificity is
+imposed by zeroing out patients who do not belong to the owning cohort:
+
+- **Shared factor** $k \in \mathcal{S}$: $L_{ik}$ is kept for *every* patient,
+  regardless of cohort. All patients can express a shared program.
+- **Cohort-$c$-specific factor** $k \in \mathcal{P}_c$: $L_{ik}$ is set to
+  **zero** for every patient $i$ not in cohort $c$. Only patients from cohort
+  $c$ can express this program; it is invisible in all other cohorts.
+
+The resulting $L$ is block-sparse: shared columns are dense (all patients),
+specific columns are zero everywhere except one cohort block. This is the
+operational definition of "study-specific" built into the simulation.
+
+### 3.3 Survival coefficients $\beta$ ($K$-vector) — which factors are prognostic
+
+$\beta$ is **fixed by design** — it is not drawn from a distribution. It encodes
+which factors the model should identify as prognostic:
+
+- **Shared factors** $k \in \mathcal{S}$: assigned nonzero coefficients, cycling
+  the pattern $(1.5,\,-1.2,\,0.8,\,-0.5)$ to length $|\mathcal{S}|$.
+  For the primary hybrid scenario ($|\mathcal{S}|=2$): $\beta = (1.5,\,-1.2)$,
+  so the first shared factor is positively prognostic (high loading → worse
+  outcome), the second is protective.
+- **Cohort-specific factors** $k \in \mathcal{P}_c$: $\beta_k = 0$. These
+  factors drive expression patterns within a cohort but carry no survival
+  information. The correct model behaviour is to assign $\hat\beta_k \approx 0$
+  to these factors.
+
+The model receives no information about which $\beta_k$ are zero — it must infer
+this from the data. Recovering nonzero $\beta$ on shared factors (true positives)
+while keeping $\hat\beta \approx 0$ on specific factors (avoiding false
+positives) is the central evaluation criterion.
+
+### 3.4 Observed genomics matrix $Y$ ($n \times p$)
+
+Given $L$, $F$, we generate what the model will actually observe:
 
 $$ Y = L F^{\top} + E, \qquad
-   E_{ij} \sim \mathcal{N}(0,\ 1/\tau_j),\quad
-   \tau_j \sim \text{Gamma}(\text{shape}=2,\ \text{rate}=2). $$
+   E_{ij} \sim \mathcal{N}(0,\,1/\tau_j), \quad
+   \tau_j \sim \text{Gamma}(\text{shape}=2,\,\text{rate}=2). $$
 
-Each gene $j$ has its own noise precision $\tau_j$, giving noise SD
-$1/\sqrt{\tau_j}$ ($\mathbb{E}[\tau_j]=1$), matching the established single-cohort
-DGP. $Y$ is column-centered before fitting (standard preprocessing). Batch effects
-are absorbed by the study-specific factors by construction, so no explicit
-platform offset is added (an optional per-cohort gene-mean offset is available for
-stress-testing but is off by default).
+Each gene $j$ has its own noise precision $\tau_j$ drawn from a Gamma prior
+($\mathbb{E}[\tau_j] = 1$, so typical noise SD $\approx 1$). This gives
+heteroscedastic noise across genes, matching real expression data.
+$Y$ is column-centered before being passed to the model (standard preprocessing).
 
-### 3.4 Survival model (Weibull proportional hazards) — shared factors only
+At this point the simulation has produced the expression matrix $Y$ — equivalent
+to what we would observe from an RNA-seq or array experiment — with the latent
+factor structure $(L, F)$ baked in.
 
-$$ \eta_i = \sum_{k \in \mathcal{S}} L_{ik}\,\beta_k
-   \qquad (\beta_k = 0 \text{ for every specific factor}), $$
-$$ T_i = \left( \frac{-\log U_i}{\lambda_0\cdot \exp(\eta_i)} \right)^{1/\alpha},
-   \quad U_i \sim \text{Unif}(0,1), $$
+### 3.5 Observed survival outcomes — time and status
 
-where $\alpha = 1.5$ is the Weibull shape and $\lambda_0 = 0.01$ is the baseline scale
-(controls the overall event rate). The baseline cumulative hazard is
-$H_0(t) = \lambda_0\, t^{\alpha}$.
-The default shared coefficients cycle the established pattern
-$(1.5, -1.2, 0.8, -0.5)$ to length $|\mathcal{S}|$ (truncated if $|\mathcal{S}| < 4$;
-e.g. $|\mathcal{S}|=2$ gives $\beta=(1.5,-1.2)$). **Censoring** is calibrated to
-$\approx 30\%$ by bisection: $\text{censor\_base} \sim \text{Exp}(1)$,
-$\text{time} = \min(\text{event}, \text{censor})$,
-$\text{status} = \mathbf{1}\{\text{event} \le \text{censor}\}$.
+The survival outcomes are generated from the **shared factors only**, via a
+Weibull proportional-hazards model. Specific factors are deliberately excluded
+from the survival model ($\beta_k = 0$), so any prognostic signal the model finds
+on specific factors is a false positive.
 
-> **Anchoring caveat (meeting notes).** Because the survival outcome is linked
-> only to shared factors, the supervision "anchors" those factors into the shared
-> component. This is exactly the intended mechanism; the results report discusses
-> whether it produces cleaner shared/specific separation.
+**Linear predictor** (shared factors only):
+$$ \eta_i = \sum_{k \in \mathcal{S}} L_{ik}\,\beta_k. $$
+
+**Event time** via Weibull-PH inverse CDF:
+$$ T_i = \left( \frac{-\log U_i}{\lambda_0 \cdot \exp(\eta_i)} \right)^{1/\alpha},
+   \quad U_i \sim \text{Uniform}(0,1), $$
+where $\alpha = 1.5$ (Weibull shape) and $\lambda_0 = 0.01$ (baseline scale).
+This is the standard inversion method: $U_i$ is a uniform random draw, and the
+formula inverts the Weibull-PH survival function
+$S(t\mid\eta_i) = \exp(-\lambda_0 t^\alpha e^{\eta_i})$ to produce a random
+event time that respects the proportional-hazards structure.
+
+**Censoring** is applied by drawing a censoring time $C_i = s \cdot B_i$ where
+$B_i \sim \text{Exponential}(1)$ and $s$ is a scale chosen by bisection to
+achieve approximately 30\% censoring:
+$$ \text{time}_i = \min(T_i, C_i), \qquad
+   \text{status}_i = \mathbf{1}\{T_i \leq C_i\}. $$
+
+**What the model receives.** The model is given only $(Y, \text{time},
+\text{status})$ — the same inputs it would receive from a real study. It does not
+see $L$, $F$, or $\beta$. Its task is to jointly factorize $Y$ and fit the
+survival model to recover $\hat L$, $\hat F$, and $\hat\beta$.
+
+> **Anchoring.** Because $\beta \neq 0$ only on shared factors, survival
+> supervision pulls those factors toward the shared component — the model has an
+> outcome-level incentive to represent them accurately. This is the intended
+> mechanism and the key advantage of supervised over unsupervised factorization.
 
 ---
 
