@@ -144,7 +144,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Study-specific factors</strong> — programs private to a <em>single</em> study. These absorb platform/batch effects and cohort-private biology that should <em>not</em> be mistaken for shared, generalizable signal.</li>
 </ul>
 <p>This proposal specifies a simulation that generates data with a <strong>known</strong> shared / study-specific factor structure, so we can test whether the current model <strong>natively</strong> recovers that distinction — the same goal the previously discussed cohort dummy-indicator approach was meant to serve. If the base model already separates shared from study-specific factors, the dummy indicator columns may be unnecessary.</p>
-<p>The design incorporates the plan from a prior meeting, with three key elements:</p>
+<p>The design incorporates the plan from the last meeting (5/29), with three key elements:</p>
 <ol type="1">
 <li><strong>EBMF-grounded ground truth.</strong> Realistic gene programs are taken from an Empirical Bayes Matrix Factorization (<code>flashier</code>) fit to the merged real training cohorts. EBMF is also our <strong>unsupervised benchmark</strong> (Section 6).</li>
 <li><strong>Shared factors carry survival signal; study-specific factors do not</strong> (<span class="math inline">\(\beta \neq 0\)</span> on shared, <span class="math inline">\(\beta = 0\)</span> on specific). Survival is generated from the shared component only.</li>

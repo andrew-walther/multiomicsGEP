@@ -52,7 +52,7 @@ discussed cohort dummy-indicator approach was meant to serve. If the base model
 already separates shared from study-specific factors, the dummy indicator columns
 may be unnecessary.
 
-The design incorporates the plan from a prior meeting, with three key elements:
+The design incorporates the plan from the last meeting (5/29), with three key elements:
 
 1. **EBMF-grounded ground truth.** Realistic gene programs are taken from an
    Empirical Bayes Matrix Factorization (`flashier`) fit to the merged real
