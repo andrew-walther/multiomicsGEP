@@ -1,0 +1,148 @@
+/* Deck-specific polish for the June 18 lab meeting (SSBMF project update).
+   Inherits the UNC brand palette from ../resources/custom.css. Reuses the
+   class vocabulary established for the April 9 V3 deck. */
+
+.reveal .slides section {
+  padding-top: 0.15em;
+}
+
+/* ── tight lists ─────────────────────────────────────────────────────── */
+.reveal .tight-list ul,
+.reveal .tight-list ol {
+  margin-top: 0.25em;
+  margin-bottom: 0.35em;
+}
+
+.reveal .tight-list li {
+  margin-bottom: 0.28em;
+  line-height: 1.3;
+}
+
+/* ── column spacing ──────────────────────────────────────────────────── */
+.reveal .dense-cols .columns {
+  gap: 1.3em;
+  align-items: flex-start;
+}
+
+/* ── callouts ────────────────────────────────────────────────────────── */
+.reveal .compact-callout .callout {
+  padding: 0.7em 0.95em;
+  margin: 0.6em 0;
+}
+
+.reveal .compact-callout .callout h3 {
+  margin-top: 0.1em;
+  margin-bottom: 0.35em;
+  font-size: 1em;
+}
+
+/* ── math sizing ─────────────────────────────────────────────────────── */
+.reveal .small-math p,
+.reveal .small-math li,
+.reveal .small-math table {
+  line-height: 1.32;
+}
+
+/* ── tables ──────────────────────────────────────────────────────────── */
+.reveal .compact-table table {
+  font-size: 0.72em;
+  margin-top: 0.6em;
+  margin-bottom: 0.7em;
+}
+
+.reveal .compact-table table th,
+.reveal .compact-table table td {
+  padding: 0.42em 0.62em;
+}
+
+.reveal .table-note {
+  font-size: 0.62em;
+  color: #5f6b7a;
+  margin-top: 0.05em;
+  margin-bottom: 0.5em;
+}
+
+/* ── paired figures (two side-by-side images) ────────────────────────── */
+.reveal .paired-figures img {
+  max-height: 470px;
+  width: auto;
+}
+
+.reveal .paired-figures .columns {
+  align-items: flex-start;
+  gap: 1.25em;
+}
+
+.reveal .paired-figures figure {
+  margin: 0.35em auto 0.5em auto;
+}
+
+/* ── hero figure (single large centred image) ────────────────────────── */
+.reveal .hero-figure img {
+  max-height: 640px;
+  width: auto;
+}
+
+/* ── KM-emphasis layout (figure-heavy right column) ──────────────────── */
+.reveal .km-emphasis .columns {
+  gap: 1em;
+  align-items: flex-start;
+}
+
+.reveal .km-emphasis .column:last-child img {
+  max-height: 560px;
+}
+
+/* ── multi-panel grid (appendix) ─────────────────────────────────────── */
+.reveal .multi-panel img {
+  max-height: 360px;
+  width: auto;
+  display: block;
+  margin: 0.25em auto;
+}
+
+.reveal .multi-panel .columns {
+  gap: 0.8em;
+  align-items: flex-start;
+}
+
+/* ── future / summary two-column ─────────────────────────────────────── */
+.reveal .future-summary .columns {
+  gap: 3em;
+  align-items: flex-start;
+}
+
+.reveal .future-summary h3 {
+  margin-bottom: 0.5em;
+  font-size: 1.16em;
+}
+
+.reveal .future-summary ol {
+  margin-top: 0.4em;
+  font-size: 1.05em;
+}
+
+.reveal .future-summary li {
+  margin-bottom: 0.6em;
+  line-height: 1.42;
+}
+
+/* ── single big-figure with caption, sized for external C-index chart ── */
+.reveal .cindex-figure img {
+  max-height: 560px;
+  width: auto;
+}
+
+/* ── headline number styling for the impact slide ────────────────────── */
+.reveal .headline-c {
+  color: #4B9CD3;
+  font-weight: 700;
+}
+
+/* ── vertically center a slide's content top-to-bottom ───────────────── */
+.reveal .slides section.vcenter {
+  height: 100%;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+}
