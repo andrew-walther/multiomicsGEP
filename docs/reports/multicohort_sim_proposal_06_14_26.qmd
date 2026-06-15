@@ -535,8 +535,3 @@ gridExtra::grid.arrange(p_true$gtable, p_hat$gtable, ncol = 2)
    criterion to distinguish true shared prognostic factors from spurious
    specific-factor assignments.
 
-*The working implementation is in `results/multi_cohort_sim/` (runner:
-`run_multicohort_sim.R`; outputs: `outputs/multicohort_sim_results.csv`), and the
-full results report with figures is at
-`docs/reports/multicohort_sim_results_06_14_26.{pdf,html}`. The design,
-implementation, and results can all be updated based on feedback to this proposal.*
