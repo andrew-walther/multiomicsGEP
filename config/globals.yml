@@ -66,6 +66,13 @@ synthetic_multicohort:
     hybrid:         { K_shared: 2, K_specific: [2, 2] }
     nothing_shared: { K_shared: 0, K_specific: [3, 3] }
 
+  # Signal-ratio sweep: a_shared is fixed at 12; a_specific is varied to make
+  # study-specific factors progressively stronger relative to shared ones.
+  # The variance ratio is (a_specific/a_shared)^2, so ratio 4 = 16x specific variance.
+  signal_ratio_sweep:
+    a_shared: 12.0
+    a_specific_values: [12.0, 18.0, 24.0, 36.0, 48.0]   # ratios: 1x, 1.5x, 2x, 3x, 4x specific
+
 # ------------------------------------------------------------------------------
 # Preprocessing
 # ------------------------------------------------------------------------------

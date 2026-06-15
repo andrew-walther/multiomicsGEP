@@ -486,6 +486,53 @@ ggplot(hl, aes(factor, patient, fill = val)) +
    hybrid scenario stress a regime where study-specific variance *dominates*
    shared variance (the harder, more realistic case)?
 
+5. **Cohort indicator: design decision and remaining false positives.** In the
+   hybrid scenario, adding the cohort dummy indicator halves the $\beta$
+   false-positive rate (0.50 $\to$ 0.20), but does not eliminate it — 20% of
+   study-specific factors still receive a spurious prognostic coefficient even
+   with the indicator present.
+
+   The mechanism is confounding: study-specific factors are active in exactly
+   one cohort, and that cohort's patients have different survival trajectories
+   (driven by the shared prognostic factors with different mean loadings across
+   cohorts). Without a cohort label, the model absorbs this cohort-level
+   survival difference by assigning $\hat\beta$ to the specific factors. The
+   indicator breaks this confounding, but residual within-cohort correlation
+   (finite sample, $n_c = 150$) accounts for the remaining 0.20.
+
+   Two open sub-questions:
+
+   (a) *Should the cohort indicator be part of the default recommended
+   configuration?* The current D4 real-data benchmark achieves C = 0.636
+   **without** the indicator, suggesting confounding is tolerable in practice.
+   But this simulation targets the equal-signal hybrid ($a_\text{shared} =
+   a_\text{specific}$); whether the PDAC cohorts sit in a harder regime (Q4
+   above) where the FP problem worsens is unknown.
+
+   (b) *What additional approaches could reduce the residual false positives?*
+   Three candidates:
+   - **Signal-ratio sweep** (planned): stress the specific-dominant regime
+     ($a_\text{specific} \gg a_\text{shared}$) to quantify how badly the FP
+     rate grows and whether the indicator remains sufficient.
+   - **Tighter $\beta$ prior**: a tighter normal prior on $\beta$ would shrink
+     small spurious coefficients toward zero without the full collapse that the
+     `point_normal` prior causes. This has not been tested in this setting.
+   - **Cohort-stratified Cox baseline**: replace the shared baseline hazard with
+     cohort-stratified strata, natively absorbing cohort-level survival
+     differences without indicator columns. This is a more substantial model
+     change.
+
+   **The signal-ratio sweep (Q4/Q5b) has now been completed** (see the results
+   report, §7). Key findings: (i) the FP rate is bounded at 0.20–0.50 across
+   all variance ratios — it does not grow monotonically as specific factors
+   dominate; (ii) the indicator's advantage is regime-dependent and narrows at
+   high variance ratios; (iii) structural recovery and C-index are completely
+   stable across all ratios. The recommendation: include the cohort indicator
+   as a default (greatest benefit at equal-to-moderate heterogeneity), and
+   apply a $|\hat\beta|$ magnitude threshold rather than a binary nonzero
+   criterion to distinguish true shared prognostic factors from spurious
+   specific-factor assignments.
+
 *The working implementation is in `results/multi_cohort_sim/` (runner:
 `run_multicohort_sim.R`; outputs: `outputs/multicohort_sim_results.csv`), and the
 full results report with figures is at
