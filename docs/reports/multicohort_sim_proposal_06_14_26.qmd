@@ -568,7 +568,7 @@ suppressPackageStartupMessages(library(survival))
 scen_labels <- c(all_shared = "All shared", hybrid = "Hybrid",
                  nothing_shared = "Nothing shared")
 scen_cols   <- list(low = "steelblue", high = "firebrick")
-par(mfrow = c(1, 3), mar = c(3.5, 3.5, 2, 0.5), mgp = c(2, 0.6, 0), cex = 0.82)
+par(mfrow = c(1, 3), mar = c(4.8, 3.5, 2, 0.5), mgp = c(2, 0.6, 0), cex = 0.82)
 for (sc in c("all_shared", "hybrid", "nothing_shared")) {
   if (!sc %in% names(ex) || !"YFB_base" %in% names(ex[[sc]])) {
     plot.new(); title(main = scen_labels[sc]); next
@@ -584,7 +584,7 @@ for (sc in c("all_shared", "hybrid", "nothing_shared")) {
        main = scen_labels[sc], xlab = "Time", ylab = "Survival",
        bty = "l", ylim = c(0, 1))
   mtext(sprintf("C = %.2f,  p = %.2g", max(cc, 1 - cc), pval),
-        side = 1, line = 2.2, cex = 0.68, col = "grey30")
+        side = 1, line = 3.8, cex = 0.72, col = "grey10")
   if (sc == "all_shared")
     legend("topright", c("low risk", "high risk"),
            col = c(scen_cols$low, scen_cols$high),
@@ -658,7 +658,7 @@ for (sc in c("all_shared", "hybrid", "nothing_shared")) {
    Two open sub-questions:
 
    (a) *Should the cohort indicator be part of the default recommended
-   configuration?* The current D4 real-data benchmark achieves C = 0.636
+   configuration?* Our benchmark on real PDAC data achieves C = 0.636
    **without** the indicator, suggesting confounding is tolerable in practice.
    But this simulation targets the equal-signal hybrid ($a_\text{shared} =
    a_\text{specific}$); whether the PDAC cohorts sit in a harder regime (Q4
@@ -694,13 +694,13 @@ for (sc in c("all_shared", "hybrid", "nothing_shared")) {
 **Recommended model configuration.** The YFB variant — linear predictor
 $\eta = (YF)\beta$, computed from factor *scores* rather than inferred
 loadings — is the recommended form. On real PDAC data it achieves external
-concordance $C = 0.636$ across five held-out cohorts (D4 benchmark), exceeding
+concordance $C = 0.636$ across five held-out cohorts, exceeding
 the DeSurv baseline and the LB alternative ($\eta = L\beta$). Key settings that
 are not negotiable: (i) per-platform $z$-standardization before pooling — without
 it, ten of twelve preprocessing configurations collapse $\hat\beta \to 0$;
 (ii) a `normal` prior on $\beta$ (the `point_normal` prior causes the same
 collapse under YFB); and (iii) $K$ selected by cross-validation with the 1-SE
-rule ($K = 7$ in the D4 benchmark). DeSurv-aligned gene selection
+rule ($K = 7$ on the PDAC benchmark). DeSurv-aligned gene selection
 (combined-rank, top-3000 per cohort) provides a modest additional gain
 ($\Delta C \approx +0.012$).
 
