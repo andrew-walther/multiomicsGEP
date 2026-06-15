@@ -96,11 +96,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#worked-example-hybrid-c2-n_c150-p1000-k6" id="toc-worked-example-hybrid-c2-n_c150-p1000-k6" class="nav-link" data-scroll-target="#worked-example-hybrid-c2-n_c150-p1000-k6">Worked example — Hybrid, <span class="math inline">\(C=2\)</span>, <span class="math inline">\(n_c=150\)</span>, <span class="math inline">\(p=1000\)</span>, <span class="math inline">\(K=6\)</span></a></li>
   </ul></li>
-  <li><a href="#integration-with-the-ssbmf-yfb-model" id="toc-integration-with-the-ssbmf-yfb-model" class="nav-link" data-scroll-target="#integration-with-the-ssbmf-yfb-model">5. Integration with the SSBMF (YFB) Model</a></li>
-  <li><a href="#supervised-vs.-unsupervised-ebmf-benchmark" id="toc-supervised-vs.-unsupervised-ebmf-benchmark" class="nav-link" data-scroll-target="#supervised-vs.-unsupervised-ebmf-benchmark">6. Supervised vs.&nbsp;Unsupervised (EBMF) Benchmark</a></li>
-  <li><a href="#evaluation-metrics" id="toc-evaluation-metrics" class="nav-link" data-scroll-target="#evaluation-metrics">7. Evaluation Metrics</a></li>
-  <li><a href="#reference-data-generating-code" id="toc-reference-data-generating-code" class="nav-link" data-scroll-target="#reference-data-generating-code">8. Reference Data-Generating Code</a></li>
-  <li><a href="#open-questions-for-discussion" id="toc-open-questions-for-discussion" class="nav-link" data-scroll-target="#open-questions-for-discussion">9. Open Questions for Discussion</a></li>
+  <li><a href="#model-arms" id="toc-model-arms" class="nav-link" data-scroll-target="#model-arms">5. Model Arms</a></li>
+  <li><a href="#evaluation-metrics" id="toc-evaluation-metrics" class="nav-link" data-scroll-target="#evaluation-metrics">6. Evaluation Metrics</a></li>
+  <li><a href="#reference-data-generating-code" id="toc-reference-data-generating-code" class="nav-link" data-scroll-target="#reference-data-generating-code">7. Reference Data-Generating Code</a></li>
+  <li><a href="#open-questions-for-discussion" id="toc-open-questions-for-discussion" class="nav-link" data-scroll-target="#open-questions-for-discussion">8. Open Questions for Discussion</a></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../../multicohort_sim_proposal_06_14_26.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
 </div>
@@ -144,11 +143,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Study-specific factors</strong> — programs private to a <em>single</em> study. These absorb platform/batch effects and cohort-private biology that should <em>not</em> be mistaken for shared, generalizable signal.</li>
 </ul>
 <p>This proposal specifies a simulation that generates data with a <strong>known</strong> shared / study-specific factor structure, so we can test whether the current model <strong>natively</strong> recovers that distinction — the same goal the previously discussed cohort dummy-indicator approach was meant to serve. If the base model already separates shared from study-specific factors, the dummy indicator columns may be unnecessary.</p>
-<p>The design incorporates the plan from the last meeting (5/29), with three key elements:</p>
+<p>The design incorporates the plan from the last meeting (5/29), with two key elements:</p>
 <ol type="1">
-<li><strong>EBMF-grounded ground truth.</strong> Realistic gene programs are taken from an Empirical Bayes Matrix Factorization (<code>flashier</code>) fit to the merged real training cohorts. EBMF is also our <strong>unsupervised benchmark</strong> (Section 6).</li>
+<li><strong>EBMF-grounded ground truth.</strong> Realistic gene programs are taken from an Empirical Bayes Matrix Factorization (<code>flashier</code>) fit to the merged real training cohorts. EBMF is also our <strong>unsupervised benchmark</strong> (Section 5).</li>
 <li><strong>Shared factors carry survival signal; study-specific factors do not</strong> (<span class="math inline">\(\beta \neq 0\)</span> on shared, <span class="math inline">\(\beta = 0\)</span> on specific). Survival is generated from the shared component only.</li>
-<li><strong>The signal-strength of shared vs.&nbsp;study-specific structure is tunable</strong> through the magnitude of the <span class="math inline">\(F\)</span> columns, which defines the three scenarios.</li>
 </ol>
 <hr>
 </section>
@@ -218,9 +216,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>observed genomics matrix</td>
 <td><span class="math inline">\(n \times p\)</span></td>
 </tr>
+<tr class="odd">
+<td><span class="math inline">\(a_{\text{shared}}, a_{\text{specific}}\)</span></td>
+<td>amplitude (signal strength) of shared / specific factors</td>
+<td>scalar</td>
+</tr>
 </tbody>
 </table>
-<p>Rows of <span class="math inline">\(Y\)</span> (and <span class="math inline">\(L\)</span>) are <strong>stacked by cohort</strong>: rows <span class="math inline">\(1..n_1\)</span> are cohort 1, the next <span class="math inline">\(n_2\)</span> rows are cohort 2, and so on. Factors partition disjointly: <span class="math inline">\(K = |\mathcal{S}| + \sum_{c} |\mathcal{P}_c|\)</span>.</p>
+<p>Rows of <span class="math inline">\(Y\)</span> (and <span class="math inline">\(L\)</span>) are <strong>stacked by cohort</strong>: rows <span class="math inline">\(1..n_1\)</span> are cohort 1, the next <span class="math inline">\(n_2\)</span> rows are cohort 2, and so on. Factors partition disjointly: <span class="math inline">\(K = |\mathcal{S}| + \sum_{c} |\mathcal{P}_c|\)</span>. The remaining noise and survival parameters (<span class="math inline">\(\tau_j\)</span>, <span class="math inline">\(\alpha\)</span>, <span class="math inline">\(\lambda_0\)</span>, <span class="math inline">\(U_i\)</span>) are defined inline where they first appear in Section 3.</p>
 <hr>
 </section>
 <section id="data-generating-process" class="level2">
@@ -236,30 +239,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="gene-programs-factors-f-p-times-k" class="level3">
 <h3 class="anchored" data-anchor-id="gene-programs-factors-f-p-times-k">3.2 Gene Programs / Factors <span class="math inline">\(F\)</span> (<span class="math inline">\(p \times K\)</span>)</h3>
-<p>Each column <span class="math inline">\(F_{\cdot k}\)</span> is a <strong>gene program</strong>, normalized to unit <span class="math inline">\(L_2\)</span> norm so its scale is set explicitly by an amplitude (below):</p>
+<p>Each column <span class="math inline">\(F_{\cdot k}\)</span> is a <strong>gene program</strong>: a vector of gene weights, normalized to unit <span class="math inline">\(L_2\)</span> norm. Two sources are supported:</p>
 <ul>
-<li><strong>Preferred (EBMF-grounded):</strong> a column of <span class="math inline">\(\texttt{ldf(flash\_fit, type=2)}\$F\)</span> fit to the merged real training cohorts (realistic sparse programs), made <strong>non-negative</strong> (absolute value) to match the model’s non-negative <code>point_exponential</code> factor prior. When <span class="math inline">\(K\)</span> exceeds the EBMF rank, columns are recycled by index. <em>Matching the prior to the data sign structure is essential for a fair test:</em> signed programs against a non-negative prior artificially depress recovery. The EBMF benchmark is likewise run with a non-negative prior.</li>
-<li><strong>Synthetic fallback</strong> (no real data / no <code>flashier</code>): for each factor pick <span class="math inline">\(\lceil \text{active\_rate}\cdot p \rceil\)</span> active genes (default 5%) and set their weight to <span class="math inline">\(1/\sqrt{\#\text{active}}\)</span> (unit-norm column).</li>
+<li><strong>Preferred (EBMF-grounded):</strong> real gene programs from a <code>flashier</code> fit to the merged training cohorts (realistic, sparse). When <span class="math inline">\(K\)</span> exceeds the EBMF rank (the number of programs the <code>flashier</code> fit returns), columns are recycled by index.</li>
+<li><strong>Synthetic fallback</strong> (no real data / no <code>flashier</code>): for each factor, pick 5% of genes at random and give them equal weight.</li>
 </ul>
-<p><strong>Signal-strength knob.</strong> Multiply each column by an amplitude <span class="math inline">\(a_k\)</span>: <span class="math inline">\(a_{\text{shared}}\)</span> for shared columns, <span class="math inline">\(a_{\text{specific}}\)</span> for specific ones. Since the variance factor <span class="math inline">\(k\)</span> contributes to <span class="math inline">\(Y\)</span> is <span class="math inline">\(\mathbb{E}[L_{\cdot k}^2]\,\|F_{\cdot k}\|^2\, a_k^2\)</span> and <span class="math inline">\(\|F_{\cdot k}\|^2 = 1\)</span>, the <strong>variance ratio scales as <span class="math inline">\((a_{\text{shared}}/a_{\text{specific}})^2\)</span></strong>. We call <span class="math inline">\(\texttt{shared\_signal\_ratio} = a_{\text{shared}}/a_{\text{specific}}\)</span> the continuous dial behind the scenarios in Section 4.</p>
+<p>Each column is then scaled by an amplitude — <span class="math inline">\(a_{\text{shared}}\)</span> for shared factors, <span class="math inline">\(a_{\text{specific}}\)</span> for specific ones — which sets how strongly each factor type contributes signal relative to the noise.</p>
+<blockquote class="blockquote">
+<p><strong>Non-negativity must match the prior.</strong> The SSBMF models place a non-negative (<code>point_exponential</code>) prior on <span class="math inline">\(F\)</span>, so the ground-truth programs are made non-negative (absolute value) and the EBMF benchmark is run non-negative too. Feeding signed programs to a non-negative-prior model is a prior/data mismatch that artificially depresses recovery — so both are kept non-negative for a fair test.</p>
+</blockquote>
 </section>
 <section id="genomics-model-gaussian" class="level3">
 <h3 class="anchored" data-anchor-id="genomics-model-gaussian">3.3 Genomics model (Gaussian)</h3>
-<p><span class="math display">\[ Y = L F^{\top} + \text{offset} + E, \qquad
+<p><span class="math display">\[ Y = L F^{\top} + E, \qquad
    E_{ij} \sim \mathcal{N}(0,\ 1/\tau_j),\quad
    \tau_j \sim \text{Gamma}(\text{shape}=2,\ \text{rate}=2). \]</span></p>
-<ul>
-<li>Per-gene precision <span class="math inline">\(\tau_j\)</span> gives gene <span class="math inline">\(j\)</span> noise SD <span class="math inline">\(1/\sqrt{\tau_j}\)</span> (<span class="math inline">\(\mathbb{E}[\tau_j]=1\)</span>), matching the established single-cohort DGP.</li>
-<li><span class="math inline">\(\text{offset}\)</span> (default <strong>0</strong>): per the meeting notes, batch effects are absorbed by the study-specific component by construction, so an explicit offset is usually unnecessary. When enabled, one vector per cohort <span class="math inline">\(o_c \sim \mathcal{N}(0, \sigma_{\text{offset}}^2 I_p)\)</span> is added to that cohort’s rows (a pure platform shift) for stress-testing.</li>
-<li><span class="math inline">\(Y\)</span> is <strong>column-centered</strong> before fitting (standard preprocessing).</li>
-</ul>
+<p>Each gene <span class="math inline">\(j\)</span> has its own noise precision <span class="math inline">\(\tau_j\)</span>, giving noise SD <span class="math inline">\(1/\sqrt{\tau_j}\)</span> (<span class="math inline">\(\mathbb{E}[\tau_j]=1\)</span>), matching the established single-cohort DGP. <span class="math inline">\(Y\)</span> is column-centered before fitting (standard preprocessing). Batch effects are absorbed by the study-specific factors by construction, so no explicit platform offset is added (an optional per-cohort gene-mean offset is available for stress-testing but is off by default).</p>
 </section>
 <section id="survival-model-weibull-proportional-hazards-shared-factors-only" class="level3">
 <h3 class="anchored" data-anchor-id="survival-model-weibull-proportional-hazards-shared-factors-only">3.4 Survival model (Weibull proportional hazards) — shared factors only</h3>
 <p><span class="math display">\[ \eta_i = \sum_{k \in \mathcal{S}} L_{ik}\,\beta_k
    \qquad (\beta_k = 0 \text{ for every specific factor}), \]</span> <span class="math display">\[ T_i = \left( \frac{-\log U_i}{\lambda_0\cdot \exp(\eta_i)} \right)^{1/\alpha},
    \quad U_i \sim \text{Unif}(0,1), \]</span></p>
-<p>where <span class="math inline">\(\alpha = 1.5\)</span> is the Weibull shape and <span class="math inline">\(\lambda_0 = 0.01\)</span> is the baseline scale (controls the overall event rate). The baseline cumulative hazard is <span class="math inline">\(H_0(t) = (\lambda_0\, t)^{\alpha}\)</span>. The default shared coefficients cycle the established pattern <span class="math inline">\((1.5, -1.2, 0.8, -0.5)\)</span> to length <span class="math inline">\(|\mathcal{S}|\)</span>. <strong>Censoring</strong> is calibrated to <span class="math inline">\(\approx 30\%\)</span> by bisection: <span class="math inline">\(\text{censor\_base} \sim \text{Exp}(1)\)</span>, <span class="math inline">\(\text{time} = \min(\text{event}, \text{censor})\)</span>, <span class="math inline">\(\text{status} = \mathbf{1}\{\text{event} \le \text{censor}\}\)</span>.</p>
+<p>where <span class="math inline">\(\alpha = 1.5\)</span> is the Weibull shape and <span class="math inline">\(\lambda_0 = 0.01\)</span> is the baseline scale (controls the overall event rate). The baseline cumulative hazard is <span class="math inline">\(H_0(t) = \lambda_0\, t^{\alpha}\)</span>. The default shared coefficients cycle the established pattern <span class="math inline">\((1.5, -1.2, 0.8, -0.5)\)</span> to length <span class="math inline">\(|\mathcal{S}|\)</span> (truncated if <span class="math inline">\(|\mathcal{S}| &lt; 4\)</span>; e.g.&nbsp;<span class="math inline">\(|\mathcal{S}|=2\)</span> gives <span class="math inline">\(\beta=(1.5,-1.2)\)</span>). <strong>Censoring</strong> is calibrated to <span class="math inline">\(\approx 30\%\)</span> by bisection: <span class="math inline">\(\text{censor\_base} \sim \text{Exp}(1)\)</span>, <span class="math inline">\(\text{time} = \min(\text{event}, \text{censor})\)</span>, <span class="math inline">\(\text{status} = \mathbf{1}\{\text{event} \le \text{censor}\}\)</span>.</p>
 <blockquote class="blockquote">
 <p><strong>Anchoring caveat (meeting notes).</strong> Because the survival outcome is linked only to shared factors, the supervision “anchors” those factors into the shared component. This is exactly the intended mechanism; the results report discusses whether it produces cleaner shared/specific separation.</p>
 </blockquote>
@@ -268,7 +270,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="the-three-scenarios" class="level2">
 <h2 class="anchored" data-anchor-id="the-three-scenarios">4. The Three Scenarios</h2>
-<p>The scenarios differ only in how the <span class="math inline">\(K\)</span> factors are partitioned into shared vs. specific (and, optionally, in <code>shared_signal_ratio</code>). For the primary setting <span class="math inline">\(C=2\)</span>, <span class="math inline">\(n_c=150\)</span>, <span class="math inline">\(p=1000\)</span>, <span class="math inline">\(K=6\)</span>:</p>
+<p>The scenarios differ only in how the <span class="math inline">\(K\)</span> factors are partitioned into shared vs. specific. For the primary setting <span class="math inline">\(C=2\)</span>, <span class="math inline">\(n_c=150\)</span>, <span class="math inline">\(p=1000\)</span>, <span class="math inline">\(K=6\)</span>:</p>
 <table class="table">
 <colgroup>
 <col style="width: 25%">
@@ -315,49 +317,77 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Coefficients:</strong> <span class="math inline">\(\beta = [1.5,\ -1.2,\ 0,\ 0,\ 0,\ 0]\)</span> — only the two shared factors drive survival.</li>
 <li><strong>What a correct model should find:</strong> factors 1–2 with loadings across <em>both</em> cohorts <em>and</em> nonzero <span class="math inline">\(\hat\beta\)</span>; factors 3–6 cohort-private with <span class="math inline">\(\hat\beta \approx 0\)</span>. The unsupervised EBMF benchmark should recover the same six gene programs but cannot say which two are prognostic.</li>
 </ul>
-<p><strong>Secondary sensitivity:</strong> a 3-cohort hybrid (2 shared + 1 private per cohort) and a <code>shared_signal_ratio</code> sweep within the hybrid regime.</p>
+<p><strong>Secondary sensitivity:</strong> a 3-cohort hybrid (2 shared + 1 private per cohort), and a sweep of the shared-to-specific amplitude ratio (<span class="math inline">\(a_{\text{shared}}/a_{\text{specific}}\)</span>) within the hybrid regime to stress the case where study-specific signal dominates.</p>
 <hr>
 </section>
 </section>
-<section id="integration-with-the-ssbmf-yfb-model" class="level2">
-<h2 class="anchored" data-anchor-id="integration-with-the-ssbmf-yfb-model">5. Integration with the SSBMF (YFB) Model</h2>
-<p>The DGP emits exactly the inputs the fitters expect — <span class="math inline">\(Y\)</span> (<span class="math inline">\(n\times p\)</span>, column-centered), <code>time</code>, <code>status</code>, and <code>cohort_id</code> (a factor). These map directly onto:</p>
-<ul>
-<li><strong><code>fit_cox_on_yf()</code></strong> — the <strong>YFB</strong> model, linear predictor <span class="math inline">\(\eta = (YF)\beta\)</span>. This is the recommended model; <code>EF_norms</code> from the fit must be passed to <code>predict_cox_on_yf()</code> for consistent train/test scaling.</li>
-<li><strong><code>fit_supervised_mf_modular()</code></strong> — the <strong>LB</strong> model, <span class="math inline">\(\eta = L\beta\)</span> (retained for comparison).</li>
-</ul>
-<p><strong>Model configuration.</strong> Both fitters use <code>prior_beta = "normal"</code> (avoids the <span class="math inline">\(\beta\to0\)</span> collapse under YFB), <code>alpha = 0.5</code>, <code>lambda = 1.0</code>, and a <code>point_exponential</code> (non-negative) prior on <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span>. Per-platform normalization — the single most important preprocessing step on real merged data — is implicitly satisfied here because every cohort block is generated on a common scale; a per-cohort-centering (“z-score”) arm is retained as a reference. The cohort dummy indicator (<code>cohort_id</code>) uses <strong>corner-point encoding</strong> (<span class="math inline">\(C-1\)</span> fixed binary columns that absorb per-cohort gene means and never enter the Cox predictor).</p>
-<p><strong>The native-identification test.</strong> The headline analysis fits <strong>without</strong> the dummy indicator (<code>cohort_id = NULL</code>) and asks whether the fitted factors separate into shared vs.&nbsp;study-specific on their own. The <span class="math inline">\(\pm\)</span>dummy comparison then quantifies whether the indicator adds anything.</p>
-<hr>
-</section>
-<section id="supervised-vs.-unsupervised-ebmf-benchmark" class="level2">
-<h2 class="anchored" data-anchor-id="supervised-vs.-unsupervised-ebmf-benchmark">6. Supervised vs.&nbsp;Unsupervised (EBMF) Benchmark</h2>
-<p>EBMF (<code>flashier</code>, greedy + backfit) is fit to the <strong>same simulated <span class="math inline">\(Y\)</span></strong> with <strong>no survival information</strong>, and scored on the <em>identical</em> factor-recovery and specificity-classification metrics as the supervised fits. Because EBMF is survival-blind, it has <strong>no <span class="math inline">\(\beta\)</span></strong>. The comparison answers two questions:</p>
+<section id="model-arms" class="level2">
+<h2 class="anchored" data-anchor-id="model-arms">5. Model Arms</h2>
+<p>Each simulated dataset (<span class="math inline">\(Y\)</span>, <code>time</code>, <code>status</code>, <code>cohort_id</code>) is fit by <strong>five arms</strong> — four supervised (LB/YFB <span class="math inline">\(\times\)</span> <span class="math inline">\(\pm\)</span>cohort indicator) plus the unsupervised EBMF benchmark:</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Arm</th>
+<th>Model</th>
+<th>Cohort indicator</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>YFB_base</strong></td>
+<td>YFB (<span class="math inline">\(\eta = (YF)\beta\)</span>) — recommended</td>
+<td>none</td>
+</tr>
+<tr class="even">
+<td><strong>YFB_cohort</strong></td>
+<td>YFB</td>
+<td>yes</td>
+</tr>
+<tr class="odd">
+<td><strong>LB_base</strong></td>
+<td>LB (<span class="math inline">\(\eta = L\beta\)</span>)</td>
+<td>none</td>
+</tr>
+<tr class="even">
+<td><strong>LB_cohort</strong></td>
+<td>LB</td>
+<td>yes</td>
+</tr>
+<tr class="odd">
+<td><strong>EBMF</strong></td>
+<td>unsupervised <code>flashier</code> (survival-blind)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>All supervised arms use a non-negative (<code>point_exponential</code>) prior on <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> and a normal prior on <span class="math inline">\(\beta\)</span>. The cohort indicator, when present, absorbs per-cohort gene-mean differences without entering the survival predictor.</p>
+<p><strong>The native-identification test.</strong> The headline analysis is the <strong>base</strong> arms (no cohort indicator): can the fitted factors separate into shared vs. study-specific on their own? The <span class="math inline">\(\pm\)</span>indicator comparison then quantifies whether the indicator adds anything.</p>
+<p><strong>Why EBMF.</strong> EBMF is fit to the same <span class="math inline">\(Y\)</span> but is survival-blind, so it has no <span class="math inline">\(\beta\)</span>. It is the unsupervised gold standard for the factorization itself, answering two questions:</p>
 <ol type="1">
-<li>Does the supervised model recover the shared/study-specific structure <em>as well as</em> the unsupervised gold standard (i.e., supervision does not hurt the factorization)?</li>
-<li>Does survival supervision <em>additionally</em> yield correct <span class="math inline">\(\beta\)</span> — flagging which recovered factors are prognostic — which EBMF fundamentally cannot?</li>
+<li>Does the supervised model recover the shared/study-specific structure <em>as well as</em> EBMF (i.e., supervision does not cost structural fidelity)?</li>
+<li>Does supervision <em>additionally</em> yield correct <span class="math inline">\(\beta\)</span> — flagging which factors are prognostic — which EBMF fundamentally cannot?</li>
 </ol>
-<p>This is the value-add argument for the paper: same structural recovery, plus correct survival attribution.</p>
+<p>This is the value-add argument: same structural recovery, plus correct survival attribution.</p>
 <blockquote class="blockquote">
-<p>Note: two distinct EBMF uses. The <strong>template-building</strong> EBMF (Section 3.2) is fit to <em>real</em> data to manufacture realistic ground-truth gene programs. The <strong>benchmark</strong> EBMF here is fit to each <em>simulated</em> <span class="math inline">\(Y\)</span> and scored as a competing method. They do not share a fit.</p>
+<p>The EBMF here (fit to each <em>simulated</em> <span class="math inline">\(Y\)</span>, scored as a competing method) is distinct from the EBMF in Section 3.2 (fit to <em>real</em> data to build ground-truth programs). They do not share a fit.</p>
 </blockquote>
 <hr>
 </section>
 <section id="evaluation-metrics" class="level2">
-<h2 class="anchored" data-anchor-id="evaluation-metrics">7. Evaluation Metrics</h2>
+<h2 class="anchored" data-anchor-id="evaluation-metrics">6. Evaluation Metrics</h2>
 <p>For each (scenario × model arm × seed) we record:</p>
 <ul>
 <li><strong>Shared-factor recovery</strong> — mean best <span class="math inline">\(|\text{cor}|\)</span> between estimated and true gene programs (<span class="math inline">\(F\)</span> columns, gene space, comparable across LB/YFB/EBMF), over the <em>true shared</em> factors.</li>
 <li><strong>Specific-factor recovery</strong> — same, over the <em>true study-specific</em> factors.</li>
-<li><strong>Specificity-classification accuracy</strong> — label each <em>estimated</em> factor shared/specific from its per-cohort loading energy, compare to the truth. This is the direct test of “does the model natively identify the distinction?”</li>
-<li><strong>Survival-effect recovery</strong> — <span class="math inline">\(|\hat\beta|\)</span> on factors matched to true shared (expect $&gt; $ threshold) vs.&nbsp;true specific (expect <span class="math inline">\(\approx 0\)</span>). Reported as true-positive and <strong>false-positive prognostic rates</strong> (the latter is the anchoring / nothing-shared check). Threshold from <code>globals.yml: k_selection$beta_threshold</code>.</li>
+<li><strong>Specificity-classification accuracy</strong> — label each <em>estimated</em> factor shared/specific from its per-cohort loading energy (a factor is called specific if more than 85% of its squared-loading energy concentrates in a single cohort), then compare to the truth. This is the direct test of “does the model natively identify the distinction?”</li>
+<li><strong>Survival-effect recovery</strong> — <span class="math inline">\(|\hat\beta|\)</span> on factors matched to true shared (expect above a small threshold) vs.&nbsp;true specific (expect <span class="math inline">\(\approx 0\)</span>). Reported as true-positive and <strong>false-positive prognostic rates</strong> (the latter is the anchoring / nothing-shared check).</li>
 <li><strong>C-index</strong> — orientation-free held-out concordance, <span class="math inline">\(\max(C, 1-C)\)</span>.</li>
 </ul>
 <p><strong>Comparisons reported:</strong> (i) YFB vs.&nbsp;LB; (ii) base vs.&nbsp;<span class="math inline">\(+\)</span>cohort-dummy (<span class="math inline">\(\Delta\)</span> in each metric — “are dummies necessary?”); (iii) supervised vs.&nbsp;unsupervised EBMF.</p>
 <hr>
 </section>
 <section id="reference-data-generating-code" class="level2">
-<h2 class="anchored" data-anchor-id="reference-data-generating-code">8. Reference Data-Generating Code</h2>
+<h2 class="anchored" data-anchor-id="reference-data-generating-code">7. Reference Data-Generating Code</h2>
 <p>The following is the complete, self-contained DGP (the project implementation wraps this same logic with configuration and seeds). A reader can run it directly given the small <code>.calibrate</code> helper.</p>
 <div class="cell">
 <details>
@@ -384,7 +414,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">active_rate  =</span> <span class="fl">0.05</span>,               <span class="co"># synthetic-fallback sparsity</span></span>
 <span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">beta_shared  =</span> <span class="cn">NULL</span>,               <span class="co"># length K_shared; NULL -&gt; recycle c(1.5,-1.2,0.8,-0.5)</span></span>
 <span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">offset_sd    =</span> <span class="fl">0.0</span>,                <span class="co"># explicit platform offset SD (0 = off)</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">shape        =</span> <span class="fl">1.5</span>, <span class="at">scale0 =</span> <span class="fl">0.01</span>, <span class="co"># Weibull-PH baseline</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">shape        =</span> <span class="fl">1.5</span>, <span class="at">scale0 =</span> <span class="fl">0.01</span>, <span class="co"># Weibull-PH baseline (shape = alpha, scale0 = lambda_0)</span></span>
 <span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">target_cens  =</span> <span class="fl">0.30</span>,               <span class="co"># target censoring fraction</span></span>
 <span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">seed         =</span> 1L) {</span>
 <span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
@@ -455,7 +485,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <hr>
 </section>
 <section id="open-questions-for-discussion" class="level2">
-<h2 class="anchored" data-anchor-id="open-questions-for-discussion">9. Open Questions for Discussion</h2>
+<h2 class="anchored" data-anchor-id="open-questions-for-discussion">8. Open Questions for Discussion</h2>
 <ol type="1">
 <li><strong>Specificity definition.</strong> We encode study-specific factors via block-zero loadings (a factor is active in exactly one cohort). Is this the structure you intend, or should specific factors also have <em>non-overlapping gene programs</em> per cohort?</li>
 <li><strong>Nothing-shared survival.</strong> Default leaves survival null in the nothing-shared scenario (false-positive control). Do you prefer instead a within-cohort prognostic specific factor so each cohort has its own survival signal?</li>
