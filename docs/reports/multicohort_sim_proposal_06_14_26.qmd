@@ -1,6 +1,6 @@
 ---
-title: "Multi-Cohort Simulation Study: Shared vs. Study-Specific Factors (Proposal)"
-subtitle: "Data-generating process and evaluation design for the SSBMF (YFB) model"
+title: "Multi-Cohort Simulation Study: Shared vs. Study-Specific Factors"
+subtitle: "Proposal, implementation, and initial results for the SSBMF model"
 author: "Andrew Walther"
 date: "2026-06-14"
 format:
@@ -369,7 +369,62 @@ generate_multicohort_data <- function(
 
 ---
 
-## 8. Open Questions for Discussion
+## 8. Initial Results
+
+The design above has been implemented and run end-to-end (3 scenarios $\times$ 5
+arms $\times$ 5 seeds). This section is a high-level overview; the companion
+results report (`multicohort_sim_results_06_14_26`) carries the full tables,
+figures, and methodology notes. **These are preliminary and may be revised after
+this proposal is discussed.**
+
+| Scenario | Arm | Rec. shared | Rec. specific | Spec. acc. | C-index | $\beta$ FP |
+|---|---|:--:|:--:|:--:|:--:|:--:|
+| all_shared | YFB_base | 0.92 | — | 1.00 | 0.87 | — |
+| all_shared | YFB_cohort | 0.94 | — | 0.90 | 0.86 | — |
+| all_shared | LB_base | 0.53 | — | 1.00 | 0.74 | — |
+| all_shared | EBMF | 0.82 | — | 0.90 | — | — |
+| hybrid | YFB_base | 0.90 | 0.84 | 0.97 | 0.81 | 0.50 |
+| hybrid | YFB_cohort | 0.92 | 0.92 | 1.00 | 0.81 | 0.20 |
+| hybrid | LB_base | 0.72 | 0.67 | 0.83 | 0.76 | 0.20 |
+| hybrid | EBMF | 0.68 | 0.78 | 0.80 | — | — |
+| nothing_shared | YFB_base | — | 0.89 | 1.00 | 0.55 | 0.03 |
+| nothing_shared | YFB_cohort | — | 0.91 | 1.00 | 0.54 | 0.03 |
+| nothing_shared | LB_base | — | 0.78 | 0.87 | 0.54 | 0.07 |
+| nothing_shared | EBMF | — | 0.70 | 0.80 | — | — |
+
+*Mean over 5 seeds. Recovery = best $|\text{cor}|$ of estimated vs. true gene
+programs; Spec. acc. = specificity-classification accuracy; $\beta$ FP =
+false-positive prognostic rate on true-specific factors. EBMF is survival-blind
+(no C-index, no $\beta$). LB_cohort omitted from the table for brevity.*
+
+**The headline findings:**
+
+1. **The model natively identifies the shared / study-specific distinction.** In
+   the hybrid scenario, YFB classifies factors as shared vs. specific with
+   accuracy 0.97 (base) to 1.00 (+cohort indicator), purely from per-cohort loading
+   energy — no indicator columns required. This directly answers the central
+   question.
+2. **It does not fabricate prognostic signal when none exists.** In nothing_shared
+   ($\eta \equiv 0$ by construction), every arm sits at C-index $\approx 0.54$ and
+   the $\beta$ false-positive rate is 0.03–0.07 — the model does not invent a
+   shared prognostic factor out of purely study-specific structure.
+3. **Survival prediction is strong where shared prognostic signal exists**
+   (C-index 0.81–0.87, YFB highest), and EBMF — being survival-blind — produces no
+   risk score at all. This is the value-add of supervision.
+4. **Supervision does not cost structural fidelity.** YFB recovers shared programs
+   at $|\text{cor}| \approx 0.90$–0.94 and specific programs at 0.84–0.92, matching
+   or exceeding the non-negative EBMF benchmark (0.68–0.82).
+5. **The cohort indicator helps under genuine heterogeneity, and is redundant
+   otherwise.** In hybrid, adding it halves the $\beta$ false-positive rate
+   (0.50 $\to$ 0.20) and lifts specificity accuracy to 1.00; in all_shared it adds
+   nothing. This is the quantitative answer to "are the dummy indicators
+   necessary?"
+6. **YFB is more reliable than LB**, which collapses to near-zero recovery on some
+   seeds — consistent with YFB being the recommended model.
+
+---
+
+## 9. Open Questions for Discussion
 
 1. **Specificity definition.** We encode study-specific factors via block-zero
    loadings (a factor is active in exactly one cohort). Is this the structure you
@@ -385,9 +440,8 @@ generate_multicohort_data <- function(
    hybrid scenario stress a regime where study-specific variance *dominates*
    shared variance (the harder, more realistic case)?
 
-*The working implementation and preliminary results are in
-`results/multi_cohort_sim/` (runner: `run_multicohort_sim.R`; outputs:
-`outputs/multicohort_sim_results.csv`). A summary results report is available at
-`docs/reports/multicohort_sim_results_06_14_26.{pdf,html}`. Both the
-implementation and the results report can be updated based on feedback to this
-proposal.*
+*The working implementation is in `results/multi_cohort_sim/` (runner:
+`run_multicohort_sim.R`; outputs: `outputs/multicohort_sim_results.csv`), and the
+full results report with figures is at
+`docs/reports/multicohort_sim_results_06_14_26.{pdf,html}`. The design,
+implementation, and results can all be updated based on feedback to this proposal.*

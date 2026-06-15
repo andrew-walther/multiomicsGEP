@@ -9,7 +9,7 @@
 <meta name="author" content="Andrew Walther">
 <meta name="dcterms.date" content="2026-06-14">
 
-<title>Multi-Cohort Simulation Study: Shared vs.&nbsp;Study-Specific Factors (Proposal)</title>
+<title>Multi-Cohort Simulation Study: Shared vs.&nbsp;Study-Specific Factors</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -99,7 +99,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#model-arms" id="toc-model-arms" class="nav-link" data-scroll-target="#model-arms">5. Model Arms</a></li>
   <li><a href="#evaluation-metrics" id="toc-evaluation-metrics" class="nav-link" data-scroll-target="#evaluation-metrics">6. Evaluation Metrics</a></li>
   <li><a href="#reference-data-generating-code" id="toc-reference-data-generating-code" class="nav-link" data-scroll-target="#reference-data-generating-code">7. Reference Data-Generating Code</a></li>
-  <li><a href="#open-questions-for-discussion" id="toc-open-questions-for-discussion" class="nav-link" data-scroll-target="#open-questions-for-discussion">8. Open Questions for Discussion</a></li>
+  <li><a href="#initial-results" id="toc-initial-results" class="nav-link" data-scroll-target="#initial-results">8. Initial Results</a></li>
+  <li><a href="#open-questions-for-discussion" id="toc-open-questions-for-discussion" class="nav-link" data-scroll-target="#open-questions-for-discussion">9. Open Questions for Discussion</a></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="../../multicohort_sim_proposal_06_14_26.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
 </div>
@@ -107,8 +108,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Multi-Cohort Simulation Study: Shared vs.&nbsp;Study-Specific Factors (Proposal)</h1>
-<p class="subtitle lead">Data-generating process and evaluation design for the SSBMF (YFB) model</p>
+<h1 class="title">Multi-Cohort Simulation Study: Shared vs.&nbsp;Study-Specific Factors</h1>
+<p class="subtitle lead">Proposal, implementation, and initial results for the SSBMF model</p>
 </div>
 
 
@@ -484,15 +485,162 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <hr>
 </section>
+<section id="initial-results" class="level2">
+<h2 class="anchored" data-anchor-id="initial-results">8. Initial Results</h2>
+<p>The design above has been implemented and run end-to-end (3 scenarios <span class="math inline">\(\times\)</span> 5 arms <span class="math inline">\(\times\)</span> 5 seeds). This section is a high-level overview; the companion results report (<code>multicohort_sim_results_06_14_26</code>) carries the full tables, figures, and methodology notes. <strong>These are preliminary and may be revised after this proposal is discussed.</strong></p>
+<table class="table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Scenario</th>
+<th>Arm</th>
+<th style="text-align: center;">Rec. shared</th>
+<th style="text-align: center;">Rec. specific</th>
+<th style="text-align: center;">Spec. acc.</th>
+<th style="text-align: center;">C-index</th>
+<th style="text-align: center;"><span class="math inline">\(\beta\)</span> FP</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>all_shared</td>
+<td>YFB_base</td>
+<td style="text-align: center;">0.92</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">1.00</td>
+<td style="text-align: center;">0.87</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="even">
+<td>all_shared</td>
+<td>YFB_cohort</td>
+<td style="text-align: center;">0.94</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">0.90</td>
+<td style="text-align: center;">0.86</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="odd">
+<td>all_shared</td>
+<td>LB_base</td>
+<td style="text-align: center;">0.53</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">1.00</td>
+<td style="text-align: center;">0.74</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="even">
+<td>all_shared</td>
+<td>EBMF</td>
+<td style="text-align: center;">0.82</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">0.90</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="odd">
+<td>hybrid</td>
+<td>YFB_base</td>
+<td style="text-align: center;">0.90</td>
+<td style="text-align: center;">0.84</td>
+<td style="text-align: center;">0.97</td>
+<td style="text-align: center;">0.81</td>
+<td style="text-align: center;">0.50</td>
+</tr>
+<tr class="even">
+<td>hybrid</td>
+<td>YFB_cohort</td>
+<td style="text-align: center;">0.92</td>
+<td style="text-align: center;">0.92</td>
+<td style="text-align: center;">1.00</td>
+<td style="text-align: center;">0.81</td>
+<td style="text-align: center;">0.20</td>
+</tr>
+<tr class="odd">
+<td>hybrid</td>
+<td>LB_base</td>
+<td style="text-align: center;">0.72</td>
+<td style="text-align: center;">0.67</td>
+<td style="text-align: center;">0.83</td>
+<td style="text-align: center;">0.76</td>
+<td style="text-align: center;">0.20</td>
+</tr>
+<tr class="even">
+<td>hybrid</td>
+<td>EBMF</td>
+<td style="text-align: center;">0.68</td>
+<td style="text-align: center;">0.78</td>
+<td style="text-align: center;">0.80</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+<tr class="odd">
+<td>nothing_shared</td>
+<td>YFB_base</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">0.89</td>
+<td style="text-align: center;">1.00</td>
+<td style="text-align: center;">0.55</td>
+<td style="text-align: center;">0.03</td>
+</tr>
+<tr class="even">
+<td>nothing_shared</td>
+<td>YFB_cohort</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">0.91</td>
+<td style="text-align: center;">1.00</td>
+<td style="text-align: center;">0.54</td>
+<td style="text-align: center;">0.03</td>
+</tr>
+<tr class="odd">
+<td>nothing_shared</td>
+<td>LB_base</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">0.78</td>
+<td style="text-align: center;">0.87</td>
+<td style="text-align: center;">0.54</td>
+<td style="text-align: center;">0.07</td>
+</tr>
+<tr class="even">
+<td>nothing_shared</td>
+<td>EBMF</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">0.70</td>
+<td style="text-align: center;">0.80</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p><em>Mean over 5 seeds. Recovery = best <span class="math inline">\(|\text{cor}|\)</span> of estimated vs.&nbsp;true gene programs; Spec. acc. = specificity-classification accuracy; <span class="math inline">\(\beta\)</span> FP = false-positive prognostic rate on true-specific factors. EBMF is survival-blind (no C-index, no <span class="math inline">\(\beta\)</span>). LB_cohort omitted from the table for brevity.</em></p>
+<p><strong>The headline findings:</strong></p>
+<ol type="1">
+<li><strong>The model natively identifies the shared / study-specific distinction.</strong> In the hybrid scenario, YFB classifies factors as shared vs.&nbsp;specific with accuracy 0.97 (base) to 1.00 (+cohort indicator), purely from per-cohort loading energy — no indicator columns required. This directly answers the central question.</li>
+<li><strong>It does not fabricate prognostic signal when none exists.</strong> In nothing_shared (<span class="math inline">\(\eta \equiv 0\)</span> by construction), every arm sits at C-index <span class="math inline">\(\approx 0.54\)</span> and the <span class="math inline">\(\beta\)</span> false-positive rate is 0.03–0.07 — the model does not invent a shared prognostic factor out of purely study-specific structure.</li>
+<li><strong>Survival prediction is strong where shared prognostic signal exists</strong> (C-index 0.81–0.87, YFB highest), and EBMF — being survival-blind — produces no risk score at all. This is the value-add of supervision.</li>
+<li><strong>Supervision does not cost structural fidelity.</strong> YFB recovers shared programs at <span class="math inline">\(|\text{cor}| \approx 0.90\)</span>–0.94 and specific programs at 0.84–0.92, matching or exceeding the non-negative EBMF benchmark (0.68–0.82).</li>
+<li><strong>The cohort indicator helps under genuine heterogeneity, and is redundant otherwise.</strong> In hybrid, adding it halves the <span class="math inline">\(\beta\)</span> false-positive rate (0.50 <span class="math inline">\(\to\)</span> 0.20) and lifts specificity accuracy to 1.00; in all_shared it adds nothing. This is the quantitative answer to “are the dummy indicators necessary?”</li>
+<li><strong>YFB is more reliable than LB</strong>, which collapses to near-zero recovery on some seeds — consistent with YFB being the recommended model.</li>
+</ol>
+<hr>
+</section>
 <section id="open-questions-for-discussion" class="level2">
-<h2 class="anchored" data-anchor-id="open-questions-for-discussion">8. Open Questions for Discussion</h2>
+<h2 class="anchored" data-anchor-id="open-questions-for-discussion">9. Open Questions for Discussion</h2>
 <ol type="1">
 <li><strong>Specificity definition.</strong> We encode study-specific factors via block-zero loadings (a factor is active in exactly one cohort). Is this the structure you intend, or should specific factors also have <em>non-overlapping gene programs</em> per cohort?</li>
 <li><strong>Nothing-shared survival.</strong> Default leaves survival null in the nothing-shared scenario (false-positive control). Do you prefer instead a within-cohort prognostic specific factor so each cohort has its own survival signal?</li>
 <li><strong>Cohort count.</strong> Primary is <span class="math inline">\(C=2\)</span> (matches the real training data and the fixed-effects rationale); a <span class="math inline">\(C=3\)</span> hybrid is included as sensitivity. Is 2 sufficient for the methods claim, or should 3 be primary?</li>
 <li><strong>Signal ratio.</strong> Default <span class="math inline">\(a_{\text{shared}} = a_{\text{specific}}\)</span>. Should the hybrid scenario stress a regime where study-specific variance <em>dominates</em> shared variance (the harder, more realistic case)?</li>
 </ol>
-<p><em>The working implementation and preliminary results are in <code>results/multi_cohort_sim/</code> (runner: <code>run_multicohort_sim.R</code>; outputs: <code>outputs/multicohort_sim_results.csv</code>). A summary results report is available at <code>docs/reports/multicohort_sim_results_06_14_26.{pdf,html}</code>. Both the implementation and the results report can be updated based on feedback to this proposal.</em></p>
+<p><em>The working implementation is in <code>results/multi_cohort_sim/</code> (runner: <code>run_multicohort_sim.R</code>; outputs: <code>outputs/multicohort_sim_results.csv</code>), and the full results report with figures is at <code>docs/reports/multicohort_sim_results_06_14_26.{pdf,html}</code>. The design, implementation, and results can all be updated based on feedback to this proposal.</em></p>
 </section>
 
 </main>
