@@ -127,42 +127,71 @@ if (have_ex) ex <- readRDS(ex_path)
 
 ### 3.1 The model recovers the shared / cohort-specific loading structure
 
-```{r fig-loadings, fig.width=7, fig.height=4.4, eval=have_ex, fig.cap="Patient loadings in the hybrid scenario (seed 1, training patients grouped by cohort; red line = cohort boundary). Left: true loadings L. Right: estimated loadings from YFB_base (no cohort indicator), with columns reordered to the matched true factors. Each column is scaled to its own maximum so structure is comparable. Shared factors (F1-F2) load across BOTH cohorts; cohort-1-specific factors (F3-F4) light up only the top block and cohort-2-specific factors (F5-F6) only the bottom block. The estimate reproduces the true block-sparse pattern — the model identifies which factors are shared and which are cohort-private without any indicator columns."}
-d   <- ex$hybrid$data
-spl <- ex$hybrid$split
-cid <- d$cohort_id[spl$train_idx]
-ord <- order(cid)                              # group patients by cohort
-cid_ord <- cid[ord]
-labs <- d$factor_labels
-flab <- paste0("F", seq_along(labs), " (", labs, ")")
+```{r fig-loadings, fig.width=9, fig.height=5.5, eval=have_ex, fig.cap="Patient loading heatmaps for the hybrid scenario (seed 1, training split). Rows = patients grouped by cohort (left sidebar); columns = factors reordered to match the six true factors (2 shared, 4 cohort-specific). Top annotation: true factor type (Active = shared/prognostic; Shrunk = study-specific/non-prognostic) and estimated |beta-hat| from YFB_base. Cell colour: white (zero loading) to red (high loading). LEFT: ground-truth L showing the block-sparse structure — shared factors (F1-F2) fill both cohort blocks, cohort-1-specific (F3-F4) fill only the top block, cohort-2-specific (F5-F6) only the bottom. RIGHT: estimated L from YFB_base (no cohort indicator) — the model reproduces the block-sparse pattern with no indicator columns supplied."}
+suppressPackageStartupMessages({ library(pheatmap); library(gridExtra) })
+
+d    <- ex$hybrid$data
+spl  <- ex$hybrid$split
+cid  <- droplevels(d$cohort_id[spl$train_idx])
 fit  <- ex$hybrid$YFB_base
 
+# Reorder columns to match true factor order (shared first, then specific)
+col_idx <- fit$match$match          # estimated col j maps to true factor col_idx[j]
+inv_map <- order(col_idx)           # reorder estimated cols so they align to true order
+labs    <- d$factor_labels          # "shared", "specific_1", "specific_2", ...
+flab    <- paste0("F", seq_along(labs))
+
+# Sort rows by cohort
+ord     <- order(cid)
+cid_ord <- cid[ord]
+gap_row <- which(diff(as.integer(cid_ord)) != 0)  # horizontal gap at cohort boundary
+
+# Build true and estimated L matrices (rows sorted by cohort, cols in true order)
 Ltrue <- d$L_true[spl$train_idx, , drop = FALSE][ord, , drop = FALSE]
-Lhat  <- fit$EL[ord, fit$match$match, drop = FALSE]   # align est. columns to true order
+Lhat  <- fit$EL[ord, inv_map, drop = FALSE]
+rownames(Ltrue) <- rownames(Lhat) <- paste0("P", seq_len(nrow(Ltrue)))
+colnames(Ltrue) <- colnames(Lhat) <- flab
 
-scale01 <- function(M) apply(M, 2, function(x) { r <- max(abs(x)); if (r < 1e-12) abs(x) else abs(x) / r })
-mk <- function(M, src) {
-  M <- scale01(M); colnames(M) <- flab
-  df <- as.data.frame(M); df$patient <- seq_len(nrow(M))
-  tidyr::pivot_longer(df, -patient, names_to = "factor", values_to = "val") %>%
-    dplyr::mutate(source = src)
-}
-hl <- rbind(mk(Ltrue, "True L"), mk(Lhat, "Estimated L (YFB_base)"))
-hl$factor <- factor(hl$factor, levels = flab)
-hl$source <- factor(hl$source, levels = c("True L", "Estimated L (YFB_base)"))
-bnd <- sum(cid_ord == levels(cid_ord)[1])
+# Row annotation: cohort membership
+row_anno <- data.frame(Cohort = cid_ord, row.names = rownames(Ltrue))
+cohort_pal <- setNames(c("#2166AC", "#D6604D"), levels(cid_ord))
 
-ggplot(hl, aes(factor, patient, fill = val)) +
-  geom_raster() +
-  geom_hline(yintercept = bnd + 0.5, colour = "red", linewidth = 0.4) +
-  facet_wrap(~source) +
-  scale_y_reverse() +                            # patient 1 (cohort 1) at top
-  scale_fill_gradient(low = "white", high = "steelblue") +
-  labs(x = NULL, y = "patient (top = cohort 1, bottom = cohort 2)",
-       fill = "loading\n(col-scaled)") +
-  theme_minimal(base_size = 9) +
-  theme(axis.text.x = element_text(angle = 35, hjust = 1),
-        panel.grid = element_blank())
+# Column annotation: true factor type (Active = shared, Shrunk = specific)
+# and estimated |beta-hat| from YFB_base
+true_status <- ifelse(labs == "shared", "Active", "Shrunk")
+ebeta_abs   <- abs(fit$EBeta[inv_map])
+col_anno    <- data.frame(
+  Type     = factor(true_status, levels = c("Active", "Shrunk")),
+  Abs_Beta = ebeta_abs,
+  row.names = flab
+)
+
+anno_colors <- list(
+  Cohort   = cohort_pal,
+  Type     = c(Active = "#D62728", Shrunk = "#BDBDBD"),
+  Abs_Beta = c("#FFFFFF", "#08306B")
+)
+
+heat_pal <- colorRampPalette(c("#FFFFFF", "#FCBBA1", "#FB6A4A", "#A50F15"))(100)
+
+ph_args <- list(
+  cluster_rows      = FALSE, cluster_cols     = FALSE,
+  show_rownames     = FALSE, show_colnames    = TRUE,
+  color             = heat_pal,
+  annotation_row    = row_anno,
+  annotation_col    = col_anno,
+  annotation_colors = anno_colors,
+  gaps_row          = gap_row,
+  border_color      = NA,
+  fontsize_col      = 9, fontsize = 9,
+  legend            = TRUE, annotation_legend = TRUE,
+  silent            = TRUE
+)
+
+p_true <- do.call(pheatmap, c(list(Ltrue, main = "True L"), ph_args))
+p_hat  <- do.call(pheatmap, c(list(Lhat,  main = "Estimated L (YFB_base, no indicator)"), ph_args))
+
+gridExtra::grid.arrange(p_true$gtable, p_hat$gtable, ncol = 2)
 ```
 
 ### 3.2 Factor recovery: estimated gene programs match the truth
