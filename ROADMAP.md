@@ -4,12 +4,13 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-05-28.** Core model complete (modular CAVI, 246/246 tests passing).
+> **Status as of 2026-06-14.** Core model complete (modular CAVI, 246/246 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
 > cohorts across RNA-seq, microarray, and proteomics platforms). Recommended configuration
-> finalized: **D4 (YFB + DeSurv gene selection, K=7, mean external C=0.636)**. See
-> `docs/reports/desurv_alignment_report_05_27_26.pdf` and
-> `docs/reports/desurv_factor_diagnostics_05_27_26.pdf`.
+> finalized: YFB + DeSurv gene selection, K=7, mean external C=0.636. Multi-cohort simulation
+> study complete: shared vs. study-specific factor recovery validated across 3 scenarios and
+> 5 arms; proposal and key results in `docs/reports/multicohort_sim_proposal_06_14_26.pdf`.
+> See `docs/reports/desurv_alignment_report_05_27_26.pdf` for the real-data benchmark.
 >
 > **Recommended configuration — D4:** YFB (η = (YF)β), DeSurv-aligned gene selection
 > (combined mean+variance rank, top-3000 per cohort before per-platform z-standardization,
@@ -148,6 +149,19 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   violated (Schoenfeld global p>0.05). Heatmaps and top-gene tables for all active factors
   provided as starting point for pathway enrichment.
   *Files: docs/reports/desurv_factor_diagnostics_05_27_26.{qmd,pdf}*
+
+- [ ] **A/B comparison: SSBMF vs unsupervised EBMF on real PDAC data** `[Priority: High]` `[Effort: Medium]`
+  Fit an unsupervised EBMF model (no survival objective) on the same merged TCGA+CPTAC training
+  data and DeSurv gene set. Evaluate both on the same 5 held-out PDAC cohorts (η = YFβ for SSBMF;
+  Cox PH on YF factor scores post-hoc for EBMF). Goal: quantify the performance and interpretability
+  lift from the supervised component on real data. The multi-cohort simulation provides preliminary
+  evidence: in the hybrid scenario (only some factors prognostic — the realistic case) the joint
+  model achieves C=0.81 vs EBMF→Cox C=0.72 (+0.09); at equal signal the two-stage baseline nearly
+  matches. Real-data confirmation would strengthen the manuscript's core claim.
+  Key comparisons: (1) external C-index; (2) factor stability and biological coherence (do the
+  same 2 active programs emerge unsupervised?); (3) pathway enrichment concordance.
+  *Files: YFB fit in `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds`;
+  EBMF via `flashier`; prediction via `code/predict.R`.*
 
 - [ ] **Pathway enrichment on D4 active factors** `[Priority: High]` `[Effort: Small]`
   Submit top-weighted genes from D4 Factor 3 (adverse) and Factor 7 (protective) to MSigDB
@@ -345,6 +359,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ---
 
 ## ✅ Completed
+
+- [x] **Multi-cohort simulation study: shared vs. study-specific factor recovery** *(Complete — 2026-06-14)*
+  Validated that YFB natively recovers the shared/study-specific distinction across 3 scenarios
+  (all-shared, hybrid, nothing-shared), 5 arms (YFB/LB ± cohort indicator + unsupervised EBMF→Cox),
+  and 5 seeds. Key findings: specificity-classification accuracy 0.97–1.00 (hybrid, YFB); held-out
+  C-index 0.81 vs EBMF→Cox 0.72 in the hybrid regime; β false-positive rate 0.03–0.07 in the
+  null scenario. Signal-ratio sweep (1×–16× specific-to-shared variance) shows FP rate is bounded
+  and does not grow monotonically. Recommendation from simulation: include cohort indicator as
+  default and use |β̂| magnitude thresholding rather than binary nonzero classification.
+  *Files: `results/multi_cohort_sim/`, `config/globals.yml` (`synthetic_multicohort` block),
+  `docs/reports/multicohort_sim_proposal_06_14_26.{qmd,pdf}`. Branch: `multi-cohort-sim`.*
 
 - [x] **YFB K-CV sign fix (2026-05-20)** — `sign_correction=FALSE` parameter added to
   `fit_cox_on_yf()` and passed in `select_K_cv(model="YFB")`. Before fix: C<0.5 for all K

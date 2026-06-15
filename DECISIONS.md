@@ -39,8 +39,10 @@ near-unimodal landscape per the 2026-05-06 "Phase 3 — multi-initialization" 30
 
 **Status:** Working draft for the 2026-06-15 advisor meeting; subject to revision after feedback.
 
-**Files:** `results/multi_cohort_sim/{generate_multicohort_data,build_ebmf_templates,sim_scoring,run_multicohort_sim}.R`,
-`config/globals.yml` (`synthetic_multicohort`), `docs/reports/multicohort_sim_{proposal,results}_06_14_26.qmd`.
+**Files:** `results/multi_cohort_sim/{generate_multicohort_data,build_ebmf_templates,sim_scoring,run_multicohort_sim,run_signal_ratio_sweep}.R`,
+`config/globals.yml` (`synthetic_multicohort`), `docs/reports/multicohort_sim_proposal_06_14_26.{qmd,pdf}`.
+The standalone results report was consolidated into the proposal (Part II removed for brevity;
+full tables and sweep figures available from the runner outputs).
 
 ---
 
