@@ -867,3 +867,51 @@ convergence and the survival-activity magnitudes.
 ::::
 
 - The spike-and-slab / shrinkage behavior is visible: most programs are shrunk below the survival-activity threshold, with only the survival-active ones retained
+
+
+## Appendix — relation to DeSurv (Young et al., PNAS 2026) {visibility="uncounted" .smaller .dense-cols .tight-list .compact-table}
+
+:::: {.columns}
+
+::: {.column width="48%"}
+
+**Same design & same data — SBMF is the Bayesian counterpart.** Both jointly fit supervised NMF + Cox with **non-negative gene programs**, share the same training set (**TCGA + CPTAC, $n=273$**) and the **same five external PDAC cohorts** (Dijk, Moffitt, PACA-AU array/seq, Puleo; $n=616$), score new patients by **projection** (no retraining), select via **CV C-index + 1-SE**, and use the **combined-rank top-3000-per-cohort** gene selection. Both also find that the **highest-variance program is *not* the most prognostic**.
+
+DeSurv objective: $(1-\alpha)\,\mathcal{L}_\text{NMF} - \alpha\,\mathcal{L}_\text{Cox}$, with the survival gradient on the gene programs $W$.
+
+:::
+
+::: {.column width="52%"}
+
+**What SBMF changes**
+
+| | DeSurv | SBMF |
+|:--|:--|:--|
+| Estimation | penalized optimization | Bayesian variational (CAVI) |
+| Tuned by BO | $k,\;\alpha,\;\lambda$ | **only $K$** ($\alpha,\lambda$ not tuned) |
+| Shrinkage | fixed elastic-net | empirical-Bayes priors (learned) |
+| Uncertainty | point estimates | posterior mean **+** variance |
+| Noise | least-squares | per-gene precision $\tau$; $E[L^2]$ correction |
+
+- **DeSurv:** $k=3,\ \alpha=0.334$; pooled external **HR/SD $=1.50$** (95% CI 1.31–1.72)
+- **SBMF (YF)β:** $K=`r yfb_K`\to K_\text{eff}=`r yfb_keff`$; mean external **C $=`r sprintf("%.3f", yfb_mean)`**
+
+:::
+
+::::
+
+**Honest caveat:** the two report different primary metrics (DeSurv: pooled HR/SD; SBMF: mean external C-index) and use slightly different normalization (DeSurv within-subject rank → 1970 genes; SBMF per-platform z-std → 2064). A **matched same-protocol head-to-head is a planned next step** — DeSurv is *not* re-run here.
+
+::: {.notes}
+This is the backup for the inevitable "how does this compare to DeSurv?" question.
+Be collegial and precise: SBMF is the Bayesian sibling of DeSurv — same supervised
+NMF+Cox idea, same training data and the same five external cohorts, same
+projection-based scoring and CV+1-SE selection, and SBMF borrowed DeSurv's
+combined-rank gene selection. The genuine differences: DeSurv tunes k, alpha, and
+lambda by Bayesian optimization; SBMF only selects K and lets the empirical-Bayes
+priors learn the shrinkage, with no alpha or lambda to tune, plus posterior
+uncertainty and a heteroscedastic noise model. On numbers, DeSurv reports pooled
+HR per SD of 1.50; SBMF reports mean external C of 0.636 — different metrics, so a
+matched head-to-head on one protocol is the honest next step, not a claim of
+superiority today.
+:::
