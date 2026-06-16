@@ -733,8 +733,6 @@ preprocessing but applied inside the Bayesian model.
 
 ## Impact / key findings {.smaller .tight-list}
 
-<br>
-
 1. **Joint supervision beats the unsupervised two-step** — by ~0.09 C-index on synthetic data with known truth (0.81 vs 0.72, hybrid), and across **all five** held-out PDAC cohorts on real data.
 
 2. **Preprocessing is decisive** — per-platform z-standardization before merging is the difference between a working model and $\beta\to 0$; **10 of 12** alternatives collapse.
@@ -743,8 +741,19 @@ preprocessing but applied inside the Bayesian model.
 
 4. **Mean external C-index = `r sprintf("%.3f", yfb_mean)`** across five independent PDAC cohorts — fully Bayesian throughout (adaptive priors, no $\alpha$ tuning, uncertainty-aware).
 
+### Limitations
+
+- **Small external cohorts give noisy estimates** — per-cohort C ranges down to `r sprintf("%.2f", min(yfb_real$c_index))` (Moffitt), near chance
+- **Real-data margin over unsupervised EBMF → Cox is modest** (EBMF is already ≈0.63 within-training); the *synthetic* gap (0.81 vs 0.72) is the cleaner demonstration of supervision's value
+- The two programs are **statistically** prognostic — **biological annotation (pathway enrichment) is the next step**, not yet done
+
 ::: {.notes}
-Four takeaways as plain numbered lines. Supervision helps — clearly on synthetic,
+Four takeaways as plain numbered lines, then an honest limitations beat. Small
+external cohorts (Moffitt near chance) give noisy C-index; the real-data margin
+over EBMF is modest because EBMF is already strong within-training, so I lean on
+the cleaner synthetic gap and on parsimony/exact-scoring; and the programs are
+statistically prognostic but not yet biologically annotated — that's the pathway
+enrichment next step. Supervision helps — clearly on synthetic,
 across all five cohorts on real. Preprocessing is decisive. Parsimony with signal:
 two active programs, exact external scoring, performance competitive with the
 field, all fully Bayesian with adaptive priors and no alpha to tune.

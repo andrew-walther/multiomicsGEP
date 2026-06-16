@@ -2332,15 +2332,20 @@ display:block!important;
 </section>
 <section id="impact-key-findings" class="slide level2 smaller tight-list">
 <h2>Impact / key findings</h2>
-<p><br></p>
 <ol type="1">
 <li><p><strong>Joint supervision beats the unsupervised two-step</strong> — by ~0.09 C-index on synthetic data with known truth (0.81 vs 0.72, hybrid), and across <strong>all five</strong> held-out PDAC cohorts on real data.</p></li>
 <li><p><strong>Preprocessing is decisive</strong> — per-platform z-standardization before merging is the difference between a working model and <span class="math inline">\beta\to 0</span>; <strong>10 of 12</strong> alternatives collapse.</p></li>
 <li><p><strong>Parsimony with signal</strong> — the recommended model carries just <strong><span class="math inline">K_\text{eff}=2</span> survival-active programs</strong> (vs ~20 unsupervised factors) yet matches the field, with <strong>exact, leakage-free external scoring</strong>.</p></li>
 <li><p><strong>Mean external C-index = 0.636</strong> across five independent PDAC cohorts — fully Bayesian throughout (adaptive priors, no <span class="math inline">\alpha</span> tuning, uncertainty-aware).</p></li>
 </ol>
+<h3 id="limitations">Limitations</h3>
+<ul>
+<li><strong>Small external cohorts give noisy estimates</strong> — per-cohort C ranges down to 0.55 (Moffitt), near chance</li>
+<li><strong>Real-data margin over unsupervised EBMF → Cox is modest</strong> (EBMF is already ≈0.63 within-training); the <em>synthetic</em> gap (0.81 vs 0.72) is the cleaner demonstration of supervision’s value</li>
+<li>The two programs are <strong>statistically</strong> prognostic — <strong>biological annotation (pathway enrichment) is the next step</strong>, not yet done</li>
+</ul>
 <aside class="notes">
-<p>Four takeaways as plain numbered lines. Supervision helps — clearly on synthetic, across all five cohorts on real. Preprocessing is decisive. Parsimony with signal: two active programs, exact external scoring, performance competitive with the field, all fully Bayesian with adaptive priors and no alpha to tune.</p>
+<p>Four takeaways as plain numbered lines, then an honest limitations beat. Small external cohorts (Moffitt near chance) give noisy C-index; the real-data margin over EBMF is modest because EBMF is already strong within-training, so I lean on the cleaner synthetic gap and on parsimony/exact-scoring; and the programs are statistically prognostic but not yet biologically annotated — that’s the pathway enrichment next step. Supervision helps — clearly on synthetic, across all five cohorts on real. Preprocessing is decisive. Parsimony with signal: two active programs, exact external scoring, performance competitive with the field, all fully Bayesian with adaptive priors and no alpha to tune.</p>
 <style type="text/css">
 span.MJX_Assistive_MathML {
 position:absolute!important;
