@@ -211,6 +211,15 @@ The corrected implementation with 6 algorithmic improvements:
 | A5 | ELBO proxy | Genomics log-likelihood tracked per iteration |
 | A6 | Taylor refresh flag | `refresh_taylor=FALSE` for optional per-k recomputation |
 
+> **Convergence in the canonical modular loops (2026-06-16 clarification).** The A4 "dual
+> delta-L / delta-beta" rule describes the V2 monolithic reference. The canonical modular CAVI
+> loops used for all current results — `code/fit_modular.R` (LB) and `code/fit_cox_on_yf.R`
+> (YFB) — instead declare convergence on the **relative full-ELBO change < tol (default 1e-5)**,
+> after a 5-iteration burn-in; mean|delta-L| and mean|delta-beta| are computed and logged as
+> diagnostics but are not the stopping rule. The ELBO is both the optimization objective and the
+> convergence monitor; the number of programs K is selected separately by cross-validated C-index
+> (1-SE rule). See DECISIONS.md 2026-06-16.
+
 **Function signature:**
 
 ```r
@@ -1907,5 +1916,54 @@ analysis and PDAC subtype comparison (Moffitt basal/classical, Bailey et al. 201
 | `DECISIONS.md` | 2026-05-27 entry: D4 adoption, D5 cohort indicator finding |
 | `ROADMAP.md` | Header updated to 2026-05-28; diagnostics report + pathway enrichment added |
 | `CLAUDE.md` | Recommended configuration updated to D4 |
+
+---
+
+# Session 26 — Multi-cohort simulation & 6/18 lab-meeting deck (2026-06-14 to 06-16)
+
+## 26.1 — Multi-cohort simulation study (2026-06-14)
+
+Completed the shared vs. study-specific factor-recovery simulation: EBMF-grounded ground truth,
+3 scenarios (all-shared; shared & cohort-specific [hybrid]; all cohort-specific [negative control])
+× 5 model arms (YFB/LB ± cohort indicator + unsupervised EBMF) × 5 seeds. The projection model
+recovers shared factors at |r|≈0.90–0.92 and types shared vs. study-specific with accuracy up to
+1.00; in the hybrid regime it reaches C=0.81 vs EBMF→Cox 0.72; the negative control sits at chance
+for every arm (no fabricated signal). Proposal/results: `docs/reports/multicohort_sim_proposal_06_14_26.{qmd,pdf}`.
+
+## 26.2 — Real-data unsupervised baseline (EBMF→Cox)
+
+Added `results/benchmark_sim/run_ebmf_cox_external.R`: fits `flashier` EBMF on the merged
+TCGA+CPTAC training set (same gene set), then Cox on the factor scores, and scores the 5 held-out
+cohorts by projection. Mean external **C=0.564 (K=20)** vs YFB 0.636 — the real-data analog of the
+synthetic result, with far greater parsimony (K_eff=2 vs 20 factors). See DECISIONS.md 2026-06-15.
+
+## 26.3 — 6/18/2026 lab-meeting deck (revised, merged to main `905279b`)
+
+Built and revised a 28-slide Quarto reveal.js deck (`presentation/walther_lab_meeting_06_18_2026/`).
+Per-slide PDF (`_slides.pdf`) built with **decktape** (Chrome `--print-to-pdf` was non-deterministic
+for reveal pagination). Three reproducible figure generators in `figs/`. A reviewer subagent passed
+the deck (no critical issues). Key corrections made during revision:
+
+- **Priors restated:** point-exponential on L,F; normal on β; τ MLE (earlier drafts wrongly said
+  "point-normal").
+- **Convergence:** relative full-ELBO change < 1e-5 is the criterion (ΔL/Δβ are diagnostics) —
+  see the clarification note in §Code Versions and DECISIONS.md 2026-06-16.
+- **K vs K_eff** made explicit: K=7 retained by CV+1-SE (floor K≥3); K_eff=2 survival-active by
+  |β̂|>1e-3.
+- **Adverse/protective direction** read from the (YF)-projection KM (marginal), not the joint-β
+  sign: **Program 7 adverse** (MET/ITGA3/glycolytic), **Program 3 protective** (epithelial) —
+  opposite the β sign (suppression among correlated programs). DECISIONS.md 2026-06-16.
+- Added a Limitations section and a DeSurv-comparison backup slide (grounded in Young et al.,
+  PNAS 2026).
+
+## 26.4 — Files changed
+
+| File | Change |
+|------|--------|
+| `presentation/walther_lab_meeting_06_18_2026/` | New/revised deck, figures, 3 figure generators, revision notes |
+| `results/benchmark_sim/run_ebmf_cox_external.R` | New unsupervised EBMF→Cox external baseline + outputs |
+| `docs/plans/rashidlab_meeting_feedback_04_09_26.md` | April feedback notes |
+| `DECISIONS.md` | 2026-06-15 (EBMF baseline) and 2026-06-16 (deck corrections) entries |
+| `ROADMAP.md` | Status → 2026-06-16; adverse/protective relabel; EBMF baseline + deck milestones |
 
 ---

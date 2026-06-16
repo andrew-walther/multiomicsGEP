@@ -4,19 +4,25 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-06-14.** Core model complete (modular CAVI, 246/246 tests passing).
+> **Status as of 2026-06-16.** Core model complete (modular CAVI, 246/246 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
 > cohorts across RNA-seq, microarray, and proteomics platforms). Recommended configuration
-> finalized: YFB + DeSurv gene selection, K=7, mean external C=0.636. Multi-cohort simulation
+> finalized: YFB + survival-ranked gene selection, K=7, mean external C=0.636. Multi-cohort simulation
 > study complete: shared vs. study-specific factor recovery validated across 3 scenarios and
 > 5 arms; proposal and key results in `docs/reports/multicohort_sim_proposal_06_14_26.pdf`.
 > See `docs/reports/desurv_alignment_report_05_27_26.pdf` for the real-data benchmark.
+> 6/18/2026 lab-meeting deck delivered and merged to main (`905279b`); unsupervised EBMF→Cox
+> external baseline added (mean external C=0.564, K=20 — DECISIONS.md 2026-06-15). Adverse/protective
+> program directions corrected to the marginal (YF)-projection convention (DECISIONS.md 2026-06-16).
 >
 > **Recommended configuration — D4:** YFB (η = (YF)β), DeSurv-aligned gene selection
 > (combined mean+variance rank, top-3000 per cohort before per-platform z-standardization,
 > 2064 genes after intersection), K=7 (CV-selected with biological floor K≥3), no cohort
 > indicator. Mean external C=0.636 across 5 held-out PDAC cohorts. Identifies 2 active gene
-> expression programs (K_eff=2): one adverse (β̂₃=+0.011) and one protective (β̂₇=−0.041).
+> expression programs (K_eff=2). By marginal (YF)-projection survival association — the convention
+> used in the talk and the biologically sensible one — **Program 7 is adverse** (MET/ITGA3/glycolytic)
+> and **Program 3 protective** (epithelial). The joint-β signs (β̂₇=−0.041, β̂₃=+0.011) are *opposite*
+> the marginal direction, a suppression effect among correlated programs (see DECISIONS.md 2026-06-16).
 > New-patient scoring: η_new = Y_new F β̂ (exact, no approximation). Factor weight matrix F
 > provides directly interpretable gene signatures for pathway enrichment.
 >
@@ -143,9 +149,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Full diagnostic evaluation of D1–D5 on merged TCGA+CPTAC training cohort. All five
   configurations converge to K_eff=2 (two active programs) regardless of K requested (3–8),
   confirming the ARD prior concentrates survival signal into at most 2 directions. D4 active
-  factors: Factor 3 (adverse, β̂=+0.011, log-rank p<0.05) and Factor 7 (protective,
-  β̂=−0.041). Kaplan-Meier stratification consistent with β directions in training cohort;
-  signal replicates across all 5 external cohorts. Proportional hazards assumption not
+  factors: Factor 3 (β̂=+0.011) and Factor 7 (β̂=−0.041), both log-rank p<0.05.
+  **[Corrected 2026-06-16: by the marginal (YF)-projection direction adopted in the 6/18 deck,
+  Factor 7 is *adverse* (MET/ITGA3/glycolytic) and Factor 3 *protective* (epithelial) — opposite
+  the joint-β-sign labels shown in this 05-27 report (suppression among correlated programs).
+  See DECISIONS.md 2026-06-16.]**
+  Signal replicates across all 5 external cohorts. Proportional hazards assumption not
   violated (Schoenfeld global p>0.05). Heatmaps and top-gene tables for all active factors
   provided as starting point for pathway enrichment.
   *Files: docs/reports/desurv_factor_diagnostics_05_27_26.{qmd,pdf}*
@@ -160,12 +169,18 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   matches. Real-data confirmation would strengthen the manuscript's core claim.
   Key comparisons: (1) external C-index; (2) factor stability and biological coherence (do the
   same 2 active programs emerge unsupervised?); (3) pathway enrichment concordance.
+  **Update 2026-06-16:** comparison (1) is done — `run_ebmf_cox_external.R` gives EBMF→Cox mean
+  external C=0.564 (K=20) vs YFB 0.636 across the same 5 cohorts (DECISIONS.md 2026-06-15). The
+  same-protocol external comparison is shown in the 6/18 deck. Parts (2) factor stability and
+  (3) pathway concordance remain.
   *Files: YFB fit in `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds`;
-  EBMF via `flashier`; prediction via `code/predict.R`.*
+  EBMF via `flashier`; prediction via `code/predict.R`; baseline runner `run_ebmf_cox_external.R`.*
 
 - [ ] **Pathway enrichment on D4 active factors** `[Priority: High]` `[Effort: Small]`
-  Submit top-weighted genes from D4 Factor 3 (adverse) and Factor 7 (protective) to MSigDB
-  hallmark gene sets / KEGG / GSEA. Cross-reference with Moffitt basal/classical scores and
+  Submit top-weighted genes from D4 Factor 7 (adverse: MET/ITGA3/glycolytic) and Factor 3
+  (protective: epithelial) to MSigDB hallmark gene sets / KEGG / GSEA. Top-gene lists already
+  exported to `presentation/walther_lab_meeting_06_18_2026/assets/active_factor_genes.csv`.
+  Cross-reference with Moffitt basal/classical scores and
   Bailey et al. (2016) four-subtype annotations in TCGA_PAAD to assess concordance with
   established PDAC molecular axes. Patient loadings L̂_{i,3} and L̂_{i,7} serve as continuous
   molecular scores for subtype comparison. This is the primary interpretability task remaining

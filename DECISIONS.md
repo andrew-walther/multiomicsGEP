@@ -5,6 +5,45 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-06-16 — Deck revision: KM direction convention, convergence criterion, prior restatement
+
+While revising the 2026-06-18 lab-meeting deck (merged to main, `905279b`), three analytical
+points were corrected/clarified. They supersede earlier wording in the 2026-05-27 factor
+diagnostics report and parts of ROADMAP/PROJECT_STATUS.
+
+**1. Adverse/protective direction is read from the (YF)-projection survival association
+(marginal), NOT from the joint-model β sign.** The two disagree for the recommended model: the
+joint coefficients are β̂₇ = −0.041 and β̂₃ = +0.011, but a Cox model on each program's projection
+score (YF)ₖ — the quantity the risk model actually scores on — shows **Program 7 is adverse**
+(higher activation → worse survival; carries MET, ITGA3, and glycolytic genes GAPDH/ENO1/TPI1/PGK1;
+log-rank p≈5×10⁻⁴) and **Program 3 is protective** (epithelial markers MLPH/SLC45A3/TJP3;
+p≈8×10⁻³). This is a **suppression effect**: the conditional (joint-β) sign can invert the marginal
+direction when programs are correlated. *Decision:* label adverse/protective by the marginal
+survival direction (which the KM curve displays and which matches biology), and report |β̂| as the
+survival-activity magnitude rather than its signed value. The full risk score η = (YF)β is
+correctly oriented throughout (training C = 0.656). *Files:* `figs/make_factor_figs.R` (KM
+stratified by ZF = Y·EF; direction from the sign of the Cox coefficient on the projection).
+
+**2. The canonical convergence criterion is relative full-ELBO change < 10⁻⁵.** Both
+`code/fit_modular.R` and `code/fit_cox_on_yf.R` declare convergence when
+|ELBO⁽ᵗ⁾ − ELBO⁽ᵗ⁻¹⁾| / |ELBO⁽ᵗ⁻¹⁾| < tol (default 1e-5, after a 5-iteration burn-in). The mean
+absolute changes ΔL and Δβ are computed and logged but are **not** the stopping rule. This
+clarifies the earlier "dual ΔL+Δβ < 1e-3" description (a V2-era design that the modular loops
+moved past). The ELBO is both the CAVI objective and the convergence monitor; the number of
+programs K is selected separately by cross-validated C-index with the 1-SE rule.
+
+**3. Prior restatement (recommended model).** L and F use a **point-exponential** (non-negative
+spike-and-slab) prior; β uses a **normal** prior; τ is a closed-form MLE. Legacy references to
+"point-normal priors" describe earlier prior-sensitivity experiments, not the recommended
+configuration. *Files:* `code/fit_cox_on_yf.R` (`prior_LF="point_exponential"`,
+`prior_beta="normal"`).
+
+**Deliverables:** revised 6/18 deck (28 slides) including a Limitations section and a
+DeSurv-comparison backup slide grounded in the DeSurv manuscript (Young et al., PNAS 2026); the
+unsupervised EBMF→Cox external baseline is recorded in the 2026-06-15 entry below.
+
+---
+
 ## 2026-06-15 — Real-data unsupervised baseline: EBMF→Cox external validation
 
 **Question:** The repo had supervised external C-indices (LB/YFB) and a *within-training*
