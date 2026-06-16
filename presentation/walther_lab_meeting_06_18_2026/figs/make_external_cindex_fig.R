@@ -88,8 +88,8 @@ leg_labels <- c(
   "Unsupervised  EBMF → Cox"
 )
 
-png(OUT_PNG, width = 1600, height = 950, res = 150)
-op <- par(mar = c(5.2, 5.2, 3.2, 1.4), xpd = NA)
+png(OUT_PNG, width = 1450, height = 1020, res = 150)
+op <- par(mar = c(5.4, 5.4, 3.4, 1.6), xpd = NA)
 
 bp <- barplot(
   mat, beside = TRUE, col = bar_cols, border = NA,
