@@ -5,6 +5,35 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-06-15 — Real-data unsupervised baseline: EBMF→Cox external validation
+
+**Question:** The repo had supervised external C-indices (LB/YFB) and a *within-training*
+per-factor EBMF diagnostic, but no *external* evaluation of the unsupervised two-step
+(EBMF → Cox) on the held-out cohorts — so the "supervised joint beats unsupervised two-step"
+claim was only demonstrated on synthetic data, not real data.
+
+**Decision:** Add `results/benchmark_sim/run_ebmf_cox_external.R`, which fits `flashier` EBMF to
+the merged TCGA_PAAD + CPTAC training matrix under the **identical** DeSurv-aligned preprocessing
+as the recommended YFB model (per-platform z-std + combined-rank top-3000-per-cohort), fits
+`coxph` on the EBMF factor scores, and scores the 5 held-out cohorts via the **same projection
+formula used for YFB** (η = Y·F_norm·β). The only difference from YFB is that F is learned
+unsupervised — making it a clean like-for-like contrast that isolates the value of supervision.
+The script **fails loud** if β→0 or training/external C is at chance.
+
+**Why this scoring choice:** Fitting Cox on the same projection used at test (rather than on
+flashier's shrunken L directly) guarantees train/test consistency and mirrors the YFB
+external-scoring path exactly. EBMF's natural rank is used (flashier selected K=20); this is
+stated on the slide so the baseline is neither strawmanned nor cherry-picked.
+
+**Result (5 held-out PDAC cohorts):** EBMF→Cox mean external C = **0.564** (K=20), vs YFB
+**0.636** and LB **0.622**. The ~0.07 gap confirms on real data what the synthetic study showed
+(YFB 0.81 > EBMF 0.72): supervised joint factorization generalizes better than the unsupervised
+two-step, and does so with far greater parsimony (K_eff=2 survival-active programs vs 20 EBMF
+factors). Output: `results/benchmark_sim/outputs/ebmf_cox_external/`. Built for the 6/18/2026
+lab-meeting deck (`presentation/walther_lab_meeting_06_18_2026/`).
+
+---
+
 ## 2026-06-14 — Multi-Cohort Simulation: non-negative ground truth + fair EBMF benchmark
 
 **Question:** How should a multi-cohort simulation (shared vs. study-specific factors) be
