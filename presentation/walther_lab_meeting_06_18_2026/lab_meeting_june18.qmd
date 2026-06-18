@@ -187,8 +187,8 @@ $h_0(t)$ is left **unspecified** — it cancels in the Cox partial likelihood. N
 
 ::::
 ::: {.notes}
-Two equations, one shared L. Every symbol is defined in the table, including the
-risk score eta. The baseline hazard is non-parametric — a specific April
+Two equations, one shared latent structure. Every symbol is defined in the table,
+including the risk score eta. The baseline hazard is non-parametric — a specific April
 question — so h0(t) drops out of the partial likelihood and we make no
 parametric shape assumption.
 :::
@@ -260,7 +260,7 @@ $$\text{ELBO}=\underbrace{E_q[\mathcal{L}_\text{gen}]}_{\text{expression fit}}\;
 ::: {.column width="50%"}
 
 - **KL term** penalizes each posterior $q$ away from its prior — the adaptive shrinkage
-- The **shared $L$** enters both likelihood terms — that coupling *is* the supervision
+- The **shared $F$** enters both likelihood terms — genomics reconstruction ($Y \approx LF^\top$) and survival risk ($\eta = (YF)\beta$) — that coupling *is* the supervision
 - The ELBO **balances** expression and survival automatically — **no tuning parameter $\alpha$** ($\lambda=1$ in the recommended fits)
 
 :::
@@ -275,7 +275,8 @@ direct April request. The ELBO has three pieces: Gaussian genomics
 reconstruction, the Cox survival term via a second-order Taylor expansion that
 keeps the updates conjugate, and a per-block KL penalty that is the adaptive
 shrinkage. I show the survival term for the projection (YF)β model, which is the
-recommended one. The shared L in both likelihood terms is the supervision, and
+recommended one. The shared F in both likelihood terms is the supervision — F
+shapes expression reconstruction and the survival risk score simultaneously — and
 the ELBO balances the two with no α to tune.
 :::
 

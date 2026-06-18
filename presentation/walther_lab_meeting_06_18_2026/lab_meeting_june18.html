@@ -1703,7 +1703,7 @@ display:block!important;
 </div>
 </div>
 <aside class="notes">
-<p>Two equations, one shared L. Every symbol is defined in the table, including the risk score eta. The baseline hazard is non-parametric — a specific April question — so h0(t) drops out of the partial likelihood and we make no parametric shape assumption.</p>
+<p>Two equations, one shared latent structure. Every symbol is defined in the table, including the risk score eta. The baseline hazard is non-parametric — a specific April question — so h0(t) drops out of the partial likelihood and we make no parametric shape assumption.</p>
 <style type="text/css">
 span.MJX_Assistive_MathML {
 position:absolute!important;
@@ -1783,7 +1783,7 @@ display:block!important;
 </div><div class="column" style="width:50%;">
 <ul>
 <li><strong>KL term</strong> penalizes each posterior <span class="math inline">q</span> away from its prior — the adaptive shrinkage</li>
-<li>The <strong>shared <span class="math inline">L</span></strong> enters both likelihood terms — that coupling <em>is</em> the supervision</li>
+<li>The <strong>shared <span class="math inline">F</span></strong> enters both likelihood terms — genomics reconstruction (<span class="math inline">Y \approx LF^\top</span>) and survival risk (<span class="math inline">\eta = (YF)\beta</span>) — that coupling <em>is</em> the supervision</li>
 <li>The ELBO <strong>balances</strong> expression and survival automatically — <strong>no tuning parameter <span class="math inline">\alpha</span></strong> (<span class="math inline">\lambda=1</span> in the recommended fits)</li>
 </ul>
 </div>
@@ -1792,7 +1792,7 @@ display:block!important;
 <p><strong>What the ELBO is <em>for</em>:</strong> it is the <strong>fitting objective</strong> — CAVI maximizes it, and a fit is declared converged when it stops improving. <strong>It is <em>not</em> used to choose the number of programs</strong> — that is done by cross-validated C-index (next: <em>Selecting K</em>).</p>
 </blockquote>
 <aside class="notes">
-<p>The variational family is mean-field and factor-wise, written out at the top — a direct April request. The ELBO has three pieces: Gaussian genomics reconstruction, the Cox survival term via a second-order Taylor expansion that keeps the updates conjugate, and a per-block KL penalty that is the adaptive shrinkage. I show the survival term for the projection (YF)β model, which is the recommended one. The shared L in both likelihood terms is the supervision, and the ELBO balances the two with no α to tune.</p>
+<p>The variational family is mean-field and factor-wise, written out at the top — a direct April request. The ELBO has three pieces: Gaussian genomics reconstruction, the Cox survival term via a second-order Taylor expansion that keeps the updates conjugate, and a per-block KL penalty that is the adaptive shrinkage. I show the survival term for the projection (YF)β model, which is the recommended one. The shared F in both likelihood terms is the supervision — F shapes expression reconstruction and the survival risk score simultaneously — and the ELBO balances the two with no α to tune.</p>
 <style type="text/css">
 span.MJX_Assistive_MathML {
 position:absolute!important;

@@ -174,18 +174,20 @@ for exact scoring (in practice, very little --- see the external C-index slide).
 \scriptlabel The variational family is \key{mean-field} --- every block factorizes independently.
 Inference maximizes the \key{ELBO}, with three pieces: a Gaussian genomics-fit term, a survival-fit
 term (a \key{2nd-order Taylor expansion of the Cox likelihood} that keeps it conjugate to the
-updates), and a per-block KL term that is the adaptive shrinkage. The \key{shared $L$ enters both
-likelihood terms --- that coupling is the supervision}. And it balances the two automatically:
-\key{no $\alpha$ to tune} ($\lambda = 1$).
+updates), and a per-block KL term that is the adaptive shrinkage. In the recommended projection
+model, the \key{shared $F$ enters both likelihood terms --- that coupling is the supervision}: $F$
+shapes expression reconstruction ($Y \approx LF^\top$) and simultaneously shapes the survival risk
+score ($\eta_i = (YF)_i\beta$). And it balances the two automatically: \key{no $\alpha$ to tune}
+($\lambda = 1$).
 
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} Supervision is built into a single joint objective; the shared
-$L$ in both likelihood terms is the mechanism.
+$F$ in both likelihood terms is the mechanism (in the projection model).
 \item \sectionlabel{Emphasis:} State plainly what the ELBO is \emph{for}: it is the fitting
 objective that CAVI maximizes, \emph{not} the criterion used to choose the number of programs (that
 is cross-validation, two slides later).
-\item \sectionlabel{Good Line to Stress:} ``Both likelihoods share the same latent loadings, so the
-factors cannot specialize to only one task.''
+\item \sectionlabel{Good Line to Stress:} ``Both likelihoods share the same gene loading matrix, so
+the factors cannot specialize to only one task.''
 \item \sectionlabel{Likely Question:} ``Why is there no $\alpha$ to weight genomics against
 survival?'' Because the ELBO is a single coherent objective on the same probability scale; the two
 likelihood terms and the KL penalty are already commensurate, so $\lambda = 1$. This was a specific
