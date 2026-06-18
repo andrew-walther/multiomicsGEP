@@ -268,6 +268,7 @@ $$\text{ELBO}=\underbrace{E_q[\mathcal{L}_\text{gen}]}_{\text{expression fit}}\;
 ::::
 
 > **What the ELBO is *for*:** it is the **fitting objective** — CAVI maximizes it, and a fit is declared converged when it stops improving. **It is *not* used to choose the number of programs** — that is done by cross-validated C-index (next: *Selecting K*).
+
 ::: {.notes}
 The variational family is mean-field and factor-wise, written out at the top — a
 direct April request. The ELBO has three pieces: Gaussian genomics

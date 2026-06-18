@@ -1789,8 +1789,21 @@ display:block!important;
 </div>
 </div>
 <blockquote>
-<p><strong>What the ELBO is <em>for</em>:</strong> it is the <strong>fitting objective</strong> — CAVI maximizes it, and a fit is declared converged when it stops improving. <strong>It is <em>not</em> used to choose the number of programs</strong> — that is done by cross-validated C-index (next: <em>Selecting K</em>). ::: {.notes} The variational family is mean-field and factor-wise, written out at the top — a direct April request. The ELBO has three pieces: Gaussian genomics reconstruction, the Cox survival term via a second-order Taylor expansion that keeps the updates conjugate, and a per-block KL penalty that is the adaptive shrinkage. I show the survival term for the projection (YF)β model, which is the recommended one. The shared L in both likelihood terms is the supervision, and the ELBO balances the two with no α to tune. :::</p>
+<p><strong>What the ELBO is <em>for</em>:</strong> it is the <strong>fitting objective</strong> — CAVI maximizes it, and a fit is declared converged when it stops improving. <strong>It is <em>not</em> used to choose the number of programs</strong> — that is done by cross-validated C-index (next: <em>Selecting K</em>).</p>
 </blockquote>
+<aside class="notes">
+<p>The variational family is mean-field and factor-wise, written out at the top — a direct April request. The ELBO has three pieces: Gaussian genomics reconstruction, the Cox survival term via a second-order Taylor expansion that keeps the updates conjugate, and a per-block KL penalty that is the adaptive shrinkage. I show the survival term for the projection (YF)β model, which is the recommended one. The shared L in both likelihood terms is the supervision, and the ELBO balances the two with no α to tune.</p>
+<style type="text/css">
+span.MJX_Assistive_MathML {
+position:absolute!important;
+clip: rect(1px, 1px, 1px, 1px);
+padding: 1px 0 0 0!important;
+border: 0!important;
+height: 1px!important;
+width: 1px!important;
+overflow: hidden!important;
+display:block!important;
+}</style></aside>
 </section>
 <section id="inference-factor-wise-cavi" class="slide level2 smaller dense-cols tight-list small-math">
 <h2>Inference: factor-wise CAVI</h2>
