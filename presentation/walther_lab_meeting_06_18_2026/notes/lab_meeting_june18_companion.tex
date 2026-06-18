@@ -1,0 +1,900 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage[normalem]{ulem}
+
+\hypersetup{
+  colorlinks = true,
+  linkcolor = blue!50!black,
+  urlcolor = blue!50!black
+}
+
+\definecolor{keyblue}{RGB}{19,41,75}      % UNC navy --- main emphasis
+\definecolor{keycar}{RGB}{75,156,211}     % Carolina blue --- headline numbers
+
+\setlist[itemize]{leftmargin=1.4em, itemsep=0.25em, topsep=0.35em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\newcommand{\scriptlabel}{\textbf{Script. }}
+\newcommand{\sectionlabel}[1]{\textbf{#1}}
+\newcommand{\actioncue}[1]{\textit{\textbf{#1}}}
+% Emphasis macros for use inside scripts:
+\newcommand{\key}[1]{\textcolor{keyblue}{\textbf{#1}}}        % bold + navy: say-this points
+\newcommand{\num}[1]{\textcolor{keycar}{\textbf{\uline{#1}}}} % bold + underline + Carolina: headline numbers
+\title{Supervised Bayesian Matrix Factorization\\Identifies Prognostic Gene Expression Programs\\[0.8em]\large Presentation Notes}
+\author{Andrew Walther}
+\date{June 18, 2026}
+
+\begin{document}
+\maketitle
+
+\noindent This companion is written as a preparation guide for an approximately 25-minute lab
+meeting talk. The main-deck sections are written as the primary script. The figure-and-table
+analysis guide, the quick review prompts, and the anticipated-questions section are reference
+material to study before the talk and to draw on during discussion. The appendix scripts are short
+and are intended only for slides that come up if the discussion turns technical.
+
+\section*{Executive Summary}
+
+Pancreatic ductal adenocarcinoma (PDAC) needs validated molecular prognosis, but the conventional
+\emph{two-step} pipeline --- run an unsupervised factorization (PCA / EBMF), then test factors for
+survival after the fact --- chases the largest expression variance and misses low-variance programs
+that cleanly separate survivors. This work develops a \emph{joint, supervised Bayesian matrix
+factorization}: a single set of patient program activations both reconstructs the expression matrix
+and drives a Cox risk score, so survival shapes the factors \emph{during} estimation. New patients
+are scored by an exact genomic projection ($\eta = (Y_{\text{new}}F)\beta$), so out-of-sample
+scoring is leakage-free with no re-fitting, and the model is fully Bayesian with adaptive priors and
+no genomics-versus-survival weight to tune.
+
+\begin{itemize}
+\item \sectionlabel{Findings:} On a controlled simulation, the supervised model reaches a held-out
+C-index of $0.81$ in the realistic scenario versus $0.72$ for the two-step, while all methods sit at
+chance ($\approx 0.54$) in a null scenario --- no fabricated signal. On real PDAC data (train
+TCGA-PAAD + CPTAC, validate five fully held-out cohorts), it attains mean external C $= 0.636$,
+beating the two-step in all five cohorts.
+\item \sectionlabel{Parsimony:} Of seven retained programs, only two carry survival signal --- an
+adverse MET/integrin/glycolytic program and a protective epithelial-differentiation program.
+\item \sectionlabel{Impact:} Supervision recovers prognostic structure the two-step misses, on both
+synthetic and independent real cohorts; preprocessing (per-platform normalization before merging) is
+decisive for keeping the survival coefficients from collapsing; and the output is two interpretable
+programs with exact external scoring. Next step: pathway enrichment to assign biology, en route to a
+methods-primary manuscript.
+\end{itemize}
+
+\section*{Opening}
+
+\noindent\emph{Slide numbers below match the deck's on-screen numbering. The three section-divider
+slides (3 Background, 5 Methods, 13 Results) count toward that numbering; appendix slides are
+``uncounted'' in the deck and so are labeled A1--A3 here.}
+
+\noindent\textbf{Pacing.} 20--25 minutes over 24 slides is about \key{one minute per slide}. Each
+\scriptlabel paragraph is written to be read in 30--45 seconds --- keep moving. Text in
+\key{navy bold} is a must-say point; \num{underlined Carolina blue} marks the headline numbers.
+
+\subsection*{Slide 1 --- Title Slide}
+\scriptlabel Thanks everyone --- a project update on the supervised Bayesian matrix factorization
+work. The one-line version: \key{bringing survival into the factorization changes which gene
+programs the model prioritizes}, and it \key{beats the unsupervised two-step} both on simulation and
+across \num{five} independent PDAC cohorts.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Frame the talk as a methods update \emph{and} a validated
+results update --- this is no longer preliminary.
+\item \sectionlabel{Emphasis:} The talk is about clinically relevant latent structure, not
+reconstruction quality. Set that expectation early.
+\item \sectionlabel{Timing:} Two sentences, then move into the agenda.
+\end{itemize}
+
+\section*{Main Deck}
+
+\subsection*{Slide 2 --- Agenda}
+\scriptlabel A couple of minutes on motivation, then the method, then \key{most of the talk is
+results} --- a multi-cohort simulation, the real-data gene programs and survival, and external
+validation. I close with impact and next steps.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} This is a results-forward talk; the method section directly
+answers the questions raised in April.
+\item \sectionlabel{Emphasis:} Flag that the heart of the talk is the synthetic-versus-real
+comparison against the unsupervised two-step.
+\end{itemize}
+
+\subsection*{Slide 3 --- Section divider: Background}
+\scriptlabel (Divider slide --- no content.) Pause here to transition from agenda into motivation.
+
+\subsection*{Slide 4 --- Background: PDAC needs molecular prognosis}
+\scriptlabel PDAC has five-year survival under 12\% and \key{no adopted molecular stratification at
+diagnosis}. The signal is there but mixed across malignant, stromal, and immune compartments and
+often low-variance. Our goal: recover \key{gene expression programs} --- a column of $F$ with
+patient activation in $L$ --- that predict survival, validated on independent cohorts. Why
+\key{jointly} rather than two-step: unsupervised axes chase the largest variance, often batch, so a
+\key{15\%-variance program may be batch while a 3\% one separates survivors}. Supervision steers the
+factors toward survival-relevant structure during estimation.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} There is a genuine clinical need, and the methodological hook
+--- joint over two-step --- is the thread of the entire talk.
+\item \sectionlabel{Figure/Table Purpose:} The callout contrasts ``describing tumor heterogeneity''
+with ``predicting disease course.''
+\item \sectionlabel{Good Line to Stress:} ``A high-variance program can be batch effect; a
+low-variance program can be the one that separates survivors. Supervision prioritizes the second.''
+\end{itemize}
+
+\subsection*{Slide 5 --- Section divider: Methods}
+\scriptlabel (Divider slide --- no content.) Signal the shift from motivation into the method.
+
+\subsection*{Slide 6 --- The model --- two coupled components}
+\scriptlabel Two coupled pieces: a low-rank factorization $Y = LF^\top + E$ for expression, and a
+Cox model $h_i(t) = h_0(t)\exp(\eta_i)$ for survival, driven by the \key{same patient loadings $L$}.
+The table defines every symbol. The key point: a program is \key{prognostic only if $\beta_k \neq
+0$} --- otherwise it explains expression alone. And the \key{baseline hazard $h_0(t)$ is
+non-parametric}: it cancels in the partial likelihood, so no Weibull/exponential assumption, just
+proportional hazards.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} One latent space drives both genomics reconstruction and the
+survival score.
+\item \sectionlabel{Figure/Table Purpose:} The dimension table defines every object once so later
+slides move faster.
+\item \sectionlabel{Emphasis:} Two specific April requests are answered here --- every parameter is
+defined, and $h_0(t)$ is non-parametric and cancels.
+\item \sectionlabel{Good Line to Stress:} ``$\beta_k = 0$ means the model keeps that program for
+expression but not for prognosis --- that separation is the whole point.''
+\end{itemize}
+
+\subsection*{Slide 7 --- Two linear predictors --- $L\beta$ vs $(YF)\beta$}
+\scriptlabel The key update since April: \key{two linear predictors}. The loadings predictor
+$\eta = L\beta$ is fully joint, but scoring a new patient needs an \key{OLS re-projection --- an
+approximation}. The projection predictor $\eta = (YF)\beta$ scores new patients by the \key{identical
+training formula --- exact, no mismatch}. On the priors --- now stated correctly: $q(\cdot)$ is the
+variational posterior for each block, fit by empirical Bayes every update. \key{Point-exponential
+(non-negative) on $L$ and $F$, normal on $\beta$}, closed-form MLE for $\tau$ --- \key{not
+point-normal}.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Report both predictors; the projection $(YF)\beta$ is the
+recommended one because it gives exact, leakage-free external scoring.
+\item \sectionlabel{Emphasis:} The priors are \emph{point-exponential} on $L,F$ and \emph{normal}
+on $\beta$. This is a correction from April --- they are \emph{not} point-normal. Say this clearly.
+\item \sectionlabel{Good Line to Stress:} ``$(YF)\beta$ scores a held-out patient with the same
+formula we trained on --- there is no projection approximation to worry about.''
+\item \sectionlabel{Likely Question:} ``Why keep $L\beta$ at all?'' It is the fully-joint reference:
+survival shapes the loadings most directly there, and comparing the two quantifies what we give up
+for exact scoring (in practice, very little --- see the external C-index slide).
+\end{itemize}
+
+\subsection*{Slide 8 --- The objective --- ELBO \& variational family}
+\scriptlabel The variational family is \key{mean-field} --- every block factorizes independently.
+Inference maximizes the \key{ELBO}, with three pieces: a Gaussian genomics-fit term, a survival-fit
+term (a \key{2nd-order Taylor expansion of the Cox likelihood} that keeps it conjugate to the
+updates), and a per-block KL term that is the adaptive shrinkage. The \key{shared $L$ enters both
+likelihood terms --- that coupling is the supervision}. And it balances the two automatically:
+\key{no $\alpha$ to tune} ($\lambda = 1$).
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Supervision is built into a single joint objective; the shared
+$L$ in both likelihood terms is the mechanism.
+\item \sectionlabel{Emphasis:} State plainly what the ELBO is \emph{for}: it is the fitting
+objective that CAVI maximizes, \emph{not} the criterion used to choose the number of programs (that
+is cross-validation, two slides later).
+\item \sectionlabel{Good Line to Stress:} ``Both likelihoods share the same latent loadings, so the
+factors cannot specialize to only one task.''
+\item \sectionlabel{Likely Question:} ``Why is there no $\alpha$ to weight genomics against
+survival?'' Because the ELBO is a single coherent objective on the same probability scale; the two
+likelihood terms and the KL penalty are already commensurate, so $\lambda = 1$. This was a specific
+April concern about hand-tuning the balance.
+\end{itemize}
+
+\subsection*{Slide 9 --- Inference --- factor-wise CAVI}
+\scriptlabel Inference is \key{coordinate-ascent variational inference}: one factor at a time, each
+update an \key{EBNM sub-problem}. The one detail to land: the loadings precision is
+\key{dual-source} --- a genomics piece plus a \key{survival piece $W_{ii}E[\beta_k^2]$} --- so
+survival genuinely shapes the loadings. Convergence, in plain English: stop when the \key{relative
+ELBO change falls below $10^{-5}$} ($\Delta L$, $\Delta\beta$ are diagnostics only). And a
+\key{sign correction}: concordance is sign-invariant, so we orient each program by \key{training}
+concordance and reuse it at test.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The algorithm updates one factor at a time, each block reducing
+to an EBNM call; convergence is judged on the ELBO itself.
+\item \sectionlabel{Emphasis:} Convergence is the \emph{relative ELBO change below $10^{-5}$} --- the
+ELBO is both the objective and the convergence monitor. The $\Delta L$ / $\Delta\beta$ thresholds are
+diagnostics, not the stopping rule.
+\item \sectionlabel{Good Line to Stress:} ``The loadings precision literally adds a survival term to
+the genomics term --- that is where supervision enters the updates.''
+\item \sectionlabel{Likely Question:} ``Is the convergence rule about the \emph{mean} of $L$ and
+$\beta$?'' No --- the stopping rule is the relative change in the ELBO. We additionally watch the
+mean absolute per-element change in $L$ and $\beta$ as a sanity check; averaging avoids a single
+oscillating factor blocking the stop, but it is diagnostic only.
+\end{itemize}
+
+\subsection*{Slide 10 --- Preprocessing is crucial --- per-platform normalization}
+\scriptlabel \key{The most important practical finding since April.} Merging platforms leaves genes
+on different scales. The survival precision is $A_k = \sum_i w_i (YF)_{ik}^2$ --- $w_i$ the Cox
+working weight, $(YF)_{ik}$ the projection score. Without correction, \key{between-platform variance
+swamps $A_k$ and the survival coefficients collapse to $\beta \to 0$}. The fix: \key{z-standardize
+each platform \emph{before} merging} (with log2 + per-cohort gene selection, leaving \num{2064}
+genes). In an 18-config benchmark, \key{10 of 12} non-per-platform pipelines collapse. And no
+leakage --- normalization is fit within each cohort before any split.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Per-platform normalization before merging is the difference
+between a working model and $\beta \to 0$.
+\item \sectionlabel{Emphasis:} Define both pieces of $A_k$ aloud --- $w_i$ is the Cox working weight,
+$(YF)_{ik}$ is the projection score. The audience flagged this expression as under-explained.
+\item \sectionlabel{Good Line to Stress:} ``Ten of twelve alternative pipelines collapse the
+survival signal to zero --- this preprocessing step is load-bearing, not cosmetic.''
+\item \sectionlabel{Likely Question:} ``Isn't per-cohort normalization leakage?'' No --- it is fit
+within each training cohort before any train/test split, and each held-out cohort is normalized by
+its own statistics at scoring time, never using training or test labels.
+\end{itemize}
+
+\subsection*{Slide 11 --- Selecting the number of programs --- $K$ and $K_{\text{eff}}$}
+\scriptlabel Two distinct numbers, kept separate. \key{$K$ = how many programs we retain}, chosen by
+\key{5-fold cross-validation} (1-SE rule, biological floor $K \ge 3$) $\to$ \num{$K = 7$}.
+\key{$K_{\text{eff}}$ = how many are prognostic}: a program is survival-active if \key{$|\hat\beta_k|
+> 10^{-3}$}, and only \num{$K_{\text{eff}} = 2$} of the seven clear it --- the rest explain
+expression only. \key{$K$ is reconstruction capacity; $K_{\text{eff}}$ is the prognostic subset} ---
+always quote both.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} $K = 7$ by cross-validation; $K_{\text{eff}} = 2$ by the
+survival-coefficient threshold. Always quote both.
+\item \sectionlabel{Emphasis:} $K$ is now chosen by CV --- this directly answers April's ``how is
+$K$ selected?'' The two filters are different criteria, not the same number.
+\item \sectionlabel{Good Line to Stress:} ``$K$ is how many programs the model keeps;
+$K_{\text{eff}}$ is how many of those actually predict survival.''
+\item \sectionlabel{Likely Question:} ``Why a floor of three?'' It is a biological/comparison
+minimum aligned with the lab's penalized survival-MF setup --- we want enough programs to compare
+shared and specific structure, not to discover the model wants only one.
+\end{itemize}
+
+\subsection*{Slide 12 --- $L$ extension --- cohort-membership indicator}
+\scriptlabel An extension we evaluated and \key{do not recommend}. We append dummy columns to $L$
+(one per non-reference cohort) with \key{$\beta$ fixed at zero}, so they absorb platform offsets
+while survival uses only the biological programs. The forced dummy costs a degree of freedom, so
+\key{$K: 7 \to 8$}. But under per-platform z-standardization the \key{offset is already removed} ---
+the indicator just spends a slot, moving external C \key{\emph{down} \num{0.636} $\to$ \num{0.614}}.
+So: \key{no cohort indicator}.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Recommendation is \emph{no} cohort indicator under per-platform
+z-standardization --- it costs a factor and slightly lowers external C.
+\item \sectionlabel{Emphasis:} Note explicitly that the indicator requires one extra factor (a
+degree of freedom), so $K: 7 \to 8$, to preserve the biological program count.
+\item \sectionlabel{Good Line to Stress:} ``The indicator and the normalization solve the same
+problem; once you normalize per platform, the indicator is redundant.''
+\item \sectionlabel{Likely Question:} ``So when \emph{would} you use it?'' Only if you could not
+normalize per platform --- e.g.\ a single merged matrix with unknown batch structure. Here we can,
+so we do not need it.
+\end{itemize}
+
+\subsection*{Slide 13 --- Section divider: Results}
+\scriptlabel (Divider slide --- no content.) Mark the hand-off from method into results.
+
+\subsection*{Slide 14 --- Data --- synthetic validation \& PDAC cohorts}
+\scriptlabel Two datasets. The simulation is a \key{completed} multi-cohort study with known ground
+truth --- shared factors (carrying the survival signal) plus study-specific factors --- across
+\key{three scenarios} (all-shared, an \key{all-cohort-specific negative control}, and the realistic
+mix) and five model arms including the unsupervised EBMF baseline. On real data we \key{train on
+TCGA-PAAD + CPTAC} ($n \approx 273$) and \key{validate on five fully held-out cohorts} scored by the
+exact projection formula, spanning microarray and RNA-seq.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The validation is cross-cohort and cross-platform on both
+simulated and real data --- not a single-dataset demonstration.
+\item \sectionlabel{Figure/Table Purpose:} The cohort table grounds the audience in which cohorts
+are held out and on what platform.
+\item \sectionlabel{Emphasis:} The simulation is \emph{completed} (drop any ``in progress''
+language), and the all-cohort-specific scenario is a genuine negative control.
+\item \sectionlabel{Likely Question:} ``Why these five external cohorts?'' They are the publicly
+available PDAC cohorts with matched expression and survival and sufficient sample size, and they
+span microarray and RNA-seq so the test is platform-agnostic by construction.
+\end{itemize}
+
+\subsection*{Slide 15 --- Synthetic results --- shared \& cohort-specific factor recovery}
+\scriptlabel Two complementary questions. \key{Figure 1 --- recovery}: how faithfully each program is
+reconstructed (a correlation). \key{Figure 2 --- specificity accuracy}: whether the model correctly
+\emph{labels} each program shared vs.\ study-specific (a classification). We need \key{both} ---
+good programs with the wrong architecture would show as high recovery, low typing. The projection
+model is \key{high on both} (recovery \num{0.90}--\num{0.92}, typing up to \num{1.00}), which is why
+the cohort indicator adds little.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The projection model both reconstructs and correctly types the
+shared prognostic programs, with no indicator columns.
+\item \sectionlabel{Figure/Table Purpose:} Figure 1 = reconstruction fidelity (a correlation);
+Figure 2 = structural classification (an accuracy). They measure different things.
+\item \sectionlabel{Emphasis:} Motivate why \emph{both} plots are needed --- good recovery does not
+guarantee correct shared-vs-specific typing.
+\item \sectionlabel{Likely Question:} ``What is specificity-classification accuracy exactly?'' It is
+the fraction of recovered factors correctly called shared vs.\ study-specific, judged from how a
+factor's loading energy is distributed across cohorts --- shared factors load in all cohorts,
+specific factors in one.
+\end{itemize}
+
+\subsection*{Slide 16 --- Synthetic results --- factor recovery heatmap}
+\scriptlabel This makes recovery concrete. \key{Left: the true loadings}; \key{right: the estimate}
+from the projection model with \key{no cohort indicator}. \key{Shared factors light up in both
+cohort blocks, study-specific in one} --- and the estimate reproduces that structure straight from
+the data. This is the visual basis for the previous slide's numbers.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The model recovers the intended block-sparse shared/specific
+structure straight from the data, without being told which factors are shared.
+\item \sectionlabel{Figure/Table Purpose:} Side-by-side true vs.\ estimated loadings; the visual
+counterpart to the correlation and accuracy bars.
+\item \sectionlabel{Good Line to Stress:} ``No indicator columns --- the model figures out shared
+versus cohort-specific on its own.''
+\end{itemize}
+
+\subsection*{Slide 17 --- Synthetic results --- supervision outperforms the unsupervised two-step}
+\scriptlabel \key{The headline of the simulation.} In the realistic scenario (mean over 5 seeds),
+the supervised projection model reaches \num{0.81}, ahead of loadings at \num{0.76} and the
+\key{unsupervised two-step at \num{0.72}}. And in the \key{negative control, every arm sits at
+$\approx$\num{0.54}} --- \key{no false signal manufactured when none exists}. Clean, controlled
+evidence that supervision helps and does not hallucinate.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Joint supervision beats the unsupervised two-step on data with
+known ground truth, and invents no signal when there is none.
+\item \sectionlabel{Figure/Table Purpose:} The C-index bars now \emph{include} the EBMF two-step, so
+the comparison is on one plot.
+\item \sectionlabel{Emphasis:} Say ``hybrid (shared \& cohort-specific)'' and ``mean over five
+seeds'' precisely. The $0.54$ control is as important as the $0.81$.
+\item \sectionlabel{Good Line to Stress:} ``Supervision buys about nine C-index points over the
+two-step in the realistic scenario --- and nothing in the null, which is exactly what you want.''
+\end{itemize}
+
+\subsection*{Slide 18 --- PDAC cohorts --- prognostic gene programs}
+\scriptlabel On real data, the recommended model retains \num{7} programs but only \num{2} are
+survival-active (starred): \key{Program 3 protective, Program 7 adverse}. Weights are non-negative
+(point-exponential prior). The point to land: the \key{largest expression program --- a stromal
+collagen block --- is \emph{not} survival-active}. \key{Supervision separates expression-only from
+prognostic structure} --- exactly what PCA-then-test cannot do.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Seven programs retained, two survival-active (Program 3
+protective, Program 7 adverse); the biggest expression program is not prognostic.
+\item \sectionlabel{Figure/Table Purpose:} The starred heatmap shows which programs are prognostic
+and that they are non-negative, interpretable gene sets.
+\item \sectionlabel{Emphasis:} State the model by its characteristics, not a code name. Quote
+$K = 7$ retained, $K_{\text{eff}} = 2$ active.
+\item \sectionlabel{Likely Question:} ``You said two active --- the heatmap looks like more are
+starred?'' Only two clear the $|\hat\beta| > 10^{-3}$ threshold; any others are below it and
+expression-only. Program 3 (protective) and Program 7 (adverse) are the two.
+\end{itemize}
+
+\subsection*{Slide 19 --- PDAC cohorts --- prognostic association}
+\scriptlabel Both active programs \key{stratify patients into clear survival groups}, split at the
+\key{median projection score $(YF)_k$} --- the quantity the model scores on. \key{Program 7
+(adverse)} carries \key{MET, ITGA3, and glycolytic enzymes} --- an aggressive signature --- and does
+worse, \key{$p = \num{0.00047}$}. \key{Program 3 (protective)} carries epithelial-differentiation
+markers, $p = \num{0.0077}$. Directions read off the curves; \key{PH not violated} (Schoenfeld).
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Both active programs produce clean, significant survival
+separation on the score the model uses.
+\item \sectionlabel{Figure/Table Purpose:} Kaplan--Meier curves, split at the median $(YF)_k$
+projection score, with log-rank $p$-values and the empirical direction labeled.
+\item \sectionlabel{Emphasis:} Name a few genes under each program --- MET/ITGA3/glycolytic for
+adverse, epithelial-differentiation for protective --- to set up the pathway-enrichment next step.
+\item \sectionlabel{Likely Question (be ready):} ``Does the joint $\hat\beta$ sign agree with the
+adverse direction?'' For Program 7 the joint-model coefficient sign can run \emph{opposite} to its
+marginal adverse direction --- a suppression effect among correlated programs. We therefore label
+each program by the empirical survival direction the KM curve shows, and stratify by the $(YF)$
+projection, not the raw $\beta$ sign. Be precise here; this is a subtle point that can otherwise look
+like an inconsistency.
+\end{itemize}
+
+\subsection*{Slide 20 --- PDAC cohorts --- external C-index}
+\scriptlabel The \key{real-data analog of the synthetic headline}, scored on five held-out cohorts.
+The \key{projection model averages \num{0.636}}, loadings \num{0.622}, the \key{unsupervised
+two-step \num{0.564}}. The projection model \key{wins in \emph{all five} cohorts}. Beyond the number,
+I lean on \key{parsimony}: two active programs and exact external scoring, versus $\sim$20
+unsupervised factors.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The projection supervised model beats the unsupervised two-step
+across all five external cohorts; mean external C $= 0.636$.
+\item \sectionlabel{Figure/Table Purpose:} Per-cohort + mean bars for the three arms, plotted at a
+proper aspect ratio with the chance line.
+\item \sectionlabel{Emphasis:} Use the labels ``projection (YFB) model'' and ``loadings (LB)
+model.'' State the all-five-cohort win, not a vague ``competitive.''
+\item \sectionlabel{Good Line to Stress:} ``The projection-based supervised joint model outperforms
+the unsupervised two-step across all five external PDAC cohorts.''
+\end{itemize}
+
+\subsection*{Slide 21 --- Model comparison summary}
+\scriptlabel One table, every model by its characteristics. The \key{recommendation: projection
+predictor, per-platform z-std, no cohort indicator} --- \key{best on both synthetic (\num{0.81}) and
+real external (\num{0.636})}, the most parsimonious structure ($K = 7 \to K_{\text{eff}} = 2$), exact
+scoring. Loadings is close (\num{0.76} / \num{0.622}); the indicator costs a factor for no gain; the
+two-step trails (\num{0.72} / \num{0.564}). The gene-selection recipe is \key{our own work},
+motivated by the lab's penalized survival-MF.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The recommended configuration wins on both axes with the
+simplest, most interpretable structure.
+\item \sectionlabel{Figure/Table Purpose:} One table comparing linear predictor, preprocessing,
+cohort indicator, $K$, $K_{\text{eff}}$, synthetic C, and real external C across the four models.
+\item \sectionlabel{Emphasis:} Describe the gene-selection step as our own work; mention the
+penalized-MF motivation only as a side note, not as a dependency. And reinforce the $K \to
+K_{\text{eff}}$ distinction here, since it ties the whole methods section together.
+\end{itemize}
+
+\subsection*{Slide 22 --- Impact / key findings}
+\scriptlabel Four findings, fast. \key{(1) Supervision beats the two-step} --- \num{0.81} vs
+\num{0.72} synthetic, all five cohorts real. \key{(2) Preprocessing is decisive} --- per-platform
+z-std or $\beta \to 0$; 10 of 12 alternatives collapse. \key{(3) Parsimony with signal} --- two
+active programs vs $\sim$20, exact external scoring. \key{(4) Mean external C \num{0.636}}, fully
+Bayesian, no $\alpha$. Then \key{honest limitations}: small noisy cohorts (Moffitt $\approx$\num{0.55});
+modest real margin (EBMF strong within-training); \key{biology not yet annotated --- pathway
+enrichment is next}.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Supervision helps clearly on synthetic and across all five real
+cohorts; preprocessing is decisive; the model is parsimonious and fully Bayesian.
+\item \sectionlabel{Emphasis:} Deliver the limitations honestly --- small-cohort noise, the modest
+real-data margin, and the not-yet-done biological annotation. It strengthens credibility.
+\item \sectionlabel{Good Line to Stress:} ``Two interpretable prognostic programs, exact external
+scoring, no tuning parameter --- competitive with the field at a fraction of the complexity.''
+\item \sectionlabel{Likely Question:} ``If the real-data margin is modest, why believe it?'' Because
+the synthetic study isolates supervision's effect with known truth ($0.81$ vs $0.72$), and on real
+data the projection model wins in \emph{all five} cohorts, not on average only --- consistency
+across independent cohorts is the evidence, alongside parsimony and exact scoring.
+\end{itemize}
+
+\subsection*{Slide 23 --- Future directions \& summary}
+\scriptlabel We \key{addressed two of April's next-steps}: CV-based $K$ selection and the
+completed multi-cohort simulation; convergence is now on the full ELBO. \key{Next: pathway
+enrichment} to name the two programs biologically, then \key{manuscript preparation}. The recommended
+model in one line: \key{projection $(YF)\beta$, no cohort indicator, per-platform z-std, $K = 7$
+($K_{\text{eff}} = 2$), mean external C \num{0.636}}.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The April next-steps are addressed; the remaining work is
+biological annotation and the manuscript.
+\item \sectionlabel{Emphasis:} Priors are point-exponential / normal --- not point-normal. Frame the
+preprocessing point as ``crucial for performance and for avoiding precision domination,'' not jargon.
+\item \sectionlabel{Good Line to Stress:} ``The next stage is turning two statistical programs into
+interpretable biology.''
+\end{itemize}
+
+\subsection*{Slide 24 --- Discussion}
+\scriptlabel Stop here, thank the group, and open the floor. If discussion turns technical, I have
+appendix slides on the cohort-indicator contrast, on convergence and the survival-activity
+magnitudes, and on the relationship to the lab's penalized survival-MF method.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Open for questions; note that deeper technical detail is in the
+appendix.
+\end{itemize}
+
+\section*{Figure \& Table Analysis Guide}
+
+This section decodes every figure and table in the deck with a consistent structure: what it
+presents, how to interpret it, and the takeaway, followed by a key line to say and a likely
+question. All numbers below come from the result CSVs and match the deck.
+
+\subsection*{Figure 1 --- Factor recovery (synthetic) [Slide 15]}
+\sectionlabel{What it presents.} A $2 \times 3$ grid of bar panels. Columns are the three scenarios
+(all-shared, all-cohort-specific, shared \& cohort-specific); the top row is shared (prognostic)
+factors and the bottom row is study-specific factors. The $y$-axis is factor recovery: the mean best
+absolute correlation between each estimated program and the true program it matches, $0$ to $1$,
+mean $\pm$ SE over five seeds. Bars are the five model arms (projection base/cohort, loadings
+base/cohort, EBMF).
+
+\sectionlabel{How to interpret it.} A tall bar means the estimated program closely reproduces a true
+program. In the realistic hybrid scenario the projection model recovers shared factors at about
+$0.89$ and study-specific factors at about $0.84$; the loadings model is lower ($\approx 0.72$ shared,
+$\approx 0.67$ specific) and the unsupervised EBMF is lower still on shared factors ($\approx 0.68$).
+In the all-shared scenario the projection model recovers shared factors at $\approx 0.92$.
+
+\sectionlabel{The takeaway.} The supervised projection model reconstructs the true programs ---
+especially the prognostic shared ones --- more faithfully than the loadings model or the
+unsupervised baseline.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``Recovery is just a correlation between each estimated program
+and its true counterpart --- higher is better, and the projection model is highest on the shared
+prognostic factors.''
+\item \sectionlabel{Likely question:} ``Why is recovery not 1.0 even with supervision?'' Finite
+sample size and noise; matrix factorization recovers programs up to small cross-loading, so $0.9$
+with everything else near zero is clean recovery.
+\end{itemize}
+
+\subsection*{Figure 2 --- Specificity-classification accuracy (synthetic) [Slide 15]}
+\sectionlabel{What it presents.} A $1 \times 3$ grid, one panel per scenario. The $y$-axis is
+specificity-classification accuracy: the fraction of recovered factors correctly typed as shared
+versus study-specific, judged from per-cohort loading energy alone (mean $\pm$ SE over five seeds).
+
+\sectionlabel{How to interpret it.} This is a classification score, not a correlation. A factor that
+loads across all cohorts should be called shared; one that loads in a single cohort should be called
+specific. In the hybrid scenario the projection model reaches accuracy up to $1.00$ (cohort variant)
+and $\approx 0.97$ (base); the loadings and EBMF arms are lower ($0.70$ to $0.83$).
+
+\sectionlabel{The takeaway.} The projection model not only reconstructs programs but assigns them the
+correct architectural type, which is why an explicit cohort indicator buys little.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``Recovery asks whether the program is right; this asks whether
+its shared-versus-specific label is right. We report both because you can get one without the other.''
+\item \sectionlabel{Likely question:} ``Why do we need this in addition to recovery?'' A model could
+reconstruct a program faithfully yet mistype it as shared when it is cohort-specific --- that would
+be good programs with wrong structure. Both must hold.
+\end{itemize}
+
+\subsection*{Figure 3 --- Factor-recovery heatmap (synthetic) [Slide 16]}
+\sectionlabel{What it presents.} Two side-by-side heatmaps of the patient-loading matrix $L$ in the
+realistic hybrid scenario (seed 1). Rows are patients grouped by cohort (left annotation bar),
+columns are factors $F1$--$F6$, with top annotations for true factor type (shared/prognostic vs.\
+study-specific) and $|\hat\beta|$. Left: the true block-sparse $L$. Right: the estimated $L$ from the
+projection model with no cohort indicator.
+
+\sectionlabel{How to interpret it.} In a shared factor's column, both cohort blocks light up; in a
+study-specific factor's column, only one block does. The estimated heatmap on the right reproduces
+that block pattern from the true heatmap on the left.
+
+\sectionlabel{The takeaway.} The model recovers the intended shared/specific block structure directly
+from the data, without indicator columns --- the visual basis for Figures 1 and 2.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``Shared programs are active in both cohort blocks, specific
+programs in one --- and the estimate on the right matches the truth on the left.''
+\end{itemize}
+
+\subsection*{Figure 4 --- Held-out C-index by scenario (synthetic) [Slide 17]}
+\sectionlabel{What it presents.} A $1 \times 3$ grid, one panel per scenario, of held-out C-index by
+model arm (mean $\pm$ SE over five seeds) with a dashed line at chance ($0.50$). The unsupervised
+EBMF $\to$ Cox baseline is shown alongside the supervised arms; values are labeled above the bars.
+
+\sectionlabel{How to interpret it.} Higher is better; $0.50$ is chance. In the hybrid (realistic)
+scenario: projection $0.81$, loadings $0.76$, EBMF $0.72$. In the all-cohort-specific negative
+control, all arms sit at about $0.54$. In all-shared, projection is highest ($\approx 0.87$).
+
+\sectionlabel{The takeaway.} Supervision improves discrimination in scenarios with real prognostic
+structure and fabricates none in the null control.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``$0.81$ for supervision versus $0.72$ for the two-step in the
+realistic scenario --- and everyone at chance in the null, which is the safety check.''
+\item \sectionlabel{Likely question:} ``Is the $0.81$-vs-$0.72$ gap meaningful given five seeds?''
+The bars carry standard errors; the ordering (projection $>$ loadings $>$ EBMF) is consistent across
+seeds, and the null-control collapse to chance confirms it is signal, not noise.
+\end{itemize}
+
+\subsection*{Figure 5 --- PDAC gene-weight heatmap (real) [Slide 18]}
+\sectionlabel{What it presents.} A gene-weight heatmap of the top 30 genes for the recommended model
+(projection $(YF)\beta$, per-platform z-standardization, survival-ranked gene selection over 2064
+genes, no cohort indicator, $K = 7$). Columns are the seven programs; weights are non-negative
+(point-exponential prior); survival-active programs ($|\hat\beta| > 10^{-3}$) are starred.
+
+\sectionlabel{How to interpret it.} Each column is a gene program --- a coordinated set of
+high-weight genes. Two columns are starred: Program 3 (protective) and Program 7 (adverse). The
+largest expression program is a collagen/ECM stromal block and is \emph{not} starred --- it explains
+expression but not survival.
+
+\sectionlabel{The takeaway.} Supervision separates expression-only structure (the big stromal
+program) from prognostic structure (the two starred programs) --- a separation a PCA-then-test
+workflow cannot make.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``The biggest expression program is not prognostic; only two
+small programs carry survival signal. That separation is the payoff of supervision.''
+\item \sectionlabel{Likely question:} ``Why are the weights all non-negative?'' Because $L$ and $F$
+use a point-exponential prior, which constrains gene weights and loadings to be non-negative --- this
+makes programs additive and interpretable.
+\end{itemize}
+
+\subsection*{Figure 6 --- Kaplan--Meier curves (real) [Slide 19]}
+\sectionlabel{What it presents.} Kaplan--Meier survival curves for the two survival-active programs,
+patients split at the median projection score $(YF)_k$ in the training cohorts. Each panel shows
+high- vs.\ low-activation groups with a log-rank $p$-value and the empirical direction
+(adverse/protective).
+
+\sectionlabel{How to interpret it.} For the adverse program (Program 7, MET/ITGA3/glycolytic), the
+high-activation group has worse survival, log-rank $p = 0.00047$. For the protective program
+(Program 3, epithelial differentiation), the high-activation group has better survival, $p = 0.0077$.
+The split is on the projection score, the quantity the risk model uses, not the raw loading.
+
+\sectionlabel{The takeaway.} Both active programs produce clinically meaningful, statistically
+significant survival stratification on the model's own score.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``We split on $(YF)_k$, the score the model actually uses ---
+the adverse program separates patients at $p = 0.0005$, the protective at $p = 0.008$.''
+\item \sectionlabel{Likely question:} ``Why label by the curve rather than the $\beta$ sign?'' In the
+joint model the coefficient sign for Program 7 can invert relative to its marginal direction because
+the prognostic programs are correlated (a suppression effect). The empirical KM direction is the
+honest, interpretable label, so we use it and stratify by the projection.
+\end{itemize}
+
+\subsection*{Figure 7 --- External C-index across five cohorts (real) [Slide 20]}
+\sectionlabel{What it presents.} A grouped bar chart: cohort groups (Dijk, Moffitt, PACA-AU array,
+PACA-AU seq, Puleo, and Mean), three bars per group --- loadings $L\beta$, projection $(YF)\beta$
+(recommended), and unsupervised EBMF $\to$ Cox --- with a dashed chance line at $0.50$.
+
+\sectionlabel{How to interpret it.} Per-cohort projection-model values: Dijk $0.657$, Moffitt
+$0.550$, PACA-AU array $0.651$, PACA-AU seq $0.675$, Puleo $0.645$; mean $0.636$. The loadings model
+means $0.622$; the unsupervised two-step means $0.564$ (per cohort $0.575$, $0.542$, $0.549$,
+$0.562$, $0.591$). The projection model exceeds the two-step in every cohort. Moffitt is the weakest
+($0.55$), reflecting a small, noisy microarray cohort.
+
+\sectionlabel{The takeaway.} The real-data analog of Figure 4: the supervised projection model beats
+the unsupervised two-step in all five held-out cohorts.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``Mean $0.636$ for the projection model versus $0.564$ for the
+two-step --- and it wins in all five cohorts, not just on average.''
+\item \sectionlabel{Likely question:} ``Why is Moffitt so low?'' Small cohort, microarray, fewer
+events --- per-cohort C-index is noisy at that sample size. It is still above chance, and the mean
+and the all-cohort win are the robust signal.
+\end{itemize}
+
+\subsection*{Table --- Model comparison summary [Slide 21]}
+\sectionlabel{What it presents.} One row per model --- projection (recommended), loadings, projection
++ cohort indicator, and unsupervised two-step --- with columns for linear predictor, preprocessing,
+cohort indicator, $K$, $K_{\text{eff}}$, synthetic C (hybrid, 5 seeds), and real external C (mean
+over 5 cohorts).
+
+\sectionlabel{How to interpret it.} Read across the recommended (bold) row: projection $(YF)\beta$,
+per-platform z-std + survival-ranked selection, no cohort indicator, $K = 7 \to K_{\text{eff}} = 2$,
+synthetic $0.81$, real $0.636$. Compare down the last two columns: loadings $0.76$ / $0.622$;
+projection + cohort indicator $0.81$ / $0.614$ (one extra factor, no gain); two-step $0.72$ / $0.564$.
+
+\sectionlabel{The takeaway.} The recommended configuration wins on both the synthetic and the real
+external axis, with the simplest survival structure and exact scoring.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``Best on both axes, fewest active programs, exact external
+scoring --- that is the recommendation.''
+\end{itemize}
+
+\subsection*{Appendix Figure A1 --- Cohort-indicator gene-weight heatmap [Slide A1]}
+\sectionlabel{What it presents.} The gene-weight heatmap (top 40 genes) for the projection model with
+the cohort-membership indicator added, $K = 8$, survival-active programs starred.
+
+\sectionlabel{How to interpret it \& takeaway.} The survival-active structure is essentially
+unchanged from the recommended (no-indicator) model --- the extra factor slot absorbs a platform
+offset, not new biology. This confirms the offset is already removed by per-platform normalization.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``Adding the indicator changes the bookkeeping, not the
+biology --- the same two programs remain active.''
+\end{itemize}
+
+\subsection*{Appendix Figure A2 --- Cohort-indicator Kaplan--Meier [Slide A1]}
+\sectionlabel{What it presents.} Kaplan--Meier stratification for the cohort-indicator model, split
+by projection score, same format as Figure 6.
+
+\sectionlabel{How to interpret it \& takeaway.} The survival separation is essentially identical to
+the recommended model. Together with the external C-index ($0.614$ vs $0.636$), this shows the
+indicator spends a factor without improving prognosis under per-platform z-standardization.
+
+\subsection*{Appendix Figure A3 --- Training RMSE convergence traces [Slide A2]}
+\sectionlabel{What it presents.} Reconstruction-RMSE traces across model configurations as a function
+of CAVI iteration.
+
+\sectionlabel{How to interpret it \& takeaway.} RMSE descends and stabilizes to a plateau; the actual
+stopping rule is the relative ELBO change falling below $10^{-5}$ (with $\Delta L$, $\Delta\beta$
+tracked as diagnostics). A small RMSE rise/plateau is expected because the joint objective trades a
+little reconstruction for survival-relevant, regularized factors --- the ELBO is increasing
+throughout.
+
+\begin{itemize}
+\item \sectionlabel{Likely question:} ``If RMSE plateaus or ticks up, is that a failure?'' No --- RMSE
+is a by-product; the ELBO is the objective and it increases. The model trades a little expression fit
+for survival-relevant structure.
+\end{itemize}
+
+\subsection*{Appendix Figure A4 --- Survival-activity magnitudes $|\hat\beta_k|$ [Slide A2]}
+\sectionlabel{What it presents.} Bars of $|\hat\beta_k|$ per program, one facet per model, with red
+for survival-active and gray for expression-only, and a dashed activity threshold.
+
+\sectionlabel{How to interpret it \& takeaway.} Most programs fall below the $10^{-3}$ threshold
+(expression-only); only a small number clear it (survival-active). This visualizes the
+spike-and-slab shrinkage and how $K_{\text{eff}}$ is read off $|\hat\beta|$. For the recommended
+model, Program 7 has the largest magnitude ($|\hat\beta| = 0.041$) and Program 3 the next
+($|\hat\beta| = 0.011$).
+
+\subsection*{Appendix Table --- Relation to the penalized survival-MF method (DeSurv) [Slide A3]}
+\sectionlabel{What it presents.} A side-by-side comparison of the lab's penalized supervised-NMF+Cox
+method and the present Bayesian model: estimation, what is tuned, shrinkage, uncertainty, and noise
+model, with headline numbers.
+
+\sectionlabel{How to interpret it \& takeaway.} Same design and same data --- both jointly fit
+supervised NMF + Cox with non-negative programs, share the TCGA + CPTAC training set and the same
+five external cohorts, score by projection, and select by CV + 1-SE. The differences: the penalized
+method tunes $k$, $\alpha$, and $\lambda$ by Bayesian optimization, while the Bayesian model tunes
+only $K$ and lets empirical-Bayes priors learn the shrinkage, with posterior uncertainty and a
+per-gene precision $\tau$. The penalized method reports a pooled external HR per SD of $1.50$ (95\%
+CI $1.31$--$1.72$); the Bayesian model reports mean external C $= 0.636$.
+
+\begin{itemize}
+\item \sectionlabel{Key line to say:} ``This is the Bayesian sibling of the penalized method --- same
+idea, same data, but adaptive priors, only $K$ to tune, and posterior uncertainty.''
+\item \sectionlabel{Honest caveat:} The two report different primary metrics (pooled HR/SD vs.\ mean
+external C) and use slightly different normalization (within-subject rank $\to$ 1970 genes vs.\
+per-platform z-std $\to$ 2064). A matched, same-protocol head-to-head is a planned next step --- the
+penalized method is not re-run here, so do not claim superiority today.
+\end{itemize}
+
+\section*{Slide-by-Slide Review Guide (Quick Q\&A)}
+
+Use this as a rapid self-test before the talk. For each prompt, you should be able to give the answer
+spontaneously.
+
+\begin{itemize}
+\item \actioncue{Slide 4 --- Background:} \emph{Why model expression and survival jointly instead of two-step?}
+--- Unsupervised axes chase the largest variance, often batch; a low-variance but prognostic program
+gets missed. Supervision steers factors toward survival-relevant structure during estimation.
+
+\item \actioncue{Slide 6 --- The model:} \emph{What makes a program prognostic?} --- Its survival coefficient
+$\beta_k \neq 0$. If $\beta_k = 0$ the program explains expression only. The baseline hazard $h_0(t)$
+is non-parametric and cancels in the partial likelihood.
+
+\item \actioncue{Slide 7 --- Two linear predictors:} \emph{What is the difference between $L\beta$ and
+$(YF)\beta$?} --- $L\beta$ is fully joint but needs an OLS re-projection to score new patients (an
+approximation). $(YF)\beta$ scores new patients with the identical training formula --- exact,
+leakage-free; it is the recommended model.
+
+\item \actioncue{Slide 7 --- Priors:} \emph{What priors do you use?} --- Point-exponential (non-negative
+spike-and-slab) on $L$ and $F$, normal on $\beta$, closed-form MLE for $\tau$. Not point-normal.
+
+\item \actioncue{Slide 8 --- ELBO:} \emph{What is the ELBO used for?} --- It is the fitting objective CAVI
+maximizes; convergence is its relative change below $10^{-5}$. It is \emph{not} the model-selection
+criterion for $K$ --- that is cross-validation.
+
+\item \actioncue{Slide 9 --- CAVI / convergence:} \emph{How do you know it converged?} --- Relative ELBO change
+below $10^{-5}$ after a five-iteration burn-in; mean absolute changes in $L$ and $\beta$ (both below
+$10^{-3}$) are diagnostic only.
+
+\item \actioncue{Slide 10 --- Preprocessing:} \emph{Why is per-platform normalization essential?} --- The survival
+precision $A_k = \sum_i w_i (YF)_{ik}^2$ is swamped by between-platform variance otherwise, collapsing
+$\beta \to 0$. 10 of 12 non-per-platform pipelines collapse. We normalize each platform before
+merging, leaving 2064 genes.
+
+\item \actioncue{Slide 11 --- Selecting $K$:} \emph{How is $K$ chosen, and what is $K_{\text{eff}}$?} --- $K = 7$
+by five-fold CV C-index, 1-SE rule, floor $K \ge 3$. $K_{\text{eff}} = 2$ is the subset with
+$|\hat\beta| > 10^{-3}$.
+
+\item \actioncue{Slide 12 --- Cohort indicator:} \emph{Why not use it?} --- Under per-platform z-std the offset is
+already removed; it costs a factor ($K: 7 \to 8$) and lowers external C ($0.636 \to 0.614$).
+
+\item \actioncue{Slide 15 --- Synthetic recovery:} \emph{What do the two synthetic recovery plots show?} ---
+Recovery = correlation of estimated vs.\ true programs; specificity accuracy = correct shared/specific
+typing. Projection is high on both.
+
+\item \actioncue{Slide 17 --- Synthetic C-index:} \emph{What is the headline simulation result?} --- Hybrid
+scenario: projection $0.81$ vs loadings $0.76$ vs two-step $0.72$; null control all at $\approx 0.54$.
+
+\item \actioncue{Slide 18 --- Real programs:} \emph{How many programs, how many prognostic?} --- 7 retained
+($K$), 2 survival-active ($K_{\text{eff}}$): Program 3 protective, Program 7 adverse. The largest
+expression program (stromal/ECM) is not prognostic.
+
+\item \actioncue{Slide 19 --- Real survival:} \emph{What are the survival results?} --- Split on median $(YF)_k$:
+adverse program log-rank $p = 0.00047$, protective $p = 0.0077$; PH not violated.
+
+\item \actioncue{Slide 20 --- External C-index:} \emph{What is the real-data headline?} --- Mean external C
+$= 0.636$ (projection) vs $0.622$ (loadings) vs $0.564$ (two-step); projection wins in all five
+cohorts.
+
+\item \actioncue{Slides 22--23 --- Impact:} \emph{What are the limitations?} --- Small noisy external cohorts (Moffitt
+$\approx 0.55$); modest real-data margin (EBMF strong within-training $\approx 0.63$); programs not
+yet biologically annotated.
+\end{itemize}
+
+\section*{Anticipate These Audience Questions}
+
+\begin{itemize}
+\item \sectionlabel{``Why point-exponential on $L,F$ and normal on $\beta$ --- why not point-normal?''}
+Programs and loadings should be non-negative and additive for interpretability, so a non-negative
+point-exponential spike-and-slab is the natural prior on $L$ and $F$; it also gives sparse, readable
+gene weights. The survival coefficients can take either sign, so a normal (Gaussian) prior is
+appropriate there. Point-normal was a misstatement in the April materials --- this is the correction.
+
+\item \sectionlabel{``How exactly is $K$ chosen, and how do you get $K_{\text{eff}}$?''} $K$ is chosen
+by five-fold cross-validation: held-out C-index across a grid of $K$, the 1-SE rule (smallest $K$
+within one SE of the best), and a biological floor of $K \ge 3$, giving $K = 7$. $K_{\text{eff}}$ is
+then the number of those programs whose posterior $|\hat\beta_k|$ exceeds the activity threshold
+$10^{-3}$ --- here 2. $K$ is reconstruction capacity; $K_{\text{eff}}$ is the prognostic subset.
+
+\item \sectionlabel{``Why report two linear predictors --- isn't one enough?''} $L\beta$ is the
+fully-joint reference where survival shapes the loadings most directly, but scoring a new patient
+needs an OLS re-projection, an approximation. $(YF)\beta$ scores new patients with the identical
+training formula --- exact and leakage-free --- so it is the recommended model. Reporting both
+quantifies what we trade for exact scoring (very little: $0.636$ vs $0.622$ external).
+
+\item \sectionlabel{``Is the ELBO how you choose the number of factors?''} No. The ELBO is the
+\emph{fitting} objective --- CAVI maximizes it and convergence is when its relative change drops below
+$10^{-5}$. The number of programs is chosen separately by cross-validated C-index. Conflating the two
+was a point of confusion previously; keep them distinct.
+
+\item \sectionlabel{``Why not include the cohort indicator --- doesn't it handle batch?''} It does, but
+so does per-platform z-standardization, and they solve the same problem. Under per-platform z-std the
+platform offset is already removed, so the indicator only spends a factor slot ($K: 7 \to 8$) and
+slightly lowers external C ($0.636 \to 0.614$). We would only need it if we could not normalize per
+platform.
+
+\item \sectionlabel{``Have you tried other preprocessing --- does it really matter that much?''} Yes,
+in an 18-configuration benchmark: any pipeline that does not z-standardize per platform before merging
+(joint z-std, log-only, or joint quantile normalization without rank transform) collapses $\beta \to 0$
+for both linear predictors --- 10 of 12 such configurations. The mechanism is that between-platform
+variance dominates the survival precision $A_k = \sum_i w_i (YF)_{ik}^2$. Per-platform z-std before
+merging is what makes the model work.
+
+\item \sectionlabel{``How does this compare to the lab's penalized supervised-MF (DeSurv) method?''}
+It is the Bayesian counterpart: same supervised NMF + Cox idea, same TCGA + CPTAC training set and
+same five external cohorts, same projection-based scoring and CV + 1-SE selection, and we borrowed the
+combined-rank gene-selection recipe. The differences are real: the penalized method tunes $k$,
+$\alpha$, and $\lambda$ by Bayesian optimization; the Bayesian model tunes only $K$ and lets
+empirical-Bayes priors learn the shrinkage, adds posterior uncertainty, and uses a per-gene noise
+precision. They report different primary metrics (pooled HR/SD $= 1.50$ vs.\ mean external C $= 0.636$),
+so a matched same-protocol head-to-head is a planned next step --- not a superiority claim today.
+
+\item \sectionlabel{``Does the joint $\beta$ sign always match the survival direction you report?''}
+Not necessarily. For the adverse program (Program 7), the joint-model coefficient sign can run
+opposite to its marginal adverse direction --- a suppression effect among correlated prognostic
+programs. We therefore label each program by the empirical survival direction the Kaplan--Meier curve
+shows and stratify by the $(YF)$ projection, not the raw $\beta$ sign. This is deliberate, not an
+inconsistency.
+
+\item \sectionlabel{``Five external cohorts and a modest margin --- what would convince you it works?''}
+Three things, in order of strength: the controlled simulation isolates supervision's effect with known
+ground truth ($0.81$ vs $0.72$); the projection model wins in \emph{all five} independent real cohorts,
+not on average only; and the recovered programs are parsimonious and biologically coherent
+(MET/integrin/glycolytic adverse, epithelial protective). Pathway enrichment is the next step to
+confirm the biology.
+
+\item \sectionlabel{``How was the survival term made conjugate to the Bayesian updates?''} By a
+second-order Taylor expansion of the Cox partial log-likelihood in the linear predictor $\eta = (YF)\beta$.
+That produces a Gaussian-form working response and weight (the Cox working weight $w_i$), which slots
+into the EBNM normal-means updates --- the same machinery as the genomics term.
+\end{itemize}
+
+\section*{Appendix Slide Scripts}
+
+\subsection*{Slide A1 --- Appendix: Cohort-indicator contrast}
+\scriptlabel If someone asks what the cohort indicator changes, this is the slide. Adding it under
+per-platform z-standardization spends a factor slot --- $K$ goes from 7 to 8 --- without improving
+external C-index ($0.636 \to 0.614$), and the biological survival-active structure is essentially
+unchanged. That confirms the platform offset is already removed by normalization.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The indicator is redundant under per-platform normalization.
+\end{itemize}
+
+\subsection*{Slide A2 --- Appendix: Convergence \& survival-activity magnitudes}
+\scriptlabel If the discussion turns to optimization behavior, these traces show RMSE stabilizing to
+a plateau while the ELBO --- the actual objective --- increases; stopping is governed by the relative
+ELBO change below $10^{-5}$. The $|\hat\beta_k|$ bars show the spike-and-slab shrinkage: most programs
+fall below the activity threshold, only a couple clear it, which is how $K_{\text{eff}}$ is read off.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Convergence is judged on the ELBO; $K_{\text{eff}}$ is the few
+programs with $|\hat\beta|$ above threshold.
+\end{itemize}
+
+\subsection*{Slide A3 --- Appendix: Relation to the penalized survival-MF method}
+\scriptlabel This is the backup for the inevitable comparison question. Be collegial and precise: this
+is the Bayesian sibling of the penalized supervised-NMF+Cox method --- same idea, same training data,
+same five external cohorts, same projection scoring and CV + 1-SE selection, and we borrowed its
+combined-rank gene selection. The genuine differences are adaptive empirical-Bayes priors (only $K$ to
+tune, no $\alpha$ or $\lambda$), posterior uncertainty, and a per-gene noise model. The two report
+different primary metrics, so a matched head-to-head on one protocol is the honest next step rather
+than a superiority claim today.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Same problem and data, Bayesian estimation; differences are
+adaptive priors, fewer tuned knobs, and uncertainty. Head-to-head is planned.
+\end{itemize}
+
+\end{document}
