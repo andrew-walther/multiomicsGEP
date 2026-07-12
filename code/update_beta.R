@@ -99,6 +99,9 @@ compute_z_no_k <- function(z, EL, EBeta, k) {
 #'                     Default 0.5 balances the gradient scale asymmetry (p >> n).
 #' @param A_floor      numeric: minimum value for A_k to prevent 0-division.
 #'                     Default 1e-10.  [A3 in V2.R]
+#' @param survival_divisor numeric: divides A_k and B_k (default 1 = no-op).
+#'                     Phase 1a objective normalization (see DECISIONS.md).
+#'                     x_k is invariant to this divisor; only s_k changes.
 #'
 #' @return Named list:
 #'   $mean        -- posterior mean E_q[beta_k]
@@ -124,7 +127,8 @@ compute_z_no_k <- function(z, EL, EBeta, k) {
 update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
                           prior_family = "point_normal",
                           alpha        = 0.5,
-                          A_floor      = 1e-10) {
+                          A_floor      = 1e-10,
+                          survival_divisor = 1) {
 
   # ------------------------------------------------------------------
   # Precision (A_k): error-in-variables correction, scaled by alpha
@@ -137,7 +141,7 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
   # ------------------------------------------------------------------
   # Floor triggers when all weights are zero or all loadings are zero —
   # degenerate inputs that would otherwise cause division by zero in x_k and s_k.
-  A_k <- max(alpha * sum(w * EL2_k), A_floor)
+  A_k <- max(alpha * sum(w * EL2_k) / survival_divisor, A_floor)
 
   # ------------------------------------------------------------------
   # Signal (B_k): weighted inner product of partial response and loading
@@ -145,7 +149,7 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
   # Note: alpha cancels in x_k = B_k/A_k, so the EBNM pseudo-observation
   # is alpha-independent.  Only s_k = 1/sqrt(A_k) is affected by alpha.
   # ------------------------------------------------------------------
-  B_k <- alpha * sum(w * z_no_k * EL_k)
+  B_k <- alpha * sum(w * z_no_k * EL_k) / survival_divisor
 
   # ------------------------------------------------------------------
   # EBNM pseudo-observation and noise
@@ -226,7 +230,8 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
 update_beta_all <- function(w, z, EL, EL2, EBeta,
                             prior_family = "point_normal",
                             alpha        = 0.5,
-                            A_floor      = 1e-10) {
+                            A_floor      = 1e-10,
+                            survival_divisor = 1) {
 
   K          <- ncol(EL)
   # Mutable copy: Gauss-Seidel requires updating beta_k in-place so that
@@ -246,7 +251,8 @@ update_beta_all <- function(w, z, EL, EL2, EBeta,
       EL2_k      = EL2[, k],
       prior_family = prior_family,
       alpha      = alpha,
-      A_floor    = A_floor
+      A_floor    = A_floor,
+      survival_divisor = survival_divisor
     )
 
     # Gauss-Seidel: update EBeta_curr so next k uses the new value

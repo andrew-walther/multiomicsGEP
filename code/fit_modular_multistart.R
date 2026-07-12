@@ -31,7 +31,7 @@
 #' @param time        n-vector of survival / censoring times
 #' @param status      n-vector of event indicators (1=event, 0=censored)
 #' @param ...         Additional arguments passed to fit_supervised_mf_modular()
-#'                    (K, max_iter, tol, prior_LF, prior_beta, alpha, lambda,
+#'                    (K, max_iter, tol, prior_LF, prior_beta, alpha,
 #'                    N_burnin, sign_correction, verbose, etc.)
 #'                    init_method is overridden internally — do not pass it.
 #' @param n_init      integer: number of random restarts (default 30).

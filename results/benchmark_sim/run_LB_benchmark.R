@@ -51,7 +51,6 @@ source("code/select_alpha_cv.R")  # select_alpha_cv() — LB-only alpha CV via 5
 K          <- if (QUICK_MODE) 5 else if (TRAIN_MODE == "merged") cfg$benchmark$k_pdac else cfg$benchmark$k_pdac_single
 K_SYN      <- if (QUICK_MODE) 5 else cfg$benchmark$k_pdac_synthetic
 ALPHA      <- cfg$benchmark$alpha
-LAMBDA     <- cfg$benchmark$lambda
 N_BURNIN   <- cfg$benchmark$n_burnin
 NORM_AB    <- cfg$benchmark$normalize_ab
 PRIORS     <- cfg$benchmark$prior_beta_compare
@@ -67,10 +66,10 @@ if ("--n-init" %in% args) {
 MULTISTART <- N_INIT > 1
 
 cat("=== LB Benchmark (Cluster A — eta = L·beta) ===\n")
-cat(sprintf("    K=%d (synthetic K=%d) | alpha=%s | lambda=%.2f | N_burnin=%d\n",
+cat(sprintf("    K=%d (synthetic K=%d) | alpha=%s | N_burnin=%d\n",
             K, K_SYN,
             if (QUICK_MODE) sprintf("%.2f (fixed)", ALPHA) else sprintf("%.2f (CV-selected per mode)", ALPHA),
-            LAMBDA, N_BURNIN))
+            N_BURNIN))
 cat(sprintf("    Priors: %s\n", paste(PRIORS, collapse = " vs ")))
 cat(sprintf("    Train mode: %s | Quick mode: %s | n_init: %d\n\n",
             TRAIN_MODE, QUICK_MODE, N_INIT))
@@ -112,7 +111,7 @@ if (RUN_SYNTHETIC) {
       Y_tr, t_tr, s_tr,
       K = K_SYN, max_iter = MAX_ITER, tol = cfg$cavi$tol,
       prior_LF = "point_exponential", prior_beta = pr,
-      alpha = ALPHA, lambda = LAMBDA, N_burnin = N_BURNIN,
+      alpha = ALPHA, N_burnin = N_BURNIN,
       normalize_AB = NORM_AB, verbose = FALSE
     )
     pred     <- predict_supervised_mf(Y_te, fit$EF, fit$EBeta)
@@ -205,7 +204,6 @@ if (!pdac_available) {
       max_iter     = MAX_ITER,
       tol          = cfg$cavi$tol,
       prior_LF     = "point_exponential",
-      lambda       = LAMBDA,
       N_burnin     = N_BURNIN,
       normalize_AB = NORM_AB,
       verbose      = FALSE
@@ -227,7 +225,7 @@ if (!pdac_available) {
       Y_train, time_train, status_train,
       K = K, max_iter = MAX_ITER, tol = cfg$cavi$tol,
       prior_LF = "point_exponential", prior_beta = pr,
-      alpha = ALPHA, lambda = LAMBDA, N_burnin = N_BURNIN,
+      alpha = ALPHA, N_burnin = N_BURNIN,
       normalize_AB = NORM_AB
     )
     if (MULTISTART) {

@@ -115,7 +115,23 @@ calc_cox_taylor_yf <- function(eta, time, status) {
 #' @param prior_beta character: EBNM prior family for beta (default "point_normal")
 #' @param alpha      numeric in [0, 1]: survival mixing weight for the beta update
 #'                 (default 0.5). Note: F update always uses alpha_F=0 (see DECISIONS.md).
-#' @param lambda     numeric: lambda multiplier for the beta update (default 1.0)
+#' @param norm_convention character: Phase 1a objective normalization convention
+#'                 (see DECISIONS.md and fit_modular.R). Under YFB, L and F are
+#'                 pure-genomics with no survival competition at the default
+#'                 alpha_F=0 (unlike LB's L), so the genomics divisor does NOT
+#'                 reach update_L_surv_YFB_k/update_F_surv_YFB_k -- there is no
+#'                 imbalance to fix there, and rescaling a pure-genomics precision
+#'                 would only add a gratuitous change with no benefit. Only the
+#'                 beta update (survival_divisor) and the ELBO assembly (both
+#'                 divisors, for reporting/monitoring) are affected here.
+#'                 "per_p" (default) -- BOOSTS survival (A_k/B_k in update_beta_k,
+#'                   survival ELBO term) by a factor of p; genomics is left
+#'                   unchanged. Verified empirically to leave YFB's EL/EF exactly
+#'                   unchanged (they never receive genomics_divisor) and to avoid
+#'                   the L<->F collapse seen in LB under a genomics-shrinking
+#'                   convention -- see DECISIONS.md 2026-07-12.
+#'                 "np_n" -- literal genomics/(n*p), survival/n; retained for
+#'                   empirical comparison (genomics-shrinking direction).
 #' @param init_method character: "svd" (default), "random", or "custom"
 #' @param EL_init  Optional n x K matrix: custom initial loadings
 #' @param EF_init  Optional p x K matrix: custom initial factors
@@ -153,7 +169,7 @@ fit_cox_on_yf <- function(Y, time, status,
                            prior_LF     = "point_exponential",
                            prior_beta   = "normal",
                            alpha        = 0.5,
-                           lambda       = 1.0,
+                           norm_convention = c("per_p", "np_n"),
                            init_method  = "svd",
                            EL_init      = NULL,
                            EF_init      = NULL,
@@ -179,6 +195,13 @@ fit_cox_on_yf <- function(Y, time, status,
     stop("N_frozen must be a non-negative integer.")
   }
   N_frozen <- as.integer(N_frozen)
+
+  # ---- Phase 1a objective normalization (see DECISIONS.md) -----------------
+  # "per_p": boosts survival (divisor < 1 => multiplies) instead of shrinking
+  # genomics -- see fit_modular.R and DECISIONS.md 2026-07-12 for rationale.
+  norm_convention  <- match.arg(norm_convention)
+  genomics_divisor <- if (norm_convention == "np_n") n * p else 1
+  survival_divisor <- if (norm_convention == "np_n") n   else 1 / p
 
   # ---- Progressive α schedule ----
   use_alpha_schedule <- !is.null(alpha_schedule)
@@ -330,7 +353,8 @@ fit_cox_on_yf <- function(Y, time, status,
         z_no_k_b <- compute_z_no_k(z_b, ZF_b, EBeta, k)
         # Cluster B: ZF[,k] is observed, so its "second moment" = ZF[,k]^2 (no posterior variance)
         res_b    <- update_beta_k(w_b, z_no_k_b, ZF_b[, k], ZF_b[, k]^2,
-                                  prior_family = prior_beta, alpha = alpha)
+                                  prior_family = prior_beta, alpha = alpha,
+                                  survival_divisor = survival_divisor)
         EBeta[k]  <- res_b$mean
         EBeta2[k] <- res_b$second
       }
@@ -438,7 +462,8 @@ fit_cox_on_yf <- function(Y, time, status,
       # A_beta = sum(w * ZF_k^2) is non-zero from SVD init regardless of EBeta,
       # breaking the chicken-and-egg that plagued Cluster A's L update.
       res_beta    <- update_beta_k(w, z_no_k, ZF[, k], ZF[, k]^2,
-                                   prior_family = prior_beta, alpha = alpha_iter)
+                                   prior_family = prior_beta, alpha = alpha_iter,
+                                   survival_divisor = survival_divisor)
       EBeta[k]    <- res_beta$mean
       EBeta2[k]   <- res_beta$second
       kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
@@ -516,8 +541,8 @@ fit_cox_on_yf <- function(Y, time, status,
     # posterior second moment equals its squared value (no variance term).
     surv_elbo               <- compute_survival_elbo(taylor$logPL, w,
                                                      ZF, ZF^2, EBeta, EBeta2)
-    history$elbo_full[iter] <- (1 - alpha) * res_tau$elbo_proxy +
-                               alpha * surv_elbo +
+    history$elbo_full[iter] <- (1 - alpha) * (res_tau$elbo_proxy / genomics_divisor) +
+                               alpha * (surv_elbo / survival_divisor) +
                                sum(kl_L) + sum(kl_F) + sum(kl_beta)
     if (!is.null(cohort_id) && C_cols > 0) {
       history$elbo_full[iter] <- history$elbo_full[iter] +
@@ -616,7 +641,10 @@ fit_cox_on_yf <- function(Y, time, status,
     EBeta2   = EBeta2,
     Tau      = Tau,
     EF_norms = EF_norms,   # K-vector: final iteration column norms for prediction
-    history  = history
+    history  = history,
+    norm_convention  = norm_convention,
+    genomics_divisor = genomics_divisor,
+    survival_divisor = survival_divisor
   )
   if (!is.null(cohort_id) && C_cols > 0) {
     result$L_cohort   <- L_cohort

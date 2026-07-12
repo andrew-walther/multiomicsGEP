@@ -444,3 +444,34 @@ run_test("T_alpha.2: alpha=1 -> gives original unscaled formula (A = sum(w*EL2_k
   assert_near(res$A, expected_A, msg = "A_k with alpha=1 should match unscaled formula")
   assert_near(res$B, expected_B, msg = "B_k with alpha=1 should match unscaled formula")
 })
+
+cat("\n=== T_norm: Survival Divisor (Phase 1a normalization) ===\n")
+
+run_test("T_norm.1: survival_divisor scales A_k and B_k exactly, x unchanged", {
+  set.seed(1201); n <- 20
+  w      <- abs(rnorm(n)) + 0.1
+  EL_k   <- rnorm(n)
+  EL2_k  <- EL_k^2 + 0.1
+  z_no_k <- rnorm(n)
+
+  res_raw <- update_beta_k(w, z_no_k, EL_k, EL2_k)
+  res_div <- update_beta_k(w, z_no_k, EL_k, EL2_k, survival_divisor = n)
+
+  assert_near(res_div$A, res_raw$A / n, tol = 1e-10, msg = "survival_divisor should scale A_k by 1/n")
+  assert_near(res_div$B, res_raw$B / n, tol = 1e-10, msg = "survival_divisor should scale B_k by 1/n")
+  assert_near(res_div$x, res_raw$x, tol = 1e-8, msg = "x_k should be invariant to survival_divisor")
+})
+
+run_test("T_norm.2: default survival_divisor=1 reproduces pre-normalization behavior exactly", {
+  set.seed(1202); n <- 20
+  w      <- abs(rnorm(n)) + 0.1
+  EL_k   <- rnorm(n)
+  EL2_k  <- EL_k^2 + 0.1
+  z_no_k <- rnorm(n)
+
+  res_default  <- update_beta_k(w, z_no_k, EL_k, EL2_k)
+  res_explicit <- update_beta_k(w, z_no_k, EL_k, EL2_k, survival_divisor = 1)
+
+  assert_near(res_default$A, res_explicit$A, tol = 1e-12, msg = "default divisor should be a no-op")
+  assert_near(res_default$B, res_explicit$B, tol = 1e-12, msg = "default divisor should be a no-op")
+})

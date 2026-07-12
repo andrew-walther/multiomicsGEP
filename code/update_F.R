@@ -69,6 +69,10 @@ suppressPackageStartupMessages(library(ebnm))
 #'                    Default 0.5. Note: tau still cancels in x_j = B_F/A_F because
 #'                    (1-alpha) also cancels in the ratio.
 #' @param A_floor     numeric: minimum value for each A_F[j] (default 1e-10)
+#' @param genomics_divisor numeric: divides A_F and B_F (default 1 = no-op).
+#'                    Phase 1a objective normalization: keeps F's genomics scale
+#'                    consistent with L's (see DECISIONS.md). x_j is invariant to
+#'                    this divisor (cancels in the ratio); only s_j changes.
 #'
 #' @return Named list:
 #'   $mean        -- p-vector: posterior mean E_q[f_{jk}]
@@ -94,7 +98,8 @@ suppressPackageStartupMessages(library(ebnm))
 update_F_k <- function(Tau, EL_k, EL2_k, R_k,
                         prior_family = "point_exponential",
                         alpha        = 0.5,
-                        A_floor      = 1e-10) {
+                        A_floor      = 1e-10,
+                        genomics_divisor = 1) {
 
   # ------------------------------------------------------------------
   # Precision A_{jk}  (p-vector)
@@ -111,7 +116,8 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
   # sum_EL2_k is a SCALAR that broadcasts across all p features.
   # This is why A_F[j] = (1-alpha) * tau_j * sum_EL2_k.
   sum_EL2_k <- sum(EL2_k)                                         # scalar
-  A_F       <- pmax((1 - alpha) * Tau * sum_EL2_k, A_floor)       # p-vector [A3]
+  A_F       <- pmax((1 - alpha) * Tau * sum_EL2_k / genomics_divisor,
+                     A_floor)                                     # p-vector [A3]
 
   # ------------------------------------------------------------------
   # Signal B_{jk}  (p-vector)
@@ -123,7 +129,7 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
   # Note: (1-alpha) cancels in x_j = B_F/A_F, so x is alpha-independent.
   # Only s_j = 1/sqrt(A_F) changes with alpha.
   # ------------------------------------------------------------------
-  B_F <- (1 - alpha) * Tau * as.vector(t(R_k) %*% EL_k)           # p-vector
+  B_F <- (1 - alpha) * Tau * as.vector(t(R_k) %*% EL_k) / genomics_divisor  # p-vector
 
   # ------------------------------------------------------------------
   # EBNM pseudo-observation and noise (p-vectors)
@@ -201,7 +207,8 @@ update_F_k <- function(Tau, EL_k, EL2_k, R_k,
 update_F_all <- function(Y, EL, EL2, EF, EF2, Tau,
                           prior_family = "point_exponential",
                           alpha        = 0.5,
-                          A_floor      = 1e-10) {
+                          A_floor      = 1e-10,
+                          genomics_divisor = 1) {
 
   p <- nrow(EF)
   K <- ncol(EF)
@@ -222,7 +229,8 @@ update_F_all <- function(Y, EL, EL2, EF, EF2, Tau,
       R_k        = R_k,
       prior_family = prior_family,
       alpha      = alpha,
-      A_floor    = A_floor
+      A_floor    = A_floor,
+      genomics_divisor = genomics_divisor
     )
 
     # Gauss-Seidel: update EF columns so next k uses fresh values

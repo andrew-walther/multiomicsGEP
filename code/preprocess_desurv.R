@@ -87,11 +87,23 @@ rank_transform_subjects <- function(Y, ties_method = "average") {
   ranked
 }
 
+#' @param rank_transform logical; apply the per-subject rank transform (default
+#'   TRUE, backward compatible). Phase 1c (see DECISIONS.md): external-cohort
+#'   preprocessing must match whatever training used -- pass FALSE together
+#'   with per_platform_standardize=TRUE to reproduce the DeSurv-aligned
+#'   training pipeline's per-platform z-standardization instead.
+#' @param per_platform_standardize logical; z-standardize each gene column
+#'   (colMean=0, colSD=1) instead of/alongside the rank transform (default
+#'   FALSE, backward compatible). Mirrors
+#'   \code{\link{per_platform_standardize_cohorts}}'s per-cohort treatment in
+#'   the training (\code{preprocess_merged_cohorts}) pipeline.
 preprocess_desurv_cohort <- function(Y, gene_names,
                                      top_n = 2000,
                                      log_transform = TRUE,
                                      ties_method = "average",
-                                     cohort_name = NULL) {
+                                     cohort_name = NULL,
+                                     rank_transform = TRUE,
+                                     per_platform_standardize = FALSE) {
   validate_expression_inputs(Y, gene_names)
 
   Y_proc <- Y
@@ -99,18 +111,32 @@ preprocess_desurv_cohort <- function(Y, gene_names,
     Y_proc <- log2_plus1_transform(Y_proc)
 
   filtered <- select_top_variable_genes(Y_proc, gene_names, top_n = top_n)
-  Y_ranked <- rank_transform_subjects(filtered$Y, ties_method = ties_method)
-  colnames(Y_ranked) <- filtered$gene_names
+  Y_out <- filtered$Y
+  colnames(Y_out) <- filtered$gene_names
+
+  # Per-platform z-standardization and the per-subject rank transform are
+  # alternative, mutually-exclusive-in-practice normalization strategies (see
+  # code/preprocess_desurv.R's preprocess_merged_cohorts, which the training
+  # pipeline uses): apply whichever the caller selects, matching training.
+  if (per_platform_standardize) {
+    Y_out <- per_platform_standardize_cohorts(list(Y_out))[[1]]
+  }
+  if (rank_transform) {
+    Y_out <- rank_transform_subjects(Y_out, ties_method = ties_method)
+    colnames(Y_out) <- filtered$gene_names
+  }
 
   list(
-    Y = Y_ranked,
+    Y = Y_out,
     gene_names = filtered$gene_names,
-    n = nrow(Y_ranked),
-    p = ncol(Y_ranked),
+    n = nrow(Y_out),
+    p = ncol(Y_out),
     cohort_name = cohort_name,
     top_n = top_n,
     log_transform = log_transform,
-    ties_method = ties_method
+    ties_method = ties_method,
+    rank_transform = rank_transform,
+    per_platform_standardize = per_platform_standardize
   )
 }
 

@@ -50,7 +50,6 @@ b        <- cfg$benchmark
 p        <- cfg$preprocessing
 
 ALPHA            <- b$alpha
-LAMBDA           <- b$lambda
 MAX_ITER         <- if (QUICK_MODE) 30L else cfg$cavi$max_iter
 K_GRID           <- if (QUICK_MODE) 2L:4L else 2L:10L
 PRIOR_BETA       <- "normal"
@@ -223,7 +222,6 @@ for (dcfg in DESURV_CONFIGS[3:5]) {
     max_iter   = MAX_ITER,
     prior_beta = PRIOR_BETA,
     alpha      = ALPHA,
-    lambda     = LAMBDA,
     cohort_id  = cid_cv,
     sign_correction = FALSE
   )
@@ -257,13 +255,13 @@ for (dcfg in DESURV_CONFIGS) {
     if (dcfg$model == "LB")
       fit_supervised_mf_modular(
         Y_train, time_train, status_train,
-        K = K, max_iter = MAX_ITER, alpha = ALPHA, lambda = LAMBDA,
+        K = K, max_iter = MAX_ITER, alpha = ALPHA,
         prior_beta = PRIOR_BETA, verbose = TRUE,
         cohort_id = cohort_id, sigma_F_cohort = SIGMA_COH)
     else
       fit_cox_on_yf(
         Y_train, time_train, status_train,
-        K = K, max_iter = MAX_ITER, alpha = ALPHA, lambda = LAMBDA,
+        K = K, max_iter = MAX_ITER, alpha = ALPHA,
         prior_beta = PRIOR_BETA, verbose = TRUE,
         cohort_id = cohort_id, sigma_F_cohort = SIGMA_COH)
   )
@@ -287,12 +285,21 @@ for (ext_cohort in EXTERNAL_COHORTS) {
   # top_n=NULL: keep all external genes; intersection with train_genes controls
   # the final gene set. This prevents the external-cohort top-N filter from
   # discarding genes that happen to be in the training gene set.
+  #
+  # rank_transform=FALSE, per_platform_standardize=TRUE: matches the training
+  # preprocessing exactly (Section 3 above calls preprocess_merged_cohorts with
+  # the same two settings for every DESURV_CONFIGS entry, including D1/D2).
+  # Before Phase 1c this was the reverse -- external cohorts were rank-
+  # transformed and never per-platform z-standardized, while training was
+  # per-platform z-standardized and never rank-transformed. See DECISIONS.md.
   pre_ext <- preprocess_desurv_cohort(
     Y             = raw_ext$Y,
     gene_names    = raw_ext$gene_names,
     top_n         = NULL,
     log_transform = PLATFORM_LOG_TRANSFORM[[ext_cohort]],
-    cohort_name   = ext_cohort
+    cohort_name   = ext_cohort,
+    rank_transform           = FALSE,
+    per_platform_standardize = TRUE
   )
 
   for (dcfg in DESURV_CONFIGS) {

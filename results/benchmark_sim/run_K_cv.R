@@ -52,7 +52,6 @@ PDAC_DATA_ROOT <- Sys.getenv("PDAC_DATA_ROOT",
 K_GRID   <- c(2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 15L, 20L)
 N_FOLDS  <- 5L
 ALPHA    <- 0.50
-LAMBDA   <- cfg$cavi$lambda
 MAX_ITER <- cfg$cavi$max_iter
 TOL      <- cfg$cavi$tol
 PRIOR_LF <- "point_exponential"
@@ -102,7 +101,6 @@ run_one_kcv <- function(model_name, prior_b, label) {
       verbose    = TRUE,
       model      = "LB",
       alpha      = ALPHA,
-      lambda     = LAMBDA,
       max_iter   = MAX_ITER,
       tol        = TOL,
       prior_LF   = PRIOR_LF,
@@ -118,7 +116,6 @@ run_one_kcv <- function(model_name, prior_b, label) {
       verbose    = TRUE,
       model      = "YFB",
       alpha      = ALPHA,
-      lambda     = LAMBDA,
       max_iter   = MAX_ITER,
       tol        = TOL,
       prior_LF   = PRIOR_LF,
@@ -162,8 +159,8 @@ run_one_kcv <- function(model_name, prior_b, label) {
 cat("============================================================\n")
 cat(" K-CV Sweep — LB model, TCGA_PAAD (tcga_only)\n")
 cat(sprintf("  K_grid : %s\n", paste(K_GRID, collapse = ", ")))
-cat(sprintf("  n_folds: %d | alpha=%.2f | lambda=%.2f | max_iter=%d\n\n",
-            N_FOLDS, ALPHA, LAMBDA, MAX_ITER))
+cat(sprintf("  n_folds: %d | alpha=%.2f | max_iter=%d\n\n",
+            N_FOLDS, ALPHA, MAX_ITER))
 
 lb_results <- list()
 for (prior_b in PRIORS)
@@ -195,8 +192,8 @@ write.csv(cmp_lb, file.path(out_dir, "K_cv_comparison_LB.csv"), row.names = FALS
 cat("============================================================\n")
 cat(" K-CV Sweep — YFB model, TCGA_PAAD (tcga_only)\n")
 cat(sprintf("  K_grid : %s\n", paste(K_GRID, collapse = ", ")))
-cat(sprintf("  n_folds: %d | alpha=%.2f | lambda=%.2f | max_iter=%d\n\n",
-            N_FOLDS, ALPHA, LAMBDA, MAX_ITER))
+cat(sprintf("  n_folds: %d | alpha=%.2f | max_iter=%d\n\n",
+            N_FOLDS, ALPHA, MAX_ITER))
 
 yfb_results <- list()
 for (prior_b in PRIORS)
