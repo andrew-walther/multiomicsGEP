@@ -93,6 +93,16 @@ compute_R_k <- function(Y, EL, EF, k) {
 #'                    always the unweighted raw components (before alpha scaling),
 #'                    so $B = (1-alpha)*$B_gen + alpha*$B_surv.
 #' @param A_floor     numeric: minimum value for each A_L[i] (default 1e-10)
+#' @param genomics_divisor numeric: divides A_gen and B_gen (default 1 = no-op).
+#'                    Phase 1a objective normalization: A_gen is currently a raw
+#'                    sum over p genes (~O(p)), while A_surv is a single
+#'                    per-patient term (~O(1)) -- an unnormalized ~p-fold scale
+#'                    gap that makes alpha's (1-alpha)/alpha mixing uninterpretable
+#'                    regardless of its value. Passing genomics_divisor=p restores
+#'                    a comparable per-patient scale (see DECISIONS.md).
+#' @param survival_divisor numeric: divides A_surv and B_surv (default 1 = no-op).
+#'                    Set alongside genomics_divisor for the alternate literal
+#'                    n*p / n normalization convention (see DECISIONS.md).
 #'
 #' @return Named list:
 #'   $mean        -- n-vector: posterior mean E_q[l_{ik}]
@@ -125,7 +135,9 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
                         alpha        = 0.5,
                         lambda       = 1.0,
                         A_floor      = 1e-10,
-                        normalize_AB = FALSE) {
+                        normalize_AB = FALSE,
+                        genomics_divisor = 1,
+                        survival_divisor = 1) {
 
   # ------------------------------------------------------------------
   # Precision A_{ik}  (n-vector)
@@ -140,10 +152,10 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   # ------------------------------------------------------------------
   # A_gen is a SCALAR (constant across all patients) because the genomics
   # precision sum_j(tau_j * EF2_jk) does not depend on sample i.
-  A_gen  <- sum(Tau * EF2_k)                                     # scalar
+  A_gen  <- sum(Tau * EF2_k) / genomics_divisor                  # scalar
   # A_surv is an n-VECTOR because Cox weights W_ii differ per patient.
   # This is why L requires a vector EBNM (unlike beta's scalar EBNM).
-  A_surv <- lambda * w * EBeta2_k                                # λ-scaled n-vector
+  A_surv <- lambda * w * EBeta2_k / survival_divisor             # λ-scaled n-vector
 
   # ------------------------------------------------------------------
   # Signal B_{ik}  (n-vector)
@@ -156,8 +168,8 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   # components — before alpha scaling — to preserve diagnostic utility.
   # The combined $B reflects the weighting: (1-alpha)*B_gen + alpha*B_surv.
   # ------------------------------------------------------------------
-  B_gen  <- as.vector(R_k %*% (Tau * EF_k))                     # n-vector (raw)
-  B_surv <- lambda * w * z_no_k * EBeta_k                        # λ-scaled n-vector (raw)
+  B_gen  <- as.vector(R_k %*% (Tau * EF_k)) / genomics_divisor  # n-vector (raw)
+  B_surv <- lambda * w * z_no_k * EBeta_k / survival_divisor     # λ-scaled n-vector (raw)
 
   # ------------------------------------------------------------------
   # Optional rescaling [Fix 4 of docs/beta_zero_fix_design.md §4.8]
@@ -269,7 +281,9 @@ update_L_all <- function(Y, EL, EL2, EF, EF2, Tau, w, z,
                           prior_family = "point_exponential",
                           alpha        = 0.5,
                           lambda       = 1.0,
-                          A_floor      = 1e-10) {
+                          A_floor      = 1e-10,
+                          genomics_divisor = 1,
+                          survival_divisor = 1) {
 
   n <- nrow(EL)
   K <- ncol(EL)
@@ -300,7 +314,9 @@ update_L_all <- function(Y, EL, EL2, EF, EF2, Tau, w, z,
       prior_family = prior_family,
       alpha      = alpha,
       lambda     = lambda,
-      A_floor    = A_floor
+      A_floor    = A_floor,
+      genomics_divisor = genomics_divisor,
+      survival_divisor = survival_divisor
     )
 
     # Gauss-Seidel: update EL columns so next k uses fresh values

@@ -660,6 +660,67 @@ run_test("T_alpha.1: alpha=0 -> pure genomics (A_L=A_gen, B_L=B_gen)", {
   assert_near(res$B_gen, B_gen_expected, tol = 1e-10, msg = "B_gen should be unweighted")
 })
 
+cat("\n=== T_norm: Genomics/Survival Divisors (Phase 1a normalization) ===\n")
+
+run_test("T_norm.1: genomics_divisor scales A_gen and B_gen exactly, x unchanged (alpha=0)", {
+  set.seed(1001); n <- 12; p <- 7
+  Tau     <- abs(rnorm(p)) + 0.1
+  EF_k    <- rnorm(p)
+  EF2_k   <- EF_k^2 + 0.1
+  w       <- abs(rnorm(n)) + 0.1
+  EBeta_k  <- 1.1
+  EBeta2_k <- EBeta_k^2 + 0.05
+  R_k     <- matrix(rnorm(n * p), n, p)
+  z_no_k  <- rnorm(n)
+
+  res_raw <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k, alpha = 0)
+  res_div <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k, alpha = 0,
+                        genomics_divisor = p)
+
+  assert_near(res_div$A, res_raw$A / p, tol = 1e-10, msg = "genomics_divisor should scale A by 1/p at alpha=0")
+  assert_near(res_div$B, res_raw$B / p, tol = 1e-10, msg = "genomics_divisor should scale B by 1/p at alpha=0")
+  assert_near(res_div$x, res_raw$x, tol = 1e-8, msg = "x should be invariant to genomics_divisor (ratio unchanged)")
+})
+
+run_test("T_norm.2: survival_divisor scales A_surv and B_surv exactly, x unchanged (alpha=1)", {
+  set.seed(1002); n <- 12; p <- 7
+  Tau     <- abs(rnorm(p)) + 0.1
+  EF_k    <- rnorm(p)
+  EF2_k   <- EF_k^2 + 0.1
+  w       <- abs(rnorm(n)) + 0.1
+  EBeta_k  <- 1.1
+  EBeta2_k <- EBeta_k^2 + 0.05
+  R_k     <- matrix(rnorm(n * p), n, p)
+  z_no_k  <- rnorm(n)
+
+  res_raw <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k, alpha = 1)
+  res_div <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k, alpha = 1,
+                        survival_divisor = n)
+
+  assert_near(res_div$A, res_raw$A / n, tol = 1e-10, msg = "survival_divisor should scale A by 1/n at alpha=1")
+  assert_near(res_div$B, res_raw$B / n, tol = 1e-10, msg = "survival_divisor should scale B by 1/n at alpha=1")
+  assert_near(res_div$x, res_raw$x, tol = 1e-8, msg = "x should be invariant to survival_divisor (ratio unchanged)")
+})
+
+run_test("T_norm.3: default divisors (1) reproduce pre-normalization behavior exactly", {
+  set.seed(1003); n <- 10; p <- 6
+  Tau     <- abs(rnorm(p)) + 0.1
+  EF_k    <- rnorm(p)
+  EF2_k   <- EF_k^2 + 0.1
+  w       <- abs(rnorm(n)) + 0.1
+  EBeta_k  <- 0.9
+  EBeta2_k <- EBeta_k^2 + 0.05
+  R_k     <- matrix(rnorm(n * p), n, p)
+  z_no_k  <- rnorm(n)
+
+  res_default  <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k)
+  res_explicit <- update_L_k(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k, R_k, z_no_k,
+                             genomics_divisor = 1, survival_divisor = 1)
+
+  assert_near(res_default$A, res_explicit$A, tol = 1e-12, msg = "default divisors should be no-ops")
+  assert_near(res_default$B, res_explicit$B, tol = 1e-12, msg = "default divisors should be no-ops")
+})
+
 run_test("T_alpha.2: alpha=1 -> pure survival (A_L=A_surv, B_L=B_surv)", {
   # alpha=1 means no genomics contribution: A = 0*A_gen + 1*A_surv = A_surv
   # and B = 0*B_gen + 1*B_surv = B_surv.

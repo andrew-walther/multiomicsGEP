@@ -148,6 +148,34 @@ calc_cox_taylor <- function(eta, time, status) {
 #'                   beta update: alpha*A_beta / alpha*B_beta
 #'                 alpha=0: pure genomics (beta not updated); alpha=1: pure survival
 #'                 (F not updated). Default 0.5 balances the p >> n gradient asymmetry.
+#' @param norm_convention character: Phase 1a objective normalization convention
+#'                 (see DECISIONS.md 2026-07-12). Before normalization, the
+#'                 genomics term of A_L (a raw sum over p genes, ~O(p)) and the
+#'                 survival term (a single per-patient term, ~O(1)) differ by an
+#'                 unnormalized ~p-fold scale gap, making alpha's mixing
+#'                 uninterpretable regardless of its value.
+#'                 Under LB (Cluster A), L and F co-adapt bilinearly (L's
+#'                 precision depends on EF^2 and vice versa). Rescaling either
+#'                 side's precision -- in EITHER direction -- destabilizes that
+#'                 coupling: dividing genomics by p collapses EL/EF to exactly
+#'                 zero; multiplying survival by p instead causes unbounded
+#'                 divergence (both confirmed empirically, including at
+#'                 realistic PDAC scale, and a scheduled/ramped introduction via
+#'                 alpha_schedule does not stabilize it either). Consequently,
+#'                 genomics_divisor/survival_divisor are NOT passed to
+#'                 update_L_k or update_F_k here regardless of norm_convention --
+#'                 LB's L/F precision is always at its original, pre-Phase-1a
+#'                 scale. Only the ELBO monitor and the beta update (no bilinear
+#'                 coupling there) receive the convention's rebalancing, so LB's
+#'                 alpha-interpretability fix is partial. The recommended
+#'                 production model (YFB, fit_cox_on_yf.R) is unaffected by this
+#'                 limitation: its L/F updates never touch these divisors in the
+#'                 first place (no genomics/survival competition to rebalance),
+#'                 so YFB gets the full, verified-stable treatment.
+#'                 "per_p" (default) -- boosts the survival ELBO term and the
+#'                   beta update's A_k/B_k by a factor of p.
+#'                 "np_n" -- literal convention (genomics/(n*p), survival/n)
+#'                   for the ELBO monitor and beta; retained for comparison.
 #' @param init_method  character: initialization strategy.
 #'                 "svd"    (default — deterministic SVD warm-start),
 #'                 "random" (random normal initialization, useful with
@@ -181,6 +209,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                       prior_beta      = "point_normal",
                                       alpha           = 0.5,
                                       lambda          = 1.0,
+                                      norm_convention = c("per_p", "np_n"),
                                       init_method     = "svd",
                                       EL_init         = NULL,
                                       EF_init         = NULL,
@@ -198,6 +227,15 @@ fit_supervised_mf_modular <- function(Y, time, status,
       alpha < 0 || alpha > 1) {
     stop("alpha must be a finite scalar in [0, 1].")
   }
+
+  # ---- Phase 1a objective normalization (see DECISIONS.md) -----------------
+  # "per_p": boosts survival (divisor < 1 => multiplies) instead of shrinking
+  # genomics, to avoid the L<->F collapse documented in DECISIONS.md 2026-07-12.
+  # "np_n": literal genomics/(n*p), survival/n -- retained for comparison; this
+  # is the collapse-prone, genomics-shrinking direction.
+  norm_convention  <- match.arg(norm_convention)
+  genomics_divisor <- if (norm_convention == "np_n") n * p else 1
+  survival_divisor <- if (norm_convention == "np_n") n   else 1 / p
 
   # ---- Progressive α schedule [A2 of docs/beta_zero_fix_design.md §4.4] ----
   # alpha_schedule = list(warmup_iters, ramp_iters) ramps α from 0 (pure
@@ -393,7 +431,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
       for (k in seq_len(K)) {
         z_no_k_b <- compute_z_no_k(z_b, EL, EBeta, k)
         res_b    <- update_beta_k(w_b, z_no_k_b, EL[, k], EL2_init[, k],
-                                  prior_family = prior_beta, alpha = alpha)
+                                  prior_family = prior_beta, alpha = alpha,
+                                  survival_divisor = survival_divisor)
         EBeta[k]  <- res_b$mean
         EBeta2[k] <- res_b$second
       }
@@ -531,6 +570,17 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # Uses current EBeta[k] from the previous outer iteration (or from
       # initialization on iter 1). A_surv/A_gen << 1, so EBeta staleness
       # barely affects the L precision; the L update is dominated by genomics.
+      #
+      # NOTE on Phase 1a scope (see DECISIONS.md 2026-07-12): genomics_divisor/
+      # survival_divisor are intentionally NOT passed here (left at their
+      # update_L_k defaults of 1). L and F co-adapt bilinearly (L's precision
+      # depends on EF^2 and vice versa); rescaling either side -- in EITHER
+      # direction -- destabilizes that coupling. Shrinking genomics collapses
+      # EL/EF to exactly zero; boosting survival causes unbounded divergence
+      # (both confirmed empirically at PDAC-realistic scale). Only the ELBO
+      # monitor and the beta update (no bilinear coupling) receive the
+      # normalization; the recommended production model (YFB) is unaffected
+      # by this either way, since its L/F updates never touch these divisors.
       # ----------------------------------------------------------------------
       res_L   <- update_L_k(Tau, EF_aug[, k], EF2_aug[, k], w, EBeta[k], EBeta2[k],
                              R_k, z_no_k, prior_family = prior_LF, alpha = alpha_iter,
@@ -547,6 +597,9 @@ fit_supervised_mf_modular <- function(Y, time, status,
       #
       # R_k depends on EL[,k], so recompute it using the updated EL[,k]
       # from step (a).  This is the Gauss-Seidel property.
+      #
+      # genomics_divisor is intentionally NOT passed here -- see the note above
+      # update_L_k's call site (Phase 1a scope, DECISIONS.md 2026-07-12).
       # ----------------------------------------------------------------------
       R_k   <- compute_R_k(Y, EL_aug, EF_aug, k)
       res_F <- update_F_k(Tau, EL_aug[, k], EL2_aug[, k], R_k,
@@ -566,7 +619,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # depends directly on EL, so using the freshest EL matters here.
       # ----------------------------------------------------------------------
       res_beta    <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
-                                   prior_family = prior_beta, alpha = alpha_iter)
+                                   prior_family = prior_beta, alpha = alpha_iter,
+                                   survival_divisor = survival_divisor)
       EBeta[k]    <- res_beta$mean
       EBeta2[k]   <- res_beta$second
       kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
@@ -610,8 +664,8 @@ fit_supervised_mf_modular <- function(Y, time, status,
     # kl_*: E_q[log g(theta)] - E_q[log q(theta)] for each factor (each <= 0).
     surv_elbo               <- compute_survival_elbo(taylor$logPL, w,
                                                      EL, EL2, EBeta, EBeta2)
-    history$elbo_full[iter] <- (1 - alpha) * res_tau$elbo_proxy +
-                               alpha * surv_elbo +
+    history$elbo_full[iter] <- (1 - alpha) * (res_tau$elbo_proxy / genomics_divisor) +
+                               alpha * (surv_elbo / survival_divisor) +
                                sum(kl_L) + sum(kl_F) + sum(kl_beta)
     # compute_normal_kl returns a NEGATIVE value (-KL <= 0); adding it
     # correctly penalises the ELBO.  Never subtract — that double-negates.
@@ -712,7 +766,10 @@ fit_supervised_mf_modular <- function(Y, time, status,
     EBeta  = EBeta,
     EBeta2 = EBeta2,
     Tau    = Tau,
-    history = history
+    history = history,
+    norm_convention  = norm_convention,
+    genomics_divisor = genomics_divisor,
+    survival_divisor = survival_divisor
   )
   # Expose cohort fields when the extension is active.
   # Global EL/EF (K-factor only) are unchanged for backward compatibility.

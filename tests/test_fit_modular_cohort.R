@@ -25,6 +25,12 @@ local({
 # T1: Backward compatibility — cohort_id=NULL matches frozen ELBO fixture
 # ---------------------------------------------------------------------------
 run_test("LBCohort-T1: cohort_id=NULL ELBO matches frozen baseline", {
+  # Baseline regenerated 2026-07-12 (Phase 1a): elbo_full's assembly now boosts
+  # the survival ELBO term by a factor of p under the default norm_convention=
+  # "per_p" (see DECISIONS.md 2026-07-12). EL/EF/EBeta themselves are IDENTICAL
+  # to the pre-Phase-1a values for this pure-noise fixture (verified directly --
+  # all zero in both cases, correct EBNM shrinkage with no real signal); only
+  # the reported elbo_full value legitimately changed.
   set.seed(99)
   n <- 40L; p <- 30L; K <- 3L
   Y      <- matrix(rnorm(n * p), n, p)

@@ -56,7 +56,8 @@ test_files <- c(
   "tests/test_update_F_cohort.R",
   "tests/test_fit_modular_cohort.R",
   "tests/test_fit_yf_cohort.R",
-  "tests/test_fit_yf_frozen_f.R"
+  "tests/test_fit_yf_frozen_f.R",
+  "tests/test_normalization.R"
 )
 
 # Run each test file

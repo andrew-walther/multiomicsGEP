@@ -528,3 +528,34 @@ run_test("T_alpha.2: alpha=0 -> gives original unscaled formula (A = Tau*sum_EL2
   assert_near(res$A, expected_A, tol = 1e-12, msg = "alpha=0: A_F should equal unscaled formula")
   assert_near(res$B, expected_B, tol = 1e-12, msg = "alpha=0: B_F should equal unscaled formula")
 })
+
+cat("\n=== T_norm: Genomics Divisor (Phase 1a normalization) ===\n")
+
+run_test("T_norm.1: genomics_divisor scales A_F and B_F exactly, x unchanged", {
+  set.seed(1101); n <- 15; p <- 9
+  Tau    <- abs(rnorm(p)) + 0.1
+  EL_k   <- rnorm(n)
+  EL2_k  <- EL_k^2 + 0.1
+  R_k    <- matrix(rnorm(n * p), n, p)
+
+  res_raw <- update_F_k(Tau, EL_k, EL2_k, R_k)
+  res_div <- update_F_k(Tau, EL_k, EL2_k, R_k, genomics_divisor = p)
+
+  assert_near(res_div$A, res_raw$A / p, tol = 1e-10, msg = "genomics_divisor should scale A_F by 1/p")
+  assert_near(res_div$B, res_raw$B / p, tol = 1e-10, msg = "genomics_divisor should scale B_F by 1/p")
+  assert_near(res_div$x, res_raw$x, tol = 1e-8, msg = "x_F should be invariant to genomics_divisor")
+})
+
+run_test("T_norm.2: default genomics_divisor=1 reproduces pre-normalization behavior exactly", {
+  set.seed(1102); n <- 15; p <- 9
+  Tau    <- abs(rnorm(p)) + 0.1
+  EL_k   <- rnorm(n)
+  EL2_k  <- EL_k^2 + 0.1
+  R_k    <- matrix(rnorm(n * p), n, p)
+
+  res_default  <- update_F_k(Tau, EL_k, EL2_k, R_k)
+  res_explicit <- update_F_k(Tau, EL_k, EL2_k, R_k, genomics_divisor = 1)
+
+  assert_near(res_default$A, res_explicit$A, tol = 1e-12, msg = "default divisor should be a no-op")
+  assert_near(res_default$B, res_explicit$B, tol = 1e-12, msg = "default divisor should be a no-op")
+})

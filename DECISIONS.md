@@ -5,6 +5,93 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-12 — Phase 1a objective normalization: boost survival (not shrink genomics), and only where it is safe
+
+**Background.** The Rashid lab's 6/18/2026 feedback noted that the genomics likelihood term of
+the model's objective is O(n·p) in aggregate while the survival (Cox partial likelihood) term is
+O(n) — an unnormalized ~p-fold scale gap. This makes the `alpha` mixing weight
+`(1-alpha)*genomics + alpha*survival` uninterpretable: alpha=0.5 does not mean "balanced,"
+because the genomics side starts ~p times larger regardless of alpha's value. The fix needed to
+reach the actual CAVI update coefficients (the A/B precision-and-signal terms passed into each
+EBNM sub-problem), not just the reported ELBO monitor, per the post-lab-meeting action plan
+(`docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`, Phase 1a).
+
+**Two candidate directions were tried and empirically rejected for the LB (Cluster A,
+`code/fit_modular.R`) model** before arriving at the shipped design. Both were tested at toy scale
+(n=150, p=200) and realistic PDAC scale (n=270, p=2000), alpha=0.5:
+
+1. **Shrink genomics** (`A_gen`/`B_gen` in `update_L_k`/`update_F_k` divided by `p`): L, F, and beta
+   collapsed to *exactly zero*, reproducibly, at both scales. Root cause: L and F co-adapt
+   bilinearly — L's precision `A_gen = sum(Tau*EF2_k)` depends on F's squared values, and F's
+   precision depends on L's squared values. Reducing genomics' precision at all removes the
+   accidental numerical safety margin the *unnormalized* model was relying on (its very large
+   `A_gen` never let either factor's posterior variance grow enough to matter); once one factor's
+   estimate dips, the other's effective precision drops too, compounding to zero within 2-3
+   iterations.
+2. **Boost survival instead** (`A_surv`/`B_surv` in `update_L_k` multiplied by `p`, leaving genomics
+   at its original scale — mathematically the same relative rebalancing, verified algebraically to
+   give the identical `x = B/A` pseudo-observation, differing only in absolute precision/shrinkage
+   strength): avoided the collapse in one synthetic scenario, but caused **unbounded divergence**
+   in another (the exact fixture already used by `tests/test_elbo.R`'s `.elbo_test_data`) —
+   `max(|EL|)` exceeded 600,000 by iteration 3, overflowing `exp(eta)` in the Cox Taylor expansion
+   and producing transient `NaN`s in the ELBO. A scheduled/ramped introduction of the boost (reusing
+   the existing `alpha_schedule` warmup+ramp mechanism, which already exists for a similar reason —
+   easing survival pressure onto L) was tried and did **not** stabilize it; `max(|EL|)` still
+   reached 12 million.
+3. **Decoupling** the two update sites resolved it: passing the boosted `survival_divisor` **only**
+   to `update_beta_k`'s own precision (no bilinear coupling — β's precision does not feed back into
+   itself the way L/F's do) and to the ELBO monitor (reporting/convergence only, never feeds back
+   into any update), while leaving `update_L_k`/`update_F_k` completely untouched, was stable at
+   both scales with sensible factor recovery (correlation 0.3-0.8 with true loadings on synthetic
+   data with a real signal).
+
+**Decision:**
+- `genomics_divisor`/`survival_divisor` are **never** passed to `update_L_k`/`update_F_k` inside
+  `fit_supervised_mf_modular()`'s (LB) CAVI loop, regardless of `norm_convention`. LB's L/F
+  precision stays at its original, pre-Phase-1a scale unconditionally. Only the ELBO assembly and
+  the beta update (main loop and burn-in) receive the rebalancing.
+  **Consequence: for LB specifically, the stated success criterion ("alpha=0.5 means balanced") is
+  only partially met** — the L-update's internal genomics/survival mixture (the place the original
+  imbalance actually lives) is unchanged, so LB's alpha still behaves close to its pre-Phase-1a
+  self at interior values. This is a known, accepted limitation for LB, deferred pending a properly
+  damped/trust-region stabilization of the bilinear coupling (not attempted here — out of Phase 1
+  scope).
+- **YFB (Cluster B, `code/fit_cox_on_yf.R`, the actual recommended/production model, D4) is
+  unaffected by this limitation**: its L (`update_L_surv_YFB_k`) is pure-genomics-only regardless of
+  alpha, and F (`update_F_surv_YFB_k`) defaults to `alpha_F=0` (pure genomics) — there is no
+  genomics/survival competition in either update to rebalance in the first place, so YFB gets the
+  full, verified-stable normalization on its beta update and ELBO monitor. Empirically verified:
+  `EL`/`EF` are bit-identical between `norm_convention="per_p"` and `"np_n"` (both leave YFB's L/F
+  untouched), confirming no unintended side effect.
+- Two conventions are exposed via `norm_convention = c("per_p", "np_n")`:
+  - `"per_p"` (default): `genomics_divisor=1` (unchanged), `survival_divisor=1/p` (multiplies
+    survival's contribution by p). This is the safe, boost-survival direction.
+  - `"np_n"`: the literal convention from the plan text (`genomics_divisor=n*p`,
+    `survival_divisor=n`) — retained (applied only to the ELBO monitor and beta, per the same
+    L/F-untouched rule) purely for empirical side-by-side comparison, since it was explicitly
+    requested; it is *not* recommended, being the direction that would collapse LB's L/F if it were
+    ever threaded there.
+- The `elbo_proxy` genomics ELBO term itself (`code/update_tau.R`) is **unchanged** — its own
+  precision-MLE argmax for `tau_j` is invariant to any positive scalar multiplying the whole
+  genomics likelihood, so no rescaling was needed there; only the point where `elbo_proxy` and
+  `surv_elbo` are combined into `elbo_full` (in `fit_modular.R` and `fit_cox_on_yf.R`) applies the
+  divisors.
+
+**Trade-offs:** LB's own interpretability goal is not fully achieved (see above) — this is an
+explicit, documented scope narrowing, not a silent gap. The `tests/fixtures/lb_cohort_null_elbo_baseline.rds`
+frozen-ELBO fixture was regenerated because `elbo_full`'s formula legitimately changed (verified:
+`EL`/`EF`/`EBeta` are bit-identical to the pre-change baseline for that pure-noise fixture; only the
+reported ELBO value differs).
+
+**Affected files:** `code/update_L.R`, `code/update_F.R`, `code/update_beta.R` (new
+`genomics_divisor`/`survival_divisor` parameters, default 1 = no-op), `code/fit_modular.R`,
+`code/fit_cox_on_yf.R` (new `norm_convention` parameter; ELBO assembly; beta update call sites,
+including burn-in), `tests/test_update_L.R`, `tests/test_update_F.R`, `tests/test_update_beta.R`,
+`tests/test_normalization.R` (new), `tests/test_fit_modular_cohort.R` (regenerated baseline),
+`tests/fixtures/lb_cohort_null_elbo_baseline.rds`.
+
+---
+
 ## 2026-06-16 — Deck revision: KM direction convention, convergence criterion, prior restatement
 
 While revising the 2026-06-18 lab-meeting deck (merged to main, `905279b`), three analytical
