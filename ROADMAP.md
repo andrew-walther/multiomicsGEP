@@ -275,6 +275,15 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 📐 Model Selection
 
+- [ ] **Joint (K, α) tuning via Bayesian optimization, to match DeSurv's search procedure** `[Priority: Low-Medium]` `[Effort: Medium]`
+  Plan only, not implemented: `docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`. Motivation:
+  DeSurv jointly tunes `k, α, λ` via Bayesian optimization; we tune only K via grid-search CV with
+  α fixed at 0.5. This confirmed methodology difference is part of why K=7-vs-DeSurv's-k=3 isn't a
+  fair apples-to-apples comparison (`DECISIONS.md` 2026-07-12). A joint `(K, α)` BO search (no
+  direct analogue of DeSurv's λ exists for us — see the plan doc) would let that comparison stand
+  on equal footing. Deferred behind Phase 2/3; revisit sooner if the manuscript (Phase 6) needs a
+  defensible answer to "why does SBMF use more factors than DeSurv."
+
 - [x] **K_eff 2→4 root-caused and resolved (not a `beta_threshold` calibration issue)** *(Complete — 2026-07-12)*
   D4's K_eff rose from 2 to 4 after the initial Phase 1 merge, alongside an apparent external
   C-index gain (0.636→0.642). Root cause, confirmed directly (not `beta_threshold` miscalibration
