@@ -69,6 +69,17 @@ synthetic_multicohort:
     a_shared: 12.0
     a_specific_values: [12.0, 18.0, 24.0, 36.0, 48.0]   # ratios: 1x, 1.5x, 2x, 3x, 4x specific
 
+  # Survival-strength sweep (Phase 2, docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md):
+  # scales beta_shared = strength * c(1.5, -1.2, 0.8, -0.5) uniformly, holding all
+  # genomics DGP parameters (a_shared, F structure, noise) fixed. strength=0 is
+  # the "survival completely off" honesty-check point (joint model should equal
+  # the 2-step baselines); strength=1.0 matches the default magnitude used
+  # elsewhere in this simulation suite, for reference.
+  survival_strength_sweep:
+    K_shared: 4            # matches length(default beta_shared) = c(1.5,-1.2,0.8,-0.5)
+    K_specific: [0, 0]     # no cohort-specific factors -- keep this sweep simple
+    strength_values: [0.0, 0.25, 0.5, 1.0, 2.0, 4.0]
+
 # ------------------------------------------------------------------------------
 # Preprocessing
 # ------------------------------------------------------------------------------
