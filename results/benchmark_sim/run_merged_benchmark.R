@@ -53,7 +53,6 @@ tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 
 ALPHA       <- b$alpha
-LAMBDA      <- b$lambda
 MAX_ITER    <- if (QUICK_MODE) 30L else cfg$cavi$max_iter
 PRIOR_BETA  <- "normal"
 SIGMA_COH   <- 1.0
@@ -165,13 +164,13 @@ for (mcfg in MODEL_CONFIGS) {
     if (mcfg$model == "LB")
       fit_supervised_mf_modular(Y_train, time_train, status_train,
                                 K = K, max_iter = MAX_ITER, alpha = ALPHA,
-                                lambda = LAMBDA, prior_beta = PRIOR_BETA,
+                                prior_beta = PRIOR_BETA,
                                 verbose = TRUE, cohort_id = cohort_id,
                                 sigma_F_cohort = SIGMA_COH)
     else
       fit_cox_on_yf(Y_train, time_train, status_train,
                    K = K, max_iter = MAX_ITER, alpha = ALPHA,
-                   lambda = LAMBDA, prior_beta = PRIOR_BETA,
+                   prior_beta = PRIOR_BETA,
                    verbose = TRUE, cohort_id = cohort_id,
                    sigma_F_cohort = SIGMA_COH)
   )

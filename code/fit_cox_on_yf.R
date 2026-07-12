@@ -115,7 +115,6 @@ calc_cox_taylor_yf <- function(eta, time, status) {
 #' @param prior_beta character: EBNM prior family for beta (default "point_normal")
 #' @param alpha      numeric in [0, 1]: survival mixing weight for the beta update
 #'                 (default 0.5). Note: F update always uses alpha_F=0 (see DECISIONS.md).
-#' @param lambda     numeric: lambda multiplier for the beta update (default 1.0)
 #' @param norm_convention character: Phase 1a objective normalization convention
 #'                 (see DECISIONS.md and fit_modular.R). Under YFB, L and F are
 #'                 pure-genomics with no survival competition at the default
@@ -170,7 +169,6 @@ fit_cox_on_yf <- function(Y, time, status,
                            prior_LF     = "point_exponential",
                            prior_beta   = "normal",
                            alpha        = 0.5,
-                           lambda       = 1.0,
                            norm_convention = c("per_p", "np_n"),
                            init_method  = "svd",
                            EL_init      = NULL,

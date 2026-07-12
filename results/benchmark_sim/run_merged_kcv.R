@@ -58,7 +58,6 @@ K_GRID            <- if (QUICK_MODE) 2L:4L  else 2L:10L
 N_FOLDS           <- if (QUICK_MODE) 3L      else cfg$cavi$n_cv_folds    # 5
 MAX_ITER          <- if (QUICK_MODE) 30L     else cfg$cavi$max_iter      # 300
 ALPHA             <- cfg$benchmark$alpha                                  # 0.5
-LAMBDA            <- cfg$benchmark$lambda                                 # 1.0
 PRIOR_BETA        <- "normal"
 K_MIN_BIOLOGICAL  <- 3L   # biological floor: K_final = max(K_1se, K_MIN_BIOLOGICAL)
 
@@ -168,7 +167,6 @@ run_kcv <- function(Y, time, status, model, label) {
     max_iter   = MAX_ITER,
     prior_beta = PRIOR_BETA,
     alpha      = ALPHA,
-    lambda     = LAMBDA,
     sign_correction = FALSE
   )
   K_1se   <- result$K_opt

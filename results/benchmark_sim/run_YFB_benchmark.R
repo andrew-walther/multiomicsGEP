@@ -57,7 +57,6 @@ source("code/preprocess_desurv.R")
 K            <- if (QUICK_MODE) 5 else if (TRAIN_MODE == "merged" && NO_RANK) cfg$benchmark$k_pdac_yfb_merged else if (TRAIN_MODE == "merged") cfg$benchmark$k_pdac else cfg$benchmark$k_pdac_single
 K_SYN        <- if (QUICK_MODE) 5 else cfg$benchmark$k_pdac_synthetic
 ALPHA        <- cfg$benchmark$alpha
-LAMBDA       <- cfg$benchmark$lambda
 N_BURNIN     <- cfg$benchmark$n_burnin
 NORM_AB      <- cfg$benchmark$normalize_ab
 COX_WARMSTART <- "--cox-warmstart" %in% args || cfg$benchmark$cox_warmstart
@@ -67,8 +66,8 @@ MAX_ITER     <- if (QUICK_MODE) 30 else cfg$cavi$max_iter
 ALPHA_F      <- 0   # Cluster B baseline: F update is pure-genomics (see DECISIONS.md 2026-04-30)
 
 cat("=== YFB Benchmark (Cluster B — eta = YF·beta) ===\n")
-cat(sprintf("    K=%d (synthetic K=%d) | alpha=%.2f | alpha_F=%.2f | lambda=%.2f | N_burnin=%d\n",
-            K, K_SYN, ALPHA, ALPHA_F, LAMBDA, N_BURNIN))
+cat(sprintf("    K=%d (synthetic K=%d) | alpha=%.2f | alpha_F=%.2f | N_burnin=%d\n",
+            K, K_SYN, ALPHA, ALPHA_F, N_BURNIN))
 cat(sprintf("    cox_warmstart=%s | normalize_AB=%s | per_platform_norm=%s | no_rank=%s\n",
             COX_WARMSTART, NORM_AB, PER_PLATFORM_NORM, NO_RANK))
 cat(sprintf("    Priors: %s\n", paste(PRIORS, collapse = " vs ")))
@@ -114,7 +113,7 @@ if (RUN_SYNTHETIC) {
       Y_tr, t_tr, s_tr,
       K = K_SYN, max_iter = MAX_ITER, tol = cfg$cavi$tol,
       prior_LF = "point_exponential", prior_beta = pr,
-      alpha = ALPHA, lambda = LAMBDA, N_burnin = N_BURNIN,
+      alpha = ALPHA, N_burnin = N_BURNIN,
       cox_warmstart = COX_WARMSTART, normalize_AB = NORM_AB,
       verbose = FALSE
     )
@@ -206,7 +205,7 @@ if (!pdac_available) {
       Y_train, time_train, status_train,
       K = K, max_iter = MAX_ITER, tol = cfg$cavi$tol,
       prior_LF = "point_exponential", prior_beta = pr,
-      alpha = ALPHA, lambda = LAMBDA, N_burnin = N_BURNIN,
+      alpha = ALPHA, N_burnin = N_BURNIN,
       cox_warmstart = COX_WARMSTART, normalize_AB = NORM_AB,
       verbose = TRUE
     )

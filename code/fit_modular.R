@@ -208,7 +208,6 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                       prior_LF        = "point_exponential",
                                       prior_beta      = "point_normal",
                                       alpha           = 0.5,
-                                      lambda          = 1.0,
                                       norm_convention = c("per_p", "np_n"),
                                       init_method     = "svd",
                                       EL_init         = NULL,
@@ -417,7 +416,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
   # i.e., zero posterior variance). This directly replicates Warm-start
   # Exp 1, which proved the β update produces non-zero coefficients when L
   # is fixed. Goal: enter the joint CAVI loop with a non-zero EBeta so that
-  # A_surv = λ·w·E[β_k²] is non-trivial in the L update from iter 1.
+  # A_surv = w·E[β_k²] is non-trivial in the L update from iter 1.
   #
   # Backward compatibility: default N_burnin = 0 skips the block entirely.
   # ==========================================================================
@@ -554,12 +553,12 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # the first few factors. A_surv ≪ A_gen quantifies the structural
       # scale imbalance that crippled merged-cohort training. Matches
       # update_L_k() math: A_gen = sum_j(τ_j · E[f_jk²]) (scalar across i);
-      # A_surv = λ · w_i · E[β_k²] (n-vector — we report the mean for
+      # A_surv = w_i · E[β_k²] (n-vector — we report the mean for
       # readability). Logged before the L update so the value reflects the
       # state seen at the iteration boundary.
       if (iter == 1 && verbose && k <= 3) {
         A_gen_k  <- sum(Tau * EF2[, k])
-        A_surv_k <- mean(w) * EBeta2[k] * lambda
+        A_surv_k <- mean(w) * EBeta2[k]
         cat(sprintf("    [iter1, k=%d] A_gen=%.2e  A_surv=%.2e  ratio=%.4f\n",
                     k, A_gen_k, A_surv_k, A_surv_k / (A_gen_k + 1e-30)))
       }
@@ -584,7 +583,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
       # ----------------------------------------------------------------------
       res_L   <- update_L_k(Tau, EF_aug[, k], EF2_aug[, k], w, EBeta[k], EBeta2[k],
                              R_k, z_no_k, prior_family = prior_LF, alpha = alpha_iter,
-                             lambda = lambda, normalize_AB = normalize_AB)
+                             normalize_AB = normalize_AB)
       EL[, k]      <- res_L$mean
       EL2[, k]     <- res_L$second
       EL_aug[, k]  <- res_L$mean    # keep augmented matrix in sync

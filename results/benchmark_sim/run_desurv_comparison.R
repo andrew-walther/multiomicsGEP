@@ -50,7 +50,6 @@ b        <- cfg$benchmark
 p        <- cfg$preprocessing
 
 ALPHA            <- b$alpha
-LAMBDA           <- b$lambda
 MAX_ITER         <- if (QUICK_MODE) 30L else cfg$cavi$max_iter
 K_GRID           <- if (QUICK_MODE) 2L:4L else 2L:10L
 PRIOR_BETA       <- "normal"
@@ -223,7 +222,6 @@ for (dcfg in DESURV_CONFIGS[3:5]) {
     max_iter   = MAX_ITER,
     prior_beta = PRIOR_BETA,
     alpha      = ALPHA,
-    lambda     = LAMBDA,
     cohort_id  = cid_cv,
     sign_correction = FALSE
   )
@@ -257,13 +255,13 @@ for (dcfg in DESURV_CONFIGS) {
     if (dcfg$model == "LB")
       fit_supervised_mf_modular(
         Y_train, time_train, status_train,
-        K = K, max_iter = MAX_ITER, alpha = ALPHA, lambda = LAMBDA,
+        K = K, max_iter = MAX_ITER, alpha = ALPHA,
         prior_beta = PRIOR_BETA, verbose = TRUE,
         cohort_id = cohort_id, sigma_F_cohort = SIGMA_COH)
     else
       fit_cox_on_yf(
         Y_train, time_train, status_train,
-        K = K, max_iter = MAX_ITER, alpha = ALPHA, lambda = LAMBDA,
+        K = K, max_iter = MAX_ITER, alpha = ALPHA,
         prior_beta = PRIOR_BETA, verbose = TRUE,
         cohort_id = cohort_id, sigma_F_cohort = SIGMA_COH)
   )

@@ -62,7 +62,6 @@ source("code/preprocess_desurv.R")
 K_LB       <- if (QUICK_MODE) 5L  else if (LOW_K_MODE) 5L  else cfg$benchmark$k_pdac       # 20
 K_YFB      <- if (QUICK_MODE) 2L  else if (LOW_K_MODE) 3L  else cfg$benchmark$k_pdac_yfb_merged  # 3
 ALPHA      <- cfg$benchmark$alpha        # 0.5
-LAMBDA     <- cfg$benchmark$lambda
 MAX_ITER   <- if (QUICK_MODE) 30L else cfg$cavi$max_iter           # 300
 PRIOR_BETA <- "normal"   # avoids beta->0 collapse; consistent with best main-branch result
 SIGMA_COH  <- 1.0        # sigma_F_cohort: prior SD for cohort F rows
@@ -141,7 +140,6 @@ fits$LB_base <- suppressMessages(
                             K        = K_LB,
                             max_iter = MAX_ITER,
                             alpha    = ALPHA,
-                            lambda   = LAMBDA,
                             prior_beta = PRIOR_BETA,
                             verbose  = TRUE,
                             cohort_id = NULL)
@@ -159,7 +157,6 @@ fits$LB_cohort <- suppressMessages(
                             K        = K_LB,
                             max_iter = MAX_ITER,
                             alpha    = ALPHA,
-                            lambda   = LAMBDA,
                             prior_beta     = PRIOR_BETA,
                             verbose        = TRUE,
                             cohort_id      = cohort_labels,
@@ -183,7 +180,6 @@ fits$YFB_base <- suppressMessages(
                 K          = K_YFB,
                 max_iter   = MAX_ITER,
                 alpha      = ALPHA,
-                lambda     = LAMBDA,
                 prior_beta = PRIOR_BETA,
                 verbose    = TRUE,
                 cohort_id  = NULL)
@@ -201,7 +197,6 @@ fits$YFB_cohort <- suppressMessages(
                 K              = K_YFB,
                 max_iter       = MAX_ITER,
                 alpha          = ALPHA,
-                lambda         = LAMBDA,
                 prior_beta     = PRIOR_BETA,
                 verbose        = TRUE,
                 cohort_id      = cohort_labels,
