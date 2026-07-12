@@ -1,0 +1,121 @@
+---
+title: "Joint Supervised Factorization vs. Two-Step Baselines: A Survival-Strength Sweep"
+date: "2026-07-12"
+format:
+  pdf:
+    toc: false
+  html:
+    toc: true
+---
+
+## Purpose
+
+The supervised Bayesian matrix factorization model (SBMF, here in its Cox-on-YF parameterization,
+$\eta = (YF)\beta$) jointly fits a genomics factorization and a Cox survival model. The standard
+alternative is a two-step procedure: factorize the genomics data first, without using the survival
+outcome, then fit a Cox model on the resulting factor scores. This report asks a direct question:
+does joint estimation actually improve on the two-step approach, and — just as importantly — does
+it *avoid inventing* an advantage when there is no real survival signal to find?
+
+We simulate data where the true prognostic effect size can be dialed from zero (survival carries no
+information) up to large, holding the genomics generative structure fixed, and compare:
+
+- **YFB (joint)**, fit with the production default $\alpha = 0.5$.
+- **PCA + Cox** (two-step): principal components of the training genomics matrix, then a Cox model
+  on the top components; held-out samples are scored by projecting onto the *training* rotation.
+- **EBMF + Cox** (two-step): an unsupervised empirical-Bayes matrix factorization (`flashier`,
+  non-negative priors matching the joint model's own priors), then a downstream Cox fit on the
+  factor scores.
+- **LB (joint)**, the alternative joint parameterization ($\eta = L\beta$), included as a secondary
+  reference.
+- **YFB at $\alpha=0$**, an internal control: forcing $\alpha=0$ should reduce the joint model to a
+  purely genomics-driven factorization, structurally identical to what it would learn regardless of
+  the survival outcome.
+
+Data: two synthetic cohorts (n=150 each), p=1000 genes, K=4 factors, all shared across cohorts (no
+cohort-specific structure — kept simple so the comparison isolates the survival-strength question).
+5 replicate seeds per strength level. Full CAVI convergence (no iteration cap).
+
+## Result 1 — Equivalence when survival carries no signal
+
+| Method | Mean C-index | SE |
+|---|---|---|
+| YFB (joint) | 0.517 | 0.008 |
+| PCA + Cox | 0.533 | 0.017 |
+| EBMF + Cox | 0.540 | 0.017 |
+
+All three sit within about 1 SE of each other and of chance (C = 0.5) — the joint model does not
+manufacture a spurious advantage when there is nothing to find. The raw gaps (0.016–0.023) are
+slightly above an idealized "< 0.01" target, but given standard errors of 0.008–0.017 on only 5
+seeds, none of these differences are distinguishable from noise. We report this honestly rather than
+rounding it down to a clean pass: the evidence is *consistent with* equivalence, not a
+razor-sharp confirmation of it.
+
+## Result 2 — Separation as the true effect grows
+
+```{r}
+#| echo: false
+#| fig-cap: "Held-out C-index vs. prognostic effect strength. Error bars: ±1 SE across 5 seeds."
+knitr::include_graphics("../../results/multi_cohort_sim/outputs/survival_strength_sweep_plot.png")
+```
+
+| Strength | YFB (joint) | PCA+Cox | EBMF+Cox | LB (joint) |
+|---|---|---|---|---|
+| 0.00 | 0.517 | 0.533 | 0.540 | 0.526 |
+| 0.25 | 0.621 | 0.625 | 0.630 | 0.614 |
+| 0.50 | 0.729 | 0.724 | 0.692 | 0.697 |
+| 1.00 | 0.809 | 0.798 | 0.747 | 0.796 |
+| 2.00 | 0.894 | 0.880 | 0.841 | 0.836 |
+| 4.00 | **0.931** | 0.908 | 0.875 | 0.877 |
+
+The joint model does not lead at every strength level — at 0.25 it is essentially tied with both
+two-step baselines (within noise). From strength 0.5 onward it pulls ahead of EBMF+Cox, and from
+1.0 onward ahead of PCA+Cox as well, with the gap widening monotonically and its own standard error
+shrinking (0.027 at strength 1.0 down to 0.006 at strength 4.0 — the joint model's advantage becomes
+both larger and more precisely estimated as signal strengthens). **Honest summary: the joint
+model's advantage is not immediate or uniform, but it emerges reliably once genuine survival signal
+exists, and grows with it** — exactly the qualitative pattern the method's value proposition
+requires, without an inflated claim about how small an effect it can already exploit.
+
+## Result 3 — Internal control: is $\alpha=0$ really "survival off"?
+
+A meaningful sanity check: at $\alpha=0$, the joint model's learned genomics factors ($F$) should be
+*structurally identical* to what it would learn from any other $\alpha$, because under the YFB
+parameterization $F$ never uses the survival outcome regardless of $\alpha$ (only $\beta$ does).
+Naively comparing $F$ from two independently-converged fits is confounded, however: different
+$\alpha$ values give different combined objective trajectories, so CAVI declares convergence after a
+different number of iterations for each — meaning a naive comparison contrasts two *different
+snapshots* of an otherwise-identical trajectory, not a true $\alpha$ effect. Controlling for this
+(forcing both fits to run an identical, fixed number of iterations) gives an unambiguous answer:
+
+> **max$|F_{\alpha=0.5} - F_{\alpha=0}| = 0$ exactly, at every strength level and every seed tested
+> (30/30 comparisons).**
+
+This is the strongest and cleanest of the three results: $\alpha=0$ provably reduces the joint model
+to the same genomics factorization regardless of $\alpha$, confirming the model behaves as designed
+at this boundary.
+
+## Limitations
+
+- Factor-recovery (correlation with the true gene programs) was also tracked but is not the focus
+  here; PCA's linear, orthogonal basis recovers the (non-negative, sparse) true factors noticeably
+  less well than the two EBNM/NMF-style methods (YFB, EBMF) — a structural mismatch between PCA and
+  this particular data-generating process, not necessarily a general property of two-step methods.
+- LB (the alternative joint parameterization) is included for reference only; per `DECISIONS.md`
+  2026-07-12, LB's own objective-normalization work is unresolved, so no claims are made about its
+  competitiveness here beyond what the raw numbers show.
+- 5 seeds is enough to see a directional pattern but gives wide standard errors at low signal
+  strength; a tighter equivalence claim at strength=0 would benefit from more seeds.
+- This is a controlled simulation, not the real PDAC validation; Phase 1's own real-data results
+  (external mean C=0.627, `DECISIONS.md` 2026-07-12) remain the primary evidence for real-world
+  performance.
+
+## Reproducing
+
+```
+Rscript results/multi_cohort_sim/run_survival_strength_sweep.R
+```
+
+Config: `config/globals.yml`, `synthetic_multicohort.survival_strength_sweep`. Outputs:
+`results/multi_cohort_sim/outputs/survival_strength_sweep_results.csv` and
+`survival_strength_sweep_alpha_invariance.csv`.

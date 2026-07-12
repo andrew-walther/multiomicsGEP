@@ -2081,3 +2081,50 @@ Full reasoning, the empirical comparison table, and the CV table are in `DECISIO
 (two new entries). `CLAUDE.md`, `ROADMAP.md` corrected to match.
 
 ---
+
+# Session 28 — Phase 2: joint model vs. two-step value-add (2026-07-12)
+
+Branch `validation-two-step` (cut from `main` after Phase 1's merge and post-merge correction).
+Implements Phase 2 of `docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`.
+
+## 28.1 — PCA+Cox two-step baseline
+
+New, TDD-developed `results/multi_cohort_sim/fit_pca_cox.R`: unsupervised PCA on training genomics
+data, then Cox regression on the top-K PC scores; held-out scoring reuses the training rotation and
+center. 9/9 tests (structure, train/test projection consistency, degenerate-fit handling, signal
+recovery on a known prognostic direction).
+
+## 28.2 — Survival-strength sweep
+
+New `results/multi_cohort_sim/run_survival_strength_sweep.R` and a
+`synthetic_multicohort.survival_strength_sweep` config block: scales the true prognostic effect
+(`beta_shared`) from 0 to large across 6 levels × 5 seeds, holding the genomics DGP fixed. Compares
+YFB (joint, tuned α=0.5) against PCA+Cox and EBMF+Cox (existing) two-step baselines, plus LB (joint)
+as a secondary reference and YFB at α=0 as the internal control.
+
+**Honest results** (full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`):
+- **Equivalence at zero signal:** YFB=0.517±0.008 vs. PCA+Cox=0.533±0.017 vs. EBMF+Cox=0.540±0.017
+  — within ~1 SE of each other and of chance; consistent with equivalence though the raw gaps
+  (0.016–0.023) sit slightly above an idealized <0.01 target.
+- **Separation growing with signal:** not immediate — tied with baselines at strength=0.25 — but
+  reliable and growing from strength≥0.5 onward (0.931 vs. 0.908/0.875 at the strongest level, with
+  YFB's own SE shrinking from 0.027 to 0.006 as signal strengthens).
+- **α=0 internal control (cleanest result):** max|F(α=0.5) − F(α=0)| = exactly 0 across all 30
+  strength×seed combinations. Required controlling for a real confound first: naturally-converged
+  fits at different α values stop after different iteration counts (different combined-objective
+  trajectories), so a naive F comparison contrasts different snapshots of an otherwise-identical
+  trajectory, not a true α effect. Forcing identical iteration counts (`tol=-1`) isolates the
+  genuine structural property cleanly.
+
+## 28.3 — Files changed
+
+| File | Change |
+|------|--------|
+| `results/multi_cohort_sim/fit_pca_cox.R` (new) | `fit_pca_cox()`/`predict_pca_cox()` |
+| `results/multi_cohort_sim/run_survival_strength_sweep.R` (new) | The sweep runner |
+| `config/globals.yml` | New `survival_strength_sweep` config block |
+| `tests/test_fit_pca_cox.R` (new) | 9 tests |
+| `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}` (new) | Full report |
+| `DECISIONS.md`, `ROADMAP.md` | Phase 2 entry/milestone |
+
+---

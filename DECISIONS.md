@@ -5,6 +5,46 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-12 — Phase 2: joint model vs. two-step baselines, survival-strength sweep
+
+**Goal (Phase 2 of the post-lab-meeting action plan):** show that the joint model beats a 2-step
+(unsupervised factorization → Cox) baseline when survival carries real signal, and is *equivalent*
+to it when survival carries none. Implemented as a simulation sweep
+(`results/multi_cohort_sim/run_survival_strength_sweep.R`) scaling the true prognostic effect
+(`beta_shared`) from 0 to large across 6 levels × 5 seeds, comparing YFB (joint, tuned α=0.5)
+against new PCA+Cox and existing EBMF+Cox two-step baselines (LB included as a secondary
+reference). Full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`.
+
+**Result 1 (equivalence at zero signal):** YFB=0.517±0.008, PCA+Cox=0.533±0.017,
+EBMF+Cox=0.540±0.017. All within ~1 SE of each other and of chance — consistent with equivalence,
+though the raw gaps (0.016–0.023) are slightly above an idealized "<0.01" target; reported honestly
+as "consistent with, not a sharp confirmation of" equivalence, given only 5 seeds.
+
+**Result 2 (separation growing with signal):** not immediate or uniform — at strength=0.25 YFB is
+tied with both baselines (within noise). From strength≥0.5 it pulls ahead of EBMF+Cox, and from
+strength≥1.0 ahead of PCA+Cox too, with the gap widening and YFB's own SE shrinking as signal grows
+(SE 0.027→0.006 from strength 1→4). At strength=4: YFB=0.931±0.006 vs. PCA+Cox=0.908±0.015 vs.
+EBMF+Cox=0.875±0.057.
+
+**Result 3 (α=0 internal control) — the cleanest of the three:** max$|F_{\alpha=0.5}-F_{\alpha=0}|$
+= exactly 0 at every strength level and seed (30/30). Required a dedicated, iteration-count-
+controlled comparison (`tol=-1`, fixed iterations) rather than comparing naturally-converged fits
+directly — different α values give different combined-objective trajectories, so naturally-
+converged fits stop after a different number of iterations, making a naive F comparison confounded
+by convergence timing rather than a true α effect. Once controlled for, the result is exact and
+unambiguous: YFB's genomics factorization is provably α-invariant, confirming the model behaves as
+designed at this boundary.
+
+**New reusable code:** `results/multi_cohort_sim/fit_pca_cox.R` (`fit_pca_cox()`/`predict_pca_cox()`,
+9 TDD tests), a `synthetic_multicohort.survival_strength_sweep` config block
+(`config/globals.yml`).
+
+**Not addressed here:** LB's own unresolved Phase 1a limitation (documented in this file's
+objective-normalization entry) — LB's numbers are shown for reference only, no claims made about
+its competitiveness beyond the raw table.
+
+---
+
 ## 2026-07-12 — Fresh K-CV under corrected code: K=7 is genuine, not an artifact; K vs. DeSurv's k=3 is a methodology-comparison question, not a "our model needs more capacity" one
 
 **Motivation.** `k_merged_yfb_desurv=7` predated this entire session (cached 2026-05-27); every

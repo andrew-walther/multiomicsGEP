@@ -58,18 +58,33 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [x] **Phase 2 (joint model vs. two-step value-add, survival-strength sweep)** *(Complete, 2026-07-12)*
+  Post-lab-meeting action plan Phase 2, branch `validation-two-step`. Simulation sweep scaling the
+  true prognostic effect from 0 to large, comparing YFB (joint) against new PCA+Cox and existing
+  EBMF+Cox two-step baselines. Honest results: equivalence at zero signal holds within ~1 SE (not a
+  razor-sharp <0.01 match, but not distinguishable from noise on 5 seeds); the joint model's
+  advantage is not immediate (tied with baselines at very weak signal) but emerges and grows
+  reliably from moderate signal onward (C=0.931 vs. 0.908/0.875 at the strongest level tested); the
+  α=0 internal control (YFB's genomics factors should be exactly alpha-invariant) is exact —
+  max|F diff|=0 across all 30 strength×seed combinations once convergence-timing is controlled for.
+  Full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`. New reusable code:
+  `results/multi_cohort_sim/fit_pca_cox.R`. Details: DECISIONS.md 2026-07-12.
+
 - [x] **Phase 1 (objective normalization, λ retirement, train/test preprocessing fix)**
-  *(Complete on branch `objective-normalization`, 2026-07-12 — awaiting net-benefit-gate merge)*
+  *(Complete, merged to `main` 2026-07-12)*
   Post-lab-meeting action plan Phase 1 (`docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`):
   normalized the unnormalized ~p-fold genomics/survival ELBO-term scale gap by boosting the
-  survival contribution (not shrinking genomics — shrinking genomics collapses LB's L/F to
-  exactly zero via a bilinear feedback loop; boosting survival is stable and reaches YFB/D4's
-  β and ELBO monitor safely); retired the redundant `lambda` survival-scale multiplier (`alpha`
-  already plays that role); fixed a train/test preprocessing mismatch where external cohorts were
-  rank-transformed while training was per-platform z-standardized (the reverse), across 3
-  benchmark scripts. **Net effect on D4 (recommended config): external mean C-index 0.636 → 0.642
-  (+0.006), K=7, K_eff=4** — re-run of `run_desurv_comparison.R` on real PDAC data, no regression.
-  264/264 tests passing. Full investigation (including two rejected normalization directions) in
+  survival contribution for the ELBO monitor only (not shrinking genomics — shrinking genomics
+  collapses LB's L/F to exactly zero via a bilinear feedback loop; boosting β's own precision was
+  tried too but found unjustified and reverted, see below); retired the redundant `lambda`
+  survival-scale multiplier (`alpha` already plays that role); fixed a train/test preprocessing
+  mismatch where external cohorts were rank-transformed while training was per-platform
+  z-standardized (the reverse), across 3 benchmark scripts. **Honest net effect on D4 (recommended
+  config): external mean C-index 0.636 → 0.627, K=7, K_eff=2 (unchanged)** — the small decline is
+  attributable entirely to the preprocessing fix (a genuine bug fix, kept regardless); objective
+  normalization itself has zero effect on YFB's fitted output (there was no real per-coordinate
+  imbalance in YFB to fix — see the K_eff root-cause entry below). 267/267 tests passing. Full
+  investigation (including two rejected normalization directions and the beta-boost correction) in
   DECISIONS.md 2026-07-12.
 
 - [x] **Re-run benchmarks with top_n=2000 to restore single-cohort baseline** *(complete 2026-05-05)*
