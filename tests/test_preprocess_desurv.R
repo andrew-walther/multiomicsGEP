@@ -61,6 +61,52 @@ run_test("T1.5: preprocess_desurv_cohort applies log-filter-rank pipeline", {
               "Each subject should have ranks 1..p after preprocessing")
 })
 
+run_test("T1.5b: preprocess_desurv_cohort defaults to rank_transform=TRUE (backward compatible)", {
+  Y <- rbind(
+    c(0, 10, 30, 5),
+    c(0, 20, 5, 15),
+    c(0, 30, 10, 25)
+  )
+  gene_names <- c("g1", "g2", "g3", "g4")
+  out <- preprocess_desurv_cohort(Y, gene_names, top_n = 3, cohort_name = "toy")
+  assert_true(all(apply(out$Y, 1, function(x) setequal(as.numeric(x), 1:3))),
+              "Default behavior must still rank-transform (backward compatible)")
+})
+
+run_test("Phase1c-T1: rank_transform=FALSE, per_platform_standardize=TRUE gives per-gene mean~0, sd~1 (not ranks)", {
+  # Matches the training pipeline's per_platform_standardize step
+  # (code/preprocess_desurv.R's preprocess_merged_cohorts with
+  # per_platform_standardize=TRUE, rank_transform=FALSE) -- external cohort
+  # preprocessing must use the SAME transform, not the default rank transform.
+  set.seed(11)
+  Y <- matrix(rnorm(20 * 5, mean = 10, sd = 3), 20, 5)
+  gene_names <- paste0("g", 1:5)
+  out <- preprocess_desurv_cohort(Y, gene_names, top_n = NULL,
+                                  rank_transform = FALSE,
+                                  per_platform_standardize = TRUE,
+                                  cohort_name = "ext")
+  assert_near(colMeans(out$Y), rep(0, 5), tol = 1e-8,
+              msg = "per_platform_standardize should give colMean ~ 0")
+  assert_near(apply(out$Y, 2, sd), rep(1, 5), tol = 1e-8,
+              msg = "per_platform_standardize should give colSD ~ 1")
+  # Explicitly NOT rank-transformed: values should not be a permutation of 1:p
+  assert_true(!all(apply(out$Y, 1, function(x) setequal(round(x, 6), round(rank(x), 6)))),
+              "Should not be rank-transformed when rank_transform=FALSE")
+})
+
+run_test("Phase1c-T2: rank_transform=FALSE with per_platform_standardize=FALSE skips both transforms (raw log-scale passthrough)", {
+  set.seed(12)
+  Y <- matrix(rnorm(10 * 4, mean = 5, sd = 2), 10, 4)
+  gene_names <- paste0("g", 1:4)
+  out <- preprocess_desurv_cohort(Y, gene_names, top_n = NULL,
+                                  log_transform = FALSE,
+                                  rank_transform = FALSE,
+                                  per_platform_standardize = FALSE,
+                                  cohort_name = "raw")
+  assert_near(out$Y, Y, tol = 1e-10,
+              msg = "With both transforms off and no log transform, Y should pass through unchanged")
+})
+
 run_test("T1.6: intersect_preprocessed_cohorts subsets to common genes in reference order", {
   c1 <- list(Y = matrix(1:6, nrow = 2), gene_names = c("g1", "g2", "g3"), p = 3L)
   c2 <- list(Y = matrix(7:12, nrow = 2), gene_names = c("g3", "g2", "g4"), p = 3L)

@@ -256,12 +256,18 @@ if (!pdac_available || length(fit_yfb) == 0) {
     for (cohort in EXTERNAL_COHORTS) {
       tryCatch({
         raw     <- load_pdac_raw(cohort, PDAC_DATA_ROOT)
+        # rank_transform/per_platform_standardize must match whatever this run's
+        # training used (line ~172 above: rank_transform=!NO_RANK,
+        # per_platform_standardize=PER_PLATFORM_NORM) -- otherwise external
+        # cohorts are preprocessed inconsistently with training (see DECISIONS.md).
         ext_pre <- preprocess_desurv_cohort(
           Y             = raw$Y,
           gene_names    = raw$gene_names,
           top_n         = NULL,
           log_transform = PLATFORM_LOG_TRANSFORM[[cohort]],
-          cohort_name   = cohort
+          cohort_name   = cohort,
+          rank_transform           = !NO_RANK,
+          per_platform_standardize = PER_PLATFORM_NORM
         )
         common <- intersect(tr_genes, ext_pre$gene_names)
         if (length(common) < 10) {

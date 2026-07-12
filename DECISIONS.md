@@ -5,6 +5,56 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-12 — Phase 1c: fix external-cohort preprocessing to match training (rank vs. per-platform z-std)
+
+**Problem.** `preprocess_desurv_cohort()` (`code/preprocess_desurv.R`) unconditionally
+per-subject rank-transformed and never per-platform z-standardized. Several benchmark scripts'
+training preprocessing (`preprocess_merged_cohorts(..., rank_transform=FALSE,
+per_platform_standardize=TRUE, ...)`) does the exact opposite. External cohorts were therefore
+preprocessed inconsistently with training in every script using this DeSurv-aligned pipeline.
+
+**Fix:** `preprocess_desurv_cohort()` gained two new parameters, `rank_transform = TRUE` and
+`per_platform_standardize = FALSE` (both defaults preserve prior behavior for existing callers).
+Column-wise z-standardization commutes with the later `intersect()`-based gene-set subsetting
+(a gene's z-score depends only on its own across-subject mean/SD, not on which other genes are
+present), so computing it before vs. after the training-gene intersection gives identical values
+for the retained genes — no ordering concern.
+
+**Fixed (mechanical, single training config per run — straightforward to match):**
+- `results/benchmark_sim/run_desurv_comparison.R` (Section 6, external validation for D1-D5):
+  now passes `rank_transform=FALSE, per_platform_standardize=TRUE`, matching Section 3's training
+  call for every config. This is the D4 recommended-configuration benchmark.
+- `results/benchmark_sim/run_ebmf_cox_external.R` (the EBMF→Cox 2-step baseline that Phase 2's
+  joint-vs-2-step comparison depends on): same fix — its training call is explicitly commented
+  "matches D4 training preprocessing," so its external validation must too.
+- `results/benchmark_sim/run_YFB_benchmark.R`: training's rank/per-platform settings are
+  CLI-flag-controlled (`--no-rank`, `--per-platform-norm`); external validation now threads the
+  same flags through (`rank_transform = !NO_RANK, per_platform_standardize = PER_PLATFORM_NORM`)
+  instead of always using the function's defaults.
+- `results/benchmark_sim/run_LB_benchmark.R`: checked and found **already consistent** — its
+  training call uses `rank_transform=TRUE` with no `per_platform_standardize` (i.e. the same
+  defaults `preprocess_desurv_cohort()` already uses for external validation) — no change needed.
+
+**Deferred, NOT fixed (documented, not silently left):**
+- `results/benchmark_sim/run_merged_benchmark.R` (the older, largely-superseded 18-config M1-M18
+  comparison) computes external preprocessing **once** per cohort with fixed settings
+  (`top_n=2000`, defaults `rank_transform=TRUE, per_platform_standardize=FALSE`), then reuses that
+  single `pre_ext` across all 18 `MODEL_CONFIGS`, which have **heterogeneous** per-config
+  `rank`/`per_plat` training settings. A single external preprocessing cannot simultaneously match
+  18 different training preprocessing recipes. A correct fix requires computing external
+  preprocessing per unique `(rank, per_plat)` combination inside the config loop (mirroring how
+  `preproc_cache`/`gene_set_cache` already work for training) — a real restructuring, not a
+  parameter flip, and out of Phase 1's scope given this script is superseded by the D-series
+  pipeline for the current recommended configuration (D4). Flagged here so it is not mistaken for
+  "already fixed."
+
+**Affected files:** `code/preprocess_desurv.R`, `results/benchmark_sim/run_desurv_comparison.R`,
+`results/benchmark_sim/run_ebmf_cox_external.R`, `results/benchmark_sim/run_YFB_benchmark.R`,
+`tests/test_preprocess_desurv.R` (3 new tests: backward-compatible default, per-platform
+z-standardize behavior, both-transforms-off passthrough).
+
+---
+
 ## 2026-07-12 — Phase 1a objective normalization: boost survival (not shrink genomics), and only where it is safe
 
 **Background.** The Rashid lab's 6/18/2026 feedback noted that the genomics likelihood term of

@@ -214,12 +214,19 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 
   # top_n = NULL: keep all external genes; the intersection with train_genes
   # controls the final gene set (mirrors run_desurv_comparison.R).
+  #
+  # rank_transform=FALSE, per_platform_standardize=TRUE: matches training
+  # (section 1 above) exactly -- training here is per-platform z-standardized
+  # and never rank-transformed. Before Phase 1c this was the reverse, biasing
+  # the EBMF-vs-SBMF 2-step comparison this script produces (see DECISIONS.md).
   pre_ext <- preprocess_desurv_cohort(
     Y             = raw_ext$Y,
     gene_names    = raw_ext$gene_names,
     top_n         = NULL,
     log_transform = PLATFORM_LOG_TRANSFORM[[ext_cohort]],
-    cohort_name   = ext_cohort
+    cohort_name   = ext_cohort,
+    rank_transform           = FALSE,
+    per_platform_standardize = TRUE
   )
 
   common <- intersect(train_genes, pre_ext$gene_names)

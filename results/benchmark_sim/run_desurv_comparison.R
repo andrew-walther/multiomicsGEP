@@ -285,12 +285,21 @@ for (ext_cohort in EXTERNAL_COHORTS) {
   # top_n=NULL: keep all external genes; intersection with train_genes controls
   # the final gene set. This prevents the external-cohort top-N filter from
   # discarding genes that happen to be in the training gene set.
+  #
+  # rank_transform=FALSE, per_platform_standardize=TRUE: matches the training
+  # preprocessing exactly (Section 3 above calls preprocess_merged_cohorts with
+  # the same two settings for every DESURV_CONFIGS entry, including D1/D2).
+  # Before Phase 1c this was the reverse -- external cohorts were rank-
+  # transformed and never per-platform z-standardized, while training was
+  # per-platform z-standardized and never rank-transformed. See DECISIONS.md.
   pre_ext <- preprocess_desurv_cohort(
     Y             = raw_ext$Y,
     gene_names    = raw_ext$gene_names,
     top_n         = NULL,
     log_transform = PLATFORM_LOG_TRANSFORM[[ext_cohort]],
-    cohort_name   = ext_cohort
+    cohort_name   = ext_cohort,
+    rank_transform           = FALSE,
+    per_platform_standardize = TRUE
   )
 
   for (dcfg in DESURV_CONFIGS) {
