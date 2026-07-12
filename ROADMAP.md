@@ -275,22 +275,37 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 📐 Model Selection
 
-- [ ] **Recalibrate `beta_threshold` against Phase 1a's boosted β precision** `[Priority: Medium]` `[Effort: Low]`
-  D4's K_eff rose from 2 to 4 after Phase 1 (objective normalization + λ retirement), alongside
-  the external C-index gain (0.636→0.642). Inspecting the actual β values: the two original
-  active factors remain dominant and consistent with the pre-Phase-1 result (β≈+0.019 and
-  β≈−0.042, vs. previously reported +0.011/−0.041 — same identity, same sign, similar
-  magnitude), while the two *newly*-active factors are only marginally above
-  `beta_threshold=0.001` (β≈+0.0034, +0.0036). `beta_threshold` (`config/globals.yml`,
-  `k_selection.beta_threshold`) was calibrated against the pre-Phase-1 β scale; Phase 1a's
-  survival-boost intentionally increases β's absolute precision (less EBNM shrinkage), so the
-  same fixed cutoff no longer necessarily separates "real" from "borderline" factors the way it
-  did before. Before treating K_eff=4 as a genuine parsimony change (vs. a threshold artifact),
-  re-derive or re-validate `beta_threshold` under the new precision regime — e.g. via PVE-based
-  thresholding (already available, `k_selection.pve_threshold`) as a cross-check, or a
-  CV-stability check on which factors survive across resamples. Relevant to Phase 3's own
-  K/K_eff analysis (below) — do this before or alongside Phase 3 rather than separately.
-  *Flagged: DECISIONS.md 2026-07-12, CLAUDE.md "Current model status."*
+- [x] **K_eff 2→4 root-caused and resolved (not a `beta_threshold` calibration issue)** *(Complete — 2026-07-12)*
+  D4's K_eff rose from 2 to 4 after the initial Phase 1 merge, alongside an apparent external
+  C-index gain (0.636→0.642). Root cause, confirmed directly (not `beta_threshold` miscalibration
+  as first suspected): an implementation detail in Phase 1a's objective normalization
+  (`boost_beta=TRUE`) boosted β's own EBNM precision by a factor of p in *both* models, even
+  though β's coordinate update has no genomics term competing with it in its own formula in
+  either model — the genomics/survival imbalance Phase 1a targets does not structurally exist
+  for β at all, so this boost corrected no real imbalance; it only reduced EBNM shrinkage,
+  inflating K_eff without reflecting genuine new survival signal. Fix: `boost_beta` now defaults
+  to `FALSE` in both `fit_supervised_mf_modular()` and `fit_cox_on_yf()`. Confirmed on real
+  data: with `boost_beta=FALSE`, D4's β values are essentially identical to the pre-Phase-1
+  baseline (+0.0115/−0.0404 vs. previously +0.011/−0.041) and K_eff is back to 2. The honest
+  post-Phase-1 external C-index is **0.627** (down slightly from 0.636, attributable entirely to
+  Phase 1c's preprocessing fix, not 1a) — see `DECISIONS.md` 2026-07-12 for the full comparison
+  table and `CLAUDE.md` "Current model status" for the corrected headline numbers.
+
+- [x] **Re-evaluate K=7's parsimony now that the objective/preprocessing fixes are settled** *(Complete — 2026-07-12)*
+  Fresh `select_K_cv()` run (YFB, D4 preprocessing, K grid 2:10, no floor imposed a priori) under
+  the corrected code (`boost_beta=FALSE`, fixed preprocessing): **K=7 is genuine, not an
+  artifact.** A real, non-noise jump exists between K=6 (mean C=0.593) and K=7 (0.633) — larger
+  than any fold's SE (~0.03) — with K=8 the actual peak (0.651) and K=7 the 1-SE-simplest choice
+  tied with it. K=2 through K=6 are all meaningfully worse, not just noisier. Kept K=7. The
+  K=7-vs-DeSurv's-k=3 gap is attributable to two confirmed methodology differences (DeSurv jointly
+  tunes k/α/λ via Bayesian optimization with a fixed elastic-net penalty; we tune only K via CV
+  with α fixed and no penalty at all) rather than evidence that the datasets themselves demand
+  more latent structure — a fair comparison needs a matched-protocol re-run (Phase 2/6), not a
+  different K-CV on our side. K_eff=2 (survival-active factors) already tracks DeSurv's own ~1
+  reasonably well; the parsimony story that holds up is about *effective*, not total, factors.
+  Full table and reasoning: `DECISIONS.md` 2026-07-12.
+  *Files: `results/benchmark_sim/run_merged_kcv.R` (existing infra), a focused ad-hoc re-run for
+  the D4 (YFB DeSurv-aligned) config specifically.*
 
 - [x] **K selection via cross-validated C-index** *(Complete — Phase 4, 2026-05-06)*
   `select_K_cv()` implemented in `code/select_K.R` with 1-SE rule; accepts `model="LB"` or

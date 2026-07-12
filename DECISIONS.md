@@ -5,6 +5,115 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-12 — Fresh K-CV under corrected code: K=7 is genuine, not an artifact; K vs. DeSurv's k=3 is a methodology-comparison question, not a "our model needs more capacity" one
+
+**Motivation.** `k_merged_yfb_desurv=7` predated this entire session (cached 2026-05-27); every
+benchmark re-run since then skipped K-CV because a value was already present. It had never been
+selected under the corrected code (`boost_beta=FALSE`, fixed train/test preprocessing). Re-ran
+`select_K_cv()` fresh (YFB, D4 preprocessing, K grid 2:10, 5-fold, no floor imposed) to see the
+real curve before deciding whether to enforce more parsimony.
+
+**Result (no floor applied):**
+
+| K | 2 | 3 | 4 | 5 | 6 | **7** | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|
+| mean C | 0.567 | 0.568 | 0.573 | 0.587 | 0.593 | **0.633** | 0.651 (best) | 0.628 | 0.620 |
+| SE | 0.037 | 0.031 | 0.034 | 0.029 | 0.033 | 0.029 | 0.026 | 0.032 | 0.029 |
+
+**Conclusion: K=7 is not an artifact of the K≥3 floor, the pre-Phase-1 code, or noise.** There is a
+genuine, non-noise jump between K=6 (0.593) and K=7 (0.633) — about 4 points, larger than any
+single fold's SE (~0.03) — and K=2 through K=6 are all more than 1 SE below the K=8 peak (0.651).
+The 1-SE rule's selection of K=7 (smallest K statistically tied with the best) is honest evidence,
+not a selection-procedure quirk. Reducing K below ~7 costs real, held-out predictive performance
+on this model/data/preprocessing combination.
+
+**Why doesn't this match DeSurv's k=3, given identical training/validation data?** Two confirmed
+methodological differences, not a data difference:
+1. DeSurv tunes **k, α, and its elastic-net penalty λ jointly via Bayesian optimization**
+   (`presentation/walther_lab_meeting_06_18_2026/lab_meeting_june18.qmd`, comparison table). We
+   tune **only K via CV**, with α fixed at 0.5 and no elastic-net penalty at all (§ removed
+   2026-07-12, Phase 1b — and as established there, our retired λ was never analogous to DeSurv's
+   anyway). A joint search over 3 interacting hyperparameters can land in a different region of
+   the trade-off surface than a 1-hyperparameter search with the other two frozen, even on
+   identical data.
+2. DeSurv's shrinkage is a **fixed, jointly-tuned elastic-net penalty** — a mechanism that can
+   aggressively collapse redundant factors during optimization. Ours is **empirical-Bayes
+   adaptive shrinkage** (point-exponential priors on L/F), a different mechanism, not jointly
+   tuned with K.
+
+**Not yet verified** (stated as a hypothesis, not a finding): the working explanation that the
+"extra" ~5 factors beyond K_eff=2 are earning their keep on genomics reconstruction specifically
+(rather than survival) is *inferred* from K_eff staying low regardless of total K — a direct
+reconstruction-quality-vs-K curve (RMSE or per-factor PVE) has not been pulled to confirm this.
+
+**Decision:** keep K=7 for D4 (matches 1-SE rule, nearly identical to the K=8 peak, simpler).
+Do not attempt to force a smaller K without cause — the CV evidence does not support it. The
+"why 7 vs DeSurv's 3" question is a **matched-protocol comparison problem** (Phase 2/6's planned
+same-protocol DeSurv head-to-head), not something resolvable by re-running our own K-CV
+differently. K_eff=2 (survival-active factors) already matches DeSurv's own finding of survival
+concentrated in ~1 factor reasonably well — the parsimony story that holds up is about *effective*
+factors, not total factors.
+
+**Affected files:** `results/benchmark_sim/outputs/desurv_comparison/kcv_yfb_desurv_corrected.{csv,rds}`
+(new); no code changes (K unchanged in `config/globals.yml`).
+
+---
+
+## 2026-07-12 — Phase 1a's beta boost was unjustified: corrected default is `boost_beta=FALSE`; honest Phase 1 conclusion is "no performance benefit for YFB"
+
+**What was wrong.** The Phase 1a design merged earlier the same day boosted beta's own EBNM
+precision by a factor of p (`survival_divisor` threaded into `update_beta_k` via
+`norm_convention`), justified as "safe" because beta has no bilinear L↔F-style feedback coupling.
+Safe is not the same as *necessary*: beta's own coordinate update (`A_k = alpha * sum(w * EL2_k
+or ZF_k^2) / survival_divisor`) has **no genomics term competing with it in its own formula, in
+either model**. The genomics/survival scale imbalance Phase 1a set out to fix only structurally
+exists in LB's L-update, where both terms are added together in one formula — it does not exist
+for beta in either model. Boosting beta's precision anyway did not correct any real imbalance; it
+only reduced EBNM shrinkage, which mechanically pulls more factors above a fixed
+`beta_threshold` without reflecting a genuine gain in survival signal.
+
+**Empirical confirmation (D4, K=7, real PDAC training + 5-cohort external validation):**
+
+| Configuration | Mean external C | K_eff | β (factors 3, 5, 6, 7) |
+|---|---|---|---|
+| Pre-Phase-1 baseline (documented 2026-05-27) | 0.636 | 2 | +0.011, —, —, −0.041 |
+| Phase 1 corrected (`boost_beta=FALSE`) | **0.6267** | **2** | +0.0115, 0, 0, −0.0404 |
+| Phase 1 as first merged (`boost_beta=TRUE`) | 0.6419 | 4 | +0.0186, 0.0034, 0.0036, −0.0425 |
+
+With `boost_beta=FALSE`, β's values are essentially bit-identical to the pre-Phase-1 baseline —
+confirming beta genuinely never needed rebalancing. This also means Phase 1a has **zero effect
+on any of YFB's fitted output** (EL/EF were already confirmed bit-identical regardless of
+`norm_convention`; now EBeta is too) — its only surviving effect is the ELBO monitor's reported
+scale during fitting (a diagnostic/convergence quantity, not a fitted parameter). Consequently,
+**the 0.636→0.642 "improvement" reported when Phase 1 first merged was an artifact of this
+unjustified boost, not a genuine effect of objective normalization.**
+
+**Decision:**
+- `boost_beta` (new parameter on `fit_supervised_mf_modular()` and `fit_cox_on_yf()`) defaults to
+  `FALSE` in both models. `TRUE` reproduces the superseded design, retained only for reference/
+  comparison, not recommended.
+- **Honest Phase 1 conclusion for YFB:** objective normalization (1a) provides no performance
+  benefit — there was no real per-coordinate imbalance in YFB to fix in the first place (L is
+  pure-genomics, β is pure-survival, they never share a coordinate). It is kept anyway because
+  the ELBO-monitor fix is a genuine (if purely internal) correctness improvement: previously
+  `alpha=0.5` did not mean "balanced" even in the quantity CAVI itself uses for convergence
+  monitoring, regardless of whether that quantity affects the final fit.
+- **The corrected, final post-Phase-1 numbers for D4:** mean external C = 0.627 (down slightly
+  from 0.636, attributable entirely to Phase 1c's preprocessing fix — see that entry below, not
+  to 1a), K_eff = 2 (unchanged from before Phase 1 — the parsimony goal is fully preserved).
+- Superseded the "D4 K_eff rose 2→4... not yet confirmed" entry below (kept for the investigation
+  record) and the initial merge commit's headline numbers (`CLAUDE.md`, `ROADMAP.md`,
+  `PROJECT_STATUS.qmd` corrected in the same pass as this entry).
+- **Not addressed by this fix:** Phase 1a still provides no working per-coordinate fix for LB
+  (unresolved, deferred — both shrink-genomics and boost-survival directions destabilize LB's L,
+  as documented in the objective-normalization entry below). This does not affect YFB/D4.
+
+**Affected files:** `code/fit_modular.R`, `code/fit_cox_on_yf.R` (`boost_beta` parameter,
+`beta_divisor` exposed in the returned result), `tests/test_normalization.R` (3 new tests: T_conv.8-10),
+`CLAUDE.md`, `ROADMAP.md`, `PROJECT_STATUS.qmd` (corrected headline numbers).
+
+---
+
 ## 2026-07-12 — Phase 1b: retire lambda, alpha is the sole genomics/survival mixing weight
 
 **Decision:** Removed the `lambda` survival-scale multiplier from `update_L_k`/`update_L_all`
@@ -33,6 +142,10 @@ in `results/benchmark_sim/` that read `cfg$...$lambda`.
 ---
 
 ## 2026-07-12 — D4 K_eff rose 2→4 after Phase 1; likely a `beta_threshold` scale artifact, not yet confirmed
+
+> **SUPERSEDED same day** — see "Phase 1a's beta boost was unjustified" entry above. The root
+> cause was not `beta_threshold` calibration; it was an unjustified precision boost applied to
+> beta's own update. Retained for the record of how the investigation proceeded.
 
 **Observation.** Re-running `run_desurv_comparison.R` after Phase 1 (objective normalization, λ
 retirement, preprocessing fix) gives D4 external mean C-index 0.636 → 0.642 (K=7, up), but

@@ -122,16 +122,29 @@ calc_cox_taylor_yf <- function(eta, time, status) {
 #'                 reach update_L_surv_YFB_k/update_F_surv_YFB_k -- there is no
 #'                 imbalance to fix there, and rescaling a pure-genomics precision
 #'                 would only add a gratuitous change with no benefit. Only the
-#'                 beta update (survival_divisor) and the ELBO assembly (both
-#'                 divisors, for reporting/monitoring) are affected here.
-#'                 "per_p" (default) -- BOOSTS survival (A_k/B_k in update_beta_k,
-#'                   survival ELBO term) by a factor of p; genomics is left
-#'                   unchanged. Verified empirically to leave YFB's EL/EF exactly
-#'                   unchanged (they never receive genomics_divisor) and to avoid
-#'                   the L<->F collapse seen in LB under a genomics-shrinking
+#'                 ELBO assembly (both divisors, reporting/monitoring only) is
+#'                 affected by norm_convention itself; the beta update is
+#'                 governed separately by `boost_beta` (see below).
+#'                 "per_p" (default) -- boosts the survival ELBO term (reporting
+#'                   only) by a factor of p; genomics is left unchanged.
+#'                   Verified empirically to leave YFB's EL/EF exactly unchanged
+#'                   (they never receive genomics_divisor) and to avoid the
+#'                   L<->F collapse seen in LB under a genomics-shrinking
 #'                   convention -- see DECISIONS.md 2026-07-12.
 #'                 "np_n" -- literal genomics/(n*p), survival/n; retained for
 #'                   empirical comparison (genomics-shrinking direction).
+#' @param boost_beta logical (default FALSE). Beta's own coordinate update has
+#'                 no genomics term competing with it in its own formula (ZF is
+#'                 observed, 100% survival) -- the genomics/survival imbalance
+#'                 `norm_convention` targets does not structurally exist there,
+#'                 so boosting beta's precision does not correct any real
+#'                 imbalance for it; it only reduces EBNM shrinkage, which
+#'                 inflates K_eff (more factors cross a fixed beta_threshold)
+#'                 without necessarily reflecting a genuine gain in survival
+#'                 signal. Default FALSE leaves beta's precision unboosted
+#'                 regardless of `norm_convention`. TRUE reproduces the earlier
+#'                 (superseded) design that boosted it alongside the ELBO
+#'                 monitor. See DECISIONS.md 2026-07-12.
 #' @param init_method character: "svd" (default), "random", or "custom"
 #' @param EL_init  Optional n x K matrix: custom initial loadings
 #' @param EF_init  Optional p x K matrix: custom initial factors
@@ -170,6 +183,7 @@ fit_cox_on_yf <- function(Y, time, status,
                            prior_beta   = "normal",
                            alpha        = 0.5,
                            norm_convention = c("per_p", "np_n"),
+                           boost_beta   = FALSE,
                            init_method  = "svd",
                            EL_init      = NULL,
                            EF_init      = NULL,
@@ -202,6 +216,13 @@ fit_cox_on_yf <- function(Y, time, status,
   norm_convention  <- match.arg(norm_convention)
   genomics_divisor <- if (norm_convention == "np_n") n * p else 1
   survival_divisor <- if (norm_convention == "np_n") n   else 1 / p
+  # beta's own coordinate update has no genomics term competing with it in its
+  # own formula in either model (100% survival) -- the genomics/survival
+  # imbalance this normalization targets does not structurally exist there.
+  # boost_beta=FALSE (default) leaves beta's precision at its original scale;
+  # =TRUE reproduces the earlier (superseded) design that also boosted it.
+  # See DECISIONS.md 2026-07-12.
+  beta_divisor <- if (boost_beta) survival_divisor else 1
 
   # ---- Progressive α schedule ----
   use_alpha_schedule <- !is.null(alpha_schedule)
@@ -354,7 +375,7 @@ fit_cox_on_yf <- function(Y, time, status,
         # Cluster B: ZF[,k] is observed, so its "second moment" = ZF[,k]^2 (no posterior variance)
         res_b    <- update_beta_k(w_b, z_no_k_b, ZF_b[, k], ZF_b[, k]^2,
                                   prior_family = prior_beta, alpha = alpha,
-                                  survival_divisor = survival_divisor)
+                                  survival_divisor = beta_divisor)
         EBeta[k]  <- res_b$mean
         EBeta2[k] <- res_b$second
       }
@@ -463,7 +484,7 @@ fit_cox_on_yf <- function(Y, time, status,
       # breaking the chicken-and-egg that plagued Cluster A's L update.
       res_beta    <- update_beta_k(w, z_no_k, ZF[, k], ZF[, k]^2,
                                    prior_family = prior_beta, alpha = alpha_iter,
-                                   survival_divisor = survival_divisor)
+                                   survival_divisor = beta_divisor)
       EBeta[k]    <- res_beta$mean
       EBeta2[k]   <- res_beta$second
       kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
@@ -644,7 +665,8 @@ fit_cox_on_yf <- function(Y, time, status,
     history  = history,
     norm_convention  = norm_convention,
     genomics_divisor = genomics_divisor,
-    survival_divisor = survival_divisor
+    survival_divisor = survival_divisor,
+    beta_divisor     = beta_divisor
   )
   if (!is.null(cohort_id) && C_cols > 0) {
     result$L_cohort   <- L_cohort

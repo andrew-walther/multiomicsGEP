@@ -164,3 +164,75 @@ run_test("T_conv.7: LB per_p (boost-survival) avoids the L/F/beta collapse seen 
   assert_true(max(abs(res$EL)) > 1e-3, "LB per_p: EL should not collapse to zero")
   assert_true(max(abs(res$EF)) > 1e-3, "LB per_p: EF should not collapse to zero")
 })
+
+cat("\n=== T_conv: boost_beta decoupling (does beta actually need rebalancing?) ===\n")
+
+#' Shared fixture: synthetic data with REAL survival signal tied to a genomics
+#' factor, so beta does not trivially collapse to zero regardless of
+#' normalization (a pure-noise DGP would pass these tests vacuously).
+.beta_boost_fixture <- function(seed, n = 80, p = 100, K_true = 2) {
+  set.seed(seed)
+  L_true <- matrix(rnorm(n * K_true), n, K_true)
+  F_true <- matrix(rnorm(p * K_true), p, K_true)
+  Y <- L_true %*% t(F_true) + matrix(rnorm(n * p, sd = 0.5), n, p)
+  lp <- L_true[, 1]
+  time   <- rweibull(n, shape = 1.5, scale = exp(-lp / 1.5))
+  status <- as.integer(time < stats::quantile(time, 0.7))
+  list(Y = Y, time = time, status = status)
+}
+
+run_test("T_conv.8: YFB beta_divisor is 1 regardless of norm_convention when boost_beta=FALSE (default)", {
+  # Neither LB's nor YFB's beta update has a genomics term competing with it in
+  # its own formula (A_k = alpha*sum(w*EL2_k or ZF_k^2)/survival_divisor, no
+  # genomics term at all) -- the genomics/survival imbalance Phase 1a targets
+  # only structurally exists in LB's L update. Boosting beta's own precision
+  # does not correct any real imbalance for beta; it just changes its EBNM
+  # shrinkage strength. boost_beta=FALSE (the corrected default) leaves beta
+  # completely unaffected by norm_convention, in both models. Checked via the
+  # exposed $beta_divisor rather than emergent EBeta values, since YFB's
+  # default cox_warmstart=FALSE + "normal" prior has a known, pre-existing
+  # (Phase-1a-unrelated) tendency to collapse beta to exactly zero on small
+  # synthetic scenarios regardless of convention -- a deterministic check on
+  # the computed divisor avoids that unrelated confound entirely.
+  d <- .beta_boost_fixture(5001)
+
+  res_perp <- fit_cox_on_yf(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
+                            norm_convention = "per_p", verbose = FALSE,
+                            sign_correction = FALSE)
+  res_npn  <- fit_cox_on_yf(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
+                            norm_convention = "np_n", verbose = FALSE,
+                            sign_correction = FALSE)
+
+  assert_near(res_perp$beta_divisor, 1, tol = 1e-10, msg = "per_p: beta_divisor should be 1 (unboosted) by default")
+  assert_near(res_npn$beta_divisor,  1, tol = 1e-10, msg = "np_n: beta_divisor should be 1 (unboosted) by default")
+})
+
+run_test("T_conv.9: YFB boost_beta=TRUE sets beta_divisor to match survival_divisor", {
+  d <- .beta_boost_fixture(5002)
+
+  res <- fit_cox_on_yf(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
+                       norm_convention = "per_p", boost_beta = TRUE,
+                       verbose = FALSE, sign_correction = FALSE)
+
+  assert_near(res$beta_divisor, res$survival_divisor, tol = 1e-10,
+              msg = "boost_beta=TRUE: beta_divisor should equal survival_divisor")
+  assert_true(res$beta_divisor != 1,
+              "boost_beta=TRUE: beta_divisor should differ from the unboosted default of 1")
+})
+
+run_test("T_conv.10: LB boost_beta defaults to FALSE and threads through the burn-in path too", {
+  d <- .beta_boost_fixture(5003, n = 60, p = 80, K_true = 2)
+
+  set.seed(1)
+  res_perp <- fit_supervised_mf_modular(d$Y, d$time, d$status, K = 2, max_iter = 10, tol = -1,
+                                        norm_convention = "per_p", verbose = FALSE,
+                                        sign_correction = FALSE)
+  set.seed(1)
+  res_npn  <- fit_supervised_mf_modular(d$Y, d$time, d$status, K = 2, max_iter = 10, tol = -1,
+                                        norm_convention = "np_n", verbose = FALSE,
+                                        sign_correction = FALSE)
+
+  assert_true(max(abs(res_perp$EBeta)) > 1e-4, "sanity: beta should not have collapsed to zero")
+  assert_near(res_perp$EBeta, res_npn$EBeta, tol = 1e-8,
+              msg = "LB boost_beta=FALSE: EBeta should be identical across norm_convention")
+})

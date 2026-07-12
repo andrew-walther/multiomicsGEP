@@ -2048,4 +2048,36 @@ throughout.
 | `DECISIONS.md` | 4 entries, 2026-07-12 (normalization, λ retirement, preprocessing fix) |
 | `ROADMAP.md`, `CLAUDE.md` | Phase 1 milestone; updated D4 metrics; K_eff/`beta_threshold` open item |
 
+## 27.6 — Post-merge correction: beta boost was unjustified; fresh K-CV confirms K=7 is genuine
+
+After merging §27.1–27.5 to `main`, closer review of the K_eff 2→4 open item (flagged in §27.4)
+found the actual root cause and corrected it, and a fresh K-CV run answered the "is K=7 really
+necessary" question directly rather than by inference.
+
+**Beta boost correction.** Beta's own coordinate update has no genomics term competing with it in
+its own formula in either model (100% survival) — the genomics/survival imbalance Phase 1a
+targets does not structurally exist for beta. The merged design nonetheless boosted beta's
+precision by p (justified at the time as "safe," which is not the same as "necessary"). Confirmed
+empirically on real data: with the corrected default `boost_beta=FALSE`, D4's β values are
+essentially identical to the pre-Phase-1 baseline, K_eff reverts to 2, and the honest external
+C-index is **0.627** (not the previously-reported 0.642 — that number was an artifact of the
+unjustified boost). The 0.636→0.627 movement is attributable entirely to Phase 1c's preprocessing
+fix, not to Phase 1a, which now has zero effect on YFB's fitted output (ELBO-monitor-only).
+**Honest conclusion: Phase 1a's objective normalization provides no performance benefit for
+YFB** — there was no real per-coordinate imbalance there to begin with. It's kept anyway as a
+genuine, if purely internal, correctness fix to the ELBO monitor used for convergence.
+
+**Fresh K-CV (YFB, D4 preprocessing, K=2:10, no floor).** K=7 is genuine: a real, non-noise jump
+exists between K=6 (mean C=0.593) and K=7 (0.633), larger than the ~0.03 fold-to-fold SE; K=8 is
+the actual peak (0.651); K=2–6 are all meaningfully worse, not just noisier. Kept K=7. The
+7-vs-DeSurv's-3 gap traces to two confirmed methodology differences, not evidence the data itself
+needs more capacity: DeSurv jointly tunes k/α/λ via Bayesian optimization with a fixed elastic-net
+penalty, while we tune only K via CV with α fixed and no penalty. K_eff=2 already tracks DeSurv's
+own ~1 survival-active factor reasonably well — the parsimony story that holds up is about
+*effective*, not total, factors. A fair K comparison needs a matched-protocol DeSurv re-run
+(Phase 2/6), not a different K-CV on our side.
+
+Full reasoning, the empirical comparison table, and the CV table are in `DECISIONS.md` 2026-07-12
+(two new entries). `CLAUDE.md`, `ROADMAP.md` corrected to match.
+
 ---
