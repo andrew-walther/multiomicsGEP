@@ -1967,3 +1967,85 @@ the deck (no critical issues). Key corrections made during revision:
 | `ROADMAP.md` | Status → 2026-06-16; adverse/protective relabel; EBMF baseline + deck milestones |
 
 ---
+
+# Session 27 — Post-lab-meeting Phase 1: objective normalization, λ retirement, preprocessing fix (2026-07-12)
+
+Branch `objective-normalization` (cut from `main` at `07a429a`), merged to `main`. Implements
+Phase 1 of `docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`, the plan that triages
+the Rashid lab's 6/18/2026 feedback.
+
+## 27.1 — Objective normalization (Phase 1a): two rejected designs before a stable one
+
+The genomics ELBO term is O(n·p) in aggregate, survival is O(n) — an unnormalized ~p-fold scale
+gap that makes `alpha`'s `(1-alpha)/alpha` mixing uninterpretable (alpha=0.5 never meant
+"balanced"). Two direct-rescaling attempts were tried and **empirically rejected** for the LB
+(Cluster A) model, at both toy (n=150,p=200) and realistic PDAC scale (n=270,p=2000):
+
+1. **Divide genomics by p** (matches the plan's literal wording): L, F, and β collapsed to
+   *exactly zero*, reproducibly. Cause: L and F co-adapt bilinearly (L's precision depends on
+   F², F's on L²); reducing genomics' precision removes the accidental numerical safety margin
+   the unnormalized model relied on, and one factor's dip compounds into the other's.
+2. **Multiply survival by p instead** (avoids shrinking genomics): avoided the collapse in one
+   scenario but caused *unbounded divergence* (max|EL| > 600,000) in another — the exact fixture
+   `tests/test_elbo.R` already used. A scheduled/ramped introduction (reusing the existing
+   `alpha_schedule` mechanism) did not stabilize it either.
+
+**Shipped design:** `genomics_divisor`/`survival_divisor` (new parameters on `update_L_k`,
+`update_F_k`, `update_beta_k`, default 1 = no-op) are never passed to `update_L_k`/`update_F_k` in
+either model's CAVI loop — L/F precision stays at its original scale unconditionally. Only the
+ELBO monitor and the beta update (no bilinear coupling) receive the rebalancing, via a new
+`norm_convention` parameter (`"per_p"` default = boost survival by p; `"np_n"` = the literal
+convention, retained for comparison). **Consequence:** LB's own alpha-interpretability goal is
+only partially met (documented, deferred — not a silent gap). **YFB (the production/D4 model) is
+unaffected by this limitation**: its L is pure-genomics-only and F defaults to `alpha_F=0`, so
+there is no genomics/survival competition to rebalance in the first place; it gets the full,
+verified-stable treatment on β and the ELBO monitor. Full investigation in DECISIONS.md
+2026-07-12.
+
+## 27.2 — Retire `lambda` (Phase 1b)
+
+Removed the `lambda` survival-scale multiplier entirely (`update_L.R`, `fit_modular.R`,
+`fit_cox_on_yf.R` — already dead code there, `config/globals.yml`, 7 benchmark runners). `alpha`
+already plays the mixing-weight role `lambda` duplicated; DeSurv's own λ is an unrelated
+elastic-net penalty on β, a role already filled by this model's EBNM priors. Pure simplification,
+zero behavior change (no test referenced `lambda`; it always defaulted to a no-op 1.0).
+
+## 27.3 — Fix external-cohort preprocessing mismatch (Phase 1c)
+
+`preprocess_desurv_cohort()` unconditionally rank-transformed and never per-platform
+z-standardized; the DeSurv-aligned training pipeline (`preprocess_merged_cohorts`) does the
+opposite. Added `rank_transform`/`per_platform_standardize` parameters (defaults preserve prior
+behavior). Fixed at 3 call sites that needed it: `run_desurv_comparison.R` (the D4 benchmark),
+`run_ebmf_cox_external.R` (the EBMF 2-step baseline Phase 2 depends on — an independent-review
+catch, not in the original scope), and `run_YFB_benchmark.R` (CLI-flag-controlled). Checked and
+left alone: `run_LB_benchmark.R` (already consistent by coincidence of defaults) and
+`run_merged_benchmark.R` (18 heterogeneous configs reusing one external preprocessing call — a
+real restructuring needed, not a parameter flip; documented as a known, deferred limitation, not
+silently unfixed).
+
+## 27.4 — Real-data verification result
+
+Re-ran `run_desurv_comparison.R` (full, not `--quick`) on real PDAC data after all three
+sub-phases. **D4 external mean C-index: 0.636 → 0.642 (+0.006)**, K=7. **K_eff rose 2 → 4**: the
+two original active factors remain dominant and consistent in sign/magnitude with the pre-Phase-1
+result (β≈+0.019, −0.042 vs. previously +0.011, −0.041), while the two newly-active factors are
+only marginally above `beta_threshold=0.001` (β≈+0.0034, +0.0036) — plausibly a threshold-scale
+artifact of Phase 1a's boosted β precision rather than a genuine parsimony loss, but not yet
+confirmed either way. Flagged as an open item (ROADMAP.md, CLAUDE.md) to resolve before or
+alongside Phase 3's own K/K_eff analysis. 264/264 core tests + 81/81 real-data tests passing
+throughout.
+
+## 27.5 — Files changed
+
+| File | Change |
+|------|--------|
+| `code/update_L.R`, `code/update_F.R`, `code/update_beta.R` | `genomics_divisor`/`survival_divisor` params; λ removed |
+| `code/fit_modular.R`, `code/fit_cox_on_yf.R` | `norm_convention` param, ELBO assembly rebalanced, λ removed |
+| `code/preprocess_desurv.R` | `rank_transform`/`per_platform_standardize` params on `preprocess_desurv_cohort()` |
+| `config/globals.yml` | `lambda` keys removed |
+| 8 files in `results/benchmark_sim/` | λ call-site cleanup; 3 external-preprocessing fixes |
+| `tests/test_update_L.R`, `test_update_F.R`, `test_update_beta.R`, `test_normalization.R` (new), `test_preprocess_desurv.R`, `test_fit_modular_cohort.R` (regenerated baseline) | 18 new/updated tests |
+| `DECISIONS.md` | 4 entries, 2026-07-12 (normalization, λ retirement, preprocessing fix) |
+| `ROADMAP.md`, `CLAUDE.md` | Phase 1 milestone; updated D4 metrics; K_eff/`beta_threshold` open item |
+
+---

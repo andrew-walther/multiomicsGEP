@@ -32,6 +32,36 @@ in `results/benchmark_sim/` that read `cfg$...$lambda`.
 
 ---
 
+## 2026-07-12 — D4 K_eff rose 2→4 after Phase 1; likely a `beta_threshold` scale artifact, not yet confirmed
+
+**Observation.** Re-running `run_desurv_comparison.R` after Phase 1 (objective normalization, λ
+retirement, preprocessing fix) gives D4 external mean C-index 0.636 → 0.642 (K=7, up), but
+K_eff (factors with |β̂| > `beta_threshold`=0.001) rose from 2 to 4. Inspecting D4's actual β
+vector: `[0, 0, 0.0186, 0, 0.0034, 0.0036, -0.0425]`. The two originally-active factors (indices 3
+and 7) remain dominant and match the pre-Phase-1 result in sign and similar magnitude
+(previously β̂₃=+0.011, β̂₇=−0.041; now +0.0186, −0.0425 — same identity). The two *newly*-active
+factors (5, 6) sit at β≈0.0034–0.0036, only ~3.4× the threshold.
+
+**Interpretation (not yet confirmed).** Phase 1a's default `norm_convention="per_p"` boosts β's
+own precision by a factor of p in the beta update (see the 2026-07-12 objective-normalization
+entry above) — EBNM therefore shrinks β less aggressively overall than before Phase 1. This is
+consistent with two previously-suppressed, weak factors now crossing a `beta_threshold` that was
+calibrated against the *old*, unboosted β scale. It is also possible this reflects a genuine
+(if modest) gain in recoverable signal — the external C-index did improve. These are not
+distinguished by the evidence in hand.
+
+**Decision:** do not treat K_eff=4 as either a confirmed parsimony loss or a confirmed
+improvement yet. Flagged as an open item (`ROADMAP.md`) to resolve via a `beta_threshold`
+recalibration or cross-check (e.g. PVE-based thresholding, already available via
+`k_selection.pve_threshold`; or a CV-stability check on which factors survive resampling) before
+or alongside Phase 3's own K/K_eff analysis, which depends on exactly this question ("does K
+shrink toward DeSurv's 3 on the corrected objective, and how many factors are genuinely
+survival-active").
+
+**Affected files:** none (analysis only); follow-up tracked in `ROADMAP.md` under Model Selection.
+
+---
+
 ## 2026-07-12 — Phase 1c: fix external-cohort preprocessing to match training (rank vs. per-platform z-std)
 
 **Problem.** `preprocess_desurv_cohort()` (`code/preprocess_desurv.R`) unconditionally
