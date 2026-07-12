@@ -5,6 +5,33 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-12 — Phase 1b: retire lambda, alpha is the sole genomics/survival mixing weight
+
+**Decision:** Removed the `lambda` survival-scale multiplier from `update_L_k`/`update_L_all`
+(`code/update_L.R`), `fit_supervised_mf_modular()` (`code/fit_modular.R`), and `fit_cox_on_yf()`
+(`code/fit_cox_on_yf.R`, where it was already fully dead — accepted as a parameter but never
+referenced internally), plus every `config/globals.yml` entry and benchmark-runner call site that
+set it.
+
+**Reason.** `alpha`'s existing `(1-alpha)*genomics + alpha*survival` weighting already plays
+exactly the role a `(1-lambda)`/`lambda` pair would — `lambda` was a second, redundant knob
+multiplying only the survival side, always left at its no-op default (1.0) in every production
+config (`config/globals.yml`'s own comment: "lambda=1 matches or beats p/n and 2p/n"). DeSurv's own
+`λ` (Young et al., referenced in the post-lab-meeting plan) is not analogous to this parameter at
+all — it is an elastic-net penalty coefficient on β, a regularization role this model already fills
+via its empirical-Bayes (EBNM) priors on β (point_normal/point_laplace), not a second likelihood-
+mixing weight. No replacement parameter was needed.
+
+**Trade-offs:** None identified — no test file referenced `lambda`, and it was a no-op in every
+config, so this is a pure simplification with zero behavior change (261/261 tests passing,
+identical to before removal).
+
+**Affected files:** `code/update_L.R`, `code/fit_modular.R`, `code/fit_cox_on_yf.R`,
+`code/fit_modular_multistart.R` (docstring), `config/globals.yml`, and 7 benchmark runner scripts
+in `results/benchmark_sim/` that read `cfg$...$lambda`.
+
+---
+
 ## 2026-07-12 — Phase 1c: fix external-cohort preprocessing to match training (rank vs. per-platform z-std)
 
 **Problem.** `preprocess_desurv_cohort()` (`code/preprocess_desurv.R`) unconditionally
