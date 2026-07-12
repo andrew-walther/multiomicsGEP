@@ -34,7 +34,7 @@ C-index = 0.636 across 5 held-out PDAC cohorts). This is the baseline every chan
 | Why 7 factors (DeSurv=3)? K shrink if survival off? | K=7 by CV+1-SE+floor≥3; K_eff=2 active; no survival-off diagnostic | **Phase 3** |
 | Joint vs 2-step equivalence when survival has no signal | EBMF 2-step exists in `multi_cohort_sim`; no PCA+Cox baseline; no survival-strength sweep in main narrative | **Phase 2** (the value-add story) |
 | Factor interpretation (basal-like adverse / protective) + GO | Pathway-enrichment plan already written, not implemented (branch `pathway-enrichment-plan`) | **Phase 5** |
-| Paper repo / Quarto draft | Not started (`github.com/andrew-walther/SSBMF-paper`) | **Phase 6** |
+| Paper repo / Quarto draft | Repo exists (`github.com/andrew-walther/SSBMF-paper`); scaffold/draft TBD | **Phase 6** |
 | Post-commit Codex review hook; RAG lit DB | Not started | **Backlog** |
 
 ### Why α, not a second λ (DeSurv-grounded)
@@ -261,9 +261,15 @@ DeSurv), answering the GO/gene-ID feedback.
 
 ---
 
-## Phase 6 — Manuscript track (deferred; after model work stabilizes)
+## Phase 6 — Manuscript track (scaffold + intro research parallelizable now; methods/results deferred)
 
 **Goal:** Stand up paper infrastructure and begin the introduction.
+
+**Parallelization:** the **repo scaffold** and **intro/background literature research** (incl. the
+RAG reference library) are independent of the model code and can run in a **parallel session now** —
+they live in the separate `SSBMF-paper` repo, so there is no conflict with the model branches.
+**Do not draft methods or results in parallel** — those depend on Phase 1–3 outcomes (K, α, C-index)
+and would need rewriting; frame everything as pending until the model work stabilizes.
 
 **What we hope to achieve — success criteria (define before implementing):**
 - **A working manuscript scaffold.** *Success:* `SSBMF-paper` repo renders a Quarto skeleton;
@@ -274,8 +280,9 @@ DeSurv), answering the GO/gene-ID feedback.
   positioning of SBMF as the Bayesian counterpart to DeSurv — framed as a *pending* head-to-head, not a
   superiority claim.
 
-- Scaffold `github.com/andrew-walther/SSBMF-paper`: Quarto manuscript skeleton; organize benchmark
-  scripts and figure generators into a `paper/` layout.
+- Build out the **existing** `github.com/andrew-walther/SSBMF-paper` repo: assess what's already there,
+  add a Quarto manuscript skeleton where missing; organize benchmark scripts and figure generators
+  into a `paper/` layout.
 - **Background research for the intro:** prompt the user for their existing reference list, then run
   deep literature research (`deep-research` skill) to fill gaps — supervised/guided matrix
   factorization, prognostic gene programs, PDAC subtyping (PurIST, DeCAF, basal/classical), Bayesian
@@ -316,3 +323,37 @@ DeSurv), answering the GO/gene-ID feedback.
 - **Independent review at every checkpoint** (see protocol) — plus a **final whole-branch review**
   against the net-benefit gate before any merge is proposed.
 - **Merge to `main` only when the net-benefit gate is met.**
+
+---
+
+## Appendix — Phase 6 starting reference library & gap analysis
+
+The user's current Zotero library (18 sources as of 2026-07-08) covers the factorization/integration
+and EB-MF pillars well; the thin spots are PDAC subtype biology and the supervised-factor-for-survival
+lineage. The Phase 6 research session should **build on these, not re-derive them**, and target the gaps.
+
+**Already held (grouped):**
+- *Unsupervised multi-omics factor/integration:* MOFA (Argelaguet 2017/2018), iCluster (Shen 2009),
+  DIABLO (Singh 2019), GRN review (Badia-i-Mompel 2023)
+- *Single-cell multi-omic integration (LIGER/iNMF):* Welch 2019, Liu 2020, Gao 2021
+- *Supervised / semi-supervised NMF:* Austin 2018, Leuschner 2019, Lindstrom 2023
+- *EB / Bayesian MF & variational:* Wang & Stephens (EBMF — method engine), Kingma & Welling VAE 2019,
+  Lim IWAE 2022
+- *Bayesian survival / variable selection:* Yang et al. 2025 (Cox + SuSiE)
+- *Multi-task / sparsity:* Behdin 2025
+- *PDAC / cancer-genomics application:* Raphael 2017 (TCGA-PDAC), Young et al. DeSurv (primary
+  comparator), Liu 2021 (methylation-eQTL)
+
+**Gaps to fill (prioritized; verify all metadata during research — candidates, not verified citations):**
+- **HIGH — PDAC molecular subtypes** (needed to interpret basal-like adverse / protective factors):
+  Moffitt et al. 2015 (basal/classical, NMF virtual microdissection), Collisson et al. 2011,
+  Bailey et al. 2016, **PurIST** (Rashid/Yeh single-sample classifier) and **DeCAF** — both named in the
+  6/18 feedback and DeSurv's adjustment analysis, both absent from the current library.
+- **HIGH — gene-expression-program discovery via factorization:** Brunet et al. 2004 (NMF metagenes),
+  cNMF / Kotliar et al. 2019.
+- **MEDIUM-HIGH — supervised dimension reduction for survival:** Bair & Tibshirani supervised PCA,
+  PLS-Cox (the pre-Bayesian ancestry of SBMF).
+- **MEDIUM — survival + high-dim genomics comparators:** penalized Cox (Simon et al. 2011 glmnet;
+  Tibshirani 1997 lasso-Cox), deep-learning survival (DeepSurv/Katzman 2018; Chaudhary et al. 2018).
+- **LOW-MEDIUM — methods scaffolding:** variational inference review (Blei, Kucukelbir & McAuliffe 2017),
+  C-index (Harrell).
