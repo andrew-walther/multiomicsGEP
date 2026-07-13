@@ -5,6 +5,75 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-13 — K-parsimony follow-up Step 2: deflation-init is mathematically equivalent to SVD-init for non-degenerate data — does not reproduce Step 1's rescue
+
+**Motivation.** Step 1 (entry below) found the CAVI factor-collapse artifact could be fixed by
+warm-starting K=4/K=5 from an already-converged K=7 fit's PVE-ranked columns, but that this was "a
+one-off warm-start hack" requiring a pre-existing higher-K fit. Step 2's goal
+(`docs/plans/ssbmf_k_parsimony_followup_plan_07_13_2026.md`) was to make this permanent and general:
+add a deflation-style init (rank-1 SVD of Y for factor 1, rank-1 SVD of the residual for factor 2,
+etc.) to `fit_cox_on_yf`/`fit_supervised_mf_modular`, verify it fixes the `sparse_synthetic` collapse
+scenario, and confirm no regression.
+
+**New code:** `code/deflation_init.R` (`deflation_svd_init()`), `init_method = "deflation"` added to
+both `fit_cox_on_yf()` and `fit_supervised_mf_modular()`, `tests/test_deflation_init.R` (9 tests, TDD).
+Branch `cavi-deflation-init`.
+
+**Result — this does NOT reproduce Step 1's rescue, and the reason is analytically clear, not just an
+empirical near-miss:**
+
+1. **Real PDAC data (D4 config), fresh deflation-init at K=4 and K=5: bit-identical to fresh SVD-init.**
+   K=4: mean C=0.5409, K_eff=1, beta_max=0.0092, 7 iterations. K=5: mean C=0.5960, K_eff=3,
+   beta_max=0.0201, 41 iterations. The mean-C/K_eff figures match the Step 1 table's fresh-SVD row
+   exactly (0.5409/K_eff=1 at K=4; 0.5960/K_eff=3 at K=5); beta_max and iteration count match the
+   Phase 3 entry's fresh-SVD figures below (which reported beta_max only as "~0.009" — this run's more
+   precise 0.0092/0.0201 are consistent with, not just approximately equal to, that entry). Neither
+   reaches the 0.6068 margin Step 1's warm-start reached (0.6270 at both K).
+2. **`sparse_synthetic`-style diagnostic (`results/multi_cohort_sim/diagnose_factor_collapse.R`,
+   extended with a deflation-init check):** YFB's dead-factor count is identical between SVD-init and
+   deflation-init in every one of 5 seeds (2,2,2,2,1 vs. 2,2,2,2,1). LB's average drops from 2.4/4 to
+   1.8/4 but non-monotonically (2 seeds improve, 2 get worse or stay flat, 1 seed's dead-factor count
+   *increases* from 2 to 3) — consistent with ordinary fit-to-fit variability in a numerically
+   different-but-equivalent computation path, not a real fix.
+3. **Why:** greedy rank-1 SVD deflation and a single batch top-K SVD extract the *same* leading-K
+   singular subspace whenever a matrix's top-K singular values are distinct — a standard linear-algebra
+   fact (this is essentially how many SVD/PCA algorithms are implemented internally). Real data (and
+   most synthetic data with continuous noise) essentially never has exactly-tied singular values, so
+   `init_method="deflation"` was mathematically guaranteed to match `init_method="svd"` in the regime
+   this plan needed it to differ in. The `sparse_synthetic` DGP's "near-tied, disjoint-support" factors
+   are near-tied in *amplitude*, not exactly tied in *singular value* — not the actual degenerate case
+   deflation could help with.
+
+**What this means for the collapse mechanism.** Step 1 already showed best-ELBO multistart (14 random
+restarts) rescued nothing — SVD-init was always the best-ELBO restart. Step 2 now shows a second,
+independent "different starting subspace" strategy also rescues nothing, for an analytically
+understood reason. Both negative results point the same direction: **the collapse is not about which
+linear-algebra decomposition of Y seeds CAVI** — deflation, batch SVD, and 14 random draws all land in
+the same basin. What *did* work (Step 1) was warm-starting from a solution that had already been
+shaped by many iterations of the full joint CAVI process (EBNM shrinkage + Cox coupling +
+factor-wise Gauss-Seidel) at a higher K — a qualitatively different kind of starting point that no
+raw transformation of Y alone can produce.
+
+**Judgment call — flagging rather than resolving unilaterally.** The plan's Step 2 goal was a fix
+that's "permanent and general, not a one-off warm-start hack." Deflation-init does not deliver that,
+and the plan does not specify a fallback for this outcome (Step 3's joint-BO path is reserved for a
+CAPACITY-LIMITED verdict, which Step 1 explicitly ruled out). This is exactly the kind of ambiguity
+the plan itself says should pause for user input, rather than being silently resolved. Recommendation
+brought to the user: adopt Step 1's validated warm-start-from-a-higher-K-fit as the standing
+recommended fitting recipe for K<7 in this model family (it is general in the sense of not requiring
+new machinery — just fitting once at a generously large K and reusing `extract_top_k_by_pve()` — even
+if not "permanent" in the stronger sense of not depending on any prior fit at all), and use it as
+Step 4's fitting procedure. The `deflation_svd_init()` code itself is kept (correct, tested, harmless,
+and a documented, if narrow, alternative for the true degenerate-singular-value edge case) but is not
+claimed as *the* fix.
+
+*Files: `code/deflation_init.R` (new), `code/fit_modular.R` / `code/fit_cox_on_yf.R` (new
+`init_method="deflation"` branch), `tests/test_deflation_init.R` (new, TDD, 9/9 passing),
+`results/multi_cohort_sim/diagnose_factor_collapse.R` (extended with a deflation-init check). Full
+test suite: 299/299 passing.*
+
+---
+
 ## 2026-07-13 — K-parsimony follow-up Step 1: K=7's necessity was an optimization artifact, not a capacity floor, at K=4-5
 
 **Motivation.** The Phase 3 entry below found K=7 "not free to shrink" but explicitly flagged K=2/K=4's
