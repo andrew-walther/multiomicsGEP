@@ -49,9 +49,10 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#purpose" id="toc-purpose" class="nav-link active" data-scroll-target="#purpose">Purpose</a></li>
-  <li><a href="#result-1-equivalence-when-survival-carries-no-signal" id="toc-result-1-equivalence-when-survival-carries-no-signal" class="nav-link" data-scroll-target="#result-1-equivalence-when-survival-carries-no-signal">Result 1 — Equivalence when survival carries no signal</a></li>
-  <li><a href="#result-2-separation-as-the-true-effect-grows" id="toc-result-2-separation-as-the-true-effect-grows" class="nav-link" data-scroll-target="#result-2-separation-as-the-true-effect-grows">Result 2 — Separation as the true effect grows</a></li>
+  <li><a href="#result-1-equivalence-when-survival-carries-no-signal-default-scenario" id="toc-result-1-equivalence-when-survival-carries-no-signal-default-scenario" class="nav-link" data-scroll-target="#result-1-equivalence-when-survival-carries-no-signal-default-scenario">Result 1 — Equivalence when survival carries no signal (default scenario)</a></li>
+  <li><a href="#result-2-separation-as-the-true-effect-grows-default-scenario" id="toc-result-2-separation-as-the-true-effect-grows-default-scenario" class="nav-link" data-scroll-target="#result-2-separation-as-the-true-effect-grows-default-scenario">Result 2 — Separation as the true effect grows (default scenario)</a></li>
   <li><a href="#result-3-internal-control-is-alpha0-really-survival-off" id="toc-result-3-internal-control-is-alpha0-really-survival-off" class="nav-link" data-scroll-target="#result-3-internal-control-is-alpha0-really-survival-off">Result 3 — Internal control: is <span class="math inline">\(\alpha=0\)</span> really “survival off”?</a></li>
+  <li><a href="#result-4-robustness-across-dgp-structures-a-genuine-reversal-root-caused" id="toc-result-4-robustness-across-dgp-structures-a-genuine-reversal-root-caused" class="nav-link" data-scroll-target="#result-4-robustness-across-dgp-structures-a-genuine-reversal-root-caused">Result 4 — Robustness across DGP structures: a genuine reversal, root-caused</a></li>
   <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations</a></li>
   <li><a href="#reproducing" id="toc-reproducing" class="nav-link" data-scroll-target="#reproducing">Reproducing</a></li>
   </ul>
@@ -85,7 +86,7 @@ ul.task-list li input[type="checkbox"] {
 <section id="purpose" class="level2">
 <h2 class="anchored" data-anchor-id="purpose">Purpose</h2>
 <p>The supervised Bayesian matrix factorization model (SBMF, here in its Cox-on-YF parameterization, <span class="math inline">\(\eta = (YF)\beta\)</span>) jointly fits a genomics factorization and a Cox survival model. The standard alternative is a two-step procedure: factorize the genomics data first, without using the survival outcome, then fit a Cox model on the resulting factor scores. This report asks a direct question: does joint estimation actually improve on the two-step approach, and — just as importantly — does it <em>avoid inventing</em> an advantage when there is no real survival signal to find?</p>
-<p>We simulate data where the true prognostic effect size can be dialed from zero (survival carries no information) up to large, holding the genomics generative structure fixed, and compare:</p>
+<p>We simulate data where the true prognostic effect size can be dialed from zero (survival carries no information) up to large, holding the genomics generative structure fixed within a scenario, and compare:</p>
 <ul>
 <li><strong>YFB (joint)</strong>, fit with the production default <span class="math inline">\(\alpha = 0.5\)</span>.</li>
 <li><strong>PCA + Cox</strong> (two-step): principal components of the training genomics matrix, then a Cox model on the top components; held-out samples are scored by projecting onto the <em>training</em> rotation.</li>
@@ -93,10 +94,10 @@ ul.task-list li input[type="checkbox"] {
 <li><strong>LB (joint)</strong>, the alternative joint parameterization (<span class="math inline">\(\eta = L\beta\)</span>), included as a secondary reference.</li>
 <li><strong>YFB at <span class="math inline">\(\alpha=0\)</span></strong>, an internal control: forcing <span class="math inline">\(\alpha=0\)</span> should reduce the joint model to a purely genomics-driven factorization, structurally identical to what it would learn regardless of the survival outcome.</li>
 </ul>
-<p>Data: two synthetic cohorts (n=150 each), p=1000 genes, K=4 factors, all shared across cohorts (no cohort-specific structure — kept simple so the comparison isolates the survival-strength question). 5 replicate seeds per strength level. Full CAVI convergence (no iteration cap).</p>
+<p>Data: two synthetic cohorts (n=150 each), p=1000 genes, K=4 factors (K=8 in one scenario), all shared across cohorts (no cohort-specific structure — kept simple so the comparison isolates the survival-strength question). <strong>10 replicate seeds per strength level, across 4 DGP scenarios</strong> (extended 2026-07-12 same-day from an initial 5-seed/1-scenario pass — see the Reproducing section and <code>DECISIONS.md</code> for why): <code>default</code> (real EBMF gene-program templates, the primary scenario used for Results 1–3 below), <code>sparse_synthetic</code> (synthetic sparse F, 2% active genes/factor, real templates off), <code>low_snr</code> (shared-factor amplitude 12→6), and <code>high_K</code> (K_shared 4→8). Full CAVI convergence (no iteration cap).</p>
 </section>
-<section id="result-1-equivalence-when-survival-carries-no-signal" class="level2">
-<h2 class="anchored" data-anchor-id="result-1-equivalence-when-survival-carries-no-signal">Result 1 — Equivalence when survival carries no signal</h2>
+<section id="result-1-equivalence-when-survival-carries-no-signal-default-scenario" class="level2">
+<h2 class="anchored" data-anchor-id="result-1-equivalence-when-survival-carries-no-signal-default-scenario">Result 1 — Equivalence when survival carries no signal (default scenario)</h2>
 <table class="table">
 <thead>
 <tr class="header">
@@ -108,31 +109,36 @@ ul.task-list li input[type="checkbox"] {
 <tbody>
 <tr class="odd">
 <td>YFB (joint)</td>
-<td>0.517</td>
-<td>0.008</td>
+<td>0.523</td>
+<td>0.009</td>
 </tr>
 <tr class="even">
-<td>PCA + Cox</td>
-<td>0.533</td>
-<td>0.017</td>
+<td>LB (joint)</td>
+<td>0.539</td>
+<td>0.008</td>
 </tr>
 <tr class="odd">
+<td>PCA + Cox</td>
+<td>0.539</td>
+<td>0.012</td>
+</tr>
+<tr class="even">
 <td>EBMF + Cox</td>
-<td>0.540</td>
-<td>0.017</td>
+<td>0.544</td>
+<td>0.011</td>
 </tr>
 </tbody>
 </table>
-<p>All three sit within about 1 SE of each other and of chance (C = 0.5) — the joint model does not manufacture a spurious advantage when there is nothing to find. The raw gaps (0.016–0.023) are slightly above an idealized “&lt; 0.01” target, but given standard errors of 0.008–0.017 on only 5 seeds, none of these differences are distinguishable from noise. We report this honestly rather than rounding it down to a clean pass: the evidence is <em>consistent with</em> equivalence, not a razor-sharp confirmation of it.</p>
+<p>All four sit within about 1-2 SE of each other and of chance (C = 0.5) — the joint model does not manufacture a spurious advantage when there is nothing to find. We report this honestly rather than rounding it down to a clean pass: with 10 seeds the gaps are tighter than the original 5-seed pass, but still not a razor-sharp confirmation of exact equivalence — consistent with it, not proof of it.</p>
 </section>
-<section id="result-2-separation-as-the-true-effect-grows" class="level2">
-<h2 class="anchored" data-anchor-id="result-2-separation-as-the-true-effect-grows">Result 2 — Separation as the true effect grows</h2>
+<section id="result-2-separation-as-the-true-effect-grows-default-scenario" class="level2">
+<h2 class="anchored" data-anchor-id="result-2-separation-as-the-true-effect-grows-default-scenario">Result 2 — Separation as the true effect grows (default scenario)</h2>
 <div class="cell">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="../../results/multi_cohort_sim/outputs/survival_strength_sweep_plot.png" class="img-fluid figure-img" width="600"></p>
-<figcaption class="figure-caption">Held-out C-index vs.&nbsp;prognostic effect strength. Error bars: ±1 SE across 5 seeds.</figcaption>
+<p><img src="../../results/multi_cohort_sim/outputs/survival_strength_sweep_plot.png" class="img-fluid figure-img" width="712"></p>
+<figcaption class="figure-caption">Held-out C-index vs.&nbsp;prognostic effect strength, by DGP scenario. Error bars: ±1 SE across 10 seeds.</figcaption>
 </figure>
 </div>
 </div>
@@ -150,72 +156,117 @@ ul.task-list li input[type="checkbox"] {
 <tbody>
 <tr class="odd">
 <td>0.00</td>
-<td>0.517</td>
-<td>0.533</td>
-<td>0.540</td>
-<td>0.526</td>
+<td>0.523</td>
+<td>0.539</td>
+<td>0.544</td>
+<td>0.539</td>
 </tr>
 <tr class="even">
 <td>0.25</td>
-<td>0.621</td>
-<td>0.625</td>
-<td>0.630</td>
-<td>0.614</td>
+<td>0.610</td>
+<td>0.619</td>
+<td>0.622</td>
+<td>0.611</td>
 </tr>
 <tr class="odd">
 <td>0.50</td>
-<td>0.729</td>
-<td>0.724</td>
-<td>0.692</td>
-<td>0.697</td>
+<td>0.718</td>
+<td>0.716</td>
+<td>0.702</td>
+<td>0.695</td>
 </tr>
 <tr class="even">
 <td>1.00</td>
-<td>0.809</td>
-<td>0.798</td>
-<td>0.747</td>
-<td>0.796</td>
+<td>0.818</td>
+<td>0.805</td>
+<td>0.787</td>
+<td>0.789</td>
 </tr>
 <tr class="odd">
 <td>2.00</td>
 <td>0.894</td>
-<td>0.880</td>
-<td>0.841</td>
-<td>0.836</td>
+<td>0.875</td>
+<td>0.867</td>
+<td>0.854</td>
 </tr>
 <tr class="even">
 <td>4.00</td>
-<td><strong>0.931</strong></td>
-<td>0.908</td>
-<td>0.875</td>
-<td>0.877</td>
+<td><strong>0.927</strong></td>
+<td>0.900</td>
+<td>0.899</td>
+<td>0.856</td>
 </tr>
 </tbody>
 </table>
-<p>The joint model does not lead at every strength level — at 0.25 it is essentially tied with both two-step baselines (within noise). From strength 0.5 onward it pulls ahead of EBMF+Cox, and from 1.0 onward ahead of PCA+Cox as well, with the gap widening monotonically and its own standard error shrinking (0.027 at strength 1.0 down to 0.006 at strength 4.0 — the joint model’s advantage becomes both larger and more precisely estimated as signal strengthens). <strong>Honest summary: the joint model’s advantage is not immediate or uniform, but it emerges reliably once genuine survival signal exists, and grows with it</strong> — exactly the qualitative pattern the method’s value proposition requires, without an inflated claim about how small an effect it can already exploit.</p>
+<p>The joint model does not lead at every strength level — at 0.25 it is essentially tied with both two-step baselines (within noise), and PCA+Cox edges ahead at 0.50 (within 1 SE). From strength 1.0 onward YFB leads consistently, with the gap over both two-step baselines widening through strength 4.0. <strong>Honest summary, under this scenario’s DGP: the joint model’s advantage is not immediate or uniform, but it emerges reliably once genuine survival signal exists, and grows with it</strong> — this is the qualitative pattern the method’s value proposition requires. Whether it <em>generalizes</em> to other DGP structures is the subject of Result 4 below, and the answer there is more qualified than this table alone suggests.</p>
 </section>
 <section id="result-3-internal-control-is-alpha0-really-survival-off" class="level2">
 <h2 class="anchored" data-anchor-id="result-3-internal-control-is-alpha0-really-survival-off">Result 3 — Internal control: is <span class="math inline">\(\alpha=0\)</span> really “survival off”?</h2>
 <p>A meaningful sanity check: at <span class="math inline">\(\alpha=0\)</span>, the joint model’s learned genomics factors (<span class="math inline">\(F\)</span>) should be <em>structurally identical</em> to what it would learn from any other <span class="math inline">\(\alpha\)</span>, because under the YFB parameterization <span class="math inline">\(F\)</span> never uses the survival outcome regardless of <span class="math inline">\(\alpha\)</span> (only <span class="math inline">\(\beta\)</span> does). Naively comparing <span class="math inline">\(F\)</span> from two independently-converged fits is confounded, however: different <span class="math inline">\(\alpha\)</span> values give different combined objective trajectories, so CAVI declares convergence after a different number of iterations for each — meaning a naive comparison contrasts two <em>different snapshots</em> of an otherwise-identical trajectory, not a true <span class="math inline">\(\alpha\)</span> effect. Controlling for this (forcing both fits to run an identical, fixed number of iterations) gives an unambiguous answer:</p>
 <blockquote class="blockquote">
-<p><strong>max<span class="math inline">\(|F_{\alpha=0.5} - F_{\alpha=0}| = 0\)</span> exactly, at every strength level and every seed tested (30/30 comparisons).</strong></p>
+<p><strong>max<span class="math inline">\(|F_{\alpha=0.5} - F_{\alpha=0}| = 0\)</span> exactly, at every scenario, strength level, and seed tested (240/240 comparisons).</strong></p>
 </blockquote>
 <p>This result is exact and unambiguous, but it should not be read as independent empirical evidence the way Results 1–2 are: under the YFB parameterization, <span class="math inline">\(F\)</span>’s own update never consumes <span class="math inline">\(\alpha\)</span>, <span class="math inline">\(\beta\)</span>, or the survival working-response quantities at all (<code>code/update_F_surv_YFB.R</code>), so <span class="math inline">\(\alpha\)</span>-invariance is close to a structural consequence of the architecture rather than a discovery made by running the simulation. What the check <em>does</em> confirm empirically — and is worth verifying rather than assuming — is that this structural property actually holds in the fitted code (no bug lets <span class="math inline">\(\beta\)</span> leak into <span class="math inline">\(F\)</span>), and that the earlier, naive comparison’s non-zero differences really were a convergence-timing artifact and not a sign of a real, small alpha dependency the architecture argument would have missed.</p>
+</section>
+<section id="result-4-robustness-across-dgp-structures-a-genuine-reversal-root-caused" class="level2">
+<h2 class="anchored" data-anchor-id="result-4-robustness-across-dgp-structures-a-genuine-reversal-root-caused">Result 4 — Robustness across DGP structures: a genuine reversal, root-caused</h2>
+<p>Results 1–3 use the <code>default</code> scenario (real EBMF gene-program templates). Extending to 3 more DGP structures asks whether the joint-vs-2-step ordering found there is a general pattern or specific to that one structure. Two of the three extra scenarios (<code>low_snr</code>, <code>high_K</code>) confirm the same qualitative pattern as <code>default</code> — YFB pulls ahead of both two-step baselines as signal strengthens, by a wider margin under <code>low_snr</code> (0.815 vs.&nbsp;0.708/0.654 at strength=4) and a comparable margin under <code>high_K</code> (0.903 vs.&nbsp;0.885/0.837).</p>
+<p><strong><code>sparse_synthetic</code> reverses the ordering entirely, and not marginally:</strong></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Strength</th>
+<th>YFB (joint)</th>
+<th>PCA+Cox</th>
+<th>EBMF+Cox</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1.00</td>
+<td>0.726 ± 0.022</td>
+<td>0.817 ± 0.007</td>
+<td>0.820 ± 0.007</td>
+</tr>
+<tr class="even">
+<td>2.00</td>
+<td>0.808 ± 0.027</td>
+<td>0.890 ± 0.005</td>
+<td>0.894 ± 0.004</td>
+</tr>
+<tr class="odd">
+<td>4.00</td>
+<td>0.795 ± 0.027</td>
+<td>0.934 ± 0.005</td>
+<td>0.940 ± 0.004</td>
+</tr>
+</tbody>
+</table>
+<p>At strength=4, YFB sits roughly 5 SEs <em>below</em> both two-step baselines. This is a real effect, not noise, and we root-caused it with a persisted, reproducible diagnostic (<code>results/multi_cohort_sim/diagnose_factor_collapse.R</code>, 5 seeds, output <code>results/multi_cohort_sim/outputs/factor_collapse_diagnostic.csv</code>) rather than reporting it as an open question:</p>
+<ol type="1">
+<li><strong>Refitting YFB at <span class="math inline">\(\alpha=0\)</span></strong> (survival term fully removed) shows the <em>identical</em> dead-factor count as the tuned fit in every one of 5 seeds tested (mean 1.8/4 dead, both cases) — ruling out anything related to the joint survival objective. This is a pure genomics-factorization problem.</li>
+<li><strong>LB</strong> (the alternative joint parameterization, sharing the same <code>update_L.R</code>/<code>update_F.R</code> machinery) also collapses — on average <em>more</em> factors die than for YFB (mean 2.4/4 vs.&nbsp;1.8/4 across the 5 seeds, worse in 3 of 5, better in the other 2) — confirming this is a shared CAVI vulnerability, not something specific to the Cox-on-YF reformulation, though the severity is seed-dependent rather than uniformly worse for LB.</li>
+<li><strong>Switching SVD initialization to random initialization makes it uniformly worse</strong>: all 4 factors die in every one of the 5 seeds tested (vs.&nbsp;1–2 of 4 for SVD init) — ruling out “bad initialization, fixable with a better starting point” as the explanation.</li>
+</ol>
+<p><strong>Diagnosis.</strong> It is <em>not</em> an amplitude-hierarchy effect — <code>a_shared</code> is applied identically to every shared factor in every scenario, including <code>default</code>, so there is no built-in amplitude ranking anywhere for CAVI to exploit. The real differentiator is <strong>loading structure</strong>: the real EBMF templates used in <code>default</code>/<code>low_snr</code>/<code>high_K</code> are dense (97% of genes carry a non-trivial loading in a representative factor, not a sparse point mass) with graded magnitudes and real cross-factor correlation (up to <span class="math inline">\(|r|\approx0.4\)</span> between columns) — verified directly on the cached templates. <code>sparse_synthetic</code>, by contrast, gives each factor exactly 2% of genes active, uniform magnitude within a factor, and near-zero cross-factor overlap by construction (columns are independently sampled disjoint gene sets). This near-perfect symmetry — several factors of identical scale with no overlapping structure to break ties — appears to be exactly the condition under which our point_exponential-based joint CAVI can hit a degenerate fixed point: once a factor’s estimated loadings dip slightly below its (otherwise identical) siblings early in optimization, the shrinkage prior pushes it further toward zero every iteration, with no mechanism to recover, and the ELBO genuinely plateaus at this bad solution (hence the fast, “converged” fits — 6–14 iterations across all checks). EBMF avoids this because <code>flashier</code> fits factors <em>greedily</em>, one at a time on the residual — each factor only ever competes against noise, never against symmetric siblings for the same variance. PCA avoids it because it performs no sparsity-inducing shrinkage at all, so there is no collapse mechanism to trigger.</p>
+<p><strong>Why this doesn’t obviously threaten the real-data conclusions — but with a genuine caveat.</strong> Real gene-expression factors have the dense, graded, cross-correlated structure described above, which <code>default</code> never showed any collapse under (0/60 fits, either model). But the failure mode is not strictly confined to the most extreme synthetic scenario: in <code>low_snr</code> and <code>high_K</code> — both built on the same real EBMF templates as <code>default</code> — <strong>LB shows occasional complete collapse</strong> (10 of 180 fits, frac_recov=0; YFB shows none, 0 of 180). So the honest scoping claim is narrower than “only happens with unrealistic synthetic data”: YFB has not collapsed in any real-template scenario tested here, but LB has, occasionally, even with real templates, when SNR is low or K is larger. This is logged as a genuine, understood algorithmic limitation of the joint CAVI fitting procedure (shared by LB and YFB, with LB apparently more susceptible) — not resolved in this report; candidate follow-ups (multistart best-ELBO selection via <code>code/fit_modular_multistart.R</code>, or a greedy-init variant) are tracked in <code>ROADMAP.md</code>.</p>
 </section>
 <section id="limitations" class="level2">
 <h2 class="anchored" data-anchor-id="limitations">Limitations</h2>
 <ul>
-<li>Factor-recovery (correlation with the true gene programs) was also tracked but is not the focus here; PCA’s linear, orthogonal basis recovers the (non-negative, sparse) true factors noticeably less well than the two EBNM/NMF-style methods (YFB, EBMF) — a structural mismatch between PCA and this particular data-generating process, not necessarily a general property of two-step methods.</li>
-<li>LB (the alternative joint parameterization) is included for reference only; per <code>DECISIONS.md</code> 2026-07-12, LB’s own objective-normalization work is unresolved, so no claims are made about its competitiveness here beyond what the raw numbers show.</li>
-<li>5 seeds is enough to see a directional pattern but gives wide standard errors at low signal strength; a tighter equivalence claim at strength=0 would benefit from more seeds.</li>
-<li>This is a controlled simulation, not the real PDAC validation; Phase 1’s own real-data results (external mean C=0.627, <code>DECISIONS.md</code> 2026-07-12) remain the primary evidence for real-world performance.</li>
+<li>Factor-recovery (correlation with the true gene programs) was also tracked; in the <code>default</code> scenario, PCA’s linear, orthogonal basis recovers the true factors noticeably less well than the EBNM/NMF-style methods (YFB, EBMF) — a structural mismatch between PCA and this DGP, not necessarily a general property of two-step methods. In <code>sparse_synthetic</code>, this reverses (see Result 4): YFB’s factor recovery collapses (~0.62–0.75) while EBMF’s stays near-perfect (~0.998).</li>
+<li>LB (the alternative joint parameterization) is included for reference only; per <code>DECISIONS.md</code> 2026-07-12, LB’s own objective-normalization work is unresolved, and it shows the same factor-collapse vulnerability as YFB, on average somewhat more severely (see Result 4) — no claims are made about its competitiveness beyond the raw numbers shown.</li>
+<li>10 seeds gives tighter standard errors than the initial 5-seed pass, but wide-strength-range claims (especially the strength=0 equivalence check) would still benefit from more seeds.</li>
+<li>Only 4 DGP scenarios were tested; two additional axes were scoped out of this pass to bound compute and are flagged, not silently dropped: n/p variation toward realistic PDAC scale, and a cohort-heterogeneity variant. Both remain open follow-ups.</li>
+<li>This is a controlled simulation, not the real PDAC validation; Phase 1’s own real-data results (external mean C=0.627, <code>DECISIONS.md</code> 2026-07-12) remain the primary evidence for real-world performance. The factor-collapse failure mode (Result 4) has not been observed for YFB in any real-template scenario tested here, but has occurred occasionally for LB even with real templates (<code>low_snr</code>, <code>high_K</code>) — see the scoping note there for the precise, non-overclaimed boundary.</li>
 </ul>
 </section>
 <section id="reproducing" class="level2">
 <h2 class="anchored" data-anchor-id="reproducing">Reproducing</h2>
 <pre><code>Rscript results/multi_cohort_sim/run_survival_strength_sweep.R
-Rscript results/multi_cohort_sim/plot_survival_strength_sweep.R</code></pre>
-<p>Config: <code>config/globals.yml</code>, <code>synthetic_multicohort.survival_strength_sweep</code>. Outputs: <code>results/multi_cohort_sim/outputs/survival_strength_sweep_results.csv</code>, <code>survival_strength_sweep_alpha_invariance.csv</code>, and <code>survival_strength_sweep_plot.png</code> (the figure above, generated by the second script from the first script’s CSV).</p>
+Rscript results/multi_cohort_sim/plot_survival_strength_sweep.R
+Rscript results/multi_cohort_sim/diagnose_factor_collapse.R   # Result 4 root-cause checks</code></pre>
+<p>Config: <code>config/globals.yml</code>, <code>synthetic_multicohort.survival_strength_sweep</code> (<code>n_seeds</code>, <code>scenarios</code>). Outputs: <code>results/multi_cohort_sim/outputs/survival_strength_sweep_results.csv</code> (now with a <code>scenario</code> column), <code>survival_strength_sweep_alpha_invariance.csv</code> (likewise), and <code>survival_strength_sweep_plot.png</code> (the figure above, faceted by scenario, generated by the second script from the first script’s CSV).</p>
 </section>
 
 </main>

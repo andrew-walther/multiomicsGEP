@@ -79,6 +79,17 @@ synthetic_multicohort:
     K_shared: 4            # matches length(default beta_shared) = c(1.5,-1.2,0.8,-0.5)
     K_specific: [0, 0]     # no cohort-specific factors -- keep this sweep simple
     strength_values: [0.0, 0.25, 0.5, 1.0, 2.0, 4.0]
+    n_seeds: 10             # replicate seeds for this sweep specifically (more than the
+                            # shared 5-seed default above, to tighten SEs on the joint-vs-
+                            # 2-step comparison); overrides `seeds` for this script only.
+    # DGP structure variants layered on the default scenario (real EBMF gene-program
+    # templates, a_shared=12). Each asks whether the joint-vs-2-step ordering found under
+    # the default DGP is a general pattern or an artifact of that specific structure.
+    scenarios:
+      default:          {}                                          # real EBMF templates, a_shared=12
+      sparse_synthetic: { f_templates: false, active_rate: 0.02 }    # synthetic sparse F (2% active genes/factor), away from real gene-program shapes
+      low_snr:          { a_shared: 6.0 }                            # weaker per-factor genomic signal relative to fixed noise (12 -> 6; a<=4 collapses per line 51-52 above)
+      high_K:           { K_shared: 8 }                              # more shared factors (beta_shared recycled to length 8)
 
 # ------------------------------------------------------------------------------
 # Preprocessing

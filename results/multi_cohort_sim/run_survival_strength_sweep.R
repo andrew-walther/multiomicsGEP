@@ -15,9 +15,24 @@
 #               reformulation) -- verified directly by comparing EF at
 #               alpha=0 vs. the tuned alpha, not just asserted.
 #
+#          Comprehensive extension (2026-07-12, same-day follow-up): the
+#          initial 5-seed/1-scenario run showed the right qualitative
+#          pattern but was too thin to be strong evidence (wide SEs, no test
+#          of whether the pattern is specific to one DGP structure). This
+#          version adds:
+#            - 10 seeds/condition (was 5) for tighter SEs.
+#            - 3 additional DGP scenarios beyond the default (real EBMF
+#              templates): sparse synthetic F, low SNR, more shared factors
+#              (config/globals.yml, synthetic_multicohort.survival_strength_
+#              sweep.scenarios) -- asks whether the joint-vs-2-step ordering
+#              is a general pattern or an artifact of one specific DGP.
+#          Deferred (flagged, not silently dropped): n/p variation toward
+#          realistic PDAC scale, and a cohort-heterogeneity variant. Both are
+#          worth doing but were scoped out of this pass to bound compute.
+#
 #          Output: results/multi_cohort_sim/outputs/
-#            survival_strength_sweep_results.csv
-#            survival_strength_sweep_alpha_invariance.csv
+#            survival_strength_sweep_results.csv        (now has a `scenario` column)
+#            survival_strength_sweep_alpha_invariance.csv (now has a `scenario` column)
 #
 # Author:  Claude Code (reviewed by Andrew Walther)
 # Created: 2026-07-12
@@ -79,13 +94,19 @@ BETA_THRESH <- cfg$k_selection$beta_threshold
 ALPHA_TUNED <- cfg$benchmark$alpha   # 0.5 -- the production default, our "tuned" alpha
 PRIOR_BETA  <- "normal"
 MAX_ITER    <- if (QUICK_MODE) 30L else cfg$cavi$max_iter
-SEEDS       <- if (QUICK_MODE) unlist(mc$seeds)[1:2] else unlist(mc$seeds)
+N_SEEDS     <- sss$n_seeds %||% length(mc$seeds)
+SEEDS       <- if (QUICK_MODE) 1:2 else seq_len(N_SEEDS)
 
-K_SHARED    <- sss$K_shared
 K_SPECIFIC  <- unlist(sss$K_specific)
-K_FIT       <- K_SHARED + sum(K_SPECIFIC)   # = K_SHARED here (K_SPECIFIC = [0,0])
 STRENGTHS   <- unlist(sss$strength_values)
-BETA_BASE   <- c(1.5, -1.2, 0.8, -0.5)      # default shared-factor coefficients, scaled by strength
+BETA_BASE_DEFAULT <- c(1.5, -1.2, 0.8, -0.5)   # default shared-factor coefficients, scaled by strength
+
+# --- DGP scenario definitions (config/globals.yml, ...survival_strength_sweep.scenarios) ---
+# Each scenario overrides a subset of {K_shared, a_shared, f_templates, active_rate}
+# on top of the defaults below; asks whether the joint-vs-2-step ordering is a
+# general pattern or an artifact of the single default DGP structure.
+SCENARIOS_CFG <- sss$scenarios %||% list(default = list())
+if (QUICK_MODE) SCENARIOS_CFG <- SCENARIOS_CFG["default"]   # quick mode: default scenario only
 
 OUT_DIR <- "results/multi_cohort_sim/outputs"
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
@@ -93,17 +114,20 @@ dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
 cat("============================================================\n")
 cat(" Survival-Strength Sweep — Joint (YFB) vs. Two-Step Baselines\n")
 cat(sprintf(" strength grid: %s\n", paste(STRENGTHS, collapse = ", ")))
-cat(sprintf(" K_shared=%d | alpha_tuned=%.2f | mode=%s | seeds=%s\n",
-            K_SHARED, ALPHA_TUNED, if (QUICK_MODE) "QUICK" else "FULL",
+cat(sprintf(" scenarios: %s\n", paste(names(SCENARIOS_CFG), collapse = ", ")))
+cat(sprintf(" alpha_tuned=%.2f | mode=%s | seeds=%s\n",
+            ALPHA_TUNED, if (QUICK_MODE) "QUICK" else "FULL",
             paste(SEEDS, collapse = ",")))
 cat("============================================================\n\n")
 
 # --------------------------------------------------------------------------
 # 2. EBMF gene-program templates (real-data ground truth; NULL -> synthetic)
+#    Built once; individual scenarios opt out via f_templates: false to force
+#    the synthetic sparse fallback instead (see SCENARIOS_CFG below).
 # --------------------------------------------------------------------------
 templates  <- tryCatch(build_ebmf_templates(Kmax = EBMF_KMAX),
                        error = function(e) { message("EBMF templates: ", e$message); NULL })
-F_TEMPLATES <- if (!is.null(templates)) {
+F_TEMPLATES_REAL <- if (!is.null(templates)) {
   cat(sprintf("Using EBMF templates: %d programs.\n\n", templates$K_ebmf))
   Ft <- templates$F
   Ft <- if (nrow(Ft) >= P) Ft[seq_len(P), , drop = FALSE]
@@ -111,7 +135,7 @@ F_TEMPLATES <- if (!is.null(templates)) {
   dimnames(Ft) <- NULL
   abs(Ft)
 } else {
-  cat("Using synthetic sparse-F fallback.\n\n")
+  cat("No EBMF templates available -- 'default' scenario will use the synthetic fallback too.\n\n")
   NULL
 }
 
@@ -202,10 +226,25 @@ predict_test <- function(arm, fit, d, spl) {
 ARMS <- c("YFB_tuned", "YFB_alpha0", "LB_tuned", "PCA_Cox", "EBMF")
 
 # --------------------------------------------------------------------------
-# 4. Main loop: strength x seed x arm
+# 4. Main loop: scenario x strength x seed x arm
 # --------------------------------------------------------------------------
 rows       <- list()
 alpha_rows <- list()   # section 4b: YFB alpha-invariance check
+
+for (scen_name in names(SCENARIOS_CFG)) {
+  ov <- SCENARIOS_CFG[[scen_name]]
+
+  # --- resolve this scenario's DGP parameters against the defaults ---
+  K_SHARED    <- ov$K_shared %||% sss$K_shared
+  K_FIT       <- K_SHARED + sum(K_SPECIFIC)
+  A_SHARED    <- ov$a_shared %||% mc$a_shared
+  ACTIVE_RATE <- ov$active_rate %||% mc$active_rate
+  USE_TEMPLATES <- ov$f_templates %||% TRUE
+  F_TEMPLATES <- if (USE_TEMPLATES) F_TEMPLATES_REAL else NULL
+  BETA_BASE   <- rep_len(BETA_BASE_DEFAULT, K_SHARED)   # recycled for high_K (K_shared=8)
+
+  cat(sprintf("============ scenario: %s (K_shared=%d, a_shared=%.1f, templates=%s) ============\n",
+              scen_name, K_SHARED, A_SHARED, USE_TEMPLATES))
 
 for (strength in STRENGTHS) {
   cat(sprintf("--- strength=%.2f (beta_shared = %s) ---\n",
@@ -216,6 +255,7 @@ for (strength in STRENGTHS) {
       C = C, n_per = N_PER, p = P,
       K_shared = K_SHARED, K_specific = K_SPECIFIC,
       F_templates = F_TEMPLATES, a_shared = A_SHARED, a_specific = A_SHARED,
+      active_rate = ACTIVE_RATE,
       beta_shared = strength * BETA_BASE,
       target_censoring = TARGET_CENS, seed = s)
 
@@ -234,6 +274,7 @@ for (strength in STRENGTHS) {
       ci   <- if (is.null(pred)) NA_real_ else oriented_cindex(pred$risk, pred$time, pred$status)
 
       rows[[length(rows) + 1]] <- data.frame(
+        scenario      = scen_name,
         strength      = strength,
         arm           = arm,
         seed          = s,
@@ -267,7 +308,7 @@ for (strength in STRENGTHS) {
       K = K_FIT, max_iter = ctrl_iter, tol = -1, alpha = 0,
       prior_beta = PRIOR_BETA, verbose = FALSE, sign_correction = FALSE))
     alpha_rows[[length(alpha_rows) + 1]] <- data.frame(
-      strength = strength, seed = s,
+      scenario = scen_name, strength = strength, seed = s,
       max_abs_EF_diff = max(abs(f_ctrl_tuned$EF - f_ctrl_a0$EF)),
       stringsAsFactors = FALSE
     )
@@ -276,6 +317,7 @@ for (strength in STRENGTHS) {
   }
   cat("\n")
 }
+}   # end scenario loop
 
 results    <- do.call(rbind, rows)
 alpha_inv  <- do.call(rbind, alpha_rows)
@@ -290,14 +332,14 @@ write.csv(alpha_inv, file.path(OUT_DIR, "survival_strength_sweep_alpha_invarianc
 # 6. Console summary
 # --------------------------------------------------------------------------
 cat("============================================================\n")
-cat(" Mean over seeds: C-index and factor recovery by strength x arm\n")
+cat(" Mean over seeds: C-index and factor recovery by scenario x strength x arm\n")
 cat("============================================================\n")
-agg <- aggregate(cbind(c_index, rec_mean) ~ strength + arm, data = results,
+agg <- aggregate(cbind(c_index, rec_mean) ~ scenario + strength + arm, data = results,
                  FUN = function(x) mean(x, na.rm = TRUE), na.action = na.pass)
-agg <- agg[order(agg$strength, agg$arm), ]
+agg <- agg[order(agg$scenario, agg$strength, agg$arm), ]
 for (i in seq_len(nrow(agg))) {
-  cat(sprintf("  strength=%.2f  %-11s  C=%.3f  rec=%.3f\n",
-              agg$strength[i], agg$arm[i], agg$c_index[i], agg$rec_mean[i]))
+  cat(sprintf("  [%-16s] strength=%.2f  %-11s  C=%.3f  rec=%.3f\n",
+              agg$scenario[i], agg$strength[i], agg$arm[i], agg$c_index[i], agg$rec_mean[i]))
 }
 
 cat("\n============================================================\n")

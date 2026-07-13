@@ -58,17 +58,52 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
-- [x] **Phase 2 (joint model vs. two-step value-add, survival-strength sweep)** *(Complete, 2026-07-12)*
+- [x] **Phase 2 (joint model vs. two-step value-add, survival-strength sweep)** *(Complete, 2026-07-12;
+  comprehensively extended same day)*
   Post-lab-meeting action plan Phase 2, branch `validation-two-step`. Simulation sweep scaling the
   true prognostic effect from 0 to large, comparing YFB (joint) against new PCA+Cox and existing
-  EBMF+Cox two-step baselines. Honest results: equivalence at zero signal holds within ~1 SE (not a
-  razor-sharp <0.01 match, but not distinguishable from noise on 5 seeds); the joint model's
-  advantage is not immediate (tied with baselines at very weak signal) but emerges and grows
-  reliably from moderate signal onward (C=0.931 vs. 0.908/0.875 at the strongest level tested); the
-  α=0 internal control (YFB's genomics factors should be exactly alpha-invariant) is exact —
-  max|F diff|=0 across all 30 strength×seed combinations once convergence-timing is controlled for.
+  EBMF+Cox two-step baselines, across **10 seeds and 4 DGP scenarios** (`default` real EBMF
+  templates, `sparse_synthetic`, `low_snr`, `high_K`; extended from an initial 5-seed/1-scenario
+  pass). Honest results: equivalence at zero signal holds within ~1-2 SE; under `default`/`low_snr`/
+  `high_K` the joint model's advantage is not immediate (tied with baselines at very weak signal) but
+  emerges and grows reliably from moderate signal onward; the α=0 internal control is exact —
+  max|F diff|=0 across all 240 scenario×strength×seed combinations. **`sparse_synthetic` reverses the
+  ordering** (YFB ~5 SEs below both two-step baselines at strength=4) — root-caused with a persisted
+  diagnostic script to a genuine, understood CAVI factor-collapse vulnerability shared by LB and YFB
+  (see the follow-up item below), not a survival-coupling bug and not an amplitude-hierarchy effect
+  (amplitude is identical across all shared factors in every scenario); the real differentiator is
+  loading density/structure (real EBMF templates are dense and cross-correlated, `sparse_synthetic`
+  is exactly sparse and disjoint). YFB has not collapsed in any real-template scenario tested
+  (`default`/`low_snr`/`high_K`, 0/180 fits), but **LB has, occasionally, even with real templates**
+  (`low_snr`/`high_K`, 10/180 fits) — so this is not purely a contrived-synthetic-data phenomenon.
   Full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`. New reusable code:
-  `results/multi_cohort_sim/fit_pca_cox.R`. Details: DECISIONS.md 2026-07-12.
+  `results/multi_cohort_sim/fit_pca_cox.R`, `results/multi_cohort_sim/plot_survival_strength_sweep.R`,
+  `results/multi_cohort_sim/diagnose_factor_collapse.R`. Details: DECISIONS.md 2026-07-12.
+
+- [ ] **Investigate CAVI factor-collapse vulnerability (discovered via Phase 2's comprehensive sweep)**
+  Both LB and YFB's shared `update_L.R`/`update_F.R` joint-CAVI fitting can collapse multiple factors
+  to exactly zero and get permanently stuck when factors have near-equal amplitude and disjoint
+  (non-overlapping), low-density support — confirmed independent of the survival objective (identical
+  dead-factor count at α=0 in every seed tested) and not fixable by switching to random init (makes
+  it uniformly worse: 4/4 dead vs. 1-2/4 for SVD init). LB collapses more on average than YFB (mean
+  2.4/4 vs. 1.8/4 dead over 5 seeds) but not in every individual seed. EBMF avoids this via greedy
+  (residual-based) factor-at-a-time fitting; PCA avoids it by doing no sparsity-inducing shrinkage.
+  Candidate fixes to evaluate: (1) multistart best-ELBO selection via the existing
+  `code/fit_modular_multistart.R` (built but not yet tested against this specific failure mode — an
+  attempted test hit an unrelated setup error, not yet resolved); (2) a greedy/sequential init variant
+  analogous to EBMF's. Priority: elevated from "no evidence it affects real fits" — LB has shown this
+  collapse occasionally on real-template scenarios (`low_snr`, `high_K`), not only on contrived
+  synthetic data, so this is a real (if so-far-occasional) robustness gap worth investigating, not
+  purely hypothetical. Details: DECISIONS.md 2026-07-12 (Phase 2
+  same-day follow-up entry).
+
+- [ ] **Phase 3 (K-parsimony trade-off on real data)** *(Plan drafted 2026-07-12, not started)*
+  Build the external-validation K-vs-performance curve (K ∈ {2,3,4,5,7}) that the internal CV curve
+  doesn't give us — extend `results/benchmark_sim/run_desurv_comparison.R` to refit YFB D4 at each K
+  and re-run external validation against the same 5 held-out PDAC cohorts, then apply a 1-SE-style
+  decision rule (smallest K within 1 SE of K=7's external C=0.627). Branch: `phase3-k-parsimony`,
+  cut from `main` (does not depend on Phase 2's unmerged `validation-two-step`). Requires
+  `PDAC_DATA_ROOT` set (local OneDrive path or Longleaf) — not available in all environments.
 
 - [x] **Phase 1 (objective normalization, λ retirement, train/test preprocessing fix)**
   *(Complete, merged to `main` 2026-07-12)*
