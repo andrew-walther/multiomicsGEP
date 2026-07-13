@@ -2082,6 +2082,109 @@ Full reasoning, the empirical comparison table, and the CV table are in `DECISIO
 
 ---
 
+# Session 28 — Phase 2: joint model vs. two-step value-add (2026-07-12)
+
+Branch `validation-two-step` (cut from `main` after Phase 1's merge and post-merge correction).
+Implements Phase 2 of `docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`.
+
+## 28.1 — PCA+Cox two-step baseline
+
+New, TDD-developed `results/multi_cohort_sim/fit_pca_cox.R`: unsupervised PCA on training genomics
+data, then Cox regression on the top-K PC scores; held-out scoring reuses the training rotation and
+center. 9/9 tests (structure, train/test projection consistency, degenerate-fit handling, signal
+recovery on a known prognostic direction).
+
+## 28.2 — Survival-strength sweep
+
+New `results/multi_cohort_sim/run_survival_strength_sweep.R` and a
+`synthetic_multicohort.survival_strength_sweep` config block: scales the true prognostic effect
+(`beta_shared`) from 0 to large across 6 levels × 5 seeds, holding the genomics DGP fixed. Compares
+YFB (joint, tuned α=0.5) against PCA+Cox and EBMF+Cox (existing) two-step baselines, plus LB (joint)
+as a secondary reference and YFB at α=0 as the internal control.
+
+**Honest results** (full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`):
+- **Equivalence at zero signal:** YFB=0.517±0.008 vs. PCA+Cox=0.533±0.017 vs. EBMF+Cox=0.540±0.017
+  — within ~1 SE of each other and of chance; consistent with equivalence though the raw gaps
+  (0.016–0.023) sit slightly above an idealized <0.01 target.
+- **Separation growing with signal:** not immediate — tied with baselines at strength=0.25 — but
+  reliable and growing from strength≥0.5 onward (0.931 vs. 0.908/0.875 at the strongest level, with
+  YFB's own SE shrinking from 0.027 to 0.006 as signal strengthens).
+- **α=0 internal control (cleanest result):** max|F(α=0.5) − F(α=0)| = exactly 0 across all 30
+  strength×seed combinations. Required controlling for a real confound first: naturally-converged
+  fits at different α values stop after different iteration counts (different combined-objective
+  trajectories), so a naive F comparison contrasts different snapshots of an otherwise-identical
+  trajectory, not a true α effect. Forcing identical iteration counts (`tol=-1`) isolates the
+  genuine structural property cleanly.
+
+## 28.3 — Files changed (initial pass)
+
+| File | Change |
+|------|--------|
+| `results/multi_cohort_sim/fit_pca_cox.R` (new) | `fit_pca_cox()`/`predict_pca_cox()` |
+| `results/multi_cohort_sim/run_survival_strength_sweep.R` (new) | The sweep runner |
+| `config/globals.yml` | New `survival_strength_sweep` config block |
+| `tests/test_fit_pca_cox.R` (new) | 9 tests |
+| `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}` (new) | Full report |
+| `DECISIONS.md`, `ROADMAP.md` | Phase 2 entry/milestone |
+
+## 28.4 — Comprehensive extension, same day: 10 seeds, 4 DGP scenarios
+
+The initial 5-seed/1-scenario pass was directionally right but too thin to be strong evidence.
+Extended `run_survival_strength_sweep.R` and `config/globals.yml`
+(`survival_strength_sweep.{n_seeds,scenarios}`) to run 10 seeds across 4 DGP scenarios: `default`
+(real EBMF templates, as before), `sparse_synthetic` (synthetic sparse F, 2% active genes/factor,
+real templates off), `low_snr` (shared-factor amplitude 12→6), `high_K` (K_shared 4→8).
+
+**`default`/`low_snr`/`high_K` confirm the original pattern** (equivalence at zero, growing joint
+advantage from moderate signal, exact α-invariance — now 240/240 combinations, not 30/30).
+
+**`sparse_synthetic` reverses the ordering**: at strength=4, YFB=0.795±0.027 vs. PCA+Cox=0.934±0.005
+vs. EBMF+Cox=0.940±0.004 — roughly 5 SEs below both two-step baselines, not noise.
+
+**Root-caused with a persisted, reproducible diagnostic** (`results/multi_cohort_sim/
+diagnose_factor_collapse.R`, 5 seeds), not left as an open question:
+1. YFB at α=0 (survival term fully removed) shows the *identical* dead-factor count as the tuned
+   fit in every one of 5 seeds (mean 1.8/4 dead, both cases) — rules out the joint survival
+   objective as the cause.
+2. LB (same `update_L.R`/`update_F.R` machinery) also collapses — on average *more* factors die
+   than YFB (mean 2.4/4 vs. 1.8/4 over 5 seeds; worse in 3/5, better in 2/5) — confirms a shared
+   CAVI vulnerability, not something specific to the Cox-on-YF reformulation, though severity is
+   seed-dependent rather than uniformly worse for LB.
+3. Random init makes it uniformly worse (4/4 dead in every seed vs. 1–2/4 for SVD init) — rules
+   out "bad initialization" as the fixable cause.
+
+**Diagnosis:** NOT an amplitude-hierarchy effect (`a_shared` is identical across all shared factors
+in every scenario, including `default` — verified directly). The actual differentiator is loading
+structure: real EBMF templates are dense (97% of genes non-trivially loaded) with graded magnitudes
+and real cross-factor correlation (up to |r|≈0.4), while `sparse_synthetic` gives each factor exactly
+2% active genes, uniform magnitude, and near-zero cross-factor overlap by construction. This
+near-perfect symmetry appears to be exactly the condition under which our point_exponential joint
+CAVI hits a degenerate fixed point — a factor that dips slightly below its (otherwise identical)
+siblings gets shrunk further every iteration with no recovery mechanism, and the ELBO genuinely
+plateaus there (fast "convergence" at a bad solution). EBMF avoids this via greedy, residual-based
+factor-at-a-time fitting; PCA avoids it by doing no shrinkage at all.
+
+**Scoping — narrower than "only a synthetic-data artifact":** `default` (real templates) showed
+zero collapses for either model (0/60 fits). But in `low_snr`/`high_K` — also built on real EBMF
+templates — **LB collapsed completely on 10 of 180 fits; YFB on 0 of 180**. So YFB has not
+collapsed under any real-template scenario tested here, but LB has, occasionally, under lower SNR
+or higher K — this is not purely a contrived-synthetic-data phenomenon, though there is still no
+evidence it affects the real PDAC fits. Logged as a genuine, understood algorithmic limitation
+(ROADMAP.md follow-up item, priority elevated accordingly), not resolved here.
+
+**Additional files changed:**
+
+| File | Change |
+|------|--------|
+| `results/multi_cohort_sim/run_survival_strength_sweep.R` | Scenario loop, 10 seeds |
+| `results/multi_cohort_sim/plot_survival_strength_sweep.R` | Faceted-by-scenario plot (script itself created in an earlier commit; modified here for faceting) |
+| `results/multi_cohort_sim/diagnose_factor_collapse.R` (new) | Root-cause diagnostic for Result 4 |
+| `config/globals.yml` | `n_seeds`, `scenarios` block |
+| `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}` | Result 4 (scenario robustness + diagnosis) |
+| `DECISIONS.md`, `ROADMAP.md` | Same-day follow-up entry + new CAVI-collapse and Phase 3 items |
+
+---
+
 # Session 29 — Phase 3: K-parsimony curve on real data (2026-07-13)
 
 Branch `phase3-k-parsimony` (cut from `main`, independent of Phase 2's unmerged
@@ -2131,8 +2234,7 @@ free" — refitting at smaller K directly (not just counting active factors from
 real performance loss at every smaller K tested here, on every held-out cohort, with the caveat
 above applying most to K=2/K=4 specifically. Whether DeSurv's joint (K,α,λ) Bayesian-optimization
 tuning would find a smaller K with comparable *external* performance remains untested — a plan for
-this exists (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`) but is currently only on the
-unmerged `validation-two-step` branch.
+this exists (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`), not yet implemented.
 
 ## 29.2 — Files changed
 

@@ -66,11 +66,100 @@ caveat above). The K=7→K_eff=2 gap is better understood as CV-selected capacit
 produce few large-|β| factors, not as 5 factors that could simply be removed. Whether DeSurv's joint
 (K, α, λ) Bayesian-optimization tuning would find a smaller K with comparable *external* performance
 (as opposed to comparable internal/training performance) remains untested here — a plan for this
-exists (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`) but currently only on the unmerged
-`validation-two-step` branch, not yet available here.
+exists (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`), not yet implemented.
 
 *Files: `results/benchmark_sim/run_k_parsimony_curve.R` (new),
 `results/benchmark_sim/outputs/k_parsimony_curve/k_parsimony_curve_results.csv` (new).*
+
+---
+
+## 2026-07-12 — Phase 2: joint model vs. two-step baselines, survival-strength sweep
+
+**Goal (Phase 2 of the post-lab-meeting action plan):** show that the joint model beats a 2-step
+(unsupervised factorization → Cox) baseline when survival carries real signal, and is *equivalent*
+to it when survival carries none. Implemented as a simulation sweep
+(`results/multi_cohort_sim/run_survival_strength_sweep.R`) scaling the true prognostic effect
+(`beta_shared`) from 0 to large across 6 levels × 5 seeds, comparing YFB (joint, tuned α=0.5)
+against new PCA+Cox and existing EBMF+Cox two-step baselines (LB included as a secondary
+reference). Full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`.
+
+**Result 1 (equivalence at zero signal):** YFB=0.517±0.008, PCA+Cox=0.533±0.017,
+EBMF+Cox=0.540±0.017. All within ~1 SE of each other and of chance — consistent with equivalence,
+though the raw gaps (0.016–0.023) are slightly above an idealized "<0.01" target; reported honestly
+as "consistent with, not a sharp confirmation of" equivalence, given only 5 seeds.
+
+**Result 2 (separation growing with signal):** not immediate or uniform — at strength=0.25 YFB is
+tied with both baselines (within noise). From strength≥0.5 it pulls ahead of EBMF+Cox, and from
+strength≥1.0 ahead of PCA+Cox too, with the gap widening and YFB's own SE shrinking as signal grows
+(SE 0.027→0.006 from strength 1→4). At strength=4: YFB=0.931±0.006 vs. PCA+Cox=0.908±0.015 vs.
+EBMF+Cox=0.875±0.057.
+
+**Result 3 (α=0 internal control) — the cleanest of the three:** max$|F_{\alpha=0.5}-F_{\alpha=0}|$
+= exactly 0 at every strength level and seed (30/30). Required a dedicated, iteration-count-
+controlled comparison (`tol=-1`, fixed iterations) rather than comparing naturally-converged fits
+directly — different α values give different combined-objective trajectories, so naturally-
+converged fits stop after a different number of iterations, making a naive F comparison confounded
+by convergence timing rather than a true α effect. Once controlled for, the result is exact and
+unambiguous: YFB's genomics factorization is provably α-invariant, confirming the model behaves as
+designed at this boundary.
+
+**New reusable code:** `results/multi_cohort_sim/fit_pca_cox.R` (`fit_pca_cox()`/`predict_pca_cox()`,
+9 TDD tests), a `synthetic_multicohort.survival_strength_sweep` config block
+(`config/globals.yml`).
+
+**Not addressed here:** LB's own unresolved Phase 1a limitation (documented in this file's
+objective-normalization entry) — LB's numbers are shown for reference only, no claims made about
+its competitiveness beyond the raw table.
+
+**Same-day follow-up — comprehensive extension (10 seeds, 4 DGP scenarios) surfaces a genuine
+joint-model failure mode, root-caused:** the initial 5-seed/1-scenario run was directionally right
+but too thin. Extending to 10 seeds and 3 additional DGP structures (`sparse_synthetic`: synthetic
+sparse F, 2% active genes/factor, real templates off; `low_snr`: a_shared 12→6; `high_K`: K_shared
+4→8) confirmed Results 1–3 hold under `default`, `low_snr`, and `high_K` — but **`sparse_synthetic`
+reverses the joint-vs-2-step ordering entirely**: at strength=4, YFB=0.795±0.027 vs.
+PCA+Cox=0.934±0.005 vs. EBMF+Cox=0.940±0.004 (a ~5-SE gap, not noise).
+
+Root-caused with a persisted, reproducible diagnostic (`results/multi_cohort_sim/
+diagnose_factor_collapse.R`, 5 seeds; `outputs/factor_collapse_diagnostic.csv`), not left as an open
+mystery:
+1. Refitting YFB at α=0 (survival term fully removed) shows the *identical* dead-factor count as the
+   tuned fit in every one of 5 seeds (mean 1.8/4 dead, both cases) — rules out anything related to
+   the joint survival objective.
+2. LB (identical `update_L.R`/`update_F.R` machinery) also collapses — on average *more* factors die
+   than for YFB (mean 2.4/4 vs. 1.8/4 across 5 seeds; worse in 3/5, better in 2/5) — confirms this is
+   a shared CAVI vulnerability, not specific to the Cox-on-YF reformulation, though severity is
+   seed-dependent rather than uniformly worse for LB.
+3. Switching SVD init → random init makes it *uniformly worse*: all 4 factors die in every one of
+   5 seeds (vs. 1–2 of 4 for SVD init) — rules out "bad initialization" as the root cause.
+
+**Diagnosis:** NOT an amplitude-hierarchy effect — `a_shared` is applied identically to every shared
+factor in *every* scenario including `default`, so there is no built-in amplitude ranking anywhere.
+The actual differentiator is **loading structure**: real EBMF templates (`default`/`low_snr`/
+`high_K`) are dense (97% of genes carry non-trivial loading in a representative factor, verified
+directly on the cached templates) with graded magnitudes and real cross-factor correlation (up to
+|r|≈0.4); `sparse_synthetic` gives each factor exactly 2% active genes, uniform magnitude, and
+near-zero cross-factor overlap by construction. This near-perfect symmetry (several equal-scale,
+non-overlapping factors, no ties to break) appears to be exactly the condition under which our
+point_exponential-based joint CAVI hits a degenerate fixed point: a factor whose estimated loadings
+dip slightly below its (otherwise identical) siblings gets shrunk further every iteration with no
+mechanism to recover, and the ELBO genuinely plateaus at this bad solution (hence fast, "converged"
+fits — 6-14 iterations across all checks). EBMF avoids this by fitting factors *greedily* on the
+residual (each factor only ever competes against noise, never against symmetric siblings for the
+same variance); PCA avoids it by doing no sparsity-inducing shrinkage at all.
+
+**Scoping — narrower than "only a synthetic-data artifact":** `default` (real templates) showed zero
+collapses for either model (0/60 fits). But in `low_snr` and `high_K` — also built on real EBMF
+templates — **LB collapsed completely on 10 of 180 fits** (frac_recov=0); **YFB collapsed on 0 of
+180**. So the honest claim is: YFB has not collapsed in any real-template scenario tested here, but
+LB has, occasionally, under lower SNR or higher K, even with real templates — this is *not* purely a
+contrived-synthetic-data phenomenon, though we still have no evidence it affects the actual real
+PDAC fits. Logged as a known, understood algorithmic limitation (LB apparently more susceptible),
+not resolved here; candidate follow-ups (multistart best-ELBO selection via the existing
+`code/fit_modular_multistart.R`, or a greedy-init variant) go in `ROADMAP.md`.
+
+Updated report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}` (now includes a
+per-scenario results table and this failure-mode analysis). Config:
+`synthetic_multicohort.survival_strength_sweep.{n_seeds,scenarios}` (`config/globals.yml`).
 
 ---
 

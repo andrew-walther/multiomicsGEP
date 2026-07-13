@@ -84,18 +84,60 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   survives — this is about tightening the specific K=2/K=4 numbers, not re-opening the headline
   finding.
 
+- [x] **Phase 2 (joint model vs. two-step value-add, survival-strength sweep)** *(Complete, 2026-07-12;
+  comprehensively extended same day)*
+  Post-lab-meeting action plan Phase 2, branch `validation-two-step`. Simulation sweep scaling the
+  true prognostic effect from 0 to large, comparing YFB (joint) against new PCA+Cox and existing
+  EBMF+Cox two-step baselines, across **10 seeds and 4 DGP scenarios** (`default` real EBMF
+  templates, `sparse_synthetic`, `low_snr`, `high_K`; extended from an initial 5-seed/1-scenario
+  pass). Honest results: equivalence at zero signal holds within ~1-2 SE; under `default`/`low_snr`/
+  `high_K` the joint model's advantage is not immediate (tied with baselines at very weak signal) but
+  emerges and grows reliably from moderate signal onward; the α=0 internal control is exact —
+  max|F diff|=0 across all 240 scenario×strength×seed combinations. **`sparse_synthetic` reverses the
+  ordering** (YFB ~5 SEs below both two-step baselines at strength=4) — root-caused with a persisted
+  diagnostic script to a genuine, understood CAVI factor-collapse vulnerability shared by LB and YFB
+  (see the follow-up item below), not a survival-coupling bug and not an amplitude-hierarchy effect
+  (amplitude is identical across all shared factors in every scenario); the real differentiator is
+  loading density/structure (real EBMF templates are dense and cross-correlated, `sparse_synthetic`
+  is exactly sparse and disjoint). YFB has not collapsed in any real-template scenario tested
+  (`default`/`low_snr`/`high_K`, 0/180 fits), but **LB has, occasionally, even with real templates**
+  (`low_snr`/`high_K`, 10/180 fits) — so this is not purely a contrived-synthetic-data phenomenon.
+  Full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`. New reusable code:
+  `results/multi_cohort_sim/fit_pca_cox.R`, `results/multi_cohort_sim/plot_survival_strength_sweep.R`,
+  `results/multi_cohort_sim/diagnose_factor_collapse.R`. Details: DECISIONS.md 2026-07-12.
+
+- [ ] **Investigate CAVI factor-collapse vulnerability (discovered via Phase 2's comprehensive sweep)**
+  Both LB and YFB's shared `update_L.R`/`update_F.R` joint-CAVI fitting can collapse multiple factors
+  to exactly zero and get permanently stuck when factors have near-equal amplitude and disjoint
+  (non-overlapping), low-density support — confirmed independent of the survival objective (identical
+  dead-factor count at α=0 in every seed tested) and not fixable by switching to random init (makes
+  it uniformly worse: 4/4 dead vs. 1-2/4 for SVD init). LB collapses more on average than YFB (mean
+  2.4/4 vs. 1.8/4 dead over 5 seeds) but not in every individual seed. EBMF avoids this via greedy
+  (residual-based) factor-at-a-time fitting; PCA avoids it by doing no sparsity-inducing shrinkage.
+  Candidate fixes to evaluate: (1) multistart best-ELBO selection via the existing
+  `code/fit_modular_multistart.R` (built but not yet tested against this specific failure mode — an
+  attempted test hit an unrelated setup error, not yet resolved); (2) a greedy/sequential init variant
+  analogous to EBMF's. Priority: elevated from "no evidence it affects real fits" — LB has shown this
+  collapse occasionally on real-template scenarios (`low_snr`, `high_K`), not only on contrived
+  synthetic data, so this is a real (if so-far-occasional) robustness gap worth investigating, not
+  purely hypothetical. Details: DECISIONS.md 2026-07-12 (Phase 2
+  same-day follow-up entry).
+
 - [x] **Phase 1 (objective normalization, λ retirement, train/test preprocessing fix)**
-  *(Complete on branch `objective-normalization`, 2026-07-12 — awaiting net-benefit-gate merge)*
+  *(Complete, merged to `main` 2026-07-12)*
   Post-lab-meeting action plan Phase 1 (`docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`):
   normalized the unnormalized ~p-fold genomics/survival ELBO-term scale gap by boosting the
-  survival contribution (not shrinking genomics — shrinking genomics collapses LB's L/F to
-  exactly zero via a bilinear feedback loop; boosting survival is stable and reaches YFB/D4's
-  β and ELBO monitor safely); retired the redundant `lambda` survival-scale multiplier (`alpha`
-  already plays that role); fixed a train/test preprocessing mismatch where external cohorts were
-  rank-transformed while training was per-platform z-standardized (the reverse), across 3
-  benchmark scripts. **Net effect on D4 (recommended config): external mean C-index 0.636 → 0.642
-  (+0.006), K=7, K_eff=4** — re-run of `run_desurv_comparison.R` on real PDAC data, no regression.
-  264/264 tests passing. Full investigation (including two rejected normalization directions) in
+  survival contribution for the ELBO monitor only (not shrinking genomics — shrinking genomics
+  collapses LB's L/F to exactly zero via a bilinear feedback loop; boosting β's own precision was
+  tried too but found unjustified and reverted, see below); retired the redundant `lambda`
+  survival-scale multiplier (`alpha` already plays that role); fixed a train/test preprocessing
+  mismatch where external cohorts were rank-transformed while training was per-platform
+  z-standardized (the reverse), across 3 benchmark scripts. **Honest net effect on D4 (recommended
+  config): external mean C-index 0.636 → 0.627, K=7, K_eff=2 (unchanged)** — the small decline is
+  attributable entirely to the preprocessing fix (a genuine bug fix, kept regardless); objective
+  normalization itself has zero effect on YFB's fitted output (there was no real per-coordinate
+  imbalance in YFB to fix — see the K_eff root-cause entry below). 267/267 tests passing. Full
+  investigation (including two rejected normalization directions and the beta-boost correction) in
   DECISIONS.md 2026-07-12.
 
 - [x] **Re-run benchmarks with top_n=2000 to restore single-cohort baseline** *(complete 2026-05-05)*
@@ -300,6 +342,15 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ---
 
 ## 📐 Model Selection
+
+- [ ] **Joint (K, α) tuning via Bayesian optimization, to match DeSurv's search procedure** `[Priority: Low-Medium]` `[Effort: Medium]`
+  Plan only, not implemented: `docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`. Motivation:
+  DeSurv jointly tunes `k, α, λ` via Bayesian optimization; we tune only K via grid-search CV with
+  α fixed at 0.5. This confirmed methodology difference is part of why K=7-vs-DeSurv's-k=3 isn't a
+  fair apples-to-apples comparison (`DECISIONS.md` 2026-07-12). A joint `(K, α)` BO search (no
+  direct analogue of DeSurv's λ exists for us — see the plan doc) would let that comparison stand
+  on equal footing. Deferred behind Phase 2/3; revisit sooner if the manuscript (Phase 6) needs a
+  defensible answer to "why does SBMF use more factors than DeSurv."
 
 - [x] **K_eff 2→4 root-caused and resolved (not a `beta_threshold` calibration issue)** *(Complete — 2026-07-12)*
   D4's K_eff rose from 2 to 4 after the initial Phase 1 merge, alongside an apparent external
