@@ -58,6 +58,16 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [ ] **TO-DO (flagged by user, 2026-07-13): executive summary / progress report for research team**
+  Once all remaining phases below and their follow-ups (multistart/warm-start re-check, joint
+  K/α/penalty BO if pursued, pathway enrichment) are complete, write an executive summary /
+  progress report summarizing the recent work and results (Phase 1 objective-normalization
+  correction, Phase 2 joint-vs-two-step validation, Phase 3 K-parsimony curve, and any follow-ups)
+  to share with the research team. Audience and tone should follow the existing documentation
+  convention (biostatistician collaborators reading cold, not an implementation log — see
+  `CLAUDE.md`'s "Documentation audience" note). Do not start this until the user confirms the
+  remaining phases are far enough along.
+
 - [x] **Phase 3 (K-parsimony curve on real data)** *(Complete, 2026-07-13, branch `phase3-k-parsimony`)*
   Built `results/benchmark_sim/run_k_parsimony_curve.R`: refits YFB D4 (per-platform z-std, DeSurv
   combined-rank gene selection, top-3000 per cohort, no cohort_id) at K ∈ {2,3,4,5,7} and re-runs
@@ -75,14 +85,27 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   refitting at smaller K directly shows real performance loss in this run, though see the caveat
   before treating K=2/K=4 specifically as conclusive. Details: DECISIONS.md 2026-07-13.
 
-- [ ] **Re-verify Phase 3's K=2/K=4 results with multistart before treating as conclusive**
+- [ ] **Re-verify Phase 3's K=2/K=4 results with multistart and warm-start before treating as conclusive**
   `run_k_parsimony_curve.R`'s K=2 and K=4 fits converge in 7-9 iterations with beta_max≈0.009 —
-  consistent with the CAVI factor-collapse failure mode documented for Phase 2. A best-ELBO
-  multistart rerun at K=2/K=4 (and ideally K=3/K=5 too, for consistency) would confirm whether these
-  specific numbers reflect a genuine ceiling or a collapsed single-seed fit. Low urgency: K=5, which
-  converges normally, already falls short of K=7 on its own, so the qualitative conclusion likely
-  survives — this is about tightening the specific K=2/K=4 numbers, not re-opening the headline
-  finding.
+  consistent with the CAVI factor-collapse failure mode documented for Phase 2. Two complementary
+  checks before concluding parsimony is genuinely unavailable: (1) best-ELBO multistart rerun at
+  K=2/K=4 (and ideally K=3/K=5 too, for consistency); (2) warm-start K=2-5 from the converged K=7
+  fit's top-|β| or top-PVE columns instead of a fresh SVD init each time — the cheaper, more direct
+  test of whether small-K underperformance is an optimization artifact or a true capacity ceiling.
+  Low urgency for the headline conclusion: K=5, which converges normally, already falls short of
+  K=7 on its own, so the qualitative finding likely survives — this is about tightening the specific
+  K=2/K=4 numbers and clarifying whether a smarter fitting procedure (not a smaller model) is the
+  real route to parsimony.
+
+- [ ] **Joint (K, α, penalty) Bayesian-optimization, prioritized higher after Phase 3**
+  Plan already drafted (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`), previously deferred
+  as not top priority. Phase 3's finding (K=7 is not free to shrink under our fixed-α, no-penalty,
+  K-only CV) strengthens the case for testing DeSurv's actual approach — jointly tuning K, α, and an
+  elastic-net-style penalty — since our current tuning procedure may be structurally unable to find
+  a smaller-K optimum that a differently-regularized fit could reach. Sequence after the multistart/
+  warm-start re-check above: if warm-starting shows small-K fits can approach K=7's performance with
+  a better optimization procedure, this BO work may be lower-value; if not, it becomes the natural
+  next lever.
 
 - [x] **Phase 2 (joint model vs. two-step value-add, survival-strength sweep)** *(Complete, 2026-07-12;
   comprehensively extended same day)*
