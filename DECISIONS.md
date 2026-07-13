@@ -5,6 +5,94 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-13 — K-parsimony follow-up Step 3: joint (K, alpha) Bayesian optimization finds a marginally better K=8, not a smaller K
+
+**Motivation.** Step 2's deflation-init (entry below) failed to reproduce Step 1's warm-start
+rescue — an analytically-understood negative result, not a bug. This raised the question the
+user chose to pursue next: does jointly tuning `(K, alpha)` via Bayesian optimization (DeSurv's own
+approach, vs. our fixed-alpha=0.5, K-only CV) find a smaller K with comparable external performance?
+Branch `joint-k-alpha-bayesopt`.
+
+**New code:** `code/select_k_alpha_bo.R` — `select_k_alpha_bo_objective()` (thin wrapper: scores a
+single `(K, alpha)` point via a single-K call to the existing `select_K_cv()`, reusing its
+fold-fitting machinery rather than duplicating it), `select_k_alpha_bayesopt()` (wraps
+`rBayesianOptimization::BayesianOptimization()`), and `pick_trustworthy_bo_winner()` (validity gate,
+see below). `results/benchmark_sim/run_joint_bo.R` (real-data runner). `tests/test_select_k_alpha_bo.R`
+(12 tests, TDD). Package `rBayesianOptimization` installed (CRAN; `ParBayesianOptimization`, the
+plan's first-choice candidate, is not available for the current R version).
+
+**A real design gap caught before the expensive run, not after.** The raw BO objective (mean CV
+concordance) has no way to know whether a high-scoring point reflects genuine survival modeling or
+incidental unsupervised-reconstruction alignment with the outcome — a documented failure mode in
+this exact project (2026-05-05 entry below: alpha=1.0 degenerate K-CV selection, K_eff=0; the
+archived "lucky PCA direction alignment" finding). A `--quick` dry run surfaced exactly this: BO's
+raw `Best_Par` was `K=10, alpha≈0` (literally `2.2e-16`, i.e. survival term off) with **K_eff=0**,
+yet external mean C=0.6213 — a plausible-looking number for a model that isn't using survival
+information at all. Fixed by adding `pick_trustworthy_bo_winner()`: re-fits the top 5 CV-scoring
+`(K, alpha)` candidates on full training data and returns the best-scoring one with K_eff > 0,
+raising an informative error if none qualify. (`alpha_bounds` were deliberately left at the full
+`[0,1]` rather than narrowed away from the extremes — this project's own existing alpha-grid
+convention (`config/globals.yml`, `alpha_grid: [0.0, ..., 1.0]`) already tests both extremes, so
+narrowing would have been a new, undiscussed deviation; a validity gate on the *result* is more
+honest than silently reshaping the search space.)
+
+**Result — real data (D4 config, n_folds=5, init_points=8, n_iter=15):**
+
+| Config | Mean external C | SE | K_eff |
+|---|---|---|---|
+| K=7, alpha=0.5 (Step 1 fresh SVD reference) | 0.6267 | 0.0199 | 2 |
+| K=4, alpha=0.5 (Step 1 warm-start-from-K=7) | 0.6270 | 0.0198 | 2 |
+| K=5, alpha=0.5 (Step 1 warm-start-from-K=7) | 0.6270 | 0.0198 | 2 |
+| **K=8, alpha=0.7072 (Step 3 BO winner)** | **0.6282** | 0.0203 | 2 |
+
+The BO winner passed the validity gate (K_eff=2, not degenerate) and passed the sanity check against
+the existing internal K-CV grid (BO's internal CV=0.6546 vs. the existing K=7/alpha=0.5 internal
+reference of 0.633 — BO found a genuinely *better*-scoring region on the internal objective, not a
+worse one). **But it is a larger K, not a smaller one** — the stated goal of this step (find a
+*smaller* K with comparable performance) was not met. The marginal external-C improvement (0.6282 vs.
+0.6267, well within 1 SE of either) is not a meaningfully different answer from K=7's own number;
+adjusting alpha upward from 0.5 to ~0.71 (more survival-weighted) at a slightly larger K is, at best,
+a minor refinement, not a parsimony win.
+
+**A real limitation of this specific run, stated plainly, with a more precise mechanism than first
+suspected.** After finding `(K=8, alpha=0.7072)` at evaluation 9 of 23, the search proposed the
+*exact same point* for all 15 remaining rounds (9 through 23) rather than continuing to explore the
+smaller-K region under different alpha values. Initially attributed to the default UCB acquisition's
+exploration/exploitation balance; code review identified a more precise, more actionable cause:
+`K_bounds` is passed as integer-typed (`c(2L, 10L)`), and `rBayesianOptimization` documents that
+integer-suffixed bounds are treated as a discrete dimension internally, pre-rounding K *before* the
+Gaussian process or acquisition function ever see it — `select_k_alpha_bo_objective()`'s own
+`round(K)` was therefore redundant, and the real effect is that the optimizer's search over K
+collapses onto a coarser grid than a from-scratch continuous relaxation would give it, likely
+compounding with only 8 init points to converge early. This means the search's real exploration was
+effectively ~9 unique points, not 23, and `pick_trustworthy_bo_winner()`'s top-5 gate ended up
+re-checking 5 copies of the identical point — it still correctly confirmed K_eff>0 (not degenerate),
+but was not exercised against genuinely diverse candidates in this particular run. The search's
+early, more diverse evaluations (rounds 1-8: K∈{3,4,6,7,8,9} at various alpha) never found a smaller K
+competitive with K=7, but with only 8 init points and this early convergence, this is not a thorough
+search of the smaller-K region — a larger init_points budget, a continuous-relaxation workaround (not
+using the "L"-suffix integer-bounds convention), and/or a retuned acquisition (higher kappa, or
+`acq="ei"`/`"poi"`) would be needed before concluding smaller K is definitively unreachable via joint
+tuning. Recorded honestly as an open question, not resolved here.
+
+**Judgment call for Step 4:** given Step 3 did not find a smaller K, and Step 1's validated
+warm-start-from-K=7 recipe already delivers the actual parsimony goal (K=4 or K=5 at K=7-level
+performance, using only existing machinery), Step 4's final validation should adopt **Step 1's
+warm-start recipe**, not the Step 3 BO winner, as the config to carry forward — K=8 is not more
+parsimonious than K=7, so adopting it would move in the wrong direction relative to this whole
+follow-up's purpose. The BO machinery is kept (correct, tested, and a real option for a future,
+better-tuned joint search) but is not the answer to "can K shrink."
+
+Full test suite: 311/311 passing (299 + 12 new tests: 7 for the BO wrapper, 5 for
+`pick_trustworthy_bo_winner()`). Reviewed by `superpowers:code-reviewer`.
+
+*Files: `code/select_k_alpha_bo.R` (new), `tests/test_select_k_alpha_bo.R` (new, TDD),
+`results/benchmark_sim/run_joint_bo.R` (new),
+`results/benchmark_sim/outputs/joint_bo/joint_bo_history.csv`,
+`joint_bo_external_val.csv` (new).*
+
+---
+
 ## 2026-07-13 — K-parsimony follow-up Step 2: deflation-init is mathematically equivalent to SVD-init for non-degenerate data — does not reproduce Step 1's rescue
 
 **Motivation.** Step 1 (entry below) found the CAVI factor-collapse artifact could be fixed by
