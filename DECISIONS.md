@@ -5,6 +5,62 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-13 — K-parsimony follow-up Step 4 (final validation): K=7 remains the recommended default; K=4 is a validated, statistically-equivalent, more-parsimonious alternative
+
+**Synthesis of Steps 1-3.** The conclusive, doubly-verified answer to "is K=7 necessary":
+
+| Config | Fitting procedure | Mean external C | K_eff |
+|---|---|---|---|
+| K=2 | warm-start-from-K=7 (best of 3 methods) | 0.5608 | 1 |
+| K=3 | warm-start-from-K=7 (best of 3 methods) | 0.5955 | 3 |
+| **K=4** | **warm-start-from-K=7 (PVE-ranked columns)** | **0.6270** | **2** |
+| **K=5** | **warm-start-from-K=7 (PVE-ranked columns)** | **0.6270** | **2** |
+| **K=7** | **fresh SVD (one-step, no dependency)** | **0.6267** | **2** |
+| K=8 | joint (K,alpha) Bayesian optimization | 0.6282 | 2 |
+
+K=4, K=5, K=7, and K=8 are all statistically indistinguishable on external validation (spread of
+0.0015, far inside any individual config's SE of ~0.02) and all converge to the **same K_eff=2** —
+the number of factors that actually matter for survival prediction is robust to total K once
+optimization artifacts are controlled for, across a 2x range of K (4 to 8). K=2/K=3 remain a
+genuine, confirmed floor below which performance drops regardless of fitting procedure.
+
+**Decision: keep K=7 as the primary recommended configuration; do not change
+`config/globals.yml`'s `k_merged_yfb_desurv`.** This is a judgment call, stated plainly rather than
+silently resolved:
+- K=7 is reachable with a single, dependency-free fresh-SVD fit. K=4/K=5's statistically-equivalent
+  performance is **only reachable via the two-step warm-start recipe** (fit K=7 first, extract its
+  top-K PVE-ranked columns via `extract_top_k_by_pve()`, then refit at the smaller K with
+  `init_method="custom"`) — a fresh SVD fit at K=4 alone gives 0.5409, a full 0.086 worse. Adopting
+  K=4 as "the" recommended config would mean every future reproduction of the recommended pipeline
+  needs this two-step procedure for zero measurable gain in external performance (K_eff is identical
+  at 2 either way).
+- Step 5 (pathway enrichment) already targets K=7's Factor 7 (adverse) / Factor 3 (protective) —
+  keeping K=7 avoids re-deriving which factor indices are the biologically active ones under a
+  different K, an unforced complication with no offsetting benefit.
+- The scientific finding — K=7's extra factors beyond K_eff=2 are not load-bearing for survival
+  prediction, and a smaller, equally-performing K is available and validated — is fully preserved
+  and reportable regardless of which config is the "default": this is now documented, tested,
+  reproducible fact, not lost by keeping K=7 as the practical default.
+
+**What actually changed vs. Phase 3's original conclusion.** Phase 3 (2026-07-13, entry below) said
+"K=7 is not free to shrink." That is now **superseded**: K=7 is not *necessary* (K=4/K=5 tie it), but
+remains the *practical default* for reproducibility reasons unrelated to predictive performance. This
+is a more complete, more honest answer than either "K=7 is required" (Phase 3, since revised) or
+"switch to K=4" (would silently reintroduce a two-step fitting dependency) — both of Steps 1-3's own
+optimization strategies (warm-start, joint BO) independently confirm the same K_eff=2 ceiling and the
+same statistical tie among K∈{4,5,7,8}.
+
+**Recorded for a future session or the user to revisit:** if a future need (e.g. a reviewer question,
+or a manuscript emphasis on parsimony) makes adopting K=4 as the formal default worthwhile despite the
+two-step fitting cost, this entry has everything needed to make that change: update
+`config/globals.yml`'s `k_merged_yfb_desurv: 4`, document the two-step fitting requirement prominently
+in `CLAUDE.md`'s Quick Reference, and re-verify Step 5's target factor indices under the new K.
+
+*Files: no code changes (synthesis of already-committed Steps 1-3 results); `CLAUDE.md`'s "Current
+model status" line updated to reference this entry.*
+
+---
+
 ## 2026-07-13 — K-parsimony follow-up Step 3: joint (K, alpha) Bayesian optimization finds a marginally better K=8, not a smaller K
 
 **Motivation.** Step 2's deflation-init (entry below) failed to reproduce Step 1's warm-start

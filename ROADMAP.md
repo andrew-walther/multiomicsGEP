@@ -4,22 +4,29 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-06-16.** Core model complete (modular CAVI, 246/246 tests passing).
+> **Status as of 2026-07-13.** Core model complete (modular CAVI, 311/311 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
-> cohorts across RNA-seq, microarray, and proteomics platforms). Recommended configuration
-> finalized: YFB + survival-ranked gene selection, K=7, mean external C=0.636. Multi-cohort simulation
+> cohorts across RNA-seq, microarray, and proteomics platforms). Multi-cohort simulation
 > study complete: shared vs. study-specific factor recovery validated across 3 scenarios and
 > 5 arms; proposal and key results in `docs/reports/multicohort_sim_proposal_06_14_26.pdf`.
 > See `docs/reports/desurv_alignment_report_05_27_26.pdf` for the real-data benchmark.
 > 6/18/2026 lab-meeting deck delivered and merged to main (`905279b`); unsupervised EBMF→Cox
 > external baseline added (mean external C=0.564, K=20 — DECISIONS.md 2026-06-15). Adverse/protective
 > program directions corrected to the marginal (YF)-projection convention (DECISIONS.md 2026-06-16).
+> Post-lab-meeting Phases 1-3 and the K-parsimony follow-up plan's Steps 1-4 (DECISIONS.md 2026-07-12/13)
+> corrected and re-verified the recommended config's numbers below (superseding the earlier 0.636/K=7
+> figure quoted through 2026-07-12) and confirmed K=7's extra factors beyond K_eff=2 are not load-bearing
+> for survival prediction, though K=7 remains the practical default (see DECISIONS.md 2026-07-13, Step 4).
 >
 > **Recommended configuration — D4:** YFB (η = (YF)β), DeSurv-aligned gene selection
 > (combined mean+variance rank, top-3000 per cohort before per-platform z-standardization,
 > 2064 genes after intersection), K=7 (CV-selected with biological floor K≥3), no cohort
-> indicator. Mean external C=0.636 across 5 held-out PDAC cohorts. Identifies 2 active gene
-> expression programs (K_eff=2). By marginal (YF)-projection survival association — the convention
+> indicator. **Mean external C=0.627 across 5 held-out PDAC cohorts** (corrected 2026-07-12 from an
+> earlier 0.636 figure; see DECISIONS.md). Identifies 2 active gene expression programs (K_eff=2).
+> A statistically-equivalent, more-parsimonious K=4 (or K=5) alternative is validated but requires a
+> two-step warm-start fitting procedure rather than a single fresh fit (DECISIONS.md 2026-07-13, Step 4)
+> — K=7 is kept as the default for one-step reproducibility, not because it out-performs K=4/K=5.
+> By marginal (YF)-projection survival association — the convention
 > used in the talk and the biologically sensible one — **Program 7 is adverse** (MET/ITGA3/glycolytic)
 > and **Program 3 protective** (epithelial). The joint-β signs (β̂₇=−0.041, β̂₃=+0.011) are *opposite*
 > the marginal direction, a suppression effect among correlated programs (see DECISIONS.md 2026-06-16).
@@ -133,6 +140,18 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   **Step 4 will adopt Step 1's validated warm-start-from-K=7 recipe (K=4 or K=5, matching K=7's
   performance)**, not this step's K=8 result, since K=8 moves away from the parsimony goal. Details:
   DECISIONS.md 2026-07-13 (K-parsimony follow-up Step 3 entry).
+
+- [x] **Final validation (Step 4 of the K-parsimony follow-up plan)** *(Complete, 2026-07-13)*
+  Synthesized Steps 1-3: K∈{4,5,7,8} are all statistically indistinguishable on external validation
+  (spread of 0.0015, well inside any config's own SE) and all converge to the same K_eff=2 — the
+  survival-relevant factor count is robust to total K once optimization artifacts are controlled for.
+  **Decision: K=7 stays the recommended default** (`config/globals.yml` unchanged) since it's reachable
+  with a single dependency-free fresh-SVD fit, while K=4/K=5's equivalent performance requires a
+  two-step warm-start procedure for no measurable gain — a judgment call favoring reproducibility
+  simplicity over total-K minimalism, stated plainly rather than silently resolved. The scientific
+  finding (K=7's extra factors aren't load-bearing for survival prediction) is fully preserved and
+  reportable either way. `CLAUDE.md`'s "Current model status" line updated. Details: DECISIONS.md
+  2026-07-13 (K-parsimony follow-up Step 4 entry).
 
 - [x] **Phase 2 (joint model vs. two-step value-add, survival-strength sweep)** *(Complete, 2026-07-12;
   comprehensively extended same day)*
