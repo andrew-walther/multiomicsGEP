@@ -2081,3 +2081,65 @@ Full reasoning, the empirical comparison table, and the CV table are in `DECISIO
 (two new entries). `CLAUDE.md`, `ROADMAP.md` corrected to match.
 
 ---
+
+# Session 29 — Phase 3: K-parsimony curve on real data (2026-07-13)
+
+Branch `phase3-k-parsimony` (cut from `main`, independent of Phase 2's unmerged
+`validation-two-step`). The internal K-CV table (previous session) measures training-fold C-index;
+it doesn't say how much of the recommended config's **external** validation number (D4: mean
+C=0.627, K=7) would survive at a smaller, more parsimonious K.
+
+## 29.1 — K-parsimony curve
+
+New `results/benchmark_sim/run_k_parsimony_curve.R`: refits YFB D4 (per-platform z-std, DeSurv
+combined-rank gene selection, top-3000 per cohort, no cohort_id) at K ∈ {2, 3, 4, 5, 7}, re-running
+external validation against the same 5 held-out PDAC cohorts for each K.
+
+**Result:**
+
+| K | Mean external C | SE | K_eff |
+|---|---|---|---|
+| 2 | 0.541 | 0.012 | 1 |
+| 3 | 0.594 | 0.016 | 1 |
+| 4 | 0.541 | 0.012 | 1 |
+| 5 | 0.596 | 0.027 | 3 |
+| 7 | **0.627** | 0.020 | 2 |
+
+Applying the same 1-SE rule used for internal K-CV: K=7's margin is 0.627−0.020=0.607, and no
+smaller K reaches it (K=5's 0.596 is closest, still short). **K=7 is not free to shrink, in this
+single-seed comparison** — this is the honest answer, not the parsimony win we might have hoped for.
+
+Two things worth noting rather than glossing over:
+- **K=7 wins on every one of the 5 individual external cohorts** (not just on average) — a
+  consistent, non-cherry-picked result.
+- **The curve is non-monotonic and K_eff doesn't track it**: K=4 (K_eff=1) essentially ties K=2
+  (K_eff=1) despite one more factor; K=5 (K_eff=3, more "active" factors than K=7's 2) still
+  underperforms K=7. K_eff alone is not a reliable predictor of external performance here.
+
+**Caveat (raised by independent review, not glossed over):** each K used a single seed/init.
+K=2 and K=4 converge suspiciously fast (7 and 9 iterations) to a tiny beta_max (~0.009), while
+K=3/K=7 take 20 iterations to a substantially larger beta_max (0.033/0.040) and K=5 takes 41 —
+the fast, near-zero-β pattern at K=2/K=4 is consistent with the same CAVI factor-collapse failure
+mode root-caused in Session 28 (Phase 2's `sparse_synthetic` finding), not necessarily a genuine
+ceiling for those K values. A multistart (best-ELBO) rerun at K=2/K=4 would be needed before
+treating those specific numbers as conclusive. K=5's result is less suspect (converges normally)
+and already falls short of K=7 on its own, so the qualitative conclusion likely survives, but the
+precise K=2/K=4 numbers should not yet be treated as a hard ceiling.
+
+**Conclusion:** the K=7-vs-DeSurv's-K=3 gap is not simply "extra factors that could be pruned for
+free" — refitting at smaller K directly (not just counting active factors from the K=7 fit) shows
+real performance loss at every smaller K tested here, on every held-out cohort, with the caveat
+above applying most to K=2/K=4 specifically. Whether DeSurv's joint (K,α,λ) Bayesian-optimization
+tuning would find a smaller K with comparable *external* performance remains untested — a plan for
+this exists (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`) but is currently only on the
+unmerged `validation-two-step` branch.
+
+## 29.2 — Files changed
+
+| File | Change |
+|------|--------|
+| `results/benchmark_sim/run_k_parsimony_curve.R` (new) | K-parsimony curve runner |
+| `results/benchmark_sim/outputs/k_parsimony_curve/k_parsimony_curve_results.csv` (new) | Raw results (5 K x 5 cohorts) |
+| `DECISIONS.md`, `ROADMAP.md` | Phase 3 entry/milestone |
+
+---

@@ -5,6 +5,75 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-13 — Phase 3: K-parsimony curve on real data — K=7 is not free to shrink; smaller K all underperform
+
+**Motivation.** The existing K-CV table (2026-07-12 entry below) measures internal training-fold
+C-index. It doesn't answer the actually decision-relevant question: how much of the recommended
+config's headline **external** validation number (D4: mean C=0.627 across 5 held-out PDAC cohorts,
+K=7) would survive at a smaller, more parsimonious K. Built
+`results/benchmark_sim/run_k_parsimony_curve.R`: refits YFB D4 (per-platform z-std, DeSurv
+combined-rank gene selection, top-3000 per cohort, no cohort_id) at K ∈ {2, 3, 4, 5, 7}, re-running
+external validation against the same 5 held-out cohorts for each K.
+
+**Result — real data, branch `phase3-k-parsimony`:**
+
+| K | Mean external C | SE | K_eff |
+|---|---|---|---|
+| 2 | 0.5406 | 0.0116 | 1 |
+| 3 | 0.5943 | 0.0162 | 1 |
+| 4 | 0.5409 | 0.0116 | 1 |
+| 5 | 0.5960 | 0.0269 | 3 |
+| 7 | **0.6267** | 0.0199 | 2 |
+
+Applying the same 1-SE decision rule already used for internal K-CV (smallest K within 1 SE of the
+best): K=7's margin is 0.6267 − 0.0199 = 0.6068, and no smaller K in the grid reaches it (K=5's
+0.5960 is the closest, still ~0.6 SE short). **K=7 remains necessary for the external number in this
+run — there is no parsimony discount available in this K range**, with one caveat below on how much
+weight a single-seed run can bear.
+
+Two additional observations, reported honestly rather than smoothed over:
+- **K=7 is not just best on average — it wins on every one of the 5 individual external cohorts**
+  (Dijk 0.6345, Moffitt 0.5486, PACA_AU_array 0.6483, PACA_AU_seq 0.6573, Puleo 0.6447), each the
+  single highest C-index in its column across all 5 K values tested. Not a cherry-picked mean.
+- **The curve is not monotonic and K_eff doesn't track external performance.** K=4 (K_eff=1)
+  essentially ties K=2 (K_eff=1) on every cohort (e.g., Dijk 0.5589 vs. 0.5586) despite having one
+  more factor available, while K=3 (also K_eff=1) unpredictably lands much closer to K=5/K=7 on some
+  cohorts (PACA_AU_array 0.6131) and not others (Moffitt 0.5315). Two active factors (K_eff) at K=7
+  outperforms every smaller-K fit tested, including ones with the same or a higher K_eff (K=5,
+  K_eff=3) — K_eff alone is not a reliable predictor of external performance at fixed model capacity.
+
+**Caveat — single seed/init per K, not left unstated.** Every K used one fit (seed=42, SVD init).
+The per-K iteration counts are revealing: K=2 and K=4 both converge suspiciously fast (9 and 7
+iterations respectively) to a tiny beta_max (~0.009), while K=3 and K=7 take 20 iterations to a
+substantially larger beta_max (0.033, 0.040), and K=5 takes 41 iterations. This pattern — fast
+convergence to a near-zero-β solution — is consistent with exactly the CAVI factor-collapse failure
+mode root-caused in Phase 2 (`sparse_synthetic` finding, this file's 2026-07-12/13 entries): a
+single SVD-initialized fit at these K values may be landing in a degenerate local optimum rather
+than genuinely representing the best K=2 or K=4 model achievable. So "K=7 is necessary" is a fair
+description of *this specific single-seed comparison*, but not yet a fully robust claim about K=2-4's
+ceiling — a multistart (best-ELBO) rerun at the underperforming K values would be needed to rule out
+collapse before treating this as final. The K=7-vs-K=5 gap is less suspect (both converge at a
+comparable iteration count with comparable beta_max scale), so the core finding — a smaller,
+already-more-thoroughly-converged K=5 still falls short of K=7 — stands more confidently than the
+K=2/K=4 comparisons do.
+
+**Conclusion:** the gap between our K=7 and DeSurv's K=3 (2026-07-12 entry below) is not simply
+"our model retains unnecessary factors that could be pruned for free" — refitting at smaller K
+directly, rather than just counting active factors from the K=7 fit, shows real, substantial
+performance loss at every smaller K tested here, on every held-out cohort, though the K=2/K=4 numbers
+specifically should be re-verified with multistart before treating them as a hard ceiling (see
+caveat above). The K=7→K_eff=2 gap is better understood as CV-selected capacity that happens to
+produce few large-|β| factors, not as 5 factors that could simply be removed. Whether DeSurv's joint
+(K, α, λ) Bayesian-optimization tuning would find a smaller K with comparable *external* performance
+(as opposed to comparable internal/training performance) remains untested here — a plan for this
+exists (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`) but currently only on the unmerged
+`validation-two-step` branch, not yet available here.
+
+*Files: `results/benchmark_sim/run_k_parsimony_curve.R` (new),
+`results/benchmark_sim/outputs/k_parsimony_curve/k_parsimony_curve_results.csv` (new).*
+
+---
+
 ## 2026-07-12 — Fresh K-CV under corrected code: K=7 is genuine, not an artifact; K vs. DeSurv's k=3 is a methodology-comparison question, not a "our model needs more capacity" one
 
 **Motivation.** `k_merged_yfb_desurv=7` predated this entire session (cached 2026-05-27); every

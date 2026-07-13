@@ -58,6 +58,32 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [x] **Phase 3 (K-parsimony curve on real data)** *(Complete, 2026-07-13, branch `phase3-k-parsimony`)*
+  Built `results/benchmark_sim/run_k_parsimony_curve.R`: refits YFB D4 (per-platform z-std, DeSurv
+  combined-rank gene selection, top-3000 per cohort, no cohort_id) at K ∈ {2,3,4,5,7} and re-runs
+  external validation against the same 5 held-out PDAC cohorts for each K — the curve the internal
+  CV table doesn't give us. **Result: K=7 is not free to shrink, in this single-seed comparison.**
+  Mean external C-index: K=2→0.541, K=3→0.594, K=4→0.541, K=5→0.596, K=7→**0.627** (SE=0.020) — no
+  smaller K reaches within 1 SE of K=7 (margin 0.607). K=7 wins on every one of the 5 individual
+  external cohorts, not just on average. The curve is non-monotonic (K=4 ties K=2 despite one more
+  factor) and K_eff doesn't track external performance (K=5 has K_eff=3 but underperforms K=7's
+  K_eff=2). **Caveat:** each K used a single seed/init; K=2 and K=4 converge suspiciously fast (7-9
+  iterations) to a tiny beta_max, consistent with the Phase 2 CAVI factor-collapse failure mode —
+  a multistart rerun at those K values is needed before treating them as a hard ceiling (K=5's
+  result, which converges normally, is less suspect and already falls short of K=7 on its own).
+  Conclusion: the K=7-vs-DeSurv's-K=3 gap is not simply "extra factors we could prune for free" —
+  refitting at smaller K directly shows real performance loss in this run, though see the caveat
+  before treating K=2/K=4 specifically as conclusive. Details: DECISIONS.md 2026-07-13.
+
+- [ ] **Re-verify Phase 3's K=2/K=4 results with multistart before treating as conclusive**
+  `run_k_parsimony_curve.R`'s K=2 and K=4 fits converge in 7-9 iterations with beta_max≈0.009 —
+  consistent with the CAVI factor-collapse failure mode documented for Phase 2. A best-ELBO
+  multistart rerun at K=2/K=4 (and ideally K=3/K=5 too, for consistency) would confirm whether these
+  specific numbers reflect a genuine ceiling or a collapsed single-seed fit. Low urgency: K=5, which
+  converges normally, already falls short of K=7 on its own, so the qualitative conclusion likely
+  survives — this is about tightening the specific K=2/K=4 numbers, not re-opening the headline
+  finding.
+
 - [x] **Phase 1 (objective normalization, λ retirement, train/test preprocessing fix)**
   *(Complete on branch `objective-normalization`, 2026-07-12 — awaiting net-benefit-gate merge)*
   Post-lab-meeting action plan Phase 1 (`docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`):
