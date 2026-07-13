@@ -85,27 +85,35 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   refitting at smaller K directly shows real performance loss in this run, though see the caveat
   before treating K=2/K=4 specifically as conclusive. Details: DECISIONS.md 2026-07-13.
 
-- [ ] **Re-verify Phase 3's K=2/K=4 results with multistart and warm-start before treating as conclusive**
-  `run_k_parsimony_curve.R`'s K=2 and K=4 fits converge in 7-9 iterations with beta_max≈0.009 —
-  consistent with the CAVI factor-collapse failure mode documented for Phase 2. Two complementary
-  checks before concluding parsimony is genuinely unavailable: (1) best-ELBO multistart rerun at
-  K=2/K=4 (and ideally K=3/K=5 too, for consistency); (2) warm-start K=2-5 from the converged K=7
-  fit's top-|β| or top-PVE columns instead of a fresh SVD init each time — the cheaper, more direct
-  test of whether small-K underperformance is an optimization artifact or a true capacity ceiling.
-  Low urgency for the headline conclusion: K=5, which converges normally, already falls short of
-  K=7 on its own, so the qualitative finding likely survives — this is about tightening the specific
-  K=2/K=4 numbers and clarifying whether a smarter fitting procedure (not a smaller model) is the
-  real route to parsimony.
+- [x] **Re-verify Phase 3's K=2/K=4 results with multistart and warm-start before treating as conclusive**
+  *(Complete, 2026-07-13, branch `phase3-followup-warmstart` — Step 1 of
+  `docs/plans/ssbmf_k_parsimony_followup_plan_07_13_2026.md`)*
+  Result: **K=4 and K=5 both reach K=7-level external performance (mean C=0.6270 vs. K=7's 0.6267)
+  once warm-started from the converged K=7 fit's top-K PVE-ranked columns** — Phase 3's
+  "K=7 is not free to shrink" does not survive better optimization at these two K values.
+  K=2/K=3 remain short of the margin even with warm-start, so they look like a genuine capacity
+  limit rather than a collapse artifact. Notably, best-ELBO multistart (15 restarts) rescued
+  nothing at any K — SVD init was always the best-ELBO restart among them; it took a warm-start
+  seeded from a demonstrably good (K=7) solution, not just more random restarts, to escape the
+  degenerate fixed point. Mechanical decision rule outcome: **OPTIMIZATION-LIMITED → proceeds to
+  the deflation-init fix (Step 2)**, not the joint-BO path (Step 3). Details: DECISIONS.md
+  2026-07-13 (K-parsimony follow-up Step 1 entry).
 
-- [ ] **Joint (K, α, penalty) Bayesian-optimization, prioritized higher after Phase 3**
-  Plan already drafted (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`), previously deferred
-  as not top priority. Phase 3's finding (K=7 is not free to shrink under our fixed-α, no-penalty,
-  K-only CV) strengthens the case for testing DeSurv's actual approach — jointly tuning K, α, and an
-  elastic-net-style penalty — since our current tuning procedure may be structurally unable to find
-  a smaller-K optimum that a differently-regularized fit could reach. Sequence after the multistart/
-  warm-start re-check above: if warm-starting shows small-K fits can approach K=7's performance with
-  a better optimization procedure, this BO work may be lower-value; if not, it becomes the natural
-  next lever.
+- [ ] **Deflation-style CAVI initialization (Step 2 of the K-parsimony follow-up plan)**
+  Make the warm-start rescue above permanent and general — not dependent on already having a
+  converged higher-K fit to seed from. Add a deflation-style init option (rank-1 SVD of Y for
+  factor 1, rank-1 SVD of the residual for factor 2, etc., through K factors) to
+  `fit_cox_on_yf`/`fit_supervised_mf_modular`; verify it fixes the `sparse_synthetic` collapse
+  scenario (`results/multi_cohort_sim/diagnose_factor_collapse.R`); confirm no regression on the
+  full suite and the real-data D4 benchmark. Branch `cavi-deflation-init`.
+
+- [ ] **Joint (K, α, penalty) Bayesian-optimization — deprioritized after the Step 1 follow-up**
+  Plan drafted (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`) but not triggered: the
+  mechanical decision rule above resolved OPTIMIZATION-LIMITED, not CAPACITY-LIMITED, so per the
+  follow-up plan this path is skipped in favor of the deflation-init fix. Revisit only if the
+  deflation-init fix (above) fails to reproduce the warm-start rescue at K=4/K=5, or if a later,
+  independent need arises to make the K=7-vs-DeSurv's-K=3 comparison more methodologically
+  symmetric (DeSurv jointly tunes K, α, and a penalty; we would still only be tuning K, α).
 
 - [x] **Phase 2 (joint model vs. two-step value-add, survival-strength sweep)** *(Complete, 2026-07-12;
   comprehensively extended same day)*
@@ -137,14 +145,20 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   it uniformly worse: 4/4 dead vs. 1-2/4 for SVD init). LB collapses more on average than YFB (mean
   2.4/4 vs. 1.8/4 dead over 5 seeds) but not in every individual seed. EBMF avoids this via greedy
   (residual-based) factor-at-a-time fitting; PCA avoids it by doing no sparsity-inducing shrinkage.
-  Candidate fixes to evaluate: (1) multistart best-ELBO selection via the existing
-  `code/fit_modular_multistart.R` (built but not yet tested against this specific failure mode — an
-  attempted test hit an unrelated setup error, not yet resolved); (2) a greedy/sequential init variant
-  analogous to EBMF's. Priority: elevated from "no evidence it affects real fits" — LB has shown this
-  collapse occasionally on real-template scenarios (`low_snr`, `high_K`), not only on contrived
-  synthetic data, so this is a real (if so-far-occasional) robustness gap worth investigating, not
-  purely hypothetical. Details: DECISIONS.md 2026-07-12 (Phase 2
-  same-day follow-up entry).
+  Candidate fixes evaluated: (1) multistart best-ELBO selection via
+  `code/fit_modular_multistart.R` (extended to YFB and tested against real PDAC data,
+  2026-07-13) — **did not help**: best-ELBO restart was the SVD init at every K tested, i.e. random
+  restarts from the same broad distribution don't escape the degenerate fixed point. What did work:
+  warm-starting from a demonstrably good (already-converged, higher-K) solution's top-PVE columns
+  (DECISIONS.md 2026-07-13, K-parsimony follow-up Step 1) — this rescued K=4/K=5 to K=7-level
+  external performance. (2) A greedy/deflation-style sequential init variant (analogous to EBMF's,
+  and to what the warm-start effectively achieves without requiring a pre-existing higher-K fit) is
+  now the active candidate fix, in progress as the K-parsimony follow-up plan's Step 2
+  (`cavi-deflation-init` branch). Priority: elevated from "no evidence it affects real fits" — LB has
+  shown this collapse occasionally on real-template scenarios (`low_snr`, `high_K`), not only on
+  contrived synthetic data, so this is a real (if so-far-occasional) robustness gap worth
+  investigating, not purely hypothetical. Details: DECISIONS.md 2026-07-12 (Phase 2 same-day
+  follow-up entry), 2026-07-13 (K-parsimony follow-up Step 1 entry).
 
 - [x] **Phase 1 (objective normalization, λ retirement, train/test preprocessing fix)**
   *(Complete, merged to `main` 2026-07-12)*
