@@ -5,6 +5,101 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-13 — K-parsimony follow-up Step 1: K=7's necessity was an optimization artifact, not a capacity floor, at K=4-5
+
+**Motivation.** The Phase 3 entry below found K=7 "not free to shrink" but explicitly flagged K=2/K=4's
+suspiciously fast convergence (7-9 iterations to a near-zero β) as consistent with the CAVI
+factor-collapse failure mode from Phase 2, and could not rule out that this — rather than a genuine
+capacity ceiling — explained their poor external performance. This is Step 1 of
+`docs/plans/ssbmf_k_parsimony_followup_plan_07_13_2026.md`: re-fit K ∈ {2,3,4,5} with two
+improved-optimization strategies and compare against the original fresh-SVD numbers.
+
+**New code:** `code/warmstart_from_fit.R` (`extract_top_k_by_pve()` — selects a converged fit's
+top-K columns by final-iteration PVE, for use as `init_method="custom"` warm-start); `code/fit_modular_multistart.R`
+(`fit_cox_on_yf_multistart()` — YFB counterpart to the existing LB multistart wrapper);
+`results/benchmark_sim/run_k_parsimony_followup.R` (the comparison runner, branch
+`phase3-followup-warmstart`).
+
+**Method.** For each K ∈ {2,3,4,5}: (a) fresh SVD (Phase 3's original numbers, reproduced here), (b)
+warm-start from the converged K=7 fit's top-K PVE-ranked columns, (c) best-ELBO multistart
+(n_init=15: 1 SVD + 14 random restarts). Same D4 config, same 5 held-out cohorts, K=7 refit here too
+as a reproducibility check (reproduced 0.6267 exactly).
+
+**Result — real data:**
+
+| K | method | Mean external C | SE | K_eff |
+|---|---|---|---|---|
+| 2 | fresh | 0.5406 | 0.0116 | 1 |
+| 2 | multistart | 0.5406 | 0.0116 | 1 |
+| 2 | warmstart | 0.5608 | 0.0195 | 1 |
+| 3 | fresh | 0.5943 | 0.0162 | 1 |
+| 3 | multistart | 0.5943 | 0.0162 | 1 |
+| 3 | warmstart | 0.5955 | 0.0255 | 3 |
+| 4 | fresh | 0.5409 | 0.0116 | 1 |
+| 4 | multistart | 0.5409 | 0.0116 | 1 |
+| 4 | **warmstart** | **0.6270** | 0.0198 | 2 |
+| 5 | fresh | 0.5960 | 0.0269 | 3 |
+| 5 | multistart | 0.5960 | 0.0269 | 3 |
+| 5 | **warmstart** | **0.6270** | 0.0198 | 2 |
+| 7 | fresh (reference) | 0.6267 | 0.0199 | 2 |
+
+Applying the plan's mechanical decision rule (best-of-{fresh, warmstart, multistart} per K within 1 SE
+of K=7's margin, 0.6267 − 0.0199 = 0.6068): **K=4 and K=5 both reach it via warm-start (0.6270 ≥
+0.6068) — outcome is OPTIMIZATION-LIMITED.** Per the plan, this routes to **Step 2** (deflation-init
+fix), not Step 3 (joint Bayesian optimization).
+
+**Two findings worth stating plainly, not smoothed over:**
+
+1. **Warm-start rescued K=4/K=5; best-ELBO multistart rescued nothing.** At every single K tested,
+   multistart's `best_idx` was restart 1 — the SVD init itself — meaning none of the 14 random
+   restarts found a higher-ELBO solution than SVD init at any K. SVD init is already the local-ELBO
+   optimum among these candidates; the degenerate fixed point Phase 3 landed in is not something a
+   *different starting point drawn from the same broad random distribution* escapes — it takes a
+   warm-start seeded from a demonstrably good solution (the converged K=7 fit) to reach the better
+   fixed point. This directly informs Step 2: a fix must change the *character* of the initialization
+   (e.g. deflation/greedy, sequentially removing signal like the K=7 warm-start effectively did),
+   not just add more random restarts.
+2. **The rescue is real but partial, not universal.** K=4 and K=5 warm-start converge to
+   essentially the same 2-active-factor solution as K=7 (same K_eff=2, same beta_max=0.0403, same
+   mean C=0.6270) — strong evidence the "real" signal in this data lives in ~2 factors that K=7's
+   fit already found, and K=4-5 have enough capacity to hold them once initialized correctly. K=3
+   warm-start converges to a different point (K_eff jumps to 3, all factors "active" by threshold)
+   but external performance barely moves (0.5955 vs. 0.5943 fresh) — breaking the collapse at K=3
+   does not, by itself, recover K=7-level performance, suggesting 3 factors may be a genuine
+   information floor for this specific signal rather than purely an optimization artifact. K=2
+   warm-start also improves (0.5608 vs. 0.5406) but remains well short of the margin. So the
+   corrected picture is: **K=2/K=3 show real evidence of a capacity limit; K=4/K=5's Phase 3
+   underperformance was specifically an optimization artifact that a smarter initialization
+   resolves.**
+
+**Conclusion — supersedes Phase 3's headline claim.** Phase 3 said "K=7 is not free to shrink"; that
+holds for K=2/K=3 but not for K=4/K=5 once the CAVI factor-collapse artifact documented in Phase 2 is
+corrected for. K=4 (and K=5) are a genuinely available, more parsimonious alternative to K=7 for this
+recommended config, provided the fit uses warm-start (or an equivalent fix) rather than fresh SVD
+init. Step 2 will build this into a permanent, general initialization option (deflation-style init)
+rather than relying on an already-fitted K=7 model as a warm-start source, and Step 4 will produce
+the final, doubly-verified K-vs-external-performance answer once that fix is in place.
+
+**Judgment call, documented rather than escalated:** the plan's Step 1 item 2 flagged an earlier
+setup error sourcing `code/fit_cox_on_yf.R` (`stopifnot(!is.null(real_Y), ...)` firing on `source()`)
+as "likely a missing `tryCatch(source(...))` wrap... root-cause and fix that, don't just work around
+it." The fix applied is exactly that wrap — the same idiom already used in `tests/run_tests.R` and
+three other existing test files to source this file safely. `fit_cox_on_yf.R`'s `DATA_MODE` runner
+block itself (which always fires on `source()`) is an intentional, unmodified, shared pattern with
+`fit_modular.R`; hardening it further would be a larger, unrequested change to a core, heavily-tested
+file for no benefit beyond what the existing convention already provides. This reasoning, and the new
+`warmstart_from_fit.R`/`fit_modular_multistart.R` code it applies to, were reviewed and concurred on
+by `superpowers:code-reviewer` prior to that code's commit; this Step 1 write-up (including the
+runner script and this entry) was reviewed by a second, separate `superpowers:code-reviewer` pass.
+
+*Files: `code/warmstart_from_fit.R` (new), `code/fit_modular_multistart.R` (extended),
+`tests/test_warmstart_from_fit.R`, `tests/test_yfb_multistart.R` (new, TDD),
+`results/benchmark_sim/run_k_parsimony_followup.R` (new),
+`results/benchmark_sim/outputs/k_parsimony_followup/k_parsimony_followup_results.csv` (new).
+Full test suite: 290/290 passing.*
+
+---
+
 ## 2026-07-13 — Phase 3: K-parsimony curve on real data — K=7 is not free to shrink; smaller K all underperform
 
 **Motivation.** The existing K-CV table (2026-07-12 entry below) measures internal training-fold
