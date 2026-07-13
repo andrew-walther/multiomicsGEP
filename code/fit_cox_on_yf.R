@@ -52,6 +52,7 @@ source("code/update_beta.R")        # compute_z_no_k, update_beta_k, update_beta
 source("code/update_tau.R")         # compute_var_term, update_tau
 source("code/compute_elbo.R")       # compute_ebnm_kl, compute_survival_elbo, compute_normal_kl
 source("code/update_F_cohort.R")    # update_F_cohort_col, update_F_cohort_all
+source("code/deflation_init.R")     # deflation_svd_init -- init_method="deflation"
 
 # compute_R_k is defined in update_L.R (Cluster A); re-source just that function
 # by sourcing update_L.R here. The Cluster B update files use only compute_R_k,
@@ -145,7 +146,10 @@ calc_cox_taylor_yf <- function(eta, time, status) {
 #'                 regardless of `norm_convention`. TRUE reproduces the earlier
 #'                 (superseded) design that boosted it alongside the ELBO
 #'                 monitor. See DECISIONS.md 2026-07-12.
-#' @param init_method character: "svd" (default), "random", or "custom"
+#' @param init_method character: "svd" (default), "random", "deflation"
+#'                 (sequential rank-1 SVD deflation, code/deflation_init.R --
+#'                 candidate fix for the CAVI factor-collapse failure mode,
+#'                 DECISIONS.md 2026-07-13), or "custom"
 #' @param EL_init  Optional n x K matrix: custom initial loadings
 #' @param EF_init  Optional p x K matrix: custom initial factors
 #' @param N_burnin integer: beta-only burn-in iterations before joint CAVI (default 0).
@@ -291,13 +295,21 @@ fit_cox_on_yf <- function(Y, time, status,
     y_sd <- sd(Y)
     EL   <- matrix(rnorm(n * K, sd = 0.1 * y_sd), n, K)
     EF   <- matrix(rnorm(p * K, sd = 0.1 * y_sd), p, K)
+  } else if (init_method == "deflation") {
+    # Sequential rank-1 SVD deflation (code/deflation_init.R): each factor is
+    # fit to the residual after removing prior factors, so successive
+    # factors cannot start out near-tied in amplitude the way batch SVD
+    # columns from close singular values can -- see DECISIONS.md 2026-07-13.
+    defl <- deflation_svd_init(Y_for_svd, K)
+    EL <- abs(defl$EL)
+    EF <- abs(defl$EF)
   } else if (init_method == "custom") {
     if (is.null(EL_init) || is.null(EF_init))
       stop("init_method='custom' requires both EL_init (n x K) and EF_init (p x K).")
     EL <- EL_init
     EF <- EF_init
   } else {
-    stop(sprintf("Unknown init_method: '%s'. Use 'svd', 'random', or 'custom'.", init_method))
+    stop(sprintf("Unknown init_method: '%s'. Use 'svd', 'random', 'deflation', or 'custom'.", init_method))
   }
 
   EL2 <- EL^2

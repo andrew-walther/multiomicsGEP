@@ -99,21 +99,33 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   the deflation-init fix (Step 2)**, not the joint-BO path (Step 3). Details: DECISIONS.md
   2026-07-13 (K-parsimony follow-up Step 1 entry).
 
-- [ ] **Deflation-style CAVI initialization (Step 2 of the K-parsimony follow-up plan)**
-  Make the warm-start rescue above permanent and general — not dependent on already having a
-  converged higher-K fit to seed from. Add a deflation-style init option (rank-1 SVD of Y for
-  factor 1, rank-1 SVD of the residual for factor 2, etc., through K factors) to
-  `fit_cox_on_yf`/`fit_supervised_mf_modular`; verify it fixes the `sparse_synthetic` collapse
-  scenario (`results/multi_cohort_sim/diagnose_factor_collapse.R`); confirm no regression on the
-  full suite and the real-data D4 benchmark. Branch `cavi-deflation-init`.
+- [x] **Deflation-style CAVI initialization (Step 2 of the K-parsimony follow-up plan)**
+  *(Complete but NEGATIVE result, 2026-07-13, branch `cavi-deflation-init`)*
+  Built and tested `code/deflation_init.R` (`deflation_svd_init()`, `init_method="deflation"` added
+  to both models). **Does not reproduce the Step 1 warm-start rescue**: on real PDAC data,
+  fresh deflation-init at K=4 and K=5 is *bit-identical* to fresh SVD-init (same C-index, K_eff,
+  beta_max, iteration count at both K) — neither reaches the margin Step 1's warm-start reached.
+  Reason, analytically understood rather than just an empirical miss: greedy rank-1 SVD deflation
+  and a batch top-K SVD extract the same leading-K singular subspace whenever the top-K singular
+  values are distinct (a standard linear-algebra fact) — true of essentially all real data, so
+  deflation-init was mathematically guaranteed to match plain SVD-init here. Combined with Step 1's
+  finding that random-restart multistart also didn't help, this points to the collapse being about
+  the CAVI *dynamics* (EBNM shrinkage + Cox coupling + Gauss-Seidel), not which linear-algebra
+  decomposition of Y seeds it — only a starting point already shaped by a full higher-K CAVI fit
+  (Step 1's actual mechanism) escapes it. **Flagged to the user rather than resolved unilaterally**:
+  the plan has no specified fallback for "Step 2's specific fix doesn't work." Recommendation:
+  adopt Step 1's warm-start-from-a-higher-K-fit as the standing recipe for Step 4, rather than
+  deflation-init. `deflation_svd_init()` code is kept (correct, tested, a narrow but real option for
+  the true tied-singular-value edge case) but not claimed as the fix. Details: DECISIONS.md
+  2026-07-13 (K-parsimony follow-up Step 2 entry).
 
-- [ ] **Joint (K, α, penalty) Bayesian-optimization — deprioritized after the Step 1 follow-up**
-  Plan drafted (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`) but not triggered: the
-  mechanical decision rule above resolved OPTIMIZATION-LIMITED, not CAPACITY-LIMITED, so per the
-  follow-up plan this path is skipped in favor of the deflation-init fix. Revisit only if the
-  deflation-init fix (above) fails to reproduce the warm-start rescue at K=4/K=5, or if a later,
-  independent need arises to make the K=7-vs-DeSurv's-K=3 comparison more methodologically
-  symmetric (DeSurv jointly tunes K, α, and a penalty; we would still only be tuning K, α).
+- [ ] **Joint (K, α, penalty) Bayesian-optimization — reconsider given Step 2's negative result**
+  Plan drafted (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`), not triggered by the
+  mechanical decision rule (OPTIMIZATION-LIMITED, not CAPACITY-LIMITED) but worth revisiting now
+  that Step 2's specific fix (deflation-init) turned out not to work — the mechanical rule's premise
+  (a smaller-K optimum is reachable via better optimization alone) is still supported by Step 1's
+  own warm-start result, but the "permanent and general" version of that fix remains unbuilt. Awaiting
+  user direction on how to proceed (see the Step 2 item above).
 
 - [x] **Phase 2 (joint model vs. two-step value-add, survival-strength sweep)** *(Complete, 2026-07-12;
   comprehensively extended same day)*

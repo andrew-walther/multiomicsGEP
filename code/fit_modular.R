@@ -61,6 +61,7 @@ source("code/update_beta.R")   # compute_z_no_k, update_beta_k, update_beta_all
 source("code/update_tau.R")    # compute_var_term, update_tau
 source("code/compute_elbo.R")  # compute_ebnm_kl, compute_survival_elbo, compute_normal_kl
 source("code/update_F_cohort.R")  # update_F_cohort_col, update_F_cohort_all
+source("code/deflation_init.R")   # deflation_svd_init -- init_method="deflation"
 
 # ------------------------------------------------------------------------------
 #' Calculate Cox Score and Diagonal Hessian (Taylor Expansion)
@@ -193,6 +194,9 @@ calc_cox_taylor <- function(eta, time, status) {
 #'                 "svd"    (default — deterministic SVD warm-start),
 #'                 "random" (random normal initialization, useful with
 #'                 multiple restarts to escape local optima),
+#'                 "deflation" (sequential rank-1 SVD deflation -- see
+#'                 code/deflation_init.R; candidate fix for the CAVI
+#'                 factor-collapse failure mode, DECISIONS.md 2026-07-13),
 #'                 "custom" (supply EL_init and EF_init directly; set
 #'                 automatically when both are non-NULL).
 #' @param EL_init  Optional n x K numeric matrix: custom initial loadings.
@@ -362,6 +366,14 @@ fit_supervised_mf_modular <- function(Y, time, status,
     y_sd <- sd(Y)
     EL   <- matrix(rnorm(n * K, sd = 0.1 * y_sd), n, K)
     EF   <- matrix(rnorm(p * K, sd = 0.1 * y_sd), p, K)
+  } else if (init_method == "deflation") {
+    # Sequential rank-1 SVD deflation (code/deflation_init.R): each factor is
+    # fit to the residual after removing prior factors, so successive
+    # factors cannot start out near-tied in amplitude the way batch SVD
+    # columns from close singular values can -- see DECISIONS.md 2026-07-13.
+    defl <- deflation_svd_init(Y_for_svd, K)
+    EL <- pmax(defl$EL, 0)   # pmax ensures non-negative init matches point_exponential prior
+    EF <- pmax(defl$EF, 0)
   } else if (init_method == "custom") {
     # Custom warm-start: caller supplies EL_init (n x K) and EF_init (p x K).
     # Primary use case: EBMF warm-start diagnostic — initialise from a
@@ -378,7 +390,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
     EL <- EL_init
     EF <- EF_init
   } else {
-    stop(sprintf("Unknown init_method: '%s'. Use 'svd', 'random', or 'custom'.", init_method))
+    stop(sprintf("Unknown init_method: '%s'. Use 'svd', 'random', 'deflation', or 'custom'.", init_method))
   }
 
   # Second moments initialised to squared means (zero posterior variance).
