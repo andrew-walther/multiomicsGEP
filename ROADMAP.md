@@ -119,13 +119,20 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   the true tied-singular-value edge case) but not claimed as the fix. Details: DECISIONS.md
   2026-07-13 (K-parsimony follow-up Step 2 entry).
 
-- [ ] **Joint (K, α, penalty) Bayesian-optimization — reconsider given Step 2's negative result**
-  Plan drafted (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`), not triggered by the
-  mechanical decision rule (OPTIMIZATION-LIMITED, not CAPACITY-LIMITED) but worth revisiting now
-  that Step 2's specific fix (deflation-init) turned out not to work — the mechanical rule's premise
-  (a smaller-K optimum is reachable via better optimization alone) is still supported by Step 1's
-  own warm-start result, but the "permanent and general" version of that fix remains unbuilt. Awaiting
-  user direction on how to proceed (see the Step 2 item above).
+- [x] **Joint (K, α) Bayesian-optimization (Step 3 of the K-parsimony follow-up plan)**
+  *(Complete, 2026-07-13, branch `joint-k-alpha-bayesopt`)*
+  Built `code/select_k_alpha_bo.R` (`rBayesianOptimization`-based joint search, reusing
+  `select_K_cv()`'s fold machinery) and a validity gate (`pick_trustworthy_bo_winner()`) after a
+  `--quick` dry run caught the raw BO objective picking a degenerate `alpha≈0, K_eff=0` "winner" that
+  scored well by incidental unsupervised-reconstruction alignment — the same failure mode documented
+  2026-05-05 below. **Result: found K=8, alpha=0.71, external mean C=0.6282 (K_eff=2) — marginally
+  better than K=7's 0.6267, but a LARGER K, not a smaller one.** Did not meet this step's goal (a
+  smaller K with comparable performance). A real limitation: the acquisition function got stuck
+  re-proposing the identical point for 15 of 23 evaluations, so the smaller-K region was not
+  thoroughly explored under varied alpha — recorded as open, not concluded to be unreachable.
+  **Step 4 will adopt Step 1's validated warm-start-from-K=7 recipe (K=4 or K=5, matching K=7's
+  performance)**, not this step's K=8 result, since K=8 moves away from the parsimony goal. Details:
+  DECISIONS.md 2026-07-13 (K-parsimony follow-up Step 3 entry).
 
 - [x] **Phase 2 (joint model vs. two-step value-add, survival-strength sweep)** *(Complete, 2026-07-12;
   comprehensively extended same day)*
