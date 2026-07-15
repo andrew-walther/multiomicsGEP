@@ -40,6 +40,17 @@ t3 <- read_csv_safe("T3_concordance_stats.csv")
 t4 <- read_csv_safe("T4_sbmf_desurv_overlap.csv")
 c1 <- read_csv_safe("C1_all_programs_summary.csv")
 c2 <- read_csv_safe("C2_external_cohort_robustness.csv")
+
+ora_path <- file.path(OUT, "ora_results_active.rds")
+ora <- if (file.exists(ora_path)) readRDS(ora_path) else NULL
+ora_headline <- NULL
+if (!is.null(ora) && !is.null(t1)) {
+  headline_sets <- unique(t1$set[t1$collection == "PDAC_custom"])
+  ora_headline <- ora[ora$set %in% headline_sets & ora$top_n == 150,
+                       c("program", "label", "set", "padj")]
+  ora_headline$padj <- formatC(ora_headline$padj, format = "g", digits = 2)
+  names(ora_headline)[names(ora_headline) == "padj"] <- "ORA_padj_N150"
+}
 ```
 
 ## 1. Motivation and direction convention
@@ -90,7 +101,7 @@ if (!is.null(t1)) {
   t1_show$set <- gsub("^REACTOME_", "", t1_show$set)
   t1_show$set <- gsub("_", " ", t1_show$set)
   t1_show$NES <- round(t1_show$NES, 2)
-  t1_show$padj <- signif(t1_show$padj, 2)
+  t1_show$padj <- formatC(t1_show$padj, format = "g", digits = 2)
   knitr::kable(t1_show, row.names = FALSE, booktabs = TRUE,
                caption = "T1: all sets enriched at padj<0.10 for Programs 3 and 7 (KEGG\\_MEDICUS\\_REFERENCE\\_/REACTOME\\_ prefixes stripped for width; full names in F1 and the underlying CSV).")
 }
@@ -102,6 +113,26 @@ EREG, TGFA, VEGFA), and a basal keratin/integrin developmental program (Reactome
 headline association is classical/differentiated tumor identity (DeSurv D1, Moffitt Classical:
 GATA6, HNF4A, TFF1-3, AGR2/3) — with a secondary, weaker (padj=0.017 vs 0.035; see \S6) hit on the
 DeSurv basal-like list, discussed honestly rather than omitted.
+
+**ORA confirmatory cross-check.** The plan's confirmatory method (over-representation analysis on
+top-N weighted genes, N $\in$ \{50,100,150\}) was run for exactly this purpose — to check that
+fgsea's ranked-list hits are not an artifact of the rank-based method specifically.
+
+```{r ora-table}
+if (!is.null(ora_headline) && nrow(ora_headline) > 0) {
+  knitr::kable(ora_headline, row.names = FALSE, booktabs = TRUE,
+               caption = "ORA (top-150 weighted genes) padj for each program's fgsea headline custom gene set.")
+}
+```
+
+ORA independently confirms Program 7's two custom-collection headline sets (Bailey Squamous and
+DeSurv D3, both reaching $padj<10^{-7}$ at N=150) and Program 3's DeSurv D1/Moffitt Classical
+associations (both strengthening from non-significant at N=50 to $padj<10^{-3}$ at N=150) — the
+same conclusion as fgsea, by an independent method. It does **not**, however, confirm Program 3's
+secondary DeSurv D3 (basal-like) hit at any N tested (padj $\ge$ 0.18 throughout) — a real,
+additional piece of evidence (beyond \S6's honest nuance discussion) that this secondary
+association is weaker and less robust than the primary classical signal, consistent with it being
+driven by shared general epithelial markers rather than a genuine basal-program overlap.
 
 ```{r c1-table}
 if (!is.null(c1)) {
@@ -131,8 +162,8 @@ biological question. All 144/144 samples matched (100%).
 if (!is.null(t3)) {
   t3_show <- t3[, c("program", "label", "spearman_rho", "spearman_p", "kruskal_p", "n")]
   t3_show$spearman_rho <- round(t3_show$spearman_rho, 3)
-  t3_show$spearman_p <- signif(t3_show$spearman_p, 2)
-  t3_show$kruskal_p <- signif(t3_show$kruskal_p, 2)
+  t3_show$spearman_p <- formatC(t3_show$spearman_p, format = "g", digits = 2)
+  t3_show$kruskal_p <- formatC(t3_show$kruskal_p, format = "g", digits = 2)
   knitr::kable(t3_show, row.names = FALSE, booktabs = TRUE,
                caption = "T3: concordance between program loadings and PurIST (Spearman rho vs. PurIST.prob; Kruskal-Wallis vs. the 2-group PurIST call).")
 }
@@ -156,7 +187,7 @@ related to survival via Cox proportional hazards.
 if (!is.null(c2)) {
   c2_show <- c2[, c("program", "label", "cohort", "n", "HR", "p", "cindex")]
   c2_show$HR <- round(c2_show$HR, 2)
-  c2_show$p <- signif(c2_show$p, 2)
+  c2_show$p <- formatC(c2_show$p, format = "g", digits = 2)
   c2_show$cindex <- round(c2_show$cindex, 3)
   knitr::kable(c2_show, row.names = FALSE, booktabs = TRUE,
                caption = "C2: per-cohort hazard ratio and C-index for each program's headline leading-edge signature.")
@@ -178,30 +209,32 @@ knitr::include_graphics(file.path(OUT, "F5_sbmf_vs_desurv.png"))
 if (!is.null(t4)) {
   t4_show <- t4
   t4_show$jaccard <- round(t4_show$jaccard, 3)
-  t4_show$hyper_p <- signif(t4_show$hyper_p, 2)
+  t4_show$hyper_p <- formatC(t4_show$hyper_p, format = "g", digits = 2)
   knitr::kable(t4_show, row.names = FALSE, booktabs = TRUE,
-               caption = "T4: gene-overlap Jaccard and hypergeometric enrichment p-value, SBMF top-270 genes per program vs. each DeSurv factor (background = 2064 genes).")
+               caption = "T4: gene-overlap Jaccard and hypergeometric enrichment p-value, SBMF top-270 genes per program vs. each DeSurv factor gene list, both restricted to the 2064-gene background before computing overlap/p (a code-review fix -- DeSurv's own 270-gene-per-factor lists are not a full subset of the 2064-gene universe).")
 }
 ```
 
-Program 3's top genes overlap DeSurv D1 (Classical) most strongly (61/270, $p=2.4\times10^{-6}$),
-with a real but weaker secondary overlap with D3 (Basal-like; 49/270, $p=0.0068$) — the same
-nuance already flagged in \S3, now independently reproduced via a completely different method
-(direct gene-list Jaccard rather than fgsea enrichment). Program 7's top genes overlap D3 most
-strongly (80/270, $p=5.1\times10^{-15}$) with no significant overlap with D1 or D2. Neither program
-overlaps D2 (stromal/immune) — expected, since neither is a stromal/immune program.
+Program 3's top genes overlap DeSurv D1 (Classical) most strongly (61/270, $p=1.1\times10^{-7}$),
+with a real but weaker secondary overlap with D3 (Basal-like; 49/270, $p=2.8\times10^{-3}$) — the
+same nuance already flagged in \S3, now independently reproduced via a completely different method
+(direct gene-list Jaccard rather than fgsea enrichment) -- and, per \S3's ORA cross-check, weaker
+under that method too. Program 7's top genes overlap D3 most strongly (80/270,
+$p=3.2\times10^{-16}$) with no significant overlap with D1 or D2. Neither program overlaps D2
+(stromal/immune) — expected, since neither is a stromal/immune program.
 
 ## 7. Direction sanity check (C3) and conclusion
 
-Four independent methods were run: gene-set enrichment (\S3), PurIST subtype concordance (\S4),
-external-cohort survival (\S5), and direct SBMF-DeSurv gene overlap (\S6). **All four agree, with no
-contradictions:** Program 7 (Adverse) is a basal-like/squamous, MET/EGFR-RTK-driven, EMT-associated
-program — the PDAC subtype literature's established worse-prognosis axis. Program 3 (Protective) is
-a classical, differentiated-epithelial program — the established better-prognosis axis. The one
-honest nuance (Program 3's secondary, weaker basal-like association, plausibly driven by shared
-general epithelial-identity markers rather than basal-specific drivers) is reproduced by two
-independent methods (\S3, \S6) and is reported rather than smoothed over, but does not contradict
-the dominant classical/protective signal.
+Five independent methods were run: fgsea gene-set enrichment and its ORA confirmatory cross-check
+(\S3), PurIST subtype concordance (\S4), external-cohort survival (\S5), and direct SBMF-DeSurv gene
+overlap (\S6). **All five agree, with no contradictions:** Program 7 (Adverse) is a basal-like/
+squamous, MET/EGFR-RTK-driven, EMT-associated program — the PDAC subtype literature's established
+worse-prognosis axis. Program 3 (Protective) is a classical, differentiated-epithelial program —
+the established better-prognosis axis. The one honest nuance (Program 3's secondary, weaker
+basal-like association, plausibly driven by shared general epithelial-identity markers rather than
+basal-specific drivers) is reproduced by fgsea and gene-overlap (\S3, \S6) but not confirmed by ORA
+(\S3) — reported rather than smoothed over either way, but not a contradiction of the dominant
+classical/protective signal.
 
 **Reproducibility.** `fgsea` 1.36.2 (permutation seed = 1); `msigdbr` 26.1.0; `clusterProfiler`
 4.18.4; `org.Hs.eg.db` 3.22.0. Per-gene-set source citations and MSigDB-universe mapping rates

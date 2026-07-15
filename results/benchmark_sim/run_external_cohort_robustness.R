@@ -51,6 +51,10 @@ t1 <- t1[order(t1$program, t1$padj), ]
 
 headline <- lapply(ACTIVE_PROGRAMS, function(k) {
   row <- t1[t1$program == k, ][1, ]
+  if (is.na(row$set)) {
+    stop(sprintf("run_external_cohort_robustness: program %d has no headline signature ",
+                 "(zero fgsea sets at padj<0.10) -- cannot score external cohorts for it", k))
+  }
   list(program = k, label = d4$program_labels[[as.character(k)]],
        set = row$set, collection = row$collection,
        leading_edge = strsplit(row$leading_edge, ";")[[1]])

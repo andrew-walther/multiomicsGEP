@@ -641,14 +641,24 @@ score_leading_edge_signature <- function(Y, gene_names, leading_edge_genes) {
   list(score = rowMeans(Z), n_genes_used = length(present), missing_genes = missing)
 }
 
-#' Cox model of survival on a single signature score, plus C-index.
+#' Cox model of survival on a single signature score, plus an oriented C-index.
 #'
-#' Project convention (matching code/select_alpha_cv.R, code/predict.R):
 #' survival::concordance() treats a HIGHER predictor as predicting LONGER
-#' survival by default, so a "higher score = higher risk" C-index requires
-#' negating the score inside the formula (concordance(Surv(...) ~ I(-score))),
-#' verified empirically before use here (a synthetic score constructed to be
-#' unambiguously high-risk gave C-index ~0.01 unnegated vs ~0.99 negated).
+#' survival by default (verified empirically: an unambiguously high-risk
+#' synthetic score gave C-index ~0.01 unnegated vs ~0.99 negated). A fixed
+#' negation is wrong here because this function is called for both Adverse
+#' (higher score = higher risk) and Protective (higher score = lower risk)
+#' program signatures -- negating unconditionally silently reports the
+#' *wrong-direction* C-index for the Protective case (caught in code review:
+#' a constructed strong, significant protective signature, HR=0.25,
+#' p=1e-18, reported cindex=0.22, i.e. "worse than chance", when its true
+#' discriminative accuracy in the correct direction is 1-0.22=0.78).
+#'
+#' Matches this project's existing oriented_cindex() convention (used in
+#' run_desurv_comparison.R, run_k_parsimony_curve.R, and 6 other benchmark
+#' scripts): report max(c_raw, 1-c_raw), the C-index in whichever direction
+#' is more discriminative, which sidesteps needing to know a priori which
+#' sign convention a given score/program follows.
 #'
 #' @param score  numeric vector, length n (signature score per patient)
 #' @param time   numeric vector, length n
@@ -657,11 +667,11 @@ score_leading_edge_signature <- function(Y, gene_names, leading_edge_genes) {
 cohort_signature_cox <- function(score, time, status) {
   fit <- survival::coxph(survival::Surv(time, status) ~ score)
   s <- summary(fit)
-  cidx <- survival::concordance(survival::Surv(time, status) ~ I(-score))$concordance
+  c_raw <- as.numeric(survival::concordance(survival::Surv(time, status) ~ score)$concordance)
   list(
     HR = unname(exp(coef(fit))),
     p = unname(s$coefficients[1, "Pr(>|z|)"]),
-    cindex = as.numeric(cidx),
+    cindex = max(c_raw, 1 - c_raw),
     n = length(score)
   )
 }
@@ -670,18 +680,30 @@ cohort_signature_cox <- function(score, time, status) {
 
 #' Jaccard overlap + hypergeometric enrichment p-value between two gene sets.
 #'
+#' Both sets are first restricted to `background` -- the hypergeometric model
+#' assumes both are drawn from that universe, which does not hold in general
+#' (e.g. DeSurv's own factor gene lists are not a subset of SBMF's 2064-gene
+#' selected universe: ~245-259 of each 270-gene DeSurv list actually fall
+#' inside it). Using the un-restricted set sizes as phyper()'s `m`/`n`/`k`
+#' understates significance (verified: recomputing with m=249 instead of the
+#' unrestricted 270 for Program 3 vs. DeSurv D1 changes p from ~2.4e-6 to
+#' ~1.1e-7, a ~22x difference) -- caught in code review, fixed here.
+#'
 #' @param set_a, set_b character vectors of gene symbols
-#' @param background_size total size of the gene universe both sets are drawn
-#'                         from (e.g. 2064, the D4 selected-gene universe)
-#' @return list(overlap_n, jaccard, hyper_p)
-compute_geneset_overlap <- function(set_a, set_b, background_size) {
+#' @param background   character vector of all gene symbols in the universe
+#'                      both sets are conceptually drawn from (e.g. the 2064
+#'                      D4 selected genes)
+#' @return list(overlap_n, jaccard, hyper_p) -- computed on each set restricted to `background`
+compute_geneset_overlap <- function(set_a, set_b, background) {
+  set_a <- intersect(set_a, background)
+  set_b <- intersect(set_b, background)
   overlap_n <- length(intersect(set_a, set_b))
   union_n <- length(union(set_a, set_b))
   jaccard <- if (union_n == 0) 0 else overlap_n / union_n
   # P(X >= overlap_n) under the hypergeometric null: drawing length(set_a)
-  # genes without replacement from a background_size universe containing
+  # genes without replacement from a background universe containing
   # length(set_b) "successes".
-  hyper_p <- stats::phyper(overlap_n - 1, length(set_b), background_size - length(set_b),
+  hyper_p <- stats::phyper(overlap_n - 1, length(set_b), length(background) - length(set_b),
                             length(set_a), lower.tail = FALSE)
   list(overlap_n = overlap_n, jaccard = jaccard, hyper_p = hyper_p)
 }
@@ -701,14 +723,15 @@ compute_geneset_overlap <- function(set_a, set_b, background_size) {
 #' @param top_n       number of top-weighted genes per program to compare (270,
 #'                     matching DeSurv's own top-N-per-factor convention, for
 #'                     an apples-to-apples comparison)
-#' @param background_size total gene universe size (e.g. 2064)
+#' @param background  character vector of all gene symbols in the universe
+#'                     (default: rownames(EF), the full 2064-gene D4 universe)
 #' @return data.frame (T4): program, label, desurv_factor, overlap_n, jaccard, hyper_p
 sbmf_desurv_overlap_table <- function(EF, program_labels, desurv_genesets, programs,
-                                       top_n = 270, background_size = nrow(EF)) {
+                                       top_n = 270, background = rownames(EF)) {
   rows <- lapply(programs, function(k) {
     top_genes <- top_n_genes_table(EF, k, program_labels, n = top_n)$gene
     do.call(rbind, lapply(names(desurv_genesets), function(dname) {
-      ov <- compute_geneset_overlap(top_genes, desurv_genesets[[dname]], background_size)
+      ov <- compute_geneset_overlap(top_genes, desurv_genesets[[dname]], background)
       data.frame(
         program = k, label = program_labels[[as.character(k)]], desurv_factor = dname,
         overlap_n = ov$overlap_n, jaccard = ov$jaccard, hyper_p = ov$hyper_p,

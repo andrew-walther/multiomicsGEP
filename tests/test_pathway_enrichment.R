@@ -437,19 +437,42 @@ run_test("T9.4: cohort_signature_cox on pure noise gives a non-significant, near
               msg = sprintf("expected C-index near 0.5 for pure noise, got %.3f", res$cindex))
 })
 
+run_test("T9.5: cohort_signature_cox reports C-index > 0.5 for a PROTECTIVE signature too (HR < 1)", {
+  # Regression test for a real bug caught in code review: a fixed I(-score)
+  # negation is correct for an adverse (higher score = higher risk) signature
+  # but silently wrong-direction for a protective one (higher score = lower
+  # risk) -- this constructed protective signature must not report cindex < 0.5.
+  set.seed(101)
+  n <- 100; p <- 20
+  gene_names <- paste0("gene", 1:p)
+  Y <- matrix(rnorm(n * p), n, p, dimnames = list(NULL, gene_names))
+  signature_true <- rowMeans(scale(Y[, 1:5]))
+  lp <- -0.9 * signature_true  # higher score -> LOWER risk (protective)
+  time <- rexp(n, rate = exp(scale(lp)) * 0.1)
+  status <- rep(c(1, 0), length.out = n)
+  sig <- score_leading_edge_signature(Y, gene_names, paste0("gene", 1:5))
+  res <- cohort_signature_cox(sig$score, time, status)
+  assert_true(res$HR < 1, msg = sprintf("expected HR < 1 for a constructed protective signature, got %.3f", res$HR))
+  assert_true(res$p < 0.05, msg = "expected a significant association")
+  assert_true(res$cindex > 0.5,
+              msg = sprintf("expected C-index > 0.5 for a strong protective signature, got %.3f", res$cindex))
+})
+
 cat("=== T10: SBMF vs DeSurv overlap (Jaccard + hypergeometric) ===\n")
 
+.t10_background <- paste0("gene", 1:2064)
+
 run_test("T10.1: compute_geneset_overlap gives Jaccard=1 for identical sets", {
-  set_a <- paste0("gene", 1:20)
-  res <- compute_geneset_overlap(set_a, set_a, background_size = 2064)
+  set_a <- .t10_background[1:20]
+  res <- compute_geneset_overlap(set_a, set_a, background = .t10_background)
   assert_near(res$jaccard, 1.0, tol = 1e-9)
   assert_equal(res$overlap_n, 20L)
 })
 
 run_test("T10.2: compute_geneset_overlap gives Jaccard=0 and non-significant p for disjoint sets", {
-  set_a <- paste0("geneA", 1:20)
-  set_b <- paste0("geneB", 1:20)
-  res <- compute_geneset_overlap(set_a, set_b, background_size = 2064)
+  set_a <- .t10_background[1:20]
+  set_b <- .t10_background[21:40]
+  res <- compute_geneset_overlap(set_a, set_b, background = .t10_background)
   assert_equal(res$overlap_n, 0L)
   assert_near(res$jaccard, 0, tol = 1e-9)
   assert_true(res$hyper_p > 0.5, msg = "disjoint sets should not look enriched")
@@ -457,20 +480,33 @@ run_test("T10.2: compute_geneset_overlap gives Jaccard=0 and non-significant p f
 
 run_test("T10.3: compute_geneset_overlap gives a small p-value for a substantial, unlikely-by-chance overlap", {
   set.seed(42)
-  background <- paste0("gene", 1:2064)
-  set_a <- sample(background, 270)
+  set_a <- sample(.t10_background, 270)
   # set_b shares 100 genes with set_a (a much bigger overlap than expected by chance)
-  set_b <- c(sample(set_a, 100), sample(setdiff(background, set_a), 170))
-  res <- compute_geneset_overlap(set_a, set_b, background_size = 2064)
+  set_b <- c(sample(set_a, 100), sample(setdiff(.t10_background, set_a), 170))
+  res <- compute_geneset_overlap(set_a, set_b, background = .t10_background)
   assert_equal(res$overlap_n, 100L)
   assert_true(res$hyper_p < 1e-10, msg = "a 100/270 overlap should be extremely unlikely by chance")
+})
+
+run_test("T10.3b: compute_geneset_overlap restricts both sets to background before computing overlap/p", {
+  # Regression test for a real bug caught in code review: set_b only partially
+  # inside background must not use its unrestricted length in phyper() -- that
+  # understates significance (verified: ~22x p-value difference in the real
+  # DeSurv-vs-SBMF comparison, m=249 restricted vs 270 unrestricted).
+  set.seed(43)
+  set_a <- sample(.t10_background, 270)
+  in_bg <- sample(setdiff(.t10_background, set_a), 40)
+  set_b <- c(sample(set_a, 30), in_bg, paste0("notingenome", 1:200))  # 200 genes outside background
+  res <- compute_geneset_overlap(set_a, set_b, background = .t10_background)
+  assert_equal(res$overlap_n, 30L)
+  # union_n should only count the 30+40=70 background-restricted set_b genes, not 270
+  assert_true(res$jaccard > 30 / (270 + 70), msg = "jaccard should reflect the background-restricted set_b size")
 })
 
 run_test("T10.4: sbmf_desurv_overlap_table returns one row per program x DeSurv factor", {
   d4 <- load_d4_weights()
   desurv <- list(D1 = paste0("gene", 1:50), D2 = paste0("gene", 51:100), D3 = paste0("gene", 101:150))
-  t4 <- sbmf_desurv_overlap_table(d4$EF, d4$program_labels, desurv, programs = c(3, 7),
-                                   top_n = 50, background_size = 2064)
+  t4 <- sbmf_desurv_overlap_table(d4$EF, d4$program_labels, desurv, programs = c(3, 7), top_n = 50)
   assert_true(nrow(t4) == 6, msg = "expected 2 programs x 3 DeSurv factors = 6 rows")
   assert_true(all(c("program", "label", "desurv_factor", "overlap_n", "jaccard", "hyper_p") %in% names(t4)))
 })
@@ -478,8 +514,7 @@ run_test("T10.4: sbmf_desurv_overlap_table returns one row per program x DeSurv 
 run_test("T10.5: plot_sbmf_desurv_overlap returns a ggplot object", {
   d4 <- load_d4_weights()
   desurv <- list(D1 = paste0("gene", 1:50), D2 = paste0("gene", 51:100), D3 = paste0("gene", 101:150))
-  t4 <- sbmf_desurv_overlap_table(d4$EF, d4$program_labels, desurv, programs = c(3, 7),
-                                   top_n = 50, background_size = 2064)
+  t4 <- sbmf_desurv_overlap_table(d4$EF, d4$program_labels, desurv, programs = c(3, 7), top_n = 50)
   p <- plot_sbmf_desurv_overlap(t4)
   assert_true(inherits(p, "ggplot"))
 })

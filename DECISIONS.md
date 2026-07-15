@@ -26,24 +26,49 @@ basal/classical 2-group call. Direct inspection of `cmbSubtypes.RData` and
 tumor axis is PurIST (categorical Basal-like/Classical + continuous `PurIST.prob`); used that
 instead for the subtype-concordance check.
 
-**Result — four independent methods agree, with no contradictions:**
+**Result — five independent methods agree, with no contradictions:**
 
 | Method | Program 7 (Adverse) | Program 3 (Protective) |
 |---|---|---|
 | Gene-set enrichment (fgsea, all collections) | Basal-like/squamous (DeSurv D3, padj=6.1e-4), MET/EGFR-RTK signaling (3 KEGG sets, padj~1.1-1.2e-3), Bailey Squamous (padj=0.030) | Classical (DeSurv D1, padj=0.017; Moffitt Classical, padj=0.035) |
 | PurIST subtype concordance (TCGA-PAAD, n=144, 100% matched) | Spearman rho=+0.58 vs. basal-likelihood (p=2.1e-14) | rho=-0.57 (p=4.9e-14) |
 | External-cohort survival (5 held-out cohorts) | HR>1 in **5/5** cohorts (range 1.30-2.40) | HR<1 in **5/5** cohorts (range 0.42-0.88) |
-| SBMF-vs-DeSurv gene overlap (top-270 genes, hypergeometric) | 80/270 overlap with DeSurv D3 (p=5.1e-15) | 61/270 overlap with DeSurv D1 (p=2.4e-6) |
+| SBMF-vs-DeSurv gene overlap (top-270 genes, hypergeometric) | 80/270 overlap with DeSurv D3 (p=3.2e-16) | 61/270 overlap with DeSurv D1 (p=1.1e-7) |
 
 This is the established PDAC subtype-survival relationship (basal-like/squamous = worse, classical
-= better), independently recovered by every one of the four methods run.
+= better), independently recovered by every one of the five methods run (the table's fgsea row plus
+its ORA confirmatory cross-check on top-N genes, which independently reaches the same conclusion at
+$padj<10^{-7}$ for both programs' primary custom-collection hits).
 
 **One honest nuance, reported rather than smoothed over:** Program 3 also shows a secondary, weaker
 association with DeSurv's basal-like gene list (enrichment padj=0.017 vs. 0.035 for D1; gene
-overlap 49/270 vs. 61/270 for D1), reproduced by two independent methods. Plausibly attributable to
+overlap 49/270 vs. 61/270 for D1), reproduced by fgsea and gene overlap. Plausibly attributable to
 shared general epithelial/tumor-identity markers (EPCAM, KRT8, TFF1/TFF3) rather than basal-specific
-drivers — a real, reproducible finding, not noise, but it does not contradict the dominant
-classical/protective signal.
+drivers. ORA does **not** confirm this secondary hit at any top-N tested (padj $\ge$ 0.18) — unlike
+the primary classical association, which ORA does confirm and which strengthens with N — additional
+evidence the secondary association is real but weaker, not a contradiction of the dominant signal.
+
+**Independent code review (before merge) caught two real bugs, both fixed and re-verified before
+this entry was finalized:**
+1. **[Critical]** `cohort_signature_cox()`'s C-index used a fixed sign convention
+   (`concordance(Surv(...) ~ I(-score))`) correct for an adverse (higher score = higher risk)
+   signature but silently wrong-direction for a protective one — Program 3's C2 table originally
+   reported C-index 0.39-0.49 in all 5 cohorts (looking like "worse than chance") when its true
+   discriminative accuracy in the correct direction was 0.51-0.61. Fixed to match this project's
+   existing `oriented_cindex()` convention (`max(c_raw, 1-c_raw)`, used in 8+ other benchmark
+   scripts) — direction-agnostic by construction. HR signs and p-values (which never used the buggy
+   convention) were unaffected; only the C-index column was wrong. New regression test (T9.5)
+   constructs a protective signature specifically to catch this class of bug in the future.
+2. **[Important]** `compute_geneset_overlap()`'s hypergeometric test used each gene list's
+   unrestricted length as `phyper()`'s parameters, but DeSurv's 270-gene-per-factor lists are not a
+   full subset of the 2064-gene SBMF background (~245-259 of each 270 fall inside it) — understating
+   significance (Program 3 vs. D1: p moved from ~2.4e-6 to the correct ~1.1e-7, a ~22x difference;
+   see the corrected table above). Fixed by restricting both gene lists to the background before
+   computing overlap/union/`phyper()`. New regression test (T10.3b) covers a set partially outside
+   the background.
+
+Both fixes changed only precision/exact numbers, not any directional conclusion — re-verified end to
+end (re-ran Steps 8-9 on real data, re-rendered the report) rather than assumed safe.
 
 **New dependencies:** `fgsea`, `clusterProfiler`, `msigdbr`, `org.Hs.eg.db` (Bioconductor;
 pre-approved in the 2026-06-16 planning session's own decisions). `msigdbr` 26.1.0 renamed its

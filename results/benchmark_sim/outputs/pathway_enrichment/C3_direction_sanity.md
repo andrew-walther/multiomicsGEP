@@ -33,11 +33,17 @@ basal-like/squamous = worse-prognosis story. **Agrees with "Adverse."**
 
 **Verdict:** Program 3's dominant, most-significant association is Classical/differentiated biology —
 **agrees with "Protective."** The secondary DeSurv_D3_BasalLikeTumor hit (also found independently in
-Step 9's gene-overlap table, T4: 49/270 genes, p=0.0068, versus 61/270 and p=2.4e-6 for D1) is a real,
-reproducible finding, not noise — but it is honestly a nuance, not a contradiction: several of the shared
-genes (EPCAM, KRT8, TFF1/TFF3) are general epithelial/tumor-identity markers rather than basal-specific
-drivers, plausibly explaining why a "classical, differentiated-epithelial" program picks up some overlap
-with any tumor-cell gene list. Flagged here explicitly rather than omitted.
+Step 9's gene-overlap table, T4: 49/270 genes, p=2.8e-3, versus 61/270 and p=1.1e-7 for D1 -- both
+recomputed after a code-review fix restricting the hypergeometric test to genes actually present in
+the 2064-gene background) is a real, reproducible finding, not noise — but it is honestly a nuance,
+not a contradiction: several of the shared genes (EPCAM, KRT8, TFF1/TFF3) are general epithelial/
+tumor-identity markers rather than basal-specific drivers, plausibly explaining why a "classical,
+differentiated-epithelial" program picks up some overlap with any tumor-cell gene list. **ORA
+(ORA confirmatory cross-check on top-150 weighted genes) does NOT confirm this secondary hit at any
+top-N tested (padj >= 0.18)** -- unlike Program 3's primary DeSurv D1/Moffitt Classical associations,
+which ORA does confirm and which strengthen with N. This is additional, independent evidence that the
+secondary basal-like association is real but weaker/less robust than the dominant classical signal.
+Flagged here explicitly rather than omitted.
 
 ## Cross-check against the two purely outcome-based results (Steps 7-8)
 
@@ -51,4 +57,5 @@ check on the same direction claim:
   (worse survival) in 5/5 cohorts; Program 3's has HR<1 (better survival) in 5/5 cohorts.
 
 Both independent checks agree with the pathway-based direction above. **No contradictions found across
-any of the four methods (Steps 6, 7, 8, 9) run in this plan.**
+any of the five methods (Step 6 fgsea, Step 6 ORA confirmatory check, Step 7, Step 8, Step 9) run in
+this plan.**

@@ -163,8 +163,11 @@ if (nrow(f1_data) > 0) {
 
 # F2: running-ES plot for the single top (lowest padj) set per active program.
 for (k in ACTIVE_PROGRAMS) {
+  # NB: t1[t1$program == k, ][1, ] on a zero-row subset returns a 1-row frame
+  # of NAs, not a 0-row frame -- is.na(top_set_row$set) is the only reachable
+  # branch of this guard, not nrow() (caught in code review).
   top_set_row <- t1[t1$program == k, ][1, ]
-  if (nrow(top_set_row) == 0 || is.na(top_set_row$set)) {
+  if (is.na(top_set_row$set)) {
     message(sprintf("run_pathway_enrichment: no headline set for program %d -- skipping F2", k))
     next
   }

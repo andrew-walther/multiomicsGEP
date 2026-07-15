@@ -2302,26 +2302,56 @@ correlates positively with basal-likelihood (Spearman $\rho=+0.58$, $p=2.1\times
 
 ## 30.4 — External cohort robustness (Step 8)
 
-A TDD test caught a real sign-convention bug before it ever touched real data:
+A TDD test initially caught a real sign-convention issue before it touched real data:
 `survival::concordance(Surv(...) ~ score)` treats a *higher* predictor as predicting *longer*
-survival by default (verified empirically with an unambiguous synthetic case), matching the
-project's existing convention in `code/select_alpha_cv.R`/`code/predict.R` which negate risk scores
-for the same reason. Fixed before running on real data. Result: Program 7's signature has HR>1 in
-**5/5** external cohorts (range 1.30-2.40); Program 3's has HR<1 in **5/5** cohorts (range
-0.42-0.88) — exceeding the plan's own bar of "a majority of cohorts."
+survival by default. The first fix (a fixed `I(-score)` negation, matching
+`code/select_alpha_cv.R`/`code/predict.R`) turned out to only be correct for an adverse signature —
+independent code review (\S30.7) caught that it silently reports the *wrong-direction* C-index for
+a protective one. Final, correct fix: match this project's own `oriented_cindex()` convention
+(`max(c_raw, 1-c_raw)`, direction-agnostic). Result after the final fix: Program 7's signature has
+HR>1 in **5/5** external cohorts (range 1.30-2.40, C-index 0.54-0.60); Program 3's has HR<1 in
+**5/5** cohorts (range 0.42-0.88, C-index 0.51-0.61) — exceeding the plan's own bar of "a majority
+of cohorts," and both programs' C-index now correctly >0.5 throughout.
 
 ## 30.5 — SBMF-vs-DeSurv overlap and direction sanity (Steps 9-10)
 
 Direct gene-list Jaccard/hypergeometric overlap (top-270 genes per program vs. each DeSurv factor,
 independent of the fgsea/ORA results, to avoid circularity) reproduces the same story: Program 7
-overlaps DeSurv D3 most strongly (80/270, $p=5.1\times10^{-15}$); Program 3 overlaps D1 most
-strongly (61/270, $p=2.4\times10^{-6}$), with the same secondary D3 association also seen in \S30.2
-(49/270, $p=0.0068$) — a real, twice-independently-reproduced nuance, not noise, and not a
-contradiction of the dominant classical/protective signal. All four methods run (gene-set
-enrichment, subtype concordance, external-cohort survival, gene overlap) agree with no
-contradictions.
+overlaps DeSurv D3 most strongly (80/270, $p=3.2\times10^{-16}$); Program 3 overlaps D1 most
+strongly (61/270, $p=1.1\times10^{-7}$), with the same secondary D3 association also seen in \S30.2
+(49/270, $p=2.8\times10^{-3}$) — a real, twice-independently-reproduced nuance (and, per \S30.2's
+ORA cross-check, weaker under that method too), not noise, and not a contradiction of the dominant
+classical/protective signal. All five methods run (fgsea enrichment, its ORA confirmatory check,
+subtype concordance, external-cohort survival, gene overlap) agree with no contradictions.
 
-## 30.6 — Files changed
+## 30.7 — Independent code review before merge
+
+Dispatched `superpowers:code-reviewer` over the full branch diff before merging. Found and fixed two
+real bugs (both re-verified end to end — re-ran the affected analyses on real data and re-rendered
+the report, rather than assuming the fix was safe):
+
+1. **[Critical]** \S30.4's original `cohort_signature_cox()` fix (fixed `I(-score)` negation) was
+   correct for Program 7 (Adverse) but silently wrong-direction for Program 3 (Protective) — the
+   originally-published C2 table showed Program 3's C-index at 0.39-0.49 in all 5 cohorts ("worse
+   than chance") when its true discriminative accuracy in the correct direction was 0.51-0.61.
+   Fixed to `max(c_raw, 1-c_raw)`, matching this project's existing `oriented_cindex()` convention
+   used in 8+ other benchmark scripts. New regression test (T9.5) constructs a protective signature
+   specifically.
+2. **[Important]** `compute_geneset_overlap()`'s hypergeometric test used each gene list's
+   unrestricted length, but DeSurv's 270-gene lists are not a full subset of the 2064-gene SBMF
+   background (~245-259 of 270 actually fall inside it) — understating significance by up to ~22x
+   (Program 3 vs. D1: p moved from ~2.4e-6 to the correct ~1.1e-7). Fixed by restricting both gene
+   lists to the background before computing overlap/union/`phyper()`. New regression test (T10.3b).
+
+Also addressed: added the ORA confirmatory-check comparison to the report (it had been computed in
+\S30.2 but never actually compared against fgsea, despite being built for exactly that purpose —
+review finding #3), and added a fail-loud guard to `run_external_cohort_robustness.R`'s headline
+selection matching its sibling script's existing pattern (review finding #4). Neither bug changed
+any directional conclusion (HR signs, Spearman $\rho$ signs, and which DeSurv factor each program
+overlaps most were all unaffected) — both were precision/exact-number issues, not correctness-of-
+conclusion issues, but both made a published table actively misleading as originally computed.
+
+## 30.8 — Files changed
 
 | File | Change |
 |------|--------|

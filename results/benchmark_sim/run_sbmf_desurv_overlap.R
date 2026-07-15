@@ -26,7 +26,6 @@ suppressPackageStartupMessages(library(ggplot2))
 
 OUT_DIR <- "results/benchmark_sim/outputs/pathway_enrichment"
 ACTIVE_PROGRAMS <- c(3, 7)
-BACKGROUND_SIZE <- 2064  # the D4 selected-gene universe
 
 genesets_path <- file.path(OUT_DIR, "pdac_genesets.rds")
 if (!file.exists(genesets_path)) {
@@ -38,8 +37,11 @@ d4 <- load_d4_weights()
 pdac_genesets <- readRDS(genesets_path)
 desurv <- pdac_genesets[c("DeSurv_D1_ClassicalTumor", "DeSurv_D2_StromalImmune", "DeSurv_D3_BasalLikeTumor")]
 
+# background = d4$gene_names (the 2064-gene D4 selected universe); DeSurv's own
+# 270-gene-per-factor lists are NOT a subset of it (~245-259 of each fall inside),
+# so compute_geneset_overlap() restricts both sets to this background internally.
 t4 <- sbmf_desurv_overlap_table(d4$EF, d4$program_labels, desurv, programs = ACTIVE_PROGRAMS,
-                                 top_n = 270, background_size = BACKGROUND_SIZE)
+                                 top_n = 270, background = d4$gene_names)
 write.csv(t4, file.path(OUT_DIR, "T4_sbmf_desurv_overlap.csv"), row.names = FALSE)
 cat("T4 (SBMF vs DeSurv gene-list overlap):\n")
 print(t4)
