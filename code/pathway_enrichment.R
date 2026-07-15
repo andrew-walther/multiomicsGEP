@@ -55,3 +55,99 @@ load_d4_weights <- function() {
     program_labels = program_labels
   )
 }
+
+# Section: Enrichment engines ----
+
+#' Rank-based gene-set enrichment (fgsea) for one gene-weight vector.
+#'
+#' Because the point-exponential F prior makes all gene weights >= 0, the
+#' weight vector is a natural one-sided continuous ranking statistic --
+#' enrichment here is one-sided by construction (only positive NES is
+#' meaningful; "depletion" has no interpretation for a non-negative weight).
+#'
+#' @param weights_k  named numeric vector of gene weights (names = gene symbols)
+#' @param genesets   named list of character vectors (gene symbols per set)
+#' @param seed       integer seed set before fgsea's permutation step (reproducibility)
+#' @param minSize    minimum gene-set size after intersecting with weights_k's names
+#' @param maxSize    maximum gene-set size after intersecting with weights_k's names
+#' @param collection optional label identifying which gene-set collection this came from
+#' @param scoreType  fgsea scoreType; default "pos" matches the non-negative
+#'                    point-exponential weight vector (one-sided ranking, no "depletion")
+#'
+#' @return data.frame with columns: collection, set, size, NES, pval, padj, leading_edge
+#'   (leading_edge genes joined by ";"), sorted by padj ascending.
+run_fgsea_program <- function(weights_k, genesets, seed = 1, minSize = 10, maxSize = 500,
+                               collection = NA_character_, scoreType = "pos") {
+  if (is.null(names(weights_k)) || any(names(weights_k) == "")) {
+    stop("run_fgsea_program: weights_k must be a named numeric vector (names = gene symbols)")
+  }
+
+  set.seed(seed)
+  res <- fgsea::fgsea(pathways = genesets, stats = weights_k, minSize = minSize, maxSize = maxSize,
+                       scoreType = scoreType)
+
+  if (nrow(res) == 0 || all(is.na(res$pval))) {
+    stop("run_fgsea_program: fgsea returned zero results or all-NA p-values -- ",
+         "check gene-symbol overlap between weights_k and genesets")
+  }
+
+  df <- data.frame(
+    collection = collection,
+    set = res$pathway,
+    size = res$size,
+    NES = res$NES,
+    pval = res$pval,
+    padj = res$padj,
+    leading_edge = vapply(res$leadingEdge, function(x) paste(x, collapse = ";"), character(1)),
+    stringsAsFactors = FALSE
+  )
+  df[order(df$padj), ]
+}
+
+#' Over-representation analysis (hypergeometric test) on top-N weighted genes.
+#'
+#' Confirmatory cross-check for run_fgsea_program(): tests whether the top-N
+#' genes by weight are enriched in each gene set relative to a specified
+#' background (the 2064 selected genes, NOT the whole genome -- using the
+#' genome as background inflates significance because the 2064 genes are
+#' already survival/variance-selected).
+#'
+#' @param top_genes  character vector of gene symbols (top-N weighted genes for one program)
+#' @param background character vector of gene symbols (the full selected-gene universe)
+#' @param genesets   named list of character vectors (gene symbols per set)
+#' @param collection optional label identifying which gene-set collection this came from
+#'
+#' @return data.frame with columns: collection, set, size, GeneRatio, pval, padj, leading_edge
+#'   (leading_edge = overlapping gene symbols, "/"-joined by clusterProfiler)
+run_ora_program <- function(top_genes, background, genesets, collection = NA_character_) {
+  overlap_total <- sum(vapply(genesets, function(s) length(intersect(s, top_genes)), integer(1)))
+  if (overlap_total == 0) {
+    stop("run_ora_program: zero overlap between top_genes and every gene set -- ",
+         "check gene-symbol case/mapping")
+  }
+
+  term2gene <- do.call(rbind, lapply(names(genesets), function(nm) {
+    data.frame(term = nm, gene = genesets[[nm]], stringsAsFactors = FALSE)
+  }))
+
+  res <- clusterProfiler::enricher(
+    gene = top_genes, universe = background, TERM2GENE = term2gene,
+    pvalueCutoff = 1, qvalueCutoff = 1, minGSSize = 1, maxGSSize = 100000
+  )
+
+  if (is.null(res) || nrow(res@result) == 0) {
+    stop("run_ora_program: enricher() returned zero results")
+  }
+
+  rdf <- res@result
+  data.frame(
+    collection = collection,
+    set = rdf$ID,
+    size = rdf$Count,
+    GeneRatio = rdf$GeneRatio,
+    pval = rdf$pvalue,
+    padj = rdf$p.adjust,
+    leading_edge = rdf$geneID,
+    stringsAsFactors = FALSE
+  )
+}
