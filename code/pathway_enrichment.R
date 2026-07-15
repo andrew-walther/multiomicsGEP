@@ -422,3 +422,163 @@ top_n_genes_table <- function(EF, programs, program_labels, n = 50) {
   })
   do.call(rbind, rows)
 }
+
+# Section: Figures (F1-F3) ----
+
+#' Prepare top-set-per-program data for the F1 enrichment dot plot.
+#'
+#' Pure data-prep step, factored out of plot_enrichment_dotplot() so the
+#' filtering/ranking logic is unit-testable without rendering a plot.
+#'
+#' @param fgsea_results data.frame as returned by run_fgsea_program() (with a
+#'   `program` column added, e.g. by run_pathway_enrichment.R)
+#' @param programs      integer vector of program indices to include
+#' @param top_n         number of top (lowest-padj) sets to keep per program
+#' @return data.frame with an added neglog10padj column, one row per (program, set)
+prepare_dotplot_data <- function(fgsea_results, programs, top_n = 10) {
+  sub <- fgsea_results[fgsea_results$program %in% programs, ]
+  sub <- sub[order(sub$program, sub$padj), ]
+  sub <- do.call(rbind, lapply(programs, function(k) {
+    rows_k <- sub[sub$program == k, ]
+    rows_k[seq_len(min(top_n, nrow(rows_k))), ]
+  }))
+  sub$neglog10padj <- -log10(pmax(sub$padj, .Machine$double.xmin))
+  sub
+}
+
+#' F1: enrichment dot plot, top sets per program (x=NES, size=set size, color=-log10(padj)).
+#'
+#' @param dotplot_data output of prepare_dotplot_data()
+#' @return a ggplot object
+plot_enrichment_dotplot <- function(dotplot_data) {
+  dotplot_data$set_label <- paste0(dotplot_data$set, " (", dotplot_data$collection, ")")
+  dotplot_data$set_label <- factor(dotplot_data$set_label,
+                                    levels = rev(unique(dotplot_data$set_label)))
+  ggplot2::ggplot(dotplot_data, ggplot2::aes(x = NES, y = set_label, size = size, color = neglog10padj)) +
+    ggplot2::geom_point() +
+    ggplot2::facet_wrap(~label, scales = "free_y") +
+    ggplot2::scale_color_viridis_c(name = "-log10(padj)") +
+    ggplot2::labs(x = "NES", y = NULL, size = "Set size",
+                  title = "Top enriched gene sets by program") +
+    ggplot2::theme_bw()
+}
+
+#' F2: fgsea running-enrichment-score plot for one headline gene set.
+#'
+#' @param weights_k named numeric vector of gene weights for one program
+#' @param geneset   character vector of gene symbols (the gene set to plot)
+#' @param title     plot title (typically "<set name> (Program <k>, <label>)")
+#' @return a ggplot object (fgsea::plotEnrichment output)
+plot_running_es <- function(weights_k, geneset, title = "") {
+  fgsea::plotEnrichment(geneset, weights_k) + ggplot2::labs(title = title)
+}
+
+#' F3: gene-weight heatmap for a set of genes across all 7 programs.
+#'
+#' @param EF    gene x program weight matrix (rows named by gene symbol)
+#' @param genes character vector of gene symbols to include (e.g. leading-edge
+#'              genes from headline sets); rows not found in EF are dropped
+#'              (logged via message(), not silently ignored)
+#' @param program_labels named list mapping program index (as string) to label
+#' @param filename if provided, written directly to this path (pheatmap's own
+#'                 file-output mechanism); otherwise the pheatmap object is returned
+#' @return the pheatmap grob (invisibly if filename is given)
+plot_geneweight_heatmap <- function(EF, genes, program_labels, filename = NA) {
+  present <- intersect(genes, rownames(EF))
+  missing <- setdiff(genes, rownames(EF))
+  if (length(missing) > 0) {
+    message(sprintf("plot_geneweight_heatmap: %d gene(s) not found in EF and dropped: %s",
+                     length(missing), paste(missing, collapse = ", ")))
+  }
+  if (length(present) == 0) {
+    stop("plot_geneweight_heatmap: none of the requested genes were found in EF")
+  }
+
+  mat <- EF[present, , drop = FALSE]
+  colnames(mat) <- paste0("P", seq_len(ncol(mat)), "_", vapply(seq_len(ncol(mat)),
+                                                                function(k) program_labels[[as.character(k)]],
+                                                                character(1)))
+  pheatmap::pheatmap(mat, cluster_cols = FALSE, filename = filename,
+                      main = "Gene weights (EF) across all 7 programs")
+}
+
+# Section: PDAC subtype concordance (Step 7) ----
+
+#' Merge D4 patient loadings (EL) with per-sample Moffitt/PurIST subtype calls.
+#'
+#' Uses PurIST (categorical Basal-like/Classical) and PurIST.prob (continuous
+#' basal-likelihood score), NOT "MS"/"MS_K2" -- those columns in the local
+#' reference data represent the Moffitt STROMA activation axis (Activated vs
+#' Normal), a different biological question, not the tumor basal/classical
+#' axis this concordance check targets. (This corrects an assumption in the
+#' original 2026-06-16 plan draft, which conflated the two.)
+#'
+#' @param EL          patient x program loading matrix (rows in the same order
+#'                    as `sample_ids`, e.g. d4$EL[1:n_tcga, ] for the TCGA-first
+#'                    block of the pooled D4 training set)
+#' @param sample_ids  character vector, TCGA barcodes, same length/order as EL's rows
+#' @param subtype_df  data.frame with columns sampID, PurIST, PurIST.prob
+#'                    (e.g. readRDS(".../TCGA_PAAD.caf_subtype.rds")$Subtype)
+#' @param min_match_frac minimum fraction of sample_ids that must match subtype_df$sampID;
+#'                        stop() if not met (fail loud, per project convention)
+#' @return data.frame: sampID, one column per EL program (named EL_<k>), PurIST, PurIST.prob
+merge_loadings_with_subtype <- function(EL, sample_ids, subtype_df, min_match_frac = 0.80) {
+  if (nrow(EL) != length(sample_ids)) {
+    stop("merge_loadings_with_subtype: nrow(EL) must equal length(sample_ids)")
+  }
+  el_df <- as.data.frame(EL)
+  colnames(el_df) <- paste0("EL_", seq_len(ncol(EL)))
+  el_df$sampID <- sample_ids
+
+  merged <- merge(el_df, subtype_df[, c("sampID", "PurIST", "PurIST.prob")], by = "sampID")
+
+  match_frac <- nrow(merged) / length(sample_ids)
+  cat(sprintf("merge_loadings_with_subtype: matched %d/%d samples (%.1f%%)\n",
+              nrow(merged), length(sample_ids), 100 * match_frac))
+  if (match_frac < min_match_frac) {
+    stop(sprintf("merge_loadings_with_subtype: only %.1f%% of samples matched a subtype ",
+                  100 * match_frac), "call -- below the ", 100 * min_match_frac, "% threshold")
+  }
+  merged
+}
+
+#' Spearman correlation (continuous) + Kruskal-Wallis test (categorical) of
+#' program loadings against the PurIST basal/classical axis.
+#'
+#' @param matched_df output of merge_loadings_with_subtype()
+#' @param programs   integer vector of program indices (matching EL_<k> column names)
+#' @return data.frame (T3): program, spearman_rho, spearman_p, kruskal_stat, kruskal_p, n
+compute_subtype_concordance <- function(matched_df, programs) {
+  rows <- lapply(programs, function(k) {
+    col <- paste0("EL_", k)
+    sp <- suppressWarnings(cor.test(matched_df[[col]], matched_df$PurIST.prob, method = "spearman"))
+    kw <- kruskal.test(matched_df[[col]], as.factor(matched_df$PurIST))
+    data.frame(
+      program = k,
+      spearman_rho = unname(sp$estimate),
+      spearman_p = sp$p.value,
+      kruskal_stat = unname(kw$statistic),
+      kruskal_p = kw$p.value,
+      n = nrow(matched_df)
+    )
+  })
+  do.call(rbind, rows)
+}
+
+#' F4: violin plot of a program's patient loading by PurIST subtype, with test p-value.
+#'
+#' @param matched_df output of merge_loadings_with_subtype()
+#' @param program    integer program index
+#' @param program_label character label (e.g. "Adverse") for the plot title
+#' @return a ggplot object
+plot_loading_by_subtype <- function(matched_df, program, program_label = "") {
+  col <- paste0("EL_", program)
+  kw <- kruskal.test(matched_df[[col]], as.factor(matched_df$PurIST))
+  ggplot2::ggplot(matched_df, ggplot2::aes(x = PurIST, y = .data[[col]], fill = PurIST)) +
+    ggplot2::geom_violin(alpha = 0.6) +
+    ggplot2::geom_jitter(width = 0.1, alpha = 0.4) +
+    ggplot2::labs(x = "PurIST subtype", y = sprintf("Program %d loading", program),
+                  title = sprintf("Program %d (%s) vs. PurIST (Kruskal-Wallis p=%.3g)",
+                                   program, program_label, kw$p.value)) +
+    ggplot2::theme_bw() + ggplot2::theme(legend.position = "none")
+}

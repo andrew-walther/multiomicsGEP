@@ -249,4 +249,125 @@ run_test("T6.2: program 7's top gene matches the known top-weighted gene (ITGA3)
   assert_equal(tbl$label[1], "Adverse")
 })
 
+cat("=== T7: Figures (F1-F3) ===\n")
+
+.fig_test_fgsea <- data.frame(
+  program = c(3, 3, 3, 7, 7),
+  label = c("Protective", "Protective", "Protective", "Adverse", "Adverse"),
+  collection = c("Hallmark", "Hallmark", "Reactome", "Hallmark", "Hallmark"),
+  set = c("SET_A", "SET_B", "SET_C", "SET_D", "SET_E"),
+  size = c(20, 30, 15, 25, 40),
+  NES = c(1.5, 1.2, 1.1, 1.8, 1.3),
+  pval = c(0.001, 0.01, 0.02, 0.0001, 0.005),
+  padj = c(0.01, 0.05, 0.08, 0.001, 0.03),
+  leading_edge = c("GENE1;GENE2", "GENE3", "GENE4", "GENE5;GENE6", "GENE7"),
+  stringsAsFactors = FALSE
+)
+
+run_test("T7.1: prepare_dotplot_data keeps top_n sets per program, ordered by padj", {
+  res <- prepare_dotplot_data(.fig_test_fgsea, programs = c(3, 7), top_n = 2)
+  assert_true(nrow(res) == 4, msg = "expected 2 sets x 2 programs = 4 rows")
+  assert_true(all(res$set %in% c("SET_A", "SET_B", "SET_D", "SET_E")),
+              msg = "should keep the 2 lowest-padj sets per program")
+})
+
+run_test("T7.2: prepare_dotplot_data adds a neglog10padj column", {
+  res <- prepare_dotplot_data(.fig_test_fgsea, programs = c(3, 7), top_n = 2)
+  assert_true("neglog10padj" %in% names(res))
+  assert_near(res$neglog10padj[res$set == "SET_D"], -log10(0.001), tol = 1e-8)
+})
+
+run_test("T7.3: plot_enrichment_dotplot returns a ggplot object", {
+  dd <- prepare_dotplot_data(.fig_test_fgsea, programs = c(3, 7), top_n = 3)
+  p <- plot_enrichment_dotplot(dd)
+  assert_true(inherits(p, "ggplot"), msg = "expected a ggplot object")
+})
+
+run_test("T7.4: plot_running_es returns a ggplot object", {
+  set.seed(1)
+  w <- setNames(sort(rexp(50), decreasing = TRUE), paste0("gene", 1:50))
+  p <- plot_running_es(w, paste0("gene", 1:10), title = "test set")
+  assert_true(inherits(p, "ggplot"), msg = "expected a ggplot object")
+})
+
+run_test("T7.5: plot_geneweight_heatmap fails loud if no requested genes are found", {
+  d4 <- load_d4_weights()
+  err <- tryCatch({
+    plot_geneweight_heatmap(d4$EF, c("NOTAREALGENE1", "NOTAREALGENE2"), d4$program_labels)
+    "no error"
+  }, error = function(e) "error")
+  assert_equal(err, "error", msg = "should fail loud when zero requested genes are found")
+})
+
+run_test("T7.6: plot_geneweight_heatmap runs on real top genes without error", {
+  d4 <- load_d4_weights()
+  top_genes <- top_n_genes_table(d4$EF, 7, d4$program_labels, n = 10)$gene
+  res <- tryCatch({
+    plot_geneweight_heatmap(d4$EF, top_genes, d4$program_labels)
+    "ok"
+  }, error = function(e) paste("error:", conditionMessage(e)))
+  assert_equal(res, "ok")
+})
+
+cat("=== T8: PDAC subtype concordance (merge/stats/plot) ===\n")
+
+.concordance_test_EL <- local({
+  set.seed(7)
+  n <- 60
+  purist_prob <- runif(n)
+  # Program 1 loading strongly tracks PurIST.prob (positive correlation by construction)
+  el1 <- purist_prob + rnorm(n, sd = 0.05)
+  # Program 2 loading is unrelated noise
+  el2 <- rnorm(n)
+  EL <- cbind(el1, el2)
+  sample_ids <- paste0("SAMP", seq_len(n))
+  purist_cat <- ifelse(purist_prob > 0.5, "Basal-like", "Classical")
+  subtype_df <- data.frame(sampID = sample_ids, PurIST = purist_cat, PurIST.prob = purist_prob,
+                            stringsAsFactors = FALSE)
+  list(EL = EL, sample_ids = sample_ids, subtype_df = subtype_df)
+})
+
+run_test("T8.1: merge_loadings_with_subtype matches all samples when IDs align exactly", {
+  d <- .concordance_test_EL
+  merged <- merge_loadings_with_subtype(d$EL, d$sample_ids, d$subtype_df)
+  assert_true(nrow(merged) == 60, msg = "expected all 60 samples to match")
+  assert_true(all(c("EL_1", "EL_2", "PurIST", "PurIST.prob") %in% names(merged)))
+})
+
+run_test("T8.2: merge_loadings_with_subtype fails loud below the match threshold", {
+  d <- .concordance_test_EL
+  sparse_subtype <- d$subtype_df[1:10, ]  # only 10/60 will match
+  err <- tryCatch({
+    merge_loadings_with_subtype(d$EL, d$sample_ids, sparse_subtype, min_match_frac = 0.80)
+    "no error"
+  }, error = function(e) "error")
+  assert_equal(err, "error", msg = "should fail loud when match fraction is below threshold")
+})
+
+run_test("T8.3: compute_subtype_concordance recovers the known strong correlation for program 1", {
+  d <- .concordance_test_EL
+  merged <- merge_loadings_with_subtype(d$EL, d$sample_ids, d$subtype_df)
+  t3 <- compute_subtype_concordance(merged, programs = c(1, 2))
+  rho1 <- t3$spearman_rho[t3$program == 1]
+  rho2 <- t3$spearman_rho[t3$program == 2]
+  assert_true(rho1 > 0.9, msg = sprintf("expected strong correlation for program 1, got %.3f", rho1))
+  assert_true(abs(rho2) < 0.5, msg = sprintf("expected weak correlation for program 2, got %.3f", rho2))
+})
+
+run_test("T8.4: compute_subtype_concordance program 1's Kruskal p is much smaller than program 2's", {
+  d <- .concordance_test_EL
+  merged <- merge_loadings_with_subtype(d$EL, d$sample_ids, d$subtype_df)
+  t3 <- compute_subtype_concordance(merged, programs = c(1, 2))
+  p1 <- t3$kruskal_p[t3$program == 1]
+  p2 <- t3$kruskal_p[t3$program == 2]
+  assert_true(p1 < p2, msg = "program 1 (constructed to track PurIST) should be far more significant")
+})
+
+run_test("T8.5: plot_loading_by_subtype returns a ggplot object", {
+  d <- .concordance_test_EL
+  merged <- merge_loadings_with_subtype(d$EL, d$sample_ids, d$subtype_df)
+  p <- plot_loading_by_subtype(merged, program = 1, program_label = "Test")
+  assert_true(inherits(p, "ggplot"))
+})
+
 report_results("pathway_enrichment.R")

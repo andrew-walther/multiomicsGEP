@@ -147,4 +147,44 @@ cat(sprintf("ORA: %d total enriched-set rows across Programs %s x N in {50,100,1
 t2 <- top_n_genes_table(d4$EF, ACTIVE_PROGRAMS, d4$program_labels, n = 100)
 write.csv(t2, file.path(OUT_DIR, "T2_top_genes.csv"), row.names = FALSE)
 
+# Section: F1-F3 -- figures ----
+
+suppressPackageStartupMessages(library(ggplot2))
+
+f1_data <- prepare_dotplot_data(fgsea_results, programs = ACTIVE_PROGRAMS, top_n = 10)
+if (nrow(f1_data) > 0) {
+  f1 <- plot_enrichment_dotplot(f1_data)
+  ggsave(file.path(OUT_DIR, "F1_enrichment_dotplot.png"), f1, width = 16, height = 8, dpi = 150)
+  ggsave(file.path(OUT_DIR, "F1_enrichment_dotplot.pdf"), f1, width = 16, height = 8)
+  cat("F1 written.\n")
+} else {
+  message("run_pathway_enrichment: no sets available for F1 (t1 was empty) -- skipping F1")
+}
+
+# F2: running-ES plot for the single top (lowest padj) set per active program.
+for (k in ACTIVE_PROGRAMS) {
+  top_set_row <- t1[t1$program == k, ][1, ]
+  if (nrow(top_set_row) == 0 || is.na(top_set_row$set)) {
+    message(sprintf("run_pathway_enrichment: no headline set for program %d -- skipping F2", k))
+    next
+  }
+  geneset <- collections[[top_set_row$collection]][[top_set_row$set]]
+  f2 <- plot_running_es(d4$EF[, k], geneset,
+                         title = sprintf("%s (Program %d, %s)", top_set_row$set, k, top_set_row$label))
+  fname <- gsub("[^A-Za-z0-9_-]", "_", sprintf("F2_running_es_program%d_%s", k, top_set_row$set))
+  ggsave(file.path(OUT_DIR, paste0(fname, ".png")), f2, width = 7, height = 4.5, dpi = 120)
+  cat(sprintf("F2 written for program %d (%s).\n", k, top_set_row$set))
+}
+
+# F3: gene-weight heatmap over the union of headline leading-edge genes (Programs 3 & 7).
+f3_genes <- unique(unlist(lapply(strsplit(t1$leading_edge[t1$program %in% ACTIVE_PROGRAMS], ";"),
+                                  function(g) g[seq_len(min(20, length(g)))])))
+if (length(f3_genes) > 0) {
+  plot_geneweight_heatmap(d4$EF, f3_genes, d4$program_labels,
+                           filename = file.path(OUT_DIR, "F3_geneweight_heatmap.png"))
+  cat(sprintf("F3 written (%d genes).\n", length(f3_genes)))
+} else {
+  message("run_pathway_enrichment: no leading-edge genes available for F3 -- skipping F3")
+}
+
 cat("\nrun_pathway_enrichment.R complete. Outputs written to", OUT_DIR, "\n")

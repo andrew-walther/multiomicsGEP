@@ -1,0 +1,25 @@
+PDAC custom gene-set collection -- pdac_genesets.rds
+Generated: 2026-07-14 23:38:15 PDT
+R version: R version 4.5.2 (2025-10-31)
+msigdbr version: 26.1.0
+
+Per-set source citation and MSigDB-universe mapping check:
+ - Moffitt RA et al. 2015. Nat Med 21(10):1168-78. (cmbSubtypes.RData, schema 'MT', column 'Basal-like')
+ - Moffitt RA et al. 2015. Nat Med 21(10):1168-78. (cmbSubtypes.RData, schema 'MT', column 'Classical')
+ - Bailey P et al. 2016. Nature 531(7592):47-52. (cmbSubtypes.RData, schema 'Bailey', column 'Squamous')
+ - Bailey P et al. 2016. Nature 531(7592):47-52. (cmbSubtypes.RData, schema 'Bailey', column 'Immunogenic')
+ - Bailey P et al. 2016. Nature 531(7592):47-52. (cmbSubtypes.RData, schema 'Bailey', column 'PancreaticProgenitor')
+ - Bailey P et al. 2016. Nature 531(7592):47-52. (cmbSubtypes.RData, schema 'Bailey', column 'ADEX')
+ - Young AM et al. DeSurv (Young et al., PNAS 2026). si_appendix.pdf, Table S7.
+ - Young AM et al. DeSurv (Young et al., PNAS 2026). si_appendix.pdf, Table S8.
+ - Young AM et al. DeSurv (Young et al., PNAS 2026). si_appendix.pdf, Table S9.
+
+Moffitt_BasalLike (n=25): 25/25 (100%) mapped to MSigDB universe
+Moffitt_Classical (n=25): 24/25 (96%) mapped to MSigDB universe
+Bailey_Squamous (n=87): 72/87 (83%) mapped to MSigDB universe
+Bailey_Immunogenic (n=145): 139/145 (96%) mapped to MSigDB universe
+Bailey_PancreaticProgenitor (n=73): 61/73 (84%) mapped to MSigDB universe
+Bailey_ADEX (n=57): 55/57 (96%) mapped to MSigDB universe
+DeSurv_D1_ClassicalTumor (n=270): 267/270 (99%) mapped to MSigDB universe
+DeSurv_D2_StromalImmune (n=270): 263/270 (97%) mapped to MSigDB universe
+DeSurv_D3_BasalLikeTumor (n=270): 264/270 (98%) mapped to MSigDB universe
