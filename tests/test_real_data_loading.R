@@ -425,6 +425,33 @@ if (!real_data_available || !desurv_si_available) {
 }
 
 # =============================================================================
+# T7: load_pdac_raw() sampID field — needed to match D4's pooled EL rows back
+# to TCGA_PAAD sample barcodes for pathway-enrichment Step 7 (subtype
+# concordance). Real-data-gated, same convention as T2-T4/T6.
+# =============================================================================
+
+cat("\n=== T7: load_pdac_raw() sampID field ===\n")
+
+if (!real_data_available) {
+  cat("  [SKIPPED] T7.1-T7.2 (load_pdac_raw): PDAC_DATA_ROOT not set/found\n")
+} else {
+  cfg <- yaml::read_yaml("config/globals.yml")
+  source("results/benchmark_sim/benchmark_helpers.R")
+
+  run_test("T7.1: load_pdac_raw returns a sampID vector matching Y's row count", {
+    res <- load_pdac_raw("TCGA_PAAD", pdac_root)
+    assert_true(!is.null(res$sampID), msg = "sampID should not be NULL for TCGA_PAAD")
+    assert_true(length(res$sampID) == nrow(res$Y),
+                msg = "sampID length should match the number of kept samples")
+  })
+
+  run_test("T7.2: sampID values look like TCGA barcodes", {
+    res <- load_pdac_raw("TCGA_PAAD", pdac_root)
+    assert_true(all(grepl("^TCGA-", res$sampID)), msg = "expected TCGA- prefixed barcodes")
+  })
+}
+
+# =============================================================================
 # Summary
 # =============================================================================
 

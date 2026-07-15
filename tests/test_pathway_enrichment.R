@@ -309,6 +309,21 @@ run_test("T7.6: plot_geneweight_heatmap runs on real top genes without error", {
   assert_equal(res, "ok")
 })
 
+run_test("T7.7: heatmap_dimensions shrinks font and grows height as gene count increases", {
+  small <- heatmap_dimensions(n_genes = 10, n_cols = 7)
+  large <- heatmap_dimensions(n_genes = 150, n_cols = 7)
+  assert_true(large$fontsize_row < small$fontsize_row,
+              msg = "more genes should mean a smaller row-label font")
+  assert_true(large$height_in > small$height_in,
+              msg = "more genes should mean a taller saved figure")
+})
+
+run_test("T7.8: heatmap_dimensions never produces a degenerate (near-zero) font or size", {
+  huge <- heatmap_dimensions(n_genes = 5000, n_cols = 7)
+  assert_true(huge$fontsize_row >= 4, msg = "font size should have a floor")
+  assert_true(huge$width_in >= 6 && huge$height_in >= 4, msg = "figure dimensions should have a floor")
+})
+
 cat("=== T8: PDAC subtype concordance (merge/stats/plot) ===\n")
 
 .concordance_test_EL <- local({

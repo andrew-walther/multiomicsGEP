@@ -482,8 +482,12 @@ plot_running_es <- function(weights_k, geneset, title = "") {
 #' @param program_labels named list mapping program index (as string) to label
 #' @param filename if provided, written directly to this path (pheatmap's own
 #'                 file-output mechanism); otherwise the pheatmap object is returned
+#' @param cellheight_in row height in inches, scales the saved figure's height
+#'                       and row-label font size so gene names stay readable
+#'                       and non-overlapping regardless of how many genes are
+#'                       plotted (rather than a fixed figure size for all N)
 #' @return the pheatmap grob (invisibly if filename is given)
-plot_geneweight_heatmap <- function(EF, genes, program_labels, filename = NA) {
+plot_geneweight_heatmap <- function(EF, genes, program_labels, filename = NA, cellheight_in = 0.14) {
   present <- intersect(genes, rownames(EF))
   missing <- setdiff(genes, rownames(EF))
   if (length(missing) > 0) {
@@ -498,8 +502,32 @@ plot_geneweight_heatmap <- function(EF, genes, program_labels, filename = NA) {
   colnames(mat) <- paste0("P", seq_len(ncol(mat)), "_", vapply(seq_len(ncol(mat)),
                                                                 function(k) program_labels[[as.character(k)]],
                                                                 character(1)))
+
+  dims <- heatmap_dimensions(nrow(mat), ncol(mat), cellheight_in)
+
   pheatmap::pheatmap(mat, cluster_cols = FALSE, filename = filename,
+                      fontsize_row = dims$fontsize_row,
+                      width = dims$width_in, height = dims$height_in,
                       main = "Gene weights (EF) across all 7 programs")
+}
+
+#' Compute row-label font size and saved-figure dimensions for the F3 heatmap.
+#'
+#' Pure sizing logic, factored out of plot_geneweight_heatmap() so it's
+#' unit-testable without rendering: more genes -> smaller font, taller figure,
+#' so labels stay legible and non-overlapping regardless of gene count
+#' (a fixed figure size was found to squeeze >100 gene labels illegibly).
+#'
+#' @param n_genes integer, number of rows (genes) to plot
+#' @param n_cols  integer, number of columns (programs)
+#' @param cellheight_in row height in inches
+#' @return list(fontsize_row, width_in, height_in)
+heatmap_dimensions <- function(n_genes, n_cols, cellheight_in = 0.14) {
+  list(
+    fontsize_row = max(4, min(10, 500 / n_genes)),
+    width_in = max(6, n_cols * 1.1 + 3),
+    height_in = max(4, n_genes * cellheight_in + 2)
+  )
 }
 
 # Section: PDAC subtype concordance (Step 7) ----

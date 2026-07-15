@@ -83,12 +83,14 @@ load_pdac_raw <- function(dataset_name, pdac_root) {
 
   time   <- result$sampInfo$time[keeps]
   status <- as.integer(result$sampInfo$event[keeps])
+  samp_id <- if ("sampID" %in% names(result$sampInfo)) result$sampInfo$sampID[keeps] else NULL
 
   list(
     Y = Y, gene_names = gene_names,
     time = time, status = status,
     n = nrow(Y), p = ncol(Y),
-    dataset_name = dataset_name
+    dataset_name = dataset_name,
+    sampID = samp_id
   )
 }
 
