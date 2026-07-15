@@ -437,4 +437,51 @@ run_test("T9.4: cohort_signature_cox on pure noise gives a non-significant, near
               msg = sprintf("expected C-index near 0.5 for pure noise, got %.3f", res$cindex))
 })
 
+cat("=== T10: SBMF vs DeSurv overlap (Jaccard + hypergeometric) ===\n")
+
+run_test("T10.1: compute_geneset_overlap gives Jaccard=1 for identical sets", {
+  set_a <- paste0("gene", 1:20)
+  res <- compute_geneset_overlap(set_a, set_a, background_size = 2064)
+  assert_near(res$jaccard, 1.0, tol = 1e-9)
+  assert_equal(res$overlap_n, 20L)
+})
+
+run_test("T10.2: compute_geneset_overlap gives Jaccard=0 and non-significant p for disjoint sets", {
+  set_a <- paste0("geneA", 1:20)
+  set_b <- paste0("geneB", 1:20)
+  res <- compute_geneset_overlap(set_a, set_b, background_size = 2064)
+  assert_equal(res$overlap_n, 0L)
+  assert_near(res$jaccard, 0, tol = 1e-9)
+  assert_true(res$hyper_p > 0.5, msg = "disjoint sets should not look enriched")
+})
+
+run_test("T10.3: compute_geneset_overlap gives a small p-value for a substantial, unlikely-by-chance overlap", {
+  set.seed(42)
+  background <- paste0("gene", 1:2064)
+  set_a <- sample(background, 270)
+  # set_b shares 100 genes with set_a (a much bigger overlap than expected by chance)
+  set_b <- c(sample(set_a, 100), sample(setdiff(background, set_a), 170))
+  res <- compute_geneset_overlap(set_a, set_b, background_size = 2064)
+  assert_equal(res$overlap_n, 100L)
+  assert_true(res$hyper_p < 1e-10, msg = "a 100/270 overlap should be extremely unlikely by chance")
+})
+
+run_test("T10.4: sbmf_desurv_overlap_table returns one row per program x DeSurv factor", {
+  d4 <- load_d4_weights()
+  desurv <- list(D1 = paste0("gene", 1:50), D2 = paste0("gene", 51:100), D3 = paste0("gene", 101:150))
+  t4 <- sbmf_desurv_overlap_table(d4$EF, d4$program_labels, desurv, programs = c(3, 7),
+                                   top_n = 50, background_size = 2064)
+  assert_true(nrow(t4) == 6, msg = "expected 2 programs x 3 DeSurv factors = 6 rows")
+  assert_true(all(c("program", "label", "desurv_factor", "overlap_n", "jaccard", "hyper_p") %in% names(t4)))
+})
+
+run_test("T10.5: plot_sbmf_desurv_overlap returns a ggplot object", {
+  d4 <- load_d4_weights()
+  desurv <- list(D1 = paste0("gene", 1:50), D2 = paste0("gene", 51:100), D3 = paste0("gene", 101:150))
+  t4 <- sbmf_desurv_overlap_table(d4$EF, d4$program_labels, desurv, programs = c(3, 7),
+                                   top_n = 50, background_size = 2064)
+  p <- plot_sbmf_desurv_overlap(t4)
+  assert_true(inherits(p, "ggplot"))
+})
+
 report_results("pathway_enrichment.R")

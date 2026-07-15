@@ -665,3 +665,71 @@ cohort_signature_cox <- function(score, time, status) {
     n = length(score)
   )
 }
+
+# Section: SBMF vs DeSurv overlap (Step 9) ----
+
+#' Jaccard overlap + hypergeometric enrichment p-value between two gene sets.
+#'
+#' @param set_a, set_b character vectors of gene symbols
+#' @param background_size total size of the gene universe both sets are drawn
+#'                         from (e.g. 2064, the D4 selected-gene universe)
+#' @return list(overlap_n, jaccard, hyper_p)
+compute_geneset_overlap <- function(set_a, set_b, background_size) {
+  overlap_n <- length(intersect(set_a, set_b))
+  union_n <- length(union(set_a, set_b))
+  jaccard <- if (union_n == 0) 0 else overlap_n / union_n
+  # P(X >= overlap_n) under the hypergeometric null: drawing length(set_a)
+  # genes without replacement from a background_size universe containing
+  # length(set_b) "successes".
+  hyper_p <- stats::phyper(overlap_n - 1, length(set_b), background_size - length(set_b),
+                            length(set_a), lower.tail = FALSE)
+  list(overlap_n = overlap_n, jaccard = jaccard, hyper_p = hyper_p)
+}
+
+#' SBMF Programs 3 & 7 vs. DeSurv D1/D2/D3 gene-list overlap table (T4).
+#'
+#' Compares each active program's own top-N weighted genes (independent of
+#' any particular enrichment test result, to avoid circularity with Step 6's
+#' fgsea/ORA output) against each of the 3 DeSurv factor gene lists.
+#'
+#' @param EF          gene x program weight matrix (rows named by gene symbol)
+#' @param program_labels named list mapping program index (as string) to label
+#' @param desurv_genesets named list with DeSurv_D1_ClassicalTumor,
+#'                         DeSurv_D2_StromalImmune, DeSurv_D3_BasalLikeTumor
+#'                         (e.g. the relevant 3 elements of build_pdac_genesets()'s output)
+#' @param programs    integer vector of program indices to compare
+#' @param top_n       number of top-weighted genes per program to compare (270,
+#'                     matching DeSurv's own top-N-per-factor convention, for
+#'                     an apples-to-apples comparison)
+#' @param background_size total gene universe size (e.g. 2064)
+#' @return data.frame (T4): program, label, desurv_factor, overlap_n, jaccard, hyper_p
+sbmf_desurv_overlap_table <- function(EF, program_labels, desurv_genesets, programs,
+                                       top_n = 270, background_size = nrow(EF)) {
+  rows <- lapply(programs, function(k) {
+    top_genes <- top_n_genes_table(EF, k, program_labels, n = top_n)$gene
+    do.call(rbind, lapply(names(desurv_genesets), function(dname) {
+      ov <- compute_geneset_overlap(top_genes, desurv_genesets[[dname]], background_size)
+      data.frame(
+        program = k, label = program_labels[[as.character(k)]], desurv_factor = dname,
+        overlap_n = ov$overlap_n, jaccard = ov$jaccard, hyper_p = ov$hyper_p,
+        stringsAsFactors = FALSE
+      )
+    }))
+  })
+  do.call(rbind, rows)
+}
+
+#' F5: SBMF x DeSurv leading-edge/top-gene Jaccard overlap heatmap.
+#'
+#' @param overlap_table output of sbmf_desurv_overlap_table()
+#' @return a ggplot object
+plot_sbmf_desurv_overlap <- function(overlap_table) {
+  overlap_table$program_label <- sprintf("P%d (%s)", overlap_table$program, overlap_table$label)
+  ggplot2::ggplot(overlap_table, ggplot2::aes(x = desurv_factor, y = program_label, fill = jaccard)) +
+    ggplot2::geom_tile() +
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.3f\np=%.1e", jaccard, hyper_p)), size = 3) +
+    ggplot2::scale_fill_gradient(low = "white", high = "firebrick", limits = c(0, NA)) +
+    ggplot2::labs(x = "DeSurv factor", y = NULL, fill = "Jaccard",
+                  title = "SBMF vs. DeSurv gene-list overlap") +
+    ggplot2::theme_bw()
+}

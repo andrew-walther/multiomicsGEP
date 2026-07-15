@@ -1,0 +1,7 @@
+"program","label","desurv_factor","overlap_n","jaccard","hyper_p"
+3,"Protective","DeSurv_D1_ClassicalTumor",61,0.127348643006263,2.40823996695455e-06
+3,"Protective","DeSurv_D2_StromalImmune",3,0.00558659217877095,0.999999999999998
+3,"Protective","DeSurv_D3_BasalLikeTumor",49,0.09979633401222,0.00676264149075218
+7,"Adverse","DeSurv_D1_ClassicalTumor",11,0.0207939508506616,0.999999970304531
+7,"Adverse","DeSurv_D2_StromalImmune",22,0.0424710424710425,0.997529229715127
+7,"Adverse","DeSurv_D3_BasalLikeTumor",80,0.173913043478261,5.06150853541138e-15
