@@ -41,6 +41,7 @@ source("code/predict_cox_on_yf.R")
 source("code/select_alpha_cv.R")
 source("code/preprocess_desurv.R")
 source("results/multi_cohort_sim/fit_pca_cox.R")
+source("code/pathway_enrichment.R")
 
 # List all test files to run
 test_files <- c(
@@ -63,7 +64,8 @@ test_files <- c(
   "tests/test_fit_yf_cohort.R",
   "tests/test_fit_yf_frozen_f.R",
   "tests/test_normalization.R",
-  "tests/test_fit_pca_cox.R"
+  "tests/test_fit_pca_cox.R",
+  "tests/test_pathway_enrichment.R"
 )
 
 # Run each test file
