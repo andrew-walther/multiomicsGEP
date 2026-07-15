@@ -1,0 +1,211 @@
+---
+title: "Pathway Enrichment on the Recommended Model's Survival-Active Gene Programs"
+author: "Andrew Walther"
+date: "2026-07-15"
+format:
+  pdf:
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{geometry}
+        \usepackage{titling}
+        \geometry{margin=0.5in}
+        \renewcommand{\familydefault}{\sfdefault}
+        \setlength{\droptitle}{-1.8em}
+        \pretitle{\begin{center}\large\bfseries}
+        \posttitle{\par\end{center}\vspace{-0.7em}}
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+fontsize: 9pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(knitr)
+OUT <- "../../results/benchmark_sim/outputs/pathway_enrichment"
+read_csv_safe <- function(f) {
+  p <- file.path(OUT, f)
+  if (file.exists(p)) read.csv(p, stringsAsFactors = FALSE) else NULL
+}
+t1 <- read_csv_safe("T1_enrichment_active.csv")
+t3 <- read_csv_safe("T3_concordance_stats.csv")
+t4 <- read_csv_safe("T4_sbmf_desurv_overlap.csv")
+c1 <- read_csv_safe("C1_all_programs_summary.csv")
+c2 <- read_csv_safe("C2_external_cohort_robustness.csv")
+```
+
+## 1. Motivation and direction convention
+
+The recommended model (YFB, DeSurv-aligned gene selection, K=7, no cohort indicator; mean
+external C-index = 0.627 across 5 held-out PDAC cohorts) uses only 2 of its 7 latent gene
+expression programs for survival prediction ($K_{\text{eff}}=2$), a result confirmed by three
+independent methods (warm-start, deflation-init, joint (K,$\alpha$) Bayesian optimization; see
+`DECISIONS.md` 2026-07-13). This report assigns biology to those two programs — **Program 7** and
+**Program 3** — via gene-set enrichment and four independent lines of orthogonal evidence.
+
+**Direction convention (DECISIONS.md, 2026-06-16).** Adverse/protective direction is read from the
+*marginal* survival association of each program's projection score, not the joint model's $\beta$
+sign — the two disagree here (joint $\hat\beta_7=-0.041$, $\hat\beta_3=+0.011$; a suppression
+effect among correlated programs). By the marginal convention: **Program 7 = Adverse**, **Program 3
+= Protective**. All labels and directional predictions below use this convention.
+
+## 2. Methods
+
+Gene weights come from the D4 fit's $\mathbf{F}$ matrix (2064 genes $\times$ 7 programs; a
+point-exponential prior makes every weight $\ge 0$). Primary enrichment method: `fgsea`
+(`scoreType="pos"`, one-sided by construction since weights are non-negative), ranking all 2064
+genes by weight per program. Confirmatory method: over-representation analysis (`clusterProfiler::enricher`)
+on the top-N weighted genes (N $\in$ \{50,100,150\}), background = the same 2064-gene universe (not
+the whole genome, since these genes are already survival/variance-selected). Gene-set collections:
+MSigDB Hallmark, Reactome (`CP:REACTOME`), KEGG (`CP:KEGG_MEDICUS`), GO Biological Process
+(`GO:BP`) via `msigdbr` 26.1.0 (`collection`/`subcollection` arguments; `category`/`subcategory` are
+deprecated as of this version), plus a custom PDAC collection: Moffitt basal/classical (25+25
+genes; Moffitt et al. 2015), Bailey 4-subtype (Squamous/Immunogenic/Pancreatic
+Progenitor/ADEX; 87/145/73/57 genes; Bailey et al. 2016), and DeSurv's own D1/D2/D3 factor gene
+lists (270 genes each, extracted from the DeSurv SI appendix, Tables S7-S9; Young et al., PNAS
+2026). All 7 programs were enriched (a sanity check that the 5 non-survival-active programs enrich
+for generic/distinct-but-non-prognostic biology, not nothing); reporting below focuses on Programs
+3 and 7. `set.seed(1)` before all `fgsea` calls; BH-adjusted p (`padj`) per collection, reported at
+`padj < 0.10`.
+
+## 3. Gene-set enrichment (F1, T1, C1)
+
+```{r f1, fig.cap="Top enriched gene sets per active program. Size = gene-set size; color = -log10(padj)."}
+knitr::include_graphics(file.path(OUT, "F1_enrichment_dotplot.png"))
+```
+
+```{r t1-table}
+if (!is.null(t1)) {
+  t1_show <- t1[, c("program", "label", "collection", "set", "size", "NES", "padj")]
+  # Strip verbose systematic-name prefixes for table readability (full names in F1/genesets_manifest.txt)
+  t1_show$set <- gsub("^KEGG_MEDICUS_REFERENCE_", "", t1_show$set)
+  t1_show$set <- gsub("^REACTOME_", "", t1_show$set)
+  t1_show$set <- gsub("_", " ", t1_show$set)
+  t1_show$NES <- round(t1_show$NES, 2)
+  t1_show$padj <- signif(t1_show$padj, 2)
+  knitr::kable(t1_show, row.names = FALSE, booktabs = TRUE,
+               caption = "T1: all sets enriched at padj<0.10 for Programs 3 and 7 (KEGG\\_MEDICUS\\_REFERENCE\\_/REACTOME\\_ prefixes stripped for width; full names in F1 and the underlying CSV).")
+}
+```
+
+Program 7's headline associations are basal-like/squamous tumor identity (DeSurv D3, Bailey
+Squamous), MET/EGFR-driven RTK signaling (three related KEGG pathways sharing MET, EGFR, AREG,
+EREG, TGFA, VEGFA), and a basal keratin/integrin developmental program (Reactome). Program 3's
+headline association is classical/differentiated tumor identity (DeSurv D1, Moffitt Classical:
+GATA6, HNF4A, TFF1-3, AGR2/3) — with a secondary, weaker (padj=0.017 vs 0.035; see \S6) hit on the
+DeSurv basal-like list, discussed honestly rather than omitted.
+
+```{r c1-table}
+if (!is.null(c1)) {
+  knitr::kable(c1, row.names = FALSE, booktabs = TRUE,
+               caption = "C1: coherent-hit count (fgsea sets at padj<0.10) per program, all 7. The 3 fully inert programs (1, 2, 4) show 0 hits; Programs 5-6 (nominally survival-inactive) still enrich for real stromal/immune biology -- genuine variance axes in the data that are simply not survival-predictive in this model, not noise.")
+}
+```
+
+```{r f2a, fig.cap="Running enrichment score, Program 7 vs. DeSurv D3 (Basal-like Tumor).", out.width="70%"}
+knitr::include_graphics(file.path(OUT, "F2_running_es_program7_DeSurv_D3_BasalLikeTumor.png"))
+```
+
+```{r f3, fig.cap="Gene weights across all 7 programs for the union of headline leading-edge genes. Clean block-diagonal structure: Program 3's and Program 7's genes are nonzero almost exclusively in their own column."}
+knitr::include_graphics(file.path(OUT, "F3_geneweight_heatmap.png"))
+```
+
+## 4. PDAC subtype concordance (F4, T3)
+
+Program loadings ($\mathbf{L}$) for the 144 TCGA-PAAD samples in the D4 training set were matched
+to PurIST subtype calls (Basal-like/Classical, plus a continuous basal-likelihood score,
+`PurIST.prob`) already computed for this cohort -- **not** the "MS"/"MS_K2" columns referenced in
+the original 2026-06-16 plan draft, which are confirmed (by direct inspection of the underlying
+reference data) to represent the Moffitt *stroma* activation axis (Activated/Normal), a different
+biological question. All 144/144 samples matched (100%).
+
+```{r t3-table}
+if (!is.null(t3)) {
+  t3_show <- t3[, c("program", "label", "spearman_rho", "spearman_p", "kruskal_p", "n")]
+  t3_show$spearman_rho <- round(t3_show$spearman_rho, 3)
+  t3_show$spearman_p <- signif(t3_show$spearman_p, 2)
+  t3_show$kruskal_p <- signif(t3_show$kruskal_p, 2)
+  knitr::kable(t3_show, row.names = FALSE, booktabs = TRUE,
+               caption = "T3: concordance between program loadings and PurIST (Spearman rho vs. PurIST.prob; Kruskal-Wallis vs. the 2-group PurIST call).")
+}
+```
+
+```{r f4, fig.cap="Program 7 loading by PurIST subtype (Program 3's companion figure is in the output directory).", out.width="60%"}
+knitr::include_graphics(file.path(OUT, "F4_loading_vs_subtype_program7.png"))
+```
+
+Both correlations are strongly significant and in the predicted direction: Program 7 tracks
+basal-likelihood positively, Program 3 negatively — an independent, purely outcome-and-label-based
+confirmation of \S3's gene-set-based finding.
+
+## 5. External cohort robustness (C2)
+
+Each program's headline leading-edge gene signature (mean within-cohort z-score) was scored in all
+5 held-out external cohorts (Dijk, Moffitt_GEO_array, PACA_AU_array, PACA_AU_seq, Puleo_array) and
+related to survival via Cox proportional hazards.
+
+```{r c2-table}
+if (!is.null(c2)) {
+  c2_show <- c2[, c("program", "label", "cohort", "n", "HR", "p", "cindex")]
+  c2_show$HR <- round(c2_show$HR, 2)
+  c2_show$p <- signif(c2_show$p, 2)
+  c2_show$cindex <- round(c2_show$cindex, 3)
+  knitr::kable(c2_show, row.names = FALSE, booktabs = TRUE,
+               caption = "C2: per-cohort hazard ratio and C-index for each program's headline leading-edge signature.")
+}
+```
+
+Program 7's signature has HR>1 (worse survival) in **5/5** external cohorts (range 1.30-2.40,
+individually significant in 2/5); Program 3's has HR<1 (better survival) in **5/5** cohorts (range
+0.42-0.88, individually significant in 3/5). This exceeds the plan's own bar of "a majority of
+cohorts" for both programs.
+
+## 6. SBMF vs. DeSurv gene-list overlap (F5, T4)
+
+```{r f5, fig.cap="Jaccard overlap between each program's top-270 weighted genes and each DeSurv factor's gene list.", out.width="75%"}
+knitr::include_graphics(file.path(OUT, "F5_sbmf_vs_desurv.png"))
+```
+
+```{r t4-table}
+if (!is.null(t4)) {
+  t4_show <- t4
+  t4_show$jaccard <- round(t4_show$jaccard, 3)
+  t4_show$hyper_p <- signif(t4_show$hyper_p, 2)
+  knitr::kable(t4_show, row.names = FALSE, booktabs = TRUE,
+               caption = "T4: gene-overlap Jaccard and hypergeometric enrichment p-value, SBMF top-270 genes per program vs. each DeSurv factor (background = 2064 genes).")
+}
+```
+
+Program 3's top genes overlap DeSurv D1 (Classical) most strongly (61/270, $p=2.4\times10^{-6}$),
+with a real but weaker secondary overlap with D3 (Basal-like; 49/270, $p=0.0068$) — the same
+nuance already flagged in \S3, now independently reproduced via a completely different method
+(direct gene-list Jaccard rather than fgsea enrichment). Program 7's top genes overlap D3 most
+strongly (80/270, $p=5.1\times10^{-15}$) with no significant overlap with D1 or D2. Neither program
+overlaps D2 (stromal/immune) — expected, since neither is a stromal/immune program.
+
+## 7. Direction sanity check (C3) and conclusion
+
+Four independent methods were run: gene-set enrichment (\S3), PurIST subtype concordance (\S4),
+external-cohort survival (\S5), and direct SBMF-DeSurv gene overlap (\S6). **All four agree, with no
+contradictions:** Program 7 (Adverse) is a basal-like/squamous, MET/EGFR-RTK-driven, EMT-associated
+program — the PDAC subtype literature's established worse-prognosis axis. Program 3 (Protective) is
+a classical, differentiated-epithelial program — the established better-prognosis axis. The one
+honest nuance (Program 3's secondary, weaker basal-like association, plausibly driven by shared
+general epithelial-identity markers rather than basal-specific drivers) is reproduced by two
+independent methods (\S3, \S6) and is reported rather than smoothed over, but does not contradict
+the dominant classical/protective signal.
+
+**Reproducibility.** `fgsea` 1.36.2 (permutation seed = 1); `msigdbr` 26.1.0; `clusterProfiler`
+4.18.4; `org.Hs.eg.db` 3.22.0. Per-gene-set source citations and MSigDB-universe mapping rates
+recorded in `results/benchmark_sim/outputs/pathway_enrichment/genesets_manifest.txt`. All producing scripts:
+`run_pathway_enrichment.R` (Steps 5-6), `run_subtype_concordance.R` (Step 7),
+`run_external_cohort_robustness.R` (Step 8), `run_sbmf_desurv_overlap.R` (Step 9), all under
+`results/benchmark_sim/`.
