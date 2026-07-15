@@ -154,4 +154,99 @@ run_test("T3.3: zero-overlap-with-everything fails loud", {
   assert_equal(err, "error", msg = "run_ora_program should fail loud when top_genes overlap nothing")
 })
 
+cat("=== T4: parse_desurv_si_text() ===\n")
+
+# A miniature synthetic mimic of the SI appendix's pdftotext -layout output:
+# two factors, 3-gene rows x 2 columns = 6 genes per factor (instead of the
+# real 45 rows x 6 columns = 270), same structural quirks as the real PDF:
+# a form-feed before "Table", an en-dash column-range header row, a lone
+# page-number footer line, and a mixed-case gene symbol (like C19orf33).
+.mini_si_text <- c(
+  "\fTable S7: Top 6 genes for DeSurv factor D1 (Factor D1 (Classical tumor)), ranked by x",
+  "",
+  "                1–63         4–6",
+  "                GENE1        c19orf99",
+  "                GENE2        GENE5",
+  "                GENE3        GENE6",
+  "",
+  "                                   12",
+  "\fTable S8: Top 6 genes for DeSurv factor D2 (Factor D2 (stromal/immune)), ranked by x",
+  "",
+  "                1–63         4–6",
+  "                GENEA        GENED",
+  "                GENEB        GENEE",
+  "                GENEC        GENEF",
+  "",
+  "                                   13",
+  "Bailey, Peter, David K Chang, et al. 2016. citation text follows here."
+)
+
+run_test("T4.1: parse_desurv_si_text extracts exactly 6 genes for D1 and D2", {
+  res <- parse_desurv_si_text(.mini_si_text,
+                               factor_patterns = c(D1 = "Table S7:", D2 = "Table S8:"),
+                               end_pattern = "^Bailey, Peter")
+  assert_length(res$D1, 6)
+  assert_length(res$D2, 6)
+})
+
+run_test("T4.2: parse_desurv_si_text drops the column-range header and page-number footer", {
+  res <- parse_desurv_si_text(.mini_si_text,
+                               factor_patterns = c(D1 = "Table S7:", D2 = "Table S8:"),
+                               end_pattern = "^Bailey, Peter")
+  assert_false("12" %in% res$D1, msg = "page-number footer leaked into D1 gene list")
+  assert_false(any(grepl("–", res$D1)), msg = "column-range header leaked into D1 gene list")
+})
+
+run_test("T4.3: parse_desurv_si_text keeps mixed-case gene symbols (e.g. C19orf-style)", {
+  res <- parse_desurv_si_text(.mini_si_text,
+                               factor_patterns = c(D1 = "Table S7:", D2 = "Table S8:"),
+                               end_pattern = "^Bailey, Peter")
+  assert_true("c19orf99" %in% res$D1, msg = "mixed-case gene symbol was incorrectly dropped")
+})
+
+run_test("T4.4: parse_desurv_si_text fails loud if a factor doesn't hit the expected gene count", {
+  err <- tryCatch({
+    parse_desurv_si_text(.mini_si_text,
+                          factor_patterns = c(D1 = "Table S7:", D2 = "Table S8:"),
+                          end_pattern = "^Bailey, Peter",
+                          expected_n = 270)
+    "no error"
+  }, error = function(e) "error")
+  assert_equal(err, "error", msg = "should fail loud when gene count != expected_n")
+})
+
+cat("=== T5: get_msigdb_collections() ===\n")
+
+run_test("T5.1: Hallmark collection returns ~50 non-empty gene sets", {
+  res <- get_msigdb_collections(collections = list(Hallmark = list(collection = "H")))
+  assert_true("Hallmark" %in% names(res))
+  assert_true(length(res$Hallmark) >= 45 && length(res$Hallmark) <= 55,
+              msg = sprintf("expected ~50 Hallmark sets, got %d", length(res$Hallmark)))
+  assert_true(all(vapply(res$Hallmark, length, integer(1)) > 0), msg = "found an empty Hallmark set")
+})
+
+run_test("T5.2: gene sets are character vectors of gene symbols", {
+  res <- get_msigdb_collections(collections = list(Hallmark = list(collection = "H")))
+  one_set <- res$Hallmark[[1]]
+  assert_true(is.character(one_set), msg = "gene set should be a character vector")
+  assert_true(all(grepl("^[A-Za-z0-9.-]+$", one_set)), msg = "gene set contains non-symbol tokens")
+})
+
+cat("=== T6: top_n_genes_table() ===\n")
+
+run_test("T6.1: returns top-N rows per program, ordered by descending weight", {
+  d4 <- load_d4_weights()
+  tbl <- top_n_genes_table(d4$EF, programs = c(3, 7), program_labels = d4$program_labels, n = 10)
+  assert_true(nrow(tbl) == 20, msg = "expected 10 rows x 2 programs = 20")
+  t3 <- tbl[tbl$program == 3, ]
+  assert_true(all(diff(t3$weight) <= 0), msg = "weights should be sorted descending within a program")
+})
+
+run_test("T6.2: program 7's top gene matches the known top-weighted gene (ITGA3)", {
+  d4 <- load_d4_weights()
+  tbl <- top_n_genes_table(d4$EF, programs = 7, program_labels = d4$program_labels, n = 5)
+  assert_equal(tbl$gene[1], "ITGA3")
+  assert_equal(tbl$label[1], "Adverse")
+})
+
 report_results("pathway_enrichment.R")

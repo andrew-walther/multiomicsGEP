@@ -355,6 +355,76 @@ run_test("T5.4: output dimensions are unchanged", {
 })
 
 # =============================================================================
+# T6: build_pdac_genesets() and its components — real-data (PDAC_DATA_ROOT +
+# DeSurv SI appendix PDF) integration tests. Auto-skipped when either is
+# unavailable, same convention as T2-T4 above.
+# =============================================================================
+
+cat("\n=== T6: build_pdac_genesets() (Moffitt/Bailey/DeSurv custom gene sets) ===\n")
+
+source("code/pathway_enrichment.R")
+
+.desurv_si_pdf <- file.path(dirname(pdac_root), "papers", "DeSurv", "si_appendix.pdf")
+desurv_si_available <- real_data_available && file.exists(.desurv_si_pdf) &&
+  nchar(Sys.which("pdftotext")) > 0
+
+if (!real_data_available) {
+  cat("  [SKIPPED] T6.1-T6.2 (load_moffitt_bailey_genesets): PDAC_DATA_ROOT not set/found\n")
+} else {
+  run_test("T6.1: load_moffitt_bailey_genesets returns 6 non-empty gene sets", {
+    res <- load_moffitt_bailey_genesets(pdac_root)
+    expected_names <- c("Moffitt_BasalLike", "Moffitt_Classical", "Bailey_Squamous",
+                         "Bailey_Immunogenic", "Bailey_PancreaticProgenitor", "Bailey_ADEX")
+    assert_true(all(expected_names %in% names(res)), msg = "missing expected gene sets")
+    assert_true(all(vapply(res, length, integer(1)) > 0), msg = "found an empty gene set")
+  })
+
+  run_test("T6.2: Moffitt basal/classical are each exactly 25 genes (published classifier size)", {
+    res <- load_moffitt_bailey_genesets(pdac_root)
+    assert_length(res$Moffitt_BasalLike, 25)
+    assert_length(res$Moffitt_Classical, 25)
+  })
+}
+
+if (!desurv_si_available) {
+  cat("  [SKIPPED] T6.3 (extract_desurv_genesets): DeSurv si_appendix.pdf or pdftotext not available\n")
+} else {
+  run_test("T6.3: extract_desurv_genesets returns 270 genes for each of D1/D2/D3, no cross-overlap", {
+    res <- extract_desurv_genesets(.desurv_si_pdf)
+    assert_length(res$D1, 270)
+    assert_length(res$D2, 270)
+    assert_length(res$D3, 270)
+    assert_true(length(intersect(res$D1, res$D2)) == 0, msg = "D1/D2 should be disjoint top-N lists")
+    assert_true(length(intersect(res$D1, res$D3)) == 0, msg = "D1/D3 should be disjoint top-N lists")
+    assert_true(length(intersect(res$D2, res$D3)) == 0, msg = "D2/D3 should be disjoint top-N lists")
+  })
+}
+
+if (!real_data_available || !desurv_si_available) {
+  cat("  [SKIPPED] T6.4-T6.5 (build_pdac_genesets): requires both PDAC_DATA_ROOT and the DeSurv SI PDF\n")
+} else {
+  .pdac_genesets_test_dir <- file.path(tempdir(), "pathway_enrichment_test")
+
+  run_test("T6.4: build_pdac_genesets assembles all 9 sets and writes rds + manifest", {
+    res <- build_pdac_genesets(pdac_root, .desurv_si_pdf, .pdac_genesets_test_dir)
+    assert_true(length(res) == 9, msg = sprintf("expected 9 gene sets, got %d", length(res)))
+    assert_true(file.exists(file.path(.pdac_genesets_test_dir, "pdac_genesets.rds")))
+    assert_true(file.exists(file.path(.pdac_genesets_test_dir, "genesets_manifest.txt")))
+  })
+
+  run_test("T6.5: manifest records a source citation line for every gene set", {
+    manifest <- readLines(file.path(.pdac_genesets_test_dir, "genesets_manifest.txt"))
+    res <- readRDS(file.path(.pdac_genesets_test_dir, "pdac_genesets.rds"))
+    for (nm in names(res)) {
+      assert_true(any(grepl(nm, manifest, fixed = TRUE)),
+                  msg = paste("manifest missing citation line for", nm))
+    }
+  })
+
+  unlink(.pdac_genesets_test_dir, recursive = TRUE)
+}
+
+# =============================================================================
 # Summary
 # =============================================================================
 

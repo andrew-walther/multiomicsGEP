@@ -151,3 +151,274 @@ run_ora_program <- function(top_genes, background, genesets, collection = NA_cha
     stringsAsFactors = FALSE
   )
 }
+
+# Section: Custom PDAC gene sets (Moffitt / Bailey / DeSurv) ----
+
+#' Parse gene-symbol tables out of pdftotext -layout output (DeSurv SI appendix style).
+#'
+#' Pure text-parsing helper, factored out of extract_desurv_genesets() so it can
+#' be unit-tested without the actual PDF. Each "table" is a block of rows with a
+#' fixed number of whitespace-separated gene-symbol columns; this function
+#' strips the surrounding column-range header row (e.g. "1-45  46-90 ..."),
+#' blank lines, and bare page-number footer lines, and flattens the remaining
+#' rows into one gene vector per factor (row-major within each row, tables
+#' read left-to-right top-to-bottom as in the source PDF).
+#'
+#' @param lines           character vector, one element per PDF text line
+#'                        (as returned by `pdftotext -layout <pdf> -`)
+#' @param factor_patterns named character vector of regex patterns marking the
+#'                        start of each factor's table (e.g. c(D1 = "Table S7:"))
+#' @param end_pattern     regex marking the end of the last table (first line
+#'                        of the section that follows, e.g. the references list)
+#' @param expected_n      if not NULL, stop() if any factor's gene count differs
+#'                        from this value (guards against silent PDF-layout drift)
+#'
+#' @return named list (same names as factor_patterns), each a character vector of gene symbols
+parse_desurv_si_text <- function(lines, factor_patterns, end_pattern, expected_n = NULL) {
+  lines <- gsub("\f", "", lines, fixed = TRUE)
+
+  starts <- vapply(factor_patterns, function(p) grep(p, lines)[1], integer(1))
+  if (any(is.na(starts))) {
+    stop("parse_desurv_si_text: could not locate start pattern(s): ",
+         paste(names(factor_patterns)[is.na(starts)], collapse = ", "))
+  }
+  ends <- c(starts[-1], grep(end_pattern, lines)[1])
+  if (is.na(ends[length(ends)])) {
+    stop("parse_desurv_si_text: could not locate end_pattern: ", end_pattern)
+  }
+
+  parse_block <- function(block) {
+    keep <- vapply(block, function(r) {
+      tr <- trimws(r)
+      if (nchar(tr) == 0 || grepl("^[0-9]+$", tr)) return(FALSE)
+      toks <- strsplit(tr, "[ ]{2,}")[[1]]
+      length(toks) > 0 && grepl("^[A-Za-z0-9.-]+$", toks[1])
+    }, logical(1))
+    data_rows <- block[keep]
+    unlist(lapply(data_rows, function(r) strsplit(trimws(r), "[ ]{2,}")[[1]]))
+  }
+
+  result <- Map(function(s, e) parse_block(lines[(s + 1):(e - 1)]), starts, ends)
+  names(result) <- names(factor_patterns)
+
+  if (!is.null(expected_n)) {
+    bad <- names(result)[vapply(result, length, integer(1)) != expected_n]
+    if (length(bad) > 0) {
+      stop(sprintf("parse_desurv_si_text: factor(s) %s did not yield exactly %d genes -- ",
+                    paste(bad, collapse = ", "), expected_n),
+           "check for SI appendix layout changes or a parsing regression")
+    }
+  }
+
+  result
+}
+
+#' Extract the DeSurv D1/D2/D3 factor-specific gene lists from the SI appendix PDF.
+#'
+#' Per DECISIONS.md 2026-06-16 (D3): DeSurv program gene lists are extracted
+#' from the paper's SI appendix (Tables S7-S9, top 270 genes per factor by
+#' factor-specificity score). Falls back with an informative error (not a
+#' silent empty result) if the `pdftotext` system binary is unavailable or the
+#' expected tables aren't found -- the documented fallback in that case is the
+#' DeSurv GitHub repo's own gene lists (not implemented here; only needed if
+#' this path fails).
+#'
+#' @param si_pdf_path path to si_appendix.pdf (Young et al., DeSurv)
+#' @return named list: D1 (Classical tumor), D2 (stromal/immune), D3 (Basal-like tumor);
+#'   each a character vector of 270 gene symbols
+extract_desurv_genesets <- function(si_pdf_path) {
+  if (!file.exists(si_pdf_path)) {
+    stop("extract_desurv_genesets: si_appendix.pdf not found at ", si_pdf_path,
+         " -- fall back to the DeSurv GitHub repo's gene lists (D3 fallback path)")
+  }
+  if (nchar(Sys.which("pdftotext")) == 0) {
+    stop("extract_desurv_genesets: 'pdftotext' (poppler-utils) not found on PATH -- ",
+         "fall back to the DeSurv GitHub repo's gene lists (D3 fallback path)")
+  }
+
+  lines <- system2("pdftotext", c("-layout", shQuote(si_pdf_path), "-"), stdout = TRUE)
+
+  parse_desurv_si_text(
+    lines,
+    factor_patterns = c(D1 = "Table S7:", D2 = "Table S8:", D3 = "Table S9:"),
+    end_pattern = "^Bailey, Peter",
+    expected_n = 270
+  )
+}
+
+#' Load Moffitt (basal/classical) and Bailey (4-subtype) gene signatures from local reference data.
+#'
+#' Both signatures live in `cmbSubtypes.RData` (schemaList / subtypeGeneList),
+#' an ancillary reference file already present in PDAC_DATA_ROOT for subtype
+#' classification elsewhere in this project. "MT" (Moffitt Tumor) is the
+#' 25-basal + 25-classical classifier from Moffitt et al. 2015; "Bailey" is
+#' the 612-gene, 4-subtype signature from Bailey et al. 2016 (Squamous,
+#' Immunogenic, Pancreatic Progenitor, ADEX; genes flagged NotUnique in the
+#' source table are not assigned a single subtype and are excluded here).
+#'
+#' @param pdac_data_root path to PDAC_DATA_ROOT (must contain original/cmbSubtypes.RData)
+#' @return named list of character vectors: Moffitt_BasalLike, Moffitt_Classical,
+#'   Bailey_Squamous, Bailey_Immunogenic, Bailey_PancreaticProgenitor, Bailey_ADEX
+load_moffitt_bailey_genesets <- function(pdac_data_root) {
+  cmb_path <- file.path(pdac_data_root, "original", "cmbSubtypes.RData")
+  if (!file.exists(cmb_path)) {
+    stop("load_moffitt_bailey_genesets: cmbSubtypes.RData not found at ", cmb_path)
+  }
+
+  e <- new.env()
+  load(cmb_path, envir = e)
+  if (!all(c("schemaList", "subtypeGeneList") %in% ls(e))) {
+    stop("load_moffitt_bailey_genesets: cmbSubtypes.RData does not contain ",
+         "schemaList/subtypeGeneList as expected")
+  }
+
+  idx_mt <- which(e$schemaList == "MT")
+  idx_bailey <- which(e$schemaList == "Bailey")
+  if (length(idx_mt) != 1 || length(idx_bailey) != 1) {
+    stop("load_moffitt_bailey_genesets: expected exactly one 'MT' and one 'Bailey' ",
+         "schema in cmbSubtypes.RData$schemaList")
+  }
+
+  mt <- e$subtypeGeneList[[idx_mt]]
+  bailey <- e$subtypeGeneList[[idx_bailey]]
+
+  list(
+    Moffitt_BasalLike = mt$geneSymbol[mt[["Basal-like"]]],
+    Moffitt_Classical = mt$geneSymbol[mt[["Classical"]]],
+    Bailey_Squamous = bailey$geneSymbol[bailey$Squamous],
+    Bailey_Immunogenic = bailey$geneSymbol[bailey$Immunogenic],
+    Bailey_PancreaticProgenitor = bailey$geneSymbol[bailey$PancreaticProgenitor],
+    Bailey_ADEX = bailey$geneSymbol[bailey$ADEX]
+  )
+}
+
+#' Assemble the full custom PDAC gene-set collection (Moffitt + Bailey + DeSurv).
+#'
+#' Orchestrates load_moffitt_bailey_genesets() and extract_desurv_genesets(),
+#' checks every set is non-empty and that its gene symbols substantially
+#' overlap the MSigDB human gene-symbol universe (a parsing-sanity check, not
+#' a filter -- genes are kept even if unmapped, but unmapped counts are logged,
+#' never silently dropped), writes the combined list plus a manifest recording
+#' the source citation per set.
+#'
+#' @param pdac_data_root path to PDAC_DATA_ROOT
+#' @param si_pdf_path    path to the DeSurv si_appendix.pdf
+#' @param output_dir     directory to write pdac_genesets.rds + genesets_manifest.txt
+#' @return named list of all 9 gene sets (invisibly; also written to disk)
+build_pdac_genesets <- function(pdac_data_root, si_pdf_path, output_dir) {
+  moffitt_bailey <- load_moffitt_bailey_genesets(pdac_data_root)
+  desurv <- extract_desurv_genesets(si_pdf_path)
+  desurv_labeled <- list(
+    DeSurv_D1_ClassicalTumor = desurv$D1,
+    DeSurv_D2_StromalImmune = desurv$D2,
+    DeSurv_D3_BasalLikeTumor = desurv$D3
+  )
+  genesets <- c(moffitt_bailey, desurv_labeled)
+
+  empty <- names(genesets)[vapply(genesets, length, integer(1)) == 0]
+  if (length(empty) > 0) {
+    stop("build_pdac_genesets: empty gene set(s): ", paste(empty, collapse = ", "))
+  }
+
+  msigdb_universe <- unique(msigdbr::msigdbr(species = "Homo sapiens")$gene_symbol)
+  mapping_lines <- vapply(names(genesets), function(nm) {
+    g <- genesets[[nm]]
+    n_mapped <- sum(g %in% msigdb_universe)
+    if (n_mapped == 0) {
+      stop("build_pdac_genesets: gene set '", nm, "' has ZERO overlap with the ",
+           "MSigDB gene-symbol universe -- likely a parsing failure, not real biology")
+    }
+    sprintf("%s (n=%d): %d/%d (%.0f%%) mapped to MSigDB universe",
+            nm, length(g), n_mapped, length(g), 100 * n_mapped / length(g))
+  }, character(1))
+
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  saveRDS(genesets, file.path(output_dir, "pdac_genesets.rds"))
+
+  citations <- c(
+    Moffitt_BasalLike = "Moffitt RA et al. 2015. Nat Med 21(10):1168-78. (cmbSubtypes.RData, schema 'MT', column 'Basal-like')",
+    Moffitt_Classical = "Moffitt RA et al. 2015. Nat Med 21(10):1168-78. (cmbSubtypes.RData, schema 'MT', column 'Classical')",
+    Bailey_Squamous = "Bailey P et al. 2016. Nature 531(7592):47-52. (cmbSubtypes.RData, schema 'Bailey', column 'Squamous')",
+    Bailey_Immunogenic = "Bailey P et al. 2016. Nature 531(7592):47-52. (cmbSubtypes.RData, schema 'Bailey', column 'Immunogenic')",
+    Bailey_PancreaticProgenitor = "Bailey P et al. 2016. Nature 531(7592):47-52. (cmbSubtypes.RData, schema 'Bailey', column 'PancreaticProgenitor')",
+    Bailey_ADEX = "Bailey P et al. 2016. Nature 531(7592):47-52. (cmbSubtypes.RData, schema 'Bailey', column 'ADEX')",
+    DeSurv_D1_ClassicalTumor = "Young AM et al. DeSurv (Young et al., PNAS 2026). si_appendix.pdf, Table S7.",
+    DeSurv_D2_StromalImmune = "Young AM et al. DeSurv (Young et al., PNAS 2026). si_appendix.pdf, Table S8.",
+    DeSurv_D3_BasalLikeTumor = "Young AM et al. DeSurv (Young et al., PNAS 2026). si_appendix.pdf, Table S9."
+  )
+
+  manifest <- c(
+    "PDAC custom gene-set collection -- pdac_genesets.rds",
+    paste("Generated:", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")),
+    paste("R version:", R.version.string),
+    paste("msigdbr version:", as.character(utils::packageVersion("msigdbr"))),
+    "",
+    "Per-set source citation and MSigDB-universe mapping check:",
+    paste0(" - ", citations[names(genesets)]),
+    "",
+    mapping_lines
+  )
+  writeLines(manifest, file.path(output_dir, "genesets_manifest.txt"))
+
+  invisible(genesets)
+}
+
+# Section: MSigDB collections ----
+
+`%||%` <- function(a, b) if (is.null(a)) b else a
+
+#' Fetch MSigDB gene-set collections as gene-symbol lists suitable for fgsea/ORA.
+#'
+#' Default collections match the plan's methodology: Hallmark (compact,
+#' interpretable), Reactome and KEGG (pathway-level detail), GO Biological
+#' Process (broad coverage). Uses msigdbr's `collection`/`subcollection`
+#' arguments (msigdbr >= 25: `category`/`subcategory` are deprecated aliases).
+#'
+#' @param species     passed to msigdbr() (default "human")
+#' @param collections named list of msigdbr collection specs, each a list with
+#'                     `collection` and optionally `subcollection`
+#' @return named list (same names as `collections`), each element a named list
+#'   mapping gene-set name -> character vector of gene symbols
+get_msigdb_collections <- function(species = "human", collections = list(
+  Hallmark = list(collection = "H"),
+  Reactome = list(collection = "C2", subcollection = "CP:REACTOME"),
+  KEGG = list(collection = "C2", subcollection = "CP:KEGG_MEDICUS"),
+  GO_BP = list(collection = "C5", subcollection = "GO:BP")
+)) {
+  lapply(collections, function(spec) {
+    df <- if (is.null(spec$subcollection)) {
+      msigdbr::msigdbr(species = species, collection = spec$collection)
+    } else {
+      msigdbr::msigdbr(species = species, collection = spec$collection,
+                        subcollection = spec$subcollection)
+    }
+    if (nrow(df) == 0) {
+      stop("get_msigdb_collections: zero gene sets returned for collection=",
+           spec$collection, " subcollection=", spec$subcollection %||% "NULL")
+    }
+    split(df$gene_symbol, df$gs_name)
+  })
+}
+
+#' Top-N weighted genes per program, formalized as a tidy table (T2).
+#'
+#' @param EF          gene x program weight matrix (rows named by gene symbol)
+#' @param programs    integer vector of program indices to include
+#' @param program_labels named list mapping program index (as string) to label
+#' @param n           number of top genes to report per program
+#' @return data.frame: program, label, rank, gene, weight
+top_n_genes_table <- function(EF, programs, program_labels, n = 50) {
+  rows <- lapply(programs, function(k) {
+    w <- EF[, k]
+    ord <- order(w, decreasing = TRUE)[seq_len(min(n, length(w)))]
+    data.frame(
+      program = k,
+      label = program_labels[[as.character(k)]],
+      rank = seq_along(ord),
+      gene = rownames(EF)[ord],
+      weight = w[ord],
+      stringsAsFactors = FALSE
+    )
+  })
+  do.call(rbind, rows)
+}
