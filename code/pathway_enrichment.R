@@ -610,3 +610,58 @@ plot_loading_by_subtype <- function(matched_df, program, program_label = "") {
                                    program, program_label, kw$p.value)) +
     ggplot2::theme_bw() + ggplot2::theme(legend.position = "none")
 }
+
+# Section: External cohort robustness (Step 8) ----
+
+#' Score a program's leading-edge gene signature in one cohort's expression data.
+#'
+#' Signature score = mean of per-gene z-scores across the leading-edge genes,
+#' evaluated within this cohort (per-cohort standardization, matching the
+#' project's per-platform z-std convention -- each cohort is its own platform).
+#' Missing genes are logged (never silently zero-filled or dropped without
+#' a trace), and the function fails loud only if NONE of the requested genes
+#' are found (a genuine data problem, not a bad prediction).
+#'
+#' @param Y     cohort expression matrix, n patients x p genes
+#' @param gene_names character vector, length p, matching Y's columns
+#' @param leading_edge_genes character vector of gene symbols to score
+#' @return list(score = numeric vector length n, n_genes_used, missing_genes)
+score_leading_edge_signature <- function(Y, gene_names, leading_edge_genes) {
+  colnames(Y) <- gene_names
+  present <- intersect(leading_edge_genes, gene_names)
+  missing <- setdiff(leading_edge_genes, gene_names)
+  if (length(missing) > 0) {
+    message(sprintf("score_leading_edge_signature: %d/%d leading-edge gene(s) not found in this cohort: %s",
+                     length(missing), length(leading_edge_genes), paste(missing, collapse = ", ")))
+  }
+  if (length(present) == 0) {
+    stop("score_leading_edge_signature: none of the leading-edge genes were found in this cohort")
+  }
+  Z <- scale(Y[, present, drop = FALSE])
+  list(score = rowMeans(Z), n_genes_used = length(present), missing_genes = missing)
+}
+
+#' Cox model of survival on a single signature score, plus C-index.
+#'
+#' Project convention (matching code/select_alpha_cv.R, code/predict.R):
+#' survival::concordance() treats a HIGHER predictor as predicting LONGER
+#' survival by default, so a "higher score = higher risk" C-index requires
+#' negating the score inside the formula (concordance(Surv(...) ~ I(-score))),
+#' verified empirically before use here (a synthetic score constructed to be
+#' unambiguously high-risk gave C-index ~0.01 unnegated vs ~0.99 negated).
+#'
+#' @param score  numeric vector, length n (signature score per patient)
+#' @param time   numeric vector, length n
+#' @param status integer vector, length n, in {0,1}
+#' @return list(HR, p, cindex, n)
+cohort_signature_cox <- function(score, time, status) {
+  fit <- survival::coxph(survival::Surv(time, status) ~ score)
+  s <- summary(fit)
+  cidx <- survival::concordance(survival::Surv(time, status) ~ I(-score))$concordance
+  list(
+    HR = unname(exp(coef(fit))),
+    p = unname(s$coefficients[1, "Pr(>|z|)"]),
+    cindex = as.numeric(cidx),
+    n = length(score)
+  )
+}

@@ -385,4 +385,56 @@ run_test("T8.5: plot_loading_by_subtype returns a ggplot object", {
   assert_true(inherits(p, "ggplot"))
 })
 
+cat("=== T9: External cohort robustness (signature scoring + Cox) ===\n")
+
+.cohort_test_data <- local({
+  set.seed(99)
+  n <- 100; p <- 20
+  gene_names <- paste0("gene", 1:p)
+  Y <- matrix(rnorm(n * p), n, p, dimnames = list(NULL, gene_names))
+  # Genes 1-5 are the "leading edge" signature; make it a real risk factor.
+  signature_true <- rowMeans(scale(Y[, 1:5]))
+  lp <- 0.9 * signature_true
+  time <- rexp(n, rate = exp(scale(lp)) * 0.1)
+  status <- rep(c(1, 0), length.out = n)
+  list(Y = Y, gene_names = gene_names, time = time, status = status)
+})
+
+run_test("T9.1: score_leading_edge_signature logs and drops genes not found in this cohort", {
+  d <- .cohort_test_data
+  res <- score_leading_edge_signature(d$Y, d$gene_names, c(paste0("gene", 1:5), "NOTAGENE"))
+  assert_length(res$score, 100)
+  assert_equal(res$n_genes_used, 5L)
+  assert_equal(res$missing_genes, "NOTAGENE")
+})
+
+run_test("T9.2: score_leading_edge_signature fails loud if zero genes are found", {
+  d <- .cohort_test_data
+  err <- tryCatch({
+    score_leading_edge_signature(d$Y, d$gene_names, c("NOTAGENE1", "NOTAGENE2"))
+    "no error"
+  }, error = function(e) "error")
+  assert_equal(err, "error")
+})
+
+run_test("T9.3: cohort_signature_cox recovers a strong positive HR for a real risk signature", {
+  d <- .cohort_test_data
+  sig <- score_leading_edge_signature(d$Y, d$gene_names, paste0("gene", 1:5))
+  res <- cohort_signature_cox(sig$score, d$time, d$status)
+  assert_true(res$HR > 1, msg = sprintf("expected HR > 1 for a constructed risk signature, got %.3f", res$HR))
+  assert_true(res$p < 0.05, msg = "expected a significant association")
+  assert_true(res$cindex > 0.5, msg = sprintf("expected C-index > 0.5, got %.3f", res$cindex))
+})
+
+run_test("T9.4: cohort_signature_cox on pure noise gives a non-significant, near-0.5 C-index", {
+  set.seed(100)
+  n <- 100
+  noise_score <- rnorm(n)
+  time <- rexp(n, rate = 0.1)
+  status <- rep(c(1, 0), length.out = n)
+  res <- cohort_signature_cox(noise_score, time, status)
+  assert_true(res$cindex > 0.35 && res$cindex < 0.65,
+              msg = sprintf("expected C-index near 0.5 for pure noise, got %.3f", res$cindex))
+})
+
 report_results("pathway_enrichment.R")
