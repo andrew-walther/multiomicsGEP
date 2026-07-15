@@ -5,6 +5,60 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-15 — Pathway enrichment on the recommended model's two survival-active programs
+
+**Question:** what biology do Program 7 (Adverse) and Program 3 (Protective) — the recommended
+model's $K_{\text{eff}}=2$ survival-active factors (DECISIONS.md 2026-07-13) — represent?
+
+**Method:** `fgsea` ranked-by-weight enrichment (primary; one-sided, `scoreType="pos"`, since the
+point-exponential $\mathbf{F}$ prior makes every weight $\ge 0$) plus over-representation analysis
+on top-N genes (confirmatory) against MSigDB Hallmark/Reactome/KEGG/GO:BP and a custom PDAC
+collection (Moffitt basal/classical, Bailey 4-subtype, DeSurv D1-D3 factor gene lists — all
+recovered from local reference data or the DeSurv SI appendix, no fabricated gene lists). All 7
+programs enriched; reporting focuses on Programs 3 and 7. Full report:
+`docs/reports/pathway_enrichment_report_07_15_26.{qmd,pdf,html}`.
+
+**A correction to the 2026-06-16 planning draft, caught during implementation (not by the plan
+itself):** that draft's decision on subtype labels pointed to "MS"/"MS_K2" as the per-sample tumor
+basal/classical 2-group call. Direct inspection of `cmbSubtypes.RData` and
+`TCGA_PAAD.caf_subtype.rds` shows MS/MS_K2 is actually the Moffitt **stroma** activation axis
+(Activated/Normal) — a different biological question. The correct, already-available per-sample
+tumor axis is PurIST (categorical Basal-like/Classical + continuous `PurIST.prob`); used that
+instead for the subtype-concordance check.
+
+**Result — four independent methods agree, with no contradictions:**
+
+| Method | Program 7 (Adverse) | Program 3 (Protective) |
+|---|---|---|
+| Gene-set enrichment (fgsea, all collections) | Basal-like/squamous (DeSurv D3, padj=6.1e-4), MET/EGFR-RTK signaling (3 KEGG sets, padj~1.1-1.2e-3), Bailey Squamous (padj=0.030) | Classical (DeSurv D1, padj=0.017; Moffitt Classical, padj=0.035) |
+| PurIST subtype concordance (TCGA-PAAD, n=144, 100% matched) | Spearman rho=+0.58 vs. basal-likelihood (p=2.1e-14) | rho=-0.57 (p=4.9e-14) |
+| External-cohort survival (5 held-out cohorts) | HR>1 in **5/5** cohorts (range 1.30-2.40) | HR<1 in **5/5** cohorts (range 0.42-0.88) |
+| SBMF-vs-DeSurv gene overlap (top-270 genes, hypergeometric) | 80/270 overlap with DeSurv D3 (p=5.1e-15) | 61/270 overlap with DeSurv D1 (p=2.4e-6) |
+
+This is the established PDAC subtype-survival relationship (basal-like/squamous = worse, classical
+= better), independently recovered by every one of the four methods run.
+
+**One honest nuance, reported rather than smoothed over:** Program 3 also shows a secondary, weaker
+association with DeSurv's basal-like gene list (enrichment padj=0.017 vs. 0.035 for D1; gene
+overlap 49/270 vs. 61/270 for D1), reproduced by two independent methods. Plausibly attributable to
+shared general epithelial/tumor-identity markers (EPCAM, KRT8, TFF1/TFF3) rather than basal-specific
+drivers — a real, reproducible finding, not noise, but it does not contradict the dominant
+classical/protective signal.
+
+**New dependencies:** `fgsea`, `clusterProfiler`, `msigdbr`, `org.Hs.eg.db` (Bioconductor;
+pre-approved in the 2026-06-16 planning session's own decisions). `msigdbr` 26.1.0 renamed its
+`category`/`subcategory` arguments to `collection`/`subcollection` (old names deprecated but
+functional) — code uses the new names.
+
+**Files:** `code/pathway_enrichment.R` (all reusable functions); `results/benchmark_sim/run_pathway_enrichment.R`,
+`run_subtype_concordance.R`, `run_external_cohort_robustness.R`, `run_sbmf_desurv_overlap.R`
+(orchestration); outputs in `results/benchmark_sim/outputs/pathway_enrichment/`. Also: added a
+`sampID` field to `load_pdac_raw()`'s return (`results/benchmark_sim/benchmark_helpers.R`) — needed
+to match the D4 fit's pooled patient loadings back to real TCGA-PAAD sample barcodes, previously
+discarded (`rownames(Y) <- NULL`). Test suite: 355/355 (main), 88/88 (real-data).
+
+---
+
 ## 2026-07-13 — K-parsimony follow-up Step 4 (final validation): K=7 remains the recommended default; K=4 is a validated, statistically-equivalent, more-parsimonious alternative
 
 **Synthesis of Steps 1-3.** The conclusive, doubly-verified answer to "is K=7 necessary":

@@ -4,7 +4,7 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-07-13.** Core model complete (modular CAVI, 311/311 tests passing).
+> **Status as of 2026-07-15.** Core model complete (modular CAVI, 355/355 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
 > cohorts across RNA-seq, microarray, and proteomics platforms). Multi-cohort simulation
 > study complete: shared vs. study-specific factor recovery validated across 3 scenarios and
@@ -30,8 +30,12 @@
 > used in the talk and the biologically sensible one — **Program 7 is adverse** (MET/ITGA3/glycolytic)
 > and **Program 3 protective** (epithelial). The joint-β signs (β̂₇=−0.041, β̂₃=+0.011) are *opposite*
 > the marginal direction, a suppression effect among correlated programs (see DECISIONS.md 2026-06-16).
-> New-patient scoring: η_new = Y_new F β̂ (exact, no approximation). Factor weight matrix F
-> provides directly interpretable gene signatures for pathway enrichment.
+> New-patient scoring: η_new = Y_new F β̂ (exact, no approximation). **Pathway enrichment on these
+> two programs is complete** (DECISIONS.md 2026-07-15): four independent methods (gene-set
+> enrichment, PurIST subtype concordance, external-cohort survival, SBMF-vs-DeSurv gene overlap)
+> agree Program 7 is basal-like/squamous/MET-EGFR-driven and Program 3 is classical/differentiated-
+> epithelial — the established PDAC subtype-survival axis. Full report:
+> `docs/reports/pathway_enrichment_report_07_15_26.pdf`.
 >
 > **Sensitivity — D3:** LB (η = Lβ), same DeSurv gene set, K=7, mean external C=0.622.
 > Reproduces the same 2-program adverse/protective structure, confirming the finding is not
@@ -66,14 +70,26 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ## 🔥 Immediate Priorities
 
 - [ ] **TO-DO (flagged by user, 2026-07-13): executive summary / progress report for research team**
-  Once all remaining phases below and their follow-ups (multistart/warm-start re-check, joint
-  K/α/penalty BO if pursued, pathway enrichment) are complete, write an executive summary /
-  progress report summarizing the recent work and results (Phase 1 objective-normalization
-  correction, Phase 2 joint-vs-two-step validation, Phase 3 K-parsimony curve, and any follow-ups)
-  to share with the research team. Audience and tone should follow the existing documentation
-  convention (biostatistician collaborators reading cold, not an implementation log — see
-  `CLAUDE.md`'s "Documentation audience" note). Do not start this until the user confirms the
-  remaining phases are far enough along.
+  Superseded in detail by `docs/plans/ssbmf_progress_consolidation_and_remaining_work_07_14_2026.md`
+  (Part B, Item 2) — see that document for the current, up-to-date remaining-work list. Pathway
+  enrichment (Item 1) is now complete (2026-07-15, DECISIONS.md); this executive summary should
+  incorporate its result. Audience and tone should follow the existing documentation convention
+  (biostatistician collaborators reading cold, not an implementation log — see `CLAUDE.md`'s
+  "Documentation audience" note). Do not start this until the user confirms the remaining phases
+  are far enough along.
+
+- [ ] **TO-DO (flagged by user, 2026-07-14): comprehensive HTML project document ("visual executive
+  summary") — do not start until the entire consolidated plan is complete**
+  Full spec: `docs/plans/ssbmf_progress_consolidation_and_remaining_work_07_14_2026.md`, Part B,
+  Item 6. A standalone HTML document — illustrative text, figures, workflow diagrams — describing
+  current project state, key decisions constituting the current method, and its capabilities; the
+  user's framing is "a demo of the method as a visual executive summary," meant to get the user,
+  collaborators, and the research team to a common understanding of what's been accomplished and
+  what shortfalls/open items remain. Related to, but distinct from, the text-based executive summary
+  above (that one's content is a natural input to this one). **Explicitly gated: only start once
+  every other item in the consolidated plan doc above is complete** — this is the final deliverable
+  of the whole 6/18-meeting-notes-plus-followups arc, not something to build incrementally alongside
+  it.
 
 - [x] **Phase 3 (K-parsimony curve on real data)** *(Complete, 2026-07-13, branch `phase3-k-parsimony`)*
   Built `results/benchmark_sim/run_k_parsimony_curve.R`: refits YFB D4 (per-platform z-std, DeSurv
@@ -333,16 +349,21 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   *Files: YFB fit in `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds`;
   EBMF via `flashier`; prediction via `code/predict.R`; baseline runner `run_ebmf_cox_external.R`.*
 
-- [ ] **Pathway enrichment on D4 active factors** `[Priority: High]` `[Effort: Small]`
-  Submit top-weighted genes from D4 Factor 7 (adverse: MET/ITGA3/glycolytic) and Factor 3
-  (protective: epithelial) to MSigDB hallmark gene sets / KEGG / GSEA. Top-gene lists already
-  exported to `presentation/walther_lab_meeting_06_18_2026/assets/active_factor_genes.csv`.
-  Cross-reference with Moffitt basal/classical scores and
-  Bailey et al. (2016) four-subtype annotations in TCGA_PAAD to assess concordance with
-  established PDAC molecular axes. Patient loadings L̂_{i,3} and L̂_{i,7} serve as continuous
-  molecular scores for subtype comparison. This is the primary interpretability task remaining
-  before the manuscript methods section can be finalized.
-  *Files: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds (D4 fit)*
+- [x] **Pathway enrichment on D4 active factors** *(Complete, 2026-07-15, branch `pathway-enrichment-plan`)*
+  `fgsea` ranked-by-weight enrichment (primary) + ORA (confirmatory) on Programs 7 (Adverse) and 3
+  (Protective) against MSigDB Hallmark/Reactome/KEGG/GO:BP and a custom PDAC collection (Moffitt
+  basal/classical, Bailey 4-subtype, DeSurv D1-D3). Cross-referenced with Moffitt/PurIST subtype
+  concordance in TCGA-PAAD (not Bailey — no per-sample Bailey classifier output exists locally,
+  only the registered gene-set schema; deferred per the original plan). Four independent methods
+  (gene-set enrichment, PurIST subtype concordance, external-cohort survival, direct SBMF-DeSurv
+  gene overlap) all agree with no contradictions: Program 7 = basal-like/squamous/MET-EGFR-driven,
+  Program 3 = classical/differentiated-epithelial — the established PDAC subtype-survival axis.
+  See DECISIONS.md 2026-07-15 for full results and a corrected assumption (the original plan's "MS
+  /MS_K2" subtype-label reference was actually the Moffitt *stroma* axis, not tumor subtype; PurIST
+  is the correct per-sample tumor axis and was used instead).
+  *Files: `code/pathway_enrichment.R`; `results/benchmark_sim/run_pathway_enrichment.R`,
+  `run_subtype_concordance.R`, `run_external_cohort_robustness.R`, `run_sbmf_desurv_overlap.R`;
+  `docs/reports/pathway_enrichment_report_07_15_26.{qmd,pdf,html}`.*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model

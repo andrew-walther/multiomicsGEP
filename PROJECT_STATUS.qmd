@@ -2245,3 +2245,97 @@ this exists (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`), not yet im
 | `DECISIONS.md`, `ROADMAP.md` | Phase 3 entry/milestone |
 
 ---
+
+# Session 30 — Pathway enrichment on the recommended model's active gene programs (2026-07-15)
+
+*(Note: the K-parsimony follow-up plan's Steps 1-4, completed 2026-07-13 between this entry and
+Session 29 above, are logged in `DECISIONS.md` 2026-07-13 but do not yet have a corresponding
+session entry here — out of scope for this session's work, flagged so the gap is explicit rather
+than silently skipped.)*
+
+Branch `pathway-enrichment-plan` (cut fresh from `main`; the original branch of the same name
+predated ~8,000 lines of subsequent work and was unusable as a base — only its plan document,
+`docs/plans/pathway_enrichment_plan.md`, was retrieved and carried forward). Goal: assign biology
+to Program 7 (Adverse) and Program 3 (Protective), the recommended model's two survival-active
+($K_{\text{eff}}=2$) gene expression programs.
+
+## 30.1 — Enrichment engine and custom gene sets
+
+New `code/pathway_enrichment.R`: `load_d4_weights()`, `run_fgsea_program()` (rank-based, one-sided
+via `scoreType="pos"` since the point-exponential $\mathbf{F}$ prior makes all weights $\ge 0$),
+`run_ora_program()` (confirmatory, top-N genes), `build_pdac_genesets()` (Moffitt basal/classical,
+Bailey 4-subtype, DeSurv D1-D3 — all recovered from local reference data / the DeSurv SI appendix,
+not re-derived from memory), `get_msigdb_collections()` (Hallmark/Reactome/KEGG/GO:BP via
+`msigdbr` 26.1.0 — note this version renamed `category`/`subcategory` to `collection`/`subcollection`).
+
+DeSurv's D1/D2/D3 gene lists (270 genes each) are parsed directly from the SI appendix PDF's text
+(`pdftotext -layout`) — two real parsing bugs were caught before they silently corrupted the gene
+lists: page-footer page numbers were being picked up as spurious "genes," and mixed-case/hyphenated
+symbols (`C19orf33`, `HLA-H`) were dropped by an overly strict regex. Both fixed; verified all 3
+factors parse to exactly 270 unique genes with zero cross-factor overlap.
+
+## 30.2 — Enrichment result and full production run
+
+All 7 programs enriched (sanity check); Programs 5-6 (nominally survival-inactive) still enrich for
+real stromal/immune biology (12 and 40 coherent hits respectively) — genuine variance axes in the
+data that just aren't survival-predictive here, not noise. Program 7's headline associations:
+basal-like/squamous tumor identity (DeSurv D3, Bailey Squamous) and MET/EGFR-driven RTK signaling.
+Program 3's: classical/differentiated tumor identity (DeSurv D1, Moffitt Classical), with a
+secondary, weaker basal-like association reported honestly rather than smoothed over (\S30.5).
+
+F1's dot plot needed a real fix, caught visually: MSigDB's full systematic set names are long
+enough that an 11x6.5in figure squeezed the actual data points into an invisible sliver of the
+plot area. Fixed (16x8in @150dpi). F3's gene-weight heatmap had the same problem in the other
+direction — 113 gene-name row labels overlapping illegibly at a fixed figure size — fixed with a
+`heatmap_dimensions()` helper that scales font size down and figure height up with gene count.
+
+## 30.3 — PDAC subtype concordance (Step 7)
+
+Matched D4's pooled patient loadings back to the 144 TCGA-PAAD training samples (`load_pdac_raw()`
+previously discarded sample IDs via `rownames(Y) <- NULL`; added a `sampID` field, additive and
+non-breaking). Caught and corrected a real error in the original plan draft: its decision pointed
+to "MS"/"MS_K2" as the per-sample tumor basal/classical label, but direct inspection shows those
+columns are the Moffitt **stroma** activation axis (Activated/Normal), not tumor subtype. Used
+PurIST (the correct, already-available axis) instead. Result: 144/144 matched (100%); Program 7
+correlates positively with basal-likelihood (Spearman $\rho=+0.58$, $p=2.1\times10^{-14}$), Program
+3 negatively ($\rho=-0.57$, $p=4.9\times10^{-14}$) — both far exceeding significance.
+
+## 30.4 — External cohort robustness (Step 8)
+
+A TDD test caught a real sign-convention bug before it ever touched real data:
+`survival::concordance(Surv(...) ~ score)` treats a *higher* predictor as predicting *longer*
+survival by default (verified empirically with an unambiguous synthetic case), matching the
+project's existing convention in `code/select_alpha_cv.R`/`code/predict.R` which negate risk scores
+for the same reason. Fixed before running on real data. Result: Program 7's signature has HR>1 in
+**5/5** external cohorts (range 1.30-2.40); Program 3's has HR<1 in **5/5** cohorts (range
+0.42-0.88) — exceeding the plan's own bar of "a majority of cohorts."
+
+## 30.5 — SBMF-vs-DeSurv overlap and direction sanity (Steps 9-10)
+
+Direct gene-list Jaccard/hypergeometric overlap (top-270 genes per program vs. each DeSurv factor,
+independent of the fgsea/ORA results, to avoid circularity) reproduces the same story: Program 7
+overlaps DeSurv D3 most strongly (80/270, $p=5.1\times10^{-15}$); Program 3 overlaps D1 most
+strongly (61/270, $p=2.4\times10^{-6}$), with the same secondary D3 association also seen in \S30.2
+(49/270, $p=0.0068$) — a real, twice-independently-reproduced nuance, not noise, and not a
+contradiction of the dominant classical/protective signal. All four methods run (gene-set
+enrichment, subtype concordance, external-cohort survival, gene overlap) agree with no
+contradictions.
+
+## 30.6 — Files changed
+
+| File | Change |
+|------|--------|
+| `code/pathway_enrichment.R` (new) | All reusable enrichment/concordance/overlap functions |
+| `results/benchmark_sim/run_pathway_enrichment.R` (new) | fgsea/ORA runner, all collections, F1-F3 |
+| `results/benchmark_sim/run_subtype_concordance.R` (new) | PurIST concordance, F4/T3 |
+| `results/benchmark_sim/run_external_cohort_robustness.R` (new) | 5-cohort survival, C2 |
+| `results/benchmark_sim/run_sbmf_desurv_overlap.R` (new) | Gene-overlap, F5/T4 |
+| `results/benchmark_sim/generate_pathway_enrichment_figures.R` (new) | Regenerate F1-F3 from cached results |
+| `results/benchmark_sim/benchmark_helpers.R` | Added `sampID` field to `load_pdac_raw()`'s return |
+| `docs/reports/pathway_enrichment_report_07_15_26.{qmd,pdf,html}` (new) | Full analysis report |
+| `docs/plans/pathway_enrichment_plan.md` (new) | Retrieved plan document |
+| `tests/test_pathway_enrichment.R` (new, 44 tests) | Main suite: 355/355 (was 311/311 at session start) |
+| `tests/test_real_data_loading.R` (+11 tests) | Real-data suite: 88/88 (was 77/77) |
+| `DECISIONS.md`, `ROADMAP.md`, `CLAUDE.md` | Session entry, milestone, quick-reference updates |
+
+---
