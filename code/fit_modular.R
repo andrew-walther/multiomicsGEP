@@ -78,28 +78,61 @@ source("code/deflation_init.R")   # deflation_svd_init -- init_method="deflation
 #' @param eta    n-vector: current linear predictor eta_i = sum_k l_bar_{ik} beta_bar_k
 #' @param time   n-vector: observed survival / censoring times
 #' @param status n-vector: event indicator (1 = event, 0 = censored)
+#' @param strata NULL (default) for a single pooled risk set, or an n-vector of
+#'               stratum labels (e.g. study/cohort). When supplied, Breslow risk
+#'               sets are formed *within* each stratum — the standard stratified
+#'               Cox partial likelihood. The baseline hazard still cancels
+#'               per-stratum, so no parametric h0 is introduced (Item 3,
+#'               DECISIONS.md). strata=rep(1,n) reduces exactly to strata=NULL.
 #' @return list(u = n-vector score, w = n-vector neg-diagonal Hessian,
 #'              logPL = scalar Breslow partial log-likelihood at eta)
 # ------------------------------------------------------------------------------
-calc_cox_taylor <- function(eta, time, status) {
-  n   <- length(time)
-  ord <- order(time)
-  time_s   <- time[ord]
-  status_s <- status[ord]
-  eta_s    <- eta[ord]
-  theta    <- exp(eta_s)
-  risk_sum <- rev(cumsum(rev(theta)))
-  h <- status_s / risk_sum
-  H <- cumsum(h)
-  u_s <- status_s - theta * H
-  w_s <- theta * H
-  w_s[w_s < 1e-6] <- 1e-6
-  u <- numeric(n); w <- numeric(n)
-  u[ord] <- u_s;   w[ord] <- w_s
-  # Breslow partial log-likelihood: sum_i delta_i * (eta_i - log R_i)
-  # where R_i = sum_{j: t_j >= t_i} exp(eta_j) (risk set cumulative sum).
-  # pmax guards against degenerate risk sets (shouldn't occur in practice).
-  logPL <- sum(status_s * (eta_s - log(pmax(risk_sum, 1e-300))))
+calc_cox_taylor <- function(eta, time, status, strata = NULL) {
+  # Single-stratum core: one pooled Breslow risk set over the samples passed in.
+  # Byte-identical to the historical (unstratified) body, so the strata=NULL
+  # path below is unchanged.
+  .core <- function(eta, time, status) {
+    n   <- length(time)
+    ord <- order(time)
+    time_s   <- time[ord]
+    status_s <- status[ord]
+    eta_s    <- eta[ord]
+    theta    <- exp(eta_s)
+    risk_sum <- rev(cumsum(rev(theta)))
+    h <- status_s / risk_sum
+    H <- cumsum(h)
+    u_s <- status_s - theta * H
+    w_s <- theta * H
+    w_s[w_s < 1e-6] <- 1e-6
+    u <- numeric(n); w <- numeric(n)
+    u[ord] <- u_s;   w[ord] <- w_s
+    # Breslow partial log-likelihood: sum_i delta_i * (eta_i - log R_i)
+    # where R_i = sum_{j: t_j >= t_i} exp(eta_j) (risk set cumulative sum).
+    # pmax guards against degenerate risk sets (shouldn't occur in practice).
+    logPL <- sum(status_s * (eta_s - log(pmax(risk_sum, 1e-300))))
+    list(u = u, w = w, logPL = logPL)
+  }
+
+  if (is.null(strata)) return(.core(eta, time, status))
+
+  # Stratified: score/Hessian are per-sample (scatter back by index); the
+  # partial log-likelihood is additive across strata (independent risk sets).
+  n <- length(time)
+  if (length(strata) != n) {
+    stop("strata must have the same length as time (", n, ").")
+  }
+  # Fail loud: as.factor() drops NA from levels, which would silently exclude
+  # NA-labelled samples from every risk set (leaving u=0,w=0 -> 0/0 downstream).
+  if (anyNA(strata)) stop("strata must not contain NA.")
+  strata <- as.factor(strata)
+  u <- numeric(n); w <- numeric(n); logPL <- 0
+  for (lev in levels(strata)) {
+    idx <- which(strata == lev)
+    res <- .core(eta[idx], time[idx], status[idx])
+    u[idx] <- res$u
+    w[idx] <- res$w
+    logPL  <- logPL + res$logPL
+  }
   list(u = u, w = w, logPL = logPL)
 }
 
@@ -236,13 +269,32 @@ fit_supervised_mf_modular <- function(Y, time, status,
                                       sign_correction = TRUE,
                                       verbose         = TRUE,
                                       cohort_id       = NULL,
-                                      sigma_F_cohort  = 1.0) {
+                                      sigma_F_cohort  = 1.0,
+                                      strata_id       = NULL) {
 
   n <- nrow(Y); p <- ncol(Y)
 
   if (!is.numeric(alpha) || length(alpha) != 1 || !is.finite(alpha) ||
       alpha < 0 || alpha > 1) {
     stop("alpha must be a finite scalar in [0, 1].")
+  }
+
+  # ---- Stratified baseline hazard (Item 3) ---------------------------------
+  # strata_id (e.g. study/cohort) forms Breslow risk sets within each stratum
+  # in the Cox partial likelihood, so baseline survival may differ by stratum
+  # while beta is shared. Distinct from cohort_id, which absorbs *genomic*
+  # platform offsets; the two can be used together. NULL => single pooled risk
+  # set (unchanged behaviour). See DECISIONS.md.
+  # NOTE: the CV/tuning wrappers (select_alpha_cv, select_K_cv, auto_prune_K) do
+  # NOT thread strata_id per fold — hyperparameter tuning runs unstratified even
+  # if the final fit is stratified. Passing strata_id through them would hand a
+  # full-length vector to a fold-subset fit and trip the length check (a loud
+  # failure, not silent corruption).
+  if (!is.null(strata_id)) {
+    if (length(strata_id) != n)
+      stop("strata_id must be NULL or have length nrow(Y) (", n, ").")
+    if (anyNA(strata_id))
+      stop("strata_id must not contain NA.")
   }
 
   # ---- Phase 1a objective normalization (see DECISIONS.md) -----------------
@@ -457,7 +509,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
     EL2_init <- EL^2   # point estimate; zero posterior variance during burn-in
     for (b in seq_len(N_burnin)) {
       eta_b    <- as.vector(EL %*% EBeta)
-      taylor_b <- calc_cox_taylor(eta_b, time, status)
+      taylor_b <- calc_cox_taylor(eta_b, time, status, strata = strata_id)
       z_b      <- eta_b + taylor_b$u / taylor_b$w
       w_b      <- taylor_b$w
       for (k in seq_len(K)) {
@@ -535,7 +587,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
     # (z, w) are held FIXED for this outer iteration across all k.
     # ------------------------------------------------------------------------
     eta    <- as.vector(EL %*% EBeta)
-    taylor <- calc_cox_taylor(eta, time, status)
+    taylor <- calc_cox_taylor(eta, time, status, strata = strata_id)
     z      <- eta + taylor$u / taylor$w    # n-vector: working response z_i
     w      <- taylor$w                     # n-vector: W_{ii}
 

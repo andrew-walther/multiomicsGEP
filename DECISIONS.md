@@ -5,6 +5,65 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-15 — Study-specific baseline hazard via stratified Cox partial likelihood
+
+**Question:** the training set pools two studies (TCGA-PAAD, CPTAC) that may have different baseline
+survival, but the model uses a single shared baseline hazard. The 6/18 lab-meeting feedback asked
+for a `+ strata(study)` term so baseline risk can differ by study while the coefficient vector
+$\boldsymbol\beta$ stays shared. (Original-plan "Phase 4"; consolidation-plan "Item 3".)
+
+**Decision — minimal stratified partial likelihood, no parametric baseline (confirmed with the
+user before implementing):** form the Breslow risk sets *within* each stratum. The baseline hazard
+still cancels per-stratum in the partial likelihood, so no parametric $h_0(t)$ (e.g. Weibull) is
+introduced — the survival CAVI derivation is otherwise unchanged. The alternative, a fully
+parametric per-study baseline, was considered and declined as more modeling machinery than the
+feedback required.
+
+**Implementation:** the Cox Taylor helpers `calc_cox_taylor()` (LB, `code/fit_modular.R`) and
+`calc_cox_taylor_yf()` (YFB, `code/fit_cox_on_yf.R`) gained an optional `strata=` argument; the
+fitting functions `fit_supervised_mf_modular()` and `fit_cox_on_yf()` gained `strata_id=`, threaded
+to both the burn-in and main-loop Taylor calls. When `strata` is `NULL` the original single pooled
+risk set is preserved bit-for-bit; when supplied, the per-sample score $u$ and diagonal Hessian $w$
+are computed within each stratum and scattered back by index, and the partial log-likelihood is
+summed across strata. `strata_id` is distinct from `cohort_id` (which absorbs *genomic* platform
+offsets); the two are composable.
+
+**Performance (the merge gate): neutral.** Refitting the recommended configuration (YFB D4, K=7)
+with study strata (TCGA vs. CPTAC) vs. without, over the 5 held-out external cohorts:
+
+| | Mean external C | $K_{\text{eff}}$ | max\|$\hat\beta$\| |
+|---|---|---|---|
+| No strata (baseline) | 0.6267 | 2 | 0.0404 |
+| Study strata | 0.6263 | 2 | 0.0405 |
+
+Difference is $-0.0004$ (per-cohort swings within $\pm0.0015$), i.e. within noise. Mechanistically
+expected: per-platform z-standardization already absorbs most cross-study structure before the two
+training cohorts merge, so restricting the risk sets to within-study leaves $\boldsymbol\beta$
+essentially unmoved. **Kept as an available option (`strata_id`, default `NULL`), not enabled by
+default** — it adds a capability the feedback requested and is correct, but earns no predictive gain
+on this configuration, and the default fit is unchanged.
+
+**Verification:** `tests/test_stratified_cox.R` (17 tests) — single-stratum reduction anchors
+(bit-identical to unstratified, and full-fit $\hat\beta$ identical at tol 1e-8), per-stratum
+additive decomposition, two independent `survival::coxph` oracles (Breslow partial log-likelihood at
+fixed coefficient, and martingale residuals for the score $u$), NA/length-mismatch fail-loud guards.
+Full suite 374/374 (was 357).
+
+**Independent review findings addressed:** (1) NA in `strata`/`strata_id` was silently dropped by
+`as.factor()` (→ `0/0` downstream) — now rejected with an explicit error at both the helper and
+fit-function entry points. (2) The training sign-correction step (`sign_correction=TRUE`) computes a
+*pooled* concordance for its coarse $\boldsymbol\beta$-orientation flip, not a stratified one; left
+as-is because it only drives a sign flip for a shared $\boldsymbol\beta$ and the effect is
+negligible, but noted here as a known minor inconsistency under stratification. (3) The CV/tuning
+wrappers (`select_alpha_cv`, `select_K_cv`, `auto_prune_K`) do **not** thread `strata_id` per fold —
+hyperparameter tuning runs unstratified even when the final fit is stratified; documented in the
+fit-function comments so this is not mistaken for stratified tuning.
+
+**Files:** `code/fit_modular.R`, `code/fit_cox_on_yf.R`, `tests/test_stratified_cox.R`,
+`tests/run_tests.R`.
+
+---
+
 ## 2026-07-15 — Pathway enrichment on the recommended model's two survival-active programs
 
 **Question:** what biology do Program 7 (Adverse) and Program 3 (Protective) — the recommended

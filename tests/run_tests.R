@@ -65,7 +65,8 @@ test_files <- c(
   "tests/test_fit_yf_frozen_f.R",
   "tests/test_normalization.R",
   "tests/test_fit_pca_cox.R",
-  "tests/test_pathway_enrichment.R"
+  "tests/test_pathway_enrichment.R",
+  "tests/test_stratified_cox.R"
 )
 
 # Run each test file

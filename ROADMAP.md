@@ -4,7 +4,7 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Status as of 2026-07-15.** Core model complete (modular CAVI, 355/355 tests passing).
+> **Status as of 2026-07-15.** Core model complete (modular CAVI, 374/374 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
 > cohorts across RNA-seq, microarray, and proteomics platforms). Multi-cohort simulation
 > study complete: shared vs. study-specific factor recovery validated across 3 scenarios and
@@ -36,6 +36,12 @@
 > agree Program 7 is basal-like/squamous/MET-EGFR-driven and Program 3 is classical/differentiated-
 > epithelial — the established PDAC subtype-survival axis. Full report:
 > `docs/reports/pathway_enrichment_report_07_15_26.pdf`.
+>
+> **Study-specific baseline hazard** (6/18 `+ strata(study)` feedback) is implemented as an optional
+> stratified Cox partial likelihood (`strata_id=` in both fit functions; Breslow risk sets within
+> study, no parametric baseline). On the recommended config it is performance-neutral (mean external
+> C 0.6267 → 0.6263 with study strata) so it is kept as an option, not enabled by default
+> (DECISIONS.md 2026-07-15).
 >
 > **Sensitivity — D3:** LB (η = Lβ), same DeSurv gene set, K=7, mean external C=0.622.
 > Reproduces the same 2-program adverse/protective structure, confirming the finding is not
