@@ -126,39 +126,45 @@ ul.task-list li input[type="checkbox"] {
 <div class="cell">
 <div class="cell-output-display">
 <table class="table table-sm table-striped small">
-<caption>External validation, recommended configuration (mean = 0.627).</caption>
+<caption>External validation with 95% bootstrap CI (mean = 0.627).</caption>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Held-out cohort</th>
 <th style="text-align: right;">External C-index</th>
+<th style="text-align: left;">95% CI</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">PACA_AU_seq</td>
 <td style="text-align: right;">0.657</td>
+<td style="text-align: left;">(0.544, 0.772)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">PACA_AU_array</td>
 <td style="text-align: right;">0.648</td>
+<td style="text-align: left;">(0.553, 0.747)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Puleo_array</td>
 <td style="text-align: right;">0.645</td>
+<td style="text-align: left;">(0.599, 0.688)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Dijk</td>
 <td style="text-align: right;">0.634</td>
+<td style="text-align: left;">(0.555, 0.708)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Moffitt_GEO_array</td>
 <td style="text-align: right;">0.549</td>
+<td style="text-align: left;">(0.467, 0.625)</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>Point estimate above 0.5 on all five cohorts (SE <span class="math inline">\(\approx\)</span> 0.020 across cohorts); the weakest, Moffitt microarray at 0.549, is only marginally above chance and a per-cohort confidence interval is a pending addition (see open items). Per-platform z-standardization is essential — most non-per-platform preprocessing collapses the survival coefficients to zero.</p>
+<p>Four of five cohorts clear chance with their CI lower bound above 0.5; <strong>Moffitt microarray does not</strong> (CI 0.467–0.625), confirming quantitatively what was previously only a qualitative flag. <strong>Against a two-step (unsupervised EBMF then Cox) baseline on the same patients, a paired bootstrap finds the recommended model significantly more concordant when pooled across all 5 cohorts: +0.042 (95% CI 0.013–0.071).</strong> Individually only the largest cohort (Puleo, <span class="math inline">\(n=288\)</span>) reaches significance alone; the other four all favor the recommended model but are underpowered on their own. Per-platform z-standardization is essential — most non-per-platform preprocessing collapses the survival coefficients to zero.</p>
 </section>
 <section id="biology-of-the-two-active-programs" class="level2">
 <h2 class="anchored" data-anchor-id="biology-of-the-two-active-programs">Biology of the two active programs</h2>
@@ -168,7 +174,7 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="positioning-and-open-items-for-discussion">Positioning and open items (for discussion)</h2>
 <ul>
 <li><strong>Positioning:</strong> SBMF is best framed as the <strong>Bayesian counterpart to DeSurv</strong> — same design, data, and scoring, differentiated by empirical-Bayes shrinkage, posterior uncertainty, error-in-variables loadings, and a per-gene noise model. A <strong>matched, same-protocol head-to-head with DeSurv is a pending next step</strong>, not a current superiority claim.</li>
-<li><strong>Open items worth raising:</strong> (1) no confidence interval / significance test yet on the external C-index — worth adding before the manuscript; (2) factor-stability across seeds not yet characterized; (3) the LB parameterization retains a factor-collapse sensitivity (the recommended YFB model does not); (4) the YFB spike-and-slab prior collapses in cross-validation (normal prior used throughout, and is the right call); (5) requested workflow items (automated commit review, RAG literature database, HPC workflow) and a review of DeSurv’s own simulation construction remain on the backlog.</li>
+<li><strong>Open items worth raising:</strong> (1) factor-stability across seeds not yet characterized; (2) the LB parameterization retains a factor-collapse sensitivity (the recommended YFB model does not); (3) the YFB spike-and-slab prior collapses in cross-validation (normal prior used throughout, and is the right call); (4) requested workflow items (automated commit review, RAG literature database, HPC workflow) and a review of DeSurv’s own simulation construction remain on the backlog.</li>
 </ul>
 <p><em>Full detail, figures, and per-item disposition of the 6/18 feedback: <code>docs/reports/ssbmf_progress_report_07_15_26</code>.</em></p>
 </section>

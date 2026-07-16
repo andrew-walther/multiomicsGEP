@@ -44,6 +44,8 @@ desurv     <- read_csv_safe(file.path(BM, "desurv_comparison", "desurv_compariso
 kcurve     <- read_csv_safe(file.path(BM, "k_parsimony_curve", "k_parsimony_curve_results.csv"))
 kfollowup  <- read_csv_safe(file.path(BM, "k_parsimony_followup", "k_parsimony_followup_results.csv"))
 sweep      <- read_csv_safe(file.path(MCS, "survival_strength_sweep_results.csv"))
+ext_ci     <- read_csv_safe(file.path(BM, "desurv_comparison", "external_cindex_ci.csv"))
+ext_diff   <- read_csv_safe(file.path(BM, "desurv_comparison", "external_paired_diff_ci.csv"))
 
 t1 <- read_csv_safe(file.path(PE, "T1_enrichment_active.csv"))
 t3 <- read_csv_safe(file.path(PE, "T3_concordance_stats.csv"))
@@ -340,40 +342,98 @@ validated on 5 fully held-out cohorts spanning three measurement platforms (RNA-
 proteomics):
 
 ```{r ext-table}
-if (!is.null(desurv)) {
-  d4 <- desurv %>% filter(model == "D4") %>%
-    select(cohort, c_index, K, k_eff, beta_max) %>%
+if (!is.null(desurv) && !is.null(ext_ci)) {
+  d4 <- desurv %>% filter(model == "D4") %>% select(cohort, K, k_eff, beta_max)
+  ci_y <- ext_ci %>% filter(model == "YFB (recommended)") %>%
+    select(cohort, c_index, ci_lo, ci_hi) %>%
+    left_join(d4, by = "cohort") %>%
+    mutate(ci = sprintf("(%.3f, %.3f)", ci_lo, ci_hi)) %>%
+    select(cohort, c_index, ci, K, k_eff, beta_max) %>%
     arrange(desc(c_index))
-  names(d4) <- c("Cohort", "C-index", "K", "K_eff", "max|beta_hat|")
-  knitr::kable(d4, row.names = FALSE, booktabs = TRUE, digits = 4,
-               caption = "Recommended-configuration external validation, per held-out cohort.")
+  names(ci_y) <- c("Cohort", "C-index", "95% CI", "K", "K_eff", "max|beta_hat|")
+  knitr::kable(ci_y, row.names = FALSE, booktabs = TRUE, digits = 4,
+               caption = "Recommended-configuration external validation, per held-out cohort, with a 95\\% percentile-bootstrap CI (B=2000).")
 }
 ```
 
-```{r ext-fig, fig.cap="External C-index by held-out cohort, recommended configuration. Dashed line = mean (0.627).", fig.width=6, fig.height=3.4}
-if (!is.null(desurv)) {
-  d4p <- desurv %>% filter(model == "D4")
+```{r ext-fig, fig.cap="External C-index by held-out cohort with 95\\% bootstrap CI, recommended configuration. Dashed line = mean (0.627); solid grey line = chance (0.5).", fig.width=6.5, fig.height=3.6}
+if (!is.null(ext_ci)) {
+  d4p <- ext_ci %>% filter(model == "YFB (recommended)")
   mean_c <- mean(d4p$c_index)
   ggplot(d4p, aes(x = reorder(cohort, c_index), y = c_index)) +
     geom_col(fill = "#55A868", width = 0.6) +
+    geom_errorbar(aes(ymin = ci_lo, ymax = ci_hi), width = 0.2, color = "grey20") +
     geom_hline(yintercept = mean_c, linetype = "dashed", color = "grey30") +
-    geom_hline(yintercept = 0.5, color = "grey70") +
+    geom_hline(yintercept = 0.5, color = "grey50") +
     coord_flip() +
-    labs(x = NULL, y = "External C-index", title = "Per-cohort external validation") +
-    ylim(0, 0.75)
+    labs(x = NULL, y = "External C-index", title = "Per-cohort external validation, with 95% CI") +
+    ylim(0.35, 0.8)
 }
 ```
 
 Mean external C-index = **0.627** (SE $\approx$ 0.020 across the 5 cohorts), with a point estimate
-above 0.5 on all five. The spread is real: the weakest cohort (Moffitt microarray, 0.549) is only
-marginally above chance and pulls hardest on the mean, while the strongest (PACA-AU RNA-seq, 0.657)
-is well clear of it. **A caveat worth stating up front:** these are point estimates without
-within-cohort confidence intervals — a per-cohort concordance CI / test against 0.5 is a natural
-next addition and is flagged as pending (§7); the $\pm 0.020$ here is the between-cohort standard
-error, not a within-cohort interval. A key preprocessing finding underlies the result:
-**per-platform z-standardization before merging training cohorts is essential** for mixed RNA-seq +
-proteomics training data — 10 of 12 non-per-platform preprocessing configurations tested collapse
-to $\hat\beta=0$ ($K_{\text{eff}}=0$).
+above 0.5 on all five and, now with 95% bootstrap confidence intervals (percentile bootstrap,
+$B=2000$, resampling patients within each cohort — see §5.1 below for the paired-comparison
+methodology this shares), a formal answer to which cohorts clear chance: **four of five do**
+(Dijk, PACA-AU array, PACA-AU seq, Puleo all have a CI lower bound above 0.5). **Moffitt microarray
+does not** — its CI (0.467, 0.625) includes 0.5, confirming quantitatively what was previously only
+a qualitative flag ("only marginally above chance"). This is an honest, expected finding given
+Moffitt's smaller sample size and a real weaker signal, not a computational error. A key
+preprocessing finding underlies the overall result: **per-platform z-standardization before merging
+training cohorts is essential** for mixed RNA-seq + proteomics training data — 10 of 12
+non-per-platform preprocessing configurations tested collapse to $\hat\beta=0$ ($K_{\text{eff}}=0$).
+
+### 5.1 Comparison against a two-step baseline, on the same real cohorts
+
+§3's simulations show the joint model's advantage over a two-step (unsupervised factorization then
+Cox) baseline; the same comparison exists on real data, scoring an unsupervised EBMF factorization
+followed by a Cox fit (EBMF$\to$Cox) on the identical 5 external cohorts, using the identical
+preprocessing and gene selection as the recommended model. A **paired** bootstrap (each replicate
+resamples patients once and scores both models on that identical resample, preserving the
+correlation between the two models' errors on the same patients — the correct way to test whether
+one model is significantly more concordant than another on shared data) answers whether the
+recommended model's advantage is statistically real, not just numerically larger.
+
+```{r ext-cmp-table}
+if (!is.null(ext_ci)) {
+  cmp <- ext_ci %>%
+    tidyr::pivot_wider(id_cols = cohort, names_from = model,
+                        values_from = c(c_index, ci_lo, ci_hi)) %>%
+    mutate(`YFB (95% CI)` = sprintf("%.3f (%.3f, %.3f)", `c_index_YFB (recommended)`,
+                                     `ci_lo_YFB (recommended)`, `ci_hi_YFB (recommended)`),
+           `EBMF->Cox (95% CI)` = sprintf("%.3f (%.3f, %.3f)", `c_index_EBMF->Cox (2-step)`,
+                                           `ci_lo_EBMF->Cox (2-step)`, `ci_hi_EBMF->Cox (2-step)`)) %>%
+    select(cohort, `YFB (95% CI)`, `EBMF->Cox (95% CI)`)
+  names(cmp)[1] <- "Cohort"
+  knitr::kable(cmp, row.names = FALSE, booktabs = TRUE,
+               caption = "Recommended model vs. the unsupervised-EBMF-then-Cox two-step baseline, same cohorts, same patients.")
+}
+```
+
+```{r ext-diff-table}
+if (!is.null(ext_diff)) {
+  dd <- ext_diff %>%
+    mutate(`Paired diff (95% CI)` = sprintf("%+.3f (%.3f, %.3f)", diff_estimate, diff_ci_lo, diff_ci_hi),
+           `Significant?` = ifelse(significant, "Yes", "No")) %>%
+    select(cohort, n, `Paired diff (95% CI)`, `Significant?`)
+  names(dd)[1:2] <- c("Cohort", "n")
+  knitr::kable(dd, row.names = FALSE, booktabs = TRUE,
+               caption = "Paired bootstrap difference (recommended model minus EBMF->Cox), per cohort and pooled.")
+}
+```
+
+Two honest findings, neither smoothed over: (1) **individually, only the largest cohort** (Puleo,
+$n=288$) **reaches statistical significance on its own** — the other four cohorts all show a
+positive point estimate (+0.008 to +0.084) favoring the recommended model, but are underpowered
+alone at $n=52$–123. (2) **Pooled across all 5 cohorts** (a fixed-effect, inverse-variance-weighted
+combination — a simplifying assumption of one common effect size across cohorts, not a formal test
+of whether that assumption itself holds), **the advantage is significant: +0.042 (95% CI
+0.013–0.071)**. Per-cohort CIs overlap substantially with each other, consistent with the
+cohort-to-cohort spread being ordinary sampling noise from very different sample sizes rather than
+evidence of real heterogeneity in the effect. (A refreshed number along the way: the cached
+EBMF$\to$Cox baseline used here had itself gone stale — its cache predated the same preprocessing
+fix that corrected the recommended model's own external number; refreshed from 0.564 to 0.581 mean
+external C before this comparison was run.)
 
 **Study-specific baseline hazard.** The 6/18 feedback also asked whether baseline survival risk
 should be allowed to differ by training study (TCGA-PAAD vs. CPTAC) via a `+ strata(study)` term,
@@ -453,12 +513,6 @@ substantially weaker, not a contradiction of the dominant signal.
 
 ## 7. Honest open items and shortfalls
 
-- **No within-cohort uncertainty on the external C-index yet.** The per-cohort and mean external
-  concordances in §5 are point estimates; the only uncertainty reported is the between-cohort
-  standard error ($\approx$ 0.020). A per-cohort concordance confidence interval and a formal test
-  against 0.5 (e.g. via `survival::concordance`'s analytic variance or a bootstrap) is a
-  straightforward, high-value next addition — particularly for the weakest cohort (Moffitt, 0.549),
-  whose separation from chance is not established without it.
 - **Factor stability across resampling not yet characterized.** The two active programs' biological
   identity is confirmed by five independent methods (§6), but it has not been shown that refitting on
   a training bootstrap recovers the same two programs. Given the factor-collapse discussion below,

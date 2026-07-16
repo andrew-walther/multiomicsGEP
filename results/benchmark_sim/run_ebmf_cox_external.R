@@ -207,6 +207,7 @@ if (c_train < 0.55)
 
 cat("\n--- External validation (5 held-out cohorts) ---\n")
 results_rows <- list()
+risk_cache   <- list()  # per-cohort {risk, time, status}, for post-hoc bootstrap CIs
 
 for (ext_cohort in EXTERNAL_COHORTS) {
   cat(sprintf("  %s ...\n", ext_cohort))
@@ -245,6 +246,9 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 
   cat(sprintf("    common genes=%d | external C=%.4f\n", length(common), c_val))
 
+  risk_cache[[ext_cohort]] <- list(risk = risk, time = raw_ext$time,
+                                    status = raw_ext$status, n = length(risk))
+
   results_rows[[length(results_rows) + 1]] <- data.frame(
     model          = "EBMF_COX",
     label          = "EBMF->Cox (unsupervised)",
@@ -279,6 +283,10 @@ saveRDS(
        train_genes = train_genes, c_train = c_train),
   file.path(OUT_DIR, "ebmf_cox_external_fit.rds")
 )
+
+# Per-cohort {risk, time, status}, for post-hoc bootstrap CI / paired-comparison
+# analysis (results/benchmark_sim/run_external_ci_analysis.R) without re-fitting.
+saveRDS(risk_cache, file.path(OUT_DIR, "ebmf_cox_external_riskscores.rds"))
 
 mean_c <- mean(results$c_index)
 

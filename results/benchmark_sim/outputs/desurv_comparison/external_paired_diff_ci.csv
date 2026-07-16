@@ -1,0 +1,7 @@
+"cohort","diff_estimate","diff_ci_lo","diff_ci_hi","se","significant","n"
+"Dijk",0.0421,-0.0287,0.1106,0.0363,FALSE,90
+"Moffitt_GEO_array",0.0076,-0.0708,0.0889,0.0405,FALSE,123
+"PACA_AU_array",0.0514,-0.0459,0.1493,0.0472,FALSE,63
+"PACA_AU_seq",0.084,-0.0197,0.1881,0.0533,FALSE,52
+"Puleo_array",0.0426,0.0046,0.0811,0.02,TRUE,288
+"POOLED (fixed-effect, weighted by 1/SE^2)",0.0419,0.0132,0.0706,0.0146,TRUE,616

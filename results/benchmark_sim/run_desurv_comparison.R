@@ -278,6 +278,8 @@ for (dcfg in DESURV_CONFIGS) {
 cat("--- External validation (5 cohorts) ---\n")
 EXTERNAL_COHORTS <- cfg$pdac$external_cohorts
 results_rows     <- list()
+risk_cache       <- list()  # [[model]][[cohort]] = {risk, time, status}; for
+                             # post-hoc bootstrap CIs without re-fitting.
 
 for (ext_cohort in EXTERNAL_COHORTS) {
   cat(sprintf("  Loading %s ...\n", ext_cohort))
@@ -326,6 +328,11 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 
     c_val <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
 
+    if (is.null(risk_cache[[dcfg$id]])) risk_cache[[dcfg$id]] <- list()
+    risk_cache[[dcfg$id]][[ext_cohort]] <- list(
+      risk = pred$risk_scores, time = raw_ext$time, status = raw_ext$status,
+      n = length(pred$risk_scores))
+
     results_rows[[length(results_rows) + 1]] <- data.frame(
       model          = dcfg$id,
       label          = dcfg$label,
@@ -357,6 +364,10 @@ write.csv(results, out_csv, row.names = FALSE)
 
 # Save fit objects for post-hoc analysis (factor loadings, pathway enrichment).
 saveRDS(fits, file.path(OUT_DIR, "desurv_comparison_fits.rds"))
+
+# Per-model, per-cohort {risk, time, status}, for post-hoc bootstrap CI / paired-
+# comparison analysis (results/benchmark_sim/run_external_ci_analysis.R).
+saveRDS(risk_cache, file.path(OUT_DIR, "desurv_comparison_riskscores.rds"))
 
 cat(sprintf("\n=== Results saved: %s ===\n\n", out_csv))
 cat("Mean C-index by configuration:\n")

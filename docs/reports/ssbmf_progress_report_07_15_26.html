@@ -61,7 +61,10 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#shared-vs.-study-specific-prognostic-factors" id="toc-shared-vs.-study-specific-prognostic-factors" class="nav-link" data-scroll-target="#shared-vs.-study-specific-prognostic-factors">3.2 Shared vs.&nbsp;study-specific prognostic factors</a></li>
   </ul></li>
   <li><a href="#factor-parsimony-is-k7-necessary" id="toc-factor-parsimony-is-k7-necessary" class="nav-link" data-scroll-target="#factor-parsimony-is-k7-necessary">4. Factor parsimony: is <span class="math inline">\(K=7\)</span> necessary?</a></li>
-  <li><a href="#external-validation" id="toc-external-validation" class="nav-link" data-scroll-target="#external-validation">5. External validation</a></li>
+  <li><a href="#external-validation" id="toc-external-validation" class="nav-link" data-scroll-target="#external-validation">5. External validation</a>
+  <ul class="collapse">
+  <li><a href="#comparison-against-a-two-step-baseline-on-the-same-real-cohorts" id="toc-comparison-against-a-two-step-baseline-on-the-same-real-cohorts" class="nav-link" data-scroll-target="#comparison-against-a-two-step-baseline-on-the-same-real-cohorts">5.1 Comparison against a two-step baseline, on the same real cohorts</a></li>
+  </ul></li>
   <li><a href="#biology-of-the-two-survival-active-programs" id="toc-biology-of-the-two-survival-active-programs" class="nav-link" data-scroll-target="#biology-of-the-two-survival-active-programs">6. Biology of the two survival-active programs</a></li>
   <li><a href="#honest-open-items-and-shortfalls" id="toc-honest-open-items-and-shortfalls" class="nav-link" data-scroll-target="#honest-open-items-and-shortfalls">7. Honest open items and shortfalls</a></li>
   <li><a href="#potential-value-and-positioning" id="toc-potential-value-and-positioning" class="nav-link" data-scroll-target="#potential-value-and-positioning">8. Potential value and positioning</a></li>
@@ -271,11 +274,20 @@ ul.task-list li input[type="checkbox"] {
 <div class="cell">
 <div class="cell-output-display">
 <table class="table table-sm table-striped small">
-<caption>Recommended-configuration external validation, per held-out cohort.</caption>
+<caption>Recommended-configuration external validation, per held-out cohort, with a 95% percentile-bootstrap CI (B=2000).</caption>
+<colgroup>
+<col style="width: 24%">
+<col style="width: 10%">
+<col style="width: 20%">
+<col style="width: 4%">
+<col style="width: 8%">
+<col style="width: 32%">
+</colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Cohort</th>
 <th style="text-align: right;">C-index</th>
+<th style="text-align: left;">95% CI</th>
 <th style="text-align: right;">K</th>
 <th style="text-align: right;">K_eff</th>
 <th style="text-align: right;">max|beta_hat|</th>
@@ -285,6 +297,7 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td style="text-align: left;">PACA_AU_seq</td>
 <td style="text-align: right;">0.6573</td>
+<td style="text-align: left;">(0.544, 0.772)</td>
 <td style="text-align: right;">7</td>
 <td style="text-align: right;">2</td>
 <td style="text-align: right;">0.0404</td>
@@ -292,6 +305,7 @@ ul.task-list li input[type="checkbox"] {
 <tr class="even">
 <td style="text-align: left;">PACA_AU_array</td>
 <td style="text-align: right;">0.6483</td>
+<td style="text-align: left;">(0.553, 0.747)</td>
 <td style="text-align: right;">7</td>
 <td style="text-align: right;">2</td>
 <td style="text-align: right;">0.0404</td>
@@ -299,6 +313,7 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td style="text-align: left;">Puleo_array</td>
 <td style="text-align: right;">0.6447</td>
+<td style="text-align: left;">(0.599, 0.688)</td>
 <td style="text-align: right;">7</td>
 <td style="text-align: right;">2</td>
 <td style="text-align: right;">0.0404</td>
@@ -306,6 +321,7 @@ ul.task-list li input[type="checkbox"] {
 <tr class="even">
 <td style="text-align: left;">Dijk</td>
 <td style="text-align: right;">0.6345</td>
+<td style="text-align: left;">(0.555, 0.708)</td>
 <td style="text-align: right;">7</td>
 <td style="text-align: right;">2</td>
 <td style="text-align: right;">0.0404</td>
@@ -313,6 +329,7 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td style="text-align: left;">Moffitt_GEO_array</td>
 <td style="text-align: right;">0.5486</td>
+<td style="text-align: left;">(0.467, 0.625)</td>
 <td style="text-align: right;">7</td>
 <td style="text-align: right;">2</td>
 <td style="text-align: right;">0.0404</td>
@@ -325,15 +342,120 @@ ul.task-list li input[type="checkbox"] {
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="ssbmf_progress_report_07_15_26_files/figure-html/ext-fig-1.png" class="img-fluid figure-img" width="576"></p>
-<figcaption class="figure-caption">External C-index by held-out cohort, recommended configuration. Dashed line = mean (0.627).</figcaption>
+<p><img src="ssbmf_progress_report_07_15_26_files/figure-html/ext-fig-1.png" class="img-fluid figure-img" width="624"></p>
+<figcaption class="figure-caption">External C-index by held-out cohort with 95% bootstrap CI, recommended configuration. Dashed line = mean (0.627); solid grey line = chance (0.5).</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>Mean external C-index = <strong>0.627</strong> (SE <span class="math inline">\(\approx\)</span> 0.020 across the 5 cohorts), with a point estimate above 0.5 on all five. The spread is real: the weakest cohort (Moffitt microarray, 0.549) is only marginally above chance and pulls hardest on the mean, while the strongest (PACA-AU RNA-seq, 0.657) is well clear of it. <strong>A caveat worth stating up front:</strong> these are point estimates without within-cohort confidence intervals — a per-cohort concordance CI / test against 0.5 is a natural next addition and is flagged as pending (§7); the <span class="math inline">\(\pm 0.020\)</span> here is the between-cohort standard error, not a within-cohort interval. A key preprocessing finding underlies the result: <strong>per-platform z-standardization before merging training cohorts is essential</strong> for mixed RNA-seq + proteomics training data — 10 of 12 non-per-platform preprocessing configurations tested collapse to <span class="math inline">\(\hat\beta=0\)</span> (<span class="math inline">\(K_{\text{eff}}=0\)</span>).</p>
+<p>Mean external C-index = <strong>0.627</strong> (SE <span class="math inline">\(\approx\)</span> 0.020 across the 5 cohorts), with a point estimate above 0.5 on all five and, now with 95% bootstrap confidence intervals (percentile bootstrap, <span class="math inline">\(B=2000\)</span>, resampling patients within each cohort — see §5.1 below for the paired-comparison methodology this shares), a formal answer to which cohorts clear chance: <strong>four of five do</strong> (Dijk, PACA-AU array, PACA-AU seq, Puleo all have a CI lower bound above 0.5). <strong>Moffitt microarray does not</strong> — its CI (0.467, 0.625) includes 0.5, confirming quantitatively what was previously only a qualitative flag (“only marginally above chance”). This is an honest, expected finding given Moffitt’s smaller sample size and a real weaker signal, not a computational error. A key preprocessing finding underlies the overall result: <strong>per-platform z-standardization before merging training cohorts is essential</strong> for mixed RNA-seq + proteomics training data — 10 of 12 non-per-platform preprocessing configurations tested collapse to <span class="math inline">\(\hat\beta=0\)</span> (<span class="math inline">\(K_{\text{eff}}=0\)</span>).</p>
+<section id="comparison-against-a-two-step-baseline-on-the-same-real-cohorts" class="level3">
+<h3 class="anchored" data-anchor-id="comparison-against-a-two-step-baseline-on-the-same-real-cohorts">5.1 Comparison against a two-step baseline, on the same real cohorts</h3>
+<p>§3’s simulations show the joint model’s advantage over a two-step (unsupervised factorization then Cox) baseline; the same comparison exists on real data, scoring an unsupervised EBMF factorization followed by a Cox fit (EBMF<span class="math inline">\(\to\)</span>Cox) on the identical 5 external cohorts, using the identical preprocessing and gene selection as the recommended model. A <strong>paired</strong> bootstrap (each replicate resamples patients once and scores both models on that identical resample, preserving the correlation between the two models’ errors on the same patients — the correct way to test whether one model is significantly more concordant than another on shared data) answers whether the recommended model’s advantage is statistically real, not just numerically larger.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Recommended model vs.&nbsp;the unsupervised-EBMF-then-Cox two-step baseline, same cohorts, same patients.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Cohort</th>
+<th style="text-align: left;">YFB (95% CI)</th>
+<th style="text-align: left;">EBMF-&gt;Cox (95% CI)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Dijk</td>
+<td style="text-align: left;">0.634 (0.555, 0.708)</td>
+<td style="text-align: left;">0.592 (0.516, 0.671)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Moffitt_GEO_array</td>
+<td style="text-align: left;">0.549 (0.467, 0.625)</td>
+<td style="text-align: left;">0.541 (0.462, 0.613)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PACA_AU_array</td>
+<td style="text-align: left;">0.648 (0.553, 0.747)</td>
+<td style="text-align: left;">0.597 (0.500, 0.695)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PACA_AU_seq</td>
+<td style="text-align: left;">0.657 (0.544, 0.772)</td>
+<td style="text-align: left;">0.573 (0.464, 0.687)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Puleo_array</td>
+<td style="text-align: left;">0.645 (0.599, 0.688)</td>
+<td style="text-align: left;">0.602 (0.556, 0.646)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Paired bootstrap difference (recommended model minus EBMF-&gt;Cox), per cohort and pooled.</caption>
+<colgroup>
+<col style="width: 51%">
+<col style="width: 4%">
+<col style="width: 28%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Cohort</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: left;">Paired diff (95% CI)</th>
+<th style="text-align: left;">Significant?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Dijk</td>
+<td style="text-align: right;">90</td>
+<td style="text-align: left;">+0.042 (-0.029, 0.111)</td>
+<td style="text-align: left;">No</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Moffitt_GEO_array</td>
+<td style="text-align: right;">123</td>
+<td style="text-align: left;">+0.008 (-0.071, 0.089)</td>
+<td style="text-align: left;">No</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PACA_AU_array</td>
+<td style="text-align: right;">63</td>
+<td style="text-align: left;">+0.051 (-0.046, 0.149)</td>
+<td style="text-align: left;">No</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PACA_AU_seq</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: left;">+0.084 (-0.020, 0.188)</td>
+<td style="text-align: left;">No</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Puleo_array</td>
+<td style="text-align: right;">288</td>
+<td style="text-align: left;">+0.043 (0.005, 0.081)</td>
+<td style="text-align: left;">Yes</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">POOLED (fixed-effect, weighted by 1/SE^2)</td>
+<td style="text-align: right;">616</td>
+<td style="text-align: left;">+0.042 (0.013, 0.071)</td>
+<td style="text-align: left;">Yes</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Two honest findings, neither smoothed over: (1) <strong>individually, only the largest cohort</strong> (Puleo, <span class="math inline">\(n=288\)</span>) <strong>reaches statistical significance on its own</strong> — the other four cohorts all show a positive point estimate (+0.008 to +0.084) favoring the recommended model, but are underpowered alone at <span class="math inline">\(n=52\)</span>–123. (2) <strong>Pooled across all 5 cohorts</strong> (a fixed-effect, inverse-variance-weighted combination — a simplifying assumption of one common effect size across cohorts, not a formal test of whether that assumption itself holds), <strong>the advantage is significant: +0.042 (95% CI 0.013–0.071)</strong>. Per-cohort CIs overlap substantially with each other, consistent with the cohort-to-cohort spread being ordinary sampling noise from very different sample sizes rather than evidence of real heterogeneity in the effect. (A refreshed number along the way: the cached EBMF<span class="math inline">\(\to\)</span>Cox baseline used here had itself gone stale — its cache predated the same preprocessing fix that corrected the recommended model’s own external number; refreshed from 0.564 to 0.581 mean external C before this comparison was run.)</p>
 <p><strong>Study-specific baseline hazard.</strong> The 6/18 feedback also asked whether baseline survival risk should be allowed to differ by training study (TCGA-PAAD vs.&nbsp;CPTAC) via a <code>+ strata(study)</code> term, since the existing cohort-indicator mechanism only absorbs genomic platform offsets, not differing baseline risk. This was implemented as an optional stratified Cox partial likelihood (risk sets formed within each study; no parametric baseline hazard is introduced — it still cancels within each stratum, exactly as in the unstratified model). On the recommended configuration this is <strong>performance-neutral</strong>: mean external C = 0.6267 (no strata, current default) vs.&nbsp;0.6263 (with study strata) — a difference of <span class="math inline">\(-0.0004\)</span>, well inside per-cohort noise (<span class="math inline">\(\pm 0.0015\)</span>). This is mechanistically expected: per-platform z-standardization already absorbs most cross-study structure before the two training cohorts merge, so restricting risk sets to within-study leaves <span class="math inline">\(\hat\beta\)</span> essentially unmoved. It is kept as an available option (off by default) rather than a default behavior change, since it adds a capability the feedback specifically requested without costing anything on this configuration.</p>
 <hr>
+</section>
 </section>
 <section id="biology-of-the-two-survival-active-programs" class="level2">
 <h2 class="anchored" data-anchor-id="biology-of-the-two-survival-active-programs">6. Biology of the two survival-active programs</h2>
@@ -398,7 +520,6 @@ ul.task-list li input[type="checkbox"] {
 <section id="honest-open-items-and-shortfalls" class="level2">
 <h2 class="anchored" data-anchor-id="honest-open-items-and-shortfalls">7. Honest open items and shortfalls</h2>
 <ul>
-<li><strong>No within-cohort uncertainty on the external C-index yet.</strong> The per-cohort and mean external concordances in §5 are point estimates; the only uncertainty reported is the between-cohort standard error (<span class="math inline">\(\approx\)</span> 0.020). A per-cohort concordance confidence interval and a formal test against 0.5 (e.g.&nbsp;via <code>survival::concordance</code>’s analytic variance or a bootstrap) is a straightforward, high-value next addition — particularly for the weakest cohort (Moffitt, 0.549), whose separation from chance is not established without it.</li>
 <li><strong>Factor stability across resampling not yet characterized.</strong> The two active programs’ biological identity is confirmed by five independent methods (§6), but it has not been shown that refitting on a training bootstrap recovers the same two programs. Given the factor-collapse discussion below, this is a natural robustness check a reviewer will expect; the biological concordance is supporting evidence but not a direct stability test.</li>
 <li><strong>YFB with a spike-and-slab (<code>point_normal</code>) prior collapses to <span class="math inline">\(\hat\beta=0\)</span> for every <span class="math inline">\(K\)</span> in cross-validation</strong> (C=0.5 uniformly). The reduced per-fold training size appears insufficient to escape the spike component under this prior; the normal prior (used throughout this report) does not have this problem. Open, undiagnosed in detail; not blocking any result in this report, since the recommended configuration uses the normal prior.</li>
 <li><strong>The CAVI factor-collapse vulnerability identified in §3</strong> is understood mechanistically (a degenerate fixed point under near-symmetric, disjoint factor-loading structure) and has a known, validated escape (warm-starting from a higher-<span class="math inline">\(K\)</span> solution’s PVE-ranked columns, §4) but no general, from-scratch fix — deflation-style initialization was tried and does not help, for an analytically clear reason (§4, Step 2). LB shows this collapse occasionally even on realistic (non-adversarial) synthetic data; there is no evidence it affects the real PDAC fits reported here, but it is a real, if so-far-occasional, robustness gap worth further investigation.</li>

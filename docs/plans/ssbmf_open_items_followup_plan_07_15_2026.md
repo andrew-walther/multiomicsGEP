@@ -21,9 +21,21 @@ unless a dependency is noted.
 These two are the most likely first questions from a statistically literate advisor. Neither
 requires re-fitting the model — both are analyses layered on top of already-fitted results.
 
-### 1a. Per-cohort concordance confidence intervals
+### 1a. Per-cohort concordance confidence intervals — **COMPLETE 2026-07-16**
 
-**Goal:** replace the bare point-estimate C-index per external cohort with a proper interval, and a
+**Done, branch `external-cindex-cis`.** Implemented as a percentile bootstrap (option 2 below), not
+the analytic option — the user also asked for a paired significance test against the two-step
+baseline, which needs the bootstrap machinery anyway (the analytic concordance variance doesn't
+directly give a paired covariance between two different risk scores on the same patients). Also
+surfaced and fixed a second stale-baseline finding along the way (the EBMF→Cox two-step comparator's
+cached output predated the Phase 1c preprocessing fix; refreshed 0.564→0.581). New tested utility
+`code/concordance_ci.R` (12 tests, TDD); results in
+`results/benchmark_sim/outputs/desurv_comparison/{external_cindex_ci.csv,external_paired_diff_ci.csv}`.
+Full results, methodology, and the paired-comparison finding (recommended model significantly more
+concordant than the two-step baseline, pooled across cohorts: +0.042, 95% CI 0.013–0.071):
+DECISIONS.md 2026-07-16. Folded into both progress-report documents.
+
+**Original goal (for reference):** replace the bare point-estimate C-index per external cohort with a proper interval, and a
 test against chance (0.5) — especially for the weakest cohort (Moffitt microarray, C=0.549), whose
 separation from chance is not currently established.
 
@@ -185,7 +197,7 @@ conclusion; action only if/when the user wants to invest in the workflow tooling
 
 | Item | Priority | Effort | Blocks anything now? |
 |---|---|---|---|
-| 1a. Per-cohort concordance CIs | **High** | Small | No, but likely the first advisor question |
+| 1a. Per-cohort concordance CIs | **DONE 2026-07-16** | Small | — |
 | 1b. Factor-stability under resampling | **High** | Medium | No, but a natural reviewer ask |
 | 2d. Review DeSurv's own simulation | Medium | Small | No — longest-outstanding unaddressed ask |
 | 2a. point_normal K-CV collapse | Medium-Low | Medium | No — normal prior is the default |

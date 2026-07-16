@@ -5,6 +5,96 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-16 — Bootstrap C-index CIs; refreshed a second stale baseline; paired test vs. the two-step method
+
+**Context.** Item 2's progress report flagged "no uncertainty quantification on the external C-index"
+as the highest-priority open item (2026-07-15 gap-review entry). Implemented per-cohort bootstrap
+confidence intervals and, per the user's request, a paired-bootstrap test of whether the recommended
+model (YFB, DeSurv-aligned gene selection, $K=7$, no cohort indicator) is significantly more
+concordant than a two-step (unsupervised EBMF then Cox) baseline on the same real external cohorts.
+
+**A second stale-baseline finding, caught while sourcing data for this work (same category as the
+multi-cohort sim, 2026-07-15 entry above, but not caught by that pass since it audited `.qmd` report
+files, not raw result CSVs):** `results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_external_results.csv`
+(the EBMF$\to$Cox two-step baseline's external validation on the same 5 real cohorts) was last
+generated **2026-06-16** — the runner script (`run_ebmf_cox_external.R`) was patched for the
+train/test preprocessing fix on 2026-07-12 (Phase 1c), but its cached output was never regenerated
+afterward. **Re-ran it under current code:** mean external C moved **0.564 $\rightarrow$ 0.581**
+(K=20, same direction of correction as the recommended model's own 0.636$\rightarrow$0.627 move, for
+the same reason — external cohorts are now preprocessed consistently with training). `ROADMAP.md`'s
+status banner, which cited the stale 0.564 figure, is corrected.
+
+**New reusable code (TDD, `code/concordance_ci.R`, 12 new tests):**
+- `bootstrap_concordance_ci(risk, time, status, B, seed)` — percentile-bootstrap CI on a single
+  model's C-index. The risk score's "higher = worse" orientation is fixed **once** from the full
+  sample (this project's existing `oriented_cindex()` convention); bootstrap replicates are **not**
+  individually re-oriented, since doing so would force every replicate $\ge 0.5$ and upward-bias the
+  CI for a weak/null signal — fixing the sign once and letting replicates vary freely below 0.5 is
+  what gives an honest interval.
+- `bootstrap_concordance_diff_ci(risk_a, risk_b, time, status, B, seed)` — a **paired**
+  bootstrap CI on the difference in C-index between two models scored on the *same* patients (each
+  replicate resamples patients once and scores both models on that identical resample, preserving
+  the correlation between the two models' errors on shared patients — the statistically correct way
+  to test "is model A significantly better than model B here," as opposed to comparing two
+  independently-constructed CIs).
+- No re-fitting was required for either model to compute these CIs — both runner scripts
+  (`run_desurv_comparison.R`, `run_ebmf_cox_external.R`) were extended to cache per-patient
+  `{risk, time, status}` per cohort (`*_riskscores.rds`) during their existing scoring step, which is
+  why refreshing the stale EBMF baseline above (a real re-fit) only needed doing once, here.
+
+**Results (`results/benchmark_sim/run_external_ci_analysis.R`, B=2000, seed=1):**
+
+| Cohort (n) | YFB C-index (95% CI) | EBMF→Cox C-index (95% CI) | Paired diff (95% CI) | Sig.? |
+|---|---|---|---|---|
+| Dijk (90) | 0.635 (0.555, 0.708) | 0.592 (0.516, 0.671) | +0.042 (−0.029, 0.111) | No |
+| Moffitt (123) | 0.549 (**0.467**, 0.625) | 0.541 (0.462, 0.613) | +0.008 (−0.071, 0.089) | No |
+| PACA-AU array (63) | 0.648 (0.553, 0.747) | 0.597 (0.500, 0.695) | +0.051 (−0.046, 0.149) | No |
+| PACA-AU seq (52) | 0.657 (0.544, 0.772) | 0.573 (0.464, 0.687) | +0.084 (−0.020, 0.188) | No |
+| Puleo (288) | 0.645 (0.599, 0.688) | 0.602 (0.556, 0.646) | +0.043 (**0.005**, 0.081) | **Yes** |
+| **Pooled (fixed-effect, n=616)** | — | — | **+0.042 (0.013, 0.071)** | **Yes** |
+
+**Answers to the questions this was built to answer:**
+1. **Is the external C-index distinguishable from chance (0.5)?** Yes for 4 of 5 cohorts — Moffitt's
+   CI (0.467, 0.625) includes 0.5, confirming quantitatively what was previously only a qualitative
+   flag ("only marginally above chance").
+2. **Is SSBMF significantly more concordant than the two-step baseline?** Individually, only the
+   largest cohort (Puleo, n=288) reaches significance on its own (the other four all have positive
+   point estimates, 0.008–0.084, but are underpowered alone at n=52–123). **Pooled across all 5
+   cohorts (fixed-effect, inverse-variance-weighted), the advantage is significant: +0.042 (95% CI
+   0.013–0.071).** The pooling is a simplifying fixed-effect assumption (a common effect size across
+   cohorts), stated plainly — no formal cross-cohort heterogeneity test (e.g. Cochran's Q) was run,
+   since that is a more specific statistical choice than this pass was scoped to make.
+3. **Is the variation across cohorts itself significant?** Per-cohort CIs overlap substantially
+   (e.g. Moffitt's and Dijk's CIs overlap by more than half their width) — nothing here suggests
+   real cohort-to-cohort heterogeneity beyond what sampling noise from very different cohort sizes
+   (52–288 patients) would produce on its own.
+
+**Independent review findings addressed (before merge):** (1) a bootstrap replicate that happens to
+draw fewer than 2 events was silently producing `NaN` from `concordance()` rather than erroring,
+surfacing later as a confusing `quantile()` failure with no indication of the real cause — both
+CI functions now check `sum(status[idx]) < 2` per replicate and fail loud with an explicit,
+actionable message; two new deterministic tests (fixed seed known to trigger a degenerate resample)
+confirm the message, plus two more tests for the full-sample `n<10`/`too few events` guards that
+existed but were untested. (2) the progress report's new §5.1 insertion had left a truncated,
+duplicated opening line of the following paragraph ("Study-specific baseline hazard...") — removed,
+report rebuilt. Neither finding changed any reported number; both are documentation/robustness fixes.
+
+**Verification:** `Rscript tests/run_tests.R` → **392/392** (374 + 18 new, up from an initial
+386/386 before the two review-driven test additions above).
+
+**Files:** `code/concordance_ci.R` (new; degenerate-resample guard added post-review),
+`tests/test_concordance_ci.R` (new, TDD, 18/18), `tests/run_tests.R` (registered),
+`results/benchmark_sim/run_desurv_comparison.R` (added risk-score caching),
+`results/benchmark_sim/run_ebmf_cox_external.R` (added risk-score caching; re-run — refreshed stale
+output), `results/benchmark_sim/run_external_ci_analysis.R` (new),
+`results/benchmark_sim/outputs/desurv_comparison/{desurv_comparison_riskscores.rds,
+external_cindex_ci.csv, external_paired_diff_ci.csv}` (new),
+`results/benchmark_sim/outputs/ebmf_cox_external/{ebmf_cox_external_results.csv (refreshed),
+ebmf_cox_external_riskscores.rds}` (new), `ROADMAP.md` (corrected stale 0.564 figure),
+`docs/reports/ssbmf_progress_report_07_15_26.qmd/.pdf/.html` (duplicated-paragraph fix, post-review).
+
+---
+
 ## 2026-07-15 — External gap review of the progress report; corrections applied before advisor presentation
 
 **Context.** Before finalizing the progress report for presentation, dispatched an independent

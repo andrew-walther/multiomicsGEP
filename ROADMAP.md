@@ -11,7 +11,9 @@
 > 5 arms; proposal and key results in `docs/reports/multicohort_sim_proposal_06_14_26.pdf`.
 > See `docs/reports/desurv_alignment_report_05_27_26.pdf` for the real-data benchmark.
 > 6/18/2026 lab-meeting deck delivered and merged to main (`905279b`); unsupervised EBMF→Cox
-> external baseline added (mean external C=0.564, K=20 — DECISIONS.md 2026-06-15). Adverse/protective
+> external baseline added (mean external C=0.564, K=20 — DECISIONS.md 2026-06-15; **refreshed
+> 2026-07-16 to 0.581 under the corrected preprocessing — the cached output had gone stale after the
+> 2026-07-12 fix, see DECISIONS.md 2026-07-16**). Adverse/protective
 > program directions corrected to the marginal (YF)-projection convention (DECISIONS.md 2026-06-16).
 > Post-lab-meeting Phases 1-3 and the K-parsimony follow-up plan's Steps 1-4 (DECISIONS.md 2026-07-12/13)
 > corrected and re-verified the recommended config's numbers below (superseding the earlier 0.636/K=7
@@ -368,8 +370,15 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   external C=0.564 (K=20) vs YFB 0.636 across the same 5 cohorts (DECISIONS.md 2026-06-15). The
   same-protocol external comparison is shown in the 6/18 deck. Parts (2) factor stability and
   (3) pathway concordance remain.
+  **Update 2026-07-16:** the cached EBMF→Cox output above had gone stale (computed before the
+  2026-07-12 preprocessing fix); refreshed to mean external C=0.581 (K=20) vs the recommended
+  model's current 0.627. A **paired bootstrap comparison** (same patients, same 5 cohorts) finds the
+  recommended model significantly more concordant, pooled across cohorts: +0.042 (95% CI
+  0.013–0.071); individually only the largest cohort (Puleo, n=288) reaches significance alone —
+  see DECISIONS.md 2026-07-16. Part (2) factor stability and (3) pathway concordance remain.
   *Files: YFB fit in `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds`;
-  EBMF via `flashier`; prediction via `code/predict.R`; baseline runner `run_ebmf_cox_external.R`.*
+  EBMF via `flashier`; prediction via `code/predict.R`; baseline runner `run_ebmf_cox_external.R`;
+  CI analysis: `results/benchmark_sim/run_external_ci_analysis.R`.*
 
 - [x] **Pathway enrichment on D4 active factors** *(Complete, 2026-07-15, branch `pathway-enrichment-plan`)*
   `fgsea` ranked-by-weight enrichment (primary) + ORA (confirmatory) on Programs 7 (Adverse) and 3
