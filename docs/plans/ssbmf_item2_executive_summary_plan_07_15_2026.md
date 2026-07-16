@@ -75,6 +75,48 @@ The report should rest on a verified arc. Record the review outcome (and any fin
 
 ---
 
+## Prior-report & figure staleness audit (REQUIRED — do while gathering material)
+
+The report must reflect the **current** state of the method with **all relevant results**, not
+reproduce figures/numbers from prior reports that recent corrections have superseded. Several prior
+reports predate the 2026-07-12 corrections (external mean C 0.636 → 0.627; the erroneous
+`boost_beta=TRUE` K_eff 4 → 2 figure; the K-parsimony conclusions) and the 2026-06-16 program-
+direction correction. **Audit every prior report and every figure it would draw on; carry forward
+only what is still valid, and refresh/replace what is stale — do not silently inherit outdated
+figures.**
+
+Concrete inventory (verified 2026-07-15 by grepping the `.qmd` sources):
+
+**Carry the superseded `0.636` external C figure (current is 0.627) — treat as STALE sources:**
+- `docs/reports/desurv_alignment_report_05_27_26.qmd` — the "DeSurv record" report (named in
+  `CLAUDE.md`); its external-C figures are pre-correction.
+- `docs/reports/multicohort_sim_proposal_06_14_26.qmd`
+- `docs/reports/desurv_factor_diagnostics_05_27_26.qmd`
+- `docs/reports/pathway_enrichment_overview.qmd`
+- `docs/progress_report/SSBMF_Status_Update_4_29_26.qmd`
+- `docs/progress_report/SSBMF_Status_Update_5_27_26.qmd`
+- `docs/progress_report/SSBMF_Status_Update_5_28_26.qmd`
+
+**Mention `K_eff=4` / "4 active" (current is K_eff=2) — VERIFY each (some may be false positives):**
+`docs/reports/desurv_factor_diagnostics_05_27_26.qmd`, `docs/reports/ssbmf_summary_report_04_29_26.qmd`,
+`docs/progress_report/SSBMF_Status_Update_5_28_26.qmd`.
+
+**Already current (0.627) — safe to reuse figures/framing from:**
+`docs/reports/joint_vs_twostep_sweep_07_12_2026.qmd` (Phase 2 value-add sweep),
+`docs/reports/pathway_enrichment_report_07_15_26.qmd` (Item 1 biology).
+
+**Also check (beyond text numbers):** any figure image files or figure-generating scripts that
+produced plots (C-index bars, KM curves, factor/loading heatmaps, K-curves) from **pre-correction
+fits** — regenerate from current fits or the current stored results
+(`results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv`, current;
+`docs/reports/pathway_enrichment_report_07_15_26` assets, current) rather than embedding an old image.
+When in doubt about a figure's provenance, regenerate it. The authoritative current numbers live in
+`DECISIONS.md` (2026-07-12/13/15), `CLAUDE.md` (Current model status), and the current results CSV.
+
+The report is meant to be a **comprehensive review of the current state, results, and potential value
+of the method** — so the audit is not just error-correction; it is the mechanism for pulling every
+still-valid result forward into one current, coherent picture.
+
 ## Content spec for Deliverable A (what the report must cover)
 
 **Honest headline (the through-line):** the recommended configuration itself did not change since the
@@ -109,6 +151,13 @@ Sections to include (adapt structure to the audience, not to this list literally
 7. **Honest open items / shortfalls** — the YFB `point_normal` K-CV C=0.5 bug (open, ROADMAP.md); the
    stratified-baseline-hazard neutral result (Item 3, available but off by default); the K=7-vs-K=4
    reproducibility-vs-parsimony judgment call.
+8. **Potential value / positioning (make this explicit)** — where the method stands and why it
+   matters: SBMF as the Bayesian counterpart to DeSurv (same design/data/scoring), differentiated by
+   empirical-Bayes prior shrinkage, posterior uncertainty, error-in-variables E[L²], and
+   heteroscedastic τ; the joint model recovering prognostic structure a two-step misses (only when
+   survival carries it); interpretable, externally-validated gene programs with a clear biological
+   story. Frame the head-to-head with DeSurv as a *pending* matched comparison, not a superiority
+   claim. This is the "so what" of the report — state it plainly.
 
 Pull exact numbers from `DECISIONS.md` (2026-07-12/13/15), `CLAUDE.md` (Current model status), and
 `ROADMAP.md` — do not re-derive or re-run fits for the report; cite the stored results.
