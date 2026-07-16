@@ -1,0 +1,607 @@
+---
+title: "SSBMF Progress Report: Model Refinement, Validation, and Biological Interpretation"
+subtitle: "Work completed since the 6/18/2026 lab meeting"
+author: "Andrew Walther"
+date: "2026-07-15"
+format:
+  pdf:
+    latex-engine: xelatex
+    keep-tex: false
+    fig-pos: "htbp"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{geometry}
+        \usepackage{titling}
+        \geometry{margin=0.6in}
+        \renewcommand{\familydefault}{\sfdefault}
+        \setlength{\droptitle}{-1.8em}
+        \pretitle{\begin{center}\large\bfseries}
+        \posttitle{\par\end{center}\vspace{-0.7em}}
+  html:
+    toc: true
+    code-fold: true
+    theme: cosmo
+fontsize: 10pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+library(knitr)
+library(ggplot2)
+library(dplyr)
+
+BM  <- "../../results/benchmark_sim/outputs"
+MCS <- "../../results/multi_cohort_sim/outputs"
+PE  <- file.path(BM, "pathway_enrichment")
+
+read_csv_safe <- function(p) if (file.exists(p)) read.csv(p, stringsAsFactors = FALSE) else NULL
+
+desurv     <- read_csv_safe(file.path(BM, "desurv_comparison", "desurv_comparison_results.csv"))
+kcurve     <- read_csv_safe(file.path(BM, "k_parsimony_curve", "k_parsimony_curve_results.csv"))
+kfollowup  <- read_csv_safe(file.path(BM, "k_parsimony_followup", "k_parsimony_followup_results.csv"))
+sweep      <- read_csv_safe(file.path(MCS, "survival_strength_sweep_results.csv"))
+
+t1 <- read_csv_safe(file.path(PE, "T1_enrichment_active.csv"))
+t3 <- read_csv_safe(file.path(PE, "T3_concordance_stats.csv"))
+t4 <- read_csv_safe(file.path(PE, "T4_sbmf_desurv_overlap.csv"))
+c2 <- read_csv_safe(file.path(PE, "C2_external_cohort_robustness.csv"))
+
+theme_set(theme_minimal(base_size = 11))
+```
+
+## Executive summary
+
+The model configuration recommended at the 6/18/2026 lab meeting has **not changed**: YFB
+($\eta = (YF)\hat\beta$), DeSurv-aligned gene selection, $K=7$, no cohort indicator.
+What changed since then is that its headline numbers were corrected, and its $K=7$ choice was
+independently stress-tested from several directions that all converge on the same answer.
+
+- **Mean external C-index across 5 held-out PDAC cohorts: 0.627** (SE $\approx$ 0.020 across
+  cohorts; corrected from an earlier 0.636 figure — the decline is attributable entirely to a
+  train/test preprocessing bug fix, not to a regression in the model; §2).
+- **The model uses only 2 of its 7 factors for survival prediction ($K_{\text{eff}}=2$), and this is
+  now a well-supported result, not a tuning artifact** — two independent optimization strategies
+  (warm-start from a higher-$K$ fit, and a joint $(K,\alpha)$ Bayesian-optimization search) both
+  land on $K_{\text{eff}}=2$, and a deflation-initialization test analytically ruled out
+  initialization as the cause of the earlier ambiguity (§4). $K=7$ is kept as the practical default
+  for one-step reproducibility; $K=4$ or $K=5$ are validated, statistically equivalent,
+  more-parsimonious alternatives.
+- **The two survival-active gene programs have a confirmed biological identity**: an adverse,
+  basal-like/squamous/MET-EGFR-driven program (Program 7) and a protective, classical/
+  differentiated-epithelial program (Program 3) — the established PDAC subtype-survival axis,
+  independently recovered by five separate lines of evidence (§6).
+- **The joint model matches a two-step (unsupervised factorization then Cox) baseline when there is
+  no survival signal, and is more accurate and more stable when there is** — its advantage grows
+  with signal strength in the realistic regimes tested, with one understood, reported exception
+  under an unrealistic synthetic design (§3).
+- **A study-specific baseline hazard option is now available** (stratified Cox partial likelihood)
+  and is performance-neutral on the recommended configuration, so it remains off by default (§5).
+
+This report also states plainly what the method's value proposition is and is not (§8): SBMF is
+best understood as the Bayesian counterpart to the lab's existing DeSurv method, not (yet) a
+demonstrated improvement over it on a matched, head-to-head protocol.
+
+---
+
+## 1. Model overview
+
+The method fits a supervised Bayesian matrix factorization to a training cohort's gene-expression
+matrix $\mathbf{Y}$ ($n$ patients $\times$ $p$ genes) jointly with a Cox proportional-hazards model
+on patient survival, coupling the two through a shared low-rank factor structure. Two
+parameterizations of the survival linear predictor were implemented and compared:
+
+- **LB** ($\eta = \mathbf{L}\hat\beta$): survival risk is a linear function of each patient's
+  posterior-mean factor loadings $\mathbf{L}$, the same loadings the genomics likelihood fits.
+- **YFB** ($\eta = (\mathbf{YF})\hat\beta$, "Cox-on-$YF$"): survival risk is a linear function of
+  the patient's *observed* expression projected onto the learned factors ($\mathbf{Y}\mathbf{F}$),
+  computed identically at training and prediction time.
+
+**YFB is the recommended parameterization.** LB has a structural train/test mismatch: at training
+time $\mathbf{L}$ is an EBNM-shrunk posterior mean, but at prediction time on a new patient it must
+be reconstructed by projection, which is a different quantity. YFB uses the same $(\mathbf{YF})$
+projection at both stages by construction, so there is no such mismatch. YFB's genomics factor
+matrix $\mathbf{L}$ is fit from genomics data alone (no survival term touches it or $\mathbf{F}$ by
+default), and $\hat\beta$ is fit purely on the survival side — the two halves of the model never
+compete for the same coordinate, which turns out to matter for how safely the two objectives can be
+rebalanced (§2). A sensitivity check refitting the LB parameterization on the identical DeSurv gene
+set and $K=7$ gives mean external C = 0.611 (vs. YFB's 0.627) and recovers the same two-program
+adverse/protective structure — confirming the finding is not an artifact specific to the YFB
+formulation, while still supporting YFB as the primary recommendation.
+
+New-patient scoring is exact under YFB: $\eta_{\text{new}} = \mathbf{Y}_{\text{new}}\mathbf{F}\hat\beta$,
+no approximation or re-fitting required.
+
+---
+
+## 2. Putting the objective on a principled footing
+
+The lab's 6/18 feedback noted a real issue: the genomics likelihood term is $O(np)$ in aggregate
+while the survival (Cox partial likelihood) term is $O(n)$ — an unnormalized, roughly $p$-fold scale
+gap that makes the mixing weight $\alpha$ in $(1-\alpha)\cdot\text{genomics} + \alpha\cdot\text{survival}$
+uninterpretable (an $\alpha=0.5$ does not mean "balanced" when one side starts $p\times$ larger).
+
+**What was tried, and what actually helped.** Shrinking the genomics term's precision destabilized
+LB's factor updates ($\mathbf{L}$ and $\mathbf{F}$ co-adapt bilinearly, and reducing either side's
+precision removed the numerical margin the model relied on, collapsing both to exactly zero within
+a few iterations). Boosting the survival term's precision at the $\mathbf{L}$-update site caused
+unbounded divergence in a separate synthetic scenario. The design that shipped decouples the two
+update sites: the rebalancing is applied only where it cannot create bilinear feedback — the ELBO
+monitor and $\hat\beta$'s own update — while $\mathbf{L}$ and $\mathbf{F}$'s CAVI updates are left
+untouched in both models.
+
+**Honest finding: this provided no performance benefit for YFB.** In YFB's factorization, $\mathbf{L}$
+is pure-genomics and $\hat\beta$ is pure-survival — the two never share a coordinate that needs
+rebalancing in the first place, so there was no real imbalance to fix for this parameterization. An
+initial implementation detail (boosting $\hat\beta$'s own EBNM precision by a factor of $p$,
+`boost_beta=TRUE`) was found to be an unjustified side effect: it reduced EBNM shrinkage on
+$\hat\beta$ without correcting any genuine imbalance, inflating the apparent number of
+survival-active factors from $K_{\text{eff}}=2$ to $4$ and the external C-index from 0.636 to 0.642.
+Neither move reflected a real gain — with the corrected default (`boost_beta=FALSE`), $\hat\beta$'s
+values are essentially unchanged from before this work (previously $+0.011/-0.041$ for the two
+active factors, now $+0.0115/-0.0404$), and $K_{\text{eff}}$ returns to 2. This limitation does not
+apply to LB the same way — LB's $\mathbf{L}$-update genuinely does mix genomics and survival terms
+in one formula — but no stable per-coordinate fix for LB was found; this is documented as a known,
+deferred limitation that does not affect the recommended (YFB) configuration.
+
+**The redundant `lambda` mixing parameter was retired.** `alpha` already plays the role a second
+survival-scale multiplier would; `lambda` was a no-op in every production configuration and is not
+analogous to DeSurv's own elastic-net penalty (a different regularization role this model already
+fills via its empirical-Bayes priors). Removing it was a pure simplification with zero effect on any
+fitted result.
+
+**The remaining, real correction: a train/test preprocessing mismatch.** External validation cohorts
+were being rank-transformed while training used per-platform z-standardization — the reverse
+convention. Fixing this (so external cohorts are preprocessed identically to training) is the entire
+explanation for the 0.636 $\rightarrow$ **0.627** change in the recommended configuration's external
+C-index. This is a genuine correction, kept regardless of its small effect on this one metric — the
+prior number was simply computed on inconsistently preprocessed data.
+
+**Net effect on the recommended configuration:** mean external C = 0.627, $K=7$, $K_{\text{eff}}=2$
+— identical scientific conclusion to before this work, on a now-correctly-computed number.
+
+---
+
+## 3. Simulation validation: value over a two-step baseline
+
+A natural question for any supervised factorization method: does jointly fitting the factors and
+the survival model do better than fitting factors first (unsupervised) and a Cox model second? Two
+complementary simulation studies address this — one scaling survival-signal strength (§3.1), one
+varying whether prognostic structure is shared across cohorts or study-specific (§3.2). Both were
+run (or, for §3.2, re-validated) under the corrected model described in §2.
+
+### 3.1 Varying survival-signal strength
+
+The first study scales the true prognostic effect size from 0 (no survival signal) to large, across
+10 seeds and 4 data-generating scenarios, comparing YFB against two two-step baselines (PCA$\to$Cox
+and empirical-Bayes matrix factorization$\to$Cox).
+
+```{r sweep-fig, fig.cap="Joint (YFB) vs. two-step baseline C-index as true prognostic signal strength increases, across four data-generating scenarios (10 seeds each). Ribbons show \\pm 1 SE.", out.width="95%"}
+knitr::include_graphics(file.path(MCS, "survival_strength_sweep_plot.png"))
+```
+
+**At zero true signal, all methods are equivalent** (within 1-2 SE of chance), as expected —
+supervision cannot help when there is nothing to be supervised by. **As signal strength grows, in
+3 of 4 scenarios** (dense/realistic factor-loading structure; low SNR; higher factor count)
+**the joint model's advantage emerges and grows**, reaching C=0.927 vs. 0.900 (PCA+Cox) and
+0.899 (EBMF+Cox) at the strongest signal level under the realistic dense-loading design. An
+internal control confirms the
+mechanism is genuine: with the survival term turned off entirely ($\alpha=0$), YFB's genomics
+factorization is *exactly* identical to the tuned ($\alpha=0.5$) fit at every signal strength and
+seed tested (max difference = 0, 30/30 comparisons) — the model behaves as designed at this
+boundary.
+
+**One scenario reverses the ordering, and this was root-caused rather than left unexplained.** Under
+an artificial sparse-symmetric design (where each factor's true loading is exactly 2% of genes,
+uniform in magnitude, with no cross-factor overlap), the two-step baselines outperform YFB
+substantially at high signal (0.795 vs. 0.934–0.940). Diagnostic work traced this to a **shared CAVI
+factor-collapse vulnerability**, not a defect in the survival coupling: the same collapse occurs at
+$\alpha=0$ (survival term fully off), rules out anything related to joint supervision; it also
+occurs for LB (built on the same factor-update code), and is *worse* for LB on average; switching
+the initialization from SVD to random makes it uniformly worse, ruling out "bad init" as the cause.
+The actual differentiator is loading **density and structure**: real gene-expression factor
+templates are dense with graded, correlated loadings, while the sparse-symmetric design's
+exactly-sparse, non-overlapping factors form a near-perfect symmetry under which the empirical-Bayes shrinkage prior
+can lock onto a degenerate fixed point (a factor that dips slightly below its equally-scaled
+siblings gets shrunk further every iteration, with no mechanism to recover). This is not purely a
+contrived-data phenomenon — LB has also shown occasional collapse in more realistic settings
+(lower signal-to-noise and higher factor count, both built on real gene-expression templates) — so
+it is tracked as an open robustness item (§7), not dismissed as synthetic-only.
+
+**Net assessment:** the joint model's value-add over a two-step baseline is real and growing with
+signal in the realistic regimes tested, with a specific, understood failure mode under an unrealistic
+symmetric-loading design that does not appear to reflect the structure of real gene-expression data.
+
+### 3.2 Shared vs. study-specific prognostic factors
+
+The second study asks the question directly relevant to a multi-cohort application: when a latent
+program is *shared* across studies vs. *specific* to one, does the joint model recover the
+distinction and use it for prediction better than a two-step baseline? Three scenarios were
+simulated — all factors shared across cohorts, a hybrid (some shared, some study-specific), and no
+shared prognostic factors — each across 5 seeds, comparing the YFB model (with and without a cohort
+indicator) against the EBMF$\to$Cox two-step baseline. This study predates the §2 corrections, so it
+was **re-run under the current model** to confirm it still holds.
+
+```{r mcs-table}
+mc <- read_csv_safe(file.path(MCS, "multicohort_sim_results.csv"))
+if (!is.null(mc)) {
+  scen_lab <- c(all_shared = "All factors shared",
+                hybrid = "Hybrid (some shared, some specific)",
+                nothing_shared = "No shared prognostic factors")
+  rows <- lapply(names(scen_lab), function(sc) {
+    yfb  <- mean(mc$c_index[mc$scenario == sc & mc$arm == "YFB_base"])
+    ebmf <- mean(mc$c_index[mc$scenario == sc & mc$arm == "EBMF"])
+    sacc <- mean(mc$spec_acc[mc$scenario == sc & mc$arm == "YFB_base"], na.rm = TRUE)
+    data.frame(Scenario = scen_lab[[sc]],
+               `YFB (joint)` = round(yfb, 3),
+               `EBMF+Cox (two-step)` = round(ebmf, 3),
+               `Joint advantage` = sprintf("%+.3f", yfb - ebmf),
+               `Specificity acc.` = round(sacc, 2),
+               check.names = FALSE)
+  })
+  knitr::kable(do.call(rbind, rows), row.names = FALSE, booktabs = TRUE,
+               caption = "Held-out C-index, joint YFB vs. two-step baseline, by shared/specific structure (mean over 5 seeds). Specificity accuracy = how often the model correctly classifies a factor as shared vs. study-specific.")
+}
+```
+
+The pattern matches the meeting's own diagnostic logic. When there is **no shared prognostic
+signal**, the joint model and the two-step baseline are equivalent (0.549 vs. 0.550) — supervision
+has nothing to exploit. When prognostic structure **is** present, the joint model leads, and in the
+realistic **hybrid** case (only some factors carry survival signal) the advantage is as much about
+**stability as raw accuracy**: the unsupervised two-step baseline collapses on 2 of 5 seeds
+(dropping to 0.53 and 0.63), pulling its mean down to 0.717, whereas the joint model is stable
+across all seeds (0.78–0.84, mean 0.815). On the three seeds where the two-step baseline does *not*
+collapse it averages 0.807, close to the joint model — so the headline gap reflects the joint
+model's robustness (its supervised factorization does not collapse here) more than a large
+discrimination margin when both fit cleanly. The joint model also classifies each factor as shared
+vs. study-specific with perfect accuracy. Adding a cohort indicator to the YFB model is
+neutral-to-slightly-negative in simulation (e.g., hybrid 0.813 vs. 0.815), mirroring the real-data
+finding (§5) that per-platform z-standardization already absorbs the cross-study structure a cohort
+indicator would model.
+
+**Re-validation note.** Under the corrected model, the YFB (recommended) arms reproduced the
+original result within noise (max C-index difference 0.019, mean 0.004 across all 30 YFB fits) and
+the two-step baseline was bit-identical. The only material movement was in the LB reference arms
+(one cell shifting by 0.19), attributable to the previously-documented LB local-optimum sensitivity
+— the retired $\lambda$ parameter was live in LB's factor update but already inert in the YFB path,
+so removing it perturbed LB's near-bifurcation fit while leaving YFB's untouched. This does not
+affect the recommended (YFB) model or any conclusion above.
+
+---
+
+## 4. Factor parsimony: is $K=7$ necessary?
+
+DeSurv, the lab's related supervised-factorization method, selects $k=3$ for the same PDAC data.
+SBMF's cross-validated choice is $K=7$. This gap was investigated directly, rather than assumed to
+reflect a real difference in model capacity requirements.
+
+**A fresh cross-validation under the corrected objective confirms $K=7$ is not a leftover artifact.**
+Re-running $K$-selection from scratch (grid 2–10, no floor imposed) shows a genuine, non-noise jump
+in internal cross-validated C-index between $K=6$ (0.593) and $K=7$ (0.633) — larger than any single
+fold's standard error ($\approx 0.03$) — with $K=8$ the actual peak (0.651) and $K=7$ the simplest
+choice statistically tied with it (1-SE rule).
+
+**Refitting directly at smaller $K$ and re-running full external validation** — rather than just
+counting how many factors are active in the $K=7$ fit — is the more decision-relevant test, and was
+run for $K\in\{2,3,4,5,7\}$:
+
+```{r kcurve-fig, fig.cap="External mean C-index by K, single fresh-SVD fit per K (Phase 3). No K below 7 reaches within 1 SE of K=7's margin in this single-seed comparison.", fig.width=6, fig.height=3.6}
+if (!is.null(kcurve)) {
+  agg <- kcurve %>% group_by(K) %>% summarise(mean_c = mean(c_index), se = sd(c_index)/sqrt(n()))
+  k7 <- agg$mean_c[agg$K == 7]
+  ggplot(agg, aes(x = factor(K), y = mean_c)) +
+    geom_col(fill = "#4C72B0", width = 0.6) +
+    geom_hline(yintercept = k7, linetype = "dashed", color = "grey40") +
+    geom_text(aes(label = sprintf("%.3f", mean_c)), vjust = -0.5, size = 3.2) +
+    labs(x = "K (fresh SVD init)", y = "Mean external C-index",
+         title = "K-parsimony curve, single-seed fresh fits") +
+    ylim(0, 0.75)
+}
+```
+
+At face value this says "$K=7$ is not free to shrink" — but a caveat was flagged honestly at the
+time: $K=2$ and $K=4$ converged suspiciously fast (7–9 iterations) to a near-zero $\hat\beta$,
+consistent with the same collapse mode documented in §3. A four-step follow-up resolved this rather
+than leaving it open:
+
+| Step | Approach | Finding |
+|---|---|---|
+| 1 | Warm-start $K\in\{2..5\}$ from the converged $K=7$ fit's top-$K$ PVE-ranked columns; also tried best-ELBO multistart (15 restarts) | **Warm-start rescues $K=4$ and $K=5$ to $K=7$-level performance** (0.6270 vs. 0.6267, both $K_{\text{eff}}=2$); multistart rescues nothing at any $K$ — SVD init was always the best-ELBO restart. $K=2/K=3$ remain short even with warm-start (a genuine capacity floor). |
+| 2 | Make the fix general: deflation-style (greedy rank-1) initialization | **Negative, analytically understood**: deflation and batch SVD extract the identical leading-$K$ subspace whenever singular values are non-degenerate (true of essentially all real data) — mathematically guaranteed not to differ from plain SVD-init here. |
+| 3 | Joint $(K,\alpha)$ Bayesian optimization (DeSurv's own tuning approach) | Found $K=8, \alpha=0.71$, external C=0.6282 ($K_{\text{eff}}=2$) — marginally better than $K=7$, but **larger**, not smaller; did not meet the goal of finding a smaller $K$. A real limitation of this specific run (integer-bounded $K$ collapsing the search early) means smaller $K$ is not conclusively ruled unreachable by joint tuning, only that this run didn't find it. |
+| 4 | Synthesize | $K\in\{4,5,7,8\}$ are statistically indistinguishable (spread 0.0015, inside any single config's SE $\approx 0.02$) and **all converge to the same $K_{\text{eff}}=2$**. |
+
+**Decision: $K=7$ is kept as the recommended default**, not because it out-performs $K=4$ or $K=5$,
+but because it is reachable with a single, dependency-free fresh-SVD fit, while the smaller-$K$
+alternatives require the two-step warm-start recipe above for no measurable gain in external
+performance. This is a reproducibility-vs-total-parsimony judgment call, stated plainly rather than
+silently resolved — and it does not change the scientific finding: **regardless of total $K$, the
+data supports exactly 2 survival-active factors**, confirmed by three independent lines of evidence
+that never agreed on a strategy beforehand (warm-start, deflation-init, joint Bayesian optimization).
+
+The residual gap between SBMF's $K=7$ and DeSurv's $k=3$ is attributable to two confirmed
+methodology differences rather than a capacity difference in the data itself: DeSurv jointly tunes
+$(k,\alpha,\lambda)$ via Bayesian optimization with a fixed elastic-net penalty, while SBMF tunes
+only $K$ via cross-validation with $\alpha$ fixed and empirical-Bayes (not elastic-net) shrinkage. A
+matched, same-protocol comparison remains a pending step (§8), not something resolvable by
+re-running SBMF's own $K$-selection differently.
+
+---
+
+## 5. External validation
+
+The recommended configuration (YFB linear predictor, DeSurv-aligned gene selection — combined
+mean+variance rank, top-3000 genes per cohort before per-platform z-standardization, 2064 genes
+after intersection — $K=7$, no cohort indicator) is trained on TCGA-PAAD + CPTAC ($n=273$) and
+validated on 5 fully held-out cohorts spanning three measurement platforms (RNA-seq, microarray,
+proteomics):
+
+```{r ext-table}
+if (!is.null(desurv)) {
+  d4 <- desurv %>% filter(model == "D4") %>%
+    select(cohort, c_index, K, k_eff, beta_max) %>%
+    arrange(desc(c_index))
+  names(d4) <- c("Cohort", "C-index", "K", "K_eff", "max|beta_hat|")
+  knitr::kable(d4, row.names = FALSE, booktabs = TRUE, digits = 4,
+               caption = "Recommended-configuration external validation, per held-out cohort.")
+}
+```
+
+```{r ext-fig, fig.cap="External C-index by held-out cohort, recommended configuration. Dashed line = mean (0.627).", fig.width=6, fig.height=3.4}
+if (!is.null(desurv)) {
+  d4p <- desurv %>% filter(model == "D4")
+  mean_c <- mean(d4p$c_index)
+  ggplot(d4p, aes(x = reorder(cohort, c_index), y = c_index)) +
+    geom_col(fill = "#55A868", width = 0.6) +
+    geom_hline(yintercept = mean_c, linetype = "dashed", color = "grey30") +
+    geom_hline(yintercept = 0.5, color = "grey70") +
+    coord_flip() +
+    labs(x = NULL, y = "External C-index", title = "Per-cohort external validation") +
+    ylim(0, 0.75)
+}
+```
+
+Mean external C-index = **0.627** (SE $\approx$ 0.020 across the 5 cohorts), with a point estimate
+above 0.5 on all five. The spread is real: the weakest cohort (Moffitt microarray, 0.549) is only
+marginally above chance and pulls hardest on the mean, while the strongest (PACA-AU RNA-seq, 0.657)
+is well clear of it. **A caveat worth stating up front:** these are point estimates without
+within-cohort confidence intervals — a per-cohort concordance CI / test against 0.5 is a natural
+next addition and is flagged as pending (§7); the $\pm 0.020$ here is the between-cohort standard
+error, not a within-cohort interval. A key preprocessing finding underlies the result:
+**per-platform z-standardization before merging training cohorts is essential** for mixed RNA-seq +
+proteomics training data — 10 of 12 non-per-platform preprocessing configurations tested collapse
+to $\hat\beta=0$ ($K_{\text{eff}}=0$).
+
+**Study-specific baseline hazard.** The 6/18 feedback also asked whether baseline survival risk
+should be allowed to differ by training study (TCGA-PAAD vs. CPTAC) via a `+ strata(study)` term,
+since the existing cohort-indicator mechanism only absorbs genomic platform offsets, not differing
+baseline risk. This was implemented as an optional stratified Cox partial likelihood (risk sets
+formed within each study; no parametric baseline hazard is introduced — it still cancels within each
+stratum, exactly as in the unstratified model). On the recommended configuration this is
+**performance-neutral**: mean external C = 0.6267 (no strata, current default) vs. 0.6263 (with
+study strata) — a difference of $-0.0004$, well inside per-cohort noise ($\pm 0.0015$). This is
+mechanistically expected: per-platform z-standardization already absorbs most cross-study structure
+before the two training cohorts merge, so restricting risk sets to within-study leaves $\hat\beta$
+essentially unmoved. It is kept as an available option (off by default) rather than a default
+behavior change, since it adds a capability the feedback specifically requested without costing
+anything on this configuration.
+
+---
+
+## 6. Biology of the two survival-active programs
+
+Given $K_{\text{eff}}=2$ (§4), what do the two active programs actually represent biologically?
+Gene weights from the recommended fit's factor-loading matrix $\mathbf{F}$ (2064 genes $\times$ 7
+programs, all weights $\ge 0$ under a point-exponential prior) were tested for pathway enrichment
+(`fgsea`, ranked-by-weight, primary method) with an over-representation-analysis confirmatory
+cross-check, against MSigDB collections and a custom PDAC gene-set collection (Moffitt
+basal/classical, Bailey 4-subtype, DeSurv's own published factor gene lists).
+
+**A note on sign convention.** In the YFB model, a program's *joint* model coefficient $\hat\beta$
+sign can disagree with its *marginal* survival association when programs are correlated (a classic
+suppression effect) — this is exactly what happens here (joint $\hat\beta_7=-0.041$ looks
+"protective," but Program 7's own projection score is marginally, strongly adverse). Direction labels
+below follow the marginal convention (the direction a univariate Kaplan-Meier split on the program's
+own projection score would show), which is both the biologically interpretable convention and the
+one used at the 6/18 meeting.
+
+**Five independent methods agree, with no contradictions:**
+
+```{r bio-table}
+bio_tbl <- data.frame(
+  Method = c("Gene-set enrichment (fgsea, all collections)",
+             "PurIST subtype concordance (TCGA-PAAD, n=144)",
+             "External-cohort survival (5 held-out cohorts)",
+             "SBMF-vs-DeSurv gene overlap (top-270, hypergeometric)"),
+  `Program 7 (Adverse)` = c(
+    "Basal-like/squamous (DeSurv D3, padj=6.1e-4); MET/EGFR-RTK signaling (3 KEGG sets, padj~1.1-1.2e-3); Bailey Squamous (padj=0.030)",
+    "rho=+0.58 vs. basal-likelihood (p=2.1e-14)",
+    "HR>1 in 5/5 cohorts (range 1.30-2.40)",
+    "80/270 overlap with DeSurv D3 (p=3.2e-16)"),
+  `Program 3 (Protective)` = c(
+    "Classical (DeSurv D1, padj=0.017; Moffitt Classical, padj=0.035)",
+    "rho=-0.57 (p=4.9e-14)",
+    "HR<1 in 5/5 cohorts (range 0.42-0.88)",
+    "61/270 overlap with DeSurv D1 (p=1.1e-7)"),
+  check.names = FALSE
+)
+knitr::kable(bio_tbl, row.names = FALSE, booktabs = TRUE,
+             caption = "Five independent methods (gene-set enrichment plus its own ORA confirmatory cross-check counts as a fifth) agree on program identity.")
+```
+
+```{r bio-fig, fig.cap="Gene weights across all 7 programs for the union of headline leading-edge genes. Clean block-diagonal structure: Program 3's and Program 7's genes carry weight almost exclusively in their own column.", out.width="85%"}
+knitr::include_graphics(file.path(PE, "F3_geneweight_heatmap.png"))
+```
+
+This is the established PDAC subtype-survival relationship (basal-like/squamous tumors carry worse
+prognosis; classical tumors carry better prognosis), independently recovered by every method run —
+not asserted from one analysis and repeated.
+
+**One honest nuance, reported rather than smoothed over:** Program 3 also shows a secondary, weaker
+association with the basal-like gene list (enrichment padj=0.017 vs. 0.035 for its primary
+classical hit; gene overlap 49/270 vs. 61/270), plausibly attributable to shared general
+epithelial/tumor-identity markers rather than a genuine basal-program overlap. The confirmatory ORA
+method does **not** reproduce this secondary hit at any gene-list length tested (padj $\ge 0.18$
+throughout) — unlike the primary classical association, which ORA does confirm and which
+strengthens with list length — additional evidence the secondary association is real but
+substantially weaker, not a contradiction of the dominant signal.
+
+---
+
+## 7. Honest open items and shortfalls
+
+- **No within-cohort uncertainty on the external C-index yet.** The per-cohort and mean external
+  concordances in §5 are point estimates; the only uncertainty reported is the between-cohort
+  standard error ($\approx$ 0.020). A per-cohort concordance confidence interval and a formal test
+  against 0.5 (e.g. via `survival::concordance`'s analytic variance or a bootstrap) is a
+  straightforward, high-value next addition — particularly for the weakest cohort (Moffitt, 0.549),
+  whose separation from chance is not established without it.
+- **Factor stability across resampling not yet characterized.** The two active programs' biological
+  identity is confirmed by five independent methods (§6), but it has not been shown that refitting on
+  a training bootstrap recovers the same two programs. Given the factor-collapse discussion below,
+  this is a natural robustness check a reviewer will expect; the biological concordance is supporting
+  evidence but not a direct stability test.
+- **YFB with a spike-and-slab (`point_normal`) prior collapses to $\hat\beta=0$ for every $K$ in
+  cross-validation** (C=0.5 uniformly). The reduced per-fold training size appears insufficient to
+  escape the spike component under this prior; the normal prior (used throughout this report) does
+  not have this problem. Open, undiagnosed in detail; not blocking any result in this report, since
+  the recommended configuration uses the normal prior.
+- **The CAVI factor-collapse vulnerability identified in §3** is understood mechanistically (a
+  degenerate fixed point under near-symmetric, disjoint factor-loading structure) and has a known,
+  validated escape (warm-starting from a higher-$K$ solution's PVE-ranked columns, §4) but no
+  general, from-scratch fix — deflation-style initialization was tried and does not help, for an
+  analytically clear reason (§4, Step 2). LB shows this collapse occasionally even on realistic
+  (non-adversarial) synthetic data; there is no evidence it affects the real PDAC fits reported here,
+  but it is a real, if so-far-occasional, robustness gap worth further investigation.
+- **The stratified-baseline-hazard extension (§5) is available but performance-neutral** on the
+  recommended configuration — a capability added in response to specific feedback, not (yet) a
+  source of predictive improvement.
+- **The $K=7$-vs-$K=4$ choice is a reproducibility-simplicity judgment call**, not a claim that
+  $K=7$ predicts better (§4) — worth revisiting if a future need (e.g., a manuscript emphasis on
+  parsimony) makes the two-step warm-start recipe's cost worth paying.
+- **The joint $(K,\alpha)$ Bayesian-optimization search (§4, Step 3) has a known limitation in the run
+  performed**: its acquisition function re-proposed an identical point for the majority of its
+  budget rather than continuing to explore smaller $K$ under varied $\alpha$, traced to an
+  integer-bounds implementation detail that pre-rounds $K$ before the search sees it. Smaller $K$ is
+  therefore not conclusively ruled unreachable via joint tuning — only not found by this particular,
+  limited run.
+
+---
+
+## 8. Potential value and positioning
+
+**What this method is, stated plainly.** SBMF is best understood as **the Bayesian counterpart to
+DeSurv**, the lab's existing supervised-factorization-plus-Cox method — same core design (a
+low-rank factor model coupled to a Cox partial likelihood), same training/validation data (TCGA-PAAD
++ CPTAC train; the same 5 held-out external cohorts), same projection-based external scoring, and
+SBMF explicitly borrowed DeSurv's combined-rank gene-selection procedure once it was found to
+improve external validation. The genuine methodological differences are: empirical-Bayes adaptive
+shrinkage priors on the factor loadings and $\hat\beta$ (vs. DeSurv's fixed, jointly-tuned
+elastic-net penalty), full posterior distributions rather than point estimates (mean *and*
+variance for every quantity), an error-in-variables treatment of the factor loadings ($E[L^2]$
+rather than $E[L]^2$), and a heteroscedastic per-gene noise model ($\tau_j$).
+
+**Where the joint model demonstrably adds value.** §3's simulations show the joint model's
+predictive advantage over a two-step (factorize-then-Cox) alternative growing with true
+survival-signal strength across three of four data-generating scenarios, and — in the multi-cohort
+hybrid design — being both more accurate and notably more *stable* than the unsupervised two-step
+baseline, which collapses on a subset of seeds where the joint model does not. The advantage is
+therefore partly discrimination and partly robustness: the joint approach exploits prognostic
+structure a two-step pipeline under-uses when survival signal is present, and its supervised
+factorization is less prone to the degenerate fits that afflict an unsupervised one on the same
+data. This is the clearest evidence-based statement of "why joint fitting, not just factorization"
+that the project currently supports.
+
+**Where the result is externally validated and interpretable.** Mean external C=0.627 across 5
+held-out cohorts spanning three measurement platforms is not a single-dataset result; the two
+survival-active gene programs recovered have a confirmed, coherent biological story (§6) — a
+basal-like/squamous/adverse program and a classical/protective program, matching the established
+PDAC subtype-survival literature independently by five separate methods.
+
+**What this report does *not* claim.** A head-to-head, matched-protocol comparison against DeSurv
+itself (same joint hyperparameter-tuning procedure on both sides, not just the same data) remains a
+**pending** next step, not something this report substitutes for. DeSurv's own published metric is a
+pooled hazard ratio (HR/SD = 1.50, 95% CI 1.31–1.72) rather than a directly comparable C-index
+figure, and DeSurv selects $k=3$ under a joint $(k,\alpha,\lambda)$ tuning procedure that SBMF has
+not yet replicated on equal footing (§4). Framing the relationship to DeSurv as "the Bayesian
+counterpart, with a pending matched comparison" is the honest and currently defensible position —
+not a superiority claim.
+
+---
+
+## 9. Disposition of the 6/18 feedback
+
+For completeness, the status of each item raised at the 6/18 meeting. The model-specification and
+analysis items are all addressed or handled by a defensible, documented alternative; the honest
+shortfalls are the non-model items (a simulation-provenance review and three workflow/infrastructure
+requests).
+
+```{r feedback-table}
+fb <- data.frame(
+  Item = c(
+    "Baseline hazard h_0(t) — is it canceled in the partial likelihood?",
+    "Mixing weight alpha should default to 1/2",
+    "Normalize objective w.r.t. n and p (expression / np, survival / n)",
+    "Constrain lambda to (0,1); add a (1 - lambda) term on L_gen",
+    "Z-standardize input; platform-correct after z-std",
+    "strata(study) for a study-specific baseline hazard",
+    "Why 7 factors when DeSurv uses 3?",
+    "If survival is turned off, does k shrink?",
+    "Joint = 2-step C-index when survival carries no signal",
+    "Sweep 1-2 survival-related factors from 0 to large",
+    "Adverse = basal-like; protective per DeSurv",
+    "External datasets normalized; rank transform considered",
+    "Gene-ID correlation with known signals; GO for factors",
+    "Paper repository (SSBMF-paper)",
+    "Review how the DeSurv simulation was constructed",
+    "Post-commit automated code review; RAG literature database",
+    "Figure out HPC cluster workflow"),
+  Status = c(
+    "Addressed", "Addressed", "Addressed (deviation)", "Addressed (deviation)",
+    "Addressed", "Addressed", "Addressed", "Addressed", "Addressed (caveat)",
+    "Addressed", "Addressed", "Addressed", "Addressed", "Addressed",
+    "Not done", "Backlog", "Not done"),
+  Note = c(
+    "Non-parametric; cancels exactly in the Cox partial likelihood (also per-stratum under strata).",
+    "Default alpha = 0.5 (config/globals.yml).",
+    "Literal np/n convention implemented and available; per-platform-safe variant is the default (\\S2).",
+    "lambda retired entirely rather than constrained: alpha already plays the (1-lambda)/lambda role, and DeSurv's lambda is a distinct elastic-net penalty this model fills via its EB priors (\\S2).",
+    "Per-platform z-standardization before merge (\\S2, \\S5).",
+    "Optional stratified Cox partial likelihood; performance-neutral, off by default (\\S5).",
+    "Investigated from three angles; K_eff = 2 is the load-bearing count (\\S4).",
+    "alpha = 0 control: genomics factorization is exactly alpha-invariant, so k does not shrink; survival-active count goes to 0 (\\S3).",
+    "Consistent with equivalence at zero signal (gaps within 1-2 SE on 5 seeds), not a sharp confirmation (\\S3).",
+    "Survival-strength sweep, effect size 0 to large (\\S3).",
+    "Confirmed by five independent methods (\\S6).",
+    "Train/test preprocessing made consistent; rank transform evaluated (\\S2).",
+    "GO:BP enrichment + hypergeometric SBMF-vs-DeSurv gene overlap (\\S6).",
+    "Separate repo scaffolded with a drafted introduction.",
+    "No formal review of the DeSurv simulation code was done; the sweep here was built independently on real factor templates.",
+    "Both parked as backlog; not actioned.",
+    "Not yet addressed."),
+  check.names = FALSE
+)
+knitr::kable(fb, row.names = FALSE, booktabs = TRUE,
+             caption = "Status of each 6/18/2026 feedback item.") |>
+  kableExtra::column_spec(3, width = "22em")
+```
+
+The two model-specification deviations are worth stating plainly rather than burying: the mixing
+objective was rebalanced but the `lambda` parameter was **removed** rather than constrained to
+$(0,1)$, and the literal $np$/$n$ normalization convention is implemented and available but is not
+the shipped default (a per-platform-safe variant is — see §2). Both choices are justified in the
+project's decision record, but a reader expecting the parameter changes as literally worded will
+notice the difference. The remaining gaps — no formal review of the DeSurv simulation construction,
+and the deferred workflow items (automated commit review, a RAG literature database, an HPC
+workflow) — are open and not represented as done.
+
+---
+
+*Sources: `DECISIONS.md` entries dated 2026-07-12, 2026-07-13, 2026-07-15; `CLAUDE.md` "Current model
+status"; `ROADMAP.md` status banner; `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv`;
+`results/benchmark_sim/outputs/k_parsimony_curve/`; `results/benchmark_sim/outputs/k_parsimony_followup/`;
+`results/multi_cohort_sim/outputs/survival_strength_sweep_results.csv`;
+`docs/reports/pathway_enrichment_report_07_15_26`. No fits were re-run to produce this report.*

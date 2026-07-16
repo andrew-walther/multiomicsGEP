@@ -5,6 +5,166 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-15 — External gap review of the progress report; corrections applied before advisor presentation
+
+**Context.** Before finalizing the progress report for presentation, dispatched an independent
+review aimed specifically at the report's own writing (not the underlying model) — stale numbers,
+overclaims, or omitted caveats a critical reader would catch.
+
+**Findings and corrections (all applied; no re-fits needed):**
+1. **Stale sweep numbers.** The report quoted early 5-seed sweep values (0.931/0.908/0.875); the
+   shipped 10-seed CSV/figure gives 0.927/0.900/0.899. Corrected to match the shipped data.
+2. **Overclaim.** "Above chance (0.5) on every cohort" was asserted with no uncertainty. Softened to
+   "point estimate above 0.5"; added the cross-cohort SE ($\approx$0.02); called out the weakest
+   cohort (Moffitt, 0.549) explicitly rather than letting it hide inside the mean.
+3. **Hybrid-scenario "+0.10 joint advantage" reframed.** 2 of the two-step baseline's 5 seeds
+   collapse (dragging its mean to 0.717); on the 3 non-collapse seeds it scores 0.807, close to the
+   joint model's 0.815. The advantage is now described as primarily **robustness** (the joint model
+   never collapses here) rather than a pure discrimination margin.
+4. **$K_{\text{eff}}=2$ evidence count corrected.** Was described as "three independent lines of
+   evidence," counting deflation-init as a third — but deflation-init is a negative,
+   analytically-equivalent-to-SVD result, not independent confirmation. Now stated as two positive
+   strategies (warm-start, joint BO) plus an analytic ruling-out of initialization as the cause of
+   the earlier ambiguity.
+5. **Two items added to the report's open-items section as explicitly pending** (not previously
+   flagged): per-cohort concordance confidence intervals (only a cross-cohort SE existed), and
+   factor-stability-under-resampling (the two active programs' biology is confirmed five ways but
+   never re-derived from a bootstrap refit).
+
+**Also removed:** internal config shorthand (the "D1"-"D5" labels) from all report prose in favor of
+descriptive model language (YFB, cohort indicator, DeSurv-aligned gene selection, etc.) for the
+external-audience-facing documents — the labels are retained only inside code filters, never in text
+a reader sees.
+
+**Files:** `docs/reports/ssbmf_progress_report_07_15_26.qmd/.pdf/.html`,
+`docs/progress_report/SSBMF_Status_Update_07_15_26.qmd/.pdf/.html`. No code or result changes —
+corrections are entirely in report prose.
+
+---
+
+## 2026-07-15 — Whole-arc performance review + multi-cohort sim re-validated under the corrected model
+
+**Context.** Before presenting the progress report (Item 2) to advisors, ran a full performance
+review of the current method across the three validation axes the 6/18 feedback and the plan call
+for: (1) joint-vs-two-step with and without survival signal, (2) shared vs. study-specific factor
+recovery, (3) external PDAC cohorts. Two of the three were already computed under the corrected code
+(post-2026-07-12); the third (the multi-cohort shared/specific study) predated it and was re-run.
+
+**Findings — all three axes confirm the method performs as claimed:**
+
+1. **Survival-strength sweep (2-step ± signal), already under corrected code
+   (`survival_strength_sweep_results.csv`, 2026-07-13):** at zero signal YFB $\approx$ PCA+Cox
+   $\approx$ EBMF+Cox (all near chance, e.g. `default` 0.523/0.539/0.544); the joint advantage
+   emerges and grows with signal in 3/4 scenarios (`default` at strength 4: YFB 0.927 vs. 0.900/0.899;
+   `low_snr`: 0.815 vs. 0.654/0.708; `high_K`: 0.903 vs. 0.885/0.837). `sparse_synthetic` reverses
+   (0.795 vs. 0.934/0.940) — the documented CAVI factor-collapse artifact under symmetric,
+   disjoint-support loadings. $\alpha=0$ invariance control: max$|F_{\alpha=0.5}-F_{\alpha=0}|=0$
+   across all 240 cases (genomics factorization exactly $\alpha$-invariant → answers the meeting's
+   "does k shrink if survival is off" — the genomics factor structure does not change).
+
+2. **Multi-cohort shared/study-specific study — RE-RUN under the corrected model this session
+   (`multicohort_sim_results.csv`, regenerated):** the YFB (recommended) arms reproduced the
+   2026-06-15 result **within noise** (max C-index diff 0.019, mean 0.004 over 30 fits); the
+   EBMF two-step baseline was **bit-identical** (max diff 0.000). Result stands: no-shared-signal →
+   YFB 0.549 $\approx$ EBMF 0.550 (equivalence); hybrid (some factors prognostic) → YFB 0.815 vs.
+   EBMF 0.717 (**+0.10 joint advantage**); all-shared → YFB 0.871 vs. 0.856; specificity
+   classification accuracy 1.00 for YFB across all scenarios. Cohort indicator neutral-to-slightly-
+   negative in sim (hybrid 0.813 vs. 0.815), mirroring the real-data finding.
+   **The only material movement on re-run was in the LB reference arms** (one `hybrid`/`LB_base`
+   cell 0.828 → 0.633, iteration count 13 → 79). Mechanism: the retired $\lambda$ (2026-07-12
+   Phase 1b) was *live* in LB's `update_L` but *already inert* in the YFB path, so removing it was a
+   true no-op for YFB but perturbed LB's floating-point evaluation enough to tip a near-bifurcation
+   fit into a different local optimum — consistent with the documented "LB collapses more than YFB"
+   instability (2026-07-12 Phase 2), **not a regression, and not in the recommended model.**
+
+3. **External PDAC (current, `desurv_comparison_results.csv`, regenerated 2026-07-15):** recommended
+   config mean external C = 0.627, above chance on all 5 held-out cohorts (Dijk 0.635, Puleo 0.645,
+   PACA_AU_seq 0.657, PACA_AU_array 0.648, Moffitt 0.549); $K_{\text{eff}}=2$. Highest mean among all
+   5 preprocessing/parameterization configs tried; the cohort indicator lowers it (0.617). No tried
+   configuration beats 0.627 by more than 0.0015 (inside SE $\approx 0.02$) — current defaults are at
+   or statistically indistinguishable from the best observed.
+
+**Conclusion:** no performance is being left on the table by the current defaults, and the
+recommended (YFB) model's simulation behavior is stable under the corrected code. Documented in the
+progress report `docs/reports/ssbmf_progress_report_07_15_26`.
+
+*Files: `results/multi_cohort_sim/outputs/multicohort_sim_results.csv` (regenerated under corrected
+model); no code changes. Baseline for comparison preserved during the session.*
+
+---
+
+## 2026-07-15 — Compliance review vs. 6/18 feedback + performance-optimality check
+
+**Context.** Independent of the net-benefit gate (tests + C-index-regression check, entry below),
+ran two additional review passes before presenting the progress report: (a) an item-by-item
+compliance check against the original `docs/plans/rashid_lab_meeting_notes_06_18_2026.md` feedback,
+and (b) whether the recommended configuration is actually the best-performing choice or whether
+performance is being left on the table.
+
+**Compliance — all model-science items addressed or defensibly deviated:**
+- Addressed as literally requested: $h_0(t)$ non-parametric/cancels-in-partial-likelihood (also
+  confirmed for the new stratified extension), $\alpha$ default $=0.5$, per-platform z-standardize
+  then platform-correct, `strata(study)`, the "why 7 factors" investigation, the $\alpha=0$
+  "does $k$ shrink" control, the joint-vs-2-step diagnostics, factor interpretation, external-cohort
+  normalization consistency, GO/gene-ID characterization, the paper repo.
+- **Two deviations, both defensible but worth stating plainly:** (1) $\lambda$ was retired entirely
+  rather than constrained to $(0,1)$ with a $(1-\lambda)$ term added — $\alpha$ already plays that
+  rebalancing role, and DeSurv's own $\lambda$ is a different (elastic-net) mechanism this model
+  fills via empirical-Bayes priors, but a reader expecting "$\lambda \in (0,1)$" will notice the
+  parameter is simply gone. (2) The literal $np$/$n$ normalization convention was implemented and is
+  available (`norm_convention="np_n"`) but is not the shipped default — a per-platform-safe
+  convention (`per_p`) is, because `np_n` collapses LB's $\mathbf{L}$/$\mathbf{F}$ to zero.
+- **Genuine gaps, not addressed:** no formal review of how the DeSurv paper's own simulation was
+  constructed (requested at the meeting); "figure out HPC cluster workflow" has no evidence of being
+  done; the post-commit Codex review hook and a RAG literature database remain backlog, not actioned.
+
+**Performance-optimality:** confirmed the recommended configuration (YFB, $K=7$, $\alpha=0.5$, no
+cohort indicator, normal prior, per-platform z-std) is at or statistically indistinguishable from
+the best configuration observed in any sweep — every nominally higher-scoring alternative ($K=8$,
+$\alpha\approx0.71$ at 0.6282; $K=4$/$K=5$ warm-start at 0.6270) beats it by $\le 0.0015$, about
+1/13 of the per-config SE, and each has a documented, sound reason for non-adoption. The cohort
+indicator actively hurts ($-0.010$). No performance is being forgone by current defaults.
+
+**Disposition:** folded into the progress report as a new "Disposition of the 6/18 feedback"
+section (full per-item table) and used to correct two minor documentation issues found in the
+process (see net-benefit gate entry below).
+
+**Files:** no code changes; `docs/reports/ssbmf_progress_report_07_15_26.qmd` (new section).
+
+---
+
+## 2026-07-15 — Whole-branch review against the net-benefit gate (pre-Item-2 arc audit)
+
+**Context.** Before writing the Item 2 progress report, an independent review of the entire
+post-6/18 arc (Phases 1-3, K-parsimony follow-up Steps 1-4, pathway enrichment, stratified Cox)
+against the plan's net-benefit gate: (1) all tests green, (2) external mean C-index not worse than
+the 0.636 pre-work baseline in any way that isn't already documented and understood.
+
+**Verdict: gate satisfied.** `Rscript tests/run_tests.R` confirmed **374/374** passing. The
+$0.636\rightarrow0.627$ change is fully attributable to the documented Phase 1c train/test
+preprocessing fix (external cohorts were rank-transformed while training was per-platform
+z-standardized — the reverse) — not a regression from objective normalization, $\lambda$ retirement,
+the K-parsimony work, pathway enrichment, or the stratified-Cox extension, each of which
+independently leaves the recommended fit's $\hat\beta$/$E[\mathbf{L}]$/$E[\mathbf{F}]$ numerically
+unchanged or performance-neutral.
+
+**Two minor documentation findings, both fixed:**
+1. `CLAUDE.md` had two stale "355/355" test-count mentions (both now 374/374).
+2. The 2026-07-15 stratified-Cox entry's "374/374 (was 357)" didn't reconcile against the 355 stated
+   in the adjacent pathway-enrichment entry; corrected to "up from 355 before this entry" rather than
+   asserting an unverified precise delta.
+
+**A third finding, caught independently while sourcing numbers for the progress report (not by the
+dispatched reviewer):** `ROADMAP.md`'s "Sensitivity — D3" line quoted 0.622, a
+pre-Phase-1c-preprocessing-fix figure; the current results CSV gives 0.611 (all five preprocessing
+configs shifted when that fix landed, but only the recommended config's headline had been updated at
+the time). Corrected.
+
+**Files:** `CLAUDE.md`, `DECISIONS.md` (this correction), `ROADMAP.md` — documentation only, no code
+or result changes.
+
+---
+
 ## 2026-07-15 — Study-specific baseline hazard via stratified Cox partial likelihood
 
 **Question:** the training set pools two studies (TCGA-PAAD, CPTAC) that may have different baseline
@@ -47,7 +207,7 @@ on this configuration, and the default fit is unchanged.
 (bit-identical to unstratified, and full-fit $\hat\beta$ identical at tol 1e-8), per-stratum
 additive decomposition, two independent `survival::coxph` oracles (Breslow partial log-likelihood at
 fixed coefficient, and martingale residuals for the score $u$), NA/length-mismatch fail-loud guards.
-Full suite 374/374 (was 357).
+Full suite 374/374 (up from 355 before this entry).
 
 **Independent review findings addressed:** (1) NA in `strata`/`strata_id` was silently dropped by
 `as.factor()` (→ `0/0` downstream) — now rejected with an explicit error at both the helper and

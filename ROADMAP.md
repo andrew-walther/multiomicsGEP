@@ -43,9 +43,11 @@
 > C 0.6267 → 0.6263 with study strata) so it is kept as an option, not enabled by default
 > (DECISIONS.md 2026-07-15).
 >
-> **Sensitivity — D3:** LB (η = Lβ), same DeSurv gene set, K=7, mean external C=0.622.
-> Reproduces the same 2-program adverse/protective structure, confirming the finding is not
-> specific to the YFB parameterization.
+> **Sensitivity — D3:** LB (η = Lβ), same DeSurv gene set, K=7, mean external C=0.611 (corrected
+> 2026-07-15 from a stale pre-Phase-1c-preprocessing-fix figure of 0.622; current value from
+> `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv`). Reproduces the
+> same 2-program adverse/protective structure, confirming the finding is not specific to the YFB
+> parameterization.
 >
 > **Key preprocessing finding:** Per-platform z-standardization applied before merging is
 > required for mixed RNA-seq + proteomics training. 10 of 12 non-per-platform preprocessing
@@ -75,14 +77,16 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
-- [ ] **TO-DO (flagged by user, 2026-07-13): executive summary / progress report for research team**
-  Superseded in detail by `docs/plans/ssbmf_progress_consolidation_and_remaining_work_07_14_2026.md`
-  (Part B, Item 2) — see that document for the current, up-to-date remaining-work list. Pathway
-  enrichment (Item 1) is now complete (2026-07-15, DECISIONS.md); this executive summary should
-  incorporate its result. Audience and tone should follow the existing documentation convention
-  (biostatistician collaborators reading cold, not an implementation log — see `CLAUDE.md`'s
-  "Documentation audience" note). Do not start this until the user confirms the remaining phases
-  are far enough along.
+- [x] **Executive summary / progress report for research team** *(Complete, 2026-07-15, branch
+  `item2-executive-summary`)* Two deliverables: a long-form progress report
+  (`docs/reports/ssbmf_progress_report_07_15_26.{qmd,pdf,html}`) and a 2-page meeting-ready
+  executive summary (`docs/progress_report/SSBMF_Status_Update_07_15_26.{qmd,pdf,html}`), both
+  incorporating Item 1's pathway-enrichment result. Preceded by a whole-branch net-benefit-gate
+  review, a compliance check against every 6/18 feedback item, a performance-optimality check, a
+  three-axis performance re-validation (joint-vs-2-step with/without signal, shared-vs-specific
+  factors, external PDAC cohorts), and an external gap review of the report drafts themselves —
+  all five passes' findings are recorded in DECISIONS.md and folded into the reports. See
+  DECISIONS.md 2026-07-15 (five entries, newest first).
 
 - [ ] **TO-DO (flagged by user, 2026-07-14): comprehensive HTML project document ("visual executive
   summary") — do not start until the entire consolidated plan is complete**
@@ -92,9 +96,10 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   user's framing is "a demo of the method as a visual executive summary," meant to get the user,
   collaborators, and the research team to a common understanding of what's been accomplished and
   what shortfalls/open items remain. Related to, but distinct from, the text-based executive summary
-  above (that one's content is a natural input to this one). **Explicitly gated: only start once
-  every other item in the consolidated plan doc above is complete** — this is the final deliverable
-  of the whole 6/18-meeting-notes-plus-followups arc, not something to build incrementally alongside
+  above (that one's content is a natural input to this one; now complete). **Explicitly gated: only
+  start once every other item in the consolidated plan doc above is complete** — this is the final
+  deliverable of the whole 6/18-meeting-notes-plus-followups arc, not something to build incrementally
+  alongside
   it.
 
 - [x] **Phase 3 (K-parsimony curve on real data)** *(Complete, 2026-07-13, branch `phase3-k-parsimony`)*
