@@ -109,6 +109,9 @@ calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
   if (length(strata) != n) {
     stop("strata must have the same length as time (", n, ").")
   }
+  # Fail loud: as.factor() drops NA from levels, which would silently exclude
+  # NA-labelled samples from every risk set (leaving u=0,w=0 -> 0/0 downstream).
+  if (anyNA(strata)) stop("strata must not contain NA.")
   strata <- as.factor(strata)
   u <- numeric(n); w <- numeric(n); logPL <- 0
   for (lev in levels(strata)) {
@@ -241,8 +244,16 @@ fit_cox_on_yf <- function(Y, time, status,
   # while beta is shared. Distinct from cohort_id, which absorbs *genomic*
   # platform offsets; the two can be used together. NULL => single pooled risk
   # set (unchanged behaviour). See DECISIONS.md.
-  if (!is.null(strata_id) && length(strata_id) != n) {
-    stop("strata_id must be NULL or have length nrow(Y) (", n, ").")
+  # NOTE: the CV/tuning wrappers (select_alpha_cv, select_K_cv, auto_prune_K) do
+  # NOT thread strata_id per fold — hyperparameter tuning runs unstratified even
+  # if the final fit is stratified. Passing strata_id through them would hand a
+  # full-length vector to a fold-subset fit and trip the length check (a loud
+  # failure, not silent corruption).
+  if (!is.null(strata_id)) {
+    if (length(strata_id) != n)
+      stop("strata_id must be NULL or have length nrow(Y) (", n, ").")
+    if (anyNA(strata_id))
+      stop("strata_id must not contain NA.")
   }
 
   if (!is.numeric(alpha) || length(alpha) != 1 || !is.finite(alpha) ||

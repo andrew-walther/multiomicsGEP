@@ -201,3 +201,81 @@ run_test("StratCox-T9: fit_supervised_mf_modular with 2 strata runs, finite EBet
   assert_length(fit$EBeta, K)
   assert_finite(fit$EBeta)
 })
+
+# =============================================================================
+# Section 8: NA handling (fail-loud)
+#   as.factor() silently drops NA from levels, so an NA-labelled sample would be
+#   excluded from every risk set and keep u=0,w=0 -> 0/0=NaN downstream. Must
+#   error instead of silently corrupting the fit.
+# =============================================================================
+
+run_test("StratCox-T10a: calc_cox_taylor_yf errors on NA in strata", {
+  eta  <- .sc$x * .sc$beta
+  g_na <- .sc$g3; g_na[1] <- NA
+  got  <- tryCatch({ calc_cox_taylor_yf(eta, .sc$time, .sc$status, strata = g_na); FALSE },
+                   error = function(e) TRUE)
+  assert_true(got, msg = "NA strata must error, not silently drop samples")
+})
+
+run_test("StratCox-T10b: calc_cox_taylor errors on NA in strata", {
+  eta  <- .sc$x * .sc$beta
+  g_na <- .sc$g3; g_na[1] <- NA
+  got  <- tryCatch({ calc_cox_taylor(eta, .sc$time, .sc$status, strata = g_na); FALSE },
+                   error = function(e) TRUE)
+  assert_true(got, msg = "NA strata must error, not silently drop samples")
+})
+
+run_test("StratCox-T11a: fit_cox_on_yf errors on NA in strata_id", {
+  n <- 40L; p <- 15L; K <- 2L
+  set.seed(5); Y <- matrix(rnorm(n * p), n, p)
+  time <- rexp(n, 0.1); status <- rbinom(n, 1L, 0.7)
+  g <- rep(c("A", "B"), each = n / 2); g[3] <- NA
+  got <- tryCatch({
+    suppressMessages(fit_cox_on_yf(Y, time, status, K = K, max_iter = 2L,
+                                   verbose = FALSE, strata_id = g)); FALSE
+  }, error = function(e) TRUE)
+  assert_true(got, msg = "NA strata_id must error before fitting")
+})
+
+run_test("StratCox-T11b: fit_supervised_mf_modular errors on NA in strata_id", {
+  n <- 40L; p <- 15L; K <- 2L
+  set.seed(6); Y <- matrix(rnorm(n * p), n, p)
+  time <- rexp(n, 0.1); status <- rbinom(n, 1L, 0.7)
+  g <- rep(c("A", "B"), each = n / 2); g[3] <- NA
+  got <- tryCatch({
+    suppressMessages(fit_supervised_mf_modular(Y, time, status, K = K, max_iter = 2L,
+                                               verbose = FALSE, strata_id = g)); FALSE
+  }, error = function(e) TRUE)
+  assert_true(got, msg = "NA strata_id must error before fitting")
+})
+
+# =============================================================================
+# Section 9: martingale-residual oracle for the stratified score u
+#   The Cox score u_i = delta_i - theta_i*H_i is exactly the martingale residual,
+#   so survival::residuals(type="martingale") is an independent oracle for u
+#   (the coxph cross-checks above validate logPL only).
+# =============================================================================
+
+run_test("StratCox-T12a: calc_cox_taylor_yf u == coxph martingale residuals (stratified)", {
+  eta <- .sc$x * .sc$beta
+  res <- calc_cox_taylor_yf(eta, .sc$time, .sc$status, strata = .sc$g3)
+  df  <- data.frame(time = .sc$time, status = .sc$status, x = .sc$x, g = .sc$g3)
+  fit <- suppressWarnings(
+    coxph(Surv(time, status) ~ x + strata(g), data = df,
+          init = .sc$beta, iter.max = 0, ties = "breslow")
+  )
+  assert_near(max(abs(res$u - residuals(fit, type = "martingale"))), 0, tol = 1e-8,
+              msg = "stratified score u must equal coxph martingale residuals")
+})
+
+run_test("StratCox-T12b: calc_cox_taylor u == coxph martingale residuals (stratified)", {
+  eta <- .sc$x * .sc$beta
+  res <- calc_cox_taylor(eta, .sc$time, .sc$status, strata = .sc$g3)
+  df  <- data.frame(time = .sc$time, status = .sc$status, x = .sc$x, g = .sc$g3)
+  fit <- suppressWarnings(
+    coxph(Surv(time, status) ~ x + strata(g), data = df,
+          init = .sc$beta, iter.max = 0, ties = "breslow")
+  )
+  assert_near(max(abs(res$u - residuals(fit, type = "martingale"))), 0, tol = 1e-8,
+              msg = "stratified score u must equal coxph martingale residuals")
+})
