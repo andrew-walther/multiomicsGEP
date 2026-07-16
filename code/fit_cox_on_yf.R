@@ -70,24 +70,54 @@ suppressPackageStartupMessages(
 #' @param eta    n-vector: current linear predictor
 #' @param time   n-vector: observed survival/censoring times
 #' @param status n-vector: event indicator (1=event, 0=censored)
+#' @param strata NULL (default) for a single pooled risk set, or an n-vector of
+#'               stratum labels (e.g. study/cohort). When supplied, Breslow risk
+#'               sets are formed *within* each stratum — the standard stratified
+#'               Cox partial likelihood. The baseline hazard still cancels
+#'               per-stratum, so no parametric h0 is introduced (Item 3,
+#'               DECISIONS.md). strata=rep(1,n) reduces exactly to strata=NULL.
 #' @return list(u, w, logPL)
 # ------------------------------------------------------------------------------
-calc_cox_taylor_yf <- function(eta, time, status) {
-  n   <- length(time)
-  ord <- order(time)
-  time_s   <- time[ord]
-  status_s <- status[ord]
-  eta_s    <- eta[ord]
-  theta    <- exp(eta_s)
-  risk_sum <- rev(cumsum(rev(theta)))
-  h <- status_s / risk_sum
-  H <- cumsum(h)
-  u_s <- status_s - theta * H
-  w_s <- theta * H
-  w_s[w_s < 1e-6] <- 1e-6
-  u <- numeric(n); w <- numeric(n)
-  u[ord] <- u_s;   w[ord] <- w_s
-  logPL <- sum(status_s * (eta_s - log(pmax(risk_sum, 1e-300))))
+calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
+  # Single-stratum core: one pooled Breslow risk set over the samples passed in.
+  # Byte-identical to the historical (unstratified) body, so the strata=NULL
+  # path below is unchanged.
+  .core <- function(eta, time, status) {
+    n   <- length(time)
+    ord <- order(time)
+    time_s   <- time[ord]
+    status_s <- status[ord]
+    eta_s    <- eta[ord]
+    theta    <- exp(eta_s)
+    risk_sum <- rev(cumsum(rev(theta)))
+    h <- status_s / risk_sum
+    H <- cumsum(h)
+    u_s <- status_s - theta * H
+    w_s <- theta * H
+    w_s[w_s < 1e-6] <- 1e-6
+    u <- numeric(n); w <- numeric(n)
+    u[ord] <- u_s;   w[ord] <- w_s
+    logPL <- sum(status_s * (eta_s - log(pmax(risk_sum, 1e-300))))
+    list(u = u, w = w, logPL = logPL)
+  }
+
+  if (is.null(strata)) return(.core(eta, time, status))
+
+  # Stratified: score/Hessian are per-sample (scatter back by index); the
+  # partial log-likelihood is additive across strata (independent risk sets).
+  n <- length(time)
+  if (length(strata) != n) {
+    stop("strata must have the same length as time (", n, ").")
+  }
+  strata <- as.factor(strata)
+  u <- numeric(n); w <- numeric(n); logPL <- 0
+  for (lev in levels(strata)) {
+    idx <- which(strata == lev)
+    res <- .core(eta[idx], time[idx], status[idx])
+    u[idx] <- res$u
+    w[idx] <- res$w
+    logPL  <- logPL + res$logPL
+  }
   list(u = u, w = w, logPL = logPL)
 }
 
@@ -200,9 +230,20 @@ fit_cox_on_yf <- function(Y, time, status,
                            sign_correction  = TRUE,
                            verbose      = TRUE,
                            cohort_id       = NULL,
-                           sigma_F_cohort  = 1.0) {
+                           sigma_F_cohort  = 1.0,
+                           strata_id       = NULL) {
 
   n <- nrow(Y); p <- ncol(Y)
+
+  # ---- Stratified baseline hazard (Item 3) ---------------------------------
+  # strata_id (e.g. study/cohort) forms Breslow risk sets within each stratum
+  # in the Cox partial likelihood, so baseline survival may differ by stratum
+  # while beta is shared. Distinct from cohort_id, which absorbs *genomic*
+  # platform offsets; the two can be used together. NULL => single pooled risk
+  # set (unchanged behaviour). See DECISIONS.md.
+  if (!is.null(strata_id) && length(strata_id) != n) {
+    stop("strata_id must be NULL or have length nrow(Y) (", n, ").")
+  }
 
   if (!is.numeric(alpha) || length(alpha) != 1 || !is.finite(alpha) ||
       alpha < 0 || alpha > 1) {
@@ -379,7 +420,7 @@ fit_cox_on_yf <- function(Y, time, status,
       EF_norm_b  <- sweep(EF, 2, EF_norms_b, "/")
       ZF_b     <- Y %*% EF_norm_b
       eta_b    <- as.vector(ZF_b %*% EBeta)
-      taylor_b <- calc_cox_taylor_yf(eta_b, time, status)
+      taylor_b <- calc_cox_taylor_yf(eta_b, time, status, strata = strata_id)
       z_b      <- eta_b + taylor_b$u / taylor_b$w
       w_b      <- taylor_b$w
       for (k in seq_len(K)) {
@@ -467,7 +508,7 @@ fit_cox_on_yf <- function(Y, time, status,
     EF_norm   <- sweep(EF_global, 2, EF_norms, "/")    # p x K, unit-norm columns
     ZF        <- Y %*% EF_norm                         # n x K: normalized projection scores
     eta    <- as.vector(ZF %*% EBeta)           # eta = ZF * beta_tilde
-    taylor <- calc_cox_taylor_yf(eta, time, status)
+    taylor <- calc_cox_taylor_yf(eta, time, status, strata = strata_id)
     z      <- eta + taylor$u / taylor$w    # working response z_i
     w      <- taylor$w                     # W_{ii} diagonal Hessian weights
     YtWY_diag <- as.vector(t(Y^2) %*% w)  # p-vector: diag(Y'diag(w)Y)
