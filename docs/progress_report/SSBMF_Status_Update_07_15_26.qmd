@@ -34,10 +34,12 @@ execute:
 
 ```{r setup}
 library(knitr); library(dplyr)
-DS  <- "../../results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv"
-MC  <- "../../results/multi_cohort_sim/outputs/multicohort_sim_results.csv"
+DS   <- "../../results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv"
+MC   <- "../../results/multi_cohort_sim/outputs/multicohort_sim_results.csv"
+CI   <- "../../results/benchmark_sim/outputs/desurv_comparison/external_cindex_ci.csv"
+DIFF <- "../../results/benchmark_sim/outputs/desurv_comparison/external_paired_diff_ci.csv"
 rd  <- function(p) if (file.exists(p)) read.csv(p, stringsAsFactors = FALSE) else NULL
-desurv <- rd(DS); mc <- rd(MC)
+desurv <- rd(DS); mc <- rd(MC); ext_ci <- rd(CI); ext_diff <- rd(DIFF)
 rec_mean <- if (!is.null(desurv)) round(mean(desurv$c_index[desurv$model == "D4"]), 3) else 0.627
 ```
 
@@ -106,19 +108,24 @@ if (!is.null(mc)) {
 **Real data — 5 held-out PDAC cohorts** (RNA-seq, microarray, proteomics):
 
 ```{r ext-table}
-if (!is.null(desurv)) {
-  d4 <- desurv %>% filter(model=="D4") %>% arrange(desc(c_index)) %>%
-    select(cohort, c_index)
-  names(d4) <- c("Held-out cohort", "External C-index")
+if (!is.null(ext_ci)) {
+  d4 <- ext_ci %>% filter(model == "YFB (recommended)") %>% arrange(desc(c_index)) %>%
+    mutate(`95% CI` = sprintf("(%.3f, %.3f)", ci_lo, ci_hi)) %>%
+    select(cohort, c_index, `95% CI`)
+  names(d4)[1:2] <- c("Held-out cohort", "External C-index")
   knitr::kable(d4, row.names = FALSE, booktabs = TRUE, digits = 3,
-               caption = sprintf("External validation, recommended configuration (mean = %.3f).", rec_mean))
+               caption = sprintf("External validation with 95%% bootstrap CI (mean = %.3f).", rec_mean))
 }
 ```
 
-Point estimate above 0.5 on all five cohorts (SE $\approx$ 0.020 across cohorts); the weakest,
-Moffitt microarray at 0.549, is only marginally above chance and a per-cohort confidence interval is
-a pending addition (see open items). Per-platform z-standardization is essential — most
-non-per-platform preprocessing collapses the survival coefficients to zero.
+Four of five cohorts clear chance with their CI lower bound above 0.5; **Moffitt microarray does
+not** (CI 0.467–0.625), confirming quantitatively what was previously only a qualitative flag.
+**Against a two-step (unsupervised EBMF then Cox) baseline on the same patients, a paired bootstrap
+finds the recommended model significantly more concordant when pooled across all 5 cohorts: +0.042
+(95% CI 0.013–0.071).** Individually only the largest cohort (Puleo, $n=288$) reaches significance
+alone; the other four all favor the recommended model but are underpowered on their own. Per-platform
+z-standardization is essential — most non-per-platform preprocessing collapses the survival
+coefficients to zero.
 
 ## Biology of the two active programs
 
@@ -134,12 +141,10 @@ five independent methods: gene-set enrichment, PurIST subtype concordance
   data, and scoring, differentiated by empirical-Bayes shrinkage, posterior uncertainty,
   error-in-variables loadings, and a per-gene noise model. A **matched, same-protocol head-to-head
   with DeSurv is a pending next step**, not a current superiority claim.
-- **Open items worth raising:** (1) no confidence interval / significance test yet on the external
-  C-index — worth adding before the manuscript; (2) factor-stability across seeds not yet
-  characterized; (3) the LB parameterization retains a factor-collapse sensitivity (the recommended
-  YFB model does not); (4) the YFB spike-and-slab prior collapses in cross-validation (normal prior
-  used throughout, and is the right call); (5) requested workflow items (automated commit review,
-  RAG literature database, HPC workflow) and a review of DeSurv's own simulation construction remain
-  on the backlog.
+- **Open items worth raising:** (1) factor-stability across seeds not yet characterized; (2) the LB
+  parameterization retains a factor-collapse sensitivity (the recommended YFB model does not); (3) the
+  YFB spike-and-slab prior collapses in cross-validation (normal prior used throughout, and is the
+  right call); (4) requested workflow items (automated commit review, RAG literature database, HPC
+  workflow) and a review of DeSurv's own simulation construction remain on the backlog.
 
 *Full detail, figures, and per-item disposition of the 6/18 feedback: `docs/reports/ssbmf_progress_report_07_15_26`.*

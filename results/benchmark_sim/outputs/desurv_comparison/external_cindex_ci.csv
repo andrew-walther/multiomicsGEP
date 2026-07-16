@@ -1,0 +1,11 @@
+"cohort","model","c_index","ci_lo","ci_hi","se","n"
+"Dijk","YFB (recommended)",0.6345,0.5547,0.7083,0.0396,90
+"Dijk","EBMF->Cox (2-step)",0.5924,0.5158,0.6711,0.0394,90
+"Moffitt_GEO_array","YFB (recommended)",0.5486,0.4671,0.6253,0.0398,123
+"Moffitt_GEO_array","EBMF->Cox (2-step)",0.5411,0.4616,0.6131,0.0394,123
+"PACA_AU_array","YFB (recommended)",0.6483,0.553,0.7471,0.0497,63
+"PACA_AU_array","EBMF->Cox (2-step)",0.5969,0.4996,0.6953,0.0498,63
+"PACA_AU_seq","YFB (recommended)",0.6573,0.5439,0.7716,0.0577,52
+"PACA_AU_seq","EBMF->Cox (2-step)",0.5733,0.4643,0.6866,0.0563,52
+"Puleo_array","YFB (recommended)",0.6447,0.5986,0.6881,0.023,288
+"Puleo_array","EBMF->Cox (2-step)",0.6021,0.5563,0.6461,0.0228,288
