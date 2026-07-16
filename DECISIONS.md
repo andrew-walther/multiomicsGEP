@@ -5,6 +5,45 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-07-16 — Fixed PDF layout overflow and non-portable HTML in the pathway enrichment report
+
+**Problem, user-reported.** `docs/reports/pathway_enrichment_report_07_15_26.pdf` had a figure (F3,
+the gene-weight heatmap) visibly cut off/bleeding off the bottom of its page, with the preceding
+figure's page numbers also looking clipped; the `.html` version showed broken-image placeholders in
+place of every figure.
+
+**Root causes, confirmed via the LaTeX log (not guessed):**
+1. `LaTeX Warning: Float too large for page` + an `Overfull \vbox (318.7pt too high)`: the F3 chunk
+   had no `out.width` set, so pandoc defaulted to the image's raw pixel width at 300dpi — **10.7in**,
+   far wider than the page. Combined with the image's own tall aspect ratio (h/w=1.665, a ~100-gene
+   heatmap) and an automatic `height=\textheight` cap, the image was forced to consume the *entire*
+   page height with no room left for its caption, which is what produced the visible bleed.
+2. F1 had the same missing-`out.width` defect, less severely (`Overfull \hbox (36pt too wide)`,
+   \~0.5in bleeding into the margin — the likely source of the "page numbers look cut off"
+   observation, since the margin itself was untouched).
+3. **HTML:** images were referenced via relative paths (`../../results/benchmark_sim/outputs/...`)
+   rather than embedded — correct and working when opened from this exact repo layout (verified: all
+   5 paths resolve), but broken in any context that doesn't preserve the full directory structure
+   around the `.html` file (e.g. viewing the file in isolation).
+
+**Fix:** added explicit `out.width` to the F1 (85%) and F3 (45%, given its extreme aspect ratio)
+chunks — both now comfortably fit within the page in both dimensions. Added `\sloppy` to the LaTeX
+preamble to absorb two much smaller (\~0.1in) text-overflow warnings from an unbreakable long file
+path in the reproducibility paragraph. Added `embed-resources: true` to the HTML format so all 5
+figures are inlined as base64 data URIs — confirmed via the rendered HTML (file grew 42KB→2.7MB, zero
+remaining `_files/` references) — making the HTML immune to this class of bug regardless of where
+it's opened from.
+
+**Verification:** re-rendered both formats; the LaTeX log is now clean (zero `Overfull`/`Float too
+large` warnings, down from 4); visually re-inspected the previously-broken pages — F2 and F3 now
+render completely with full captions on their own pages. No change to any analysis, number, or
+figure content — this is a rendering/layout fix only.
+
+**Files:** `docs/reports/pathway_enrichment_report_07_15_26.qmd` (chunk options + YAML),
+`docs/reports/pathway_enrichment_report_07_15_26.{pdf,html}` (re-rendered).
+
+---
+
 ## 2026-07-16 — Bootstrap C-index CIs; refreshed a second stale baseline; paired test vs. the two-step method
 
 **Context.** Item 2's progress report flagged "no uncertainty quantification on the external C-index"

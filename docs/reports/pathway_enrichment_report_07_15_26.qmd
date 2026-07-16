@@ -17,10 +17,12 @@ format:
         \setlength{\droptitle}{-1.8em}
         \pretitle{\begin{center}\large\bfseries}
         \posttitle{\par\end{center}\vspace{-0.7em}}
+        \sloppy
   html:
     toc: true
     code-fold: true
     theme: cosmo
+    embed-resources: true
 fontsize: 9pt
 execute:
   echo: false
@@ -89,7 +91,7 @@ for generic/distinct-but-non-prognostic biology, not nothing); reporting below f
 
 ## 3. Gene-set enrichment (F1, T1, C1)
 
-```{r f1, fig.cap="Top enriched gene sets per active program. Size = gene-set size; color = -log10(padj)."}
+```{r f1, fig.cap="Top enriched gene sets per active program. Size = gene-set size; color = -log10(padj).", out.width="85%"}
 knitr::include_graphics(file.path(OUT, "F1_enrichment_dotplot.png"))
 ```
 
@@ -145,7 +147,7 @@ if (!is.null(c1)) {
 knitr::include_graphics(file.path(OUT, "F2_running_es_program7_DeSurv_D3_BasalLikeTumor.png"))
 ```
 
-```{r f3, fig.cap="Gene weights across all 7 programs for the union of headline leading-edge genes. Clean block-diagonal structure: Program 3's and Program 7's genes are nonzero almost exclusively in their own column."}
+```{r f3, fig.cap="Gene weights across all 7 programs for the union of headline leading-edge genes. Clean block-diagonal structure: Program 3's and Program 7's genes are nonzero almost exclusively in their own column.", out.width="45%"}
 knitr::include_graphics(file.path(OUT, "F3_geneweight_heatmap.png"))
 ```
 
