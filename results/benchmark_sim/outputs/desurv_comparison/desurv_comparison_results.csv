@@ -1,26 +1,26 @@
 "model","label","model_type","cohort","c_index","K","k_eff","beta_max","top_n","sel_method","per_cohort","n_common_genes"
-"D1","LB orig (M4)","LB","Dijk",0.5875,3,2,0.674,2000,"variance",FALSE,1908
-"D2","YFB orig (M5)","YFB","Dijk",0.5971,3,2,0.0739,2000,"variance",FALSE,1908
-"D3","LB DeSurv-aligned","LB","Dijk",0.6156,7,3,0.468,3000,"combined_rank",TRUE,2038
-"D4","YFB DeSurv-aligned","YFB","Dijk",0.6358,7,4,0.0425,3000,"combined_rank",TRUE,2038
-"D5","YFB DeSurv-aligned + cohort","YFB","Dijk",0.6391,8,4,0.0422,3000,"combined_rank",TRUE,2038
-"D1","LB orig (M4)","LB","Moffitt_GEO_array",0.5209,3,2,0.674,2000,"variance",FALSE,1548
-"D2","YFB orig (M5)","YFB","Moffitt_GEO_array",0.5165,3,2,0.0739,2000,"variance",FALSE,1548
-"D3","LB DeSurv-aligned","LB","Moffitt_GEO_array",0.5129,7,3,0.468,3000,"combined_rank",TRUE,2000
-"D4","YFB DeSurv-aligned","YFB","Moffitt_GEO_array",0.5613,7,4,0.0425,3000,"combined_rank",TRUE,2000
-"D5","YFB DeSurv-aligned + cohort","YFB","Moffitt_GEO_array",0.5585,8,4,0.0422,3000,"combined_rank",TRUE,2000
-"D1","LB orig (M4)","LB","PACA_AU_array",0.6535,3,2,0.674,2000,"variance",FALSE,1932
-"D2","YFB orig (M5)","YFB","PACA_AU_array",0.6549,3,2,0.0739,2000,"variance",FALSE,1932
-"D3","LB DeSurv-aligned","LB","PACA_AU_array",0.5962,7,3,0.468,3000,"combined_rank",TRUE,2050
-"D4","YFB DeSurv-aligned","YFB","PACA_AU_array",0.6703,7,4,0.0425,3000,"combined_rank",TRUE,2050
-"D5","YFB DeSurv-aligned + cohort","YFB","PACA_AU_array",0.6549,8,4,0.0422,3000,"combined_rank",TRUE,2050
-"D1","LB orig (M4)","LB","PACA_AU_seq",0.6204,3,2,0.674,2000,"variance",FALSE,1843
-"D2","YFB orig (M5)","YFB","PACA_AU_seq",0.6271,3,2,0.0739,2000,"variance",FALSE,1843
-"D3","LB DeSurv-aligned","LB","PACA_AU_seq",0.6081,7,3,0.468,3000,"combined_rank",TRUE,2040
-"D4","YFB DeSurv-aligned","YFB","PACA_AU_seq",0.6842,7,4,0.0425,3000,"combined_rank",TRUE,2040
-"D5","YFB DeSurv-aligned + cohort","YFB","PACA_AU_seq",0.6708,8,4,0.0422,3000,"combined_rank",TRUE,2040
-"D1","LB orig (M4)","LB","Puleo_array",0.6299,3,2,0.674,2000,"variance",FALSE,1715
-"D2","YFB orig (M5)","YFB","Puleo_array",0.629,3,2,0.0739,2000,"variance",FALSE,1715
-"D3","LB DeSurv-aligned","LB","Puleo_array",0.6225,7,3,0.468,3000,"combined_rank",TRUE,1989
-"D4","YFB DeSurv-aligned","YFB","Puleo_array",0.658,7,4,0.0425,3000,"combined_rank",TRUE,1989
-"D5","YFB DeSurv-aligned + cohort","YFB","Puleo_array",0.6562,8,4,0.0422,3000,"combined_rank",TRUE,1989
+"D1","LB orig (M4)","LB","Dijk",0.5901,3,1,0.4359,2000,"variance",FALSE,1908
+"D2","YFB orig (M5)","YFB","Dijk",0.5893,3,2,0.0635,2000,"variance",FALSE,1908
+"D3","LB DeSurv-aligned","LB","Dijk",0.5965,7,1,0.3898,3000,"combined_rank",TRUE,2038
+"D4","YFB DeSurv-aligned","YFB","Dijk",0.6345,7,2,0.0404,3000,"combined_rank",TRUE,2038
+"D5","YFB DeSurv-aligned + cohort","YFB","Dijk",0.6324,8,2,0.034,3000,"combined_rank",TRUE,2038
+"D1","LB orig (M4)","LB","Moffitt_GEO_array",0.5409,3,1,0.4359,2000,"variance",FALSE,1548
+"D2","YFB orig (M5)","YFB","Moffitt_GEO_array",0.518,3,2,0.0635,2000,"variance",FALSE,1548
+"D3","LB DeSurv-aligned","LB","Moffitt_GEO_array",0.5282,7,1,0.3898,3000,"combined_rank",TRUE,2000
+"D4","YFB DeSurv-aligned","YFB","Moffitt_GEO_array",0.5486,7,2,0.0404,3000,"combined_rank",TRUE,2000
+"D5","YFB DeSurv-aligned + cohort","YFB","Moffitt_GEO_array",0.5388,8,2,0.034,3000,"combined_rank",TRUE,2000
+"D1","LB orig (M4)","LB","PACA_AU_array",0.6623,3,1,0.4359,2000,"variance",FALSE,1932
+"D2","YFB orig (M5)","YFB","PACA_AU_array",0.6535,3,2,0.0635,2000,"variance",FALSE,1932
+"D3","LB DeSurv-aligned","LB","PACA_AU_array",0.6314,7,1,0.3898,3000,"combined_rank",TRUE,2050
+"D4","YFB DeSurv-aligned","YFB","PACA_AU_array",0.6483,7,2,0.0404,3000,"combined_rank",TRUE,2050
+"D5","YFB DeSurv-aligned + cohort","YFB","PACA_AU_array",0.6285,8,2,0.034,3000,"combined_rank",TRUE,2050
+"D1","LB orig (M4)","LB","PACA_AU_seq",0.626,3,1,0.4359,2000,"variance",FALSE,1843
+"D2","YFB orig (M5)","YFB","PACA_AU_seq",0.6237,3,2,0.0635,2000,"variance",FALSE,1843
+"D3","LB DeSurv-aligned","LB","PACA_AU_seq",0.6764,7,1,0.3898,3000,"combined_rank",TRUE,2040
+"D4","YFB DeSurv-aligned","YFB","PACA_AU_seq",0.6573,7,2,0.0404,3000,"combined_rank",TRUE,2040
+"D5","YFB DeSurv-aligned + cohort","YFB","PACA_AU_seq",0.6405,8,2,0.034,3000,"combined_rank",TRUE,2040
+"D1","LB orig (M4)","LB","Puleo_array",0.634,3,1,0.4359,2000,"variance",FALSE,1715
+"D2","YFB orig (M5)","YFB","Puleo_array",0.6253,3,2,0.0635,2000,"variance",FALSE,1715
+"D3","LB DeSurv-aligned","LB","Puleo_array",0.6232,7,1,0.3898,3000,"combined_rank",TRUE,1989
+"D4","YFB DeSurv-aligned","YFB","Puleo_array",0.6447,7,2,0.0404,3000,"combined_rank",TRUE,1989
+"D5","YFB DeSurv-aligned + cohort","YFB","Puleo_array",0.6424,8,2,0.034,3000,"combined_rank",TRUE,1989
