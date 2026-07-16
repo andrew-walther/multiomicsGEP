@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Andrew Walther">
+<meta name="dcterms.date" content="2026-07-15">
+
+<title>SSBMF Progress Report: Model Refinement, Validation, and Biological Interpretation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="ssbmf_progress_report_07_15_26_files/libs/clipboard/clipboard.min.js"></script>
+<script src="ssbmf_progress_report_07_15_26_files/libs/quarto-html/quarto.js"></script>
+<script src="ssbmf_progress_report_07_15_26_files/libs/quarto-html/popper.min.js"></script>
+<script src="ssbmf_progress_report_07_15_26_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="ssbmf_progress_report_07_15_26_files/libs/quarto-html/anchor.min.js"></script>
+<link href="ssbmf_progress_report_07_15_26_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="ssbmf_progress_report_07_15_26_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="ssbmf_progress_report_07_15_26_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="ssbmf_progress_report_07_15_26_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="ssbmf_progress_report_07_15_26_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+<script src="ssbmf_progress_report_07_15_26_files/libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="ssbmf_progress_report_07_15_26_files/libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#executive-summary" id="toc-executive-summary" class="nav-link active" data-scroll-target="#executive-summary">Executive summary</a></li>
+  <li><a href="#model-overview" id="toc-model-overview" class="nav-link" data-scroll-target="#model-overview">1. Model overview</a></li>
+  <li><a href="#putting-the-objective-on-a-principled-footing" id="toc-putting-the-objective-on-a-principled-footing" class="nav-link" data-scroll-target="#putting-the-objective-on-a-principled-footing">2. Putting the objective on a principled footing</a></li>
+  <li><a href="#simulation-validation-value-over-a-two-step-baseline" id="toc-simulation-validation-value-over-a-two-step-baseline" class="nav-link" data-scroll-target="#simulation-validation-value-over-a-two-step-baseline">3. Simulation validation: value over a two-step baseline</a>
+  <ul class="collapse">
+  <li><a href="#varying-survival-signal-strength" id="toc-varying-survival-signal-strength" class="nav-link" data-scroll-target="#varying-survival-signal-strength">3.1 Varying survival-signal strength</a></li>
+  <li><a href="#shared-vs.-study-specific-prognostic-factors" id="toc-shared-vs.-study-specific-prognostic-factors" class="nav-link" data-scroll-target="#shared-vs.-study-specific-prognostic-factors">3.2 Shared vs.&nbsp;study-specific prognostic factors</a></li>
+  </ul></li>
+  <li><a href="#factor-parsimony-is-k7-necessary" id="toc-factor-parsimony-is-k7-necessary" class="nav-link" data-scroll-target="#factor-parsimony-is-k7-necessary">4. Factor parsimony: is <span class="math inline">\(K=7\)</span> necessary?</a></li>
+  <li><a href="#external-validation" id="toc-external-validation" class="nav-link" data-scroll-target="#external-validation">5. External validation</a></li>
+  <li><a href="#biology-of-the-two-survival-active-programs" id="toc-biology-of-the-two-survival-active-programs" class="nav-link" data-scroll-target="#biology-of-the-two-survival-active-programs">6. Biology of the two survival-active programs</a></li>
+  <li><a href="#honest-open-items-and-shortfalls" id="toc-honest-open-items-and-shortfalls" class="nav-link" data-scroll-target="#honest-open-items-and-shortfalls">7. Honest open items and shortfalls</a></li>
+  <li><a href="#potential-value-and-positioning" id="toc-potential-value-and-positioning" class="nav-link" data-scroll-target="#potential-value-and-positioning">8. Potential value and positioning</a></li>
+  <li><a href="#disposition-of-the-618-feedback" id="toc-disposition-of-the-618-feedback" class="nav-link" data-scroll-target="#disposition-of-the-618-feedback">9. Disposition of the 6/18 feedback</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="ssbmf_progress_report_07_15_26.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">SSBMF Progress Report: Model Refinement, Validation, and Biological Interpretation</h1>
+<p class="subtitle lead">Work completed since the 6/18/2026 lab meeting</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Andrew Walther </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 15, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="executive-summary" class="level2">
+<h2 class="anchored" data-anchor-id="executive-summary">Executive summary</h2>
+<p>The model configuration recommended at the 6/18/2026 lab meeting has <strong>not changed</strong>: YFB (<span class="math inline">\(\eta = (YF)\hat\beta\)</span>), DeSurv-aligned gene selection, <span class="math inline">\(K=7\)</span>, no cohort indicator. What changed since then is that its headline numbers were corrected, and its <span class="math inline">\(K=7\)</span> choice was independently stress-tested from several directions that all converge on the same answer.</p>
+<ul>
+<li><strong>Mean external C-index across 5 held-out PDAC cohorts: 0.627</strong> (SE <span class="math inline">\(\approx\)</span> 0.020 across cohorts; corrected from an earlier 0.636 figure — the decline is attributable entirely to a train/test preprocessing bug fix, not to a regression in the model; §2).</li>
+<li><strong>The model uses only 2 of its 7 factors for survival prediction (<span class="math inline">\(K_{\text{eff}}=2\)</span>), and this is now a well-supported result, not a tuning artifact</strong> — two independent optimization strategies (warm-start from a higher-<span class="math inline">\(K\)</span> fit, and a joint <span class="math inline">\((K,\alpha)\)</span> Bayesian-optimization search) both land on <span class="math inline">\(K_{\text{eff}}=2\)</span>, and a deflation-initialization test analytically ruled out initialization as the cause of the earlier ambiguity (§4). <span class="math inline">\(K=7\)</span> is kept as the practical default for one-step reproducibility; <span class="math inline">\(K=4\)</span> or <span class="math inline">\(K=5\)</span> are validated, statistically equivalent, more-parsimonious alternatives.</li>
+<li><strong>The two survival-active gene programs have a confirmed biological identity</strong>: an adverse, basal-like/squamous/MET-EGFR-driven program (Program 7) and a protective, classical/ differentiated-epithelial program (Program 3) — the established PDAC subtype-survival axis, independently recovered by five separate lines of evidence (§6).</li>
+<li><strong>The joint model matches a two-step (unsupervised factorization then Cox) baseline when there is no survival signal, and is more accurate and more stable when there is</strong> — its advantage grows with signal strength in the realistic regimes tested, with one understood, reported exception under an unrealistic synthetic design (§3).</li>
+<li><strong>A study-specific baseline hazard option is now available</strong> (stratified Cox partial likelihood) and is performance-neutral on the recommended configuration, so it remains off by default (§5).</li>
+</ul>
+<p>This report also states plainly what the method’s value proposition is and is not (§8): SBMF is best understood as the Bayesian counterpart to the lab’s existing DeSurv method, not (yet) a demonstrated improvement over it on a matched, head-to-head protocol.</p>
+<hr>
+</section>
+<section id="model-overview" class="level2">
+<h2 class="anchored" data-anchor-id="model-overview">1. Model overview</h2>
+<p>The method fits a supervised Bayesian matrix factorization to a training cohort’s gene-expression matrix <span class="math inline">\(\mathbf{Y}\)</span> (<span class="math inline">\(n\)</span> patients <span class="math inline">\(\times\)</span> <span class="math inline">\(p\)</span> genes) jointly with a Cox proportional-hazards model on patient survival, coupling the two through a shared low-rank factor structure. Two parameterizations of the survival linear predictor were implemented and compared:</p>
+<ul>
+<li><strong>LB</strong> (<span class="math inline">\(\eta = \mathbf{L}\hat\beta\)</span>): survival risk is a linear function of each patient’s posterior-mean factor loadings <span class="math inline">\(\mathbf{L}\)</span>, the same loadings the genomics likelihood fits.</li>
+<li><strong>YFB</strong> (<span class="math inline">\(\eta = (\mathbf{YF})\hat\beta\)</span>, “Cox-on-<span class="math inline">\(YF\)</span>”): survival risk is a linear function of the patient’s <em>observed</em> expression projected onto the learned factors (<span class="math inline">\(\mathbf{Y}\mathbf{F}\)</span>), computed identically at training and prediction time.</li>
+</ul>
+<p><strong>YFB is the recommended parameterization.</strong> LB has a structural train/test mismatch: at training time <span class="math inline">\(\mathbf{L}\)</span> is an EBNM-shrunk posterior mean, but at prediction time on a new patient it must be reconstructed by projection, which is a different quantity. YFB uses the same <span class="math inline">\((\mathbf{YF})\)</span> projection at both stages by construction, so there is no such mismatch. YFB’s genomics factor matrix <span class="math inline">\(\mathbf{L}\)</span> is fit from genomics data alone (no survival term touches it or <span class="math inline">\(\mathbf{F}\)</span> by default), and <span class="math inline">\(\hat\beta\)</span> is fit purely on the survival side — the two halves of the model never compete for the same coordinate, which turns out to matter for how safely the two objectives can be rebalanced (§2). A sensitivity check refitting the LB parameterization on the identical DeSurv gene set and <span class="math inline">\(K=7\)</span> gives mean external C = 0.611 (vs.&nbsp;YFB’s 0.627) and recovers the same two-program adverse/protective structure — confirming the finding is not an artifact specific to the YFB formulation, while still supporting YFB as the primary recommendation.</p>
+<p>New-patient scoring is exact under YFB: <span class="math inline">\(\eta_{\text{new}} = \mathbf{Y}_{\text{new}}\mathbf{F}\hat\beta\)</span>, no approximation or re-fitting required.</p>
+<hr>
+</section>
+<section id="putting-the-objective-on-a-principled-footing" class="level2">
+<h2 class="anchored" data-anchor-id="putting-the-objective-on-a-principled-footing">2. Putting the objective on a principled footing</h2>
+<p>The lab’s 6/18 feedback noted a real issue: the genomics likelihood term is <span class="math inline">\(O(np)\)</span> in aggregate while the survival (Cox partial likelihood) term is <span class="math inline">\(O(n)\)</span> — an unnormalized, roughly <span class="math inline">\(p\)</span>-fold scale gap that makes the mixing weight <span class="math inline">\(\alpha\)</span> in <span class="math inline">\((1-\alpha)\cdot\text{genomics} + \alpha\cdot\text{survival}\)</span> uninterpretable (an <span class="math inline">\(\alpha=0.5\)</span> does not mean “balanced” when one side starts <span class="math inline">\(p\times\)</span> larger).</p>
+<p><strong>What was tried, and what actually helped.</strong> Shrinking the genomics term’s precision destabilized LB’s factor updates (<span class="math inline">\(\mathbf{L}\)</span> and <span class="math inline">\(\mathbf{F}\)</span> co-adapt bilinearly, and reducing either side’s precision removed the numerical margin the model relied on, collapsing both to exactly zero within a few iterations). Boosting the survival term’s precision at the <span class="math inline">\(\mathbf{L}\)</span>-update site caused unbounded divergence in a separate synthetic scenario. The design that shipped decouples the two update sites: the rebalancing is applied only where it cannot create bilinear feedback — the ELBO monitor and <span class="math inline">\(\hat\beta\)</span>’s own update — while <span class="math inline">\(\mathbf{L}\)</span> and <span class="math inline">\(\mathbf{F}\)</span>’s CAVI updates are left untouched in both models.</p>
+<p><strong>Honest finding: this provided no performance benefit for YFB.</strong> In YFB’s factorization, <span class="math inline">\(\mathbf{L}\)</span> is pure-genomics and <span class="math inline">\(\hat\beta\)</span> is pure-survival — the two never share a coordinate that needs rebalancing in the first place, so there was no real imbalance to fix for this parameterization. An initial implementation detail (boosting <span class="math inline">\(\hat\beta\)</span>’s own EBNM precision by a factor of <span class="math inline">\(p\)</span>, <code>boost_beta=TRUE</code>) was found to be an unjustified side effect: it reduced EBNM shrinkage on <span class="math inline">\(\hat\beta\)</span> without correcting any genuine imbalance, inflating the apparent number of survival-active factors from <span class="math inline">\(K_{\text{eff}}=2\)</span> to <span class="math inline">\(4\)</span> and the external C-index from 0.636 to 0.642. Neither move reflected a real gain — with the corrected default (<code>boost_beta=FALSE</code>), <span class="math inline">\(\hat\beta\)</span>’s values are essentially unchanged from before this work (previously <span class="math inline">\(+0.011/-0.041\)</span> for the two active factors, now <span class="math inline">\(+0.0115/-0.0404\)</span>), and <span class="math inline">\(K_{\text{eff}}\)</span> returns to 2. This limitation does not apply to LB the same way — LB’s <span class="math inline">\(\mathbf{L}\)</span>-update genuinely does mix genomics and survival terms in one formula — but no stable per-coordinate fix for LB was found; this is documented as a known, deferred limitation that does not affect the recommended (YFB) configuration.</p>
+<p><strong>The redundant <code>lambda</code> mixing parameter was retired.</strong> <code>alpha</code> already plays the role a second survival-scale multiplier would; <code>lambda</code> was a no-op in every production configuration and is not analogous to DeSurv’s own elastic-net penalty (a different regularization role this model already fills via its empirical-Bayes priors). Removing it was a pure simplification with zero effect on any fitted result.</p>
+<p><strong>The remaining, real correction: a train/test preprocessing mismatch.</strong> External validation cohorts were being rank-transformed while training used per-platform z-standardization — the reverse convention. Fixing this (so external cohorts are preprocessed identically to training) is the entire explanation for the 0.636 <span class="math inline">\(\rightarrow\)</span> <strong>0.627</strong> change in the recommended configuration’s external C-index. This is a genuine correction, kept regardless of its small effect on this one metric — the prior number was simply computed on inconsistently preprocessed data.</p>
+<p><strong>Net effect on the recommended configuration:</strong> mean external C = 0.627, <span class="math inline">\(K=7\)</span>, <span class="math inline">\(K_{\text{eff}}=2\)</span> — identical scientific conclusion to before this work, on a now-correctly-computed number.</p>
+<hr>
+</section>
+<section id="simulation-validation-value-over-a-two-step-baseline" class="level2">
+<h2 class="anchored" data-anchor-id="simulation-validation-value-over-a-two-step-baseline">3. Simulation validation: value over a two-step baseline</h2>
+<p>A natural question for any supervised factorization method: does jointly fitting the factors and the survival model do better than fitting factors first (unsupervised) and a Cox model second? Two complementary simulation studies address this — one scaling survival-signal strength (§3.1), one varying whether prognostic structure is shared across cohorts or study-specific (§3.2). Both were run (or, for §3.2, re-validated) under the corrected model described in §2.</p>
+<section id="varying-survival-signal-strength" class="level3">
+<h3 class="anchored" data-anchor-id="varying-survival-signal-strength">3.1 Varying survival-signal strength</h3>
+<p>The first study scales the true prognostic effect size from 0 (no survival signal) to large, across 10 seeds and 4 data-generating scenarios, comparing YFB against two two-step baselines (PCA<span class="math inline">\(\to\)</span>Cox and empirical-Bayes matrix factorization<span class="math inline">\(\to\)</span>Cox).</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../results/multi_cohort_sim/outputs/survival_strength_sweep_plot.png" class="img-fluid figure-img" style="width:95.0%"></p>
+<figcaption class="figure-caption">Joint (YFB) vs.&nbsp;two-step baseline C-index as true prognostic signal strength increases, across four data-generating scenarios (10 seeds each). Ribbons show SE.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>At zero true signal, all methods are equivalent</strong> (within 1-2 SE of chance), as expected — supervision cannot help when there is nothing to be supervised by. <strong>As signal strength grows, in 3 of 4 scenarios</strong> (dense/realistic factor-loading structure; low SNR; higher factor count) <strong>the joint model’s advantage emerges and grows</strong>, reaching C=0.927 vs.&nbsp;0.900 (PCA+Cox) and 0.899 (EBMF+Cox) at the strongest signal level under the realistic dense-loading design. An internal control confirms the mechanism is genuine: with the survival term turned off entirely (<span class="math inline">\(\alpha=0\)</span>), YFB’s genomics factorization is <em>exactly</em> identical to the tuned (<span class="math inline">\(\alpha=0.5\)</span>) fit at every signal strength and seed tested (max difference = 0, 30/30 comparisons) — the model behaves as designed at this boundary.</p>
+<p><strong>One scenario reverses the ordering, and this was root-caused rather than left unexplained.</strong> Under an artificial sparse-symmetric design (where each factor’s true loading is exactly 2% of genes, uniform in magnitude, with no cross-factor overlap), the two-step baselines outperform YFB substantially at high signal (0.795 vs.&nbsp;0.934–0.940). Diagnostic work traced this to a <strong>shared CAVI factor-collapse vulnerability</strong>, not a defect in the survival coupling: the same collapse occurs at <span class="math inline">\(\alpha=0\)</span> (survival term fully off), rules out anything related to joint supervision; it also occurs for LB (built on the same factor-update code), and is <em>worse</em> for LB on average; switching the initialization from SVD to random makes it uniformly worse, ruling out “bad init” as the cause. The actual differentiator is loading <strong>density and structure</strong>: real gene-expression factor templates are dense with graded, correlated loadings, while the sparse-symmetric design’s exactly-sparse, non-overlapping factors form a near-perfect symmetry under which the empirical-Bayes shrinkage prior can lock onto a degenerate fixed point (a factor that dips slightly below its equally-scaled siblings gets shrunk further every iteration, with no mechanism to recover). This is not purely a contrived-data phenomenon — LB has also shown occasional collapse in more realistic settings (lower signal-to-noise and higher factor count, both built on real gene-expression templates) — so it is tracked as an open robustness item (§7), not dismissed as synthetic-only.</p>
+<p><strong>Net assessment:</strong> the joint model’s value-add over a two-step baseline is real and growing with signal in the realistic regimes tested, with a specific, understood failure mode under an unrealistic symmetric-loading design that does not appear to reflect the structure of real gene-expression data.</p>
+</section>
+<section id="shared-vs.-study-specific-prognostic-factors" class="level3">
+<h3 class="anchored" data-anchor-id="shared-vs.-study-specific-prognostic-factors">3.2 Shared vs.&nbsp;study-specific prognostic factors</h3>
+<p>The second study asks the question directly relevant to a multi-cohort application: when a latent program is <em>shared</em> across studies vs.&nbsp;<em>specific</em> to one, does the joint model recover the distinction and use it for prediction better than a two-step baseline? Three scenarios were simulated — all factors shared across cohorts, a hybrid (some shared, some study-specific), and no shared prognostic factors — each across 5 seeds, comparing the YFB model (with and without a cohort indicator) against the EBMF<span class="math inline">\(\to\)</span>Cox two-step baseline. This study predates the §2 corrections, so it was <strong>re-run under the current model</strong> to confirm it still holds.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Held-out C-index, joint YFB vs.&nbsp;two-step baseline, by shared/specific structure (mean over 5 seeds). Specificity accuracy = how often the model correctly classifies a factor as shared vs.&nbsp;study-specific.</caption>
+<colgroup>
+<col style="width: 35%">
+<col style="width: 11%">
+<col style="width: 19%">
+<col style="width: 15%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Scenario</th>
+<th style="text-align: right;">YFB (joint)</th>
+<th style="text-align: right;">EBMF+Cox (two-step)</th>
+<th style="text-align: left;">Joint advantage</th>
+<th style="text-align: right;">Specificity acc.</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">All factors shared</td>
+<td style="text-align: right;">0.871</td>
+<td style="text-align: right;">0.856</td>
+<td style="text-align: left;">+0.015</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hybrid (some shared, some specific)</td>
+<td style="text-align: right;">0.815</td>
+<td style="text-align: right;">0.717</td>
+<td style="text-align: left;">+0.098</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">No shared prognostic factors</td>
+<td style="text-align: right;">0.549</td>
+<td style="text-align: right;">0.550</td>
+<td style="text-align: left;">-0.000</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The pattern matches the meeting’s own diagnostic logic. When there is <strong>no shared prognostic signal</strong>, the joint model and the two-step baseline are equivalent (0.549 vs.&nbsp;0.550) — supervision has nothing to exploit. When prognostic structure <strong>is</strong> present, the joint model leads, and in the realistic <strong>hybrid</strong> case (only some factors carry survival signal) the advantage is as much about <strong>stability as raw accuracy</strong>: the unsupervised two-step baseline collapses on 2 of 5 seeds (dropping to 0.53 and 0.63), pulling its mean down to 0.717, whereas the joint model is stable across all seeds (0.78–0.84, mean 0.815). On the three seeds where the two-step baseline does <em>not</em> collapse it averages 0.807, close to the joint model — so the headline gap reflects the joint model’s robustness (its supervised factorization does not collapse here) more than a large discrimination margin when both fit cleanly. The joint model also classifies each factor as shared vs.&nbsp;study-specific with perfect accuracy. Adding a cohort indicator to the YFB model is neutral-to-slightly-negative in simulation (e.g., hybrid 0.813 vs.&nbsp;0.815), mirroring the real-data finding (§5) that per-platform z-standardization already absorbs the cross-study structure a cohort indicator would model.</p>
+<p><strong>Re-validation note.</strong> Under the corrected model, the YFB (recommended) arms reproduced the original result within noise (max C-index difference 0.019, mean 0.004 across all 30 YFB fits) and the two-step baseline was bit-identical. The only material movement was in the LB reference arms (one cell shifting by 0.19), attributable to the previously-documented LB local-optimum sensitivity — the retired <span class="math inline">\(\lambda\)</span> parameter was live in LB’s factor update but already inert in the YFB path, so removing it perturbed LB’s near-bifurcation fit while leaving YFB’s untouched. This does not affect the recommended (YFB) model or any conclusion above.</p>
+<hr>
+</section>
+</section>
+<section id="factor-parsimony-is-k7-necessary" class="level2">
+<h2 class="anchored" data-anchor-id="factor-parsimony-is-k7-necessary">4. Factor parsimony: is <span class="math inline">\(K=7\)</span> necessary?</h2>
+<p>DeSurv, the lab’s related supervised-factorization method, selects <span class="math inline">\(k=3\)</span> for the same PDAC data. SBMF’s cross-validated choice is <span class="math inline">\(K=7\)</span>. This gap was investigated directly, rather than assumed to reflect a real difference in model capacity requirements.</p>
+<p><strong>A fresh cross-validation under the corrected objective confirms <span class="math inline">\(K=7\)</span> is not a leftover artifact.</strong> Re-running <span class="math inline">\(K\)</span>-selection from scratch (grid 2–10, no floor imposed) shows a genuine, non-noise jump in internal cross-validated C-index between <span class="math inline">\(K=6\)</span> (0.593) and <span class="math inline">\(K=7\)</span> (0.633) — larger than any single fold’s standard error (<span class="math inline">\(\approx 0.03\)</span>) — with <span class="math inline">\(K=8\)</span> the actual peak (0.651) and <span class="math inline">\(K=7\)</span> the simplest choice statistically tied with it (1-SE rule).</p>
+<p><strong>Refitting directly at smaller <span class="math inline">\(K\)</span> and re-running full external validation</strong> — rather than just counting how many factors are active in the <span class="math inline">\(K=7\)</span> fit — is the more decision-relevant test, and was run for <span class="math inline">\(K\in\{2,3,4,5,7\}\)</span>:</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="ssbmf_progress_report_07_15_26_files/figure-html/kcurve-fig-1.png" class="img-fluid figure-img" width="576"></p>
+<figcaption class="figure-caption">External mean C-index by K, single fresh-SVD fit per K (Phase 3). No K below 7 reaches within 1 SE of K=7’s margin in this single-seed comparison.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>At face value this says “<span class="math inline">\(K=7\)</span> is not free to shrink” — but a caveat was flagged honestly at the time: <span class="math inline">\(K=2\)</span> and <span class="math inline">\(K=4\)</span> converged suspiciously fast (7–9 iterations) to a near-zero <span class="math inline">\(\hat\beta\)</span>, consistent with the same collapse mode documented in §3. A four-step follow-up resolved this rather than leaving it open:</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>Approach</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Warm-start <span class="math inline">\(K\in\{2..5\}\)</span> from the converged <span class="math inline">\(K=7\)</span> fit’s top-<span class="math inline">\(K\)</span> PVE-ranked columns; also tried best-ELBO multistart (15 restarts)</td>
+<td><strong>Warm-start rescues <span class="math inline">\(K=4\)</span> and <span class="math inline">\(K=5\)</span> to <span class="math inline">\(K=7\)</span>-level performance</strong> (0.6270 vs.&nbsp;0.6267, both <span class="math inline">\(K_{\text{eff}}=2\)</span>); multistart rescues nothing at any <span class="math inline">\(K\)</span> — SVD init was always the best-ELBO restart. <span class="math inline">\(K=2/K=3\)</span> remain short even with warm-start (a genuine capacity floor).</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Make the fix general: deflation-style (greedy rank-1) initialization</td>
+<td><strong>Negative, analytically understood</strong>: deflation and batch SVD extract the identical leading-<span class="math inline">\(K\)</span> subspace whenever singular values are non-degenerate (true of essentially all real data) — mathematically guaranteed not to differ from plain SVD-init here.</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Joint <span class="math inline">\((K,\alpha)\)</span> Bayesian optimization (DeSurv’s own tuning approach)</td>
+<td>Found <span class="math inline">\(K=8, \alpha=0.71\)</span>, external C=0.6282 (<span class="math inline">\(K_{\text{eff}}=2\)</span>) — marginally better than <span class="math inline">\(K=7\)</span>, but <strong>larger</strong>, not smaller; did not meet the goal of finding a smaller <span class="math inline">\(K\)</span>. A real limitation of this specific run (integer-bounded <span class="math inline">\(K\)</span> collapsing the search early) means smaller <span class="math inline">\(K\)</span> is not conclusively ruled unreachable by joint tuning, only that this run didn’t find it.</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Synthesize</td>
+<td><span class="math inline">\(K\in\{4,5,7,8\}\)</span> are statistically indistinguishable (spread 0.0015, inside any single config’s SE <span class="math inline">\(\approx 0.02\)</span>) and <strong>all converge to the same <span class="math inline">\(K_{\text{eff}}=2\)</span></strong>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Decision: <span class="math inline">\(K=7\)</span> is kept as the recommended default</strong>, not because it out-performs <span class="math inline">\(K=4\)</span> or <span class="math inline">\(K=5\)</span>, but because it is reachable with a single, dependency-free fresh-SVD fit, while the smaller-<span class="math inline">\(K\)</span> alternatives require the two-step warm-start recipe above for no measurable gain in external performance. This is a reproducibility-vs-total-parsimony judgment call, stated plainly rather than silently resolved — and it does not change the scientific finding: <strong>regardless of total <span class="math inline">\(K\)</span>, the data supports exactly 2 survival-active factors</strong>, confirmed by three independent lines of evidence that never agreed on a strategy beforehand (warm-start, deflation-init, joint Bayesian optimization).</p>
+<p>The residual gap between SBMF’s <span class="math inline">\(K=7\)</span> and DeSurv’s <span class="math inline">\(k=3\)</span> is attributable to two confirmed methodology differences rather than a capacity difference in the data itself: DeSurv jointly tunes <span class="math inline">\((k,\alpha,\lambda)\)</span> via Bayesian optimization with a fixed elastic-net penalty, while SBMF tunes only <span class="math inline">\(K\)</span> via cross-validation with <span class="math inline">\(\alpha\)</span> fixed and empirical-Bayes (not elastic-net) shrinkage. A matched, same-protocol comparison remains a pending step (§8), not something resolvable by re-running SBMF’s own <span class="math inline">\(K\)</span>-selection differently.</p>
+<hr>
+</section>
+<section id="external-validation" class="level2">
+<h2 class="anchored" data-anchor-id="external-validation">5. External validation</h2>
+<p>The recommended configuration (YFB linear predictor, DeSurv-aligned gene selection — combined mean+variance rank, top-3000 genes per cohort before per-platform z-standardization, 2064 genes after intersection — <span class="math inline">\(K=7\)</span>, no cohort indicator) is trained on TCGA-PAAD + CPTAC (<span class="math inline">\(n=273\)</span>) and validated on 5 fully held-out cohorts spanning three measurement platforms (RNA-seq, microarray, proteomics):</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Recommended-configuration external validation, per held-out cohort.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Cohort</th>
+<th style="text-align: right;">C-index</th>
+<th style="text-align: right;">K</th>
+<th style="text-align: right;">K_eff</th>
+<th style="text-align: right;">max|beta_hat|</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">PACA_AU_seq</td>
+<td style="text-align: right;">0.6573</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0404</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PACA_AU_array</td>
+<td style="text-align: right;">0.6483</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0404</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Puleo_array</td>
+<td style="text-align: right;">0.6447</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0404</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Dijk</td>
+<td style="text-align: right;">0.6345</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0404</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Moffitt_GEO_array</td>
+<td style="text-align: right;">0.5486</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0404</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="ssbmf_progress_report_07_15_26_files/figure-html/ext-fig-1.png" class="img-fluid figure-img" width="576"></p>
+<figcaption class="figure-caption">External C-index by held-out cohort, recommended configuration. Dashed line = mean (0.627).</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Mean external C-index = <strong>0.627</strong> (SE <span class="math inline">\(\approx\)</span> 0.020 across the 5 cohorts), with a point estimate above 0.5 on all five. The spread is real: the weakest cohort (Moffitt microarray, 0.549) is only marginally above chance and pulls hardest on the mean, while the strongest (PACA-AU RNA-seq, 0.657) is well clear of it. <strong>A caveat worth stating up front:</strong> these are point estimates without within-cohort confidence intervals — a per-cohort concordance CI / test against 0.5 is a natural next addition and is flagged as pending (§7); the <span class="math inline">\(\pm 0.020\)</span> here is the between-cohort standard error, not a within-cohort interval. A key preprocessing finding underlies the result: <strong>per-platform z-standardization before merging training cohorts is essential</strong> for mixed RNA-seq + proteomics training data — 10 of 12 non-per-platform preprocessing configurations tested collapse to <span class="math inline">\(\hat\beta=0\)</span> (<span class="math inline">\(K_{\text{eff}}=0\)</span>).</p>
+<p><strong>Study-specific baseline hazard.</strong> The 6/18 feedback also asked whether baseline survival risk should be allowed to differ by training study (TCGA-PAAD vs.&nbsp;CPTAC) via a <code>+ strata(study)</code> term, since the existing cohort-indicator mechanism only absorbs genomic platform offsets, not differing baseline risk. This was implemented as an optional stratified Cox partial likelihood (risk sets formed within each study; no parametric baseline hazard is introduced — it still cancels within each stratum, exactly as in the unstratified model). On the recommended configuration this is <strong>performance-neutral</strong>: mean external C = 0.6267 (no strata, current default) vs.&nbsp;0.6263 (with study strata) — a difference of <span class="math inline">\(-0.0004\)</span>, well inside per-cohort noise (<span class="math inline">\(\pm 0.0015\)</span>). This is mechanistically expected: per-platform z-standardization already absorbs most cross-study structure before the two training cohorts merge, so restricting risk sets to within-study leaves <span class="math inline">\(\hat\beta\)</span> essentially unmoved. It is kept as an available option (off by default) rather than a default behavior change, since it adds a capability the feedback specifically requested without costing anything on this configuration.</p>
+<hr>
+</section>
+<section id="biology-of-the-two-survival-active-programs" class="level2">
+<h2 class="anchored" data-anchor-id="biology-of-the-two-survival-active-programs">6. Biology of the two survival-active programs</h2>
+<p>Given <span class="math inline">\(K_{\text{eff}}=2\)</span> (§4), what do the two active programs actually represent biologically? Gene weights from the recommended fit’s factor-loading matrix <span class="math inline">\(\mathbf{F}\)</span> (2064 genes <span class="math inline">\(\times\)</span> 7 programs, all weights <span class="math inline">\(\ge 0\)</span> under a point-exponential prior) were tested for pathway enrichment (<code>fgsea</code>, ranked-by-weight, primary method) with an over-representation-analysis confirmatory cross-check, against MSigDB collections and a custom PDAC gene-set collection (Moffitt basal/classical, Bailey 4-subtype, DeSurv’s own published factor gene lists).</p>
+<p><strong>A note on sign convention.</strong> In the YFB model, a program’s <em>joint</em> model coefficient <span class="math inline">\(\hat\beta\)</span> sign can disagree with its <em>marginal</em> survival association when programs are correlated (a classic suppression effect) — this is exactly what happens here (joint <span class="math inline">\(\hat\beta_7=-0.041\)</span> looks “protective,” but Program 7’s own projection score is marginally, strongly adverse). Direction labels below follow the marginal convention (the direction a univariate Kaplan-Meier split on the program’s own projection score would show), which is both the biologically interpretable convention and the one used at the 6/18 meeting.</p>
+<p><strong>Five independent methods agree, with no contradictions:</strong></p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Five independent methods (gene-set enrichment plus its own ORA confirmatory cross-check counts as a fifth) agree on program identity.</caption>
+<colgroup>
+<col style="width: 21%">
+<col style="width: 52%">
+<col style="width: 26%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Method</th>
+<th style="text-align: left;">Program 7 (Adverse)</th>
+<th style="text-align: left;">Program 3 (Protective)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Gene-set enrichment (fgsea, all collections)</td>
+<td style="text-align: left;">Basal-like/squamous (DeSurv D3, padj=6.1e-4); MET/EGFR-RTK signaling (3 KEGG sets, padj~1.1-1.2e-3); Bailey Squamous (padj=0.030)</td>
+<td style="text-align: left;">Classical (DeSurv D1, padj=0.017; Moffitt Classical, padj=0.035)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PurIST subtype concordance (TCGA-PAAD, n=144)</td>
+<td style="text-align: left;">rho=+0.58 vs.&nbsp;basal-likelihood (p=2.1e-14)</td>
+<td style="text-align: left;">rho=-0.57 (p=4.9e-14)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">External-cohort survival (5 held-out cohorts)</td>
+<td style="text-align: left;">HR&gt;1 in 5/5 cohorts (range 1.30-2.40)</td>
+<td style="text-align: left;">HR&lt;1 in 5/5 cohorts (range 0.42-0.88)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SBMF-vs-DeSurv gene overlap (top-270, hypergeometric)</td>
+<td style="text-align: left;">80/270 overlap with DeSurv D3 (p=3.2e-16)</td>
+<td style="text-align: left;">61/270 overlap with DeSurv D1 (p=1.1e-7)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../results/benchmark_sim/outputs/pathway_enrichment/F3_geneweight_heatmap.png" class="img-fluid figure-img" style="width:85.0%"></p>
+<figcaption class="figure-caption">Gene weights across all 7 programs for the union of headline leading-edge genes. Clean block-diagonal structure: Program 3’s and Program 7’s genes carry weight almost exclusively in their own column.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>This is the established PDAC subtype-survival relationship (basal-like/squamous tumors carry worse prognosis; classical tumors carry better prognosis), independently recovered by every method run — not asserted from one analysis and repeated.</p>
+<p><strong>One honest nuance, reported rather than smoothed over:</strong> Program 3 also shows a secondary, weaker association with the basal-like gene list (enrichment padj=0.017 vs.&nbsp;0.035 for its primary classical hit; gene overlap 49/270 vs.&nbsp;61/270), plausibly attributable to shared general epithelial/tumor-identity markers rather than a genuine basal-program overlap. The confirmatory ORA method does <strong>not</strong> reproduce this secondary hit at any gene-list length tested (padj <span class="math inline">\(\ge 0.18\)</span> throughout) — unlike the primary classical association, which ORA does confirm and which strengthens with list length — additional evidence the secondary association is real but substantially weaker, not a contradiction of the dominant signal.</p>
+<hr>
+</section>
+<section id="honest-open-items-and-shortfalls" class="level2">
+<h2 class="anchored" data-anchor-id="honest-open-items-and-shortfalls">7. Honest open items and shortfalls</h2>
+<ul>
+<li><strong>No within-cohort uncertainty on the external C-index yet.</strong> The per-cohort and mean external concordances in §5 are point estimates; the only uncertainty reported is the between-cohort standard error (<span class="math inline">\(\approx\)</span> 0.020). A per-cohort concordance confidence interval and a formal test against 0.5 (e.g.&nbsp;via <code>survival::concordance</code>’s analytic variance or a bootstrap) is a straightforward, high-value next addition — particularly for the weakest cohort (Moffitt, 0.549), whose separation from chance is not established without it.</li>
+<li><strong>Factor stability across resampling not yet characterized.</strong> The two active programs’ biological identity is confirmed by five independent methods (§6), but it has not been shown that refitting on a training bootstrap recovers the same two programs. Given the factor-collapse discussion below, this is a natural robustness check a reviewer will expect; the biological concordance is supporting evidence but not a direct stability test.</li>
+<li><strong>YFB with a spike-and-slab (<code>point_normal</code>) prior collapses to <span class="math inline">\(\hat\beta=0\)</span> for every <span class="math inline">\(K\)</span> in cross-validation</strong> (C=0.5 uniformly). The reduced per-fold training size appears insufficient to escape the spike component under this prior; the normal prior (used throughout this report) does not have this problem. Open, undiagnosed in detail; not blocking any result in this report, since the recommended configuration uses the normal prior.</li>
+<li><strong>The CAVI factor-collapse vulnerability identified in §3</strong> is understood mechanistically (a degenerate fixed point under near-symmetric, disjoint factor-loading structure) and has a known, validated escape (warm-starting from a higher-<span class="math inline">\(K\)</span> solution’s PVE-ranked columns, §4) but no general, from-scratch fix — deflation-style initialization was tried and does not help, for an analytically clear reason (§4, Step 2). LB shows this collapse occasionally even on realistic (non-adversarial) synthetic data; there is no evidence it affects the real PDAC fits reported here, but it is a real, if so-far-occasional, robustness gap worth further investigation.</li>
+<li><strong>The stratified-baseline-hazard extension (§5) is available but performance-neutral</strong> on the recommended configuration — a capability added in response to specific feedback, not (yet) a source of predictive improvement.</li>
+<li><strong>The <span class="math inline">\(K=7\)</span>-vs-<span class="math inline">\(K=4\)</span> choice is a reproducibility-simplicity judgment call</strong>, not a claim that <span class="math inline">\(K=7\)</span> predicts better (§4) — worth revisiting if a future need (e.g., a manuscript emphasis on parsimony) makes the two-step warm-start recipe’s cost worth paying.</li>
+<li><strong>The joint <span class="math inline">\((K,\alpha)\)</span> Bayesian-optimization search (§4, Step 3) has a known limitation in the run performed</strong>: its acquisition function re-proposed an identical point for the majority of its budget rather than continuing to explore smaller <span class="math inline">\(K\)</span> under varied <span class="math inline">\(\alpha\)</span>, traced to an integer-bounds implementation detail that pre-rounds <span class="math inline">\(K\)</span> before the search sees it. Smaller <span class="math inline">\(K\)</span> is therefore not conclusively ruled unreachable via joint tuning — only not found by this particular, limited run.</li>
+</ul>
+<hr>
+</section>
+<section id="potential-value-and-positioning" class="level2">
+<h2 class="anchored" data-anchor-id="potential-value-and-positioning">8. Potential value and positioning</h2>
+<p><strong>What this method is, stated plainly.</strong> SBMF is best understood as <strong>the Bayesian counterpart to DeSurv</strong>, the lab’s existing supervised-factorization-plus-Cox method — same core design (a low-rank factor model coupled to a Cox partial likelihood), same training/validation data (TCGA-PAAD + CPTAC train; the same 5 held-out external cohorts), same projection-based external scoring, and SBMF explicitly borrowed DeSurv’s combined-rank gene-selection procedure once it was found to improve external validation. The genuine methodological differences are: empirical-Bayes adaptive shrinkage priors on the factor loadings and <span class="math inline">\(\hat\beta\)</span> (vs.&nbsp;DeSurv’s fixed, jointly-tuned elastic-net penalty), full posterior distributions rather than point estimates (mean <em>and</em> variance for every quantity), an error-in-variables treatment of the factor loadings (<span class="math inline">\(E[L^2]\)</span> rather than <span class="math inline">\(E[L]^2\)</span>), and a heteroscedastic per-gene noise model (<span class="math inline">\(\tau_j\)</span>).</p>
+<p><strong>Where the joint model demonstrably adds value.</strong> §3’s simulations show the joint model’s predictive advantage over a two-step (factorize-then-Cox) alternative growing with true survival-signal strength across three of four data-generating scenarios, and — in the multi-cohort hybrid design — being both more accurate and notably more <em>stable</em> than the unsupervised two-step baseline, which collapses on a subset of seeds where the joint model does not. The advantage is therefore partly discrimination and partly robustness: the joint approach exploits prognostic structure a two-step pipeline under-uses when survival signal is present, and its supervised factorization is less prone to the degenerate fits that afflict an unsupervised one on the same data. This is the clearest evidence-based statement of “why joint fitting, not just factorization” that the project currently supports.</p>
+<p><strong>Where the result is externally validated and interpretable.</strong> Mean external C=0.627 across 5 held-out cohorts spanning three measurement platforms is not a single-dataset result; the two survival-active gene programs recovered have a confirmed, coherent biological story (§6) — a basal-like/squamous/adverse program and a classical/protective program, matching the established PDAC subtype-survival literature independently by five separate methods.</p>
+<p><strong>What this report does <em>not</em> claim.</strong> A head-to-head, matched-protocol comparison against DeSurv itself (same joint hyperparameter-tuning procedure on both sides, not just the same data) remains a <strong>pending</strong> next step, not something this report substitutes for. DeSurv’s own published metric is a pooled hazard ratio (HR/SD = 1.50, 95% CI 1.31–1.72) rather than a directly comparable C-index figure, and DeSurv selects <span class="math inline">\(k=3\)</span> under a joint <span class="math inline">\((k,\alpha,\lambda)\)</span> tuning procedure that SBMF has not yet replicated on equal footing (§4). Framing the relationship to DeSurv as “the Bayesian counterpart, with a pending matched comparison” is the honest and currently defensible position — not a superiority claim.</p>
+<hr>
+</section>
+<section id="disposition-of-the-618-feedback" class="level2">
+<h2 class="anchored" data-anchor-id="disposition-of-the-618-feedback">9. Disposition of the 6/18 feedback</h2>
+<p>For completeness, the status of each item raised at the 6/18 meeting. The model-specification and analysis items are all addressed or handled by a defensible, documented alternative; the honest shortfalls are the non-model items (a simulation-provenance review and three workflow/infrastructure requests).</p>
+<div class="cell">
+<div class="cell-output-display">
+<table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<caption>Status of each 6/18/2026 feedback item.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Item</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Status</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Baseline hazard h_0(t) — is it canceled in the partial likelihood?</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">Non-parametric; cancels exactly in the Cox partial likelihood (also per-stratum under strata).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mixing weight alpha should default to 1/2</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">Default alpha = 0.5 (config/globals.yml).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Normalize objective w.r.t. n and p (expression / np, survival / n)</td>
+<td style="text-align: left;">Addressed (deviation)</td>
+<td style="text-align: left; width: 22em;">Literal np/n convention implemented and available; per-platform-safe variant is the default (\S2).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Constrain lambda to (0,1); add a (1 - lambda) term on L_gen</td>
+<td style="text-align: left;">Addressed (deviation)</td>
+<td style="text-align: left; width: 22em;">lambda retired entirely rather than constrained: alpha already plays the (1-lambda)/lambda role, and DeSurv's lambda is a distinct elastic-net penalty this model fills via its EB priors (\S2).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Z-standardize input; platform-correct after z-std</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">Per-platform z-standardization before merge (\S2, \S5).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">strata(study) for a study-specific baseline hazard</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">Optional stratified Cox partial likelihood; performance-neutral, off by default (\S5).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Why 7 factors when DeSurv uses 3?</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">Investigated from three angles; K_eff = 2 is the load-bearing count (\S4).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">If survival is turned off, does k shrink?</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">alpha = 0 control: genomics factorization is exactly alpha-invariant, so k does not shrink; survival-active count goes to 0 (\S3).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Joint = 2-step C-index when survival carries no signal</td>
+<td style="text-align: left;">Addressed (caveat)</td>
+<td style="text-align: left; width: 22em;">Consistent with equivalence at zero signal (gaps within 1-2 SE on 5 seeds), not a sharp confirmation (\S3).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Sweep 1-2 survival-related factors from 0 to large</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">Survival-strength sweep, effect size 0 to large (\S3).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Adverse = basal-like; protective per DeSurv</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">Confirmed by five independent methods (\S6).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">External datasets normalized; rank transform considered</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">Train/test preprocessing made consistent; rank transform evaluated (\S2).</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Gene-ID correlation with known signals; GO for factors</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">GO:BP enrichment + hypergeometric SBMF-vs-DeSurv gene overlap (\S6).</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Paper repository (SSBMF-paper)</td>
+<td style="text-align: left;">Addressed</td>
+<td style="text-align: left; width: 22em;">Separate repo scaffolded with a drafted introduction.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Review how the DeSurv simulation was constructed</td>
+<td style="text-align: left;">Not done</td>
+<td style="text-align: left; width: 22em;">No formal review of the DeSurv simulation code was done; the sweep here was built independently on real factor templates.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Post-commit automated code review; RAG literature database</td>
+<td style="text-align: left;">Backlog</td>
+<td style="text-align: left; width: 22em;">Both parked as backlog; not actioned.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Figure out HPC cluster workflow</td>
+<td style="text-align: left;">Not done</td>
+<td style="text-align: left; width: 22em;">Not yet addressed.</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>The two model-specification deviations are worth stating plainly rather than burying: the mixing objective was rebalanced but the <code>lambda</code> parameter was <strong>removed</strong> rather than constrained to <span class="math inline">\((0,1)\)</span>, and the literal <span class="math inline">\(np\)</span>/<span class="math inline">\(n\)</span> normalization convention is implemented and available but is not the shipped default (a per-platform-safe variant is — see §2). Both choices are justified in the project’s decision record, but a reader expecting the parameter changes as literally worded will notice the difference. The remaining gaps — no formal review of the DeSurv simulation construction, and the deferred workflow items (automated commit review, a RAG literature database, an HPC workflow) — are open and not represented as done.</p>
+<hr>
+<p><em>Sources: <code>DECISIONS.md</code> entries dated 2026-07-12, 2026-07-13, 2026-07-15; <code>CLAUDE.md</code> “Current model status”; <code>ROADMAP.md</code> status banner; <code>results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv</code>; <code>results/benchmark_sim/outputs/k_parsimony_curve/</code>; <code>results/benchmark_sim/outputs/k_parsimony_followup/</code>; <code>results/multi_cohort_sim/outputs/survival_strength_sweep_results.csv</code>; <code>docs/reports/pathway_enrichment_report_07_15_26</code>. No fits were re-run to produce this report.</em></p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Andrew Walther">
+
+<title>SSBMF Status Update: Model Refinement, Validation, and Biological Interpretation (July 15, 2026)</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="SSBMF_Status_Update_07_15_26_files/libs/clipboard/clipboard.min.js"></script>
+<script src="SSBMF_Status_Update_07_15_26_files/libs/quarto-html/quarto.js"></script>
+<script src="SSBMF_Status_Update_07_15_26_files/libs/quarto-html/popper.min.js"></script>
+<script src="SSBMF_Status_Update_07_15_26_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="SSBMF_Status_Update_07_15_26_files/libs/quarto-html/anchor.min.js"></script>
+<link href="SSBMF_Status_Update_07_15_26_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="SSBMF_Status_Update_07_15_26_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="SSBMF_Status_Update_07_15_26_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="SSBMF_Status_Update_07_15_26_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="SSBMF_Status_Update_07_15_26_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="SSBMF_Status_Update_07_15_26.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">SSBMF Status Update: Model Refinement, Validation, and Biological Interpretation (July 15, 2026)</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Andrew Walther </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="headline" class="level2">
+<h2 class="anchored" data-anchor-id="headline">Headline</h2>
+<p>The recommended model has <strong>not changed</strong> since the 6/18 meeting — it remains <strong>YFB</strong> (<span class="math inline">\(\eta = (YF)\hat\beta\)</span>), DeSurv-aligned gene selection, <span class="math inline">\(K=7\)</span> latent programs, no cohort indicator. What changed is that its numbers were <strong>corrected</strong> and its factor count was <strong>stress-tested</strong>. The scientific conclusion is unchanged and now better supported: the model uses <strong>2 of its 7 programs</strong> for survival prediction, and this is robust, not a tuning artifact. <strong>Mean external C-index = 0.627 across 5 held-out PDAC cohorts.</strong></p>
+</section>
+<section id="what-was-done-since-618" class="level2">
+<h2 class="anchored" data-anchor-id="what-was-done-since-618">What was done since 6/18</h2>
+<ul>
+<li><strong>Objective put on a principled footing (§2 of the full report).</strong> The genomics/survival scale imbalance the lab flagged was addressed; the redundant <span class="math inline">\(\lambda\)</span> mixing parameter was retired (<span class="math inline">\(\alpha\)</span> already plays its role). Honest finding: for YFB this gave <strong>no performance change</strong> — its genomics half and survival half never share a coordinate needing rebalancing. A separate train/test preprocessing bug (external cohorts were rank-transformed while training was per-platform z-standardized — the reverse) was fixed; <strong>this fix alone</strong> explains the headline moving from 0.636 to <strong>0.627</strong> (a correction, not a regression).</li>
+<li><strong>Why 7 factors when DeSurv used 3? (§4)</strong> Cross-validation genuinely selects <span class="math inline">\(K=7\)</span>, but only <strong>2 factors are survival-active</strong> (<span class="math inline">\(K_{\text{eff}}=2\)</span>) — matching DeSurv’s own ~1 prognostic factor. Two independent optimization strategies (warm-start from a higher-<span class="math inline">\(K\)</span> fit, and a joint <span class="math inline">\((K,\alpha)\)</span> Bayesian-optimization search) both land on <span class="math inline">\(K_{\text{eff}}=2\)</span>, and a deflation-initialization test analytically ruled out initialization as the cause of an earlier ambiguity; <span class="math inline">\(K\in\{4,5,7,8\}\)</span> are statistically indistinguishable (spread 0.0015). <span class="math inline">\(K=7\)</span> is kept only for one-step reproducibility; <span class="math inline">\(K=4/K=5\)</span> are validated equivalents.</li>
+<li><strong>Study-specific baseline hazard (§5).</strong> Implemented the requested <code>+ strata(study)</code> as an optional stratified Cox partial likelihood. Performance-neutral (0.6267 → 0.6263), so available but off by default.</li>
+<li><strong>Biological interpretation of the two active programs (§6).</strong> Complete, and confirmed by five independent methods.</li>
+</ul>
+</section>
+<section id="validation-across-simulated-and-real-data" class="level2">
+<h2 class="anchored" data-anchor-id="validation-across-simulated-and-real-data">Validation across simulated and real data</h2>
+<p><strong>Simulation — joint model vs.&nbsp;a two-step (factorize-then-Cox) baseline</strong> (re-confirmed under the corrected model this cycle):</p>
+<ul>
+<li><em>Turn survival signal up from zero:</em> at zero signal, joint <span class="math inline">\(\approx\)</span> two-step (both near chance); as signal grows, the joint model pulls ahead and the gap widens, in 3 of 4 data-generating designs. One artificial design (exactly-sparse, symmetric factor loadings) reverses this — traced to a specific, understood factor-collapse failure mode, not a survival-coupling defect.</li>
+<li><em>Shared vs.&nbsp;study-specific factors:</em></li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Held-out C-index by cross-cohort factor structure (5 seeds).</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Scenario</th>
+<th style="text-align: right;">Joint (YFB)</th>
+<th style="text-align: right;">Two-step (EBMF+Cox)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">All factors shared</td>
+<td style="text-align: right;">0.871</td>
+<td style="text-align: right;">0.856</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hybrid (some shared, some specific)</td>
+<td style="text-align: right;">0.815</td>
+<td style="text-align: right;">0.717</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">No shared prognostic factors</td>
+<td style="text-align: right;">0.549</td>
+<td style="text-align: right;">0.550</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>When no shared prognostic signal exists, joint and two-step are equivalent; in the realistic hybrid case (only some factors prognostic) the joint model leads — as much through <strong>stability</strong> as accuracy: the unsupervised two-step baseline collapses on 2 of 5 seeds (dragging its mean to 0.717), while the joint model is stable across all seeds (mean 0.815) and classifies each factor as shared vs.&nbsp;study-specific with perfect accuracy.</p>
+<p><strong>Real data — 5 held-out PDAC cohorts</strong> (RNA-seq, microarray, proteomics):</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>External validation, recommended configuration (mean = 0.627).</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Held-out cohort</th>
+<th style="text-align: right;">External C-index</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">PACA_AU_seq</td>
+<td style="text-align: right;">0.657</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PACA_AU_array</td>
+<td style="text-align: right;">0.648</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Puleo_array</td>
+<td style="text-align: right;">0.645</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Dijk</td>
+<td style="text-align: right;">0.634</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Moffitt_GEO_array</td>
+<td style="text-align: right;">0.549</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Point estimate above 0.5 on all five cohorts (SE <span class="math inline">\(\approx\)</span> 0.020 across cohorts); the weakest, Moffitt microarray at 0.549, is only marginally above chance and a per-cohort confidence interval is a pending addition (see open items). Per-platform z-standardization is essential — most non-per-platform preprocessing collapses the survival coefficients to zero.</p>
+</section>
+<section id="biology-of-the-two-active-programs" class="level2">
+<h2 class="anchored" data-anchor-id="biology-of-the-two-active-programs">Biology of the two active programs</h2>
+<p>An <strong>adverse</strong> program (basal-like / squamous / MET-EGFR-driven) and a <strong>protective</strong> program (classical / differentiated-epithelial) — the established PDAC subtype-survival axis. Confirmed by five independent methods: gene-set enrichment, PurIST subtype concordance (<span class="math inline">\(\rho=\pm0.58\)</span>), external-cohort hazard ratios (adverse HR&gt;1 in 5/5 cohorts, protective HR&lt;1 in 5/5), and direct gene-list overlap with DeSurv’s published programs.</p>
+</section>
+<section id="positioning-and-open-items-for-discussion" class="level2">
+<h2 class="anchored" data-anchor-id="positioning-and-open-items-for-discussion">Positioning and open items (for discussion)</h2>
+<ul>
+<li><strong>Positioning:</strong> SBMF is best framed as the <strong>Bayesian counterpart to DeSurv</strong> — same design, data, and scoring, differentiated by empirical-Bayes shrinkage, posterior uncertainty, error-in-variables loadings, and a per-gene noise model. A <strong>matched, same-protocol head-to-head with DeSurv is a pending next step</strong>, not a current superiority claim.</li>
+<li><strong>Open items worth raising:</strong> (1) no confidence interval / significance test yet on the external C-index — worth adding before the manuscript; (2) factor-stability across seeds not yet characterized; (3) the LB parameterization retains a factor-collapse sensitivity (the recommended YFB model does not); (4) the YFB spike-and-slab prior collapses in cross-validation (normal prior used throughout, and is the right call); (5) requested workflow items (automated commit review, RAG literature database, HPC workflow) and a review of DeSurv’s own simulation construction remain on the backlog.</li>
+</ul>
+<p><em>Full detail, figures, and per-item disposition of the 6/18 feedback: <code>docs/reports/ssbmf_progress_report_07_15_26</code>.</em></p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
