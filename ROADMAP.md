@@ -77,6 +77,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [ ] **Follow-up plan for the progress report's open items** `[Priority: see plan]` `[Effort: see plan]`
+  A saved, not-yet-started backlog covering every open item from Item 2's progress report (§7) and
+  its review passes: per-cohort concordance CIs and factor-stability-under-resampling (highest
+  priority — likely first advisor questions, neither requires re-fitting the recommended model from
+  scratch); the DeSurv-simulation review the 6/18 meeting asked for and that has gone unaddressed
+  longest; the point_normal K-CV collapse, the general CAVI-collapse fix, and a re-run of the joint
+  $(K,\alpha)$ Bayesian-optimization search with its identified acquisition-search issue fixed
+  (all lower priority, none currently blocking); HPC/Longleaf workflow, dev-tooling backlog, and the
+  larger matched DeSurv head-to-head as future/manuscript-stage work. Full spec with approach, effort
+  estimates, and a priority table: `docs/plans/ssbmf_open_items_followup_plan_07_15_2026.md`.
+
 - [x] **Executive summary / progress report for research team** *(Complete, 2026-07-15, branch
   `item2-executive-summary`)* Two deliverables: a long-form progress report
   (`docs/reports/ssbmf_progress_report_07_15_26.{qmd,pdf,html}`) and a 2-page meeting-ready
