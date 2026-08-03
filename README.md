@@ -79,7 +79,7 @@ multiomicsGEP/
 │   ├── SSMF_DeSurv_Sim_Benchmark.md  ← DeSurv benchmark design notes
 │   └── update_L_fix.md               ← Debugging guide: A_surv/A_gen imbalance → β=0 fix
 │
-├── tests/                             ← 246 tests (run: Rscript tests/run_tests.R)
+├── tests/                             ← 374 tests (run: Rscript tests/run_tests.R)
 │   ├── run_tests.R                    ← Master test runner
 │   ├── test_helpers.R                 ← Lightweight assertion framework (no testthat)
 │   ├── test_update_beta.R             ← 24 tests for update_beta.R
@@ -253,7 +253,7 @@ The key mathematical concepts are:
 |---------|------|--------|-------|
 | V1 | `code/legacy/Supervised_Bayesian_MF.R` | Archived | Original implementation; 6 known algorithmic issues |
 | V2 | `code/Supervised_Bayesian_MF_V2.R` | Reference | Monolithic; all V1 issues corrected (A1–A6); kept for comparison |
-| Modular | `code/fit_modular.R` + `update_*.R` | ✅ **Current** | Factor-wise Gauss-Seidel CAVI; tested (246/246); recommended for all new work |
+| Modular | `code/fit_modular.R` + `update_*.R` | ✅ **Current** | Factor-wise Gauss-Seidel CAVI; tested (374/374); recommended for all new work |
 
 **V2 improvements over V1:**
 
@@ -272,9 +272,9 @@ The key mathematical concepts are:
 
 The model is fully implemented, tested, and benchmarked. See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete development log.
 
-**Current state (2026-05-28):** 246/246 tests passing. The recommended configuration uses the YFB linear predictor (η = (YF)β) with DeSurv-aligned gene selection — genes ranked jointly by mean expression and variance within each platform, top 3,000 per cohort selected before normalization, yielding ~2,064 genes after intersection. Applied to 273 PDAC patients (TCGA + CPTAC training), the model identifies two active prognostic programs: one associated with worse survival and one with better survival. Mean external concordance index = 0.636 across five independent PDAC cohorts spanning RNA-seq, microarray, and proteomics platforms.
+**Current state (2026-07-16):** 374/374 tests passing. The recommended configuration uses the YFB linear predictor (η = (YF)β) with DeSurv-aligned gene selection — genes ranked jointly by mean expression and variance within each platform, top 3,000 per cohort selected before normalization, yielding ~2,064 genes after intersection. Applied to 273 PDAC patients (TCGA + CPTAC training), the model identifies two active prognostic programs: one associated with worse survival and one with better survival. Mean external concordance index = 0.627 across five independent PDAC cohorts spanning RNA-seq, microarray, and proteomics platforms.
 
-**Next:** pathway enrichment on active factor gene weights. See `ROADMAP.md`.
+**Next:** characterize factor-stability across seeds, then run a matched, same-protocol head-to-head against DeSurv. See `ROADMAP.md`.
 
 ---
 
