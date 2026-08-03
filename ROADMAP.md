@@ -376,9 +376,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   recommended model significantly more concordant, pooled across cohorts: +0.042 (95% CI
   0.013–0.071); individually only the largest cohort (Puleo, n=288) reaches significance alone —
   see DECISIONS.md 2026-07-16. Part (2) factor stability and (3) pathway concordance remain.
+  **Update 2026-08-03:** Part (2) is done — no new fit needed, since `run_ebmf_cox_external.R`'s
+  EBMF fit was already saved and uses the identical gene universe/order as D4. EBMF's own factors 1
+  and 2 (unsupervised) correlate with Programs 3 and 7 at r=-0.72 and r=+0.69 respectively, both
+  clearly the best match for their program and well separated from all other 18 factors (next-best
+  |r| ≤ 0.60, with one honest secondary nuance for Program 3 — see DECISIONS.md 2026-08-03). The
+  same 2-program structure is real, unsupervised signal, not an artifact of the survival term. Part
+  (3) pathway concordance remains.
   *Files: YFB fit in `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds`;
   EBMF via `flashier`; prediction via `code/predict.R`; baseline runner `run_ebmf_cox_external.R`;
-  CI analysis: `results/benchmark_sim/run_external_ci_analysis.R`.*
+  CI analysis: `results/benchmark_sim/run_external_ci_analysis.R`; factor correspondence:
+  `run_ebmf_factor_correspondence.R`.*
 
 - [x] **Pathway enrichment on D4 active factors** *(Complete, 2026-07-15, branch `pathway-enrichment-plan`)*
   `fgsea` ranked-by-weight enrichment (primary) + ORA (confirmatory) on Programs 7 (Adverse) and 3

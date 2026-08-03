@@ -194,6 +194,15 @@ published programs.
 knitr::include_graphics("../../results/benchmark_sim/outputs/pathway_enrichment/F3_geneweight_heatmap.png")
 ```
 
+**New this cycle — the same 2 programs also emerge fully unsupervised.** Correlating the
+unsupervised EBMF fit already used for the two-step baseline (§"Validation," same gene
+universe/order as this model) against Programs 3 and 7: EBMF's own factor 1 tracks Program 3
+(r=-0.72) and factor 2 tracks Program 7 (r=+0.69), each clearly the best match for its program
+among all 20 EBMF factors. This 2-program structure is real, unsupervised signal in the data — not
+something the survival term invents. SBMF is best understood as a supervised re-weighting of
+EBMF's own factor structure, which is consistent with framing it as a variation on EBMF rather than
+a wholly separate model class.
+
 ## Comparison against DeSurv
 
 - **Factor count:** SBMF's CV-selected $K=7$ collapses to $K_{\text{eff}}=2$
@@ -208,6 +217,8 @@ knitr::include_graphics("../../results/benchmark_sim/outputs/pathway_enrichment/
   factorization + Cox vs. DeSurv's own framework), both methods converge on the same
   underlying tumor biology — that convergence, not a performance ranking, is the
   meaningful point of comparison here.
+
+\newpage
 
 ## Key next steps
 

@@ -5,6 +5,61 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-08-03 — The two survival-active programs also emerge from unsupervised EBMF (ROADMAP.md A/B comparison, Part 2)
+
+**Question:** ROADMAP.md's "SSBMF vs. unsupervised EBMF" item (line 359) left two parts open after
+the external C-index comparison (Part 1, done 2026-06-16/07-16): does the same 2-program biological
+structure (Program 3 Protective, Program 7 Adverse) emerge if EBMF is run with **no survival term at
+all**, or is it an artifact of supervision?
+
+**Method:** no new model fit was needed. `run_ebmf_cox_external.R`'s two-step baseline already fits
+EBMF unsupervised as its first step and saves the fit
+(`results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_external_fit.rds`, $K=20$ factors); both
+it and the recommended model (D4) select genes via the identical DeSurv-aligned
+combined_rank/top-3000-per-cohort procedure on the same merged TCGA-PAAD+CPTAC training data, so
+their 2064-gene universes are identical **and in the same order** (checked via `identical()`, not
+assumed — see `run_ebmf_factor_correspondence.R`). This makes a direct Pearson correlation between
+EBMF's 20 factor-loading columns and D4's Program 3/7 loadings valid without any re-alignment step.
+
+**Result:** yes — cleanly, for the top match, with one honest secondary nuance:
+
+| EBMF factor | vs. Program 3 (Protective) | vs. Program 7 (Adverse) |
+|---|---|---|
+| EBMF_F1 | **r = -0.72** (best match) | r = -0.05 |
+| EBMF_F2 | r = +0.03 | **r = +0.69** (best match) |
+| EBMF_F3 | r = +0.60 (second-best) | r = -0.33 |
+| all other 17 factors | \|r\| < 0.15 | \|r\| < 0.31 |
+
+EBMF's own first two extracted factors (i.e., the two it explains the most variance with,
+unsupervised) correspond one-to-one with SBMF's two survival-active programs — this is real
+structure in the data, not something the survival term invents. **One honest nuance:** EBMF_F3 has a
+secondary, moderate correlation with Program 3 (r=0.60) not mirrored by an equally strong secondary
+correlation for Program 7 — i.e., the unsupervised decomposition doesn't cleanly separate all of
+Program 3's signal into a single factor the way it does for Program 7. This echoes the same kind of
+secondary/weaker association already documented for Program 3 in the pathway-enrichment work
+(DECISIONS.md 2026-07-15, Program 3's secondary basal-like association) — Program 3's biology may
+simply be less cleanly separable from other axes of variation than Program 7's, independent of which
+method is used to extract it.
+
+**Interpretation:** SBMF is best understood as adding a supervised re-weighting/selection on top of
+EBMF's own factor structure, not as inventing biology EBMF can't see at all — consistent with the
+"Bayesian counterpart to DeSurv" positioning already used in the progress report. The joint model's
+value-add (per the existing paired-bootstrap result, +0.042 C-index, 95% CI 0.013-0.071) is in
+*using* this structure for prediction and disentangling it from the other 18 unsupervised factors,
+not in discovering it from nothing.
+
+**Not done (ROADMAP.md Part 3, deferred to a follow-up):** pathway-enrichment concordance between
+EBMF_F1/F2's gene loadings and Program 3/7's existing fgsea results
+(`docs/reports/pathway_enrichment_report_07_15_26.qmd`) — the correlation result above is a
+gene-loading-level check, not yet a biological-pathway-level one.
+
+**Files:** `results/benchmark_sim/run_ebmf_factor_correspondence.R` (new); outputs in
+`results/benchmark_sim/outputs/pathway_enrichment/` (`T5_ebmf_factor_correspondence.csv`,
+`T5_ebmf_factor_correlation_full.csv`, `F6_ebmf_factor_correspondence_heatmap.png`); noted in
+`docs/progress_report/SSBMF_Status_Update_08_03_26.qmd`.
+
+---
+
 ## 2026-07-16 — Fixed PDF layout overflow and non-portable HTML in the pathway enrichment report
 
 **Problem, user-reported.** `docs/reports/pathway_enrichment_report_07_15_26.pdf` had a figure (F3,
