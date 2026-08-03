@@ -5,6 +5,53 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-08-03 — Pathway concordance between SBMF and unsupervised EBMF: subtype-level biology replicates, pathway-level mechanism does not (ROADMAP.md A/B comparison, Part 3)
+
+**Question:** given Part 2's result (same-day entry below) that EBMF's factors 1 and 2 correlate
+strongly with Program 3/7 at the *gene-loading* level, does that correspondence extend to the
+*pathway/gene-set enrichment* level — do the matched EBMF factors show the same enriched biology as
+Program 3/7's own fgsea results (DECISIONS.md 2026-07-15), or does supervision change what biology
+is recovered, not just which genes are weighted?
+
+**Method:** EBMF's factors 1 and 2 are signed (flashier's default point-normal prior), unlike SBMF's
+non-negative point-exponential $\mathbf{F}$ — so each was sign-aligned to its matched program
+(multiplied by the sign of its Part-2 correlation: factor 1 by $-1$, factor 2 by $+1$) before a
+two-sided `fgsea` (`scoreType="std"`) against the same 5 collections already used for Programs 3/7
+(MSigDB Hallmark/Reactome/KEGG/GO:BP + the custom PDAC collection). Concordance for each of Program
+3/7's own significant sets (padj<0.10) is read off directly: is that same set also significant,
+same direction, for the matched EBMF factor?
+
+**Result — a real, non-trivial split, not clean concordance:**
+
+| Collection | Concordant / total |
+|---|---|
+| PDAC_custom (Moffitt/Bailey/DeSurv subtype gene sets) | **4/5** |
+| Reactome | 1/2 |
+| KEGG (MEDICUS pathway/signaling sets) | **0/6** |
+| **Overall** | **5/13** |
+
+The coarse *subtype*-level signal (classical/basal-like/squamous calls from DeSurv, Moffitt, Bailey)
+is robustly recovered by the unsupervised EBMF factors — e.g. Program 7's `DeSurv_D3_BasalLikeTumor`
+hit (padj=6.1e-4) replicates in EBMF_F2 at padj=1.9e-25, and `Bailey_Squamous` at padj=4.9e-7.
+But every one of the specific *molecular signaling pathway* hits from KEGG (integrin/FAK/RHOA
+signaling for Program 3; RTK/RAS/PI3K signaling for Program 7) fails to replicate — either
+non-significant in the matched EBMF factor, or (for Program 3's KEGG hits specifically) significant
+but in the **opposite** direction (NES flips sign).
+
+**Interpretation:** supervision doesn't just re-weight genes within biology EBMF already sees (Part
+2's finding) — it also sharpens or changes which finer-grained mechanistic signal comes through.
+Unsupervised EBMF recovers the coarse tumor-subtype axis but not the specific signaling-pathway
+story; the survival term appears to be doing real work at the pathway-mechanism level, not only at
+the broad-subtype level. This tempers the Part-2 "SBMF is just a supervised re-weighting of EBMF"
+framing — that framing holds at the gene-loading and subtype level, but not uniformly down to
+pathway mechanism.
+
+**Files:** `results/benchmark_sim/run_ebmf_pathway_concordance.R` (new); outputs
+`results/benchmark_sim/outputs/pathway_enrichment/T6_ebmf_pathway_concordance.csv`,
+`ebmf_fgsea_results.rds`.
+
+---
+
 ## 2026-08-03 — The two survival-active programs also emerge from unsupervised EBMF (ROADMAP.md A/B comparison, Part 2)
 
 **Question:** ROADMAP.md's "SSBMF vs. unsupervised EBMF" item (line 359) left two parts open after

@@ -356,7 +356,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   provided as starting point for pathway enrichment.
   *Files: docs/reports/desurv_factor_diagnostics_05_27_26.{qmd,pdf}*
 
-- [ ] **A/B comparison: SSBMF vs unsupervised EBMF on real PDAC data** `[Priority: High]` `[Effort: Medium]`
+- [x] **A/B comparison: SSBMF vs unsupervised EBMF on real PDAC data** *(All 3 parts complete, 2026-08-03)*
   Fit an unsupervised EBMF model (no survival objective) on the same merged TCGA+CPTAC training
   data and DeSurv gene set. Evaluate both on the same 5 held-out PDAC cohorts (η = YFβ for SSBMF;
   Cox PH on YF factor scores post-hoc for EBMF). Goal: quantify the performance and interpretability
@@ -381,12 +381,18 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   and 2 (unsupervised) correlate with Programs 3 and 7 at r=-0.72 and r=+0.69 respectively, both
   clearly the best match for their program and well separated from all other 18 factors (next-best
   |r| ≤ 0.60, with one honest secondary nuance for Program 3 — see DECISIONS.md 2026-08-03). The
-  same 2-program structure is real, unsupervised signal, not an artifact of the survival term. Part
-  (3) pathway concordance remains.
+  same 2-program structure is real, unsupervised signal, not an artifact of the survival term.
+  **Part (3) is also done (same day):** pathway concordance is a real, non-trivial split, not clean
+  agreement — coarse subtype-level gene sets (Moffitt/Bailey/DeSurv) replicate strongly in the
+  matched unsupervised EBMF factor (4/5 concordant), but every specific KEGG signaling-pathway hit
+  (integrin/FAK/RHOA for Program 3; RTK/RAS/PI3K for Program 7) fails to replicate (0/6) — either
+  non-significant or flipped in direction. Supervision appears to sharpen or change the
+  fine-grained mechanistic signal, not just re-weight genes within biology EBMF already sees — see
+  DECISIONS.md 2026-08-03 for the full breakdown. All 3 parts of this comparison are now complete.
   *Files: YFB fit in `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds`;
   EBMF via `flashier`; prediction via `code/predict.R`; baseline runner `run_ebmf_cox_external.R`;
   CI analysis: `results/benchmark_sim/run_external_ci_analysis.R`; factor correspondence:
-  `run_ebmf_factor_correspondence.R`.*
+  `run_ebmf_factor_correspondence.R`; pathway concordance: `run_ebmf_pathway_concordance.R`.*
 
 - [x] **Pathway enrichment on D4 active factors** *(Complete, 2026-07-15, branch `pathway-enrichment-plan`)*
   `fgsea` ranked-by-weight enrichment (primary) + ORA (confirmatory) on Programs 7 (Adverse) and 3
