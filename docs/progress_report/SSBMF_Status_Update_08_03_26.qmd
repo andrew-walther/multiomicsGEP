@@ -14,7 +14,7 @@ format:
         \usepackage{titling}
         \usepackage{array}
         \usepackage{float}
-        \geometry{margin=0.7in}
+        \geometry{margin=0.55in}
         \raggedbottom
         \renewcommand{\familydefault}{\sfdefault}
         \setlist[itemize]{leftmargin=1.1em, topsep=0.1em, itemsep=0.06em, parsep=0em, partopsep=0em}
@@ -217,8 +217,6 @@ a wholly separate model class.
   factorization + Cox vs. DeSurv's own framework), both methods converge on the same
   underlying tumor biology — that convergence, not a performance ranking, is the
   meaningful point of comparison here.
-
-\newpage
 
 ## Key next steps
 
