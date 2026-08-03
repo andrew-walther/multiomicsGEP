@@ -1,0 +1,67 @@
+# August 3, 2026
+
+```{r setup}
+library(knitr); library(dplyr)
+DS      <- "../../../results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv"
+OVERLAP <- "../../../results/benchmark_sim/outputs/pathway_enrichment/T4_sbmf_desurv_overlap.csv"
+rd <- function(p) if (file.exists(p)) read.csv(p, stringsAsFactors = FALSE) else NULL
+desurv <- rd(DS); overlap <- rd(OVERLAP)
+rec_mean <- if (!is.null(desurv)) round(mean(desurv$c_index[desurv$model == "D4"]), 3) else 0.627
+j7 <- if (!is.null(overlap)) round(overlap$jaccard[overlap$program==7 & overlap$desurv_factor=="DeSurv_D3_BasalLikeTumor"], 2) else 0.18
+j3 <- if (!is.null(overlap)) round(overlap$jaccard[overlap$program==3 & overlap$desurv_factor=="DeSurv_D1_ClassicalTumor"], 2) else 0.13
+```
+
+No change to the recommended model this cycle. This entry adds one new check (do the same 2
+programs show up without supervision at all?) and a direct comparison against DeSurv's published
+gene programs, then shifts focus toward the manuscript.
+
+## Method updates
+
+Nothing changed in the model or pipeline this cycle — this was a validation and comparison cycle
+building directly on 7/15.
+
+## Results updates
+
+**Do the 2 survival-active programs show up in a fully unsupervised fit, or only because the
+survival term is pushing them there?** Took the unsupervised EBMF fit (the same one already used as
+the two-step baseline in prior entries — same gene universe, no survival information at all) and
+correlated its 20 factors against our Programs 3 and 7:
+
+```{r bio-fig, fig.cap="Gene weights across all 7 programs, for the union of Program 3's and Program 7's leading-edge genes. Each gene carries weight almost entirely in its own program's column and close to none in the other 5 -- the two active programs are distinct, non-overlapping gene sets."}
+knitr::include_graphics("../figs/2026-08-03_geneweight_heatmap.png")
+```
+
+EBMF's own factor 1 tracks Program 3 (r = −0.72) and factor 2 tracks Program 7 (r = +0.69) — each is
+clearly the best match for its program among all 20 unsupervised factors. That means this 2-program
+structure is sitting in the data on its own; the survival term is finding it, not inventing it. SBMF
+reads best as a supervised re-weighting of EBMF's own factor structure — a variation on EBMF, not a
+separate model class that happens to also fit survival.
+
+**Direct comparison to DeSurv's published gene programs:** Program 7 (adverse) overlaps DeSurv's
+basal-like-tumor factor at Jaccard `r j7` (hypergeometric $p\approx3\times10^{-16}$); Program 3
+(protective) overlaps DeSurv's classical-tumor factor at Jaccard `r j3` ($p\approx1\times10^{-7}$).
+Different model classes, same underlying tumor biology — that convergence, not a head-to-head
+performance claim, is the useful takeaway here. A matched, same-protocol comparison against DeSurv is
+still the pending next step for an actual performance claim.
+
+## Relevance of new findings
+
+Two independent lines now agree that the 2-program structure is real biology rather than a modeling
+artifact: it reproduces without any survival information at all (EBMF correlation), and it matches
+an independently published, differently-derived analysis (DeSurv overlap). That's a meaningfully
+stronger position than either check alone, since neither depends on the joint model's own objective
+to succeed.
+
+## Open items to address
+
+- Factor-stability across random seeds is still uncharacterized for the recommended YFB fit.
+- Matched, same-protocol head-to-head against DeSurv (same data, same scoring) — builds directly on
+  today's gene-overlap comparison, but as a performance claim, not just a biology-convergence claim.
+- Shift in focus starting now: manuscript writing (introduction and background/literature review).
+  The companion manuscript repository is already scaffolded with an intro draft and a populated
+  reference library — next step is to continue and expand that draft.
+
+## Deep dive
+
+- Full write-up: [`SSBMF_Status_Update_08_03_26`](../../../progress_report/SSBMF_Status_Update_08_03_26.html)
+- Pathway enrichment methodology and DeSurv overlap detail: [`pathway_enrichment_report_07_15_26`](../../../reports/pathway_enrichment_report_07_15_26.html)

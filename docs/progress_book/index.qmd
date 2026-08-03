@@ -1,0 +1,15 @@
+# About this notebook {.unnumbered}
+
+This is the running record of SSBMF progress, one chapter per advisor
+meeting. Each chapter covers what changed in the method, what was run to
+validate it (on real cohorts and on simulation), whether the new results
+make sense, and what's still open. Figures and tables that came up in
+discussion are included directly; anything that needs the full statistical
+detail is linked out under that chapter's "Deep dive."
+
+For a complete session-by-session build log (every script, test, and
+decision), see `PROJECT_STATUS.qmd` at the repo root. This notebook is the
+meeting-facing summary, not a replacement for that log.
+
+Chapters are listed in the sidebar in date order — click a date to jump
+straight to that meeting.

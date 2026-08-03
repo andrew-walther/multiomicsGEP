@@ -36,6 +36,7 @@ For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (re
 | Global hyperparameter registry | `config/globals.yml` |
 | **LB benchmark runner** | `results/benchmark_sim/run_LB_benchmark.R` |
 | **YFB benchmark runner** | `results/benchmark_sim/run_YFB_benchmark.R` |
+| **Progress notebook (meeting-facing, one chapter per advisor meeting)** | `docs/progress_book/` — Quarto book, `quarto render` to build; add a new `chapters/YYYY-MM-DD.qmd` per meeting |
 | **Benchmark reports (dated)** | `docs/reports/ssbmf_summary_report_MM_DD_YY.{qmd,pdf,html}` — DeSurv record: `_04_29_26` |
 | Phase 1 loading heatmaps | `results/benchmark_sim/run_phase1_diagnostics.R` |
 | Archived benchmark runners | `results/benchmark_sim/archive/` — 9 retired scripts (see archive/README.md) |

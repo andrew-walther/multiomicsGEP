@@ -1,0 +1,67 @@
+# Week of May 7, 2026
+
+Several fixes landed this week that changed how much we trust the merged-cohort results, plus the
+first head-to-head between the two model formulations, LB and YFB.
+
+## Method updates
+
+- **Risk-direction sign fix (5/5).** Both LB and YFB had an anti-concordance bug — the model's risk
+  score was pointing the wrong way for a subset of fits. Fixed; every external result from this point
+  on assumes the corrected sign.
+- **Merged YFB collapse resolved (5/6).** The 5/5 report still showed merged YFB collapsing to
+  $\beta\approx0$. Switching to per-platform z-standardization and dropping the rank transform
+  recovered non-zero, non-degenerate survival coefficients on merged TCGA+CPTAC. This supersedes the
+  5/5 result.
+- **Ruled out as fixes:** constrained SVD initialization + Cox-sign alignment (no ELBO or external
+  gain), and a 30-restart multi-start sweep (plain SVD initialization already wins on ELBO — restarts
+  aren't the bottleneck).
+- **K-selection pipeline.** Implemented K-fold CV for choosing the number of factors. Reliable for LB;
+  not yet reliable for YFB (see Open items).
+
+**LB vs. YFB, as a modeling choice:** LB puts prognosis on the latent loadings ($\eta=L\beta$) and
+needs an OLS approximation to score new subjects. YFB puts prognosis on the observed factor scores
+($\eta=(YF)\beta$) and scores new subjects exactly, with no approximation — the tradeoff is that YFB
+needed its own from-scratch derivation rather than reusing LB's update rules.
+
+## Results updates
+
+| Model | Training set | Median external C | Active factors |
+|---|---|---:|---|
+| LB | TCGA-only | 0.610 | 2–3 |
+| LB | CPTAC-only | 0.625 | 2–3 |
+| LB | Merged TCGA+CPTAC | 0.644 | 2–3 |
+| YFB | TCGA-only | 0.553 | near-zero $\beta$ |
+| YFB | CPTAC-only | 0.561 | near-zero $\beta$ |
+| YFB | Merged TCGA+CPTAC (per-platform z-std) | 0.644 | 3 ($K_\text{eff}=3$) |
+
+**LB is the stable benchmark for now.** It gives essentially the same predictions under both the
+`normal` and `point_normal` priors, and its best single-cohort result (PACA-AU seq) reaches
+0.656–0.673. **YFB is mixed outside the merged, per-platform-standardized setting** — single-cohort
+YFB fits give near-zero betas even when the raw C-index looks above chance, which isn't a convincing
+signal on its own. On the merged cohort with the right preprocessing, though, YFB matches LB's 0.644
+— the first sign that YFB can be competitive once the platform-scale issue is handled.
+
+K-selection: under the current CV sweep, LB's `normal` prior picks $K=3$ (1-SE rule); `point_normal`
+picks $K=8$, read as a shrinkage artifact from a small $n$ rather than real evidence for 8 factors.
+Practical compromise for LB: $K=5$. YFB's CV isn't decision-ready yet — point-normal collapses to
+chance (C=0.5) in every fold, and the normal prior gives anti-concordant results across folds because
+held-out folds don't yet have stable sign correction.
+
+## Relevance of new findings
+
+The sign fix matters retroactively — any external number reported before 5/5 needs to be read as
+provisional. The bigger result is that merged YFB, once given per-platform z-standardization, reaches
+parity with LB (0.644 both) instead of collapsing — this is the first real evidence that the YFB
+reformulation from the previous entry is viable, not just a cleaner derivation on paper.
+
+## Open items to address
+
+- Should K-fold CV stay the operational rule for LB while YFB's K-selection issue is still open?
+- Next methodological push: Bayesian CV, or ARD-style shrinkage from a large $K_\text{max}$?
+- Single-cohort YFB still needs a scale-aware fix analogous to what worked for the merged cohort.
+- LB's loading update still looks genomics-dominated — survival's influence on $L$ may still be too
+  weak even after the sign fix.
+
+## Deep dive
+
+- Full write-up: [`SSBMF_Status_Update_5_07_26`](../../../progress_report/SSBMF_Status_Update_5_07_26.pdf)

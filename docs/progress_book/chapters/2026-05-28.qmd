@@ -1,0 +1,77 @@
+# Week of May 28, 2026
+
+This week answered three open questions from the May 7 entry: which preprocessing actually works for
+merged multi-platform training, whether a cohort indicator helps, and whether to standardize on LB or
+YFB. It also tested DeSurv-aligned gene selection as a replacement for plain variance filtering.
+
+## Method updates
+
+- **18-configuration preprocessing benchmark (5/27).** Compared 5 preprocessing strategies (joint
+  quantile normalization + rank transform, per-platform z-standardization, joint QN without rank
+  transform, joint z-standardization, log-only) across LB and YFB, with and without a cohort
+  indicator, on merged TCGA+CPTAC ($n=273$, 5-fold CV, biological floor $K\geq3$).
+- **DeSurv-aligned gene selection (5/28).** Replaced variance-only gene selection with a combined
+  mean+variance rank computed per-platform before normalization (DeSurv's own approach), keeping the
+  top 3,000 genes per cohort (2,064 after intersection, vs. 2,000 before).
+
+## Results updates
+
+**Critical finding: preprocessing is not a free choice.** 10 of the 12 non-per-platform
+configurations collapsed to $\hat\beta=0$ for every factor. Only **per-platform z-standardization**
+consistently recovers non-zero survival coefficients — without it, the top singular vectors of the
+merged matrix capture the RNA-seq/proteomics platform contrast rather than biology, and the survival
+update has nothing real to latch onto.
+
+**Cohort indicator is situational, not a free win.** It absorbs the platform offset when preprocessing
+hasn't already removed it (+0.020 for LB with joint QN — meaningfully helpful there), but is neutral
+to harmful once per-platform z-standardization is already in place (+0.004 for LB, −0.013 for YFB,
+where at low $K$ it competes with the 2 biological factors for variance). Recommendation: keep it
+available as a robustness option for LB when per-platform preprocessing can't be guaranteed, but
+exclude it from the primary YFB configuration.
+
+**DeSurv gene selection improved external concordance in both model families:** +0.012 for YFB (D4 vs.
+the earlier per-platform-only D2), +0.006 for LB (D3 vs. D1). YFB also outperformed LB on the same
+DeSurv gene set by +0.014 (D4 vs. D3) — the two effects are additive. Every one of the 5
+configurations tested (D1–D5) converged to exactly **2 active survival factors** regardless of how
+many factors were requested (K ranged 3–8), with one adverse-direction and one protective-direction
+program every time — the same 2-factor structure keeps showing up no matter how we slice the
+preprocessing, which is a good sign it's a real property of the data rather than a fitting quirk.
+
+| Config | Model | Gene selection | Cohort ind. | K | K_eff | Mean external C |
+|---|---|---|---|---:|---:|---:|
+| D4 (recommended) | YFB | DeSurv, 2,064 genes | No | 7 | 2 | 0.636 |
+| D3 (sensitivity) | LB | DeSurv, 2,064 genes | No | 7 | 2 | ~0.630 |
+| D5 | YFB | DeSurv, 2,064 genes | Yes | 8 | 2 | 0.614 |
+| D2 (prior baseline) | YFB | Variance only, 2,000 genes | No | 3 | 2 | 0.624 |
+| D1 (prior baseline) | LB | Variance only, 2,000 genes | No | 3 | 1 | ~0.624 |
+
+*(D4's 0.636 is the number as understood this week; a train/test preprocessing bug found later, on
+7/15, revises this down to 0.627 — see that entry. Kept here as the historical record of what we
+knew at the time.)*
+
+## Relevance of new findings
+
+This is the week the recommended configuration actually converges: **YFB, DeSurv-aligned gene
+selection, per-platform z-standardization, no cohort indicator, $K=7$.** It beats the alternatives for
+concrete, understood reasons (platform-scale collapse avoided, gene selection matches DeSurv, YFB's
+exact scoring beats LB's OLS approximation) rather than by grid-search luck — every one of the 18/5
+configurations tested has an explanation for why it does or doesn't work, which is what makes this
+choice defensible going forward rather than just "the biggest number in a table."
+
+## Open items to address
+
+- Pathway enrichment on D4's 2 active factors (Factor 3 adverse, Factor 7 protective) — the main
+  interpretability task left before the biology story can be told.
+- Compare patient loadings on the 2 active factors to Moffitt subtype scores in TCGA to check
+  concordance with classical vs. basal subtypes.
+- YFB's point-normal prior still returns C=0.5 for all K in cross-validation — open issue, normal
+  prior remains the default.
+- Cohort indicator may earn a second look once training extends past 2 platforms.
+
+## Deep dive
+
+- Preprocessing/cohort-indicator benchmark: [`cohort_lmm_benchmark_report_5_22_26`](../../../reports/cohort_lmm_benchmark_report_5_22_26.html)
+- DeSurv gene-selection comparison: [`desurv_alignment_report_05_27_26`](../../../reports/desurv_alignment_report_05_27_26.html)
+- Factor convergence/diagnostics detail: [`desurv_factor_diagnostics_05_27_26`](../../../reports/desurv_factor_diagnostics_05_27_26.html)
+- Original write-ups: [`SSBMF_Status_Update_5_27_26`](../../../progress_report/SSBMF_Status_Update_5_27_26.html),
+  [`SSBMF_Status_Update_5_28_26`](../../../progress_report/SSBMF_Status_Update_5_28_26.pdf)

@@ -1,0 +1,27 @@
+project:
+  type: book
+
+book:
+  title: "SSBMF progress notebook"
+  subtitle: "One chapter per advisor meeting"
+  author: "Andrew Walther"
+  date: last-modified
+  chapters:
+    - index.qmd
+    - chapters/2026-04-29.qmd
+    - chapters/2026-05-07.qmd
+    - chapters/2026-05-28.qmd
+    - chapters/2026-07-15.qmd
+    - chapters/2026-08-03.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-fold: true
+    fig-width: 6.5
+    fig-height: 4
+execute:
+  echo: false
+  warning: false
+  message: false
