@@ -311,6 +311,28 @@ run_test("KCV-T18: classify_factors() borderline threshold edge case (values exa
   assert_equal(out$category[1], "dead", "borderline factor (both exactly at threshold) should be classified dead")
 })
 
+run_test("KCV-T19: classify_factors() rel_thresh excludes a small-but-nonzero spurious factor relative to the max", {
+  # Mirrors the pattern found in the 2026-08-19 K-recovery simulation: one
+  # factor with a large, real EBeta, and a second whose EBeta clears
+  # beta_thresh but is only ~29% of the max (matching the real-data K=7 fit's
+  # own ratio, 0.0115/0.0404) -- rel_thresh=0.65 should exclude the second.
+  n <- 10; p_ <- 5
+  EL <- matrix(1, n, 2)
+  EF <- matrix(1, p_, 2)
+  res <- list(EL = EL, EF = EF, EBeta = c(0.0404, 0.0115))
+  Y   <- matrix(rnorm(n * p_), n, p_)
+
+  out_no_rel <- classify_factors(res, Y, beta_thresh = 0.001, pve_thresh = 0.01)
+  assert_equal(out_no_rel$category[2], "survival_active",
+               "without rel_thresh, the smaller factor clears beta_thresh and counts as active")
+
+  out_rel <- classify_factors(res, Y, beta_thresh = 0.001, pve_thresh = 0.01, rel_thresh = 0.65)
+  assert_equal(out_rel$category[1], "survival_active",
+               "the largest factor should still be survival_active under rel_thresh")
+  assert_true(out_rel$category[2] != "survival_active",
+              "rel_thresh=0.65 should exclude a factor at only ~28% of the max")
+})
+
 run_test("KCV-T16: cohort_id in ... is correctly row-subsetted per fold (LB)", {
   set.seed(21)
   n <- 60L; p <- 20L

@@ -27,8 +27,20 @@ Tracks execution of the multi-session plan for the 2026-08-21 advisor meeting. B
       validation), best-of-multistart ELBO is a near-tie between K=7 (2 survival-active + 2
       genomics-only = 4 total factors) and K=9 (2 survival-active + 3 genomics-only = 5 total).
       **Recommendation: K=7**, parsimony tiebreaker; K=9 documented as a near-tied alternative.
-      Real-data suite 88/88, full suite 394/394. See DECISIONS.md 2026-08-19. Analyses B/C
-      deferred to a later phase per `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`.
-- [ ] **Phase 3+** — not yet scoped in this session; remaining steps of the 8/13 plan (Analysis B:
-      ARD K-recovery simulation; Analysis C: signal-ratio sweep re-run) and any further meeting-prep
-      phases follow once Phase 2 lands.
+      Real-data suite 88/88, full suite 394/394. See DECISIONS.md 2026-08-19.
+- [x] **Phase 3 — Analysis B (ARD K-recovery simulation) + Analysis C (signal-ratio sweep re-run)**
+      — Analysis B (`run_k_recovery_sim.R`, 45 fits over known ground truth) found ARD
+      **over-counts** survival-active factors (91% of fits over-counted, 0% under-counted). A
+      follow-up diagnostic (`run_k_recovery_diagnostic.R`) confirmed the "extra" factors are real,
+      genuinely non-prognostic study-specific gene programs picking up spurious small β — not
+      fragments of the true signal, and not reliably fixed by `cohort_id`. Added an optional
+      `rel_thresh` parameter to `classify_factors()` (2 new tests, KCV-T19) that separates real
+      from spurious factors cleanly in the simulation — but confirmed it must NOT be applied to
+      the real D4 PDAC fit, whose smaller-β factor (Program 3) is independently validated via
+      5-cohort external HR<1 (DECISIONS.md 2026-07-15). Analysis C (`run_signal_ratio_sweep.R`,
+      new `K_INIT` param) confirmed the original YFB-vs-EBMF finding holds under ARD pruning, and
+      confirmed `cohort_id` only partially reduces Analysis B's false-positive pattern. Full suite
+      395/395. See DECISIONS.md 2026-08-20. **Open item flagged for discussion, not resolved:**
+      ARD's over-attribution of survival signal when no independent validation exists.
+- [ ] **Phase 4+** — not yet scoped in this session; remaining meeting-prep phases follow once
+      Phase 3's discussion items are addressed at the 8/21 meeting.

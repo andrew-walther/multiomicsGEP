@@ -5,6 +5,103 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-08-20 — Analysis B (ARD K-recovery simulation) finds real over-counting of survival-active factors; added an optional relative-magnitude threshold to `classify_factors()`, but confirmed it must NOT be applied to the real PDAC fit
+
+**Context:** the 2026-08-19 entry below recommends K=7 (2 survival-active + 2 genomics-only
+factors) for the real D4 PDAC model. Analysis B — a controlled simulation with KNOWN ground truth
+— was run next to check whether ARD reliably recovers the *correct number* of survival-active and
+genomics-only factors, not just a *stable* number (real-data stability doesn't prove correctness,
+since we don't know real data's ground truth).
+
+**How the simulation is built** (`results/multi_cohort_sim/generate_multicohort_data.R`, existing
+code, reused as-is): two simulated cohorts of 150 patients each, 1000 genes. Each latent factor is
+either "shared" (present in both cohorts, and the only kind that gets a real, non-zero survival
+coefficient) or "study-specific" (loadings forced to exactly zero for every patient outside its
+owning cohort, survival coefficient exactly zero by construction — real, cohort-specific gene
+programs with a genuinely known-zero prognostic effect). Gene-loading profiles are recycled from
+real EBMF programs fit to actual PDAC data (cached, not re-fit). Data is only column-centered
+before fitting — **no z-standardization or gene selection is applied, unlike the real-data D4
+pipeline** — a real gap between what Analysis A validated and what Analysis B tests, worth noting
+as a caveat on how directly comparable the two are.
+
+**Analysis B result** (`results/multi_cohort_sim/run_k_recovery_sim.R`; 3 conditions × 3 K_init
+offsets × 5 seeds = 45 fits, `results/multi_cohort_sim/outputs/k_recovery_sim_results.csv`): ARD
+substantially **over-counts** survival-active factors — 91% of the 45 fits over-counted, 0%
+under-counted, exact recovery in only 9%. Mean excess ranged +1.6 to +2.4 factors above the true
+count, uniformly across all K_init offsets tested (getting more spare capacity did not fix it).
+Meanwhile the true factor's gene loadings were recovered reasonably well (rec_shared correlation
+range 0.82–0.94 across all 45 fits, generally highest for Condition A and lowest for the more
+complex Condition C) — the over-counting is specifically about assigning spurious survival
+coefficients on top of correctly-found structure, not primarily about failing to find real
+gene-expression structure.
+
+**Follow-up diagnostic** (`results/multi_cohort_sim/run_k_recovery_diagnostic.R`, Condition A —
+exactly 1 true survival-active factor — 5 seeds, `k_recovery_diagnostic_factors.csv` /
+`_summary.csv`) pinned down most, but not all, of the mechanism: in every seed, exactly one
+"survival-active" factor correlates strongly (0.90–0.93) with the true shared factor and carries by
+far the largest |β| (0.146–0.173). Of the 12 *extra* factors flagged across the 5 seeds, 10
+correlate near-zero (≤0.17) with the true shared factor but **strongly (0.92–0.96) with a true
+study-specific (genuinely non-prognostic) factor** — i.e. the model correctly finds a real, genuine
+cohort-specific gene program and then incorrectly attaches a small, spurious non-zero β to it. The
+remaining 2 (both from one seed) correlate weakly with *everything* — true shared, every true
+specific factor, and PVE ≈0 — i.e. a small spurious β attached to what looks like a noise
+direction with no real gene-expression footprint at all, a related but distinct failure mode from
+the other 10. Adding `cohort_id` does **not** reliably fix either pattern (seed-by-seed count of
+extra factors: 3→3, 4→2, 4→5 [worse], 3→3, 3→3) — consistent with Analysis C's own
+aggregate finding below that `cohort_id` only partially reduces false positives.
+
+**The usable pattern:** in every seed, the true factor's |β| is the single largest in the fit, and
+every spurious factor stays below 62% of that max (ratio range 0.04–0.62 across all 12 spurious
+hits, 5 seeds) — a clean, consistent gap. This is a real, usable signal that `beta_threshold=0.001`
+(calibrated only to separate "exactly zero" from "not exactly zero") does not use.
+
+**Decision — added `rel_thresh` to `classify_factors()`** (optional, default `NULL` = old
+behavior unchanged): when set, a factor only counts as `survival_active` if its |β| also clears
+`rel_thresh * max(|β|)` across the fit, not just the absolute `beta_thresh`. 2 new tests added
+(`tests/test_select_K_cv.R`, KCV-T19).
+
+**Critical check before trusting this on real data — and where it stops:** the real D4 PDAC K=7
+fit's own two "active" betas (0.0115, 0.0404) have almost the identical low ratio (0.28) as the
+simulation's spurious factors (max spurious ratio 0.62) — on the surface, suggesting the smaller
+one might be exactly this kind of artifact. **But it is not:** the smaller factor is Program 3
+(Protective), already independently validated by four separate methods in the 2026-07-15 entry
+below — most decisively, its risk score gives HR<1 in **5 out of 5 held-out external cohorts**
+(range 0.42–0.88), a form of evidence the simulation's spurious factors have no analog of (they
+were never tested against independent data, because in the simulation their true effect is known
+to be exactly zero by construction). Mechanically applying `rel_thresh` to the real K=7 fit would
+have wrongly discarded Program 3. **`rel_thresh` is therefore recommended only for contexts without
+independent external validation to check against (e.g. new simulations, or new datasets before
+their own validation work is done) — not for the real D4 PDAC model, where existing 5-cohort
+validation already settles the question.** The 2026-08-19 recommendation (K=7, K_eff=4, both
+factors real) is unchanged and, if anything, more carefully checked than before.
+
+**Open item for discussion, not resolved here:** Analysis B shows real evidence that ARD can
+misattribute survival signal to non-prognostic, cohort-specific programs when no independent
+validation is available — a real limitation worth raising, alongside possible mitigations
+(`rel_thresh`, `cohort_id`, more explicit platform/cohort covariate adjustment, or additional
+external-validation-style checks for future datasets) as topics for group discussion rather than
+a settled fix.
+
+**Analysis C result** (`results/multi_cohort_sim/run_signal_ratio_sweep.R`, modified to add a
+`K_INIT` parameter — default 20, `--k-init` overridable — used in each arm's fit call instead of
+`K_FIT`=K_true=6; new output `signal_ratio_sweep_results_kinit20.csv`, original
+`signal_ratio_sweep_results.csv` preserved): re-running the original signal-ratio sweep (a_specific
+∈ {12,18,24,36,48}, i.e. variance ratios 1x–4x) with K_INIT=20 instead of fitting at K_true directly
+confirms the original conclusion still holds under ARD pruning — YFB's true-positive rate on the
+real shared factor stays at ~1.0 (0.90 at the 2x ratio) across all ratios, matching the un-pruned
+K_FIT=6 baseline. But it also directly answers the cohort_id question raised by Analysis B: the
+false-positive rate on non-prognostic factors is 0.25–0.40 for `YFB_base` and 0.15–0.40 for
+`YFB_cohort` — `cohort_id` gives a small improvement at the lowest signal ratio (0.25→0.15) but
+**no improvement at all** at 2x/4x ratios (identical FP), confirming `cohort_id` is not a reliable
+fix for this false-positive pattern.
+
+**Deferred:** the bootstrap-CI question (whether the K=5-vs-K=7 external C-index gap, 0.596 vs.
+0.627, is formally statistically significant — the per-cohort direction is consistent across all
+5 cohorts, which is suggestive, but no CI has been computed) is flagged as a future to-do
+(ROADMAP.md), not resolved this session — not urgent for the 8/21 meeting.
+
+---
+
 ## 2026-08-19 — Three-way factor classification (survival-active / genomics-only / dead) added; K_init sweep + best-of-multistart ELBO comparison recommends K=7 (2 survival-active + 2 genomics-only factors), with K=9 as a near-tied alternative
 
 **Motivation:** two methodological gaps flagged for the manuscript
@@ -88,14 +185,17 @@ every K≥7 (0.6256–0.6279) — a genuine, large (~0.03) gap between training-
 CAVI has nowhere to route ambiguous/noisy signal except into an existing factor's β, inflating
 training likelihood without it generalizing; K≥7 gives CAVI "dead" factors to absorb that instead.
 
-**Decision — apply ELBO with an external-validity gate, not ELBO alone:** per the plan agreed before
-running this check, best-of-multistart ELBO is the primary K-selection criterion (consistent with
-this project's ARD-over-CV policy), but a candidate that collapses on external validation is treated
-as failing a plausibility gate, not as a competitor to be ranked on ELBO alone. K=5/K=6 fail that
-gate outright. Restricting to K ∈ {7,8,9,10} (all pass, external C 0.6256–0.6279, mutually
-indistinguishable), **K=7 (−810,540) and K=9 (−810,421) are a near-tie at the top of best-of-multistart
-ELBO** — a ~0.015% difference, versus 3,000–5,500-unit gaps down to K=8/K=10. **Recommendation: K=7
-(2 survival-active + 2 genomics-only = 4 total factors)**, on the same parsimony-tiebreaker logic
+**Decision — use ELBO to rank candidate K's, but throw out any candidate whose model doesn't
+actually work on new data:** best-of-multistart ELBO is the main criterion for choosing K
+(consistent with this project's ARD-over-CV policy), but any K whose fit fails badly on the 5
+external cohorts is excluded first, before ranking on ELBO — a bad external result there is a sign
+that whatever the model is fitting internally, it isn't real, generalizable structure, so it
+shouldn't be allowed to win just because its training-data fit score happens to be highest. K=5/K=6
+are excluded on exactly this basis. Restricting to K ∈ {7,8,9,10} (all of which perform well
+externally, C 0.6256–0.6279, indistinguishable from each other), **K=7 (−810,540) and K=9 (−810,421)
+come out essentially tied for the best ELBO** — a ~0.015% difference, versus 3,000–5,500-unit gaps
+down to K=8/K=10. **Recommendation: K=7 (2 survival-active + 2 genomics-only = 4 total factors)**,
+choosing the simpler model since the two are statistically indistinguishable — the same logic
 already used in this project (2026-07-13 entry below: K=7 chosen over statistically-tied K=4/K=5
 because it is reachable via a single dependency-free fresh-SVD fit) — **K=9 (2 survival-active + 3
 genomics-only = 5 total) is documented as a legitimate, near-tied alternative, not discarded.**
@@ -117,8 +217,8 @@ This directly answers both open items flagged in the 8/21 meeting-prep model-spe
 (`docs/progress_book/chapters/meeting_2026_08_21.qmd` §1): how K=7 was chosen (now: ELBO/multistart,
 not just CV, and it holds up), and whether the survival-active/genomics-only split is an artifact of
 that specific K or a stable structural feature of the data (K_survival_active=2 is stable from
-K_init=7 up; K=5/6's apparent 3rd survival-active factor does not generalize and is treated as a
-training-only artifact under the external-validity gate).
+K_init=7 up; K=5/6's apparent 3rd survival-active factor does not generalize to new cohorts and is
+treated as a training-only artifact, not real signal).
 
 **Deferred to a later phase (not run this session):** Analysis B (ARD K-recovery in simulation,
 validating that K_eff_survival/K_eff_genomics track *known* ground-truth counts, not just each

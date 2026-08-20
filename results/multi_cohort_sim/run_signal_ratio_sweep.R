@@ -70,8 +70,20 @@ srs <- mc$signal_ratio_sweep
 C           <- mc$C
 N_PER       <- unlist(mc$n_per)
 P           <- mc$p
-K_FIT       <- mc$k_fit
+K_FIT       <- mc$k_fit   # true K for the hybrid scenario (K_shared=2, K_specific=[2,2]); kept
+                          # as the reference/"K_true" value, no longer passed to model fits below
 BETA_THRESH <- cfg$k_selection$beta_threshold
+
+# K_INIT: Analysis C (docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md) --
+# each arm's model fit uses an over-specified K_INIT >> K_FIT=K_true=6, letting ARD prune,
+# instead of fitting at K_FIT directly. Confirms the original signal-ratio finding (YFB beats
+# EBMF->Cox when survival signal is strong) holds under ARD pruning from over-specified K.
+# --k-init N overrides the default of 20.
+K_INIT <- 20L
+if ("--k-init" %in% args) {
+  k_init_val <- suppressWarnings(as.integer(args[which(args == "--k-init") + 1]))
+  if (!is.na(k_init_val) && k_init_val >= 1) K_INIT <- k_init_val
+}
 ALPHA       <- cfg$benchmark$alpha
 PRIOR_BETA  <- "normal"
 MAX_ITER    <- if (QUICK_MODE) 30L else cfg$cavi$max_iter
@@ -92,6 +104,7 @@ dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
 
 cat("============================================================\n")
 cat(" Signal-Ratio Sweep — Hybrid Scenario\n")
+cat(sprintf(" K_true=%d | K_INIT (over-specified, ARD-pruned)=%d\n", K_FIT, K_INIT))
 cat(sprintf(" a_shared=%.0f | a_specific grid: %s\n",
             A_SHARED, paste(sprintf("%.0f", A_SPECIFIC_GRID), collapse=", ")))
 cat(sprintf(" ratios (spec/shared): %s\n",
@@ -129,7 +142,7 @@ fit_arm <- function(arm, d, spl) {
   if (arm %in% c("YFB_base", "YFB_cohort")) {
     cid <- if (arm == "YFB_cohort") cid_tr else NULL
     f <- suppressMessages(fit_cox_on_yf(
-      Ytr, ttr, str_, K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
+      Ytr, ttr, str_, K = K_INIT, max_iter = MAX_ITER, alpha = ALPHA,
       prior_beta = PRIOR_BETA, verbose = FALSE, cohort_id = cid))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = f$EF_norms,
          EF_cohort = f$EF_cohort, n_iter = f$history$n_iter)
@@ -137,7 +150,7 @@ fit_arm <- function(arm, d, spl) {
   } else {
     cid <- if (arm == "LB_cohort") cid_tr else NULL
     f <- suppressMessages(fit_supervised_mf_modular(
-      Ytr, ttr, str_, K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
+      Ytr, ttr, str_, K = K_INIT, max_iter = MAX_ITER, alpha = ALPHA,
       prior_beta = PRIOR_BETA, verbose = FALSE, cohort_id = cid))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = NULL,
          EF_cohort = f$EF_cohort, n_iter = f$history$n_iter)
@@ -212,6 +225,7 @@ for (a_sp in A_SPECIFIC_GRID) {
         mean_abs_shared  = br$mean_abs_shared,
         mean_abs_specific= br$mean_abs_specific,
         c_index          = ci,
+        K_init           = K_INIT,
         n_iter           = fit$n_iter %||% NA_integer_,
         stringsAsFactors = FALSE
       )
@@ -224,12 +238,12 @@ for (a_sp in A_SPECIFIC_GRID) {
 results <- do.call(rbind, rows)
 
 # --------------------------------------------------------------------------
-# 5. Save
+# 5. Save — new filename (k_init-tagged) so the original K_FIT=K_true run
+#    (signal_ratio_sweep_results.csv) is preserved for comparison.
 # --------------------------------------------------------------------------
-write.csv(results,
-          file.path(OUT_DIR, "signal_ratio_sweep_results.csv"),
-          row.names = FALSE)
-cat(sprintf("Results: %s\n", file.path(OUT_DIR, "signal_ratio_sweep_results.csv")))
+out_file <- sprintf("signal_ratio_sweep_results_kinit%d.csv", K_INIT)
+write.csv(results, file.path(OUT_DIR, out_file), row.names = FALSE)
+cat(sprintf("Results: %s\n", file.path(OUT_DIR, out_file)))
 
 # --------------------------------------------------------------------------
 # 6. Console summary

@@ -110,10 +110,27 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 #' fully pruned by the ARD prior.
 #'
 #'   - "survival_active": |EBeta_k| > beta_thresh (prognostic signal present,
-#'     regardless of PVE)
+#'     regardless of PVE) AND, if rel_thresh is supplied, |EBeta_k| is also
+#'     at least rel_thresh * max(|EBeta|) across all factors in the fit.
 #'   - "genomics_only":   not survival-active, but PVE_k > pve_thresh
 #'     (explains genomic variance without prognostic value)
 #'   - "dead":            neither condition holds (fully pruned)
+#'
+#' The optional rel_thresh guards against a specific failure mode confirmed
+#' in the 2026-08-19 K-recovery simulation (DECISIONS.md): a genuinely
+#' non-prognostic factor can still pick up a small, non-zero EBeta that
+#' clears beta_thresh (calibrated only to separate "exactly zero" from
+#' "not exactly zero") without being a real survival effect. In that
+#' simulation, the true survival-active factor was always the single
+#' largest |EBeta| in the fit, and every spurious factor stayed below 62%
+#' of that max across 5 seeds — so rel_thresh=0.65 cleanly separated real
+#' from spurious there. This is a simulation-calibrated safeguard, not a
+#' general-purpose default: on real data (D4 PDAC fit), the smaller of two
+#' "active" factors passed this same low-ratio pattern (ratio ~0.28) yet is
+#' independently confirmed real via 5-cohort external validation (DECISIONS.md
+#' 2026-07-15) — rel_thresh must NOT be applied there. Use it only when no
+#' independent (e.g. external-cohort) validation is available to check
+#' against, such as new simulations.
 #'
 #' @param res         list with $EL (n x K), $EF (p x K), $EBeta (length K) —
 #'                     from fit_supervised_mf_modular() or fit_cox_on_yf()
@@ -121,23 +138,33 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 #' @param beta_thresh numeric: |EBeta_k| threshold for "survival_active"
 #'                    (default 0.001, matching config/globals.yml k_selection$beta_threshold)
 #' @param pve_thresh  numeric: PVE_k threshold for "genomics_only" (default 0.01 = 1%)
+#' @param rel_thresh  numeric in (0, 1] or NULL (default): if supplied, a factor
+#'                    must also have |EBeta_k| >= rel_thresh * max(|EBeta|) to
+#'                    count as "survival_active" — see simulation-calibration
+#'                    note above. NULL (default) disables this check, matching
+#'                    prior behavior.
 #'
 #' @return data.frame with one row per factor:
 #'   $factor      integer factor index (1..K)
 #'   $EBeta       numeric: posterior mean beta per factor
 #'   $abs_EBeta   numeric: |EBeta|
 #'   $PVE         numeric: per-factor proportion of variance explained
-#'   $surv_active logical: |EBeta| > beta_thresh
+#'   $surv_active logical: |EBeta| > beta_thresh (and, if rel_thresh set, also
+#'                >= rel_thresh * max(|EBeta|))
 #'   $geno_active logical: PVE > pve_thresh
 #'   $category    character: "survival_active", "genomics_only", or "dead"
 #'
 #' @seealso \code{\link{auto_prune_K}} for the binary active/shrunk predecessor.
 classify_factors <- function(res, Y,
                               beta_thresh = 0.001,
-                              pve_thresh  = 0.01) {
+                              pve_thresh  = 0.01,
+                              rel_thresh  = NULL) {
   pve     <- compute_pve(res, Y)
   ab_beta <- abs(res$EBeta)
   surv_active <- ab_beta > beta_thresh
+  if (!is.null(rel_thresh)) {
+    surv_active <- surv_active & (ab_beta >= rel_thresh * max(ab_beta))
+  }
   geno_active <- pve     > pve_thresh
   data.frame(
     factor      = seq_len(ncol(res$EL)),

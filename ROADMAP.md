@@ -81,7 +81,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [x] **Factor classification (survival-active/genomics-only/dead) + K-init sweep + best-of-
   multistart ELBO comparison (Analysis A)** *(Complete, 2026-08-19, branch
-  `meeting/2026-08-21-prep`)* `[Analyses B/C pending]`
+  `meeting/2026-08-21-prep`)*
   Per `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md` Step 1 + Analysis A:
   added `classify_factors()` (`code/select_K.R`) distinguishing survival-active from
   genomics-only-but-survival-silent factors, replacing `auto_prune_K()`'s binary active/shrunk
@@ -95,10 +95,34 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   genomics-only = 5 total). **Recommendation: K=7**, on the same parsimony-tiebreaker precedent
   used for the July K=4/K=5 tie below; K=9 documented as a legitimate near-tied alternative. Also
   found K_init past ~10 costs ELBO with no new structure (K_eff_total plateaus at 5), arguing
-  against a blanket "start as large as possible" rule. See DECISIONS.md 2026-08-19. **Still open,
-  deferred to a later phase:** Analysis B (ARD K-recovery against known ground-truth K in
-  simulation) and Analysis C (re-run the signal-ratio sweep with K_init ≫ K_true) — both scoped
-  in the plan doc above.
+  against a blanket "start as large as possible" rule. See DECISIONS.md 2026-08-19.
+
+- [x] **Analysis B (ARD K-recovery simulation) + Analysis C (signal-ratio sweep at K_INIT≫K_true)**
+  *(Complete, 2026-08-20, branch `meeting/2026-08-21-prep`)* `[open discussion item — see below]`
+  Analysis B (`results/multi_cohort_sim/run_k_recovery_sim.R`, known-ground-truth simulation, 45
+  fits) found ARD **substantially over-counts** survival-active factors: 91% of fits over-counted,
+  0% under-counted, uniformly across K_init offsets. A follow-up diagnostic pinned down the cause —
+  spurious "active" factors are real, genuinely non-prognostic study-specific gene programs that
+  pick up small but non-zero β (not fragments of the true signal); `cohort_id` does not reliably
+  fix this. Added an optional `rel_thresh` parameter to `classify_factors()` (real, largest-β-only
+  factor was always ≥62%-above every spurious factor's ratio-to-max across all 5 seeds tested) —
+  but confirmed this must NOT be applied to the real D4 PDAC fit, whose smaller-β factor (Program
+  3) is independently validated via 5-cohort external HR<1 (2026-07-15 entry), unlike the
+  simulation's provably-zero-effect factors. Analysis C (`run_signal_ratio_sweep.R`, now with a
+  `K_INIT` parameter, default 20) confirmed the original YFB-vs-EBMF finding holds under ARD
+  pruning, and separately confirmed `cohort_id` only partially reduces the false-positive rate
+  found in Analysis B (no improvement at all at 2x/4x signal ratios). See DECISIONS.md 2026-08-20.
+  **Open item, explicitly flagged for group discussion, not resolved:** ARD can misattribute
+  survival signal to non-prognostic factors when no independent validation exists to check
+  against — worth raising alongside possible mitigations (`rel_thresh`, `cohort_id`, other
+  covariate adjustments, or validation-style checks for future datasets).
+
+- [ ] **Bootstrap CI on the K=5-vs-K=7 external C-index gap** `[Priority: low, not urgent]`
+  Analysis A found K=5's external C-index (0.596) far below K=7's (0.627), consistent in direction
+  across all 5 held-out cohorts, but no formal significance test has been run on this specific
+  comparison. `code/concordance_ci.R` already has the bootstrap infrastructure for this (used for a
+  similar comparison in the 2026-07-16 entry below) — flagged as a future to-do, not needed for the
+  8/21 meeting.
 
 - [ ] **Follow-up plan for the progress report's open items** `[Priority: see plan]` `[Effort: see plan]`
   A saved, not-yet-started backlog covering every open item from Item 2's progress report (§7) and
