@@ -18,23 +18,20 @@ section works through that list plainly — what's done, what's still open — r
   April 29 through August 3 and pushed 2026-08-03.
 - **Model specification write-up** — the 8/3 notes' top immediate item ("write out current model
   form, pseudo-algorithm and major update steps") is §2 of this chapter, below.
+- **How $K=7$ was chosen, and whether that answer is trustworthy** (2026-08-19/20, this cycle;
+  §3 below): $K=7$ was originally chosen by cross-validated held-out C-index, which uses the
+  survival outcome to pick model structure — the ARD-vs-cross-validation comparison Dr. Rashid
+  asked about directly. Re-derived it instead from model fit alone (ELBO), cross-checked against
+  external validity, and separately stress-tested the procedure in a simulation where the true
+  number of factors is known. See §3.
 
 ### Still open (carried from 8/3, not addressed this cycle)
 
-- **Simulation comparing K-selection strategies** (grid search / cross-validated C-index vs.
-  ARD-style shrinkage from a large starting K), including a ground-truth-$K$ setup where the true
-  number of factors is known. A plan for this was drafted 2026-08-13
-  (`docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`) but not yet executed —
-  this is the next scoped piece of work, not something to imply is already done.
 - **Consistency of the 5 non-survival-active factors across the external cohorts.** Programs 3 and 7
   have been checked thoroughly (pathway enrichment, subtype correlation, DeSurv overlap, cross-cohort
-  hazard ratios); the other 5 factors in the $K=7$ fit have not had the equivalent check. This is
+  hazard ratios); the other factors in the $K=7$ fit have not had the equivalent check. This is
   flagged here rather than left implicit, since it's easy to read the Program 3/7 validation as
   covering the whole model when it doesn't.
-- **Revisiting how $K=7$ was selected**, specifically the ARD-vs-cross-validation comparison Dr.
-  Rashid asked about directly. The July K-parsimony work (warm-start equivalence of $K \in \{4,5,7,8\}$,
-  external C essentially tied) is relevant background but doesn't itself answer the ARD-vs-CV
-  question — that's the same 8/13 plan above.
 - Slides/figures for the meeting itself, prepared separately from this chapter.
 
 ### Ongoing (no change expected each cycle)
@@ -173,10 +170,91 @@ non-negative weights).
 |---|---|---|---|---|
 | 7 | Yes | Adverse | Basal-like / squamous-like (keratin, EGFR-ligand: EREG, TGFA, VEGFA) | HR>1 in 5/5 external cohorts |
 | 3 | Yes | Protective | Classical, differentiated epithelial | HR<1 in 5/5 external cohorts |
-| 1, 2, 4, 5, 6 | No | — | Not yet individually characterized | Cross-cohort consistency check still open (§1) |
+| 2 of 5 remaining | No | — | Real gene-expression programs, not tied to survival | See §3.1 — genomics-only; cross-cohort consistency check still open (§1) |
+| 3 of 5 remaining | No | — | Nothing retained | Fully pruned by the model (see §3.1) — not a "program" to characterize |
 
 $^\dagger$ Direction is read from the *marginal* survival association of each program's projection
 score (Cox on $Z\!F_{\cdot k}$ alone), not the joint model's $\tilde\beta$ sign — the two disagree for
 these two programs specifically ($\hat{\tilde\beta}_7 = -0.041$, $\hat{\tilde\beta}_3 = +0.011$), a
 suppression effect among correlated programs in the joint fit. The marginal convention is the one
 used for all adverse/protective labeling.
+
+## 3. Choosing $K$: a principled procedure, and how far it can be trusted
+
+Two questions sat behind "$K=7$, $K_{\text{eff}}=2$": how was $K=7$ actually chosen, and does that
+procedure reliably find the *right* number of programs — both survival-related and purely genomic —
+or could it be fooled? Both are worked through below, following the plan drafted 2026-08-13
+(`docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`). All findings are recorded in
+full, with exact numbers, in DECISIONS.md (2026-08-19, 2026-08-20).
+
+### 3.1 A three-way split, and choosing $K$ from model fit rather than the outcome
+
+The original $K=7$ came from cross-validated held-out C-index, which uses the survival outcome
+directly to choose model structure — the concern Dr. Rashid raised. The model's shrinkage prior on
+$\tilde\beta$ already prunes unneeded factors within a single large-$K$ fit (Automatic Relevance
+Determination, or ARD): give the model more programs than needed, and it drives the useless ones'
+survival coefficients toward zero on its own, without ever consulting the outcome to pick $K$.
+
+Re-running $K \in \{5,\dots,20\}$ this way surfaced a gap in the existing active/shrunk split: a
+program can be genuinely useless for survival while still being a real, distinct gene-expression
+program — those had been lumped in with programs the model discarded outright. Splitting "shrunk"
+into two categories — **genomics-only** (a real program, no survival link) and **dead** (nothing
+retained) — showed $K_{\text{eff}}=2$ (survival) is stable from $K=7$ upward, and a further 2–3
+programs are genomics-only rather than dead, i.e. **4 programs total are worth keeping** at $K=7$
+(2 survival + 2 genomics-only), rising to 5 at $K\ge9$.
+
+Model fit (ELBO) was then used to choose among candidate $K$'s directly — the principle already
+adopted for this model over cross-validation. $K=5$ and $K=6$ had the best training fit of any $K$
+tested, even after retrying each from 15 different starting points to rule out an unlucky fit — but
+both perform far worse on the 5 external cohorts (C=0.596–0.597) than every $K\ge7$ (C=0.626–0.628).
+A model fitting the training data best while predicting new patients worse is a sign it latched onto
+something that doesn't generalize, so $K=5$/$K=6$ are set aside on that basis, not by their ELBO
+rank. Among the remaining candidates ($K=7$–$10$, all of which predict well externally), $K=7$ and
+$K=9$ come out effectively tied on fit — $K=7$ (2 survival + 2 genomics-only) is kept as the simpler
+of the two, with $K=9$ (2 survival + 3 genomics-only) recorded as an equally defensible alternative.
+Starting even larger ($K=15,20$) does not surface further real structure and fits the training data
+measurably worse — so "start as large as possible" is not the right default here either.
+
+### 3.2 Testing the procedure where the true answer is known
+
+The real data has no ground truth to check this procedure against, so it was stress-tested on
+simulated data built with a known, exact answer: a known number of programs shared across two
+simulated patient cohorts (survival-linked) and a known number private to one cohort (real
+gene-expression structure, deliberately given zero true effect on survival).
+
+The procedure **over-counted** the survival-linked programs on this simulated data — 41 of 45 fits
+found more than the true number, none found fewer. Tracing individual programs back to their source
+showed why: the model correctly recovers the real, cohort-specific programs' gene content, but then
+attaches a small, non-zero — and spurious — survival coefficient to some of them anyway. Adding an
+explicit cohort-membership adjustment to the model did not reliably fix this. A closer look at the
+simplest case (one true survival-linked program, checked across 5 simulated datasets) found a
+workable rule: the genuinely survival-linked program was, in every one of those 5 cases, the single
+strongest coefficient in the fit, with every spurious one well below it — useful for telling real
+from spurious signal when (as in a new simulation) no outside check is available, and now available
+as an optional stricter setting in the classification code.
+
+That rule was **not** applied to the real data. The real fit's two survival-linked programs (Program
+7 and Program 3) show a similar-looking gap in coefficient size, which could look like the same
+pattern — except Program 3 already has independent, external confirmation from four separate
+directions (§2.5, DECISIONS.md 2026-07-15), including a protective hazard ratio in all 5 held-out
+cohorts. The simulated spurious programs never had that kind of external check, because their true
+effect was zero by construction; Program 3's was tested directly against new patients and held up.
+Applying the stricter rule mechanically to real data would have wrongly discarded a program already
+known to be real — so it wasn't.
+
+**Open item for discussion:** the simulation shows the underlying selection procedure can genuinely
+misattribute survival signal to a real-but-unrelated program when there is no external cohort to
+check against — which matters most for how confident to be about *future* datasets, or new
+simulations, before their own validation work is done. Possible directions (an explicit
+platform/cohort adjustment, the stricter relative-coefficient rule above, or requiring some form of
+external check before trusting a newly-found "survival-active" program) are worth the group's input
+before settling on one.
+
+### 3.3 Is the $K=5$-vs-$K=7$ external performance gap real?
+
+C=0.596 ($K=5$) vs. C=0.627 ($K=7$) — is that gap noise, or real? No single external cohort alone
+shows a statistically significant difference (each is individually too small, $n=52$–$288$ patients),
+but pooling all 5 together ($n=616$, 414 events) does: $K=5$ is significantly less concordant than
+$K=7$ (difference $-0.031$, 95% CI $[-0.060, -0.002]$, bootstrap). The same pattern — pooled-significant,
+not significant cohort-by-cohort — was already seen for a different model comparison in July (§1
+above), so this isn't a new or unusual result for this data.
