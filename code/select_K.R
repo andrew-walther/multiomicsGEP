@@ -98,6 +98,62 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 }
 
 # ============================================================
+# classify_factors() ----
+# ============================================================
+
+#' Classify each factor as survival-active, genomics-only, or dead.
+#'
+#' Extends the binary active/shrunk split from \code{auto_prune_K()} with a
+#' three-way category, distinguishing factors that carry prognostic signal
+#' from factors that are genomics-active but survival-silent (a real gene
+#' expression program with no association to survival) and factors that are
+#' fully pruned by the ARD prior.
+#'
+#'   - "survival_active": |EBeta_k| > beta_thresh (prognostic signal present,
+#'     regardless of PVE)
+#'   - "genomics_only":   not survival-active, but PVE_k > pve_thresh
+#'     (explains genomic variance without prognostic value)
+#'   - "dead":            neither condition holds (fully pruned)
+#'
+#' @param res         list with $EL (n x K), $EF (p x K), $EBeta (length K) —
+#'                     from fit_supervised_mf_modular() or fit_cox_on_yf()
+#' @param Y           numeric matrix (n x p) — the original data
+#' @param beta_thresh numeric: |EBeta_k| threshold for "survival_active"
+#'                    (default 0.001, matching config/globals.yml k_selection$beta_threshold)
+#' @param pve_thresh  numeric: PVE_k threshold for "genomics_only" (default 0.01 = 1%)
+#'
+#' @return data.frame with one row per factor:
+#'   $factor      integer factor index (1..K)
+#'   $EBeta       numeric: posterior mean beta per factor
+#'   $abs_EBeta   numeric: |EBeta|
+#'   $PVE         numeric: per-factor proportion of variance explained
+#'   $surv_active logical: |EBeta| > beta_thresh
+#'   $geno_active logical: PVE > pve_thresh
+#'   $category    character: "survival_active", "genomics_only", or "dead"
+#'
+#' @seealso \code{\link{auto_prune_K}} for the binary active/shrunk predecessor.
+classify_factors <- function(res, Y,
+                              beta_thresh = 0.001,
+                              pve_thresh  = 0.01) {
+  pve     <- compute_pve(res, Y)
+  ab_beta <- abs(res$EBeta)
+  surv_active <- ab_beta > beta_thresh
+  geno_active <- pve     > pve_thresh
+  data.frame(
+    factor      = seq_len(ncol(res$EL)),
+    EBeta       = res$EBeta,
+    abs_EBeta   = ab_beta,
+    PVE         = pve,
+    surv_active = surv_active,
+    geno_active = geno_active,
+    category    = ifelse(surv_active, "survival_active",
+                  ifelse(geno_active, "genomics_only",
+                                      "dead")),
+    stringsAsFactors = FALSE
+  )
+}
+
+# ============================================================
 # select_K_cv() ----
 # ============================================================
 

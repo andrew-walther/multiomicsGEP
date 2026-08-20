@@ -5,6 +5,76 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-08-19 — Three-way factor classification (survival-active / genomics-only / dead) added; K_init stability sweep confirms ARD pruning is a valid alternative to CV-selecting K
+
+**Motivation:** two methodological gaps flagged for the manuscript
+(`docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`):
+
+1. K=7 for the recommended D4 model (YFB, DeSurv-aligned preprocessing) was chosen by
+   cross-validated held-out C-index — which uses survival outcomes to pick model structure,
+   conflating structure selection with fitting. The methodologically preferable alternative
+   (Method 2) is to start CAVI at a large K and let the ARD-style point-normal prior on β prune
+   uninformative factors, so K need not be tuned against the outcome at all.
+2. The existing `auto_prune_K()` only distinguished "active" (`|β|>thresh` OR `PVE>thresh`) from
+   "shrunk" — collapsing two biologically distinct outcomes into one "shrunk" bucket: factors that
+   are real gene-expression programs with no prognostic value (*genomics-only*) vs. factors that
+   are fully pruned by the prior (*dead*). The manuscript needs the three-way split to state
+   "X total programs, Y are survival-associated, X−Y are genomics-active without prognostic value."
+
+**What was implemented (Step 1 + Analysis A only; Analyses B/C deferred to a later phase):**
+
+- `classify_factors(res, Y, beta_thresh, pve_thresh)` added to [`code/select_K.R`](code/select_K.R)
+  (after `auto_prune_K()`). Reuses the existing `compute_pve()`. Labels each factor
+  `"survival_active"` (`|EBeta_k| > beta_thresh`), else `"genomics_only"` (`PVE_k > pve_thresh`),
+  else `"dead"`. Both thresholds default to `config/globals.yml`'s `k_selection$beta_threshold`
+  (0.001) and `k_selection$pve_threshold` (0.01). 2 new tests in
+  [`tests/test_select_K_cv.R`](tests/test_select_K_cv.R) (KCV-T17/T18) cover all three categories
+  plus the borderline-threshold edge case (values exactly at threshold are not active — strict `>`,
+  matching `auto_prune_K()`'s existing convention).
+- Fixed a stale hardcoded `beta_thresh = 0.05` default in
+  [`results/benchmark_sim/run_phase1_diagnostics.R`](results/benchmark_sim/run_phase1_diagnostics.R)
+  to read from `config/globals.yml` instead — it predated the 2026-07 rescaling of
+  `beta_threshold` to 0.001 for the YFB model's natural β scale (~0.003–0.008) and would have
+  silently classified every YFB β as "Shrunk" if used on a YFB fit.
+- **Analysis A** (`results/benchmark_sim/run_k_init_sweep.R`): fit YFB on the real TCGA+CPTAC
+  training data (n=273, p=2064 genes) with the D4 preprocessing (per-platform z-std,
+  `combined_rank` gene selection, top-3000 per cohort before normalization, no cohort_id) at
+  K_init ∈ {7, 10, 15, 20}, classified factors at each fit, and evaluated external C-index across
+  the same 5 held-out cohorts used elsewhere in the benchmark suite. Results:
+  `results/benchmark_sim/outputs/k_init_sweep/k_init_sweep_results.csv`.
+
+**Result — the key question is answered: K_eff_survival is stable at 2 regardless of K_init.**
+
+| K_init | K_survival_active | K_genomics_only | K_dead | mean external C |
+|---|---|---|---|---|
+| 7  | 2 | 2 | 3  | 0.6267 |
+| 10 | 2 | 3 | 5  | 0.6279 |
+| 15 | 2 | 3 | 10 | 0.6270 |
+| 20 | 2 | 3 | 15 | 0.6274 |
+
+K_survival_active = 2 at every K_init tested (7 through 20), and mean external C-index across the
+5 held-out cohorts is flat (0.6267–0.6279, well within noise of each other and of the existing
+CV-selected-K=7 baseline). K_genomics_only rises modestly from 2 (at K_init=7) to 3 (at K_init≥10)
+as the extra starting capacity resolves one additional real, weakly-varying gene program that K=7
+had folded into "dead" — not a change in the survival-relevant structure. K_dead absorbs essentially
+all of the added K_init capacity (3→5→10→15), exactly as ARD pruning should behave.
+
+**Conclusion:** ARD pruning from an over-specified K is stable and produces the same
+survival-relevant conclusion as CV-selecting K directly — Method 2 is validated as a
+methodologically cleaner alternative that does not require tuning K against the survival outcome.
+This directly answers both open items flagged in the 8/21 meeting-prep model-specification chapter
+(`docs/progress_book/chapters/meeting_2026_08_21.qmd` §1): how K=7 was chosen, and whether the
+2 survival-active / ~5 genomics-only split is an artifact of that specific K or a stable structural
+feature of the data.
+
+**Deferred to a later phase (not run this session):** Analysis B (ARD K-recovery in simulation,
+validating that K_eff_survival/K_eff_genomics track *known* ground-truth counts, not just each
+other) and Analysis C (re-running the signal-ratio sweep with K_init ≫ K_true to confirm the
+YFB-vs-EBMF→Cox comparison holds under ARD pruning). Both remain scoped in
+`docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`.
+
+---
+
 ## 2026-08-03 — Pathway concordance between SBMF and unsupervised EBMF: subtype-level biology replicates, pathway-level mechanism does not (ROADMAP.md A/B comparison, Part 3)
 
 **Question:** given Part 2's result (same-day entry below) that EBMF's factors 1 and 2 correlate

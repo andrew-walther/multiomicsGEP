@@ -14,6 +14,7 @@
 
 suppressPackageStartupMessages({
   library(pheatmap)
+  library(yaml)
 })
 
 # Resolve repo root the same way run_ssbmf_benchmark.R does
@@ -24,6 +25,10 @@ if (Sys.getenv("REPO_ROOT") != "") {
 } else if (file.exists("../../code/fit_modular.R")) {
   setwd("../..")
 }
+
+# beta_thresh default sourced from globals.yml (k_selection$beta_threshold),
+# consistent with classify_factors()/auto_prune_K() elsewhere in the codebase.
+GLOBALS_BETA_THRESHOLD <- yaml::read_yaml("config/globals.yml")$k_selection$beta_threshold
 
 # ------------------------------------------------------------
 # Helper: build the cohort-stratified loading heatmap
@@ -49,7 +54,7 @@ if (Sys.getenv("REPO_ROOT") != "") {
 #' @return invisibly: list with EL_sorted, cohort_order, beta_active_mask
 plot_cohort_loading_heatmap <- function(EL, EBeta, cohort_labels,
                                         out_stub,
-                                        beta_thresh = 0.05) {
+                                        beta_thresh = GLOBALS_BETA_THRESHOLD) {
   stopifnot(nrow(EL) == length(cohort_labels))
   stopifnot(ncol(EL) == length(EBeta))
 
@@ -183,7 +188,7 @@ run_phase1_diagnostic <- function(training_mode = "merged",
                                   prior_beta    = "point_normal",
                                   output_root   = "results/benchmark_sim/outputs/real_data",
                                   base_dir      = NULL,
-                                  beta_thresh   = 0.05,
+                                  beta_thresh   = GLOBALS_BETA_THRESHOLD,
                                   label         = NULL) {
 
   if (is.null(base_dir))

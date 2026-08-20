@@ -13,12 +13,17 @@ Tracks execution of the multi-session plan for the 2026-08-21 advisor meeting. B
       model, per-factor CAVI updates, λ deprecation, gene selection, factor composition table).
       Reviewed by code-reviewer subagent (1 real fix: missing α term in q(β_k); 1 notation cleanup);
       narrative trimmed to a plain specification per feedback. Commits `5642999`, `9135532`, pushed.
-- [ ] **Phase 2 — Factor classification & K-selection validation** — implement
-      `classify_factors()` (survival-active / genomics-only / dead) and the K-init stability sweep
-      on real PDAC data, per `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`
-      (Step 1 + Analysis A). Answers the two items flagged open in §1: how K=7 was chosen, and
-      whether the 2 survival-active / 5 genomics-only split is stable under ARD pruning from a
-      larger starting K.
+- [x] **Phase 2 — Factor classification & K-selection validation** — implemented
+      `classify_factors()` (survival-active / genomics-only / dead) in `code/select_K.R` + 2 new
+      tests (KCV-T17/T18, `tests/test_select_K_cv.R`; T17 covers all 3 categories, T18 the
+      borderline-threshold edge case); fixed stale hardcoded `beta_thresh=0.05` in
+      `run_phase1_diagnostics.R` to read from `globals.yml`; ran Analysis A (K-init stability
+      sweep, `results/benchmark_sim/run_k_init_sweep.R`) on real TCGA+CPTAC data at
+      K_init ∈ {7,10,15,20}. Result: K_survival_active=2 at every K_init, mean external C-index
+      flat (0.6267-0.6279) — ARD pruning is stable, confirming Method 2 (over-specify K, let ARD
+      prune) as a valid alternative to CV-selecting K. Real-data suite 88/88, full suite 394/394.
+      See DECISIONS.md 2026-08-19. Analyses B/C deferred to a later phase per
+      `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`.
 - [ ] **Phase 3+** — not yet scoped in this session; remaining steps of the 8/13 plan (Analysis B:
       ARD K-recovery simulation; Analysis C: signal-ratio sweep re-run) and any further meeting-prep
       phases follow once Phase 2 lands.

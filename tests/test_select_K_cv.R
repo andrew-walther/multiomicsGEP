@@ -265,6 +265,52 @@ if (exists("fit_cox_on_yf", mode = "function") &&
 # ---------------------------------------------------------------------------
 # T16: cohort_id is subsetted per fold — no dimension mismatch
 # ---------------------------------------------------------------------------
+# ============================================================
+# T6: classify_factors() ----
+# ============================================================
+
+run_test("KCV-T17: classify_factors() labels survival_active/genomics_only/dead correctly", {
+  # 4 factors, hand-built so PVE and EBeta land unambiguously in each category:
+  #   factor 1: high |EBeta|, high PVE     -> survival_active
+  #   factor 2: |EBeta| below thresh, high PVE -> genomics_only
+  #   factor 3: |EBeta| below thresh, PVE below thresh -> dead
+  #   factor 4: high |EBeta|, PVE below thresh -> survival_active (survival wins over dead genomics)
+  n <- 20; p_ <- 10
+  EL <- matrix(0, n, 4)
+  EF <- matrix(0, p_, 4)
+  EL[, 1] <- 1; EF[, 1] <- 1   # PVE_1 large
+  EL[, 2] <- 1; EF[, 2] <- 1   # PVE_2 large
+  EL[, 3] <- 0.001; EF[, 3] <- 0.001  # PVE_3 ~ 0
+  EL[, 4] <- 0.001; EF[, 4] <- 0.001  # PVE_4 ~ 0
+  res <- list(EL = EL, EF = EF, EBeta = c(0.5, 0.0001, 0.0001, 0.5))
+  Y   <- matrix(rnorm(n * p_), n, p_)
+
+  out <- classify_factors(res, Y, beta_thresh = 0.001, pve_thresh = 0.01)
+
+  assert_equal(nrow(out), 4L, "classify_factors should return one row per factor")
+  assert_equal(out$category[1], "survival_active", "factor 1 should be survival_active")
+  assert_equal(out$category[2], "genomics_only",    "factor 2 should be genomics_only")
+  assert_equal(out$category[3], "dead",             "factor 3 should be dead")
+  assert_equal(out$category[4], "survival_active",  "factor 4 should be survival_active (beta wins over dead PVE)")
+})
+
+run_test("KCV-T18: classify_factors() borderline threshold edge case (values exactly at thresholds are NOT active)", {
+  # Comparisons in classify_factors() use strict '>', so a value exactly equal
+  # to the threshold is NOT classified as active — matches auto_prune_K()'s convention.
+  n <- 10; p_ <- 5
+  EL <- matrix(1, n, 1)
+  EF <- matrix(1, p_, 1)
+  res <- list(EL = EL, EF = EF, EBeta = 0.001)  # EBeta == beta_thresh exactly
+  Y   <- matrix(1, n, p_)  # total_var = n*p_ = 50; PVE = (n*p_)^2 / 50^2... compute directly
+
+  pve_val <- compute_pve(res, Y)
+  out <- classify_factors(res, Y, beta_thresh = 0.001, pve_thresh = pve_val)  # PVE == pve_thresh exactly
+
+  assert_true(!out$surv_active[1], "EBeta exactly at beta_thresh should not be surv_active (strict >)")
+  assert_true(!out$geno_active[1], "PVE exactly at pve_thresh should not be geno_active (strict >)")
+  assert_equal(out$category[1], "dead", "borderline factor (both exactly at threshold) should be classified dead")
+})
+
 run_test("KCV-T16: cohort_id in ... is correctly row-subsetted per fold (LB)", {
   set.seed(21)
   n <- 60L; p <- 20L

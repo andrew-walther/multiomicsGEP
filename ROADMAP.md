@@ -79,6 +79,20 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [x] **Factor classification (survival-active/genomics-only/dead) + K-init stability sweep
+  (Analysis A)** *(Complete, 2026-08-19, branch `meeting/2026-08-21-prep`)* `[Analyses B/C pending]`
+  Per `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md` Step 1 + Analysis A:
+  added `classify_factors()` (`code/select_K.R`) distinguishing survival-active from
+  genomics-only-but-survival-silent factors, replacing `auto_prune_K()`'s binary active/shrunk
+  split. Ran the K-init stability sweep (`results/benchmark_sim/run_k_init_sweep.R`) on real
+  TCGA+CPTAC data, D4 preprocessing, K_init ∈ {7,10,15,20}: **K_survival_active=2 at every K_init**,
+  mean external C-index flat (0.6267–0.6279) — confirms ARD pruning from an over-specified K
+  reaches the same conclusion as CV-selecting K directly, validating Method 2 (start large, let
+  ARD prune) as a methodologically cleaner alternative that doesn't tune K against the survival
+  outcome. See DECISIONS.md 2026-08-19. **Still open, deferred to a later phase:** Analysis B
+  (ARD K-recovery against known ground-truth K in simulation) and Analysis C (re-run the
+  signal-ratio sweep with K_init ≫ K_true) — both scoped in the plan doc above.
+
 - [ ] **Follow-up plan for the progress report's open items** `[Priority: see plan]` `[Effort: see plan]`
   A saved, not-yet-started backlog covering every open item from Item 2's progress report (§7) and
   its review passes: per-cohort concordance CIs and factor-stability-under-resampling (highest
