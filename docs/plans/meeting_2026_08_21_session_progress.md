@@ -42,5 +42,17 @@ Tracks execution of the multi-session plan for the 2026-08-21 advisor meeting. B
       confirmed `cohort_id` only partially reduces Analysis B's false-positive pattern. Full suite
       395/395. See DECISIONS.md 2026-08-20. **Open item flagged for discussion, not resolved:**
       ARD's over-attribution of survival signal when no independent validation exists.
-- [ ] **Phase 4+** — not yet scoped in this session; remaining meeting-prep phases follow once
-      Phase 3's discussion items are addressed at the 8/21 meeting.
+- [x] **Phase 3b — Bootstrap CI on the K=5-vs-K=7 external C-index gap** —
+      `run_k5_vs_k7_bootstrap_ci.R` (reused the already-fitted K=5/K=7 models, no re-fitting).
+      Result: no single external cohort alone is significant (each individually underpowered,
+      n=52–288), but pooled across all 5 (n=616) the gap is significant: K=5−K=7 = −0.0312, 95%
+      CI [−0.0602, −0.0017]. See DECISIONS.md 2026-08-20 addendum.
+- [x] **Phase 4 — Progress book chapter for the 8/21 meeting** —
+      `docs/progress_book/chapters/meeting_2026_08_21.qmd` §3 added (how K was chosen from model
+      fit + external validity rather than cross-validation; the simulation stress test and why its
+      fix can't be mechanically applied to real data; the bootstrap-confirmed K=5-vs-K=7 gap);
+      §1's two carried-over 8/3 open items closed out; §2.5's factor table split genomics-only vs.
+      fully-pruned. Fact-checked against DECISIONS.md by a review pass (2 findings, both fixed).
+      Quarto book renders cleanly. Commit `48c36c7`, pushed.
+- [ ] **Phase 5+** — not yet scoped in this session; remaining meeting-prep phases (slides/figures,
+      any further sections) follow once this phase lands, and are the user's call.
