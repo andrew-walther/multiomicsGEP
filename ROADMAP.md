@@ -135,6 +135,31 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   (n=616) the gap is significant: K=5−K=7 = −0.0312, 95% CI [−0.0602, −0.0017]. See DECISIONS.md
   2026-08-20 (addendum to the Analysis B/C entry).
 
+- [x] **RESOLVED: the joint model's "real advantage" was an unmatched-K artifact; a properly K=7-
+  matched comparison shows no significant advantage, in real data OR simulation** *(2026-08-20)*
+  `results/multi_cohort_sim/run_k7_signal_sweep.R` initially found YFB and two-step (EBMF+Cox)
+  statistically indistinguishable at every survival-signal strength tested once the DGP matches the
+  real recommended structure (2 survival-active + 2 genomics-only factors) — apparently in tension
+  with the previously-reported real-data advantage (+0.042, 95% CI 0.013–0.071, DECISIONS.md
+  2026-07-16). Checking that comparison found the actual cause: it compared YFB at K=7 against the
+  two-step baseline at **K=20** (`config/globals.yml`'s `k_pdac`), never matched. Re-ran the
+  baseline at K=7 (`run_ebmf_cox_external.R --k 7`, new `--k` flag) and computed a proper paired
+  bootstrap CI (`run_yfb_vs_ebmf_k7_matched_ci.R`): pooled diff = **+0.011, 95% CI [−0.013, 0.033],
+  not significant** — consistent with the simulation, not in tension with it. The two-step
+  baseline's own external C rose from 0.581 (K=20) to 0.623 (K=7) once matched — K=20 was hurting
+  *it*. **Conclusion for the manuscript:** the joint model's advantage over a fairly-matched
+  two-step baseline has not been demonstrated on real data; the clean advantage seen only in the
+  simpler July 15 simulation (all 4 factors prognostic, no genomics-only nuisance factors) looks
+  specific to that artificial DGP. See DECISIONS.md 2026-08-20 (both the new entry and the
+  superseding note added to 2026-07-16). Worth raising directly at the 8/21 meeting — bears on how
+  the manuscript should state (or not state) the joint model's value proposition.
+
+- [ ] **Follow-up: pathway-characterize the 2 genomics-only factors in the K=7 fit** `[Priority: low]`
+  `results/benchmark_sim/generate_k7_kept_factors_summary.R` (2026-08-20) used top-N-by-loading genes
+  for these 2 factors (no fresh fgsea run) as a fast first pass. Running `fgsea` on them the same way
+  Programs 3/7 were characterized (DECISIONS.md 2026-07-15) would also make progress on the
+  longstanding "characterize the non-active factors" open item (progress book §1).
+
 - [ ] **Follow-up plan for the progress report's open items** `[Priority: see plan]` `[Effort: see plan]`
   A saved, not-yet-started backlog covering every open item from Item 2's progress report (§7) and
   its review passes: per-cohort concordance CIs and factor-stability-under-resampling (highest
@@ -432,6 +457,9 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   recommended model significantly more concordant, pooled across cohorts: +0.042 (95% CI
   0.013–0.071); individually only the largest cohort (Puleo, n=288) reaches significance alone —
   see DECISIONS.md 2026-07-16. Part (2) factor stability and (3) pathway concordance remain.
+  **Superseded 2026-08-20:** that +0.042 comparison used an unmatched K (YFB K=7 vs. EBMF K=20) —
+  re-matched at K=7, the advantage is not significant (+0.011, 95% CI −0.013, 0.033). See the
+  RESOLVED item below and DECISIONS.md 2026-08-20.
   **Update 2026-08-03:** Part (2) is done — no new fit needed, since `run_ebmf_cox_external.R`'s
   EBMF fit was already saved and uses the identical gene universe/order as D4. EBMF's own factors 1
   and 2 (unsupervised) correlate with Programs 3 and 7 at r=-0.72 and r=+0.69 respectively, both

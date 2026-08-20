@@ -1,0 +1,81 @@
+"factor","label","rank","gene","weight"
+3,"Program 3 (Protective)",1,"CAPN5",2.63863
+3,"Program 3 (Protective)",2,"LPCAT4",2.62694
+3,"Program 3 (Protective)",3,"MLPH",2.5488
+3,"Program 3 (Protective)",4,"SLC45A3",2.46828
+3,"Program 3 (Protective)",5,"TJP3",2.4497
+3,"Program 3 (Protective)",6,"PLEKHA6",2.39762
+3,"Program 3 (Protective)",7,"MTMR11",2.38758
+3,"Program 3 (Protective)",8,"GALNT6",2.38274
+3,"Program 3 (Protective)",9,"TSPAN3",2.32721
+3,"Program 3 (Protective)",10,"CAPN8",2.32703
+3,"Program 3 (Protective)",11,"CYP2S1",2.32482
+3,"Program 3 (Protective)",12,"PAK1",2.32232
+3,"Program 3 (Protective)",13,"KCNE3",2.30983
+3,"Program 3 (Protective)",14,"FAM83E",2.30776
+3,"Program 3 (Protective)",15,"KCNK1",2.30611
+3,"Program 3 (Protective)",16,"ADAP1",2.29566
+3,"Program 3 (Protective)",17,"SRC",2.28613
+3,"Program 3 (Protective)",18,"PLA2G10",2.28329
+3,"Program 3 (Protective)",19,"NQO1",2.27543
+3,"Program 3 (Protective)",20,"TSPAN15",2.25573
+5,"Genomics-only (A)",1,"COL1A2",2.5278
+5,"Genomics-only (A)",2,"COL5A2",2.51206
+5,"Genomics-only (A)",3,"COL3A1",2.47489
+5,"Genomics-only (A)",4,"COL12A1",2.46983
+5,"Genomics-only (A)",5,"THBS2",2.43473
+5,"Genomics-only (A)",6,"HTRA1",2.43285
+5,"Genomics-only (A)",7,"CDH11",2.42248
+5,"Genomics-only (A)",8,"SPARC",2.42213
+5,"Genomics-only (A)",9,"ANTXR1",2.4168
+5,"Genomics-only (A)",10,"FZD1",2.41416
+5,"Genomics-only (A)",11,"PXDN",2.40753
+5,"Genomics-only (A)",12,"TIMP2",2.39265
+5,"Genomics-only (A)",13,"AEBP1",2.37904
+5,"Genomics-only (A)",14,"CTHRC1",2.3591
+5,"Genomics-only (A)",15,"COL5A1",2.33945
+5,"Genomics-only (A)",16,"COL6A3",2.33845
+5,"Genomics-only (A)",17,"C1QTNF3",2.33323
+5,"Genomics-only (A)",18,"COL8A1",2.32559
+5,"Genomics-only (A)",19,"NUAK1",2.32107
+5,"Genomics-only (A)",20,"FAP",2.31411
+6,"Genomics-only (B)",1,"CELF2",1.74033
+6,"Genomics-only (B)",2,"IKZF1",1.72074
+6,"Genomics-only (B)",3,"RCSD1",1.71217
+6,"Genomics-only (B)",4,"AKNA",1.69585
+6,"Genomics-only (B)",5,"FZD4",1.67168
+6,"Genomics-only (B)",6,"IL10RA",1.6667
+6,"Genomics-only (B)",7,"PREX1",1.65722
+6,"Genomics-only (B)",8,"COL14A1",1.64079
+6,"Genomics-only (B)",9,"RASSF2",1.63388
+6,"Genomics-only (B)",10,"SMAP2",1.63211
+6,"Genomics-only (B)",11,"APOLD1",1.61125
+6,"Genomics-only (B)",12,"TNXB",1.60848
+6,"Genomics-only (B)",13,"FBLN5",1.60311
+6,"Genomics-only (B)",14,"ITPR1",1.59772
+6,"Genomics-only (B)",15,"DOCK10",1.59604
+6,"Genomics-only (B)",16,"SLIT3",1.59335
+6,"Genomics-only (B)",17,"WDFY4",1.59203
+6,"Genomics-only (B)",18,"CHRDL1",1.59184
+6,"Genomics-only (B)",19,"HCLS1",1.59139
+6,"Genomics-only (B)",20,"SPARCL1",1.59055
+7,"Program 7 (Adverse)",1,"ITGA3",2.59489
+7,"Program 7 (Adverse)",2,"MET",2.53515
+7,"Program 7 (Adverse)",3,"BCAR3",2.48697
+7,"Program 7 (Adverse)",4,"FAM3C",2.43195
+7,"Program 7 (Adverse)",5,"GAPDH",2.41738
+7,"Program 7 (Adverse)",6,"ENO1",2.40535
+7,"Program 7 (Adverse)",7,"TPI1",2.33353
+7,"Program 7 (Adverse)",8,"CDCP1",2.30325
+7,"Program 7 (Adverse)",9,"PGK1",2.30116
+7,"Program 7 (Adverse)",10,"SLC16A3",2.29259
+7,"Program 7 (Adverse)",11,"LDHA",2.28034
+7,"Program 7 (Adverse)",12,"ITGB4",2.26414
+7,"Program 7 (Adverse)",13,"SLC2A1",2.25399
+7,"Program 7 (Adverse)",14,"S100A2",2.22
+7,"Program 7 (Adverse)",15,"TGM2",2.21683
+7,"Program 7 (Adverse)",16,"B4GALT5",2.19754
+7,"Program 7 (Adverse)",17,"FSCN1",2.19115
+7,"Program 7 (Adverse)",18,"ANLN",2.1901
+7,"Program 7 (Adverse)",19,"NT5E",2.16531
+7,"Program 7 (Adverse)",20,"LAMB3",2.14886

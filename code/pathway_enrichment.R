@@ -486,8 +486,12 @@ plot_running_es <- function(weights_k, geneset, title = "") {
 #'                       and row-label font size so gene names stay readable
 #'                       and non-overlapping regardless of how many genes are
 #'                       plotted (rather than a fixed figure size for all N)
+#' @param title    plot title; default matches the original all-7-programs caller.
+#'                 Callers plotting a subset of programs should override this so
+#'                 the figure doesn't claim to show more columns than it does.
 #' @return the pheatmap grob (invisibly if filename is given)
-plot_geneweight_heatmap <- function(EF, genes, program_labels, filename = NA, cellheight_in = 0.14) {
+plot_geneweight_heatmap <- function(EF, genes, program_labels, filename = NA, cellheight_in = 0.14,
+                                     title = "Gene weights (EF) across all 7 programs") {
   present <- intersect(genes, rownames(EF))
   missing <- setdiff(genes, rownames(EF))
   if (length(missing) > 0) {
@@ -508,7 +512,7 @@ plot_geneweight_heatmap <- function(EF, genes, program_labels, filename = NA, ce
   pheatmap::pheatmap(mat, cluster_cols = FALSE, filename = filename,
                       fontsize_row = dims$fontsize_row,
                       width = dims$width_in, height = dims$height_in,
-                      main = "Gene weights (EF) across all 7 programs")
+                      main = title)
 }
 
 #' Compute row-label font size and saved-figure dimensions for the F3 heatmap.

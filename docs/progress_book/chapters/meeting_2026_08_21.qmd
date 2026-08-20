@@ -10,10 +10,11 @@ section works through that list plainly — what's done, what's still open — r
 
 ### Since 8/3, completed
 
-- **Bootstrap C-index confidence intervals + paired significance test** (2026-07-16): the
-  recommended model is significantly more concordant than the two-step (unsupervised-factorization-
-  then-Cox) baseline, pooled across the 5 external cohorts (+0.042, 95% CI 0.013–0.071); one cohort
-  (Puleo, $n=288$) is significant on its own.
+- **Bootstrap C-index confidence intervals + paired significance test** (2026-07-16): built the
+  bootstrap-CI machinery and used it to compare the recommended model against a two-step
+  (unsupervised-factorization-then-Cox) baseline. **Superseded this cycle (§3.5): that comparison
+  used the two-step baseline at K=20 vs. YFB at K=7, an unmatched comparison — see §3.5 for the
+  corrected, K=7-matched result.**
 - **Consolidated progress notebook** (this book): one chapter per advisor meeting, backfilled
   April 29 through August 3 and pushed 2026-08-03.
 - **Model specification write-up** — the 8/3 notes' top immediate item ("write out current model
@@ -258,3 +259,66 @@ but pooling all 5 together ($n=616$, 414 events) does: $K=5$ is significantly le
 $K=7$ (difference $-0.031$, 95% CI $[-0.060, -0.002]$, bootstrap). The same pattern — pooled-significant,
 not significant cohort-by-cohort — was already seen for a different model comparison in July (§1
 above), so this isn't a new or unusual result for this data.
+
+### 3.4 What genes make up the 4 kept programs?
+
+Top-20 genes by loading weight for each of $K=7$'s 4 kept factors — the same style of figure as
+the July 15 pathway-enrichment report's gene-weight heatmap, scoped to just these 4 (the other 3,
+fully pruned, are omitted):
+
+```{r k7-genes-fig, fig.cap="Top-20 genes per factor for the 4 kept programs. Color = raw gene weight (point-exponential prior, so all weights are non-negative); each block of genes is essentially specific to one program."}
+knitr::include_graphics("../figs/2026-08-21_k7_kept_factors_heatmap.png")
+```
+
+The block-diagonal structure is clean — each program's top genes carry near-zero weight in the other
+3, including the 2 genomics-only programs, which is itself informative: whatever biology they
+represent is distinct from Program 3/7's and from each other's. Those 2 have not yet been run through
+the same pathway-enrichment pipeline that characterized Programs 3/7 (§2.5) — a fast, worthwhile
+follow-up, not done this cycle. Full gene lists (top 20 per factor, with weights):
+`results/benchmark_sim/outputs/pathway_enrichment/K7_kept_factors_top_genes.csv`.
+
+### 3.5 What is the actual value of the joint model over a two-step baseline?
+
+Requested directly: does YFB (joint survival-coupled fitting) actually outperform simply factorizing
+first (EBMF) and fitting Cox on the recovered factors after? A generic simulation-based version of
+this comparison already existed from July and showed a small, consistent edge for the joint model —
+but it used a simpler design than our actual recommended structure (4 factors, all 4 prognostic, no
+genomics-only factors, fit at exactly the true $K$).
+
+**First pass: re-ran the comparison matching the real structure exactly** — $K$=7 (over-specified,
+ARD-pruned, same as the real fit), 2 survival-active factors and 2 additional real, equal-strength
+gene-expression programs with **no** true survival effect (matching $K_{\text{eff, total}}=4$), signal
+strength varied from 0 to a realistic magnitude.
+
+```{r k7-signal-fig, fig.cap="Held-out C-index vs. true survival-signal strength, in simulation. Solid lines: July's simpler design (all 4 factors prognostic). Dashed lines: matching the real structure exactly (2 survival-active + 2 genomics-only factors, K=7)."}
+knitr::include_graphics("../figs/2026-08-21_k7_signal_sweep_comparison.png")
+```
+
+In the more faithful simulation, the joint model's edge is gone at every signal strength tested
+(dashed lines overlap closely) — a real contrast with July's simpler design (solid lines). Re-fitting
+both methods at $K=4$ (the true factor count, no spare capacity) instead of $K=7$ changes nothing,
+ruling out over-specification as the explanation.
+
+**This initially looked like it conflicted with an already-validated real-data finding — it
+doesn't, once checked properly.** The July 16 bootstrap comparison (previous §1 bullet) reported the
+recommended model as significantly more concordant than the two-step baseline (+0.042, 95% CI
+0.013–0.071). Checking that comparison's setup directly found the actual explanation: **it compared
+YFB at $K=7$ against the two-step baseline at $K=20$** — an unmatched comparison, not a fair test of
+the survival coupling itself. Re-running the two-step baseline at $K=7$ and computing a proper paired
+bootstrap comparison on the same 5 cohorts gives a very different answer:
+
+```{r k7-real-ci-fig, fig.cap="Bootstrapped difference in external C-index (YFB minus two-step EBMF+Cox), both models now fit at the same K=7. Every interval, including the pooled one, crosses zero."}
+knitr::include_graphics("../figs/2026-08-21_yfb_vs_ebmf_k7_matched_ci.png")
+```
+
+Once matched at $K=7$, the two-step baseline's own external performance *improves* substantially
+(mean C: 0.581 at $K=20$ → 0.623 at $K=7$ — $K=20$ was hurting it specifically, not helping it), and
+the previously-reported advantage collapses from a significant +0.042 to a non-significant **+0.011
+(95% CI −0.013, 0.033)**, with the two-step method actually ahead outright on 2 of the 5 cohorts.
+
+**Resolved conclusion:** the real data and the K=7-matched simulation now agree — **the joint
+model's advantage over a fairly-matched two-step baseline has not been demonstrated.** The clean
+advantage seen only in July's simpler simulation design (no genomics-only nuisance factors) looks
+specific to that artificial setup, not a property that holds in a more realistic simulation or in
+real data. This bears directly on how the manuscript should state the joint model's value
+proposition, and is worth raising plainly at this meeting rather than left implicit.

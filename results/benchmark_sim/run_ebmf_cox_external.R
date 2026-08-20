@@ -62,6 +62,13 @@ p <- cfg$preprocessing
 TOP_N_DESURV     <- p$top_n_genes_desurv   # 3000 per cohort
 BETA_THRESH      <- cfg$k_selection$beta_threshold
 K_EBMF_MAX       <- if (QUICK_MODE) 5L else b$k_pdac   # greedy ceiling (flashier may use fewer)
+# --k N overrides the default K_pdac ceiling -- e.g. --k 7 to match the recommended
+# YFB model's K exactly, for a same-K joint-vs-two-step comparison (default K_pdac=20
+# was never matched to YFB's K=7; see DECISIONS.md 2026-08-20).
+if ("--k" %in% args) {
+  k_val <- suppressWarnings(as.integer(args[which(args == "--k") + 1]))
+  if (!is.na(k_val) && k_val >= 1) K_EBMF_MAX <- k_val
+}
 TRAIN_COHORTS    <- cfg$pdac$training_cohorts
 EXTERNAL_COHORTS <- cfg$pdac$external_cohorts
 
@@ -274,19 +281,27 @@ if (length(results_rows) == 0)
   stop("No external validation rows: all cohorts had < 100 common genes.")
 
 results <- do.call(rbind, results_rows)
-out_csv <- file.path(OUT_DIR, "ebmf_cox_external_results.csv")
+
+# Filenames stay unsuffixed at the default K (K_pdac=20) for backward compatibility
+# with run_external_ci_analysis.R; a --k override gets a distinct, K-tagged filename
+# so it never overwrites the default-K cached results.
+# Also correctly gives --quick mode (K_EBMF_MAX=5) its own suffixed files instead
+# of overwriting the default-K production cache, since 5 != b$k_pdac.
+k_suffix <- if (K_EBMF_MAX == b$k_pdac) "" else sprintf("_k%d", K_EBMF_MAX)
+
+out_csv <- file.path(OUT_DIR, sprintf("ebmf_cox_external_results%s.csv", k_suffix))
 write.csv(results, out_csv, row.names = FALSE)
 
 saveRDS(
   list(flash_fit = flash_fit, F_ebmf = F_ebmf, F_norms = F_norms,
        beta_ebmf = beta_ebmf, cox_fit = cox_fit, K_ebmf = K_ebmf,
        train_genes = train_genes, c_train = c_train),
-  file.path(OUT_DIR, "ebmf_cox_external_fit.rds")
+  file.path(OUT_DIR, sprintf("ebmf_cox_external_fit%s.rds", k_suffix))
 )
 
 # Per-cohort {risk, time, status}, for post-hoc bootstrap CI / paired-comparison
 # analysis (results/benchmark_sim/run_external_ci_analysis.R) without re-fitting.
-saveRDS(risk_cache, file.path(OUT_DIR, "ebmf_cox_external_riskscores.rds"))
+saveRDS(risk_cache, file.path(OUT_DIR, sprintf("ebmf_cox_external_riskscores%s.rds", k_suffix)))
 
 mean_c <- mean(results$c_index)
 

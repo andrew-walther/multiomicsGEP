@@ -5,6 +5,96 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-08-20 — RESOLVED: the previously-reported real-data joint-model advantage was an apples-to-oranges K mismatch (YFB K=7 vs. EBMF K=20); a properly K=7-matched comparison shows no significant advantage on real data OR in simulation
+
+**Context:** for the 8/21 progress-book chapter, requested a YFB-vs-two-step comparison matching the
+*exact* recommended real-data structure (K=7, K_eff_total=4: 2 survival-active + 2 genomics-only
+factors) as signal strength varies from 0 to a realistic magnitude — a more faithful analog than the
+existing `survival_strength_sweep` (K_shared=4, all 4 factors prognostic, no genomics-only factors,
+fit at K_true directly for both arms; DECISIONS.md 2026-07-12).
+
+**Method** (`results/multi_cohort_sim/run_k7_signal_sweep.R`): single-cohort simulation
+(`generate_multicohort_data()` with `C=1` — with only one cohort, "study-specific" factors are never
+block-zeroed, so they behave as ordinary whole-sample gene-expression programs; `specific_prognostic
+=FALSE` keeps their true β fixed at 0 regardless of strength). 2 factors carry `beta_shared = strength
+* c(1.5, -1.2)`, 2 more are real gene-expression programs (same amplitude as the prognostic ones)
+with β=0 by construction. Both YFB and EBMF+Cox fit at **both** K=7 (matching the real recommended
+procedure of over-specifying and letting ARD prune) and K=4 (=K_true, no spare capacity, matching how
+the July 15 sweep fit both arms) on the *same* simulated datasets per seed, strength ∈
+{0, 0.25, 0.5, 1.0, 2.0}, 10 seeds.
+
+**Result 1 — the joint-model advantage seen in the July simulation is gone here, at every strength
+tested, at both K settings:**
+
+| Strength | YFB (K=7) | EBMF (K=7) | YFB (K=4) | EBMF (K=4) | July YFB (K=4, all-4-prognostic DGP) | July EBMF |
+|---|---|---|---|---|---|---|
+| 0.00 | 0.527 | 0.544 | 0.523 | 0.544 | 0.523 | 0.544 |
+| 0.25 | 0.597 | 0.609 | 0.603 | 0.609 | 0.610 | 0.622 |
+| 0.50 | 0.703 | 0.701 | 0.704 | 0.701 | 0.718 | 0.702 |
+| 1.00 | 0.798 | 0.796 | 0.801 | 0.796 | 0.818 | 0.787 |
+| 2.00 | 0.888 | 0.851* | 0.889 | 0.852 | 0.894 | 0.867 |
+
+*Strength=2.0's EBMF(K=7) mean is dragged down by one degenerate fit (seed 3, C=0.508, a near-chance
+flashier convergence failure); excluding it, EBMF(K=7)'s mean is 0.889 — still a dead tie with YFB.
+
+At every strength beyond 0, YFB and EBMF+Cox are statistically indistinguishable here — unlike the
+July sweep, where YFB held a small, consistent ~0.01–0.03 edge at every strength tested. Comparing
+each method's *own* absolute numbers to July shows neither method's standalone performance changed
+much (both roughly flat to marginally lower, within seed-to-seed noise) — **the gap between the two
+methods is what disappeared, not either method's own performance.**
+
+**Result 2 — K=7 vs. K=4 (over-specification) is ruled out as the cause:** fitting at K=4 (=K_true,
+no spare capacity) instead of K=7 makes no difference for either method at any strength (all
+differences <0.01, within noise) — so the recommended real-data procedure (over-specify to K=7, let
+ARD prune) is not itself diluting anything relative to fitting at the true K directly.
+
+**This result initially looked like it conflicted with an already-validated finding — the
+2026-07-16 entry's "+0.042, 95% CI 0.013–0.071, significant" real-data advantage. It doesn't,
+once checked properly.** That comparison used YFB at K=7 against the two-step baseline at
+**K=20** (`ebmf_cox_external_results.csv`'s default `K_EBMF_MAX <- b$k_pdac`, i.e.
+`config/globals.yml`'s `k_pdac: 20`) — an apples-to-oranges comparison across two different K's,
+never matched. **Re-ran the two-step baseline at K=7** (`results/benchmark_sim/run_ebmf_cox_external.R
+--k 7`, new `--k` flag added; outputs suffixed `_k7` so the original K=20 cached results are
+preserved, not overwritten) and computed a proper paired bootstrap CI
+(`code/concordance_ci.R::bootstrap_concordance_diff_ci()`, reusing both models' already-cached
+per-cohort risk scores, no re-fitting of YFB needed) on the *same* 5 external cohorts:
+
+| Cohort (n) | diff (YFB − EBMF+Cox, K=7 matched) | 95% CI | Significant? |
+|---|---|---|---|
+| Dijk (90) | +0.058 | [−0.005, 0.121] | No |
+| Moffitt (123) | +0.008 | [−0.066, 0.082] | No |
+| PACA-AU array (63) | **−0.017** | [−0.079, 0.050] | No (EBMF ahead) |
+| PACA-AU seq (52) | **−0.033** | [−0.102, 0.037] | No (EBMF ahead) |
+| Puleo (288) | +0.002 | [−0.030, 0.036] | No |
+| **Pooled (n=616)** | **+0.011** | **[−0.013, 0.033]** | **No** |
+
+Once matched at K=7, the two-step baseline's own mean external C rises substantially (0.581→0.623 —
+K=20 was hurting *it*, the same "too-large-K-for-this-data" pattern already documented elsewhere in
+this project for other models), and the previously-reported advantage collapses from a significant
++0.042 to a non-significant +0.011, with EBMF actually ahead outright on 2 of the 5 cohorts. **This
+is now consistent with, not in tension with, the K=7-matched simulation above** — both agree the
+joint model does not have a demonstrated advantage over a fairly-matched two-step baseline. The
+2026-07-16 entry's "+0.042, significant" framing is superseded by this comparison; its bootstrap
+tooling and methodology remain valid, only the specific EBMF K value used there was not matched to
+YFB. **The clean advantage seen only in the simpler July 15 simulation (K_shared=4, all 4 factors
+prognostic, no genomics-only nuisance factors) now looks specific to that artificial DGP, not a
+property that holds in a more realistic setting or in real data.** This directly bears on how the
+manuscript should state (or not state) the joint model's value proposition — worth raising plainly
+at the 8/21 meeting, not smoothed over.
+
+**Also delivered this session, not part of the tension above:** a gene-level summary of the K=7
+fit's 4 kept factors (`results/benchmark_sim/generate_k7_kept_factors_summary.R`): top-20 genes per
+factor by raw loading weight, and a heatmap (extending `code/pathway_enrichment.R`'s
+`plot_geneweight_heatmap()` with a new optional `title` parameter so a 4-column subset doesn't
+inherit the original "all 7 programs" caption) showing clean block-diagonal gene specificity across
+Program 3 (Protective), Program 7 (Adverse), and the 2 genomics-only factors. Output:
+`results/benchmark_sim/outputs/pathway_enrichment/K7_kept_factors_top_genes.csv` and
+`K7_kept_factors_geneweight_heatmap.png`. The 2 genomics-only factors' genes are not yet
+pathway-characterized (unlike Programs 3/7) — flagged as a possible fast follow-up, not done this
+session.
+
+---
+
 ## 2026-08-20 — Analysis B (ARD K-recovery simulation) finds real over-counting of survival-active factors; added an optional relative-magnitude threshold to `classify_factors()`, but confirmed it must NOT be applied to the real PDAC fit
 
 **Context:** the 2026-08-19 entry below recommends K=7 (2 survival-active + 2 genomics-only
@@ -320,9 +410,10 @@ method is used to extract it.
 **Interpretation:** SBMF is best understood as adding a supervised re-weighting/selection on top of
 EBMF's own factor structure, not as inventing biology EBMF can't see at all — consistent with the
 "Bayesian counterpart to DeSurv" positioning already used in the progress report. The joint model's
-value-add (per the existing paired-bootstrap result, +0.042 C-index, 95% CI 0.013-0.071) is in
-*using* this structure for prediction and disentangling it from the other 18 unsupervised factors,
-not in discovering it from nothing.
+value-add in *using* this structure for prediction (not in discovering it from nothing) was
+originally quoted here as the +0.042 C-index paired-bootstrap result — **superseded 2026-08-20: that
+comparison used an unmatched K (YFB K=7 vs. EBMF K=20); a K=7-matched comparison finds the advantage
+is not significant (+0.011, 95% CI −0.013, 0.033) — see DECISIONS.md 2026-08-20.**
 
 **Not done (ROADMAP.md Part 3, deferred to a follow-up):** pathway-enrichment concordance between
 EBMF_F1/F2's gene loadings and Program 3/7's existing fgsea results
@@ -376,6 +467,12 @@ figure content — this is a rendering/layout fix only.
 ---
 
 ## 2026-07-16 — Bootstrap C-index CIs; refreshed a second stale baseline; paired test vs. the two-step method
+
+> **Superseded 2026-08-20 (see the 2026-08-20 entry above):** this entry's "+0.042, significant"
+> joint-vs-two-step comparison used YFB at K=7 against the two-step baseline at K=20 — an unmatched
+> K comparison. Re-run with the two-step baseline matched to K=7, the advantage drops to a
+> non-significant +0.011 (95% CI −0.013, 0.033). The bootstrap CI methodology below remains valid;
+> only the specific EBMF K value used in the joint-vs-two-step comparison was not matched to YFB.
 
 **Context.** Item 2's progress report flagged "no uncertainty quantification on the external C-index"
 as the highest-priority open item (2026-07-15 gap-review entry). Implemented per-cohort bootstrap
