@@ -79,6 +79,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [ ] **HIGH PRIORITY, immediately after the 8/21 meeting: lab meeting slide deck for 8/27**
+  `[Priority: high — hard deadline]`
+  User is presenting a research update at lab meeting Wednesday 2026-08-27. Placeholder folder
+  already created: `presentation/walther_lab_meeting_08_27_2026/` (empty as of 2026-08-20, sibling
+  to `walther_lab_meeting_04_09_2026/` and `walther_lab_meeting_06_18_2026/` — follow those two for
+  format/structure precedent). Must cover progress and project state since the last lab
+  presentation (6/18) — i.e. everything from the June 18 lab meeting deck through this session's
+  K-selection work — **and must also integrate whatever feedback and additional progress comes out
+  of the 2026-08-21 advisor meeting**, so this cannot be fully finalized until after that meeting.
+  This is the key focus right after 8/21 lands.
+
 - [x] **Factor classification (survival-active/genomics-only/dead) + K-init sweep + best-of-
   multistart ELBO comparison (Analysis A)** *(Complete, 2026-08-19, branch
   `meeting/2026-08-21-prep`)*
