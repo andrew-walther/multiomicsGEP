@@ -54,5 +54,24 @@ Tracks execution of the multi-session plan for the 2026-08-21 advisor meeting. B
       §1's two carried-over 8/3 open items closed out; §2.5's factor table split genomics-only vs.
       fully-pruned. Fact-checked against DECISIONS.md by a review pass (2 findings, both fixed).
       Quarto book renders cleanly. Commit `48c36c7`, pushed.
+- [x] **Phase 4b — Two chapter additions requested for §3, plus a 3-round correction to the
+      joint-vs-two-step comparison** — added a gene-level summary of K=7's 4 kept factors (table +
+      heatmap, `generate_k7_kept_factors_summary.R`) and a YFB-vs-two-step comparison matching the
+      real recommended structure exactly. The comparison went through 3 rounds, each catching a
+      flaw in the last: (1) matching K to K=7 was itself confounded — it hands the two-step method
+      YFB's own answer about model complexity; (2) checked whether EBMF has a natural self-selected
+      K (it doesn't — flashier used every factor offered up to K=40, no early stopping) and found a
+      second flaw, an unregularized stage-2 Cox that overfits at large K (training C rose while
+      external C fell as K grew); (3) fixed both with a large, YFB-uninformed K + LASSO stage 2
+      (`run_ebmf_cox_regularized.R`, `run_ebmf_cox_external.R --k`). **Final result: YFB shows a
+      real, pooled-significant advantage against the fairest independent baseline tested (+0.026,
+      95% CI [0.0002, 0.0498]), and wins numerically in every one of 6 configurations tried** —
+      the same fix applied to simulation (`run_k7_signal_sweep.R`'s `EBMF_fair` arm) reproduces the
+      originally-intended pattern (equivalence at zero signal, growing advantage as signal
+      strengthens), though not independently significant at only 10 seeds. Full numbers: DECISIONS.md
+      2026-08-20 (multiple addenda to the same entry). §3.5 rewritten with the final story. Commits
+      `51a6dd2`, `91c5cdd`, pushed. Full suite 395/395.
 - [ ] **Phase 5+** — not yet scoped in this session; remaining meeting-prep phases (slides/figures,
-      any further sections) follow once this phase lands, and are the user's call.
+      any further sections) follow once this phase lands, and are the user's call. Chapter review
+      and editorial revision for clarity/concision is the immediate next step, planned for a new
+      session (see handoff prompt).
