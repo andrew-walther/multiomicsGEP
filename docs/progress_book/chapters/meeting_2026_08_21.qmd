@@ -46,17 +46,8 @@ section works through that list plainly — what's done, what's still open — r
 
 ## 2. Model Specification — YFB
 
-This section documents the model currently recommended for real-data analysis: the **Cox-on-YF**
-formulation (`code/fit_cox_on_yf.R`), referred to here as **YFB** ($\eta = (YF)\beta$). This
-supersedes an earlier variant, **LB** ($\eta = L\beta$, `code/fit_modular.R`), which remains in the
-codebase for comparison but is not the recommended fit. The two differ in exactly one structural way,
-with consequences for every update below: under LB, the patient loadings $L$ are themselves latent
-and enter both the genomics reconstruction and the survival likelihood; under YFB, the survival
-predictor uses $Y F$ directly — an **observed** projection of the data through the (posterior-mean)
-gene loadings, not a latent variable. That single change closes a train/test mismatch that LB has
-(training uses the EBNM-shrunk posterior mean $\bar L$, but a held-out patient's $L$ has to be
-estimated separately by projection — a different quantity in a different way). Under YFB, training
-and prediction use the identical formula.
+Current recommended model: **Cox-on-YF** (`code/fit_cox_on_yf.R`), $\eta = (YF)\beta$, referred to
+here as **YFB**.
 
 ### 2.1 Generative model
 
@@ -78,9 +69,8 @@ $$
 - $\tau_j$ is the feature-specific noise precision.
 - $\tilde F$ normalizes each factor's gene-weight column to unit $L_2$ norm before projecting —
   without this, $\lVert Z\!F_{\cdot k}\rVert \sim O(\sqrt{np})$ and the survival coefficients are
-  driven to zero by scale alone, not by an absence of signal.
-- **$\beta$ acts on $Z\!F$, not on $L$.** $L$ does not appear in the survival likelihood at all under
-  YFB — it is a pure-genomics quantity here, unlike under LB.
+  driven to zero by scale alone.
+- $\beta$ acts on $Z\!F$, not on $L$: $L$ does not appear in the survival likelihood.
 
 Inference is Coordinate Ascent Variational Inference (CAVI). Each coordinate update reduces to an
 Empirical Bayes Normal Means (EBNM) problem, except $\tau$, which has a closed form.
@@ -146,54 +136,38 @@ $$
 The bracketed term is the posterior-variance correction — it prevents $\tau$ from being systematically
 overestimated by ignoring uncertainty in $L$ and $F$.
 
-**Step 3 — Prediction (train and test use the identical formula).**
+**Step 3 — Prediction.**
 $$
 \widehat{\eta}_{\text{test}} = \left(Y_{\text{test}}\, \tilde F_{\text{train}}\right)\tilde\beta
 $$
-$L_{\text{test}}$ is never needed — this is the structural point of YFB over LB.
 
 **Step 4 — Sign correction.** After convergence, if training concordance of
 $\widehat\eta = Z\!F\,\tilde\beta$ is below 0.5, flip $\tilde\beta \to -\tilde\beta$ (equivalent to
-$1 - C_{\text{train}}$). The Gram structure of $F$ combined with a sign-agnostic SVD initialization
-can otherwise leave $\tilde\beta$ pointing the wrong way.
+$1 - C_{\text{train}}$).
 
-### 2.3 A retired parameter: $\lambda$
+### 2.3 A retired parameter: $\lambda$ (DEPRECATED)
 
-An earlier version of the model had a second scalar, $\lambda$, multiplying the survival-side
-precision terms in the $L$ update — separate from $\alpha$, the genomics/survival mixing weight.
-**$\lambda$ was removed on 2026-07-12** ("Phase 1b: retire lambda, alpha is the sole
-genomics/survival mixing weight" — DECISIONS.md): $\alpha$'s existing
-$(1-\alpha)\cdot\text{genomics} + \alpha\cdot\text{survival}$ weighting already plays $\lambda$'s
-intended role, and $\lambda$ was always left at its no-op default (1.0) in every production
-configuration — a redundant knob, not a functioning one. It is fully gone from `update_L.R`,
-`fit_modular.R`, `fit_cox_on_yf.R`, and `config/globals.yml`; no replacement parameter was
-introduced. **This $\lambda$ is unrelated to DeSurv's own $\lambda$** (an elastic-net penalty
-coefficient on $\beta$, in a model that tunes $\lambda$ jointly with $K$) — this model's analogous
-role is filled by the empirical-Bayes priors on $\beta$ (`point_normal`), not a second
-likelihood-mixing weight. **Marked deprecated here for the record; do not reference $\lambda$ as an
-active hyperparameter in the write-up going forward.**
-
-(A same-named `lambda` in `code/predict.R` is an unrelated ridge-regularization threshold for the
-Moore–Penrose pseudoinverse used in LB's test-time projection — not this parameter, and not affected
-by the retirement above.)
+$\lambda$ was a second scalar multiplying the survival-side precision terms in the $L$ update,
+separate from $\alpha$. **Retired 2026-07-12** (DECISIONS.md): $\alpha$'s
+$(1-\alpha)\cdot\text{genomics} + \alpha\cdot\text{survival}$ weighting already fills that role, and
+$\lambda$ was always left at its no-op default (1.0). Removed from `update_L.R`, `fit_modular.R`,
+`fit_cox_on_yf.R`, `config/globals.yml`; no replacement introduced. Not to be confused with DeSurv's
+own $\lambda$ (an elastic-net penalty on $\beta$) or the unrelated `lambda` ridge threshold in
+`code/predict.R`.
 
 ### 2.4 Gene selection
 
-Genes are selected by a combined mean-and-variance rank, computed independently within each of the 2
-training cohorts (TCGA-PAAD, CPTAC): the top 3,000 genes by that combined rank are kept per cohort,
-then intersected across the two cohorts, before per-platform $z$-standardization. This yields 2,064
-genes in the recommended configuration (vs. 2,000 under a simpler variance-only rank on the same
-data). Per-platform standardization — scaling each cohort/platform separately before merging — is not
-optional: 10 of 12 non-per-platform preprocessing variants tested collapse to $\beta = 0$ entirely.
+Combined mean-and-variance rank, computed per training cohort (TCGA-PAAD, CPTAC): top 3,000 genes
+by that rank kept per cohort, intersected across cohorts, before per-platform $z$-standardization.
+Yields 2,064 genes (vs. 2,000 under a variance-only rank). Per-platform standardization is required:
+10 of 12 non-per-platform preprocessing variants collapse to $\beta = 0$.
 
 ### 2.5 Factor composition ($K=7$, recommended configuration)
 
-Of the 7 fitted gene programs, exactly 2 carry non-negligible survival weight ($K_{\text{eff}}=2$);
-the other 5 have $|\tilde\beta_k|$ shrunk below the active threshold and are genomics-only in
-practice. Top genes within a program are the highest-weighted genes in that program's column of
-$F$ — ranked by $|\bar f_{jk}|$ (equivalently, by raw $\bar f_{jk}$ under the `point_exponential`
-prior, since its weights are one-sided/non-negative by construction, so no true "depletion" side
-exists to take an absolute value against).
+$K_{\text{eff}}=2$ of the 7 fitted gene programs carry non-negligible survival weight; the other 5
+have $|\tilde\beta_k|$ shrunk below the active threshold. Top genes within a program are ranked by
+$|\bar f_{jk}|$ (equivalently raw $\bar f_{jk}$: the `point_exponential` prior gives one-sided,
+non-negative weights).
 
 | Program | Survival-active | Direction$^\dagger$ | Biological label | Note |
 |---|---|---|---|---|
