@@ -2,11 +2,22 @@
 # Script:  results/benchmark_sim/run_k_init_sweep.R
 # Purpose: Analysis A (docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md).
 #          Fits YFB on the real TCGA+CPTAC training data at several K_init
-#          values (K_init >= the current CV-selected K=7) and classifies
-#          factors at each fit with classify_factors(), to check whether
-#          K_eff_survival stays at 2 regardless of the starting K — i.e.
-#          whether ARD pruning from an over-specified K is a stable
-#          alternative to CV-selecting K directly from held-out C-index.
+#          values spanning below, at, and above the current CV-selected K=7,
+#          and classifies factors at each fit with classify_factors(), to
+#          check whether K_eff_survival stays at 2 regardless of the
+#          starting K — i.e. whether ARD pruning from an over-specified K is
+#          a stable alternative to CV-selecting K directly from held-out
+#          C-index.
+#
+#          Also records each fit's full ELBO (elbo_full, alpha-weighted
+#          genomics + survival + KL) and final RMSE, so K_init itself can be
+#          selected by the ELBO criterion this project's own K-selection
+#          policy prefers over CV (DECISIONS.md 2026-04-24: "ARD preferred
+#          over ELBO grid search for K selection" — ARD determines K_eff
+#          within one large-K fit, but comparing ELBO *across* K_init values
+#          checks whether that single large fit was actually the best one,
+#          since ELBO is not guaranteed to be monotone non-decreasing in K
+#          once the prior's KL cost is counted).
 #
 #          Preprocessing matches the D4 configuration in
 #          run_desurv_comparison.R exactly: YFB + per-platform z-std +
@@ -54,9 +65,10 @@ BETA_THRESH  <- cfg$k_selection$beta_threshold
 PVE_THRESH   <- cfg$k_selection$pve_threshold
 TOP_N_DESURV <- p$top_n_genes_desurv  # 3000 — DeSurv-aligned, D4 config
 
-# K_init values to sweep: 7 (current CV-selected K) plus larger over-specified
-# starting points, to test ARD pruning stability.
-K_INIT_VALUES <- c(7L, 10L, 15L, 20L)
+# K_init values to sweep: below, at, and above the current CV-selected K=7,
+# to test both ARD pruning stability and whether K=7 is actually ELBO-optimal
+# among nearby candidates (not just among 7/10/15/20).
+K_INIT_VALUES <- c(5L, 6L, 7L, 8L, 9L, 10L, 15L, 20L)
 
 OUT_DIR <- "results/benchmark_sim/outputs/k_init_sweep"
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -119,8 +131,10 @@ for (K_init in K_INIT_VALUES) {
     )
   )
   fits[[as.character(K_init)]] <- fit
-  cat(sprintf("  |beta|: [%s]\n\n",
-              paste(sprintf("%.4f", abs(fit$EBeta)), collapse = ", ")))
+  n_iter <- fit$history$n_iter
+  cat(sprintf("  |beta|: [%s]\n", paste(sprintf("%.4f", abs(fit$EBeta)), collapse = ", ")))
+  cat(sprintf("  final elbo_full=%.4f | final rmse=%.6f\n\n",
+              fit$history$elbo_full[n_iter], fit$history$rmse[n_iter]))
 }
 
 # --------------------------------------------------------------------------
@@ -178,18 +192,21 @@ cat("\n=== Factor classification per K_init ===\n\n")
 results_rows <- list()
 
 for (K_init in K_INIT_VALUES) {
-  fit  <- fits[[as.character(K_init)]]
-  cls  <- classify_factors(fit, Y_train, beta_thresh = BETA_THRESH, pve_thresh = PVE_THRESH)
+  fit    <- fits[[as.character(K_init)]]
+  n_iter <- fit$history$n_iter
+  cls    <- classify_factors(fit, Y_train, beta_thresh = BETA_THRESH, pve_thresh = PVE_THRESH)
 
   K_survival_active <- sum(cls$category == "survival_active")
   K_genomics_only   <- sum(cls$category == "genomics_only")
   K_dead            <- sum(cls$category == "dead")
+  K_eff_total       <- K_survival_active + K_genomics_only
 
   cohort_c <- ext_cindex[[as.character(K_init)]]
   mean_c   <- if (length(cohort_c) > 0) mean(unlist(cohort_c)) else NA_real_
 
-  cat(sprintf("K_init=%2d: K_survival_active=%d, K_genomics_only=%d, K_dead=%d | mean external C=%.4f\n",
-              K_init, K_survival_active, K_genomics_only, K_dead, mean_c))
+  cat(sprintf("K_init=%2d: K_survival_active=%d, K_genomics_only=%d, K_dead=%d, K_eff_total=%d | mean external C=%.4f | elbo_full=%.4f | rmse=%.6f\n",
+              K_init, K_survival_active, K_genomics_only, K_dead, K_eff_total, mean_c,
+              fit$history$elbo_full[n_iter], fit$history$rmse[n_iter]))
 
   results_rows[[length(results_rows) + 1]] <- data.frame(
     K_init            = K_init,
@@ -197,12 +214,23 @@ for (K_init in K_INIT_VALUES) {
     K_survival_active = K_survival_active,
     K_genomics_only   = K_genomics_only,
     K_dead            = K_dead,
+    K_eff_total       = K_eff_total,
+    elbo_full         = round(fit$history$elbo_full[n_iter], 4),
+    rmse              = round(fit$history$rmse[n_iter], 6),
+    n_iter            = n_iter,
     mean_external_c   = round(mean_c, 4),
     stringsAsFactors  = FALSE
   )
 }
 
 results <- do.call(rbind, results_rows)
+
+# ELBO-preferred K_init: this project's stated K-selection policy
+# (DECISIONS.md 2026-04-24) prefers ELBO over CV/C-index for model comparison.
+elbo_best_idx <- which.max(results$elbo_full)
+cat(sprintf("\nELBO-preferred K_init = %d (elbo_full=%.4f, K_eff_total=%d)\n",
+            results$K_init[elbo_best_idx], results$elbo_full[elbo_best_idx],
+            results$K_eff_total[elbo_best_idx]))
 
 # Attach per-cohort C-index as separate columns for full traceability.
 for (ext_cohort in EXTERNAL_COHORTS) {

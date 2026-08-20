@@ -5,7 +5,7 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
-## 2026-08-19 — Three-way factor classification (survival-active / genomics-only / dead) added; K_init stability sweep confirms ARD pruning is a valid alternative to CV-selecting K
+## 2026-08-19 — Three-way factor classification (survival-active / genomics-only / dead) added; K_init sweep + best-of-multistart ELBO comparison recommends K=7 (2 survival-active + 2 genomics-only factors), with K=9 as a near-tied alternative
 
 **Motivation:** two methodological gaps flagged for the manuscript
 (`docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`):
@@ -14,7 +14,9 @@ Each entry records what was decided, why, what was traded away, and which files 
    cross-validated held-out C-index — which uses survival outcomes to pick model structure,
    conflating structure selection with fitting. The methodologically preferable alternative
    (Method 2) is to start CAVI at a large K and let the ARD-style point-normal prior on β prune
-   uninformative factors, so K need not be tuned against the outcome at all.
+   uninformative factors, so K need not be tuned against the outcome at all — consistent with this
+   project's standing policy (2026-04-24 entry below: "ARD preferred over ELBO grid search for K
+   selection").
 2. The existing `auto_prune_K()` only distinguished "active" (`|β|>thresh` OR `PVE>thresh`) from
    "shrunk" — collapsing two biologically distinct outcomes into one "shrunk" bucket: factors that
    are real gene-expression programs with no prognostic value (*genomics-only*) vs. factors that
@@ -36,36 +38,87 @@ Each entry records what was decided, why, what was traded away, and which files 
   to read from `config/globals.yml` instead — it predated the 2026-07 rescaling of
   `beta_threshold` to 0.001 for the YFB model's natural β scale (~0.003–0.008) and would have
   silently classified every YFB β as "Shrunk" if used on a YFB fit.
-- **Analysis A** (`results/benchmark_sim/run_k_init_sweep.R`): fit YFB on the real TCGA+CPTAC
-  training data (n=273, p=2064 genes) with the D4 preprocessing (per-platform z-std,
-  `combined_rank` gene selection, top-3000 per cohort before normalization, no cohort_id) at
-  K_init ∈ {7, 10, 15, 20}, classified factors at each fit, and evaluated external C-index across
-  the same 5 held-out cohorts used elsewhere in the benchmark suite. Results:
-  `results/benchmark_sim/outputs/k_init_sweep/k_init_sweep_results.csv`.
+- **Analysis A, single-init sweep** (`results/benchmark_sim/run_k_init_sweep.R`): fit YFB on the
+  real TCGA+CPTAC training data (n=273, p=2064 genes) with the D4 preprocessing (per-platform
+  z-std, `combined_rank` gene selection, top-3000 per cohort before normalization, no cohort_id) at
+  K_init ∈ {5, 6, 7, 8, 9, 10, 15, 20} — extended from an initial {7, 10, 15, 20} pass after the
+  first result raised the question of what K best explains genomics *reconstruction* (not just
+  survival) — classified factors at each fit, recorded each fit's final `elbo_full` and RMSE, and
+  evaluated external C-index across the same 5 held-out cohorts used elsewhere in the benchmark
+  suite.
+- **Analysis A, multistart follow-up** (`results/benchmark_sim/run_k_init_multistart_check.R`):
+  the single-init sweep found K=5/K=6 to have the *best* training ELBO of the whole grid — better
+  than K=7 — which could mean either a genuinely-preferred smaller model or a lucky single-init
+  local optimum. Re-fit K ∈ {5,6,7,8,9,10} with `fit_cox_on_yf_multistart()` (n_init=15: 1 SVD +
+  14 random restarts, best-ELBO selection — the same tool used for exactly this purpose in the
+  2026-07-13 K-parsimony follow-up) to check whether K=5/6's ELBO lead survives multistart.
+  Results: `results/benchmark_sim/outputs/k_init_sweep/k_init_multistart_results.csv` (summary) and
+  `k_init_multistart_restarts.csv` (all 90 individual restarts).
 
-**Result — the key question is answered: K_eff_survival is stable at 2 regardless of K_init.**
+**Result 1 — K_survival_active is stable at 2 across the entire grid tested (K_init 5 through 20),
+K_genomics_only stabilizes at ~2–3, both against expectation:**
 
-| K_init | K_survival_active | K_genomics_only | K_dead | mean external C |
-|---|---|---|---|---|
-| 7  | 2 | 2 | 3  | 0.6267 |
-| 10 | 2 | 3 | 5  | 0.6279 |
-| 15 | 2 | 3 | 10 | 0.6270 |
-| 20 | 2 | 3 | 15 | 0.6274 |
+| K_init | K_survival_active | K_genomics_only | K_dead | K_eff_total | mean external C |
+|---|---|---|---|---|---|
+| 5  | 3 | 1 | 1  | 4 | 0.596 |
+| 6  | 3 | 1 | 2  | 4 | 0.597 |
+| 7  | 2 | 2 | 3  | 4 | 0.6267 |
+| 8  | 2 | 2 | 4  | 4 | 0.6256 |
+| 9  | 2 | 3 | 4  | 5 | 0.6271 |
+| 10 | 2 | 3 | 5  | 5 | 0.6279 |
+| 15 | 2 | 3 | 10 | 5 | 0.6270 |
+| 20 | 2 | 3 | 15 | 5 | 0.6274 |
 
-K_survival_active = 2 at every K_init tested (7 through 20), and mean external C-index across the
-5 held-out cohorts is flat (0.6267–0.6279, well within noise of each other and of the existing
-CV-selected-K=7 baseline). K_genomics_only rises modestly from 2 (at K_init=7) to 3 (at K_init≥10)
-as the extra starting capacity resolves one additional real, weakly-varying gene program that K=7
-had folded into "dead" — not a change in the survival-relevant structure. K_dead absorbs essentially
-all of the added K_init capacity (3→5→10→15), exactly as ARD pruning should behave.
+K_survival_active = 2 (not 3) once K_init ≥ 7, and K_genomics_only stabilizes at 2–3 — i.e. K_eff_total
+(the number of factors worth retaining for the genomics *reconstruction* term, not just survival) is
+**4 at K_init=7–8, 5 at K_init≥9**. K_dead absorbs essentially all added K_init capacity beyond that
+(3→4→5→10→15), consistent with ARD pruning behaving as expected once K_init is large enough.
 
-**Conclusion:** ARD pruning from an over-specified K is stable and produces the same
-survival-relevant conclusion as CV-selecting K directly — Method 2 is validated as a
-methodologically cleaner alternative that does not require tuning K against the survival outcome.
+**Result 2 — the ELBO criterion does NOT cleanly agree with generalization at small K, and this
+survives multistart (not a single-init artifact):**
+
+At every K tested, all 15 multistart restarts (1 SVD + 14 random) converged to the SAME best-ELBO
+fit as the single fresh-SVD init already found — random restarts never beat SVD-init at any K. This
+project has documented this exact pattern before (ROADMAP.md: "best-ELBO multistart... rescued
+nothing at any K — SVD init was always the best-ELBO restart") and it replicates here. So K=5/K=6's
+ELBO advantage over K=7 (−808,404 and −812,248 vs. −810,540) is **not** a fluke of a single
+unlucky init at K=7 — it is robust. Yet K=5/K=6's external C-index (0.596–0.597) is far worse than
+every K≥7 (0.6256–0.6279) — a genuine, large (~0.03) gap between training-data model evidence
+(ELBO) and held-out predictive validity. The most likely mechanism: with too little spare capacity,
+CAVI has nowhere to route ambiguous/noisy signal except into an existing factor's β, inflating
+training likelihood without it generalizing; K≥7 gives CAVI "dead" factors to absorb that instead.
+
+**Decision — apply ELBO with an external-validity gate, not ELBO alone:** per the plan agreed before
+running this check, best-of-multistart ELBO is the primary K-selection criterion (consistent with
+this project's ARD-over-CV policy), but a candidate that collapses on external validation is treated
+as failing a plausibility gate, not as a competitor to be ranked on ELBO alone. K=5/K=6 fail that
+gate outright. Restricting to K ∈ {7,8,9,10} (all pass, external C 0.6256–0.6279, mutually
+indistinguishable), **K=7 (−810,540) and K=9 (−810,421) are a near-tie at the top of best-of-multistart
+ELBO** — a ~0.015% difference, versus 3,000–5,500-unit gaps down to K=8/K=10. **Recommendation: K=7
+(2 survival-active + 2 genomics-only = 4 total factors)**, on the same parsimony-tiebreaker logic
+already used in this project (2026-07-13 entry below: K=7 chosen over statistically-tied K=4/K=5
+because it is reachable via a single dependency-free fresh-SVD fit) — **K=9 (2 survival-active + 3
+genomics-only = 5 total) is documented as a legitimate, near-tied alternative, not discarded.**
+
+**Note on "should K_init always be large":** the data argues against a blanket "start as large as
+possible" rule. ELBO gets monotonically *worse* past K_init≈10 (K=15: −826,682; K=20: −847,800) while
+finding no additional real structure (K_eff_total plateaus at 5 from K_init=9 onward) — excess
+capacity purely costs ELBO. Combined with K=5/K=6 failing on the small side, there is a real sweet
+spot (~7–10) rather than "more is always safer," which happens to sit close to this project's
+existing `cavi.k_max: 10` default in `config/globals.yml`.
+
+**Note on the apparent K=3 discrepancy:** an earlier CV-selected K=3 elsewhere in this project
+(`k_pdac_yfb_merged`, 2026-05 entries) belongs to a *different* (pre-DeSurv, variance-based top-2000
+gene selection) preprocessing pipeline — not the D4/DeSurv-aligned config tested here, whose own
+CV-selected K is 7 (`k_merged_yfb_desurv`). The DeSurv paper's own K=3 is a third, unrelated number
+(their method, their preprocessing). None of these three K=3's are in tension with this analysis.
+
 This directly answers both open items flagged in the 8/21 meeting-prep model-specification chapter
-(`docs/progress_book/chapters/meeting_2026_08_21.qmd` §1): how K=7 was chosen, and whether the
-2 survival-active / ~5 genomics-only split is an artifact of that specific K or a stable structural
-feature of the data.
+(`docs/progress_book/chapters/meeting_2026_08_21.qmd` §1): how K=7 was chosen (now: ELBO/multistart,
+not just CV, and it holds up), and whether the survival-active/genomics-only split is an artifact of
+that specific K or a stable structural feature of the data (K_survival_active=2 is stable from
+K_init=7 up; K=5/6's apparent 3rd survival-active factor does not generalize and is treated as a
+training-only artifact under the external-validity gate).
 
 **Deferred to a later phase (not run this session):** Analysis B (ARD K-recovery in simulation,
 validating that K_eff_survival/K_eff_genomics track *known* ground-truth counts, not just each

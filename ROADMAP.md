@@ -79,19 +79,26 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
-- [x] **Factor classification (survival-active/genomics-only/dead) + K-init stability sweep
-  (Analysis A)** *(Complete, 2026-08-19, branch `meeting/2026-08-21-prep`)* `[Analyses B/C pending]`
+- [x] **Factor classification (survival-active/genomics-only/dead) + K-init sweep + best-of-
+  multistart ELBO comparison (Analysis A)** *(Complete, 2026-08-19, branch
+  `meeting/2026-08-21-prep`)* `[Analyses B/C pending]`
   Per `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md` Step 1 + Analysis A:
   added `classify_factors()` (`code/select_K.R`) distinguishing survival-active from
   genomics-only-but-survival-silent factors, replacing `auto_prune_K()`'s binary active/shrunk
-  split. Ran the K-init stability sweep (`results/benchmark_sim/run_k_init_sweep.R`) on real
-  TCGA+CPTAC data, D4 preprocessing, K_init ∈ {7,10,15,20}: **K_survival_active=2 at every K_init**,
-  mean external C-index flat (0.6267–0.6279) — confirms ARD pruning from an over-specified K
-  reaches the same conclusion as CV-selecting K directly, validating Method 2 (start large, let
-  ARD prune) as a methodologically cleaner alternative that doesn't tune K against the survival
-  outcome. See DECISIONS.md 2026-08-19. **Still open, deferred to a later phase:** Analysis B
-  (ARD K-recovery against known ground-truth K in simulation) and Analysis C (re-run the
-  signal-ratio sweep with K_init ≫ K_true) — both scoped in the plan doc above.
+  split. Swept K_init ∈ {5,6,7,8,9,10,15,20} on real TCGA+CPTAC data (D4 preprocessing), then
+  re-checked K ∈ {5..10} with 15-restart best-ELBO multistart after the single-init pass showed
+  K=5/K=6 with the best training ELBO of the grid. **Result: K_survival_active=2 from K_init=7
+  up (K=5/6 show 3, but fail external validation — C=0.596–0.597 vs. 0.6256–0.6279 for K≥7, and
+  this gap is robust to multistart, not a single-init artifact).** Restricting to K∈{7,8,9,10}
+  (all pass external validation), best-of-multistart ELBO is a near-tie between **K=7 (2
+  survival-active + 2 genomics-only = 4 total factors)** and K=9 (2 survival-active + 3
+  genomics-only = 5 total). **Recommendation: K=7**, on the same parsimony-tiebreaker precedent
+  used for the July K=4/K=5 tie below; K=9 documented as a legitimate near-tied alternative. Also
+  found K_init past ~10 costs ELBO with no new structure (K_eff_total plateaus at 5), arguing
+  against a blanket "start as large as possible" rule. See DECISIONS.md 2026-08-19. **Still open,
+  deferred to a later phase:** Analysis B (ARD K-recovery against known ground-truth K in
+  simulation) and Analysis C (re-run the signal-ratio sweep with K_init ≫ K_true) — both scoped
+  in the plan doc above.
 
 - [ ] **Follow-up plan for the progress report's open items** `[Priority: see plan]` `[Effort: see plan]`
   A saved, not-yet-started backlog covering every open item from Item 2's progress report (§7) and

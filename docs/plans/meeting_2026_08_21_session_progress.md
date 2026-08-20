@@ -17,13 +17,18 @@ Tracks execution of the multi-session plan for the 2026-08-21 advisor meeting. B
       `classify_factors()` (survival-active / genomics-only / dead) in `code/select_K.R` + 2 new
       tests (KCV-T17/T18, `tests/test_select_K_cv.R`; T17 covers all 3 categories, T18 the
       borderline-threshold edge case); fixed stale hardcoded `beta_thresh=0.05` in
-      `run_phase1_diagnostics.R` to read from `globals.yml`; ran Analysis A (K-init stability
-      sweep, `results/benchmark_sim/run_k_init_sweep.R`) on real TCGA+CPTAC data at
-      K_init ∈ {7,10,15,20}. Result: K_survival_active=2 at every K_init, mean external C-index
-      flat (0.6267-0.6279) — ARD pruning is stable, confirming Method 2 (over-specify K, let ARD
-      prune) as a valid alternative to CV-selecting K. Real-data suite 88/88, full suite 394/394.
-      See DECISIONS.md 2026-08-19. Analyses B/C deferred to a later phase per
-      `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`.
+      `run_phase1_diagnostics.R` to read from `globals.yml`. Ran Analysis A on real TCGA+CPTAC
+      data (D4 preprocessing): a single-init sweep (`run_k_init_sweep.R`, K_init ∈
+      {5,6,7,8,9,10,15,20}) followed by a 15-restart best-of-multistart ELBO check
+      (`run_k_init_multistart_check.R`, K ∈ {5..10}) after the single-init pass showed K=5/K=6
+      with the best training ELBO of the whole grid. Result: K_survival_active=2 from K_init=7 up
+      (K=5/6 show 3 but fail external validation, C=0.596-0.597 vs. 0.6256-0.6279 for K≥7 — robust
+      to multistart, not a single-init artifact). Among K∈{7,8,9,10} (all pass external
+      validation), best-of-multistart ELBO is a near-tie between K=7 (2 survival-active + 2
+      genomics-only = 4 total factors) and K=9 (2 survival-active + 3 genomics-only = 5 total).
+      **Recommendation: K=7**, parsimony tiebreaker; K=9 documented as a near-tied alternative.
+      Real-data suite 88/88, full suite 394/394. See DECISIONS.md 2026-08-19. Analyses B/C
+      deferred to a later phase per `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`.
 - [ ] **Phase 3+** — not yet scoped in this session; remaining steps of the 8/13 plan (Analysis B:
       ARD K-recovery simulation; Analysis C: signal-ratio sweep re-run) and any further meeting-prep
       phases follow once Phase 2 lands.
