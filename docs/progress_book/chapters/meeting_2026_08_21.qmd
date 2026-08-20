@@ -1,0 +1,208 @@
+# August 21, 2026
+
+## 1. Progress since August 3
+
+The 8/3 entry closed two open questions about the two survival-active gene programs (Program 7,
+adverse; Program 3, protective): they reproduce in a fully unsupervised fit (not an artifact of the
+survival term), and they independently match DeSurv's published basal-like/classical tumor axes.
+Focus then shifted toward the manuscript and toward a list of action items from that meeting. This
+section works through that list plainly — what's done, what's still open — rather than restating it.
+
+### Since 8/3, completed
+
+- **Bootstrap C-index confidence intervals + paired significance test** (2026-07-16): the
+  recommended model is significantly more concordant than the two-step (unsupervised-factorization-
+  then-Cox) baseline, pooled across the 5 external cohorts (+0.042, 95% CI 0.013–0.071); one cohort
+  (Puleo, $n=288$) is significant on its own.
+- **Consolidated progress notebook** (this book): one chapter per advisor meeting, backfilled
+  April 29 through August 3 and pushed 2026-08-03.
+- **Model specification write-up** — the 8/3 notes' top immediate item ("write out current model
+  form, pseudo-algorithm and major update steps") is §2 of this chapter, below.
+
+### Still open (carried from 8/3, not addressed this cycle)
+
+- **Simulation comparing K-selection strategies** (grid search / cross-validated C-index vs.
+  ARD-style shrinkage from a large starting K), including a ground-truth-$K$ setup where the true
+  number of factors is known. A plan for this was drafted 2026-08-13
+  (`docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`) but not yet executed —
+  this is the next scoped piece of work, not something to imply is already done.
+- **Consistency of the 5 non-survival-active factors across the external cohorts.** Programs 3 and 7
+  have been checked thoroughly (pathway enrichment, subtype correlation, DeSurv overlap, cross-cohort
+  hazard ratios); the other 5 factors in the $K=7$ fit have not had the equivalent check. This is
+  flagged here rather than left implicit, since it's easy to read the Program 3/7 validation as
+  covering the whole model when it doesn't.
+- **Revisiting how $K=7$ was selected**, specifically the ARD-vs-cross-validation comparison Dr.
+  Rashid asked about directly. The July K-parsimony work (warm-start equivalence of $K \in \{4,5,7,8\}$,
+  external C essentially tied) is relevant background but doesn't itself answer the ARD-vs-CV
+  question — that's the same 8/13 plan above.
+- Slides/figures for the meeting itself, prepared separately from this chapter.
+
+### Ongoing (no change expected each cycle)
+
+- Weekly recurring meetings and a written update each time (this book).
+- Daily pushes to the model repository and the separate manuscript repository.
+- The cohort-membership indicator (`cohort_id`) absorbs genomic platform offsets only — it never
+  carries survival information, and is off by default in the recommended configuration below.
+
+## 2. Model Specification — YFB
+
+This section documents the model currently recommended for real-data analysis: the **Cox-on-YF**
+formulation (`code/fit_cox_on_yf.R`), referred to here as **YFB** ($\eta = (YF)\beta$). This
+supersedes an earlier variant, **LB** ($\eta = L\beta$, `code/fit_modular.R`), which remains in the
+codebase for comparison but is not the recommended fit. The two differ in exactly one structural way,
+with consequences for every update below: under LB, the patient loadings $L$ are themselves latent
+and enter both the genomics reconstruction and the survival likelihood; under YFB, the survival
+predictor uses $Y F$ directly — an **observed** projection of the data through the (posterior-mean)
+gene loadings, not a latent variable. That single change closes a train/test mismatch that LB has
+(training uses the EBNM-shrunk posterior mean $\bar L$, but a held-out patient's $L$ has to be
+estimated separately by projection — a different quantity in a different way). Under YFB, training
+and prediction use the identical formula.
+
+### 2.1 Generative model
+
+$$
+Y = L F^\top + E, \qquad E_{ij} \sim \mathcal{N}\!\left(0, \tau_j^{-1}\right)
+$$
+
+$$
+Z\!F = Y \tilde F, \qquad \tilde F_{\cdot k} = \frac{F_{\cdot k}}{\lVert F_{\cdot k} \rVert_2}
+$$
+
+$$
+\eta_i = (Z\!F)_{i\cdot}\,\tilde\beta, \qquad h(t_i \mid \eta_i) = h_0(t)\exp(\eta_i)
+\quad\text{(Cox proportional hazards)}
+$$
+
+- $Y$ is $n \times p$ (patients $\times$ genes), column-centered.
+- $L$ ($n\times K$) and $F$ ($p \times K$) are the latent patient loadings and gene-program weights.
+- $\tau_j$ is the feature-specific noise precision.
+- $\tilde F$ normalizes each factor's gene-weight column to unit $L_2$ norm before projecting —
+  without this, $\lVert Z\!F_{\cdot k}\rVert \sim O(\sqrt{np})$ and the survival coefficients are
+  driven to zero by scale alone, not by an absence of signal.
+- **$\beta$ acts on $Z\!F$, not on $L$.** $L$ does not appear in the survival likelihood at all under
+  YFB — it is a pure-genomics quantity here, unlike under LB.
+
+Inference is Coordinate Ascent Variational Inference (CAVI). Each coordinate update reduces to an
+Empirical Bayes Normal Means (EBNM) problem, except $\tau$, which has a closed form.
+
+### 2.2 Update steps (one outer CAVI iteration)
+
+**Step 0 — Working response.** Recompute $\tilde F$, $Z\!F = Y\tilde F$, and $\eta = Z\!F\,\tilde\beta$;
+run one step of the Cox Newton–Raphson (Taylor) expansion at $\eta$ to get the score $u$, diagonal
+Hessian weight $w$, and working response $z = \eta + u/w$.
+
+**Step 1 — For each factor $k = 1, \dots, K$ (Gauss–Seidel: $\beta_k \to l_k \to f_k$, in order):**
+
+1. **$q(\beta_k)$ — survival coefficient.** Covariate is $Z\!F_{\cdot k}$, observed (no posterior
+   variance term):
+   $$
+   A_k = \alpha \sum_i w_i\, Z\!F_{ik}^2, \qquad
+   B_k = \alpha \sum_i w_i\, z^{-k}_i\, Z\!F_{ik}
+   $$
+   $$
+   \left(\bar\beta_k,\ \overline{\beta_k^2}\right) \leftarrow
+   \mathrm{EBNM}\!\left(x=\tfrac{B_k}{A_k},\ s=\tfrac{1}{\sqrt{A_k}}\right)
+   $$
+   where $z^{-k}_i = z_i - \sum_{k'\ne k} Z\!F_{ik'}\bar\beta_{k'}$ is the working response with
+   factor $k$'s own contribution removed, and $\alpha \in [0,1]$ (default $0.5$) is the
+   genomics/survival mixing weight. $\alpha$ cancels in $x_k = B_k/A_k$ (the EBNM pseudo-observation
+   is $\alpha$-independent) but not in $s_k = 1/\sqrt{A_k}$, so it still controls how strongly
+   $\beta_k$ is shrunk. Prior family: `point_normal` (spike-and-slab shrinkage). *(Derivation:
+   `derivations/cox_on_YF/qBeta/qBeta_YF_derivation.pdf`)*
+
+2. **$q(l_{\cdot k})$ — patient loadings, pure genomics.** $L$ carries no survival term under YFB:
+   $$
+   A_{ik} = \sum_j \tau_j\, \bar f_{jk}^2, \qquad
+   B_{ik} = \sum_j \tau_j\, R^{-k}_{ij}\, \bar f_{jk}
+   $$
+   $$
+   \left(\bar l_{ik},\ \overline{l_{ik}^2}\right) \leftarrow
+   \mathrm{EBNM}\!\left(x=\tfrac{B_{ik}}{A_{ik}},\ s=\tfrac{1}{\sqrt{A_{ik}}}\right)
+   $$
+   where $R^{-k} = Y - \bar L\bar F^\top + \bar l_{\cdot k}\bar f_{\cdot k}^\top$ is the genomics
+   residual with factor $k$ added back in. Prior family: `point_exponential` (one-sided, non-negative
+   weights — no "depletion" side). *(Derivation:
+   `derivations/cox_on_YF/qL_unsupervised/qL_unsupervised_derivation.pdf`)*
+
+3. **$q(f_{\cdot k})$ — gene-program weights.** Pure genomics at the default survival-mixing weight
+   $\alpha_F = 0$ (a dual-source form exists for $\alpha_F > 0$, unused in the recommended
+   configuration — see `derivations/cox_on_YF/qF_supervised/qF_supervised_derivation.pdf` for the
+   general case):
+   $$
+   A_{jk} = \tau_j \sum_i \overline{l_{ik}^2}, \qquad
+   B_{jk} = \tau_j \sum_i R^{-k}_{ij}\, \bar l_{ik}
+   $$
+   $$
+   \left(\bar f_{jk},\ \overline{f_{jk}^2}\right) \leftarrow
+   \mathrm{EBNM}\!\left(x=\tfrac{B_{jk}}{A_{jk}},\ s=\tfrac{1}{\sqrt{A_{jk}}}\right)
+   $$
+
+**Step 2 — $q(\tau)$: closed form, no EBNM.**
+$$
+\bar R^2_{ij} = \left(Y - \bar L\bar F^\top\right)^2_{ij} +
+\sum_{k=1}^{K}\left[\overline{l_{ik}^2}\,\overline{f_{jk}^2} - \bar l_{ik}^2 \bar f_{jk}^2\right], \qquad
+\hat\tau_j = \frac{n}{\sum_i \bar R^2_{ij}}
+$$
+The bracketed term is the posterior-variance correction — it prevents $\tau$ from being systematically
+overestimated by ignoring uncertainty in $L$ and $F$.
+
+**Step 3 — Prediction (train and test use the identical formula).**
+$$
+\widehat{\eta}_{\text{test}} = \left(Y_{\text{test}}\, \tilde F_{\text{train}}\right)\tilde\beta
+$$
+$L_{\text{test}}$ is never needed — this is the structural point of YFB over LB.
+
+**Step 4 — Sign correction.** After convergence, if training concordance of
+$\widehat\eta = Z\!F\,\tilde\beta$ is below 0.5, flip $\tilde\beta \to -\tilde\beta$ (equivalent to
+$1 - C_{\text{train}}$). The Gram structure of $F$ combined with a sign-agnostic SVD initialization
+can otherwise leave $\tilde\beta$ pointing the wrong way.
+
+### 2.3 A retired parameter: $\lambda$
+
+An earlier version of the model had a second scalar, $\lambda$, multiplying the survival-side
+precision terms in the $L$ update — separate from $\alpha$, the genomics/survival mixing weight.
+**$\lambda$ was removed on 2026-07-12** ("Phase 1b: retire lambda, alpha is the sole
+genomics/survival mixing weight" — DECISIONS.md): $\alpha$'s existing
+$(1-\alpha)\cdot\text{genomics} + \alpha\cdot\text{survival}$ weighting already plays $\lambda$'s
+intended role, and $\lambda$ was always left at its no-op default (1.0) in every production
+configuration — a redundant knob, not a functioning one. It is fully gone from `update_L.R`,
+`fit_modular.R`, `fit_cox_on_yf.R`, and `config/globals.yml`; no replacement parameter was
+introduced. **This $\lambda$ is unrelated to DeSurv's own $\lambda$** (an elastic-net penalty
+coefficient on $\beta$, in a model that tunes $\lambda$ jointly with $K$) — this model's analogous
+role is filled by the empirical-Bayes priors on $\beta$ (`point_normal`), not a second
+likelihood-mixing weight. **Marked deprecated here for the record; do not reference $\lambda$ as an
+active hyperparameter in the write-up going forward.**
+
+(A same-named `lambda` in `code/predict.R` is an unrelated ridge-regularization threshold for the
+Moore–Penrose pseudoinverse used in LB's test-time projection — not this parameter, and not affected
+by the retirement above.)
+
+### 2.4 Gene selection
+
+Genes are selected by a combined mean-and-variance rank, computed independently within each of the 2
+training cohorts (TCGA-PAAD, CPTAC): the top 3,000 genes by that combined rank are kept per cohort,
+then intersected across the two cohorts, before per-platform $z$-standardization. This yields 2,064
+genes in the recommended configuration (vs. 2,000 under a simpler variance-only rank on the same
+data). Per-platform standardization — scaling each cohort/platform separately before merging — is not
+optional: 10 of 12 non-per-platform preprocessing variants tested collapse to $\beta = 0$ entirely.
+
+### 2.5 Factor composition ($K=7$, recommended configuration)
+
+Of the 7 fitted gene programs, exactly 2 carry non-negligible survival weight ($K_{\text{eff}}=2$);
+the other 5 have $|\tilde\beta_k|$ shrunk below the active threshold and are genomics-only in
+practice. Top genes within a program are the highest-weighted genes in that program's column of
+$F$ — ranked by $|\bar f_{jk}|$ (equivalently, by raw $\bar f_{jk}$ under the `point_exponential`
+prior, since its weights are one-sided/non-negative by construction, so no true "depletion" side
+exists to take an absolute value against).
+
+| Program | Survival-active | Direction$^\dagger$ | Biological label | Note |
+|---|---|---|---|---|
+| 7 | Yes | Adverse | Basal-like / squamous-like (keratin, EGFR-ligand: EREG, TGFA, VEGFA) | HR>1 in 5/5 external cohorts |
+| 3 | Yes | Protective | Classical, differentiated epithelial | HR<1 in 5/5 external cohorts |
+| 1, 2, 4, 5, 6 | No | — | Not yet individually characterized | Cross-cohort consistency check still open (§1) |
+
+$^\dagger$ Direction is read from the *marginal* survival association of each program's projection
+score (Cox on $Z\!F_{\cdot k}$ alone), not the joint model's $\tilde\beta$ sign — the two disagree for
+these two programs specifically ($\hat{\tilde\beta}_7 = -0.041$, $\hat{\tilde\beta}_3 = +0.011$), a
+suppression effect among correlated programs in the joint fit. The marginal convention is the one
+used for all adverse/protective labeling.

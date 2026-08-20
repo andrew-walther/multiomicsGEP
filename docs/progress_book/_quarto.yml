@@ -13,6 +13,7 @@ book:
     - chapters/2026-05-28.qmd
     - chapters/2026-07-15.qmd
     - chapters/2026-08-03.qmd
+    - chapters/meeting_2026_08_21.qmd
 
 format:
   html:
