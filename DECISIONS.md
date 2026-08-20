@@ -95,10 +95,16 @@ false-positive rate on non-prognostic factors is 0.25–0.40 for `YFB_base` and 
 **no improvement at all** at 2x/4x ratios (identical FP), confirming `cohort_id` is not a reliable
 fix for this false-positive pattern.
 
-**Deferred:** the bootstrap-CI question (whether the K=5-vs-K=7 external C-index gap, 0.596 vs.
-0.627, is formally statistically significant — the per-cohort direction is consistent across all
-5 cohorts, which is suggestive, but no CI has been computed) is flagged as a future to-do
-(ROADMAP.md), not resolved this session — not urgent for the 8/21 meeting.
+**Follow-up, same day: bootstrap CI on the K=5-vs-K=7 gap** (`results/benchmark_sim/run_k5_vs_k7_bootstrap_ci.R`,
+reusing the already-fitted best-of-multistart K=5/K=7 models — no re-fitting — and
+`code/concordance_ci.R`'s existing `bootstrap_concordance_diff_ci()`, B=2000): **no single cohort
+alone reaches statistical significance** (all 5 individual 95% CIs cross zero — each cohort is
+individually underpowered, n=52–288), but **pooling all 5 cohorts (n=616, 414 events) gives a
+significant result: K=5 − K=7 = −0.0312, 95% CI [−0.0602, −0.0017]**, entirely below zero. This is
+the same pattern already seen in this project for a different comparison (2026-07-16 entry below:
+pooled-significant, most individual cohorts not significant alone) — the consistent direction
+across all 5 cohorts is real signal that individual small cohorts can't detect on their own, but
+the pooled evidence can. Results: `results/benchmark_sim/outputs/k_init_sweep/k5_vs_k7_bootstrap_ci.csv`.
 
 ---
 

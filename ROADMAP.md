@@ -117,12 +117,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   against — worth raising alongside possible mitigations (`rel_thresh`, `cohort_id`, other
   covariate adjustments, or validation-style checks for future datasets).
 
-- [ ] **Bootstrap CI on the K=5-vs-K=7 external C-index gap** `[Priority: low, not urgent]`
-  Analysis A found K=5's external C-index (0.596) far below K=7's (0.627), consistent in direction
-  across all 5 held-out cohorts, but no formal significance test has been run on this specific
-  comparison. `code/concordance_ci.R` already has the bootstrap infrastructure for this (used for a
-  similar comparison in the 2026-07-16 entry below) — flagged as a future to-do, not needed for the
-  8/21 meeting.
+- [x] **Bootstrap CI on the K=5-vs-K=7 external C-index gap** *(Complete, 2026-08-20)*
+  `results/benchmark_sim/run_k5_vs_k7_bootstrap_ci.R` (reused the already-fitted K=5/K=7 models and
+  `code/concordance_ci.R`'s `bootstrap_concordance_diff_ci()`, no re-fitting). Result: no single
+  cohort alone is significant (n too small individually, 52–288), but pooled across all 5 cohorts
+  (n=616) the gap is significant: K=5−K=7 = −0.0312, 95% CI [−0.0602, −0.0017]. See DECISIONS.md
+  2026-08-20 (addendum to the Analysis B/C entry).
 
 - [ ] **Follow-up plan for the progress report's open items** `[Priority: see plan]` `[Effort: see plan]`
   A saved, not-yet-started backlog covering every open item from Item 2's progress report (§7) and
