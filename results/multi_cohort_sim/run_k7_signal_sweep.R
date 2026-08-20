@@ -65,6 +65,7 @@ source("results/multi_cohort_sim/sim_scoring.R")
 
 HAVE_FLASHIER <- requireNamespace("flashier", quietly = TRUE)
 if (!HAVE_FLASHIER) stop("flashier package required for the EBMF two-step baseline.")
+if (!requireNamespace("glmnet", quietly = TRUE)) stop("glmnet package required for the fair (LASSO) EBMF baseline.")
 
 mc <- cfg$synthetic_multicohort
 BETA_THRESH <- cfg$k_selection$beta_threshold
@@ -149,6 +150,28 @@ predict_ebmf <- function(fit, Yte) {
   as.vector(Lte_proj %*% cc)
 }
 
+# "Fair" EBMF+Cox: a large K never informed by YFB's answer (K_FAIR, well above
+# K_TRUE=4), with a LASSO (not plain coxph) stage 2 -- the same two fixes
+# (uninformed K, regularized stage 2) validated on real data (DECISIONS.md
+# 2026-08-20) that a plain K=7/K=4-matched unregularized comparison lacks.
+K_FAIR <- 20L
+fit_ebmf_fair <- function(Ytr, ttr, str_) {
+  ebnm_args <- if (requireNamespace("ebnm", quietly = TRUE))
+    list(ebnm_fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_exponential))
+  else list()
+  f <- do.call(flashier::flash,
+               c(list(Ytr, var_type = 2, greedy_Kmax = K_FAIR, backfit = TRUE, verbose = 0), ebnm_args))
+  l  <- flashier::ldf(f, type = "2")
+  EF <- as.matrix(l$F)
+  Ltr_proj <- Ytr %*% EF %*% solve(crossprod(EF) + diag(1e-8, ncol(EF)))
+  cv_fit <- tryCatch(
+    glmnet::cv.glmnet(Ltr_proj, survival::Surv(ttr, str_), family = "cox", alpha = 1),
+    error = function(e) NULL)
+  beta <- if (is.null(cv_fit)) rep(NA_real_, ncol(EF))
+          else as.numeric(coef(cv_fit, s = "lambda.min"))
+  list(EF = EF, cox_coef = beta, n_iter = f$n_factors)
+}
+
 # --------------------------------------------------------------------------
 # Main loop: strength x seed
 # --------------------------------------------------------------------------
@@ -169,6 +192,19 @@ for (strength in STRENGTHS) {
     spl <- stratified_split(d$status, test_frac = 0.25, seed = s)
     Ytr <- d$Y[spl$train_idx, , drop = FALSE]; ttr <- d$time[spl$train_idx]; str_tr <- d$status[spl$train_idx]
     Yte <- d$Y[spl$test_idx, , drop = FALSE];  tte <- d$time[spl$test_idx];  ste_te <- d$status[spl$test_idx]
+
+    # "Fair" EBMF+Cox: K_FAIR=20, never informed by YFB's K, with LASSO stage 2.
+    fit_fair <- tryCatch(fit_ebmf_fair(Ytr, ttr, str_tr),
+                         error = function(e) { message("EBMF_fair failed: ", e$message); NULL })
+    if (!is.null(fit_fair)) {
+      c_fair <- oriented_cindex(predict_ebmf(fit_fair, Yte), tte, ste_te)
+      rows[[length(rows) + 1]] <- data.frame(
+        strength = strength, seed = s, arm = "EBMF_fair", K_fit = K_FAIR, c_index = c_fair,
+        k_survival_active = NA_integer_, k_genomics_only = NA_integer_,
+        stringsAsFactors = FALSE
+      )
+      cat(sprintf("  seed %d [K=%d/fair]: EBMF+LASSO C=%.3f\n", s, K_FAIR, c_fair))
+    }
 
     # K_INIT=7 (over-specified, matches the real recommended procedure) and
     # K_INIT=K_TRUE=4 (fit directly at the true factor count, matching how

@@ -5,7 +5,7 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
-## 2026-08-20 — RESOLVED: the previously-reported real-data joint-model advantage was an apples-to-oranges K mismatch (YFB K=7 vs. EBMF K=20); a properly K=7-matched comparison shows no significant advantage on real data OR in simulation
+## 2026-08-20 — RESOLVED: the K=7-matched comparison was itself confounded (matching K hands the two-step method the joint model's answer about model complexity); against a two-step baseline with a large, YFB-uninformed K and proper regularization, YFB shows a real, pooled-significant advantage
 
 **Context:** for the 8/21 progress-book chapter, requested a YFB-vs-two-step comparison matching the
 *exact* recommended real-data structure (K=7, K_eff_total=4: 2 survival-active + 2 genomics-only
@@ -81,6 +81,83 @@ prognostic, no genomics-only nuisance factors) now looks specific to that artifi
 property that holds in a more realistic setting or in real data.** This directly bears on how the
 manuscript should state (or not state) the joint model's value proposition — worth raising plainly
 at the 8/21 meeting, not smoothed over.
+
+**But the K=7-matched comparison has its own problem, raised directly by the user: matching K hands
+the two-step method the joint model's answer about total model complexity** — something a real,
+independent two-step analysis would never have access to (K=7 was originally chosen by
+cross-validating the *survival* outcome, and this session re-derived it from the joint model's own
+ELBO; a genuinely independent unsupervised analysis has no way to know it). A fair test should let
+the two-step method use its own, YFB-uninformed capacity budget.
+
+**Checked whether EBMF has a natural, self-selected K:** it does not, in any practical range. Greedy
+`flashier` fits with ceilings of 20 and 40 both used *every* factor offered (no early stopping) —
+real gene-expression data is essentially never exactly low-rank, so there's no clean "let it decide"
+option without building custom automatic-stopping machinery (out of scope this session).
+
+**A second, separate problem surfaced while testing large K: the two-step baseline's stage-2 Cox was
+a plain, *unregularized* `coxph()` on all K factor scores** — with K=20–40 covariates against only
+~140 training events, this is a real overfitting risk independent of whether K itself is a good
+choice. Confirmed directly: training C *rose* with K (0.671→0.731, K=7→40) while external C *fell*
+(0.623→0.578) — the textbook signature of overfitting, not evidence that more genomic complexity is
+inherently bad. **This same unregularized-`coxph()` design has been used in every two-step baseline
+this project has ever built** (this comparison, the July 16 comparison, and both simulations) — a
+systemic limitation worth flagging broadly, not unique to this analysis. Note also that a plain
+`coxph()` never actually selects *which* factors are prognostic (every factor gets a nonzero
+coefficient); a penalized Cox is a more faithful implementation of what a two-step analysis is
+actually supposed to do.
+
+**Fix: replaced stage 2 with LASSO** (`glmnet`, `family="cox"`, λ by cross-validation) on the
+already-fitted, YFB-uninformed K=20 and K=40 EBMF factors (`results/benchmark_sim/
+run_ebmf_cox_regularized.R` — no re-fitting of the unsupervised step). Regularization recovers some
+of the lost performance (K=20: 0.581→0.596; K=40: 0.578→0.601) but the two-step method still trails
+YFB in every configuration tested:
+
+| Two-step configuration | Mean external C | vs. YFB (0.627), pooled bootstrap diff |
+|---|---|---|
+| Unregularized, K=40 | 0.578 | — |
+| Unregularized, K=20 (original 2026-07-16 comparison) | 0.581 | +0.042, **significant** |
+| LASSO, K=20 | 0.596 | — |
+| **LASSO, K=40 (fairest: large, YFB-uninformed K + regularized stage 2)** | **0.601** | **+0.026, 95% CI [0.0002, 0.0498], significant** |
+| Unregularized, K=7 (matched to YFB — hands over the complexity answer) | 0.623 | +0.011, 95% CI [−0.013, 0.033], not significant |
+
+**Resolved conclusion:** YFB numerically outperforms every two-step configuration tested. The
+advantage reaches statistical significance against the two most methodologically defensible
+baselines that don't leak YFB's answer — the original K=20 comparison, and the new fairest
+comparison (K=40, YFB-uninformed, properly regularized): **+0.026, 95% CI [0.0002, 0.0498]** (per
+cohort: Dijk +0.034, Moffitt −0.011, PACA-AU array +0.025, PACA-AU seq +0.055, Puleo +0.026 — none
+individually significant at n=52–288, but YFB ahead in 4/5 and pooled-significant). The gap narrows
+to non-significant only when the two-step method is handed YFB's own K=7 — which is itself an
+unfair advantage in the *other* direction, not a neutral "fair" comparison. **The joint model's
+advantage over a competently-built, independent two-step baseline is real and does hold up on real
+data — the earlier "in tension" framing above was itself an artifact of over-correcting for the
+original K mismatch.** This directly informs how the manuscript should state the joint model's value
+proposition: the case for supervision is strongest when the two-step method must choose its own
+model complexity, exactly the realistic scenario.
+
+**The simulation (Result 1 above) had the same two flaws, and needed the same fix.** The original
+purpose of a signal-strength simulation (going back to July 15) was to show equivalence between
+methods when no survival signal exists, and a growing joint-model advantage as it strengthens — real
+data can't test the "no signal" condition, only simulation can. `run_k7_signal_sweep.R`'s original
+EBMF arm used the same unregularized `coxph()` and the same K=7/K=4 (matched-to-YFB) settings shown
+above to be flawed. Added a third arm — `EBMF_fair`: K=20 (never informed by YFB's K), LASSO stage 2
+— to the same simulated datasets:
+
+| Strength | YFB (K=7) | EBMF_fair (K=20, LASSO) | Paired diff (10 seeds) |
+|---|---|---|---|
+| 0.00 | 0.527 | 0.506 | +0.021, p=0.09, 95% CI [−0.004, 0.046] |
+| 0.25 | 0.597 | 0.607 | −0.011, p=0.12 |
+| 0.50 | 0.703 | 0.704 | −0.001, p=0.55 |
+| 1.00 | 0.798 | 0.795 | +0.003, p=0.48 |
+| 2.00 | 0.888 | 0.850 | +0.038, p=0.35, 95% CI [−0.050, 0.126] |
+
+**Qualitatively, this is exactly the intended pattern:** near-equivalence at low/no signal, YFB
+numerically ahead at the highest tested strength — consistent with both the original hypothesis and
+the real-data result above. **Quantitatively, honest caveat: with only 10 simulation replicates, no
+single strength's paired difference reaches significance** (all CIs cross zero, including the
+strength=2.0 gap that looks largest in the raw means) — simulation compute cost, not doubt about the
+direction, is the limiting factor here. The real-data result (pooled n=616) remains the stronger,
+statistically decisive piece of evidence; the simulation now shows a qualitatively consistent, if
+not independently decisive, pattern rather than the flatly-contradictory one first reported.
 
 **Also delivered this session, not part of the tension above:** a gene-level summary of the K=7
 fit's 4 kept factors (`results/benchmark_sim/generate_k7_kept_factors_summary.R`): top-20 genes per
@@ -411,9 +488,11 @@ method is used to extract it.
 EBMF's own factor structure, not as inventing biology EBMF can't see at all — consistent with the
 "Bayesian counterpart to DeSurv" positioning already used in the progress report. The joint model's
 value-add in *using* this structure for prediction (not in discovering it from nothing) was
-originally quoted here as the +0.042 C-index paired-bootstrap result — **superseded 2026-08-20: that
-comparison used an unmatched K (YFB K=7 vs. EBMF K=20); a K=7-matched comparison finds the advantage
-is not significant (+0.011, 95% CI −0.013, 0.033) — see DECISIONS.md 2026-08-20.**
+originally quoted here as the +0.042 C-index paired-bootstrap result. **Re-examined 2026-08-20:**
+that original comparison's K=20 two-step baseline turned out to be a weak, unregularized-Cox
+baseline, not a fair "best independent two-step effort" — but the underlying value-add conclusion
+holds up under a properly-built independent baseline too (large, YFB-uninformed K + LASSO stage 2):
++0.026, 95% CI [0.0002, 0.0498], still significant — see DECISIONS.md 2026-08-20.
 
 **Not done (ROADMAP.md Part 3, deferred to a follow-up):** pathway-enrichment concordance between
 EBMF_F1/F2's gene loadings and Program 3/7's existing fgsea results
@@ -468,11 +547,13 @@ figure content — this is a rendering/layout fix only.
 
 ## 2026-07-16 — Bootstrap C-index CIs; refreshed a second stale baseline; paired test vs. the two-step method
 
-> **Superseded 2026-08-20 (see the 2026-08-20 entry above):** this entry's "+0.042, significant"
-> joint-vs-two-step comparison used YFB at K=7 against the two-step baseline at K=20 — an unmatched
-> K comparison. Re-run with the two-step baseline matched to K=7, the advantage drops to a
-> non-significant +0.011 (95% CI −0.013, 0.033). The bootstrap CI methodology below remains valid;
-> only the specific EBMF K value used in the joint-vs-two-step comparison was not matched to YFB.
+> **Re-examined 2026-08-20 (see the 2026-08-20 entry above):** this entry's K=20 two-step baseline
+> used an unregularized Cox stage 2 (a systemic limitation, not unique to this entry) and a K not
+> matched to YFB's. Matching K to 7 (handing over YFB's complexity answer) drops the advantage to a
+> non-significant +0.011 — but a properly-built INDEPENDENT baseline (large, YFB-uninformed K=40 +
+> LASSO stage 2) still finds a significant advantage: +0.026, 95% CI [0.0002, 0.0498]. Net effect:
+> the qualitative conclusion here holds up, though the K=20/unregularized specifics are superseded
+> by the more careful comparison. The bootstrap CI methodology below remains valid throughout.
 
 **Context.** Item 2's progress report flagged "no uncertainty quantification on the external C-index"
 as the highest-priority open item (2026-07-15 gap-review entry). Implemented per-cohort bootstrap

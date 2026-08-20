@@ -1,0 +1,6 @@
+"model","label","model_type","cohort","c_index","K","k_eff","beta_max","top_n","sel_method","per_cohort","n_common_genes"
+"EBMF_COX","EBMF->Cox (unsupervised)","EBMF","Dijk",0.5707,40,40,0.0952,3000,"combined_rank",TRUE,2038
+"EBMF_COX","EBMF->Cox (unsupervised)","EBMF","Moffitt_GEO_array",0.5417,40,40,0.0952,3000,"combined_rank",TRUE,2000
+"EBMF_COX","EBMF->Cox (unsupervised)","EBMF","PACA_AU_array",0.6079,40,40,0.0952,3000,"combined_rank",TRUE,2050
+"EBMF_COX","EBMF->Cox (unsupervised)","EBMF","PACA_AU_seq",0.5823,40,40,0.0952,3000,"combined_rank",TRUE,2040
+"EBMF_COX","EBMF->Cox (unsupervised)","EBMF","Puleo_array",0.588,40,40,0.0952,3000,"combined_rank",TRUE,1989

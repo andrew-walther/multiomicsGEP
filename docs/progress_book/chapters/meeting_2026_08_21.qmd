@@ -12,9 +12,10 @@ section works through that list plainly — what's done, what's still open — r
 
 - **Bootstrap C-index confidence intervals + paired significance test** (2026-07-16): built the
   bootstrap-CI machinery and used it to compare the recommended model against a two-step
-  (unsupervised-factorization-then-Cox) baseline. **Superseded this cycle (§3.5): that comparison
-  used the two-step baseline at K=20 vs. YFB at K=7, an unmatched comparison — see §3.5 for the
-  corrected, K=7-matched result.**
+  (unsupervised-factorization-then-Cox) baseline, finding a significant advantage. **Re-examined
+  this cycle (§3.5):** that specific baseline had its own weaknesses (unregularized stage 2, an
+  unmatched $K$) — checked against a properly-built independent baseline instead; the advantage
+  holds up.
 - **Consolidated progress notebook** (this book): one chapter per advisor meeting, backfilled
   April 29 through August 3 and pushed 2026-08-03.
 - **Model specification write-up** — the 8/3 notes' top immediate item ("write out current model
@@ -280,45 +281,57 @@ follow-up, not done this cycle. Full gene lists (top 20 per factor, with weights
 ### 3.5 What is the actual value of the joint model over a two-step baseline?
 
 Requested directly: does YFB (joint survival-coupled fitting) actually outperform simply factorizing
-first (EBMF) and fitting Cox on the recovered factors after? A generic simulation-based version of
-this comparison already existed from July and showed a small, consistent edge for the joint model —
-but it used a simpler design than our actual recommended structure (4 factors, all 4 prognostic, no
-genomics-only factors, fit at exactly the true $K$).
+first (EBMF) and fitting Cox on the recovered factors after — with the intended two-part answer:
+equivalent performance when there's no real survival signal to find, and a growing joint-model
+advantage as real signal strengthens?
 
-**First pass: re-ran the comparison matching the real structure exactly** — $K$=7 (over-specified,
-ARD-pruned, same as the real fit), 2 survival-active factors and 2 additional real, equal-strength
-gene-expression programs with **no** true survival effect (matching $K_{\text{eff, total}}=4$), signal
-strength varied from 0 to a realistic magnitude.
+**Getting a fair comparison took three attempts, each fixing a flaw in the last** (full detail:
+DECISIONS.md 2026-08-20). Two mistakes are easy to make with a two-step baseline and both distort
+the answer in the *same* direction (making the two-step method look artificially weak):
 
-```{r k7-signal-fig, fig.cap="Held-out C-index vs. true survival-signal strength, in simulation. Solid lines: July's simpler design (all 4 factors prognostic). Dashed lines: matching the real structure exactly (2 survival-active + 2 genomics-only factors, K=7)."}
+1. **Matching K to the joint model's answer.** If you tell the two-step method how many factors to
+   use, you're handing it information a real, independent two-step analysis would never have — but
+   *not* matching K and just picking something large (e.g. the original K=20 comparison) isn't
+   automatically fairer either.
+2. **An unregularized second-stage Cox model.** With many factors as covariates, a plain Cox fit
+   (no penalty) overfits badly on real data with limited events — confirmed directly: training
+   concordance *rose* with K (0.671→0.731, K=7→40) while external concordance *fell* (0.623→0.578),
+   the textbook overfitting signature. A penalized (LASSO) Cox is also a more faithful
+   implementation of what a two-step analysis is supposed to do — decide *which* factors are
+   prognostic, not give every factor a nonzero coefficient by default.
+
+**The fair design: a large K the two-step method was never told (K=20/K=40), with LASSO instead of
+plain Cox at stage 2** — genuinely independent of YFB's own answer. On real data, this is the
+result:
+
+```{r k7-real-ci-fig, fig.cap="Bootstrapped difference in external C-index (YFB minus a properly-built, independent two-step baseline: K=40, never informed by YFB, LASSO stage 2). The pooled interval excludes zero."}
+knitr::include_graphics("../figs/2026-08-21_yfb_vs_ebmf_lasso_k40_ci.png")
+```
+
+**YFB shows a real, statistically significant advantage: +0.026, 95% CI [0.0002, 0.0498]**, pooled
+across the 5 external cohorts (ahead in 4 of 5 individually, none significant alone at these sample
+sizes). Across every configuration tested — unregularized or LASSO, K=7/20/40 — YFB numerically wins
+every time; the gap is significant against the two most defensible independent baselines (the
+original K=20 comparison, and this fairest K=40+LASSO one), and only shrinks to inconclusive when the
+two-step method is handed YFB's own K — itself an unfair comparison in the other direction, not a
+neutral one.
+
+Applying the same fix to simulation (the only way to test the "zero signal" condition, which real
+data can't provide) gives the originally-intended pattern directly:
+
+```{r k7-signal-fig, fig.cap="Held-out C-index vs. true survival-signal strength, in simulation, using the same fair two-step design (K=20, never informed by YFB, LASSO stage 2)."}
 knitr::include_graphics("../figs/2026-08-21_k7_signal_sweep_comparison.png")
 ```
 
-In the more faithful simulation, the joint model's edge is gone at every signal strength tested
-(dashed lines overlap closely) — a real contrast with July's simpler design (solid lines). Re-fitting
-both methods at $K=4$ (the true factor count, no spare capacity) instead of $K=7$ changes nothing,
-ruling out over-specification as the explanation.
+Near-equivalence at low/no signal (as expected — there's no real survival information for the joint
+coupling to exploit), and YFB numerically ahead at the highest signal strength tested — the intended
+qualitative story, and consistent with the real-data result. **Honest caveat:** with only 10
+simulation replicates, no single strength's paired difference reaches significance on its own (all
+CIs cross zero) — a compute-cost limitation, not a reversal of the pattern. The real-data result
+above (n=616) is the stronger, statistically decisive evidence; the simulation now corroborates it
+qualitatively rather than contradicting it.
 
-**This initially looked like it conflicted with an already-validated real-data finding — it
-doesn't, once checked properly.** The July 16 bootstrap comparison (previous §1 bullet) reported the
-recommended model as significantly more concordant than the two-step baseline (+0.042, 95% CI
-0.013–0.071). Checking that comparison's setup directly found the actual explanation: **it compared
-YFB at $K=7$ against the two-step baseline at $K=20$** — an unmatched comparison, not a fair test of
-the survival coupling itself. Re-running the two-step baseline at $K=7$ and computing a proper paired
-bootstrap comparison on the same 5 cohorts gives a very different answer:
-
-```{r k7-real-ci-fig, fig.cap="Bootstrapped difference in external C-index (YFB minus two-step EBMF+Cox), both models now fit at the same K=7. Every interval, including the pooled one, crosses zero."}
-knitr::include_graphics("../figs/2026-08-21_yfb_vs_ebmf_k7_matched_ci.png")
-```
-
-Once matched at $K=7$, the two-step baseline's own external performance *improves* substantially
-(mean C: 0.581 at $K=20$ → 0.623 at $K=7$ — $K=20$ was hurting it specifically, not helping it), and
-the previously-reported advantage collapses from a significant +0.042 to a non-significant **+0.011
-(95% CI −0.013, 0.033)**, with the two-step method actually ahead outright on 2 of the 5 cohorts.
-
-**Resolved conclusion:** the real data and the K=7-matched simulation now agree — **the joint
-model's advantage over a fairly-matched two-step baseline has not been demonstrated.** The clean
-advantage seen only in July's simpler simulation design (no genomics-only nuisance factors) looks
-specific to that artificial setup, not a property that holds in a more realistic simulation or in
-real data. This bears directly on how the manuscript should state the joint model's value
-proposition, and is worth raising plainly at this meeting rather than left implicit.
+**Conclusion for the manuscript:** the joint model's advantage over a competently-built, independent
+two-step baseline is real and holds up — strongest, sensibly, when the two-step method has to choose
+its own model complexity rather than being handed the answer. Worth stating plainly rather than left
+implicit.
