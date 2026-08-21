@@ -664,7 +664,11 @@ fit_cox_on_yf <- function(Y, time, status,
                   paste(sprintf("%+.2f", EBeta), collapse = ", ")))
     }
 
-    if (iter > 5 &&
+    # iter > N_frozen: convergence cannot fire while F is still held fixed --
+    # beta/L can plateau during the frozen phase on their own, and without this
+    # guard the loop would exit before F ever gets a chance to unfreeze,
+    # silently defeating the N_frozen mechanism (DECISIONS.md 2026-08-20).
+    if (iter > 5 && iter > N_frozen &&
         is.finite(history$delta_elbo_rel[iter]) &&
         history$delta_elbo_rel[iter] < tol) {
       if (verbose) {

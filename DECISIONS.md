@@ -401,6 +401,122 @@ YFB-vs-EBMF→Cox comparison holds under ARD pruning). Both remain scoped in
 
 ---
 
+## 2026-08-20 — Dual-source F (N_frozen x alpha_F grid): validated null result, alpha_F=0 default kept
+
+**Question:** Step 2 of `docs/plans/yfb_dual_source_F_experiments_08_20_2026.md` — does letting β
+warm up before F becomes dual-source (via `N_frozen`, frozen-F preconditioning) unlock a genuine
+performance benefit from `alpha_F>0`, given the cold-start sweep immediately below found `alpha_F`
+alone flat-to-worse vs. baseline? A convergence-check bug (`iter > 5` with no `iter > N_frozen`
+guard) was found and fixed first (see "N_frozen convergence check" entry below) — F was silently
+never unfreezing before the fit reported convergence, making any earlier `N_frozen` result
+(including the 2026-05-22 diagnostic's V9-V11) unreliable.
+
+**Method:** full grid, `N_frozen ∈ {0, 10, 20, 30} × alpha_F ∈ {0, 0.1, 0.3, 0.5}` (16 fits), D4
+preprocessing (per-platform z-std, combined_rank top-3000 per-cohort, K=7 fixed), full 5-cohort
+external validation, same protocol as the recommended config.
+
+**Result — mean external C-index:**
+
+| N_frozen \ alpha_F | 0.0 | 0.1 | 0.3 | 0.5 |
+|---|---|---|---|---|
+| 0 (baseline row) | **0.6267** | 0.6268 | 0.6263 | 0.6066 |
+| 10 | 0.6174 | 0.6171 | 0.6267 | 0.6254 |
+| 20 | 0.6190 | 0.6178 | 0.6266 | 0.6254 |
+| 30 | 0.6195 | 0.6184 | 0.6266 | 0.6254 |
+
+A clean, consistent pattern, not noise: freezing F without a meaningful survival weight afterward
+(`alpha_F ∈ {0, 0.1}`) actively hurts (~0.617-0.620) — wasted iterations with nothing gained.
+Restoring a real `alpha_F` (0.3 or 0.5) after any freeze duration recovers to baseline parity
+(0.6266-0.6267) but never exceeds it; the specific `N_frozen` length barely matters once `alpha_F`
+is nonzero. **No cell in the 16-configuration grid meaningfully beats the current `alpha_F=0`
+default.**
+
+**Conclusion (per the plan's Step 3 decision rule — only change the default on a clear win, not a
+tie):** `alpha_F=0` is kept as the default. This closes out both hypotheses from the linked plan:
+H1 (an EBNM shrinkage-spike floor causing instability) was moot once tested under correct
+preprocessing (see entry below — no instability at any `alpha_F`); H2 (the cold-start sweep never
+gave β room to grow) is now also resolved — even with that room, and a properly-searched
+`(N_frozen, alpha_F)` grid, dual-source F provides no benefit on this data. The model's own
+description — "F is genomics-informed; survival enters through β acting on YF" — is therefore an
+accurate account of a validated, tested design choice, not an unexamined simplification. Dual-source
+F is a legitimate architectural option that this model's specific optimization dynamics do not
+benefit from here; DeSurv's success with an analogous dual-source `W` does not transfer, most
+plausibly because DeSurv's β comes from a directly-optimized elastic-net regression (always
+non-degenerate) rather than an EBNM shrinkage posterior mean (can sit exactly at zero).
+
+**Affected files:** `results/benchmark_sim/run_yfb_dualF_frozen_grid_D4.R` (new),
+`results/benchmark_sim/outputs/yfb_dualF_frozen_grid_D4/` (new). No production defaults changed.
+
+---
+
+## 2026-08-20 — N_frozen convergence check could fire before F unfreezes (bug fix)
+
+**Bug:** `code/fit_cox_on_yf.R`'s CAVI loop convergence check (`iter > 5 && delta_elbo_rel[iter] <
+tol`) had no guard against `iter <= N_frozen`. β and L can plateau on their own during the frozen
+phase (F held fixed, nothing forcing further movement), so the loop could `break` and report
+`converged=TRUE` before F ever unfroze — silently defeating the entire frozen-F preconditioning
+mechanism. Confirmed on real D4 data: `N_frozen ∈ {10, 20, 30}` all converged at iteration 8
+(pre-fix), with F stuck at its raw SVD init and β at exactly 0 regardless of `alpha_F`. Also
+reproduced on a toy fixture (`seed=77`, `N_frozen=50`: converged at `n_iter=6`, pre-fix).
+
+**Implication for prior results:** the 2026-05-22 diagnostic's frozen-F variants (V9-V11) all
+converged at iteration 8-9 with the corresponding `N_frozen` values of 10/20/30 — the same
+signature. Those results likely never exercised the post-unfreeze dynamics they were reported as
+testing; treat that entry's frozen-F conclusions as unreliable, superseded by the corrected grid
+above.
+
+**Fix:** added `iter > N_frozen` to the convergence guard. Verified a true no-op for `N_frozen=0`
+(all production configs, since `iter > N_frozen` reduces to `iter > 0`, already implied by
+`iter > 5`). New regression test `tests/test_fit_yf_frozen_f.R` "FrozenF-T9" reproduces the bug on
+the toy fixture and fails without the fix. Independently reviewed
+(`superpowers:code-reviewer`), which also flagged a same-shaped (lower-severity) gap in
+`alpha_schedule`'s ramp phase in both `fit_cox_on_yf.R` and `fit_modular.R` — tracked separately,
+not fixed here.
+
+**Affected files:** `code/fit_cox_on_yf.R`, `tests/test_fit_yf_frozen_f.R`. 393/393 tests passing.
+
+---
+
+## 2026-08-20 — Dual-source F reconfirmed under current (D4) preprocessing: no longer unstable, still no performance benefit
+
+**Question:** `DECISIONS.md` 2026-05-22 found that turning on `alpha_F>0` (letting the survival
+gradient inform F's update, not just genomics reconstruction) caused RMSE to blow up (~290 to
+750-800) and β to collapse to 0. That test predates the per-platform z-standardization fix
+(`DECISIONS.md` 2026-07-15) — its preprocessing (`preprocess_merged_cohorts(rank_transform=TRUE)`)
+is the exact configuration `CLAUDE.md` documents as collapsing β regardless of model. Before
+investing in a fix for that instability (`docs/plans/yfb_dual_source_F_experiments_08_20_2026.md`,
+Step 1), Step 0 reran the `alpha_F` sweep under the actually-recommended D4 preprocessing
+(per-platform z-std, combined_rank top-3000 per-cohort gene selection, K=7 fixed) to check the
+instability still exists.
+
+**Result:** it does not. `alpha_F ∈ {0, 0.1, 0.3, 0.5}` all converge cleanly in 9-20 iterations with
+no RMSE blowup. External validation (5 held-out cohorts, same protocol as the recommended config):
+
+| alpha_F | K_eff | β_max | iters | mean external C-index |
+|---|---|---|---|---|
+| 0.00 (current default) | 2 | 0.040 | 20 | 0.6267 |
+| 0.10 | 2 | 0.041 | 20 | 0.6268 |
+| 0.30 | 2 | 0.041 | 20 | 0.6263 |
+| 0.50 | 4 | 0.018 | 9 | 0.6066 |
+
+`alpha_F ∈ {0.1, 0.3}` are statistically indistinguishable from the current default; `alpha_F=0.5`
+is measurably worse. The May 2026 instability appears to have been an artifact of the
+preprocessing it was tested under, not an intrinsic property of dual-source F.
+
+**Interpretation:** this resolves the "is dual-source F fundamentally broken" question (no, not
+under current preprocessing) but not the "is it useful" question — with a cold-start β (initialized
+to 0) and no warm-up, giving the survival gradient a nonzero weight from iteration 1 doesn't move
+the fit anywhere new relative to genomics-only F. Experiment A in the linked plan (a non-degenerate
+β estimator, designed to fix the RMSE-blowup instability) is no longer motivated by a reproducible
+problem and is deprioritized. Experiment B (β warm-up schedule before `alpha_F` activates, plus a
+proper `(K, alpha_F)` search rather than 3 cold-start grid points) is the remaining open question —
+this cold-start sweep never gave β room to grow before the survival term entered F's update.
+
+**Affected files:** `results/benchmark_sim/run_yfb_dualF_diagnostic_D4.R` (new),
+`results/benchmark_sim/outputs/yfb_dualF_diagnostic_D4/` (new). No production code changed;
+
+---
+
 ## 2026-08-03 — Pathway concordance between SBMF and unsupervised EBMF: subtype-level biology replicates, pathway-level mechanism does not (ROADMAP.md A/B comparison, Part 3)
 
 **Question:** given Part 2's result (same-day entry below) that EBMF's factors 1 and 2 correlate
