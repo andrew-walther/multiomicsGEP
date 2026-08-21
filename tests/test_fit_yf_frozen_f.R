@@ -131,6 +131,27 @@ run_test("FrozenF-T7: N_frozen=0 and N_frozen=5 produce different EF", {
 })
 
 # ---------------------------------------------------------------------------
+# T9: convergence cannot fire while F is still frozen. Before the fix, beta/L
+#     can plateau during the frozen phase (F held fixed, nothing forcing
+#     further movement) and the ELBO convergence check -- guarded only by
+#     `iter > 5`, not `iter > N_frozen` -- declares convergence before F ever
+#     gets a chance to unfreeze, silently defeating the entire mechanism.
+#     Reproduced on real D4-preprocessed PDAC data (DECISIONS.md 2026-08-20):
+#     N_frozen in {10,20,30} all converged at iter=8, beta stuck at exactly 0.
+# ---------------------------------------------------------------------------
+run_test("FrozenF-T9: converged run must have n_iter > N_frozen", {
+  fit <- suppressMessages(
+    fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+                  K = .ff$K, max_iter = 60L,
+                  N_frozen = 50L, verbose = FALSE)
+  )
+  assert_true(fit$history$converged,
+              msg = "Fixture no longer converges within max_iter -- update this test's max_iter/tol so it keeps exercising the guard")
+  assert_true(fit$history$n_iter > 50L,
+              msg = "Convergence fired at n_iter <= N_frozen -- F never unfroze")
+})
+
+# ---------------------------------------------------------------------------
 # T8: N_frozen works with cohort_id — cohort F columns also unfrozen properly
 # ---------------------------------------------------------------------------
 run_test("FrozenF-T8: N_frozen=3 with cohort_id runs without error", {
