@@ -1,7 +1,7 @@
 # April 29, 2026
 
 Training on the merged TCGA_PAAD (RNA-seq) + CPTAC (proteomics) cohort ($n=273$), the model kept
-returning $\hat\beta_k = 0$ for every factor — it reconstructed expression fine but learned no
+returning $\hat\beta_k = 0$ for every factor. It reconstructed expression fine but learned no
 survival signal at all, so risk prediction was just a constant hazard. This entry covers the
 diagnosis and the first fix.
 
@@ -9,13 +9,13 @@ diagnosis and the first fix.
 
 - **Preprocessing fix.** The original pipeline selected the top 2,000 variable genes within each
   cohort *before* intersecting gene universes across platforms, which left only ~838 genes shared
-  between the two. Intersecting the raw gene universes first — before any variance filtering — grew
+  between the two. Intersecting the raw gene universes first, before any variance filtering, grew
   the shared feature set to the full 2,000.
 - **Four in-model changes ("Cluster A")**, adopted together after ruling out simpler fixes ($\lambda$
   sweeps, high $\lambda$, EBMF warm-starts all failed to rescue $\beta$): reordering the inner CAVI
   loop so $\beta$ updates before $L$ and $F$; a short $\beta$-only burn-in; an $\alpha$ warmup
   schedule; and `normalize_AB`, which rescales the survival precision term in the $L$-update. That
-  last one mattered most — at iteration 1 on the merged cohort, the survival term carried roughly
+  last one mattered most: at iteration 1 on the merged cohort, the survival term carried roughly
   $0$–$2\times10^{-4}$ of the weight of the genomics term, so survival had essentially no say in the
   loading update without it.
 
@@ -23,13 +23,13 @@ diagnosis and the first fix.
 
 The Cluster A changes fixed the training-side collapse: the merged fit now converges to a stable
 solution with 2 of 20 factors active, non-degenerate loadings, and a monotone ELBO. An unsupervised
-EBMF diagnostic on the same matrix confirmed there's real signal to find — 5 of 20 factors came back
-survival-associated, with the strongest hitting C-index 0.629 at $p=3\times10^{-6}$ — so this wasn't
+EBMF diagnostic on the same matrix confirmed there's real signal to find. 5 of 20 factors came back
+survival-associated, with the strongest hitting C-index 0.629 at $p=3\times10^{-6}$, so this wasn't
 a case of the data having nothing to give.
 
 The catch: external validation got *worse* on 4 of 5 cohorts after Cluster A, relative to the
 pre-Cluster-A merged fit (Dijk 0.606 vs. 0.626, PACA-AU array 0.576 vs. 0.636, PACA-AU seq 0.629 vs.
-0.653, Puleo 0.550 vs. 0.626 — only Moffitt improved, 0.541 vs. 0.529). For context, single-cohort
+0.653, Puleo 0.550 vs. 0.626; only Moffitt improved, 0.541 vs. 0.529). For context, single-cohort
 training (no merging at all) was already reaching external C-index in the 0.60–0.63 range, so that's
 the bar merged training needs to clear.
 
@@ -37,7 +37,7 @@ the bar merged training needs to clear.
 
 Cluster A solved the optimization failure but not the actual goal. The model can now produce
 non-zero survival coefficients on the merged training set, but those coefficients fit the training
-Cox objective without transporting to new cohorts — a fit that looks healthy in-sample but doesn't
+Cox objective without transporting to new cohorts. A fit that looks healthy in-sample but doesn't
 generalize is not progress on the problem we actually care about. That points at something more
 structural than a tuning issue.
 

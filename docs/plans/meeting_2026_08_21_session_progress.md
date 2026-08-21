@@ -8,7 +8,7 @@ Tracks execution of the multi-session plan for the 2026-08-21 advisor meeting. B
 - [x] **Phase 0 — Pre-read** — `docs/plans/Meeting_Notes_Followup_8_3_26.md`,
       `docs/progress_book/`, `code/fit_cox_on_yf.R` (YFB — corrected from the originally-cited
       `code/SupervisedMF_Context.md`, which documents the older LB model), `config/globals.yml`.
-- [x] **Phase 1 — Model specification chapter** — `docs/progress_book/chapters/meeting_2026_08_21.qmd`:
+- [x] **Phase 1 — Model specification chapter** — `docs/progress_book/chapters/2026-08-21.qmd`:
       §1 (8/3 action-item follow-up, 2 items flagged still open) + §2 (YFB model spec: generative
       model, per-factor CAVI updates, λ deprecation, gene selection, factor composition table).
       Reviewed by code-reviewer subagent (1 real fix: missing α term in q(β_k); 1 notation cleanup);
@@ -48,7 +48,7 @@ Tracks execution of the multi-session plan for the 2026-08-21 advisor meeting. B
       n=52–288), but pooled across all 5 (n=616) the gap is significant: K=5−K=7 = −0.0312, 95%
       CI [−0.0602, −0.0017]. See DECISIONS.md 2026-08-20 addendum.
 - [x] **Phase 4 — Progress book chapter for the 8/21 meeting** —
-      `docs/progress_book/chapters/meeting_2026_08_21.qmd` §3 added (how K was chosen from model
+      `docs/progress_book/chapters/2026-08-21.qmd` §3 added (how K was chosen from model
       fit + external validity rather than cross-validation; the simulation stress test and why its
       fix can't be mechanically applied to real data; the bootstrap-confirmed K=5-vs-K=7 gap);
       §1's two carried-over 8/3 open items closed out; §2.5's factor table split genomics-only vs.

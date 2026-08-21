@@ -421,7 +421,7 @@ CV-selected K is 7 (`k_merged_yfb_desurv`). The DeSurv paper's own K=3 is a thir
 (their method, their preprocessing). None of these three K=3's are in tension with this analysis.
 
 This directly answers both open items flagged in the 8/21 meeting-prep model-specification chapter
-(`docs/progress_book/chapters/meeting_2026_08_21.qmd` §1): how K=7 was chosen (now: ELBO/multistart,
+(`docs/progress_book/chapters/2026-08-21.qmd` §1): how K=7 was chosen (now: ELBO/multistart,
 not just CV, and it holds up), and whether the survival-active/genomics-only split is an artifact of
 that specific K or a stable structural feature of the data (K_survival_active=2 is stable from
 K_init=7 up; K=5/6's apparent 3rd survival-active factor does not generalize to new cohorts and is

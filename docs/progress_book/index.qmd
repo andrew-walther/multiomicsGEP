@@ -1,7 +1,6 @@
 # About this notebook {.unnumbered}
 
-This is the running record of SSBMF progress, one chapter per advisor
-meeting. Each chapter covers what changed in the method, what was run to
+Running record of SSBMF project progress with one chapter per week. Each chapter covers what changed in the method, what was run to
 validate it (on real cohorts and on simulation), whether the new results
 make sense, and what's still open. Figures and tables that came up in
 discussion are included directly; anything that needs the full statistical
@@ -11,5 +10,29 @@ For a complete session-by-session build log (every script, test, and
 decision), see `PROJECT_STATUS.qmd` at the repo root. This notebook is the
 meeting-facing summary, not a replacement for that log.
 
-Chapters are listed in the sidebar in date order — click a date to jump
+Chapters are listed in the sidebar in date order; click a date to jump
 straight to that meeting.
+
+## Project synopsis
+
+Supervised Bayesian Matrix Factorization (SSBMF) jointly factorizes a genomics matrix
+(gene expression) and a patient survival outcome, so the resulting gene expression
+programs (GEPs) are chosen to be both genomically coherent *and* prognostically
+relevant, unlike standard unsupervised factorization (PCA, NMF), which has no reason
+to recover clinically meaningful structure.
+
+- **Model:** $Y = LF^\top + E$ (genomics) coupled to a Cox proportional hazards model
+  on survival, fit by Coordinate Ascent Variational Inference (CAVI) with Empirical
+  Bayes Normal Means (EBNM) sub-updates for sparsity.
+- **Current recommended form:** YFB (`code/fit_cox_on_yf.R`), $\eta = (YF)\beta$. The
+  survival predictor is computed directly from observed expression, avoiding train/test
+  projection mismatch.
+- **Data:** PDAC patient cohorts spanning RNA-seq, microarray, and proteomics platforms
+  (TCGA-PAAD + CPTAC training; 5 independent cohorts held out for external validation).
+- **Research question:** does coupling factorization to survival find real prognostic
+  structure, and is that structure worth the added model complexity? Evaluated against
+  three baselines: DeSurv (a published joint method), a two-step
+  factorize-then-Cox baseline, and unsupervised EBMF.
+
+For the full model specification and math, see `PROJECT_STATUS.qmd` at the repo root or
+the project `README.md`.
