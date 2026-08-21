@@ -500,7 +500,7 @@ The simulated spurious factors never had that check available, because their tru
 construction. Applying `rel_thresh` mechanically here would discard a program already known to be
 real.
 
-**Open item for discussion.** The selection procedure can misattribute survival signal to a
+**Item for discussion (misattribution of survival signal).** The selection procedure can misattribute survival signal to a
 real-but-unrelated program when no external cohort is available to check against. This matters most
 for future datasets and new simulations, before their own validation exists. Options: an explicit
 platform/cohort adjustment, the relative-coefficient threshold above, or requiring some form of
@@ -566,7 +566,16 @@ knitr::include_graphics("../figs/2026-08-21_yfb_vs_ebmf_lasso_k40_ci.png")
   inconclusive only when the two-step method is handed YFB's own $K$, which is unfair in the
   opposite direction, not neutral.
 
-Simulation is the only way to test the zero-signal condition, since real data cannot provide it:
+Simulation is the only way to test the zero-signal condition, since real data cannot provide it.
+"Signal strength" here is a multiplier ($0, 0.25, 0.5, 1, 2$) on the true survival coefficients
+used to generate each simulated patient's survival time, for the 2 simulated factors built to
+mirror Programs 3/7. Strength $0$ means those 2 factors have no true effect on survival at all
+(pure noise); strength $1$ is this project's standard "realistic magnitude" benchmark setting
+(`config/globals.yml`'s `synthetic$b_true`), not a value calibrated to match the real D4 fit's own
+$\tilde\beta$, which lives on a different, $Z\!F$-normalized scale. The other 2 simulated factors,
+built to mirror the genomics-only pair, always have a true survival coefficient of exactly 0,
+regardless of strength. This is a property of the simulated data, not anything either model
+estimates:
 
 ```{r k7-signal-fig, fig.cap="Held-out C-index vs. true survival-signal strength, in simulation, using the same two-step design (K=20, never informed by YFB, LASSO stage 2)."}
 knitr::include_graphics("../figs/2026-08-21_k7_signal_sweep_comparison.png")
