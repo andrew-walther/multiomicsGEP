@@ -5,6 +5,40 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-08-20 — Manuscript framing: dual-source F is a tested-and-rejected alternative, not an unexamined gap
+
+**Context:** the YFB derivation doc (`docs/notes/YFB_derivation_05_08_26.pdf`) writes $F$ in a form
+that structurally permits survival to inform gene-program loadings (a dual-source $F$, analogous to
+DeSurv's joint $W$ update), but the recommended, validated configuration fixes `alpha_F=0`
+(genomics-only $F$). Read on its own, the derivation could be mistaken for describing an
+unimplemented feature or an oversight, which would be a misleading claim for the manuscript.
+
+**Decision:** state explicitly, in the model-specification section (methods) and wherever $F$'s
+update is described: *"We evaluated a dual-source generalization of F (survival informing
+gene-program loadings, analogous to DeSurv's joint W) via a systematic 16-configuration experiment,
+found no measurable benefit and measurable harm at higher weights, and therefore adopt the simpler
+genomics-only F, with survival entering only through β on YF."* This is a documented, tested
+negative result, not an unexamined simplification — treat it as a methodological strength (we
+checked) rather than a limitation to downplay.
+
+**Supporting evidence** (full detail in the two entries immediately below, both 2026-08-20):
+(1) the `alpha_F>0` instability reported 2026-05-22 does not reproduce under the current, correct
+D4 preprocessing; (2) a real bug (convergence firing before frozen-F ever unfroze) was found and
+fixed in `code/fit_cox_on_yf.R`; (3) the corrected 16-configuration `(N_frozen × alpha_F)` grid,
+under D4 preprocessing with full 5-cohort external validation, found no configuration exceeding the
+`alpha_F=0` baseline (0.6267) — some configurations meaningfully underperformed it, none exceeded
+it. The most plausible explanation is architectural, not incidental: DeSurv's β comes from a
+directly-optimized elastic-net regression (always well-conditioned, continuously informative every
+iteration), while this model's β is a mean-field-VI coordinate-ascent posterior mean that can be
+pinned near zero by its own shrinkage prior — a general property of mean-field VI (factorized blocks
+ignore cross-block posterior correlation), not specific to this one update.
+
+**Status:** tabled. No further experimentation planned unless new evidence emerges; effort should
+go toward the separate, still-open ARD over-counting question (entry below, "Analysis B") instead,
+which does not depend on resolving this one.
+
+---
+
 ## 2026-08-20 — RESOLVED: the K=7-matched comparison was itself confounded (matching K hands the two-step method the joint model's answer about model complexity); against a two-step baseline with a large, YFB-uninformed K and proper regularization, YFB shows a real, pooled-significant advantage
 
 **Context:** for the 8/21 progress-book chapter, requested a YFB-vs-two-step comparison matching the

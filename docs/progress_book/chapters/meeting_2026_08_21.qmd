@@ -126,6 +126,13 @@ Hessian weight $w$, and working response $z = \eta + u/w$.
    \mathrm{EBNM}\!\left(x=\tfrac{B_{jk}}{A_{jk}},\ s=\tfrac{1}{\sqrt{A_{jk}}}\right)
    $$
 
+**Was the dual-source $F$ generalization tested, not just left unused?** Yes. We evaluated a
+dual-source generalization of $F$ (survival informing gene-program loadings, analogous to DeSurv's
+joint $W$) via a systematic 16-configuration experiment, found no measurable benefit and measurable
+harm at higher weights, and therefore adopt the simpler genomics-only $F$, with survival entering
+only through $\beta$ on $Z\!F = Y\tilde F$. Full method and results: DECISIONS.md, 2026-08-20
+entries.
+
 **Step 2 — $q(\tau)$: closed form, no EBNM.**
 $$
 \bar R^2_{ij} = \left(Y - \bar L\bar F^\top\right)^2_{ij} +
