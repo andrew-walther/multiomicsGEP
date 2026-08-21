@@ -5,6 +5,47 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-08-20 — Dual-source F reconfirmed under current (D4) preprocessing: no longer unstable, still no performance benefit
+
+**Question:** `DECISIONS.md` 2026-05-22 found that turning on `alpha_F>0` (letting the survival
+gradient inform F's update, not just genomics reconstruction) caused RMSE to blow up (~290 to
+750-800) and β to collapse to 0. That test predates the per-platform z-standardization fix
+(`DECISIONS.md` 2026-07-15) — its preprocessing (`preprocess_merged_cohorts(rank_transform=TRUE)`)
+is the exact configuration `CLAUDE.md` documents as collapsing β regardless of model. Before
+investing in a fix for that instability (`docs/plans/yfb_dual_source_F_experiments_08_20_2026.md`,
+Step 1), Step 0 reran the `alpha_F` sweep under the actually-recommended D4 preprocessing
+(per-platform z-std, combined_rank top-3000 per-cohort gene selection, K=7 fixed) to check the
+instability still exists.
+
+**Result:** it does not. `alpha_F ∈ {0, 0.1, 0.3, 0.5}` all converge cleanly in 9-20 iterations with
+no RMSE blowup. External validation (5 held-out cohorts, same protocol as the recommended config):
+
+| alpha_F | K_eff | β_max | iters | mean external C-index |
+|---|---|---|---|---|
+| 0.00 (current default) | 2 | 0.040 | 20 | 0.6267 |
+| 0.10 | 2 | 0.041 | 20 | 0.6268 |
+| 0.30 | 2 | 0.041 | 20 | 0.6263 |
+| 0.50 | 4 | 0.018 | 9 | 0.6066 |
+
+`alpha_F ∈ {0.1, 0.3}` are statistically indistinguishable from the current default; `alpha_F=0.5`
+is measurably worse. The May 2026 instability appears to have been an artifact of the
+preprocessing it was tested under, not an intrinsic property of dual-source F.
+
+**Interpretation:** this resolves the "is dual-source F fundamentally broken" question (no, not
+under current preprocessing) but not the "is it useful" question — with a cold-start β (initialized
+to 0) and no warm-up, giving the survival gradient a nonzero weight from iteration 1 doesn't move
+the fit anywhere new relative to genomics-only F. Experiment A in the linked plan (a non-degenerate
+β estimator, designed to fix the RMSE-blowup instability) is no longer motivated by a reproducible
+problem and is deprioritized. Experiment B (β warm-up schedule before `alpha_F` activates, plus a
+proper `(K, alpha_F)` search rather than 3 cold-start grid points) is the remaining open question —
+this cold-start sweep never gave β room to grow before the survival term entered F's update.
+
+**Affected files:** `results/benchmark_sim/run_yfb_dualF_diagnostic_D4.R` (new),
+`results/benchmark_sim/outputs/yfb_dualF_diagnostic_D4/` (new). No production code changed;
+`config/globals.yml` defaults (`alpha_F=0`) unchanged.
+
+---
+
 ## 2026-08-03 — Pathway concordance between SBMF and unsupervised EBMF: subtype-level biology replicates, pathway-level mechanism does not (ROADMAP.md A/B comparison, Part 3)
 
 **Question:** given Part 2's result (same-day entry below) that EBMF's factors 1 and 2 correlate
