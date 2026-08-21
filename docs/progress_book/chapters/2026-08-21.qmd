@@ -9,11 +9,11 @@ updates maximize. All four update formulas ($\beta$, $L$, $F$, $\tau$) are provi
 **$K$ selection now uses ARD pruning plus ELBO, not cross-validated C-index (§3.1).**
 
 - Fitting at $K_{\text{init}} \in \{5,\dots,20\}$ gives a stable **2 survival-active factors for
-  every $K \ge 7$**; added capacity goes entirely to dead factors, which is ARD working as intended
-  (see the sweep table in §3.1).
+  every $K \ge 7$**; added capacity goes entirely to dead factors, which is due to ARD
+  (see table in §3.1).
 - $K=5$/$K=6$ have the best ELBO but generalize far worse (C=0.596 vs. 0.627). ELBO ranks candidate
   $K$'s, but any $K$ that fails externally is excluded first.
-- **$K=7$ (2 survival-active + 2 genomics-only = 4 kept factors) is confirmed**, with $K=9$ as a
+- **$K=7$ (2 survival-active + 2 genomics-only = 4 kept factors) selected**, with $K=9$ as a
   near-tied alternative. The $K=5$ vs. $K=7$ gap is significant pooled across cohorts (§3.3).
 - The fit is stable across starting points: 15 restarts per $K$ all reach the same best-ELBO
   solution, which closes the factor-stability question left open on 8/3.
@@ -43,7 +43,9 @@ end of Fall 2026; 8/27 lab meeting slides in progress.
 
 **Questions**
 
-- selection of starting K value prior to pruning (tested a range and currently settled on 7)
+- Selection of starting K value prior to pruning (tested a range and currently settled on 7)?
+- Settle on method for selecting K (CV uses survival data twice vs. pruning from larger starting value)
+- general scope for remainder of project 
 
 ---
 
@@ -90,18 +92,19 @@ section tracks each of those items, both the ones closed this cycle and the ones
 - **Finalize committee:** Dr. Lin, Dr. Liu, Dr. Rashid, Dr. Hudgens, Dr. Van Deinse (Social Work).
 - **Schedule prelim for end of Fall 2026.**
 
-### Ongoing (no change expected each cycle)
+### Ongoing
 
-- Weekly recurring meetings and a written update each time (this book).
-- Daily pushes to the model repository and the separate manuscript repository.
+- Weekly recurring meetings (Thursdays?) and a written update each time (this book).
+- Frequent pushes to the model repository & writing in separate manuscript repo.
+- Prep for leading 8/27 lab meeting
 - The cohort-membership indicator (`cohort_id`) absorbs genomic platform offsets only; it never
-  carries survival information, and is off by default in the recommended configuration below.
+  carries survival information, and is off by default (no observed benefit).
 
 ---
 
 ## Model Specification: YFB
 
-Current recommended model: **Cox-on-YF** (`code/fit_cox_on_yf.R`), $\eta = (YF)\beta$, referred to
+Current model form: **"YFB" linear predictor in Cox model** (`code/fit_cox_on_yf.R`), $\eta = (YF)\beta$, referred to
 here as **YFB**.
 
 ### Generative model
@@ -263,7 +266,7 @@ Hessian weight $w$, and working response $z = \eta + u/w$.
 
 2. **$q(l_{\cdot k})$, patient loadings, pure genomics.** $L$ carries no survival term under YFB:
    $$
-   A_{ik} = \sum_j \tau_j\, \bar f_{jk}^2, \qquad
+   A_{ik} = \sum_j \tau_j\, \overline{f_{jk}^2}, \qquad
    B_{ik} = \sum_j \tau_j\, R^{-k}_{ij}\, \bar f_{jk}
    $$
    $$
