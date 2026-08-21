@@ -30,14 +30,12 @@ coefficients attaching to real-but-non-prognostic programs. A relative-magnitude
 in simulation but must not be applied to the real data, where it would discard Program 3 despite
 independent external confirmation. Needs a decision on how to handle this for future datasets.
 
-**Factor biology is still preliminary (§2.5).** Top-20 gene lists for both survival-active programs
-are included for direct inspection, along with the gene-weight heatmap for all 4 kept factors
-(§3.4). The methods used so far were convenience picks and need discussion before any biological
-label is treated as settled.
-
-**Largest outstanding item.** The matched, same-protocol head-to-head against DeSurv (carried from
-8/3) has not been started. Everything to date compares against a two-step baseline or DeSurv's
-published gene programs, not DeSurv's own predictive performance under our protocol.
+**Factor biology (§2.5).** Programs 3 and 7 were characterized in the July 15 cycle, where five
+independent methods agreed on Program 7 as adverse/basal-like and Program 3 as
+protective/classical. Those results may be sufficient as they stand. The open question is process:
+that work was self-directed rather than group-directed, so the approach is worth confirming before
+the labels carry into the manuscript. Top-20 gene lists for both programs are included here for
+direct inspection, with the gene-weight heatmap for all 4 kept factors in §3.4.
 
 **Logistics.** Finalize committee (Lin, Liu, Rashid, Hudgens, Van Deinse); prelim targeted for
 end of Fall 2026; 8/27 lab meeting slides in progress.
@@ -81,15 +79,12 @@ section tracks each of those items, both the ones closed this cycle and the ones
 
 ### Items to address
 
-- **Matched, same-protocol head-to-head against DeSurv** (carried from 8/3, not started this cycle).
-  Same data, same scoring, as a performance claim rather than the biology-convergence claim the
-  8/3 gene-overlap comparison already supports. This is the largest outstanding methodological item.
 - **Consistency of the 5 non-survival-active factors across the external cohorts.** Programs 3 and 7
   have been checked thoroughly (pathway enrichment, subtype correlation, DeSurv overlap, cross-cohort
   hazard ratios); the other factors in the $K=7$ fit have not had the equivalent check.
-- **Firming up the factor-biology methods** (§2.5). The enrichment and subtype checks run so far were
-  convenience picks and need discussion before any biological label is treated as settled.
-- **Manuscript introduction and background/literature review**, continuing from the 8/3 handoff.
+- **Aligning on the factor-biology work** (§2.5). This was pursued independently rather than at the
+  group's direction, so the approach needs review even though the existing results may turn out to
+  be sufficient.
 - Slides/figures for the 8/27 lab meeting progress update, prepared separately from this chapter.
 - **Finalize committee:** Dr. Lin, Dr. Liu, Dr. Rashid, Dr. Hudgens, Dr. Van Deinse (Social Work).
 - **Schedule prelim for end of Fall 2026.**
@@ -378,22 +373,33 @@ weights: `results/benchmark_sim/outputs/pathway_enrichment/K7_kept_factors_top_g
 - **Program 3 (protective):** CAPN5, LPCAT4, MLPH, SLC45A3, TJP3, PLEKHA6, MTMR11, GALNT6, TSPAN3,
   CAPN8, CYP2S1, PAK1, KCNE3, FAM83E, KCNK1, ADAP1, SRC, PLA2G10, NQO1, TSPAN15
 
-**Preliminary biology:** Treat this as a placeholder to
-revisit once we're aligned on which factors matter, not as settled biology:
+**Reading the lists directly:**
 
 - Program 7's list includes several glycolysis/hypoxia genes (GAPDH, ENO1, TPI1, PGK1, LDHA,
   SLC16A3, SLC2A1) alongside genes reported elsewhere as basal-like PDAC markers (MET, ITGB4,
   LAMB3, FSCN1, S100A2). This is a pattern, not a diagnosis.
-- Program 3's list doesn't jump out the way Program 7's does; it needs the
-  formal methods below rather than a read-off.
+- Program 3's list doesn't jump out the way Program 7's does; it needs the formal methods rather
+  than a read-off.
 - The 2 genomics-only programs: no gene list or biological characterization attempted yet (§3.4
   flags pulling their gene lists as a follow-up).
 
-**Preliminary Factor Biology Methods:** The pathway-enrichment and subtype checks
-already run on Programs 3/7 (gene-set enrichment via fgsea/ORA against curated PDAC gene sets,
-correlation with PurIST classical/basal subtype scores, overlap with DeSurv's own published gene
-programs, and consistency of the hazard-ratio direction across the 5 external cohorts) were picked
-for convenience as an initial look into the factor biology. Further discussion & direction for understanding factor biology is necessary.
+**Factor biology: work already done, and where it stands.** Programs 3 and 7 have been characterized
+in some depth (July 15 cycle): gene-set enrichment via fgsea/ORA against curated PDAC gene sets,
+correlation with PurIST classical/basal subtype scores, overlap with DeSurv's published gene
+programs, and consistency of the hazard-ratio direction across the 5 external cohorts. Five
+independent methods agreed: Program 7 is adverse and basal-like/squamous, Program 3 is protective
+and classical/differentiated-epithelial. Those results may well be sufficient as they stand.
+
+The caveat is process, not evidence. This line of investigation was pursued on our own initiative
+rather than at the group's direction, and the specific methods were chosen for availability rather
+than from a deliberate review of what the question needs. Worth a conversation to confirm the
+approach is the right one before the biological labels get carried into the manuscript. Existing
+results:
+
+- Full methodology and all five confirmation methods:
+  [`pathway_enrichment_report_07_15_26`](../../../reports/pathway_enrichment_report_07_15_26.html)
+- Enrichment dotplot, subtype-correlation and DeSurv-overlap figures, and per-program tables:
+  `results/benchmark_sim/outputs/pathway_enrichment/`
 
 ---
 
