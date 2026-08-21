@@ -1,8 +1,8 @@
-"program","label","n_coherent_hits"
-1,"Inactive",0
-2,"Inactive",0
-3,"Protective",6
-4,"Inactive",0
-5,"Inactive",12
-6,"Inactive",40
-7,"Adverse",7
+"program","label","program_class","n_coherent_hits"
+1,"Dead","dead",0
+2,"Dead","dead",0
+3,"Protective","survival_active",6
+4,"Dead","dead",0
+5,"Genomics-only","genomics_only",12
+6,"Genomics-only","genomics_only",40
+7,"Adverse","survival_active",7

@@ -32,10 +32,11 @@ independent external confirmation. Needs a decision on how to handle this for fu
 
 **Factor biology (§2.5).** Programs 3 and 7 were characterized in the July 15 cycle, where five
 independent methods agreed on Program 7 as adverse/basal-like and Program 3 as
-protective/classical. Those results may be sufficient as they stand. The open question is process:
-that work was self-directed rather than group-directed, so the approach is worth confirming before
-the labels carry into the manuscript. Top-20 gene lists for both programs are included here for
-direct inspection, with the gene-weight heatmap for all 4 kept factors in §3.4.
+protective/classical. Extended this cycle to the 2 genomics-only factors, which had never been
+reported: Program 5 reads as desmoplastic stroma and Program 6 as immune infiltrate, and the 4 kept
+factors together recover DeSurv's full 3-factor structure. The open question is process: this work
+was self-directed rather than group-directed, so the approach is worth confirming before the labels
+carry into the manuscript.
 
 **Logistics.** Finalize committee (Lin, Liu, Rashid, Hudgens, Van Deinse); prelim targeted for
 end of Fall 2026; 8/27 lab meeting slides in progress.
@@ -393,13 +394,22 @@ and classical/differentiated-epithelial. Those results may well be sufficient as
 The caveat is process, not evidence. This line of investigation was pursued on our own initiative
 rather than at the group's direction, and the specific methods were chosen for availability rather
 than from a deliberate review of what the question needs. Worth a conversation to confirm the
-approach is the right one before the biological labels get carried into the manuscript. Existing
-results:
+approach is the right one before the biological labels get carried into the manuscript.
 
-- Full methodology and all five confirmation methods:
+**The 2 genomics-only factors are now characterized too**, in a report written for this cycle. The
+July analysis filtered every output table to the 2 survival-active programs, so the other kept
+factors' enrichment was computed and then discarded. Reporting it turns out to matter: Program 5
+reads as desmoplastic stroma (7 collagens, SPARC, THBS2, FAP) and Program 6 as immune infiltrate
+(IKZF1, AKNA, IL10RA, HCLS1), and each of the 4 kept factors maps onto exactly one of DeSurv's 3
+published factors, with DeSurv's combined StromalImmune factor split across our Programs 5 and 6.
+The 3 dead factors return zero enriched sets, which independently corroborates the
+genomics-only/dead split. Full detail, including the caveat above:
+
+- **Current, 4-factor scope:**
+  [`pathway_enrichment_report_08_21_26`](../../../reports/pathway_enrichment_report_08_21_26.html)
+- Superseded, 2-factor scope (Programs 3/7 findings unchanged):
   [`pathway_enrichment_report_07_15_26`](../../../reports/pathway_enrichment_report_07_15_26.html)
-- Enrichment dotplot, subtype-correlation and DeSurv-overlap figures, and per-program tables:
-  `results/benchmark_sim/outputs/pathway_enrichment/`
+- Figures and per-program tables: `results/benchmark_sim/outputs/pathway_enrichment/`
 
 ---
 

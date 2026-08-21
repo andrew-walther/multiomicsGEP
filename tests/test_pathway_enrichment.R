@@ -41,11 +41,32 @@ run_test("T1.5: program_labels guards against the stale (pre-06-16) labeling", {
   assert_equal(d4$program_labels[["3"]], "Protective")
 })
 
-run_test("T1.6: inactive programs are labeled Inactive", {
+run_test("T1.6: non-survival-active programs use the three-way split, not a blanket 'Inactive'", {
+  # Superseded the single "Inactive" bucket (DECISIONS.md 2026-08-19): programs 5
+  # and 6 are genomics-only (real programs, PVE > 1%, no survival coefficient),
+  # while 1, 2 and 4 are dead (fully pruned).
   d4 <- load_d4_weights()
-  for (k in c("1", "2", "4", "5", "6")) {
-    assert_equal(d4$program_labels[[k]], "Inactive", msg = paste("program", k, "should be Inactive"))
+  for (k in c("5", "6")) {
+    assert_equal(d4$program_labels[[k]], "Genomics-only",
+                 msg = paste("program", k, "should be Genomics-only"))
+    assert_equal(d4$program_class[[k]], "genomics_only",
+                 msg = paste("program", k, "class should be genomics_only"))
   }
+  for (k in c("1", "2", "4")) {
+    assert_equal(d4$program_labels[[k]], "Dead", msg = paste("program", k, "should be Dead"))
+    assert_equal(d4$program_class[[k]], "dead", msg = paste("program", k, "class should be dead"))
+  }
+})
+
+run_test("T1.7: survival-active set is derived from EBeta and matches the kept-factor set", {
+  d4 <- load_d4_weights()
+  assert_equal(d4$survival_active, c(3L, 7L))
+  assert_equal(d4$genomics_only, c(5L, 6L))
+  assert_equal(d4$kept_factors, c(3L, 5L, 6L, 7L))
+  # survival_active must be exactly the programs clearing the beta threshold.
+  assert_equal(sort(which(abs(d4$EBeta) > 0.001)), d4$survival_active)
+  # ...and the two classes must not overlap.
+  assert_equal(length(intersect(d4$survival_active, d4$genomics_only)), 0L)
 })
 
 cat("=== T2: run_fgsea_program() ===\n")

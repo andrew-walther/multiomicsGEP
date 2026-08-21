@@ -16,17 +16,43 @@
 #' labeled "Adverse" and Program 3 "Protective" by the *marginal* (YF)-projection
 #' survival direction (DECISIONS.md 2026-06-16) -- the joint posterior mean
 #' beta-hat signs for these two programs are opposite (suppression among
-#' correlated programs) and must NOT be used to derive the label. All other
-#' programs are labeled "Inactive" (EBeta approx 0 in the recommended config).
+#' correlated programs) and must NOT be used to derive the label.
+#'
+#' The remaining 5 programs are split three ways rather than lumped as
+#' "Inactive" (DECISIONS.md 2026-08-19, `classify_factors()` in select_K.R):
+#' programs 5 and 6 are **genomics-only** (real gene-expression programs with
+#' PVE > 1% but no survival coefficient), while 1, 2 and 4 are **dead** (fully
+#' pruned by ARD, nothing retained). The 4 "kept" factors are therefore
+#' {3, 5, 6, 7}. Superseding the earlier blanket "Inactive" label matters
+#' because it changes which programs are worth characterizing: the pathway
+#' enrichment for programs 5 and 6 was computed under the old convention but
+#' filtered out of every reported table.
+#'
+#' Survival-active membership is *verified* here against |EBeta| > beta_thresh
+#' rather than trusted, so a changed fit fails loudly instead of silently
+#' mislabeling. The genomics-only/dead split is taken from the verified
+#' `classify_factors()` result, since recomputing PVE requires the training
+#' matrix Y, which this loader does not read.
+#'
+#' @param beta_thresh numeric: |EBeta_k| threshold for survival-active, matching
+#'                    `config/globals.yml` `k_selection$beta_threshold` (default 0.001)
 #'
 #' @return Named list:
-#'   $EF             numeric matrix, 2064 genes x 7 programs, rows named by gene symbol
-#'   $EBeta          numeric vector, length 7, posterior mean survival coefficients
-#'   $EL             numeric matrix, n patients x 7 programs (posterior mean loadings)
-#'   $gene_names     character vector, length 2064, gene symbols (same order as EF rows)
-#'   $program_labels named list keyed by program index as a string ("1".."7"),
-#'                    values in {"Adverse", "Protective", "Inactive"}
-load_d4_weights <- function() {
+#'   $EF              numeric matrix, 2064 genes x 7 programs, rows named by gene symbol
+#'   $EBeta           numeric vector, length 7, posterior mean survival coefficients
+#'   $EL              numeric matrix, n patients x 7 programs (posterior mean loadings)
+#'   $gene_names      character vector, length 2064, gene symbols (same order as EF rows)
+#'   $program_labels  named list keyed by program index as a string ("1".."7"),
+#'                     values in {"Adverse", "Protective", "Genomics-only", "Dead"}
+#'   $program_class   named list, same keys, values in
+#'                     {"survival_active", "genomics_only", "dead"}
+#'   $survival_active integer vector: program indices with |EBeta| > beta_thresh
+#'   $genomics_only   integer vector: genomics-only program indices
+#'   $kept_factors    integer vector: survival_active + genomics_only, sorted
+#'
+#' @seealso \code{\link{classify_factors}} in `code/select_K.R`, the source of
+#'   the three-way split.
+load_d4_weights <- function(beta_thresh = 0.001) {
   fits <- readRDS("results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fits.rds")
   d4 <- fits[["D4"]]
   gene_names <- readRDS("results/benchmark_sim/outputs/desurv_comparison/d4_gene_names.rds")
@@ -42,8 +68,28 @@ load_d4_weights <- function() {
   EF <- d4$EF
   rownames(EF) <- gene_names
 
-  program_labels <- as.list(rep("Inactive", ncol(EF)))
-  names(program_labels) <- as.character(seq_len(ncol(EF)))
+  # Verified from the fit: which programs carry survival weight.
+  surv_active <- sort(which(abs(d4$EBeta) > beta_thresh))
+  if (!identical(as.integer(surv_active), c(3L, 7L))) {
+    stop(sprintf(paste0("survival-active programs are {%s} but the labeling convention in this ",
+                        "function (Program 3 Protective / Program 7 Adverse, DECISIONS.md ",
+                        "2026-06-16) assumes {3, 7}. The fit appears to have changed; re-derive ",
+                        "the marginal survival directions before relabeling."),
+                 paste(surv_active, collapse = ", ")))
+  }
+
+  # From the verified classify_factors() result on this fit (DECISIONS.md 2026-08-19).
+  # PVE is not recomputed here because that needs the training matrix Y.
+  genomics_only <- c(5L, 6L)
+
+  program_class <- as.list(rep("dead", ncol(EF)))
+  names(program_class) <- as.character(seq_len(ncol(EF)))
+  for (k in surv_active)   program_class[[as.character(k)]] <- "survival_active"
+  for (k in genomics_only) program_class[[as.character(k)]] <- "genomics_only"
+
+  program_labels <- lapply(program_class, function(cl) {
+    switch(cl, genomics_only = "Genomics-only", dead = "Dead", cl)
+  })
   program_labels[["7"]] <- "Adverse"
   program_labels[["3"]] <- "Protective"
 
@@ -52,7 +98,11 @@ load_d4_weights <- function() {
     EBeta = d4$EBeta,
     EL = d4$EL,
     gene_names = gene_names,
-    program_labels = program_labels
+    program_labels = program_labels,
+    program_class = program_class,
+    survival_active = as.integer(surv_active),
+    genomics_only = genomics_only,
+    kept_factors = sort(c(as.integer(surv_active), genomics_only))
   )
 }
 

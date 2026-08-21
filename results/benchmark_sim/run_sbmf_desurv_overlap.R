@@ -25,7 +25,6 @@ source("code/pathway_enrichment.R")
 suppressPackageStartupMessages(library(ggplot2))
 
 OUT_DIR <- "results/benchmark_sim/outputs/pathway_enrichment"
-ACTIVE_PROGRAMS <- c(3, 7)
 
 genesets_path <- file.path(OUT_DIR, "pdac_genesets.rds")
 if (!file.exists(genesets_path)) {
@@ -34,6 +33,10 @@ if (!file.exists(genesets_path)) {
 }
 
 d4 <- load_d4_weights()
+
+# All 4 kept factors: the genomics-only pair is included because both showed
+# coherent enrichment against DeSurv's StromalImmune factor (DECISIONS.md 2026-08-19).
+ACTIVE_PROGRAMS <- d4$kept_factors
 pdac_genesets <- readRDS(genesets_path)
 desurv <- pdac_genesets[c("DeSurv_D1_ClassicalTumor", "DeSurv_D2_StromalImmune", "DeSurv_D3_BasalLikeTumor")]
 

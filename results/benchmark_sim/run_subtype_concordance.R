@@ -76,7 +76,10 @@ matched <- merge_loadings_with_subtype(EL_tcga, tcga_raw$sampID, subtype_df, min
 
 # Section: T3 -- concordance stats, Programs 3 & 7 ----
 
-ACTIVE_PROGRAMS <- c(3, 7)
+# Extended to all 4 kept factors (survival-active + genomics-only, DECISIONS.md
+# 2026-08-19). For the genomics-only pair this asks whether they track the
+# classical/basal subtype axis at all, which the 07/15 report never tested.
+ACTIVE_PROGRAMS <- d4$kept_factors
 t3 <- compute_subtype_concordance(matched, programs = ACTIVE_PROGRAMS)
 t3$label <- vapply(t3$program, function(k) d4$program_labels[[as.character(k)]], character(1))
 write.csv(t3, file.path(OUT_DIR, "T3_concordance_stats.csv"), row.names = FALSE)

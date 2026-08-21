@@ -37,7 +37,15 @@ OUT_DIR <- "results/benchmark_sim/outputs/pathway_enrichment"
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 d4 <- load_d4_weights()
-ACTIVE_PROGRAMS <- c(3, 7)
+
+# All 4 kept factors. For the 2 survival-active programs this is the confirmatory
+# test it has always been (HR direction should replicate across cohorts). For the
+# 2 genomics-only programs it is a NEGATIVE CONTROL: they carry no survival
+# coefficient in the joint fit, so a hazard ratio whose CI covers 1 in most or all
+# cohorts is the expected, label-confirming result. An HR that is consistently and
+# significantly away from 1 would instead mean the genomics-only label understates
+# them, and would need explaining (DECISIONS.md 2026-08-19).
+ACTIVE_PROGRAMS <- d4$kept_factors
 EXTERNAL_COHORTS <- cfg$pdac$external_cohorts
 cat(sprintf("External cohorts: %s\n", paste(EXTERNAL_COHORTS, collapse = ", ")))
 
