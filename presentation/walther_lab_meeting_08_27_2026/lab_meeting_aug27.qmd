@@ -1,0 +1,836 @@
+---
+title: "Supervised Bayesian Matrix Factorization Identifies Prognostic Gene Expression Programs"
+subtitle: "Project Update"
+author: "Andrew Walther"
+institute: "Department of Biostatistics, UNC Gillings School of Global Public Health"
+date: "2026-08-27"
+date-format: long
+format:
+  revealjs:
+    theme: [default, ../resources/custom.css]
+    css: lab_meeting_aug27.css
+    html-math-method: katex
+    logo: ../resources/assets/RLlogoA.png
+    footer: "Rashid Lab · UNC Chapel Hill"
+    slide-number: true
+    transition: fade
+    width: 1920
+    height: 1080
+    incremental: false
+    chalkboard: false
+    preview-links: auto
+    embed-resources: true
+    pdf-max-pages-per-slide: 1
+    pdf-separate-fragments: false
+    print-background: true
+  pdf:
+    toc: false
+    number-sections: false
+    geometry: "landscape, margin=0.5in"
+    fontsize: 10pt
+    colorlinks: true
+    fig-pos: "H"
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{float}
+        \floatplacement{figure}{H}
+execute:
+  echo: false
+  message: false
+  warning: false
+  cache: false
+---
+
+```{r setup}
+#| include: false
+library(kableExtra)
+library(dplyr)
+
+# ── Canonical result sources (paths relative to this .qmd) ──────────────────
+desurv_csv  <- "../../results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv"
+ebmf_csv    <- "../../results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_external_results.csv"
+genes_csv   <- "assets/active_factor_genes.csv"
+ksweep_csv  <- "../../results/benchmark_sim/outputs/k_init_sweep/k_init_sweep_results.csv"
+
+desurv <- read.csv(desurv_csv, stringsAsFactors = FALSE)
+
+# Recommended (projection (YF)β, no cohort indicator) — the only linear
+# predictor presented in this deck. K_init is selected by a consensus of
+# ELBO/BIC/log-likelihood/cross-validated external C-index; ARD then
+# determines K_eff (the survival-active subset) from that fit.
+yfb_real <- desurv[desurv$model == "D4", ]
+yfb_mean <- mean(yfb_real$c_index)
+yfb_K    <- yfb_real$K[1]
+
+ebmf_mean <- if (file.exists(ebmf_csv)) mean(read.csv(ebmf_csv)$c_index) else NA_real_
+ebmf_K    <- if (file.exists(ebmf_csv)) read.csv(ebmf_csv)$K[1] else NA_integer_
+
+# Merged-training gene count (rows of EF in the recommended fit = 2064).
+N_GENES_TRAIN <- 2064L
+
+# Active-program gene lists (exported by figs/make_factor_figs.R).
+af <- if (file.exists(genes_csv)) read.csv(genes_csv, stringsAsFactors = FALSE) else NULL
+adverse_row    <- if (!is.null(af)) af[af$direction == "Adverse", ][1, ]    else NULL
+protective_row <- if (!is.null(af)) af[af$direction == "Protective", ][1, ] else NULL
+
+# K_init = 2..20 consensus sweep (results/benchmark_sim/run_k_init_sweep.R),
+# ARD-classified via classify_factors() at each K_init. yfb_keff below is the
+# survival-active count at the recommended K_init=7, from this same sweep.
+ksweep <- read.csv(ksweep_csv, stringsAsFactors = FALSE)
+k7row  <- ksweep[ksweep$K_init == 7, ]
+K_INIT_REC      <- 7L
+yfb_keff        <- k7row$K_survival_active[1]
+K_GENO_REC      <- k7row$K_genomics_only[1]
+K_EFF_TOTAL_REC <- k7row$K_eff_total[1]
+K_DEAD_REC      <- k7row$K_dead[1]
+
+elbo_pref_K <- ksweep$K_init[which.max(ksweep$elbo_full)]
+bic_pref_K  <- ksweep$K_init[which.min(ksweep$bic)]
+c_pref_K    <- ksweep$K_init[which.max(ksweep$mean_external_c)]
+```
+
+
+## Agenda {.smaller .tight-list}
+
+<br>
+
+**Background** &nbsp;·&nbsp; The PDAC prognostic problem · why supervise the factorization
+
+<br>
+
+**Method updates** &nbsp;·&nbsp; The joint model & explicit priors · non-parametric baseline hazard · the ELBO & variational family · CAVI updates & convergence · preprocessing · selecting $K$: ARD shrinkage + a consensus of fit/prediction metrics
+
+<br>
+
+**Results** &nbsp;·&nbsp; The $K_\text{init}$ consensus sweep · gene programs & survival · joint model vs. the unsupervised two-step, including as survival signal strength varies
+
+<br>
+
+**Impact & Future Directions**
+
+::: {.notes}
+Roadmap for the next ~15-20 minutes. K selection works in two stages: a
+consensus of ELBO, BIC, log-likelihood, and cross-validated external C-index
+picks K_init, and ARD shrinkage then determines which of those factors are
+actually survival-active (K_eff). The projection predictor (YF)β is the only
+model presented.
+:::
+
+
+# Background {.section-divider}
+
+
+## Background: PDAC needs molecular prognosis {.dense-cols .tight-list .compact-callout .vcenter}
+
+:::: {.columns}
+
+::: {.column width="55%"}
+
+- **Five-year survival < 12%** — among the most lethal solid tumors
+- Most patients diagnosed late; **no widely adopted molecular stratification** at diagnosis
+- Bulk expression mixes malignant, stromal, and immune signals — prognostic structure is interwoven and often **low-variance**
+- **Goal:** recover *gene expression programs (GEPs)* whose activation predicts survival, and validate them on **independent** cohorts
+- A GEP is a coordinated set of genes (a column of $F$) whose patient-level activation (a column of $L$) we test for survival association
+
+:::
+
+::: {.column width="45%"}
+
+::: {.callout-note}
+### Why model expression and survival *jointly*?
+The common pipeline is **two-step**: run unsupervised factor analysis (PCA / EBMF), then test factors for survival *post hoc*.
+
+- Unsupervised axes track the **largest expression variance** — often batch or housekeeping signal
+- A program explaining little variance but strongly prognostic gets **missed**
+- **Supervision** steers factors toward survival-relevant structure *during* estimation
+
+A program explaining 15% of variance may be pure batch effect; one explaining 3% may cleanly separate survivors. Supervision prioritizes the second.
+:::
+
+:::
+
+::::
+
+::: {.notes}
+One background slide. The clinical motivation is unchanged. The methodological
+motivation — joint over two-step — is the thread of the whole talk, and I back
+it with both a synthetic comparison and a real-data external comparison against
+the unsupervised two-step (EBMF → Cox) baseline.
+:::
+
+
+# Methods {.section-divider}
+
+
+## The model — two coupled components {.smaller .compact-table .tight-list .compact-callout}
+
+<br>
+
+$$\underbrace{Y = LF^\top + E,\quad E_{ij}\sim N(0,\tau_j^{-1})}_{\text{genomics: low-rank} + \text{gene-specific noise}}
+\qquad
+\underbrace{h_i(t)=h_0(t)\exp(\eta_i)}_{\text{Cox proportional hazards}}$$
+
+:::: {.columns}
+
+::: {.column width="52%"}
+
+| Quantity | Dim | Meaning |
+|:--|:--:|:--|
+| $Y$ | $n\times p$ | expression matrix |
+| $L$ | $n\times K$ | patient program-activation scores |
+| $F$ | $p\times K$ | gene weights per program |
+| $\beta$ | $K\times 1$ | survival (log-HR) coefficients |
+| $\tau_j$ | scalar | gene-specific noise precision |
+| $\eta_i$ | scalar | patient log-risk score, $(Y_iF)\beta$ |
+
+:::
+
+::: {.column width="48%"}
+
+::: {.callout-note}
+### Shared $F$ couples the two
+The **same** gene-program weights $F$ drive both the low-rank reconstruction of $Y$ **and** the survival risk score $\eta = (YF)\beta$. A program is **prognostic only if its $\beta_k \neq 0$**; otherwise it explains expression alone.
+:::
+
+::: {.callout-tip}
+### Non-parametric baseline hazard
+$h_0(t)$ is left **unspecified** — it cancels in the Cox partial likelihood. No Weibull / exponential shape assumption; only proportional hazards.
+:::
+
+:::
+
+::::
+::: {.notes}
+Two equations, one shared latent structure. Every symbol is defined in the table,
+including the risk score eta, which is now always the projection score (YF)β. The
+baseline hazard is non-parametric, so h0(t) drops out of the partial likelihood
+and we make no parametric shape assumption.
+:::
+
+
+## The model: projection predictor and explicit priors {.smaller .dense-cols .tight-list .compact-callout .vcenter}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+### Projection predictor — $\eta = (YF)\beta$
+- Risk uses the **direct genomic projection** $YF$, not a re-derived patient score
+- **Exact** out-of-sample scoring: $\eta_\text{new} = (Y_\text{new}F)\beta$ — the *identical* formula at train and test, no train/test score mismatch
+- $L$ is fit for the genomics reconstruction only; it does not enter the survival likelihood
+
+::: {.callout-tip}
+### Why the projection form
+Leakage-free **exact** external scoring, with no OLS re-projection step for new patients — the property that makes external validation on held-out cohorts a clean apples-to-apples comparison.
+:::
+
+:::
+
+::: {.column width="50%"}
+
+**Priors — every block is explicit.** $q(\cdot)$ denotes the **variational (approximate posterior)** for each block, fit by empirical Bayes at every update:
+
+- $q(L_{\cdot k}),\, q(F_{\cdot k})$ — **point-exponential** (non-negative spike-and-slab): $\;g(\theta)=\pi_0\delta_0+(1-\pi_0)\,\text{Exp}(\lambda),\ \theta\ge 0$
+- $q(\beta_k)$ — **normal** (Gaussian slab, no spike): $\;g(\beta)=N(0,\sigma^2)$
+- $q(\tau_j)$ — **closed-form MLE**: no EBNM, no prior tuning
+
+Sparsity $\pi_0$, scale $\lambda$, and slab variance $\sigma^2$ are all estimated from the data (`ebnm`) at each step. The **normal prior on $\beta$**, not a spike-and-slab, is what makes ARD-based $K$ selection possible (next: *selecting $K$*) — shrinkage toward zero, not a hard on/off switch.
+
+:::
+
+::::
+::: {.notes}
+The projection predictor (YF)β scores new patients with the identical formula
+used at train time — no mismatch, no re-derivation. Priors are explicit:
+non-negative point-exponential on L and F, a Gaussian (normal) prior on β, and a
+closed-form MLE for τ. The normal prior on β is worth flagging here because it's
+exactly the mechanism ARD-based K selection relies on next.
+:::
+
+
+## The objective: ELBO & variational family {.smaller .dense-cols .small-math .tight-list}
+
+**Mean-field variational family** — each block factorizes independently:
+
+$$q(L,F,\beta,\tau)=\prod_{k=1}^{K}q(L_{\cdot k})\;\prod_{k=1}^{K}q(F_{\cdot k})\;\prod_{k=1}^{K}q(\beta_k)\;\prod_{j=1}^{p}q(\tau_j)$$
+
+The **ELBO** (evidence lower bound) is the objective CAVI maximizes — a lower bound on the log marginal likelihood. For the projection model:
+
+$$\text{ELBO}=\underbrace{E_q[\mathcal{L}_\text{gen}]}_{\text{expression fit}}\;+\;\underbrace{\lambda\,E_q[\mathcal{L}_\text{Cox}]}_{\text{survival fit}}\;-\;\underbrace{\textstyle\sum_\text{blocks}D_\text{KL}\!\left(q\,\|\,\text{prior}\right)}_{\text{prior regularization}}$$
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+- **Genomics fit** $E_q[\mathcal{L}_\text{gen}]=\sum_j E_q\log p(Y_{\cdot j}\mid L,F_j,\tau_j)$ — Gaussian reconstruction of $Y$ by $LF^\top$
+- **Survival fit** $E_q[\mathcal{L}_\text{Cox})]$ — a **2nd-order Taylor** expansion of the Cox partial log-likelihood in $\eta=(YF)\beta$, making the survival term conjugate to the EBNM updates
+
+:::
+
+::: {.column width="50%"}
+
+- **KL term** penalizes each posterior $q$ away from its prior — the adaptive shrinkage
+- The **shared $F$** enters both likelihood terms — genomics reconstruction ($Y \approx LF^\top$) and survival risk ($\eta = (YF)\beta$) — that coupling *is* the supervision
+- The ELBO **balances** expression and survival automatically — **no tuning parameter $\alpha$** ($\lambda=1$ in the recommended fits)
+
+:::
+
+::::
+
+> **What the ELBO is *for*:** it is the **fitting objective** — CAVI maximizes it, and a fit is declared converged when it stops improving. It is also **one of four criteria** — alongside BIC, log-likelihood, and cross-validated external C-index — used to choose $K_\text{init}$ (next: *Selecting $K$*).
+
+::: {.notes}
+The variational family is mean-field and factor-wise. The ELBO has three pieces:
+Gaussian genomics reconstruction, the Cox survival term via a second-order Taylor
+expansion that keeps the updates conjugate, and a per-block KL penalty that is
+the adaptive shrinkage. The shared F in both likelihood terms is the supervision.
+The ELBO is one of the four K_init-selection criteria alongside BIC,
+log-likelihood, and cross-validated external C-index.
+:::
+
+
+## Inference: factor-wise CAVI {.smaller .dense-cols .tight-list .small-math}
+
+:::: {.columns}
+
+::: {.column width="55%"}
+
+**Coordinate ascent (Gauss–Seidel)** — per outer iteration, for each factor $k$:
+
+$$\beta_k \;\to\; L_{\cdot k} \;\to\; F_{\cdot k}, \qquad \text{then } \tau \text{ once per sweep}$$
+
+- Each update is an **EBNM** sub-problem: pseudo-data $x=B/A$, scale $s=1/\sqrt{A}$, then `ebnm` returns the posterior mean **and** variance
+- $\beta_k$ has precision governed by the projection score's own variance across patients, so a factor with **no survival signal** shrinks $\beta_k \to 0$ on its own — the mechanism ARD relies on
+- The empirical-Bayes prior $\hat g$ is **re-estimated every update** → adaptive shrinkage per factor / per gene; deflate the residual after each factor
+
+:::
+
+::: {.column width="45%"}
+
+**Convergence — in plain English.** After a 5-iteration burn-in, stop when the **ELBO stops improving** — its relative change between iterations falls below $10^{-5}$:
+$$\frac{\big|\text{ELBO}^{(t)}-\text{ELBO}^{(t-1)}\big|}{\big|\text{ELBO}^{(t-1)}\big|} < 10^{-5}$$
+
+- The ELBO is the **single objective** being maximized, so this directly detects a stationary point of the variational optimization
+- Mean absolute changes in $L$ and $\beta$ are tracked alongside as **diagnostics** (both settle below $10^{-3}$ at convergence)
+
+::: {.callout-important}
+### Risk-direction sign correction
+Cox concordance is invariant to a global sign flip, so an unconstrained fit can land at $C<0.5$. **Fix:** orient each program against the **training** concordance, then apply the *same* orientation at test. (Used to define program activation in the survival results.)
+:::
+
+:::
+
+::::
+::: {.notes}
+CAVI updates one factor at a time in Gauss-Seidel order; each block reduces to an
+EBNM call with pseudo-data x=B/A and scale s=1/sqrt(A). Convergence requires both
+L and beta to settle below 1e-3 in MEAN absolute change; averaging avoids a
+single oscillating factor blocking the stop. The sign correction orients each
+program by training concordance and reuses it at test.
+:::
+
+
+## Preprocessing is crucial: per-platform normalization {.smaller .dense-cols .tight-list .compact-callout}
+
+:::: {.columns}
+
+::: {.column width="54%"}
+
+**The $p\gg n$ scaling problem.** Merging platforms (RNA-seq, microarray, proteomics) leaves each gene on a different scale. The survival precision for program $k$ is
+$$A_k=\sum_i w_i\,(YF)_{ik}^2,$$
+where $w_i$ = the patient's **Cox working weight** (curvature from the survival Taylor step) and $(YF)_{ik}$ = patient $i$'s **projection score** on program $k$. Without correction, between-platform variance inflates $(YF)$ unevenly, **swamps $A_k$**, and the survival coefficients **collapse to $\beta\to 0$**.
+
+**The fix — normalize *per platform, before merging*:**
+
+1. Log2 transform (RNA-seq only)
+2. **Per-cohort gene selection** (combined rank of mean × variance), top-3000 per cohort, then **intersect** → **`r N_GENES_TRAIN` genes** in the merged training matrix
+3. **Per-platform z-standardization** (each cohort centered/scaled on its own)
+4. Row-bind into the merged training matrix
+
+:::
+
+::: {.column width="46%"}
+
+::: {.callout-important}
+### Skip per-platform normalization → β collapses
+In an 18-configuration benchmark, **10 of 12** pipelines that do **not** z-standardize per platform before merging drive $\beta\to0$.
+:::
+
+::: {.callout-tip}
+### No leakage
+Normalization is fit **within each training cohort, before** any split; held-out cohorts get the *same* per-cohort recipe at scoring time.
+:::
+
+:::
+
+::::
+::: {.notes}
+The single most important practical finding since April. A_k is the survival
+precision for program k. Without per-platform normalization the projection
+scales blow up across platforms, A_k is dominated by between-platform variance,
+and beta collapses. The fix is per-platform z-standardization before merging,
+which leaves 2064 genes. 10 of 12 alternatives collapse. Normalization is fit
+per training cohort before any split — no leakage.
+:::
+
+
+## Selecting the number of programs: a two-stage framework {.smaller .dense-cols .tight-list .compact-callout}
+
+**Stage 1 — $K_\text{init}$, by a consensus of four fit/prediction criteria.** Fit at several $K_\text{init}$; compare ELBO, BIC, an ELBO-style joint log-likelihood, and cross-validated external C-index across the grid.
+
+**Stage 2 — the active-factor subset, by ARD.** Fit once at the chosen $K_\text{init}$; the normal prior on $\beta$ (previous slide) lets Automatic Relevance Determination shrink unneeded factors' $\beta_k \to 0$ **on its own**, without a second per-K validation loop.
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+### Stage 1: choosing $K_\text{init}$
+- **ELBO** — the fitting objective itself, compared *across* $K_\text{init}$
+- **BIC** $= -2\,\text{LL} + \log(n)\cdot\text{df}$, $\text{df}=K_\text{init}\cdot(n+p+1)$ — an honest complexity penalty; **not** guaranteed to agree with ELBO or external C
+- **Log-likelihood** — genomics + survival, an ELBO-style bound (not an exact marginal likelihood)
+- **Cross-validated external C-index** — the only *generalization* signal among the four, evaluated on the five held-out cohorts
+- These need **not** agree — see *Results* for the full $K_\text{init}=2..20$ sweep
+
+:::
+
+::: {.column width="50%"}
+
+### Stage 2: ARD classification at fixed $K_\text{init}$
+Each factor $k$ is classified by `classify_factors()`:
+
+- **survival-active**: $|\hat\beta_k| > 0.001$
+- **genomics-only**: not survival-active, but $\text{PVE}_k > 1\%$
+- **dead**: neither — fully pruned
+
+::: {.callout-tip}
+### Running example: $K_\text{init}=`r K_INIT_REC`$
+`r K_INIT_REC` starting factors $\to$ **`r yfb_keff` survival-active** + **`r K_GENO_REC` genomics-only** (`r K_EFF_TOTAL_REC` kept, `r K_DEAD_REC` pruned). Stable across a wide range of $K_\text{init}$ — see *Results*.
+:::
+
+:::
+
+::::
+
+::: {.notes}
+Two stages. Stage 1 picks K_init by a consensus of ELBO, BIC, log-likelihood,
+and cross-validated external C-index — these don't have to agree, and the
+Results section shows the full sweep and where they disagree. Stage 2 is ARD:
+at a fixed K_init, the normal prior on beta lets survival-irrelevant factors
+shrink to beta=0 on their own, and classify_factors() splits the rest into
+survival-active (|beta|>0.001) vs genomics-only (PVE>1%) vs dead. K_init=7 is
+the running example throughout: 2 survival-active, 2 genomics-only, 4 kept
+total, 3 pruned — the same real-data configuration used throughout Results.
+:::
+
+
+# Results {.section-divider}
+
+
+## Data — Synthetic Validation & PDAC Cohorts {.smaller .dense-cols .tight-list .compact-table .vcenter}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+### Multi-cohort simulation
+**EBMF-grounded ground truth**: shared factors (present in all studies) + study-specific factors; **shared factors carry the survival signal**, study-specific do not.
+
+**Scenarios**
+
+- *All Shared Factors* — every program is shared & prognostic
+- *All Cohort-Specific Factors* — negative control; no shared signal ($\eta\equiv 0$)
+- *Shared & Cohort-Specific Factors* — the realistic mix
+
+**Model Arms**
+
+- Unsupervised two-step (EBMF → Cox)
+- The projection-predictor joint model, $K$ selected by over-specified $K_\text{init}$ + ARD pruning (mirroring the real-data procedure)
+
+:::
+
+::: {.column width="50%"}
+
+### PDAC cohorts — External Validation
+- **Train:** TCGA-PAAD + CPTAC ($n\approx 273$, RNA-seq + proteomics)
+- **Validate:** 5 fully held-out cohorts, scored by the **exact** projection formula $\eta=(Y_\text{new}F)\beta$
+
+::: {.compact-table}
+| Held-out cohort | Platform |
+|:--|:--|
+| Dijk | RNA-seq |
+| Moffitt | Microarray |
+| PACA-AU (array) | Microarray |
+| PACA-AU (seq) | RNA-seq |
+| Puleo | Microarray |
+:::
+
+:::
+
+::::
+
+::: {.notes}
+Two datasets. The simulation now selects K the same way the real-data procedure
+does — an over-specified K_init pruned by ARD — instead of the oracle true-K
+used in June, and compares only the joint model against the unsupervised EBMF-
+then-Cox baseline. On real data we train on TCGA + CPTAC and validate on five
+fully held-out cohorts spanning microarray and RNA-seq, scored by the exact
+projection formula.
+:::
+
+
+## PDAC Cohorts — Prognostic Gene Programs {.smaller .hero-figure .tight-list}
+
+![**Figure.** Gene-weight heatmap (top 30 genes) for the recommended model: projection $(YF)\beta$, per-platform z-standardization, survival-ranked gene selection (`r N_GENES_TRAIN` genes), no cohort indicator, $K_\text{init}=`r K_INIT_REC`$. Weights are **non-negative** (point-exponential prior). Survival-active programs ($|\hat\beta|>10^{-3}$) are starred.](assets/real_gep_heatmap.png){fig-align="center" width="62%"}
+
+- $K_\text{init}=`r K_INIT_REC`$ (ELBO / BIC / log-likelihood / external-C consensus — see the sweep below) $\to$ **`r yfb_keff` survival-active** + `r K_GENO_REC` genomics-only kept — Program `r protective_row$factor` (**protective**) and Program `r adverse_row$factor` (**adverse**)
+- The *largest* expression program (collagen/ECM/stromal) is **not** survival-active — supervision separates expression-only structure from prognostic structure
+
+::: {.notes}
+On real data, the recommended fit starts at K_init=7 and ARD keeps 4 programs —
+2 survival-active (Program 3 protective, Program 7 adverse) and 2 genomics-only.
+Note the largest expression program — the stromal collagen block — is NOT
+survival-active, exactly the separation supervision is supposed to give you.
+Weights are non-negative because L and F use a point-exponential prior.
+:::
+
+
+## PDAC Cohorts — Prognostic Association {.smaller .km-emphasis .tight-list}
+
+:::: {.columns}
+
+::: {.column width="40%"}
+
+The two survival-active programs stratify patients (split at median **projection score $(YF)_k$** — the quantity the model scores on):
+
+- **Adverse — Program `r adverse_row$factor`** (higher activation → shorter survival), log-rank $p=`r formatC(adverse_row$logrank_p, format="g", digits=2)`$
+  - top genes: *`r adverse_row$top_genes`*
+- **Protective — Program `r protective_row$factor`** (higher activation → longer survival), log-rank $p=`r formatC(protective_row$logrank_p, format="g", digits=2)`$
+  - top genes: *`r protective_row$top_genes`*
+
+Proportional-hazards assumption not violated (Schoenfeld test).
+
+:::
+
+::: {.column width="60%"}
+
+![**Figure.** Kaplan–Meier curves for the two survival-active programs, patients split at the median projection score $(YF)_k$ in the training cohorts. The adverse program's high-activation group has worse survival; the protective program's, better. Direction read empirically from the curves.](assets/real_km.png){fig-align="center" width="99%"}
+
+:::
+
+::::
+
+::: {.notes}
+The two active programs stratify patients into clear survival groups, split by
+the projection score (YF)_k. Program 7, the adverse program, carries MET, ITGA3,
+and glycolytic genes — biologically a classic aggressive signature. Program 3,
+protective, carries epithelial differentiation markers. Directions are read off
+the curves. Schoenfeld test shows PH holds.
+:::
+
+
+## Choosing $K_\text{init}$: the consensus sweep {.smaller .dense-cols .tight-list .compact-callout}
+
+**$K_\text{init}=2..20$**, each fit classified by ARD. *(4-panel ELBO / BIC / log-likelihood / external-C figure inserted here — Phase 5.)*
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+- **ELBO-preferred:** $K_\text{init}=`r elbo_pref_K`$
+- **BIC-preferred:** $K_\text{init}=`r bic_pref_K`$
+- **External-C-preferred:** $K_\text{init}=`r c_pref_K`$
+
+The three do **not** agree — reported honestly, not retuned to force a match. BIC's complexity penalty (`r sprintf("~%s", format(round((K_INIT_REC+1)*(273+N_GENES_TRAIN+1) - K_INIT_REC*(273+N_GENES_TRAIN+1)), big.mark=","))` per unit $K_\text{init}$) dominates once $K_\text{init}$ climbs past single digits, while external C-index keeps rewarding a bit more capacity before plateauing.
+
+:::
+
+::: {.column width="50%"}
+
+::: {.callout-tip}
+### Recommendation: $K_\text{init}=`r K_INIT_REC`$
+Survival-active count is **stable at `r yfb_keff`** across a wide range of $K_\text{init}$ — added capacity beyond that goes to genomics-only or dead factors, ARD working as intended. $K_\text{init}=`r K_INIT_REC`$ is kept as the practical default: reachable from a single fresh fit, externally competitive, and parsimonious ($K_\text{eff}=`r K_EFF_TOTAL_REC`$ kept of `r K_INIT_REC`).
+:::
+
+:::
+
+::::
+
+::: {.notes}
+Here is where the disagreement matters. ELBO and BIC agree with each other but
+pull toward a smaller K_init than external C-index does. I'm not going to
+pretend they agree — the honest read is that BIC's df penalty, which is on the
+order of tens of thousands per unit K here, dominates once K climbs into double
+digits, while external C-index keeps rewarding capacity a bit longer before
+plateauing. K_init=7 is kept as the practical recommendation because the
+survival-active count is stable there and beyond, and it's the simplest
+single-fit path — but I want to show you the actual curves and provoke the
+question of whether a different K_init in that plateau might be preferable.
+:::
+
+
+## Joint model vs. the unsupervised two-step {.smaller .cindex-figure .tight-list}
+
+*(Two-arm external C-index figure — projection $(YF)\beta$ vs. EBMF → Cox — inserted here, Phase 4.)*
+
+```{r ext-headline}
+#| results: asis
+cat(sprintf(
+  "- **Projection model mean C = %.3f**%s, across the five held-out cohorts  \n",
+  yfb_mean,
+  if (!is.na(ebmf_mean)) sprintf(" · unsupervised EBMF → Cox %.3f", ebmf_mean) else ""))
+cat(sprintf("- $K_\\text{init}=%d$ (ELBO / BIC / log-likelihood / external-C consensus) $\\to K_\\text{eff}=%d$ survival-active of %d kept\n", K_INIT_REC, yfb_keff, K_EFF_TOTAL_REC))
+```
+
+::: {.notes}
+The real-data analog of the synthetic slide, once the two-arm figure lands. Two
+arms: the recommended projection model, and the unsupervised EBMF-to-Cox
+two-step baseline.
+:::
+
+
+## Joint model vs. two-step as survival signal strength varies {.smaller .hero-figure .tight-list}
+
+![**Figure.** External performance of the joint model vs. the unsupervised two-step (EBMF → Cox) as the simulated survival-signal strength increases. At strength = 0 (no true survival signal in the data), the joint model matches EBMF — supervision costs nothing when there is nothing to exploit. At strength = 2, the joint model pulls ahead.](../../docs/progress_book/figs/2026-08-21_k7_signal_sweep_comparison.png){fig-align="center" width="72%"}
+
+- **Strength = 0:** joint $\approx$ EBMF-only — the joint model does not fabricate prognostic signal when none exists
+- **Strength = 2:** joint model outperforms the two-step — supervision helps *only when there is signal to find*, and does not hurt when there isn't
+
+::: {.notes}
+This single figure carries two points. At zero simulated survival signal, the
+joint model tracks EBMF almost exactly — no false discovery, no manufactured
+prognostic signal. As signal strength increases, the joint model pulls ahead of
+the two-step baseline. Together this is the cleanest argument that supervision
+is a free option: it costs nothing when uninformative and helps when it isn't.
+:::
+
+
+## Synthetic Results — Recovery & Held-out Performance {.smaller .paired-figures .tight-list}
+
+*(ARD-based multi-cohort recovery simulation figures — recovery correlation, specificity accuracy, C-index by arm/scenario — inserted here or moved to the appendix, Phase 6, pending the placement decision.)*
+
+::: {.notes}
+Placement pending: the simulation now selects K via over-specified K_init + ARD
+pruning instead of the June deck's oracle true-K. If ARD-based selection
+produces a materially new finding relative to June, this goes in the main body;
+if it essentially reproduces June under the new selection procedure, it moves to
+the appendix (never cut — it's still the evidence backing the method, and
+useful for Q&A).
+:::
+
+
+## Model Comparison Summary {.smaller .compact-table .tight-list .vcenter}
+
+```{r comparison-table}
+build_row <- function(name, linpred, preproc, K, keff, real_c) {
+  data.frame(Model = name, `Linear predictor` = linpred, Preprocessing = preproc,
+             K = K, `K_eff` = keff, `Real ext. C` = real_c,
+             check.names = FALSE, stringsAsFactors = FALSE)
+}
+
+ebmf_real_disp <- if (!is.na(ebmf_mean)) sprintf("%.3f", ebmf_mean) else "—"
+ebmf_K_disp    <- if (!is.na(ebmf_K)) as.character(ebmf_K) else "~20"
+
+PREP <- "per-platform z-std + survival-ranked gene selection"
+
+cmp <- rbind(
+  build_row("Projection (recommended)", "(YF)β", PREP,
+            paste0("K_init=", K_INIT_REC), as.character(yfb_keff), sprintf("%.3f", yfb_mean)),
+  build_row("Unsupervised two-step", "EBMF → Cox", PREP,
+            ebmf_K_disp, "n/a", ebmf_real_disp)
+)
+
+kbl(cmp, booktabs = TRUE, row.names = FALSE, align = c("l","c","l","c","c","c")) |>
+  kable_styling(bootstrap_options = c("striped","hover"), full_width = TRUE, font_size = 24, position = "center") |>
+  column_spec(1, width = "15em") |>
+  column_spec(3, width = "22em") |>
+  row_spec(1, bold = TRUE)
+```
+
+<div class="table-note">Real ext. C = mean across 5 held-out PDAC cohorts. **K_init** = starting factor count, selected by an ELBO / BIC / log-likelihood / external-C consensus (Stage 1); **K_eff** = survival-active programs by ARD, $|\hat\beta| > 10^{-3}$ (Stage 2). Gene selection ranks genes by combined mean × variance per cohort.</div>
+
+:::: {.columns}
+
+::: {.column width="68%"}
+
+- **Recommendation:** projection predictor $(YF)\beta$ · per-platform z-standardization · survival-ranked gene selection · **no** cohort indicator
+- $K_\text{init}=`r K_INIT_REC`\to K_\text{eff}=`r yfb_keff`$ survival-active (`r K_EFF_TOTAL_REC` kept total), with **exact** external scoring
+
+:::
+
+::: {.column width="32%"}
+
+::: {.callout-note}
+### On gene selection
+The combined-rank selection recipe was **motivated by** the lab's penalized survival-MF (DeSurv) preprocessing; here it is applied within the fully Bayesian model.
+:::
+
+:::
+
+::::
+
+::: {.notes}
+Two rows: the recommended projection model against the unsupervised two-step
+baseline. Projection predictor with per-platform z-std and survival-ranked gene
+selection, K_init=7 selected by consensus, is the recommendation.
+:::
+
+
+## Impact / key findings {.smaller .tight-list}
+
+1. **Joint supervision beats the unsupervised two-step**, and costs nothing when there is no survival signal to exploit (previous slide's signal-strength sweep).
+
+2. **Preprocessing is decisive** — per-platform z-standardization before merging is the difference between a working model and $\beta\to 0$; **10 of 12** alternatives collapse.
+
+3. **$K$ selection is a two-stage split** — cross-validated external C-index (with ELBO, BIC, and log-likelihood) helps pick $K_\text{init}$; ARD shrinkage then determines the survival-active subset ($K_\text{eff}=`r yfb_keff`$) directly from that single over-specified fit, with no separate per-K validation loop needed for $K_\text{eff}$ itself.
+
+4. **Mean external C-index = `r sprintf("%.3f", yfb_mean)`** across five independent PDAC cohorts — fully Bayesian throughout (adaptive priors, no $\alpha$ tuning, uncertainty-aware).
+
+### Limitations
+
+- **BIC, ELBO, and external C-index need not agree** on $K_\text{init}$ — reported honestly, not retuned to force a match (previous slides)
+- **Small external cohorts give noisy estimates** — per-cohort C ranges down to `r sprintf("%.2f", min(yfb_real$c_index))` (Moffitt), near chance
+- The active programs are **statistically** prognostic and **biologically annotated** (pathway enrichment: Program `r adverse_row$factor` basal-like/adverse, Program `r protective_row$factor` classical/protective, confirmed by 5 independent methods) — a matched head-to-head against DeSurv on one protocol remains a planned next step
+
+::: {.notes}
+Four takeaways, then an honest limitations beat: the K-selection criteria
+disagree with each other and that's reported as a finding, not smoothed over;
+small external cohorts give noisy per-cohort estimates; and the biological
+annotation of the two active programs is done, with a matched DeSurv comparison
+still on the to-do list.
+:::
+
+
+## Future directions & summary {.smaller .future-summary .tight-list}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+### Current status
+- **$K$ selection**: cross-validated external C-index, ELBO, BIC, and log-likelihood inform $K_\text{init}$; ARD shrinkage determines $K_\text{eff}$
+- **Gene programs biologically annotated** — pathway enrichment on both survival-active programs, 5 independent methods
+
+### Next steps
+1. **Multiple cohorts / multiple modalities via indicator columns in $L$** — stack methylation + expression, possibly with modality-specific priors; leave-one-study-out validation; train on A vs. B vs. A+B
+2. **Manuscript preparation** — methods-primary framing; PDAC as the application
+
+:::
+
+::: {.column width="50%"}
+
+### Summary
+1. Joint supervised factorization via the projection predictor $(YF)\beta$; **point-exponential priors on $L,F$, a normal prior on $\beta$**, non-parametric baseline hazard
+2. **Preprocessing is crucial** — per-platform normalization prevents the survival precision from being dominated and $\beta$ from collapsing
+3. **$K$ selection: cross-validated external C-index, ELBO, BIC, and log-likelihood inform $K_\text{init}$; ARD shrinkage determines $K_\text{eff}$** — validated on real data (five external PDAC cohorts, mean C = `r sprintf("%.3f", yfb_mean)`) and synthetic data with known ground truth
+4. **Recommended model**
+   - Linear predictor: projection $(YF)\beta$
+   - $L$ cohort indicator: No (candidate direction for multi-cohort/multi-modality extension, above)
+   - Pre-processing: per-platform z-std
+   - $K_\text{init} = `r K_INIT_REC`$ $\to K_\text{eff} = `r yfb_keff`$, mean external C = **`r sprintf("%.3f", yfb_mean)`**
+
+:::
+
+::::
+
+::: {.notes}
+K selection: cross-validated external C-index, ELBO, BIC, and log-likelihood
+inform K_init; ARD shrinkage determines K_eff. Both survival-active programs
+are now biologically annotated. The forward-looking direction I want to lead
+with is extending L with indicator columns for multiple cohorts and/or
+multiple modalities — stack methylation and expression, possibly with
+modality-specific priors, and validate with leave-one-study-out and
+train-on-A-vs-B-vs-A+B comparisons. Then manuscript prep.
+:::
+
+
+## Discussion {.centered}
+
+### Thank You
+
+<br>
+
+**Questions, suggestions, and feedback welcome!**
+
+<br>
+
+[Andrew Walther]{style="color: #4B9CD3; font-weight: 600;"} · [awalther@unc.edu]{style="color: #13294B;"}
+
+Department of Biostatistics, UNC Gillings School of Global Public Health
+
+::: {.notes}
+Open the floor. Appendix slides cover convergence diagnostics, survival-activity
+magnitudes, and the DeSurv comparison.
+:::
+
+
+# Appendix {visibility="uncounted" .vcenter}
+
+
+## Appendix — convergence & survival-activity magnitudes {visibility="uncounted" .smaller .paired-figures}
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+![**Figure A1.** Training RMSE convergence traces across model configurations — RMSE stabilizes to a plateau; stopping is governed by the relative ELBO change falling below $10^{-5}$ ($\Delta L,\Delta\beta$ tracked as diagnostics).](assets/rmse_traces.png){fig-align="center" width="96%"}
+
+:::
+
+::: {.column width="50%"}
+
+![**Figure A2.** Survival-activity magnitude $|\hat\beta_k|$ per program. Most programs fall below the activity threshold (expression-only); a small number clear it (survival-active).](assets/beta_plots.png){fig-align="center" width="96%"}
+
+:::
+
+::::
+
+- The spike-and-slab / shrinkage behavior is visible: most programs are shrunk below the survival-activity threshold, with only the survival-active ones retained
+
+
+## Appendix — relation to DeSurv (Young et al., PNAS 2026) {visibility="uncounted" .smaller .dense-cols .tight-list .compact-table}
+
+:::: {.columns}
+
+::: {.column width="48%"}
+
+**Same design & same data — SBMF is the Bayesian counterpart.** Both jointly fit supervised NMF + Cox with **non-negative gene programs**, share the same training set (**TCGA + CPTAC, $n=273$**) and the **same five external PDAC cohorts** (Dijk, Moffitt, PACA-AU array/seq, Puleo; $n=616$), score new patients by **projection** (no retraining), and use the **combined-rank top-3000-per-cohort** gene selection. Both also find that the **highest-variance program is *not* the most prognostic**.
+
+DeSurv objective: $(1-\alpha)\,\mathcal{L}_\text{NMF} - \alpha\,\mathcal{L}_\text{Cox}$, with the survival gradient on the gene programs $W$.
+
+:::
+
+::: {.column width="52%"}
+
+**What SBMF changes**
+
+| | DeSurv | SBMF |
+|:--|:--|:--|
+| Estimation | penalized optimization | Bayesian variational (CAVI) |
+| $K$ selection | Bayesian-optimization over $k,\alpha,\lambda$ jointly | ARD shrinkage + ELBO/BIC/log-likelihood/external-C consensus on $K_\text{init}$ only |
+| Shrinkage | fixed elastic-net | empirical-Bayes priors (learned) |
+| Uncertainty | point estimates | posterior mean **+** variance |
+| Noise | least-squares | per-gene precision $\tau$; $E[L^2]$ correction |
+
+- **DeSurv:** $k=3,\ \alpha=0.334$; pooled external **HR/SD $=1.50$** (95% CI 1.31–1.72)
+- **SBMF (YF)β:** $K_\text{init}=`r K_INIT_REC`\to K_\text{eff}=`r yfb_keff`$; mean external **C $=`r sprintf("%.3f", yfb_mean)`**
+
+:::
+
+::::
+
+**Honest caveat:** the two report different primary metrics (DeSurv: pooled HR/SD; SBMF: mean external C-index) and use slightly different normalization (DeSurv within-subject rank → 1970 genes; SBMF per-platform z-std → 2064). A **matched same-protocol head-to-head is a planned next step** — DeSurv is *not* re-run here.
+
+::: {.notes}
+This is the backup for the inevitable "how does this compare to DeSurv?"
+question. SBMF is the Bayesian sibling of DeSurv — same supervised NMF+Cox idea,
+same training data and the same five external cohorts, same projection-based
+scoring, and SBMF borrowed DeSurv's combined-rank gene selection. The genuine
+differences: DeSurv tunes k, alpha, and lambda jointly by Bayesian optimization;
+SBMF selects K_init by a consensus of fit/prediction metrics and lets ARD prune
+within that fit, with empirical-Bayes priors learning the shrinkage and no alpha
+or lambda to tune, plus posterior uncertainty and a heteroscedastic noise model.
+On numbers, DeSurv reports pooled HR per SD of 1.50; SBMF reports mean external
+C of 0.627 — different metrics, so a matched head-to-head on one protocol is the
+honest next step, not a claim of superiority today.
+:::

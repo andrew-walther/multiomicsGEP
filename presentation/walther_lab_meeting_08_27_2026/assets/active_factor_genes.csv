@@ -1,0 +1,3 @@
+"factor","direction","abs_beta","logrank_p","top_genes"
+3,"Protective",0.0113,0.0077,"CAPN5, LPCAT4, MLPH, SLC45A3, TJP3, PLEKHA6, MTMR11, GALNT6"
+7,"Adverse",0.0408,0.00047,"ITGA3, MET, BCAR3, FAM3C, GAPDH, ENO1, TPI1, PGK1"
