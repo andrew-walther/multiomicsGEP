@@ -659,7 +659,7 @@ the curves. Schoenfeld test shows PH holds.
 
 ![**Figure.** $K_\text{init}=2\text{-}20$, each fit classified by ARD. Each panel states its own preferred direction; higher is better for ELBO, log-likelihood, and external C-index, lower is better for BIC. Point labels on the C-index panel are $K_\text{eff}\text{total}$ (ARD-kept factors). Dotted line = recommended $K_\text{init}=`r K_INIT_REC`$; dashed = each panel's own criterion-best.](assets/k_init_sweep_4panel.png){fig-align="center" width="82%"}
 
-- **ELBO- and BIC-preferred:** $K_\text{init}=`r elbo_pref_K`$ (both favor the smallest $K_\text{init}$ tested). **External-C-preferred:** $K_\text{init}=`r c_pref_K`$ (favors more capacity). These do **not** agree, and that disagreement is shown here rather than retuned away.
+- **ELBO- and BIC-preferred:** $K_\text{init}=`r elbo_pref_K`$ (both favor the smallest $K_\text{init}$ tested). **External-C-preferred:** $K_\text{init}=`r c_pref_K`$ (favors more capacity).
 - **Recommendation: $K_\text{init}=`r K_INIT_REC`$.** Survival-active count is stable at `r yfb_keff` across a wide range of $K_\text{init}$; $K_\text{init}=`r K_INIT_REC`$ is externally competitive (on the C-index plateau) and the simplest single-fit path. Full table in the appendix.
 
 ::: {.notes}
