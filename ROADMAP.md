@@ -79,16 +79,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
-- [ ] **HIGH PRIORITY, immediately after the 8/21 meeting: lab meeting slide deck for 8/27**
-  `[Priority: high — hard deadline]`
-  User is presenting a research update at lab meeting Wednesday 2026-08-27. Placeholder folder
-  already created: `presentation/walther_lab_meeting_08_27_2026/` (empty as of 2026-08-20, sibling
-  to `walther_lab_meeting_04_09_2026/` and `walther_lab_meeting_06_18_2026/` — follow those two for
-  format/structure precedent). Must cover progress and project state since the last lab
-  presentation (6/18) — i.e. everything from the June 18 lab meeting deck through this session's
-  K-selection work — **and must also integrate whatever feedback and additional progress comes out
-  of the 2026-08-21 advisor meeting**, so this cannot be fully finalized until after that meeting.
-  This is the key focus right after 8/21 lands.
+- [x] **HIGH PRIORITY, immediately after the 8/21 meeting: lab meeting slide deck for 8/27**
+  *(Complete, 2026-08-27)* `presentation/walther_lab_meeting_08_27_2026/`. Delivered as new work,
+  not a diff against June: loadings predictor ($L\beta$) dropped from the narrative entirely; $K$
+  selection rewritten as the two-stage ARD framework (cross-validated external C-index + ELBO + BIC
+  + log-likelihood inform $K_\text{init}$, ARD determines $K_\text{eff}$); K_init=2..20 consensus
+  sweep (new `code/compute_bic.R`, extended `run_k_init_sweep.R`) with the full curve/table
+  presented alongside the $K_\text{init}=7$ recommendation, not just the recommendation itself; the
+  +0.026 external-C headline verified to reproduce from risk scores before being quoted; multi-cohort
+  simulation re-run under ARD-based $K$ selection (15 seeds) and placed in the main body with honest
+  framing (flat recovery/C-index = well-powered; FP-rate improvement = a trend, p=0.07, not
+  significant). Full detail: DECISIONS.md 2026-08-27.
 
 - [x] **Factor classification (survival-active/genomics-only/dead) + K-init sweep + best-of-
   multistart ELBO comparison (Analysis A)** *(Complete, 2026-08-19, branch
@@ -127,6 +128,15 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   survival signal to non-prognostic factors when no independent validation exists to check
   against — worth raising alongside possible mitigations (`rel_thresh`, `cohort_id`, other
   covariate adjustments, or validation-style checks for future datasets).
+  **Update, 2026-08-27 (discussed with advisors):** treated as a relative non-issue rather than an
+  open risk requiring mitigation — a small, non-zero spurious coefficient on a non-signal factor
+  contributes minimally to the survival risk score in practice, so the over-counting this entry
+  describes does not meaningfully distort predictions even when it occurs. Consistent with the
+  8/27 deck's own simulation re-run under the *current* over-specify-then-ARD-prune procedure
+  (`ard_k12`/`ard_k20`, 15 seeds): held-out C-index is flat across $K_\text{init}$ in every
+  scenario regardless of the false-positive rate, and the false-positive rate itself trends lower
+  (not higher) at larger $K_\text{init}$, though not significantly so at $n=15$ (paired $p=0.07$,
+  hybrid scenario). See DECISIONS.md 2026-08-27.
 
 - [x] **Bootstrap CI on the K=5-vs-K=7 external C-index gap** *(Complete, 2026-08-20)*
   `results/benchmark_sim/run_k5_vs_k7_bootstrap_ci.R` (reused the already-fitted K=5/K=7 models and

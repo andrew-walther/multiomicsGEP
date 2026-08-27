@@ -724,13 +724,15 @@ selection, K_init=7 selected by consensus, is the recommendation.
 
 ## Impact / key findings {.smaller .tight-list}
 
-1. **Joint supervision beats the unsupervised two-step**, and costs nothing when there is no survival signal to exploit (previous slide's signal-strength sweep).
+1. **Joint supervision beats the unsupervised two-step**, and costs nothing when there is no survival signal to exploit (signal-strength sweep).
 
 2. **Preprocessing is decisive** — per-platform z-standardization before merging is the difference between a working model and $\beta\to 0$; **10 of 12** alternatives collapse.
 
 3. **$K$ selection is a two-stage split** — cross-validated external C-index (with ELBO, BIC, and log-likelihood) helps pick $K_\text{init}$; ARD shrinkage then determines the survival-active subset ($K_\text{eff}=`r yfb_keff`$) directly from that single over-specified fit, with no separate per-K validation loop needed for $K_\text{eff}$ itself.
 
-4. **Mean external C-index = `r sprintf("%.3f", yfb_mean)`** across five independent PDAC cohorts — fully Bayesian throughout (adaptive priors, no $\alpha$ tuning, uncertainty-aware).
+4. **Over-specifying $K_\text{init}$ and trusting ARD costs nothing** — confirmed in simulation (15 seeds): recovery, specificity, and C-index are flat whether the model starts at the true $K$ or 3x over-specified.
+
+5. **Mean external C-index = `r sprintf("%.3f", yfb_mean)`** across five independent PDAC cohorts — fully Bayesian throughout (adaptive priors, no $\alpha$ tuning, uncertainty-aware).
 
 ### Limitations
 
@@ -740,7 +742,7 @@ selection, K_init=7 selected by consensus, is the recommendation.
 - The active programs are **statistically** prognostic and **biologically annotated** (pathway enrichment: Program `r adverse_row$factor` basal-like/adverse, Program `r protective_row$factor` classical/protective, confirmed by 5 independent methods) — a matched head-to-head against DeSurv on one protocol remains a planned next step
 
 ::: {.notes}
-Four takeaways, then an honest limitations beat: the K-selection criteria
+Five takeaways, then an honest limitations beat: the K-selection criteria
 disagree with each other and that's reported as a finding, not smoothed over;
 small external cohorts give noisy per-cohort estimates; and the biological
 annotation of the two active programs is done, with a matched DeSurv comparison

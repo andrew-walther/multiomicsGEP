@@ -2287,9 +2287,10 @@ display:block!important;
 <section id="impact-key-findings" class="slide level2 smaller tight-list">
 <h2>Impact / key findings</h2>
 <ol type="1">
-<li><p><strong>Joint supervision beats the unsupervised two-step</strong>, and costs nothing when there is no survival signal to exploit (previous slide’s signal-strength sweep).</p></li>
+<li><p><strong>Joint supervision beats the unsupervised two-step</strong>, and costs nothing when there is no survival signal to exploit (signal-strength sweep).</p></li>
 <li><p><strong>Preprocessing is decisive</strong> — per-platform z-standardization before merging is the difference between a working model and <span class="math inline">\beta\to 0</span>; <strong>10 of 12</strong> alternatives collapse.</p></li>
 <li><p><strong><span class="math inline">K</span> selection is a two-stage split</strong> — cross-validated external C-index (with ELBO, BIC, and log-likelihood) helps pick <span class="math inline">K_\text{init}</span>; ARD shrinkage then determines the survival-active subset (<span class="math inline">K_\text{eff}=2</span>) directly from that single over-specified fit, with no separate per-K validation loop needed for <span class="math inline">K_\text{eff}</span> itself.</p></li>
+<li><p><strong>Over-specifying <span class="math inline">K_\text{init}</span> and trusting ARD costs nothing</strong> — confirmed in simulation (15 seeds): recovery, specificity, and C-index are flat whether the model starts at the true <span class="math inline">K</span> or 3x over-specified.</p></li>
 <li><p><strong>Mean external C-index = 0.627</strong> across five independent PDAC cohorts — fully Bayesian throughout (adaptive priors, no <span class="math inline">\alpha</span> tuning, uncertainty-aware).</p></li>
 </ol>
 <h3 id="limitations">Limitations</h3>
@@ -2300,7 +2301,7 @@ display:block!important;
 <li>The active programs are <strong>statistically</strong> prognostic and <strong>biologically annotated</strong> (pathway enrichment: Program 7 basal-like/adverse, Program 3 classical/protective, confirmed by 5 independent methods) — a matched head-to-head against DeSurv on one protocol remains a planned next step</li>
 </ul>
 <aside class="notes">
-<p>Four takeaways, then an honest limitations beat: the K-selection criteria disagree with each other and that’s reported as a finding, not smoothed over; small external cohorts give noisy per-cohort estimates; and the biological annotation of the two active programs is done, with a matched DeSurv comparison still on the to-do list.</p>
+<p>Five takeaways, then an honest limitations beat: the K-selection criteria disagree with each other and that’s reported as a finding, not smoothed over; small external cohorts give noisy per-cohort estimates; and the biological annotation of the two active programs is done, with a matched DeSurv comparison still on the to-do list.</p>
 <style type="text/css">
 span.MJX_Assistive_MathML {
 position:absolute!important;
