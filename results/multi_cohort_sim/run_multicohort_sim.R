@@ -1,26 +1,38 @@
 # ============================================================
 # Script:  results/multi_cohort_sim/run_multicohort_sim.R
 # Purpose: Multi-cohort simulation study.  For each of three scenarios
-#          (all-shared, hybrid, nothing-shared) and several seeds, fit five
-#          arms and score how well each recovers the shared vs. study-specific
-#          factor structure and the survival coefficients:
+#          (all-shared, hybrid, nothing-shared), several seeds, and three
+#          K_init settings, fit two arms and score how well each recovers the
+#          shared vs. study-specific factor structure and the survival
+#          coefficients:
 #
 #            YFB_base    — YFB model (η = (YF)β), no cohort indicator
-#            YFB_cohort  — YFB model + cohort_id (corner-point dummy)
-#            LB_base     — LB model  (η = Lβ), no cohort indicator
-#            LB_cohort   — LB model  + cohort_id
 #            EBMF        — unsupervised benchmark (flashier, survival-blind)
+#
+#          K_init settings mirror the real-data K-selection procedure (over-
+#          specified K_init + ARD pruning) rather than fitting only at the
+#          oracle true K:
+#            oracle_k6 — K_init = 6 = the true total K in every scenario;
+#                        retained as an internal reference only (not a deck
+#                        figure), to compare ARD-based recovery against it
+#            ard_k12   — K_init = 12 (2x the true K)
+#            ard_k20   — K_init = 20 (= ebmf_kmax)
+#          LB_base, LB_cohort, and YFB_cohort arms are dropped: LB is out of
+#          the narrative entirely, and 6/18 already found no meaningful YFB
+#          vs. YFB+cohort difference in simulation.
 #
 #          Metrics: shared/specific factor recovery (|cor| of gene programs),
 #          specificity-classification accuracy, β recovery (TP/FP prognostic
-#          rates), and orientation-free held-out C-index.
+#          rates, using the same |β|>0.001 ARD threshold as the real-data
+#          procedure), and orientation-free held-out C-index.
 #
 #          Output: results/multi_cohort_sim/outputs/
-#            multicohort_sim_results.csv   (one row per scenario × arm × seed)
-#            multicohort_sim_example.rds   (data + fits, first seed, for figures)
+#            multicohort_sim_results.csv   (one row per scenario × K_init × arm × seed)
+#            multicohort_sim_example.rds   (data + fits, first seed, per K_init, for figures)
 #
 # Author:  Claude Code (reviewed by Andrew Walther)
 # Created: 2026-06-14
+# Updated: 2026-08-27 -- ARD-based K_init sweep, YFB_base + EBMF arms only
 # Usage:   Rscript results/multi_cohort_sim/run_multicohort_sim.R [--quick]
 # ============================================================
 
@@ -77,7 +89,7 @@ mc          <- cfg$synthetic_multicohort
 C           <- mc$C
 N_PER       <- unlist(mc$n_per)
 P           <- mc$p
-K_FIT       <- mc$k_fit
+K_FIT_TRUE  <- mc$k_fit
 A_SHARED    <- mc$a_shared
 A_SPECIFIC  <- mc$a_specific
 OFFSET_SD   <- mc$offset_sd
@@ -92,16 +104,31 @@ SEEDS       <- if (QUICK_MODE) unlist(mc$seeds)[1] else unlist(mc$seeds)
 SCENARIOS <- lapply(mc$scenarios, function(s)
   list(K_shared = s$K_shared, K_specific = unlist(s$K_specific)))
 
-ARMS <- c("YFB_base", "YFB_cohort", "LB_base", "LB_cohort", "EBMF")
+# Arms: YFB_base (the recommended joint model) vs. EBMF (unsupervised
+# two-step) only. LB_base, LB_cohort, and YFB_cohort are dropped -- LB is out
+# of the narrative entirely, and 6/18 already found no meaningful YFB vs.
+# YFB+cohort difference in simulation (cohort indicator is a future-directions
+# item now, not a tested arm).
+ARMS <- c("YFB_base", "EBMF")
+
+# K: over-specified K_init + ARD pruning, mirroring the real-data procedure,
+# instead of the oracle K_FIT = true total K in every scenario. K_init=12 (2x
+# the true K=6) and K_init=20 (= ebmf_kmax) show whether ARD is stable across
+# starting K, the same question the real-data K_init sweep asks. The oracle
+# K=6 fit is RETAINED as an internal reference only (to compare ARD-based
+# recovery against the 6/18 oracle-K figures for the deck-placement
+# decision) -- it is not itself a deck figure.
+K_SETTINGS <- c(oracle_k6 = K_FIT_TRUE, ard_k12 = 12L, ard_k20 = EBMF_KMAX)
 
 OUT_DIR <- "results/multi_cohort_sim/outputs"
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
 
 cat("============================================================\n")
 cat(" Multi-Cohort Simulation — Shared vs. Study-Specific Factors\n")
-cat(sprintf(" mode=%s | C=%d | n_per=%s | p=%d | K_fit=%d | seeds=%s\n",
+cat(sprintf(" mode=%s | C=%d | n_per=%s | p=%d | K_settings=%s | seeds=%s\n",
             if (QUICK_MODE) "QUICK" else "FULL", C, paste(N_PER, collapse=","),
-            P, K_FIT, paste(SEEDS, collapse=",")))
+            P, paste(names(K_SETTINGS), K_SETTINGS, sep = "=", collapse = ", "),
+            paste(SEEDS, collapse=",")))
 cat("============================================================\n\n")
 
 # --------------------------------------------------------------------------
@@ -136,28 +163,19 @@ F_TEMPLATES <- if (!is.null(templates)) {
 # 3. Per-arm fitting + prediction helpers
 # --------------------------------------------------------------------------
 
-#' Fit one arm on the training split.  Returns a list with EF (p×K), EL (n_tr×K),
-#' EBeta (or NULL for EBMF), EF_norms, EF_cohort (or NULL), n_iter.
-fit_arm <- function(arm, d, spl) {
+#' Fit one arm on the training split, at a given K_init.  Returns a list with
+#' EF (p×K), EL (n_tr×K), EBeta (or NULL for EBMF), EF_norms, EF_cohort
+#' (always NULL now -- the cohort-indicator arms are dropped), n_iter.
+fit_arm <- function(arm, d, spl, K) {
   Ytr    <- d$Y[spl$train_idx, , drop = FALSE]
   ttr    <- d$time[spl$train_idx]
   str_   <- d$status[spl$train_idx]
-  cid_tr <- droplevels(d$cohort_id[spl$train_idx])
 
-  if (arm %in% c("YFB_base", "YFB_cohort")) {
-    cid <- if (arm == "YFB_cohort") cid_tr else NULL
+  if (arm == "YFB_base") {
     f <- suppressMessages(fit_cox_on_yf(
-      Ytr, ttr, str_, K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
-      prior_beta = PRIOR_BETA, verbose = FALSE, cohort_id = cid))
+      Ytr, ttr, str_, K = K, max_iter = MAX_ITER, alpha = ALPHA,
+      prior_beta = PRIOR_BETA, verbose = FALSE, cohort_id = NULL))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = f$EF_norms,
-         EF_cohort = f$EF_cohort, n_iter = f$history$n_iter)
-
-  } else if (arm %in% c("LB_base", "LB_cohort")) {
-    cid <- if (arm == "LB_cohort") cid_tr else NULL
-    f <- suppressMessages(fit_supervised_mf_modular(
-      Ytr, ttr, str_, K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
-      prior_beta = PRIOR_BETA, verbose = FALSE, cohort_id = cid))
-    list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = NULL,
          EF_cohort = f$EF_cohort, n_iter = f$history$n_iter)
 
   } else if (arm == "EBMF") {
@@ -167,13 +185,13 @@ fit_arm <- function(arm, d, spl) {
     # This is the "factorize first, attach survival afterward" pipeline that the
     # joint SSBMF model is meant to outperform: EBMF chooses its factors WITHOUT
     # seeing the outcome, so it cannot preferentially sharpen the prognostic ones.
-    # Non-negative priors (point_exponential on L and F) match the supervised arms,
+    # Non-negative priors (point_exponential on L and F) match the supervised arm,
     # so the only difference being tested is joint vs. two-stage supervision.
     ebnm_args <- if (requireNamespace("ebnm", quietly = TRUE))
       list(ebnm_fn = c(ebnm::ebnm_point_exponential, ebnm::ebnm_point_exponential))
     else list()
     f <- do.call(flashier::flash,
-                 c(list(Ytr, var_type = 2, greedy_Kmax = K_FIT,
+                 c(list(Ytr, var_type = 2, greedy_Kmax = K,
                         backfit = TRUE, verbose = 0), ebnm_args))
     l  <- flashier::ldf(f, type = "2")
     EF <- as.matrix(l$F)                 # p × K unit-norm gene programs
@@ -213,18 +231,8 @@ predict_test <- function(arm, fit, d, spl) {
                 cohort = d$cohort_id[spl$test_idx]))
   }
 
-  # subtract estimated per-cohort offset for cohort arms (matches run_synthetic.R)
-  if (!is.null(fit$EF_cohort) && ncol(fit$EF_cohort) > 0) {
-    lev <- levels(droplevels(d$cohort_id[spl$train_idx]))
-    cid_te <- factor(d$cohort_id[spl$test_idx], levels = lev)
-    Lct <- model.matrix(~ cid_te)[, -1, drop = FALSE]
-    Yte <- Yte - Lct %*% t(fit$EF_cohort)
-  }
-
-  pr <- if (grepl("^YFB", arm))
-    predict_cox_on_yf(Yte, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)
-  else
-    predict_supervised_mf(Yte, fit$EF, fit$EBeta)
+  # arm == "YFB_base" is the only other case now (cohort-indicator arms dropped).
+  pr <- predict_cox_on_yf(Yte, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)
 
   list(risk = pr$risk_scores, time = tte, status = ste,
        cohort = d$cohort_id[spl$test_idx])
@@ -251,52 +259,66 @@ for (sc in names(SCENARIOS)) {
     spl    <- stratified_split(d$status, test_frac = 0.25, seed = s)
     cid_tr <- droplevels(d$cohort_id[spl$train_idx])
 
-    for (arm in ARMS) {
-      if (arm == "EBMF" && !HAVE_FLASHIER) next
+    for (k_name in names(K_SETTINGS)) {
+      K_here <- K_SETTINGS[[k_name]]
 
-      fit <- tryCatch(fit_arm(arm, d, spl),
-                      error = function(e) { message(arm, " failed: ", e$message); NULL })
-      if (is.null(fit)) next
+      for (arm in ARMS) {
+        if (arm == "EBMF" && !HAVE_FLASHIER) next
 
-      mf   <- match_factors(fit$EF, d$F_true)
-      est  <- classify_specificity(fit$EL, cid_tr)
-      sa   <- specificity_accuracy(est, mf$match, d$factor_labels)
-      br   <- beta_recovery(fit$EBeta, mf$match, d$factor_labels, BETA_THRESH)
-      pred <- predict_test(arm, fit, d, spl)
-      ci   <- if (is.null(pred)) NA_real_
-              else oriented_cindex(pred$risk, pred$time, pred$status)
+        fit <- tryCatch(fit_arm(arm, d, spl, K = K_here),
+                        error = function(e) { message(arm, " (K=", K_here, ") failed: ", e$message); NULL })
+        if (is.null(fit)) next
 
-      is_sh <- d$factor_labels == "shared"
-      REC_CUT <- 0.7   # |cor| above which a true factor counts as "recovered"
-      rows[[length(rows) + 1]] <- data.frame(
-        scenario      = sc,
-        arm           = arm,
-        seed          = s,
-        rec_shared    = if (any(is_sh))  mean(mf$best_cor[is_sh])  else NA_real_,
-        rec_specific  = if (any(!is_sh)) mean(mf$best_cor[!is_sh]) else NA_real_,
-        frac_shared   = if (any(is_sh))  mean(mf$best_cor[is_sh]  > REC_CUT) else NA_real_,
-        frac_specific = if (any(!is_sh)) mean(mf$best_cor[!is_sh] > REC_CUT) else NA_real_,
-        spec_acc      = sa$accuracy,
-        beta_tp_rate  = br$tp_rate,
-        beta_fp_rate  = br$fp_rate,
-        beta_shared   = br$mean_abs_shared,
-        beta_specific = br$mean_abs_specific,
-        c_index       = ci,
-        n_iter        = fit$n_iter %||% NA_integer_,
-        stringsAsFactors = FALSE
-      )
+        mf   <- match_factors(fit$EF, d$F_true)
+        est  <- classify_specificity(fit$EL, cid_tr)
+        sa   <- specificity_accuracy(est, mf$match, d$factor_labels)
+        # beta_recovery()'s BETA_THRESH cutoff (0.001, the same ARD
+        # survival-active threshold used on real data) is exactly the
+        # ARD classification this K-sweep is meant to test: at K_here > true
+        # K, does a survival-irrelevant extra factor stay below threshold
+        # (true negative) or get falsely activated (false positive)?
+        br   <- beta_recovery(fit$EBeta, mf$match, d$factor_labels, BETA_THRESH)
+        pred <- predict_test(arm, fit, d, spl)
+        ci   <- if (is.null(pred)) NA_real_
+                else oriented_cindex(pred$risk, pred$time, pred$status)
 
-      # keep one example per scenario/arm (first seed) for report figures.
-      # store the split (so EL rows align to cohorts for the loading heatmap) and
-      # the held-out predictions (for the risk-stratified Kaplan-Meier figure).
-      if (s == SEEDS[1]) {
-        if (is.null(example_fit[[sc]])) example_fit[[sc]] <- list(data = d, split = spl)
-        example_fit[[sc]][[arm]] <- list(EF = fit$EF, EL = fit$EL,
-                                         EBeta = fit$EBeta, match = mf,
-                                         est_labels = est, pred = pred)
+        is_sh <- d$factor_labels == "shared"
+        REC_CUT <- 0.7   # |cor| above which a true factor counts as "recovered"
+        rows[[length(rows) + 1]] <- data.frame(
+          scenario      = sc,
+          k_setting     = k_name,
+          K_init        = K_here,
+          arm           = arm,
+          seed          = s,
+          rec_shared    = if (any(is_sh))  mean(mf$best_cor[is_sh])  else NA_real_,
+          rec_specific  = if (any(!is_sh)) mean(mf$best_cor[!is_sh]) else NA_real_,
+          frac_shared   = if (any(is_sh))  mean(mf$best_cor[is_sh]  > REC_CUT) else NA_real_,
+          frac_specific = if (any(!is_sh)) mean(mf$best_cor[!is_sh] > REC_CUT) else NA_real_,
+          spec_acc      = sa$accuracy,
+          beta_tp_rate  = br$tp_rate,
+          beta_fp_rate  = br$fp_rate,
+          beta_shared   = br$mean_abs_shared,
+          beta_specific = br$mean_abs_specific,
+          c_index       = ci,
+          n_iter        = fit$n_iter %||% NA_integer_,
+          stringsAsFactors = FALSE
+        )
+
+        # keep one example per scenario/K-setting/arm (first seed) for report
+        # figures. store the split (so EL rows align to cohorts for the
+        # loading heatmap) and the held-out predictions (for the risk-
+        # stratified Kaplan-Meier figure).
+        if (s == SEEDS[1]) {
+          if (is.null(example_fit[[k_name]])) example_fit[[k_name]] <- list()
+          if (is.null(example_fit[[k_name]][[sc]]))
+            example_fit[[k_name]][[sc]] <- list(data = d, split = spl)
+          example_fit[[k_name]][[sc]][[arm]] <- list(EF = fit$EF, EL = fit$EL,
+                                           EBeta = fit$EBeta, match = mf,
+                                           est_labels = est, pred = pred)
+        }
       }
+      cat(sprintf("  seed %d, K_init=%d (%s) done.\n", s, K_here, k_name))
     }
-    cat(sprintf("  seed %d done.\n", s))
   }
   cat("\n")
 }
@@ -315,12 +337,12 @@ saveRDS(example_fit, file.path(OUT_DIR, "multicohort_sim_example.rds"))
 cat("============================================================\n")
 cat(" Mean over seeds (rec_shared / rec_specific / spec_acc / C / FP)\n")
 cat("============================================================\n")
-agg <- aggregate(cbind(rec_shared, rec_specific, spec_acc, c_index, beta_fp_rate) ~ scenario + arm,
+agg <- aggregate(cbind(rec_shared, rec_specific, spec_acc, c_index, beta_fp_rate) ~ scenario + k_setting + K_init + arm,
                  data = results, FUN = function(x) mean(x, na.rm = TRUE), na.action = na.pass)
-agg <- agg[order(agg$scenario, agg$arm), ]
+agg <- agg[order(agg$scenario, agg$K_init, agg$arm), ]
 for (i in seq_len(nrow(agg))) {
-  cat(sprintf("  %-15s %-11s recS=%.3f recSp=%s specAcc=%.3f C=%s FP=%s\n",
-              agg$scenario[i], agg$arm[i],
+  cat(sprintf("  %-15s K_init=%-2d(%-9s) %-9s recS=%.3f recSp=%s specAcc=%.3f C=%s FP=%s\n",
+              agg$scenario[i], agg$K_init[i], agg$k_setting[i], agg$arm[i],
               agg$rec_shared[i],
               ifelse(is.nan(agg$rec_specific[i]), "  NA", sprintf("%.3f", agg$rec_specific[i])),
               agg$spec_acc[i],
