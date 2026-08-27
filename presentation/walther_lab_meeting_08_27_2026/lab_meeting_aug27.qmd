@@ -118,7 +118,7 @@ c_pref_K    <- ksweep$K_init[which.max(ksweep$mean_external_c)]
 
 <br>
 
-**Results** &nbsp;·&nbsp; The $K_\text{init}$ consensus sweep · gene programs & survival · joint model vs. the unsupervised two-step, including as survival signal strength varies
+**Results** &nbsp;·&nbsp; The $K_\text{init}$ consensus sweep · gene programs & survival · joint model vs. the unsupervised two-step, including as survival signal strength varies · multi-cohort simulation under ARD-based $K$ selection
 
 <br>
 
@@ -612,17 +612,56 @@ is a free option: it costs nothing when uninformative and helps when it isn't.
 :::
 
 
-## Synthetic Results — Recovery & Held-out Performance {.smaller .paired-figures .tight-list}
+## Synthetic Results — ARD matches oracle-K performance {.smaller .paired-figures .tight-list}
 
-*(ARD-based multi-cohort recovery simulation figures — recovery correlation, specificity accuracy, C-index by arm/scenario — inserted here or moved to the appendix, Phase 6, pending the placement decision.)*
+:::: {.columns}
+
+::: {.column width="55%"}
+
+![**Figure.** Factor recovery (mean best $|$correlation$|$ vs. the true gene programs) by $K_\text{init}$, arm, and scenario (15 seeds).](assets/syn_recovery.png){fig-align="center" width="99%"}
+
+:::
+
+::: {.column width="45%"}
+
+![**Figure.** Held-out C-index by $K_\text{init}$, arm, and scenario (15 seeds; dashed = chance).](assets/syn_cindex.png){fig-align="center" width="99%"}
+
+:::
+
+::::
+
+- Multi-cohort simulation now selects $K$ the way the real-data procedure does — an over-specified $K_\text{init}\in\{12,20\}$ pruned by ARD — instead of June's oracle true-$K=6$; $K_\text{init}=6$ retained as an internal reference
+- **Recovery, specificity, and C-index are flat across $K_\text{init}=6\to12\to20$** in every scenario — over-specifying $K$ and letting ARD prune costs nothing relative to knowing the true $K$, now with 15 seeds (up from 5) for a properly powered comparison
 
 ::: {.notes}
-Placement pending: the simulation now selects K via over-specified K_init + ARD
-pruning instead of the June deck's oracle true-K. If ARD-based selection
-produces a materially new finding relative to June, this goes in the main body;
-if it essentially reproduces June under the new selection procedure, it moves to
-the appendix (never cut — it's still the evidence backing the method, and
-useful for Q&A).
+The simulation now uses the real-data K-selection procedure -- over-specify
+K_init, let ARD prune -- instead of June's oracle true-K, with K_init=6
+retained as an internal reference point. The headline is a clean null result:
+recovery, specificity, and C-index don't move at all across K_init=6/12/20, in
+any of the three scenarios, with 15 seeds. Over-specifying K and trusting ARD
+costs nothing.
+:::
+
+
+## Synthetic Results — false-positive rate: a trend, not yet significant {.smaller .hero-figure .tight-list}
+
+![**Figure.** $\beta$ false-positive rate (a non-signal factor falsely called survival-active) vs. $K_\text{init}$, YFB\_base only (EBMF has no survival coefficient to test). 15 seeds.](assets/syn_fp_rate.png){fig-align="center" width="58%"}
+
+- In the realistic **hybrid** scenario, the false-positive rate is numerically lower at $K_\text{init}=12/20$ than at the oracle $K_\text{init}=6$ (0.35 → 0.22 → 0.27) — but a paired test (same seeds, $K_\text{init}=6$ vs. 12) gives $p=0.07$: **directionally consistent, not conventionally significant** at $n=15$ seeds
+- In the **negative-control** scenario, the false-positive rate is flat at 0.10 across all $K_\text{init}$ — no change either direction
+- Reported as an honest trend worth watching, not a confirmed effect — and consistent with the advisor discussion that a small, non-zero coefficient on an extra factor contributes little to the risk score in practice
+
+::: {.notes}
+This is the one place a genuinely new question could have shown up -- does
+over-specifying K produce MORE false-positive survival-active calls, since ARD
+has more non-signal factors to potentially mis-activate. At 5 seeds it looked
+like a clear improvement; at 15 seeds the direction holds in the hybrid
+scenario but the paired test is p=0.07, not significant, and the negative
+control is completely flat. I'm presenting this as what it is -- a promising
+trend, not a confirmed finding -- and tying it back to the point raised after
+the last simulation exercise: a small spurious coefficient on a non-signal
+factor doesn't meaningfully move the risk score, which is consistent with
+false positives here not being large in magnitude even when they occur.
 :::
 
 

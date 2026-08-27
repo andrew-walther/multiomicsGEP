@@ -39,8 +39,9 @@
 # --------------------------------------------------------------------------
 # 0. Setup
 # --------------------------------------------------------------------------
-args       <- commandArgs(trailingOnly = TRUE)
-QUICK_MODE <- "--quick" %in% args
+args         <- commandArgs(trailingOnly = TRUE)
+QUICK_MODE   <- "--quick" %in% args
+n_seeds_arg  <- args[grepl("^--n-seeds=", args)]
 
 if (file.exists("code/fit_modular.R")) {
   # already at repo root
@@ -99,7 +100,13 @@ BETA_THRESH <- cfg$k_selection$beta_threshold
 ALPHA       <- cfg$benchmark$alpha
 PRIOR_BETA  <- "normal"          # avoids β→0 collapse (run_synthetic.R rationale)
 MAX_ITER    <- if (QUICK_MODE) 30L else cfg$cavi$max_iter
-SEEDS       <- if (QUICK_MODE) unlist(mc$seeds)[1] else unlist(mc$seeds)
+# --n-seeds=N overrides config/globals.yml's synthetic_multicohort$seeds (still
+# [1,2,3,4,5]) for THIS run only, rather than editing the shared config -- six
+# other run_*.R scripts in this directory read the same seeds list, and
+# changing it globally would silently double their runtime too.
+SEEDS <- if (QUICK_MODE) { unlist(mc$seeds)[1]
+} else if (length(n_seeds_arg) > 0) { seq_len(as.integer(sub("^--n-seeds=", "", n_seeds_arg[1])))
+} else { unlist(mc$seeds) }
 
 SCENARIOS <- lapply(mc$scenarios, function(s)
   list(K_shared = s$K_shared, K_specific = unlist(s$K_specific)))
