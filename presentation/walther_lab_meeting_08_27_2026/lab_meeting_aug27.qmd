@@ -675,7 +675,7 @@ build_row <- function(name, linpred, preproc, K, keff, real_c) {
 }
 
 ebmf_real_disp <- if (!is.na(ebmf_mean)) sprintf("%.3f", ebmf_mean) else "—"
-ebmf_K_disp    <- if (!is.na(ebmf_K)) as.character(ebmf_K) else "~20"
+ebmf_K_disp    <- if (!is.na(ebmf_K)) as.character(ebmf_K) else "n/a"
 
 PREP <- "per-platform z-std + survival-ranked gene selection"
 
