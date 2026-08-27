@@ -433,6 +433,17 @@ other) and Analysis C (re-running the signal-ratio sweep with K_init ≫ K_true 
 YFB-vs-EBMF→Cox comparison holds under ARD pruning). Both remain scoped in
 `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`.
 
+**Correction (2026-08-21):** this entry's "K=5/K=6's ELBO advantage over K=7 (−808,404 and
+−812,248 vs. −810,540)" and the later "K=5/K=6 are excluded" framing overstate K=6. Checking
+`results/benchmark_sim/outputs/k_init_sweep/k_init_multistart_results.csv` directly: K=6's ELBO is
+−812,248, which is *worse* than K=7's −810,540, not better. Only K=5 (−808,404) actually beats K=7
+on ELBO; K=6 loses on both ELBO and external C-index, it isn't a second "good fit, bad
+generalization" case the way K=5 is. Doesn't change the recommendation (K=7 is still correctly
+chosen, and K=5/K=6 are still correctly excluded, just for different reasons for each), only the
+stated reason for K=6. Also: the "3,000–5,500-unit gaps to K=8/K=10" figure a few lines down is
+closer to ~3,200–3,500 against the same CSV. Caught reviewing `docs/progress_book/chapters/
+2026-08-21.qmd` §3.1 against its source data.
+
 ---
 
 ## 2026-08-20 — Dual-source F (N_frozen x alpha_F grid): validated null result, alpha_F=0 default kept

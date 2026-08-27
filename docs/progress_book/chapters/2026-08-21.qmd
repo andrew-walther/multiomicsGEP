@@ -11,8 +11,9 @@ updates maximize. All four update formulas ($\beta$, $L$, $F$, $\tau$) are provi
 - Fitting at $K_{\text{init}} \in \{5,\dots,20\}$ gives a stable **2 survival-active factors for
   every $K \ge 7$**; added capacity goes entirely to dead factors, which is due to ARD
   (see table in §3.1).
-- $K=5$/$K=6$ have the best ELBO but generalize far worse (C=0.596 vs. 0.627). ELBO ranks candidate
-  $K$'s, but any $K$ that fails externally is excluded first.
+- $K=5$ has the best ELBO of the whole grid but generalizes far worse (C=0.596 vs. 0.627); $K=6$
+  loses on both counts (worse ELBO than $K=7$, and C=0.597). ELBO ranks candidate $K$'s, but any
+  $K$ that fails externally is excluded first.
 - **$K=7$ (2 survival-active + 2 genomics-only = 4 kept factors) selected**, with $K=9$ as a
   near-tied alternative. The $K=5$ vs. $K=7$ gap is significant pooled across cohorts (§3.3).
 - The fit is stable across starting points: 15 restarts per $K$ all reach the same best-ELBO
@@ -39,7 +40,7 @@ was self-directed rather than group-directed, so the approach is worth confirmin
 carry into the manuscript.
 
 **Logistics.** Finalize committee (Lin, Liu, Rashid, Hudgens, Van Deinse); prelim targeted for
-end of Fall 2026; 8/27 lab meeting slides in progress.
+end of Fall 2026; 8/27 lab meeting preparation (topic aside from project update? Semester goal setting?).
 
 **Questions**
 
@@ -457,12 +458,14 @@ program. Splitting "shrunk" gives three categories:
   (1 SVD initialization + 14 random) converged to the same best-ELBO solution, and random restarts
   never beat SVD initialization at any $K$. This closes the factor-stability-across-seeds question
   left open on 8/3.
-- $K=5$/$K=6$ have the *best* ELBO of the grid (−808,404 / −812,248 vs. −810,540 at $K=7$), and per
-  the previous point this is not a bad-initialization artifact. But they generalize far
-  worse (C=0.596–0.597 vs. 0.626–0.628 for every $K \ge 7$). Their apparent 3rd survival-active
-  factor does not transfer to new cohorts.
+- $K=5$ has the *best* ELBO of the entire grid (−808,404 vs. −810,540 at $K=7$), and per the
+  previous point this is not a bad-initialization artifact. $K=6$'s ELBO (−812,248) is actually
+  *worse* than $K=7$'s, not better, so it loses on both fit and generalization: both $K=5$ and
+  $K=6$ generalize far worse than $K=7$ (C=0.596–0.597 vs. 0.626–0.628 for every $K \ge 7$), but
+  only $K=5$ can claim a real training-fit advantage that generalization then fails to bear out.
+  Their apparent 3rd survival-active factor does not transfer to new cohorts either way.
 - Among $K \in \{7,\dots,10\}$ (all externally indistinguishable), $K=7$ (−810,540) and $K=9$
-  (−810,421) are tied on ELBO: a 0.015% difference, against 3,000–5,500-unit gaps to $K=8$/$K=10$.
+  (−810,421) are tied on ELBO: a 0.015% difference, against ~3,200–3,500-unit gaps to $K=8$/$K=10$.
 - ELBO gets monotonically worse past $K \approx 10$ ($K=15$: −826,682; $K=20$: −847,800) while
   finding no new structure.
 
