@@ -37,6 +37,7 @@ suppressMessages(tryCatch(
   source("code/fit_cox_on_yf.R"),
   error = function(e) invisible(NULL)
 ))
+source("code/compute_bic.R")    # compute_joint_ll_bic -- needs calc_cox_taylor_yf, sourced after fit_cox_on_yf.R
 source("code/predict_cox_on_yf.R")
 source("code/select_alpha_cv.R")
 source("code/preprocess_desurv.R")
@@ -68,7 +69,8 @@ test_files <- c(
   "tests/test_fit_pca_cox.R",
   "tests/test_pathway_enrichment.R",
   "tests/test_stratified_cox.R",
-  "tests/test_concordance_ci.R"
+  "tests/test_concordance_ci.R",
+  "tests/test_compute_bic.R"
 )
 
 # Run each test file

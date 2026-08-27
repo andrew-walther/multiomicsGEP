@@ -79,16 +79,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
-- [ ] **HIGH PRIORITY, immediately after the 8/21 meeting: lab meeting slide deck for 8/27**
-  `[Priority: high — hard deadline]`
-  User is presenting a research update at lab meeting Wednesday 2026-08-27. Placeholder folder
-  already created: `presentation/walther_lab_meeting_08_27_2026/` (empty as of 2026-08-20, sibling
-  to `walther_lab_meeting_04_09_2026/` and `walther_lab_meeting_06_18_2026/` — follow those two for
-  format/structure precedent). Must cover progress and project state since the last lab
-  presentation (6/18) — i.e. everything from the June 18 lab meeting deck through this session's
-  K-selection work — **and must also integrate whatever feedback and additional progress comes out
-  of the 2026-08-21 advisor meeting**, so this cannot be fully finalized until after that meeting.
-  This is the key focus right after 8/21 lands.
+- [x] **HIGH PRIORITY, immediately after the 8/21 meeting: lab meeting slide deck for 8/27**
+  *(Complete, 2026-08-27)* `presentation/walther_lab_meeting_08_27_2026/`. Delivered as new work,
+  not a diff against June: loadings predictor ($L\beta$) dropped from the narrative entirely; $K$
+  selection rewritten as the two-stage ARD framework (cross-validated external C-index + ELBO + BIC
+  + log-likelihood inform $K_\text{init}$, ARD determines $K_\text{eff}$); K_init=2..20 consensus
+  sweep (new `code/compute_bic.R`, extended `run_k_init_sweep.R`) with the full curve/table
+  presented alongside the $K_\text{init}=7$ recommendation, not just the recommendation itself; the
+  +0.026 external-C headline verified to reproduce from risk scores before being quoted; multi-cohort
+  simulation re-run under ARD-based $K$ selection (15 seeds) and placed in the main body with honest
+  framing (flat recovery/C-index = well-powered; FP-rate improvement = a trend, p=0.07, not
+  significant). Full detail: DECISIONS.md 2026-08-27.
 
 - [x] **Factor classification (survival-active/genomics-only/dead) + K-init sweep + best-of-
   multistart ELBO comparison (Analysis A)** *(Complete, 2026-08-19, branch
@@ -127,6 +128,15 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   survival signal to non-prognostic factors when no independent validation exists to check
   against — worth raising alongside possible mitigations (`rel_thresh`, `cohort_id`, other
   covariate adjustments, or validation-style checks for future datasets).
+  **Update, 2026-08-27 (discussed with advisors):** treated as a relative non-issue rather than an
+  open risk requiring mitigation — a small, non-zero spurious coefficient on a non-signal factor
+  contributes minimally to the survival risk score in practice, so the over-counting this entry
+  describes does not meaningfully distort predictions even when it occurs. Consistent with the
+  8/27 deck's own simulation re-run under the *current* over-specify-then-ARD-prune procedure
+  (`ard_k12`/`ard_k20`, 15 seeds): held-out C-index is flat across $K_\text{init}$ in every
+  scenario regardless of the false-positive rate, and the false-positive rate itself trends lower
+  (not higher) at larger $K_\text{init}$, though not significantly so at $n=15$ (paired $p=0.07$,
+  hybrid scenario). See DECISIONS.md 2026-08-27.
 
 - [x] **Bootstrap CI on the K=5-vs-K=7 external C-index gap** *(Complete, 2026-08-20)*
   `results/benchmark_sim/run_k5_vs_k7_bootstrap_ci.R` (reused the already-fitted K=5/K=7 models and
@@ -573,6 +583,33 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ---
 
 ## 📐 Model Selection
+
+- [ ] **Literature grounding + sensitivity analysis for the ARD feature-retention thresholds** `[Priority: Medium]` `[Effort: Low-Medium]`
+  `config/globals.yml`'s `k_selection$pve_threshold` (0.01, 1% PVE) and `k_selection$beta_threshold`
+  (0.001) are **not** derived from a citable source. `beta_threshold` was explicitly
+  reverse-engineered from this model's own observed `|β̂|` scale under YFB (~0.003–0.008 — see the
+  inline comment), not a principled cutoff from the sparse-Bayesian-factor / ARD literature;
+  `pve_threshold` is an uncited round-number heuristic. Raised 2026-08-27 (Andrew): shifting either
+  threshold would plausibly change which/how many factors are classified survival-active vs.
+  genomics-only vs. dead — the K_init=11/13 dips in the K-sweep (visible external-C drops against
+  their neighbors) are consistent with real boundary sensitivity, not just noise. DECISIONS.md
+  2026-07-12 already shows this project got burned once suspecting (wrongly, in that instance) that
+  a K_eff shift was a `beta_threshold` calibration artifact. Next steps: (1) a literature search for
+  principled ARD/spike-slab retention thresholds in comparable sparse factor models, (2) a
+  sensitivity sweep of the two thresholds on the real-data D4 fit and/or the K_init sweep, to see
+  how much the K_eff/program count actually moves.
+
+- [ ] **Fully Bayesian K selection: a prior on K itself, instead of a post-hoc ELBO/BIC/log-likelihood/C-index consensus** `[Priority: Low-Medium]` `[Effort: Medium-High]`
+  Raised 2026-08-27 (Andrew), alongside the threshold item above. The current two-stage procedure
+  (Stage 1: pick `K_init` by comparing four *separately computed* criteria across independent
+  fits; Stage 2: ARD-prune within one fit) is not itself a Bayesian model-selection procedure — `K`
+  is chosen externally, not integrated over. Worth a literature look at approaches that place an
+  explicit prior on the number of active factors (e.g. Indian Buffet Process / other nonparametric
+  Bayesian factor-count priors, or a spike-slab-on-K formulation) as an alternative to the current
+  consensus-of-criteria approach — potentially resolving the ELBO/BIC-vs-external-C disagreement
+  seen in the K_init sweep by folding K selection into the same variational objective rather than
+  comparing across separately-fit models. No implementation started; scoping/literature review
+  only at this point.
 
 - [ ] **Joint (K, α) tuning via Bayesian optimization, to match DeSurv's search procedure** `[Priority: Low-Medium]` `[Effort: Medium]`
   Plan only, not implemented: `docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`. Motivation:

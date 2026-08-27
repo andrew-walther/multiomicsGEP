@@ -5,6 +5,117 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-08-27 — K selection reframed for the 8/27 lab meeting: BIC/log-likelihood added, K_init=2..20 swept, LB dropped, simulation re-run under ARD
+
+**Context:** preparing the 2026-08-27 lab-meeting deck (`presentation/walther_lab_meeting_08_27_2026/`).
+Since the 6/18 deck, $K$ selection had already moved from cross-validated C-index to ARD shrinkage
+(2026-08-19), but the deck itself, the K_init sweep (only 8 spot values, no BIC/log-likelihood), and
+the multi-cohort simulation (still oracle-K, 5 arms including the loadings predictor $L\beta$) had not
+been updated to match. This entry covers the full set of changes made to bring them into sync.
+
+**1. New joint log-likelihood / BIC helper (`code/compute_bic.R`, `compute_joint_ll_bic()`).**
+Genomics term read from `fit$history$elbo_proxy[fit$history$n_iter]` (not `tail(..., 1)`, which is
+wrong for any fit converging before `max_iter`), plus the Gaussian normalizing constant
+`-(n·p/2)·log(2π)` that `update_tau.R` omits (constant in K, but needed for the printed number to be
+an honest Gaussian log-density term). Survival term recomputed post-hoc from the *returned*
+`EF`/`EBeta` (`ZF <- Y %*% sweep(EF, 2, EF_norms, "/")`, then `calc_cox_taylor_yf()`) rather than the
+stale in-loop `logPL`, which predates the post-loop sign-correction flip and does not match what
+`predict_cox_on_yf()` scores. `df = K_init·(n+p+1)` — deliberately based on the CAVI starting $K$, not
+ARD's $K_\text{eff}$, since $K_\text{eff}$ is a post-hoc classification of the same fit, not a smaller
+model. New file rather than an addition to `compute_elbo.R`, to avoid a source cycle
+(`compute_bic.R` needs `calc_cox_taylor_yf()` from `fit_cox_on_yf.R`, which itself sources
+`compute_elbo.R`). 15 new tests in `tests/test_compute_bic.R`, including a `coxph()` oracle check on
+the survival term and a check that `df` is unchanged when `EBeta` is pruned toward zero. Test count:
+374 (stale, already wrong before this session) → 397 (actual pre-session count) → 412.
+
+**2. K_init sweep extended from 8 spot values to the full K_init=2..20 grid**
+(`results/benchmark_sim/run_k_init_sweep.R`). Hoisted the 5-cohort external load/preprocess to before
+any fitting (previously ran after all fits completed) — behavior-neutral, confirmed by exact
+reproduction of the pre-change CSV. Added `--reuse-cache` (backfill BIC/LL onto cached fits without
+refitting), `--serial`, `--k-init=a,b,c`, and an `mclapply` parallel path with a post-collection sweep
+for killed/errored workers. **Verification found the parallel path is not bit-identical to serial**:
+forked fits differ from cached/serial fits by 1e-17 to 1e-8 (floating-point non-associativity from
+Accelerate/vecLib's threaded BLAS inside forked children — `VECLIB_MAXIMUM_THREADS=1` did not fully
+pin this down), while serial refits are exactly `identical()` to cached ones. Since each fit only
+costs ~2–9s on this dataset (n=273, p=2064) — the full 19-K sweep runs in ~2.3 min serial — the
+sweep in this deck was run with `--serial` rather than accepting that drift; the `mclapply` path is
+kept in the script for a larger future dataset where it would matter, but was not exercised here.
+
+**Sweep result — the criteria disagree, reported honestly:** ELBO and BIC agree, both preferring
+$K_\text{init}=3$; external C-index disagrees, preferring $K_\text{init}=12$, though $K_\text{init}=7$
+through 20 mostly sit on a plateau around $C\approx0.627$ (two isolated dips at $K_\text{init}=11$ and
+13, consistent with the already-documented single-seed CAVI factor-collapse artifact, not a new
+problem). BIC's `df` penalty (~13,100 per unit $K_\text{init}$ here) dominates once $K_\text{init}$
+climbs past single digits, echoing the ELBO-vs-generalization gap already noted 2026-08-19.
+**Decision: keep $K_\text{init}=7$ as the presented recommendation** (survival-active count stable at
+2 across $K_\text{init}\ge7$; reachable from a single fresh fit) **but present the full 2..20 curves
+and table alongside it**, not just the recommendation — the disagreement is real and worth surfacing
+to provoke discussion on whether a different point in the plateau should be preferred, rather than
+quietly picking a winner. Two follow-up items opened in `ROADMAP.md`: the ARD retention thresholds
+(`pve_threshold=0.01`, `beta_threshold=0.001`) are not literature-derived (`beta_threshold` was
+explicitly reverse-engineered from this model's own $|\hat\beta|$ scale — see the inline comment in
+`config/globals.yml`) and warrant a literature check plus a sensitivity sweep; and a fully Bayesian
+$K$-selection alternative (a prior on $K$ itself, e.g. IBP-style) instead of the current
+post-hoc consensus is worth scoping.
+
+**3. Loadings predictor ($L\beta$) dropped from the lab-meeting narrative entirely** — methods,
+results, comparison table, and appendix. This is a presentation-scope decision (the deck no longer
+discusses the $L\beta$ variant), not a code change; `fit_modular.R`/$L\beta$ remain in the codebase.
+Cross-validated external C-index was **not** removed from the story — it remains one of the four
+$K_\text{init}$-selection inputs (with ELBO, BIC, log-likelihood); what changed is that it is no
+longer the *sole* method used to pick $K$, and ARD (not CV) now determines $K_\text{eff}$ from the
+chosen $K_\text{init}$.
+
+**4. External two-step baseline reframed to the "fairest" comparison** (EBMF → Cox, $K=40$, LASSO
+stage 2, per 2026-08-20's finding below) rather than the smaller/unregularized baseline the June deck
+used. The headline **+0.026, 95% CI [0.0002, 0.0498]** pooled bootstrap difference (2026-08-20) was
+verified to reproduce before going on a slide, per the plan's explicit caveat that it existed only as
+prose with no CSV backing: paired YFB (D4) and EBMF-k40-LASSO per-cohort risk scores were confirmed
+patient-aligned (identical time/status per cohort), then the pooled bootstrap diff was recomputed
+directly — 0.0259, 95% CI [0.0002, 0.0498], significant — matching the prior figure exactly, including
+the per-cohort breakdown. `figs/make_external_cindex_fig.R` now computes and persists this CI itself
+(`assets/yfb_vs_ebmf_k40_pooled_ci.csv`) rather than hardcoding it in the deck.
+
+**5. Multi-cohort simulation rewritten for ARD-based $K$ selection**
+(`results/multi_cohort_sim/run_multicohort_sim.R`). Arms reduced from 5 to 2 (`YFB_base`, `EBMF`):
+`LB_base`, `LB_cohort`, and `YFB_cohort` dropped (LB out of the narrative; 6/18 already found no
+meaningful YFB vs. YFB+cohort difference). $K$ changed from the oracle `K_FIT=6` (true total $K$ in
+every scenario) to a $K_\text{init}$ sweep — `oracle_k6` (retained as an internal reference only, not
+a deck figure), `ard_k12` (2× true $K$), `ard_k20` (= `ebmf_kmax`) — mirroring the real-data
+over-specify-then-ARD-prune procedure. `beta_recovery()`'s existing `BETA_THRESH` cutoff (0.001, the
+same ARD survival-active threshold used on real data) already implements exactly the
+false-positive/true-negative test this sweep needs; no new scoring logic was required.
+
+**Verification / sanity check:** the `oracle_k6` setting (same true $K=6$, re-run through the
+rewritten script) reproduces June's original numbers almost exactly (e.g. hybrid-scenario C-index
+0.815 vs. June's 0.815, $\beta$ false-positive rate 0.45 vs. 0.45 at 5 seeds) — confirms the refactor
+introduced no behavior change at matched $K$.
+
+**Result and placement decision (main body, not appendix):** recovery, specificity, and C-index are
+flat across $K_\text{init}=6\to12\to20$ in every scenario — a well-powered null result (15 seeds; see
+below) confirming that over-specifying $K$ and trusting ARD costs nothing relative to knowing the true
+$K$. A secondary question — does over-specifying $K_\text{init}$ increase the $\beta$
+false-positive rate on non-signal factors, as Analysis B (2026-08-21) suggested it might in a
+different setup — was tested directly. **At 5 seeds** this looked like a clean improvement (hybrid
+scenario FP rate 0.45→0.20→0.25 across $K_\text{init}=6/12/20$; negative-control 0.067→0.033→0.033).
+**Re-run at 15 seeds** (added a `--n-seeds=N` CLI override to `run_multicohort_sim.R` rather than
+editing `config/globals.yml`'s shared `synthetic_multicohort$seeds`, which 6 other `run_*.R` scripts
+also read) softened this: hybrid FP rate is still numerically lower at $K_\text{init}=12/20$ than at
+oracle $K=6$ (0.35→0.22→0.27), but a paired t-test ($K=6$ vs. 12, same seeds, $n=15$) gives
+**$p=0.07$ — directionally consistent, not conventionally significant** — and the negative control's
+apparent improvement at 5 seeds turned out to be noise (flat at 0.10 across all $K_\text{init}$ at 15
+seeds). **Decision:** present in the main body with honest framing — the flat recovery/C-index/
+specificity result is the headline (well-powered, unambiguous), the FP-rate observation is presented
+explicitly as "a trend, not yet significant," not oversold as a confirmed effect. This also lines up
+with prior advisor discussion that a small, non-zero coefficient on a non-signal factor contributes
+little to the risk score in practice, even when ARD doesn't fully zero it out.
+
+**Affected files:** `code/compute_bic.R` (new), `tests/test_compute_bic.R` (new),
+`results/benchmark_sim/run_k_init_sweep.R`, `results/multi_cohort_sim/run_multicohort_sim.R`,
+`presentation/walther_lab_meeting_08_27_2026/` (new deck + figs), `ROADMAP.md`, `CLAUDE.md`.
+
+---
+
 ## 2026-08-20 — Manuscript framing: dual-source F is a tested-and-rejected alternative, not an unexamined gap
 
 **Context:** the YFB derivation doc (`docs/notes/YFB_derivation_05_08_26.pdf`) writes $F$ in a form
