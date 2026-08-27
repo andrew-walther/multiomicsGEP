@@ -598,8 +598,6 @@ the argument.
 - $K_\text{init}=`r K_INIT_REC`$ (ELBO / BIC / log-likelihood / external-C consensus; see the sweep later) $\to$ **`r yfb_keff` survival-active** + `r K_GENO_REC` genomics-only kept: Program `r protective_row$factor` (**protective**) and Program `r adverse_row$factor` (**adverse**)
 - The 2 survival-active programs are characterized by **5 methods**: gene-set enrichment (fgsea, Fast Gene Set Enrichment Analysis, and ORA, Over-Representation Analysis), correlation with the PurIST classical/basal subtype score, hazard-ratio consistency across all 5 external cohorts, and gene-list overlap with the lab's published DeSurv factors
 - The 2 genomics-only programs carry **weaker evidence**: **Program 5** reads as **desmoplastic stroma** (7 collagen genes, SPARC, THBS2, FAP) and **Program 6** as **immune infiltrate** (IKZF1, AKNA, IL10RA, HCLS1), based on agreement between just 2 of those methods (gene-set enrichment and DeSurv overlap); unlike Programs 3/7, their labels have not been tested for reproducibility across cohorts
-  - **Desmoplastic stroma:** the dense, fibrous, collagen-rich scar-like tissue that PDAC tumors characteristically build around themselves; a well-known driver of drug resistance and poor tumor microenvironment, but a *tissue-composition* signal here, not a direct survival readout from this model
-  - **Immune infiltrate:** the degree to which immune cells (lymphocytes, B cells) have entered the tumor tissue; low infiltrate ("immune-cold") is a recognized hallmark of PDAC's poor response to immunotherapy
 
 ::: {.notes}
 On real data, the recommended fit starts at K_init=7 and ARD keeps 4 programs:
