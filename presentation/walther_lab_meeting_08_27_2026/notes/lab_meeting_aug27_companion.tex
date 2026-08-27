@@ -57,7 +57,7 @@ leakage-free.
 \item \sectionlabel{$K$ selection, reframed:} $K_\text{init}$ is chosen from a consensus of ELBO,
 BIC, an ELBO-style joint log-likelihood, and cross-validated external C-index, swept over
 $K_\text{init}=2..20$. The four criteria \emph{disagree} --- ELBO/BIC prefer $K_\text{init}=3$,
-external C-index prefers $K_\text{init}=12$ --- and that disagreement is presented honestly, with
+external C-index prefers $K_\text{init}=12$ --- and that disagreement is presented plainly, with
 $K_\text{init}=7$ kept as the practical recommendation (stable $K_\text{eff}=2$, externally
 competitive, reachable from a single fit).
 \item \sectionlabel{Findings:} On real PDAC data (train TCGA-PAAD + CPTAC, validate five held-out
@@ -81,10 +81,10 @@ immune infiltrate).
 
 \noindent\emph{Slide numbers below match the deck's on-screen numbering (title slide = 1). The three
 section-divider slides (3 Background, 5 Methods, 12 Results) count toward that numbering; appendix
-slides are ``uncounted'' in the deck and are labeled A1--A3 here.}
+slides are ``uncounted'' in the deck and are labeled A1--A4 here.}
 
 \noindent\textbf{Pacing.} 15--20 minutes over 24 slides is under one minute per slide on average ---
-the appendix (A1--A3) is Q\&A-only, so budget the pace against the 24 counted slides, not 27. Text in
+the appendix (A1--A4) is Q\&A-only, so budget the pace against the 24 counted slides, not 28. Text in
 \key{navy bold} is a must-say point; \num{underlined Carolina blue} marks headline numbers.
 
 \subsection*{Slide 1 --- Title Slide}
@@ -226,7 +226,7 @@ $K_\text{init}$ alongside three other criteria; ARD (not CV) determines $K_\text
 one of four $K_\text{init}$ inputs. What changed is that it no longer single-handedly determines
 $K_\text{eff}$.
 \item \sectionlabel{Likely Question:} ``Are the ARD thresholds (PVE\,$>$\,1\%, $|\hat\beta|>0.001$)
-principled?'' Be honest: no. \texttt{beta\_threshold} was calibrated to this model's own observed
+principled?'' No. \texttt{beta\_threshold} was calibrated to this model's own observed
 $|\hat\beta|$ scale (roughly 0.003--0.008 under YFB), not drawn from a citable sparse-factor-model
 source; \texttt{pve\_threshold} is an uncited round number. A literature check and a sensitivity
 sweep are open items (ROADMAP.md) --- flagged as a genuine limitation, not glossed over. See also the
@@ -236,75 +236,137 @@ Limitations slide.
 \section*{Results}
 
 \subsection*{Slide 12 --- Section divider: Results}
-\scriptlabel (Divider --- no content.) Signal the shift into results; most of the remaining time
-lives here.
+\scriptlabel (Divider --- no content.) Signal the shift into results: simulation first, then real
+data, in that order.
 
 \subsection*{Slide 13 --- Data: Synthetic Validation \& PDAC Cohorts}
-\scriptlabel Two datasets. Simulation: EBMF-grounded ground truth, shared vs.\ study-specific
-factors, three scenarios, now \key{two arms} (the projection model, EBMF $\to$ Cox) fit at an
-over-specified $K_\text{init}$ pruned by ARD, mirroring the real-data procedure. Real data: train
-TCGA-PAAD + CPTAC ($n\approx273$), validate on five fully held-out cohorts, scored by the exact
-projection formula.
+\scriptlabel Two datasets, simulation first for the rest of Results. Simulation: EBMF-grounded ground
+truth, shared vs.\ study-specific factors, three scenarios, \key{two arms} (the projection model,
+EBMF $\to$ Cox) fit at an over-specified $K_\text{init}$ pruned by ARD, mirroring the real-data
+procedure. Real data: train TCGA-PAAD + CPTAC ($n\approx273$), validate on five fully held-out
+cohorts, scored by the exact projection formula.
 
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} The simulation now tests the \emph{actual} K-selection procedure,
-not an oracle shortcut.
+not an oracle shortcut, and it comes before real data this time so the method is validated before
+it's applied.
 \end{itemize}
 
-\subsection*{Slide 14 --- PDAC Cohorts: Prognostic Gene Programs}
-\scriptlabel Gene-weight heatmap, but note the source changed: this now shows \key{only the 4
-ARD-kept factors} (from the 8/21 progress-book figure), not all 7 factors from the June deck's
-heatmap. $K_\text{init}=7 \to$ 2 survival-active (Programs 3, 7) $+$ 2 genomics-only (Programs 5, 6:
-\key{desmoplastic stroma and immune infiltrate} --- newly characterized this cycle) kept. The largest
-expression program (collagen/ECM/stromal, Program 5) is \emph{not} survival-active.
+\subsection*{Slide 14 --- Synthetic Results: over-specifying $K_\text{init}$ doesn't hurt performance}
+\scriptlabel \key{$K_\text{init}=6$} means the model was told the true number of factors directly, an
+idealized reference point never available on real data. \key{$K_\text{init}=12/20$} is the
+over-specify-plus-ARD-prune procedure actually used. C-index (and, in the appendix, recovery and
+specificity) are \key{flat across $K_\text{init}=6\to12\to20$} in every scenario, 15 seeds (up from
+5, for a properly powered comparison).
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Over-specifying $K$ and trusting ARD costs nothing relative to
+knowing the true $K$ in advance, the core validation this simulation exists to provide.
+\item \sectionlabel{Likely Question:} ``Why only 2 arms now, not 5 like June?'' $L\beta$ and the
+cohort-indicator arms are dropped from the whole narrative (see Slide 7); June already found no
+meaningful YFB-vs-YFB+cohort difference, so re-testing it here would add nothing new.
+\end{itemize}
+
+\subsection*{Slide 15 --- Synthetic Results: does a larger $K_\text{init}$ create more false alarms?}
+\scriptlabel The question: giving the model more factors than it needs gives ARD more non-signal
+factors it \emph{could} mistakenly call survival-active. At 5 seeds it looked like a clean
+improvement; \key{at 15 seeds it softened} to a real but not-yet-significant trend: hybrid scenario
+$0.35\to0.22\to0.27$, paired $t$-test $K_\text{init}=6$ vs.\ 12 gives $p=0.07$. Negative-control
+scenario is flat at 0.10 regardless of $K_\text{init}$; the apparent 5-seed improvement there was
+noise.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Report this as what it is, a promising trend, not a confirmed
+finding. Increasing to 15 seeds and watching the effect soften is itself worth mentioning as good
+practice, not something to skip past.
+\item \sectionlabel{Good Line to Stress:} ``A small, non-zero coefficient on a non-signal factor
+doesn't meaningfully move the risk score in practice, which is consistent with what we see here even
+when a false positive occurs.''
+\item \sectionlabel{Likely Question:} ``Why show a non-significant result at all?'' Because the
+direction is consistent and worth tracking, and stating the $p$-value plainly is more credible than
+either hiding it or overstating it as confirmed. It's also the direct follow-up to a concern raised
+at an earlier meeting about ARD over-counting survival-active factors.
+\end{itemize}
+
+\subsection*{Slide 16 --- Joint model vs.\ two-step as survival signal strength varies}
+\scriptlabel Reused from the 8/21 progress-book work. \key{``Strength'' is a literal multiplier} on
+the true survival coefficients used to simulate outcomes, swept at 0, 0.25, 0.5, 1, and 2, with 1
+being this project's standard realistic magnitude, so strength 2 is twice that. At strength 0 (no
+true signal at all), \key{joint $\approx$ EBMF-only}, no fabricated prognostic signal. At strength 2,
+the joint model pulls ahead. Only 10 replicate seeds, so no individual strength level is
+individually significant; the pattern across the whole sweep is the argument.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} Supervision is a free option: costs nothing when uninformative,
+helps when there is real signal.
+\item \sectionlabel{Likely Question:} ``What does `signal strength 2' actually mean?'' Twice the
+project's standard realistic-magnitude survival-coefficient setting, not an arbitrary or extreme
+value.
+\end{itemize}
+
+\subsection*{Slide 17 --- PDAC Cohorts: Prognostic Gene Programs}
+\scriptlabel Gene-weight heatmap, rows = programs, columns = genes (rotated from the progress-book
+report's tall version so it fits a slide), showing \key{only the 4 ARD-kept factors}. $K_\text{init}=7
+\to$ 2 survival-active (Programs 3, 7) $+$ 2 genomics-only (Programs 5, 6) kept. The 2 survival-active
+programs rest on \key{5 methods}: gene-set enrichment (fgsea and ORA), PurIST subtype correlation,
+hazard-ratio consistency across all 5 external cohorts, and DeSurv gene-list overlap. The 2
+genomics-only programs (\key{desmoplastic stroma, immune infiltrate}) rest on \key{weaker evidence}:
+just 2 of those methods agreeing (enrichment and DeSurv overlap), not externally validated the way
+Programs 3/7 are.
 
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} Supervision separates expression-only structure from prognostic
-structure; all 4 kept programs are now biologically named, not just the 2 survival-active ones.
+structure. Be upfront that the genomics-only labels are preliminary, not equally validated.
+\item \sectionlabel{Likely Question:} ``How confident are we in `desmoplastic stroma' and `immune
+infiltrate' specifically?'' A preliminary read, not a validated claim. The external-cohort
+check for these two programs was run as a negative control (confirming they carry no survival
+signal, which they shouldn't) rather than as positive evidence for the labels themselves. Testing
+whether the same two programs reappear on other cohorts is an open follow-up.
 \item \sectionlabel{Likely Question:} ``Why does the heatmap only show 4 factors, not all 7?'' The 3
-fully-pruned (dead) factors carry no real gene-program structure to show --- ARD's own classification
-says so, and the 8/21 pathway-enrichment work confirmed it (zero enriched gene sets for the dead
-factors, independently corroborating the split).
+fully-pruned (dead) factors carry no real gene-program structure to show; ARD's own classification
+says so, and the pathway-enrichment work confirmed it (zero enriched gene sets for the dead factors).
 \end{itemize}
 
-\subsection*{Slide 15 --- PDAC Cohorts: Prognostic Association}
+\subsection*{Slide 18 --- PDAC Cohorts: Prognostic Association}
 \scriptlabel Unchanged from June. Split at median projection score $(YF)_k$: Program 7 adverse (MET,
 ITGA3, glycolytic genes), Program 3 protective (epithelial differentiation markers). Schoenfeld test:
 PH holds.
 
 \begin{itemize}
 \item \sectionlabel{Likely Question:} ``Does the joint $\beta$ sign always match the direction you
-report?'' Not necessarily --- Program 7's joint coefficient can run opposite its marginal adverse
+report?'' Not necessarily: Program 7's joint coefficient can run opposite its marginal adverse
 direction (suppression among correlated programs). We label by the empirical KM direction and
 stratify by $(YF)$ projection, not raw $\beta$ sign. Deliberate, not an inconsistency.
 \end{itemize}
 
-\subsection*{Slide 16 --- Choosing $K_\text{init}$: the consensus sweep}
-\scriptlabel The full $K_\text{init}=2..20$ sweep, new this cycle. \key{ELBO and BIC both prefer
-$K_\text{init}=3$}; BIC's complexity penalty ($\approx$13{,}100 per unit $K_\text{init}$ here)
-dominates past single digits. \key{External C-index prefers $K_\text{init}=12$}, though
-$K_\text{init}=7$ through 20 mostly plateau around $C\approx0.627$ (two isolated dips at
-$K_\text{init}=11,13$, consistent with a known single-seed CAVI factor-collapse artifact, not new).
-$K_\text{init}=7$ kept as the recommendation: stable $K_\text{eff}=2$, simplest single-fit path.
+\subsection*{Slide 19 --- Choosing $K_\text{init}$: the consensus sweep}
+\scriptlabel The full $K_\text{init}=2$--$20$ sweep. Each panel states its own preferred direction
+now: higher is better for ELBO, log-likelihood, and external C-index; lower is better for BIC.
+\key{ELBO and BIC both prefer $K_\text{init}=3$} (both favor the smallest tested); BIC's complexity
+penalty ($\approx$13{,}100 per unit $K_\text{init}$ here) dominates past single digits. \key{External
+C-index prefers $K_\text{init}=12$}, though $K_\text{init}=7$ through 20 mostly plateau around
+$C\approx0.627$ (two isolated dips at $K_\text{init}=11,13$, a known single-seed CAVI factor-collapse
+artifact, not new). $K_\text{init}=7$ kept as the recommendation: stable $K_\text{eff}=2$, simplest
+single-fit path.
 
 \begin{itemize}
-\item \sectionlabel{Main Takeaway:} The four criteria genuinely disagree --- say so plainly, don't
-paper over it.
+\item \sectionlabel{Main Takeaway:} The four criteria genuinely disagree; say so plainly, don't paper
+over it.
 \item \sectionlabel{Good Line to Stress:} ``I'm showing you the actual curves, not just the
 recommendation, because the disagreement itself is worth discussing.''
 \item \sectionlabel{Likely Question:} ``Why not just use $K_\text{init}=3$ if ELBO/BIC prefer it?''
-$K_\text{init}=3$'s external C-index (0.594) is well below the $K_\text{init}\ge7$ plateau (0.627) ---
+$K_\text{init}=3$'s external C-index (0.594) is well below the $K_\text{init}\ge7$ plateau (0.627);
 BIC's penalty doesn't know about held-out generalization, only in-sample fit complexity. We weight
 external validity heavily, which is why $K_\text{init}=7$, not 3, is the practical recommendation.
 \item \sectionlabel{Likely Question:} ``Why not $K_\text{init}=12$, since external C prefers it?''
-It's a legitimate alternative --- $K_\text{init}=7$ through 20 are close on the plateau. $K_\text{init}=7$
-is kept for simplicity (single fresh fit) and because $K_\text{eff}$ is identical (2) across that whole
+A legitimate alternative; $K_\text{init}=7$ through 20 are close on the plateau. $K_\text{init}=7$ is
+kept for simplicity (single fresh fit) and because $K_\text{eff}$ is identical (2) across that whole
 range, so nothing about the biological conclusion changes with the choice.
 \end{itemize}
 
-\subsection*{Slide 17 --- Joint model vs.\ the unsupervised two-step}
+\subsection*{Slide 20 --- Joint model vs.\ the unsupervised two-step}
 \scriptlabel Real-data analog of the synthetic comparison. Two arms: the projection model vs.\ the
-\key{fairest} independent two-step baseline (EBMF $\to$ Cox, $K=40$, LASSO stage 2 --- large,
+\key{fairest} independent two-step baseline (EBMF $\to$ Cox, $K=40$, LASSO stage 2: large,
 YFB-uninformed $K$, regularized stage 2, not a small $K$ or an overfitting plain \texttt{coxph()}).
 Projection mean C $=\num{0.627}$ vs.\ EBMF \num{0.601}; pooled bootstrap difference \key{+0.026, 95\%
 CI [0.0002, 0.0498], significant} ($n=616$ pooled).
@@ -313,120 +375,93 @@ CI [0.0002, 0.0498], significant} ($n=616$ pooled).
 \item \sectionlabel{Main Takeaway:} This is the hardest-to-argue-with two-step comparison available,
 not a favorable cherry-pick.
 \item \sectionlabel{Emphasis:} This CI was independently re-derived from paired risk scores before
-this talk, not quoted from memory --- say so if pressed on where the number comes from.
+this talk, not quoted from memory; say so if pressed on where the number comes from.
 \item \sectionlabel{Likely Question:} ``Why $K=40$ for the baseline, not something smaller?'' Larger
 $K$ gives the unsupervised step more capacity to find whatever structure exists, without ever seeing
-survival outcomes --- handing it a \emph{smaller} $K$ (like 7, matched to YFB) actually hands over part
+survival outcomes. Handing it a \emph{smaller} $K$ (like 7, matched to YFB) actually hands over part
 of the answer, since the joint model chose that $K$ using its own selection procedure. $K=40$ with a
 regularized (LASSO) stage-2 Cox is the configuration built specifically to be the fairest test, not
 the one most favorable to us.
 \end{itemize}
 
-\subsection*{Slide 18 --- Joint model vs.\ two-step as survival signal strength varies}
-\scriptlabel Reused from the 8/21 progress-book work, unchanged this cycle. One figure, two points:
-at zero simulated survival signal, \key{joint $\approx$ EBMF-only} --- no fabricated prognostic
-signal. As signal strength increases, the joint model pulls ahead.
-
-\begin{itemize}
-\item \sectionlabel{Main Takeaway:} Supervision is a free option --- costs nothing when uninformative,
-helps when there is real signal.
-\end{itemize}
-
-\subsection*{Slide 19 --- Synthetic Results: ARD matches oracle-K performance}
-\scriptlabel New this cycle: the simulation now selects $K$ the way real data does. Recovery,
-specificity, and C-index are \key{flat across $K_\text{init}=6\to12\to20$} in every scenario, with 15
-seeds (up from 5, for a properly powered comparison). $K_\text{init}=6$ (the oracle true $K$) is kept
-only as an internal reference point, not a claim that we know the true $K$ on real data.
-
-\begin{itemize}
-\item \sectionlabel{Main Takeaway:} Over-specifying $K$ and trusting ARD costs nothing relative to
-knowing the true $K$ in advance --- the core validation this simulation exists to provide.
-\item \sectionlabel{Likely Question:} ``Why only 2 arms now, not 5 like June?'' $L\beta$ and the
-cohort-indicator arms are dropped from the whole narrative (see Slide 7); June already found no
-meaningful YFB-vs-YFB+cohort difference, so re-testing it here would add nothing new.
-\end{itemize}
-
-\subsection*{Slide 20 --- Synthetic Results: false-positive rate, a trend not yet significant}
-\scriptlabel A secondary question: does over-specifying $K_\text{init}$ increase false-positive
-survival-active calls on non-signal factors? At 5 seeds it looked like a clean improvement; \key{at
-15 seeds it softened} --- hybrid scenario 0.35$\to$0.22$\to$0.27, paired $t$-test $K=6$ vs.\ 12 gives
-$p=0.07$: directionally consistent, \key{not conventionally significant}. Negative-control scenario
-is flat at 0.10 across all $K_\text{init}$ --- the apparent 5-seed improvement there was noise.
-
-\begin{itemize}
-\item \sectionlabel{Main Takeaway:} Report this as what it is --- a promising trend, not a confirmed
-finding. Increasing to 15 seeds is itself worth mentioning as good practice, not something to skip
-past.
-\item \sectionlabel{Good Line to Stress:} ``A small, non-zero coefficient on a non-signal factor
-doesn't meaningfully move the risk score in practice, which is consistent with what we see here even
-when a false positive occurs.''
-\item \sectionlabel{Likely Question:} ``Why show a non-significant result at all?'' Because the
-direction is consistent and worth tracking, and because showing it with an honest $p$-value is more
-credible than either hiding it or overstating it as confirmed.
-\end{itemize}
-
 \subsection*{Slide 21 --- Model Comparison Summary}
-\scriptlabel Two rows now, not four: the projection model vs.\ the unsupervised two-step. Table note
-explains $K_\text{init}$ (consensus-selected) vs.\ $K_\text{eff}$ (ARD-determined) explicitly.
+\scriptlabel Two rows: the projection model vs.\ the unsupervised two-step. Table note explains
+$K_\text{init}$ (consensus-selected) vs.\ $K_\text{eff}$ (ARD-determined) explicitly. Note the
+two-step baseline's $K_\text{eff}$ is no longer ``n/a'': it's \key{15 of the 40 EBMF factors},
+the count that keep a nonzero coefficient after LASSO regularization, a different mechanism from ARD
+(L1 shrinkage vs.\ an ARD prior on $\beta$) but answering the same question.
 
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} Recommendation unchanged in substance (projection predictor,
-per-platform z-std, no cohort indicator) --- only the comparison table's row count and the
-$K$-selection description changed.
+per-platform z-std, no cohort indicator); the row count and $K$-selection description are what
+changed, plus the two-step baseline now has a real $K_\text{eff}$ instead of a placeholder.
 \end{itemize}
 
 \subsection*{Slide 22 --- Impact / key findings}
 \scriptlabel Five points: joint beats two-step at no cost when uninformative; preprocessing is
-decisive; $K$ selection is the two-stage split (say it exactly the same way as Slide 11 --- CV informs
+decisive; $K$ selection is the two-stage split (say it exactly the same way as Slide 11: CV informs
 $K_\text{init}$, ARD determines $K_\text{eff}$); over-specifying $K_\text{init}$ costs nothing
-(simulation, 15 seeds); mean external C $=\num{0.627}$. Then limitations, stated plainly: the four
-$K_\text{init}$ criteria disagree; the ARD thresholds aren't literature-derived; small cohorts are
-noisy; biological annotation is done, DeSurv head-to-head is next.
+(simulation, 15 seeds); mean external C $=\num{0.627}$. Then limitations, stated plainly: it isn't
+obvious which $K_\text{init}$ is best; the ARD thresholds aren't literature-derived, and a fixed
+threshold also assumes every factor's projection score is on a comparable scale, which is only
+partly true (see below); small cohorts are noisy; biological annotation is strong for the two
+survival-active programs, preliminary for the two genomics-only ones.
 
 \begin{itemize}
-\item \sectionlabel{Main Takeaway:} Every limitation named here has already been said once earlier in
-the talk --- this slide is a recap, not new information, which is exactly the point: nothing is being
-saved for later or hidden.
+\item \sectionlabel{Main Takeaway:} Every limitation named here has already been raised on the slide
+that produced it; this is a recap, not new information, which is the point: nothing saved for later
+or hidden.
+\item \sectionlabel{Likely Question (raised at the last advisor meeting):} ``Are the $\beta$
+coefficients even comparable across factors, so a single threshold can be applied to all of them?''
+Partially. Each factor's loading vector is unit-normalized before the projection score is computed,
+consistently at train and test time, which removes the dominant scale gap (an unnormalized loading
+on more genes would otherwise get a mechanically larger projection score for reasons unrelated to
+survival relevance). That does \emph{not} guarantee every factor's projection score has the same
+\emph{variance} across patients, which still depends on which genes each factor loads on. This
+normalization was built for fitting stability, not explicitly to solve comparability, so it was
+never checked whether it's sufficient. Tracked in ROADMAP.md as a next step: test whether
+$\text{Var}(ZF_k)$ actually varies across the kept factors, and if so, whether standardizing it
+changes which factors clear the threshold. Not a quick fix: it would change the model's fitting
+itself, not just a display choice, so it needs its own dedicated investigation, not a same-day patch.
 \end{itemize}
 
 \subsection*{Slide 23 --- Future directions \& summary}
 \scriptlabel Current status, not ``addressed since June'' framing. Next steps: lead with \key{multiple
-cohorts / multiple modalities via indicator columns in $L$} --- stack methylation + expression,
-possibly modality-specific priors, leave-one-study-out and train-on-A-vs-B-vs-A+B validation. Then
-manuscript prep. Summary panel restates the recommended configuration with numbers.
+cohorts / multiple modalities via indicator columns in $L$}: stack methylation + expression, possibly
+modality-specific priors, leave-one-study-out and train-on-A-vs-B-vs-A+B validation. Then manuscript
+prep. Summary panel restates the recommended configuration with numbers.
 
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} The cohort-indicator idea from June is repositioned here as a
-forward-looking direction (multi-cohort/multi-modality), not a tested-and-rejected result --- don't
+forward-looking direction (multi-cohort/multi-modality), not a tested-and-rejected result; don't
 imply it was tried and failed.
 \end{itemize}
 
 \subsection*{Slide 24 --- Discussion}
-\scriptlabel Open the floor. Appendix covers the full $K_\text{init}$ sweep table, convergence
-diagnostics, and the DeSurv comparison.
+\scriptlabel Open the floor. Appendix covers the full $K_\text{init}$ sweep table, simulation detail
+(recovery and specificity), convergence diagnostics, and the DeSurv comparison.
 
 \section*{Anticipate These Audience Questions}
 
 \begin{itemize}
 \item \sectionlabel{``Didn't you say cross-validation was replaced by ARD? Isn't that inconsistent
 with C-index still being on the K-sweep slide?''} No inconsistency: cross-validated external C-index
-is one of four inputs that help choose $K_\text{init}$ (Stage 1). What ARD replaced is the use of
-cross-validation to determine $K_\text{eff}$ (Stage 2) directly --- that used to require a second
-validation loop; now it falls out of a single over-specified fit.
+is one of four inputs that help choose $K_\text{init}$ (Stage 1). What ARD replaced is using
+cross-validation to determine $K_\text{eff}$ (Stage 2) directly; that used to require a second
+validation loop, and now it falls out of a single over-specified fit.
 
-\item \sectionlabel{``The four $K_\text{init}$ criteria disagree by a lot -- doesn't that undermine
-the method?''} It's an honest finding, not a flaw to hide: BIC penalizes model complexity in a way
-that doesn't know about held-out generalization, so it favors small $K_\text{init}$; external C-index
-does know about generalization and prefers more capacity. The biological conclusion ($K_\text{eff}=2$
+\item \sectionlabel{``Are the $\beta$ coefficients on a comparable scale across factors, so a single
+threshold makes sense?''} See Slide 22's note above: partially. Loading vectors are unit-normalized,
+which removes the dominant scale gap, but that doesn't equalize projection-score variance across
+factors, and nobody has checked whether that residual gap matters. Tracked as an open item, not
+resolved today, and not a quick fix since it touches the model's fitting, not just a display choice.
+
+\item \sectionlabel{``The four $K_\text{init}$ criteria disagree by a lot, doesn't that undermine the
+method?''} It's a real finding, not a flaw to hide: BIC penalizes model complexity in a way that
+doesn't know about held-out generalization, so it favors small $K_\text{init}$; external C-index does
+know about generalization and prefers more capacity. The biological conclusion ($K_\text{eff}=2$
 survival-active) is stable across the whole $K_\text{init}=7$--20 plateau regardless of which
 criterion wins, which is the more important robustness check.
-
-\item \sectionlabel{``Are the ARD retention thresholds arbitrary? Would different thresholds change
-your programs?''} They are not literature-derived --- \texttt{beta\_threshold=0.001} was calibrated
-to this model's own coefficient scale, and \texttt{pve\_threshold=0.01} is an uncited round number.
-Shifting them would plausibly move which factors classify as survival-active vs.\ genomics-only,
-which is exactly why a literature check and sensitivity sweep are tracked as open items rather than
-treated as settled.
 
 \item \sectionlabel{``Why did the two-step comparison number change from what I remember hearing
 before (0.581 or similar)?''} That was an earlier, less carefully regularized baseline (smaller $K$,
@@ -438,7 +473,7 @@ unsupervised approach every reasonable advantage before comparing.
 Because the direction is consistent across 15 seeds even though the test isn't significant, and
 stating the $p$-value plainly is more credible than either omitting the result or overstating it as
 confirmed. It's also directly relevant to a concern raised in an earlier meeting about ARD
-over-counting survival-active factors --- this is the follow-up data on that concern.
+over-counting survival-active factors; this is the follow-up data on that concern.
 
 \item \sectionlabel{``How does this compare to the lab's penalized supervised-MF (DeSurv) method?''}
 Bayesian counterpart: same supervised NMF + Cox idea, same TCGA + CPTAC training and five external
@@ -449,7 +484,7 @@ $\alpha,\lambda$ to tune) and posterior uncertainty. Different primary metrics r
 vs.\ mean external C), so a matched same-protocol head-to-head remains a planned next step.
 
 \item \sectionlabel{``What happened to the cohort-membership indicator from the June deck?''} Not
-dropped as a failed idea --- repositioned as a forward-looking multi-cohort/multi-modality direction
+dropped as a failed idea; repositioned as a forward-looking multi-cohort/multi-modality direction
 (Future Directions), since the more useful framing now is extending $L$ to combine multiple cohorts
 and/or modalities (e.g.\ methylation + expression), not re-litigating June's single-modality result.
 \end{itemize}
@@ -457,30 +492,39 @@ and/or modalities (e.g.\ methylation + expression), not re-litigating June's sin
 \section*{Appendix Slide Scripts}
 
 \subsection*{Slide A1 --- Appendix: $K_\text{init}$ sweep, full table}
-\scriptlabel If someone wants the actual numbers behind the sweep curves, this is the table --- all
+\scriptlabel If someone wants the actual numbers behind the sweep curves, this is the table: all
 19 $K_\text{init}$ values with survival-active/genomics-only/dead counts, ELBO, BIC, log-likelihood,
 and external C, $K_\text{init}=7$ highlighted.
 
 \begin{itemize}
-\item \sectionlabel{Main Takeaway:} Full transparency on the sweep --- nothing on the curve slide is
+\item \sectionlabel{Main Takeaway:} Full transparency on the sweep; nothing on the curve slide is
 cherry-picked.
 \end{itemize}
 
-\subsection*{Slide A2 --- Appendix: Convergence \& survival-activity magnitudes}
-\scriptlabel Unchanged from June. RMSE stabilizes to a plateau while the ELBO --- the actual
-objective --- governs stopping (relative change below $10^{-5}$). The $|\hat\beta_k|$ bars show the
-shrinkage: most programs fall below threshold, a couple clear it.
+\subsection*{Slide A2 --- Appendix: simulation detail, factor recovery \& specificity}
+\scriptlabel Backup for Slide 14, in case someone wants to see recovery and specificity, not just
+C-index. Same flat-across-$K_\text{init}$ story in every scenario.
+
+\begin{itemize}
+\item \sectionlabel{Main Takeaway:} The C-index slide's null result isn't cherry-picked either; every
+metric tells the same flat story.
+\end{itemize}
+
+\subsection*{Slide A3 --- Appendix: Convergence \& survival-activity magnitudes}
+\scriptlabel Unchanged from June. RMSE stabilizes to a plateau while the ELBO, the actual objective,
+governs stopping (relative change below $10^{-5}$). The $|\hat\beta_k|$ bars show the shrinkage: most
+programs fall below threshold, a couple clear it.
 
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} Convergence is judged on the ELBO; $K_\text{eff}$ is read off the
 few programs with $|\hat\beta|$ above threshold.
 \end{itemize}
 
-\subsection*{Slide A3 --- Appendix: Relation to DeSurv}
+\subsection*{Slide A4 --- Appendix: Relation to DeSurv}
 \scriptlabel Backup for the inevitable comparison question (see also the Anticipated Questions
 section above). Be collegial and precise: Bayesian sibling of DeSurv, same data and scoring, genuine
 differences are adaptive priors and fewer tuned knobs, plus posterior uncertainty. Different primary
-metrics reported; matched head-to-head is the honest next step, not a superiority claim today.
+metrics reported; a matched head-to-head is the right next step, not a superiority claim today.
 
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} Same problem and data, Bayesian estimation; head-to-head is

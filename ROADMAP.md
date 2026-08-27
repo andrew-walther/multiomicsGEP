@@ -598,6 +598,22 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   principled ARD/spike-slab retention thresholds in comparable sparse factor models, (2) a
   sensitivity sweep of the two thresholds on the real-data D4 fit and/or the K_init sweep, to see
   how much the K_eff/program count actually moves.
+  **Addendum, 2026-08-27 (raised at advisor meeting): does a fixed `beta_threshold` even compare
+  factors fairly?** A fixed threshold on `|β̂_k|` implicitly assumes every factor's projection score
+  `ZF_k = Y·F_k` is on a comparable scale. Checked directly (`code/fit_cox_on_yf.R:517-519`,
+  `code/predict_cox_on_yf.R:51-60`): each factor's loading vector `F_k` **is** unit-L2-normalized
+  before `ZF_k` is computed, consistently at both train and test time, which removes the dominant
+  scale gap (unnormalized `‖F_k‖` grows like `sqrt(p)`, so a factor loading on more genes would
+  otherwise get a mechanically larger projection score for reasons unrelated to survival relevance).
+  **This is not full comparability**, though: unit-norming the loading *vector* does not guarantee
+  equal *variance* of the resulting projection score across factors, which still depends on which
+  genes each factor loads on and their correlation structure in `Y` — no code was found that
+  additionally standardizes `Var(ZF_k)` across factors. The normalization was implemented and
+  documented (`DECISIONS.md` 2026-05-05) purely for EBNM fitting stability (preventing `β→0`
+  collapse), not as a deliberate solution to cross-factor `β` comparability, so this was never
+  actually checked. Folds into the same next-steps above: the sensitivity sweep should specifically
+  test whether `Var(ZF_k)` varies materially across the kept factors in the D4 fit, and if so,
+  whether a variance-standardized `ZF` changes which factors clear the `beta_threshold`.
 
 - [ ] **Fully Bayesian K selection: a prior on K itself, instead of a post-hoc ELBO/BIC/log-likelihood/C-index consensus** `[Priority: Low-Medium]` `[Effort: Medium-High]`
   Raised 2026-08-27 (Andrew), alongside the threshold item above. The current two-stage procedure

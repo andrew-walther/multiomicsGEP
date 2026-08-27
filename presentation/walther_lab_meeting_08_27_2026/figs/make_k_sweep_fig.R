@@ -68,7 +68,7 @@ p_elbo <- ggplot(d, aes(K_init, elbo_full)) +
   geom_line(color = col_curve, linewidth = 0.9) +
   geom_point(color = col_curve, size = 2) +
   scale_x_continuous(breaks = seq(2, 20, 2)) +
-  labs(title = "ELBO", x = "K_init", y = "elbo_full") +
+  labs(title = "ELBO (higher = better)", x = "K_init", y = "elbo_full") +
   base_theme
 
 p_bic <- ggplot(d, aes(K_init, bic)) +
@@ -84,7 +84,7 @@ p_ll <- ggplot(d, aes(K_init, loglik_joint)) +
   geom_line(color = col_curve, linewidth = 0.9) +
   geom_point(color = col_curve, size = 2) +
   scale_x_continuous(breaks = seq(2, 20, 2)) +
-  labs(title = "Log-likelihood (genomics + survival)", x = "K_init", y = "loglik_joint") +
+  labs(title = "Log-likelihood (higher = better)", x = "K_init", y = "loglik_joint") +
   base_theme
 
 p_c <- ggplot(d, aes(K_init, mean_external_c)) +
@@ -94,7 +94,7 @@ p_c <- ggplot(d, aes(K_init, mean_external_c)) +
   geom_point(color = col_curve, size = 2) +
   geom_text(aes(label = K_eff_total), vjust = -1.1, size = 3.1, color = "gray30") +
   scale_x_continuous(breaks = seq(2, 20, 2)) +
-  labs(title = "External C-index (5 held-out cohorts)", x = "K_init", y = "mean C-index",
+  labs(title = "External C-index (higher = better)", x = "K_init", y = "mean C-index",
        caption = "Point labels = K_eff_total (ARD-kept factors). Dotted line = recommended K_init=7; dashed = this panel's own criterion-best.") +
   base_theme
 

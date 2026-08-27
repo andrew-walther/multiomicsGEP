@@ -51,9 +51,7 @@ SCEN_DISP   <- c(all_shared = "All shared",
                  nothing_shared = "Nothing shared (control)")
 
 K_LEVELS <- c("oracle_k6", "ard_k12", "ard_k20")
-K_DISP   <- c(oracle_k6 = "K_init=6\n(oracle, reference)",
-              ard_k12   = "K_init=12\n(ARD, 2x true K)",
-              ard_k20   = "K_init=20\n(ARD, = ebmf_kmax)")
+K_DISP   <- c(oracle_k6 = "K_init=6", ard_k12 = "K_init=12", ard_k20 = "K_init=20")
 
 res <- res %>%
   filter(arm %in% names(ARM_DISP)) %>%
@@ -81,11 +79,11 @@ p_rec <- ggplot(rec_long, aes(k_lab, mean, fill = arm_lab)) +
   facet_grid(ftype ~ scen_lab) +
   scale_fill_manual(values = ARM_COLS, name = NULL) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(x = NULL, y = "Factor recovery  (mean best |correlation|)") +
-  theme_bw(base_size = 12) +
-  theme(axis.text.x = element_text(size = 9), strip.text = element_text(face = "bold"),
-        legend.position = "bottom")
-ggsave(file.path(ASSETS, "syn_recovery.png"), p_rec, width = 11, height = 6.6, dpi = 130)
+  labs(x = NULL, y = "Factor recovery (mean best |correlation|, ± SE over 15 seeds)") +
+  theme_bw(base_size = 17) +
+  theme(axis.text.x = element_text(size = 14), strip.text = element_text(face = "bold", size = 14),
+        legend.position = "bottom", legend.text = element_text(size = 14))
+ggsave(file.path(ASSETS, "syn_recovery.png"), p_rec, width = 16, height = 8, dpi = 130)
 cat("Wrote syn_recovery.png\n")
 
 # --------------------------------------------------------------------------
@@ -122,15 +120,15 @@ p_cidx <- ggplot(cidx, aes(k_lab, C, fill = arm_lab)) +
   geom_hline(yintercept = 0.5, linetype = 2, colour = "grey50") +
   geom_col(alpha = 0.9, width = 0.7, position = position_dodge(0.75)) +
   geom_errorbar(aes(ymin = C - se, ymax = C + se), width = 0.2, position = position_dodge(0.75)) +
-  geom_text(aes(label = sprintf("%.2f", C)), position = position_dodge(0.75), vjust = -0.6, size = 3.2) +
+  geom_text(aes(label = sprintf("%.2f", C)), position = position_dodge(0.75), vjust = -0.7, size = 5) +
   facet_wrap(~ scen_lab) +
   scale_fill_manual(values = ARM_COLS, name = NULL) +
   coord_cartesian(ylim = c(0.4, 0.95)) +
-  labs(x = NULL, y = "Held-out C-index") +
-  theme_bw(base_size = 12) +
-  theme(axis.text.x = element_text(size = 9), strip.text = element_text(face = "bold"),
-        legend.position = "bottom")
-ggsave(file.path(ASSETS, "syn_cindex.png"), p_cidx, width = 11, height = 4.8, dpi = 130)
+  labs(x = NULL, y = "Held-out C-index (± SE over 15 seeds)") +
+  theme_bw(base_size = 17) +
+  theme(axis.text.x = element_text(size = 14), strip.text = element_text(face = "bold", size = 14),
+        legend.position = "bottom", legend.text = element_text(size = 14))
+ggsave(file.path(ASSETS, "syn_cindex.png"), p_cidx, width = 16, height = 6.5, dpi = 130)
 cat("Wrote syn_cindex.png\n")
 
 # --------------------------------------------------------------------------
