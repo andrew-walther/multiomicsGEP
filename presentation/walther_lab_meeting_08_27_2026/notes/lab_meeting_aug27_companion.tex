@@ -308,11 +308,16 @@ value.
 \scriptlabel Gene-weight heatmap, rows = programs, columns = genes (rotated from the progress-book
 report's tall version so it fits a slide), showing \key{only the 4 ARD-kept factors}. $K_\text{init}=7
 \to$ 2 survival-active (Programs 3, 7) $+$ 2 genomics-only (Programs 5, 6) kept. The 2 survival-active
-programs rest on \key{5 methods}: gene-set enrichment (fgsea and ORA), PurIST subtype correlation,
+programs rest on \key{5 methods}: gene-set enrichment (fgsea, Fast Gene Set Enrichment Analysis, and
+ORA, Over-Representation Analysis), PurIST subtype correlation,
 hazard-ratio consistency across all 5 external cohorts, and DeSurv gene-list overlap. The 2
 genomics-only programs (\key{desmoplastic stroma, immune infiltrate}) rest on \key{weaker evidence}:
 just 2 of those methods agreeing (enrichment and DeSurv overlap), not externally validated the way
-Programs 3/7 are.
+Programs 3/7 are. \key{Desmoplastic stroma} = the dense, collagen-rich fibrous tissue PDAC tumors
+build around themselves, a known driver of drug resistance (tissue-composition signal, not itself a
+survival readout here). \key{Immune infiltrate} = how much the tumor has been entered by immune
+cells; low infiltrate (``immune-cold'') is a recognized hallmark of PDAC's poor immunotherapy
+response.
 
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} Supervision separates expression-only structure from prognostic
@@ -529,6 +534,38 @@ metrics reported; a matched head-to-head is the right next step, not a superiori
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} Same problem and data, Bayesian estimation; head-to-head is
 planned, not done.
+\end{itemize}
+
+\subsection*{Slide A5 --- Appendix: the 5 gene-program validation methods, in detail}
+\scriptlabel Backup for Slide 17's ``5 methods'' claim: a table spelling out how each method is
+implemented, what it tests, and what it found, for anyone (including yourself) who needs the
+definitions on hand.
+
+\begin{itemize}
+\item \sectionlabel{fgsea (Fast Gene Set Enrichment Analysis, primary):} genes within a program ranked by posterior weight, tested
+against Hallmark/Reactome/KEGG/GO-BP/a custom PDAC collection, BH-adjusted $p<0.10$. Tests whether a
+program's top genes cluster into known pathways more than chance. The 3 dead factors return zero
+hits (an internal consistency check); Programs 5/6 return many (stroma/EMT for 5, immune activation
+for 6).
+\item \sectionlabel{ORA (Over-Representation Analysis, sensitivity check):} hypergeometric test on a fixed top-$N$ gene list
+($N\in\{50,100,150\}$) vs.\ the 2,064-gene background. A simpler, threshold-based cross-check on
+fgsea's ranked approach --- confirms the same pathway calls.
+\item \sectionlabel{PurIST subtype concordance:} correlates each program's patient loadings against
+an independently published PDAC classical/basal subtype score, in an external cohort (TCGA-PAAD,
+$n=144$). Genuinely out-of-sample. Programs 3/7 land at strong opposite ends ($\rho=-0.575$/$+0.582$)
+--- this recovers a known PDAC finding rather than assuming it. Program 6 is orthogonal to subtype
+($\rho=-0.026$); Program 5 leans weakly basal ($\rho=0.299$), consistent with a stroma reading.
+\item \sectionlabel{DeSurv gene-list overlap:} Jaccard index and hypergeometric $p$ against each of
+DeSurv's 3 previously published factor gene lists. Tests replication against the lab's own prior
+work. The 4 kept programs recover DeSurv's 3-factor structure, with DeSurv's single combined
+stromal/immune factor splitting cleanly into Programs 5 and 6.
+\item \sectionlabel{External cohort robustness:} each program's leading-edge signature scored in all
+5 held-out cohorts, univariate Cox fit per cohort. The other genuinely out-of-sample check. For
+Programs 3/7 this is confirmatory (direction replicates); for Programs 5/6 it is a negative control
+only (no survival signal, as expected) --- not evidence for the stroma/immune labels themselves.
+\item \sectionlabel{Main Takeaway:} Programs 3/7 carry both out-of-sample checks (PurIST, external
+cohorts) plus both internal ones (fgsea, DeSurv overlap) --- all 5. Programs 5/6 only carry the 2
+internal ones, which is exactly why their labels are flagged as preliminary, not equally validated.
 \end{itemize}
 
 \end{document}

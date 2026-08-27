@@ -596,8 +596,10 @@ the argument.
 ![**Figure.** Top-20 genes by loading weight for each of $K_\text{init}=`r K_INIT_REC`$'s 4 kept factors (the other 3, fully pruned, are omitted), rows = programs, columns = genes. Weights are **non-negative** (point-exponential prior); the block-diagonal structure means each program's top genes carry near-zero weight in the other 3.](assets/gene_program_heatmap.png){fig-align="center" width="94%"}
 
 - $K_\text{init}=`r K_INIT_REC`$ (ELBO / BIC / log-likelihood / external-C consensus; see the sweep later) $\to$ **`r yfb_keff` survival-active** + `r K_GENO_REC` genomics-only kept: Program `r protective_row$factor` (**protective**) and Program `r adverse_row$factor` (**adverse**)
-- The 2 survival-active programs are characterized by **5 methods**: gene-set enrichment (fgsea and ORA), correlation with the PurIST classical/basal subtype score, hazard-ratio consistency across all 5 external cohorts, and gene-list overlap with the lab's published DeSurv factors
+- The 2 survival-active programs are characterized by **5 methods**: gene-set enrichment (fgsea, Fast Gene Set Enrichment Analysis, and ORA, Over-Representation Analysis), correlation with the PurIST classical/basal subtype score, hazard-ratio consistency across all 5 external cohorts, and gene-list overlap with the lab's published DeSurv factors
 - The 2 genomics-only programs carry **weaker evidence**: **Program 5** reads as **desmoplastic stroma** (7 collagen genes, SPARC, THBS2, FAP) and **Program 6** as **immune infiltrate** (IKZF1, AKNA, IL10RA, HCLS1), based on agreement between just 2 of those methods (gene-set enrichment and DeSurv overlap); unlike Programs 3/7, their labels have not been tested for reproducibility across cohorts
+  - **Desmoplastic stroma:** the dense, fibrous, collagen-rich scar-like tissue that PDAC tumors characteristically build around themselves; a well-known driver of drug resistance and poor tumor microenvironment, but a *tissue-composition* signal here, not a direct survival readout from this model
+  - **Immune infiltrate:** the degree to which immune cells (lymphocytes, B cells) have entered the tumor tissue; low infiltrate ("immune-cold") is a recognized hallmark of PDAC's poor response to immunotherapy
 
 ::: {.notes}
 On real data, the recommended fit starts at K_init=7 and ARD keeps 4 programs:
@@ -993,4 +995,33 @@ or lambda to tune, plus posterior uncertainty and a heteroscedastic noise model.
 On numbers, DeSurv reports pooled HR per SD of 1.50; SBMF reports mean external
 C of 0.627, different metrics, so a matched head-to-head on one protocol is the
 right next step, not a claim of superiority today.
+:::
+
+
+## Appendix: the 5 gene-program validation methods, in detail {visibility="uncounted" .smaller .dense-cols .tight-list .compact-table}
+
+| Method | Implementation | What it tests | Result |
+|:--|:--|:--|:--|
+| **fgsea** (Fast Gene Set Enrichment Analysis, primary) | Genes ranked by weight within a program; tested against Hallmark, Reactome, KEGG, GO-BP, and a custom PDAC collection (Moffitt/Bailey signatures + DeSurv's 3 published factors). BH-adjusted $p<0.10$. | Do a program's top-weighted genes cluster into known biological pathways, more than chance? | 3 dead programs: zero hits (consistency check). Programs 5/6: many hits — stroma/EMT (5), immune activation (6). |
+| **ORA** (Over-Representation Analysis, sensitivity check) | Hypergeometric over-representation on the top $N$ genes ($N\in\{50,100,150\}$) vs. the 2,064-gene background. | Does a simpler, threshold-based test agree with fgsea's ranked approach? | Confirms fgsea's pathway calls — not an artifact of the ranking method. |
+| **PurIST subtype concordance** | Spearman correlation + Kruskal–Wallis of each program's patient loadings against the published PurIST classical/basal score, TCGA-PAAD ($n=144$, external, out-of-sample). | Does the program track an independently validated, previously published PDAC subtype axis? | Programs 3/7 at strong opposite ends ($\rho=-0.575$ / $+0.582$) — recovers a known PDAC finding. Program 6 orthogonal ($\rho=-0.026$, $p=0.75$); Program 5 weak basal lean ($\rho=0.299$, $p=2.8\times10^{-4}$). |
+| **DeSurv gene-list overlap** | Jaccard index + hypergeometric $p$ against each of DeSurv's 3 published factor gene lists, top 270 genes/program. | Do these programs replicate the lab's own prior published factors? | The 4 kept programs recover DeSurv's 3-factor structure; DeSurv's single combined stromal/immune factor splits into Programs 5 and 6. |
+| **External cohort robustness** | Each program's leading-edge signature scored in all 5 held-out cohorts; univariate Cox fit per cohort. | Does the prognostic direction replicate out-of-sample? | Confirmatory for 3/7 (direction replicates across cohorts). Negative control for 5/6 (no survival signal, as expected — not evidence for their labels). |
+
+<div class="table-note">Programs 3 and 7 (survival-active) are supported by all 5 methods, including 2 genuinely out-of-sample checks (PurIST in TCGA-PAAD, hazard-ratio replication across 5 cohorts). Programs 5 and 6 (genomics-only) are supported by only fgsea + DeSurv overlap — plausible readings, not yet tested for cross-cohort reproducibility.</div>
+
+::: {.notes}
+Backup detail for Slide 17's "5 methods" claim, in case someone wants the
+actual definitions and numbers rather than the one-line summary. fgsea and ORA
+are both gene-set enrichment tests (fgsea ranks all genes by weight; ORA just
+thresholds to a top-N list as a simpler robustness check on fgsea). PurIST is
+an independent, previously published PDAC subtype classifier — using it here
+is a genuinely out-of-sample check, not something derived from our own data.
+DeSurv overlap checks replication against the lab's own prior published
+factors. External cohort robustness is the other genuinely out-of-sample
+check: does the prognostic direction hold up in 5 cohorts the model never
+trained on. Emphasize the asymmetry: Programs 3/7 have both out-of-sample
+checks plus all the internal ones; Programs 5/6 only have the 2 internal
+checks, which is exactly why their labels are flagged as preliminary on
+Slide 17.
 :::
