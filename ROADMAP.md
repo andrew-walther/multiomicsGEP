@@ -574,6 +574,33 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 📐 Model Selection
 
+- [ ] **Literature grounding + sensitivity analysis for the ARD feature-retention thresholds** `[Priority: Medium]` `[Effort: Low-Medium]`
+  `config/globals.yml`'s `k_selection$pve_threshold` (0.01, 1% PVE) and `k_selection$beta_threshold`
+  (0.001) are **not** derived from a citable source. `beta_threshold` was explicitly
+  reverse-engineered from this model's own observed `|β̂|` scale under YFB (~0.003–0.008 — see the
+  inline comment), not a principled cutoff from the sparse-Bayesian-factor / ARD literature;
+  `pve_threshold` is an uncited round-number heuristic. Raised 2026-08-27 (Andrew): shifting either
+  threshold would plausibly change which/how many factors are classified survival-active vs.
+  genomics-only vs. dead — the K_init=11/13 dips in the K-sweep (visible external-C drops against
+  their neighbors) are consistent with real boundary sensitivity, not just noise. DECISIONS.md
+  2026-07-12 already shows this project got burned once suspecting (wrongly, in that instance) that
+  a K_eff shift was a `beta_threshold` calibration artifact. Next steps: (1) a literature search for
+  principled ARD/spike-slab retention thresholds in comparable sparse factor models, (2) a
+  sensitivity sweep of the two thresholds on the real-data D4 fit and/or the K_init sweep, to see
+  how much the K_eff/program count actually moves.
+
+- [ ] **Fully Bayesian K selection: a prior on K itself, instead of a post-hoc ELBO/BIC/log-likelihood/C-index consensus** `[Priority: Low-Medium]` `[Effort: Medium-High]`
+  Raised 2026-08-27 (Andrew), alongside the threshold item above. The current two-stage procedure
+  (Stage 1: pick `K_init` by comparing four *separately computed* criteria across independent
+  fits; Stage 2: ARD-prune within one fit) is not itself a Bayesian model-selection procedure — `K`
+  is chosen externally, not integrated over. Worth a literature look at approaches that place an
+  explicit prior on the number of active factors (e.g. Indian Buffet Process / other nonparametric
+  Bayesian factor-count priors, or a spike-slab-on-K formulation) as an alternative to the current
+  consensus-of-criteria approach — potentially resolving the ELBO/BIC-vs-external-C disagreement
+  seen in the K_init sweep by folding K selection into the same variational objective rather than
+  comparing across separately-fit models. No implementation started; scoping/literature review
+  only at this point.
+
 - [ ] **Joint (K, α) tuning via Bayesian optimization, to match DeSurv's search procedure** `[Priority: Low-Medium]` `[Effort: Medium]`
   Plan only, not implemented: `docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`. Motivation:
   DeSurv jointly tunes `k, α, λ` via Bayesian optimization; we tune only K via grid-search CV with

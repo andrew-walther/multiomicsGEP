@@ -545,43 +545,24 @@ the curves. Schoenfeld test shows PH holds.
 :::
 
 
-## Choosing $K_\text{init}$: the consensus sweep {.smaller .dense-cols .tight-list .compact-callout}
+## Choosing $K_\text{init}$: the consensus sweep {.smaller .hero-figure .tight-list}
 
-**$K_\text{init}=2..20$**, each fit classified by ARD. *(4-panel ELBO / BIC / log-likelihood / external-C figure inserted here — Phase 5.)*
+![**Figure.** $K_\text{init}=2..20$, each fit classified by ARD. Point labels on the C-index panel are $K_\text{eff}\text{total}$ (ARD-kept factors). Dotted line = recommended $K_\text{init}=`r K_INIT_REC`$; dashed = each panel's own criterion-best.](assets/k_init_sweep_4panel.png){fig-align="center" width="82%"}
 
-:::: {.columns}
-
-::: {.column width="50%"}
-
-- **ELBO-preferred:** $K_\text{init}=`r elbo_pref_K`$
-- **BIC-preferred:** $K_\text{init}=`r bic_pref_K`$
-- **External-C-preferred:** $K_\text{init}=`r c_pref_K`$
-
-The three do **not** agree — reported honestly, not retuned to force a match. BIC's complexity penalty (`r sprintf("~%s", format(round((K_INIT_REC+1)*(273+N_GENES_TRAIN+1) - K_INIT_REC*(273+N_GENES_TRAIN+1)), big.mark=","))` per unit $K_\text{init}$) dominates once $K_\text{init}$ climbs past single digits, while external C-index keeps rewarding a bit more capacity before plateauing.
-
-:::
-
-::: {.column width="50%"}
-
-::: {.callout-tip}
-### Recommendation: $K_\text{init}=`r K_INIT_REC`$
-Survival-active count is **stable at `r yfb_keff`** across a wide range of $K_\text{init}$ — added capacity beyond that goes to genomics-only or dead factors, ARD working as intended. $K_\text{init}=`r K_INIT_REC`$ is kept as the practical default: reachable from a single fresh fit, externally competitive, and parsimonious ($K_\text{eff}=`r K_EFF_TOTAL_REC`$ kept of `r K_INIT_REC`).
-:::
-
-:::
-
-::::
+- **ELBO- and BIC-preferred:** $K_\text{init}=`r elbo_pref_K`$ · **External-C-preferred:** $K_\text{init}=`r c_pref_K`$ — these do **not** agree, reported honestly, not retuned to force a match
+- **Recommendation: $K_\text{init}=`r K_INIT_REC`$.** Survival-active count is stable at `r yfb_keff` across a wide range of $K_\text{init}$; $K_\text{init}=`r K_INIT_REC`$ is externally competitive (on the C-index plateau) and the simplest single-fit path — full table in the appendix
 
 ::: {.notes}
-Here is where the disagreement matters. ELBO and BIC agree with each other but
-pull toward a smaller K_init than external C-index does. I'm not going to
-pretend they agree — the honest read is that BIC's df penalty, which is on the
-order of tens of thousands per unit K here, dominates once K climbs into double
-digits, while external C-index keeps rewarding capacity a bit longer before
-plateauing. K_init=7 is kept as the practical recommendation because the
-survival-active count is stable there and beyond, and it's the simplest
-single-fit path — but I want to show you the actual curves and provoke the
-question of whether a different K_init in that plateau might be preferable.
+Here is where the disagreement matters. ELBO and BIC agree with each other,
+preferring K_init=3 -- BIC's df penalty, tens of thousands of units per K_init
+here, dominates once K_init climbs into double digits. External C-index
+prefers K_init=12, but K_init=7 through 20 mostly sit on a plateau around
+C~0.627, with two isolated dips at K_init=11 and 13 -- I want to show the
+actual curves and provoke the question of whether a different K_init in that
+plateau might be preferable, rather than presenting K_init=7 as the only
+defensible choice. K_init=7 is kept as the practical recommendation because
+the survival-active count is stable there and it's the simplest single-fit
+path.
 :::
 
 
@@ -715,6 +696,7 @@ selection, K_init=7 selected by consensus, is the recommendation.
 ### Limitations
 
 - **BIC, ELBO, and external C-index need not agree** on $K_\text{init}$ — reported honestly, not retuned to force a match (previous slides)
+- **The ARD retention thresholds ($\text{PVE}>1\%$, $|\hat\beta|>0.001$) are not literature-derived** — $\hat\beta$'s cutoff was reverse-engineered from this model's own coefficient scale, not a principled sparse-factor cutoff; a sensitivity sweep and literature check are open (ROADMAP.md)
 - **Small external cohorts give noisy estimates** — per-cohort C ranges down to `r sprintf("%.2f", min(yfb_real$c_index))` (Moffitt), near chance
 - The active programs are **statistically** prognostic and **biologically annotated** (pathway enrichment: Program `r adverse_row$factor` basal-like/adverse, Program `r protective_row$factor` classical/protective, confirmed by 5 independent methods) — a matched head-to-head against DeSurv on one protocol remains a planned next step
 
@@ -791,6 +773,35 @@ magnitudes, and the DeSurv comparison.
 
 
 # Appendix {visibility="uncounted" .vcenter}
+
+
+## Appendix — $K_\text{init}$ sweep, full table {visibility="uncounted" .smaller .compact-table .tight-list}
+
+```{r ksweep-table}
+ksweep_disp <- ksweep[order(ksweep$K_init),
+  c("K_init", "K_survival_active", "K_genomics_only", "K_dead", "K_eff_total",
+    "elbo_full", "bic", "loglik_joint", "mean_external_c")]
+names(ksweep_disp) <- c("K_init", "Surv-active", "Genomics-only", "Dead", "K_eff (kept)",
+                         "ELBO", "BIC", "Log-lik", "External C")
+ksweep_disp$ELBO       <- round(ksweep_disp$ELBO)
+ksweep_disp$BIC        <- round(ksweep_disp$BIC)
+ksweep_disp$`Log-lik`  <- round(ksweep_disp$`Log-lik`)
+
+kbl(ksweep_disp, booktabs = TRUE, row.names = FALSE, align = "c",
+    format.args = list(big.mark = ",")) |>
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = TRUE,
+                font_size = 20, position = "center") |>
+  row_spec(which(ksweep_disp$K_init == K_INIT_REC), bold = TRUE, background = "#EAF3FA")
+```
+
+<div class="table-note">Highlighted row = the recommended $K_\text{init}=`r K_INIT_REC`$. External C = mean C-index across the 5 held-out PDAC cohorts. BIC and Log-lik are ELBO-style bounds, not exact marginal-likelihood quantities.</div>
+
+::: {.notes}
+The full sweep table, for anyone who wants the actual numbers rather than just
+the curves. Note the K_eff (kept) column is not monotone in K_init -- it moves
+between 2 and 5 as ARD prunes differently at each starting point, and two rows
+(K_init=11, 13) show a visible external-C dip against their neighbors.
+:::
 
 
 ## Appendix — convergence & survival-activity magnitudes {visibility="uncounted" .smaller .paired-figures}
