@@ -63,8 +63,23 @@ yfb_real <- desurv[desurv$model == "D4", ]
 yfb_mean <- mean(yfb_real$c_index)
 yfb_K    <- yfb_real$K[1]
 
-ebmf_mean <- if (file.exists(ebmf_csv)) mean(read.csv(ebmf_csv)$c_index) else NA_real_
-ebmf_K    <- if (file.exists(ebmf_csv)) read.csv(ebmf_csv)$K[1] else NA_integer_
+# Two-step baseline: EBMF -> Cox, K=40, LASSO stage 2 -- the fairest
+# independent comparison (large, YFB-uninformed K; a regularized stage-2 Cox
+# rather than a plain coxph() that overfits at K=40; DECISIONS.md 2026-08-20),
+# not the smaller-K/unregularized baseline this deck used in June.
+ebmf_reg_csv <- "../../results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_regularized_results.csv"
+ebmf_reg     <- if (file.exists(ebmf_reg_csv)) read.csv(ebmf_reg_csv, stringsAsFactors = FALSE) else NULL
+ebmf_k40     <- if (!is.null(ebmf_reg)) ebmf_reg[ebmf_reg$K == 40, ] else NULL
+ebmf_mean    <- if (!is.null(ebmf_k40)) mean(ebmf_k40$c_index) else NA_real_
+ebmf_K       <- if (!is.null(ebmf_k40)) 40L else NA_integer_
+
+# Pooled bootstrap difference (YFB - EBMF k40 LASSO), precomputed by
+# figs/make_external_cindex_fig.R (code/concordance_ci.R::bootstrap_concordance_diff_ci,
+# B=2000, seed=1) -- reproduces DECISIONS.md 2026-08-20's "+0.026, 95% CI
+# [0.0002, 0.0498]" exactly; verified against risk scores directly before
+# this figure was built, not taken on faith from the prose.
+ci_csv    <- "assets/yfb_vs_ebmf_k40_pooled_ci.csv"
+ci_pooled <- if (file.exists(ci_csv)) read.csv(ci_csv, stringsAsFactors = FALSE) else NULL
 
 # Merged-training gene count (rows of EF in the recommended fit = 2064).
 N_GENES_TRAIN <- 2064L
@@ -481,17 +496,18 @@ projection formula.
 
 ## PDAC Cohorts — Prognostic Gene Programs {.smaller .hero-figure .tight-list}
 
-![**Figure.** Gene-weight heatmap (top 30 genes) for the recommended model: projection $(YF)\beta$, per-platform z-standardization, survival-ranked gene selection (`r N_GENES_TRAIN` genes), no cohort indicator, $K_\text{init}=`r K_INIT_REC`$. Weights are **non-negative** (point-exponential prior). Survival-active programs ($|\hat\beta|>10^{-3}$) are starred.](assets/real_gep_heatmap.png){fig-align="center" width="62%"}
+![**Figure.** Top-20 genes by loading weight for each of $K_\text{init}=`r K_INIT_REC`$'s 4 kept factors (the other 3, fully pruned, are omitted). Weights are **non-negative** (point-exponential prior); the structure is block-diagonal — each program's top genes carry near-zero weight in the other 3.](../../docs/progress_book/figs/2026-08-21_k7_kept_factors_heatmap.png){fig-align="center" width="62%"}
 
 - $K_\text{init}=`r K_INIT_REC`$ (ELBO / BIC / log-likelihood / external-C consensus — see the sweep below) $\to$ **`r yfb_keff` survival-active** + `r K_GENO_REC` genomics-only kept — Program `r protective_row$factor` (**protective**) and Program `r adverse_row$factor` (**adverse**)
-- The *largest* expression program (collagen/ECM/stromal) is **not** survival-active — supervision separates expression-only structure from prognostic structure
+- The 2 genomics-only programs are now biologically characterized too: **Program 5** reads as **desmoplastic stroma** (collagens, SPARC, THBS2, FAP), **Program 6** as **immune infiltrate** (IKZF1, AKNA, IL10RA, HCLS1) — real expression structure, distinct from the survival-active programs and from each other, just not prognostic on its own
 
 ::: {.notes}
 On real data, the recommended fit starts at K_init=7 and ARD keeps 4 programs —
-2 survival-active (Program 3 protective, Program 7 adverse) and 2 genomics-only.
-Note the largest expression program — the stromal collagen block — is NOT
-survival-active, exactly the separation supervision is supposed to give you.
-Weights are non-negative because L and F use a point-exponential prior.
+2 survival-active (Program 3 protective, Program 7 adverse) and 2 genomics-only
+(Program 5 stroma, Program 6 immune infiltrate). The figure shows only the 4
+kept factors, not all 7 — the 3 fully-pruned (dead) factors are omitted since
+they carry no real gene-program structure. Weights are non-negative because L
+and F use a point-exponential prior.
 :::
 
 
@@ -571,21 +587,31 @@ question of whether a different K_init in that plateau might be preferable.
 
 ## Joint model vs. the unsupervised two-step {.smaller .cindex-figure .tight-list}
 
-*(Two-arm external C-index figure — projection $(YF)\beta$ vs. EBMF → Cox — inserted here, Phase 4.)*
+![**Figure.** External C-index across the five held-out PDAC cohorts (+ mean): the recommended projection model vs. the fairest independent two-step baseline (EBMF → Cox, $K=40$, LASSO stage 2 — a large, YFB-uninformed factor count with a regularized second stage, rather than a small $K$ or an unregularized `coxph()` that overfits at $K=40$). Dashed line = chance.](assets/external_cindex.png){fig-align="center" width="66%"}
 
 ```{r ext-headline}
 #| results: asis
 cat(sprintf(
   "- **Projection model mean C = %.3f**%s, across the five held-out cohorts  \n",
   yfb_mean,
-  if (!is.na(ebmf_mean)) sprintf(" · unsupervised EBMF → Cox %.3f", ebmf_mean) else ""))
+  if (!is.na(ebmf_mean)) sprintf(" · unsupervised EBMF → Cox (K=40, LASSO) %.3f", ebmf_mean) else ""))
+if (!is.null(ci_pooled)) {
+  cat(sprintf("- Pooled bootstrap difference: **+%.3f, 95%% CI [%.4f, %.4f]**, n=%d pooled across cohorts%s\n",
+              ci_pooled$diff_estimate, ci_pooled$diff_lower, ci_pooled$diff_upper, ci_pooled$n,
+              if (isTRUE(ci_pooled$significant)) " — **significant**" else ""))
+}
 cat(sprintf("- $K_\\text{init}=%d$ (ELBO / BIC / log-likelihood / external-C consensus) $\\to K_\\text{eff}=%d$ survival-active of %d kept\n", K_INIT_REC, yfb_keff, K_EFF_TOTAL_REC))
 ```
 
 ::: {.notes}
-The real-data analog of the synthetic slide, once the two-arm figure lands. Two
-arms: the recommended projection model, and the unsupervised EBMF-to-Cox
-two-step baseline.
+The real-data analog of the synthetic slide. Two arms: the recommended
+projection model, and the fairest independent two-step baseline I could build
+-- EBMF at a large, YFB-uninformed K=40, with a regularized (LASSO) stage-2
+Cox rather than a plain coxph() that overfits at that K. The pooled bootstrap
+difference is significant. This is not the only two-step comparison in the
+project -- other configurations trail YFB by more, some without reaching
+significance at this sample size -- this is the one built specifically to be
+hardest to argue with.
 :::
 
 
