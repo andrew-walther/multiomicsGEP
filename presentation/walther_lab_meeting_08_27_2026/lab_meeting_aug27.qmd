@@ -873,6 +873,10 @@ magnitudes, and the DeSurv comparison.
 
 ## Appendix: $K_\text{init}$ sweep, full table {visibility="uncounted" .smaller .compact-table .tight-list}
 
+:::: {.columns}
+
+::: {.column width="62%"}
+
 ```{r ksweep-table}
 ksweep_disp <- ksweep[order(ksweep$K_init),
   c("K_init", "K_survival_active", "K_genomics_only", "K_dead", "K_eff_total",
@@ -886,17 +890,31 @@ ksweep_disp$`Log-lik`  <- round(ksweep_disp$`Log-lik`)
 kbl(ksweep_disp, booktabs = TRUE, row.names = FALSE, align = "c",
     format.args = list(big.mark = ",")) |>
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = TRUE,
-                font_size = 20, position = "center") |>
+                font_size = 15, position = "center") |>
   row_spec(which(ksweep_disp$K_init == K_INIT_REC), bold = TRUE, background = "#EAF3FA")
 ```
 
 <div class="table-note">Highlighted row = the recommended $K_\text{init}=`r K_INIT_REC`$. External C = mean C-index across the 5 held-out PDAC cohorts. BIC and Log-lik are ELBO-style bounds, not exact marginal-likelihood quantities.</div>
 
+:::
+
+::: {.column width="38%"}
+
+![**Figure.** $K_\text{eff}$ (ARD-kept factor count) by $K_\text{init}$, split survival-active vs. genomics-only. $K_\text{eff}$ steps up from 2 at $K_\text{init}=2$ to a plateau of 5 by $K_\text{init}\approx9$, rather than staying fixed as $K_\text{init}$ grows.](assets/k_eff_step.png){fig-align="center" width="100%"}
+
+:::
+
+::::
+
 ::: {.notes}
 The full sweep table, for anyone who wants the actual numbers rather than just
 the curves. Note the K_eff (kept) column is not monotone in K_init -- it moves
 between 2 and 5 as ARD prunes differently at each starting point, and two rows
-(K_init=11, 13) show a visible external-C dip against their neighbors.
+(K_init=11, 13) show a visible external-C dip against their neighbors. The bar
+chart on the right makes the same K_eff column visual: a step-up from 2 to a
+plateau of 5 as K_init grows past ~9, driven mostly by additional
+genomics-only factors, not additional survival-active ones -- the
+survival-active count itself stays at 2-3 throughout.
 :::
 
 

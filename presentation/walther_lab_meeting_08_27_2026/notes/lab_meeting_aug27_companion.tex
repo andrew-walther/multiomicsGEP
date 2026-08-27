@@ -499,11 +499,16 @@ and/or modalities (e.g.\ methylation + expression), not re-litigating June's sin
 \subsection*{Slide A1 --- Appendix: $K_\text{init}$ sweep, full table}
 \scriptlabel If someone wants the actual numbers behind the sweep curves, this is the table: all
 19 $K_\text{init}$ values with survival-active/genomics-only/dead counts, ELBO, BIC, log-likelihood,
-and external C, $K_\text{init}=7$ highlighted.
+and external C, $K_\text{init}=7$ highlighted. Alongside it, a bar chart of $K_\text{eff}$ (ARD-kept
+factor count) vs.\ $K_\text{init}$, split survival-active vs.\ genomics-only: $K_\text{eff}$
+\key{steps up} from 2 at $K_\text{init}=2$ to a plateau of 5 by $K_\text{init}\approx9$, rather than
+staying fixed --- and the step-up is driven almost entirely by additional genomics-only factors, not
+additional survival-active ones (survival-active count stays at 2--3 throughout).
 
 \begin{itemize}
 \item \sectionlabel{Main Takeaway:} Full transparency on the sweep; nothing on the curve slide is
-cherry-picked.
+cherry-picked. The step-up in $K_\text{eff}$ is a genuine pattern, not noise, and it's driven by the
+genomics-only factors --- the survival-active count is the stable part.
 \end{itemize}
 
 \subsection*{Slide A2 --- Appendix: simulation detail, factor recovery \& specificity}
