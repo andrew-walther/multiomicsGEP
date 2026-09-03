@@ -2,6 +2,11 @@
 
 For full project context, see **[`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd)** (renders to `PROJECT_STATUS.pdf`).
 
+This is the single source of truth for agent instructions in this repo. `AGENTS.md` is a symlink to
+this file (so Codex, Antigravity, and other tools that look for `AGENTS.md` read the same content) —
+edit `CLAUDE.md`, never `AGENTS.md` directly. If a `GEMINI.md` or similar is ever added, symlink it
+here too rather than maintaining a separate copy.
+
 ---
 
 ## Key Instructions
