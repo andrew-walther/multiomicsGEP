@@ -178,7 +178,7 @@ because:
 
 1. YFB_base achieves $C=0.796$ by chance alignment of the survival-relevant factor
    with the top SVD component in this particular DGP. Adding the cohort column
-   redirects the first CAVI iteration toward the offset, disrupting this lucky alignment.
+   redirects the first CAVI iteration toward the offset, disrupting this chance alignment.
 2. The C-index instability criterion (criterion c) is designed to verify that the cohort
    extension does not catastrophically disrupt predictions; it passes comfortably.
 
@@ -364,7 +364,7 @@ pre-normalization; the cohort-column approach does not.
 ## K_eff Trade-off
 
 With $K=20$ and full convergence, ARD pruning reduces LB_base to $K_\text{eff}=3$ and
-LB_cohort to $K_\text{eff}=2$. The cohort indicator column "uses up" one factor of capacity.
+LB_cohort to $K_\text{eff}=2$. The cohort indicator column consumes one factor of capacity.
 This trade-off is acceptable when $K_\text{eff} = 3$ would have included a platform factor
 anyway — but on PDAC merged data, the three LB_base factors appear to be genuinely biological
 (they transfer across platforms). Adding a cohort column forces ARD to settle for two
@@ -429,12 +429,12 @@ $\alpha$ for merged training:
 $$\alpha_\text{merged} = \frac{p}{n + p} \approx \frac{2000}{2273} = 0.88$$
 
 This would need careful validation (risk of overfitting $\beta$ to the survival signal)
-but represents the simplest tunable lever.
+but represents the simplest adjustable parameter.
 
 ## Solution 4: β-Only Burn-In Iterations (Medium effort)
 
 Hold $L$ and $F$ fixed and update $\beta$ alone for $N_\text{burnin}$ iterations at the
-start of fitting. This "reserves" the first iterations for the survival signal and ensures
+start of fitting. This dedicates the first iterations to the survival signal and ensures
 $\beta$ reaches a non-zero steady state before the genomics-dominated $L/F$ updates begin
 competing with it.
 

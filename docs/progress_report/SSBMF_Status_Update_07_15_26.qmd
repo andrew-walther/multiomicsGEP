@@ -79,8 +79,8 @@ across 5 held-out PDAC cohorts.**
 **Simulation — joint model vs. a two-step (factorize-then-Cox) baseline** (re-confirmed under the
 corrected model this cycle):
 
-- *Turn survival signal up from zero:* at zero signal, joint $\approx$ two-step (both near chance);
-  as signal grows, the joint model pulls ahead and the gap widens, in 3 of 4 data-generating
+- *Increasing survival signal from zero:* at zero signal, joint $\approx$ two-step (both near chance);
+  as signal grows, the joint model exceeds the two-step baseline by a growing margin, in 3 of 4 data-generating
   designs. One artificial design (exactly-sparse, symmetric factor loadings) reverses this — traced
   to a specific, understood factor-collapse failure mode, not a survival-coupling defect.
 - *Shared vs. study-specific factors:*
@@ -101,7 +101,7 @@ if (!is.null(mc)) {
 
   When no shared prognostic signal exists, joint and two-step are equivalent; in the realistic
   hybrid case (only some factors prognostic) the joint model leads — as much through **stability**
-  as accuracy: the unsupervised two-step baseline collapses on 2 of 5 seeds (dragging its mean to
+  as accuracy: the unsupervised two-step baseline collapses on 2 of 5 seeds (which lowers its mean to
   0.717), while the joint model is stable across all seeds (mean 0.815) and classifies each factor
   as shared vs. study-specific with perfect accuracy.
 

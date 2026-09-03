@@ -474,7 +474,7 @@ first. A bad external result means whatever the model is fitting internally isn'
 structure, so it shouldn't win on training-fit score alone. That excludes $K=5$/$K=6$. Of the
 remaining tie, **$K=7$ (2 survival-active + 2 genomics-only)** is kept as the simpler model; $K=9$
 (2 + 3) is recorded as a legitimate near-tied alternative. "Start as large as possible" is not
-supported here; there is a real sweet spot around 7–10.
+supported here; $K$ in the 7–10 range performs best.
 
 ### Simulation check: the procedure over-counts survival-active factors
 

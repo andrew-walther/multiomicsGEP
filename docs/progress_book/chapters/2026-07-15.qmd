@@ -21,7 +21,7 @@ on model choice this cycle; the work below is corrections and stress-tests of th
 Two things changed under the hood, neither of which changes which model we recommend:
 
 - **Objective cleanup.** Dropped the redundant $\lambda$ mixing weight between the genomics and
-  survival halves of the objective. $\alpha$ already does that job, so $\lambda$ was dead weight.
+  survival halves of the objective. $\alpha$ already does that job, so $\lambda$ had no remaining function.
   For YFB this had **no effect on the fitted model**: its genomics loadings ($L$) and its survival
   coefficients ($\beta$) don't share a coordinate that needs rebalancing, so there was nothing for
   $\lambda$ to actually trade off. Separately, this cleanup caught a **train/test preprocessing
@@ -56,7 +56,7 @@ knitr::include_graphics("../figs/2026-07-15_survival_strength_sweep.png")
 
 At a scaling factor of 0 (no true survival coefficients), joint and two-step are indistinguishable
 (both near chance, as they should be, since there's nothing to detect). As the scaling factor increases,
-the joint model pulls ahead, in 3 of 4 simulation designs we tried. The fourth design (loadings that
+the joint model's C-index increasingly exceeds the two-step baseline's, in 3 of 4 simulation designs we tried. The fourth design (loadings that
 are exactly sparse and symmetric across factors) reverses this, but that's a known factor-collapse
 failure mode in that specific design, not evidence against survival-coupling in general.
 
@@ -81,7 +81,7 @@ if (!is.null(mc)) {
 When nothing is shared, the two approaches tie, as expected, since there's no cross-cohort structure
 for the joint model to exploit. In the realistic middle case (some factors shared, some not), the
 joint model wins, and more through **stability** than raw accuracy: the two-step baseline collapses
-outright on 2 of 5 seeds, dragging its mean down; the joint model stays stable across all 5 and also
+outright on 2 of 5 seeds, which lowers its mean; the joint model stays stable across all 5 and also
 correctly sorts which factors are shared vs. cohort-specific.
 
 **Real data.** Same recommended model, evaluated on 5 held-out PDAC cohorts it never saw during
@@ -120,7 +120,7 @@ real, not that we've found something new.
 ## Relevance of new findings
 
 The corrected 0.627 and the $K_{\text{eff}}=2$ result both point the same direction: the model is
-doing something narrower than the original pitch, and the numbers hold up across several
+doing something narrower than originally proposed, and the numbers hold up across several
 independent checks, not just the one fit we ran. SBMF is best described as a **Bayesian
 counterpart to DeSurv**: same modeling setup and scoring, our version adds shrinkage priors,
 posterior uncertainty, and a per-gene noise model. This is not a claim that we already beat DeSurv

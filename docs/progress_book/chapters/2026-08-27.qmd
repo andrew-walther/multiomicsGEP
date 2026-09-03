@@ -93,8 +93,8 @@ if anything it improves": the hybrid scenario's false-positive rate dropped from
 0.20–0.25 (K_init=12/20), and the negative-control scenario dropped from 0.067 to 0.033.
 
 Re-running at 15 seeds (a `--n-seeds` override was added to the runner rather than changing the shared
-seed list in `config/globals.yml`, which several other simulation scripts also read) told a more
-measured story. The hybrid-scenario drop is still there directionally (0.35→0.22→0.27) but a paired
+seed list in `config/globals.yml`, which several other simulation scripts also read) showed a less
+clean-cut pattern. The hybrid-scenario drop is still there directionally (0.35→0.22→0.27) but a paired
 t-test (same seeds, K_init=6 vs. 12) gives p=0.07 — not conventionally significant. The
 negative-control scenario's apparent improvement turned out to be an artifact of only 5 seeds: at 15
 seeds it is flat at 0.10 across every K_init tested.

@@ -153,7 +153,7 @@ if (!is.null(t5)) {
 
 ### What the two genomics-only programs look like
 
-The top-weighted genes are unusually legible for both:
+The top-weighted genes are unusually easy to interpret for both:
 
 ```{r t2-genes}
 if (!is.null(t2)) {
@@ -183,8 +183,8 @@ mixed with vascular and basement-membrane genes (FBLN5, SLIT3, SPARCL1, APOLD1, 
 TNXB, CHRDL1). Its enrichment is correspondingly immune-dominated: cell activation,
 lymphocyte activation, B-cell activation, and positive regulation of cell-cell adhesion.
 
-Neither reading is a formal claim. Both are what the gene lists and enrichment tables say
-on their face, and both are consistent across two independent methods (fgsea ranking and
+Neither reading is a formal claim. Both are what the gene lists and enrichment tables directly
+show, and both are consistent across two independent methods (fgsea ranking and
 the DeSurv overlap in §6). See §7 for the standing caveat about methodology.
 
 ## 4. Subtype concordance
@@ -250,7 +250,7 @@ allows.
 instructive.** The runner defines a program's headline signature as its single lowest-padj
 enriched set. For Program 6 that set is `DeSurv_D1_ClassicalTumor`, the *same* gene list
 that serves as Program 3's signature. Scoring it measures the classical-tumor axis's
-prognostic value, not whether Program 6 carries survival signal, and it duly came back
+prognostic value, not whether Program 6 carries survival signal, and it came back
 protective-leaning (HR < 1 in 4 of 5 cohorts, 2 significant). Read naively, that looks like
 evidence against the genomics-only label. It is really just the classical signature
 reappearing.

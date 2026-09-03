@@ -59,7 +59,7 @@ theme_set(theme_minimal(base_size = 11))
 
 The model configuration recommended at the 6/18/2026 lab meeting has **not changed**: YFB
 ($\eta = (YF)\hat\beta$), DeSurv-aligned gene selection, $K=7$, no cohort indicator.
-What changed since then is that its headline numbers were corrected, and its $K=7$ choice was
+What changed since then is that its main numbers were corrected, and its $K=7$ choice was
 independently stress-tested from several directions that all converge on the same answer.
 
 - **Mean external C-index across 5 held-out PDAC cohorts: 0.627** (SE $\approx$ 0.020 across
@@ -207,7 +207,7 @@ the initialization from SVD to random makes it uniformly worse, ruling out "bad 
 The actual differentiator is loading **density and structure**: real gene-expression factor
 templates are dense with graded, correlated loadings, while the sparse-symmetric design's
 exactly-sparse, non-overlapping factors form a near-perfect symmetry under which the empirical-Bayes shrinkage prior
-can lock onto a degenerate fixed point (a factor that dips slightly below its equally-scaled
+can converge to a degenerate fixed point (a factor that dips slightly below its equally-scaled
 siblings gets shrunk further every iteration, with no mechanism to recover). This is not purely a
 contrived-data phenomenon — LB has also shown occasional collapse in more realistic settings
 (lower signal-to-noise and higher factor count, both built on real gene-expression templates) — so
@@ -256,7 +256,7 @@ realistic **hybrid** case (only some factors carry survival signal) the advantag
 **stability as raw accuracy**: the unsupervised two-step baseline collapses on 2 of 5 seeds
 (dropping to 0.53 and 0.63), pulling its mean down to 0.717, whereas the joint model is stable
 across all seeds (0.78–0.84, mean 0.815). On the three seeds where the two-step baseline does *not*
-collapse it averages 0.807, close to the joint model — so the headline gap reflects the joint
+collapse it averages 0.807, close to the joint model — so the overall gap reflects the joint
 model's robustness (its supervised factorization does not collapse here) more than a large
 discrimination margin when both fit cleanly. The joint model also classifies each factor as shared
 vs. study-specific with perfect accuracy. Adding a cohort indicator to the YFB model is
@@ -422,7 +422,7 @@ if (!is.null(ext_diff)) {
 }
 ```
 
-Two honest findings, neither smoothed over: (1) **individually, only the largest cohort** (Puleo,
+Two honest findings, neither minimized: (1) **individually, only the largest cohort** (Puleo,
 $n=288$) **reaches statistical significance on its own** — the other four cohorts all show a
 positive point estimate (+0.008 to +0.084) favoring the recommended model, but are underpowered
 alone at $n=52$–123. (2) **Pooled across all 5 cohorts** (a fixed-effect, inverse-variance-weighted
@@ -492,7 +492,7 @@ knitr::kable(bio_tbl, row.names = FALSE, booktabs = TRUE,
              caption = "Five independent methods (gene-set enrichment plus its own ORA confirmatory cross-check counts as a fifth) agree on program identity.")
 ```
 
-```{r bio-fig, fig.cap="Gene weights across all 7 programs for the union of headline leading-edge genes. Clean block-diagonal structure: Program 3's and Program 7's genes carry weight almost exclusively in their own column.", out.width="85%"}
+```{r bio-fig, fig.cap="Gene weights across all 7 programs for the union of primary leading-edge genes. Clean block-diagonal structure: Program 3's and Program 7's genes carry weight almost exclusively in their own column.", out.width="85%"}
 knitr::include_graphics(file.path(PE, "F3_geneweight_heatmap.png"))
 ```
 
@@ -500,7 +500,7 @@ This is the established PDAC subtype-survival relationship (basal-like/squamous 
 prognosis; classical tumors carry better prognosis), independently recovered by every method run —
 not asserted from one analysis and repeated.
 
-**One honest nuance, reported rather than smoothed over:** Program 3 also shows a secondary, weaker
+**One honest nuance, reported rather than minimized:** Program 3 also shows a secondary, weaker
 association with the basal-like gene list (enrichment padj=0.017 vs. 0.035 for its primary
 classical hit; gene overlap 49/270 vs. 61/270), plausibly attributable to shared general
 epithelial/tumor-identity markers rather than a genuine basal-program overlap. The confirmatory ORA
@@ -571,7 +571,7 @@ that the project currently supports.
 
 **Where the result is externally validated and interpretable.** Mean external C=0.627 across 5
 held-out cohorts spanning three measurement platforms is not a single-dataset result; the two
-survival-active gene programs recovered have a confirmed, coherent biological story (§6) — a
+survival-active gene programs recovered have a confirmed, coherent biological explanation (§6) — a
 basal-like/squamous/adverse program and a classical/protective program, matching the established
 PDAC subtype-survival literature independently by five separate methods.
 
@@ -625,7 +625,7 @@ fb <- data.frame(
     "lambda retired entirely rather than constrained: alpha already plays the (1-lambda)/lambda role, and DeSurv's lambda is a distinct elastic-net penalty this model fills via its EB priors (\\S2).",
     "Per-platform z-standardization before merge (\\S2, \\S5).",
     "Optional stratified Cox partial likelihood; performance-neutral, off by default (\\S5).",
-    "Investigated from three angles; K_eff = 2 is the load-bearing count (\\S4).",
+    "Investigated from three angles; K_eff = 2 is the count the conclusion depends on (\\S4).",
     "alpha = 0 control: genomics factorization is exactly alpha-invariant, so k does not shrink; survival-active count goes to 0 (\\S3).",
     "Consistent with equivalence at zero signal (gaps within 1-2 SE on 5 seeds), not a sharp confirmation (\\S3).",
     "Survival-strength sweep, effect size 0 to large (\\S3).",
@@ -643,7 +643,7 @@ knitr::kable(fb, row.names = FALSE, booktabs = TRUE,
   kableExtra::column_spec(3, width = "22em")
 ```
 
-The two model-specification deviations are worth stating plainly rather than burying: the mixing
+The two model-specification deviations are worth stating plainly rather than leaving unstated: the mixing
 objective was rebalanced but the `lambda` parameter was **removed** rather than constrained to
 $(0,1)$, and the literal $np$/$n$ normalization convention is implemented and available but is not
 the shipped default (a per-platform-safe variant is — see §2). Both choices are justified in the

@@ -133,7 +133,7 @@ Two adjustments are made before use:
 Each column is then multiplied by an amplitude scalar: $a_\text{shared}$ for
 columns assigned to shared factors and $a_\text{specific}$ for cohort-specific
 ones. Because $\|F_{\cdot k}\| = 1$, the variance contributed by factor $k$ to
-$Y$ scales as $a_k^2$, making the amplitude the direct signal-strength dial.
+$Y$ scales as $a_k^2$, making the amplitude the direct signal-strength parameter.
 
 A synthetic fallback is used when real data are unavailable: each column is a
 random sparse vector (5% of genes active, equal weights), unit-normalized and
@@ -299,7 +299,7 @@ All supervised arms use a non-negative (`point_exponential`) prior on $L$ and $F
 and a normal prior on $\beta$. The cohort indicator, when present, absorbs
 per-cohort gene-mean differences without entering the survival predictor.
 
-**The native-identification test.** The headline analysis is the **base** arms
+**The native-identification test.** The primary analysis is the **base** arms
 (no cohort indicator): can the fitted factors separate into shared vs.
 study-specific on their own? The $\pm$indicator comparison then quantifies whether
 the indicator adds anything.
@@ -313,7 +313,7 @@ answering two questions:
 2. Does supervision *additionally* yield correct $\beta$ — flagging which factors
    are prognostic — which EBMF fundamentally cannot?
 
-This is the value-add argument: same structural recovery, plus correct survival
+This is the argument for supervision's benefit: same structural recovery, plus correct survival
 attribution.
 
 > The EBMF here (fit to each *simulated* $Y$, scored as a competing method) is
@@ -592,7 +592,7 @@ for (sc in c("all_shared", "hybrid", "nothing_shared")) {
 }
 ```
 
-**The headline findings:**
+**The main findings:**
 
 1. **The model natively identifies the shared / study-specific distinction.** In
    the hybrid scenario, YFB classifies factors as shared vs. specific with
@@ -610,7 +610,7 @@ for (sc in c("all_shared", "hybrid", "nothing_shared")) {
    outcome, it cannot preferentially sharpen the prognostic ones; jointly modelling
    genomics and survival can. In all_shared (every factor prognostic) the two-stage
    baseline nearly matches (0.86 vs. 0.87), and in nothing_shared both sit at chance
-   — exactly where the gap should and should not appear. This is the core value-add
+   — exactly where the gap should and should not appear. This is the core benefit
    of supervision.
 4. **Supervision does not cost structural fidelity.** YFB recovers shared programs
    at $|\text{cor}| \approx 0.90$–0.94 and specific programs at 0.84–0.92, matching
@@ -695,8 +695,8 @@ for (sc in c("all_shared", "hybrid", "nothing_shared")) {
 $\eta = (YF)\beta$, computed from factor *scores* rather than inferred
 loadings — is the recommended form. On real PDAC data it achieves external
 concordance $C = 0.636$ across five held-out cohorts, exceeding
-the DeSurv baseline and the LB alternative ($\eta = L\beta$). Key settings that
-are not negotiable: (i) per-platform $z$-standardization before pooling — without
+the DeSurv baseline and the LB alternative ($\eta = L\beta$). Key required settings:
+(i) per-platform $z$-standardization before pooling — without
 it, ten of twelve preprocessing configurations collapse $\hat\beta \to 0$;
 (ii) a `normal` prior on $\beta$ (the `point_normal` prior causes the same
 collapse under YFB); and (iii) $K$ selected by cross-validation with the 1-SE

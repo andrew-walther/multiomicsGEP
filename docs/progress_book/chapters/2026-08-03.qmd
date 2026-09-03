@@ -33,7 +33,8 @@ knitr::include_graphics("../figs/2026-08-03_geneweight_heatmap.png")
 
 EBMF's own factor 1 tracks Program 3 (r = −0.72) and factor 2 tracks Program 7 (r = +0.69). Each is
 clearly the best match for its program among all 20 unsupervised factors. That means this 2-program
-structure is sitting in the data on its own; the survival term is finding it, not inventing it. SBMF
+structure exists in the data independent of the survival term; the survival term identifies it
+rather than creates it. SBMF
 is a supervised re-weighting of EBMF's own factor structure: a variation on EBMF, not a separate
 model class that happens to also fit survival.
 

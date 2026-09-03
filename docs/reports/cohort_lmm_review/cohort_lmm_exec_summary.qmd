@@ -45,7 +45,7 @@ compete: CAVI converges with $\hat{\beta} \approx 0$, producing a prognostic
 score of no clinical value.  Per-platform z-score normalization reduces but
 does not eliminate the collapse.  A principled solution requires modeling the
 platform offset *within* the CAVI iteration so the survival component is
-shielded from it throughout inference.
+kept separate from it throughout inference.
 
 ## Literature Context
 

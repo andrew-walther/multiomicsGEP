@@ -198,7 +198,7 @@ if (!is.null(c2)) {
 
 Program 7's signature has HR>1 (worse survival) in **5/5** external cohorts (range 1.30-2.40,
 individually significant in 2/5); Program 3's has HR<1 (better survival) in **5/5** cohorts (range
-0.42-0.88, individually significant in 3/5). This exceeds the plan's own bar of "a majority of
+0.42-0.88, individually significant in 3/5). This exceeds the plan's own threshold of "a majority of
 cohorts" for both programs.
 
 ## 6. SBMF vs. DeSurv gene-list overlap (F5, T4)
@@ -235,7 +235,7 @@ worse-prognosis axis. Program 3 (Protective) is a classical, differentiated-epit
 the established better-prognosis axis. The one honest nuance (Program 3's secondary, weaker
 basal-like association, plausibly driven by shared general epithelial-identity markers rather than
 basal-specific drivers) is reproduced by fgsea and gene-overlap (\S3, \S6) but not confirmed by ORA
-(\S3) — reported rather than smoothed over either way, but not a contradiction of the dominant
+(\S3) — reported directly rather than minimized either way, but not a contradiction of the dominant
 classical/protective signal.
 
 **Reproducibility.** `fgsea` 1.36.2 (permutation seed = 1); `msigdbr` 26.1.0; `clusterProfiler`

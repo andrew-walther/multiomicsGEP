@@ -93,7 +93,7 @@ Full diagnostics for all five configurations are in `docs/reports/desurv_factor_
 - *Factor 3 (adverse):* $\hat{\beta}_3 = +0.0113$; high-loading patients have worse survival; log-rank $p < 0.05$ on the training cohort. Median-split K-M curves show early separation with the high-loading group accumulating events faster across the follow-up period.
 - *Factor 7 (protective):* $\hat{\beta}_7 = -0.0408$; high-loading patients have better survival. Separation is visible throughout follow-up and directionally consistent in all five external cohorts (C $\geq 0.55$ across Dijk, Moffitt GEO, PACA-AU array, PACA-AU seq, Puleo).
 
-The survival directions are internally consistent: $\hat{\beta}$ sign predicts which Kaplan-Meier arm fares worse in every active factor across all five configurations. This directional coherence is a necessary condition for the model's survival signal being real rather than artifactual.
+The survival directions are internally consistent: $\hat{\beta}$ sign predicts which Kaplan-Meier arm has worse survival in every active factor across all five configurations. This directional coherence is a necessary condition for the model's survival signal being real rather than artifactual.
 
 **YFB coefficient scale:** $\hat{\beta}$ values for YFB configurations (D2, D4, D5) are smaller in magnitude than their LB counterparts (D1, D3) because the YFB formulation normalizes $F$ columns to unit Euclidean norm, compressing the inner product scale by $\sim\sqrt{p}$. The survival signal encoded is equivalent; only the parameterization differs.
 

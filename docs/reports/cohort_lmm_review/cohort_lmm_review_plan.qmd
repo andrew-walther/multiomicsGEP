@@ -331,8 +331,8 @@ while simultaneously separating batch from biological variation.
 The cohort dummy-variable extension proposed here performs **joint inference**:
 $F_{\text{cohort}}$ is estimated within the CAVI iteration alongside the
 biological factors and the Cox partial likelihood, so the survival signal in
-$L_{\text{global}}$ is continuously shielded from cohort contamination.  The
-constraint $\beta_{\text{cohort}} \equiv 0$ makes this shielding exact and
+$L_{\text{global}}$ is kept separate from cohort effects at every iteration.  The
+constraint $\beta_{\text{cohort}} \equiv 0$ makes this separation exact and
 recoverable even when cohort effects dominate the first principal component —
 precisely the failure mode observed in merged TCGA + CPTAC training.
 
@@ -714,8 +714,9 @@ before $F_{\text{cohort}}$ has a chance to absorb it.
 4. **$\boldsymbol{\beta}^{(0)} = \mathbf{0}$**: unchanged.
 
 This ensures the platform PC is largely captured by $F_{\text{cohort}}^{(0)}$
-before the first CAVI sweep, giving $L_{\text{global}}$ a clean start on
-residual biological variation.
+before the first CAVI sweep, so that $L_{\text{global}}$'s first update
+operates on residual biological variation rather than unresidualised platform
+variation.
 
 ## API Changes to `fit_modular.R`
 

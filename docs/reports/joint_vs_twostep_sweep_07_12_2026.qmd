@@ -54,7 +54,7 @@ convergence (no iteration cap).
 All four sit within about 1-2 SE of each other and of chance (C = 0.5) — the joint model does not
 manufacture a spurious advantage when there is nothing to find. We report this honestly rather than
 rounding it down to a clean pass: with 10 seeds the gaps are tighter than the original 5-seed pass,
-but still not a razor-sharp confirmation of exact equivalence — consistent with it, not proof of it.
+but still not confirmation of exact equivalence — consistent with it, not proof of it.
 
 ## Result 2 — Separation as the true effect grows (default scenario)
 
@@ -74,11 +74,11 @@ knitr::include_graphics("../../results/multi_cohort_sim/outputs/survival_strengt
 | 4.00 | **0.927** | 0.900 | 0.899 | 0.856 |
 
 The joint model does not lead at every strength level — at 0.25 it is essentially tied with both
-two-step baselines (within noise), and PCA+Cox edges ahead at 0.50 (within 1 SE). From strength 1.0
+two-step baselines (within noise), and PCA+Cox is slightly higher at 0.50 (within 1 SE). From strength 1.0
 onward YFB leads consistently, with the gap over both two-step baselines widening through strength
 4.0. **Honest summary, under this scenario's DGP: the joint model's advantage is not immediate or
 uniform, but it emerges reliably once genuine survival signal exists, and grows with it** — this is
-the qualitative pattern the method's value proposition requires. Whether it *generalizes* to other
+the qualitative pattern required to justify the joint model's use. Whether it *generalizes* to other
 DGP structures is the subject of Result 4 below, and the answer there is more qualified than this
 table alone suggests.
 
@@ -111,7 +111,7 @@ dependency the architecture argument would have missed.
 Results 1–3 use the `default` scenario (real EBMF gene-program templates). Extending to 3 more DGP
 structures asks whether the joint-vs-2-step ordering found there is a general pattern or specific to
 that one structure. Two of the three extra scenarios (`low_snr`, `high_K`) confirm the same
-qualitative pattern as `default` — YFB pulls ahead of both two-step baselines as signal strengthens,
+qualitative pattern as `default` — YFB exceeds both two-step baselines as signal strengthens,
 by a wider margin under `low_snr` (0.815 vs. 0.708/0.654 at strength=4) and a comparable margin under
 `high_K` (0.903 vs. 0.885/0.837).
 

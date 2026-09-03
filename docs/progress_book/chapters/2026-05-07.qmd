@@ -39,7 +39,7 @@ needed its own from-scratch derivation rather than reusing LB's update rules.
 0.656–0.673. **YFB is mixed outside the merged, per-platform-standardized setting**: single-cohort
 YFB fits give near-zero betas even when the raw C-index looks above chance, which isn't a convincing
 signal on its own. On the merged cohort with the right preprocessing, though, YFB matches LB's 0.644.
-That is the first sign YFB can hold its own once the platform-scale issue is handled.
+That is the first evidence YFB can match LB's performance once the platform-scale issue is handled.
 
 K-selection: under the current CV sweep, LB's `normal` prior picks $K=3$ (1-SE rule); `point_normal`
 picks $K=8$, read as a shrinkage artifact from a small $n$ rather than real evidence for 8 factors.

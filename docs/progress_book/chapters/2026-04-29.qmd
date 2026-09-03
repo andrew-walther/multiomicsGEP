@@ -24,8 +24,8 @@ diagnosis and the first fix.
 The Cluster A changes fixed the training-side collapse: the merged fit now converges to a stable
 solution with 2 of 20 factors active, non-degenerate loadings, and a monotone ELBO. An unsupervised
 EBMF diagnostic on the same matrix confirmed there's real signal to find. 5 of 20 factors came back
-survival-associated, with the strongest hitting C-index 0.629 at $p=3\times10^{-6}$, so this wasn't
-a case of the data having nothing to give.
+survival-associated, with the strongest hitting C-index 0.629 at $p=3\times10^{-6}$, so real
+survival signal was present in the data.
 
 The catch: external validation got *worse* on 4 of 5 cohorts after Cluster A, relative to the
 pre-Cluster-A merged fit (Dijk 0.606 vs. 0.626, PACA-AU array 0.576 vs. 0.636, PACA-AU seq 0.629 vs.
@@ -37,7 +37,7 @@ the bar merged training needs to clear.
 
 Cluster A solved the optimization failure but not the actual goal. The model can now produce
 non-zero survival coefficients on the merged training set, but those coefficients fit the training
-Cox objective without transporting to new cohorts. A fit that looks healthy in-sample but doesn't
+Cox objective without transporting to new cohorts. A fit with low training error that doesn't
 generalize is not progress on the problem we actually care about. That points at something more
 structural than a tuning issue.
 

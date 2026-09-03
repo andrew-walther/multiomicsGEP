@@ -49,7 +49,7 @@ theme_set(theme_bw(base_size = 13))
 
 When TCGA (RNA-seq) and CPTAC (proteomics) data are trained together, the
 dominant axis of variation in Y is **platform technology**, not biology.
-The CAVI algorithm locks onto that axis and produces β→0 — a useless prognostic
+The CAVI algorithm converges on that axis and produces β→0 — a useless prognostic
 score.
 
 ```{r collapse-sim}
@@ -127,8 +127,8 @@ p_heat + p_pca + plot_layout(widths = c(2, 1))
 
 **Interpretation:** PC1 captures `r var_exp[1]`% of variance and is entirely
 driven by cohort membership. Any supervised factorisation that fits a single
-shared L matrix will burn its first (and dominant) factor on this axis,
-crowding out the biological signal and forcing β→0.
+shared L matrix will use its first (and dominant) factor to capture this axis,
+displacing the biological signal and forcing β→0.
 
 ## Current Model {#sec-current}
 

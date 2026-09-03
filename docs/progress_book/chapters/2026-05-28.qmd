@@ -20,9 +20,9 @@ YFB. It also tested DeSurv-aligned gene selection as a replacement for plain var
 configurations collapsed to $\hat\beta=0$ for every factor. Only **per-platform z-standardization**
 consistently recovers non-zero survival coefficients. Without it, the top singular vectors of the
 merged matrix capture the RNA-seq/proteomics platform contrast rather than biology, and the survival
-update has nothing real to latch onto.
+update has no real biological signal to use.
 
-**Cohort indicator is situational, not a free win.** It absorbs the platform offset when preprocessing
+**Cohort indicator helps only in specific configurations, not universally.** It absorbs the platform offset when preprocessing
 hasn't already removed it (+0.020 for LB with joint QN, meaningfully helpful there), but is neutral
 to harmful once per-platform z-standardization is already in place (+0.004 for LB, −0.013 for YFB,
 where at low $K$ it competes with the 2 biological factors for variance). Recommendation: keep it
@@ -34,8 +34,8 @@ the earlier per-platform-only D2), +0.006 for LB (D3 vs. D1). YFB also outperfor
 DeSurv gene set by +0.014 (D4 vs. D3); the two effects are additive. Every one of the 5
 configurations tested (D1–D5) converged to exactly **2 active survival factors** regardless of how
 many factors were requested (K ranged 3–8), with one adverse-direction and one protective-direction
-program every time. The same 2-factor structure keeps showing up no matter how we slice the
-preprocessing, which is a good sign it's a real property of the data rather than a fitting quirk.
+program every time. The same 2-factor structure appears in every preprocessing configuration
+tested, which supports it being a real property of the data rather than a fitting artifact.
 
 | Config | Model | Gene selection | Cohort ind. | K | K_eff | Mean external C |
 |---|---|---|---|---:|---:|---:|
@@ -65,7 +65,7 @@ configurations.
   concordance with classical vs. basal subtypes.
 - YFB's point-normal prior still returns C=0.5 for all K in cross-validation. Open issue; normal
   prior remains the default.
-- Cohort indicator may earn a second look once training extends past 2 platforms.
+- Cohort indicator may be worth reconsidering once training extends past 2 platforms.
 
 ## Deep dive
 
