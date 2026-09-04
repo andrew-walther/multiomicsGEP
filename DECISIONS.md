@@ -5,6 +5,72 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-09-04 (addendum) — Stage 3/5 leftovers closed out: the `strata_only` sub-arm, held-out survival log-likelihood per arm, two new figures, and the top-2-match merge diagnostic
+
+**Context.** A pass through the original plan against what had actually landed found real, specific
+gaps against the plan's own checklist, not just polish items.
+
+**1. The `strata_only` decomposition sub-arm was missing.** The plan's Stage 3a decomposition table
+has three single-component sub-arms (`cohort_L_only`, `strata_only`, `beta_c_only`); only two had
+been fit. New fit: `strata_id = dataset_labels` alone, K_init=7, D4. Result: `K_survival_active=2`,
+mean external C = **0.6263** — essentially identical to the plain model (0.6267), confirming
+`strata_id`'s performance-neutrality (previously found under an older config, DECISIONS.md
+2026-07-15) now holds under the current D4/K_init=7 config too, with the other two components
+(`cohort_L`, `beta_c`) fit alongside it for direct comparison.
+
+**2. Held-out survival log-likelihood, requested per arm alongside external C-index, had never been
+computed for the cohort-aware arms.** Building it exposed a real, separate bug:
+`cv_survival_loglik()` had no way to pass `cohort_id`/`strata_id`/`beta_cohort_id` through to each
+fold's fit without a dimension-mismatch error, since these are full-length vectors that need
+row-subsetting to each fold's training indices first (`code/compute_cv_loglik.R`, 3 new tests,
+443 total). Result, mean logPL per held-out event across 5 folds:
+
+| Arm | Held-out survival logPL/event |
+|---|---|
+| joint_yfb | -3.2212 |
+| joint_yfb_cohort_L | -3.2484 |
+| joint_yfb_beta_c | -3.2329 |
+| joint_yfb_all_c | -3.2216 |
+| strata_only | -3.2200 |
+
+A second, independent criterion (survival generalization on the training cohort, not external
+cohorts) reaches the same qualitative ranking as external C-index: `cohort_L` is clearly the worst
+arm on both metrics; the rest are close enough (differences small relative to `se_logPL` of
+1.7-2.2) to be indistinguishable, consistent with the bootstrap CIs already reported.
+
+**3. Two figures the plan asked for were missing** — a table/hardcoded-number substitute existed but
+not the requested visuals:
+- `docs/progress_book/figs/2026-09-04_3way_percohort_cindex.png`: grouped bars of per-cohort +
+  mean external C for the three main performance arms (plain model, cohort-indicator combination,
+  two-step baseline), chance line at 0.5.
+- `docs/progress_book/figs/2026-09-04_percohort_beta.png`: per-cohort $\beta_k^{(c)}$ across all 7
+  factors (not just the 2 survival-active ones), making visible that Programs 1, 2, 4, 5, 6 are
+  uniformly near-zero in both cohorts and only Programs 3 and 7 carry any signal at all.
+
+**4. The specific "do multiple true factors merge into one estimated factor" diagnostic the
+advisors asked for had not been built.** `match_factors()` reports each TRUE factor's single best
+estimated match, which cannot reveal a merge (two true factors both matching the SAME estimated
+factor shows up fine from the true-factor side). New
+`results/multi_cohort_sim/run_top2_match_diagnostic.R`: for each ESTIMATED factor, at every
+K_init/scenario already fit, reports its top-2 correlations with true factors and flags a merge
+when the second-best correlation exceeds 0.5. Result: **7 of 27 estimated factors under
+under-specified K_init (2, 3, 4) show a clear merge signature; 0 of 114 do at K_init=6, 12, or 20.**
+This is a direct, quantitative confirmation of the under-specification finding already reported
+(recovery collapses below K_true=6), from the specific angle the advisors asked about.
+
+**Files:** `results/benchmark_sim/run_cohort_beta_supplementary.R` (item 1-2, outputs
+`cohort_beta_supplementary_results.csv`, `cohort_beta_heldout_survival_ll.csv`);
+`results/multi_cohort_sim/run_top2_match_diagnostic.R` (item 4, output
+`top2_match_diagnostic.csv`); the two new figures (item 3) generated ad hoc from already-saved fit
+objects, no re-fitting.
+
+**Still open from the original plan: the training-set sub-analysis** (arm 1 refit on `tcga_only` and
+`cptac_only` alone, each with its own gene selection, to test whether pooling the two training
+cohorts actually helps) — in progress as this entry is written; see the next addendum or the
+results CSV directly if this note is stale.
+
+---
+
 ## 2026-09-04 (addendum) — Stage 3 full analysis (bootstrap CIs, leave-one-study-out, factor comparison), and why the factor comparison came out the way it did
 
 **Bootstrap CIs** (`run_cohort_beta_bootstrap_ci.R`, `bootstrap_concordance_diff_ci()`, B=2000, pooled

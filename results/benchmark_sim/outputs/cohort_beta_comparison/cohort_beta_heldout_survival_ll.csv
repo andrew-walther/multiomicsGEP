@@ -1,0 +1,6 @@
+"arm","total_logPL","mean_logPL_per_event","se_logPL"
+"joint_yfb",-447.7486,-3.221213,1.7371
+"joint_yfb_cohort_L",-451.5259,-3.248388,2.143
+"joint_yfb_beta_c",-449.3767,-3.232926,1.7664
+"joint_yfb_all_c",-447.8002,-3.221584,2.227
+"strata_only",-447.5835,-3.220025,1.7072

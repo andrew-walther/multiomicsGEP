@@ -1,0 +1,7 @@
+"arm","K","K_survival_active","K_genomics_only","K_eff_total","mean_external_c","fit_secs","c_Dijk","c_Moffitt_GEO_array","c_PACA_AU_array","c_PACA_AU_seq","c_Puleo_array"
+"joint_yfb",7,2,2,4,0.6267,2.8,0.6345,0.5486,0.6483,0.6573,0.6447
+"joint_yfb_cohort_L",7,1,3,4,0.5431,5,0.5674,0.5213,0.5272,0.5185,0.5815
+"joint_yfb_beta_c",7,2,2,4,0.6132,2.4,0.57,0.5558,0.6314,0.682,0.6269
+"joint_yfb_all_c",7,2,2,4,0.606,1.3,0.6033,0.5407,0.6123,0.6484,0.6252
+"two_step_ebmf_cox",40,NA,NA,15,0.6008,NA,0.6002,0.5596,0.6233,0.6025,0.6183
+"strata_only",7,2,2,4,0.6263,NA,0.6347,0.549,0.6468,0.6573,0.6436
