@@ -186,4 +186,44 @@ run_test("CVLL-T12: stop()s when create_stratified_folds() is unavailable", {
   assert_true(!is.null(err), "expected an error when Y is not a numeric matrix")
 })
 
+# ============================================================
+# cv_survival_loglik() -- cohort_id / strata_id / beta_cohort_id passthrough
+# (added 2026-09-04, Stage 3 leftovers: needed to score cohort-aware arms'
+# held-out survival log-likelihood without a per-fold dimension mismatch)
+# ============================================================
+
+run_test("CVLL-T13: cohort_id=NULL/strata_id=NULL/beta_cohort_id=NULL reproduces the base result", {
+  ref <- cv_survival_loglik(Y, time, status, K = K_true, n_folds = 4, seed = 11, max_iter = 20, tol = 1e-3)
+  res <- cv_survival_loglik(Y, time, status, K = K_true, n_folds = 4, seed = 11, max_iter = 20, tol = 1e-3,
+                             cohort_id = NULL, strata_id = NULL, beta_cohort_id = NULL)
+  assert_near(res$total_logPL, ref$total_logPL, tol = 1e-10, "NULL cohort args must not change the result")
+})
+
+run_test("CVLL-T14: cohort_id is correctly row-subsetted per fold (no dimension-mismatch error)", {
+  set.seed(99)
+  cohort2 <- sample(c("A", "B"), n, replace = TRUE)
+  res <- tryCatch(
+    cv_survival_loglik(Y, time, status, K = K_true, n_folds = 4, seed = 11, max_iter = 15, tol = 1e-3,
+                        cohort_id = cohort2),
+    error = function(e) e
+  )
+  assert_true(!inherits(res, "error"), sprintf("cohort_id passthrough should not error: %s",
+              if (inherits(res, "error")) conditionMessage(res) else ""))
+  assert_finite(res$total_logPL, "total_logPL must be finite with cohort_id supplied")
+})
+
+run_test("CVLL-T15: beta_cohort_id is correctly row-subsetted and scored with the pooled fallback", {
+  set.seed(99)
+  cohort2 <- sample(c("A", "B"), n, replace = TRUE)
+  res <- tryCatch(
+    cv_survival_loglik(Y, time, status, K = K_true, n_folds = 4, seed = 11, max_iter = 15, tol = 1e-3,
+                        beta_cohort_id = cohort2),
+    error = function(e) e
+  )
+  assert_true(!inherits(res, "error"), sprintf("beta_cohort_id passthrough should not error: %s",
+              if (inherits(res, "error")) conditionMessage(res) else ""))
+  assert_finite(res$total_logPL, "total_logPL must be finite with beta_cohort_id supplied")
+  assert_equal(nrow(res$fold_results), 4L, "expected one row per fold")
+})
+
 report_results("test_compute_cv_loglik.R")

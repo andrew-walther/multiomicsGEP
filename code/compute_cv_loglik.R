@@ -184,6 +184,19 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #'                 config/globals.yml cv_loglik$seed)
 #' @param max_iter,tol,prior_LF,prior_beta,alpha: forwarded to
 #'                 `fit_cox_on_yf()` for each fold's training fit.
+#' @param cohort_id,strata_id,beta_cohort_id NULL (default), or n-vectors
+#'                 forwarded to `fit_cox_on_yf()` -- row-subsetted to each
+#'                 fold's training indices internally (the same pattern
+#'                 `select_K.R::select_K_cv()` uses), since passing a
+#'                 full-length vector straight through would trip
+#'                 `fit_cox_on_yf()`'s own length check against the
+#'                 fold-subsetted `Y`. When `beta_cohort_id` is supplied,
+#'                 held-out scoring uses the fold's `EBeta_pooled`
+#'                 (pooled patient-sums, not `rowMeans`), matching the
+#'                 convention used for external-cohort scoring elsewhere
+#'                 in this project -- a CV fold is treated the same as a
+#'                 held-out cohort for this purpose, even though its
+#'                 patients' cohort labels happen to be known.
 #' @param ...      additional arguments forwarded to `fit_cox_on_yf()`
 #'                 (e.g. init_method). Do not pass K or sign_correction.
 #'
@@ -203,6 +216,9 @@ cv_survival_loglik <- function(Y, time, status, K,
                                 prior_LF   = "point_exponential",
                                 prior_beta = "normal",
                                 alpha      = 0.5,
+                                cohort_id       = NULL,
+                                strata_id       = NULL,
+                                beta_cohort_id  = NULL,
                                 ...) {
 
   required_fns <- c("fit_cox_on_yf", "predict_cox_on_yf", "calc_cox_taylor_yf",
@@ -231,26 +247,33 @@ cv_survival_loglik <- function(Y, time, status, K,
       list(Y = Y[train_idx, , drop = FALSE], time = time[train_idx], status = status[train_idx],
            K = K, max_iter = max_iter, tol = tol,
            prior_LF = prior_LF, prior_beta = prior_beta, alpha = alpha,
-           sign_correction = FALSE, verbose = FALSE),
+           sign_correction = FALSE, verbose = FALSE,
+           cohort_id      = if (is.null(cohort_id)) NULL else cohort_id[train_idx],
+           strata_id      = if (is.null(strata_id)) NULL else strata_id[train_idx],
+           beta_cohort_id = if (is.null(beta_cohort_id)) NULL else beta_cohort_id[train_idx]),
       extra
     )
     fit <- do.call(fit_cox_on_yf, fit_args)
+    use_pooled <- !is.null(beta_cohort_id)
 
     # Orientation from TRAINING concordance only -- see roxygen leakage guard above.
     # reverse = TRUE: eta is a Cox risk score (larger eta -> shorter survival),
     # the opposite of concordance()'s formula-method default assumption.
     ZF_train  <- Y[train_idx, , drop = FALSE] %*% sweep(fit$EF, 2, fit$EF_norms, "/")
-    eta_train <- as.vector(ZF_train %*% fit$EBeta)
+    EBeta_for_orient <- if (use_pooled) fit$EBeta_pooled else fit$EBeta
+    eta_train <- if (use_pooled) as.vector(ZF_train %*% fit$EBeta_pooled)
+                 else as.vector(ZF_train %*% fit$EBeta)
     c_train   <- tryCatch(
       as.numeric(survival::concordance(
         survival::Surv(time[train_idx], status[train_idx]) ~ eta_train, reverse = TRUE
       )$concordance),
       error = function(e) NA_real_
     )
-    EBeta_oriented <- fit$EBeta
+    EBeta_oriented <- EBeta_for_orient
     if (is.finite(c_train) && c_train < 0.5) EBeta_oriented <- -EBeta_oriented
 
     # Held-out scoring: eta_new = (Y_test EF) beta -- exact YFB prediction formula.
+    # Cohort-specific-beta fits score with the pooled fallback (see @param above).
     pred <- predict_cox_on_yf(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
                                EF_norms = fit$EF_norms)
     surv <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx])
