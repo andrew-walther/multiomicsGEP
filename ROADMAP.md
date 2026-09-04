@@ -531,6 +531,20 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🧬 Model Specification
 
+- [ ] **Test whether `alpha_F > 0` can be stabilized, to let F actually respond to survival** `[Priority: Medium]` `[Effort: Medium]`
+  Raised 2026-09-04 (Andrew), following the factor-comparison finding that SSBMF's kept programs
+  match EBMF's own top-5-by-variance factors, not low-variance ones. Verified directly in the code:
+  under the default `alpha_F=0`, neither L nor F ever receives any survival-derived signal
+  (`compute_R_k(Y, EL, EF, k)` is a function of Y/L/F only) -- the genomics factorization is
+  mathematically identical to unsupervised MF at every iteration, and "jointness" only affects how
+  beta is estimated afterward. The model's already-validated advantage over the two-step baseline
+  (+0.026, significant) is therefore attributable to prior/estimation choices for L, F, and beta, not
+  to survival reshaping which gene programs get found. Discovering a genuinely low-variance,
+  otherwise-overlooked prognostic program would need `alpha_F > 0`, disabled by default for a
+  documented positive-feedback instability (DECISIONS.md 2026-04-30). Worth revisiting with the
+  stabilization techniques found useful elsewhere this session (deflation-init, warm-starting from a
+  converged alpha_F=0 solution) -- not tested yet.
+
 - [ ] **Incorporate F'Y term in survival model** `[Priority: Medium]` `[Effort: Large]`
   Replace $L_i$ in the Cox linear predictor with $(F^\top y_i)$ — the projection of patient $i$'s
   observed expression onto the factor space. This decouples factor learning from survival supervision:

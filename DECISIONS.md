@@ -5,6 +5,69 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-09-04 (addendum) — Stage 3 full analysis (bootstrap CIs, leave-one-study-out, factor comparison), and why the factor comparison came out the way it did
+
+**Bootstrap CIs** (`run_cohort_beta_bootstrap_ci.R`, `bootstrap_concordance_diff_ci()`, B=2000, pooled
+patient-aligned risk scores across the 5 external cohorts, no re-fitting):
+
+| Comparison (joint_yfb minus) | Diff | 95% CI | Significant |
+|---|---|---|---|
+| `cohort_id` | 0.0783 | [0.0435, 0.1095] | Yes |
+| `beta_cohort_id` | 0.0221 | [-0.0093, 0.0505] | **No** |
+| all three combined | 0.0268 | [0.0004, 0.0503] | Yes (barely) |
+| two-step EBMF->Cox | 0.0259 | [0.0002, 0.0498] | Yes (matches the 8/27 deck's +0.026 headline) |
+
+`beta_cohort_id`'s gap to the plain model is **not** statistically distinguishable from zero —
+"roughly equivalent performance," the correct characterization per Andrew's framing (2026-09-04
+earlier addendum), not "underperforms."
+
+**Leave-one-study-out**: the ranking `joint_yfb > joint_yfb_beta_c > joint_yfb_all_c >
+joint_yfb_cohort_L` is identical regardless of which of the 5 external cohorts is excluded from the
+mean — not carried by any one small cohort (Moffitt, n=52, sits near chance and its exclusion doesn't
+change anything).
+
+**`cohort_id` vs. `beta_cohort_id`, structurally, per Andrew's question.** They touch different,
+non-overlapping parts of the model: `cohort_id` changes what L/F converge to (genomics-side, indirect
+effect on the biological factors); `beta_cohort_id` changes nothing about L/F and only splits beta_k
+into C partially-pooled values (survival-side only, direct and interpretable). Combining both
+(`joint_yfb_all_c`, 0.6060, K_survival_active stays at 2) is informative on its own: `cohort_id`'s
+damage is much smaller combined (-0.021 vs. the plain model) than alone (-0.084) -- the two mechanisms
+don't compound; `cohort_id`'s CAVI-collapse failure mode is seed/init-sensitive enough that adding
+`beta_cohort_id` to the same fit happens to land it somewhere less bad, not that `beta_cohort_id`
+structurally protects against it. Net: combining adds `cohort_id`'s genomics-side risk for no
+offsetting benefit over `beta_cohort_id` alone here.
+
+**Factor comparison** (`run_factor_comparison.R`, no re-fitting): all 4 ARD-kept SSBMF programs match
+EBMF (K=40) factors ranked 1-5 of 40 by variance explained (Jaccard 0.17-0.53, hypergeometric p as low
+as 1e-129) -- the opposite of the plan's speculative "buried deep in the unsupervised ordering"
+scenario motivated by DeSurv's own comparison.
+
+**Why, mechanistically (Andrew's question, verified directly in the code, not speculated): under the
+default `alpha_F=0`, neither L nor F ever receives any survival-derived signal.** `compute_R_k(Y, EL,
+EF, k)` (the residual driving both q(L) and q(F)) is a function of `Y, EL, EF` only -- no beta, no Cox
+weights, no residuals from the survival term anywhere in either update. This means the entire
+genomics factorization step is mathematically identical, at every CAVI iteration, to running plain
+unsupervised matrix factorization on Y -- the model's "jointness" affects only how beta is estimated
+from the resulting projections, not what gene programs get discovered. It is therefore not a
+coincidence that SSBMF's kept programs resemble EBMF's own top-variance factors: both procedures are
+solving close to the same reconstruction problem for F. **This reframes what the model's already-
+validated advantage over the two-step baseline (+0.026, significant) can be attributed to**: it comes
+from the prior specification and joint estimation procedure for L, F, and especially beta (partial
+pooling, EBNM shrinkage, ARD-based K selection), not from beta reshaping which gene programs are
+found. The more ambitious version of the value proposition -- discovering a genuinely LOW-variance,
+otherwise-overlooked gene program that turns out to be highly prognostic -- would require `alpha_F >
+0` (a real survival gradient into F), which is currently disabled by default due to a documented
+positive-feedback instability (DECISIONS.md 2026-04-30). Whether the stabilization techniques found
+useful elsewhere this session (deflation-init, warm-starting from a converged alpha_F=0 solution)
+would make `alpha_F > 0` usable is an open question, added to ROADMAP.md rather than tested here.
+
+**Files:** `results/benchmark_sim/run_cohort_beta_bootstrap_ci.R`,
+`run_cohort_beta_leave_one_out.R`, `run_factor_comparison.R`; corresponding CSVs under
+`results/benchmark_sim/outputs/cohort_beta_comparison/` and `.../factor_comparison/`;
+`docs/progress_book/figs/2026-09-04_factor_comparison_heatmap.png`.
+
+---
+
 ## 2026-09-04 — Orientation bug in `fit_cox_on_yf()`'s Phase C sign-correction: found while building held-out survival log-likelihood, fixed in `compute_bic.R` and `compute_cv_loglik.R`, `fit_cox_on_yf.R` left unchanged
 
 **Context:** building `code/compute_cv_loglik.R`'s `cv_survival_loglik()` (a held-out Cox partial
