@@ -604,36 +604,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   deflation-init (`code/deflation_init.R`) at K=11/13, or warm-starting from the converged K=7
   solution's factors plus 4-6 fresh ones.
 
-- [ ] **Literature grounding + sensitivity analysis for the ARD feature-retention thresholds** `[Priority: Medium]` `[Effort: Low-Medium]`
+- [x] **Sensitivity analysis for the ARD feature-retention thresholds** *(Complete, 2026-09-04, `results/benchmark_sim/run_threshold_sensitivity.R`, DECISIONS.md 2026-09-04)*. Re-classified the 19 cached K_init sweep fits over a `beta_thresh` x `pve_thresh` grid (no re-fitting). **Result: the current defaults sit in the middle of a wide, flat plateau.** `K_survival_active=2` at K_init=7 is unchanged across `beta_thresh` 1e-4 to 0.01 (100x span) and every `pve_thresh` tested; only the extremes move it (no threshold -> 4; the stale 0.05 default -> 0, at every K_init 2-20). The K_init=11/13 dips are NOT threshold-boundary sensitivity -- `K_survival_active` stays flat at 2 around both dips under every threshold in the stable range; the dip is fully explained by the CAVI-convergence finding in the same DECISIONS.md entry's Stage 6. `rel_thresh`'s ratio-to-max at K_init=7 is 0.285, confirming numerically (not just qualitatively) that `rel_thresh=0.65` must not be applied to this fit. Raw vs. variance-standardized `|beta_k|` ranking agrees exactly for the two survival-active factors -- the fixed cutoff is defensible in practice here. Literature grounding for a principled (non-reverse-engineered) threshold value is still open -- not addressed by this sensitivity check.
+- [ ] **Literature grounding for the ARD feature-retention thresholds** `[Priority: Low]` `[Effort: Low-Medium]`
   `config/globals.yml`'s `k_selection$pve_threshold` (0.01, 1% PVE) and `k_selection$beta_threshold`
-  (0.001) are **not** derived from a citable source. `beta_threshold` was explicitly
-  reverse-engineered from this model's own observed `|β̂|` scale under YFB (~0.003–0.008 — see the
-  inline comment), not a principled cutoff from the sparse-Bayesian-factor / ARD literature;
-  `pve_threshold` is an uncited round-number heuristic. Raised 2026-08-27 (Andrew): shifting either
-  threshold would plausibly change which/how many factors are classified survival-active vs.
-  genomics-only vs. dead — the K_init=11/13 dips in the K-sweep (visible external-C drops against
-  their neighbors) are consistent with real boundary sensitivity, not just noise. DECISIONS.md
-  2026-07-12 already shows this project got burned once suspecting (wrongly, in that instance) that
-  a K_eff shift was a `beta_threshold` calibration artifact. Next steps: (1) a literature search for
-  principled ARD/spike-slab retention thresholds in comparable sparse factor models, (2) a
-  sensitivity sweep of the two thresholds on the real-data D4 fit and/or the K_init sweep, to see
-  how much the K_eff/program count actually moves.
-  **Addendum, 2026-08-27 (raised at advisor meeting): does a fixed `beta_threshold` even compare
-  factors fairly?** A fixed threshold on `|β̂_k|` implicitly assumes every factor's projection score
-  `ZF_k = Y·F_k` is on a comparable scale. Checked directly (`code/fit_cox_on_yf.R:517-519`,
-  `code/predict_cox_on_yf.R:51-60`): each factor's loading vector `F_k` **is** unit-L2-normalized
-  before `ZF_k` is computed, consistently at both train and test time, which removes the dominant
-  scale gap (unnormalized `‖F_k‖` grows like `sqrt(p)`, so a factor loading on more genes would
-  otherwise get a mechanically larger projection score for reasons unrelated to survival relevance).
-  **This is not full comparability**, though: unit-norming the loading *vector* does not guarantee
-  equal *variance* of the resulting projection score across factors, which still depends on which
-  genes each factor loads on and their correlation structure in `Y` — no code was found that
-  additionally standardizes `Var(ZF_k)` across factors. The normalization was implemented and
-  documented (`DECISIONS.md` 2026-05-05) purely for EBNM fitting stability (preventing `β→0`
-  collapse), not as a deliberate solution to cross-factor `β` comparability, so this was never
-  actually checked. Folds into the same next-steps above: the sensitivity sweep should specifically
-  test whether `Var(ZF_k)` varies materially across the kept factors in the D4 fit, and if so,
-  whether a variance-standardized `ZF` changes which factors clear the `beta_threshold`.
+  (0.001) are **not** derived from a citable source — `beta_threshold` was reverse-engineered from
+  this model's own observed `|β̂|` scale under YFB, not a principled cutoff from the
+  sparse-Bayesian-factor / ARD literature; `pve_threshold` is an uncited round-number heuristic. The
+  empirical sensitivity question (how much does K_eff move if these shift, and is the fixed cutoff
+  fair across factors of different projection-score variance) is answered directly in DECISIONS.md
+  2026-09-04 / `run_threshold_sensitivity.R` — both are stable in the range that matters for this
+  fit. What remains here is purely a literature search for whether a principled (non-reverse-engineered)
+  threshold exists in comparable sparse factor models, for the manuscript's methods section.
 
 - [ ] **Fully Bayesian K selection: a prior on K itself, instead of a post-hoc ELBO/BIC/log-likelihood/C-index consensus** `[Priority: Low-Medium]` `[Effort: Medium-High]`
   Raised 2026-08-27 (Andrew), alongside the threshold item above. The current two-stage procedure

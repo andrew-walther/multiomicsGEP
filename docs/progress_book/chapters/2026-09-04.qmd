@@ -292,7 +292,43 @@ redesigned; a better starting point was enough.
 
 ---
 
-## §4 — Where the value-add goes next
+## §4 — Are the retention thresholds load-bearing?
+
+`classify_factors()`'s `beta_thresh` (0.001) and `pve_thresh` (0.01) are not derived from a citable
+source (raised at the 8/27 meeting). Re-classifying the 19 already-cached K_init sweep fits over a
+grid (no re-fitting) answers this directly rather than leaving it as an acknowledged gap.
+
+```{r threshold-heatmap-fig, fig.cap="K_survival_active at K_init=7 across the beta_thresh x pve_thresh grid. Current defaults (beta_thresh=0.001, pve_thresh=0.01) sit in the middle of a wide plateau."}
+knitr::include_graphics("../figs/2026-09-04_threshold_sensitivity_heatmap.png")
+```
+
+**The current defaults sit in the middle of a wide, flat plateau, not near a fragile boundary.**
+`K_survival_active=2` at K_init=7 is unchanged across the entire practical range of `beta_thresh`
+tested (1e-4 through 0.01, a 100x span) and every `pve_thresh` tested — `pve_thresh` has zero effect
+on `K_survival_active` here at all. Only the extremes move it: no threshold at all gives 4; the stale
+`auto_prune_K()` default of 0.05 gives 0 — confirmed to hold at every K_init from 2 to 20, not just
+K_init=7.
+
+```{r threshold-vs-kinit-fig, fig.cap="K_survival_active vs K_init at three beta_thresh values. beta_thresh=0.05 (the stale default) gives zero survival-active factors everywhere."}
+knitr::include_graphics("../figs/2026-09-04_threshold_vs_kinit.png")
+```
+
+This also answers a standing worry: the K_init=11/13 dips are NOT a threshold-boundary artifact —
+`K_survival_active` is flat at 2 around both dips under every `beta_thresh` in the stable range. The
+dip is fully explained by the CAVI-convergence finding in §2.4, not by where the threshold happens to
+sit.
+
+Two smaller checks, both resolving prior qualitative caveats into exact numbers: `rel_thresh`'s
+ratio-to-max at K_init=7 for the smaller survival-active factor is 0.285 — any `rel_thresh` at or
+above roughly 0.29 would incorrectly drop it despite its independent external validation, confirming
+`rel_thresh=0.65` (the simulation-calibrated default) must not be applied here. And a raw-vs.
+variance-standardized $|\beta_k|$ ranking (testing whether `classify_factors()`'s fixed cutoff is fair
+across factors whose projection-score variance might differ) gives the **identical ordering** either
+way for the two survival-active factors — the fixed cutoff is defensible in practice for this fit.
+
+---
+
+## §5 — Where the value-add goes next
 
 Multi-modality extension (methylation, matched multi-view data) is out of scope here: no such data
 exists under `PDAC_DATA_ROOT` (all 7 datasets are gene-level expression/protein), and

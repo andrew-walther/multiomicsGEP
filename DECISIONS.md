@@ -182,6 +182,49 @@ rather than left as speculation:**
 
 ---
 
+## 2026-09-04 (addendum) — Stage 4: retention-threshold sensitivity and beta comparability, resolved (not just cited)
+
+**Context.** `beta_thresh` (0.001) and `pve_thresh` (0.01) in `classify_factors()` are not derived
+from a citable source (ROADMAP.md, raised 2026-08-27). New
+`results/benchmark_sim/run_threshold_sensitivity.R` re-classifies the 19 already-cached K_init sweep
+fits over a grid — no re-fitting, so this is fast (seconds).
+
+**Result: the current defaults sit in the middle of a wide, flat plateau, not near a fragile
+boundary.** At K_init=7, `K_survival_active=2` is unchanged across the ENTIRE practical range of
+`beta_thresh` tested (1e-4 through 0.01, a 100x span) and across every `pve_thresh` value tested
+(0.001-0.05) — `pve_thresh` has zero effect on `K_survival_active` at this K_init at all. Only the
+extremes move it: `beta_thresh=0` (no threshold, everything nonzero counts) gives 4; `beta_thresh=0.05`
+(the stale `auto_prune_K()` default, previously flagged as classifying every YFB beta inactive) gives
+0, confirmed directly and quantitatively here — and confirmed to give `K_survival_active=0` at EVERY
+K_init from 2 to 20, not just K_init=7 (`docs/progress_book/figs/2026-09-04_threshold_vs_kinit.png`).
+The 2026-08-27 worry that the K_init=11/13 dips might reflect threshold-boundary sensitivity is not
+supported by this grid — `K_survival_active` is flat at 2 around both dips under every `beta_thresh`
+in the stable range; the dip is fully explained by the CAVI-convergence finding above (Stage 6), not
+threshold placement.
+
+**`rel_thresh` sweep confirms the existing caveat with an exact number.** At K_init=7, the smaller
+survival-active factor's ratio-to-max is 0.285 — any `rel_thresh >= ~0.29` would incorrectly drop it
+despite its independent external validation (DECISIONS.md 2026-07-15). `rel_thresh=0.65` (the
+simulation-calibrated default) would drop it by a wide margin. Confirms `rel_thresh` must not be
+applied to this real fit, exactly as already documented, now with the specific number that makes the
+caveat concrete rather than qualitative.
+
+**Beta comparability: the raw and variance-standardized rankings agree.** `classify_factors()` tests
+raw `|E_q[beta_k]|` against a fixed cutoff, which assumes every factor's projection score is on a
+comparable scale; `F_k` is unit-L2-normalized (removing the dominant scale gap) but `Var(ZF_k)` was
+never checked. Computed directly at K_init=7: `sd(ZF_k)` for the two survival-active factors is 12.41
+(Program 3) and 10.12 (Program 7) — a modest ~1.2x difference — and ranking by raw `|beta_k|` vs.
+variance-standardized `|beta_k|·sd(ZF_k)` gives the identical ordering (Program 7 > Program 3 either
+way). The fixed cutoff is defensible in practice for this fit; this would need rechecking if a future
+fit shows a much larger `sd(ZF_k)` spread across its active factors.
+
+**Files:** `results/benchmark_sim/run_threshold_sensitivity.R`;
+`results/benchmark_sim/outputs/threshold_sensitivity/` (4 CSVs);
+`docs/progress_book/figs/2026-09-04_threshold_sensitivity_heatmap.png`,
+`2026-09-04_threshold_vs_kinit.png`.
+
+---
+
 ## 2026-09-04 (addendum) — Stage 6: the K_init=11/13 external-C dip does not survive as a multistart artifact; the falsifiable prediction in this same entry's Stage 1 work was wrong
 
 **Context.** The K_init=2..20 sweep (above) shows external C-index dipping sharply at K_init=11
