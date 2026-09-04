@@ -182,6 +182,57 @@ rather than left as speculation:**
 
 ---
 
+## 2026-09-04 (addendum) — Stage 5 addition: ground-truth recovery test for beta_cohort_id (ties back to the same-day follow-up questions)
+
+**Motivation.** Directly answers "is performance the right target, or should we check recovery of
+cohort-specific structure" with ground truth rather than the real-data proxy in the earlier addendum.
+`generate_multicohort_data()` already supports `specific_prognostic = TRUE` (built, never exercised
+by `run_multicohort_sim.R`): the first study-specific factor of each cohort gets a real, non-zero
+survival coefficient (beta=0.8) that is genuinely cohort-specific by construction — that factor's
+loadings are block-zero outside its owning cohort, so its survival contribution is structurally
+absent from the other cohort. This is exactly the case `beta_cohort_id` was built to represent and a
+shared beta cannot.
+
+**Method.** New `results/multi_cohort_sim/run_cohort_beta_recovery_sim.R`: hybrid scenario
+(K_shared=2, K_specific=[2,2]), `specific_prognostic=TRUE`, 10 seeds, K_init in {6 (oracle), 12
+(2x)}. Two arms (`YFB_base`, `YFB_beta_cohort`) on the SAME data per seed. Primary metric: for the
+true cohort-specific-prognostic factor (matched via `match_factors()`), does `beta_cohort_id`'s
+owning-cohort coefficient exceed its other-cohort coefficient, and how does that compare to
+`YFB_base`'s single shared value for the same factor.
+
+**Result: real, majority-correct attribution, with one honest caveat.** Median over seeds (median
+used deliberately — see caveat below): owning-cohort coefficient 0.060 vs. other-cohort 0.0085 at
+K_init=6 (~7x), 0.054 vs. 0.0075 at K_init=12 (~7x). Individually, 15/20 (K_init=6) and 17/20
+(K_init=12) (seed x cohort) cases show the correct direction (owning > other). `YFB_base`'s single
+shared coefficient (0.061, 0.059) sits close to `beta_cohort_id`'s owning-cohort value rather than
+being visibly diluted — the shared estimate is effectively dominated by the one cohort with non-zero
+loading on that factor, since the other cohort contributes near-zero gradient. **The real value of
+`beta_cohort_id` here is not a larger recovered magnitude; it is that only the cohort-specific model
+makes the cohort-specificity itself visible and attributable** — `YFB_base`'s 0.061 gives no signal
+about whether that effect is uniform or driven entirely by one cohort, while `beta_cohort_id`'s
+[0.060, 0.0085] pair does.
+
+**Caveat, stated plainly rather than smoothed over: one seed (4) produced a divergent, unstable
+`beta_cohort_id` fit** at K_init=6 (coefficients of magnitude 1-15, roughly 20-200x every other seed's
+scale), which corrupts a naive mean (reported as `other > owning` on first pass, the opposite of the
+true pattern — caught by inspecting the per-seed CSV rather than trusting the aggregate). This is
+consistent with this project's repeated finding that fresh-SVD CAVI is not guaranteed to reach a
+good solution at every seed (2026-07-13, 2026-08-19, this session's Stage 6) — not a new failure
+mode specific to `beta_cohort_id`. Median (robust to one outlier) is reported as the primary summary
+for this reason; a future run with multistart per seed would settle whether this is truly rare or
+worth flagging more prominently.
+
+**`classify_specificity()` genomics-side recovery and external C-index are similar between arms**
+(spec_acc 0.93 vs 0.92 at K_init=6; C-index 0.83 vs 0.82) — expected, since the two arms share the
+same L/F updates and differ only in the survival term.
+
+**Files:** `results/multi_cohort_sim/run_cohort_beta_recovery_sim.R`;
+`results/multi_cohort_sim/outputs/cohort_beta_recovery_sim_results.csv`,
+`cohort_beta_recovery_sim_attribution.csv`. The original Stage 5 item (K_init in {2,3,4} added to
+the existing {6,12,20} grid for `run_multicohort_sim.R`, 15 seeds) is a separate, not-yet-done task.
+
+---
+
 ## 2026-09-04 (addendum) — Stage 4: retention-threshold sensitivity and beta comparability, resolved (not just cited)
 
 **Context.** `beta_thresh` (0.001) and `pve_thresh` (0.01) in `classify_factors()` are not derived
