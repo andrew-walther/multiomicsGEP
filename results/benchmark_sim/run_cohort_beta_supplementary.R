@@ -122,11 +122,16 @@ for (arm in names(arm_specs)) {
   spec <- arm_specs[[arm]]
   cat(sprintf("  %s ...\n", arm))
   res <- tryCatch(
+    # cv_scoring="within_cohort" (explicit, though also the default as of
+    # 2026-09-04): this is an ordinary K-fold CV over patients from the same
+    # fixed set of training cohorts, so each held-out patient's own cohort
+    # label is known -- not a genuinely unseen cohort. See
+    # code/compute_cv_loglik.R's cv_scoring roxygen for the full distinction.
     cv_survival_loglik(Y_train, time_train, status_train, K = K_REC,
                         n_folds = CVL$n_folds, seed = CVL$seed,
                         max_iter = cfg$cavi$max_iter, alpha = b$alpha, prior_beta = "normal",
                         cohort_id = spec$cohort_id, strata_id = spec$strata_id,
-                        beta_cohort_id = spec$beta_cohort_id),
+                        beta_cohort_id = spec$beta_cohort_id, cv_scoring = "within_cohort"),
     error = function(e) { cat(sprintf("    FAILED: %s\n", conditionMessage(e))); NULL }
   )
   ll_rows[[arm]] <- data.frame(

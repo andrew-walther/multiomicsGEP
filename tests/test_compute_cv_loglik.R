@@ -212,7 +212,7 @@ run_test("CVLL-T14: cohort_id is correctly row-subsetted per fold (no dimension-
   assert_finite(res$total_logPL, "total_logPL must be finite with cohort_id supplied")
 })
 
-run_test("CVLL-T15: beta_cohort_id is correctly row-subsetted and scored with the pooled fallback", {
+run_test("CVLL-T15: beta_cohort_id is correctly row-subsetted and scored (within_cohort default)", {
   set.seed(99)
   cohort2 <- sample(c("A", "B"), n, replace = TRUE)
   res <- tryCatch(
@@ -224,6 +224,96 @@ run_test("CVLL-T15: beta_cohort_id is correctly row-subsetted and scored with th
               if (inherits(res, "error")) conditionMessage(res) else ""))
   assert_finite(res$total_logPL, "total_logPL must be finite with beta_cohort_id supplied")
   assert_equal(nrow(res$fold_results), 4L, "expected one row per fold")
+  assert_equal(res$cv_scoring, "within_cohort", "cv_scoring defaults to within_cohort")
+})
+
+# ============================================================
+# Review finding, Step 4 (fixed 2026-09-04, DECISIONS.md): two held-out
+# scoring gaps in cv_survival_loglik() -- strata_id was not passed through to
+# the held-out calc_cox_taylor_yf() call, and beta_cohort_id fits always
+# scored with EBeta_pooled even though within-fold CV patients have KNOWN
+# held-out cohort labels.
+# ============================================================
+
+run_test("CVLL-T16: cv_scoring is NA_character_ when beta_cohort_id is NULL (argument unused)", {
+  res <- cv_survival_loglik(Y, time, status, K = K_true, n_folds = 4, seed = 11, max_iter = 15, tol = 1e-3)
+  assert_true(is.na(res$cv_scoring), "cv_scoring should be NA when beta_cohort_id is NULL")
+})
+
+run_test("CVLL-T17: cv_scoring='within_cohort' vs 'unseen_cohort' give genuinely different held-out logPL", {
+  # These answer different questions (see roxygen) and must not silently
+  # collapse to the same number -- that would indicate cohort_id_test /
+  # EBeta_pooled aren't actually being used distinctly.
+  set.seed(99)
+  cohort2 <- sample(c("A", "B"), n, replace = TRUE)
+  res_within <- cv_survival_loglik(Y, time, status, K = K_true, n_folds = 4, seed = 11, max_iter = 15, tol = 1e-3,
+                                    beta_cohort_id = cohort2, cv_scoring = "within_cohort")
+  res_unseen <- cv_survival_loglik(Y, time, status, K = K_true, n_folds = 4, seed = 11, max_iter = 15, tol = 1e-3,
+                                    beta_cohort_id = cohort2, cv_scoring = "unseen_cohort")
+  assert_true(abs(res_within$total_logPL - res_unseen$total_logPL) > 1e-8,
+              "within_cohort and unseen_cohort must score differently -- they use different beta sources")
+  assert_equal(res_within$cv_scoring, "within_cohort", "echoes the requested mode")
+  assert_equal(res_unseen$cv_scoring, "unseen_cohort", "echoes the requested mode")
+})
+
+run_test("CVLL-T18: cv_scoring rejects an invalid value", {
+  err <- tryCatch({
+    cv_survival_loglik(Y, time, status, K = K_true, n_folds = 4, max_iter = 5, tol = 1e-3,
+                        beta_cohort_id = sample(c("A", "B"), n, replace = TRUE), cv_scoring = "bogus")
+    NULL
+  }, error = function(e) e)
+  assert_true(!is.null(err), "expected match.arg() to reject an invalid cv_scoring value")
+})
+
+run_test("CVLL-T19: strata_id is passed through to held-out scoring (isolated from its training-time effect)", {
+  # strata_id also affects the TRAINING fit (already correct before this
+  # fix), so comparing cv_survival_loglik(strata_id=...) against
+  # cv_survival_loglik() with no strata_id conflates that pre-existing,
+  # already-correct effect with the held-out-scoring bug this test targets.
+  # Isolate the held-out line by reproducing fold 1 of
+  # cv_survival_loglik(strata_id=strata3)'s OWN computation manually --
+  # same fold assignment (create_stratified_folds depends only on status,
+  # not strata_id, so it is identical either way), same training fit (same
+  # seed, same strata_id) -- and comparing calc_cox_taylor_yf() WITH vs.
+  # WITHOUT the strata argument on that fold's OWN held-out risk scores.
+  # Before the fix, cv_survival_loglik()'s recorded logPL matched the
+  # unstratified (no-strata) recomputation; after the fix it matches the
+  # stratified one.
+  set.seed(77)
+  strata3 <- sample(c("S1", "S2", "S3"), n, replace = TRUE)
+  n_folds <- 4L; seed <- 5L
+  res <- cv_survival_loglik(Y, time, status, K = K_true, n_folds = n_folds, seed = seed,
+                             max_iter = 15, tol = 1e-3, strata_id = strata3)
+
+  fold_obj  <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
+  test_idx  <- fold_obj$folds[[1]]
+  train_idx <- setdiff(seq_len(n), test_idx)
+  set.seed(42L)  # cv_survival_loglik() does not itself seed the fit; fit_cox_on_yf's
+                 # CAVI loop is deterministic (SVD init, no RNG), so this is a no-op
+                 # safeguard for determinism, matching how other tests in this file fit directly.
+  fit <- suppressMessages(fit_cox_on_yf(
+    Y[train_idx, , drop = FALSE], time[train_idx], status[train_idx], K = K_true,
+    max_iter = 15, tol = 1e-3, sign_correction = FALSE, verbose = FALSE,
+    strata_id = strata3[train_idx]
+  ))
+  # Reproduce cv_survival_loglik()'s own (non-cohort) orientation decision
+  # exactly, so risk_scores below matches what it would have used internally
+  # -- logPL is NOT sign-invariant, so an orientation mismatch here would
+  # fail this test for a reason unrelated to the strata fix being tested.
+  ZF_train  <- Y[train_idx, , drop = FALSE] %*% sweep(fit$EF, 2, fit$EF_norms, "/")
+  eta_train <- as.vector(ZF_train %*% fit$EBeta)
+  c_train   <- as.numeric(survival::concordance(
+    survival::Surv(time[train_idx], status[train_idx]) ~ eta_train, reverse = TRUE)$concordance)
+  EBeta_oriented <- if (is.finite(c_train) && c_train < 0.5) -fit$EBeta else fit$EBeta
+  pred <- predict_cox_on_yf(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented, EF_norms = fit$EF_norms)
+  logpl_stratified   <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx],
+                                            strata = strata3[test_idx])$logPL
+  logpl_unstratified <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx])$logPL
+
+  assert_true(abs(logpl_stratified - logpl_unstratified) > 1e-10,
+              "fixture must make stratified vs. unstratified held-out logPL differ, or this test cannot discriminate")
+  assert_near(res$fold_results$logPL[1], logpl_stratified, tol = 1e-8,
+              "cv_survival_loglik()'s recorded fold-1 logPL must match the STRATIFIED held-out recomputation")
 })
 
 report_results("test_compute_cv_loglik.R")

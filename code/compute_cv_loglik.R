@@ -190,18 +190,37 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #'                 `select_K.R::select_K_cv()` uses), since passing a
 #'                 full-length vector straight through would trip
 #'                 `fit_cox_on_yf()`'s own length check against the
-#'                 fold-subsetted `Y`. When `beta_cohort_id` is supplied,
-#'                 held-out scoring uses the fold's `EBeta_pooled`
-#'                 (pooled patient-sums, not `rowMeans`), matching the
-#'                 convention used for external-cohort scoring elsewhere
-#'                 in this project -- a CV fold is treated the same as a
-#'                 held-out cohort for this purpose, even though its
-#'                 patients' cohort labels happen to be known.
+#'                 fold-subsetted `Y`. `strata_id` is ALSO row-subsetted to
+#'                 the test fold and passed to the held-out
+#'                 `calc_cox_taylor_yf()` call (fixed 2026-09-04, DECISIONS.md
+#'                 -- previously a model fit under stratified risk sets was
+#'                 scored under one pooled risk set on the held-out side).
+#' @param cv_scoring "within_cohort" (default) or "unseen_cohort" -- only
+#'                 meaningful when `beta_cohort_id` is supplied; ignored
+#'                 otherwise. These are two DIFFERENT questions and are not
+#'                 interchangeable (fixed 2026-09-04, DECISIONS.md -- every
+#'                 fold previously scored with `EBeta_pooled` regardless):
+#'                 "within_cohort" answers "how well does this model predict
+#'                 a held-out PATIENT from a cohort it has already seen,
+#'                 using that patient's own (held-out but KNOWN) cohort
+#'                 label's beta column" -- the natural reading of an
+#'                 ordinary K-fold CV, since folds split patients within the
+#'                 same fixed set of training cohorts, not cohorts
+#'                 themselves. "unseen_cohort" answers "how well does the
+#'                 pooled/shared beta generalize to a cohort with NO
+#'                 beta^(c) of its own" -- scores every fold with
+#'                 `EBeta_pooled`, ignoring the test fold's own (known)
+#'                 cohort labels; this is the right question for comparing
+#'                 against genuinely external cohorts (see
+#'                 `predict_cox_on_yf()`'s `cohort_id_test = NULL` path
+#'                 elsewhere in this project), not for an ordinary CV fold.
 #' @param ...      additional arguments forwarded to `fit_cox_on_yf()`
 #'                 (e.g. init_method). Do not pass K or sign_correction.
 #'
 #' @return Named list:
 #'   $K                     echoed input K
+#'   $cv_scoring            echoed input cv_scoring, or NA_character_ when
+#'                          beta_cohort_id is NULL (the argument is unused)
 #'   $fold_results          data.frame: fold, n_train, n_test, n_event_test,
 #'                          c_train, logPL, logPL_per_event
 #'   $total_logPL           sum of held-out logPL across folds
@@ -219,8 +238,10 @@ cv_survival_loglik <- function(Y, time, status, K,
                                 cohort_id       = NULL,
                                 strata_id       = NULL,
                                 beta_cohort_id  = NULL,
+                                cv_scoring      = c("within_cohort", "unseen_cohort"),
                                 ...) {
 
+  cv_scoring <- match.arg(cv_scoring)
   required_fns <- c("fit_cox_on_yf", "predict_cox_on_yf", "calc_cox_taylor_yf",
                      "create_stratified_folds")
   missing_fns <- required_fns[!vapply(required_fns, exists, logical(1), mode = "function")]
@@ -254,15 +275,36 @@ cv_survival_loglik <- function(Y, time, status, K,
       extra
     )
     fit <- do.call(fit_cox_on_yf, fit_args)
-    use_pooled <- !is.null(beta_cohort_id)
+    use_cohort <- !is.null(beta_cohort_id)
 
-    # Orientation from TRAINING concordance only -- see roxygen leakage guard above.
-    # reverse = TRUE: eta is a Cox risk score (larger eta -> shorter survival),
-    # the opposite of concordance()'s formula-method default assumption.
-    ZF_train  <- Y[train_idx, , drop = FALSE] %*% sweep(fit$EF, 2, fit$EF_norms, "/")
-    EBeta_for_orient <- if (use_pooled) fit$EBeta_pooled else fit$EBeta
-    eta_train <- if (use_pooled) as.vector(ZF_train %*% fit$EBeta_pooled)
-                 else as.vector(ZF_train %*% fit$EBeta)
+    # Orientation from TRAINING concordance only -- see roxygen leakage guard
+    # above. reverse = TRUE: eta is a Cox risk score (larger eta -> shorter
+    # survival), the opposite of concordance()'s formula-method default
+    # assumption. EBeta_for_orient/eta_train/the resulting flip decision
+    # depend on cv_scoring -- see the @param cv_scoring roxygen above for why
+    # these are genuinely different questions, not interchangeable:
+    #   - not use_cohort:      unchanged (fit$EBeta, a K-vector).
+    #   - "unseen_cohort":     fit$EBeta_pooled, ignoring the fold's own
+    #                          (known) cohort labels -- the pre-2026-09-04
+    #                          behavior, unconditional on cv_scoring.
+    #   - "within_cohort":     fit$EBeta (the K x C matrix), oriented via a
+    #                          single GLOBAL flip decided from the pooled
+    #                          training eta using each training patient's own
+    #                          known cohort column -- mirrors fit_cox_on_yf()'s
+    #                          own Phase C convention (one global flip, applied
+    #                          uniformly to every cohort column).
+    ZF_train <- Y[train_idx, , drop = FALSE] %*% sweep(fit$EF, 2, fit$EF_norms, "/")
+    if (!use_cohort) {
+      EBeta_for_orient <- fit$EBeta
+      eta_train <- as.vector(ZF_train %*% fit$EBeta)
+    } else if (cv_scoring == "unseen_cohort") {
+      EBeta_for_orient <- fit$EBeta_pooled
+      eta_train <- as.vector(ZF_train %*% fit$EBeta_pooled)
+    } else {  # within_cohort
+      EBeta_for_orient <- fit$EBeta
+      train_cohort_idx <- match(beta_cohort_id[train_idx], colnames(fit$EBeta))
+      eta_train <- rowSums(ZF_train * t(fit$EBeta)[train_cohort_idx, , drop = FALSE])
+    }
     c_train   <- tryCatch(
       as.numeric(survival::concordance(
         survival::Surv(time[train_idx], status[train_idx]) ~ eta_train, reverse = TRUE
@@ -272,11 +314,23 @@ cv_survival_loglik <- function(Y, time, status, K,
     EBeta_oriented <- EBeta_for_orient
     if (is.finite(c_train) && c_train < 0.5) EBeta_oriented <- -EBeta_oriented
 
-    # Held-out scoring: eta_new = (Y_test EF) beta -- exact YFB prediction formula.
-    # Cohort-specific-beta fits score with the pooled fallback (see @param above).
-    pred <- predict_cox_on_yf(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
-                               EF_norms = fit$EF_norms)
-    surv <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx])
+    # Held-out scoring: eta_new = (Y_test EF) beta -- exact YFB prediction
+    # formula. "within_cohort" scores each test patient with their own
+    # (held-out but known) cohort's column via cohort_id_test; the other two
+    # cases pass a K-vector, so cohort_id_test stays NULL (its only valid
+    # value for a non-matrix EBeta).
+    pred <- if (use_cohort && cv_scoring == "within_cohort") {
+      predict_cox_on_yf(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
+                         EF_norms = fit$EF_norms, cohort_id_test = beta_cohort_id[test_idx])
+    } else {
+      predict_cox_on_yf(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
+                         EF_norms = fit$EF_norms)
+    }
+    # strata_id row-subsetted to the test fold (fixed 2026-09-04, DECISIONS.md):
+    # a model fit under stratified risk sets must be scored under stratified
+    # risk sets, not one pooled risk set.
+    surv <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx],
+                                strata = if (is.null(strata_id)) NULL else strata_id[test_idx])
 
     n_event_test <- sum(status[test_idx] == 1)
     fold_rows[[fold_id]] <- data.frame(
@@ -296,6 +350,7 @@ cv_survival_loglik <- function(Y, time, status, K,
 
   list(
     K                    = K,
+    cv_scoring           = if (is.null(beta_cohort_id)) NA_character_ else cv_scoring,
     fold_results         = fold_results,
     total_logPL          = sum(fold_results$logPL),
     total_events         = sum(fold_results$n_event_test),
