@@ -14,6 +14,12 @@
 #          Manual/local equivalent: docs/progress_book/publish_gh_pages.sh
 #          (same end result, useful for previewing before pushing).
 #
+#          docs/progress_book/_book/ is ALSO tracked directly on main (so
+#          the rendered HTML is browsable from the repo itself, not only
+#          via gh-pages) -- this workflow does not update that copy; it
+#          only publishes to gh-pages. Re-render and commit _book/ on main
+#          separately when wanted.
+#
 # Author:  Claude Code (reviewed by Andrew Walther)
 # Created: 2026-09-04
 # ============================================================

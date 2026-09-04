@@ -33,8 +33,6 @@
 **/*_cache/
 **/.quarto/
 
-# Quarto book build output (regenerate with `quarto render`)
-docs/progress_book/_book/
 
 # Annotated copies (local working copies, not version-controlled)
 **/annotated copies/

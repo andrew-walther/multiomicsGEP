@@ -13,9 +13,15 @@
 #          orphan gh-pages branch via a throwaway clone (never touches this
 #          working copy's git state).
 #
-#          _book/ is intentionally gitignored on main (build artifact) --
-#          only gh-pages carries the rendered output.
+#          _book/ is ALSO tracked on main directly (so the rendered HTML is
+#          browsable/downloadable from the repo itself, not only via
+#          gh-pages) -- this script only handles the gh-pages/Pages side;
+#          committing _book/'s changes to main is a separate, manual step
+#          (or let .github/workflows/publish-progress-book.yml's own
+#          render stay authoritative for gh-pages and just `git add`/commit
+#          _book/ here yourself when you want main to carry the update too).
 #
+
 # Usage:   bash docs/progress_book/publish_gh_pages.sh
 # Author:  Claude Code (reviewed by Andrew Walther)
 # Created: 2026-09-04
