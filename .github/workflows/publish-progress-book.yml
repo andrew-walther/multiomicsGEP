@@ -43,7 +43,7 @@ jobs:
         uses: r-lib/actions/setup-r@v2
 
       - name: Install R packages used by the book's chunks
-        run: Rscript -e 'install.packages(c("knitr", "dplyr"))'
+        run: Rscript -e 'install.packages(c("knitr", "dplyr", "rmarkdown"))'
 
       - name: Render book
         run: quarto render docs/progress_book
