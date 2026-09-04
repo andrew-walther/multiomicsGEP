@@ -251,6 +251,45 @@ this is an open question, not addressed here — the full Stage 3 analysis (boot
 pairwise differences, leave-one-study-out, and the separate supervised-vs-unsupervised factor
 comparison) is still pending and would sharpen whether −0.0135 is distinguishable from noise.
 
+### §3.1 — Performance is not the only, or best, target: two follow-up questions
+
+**Is recovery of cohort-specific structure a better target than external C-index?** Yes. External
+C-index cannot distinguish "the model attributes signal to the correct cohort" from "it doesn't" —
+only a ground-truth check (simulation) or direct inspection of per-cohort coefficients (real data)
+can. The real-data check, done for free from the fits already saved above:
+
+|  | Program 3 (protective) | Program 7 (adverse) |
+|---|---|---|
+| Shared beta (joint_yfb) | 0.0115 | -0.0404 |
+| CPTAC (beta_cohort_id) | 0.0304 | -0.0341 |
+| TCGA_PAAD (beta_cohort_id) | 0.0004 | -0.0394 |
+
+Program 3's survival association is almost entirely a **CPTAC effect** — the shared-beta model blends
+it into a smaller, misleading number that applies to neither cohort exactly. Program 7's adverse
+effect is **consistent across both cohorts**. This is a real, interpretable finding about cohort
+heterogeneity that external C-index cannot see, independent of whether it moves the C-index needle —
+and it is exactly the kind of value this method could offer over DeSurv or plain unsupervised
+EBMF/NMF, neither of which represents per-cohort coefficients at all. The ground-truth version of this
+check — does `beta_cohort_id` correctly recover known shared-vs-specific factor structure in the
+multi-cohort simulation — is added to Stage 5 (§6).
+
+**Can `cohort_id` help without "stealing" K factors, the way it dropped `K_survival_active` from 2 to
+1 above?** Tested directly: refit `joint_yfb_cohort_L`, warm-started from the plain `joint_yfb` fit's
+converged loadings/factors instead of a fresh SVD init.
+
+| | Fresh SVD init | Warm-started from joint_yfb |
+|---|---|---|
+| K_survival_active | 1 | 2 |
+| Mean external C | 0.5431 | **0.6172** |
+
+Warm-starting recovers both survival-active factors and closes most of the gap to the plain model
+(0.6267) without any change to the model itself. **The factor loss under fresh-SVD `cohort_id` is a
+CAVI convergence artifact, not a genuine information conflict** between the genomics-offset columns
+and the biological factors — consistent with this project's repeated finding that fresh-SVD CAVI at a
+given K is not guaranteed to reach that K's best solution (the K=4/5 warm-start results from
+2026-07-13, and the multistart checks in §2.4 above and from 2026-08-19). `cohort_id` was not
+redesigned; a better starting point was enough.
+
 ---
 
 ## §4 — Where the value-add goes next

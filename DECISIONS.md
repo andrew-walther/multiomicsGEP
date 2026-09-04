@@ -151,6 +151,35 @@ actively harmful the way `cohort_id` is. Combining all three extensions (0.6060)
 gap either. Reported as a finding, not smoothed over: the cohort-aware extensions built to date do
 not improve on the simplest joint model for this dataset's size and cohort structure.
 
+**Addendum, same day — two follow-up questions from Andrew, both answered directly with evidence
+rather than left as speculation:**
+
+1. **"Performance may be the wrong target — do we recover cohort-specific structure, not just match
+   or beat external C?"** Correct, and this reframes the right evaluation. External C-index cannot
+   distinguish "the model attributes signal to the correct cohort" from "the model doesn't"; only a
+   ground-truth check (simulation) or a direct inspection of per-cohort coefficients (real data) can.
+   Checked the latter for free from the already-saved fits
+   (`cohort_beta_comparison_fits.rds`): under `beta_cohort_id`, Program 3's survival coefficient is
+   **almost entirely a CPTAC effect** (beta=0.0304 in CPTAC vs. 0.0004 in TCGA_PAAD) that the shared-beta
+   model blends into a smaller, misleading 0.0115 for both cohorts; Program 7's adverse effect is
+   **consistent across both cohorts** (-0.0341 CPTAC, -0.0394 TCGA_PAAD). This is a real, interpretable
+   cohort-heterogeneity finding invisible to external C-index, and a genuine argument for
+   `beta_cohort_id` as a diagnostic tool independent of whether it moves the C-index needle. The
+   ground-truth version of this check (does `beta_cohort_id` correctly recover known shared-vs-specific
+   factor structure in the multi-cohort simulation, via `classify_specificity()`) is added to Stage 5.
+
+2. **"Can `cohort_id` help without stealing K factors, the way it dropped `K_survival_active` from 2 to
+   1?"** Tested directly: refit `joint_yfb_cohort_L` warm-started from the plain `joint_yfb` fit's
+   converged `EL`/`EF` (`init_method="custom"`) instead of a fresh SVD init. Result:
+   `K_survival_active` recovers to 2 (`EBeta ~= [0.0132, -0.0359]`, close to the original
+   `[0.0115, -0.0404]`), and mean external C rises to **0.6172** (vs. 0.5431 fresh-SVD) — closing most
+   of the gap to the plain model (0.6267) without any architecture change. **The 2->1 factor loss under
+   fresh-SVD `cohort_id` is a CAVI convergence artifact, not a genuine information conflict** between
+   the genomics-offset columns and the biological factors — consistent with this project's own
+   repeated finding that fresh-SVD CAVI at a given K is not guaranteed to reach that K's best
+   solution (2026-07-13 warm-start results, 2026-08-19/2026-09-04 multistart checks). `cohort_id` was
+   not redesigned to avoid this; a good starting point was enough.
+
 ---
 
 ## 2026-09-04 (addendum) — Stage 6: the K_init=11/13 external-C dip does not survive as a multistart artifact; the falsifiable prediction in this same entry's Stage 1 work was wrong
