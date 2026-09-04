@@ -85,6 +85,45 @@ the honest record of what was presented that day.
 
 ---
 
+## 2026-09-04 (addendum) — Stage 6: the K_init=11/13 external-C dip does not survive as a multistart artifact; the falsifiable prediction in this same entry's Stage 1 work was wrong
+
+**Context.** The K_init=2..20 sweep (above) shows external C-index dipping sharply at K_init=11
+(0.5994) and K_init=13 (0.5390), against an otherwise flat K_init=7..20 plateau (~0.627), coinciding
+with the two worst ELBOs in that sweep (-825096, -834897) and with `K_survival_active` jumping from 2
+to 3. Before this session's fitting, that pattern was named as a falsifiable prediction: if the dip is
+a single-init CAVI local-optimum artifact (the documented failure mode for K=5/6 in the 2026-08-19
+multistart check, and for K=2/4 in the 2026-07-13 K-parsimony follow-up), a 15-restart best-ELBO
+multistart search should find a better solution at K=11/13 that lands back on the plateau.
+
+**Method.** New `results/benchmark_sim/run_k_init_multistart_dip_check.R` (a separate script from the
+2026-08-19 `run_k_init_multistart_check.R`, so that script's tracked outputs are untouched):
+`fit_cox_on_yf_multistart()`, `n_init=15` (1 SVD + 14 random), best-ELBO selection, at
+K_init ∈ {10,...,15} — bracketing both dips with K=10/12/14/15 as non-dip controls, same D4
+preprocessing as the main sweep.
+
+**Result: the prediction is wrong.** At every K in {10,...,15}, the SVD init already has the best ELBO
+of all 15 restarts by a wide margin (e.g. K=11: SVD init ELBO=-825096 vs. next-best of the 14 random
+restarts at -848k or worse; K=13: SVD=-834897 vs. next-best -850k or worse) — every random restart
+collapses to `k_eff≈0` (all factors pruned to zero), so multistart from random initializations never
+finds, let alone beats, whatever solution the SVD init reaches. The best-of-multistart result is
+therefore identical to the single-init sweep at every K in this range, external C included
+(K=11: 0.5994 → 0.5994; K=13: 0.5390 → 0.5390).
+
+**Consequence.** The K_init=11/13 dip is not a fixable single-init artifact — it is a reproducible
+property of the SVD-initialized fit at those two specific K values (the only initialization method
+that has ever produced a competitive fit anywhere in this project; random restarts are uniformly much
+worse at every K tested, here and in the 2026-08-19/2026-07-13 checks). Why K=11 and K=13
+specifically converge to a 3-survival-active-factor solution with much worse external validity, while
+every other K_init in the 7..20 range does not, remains unexplained. This is left as an open question
+rather than investigated further here (deflation-init or warm-starting from the K=7 solution are the
+natural next things to try, but were out of scope for this check).
+
+**Files:** `results/benchmark_sim/run_k_init_multistart_dip_check.R`;
+`results/benchmark_sim/outputs/k_init_sweep/k_init_multistart_dip_results.csv`,
+`k_init_multistart_dip_restarts.csv`.
+
+---
+
 ## 2026-08-27 — K selection reframed for the 8/27 lab meeting: BIC/log-likelihood added, K_init=2..20 swept, LB dropped, simulation re-run under ARD
 
 **Context:** preparing the 2026-08-27 lab-meeting deck (`presentation/walther_lab_meeting_08_27_2026/`).

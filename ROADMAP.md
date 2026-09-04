@@ -592,6 +592,18 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 📐 Model Selection
 
+- [ ] **What causes the K_init=11/13 external-C dip?** `[Priority: Medium]` `[Effort: Medium]`
+  Raised and only partly answered 2026-09-04 (`run_k_init_multistart_dip_check.R`, DECISIONS.md
+  2026-09-04 addendum): a stated, falsifiable prediction that 15-restart best-ELBO multistart would
+  remove the dip (treating it as a single-init CAVI local-optimum artifact, the documented failure
+  mode elsewhere in this project) was WRONG — the SVD init already has the best ELBO of all 15
+  restarts at every K in {10,...,15}, so multistart reproduces the dip exactly. The dip is real and
+  reproducible, not a fixable initialization artifact, but why K_init=11 and K_init=13 specifically
+  land on a 3-survival-active-factor solution with much worse external validity (while every other
+  K_init in 7..20 does not) is still unexplained. Natural next steps, not yet tried:
+  deflation-init (`code/deflation_init.R`) at K=11/13, or warm-starting from the converged K=7
+  solution's factors plus 4-6 fresh ones.
+
 - [ ] **Literature grounding + sensitivity analysis for the ARD feature-retention thresholds** `[Priority: Medium]` `[Effort: Low-Medium]`
   `config/globals.yml`'s `k_selection$pve_threshold` (0.01, 1% PVE) and `k_selection$beta_threshold`
   (0.001) are **not** derived from a citable source. `beta_threshold` was explicitly
