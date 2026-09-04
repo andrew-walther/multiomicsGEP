@@ -1,0 +1,56 @@
+# ============================================================
+# Workflow: publish-progress-book.yml
+# Purpose: Auto-render and publish docs/progress_book/ to GitHub Pages
+#          (gh-pages branch) on every push to main that touches it, so
+#          https://andrew-walther.github.io/multiomicsGEP/ always reflects
+#          the latest chapter without a manual publish step.
+#
+#          Figures under docs/progress_book/figs/*.png are pre-rendered
+#          and committed to git (not regenerated here) -- the book's own
+#          R chunks only need knitr + dplyr for tables, no modeling
+#          packages or real PDAC data, so this stays a fast, self-contained
+#          CI job.
+#
+#          Manual/local equivalent: docs/progress_book/publish_gh_pages.sh
+#          (same end result, useful for previewing before pushing).
+#
+# Author:  Claude Code (reviewed by Andrew Walther)
+# Created: 2026-09-04
+# ============================================================
+name: Publish progress book
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/progress_book/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  render-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Install R packages used by the book's chunks
+        run: Rscript -e 'install.packages(c("knitr", "dplyr"))'
+
+      - name: Render book
+        run: quarto render docs/progress_book
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/progress_book/_book
+          publish_branch: gh-pages
