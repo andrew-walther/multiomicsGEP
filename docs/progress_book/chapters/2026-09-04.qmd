@@ -1,0 +1,262 @@
+# September 4, 2026
+
+## Summary {.unnumbered}
+
+**The 8/27 K_init sweep's log-likelihood and BIC were in-sample, not cross-validated.** An advisor
+asked directly whether they were, and the honest answer at the time was "not sure, probably" — they
+were not. A genuine held-out survival log-likelihood and a bi-cross-validated genomics log-likelihood
+now exist alongside the existing in-sample criteria, reported separately since they answer different
+questions. See (§2).
+
+**Building the held-out survival log-likelihood surfaced a real, pre-existing orientation bug** in
+`fit_cox_on_yf()`'s post-loop sign-correction, independent of anything else in this session's work. It
+does not affect any previously-reported external C-index or K_eff number, but it did affect the
+in-sample BIC/log-likelihood values reported on 8/27. Fixed at the two places it mattered
+(`compute_bic.R`, `compute_cv_loglik.R`); the shared fitting function is left unchanged and the issue
+documented at the source. See (§2).
+
+**Six criteria now disagree on K_init, and the disagreement is itself informative, not a problem to
+resolve.** ELBO and in-sample BIC prefer K_init=3; held-out survival log-likelihood drifts toward
+larger K; bi-CV genomics log-likelihood favors K≈4; external C-index plateaus from K_init=7. External
+C-index is the only one of the five testing generalization to genuinely independent cohorts, and is
+the right one to lead with. See (§2).
+
+**The K_init=11/13 external-C dip is real and not a multistart artifact.** A stated, falsifiable
+prediction that 15-restart best-ELBO multistart would remove the dip was WRONG — the SVD init already
+has the best ELBO of all 15 restarts at every K tested. Why these two specific K values land on a
+worse solution remains open. See (§2.3).
+
+**Cohort membership now reaches the survival coefficients, not just the genomics reconstruction.** A
+new `beta_cohort_id` argument lets each latent factor carry a different survival coefficient per
+cohort, distinct from the existing `cohort_id` (genomics offsets) and `strata_id` (baseline hazard)
+extensions — all three are now inventoried and composable. See (§3).
+
+---
+
+## §1 — Feedback from the 8/27 meeting
+
+The meeting went well ("results & method are a great basis for the paper" — Naim). Two items were
+substantive model/method gaps rather than write-ups, and both are addressed as real implementation in
+this chapter rather than documentation:
+
+- Whether the log-likelihood and BIC used to select `K_init` were cross-validated. They were not — §2
+  states plainly what was actually computed on 8/27, and adds a genuine held-out criterion.
+- Whether cohort membership could enter the survival term directly, not just the genomics
+  reconstruction. §3 adds cohort-specific survival coefficients.
+
+`chapters/2026-08-27.qmd` is left as the pre-meeting record and is not altered by this chapter.
+
+---
+
+## §2 — What the log-likelihood and BIC actually were, and a cross-validated replacement
+
+```{r setup}
+library(knitr); library(dplyr)
+BM <- "../../../results/benchmark_sim/outputs"
+rd <- function(p) if (file.exists(p)) read.csv(p, stringsAsFactors = FALSE) else NULL
+
+ksweep <- rd(file.path(BM, "k_init_sweep", "k_init_sweep_results.csv"))
+dip    <- rd(file.path(BM, "k_init_sweep", "k_init_multistart_dip_results.csv"))
+cbc    <- rd(file.path(BM, "cohort_beta_comparison", "cohort_beta_comparison_results.csv"))
+```
+
+### §2.1 — What was actually computed on 8/27
+
+The 8/27 figure's log-likelihood and BIC (`code/compute_bic.R`'s `compute_joint_ll_bic()`) are
+**in-sample**: the model is fit on all 273 training patients, then scored on those same 273 patients.
+Three limitations of this specific BIC, verified directly in `compute_bic.R`'s roxygen and repeated
+here because they explain why it and a genuine held-out check can disagree:
+
+- The Cox term is a *partial* likelihood with the baseline hazard profiled out. Its effective sample
+  size is the event count (139 in this training set), not the 273 patients `log(n)` charges it
+  against.
+- `df = K_init·(n+p+1)` is charged by the CAVI starting K, not by ARD's K_eff — deliberate (K_eff is a
+  post-hoc classification of the same fit, not a smaller model), but it means BIC's complexity penalty
+  does not track what ARD actually keeps.
+- `log(n)·df` applies a single, `n`-scaled penalty against a genomics reconstruction term whose
+  effective sample size is `n·p` (≈563,000 entries), not `n`.
+
+No "cross-validated BIC" was built. BIC's `log(n)` penalty and cross-validation both correct for
+in-sample optimism, under different asymptotic justifications (BIC vs. AIC) — combining them
+double-corrects the same thing. The right comparison is: keep the in-sample BIC with the caveats
+above, and report a genuinely held-out criterion alongside it.
+
+### §2.2 — A held-out survival log-likelihood, and a bi-cross-validated genomics log-likelihood
+
+New `code/compute_cv_loglik.R`, two criteria, reported separately and never combined into one number:
+
+- **`cv_survival_loglik()`**: stratified 5-fold CV, fit on 4/5 of the training patients, scored on the
+  held-out 1/5 via `eta_new = (Y_test·F)·beta` — the exact YFB prediction formula, so no train/test
+  mismatch. Each fold's orientation is fixed from **training** concordance only, never from the
+  held-out fold's own outcomes (that would leak).
+- **`bicv_genomics_loglik()`**: bi-cross-validation (Owen & Perry 2009), holding out row AND column
+  blocks jointly. Ordinary row-wise held-out genomics scoring is not well-defined here — projecting a
+  held-out patient's loadings from that same patient's own expression and then scoring against it
+  reuses the data being scored, so the apparent fit improves in K regardless of real structure. There
+  is also no missing-data (NA/mask) machinery anywhere in the CAVI loop, so Wold-style single-cell
+  masking was not an option.
+
+**Building the held-out survival log-likelihood found a real bug, independent of this new code.**
+Orienting each CV fold required replicating `fit_cox_on_yf()`'s own post-loop sign-correction rule.
+Doing so exposed that the rule checks `concordance(Surv(time,status) ~ eta)` without `reverse = TRUE`
+— per `survival::concordance()`'s own documentation, its formula method assumes a larger predictor
+means a *longer* survival by default, the opposite of a Cox risk score. Verified empirically: a fit
+with true training concordance of 0.90+ read as "already fine, don't flip" under the existing check,
+because the check itself has the direction backwards.
+
+This does not affect any previously-reported external C-index (`oriented_cindex()`'s `max(c, 1-c)` is
+invariant to exactly this sign ambiguity) or K_eff (`classify_factors()`'s `abs(EBeta)` threshold, also
+sign-invariant), so the K_init=7 recommendation — which rests on external C-index — is unaffected. It
+does affect Cox partial log-likelihood, which is not sign-invariant, so the 8/27 BIC/log-likelihood
+values were computed on a systematically mis-oriented survival term. The shared fitting function
+(`fit_cox_on_yf.R`) is left unchanged — fixing it would flip `EBeta`'s sign for every existing fit, and
+every currently-reported result that depends on that sign already uses a convention that does not need
+the check to be correct. `compute_bic.R` and `compute_cv_loglik.R` instead re-derive the correct
+orientation themselves; the issue is documented prominently at the source.
+
+### §2.3 — Six criteria, six different questions
+
+```{r ksweep-fig, fig.cap="K_init consensus sweep, six panels. ELBO and in-sample BIC (top left, top middle) score training-data fit dominated by the genomics term (n·p ≈ 563,000 numbers vs. 139 events); held-out survival log-likelihood (bottom left) and bi-cross-validated genomics log-likelihood (bottom middle) are new this session; external C-index (bottom right) is the only criterion testing generalization to genuinely independent cohorts."}
+knitr::include_graphics("../figs/2026-09-04_k_init_sweep_6panel.png")
+```
+
+Reading each panel as what it actually measures, not as a single number to argmax:
+
+- **ELBO / in-sample BIC** score training-data fit combined across genomics reconstruction and
+  survival into one number, and the genomics term is roughly 1,400x larger by raw entry count. They
+  are really answering "does this factor reduce genomics reconstruction error enough to justify its
+  complexity cost," almost regardless of what it does for survival — which is exactly why K_init=3
+  (`r if (!is.null(ksweep)) ksweep$K_eff_total[ksweep$K_init==3] else 3` kept factors, no ARD pruning
+  headroom at all) looks best to them even though its external C-index
+  (`r if (!is.null(ksweep)) sprintf("%.3f", ksweep$mean_external_c[ksweep$K_init==3]) else "0.594"`)
+  sits near the K_init=2 floor.
+- **Held-out survival log-likelihood** measures only survival generalization, on the *same* training
+  cohort (one 5-fold split, not repeated across seeds). It drifts upward with K
+  (`r if (!is.null(ksweep)) sprintf("%.3f", min(ksweep$cv_survival_logPL_per_event, na.rm=TRUE)) else "-3.24"`
+  at the low end to
+  `r if (!is.null(ksweep)) sprintf("%.3f", max(ksweep$cv_survival_logPL_per_event, na.rm=TRUE)) else "-3.16"`
+  at the high end, per event) — a real signal, but a noisy single-split one, best read as "more
+  factors don't obviously hurt held-out survival fit here" rather than a precise argmax at K=19.
+- **Bi-CV genomics log-likelihood** measures only genomics generalization, and says something
+  different: past K≈4, additional factors mostly capture structure that does not hold up under
+  held-out gene×patient blocks — a caveat purely about the genomics side, unrelated to survival.
+- **External C-index** is the only criterion testing generalization to genuinely independent cohorts
+  (different institutions, platforms, years) — the actual deployment question, and the right one to
+  lead with. It plateaus from K_init=7
+  (`r if (!is.null(ksweep)) sprintf("%.3f", ksweep$mean_external_c[ksweep$K_init==7]) else "0.627"`)
+  through K_init=20, with a nominal peak at K_init=12
+  (`r if (!is.null(ksweep)) sprintf("%.3f", ksweep$mean_external_c[ksweep$K_init==12]) else "0.630"`,
+  a +0.003 difference from K_init=7 — not a meaningfully different result). K_init=7 is the smallest
+  K_init on that plateau, which is the parsimony argument, not a claim that ELBO/BIC concur.
+
+The disagreement is not a discrepancy to resolve. Each criterion is answering a genuinely different
+question — training fit dominated by genomics, held-out survival fit on the training cohort, held-out
+genomics fit on the training cohort, and generalization to new cohorts entirely — and trusting the one
+closest to the actual deployment question (external C-index) over the others is the correct read, not
+an arbitrary choice among five noisy estimates of the same thing.
+
+### §2.4 — The K_init=11/13 dip does not survive multistart
+
+The sweep above shows external C-index dropping sharply at K_init=11
+(`r if (!is.null(ksweep)) sprintf("%.3f", ksweep$mean_external_c[ksweep$K_init==11]) else "0.599"`)
+and K_init=13
+(`r if (!is.null(ksweep)) sprintf("%.3f", ksweep$mean_external_c[ksweep$K_init==13]) else "0.539"`),
+against an otherwise flat K_init=7..20 plateau, coinciding with the two worst ELBOs in the sweep and
+with `K_survival_active` jumping from 2 to 3. Before running anything, this was stated as a falsifiable
+prediction: if the dip is a single-init CAVI local-optimum artifact — the documented failure mode
+elsewhere in this project, for K=5/6 (2026-08-19) and K=2/4 (2026-07-13) — a 15-restart best-ELBO
+multistart search should find a better solution at K_init=11/13 that lands back on the plateau.
+
+```{r dip-table}
+if (!is.null(dip)) {
+  kable(dip[, c("K", "best_idx", "n_init", "best_elbo_full", "K_survival_active", "mean_external_c")],
+        col.names = c("K_init", "Best restart", "n restarts", "Best ELBO", "K survival-active", "Mean external C"),
+        digits = c(0, 0, 0, 1, 0, 4))
+} else {
+  cat("(k_init_multistart_dip_results.csv not found)")
+}
+```
+
+**The prediction is wrong.** At every K_init in {10,...,15}, restart 1 (the SVD init) already has the
+best ELBO of all 15 restarts — every random restart collapses to essentially zero active factors, so
+best-of-multistart reproduces the single-init sweep exactly, dip included. The K_init=11/13 dip is a
+real, reproducible property of the SVD-initialized fit at those two specific K values, not a fixable
+initialization artifact. Why K_init=11 and K_init=13 specifically converge to a 3-survival-active-factor
+solution with much worse external validity, while no other K_init in the 7-20 range does, is left open
+(`ROADMAP.md`); deflation-init or warm-starting from the converged K_init=7 solution are the natural
+next things to try, not attempted here.
+
+---
+
+## §3 — Cohort membership in the survival term
+
+Three cohort-aware model components now exist and are independent, composable, and separately
+maintained:
+
+| Component | Added | What it does | Effect on beta |
+|---|---|---|---|
+| `cohort_id` | 2026-05-22 | Fixed indicator columns appended to L/F, absorbing per-gene platform offsets in genomics reconstruction | `beta_cohort = 0` by construction — never reaches survival |
+| `strata_id` | 2026-07-15 | Stratified Cox partial likelihood — cohort-specific baseline hazard | Beta stays shared across strata |
+| `beta_cohort_id` | 2026-09-04 | Cohort-specific survival coefficients beta_k^(c) | The only one where beta itself varies by cohort |
+
+$$
+\eta_i = \sum_k (YF)_{ik} \cdot \beta_k^{c(i)}
+$$
+
+- $\eta_i$: the Cox linear predictor for patient $i$
+- $(YF)_{ik}$: the observed projection score of patient $i$ onto factor $k$
+- $\beta_k^{c(i)}$: the survival coefficient for factor $k$ under patient $i$'s cohort $c(i)$
+
+The $C$ cohort coefficients per factor are partially pooled through one shared EBNM prior (one
+vectorized `ebnm()` call per factor across cohorts, not $C$ independent calls) — the "consensus
+factors are more reproducible" idea, made operational rather than assumed.
+
+`cohort_id` was last benchmarked 2026-05-22 at K=20 under an older preprocessing pipeline, where it
+lost for YFB (mean external C 0.544 → 0.539) — never under the current recommended config until now.
+The table below re-benchmarks it there directly, alongside the new `beta_cohort_id` extension, all
+three combined, and the two-step EBMF→Cox baseline — sanity-gated first against
+`desurv_comparison_results.csv` (D4: 0.6267, K_eff=2 — matched exactly).
+
+```{r cohort-beta-table}
+if (!is.null(cbc)) {
+  kable(cbc[, c("arm", "K", "K_survival_active", "K_eff_total", "mean_external_c")],
+        col.names = c("Arm", "K", "K survival-active", "K_eff total", "Mean external C"),
+        digits = c(0, 0, 0, 0, 4))
+} else {
+  cat("(cohort_beta_comparison_results.csv not found)")
+}
+```
+
+**This is a clean null result for every cohort-aware extension tested here, under the current
+recommended config.** None beats the plain joint model (0.6267):
+
+- **`cohort_id` alone is the worst arm** (0.5431), even worse than the two-step baseline (0.6008), and
+  `K_survival_active` drops from 2 to 1 — the genomics-offset columns compete with, rather than
+  coexist alongside, the biological factors that carry real survival signal. This extends the
+  2026-05-22 finding (cohort_id lost for YFB under older preprocessing) to the current D4/K_init=7
+  config directly, closing that open question.
+- **`beta_cohort_id` alone is the best of the three cohort-aware arms** and clears the two-step
+  baseline (0.6132 vs. 0.6008), but still trails the plain joint model by −0.0135. Cohort-specific
+  survival coefficients are not actively harmful the way `cohort_id` is, but they do not currently add
+  value over a single shared coefficient — on this training set (n=273, 139 events, C=2 cohorts), there
+  is not enough per-cohort signal for the partial-pooling structure to earn back the extra model
+  complexity.
+- **Combining all three extensions (0.6060) does not recover the gap** either — it sits between
+  `beta_cohort_id` alone and the two-step baseline.
+
+Reported as a finding, not smoothed over: the cohort-aware extensions built to date do not improve
+external validity for this dataset's size and cohort structure (two training cohorts). Whether a
+larger or more heterogeneous training set (more than two cohorts, larger per-cohort n) would change
+this is an open question, not addressed here — the full Stage 3 analysis (bootstrap CIs on the
+pairwise differences, leave-one-study-out, and the separate supervised-vs-unsupervised factor
+comparison) is still pending and would sharpen whether −0.0135 is distinguishable from noise.
+
+---
+
+## §4 — Where the value-add goes next
+
+Multi-modality extension (methylation, matched multi-view data) is out of scope here: no such data
+exists under `PDAC_DATA_ROOT` (all 7 datasets are gene-level expression/protein), and
+`preprocess_merged_cohorts()` row-binds patients into one n×p matrix, so same-patient feature blocks
+from different modalities are structurally unrepresentable in the current pipeline. This is a
+prerequisite for that direction, not a decision against it.

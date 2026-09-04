@@ -85,6 +85,74 @@ the honest record of what was presented that day.
 
 ---
 
+## 2026-09-04 (addendum) — Stage 2: cohort-specific survival coefficients (`beta_cohort_id`), and a review of prior cohort-aware work so nothing is left orphaned
+
+**Motivation.** A direct question at the 8/27 meeting: can cohort membership enter the survival
+term, not just the genomics side? This entry both answers it and catalogs how it relates to the
+project's two EARLIER cohort-aware extensions, so the three do not get confused with one another.
+
+**Inventory of cohort-aware model components (all three now exist, all three are independent and
+composable):**
+
+| Component | Added | What it does | Effect on beta |
+|---|---|---|---|
+| `cohort_id` | 2026-05-22 | Fixed indicator columns appended to L/F, absorbing per-gene platform offsets in genomics reconstruction | `beta_cohort = 0` by construction — never reaches survival |
+| `strata_id` | 2026-07-15 (Item 3) | Stratified Cox partial likelihood — cohort-specific baseline hazard | Beta stays shared across strata |
+| `beta_cohort_id` | 2026-09-04 (this entry) | Cohort-specific survival coefficients beta_k^(c) | The only one where beta itself varies by cohort |
+
+`cohort_id` and `strata_id` are unchanged by this work — neither file (`code/update_F_cohort.R`,
+the `strata_id` block in `code/fit_cox_on_yf.R`) was touched, and `results/benchmark_sim/run_cohort_lmm_benchmark.R`
+(the existing 4-way LB/YFB × base/cohort benchmark using `cohort_id`) still runs exactly as before.
+`cohort_id` was last benchmarked 2026-05-22 at K=20 under an OLDER preprocessing pipeline (pre-Phase-1c,
+pre-DeSurv-aligned D4 config), where it was neutral-to-slightly-negative for YFB (mean external C
+0.544 → 0.539) — never re-benchmarked under the current recommended config (D4, K_init=7). The
+comparison below (Stage 3 preview) fills that gap directly.
+
+**Implementation.** New `code/update_beta_cohort.R`: `update_beta_cohort_k()`/`_all()` reproduce
+`update_beta_k()`'s A_k/B_k formulas per cohort-subset (zero edits to `update_beta_k()` itself), then
+make ONE vectorized `ebnm()` call per factor across the C cohorts so they partially pool toward a
+shared value rather than fitting C independent scalars. Wired into `fit_cox_on_yf.R` via a new
+`beta_cohort_id` argument (default `NULL`, verified to reproduce the current fit bit-for-bit —
+`tests/test_fit_yf_cohort.R` `YFBBetaCohort-T1`, checked against a git-stashed pre-change build
+directly, not just a unit test). `predict_cox_on_yf()` gained `cohort_id_test` (appended after
+`EF_norms`, positional callers unaffected): `NULL` uses the fit's `$EBeta_pooled` (computed from
+pooled patient-sums, not `rowMeans(EBeta)`, which is wrong under unequal cohort sizes — 144 vs 129
+in this project's own training data); a supplied unseen cohort level errors loudly.
+`classify_factors()` now tests `max_c |beta_k^(c)|` for survival-active status under cohort beta,
+reporting each cohort's value alongside (`$EBeta_by_cohort`) rather than averaging disagreement away.
+`compute_bic.R`'s `df` becomes `K_init*(n+p+C)` under cohort beta (one survival coefficient per
+factor per cohort, not one shared). 15 new tests (`tests/test_update_beta_cohort.R`,
+`tests/test_fit_yf_cohort.R` additions). Test count: 425 → 440, zero regressions.
+
+**Result (Stage 3 preview — full analysis, bootstrap CIs, and leave-one-study-out remain Stage 3
+proper):** `results/benchmark_sim/run_cohort_beta_comparison.R`, sanity-gated against
+`desurv_comparison_results.csv` (D4: 0.6267, K_eff=2 — matched exactly before interpreting anything
+else). Five arms, mean external C-index across the 5 held-out cohorts, all at K_init=7, D4
+preprocessing:
+
+| Arm | K_survival_active | Mean external C |
+|---|---|---|
+| **joint_yfb** (current recommended, no cohort information) | 2 | **0.6267** |
+| joint_yfb_cohort_L (+ `cohort_id` only) | 1 | 0.5431 |
+| joint_yfb_beta_c (+ `beta_cohort_id` only) | 2 | 0.6132 |
+| joint_yfb_all_c (`cohort_id` + `strata_id` + `beta_cohort_id`) | 2 | 0.6060 |
+| two_step_ebmf_cox (reused, K=40, LASSO stage 2) | — | 0.6008 |
+
+**This is a clean null result for every cohort-aware extension tested here, under the current
+recommended config — none beats the plain joint model.** `cohort_id` alone is the worst arm, even
+worse than the two-step baseline (0.5431), and its `K_survival_active` drops from 2 to 1 — the
+genomics-offset columns appear to compete with, not just coexist alongside, the biological factors
+that carry real survival signal, extending the 2026-05-22 finding (cohort_id lost for YFB under
+older preprocessing) to the current D4/K_init=7 config directly. `beta_cohort_id` alone is the best
+of the three cohort-aware arms and clears the two-step baseline (0.6132 vs. 0.6008), but still trails
+the plain joint model by −0.0135 — cohort-specific survival coefficients do not currently add value
+over a single shared coefficient on this training set (n=273, 139 events, C=2), though they are not
+actively harmful the way `cohort_id` is. Combining all three extensions (0.6060) does not recover the
+gap either. Reported as a finding, not smoothed over: the cohort-aware extensions built to date do
+not improve on the simplest joint model for this dataset's size and cohort structure.
+
+---
+
 ## 2026-09-04 (addendum) — Stage 6: the K_init=11/13 external-C dip does not survive as a multistart artifact; the falsifiable prediction in this same entry's Stage 1 work was wrong
 
 **Context.** The K_init=2..20 sweep (above) shows external C-index dipping sharply at K_init=11
