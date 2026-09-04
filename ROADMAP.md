@@ -79,6 +79,26 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [ ] **Slow, thorough re-characterization of the selected gene programs' biological character,
+  now that `beta_cohort_id` (cohort-specific survival coefficients) is integrated**
+  `[Priority: High]` `[Effort: Large]` — Flagged 2026-09-04 (Andrew), explicitly as a NEXT step, not
+  to be started immediately.
+  The existing 5-method characterization of Programs 3/7 (fgsea + ORA gene-set enrichment, PurIST
+  subtype concordance, external-cohort hazard-ratio consistency, SBMF-vs-DeSurv gene overlap;
+  `code/pathway_enrichment.R`, `docs/reports/pathway_enrichment_report_07_15_26.pdf`, DECISIONS.md
+  2026-07-15) was run and reported without a slow walkthrough of what each method actually tests —
+  Andrew does not currently have working understanding of the methods themselves, only the
+  headline conclusion. It also predates `beta_cohort_id` (Stage 2, DECISIONS.md 2026-09-04) and so
+  never incorporated what cohort-specific coefficients revealed: Program 3's effect is almost
+  entirely CPTAC-specific, Program 7's is consistent across both training cohorts (2026-09-04
+  chapter, §3). **Explicit preference for HOW to start this: teach-back first** — walk through each
+  of the 5 existing methods in plain terms (what it tests, what its output means, its limitations)
+  using the existing results as the worked example, before any new analysis or re-running is
+  planned. Only after that understanding is solid should the group plan what's actually missing
+  (e.g. whether the 5 methods should be re-run split by cohort, whether new methods are needed, how
+  the cohort-specific finding should reshape the biological narrative). Do not skip to new analysis
+  code before the teach-back.
+
 - [ ] **Full ROADMAP.md review and pass, after the 9/4 meeting** `[Priority: High]` `[Effort: Small-Medium]`
   Flagged 2026-09-03 (Andrew). This document hasn't had a full top-to-bottom review in a while —
   several sections likely have stale priorities, items that are actually done but not checked off,
