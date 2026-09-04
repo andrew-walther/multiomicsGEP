@@ -127,8 +127,16 @@ compute_ebnm_kl <- function(ebnm_log_lik, A, x, mean_q, second_q) {
 #' @param w       n-vector: Cox diagonal Hessian (negative, positive values)
 #' @param EL      n x K matrix: posterior means E_q[l_{ik}]
 #' @param EL2     n x K matrix: posterior 2nd moments E_q[l_{ik}^2]
-#' @param EBeta   K-vector: posterior means E_q[beta_k]
-#' @param EBeta2  K-vector: posterior 2nd moments E_q[beta_k^2]
+#' @param EBeta   K-vector: posterior means E_q[beta_k]. When `cohort_idx` is
+#'                supplied, a K x C matrix instead (one column per cohort;
+#'                see `code/update_beta_cohort.R`).
+#' @param EBeta2  K-vector (or K x C matrix, matching `EBeta`): posterior 2nd
+#'                moments E_q[beta_k^2]
+#' @param cohort_idx NULL (default, preserves the shared-beta path exactly),
+#'                or an n-vector of integers in 1..C giving each patient's
+#'                cohort index into `EBeta`/`EBeta2`'s columns. Each
+#'                patient's own cohort column is used when forming
+#'                `Var_q(eta_i)`, since `beta_k^{c(i)}` varies by patient.
 #'
 #' @return scalar: E_q[log PL(t, delta | L, beta)] (approximate)
 #'
@@ -139,12 +147,21 @@ compute_ebnm_kl <- function(ebnm_log_lik, A, x, mean_q, second_q) {
 #'
 #' @seealso fit_modular.R (caller), derivations/MF_UpdateDerivations/
 # ------------------------------------------------------------------------------
-compute_survival_elbo <- function(logPL, w, EL, EL2, EBeta, EBeta2) {
+compute_survival_elbo <- function(logPL, w, EL, EL2, EBeta, EBeta2, cohort_idx = NULL) {
 
-  # Var_q(eta_i) = sum_k [EL2[i,k]*EBeta2[k] - EL[i,k]^2 * EBeta[k]^2]
-  # sweep(EL2, 2, EBeta2, "*"):  each col k of EL2 multiplied by EBeta2[k]
-  var_eta <- rowSums(sweep(EL2, 2, EBeta2, "*")) -
-             rowSums(sweep(EL^2, 2, EBeta^2, "*"))
+  if (is.null(cohort_idx)) {
+    # Var_q(eta_i) = sum_k [EL2[i,k]*EBeta2[k] - EL[i,k]^2 * EBeta[k]^2]
+    # sweep(EL2, 2, EBeta2, "*"):  each col k of EL2 multiplied by EBeta2[k]
+    var_eta <- rowSums(sweep(EL2, 2, EBeta2, "*")) -
+               rowSums(sweep(EL^2, 2, EBeta^2, "*"))
+  } else {
+    # Cohort-specific beta: each patient i uses column cohort_idx[i] of the
+    # K x C matrices EBeta/EBeta2. t(EBeta2)[cohort_idx, ] broadcasts each
+    # patient's own cohort's EBeta2 row (length K) into an n x K matrix in
+    # one indexing operation (same pattern as compute_z_no_k_cohort()).
+    var_eta <- rowSums(EL2 * t(EBeta2)[cohort_idx, , drop = FALSE]) -
+               rowSums(EL^2 * t(EBeta^2)[cohort_idx, , drop = FALSE])
+  }
 
   # Uncertainty correction: subtract (1/2) * sum_i w_i * Var_q(eta_i)
   logPL - 0.5 * sum(w * var_eta)

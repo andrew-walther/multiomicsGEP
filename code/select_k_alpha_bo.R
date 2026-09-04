@@ -191,9 +191,15 @@ pick_trustworthy_bo_winner <- function(history, Y, time, status,
       extra_args
     )))
     fits[[i]]    <- fit_i
+    # Cohort-specific beta (fit_cox_on_yf(..., beta_cohort_id=...)) would make
+    # fit_i$EBeta a K x C matrix -- max_c |EBeta_k^(c)| per factor, so this
+    # still counts K factors, not K*C entries. This BO search never tunes
+    # beta_cohort_id, so ab_beta is always the plain vector case in practice;
+    # guarded defensively per DECISIONS.md 2026-09-04.
+    ab_beta_i <- if (is.matrix(fit_i$EBeta)) apply(abs(fit_i$EBeta), 1, max) else abs(fit_i$EBeta)
     checked[[i]] <- data.frame(
       K = K_i, alpha = top$alpha[i], cv_value = top$Value[i],
-      k_eff = sum(abs(fit_i$EBeta) > beta_threshold),
+      k_eff = sum(ab_beta_i > beta_threshold),
       stringsAsFactors = FALSE
     )
   }

@@ -160,3 +160,144 @@ run_test("YFBCohort-T9: small sigma_F_cohort shrinks EF_cohort toward zero", {
     msg = "tight prior -> smaller |EF_cohort| on average"
   )
 })
+
+# =============================================================================
+# Integration tests for beta_cohort_id (Stage 2, DECISIONS.md 2026-09-04) --
+# COHORT-SPECIFIC SURVIVAL COEFFICIENTS, a distinct extension from cohort_id
+# above (genomics offsets in L/F). Separate fixture, separate section: these
+# tests exercise fit_cox_on_yf()'s beta_cohort_id argument end-to-end,
+# including predict_cox_on_yf()'s cohort_id_test path. Unit tests for the
+# underlying arithmetic (update_beta_cohort_k/_all, compute_pooled_beta) live
+# in tests/test_update_beta_cohort.R; these are the integration layer.
+# =============================================================================
+
+local({
+  set.seed(4242)
+  n <- 80L; p <- 40L; K <- 3L
+  .fb <<- list(
+    n = n, p = p, K = K,
+    Y      = matrix(rnorm(n * p), n, p),
+    time   = rexp(n, 0.1),
+    status = rbinom(n, 1, 0.7),
+    cohort2 = rep(c("A", "B"), each = n / 2)
+  )
+})
+
+# ---------------------------------------------------------------------------
+# BC-INT-T1: beta_cohort_id = NULL is the regression gate -- must reproduce
+# the current (non-cohort) fit bit-for-bit. Non-negotiable per the 9/4 plan.
+# ---------------------------------------------------------------------------
+run_test("YFBBetaCohort-T1: beta_cohort_id=NULL reproduces the fit BIT-FOR-BIT", {
+  fit_ref <- suppressMessages(
+    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 15L,
+                  prior_beta = "normal", alpha = 0.5, sign_correction = TRUE,
+                  verbose = FALSE)
+  )
+  fit_null <- suppressMessages(
+    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 15L,
+                  prior_beta = "normal", alpha = 0.5, sign_correction = TRUE,
+                  verbose = FALSE, beta_cohort_id = NULL)
+  )
+  assert_equal(fit_null$EBeta, fit_ref$EBeta, msg = "EBeta must be bit-for-bit identical")
+  assert_equal(fit_null$EF, fit_ref$EF, msg = "EF must be bit-for-bit identical")
+  assert_equal(fit_null$EL, fit_ref$EL, msg = "EL must be bit-for-bit identical")
+  assert_equal(fit_null$history$elbo_full, fit_ref$history$elbo_full,
+               msg = "elbo_full trajectory must be bit-for-bit identical")
+})
+
+# ---------------------------------------------------------------------------
+# BC-INT-T2: shape and structure of a cohort-beta fit
+# ---------------------------------------------------------------------------
+run_test("YFBBetaCohort-T2: beta_cohort_id gives a K x C EBeta and the expected extra fields", {
+  fit <- suppressMessages(
+    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
+                  verbose = FALSE, beta_cohort_id = .fb$cohort2)
+  )
+  assert_true(is.matrix(fit$EBeta), msg = "EBeta should be a matrix under beta_cohort_id")
+  assert_true(all(dim(fit$EBeta) == c(.fb$K, 2L)), msg = "EBeta should be K x C")
+  assert_equal(colnames(fit$EBeta), c("A", "B"), msg = "EBeta columns should be named by cohort level")
+  assert_length(fit$EBeta_pooled, .fb$K, msg = "EBeta_pooled should be a K-vector")
+  assert_finite(fit$EBeta_pooled, msg = "EBeta_pooled must be finite")
+  assert_true(all(fit$EBeta2 >= fit$EBeta^2 - 1e-8), msg = "EBeta2 >= EBeta^2 elementwise")
+})
+
+# ---------------------------------------------------------------------------
+# BC-INT-T3: end-to-end recovery of genuinely cohort-specific survival signal
+# ---------------------------------------------------------------------------
+run_test("YFBBetaCohort-T3: recovers opposite-signed survival signal across two cohorts", {
+  set.seed(77)
+  n2 <- 300L; p2 <- 60L; K2 <- 2L
+  # Strong single latent factor, opposite prognostic direction per cohort.
+  L_true <- matrix(abs(rnorm(n2)), n2, 1)
+  F_true <- matrix(abs(rnorm(p2)), p2, 1)
+  Y2 <- L_true %*% t(F_true) + matrix(rnorm(n2 * p2, sd = 0.2), n2, p2)
+  Y2 <- cbind(Y2, matrix(rnorm(n2 * (p2)), n2, p2))  # decoy noise genes
+  cohort2 <- rep(c("A", "B"), each = n2 / 2)
+  beta_true <- ifelse(cohort2 == "A", 2.5, -2.5)
+  risk <- as.vector(L_true) * beta_true
+  time2   <- rexp(n2, rate = exp(risk - mean(risk)))
+  status2 <- rbinom(n2, 1, 0.85)
+
+  fit <- suppressMessages(
+    fit_cox_on_yf(Y2, time2, status2, K = K2, max_iter = 60L, tol = 1e-4,
+                  prior_beta = "normal", alpha = 1.0, sign_correction = TRUE,
+                  verbose = FALSE, beta_cohort_id = cohort2)
+  )
+  # The two cohort columns of the survival-carrying factor should have
+  # opposite signs (which factor carries the signal depends on CAVI's own
+  # ordering, so check across all K factors for the largest |beta| spread).
+  beta_range_per_factor <- apply(fit$EBeta, 1, function(r) diff(range(r)))
+  best_k <- which.max(beta_range_per_factor)
+  assert_true(sign(fit$EBeta[best_k, 1]) != sign(fit$EBeta[best_k, 2]),
+              "the factor with the largest cross-cohort beta spread should have opposite-signed cohort coefficients")
+})
+
+# ---------------------------------------------------------------------------
+# BC-INT-T4: predict_cox_on_yf() -- unseen cohort errors, NULL falls back to pooled
+# ---------------------------------------------------------------------------
+run_test("YFBBetaCohort-T4: predict_cox_on_yf errors loudly on an unseen cohort level", {
+  fit <- suppressMessages(
+    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
+                  verbose = FALSE, beta_cohort_id = .fb$cohort2)
+  )
+  err <- tryCatch({
+    predict_cox_on_yf(.fb$Y[1:5, , drop = FALSE], fit$EF, fit$EBeta, EF_norms = fit$EF_norms,
+                       cohort_id_test = rep("UNSEEN_COHORT", 5))
+    NULL
+  }, error = function(e) e)
+  assert_true(!is.null(err), "expected an error on an unseen cohort_id_test level")
+})
+
+run_test("YFBBetaCohort-T5: predict_cox_on_yf falls back to EBeta_pooled with cohort_id_test=NULL", {
+  fit <- suppressMessages(
+    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
+                  verbose = FALSE, beta_cohort_id = .fb$cohort2)
+  )
+  pred <- predict_cox_on_yf(.fb$Y[1:10, , drop = FALSE], fit$EF, fit$EBeta_pooled,
+                             EF_norms = fit$EF_norms)
+  assert_length(pred$risk_scores, 10L, "risk_scores should have length n_test")
+  assert_finite(pred$risk_scores, "risk_scores must be finite")
+
+  # Passing the raw K x C matrix without cohort_id_test should fail loudly
+  # rather than silently misuse it.
+  err <- tryCatch({
+    predict_cox_on_yf(.fb$Y[1:10, , drop = FALSE], fit$EF, fit$EBeta, EF_norms = fit$EF_norms)
+    NULL
+  }, error = function(e) e)
+  assert_true(!is.null(err), "expected an error passing a K x C EBeta with cohort_id_test=NULL")
+})
+
+run_test("YFBBetaCohort-T6: predict_cox_on_yf scores matched cohort levels correctly by name", {
+  fit <- suppressMessages(
+    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
+                  verbose = FALSE, beta_cohort_id = .fb$cohort2)
+  )
+  pred <- predict_cox_on_yf(.fb$Y, fit$EF, fit$EBeta, EF_norms = fit$EF_norms,
+                             cohort_id_test = .fb$cohort2)
+  # Manually recompute risk scores by looking up each patient's own column.
+  ZF_manual <- .fb$Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")
+  cohort_idx <- match(.fb$cohort2, colnames(fit$EBeta))
+  expected <- rowSums(ZF_manual * t(fit$EBeta)[cohort_idx, , drop = FALSE])
+  assert_near(pred$risk_scores, expected, tol = 1e-8,
+              "predict_cox_on_yf's cohort-matched risk scores must match a manual per-patient lookup")
+})

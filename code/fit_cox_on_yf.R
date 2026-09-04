@@ -49,6 +49,7 @@ source("code/update_F_surv_YFB.R")  # update_F_surv_YFB_k, update_F_surv_YFB_all
 
 # Shared update files (same interface, different inputs vs. Cluster A)
 source("code/update_beta.R")        # compute_z_no_k, update_beta_k, update_beta_all
+source("code/update_beta_cohort.R") # update_beta_cohort_k/_all, compute_pooled_beta -- beta_cohort_id
 source("code/update_tau.R")         # compute_var_term, update_tau
 source("code/compute_elbo.R")       # compute_ebnm_kl, compute_survival_elbo, compute_normal_kl
 source("code/update_F_cohort.R")    # update_F_cohort_col, update_F_cohort_all
@@ -241,8 +242,30 @@ calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
 #'                 `cv_survival_loglik()` both do this.
 #' @param verbose  Logical: print iteration logs? (default TRUE)
 #'
+#' @param beta_cohort_id NULL (default) or an n-vector of cohort labels for
+#'                 COHORT-SPECIFIC SURVIVAL COEFFICIENTS beta_k^{c(i)}
+#'                 (code/update_beta_cohort.R). A third, independent grouping
+#'                 variable, distinct from `cohort_id` (genomics offsets in
+#'                 L/F, beta_cohort=0 by construction there) and `strata_id`
+#'                 (cohort-specific baseline hazard, beta still shared). Only
+#'                 `beta_cohort_id` lets a factor be prognostic in one
+#'                 cohort and not another; all three can be combined (in
+#'                 practice they are often the same underlying grouping
+#'                 vector, e.g. dataset_labels, but they are different model
+#'                 components). The C cohort coefficients per factor are
+#'                 partially pooled through one shared EBNM prior (one
+#'                 vectorized `ebnm()` call per factor across cohorts, not C
+#'                 independent calls). `EBeta`/`EBeta2` become K x C
+#'                 matrices when supplied. NULL (default) reproduces
+#'                 today's shared-beta fit bit-for-bit
+#'                 (tests/test_update_beta_cohort.R). Not supported with
+#'                 `alpha_F > 0` (loud error).
 #' @return Named list:
-#'   $EL, $EL2, $EF, $EF2, $EBeta, $EBeta2, $Tau, $history
+#'   $EL, $EL2, $EF, $EF2, $EBeta, $EBeta2, $Tau, $history. When
+#'   `beta_cohort_id` is supplied: `$EBeta`/`$EBeta2` are K x C matrices,
+#'   plus `$EBeta_pooled` (K-vector, for external prediction -- see
+#'   `predict_cox_on_yf()`'s `cohort_id_test` argument), `$beta_cohort_id`,
+#'   `$beta_cohort_levels`.
 fit_cox_on_yf <- function(Y, time, status,
                            K            = 5,
                            max_iter     = 100,
@@ -265,9 +288,39 @@ fit_cox_on_yf <- function(Y, time, status,
                            verbose      = TRUE,
                            cohort_id       = NULL,
                            sigma_F_cohort  = 1.0,
-                           strata_id       = NULL) {
+                           strata_id       = NULL,
+                           beta_cohort_id  = NULL) {
 
   n <- nrow(Y); p <- ncol(Y)
+
+  # ---- Cohort-specific survival coefficients (Stage 2, DECISIONS.md 2026-09-04) --
+  # beta_cohort_id is a THIRD, independent grouping variable -- distinct from
+  # cohort_id (genomics offsets appended to L/F) and strata_id (cohort-specific
+  # baseline hazard, beta still shared). Only beta_cohort_id lets a factor be
+  # prognostic in one cohort and not another. See code/update_beta_cohort.R's
+  # file header for the full three-way distinction. NULL (default) preserves
+  # today's shared-beta behavior exactly -- verified bit-for-bit in
+  # tests/test_update_beta_cohort.R.
+  use_beta_cohort <- !is.null(beta_cohort_id)
+  if (use_beta_cohort) {
+    if (length(beta_cohort_id) != n)
+      stop("beta_cohort_id must be NULL or have length nrow(Y) (", n, ").")
+    if (anyNA(beta_cohort_id))
+      stop("beta_cohort_id must not contain NA.")
+    beta_cohort_id  <- factor(beta_cohort_id)
+    beta_cohort_idx <- as.integer(beta_cohort_id)   # n-vector in 1..C
+    C_beta          <- nlevels(beta_cohort_id)
+    beta_cohort_levels <- levels(beta_cohort_id)
+    if (C_beta < 2)
+      stop("beta_cohort_id must have at least 2 distinct levels (got ", C_beta, ").")
+    if (alpha_F > 0)
+      stop("beta_cohort_id is not supported with alpha_F > 0: update_F_surv_YFB_k()'s ",
+           "EBeta_k/EBeta2_k arguments are scalars, and `EBeta[k]` on a K x C_beta ",
+           "cohort-beta matrix would silently index the wrong (flattened) element ",
+           "rather than error. alpha_F > 0 is not the default and has no cohort-beta ",
+           "decomposition implemented -- failing loudly here rather than silently ",
+           "scoring the F update with the wrong beta value.")
+  }
 
   # ---- Stratified baseline hazard (Item 3) ---------------------------------
   # strata_id (e.g. study/cohort) forms Breslow risk sets within each stratum
@@ -446,6 +499,14 @@ fit_cox_on_yf <- function(Y, time, status,
     cat(sprintf("    [init] EBeta initialized to 0 (cox_warmstart=FALSE)\n"))
   }
 
+  # Expand EBeta/EBeta2 from K-vectors to K x C_beta matrices when
+  # beta_cohort_id is supplied -- every cohort column starts from the same
+  # (possibly warm-started) value. NULL preserves the K-vector path exactly.
+  if (use_beta_cohort) {
+    EBeta  <- matrix(EBeta,  K, C_beta)
+    EBeta2 <- matrix(EBeta2, K, C_beta)
+  }
+
   # ==========================================================================
   # β-only burn-in: N_burnin iterations with EL and EF held fixed.
   # Under Cluster B, beta's signal path uses ZF = Y·EF (observed), so
@@ -461,18 +522,30 @@ fit_cox_on_yf <- function(Y, time, status,
       EF_norms_b <- sqrt(colSums(EF^2) + 1e-10)
       EF_norm_b  <- sweep(EF, 2, EF_norms_b, "/")
       ZF_b     <- Y %*% EF_norm_b
-      eta_b    <- as.vector(ZF_b %*% EBeta)
-      taylor_b <- calc_cox_taylor_yf(eta_b, time, status, strata = strata_id)
-      z_b      <- eta_b + taylor_b$u / taylor_b$w
-      w_b      <- taylor_b$w
-      for (k in seq_len(K)) {
-        z_no_k_b <- compute_z_no_k(z_b, ZF_b, EBeta, k)
-        # Cluster B: ZF[,k] is observed, so its "second moment" = ZF[,k]^2 (no posterior variance)
-        res_b    <- update_beta_k(w_b, z_no_k_b, ZF_b[, k], ZF_b[, k]^2,
-                                  prior_family = prior_beta, alpha = alpha,
-                                  survival_divisor = beta_divisor)
-        EBeta[k]  <- res_b$mean
-        EBeta2[k] <- res_b$second
+      if (use_beta_cohort) {
+        eta_b    <- rowSums(ZF_b * t(EBeta)[beta_cohort_idx, , drop = FALSE])
+        taylor_b <- calc_cox_taylor_yf(eta_b, time, status, strata = strata_id)
+        z_b      <- eta_b + taylor_b$u / taylor_b$w
+        w_b      <- taylor_b$w
+        res_b    <- update_beta_cohort_all(w_b, z_b, ZF_b, EBeta, beta_cohort_idx, C_beta,
+                                            prior_family = prior_beta, alpha = alpha,
+                                            survival_divisor = beta_divisor)
+        EBeta  <- res_b$EBeta
+        EBeta2 <- res_b$EBeta2
+      } else {
+        eta_b    <- as.vector(ZF_b %*% EBeta)
+        taylor_b <- calc_cox_taylor_yf(eta_b, time, status, strata = strata_id)
+        z_b      <- eta_b + taylor_b$u / taylor_b$w
+        w_b      <- taylor_b$w
+        for (k in seq_len(K)) {
+          z_no_k_b <- compute_z_no_k(z_b, ZF_b, EBeta, k)
+          # Cluster B: ZF[,k] is observed, so its "second moment" = ZF[,k]^2 (no posterior variance)
+          res_b    <- update_beta_k(w_b, z_no_k_b, ZF_b[, k], ZF_b[, k]^2,
+                                    prior_family = prior_beta, alpha = alpha,
+                                    survival_divisor = beta_divisor)
+          EBeta[k]  <- res_b$mean
+          EBeta2[k] <- res_b$second
+        }
       }
     }
     if (verbose) {
@@ -549,7 +622,8 @@ fit_cox_on_yf <- function(Y, time, status,
     EF_norms  <- sqrt(colSums(EF_global^2) + 1e-10)   # K-vector
     EF_norm   <- sweep(EF_global, 2, EF_norms, "/")    # p x K, unit-norm columns
     ZF        <- Y %*% EF_norm                         # n x K: normalized projection scores
-    eta    <- as.vector(ZF %*% EBeta)           # eta = ZF * beta_tilde
+    eta    <- if (use_beta_cohort) rowSums(ZF * t(EBeta)[beta_cohort_idx, , drop = FALSE])
+              else as.vector(ZF %*% EBeta)           # eta = ZF * beta_tilde (or beta_tilde^{c(i)})
     taylor <- calc_cox_taylor_yf(eta, time, status, strata = strata_id)
     z      <- eta + taylor$u / taylor$w    # working response z_i
     w      <- taylor$w                     # W_{ii} diagonal Hessian weights
@@ -569,7 +643,8 @@ fit_cox_on_yf <- function(Y, time, status,
 
       R_k    <- compute_R_k(Y, EL_aug, EF_aug, k)
       # Cluster B: z_no_k computed w.r.t. ZF (not EL as in Cluster A)
-      z_no_k <- compute_z_no_k(z, ZF, EBeta, k)
+      z_no_k <- if (use_beta_cohort) compute_z_no_k_cohort(z, ZF, EBeta, beta_cohort_idx, k)
+                else compute_z_no_k(z, ZF, EBeta, k)
 
       # ---- (a) Update q(beta_k): Survival Coefficient ----
       # Covariate is ZF[,k] = (Y·EF)[,k] — observed projection (not latent).
@@ -577,11 +652,23 @@ fit_cox_on_yf <- function(Y, time, status,
       # its "posterior second moment" = squared value (no variance term).
       # A_beta = sum(w * ZF_k^2) is non-zero from SVD init regardless of EBeta,
       # breaking the chicken-and-egg that plagued Cluster A's L update.
-      res_beta    <- update_beta_k(w, z_no_k, ZF[, k], ZF[, k]^2,
-                                   prior_family = prior_beta, alpha = alpha_iter,
-                                   survival_divisor = beta_divisor)
-      EBeta[k]    <- res_beta$mean
-      EBeta2[k]   <- res_beta$second
+      if (use_beta_cohort) {
+        # One vectorized ebnm() call across the C_beta cohort columns of
+        # factor k (code/update_beta_cohort.R) -- partial pooling, not C
+        # independent update_beta_k() calls.
+        res_beta     <- update_beta_cohort_k(w, z_no_k, ZF[, k], ZF[, k]^2,
+                                             beta_cohort_idx, C_beta,
+                                             prior_family = prior_beta, alpha = alpha_iter,
+                                             survival_divisor = beta_divisor)
+        EBeta[k, ]   <- res_beta$mean
+        EBeta2[k, ]  <- res_beta$second
+      } else {
+        res_beta    <- update_beta_k(w, z_no_k, ZF[, k], ZF[, k]^2,
+                                     prior_family = prior_beta, alpha = alpha_iter,
+                                     survival_divisor = beta_divisor)
+        EBeta[k]    <- res_beta$mean
+        EBeta2[k]   <- res_beta$second
+      }
       kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
                                       res_beta$A, res_beta$x,
                                       res_beta$mean, res_beta$second)
@@ -610,6 +697,11 @@ fit_cox_on_yf <- function(Y, time, status,
       if (!freeze_F) {
         R_k        <- compute_R_k(Y, EL_aug, EF_aug, k)
         YtWz_no_k  <- as.vector(t(Y) %*% (w * z_no_k))  # p-vector
+        # EBeta[k]/EBeta2[k] on a K x C_beta cohort-beta matrix would index the
+        # wrong (flattened) element, not error -- harmless ONLY because
+        # alpha_F > 0 with beta_cohort_id is rejected at the top of this
+        # function (alpha=alpha_F=0 here zero-weights A_surv/B_surv below
+        # regardless of what EBeta_k/EBeta2_k contain).
         res_F <- update_F_surv_YFB_k(Tau, EL_aug[, k], EL2_aug[, k], R_k,
                                       EBeta_k      = EBeta[k],
                                       EBeta2_k     = EBeta2[k],
@@ -649,14 +741,20 @@ fit_cox_on_yf <- function(Y, time, status,
     }, numeric(1))
     history$factor_pve[iter, ] <- factor_pve_iter
 
-    # Development guard: ZF must be n x K; EBeta must be K-vector.
-    stopifnot(ncol(ZF) == K, length(EBeta) == K)
+    # Development guard: ZF must be n x K; EBeta must be K-vector (or K x C_beta).
+    if (use_beta_cohort) {
+      stopifnot(ncol(ZF) == K, all(dim(EBeta) == c(K, C_beta)))
+    } else {
+      stopifnot(ncol(ZF) == K, length(EBeta) == K)
+    }
 
     # Full ELBO under Cluster B: ZF = Y·EF is the survival predictor.
     # Pass ZF^2 as EL2 (element-wise squared): ZF is observed, so its
     # posterior second moment equals its squared value (no variance term).
-    surv_elbo               <- compute_survival_elbo(taylor$logPL, w,
-                                                     ZF, ZF^2, EBeta, EBeta2)
+    surv_elbo               <- compute_survival_elbo(
+      taylor$logPL, w, ZF, ZF^2, EBeta, EBeta2,
+      cohort_idx = if (use_beta_cohort) beta_cohort_idx else NULL
+    )
     history$elbo_full[iter] <- (1 - alpha) * (res_tau$elbo_proxy / genomics_divisor) +
                                alpha * (surv_elbo / survival_divisor) +
                                sum(kl_L) + sum(kl_F) + sum(kl_beta)
@@ -745,7 +843,13 @@ fit_cox_on_yf <- function(Y, time, status,
     # Location 2: restrict to K global-factor columns before computing ZF_final.
     # EF_norms was computed from EF_global (K columns) earlier in this iteration.
     ZF_final  <- Y %*% sweep(EF_aug[, 1:K, drop = FALSE], 2, EF_norms, "/")
-    eta_final <- as.vector(ZF_final %*% EBeta)
+    # Cohort beta: the flip decision and the flip itself are GLOBAL (computed
+    # on the pooled eta_final across all patients, applied uniformly to every
+    # cohort column) -- a per-cohort flip would break the shared F
+    # orientation, since F is common to all cohorts.
+    eta_final <- if (use_beta_cohort)
+                   rowSums(ZF_final * t(EBeta)[beta_cohort_idx, , drop = FALSE])
+                 else as.vector(ZF_final %*% EBeta)
     c_train   <- as.numeric(
       concordance(Surv(time, status) ~ eta_final)$concordance
     )
@@ -759,6 +863,13 @@ fit_cox_on_yf <- function(Y, time, status,
   }
 
   stopifnot(length(EF_norms) == K)  # guard: must be K-vector for prediction
+
+  if (use_beta_cohort) {
+    # Column names are how predict_cox_on_yf() matches a test cohort's label
+    # against the right column of EBeta.
+    colnames(EBeta)  <- beta_cohort_levels
+    colnames(EBeta2) <- beta_cohort_levels
+  }
 
   result <- list(
     EL       = EL,
@@ -780,6 +891,21 @@ fit_cox_on_yf <- function(Y, time, status,
     result$EF_cohort  <- EF_aug[, K + seq_len(C_cols), drop = FALSE]
     result$EF2_cohort <- EF2_aug[, K + seq_len(C_cols), drop = FALSE]
     result$cohort_id  <- cohort_id
+  }
+  if (use_beta_cohort) {
+    # EBeta_pooled: for external prediction, where no beta_cohort_id is
+    # available (code/update_beta_cohort.R's compute_pooled_beta()).
+    # Computed from POOLED PATIENT-SUMS at the final converged w/z/ZF (the
+    # last main-loop iteration's values, still in scope here) -- NOT
+    # rowMeans(EBeta), which is wrong under unequal cohort sizes. Init from
+    # rowMeans purely as a Gauss-Seidel starting point (direction-consistent
+    # with whatever Phase C decided above, not a claim about its value).
+    result$EBeta_pooled     <- compute_pooled_beta(
+      w, z, ZF, rowMeans(EBeta),
+      prior_family = prior_beta, alpha = alpha, survival_divisor = beta_divisor
+    )
+    result$beta_cohort_id    <- beta_cohort_id
+    result$beta_cohort_levels <- beta_cohort_levels
   }
   result
 }

@@ -132,25 +132,39 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 #' independent (e.g. external-cohort) validation is available to check
 #' against, such as new simulations.
 #'
-#' @param res         list with $EL (n x K), $EF (p x K), $EBeta (length K) —
-#'                     from fit_supervised_mf_modular() or fit_cox_on_yf()
+#' @param res         list with $EL (n x K), $EF (p x K), $EBeta —
+#'                     from fit_supervised_mf_modular() or fit_cox_on_yf().
+#'                     $EBeta is a length-K vector for a shared beta, or a
+#'                     K x C matrix under cohort-specific beta
+#'                     (fit_cox_on_yf(..., beta_cohort_id = ...) --
+#'                     code/update_beta_cohort.R).
 #' @param Y           numeric matrix (n x p) — the original data
 #' @param beta_thresh numeric: |EBeta_k| threshold for "survival_active"
-#'                    (default 0.001, matching config/globals.yml k_selection$beta_threshold)
+#'                    (default 0.001, matching config/globals.yml k_selection$beta_threshold).
+#'                    Under cohort-specific beta, tested against
+#'                    max_c |EBeta_k^(c)| — a factor is survival-active if it
+#'                    is prognostic in AT LEAST ONE cohort. Disagreement
+#'                    across cohorts is reported in $EBeta_by_cohort, not
+#'                    hidden by the max.
 #' @param pve_thresh  numeric: PVE_k threshold for "genomics_only" (default 0.01 = 1%)
 #' @param rel_thresh  numeric in (0, 1] or NULL (default): if supplied, a factor
 #'                    must also have |EBeta_k| >= rel_thresh * max(|EBeta|) to
 #'                    count as "survival_active" — see simulation-calibration
 #'                    note above. NULL (default) disables this check, matching
-#'                    prior behavior.
+#'                    prior behavior. Applied to the same max_c-reduced
+#'                    |EBeta_k| used for beta_thresh under cohort-specific beta.
 #'
 #' @return data.frame with one row per factor:
 #'   $factor      integer factor index (1..K)
-#'   $EBeta       numeric: posterior mean beta per factor
-#'   $abs_EBeta   numeric: |EBeta|
+#'   $EBeta       numeric: posterior mean beta per factor (shared-beta case
+#'                only; NA under cohort-specific beta -- see $EBeta_by_cohort)
+#'   $abs_EBeta   numeric: |EBeta| (shared-beta), or max_c |EBeta_k^(c)| (cohort-specific)
+#'   $EBeta_by_cohort list-column, one numeric vector (length C) per row,
+#'                giving each cohort's EBeta_k^(c); NULL entries when
+#'                $EBeta is a shared (non-cohort) vector.
 #'   $PVE         numeric: per-factor proportion of variance explained
-#'   $surv_active logical: |EBeta| > beta_thresh (and, if rel_thresh set, also
-#'                >= rel_thresh * max(|EBeta|))
+#'   $surv_active logical: |EBeta| (or max_c |EBeta^(c)|) > beta_thresh (and,
+#'                if rel_thresh set, also >= rel_thresh * max(|EBeta|))
 #'   $geno_active logical: PVE > pve_thresh
 #'   $category    character: "survival_active", "genomics_only", or "dead"
 #'
@@ -159,16 +173,27 @@ classify_factors <- function(res, Y,
                               beta_thresh = 0.001,
                               pve_thresh  = 0.01,
                               rel_thresh  = NULL) {
-  pve     <- compute_pve(res, Y)
-  ab_beta <- abs(res$EBeta)
+  pve <- compute_pve(res, Y)
+  is_cohort_beta <- is.matrix(res$EBeta) && ncol(res$EBeta) > 1
+
+  if (is_cohort_beta) {
+    ab_beta          <- apply(abs(res$EBeta), 1, max)   # max_c |EBeta_k^(c)|
+    EBeta_scalar_col  <- rep(NA_real_, nrow(res$EBeta))
+    EBeta_by_cohort   <- lapply(seq_len(nrow(res$EBeta)), function(k) res$EBeta[k, ])
+  } else {
+    ab_beta          <- abs(res$EBeta)
+    EBeta_scalar_col  <- res$EBeta
+    EBeta_by_cohort   <- vector("list", length(res$EBeta))
+  }
+
   surv_active <- ab_beta > beta_thresh
   if (!is.null(rel_thresh)) {
     surv_active <- surv_active & (ab_beta >= rel_thresh * max(ab_beta))
   }
-  geno_active <- pve     > pve_thresh
-  data.frame(
+  geno_active <- pve > pve_thresh
+  out <- data.frame(
     factor      = seq_len(ncol(res$EL)),
-    EBeta       = res$EBeta,
+    EBeta       = EBeta_scalar_col,
     abs_EBeta   = ab_beta,
     PVE         = pve,
     surv_active = surv_active,
@@ -178,6 +203,8 @@ classify_factors <- function(res, Y,
                                       "dead")),
     stringsAsFactors = FALSE
   )
+  out$EBeta_by_cohort <- EBeta_by_cohort
+  out
 }
 
 # ============================================================

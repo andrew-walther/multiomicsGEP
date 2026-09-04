@@ -68,8 +68,13 @@ load_d4_weights <- function(beta_thresh = 0.001) {
   EF <- d4$EF
   rownames(EF) <- gene_names
 
-  # Verified from the fit: which programs carry survival weight.
-  surv_active <- sort(which(abs(d4$EBeta) > beta_thresh))
+  # Verified from the fit: which programs carry survival weight. Cohort-specific
+  # beta (fit_cox_on_yf(..., beta_cohort_id=...)) would make d4$EBeta a K x C
+  # matrix -- max_c |EBeta_k^(c)| per factor keeps this a K-length check, not
+  # K*C. The saved D4 fit used here is never a cohort-beta fit in practice;
+  # guarded defensively per DECISIONS.md 2026-09-04.
+  ab_beta_d4  <- if (is.matrix(d4$EBeta)) apply(abs(d4$EBeta), 1, max) else abs(d4$EBeta)
+  surv_active <- sort(which(ab_beta_d4 > beta_thresh))
   if (!identical(as.integer(surv_active), c(3L, 7L))) {
     stop(sprintf(paste0("survival-active programs are {%s} but the labeling convention in this ",
                         "function (Program 3 Protective / Program 7 Adverse, DECISIONS.md ",

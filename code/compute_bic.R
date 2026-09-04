@@ -136,7 +136,13 @@ compute_joint_ll_bic <- function(fit, Y, time, status, strata = NULL,
     stop(sprintf("fit$EF_norms has length %d, expected ncol(fit$EF) = %d.",
                  length(fit$EF_norms), K_init))
   }
-  if (length(fit$EBeta) != K_init) {
+  use_beta_cohort <- !is.null(fit$beta_cohort_id)
+  if (use_beta_cohort) {
+    if (!is.matrix(fit$EBeta) || nrow(fit$EBeta) != K_init)
+      stop(sprintf("fit has a non-NULL beta_cohort_id, so fit$EBeta must be a K_init x C matrix with K_init = %d rows; got %s.",
+                    K_init, paste(dim(fit$EBeta), collapse = " x ")))
+    C_beta <- ncol(fit$EBeta)
+  } else if (length(fit$EBeta) != K_init) {
     stop(sprintf("fit$EBeta has length %d, expected ncol(fit$EF) = %d.",
                  length(fit$EBeta), K_init))
   }
@@ -169,8 +175,16 @@ compute_joint_ll_bic <- function(fit, Y, time, status, strata = NULL,
   }
 
   # ---- Survival term: recomputed post-hoc at the returned EF/EBeta -------
-  ZF  <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")
-  eta <- as.vector(ZF %*% fit$EBeta)
+  ZF <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")
+  if (use_beta_cohort) {
+    if (length(fit$beta_cohort_id) != n)
+      stop("fit$beta_cohort_id length does not match nrow(Y) -- compute_joint_ll_bic() ",
+           "must be called with the SAME Y/time/status used to produce this fit.")
+    cohort_idx <- match(as.character(fit$beta_cohort_id), colnames(fit$EBeta))
+    eta <- rowSums(ZF * t(fit$EBeta)[cohort_idx, , drop = FALSE])
+  } else {
+    eta <- as.vector(ZF %*% fit$EBeta)
+  }
 
   # Orientation correction (DECISIONS.md 2026-09-04): fit_cox_on_yf()'s own
   # post-loop sign-correction (fit_cox_on_yf.R, "Phase C") checks
@@ -211,7 +225,9 @@ compute_joint_ll_bic <- function(fit, Y, time, status, strata = NULL,
   loglik_joint <- loglik_genomics + loglik_survival
 
   # ---- df and BIC: K_init-based, not K_eff-based --------------------------
-  df  <- K_init * (n + p + 1)
+  # Under a cohort-specific beta, each factor contributes C_beta survival
+  # coefficients instead of 1 (n + p + C_beta per factor, not n + p + 1).
+  df  <- if (use_beta_cohort) K_init * (n + p + C_beta) else K_init * (n + p + 1)
   bic <- -2 * loglik_joint + log(n) * df
 
   list(

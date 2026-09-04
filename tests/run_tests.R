@@ -17,6 +17,7 @@ source("tests/test_helpers.R")
 
 # Source modules under test
 source("code/update_beta.R")
+source("code/update_beta_cohort.R")  # update_beta_cohort_k/_all, compute_pooled_beta -- beta_cohort_id
 source("code/update_L.R")
 source("code/update_F.R")
 source("code/update_tau.R")
@@ -49,6 +50,7 @@ source("code/concordance_ci.R")
 # List all test files to run
 test_files <- c(
   "tests/test_update_beta.R",
+  "tests/test_update_beta_cohort.R",
   "tests/test_update_L.R",
   "tests/test_update_F.R",
   "tests/test_update_tau.R",
