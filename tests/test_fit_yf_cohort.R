@@ -301,3 +301,86 @@ run_test("YFBBetaCohort-T6: predict_cox_on_yf scores matched cohort levels corre
   assert_near(pred$risk_scores, expected, tol = 1e-8,
               "predict_cox_on_yf's cohort-matched risk scores must match a manual per-patient lookup")
 })
+
+# =============================================================================
+# Section: EBeta_pooled pre/post-Phase-C coherence, and EBeta2 sign-flip
+# invariance (review finding, Step 3, fixed 2026-09-04 -- see DECISIONS.md).
+#
+# Fixture below (seed=18, with a short sample()-selected data-generating
+# regime) was found by search specifically because it makes fit_cox_on_yf()'s
+# Phase C sign-check trigger a flip (a genuine, if rare, event -- most random
+# data converges beta to the correct sign on its own since beta itself is
+# unconstrained). A flip is REQUIRED to exercise this fix: without one,
+# EBeta_pooled would trivially match between sign_correction=TRUE/FALSE under
+# both the old buggy code and the fix, since neither path would ever touch a
+# post-flip EBeta.
+# =============================================================================
+
+local({
+  n <- 80L; p <- 20L
+  cohort2 <- rep(c("A", "B"), each = n / 2)
+  set.seed(18)
+  K <- sample(3:8, 1)
+  L_true <- matrix(rexp(n * K, 1), n, K)
+  F_true <- matrix(rexp(p * K, 1), p, K)
+  beta_true <- rnorm(K, 0, sample(c(1, 2, 3), 1))
+  Y <- L_true %*% t(F_true) + matrix(rnorm(n * p, sd = sample(c(0.3, 0.5, 0.8), 1)), n, p)
+  eta_true <- L_true %*% beta_true
+  time   <- rexp(n, rate = exp(sample(c(0.3, 0.5, 0.7, 1), 1) * scale(eta_true)[, 1]))
+  status <- rbinom(n, 1L, 0.85)
+  mi     <- sample(1:3, 1)
+  .pc <<- list(n = n, p = p, K = K, Y = Y, time = time, status = status,
+               cohort2 = cohort2, max_iter = mi)
+})
+
+run_test("YFBBetaCohort-T7: this fixture's Phase C sign check actually flips (fixture validity check)", {
+  fit_true  <- suppressMessages(
+    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+                  verbose = FALSE, sign_correction = TRUE, beta_cohort_id = .pc$cohort2)
+  )
+  fit_false <- suppressMessages(
+    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+                  verbose = FALSE, sign_correction = FALSE, beta_cohort_id = .pc$cohort2)
+  )
+  assert_near(fit_true$EBeta, -fit_false$EBeta, tol = 1e-9,
+              "fixture must actually trigger a Phase C flip (sign_correction=TRUE's EBeta must be the exact negation of sign_correction=FALSE's) -- otherwise T8/T9 below are not meaningful")
+})
+
+run_test("YFBBetaCohort-T8: EBeta_pooled is identical whether or not Phase C flips (coherent-state fix)", {
+  # Before the fix, EBeta_pooled was computed from rowMeans(EBeta) AFTER
+  # Phase C's potential flip, while w/z/ZF (never touched by Phase C) stayed
+  # at their pre-flip state -- an incoherent init that fed compute_pooled_beta()
+  # a mismatched-sign partial residual, producing a genuinely different
+  # (not just sign-flipped) result, not just here but on the cached D4 fit
+  # (Program 7: 0.0404 vs. 0.0204, a 2x difference from this alone). Fixed by
+  # computing EBeta_pooled from the PRE-Phase-C EBeta snapshot, which is
+  # identical regardless of sign_correction (the main CAVI loop that produces
+  # it runs identically either way -- Phase C runs strictly afterward).
+  fit_true  <- suppressMessages(
+    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+                  verbose = FALSE, sign_correction = TRUE, beta_cohort_id = .pc$cohort2)
+  )
+  fit_false <- suppressMessages(
+    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+                  verbose = FALSE, sign_correction = FALSE, beta_cohort_id = .pc$cohort2)
+  )
+  assert_near(fit_true$EBeta_pooled, fit_false$EBeta_pooled, tol = 1e-10,
+              "EBeta_pooled must not depend on sign_correction -- it must be computed from the same pre-Phase-C state either way")
+})
+
+run_test("YFBBetaCohort-T9: EBeta2 is unchanged by a Phase C sign flip (E[beta^2] invariant to negating beta)", {
+  # Before the fix, Phase C set EBeta2 <- EBeta^2 using the NEWLY negated
+  # EBeta -- i.e. replaced the posterior second moment (Var + mean^2) with
+  # just the squared point estimate, silently discarding the posterior
+  # variance. A sign flip must leave EBeta2 exactly as it was.
+  fit_true  <- suppressMessages(
+    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+                  verbose = FALSE, sign_correction = TRUE, beta_cohort_id = .pc$cohort2)
+  )
+  fit_false <- suppressMessages(
+    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+                  verbose = FALSE, sign_correction = FALSE, beta_cohort_id = .pc$cohort2)
+  )
+  assert_near(fit_true$EBeta2, fit_false$EBeta2, tol = 1e-12,
+              "EBeta2 must be identical whether or not Phase C flips EBeta's sign")
+})

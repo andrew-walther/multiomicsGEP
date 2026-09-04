@@ -840,6 +840,14 @@ fit_cox_on_yf <- function(Y, time, status,
 
   }  # end CAVI loop
 
+  # Coherent-state snapshot (Step 3 fix, DECISIONS.md 2026-09-04): EBeta as it
+  # stood at the end of the main loop, BEFORE Phase C's potential sign flip
+  # below. This is the same state that produced the w/z/ZF used above (Phase
+  # C never recomputes them) -- used as EBeta_pooled's init further down, so
+  # every input to that single Gauss-Seidel sweep is mutually consistent,
+  # regardless of what Phase C later decides.
+  EBeta_pre_phaseC <- EBeta
+
   # Phase C: Check training concordance; flip EBeta sign if anti-concordant.
   # With YFB (eta = ZF·beta), the Gram matrix EF'EF and the pmax(SVD) initialization
   # (which discards sign information from F_true) can invert the relationship between
@@ -879,8 +887,13 @@ fit_cox_on_yf <- function(Y, time, status,
       if (verbose) {
         cat(sprintf("    [Phase C] Training C=%.4f < 0.5 — flipping EBeta sign\n", c_train))
       }
-      EBeta  <- -EBeta
-      EBeta2 <- EBeta^2
+      # EBeta2 (E[beta^2] = Var(beta) + E[beta]^2) is left untouched: a sign
+      # flip negates E[beta] but does not change its square, so overwriting
+      # EBeta2 with (-EBeta)^2 here (as before 2026-09-04) silently discarded
+      # the posterior variance component and replaced it with the point
+      # estimate squared -- a real bug (Step 3, review finding), fixed by
+      # simply not touching EBeta2 on a sign flip.
+      EBeta <- -EBeta
     }
   }
 
@@ -919,11 +932,24 @@ fit_cox_on_yf <- function(Y, time, status,
     # available (code/update_beta_cohort.R's compute_pooled_beta()).
     # Computed from POOLED PATIENT-SUMS at the final converged w/z/ZF (the
     # last main-loop iteration's values, still in scope here) -- NOT
-    # rowMeans(EBeta), which is wrong under unequal cohort sizes. Init from
-    # rowMeans purely as a Gauss-Seidel starting point (direction-consistent
-    # with whatever Phase C decided above, not a claim about its value).
+    # rowMeans(EBeta), which is wrong under unequal cohort sizes.
+    #
+    # Init from rowMeans(EBeta_pre_phaseC) -- the PRE-Phase-C snapshot (Step 3
+    # fix, DECISIONS.md 2026-09-04), not the (possibly sign-flipped) final
+    # EBeta. w/z/ZF above were never touched by Phase C, so they are only
+    # mutually consistent with the pre-flip EBeta: compute_pooled_beta() is
+    # one Gauss-Seidel sweep (update_beta_all(), not iterated to convergence),
+    # and its z_no_k partial-residual computation subtracts OTHER factors'
+    # contribution using the init -- feeding it a POST-flip init while w/z/ZF
+    # reflect the PRE-flip state produced a genuinely wrong-MAGNITUDE result
+    # (not just a wrong sign; verified on the cached D4 fit: Program 7's
+    # pooled beta was 0.0404 with Phase C disabled vs. 0.0204 enabled, a 2x
+    # difference from this inconsistency alone). Using the coherent snapshot
+    # here makes EBeta_pooled independent of `sign_correction` entirely
+    # (Phase C runs strictly after the main loop and never affects it) --
+    # see tests/test_fit_yf_cohort.R for the regression test.
     result$EBeta_pooled     <- compute_pooled_beta(
-      w, z, ZF, rowMeans(EBeta),
+      w, z, ZF, rowMeans(EBeta_pre_phaseC),
       prior_family = prior_beta, alpha = alpha, survival_divisor = beta_divisor
     )
     result$beta_cohort_id    <- beta_cohort_id
