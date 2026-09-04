@@ -71,9 +71,17 @@ for (ec in EXTERNAL_COHORTS) {
 }
 
 # --------------------------------------------------------------------------
-# Per-cohort, per-arm risk scores -- oriented ONCE per arm per cohort (the
-# same fixed-sign convention bootstrap_concordance_diff_ci() itself applies
-# internally), from the fits already saved by run_cohort_beta_comparison.R.
+# Per-cohort, per-arm risk scores. Every joint_yfb* score is
+# ZF_ext %*% fit$EBeta (or fit$EBeta_pooled), and fit$EBeta's sign is now the
+# single, frozen, training-data-only orientation decided by fit_cox_on_yf()'s
+# Phase C (fixed 2026-09-04, DECISIONS.md -- correct-direction concordance,
+# reverse=TRUE) -- it must NOT be re-derived from the external cohort's own
+# outcomes below. The two-step EBMF+LASSO-Cox baseline's risk score is a
+# standard glmnet Cox linear predictor (larger = higher risk by construction,
+# no orientation ambiguity to begin with). So every score passed to
+# bootstrap_concordance_diff_ci() below is scored with flip_a=FALSE,
+# flip_b=FALSE -- no evaluator here decides its own sign from the data it is
+# scoring.
 # --------------------------------------------------------------------------
 score_arm <- function(fit, use_pooled_beta) {
   out <- list()
@@ -114,7 +122,8 @@ for (arm in comparison_arms) {
     if (is.null(a) || is.null(b)) next
     stopifnot(identical(a$time, b$time), identical(a$status, b$status))
 
-    ci <- bootstrap_concordance_diff_ci(a$risk, b$risk, a$time, a$status, B = 2000, seed = 1)
+    ci <- bootstrap_concordance_diff_ci(a$risk, b$risk, a$time, a$status, B = 2000, seed = 1,
+                                         flip_a = FALSE, flip_b = FALSE)
     rows[[length(rows) + 1]] <- data.frame(
       comparison = sprintf("%s_minus_%s", BASELINE, arm), cohort = ec, n = length(a$time),
       diff_estimate = round(ci$estimate, 4), diff_lower = round(ci$lower, 4),
@@ -124,7 +133,8 @@ for (arm in comparison_arms) {
     pooled_time <- c(pooled_time, a$time); pooled_status <- c(pooled_status, a$status)
   }
   if (length(pooled_time) > 0) {
-    ci_p <- bootstrap_concordance_diff_ci(pooled_a, pooled_b, pooled_time, pooled_status, B = 2000, seed = 1)
+    ci_p <- bootstrap_concordance_diff_ci(pooled_a, pooled_b, pooled_time, pooled_status, B = 2000, seed = 1,
+                                           flip_a = FALSE, flip_b = FALSE)
     rows[[length(rows) + 1]] <- data.frame(
       comparison = sprintf("%s_minus_%s", BASELINE, arm), cohort = "POOLED", n = length(pooled_time),
       diff_estimate = round(ci_p$estimate, 4), diff_lower = round(ci_p$lower, 4),

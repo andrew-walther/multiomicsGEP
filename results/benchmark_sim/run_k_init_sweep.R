@@ -87,6 +87,7 @@ source("code/compute_bic.R")   # compute_joint_ll_bic -- needs calc_cox_taylor_y
 source("code/compute_cv_loglik.R")  # cv_survival_loglik, bicv_genomics_loglik
 source("code/preprocess_desurv.R")
 source("code/select_K.R")
+source("code/concordance_ci.R")  # frozen_reverse_cindex()
 
 YML_PATH <- "config/globals.yml"
 cfg      <- yaml::read_yaml(YML_PATH)
@@ -223,11 +224,10 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 }
 cat(sprintf("  %d/%d external cohorts usable\n\n", length(ext_data), length(EXTERNAL_COHORTS)))
 
-oriented_cindex <- function(risk, time, status) {
-  if (sd(risk) == 0) return(NA_real_)  # constant risk score: undefined orientation
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
-}
+# frozen_cindex(): orientation frozen at fit time by fit_cox_on_yf()'s Phase C
+# (fixed 2026-09-04, DECISIONS.md) -- fit$EBeta already carries the correct
+# sign, so no per-cohort max(c,1-c) re-orientation here.
+frozen_cindex <- function(risk, time, status) frozen_reverse_cindex(risk, time, status)
 
 # --------------------------------------------------------------------------
 # 3. Per-K_init worker: fit-or-reuse, BIC/LL, classify_factors, external
@@ -293,7 +293,7 @@ run_one_K <- function(K_init, verbose_fit) {
       d      <- ext_data[[ext_cohort]]
       EF_sub <- fit$EF[d$train_idx, , drop = FALSE]
       pred   <- predict_cox_on_yf(d$Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
-      cohort_c[[ext_cohort]] <- oriented_cindex(pred$risk_scores, d$time, d$status)
+      cohort_c[[ext_cohort]] <- frozen_cindex(pred$risk_scores, d$time, d$status)
     }
     mean_c <- if (length(cohort_c) > 0) mean(unlist(cohort_c), na.rm = TRUE) else NA_real_
 

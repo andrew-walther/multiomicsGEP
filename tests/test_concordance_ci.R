@@ -220,4 +220,84 @@ run_test("CCI-T12d: a degenerate bootstrap resample (< 2 events) fails loud with
               sprintf("expected an informative degenerate-resample message, got: %s", msg))
 })
 
+# ============================================================
+# Section: frozen_reverse_cindex() and the flip/flip_a/flip_b override
+# (review finding, Step 2, 2026-09-04 -- see DECISIONS.md)
+# ============================================================
+
+run_test("CCI-T13: frozen_reverse_cindex matches concordance(reverse=TRUE) exactly", {
+  ref <- as.numeric(concordance(Surv(.cci_strong$time, .cci_strong$status) ~ .cci_strong$risk,
+                                 reverse = TRUE)$concordance)
+  got <- frozen_reverse_cindex(.cci_strong$risk, .cci_strong$time, .cci_strong$status)
+  assert_near(got, ref, tol = 1e-12, msg = "must be exactly concordance(reverse=TRUE)")
+})
+
+run_test("CCI-T14: frozen_reverse_cindex can report below 0.5 (not masked by max(c,1-c))", {
+  # Flip the strong signal's sign: now "larger risk = LONGER survival", the
+  # wrong direction for a frozen "higher = worse" convention -- a genuine
+  # below-chance finding that max(c, 1-c) would have hidden.
+  got <- frozen_reverse_cindex(-.cci_strong$risk, .cci_strong$time, .cci_strong$status)
+  assert_true(got < 0.5, msg = sprintf("expected a below-0.5 frozen score, got %.4f", got))
+})
+
+run_test("CCI-T15: frozen_reverse_cindex rejects mismatched lengths", {
+  err <- tryCatch({
+    frozen_reverse_cindex(rnorm(5), rexp(6), rbinom(6, 1, 0.5))
+    "no error"
+  }, error = function(e) "error")
+  assert_equal(err, "error", "mismatched lengths should raise an error")
+})
+
+run_test("CCI-T16: bootstrap_concordance_ci(flip=NULL) is bit-for-bit identical to the pre-existing default", {
+  r <- .cci_strong
+  a <- bootstrap_concordance_ci(r$risk, r$time, r$status, B = 200, seed = 5)
+  b <- bootstrap_concordance_ci(r$risk, r$time, r$status, B = 200, seed = 5, flip = NULL)
+  assert_near(a$estimate, b$estimate, tol = 1e-12, msg = "flip=NULL must not change estimate")
+  assert_near(a$lower, b$lower, tol = 1e-12, msg = "flip=NULL must not change lower")
+  assert_near(a$upper, b$upper, tol = 1e-12, msg = "flip=NULL must not change upper")
+})
+
+run_test("CCI-T17: bootstrap_concordance_ci(flip=TRUE/FALSE) bypasses the same-sample orientation decision", {
+  r <- .cci_strong
+  # The strong-signal fixture is already "higher risk = shorter survival"
+  # (reverse=TRUE concordance > 0.5); forcing flip=TRUE must give an estimate
+  # BELOW 0.5, unlike the flip=NULL default which would re-orient it back up.
+  forced <- bootstrap_concordance_ci(r$risk, r$time, r$status, B = 200, seed = 5, flip = TRUE)
+  natural <- bootstrap_concordance_ci(r$risk, r$time, r$status, B = 200, seed = 5, flip = NULL)
+  assert_true(forced$estimate < 0.5, msg = sprintf("forced flip=TRUE estimate should read <0.5, got %.4f", forced$estimate))
+  assert_near(forced$estimate, 1 - natural$estimate, tol = 1e-8,
+              msg = "flip=TRUE estimate should be the complement of the unflipped natural estimate")
+})
+
+run_test("CCI-T18: bootstrap_concordance_ci rejects a non-logical flip", {
+  err <- tryCatch({
+    bootstrap_concordance_ci(.cci_strong$risk, .cci_strong$time, .cci_strong$status, B = 20, flip = "yes")
+    "no error"
+  }, error = function(e) "error")
+  assert_equal(err, "error", "non-logical flip should raise an error")
+})
+
+run_test("CCI-T19: bootstrap_concordance_diff_ci(flip_a=flip_b=NULL) is bit-for-bit identical to the pre-existing default", {
+  r <- .cci_strong
+  a <- bootstrap_concordance_diff_ci(r$risk, .cci_noise_risk, r$time, r$status, B = 200, seed = 7)
+  b <- bootstrap_concordance_diff_ci(r$risk, .cci_noise_risk, r$time, r$status, B = 200, seed = 7,
+                                      flip_a = NULL, flip_b = NULL)
+  assert_near(a$estimate, b$estimate, tol = 1e-12, msg = "flip_a/flip_b=NULL must not change estimate")
+  assert_near(a$lower, b$lower, tol = 1e-12, msg = "flip_a/flip_b=NULL must not change lower")
+  assert_near(a$upper, b$upper, tol = 1e-12, msg = "flip_a/flip_b=NULL must not change upper")
+})
+
+run_test("CCI-T20: bootstrap_concordance_diff_ci(flip_a=FALSE, flip_b=FALSE) scores both risk scores as-is (reverse=TRUE, Cox convention)", {
+  r <- .cci_strong
+  # Force no re-orientation on either score; the estimate must equal the
+  # direct reverse=TRUE (Cox risk-score) concordance difference, matching
+  # frozen_reverse_cindex()'s convention -- not the same-sample-adjusted,
+  # non-reverse arithmetic the flip=NULL path uses.
+  ci <- bootstrap_concordance_diff_ci(r$risk, .cci_noise_risk, r$time, r$status, B = 50, seed = 9,
+                                       flip_a = FALSE, flip_b = FALSE)
+  ref <- frozen_reverse_cindex(r$risk, r$time, r$status) -
+         frozen_reverse_cindex(.cci_noise_risk, r$time, r$status)
+  assert_near(ci$estimate, ref, tol = 1e-8, msg = "flip_a=flip_b=FALSE should score both risk vectors as-is under reverse=TRUE")
+})
+
 report_results("test_concordance_ci.R")

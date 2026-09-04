@@ -73,6 +73,7 @@ tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
 source("code/compute_bic.R")
 source("code/preprocess_desurv.R")
 source("code/select_K.R")
+source("code/concordance_ci.R")  # frozen_reverse_cindex()
 
 b   <- cfg$benchmark
 pcf <- cfg$preprocessing
@@ -146,11 +147,12 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 }
 cat(sprintf("  %d/%d external cohorts usable\n\n", length(ext_data), length(EXTERNAL_COHORTS)))
 
-oriented_cindex <- function(risk, time, status) {
-  if (sd(risk) == 0) return(NA_real_)
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
-}
+# frozen_cindex(): the orientation is decided ONCE, at fit time, by
+# fit_cox_on_yf()'s Phase C (fixed 2026-09-04, DECISIONS.md -- correct-
+# direction concordance, reverse=TRUE). fit$EBeta / fit$EBeta_pooled already
+# carry that frozen sign, so external cohorts are scored as-is -- no
+# per-cohort max(c, 1-c) re-orientation from the cohort's own outcomes.
+frozen_cindex <- function(risk, time, status) frozen_reverse_cindex(risk, time, status)
 
 score_external <- function(fit, use_pooled_beta) {
   cohort_c <- list()
@@ -159,7 +161,7 @@ score_external <- function(fit, use_pooled_beta) {
     EF_sub <- fit$EF[d$train_idx, , drop = FALSE]
     beta_to_use <- if (use_pooled_beta) fit$EBeta_pooled else fit$EBeta
     pred   <- predict_cox_on_yf(d$Y_ext, EF_sub, beta_to_use, EF_norms = fit$EF_norms)
-    cohort_c[[ext_cohort]] <- oriented_cindex(pred$risk_scores, d$time, d$status)
+    cohort_c[[ext_cohort]] <- frozen_cindex(pred$risk_scores, d$time, d$status)
   }
   list(cohort_c = cohort_c, mean_c = mean(unlist(cohort_c), na.rm = TRUE))
 }

@@ -38,15 +38,16 @@ source("code/predict.R"); source("code/predict_cox_on_yf.R")
 tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 source("code/select_K.R")
+source("code/concordance_ci.R")  # frozen_reverse_cindex()
 
 K_REC <- 7L
 b <- cfg$benchmark
 EXTERNAL_COHORTS <- cfg$pdac$external_cohorts
 
-oriented_cindex <- function(risk, time, status) {
-  if (sd(risk) == 0) return(NA_real_)
-  c <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance); max(c, 1 - c)
-}
+# frozen_cindex(): orientation frozen at fit time by fit_cox_on_yf()'s Phase C
+# (fixed 2026-09-04, DECISIONS.md) -- fit$EBeta already carries the correct
+# sign, so no per-cohort max(c,1-c) re-orientation here.
+frozen_cindex <- function(risk, time, status) frozen_reverse_cindex(risk, time, status)
 
 run_single_cohort <- function(ds) {
   cat(sprintf("=== Training on %s alone ===\n", ds))
@@ -77,7 +78,7 @@ run_single_cohort <- function(ds) {
     Y_ext <- pre_ext$Y[, match(common, pre_ext$gene_names), drop = FALSE]
     EF_sub <- fit$EF[match(common, train_genes), , drop = FALSE]
     pred <- predict_cox_on_yf(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
-    cohort_c[[ec]] <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
+    cohort_c[[ec]] <- frozen_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
   }
   mean_c <- mean(unlist(cohort_c), na.rm = TRUE)
   K_surv <- sum(cls$category == "survival_active")

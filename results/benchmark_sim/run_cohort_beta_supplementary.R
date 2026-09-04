@@ -41,6 +41,7 @@ tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
 source("code/compute_cv_loglik.R")
 source("code/preprocess_desurv.R")
 source("code/select_K.R")
+source("code/concordance_ci.R")  # frozen_reverse_cindex()
 
 OUT_DIR <- "results/benchmark_sim/outputs/cohort_beta_comparison"
 CVL <- cfg$cv_loglik
@@ -74,16 +75,16 @@ for (ec in EXTERNAL_COHORTS) {
   ext_data[[ec]] <- list(Y_ext = pre_ext$Y[, match(common, pre_ext$gene_names), drop = FALSE],
                           train_idx = match(common, train_genes), time = raw_ext$time, status = raw_ext$status)
 }
-oriented_cindex <- function(risk, time, status) {
-  if (sd(risk) == 0) return(NA_real_)
-  c <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance); max(c, 1 - c)
-}
+# frozen_cindex(): orientation frozen at fit time by fit_cox_on_yf()'s Phase C
+# (fixed 2026-09-04, DECISIONS.md) -- fit$EBeta/EBeta_pooled already carry the
+# correct sign, so no per-cohort max(c,1-c) re-orientation here.
+frozen_cindex <- function(risk, time, status) frozen_reverse_cindex(risk, time, status)
 score_external <- function(fit, use_pooled_beta) {
   cs <- sapply(names(ext_data), function(ec) {
     d <- ext_data[[ec]]; EF_sub <- fit$EF[d$train_idx, , drop = FALSE]
     beta <- if (use_pooled_beta) fit$EBeta_pooled else fit$EBeta
     pred <- predict_cox_on_yf(d$Y_ext, EF_sub, beta, EF_norms = fit$EF_norms)
-    oriented_cindex(pred$risk_scores, d$time, d$status)
+    frozen_cindex(pred$risk_scores, d$time, d$status)
   })
   mean(cs, na.rm = TRUE)
 }
@@ -155,7 +156,7 @@ strata_row <- data.frame(
 for (ec in EXTERNAL_COHORTS) {
   d <- ext_data[[ec]]; EF_sub <- fit_strata_only$EF[d$train_idx, , drop = FALSE]
   pred <- predict_cox_on_yf(d$Y_ext, EF_sub, fit_strata_only$EBeta, EF_norms = fit_strata_only$EF_norms)
-  strata_row[[paste0("c_", ec)]] <- round(oriented_cindex(pred$risk_scores, d$time, d$status), 4)
+  strata_row[[paste0("c_", ec)]] <- round(frozen_cindex(pred$risk_scores, d$time, d$status), 4)
 }
 common_cols <- intersect(names(existing), names(strata_row))
 updated <- rbind(existing[, common_cols], strata_row[, common_cols])

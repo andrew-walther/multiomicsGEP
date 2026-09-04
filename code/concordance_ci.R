@@ -10,6 +10,34 @@
 
 suppressPackageStartupMessages(library(survival))
 
+#' @title Concordance under a frozen, training-data-derived orientation
+#'
+#' @description Scores a risk vector as-is, under the convention "larger risk
+#'   = shorter survival" (a Cox risk score), using
+#'   \code{survival::concordance(..., reverse = TRUE)}. Unlike this project's
+#'   older \code{oriented_cindex()} pattern (\code{max(c_raw, 1 - c_raw)}),
+#'   this does NOT look at `time`/`status` to decide whether to flip the risk
+#'   score -- the orientation must already be fixed, at fit time, from
+#'   training data only (e.g. `fit_cox_on_yf()`'s Phase C sign correction,
+#'   fixed 2026-09-04 -- see DECISIONS.md). A risk score that is genuinely
+#'   anti-concordant on the data it is scored against will correctly report a
+#'   value below 0.5 here, rather than having that below-chance result masked
+#'   by taking the max with its complement.
+#'
+#' @param risk numeric vector of per-patient linear-predictor risk scores,
+#'   already oriented ("higher = worse prognosis") by the caller.
+#' @param time,status as in \code{bootstrap_concordance_ci()}.
+#'
+#' @return Numeric scalar: the concordance, NOT sign-adjusted.
+#'
+#' @family concordance-ci
+frozen_reverse_cindex <- function(risk, time, status) {
+  if (length(risk) != length(time) || length(time) != length(status))
+    stop("risk, time, and status must all have the same length.")
+  if (sd(risk) == 0) return(NA_real_)  # constant risk score: concordance undefined
+  as.numeric(concordance(Surv(time, status) ~ risk, reverse = TRUE)$concordance)
+}
+
 #' @title Percentile-bootstrap confidence interval for a C-index
 #'
 #' @description Resamples patients with replacement and recomputes Harrell's
@@ -30,6 +58,15 @@ suppressPackageStartupMessages(library(survival))
 #' @param B integer number of bootstrap replicates (default 2000).
 #' @param seed integer RNG seed, for reproducibility (default 1).
 #' @param conf_level confidence level (default 0.95).
+#' @param flip NULL (default) or a logical scalar. NULL preserves the
+#'   original behavior: the flip is decided from the SAME `risk`/`time`/
+#'   `status` being scored (this project's original `oriented_cindex()`-style
+#'   convention; see the Description above for why this is fine for CI width
+#'   but is a same-sample orientation decision). Pass a logical to instead use
+#'   a FROZEN orientation established elsewhere (e.g. from training data
+#'   only, per DECISIONS.md 2026-09-04) -- `estimate` is then the concordance
+#'   of `risk` (or `-risk` if `flip = TRUE`) as-is, NOT adjusted toward 0.5,
+#'   so a genuinely poor score can come back below 0.5.
 #'
 #' @return A list with `estimate` (oriented point-estimate C-index), `lower`,
 #'   `upper` (percentile CI bounds), `se` (bootstrap standard deviation),
@@ -37,9 +74,9 @@ suppressPackageStartupMessages(library(survival))
 #'   establish the "higher = worse" orientation).
 #'
 #' @family concordance-ci
-#' @seealso bootstrap_concordance_diff_ci
+#' @seealso bootstrap_concordance_diff_ci, frozen_reverse_cindex
 bootstrap_concordance_ci <- function(risk, time, status, B = 2000, seed = 1,
-                                      conf_level = 0.95) {
+                                      conf_level = 0.95, flip = NULL) {
   n <- length(risk)
   if (length(time) != n || length(status) != n)
     stop("risk, time, and status must all have the same length.")
@@ -50,10 +87,26 @@ bootstrap_concordance_ci <- function(risk, time, status, B = 2000, seed = 1,
   if (sum(status) < 2)
     stop("Too few events (< 2) to compute a meaningful concordance CI.")
 
-  c_full <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  flip <- c_full < 0.5
-  risk_use <- if (flip) -risk else risk
-  estimate <- if (flip) 1 - c_full else c_full
+  # frozen_orientation: whether flip was supplied by the caller (TRUE/FALSE),
+  # as opposed to being decided here from the same sample being scored (the
+  # original, flip=NULL behavior). This also controls whether concordance()
+  # is called with reverse=TRUE below: a caller-supplied flip is meant to
+  # match frozen_reverse_cindex()'s "larger risk = shorter survival" (Cox)
+  # convention, which requires reverse=TRUE; the legacy flip=NULL path uses
+  # plain (non-reverse) concordance throughout, unchanged, for exact
+  # backward compatibility.
+  frozen_orientation <- !is.null(flip)
+  if (!frozen_orientation) {
+    c_full <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
+    flip <- c_full < 0.5
+    risk_use <- if (flip) -risk else risk
+    estimate <- if (flip) 1 - c_full else c_full
+  } else {
+    if (!is.logical(flip) || length(flip) != 1 || is.na(flip))
+      stop("flip must be NULL or a single non-NA logical.")
+    risk_use <- if (flip) -risk else risk
+    estimate <- as.numeric(concordance(Surv(time, status) ~ risk_use, reverse = TRUE)$concordance)
+  }
 
   set.seed(seed)
   boot_c <- numeric(B)
@@ -70,7 +123,7 @@ bootstrap_concordance_ci <- function(risk, time, status, B = 2000, seed = 1,
         "Concordance is undefined for this resample -- this can happen with a ",
         "low event-rate or small cohort; try a different seed or a larger B.")
     boot_c[b] <- as.numeric(
-      concordance(Surv(time[idx], status[idx]) ~ risk_use[idx])$concordance
+      concordance(Surv(time[idx], status[idx]) ~ risk_use[idx], reverse = frozen_orientation)$concordance
     )
   }
 
@@ -101,16 +154,23 @@ bootstrap_concordance_ci <- function(risk, time, status, B = 2000, seed = 1,
 #'   being compared (same patients, same length).
 #' @param time,status as in `bootstrap_concordance_ci()`.
 #' @param B,seed,conf_level as in `bootstrap_concordance_ci()`.
+#' @param flip_a,flip_b NULL (default) or logical scalars, analogous to
+#'   `bootstrap_concordance_ci()`'s `flip`: NULL decides each score's flip
+#'   from the same `time`/`status` being scored here (original behavior);
+#'   a logical uses a pre-frozen orientation instead (e.g. each risk score is
+#'   already correctly signed from its own model's training fit, so both are
+#'   typically passed as `FALSE`).
 #'
 #' @return A list with `estimate` (point-estimate difference, C(risk_a) -
 #'   C(risk_b)), `lower`, `upper` (percentile CI on the difference), `se`,
 #'   `B`, and `significant` (logical; TRUE if the CI excludes 0).
 #'
 #' @family concordance-ci
-#' @seealso bootstrap_concordance_ci
+#' @seealso bootstrap_concordance_ci, frozen_reverse_cindex
 bootstrap_concordance_diff_ci <- function(risk_a, risk_b, time, status,
                                            B = 2000, seed = 1,
-                                           conf_level = 0.95) {
+                                           conf_level = 0.95,
+                                           flip_a = NULL, flip_b = NULL) {
   n <- length(risk_a)
   if (length(risk_b) != n || length(time) != n || length(status) != n)
     stop("risk_a, risk_b, time, and status must all have the same length.")
@@ -121,14 +181,30 @@ bootstrap_concordance_diff_ci <- function(risk_a, risk_b, time, status,
   if (sum(status) < 2)
     stop("Too few events (< 2) to compute a meaningful concordance CI.")
 
-  c_full_a <- as.numeric(concordance(Surv(time, status) ~ risk_a)$concordance)
-  c_full_b <- as.numeric(concordance(Surv(time, status) ~ risk_b)$concordance)
-  flip_a <- c_full_a < 0.5
-  flip_b <- c_full_b < 0.5
+  # .score() preserves the ORIGINAL arithmetic (1 - c_full via the complement,
+  # not a fresh concordance() call on the negated vector) when flip is NULL,
+  # so existing flip_a/flip_b=NULL callers get bit-for-bit identical results
+  # to before this parameter was added. A caller-supplied flip is scored with
+  # reverse=TRUE, matching frozen_reverse_cindex()'s "larger risk = shorter
+  # survival" (Cox) convention -- see bootstrap_concordance_ci() for why.
+  .score <- function(risk, flip) {
+    if (is.null(flip)) {
+      c_full <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
+      flip <- c_full < 0.5
+      list(flip = flip, frozen = FALSE, c = if (flip) 1 - c_full else c_full)
+    } else {
+      if (!is.logical(flip) || length(flip) != 1 || is.na(flip))
+        stop("flip_a/flip_b must be NULL or a single non-NA logical.")
+      risk_use <- if (flip) -risk else risk
+      list(flip = flip, frozen = TRUE,
+           c = as.numeric(concordance(Surv(time, status) ~ risk_use, reverse = TRUE)$concordance))
+    }
+  }
+  res_a <- .score(risk_a, flip_a); flip_a <- res_a$flip; frozen_a <- res_a$frozen
+  res_b <- .score(risk_b, flip_b); flip_b <- res_b$flip; frozen_b <- res_b$frozen
   risk_a_use <- if (flip_a) -risk_a else risk_a
   risk_b_use <- if (flip_b) -risk_b else risk_b
-  estimate <- (if (flip_a) 1 - c_full_a else c_full_a) -
-              (if (flip_b) 1 - c_full_b else c_full_b)
+  estimate <- res_a$c - res_b$c
 
   set.seed(seed)
   boot_diff <- numeric(B)
@@ -142,8 +218,8 @@ bootstrap_concordance_diff_ci <- function(risk_a, risk_b, time, status,
         b, B), sprintf("(n=%d, seed=%d, overall events=%d). ", n, seed, sum(status)),
         "Concordance is undefined for this resample -- this can happen with a ",
         "low event-rate or small cohort; try a different seed or a larger B.")
-    ca <- as.numeric(concordance(Surv(time[idx], status[idx]) ~ risk_a_use[idx])$concordance)
-    cb <- as.numeric(concordance(Surv(time[idx], status[idx]) ~ risk_b_use[idx])$concordance)
+    ca <- as.numeric(concordance(Surv(time[idx], status[idx]) ~ risk_a_use[idx], reverse = frozen_a)$concordance)
+    cb <- as.numeric(concordance(Surv(time[idx], status[idx]) ~ risk_b_use[idx], reverse = frozen_b)$concordance)
     boot_diff[b] <- ca - cb
   }
 
