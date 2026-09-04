@@ -50,6 +50,13 @@ a point-estimate comparison, not a tested one.
 Test suite unaffected in count (468/468, one existing test's assertion corrected rather than a new
 test added). Chapter re-rendered with `quarto render` to confirm it still compiles.
 
+**Codex re-reviewed `73ece4e..71b5331` and approved**, confirming P1/P2/P3 above were addressed
+correctly and finding no new blocker (also independently re-ran `test_fit_yf_cohort.R`'s full harness:
+18/18 passing). This closes out the review-findings fix plan (`docs/plans/review_findings_fix_plan_09_04_2026.md`,
+Steps 1-6) with an independent second-round sign-off. Branch `fix/2026-09-04-review-findings` is ready
+to merge to `main` whenever wanted — that remains a user decision tied to lab-meeting timing, not
+automatic.
+
 ---
 
 ## 2026-09-04 (addendum) — Review-findings fix plan, Steps 1-4 complete (branch `fix/2026-09-04-review-findings`, not merged to `main`); a stale-cache interaction discovered while re-running `run_k_init_sweep.R`
