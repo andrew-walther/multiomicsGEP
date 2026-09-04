@@ -300,4 +300,96 @@ run_test("CCI-T20: bootstrap_concordance_diff_ci(flip_a=FALSE, flip_b=FALSE) sco
   assert_near(ci$estimate, ref, tol = 1e-8, msg = "flip_a=flip_b=FALSE should score both risk vectors as-is under reverse=TRUE")
 })
 
+# ============================================================
+# Section: bootstrap_concordance_diff_ci_stratified() -- paired,
+# cohort-equal-weighted bootstrap (review finding, Step 4, 2026-09-04,
+# DECISIONS.md -- fixes the pooled-bootstrap estimand mismatch)
+# ============================================================
+
+.cci_strata <- local({
+  set.seed(31)
+  make_stratum <- function(n, seed) {
+    set.seed(seed)
+    risk_a <- rnorm(n); risk_b <- rnorm(n)
+    time   <- rexp(n, rate = exp(0.7 * scale(risk_a)[, 1]))
+    status <- rbinom(n, 1, 0.8)
+    list(risk_a = risk_a, risk_b = risk_b, time = time, status = status)
+  }
+  # Deliberately UNEQUAL sizes so a patient-weighted vs. cohort-equal-weighted
+  # aggregation would give visibly different results if conflated.
+  list(make_stratum(20, 1), make_stratum(20, 2), make_stratum(200, 3))
+})
+
+run_test("CCI-T21: bootstrap_concordance_diff_ci_stratified's point estimate is the UNWEIGHTED mean of per-stratum estimates", {
+  s <- .cci_strata
+  ci <- bootstrap_concordance_diff_ci_stratified(
+    lapply(s, `[[`, "risk_a"), lapply(s, `[[`, "risk_b"),
+    lapply(s, `[[`, "time"), lapply(s, `[[`, "status"), B = 100, seed = 4
+  )
+  per_stratum <- vapply(s, function(st) {
+    frozen_reverse_cindex(st$risk_a, st$time, st$status) -
+      frozen_reverse_cindex(st$risk_b, st$time, st$status)
+  }, numeric(1))
+  assert_near(ci$estimate, mean(per_stratum), tol = 1e-8,
+              "point estimate must be the unweighted mean across strata, not the patient-weighted pooled concordance")
+  assert_equal(ci$n_strata, 3L, "n_strata should echo the number of strata supplied")
+})
+
+run_test("CCI-T22: bootstrap_concordance_diff_ci_stratified differs from naively concatenating all strata (the bug this fixes)", {
+  s <- .cci_strata
+  ci_stratified <- bootstrap_concordance_diff_ci_stratified(
+    lapply(s, `[[`, "risk_a"), lapply(s, `[[`, "risk_b"),
+    lapply(s, `[[`, "time"), lapply(s, `[[`, "status"), B = 100, seed = 4
+  )
+  ci_pooled <- bootstrap_concordance_diff_ci(
+    unlist(lapply(s, `[[`, "risk_a")), unlist(lapply(s, `[[`, "risk_b")),
+    unlist(lapply(s, `[[`, "time")), unlist(lapply(s, `[[`, "status")),
+    B = 100, seed = 4, flip_a = FALSE, flip_b = FALSE
+  )
+  assert_true(abs(ci_stratified$estimate - ci_pooled$estimate) > 1e-6,
+              "cohort-equal-weighted and patient-weighted pooling should give visibly different estimates under unequal cohort sizes")
+})
+
+run_test("CCI-T23: bootstrap_concordance_diff_ci_stratified rejects mismatched list lengths", {
+  s <- .cci_strata
+  err <- tryCatch({
+    bootstrap_concordance_diff_ci_stratified(
+      lapply(s, `[[`, "risk_a"), lapply(s, `[[`, "risk_b")[1:2],
+      lapply(s, `[[`, "time"), lapply(s, `[[`, "status"), B = 20
+    )
+    "no error"
+  }, error = function(e) "error")
+  assert_equal(err, "error", "mismatched number of strata across lists should raise an error")
+})
+
+run_test("CCI-T24: bootstrap_concordance_diff_ci_stratified rejects a too-small stratum", {
+  s <- .cci_strata
+  tiny <- list(risk_a = rnorm(5), risk_b = rnorm(5), time = rexp(5), status = rep(1L, 5))
+  err <- tryCatch({
+    bootstrap_concordance_diff_ci_stratified(
+      c(lapply(s, `[[`, "risk_a"), list(tiny$risk_a)),
+      c(lapply(s, `[[`, "risk_b"), list(tiny$risk_b)),
+      c(lapply(s, `[[`, "time"), list(tiny$time)),
+      c(lapply(s, `[[`, "status"), list(tiny$status)),
+      B = 20
+    )
+    "no error"
+  }, error = function(e) "error")
+  assert_equal(err, "error", "a stratum with n < 10 should raise an error")
+})
+
+run_test("CCI-T25: bootstrap_concordance_diff_ci_stratified is reproducible given the same seed", {
+  s <- .cci_strata
+  a <- bootstrap_concordance_diff_ci_stratified(
+    lapply(s, `[[`, "risk_a"), lapply(s, `[[`, "risk_b"),
+    lapply(s, `[[`, "time"), lapply(s, `[[`, "status"), B = 100, seed = 8
+  )
+  b <- bootstrap_concordance_diff_ci_stratified(
+    lapply(s, `[[`, "risk_a"), lapply(s, `[[`, "risk_b"),
+    lapply(s, `[[`, "time"), lapply(s, `[[`, "status"), B = 100, seed = 8
+  )
+  assert_near(a$lower, b$lower, tol = 1e-12, "identical seed should give identical lower bound")
+  assert_near(a$upper, b$upper, tol = 1e-12, "identical seed should give identical upper bound")
+})
+
 report_results("test_concordance_ci.R")

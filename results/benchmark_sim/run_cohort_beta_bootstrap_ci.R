@@ -8,10 +8,17 @@
 #          fits from run_cohort_beta_comparison.R and the cached two-step
 #          risk scores from run_ebmf_cox_regularized.R.
 #
-#          Per-cohort AND pooled (patient-aligned risk scores concatenated
-#          across the 5 external cohorts) bootstrap CIs, matching the
-#          established pattern in run_yfb_vs_ebmf_k7_matched_ci.R
-#          (bootstrap_concordance_diff_ci(), B=2000, seed=1).
+#          Per-cohort bootstrap CIs (bootstrap_concordance_diff_ci(),
+#          B=2000, seed=1, matching the established pattern in
+#          run_yfb_vs_ebmf_k7_matched_ci.R) plus one POOLED CI per
+#          comparison via bootstrap_concordance_diff_ci_stratified() --
+#          resampled WITHIN each cohort per replicate and averaged with
+#          EQUAL weight per cohort, matching this project's headline
+#          mean-of-cohorts C-index convention (fixed 2026-09-04,
+#          DECISIONS.md -- previously a naive concatenation of all 5
+#          cohorts' patients before one bootstrap call, which gave larger
+#          cohorts more weight and let concordance pairs form between
+#          cohorts).
 #
 #   Output: results/benchmark_sim/outputs/cohort_beta_comparison/
 #             cohort_beta_bootstrap_ci.csv
@@ -110,13 +117,27 @@ if (!is.null(two_step)) arm_risk[["two_step_ebmf_cox"]] <- two_step
 # --------------------------------------------------------------------------
 # Pairwise bootstrap CIs: every arm vs. joint_yfb (the baseline this
 # comparison is about), per cohort and pooled.
+#
+# POOLED estimand (fixed 2026-09-04, DECISIONS.md -- review finding, Step 4):
+# previously concatenated all 5 cohorts' patients into one vector before a
+# single bootstrap_concordance_diff_ci() call. That gives larger cohorts more
+# influence and lets concordance pairs form BETWEEN cohorts (different
+# populations, different follow-up -- not comparable), answering "the
+# patient-weighted, cross-cohort-pooled C-index difference," not "the mean
+# of the per-cohort differences" -- the estimand this project's headline
+# metric elsewhere actually uses (run_cohort_beta_comparison.R's
+# score_external()'s mean_c, an UNWEIGHTED mean across cohorts). Fixed by
+# bootstrap_concordance_diff_ci_stratified(): resamples WITHIN each cohort
+# independently per replicate, averages cohorts with EQUAL weight. This is
+# conditional on these 5 fixed cohorts, not a claim about generalization to
+# an unobserved cohort.
 # --------------------------------------------------------------------------
 BASELINE <- "joint_yfb"
 comparison_arms <- setdiff(names(arm_risk), BASELINE)
 
 rows <- list()
 for (arm in comparison_arms) {
-  pooled_a <- pooled_b <- pooled_time <- pooled_status <- c()
+  strat_a <- strat_b <- strat_time <- strat_status <- list()
   for (ec in EXTERNAL_COHORTS) {
     a <- arm_risk[[BASELINE]][[ec]]; b <- arm_risk[[arm]][[ec]]
     if (is.null(a) || is.null(b)) next
@@ -129,19 +150,20 @@ for (arm in comparison_arms) {
       diff_estimate = round(ci$estimate, 4), diff_lower = round(ci$lower, 4),
       diff_upper = round(ci$upper, 4), significant = ci$significant, stringsAsFactors = FALSE
     )
-    pooled_a <- c(pooled_a, a$risk); pooled_b <- c(pooled_b, b$risk)
-    pooled_time <- c(pooled_time, a$time); pooled_status <- c(pooled_status, a$status)
+    strat_a[[ec]] <- a$risk; strat_b[[ec]] <- b$risk
+    strat_time[[ec]] <- a$time; strat_status[[ec]] <- a$status
   }
-  if (length(pooled_time) > 0) {
-    ci_p <- bootstrap_concordance_diff_ci(pooled_a, pooled_b, pooled_time, pooled_status, B = 2000, seed = 1,
-                                           flip_a = FALSE, flip_b = FALSE)
+  if (length(strat_time) > 0) {
+    ci_p <- bootstrap_concordance_diff_ci_stratified(strat_a, strat_b, strat_time, strat_status,
+                                                       B = 2000, seed = 1)
+    n_pooled <- sum(vapply(strat_time, length, integer(1)))
     rows[[length(rows) + 1]] <- data.frame(
-      comparison = sprintf("%s_minus_%s", BASELINE, arm), cohort = "POOLED", n = length(pooled_time),
+      comparison = sprintf("%s_minus_%s", BASELINE, arm), cohort = "POOLED", n = n_pooled,
       diff_estimate = round(ci_p$estimate, 4), diff_lower = round(ci_p$lower, 4),
       diff_upper = round(ci_p$upper, 4), significant = ci_p$significant, stringsAsFactors = FALSE
     )
-    cat(sprintf("%-35s POOLED (n=%d): diff=%.4f [%.4f, %.4f] sig=%s\n",
-                sprintf("%s - %s", BASELINE, arm), length(pooled_time),
+    cat(sprintf("%-35s POOLED (%d cohorts, n=%d): diff=%.4f [%.4f, %.4f] sig=%s\n",
+                sprintf("%s - %s", BASELINE, arm), ci_p$n_strata, n_pooled,
                 ci_p$estimate, ci_p$lower, ci_p$upper, ci_p$significant))
   }
 }

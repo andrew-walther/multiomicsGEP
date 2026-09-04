@@ -230,3 +230,97 @@ bootstrap_concordance_diff_ci <- function(risk_a, risk_b, time, status,
   list(estimate = estimate, lower = qs[1], upper = qs[2],
        se = stats::sd(boot_diff), B = B, significant = significant)
 }
+
+#' @title Paired-bootstrap CI for a difference in C-index, pooled ACROSS
+#'   independent strata (e.g. cohorts) with EQUAL weight per stratum
+#'
+#' @description Fixes an estimand mismatch (review finding, Step 4,
+#'   2026-09-04, DECISIONS.md): naively concatenating patients from several
+#'   independent cohorts before bootstrapping (as
+#'   \code{bootstrap_concordance_diff_ci()} would, called once on the
+#'   concatenation) gives larger cohorts more influence on the result and
+#'   lets concordance pairs form BETWEEN cohorts, which have no reason to be
+#'   comparable (different populations, different follow-up). That answers a
+#'   different question than "the mean of the per-cohort C-index
+#'   differences" -- the headline metric this project reports elsewhere
+#'   (e.g. \code{run_cohort_beta_comparison.R}'s \code{score_external()}'s
+#'   \code{mean_c}, an unweighted mean across cohorts).
+#'
+#'   This function instead resamples WITHIN each stratum independently on
+#'   every bootstrap replicate, computes that replicate's per-stratum
+#'   difference, and averages the strata with EQUAL weight (matching the
+#'   headline metric's convention, not weighted by patient count) to get one
+#'   pooled value per replicate. The point estimate is the same unweighted
+#'   mean of the per-stratum point estimates. This is conditional on the
+#'   observed set of strata (e.g. these 5 fixed cohorts) -- it is not a
+#'   claim about generalization to a new, unobserved cohort.
+#'
+#' @param risk_a_list,risk_b_list,time_list,status_list lists of numeric
+#'   vectors, one element per stratum (e.g. per external cohort), already
+#'   aligned (same length/order of patients within each stratum across the
+#'   four lists). Risk scores are scored AS-IS (frozen orientation,
+#'   equivalent to \code{bootstrap_concordance_diff_ci(..., flip_a = FALSE,
+#'   flip_b = FALSE)}) -- no per-stratum or per-replicate re-orientation.
+#' @param B,seed,conf_level as in \code{bootstrap_concordance_diff_ci()}.
+#'
+#' @return A list with `estimate`, `lower`, `upper`, `se`, `B`,
+#'   `significant`, and `n_strata` (number of strata actually used).
+#'
+#' @family concordance-ci
+#' @seealso bootstrap_concordance_diff_ci, frozen_reverse_cindex
+bootstrap_concordance_diff_ci_stratified <- function(risk_a_list, risk_b_list,
+                                                       time_list, status_list,
+                                                       B = 2000, seed = 1,
+                                                       conf_level = 0.95) {
+  n_strata <- length(risk_a_list)
+  if (n_strata < 1) stop("Need at least one stratum.")
+  if (length(risk_b_list) != n_strata || length(time_list) != n_strata ||
+      length(status_list) != n_strata)
+    stop("risk_a_list, risk_b_list, time_list, and status_list must have the same length (one per stratum).")
+  n_per <- vapply(risk_a_list, length, integer(1))
+  for (s in seq_len(n_strata)) {
+    if (length(risk_b_list[[s]]) != n_per[s] || length(time_list[[s]]) != n_per[s] ||
+        length(status_list[[s]]) != n_per[s])
+      stop(sprintf("Stratum %d: risk_a, risk_b, time, and status must all have the same length.", s))
+    if (anyNA(risk_a_list[[s]]) || anyNA(risk_b_list[[s]]) || anyNA(time_list[[s]]) || anyNA(status_list[[s]]))
+      stop(sprintf("Stratum %d: inputs must not contain NA values.", s))
+    if (n_per[s] < 10)
+      stop(sprintf("Stratum %d has too few observations (n=%d < 10).", s, n_per[s]))
+    if (sum(status_list[[s]]) < 2)
+      stop(sprintf("Stratum %d has too few events (< 2) in the full sample.", s))
+  }
+
+  .stratum_diff <- function(s, idx = NULL) {
+    if (is.null(idx)) idx <- seq_len(n_per[s])
+    ca <- as.numeric(concordance(Surv(time_list[[s]][idx], status_list[[s]][idx]) ~
+                                    risk_a_list[[s]][idx], reverse = TRUE)$concordance)
+    cb <- as.numeric(concordance(Surv(time_list[[s]][idx], status_list[[s]][idx]) ~
+                                    risk_b_list[[s]][idx], reverse = TRUE)$concordance)
+    ca - cb
+  }
+  estimate <- mean(vapply(seq_len(n_strata), .stratum_diff, numeric(1)))
+
+  set.seed(seed)
+  boot_diff <- numeric(B)
+  for (b in seq_len(B)) {
+    per_stratum <- numeric(n_strata)
+    for (s in seq_len(n_strata)) {
+      idx <- sample.int(n_per[s], n_per[s], replace = TRUE)
+      if (sum(status_list[[s]][idx]) < 2)
+        stop(sprintf(
+          "Bootstrap replicate %d/%d, stratum %d has fewer than 2 events after resampling ",
+          b, B, s), sprintf("(n=%d, seed=%d, overall events=%d). ", n_per[s], seed, sum(status_list[[s]])),
+          "Concordance is undefined for this resample -- this can happen with a ",
+          "low event-rate or small stratum; try a different seed or a larger B.")
+      per_stratum[s] <- .stratum_diff(s, idx)
+    }
+    boot_diff[b] <- mean(per_stratum)
+  }
+
+  alpha <- 1 - conf_level
+  qs <- stats::quantile(boot_diff, probs = c(alpha / 2, 1 - alpha / 2), names = FALSE)
+  significant <- (qs[1] > 0) || (qs[2] < 0)
+
+  list(estimate = estimate, lower = qs[1], upper = qs[2],
+       se = stats::sd(boot_diff), B = B, significant = significant, n_strata = n_strata)
+}
