@@ -18,6 +18,16 @@
 #          criterion. These are not guaranteed to agree -- report whatever
 #          the sweep actually shows.
 #
+#          As of 2026-09-04, also records two genuinely held-out criteria
+#          (code/compute_cv_loglik.R), answering directly whether the
+#          in-sample log-likelihood/BIC above agree with a real held-out
+#          check: cv_survival_loglik() (held-out Cox partial log-likelihood,
+#          leakage-free) and bicv_genomics_loglik() (bi-cross-validated
+#          genomics log-likelihood). These require fresh per-fold/per-block
+#          fits that cannot be derived from the single cached main fit, so
+#          they have their own cache (k_init_sweep_cv_results.rds,
+#          --reuse-cv-cache) independent of --reuse-cache for the main fits.
+#
 #          Preprocessing matches the D4 configuration in
 #          run_desurv_comparison.R exactly: YFB + per-platform z-std +
 #          combined_rank gene selection (top-3000 per cohort, before
@@ -51,11 +61,12 @@
 #          sweep with mc.cores > 1.
 # ============================================================
 
-args         <- commandArgs(trailingOnly = TRUE)
-QUICK_MODE   <- "--quick" %in% args
-REUSE_CACHE  <- "--reuse-cache" %in% args
-SERIAL_MODE  <- "--serial" %in% args
-k_init_arg   <- args[grepl("^--k-init=", args)]
+args           <- commandArgs(trailingOnly = TRUE)
+QUICK_MODE     <- "--quick" %in% args
+REUSE_CACHE    <- "--reuse-cache" %in% args
+REUSE_CV_CACHE <- "--reuse-cv-cache" %in% args
+SERIAL_MODE    <- "--serial" %in% args
+k_init_arg     <- args[grepl("^--k-init=", args)]
 
 # Navigate to project root if invoked from a subdirectory
 if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
@@ -73,6 +84,7 @@ source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
 tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
 source("code/compute_bic.R")   # compute_joint_ll_bic -- needs calc_cox_taylor_yf from fit_cox_on_yf.R
+source("code/compute_cv_loglik.R")  # cv_survival_loglik, bicv_genomics_loglik
 source("code/preprocess_desurv.R")
 source("code/select_K.R")
 
@@ -88,9 +100,12 @@ BETA_THRESH  <- cfg$k_selection$beta_threshold
 PVE_THRESH   <- cfg$k_selection$pve_threshold
 TOP_N_DESURV <- p$top_n_genes_desurv  # 3000 — DeSurv-aligned, D4 config
 
-OUT_DIR   <- "results/benchmark_sim/outputs/k_init_sweep"
-FITS_RDS  <- file.path(OUT_DIR, "k_init_sweep_fits.rds")
+OUT_DIR      <- "results/benchmark_sim/outputs/k_init_sweep"
+FITS_RDS     <- file.path(OUT_DIR, "k_init_sweep_fits.rds")
+CV_CACHE_RDS <- file.path(OUT_DIR, "k_init_sweep_cv_results.rds")
 dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
+
+CVL <- cfg$cv_loglik
 
 # --------------------------------------------------------------------------
 # 0. Resolve K_INIT_VALUES and (if requested) load the cached fits to reuse.
@@ -103,6 +118,18 @@ if (REUSE_CACHE) {
   cat(sprintf("--reuse-cache: loaded %d cached fits from %s (K = %s)\n",
               length(cached_fits), FITS_RDS,
               paste(sort(as.integer(names(cached_fits))), collapse = ", ")))
+}
+
+# Separate cache for the held-out CV criteria (code/compute_cv_loglik.R):
+# these need fresh per-fold/per-block fits that the single main fit above
+# cannot supply, so they cannot be back-filled from cached_fits.
+cached_cv <- NULL
+if (REUSE_CV_CACHE) {
+  if (!file.exists(CV_CACHE_RDS)) stop("--reuse-cv-cache given but no cache found at ", CV_CACHE_RDS)
+  cached_cv <- readRDS(CV_CACHE_RDS)
+  cat(sprintf("--reuse-cv-cache: loaded %d cached CV results from %s (K = %s)\n",
+              length(cached_cv), CV_CACHE_RDS,
+              paste(sort(as.integer(names(cached_cv))), collapse = ", ")))
 }
 
 if (length(k_init_arg) > 0) {
@@ -233,6 +260,28 @@ run_one_K <- function(K_init, verbose_fit) {
 
     bic_res <- compute_joint_ll_bic(fit, Y_train, time_train, status_train)
 
+    cv_cached <- cached_cv[[as.character(K_init)]]
+    if (!is.null(cv_cached)) {
+      cv_surv <- cv_cached$cv_surv
+      cv_bicv <- cv_cached$cv_bicv
+      cv_source <- "cached"
+    } else {
+      set.seed(42L)
+      cv_surv <- tryCatch(
+        cv_survival_loglik(Y_train, time_train, status_train, K = K_init,
+                            n_folds = CVL$n_folds, seed = CVL$seed,
+                            max_iter = MAX_ITER, prior_beta = PRIOR_BETA, alpha = ALPHA),
+        error = function(e) { cat(sprintf("  [K=%d] cv_survival_loglik failed: %s\n", K_init, conditionMessage(e))); NULL }
+      )
+      cv_bicv <- tryCatch(
+        bicv_genomics_loglik(Y_train, status_train, K = K_init,
+                              n_row_folds = CVL$n_row_folds, n_col_folds = CVL$n_col_folds,
+                              seed = CVL$seed, max_iter = MAX_ITER),
+        error = function(e) { cat(sprintf("  [K=%d] bicv_genomics_loglik failed: %s\n", K_init, conditionMessage(e))); NULL }
+      )
+      cv_source <- "fresh"
+    }
+
     cls <- classify_factors(fit, Y_train, beta_thresh = BETA_THRESH, pve_thresh = PVE_THRESH)
     K_survival_active <- sum(cls$category == "survival_active")
     K_genomics_only   <- sum(cls$category == "genomics_only")
@@ -271,6 +320,11 @@ run_one_K <- function(K_init, verbose_fit) {
       n_train            = nrow(Y_train),
       p_genes            = ncol(Y_train),
       mean_external_c    = round(mean_c, 4),
+      cv_survival_total_logPL     = if (is.null(cv_surv)) NA_real_ else round(cv_surv$total_logPL, 4),
+      cv_survival_logPL_per_event = if (is.null(cv_surv)) NA_real_ else round(cv_surv$mean_logPL_per_event, 6),
+      cv_survival_se_logPL        = if (is.null(cv_surv)) NA_real_ else round(cv_surv$se_logPL, 4),
+      bicv_genomics_total_loglik  = if (is.null(cv_bicv)) NA_real_ else round(cv_bicv$total_loglik, 2),
+      cv_source                   = cv_source,
       stringsAsFactors   = FALSE
     )
     for (ext_cohort in EXTERNAL_COHORTS) {
@@ -278,7 +332,8 @@ run_one_K <- function(K_init, verbose_fit) {
       row[[paste0("c_", ext_cohort)]] <- if (is.null(v)) NA_real_ else round(v, 4)
     }
 
-    list(K_init = K_init, fit_status = "ok", row = row, fit = fit)
+    list(K_init = K_init, fit_status = "ok", row = row, fit = fit,
+         cv_result = list(cv_surv = cv_surv, cv_bicv = cv_bicv))
   }, error = function(e) {
     list(K_init = K_init, fit_status = "error", error_msg = conditionMessage(e))
   })
@@ -311,6 +366,7 @@ if (CORES > 1) {
 # --------------------------------------------------------------------------
 
 fits          <- list()
+cv_results    <- list()
 results_rows  <- list()
 n_ok <- 0L; n_failed <- 0L
 
@@ -341,11 +397,15 @@ for (i in seq_along(K_INIT_VALUES)) {
 
   n_ok <- n_ok + 1L
   fits[[as.character(K_init)]] <- res$fit
+  cv_results[[as.character(K_init)]] <- res$cv_result
   results_rows[[length(results_rows) + 1]] <- res$row
   r <- res$row
-  cat(sprintf("K_init=%2d [%s]: K_survival_active=%d, K_genomics_only=%d, K_dead=%d, K_eff_total=%d | mean external C=%.4f | elbo_full=%.4f | bic=%.4f | rmse=%.6f | %.1fs\n",
+  cat(sprintf("K_init=%2d [%s]: K_survival_active=%d, K_genomics_only=%d, K_dead=%d, K_eff_total=%d | mean external C=%.4f | elbo_full=%.4f | bic=%.4f | cv_surv_logPL/event=%s | bicv_genomics=%s | rmse=%.6f | %.1fs\n",
               K_init, r$fit_source, r$K_survival_active, r$K_genomics_only, r$K_dead, r$K_eff_total,
-              r$mean_external_c, r$elbo_full, r$bic, r$rmse, r$fit_secs))
+              r$mean_external_c, r$elbo_full, r$bic,
+              ifelse(is.na(r$cv_survival_logPL_per_event), "NA", sprintf("%.4f", r$cv_survival_logPL_per_event)),
+              ifelse(is.na(r$bicv_genomics_total_loglik), "NA", sprintf("%.1f", r$bicv_genomics_total_loglik)),
+              r$rmse, r$fit_secs))
 }
 
 cat(sprintf("\n%d/%d K_init values fit successfully (%d failed)\n",
@@ -371,16 +431,28 @@ results <- results[order(results$K_init), ]
 
 ok_results <- results[results$fit_status == "ok" & !is.na(results$elbo_full), ]
 if (nrow(ok_results) > 0) {
-  elbo_best <- ok_results[which.max(ok_results$elbo_full), ]
-  bic_best  <- ok_results[which.min(ok_results$bic), ]
-  c_best    <- ok_results[which.max(ok_results$mean_external_c), ]
+  elbo_best    <- ok_results[which.max(ok_results$elbo_full), ]
+  bic_best     <- ok_results[which.min(ok_results$bic), ]
+  c_best       <- ok_results[which.max(ok_results$mean_external_c), ]
+  cv_surv_ok   <- ok_results[!is.na(ok_results$cv_survival_logPL_per_event), ]
+  bicv_ok      <- ok_results[!is.na(ok_results$bicv_genomics_total_loglik), ]
   cat("\n=== K_init preferred by each criterion ===\n")
-  cat(sprintf("  ELBO-preferred     K_init = %2d (elbo_full=%.4f, K_eff_total=%d)\n",
+  cat(sprintf("  ELBO-preferred            K_init = %2d (elbo_full=%.4f, K_eff_total=%d)\n",
               elbo_best$K_init, elbo_best$elbo_full, elbo_best$K_eff_total))
-  cat(sprintf("  BIC-preferred      K_init = %2d (bic=%.4f, K_eff_total=%d)\n",
+  cat(sprintf("  BIC-preferred (in-sample) K_init = %2d (bic=%.4f, K_eff_total=%d)\n",
               bic_best$K_init, bic_best$bic, bic_best$K_eff_total))
-  cat(sprintf("  C-index-preferred  K_init = %2d (mean_external_c=%.4f, K_eff_total=%d)\n",
+  cat(sprintf("  External C-preferred      K_init = %2d (mean_external_c=%.4f, K_eff_total=%d)\n",
               c_best$K_init, c_best$mean_external_c, c_best$K_eff_total))
+  if (nrow(cv_surv_ok) > 0) {
+    cv_surv_best <- cv_surv_ok[which.max(cv_surv_ok$cv_survival_logPL_per_event), ]
+    cat(sprintf("  Held-out survival LL-pref K_init = %2d (cv_survival_logPL_per_event=%.4f)\n",
+                cv_surv_best$K_init, cv_surv_best$cv_survival_logPL_per_event))
+  }
+  if (nrow(bicv_ok) > 0) {
+    bicv_best <- bicv_ok[which.max(bicv_ok$bicv_genomics_total_loglik), ]
+    cat(sprintf("  Bi-CV genomics LL-pref    K_init = %2d (bicv_genomics_total_loglik=%.1f)\n",
+                bicv_best$K_init, bicv_best$bicv_genomics_total_loglik))
+  }
   if (elbo_best$K_init != bic_best$K_init || elbo_best$K_init != c_best$K_init) {
     cat("  NOTE: criteria disagree on the preferred K_init — see DECISIONS.md before presenting a single number.\n")
   }
@@ -389,5 +461,6 @@ if (nrow(ok_results) > 0) {
 out_csv <- file.path(OUT_DIR, "k_init_sweep_results.csv")
 write.csv(results, out_csv, row.names = FALSE)
 if (length(fits) > 0) saveRDS(fits, FITS_RDS)
+if (length(cv_results) > 0) saveRDS(cv_results, CV_CACHE_RDS)
 
 cat(sprintf("\n=== Results saved: %s ===\n", out_csv))
