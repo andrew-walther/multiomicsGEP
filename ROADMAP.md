@@ -79,6 +79,14 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [ ] **Full ROADMAP.md review and pass, after the 9/4 meeting** `[Priority: High]` `[Effort: Small-Medium]`
+  Flagged 2026-09-03 (Andrew). This document hasn't had a full top-to-bottom review in a while —
+  several sections likely have stale priorities, items that are actually done but not checked off,
+  or items overtaken by later decisions (compare against `DECISIONS.md` for anything logged since
+  the last full pass). Do this once the 9/4 meeting and its prep are behind us, alongside picking
+  up the infrastructure to-dos added the same day (code folder organization, `PROJECT_STATUS.qmd`
+  refresh, `demos/` fate, dataset vendoring — see Infrastructure section below).
+
 - [x] **HIGH PRIORITY, immediately after the 8/21 meeting: lab meeting slide deck for 8/27**
   *(Complete, 2026-08-27)* `presentation/walther_lab_meeting_08_27_2026/`. Delivered as new work,
   not a diff against June: loadings predictor ($L\beta$) dropped from the narrative entirely; $K$
@@ -722,6 +730,38 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ---
 
 ## ⚙️ Infrastructure
+
+- [ ] **Code folder organization pass** `[Priority: Medium]` `[Effort: Medium]`
+  Flagged 2026-09-03 (Andrew), during 9/4 meeting prep. R code is currently spread across
+  `code/`, `demos/`, `results/`, and `tests/`, and `code/` itself is getting expansive. The
+  DeSurv paper repo (github.com/rashidlab/DeSurv-paper) splits into an `R/` folder and a
+  `code/` folder, with `code/` scripts numbered sequentially in execution order — a useful
+  reference point, not a template to copy blindly. Overlaps with the deferred "Repository
+  reorganisation" item below (code/derivations portions of that item were never done); revisit
+  both together rather than as separate passes.
+  *Notes: Do not start until current meeting-prep work is committed and stable. Coordinate with
+  the repository reorganisation item below.*
+
+- [ ] **Refresh `PROJECT_STATUS.qmd`** `[Priority: Medium]` `[Effort: Small]`
+  Flagged 2026-09-03 (Andrew). `PROJECT_STATUS.qmd` (the designated single source of truth for
+  project status per `CLAUDE.md`) has not been updated since 2026-07-15 — misses the K-parsimony
+  follow-up, pathway enrichment completion, 8/21 and 9/4 meeting prep, and everything else
+  recorded in `DECISIONS.md`/`ROADMAP.md` since. Needs a pass to bring it current, then should be
+  kept current going forward per its stated role.
+
+- [ ] **Decide the fate of the `demos/` folder** `[Priority: Low]` `[Effort: Small]`
+  Flagged 2026-09-03 (Andrew). `demos/` has been untouched for ~6 months; unclear it still earns
+  its keep as a standalone top-level folder. Options: fold its content into `results/`
+  (simulations), archive it, or leave it as-is until the method is finalized and new demos are
+  built deliberately. No decision made yet.
+
+- [ ] **Consider vendoring analysis datasets into the repo** `[Priority: Low]` `[Effort: Medium]`
+  Flagged 2026-09-03 (Andrew). The DeSurv paper repo includes its analysis datasets directly
+  in-repo (github.com/rashidlab/DeSurv-paper/tree/public/data). This repo currently always
+  references real PDAC data from the OneDrive folder (not in git — see `CLAUDE.md`). Open
+  question: should some/all datasets be vendored into `multiomicsGEP` instead of always pointing
+  to OneDrive? Weigh data size, licensing/PHI concerns (this is patient data), and reproducibility
+  before deciding — do not commit patient-level data without confirming it's permitted.
 
 - [ ] **Investigate {targets} workflow for pipeline reproducibility** `[Priority: Low]` `[Effort: Medium]`
   Adopt the R `targets` package to manage computational dependencies across the pipeline (data
