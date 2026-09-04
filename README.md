@@ -69,6 +69,12 @@ multiomicsGEP/
 │       └── multiomicsGEP_code.Rmd     ← Early exploratory notebook
 │
 ├── docs/                              ← Companion documentation (PDF + HTML)
+│   ├── progress_book/                 ← Quarto book, one chapter per advisor meeting
+│   │                                     Rendered HTML: https://andrew-walther.github.io/multiomicsGEP/
+│   │                                     (auto-published on every push to main that touches this
+│   │                                     directory — .github/workflows/publish-progress-book.yml;
+│   │                                     `_book/` is also committed on main directly, so the whole
+│   │                                     book always re-renders fresh alongside each new chapter)
 │   ├── Makefile                       ← `make all` renders .qmd → .pdf + .html via Quarto
 │   ├── fit_modular.qmd/.pdf/.html     ← fit_modular.R walkthrough (full CAVI loop)
 │   ├── update_beta.qmd/.pdf/.html     ← β update: derivation, code, tests, demos
