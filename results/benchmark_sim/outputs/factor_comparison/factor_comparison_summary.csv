@@ -1,0 +1,5 @@
+"sbmf_program","sbmf_category","best_ebmf_factor","best_jaccard","best_hyper_p","ebmf_variance_rank","ebmf_variance_rank_of_40"
+3,"survival_active",3,0.399,8.664670688677e-83,3,"3/40"
+5,"genomics_only",1,0.4917,1.05054482172252e-116,1,"1/40"
+6,"genomics_only",4,0.1739,5.06150853541138e-15,5,"5/40"
+7,"survival_active",2,0.5254,1.6632566454985e-129,2,"2/40"

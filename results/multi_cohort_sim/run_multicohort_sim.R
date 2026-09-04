@@ -125,7 +125,15 @@ ARMS <- c("YFB_base", "EBMF")
 # K=6 fit is RETAINED as an internal reference only (to compare ARD-based
 # recovery against the 6/18 oracle-K figures for the deck-placement
 # decision) -- it is not itself a deck figure.
-K_SETTINGS <- c(oracle_k6 = K_FIT_TRUE, ard_k12 = 12L, ard_k20 = EBMF_KMAX)
+#
+# under_k2/3/4 (added 2026-09-04, DECISIONS.md): UNDER-specified K_init,
+# below K_true=6, answering the advisors' question of whether multiple true
+# factors merge into one estimated factor when K_init is too small to
+# represent them separately. match_factors()/classify_specificity() already
+# support this without change -- the "under-specified" case is just a
+# smaller K passed to the same fitting/scoring pipeline.
+K_SETTINGS <- c(under_k2 = 2L, under_k3 = 3L, under_k4 = 4L,
+                oracle_k6 = K_FIT_TRUE, ard_k12 = 12L, ard_k20 = EBMF_KMAX)
 
 OUT_DIR <- "results/multi_cohort_sim/outputs"
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
