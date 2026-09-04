@@ -346,16 +346,25 @@ run_test("YFBBetaCohort-T7: this fixture's Phase C sign check actually flips (fi
               "fixture must actually trigger a Phase C flip (sign_correction=TRUE's EBeta must be the exact negation of sign_correction=FALSE's) -- otherwise T8/T9 below are not meaningful")
 })
 
-run_test("YFBBetaCohort-T8: EBeta_pooled is identical whether or not Phase C flips (coherent-state fix)", {
-  # Before the fix, EBeta_pooled was computed from rowMeans(EBeta) AFTER
+run_test("YFBBetaCohort-T8: EBeta_pooled tracks EBeta's final orientation exactly (coherent-state fix, round 2)", {
+  # Before the FIRST fix, EBeta_pooled was computed from rowMeans(EBeta) AFTER
   # Phase C's potential flip, while w/z/ZF (never touched by Phase C) stayed
   # at their pre-flip state -- an incoherent init that fed compute_pooled_beta()
   # a mismatched-sign partial residual, producing a genuinely different
   # (not just sign-flipped) result, not just here but on the cached D4 fit
   # (Program 7: 0.0404 vs. 0.0204, a 2x difference from this alone). Fixed by
-  # computing EBeta_pooled from the PRE-Phase-C EBeta snapshot, which is
-  # identical regardless of sign_correction (the main CAVI loop that produces
-  # it runs identically either way -- Phase C runs strictly afterward).
+  # computing EBeta_pooled's Gauss-Seidel sweep from the PRE-Phase-C EBeta
+  # snapshot, so that sweep's inputs are always mutually consistent.
+  #
+  # That first fix alone left a SECOND bug (caught in code review, round 2):
+  # the sweep's OUTPUT was never re-flipped to match Phase C's actual
+  # decision, so EBeta_pooled stayed frozen at the pre-flip orientation while
+  # EBeta itself got flipped -- an orientation MISMATCH between the two
+  # (both are used interchangeably by predict_cox_on_yf() on external
+  # cohorts, depending on whether the cohort's beta_cohort_id is known).
+  # The correct invariant is therefore NOT "EBeta_pooled is identical
+  # regardless of sign_correction" -- it's "EBeta_pooled is negated exactly
+  # when EBeta is negated," i.e. it tracks the SAME final global sign.
   fit_true  <- suppressMessages(
     fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
                   verbose = FALSE, sign_correction = TRUE, beta_cohort_id = .pc$cohort2)
@@ -364,8 +373,10 @@ run_test("YFBBetaCohort-T8: EBeta_pooled is identical whether or not Phase C fli
     fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
                   verbose = FALSE, sign_correction = FALSE, beta_cohort_id = .pc$cohort2)
   )
-  assert_near(fit_true$EBeta_pooled, fit_false$EBeta_pooled, tol = 1e-10,
-              "EBeta_pooled must not depend on sign_correction -- it must be computed from the same pre-Phase-C state either way")
+  # T7 already confirms this fixture makes Phase C flip (fit_true$EBeta ==
+  # -fit_false$EBeta exactly) -- EBeta_pooled must show the same relationship.
+  assert_near(fit_true$EBeta_pooled, -fit_false$EBeta_pooled, tol = 1e-10,
+              "EBeta_pooled must be negated exactly when Phase C flips EBeta -- same final orientation, not independent of sign_correction")
 })
 
 run_test("YFBBetaCohort-T9: EBeta2 is unchanged by a Phase C sign flip (E[beta^2] invariant to negating beta)", {

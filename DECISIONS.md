@@ -5,6 +5,53 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-09-04 (addendum) — Codex round-2 review of the fix-plan branch: two more real findings, both fixed
+
+**Context.** After Steps 1-6 of `docs/plans/review_findings_fix_plan_09_04_2026.md` were complete and
+pushed on `fix/2026-09-04-review-findings`, Codex was asked to review the branch (commit `73ece4e`) a
+second time. It confirmed the tied-event, `EBeta2`, orientation-circularity, and CV-scoring-gap fixes
+were correct, and flagged two more real issues plus one wording nit.
+
+**P1 (real bug, fixed): `EBeta_pooled` orientation mismatch.** The Step 3 fix (`EBeta_pre_phaseC`
+snapshot) made `EBeta_pooled`'s Gauss-Seidel sweep internally coherent, but never re-applied Phase C's
+flip decision to the sweep's OUTPUT — so after a fit where Phase C actually flips, the returned
+`EBeta` (cohort matrix) and `EBeta_pooled` end up on OPPOSITE final orientations, even though
+`predict_cox_on_yf()` uses them interchangeably (whichever a given external cohort's `beta_cohort_id`
+status calls for). Fixed in `fit_cox_on_yf.R`: track `phaseC_flipped` and negate `EBeta_pooled` after
+computing it from the coherent pre-flip state, whenever Phase C flipped `EBeta`. The regression test
+(`YFBBetaCohort-T8`, `tests/test_fit_yf_cohort.R`) was wrong in the same way Codex's review describes
+it should be — it asserted `EBeta_pooled` is IDENTICAL regardless of `sign_correction`, when the
+correct invariant is that it's NEGATED exactly when `EBeta` is. Fixed the assertion to match.
+**Verified this changes no already-reported number**: checked directly against the cached
+`cohort_beta_comparison_fits.rds` fits (`joint_yfb_beta_c`, `joint_yfb_all_c`) — `EBeta_pooled` and
+`rowMeans(EBeta)` already agree in sign for both, meaning Phase C never actually flipped for either
+real fit. No benchmark re-run was needed; this closes a real correctness gap without changing this
+chapter's numbers.
+
+**P2 (real finding, chapter reworded): held-out log-likelihood isn't one comparable ranking across
+strata_id arms.** Step 4's `strata_id`-passthrough fix (a genuine, correct fix on its own) means
+`joint_yfb_all_c` and `strata_only` are now scored under per-cohort (stratified) risk sets, while
+`joint_yfb`, `joint_yfb_cohort_L`, and `joint_yfb_beta_c` are scored under one pooled risk set.
+Stratified and pooled partial log-likelihoods are not on the same scale, so treating all five as one
+ranked list is invalid — confirmed numerically: the two stratified arms both read around -354.8,
+dramatically higher than the other three's -445 to -451, a gap far too large to be genuine model
+superiority and consistent with a scale artifact of stratification. The chapter's §3 claim that
+held-out log-likelihood "reaches the same ranking" as external C-index has been narrowed to the three
+arms that share a common (pooled) risk set, where it does hold exactly
+(`joint_yfb_beta_c` > `joint_yfb` > `joint_yfb_cohort_L`, matching external C); the two `strata_id`
+arms are now described separately with the scale caveat. No code changes were needed for this one —
+Step 4's fix was correct, the chapter's INTERPRETATION of its output needed correcting.
+
+**P3 (wording): "beats a two-step alternative"** overstated what the bootstrap table actually
+supports — it only reports a CI against the current model (`joint_yfb`), not against the two-step
+baseline directly. Reworded to "had a higher observed mean external C than," with a note that this is
+a point-estimate comparison, not a tested one.
+
+Test suite unaffected in count (468/468, one existing test's assertion corrected rather than a new
+test added). Chapter re-rendered with `quarto render` to confirm it still compiles.
+
+---
+
 ## 2026-09-04 (addendum) — Review-findings fix plan, Steps 1-4 complete (branch `fix/2026-09-04-review-findings`, not merged to `main`); a stale-cache interaction discovered while re-running `run_k_init_sweep.R`
 
 **Context.** Implementing `docs/plans/review_findings_fix_plan_09_04_2026.md` (produced from the two-round

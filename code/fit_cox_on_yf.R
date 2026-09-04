@@ -869,6 +869,14 @@ fit_cox_on_yf <- function(Y, time, status,
   # survival -- the opposite of hazard direction). This is the single,
   # training-data-only orientation decision for the whole fit -- see the
   # sign_correction roxygen param above.
+  # phaseC_flipped: whether Phase C below actually negates EBeta. EBeta_pooled
+  # (computed further down from the pre-Phase-C snapshot, for a reason
+  # unrelated to this flag -- see its own comment) must receive the SAME
+  # final global orientation as EBeta, since predict_cox_on_yf() uses
+  # EBeta_pooled as a drop-in replacement for EBeta on external cohorts with
+  # no beta_cohort_id of their own (2026-09-04 review finding, round 2 --
+  # DECISIONS.md).
+  phaseC_flipped <- FALSE
   if (sign_correction) {
     # Location 2: restrict to K global-factor columns before computing ZF_final.
     # EF_norms was computed from EF_global (K columns) earlier in this iteration.
@@ -894,6 +902,7 @@ fit_cox_on_yf <- function(Y, time, status,
       # estimate squared -- a real bug (Step 3, review finding), fixed by
       # simply not touching EBeta2 on a sign flip.
       EBeta <- -EBeta
+      phaseC_flipped <- TRUE
     }
   }
 
@@ -945,13 +954,19 @@ fit_cox_on_yf <- function(Y, time, status,
     # (not just a wrong sign; verified on the cached D4 fit: Program 7's
     # pooled beta was 0.0404 with Phase C disabled vs. 0.0204 enabled, a 2x
     # difference from this inconsistency alone). Using the coherent snapshot
-    # here makes EBeta_pooled independent of `sign_correction` entirely
-    # (Phase C runs strictly after the main loop and never affects it) --
-    # see tests/test_fit_yf_cohort.R for the regression test.
-    result$EBeta_pooled     <- compute_pooled_beta(
+    # here makes the underlying Gauss-Seidel sweep independent of
+    # `sign_correction` -- but its OUTPUT must still end up on the same final
+    # orientation as EBeta (Phase C's flip is applied afterward, below), since
+    # EBeta and EBeta_pooled are used interchangeably by predict_cox_on_yf()
+    # depending on whether a test cohort's beta_cohort_id is known (2026-09-04
+    # review finding, round 2 -- DECISIONS.md). See tests/test_fit_yf_cohort.R
+    # for the regression test.
+    EBeta_pooled <- compute_pooled_beta(
       w, z, ZF, rowMeans(EBeta_pre_phaseC),
       prior_family = prior_beta, alpha = alpha, survival_divisor = beta_divisor
     )
+    if (phaseC_flipped) EBeta_pooled <- -EBeta_pooled
+    result$EBeta_pooled <- EBeta_pooled
     result$beta_cohort_id    <- beta_cohort_id
     result$beta_cohort_levels <- beta_cohort_levels
   }
