@@ -90,15 +90,33 @@ calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
     status_s <- status[ord]
     eta_s    <- eta[ord]
     theta    <- exp(eta_s)
-    risk_sum <- rev(cumsum(rev(theta)))
-    h <- status_s / risk_sum
-    H <- cumsum(h)
+
+    # Breslow tied-event handling: all rows sharing an event time must use the
+    # SAME risk-set denominator and the SAME cumulative-hazard increment. The
+    # naive per-row reverse-cumsum below only gives the correct denominator to
+    # the FIRST row of each tied-time block (since it sums theta from that row
+    # to the end, which for the earliest position in a contiguous tied block
+    # already covers the whole block + everyone after); later rows in the same
+    # block wrongly exclude the earlier tied rows. Fix: broadcast the
+    # first-position value to every row in the block, and accumulate the
+    # cumulative hazard once per unique time (not once per row).
+    risk_sum_pos <- rev(cumsum(rev(theta)))       # per-row, pre-tie-fix
+    first_idx    <- match(time_s, time_s)         # first sorted position sharing this row's time
+    risk_sum     <- risk_sum_pos[first_idx]       # shared denominator within a tied-time block
+
+    d_grp <- ave(status_s, time_s, FUN = sum)     # event count at this row's time, broadcast to the block
+    is_first    <- !duplicated(time_s)            # one row per unique time, in increasing time order
+    h_unique    <- d_grp[is_first] / risk_sum[is_first]
+    H_unique    <- cumsum(h_unique)               # cumulative hazard, incremented once per unique time
+    grp_id      <- cumsum(is_first)               # 1,2,3,... group index per row
+    H           <- H_unique[grp_id]
+
     u_s <- status_s - theta * H
     w_s <- theta * H
     w_s[w_s < 1e-6] <- 1e-6
     u <- numeric(n); w <- numeric(n)
     u[ord] <- u_s;   w[ord] <- w_s
-    logPL <- sum(status_s * (eta_s - log(pmax(risk_sum, 1e-300))))
+    logPL <- sum(status_s * eta_s) - sum(d_grp[is_first] * log(pmax(risk_sum[is_first], 1e-300)))
     list(u = u, w = w, logPL = logPL)
   }
 

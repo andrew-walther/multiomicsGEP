@@ -103,6 +103,89 @@ run_test("StratCox-T3b: unstratified calc_cox_taylor_yf matches coxph (Breslow) 
 })
 
 # =============================================================================
+# Section 3b: tied-event-time Breslow correctness (fixed 2026-09-04 — the
+# unstratified fixture above uses rexp() continuous times, so ties have
+# measure zero and never exercised this code path; real training data has
+# tied event times, so a dedicated tied-time fixture is required)
+# =============================================================================
+
+local({
+  set.seed(404)
+  n <- 12L
+  .tie <<- list(
+    n      = n,
+    x      = rnorm(n),
+    # Deliberately tied times: three distinct values, several rows each.
+    time   = rep(c(1, 2, 3, 4), each = 3L),
+    status = c(1,0,1, 1,1,0, 0,1,1, 1,0,1),
+    beta   = 0.6
+  )
+})
+
+run_test("StratCox-T3c: calc_cox_taylor_yf logPL matches coxph (Breslow) with tied times", {
+  eta <- .tie$x * .tie$beta
+  res <- calc_cox_taylor_yf(eta, .tie$time, .tie$status)
+  df  <- data.frame(time = .tie$time, status = .tie$status, x = .tie$x)
+  fit <- suppressWarnings(
+    coxph(Surv(time, status) ~ x, data = df,
+          init = .tie$beta, iter.max = 0, ties = "breslow")
+  )
+  assert_near(res$logPL, tail(fit$loglik, 1), tol = 1e-6,
+              msg = "tied-time logPL must match coxph Breslow reference")
+})
+
+run_test("StratCox-T3d: calc_cox_taylor_yf u == coxph martingale residuals with tied times", {
+  eta <- .tie$x * .tie$beta
+  res <- calc_cox_taylor_yf(eta, .tie$time, .tie$status)
+  df  <- data.frame(time = .tie$time, status = .tie$status, x = .tie$x)
+  fit <- suppressWarnings(
+    coxph(Surv(time, status) ~ x, data = df,
+          init = .tie$beta, iter.max = 0, ties = "breslow")
+  )
+  resid_ref <- residuals(fit, type = "martingale")
+  assert_near(max(abs(res$u - resid_ref)), 0, tol = 1e-6,
+              msg = "tied-time u must match coxph martingale residuals")
+})
+
+run_test("StratCox-T3e: permuting tied rows leaves logPL, u, w unchanged (order invariance)", {
+  eta <- .tie$x * .tie$beta
+  res_base <- calc_cox_taylor_yf(eta, .tie$time, .tie$status)
+
+  # Permute only within each tied-time block, then apply the same permutation
+  # to eta so (eta, time, status) triples stay attached to the same "subject".
+  # perm[j] = which original subject now sits at row j.
+  set.seed(1)
+  blocks <- split(seq_len(.tie$n), .tie$time)
+  shuffled <- lapply(blocks, function(idx) if (length(idx) > 1) sample(idx) else idx)
+  perm <- integer(.tie$n)
+  perm[unlist(blocks)] <- unlist(shuffled)
+
+  res_perm <- calc_cox_taylor_yf(eta[perm], .tie$time[perm], .tie$status[perm])
+  assert_near(res_perm$logPL, res_base$logPL, tol = 1e-10,
+              msg = "logPL must be invariant to permuting tied rows")
+  # res_perm's row j corresponds to original subject perm[j]; scatter back to
+  # original subject identity (row i) before comparing to res_base.
+  inv_perm <- order(perm)
+  assert_near(max(abs(res_perm$u[inv_perm] - res_base$u)), 0, tol = 1e-10,
+              msg = "u must be invariant (per-subject) to permuting tied rows")
+  assert_near(max(abs(res_perm$w[inv_perm] - res_base$w)), 0, tol = 1e-10,
+              msg = "w must be invariant (per-subject) to permuting tied rows")
+})
+
+run_test("StratCox-T3f: calc_cox_taylor_yf stratified with ties within a stratum matches coxph", {
+  eta <- .tie$x * .tie$beta
+  g   <- rep(c("A", "B"), length.out = .tie$n)
+  res <- calc_cox_taylor_yf(eta, .tie$time, .tie$status, strata = g)
+  df  <- data.frame(time = .tie$time, status = .tie$status, x = .tie$x, g = g)
+  fit <- suppressWarnings(
+    coxph(Surv(time, status) ~ x + strata(g), data = df,
+          init = .tie$beta, iter.max = 0, ties = "breslow")
+  )
+  assert_near(res$logPL, tail(fit$loglik, 1), tol = 1e-6,
+              msg = "stratified tied-time logPL must match coxph reference")
+})
+
+# =============================================================================
 # Section 4: error handling
 # =============================================================================
 
