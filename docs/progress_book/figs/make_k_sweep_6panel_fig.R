@@ -46,6 +46,7 @@ d <- read.csv(KSWEEP_CSV, stringsAsFactors = FALSE) |> filter(fit_status == "ok"
 K_REC <- 7L
 elbo_pref     <- d$K_init[which.max(d$elbo_full)]
 bic_pref      <- d$K_init[which.min(d$bic)]
+ll_pref       <- d$K_init[which.max(d$loglik_joint)]
 c_pref        <- d$K_init[which.max(d$mean_external_c)]
 cv_surv_pref  <- if (any(!is.na(d$cv_survival_logPL_per_event)))
                    d$K_init[which.max(d$cv_survival_logPL_per_event)] else NA_integer_
@@ -87,7 +88,7 @@ p_bic <- ggplot(d, aes(K_init, bic)) +
   base_theme
 
 p_ll <- ggplot(d, aes(K_init, loglik_joint)) +
-  mark_layer(elbo_pref) +
+  mark_layer(ll_pref) +
   geom_line(color = col_curve, linewidth = 0.9) +
   geom_point(color = col_curve, size = 1.8) +
   scale_x_continuous(breaks = seq(2, 20, 2)) +
@@ -134,7 +135,7 @@ ggsave(OUT_PNG, fig, width = 16, height = 8, dpi = 170, bg = "white")
 
 cat(sprintf("Wrote %s\n", normalizePath(OUT_PNG)))
 cat(sprintf("ELBO-pref K_init=%d | BIC-pref K_init=%d | in-sample-LL-pref K_init=%d | held-out-surv-LL-pref K_init=%s | bi-CV-genomics-LL-pref K_init=%s | C-pref K_init=%d | recommended K_init=%d\n",
-            elbo_pref, bic_pref, elbo_pref,
+            elbo_pref, bic_pref, ll_pref,
             ifelse(is.na(cv_surv_pref), "NA", cv_surv_pref),
             ifelse(is.na(bicv_pref), "NA", bicv_pref),
             c_pref, K_REC))

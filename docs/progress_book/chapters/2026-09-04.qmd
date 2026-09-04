@@ -2,7 +2,7 @@
 
 ## Summary {.unnumbered}
 
-- **Cohort-specific survival coefficients (`beta_cohort_id`): performance is statistically indistinguishable from the current model, and the value-add is understanding how each cohort contributes to the learned factors** — confirmed on real data and with simulated ground truth. (§3)
+- **Cohort-specific survival coefficients (`beta_cohort_id`): no significant performance difference from the current model was detected, and the value-add is understanding how each cohort contributes to the learned factors** — confirmed on real data and with simulated ground truth. (§3)
 - **Retained factors are not sensitive to the choice of retention threshold** — the same 2 survival-active factors are kept across a 100x range of `beta_thresh` and every `pve_thresh` tested. (§2)
 - **The 8/27 log-likelihood and BIC were in-sample, not cross-validated.** Now have genuine held-out versions alongside them; found and fixed a real orientation bug in the process. (§1)
 - **Under-specifying K_init merges true factors together**, as expected; over-specification remains safe (unchanged from 8/27). (§4)
@@ -30,7 +30,7 @@ fcomp  <- rd(file.path(BM, "factor_comparison", "factor_comparison_summary.csv")
 **Was the log-likelihood/BIC used to pick K_init cross-validated?** No — `compute_joint_ll_bic()` fits on all 273 training patients and scores those same 273 patients, in-sample. That's not wrong, but it isn't what was implied at the meeting. Two things follow:
 
 - **A genuine held-out version now exists** (new `code/compute_cv_loglik.R`): a held-out Cox partial log-likelihood (5-fold CV) and a bi-cross-validated genomics log-likelihood (holding out patient AND gene blocks jointly — an ordinary held-out check doesn't work here, since projecting a patient from their own expression and then scoring them against it improves with more factors regardless of real structure). Reported separately from in-sample BIC, never combined into a "cross-validated BIC" — the two correct for the same in-sample optimism under different justifications, so combining them double-corrects.
-- **Building the held-out check found a real, unrelated bug**: the model's own sign-correction step (which flips a fit's coefficients if training performance looks backwards) had the check itself backwards, due to a default assumption in the underlying statistics package that doesn't hold for this kind of model. This does **not** affect any previously-reported external validation performance or the count of prognostic factors — those are unaffected by this sign either way. It **did** affect the in-sample BIC values (K_init=7's BIC moves from 1,614,174 to a corrected 1,614,079 — small, doesn't change which K_init BIC prefers). Fixed where it mattered; documented at the source.
+- **Building the held-out check found a real bug, since fixed at the source**: the model's own sign-correction step (which flips a fit's coefficients if training performance looks backwards) had the check itself backwards, due to a default assumption in the underlying statistics package that doesn't hold for this kind of model. It **did** affect the in-sample BIC values (K_init=7's BIC moves from 1,614,174 to a corrected 1,614,079 — small, doesn't change which K_init BIC prefers). It does **not** affect the count of prognostic factors (sign-invariant by construction) or any headline external C-index (also sign-invariant, since it was previously reported via a symmetric convention that didn't depend on this check being correct). It has since been fixed directly in the model's fitting code, not just worked around downstream — the practical consequence is that every joint survival coefficient reported in this chapter (§3's per-cohort values included) is now on a *correct and trustworthy* sign convention for the first time, rather than one requiring a symmetric workaround to interpret safely. Some coefficients that were reported earlier this session under the old (uncorrected) convention flip sign as a result — magnitudes and every qualitative conclusion drawn from them are unchanged; see §3.
 
 **Six criteria on K_init now, not four — and they still disagree, which is informative, not a problem:**
 
@@ -40,10 +40,13 @@ knitr::include_graphics("../figs/2026-09-04_k_init_sweep_6panel.png")
 
 | Criterion | What it actually measures | Prefers |
 |---|---|---|
-| ELBO / in-sample BIC / in-sample log-likelihood | Training-cohort fit, dominated by the genomics reconstruction term | K_init=3 |
+| ELBO / in-sample BIC | Training-cohort fit, dominated by the genomics reconstruction term | K_init=3 |
+| In-sample log-likelihood | The same in-sample fit, decomposed differently from BIC (no complexity penalty) | K_init=15 |
 | Held-out survival log-likelihood | Survival generalization, still the training cohort | Drifts toward larger K, noisily |
 | Bi-cross-validated genomics log-likelihood | Genomics generalization, still the training cohort | K≈4 |
 | **External C-index** | **Generalization to genuinely new cohorts — the actual deployment question** | **Plateaus from K_init=7** |
+
+(An earlier draft of this table listed in-sample log-likelihood alongside ELBO/BIC as also preferring K_init=3 — it doesn't. `k_init_sweep_results.csv`'s `loglik_joint` column is highest at K_init=15 (-750,480) vs. -768,148 at K_init=3; ELBO and BIC penalize model complexity and log-likelihood does not, so the three needn't agree, and here they don't.)
 
 Each answers a different question; the one closest to the deployment question (external C-index) is the one to trust. K_init=7 is the smallest K_init on that plateau — a parsimony argument, not a claim that the other criteria agree.
 
@@ -75,7 +78,7 @@ knitr::include_graphics("../figs/2026-09-04_threshold_sensitivity_heatmap.png")
 knitr::include_graphics("../figs/2026-09-04_threshold_vs_kinit.png")
 ```
 
-- This also confirms the K_init=11/13 dip (§1) is **not** a threshold artifact — the retained-factor count stays flat around both dips under every threshold in the stable range.
+- This does **not** show the retained-factor count staying flat around the K_init=11/13 dip (§1) — `threshold_vs_kinit.csv` shows K_survival_active=3 (not the usual 2) at K_init=11 under both `beta_thresh=0.001` and `0.01`, and at K_init=13 under `beta_thresh=0.001` (dropping to 1 under `0.01`). The dip in external C-index at K=11/13 is real (§1's restart check), but it is not accompanied by a stable retained-factor count — the threshold analysis doesn't explain the dip, it just shows the dip's factor count is itself threshold-sensitive in a way the rest of the K_init range isn't.
 - A related, simulation-only threshold (`rel_thresh`, requiring a factor's coefficient to be within some fraction of the largest one) is confirmed **not** usable on this real data: the smaller of the two true prognostic factors sits at only 29% of the largest factor's coefficient, so the simulation-calibrated cutoff (65%) would incorrectly discard it.
 - One remaining fairness question — do factors need their coefficients rescaled by how much their signal actually varies before comparing them to a single fixed threshold — checked directly: rescaling doesn't change which factors are called prognostic here.
 
@@ -97,7 +100,7 @@ $$
 \eta_i = \sum_k (YF)_{ik} \cdot \beta_k^{c(i)}
 $$
 
-$\eta_i$ is patient $i$'s risk score; $(YF)_{ik}$ is how strongly patient $i$ expresses gene program $k$; $\beta_k^{c(i)}$ is program $k$'s survival coefficient in patient $i$'s cohort. The per-cohort coefficients for a given program are shrunk toward a shared value rather than estimated fully independently, so cohorts with less data borrow strength from the others.
+$\eta_i$ is patient $i$'s risk score; $(YF)_{ik}$ is how strongly patient $i$ expresses gene program $k$; $\beta_k^{c(i)}$ is program $k$'s survival coefficient in patient $i$'s cohort. The per-cohort coefficients for a given program are shrunk toward **zero** by a shared, jointly-estimated prior (not toward each other, or toward an estimated common nonzero value) rather than estimated fully independently — what's shared across cohorts is the *amount* of shrinkage, not a common coefficient. Cohorts with less data still borrow strength from the others, since that shared shrinkage amount is fit jointly across all cohorts' data.
 
 ### Performance: statistically indistinguishable from the current model
 
@@ -121,7 +124,7 @@ if (!is.null(boot)) {
 }
 ```
 
-- **`beta_cohort_id`'s gap to the current model is not statistically significant** (95% confidence interval includes zero) — "roughly equivalent performance," which is the right way to read it, not "underperforms." It also beats a two-step alternative (factorize first, then fit survival separately).
+- **`beta_cohort_id`'s gap to the current model was not detected as statistically significant** (pooled 95% CI includes zero, and is narrow) — the point estimate very slightly favors `beta_cohort_id` itself. A CI that includes zero means a difference wasn't detected here, not proof that the two are equivalent; the honest read is "no evidence of a performance cost to letting the coefficient vary by cohort," not "underperforms." It also beats a two-step alternative (factorize first, then fit survival separately).
 - **`cohort_id` (the existing, genomics-side component) is significantly worse**, and worse than the two-step alternative too — it visibly competes with the real prognostic signal rather than coexisting with it (prognostic factor count drops from 2 to 1). This is a genuine limitation of that existing component, not of the new one. A `strata_id`-only fit (cohort-specific baseline risk, no other change) is statistically indistinguishable from the current model too — a clean null, not a failure to report.
 - This ranking is identical no matter which of the 5 external validation cohorts is left out of the average — not an artifact of one small cohort. A second, independent check (held-out survival log-likelihood on the training cohorts, not external validation) reaches the same ranking.
 
@@ -131,7 +134,7 @@ if (!is.null(boot)) {
 knitr::include_graphics("../figs/2026-09-04_percohort_beta.png")
 ```
 
-Allowing cohort-specific coefficients reveals that **Program 3's protective effect is almost entirely specific to CPTAC** (0.030 vs. 0.0004 in TCGA_PAAD) — the current (shared-coefficient) model blends it into a single number (0.0115) that is not accurate for either cohort individually. **Program 7's adverse effect, by contrast, is consistent across both cohorts** (-0.034 CPTAC, -0.039 TCGA_PAAD). Neither fact is visible from the current model or from external validation performance — it only shows up once cohort membership is allowed into the survival term. This is exactly the kind of "does the model actually handle multiple cohorts sensibly" evidence that would matter for comparison against methods like DeSurv or plain unsupervised factorization, none of which represent per-cohort effects at all.
+Allowing cohort-specific coefficients reveals that **Program 3's effect is almost entirely specific to CPTAC** (magnitude 0.030 vs. 0.0004 in TCGA_PAAD) — the current (shared-coefficient) model blends it into a single number (magnitude 0.0115) that is not accurate for either cohort individually. **Program 7's effect, by contrast, is consistent across both cohorts** (magnitude 0.034 CPTAC, 0.039 TCGA_PAAD). Neither fact is visible from the current model or from external validation performance — it only shows up once cohort membership is allowed into the survival term. (The joint coefficients' sign convention was corrected this session — see the fix-plan work above these results — so these values are stated by magnitude; which cohort dominates which program, the ratio between them, and each program's adverse/protective label from marginal association, DECISIONS.md 2026-06-16, are unaffected by that fix.) This is exactly the kind of "does the model actually handle multiple cohorts sensibly" evidence that would matter for comparison against methods like DeSurv or plain unsupervised factorization, none of which represent per-cohort effects at all.
 
 **This was confirmed a second way, with simulated ground truth**, not just observed as a pattern in real data: a simulation was built where a factor is *known* by construction to be prognostic in one cohort and not the other.
 
@@ -152,19 +155,21 @@ if (!is.null(cbr)) {
 
 ### Three supporting technical notes
 
-- **Does pooling the two training cohorts actually help, or would one alone do just as well?** Asserted in the 8/21 notes, never tested — tested now: the current model refit on TCGA_PAAD alone (n=144) or CPTAC alone (n=129) reaches mean external C of 0.514 and 0.578 respectively, well below the pooled fit's 0.627 (and TCGA_PAAD-alone loses a prognostic factor, 2→1). Pooling clearly helps.
+- **Does pooling the two training cohorts actually help, or would one alone do just as well?** Asserted in the 8/21 notes, never tested — tested now: the current model refit on TCGA_PAAD alone (n=144) or CPTAC alone (n=129) reaches mean external C of 0.514 and 0.578 respectively, well below the pooled fit's 0.627 (and TCGA_PAAD-alone loses a prognostic factor, 2→1). This is consistent with pooling helping, but the comparison isn't a clean isolation of pooling's effect: refitting on a single cohort changes both the sample size AND the gene-selection step (each cohort's own top-3000 genes, not the pooled 2064-gene set), so sample size and gene selection are confounded here, not separated.
 - **Why does the existing `cohort_id` component compete with prognostic signal instead of coexisting with it?** Tested directly: refitting it from a better starting point (instead of a fresh random start) recovers both prognostic factors and closes most of its performance gap (external C rises from 0.543 to 0.617). So this is a model-fitting quirk, not a fundamental conflict between the two components.
-- **Why do this model's kept gene programs resemble the highest-variance programs an unsupervised method would find anyway**, rather than uncovering a lower-variance program invisible to unsupervised methods? Checked directly in the code: by design, the current model's gene-program-discovery step does not receive any feedback from survival at all — it is mathematically identical to running an unsupervised factorization, and only the *selection* of which programs are prognostic is supervised. Finding a genuinely low-variance, otherwise-overlooked prognostic program would require changing that design (letting survival influence which programs are discovered, not just which are kept) — a real, currently-disabled option flagged for future work (`ROADMAP.md`).
+- **Why do this model's kept gene programs resemble the highest-variance programs an unsupervised method would find anyway**, rather than uncovering a lower-variance program invisible to unsupervised methods? Checked directly in the code: by design, the current model's gene-program-DISCOVERY step (the F update) does not receive any feedback from survival at all — its update formula is identical to running an unsupervised factorization, and only the *selection* of which discovered programs are prognostic is supervised. This is not quite the same as saying survival has zero influence on the fit overall: survival still affects which iterate the CAVI loop converges to and returns via the joint stopping rule, since that rule is driven by the FULL objective (genomics and survival together), not the genomics term alone. Finding a genuinely low-variance, otherwise-overlooked prognostic program would require a more direct change (letting survival influence which programs are discovered, not just which are kept, or which iterate is selected) — a real, currently-disabled option flagged for future work (`ROADMAP.md`).
 
 ---
 
 ## §4 — Other findings
 
-**Under-specifying K_init merges true factors together, as expected.** Giving the model fewer starting factors than truly exist causes genuinely distinct factors to blend into one; over-specifying (more starting factors than needed) remains safe, unchanged from 8/27. Checked directly, factor by factor: **7 of 27 estimated factors show a clear merge signature (correlating substantially with two different true factors at once) when under-specified; 0 of 114 do at the true K_init or above.**
+**Under-specifying K_init merges true factors together, as expected.** Giving the model fewer starting factors than truly exist causes genuinely distinct factors to blend into one; over-specifying (more starting factors than needed) remains safe, unchanged from 8/27. Checked directly, factor by factor: **7 of 27 estimated factors show a clear merge signature (correlating substantially with two different true factors at once) when under-specified; 0 of 114 do at the true K_init or above.** (This diagnostic is from a single simulated replicate — exploratory, not aggregated across the 15-seed replicate set the rest of this section's numbers are averaged over; treat the specific counts as illustrative of the pattern rather than a precise estimate of its frequency.)
 
-```{r delta-fig, fig.cap="Joint model's C-index advantage over an unsupervised comparison, by scenario and number of starting factors, +-1 SE over 15 simulated replicates. Below the true number of factors (6), the advantage is flat or negative; from 6 upward it is stable and, in the scenario with a mix of shared and cohort-specific structure, substantial."}
+```{r delta-fig, fig.cap="Joint model's C-index advantage over an unsupervised comparison, by scenario and number of starting factors, +-1 SE over 15 simulated replicates. From the true number of factors (6) upward, the advantage is stable and, in the scenario with a mix of shared and cohort-specific structure, substantial. Below 6, the picture is scenario-dependent, not uniformly flat or negative -- see body text."}
 knitr::include_graphics("../figs/2026-09-04_multicohort_delta_fig.png")
 ```
+
+(The caption above corrects an earlier draft that described the advantage as "flat or negative" below K=6 in every scenario. `multicohort_delta_summary.csv` shows this holds for the `all_shared` and `nothing_shared` scenarios, but not for `hybrid` [mixed shared/cohort-specific structure]: there, the advantage is strongly POSITIVE below K=6, peaking at K_init=4 (+0.157), larger than at the true K_init=6 [+0.095]. Under-specifying K in a mixed-structure setting can apparently still find a useful, if merged, factor.)
 
 **This model's 4 kept gene programs were compared against an unsupervised factorization** (no performance metric — a comparison of which genes each method's programs are built from, not which predicts better).
 
@@ -172,7 +177,7 @@ knitr::include_graphics("../figs/2026-09-04_multicohort_delta_fig.png")
 knitr::include_graphics("../figs/2026-09-04_factor_comparison_heatmap.png")
 ```
 
-All 4 map cleanly onto the unsupervised method's own top 5 (of 40) programs by variance explained (overlap p-values as low as 1e-129) — not buried deep in the unsupervised ranking, which is the direct explanation for the second technical note in §3.
+All 4 map cleanly onto the unsupervised method's own top 5 (of 40) programs by variance explained (hypergeometric overlap p-values as low as 1e-129) — not buried deep in the unsupervised ranking, which is the direct explanation for the second technical note in §3. These p-values are descriptive, not inferential: both sets of gene programs are derived from the same expression matrix, so their gene-selection events are correlated by construction, not independent samples — read them as "this overlap is large," not as a formal hypothesis test.
 
 ---
 
