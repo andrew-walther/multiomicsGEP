@@ -5,6 +5,87 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-09-04 (addendum) — Review-findings fix plan, Steps 1-4 complete (branch `fix/2026-09-04-review-findings`, not merged to `main`); a stale-cache interaction discovered while re-running `run_k_init_sweep.R`
+
+**Context.** Implementing `docs/plans/review_findings_fix_plan_09_04_2026.md` (produced from the two-round
+Codex review, `docs/reviews/2026-09-04_progress_notebook_review.md`). Steps 1-4 are code-complete, tested
+(468/468 passing, up from 443 at the start), and committed on the branch; `main` is untouched. Steps 5-6
+(chapter regeneration, full test suite sign-off) remain.
+
+**Step 1 — Breslow tied-event-time fix** (`calc_cox_taylor_yf()`, `code/fit_cox_on_yf.R`): fixed the risk-set
+denominator and cumulative-hazard increment to be shared across rows with a tied event time, instead of
+per-row. Verified against `coxph(..., ties="breslow")` and permutation-invariance. Real training data has
+tied event times (9 TCGA + 12 CPTAC rows), so this was live, not hypothetical.
+
+**Step 2 — Frozen, training-data-only orientation**: fixed Phase C's `concordance()` call to pass
+`reverse = TRUE` (the check was inverted; see the 2026-09-04 entry below this one for the original bug
+writeup). This is now the single, frozen orientation decision for a `sign_correction = TRUE` fit — no
+downstream evaluator re-derives it from the data it scores. `oriented_cindex()`'s `max(c, 1-c)` pattern was
+replaced with `frozen_reverse_cindex()` (plain `concordance(reverse=TRUE)`, no masking of a genuinely poor
+score) in the six active-pipeline files; ~15 historical/diagnostic scripts were left on the old convention
+(scope decision, not re-litigated here).
+
+**Step 3 — `EBeta_pooled` coherent state**: `EBeta_pooled` is now computed from a snapshot of `EBeta` taken
+before Phase C's potential flip, consistent with the `w`/`z`/`ZF` state Phase C never touches (previously a
+post-flip point estimate was combined with pre-flip gradient/Hessian information, producing a genuinely
+wrong-magnitude result — not just a wrong sign — verified as a real 2x discrepancy on the cached D4 fit).
+Also fixed `EBeta2` being overwritten with `(-EBeta)^2` on a flip, discarding the posterior variance.
+
+**Step 4 — `compute_cv_loglik.R`'s two held-out scoring gaps**: `strata_id` now reaches the held-out
+`calc_cox_taylor_yf()` call (previously training-only); a new `cv_scoring = c("within_cohort",
+"unseen_cohort")` argument distinguishes ordinary within-cohort CV (score with the fold's own known cohort
+column, new default) from genuinely-unseen-cohort generalization (the old, now-optional, unconditional
+`EBeta_pooled` behavior). Also fixed the bootstrap-CI pooled estimand: `run_cohort_beta_bootstrap_ci.R`'s
+"POOLED" row previously concatenated all 5 external cohorts' patients before one bootstrap call (patient-
+weighted, cross-cohort pairs); `bootstrap_concordance_diff_ci_stratified()` (`code/concordance_ci.R`) now
+resamples within each cohort and averages with equal weight per cohort, matching this project's headline
+mean-of-cohorts convention.
+
+**Re-running the downstream benchmarks (the second half of Step 4).** `run_cohort_beta_comparison.R`,
+`run_cohort_beta_bootstrap_ci.R`, and `run_cohort_beta_supplementary.R` were re-run against real data with
+fresh fits and completed cleanly; the sanity gate (`joint_yfb` mean external C must match
+`desurv_comparison_results.csv`) passed exactly (0.6267, K_eff=2), confirming Steps 1-3 are neutral for the
+recommended model's headline number, as expected.
+
+`run_k_init_sweep.R` needed two follow-up fixes not anticipated by the plan text:
+
+1. **A macOS fork/BLAS segfault**, unrelated to this plan's changes: `mclapply` workers calling `svd()`
+   (Apple's Accelerate BLAS is not fork-safe) crashed every K. Already documented in the script's own header
+   comment (`VECLIB_MAXIMUM_THREADS=1 K_SWEEP_CORES=5 Rscript ...`) — simply wasn't set on the first attempt.
+2. **A stale-cache / new-orientation-convention interaction, found and fixed during this session (not
+   anticipated by the plan).** The plan said to pass `--reuse-cache` for this re-run ("the ELBO/BIC parts
+   that don't depend on ties"), reusing the 19 main fits cached before Steps 1-3. This is unsafe for
+   `mean_external_c` specifically, though harmless for ELBO/BIC/CV-survival-logPL/bi-CV: those functions
+   already independently re-derive orientation from training data (by design, to be robust to exactly this
+   kind of stale-`EBeta`-sign scenario — see `compute_bic.R`'s `BIC-T16` and `compute_cv_loglik.R`'s own
+   leakage-guard reorientation). `frozen_reverse_cindex()`, by contrast, is Step 2's whole point: it TRUSTS
+   `fit$EBeta`'s sign directly instead of re-deriving it, which is only valid for a fit produced by the
+   *fixed* Phase C. Verified directly: the cached K=7 fit's own training concordance under the correct
+   (`reverse=TRUE`) convention was 0.344 (anti-oriented) — Phase C's old, inverted check had wrongly left it
+   unflipped when it was cached (pre-Step-2). Reusing it under the new "trust `EBeta` directly" convention
+   silently scored external cohorts with the wrong-signed risk score, giving `mean_external_c=0.373` for K=7
+   instead of the correct 0.627. **Fix:** re-fit all 19 K values fresh (no `--reuse-cache`) rather than
+   attempt a narrower fix that reuses cached fits for some columns but not others — this was also cheap in
+   practice, all 19 fits completing in under 2 minutes total. After the full fresh re-fit, K=7's
+   `mean_external_c=0.6267` matches the D4 baseline exactly, and the external-C values across K track the
+   previously-established ~0.60-0.63 range (K_init=2/13 read lower, ~0.54, consistent with the known
+   CAVI factor-collapse pattern at those K values documented 2026-07-13 -- not a new finding).
+   **Consequence for anyone re-running this project's benchmarks after Step 2:** `--reuse-cache` is not
+   generically safe for any script that computes `mean_external_c`/`frozen_cindex` (or otherwise trusts a
+   fit's `EBeta` sign directly) against fits cached before this date; it remains fine for BIC/loglik/held-out
+   survival-LL columns, which re-derive orientation themselves.
+
+`results/multi_cohort_sim/run_training_set_subanalysis.R` was intentionally NOT re-run, per the plan (its
+"pooling clearly helps" claim needs rewording regardless of these fixes, since it conflates sample size and
+gene selection — that rewording is Step 5's job, not a re-run).
+
+**Not yet done:** Step 5 (regenerate `docs/progress_book/chapters/2026-09-04.qmd` from these corrected
+numbers, fix the 3 independently-confirmed factual errors and the overstated equivalence claim) and Step 6
+(final full test-suite confirmation, update `CLAUDE.md`'s test count). Both remain, pending explicit
+go-ahead per this session's FAST-mode workflow.
+
+---
+
 ## 2026-09-04 (addendum) — Stage 3/5 leftovers closed out: the `strata_only` sub-arm, held-out survival log-likelihood per arm, two new figures, and the top-2-match merge diagnostic
 
 **Context.** A pass through the original plan against what had actually landed found real, specific
