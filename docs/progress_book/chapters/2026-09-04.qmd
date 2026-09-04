@@ -2,7 +2,7 @@
 
 ## Summary {.unnumbered}
 
-- **The 8/27 log-likelihood/BIC were in-sample, not cross-validated** (an advisor asked directly). A genuine held-out survival log-likelihood and a bi-cross-validated genomics log-likelihood now exist alongside them. (§2)
+- **The 8/27 log-likelihood/BIC were in-sample, not cross-validated.** A genuine held-out survival log-likelihood and a bi-cross-validated genomics log-likelihood now exist alongside them. (§2)
 - **Found and fixed a real orientation bug** in `fit_cox_on_yf()`'s sign-correction while building the held-out check. Does not affect any previously-reported external C-index or K_eff (the count of factors kept as prognostic); did affect 8/27's BIC/log-likelihood values. (§2)
 - **Six criteria now disagree on K_init — informative, not a problem.** ELBO/BIC prefer K_init=3; the two new held-out criteria pull in different directions from each other; external C-index (the only one testing genuinely new cohorts) plateaus from K_init=7. (§2)
 - **The K_init=11/13 dip is real, not a multistart artifact.** A stated prediction that multistart would remove it was wrong. (§2)
