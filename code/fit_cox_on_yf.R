@@ -208,6 +208,37 @@ calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
 #'                 EBeta if training concordance of ZF·EBeta is < 0.5 (default TRUE).
 #'                 Set FALSE inside cross-validation folds so fold-to-fold EBeta
 #'                 orientation stays consistent; CV evaluates via I(-risk_scores).
+#'
+#'                 \strong{Known issue (DECISIONS.md 2026-09-04):} the concordance
+#'                 check below (search "Phase C") omits `reverse = TRUE`. Per
+#'                 `survival::concordance()`'s own documentation, its formula
+#'                 method defaults to assuming a larger predictor means a
+#'                 LARGER (longer) response -- the opposite of a Cox risk
+#'                 score, where a larger eta means a SHORTER survival time --
+#'                 and `reverse = TRUE` is documented as required for exactly
+#'                 this case. Without it, the check is inverted: confirmed
+#'                 empirically, a fit with true (correct-direction) training
+#'                 concordance of 0.90+ reads as "already fine, don't flip"
+#'                 under this check, when a flip was in fact needed. The
+#'                 returned `EBeta`'s sign is therefore NOT a reliable
+#'                 hazard-direction indicator when `sign_correction = TRUE`.
+#'                 This has been left as-is (not fixed here) because fixing
+#'                 it would change `EBeta`'s sign for every existing
+#'                 `sign_correction = TRUE` fit, and every currently-reported
+#'                 result that depends on `EBeta`'s sign already uses a
+#'                 convention that does not need this check to be correct:
+#'                 external C-index via `oriented_cindex()`'s
+#'                 `max(c, 1-c)` (sign-invariant), K_eff via
+#'                 `classify_factors()`'s `abs(EBeta)` threshold
+#'                 (sign-invariant), and pathway-enrichment adverse/protective
+#'                 direction, which by design uses each program's marginal
+#'                 association rather than joint beta sign (DECISIONS.md
+#'                 2026-06-16). Anything that is NOT sign-invariant --
+#'                 concretely, Cox partial log-likelihood -- must re-derive
+#'                 the correct orientation itself rather than trusting
+#'                 `EBeta`'s sign; `code/compute_bic.R`'s
+#'                 `compute_joint_ll_bic()` and `code/compute_cv_loglik.R`'s
+#'                 `cv_survival_loglik()` both do this.
 #' @param verbose  Logical: print iteration logs? (default TRUE)
 #'
 #' @return Named list:
@@ -702,6 +733,14 @@ fit_cox_on_yf <- function(Y, time, status,
   # inflates apparent C-index variance and corrupts K selection. CV evaluates
   # held-out concordance via I(-pred$risk_scores), which implicitly assumes the
   # raw SVD-initialized EBeta orientation — consistent with the LB model convention.
+  #
+  # KNOWN ISSUE (DECISIONS.md 2026-09-04): the concordance() call below omits
+  # reverse = TRUE, which survival::concordance()'s own documentation requires
+  # for a Cox risk score (its formula method otherwise assumes larger eta means
+  # LONGER survival — the opposite of hazard direction). This check is
+  # therefore inverted and EBeta's returned sign is not a reliable hazard-
+  # direction indicator. See the sign_correction roxygen param above for the
+  # full explanation of why this is left as-is and what remains unaffected.
   if (sign_correction) {
     # Location 2: restrict to K global-factor columns before computing ZF_final.
     # EF_norms was computed from EF_global (K columns) earlier in this iteration.

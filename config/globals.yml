@@ -28,6 +28,15 @@ k_selection:
                          # 0.001 distinguishes non-zero from spike-shrunk betas in both models.
 
 # ------------------------------------------------------------------------------
+# Cross-validated held-out log-likelihood (code/compute_cv_loglik.R)
+# ------------------------------------------------------------------------------
+cv_loglik:
+  n_folds: 5        # stratified folds for cv_survival_loglik() (held-out Cox partial LL)
+  n_row_folds: 5     # patient folds for bicv_genomics_loglik() (bi-cross-validation)
+  n_col_folds: 5     # gene folds for bicv_genomics_loglik()
+  seed: 42
+
+# ------------------------------------------------------------------------------
 # Synthetic simulation
 # ------------------------------------------------------------------------------
 synthetic:

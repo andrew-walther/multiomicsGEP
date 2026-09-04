@@ -5,6 +5,86 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-09-04 — Orientation bug in `fit_cox_on_yf()`'s Phase C sign-correction: found while building held-out survival log-likelihood, fixed in `compute_bic.R` and `compute_cv_loglik.R`, `fit_cox_on_yf.R` left unchanged
+
+**Context:** building `code/compute_cv_loglik.R`'s `cv_survival_loglik()` (a held-out Cox partial
+log-likelihood, requested at the 8/27 meeting alongside the existing in-sample BIC/log-likelihood)
+required replicating `fit_cox_on_yf()`'s post-loop sign-correction rule ("Phase C") to orient each
+fold's `EBeta` from training data only. Replicating it exposed a bug in the rule itself.
+
+**The bug.** `fit_cox_on_yf.R`'s Phase C block calls
+`concordance(Surv(time, status) ~ eta_final)$concordance` and flips `EBeta` if the result is below
+0.5. `survival::concordance()`'s formula method defaults to assuming a larger predictor is associated
+with a LARGER (longer) response — the opposite of a Cox risk score, where a larger `eta` means a
+SHORTER survival time. The package's own documentation names this exact case and requires
+`reverse = TRUE`, which the call omits. The check is therefore inverted.
+
+**Verified empirically**, not just from the documentation: fit `fit_cox_on_yf(..., sign_correction =
+TRUE)` on synthetic data with a strong, unambiguous survival signal, then compared the check's own
+(uncorrected) concordance against the correct-direction (`reverse = TRUE`) concordance on the same
+`eta`:
+
+| seed | uncorrected check (fit's own logic) | correct-direction concordance |
+|---|---|---|
+| 2 | 0.926 | 0.074 |
+| 8 | 0.891 | 0.109 |
+| 10 | 0.923 | 0.077 |
+
+The uncorrected check reads "~0.90, already fine, don't flip" while the model is actually ~0.08 in
+the correct direction — close to perfectly anti-concordant. Because the check is inverted, the branch
+that decides not to flip (the common case) leaves `EBeta` oriented backwards from true hazard
+direction.
+
+**What this does and does not affect.**
+- **Not affected:** every external C-index reported in this project. `oriented_cindex()`
+  (`results/benchmark_sim/run_k_init_sweep.R` and the other benchmark runners) reports
+  `max(c_raw, 1-c_raw)`, which is invariant to this sign ambiguity. `select_K_cv()` fits with
+  `sign_correction = FALSE` and applies its own fixed `I(-risk_scores)` convention, bypassing Phase C
+  entirely. So the mean external C = 0.627 (5 held-out PDAC cohorts), the K_init=7 recommendation
+  (rests on external C, not BIC/ELBO — see 2026-08-27 entry), and K_eff via `classify_factors()`'s
+  `abs(EBeta)` threshold (sign-invariant) are all unaffected. Pathway-enrichment adverse/protective
+  labeling (2026-06-16 entry) is also unaffected — it was already defined by design from each
+  program's marginal survival association, not joint `beta` sign, precisely because the two were
+  already known to disagree (a suppression effect, unrelated to this bug).
+- **Not affected:** the 2026-08-19 best-of-multistart ELBO comparisons (K=5/6/7/9). Phase C runs once,
+  after the CAVI loop terminates; `history$elbo_full` is computed inside the loop and never calls it.
+- **Affected:** the in-sample survival log-likelihood and BIC reported in the 2026-08-27 entry.
+  `run_k_init_sweep.R` fits `fit_cox_on_yf()` with the default `sign_correction = TRUE` and passes
+  that fit directly to `compute_joint_ll_bic()`, whose survival term (`calc_cox_taylor_yf()`'s partial
+  log-likelihood) is NOT sign-invariant, unlike C-index. Those BIC/log-likelihood numbers were
+  computed on a systematically mis-oriented survival term. They were not the basis for the K_init=7
+  recommendation (external C carries that argument) and were not scrutinized closely before the 8/27
+  presentation.
+
+**The fix.** `fit_cox_on_yf.R` and `fit_modular.R` (which has the identical pattern at line 834) are
+left unchanged: fixing the check in place would flip `EBeta`'s sign for every existing
+`sign_correction = TRUE` fit, and every currently-reported result that depends on `EBeta`'s sign
+already uses a convention that does not need this check to be correct (enumerated above) — changing
+it would touch nothing correct and risk everything downstream that has not been re-audited. Both
+functions now carry a prominent roxygen/inline comment naming the issue, explaining why it is left as
+is, and pointing to the correct pattern. Instead, the two places where this bug is not harmless were
+fixed directly:
+- `compute_bic.R`'s `compute_joint_ll_bic()` now re-orients `eta` itself with a correct-direction
+  (`reverse = TRUE`) concordance check before scoring, rather than trusting `fit$EBeta`'s sign. New
+  regression test `BIC-T16` asserts `loglik_survival` is invariant to negating the input `EBeta` —
+  this is the test that would have caught the original bug, since it fails under the old
+  (sign-trusting) implementation. `tests/test_compute_bic.R`'s existing oracle tests (BIC-T6, BIC-T7)
+  were updated to apply the same reorientation before comparing.
+- `compute_cv_loglik.R`'s `cv_survival_loglik()` (new this session) was built with the correct
+  (`reverse = TRUE`) orientation check from the start, computed on training-fold data only (see the
+  file's own leakage-guard documentation).
+
+**Consequence for Stage 1c of the 9/4 plan:** the K_init=2..20 sweep is being re-run with the
+corrected `compute_bic.R` alongside the new held-out log-likelihood criteria; the corrected in-sample
+BIC/log-likelihood values will differ from the 2026-08-27 entry's, and the 9/4 chapter states this
+plainly rather than silently superseding the earlier numbers.
+`docs/progress_book/chapters/2026-08-27.qmd` is left untouched (copy-edit only, per the 9/4 plan) as
+the honest record of what was presented that day.
+
+**Test count:** 412 → 425 (13 new: 1 in `test_compute_bic.R`, 12 in the new `test_compute_cv_loglik.R`).
+
+---
+
 ## 2026-08-27 — K selection reframed for the 8/27 lab meeting: BIC/log-likelihood added, K_init=2..20 swept, LB dropped, simulation re-run under ARD
 
 **Context:** preparing the 2026-08-27 lab-meeting deck (`presentation/walther_lab_meeting_08_27_2026/`).
