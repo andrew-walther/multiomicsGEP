@@ -110,6 +110,10 @@ if (!is.null(cbc)) {
 
 (As a first check, the current model's row above reproduces the previously-reported result exactly — mean external C=0.6267 — confirming this comparison starts from the right baseline.)
 
+```{r threeway-fig, fig.cap="External C-index by cohort for the three main performance arms. Dashed line = chance (C=0.5)."}
+knitr::include_graphics("../figs/2026-09-04_3way_percohort_cindex.png")
+```
+
 ```{r boot-table}
 if (!is.null(boot)) {
   bp <- boot[boot$cohort == "POOLED", c("comparison", "diff_estimate", "diff_lower", "diff_upper", "significant")]
@@ -118,23 +122,16 @@ if (!is.null(boot)) {
 ```
 
 - **`beta_cohort_id`'s gap to the current model is not statistically significant** (95% confidence interval includes zero) — "roughly equivalent performance," which is the right way to read it, not "underperforms." It also beats a two-step alternative (factorize first, then fit survival separately).
-- **`cohort_id` (the existing, genomics-side component) is significantly worse**, and worse than the two-step alternative too — it visibly competes with the real prognostic signal rather than coexisting with it (prognostic factor count drops from 2 to 1). This is a genuine limitation of that existing component, not of the new one.
-- This ranking is identical no matter which of the 5 external validation cohorts is left out of the average — not an artifact of one small cohort.
+- **`cohort_id` (the existing, genomics-side component) is significantly worse**, and worse than the two-step alternative too — it visibly competes with the real prognostic signal rather than coexisting with it (prognostic factor count drops from 2 to 1). This is a genuine limitation of that existing component, not of the new one. A `strata_id`-only fit (cohort-specific baseline risk, no other change) is statistically indistinguishable from the current model too — a clean null, not a failure to report.
+- This ranking is identical no matter which of the 5 external validation cohorts is left out of the average — not an artifact of one small cohort. A second, independent check (held-out survival log-likelihood on the training cohorts, not external validation) reaches the same ranking.
 
 ### Interpretability: seeing how cohorts differ
 
-```{r cohort-het-table}
-het <- data.frame(
-  Program = c("Program 3 (protective)", "Program 7 (adverse)"),
-  `Shared coefficient` = c(0.0115, -0.0404),
-  `CPTAC` = c(0.0304, -0.0341),
-  `TCGA_PAAD` = c(0.0004, -0.0394),
-  check.names = FALSE
-)
-kable(het)
+```{r percohort-beta-fig, fig.cap="Per-cohort survival coefficients across all 7 factors. Only Programs 3 and 7 carry any signal at all -- the other five are near-zero in both cohorts."}
+knitr::include_graphics("../figs/2026-09-04_percohort_beta.png")
 ```
 
-Allowing cohort-specific coefficients reveals that **Program 3's protective effect is almost entirely specific to CPTAC** — the current (shared-coefficient) model blends it into a single number that is not accurate for either cohort individually. **Program 7's adverse effect, by contrast, is consistent across both cohorts.** Neither fact is visible from the current model or from external validation performance — it only shows up once cohort membership is allowed into the survival term. This is exactly the kind of "does the model actually handle multiple cohorts sensibly" evidence that would matter for comparison against methods like DeSurv or plain unsupervised factorization, none of which represent per-cohort effects at all.
+Allowing cohort-specific coefficients reveals that **Program 3's protective effect is almost entirely specific to CPTAC** (0.030 vs. 0.0004 in TCGA_PAAD) — the current (shared-coefficient) model blends it into a single number (0.0115) that is not accurate for either cohort individually. **Program 7's adverse effect, by contrast, is consistent across both cohorts** (-0.034 CPTAC, -0.039 TCGA_PAAD). Neither fact is visible from the current model or from external validation performance — it only shows up once cohort membership is allowed into the survival term. This is exactly the kind of "does the model actually handle multiple cohorts sensibly" evidence that would matter for comparison against methods like DeSurv or plain unsupervised factorization, none of which represent per-cohort effects at all.
 
 **This was confirmed a second way, with simulated ground truth**, not just observed as a pattern in real data: a simulation was built where a factor is *known* by construction to be prognostic in one cohort and not the other.
 
@@ -153,8 +150,9 @@ if (!is.null(cbr)) {
 
 `beta_cohort_id` correctly attributes the effect to the true cohort in a clear majority of cases (roughly 7x larger coefficient in the true cohort vs. the other, in 15–17 of 20 test cases). The value again wasn't a bigger number — the shared coefficient already sat close to the true cohort's value — it was that only the cohort-specific version makes that attribution visible at all.
 
-### Two supporting technical notes
+### Three supporting technical notes
 
+- **Does pooling the two training cohorts actually help, or would one alone do just as well?** Asserted in the 8/21 notes, never tested — tested now: the current model refit on TCGA_PAAD alone (n=144) or CPTAC alone (n=129) reaches mean external C of 0.514 and 0.578 respectively, well below the pooled fit's 0.627 (and TCGA_PAAD-alone loses a prognostic factor, 2→1). Pooling clearly helps.
 - **Why does the existing `cohort_id` component compete with prognostic signal instead of coexisting with it?** Tested directly: refitting it from a better starting point (instead of a fresh random start) recovers both prognostic factors and closes most of its performance gap (external C rises from 0.543 to 0.617). So this is a model-fitting quirk, not a fundamental conflict between the two components.
 - **Why do this model's kept gene programs resemble the highest-variance programs an unsupervised method would find anyway**, rather than uncovering a lower-variance program invisible to unsupervised methods? Checked directly in the code: by design, the current model's gene-program-discovery step does not receive any feedback from survival at all — it is mathematically identical to running an unsupervised factorization, and only the *selection* of which programs are prognostic is supervised. Finding a genuinely low-variance, otherwise-overlooked prognostic program would require changing that design (letting survival influence which programs are discovered, not just which are kept) — a real, currently-disabled option flagged for future work (`ROADMAP.md`).
 
@@ -162,7 +160,7 @@ if (!is.null(cbr)) {
 
 ## §4 — Other findings
 
-**Under-specifying K_init merges true factors together, as expected.** Giving the model fewer starting factors than truly exist causes genuinely distinct factors to blend into one; over-specifying (more starting factors than needed) remains safe, unchanged from 8/27.
+**Under-specifying K_init merges true factors together, as expected.** Giving the model fewer starting factors than truly exist causes genuinely distinct factors to blend into one; over-specifying (more starting factors than needed) remains safe, unchanged from 8/27. Checked directly, factor by factor: **7 of 27 estimated factors show a clear merge signature (correlating substantially with two different true factors at once) when under-specified; 0 of 114 do at the true K_init or above.**
 
 ```{r delta-fig, fig.cap="Joint model's C-index advantage over an unsupervised comparison, by scenario and number of starting factors, +-1 SE over 15 simulated replicates. Below the true number of factors (6), the advantage is flat or negative; from 6 upward it is stable and, in the scenario with a mix of shared and cohort-specific structure, substantial."}
 knitr::include_graphics("../figs/2026-09-04_multicohort_delta_fig.png")

@@ -64,10 +64,26 @@ This is a direct, quantitative confirmation of the under-specification finding a
 `top2_match_diagnostic.csv`); the two new figures (item 3) generated ad hoc from already-saved fit
 objects, no re-fitting.
 
-**Still open from the original plan: the training-set sub-analysis** (arm 1 refit on `tcga_only` and
-`cptac_only` alone, each with its own gene selection, to test whether pooling the two training
-cohorts actually helps) — in progress as this entry is written; see the next addendum or the
-results CSV directly if this note is stale.
+**5. Training-set sub-analysis: does pooling help at all?** The 8/21 notes asserted that using more
+samples (pooling TCGA_PAAD+CPTAC, n=273) improves factor estimation over training on either cohort
+alone — asserted, never tested, until now. `results/benchmark_sim/run_training_set_subanalysis.R`:
+arm 1 (plain joint model, K_init=7) refit on `tcga_only` (n=144) and `cptac_only` (n=129), each with
+its own gene selection (not gene-set-matched to the pooled fit or to each other — the natural
+consequence of selecting genes from a smaller cohort, not a choice made for convenience; the pooled
+fit remains the primary result for this reason).
+
+| Training set | n | p | K_survival_active | Mean external C |
+|---|---|---|---|---|
+| **Pooled (TCGA_PAAD+CPTAC)** | 273 | 2064 | 2 | **0.6267** |
+| TCGA_PAAD only | 144 | 3000 | 1 | 0.5139 |
+| CPTAC only | 129 | 3000 | 2 | 0.5776 |
+
+**Pooling clearly helps** — the pooled fit beats both single-cohort fits by a wide margin (+0.049
+over CPTAC-only, +0.113 over TCGA_PAAD-only), and TCGA_PAAD-only additionally loses a
+survival-active factor (2→1). This confirms the 8/21 claim directly rather than leaving it as an
+unverified assertion.
+
+All five items from the original plan's Stage 3/5 checklist are now closed.
 
 ---
 
