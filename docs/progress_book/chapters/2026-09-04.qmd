@@ -47,7 +47,16 @@ knitr::include_graphics("../figs/2026-09-04_k_init_sweep_6panel.png")
 
 Each answers a different question; the one closest to the deployment question (external C-index) is the one to trust. K_init=7 is the smallest K_init on that plateau — a parsimony argument, not a claim that the other criteria agree.
 
-**The K_init=11 and 13 dips in that plateau are real, not a fluke of initialization.** A restart-based check (15 random re-initializations per K) was run specifically to test whether these two K values just got unlucky starting points; they didn't — the original fit was already the best of all 16 attempts at both K=11 and K=13. Why these two specific values land on a worse solution is still open.
+**The K_init=11 and 13 dips in that plateau are real, not a fluke of initialization.** A restart-based check (15 random re-initializations per K) was run specifically to test whether these two K values just got unlucky starting points:
+
+```{r dip-table}
+if (!is.null(dip)) {
+  kable(dip[, c("K", "best_idx", "n_init", "mean_external_c")],
+        col.names = c("K_init", "Best restart (of n_init)", "Restarts tried", "Mean external C"), digits = c(0, 0, 0, 4))
+}
+```
+
+They didn't — the original fit (restart 1) was already the best of all 15 attempts at both K=11 and K=13. Why these two specific values land on a worse solution is still open.
 
 ---
 
@@ -127,7 +136,22 @@ kable(het)
 
 Allowing cohort-specific coefficients reveals that **Program 3's protective effect is almost entirely specific to CPTAC** — the current (shared-coefficient) model blends it into a single number that is not accurate for either cohort individually. **Program 7's adverse effect, by contrast, is consistent across both cohorts.** Neither fact is visible from the current model or from external validation performance — it only shows up once cohort membership is allowed into the survival term. This is exactly the kind of "does the model actually handle multiple cohorts sensibly" evidence that would matter for comparison against methods like DeSurv or plain unsupervised factorization, none of which represent per-cohort effects at all.
 
-**This was confirmed a second way, with simulated ground truth**, not just observed as a pattern in real data: a simulation was built where a factor is *known* by construction to be prognostic in one cohort and not the other. `beta_cohort_id` correctly attributes the effect to the right cohort in a clear majority of cases (roughly 7x larger coefficient in the true cohort vs. the other, in 15–17 of 20 test cases). The value again wasn't a bigger number — the current model's shared coefficient already sat close to the true cohort's value — it was that only the cohort-specific version makes that attribution visible at all.
+**This was confirmed a second way, with simulated ground truth**, not just observed as a pattern in real data: a simulation was built where a factor is *known* by construction to be prognostic in one cohort and not the other.
+
+```{r cohort-recovery-setup}
+cbr <- rd(file.path(BM, "..", "..", "multi_cohort_sim", "outputs", "cohort_beta_recovery_sim_attribution.csv"))
+```
+
+```{r cohort-recovery-table}
+if (!is.null(cbr)) {
+  agg <- aggregate(cbind(yfb_base_shared_beta, yfb_beta_cohort_owning_col, yfb_beta_cohort_other_col_mean) ~ K_init,
+                    data = cbr, FUN = median)
+  kable(agg, col.names = c("K_init", "Shared coefficient", "True cohort's coefficient", "Other cohort's coefficient"),
+        digits = 4, caption = "Median over 10 simulated replicates.")
+}
+```
+
+`beta_cohort_id` correctly attributes the effect to the true cohort in a clear majority of cases (roughly 7x larger coefficient in the true cohort vs. the other, in 15–17 of 20 test cases). The value again wasn't a bigger number — the shared coefficient already sat close to the true cohort's value — it was that only the cohort-specific version makes that attribution visible at all.
 
 ### Two supporting technical notes
 
@@ -138,8 +162,19 @@ Allowing cohort-specific coefficients reveals that **Program 3's protective effe
 
 ## §4 — Other findings
 
-- **Under-specifying K_init merges true factors together, as expected.** In simulation, giving the model fewer starting factors than truly exist causes genuinely distinct factors to blend into one — recovery quality collapses well below the true number and rises to a plateau once enough starting factors are provided. Over-specifying (more starting factors than needed) remains safe, unchanged from 8/27.
-- **This model's 4 kept gene programs were compared against an unsupervised factorization** (no performance metric — a comparison of which genes each method's programs are built from). All 4 map cleanly onto the unsupervised method's own top 5 (of 40) programs by variance explained — not buried deep in the unsupervised ranking, which is the direct explanation for the second technical note in §3.
+**Under-specifying K_init merges true factors together, as expected.** Giving the model fewer starting factors than truly exist causes genuinely distinct factors to blend into one; over-specifying (more starting factors than needed) remains safe, unchanged from 8/27.
+
+```{r delta-fig, fig.cap="Joint model's C-index advantage over an unsupervised comparison, by scenario and number of starting factors, +-1 SE over 15 simulated replicates. Below the true number of factors (6), the advantage is flat or negative; from 6 upward it is stable and, in the scenario with a mix of shared and cohort-specific structure, substantial."}
+knitr::include_graphics("../figs/2026-09-04_multicohort_delta_fig.png")
+```
+
+**This model's 4 kept gene programs were compared against an unsupervised factorization** (no performance metric — a comparison of which genes each method's programs are built from, not which predicts better).
+
+```{r fcomp-fig, fig.cap="This model's 4 kept programs vs. all 40 unsupervised factors, ordered by variance explained (left = highest). All 4 land in the unsupervised method's own top 5 -- not buried deep in its ranking, which is the direct explanation for the second technical note in §3."}
+knitr::include_graphics("../figs/2026-09-04_factor_comparison_heatmap.png")
+```
+
+All 4 map cleanly onto the unsupervised method's own top 5 (of 40) programs by variance explained (overlap p-values as low as 1e-129) — not buried deep in the unsupervised ranking, which is the direct explanation for the second technical note in §3.
 
 ---
 
