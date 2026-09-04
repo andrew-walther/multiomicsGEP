@@ -2,29 +2,17 @@
 
 ## Summary {.unnumbered}
 
-- **The 8/27 log-likelihood/BIC were in-sample, not cross-validated.** A genuine held-out survival log-likelihood and a bi-cross-validated genomics log-likelihood now exist alongside them. (§2)
-- **Found and fixed a real orientation bug** in `fit_cox_on_yf()`'s sign-correction while building the held-out check. Does not affect any previously-reported external C-index or K_eff (the count of factors kept as prognostic); did affect 8/27's BIC/log-likelihood values. (§2)
-- **Six criteria now disagree on K_init — informative, not a problem.** ELBO/BIC prefer K_init=3; the two new held-out criteria pull in different directions from each other; external C-index (the only one testing genuinely new cohorts) plateaus from K_init=7. (§2)
-- **The K_init=11/13 dip is real, not a multistart artifact.** A stated prediction that multistart would remove it was wrong. (§2)
-- **`beta_cohort_id`: cohort-specific survival coefficients**, a new model extension distinct from the existing `cohort_id` and `strata_id`. Performance is statistically indistinguishable from the plain model; the value is in visibility into cohort heterogeneity, confirmed both on real data and with simulated ground truth. (§3)
-- **Retention thresholds are not fragile** — `K_survival_active=2` is stable across a 100x range of `beta_thresh`. (§4)
-- **Under-specifying K_init merges true factors together**, as expected; over-specification remains safe (unchanged from 8/27). (§5)
-- **Multi-modality extension is out of scope for now** — no such data exists yet, and the current preprocessing can't represent it structurally. (§6)
+- **Cohort-specific survival coefficients (`beta_cohort_id`): performance is statistically indistinguishable from the current model, and the value-add is understanding how each cohort contributes to the learned factors** — confirmed on real data and with simulated ground truth. (§3)
+- **Retained factors are not sensitive to the choice of retention threshold** — the same 2 survival-active factors are kept across a 100x range of `beta_thresh` and every `pve_thresh` tested. (§2)
+- **The 8/27 log-likelihood and BIC were in-sample, not cross-validated.** Now have genuine held-out versions alongside them; found and fixed a real orientation bug in the process. (§1)
+- **Under-specifying K_init merges true factors together**, as expected; over-specification remains safe (unchanged from 8/27). (§4)
+- **Multi-modality extension is out of scope for now** — no such data exists yet, and the current preprocessing can't represent it structurally. (§5)
 
 `chapters/2026-08-27.qmd` is the pre-meeting record and is not altered here.
 
 ---
 
-## §1 — Feedback from the 8/27 meeting
-
-Two items were substantive gaps, addressed as implementation, not just write-up:
-
-- Was the log-likelihood/BIC cross-validated? No — §2 states what was actually computed and adds a genuine held-out criterion.
-- Can cohort membership enter the survival term, not just genomics reconstruction? §3 adds cohort-specific survival coefficients.
-
----
-
-## §2 — Log-likelihood and BIC: what they were, and a cross-validated replacement
+## §1 — Clarifying the 8/27 results
 
 ```{r setup}
 library(knitr); library(dplyr)
@@ -39,82 +27,79 @@ loo    <- rd(file.path(BM, "cohort_beta_comparison", "leave_one_study_out.csv"))
 fcomp  <- rd(file.path(BM, "factor_comparison", "factor_comparison_summary.csv"))
 ```
 
-**What 8/27 actually computed.** `compute_joint_ll_bic()` fits on all 273 training patients and scores those same 273 patients — in-sample. Three specific limitations (`compute_bic.R` roxygen):
+**Was the log-likelihood/BIC used to pick K_init cross-validated?** No — `compute_joint_ll_bic()` fits on all 273 training patients and scores those same 273 patients, in-sample. That's not wrong, but it isn't what was implied at the meeting. Two things follow:
 
-- The Cox term's effective sample size is the event count (139), not `n`=273.
-- `df` is charged by the CAVI starting K, not by ARD's kept K — deliberate, but it means the complexity penalty doesn't track what ARD actually keeps.
-- The `log(n)` penalty is scaled for the survival term's sample size, not the genomics term's (`n·p` ≈ 563,000 entries).
+- **A genuine held-out version now exists** (new `code/compute_cv_loglik.R`): a held-out Cox partial log-likelihood (5-fold CV) and a bi-cross-validated genomics log-likelihood (holding out patient AND gene blocks jointly — an ordinary held-out check doesn't work here, since projecting a patient from their own expression and then scoring them against it improves with more factors regardless of real structure). Reported separately from in-sample BIC, never combined into a "cross-validated BIC" — the two correct for the same in-sample optimism under different justifications, so combining them double-corrects.
+- **Building the held-out check found a real, unrelated bug**: the model's own sign-correction step (which flips a fit's coefficients if training performance looks backwards) had the check itself backwards, due to a default assumption in the underlying statistics package that doesn't hold for this kind of model. This does **not** affect any previously-reported external validation performance or the count of prognostic factors — those are unaffected by this sign either way. It **did** affect the in-sample BIC values (K_init=7's BIC moves from 1,614,174 to a corrected 1,614,079 — small, doesn't change which K_init BIC prefers). Fixed where it mattered; documented at the source.
 
-No "cross-validated BIC" was built — BIC's penalty and cross-validation both correct in-sample optimism under different justifications, so combining them double-corrects. Instead: keep in-sample BIC with these caveats, and add a genuinely held-out criterion alongside it.
+**Six criteria on K_init now, not four — and they still disagree, which is informative, not a problem:**
 
-**New `code/compute_cv_loglik.R`**, two criteria, reported separately, never combined:
-
-- `cv_survival_loglik()` — held-out Cox partial log-likelihood, 5-fold CV, scored via `eta_new = (Y_test·F)·beta` (the exact prediction formula, no train/test mismatch). Each fold's sign is fixed from *training* concordance only.
-- `bicv_genomics_loglik()` — bi-cross-validation (Owen & Perry 2009), holding out row *and* column blocks jointly. Ordinary row-wise held-out scoring doesn't work here (it reuses the patient's own expression to score that patient, so it improves with K regardless of real structure), and there's no missing-data machinery for a Wold-style mask.
-
-**A real bug, found while building this, unrelated to the new code's own correctness.** Orienting each CV fold required replicating `fit_cox_on_yf()`'s sign-correction rule, which checks training concordance and flips the model's coefficients if it's below 0.5. That check has the direction backwards: it uses R's default assumption that a higher score means *better* survival, when a Cox risk score means the opposite (higher = worse, shorter survival). Verified empirically: a fit with true concordance 0.90+ (in the correct direction) read as "fine, don't flip" under the existing (backwards) check.
-
-- **Not affected**: any external C-index (already computed in a way that doesn't depend on this sign) or `K_eff` — the count of factors the model keeps as prognostic (uses `abs()` of the coefficient, also sign-independent) — so the K_init=7 recommendation is unaffected.
-- **Affected**: Cox partial log-likelihood, which *does* depend on the sign — so 8/27's BIC/log-likelihood values were computed with the wrong orientation. Concretely, at K_init=7 the corrected BIC is 1,614,079 vs. 8/27's 1,614,174 — a small shift that does not change which K_init BIC prefers (still K_init=3).
-- **Fix**: `compute_bic.R` and `compute_cv_loglik.R` now re-derive the correct orientation themselves. The shared fitting function is left unchanged (fixing it there would flip the sign of every existing fit's coefficients); the issue is documented at the source instead.
-
-**Six criteria (K_init = the number of latent gene-expression factors the model starts with), six different questions.**
-
-```{r ksweep-fig, fig.cap="K_init consensus sweep, six panels. ELBO/BIC/in-sample log-likelihood score training fit dominated by genomics (563k entries vs. 139 events); the two held-out criteria are new; external C-index is the only one testing genuinely new cohorts."}
+```{r ksweep-fig, fig.cap="K_init consensus sweep, six panels. The top row and held-out survival log-likelihood score training-cohort fit; bi-CV genomics log-likelihood and external C-index (bottom right) test generalization."}
 knitr::include_graphics("../figs/2026-09-04_k_init_sweep_6panel.png")
 ```
 
 | Criterion | What it actually measures | Prefers |
 |---|---|---|
-| ELBO | Training fit (evidence lower bound), dominated by the genomics term | K_init=3 |
-| In-sample BIC | Same training fit, penalized for model size | K_init=3 |
-| In-sample joint log-likelihood | Same training fit, no penalty | K_init=3 |
-| Held-out survival log-lik. | Survival generalization, same training cohort (one 5-fold split) | Drifts toward larger K, noisily |
-| Bi-CV genomics log-lik. | Genomics generalization, same training cohort | K≈4 |
-| **External C-index** | **Generalization to genuinely new cohorts — the real deployment question** | **Plateaus from K_init=7** |
+| ELBO / in-sample BIC / in-sample log-likelihood | Training-cohort fit, dominated by the genomics reconstruction term | K_init=3 |
+| Held-out survival log-likelihood | Survival generalization, still the training cohort | Drifts toward larger K, noisily |
+| Bi-cross-validated genomics log-likelihood | Genomics generalization, still the training cohort | K≈4 |
+| **External C-index** | **Generalization to genuinely new cohorts — the actual deployment question** | **Plateaus from K_init=7** |
 
-The disagreement isn't a discrepancy to resolve — each answers a different question, and the one closest to the deployment question (external C-index) is the right one to trust. K_init=7 is the smallest K on that plateau (nominal peak K_init=12 is +0.003, not meaningfully different) — a parsimony argument, not a claim that ELBO/BIC agree.
+Each answers a different question; the one closest to the deployment question (external C-index) is the one to trust. K_init=7 is the smallest K_init on that plateau — a parsimony argument, not a claim that the other criteria agree.
 
-**The K_init=11/13 dip does not survive multistart.**
-
-```{r dip-table}
-if (!is.null(dip)) {
-  kable(dip[, c("K", "best_idx", "n_init", "best_elbo_full", "K_survival_active", "mean_external_c")],
-        col.names = c("K_init", "Best restart", "n restarts", "Best ELBO", "K surv-active", "Mean ext. C"),
-        digits = c(0, 0, 0, 1, 0, 4))
-}
-```
-
-Stated prediction (before running it): if the dip is a single-init local-optimum artifact — the documented failure mode elsewhere in this project — 15-restart best-ELBO multistart should remove it. **It didn't.** At every K_init in {10,...,15}, the SVD init already has the best ELBO of all 15 restarts. The dip is real and reproducible; why K_init=11/13 specifically land on a worse solution is left open (`ROADMAP.md`).
+**The K_init=11 and 13 dips in that plateau are real, not a fluke of initialization.** A restart-based check (15 random re-initializations per K) was run specifically to test whether these two K values just got unlucky starting points; they didn't — the original fit was already the best of all 16 attempts at both K=11 and K=13. Why these two specific values land on a worse solution is still open.
 
 ---
 
-## §3 — Cohort membership in the survival term
+## §2 — Are retained factors sensitive to threshold variation?
 
-Three cohort-aware components now exist, independent and composable:
+Two thresholds decide which latent factors count as biologically or prognostically meaningful: `beta_thresh` (minimum coefficient size to call a factor prognostic) and `pve_thresh` (minimum variance explained to call a factor genomics-active). Neither has ever been checked for sensitivity — until now.
 
-| Component | Added | Effect on beta |
-|---|---|---|
-| `cohort_id` | 2026-05-22 | `beta_cohort=0` by construction — genomics offset only |
-| `strata_id` | 2026-07-15 | Cohort-specific baseline hazard; beta stays shared |
-| `beta_cohort_id` | 2026-09-04 | The only one where beta itself varies by cohort |
+```{r threshold-heatmap-fig, fig.cap="Number of retained prognostic factors at K_init=7 across the beta_thresh x pve_thresh grid."}
+knitr::include_graphics("../figs/2026-09-04_threshold_sensitivity_heatmap.png")
+```
+
+- **The same 2 prognostic factors are retained across the entire practical range**: `beta_thresh` from 1e-4 to 0.01 (a 100x span) and every `pve_thresh` tested. `pve_thresh` has no effect at all in this range.
+- Only the extremes change the count: no threshold at all keeps 4 factors; the old default of 0.05 keeps 0, at every K_init from 2 to 20.
+
+```{r threshold-vs-kinit-fig, fig.cap="Number of retained prognostic factors vs K_init at three beta_thresh values."}
+knitr::include_graphics("../figs/2026-09-04_threshold_vs_kinit.png")
+```
+
+- This also confirms the K_init=11/13 dip (§1) is **not** a threshold artifact — the retained-factor count stays flat around both dips under every threshold in the stable range.
+- A related, simulation-only threshold (`rel_thresh`, requiring a factor's coefficient to be within some fraction of the largest one) is confirmed **not** usable on this real data: the smaller of the two true prognostic factors sits at only 29% of the largest factor's coefficient, so the simulation-calibrated cutoff (65%) would incorrectly discard it.
+- One remaining fairness question — do factors need their coefficients rescaled by how much their signal actually varies before comparing them to a single fixed threshold — checked directly: rescaling doesn't change which factors are called prognostic here.
+
+---
+
+## §3 — Cohort membership in the survival term: performance and interpretability
+
+**The headline result: letting the survival coefficient vary by cohort (`beta_cohort_id`) performs statistically the same as the current model, and the value it adds is visibility into how each training cohort contributes to the learned factors — not a predictive-accuracy gain.** Confirmed two ways below: on the real data, and with simulated ground truth.
+
+Three ways cohort membership can enter this model now exist, and they are independent of each other:
+
+| Component | What it does |
+|---|---|
+| `cohort_id` (existing) | Absorbs per-gene platform/batch differences in the genomics data; never touches survival |
+| `strata_id` (existing) | Lets each cohort have its own baseline survival risk; the coefficient on each factor stays shared |
+| **`beta_cohort_id` (new this session)** | **The only one where a factor's survival coefficient itself is allowed to differ by cohort** |
 
 $$
 \eta_i = \sum_k (YF)_{ik} \cdot \beta_k^{c(i)}
 $$
 
-The per-cohort coefficients for a given factor are partially pooled through one shared EBNM prior (the shrinkage-toward-a-common-value method used throughout this project) — one vectorized call per factor across cohorts, not one independent call per cohort.
+$\eta_i$ is patient $i$'s risk score; $(YF)_{ik}$ is how strongly patient $i$ expresses gene program $k$; $\beta_k^{c(i)}$ is program $k$'s survival coefficient in patient $i$'s cohort. The per-cohort coefficients for a given program are shrunk toward a shared value rather than estimated fully independently, so cohorts with less data borrow strength from the others.
 
-**Performance comparison** (D4 = this project's current recommended preprocessing/training configuration; K_init=7). As a first check, this reproduces the previously-reported result exactly (mean external C=0.6267, K_eff=2), confirming the comparison below starts from the right baseline:
+### Performance: statistically indistinguishable from the current model
 
 ```{r cohort-beta-table}
 if (!is.null(cbc)) {
   kable(cbc[, c("arm", "K", "K_survival_active", "K_eff_total", "mean_external_c")],
-        col.names = c("Arm", "K", "K surv-active", "K_eff total (survival-active + genomics-only)", "Mean external C"), digits = c(0,0,0,0,4))
+        col.names = c("Model", "K", "Prognostic factors", "Total kept factors", "Mean external C"), digits = c(0,0,0,0,4))
 }
 ```
 
-**Bootstrap CIs on the differences vs. `joint_yfb`** (paired, pooled across cohorts, B=2000):
+(As a first check, the current model's row above reproduces the previously-reported result exactly — mean external C=0.6267 — confirming this comparison starts from the right baseline.)
 
 ```{r boot-table}
 if (!is.null(boot)) {
@@ -123,112 +108,41 @@ if (!is.null(boot)) {
 }
 ```
 
-- **`cohort_id` alone is the worst arm** (0.5431) — significantly worse than the plain model, and worse than the two-step baseline. `K_survival_active` drops 2→1: the genomics-offset columns compete with the real signal. Extends the 2026-05-22 finding (cohort_id lost for YFB) to the current D4/K_init=7 config.
-- **`beta_cohort_id` alone is the best of the three cohort-aware arms** and its gap to the plain model is **not statistically significant** (95% CI includes 0) — "roughly equivalent performance," not "underperforms." It also beats the two-step baseline.
-- **Leave-one-study-out**: the ranking `joint_yfb > beta_cohort_id > all three combined > cohort_id` (all three = `cohort_id` + `strata_id` + `beta_cohort_id` together, the `joint_yfb_all_c` row above) is identical regardless of which of the 5 external cohorts is excluded — not carried by one small cohort.
+- **`beta_cohort_id`'s gap to the current model is not statistically significant** (95% confidence interval includes zero) — "roughly equivalent performance," which is the right way to read it, not "underperforms." It also beats a two-step alternative (factorize first, then fit survival separately).
+- **`cohort_id` (the existing, genomics-side component) is significantly worse**, and worse than the two-step alternative too — it visibly competes with the real prognostic signal rather than coexisting with it (prognostic factor count drops from 2 to 1). This is a genuine limitation of that existing component, not of the new one.
+- This ranking is identical no matter which of the 5 external validation cohorts is left out of the average — not an artifact of one small cohort.
 
-**Two follow-up questions, both answered with evidence:**
+### Interpretability: seeing how cohorts differ
 
-*Is recovery of cohort structure the better target, not performance?* Yes. From the fits already in hand:
-
-| | Program 3 (protective) | Program 7 (adverse) |
-|---|---|---|
-| Shared beta | 0.0115 | -0.0404 |
-| CPTAC (`beta_cohort_id`) | 0.0304 | -0.0341 |
-| TCGA_PAAD (`beta_cohort_id`) | 0.0004 | -0.0394 |
-
-Program 3's effect is almost entirely CPTAC-specific — the shared model blends it into a number that's accurate for neither cohort. Program 7 is consistent across both. This visibility, not a C-index gain, is the value-add over DeSurv or unsupervised matrix factorization methods (EBMF, NMF), none of which represent per-cohort coefficients at all. (Ground-truth version: §5.)
-
-*Can `cohort_id` help without "stealing" factors?* Warm-starting it from the plain model's converged solution (instead of a fresh SVD init) recovers both survival-active factors and closes most of the gap:
-
-| | Fresh SVD init | Warm-started |
-|---|---|---|
-| K_survival_active | 1 | 2 |
-| Mean external C | 0.5431 | **0.6172** |
-
-The 2→1 factor loss was a CAVI convergence artifact, not a real conflict between the offset columns and the biological factors.
-
-**Factor comparison: this model's 4 kept gene-expression programs vs. unsupervised EBMF (Empirical Bayes Matrix Factorization, K=40 factors), no performance metric involved** — the question is which genes each method's factors are built from, not which predicts better.
-
-```{r fcomp-table}
-if (!is.null(fcomp)) {
-  kable(fcomp[, c("sbmf_program", "sbmf_category", "best_ebmf_factor", "best_jaccard", "ebmf_variance_rank_of_40")],
-        col.names = c("Program", "Category", "Best EBMF match", "Jaccard", "EBMF variance rank"), digits = 3)
-}
+```{r cohort-het-table}
+het <- data.frame(
+  Program = c("Program 3 (protective)", "Program 7 (adverse)"),
+  `Shared coefficient` = c(0.0115, -0.0404),
+  `CPTAC` = c(0.0304, -0.0341),
+  `TCGA_PAAD` = c(0.0004, -0.0394),
+  check.names = FALSE
+)
+kable(het)
 ```
 
-```{r fcomp-fig, fig.cap="This model's 4 kept programs vs. all 40 EBMF factors, ordered by EBMF variance rank (left = highest)."}
-knitr::include_graphics("../figs/2026-09-04_factor_comparison_heatmap.png")
-```
+Allowing cohort-specific coefficients reveals that **Program 3's protective effect is almost entirely specific to CPTAC** — the current (shared-coefficient) model blends it into a single number that is not accurate for either cohort individually. **Program 7's adverse effect, by contrast, is consistent across both cohorts.** Neither fact is visible from the current model or from external validation performance — it only shows up once cohort membership is allowed into the survival term. This is exactly the kind of "does the model actually handle multiple cohorts sensibly" evidence that would matter for comparison against methods like DeSurv or plain unsupervised factorization, none of which represent per-cohort effects at all.
 
-All 4 kept programs — including both survival-active ones — match EBMF factors ranked 1–5 of 40 by variance explained (Jaccard 0.17–0.53, hypergeometric p as low as 1e-129). This is the *opposite* of DeSurv's precedent motivating this check (a prognostic program buried deep in the unsupervised ordering) — here the prognostic structure sits near the top of EBMF's own variance ranking. Reported as the actual finding, not forced to match the hypothesis.
+**This was confirmed a second way, with simulated ground truth**, not just observed as a pattern in real data: a simulation was built where a factor is *known* by construction to be prognostic in one cohort and not the other. `beta_cohort_id` correctly attributes the effect to the right cohort in a clear majority of cases (roughly 7x larger coefficient in the true cohort vs. the other, in 15–17 of 20 test cases). The value again wasn't a bigger number — the current model's shared coefficient already sat close to the true cohort's value — it was that only the cohort-specific version makes that attribution visible at all.
 
-**Why, mechanistically — verified in the code, not speculated:**
+### Two supporting technical notes
 
-- Under the current default setting (`alpha_F=0`), the update equations for the gene-loading matrices (`L`, `F`) never receive any survival-derived signal — they're a function of the genomics data alone.
-- The genomics factorization is therefore mathematically identical, at every iteration, to unsupervised matrix factorization. Joint fitting only affects how `beta` (the survival coefficients) is estimated afterward, not which gene programs get discovered in the first place.
-- So the model's already-validated advantage over the two-step baseline (below) comes from the prior/estimation choices for `L`, `F`, and `beta`, not from survival reshaping the factorization itself.
-- Discovering a genuinely low-variance, otherwise-overlooked prognostic program would need `alpha_F > 0` (letting survival influence the factorization directly), disabled by default for a documented CAVI instability (DECISIONS.md 2026-04-30). Worth revisiting with this session's stabilization techniques (deflation-init, warm-start) — not tested here (ROADMAP.md).
-
-**`cohort_id` vs. `beta_cohort_id`, structurally** (a direct question raised this session): they touch disjoint parts of the model.
-
-- `cohort_id` changes what `L`/`F` converge to (genomics side, indirect effect on the biological factors).
-- `beta_cohort_id` changes nothing about `L`/`F` and only splits each factor's survival coefficient into one value per cohort (survival side, direct and interpretable — the Program 3 table above is only readable because of this).
-- Fitting all three together (`joint_yfb_all_c`, 0.6060, `K_survival_active` stays at 2) shows `cohort_id`'s damage shrinks when combined (−0.021 vs. −0.084 alone) — the two don't compound; `cohort_id`'s CAVI-collapse failure mode is just seed/initialization-sensitive enough to land differently when fit alongside the others.
-- Net: combining adds `cohort_id`'s risk for no benefit over `beta_cohort_id` alone, on this dataset.
+- **Why does the existing `cohort_id` component compete with prognostic signal instead of coexisting with it?** Tested directly: refitting it from a better starting point (instead of a fresh random start) recovers both prognostic factors and closes most of its performance gap (external C rises from 0.543 to 0.617). So this is a model-fitting quirk, not a fundamental conflict between the two components.
+- **Why do this model's kept gene programs resemble the highest-variance programs an unsupervised method would find anyway**, rather than uncovering a lower-variance program invisible to unsupervised methods? Checked directly in the code: by design, the current model's gene-program-discovery step does not receive any feedback from survival at all — it is mathematically identical to running an unsupervised factorization, and only the *selection* of which programs are prognostic is supervised. Finding a genuinely low-variance, otherwise-overlooked prognostic program would require changing that design (letting survival influence which programs are discovered, not just which are kept) — a real, currently-disabled option flagged for future work (`ROADMAP.md`).
 
 ---
 
-## §4 — Are the retention thresholds load-bearing?
+## §4 — Other findings
 
-```{r threshold-heatmap-fig, fig.cap="K_survival_active at K_init=7 across the beta_thresh x pve_thresh grid."}
-knitr::include_graphics("../figs/2026-09-04_threshold_sensitivity_heatmap.png")
-```
-
-- `K_survival_active=2` at K_init=7 is unchanged across `beta_thresh` (the minimum coefficient size to count a factor as prognostic) from 1e-4 to 0.01 (100x span) and every `pve_thresh` (minimum variance explained to count a factor as genomics-active) tested. Only the extremes move it: no threshold → 4; the previous default of 0.05 → 0, at every K_init 2–20.
-
-```{r threshold-vs-kinit-fig, fig.cap="K_survival_active vs K_init at three beta_thresh values."}
-knitr::include_graphics("../figs/2026-09-04_threshold_vs_kinit.png")
-```
-
-- This also confirms the K_init=11/13 dip is **not** a threshold artifact — `K_survival_active` stays flat at 2 around both dips under every threshold in the stable range.
-- `rel_thresh` (an additional, simulation-only threshold requiring a factor's coefficient to be within some fraction of the largest one) has a ratio-to-max of 0.285 for the smaller of the two real survival-active factors at K_init=7 — confirms numerically that `rel_thresh=0.65` (calibrated on simulated data) must not be applied to this real fit, since it would incorrectly discard that factor.
-- Raw vs. variance-standardized $|\beta_k|$ ranking agrees exactly for the two survival-active factors — the fixed cutoff is fair in practice for this fit.
+- **Under-specifying K_init merges true factors together, as expected.** In simulation, giving the model fewer starting factors than truly exist causes genuinely distinct factors to blend into one — recovery quality collapses well below the true number and rises to a plateau once enough starting factors are provided. Over-specifying (more starting factors than needed) remains safe, unchanged from 8/27.
+- **This model's 4 kept gene programs were compared against an unsupervised factorization** (no performance metric — a comparison of which genes each method's programs are built from). All 4 map cleanly onto the unsupervised method's own top 5 (of 40) programs by variance explained — not buried deep in the unsupervised ranking, which is the direct explanation for the second technical note in §3.
 
 ---
 
-## §5 — Simulation: recovery of cohort structure, and under-specified K_init
+## §5 — Where the value-add goes next
 
-**Ground-truth recovery test for `beta_cohort_id`.** `generate_multicohort_data()`'s `specific_prognostic=TRUE` (built, never previously used) gives one factor per cohort a real, cohort-specific survival effect.
-
-```{r cohort-recovery-setup}
-cbr <- rd(file.path(BM, "..", "..", "multi_cohort_sim", "outputs", "cohort_beta_recovery_sim_attribution.csv"))
-```
-
-```{r cohort-recovery-table}
-if (!is.null(cbr)) {
-  agg <- aggregate(cbind(yfb_base_shared_beta, yfb_beta_cohort_owning_col, yfb_beta_cohort_other_col_mean) ~ K_init,
-                    data = cbr, FUN = median)
-  kable(agg, col.names = c("K_init", "Shared beta", "Owning-cohort beta", "Other-cohort beta"),
-        digits = 4, caption = "Median over 10 seeds.")
-}
-```
-
-- **Median owning-cohort coefficient is ~7x the other cohort's**, at both K_init tested. 15/20 and 17/20 (seed × cohort) cases show correct attribution.
-- The value is not a larger magnitude — `YFB_base`'s single shared coefficient sits close to the owning-cohort value anyway — it's that only the cohort-specific model makes the heterogeneity *visible*.
-- One seed produced a divergent, unstable fit (coefficients 20–200x every other seed's scale) that would flip a naive mean's conclusion — median is reported for exactly this reason. Consistent with this project's recurring CAVI-instability finding, not new to `beta_cohort_id`.
-
-**Under-specified K_init merges true factors, as expected.**
-
-```{r delta-fig, fig.cap="Joint YFB vs. unsupervised EBMF: C-index gap by scenario and K_init, +-1 SE over 15 seeds."}
-knitr::include_graphics("../figs/2026-09-04_multicohort_delta_fig.png")
-```
-
-- Factor recovery collapses sharply below K_true=6 in every scenario and rises to a ceiling by K_init=6, then stays flat through K_init=20 — over-specification remains safe (unchanged from 8/27); under-specification genuinely merges factors together.
-- Both arms are scored on the same simulated dataset per seed, confirmed directly from the runner (the advisors asked this explicitly on 8/27).
-
----
-
-## §6 — Where the value-add goes next
-
-Multi-modality extension (methylation, matched multi-view data) is out of scope: no such data exists under `PDAC_DATA_ROOT`, and `preprocess_merged_cohorts()` row-binds patients into one matrix, so same-patient feature blocks from different modalities are structurally unrepresentable today. A prerequisite for that direction, not a decision against it.
+Multi-modality extension (methylation, matched multi-view data) is out of scope: no such data exists yet, and the current data-merging step combines patients into one table in a way that can't represent multiple feature types per patient. A prerequisite for that direction, not a decision against it.
