@@ -4,7 +4,7 @@
 #               prior_beta="point_normal" vs "normal" on synthetic validation,
 #               PDAC training (merged TCGA_PAAD + CPTAC), and 5 external cohorts.
 #               Replaces run_cluster_a_smoke.R + run_cluster_a_external.R.
-# Author:       Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created:      2026-05-04
 # Dependencies: code/fit_modular.R, code/predict.R, code/train_test_split.R,
 #               code/preprocess_desurv.R, results/benchmark_sim/benchmark_helpers.R

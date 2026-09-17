@@ -1,7 +1,7 @@
 ---
 title: "A Multimodal Extension of the YFB Model"
 subtitle: "Matched expression and methylation: likelihood, empirical-Bayes priors, and variational updates"
-author: "Prepared by Codex for Andrew Walther and advisors"
+author: "Andrew Walther"
 date: "2026-09-10"
 format:
   pdf:

@@ -19,7 +19,7 @@
 #     real_gep_heatmap.png, real_km.png   (recommended model)
 #     cohort_heatmap.png,  cohort_km.png  (cohort-indicator contrast, appendix)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-06-15
 # Dependencies: yaml, survival, ggplot2, dplyr, tidyr, patchwork
 # Usage:   PDAC_DATA_ROOT=<path> Rscript \

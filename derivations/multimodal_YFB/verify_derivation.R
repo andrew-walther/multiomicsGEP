@@ -2,7 +2,7 @@
 # Script: verify_derivation.R
 # Purpose: Check the multimodal YFB derivation using derivatives,
 #          exact finite-support expectations, and numerical integrals.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-10
 # Dependencies: base R (stats functions ship with R)
 # ============================================================

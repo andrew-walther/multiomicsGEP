@@ -23,7 +23,7 @@
 #          under the D4 preprocessing (per-platform z-std, combined_rank
 #          top-3000 per-cohort, K=7 fixed), full 5-cohort external validation.
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-20
 # Usage:   Rscript results/benchmark_sim/run_yfb_dualF_frozen_grid_D4.R [--quick]
 # ============================================================

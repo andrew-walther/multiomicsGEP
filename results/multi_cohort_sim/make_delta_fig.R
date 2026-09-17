@@ -9,7 +9,7 @@
 #   Input:  results/multi_cohort_sim/outputs/multicohort_sim_results.csv
 #   Output: docs/progress_book/figs/2026-09-04_multicohort_delta_fig.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   Rscript results/multi_cohort_sim/make_delta_fig.R
 # ============================================================

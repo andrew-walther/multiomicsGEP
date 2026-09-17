@@ -20,7 +20,7 @@
 #   Output:
 #     docs/progress_book/figs/2026-09-04_k_init_sweep_6panel.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Dependencies: ggplot2, dplyr, patchwork
 # Usage:   Rscript docs/progress_book/figs/make_k_sweep_6panel_fig.R

@@ -15,7 +15,7 @@
 #          signal, an approach analogous to EBMF's own greedy,
 #          factor-at-a-time fitting (ROADMAP.md 2026-07-12 entry on why
 #          EBMF avoids this collapse mode).
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-13
 # Dependencies: none
 # ============================================================

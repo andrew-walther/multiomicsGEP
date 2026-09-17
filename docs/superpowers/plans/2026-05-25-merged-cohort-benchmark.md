@@ -147,7 +147,7 @@ git commit -m "Add placeholder K keys for merged-cohort CV benchmark (run_merged
 #          This is standard practice for K selection (not final model
 #          parameters) and the effect is small, but it is not leakage-free.
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-25
 # Usage:   Rscript results/benchmark_sim/run_merged_kcv.R [--quick]
 #          --quick: K_grid=2:5, n_folds=3, max_iter=50 (~5 min)
@@ -414,7 +414,7 @@ Fits all 6 model configurations at their CV-selected K and evaluates on 5 extern
 #          Excluded (documented β→0 structural failure, all V0–V11 exhausted):
 #            YFB × joint quantile+rank × No/Yes
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-25
 # Usage:   Rscript results/benchmark_sim/run_merged_benchmark.R [--quick]
 #          --quick: max_iter=30, skips interpretability output (smoke test)

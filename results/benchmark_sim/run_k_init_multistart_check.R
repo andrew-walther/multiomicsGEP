@@ -27,7 +27,7 @@
 #             k_init_multistart_results.csv   (one row per K, best-of-multistart)
 #             k_init_multistart_restarts.csv  (one row per K x restart, full diagnostics)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-19
 # Usage:   caffeinate -i Rscript results/benchmark_sim/run_k_init_multistart_check.R
 #          caffeinate -i Rscript results/benchmark_sim/run_k_init_multistart_check.R --quick

@@ -4,7 +4,7 @@
 #          cached fgsea_results_all.rds + pdac_genesets.rds, without
 #          re-running the expensive fgsea/ORA computation. Re-fetches the
 #          (fast) MSigDB collections needed for F2's raw gene-set lookups.
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-14
 # Usage:   Rscript results/benchmark_sim/generate_pathway_enrichment_figures.R
 # ============================================================

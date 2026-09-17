@@ -18,7 +18,7 @@
 #          validation, matching the exact D4 protocol, for a like-for-like
 #          comparison against the recommended config's 0.627 mean C-index.
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-20
 # Usage:   Rscript results/benchmark_sim/run_yfb_dualF_diagnostic_D4.R [--quick]
 #          --quick: max_iter=30 (fast sanity check)

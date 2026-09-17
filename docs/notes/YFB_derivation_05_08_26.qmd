@@ -1,6 +1,6 @@
 ---
 title: "YFB Derivation Notes"
-author: "OpenAI Codex"
+author: "Andrew Walther"
 date: "May 8, 2026"
 format:
   pdf:

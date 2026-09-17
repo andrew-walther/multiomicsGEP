@@ -5,7 +5,7 @@
 #               When run_all = TRUE and data_mode = "real", loops over all 7
 #               PDAC cohorts and produces a cross-dataset summary table, then
 #               fits a pooled model on the RNA-seq trio.
-# Author:       Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created:      2026-03-31
 # Dependencies: code/fit_modular.R (sources update_*.R internally);
 #               survival, ebnm (loaded by fit_modular.R)

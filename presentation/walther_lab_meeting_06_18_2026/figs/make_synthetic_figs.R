@@ -18,7 +18,7 @@
 #   Inputs:
 #     results/multi_cohort_sim/outputs/multicohort_sim_results.csv
 #     results/multi_cohort_sim/outputs/multicohort_sim_example.rds
-#   Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 #   Created: 2026-06-15
 #   Dependencies: ggplot2, dplyr, tidyr, pheatmap, gridExtra, grid
 #   Usage:   Rscript presentation/walther_lab_meeting_06_18_2026/figs/make_synthetic_figs.R

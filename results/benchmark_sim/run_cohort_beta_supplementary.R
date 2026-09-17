@@ -21,7 +21,7 @@
 #             cohort_beta_heldout_survival_ll.csv    (held-out survival
 #               log-likelihood for all 5 arms)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   Rscript results/benchmark_sim/run_cohort_beta_supplementary.R
 # ============================================================

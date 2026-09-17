@@ -3,7 +3,7 @@
 # Purpose: Tests for code/update_beta_cohort.R -- cohort-specific survival
 #          coefficients beta_k^(c) (update_beta_cohort_k/_all,
 #          compute_z_no_k_cohort, compute_pooled_beta).
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   Rscript tests/run_tests.R  (included via source)
 #          Rscript tests/test_update_beta_cohort.R  (standalone)

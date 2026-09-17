@@ -2,7 +2,7 @@
 # Script: predict.R
 # Purpose: Project new patients into a trained SBMF factor space
 #          and compute survival risk scores for hold-out evaluation.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-03-31
 # Dependencies: survival (for concordance())
 # ============================================================

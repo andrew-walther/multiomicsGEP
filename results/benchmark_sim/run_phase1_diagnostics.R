@@ -4,7 +4,7 @@
 #          SSBMF fit. Produces a cohort-stratified L-loading heatmap
 #          to identify factors that encode batch/study signal vs.
 #          biological/prognostic signal.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-04-28
 # Dependencies: pheatmap (CRAN)
 # Inputs:  results/benchmark_sim/outputs/real_data/{mode}/{prior}/tables/final_model.rds

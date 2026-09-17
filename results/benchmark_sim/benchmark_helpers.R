@@ -3,7 +3,7 @@
 # Purpose:      Shared constants and data-loading functions for
 #               run_LB_benchmark.R and run_YFB_benchmark.R.
 #               Must be sourced after cfg <- yaml::read_yaml("config/globals.yml").
-# Author:       Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created:      2026-05-05
 # Dependencies: config/globals.yml (cfg must exist in calling env)
 # ============================================================

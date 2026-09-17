@@ -3,7 +3,7 @@
 # Purpose: Bootstrap confidence intervals for Harrell's C-index (concordance),
 #          and a paired-bootstrap CI for the difference in C-index between two
 #          risk scores evaluated on the same patients.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-16
 # Dependencies: survival
 # ============================================================

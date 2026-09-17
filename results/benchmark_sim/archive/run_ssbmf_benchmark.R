@@ -3,7 +3,7 @@
 # Purpose:      Phase 2 synthetic benchmark for the SBMF model.
 #               Generates a corrected synthetic DGP, selects alpha via CV,
 #               fits the final model, and writes benchmark tables/figures.
-# Author:       Codex
+# Author: Andrew Walther
 # Created:      2026-04-23
 # Dependencies: code/fit_modular.R, code/predict.R, code/train_test_split.R,
 #               code/select_alpha_cv.R

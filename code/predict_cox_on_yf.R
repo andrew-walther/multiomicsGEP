@@ -1,7 +1,7 @@
 # ============================================================
 # Script: predict_cox_on_yf.R
 # Purpose: Cluster B prediction — direct Y·EF projection (same formula as training)
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-04
 # Dependencies: none (base R only)
 # ============================================================

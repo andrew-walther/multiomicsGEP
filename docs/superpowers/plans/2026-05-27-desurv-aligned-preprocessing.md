@@ -549,7 +549,7 @@ Create the file with this content:
 #   Output: results/benchmark_sim/outputs/desurv_comparison/
 #     desurv_comparison_results.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-27
 # Usage:   caffeinate -i Rscript results/benchmark_sim/run_desurv_comparison.R
 #          caffeinate -i Rscript results/benchmark_sim/run_desurv_comparison.R --quick

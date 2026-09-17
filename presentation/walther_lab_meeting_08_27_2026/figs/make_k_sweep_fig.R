@@ -17,7 +17,7 @@
 #   Output:
 #     presentation/walther_lab_meeting_08_27_2026/assets/k_init_sweep_4panel.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-27
 # Dependencies: ggplot2, dplyr, patchwork
 # Usage:   Rscript presentation/walther_lab_meeting_08_27_2026/figs/make_k_sweep_fig.R

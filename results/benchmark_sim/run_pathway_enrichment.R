@@ -17,7 +17,7 @@
 #     ora_results_active.rds   -- full ORA result data.frame (Programs 3 & 7, N in {50,100,150})
 #     pdac_genesets.rds / genesets_manifest.txt -- from build_pdac_genesets()
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-14
 # Usage:   Rscript results/benchmark_sim/run_pathway_enrichment.R
 #          Rscript results/benchmark_sim/run_pathway_enrichment.R --quick

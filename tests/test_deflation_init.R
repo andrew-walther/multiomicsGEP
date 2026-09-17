@@ -3,7 +3,7 @@
 # Purpose: Tests for deflation_svd_init() (code/deflation_init.R) and its
 #          integration as init_method="deflation" in fit_supervised_mf_modular()
 #          (Cluster A / LB) and fit_cox_on_yf() (Cluster B / YFB).
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-13
 # Usage:   Rscript tests/run_tests.R  (included via source)
 #          Rscript tests/test_deflation_init.R  (standalone)

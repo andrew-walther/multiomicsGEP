@@ -23,7 +23,7 @@
 #
 
 # Usage:   bash docs/progress_book/publish_gh_pages.sh
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # ============================================================
 set -euo pipefail

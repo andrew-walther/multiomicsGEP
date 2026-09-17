@@ -23,7 +23,7 @@
 #
 #   Output: results/multi_cohort_sim/outputs/k_recovery_sim_results.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-19
 # Usage:   Rscript results/multi_cohort_sim/run_k_recovery_sim.R [--quick]
 # ============================================================

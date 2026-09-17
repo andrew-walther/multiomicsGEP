@@ -9,7 +9,7 @@
 #          and reports Harrell's C-index per cohort for both fits.
 #          Pass condition (§4.9): >= 1 external cohort with C-index improved
 #          vs. baseline.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-04-29
 # Inputs:  PDAC raw data; results/benchmark_sim/outputs/cluster_a_smoke/
 #          tables/smoke_fit.rds (cluster A fit; reused if present)

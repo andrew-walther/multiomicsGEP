@@ -1,7 +1,7 @@
 # ============================================================
 # Script:  test_select_K_cv.R
 # Purpose: Tests for select_K_cv() — K selection via cross-validated C-index
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-06
 # Usage:   Rscript tests/run_tests.R  (included via source)
 #          Rscript tests/test_select_K_cv.R  (standalone)

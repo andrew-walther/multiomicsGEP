@@ -12,7 +12,7 @@
 #          duplicating its fold-fitting logic -- select_K_cv() already
 #          threads arbitrary extra arguments (including `alpha`) through to
 #          the underlying fit function via `...`.
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-13
 # Dependencies: code/select_K.R (select_K_cv), code/train_test_split.R
 #               (create_stratified_folds), rBayesianOptimization package

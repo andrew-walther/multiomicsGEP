@@ -19,7 +19,7 @@
 #   Output: results/benchmark_sim/outputs/cohort_beta_comparison/
 #             training_set_subanalysis_results.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   Rscript results/benchmark_sim/run_training_set_subanalysis.R
 # ============================================================

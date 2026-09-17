@@ -3,7 +3,7 @@
 # Purpose: Cross-validated alpha selection for the SBMF model.
 #          Evaluates alpha values by held-out C-index and supports
 #          either max-C-index or 1-SE rule selection.
-# Author: Codex
+# Author: Andrew Walther
 # Created: 2026-04-23
 # Dependencies: code/fit_modular.R, code/predict.R, code/train_test_split.R
 #               must be sourced first.

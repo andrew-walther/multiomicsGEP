@@ -3,7 +3,7 @@
 # Purpose: PVE-ranked column extraction for warm-starting a smaller-K refit
 #          from an already-converged, larger-K fit (fit_cox_on_yf() or
 #          fit_supervised_mf_modular() output).
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-13
 # Dependencies: none (operates on the returned fit list only)
 # ============================================================

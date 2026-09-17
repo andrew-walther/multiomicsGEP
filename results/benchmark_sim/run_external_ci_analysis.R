@@ -26,7 +26,7 @@
 #     external_cindex_ci.csv        (per-model, per-cohort C-index + CI)
 #     external_paired_diff_ci.csv   (per-cohort + pooled paired-diff CI)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-16
 # Dependencies: survival
 # Usage:   Rscript results/benchmark_sim/run_external_ci_analysis.R

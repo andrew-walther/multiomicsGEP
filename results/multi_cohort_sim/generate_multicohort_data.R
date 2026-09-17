@@ -13,7 +13,7 @@
 #          Specificity is encoded by BLOCK-ZERO loadings: a cohort-c-specific
 #          factor has L_ik = 0 for every patient i not in cohort c.
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-06-14
 # Dependencies: base R only (flashier templates passed in optionally)
 # ============================================================

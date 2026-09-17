@@ -23,7 +23,7 @@
 #             factor_comparison_summary.csv
 #   Figure: docs/progress_book/figs/2026-09-04_factor_comparison_heatmap.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   Rscript results/benchmark_sim/run_factor_comparison.R
 # ============================================================

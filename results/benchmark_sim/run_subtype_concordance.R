@@ -19,7 +19,7 @@
 #     F4_loading_vs_subtype_program3.png
 #     F4_loading_vs_subtype_program7.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-14
 # Usage:   export PDAC_DATA_ROOT=...
 #          Rscript results/benchmark_sim/run_subtype_concordance.R

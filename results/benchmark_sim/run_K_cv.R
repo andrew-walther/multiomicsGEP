@@ -12,7 +12,7 @@
 #   PDAC_DATA_ROOT=/path/to/data Rscript results/benchmark_sim/run_K_cv.R
 #
 # Output: results/benchmark_sim/outputs/K_cv/
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-06
 # Dependencies: code/fit_modular.R, code/predict.R,
 #               code/fit_cox_on_yf.R, code/predict_cox_on_yf.R,

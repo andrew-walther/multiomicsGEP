@@ -23,7 +23,7 @@
 #   Output: results/multi_cohort_sim/outputs/k_recovery_diagnostic_factors.csv (per-factor)
 #           results/multi_cohort_sim/outputs/k_recovery_diagnostic_summary.csv (per-seed base vs. cohort_id counts)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-19
 # Usage:   Rscript results/multi_cohort_sim/run_k_recovery_diagnostic.R
 # ============================================================

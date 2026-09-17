@@ -4,7 +4,7 @@
 #               benchmark to assess whether lambda = p/n survival
 #               scaling improves beta recovery and hold-out C-index.
 #               Sandbox only — no production changes.
-# Author:       Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created:      2026-04-24
 # Run from repo root:
 #   Rscript results/benchmark_sim/sandbox_lambda_test.R

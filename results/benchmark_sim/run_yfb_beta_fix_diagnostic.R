@@ -26,7 +26,7 @@
 #   A_surv/A_gen ratio — the scale imbalance that drives β→0.
 #   Target: ratio > 0.01 at iter 1 (comparable to single-cohort TCGA).
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-22
 # Usage:   Rscript results/benchmark_sim/run_yfb_beta_fix_diagnostic.R [--quick]
 #          --quick: K_grid=2:5, max_iter=50, 3 folds (fast sanity check ~5 min)

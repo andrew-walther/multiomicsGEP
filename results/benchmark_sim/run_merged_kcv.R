@@ -23,7 +23,7 @@
 #          NOTE on leakage: preprocessing applied to full training matrix before
 #          CV fold split. This is standard for K selection, not final inference.
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-25
 # Usage:   Rscript results/benchmark_sim/run_merged_kcv.R [--quick]
 #          --quick: K_grid=2:4, n_folds=3, max_iter=30 (~3 min)

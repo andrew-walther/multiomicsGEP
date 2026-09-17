@@ -2,7 +2,7 @@
 # Script:  test_concordance_ci.R
 # Purpose: Tests for concordance_ci.R -- bootstrap C-index CI and paired-
 #          difference CI (bootstrap_concordance_ci, bootstrap_concordance_diff_ci)
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-16
 # Usage:   Rscript tests/run_tests.R  (included via source)
 #          Rscript tests/test_concordance_ci.R  (standalone)

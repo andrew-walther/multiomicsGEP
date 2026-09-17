@@ -34,7 +34,7 @@
 #            survival_strength_sweep_results.csv        (now has a `scenario` column)
 #            survival_strength_sweep_alpha_invariance.csv (now has a `scenario` column)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-12
 # Usage:   Rscript results/multi_cohort_sim/run_survival_strength_sweep.R [--quick]
 # ============================================================

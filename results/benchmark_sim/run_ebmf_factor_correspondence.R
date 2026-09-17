@@ -21,7 +21,7 @@
 #     T5_ebmf_factor_correlation_full.csv     (full 20 x 2 correlation matrix)
 #     F6_ebmf_factor_correspondence_heatmap.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-03
 # Usage:   Rscript results/benchmark_sim/run_ebmf_factor_correspondence.R
 #          (requires results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_external_fit.rds

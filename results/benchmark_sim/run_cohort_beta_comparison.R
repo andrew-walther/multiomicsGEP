@@ -50,7 +50,7 @@
 #   Output: results/benchmark_sim/outputs/cohort_beta_comparison/
 #             cohort_beta_comparison_results.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   caffeinate -i Rscript results/benchmark_sim/run_cohort_beta_comparison.R
 # ============================================================

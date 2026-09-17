@@ -3,7 +3,7 @@
 # Purpose: Tests for code/compute_cv_loglik.R -- cv_survival_loglik(),
 #          bicv_genomics_loglik(), gaussian_matrix_loglik(), and the
 #          .fit_genomics_only() internal helper.
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   Rscript tests/run_tests.R  (included via source)
 #          Rscript tests/test_compute_cv_loglik.R  (standalone)

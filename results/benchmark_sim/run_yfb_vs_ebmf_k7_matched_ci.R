@@ -10,7 +10,7 @@
 #
 #   Output: results/benchmark_sim/outputs/ebmf_cox_external/yfb_vs_ebmf_k7_matched_ci.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-20
 # Usage:   Rscript results/benchmark_sim/run_yfb_vs_ebmf_k7_matched_ci.R
 # Requires: results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_external_riskscores_k7.rds

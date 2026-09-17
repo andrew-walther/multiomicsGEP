@@ -17,7 +17,7 @@
 #            (b) YFB_cohort C-index >= YFB_base C-index
 #            (c) Factor recovery (mean max-cor): cohort >= base for both models
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-22
 # Usage:   Rscript results/cohort_lmm_sim/run_synthetic.R [--seed N]
 #          (default seed = 42)

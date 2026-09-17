@@ -5,7 +5,7 @@
 #               each external PDAC cohort.  Writes
 #               ph_diagnostics_table.csv to the benchmark
 #               output directory without re-running alpha CV.
-# Author:       Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created:      2026-04-24
 # Dependencies: results/benchmark_sim/run_ssbmf_benchmark.R
 #               (sources all helpers automatically)

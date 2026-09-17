@@ -7,7 +7,7 @@
 #          high_K) -- added 2026-07-12 same-day follow-up once the
 #          comprehensive extension showed the joint-vs-2-step ordering is
 #          NOT the same across DGP structures (see DECISIONS.md).
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-12
 # Usage:   Rscript results/multi_cohort_sim/plot_survival_strength_sweep.R
 # ============================================================

@@ -1,7 +1,7 @@
 # ============================================================
 # Script:  test_yfb_multistart.R
 # Purpose: Tests for fit_cox_on_yf_multistart() (code/fit_modular_multistart.R)
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-13
 # Usage:   Rscript tests/run_tests.R  (included via source)
 #          Rscript tests/test_yfb_multistart.R  (standalone)

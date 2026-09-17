@@ -6,7 +6,7 @@
 #          with the highest final training ELBO.
 #          Selection criterion: ELBO (not held-out C-index) — selecting on
 #          C-index would leak the validation cohort into model selection.
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-06
 # Dependencies: code/fit_modular.R (must be sourced before this file)
 # ============================================================

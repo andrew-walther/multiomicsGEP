@@ -30,7 +30,7 @@
 #      maintains the EBMF structure: warm-starting is a viable fix. If β
 #      collapses back to zero: the L update is washing out the survival signal.
 #
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-04-29
 # Dependencies: flashier (already fitted), survival
 # Inputs:  results/benchmark_sim/outputs/ebmf_diagnostic/tables/ebmf_fit.rds

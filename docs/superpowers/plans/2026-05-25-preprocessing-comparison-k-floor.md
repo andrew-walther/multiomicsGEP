@@ -404,7 +404,7 @@ The existing script runs 3 K-CV calls in sequence with hard-coded preprocessing 
 #          NOTE on leakage: preprocessing applied to full training matrix before
 #          CV fold split. This is standard for K selection, not final inference.
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-25
 # Usage:   Rscript results/benchmark_sim/run_merged_kcv.R [--quick]
 #          --quick: K_grid=2:4, n_folds=3, max_iter=30 (~3 min)
@@ -715,7 +715,7 @@ Restructure the benchmark script to mirror the config-table approach from the K-
 #          K values read from globals.yml. Run run_merged_kcv.R first.
 #          YFB x joint QN excluded (structural beta->0, DECISIONS.md 2026-05-22).
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-25
 # Usage:   Rscript results/benchmark_sim/run_merged_benchmark.R [--quick]
 #          --quick: max_iter=30, skip top-gene table (smoke test)

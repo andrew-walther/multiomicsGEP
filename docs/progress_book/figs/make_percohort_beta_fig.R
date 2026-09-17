@@ -18,7 +18,7 @@
 #   Output:
 #     docs/progress_book/figs/2026-09-04_percohort_beta.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Dependencies: ggplot2
 # Usage:   Rscript docs/progress_book/figs/make_percohort_beta_fig.R

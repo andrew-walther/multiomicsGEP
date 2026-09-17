@@ -13,7 +13,7 @@
 #   Output: results/benchmark_sim/outputs/pathway_enrichment/
 #     C2_external_cohort_robustness.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-14
 # Usage:   export PDAC_DATA_ROOT=...
 #          Rscript results/benchmark_sim/run_external_cohort_robustness.R

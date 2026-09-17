@@ -7,7 +7,7 @@
 #          All three metrics are computed against the known ground truth
 #          returned by generate_multicohort_data().
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-06-14
 # Dependencies: base R (stats::cor)
 # ============================================================

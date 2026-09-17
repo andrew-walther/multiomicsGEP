@@ -21,7 +21,7 @@
 #            joint_bo_history.csv        (every (K, alpha) point evaluated)
 #            joint_bo_external_val.csv   (external validation of the BO winner)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-13
 # Usage:   caffeinate -i Rscript results/benchmark_sim/run_joint_bo.R
 #          caffeinate -i Rscript results/benchmark_sim/run_joint_bo.R --quick

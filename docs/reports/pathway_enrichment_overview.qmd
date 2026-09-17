@@ -650,7 +650,7 @@ Six functions, each with a single responsibility, matching the roxygen documenta
 # Script: pathway_enrichment.R
 # Purpose: Reusable functions for GSEA, ORA, and subtype
 #          comparison of SSBMF factor weight vectors.
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Dependencies: fgsea, msigdbr, clusterProfiler, ggplot2, dplyr
 # ============================================================
 

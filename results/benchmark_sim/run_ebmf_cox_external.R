@@ -27,7 +27,7 @@
 #     ebmf_cox_external_results.csv   (tidy, columns aligned with desurv CSV)
 #     ebmf_cox_external_fit.rds       (flashier fit, F, beta, for post-hoc use)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-06-15
 # Dependencies: flashier (>= 1.0.0), survival, yaml
 # Usage:   PDAC_DATA_ROOT=<path> caffeinate -i Rscript \

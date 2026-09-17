@@ -12,7 +12,7 @@
 #            * max|EL| trajectory (must stay > 0.01)
 #          Pass condition (§4.9): >= 1 factor with |EBeta| > 0.05 AND
 #          stable through CAVI; ELBO non-decreasing; max|EL| > 0.01.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-04-29
 # Dependencies: survival, ebnm (via fit_modular sources)
 # Inputs:  PDAC raw data (PDAC_DATA_ROOT env var or default OneDrive path)

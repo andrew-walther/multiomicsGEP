@@ -3,7 +3,7 @@
 # Purpose: Survival-aware gene feature selection for SBMF.
 #          Provides univariate Cox p-value filtering as an
 #          alternative to variance-based selection.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-04-01
 # Dependencies: survival
 # ============================================================

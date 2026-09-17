@@ -17,7 +17,7 @@
 #   Output:
 #     docs/progress_book/figs/2026-09-04_3way_percohort_cindex.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Dependencies: ggplot2, tidyr
 # Usage:   Rscript docs/progress_book/figs/make_3way_percohort_cindex_fig.R

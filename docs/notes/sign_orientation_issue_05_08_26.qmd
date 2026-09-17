@@ -1,6 +1,6 @@
 ---
 title: "Sign and Orientation Issue in LB and YFB"
-author: "OpenAI Codex"
+author: "Andrew Walther"
 date: "May 8, 2026"
 format:
   pdf:

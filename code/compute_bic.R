@@ -2,7 +2,7 @@
 # Script: code/compute_bic.R
 # Purpose: Joint (genomics + survival) log-likelihood and BIC for a
 #          fit_cox_on_yf() (YFB, eta = (YF)beta) model object.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-27
 # Dependencies: code/fit_cox_on_yf.R (must be sourced first -- provides
 #               calc_cox_taylor_yf()); no other dependency on compute_elbo.R

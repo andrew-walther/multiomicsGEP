@@ -2,7 +2,7 @@
 # Script: update_F_cohort.R
 # Purpose: Closed-form Normal conjugate update for cohort indicator
 #          F rows in the augmented SSBMF model (cohort-cols-L branch).
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-22
 # Dependencies: none (pure R arithmetic)
 # ============================================================
