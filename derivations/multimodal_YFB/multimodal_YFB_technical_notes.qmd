@@ -1,0 +1,1506 @@
+---
+title: "A Multimodal Extension of the YFB Model"
+subtitle: "Matched expression and methylation: likelihood, empirical-Bayes priors, and variational updates"
+author: "Prepared by Codex for Andrew Walther and advisors"
+date: "2026-09-10"
+format:
+  pdf:
+    documentclass: article
+    pdf-engine: xelatex
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    colorlinks: true
+    geometry: margin=1in
+    keep-tex: false
+fontsize: 11pt
+execute:
+  echo: false
+  warning: true
+  error: false
+header-includes: |
+    \usepackage{amsmath,amssymb,booktabs}
+    \newcommand{\E}{\mathbb{E}}
+    \newcommand{\Var}{\operatorname{Var}}
+    \newcommand{\Cov}{\operatorname{Cov}}
+    \newcommand{\KL}{\operatorname{KL}}
+    \newcommand{\tr}{\operatorname{tr}}
+    \newcommand{\diag}{\operatorname{diag}}
+    \newcommand{\Normal}{\mathcal{N}}
+    \newcommand{\PL}{\operatorname{PL}}
+    \allowdisplaybreaks
+    \setlength{\emergencystretch}{3em}
+---
+
+# Purpose and review status
+
+This document adapts the existing YFB model in multiomicsGEP to matched
+expression and DNA methylation measurements. It is a methodological proposal
+for advisor review, not a report of a fitted multimodal model. No production
+fitting code, model defaults, simulations, or real-data analyses are changed.
+
+There are two distinct adaptations to assess. First, partition the features
+by modality and estimate separate loading priors while sharing the subject
+scores. Second, derive the survival-feedback version of YFB from a coherent
+objective. The current default YFB algorithm suppresses survival feedback
+into the loadings. Its direct multimodal counterpart is retained here as a
+compatibility baseline. Differences required by a joint derivation are
+identified separately from differences required simply by adding a modality.
+
+The intended application has **one training cohort** and **one independent
+validation cohort**, each with matched expression and methylation data.
+The validation subjects are not additional training subjects. One
+right-censored survival endpoint is assumed. Outcome-dependent decisions
+must use training data only.
+
+The starting prior is nonnegative point-exponential for both $L$ and each
+$F_m$, with separate fitted parameters for every column and modality.
+Signed alternatives are derived for comparison. All $K$ score columns are
+shared, but an entire loading column may vanish in one modality. Ordinary
+observation likelihood is examined first; explicit modality weighting is
+an alternative, not an assumed solution.
+
+**Choices still requiring advisor review:** loading support and analysis
+scale; ordinary versus weighted objective; raw versus normalized survival
+projection; and the approximation used for joint inference. The derivations
+below make those choices reviewable without claiming they have been selected.
+
+# Current implementation: the reference to be adapted
+
+The source audit refers to repository revision c13eaea, inspected on
+September 10, 2026. The executable modules take precedence over older
+companion documents when identifying implemented behavior.
+
+| Quantity | R representation | Implemented YFB behavior |
+|:--|:--|:--|
+| Subject scores | EL, EL2 | $n\times K$ means and second moments; omics-only update |
+| Feature loadings | EF, EF2 | $p\times K$ means and second moments |
+| Survival coefficients | EBeta, EBeta2 | $K$ means and second moments for a single cohort |
+| Residual precision | Tau | $p$ point estimates, not a variational distribution |
+| Projection scale | EF_norms | Training loading-column norms used for prediction |
+| Priors | prior_LF, prior_beta | Defaults: point-exponential and Normal, respectively |
+
+The relevant entry point is \path{code/fit_cox_on_yf.R}.
+Its update modules are \path{code/update_L_surv_YFB.R},
+\path{code/update_F_surv_YFB.R}, \path{code/update_beta.R}, and
+\path{code/update_tau.R}. Prediction is in
+\path{code/predict_cox_on_yf.R}.
+For reference, the LB model in \path{code/fit_modular.R} uses $\eta=L\beta$,
+whereas YFB predicts survival from projections of the observed omics.
+
+The current YFB fit uses
+$$
+\widehat Z=Y\bar F D^{-1},\qquad
+D_{kk}=\sqrt{\sum_j\bar f_{jk}^{\,2}+10^{-10}},\qquad
+\widehat\eta=\widehat Z\bar\beta.
+$$ {#eq-current-projection}
+
+Here $Z$ is not $L$. Even with perfect reconstruction,
+$YF=LF^\top F$ need not equal $L$.
+
+The defaults are alpha_F = 0, alpha = 0.5, and boost_beta = FALSE.
+Thus $L$ and $F$ use unweighted omics information, while the coefficient
+update uses alpha times the survival quadratic. Fitting one prior per
+column is already the pattern; the multimodal change is to fit one
+loading prior per **modality and column**, instead of pooling all features
+into that column's prior.
+
+## Differences that a joint derivation must not conceal
+
+1. **Feedback:** a Cox factor depending on $F$ contributes to its update.
+   Setting alpha_F to zero removes that contribution. The resulting
+   procedure is modular; it is not coordinate ascent on the full joint
+   posterior specified below.
+2. **Projection uncertainty:** passing $\widehat Z^2$ as a second moment
+   treats the current estimated projection as fixed. Joint inference on
+   $F$ requires additional variance terms.
+3. **Feature interactions:** the existing optional survival contribution
+   in update_F_surv_YFB.R uses only the diagonal of $Y^\top W Y$ and a
+   factor-excluded working response. An exact scalar loading update also
+   subtracts the contributions of the other features in that same factor.
+4. **Curvature:** the helper calc_cox_taylor_yf computes a working curvature
+   described precisely in Section @sec-cox. It is not the exact negative
+   diagonal Hessian despite that wording in older comments.
+5. **Objective weights:** under the default per_p reporting convention,
+   the reported survival contribution is multiplied by $p$, while the
+   coefficient update is not. Omics updates also do not use the reported
+   factor $(1-\alpha)$. Therefore the reported combined diagnostic is not
+   a single objective whose coordinate updates reproduce all defaults.
+6. **Normalization:** the optional survival loading update is written for
+   a linear, unnormalized projection; differentiating a normalized
+   projection requires additional terms.
+
+These observations motivate explicit comparisons. They are not changes to
+the established single-modality implementation.
+
+# Data, parameterization, and priors
+
+## Matched blocks and notation
+
+For modality $m\in\{1,\ldots,M\}$, let $Y_m\in\mathbb R^{n\times p_m}$.
+Initially $M=2$: expression and methylation. Row $i$ refers to the same
+subject in every block. Each subject has observed follow-up
+$t_i=\min(T_i,C_i)$ and event indicator $\delta_i=1\{T_i\leq C_i\}$.
+The likelihood below conditions on the realized preprocessing and feature
+selection; fitting those operations is a separate training-only step.
+
+$$
+\begin{aligned}
+p&=\sum_{m=1}^M p_m,&
+Y&=[Y_1\ \cdots\ Y_M]\in\mathbb R^{n\times p},\\
+F&=[F_1^\top\ \cdots\ F_M^\top]^\top\in\mathbb R^{p\times K},&
+L&\in\mathbb R^{n\times K}.
+\end{aligned}
+$$ {#eq-blocks}
+
+Use $k$ for a factor, $j$ for a feature within modality $m$, and $a=(m,j)$
+for a flattened feature index. Gene and CpG identifiers occupy distinct
+namespaces. No gene-to-CpG pairing is required.
+
+The Gaussian observation model is
+$$
+y_{mij}\mid L,F_m,\tau_{mj}
+\ \overset{\mathrm{ind}}{\sim}\
+\Normal\left(\sum_{k=1}^K l_{ik}f_{mjk},\tau_{mj}^{-1}\right).
+$$ {#eq-observation}
+
+Conditional residual independence across features and modalities is an
+assumption, not an assertion that CpGs are marginally independent.
+Shared factors induce marginal dependence. Residual dependence left after
+factorization is a potential source of overconfidence at large $p_m$.
+Residual precisions vary across features within each modality. A single
+modality-wide precision is not introduced.
+
+For derivation of the linear YFB case, define **fixed** projection
+coefficients $c_m$ and the columns
+$$
+x_{mj}=c_mY_m[:,j],\qquad
+X=[c_1Y_1\ \cdots\ c_MY_M],\qquad
+z_k=Xf_k,\qquad \eta=\sum_k\beta_k z_k.
+$$ {#eq-projection}
+
+The unweighted stacked projection has $c_m=1$ and
+$Z=YF=\sum_mY_mF_m$. Coefficients $c_m$ change prediction, whereas the
+likelihood weights introduced later change estimation of the reconstruction.
+They are separate choices. In the core derivation they are fixed constants,
+not parameters silently re-estimated at each iteration.
+
+## Score and loading priors
+
+Use conditionally independent entries with column-specific distributions:
+$$
+l_{ik}\sim g_{L_k},\qquad
+f_{mjk}\sim g_{F_{mk}},\qquad
+\beta_k\sim g_{\beta_k}.
+$$ {#eq-priors}
+
+The starting score and loading families are
+$$
+\begin{aligned}
+g_{L_k}&=(1-\pi_{Lk})\delta_0+
+          \pi_{Lk}\operatorname{Exp}(r_{Lk}),\\
+g_{F_{mk}}&=(1-\pi_{Fmk})\delta_0+
+          \pi_{Fmk}\operatorname{Exp}(r_{Fmk}).
+\end{aligned}
+$$ {#eq-pe-prior}
+
+Here $\pi$ is the **probability of the nonzero component**, $r>0$ is an
+exponential rate, and $\delta_0$ is a unit point mass at zero. The package
+scale parameter is $1/r$, not $r$. The prior mode remains fixed at zero.
+There are $2K$ score-prior hyperparameters and $2MK$ loading-prior
+hyperparameters before considering boundary cases. No additional
+hyperpriors are imposed: these are empirical-Bayes estimates.
+
+The minimal signed comparison replaces $g_{F_{mk}}$ by
+$$
+g_{F_{mk}}=(1-\pi_{Fmk})\delta_0+
+             \pi_{Fmk}\Normal(0,s_{Fmk}^2).
+$$ {#eq-pn-prior}
+
+It can be applied to both modalities or to a prespecified subset.
+The score family can remain point-exponential for that comparison. A
+fully signed alternative also replaces $g_{L_k}$ by point-normal; this
+is a separate modeling choice, particularly relevant for centered data.
+The updates below support either family.
+
+The coefficient baseline retains the implemented zero-centered Normal
+family:
+$$
+\beta_k\sim\Normal(0,s_{\beta k}^2).
+$$ {#eq-beta-prior}
+
+Each variance is fitted empirically. With only one coefficient per factor,
+this is a weakly informed, boundary-prone empirical-Bayes problem; it is
+not pooling across $K$ coefficients. A common variance or spike-and-slab
+coefficient family would be an additional choice, not a hidden default.
+The document gives the Normal and spike-and-slab algebra so that such a
+comparison is possible.
+
+## What shared means
+
+Sharing means the same $l_{ik}$ participates in every modality's
+reconstruction. It does not require $\pi_{Fmk}>0$ or a nonzero posterior
+column in every modality. A zero block in methylation leaves an
+expression-only factor within the common $K$-column space.
+Separate priors do not introduce different subject scores for each modality,
+and no cross-modality prior ties $f_{1jk}$ to a particular CpG loading.
+
+# From joint likelihood to the variational objective
+
+## Observation and survival likelihoods
+
+The complete Gaussian observation log-likelihood is
+$$
+\ell_m=
+-\frac{np_m}{2}\log(2\pi)
++\frac n2\sum_j\log\tau_{mj}
+-\frac12\sum_{i,j}\tau_{mj}
+ \left(y_{mij}-\sum_kl_{ik}f_{mjk}\right)^2.
+$$ {#eq-omics-likelihood}
+
+Under proportional hazards, $h_i(t)=h_0(t)\exp(\eta_i)$.
+Conditional on independent, noninformative censoring, the event-time
+likelihood contribution, omitting censoring factors, is
+$$
+\mathcal L_T(h_0,\eta)=
+\prod_i \{h_0(t_i)e^{\eta_i}\}^{\delta_i}
+          \exp\{-H_0(t_i)e^{\eta_i}\}.
+$$ {#eq-full-survival}
+
+Consequently, a full joint likelihood with a specified baseline is
+$\{\prod_m p(Y_m\mid L,F_m,\tau_m)\}\mathcal L_T(h_0,\eta)$.
+Multiplying by the priors gives the corresponding posterior kernel.
+This factorization is coherent even though $Y$ also enters $\eta$:
+it specifies $p(Y\mid L,F,\tau)p(T\mid Y,F,\beta,h_0)$.
+
+The existing method eliminates the baseline hazard from coefficient
+estimation using the Cox partial likelihood. At distinct event time $u_r$,
+write $\mathcal D_r=\{i:t_i=u_r,\delta_i=1\}$,
+$d_r=|\mathcal D_r|$, and $\mathcal R_r=\{i:t_i\geq u_r\}$.
+With the Breslow convention for ties,
+$$
+\ell_{\rm Cox}(\eta)
+=\sum_r\left\{\sum_{i\in\mathcal D_r}\eta_i
+       -d_r\log\sum_{i\in\mathcal R_r}e^{\eta_i}\right\}.
+$$ {#eq-cox-pl}
+
+This is the adopted survival estimation factor. It is not a normalized
+joint density of event times. For untied events its conditional risk-set
+interpretation motivates partial-likelihood inference; Breslow specifies
+the tie approximation. Absolute survival probabilities would additionally
+need an estimated baseline, for example
+$\Delta\widehat H_0(u_r)=d_r/\sum_{i\in\mathcal R_r}e^{\widehat\eta_i}$.
+The present target is relative risk, not absolute survival calibration.
+
+## Ordinary and weighted estimation targets
+
+Let $a_m>0$ be an omics-likelihood weight and $b\geq0$ a survival weight.
+The generalized posterior kernel is
+$$
+\widetilde p(L,F,\beta\mid Y,t,\delta;\tau,g)
+\ \propto\
+\exp\left\{\sum_m a_m\ell_m+b\ell_{\rm Cox}(\eta)\right\}
+\prod_{i,k}g_{L_k}(l_{ik})
+\prod_{m,j,k}g_{F_{mk}}(f_{mjk})
+\prod_k g_{\beta_k}(\beta_k).
+$$ {#eq-kernel}
+
+The ordinary observation-likelihood reference is $a_m=1$, $b=1$.
+Even there the survival factor is a partial likelihood. Nonunit weights
+define a power-likelihood or generalized-Bayes target, not the original
+sampling likelihood. Weights are prespecified or tuned inside training;
+there is no weight update in this document. Setting $b=0$ removes survival
+from the *entire joint target*, including $\beta$; it does not reproduce
+the no-feedback baseline, which still fits $\beta$.
+
+Use the mean-field family
+$$
+q(L,F,\beta)=
+\prod_{i,k}q(l_{ik})
+\prod_{m,j,k}q(f_{mjk})
+\prod_kq(\beta_k).
+$$ {#eq-meanfield}
+
+Define means $\bar l,\bar f,\bar\beta$, second moments
+$l^{(2)},f^{(2)},\beta^{(2)}$, and variances
+$v_l=l^{(2)}-\bar l^2$, $v_f=f^{(2)}-\bar f^2$,
+$v_\beta=\beta^{(2)}-\bar\beta^2$. The second moments are not squared means.
+The exact variational functional for the kernel is
+$$
+\begin{aligned}
+\mathcal J(q,\tau,g)
+={}&\sum_m a_m\E_q\ell_m+b\E_q\ell_{\rm Cox}(\eta)\\
+&-\sum_{i,k}\KL(q(l_{ik})\Vert g_{L_k})\\
+&-\sum_{m,j,k}\KL(q(f_{mjk})\Vert g_{F_{mk}})
+ -\sum_k\KL(q(\beta_k)\Vert g_{\beta_k}).
+\end{aligned}
+$$ {#eq-objective}
+
+For fixed hyperparameters it bounds the log normalizing constant of the
+kernel. It is not automatically a bound on a full event-time marginal
+likelihood. Empirical Bayes optimizes this functional over $g$ and $\tau$
+as well as $q$. Mixed discrete/continuous priors require KL with respect
+to the appropriate mixed measure; a Gaussian differential entropy alone
+would omit the point mass.
+
+The expectation of the Cox log-sum-exp has no general closed form.
+The following updates optimize a stated quadratic surrogate. Keeping
+that approximation visible is essential.
+
+# Cox expansion and projection uncertainty {#sec-cox}
+
+## Exact derivatives and the implemented working curvature
+
+At an expansion point $\eta_0$, define the $n$-vector of risk-set
+probabilities $P_r$ by
+$$
+(P_r)_i=
+\frac{1\{i\in\mathcal R_r\}e^{\eta_{0i}}}
+     {\sum_{h\in\mathcal R_r}e^{\eta_{0h}}}.
+$$
+
+Differentiating @eq-cox-pl gives
+$$
+u=\delta-\sum_r d_r P_r,\qquad
+H=-\nabla^2\ell_{\rm Cox}(\eta_0)
+ =\sum_r d_r\{\diag(P_r)-P_rP_r^\top\}.
+$$ {#eq-cox-derivatives}
+
+$H$ is positive semidefinite and generally dense. Its rows sum to zero,
+reflecting invariance to a common shift in $\eta$. Its diagonal is
+$\sum_r d_r(P_r)_i\{1-(P_r)_i\}$.
+
+The current helper instead uses, before its numerical floor,
+$$
+W_{\rm work}=\diag\left(\sum_r d_r P_r\right).
+$$ {#eq-working-curvature}
+
+This omits the negative outer-product terms, including their diagonals.
+At $\eta_0$, $W_{\rm work}-H=\sum_r d_rP_rP_r^\top$ is positive
+semidefinite. This local relation does **not** establish a global
+quadratic lower bound at all $\eta$. The implemented floor is $10^{-6}$
+on each working weight; it is a numerical alteration, not part of the
+exact Hessian.
+
+## A common notation for the quadratic surrogate
+
+For either $W=H$ or a stated working approximation, write
+$$
+Q(\eta;\eta_0,W)
+=\ell_{\rm Cox}(\eta_0)
++u^\top(\eta-\eta_0)
+-\tfrac12(\eta-\eta_0)^\top W(\eta-\eta_0).
+$$ {#eq-quadratic}
+
+Define
+$$
+t^\star=u+W\eta_0,\qquad
+C_0=\ell_{\rm Cox}(\eta_0)-u^\top\eta_0
+                    -\tfrac12\eta_0^\top W\eta_0.
+$$
+Then $Q=C_0+(t^\star)^\top\eta-\eta^\top W\eta/2$.
+For diagonal positive $W$, the familiar working response is
+$z^\star=\eta_0+W^{-1}u$, so $t^\star=Wz^\star$.
+The $t^\star$ form also works with the singular full Hessian and avoids
+an unnecessary matrix inverse.
+
+Replace $\E\ell_{\rm Cox}$ in @eq-objective by $\E Q$ to obtain
+$\mathcal J_Q$. The expansion point, $u$, and $W$ are held fixed during
+an inner coordinate-ascent cycle. In particular, the linear coefficient
+is $u+W\eta_0$, not just $u$.
+
+## Moments of projected scores and the risk predictor
+
+Let $\bar z_k=X\bar f_k$ and let $v_{f,ak}$ be the loading variance.
+Mean-field independence of distinct loadings gives
+$$
+V_{z_k}=\Cov(z_k)=\sum_a v_{f,ak}x_ax_a^\top,\qquad
+\E[z_kz_k^\top]=\bar z_k\bar z_k^\top+V_{z_k}.
+$$ {#eq-score-moments}
+
+Although individual loading posteriors are independent, different
+subjects' projections are correlated: the same uncertain loadings are
+used for every subject. Distinct factor columns are independent under
+the chosen variational family. Thus
+$$
+\begin{aligned}
+\mu_\eta&=\sum_k\bar\beta_k\bar z_k,\\
+V_\eta&=\sum_k\left\{
+  \beta_k^{(2)}V_{z_k}
+  +v_{\beta,k}\bar z_k\bar z_k^\top\right\},\\
+\E Q&=C_0+(t^\star)^\top\mu_\eta
+-\tfrac12\mu_\eta^\top W\mu_\eta-\tfrac12\tr(WV_\eta).
+\end{aligned}
+$$ {#eq-risk-moments}
+
+At $\eta_0=\mu_\eta$, the last expression simplifies to
+$\ell_{\rm Cox}(\mu_\eta)-\tr(WV_\eta)/2$.
+After inner updates move $\mu_\eta$, the unsimplified expression must be
+used until the expansion is refreshed. Mixing an old log partial
+likelihood with updated means and dropping the linear correction
+evaluates a different quantity.
+
+For diagonal $W$, only $\Var(\eta_i)$ is needed, but the
+$\beta_k^{(2)}V_{z_k}$ term remains. Dropping it is precisely the
+fixed-projection approximation.
+
+# Coordinate updates from the surrogate objective
+
+## The normal-means reduction
+
+For any scalar coordinate $\theta$ with prior $g$, suppose its expected
+log-likelihood contribution, holding other variational factors fixed, is
+$$
+-\tfrac12 A\theta^2+B\theta+\mathrm{constant},\qquad A>0.
+$$
+The variational functional for this coordinate is the expectation of
+this expression plus $\E_q\log g-\E_q\log q$. Taking its functional
+derivative subject to $\int q=1$ yields
+$$
+\log q^\star(\theta)=\log g(\theta)-\tfrac12 A\theta^2+B\theta+C.
+$$
+Completing the square with $x=B/A$ and $s=A^{-1/2}$ gives
+$$
+q^\star(d\theta)=
+\frac{\Normal(x;\theta,s^2)g(d\theta)}
+     {\int\Normal(x;v,s^2)g(dv)}.
+$$ {#eq-normal-means}
+
+This establishes the EBNM interface; it is not a substitute for deriving
+$A$ and $B$ for each parameter. The symbol $B$ here is a linear
+coefficient in a quadratic, not the vector of survival coefficients.
+Throughout this document the user's survival $B$ is denoted $\beta$.
+
+## Shared subject scores $L$
+
+For factor $k$, define the reconstruction residual excluding that
+factor:
+$$
+\bar R_{mij}^{-k}
+=y_{mij}-\sum_{h\ne k}\bar l_{ih}\bar f_{mjh}.
+$$ {#eq-reconstruction-residual}
+
+Holding the other coordinates fixed, expand the observation term:
+$$
+\begin{aligned}
+&-\frac12\sum_{m,j}a_m\tau_{mj}
+  \E_{-l_{ik}}\left[(R_{mij}^{-k}-l_{ik}f_{mjk})^2\right]\\
+&\quad=-\frac12 l_{ik}^2
+  \sum_{m,j}a_m\tau_{mj}f_{mjk}^{(2)}
+ +l_{ik}\sum_{m,j}a_m\tau_{mj}
+                 \bar R_{mij}^{-k}\bar f_{mjk}+C.
+\end{aligned}
+$$
+
+The residual is independent of $f_{mjk}$ under mean field because it
+excludes factor $k$. Under YFB, $\eta$ contains $F$ and $Y$, not $L$,
+so there is no survival contribution to this coordinate. Therefore
+$$
+\begin{aligned}
+A_{L,ik}&=\sum_m a_m\sum_j\tau_{mj}f_{mjk}^{(2)},\\
+B_{L,ik}&=\sum_m a_m\sum_j\tau_{mj}
+                \bar R_{mij}^{-k}\bar f_{mjk}.
+\end{aligned}
+$$ {#eq-L-update}
+
+The precision is the same across subjects with complete modalities.
+Apply @eq-normal-means with $g_{L_k}$. An $n$-observation EBNM fit
+per factor estimates its shared score prior. Return
+$\bar l_{ik}=\E l_{ik}$ and $l_{ik}^{(2)}=\Var(l_{ik})+\bar l_{ik}^2$.
+Compared with current YFB, the only structural change is the sum over
+modalities, with explicit weights when used.
+
+## Survival coefficients $\beta$
+
+Define the mean contribution of all other factors to risk:
+$$
+\mu_{\eta,-k}=\sum_{h\ne k}\bar\beta_h\bar z_h,\qquad
+h_k=t^\star-W\mu_{\eta,-k}.
+$$ {#eq-survival-residual}
+
+Insert $\eta=\eta_{-k}+\beta_kz_k$ into the quadratic. Terms depending
+on $\beta_k$ are
+$$
+b\beta_k\bar z_k^\top h_k
+-\frac b2\beta_k^2\E[z_k^\top Wz_k].
+$$
+The cross term factors because $\eta_{-k}$ and $z_k$ involve different
+mean-field factor columns. By @eq-score-moments,
+$$
+\E[z_k^\top Wz_k]
+=\bar z_k^\top W\bar z_k+\tr(WV_{z_k}).
+$$
+Thus
+$$
+\begin{aligned}
+A_{\beta,k}
+ &=b\left\{\bar z_k^\top W\bar z_k
+                      +\sum_a v_{f,ak}x_a^\top Wx_a\right\},\\
+B_{\beta,k}&=b\bar z_k^\top h_k.
+\end{aligned}
+$$ {#eq-beta-update}
+
+With a Normal prior variance $s_{\beta k}^2$, completing the square
+including its precision gives
+$$
+v_{\beta,k}=(A_{\beta,k}+s_{\beta k}^{-2})^{-1},\quad
+\bar\beta_k=v_{\beta,k}B_{\beta,k},\quad
+\beta_k^{(2)}=v_{\beta,k}+\bar\beta_k^2.
+$$ {#eq-beta-normal}
+
+For a spike-and-slab alternative, use the posterior formula in
+Section @sec-prior-fitting. The extra trace term in @eq-beta-update
+is the loading-uncertainty correction missing from a fixed-projection
+fit. For diagonal $W$ and $v_f=0$, these equations reduce to the
+implemented beta-update algebra with $b=\mathrm{alpha}/\mathrm{beta\_divisor}$.
+
+## Modality-specific loadings $F_m$
+
+### Reconstruction contribution
+
+For $a=(m,j)$ and factor $k$, expand
+$$
+\begin{aligned}
+&-\frac{a_m\tau_{mj}}2
+   \sum_i\E_{-f_{mjk}}(R_{mij}^{-k}-l_{ik}f_{mjk})^2\\
+&\quad=-\frac12 A_{F,{\rm om},ak} f_{mjk}^2
+       +B_{F,{\rm om},ak} f_{mjk}+C,
+\end{aligned}
+$$
+where
+$$
+A_{F,{\rm om},ak}=a_m\tau_{mj}\sum_i l_{ik}^{(2)},\qquad
+B_{F,{\rm om},ak}=a_m\tau_{mj}
+                    \sum_i\bar l_{ik}\bar R_{mij}^{-k}.
+$$ {#eq-F-omics}
+
+Only this feature's modality appears in its reconstruction likelihood.
+Its shared score column carries the information integrated from the
+other modalities.
+
+### Survival contribution, including same-factor features
+
+Write
+$$
+z_k=x_a f_{ak}+z_{k,-a},\qquad
+\bar z_{k,-a}=\bar z_k-x_a\bar f_{ak}.
+$$
+The factor-$k$ part of the expected survival quadratic is
+$$
+b\bar\beta_k\,\E[z_k]^\top h_k
+-\frac b2\beta_k^{(2)}\E[z_k^\top Wz_k]+C.
+$$
+Expanding the second term while keeping the scalar $f_{ak}$ free gives
+$$
+\E_{-f_{ak}}[z_k^\top Wz_k]
+= f_{ak}^2x_a^\top Wx_a
+ +2f_{ak}x_a^\top W\bar z_{k,-a}+C.
+$$
+Consequently,
+$$
+\begin{aligned}
+A_{F,{\rm surv},ak}&=b\beta_k^{(2)}x_a^\top Wx_a,\\
+B_{F,{\rm surv},ak}
+ &=b\left\{\bar\beta_k x_a^\top h_k
+          -\beta_k^{(2)}x_a^\top W\bar z_{k,-a}\right\}.
+\end{aligned}
+$$ {#eq-F-survival}
+
+The second term in $B_{F,{\rm surv},ak}$ subtracts the contribution of
+**all other features in the same factor**, including the other
+modality. It has $\beta_k^{(2)}$, not $\bar\beta_k^2$, because the same
+random coefficient multiplies both contributions. Removing factor $k$
+from the working response is not enough to remove these interactions.
+Even a diagonal $W$ does not make $X^\top WX$ diagonal.
+
+Combine the two sources:
+$$
+A_{F,ak}=A_{F,{\rm om},ak}+A_{F,{\rm surv},ak},\qquad
+B_{F,ak}=B_{F,{\rm om},ak}+B_{F,{\rm surv},ak}.
+$$ {#eq-F-update}
+
+Apply @eq-normal-means with the prior $g_{F_{mk}}$ belonging to this
+modality and factor. The priors remain separate even though the
+survival contributions couple their posterior updates.
+
+### Consequence for implementation
+
+In omics-only factorization, the feature updates within a factor are
+conditionally separable, so one vectorized EBNM call can update a whole
+loading block and estimate its prior. In joint YFB, $B_{F,ak}$ depends
+on the current means of the other features. A simultaneous update using
+stale values is a parallel fixed-point step, not an exact block
+coordinate maximization.
+
+A direct derivation-faithful algorithm therefore performs scalar
+Gauss-Seidel posterior updates with the current modality prior fixed,
+maintains $\bar z_k$ incrementally, and updates the prior parameters
+using all features in that modality after a sweep. This is a
+variational-EM procedure, not one independently re-fitted prior per
+feature. A faster block or proximal method may later be designed, but
+its objective and convergence behavior must be checked separately.
+
+## Residual precisions $\tau_{mj}$
+
+Independence of factor columns gives the variance-corrected residual
+moment
+$$
+S_{mij}=
+\left(y_{mij}-\sum_k\bar l_{ik}\bar f_{mjk}\right)^2
++\sum_k\left\{l_{ik}^{(2)}f_{mjk}^{(2)}
+                         -\bar l_{ik}^2\bar f_{mjk}^2\right\}.
+$$ {#eq-residual-moment}
+
+To obtain it, expand the squared sum of factor products. Cross-factor
+expectations equal products of means; the difference between the second
+moment and the squared mean survives only within each factor. This
+explains both the plus sign and the necessity of second moments.
+
+The terms involving $\tau_{mj}$ are
+$$
+\frac{a_m n}{2}\log\tau_{mj}
+-\frac{a_m\tau_{mj}}{2}\sum_i S_{mij}.
+$$
+Differentiate and set the result to zero:
+$$
+\frac{a_m n}{2\tau_{mj}}-\frac{a_m}{2}\sum_iS_{mij}=0
+\quad\Longrightarrow\quad
+\widehat\tau_{mj}=\frac n{\sum_iS_{mij}}.
+$$ {#eq-tau-update}
+
+The second derivative is negative for $a_m>0$. A constant modality
+weight cancels from this point-estimation update; it does not cancel
+from the score and loading posterior precisions. If a modality is
+assigned weight zero, its residual precisions are not identified by
+this objective. Positive weights are assumed throughout.
+
+The existing denominator floor gives
+$\tau_{mj}\leq1/\mathrm{tau\_floor}$ and should be described as a
+constrained estimate. The multimodal method can reuse the algebra
+blockwise without allocating all $S_m$ simultaneously. No
+Gamma-prior, shape/rate update, or $q(\tau)$ is implied.
+
+# Prior estimation and posterior moments {#sec-prior-fitting}
+
+## Generic empirical-Bayes step
+
+For a conditionally separable block with pseudo-data $(x_d,s_d)$,
+optimizing its posterior factors and common prior jointly gives
+$$
+\widehat g=
+\arg\max_{g\in\mathcal G}
+\sum_d\log\left\{\int\Normal(x_d;\theta,s_d^2)g(d\theta)\right\}.
+$$ {#eq-ebnm-marginal}
+
+This follows by substituting the normalized posterior
+@eq-normal-means into the block variational objective: the
+posterior-versus-prior and pseudo-likelihood terms reduce to the log
+normalizing integral. Apply this to $n$ subjects for $g_{L_k}$,
+to $p_m$ features for $g_{F_{mk}}$ in the no-feedback case,
+and to the scalar coefficient for $g_{\beta_k}$.
+
+In coupled joint loading updates, the pseudo-data change when other
+features change. Maximizing a product of marginal densities computed
+from stale pseudo-data is not an exact joint loading-block update.
+Instead alternate fixed-prior coordinate posteriors with the
+fixed-posterior hyperparameter step
+$$
+\widehat g=\arg\max_g\sum_d\E_{q_d}\log g(\theta_d).
+$$ {#eq-hyper-em}
+
+The closed-form steps below implement this variational-EM option.
+They also make every proposed hyperparameter estimable.
+
+## Point-normal family
+
+For prior $(1-\pi)\delta_0+\pi\Normal(0,s_0^2)$ and pseudo-likelihood
+$x\mid\theta\sim\Normal(\theta,s^2)$, define
+$$
+d_0=\Normal(x;0,s^2),\quad
+d_1=\Normal(x;0,s^2+s_0^2),\quad
+r=\frac{\pi d_1}{(1-\pi)d_0+\pi d_1}.
+$$
+Conditional on being in the slab, completing the Gaussian square gives
+$$
+v=(s^{-2}+s_0^{-2})^{-1},\qquad \mu=vx/s^2.
+$$
+The posterior moments are
+$$
+\E\theta=r\mu,\qquad
+\E\theta^2=r(v+\mu^2).
+$$ {#eq-pn-moments}
+
+Introduce a slab indicator $\gamma_d$. The expected complete-prior
+log density for $N$ coordinates is, up to constants,
+$$
+\sum_d\{r_d\log\pi+(1-r_d)\log(1-\pi)\}
+-\frac12\sum_d r_d\log s_0^2
+-\frac{1}{2s_0^2}\sum_d\E\theta_d^2.
+$$
+Differentiating with respect to $\pi$ and $s_0^2$ yields
+$$
+\pi_{\rm new}=\frac1N\sum_d r_d,\qquad
+s_{0,\rm new}^2=\frac{\sum_d\E\theta_d^2}{\sum_dr_d}.
+$$ {#eq-pn-hyper}
+
+The numerator is the unconditional second moment because the spike
+contributes zero. These equations apply separately to each selected
+modality-factor prior; no sum over the other modality appears.
+
+## Point-exponential family
+
+Use $(1-\pi)\delta_0+\pi r_0e^{-r_0\theta}1\{\theta\geq0\}$.
+Multiplying the slab density by the normal pseudo-likelihood and
+completing the square yields a Normal distribution truncated below at
+zero with underlying mean
+$\mu=x-r_0s^2$ and variance $s^2$.
+Writing $h=\mu/s$ and $\lambda(h)=\phi(h)/\Phi(h)$,
+$$
+\begin{aligned}
+d_1&=r_0\exp(-r_0x+r_0^2s^2/2)\Phi(h),\\
+r&=\frac{\pi d_1}{(1-\pi)\Normal(x;0,s^2)+\pi d_1},\\
+M_1&=\mu+s\lambda(h),\\
+M_2&=\mu^2+s^2+\mu s\lambda(h),\\
+\E\theta&=rM_1,\qquad \E\theta^2=rM_2.
+\end{aligned}
+$$ {#eq-pe-moments}
+
+The slab integral $d_1$ follows by integrating the completed Normal
+kernel from zero to infinity. The moment formulas follow from the
+first two moments of that truncated Normal. Log-scale evaluation of
+$d_1$, $\Phi$, and the inverse Mills ratio is needed in extreme tails;
+the displayed expressions specify the mathematics, not a recommendation
+to evaluate unstable exponentials directly.
+
+The complete-prior expected log density contains
+$$
+\sum_d\{r_d\log\pi+(1-r_d)\log(1-\pi)\}
+ +\left(\sum_dr_d\right)\log r_0-r_0\sum_d\E\theta_d.
+$$
+Setting its derivatives to zero gives
+$$
+\pi_{\rm new}=N^{-1}\sum_dr_d,\qquad
+r_{0,\rm new}=\frac{\sum_dr_d}{\sum_d\E\theta_d}.
+$$ {#eq-pe-hyper}
+
+The score prior uses $N=n$; the loading prior uses $N=p_m$. This is
+where modality-specific sparsity and amplitude are learned separately.
+
+## Normal coefficient family and boundary cases
+
+For a zero-centered Normal prior shared by a block of $N$ coefficients,
+@eq-hyper-em gives $s_{\beta,\rm new}^2=N^{-1}\sum_d\E\beta_d^2$.
+The implemented factor-specific baseline has $N=1$.
+If optimizing the scalar normal-means marginal likelihood jointly
+instead, differentiation of
+$-\log(s^2+s_\beta^2)/2-x^2/\{2(s^2+s_\beta^2)\}$ gives
+$$
+\widehat s_\beta^2=\max(0,x^2-s^2).
+$$
+The direct marginal maximizer and one EM step are different operations;
+repeated EM steps target the same stationary problem in this separable case.
+
+If $\sum r_d=0$, the fitted prior is the point mass at zero and the
+slab scale is unidentifiable. Do not divide zero by zero or report a
+meaningful slab estimate. If $A=0$ and $B=0$, the likelihood supplies no
+information and the fixed-prior posterior equals the prior. A precision
+floor used for software compatibility is not evidence of information.
+If all fitted factors vanish or the cohort has no events, the algorithm
+must report that state rather than claim a prognostic model.
+Boundary priors can be absorbing under EM, so initial priors should
+start inside their admissible parameter space and multiple starts
+should be considered after approval.
+
+## Computing KL contributions correctly
+
+For a posterior obtained from @eq-normal-means at fixed $g$,
+let $m(x)=\int\Normal(x;\theta,s^2)g(d\theta)$. Then
+$$
+-\KL(q\Vert g)
+=\log m(x)-\E_q\log\Normal(x;\theta,s^2),
+$$
+where
+$$
+\E_q\log\Normal(x;\theta,s^2)
+=-\tfrac12\log(2\pi s^2)
+-\frac{x^2-2x\E\theta+\E\theta^2}{2s^2}.
+$$ {#eq-kl}
+
+This is the identity used by compute_ebnm_kl. The sum over loading
+blocks must retain every modality's term. After a hyperparameter update
+changes $g$ while holding $q$ fixed, an old EBNM normalizing constant
+cannot be used unchanged. Evaluate the mixed-distribution KL directly,
+or add $\E_q\log(g_{\rm new}/g_{\rm old})$ to the stored negative KL.
+Likewise, never recompute pseudo-data and combine their likelihood
+normalizer with posterior moments from a different update.
+
+# Dimensional imbalance: what separate priors can and cannot do
+
+## Ordinary likelihood first
+
+With $a_m=1$, a modality contributes more independent observations when
+it has more features. Its contribution to score precision is
+$$
+A_{L,k}^{(m)}=\sum_{j=1}^{p_m}\tau_{mj}f_{mjk}^{(2)}.
+$$
+If those expected precision-weighted second moments have comparable
+means across modalities, $A_{L,k}^{(m)}$ grows with $p_m$. This is a
+likelihood property, not a consequence of mistakenly sharing the priors.
+Separate $g_{F_{mk}}$ can learn different sparsity and amplitude, and
+feature-wise $\tau_{mj}$ can reflect different residual variances.
+Neither guarantees cancellation of the feature-count effect.
+
+Consider a representative loading prior with nonzero probability $\pi_m$.
+Its second moment is $\pi_m s_m^2$ for point-normal and $2\pi_m/r_m^2$
+for point-exponential. At comparable residual precision, a rough prior
+scale for a modality's contribution is therefore proportional to
+$p_m\pi_m s_m^2$ or $2p_m\pi_m/r_m^2$. This is an explanatory scale
+calculation, not the posterior update. Balancing those quantities would
+require an explicit constraint or hyperprior; independent EB fitting
+does not impose one.
+
+## Explicit likelihood-weight alternatives
+
+Three choices illustrate the distinction:
+
+| Formulation | Omics weights | Interpretation |
+|:--|:--|:--|
+| Ordinary reference | $a_m=1$ | Every measured feature contributes its ordinary likelihood |
+| Per-feature average | $a_m=1/p_m$ | Each modality contributes its mean feature log-likelihood |
+| Equal effective counts | $a_m=p_{\rm ref}/p_m$ | Equal feature-count scale with an explicit reference count |
+
+The latter two have the same *relative* modality weights but different
+absolute evidence strength relative to priors, entropy, and the survival
+term. The reference $p_{\rm ref}$ is an additional declared constant;
+it must not be chosen implicitly.
+
+More generally one can write $a_m=\rho_m/p_m$ with fixed positive
+$\rho_m$. If the earlier alpha convention is desired, explicitly define
+$a_m=(1-\alpha)\rho_m/p_m$ and $b=\alpha/s_T$ with a declared survival
+scale $s_T$. This changes every relevant update, not only the reported
+objective. The ordinary reference is easier to express directly by
+$a_m=b=1$; it is not equivalent to alpha = 0.5 when prior/entropy terms
+are left unchanged.
+
+In the pure-reconstruction loading update, $a_m$ cancels from $x=B/A$
+but changes $s=A^{-1/2}$. Consequently it changes shrinkage and the
+fitted prior. In $L$, relative modality weights change both $x$ and $s$.
+In joint $F$, cancellation generally fails because survival contributes
+additional terms. In $\tau$, the weight cancels as shown above.
+
+The loading prior/entropy contribution still contains $p_m$ terms.
+Weighting the observation likelihood alone is therefore not a theorem
+of equal posterior modality influence. If one also weights loading KL
+terms, the coordinate posterior and hyperparameter objective change
+again; that is a different functional and is not adopted here.
+Multiplying the **entire** objective by a common positive constant
+leaves its maximizer unchanged. Multiplying only likelihood terms does
+not.
+
+## Informative, null, duplicate, and rescaled features
+
+**Additional informative features.** Under conditional independence they
+can improve estimation of shared scores. Removing all benefit of extra
+informative measurements is not necessarily desirable. Evaluate whether
+the larger block contributes independent signal or redundant evidence.
+
+**Additional null features.** An adaptive loading prior can shrink their
+means, but posterior second moments can remain positive. Their aggregate
+precision contribution and the fitted noise levels should be inspected.
+A large CpG block must not be assumed harmless merely because most
+posterior means are small.
+
+**Duplicated features.** If one modality's features and loading moments
+are repeated $r$ times, its unweighted score precision and signal
+multiply by $r$. With weights divided by $r$, these particular sums are
+unchanged. The full fit need not be invariant: there are now more prior
+terms and correlated residuals, and YFB projection contributions also
+duplicate unless separately adjusted. This is a useful diagnostic of
+pseudoreplication, not an exact invariance requirement for the entire
+weighted model.
+
+**Measurement rescaling.** Under $Y_m'=d_mY_m$,
+$F_m'=d_mF_m$, and $\tau_m'=\tau_m/d_m^2$, the Gaussian model transforms
+consistently, with the usual data-density Jacobian. Raw YFB projections
+instead satisfy $Y_m'F_m'=d_m^2Y_mF_m$. Thus noise adjustment alone does
+not make YFB prediction scale-invariant. Modality preprocessing and
+projection normalization need their own specification.
+
+The initial scientific comparison should keep the ordinary likelihood,
+fit separate priors, and examine these contributions. Weighted targets
+are explicit alternatives if the resulting domination reflects unwanted
+feature-count or redundancy effects. The comparison must use training
+data; the independent cohort cannot decide the weights.
+
+# Projection normalization, support, and identifiability
+
+## Three projection definitions
+
+For a point estimate of the loading columns, compare
+$$
+\begin{aligned}
+\text{raw:}\quad z_k
+ &=\sum_m c_mY_m f_{mk},\\
+\text{global norm:}\quad z_k
+ &=\frac{\sum_mY_m f_{mk}}
+           {\sqrt{\sum_m\|f_{mk}\|^2}},\\
+\text{per-modality norm:}\quad z_k
+ &=\sum_m c_mY_m\frac{f_{mk}}{\|f_{mk}\|}.
+\end{aligned}
+$$ {#eq-normalization-comparison}
+
+The first is the linear model derived in full above. The second matches
+the structure of current YFB prediction, apart from its numerical
+epsilon. The third gives each modality its own unit-norm loading
+direction; it is an alternative for review, not a guaranteed balance of
+projected variance. Correlation and variance within $Y_m$ still matter.
+It can also amplify a very weak nonzero loading block, making the
+zero-block convention particularly consequential.
+
+Current YFB normalizes the **posterior mean** loading, not every draw of
+$F$. In general,
+$\E[F/\|F\|]\ne\E[F]/\|\E[F]\|$. Treating a normalized mean projection as
+fixed during $\beta$ fitting is a plug-in approximation. It must not be
+substituted for a stochastic normalized projection in a joint posterior
+without stating that change.
+
+## Derivatives for a normalized loading direction
+
+For one column write $r=(f^\top f+\epsilon)^{1/2}$ and
+$z=Xf/r$. The current epsilon is a numerical regularizer; with
+$\epsilon>0$ it changes exact scale invariance. For coordinate $f_a$,
+$$
+\begin{aligned}
+\frac{\partial z}{\partial f_a}
+ &=\frac{x_a}{r}-\frac{(Xf)f_a}{r^3},\\
+\frac{\partial^2z}{\partial f_a^2}
+ &=-\frac{2x_af_a}{r^3}-\frac{Xf}{r^3}
+                         +\frac{3(Xf)f_a^2}{r^5}.
+\end{aligned}
+$$ {#eq-normalized-derivatives}
+
+These follow from $\partial r/\partial f_a=f_a/r$ and the product rule.
+For per-modality normalization the same equations apply within each
+block, multiplied by $c_m$; for global normalization the norm uses all
+modalities, so even its denominator couples the blocks.
+
+For a point coefficient $\beta_k$, the survival gradient for $f_a$ is
+$(\partial\eta/\partial f_a)^\top u$. Its second derivative is
+$$
+-\left(\frac{\partial\eta}{\partial f_a}\right)^\top
+ H\left(\frac{\partial\eta}{\partial f_a}\right)
++u^\top\frac{\partial^2\eta}{\partial f_a^2}.
+$$
+The second term is absent from a linear projection. It can change
+concavity. Replacing $x_a$ by $x_a/r$ in the raw update and ignoring
+the derivatives of $r$ does not derive the normalized model.
+
+## Estimation implications for normalized alternatives
+
+For a stochastic normalized predictor, the exact coordinate equation is
+$$
+q^\star(f_a)\ \propto\
+g(f_a)\exp\left\{-\tfrac12A_{\rm om}f_a^2+B_{\rm om}f_a
+ +b\,\E_{-f_a}\ell_{\rm Cox}(\eta(f_a,F_{-a},\beta))\right\}.
+$$ {#eq-normalized-coordinate}
+
+The Cox term can instead be replaced by $Q$ for a stated surrogate, but
+its composition with the normalization remains nonquadratic.
+$L$ and $\tau$ retain their reconstruction updates. For $\beta$ under
+a quadratic Cox surrogate, @eq-beta-update still holds with
+$\bar z_k=\E z_k$ and $V_{z_k}=\Cov(z_k)$ computed for the chosen nonlinear
+map; @eq-score-moments is no longer valid. Prior hyperparameter EM steps
+retain their form once coordinate responsibilities and moments are known.
+
+A numerical implementation of this alternative would integrate the
+continuous slab and point mass separately for each coordinate, normalize
+their masses, and integrate their first two moments. Inner expectations
+over other coordinates require quadrature in tiny checks and controlled
+Monte Carlo at realistic dimensions. Numerical integration error and
+Monte Carlo error must be reported. This is substantially more expensive
+than the linear surrogate algorithm and is not a drop-in EBNM call.
+A local linearization is a possible cheaper approximation, but requires
+the Jacobian in @eq-normalized-derivatives and its own objective checks.
+
+With $\epsilon=0$, a spike-and-slab prior gives positive probability to
+an all-zero loading block, where the normalized map is undefined.
+One must specify its projection as zero at that atom; this yields a
+discontinuity near zero. Alternatively $\epsilon>0$ gives a smooth map
+everywhere with an explicitly scale-dependent regularization. These
+alternatives are shown for advisor choice, not resolved by silently
+inserting a floor.
+
+## Nonnegative support and expression--methylation association
+
+Nonnegative score and loading priors imply a nonnegative reconstructed
+mean $LF_m^\top$. Gaussian noise can be negative, but this does not make
+that mean family capable of representing arbitrary centered positive
+and negative signal. Centered expression or methylation M-values and
+nonnegative priors must therefore be considered together.
+
+Within a single factor, nonnegative loadings in both modalities move
+in the same direction as its score. They cannot represent opposite
+directions for that one factor. Multiple complementary factors may
+produce inverse associations in a fitted dataset, but that is not the
+same model as a single signed shared effect. With independent
+nonnegative score priors, the prior marginal cross-feature covariance
+from shared factors is nonnegative.
+
+Methylation associations depend on genomic context. A primary study
+reported negative effects enriched near transcription start sites and
+positive effects enriched in gene bodies
+([Nature Communications, 2022](https://www.nature.com/articles/s41467-022-35196-3)).
+The model should not assume a universal inverse association or reverse
+all CpGs.
+
+Three analysis-scale choices deserve review: retain nonnegative
+transformed measurements and acknowledge their baseline structure;
+use signed loading and possibly signed score priors for centered
+measurements; or extend the model with feature intercepts. Intercepts
+are **not** part of the core parameterization. If selected, define
+$y_{mij}=\mu_{mj}+\sum_kl_{ik}f_{mjk}+e_{mij}$ and, at fixed moments,
+differentiate the Gaussian residual sum of squares to obtain
+$$
+\widehat\mu_{mj}=\frac1n\sum_i
+ \left(y_{mij}-\sum_k\bar l_{ik}\bar f_{mjk}\right).
+$$
+The core updates then use $Y_m-\mu_m$. Score-location constraints and
+whether the survival projection also uses this centered matrix would
+need to be specified together. Adding this parameter is an advisor
+decision, not an undocumented preprocessing substitution.
+
+## Scale, sign, permutation, and factor number
+
+For linear YFB, the simultaneous transformation
+$$
+l_k'=d_kl_k,\quad f_{mk}'=f_{mk}/d_k,\quad
+\beta_k'=d_k\beta_k,\qquad d_k>0
+$$ {#eq-gauge}
+preserves reconstruction and $\eta$. If prior scales are learned,
+transform them too: $r_{Lk}'=r_{Lk}/d_k$,
+$r_{Fmk}'=d_kr_{Fmk}$, and
+$s_{\beta k}'=d_ks_{\beta k}$. The scale ambiguity is not resolved
+merely by independent scale-adaptive priors.
+
+A reporting convention for a nonzero factor can set
+$n^{-1}\sum_i l_{ik}^{(2)}=1$ using
+$d_k=(n^{-1}\sum_i l_{ik}^{(2)})^{-1/2}$. Transform second moments by
+$d_k^2$ for $L,\beta$ and by $d_k^{-2}$ for $F_m$, and transform the
+prior parameters consistently. This is a change of coordinates, not
+rescaling data. It must not be applied using these same beta rules to
+the normalized-projection model, where the invariances differ.
+
+Factor permutations always remain. Signed priors permit sign changes
+with corresponding coefficient/score transformations. General
+invertible rotations preserve $LF^\top$ but need not preserve
+independent sparse priors, mean-field distributions, or their objective.
+Do not enforce orthogonality post hoc and claim the posterior is unchanged.
+
+Report subspace recovery as well as matched-factor recovery. A
+factor-matching procedure must handle permutation and applicable scale
+and sign transformations. Keep separate summaries of omics activity,
+activity in each modality, and prognostic activity; a small beta is not
+the definition of an absent omics factor. The existing real-data
+$K_{\rm init}=7$ and activity thresholds are not validated multimodal
+defaults. Numerical $K$ choices remain for the later simulation design.
+
+# Algorithms and compatibility
+
+## A direct multimodal version of current no-feedback YFB
+
+The closest adaptation preserves the present learning direction:
+
+1. Fit shared $L$, separate $F_m$ priors, and feature-wise $\tau_m$ using
+   the omics objective. The ordinary baseline sets $a_m=1$.
+2. Form $\widehat Z$ from the stacked posterior mean loadings using the
+   current global column normalization.
+3. Fit $\beta$ on those fixed projections with the current Cox working
+   curvature and alpha scaling. This can be interleaved with omics
+   iterations for compatibility, but final coefficients must be
+   converged against the final saved projection.
+4. Save projection norms, feature order, fitted priors, transformations,
+   and any training-only orientation choice for external prediction.
+
+This is an omics representation plus a conditional survival model.
+Its objectives are an omics variational objective and a conditional Cox
+coefficient objective, reported separately. There is no feedback path
+from survival to the representation. It is not obtained by setting
+$b=0$ in the joint target.
+
+When $M=1$, with the same preprocessing, priors, initialization,
+update order, floors, and finalization, its algebra reduces to current
+YFB. The joint uncertainty-aware model need not reproduce that fit:
+those are different estimation procedures.
+
+## Joint linear-projection variational algorithm
+
+This is the derivation-complete reference algorithm for the raw or
+fixed-weight linear projection. It uses the full $H$ or the explicitly
+declared working $W$; comparison of these approximations is left to review.
+
+1. **Initialize from training omics.** Use nonzero factor columns and
+   interior prior parameters. Adapt the existing SVD initialization for
+   the selected support; retain initialization provenance. A
+   reconstruction warm start followed by a coefficient fit can reduce
+   early factor collapse. No validation outcomes are consulted.
+2. **Set an outer expansion.** Compute all current moments, $\eta_0$,
+   the Cox score, and $W$. Store $t^\star$ and $C_0$.
+3. **Perform inner coordinate sweeps.** For each factor, update $\beta_k$,
+   the shared $L_k$, and loading coordinates across modalities using
+   @eq-beta-update, @eq-L-update, and @eq-F-update. Hold the Cox expansion
+   fixed; update residuals and projected means after each changed
+   coordinate.
+4. **Update priors.** Use blockwise EBNM where conditionally separable.
+   For joint loading priors use the fixed-posterior EM steps after
+   fixed-prior scalar sweeps. Compute KL consistently with the current
+   posterior and prior.
+5. **Update noise and evaluate.** Apply @eq-tau-update to each block and
+   evaluate $\mathcal J_Q$ using @eq-risk-moments and all KL terms.
+   An exact inner update must not decrease this *fixed-expansion*
+   functional beyond numerical tolerance. A decrease requires diagnosis.
+6. **Refresh and monitor.** After inner convergence, refresh the Cox
+   expansion. Monitor coefficient, score, loading, precision, and
+   objective changes, not just training C-index. Record separate
+   reconstruction, Cox, uncertainty, and prior contributions.
+7. **Finalize coherently.** Recompute risk projections and all
+   diagnostics from the saved final state. Apply only approved
+   parameterization conventions. Retain nonconvergence, degenerate
+   factors, and boundary priors as explicit diagnostics.
+
+Changing the local expansion can change $\mathcal J_Q$ without
+monotonicity in the exact $\mathcal J$. A quadratic Taylor approximation
+is not a global lower bound, and inner coordinate ascent does not prove
+outer convergence. For development, approximate $\E\ell_{\rm Cox}$ with
+posterior draws and record Monte Carlo uncertainty. Such monitoring
+can detect failures; it does not turn a local approximation into a
+theorem. Damping or a proven bound is a later inference choice if
+outer instability persists. Do not silently fall back to alpha_F = 0
+and report joint-model convergence.
+
+## What can be reused
+
+The residual-moment algebra, Normal conjugacy, scalar normal-means
+posterior machinery, Cox risk-set construction, and most parameter
+names can be reused. A loading-prior identifier must become a
+modality-indexed object. $L$ and $\beta$ remain shared.
+
+The shared score update must aggregate modality contributions. Loading
+updates require per-modality priors; joint loading updates additionally
+require the same-factor interaction correction. The joint coefficient
+and objective calculations require projection uncertainty. Reusing the
+old combined ELBO monitor unchanged would conceal differences in
+objective weights and uncertainty.
+
+For the mathematical no-feedback reduction, remove the survival terms
+from $F$ *and* treat projections as fixed for coefficient fitting.
+For the omics-only reduction of the joint model, set $b=0$; then
+$q(\beta)=g_\beta$. These are distinct checks.
+
+# Independent validation and future cohort compatibility
+
+## Frozen training-to-validation map
+
+Let validation data be $Y_m^{\rm val}$ with $n_{\rm val}$ rows.
+Modality names and within-modality feature identifiers must match the
+training contract. Reorder subjects by verified identifiers before
+fitting or prediction, never by row position alone. Validation subjects
+may be reordered freely provided both modality blocks follow the same
+permutation.
+
+Feature selection, imputation rules if later approved, transformation
+parameters, centering/scaling, projection weights, fitted priors,
+loadings, beta, and factor-retention rules are learned or fixed using
+training data. Outcome-independent assay QC may operate on validation
+measurements, but it must not refit the statistical prediction map.
+All tuning and CV preprocessing must be repeated inside each training
+fold rather than learned once on the full training cohort.
+
+For the linear projection, the frozen plug-in risk prediction is
+$$
+\widehat\eta^{\rm val}
+=\sum_k\bar\beta_k\sum_m c_mY_m^{\rm val}\bar f_{mk}.
+$$ {#eq-validation}
+
+For the compatibility model, substitute
+$\bar f_{mk}/D_{kk}^{\rm train}$ using the saved global training norm.
+For other approved normalization rules, apply their corresponding
+frozen training quantities. Normalizing on the validation cohort or
+refitting beta would change the prediction rule.
+
+Under mean-field joint inference with a linear projection, the
+plug-in expression is the posterior mean risk predictor. Uncertainty
+can be propagated by applying @eq-risk-moments with the validation
+design matrix, without validation outcomes. For stochastic normalized
+models, posterior-mean prediction instead requires integration through
+the nonlinear map; normalization of posterior means is an additional
+approximation.
+
+Missing required modalities or features are not silently imputed by
+zero and norms are not recomputed on an arbitrary feature subset.
+For the initial complete-data design, incompatible inputs must stop.
+An assay-based common feature universe may be prespecified from
+platform metadata; outcome- or value-dependent feature selection uses
+training only. If complete matching is impossible, a missing-feature
+extension must be reviewed before reporting validation results.
+
+## Latent scores for reconstruction are a separate output
+
+To evaluate validation reconstruction, hold $F_m,\tau_m,g_{L_k}$
+fixed at training estimates and infer validation score distributions
+using @eq-L-update with validation omics only. Iterate the score
+coordinates; do not re-estimate the score priors on validation.
+This produces $\bar L^{\rm val}$ for reconstruction, not the YFB
+survival covariates.
+
+A point-estimate Gaussian alternative without prior shrinkage solves
+$$
+\widehat L^{\rm val}=
+\left\{\sum_m a_mY_m^{\rm val}\diag(\tau_m)\bar F_m\right\}
+\left\{\sum_m a_m\bar F_m^\top\diag(\tau_m)\bar F_m\right\}^{+}.
+$$
+The pseudoinverse handles rank deficiency. This is weighted least
+squares conditional on fixed mean loadings, not the same posterior
+inference as the moment-based score update. It is supplied only to
+clarify the distinction from the existing LB prediction routine.
+
+Evaluate survival outcomes only after predictions are frozen. Report
+discrimination and uncertainty alongside convergence and factor
+activity. Do not use validation concordance to flip the sign of beta.
+A factor reorientation that preserves $\eta$ is harmless; negating
+beta alone changes the statistical fit and is not a joint-objective
+update. The current training-concordance sign correction belongs to
+the compatibility baseline and should be reported if used.
+
+## Cohorts are orthogonal to modality partitions
+
+If multiple training cohorts are later included, the observation model
+can be extended to
+$$
+Y_m=LF_m^\top+C A_m^\top+E_m,
+$$
+where $C$ is an observed $n\times(C_{\rm train}-1)$ corner-point
+cohort-indicator matrix and $A_m$ contains feature-specific offsets.
+These indicator columns are not biological factors and their survival
+coefficients are zero in the existing offset extension. Their Gaussian
+prior updates use the same feature precision and, in a weighted
+objective, the same modality likelihood weight.
+
+Stratified survival instead sums @eq-cox-pl over training strata and
+modifies the risk sets. Cohort-specific beta instead replaces
+$\beta_k$ by $\beta_k^{c(i)}$ with an explicitly chosen pooling prior.
+None of these mechanisms partitions $F$ by modality. With one
+training cohort they are absent; an unseen validation cohort does not
+supply an estimable new offset or beta without changing the validation
+design. A full combined-cohort derivation is future work.
+
+# Translation to implementation and simulation after review
+
+## Minimal interface changes
+
+A future fit should accept a named list of numeric matrices, one
+per modality, plus survival vectors keyed to verified subject IDs.
+The fitted object should retain shared EL/EL2 and EBeta/EBeta2 and
+modality-indexed EF/EF2, Tau, prior fits, feature IDs, and training
+preprocessing/projection metadata. Existing single-matrix callers
+should continue to work through their existing path. No such API
+has been implemented in this deliverable.
+
+Loading-prior arguments must be separate from the shared score prior.
+The old prior_LF convenience setting can remain an explicit baseline
+mapping, but it must not cause features from different modalities to
+be passed into the same fitted loading prior.
+Likelihood weights, projection coefficients, and objective type need
+distinct names and saved values; alpha_F must not be overloaded to
+mean modality balance.
+
+## Computation at CpG scale
+
+At $p_1=20{,}000$ and $p_2=400{,}000$, a dense $p\times p$ double
+matrix alone would require about $1.41$ TB in decimal units.
+It must not be constructed. A dense $n\times p$ data matrix requires
+$8np$ bytes (about $1.68$ GB at $n=500$), before residuals, copies,
+second moments, and temporary products. These are illustrative memory
+calculations, not selected simulation sample sizes.
+
+Keep modality blocks separate. For diagonal $W$, scalar loading
+updates and variance traces need products such as
+$x_a^\top Wx_a$ and $x_a^\top W\bar z_{k,-a}$, which can be computed
+without $X^\top WX$. Updating $\bar z_k$ after one loading change costs
+$O(n)$. Dense diagonal-working-curvature sweeps cost roughly
+$O(nK\sum_mp_m)$, apart from EBNM optimization. Full-Hessian products
+can be more expensive; use risk-set products or a declared
+approximation and benchmark them. Scalar R-to-package calls per CpG
+may be a practical bottleneck even without a memory problem.
+
+The exact Gauss-Seidel loading updates are sequential through their
+shared projections. Parallelizing them naively changes the algorithm.
+Independent simulation seeds and training folds are safer first
+parallelization targets. If later run on Longleaf, request memory
+based on measured peak allocation, control BLAS threads inside SLURM
+workers, and avoid nested parallel oversubscription.
+
+## Synthetic data: mechanism before scenario grid
+
+Generate training and validation subjects independently conditional
+on common population parameters $F_m,\tau_m,\beta$ and score-prior
+distributions. Sharing these parameters is what permits evaluation
+of generalization to new subjects. Independently resampling the
+validation loading matrix would instead test a changed population and
+must be labeled a distribution-shift scenario.
+
+For a well-specified YFB experiment, first generate $L$, then $Y_m$,
+then survival using the selected YFB projection of the realized $Y_m$.
+The existing multi-cohort simulation uses an $L\beta$ survival
+mechanism; reusing it without modification would be a misspecification
+experiment. Include an $L\beta$ mechanism only as an explicitly named
+robustness comparison.
+
+Candidate scenario dimensions are modality feature-count ratio,
+sparsity, residual precision, feature redundancy, complementary versus
+redundant modality signal, nonnegative versus signed true loadings,
+and factors absent from one modality. Start with small dimensions
+that preserve the expression-to-CpG ratio, then measure scaling before
+full-size runs. Exact sample sizes, effect sizes, repetitions,
+censoring fractions, and factor numbers are intentionally deferred
+until model review; do not copy the current gene-expression defaults
+as if validated for multimodal data.
+
+Candidate estimands include shared subspace recovery, matched
+loading recovery by modality, reconstruction error by modality,
+survival discrimination on untouched validation data, activity
+classification, runtime, memory, and convergence/failure rates.
+Compare expression-only, methylation-only, direct no-feedback
+multimodal YFB, and the approved joint model using comparable tuning
+budgets. Assess integration benefit against both single-modality
+models; report uncertainty over independently generated replicates.
+
+## Real-data preprocessing decisions
+
+The real-data design needs modality-specific assay QC, sample identity
+checks, feature annotation/version matching, and a frozen
+training-to-validation transformation. Expression counts may require
+a library-size-aware transform; methylation proportions may be kept
+on a bounded measurement scale or transformed to M-values for a
+Gaussian working likelihood. These choices have different support
+implications under nonnegative priors. They remain for review with
+the actual assays and are not implemented by this mathematical note.
+
+Investigate CpG redundancy and batch/platform shifts separately from
+feature-count balance. Matched subjects do not eliminate assay effects.
+Do not infer a one-to-one gene--CpG correspondence or a universal
+inverse relation during feature matching.
+
+# Verification and advisor decisions
+
+## Reproducible numerical checks
+
+The companion check script validates the algebra on small deterministic
+examples; it does not fit or simulate a proposed multimodal model.
+Its examples use nonzero posterior variances and correlated features
+across modalities so that dropping the interaction or uncertainty
+terms produces detectable errors.
+
+```{r}
+#| label: derivation-checks
+#| results: asis
+source("verify_derivation.R", local = TRUE)
+cat(sprintf("**Verification result:** %d of %d checks passed.\n\n",
+            sum(check_results$passed), nrow(check_results)))
+knitr::kable(check_results[, c("check", "passed")],
+             col.names = c("Algebra or behavior checked", "Passed"),
+             row.names = FALSE)
+```
+
+The checks cover exact Breslow derivatives with tied events;
+the implemented working-curvature relation; finite-difference
+derivatives of the expected quadratic for $L,F,\beta,\tau$;
+enumerated risk moments; prior posterior moments and hyperparameter
+stationarity; modality-partition reduction; weighted duplication sums;
+and normalized-projection derivatives.
+
+These checks verify local formulas, not convergence or predictive
+performance of a future implementation. No numerical fit comparison
+is claimed. After code implementation, run the repository test suite
+and add end-to-end tests for subject/feature alignment, frozen
+prediction, separate prior fitting, objective accounting, and
+the matched single-modality reduction.
+
+## Decisions to take to the advisors
+
+| Decision | Starting point | Alternative or required resolution |
+|:--|:--|:--|
+| Representation | One shared $L$; separate $F_m$ priors | Allow a block to shrink to zero; already agreed |
+| Data structure | One matched training cohort and one matched validation cohort | Multiple training cohorts deferred |
+| Observation model | Gaussian working likelihood; feature-wise precision MLE | Confirm transforms and residual adequacy |
+| Loading support | Nonnegative point-exponential | Compare signed loadings and centered-data compatibility |
+| Evidence balance | Ordinary observation likelihood first | Explicit modality weights if justified |
+| Projection | Current normalized mean projection for compatibility | Linear joint reference versus nonlinear normalized joint model |
+| Supervision | Joint survival-informed $F$ derivation | Retain no-feedback YFB as the direct implementation baseline |
+| Inference | Coordinate updates for a declared Cox surrogate | Select working versus exact curvature and stability strategy |
+| Beta prior | Existing zero-centered Normal per factor | Pooling or sparse alternative requires separate choice |
+| Validation | Frozen training map; outcomes only for evaluation | Missing-feature or cohort adaptation needs a new protocol |
+
+The main dependency is projection choice: it determines whether
+normal-means coordinate updates remain available. Weighting and prior
+support must then be assessed on that same parameterization and
+analysis scale. This document supplies the mathematical alternatives;
+it does not approve one by implication.
+
+## Build, provenance, and teach-back
+
+From the repository root:
+
+```bash
+Rscript derivations/multimodal_YFB/verify_derivation.R
+quarto render derivations/multimodal_YFB/multimodal_YFB_derivation.qmd --to pdf
+```
+
+Rendering executes the verification script and stops on a failed
+assertion. The source remains editable alongside the PDF. The
+standalone check script uses base R; rendering additionally needs
+Quarto, knitr, and a working LaTeX installation. It does not source
+the production fitting scripts or load real data.
+
+The mathematical document's input is the existing YFB parameterization
+and the agreed matched-modality design; its output is a set of
+explicit estimation objectives and derived update procedures.
+The main design choice is to separate direct compatibility from
+joint inference so that new modality priors do not conceal changes
+in survival supervision. The main limitation is that a local Cox
+surrogate and a mean-field approximation do not establish global
+convergence or calibrated uncertainty.
+
+The check script's input is small deterministic numerical fixtures.
+It compares derivatives, exact finite-support expectations, and
+numerical integrals with the equations. Its output is a named table
+of assertions; any failure terminates execution. These computations
+test mathematical identities rather than performance of an
+unimplemented model.
+
+# Sources and local references
+
+The update algebra in this note is derived explicitly above. The
+following sources establish the empirical-Bayes framework and
+software conventions; they are not substitutes for the derivation.
+
+- Wang and Stephens (2021), [Empirical Bayes Matrix Factorization](https://www.jmlr.org/papers/v22/20-589.html).
+  Background on learning factor/loading priors with variational empirical Bayes.
+- Willwerscheid, Carbonetto, and Stephens (2025),
+  [ebnm: An R Package for Solving the Empirical Bayes Normal Means Problem Using a Variety of Prior Families](https://www.jstatsoft.org/index.php/jss/article/view/v114i03).
+  Background on normal-means prior estimation.
+- [Official ebnm reference](https://stephenslab.github.io/ebnm/reference/ebnm.html).
+  Fixed prior mode, prior scale conventions, fixed-prior posterior calls,
+  and posterior moment outputs. Local package version inspected: 1.1.42.
+- [Quantifying the role of transcript levels in mediating DNA methylation effects on complex traits and diseases](https://www.nature.com/articles/s41467-022-35196-3)
+  (Nature Communications, 2022). Biological context for the sign comparison.
+- Local mathematical references: \path{derivations/cox_on_YF/} and
+  \path{docs/notes/YFB_update_derivations_detailed_05_08_26.qmd}.
+  These describe earlier YFB formulas; the audit in Section 2
+  identifies where they cannot be carried over unchanged.
+- Local implementation references: \path{code/fit_cox_on_yf.R};
+  \path{code/update_L_surv_YFB.R}; \path{code/update_F_surv_YFB.R};
+  \path{code/update_beta.R}; \path{code/update_tau.R};
+  \path{code/compute_elbo.R}; \path{code/predict_cox_on_yf.R}.
+- Cohort references: \path{code/update_F_cohort.R} and
+  \path{code/update_beta_cohort.R}; stratified risk-set handling in
+  \path{code/fit_cox_on_yf.R}.

@@ -79,6 +79,18 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [ ] **Review the matched expression/methylation YFB formulation with advisors**
+  `[Priority: High]` `[Effort: Medium]` — The derivation and PDF in
+  `derivations/multimodal_YFB/` are prepared: a nine-page meeting derivation,
+  linked R implementation specification, preserved technical notes, and algebra checks.
+  Review precedes runnable code and the September 10 progress-book chapter.
+  Decide loading support and analysis scale, ordinary versus weighted likelihood,
+  projection normalization, and the approximation for joint survival feedback.
+  Retain the current no-feedback YFB extension as the compatibility comparator.
+  Implementation, simulation scenarios, and a real-data application follow
+  approval; the initial design uses one matched training cohort and one independent
+  matched validation cohort.
+
 - [ ] **Slow, thorough re-characterization of the selected gene programs' biological character,
   now that `beta_cohort_id` (cohort-specific survival coefficients) is integrated**
   `[Priority: High]` `[Effort: Large]` — Flagged 2026-09-04 (Andrew), explicitly as a NEXT step, not
@@ -848,6 +860,14 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ---
 
 ## ✅ Completed
+
+- [x] **Mathematical proposal for multimodal YFB** — Shared subject scores,
+  modality-specific empirical-Bayes loading priors, feature-wise precision updates,
+  Cox survival updates, prior-hyperparameter derivations, prediction rules, and
+  explicit weighting/normalization comparisons are documented in
+  `derivations/multimodal_YFB/multimodal_YFB_derivation.{qmd,pdf}`.
+  Base-R numerical checks accompany the derivation. This completes document
+  preparation, not advisor approval or model implementation. *(2026-09-10)*
 
 - [x] **Multi-cohort simulation study: shared vs. study-specific factor recovery** *(Complete — 2026-06-14)*
   Validated that YFB natively recovers the shared/study-specific distinction across 3 scenarios

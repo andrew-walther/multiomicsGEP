@@ -1,0 +1,263 @@
+---
+title: "Multimodal YFB: R Implementation Specification"
+author: "Andrew Walther"
+date: "2026-09-10"
+format:
+  html:
+    toc: true
+    self-contained: true
+execute:
+  eval: false
+---
+
+This is a **proposed implementation**, to be reviewed with the
+[derivation PDF](multimodal_YFB_derivation.pdf) and its
+[editable source](multimodal_YFB_derivation.qmd). Code below is pseudocode:
+function names describe future interfaces and are not callable fitters.
+Existing YFB and multi-cohort implementations remain unchanged.
+
+## Scope and interfaces
+
+The first fitter will accept one training cohort with matched expression and
+methylation. It will return shared score and coefficient moments, separate
+loading moments and fitted priors, and separate feature-wise precisions.
+All development files initially belong in this directory.
+
+```r
+fit_multimodal_yfb(
+  Y = list(expression = Y_expression, methylation = Y_methylation),
+  time = time, event = event, K = K,
+  init = initialization, control = control
+)
+
+predict_multimodal_yfb(fit, new_Y)
+```
+
+- `Y[[m]]`: numeric subject-by-feature matrix, with unique row and column names.
+- `time`, `event`: named vectors aligned to training subject IDs; right-censored
+  survival, with event coded 0/1 and Breslow ties.
+- `K`: common factor count. The initial release fixes K during fitting.
+- `init`: valid first/second moments and nondegenerate prior parameters.
+- `control`: iteration limits, tolerances, and numerical safeguards. Existing
+  applicable values come from `config/globals.yml`; new defaults require review.
+- `new_Y`: the two validation matrices transformed with saved training rules.
+- Prediction returns a named risk-predictor vector, not survival probabilities.
+  Estimating a baseline hazard is outside this first specification.
+
+### Matching and preprocessing contract
+
+Require exactly the same subject IDs in both training modalities. Reorder using
+IDs, then assert identity; do not silently intersect or discard subjects.
+Feature names need only be unique **within** modality. Validation must contain
+all selected training features in each modality, reordered explicitly. Extra
+features may be ignored only with a reported count. Missing features, nonfinite
+measurements, duplicated identifiers, or unmatched subjects cause an error.
+The first implementation assumes complete measurements, not missing-view imputation.
+
+Feature selection, transforms, centering/scaling parameters, and their order are
+learned using training data only and stored with the fit. The nonnegative
+point-exponential factor model requires deliberate review of the analysis scale;
+there is no automatic claim that centered expression or methylation matrices
+satisfy its signal assumptions. Freeze preprocessing before the first demo.
+
+## Equation-to-code map
+
+Equation numbers refer to the companion derivation; equation IDs are stable
+anchors in its source. The proposed implementation follows these blocks directly.
+
+| Derivation equations (stable source IDs) | Proposed operation | Inputs → outputs |
+|---|---|---|
+| 1, 3 (`eq-model`, `eq-priors`) | Validate data and initialize state | Named blocks → moments and priors |
+| 8–9 (`eq-working`, `eq-quadratic`) | `cox_working()` | Mean predictor, outcomes → score, w, h, constant |
+| 10 (`eq-projection-moments`) | `projection_moments()` | Y, EF, EF2 → EZ, VZ |
+| 11 (`eq-eta-moments`) | `predictor_moments()` | EZ, VZ, EBeta, EBeta2 → mean and variance |
+| 15–16 (`eq-L-update`, `eq-L-prior`) | `update_multimodal_L_k()` | Residuals and loading moments → EL, EL2, prior_L |
+| 20 (`eq-F-update`) | `update_multimodal_F_mk()` | Current projections, score moments, fixed prior → EF, EF2, slab probabilities |
+| 22 (`eq-F-prior-update`) | Loading-prior maximization | Slab probabilities and EF → modality-specific π and rate |
+| 24–26 (`eq-beta-inputs`–`eq-beta-update`) | `update_multimodal_beta_k()` | Integrated projection moments → EBeta, EBeta2, prior variance |
+| 28–29 (`eq-residual-second`, `eq-tau-update`) | `update_multimodal_tau()` | Both moments → feature-wise Tau |
+| 6, 12 (`eq-objective`, `eq-expected-working`) | `working_objective()` | State and frozen working terms → objective components |
+| 2 (`eq-predictor`) | `predict_multimodal_yfb()` | Frozen fit, new blocks → risk predictor |
+
+The names above are proposed; inspect existing helpers before writing new ones.
+The canonical modules and `ebnm` already provide relevant conventions. Reuse a
+helper only if its objective, moment handling, and predictor scale match these
+equations. In particular, do not import loading normalization or omit survival
+feedback simply to reproduce an existing YFB call path.
+
+## State and output structure
+
+```r
+list(
+  EL = EL, EL2 = EL2,                         # n × K shared moments
+  EF = list(expression = EF1, methylation = EF2),
+  EF2 = list(expression = EF21, methylation = EF22), # p_m × K
+  EBeta = EBeta, EBeta2 = EBeta2,               # length K
+  Tau = list(expression = tau1, methylation = tau2), # length p_m
+  prior_L = prior_L,                           # one prior per factor
+  prior_F = list(expression = prior_F1, methylation = prior_F2),
+  prior_beta = prior_beta,                     # K Normal variances
+  training_spec = training_spec,               # IDs, feature order, transforms
+  diagnostics = diagnostics
+)
+```
+
+Every `*2` field stores E[θ²], not Var(θ) and not E[θ]². Variance is recovered
+by subtraction with a tolerance for roundoff; materially negative variance is
+an error. Projection moments can be maintained internally and omitted from a
+compact saved fit. Loading priors contain π (slab probability) and rate, with
+an explicit point-mass state for zero slab mass.
+
+## Update pseudocode
+
+### Shared scores
+
+For fixed k, form the residual excluding k in each block. Add information over
+modalities, then fit one point-exponential EBNM model across subjects.
+
+```r
+A_L <- sum_over_modalities_and_features(Tau * EF2[, k])
+B_L <- sum_over_modalities(R_minus_k %*% (Tau * EF[, k]))
+# EBNM inputs: x = B_L / A_L, s = sqrt(1 / A_L)
+# Estimate one g_Lk and return posterior mean and second moment for each subject.
+```
+
+`A_L` is scalar for complete data with feature-wise precision; `B_L` has length n.
+The eventual `ebnm` call must pass standard deviations, not variances. Package
+output conventions and fixed-prior support must be verified before implementation.
+
+### Loading coordinates and modality priors
+
+For each (m,k), freeze its prior and update features in order. `h_minus_k` excludes
+other factors, while `EZ_other` excludes only the current feature of factor k.
+
+```r
+h_minus_k <- h - w * eta_mean_minus_k
+for (j in seq_len(ncol(Y[[m]]))) {
+  y <- Y[[m]][, j]
+  EZ_other <- EZ[, k] - y * EF[[m]][j, k]
+  A <- Tau[[m]][j] * sum(EL2[, k]) + EBeta2[k] * sum(w * y^2)
+  B <- Tau[[m]][j] * sum(EL[, k] * R_minus_k[[m]][, j]) +
+       sum(y * (EBeta[k] * h_minus_k - w * EBeta2[k] * EZ_other))
+  # Fixed-prior posterior from x=B/A and s=sqrt(1/A).
+  # Save mean, second moment, and posterior slab probability.
+  # Increment EZ[,k] by y*(new_mean-old_mean).
+  # Increment VZ[,k] by y^2*(new_variance-old_variance).
+}
+# π <- mean(posterior_slab_probability)
+# rate <- sum(posterior_slab_probability) / sum(posterior_mean)
+# Handle zero slab mass as an explicit point mass, not a 0/0 calculation.
+```
+
+This is a scalar Gauss–Seidel sweep, not a vector of independent prior fits.
+The subtraction uses E[β²], including uncertainty. Never construct a p-by-p
+cross-feature matrix: current projection vectors supply the necessary interaction.
+
+### Survival coefficients and precision
+
+```r
+A_beta <- sum(w * (EZ[, k]^2 + VZ[, k]))
+B_beta <- sum(EZ[, k] * h_minus_k)
+# x <- B_beta/A_beta; s_obs2 <- 1/A_beta
+# prior_var <- max(0, x^2-s_obs2)
+# For prior_var>0: var <- 1/(A_beta+1/prior_var); mean <- var*B_beta
+# Otherwise return an explicit point-mass posterior.
+
+# For each modality, compute by feature chunks:
+mean_signal <- EL %*% t(EF[[m]])
+variance_signal <- EL2 %*% t(EF2[[m]]) - EL^2 %*% t(EF[[m]]^2)
+expected_residual2 <- (Y[[m]] - mean_signal)^2 + variance_signal
+Tau[[m]] <- nrow(Y[[m]]) / colSums(expected_residual2)
+```
+
+The displayed precision block explains the matrix identity. The production
+version should chunk features to avoid retaining several n-by-p methylation
+matrices. Positive residual sums give the exact MLE; a zero sum must be surfaced.
+
+### Outer and inner loops
+
+```r
+initialize_state()
+for (outer in seq_len(control$max_outer)) {
+  working <- cox_working(time, event, eta_mean)
+  # Keep working$w, working$h, and the expansion constant fixed here.
+  for (inner in seq_len(control$max_inner)) {
+    for (k in seq_len(K)) {
+      update_multimodal_L_k()
+      for (m in names(Y)) update_multimodal_F_mk() # posterior then prior
+      update_multimodal_beta_k()
+    }
+    update_multimodal_tau()
+    evaluate_fixed_working_objective_and_moment_change()
+    # Break only when the declared inner criteria hold.
+  }
+  evaluate_outer_predictor_and_moment_change()
+  # Report iteration-limit termination separately from convergence.
+}
+```
+
+Boundary states can be absorbing under coordinate ascent. Initialization and
+any later restart strategy must be explicit, recorded, and evaluated. A silent
+prior floor or automatic factor deletion changes the proposed algorithm.
+
+## Diagnostics and tests before a runnable release
+
+Record reconstruction likelihood by modality, each prior KL contribution,
+expected working survival contribution, partial likelihood at the mean predictor,
+iteration counts, moment changes, fitted prior boundaries, and precision ranges.
+Compare working-objective values only at the **same frozen expansion**. Do not
+label plug-in partial likelihood as a variational ELBO or claim monotonicity
+across refreshed approximations.
+
+Required tests should check numerical answers, not merely dimensions:
+
+- Scalar L/F/β gradients and curvatures against finite differences, with
+  nonzero variances and correlated features spanning both modalities.
+- F updates that detect omission of the same-factor cross-feature term.
+- Projection and residual second moments against explicit enumeration.
+- Separate prior updates against direct expected-log-prior maximization;
+  different modality distributions must produce independently estimated priors.
+- Tau against the likelihood optimum; explicit zero-residual behavior.
+- Fixed-surrogate ascent for posterior and prior steps, with consistent KL terms.
+- Subject/feature permutation invariance after ID alignment; informative errors
+  for missing IDs/features, duplicate names, or invalid moments.
+- Frozen validation prediction equal to the explicit matrix product; changing
+  validation outcomes must not change preprocessing, fitted parameters, or scores.
+- A single-modality reduction to these equations, rather than equality to a
+  legacy fitter with different normalization or survival-feedback choices.
+
+The existing `verify_derivation.R` checks algebra only. It does not establish
+convergence, performance, or correctness of a future fitter.
+
+## Small matched training/validation demo
+
+After mathematical review, implement one small deterministic simulation before
+scaling up. Use independently generated training and validation scores, shared
+true loadings, and modality-specific sparsity and residual precision. Generate
+each block as L F_mᵀ plus Gaussian noise, then generate event times from a stated
+baseline hazard and the same linear YFB predictor used for fitting. Generate
+independent censoring and record the achieved event fraction.
+
+Use p_methylation substantially larger than p_expression in the small demo;
+select concrete dimensions and signal strengths during simulation design. This
+ratio check precedes a memory test at the intended 15–20k genes and 300–400k CpGs.
+
+The demo will show aligned factor/loading recovery, reconstruction by modality,
+concordance on independent validation subjects, and fitted prior parameters.
+Compare integrated fitting with expression-only and methylation-only fits using
+the same training-only selection rules. Align factor labels before recovery
+metrics; do not interpret scale-dependent loading error without alignment.
+One demonstration is a software check, not evidence that integration improves
+prediction. Replicated scenarios and uncertainty summaries follow separately.
+
+## Delivery sequence
+
+1. Review the concise mathematical document and this specification.
+2. Add an isolated fitter, prediction function, and correctness tests here.
+3. Run the small independent-cohort demo, then replicated simulation studies.
+4. Adapt preprocessing and frozen prediction to real matched cohorts.
+
+After document refinement and advisor/user review, create the September 10
+progress-book chapter and register it in the book configuration. It should
+summarize the approved formulation and distinguish proposed methods from code
+that has been implemented and results that have actually been evaluated.

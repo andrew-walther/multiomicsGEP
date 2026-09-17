@@ -5,6 +5,34 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-09-10 — Multimodal YFB derivation prepared for advisor review
+
+**Agreed design scope.** Adapt the current YFB method to matched expression and
+methylation in one training cohort, evaluated in one independent matched cohort.
+Use one shared score matrix, one survival coefficient per factor, separate
+empirical-Bayes loading priors by modality and factor, and feature-wise Gaussian
+residual precisions. A factor may be inactive in one modality.
+
+**Methodological deliverable.** The source and PDF in
+`derivations/multimodal_YFB/` derive the observation and survival estimation
+objectives, all parameter updates, prior estimation, and frozen external
+prediction. `verify_derivation.R` checks the algebra without implementing a
+fitter. The direct adaptation of current no-feedback YFB is distinguished from
+the requested joint survival-informed formulation. The latter requires
+same-factor feature interactions and projection uncertainty that cannot be
+recovered by partitioning the existing loading update alone.
+
+**Refined document scope (September 10).** The meeting derivation now selects
+the linear joint-YFB projection and diagonal Cox working approximation, with
+ordinary observation likelihood and separate point-exponential loading priors.
+It is nine pages, focused on the objective and coordinate updates. Separate priors
+do not guarantee equal modality influence. Alternatives remain in preserved
+technical notes, not in the meeting derivation. The companion implementation
+specification describes future code; a runnable fitter and the progress-book
+chapter follow refinement and review. No numerical defaults have changed.
+
+---
+
 ## 2026-09-04 (addendum) — Codex round-2 review of the fix-plan branch: two more real findings, both fixed
 
 **Context.** After Steps 1-6 of `docs/plans/review_findings_fix_plan_09_04_2026.md` were complete and

@@ -42,6 +42,27 @@ with point-normal priors.
 
 ---
 
+## Matched expression and methylation: derivation for review (2026-09-10)
+
+The [multimodal YFB mathematical proposal](derivations/multimodal_YFB/multimodal_YFB_derivation.pdf)
+and its [Quarto source](derivations/multimodal_YFB/multimodal_YFB_derivation.qmd)
+adapt the existing YFB parameterization to one training cohort with matched
+expression and methylation and one independent matched validation cohort.
+The model shares subject scores and survival coefficients, while fitting separate
+loading priors and feature-wise residual precisions by modality.
+
+The concise nine-page proposal derives the EBMF plus survival objective and
+L/F/β/Tau updates for linear joint YFB using the diagonal Cox working approximation.
+Separate point-exponential loading priors are estimated per modality and factor.
+The [implementation specification](derivations/multimodal_YFB/multimodal_YFB_implementation.qmd)
+maps numbered equations to proposed R updates and tests. The original extensive
+derivation remains in the same folder as technical notes. All 35 existing algebra
+checks pass, including loading interactions and posterior second moments.
+
+This is proposed methodology awaiting review. No runnable multimodal fitter,
+production code, simulation study, or global defaults have changed. The September
+10 progress-book chapter follows document refinement and review.
+
 ## Repository Map
 
 ```
