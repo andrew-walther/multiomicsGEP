@@ -48,6 +48,7 @@ source("code/pathway_enrichment.R")
 source("code/concordance_ci.R")
 source("code/multimodal_yfb_helpers.R")
 source("code/preprocess_multimodal_yfb.R")
+source("code/multimodal_yfb_updates.R")
 
 # List all test files to run
 test_files <- c(
@@ -78,7 +79,8 @@ test_files <- c(
   "tests/test_compute_bic.R",
   "tests/test_compute_cv_loglik.R",
   "tests/test_multimodal_yfb_helpers.R",
-  "tests/test_multimodal_yfb_preprocess_predict.R"
+  "tests/test_multimodal_yfb_preprocess_predict.R",
+  "tests/test_multimodal_yfb_updates.R"
 )
 
 # Run each test file
