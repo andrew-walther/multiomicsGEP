@@ -17,6 +17,13 @@ cavi:
   alpha_grid: [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0]
   n_cv_folds: 5
 
+multimodal_yfb:
+  max_outer: 50
+  max_inner: 5
+  tol: 1.0e-5
+  pve_threshold: 0.01
+  prognostic_z_threshold: 1.96
+
 # ------------------------------------------------------------------------------
 # K selection / auto-prune thresholds
 # ------------------------------------------------------------------------------
