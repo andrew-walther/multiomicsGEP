@@ -59,9 +59,14 @@ maps numbered equations to proposed R updates and tests. The original extensive
 derivation remains in the same folder as technical notes. All 35 existing algebra
 checks pass, including loading interactions and posterior second moments.
 
-This is proposed methodology awaiting review. No runnable multimodal fitter,
-production code, simulation study, or global defaults have changed. The September
-10 progress-book chapter follows document refinement and review.
+Following approval, an isolated runnable multimodal fitter, frozen predictor,
+matched-block simulation generator, and checkpointed K-selection runner were
+implemented under `code/` and tested through `tests/run_tests.R`. The established
+single-modality production model is unchanged. The multimodal fitter uses
+factor-scale canonicalization and a relative identifiable convergence criterion
+(maximum 500 sweeps); its K=5,...,15 replicated held-out selection study is the
+remaining prerequisite to choosing a multimodal default. The September 18
+progress-book chapter records the implementation and preliminary screening.
 
 ## Repository Map
 

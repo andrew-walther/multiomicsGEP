@@ -35,13 +35,18 @@ Inference is performed via **Coordinate Ascent Variational Inference (CAVI)**, w
 
 ## Repository Structure
 
-**Multimodal YFB derivation (advisor-review proposal, September 2026):**
+**Multimodal YFB (isolated implementation and simulation, September 2026):**
 [PDF](derivations/multimodal_YFB/multimodal_YFB_derivation.pdf) and
 [editable Quarto source](derivations/multimodal_YFB/multimodal_YFB_derivation.qmd).
 The nine-page document derives linear joint YFB with separate loading priors,
 the diagonal Cox working approximation, and L/F/β/Tau updates. The linked
 [R implementation specification](derivations/multimodal_YFB/multimodal_YFB_implementation.qmd)
-contains proposed interfaces and pseudocode; no multimodal fitter is implemented.
+maps the derivation to the isolated implementation. The runnable matched-block
+fitter, frozen predictor, simulation generator, and K-selection runner are in
+`code/fit_multimodal_yfb.R`, `code/predict_multimodal_yfb.R`,
+`code/simulate_multimodal_yfb.R`, and `code/run_multimodal_yfb_simulation.R`.
+The multimodal module is not the production single-modality PDAC model; its
+replicated K-selection study is still in progress.
 The original extensive derivation is preserved as technical notes in the same folder.
 Run the base-R mathematical checks with
 `Rscript derivations/multimodal_YFB/verify_derivation.R`.

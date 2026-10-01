@@ -61,7 +61,9 @@ $x=B/A$ with standard-error squared $s^2=A^{-1}$. An intentionally
 over-specified $K_{\mathrm{init}}$ is reduced to an effective factor count
 $K_{\mathrm{eff}}$ through factor-wise empirical-Bayes shrinkage. The
 following sections state the full objective, the exact $A/B$ expressions,
-and the update order.
+the EBNM handoff, and the update order. The precision update $\tau$ is the
+one exception: it is a closed-form maximum-likelihood update, not an EBNM
+problem.
 
 # Model and priors
 
@@ -87,6 +89,15 @@ $$
 Z_{ik}=\sum_{m=1}^2\sum_{j=1}^{p_m}y_{mij}f_{mjk},\qquad
 \boxed{\eta_i=\sum_k Z_{ik}\beta_k.}
 $$ {#eq-predictor}
+
+Equivalently, the predictor for all subjects is
+
+$$
+\boxed{\boldsymbol\eta=(Y_1F_1+Y_2F_2)\beta=YF\beta,}
+$$ {#eq-predictor-matrix}
+
+where $Y_mF_m$ is $n\times K$, so the sum is a shared subject-by-factor
+projection before multiplication by the $K$-vector $\beta$.
 
 Unlike LB, whose predictor is $L\beta$, YFB depends directly on $F$ and
 $\beta$. Thus survival contributes to their updates, but not directly to $L$.
@@ -218,8 +229,25 @@ being updated.
 
 # Cox working approximation
 
-To obtain quadratic updates, expand at the current mean predictor $\eta^0$.
-Define risk-set probabilities, score, and working curvature by
+The Cox partial likelihood in @eq-cox is the same Breslow partial likelihood
+used by the current single-modality YFB fitter, including its treatment of
+tied event times. At each event time, it compares the event subjects with
+the subjects still at risk; it does not require a parametric baseline hazard.
+
+The Cox term is nonlinear in $\eta$, whereas the EBNM updates require a
+quadratic in the coordinate being updated. At each outer iteration, evaluate
+the current mean predictor $\eta^0$ and replace $\ell_C$ by a local
+weighted-least-squares surrogate. Hold that surrogate fixed during the next
+inner coordinate sweep. This is the same calculation that produces the
+single-mode working response $z$ and weights $w$.
+
+At event time $t_r$, $P_{ri}$ is the normalized relative-risk weight for
+subject $i$ within risk set $R_r$; it is probability-like, but is not an
+additional model parameter. The score $u_i$ is the observed event count less
+its current expected allocation, and $w_i$ is a local-information weight.
+The full Cox Hessian couples subjects. The diagonal working approximation
+retains $w_i$ while dropping those cross-subject terms, which permits scalar
+coordinate updates. Define these quantities by
 
 $$
 P_{ri}=\frac{\mathbf1\{i\in R_r\}e^{\eta_i^0}}
@@ -244,10 +272,13 @@ Q_C(\eta\mid\eta^0)
 \end{aligned}
 $$ {#eq-quadratic}
 
-For $w_i>0$, let $z_i^*=h_i/w_i$; then
+For $w_i>0$, let $z_i^*=h_i/w_i=\eta_i^0+u_i/w_i$; then
 $Q_C=C'-\frac12\sum_iw_i(z_i^*-\eta_i)^2$.
 The division-free form using $h_i$ also applies at zero curvature.
 Hold $(w,h)$ fixed during a coordinate sweep.
+Earlier single-mode derivations begin from this resulting $(z,w)$
+representation rather than deriving it; the present section makes that
+shared step explicit.
 
 To take expectations, independence of loading entries gives
 
@@ -277,17 +308,74 @@ expectation. The updates optimize the resulting **fixed working objective**;
 refreshing the expansion does not guarantee monotone improvement in the
 original nonquadratic variational objective.
 
+## From the working objective to an EBNM input
+
+Let $\mathcal J_{\mathrm{work}}$ denote @eq-objective after the replacement
+$\E_q[\ell_C]\leftarrow\E_q[Q_C]$. For a coordinate $\theta$ with prior
+$g_\theta$, the coordinate-ascent rule is
+
+$$
+\log q^*(\theta)=
+\E_{-\theta}\left[\ell_Y+Q_C\right]+\log g_\theta(\theta)+C.
+$$ {#eq-coordinate-rule}
+
+Each section below first removes the terms of this expression that do not
+contain the coordinate. Algebra then collects the remaining likelihood terms
+as
+
+$$
+\begin{aligned}
+\log q^*(\theta)
+&=-\frac{A_\theta}{2}\theta^2+B_\theta\theta
+  +\log g_\theta(\theta)+C\\
+&=\log\left[g_\theta(\theta)
+N\left(x_\theta;\theta,s_\theta^2\right)\right]+C',\\
+x_\theta&=B_\theta/A_\theta,\qquad s_\theta=A_\theta^{-1/2}.
+\end{aligned}
+$$ {#eq-ebnm-handoff}
+
+Thus the likelihood algebra ends once $A_\theta$ and $B_\theta$ have been
+identified: $(x_\theta,s_\theta)$ are the normal-means data supplied to
+EBNM. For a collection of coordinates sharing one prior, an implementation
+uses the corresponding vectors in
+\texttt{ebnm(x = x, s = s, prior\_family = ...)} and extracts the posterior
+mean and standard deviation; the required second moment is
+$\E_q(\theta^2)=\operatorname{sd}_q(\theta)^2+\E_q(\theta)^2$.
+
+For $L_{\cdot k}$, this is one vector EBNM call across subjects. For
+$F_{\cdot k}$ within a modality, the Cox term couples feature coordinates,
+so a single simultaneous vector call is not the exact coordinate algorithm.
+Instead, update the pseudo-observations sequentially using a shared current
+$g_{F_{mk}}$, then re-estimate that shared prior from the completed feature
+sweep. For $\beta_k$, the stated Normal prior makes the EBNM posterior
+available in closed form; an EBNM implementation can produce the same
+normal-means posterior. The $\tau_{mj}$ update has no prior and therefore
+does not enter EBNM.
+
 # Update the shared scores $L$
 
-**Isolate the terms.** For coordinate $l_{ik}$, define the residual excluding
-factor $k$,
+**Start from the fixed working objective.** Replace $\E_q[\ell_C]$ in
+@eq-objective by $\E_q[Q_C]$ from @eq-expected-working. For coordinate
+$l_{ik}$, this Cox contribution is constant because
+$\eta=YF\beta$ contains $F$ and $\beta$, but not $L$. Thus only the
+reconstruction term and the $L$ prior contribution remain. Define the
+reconstruction residual excluding factor $k$,
 
 $$
 R_{mij}^{-k}=y_{mij}-\sum_{a\ne k}l_{ia}f_{mja},\qquad
 \bar R_{mij}^{-k}=y_{mij}-\sum_{a\ne k}\bar l_{ia}\bar f_{mja}.
 $$ {#eq-residual}
 
-Only reconstruction and $g_{L_k}$ involve this coordinate:
+The retained objective terms are
+
+$$
+[\mathcal J_{\mathrm{work}}]_{l_{ik}}=
+\E_q\left[-\frac12\sum_{mj}\tau_{mj}
+ (R_{mij}^{-k}-l_{ik}f_{mjk})^2\right]
+-\KL\{q(l_{ik})\Vert g_{L_k}\}+C.
+$$ {#eq-L-objective-terms}
+
+Applying the coordinate rule @eq-coordinate-rule to this expression gives
 
 $$
 \log q^*(l_{ik})=
@@ -311,7 +399,15 @@ $$
 The cross-product factors because $R^{-k}$ excludes factor $k$.
 Both modalities therefore contribute information about the same score.
 
-**Identify coefficients and update.**
+**Collect the quadratic and hand off to EBNM.** Substituting the preceding
+expansion into @eq-L-isolate gives
+
+$$
+\log q^*(l_{ik})=-\frac{A_{L_{ik}}}{2}l_{ik}^2+B_{L_{ik}}l_{ik}
++\log g_{L_k}(l_{ik})+C,
+$$
+
+where the coefficients and the resulting normal-means input are
 
 $$
 \boxed{\begin{aligned}
@@ -341,7 +437,33 @@ There is no separate score matrix for methylation.
 
 # Update modality-specific loadings $F_m$
 
-**Reconstruction terms.** Isolating $f=f_{mjk}$ yields
+Fix a modality $m\in\{1,2\}$ ($m=1$ for expression and $m=2$ for
+methylation), a feature $j\in\{1,\ldots,p_m\}$ within that modality, and a
+factor $k\in\{1,\ldots,K\}$. Thus $f_{mjk}$ is a loading in modality $m$
+and uses the modality--factor prior $g_{F_{mk}}$.
+
+**Start from the fixed working objective.** Let $\ell_{Y_m}$ denote the
+$m$th summand of $\ell_Y$ in @eq-omics. In the fixed working objective,
+the terms involving $f=f_{mjk}$ are precisely the reconstruction term for
+modality $m$, the working Cox term, and its prior contribution:
+
+$$
+[\mathcal J_{\mathrm{work}}]_{f_{mjk}}=
+\E_q\left[-\frac12\tau_{mj}\sum_i
+ (R_{mij}^{-k}-l_{ik}f_{mjk})^2+Q_C\right]
+-\KL\{q(f_{mjk})\Vert g_{F_{mk}}\}+C.
+$$ {#eq-F-objective-terms}
+
+Applying @eq-coordinate-rule, equivalently retaining only the terms that
+contain $f_{mjk}$, gives
+
+$$
+\log q^*(f_{mjk})=
+[\E_q\ell_{Y_m}]_{f_{mjk}}+[\E_qQ_C]_{f_{mjk}}
++\log g_{F_{mk}}(f_{mjk})+C.
+$$ {#eq-F-isolate}
+
+**Reconstruction contribution.** Isolating $f=f_{mjk}$ yields
 $-\frac12\tau_{mj}\sum_i\E(R_{mij}^{-k}-l_{ik}f)^2$.
 Expanding gives $-A_Yf^2/2+B_Yf$, where
 
@@ -350,7 +472,8 @@ A_Y=\tau_{mj}\sum_i l_{ik}^{(2)},\qquad
 B_Y=\tau_{mj}\sum_i\bar l_{ik}\bar R_{mij}^{-k}.
 $$ {#eq-F-omics}
 
-**Survival terms.** Separate other factors from other features of this factor:
+**Working-survival contribution.** Separate other factors from other
+features of this factor:
 
 $$
 \begin{aligned}
@@ -376,7 +499,22 @@ $$ {#eq-F-expand}
 The second cross-product uses $\E\beta_k^2$, since both features multiply
 the **same** random coefficient. It includes features from both modalities.
 
-**Combine coefficients and apply the modality's prior.**
+**Combine the two likelihood contributions.** The reconstruction and working
+survival expressions give
+
+$$
+\begin{aligned}
+\log q^*(f)
+&=-\frac12(A_Y+A_C)f^2+(B_Y+B_C)f
+  +\log g_{F_{mk}}(f)+C,\\
+A_C&=\beta_k^{(2)}\sum_iw_i y_{mij}^2,\\
+B_C&=\sum_i y_{mij}\left\{\bar\beta_k h_i^{-k}
+ -w_i\beta_k^{(2)}\bar Z_{ik}^{-(m,j)}\right\}.
+\end{aligned}
+$$ {#eq-F-combine}
+
+**Identify the EBNM input and apply the modality's prior.** Thus
+$A_{F_{mjk}}=A_Y+A_C$ and $B_{F_{mjk}}=B_Y+B_C$, giving
 
 $$
 \boxed{\begin{aligned}
@@ -448,9 +586,19 @@ not the joint model derived here.
 
 # Update the shared survival coefficients $\beta$
 
-**Isolate the terms.** Write
+**Start from the fixed working objective.** In that objective, only the
+working Cox term and the $\beta_k$ prior contribution depend on $\beta_k$.
+Write
 $\eta_i=\eta_i^{-k}+Z_{ik}\beta_k$. The working survival term and
 $g_{\beta_k}$ are the only terms involving $\beta_k$:
+
+$$
+[\mathcal J_{\mathrm{work}}]_{\beta_k}=
+\E_q[Q_C]-\KL\{q(\beta_k)\Vert g_{\beta_k}\}+C,
+$$ {#eq-beta-objective-terms}
+
+where the displayed expectation retains only its $\beta_k$-dependent terms.
+Applying @eq-coordinate-rule gives
 
 $$
 \log q^*(\beta_k)=
@@ -473,6 +621,16 @@ x_{\beta_k}&=B_{\beta_k}/A_{\beta_k},\qquad
 s_{\mathrm{obs},k}^2=A_{\beta_k}^{-1}.
 \end{aligned}}
 $$ {#eq-beta-inputs}
+
+Equivalently, the coordinate expression is
+
+$$
+\log q^*(\beta_k)=-\frac{A_{\beta_k}}2\beta_k^2
++B_{\beta_k}\beta_k+\log g_{\beta_k}(\beta_k)+C,
+$$
+
+which is the scalar normal-means input in @eq-ebnm-handoff. The next step
+uses the chosen Normal prior to write its posterior analytically.
 
 **Estimate the prior and obtain posterior moments.** With prior variance
 $s_{\beta_k}^2$, the scalar marginal distribution is
@@ -502,7 +660,9 @@ omit loading uncertainty and would not yield this variational update.
 
 # Update feature-wise precisions $\tau_m$
 
-**Isolate the terms.** For a single feature, define
+**Start from the fixed working objective.** The precision $\tau_{mj}$
+appears only in the observation likelihood for feature $j$ of modality $m$;
+there is no precision prior in this proposal. For a single feature, define
 $S_{mij}=\E_q[(y_{mij}-\sum_k l_{ik}f_{mjk})^2]$.
 The precision-dependent objective is
 
@@ -566,13 +726,12 @@ silently presenting a capped value as the MLE.
 chosen $K$, and numerical tolerances. Feature order and preprocessing are
 recorded for subsequent prediction.
 
-1. **Initialize.** Choose finite, nondegenerate score/loading moments,
-   positive precisions, and priors with positive slab mass and rate. Initialize
-   $\beta$ and its prior away from an absorbing zero state, then compute
-   projection moments using @eq-projection-moments.
+1. **Initialize.** Choose finite score/loading moments, positive precisions,
+   and priors with positive slab mass and rate; initialize $\beta$ away from
+   an absorbing zero state, then compute @eq-projection-moments.
 2. **Refresh the survival approximation.** Set $\eta^0=\mu_\eta$, compute
-   $(u,w,h)$ from @eq-working and @eq-quadratic, and freeze these quantities
-   for the inner updates.
+   $(u,w,h)$ from @eq-working and @eq-quadratic, and freeze them for the
+   inner updates.
 3. **For each factor $k$, update in order:**
    - Form residuals excluding $k$ using current moments (@eq-residual).
    - Update $q(L_{\cdot k})$ and $g_{L_k}$ using @eq-L-update and @eq-L-prior.
@@ -581,21 +740,13 @@ recorded for subsequent prediction.
 4. **Update noise.** Compute expected residuals and update all $\tau_{mj}$
    using @eq-residual-second and @eq-tau-update.
 5. **Assess convergence.** At fixed $(w,h)$, sweep until the working objective
-   and moments stabilize, then refresh the survival approximation. Stop when
-   outer iterations stabilize the predictor and moments; report failures and
-   record the fixed objective and mean-predictor Cox partial likelihood as a
-   diagnostic, not $\E_q\ell_C$.
+   and moments stabilize, then refresh the approximation. Stop when outer
+   iterations stabilize the predictor and moments; record the fixed objective
+   and mean-predictor Cox partial likelihood, not $\E_q\ell_C$.
 
-No per-iteration column normalization is part of these equations. Factor
-labels and nonzero scales are exchangeable: rescaling a score column, both
-loading columns, and its survival coefficient can leave reconstruction and
-the predictor unchanged; estimated prior scales transform accordingly.
-Reporting may standardize a fitted nonzero score column after convergence with
-the corresponding parameter transformations, but this is not a fitting update.
-
-For independent validation, hold fitted parameters and preprocessing fixed and
-compute $\widehat\eta_{\rm val}=(Y_{1,\rm val}\bar F_1+
-Y_{2,\rm val}\bar F_2)\bar\beta$ without refitting to validation outcomes.
+Do not normalize columns during fitting: factor scales are exchangeable.
+After convergence, reporting may rescale a nonzero score column with the
+corresponding loadings and coefficient.
 
 ```{r}
 #| include: false

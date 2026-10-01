@@ -28,8 +28,10 @@ multimodal_yfb_validate_moments <- function(mean, second, name,
   if (any(!is.finite(mean)) || any(!is.finite(second))) {
     stop(name, " posterior moments must be finite.")
   }
-  if (any(second < mean^2 - tolerance)) {
-    stop(name, " posterior second moments must be at least squared means.")
+  minimum_variance <- min(second - mean^2)
+  if (minimum_variance < -tolerance) {
+    stop(name, " posterior second moments must be at least squared means ",
+         sprintf("(minimum variance %.3e).", minimum_variance))
   }
   invisible(TRUE)
 }

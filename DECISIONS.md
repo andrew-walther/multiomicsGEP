@@ -5,6 +5,51 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-09-18 — Multimodal YFB convergence and rank-selection protocol
+
+**Decision.** The isolated matched expression--methylation YFB fitter uses
+factor-scale canonicalization followed by a relative, identifiable convergence
+criterion. It allows up to 500 outer sweeps and declares convergence only when
+both the maximum relative fitted-reconstruction change and maximum relative raw
+risk-predictor change are below $10^{-4}$. The raw likelihood and prediction
+parameterization are unchanged.
+
+**Reason.** The factorization has a scale symmetry: reciprocal changes in the
+shared score and modality-specific loading preserve both $LF_m^\top$ and the
+raw joint YFB predictor. Latent-moment or absolute-scale stopping rules can
+therefore report non-convergence for an otherwise stable fit. A borderline
+K=7 simulation fit met the scale-invariant criterion at sweep 314, showing the
+generic 300-sweep cap was insufficient.
+
+**Rank and retention.** Reconstruction-active factors (joint marginal PVE at
+least 1%) and survival-active factors ($|E(\beta_k)|/\operatorname{SD}(\beta_k)
+\geq1.96$) are reported independently, with their union retained for
+interpretation. Neither count selects $K_{\mathrm{init}}$. The selection
+procedure is a paired replicated simulation panel over K=5,...,15 and chooses
+the smallest K within one standard error of the best mean held-out C-index;
+held-out partial likelihood is reported only as a same-risk-set secondary
+diagnostic. This is the current route to a parsimonious reconstruction rank
+without discarding a survival-active program.
+
+**Factor-level shrinkage.** A shared Gamma-rate prototype did not reduce
+reconstruction-active factors and worsened held-out C-index, so it was removed.
+The present point-exponential coordinate priors are not claimed to be a
+whole-factor ARD mechanism. A group spike-and-slab or group-penalty extension
+would require a new derivation and a separate validation study.
+
+**Simulation recovery.** The simulation suite now includes an
+`adverse_protective` scenario with true coefficients $(0.70,-0.70,0)$ and
+reports both prognostic retention and direction recall. A full-convergence
+held-out check at K=12 recovered both true programs and both signs; it is a
+sanity check, not final power evidence.
+
+**Affected files.** `code/fit_multimodal_yfb.R`,
+`code/run_multimodal_yfb_simulation.R`,
+`code/simulate_multimodal_yfb.R`, `config/globals.yml`, and their focused
+tests; screening outputs are under `results/benchmark_sim/outputs/`.
+
+---
+
 ## 2026-09-10 — Multimodal YFB derivation prepared for advisor review
 
 **Agreed design scope.** Adapt the current YFB method to matched expression and

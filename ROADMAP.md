@@ -4,6 +4,8 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
+> **Active working plan (2026-10-01):** `docs/plans/Working_Plan_10_1_26.md` brings together the 8/27, 9/4 and 9/18 meeting notes into prioritized workstreams: branch review, matched TCGA/ICGC preprocessing, multimodal K pruning and F priors, real-data fits, and open single-modality items. Start open work there.
+>
 > **Status as of 2026-07-15.** Core model complete (modular CAVI, 374/374 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
 > cohorts across RNA-seq, microarray, and proteomics platforms). Multi-cohort simulation
@@ -79,17 +81,15 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
-- [ ] **Review the matched expression/methylation YFB formulation with advisors**
-  `[Priority: High]` `[Effort: Medium]` — The derivation and PDF in
-  `derivations/multimodal_YFB/` are prepared: a nine-page meeting derivation,
-  linked R implementation specification, preserved technical notes, and algebra checks.
-  Review precedes runnable code and the September 10 progress-book chapter.
-  Decide loading support and analysis scale, ordinary versus weighted likelihood,
-  projection normalization, and the approximation for joint survival feedback.
-  Retain the current no-feedback YFB extension as the compatibility comparator.
-  Implementation, simulation scenarios, and a real-data application follow
-  approval; the initial design uses one matched training cohort and one independent
-  matched validation cohort.
+- [ ] **Complete replicated K selection for matched expression/methylation YFB**
+  `[Priority: High]` `[Effort: Large]` — The approved raw joint-YFB derivation,
+  isolated fitter, frozen predictor, and matched simulations are implemented.
+  Run the checkpointed paired K=5,...,15 panel over independent seeds, selecting
+  the smallest K within one standard error of the best mean held-out C-index.
+  Report reconstruction-active, survival-active, and union-retained counts
+  separately; do not use marginal PVE as a rank-selection rule. Confirm recovery
+  in both the ordinary and adverse/protective-program simulation scenarios before
+  considering matched expression--methylation real data.
 
 - [ ] **Slow, thorough re-characterization of the selected gene programs' biological character,
   now that `beta_cohort_id` (cohort-specific survival coefficients) is integrated**

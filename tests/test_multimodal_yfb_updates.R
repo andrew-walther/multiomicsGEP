@@ -80,6 +80,11 @@ run_test("MMYFB-Updates-T4: loading-prior update is modality-specific and handle
   assert_true(prior_methylation$point_mass)
 })
 
+run_test("MMYFB-Updates-T4b: loading-prior update treats zero posterior magnitude as a point mass", {
+  prior <- multimodal_yfb_update_loading_prior(c(0.5, 0.5), c(0, 0))
+  assert_true(prior$point_mass)
+})
+
 run_test("MMYFB-Updates-T5: beta update includes projection uncertainty", {
   beta <- multimodal_yfb_update_beta_k(EZ_k = c(2, 3), VZ_k = c(1, 2),
                                         w = c(0.5, 1), h_minus_k = c(1, 2))
@@ -108,9 +113,11 @@ run_test("MMYFB-Updates-T6: tau is n divided by each expected residual sum", {
 
 run_test("MMYFB-Updates-T7: zero-information updates retain their stated prior boundaries", {
   prior_mean <- multimodal_yfb_point_exponential_posterior(0, 0, .mm_prior)
+  underflow_mean <- multimodal_yfb_point_exponential_posterior(0, -1e-238, .mm_prior)
   beta <- multimodal_yfb_update_beta_k(c(0, 0), c(0, 0), c(0, 0), c(0, 0),
                                         prior_variance = 2)
   assert_near(prior_mean$mean, 0.6 / 1.2, tol = 1e-12)
+  assert_near(underflow_mean$mean, prior_mean$mean, tol = 1e-12)
   assert_near(prior_mean$second, 2 * 0.6 / 1.2^2, tol = 1e-12)
   assert_near(beta$second, 2, tol = 1e-12)
 })
@@ -128,5 +135,32 @@ run_test("MMYFB-Updates-T8: tau reports zero-residual boundary", {
   }, error = conditionMessage)
   assert_true(grepl("zero", error, ignore.case = TRUE))
 })
+
+run_test("MMYFB-Updates-T9: extreme negative pseudo-observations retain valid moments", {
+  posterior <- multimodal_yfb_point_exponential_posterior(
+    A = 1, B = -1e5, prior = .mm_prior
+  )
+  assert_true(is.finite(posterior$mean) && is.finite(posterior$second))
+  assert_true(posterior$mean >= 0)
+  assert_true(posterior$second >= posterior$mean^2)
+})
+
+run_test("MMYFB-Updates-T10: shared-score update refits its EB prior", {
+  update <- multimodal_yfb_update_L_k(
+    Y = list(expression = matrix(c(3, 4), ncol = 1),
+             methylation = matrix(c(5, 6), ncol = 1)),
+    R_minus_k = list(expression = matrix(c(2, 3), ncol = 1),
+                       methylation = matrix(c(4, 5), ncol = 1)),
+    EF_k = list(expression = 2, methylation = 1),
+    EF2_k = list(expression = 4.5, methylation = 1.25),
+    Tau = list(expression = 3, methylation = 2), prior = .mm_prior
+  )
+  expected <- multimodal_yfb_update_loading_prior(update$slab_prob, update$mean)
+  assert_true(is.list(update$prior),
+              msg = "shared-score update must return its refitted prior")
+  assert_near(update$prior$pi, expected$pi, tol = 1e-12)
+  assert_near(update$prior$rate, expected$rate, tol = 1e-12)
+})
+
 
 if (sys.nframe() == 0L) report_results("test_multimodal_yfb_updates.R")

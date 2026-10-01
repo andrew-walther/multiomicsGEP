@@ -18,9 +18,14 @@ cavi:
   n_cv_folds: 5
 
 multimodal_yfb:
-  max_outer: 50
+  # Some raw-scale multimodal fits require slightly more than the generic CAVI
+  # cap to meet the identifiable relative-change criterion.
+  max_outer: 500
   max_inner: 5
-  tol: 1.0e-5
+  # Relative fitted-reconstruction/predictor tolerance after factor-scale
+  # canonicalization. The denominator is max(1, fitted magnitude), so this
+  # criterion is invariant to the raw measurement scale of each modality.
+  tol: 1.0e-4
   pve_threshold: 0.01
   prognostic_z_threshold: 1.96
 

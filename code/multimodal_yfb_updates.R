@@ -36,6 +36,12 @@ multimodal_yfb_point_exponential_posterior <- function(A, B, prior) {
     return(list(mean = 0, second = 0, slab_prob = 0, x = NA_real_, s2 = NA_real_))
   }
   if (A == 0) {
+    # A collapsed factor can leave a subnormal residual B through floating-
+    # point cancellation (for example 10^-238). Algebraically B is then zero:
+    # no coordinate has information once its quadratic precision vanishes.
+    # Treat only this underflow-scale remainder as the stated zero-information
+    # boundary; a material B with A = 0 remains an invalid, unbounded update.
+    if (abs(B) <= sqrt(.Machine$double.xmin)) B <- 0
     if (B != 0) stop("A = 0 with B != 0 is not a valid quadratic update.")
     return(list(mean = prior$pi / prior$rate,
                 second = 2 * prior$pi / prior$rate^2,
@@ -53,10 +59,23 @@ multimodal_yfb_point_exponential_posterior <- function(A, B, prior) {
   log_total <- max(log_spike, log_slab) +
     log(exp(log_spike - max(log_spike, log_slab)) + exp(log_slab - max(log_spike, log_slab)))
   slab_prob <- exp(log_slab - log_total)
-  mills <- exp(dnorm(h, log = TRUE) - pnorm(h, log.p = TRUE))
-  slab_mean <- slab_location + s * mills
-  slab_second <- slab_location^2 + s2 + slab_location * s * mills
-  list(mean = slab_prob * slab_mean, second = slab_prob * slab_second,
+  if (h < -8) {
+    # For a = -h >> 0, direct truncated-Normal moments subtract nearly equal
+    # O(a^2) terms. The inverse-Mills expansion below gives the positive
+    # O(a^-1) mean and O(a^-2) second moment without cancellation.
+    a <- -h
+    inverse_a <- 1 / a
+    delta <- inverse_a - 2 * inverse_a^3 + 10 * inverse_a^5 - 74 * inverse_a^7
+    slab_mean <- s * delta
+    slab_second <- s2 * (1 - a * delta)
+  } else {
+    mills <- exp(dnorm(h, log = TRUE) - pnorm(h, log.p = TRUE))
+    slab_mean <- slab_location + s * mills
+    slab_second <- slab_location^2 + s2 + slab_location * s * mills
+  }
+  mean <- slab_prob * slab_mean
+  second <- max(slab_prob * slab_second, mean^2)
+  list(mean = mean, second = second,
        slab_prob = slab_prob, x = x, s2 = s2)
 }
 
@@ -102,7 +121,11 @@ multimodal_yfb_update_L_k <- function(Y, R_minus_k, EF_k, EF2_k, Tau, prior) {
        s2 = vapply(posterior, `[[`, numeric(1), "s2"),
        mean = vapply(posterior, `[[`, numeric(1), "mean"),
        second = vapply(posterior, `[[`, numeric(1), "second"),
-       slab_prob = vapply(posterior, `[[`, numeric(1), "slab_prob"))
+       slab_prob = vapply(posterior, `[[`, numeric(1), "slab_prob"),
+       prior = multimodal_yfb_update_loading_prior(
+         vapply(posterior, `[[`, numeric(1), "slab_prob"),
+         vapply(posterior, `[[`, numeric(1), "mean")
+       ))
 }
 
 #' Maximize one modality-factor point-exponential loading prior
@@ -122,7 +145,12 @@ multimodal_yfb_update_loading_prior <- function(slab_prob, mean) {
   total_slab <- sum(slab_prob)
   if (total_slab == 0) return(list(pi = 0, rate = NA_real_, point_mass = TRUE))
   total_mean <- sum(mean)
-  if (total_mean <= 0) stop("Positive posterior slab mass requires positive posterior means.")
+  # A finite slab probability can coexist with numerically zero posterior
+  # means after a large factor-level rate. Its empirical-Bayes MLE is the
+  # infinite-rate limit, represented here by the existing point-mass boundary.
+  if (total_mean <= sqrt(.Machine$double.xmin)) {
+    return(list(pi = 0, rate = NA_real_, point_mass = TRUE))
+  }
   list(pi = total_slab / length(mean), rate = total_slab / total_mean, point_mass = FALSE)
 }
 
@@ -172,15 +200,15 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
   for (j in seq_len(ncol(Y_m))) {
     y <- Y_m[, j]
     old_mean <- EF_new[j]
-    old_variance <- EF2_new[j] - old_mean^2
+    old_variance <- pmax(EF2_new[j] - old_mean^2, 0)
     EZ_without_j <- EZ_new - y * old_mean
     A <- Tau_m[j] * sum_EL2 + EBeta2_k * sum(w * y^2)
     B <- Tau_m[j] * sum(EL_k * R_mk[, j]) +
       sum(y * (EBeta_k * h_minus_k - w * EBeta2_k * EZ_without_j))
     posterior <- multimodal_yfb_point_exponential_posterior(A, B, prior)
-    new_variance <- posterior$second - posterior$mean^2
+    new_variance <- pmax(posterior$second - posterior$mean^2, 0)
     EF_new[j] <- posterior$mean
-    EF2_new[j] <- posterior$second
+    EF2_new[j] <- posterior$mean^2 + new_variance
     EZ_new <- EZ_without_j + y * posterior$mean
     VZ_new <- VZ_new + y^2 * (new_variance - old_variance)
     details[[j]] <- c(posterior, list(A = A, B = B, EZ_without_j = EZ_without_j))

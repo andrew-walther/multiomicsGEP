@@ -51,6 +51,7 @@ source("code/preprocess_multimodal_yfb.R")
 source("code/multimodal_yfb_updates.R")
 source("code/fit_multimodal_yfb.R")
 source("code/predict_multimodal_yfb.R")
+source("code/simulate_multimodal_yfb.R")
 
 # List all test files to run
 test_files <- c(
@@ -83,7 +84,8 @@ test_files <- c(
   "tests/test_multimodal_yfb_helpers.R",
   "tests/test_multimodal_yfb_preprocess_predict.R",
   "tests/test_multimodal_yfb_updates.R",
-  "tests/test_multimodal_yfb_fit.R"
+  "tests/test_multimodal_yfb_fit.R",
+  "tests/test_simulate_multimodal_yfb.R"
 )
 
 # Run each test file

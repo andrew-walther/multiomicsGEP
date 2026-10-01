@@ -1,0 +1,2 @@
+"scenario","replicate_id","seed","method","K_init","converged","K_eff_reconstruction","K_eff_survival","K_eff_retained","c_index","heldout_partial_log_likelihood","training_partial_log_likelihood","true_risk_correlation","prognostic_recall","prognostic_direction_recall","runtime_seconds"
+"adverse_protective",1,20260919,"joint_multimodal_yfb",12,TRUE,6,4,8,0.776568265682657,-299.830486394673,-294.553817927743,0.902587704199675,1,1,45.502
