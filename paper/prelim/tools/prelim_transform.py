@@ -201,11 +201,11 @@ REFS_BLOCK_STANDALONE = "# References {.unnumbered}\n\n::: {#refs}\n:::\n"
 
 APPENDIX_BLOCK = """```{=latex}
 % Appendix: \\appendix resets the chapter counter and switches the TOC prefix
-% to APPENDIX (bios-prelim.cls). \\setcounter{chapter}{1} makes this chapter's
-% appendix APPENDIX B, after Chapter 2's APPENDIX A (plan step 7).
+% to APPENDIX (bios-prelim.cls). \\setcounter{chapter}{2} makes this chapter's
+% appendix APPENDIX C, after Chapter 2's A and Chapter 3's B.
 \\appendix
 \\addtocontents{toc}{\\protect\\renewcommand{\\protect\\uncTocChapPrefix}{APPENDIX}}
-\\setcounter{chapter}{1}
+\\setcounter{chapter}{2}
 ```
 
 # Supplementary Material for Chapter 4
@@ -228,7 +228,7 @@ HARNESS = """```{=latex}
 \\renewcommand{\\contentsname}{TABLE OF CONTENTS}
 \\tableofcontents
 \\mainmatter
-\\setcounter{chapter}{2}
+\\setcounter{chapter}{3}
 ```
 """
 
@@ -257,7 +257,7 @@ def transform(chapter_text, header_text, source_label):
     #     body heading moves down one level: '#' -> '##' (3.1), '##' -> '###'.
     main = demote_headings(main)
 
-    # T5: the appendix becomes APPENDIX B with its own chapter-level heading;
+    # T5: the appendix becomes APPENDIX C with its own chapter-level heading;
     #     '## A1. Title' -> '## Title' (the class numbers it B.1). The
     #     \applabel anchors are redefined as plain \label in the header, so
     #     'Appendix \ref{...}' prints B.1 here and A1 in the standalone.
