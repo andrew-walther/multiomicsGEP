@@ -32,10 +32,13 @@ outcome, therefore reproduces every reported cohort C:
 projections, checks that they match the saved scores to 1e-8, and uses
 risk = −η.
 
-**Follow-up.** Switch `run_external_ci_analysis.R` to a frozen orientation
-(`flip = TRUE` for D4, or refit D4 after the sign fix). The numbers will not
-change, but the script will no longer use the circular convention. Report
-concordance below 0.5 where it occurs rather than flipping it.
+**Follow-up (done 2026-10-02).** `run_external_ci_analysis.R` now passes
+frozen orientations to the bootstrap functions: `flip = TRUE` for D4
+(risk = −η), and `flip = FALSE` for the two-step EBMF→Cox score, which is
+already a training-fit Cox risk. The rerun reproduces
+`external_cindex_ci.csv` and `external_paired_diff_ci.csv` exactly.
+- Per cohort, the paired difference excludes zero only in Puleo.
+- Pooled (fixed effect), ΔC = 0.042 (95% CI 0.013 to 0.071).
 
 ---
 

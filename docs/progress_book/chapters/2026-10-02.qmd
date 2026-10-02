@@ -172,7 +172,7 @@ The recommended single-modality fit (YFB, K_init = 7, trained on TCGA-PAAD + CPT
 | Stromal program | Expression only | Stromal | collagens, *FAP*, *SPARC* |
 | Immune program | Expression only | Immune | *IKZF1*, *IL10RA* |
 
-Its mean external C across five held-out cohorts is 0.627, against 0.581 for the two-step baseline, and it is higher in every cohort.
+Its mean external C across five held-out cohorts is 0.627, against 0.581 for the two-step baseline. It is higher in every cohort, although only Puleo's paired difference is individually significant. The pooled difference is $\Delta C=0.042$ (95% CI 0.013 to 0.071).
 
 **The frozen model separates survival in every held-out cohort.**
 - Separation is clearest in Puleo (largest cohort, log-rank $p<0.0001$) and Dijk ($p=0.0005$).
@@ -191,7 +191,7 @@ Its mean external C across five held-out cohorts is 0.627, against 0.581 for the
 
 - **The problem.** The script that produced the external C table chose each risk score's direction separately in every validation cohort, using that cohort's outcomes. The 9/4 review flagged this convention as circular.
 - **Why the numbers don't change.** The saved fit predates the 9/4 sign fix, so its $\eta$ is a good-prognosis score in all five cohorts. A single global flip, risk $=-\eta$, chosen before seeing any validation outcome, reproduces every reported C (0.634, 0.549, 0.648, 0.657, 0.645).
-- **Going forward.** Orientation is fixed from training only. A model that fails in a cohort will show C < 0.5 rather than being flipped. The reporting script will be updated to match.
+- **Going forward.** Orientation is fixed from training only. A model that fails in a cohort will show C < 0.5 rather than being flipped. The reporting script now uses these frozen orientations, and its rerun reproduces the C-index and paired-difference tables exactly.
 :::
 
 ## §6 — Single-modality YFB: $Z_F$, and the α_F question
@@ -242,5 +242,5 @@ $$
   - Done: the loading sweep is now compiled code, 5× faster on real data, with identical results.
   - Remaining: `ebnm` prior refits take about half the time.
   - Still needed: the full 305k-CpG fit on Longleaf, and the block update.
-- **Single modality.** Run the α/α_F experiments (§6). Update the C-index reporting script to the frozen orientation.
+- **Single modality.** Run the α/α_F experiments (§6). 
 - **Prelim.** The proposal chapter draft is in `paper/prelim/project3-ssbmf.qmd` (21 pp). Its multimodal results are pending.

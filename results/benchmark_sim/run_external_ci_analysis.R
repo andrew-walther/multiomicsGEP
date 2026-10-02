@@ -42,6 +42,17 @@ B    <- 2000L
 SEED <- 1L
 
 YFB_MODEL <- "D4"  # recommended configuration
+
+# Frozen orientations, fixed without validation outcomes (DECISIONS.md 2026-10-02):
+# - the saved D4 fit predates the 2026-09-04 sign-correction fix, so its eta is a
+#   good-prognosis score: risk = -eta (flip = TRUE);
+# - the two-step EBMF->Cox score comes from a training-data Cox fit and is
+#   already a risk score (flip = FALSE).
+# Previously flip = NULL chose each cohort's orientation from that cohort's own
+# outcomes (circular). Both conventions give identical numbers here because
+# every cohort agrees in direction; the frozen one is the correct statement.
+FLIP_YFB  <- TRUE
+FLIP_EBMF <- FALSE
 OUT_DIR   <- "results/benchmark_sim/outputs/desurv_comparison"
 
 yfb_scores  <- readRDS(file.path(OUT_DIR, "desurv_comparison_riskscores.rds"))[[YFB_MODEL]]
@@ -66,8 +77,10 @@ for (co in cohorts) {
 
   cat(sprintf("  %s (n=%d) ...\n", co, y$n))
 
-  ci_y <- bootstrap_concordance_ci(y$risk, y$time, y$status, B = B, seed = SEED)
-  ci_e <- bootstrap_concordance_ci(e$risk, e$time, e$status, B = B, seed = SEED)
+  ci_y <- bootstrap_concordance_ci(y$risk, y$time, y$status, B = B, seed = SEED,
+                                   flip = FLIP_YFB)
+  ci_e <- bootstrap_concordance_ci(e$risk, e$time, e$status, B = B, seed = SEED,
+                                   flip = FLIP_EBMF)
 
   ci_rows[[length(ci_rows) + 1]] <- data.frame(
     cohort = co, model = "YFB (recommended)",
@@ -81,7 +94,8 @@ for (co in cohorts) {
     se = round(ci_e$se, 4), n = e$n, stringsAsFactors = FALSE)
 
   diff <- bootstrap_concordance_diff_ci(y$risk, e$risk, y$time, y$status,
-                                         B = B, seed = SEED)
+                                         B = B, seed = SEED,
+                                         flip_a = FLIP_YFB, flip_b = FLIP_EBMF)
   diff_rows[[length(diff_rows) + 1]] <- data.frame(
     cohort = co, diff_estimate = round(diff$estimate, 4),
     diff_ci_lo = round(diff$lower, 4), diff_ci_hi = round(diff$upper, 4),

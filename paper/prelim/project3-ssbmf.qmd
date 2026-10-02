@@ -186,7 +186,7 @@ The sweep covers $K_{\mathrm{init}}=3,\dots,10$ and $15$, with three seeds per s
 
 ## Joint fitting improves external discrimination over a two-step pipeline in five held-out cohorts
 
-The recommended single-modality configuration was trained on TCGA-PAAD and CPTAC with $K_{\mathrm{init}}=7$. Its mean external concordance across the five held-out cohorts was 0.627, against 0.581 for an unsupervised factorization followed by Cox regression on the same genes (@tbl-external). The joint model's concordance was higher in every cohort. Concordance in this range is comparable to that reported for DeSurv in its validation cohorts [@Young2026].
+The recommended single-modality configuration was trained on TCGA-PAAD and CPTAC with $K_{\mathrm{init}}=7$. Its mean external concordance across the five held-out cohorts was 0.627, against 0.581 for an unsupervised factorization followed by Cox regression on the same genes (@tbl-external). The joint model's concordance was higher in every cohort. Taken one cohort at a time, the paired-bootstrap interval for the difference excludes zero only in Puleo, the largest cohort. Pooled across the five cohorts, the improvement is $\Delta C=0.042$ (95% CI 0.013 to 0.071), using a fixed-effect, inverse-variance pooling. Concordance in this range is comparable to that reported for DeSurv in its validation cohorts [@Young2026].
 
 | Validation cohort | $n$ | Joint YFB | Two-step EBMF → Cox |
 |---|---|---|---|
