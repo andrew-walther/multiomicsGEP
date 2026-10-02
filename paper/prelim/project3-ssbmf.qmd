@@ -287,10 +287,10 @@ The planned schedule is given in Table \ref{tab:timeline}.
 ```{=latex}
 % Not a float: as the last item before References it would otherwise be
 % moved to a page of its own.
-\begin{center}
-\small
+\noindent\begin{minipage}{\linewidth}
+\centering\small
 \captionof{table}{Timeline for the remaining work.}\label{tab:timeline}
-\begin{tabular}{>{\raggedright\arraybackslash}p{4.0cm}>{\raggedright\arraybackslash}p{10.0cm}}
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{9.6cm}}
 \toprule
 Period & Work \\
 \midrule
@@ -301,7 +301,7 @@ April--May 2027 & Full-CpG multimodal fit on the computing cluster; manuscript d
 Summer 2027 & Dissertation completion and defense (date to be confirmed) \\
 \bottomrule
 \end{tabular}
-\end{center}
+\end{minipage}
 ```
 
 \FloatBarrier
