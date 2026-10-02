@@ -1,0 +1,187 @@
+# October 2, 2026
+
+## Summary {.unnumbered}
+
+- **The multimodal model now has a first real-data application.** It is trained on TCGA-PAAD and validated externally on ICGC (PACA-AU), using matched expression and methylation data for both cohorts. (§3, §4)
+- **Loading priors can now be chosen per modality: point-exponential, point-Laplace or Normal.** The last two allow signed loadings, as discussed on 9/18. (§2)
+- **Real-data preprocessing is in place and tested.** It covers log2 expression, CpG matching, imputation, survival linkage and screening on the training cohort only. How to select features for a two-modality model is an open question for discussion. (§3)
+- **The single-modality α_F question has candidate solutions and a test design.** Experiments will follow once the multimodal prototype is in place. The projection-score notation $Z_F$ is now defined in the derivation. (§5)
+
+[RESULTS SUMMARY BULLET — fill in from §4 once fits complete]
+
+---
+
+## §1 — The multimodal model
+
+This section restates the model for readers who have not seen the derivation. The full derivation, with every update equation, is in `derivations/multimodal_YFB/multimodal_YFB_derivation.pdf`.
+
+**Data.** For $n$ matched patients, $Y_1\in\mathbb R^{n\times p_1}$ is gene expression and $Y_2\in\mathbb R^{n\times p_2}$ is DNA methylation. Survival is $(t_i,\delta_i)$.
+
+**Reconstruction.** One score matrix is shared across modalities, and each modality has its own loadings:
+
+$$
+Y_m = L F_m^\top + E_m,\qquad E_{mij}\sim N(0,\tau_{mj}^{-1}),\qquad m=1,2.
+$$
+
+- $L\in\mathbb R^{n\times K}$ (shared): patient $i$'s level of program $k$.
+- $F_m\in\mathbb R^{p_m\times K}$ (one per modality): how strongly each gene or CpG takes part in program $k$.
+- Each feature has its own residual precision $\tau_{mj}$.
+- A program may be active in one modality and absent in the other. Matched expression and methylation enter the model as more rows of $F$ (features), whereas extra cohorts enter as more rows of $L$ (patients).
+
+**Survival.** A Cox model with linear predictor
+
+$$
+\eta_i=\sum_k Z_{ik}\beta_k,\qquad Z_{ik}=\sum_{m}\sum_j y_{mij}f_{mjk},\qquad
+\boldsymbol\eta = (Y_1F_1+Y_2F_2)\,\beta .
+$$
+
+$Z$ projects each patient's observed data onto the loadings, so a new patient's risk score needs only their measurements and the fitted $F$ and $\beta$; $L$ does not have to be estimated for them. Survival enters the updates of $F$ and $\beta$, but not $L$.
+
+**Priors (empirical Bayes; each hyperparameter is fit from the data).**
+
+- Scores: $l_{ik}\sim(1-\pi_{L_k})\delta_0+\pi_{L_k}\operatorname{Exp}(r_{L_k})$, which are nonnegative.
+- Loadings: $f_{mjk}\sim g_{F_{mk}}$, a separate prior for each modality and program, from one of three families selected per modality:
+  - point-exponential (nonnegative)
+  - point-Laplace, $(1-\pi)\delta_0+\pi\,\tfrac{\lambda}{2}e^{-\lambda|f|}$ (signed and sparse)
+  - Normal, $N(0,\sigma^2)$ (signed)
+- Survival coefficients: $\beta_k\sim N(0,s^2_{\beta_k})$.
+
+**Fitting.** Coordinate-ascent variational inference with a Cox working approximation that is refreshed at every outer sweep.
+
+- There are **no α or α_F weights**: the genomics and survival terms enter the $F$ update as a plain sum.
+- The model is unchanged when a program's scores are multiplied by $a_k$ and its loadings divided by $a_k$ (with $\beta_k$ multiplied by $a_k$), so that scale is not identifiable. After each factor's update the fitter rescales it so that the standard deviation of $Z_{\cdot k}$ is 1.
+- Convergence is declared when the fitted reconstruction and $\eta$ change by less than $10^{-4}$ (relative).
+
+**Counting factors.**
+
+- A factor is *reconstruction-active* if its share of variance explained is ≥ 1%.
+- It is *survival-active* if $|E\beta_k|/\mathrm{SD}(\beta_k)\ge 1.96$.
+- The coordinate priors shrink entries, not whole factors, so these counts do not by themselves choose $K$ (§6).
+
+## §2 — Signed loading priors
+
+`fit_multimodal_yfb(..., control = list(prior_F = list(expression = ..., methylation = ...)))` now accepts `point_exponential` (the default), `point_laplace` or `normal` for each modality.
+
+- **Posterior updates.** Each loading is still updated one feature at a time from its pseudo-observation $x_j=B_j/A_j$, with variance $1/A_j$. The posterior moments are closed form: point-Laplace gives a point mass plus two truncated Normals, and Normal is conjugate. Both agree with `ebnm` to $10^{-6}$ when the prior is held fixed.
+- **Prior updates.** After each modality–factor sweep, `ebnm` re-fits the prior to that sweep's pseudo-observations, as flashier does.
+- **Tests.** Six new tests cover the posteriors, recovery of known prior parameters, the zero-information case, rescaling, and an end-to-end fit. The suite passes 521/521.
+- **Not yet supported:** signed (centered) input data. The input contract still requires nonnegative blocks, so the signed priors are currently fit on log2 expression and β-scale methylation.
+
+[PRIOR COMPARISON ON REAL DATA — point-exponential vs point-Laplace at K = 7, from §4]
+
+## §3 — Real data: matched TCGA and ICGC expression + methylation
+
+`code/load_multiomics_data.R` builds the cohorts from the files Yusha shared. Tests check that the patient IDs agree across expression, methylation and survival.
+
+| Cohort | Role | Patients | Events | Notes |
+|---|---|---|---|---|
+| TCGA-PAAD | training | 144 | 75 | 6 of 150 dropped (missing or non-positive time) |
+| ICGC primary PDAC | external validation | 50 | 30 | primary tumours with PDAC histology |
+| ICGC, all donors | sensitivity | 67 | 40 | adds 10 IPMN with invasion, 4 adenosquamous, 2 acinar, 1 signet ring |
+
+**Preprocessing**
+
+- **Expression.**
+  - TCGA: log2(TMM-CPM + 1), as provided.
+  - ICGC: provided unlogged, so log2(x + 1) is applied.
+  - ICGC donor DO33168 has two RNA samples; they are averaged in the source object.
+- **Methylation.**
+  - β-values on the 305,352 CpGs present in both cohorts' sex-chromosome-filtered probe sets, matched by probe name.
+  - Missing values (0.07% in TCGA) are filled by KNN imputation within each cohort, using Yusha's code.
+- **Survival.**
+  - TCGA: from the PDAC_data survival table.
+  - ICGC: from `info.expr`, collapsed to one row per donor. It agrees exactly with the PACA_AU_seq survival table.
+- **Screening.** Done on TCGA only, so that the validation cohort plays no part:
+  - 3,000 genes by the DeSurv combined mean + variance rank;
+  - 10,000 CpGs by β variance.
+
+**Methylation scale.** The model assumes Gaussian residuals for each feature. Across the 10,000 screened CpGs:
+
+| Scale | Median \|skewness\| | CpGs with \|skewness\| > 1 | Median excess kurtosis | Shapiro–Wilk rejects |
+|---|---|---|---|---|
+| β | 0.43 | 13% | −0.73 | 92% |
+| asin(2β − 1) | 0.34 | 6.6% | −0.70 | 82% |
+
+The arcsine transform halves the share of strongly skewed CpGs. Neither scale is Gaussian; both are flatter than Normal, which fits bimodal methylation. The first fits use β-values, because they meet the current nonnegative input requirement. The arcsine scale will be compared once centered input is supported.
+
+![Per-CpG skewness on each methylation scale (TCGA, 10k screened CpGs)](../../../results/multimodal_real/outputs/methylation_distribution_skew.png)
+
+::: {.callout-note}
+## Discussion point: feature selection for two modalities
+The screening above uses DeSurv's single-modality gene rule and a variance rule for CpGs. Some choices are not settled:
+
+- How many CpGs to keep relative to genes. With 10k CpGs and 3k genes, methylation has more than three times as many features, and without per-modality weights it can dominate the reconstruction likelihood.
+- Whether screening should be variance-based or survival-aware.
+- Whether CpGs should be screened separately, or mapped to genes (e.g. promoter CpGs of the selected genes).
+
+These choices affect the factors as much as the priors do. We would like to settle them before running larger fits.
+:::
+
+## §4 — First real-data fits: TCGA → ICGC
+
+[FILL FROM results/multimodal_real/outputs/real_fit_cindex_*.csv]
+
+- **Arms.** All arms use the same training patients and screened features:
+  - joint multimodal YFB;
+  - expression-only YFB on the same log2 genes;
+  - two-step EBMF → Cox on the stacked modalities.
+- **K values.** K = 5, 7 and 10 with point-exponential loadings, plus K = 7 with point-Laplace loadings.
+- **Metric.** Harrell's C with a frozen risk orientation, and a 1,000-sample bootstrap 95% CI.
+
+[TABLE: method × K × cohort C-index with CI, convergence, K_eff (reconstruction / survival)]
+
+[FACTOR COMPARISON: correlation of joint expression loadings with expression-only YFB programs and with tcga_flash_K14]
+
+## §5 — Single-modality YFB: what $Z_F$ means, and the α_F question
+
+### The projection score $Z_F$
+
+The β derivation (`derivations/cox_on_YF/qBeta/qBeta_YF_derivation.pdf`) now defines this quantity explicitly:
+
+$$
+Z_F = Y\,E[F],\qquad (z_F)_{ik}=\sum_j y_{ij}E[f_{jk}].
+$$
+
+- **What it is.** $Z_F$ is patient $i$'s expression profile projected onto program $k$'s loading vector. The subscript records that the score is built from $F$, not from $L$.
+- **How it differs from $L$.** $L$ appears only in the reconstruction $Y\approx LF^\top$. $Z_F$ appears only in the Cox predictor $\eta=Z_F\tilde\beta$.
+- **Normalization in the code.** `code/fit_cox_on_yf.R` normalizes the loading columns before projecting: $\hat Z_F = Y E[F] D^{-1}$ with $D=\mathrm{diag}(\lVert E[f_k]\rVert)$. This changes only the units of $\tilde\beta$; the class of predictors is the same.
+- **Multimodal model.** It uses the unnormalized $Z$ and controls scale with the factor rescaling step instead.
+
+### α and α_F
+
+In the current single-modality model:
+
+- **α = 0.5** tempers the Cox likelihood in the β update. It cancels in β's pseudo-observation and only widens its posterior.
+- **α_F = 0** leaves survival out of the F update entirely, so F is the same as in unsupervised EBMF.
+
+The consequence: the model keeps programs that both explain a lot of expression variance and are associated with survival. **It cannot find a low-variance prognostic program**, which is the advantage of supervision that the literature review argues for. The goal is to remove the weights, not to tune them.
+
+**Why α_F was set to 0.** In early versions, survival in the F update started a feedback loop. Larger F shrank L, which gave survival more relative weight in the next F update. $\max|E F|$ reached about $7\times10^4$, and then L and F collapsed. Under the current preprocessing the instability does not reproduce, but α_F > 0 also did not improve external C: α_F = 0, 0.1 and 0.3 gave mean external C of 0.6267, 0.6268 and 0.6263, and α_F = 0.5 was worse (0.607).
+
+**Candidate solutions**
+
+| # | Approach | Mechanism | Changes the model? |
+|---|---|---|---|
+| 1 | Use the multimodal model's factor rescaling, with α = α_F = 1 (plain sum) | Pins each factor's scale after its update, which removes the scale freedom behind the F-grows/L-shrinks loop. The multimodal model already runs this way. | No, only the optimization |
+| 2 | Warm start from the α_F = 0 fit, then switch to the plain sum | Avoids the initialization imbalance, where reconstruction outweighs survival by about $10^4$ when β ≈ 0 and survival has nothing to start from | No |
+| 3 | Increase α_F gradually from 0 to 1 over iterations | Optimization device only; the final objective is the plain sum | No |
+| 4 | Change the update order (β before F within each factor, or F after L and β) | Reduces how far each step can move the coupled L–F–β system | No |
+| 5 | Treat α as a power on the likelihood, with a stated rule for choosing it | Keeps a parameter, but justified as a tempered posterior | Yes (fallback) |
+
+**Test design**, fixed before running:
+
+- **Simulation.** Plant a prognostic program with low variance. Success means recovering its true loading (absolute correlation ≥ 0.7) and classifying it as survival-active more often than the α_F = 0 fit does, without losing the high-variance programs.
+- **Real data.** Pooled-bootstrap ΔC over the 5 held-out PDAC cohorts against the current configuration (mean C 0.627).
+- **Null result.** If supervision does not change F, report that. The prelim proposal's framing is then limited to what the α_F = 0 model supports.
+
+## §6 — Open items and next steps
+
+- **Choosing K in the multimodal model.**
+  - The point-exponential coordinate priors do not remove whole factors, so the number of reconstruction-active factors stays close to $K_{\mathrm{init}}$.
+  - Planned: a flashier-style step that removes a factor when the full ELBO, including the survival term, does not decrease without it.
+  - Interim rule: the smallest K within 1 SE of the best held-out C.
+- **Centered (signed) input**, so the arcsine methylation scale and an intercept/baseline can be used, as suggested on 9/18.
+- **Modality balance** at realistic feature ratios (methylation ≫ expression).
+- **A converged re-run** of the September simulation smoke study, and a replicated K panel.
+- **α/α_F experiments** (§5), after the multimodal prototype.
+- **Runtime.** The per-feature F update is written in R. One outer sweep on 144 × 13,000 takes about 14 s, so the full 305k-CpG fit needs either compiled code or Longleaf.

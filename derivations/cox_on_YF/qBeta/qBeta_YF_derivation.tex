@@ -50,6 +50,36 @@ CAVI iteration, there is \textbf{no second-moment correction needed for the pred
 $\mathbf{Z}_F$ has zero posterior variance from $q(\tilde\beta_k)$'s perspective.
 
 \bigskip
+\textbf{Notation: the projection score $\mathbf{Z}_F$} (clarification added 2026-10-01).
+$\mathbf{Z}_F = \mathbf{Y}\,\E[\mathbf{F}]$ is the $n\times K$ matrix with entries
+$(z_F)_{ik} = \sum_j y_{ij}\,\E[f_{jk}]$: patient $i$'s expression profile projected onto
+the posterior-mean loading vector of program $k$. The subscript $F$ records that the score
+is built from the loadings $\mathbf{F}$, as opposed to the latent score $\mathbf{L}$.
+The two have different roles: $\mathbf{L}$ appears only in the reconstruction
+$\mathbf{Y}\approx\mathbf{L}\mathbf{F}^\top$, and $\mathbf{Z}_F$ appears only in the Cox
+linear predictor. Because $\mathbf{Z}_F$ is a function of observed $\mathbf{Y}$, it can be
+computed for a new patient without estimating that patient's $\mathbf{L}$.
+
+\smallskip
+\emph{Normalization in the implementation} (\texttt{code/fit\_cox\_on\_yf.R}). The
+columns of $\E[\mathbf{F}]$ are scaled to unit Euclidean norm before projecting:
+\[
+  \hat{\mathbf{Z}}_F = \mathbf{Y}\,\E[\mathbf{F}]\,\mathbf{D}^{-1},\qquad
+  \mathbf{D} = \operatorname{diag}\bigl(\lVert\E[\mathbf{f}_1]\rVert,\dots,\lVert\E[\mathbf{f}_K]\rVert\bigr),
+\]
+and $\eta_i = \sum_k(\hat z_F)_{ik}\tilde\beta_k$. This only changes the units of
+$\tilde\beta$: $\hat{\mathbf{Z}}_F\tilde{\boldsymbol\beta} = \mathbf{Y}\E[\mathbf{F}]
+(\mathbf{D}^{-1}\tilde{\boldsymbol\beta})$, so $\tilde\beta_k$ equals
+$\lVert\E[\mathbf{f}_k]\rVert$ times the coefficient on the unnormalized score. It was
+introduced because $\lVert(\mathbf{z}_F)_{\cdot k}\rVert$ grows with $p$. On that scale
+the spike-and-slab prior on $\tilde\beta$ drove $\E[\tilde\beta]$ to zero. Prediction
+applies the stored norms (\texttt{EF\_norms}). Everything in this document holds with
+$(z_F)_{ik}$ read as $(\hat z_F)_{ik}$. The multimodal extension
+(\texttt{derivations/multimodal\_YFB/}) uses the unnormalized
+$\mathbf{Z}=\sum_m\mathbf{Y}_m\E[\mathbf{F}_m]$ and fixes scale by rescaling each factor
+instead.
+
+\bigskip
 \textbf{Goal of D3.} Derive the EBNM inputs $A_{\tilde\beta,k}$ and $B_{\tilde\beta,k}$,
 show that $\alpha$ cancels in the pseudo-observation $x_{\tilde\beta,k} = B/A$, and
 confirm the connection to the original $q(\beta)$ derivation.
