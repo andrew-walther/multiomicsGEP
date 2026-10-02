@@ -13,6 +13,7 @@ format:
       \usepackage{amssymb}
       \usepackage{booktabs}
       \usepackage{etoolbox}
+      \usepackage{placeins}
       \BeforeBeginEnvironment{tabular}{\begingroup\setstretch{1}}
       \AfterEndEnvironment{tabular}{\endgroup}
 bibliography: ../ssbmf-refs.bib
@@ -171,7 +172,7 @@ The sweep covers $K_{\mathrm{init}}=3,\dots,10$ and $15$, with three seeds per s
 - Training: TCGA-PAAD, 144 patients (75 deaths).
 - Validation: ICGC PACA-AU. The main set is 50 primary-tumor PDAC donors (30 deaths). A sensitivity set adds intraductal papillary mucinous neoplasm with invasion and other histologies, for 67 donors (40 deaths).
 - Expression: log2-normalized.
-- Methylation: β-values on the 305,352 CpGs passing both cohorts' sex-chromosome filters, with $k$-nearest-neighbor imputation of the 0.07% missing values within each cohort.
+- Methylation: $\beta$-values on the 305,352 CpGs passing both cohorts' sex-chromosome filters, with $k$-nearest-neighbor imputation of the 0.07% missing values within each cohort.
 - Screening is done on the training cohort only: 3,000 genes by the DeSurv rule and the 10,000 most variable CpGs.
 
 ## Evaluation
@@ -199,21 +200,32 @@ The recommended single-modality configuration was trained on TCGA-PAAD and CPTAC
 
 ## An over-specified fit retains two survival-associated programs and two expression programs
 
-From $K_{\mathrm{init}}=7$, four programs were retained: two survival-active and two that explain expression variance only.
+From $K_{\mathrm{init}}=7$, four programs were retained: two survival-active and two that explain expression variance only (@fig-programs). The other three were shrunk to zero.
 
 - **Program 7** is associated with worse survival. It is enriched for MET, ITGA3 and glycolytic genes, consistent with the basal-like program.
 - **Program 3** is associated with better survival. It is enriched for epithelial (classical) genes.
+- **Expression-only programs.** One is stromal (collagens, *FAP*, *SPARC*, *CTHRC1*) and one is immune (*IKZF1*, *IL10RA*, *HCLS1*). Each explains expression variance without a survival association.
 - **Direction.** The adverse or protective direction is read from the marginal survival association of each program's projection, because the joint coefficients' signs can reverse when correlated programs are fit together.
 
-[FIGURE: program gene-weight heatmap and Kaplan–Meier curves by projection tertile]
+![Gene weights of the four programs retained from $K_{\mathrm{init}}=7$ (top 20 genes per program). Programs 3 and 7 are survival-active; the stromal and immune programs explain expression variance only.](figures/single_programs_heatmap.png){#fig-programs width=70%}
+
+[FIGURE TO ADD: Kaplan–Meier curves by projection tertile for Programs 3 and 7 in the validation cohorts, regenerated from the current configuration]
 
 ## Under-specifying the starting rank merges true programs; over-specifying does not
 
-In simulation, starting with fewer factors than truth ($K_{\mathrm{init}}=2$–4) produced estimated factors that each correlated strongly with two true programs: 7 of 27 estimated factors were merges. Starting at or above truth ($K_{\mathrm{init}}=6$, 12, 20) produced no merges (0 of 114). This supports over-specifying $K_{\mathrm{init}}$ and then shrinking. [FIGURE: delta-C bar chart by scenario and $K_{\mathrm{init}}$]
+In simulation, starting with fewer factors than truth ($K_{\mathrm{init}}=2$–4) produced estimated factors that each correlated strongly with two true programs: 7 of 27 estimated factors were merges. Starting at or above truth ($K_{\mathrm{init}}=6$, 12, 20) produced no merges (0 of 114).
+
+The concordance gain from joint fitting also depends on $K_{\mathrm{init}}$ (@fig-delta-c). In the scenario where shared and cohort-specific programs coexist (hybrid), the joint model's held-out concordance exceeded the two-step model's at every $K_{\mathrm{init}}\ge3$. The gain was largest at $K_{\mathrm{init}}=4$ (0.16) and stable at about 0.10 from $K_{\mathrm{init}}=6$ upward. In the scenario where all programs are shared, the joint model was ahead only from $K_{\mathrm{init}}=6$ upward, and below that it was slightly behind. With no shared programs, the two models were within about 0.01 of each other. Together these results support over-specifying $K_{\mathrm{init}}$ and then shrinking.
+
+![Difference in held-out concordance between the joint model and unsupervised EBMF followed by Cox regression, by simulation scenario and $K_{\mathrm{init}}$ (mean ± 1 SE over 15 seeds; both models fit to the same simulated data).](figures/single_delta_c_kinit.png){#fig-delta-c width=85%}
 
 ## The protective program's survival association is concentrated in one training cohort
 
-With cohort-specific survival coefficients, the adverse program's association was present in both training cohorts, while the protective program's association came mainly from CPTAC. In a ground-truth simulation, the model attributed the effect to the correct cohort in 15–17 of 20 settings. With larger cohorts, effects should be shared across cohorts. Apparent cohort-specific effects of this size are therefore interpreted cautiously, as possibly reflecting small samples.
+With cohort-specific survival coefficients, the adverse program's association was present in both training cohorts, while the protective program's association came mainly from CPTAC (@fig-percohort). In a ground-truth simulation, the model attributed the effect to the correct cohort in 15–17 of 20 settings. With larger cohorts, effects should be shared across cohorts. Apparent cohort-specific effects of this size are therefore interpreted cautiously, as possibly reflecting small samples.
+
+![Cohort-specific survival coefficients for the seven programs of the $K_{\mathrm{init}}=7$ fit. Program 7 has a similar coefficient in both training cohorts; Program 3's coefficient is nonzero only in CPTAC.](figures/single_percohort_beta.png){#fig-percohort width=85%}
+
+\FloatBarrier
 
 ## In the multimodal model, evidence-based pruning recovers the true number of programs [PENDING]
 
@@ -242,7 +254,7 @@ With cohort-specific survival coefficients, the adverse program's association wa
 - **Supervision of the loadings.** In the single-modality model, survival informs the coefficients but not the loadings ($\alpha_F=0$). The discovery advantage described in Section 1.2 has therefore not been demonstrated. The programs found are high-variance programs that are also prognostic.
 - **Partial likelihood in the evidence bound.** The bound used for pruning plugs in the posterior-mean predictor rather than taking the expectation of the partial likelihood. It can therefore overstate the survival contribution of a factor.
 - **Matched multi-omic cohorts are small.** The validation set has 50–67 donors, and ICGC includes mixed histologies.
-- **Unsettled preprocessing choices.** Feature screening for two modalities, and the methylation scale (β-values versus a variance-stabilizing transformation), are not yet settled.
+- **Unsettled preprocessing choices.** Feature screening for two modalities, and the methylation scale ($\beta$-values versus a variance-stabilizing transformation), are not yet settled.
 
 ## Future directions and continuing work
 
@@ -252,9 +264,15 @@ With cohort-specific survival coefficients, the adverse program's association wa
   - warm starts;
   - gradually increasing the survival weight during fitting;
   - reordering the updates.
+
   The planned test is recovery of a low-variance prognostic program in simulation.
 - **Further extensions:**
   - a factor-level shrinkage prior on $K$ [@BhattacharyaDunson2011; @GriffithsGhahramani2011];
   - joint modelling of multiple cohorts and modalities together;
   - the full 305,352-CpG fit on the computing cluster;
   - preparation of the manuscript for journal submission.
+
+# References {.unnumbered}
+
+::: {#refs}
+:::
