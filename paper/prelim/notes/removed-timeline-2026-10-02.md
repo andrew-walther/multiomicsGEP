@@ -37,4 +37,3 @@ Summer 2027 & Dissertation completion and defense (date to be confirmed) \\
 \end{tabular}
 \end{minipage}
 ```
-
