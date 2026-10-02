@@ -59,6 +59,29 @@ multimodal_yfb_point_exponential_posterior <- function(A, B, prior) {
   log_total <- max(log_spike, log_slab) +
     log(exp(log_spike - max(log_spike, log_slab)) + exp(log_slab - max(log_spike, log_slab)))
   slab_prob <- exp(log_slab - log_total)
+  slab <- multimodal_yfb_positive_truncnorm_moments(slab_location, s)
+  mean <- slab_prob * slab$mean
+  second <- max(slab_prob * slab$second, mean^2)
+  list(mean = mean, second = second,
+       slab_prob = slab_prob, x = x, s2 = s2)
+}
+
+#' Moments of a Normal truncated to the positive half-line
+#'
+#' For theta ~ N(m, s^2) restricted to theta >= 0, with h = m / s and
+#' inverse Mills ratio r(h) = phi(h) / Phi(h):
+#'   E[theta] = m + s r(h),  E[theta^2] = m^2 + s^2 + m s r(h).
+#' For h < -8 the direct formulas subtract nearly equal O(h^2) terms, so an
+#' inverse-Mills asymptotic expansion is used instead.
+#'
+#' @param location Untruncated mean m.
+#' @param s Untruncated standard deviation (> 0).
+#' @return List with `mean` and `second` moments.
+#' @examples
+#' multimodal_yfb_positive_truncnorm_moments(0, 1)
+#' @family multimodal_yfb_updates
+multimodal_yfb_positive_truncnorm_moments <- function(location, s) {
+  h <- location / s
   if (h < -8) {
     # For a = -h >> 0, direct truncated-Normal moments subtract nearly equal
     # O(a^2) terms. The inverse-Mills expansion below gives the positive
@@ -66,17 +89,112 @@ multimodal_yfb_point_exponential_posterior <- function(A, B, prior) {
     a <- -h
     inverse_a <- 1 / a
     delta <- inverse_a - 2 * inverse_a^3 + 10 * inverse_a^5 - 74 * inverse_a^7
-    slab_mean <- s * delta
-    slab_second <- s2 * (1 - a * delta)
+    list(mean = s * delta, second = s^2 * (1 - a * delta))
   } else {
     mills <- exp(dnorm(h, log = TRUE) - pnorm(h, log.p = TRUE))
-    slab_mean <- slab_location + s * mills
-    slab_second <- slab_location^2 + s2 + slab_location * s * mills
+    list(mean = location + s * mills,
+         second = location^2 + s^2 + location * s * mills)
   }
-  mean <- slab_prob * slab_mean
-  second <- max(slab_prob * slab_second, mean^2)
-  list(mean = mean, second = second,
-       slab_prob = slab_prob, x = x, s2 = s2)
+}
+
+#' Update a signed (point-Laplace or Normal) posterior from one pseudo-observation
+#'
+#' Pseudo-observation x = B / A with variance s^2 = 1 / A, x | theta ~ N(theta, s^2).
+#'
+#' point_laplace: theta ~ (1 - pi) delta_0 + pi (lambda / 2) exp(-lambda |theta|).
+#'   The slab posterior is a mixture of a positive truncated N(x - lambda s^2, s^2)
+#'   and a negative truncated N(x + lambda s^2, s^2), with log weights
+#'   log(pi lambda / 2) -/+ lambda x + lambda^2 s^2 / 2 + log Phi((+/-x - lambda s^2) / s).
+#'   The spike has log weight log(1 - pi) + log N(x; 0, s^2).
+#' normal: theta ~ N(0, sigma^2). Posterior variance v = 1 / (A + 1 / sigma^2),
+#'   mean v B; sigma^2 = 0 is the point mass at zero.
+#'
+#' @param A Nonnegative quadratic precision.
+#' @param B Linear quadratic coefficient.
+#' @param prior List with `family` ("point_laplace" or "normal"), `point_mass`,
+#'   and `pi`, `rate` (point_laplace) or `variance` (normal).
+#' @return Posterior `mean`, `second`, nonzero probability `slab_prob`,
+#'   pseudo-observation `x`, and its variance `s2`.
+#' @examples
+#' multimodal_yfb_signed_posterior(2, -1, list(family = "point_laplace",
+#'   pi = 0.5, rate = 1))
+#' @family multimodal_yfb_updates
+multimodal_yfb_signed_posterior <- function(A, B, prior) {
+  if (!is.numeric(A) || length(A) != 1L || !is.numeric(B) || length(B) != 1L ||
+      !is.finite(A) || !is.finite(B) || A < 0) {
+    stop("A must be a finite nonnegative scalar and B must be finite.")
+  }
+  family <- prior$family
+  if (!family %in% c("point_laplace", "normal")) {
+    stop("Signed prior family must be point_laplace or normal.")
+  }
+  if (isTRUE(prior$point_mass)) {
+    return(list(mean = 0, second = 0, slab_prob = 0,
+                x = if (A > 0) B / A else NA_real_, s2 = if (A > 0) 1 / A else Inf))
+  }
+  if (A == 0) {
+    if (abs(B) <= sqrt(.Machine$double.xmin)) B <- 0
+    if (B != 0) stop("A = 0 with B != 0 is not a valid quadratic update.")
+    # No information: the posterior is the prior (mean zero by symmetry)
+    second <- if (family == "normal") prior$variance else 2 * prior$pi / prior$rate^2
+    return(list(mean = 0, second = second, slab_prob = if (family == "normal") 1 else prior$pi,
+                x = NA_real_, s2 = Inf))
+  }
+  x <- B / A
+  s2 <- 1 / A
+  s <- sqrt(s2)
+  if (family == "normal") {
+    variance <- 1 / (A + 1 / prior$variance)
+    mean <- variance * B
+    return(list(mean = mean, second = variance + mean^2, slab_prob = 1, x = x, s2 = s2))
+  }
+  lambda <- prior$rate
+  log_slab_constant <- log(prior$pi) + log(lambda / 2) + 0.5 * lambda^2 * s2
+  log_pos <- log_slab_constant - lambda * x + pnorm((x - lambda * s2) / s, log.p = TRUE)
+  log_neg <- log_slab_constant + lambda * x + pnorm((-x - lambda * s2) / s, log.p = TRUE)
+  log_spike <- if (prior$pi < 1) log1p(-prior$pi) + dnorm(x, 0, s, log = TRUE) else -Inf
+  log_w <- c(spike = log_spike, pos = log_pos, neg = log_neg)
+  weights <- exp(log_w - max(log_w))
+  weights <- weights / sum(weights)
+  pos <- multimodal_yfb_positive_truncnorm_moments(x - lambda * s2, s)
+  # theta < 0 part: -theta is a positive truncated N(-x - lambda s^2, s^2)
+  neg <- multimodal_yfb_positive_truncnorm_moments(-x - lambda * s2, s)
+  mean <- weights[["pos"]] * pos$mean - weights[["neg"]] * neg$mean
+  second <- max(weights[["pos"]] * pos$second + weights[["neg"]] * neg$second, mean^2)
+  list(mean = mean, second = second, slab_prob = 1 - weights[["spike"]], x = x, s2 = s2)
+}
+
+#' Fit a signed modality-factor loading prior by empirical Bayes (ebnm)
+#'
+#' Maximizes the marginal likelihood of the sweep's pseudo-observations
+#' (x_j, s_j), as flashier does for each factor. The mode is fixed at zero.
+#' Pseudo-observations without information (s_j = Inf) are excluded.
+#'
+#' @param x Pseudo-observations, one per feature.
+#' @param s2 Their variances.
+#' @param family "point_laplace" or "normal".
+#' @return Prior list for [multimodal_yfb_signed_posterior()].
+#' @examples
+#' multimodal_yfb_fit_signed_prior(c(-2, 0.1, 3), c(1, 1, 1), "point_laplace")
+#' @family multimodal_yfb_updates
+multimodal_yfb_fit_signed_prior <- function(x, s2, family) {
+  ok <- is.finite(x) & is.finite(s2) & s2 > 0
+  if (!any(ok)) {
+    return(list(family = family, pi = 0, rate = NA_real_, variance = 0, point_mass = TRUE))
+  }
+  if (family == "normal") {
+    g <- ebnm::ebnm_normal(x[ok], sqrt(s2[ok]), mode = 0)$fitted_g
+    variance <- g$sd^2
+    return(list(family = family, variance = variance, point_mass = variance <= 0))
+  }
+  g <- ebnm::ebnm_point_laplace(x[ok], sqrt(s2[ok]), mode = 0)$fitted_g
+  # laplacemix: component 1 is the point mass (scale 0); component 2 has
+  # density exp(-|theta| / scale) / (2 scale), so rate lambda = 1 / scale
+  slab_pi <- g$pi[2]
+  if (slab_pi <= sqrt(.Machine$double.eps) || g$scale[2] <= 0) {
+    return(list(family = family, pi = 0, rate = NA_real_, point_mass = TRUE))
+  }
+  list(family = family, pi = slab_pi, rate = 1 / g$scale[2], point_mass = FALSE)
 }
 
 #' Update one shared score column using both reconstruction blocks
@@ -167,7 +285,8 @@ multimodal_yfb_update_loading_prior <- function(slab_prob, mean) {
 #' @param EZ_k,VZ_k Current joint projection mean and variance for this factor.
 #' @param EF_k,EF2_k Current loading posterior moments for this modality-factor.
 #' @param EBeta_k,EBeta2_k Coefficient posterior moments for this factor.
-#' @param prior Fixed modality-factor point-exponential prior for this sweep.
+#' @param prior Fixed modality-factor prior for this sweep: point-exponential
+#'   (`family` NULL or "point_exponential"), "point_laplace" or "normal".
 #' @return Updated loading/projection moments, fitted prior, and per-feature diagnostics.
 #' @examples
 #' multimodal_yfb_update_F_mk(matrix(1, 1, 1), 1, 1, 1, matrix(1, 1, 1),
@@ -197,6 +316,9 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
   VZ_new <- pmax(VZ_k, 0)
   details <- vector("list", ncol(Y_m))
   sum_EL2 <- sum(EL2_k)
+  # prior$family is NULL or "point_exponential" for the original nonnegative
+  # loadings; "point_laplace" and "normal" give signed loadings
+  signed <- !is.null(prior$family) && prior$family != "point_exponential"
   for (j in seq_len(ncol(Y_m))) {
     y <- Y_m[, j]
     old_mean <- EF_new[j]
@@ -205,7 +327,11 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
     A <- Tau_m[j] * sum_EL2 + EBeta2_k * sum(w * y^2)
     B <- Tau_m[j] * sum(EL_k * R_mk[, j]) +
       sum(y * (EBeta_k * h_minus_k - w * EBeta2_k * EZ_without_j))
-    posterior <- multimodal_yfb_point_exponential_posterior(A, B, prior)
+    posterior <- if (signed) {
+      multimodal_yfb_signed_posterior(A, B, prior)
+    } else {
+      multimodal_yfb_point_exponential_posterior(A, B, prior)
+    }
     new_variance <- pmax(posterior$second - posterior$mean^2, 0)
     EF_new[j] <- posterior$mean
     EF2_new[j] <- posterior$mean^2 + new_variance
@@ -213,10 +339,17 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
     VZ_new <- VZ_new + y^2 * (new_variance - old_variance)
     details[[j]] <- c(posterior, list(A = A, B = B, EZ_without_j = EZ_without_j))
   }
+  new_prior <- if (signed) {
+    multimodal_yfb_fit_signed_prior(vapply(details, `[[`, numeric(1), "x"),
+                                    vapply(details, `[[`, numeric(1), "s2"),
+                                    prior$family)
+  } else {
+    c(multimodal_yfb_update_loading_prior(
+      vapply(details, `[[`, numeric(1), "slab_prob"), EF_new
+    ), if (!is.null(prior$family)) list(family = prior$family))
+  }
   list(EF = EF_new, EF2 = EF2_new, EZ = EZ_new, VZ = pmax(VZ_new, 0),
-       prior = multimodal_yfb_update_loading_prior(
-         vapply(details, `[[`, numeric(1), "slab_prob"), EF_new
-       ), details = details)
+       prior = new_prior, details = details)
 }
 
 #' Update one shared Normal-prior survival coefficient

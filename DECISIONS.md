@@ -5,6 +5,45 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-01 — Signed loading priors for the multimodal model (point-Laplace, Normal)
+
+**Decision.** `fit_multimodal_yfb()` takes `control$prior_F`, which sets the
+loading prior for each modality. The options are point-exponential (the
+default, giving nonnegative F), point-Laplace, and Normal; the last two give
+signed F. The score prior on L stays point-exponential.
+
+- **Posterior update.** Each feature still gets the exact Gauss–Seidel
+  update from its pseudo-observation x_j = B_j/A_j with variance 1/A_j. For
+  the signed families the posterior moments are closed form:
+  - Point-Laplace: a spike plus a mixture of two truncated Normals.
+  - Normal: conjugate.
+  - Both are checked against `ebnm` with the prior held fixed, agreeing to
+    1e-6.
+- **Prior update.** After each modality–factor sweep the prior is re-fit by
+  `ebnm::ebnm_point_laplace` or `ebnm::ebnm_normal` (mode fixed at 0). This
+  maximizes the marginal likelihood of the sweep's pseudo-observations, as
+  flashier does.
+- **Rescaling step.** The factor rescaling multiplies a Laplace rate by the
+  scale factor c and a Normal variance by 1/c².
+
+**Reason.** Advisor feedback on 9/18. Loadings can be negative because a
+program can lower expression or methylation of a feature relative to
+baseline. Methylation may need a sparser prior than expression. The user
+should be able to choose, and the simulation study should give a
+recommendation for each scenario. `ebnm` was chosen over hand-derived
+empirical-Bayes updates because it is already a dependency and its fits are
+tested.
+
+**Not changed yet.** The input contract still requires nonnegative data.
+Centering (signed inputs) is the next step. The canonicalization and
+convergence rules are unchanged.
+
+**Affected files.** `code/multimodal_yfb_updates.R`,
+`code/fit_multimodal_yfb.R`, `config/globals.yml`
+(`multimodal_yfb$prior_F`), `tests/test_multimodal_yfb_priors.R`.
+
+---
+
 ## 2026-10-01 — Matched TCGA/ICGC expression + methylation cohorts for the multimodal model
 
 **Decision.** The multimodal model's first real-data application trains on

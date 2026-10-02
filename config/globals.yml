@@ -28,6 +28,11 @@ multimodal_yfb:
   tol: 1.0e-4
   pve_threshold: 0.01
   prognostic_z_threshold: 1.96
+  # Loading (F) prior family per modality: point_exponential (nonnegative F),
+  # point_laplace or normal (signed F, fit by ebnm). L stays point-exponential.
+  prior_F:
+    expression: point_exponential
+    methylation: point_exponential
 
 # ------------------------------------------------------------------------------
 # Matched TCGA/ICGC expression + methylation data (code/load_multiomics_data.R)

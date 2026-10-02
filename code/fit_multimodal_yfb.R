@@ -147,7 +147,8 @@ multimodal_yfb_cox_warm_start <- function(EZ, time, event) {
 #' @param EF,EF2 Named loading posterior mean and second-moment matrices.
 #' @param EBeta,EBeta2 Shared survival coefficient posterior moments.
 #' @param prior_L Shared score point-exponential priors by factor.
-#' @param prior_F Named loading point-exponential priors by modality and factor.
+#' @param prior_F Named loading priors by modality and factor (family point_exponential,
+#'   point_laplace or normal).
 #' @param factors Integer factor indices to canonicalize; defaults to all factors.
 #' @return Canonicalized moments, priors, and the applied positive factor scales.
 #' @examples
@@ -204,7 +205,13 @@ multimodal_yfb_canonicalize_factors <- function(Y, EL, EL2, EF, EF2, EBeta,
       EF[[modality]][, k] <- EF[[modality]][, k] / scale[k]
       EF2[[modality]][, k] <- EF2[[modality]][, k] / scale[k]^2
       if (!isTRUE(prior_F[[modality]][[k]]$point_mass)) {
-        prior_F[[modality]][[k]]$rate <- prior_F[[modality]][[k]]$rate * scale[k]
+        # F_k -> F_k / c rescales an exponential or Laplace rate by c and a
+        # Normal prior variance by 1 / c^2
+        if (identical(prior_F[[modality]][[k]]$family, "normal")) {
+          prior_F[[modality]][[k]]$variance <- prior_F[[modality]][[k]]$variance / scale[k]^2
+        } else {
+          prior_F[[modality]][[k]]$rate <- prior_F[[modality]][[k]]$rate * scale[k]
+        }
       }
     }
   }
@@ -305,6 +312,12 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
   }
   settings <- modifyList(multimodal_yfb_default_control(), control)
   settings$damping <- settings$damping %||% 1
+  settings$prior_F <- settings$prior_F %||%
+    list(expression = "point_exponential", methylation = "point_exponential")
+  if (!is.list(settings$prior_F) || !setequal(names(settings$prior_F), names(Y)) ||
+      !all(unlist(settings$prior_F) %in% c("point_exponential", "point_laplace", "normal"))) {
+    stop("control$prior_F must name a prior (point_exponential, point_laplace or normal) for each modality.")
+  }
   settings$tau_chunk_size <- settings$tau_chunk_size %||% 1000L
   numeric_controls <- c("max_outer", "max_inner", "tol", "pve_threshold",
                         "prognostic_z_threshold", "damping", "tau_chunk_size")
@@ -333,8 +346,17 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
   EF2 <- lapply(EF, function(x) x^2 + 1e-6)
   Tau <- lapply(Y, function(x) rep(1 / max(stats::var(as.vector(x)), 1e-6), ncol(x)))
   prior_L <- rep(list(list(pi = 0.5, rate = 1, point_mass = FALSE)), K)
-  prior_F <- lapply(Y, function(x) rep(list(list(pi = 0.5, rate = 1,
-                                               point_mass = FALSE)), K))
+  # Loading prior family per modality (control$prior_F, default from globals):
+  # point_exponential (nonnegative F), point_laplace or normal (signed F)
+  prior_F <- lapply(names(Y), function(modality) {
+    family <- settings$prior_F[[modality]]
+    init <- switch(family,
+      point_exponential = list(family = family, pi = 0.5, rate = 1, point_mass = FALSE),
+      point_laplace = list(family = family, pi = 0.5, rate = 1, point_mass = FALSE),
+      normal = list(family = family, variance = 1, point_mass = FALSE))
+    rep(list(init), K)
+  })
+  names(prior_F) <- names(Y)
 
   projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
   beta_warm_start <- multimodal_yfb_cox_warm_start(
