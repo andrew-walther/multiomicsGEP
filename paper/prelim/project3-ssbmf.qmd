@@ -1,5 +1,6 @@
 ---
 title: "Survival-Supervised Bayesian Matrix Factorization for Prognostic Gene Expression Programs in Pancreatic Cancer"
+author: "Andrew J Walther"
 format:
   pdf:
     documentclass: article
@@ -31,11 +32,9 @@ Status (2026-10-02): prose draft after independent review
 (docs/reviews/2026-10-02_prelim_proposal_review.md).
 - Claims about supervision changing F are scoped to the alpha_F = 0 model
   (bios-dissertation/ROADMAP.md, Project 3 to-do).
-- Citations still to add are marked <!- - CITE: ... - -> (verified entries are
-  drafted in paper/prelim/notes/missing-references.bib; adding them requires
-  editing the bios-dissertation master bib).
 - Figures: paper/prelim/make_figures.R.
-- Author list and affiliations: [TO CONFIRM].
+- Prelim author: Andrew J Walther. Planned manuscript authors: Andrew J Walther,
+  Amber Young, Yusha Liu, Naim Rashid.
 -->
 
 **Summary.** Gene expression programs in pancreatic ductal adenocarcinoma (PDAC) carry prognostic information, but they are usually found by an unsupervised factorization that ignores survival. A Cox model is then fitted to the estimated scores, as if they were measured without error. This chapter develops survival-supervised Bayesian matrix factorization (SSBMF), which fits an empirical-Bayes factorization and a Cox model together. Program uncertainty is carried into the survival coefficients, and the number of programs is reduced from an over-specified starting rank by shrinkage. In five held-out PDAC cohorts the single-modality model's external concordance slightly exceeds that of an independently tuned two-step pipeline (mean 0.627 against 0.601), and its adverse (basal-like) and protective (classical) programs keep their direction out of sample. A multimodal extension to matched expression and methylation now selects the correct number of programs in simulation. On TCGA → ICGC data it matches the established model at the pre-specified rank, but its rank is not yet chosen reliably and methylation has not yet improved prediction. The remaining aims are to let survival inform the programs themselves, to make the number of programs data-driven on real multimodal data, and to determine what methylation contributes.
@@ -97,7 +96,7 @@ where $\hat Z_F$ is each patient's expression projected onto the unit-normalized
 
 The model is fitted by coordinate-ascent variational inference, using a second-order approximation of the Cox partial likelihood that is refreshed every iteration. Two weights are applied. A weight $\alpha=0.5$ tempers the Cox term in the coefficient update, and $\alpha_F=0$ keeps the Cox term out of the loading update. With $\alpha_F=0$, survival informs the coefficients but not the loadings, so the programs found are those that explain expression variance and are also associated with survival. Removing these weights is Aim 2.
 
-The starting rank is chosen by a consensus of four criteria: the evidence lower bound (ELBO), BIC, a bi-cross-validated genomic log-likelihood and cross-validated concordance, followed by a one-standard-error rule. <!-- CITE: Schwarz 1978; Owen & Perry 2009; Breiman et al. 1984 --> Programs in the over-specified fit are then classified into three groups:
+The starting rank is chosen by a consensus of four criteria: the evidence lower bound (ELBO), BIC, a bi-cross-validated genomic log-likelihood and cross-validated concordance, followed by a one-standard-error rule [@Schwarz1978; @OwenPerry2009; @Breiman1984; @Hastie2009]. Programs in the over-specified fit are then classified into three groups:
 
 - survival-active: posterior mean $|\tilde\beta_k|>10^{-3}$, a cutoff set on the scale of the unit-normalized projection;
 - genomics-only: explaining at least 1% of the variance;
@@ -126,7 +125,7 @@ Survival follows a Cox model with $\boldsymbol\eta=(Y_1F_1+Y_2F_2)\,\beta$ and $
 3. marginal-likelihood fits of each prior with `ebnm`, which allow a whole program to shrink to zero;
 4. evidence-based pruning.
 
-At the end of fitting, a program is removed if the ELBO is no lower without it, with the other programs held fixed. The ELBO here is the expected reconstruction log-likelihood, plus the Cox partial log-likelihood at the posterior-mean predictor, minus the Kullback–Leibler divergence of each posterior from its prior. The model is then refitted from the remaining programs, and this repeats until no program can be removed. <!-- CITE: flashier (Willwerscheid et al.) for the nullcheck idea -->
+At the end of fitting, a program is removed if the ELBO is no lower without it, with the other programs held fixed. The ELBO here is the expected reconstruction log-likelihood, plus the Cox partial log-likelihood at the posterior-mean predictor, minus the Kullback–Leibler divergence of each posterior from its prior. The model is then refitted from the remaining programs, and this repeats until no program can be removed. This follows the evidence-based check for dropping factors in flashier [@Willwerscheid2023].
 
 Feature precisions $\tau_{mj}$ are estimated by maximum likelihood without regularization. Without the intercept, spare non-negative programs absorbed feature means and could fit single features exactly, so they were never removed. Adding the intercept removed this problem. The fitter is initialized from a truncated singular value decomposition of the stacked data. It stops when the relative change in both the fitted reconstruction and the risk score falls below $10^{-4}$, or after 500 iterations.
 
@@ -154,20 +153,20 @@ All screening and preprocessing choices are made on the training data.
 | True rank | 6 (e.g. 2 shared + 2 + 2 specific in the mixed scenario) | 3 |
 | Starting ranks | 2, 3, 4, 6, 12, 20 | 3–10, 15 |
 | Noise | Fixed design | Each true program explains about 10% of variance, or under 1% |
-| Survival | Proportional hazards | Weibull proportional hazards from the joint predictor <!-- CITE: Bender et al. 2005 --> |
+| Survival | Proportional hazards | Weibull proportional hazards from the joint predictor [@Bender2005] |
 | Seeds | 15 | 3 |
 
 : Simulation designs. {#tbl-sim-design}
 
 ## Data and preprocessing
 
-**Single-modality application.** The model is trained on TCGA-PAAD (144 patients) and CPTAC (129) and validated in five held-out cohorts: Dijk, Moffitt GEO array, PACA-AU array, PACA-AU RNA-seq and Puleo array. <!-- CITE: cohort papers (Cao 2021 CPTAC; Puleo 2018; Dijk) --> Preprocessing is a log transformation where needed, standardization within each platform, and DeSurv's gene-selection rule: the top 3,000 genes per cohort by combined mean and variance rank, intersected across cohorts [@Young2026].
+**Single-modality application.** The model is trained on TCGA-PAAD (144 patients) and CPTAC (129) [@Raphael2017; @Cao2021] and validated in five held-out cohorts: Dijk [@Dijk2020], Moffitt GEO array [@Moffitt2015], PACA-AU array and PACA-AU RNA-seq [@Bailey2016], and Puleo array [@Puleo2018]. Preprocessing is a log transformation where needed, standardization within each platform, and DeSurv's gene-selection rule: the top 3,000 genes per cohort by combined mean and variance rank, intersected across cohorts [@Young2026].
 
-**Multimodal application.** The model is trained on TCGA-PAAD (144 patients, 75 deaths). It is validated on 50 primary-tumor PDAC donors from ICGC PACA-AU (30 deaths), with a sensitivity set of 67 donors (40 deaths) that adds IPMN with invasion and other histologies. Expression is on the log2 scale. Methylation beta-values are used on the 305,352 CpGs that pass both cohorts' sex-chromosome filters. Missing methylation values (0.07% in TCGA) are imputed by $k$-nearest neighbors within each cohort. <!-- CITE: Troyanskaya et al. 2001 --> Screening is done on the training cohort only: 3,000 genes by the DeSurv rule and the 10,000 most variable CpGs.
+**Multimodal application.** The model is trained on TCGA-PAAD (144 patients, 75 deaths). It is validated on 50 primary-tumor PDAC donors from ICGC PACA-AU (30 deaths), with a sensitivity set of 67 donors (40 deaths) that adds IPMN with invasion and other histologies. Expression is on the log2 scale. Methylation beta-values are used on the 305,352 CpGs that pass both cohorts' sex-chromosome filters. Missing methylation values (0.07% in TCGA) are imputed by $k$-nearest neighbors within each cohort [@Troyanskaya2001]. Screening is done on the training cohort only: 3,000 genes by the DeSurv rule and the 10,000 most variable CpGs.
 
 ## Evaluation
 
-Discrimination is measured by Harrell's concordance [@Harrell1982] in held-out cohorts, with percentile bootstrap intervals. <!-- CITE: Efron & Tibshirani 1993 --> Differences between models use a paired bootstrap within each cohort (2,000 replicates), pooled by fixed-effect inverse-variance weighting. Because each risk score's direction is fixed from training, a model that fails in a cohort can show a concordance below 0.5. In simulation, a true program counts as recovered when the absolute correlation between true and estimated loadings is at least 0.7. Prognostic recall is the share of true prognostic programs whose matched program is survival-active with the correct sign; we also count false survival-active programs.
+Discrimination is measured by Harrell's concordance [@Harrell1982] in held-out cohorts, with percentile bootstrap intervals [@EfronTibshirani1993]. Differences between models use a paired bootstrap within each cohort (2,000 replicates), pooled by fixed-effect inverse-variance weighting. Because each risk score's direction is fixed from training, a model that fails in a cohort can show a concordance below 0.5. In simulation, a true program counts as recovered when the absolute correlation between true and estimated loadings is at least 0.7. Prognostic recall is the share of true prognostic programs whose matched program is survival-active with the correct sign; we also count false survival-active programs.
 
 # Results
 

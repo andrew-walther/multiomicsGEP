@@ -187,3 +187,8 @@ Full CAVI derivations (the single-modality derivation PDFs and `derivations/mult
     - Confirm the proposed thresholds in the success criteria.
     - Confirm the defense date.
     - Confirm the author list.
+- 2026-10-02 (night): The 11 verified references were added to the bios-dissertation master bib (`ce3f6fe`, not yet pushed). DOIs were re-checked against Crossref.
+  - Young2026 (DeSurv) is now `@unpublished` (submitted, not yet published).
+  - All citation markers in the proposal are replaced with real citations: 37 keys, and the bib check passes.
+  - Prelim author: Andrew J Walther; prelim exam on 2026-12-07.
+  - Planned manuscript authors: Andrew J Walther, Amber Young, Yusha Liu, Naim Rashid.
