@@ -68,6 +68,36 @@ factor-scale canonicalization and a relative identifiable convergence criterion
 remaining prerequisite to choosing a multimodal default. The September 18
 progress-book chapter records the implementation and preliminary screening.
 
+**2026-10-01/02: choosing K and the first real-data application.**
+
+Why the number of active factors tracked $K_{\mathrm{init}}$:
+
+- Unregularized per-feature precisions let a spare factor fit a single
+  feature exactly, so its precision was unbounded (up to $10^{16}$ in
+  simulation).
+- The model had no intercept, so spare nonnegative factors absorbed feature
+  means.
+- In the September simulations each true factor explained under 1% of the
+  variance, so the design could not test this.
+
+The fix is a parsimony framework: a per-feature intercept, point-Laplace
+loadings, `ebnm` marginal-likelihood prior fits, and ELBO-based factor pruning
+using the Cox partial log-likelihood. In single-seed simulations at moderate
+noise it recovers the true $K=3$ from both $K_{\mathrm{init}}=5$ and $12$, with
+the prognostic programs survival-active and of the correct sign. A
+low-variance prognostic program is recovered only partially.
+
+Matched TCGA → ICGC expression + methylation data are loaded and tested
+(`code/load_multiomics_data.R`). The replicated simulation sweep
+($K_{\mathrm{init}}=3,\dots,10,15$) and the real-data fits are recorded in the
+2026-10-02 progress-book chapter. Decisions are in `DECISIONS.md`
+(2026-10-01, 2026-10-02).
+
+Single-modality reporting was checked in the same period. The external
+C-indices are unchanged under frozen, training-fixed risk orientations. The
+pooled improvement over the two-step baseline is $\Delta C = 0.042$
+(95% CI 0.013 to 0.071).
+
 ## Repository Map
 
 ```

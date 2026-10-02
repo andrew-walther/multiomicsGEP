@@ -48,6 +48,24 @@ fitter, frozen predictor, simulation generator, and K-selection runner are in
 `code/simulate_multimodal_yfb.R`, and `code/run_multimodal_yfb_simulation.R`.
 The multimodal module is not the production single-modality PDAC model; its
 replicated K-selection study is still in progress.
+
+Options added on 2026-10-01 (defaults keep the original behaviour):
+
+- **Loading priors per modality.** `control$prior_F` sets point-exponential,
+  point-Laplace or Normal, with the signed priors fit by `ebnm`.
+- **Factor pruning, which together selects K.**
+  - a per-feature intercept (`intercept`);
+  - marginal-likelihood prior fits (`prior_update = "ebnm"`);
+  - an ELBO nullcheck that removes factors (`prune`), with the Cox partial
+    log-likelihood as the survival term.
+- **Faster sweep.** The per-feature loading sweep is compiled C++
+  (`code/multimodal_yfb_sweep.cpp`), with an automatic fallback to R.
+
+Matched TCGA (training) and ICGC (validation) expression + methylation cohorts are
+built by `code/load_multiomics_data.R`, which reads a local, git-ignored `data/`
+folder. The real-data runner is `results/multimodal_real/run_multimodal_real_fit.R`;
+the simulation comparison of fitting variants is
+`results/benchmark_sim/run_multimodal_pruning_comparison.R`.
 The original extensive derivation is preserved as technical notes in the same folder.
 Run the base-R mathematical checks with
 `Rscript derivations/multimodal_YFB/verify_derivation.R`.
