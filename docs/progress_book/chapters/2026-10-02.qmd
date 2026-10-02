@@ -1,12 +1,45 @@
 # October 2, 2026
 
-## Summary {.unnumbered}
+## Executive summary {.unnumbered}
 
-- **The multimodal model now chooses its own number of factors.** The model could not prune spare factors, and we found two reasons why. The first is that unregularized per-feature precisions let a spare factor fit one feature exactly. The second is that the model had no intercept. We fixed both with an intercept, point-Laplace loadings, marginal-likelihood prior fits and evidence-based factor pruning. In a replicated simulation sweep the pruned fit returns about the true $K=3$ for every $K_{\mathrm{init}}$ from 3 to 15, where the original fit kept all $K_{\mathrm{init}}$ factors. Prognostic programs that carry variance are recovered with the correct signs. A low-variance prognostic program is still missed. (§2)
-- **First real-data result.** The joint multimodal model was trained on TCGA expression + methylation and evaluated on ICGC. External C is 0.685 (95% CI 0.579–0.779), against 0.491 for expression-only YFB and 0.424 for the two-step model. The intervals are wide and overlap. The survival-active factor corresponds to single-modality Program 7.
-- **Two discussion points from the real data.** The ELBO is dominated by reconstruction at 13,000 features, so survival cannot affect which factors are kept. The factors found are mostly modality-specific. Feature selection for two modalities is still open. (§3, §4)
-- **The single-modality results now include held-out Kaplan–Meier evidence.** In the five held-out cohorts the frozen model stratifies survival, and its adverse and protective programs keep their direction. We also checked how the reported C-indices were oriented: the numbers stand. (§5)
-- **The single-modality α_F question has candidate solutions and a test design.** The projection score $Z_F$ is now defined in the derivation. (§6)
+::: {.callout-tip appearance="simple"}
+**In one line:** the multimodal model now picks its own number of factors in simulation. Its first external validation on matched TCGA → ICGC expression and methylation is promising: C = 0.685, against 0.42–0.49 for the comparators. Survival still has almost no say in which factors are kept, and that is the main open problem.
+:::
+
+**Progress since 9/18**
+
+1. **Choosing K now works in simulation.** Spare factors used to survive for two reasons: unbounded per-feature precisions, and a missing intercept. With the fix, the final number of factors stays at about the true K = 3 for every starting value from 3 to 15. The original fit kept all of them. (§2)
+2. **Prognostic programs that carry variance are recovered with the correct signs**, held-out C ≈ 0.79, and every pruned fit converged. (§2)
+3. **First real-data result, trained on TCGA and validated on ICGC primary PDAC (n = 50).**
+   - The joint expression + methylation model reaches C = 0.685 (95% CI 0.579–0.779).
+   - The expression-only fit reaches 0.491 and the two-step model 0.424.
+   - Its survival-active program matches single-modality Program 7 (adverse). (§4)
+4. **The single-modality results are strengthened.**
+   - Held-out Kaplan–Meier curves show survival separation in all five external cohorts, and the adverse and protective programs keep their direction.
+   - The reported C-indices are unchanged under a training-fixed risk orientation.
+   - Pooled gain over the two-step model: ΔC = 0.042 (95% CI 0.013–0.071). (§5)
+5. **Infrastructure.**
+   - A tested TCGA/ICGC data loader.
+   - Signed loading priors.
+   - A compiled loading sweep, 5× faster with identical results.
+   - The model can now be fit to a single modality.
+   - A prelim proposal draft (22 pp).
+
+**Open problems**
+
+- **A low-variance prognostic program is not recovered** in simulation, by either the original or the pruned fit.
+- **Survival has almost no influence on which factors are kept.** On real data it contributes under 3 nats, against 10⁴–10⁵ for reconstruction. This is the multimodal form of the α_F question. (§4)
+- **The real-data comparison is provisional.**
+  - The intervals are wide.
+  - The fit did not formally converge, although its risk score was stable.
+  - Only K_init = 7 has finished.
+  - The gain over expression-only is confounded with the new framework. [PENDING: same framework fit to expression alone]
+
+**For discussion**
+
+- **How should CpGs be screened relative to genes?** We currently keep 10k CpGs and 3k genes. (§3)
+- **Should shared expression–methylation programs be expected?** Most of the fitted factors use only one modality. (§4)
+- **How should survival get a say in factor selection?** Candidates are modality and likelihood weights, survival-aware screening, or a separate retention rule. (§4, §7)
 
 ---
 
@@ -155,7 +188,7 @@ What the sweep shows:
 - The arcsine transform halves the share of strongly skewed CpGs, but neither scale is Gaussian. Both are flatter than Normal, which fits bimodal methylation.
 - With the intercept and signed priors, either scale can now be used. The first fits use β-values.
 
-![Per-CpG skewness on each methylation scale (TCGA, 10k screened CpGs)](../../../results/multimodal_real/outputs/methylation_distribution_skew.png)
+![Per-CpG skewness on each methylation scale (TCGA, 10k screened CpGs)](../figs/2026-10-02_methylation_skew.png)
 
 ::: {.callout-note}
 ## Discussion point: feature selection for two modalities
@@ -234,13 +267,13 @@ Its mean external C across five held-out cohorts is 0.627, against 0.581 for the
 - Separation is clearest in Puleo (largest cohort, log-rank $p<0.0001$) and Dijk ($p=0.0005$).
 - It is weakest in Moffitt ($p=0.17$; C = 0.549).
 
-![Overall survival by within-cohort tertile of the frozen model's risk score. No validation outcome was used to fit, orient or threshold the score.](../../../results/benchmark_sim/outputs/km_figures/km_risk_tertiles_external.png)
+![Overall survival by within-cohort tertile of the frozen model's risk score. No validation outcome was used to fit, orient or threshold the score.](../figs/2026-10-02_km_risk_external.png)
 
 **Both survival-associated programs keep their direction out of sample.** Pooled over the 616 held-out patients, with log-rank tests stratified by cohort:
 - High Program 7 activity: worst survival ($p<0.0001$).
 - High Program 3 activity: best survival ($p=0.004$).
 
-![Survival by within-cohort tertile of Program 3 and Program 7 projection scores, pooled over the five held-out cohorts.](../../../results/benchmark_sim/outputs/km_figures/km_programs_pooled_external.png)
+![Survival by within-cohort tertile of Program 3 and Program 7 projection scores, pooled over the five held-out cohorts.](../figs/2026-10-02_km_programs_external.png)
 
 ::: {.callout-important}
 ## How the reported C-indices are oriented
