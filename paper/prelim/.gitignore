@@ -1,0 +1,6 @@
+# Render byproducts of the standalone chapter (the generated prelim copy is
+# committed in bios-dissertation, not here)
+*.pdf
+*.tex
+*_files/
+tools/sync.log

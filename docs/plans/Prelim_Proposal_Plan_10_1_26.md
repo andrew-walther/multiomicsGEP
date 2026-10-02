@@ -130,3 +130,14 @@ Full CAVI derivations (the single-modality derivation PDFs and `derivations/mult
 
 ## Progress log
 - 2026-10-01: Plan written. Nothing drafted yet.
+- 2026-10-01 (late):
+  - Steps 1–2 done, and a first full draft written: `paper/prelim/project3-ssbmf.qmd`, which renders to 17 pages. `paper/thesis/` is created (empty).
+    - Introduction, Methods (single-modality and multimodal), and Discussion are drafted.
+    - Results 3.1–3.4 report the established single-modality findings. 3.5–3.6 (multimodal) are marked [PENDING].
+  - Bibliography: `paper/ssbmf-refs.bib`, entries copied verbatim from the master bib. The bib check passes (24 keys).
+  - Sync tools adapted in `paper/prelim/tools/` from Project 2:
+    - Chapter 4, `project3-ssbmf` paths.
+    - Quarto cross-references are no longer counted as citations.
+    - The declarations file is optional.
+    - **Not yet installed or run.** Installing the post-commit hook and the first sync, which commits in bios-dissertation, need the user's go-ahead.
+  - Author list: to confirm.
