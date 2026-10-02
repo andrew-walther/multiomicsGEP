@@ -8,16 +8,17 @@
 
 **Progress since 9/18**
 
-1. **Choosing K works in simulation.**
+1. **Choosing K works in simulation.** Full sweep: 486 fits; 3 scenarios × 2 noise levels × K_init = 3–15 × 3 seeds.
    - Spare factors survived for two reasons: unbounded per-feature precisions and a missing intercept.
-   - With the fix, the final number of factors stays near the true K = 3 for every starting value from 3 to 15 in the two scenarios where each program carries variance. The original fit kept every starting factor.
-   - The prognostic programs are found survival-active with the correct sign in 75–100% of runs. (§2)
+   - With the fix, the final number of factors stays at 3.0–3.7 for every K_init ≥ 4 at moderate noise. The original fit kept every starting factor.
+   - The pruned fit recovers essentially all true factors, converges in every run (against 7–37%), and has slightly higher held-out C.
+   - At high noise its held-out C is far better: 0.79–0.81 against about 0.70. (§2)
 2. **First real-data results.** Trained on TCGA (144 patients); validated on ICGC primary PDAC (50 donors, 30 deaths).
    - The new framework reaches C = 0.685 (95% CI 0.579–0.779) on expression + methylation and 0.676 on expression alone.
    - Our recommended single-modality model scores 0.685 on the same donors. It was trained on TCGA + CPTAC.
    - Weaker comparators reach 0.42–0.53.
    - **Methylation adds +0.01, within the noise.**
-   - **The result depends on the starting rank.** Across K_init = 3, 4, 5, 7 and 10, C is 0.557, 0.574, 0.500, 0.685 and 0.650. At K_init = 5 no factor is survival-active. (§4)
+   - **The result depends on the starting rank.** Across K_init = 3, 4, 5, 7, 10 and 15, C is 0.557, 0.574, 0.500, 0.685, 0.650 and 0.547. At K_init = 5 no factor is survival-active; at 15, eleven are, and C falls. (§4)
 3. **The selected programs are recognizable PDAC biology.**
    - The axes found are basal-like vs classical, normal vs activated stroma, exocrine, and immune.
    - The one survival-active program is the basal-like axis (ICGC HR 1.99 per SD, p = 0.0003). It matches single-modality Program 7.
@@ -30,7 +31,7 @@
 **Open problems and discussion points**
 
 - **Survival barely influences which factors are kept.** On real data it changes the evidence for any factor by less than 3 nats, against 10⁴–10⁵ for reconstruction. This may also be why a low-variance prognostic program is missed in simulation. It is the multimodal form of the single-modality α_F question. How should survival be made to affect factor retention? (§4, §7)
-- **Pruning removed no factors on real data** at any starting rank tried (3, 4, 5, 7, 10), so the starting rank fixes the final rank and the result varies with it. The evidence supports many molecular factors. Choosing the rank on real data is the most important open problem. (§4)
+- **Pruning removed no factors on real data** at any starting rank tried (3–15), so the starting rank fixes the final rank and the result varies with it. The evidence supports many molecular factors. Choosing the rank on real data is the most important open problem. (§4)
 - **What methylation contributes.** Most factors use one modality. Should CpGs be screened relative to genes, for example promoter CpGs of the selected genes, instead of the 10k most variable? (§3, §4)
 
 Terms used below:
@@ -126,38 +127,53 @@ $$
 - One $\tau$ per modality removes the degeneracy but mis-weights heteroscedastic features. Nothing was pruned, and C fell to 0.65.
 - An empirical-Bayes Gamma prior on $\tau$ learns a heavy tail, so $\tau$ still reached about $10^{17}$.
 
-### Simulation sweep (preliminary: 2 seeds)
+### Simulation sweep
 
 **Design.**
 
-- Data: true $K=3$, $n=120$, 50 + 50 features, moderate noise (each true factor explains about 10% of variance).
-- Starting ranks: $K_{\mathrm{init}}=3,5,7,10,15$.
-- Scenarios: three. Seeds: two per setting.
-- Fits: 60, original vs pruned, on identical data. No fit errored.
-- The full sweep (both noise levels, $K_{\mathrm{init}}=3,\dots,10,15$, three seeds) is still running.
+- Data: true $K=3$, $n=120$, 50 + 50 features.
+- Starting ranks: $K_{\mathrm{init}}=3,\dots,10,15$.
+- Scenarios: three. Noise levels: two.
+  - Moderate: each true factor explains about 10% of variance.
+  - The original September design: each true factor explains under 1%.
+- Seeds: three per setting.
+- Variants: the original fit, the pruned fit, and the pruned fit with a variance-corrected survival term. All three are fit to identical data.
+- Fits: 486, with no errors.
 
-![Final number of factors against $K_{\mathrm{init}}$ (true $K=3$, dashed; $y=x$, dotted). The original fit keeps every starting factor; the pruned fit returns about 3 factors when the programs carry variance.](../figs/2026-10-02_pruning_K_final.png)
+![Final number of factors against $K_{\mathrm{init}}$ (true $K=3$, dashed; $y=x$, dotted), mean and range over 3 seeds. The original fit keeps every starting factor; the pruned fits stay near 3 at moderate noise and below 3 when the true factors explain under 1% of variance.](../figs/2026-10-02_pruning_K_final.png)
 
-| Scenario | Final $K$, original ($K_{\mathrm{init}}$ = 3 / 5 / 7 / 10 / 15) | Final $K$, pruned | True factors recovered, pruned | Prognostic programs survival-active, pruned | Held-out C, pruned |
-|---|---|---|---|---|---|
-| Two prognostic programs | 3 / 5 / 7 / 10 / 15 | 3 / 3 / 3 / 3 / 3.5 | 3 of 3 at every $K_{\mathrm{init}}$ | 100% (75% at 15) | 0.785–0.788 |
-| Adverse + protective | 3 / 5 / 7 / 10 / 15 | 2.5 / 3 / 3.5 / 3.5 / 3 | 3 of 3 from $K_{\mathrm{init}}\ge5$ (2.5 at 3) | 75–100% | 0.766–0.795 |
-| Low-variance prognostic | 3 / 5 / 7 / 10 / 15 | 2 / 2.5 / 2.5 / 2.5 / 2.5 | 2 of 3 (1.5 at $K_{\mathrm{init}}=3$); the low-variance program is missed | 0% | 0.50–0.73 across seeds |
+**Moderate noise** (means over $K_{\mathrm{init}}=3,\dots,10,15$ and seeds):
+
+| Scenario | Variant | Final $K$ ($K_{\mathrm{init}}\ge4$) | True factors recovered (of 3) | Prognostic recall | False survival-active | Held-out C | Converged |
+|---|---|---|---|---|---|---|---|
+| Two prognostic programs | original | = $K_{\mathrm{init}}$ | 2.74 | 0.93 | 0.82 | 0.781 | 7% |
+| | **pruned** | **3.0–3.7** | **3.00** | 0.87 | **0.67** | **0.798** | **100%** |
+| Adverse + protective | original | = $K_{\mathrm{init}}$ | 2.78 | 0.89 | 0.70 | 0.786 | 37% |
+| | **pruned** | **3.0–3.3** | **2.96** | 0.87 | **0.59** | **0.794** | **100%** |
+| Low-variance prognostic | original | = $K_{\mathrm{init}}$ | 2.00 | 0 | 2.22 | 0.625 | 19% |
+| | **pruned** | 2.3–2.7 | 1.96 | 0 | 1.26 | 0.625 | **100%** |
+
+**Original noise** (true factors under 1% of variance):
+
+| Scenario | Variant | Final $K$ | True factors recovered | Prognostic recall | False survival-active | Held-out C |
+|---|---|---|---|---|---|---|
+| Two prognostic programs | original | = $K_{\mathrm{init}}$ | 0.11 | 0.06 | 2.85 | 0.695 |
+| | **pruned** | 1.0–2.3 | **1.19** | **0.59** | **0.44** | **0.789** |
+| Adverse + protective | original | = $K_{\mathrm{init}}$ | 0.59 | 0.30 | 1.41 | 0.703 |
+| | **pruned** | 1.0–2.7 | **1.33** | **0.67** | **0.52** | **0.799** |
+| Low-variance prognostic | original | = $K_{\mathrm{init}}$ | 0.15 | 0 | 2.63 | 0.693 |
+| | **pruned** | 1.0–3.3 | **0.93** | **0.52** | **1.15** | **0.805** |
 
 What the sweep shows:
 
-- **$K$ no longer follows $K_{\mathrm{init}}$.**
-  - With pruning, the final count stays near the truth from $K_{\mathrm{init}}=3$ to 15 when every program carries variance. It is 2–2.5 when the prognostic program is low-variance.
-  - All 30 pruned fits converged. The original fit converged in 8 of 30, and in none of the two-prognostic runs.
-- **Variance-carrying prognostic programs are found with the right sign** in 75–100% of runs.
-  - Both programs are flagged in 50–100% of runs at each $K_{\mathrm{init}}$.
-  - Pruned fits still average 0.5–1 *false* survival-active factors in these scenarios. One example: a non-prognostic true factor flagged in one seed even at the correct $K=3$. Another: survival-only duplicates of a prognostic program at large $K_{\mathrm{init}}$.
-- **The low-variance prognostic program is lost by both methods.**
-  - In one seed (C = 0.73) its survival signal was credited to two wrong factors.
-  - In the other (C = 0.50) no factor was survival-active and the program was not recovered ($\lvert r\rvert=0.06$).
-- **At $K_{\mathrm{init}}=3$** a true factor is sometimes pruned.
+- **$K$ no longer follows $K_{\mathrm{init}}$.** At moderate noise the pruned fit returns 3.0–3.7 factors for every $K_{\mathrm{init}}\ge4$ when every program carries variance. With a low-variance program it returns 2.3–2.7. With true factors under 1% of variance it returns fewer than 3. This is the honest answer when factors can barely be distinguished from noise.
+- **Better recovery and prediction where the original fit struggles.** At moderate noise the pruned fit recovers essentially all true factors. Its held-out C is slightly higher, its false survival-active factors are fewer, and it converges in every run, against 7–37% for the original. Prognostic recall is similar, 0.87 against 0.89–0.93. At high noise the gains are large: held-out C 0.79–0.81 against about 0.70, and prognostic recall 0.52–0.67 against 0–0.30.
+- **The low-variance prognostic program is still missed at moderate noise by both methods.** It is recovered in about half the fits at high noise. Why this differs by noise level is not yet understood.
+- **The variance-corrected survival term made no difference** to any summary, so the plug-in partial log-likelihood is kept.
+- **False survival-active factors remain** at 0.4–0.7 per fit in the informative scenarios.
+- **Runtime.** Pruned fits were also faster: median 59 s against 119 s, because they converge.
 
-![Recovery at moderate noise, mean over 2 seeds per setting: false survival-active factors, the share of prognostic programs found survival-active, and true factors recovered.](../figs/2026-10-02_pruning_recovery.png)
+![Recovery by $K_{\mathrm{init}}$ at moderate noise (mean over 3 seeds): false survival-active factors, the share of prognostic programs found survival-active, and true factors recovered.](../figs/2026-10-02_pruning_recovery.png)
 
 ## §3 — Real data: matched TCGA and ICGC expression + methylation
 
@@ -227,20 +243,20 @@ What the comparison shows:
 - **Methylation adds +0.01**, far inside the uncertainty for 50 donors.
 - **Stacking methylation hurts the two-step model,** from 0.525 to 0.424.
 
-| Starting rank $K_{\mathrm{init}}$ (expression + methylation) | 3 | 4 | 5 | 7 | 10 |
-|---|---|---|---|---|---|
-| Factors kept (none pruned) | 3 | 4 | 5 | 7 | 10 |
-| Survival-active | 0 | 1 | **0** | 1 | 3 |
-| Converged within 500 sweeps | yes (398) | yes (465) | no | no | no |
-| ICGC primary C | 0.557 (0.420–0.699) | 0.574 (0.428–0.714) | **0.500** (constant risk) | 0.685 (0.579–0.779) | 0.650 (0.529–0.763) |
+| Starting rank $K_{\mathrm{init}}$ (expression + methylation) | 3 | 4 | 5 | 7 | 10 | 15 |
+|---|---|---|---|---|---|---|
+| Factors kept (none pruned) | 3 | 4 | 5 | 7 | 10 | 15 |
+| Survival-active | 0 | 1 | **0** | 1 | 3 | **11** |
+| Converged within 500 sweeps | yes (398) | yes (465) | no | no | no | no |
+| ICGC primary C | 0.557 (0.420–0.699) | 0.574 (0.428–0.714) | **0.500** (constant risk) | 0.685 (0.579–0.779) | 0.650 (0.529–0.763) | 0.547 (0.408–0.676) |
 
 **The real-data result depends strongly on the starting rank.**
 
 - At $K_{\mathrm{init}}=5$ no factor is survival-active. Every $\beta_k$ is shrunk to exactly zero, so the risk score is constant and C = 0.5.
-- At $K_{\mathrm{init}}=7$, which was chosen in advance to match the single-modality model, the only survival-active factor is the basal-like one.
+- At $K_{\mathrm{init}}=7$, chosen in advance to match the single-modality model, the only survival-active factor is the basal-like one.
 - At $K_{\mathrm{init}}=10$ there are three survival-active factors, including one matching Program 3 ($\lvert r\rvert=0.68$).
-- The 0.685 at $K_{\mathrm{init}}=7$ is the best of the starting ranks so far, not a typical value.
-- Ranks 6, 8, 9 and 15 are still running.
+- At $K_{\mathrm{init}}=15$ eleven of fifteen factors are survival-active and external C falls to 0.547. With many unpruned factors the model finds survival associations that do not hold out of sample.
+- The 0.685 at $K_{\mathrm{init}}=7$ is the best of the starting ranks, not a typical value. Ranks 6, 8 and 9 are still running.
 
 Because pruning removes nothing on real data, the starting rank effectively *is* the final rank. Unlike in simulation, it is not yet chosen by the model. This is the most important open problem for the real-data application.
 

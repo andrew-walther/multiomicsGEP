@@ -254,13 +254,11 @@ Without the parsimony framework, the number of factors retained by the multimoda
 1. Unregularized per-feature precisions let a spare factor fit a single feature exactly, which made the likelihood unbounded.
 2. Without an intercept, spare non-negative factors absorbed feature means.
 
-With the framework, the final number of factors stays near the true value for every starting rank from 3 to 15 (@fig-mm-pruning). Before this, the final count tracked the starting rank exactly. Where the prognostic programs also explain molecular variation, the pruned fits:
+With the framework, the final number of factors no longer depends on the starting rank (@fig-mm-pruning; 486 fits over three scenarios, two noise levels, starting ranks 3–15 and three seeds).
 
-- recovered all three true programs ($\lvert r\rvert\ge0.7$) from $K_{\mathrm{init}}\ge5$;
-- identified the prognostic programs as survival-active with the correct sign in 75–100% of fits;
-- converged in every run.
-
-A prognostic program that explains little variation was not recovered by either the original or the pruned fit. [Preliminary: 2 seeds per setting at moderate noise; the full sweep is in progress.]
+- **Moderate noise.** It stayed at 3.0–3.7 for every starting rank of 4 or more when each true program explained about 10% of variance. The pruned fits recovered essentially all true programs (2.96–3.00 of 3) and converged in every run, against 7–37% for the original fit. Their held-out concordance was slightly higher (0.794–0.798 against 0.781–0.786), with fewer false survival-active factors.
+- **High noise.** When each true program explained under 1% of variance, the pruned fit returned fewer than three factors, and its held-out concordance was far higher (0.79–0.81 against about 0.70).
+- **Low-variance prognostic program.** At moderate noise it was not recovered by either fit.
 
 ![Final number of factors against the starting rank in simulation (true $K=3$, dashed; $y=x$, dotted), for the original multimodal fit and the fit with evidence-based pruning.](figures/multimodal_pruning_K_final.png){#fig-mm-pruning width=95%}
 
@@ -293,7 +291,8 @@ These results come with caveats:
 
 - **Wide intervals.** With 30 deaths, the intervals are wide.
 - **No pruning on real data.** Pruning removed no factors at any starting rank tried; the evidence supports every molecular factor.
-- **Starting rank matters.** Concordance was 0.557, 0.574, 0.500, 0.685 and 0.650 at starting ranks 3, 4, 5, 7 and 10.
+- **Starting rank matters.** Concordance was 0.557, 0.574, 0.500, 0.685, 0.650 and 0.547 at starting ranks 3, 4, 5, 7, 10 and 15.
+  - At rank 15, eleven of fifteen factors were survival-active.
   - At rank 5 no factor was survival-active, so the risk score was constant.
   - $K_{\mathrm{init}}=7$ was used to match the single-modality model.
   - Because no factors were pruned, the starting rank fixes the final rank on real data.
