@@ -46,9 +46,19 @@ variants <- list(
   pruned_vc = list(intercept = TRUE, prior_update = "ebnm", prior_F = laplace,
                    prune = TRUE, survival_elbo = "corrected")
 )
+# Optional reduced grid (e.g. a quick check before a meeting):
+#   MMYFB_SWEEP_K="3,5,7,10,15" MMYFB_SWEEP_NOISE="0.25" MMYFB_SWEEP_VARIANTS="original,pruned"
+#   MMYFB_SWEEP_TAG="quick"  (written to pruning_comparison_<tag>.csv)
+env_vec <- function(name, default, f = as.numeric) {
+  v <- Sys.getenv(name, ""); if (nzchar(v)) f(strsplit(v, ",")[[1]]) else default
+}
+variants <- variants[env_vec("MMYFB_SWEEP_VARIANTS", names(variants), as.character)]
+tag <- Sys.getenv("MMYFB_SWEEP_TAG", "")
+suffix <- if (nzchar(tag)) paste0("_", tag) else ""
 grid <- expand.grid(
   scenario = c("both_informative", "adverse_protective", "low_variance_prognostic_factor"),
-  noise_scale = c(0.25, 1), K_init = c(3:10, 15L),
+  noise_scale = env_vec("MMYFB_SWEEP_NOISE", c(0.25, 1)),
+  K_init = as.integer(env_vec("MMYFB_SWEEP_K", c(3:10, 15L))),
   seed = 20261001L + seq_len(n_seeds), stringsAsFactors = FALSE)
 
 #' Add a 4-noise-SD baseline to each feature (and truncate at 0, which
@@ -132,7 +142,7 @@ results <- do.call(rbind, lapply(results[!failed], function(x) {
   x[setdiff(all_cols, names(x))] <- NA
   x[all_cols]
 }))
-write.csv(results, file.path(out_dir, "pruning_comparison.csv"), row.names = FALSE)
+write.csv(results, file.path(out_dir, paste0("pruning_comparison", suffix, ".csv")), row.names = FALSE)
 
 errors <- results[!is.na(results$error), ]
 if (nrow(errors)) {
@@ -146,4 +156,5 @@ summary_tab <- aggregate(
 summary_tab <- summary_tab[order(summary_tab$noise_scale, summary_tab$scenario,
                                  summary_tab$variant, summary_tab$K_init), ]
 print(summary_tab, digits = 3, row.names = FALSE)
-write.csv(summary_tab, file.path(out_dir, "pruning_comparison_summary.csv"), row.names = FALSE)
+write.csv(summary_tab, file.path(out_dir, paste0("pruning_comparison_summary", suffix, ".csv")),
+          row.names = FALSE)
