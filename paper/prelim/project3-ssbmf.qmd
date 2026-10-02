@@ -292,8 +292,11 @@ Models were trained on TCGA (144 patients) and evaluated on 50 ICGC primary PDAC
 These results come with caveats:
 
 - **Wide intervals.** With 30 deaths, the intervals are wide.
-- **No pruning on real data.** Pruning removed no factors at starting ranks 3, 7 and 10; the evidence supports every molecular factor.
-- **Starting rank matters.** Concordance was 0.557, 0.685 and 0.650 at starting ranks 3, 7 and 10. $K_{\mathrm{init}}=7$ was used to match the single-modality model.
+- **No pruning on real data.** Pruning removed no factors at any starting rank tried; the evidence supports every molecular factor.
+- **Starting rank matters.** Concordance was 0.557, 0.574, 0.500, 0.685 and 0.650 at starting ranks 3, 4, 5, 7 and 10.
+  - At rank 5 no factor was survival-active, so the risk score was constant.
+  - $K_{\mathrm{init}}=7$ was used to match the single-modality model.
+  - Because no factors were pruned, the starting rank fixes the final rank on real data.
 - **Convergence.** The fits at starting ranks 7 and 10 reached the 500-iteration cap before meeting the convergence criterion.
 
 # Discussion

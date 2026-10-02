@@ -3,7 +3,7 @@
 ## Executive summary {.unnumbered}
 
 ::: {.callout-tip appearance="simple"}
-**In one line:** with a new fitting framework, the multimodal model chooses its own number of factors in simulation. On real data it now matches our established single-modality model: C = 0.685 on the same 50 ICGC donors, from one training cohort. Methylation has not yet added predictive value, and survival still barely affects which factors are retained.
+**In one line:** with a new fitting framework, the multimodal model chooses its own number of factors in simulation. On real data, at the pre-specified rank, it matches our established single-modality model: C = 0.685 on the same 50 ICGC donors, from one training cohort. The real-data result depends strongly on the starting rank, methylation has not yet added predictive value, and survival barely affects which factors are retained.
 :::
 
 **Progress since 9/18**
@@ -16,7 +16,8 @@
    - The new framework reaches C = 0.685 (95% CI 0.579–0.779) on expression + methylation and 0.676 on expression alone.
    - Our recommended single-modality model scores 0.685 on the same donors. It was trained on TCGA + CPTAC.
    - Weaker comparators reach 0.42–0.53.
-   - **Methylation adds +0.01, within the noise.** (§4)
+   - **Methylation adds +0.01, within the noise.**
+   - **The result depends on the starting rank.** Across K_init = 3, 4, 5, 7 and 10, C is 0.557, 0.574, 0.500, 0.685 and 0.650. At K_init = 5 no factor is survival-active. (§4)
 3. **The selected programs are recognizable PDAC biology.**
    - The axes found are basal-like vs classical, normal vs activated stroma, exocrine, and immune.
    - The one survival-active program is the basal-like axis (ICGC HR 1.99 per SD, p = 0.0003). It matches single-modality Program 7.
@@ -29,7 +30,7 @@
 **Open problems and discussion points**
 
 - **Survival barely influences which factors are kept.** On real data it changes the evidence for any factor by less than 3 nats, against 10⁴–10⁵ for reconstruction. This may also be why a low-variance prognostic program is missed in simulation. It is the multimodal form of the single-modality α_F question. How should survival be made to affect factor retention? (§4, §7)
-- **Pruning removed no factors on real data** at K_init = 3, 7 and 10. The evidence supports many molecular factors, and the larger starting ranks are still running. (§4)
+- **Pruning removed no factors on real data** at any starting rank tried (3, 4, 5, 7, 10), so the starting rank fixes the final rank and the result varies with it. The evidence supports many molecular factors. Choosing the rank on real data is the most important open problem. (§4)
 - **What methylation contributes.** Most factors use one modality. Should CpGs be screened relative to genes, for example promoter CpGs of the selected genes, instead of the 10k most variable? (§3, §4)
 
 Terms used below:
@@ -226,14 +227,22 @@ What the comparison shows:
 - **Methylation adds +0.01**, far inside the uncertainty for 50 donors.
 - **Stacking methylation hurts the two-step model,** from 0.525 to 0.424.
 
-| Starting rank $K_{\mathrm{init}}$ (expression + methylation) | 3 | 7 | 10 |
-|---|---|---|---|
-| Factors kept (none pruned) | 3 | 7 | 10 |
-| Survival-active | 0 | 1 | 3 |
-| Converged within 500 sweeps | yes (398) | no | no |
-| ICGC primary C | 0.557 (0.420–0.699) | 0.685 (0.579–0.779) | 0.650 (0.529–0.763) |
+| Starting rank $K_{\mathrm{init}}$ (expression + methylation) | 3 | 4 | 5 | 7 | 10 |
+|---|---|---|---|---|---|
+| Factors kept (none pruned) | 3 | 4 | 5 | 7 | 10 |
+| Survival-active | 0 | 1 | **0** | 1 | 3 |
+| Converged within 500 sweeps | yes (398) | yes (465) | no | no | no |
+| ICGC primary C | 0.557 (0.420–0.699) | 0.574 (0.428–0.714) | **0.500** (constant risk) | 0.685 (0.579–0.779) | 0.650 (0.529–0.763) |
 
-Starting rank matters on real data, and which programs are survival-active depends on it. At $K_{\mathrm{init}}=10$, the three survival-active factors include one matching Program 3 ($\lvert r\rvert=0.68$). At $K_{\mathrm{init}}=7$ the only survival-active factor is the basal-like one. The other starting ranks, up to 15, are still running.
+**The real-data result depends strongly on the starting rank.**
+
+- At $K_{\mathrm{init}}=5$ no factor is survival-active. Every $\beta_k$ is shrunk to exactly zero, so the risk score is constant and C = 0.5.
+- At $K_{\mathrm{init}}=7$, which was chosen in advance to match the single-modality model, the only survival-active factor is the basal-like one.
+- At $K_{\mathrm{init}}=10$ there are three survival-active factors, including one matching Program 3 ($\lvert r\rvert=0.68$).
+- The 0.685 at $K_{\mathrm{init}}=7$ is the best of the starting ranks so far, not a typical value.
+- Ranks 6, 8, 9 and 15 are still running.
+
+Because pruning removes nothing on real data, the starting rank effectively *is* the final rank. Unlike in simulation, it is not yet chosen by the model. This is the most important open problem for the real-data application.
 
 **Caveats.**
 
