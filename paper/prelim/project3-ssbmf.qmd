@@ -24,9 +24,10 @@ bibliography: ../ssbmf-refs.bib
 
 <!--
 Project 3 prelim proposal chapter -- the ONLY editable source. A generated copy
-will go to bios-dissertation/prelim/project-proposals/project3-ssbmf/draft/
-(Project 2 pattern; see docs/plans/Prelim_Proposal_Plan_10_1_26.md). The sync
-tools are not installed yet.
+goes to bios-dissertation/prelim/project-proposals/project3-ssbmf/draft/
+(Project 2 pattern; see docs/plans/Prelim_Proposal_Plan_10_1_26.md) by running
+tools/sync_to_prelim.sh by hand after each commit. Use @sec- labels for
+internal section references so they number 4.x in the prelim render.
 
 Status (2026-10-02): prose draft after independent review
 (docs/reviews/2026-10-02_prelim_proposal_review.md).
