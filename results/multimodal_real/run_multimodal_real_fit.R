@@ -17,6 +17,8 @@
 #      Framework: MMYFB_FRAMEWORK=pruned uses the 10/1 parsimony framework --
 #      per-feature intercept, point-Laplace loadings, ebnm prior fits and ELBO
 #      factor pruning (partial log-likelihood) -- on the raw inputs.
+#      Modalities: MMYFB_MODALITIES=expression fits the same model to expression
+#      alone (e.g. to separate the effect of methylation from the framework).
 #      Input scale: MMYFB_INPUT = raw (default: log2 expression, beta methylation),
 #      centered (features centered on TCGA means), or centered_asin (methylation
 #      transformed to asin(2*beta - 1) first). Centered inputs need signed priors.
@@ -89,6 +91,12 @@ if (input != "raw") {
     d[[nm]]$Y <- Map(function(x, m) sweep(x, 2, m), d[[nm]]$Y, mu)
   }
   prior_tag <- paste0(prior_tag, "_", input)
+}
+modalities <- strsplit(Sys.getenv("MMYFB_MODALITIES", "expression,methylation"), ",")[[1]]
+if (!identical(modalities, c("expression", "methylation"))) {
+  # Every arm (joint and baselines) sees only the requested modalities
+  for (nm in c("training", "validation_primary", "validation_all")) d[[nm]]$Y <- d[[nm]]$Y[modalities]
+  prior_tag <- paste0(prior_tag, "_", paste(modalities, collapse = "-"), "-only")
 }
 tr <- d$training
 validation <- list(icgc_primary = d$validation_primary, icgc_all = d$validation_all)

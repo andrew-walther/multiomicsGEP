@@ -8,18 +8,26 @@
 
 .multimodal_yfb_modalities <- c("expression", "methylation")
 
-.validate_multimodal_yfb_blocks <- function(Y, label, nonnegative = NULL) {
+.validate_multimodal_yfb_blocks <- function(Y, label, nonnegative = NULL,
+                                            modalities = NULL) {
+  # Y may hold both modalities or one of them (e.g. expression alone, to fit
+  # the same model to a single modality); blocks keep the canonical order.
+  if (!is.list(Y) || is.null(names(Y)) || length(Y) == 0L ||
+      !all(names(Y) %in% .multimodal_yfb_modalities) || anyDuplicated(names(Y))) {
+    stop(label, " Y must be a named list of expression and/or methylation blocks.")
+  }
+  modalities <- modalities %||% .multimodal_yfb_modalities[.multimodal_yfb_modalities %in% names(Y)]
+  if (!identical(names(Y), modalities)) {
+    stop(label, " Y must contain exactly the blocks ", paste(modalities, collapse = ", "),
+         ", in that order.")
+  }
   # nonnegative: named logical by modality. Blocks fit with a point-exponential
   # loading prior must be nonnegative; signed priors (point-Laplace, Normal)
   # allow centered or otherwise signed data. Default: all blocks nonnegative.
   if (is.null(nonnegative)) {
-    nonnegative <- stats::setNames(rep(TRUE, length(.multimodal_yfb_modalities)),
-                                   .multimodal_yfb_modalities)
+    nonnegative <- stats::setNames(rep(TRUE, length(modalities)), modalities)
   }
-  if (!is.list(Y) || !identical(names(Y), .multimodal_yfb_modalities)) {
-    stop(label, " Y must be a named list with expression and methylation blocks.")
-  }
-  for (modality in .multimodal_yfb_modalities) {
+  for (modality in modalities) {
     block <- Y[[modality]]
     if (!is.matrix(block) || !is.numeric(block) || is.null(rownames(block)) ||
         is.null(colnames(block)) || anyDuplicated(rownames(block)) ||
@@ -30,11 +38,13 @@
            "numeric matrix with unique row and column names.")
     }
   }
-  subject_ids <- rownames(Y$expression)
-  if (!setequal(subject_ids, rownames(Y$methylation))) {
-    stop(label, " expression and methylation must contain exactly the same subject IDs.")
+  subject_ids <- rownames(Y[[1]])
+  for (modality in modalities[-1]) {
+    if (!setequal(subject_ids, rownames(Y[[modality]]))) {
+      stop(label, " all modalities must contain exactly the same subject IDs.")
+    }
+    Y[[modality]] <- Y[[modality]][subject_ids, , drop = FALSE]
   }
-  Y$methylation <- Y$methylation[subject_ids, , drop = FALSE]
   Y
 }
 
@@ -53,7 +63,7 @@
 #' @family multimodal_yfb_preprocessing
 preprocess_multimodal_yfb_training <- function(Y, time, event, nonnegative = NULL) {
   Y <- .validate_multimodal_yfb_blocks(Y, "Training", nonnegative)
-  subject_ids <- rownames(Y$expression)
+  subject_ids <- rownames(Y[[1]])
   if (!is.numeric(time) || !is.numeric(event) || is.null(names(time)) ||
       is.null(names(event)) || anyDuplicated(names(time)) || anyDuplicated(names(event)) ||
       !setequal(names(time), subject_ids) || !setequal(names(event), subject_ids) ||
@@ -67,7 +77,7 @@ preprocess_multimodal_yfb_training <- function(Y, time, event, nonnegative = NUL
     training_spec = list(
       subject_ids = subject_ids,
       feature_names = lapply(Y, colnames),
-      modalities = .multimodal_yfb_modalities,
+      modalities = names(Y),
       nonnegative = nonnegative
     )
   )
@@ -85,14 +95,17 @@ preprocess_multimodal_yfb_training <- function(Y, time, event, nonnegative = NUL
 #' align_multimodal_yfb_prediction(Y, spec)
 #' @family multimodal_yfb_preprocessing
 align_multimodal_yfb_prediction <- function(Y, training_spec) {
-  Y <- .validate_multimodal_yfb_blocks(Y, "Validation", training_spec$nonnegative)
+  modalities <- training_spec$modalities %||% .multimodal_yfb_modalities
   if (!is.list(training_spec$feature_names) ||
-      !identical(names(training_spec$feature_names), .multimodal_yfb_modalities)) {
-    stop("training_spec must contain feature names for expression and methylation.")
+      !identical(names(training_spec$feature_names), modalities)) {
+    stop("training_spec must contain feature names for every training modality.")
   }
-  ignored_features <- vector("list", length(.multimodal_yfb_modalities))
-  names(ignored_features) <- .multimodal_yfb_modalities
-  for (modality in .multimodal_yfb_modalities) {
+  # Validation data may carry extra modalities; keep the training ones only
+  Y <- Y[intersect(modalities, names(Y))]
+  Y <- .validate_multimodal_yfb_blocks(Y, "Validation", training_spec$nonnegative, modalities)
+  ignored_features <- vector("list", length(modalities))
+  names(ignored_features) <- modalities
+  for (modality in modalities) {
     required <- training_spec$feature_names[[modality]]
     missing <- setdiff(required, colnames(Y[[modality]]))
     if (length(missing) > 0L) {

@@ -140,3 +140,24 @@ run_test("MMYFB-Prune-T8: the compiled score update reproduces the R score updat
     }
   }
 })
+
+run_test("MMYFB-Prune-T9: the model fits a single modality and predicts from multimodal validation data", {
+  data <- simulate_multimodal_yfb_data("both_informative", n_train = 60, n_validation = 30,
+                                        p_expression = 15, p_methylation = 15, seed = 44,
+                                        truncate = FALSE, noise_scale = 0.5)
+  Yexpr <- data$training$Y["expression"]
+  fit <- fit_multimodal_yfb(Yexpr, data$training$time, data$training$event, K = 3,
+                            control = list(intercept = TRUE, prior_update = "ebnm", prune = TRUE,
+                              max_outer = 30L,
+                              prior_F = list(expression = "point_laplace", methylation = "point_laplace")))
+  assert_equal(names(fit$EF), "expression")
+  assert_equal(fit$training_spec$modalities, "expression")
+  # validation data with both blocks: methylation is ignored
+  r <- predict_multimodal_yfb(fit, data$validation$Y)$risk_scores
+  assert_length(r, 30)
+  assert_true(all(is.finite(r)))
+  # wrong block order still errors
+  bad <- tryCatch(fit_multimodal_yfb(rev(data$training$Y), data$training$time,
+                                     data$training$event, 2), error = function(e) conditionMessage(e))
+  assert_true(grepl("in that order", bad))
+})

@@ -32,7 +32,8 @@ if (!length(files)) stop("No cached fits in ", file.path(out_dir, "fits"))
 parse_name <- function(path) {
   b <- sub("\\.rds$", "", basename(path))
   list(K_init = as.integer(sub("^fits_K(\\d+).*", "\\1", b)),
-       config = if (grepl("_pruned$", b)) "pruned" else if (b == sub("_.*", "", b) ||
+       config = if (grepl("_pruned_expression-only$", b)) "pruned_expression_only" else
+                if (grepl("_pruned$", b)) "pruned" else if (b == sub("_.*", "", b) ||
                   grepl("^fits_K\\d+$", b)) "original" else sub("^fits_K\\d+_", "", b))
 }
 
@@ -46,6 +47,7 @@ cohorts_for <- function(config) {
     mu <- lapply(x$training$Y, colMeans)
     for (nm in names(x)) x[[nm]]$Y <- Map(function(y, m) sweep(y, 2, m), x[[nm]]$Y, mu)
   }
+  if (grepl("expression_only", config)) for (nm in names(x)) x[[nm]]$Y <- x[[nm]]$Y["expression"]
   names(x) <- c("tcga_train", "icgc_primary", "icgc_all")
   x
 }

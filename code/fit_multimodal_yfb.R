@@ -317,10 +317,11 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   nonnegative <- if (is.list(prior_F_requested) && !is.null(names(prior_F_requested))) {
     vapply(prior_F_requested, function(f) identical(f, "point_exponential"), logical(1))
   } else NULL
+  if (!is.null(nonnegative) && is.list(Y)) nonnegative <- nonnegative[intersect(names(nonnegative), names(Y))]
   data <- preprocess_multimodal_yfb_training(Y, time, event, nonnegative)
   Y <- data$Y
   Y_raw <- Y
-  n <- nrow(Y$expression)
+  n <- nrow(Y[[1]])
   if (length(K) != 1L || !is.finite(K) || K < 1L || K != as.integer(K)) {
     stop("K must be a positive integer.")
   }
@@ -349,6 +350,8 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   }
   settings$prior_F <- settings$prior_F %||%
     list(expression = "point_exponential", methylation = "point_exponential")
+  # Keep the prior entries for the modalities actually supplied
+  if (is.list(settings$prior_F)) settings$prior_F <- settings$prior_F[intersect(names(settings$prior_F), names(Y))]
   if (!is.list(settings$prior_F) || !setequal(names(settings$prior_F), names(Y)) ||
       !all(unlist(settings$prior_F) %in% c("point_exponential", "point_laplace", "normal"))) {
     stop("control$prior_F must name a prior (point_exponential, point_laplace or normal) for each modality.")

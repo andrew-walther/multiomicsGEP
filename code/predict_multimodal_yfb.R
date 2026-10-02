@@ -27,7 +27,7 @@ predict_multimodal_yfb <- function(fit, new_Y) {
   projection <- Reduce(`+`, Map(`%*%`, aligned$Y, fit$EF))
   list(
     risk_scores = stats::setNames(
-      as.vector(projection %*% fit$EBeta), rownames(aligned$Y$expression)
+      as.vector(projection %*% fit$EBeta), rownames(aligned$Y[[1]])
     ),
     ignored_features = aligned$ignored_features
   )
