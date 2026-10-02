@@ -10,6 +10,10 @@
 #               code/load_multiomics_data.R
 # Run: Rscript results/multimodal_real/run_multimodal_real_fit.R [K ...]
 #      (default K = 5 7 10). Each K is cached in outputs/fits/.
+#      Loading prior: set MMYFB_PRIOR_F to one family for both modalities or
+#      "expression_family,methylation_family", e.g.
+#      MMYFB_PRIOR_F=point_laplace Rscript ... 7
+#      (default point_exponential; signed priors still use the nonnegative inputs).
 # ============================================================
 #
 # Inputs are on the scales the current nonnegative point-exponential model
@@ -45,6 +49,10 @@ source("code/load_multiomics_data.R")
 
 args <- commandArgs(trailingOnly = TRUE)
 K_values <- if (length(args)) as.integer(args) else c(5L, 7L, 10L)
+prior_arg <- strsplit(Sys.getenv("MMYFB_PRIOR_F", "point_exponential"), ",")[[1]]
+prior_F <- list(expression = prior_arg[1], methylation = prior_arg[length(prior_arg)])
+prior_tag <- if (all(unlist(prior_F) == "point_exponential")) "" else
+  paste0("_", prior_F$expression, "-", prior_F$methylation)
 out_dir <- "results/multimodal_real/outputs"
 dir.create(file.path(out_dir, "fits"), recursive = TRUE, showWarnings = FALSE)
 
@@ -81,12 +89,13 @@ timed <- function(expr) {
 
 rows <- list()
 for (K in K_values) {
-  fit_path <- file.path(out_dir, "fits", sprintf("fits_K%02d.rds", K))
+  fit_path <- file.path(out_dir, "fits", sprintf("fits_K%02d%s.rds", K, prior_tag))
   if (file.exists(fit_path)) {
     fits <- readRDS(fit_path)
   } else {
     message("K = ", K, ": fitting joint multimodal YFB")
-    joint <- timed(fit_multimodal_yfb(tr$Y, tr$time, tr$event, K))
+    joint <- timed(fit_multimodal_yfb(tr$Y, tr$time, tr$event, K,
+                                      control = list(prior_F = prior_F)))
     message("K = ", K, ": fitting expression-only YFB")
     expr_only <- timed(fit_multimodal_yfb_single_modality(
       tr$Y, tr$time, tr$event, "expression", K))
@@ -119,7 +128,8 @@ for (K in K_values) {
   for (arm in names(arms)) {
     sc <- score_cohorts(arms[[arm]]$risk)
     rows[[length(rows) + 1L]] <- cbind(
-      K_init = K, method = arm, sc, arms[[arm]]$info,
+      K_init = K, prior_F = paste(prior_F$expression, prior_F$methylation, sep = "/"),
+      method = arm, sc, arms[[arm]]$info,
       runtime_seconds = attr(fits[[c(joint_multimodal_yfb = "joint",
         expression_only_yfb = "expr_only", two_step_ebmf_cox = "two_step")[[arm]]]],
         "runtime_seconds") %||% NA_real_)
@@ -128,4 +138,5 @@ for (K in K_values) {
 results <- do.call(rbind, rows)
 rownames(results) <- NULL
 print(results, digits = 3)
-write.csv(results, file.path(out_dir, "real_fit_cindex.csv"), row.names = FALSE)
+write.csv(results, file.path(out_dir, sprintf("real_fit_cindex%s_K%s.csv", prior_tag,
+          paste(K_values, collapse = "-"))), row.names = FALSE)

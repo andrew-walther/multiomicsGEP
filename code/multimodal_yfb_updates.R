@@ -319,14 +319,22 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
   # prior$family is NULL or "point_exponential" for the original nonnegative
   # loadings; "point_laplace" and "normal" give signed loadings
   signed <- !is.null(prior$family) && prior$family != "point_exponential"
+  # Terms that do not change during the feature sweep, computed once
+  # (algebraically identical to computing them inside the loop):
+  #   sum_i w_i y_ij^2,  sum_i EL_ik R_ij,  sum_i y_ij h_i
+  wY <- w * Y_m
+  sum_wy2 <- unname(colSums(wY * Y_m))
+  sum_LR <- as.vector(crossprod(R_mk, EL_k))
+  sum_yh <- as.vector(crossprod(Y_m, h_minus_k))
   for (j in seq_len(ncol(Y_m))) {
     y <- Y_m[, j]
     old_mean <- EF_new[j]
-    old_variance <- pmax(EF2_new[j] - old_mean^2, 0)
-    EZ_without_j <- EZ_new - y * old_mean
-    A <- Tau_m[j] * sum_EL2 + EBeta2_k * sum(w * y^2)
-    B <- Tau_m[j] * sum(EL_k * R_mk[, j]) +
-      sum(y * (EBeta_k * h_minus_k - w * EBeta2_k * EZ_without_j))
+    old_variance <- max(EF2_new[j] - old_mean^2, 0)
+    # EZ_without_j = EZ - y_j * old_mean, so
+    # sum_i w_i y_ij EZ_without_j,i = sum_i w_i y_ij EZ_i - old_mean * sum_wy2[j]
+    sum_wyEZ_without_j <- sum(wY[, j] * EZ_new) - old_mean * sum_wy2[j]
+    A <- Tau_m[j] * sum_EL2 + EBeta2_k * sum_wy2[j]
+    B <- Tau_m[j] * sum_LR[j] + EBeta_k * sum_yh[j] - EBeta2_k * sum_wyEZ_without_j
     posterior <- if (signed) {
       multimodal_yfb_signed_posterior(A, B, prior)
     } else {
@@ -335,9 +343,9 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
     new_variance <- pmax(posterior$second - posterior$mean^2, 0)
     EF_new[j] <- posterior$mean
     EF2_new[j] <- posterior$mean^2 + new_variance
-    EZ_new <- EZ_without_j + y * posterior$mean
+    EZ_new <- EZ_new + y * (posterior$mean - old_mean)
     VZ_new <- VZ_new + y^2 * (new_variance - old_variance)
-    details[[j]] <- c(posterior, list(A = A, B = B, EZ_without_j = EZ_without_j))
+    details[[j]] <- c(posterior, list(A = A, B = B))
   }
   new_prior <- if (signed) {
     multimodal_yfb_fit_signed_prior(vapply(details, `[[`, numeric(1), "x"),
