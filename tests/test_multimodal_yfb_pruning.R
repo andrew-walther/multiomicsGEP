@@ -111,10 +111,32 @@ run_test("MMYFB-Prune-T7: the compiled loading sweep reproduces the R sweep for 
       b <- do.call(multimodal_yfb_update_F_mk, c(args, list(prior = pr)))
       options(old)
       for (nm in c("EF", "EF2", "EZ", "VZ", "kl")) assert_near(a[[nm]], b[[nm]], tol = 1e-10)
-      da <- as.matrix(a$details); db <- as.matrix(b$details)
+      da <- do.call(cbind, a$details); db <- do.call(cbind, b$details)
       # log p(x) is NA by design for point-mass / zero-information coordinates
       assert_true(identical(is.na(da), is.na(db)))
       assert_near(da[!is.na(da)], db[!is.na(db)], tol = 1e-10)
+    }
+  }
+})
+
+run_test("MMYFB-Prune-T8: the compiled score update reproduces the R score update", {
+  if (!multimodal_yfb_use_cpp()) {
+    cat("  (compiled sweep unavailable; skipping the comparison)\n")
+  } else {
+    set.seed(52)
+    n <- 30; p <- 12
+    Y <- list(expression = matrix(rnorm(n * p), n, p), methylation = matrix(rnorm(n * p), n, p))
+    R <- lapply(Y, function(y) y + rnorm(length(y), sd = 0.1))
+    EF <- lapply(1:2, function(i) abs(rnorm(p))); names(EF) <- names(Y)
+    EF2 <- lapply(EF, function(f) f^2 + 0.05)
+    Tau <- lapply(Y, function(y) rgamma(ncol(y), 2, 2))
+    for (pr in list(list(pi = 0.4, rate = 1.2, point_mass = FALSE), list(point_mass = TRUE))) {
+      a <- multimodal_yfb_update_L_k(Y, R, EF, EF2, Tau, pr)
+      old <- options(multimodal_yfb.engine = "R")
+      b <- multimodal_yfb_update_L_k(Y, R, EF, EF2, Tau, pr)
+      options(old)
+      for (nm in c("mean", "second", "slab_prob", "kl")) assert_near(a[[nm]], b[[nm]], tol = 1e-12)
+      assert_true(identical(is.na(a$x), is.na(b$x)))
     }
   }
 })

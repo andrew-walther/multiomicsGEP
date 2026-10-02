@@ -130,3 +130,19 @@ List mmyfb_F_sweep_cpp(NumericMatrix Y, NumericVector Tau, double sum_EL2,
                       _["mean"] = mean_out, _["second"] = second_out,
                       _["slab_prob"] = slab_out, _["log_ml"] = logml_out);
 }
+
+// Vectorized posterior for independent coordinates (used by the score update,
+// where every coordinate shares the same A): same formulas as posterior().
+// [[Rcpp::export]]
+List mmyfb_posterior_vec_cpp(NumericVector A, NumericVector B, int family, bool point_mass,
+                             double pi, double rate, double variance) {
+  int n = B.size();
+  NumericVector mean(n), second(n), slab(n), x(n), s2(n), log_ml(n);
+  for (int i = 0; i < n; i++) {
+    Post q = posterior(A[A.size() == 1 ? 0 : i], B[i], family, point_mass, pi, rate, variance);
+    mean[i] = q.mean; second[i] = q.second; slab[i] = q.slab_prob;
+    x[i] = q.x; s2[i] = q.s2; log_ml[i] = q.log_ml;
+  }
+  return List::create(_["mean"] = mean, _["second"] = second, _["slab_prob"] = slab,
+                      _["x"] = x, _["s2"] = s2, _["log_ml"] = log_ml);
+}

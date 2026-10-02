@@ -245,15 +245,20 @@ multimodal_yfb_coordinate_kl <- function(x, s2, mean, second, log_ml) {
 #' uses to prune factors.
 #'
 #' @param x,s2 Pseudo-observations and their variances.
+#' @param init Optional current prior (warm start for the optimizer).
 #' @return Prior list (`pi`, `rate`, `point_mass`, `family`).
 #' @examples
 #' multimodal_yfb_fit_exponential_prior_ebnm(c(0.1, 2, 3), c(1, 1, 1))
 #' @family multimodal_yfb_updates
-multimodal_yfb_fit_exponential_prior_ebnm <- function(x, s2) {
+multimodal_yfb_fit_exponential_prior_ebnm <- function(x, s2, init = NULL) {
   ok <- is.finite(x) & is.finite(s2) & s2 > 0
   dead <- list(family = "point_exponential", pi = 0, rate = NA_real_, point_mass = TRUE)
   if (!any(ok)) return(dead)
-  g <- ebnm::ebnm_point_exponential(x[ok], sqrt(s2[ok]), mode = 0)$fitted_g
+  g_init <- if (!is.null(init) && !isTRUE(init$point_mass) && is.finite(init$rate %||% NA))
+    ebnm::gammamix(pi = c(1 - init$pi, init$pi), shape = c(1, 1), scale = c(0, 1 / init$rate),
+                   shift = c(0, 0))
+  else NULL
+  g <- ebnm::ebnm_point_exponential(x[ok], sqrt(s2[ok]), mode = 0, g_init = g_init)$fitted_g
   # gammamix: component 1 is the point mass (scale 0); component 2 is
   # Exp(rate = 1 / scale)
   if (g$pi[2] <= sqrt(.Machine$double.eps) || g$scale[2] <= 0) return(dead)
@@ -269,21 +274,29 @@ multimodal_yfb_fit_exponential_prior_ebnm <- function(x, s2) {
 #' @param x Pseudo-observations, one per feature.
 #' @param s2 Their variances.
 #' @param family "point_laplace" or "normal".
+#' @param init Optional current prior (warm start for the optimizer).
 #' @return Prior list for [multimodal_yfb_signed_posterior()].
 #' @examples
 #' multimodal_yfb_fit_signed_prior(c(-2, 0.1, 3), c(1, 1, 1), "point_laplace")
 #' @family multimodal_yfb_updates
-multimodal_yfb_fit_signed_prior <- function(x, s2, family) {
+multimodal_yfb_fit_signed_prior <- function(x, s2, family, init = NULL) {
   ok <- is.finite(x) & is.finite(s2) & s2 > 0
   if (!any(ok)) {
     return(list(family = family, pi = 0, rate = NA_real_, variance = 0, point_mass = TRUE))
   }
   if (family == "normal") {
-    g <- ebnm::ebnm_normal(x[ok], sqrt(s2[ok]), mode = 0)$fitted_g
+    g_init <- if (!is.null(init) && !isTRUE(init$point_mass) && is.finite(init$variance %||% NA))
+      ashr::normalmix(1, 0, sqrt(init$variance)) else NULL
+    g <- ebnm::ebnm_normal(x[ok], sqrt(s2[ok]), mode = 0, g_init = g_init)$fitted_g
     variance <- g$sd^2
     return(list(family = family, variance = variance, point_mass = variance <= 0))
   }
-  g <- ebnm::ebnm_point_laplace(x[ok], sqrt(s2[ok]), mode = 0)$fitted_g
+  # Warm start from the current prior: the same marginal-likelihood problem,
+  # started closer to its optimum
+  g_init <- if (!is.null(init) && !isTRUE(init$point_mass) && is.finite(init$rate %||% NA))
+    ebnm::laplacemix(pi = c(1 - init$pi, init$pi), mean = c(0, 0), scale = c(0, 1 / init$rate))
+  else NULL
+  g <- ebnm::ebnm_point_laplace(x[ok], sqrt(s2[ok]), mode = 0, g_init = g_init)$fitted_g
   # laplacemix: component 1 is the point mass (scale 0); component 2 has
   # density exp(-|theta| / scale) / (2 scale), so rate lambda = 1 / scale
   slab_pi <- g$pi[2]
@@ -331,13 +344,21 @@ multimodal_yfb_update_L_k <- function(Y, R_minus_k, EF_k, EF2_k, Tau, prior,
     A <- A + sum(Tau[[modality]] * EF2_k[[modality]])
     B <- B + as.vector(R_minus_k[[modality]] %*% (Tau[[modality]] * EF_k[[modality]]))
   }
-  posterior <- lapply(seq_len(n), function(i) {
-    multimodal_yfb_point_exponential_posterior(A, B[i], prior)
-  })
-  get <- function(field) vapply(posterior, `[[`, numeric(1), field)
+  if (multimodal_yfb_use_cpp()) {
+    # All n coordinates share A, so the posterior is one vectorized call
+    posterior <- mmyfb_posterior_vec_cpp(A, B, 0L, isTRUE(prior$point_mass),
+                                         prior$pi %||% NA_real_, prior$rate %||% NA_real_,
+                                         NA_real_)
+    get <- function(field) posterior[[field]]
+  } else {
+    posterior <- lapply(seq_len(n), function(i) {
+      multimodal_yfb_point_exponential_posterior(A, B[i], prior)
+    })
+    get <- function(field) vapply(posterior, `[[`, numeric(1), field)
+  }
   x <- get("x"); s2 <- get("s2"); mean <- get("mean"); second <- get("second")
   new_prior <- if (prior_update == "ebnm") {
-    multimodal_yfb_fit_exponential_prior_ebnm(x, s2)
+    multimodal_yfb_fit_exponential_prior_ebnm(x, s2, prior)
   } else {
     multimodal_yfb_update_loading_prior(get("slab_prob"), mean)
   }
@@ -438,7 +459,7 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
       EBeta_k, EBeta2_k, family_code, isTRUE(prior$point_mass),
       prior$pi %||% NA_real_, prior$rate %||% NA_real_, prior$variance %||% NA_real_)
     EF_new <- res$EF; EF2_new <- res$EF2; EZ_new <- res$EZ; VZ_new <- res$VZ
-    details <- as.data.frame(res[c("mean", "second", "slab_prob", "x", "s2", "log_ml", "A", "B")])
+    details <- res[c("mean", "second", "slab_prob", "x", "s2", "log_ml", "A", "B")]
   } else {
     for (j in seq_len(ncol(Y_m))) {
       y <- Y_m[, j]
@@ -461,14 +482,16 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
       VZ_new <- VZ_new + y^2 * (new_variance - old_variance)
       details[[j]] <- c(posterior, list(A = A, B = B))
     }
-    details <- data.frame(t(vapply(details, function(d) unlist(d[c(
-      "mean", "second", "slab_prob", "x", "s2", "log_ml", "A", "B")]), numeric(8))))
+    fields <- c("mean", "second", "slab_prob", "x", "s2", "log_ml", "A", "B")
+    details <- stats::setNames(lapply(fields, function(f) {
+      vapply(details, function(d) as.numeric(d[[f]]), numeric(1))
+    }), fields)
   }
   get <- function(field) details[[field]]
   new_prior <- if (signed) {
-    multimodal_yfb_fit_signed_prior(get("x"), get("s2"), prior$family)
+    multimodal_yfb_fit_signed_prior(get("x"), get("s2"), prior$family, prior)
   } else if (prior_update == "ebnm") {
-    multimodal_yfb_fit_exponential_prior_ebnm(get("x"), get("s2"))
+    multimodal_yfb_fit_exponential_prior_ebnm(get("x"), get("s2"), prior)
   } else {
     c(multimodal_yfb_update_loading_prior(get("slab_prob"), EF_new),
       if (!is.null(prior$family)) list(family = prior$family))
