@@ -99,3 +99,29 @@ run_test("MMYFB-Prior-T6: fitter accepts signed loading priors and returns signe
                   error = function(e) conditionMessage(e))
   assert_true(grepl("prior_F", bad))
 })
+
+run_test("MMYFB-Prior-T7: signed priors accept centered data; point-exponential still rejects it", {
+  data <- simulate_multimodal_yfb_data("both_informative", n_train = 50,
+                                        n_validation = 30, p_expression = 12,
+                                        p_methylation = 12, seed = 32)
+  # center each modality on the training means; apply the same means to validation
+  mu <- lapply(data$training$Y, colMeans)
+  center <- function(Y) Map(function(x, m) sweep(x, 2, m), Y, mu)
+  Ytr <- center(data$training$Y); Yva <- center(data$validation$Y)
+  fit <- fit_multimodal_yfb(Ytr, data$training$time, data$training$event, K = 2,
+                            control = list(max_outer = 20L,
+                              prior_F = list(expression = "point_laplace",
+                                             methylation = "point_laplace")))
+  assert_true(all(is.finite(predict_multimodal_yfb(fit, Yva)$risk_scores)))
+  err <- tryCatch(fit_multimodal_yfb(Ytr, data$training$time, data$training$event, K = 2,
+                                     control = list(max_outer = 2L)),
+                  error = function(e) conditionMessage(e))
+  assert_true(grepl("nonnegative", err))
+  # mixed: only the signed-prior modality may be signed
+  mixed <- list(expression = data$training$Y$expression, methylation = Ytr$methylation)
+  ok <- fit_multimodal_yfb(mixed, data$training$time, data$training$event, K = 2,
+                           control = list(max_outer = 2L,
+                             prior_F = list(expression = "point_exponential",
+                                            methylation = "normal")))
+  assert_true(inherits(ok, "multimodal_yfb_fit"))
+})

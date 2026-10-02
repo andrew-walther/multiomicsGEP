@@ -301,14 +301,19 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #' @family multimodal_yfb
 #' @seealso [predict_multimodal_yfb()]
 fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
-  data <- preprocess_multimodal_yfb_training(Y, time, event)
+  if (!is.list(control) || (length(control) > 0L && is.null(names(control)))) {
+    stop("control must be an empty or named list.")
+  }
+  # Signed loading priors allow signed (e.g. centered) data in that modality
+  prior_F_requested <- modifyList(multimodal_yfb_default_control(), control)$prior_F
+  nonnegative <- if (is.list(prior_F_requested) && !is.null(names(prior_F_requested))) {
+    vapply(prior_F_requested, function(f) identical(f, "point_exponential"), logical(1))
+  } else NULL
+  data <- preprocess_multimodal_yfb_training(Y, time, event, nonnegative)
   Y <- data$Y
   n <- nrow(Y$expression)
   if (length(K) != 1L || !is.finite(K) || K < 1L || K != as.integer(K)) {
     stop("K must be a positive integer.")
-  }
-  if (!is.list(control) || (length(control) > 0L && is.null(names(control)))) {
-    stop("control must be an empty or named list.")
   }
   settings <- modifyList(multimodal_yfb_default_control(), control)
   settings$damping <- settings$damping %||% 1

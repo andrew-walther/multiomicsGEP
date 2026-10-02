@@ -8,7 +8,14 @@
 
 .multimodal_yfb_modalities <- c("expression", "methylation")
 
-.validate_multimodal_yfb_blocks <- function(Y, label) {
+.validate_multimodal_yfb_blocks <- function(Y, label, nonnegative = NULL) {
+  # nonnegative: named logical by modality. Blocks fit with a point-exponential
+  # loading prior must be nonnegative; signed priors (point-Laplace, Normal)
+  # allow centered or otherwise signed data. Default: all blocks nonnegative.
+  if (is.null(nonnegative)) {
+    nonnegative <- stats::setNames(rep(TRUE, length(.multimodal_yfb_modalities)),
+                                   .multimodal_yfb_modalities)
+  }
   if (!is.list(Y) || !identical(names(Y), .multimodal_yfb_modalities)) {
     stop(label, " Y must be a named list with expression and methylation blocks.")
   }
@@ -16,9 +23,11 @@
     block <- Y[[modality]]
     if (!is.matrix(block) || !is.numeric(block) || is.null(rownames(block)) ||
         is.null(colnames(block)) || anyDuplicated(rownames(block)) ||
-        anyDuplicated(colnames(block)) || any(!is.finite(block)) || any(block < 0)) {
-      stop(label, " ", modality,
-           " must be a finite nonnegative numeric matrix with unique row and column names.")
+        anyDuplicated(colnames(block)) || any(!is.finite(block)) ||
+        (isTRUE(nonnegative[[modality]]) && any(block < 0))) {
+      stop(label, " ", modality, " must be a finite ",
+           if (isTRUE(nonnegative[[modality]])) "nonnegative " else "",
+           "numeric matrix with unique row and column names.")
     }
   }
   subject_ids <- rownames(Y$expression)
@@ -34,14 +43,16 @@
 #' @param Y Named expression and methylation subject-by-feature matrices.
 #' @param time Named positive follow-up-time vector.
 #' @param event Named 0/1 event-indicator vector.
+#' @param nonnegative Named logical by modality: must the block be
+#'   nonnegative? (Default: all TRUE, as required by point-exponential loadings.)
 #' @return List with aligned `Y`, outcome vectors, and `training_spec` metadata.
 #' @examples
 #' Y <- list(expression = matrix(1, 1, 1, dimnames = list("s1", "g1")),
 #'           methylation = matrix(1, 1, 1, dimnames = list("s1", "cg1")))
 #' preprocess_multimodal_yfb_training(Y, c(s1 = 1), c(s1 = 1))
 #' @family multimodal_yfb_preprocessing
-preprocess_multimodal_yfb_training <- function(Y, time, event) {
-  Y <- .validate_multimodal_yfb_blocks(Y, "Training")
+preprocess_multimodal_yfb_training <- function(Y, time, event, nonnegative = NULL) {
+  Y <- .validate_multimodal_yfb_blocks(Y, "Training", nonnegative)
   subject_ids <- rownames(Y$expression)
   if (!is.numeric(time) || !is.numeric(event) || is.null(names(time)) ||
       is.null(names(event)) || anyDuplicated(names(time)) || anyDuplicated(names(event)) ||
@@ -56,7 +67,8 @@ preprocess_multimodal_yfb_training <- function(Y, time, event) {
     training_spec = list(
       subject_ids = subject_ids,
       feature_names = lapply(Y, colnames),
-      modalities = .multimodal_yfb_modalities
+      modalities = .multimodal_yfb_modalities,
+      nonnegative = nonnegative
     )
   )
 }
@@ -73,7 +85,7 @@ preprocess_multimodal_yfb_training <- function(Y, time, event) {
 #' align_multimodal_yfb_prediction(Y, spec)
 #' @family multimodal_yfb_preprocessing
 align_multimodal_yfb_prediction <- function(Y, training_spec) {
-  Y <- .validate_multimodal_yfb_blocks(Y, "Validation")
+  Y <- .validate_multimodal_yfb_blocks(Y, "Validation", training_spec$nonnegative)
   if (!is.list(training_spec$feature_names) ||
       !identical(names(training_spec$feature_names), .multimodal_yfb_modalities)) {
     stop("training_spec must contain feature names for expression and methylation.")

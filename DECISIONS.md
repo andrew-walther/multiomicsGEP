@@ -34,9 +34,14 @@ recommendation for each scenario. `ebnm` was chosen over hand-derived
 empirical-Bayes updates because it is already a dependency and its fits are
 tested.
 
-**Not changed yet.** The input contract still requires nonnegative data.
-Centering (signed inputs) is the next step. The canonicalization and
-convergence rules are unchanged.
+**Signed input.** A modality fit with a point-Laplace or Normal loading
+prior may now contain signed data, for example features centered on the
+training means (so 0 is the baseline, as suggested on 9/18) or
+asin(2β − 1) methylation. A modality fit with point-exponential loadings
+must still be nonnegative; the validator enforces this separately for each
+modality. Prediction centers the validation cohort on the training means.
+A constant shift of η leaves the C-index unchanged. The canonicalization
+and convergence rules are unchanged.
 
 **Affected files.** `code/multimodal_yfb_updates.R`,
 `code/fit_multimodal_yfb.R`, `config/globals.yml`

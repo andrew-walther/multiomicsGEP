@@ -13,7 +13,10 @@
 #      Loading prior: set MMYFB_PRIOR_F to one family for both modalities or
 #      "expression_family,methylation_family", e.g.
 #      MMYFB_PRIOR_F=point_laplace Rscript ... 7
-#      (default point_exponential; signed priors still use the nonnegative inputs).
+#      (default point_exponential).
+#      Input scale: MMYFB_INPUT = raw (default: log2 expression, beta methylation),
+#      centered (features centered on TCGA means), or centered_asin (methylation
+#      transformed to asin(2*beta - 1) first). Centered inputs need signed priors.
 # ============================================================
 #
 # Inputs are on the scales the current nonnegative point-exponential model
@@ -58,6 +61,25 @@ dir.create(file.path(out_dir, "fits"), recursive = TRUE, showWarnings = FALSE)
 
 cache <- "data/processed_multiomics_tcga_icgc.rds"
 d <- if (file.exists(cache)) readRDS(cache) else build_multiomics_cohorts()
+input <- Sys.getenv("MMYFB_INPUT", "raw")
+stopifnot(input %in% c("raw", "centered", "centered_asin"))
+if (input != "raw") {
+  if (any(unlist(prior_F) == "point_exponential")) {
+    stop("Centered inputs require signed loading priors for both modalities.")
+  }
+  if (input == "centered_asin") {
+    for (nm in c("training", "validation_primary", "validation_all")) {
+      d[[nm]]$Y$methylation <- asin(2 * d[[nm]]$Y$methylation - 1)
+    }
+  }
+  # Center every cohort on the TRAINING feature means (no validation information);
+  # a constant shift of the risk score does not change the C-index
+  mu <- lapply(d$training$Y, colMeans)
+  for (nm in c("training", "validation_primary", "validation_all")) {
+    d[[nm]]$Y <- Map(function(x, m) sweep(x, 2, m), d[[nm]]$Y, mu)
+  }
+  prior_tag <- paste0(prior_tag, "_", input)
+}
 tr <- d$training
 validation <- list(icgc_primary = d$validation_primary, icgc_all = d$validation_all)
 
@@ -129,6 +151,7 @@ for (K in K_values) {
     sc <- score_cohorts(arms[[arm]]$risk)
     rows[[length(rows) + 1L]] <- cbind(
       K_init = K, prior_F = paste(prior_F$expression, prior_F$methylation, sep = "/"),
+      input = input,
       method = arm, sc, arms[[arm]]$info,
       runtime_seconds = attr(fits[[c(joint_multimodal_yfb = "joint",
         expression_only_yfb = "expr_only", two_step_ebmf_cox = "two_step")[[arm]]]],
