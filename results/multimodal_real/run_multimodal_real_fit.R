@@ -103,7 +103,8 @@ score_cohorts <- function(risk_fn) {
   do.call(rbind, lapply(names(cohorts), function(nm) {
     x <- cohorts[[nm]]
     risk <- risk_fn(x$Y)
-    ci <- bootstrap_concordance_ci(risk, x$time, x$event, B = 1000, seed = 1)
+    # frozen orientation (training-fit Cox risk scores); see summarize_multimodal_real.R
+    ci <- bootstrap_concordance_ci(risk, x$time, x$event, B = 1000, seed = 1, flip = FALSE)
     data.frame(cohort = nm, n = length(risk), events = sum(x$event),
                c_index = multimodal_yfb_survival_metrics(risk, x$time, x$event)$c_index,
                ci_lower = ci$lower, ci_upper = ci$upper)

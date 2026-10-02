@@ -1,0 +1,10 @@
+"config","K_init","method","K_final","n_variance_only","n_survival_only","n_both","n_survival_active","converged","elbo","cohort","c_index","ci_lower","ci_upper"
+"pruned",7,"expression_only_yfb",NA,NA,NA,NA,NA,NA,NA,"icgc_all",0.480450629555997,0.368643039850586,0.580881373600934
+"pruned",7,"expression_only_yfb",NA,NA,NA,NA,NA,NA,NA,"icgc_primary",0.49112426035503,0.364010223612262,0.632635426492386
+"pruned",7,"expression_only_yfb",NA,NA,NA,NA,NA,NA,NA,"tcga_train",0.593717093717094,0.523582705349247,0.663857024241597
+"pruned",7,"joint_multimodal_yfb",7,6,0,1,1,FALSE,479907.179395277,"icgc_all",0.638833664678595,0.546515108736571,0.734411795999433
+"pruned",7,"joint_multimodal_yfb",7,6,0,1,1,FALSE,479907.179395277,"icgc_primary",0.685207100591716,0.579296481648668,0.779361159125572
+"pruned",7,"joint_multimodal_yfb",7,6,0,1,1,FALSE,479907.179395277,"tcga_train",0.637767637767638,0.565820301217884,0.708304904991988
+"pruned",7,"two_step_ebmf_cox",NA,NA,NA,NA,NA,NA,NA,"icgc_all",0.418157720344599,0.310309607405043,0.531175394549757
+"pruned",7,"two_step_ebmf_cox",NA,NA,NA,NA,NA,NA,NA,"icgc_primary",0.423668639053254,0.285837246865616,0.567185845224677
+"pruned",7,"two_step_ebmf_cox",NA,NA,NA,NA,NA,NA,NA,"tcga_train",0.578975078975079,0.507066887574922,0.650840365951465

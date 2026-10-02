@@ -53,7 +53,10 @@ cohorts_for <- function(config) {
 score <- function(risk_fn, cohorts) {
   do.call(rbind, lapply(names(cohorts), function(nm) {
     x <- cohorts[[nm]]; r <- risk_fn(x$Y)
-    ci <- bootstrap_concordance_ci(r, x$time, x$event, B = 1000, seed = 1)
+    # Frozen orientation: every score here comes from a training-data Cox fit,
+    # so it is already a risk score (flip = FALSE). flip = NULL would re-pick
+    # the direction from the validation outcomes (circular).
+    ci <- bootstrap_concordance_ci(r, x$time, x$event, B = 1000, seed = 1, flip = FALSE)
     data.frame(cohort = nm, c_index = multimodal_yfb_survival_metrics(r, x$time, x$event)$c_index,
                ci_lower = ci$lower, ci_upper = ci$upper)
   }))
@@ -138,6 +141,7 @@ comp <- list()
 for (nm in names(joint_fits)) {
   jf <- joint_fits[[nm]]; if (jf$config != "pruned") next
   E <- jf$fit$EF$expression
+  rownames(E) <- jf$fit$training_spec$feature_names$expression
   cls <- jf$fit$diagnostics$factor_class
   colnames(E) <- paste0("k", seq_len(ncol(E)), " (", sub("reconstruction_only", "variance",
                         sub("survival_only", "survival", cls)), ", beta=",
