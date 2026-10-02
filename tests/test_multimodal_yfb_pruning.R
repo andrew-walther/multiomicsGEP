@@ -88,3 +88,33 @@ run_test("MMYFB-Prune-T6: with an intercept, a constant feature shift does not c
   assert_near(a$EF$expression, b$EF$expression, tol = 1e-6)
   assert_near(b$mu$expression - a$mu$expression, rep(5, 12), tol = 1e-6)
 })
+
+run_test("MMYFB-Prune-T7: the compiled loading sweep reproduces the R sweep for every prior family", {
+  if (!multimodal_yfb_use_cpp()) {
+    cat("  (compiled sweep unavailable; skipping the comparison)\n")
+  } else {
+    set.seed(51)
+    n <- 40; p <- 25
+    Y <- matrix(rnorm(n * p), n, p); R <- matrix(rnorm(n * p), n, p)
+    EL <- rexp(n)
+    args <- list(Y_m = Y, Tau_m = rgamma(p, 2, 2), EL_k = EL, EL2_k = EL^2 + rexp(n),
+                 R_mk = R, w = runif(n), h_minus_k = rnorm(n), EZ_k = rnorm(n),
+                 VZ_k = runif(n), EF_k = EF0 <- rnorm(p, sd = 0.3), EF2_k = EF0^2 + 0.1,
+                 EBeta_k = 0.4, EBeta2_k = 0.3)
+    priors <- list(list(pi = 0.4, rate = 1.5, point_mass = FALSE),
+                   list(family = "point_laplace", pi = 0.4, rate = 1.5, point_mass = FALSE),
+                   list(family = "normal", variance = 0.8, point_mass = FALSE),
+                   list(family = "point_laplace", point_mass = TRUE))
+    for (pr in priors) {
+      a <- do.call(multimodal_yfb_update_F_mk, c(args, list(prior = pr)))
+      old <- options(multimodal_yfb.engine = "R")
+      b <- do.call(multimodal_yfb_update_F_mk, c(args, list(prior = pr)))
+      options(old)
+      for (nm in c("EF", "EF2", "EZ", "VZ", "kl")) assert_near(a[[nm]], b[[nm]], tol = 1e-10)
+      da <- as.matrix(a$details); db <- as.matrix(b$details)
+      # log p(x) is NA by design for point-mass / zero-information coordinates
+      assert_true(identical(is.na(da), is.na(db)))
+      assert_near(da[!is.na(da)], db[!is.na(db)], tol = 1e-10)
+    }
+  }
+})

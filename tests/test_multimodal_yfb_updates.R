@@ -46,13 +46,13 @@ run_test("MMYFB-Updates-T2: F update includes same-factor cross-feature term", {
   expected_A1 <- 2 * sum(c(1.2, 4.5)) + 0.8 * sum(c(0.5, 1) * c(1, 2)^2)
   expected_B1 <- 2 * sum(c(1, 2) * c(5, 6)) +
     sum(c(1, 2) * (0.5 * c(2, 1) - c(0.5, 1) * 0.8 * c(6, 8)))
-  assert_near(update$details[[1]]$A, expected_A1, tol = 1e-12)
-  assert_near(update$details[[1]]$B, expected_B1, tol = 1e-12)
-  assert_near(update$details[[1]]$x, expected_B1 / expected_A1, tol = 1e-12)
-  assert_near(update$details[[1]]$s2, 1 / expected_A1, tol = 1e-12)
+  assert_near(update$details$A[1], expected_A1, tol = 1e-12)
+  assert_near(update$details$B[1], expected_B1, tol = 1e-12)
+  assert_near(update$details$x[1], expected_B1 / expected_A1, tol = 1e-12)
+  assert_near(update$details$s2[1], 1 / expected_A1, tol = 1e-12)
   no_interaction <- 2 * sum(c(1, 2) * c(5, 6)) +
     sum(c(1, 2) * (0.5 * c(2, 1)))
-  assert_true(abs(update$details[[1]]$B - no_interaction) > 1e-6,
+  assert_true(abs(update$details$B[1] - no_interaction) > 1e-6,
               msg = "same-factor interaction must affect B")
 })
 
@@ -67,7 +67,7 @@ run_test("MMYFB-Updates-T3: F update uses EBeta2 rather than squared EBeta", {
   )
   low <- do.call(multimodal_yfb_update_F_mk, c(args, list(EBeta2_k = 0.25)))
   high <- do.call(multimodal_yfb_update_F_mk, c(args, list(EBeta2_k = 0.8)))
-  assert_true(high$details[[1]]$A > low$details[[1]]$A)
+  assert_true(high$details$A[1] > low$details$A[1])
 })
 
 # T3: prior, beta, and tau boundaries ----

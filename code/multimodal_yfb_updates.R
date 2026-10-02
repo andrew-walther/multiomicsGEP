@@ -69,6 +69,48 @@ multimodal_yfb_point_exponential_posterior <- function(A, B, prior) {
        slab_prob = slab_prob, x = x, s2 = s2, log_ml = log_total)
 }
 
+# Compiled loading sweep ----
+
+.multimodal_yfb_cpp <- new.env()
+
+#' Whether to use the compiled (C++) loading sweep
+#'
+#' Compiles `code/multimodal_yfb_sweep.cpp` with Rcpp once per R session. On
+#' macOS, if the default build cannot find the C++ standard headers (a known
+#' Command Line Tools issue), it retries with the SDK's libc++ include path,
+#' set only for this build. If compilation still fails, it warns once and the
+#' R loop is used (same results, slower). Force the R loop with
+#' `options(multimodal_yfb.engine = "R")`.
+#'
+#' @return TRUE if the compiled sweep is available and enabled.
+#' @examples
+#' multimodal_yfb_use_cpp()
+#' @family multimodal_yfb_updates
+multimodal_yfb_use_cpp <- function() {
+  if (identical(getOption("multimodal_yfb.engine"), "R")) return(FALSE)
+  if (!is.null(.multimodal_yfb_cpp$ok)) return(.multimodal_yfb_cpp$ok)
+  src <- "code/multimodal_yfb_sweep.cpp"
+  build <- function() {
+    utils::capture.output(Rcpp::sourceCpp(src, env = globalenv()))
+    TRUE
+  }
+  ok <- requireNamespace("Rcpp", quietly = TRUE) && file.exists(src) &&
+    tryCatch(suppressWarnings(build()), error = function(e) FALSE)
+  if (!ok && Sys.info()[["sysname"]] == "Darwin") {
+    sdk <- tryCatch(system2("xcrun", "--show-sdk-path", stdout = TRUE, stderr = FALSE),
+                    error = function(e) character())
+    if (length(sdk) && nzchar(sdk)) {
+      old <- Sys.getenv("PKG_CXXFLAGS")
+      Sys.setenv(PKG_CXXFLAGS = paste0("-I", sdk, "/usr/include/c++/v1 -isysroot ", sdk))
+      ok <- tryCatch(suppressWarnings(build()), error = function(e) FALSE)
+      Sys.setenv(PKG_CXXFLAGS = old)
+    }
+  }
+  if (!ok) warning("Compiled multimodal YFB sweep unavailable; using the (slower) R loop.")
+  .multimodal_yfb_cpp$ok <- ok
+  ok
+}
+
 #' Moments of a Normal truncated to the positive half-line
 #'
 #' For theta ~ N(m, s^2) restricted to theta >= 0, with h = m / s and
@@ -387,36 +429,49 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
   sum_wy2 <- unname(colSums(wY * Y_m))
   sum_LR <- as.vector(crossprod(R_mk, EL_k))
   sum_yh <- as.vector(crossprod(Y_m, h_minus_k))
-  for (j in seq_len(ncol(Y_m))) {
-    y <- Y_m[, j]
-    old_mean <- EF_new[j]
-    old_variance <- max(EF2_new[j] - old_mean^2, 0)
-    # EZ_without_j = EZ - y_j * old_mean, so
-    # sum_i w_i y_ij EZ_without_j,i = sum_i w_i y_ij EZ_i - old_mean * sum_wy2[j]
-    sum_wyEZ_without_j <- sum(wY[, j] * EZ_new) - old_mean * sum_wy2[j]
-    A <- Tau_m[j] * sum_EL2 + EBeta2_k * sum_wy2[j]
-    B <- Tau_m[j] * sum_LR[j] + EBeta_k * sum_yh[j] - EBeta2_k * sum_wyEZ_without_j
-    posterior <- if (signed) {
-      multimodal_yfb_signed_posterior(A, B, prior)
-    } else {
-      multimodal_yfb_point_exponential_posterior(A, B, prior)
+  family_code <- match(if (is.null(prior$family)) "point_exponential" else prior$family,
+                       c("point_exponential", "point_laplace", "normal")) - 1L
+  if (multimodal_yfb_use_cpp()) {
+    # Same loop in C++ (code/multimodal_yfb_sweep.cpp); see the R branch for the math
+    res <- mmyfb_F_sweep_cpp(
+      Y_m, Tau_m, sum_EL2, sum_wy2, sum_LR, sum_yh, w, EZ_new, VZ_new, EF_new, EF2_new,
+      EBeta_k, EBeta2_k, family_code, isTRUE(prior$point_mass),
+      prior$pi %||% NA_real_, prior$rate %||% NA_real_, prior$variance %||% NA_real_)
+    EF_new <- res$EF; EF2_new <- res$EF2; EZ_new <- res$EZ; VZ_new <- res$VZ
+    details <- as.data.frame(res[c("mean", "second", "slab_prob", "x", "s2", "log_ml", "A", "B")])
+  } else {
+    for (j in seq_len(ncol(Y_m))) {
+      y <- Y_m[, j]
+      old_mean <- EF_new[j]
+      old_variance <- max(EF2_new[j] - old_mean^2, 0)
+      # EZ_without_j = EZ - y_j * old_mean, so
+      # sum_i w_i y_ij EZ_without_j,i = sum_i w_i y_ij EZ_i - old_mean * sum_wy2[j]
+      sum_wyEZ_without_j <- sum(wY[, j] * EZ_new) - old_mean * sum_wy2[j]
+      A <- Tau_m[j] * sum_EL2 + EBeta2_k * sum_wy2[j]
+      B <- Tau_m[j] * sum_LR[j] + EBeta_k * sum_yh[j] - EBeta2_k * sum_wyEZ_without_j
+      posterior <- if (signed) {
+        multimodal_yfb_signed_posterior(A, B, prior)
+      } else {
+        multimodal_yfb_point_exponential_posterior(A, B, prior)
+      }
+      new_variance <- pmax(posterior$second - posterior$mean^2, 0)
+      EF_new[j] <- posterior$mean
+      EF2_new[j] <- posterior$mean^2 + new_variance
+      EZ_new <- EZ_new + y * (posterior$mean - old_mean)
+      VZ_new <- VZ_new + y^2 * (new_variance - old_variance)
+      details[[j]] <- c(posterior, list(A = A, B = B))
     }
-    new_variance <- pmax(posterior$second - posterior$mean^2, 0)
-    EF_new[j] <- posterior$mean
-    EF2_new[j] <- posterior$mean^2 + new_variance
-    EZ_new <- EZ_new + y * (posterior$mean - old_mean)
-    VZ_new <- VZ_new + y^2 * (new_variance - old_variance)
-    details[[j]] <- c(posterior, list(A = A, B = B))
+    details <- data.frame(t(vapply(details, function(d) unlist(d[c(
+      "mean", "second", "slab_prob", "x", "s2", "log_ml", "A", "B")]), numeric(8))))
   }
-  get <- function(field) vapply(details, `[[`, numeric(1), field)
+  get <- function(field) details[[field]]
   new_prior <- if (signed) {
     multimodal_yfb_fit_signed_prior(get("x"), get("s2"), prior$family)
   } else if (prior_update == "ebnm") {
     multimodal_yfb_fit_exponential_prior_ebnm(get("x"), get("s2"))
   } else {
-    c(multimodal_yfb_update_loading_prior(
-      vapply(details, `[[`, numeric(1), "slab_prob"), EF_new
-    ), if (!is.null(prior$family)) list(family = prior$family))
+    c(multimodal_yfb_update_loading_prior(get("slab_prob"), EF_new),
+      if (!is.null(prior$family)) list(family = prior$family))
   }
   list(EF = EF_new, EF2 = EF2_new, EZ = EZ_new, VZ = pmax(VZ_new, 0),
        prior = new_prior, details = details,
