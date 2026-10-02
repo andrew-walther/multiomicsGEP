@@ -256,7 +256,7 @@ A prognostic program that explains little variation was not recovered by either 
 
 \FloatBarrier
 
-## In a first external validation, adding methylation improves discrimination over expression-only and two-step models
+## In a first external validation, the multimodal model has higher concordance than expression-only and two-step models
 
 The pruned model was trained on TCGA expression and methylation (144 patients). On 50 ICGC primary PDAC donors its external concordance was 0.685 (95% CI 0.579 to 0.779). On the same features, expression-only YFB reached 0.491 and the two-step model 0.424 (@tbl-mm-external). Its survival-active factor corresponded to the adverse single-modality program ($\lvert r\rvert=0.68$ on shared genes).
 
@@ -273,6 +273,7 @@ These results come with caveats:
 - **The intervals are wide and overlap** with only 30 deaths in the validation set.
 - **The baselines are weak here.** Both fail to transfer to ICGC.
 - **Convergence.** The fit had a stable risk score but had not met the formal convergence criterion.
+- **The comparison is confounded.** The expression-only comparator is the single-modality fitter, which has no intercept, no point-Laplace loadings and no pruning. The gain may therefore come from the framework rather than from methylation. The planned test is the same framework fit to expression alone.
 
 [PENDING: remaining starting ranks.]
 

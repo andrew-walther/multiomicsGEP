@@ -185,6 +185,7 @@ The screening uses DeSurv's single-modality gene rule and a variance rule for Cp
 **Caveats.**
 - **Small validation set.** With 50 donors and 30 deaths the intervals are wide, and the joint model's interval overlaps the expression-only model's.
 - **Weak baselines.** Both baselines fall below 0.5 on ICGC, so part of the gap reflects their failure to transfer.
+- **The expression-only comparison is confounded.** That arm uses the single-modality fitter, which has no intercept, no point-Laplace loadings and no pruning. The gain may come from the framework rather than from methylation. The fair test is the multimodal framework fit to expression alone, which is next on the list.
 - **Not formally converged.** The fit stopped at the 500-sweep cap. The risk score had stabilized (largest relative change in $\eta$ $3.6\times10^{-4}$), but the largest per-feature reconstruction change stayed around 1%. That maximum over 13,000 features is being held up by a few slowly moving features. Stopping on the ELBO or a mean change is the planned fix.
 
 **Why nothing was pruned at $K_{\mathrm{init}}=7$.** The nullcheck asks, for each factor, how much the ELBO would fall without it:
@@ -298,6 +299,7 @@ $$
     - a separate retention rule for survival-active factors.
     This is the multimodal version of the α_F question, and the route to recovering low-variance prognostic programs.
   - Change the stopping rule to the ELBO or a mean change, with $\eta$ stability still required.
+  - Run the framework on expression alone, to separate the contribution of methylation from that of the framework (§4).
 - **Feature selection and modality balance.** Settle these together (§3 discussion point).
 - **Runtime.**
   - Done: the loading sweep is now compiled code, 5× faster on real data, with identical results.
