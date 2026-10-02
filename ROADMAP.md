@@ -4,7 +4,7 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Active working plan (2026-10-01):** `docs/plans/Working_Plan_10_1_26.md` brings together the 8/27, 9/4 and 9/18 meeting notes into prioritized workstreams: branch review, matched TCGA/ICGC preprocessing, multimodal K pruning and F priors, real-data fits, and open single-modality items. Start open work there.
+> **Active working plan (2026-10-02):** `docs/plans/Meeting_Notes_Followup_10_2_26.md` follows the 10/2 advisor meeting. Its deliverables are a unified write-up as the start of the manuscript; survival supervision of the program loadings F (α_F = 0 cannot be the final method, DECISIONS.md 2026-10-02); and a sensitivity analysis on the number of genes and CpGs. Start open work there. The 10/1 plan (`docs/plans/Working_Plan_10_1_26.md`) records the work done 10/1–10/2.
 >
 > **Status as of 2026-07-15.** Core model complete (modular CAVI, 374/374 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC

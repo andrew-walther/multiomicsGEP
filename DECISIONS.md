@@ -5,6 +5,27 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-02 — α_F = 0 cannot be the final method: survival must inform the program loadings
+
+**Decision.** The recommended single-modality configuration uses α_F = 0, so survival never enters the update of the loadings F (or of L). The model then finds the same programs as unsupervised factorization, and survival only affects β. After the 10/2 advisor meeting this is no longer an acceptable final method. The method will be finalized only once survival informs F strongly enough to recover a planted low-variance prognostic program in simulation, without instability and without losing external C. The plan is Workstream C of `docs/plans/Meeting_Notes_Followup_10_2_26.md`.
+
+**Why.** Finding a prognostic program that explains little variance is the case a supervised factorization exists for. The 2026-08-20 evidence for keeping α_F = 0 (no gain in external C across α_F ∈ {0, 0.1, 0.3, 0.5}) does not address that case, because real-data C cannot show whether such a program was found. The advisors' position is that the plain Bayesian formulation should let the priors balance the factorization and survival terms, with an estimated mixing parameter if needed.
+
+**What we know about why survival has little effect** (`code/update_F_surv_YFB.R:27-31,136`):
+
+1. **Gating.** The survival terms in the F update are multiplied by E[β̃_k] and E[β̃_k²]. A program with β near 0 gets no survival information, so a prognostic direction that no program already points at is never found.
+2. **Scale.** The survival precision was about 10⁻⁴ of the genomics precision at initialization (2026-04-30 entry, April preprocessing; to be re-measured). Under the model as written this is the correct Bayesian weighting. A weight on the survival term is justified by misspecification of the low-rank Gaussian model, not imposed ad hoc.
+3. **Scale feedback.** LFᵀ does not fix the scale of F_k, but the survival term depends on it. This caused the April runaway. The multimodal model removes the freedom by rescaling each program to sd(YF_k) = 1 every iteration (`code/fit_multimodal_yfb.R:162-213`). The single-modality model does not.
+
+**Evidence that equal weights alone are not enough.** The multimodal F update already uses the equal-weight Bayesian update with that rescaling (`code/multimodal_yfb_updates.R:471-472`). It is stable, and it still does not recover a planted low-variance prognostic program (10/2 progress chapter, §B).
+
+**What this changes.**
+- α_F = 0 remains the configuration behind the reported single-modality results until Workstream C is done.
+- The 2026-08-20 manuscript-framing entry ("dual-source F is a tested-and-rejected alternative") is withdrawn as the final framing. It still describes correctly what the 16-configuration grid showed.
+- Any survival weight or prior is chosen by cross-validated C, with cross-validated partial log-likelihood reported alongside.
+
+---
+
 ## 2026-10-02 — Prelim chapter: remaining work instead of specific aims; thesis-style floats
 
 **Decision.** The prelim chapter (`paper/prelim/project3-ssbmf.qmd`, Chapter 4 of the prelim) no longer has a Specific aims section with "success criteria". The planned work is a *Remaining work* subsection at the end of Methods, written as prose, and the evaluation of each piece is stated as part of the planned evaluation. The thresholds are unchanged: recovery at absolute loading correlation ≥ 0.7, lower 95% limit of ΔC above −0.02, final rank varying by at most one across starting ranks 5–15. Lists are converted to prose, as in Chapters 2 and 3. Tables and figures are raw LaTeX floats in Chapter 3's style: `[!htb]`, `\small\centering`, table captions above and figure captions below, booktabs rules, `tab:`/`fig:` labels. Internal section references use Quarto `@sec-` labels so that they number 4.x in the prelim.

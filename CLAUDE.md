@@ -61,7 +61,7 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |
 | Architectural decisions log | `DECISIONS.md` |
 | Prioritized next steps | `ROADMAP.md` |
-| **Current working plan** | `docs/plans/Working_Plan_10_1_26.md` — start open work here |
+| **Current working plan** | `docs/plans/Meeting_Notes_Followup_10_2_26.md` — start open work here (write-up, feature-count sensitivity, survival weighting); `Working_Plan_10_1_26.md` records the 10/1–10/2 work |
 | Matched TCGA/ICGC expression + methylation loader | `code/load_multiomics_data.R` — `build_multiomics_cohorts()`; real-data checks `tests/test_real_multiomics_loading.R` (local) |
 | Multimodal parsimony framework (intercept, ebnm priors, ELBO pruning) and compiled sweep | `code/fit_multimodal_yfb.R` controls `intercept`/`prior_update`/`prune`/`tau_model`; `code/multimodal_yfb_sweep.cpp` |
 | Multimodal simulation and real-data runners | `results/benchmark_sim/run_multimodal_pruning_comparison.R`; `results/multimodal_real/run_multimodal_real_fit.R` + `summarize_multimodal_real.R` |
