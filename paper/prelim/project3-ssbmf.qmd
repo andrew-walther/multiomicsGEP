@@ -285,10 +285,12 @@ This project is in progress. The remaining work (@sec-remaining) tests whether s
 The planned schedule is given in Table \ref{tab:timeline}.
 
 ```{=latex}
-\begin{table}[!htb]
-\small\centering
-\caption{Timeline for the remaining work.}\label{tab:timeline}
-\begin{tabular}{>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}p{10.4cm}}
+% Not a float: as the last item before References it would otherwise be
+% moved to a page of its own.
+\begin{center}
+\small
+\captionof{table}{Timeline for the remaining work.}\label{tab:timeline}
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.0cm}>{\raggedright\arraybackslash}p{10.0cm}}
 \toprule
 Period & Work \\
 \midrule
@@ -299,7 +301,7 @@ April--May 2027 & Full-CpG multimodal fit on the computing cluster; manuscript d
 Summer 2027 & Dissertation completion and defense (date to be confirmed) \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
 ```
 
 \FloatBarrier
