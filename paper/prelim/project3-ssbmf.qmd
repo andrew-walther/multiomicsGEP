@@ -27,7 +27,7 @@ bibliography: ../ssbmf-refs.bib
 Project 3 prelim proposal chapter -- the ONLY editable source. A generated copy
 goes to bios-dissertation/prelim/project-proposals/project3-ssbmf/draft/
 (Project 2 pattern; see docs/plans/Prelim_Proposal_Plan_10_1_26.md) by running
-tools/sync_to_prelim.sh by hand after each commit. Use @sec- labels for
+the installed post-commit hook (or tools/sync_to_prelim.sh by hand). Use @sec- labels for
 internal section references so they number 4.x in the prelim render.
 
 Status (2026-10-02): prose draft after independent review
@@ -278,31 +278,11 @@ There are further limitations. The evidence bound used for pruning evaluates the
 
 ## Future directions and continuing work
 
-This project is in progress. The remaining work (@sec-remaining) tests whether survival can inform the single-modality loadings without a tuning weight, and introduces modality and survival weights so that the multimodal model chooses its number of programs on real data and the contribution of methylation can be judged. Further extensions include a factor-level shrinkage prior on the number of programs [@BhattacharyaDunson2011; @GriffithsGhahramani2011], joint modelling of several cohorts and modalities, the full 305,352-CpG fit on the computing cluster, a direct comparison with DeSurv, and preparation of the manuscript for journal submission.
+Completing this project requires further methodological development and evidence that survival information can improve program discovery. The remaining work (@sec-remaining) will assess whether a stable loading update can recover low-variance prognostic programs that the current factorization misses, while retaining the high-variance programs and external predictive performance. Expanded simulations will evaluate program recovery, false survival associations, convergence and uncertainty under known data-generating mechanisms. These results will test whether, and under what conditions, the method supports survival-guided discovery.
 
-## Timeline
+Additional multimodal analyses will examine how the number and selection of genes and CpGs affect predictive discrimination and agreement between estimated programs. Varying the feature count one modality at a time, and comparing variance-based with gene-linked CpG screening, will help distinguish the contribution of methylation from the effects of screening. Further evaluation of the balance between reconstruction and survival, together with rank selection and factor-level shrinkage [@BhattacharyaDunson2011; @GriffithsGhahramani2011], will assess whether the number of programs can be chosen reliably on real data.
 
-The planned schedule is given in Table \ref{tab:timeline}.
-
-```{=latex}
-% Not a float: as the last item before References it would otherwise be
-% moved to a page of its own.
-\noindent\begin{minipage}{\linewidth}
-\centering\small
-\captionof{table}{Timeline for the remaining work.}\label{tab:timeline}
-\begin{tabular}{>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}p{9.6cm}}
-\toprule
-Period & Work \\
-\midrule
-October--November 2026 & Prelim abstract (November 2) and proposal (November 16); modality and survival weights for the multimodal model; gene-linked CpG screening \\
-December 2026 & Prelim oral exam (December 7) \\
-January--March 2027 & Survival in the single-modality loadings; full multimodal simulation study; comparison with DeSurv \\
-April--May 2027 & Full-CpG multimodal fit on the computing cluster; manuscript draft \\
-Summer 2027 & Dissertation completion and defense (date to be confirmed) \\
-\bottomrule
-\end{tabular}
-\end{minipage}
-```
+The expected additional results include a replicated multimodal simulation study, larger CpG analyses on the computing cluster, and external comparisons with expression-only models, two-step pipelines and DeSurv. Joint modelling of cohorts and modalities will be considered as a further extension. Predictive performance and biological interpretation will be evaluated separately: methylation may improve discrimination, identify additional prognostic programs, or provide little benefit under the settings studied.
 
 \FloatBarrier
 

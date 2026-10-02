@@ -270,3 +270,12 @@ MIT (see `LICENSE`). PDAC and TCGA/ICGC data are not included and keep their own
 ## Author
 
 Andrew Walther — May 2026
+
+## Chapter 4 proposal
+
+The canonical chapter is `paper/prelim/project3-ssbmf.qmd`. Its installed
+post-commit hook renders and commits the generated Chapter 4 copy in
+bios-dissertation; rerun that repository's `prelim/tools/build_prelim.py`
+to update the full prelim. Continuing work is described as methodological
+aims and expected results without a fixed-date timeline. A substantive
+revision will follow the advisor-meeting plan and verified additional results.

@@ -935,3 +935,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 - [x] **Prior sensitivity report** — point_normal vs point_laplace compared on synthetic and all PDAC training modes. point_normal recommended as default. *(Completed April 2026)*
 - [x] **24-page DeSurv benchmark report** — `results/benchmark_sim/ssbmf_summary_report.pdf`. Includes ARD justification over ELBO K-grid-search, alpha gradient notation, per-figure takeaways, side-by-side prior comparison (Fig 19), multi-modal failure documented. *(Completed April 2026)*
 - [x] **C-index honest reporting fix** — `get_cindex_comparison()` uses model's own `EL %*% EBeta`; corrected `concordance()` direction convention. *(Completed April 2026)*
+
+## Chapter 4 narrative revision — 2026-10-02
+
+- Removed the fixed-date chapter timeline at the author's request; original
+  source retained in `paper/prelim/notes/removed-timeline-2026-10-02.md`.
+- Reframed continuing work around additional methodology and expected
+  evidence, retaining current limitations and making no new result claims.
+- Advisor-meeting follow-up remains the authority for the later substantive
+  revision. No analytical code, model defaults or results changed.

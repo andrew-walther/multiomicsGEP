@@ -2425,3 +2425,16 @@ conclusion issues, but both made a published table actively misleading as origin
 | `DECISIONS.md`, `ROADMAP.md`, `CLAUDE.md` | Session entry, milestone, quick-reference updates |
 
 ---
+
+## Chapter 4 continuing-work framing (2026-10-02)
+
+At the author's request, the prelim chapter's dated timeline table was removed
+and retained in `paper/prelim/notes/removed-timeline-2026-10-02.md`. The
+continuing-work section now describes additional methodology and expected
+evidence without calendar commitments: survival-informed program discovery,
+feature-count/screening sensitivity, multimodal rank selection and external
+predictive and biological evaluation. Existing methods and results are
+unchanged. The advisor-meeting follow-up plan will guide a later substantive
+chapter update after methodological decisions and additional results are
+verified. The installed sync hook regenerates Chapter 4 in bios-dissertation;
+the full prelim must then be rebuilt there.
