@@ -141,3 +141,39 @@ Full CAVI derivations (the single-modality derivation PDFs and `derivations/mult
     - The declarations file is optional.
     - **Not yet installed or run.** Installing the post-commit hook and the first sync, which commits in bios-dissertation, need the user's go-ahead.
   - Author list: to confirm.
+- 2026-10-02: An independent review was done (`docs/reviews/2026-10-02_prelim_proposal_review.md`).
+  - Its accuracy must-fixes M1–M8 are applied. The main changes:
+    - Fair two-step baselines: +0.026 against the K = 40 LASSO baseline, +0.011 against the K-matched one.
+    - The "joint fitting" framing is removed; it conflicted with the α_F constraint.
+    - Multimodal results are reported as parity with the established model (0.685 on the same 50 donors). The draft says that no factors were pruned on real data and that methylation added little.
+    - The DeSurv head-to-head comparison is moved to future work.
+  - Should-fixes S1, S5, S6, S7, S10, S12, S13 and part of S14 are also applied. The draft is now 25 pp.
+
+### Remaining from the review (before 11/16)
+1. **Structure.**
+   - Specific aims for the remaining work, each with a testable criterion.
+   - A timeline to the defense.
+   - A simulation design table for both studies.
+   - A short abstract or summary paragraph at the top.
+   - A methods paragraph on the comparators.
+   - Prediction and preprocessing for new cohorts.
+   - Initialization and convergence rules for both fitters.
+2. **Prose.** Rewrite Methods, Results and Discussion as paragraphs; keep bullets only for parameter lists.
+3. **Figures.** Relabel the code-style labels:
+   - Heatmap columns: P3 is not Program 3.
+   - ΔC figure legend: all_shared, hybrid and nothing_shared.
+   - Per-cohort β figure: add the sign convention.
+   - Multimodal K figure legend.
+   - Remove the embedded titles.
+4. **Citations.**
+   - Fix the Young2026 entry (@misc → @article with full details).
+   - Add flashier, the cohort papers (CPTAC, Puleo, Dijk), KNN imputation (Troyanskaya 2001), bi-cross-validation (Owen & Perry 2009), BIC (Schwarz 1978), the 1-SE rule, the bootstrap (Efron & Tibshirani), Weibull survival simulation (Bender 2005), and MOFA / iCluster for Contribution 4.
+   - Split the SEER sentence.
+5. **Remaining should-fixes.**
+   - S2: report false survival-active factors in §3.5.
+   - S3: tempered and conditional β intervals; partly done.
+   - S8: methods vs runs (K grid, noise, n, p); update when the full sweep finishes.
+   - S9: pooling description; done.
+   - S11: convergence statement; done.
+6. **Labels.** Replace internal labels ("New framework", "YFB" undefined, "the frozen model") with descriptive names. Define EBMF at first use.
+7. **After the full sweep and remaining starting ranks finish:** update §3.5–3.6 and remove the [Preliminary] and [PENDING] markers.
