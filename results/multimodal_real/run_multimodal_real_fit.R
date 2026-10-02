@@ -143,18 +143,22 @@ for (K in K_values) {
       risk = function(Y) predict_multimodal_yfb(fits$joint, Y)$risk_scores,
       info = data.frame(converged = dj$converged, iterations = dj$iterations,
                         K_final = ncol(fits$joint$EL),
+                        elbo = as.numeric(dj$elbo %||% NA_real_),
+                        n_pruned = NROW(dj$pruning),
                         K_eff_reconstruction = dj$K_eff_reconstruction,
                         K_eff_survival = dj$K_eff_survival)),
     expression_only_yfb = list(
       risk = function(Y) predict_multimodal_yfb_single_modality(fits$expr_only, Y)$risk_scores,
       info = data.frame(converged = fits$expr_only$history$converged, K_final = NA_integer_,
+                        elbo = NA_real_, n_pruned = NA_integer_,
                         iterations = fits$expr_only$history$n_iter,
                         K_eff_reconstruction = sum(fits$expr_only$history$factor_pve[
                           fits$expr_only$history$n_iter, ] >= 0.01),
                         K_eff_survival = NA_integer_)),
     two_step_ebmf_cox = list(
       risk = function(Y) predict_multimodal_yfb_ebmf_cox(fits$two_step, Y),
-      info = data.frame(converged = NA, K_final = NA_integer_, iterations = NA,
+      info = data.frame(converged = NA, K_final = NA_integer_, elbo = NA_real_,
+                        n_pruned = NA_integer_, iterations = NA,
                         K_eff_reconstruction = fits$two_step$n_factors,
                         K_eff_survival = NA_integer_))
   )

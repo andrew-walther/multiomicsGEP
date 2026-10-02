@@ -14,7 +14,6 @@ res <- read.csv(file.path(out_dir, "pruning_comparison.csv"))
 res <- res[is.na(res$error), ]
 
 variant_labels <- c(original = "Original (no intercept, no pruning)",
-                    noprune = "Intercept + Laplace F + ebnm, no pruning",
                     pruned = "Pruned (partial log-lik)",
                     pruned_vc = "Pruned (variance-corrected)")
 scenario_labels <- c(both_informative = "Two prognostic programs",
@@ -22,8 +21,8 @@ scenario_labels <- c(both_informative = "Two prognostic programs",
                      low_variance_prognostic_factor = "Low-variance prognostic")
 # Categorical slots 1-4 of the validated reference palette (fixed order);
 # shapes give a second encoding because two hues are below 3:1 contrast
-cols <- c(original = "#2a78d6", noprune = "#eb6834", pruned = "#1baf7a", pruned_vc = "#eda100")
-shapes <- c(original = 16, noprune = 17, pruned = 15, pruned_vc = 18)
+cols <- c(original = "#2a78d6", pruned = "#eb6834", pruned_vc = "#1baf7a")
+shapes <- c(original = 16, pruned = 15, pruned_vc = 17)
 res$variant <- factor(res$variant, levels = names(variant_labels))
 res$scenario <- factor(res$scenario, levels = names(scenario_labels), labels = scenario_labels)
 res$noise <- factor(ifelse(res$noise_scale == 1, "Original noise (factor PVE < 1%)",
@@ -50,7 +49,7 @@ p1 <- ggplot(k, aes(K_init, mean, colour = variant, shape = variant)) +
   geom_line(linewidth = 0.7, position = position_dodge(width = 1.2)) +
   geom_point(size = 2.6, position = position_dodge(width = 1.2)) +
   facet_grid(noise ~ scenario) + scales_v +
-  scale_x_continuous(breaks = c(5, 8, 12, 16)) +
+  scale_x_continuous(breaks = c(3:10, 15)) +
   labs(x = expression(K[init]), y = "Final number of factors (mean, range over seeds)",
        title = "Final factor count vs starting K (true K = 3, dashed; y = x, dotted)")
 ggsave(file.path(out_dir, "pruning_K_final.png"), p1, width = 9.5, height = 6.5, dpi = 150)
@@ -64,7 +63,7 @@ p2 <- ggplot(mod, aes(K_init, mean, colour = variant, shape = variant)) +
   geom_line(linewidth = 0.7, position = position_dodge(width = 1.2)) +
   geom_point(size = 2.6, position = position_dodge(width = 1.2)) +
   facet_grid(metric ~ scenario, scales = "free_y", labeller = label_wrap_gen(28)) + scales_v +
-  scale_x_continuous(breaks = c(5, 8, 12, 16)) +
+  scale_x_continuous(breaks = c(3:10, 15)) +
   labs(x = expression(K[init]), y = NULL,
        title = "Recovery at moderate noise (mean over seeds)")
 ggsave(file.path(out_dir, "pruning_recovery.png"), p2, width = 9.5, height = 7.5, dpi = 150)

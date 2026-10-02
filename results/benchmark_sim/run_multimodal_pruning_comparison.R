@@ -21,8 +21,7 @@
 #
 # Variants (control passed to fit_multimodal_yfb()):
 #   original   EM prior updates, point-exponential F, no intercept, no pruning
-#   noprune    intercept + point-Laplace F + ebnm priors, no pruning (ablation)
-#   pruned     noprune + ELBO nullcheck, survival = partial log-lik at E[eta]
+#   pruned     intercept + point-Laplace F + ebnm priors + ELBO nullcheck, survival = partial log-lik at E[eta]
 #   pruned_vc  pruned with the variance-corrected survival term
 #
 # Parallelization: one socket-cluster task per simulated dataset (parLapplyLB);
@@ -42,7 +41,6 @@ dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 laplace <- list(expression = "point_laplace", methylation = "point_laplace")
 variants <- list(
   original  = list(),
-  noprune   = list(intercept = TRUE, prior_update = "ebnm", prior_F = laplace),
   pruned    = list(intercept = TRUE, prior_update = "ebnm", prior_F = laplace,
                    prune = TRUE, survival_elbo = "plugin"),
   pruned_vc = list(intercept = TRUE, prior_update = "ebnm", prior_F = laplace,
@@ -50,7 +48,7 @@ variants <- list(
 )
 grid <- expand.grid(
   scenario = c("both_informative", "adverse_protective", "low_variance_prognostic_factor"),
-  noise_scale = c(0.25, 1), K_init = c(5L, 8L, 12L, 16L),
+  noise_scale = c(0.25, 1), K_init = c(3:10, 15L),
   seed = 20261001L + seq_len(n_seeds), stringsAsFactors = FALSE)
 
 #' Add a 4-noise-SD baseline to each feature (and truncate at 0, which
@@ -86,7 +84,7 @@ score_fit <- function(fit, data, Yva) {
     direction_recall = mean(direction[prognostic]),
     c_validation = multimodal_yfb_survival_metrics(risk, data$validation$time,
                                                    data$validation$event)$c_index,
-    converged = fit$diagnostics$converged,
+    converged = fit$diagnostics$converged, elbo = as.numeric(fit$diagnostics$elbo),
     n_pruned = NROW(fit$diagnostics$pruning))
 }
 
