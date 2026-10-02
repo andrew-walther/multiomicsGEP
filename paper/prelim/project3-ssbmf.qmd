@@ -68,7 +68,7 @@ This chapter develops survival-supervised Bayesian matrix factorization (SSBMF).
 3. **External validation** in five held-out PDAC cohorts across RNA-seq, microarray and proteomic platforms, with comparisons to a two-step factorization-then-Cox baseline and to DeSurv.
 4. **A multimodal extension** for matched gene expression and DNA methylation. Patient program scores are shared across modalities, while each modality has its own loadings and loading prior. A parsimony framework (intercept, marginal-likelihood prior fits and evidence-based factor pruning) selects the factors explaining molecular variation and those explaining survival without cross-validating $K$.
 
-Section 2 presents both models and the simulation and data designs, Section 3 the results, and Section 4 a discussion. The multimodal work is in progress; Section 4.4 states what remains.
+Section 2 presents both models and the simulation and data designs, Section 3 the results, and Section 4 a discussion. The multimodal work is in progress; Section 4.3 states what remains.
 
 # Methods
 
@@ -237,19 +237,44 @@ With cohort-specific survival coefficients, the adverse program's association wa
 
 \FloatBarrier
 
-## In the multimodal model, evidence-based pruning recovers the true number of programs [PENDING]
+## With evidence-based pruning, the multimodal model's rank no longer depends on the starting rank
 
-- **Without the framework.** The number of reconstruction-active factors tracked $K_{\mathrm{init}}$. Two causes were identified:
-  1. Unregularized per-feature precisions let a spare factor fit a single feature exactly, which made its precision unbounded.
-  2. Without an intercept, spare non-negative factors absorbed feature means.
-- **With the framework.** In single-seed checks at the moderate noise level, the fit returned $K=3$ from both $K_{\mathrm{init}}=5$ and $12$, recovered all three true programs ($|r|\ge0.99$), and identified the prognostic programs with the correct signs.
-- **Not yet solved.** The low-variance prognostic program was recovered only partially ($|r|=0.47$).
+Without the parsimony framework, the number of factors retained by the multimodal model equalled $K_{\mathrm{init}}$. Two causes were identified:
 
-[PENDING: replicated sweep over $K_{\mathrm{init}}=3,\dots,10,15$ — final $K$ against $K_{\mathrm{init}}$, recovery, false survival-active factors, held-out C; Figure and Table]
+1. Unregularized per-feature precisions let a spare factor fit a single feature exactly, which made the likelihood unbounded.
+2. Without an intercept, spare non-negative factors absorbed feature means.
 
-## Multimodal application: TCGA to ICGC [PENDING]
+With the framework, the final number of factors stays near the true value for every starting rank from 3 to 15 (@fig-mm-pruning). Before this, the final count tracked the starting rank exactly. Where the prognostic programs also explain molecular variation, the pruned fits:
 
-[PENDING: retained programs by role across $K_{\mathrm{init}}$; ICGC external concordance of the joint model against expression-only YFB and two-step factorization; correspondence of expression loadings with the single-modality programs and an unsupervised TCGA factorization; direction of methylation loadings relative to expression]
+- recovered all three true programs ($\lvert r\rvert\ge0.7$) from $K_{\mathrm{init}}\ge5$;
+- identified the prognostic programs as survival-active with the correct sign in 75–100% of fits;
+- converged in every run.
+
+A prognostic program that explains little variation was not recovered by either the original or the pruned fit. [Preliminary: 2 seeds per setting at moderate noise; the full sweep is in progress.]
+
+![Final number of factors against the starting rank in simulation (true $K=3$, dashed; $y=x$, dotted), for the original multimodal fit and the fit with evidence-based pruning.](figures/multimodal_pruning_K_final.png){#fig-mm-pruning width=95%}
+
+\FloatBarrier
+
+## In a first external validation, adding methylation improves discrimination over expression-only and two-step models
+
+The pruned model was trained on TCGA expression and methylation (144 patients). On 50 ICGC primary PDAC donors its external concordance was 0.685 (95% CI 0.579 to 0.779). On the same features, expression-only YFB reached 0.491 and the two-step model 0.424 (@tbl-mm-external). Its survival-active factor corresponded to the adverse single-modality program ($\lvert r\rvert=0.68$ on shared genes).
+
+| Model | ICGC primary PDAC ($n=50$) | ICGC all donors ($n=67$) |
+|---|---|---|
+| Joint multimodal | 0.685 (0.579, 0.779) | 0.639 (0.547, 0.734) |
+| Expression-only YFB | 0.491 (0.364, 0.633) | 0.480 (0.369, 0.581) |
+| Two-step EBMF → Cox | 0.424 (0.286, 0.567) | 0.418 (0.310, 0.531) |
+
+: External concordance (95% bootstrap interval) of models trained on TCGA, $K_{\mathrm{init}}=7$. {#tbl-mm-external}
+
+These results come with caveats:
+
+- **The intervals are wide and overlap** with only 30 deaths in the validation set.
+- **The baselines are weak here.** Both fail to transfer to ICGC.
+- **Convergence.** The fit had a stable risk score but had not met the formal convergence criterion.
+
+[PENDING: remaining starting ranks.]
 
 # Discussion
 
@@ -263,6 +288,7 @@ With cohort-specific survival coefficients, the adverse program's association wa
 
 - **Supervision of the loadings.** In the single-modality model, survival informs the coefficients but not the loadings ($\alpha_F=0$). The discovery advantage described in Section 1.2 has therefore not been demonstrated. The programs found are high-variance programs that are also prognostic.
 - **Partial likelihood in the evidence bound.** The bound used for pruning plugs in the posterior-mean predictor rather than taking the expectation of the partial likelihood. It can therefore overstate the survival contribution of a factor.
+- **Survival has little influence on which factors are kept.** With 144 patients and 13,000 molecular features, reconstruction terms outnumber partial-likelihood terms by more than 10,000 to one. In the TCGA fit, survival changed the evidence for any factor by less than 3 nats, against $10^4$–$10^5$ for reconstruction. Factor selection is therefore driven by molecular variation. This explains why low-variance prognostic programs are not recovered, and it is the multimodal form of the single-modality $\alpha_F$ question.
 - **Matched multi-omic cohorts are small.** The validation set has 50–67 donors, and ICGC includes mixed histologies.
 - **Unsettled preprocessing choices.** Feature screening for two modalities, and the methylation scale ($\beta$-values versus a variance-stabilizing transformation), are not yet settled.
 

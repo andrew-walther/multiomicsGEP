@@ -2,8 +2,9 @@
 
 ## Summary {.unnumbered}
 
-- **The multimodal model now chooses its own number of factors.** The model could not prune spare factors, and we found two reasons why. The first is that unregularized per-feature precisions let a spare factor fit one feature exactly. The second is that the model had no intercept. We fixed both with an intercept, point-Laplace loadings, marginal-likelihood prior fits and evidence-based factor pruning. In single-seed simulations this setup recovers the true $K=3$ from both $K_{\mathrm{init}}=5$ and $K_{\mathrm{init}}=12$. (§2) [PENDING: replicated sweep summary]
-- **The first real-data application is set up and running.** The model is trained on matched TCGA expression and methylation and validated externally on ICGC. The data are loaded, preprocessed and tested. Feature selection for two modalities is a discussion point. (§3, §4) [PENDING: fits]
+- **The multimodal model now chooses its own number of factors.** The model could not prune spare factors, and we found two reasons why. The first is that unregularized per-feature precisions let a spare factor fit one feature exactly. The second is that the model had no intercept. We fixed both with an intercept, point-Laplace loadings, marginal-likelihood prior fits and evidence-based factor pruning. In a replicated simulation sweep the pruned fit returns about the true $K=3$ for every $K_{\mathrm{init}}$ from 3 to 15, where the original fit kept all $K_{\mathrm{init}}$ factors. Prognostic programs that carry variance are recovered with the correct signs. A low-variance prognostic program is still missed. (§2)
+- **First real-data result.** The joint multimodal model was trained on TCGA expression + methylation and evaluated on ICGC. External C is 0.685 (95% CI 0.579–0.779), against 0.491 for expression-only YFB and 0.424 for the two-step model. The intervals are wide and overlap. The survival-active factor corresponds to single-modality Program 7.
+- **Two discussion points from the real data.** The ELBO is dominated by reconstruction at 13,000 features, so survival cannot affect which factors are kept. The factors found are mostly modality-specific. Feature selection for two modalities is still open. (§3, §4)
 - **The single-modality results now include held-out Kaplan–Meier evidence.** In the five held-out cohorts the frozen model stratifies survival, and its adverse and protective programs keep their direction. We also checked how the reported C-indices were oriented: the numbers stand. (§5)
 - **The single-modality α_F question has candidate solutions and a test design.** The projection score $Z_F$ is now defined in the derivation. (§6)
 
@@ -97,13 +98,33 @@ $$
 - **Duplicates at large $K_{\mathrm{init}}$.** The fit can keep a reconstruction factor and a survival-only copy of the same program.
 - **The other precision models.** One $\tau$ per modality removes the degeneracy but mis-weights heteroscedastic features (no pruning; C fell to 0.65). An empirical-Bayes Gamma prior on $\tau$ learns a heavy tail, so $\tau$ still reached about $10^{17}$.
 
-### Replicated sweep
+### Replicated sweep (preliminary: 2 seeds)
 
-[PENDING: `results/benchmark_sim/run_multimodal_pruning_comparison.R`]
+**Design.** The original fit and the pruned fit were run on identical simulated data:
 
-- **Design.** $K_{\mathrm{init}}=3,\dots,10,15$; three scenarios; two noise levels; three seeds.
-- **Variants.** The original fit, the pruned fit, and the pruned fit with a variance-corrected survival term.
-- **Outputs.** Final $K$ against $K_{\mathrm{init}}$, factor recovery, prognostic recall and false survival-active factors, and held-out C. Figures will be `pruning_K_final.png` and `pruning_recovery.png`.
+- $K_{\mathrm{init}}=3,5,7,10,15$;
+- three scenarios;
+- moderate noise;
+- two seeds per setting, 60 fits in all, with no errors.
+
+The full sweep (both noise levels, $K_{\mathrm{init}}=3,\dots,10,15$, three seeds) is still running.
+
+![Final number of factors against $K_{\mathrm{init}}$ (true $K=3$, dashed; $y=x$, dotted). The original fit keeps every starting factor. The pruned fit returns about 3 factors whatever the starting rank.](../figs/2026-10-02_pruning_K_final.png)
+
+| Scenario | Final $K$, original ($K_{\mathrm{init}}$ = 3 / 5 / 7 / 10 / 15) | Final $K$, pruned | True factors recovered, pruned | Prognostic programs survival-active, pruned | Held-out C, pruned |
+|---|---|---|---|---|---|
+| Two prognostic programs | 3 / 5 / 7 / 10 / 15 | 3 / 3 / 3 / 3 / 3.5 | 3 of 3 at every $K_{\mathrm{init}}$ | 100% (75% at 15) | 0.787–0.788 |
+| Adverse + protective | 3 / 5 / 7 / 10 / 15 | 2.5 / 3 / 3.5 / 3.5 / 3 | 3 of 3 from $K_{\mathrm{init}}\ge5$ | 75–100% | 0.783–0.795 |
+| Low-variance prognostic | 3 / 5 / 7 / 10 / 15 | 2 / 2.5 / 2.5 / 2.5 / 2.5 | 2 of 3 (the low-variance program is missed) | 0% | 0.61 |
+
+What the sweep shows:
+
+- **$K$ no longer follows $K_{\mathrm{init}}$.** With pruning, the final number of factors stays near the truth from $K_{\mathrm{init}}=3$ to 15. The pruned fits also converged in every run; the original fit converged in 0–50% of runs.
+- **Variance-carrying prognostic programs are recovered with the right signs.** In the two scenarios where the prognostic programs carry variance, the fit recovers them and assigns survival to them with the correct sign.
+- **The low-variance prognostic program is lost by both methods,** and the survival association is credited to the wrong factor (one false survival-active factor). This is the main limitation; see §4 for why.
+- **Minor issues.** At $K_{\mathrm{init}}=3$ a true factor is sometimes pruned. At large $K_{\mathrm{init}}$ a survival-only duplicate of a prognostic program sometimes survives.
+
+![Recovery at moderate noise, mean over 2 seeds per setting: false survival-active factors, the share of prognostic programs found survival-active, and true factors recovered.](../figs/2026-10-02_pruning_recovery.png)
 
 ## §3 — Real data: matched TCGA and ICGC expression + methylation
 
@@ -148,7 +169,41 @@ The screening uses DeSurv's single-modality gene rule and a variance rule for Cp
 
 ## §4 — First real-data fits: TCGA → ICGC
 
-[PENDING: `results/multimodal_real/summarize_multimodal_real.R` builds the table and figures from the cached fits]
+**First completed fit: pruned framework, $K_{\mathrm{init}}=7$.** The other starting ranks are still running.
+
+| External C (95% bootstrap CI; orientation fixed from training) | ICGC primary PDAC (n = 50) | ICGC all donors (n = 67) | TCGA (training) |
+|---|---|---|---|
+| **Joint multimodal (expression + methylation)** | **0.685** (0.579–0.779) | **0.639** (0.547–0.734) | 0.638 |
+| Expression-only YFB, same genes | 0.491 (0.364–0.633) | 0.480 (0.369–0.581) | 0.594 |
+| Two-step EBMF → Cox, stacked modalities | 0.424 (0.286–0.567) | 0.418 (0.310–0.531) | 0.579 |
+
+**The programs match the single-modality ones.**
+- The joint fit's one survival-active factor (adverse direction) corresponds to single-modality **Program 7** ($\lvert r\rvert=0.68$ over 1,781 shared genes).
+- Its largest expression factor corresponds to **Program 3** ($\lvert r\rvert=0.79$), although here it is not survival-active.
+- Every factor has a counterpart in Yusha's unsupervised `tcga_flash_K14` fit ($\lvert r\rvert$ 0.60–0.87).
+
+**Caveats.**
+- **Small validation set.** With 50 donors and 30 deaths the intervals are wide, and the joint model's interval overlaps the expression-only model's.
+- **Weak baselines.** Both baselines fall below 0.5 on ICGC, so part of the gap reflects their failure to transfer.
+- **Not formally converged.** The fit stopped at the 500-sweep cap. The risk score had stabilized (largest relative change in $\eta$ $3.6\times10^{-4}$), but the largest per-feature reconstruction change stayed around 1%. That maximum over 13,000 features is being held up by a few slowly moving features. Stopping on the ELBO or a mean change is the planned fix.
+
+**Why nothing was pruned at $K_{\mathrm{init}}=7$.** The nullcheck asks, for each factor, how much the ELBO would fall without it:
+
+| Factor | Loads on | Reconstruction loss if removed | Survival loss | KL saved |
+|---|---|---|---|---|
+| 1 | expression | −100,137 | 0.0 | +22,602 |
+| 2 | expression and methylation | −132,648 | 0.0 | +16,504 |
+| 3 | expression | −54,407 | 0.0 | +9,352 |
+| 4 (survival-active) | expression | −74,714 | −2.9 | +20,323 |
+| 5 | expression | −39,226 | −0.8 | +14,310 |
+| 6 | expression | −92,923 | 0.0 | +18,227 |
+| 7 | methylation | −301,982 | 0.0 | +28,895 |
+
+The table answers the question, and it raises two discussion points.
+
+- **The data support all seven factors.** With 144 × 13,000 values, each factor gains far more in reconstruction than it costs in KL. This is consistent with the unsupervised flash fit, which keeps 14 factors on expression alone. Pruning should start removing factors only at larger $K_{\mathrm{init}}$, which the sweep will show.
+- **Survival is negligible in the ELBO at this scale.** It contributes under 3 nats to any factor, against $10^4$–$10^5$ for reconstruction. There are 144 partial-likelihood terms against about 1.9 million reconstruction terms. Survival therefore cannot affect which factors are kept, and this is also why the simulated low-variance prognostic program is lost. It is the same scale imbalance that the single-modality α/α_F weights were introduced for.
+- **The factors are mostly modality-specific.** Only factor 2 loads on both modalities. Factor 7 is methylation-only and the others are expression-only. The shared-score model allows shared programs but does not require them. Whether shared expression–methylation programs should be expected, and whether CpGs should be screened relative to the selected genes (§3), are questions for discussion.
 
 - **Arms.** All arms use the same training patients and screened features:
   - joint multimodal YFB (the pruned framework);
@@ -235,8 +290,14 @@ $$
 ## §7 — Open items and next steps
 
 - **Multimodal model.**
-  - Finish the replicated simulation sweep (§2) and the real-data fits (§4).
-  - Fix the survival-only duplicates and the low-variance case.
+  - Finish the full simulation sweep (§2) and the real-data $K_{\mathrm{init}}$ sweep (§4).
+  - Fix the survival-only duplicates.
+  - **Give survival a voice in factor selection.** At realistic $p$ the ELBO is dominated by reconstruction (§4). The options are:
+    - per-modality likelihood weights;
+    - survival-aware feature screening;
+    - a separate retention rule for survival-active factors.
+    This is the multimodal version of the α_F question, and the route to recovering low-variance prognostic programs.
+  - Change the stopping rule to the ELBO or a mean change, with $\eta$ stability still required.
 - **Feature selection and modality balance.** Settle these together (§3 discussion point).
 - **Runtime.**
   - Done: the loading sweep is now compiled code, 5× faster on real data, with identical results.
