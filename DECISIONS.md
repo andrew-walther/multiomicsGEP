@@ -5,6 +5,18 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-02 — Prelim chapter: remaining work instead of specific aims; thesis-style floats
+
+**Decision.** The prelim chapter (`paper/prelim/project3-ssbmf.qmd`, Chapter 4 of the prelim) no longer has a Specific aims section with "success criteria". The planned work is a *Remaining work* subsection at the end of Methods, written as prose, and the evaluation of each piece is stated as part of the planned evaluation. The thresholds are unchanged: recovery at absolute loading correlation ≥ 0.7, lower 95% limit of ΔC above −0.02, final rank varying by at most one across starting ranks 5–15. Lists are converted to prose, as in Chapters 2 and 3. Tables and figures are raw LaTeX floats in Chapter 3's style: `[!htb]`, `\small\centering`, table captions above and figure captions below, booktabs rules, `tab:`/`fig:` labels. Internal section references use Quarto `@sec-` labels so that they number 4.x in the prelim.
+
+**Why.** The author asked for the prelim to describe the current state of the method and results plus the remaining work, not an aims-and-criteria structure. The author also asked for floats placed with their text and formatted to the thesis guidelines.
+
+**Trade-off.** The raw-LaTeX tables render only in PDF output, which is the only format the chapter targets. Quarto prints a harmless warning for raw tables with non-`tbl` labels, as it does for Chapter 3. The timeline is a non-floating table (`\captionof` in a minipage) because as the last float it was otherwise moved to a page of its own.
+
+**Files.** `paper/prelim/project3-ssbmf.qmd`; `paper/prelim/tools/` (`prelim_transform.py`, `install_hooks.sh`, `post_commit_hook.sh`); `results/benchmark_sim/make_km_figures.R` (untitled KM copies for the chapter).
+
+---
+
 ## 2026-10-02 — Orientation of the reported single-modality external C-indices
 
 **Finding.** `run_external_ci_analysis.R` produces `external_cindex_ci.csv`, the

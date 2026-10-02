@@ -192,3 +192,9 @@ Full CAVI derivations (the single-modality derivation PDFs and `derivations/mult
   - All citation markers in the proposal are replaced with real citations: 37 keys, and the bib check passes.
   - Prelim author: Andrew J Walther; prelim exam on 2026-12-07.
   - Planned manuscript authors: Andrew J Walther, Amber Young, Yusha Liu, Naim Rashid.
+- 2026-10-02 (late night): Aligned the introduction with the literature review (cites §1.3.1–1.3.6 instead of restating them; 27 cited keys). Following the author's feedback:
+  - Specific aims and success criteria replaced by a Remaining work subsection in Methods.
+  - Lists rewritten as prose.
+  - Tables and figures converted to Chapter 3's raw-LaTeX float style, with embedded KM titles removed.
+  - Sync to bios-dissertation working: `tools/sync_to_prelim.sh`, with a post-commit hook (`tools/install_hooks.sh`) that regenerates and commits Chapter 4 whenever the chapter, its figures, its tools or `ssbmf-refs.bib` change. It never pushes. The prelim draft is 23 pp.
+  - The standalone introduction for the journal manuscript is planned in ROADMAP.md.

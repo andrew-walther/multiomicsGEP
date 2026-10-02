@@ -81,6 +81,17 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [ ] **Manuscript introduction with its own background (`paper/thesis/`)**
+  `[Priority: Medium]` `[Effort: Medium]` — The prelim chapter's introduction
+  refers to the literature review (Chapter 1, Sections 1.3.1–1.3.6) instead of
+  restating it. A journal manuscript must stand alone, so its introduction
+  should restore that background with citations: PDAC subtyping and program
+  discovery (Collisson2011, Rashid2020, Brunet2004, Kotliar2019), the two-step
+  pipeline and supervised alternatives (Bair2004, Tibshirani1997, Nygard2008,
+  Simon2011), and attenuation from treating estimated scores as fixed
+  (Prentice1982, Carroll2006). Start when the manuscript draft is set up in
+  `paper/thesis/` (authors: Walther, Young, Liu, Rashid).
+
 - [ ] **Complete replicated K selection for matched expression/methylation YFB**
   `[Priority: High]` `[Effort: Large]` — The approved raw joint-YFB derivation,
   isolated fitter, frozen predictor, and matched simulations are implemented.
