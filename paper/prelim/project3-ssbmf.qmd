@@ -173,7 +173,7 @@ In every held-out cohort the patients in the lowest third of predicted risk had 
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/single_km_risk_external.png}
+\includegraphics[width=0.75\linewidth]{figures/single_km_risk_external.png}
 \caption{Overall survival by tertile of the frozen model's risk score within each held-out cohort. No validation outcome was used to fit, orient or threshold the score.}\label{fig:km-risk}
 \end{figure}
 ```
@@ -185,7 +185,7 @@ From a starting rank of 7, four programs were retained and three shrunk to zero 
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.5\linewidth]{figures/single_programs_heatmap.png}
+\includegraphics[width=0.42\linewidth]{figures/single_programs_heatmap.png}
 \caption{Gene weights of the four programs retained from a starting rank of 7 (top 12 genes per program, scaled to each program's largest weight).}\label{fig:programs}
 \end{figure}
 ```
@@ -195,7 +195,7 @@ Both survival-associated programs kept their direction in data the model never s
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/single_km_programs_external.png}
+\includegraphics[width=0.8\linewidth]{figures/single_km_programs_external.png}
 \caption{Overall survival by within-cohort tertile of Program 3 and Program 7 projection scores, pooled over the five held-out cohorts.}\label{fig:km-programs}
 \end{figure}
 ```
@@ -207,7 +207,7 @@ In simulation, starting below the true rank (2–4) produced estimated programs 
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/single_delta_c_kinit.png}
+\includegraphics[width=0.8\linewidth]{figures/single_delta_c_kinit.png}
 \caption{Difference in held-out concordance between the supervised model and a two-step pipeline (unpenalized Cox stage) in simulation, by scenario and starting rank (mean $\pm$ 1 SE over 15 seeds; both models fitted to the same data).}\label{fig:delta-c}
 \end{figure}
 ```
@@ -219,7 +219,7 @@ With cohort-specific survival coefficients, the adverse program's association wa
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.8\linewidth]{figures/single_percohort_beta.png}
+\includegraphics[width=0.7\linewidth]{figures/single_percohort_beta.png}
 \caption{Cohort-specific survival coefficients of the seven programs (starting rank 7). Positive values indicate higher hazard.}\label{fig:percohort}
 \end{figure}
 ```
@@ -233,7 +233,7 @@ Without the parsimony framework the multimodal model kept every starting program
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/multimodal_pruning_K_final.png}
+\includegraphics[width=0.75\linewidth]{figures/multimodal_pruning_K_final.png}
 \caption{Number of programs kept against the starting rank in simulation (true rank 3, dashed; $y=x$, dotted), with and without the parsimony framework; mean and range over three seeds.}\label{fig:mm-pruning}
 \end{figure}
 ```

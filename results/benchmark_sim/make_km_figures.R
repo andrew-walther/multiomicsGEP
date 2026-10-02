@@ -120,6 +120,9 @@ p1 <- ggplot(steps, aes(time, surv, colour = group)) +
   labs(x = "Months", y = "Overall survival",
        title = "Frozen single-modality model in five held-out cohorts")
 ggsave(file.path(out_dir, "km_risk_tertiles_external.png"), p1, width = 9, height = 6, dpi = 150)
+# Untitled copy for the prelim chapter (the caption carries the title)
+ggsave("paper/prelim/figures/single_km_risk_external.png", p1 + labs(title = NULL),
+       width = 9, height = 6, dpi = 150)
 
 # Figure 2: Program 7 and Program 3 tertiles, pooled across cohorts ----
 prog <- rbind(
@@ -146,6 +149,8 @@ p2 <- ggplot(prog, aes(time, surv, colour = group)) +
   labs(x = "Months", y = "Overall survival",
        title = "Survival by program activity, held-out cohorts pooled")
 ggsave(file.path(out_dir, "km_programs_pooled_external.png"), p2, width = 9, height = 4.2, dpi = 150)
+ggsave("paper/prelim/figures/single_km_programs_external.png", p2 + labs(title = NULL),
+       width = 9, height = 4.2, dpi = 150)
 
 write.csv(lab[, c("facet", "n", "label")], file.path(out_dir, "km_risk_tertile_stats.csv"), row.names = FALSE)
 print(lab[, c("facet", "label")]); print(plab)
