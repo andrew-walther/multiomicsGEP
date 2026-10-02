@@ -16,6 +16,8 @@ format:
       \usepackage{placeins}
       \BeforeBeginEnvironment{tabular}{\begingroup\setstretch{1}}
       \AfterEndEnvironment{tabular}{\endgroup}
+      \BeforeBeginEnvironment{longtable}{\begingroup\setstretch{1}}
+      \AfterEndEnvironment{longtable}{\endgroup}
 bibliography: ../ssbmf-refs.bib
 ---
 
@@ -25,178 +27,153 @@ will go to bios-dissertation/prelim/project-proposals/project3-ssbmf/draft/
 (Project 2 pattern; see docs/plans/Prelim_Proposal_Plan_10_1_26.md). The sync
 tools are not installed yet.
 
-Status (2026-10-01): first full draft of the structure.
-
-- Single-modality text reports established results (PROJECT_STATUS.qmd, DECISIONS.md).
-- Multimodal results are marked [PENDING] until the 10/2 sweeps are reviewed.
+Status (2026-10-02): prose draft after independent review
+(docs/reviews/2026-10-02_prelim_proposal_review.md).
 - Claims about supervision changing F are scoped to the alpha_F = 0 model
   (bios-dissertation/ROADMAP.md, Project 3 to-do).
+- Citations still to add are marked <!- - CITE: ... - -> (verified entries are
+  drafted in paper/prelim/notes/missing-references.bib; adding them requires
+  editing the bios-dissertation master bib).
+- Figures: paper/prelim/make_figures.R.
 - Author list and affiliations: [TO CONFIRM].
 -->
+
+**Summary.** Gene expression programs in pancreatic ductal adenocarcinoma (PDAC) carry prognostic information, but they are usually found by an unsupervised factorization that ignores survival. A Cox model is then fitted to the estimated scores, as if they were measured without error. This chapter develops survival-supervised Bayesian matrix factorization (SSBMF), which fits an empirical-Bayes factorization and a Cox model together. Program uncertainty is carried into the survival coefficients, and the number of programs is reduced from an over-specified starting rank by shrinkage. In five held-out PDAC cohorts the single-modality model's external concordance slightly exceeds that of an independently tuned two-step pipeline (mean 0.627 against 0.601), and its adverse (basal-like) and protective (classical) programs keep their direction out of sample. A multimodal extension to matched expression and methylation now selects the correct number of programs in simulation. On TCGA → ICGC data it matches the established model at the pre-specified rank, but its rank is not yet chosen reliably and methylation has not yet improved prediction. The remaining aims are to let survival inform the programs themselves, to make the number of programs data-driven on real multimodal data, and to determine what methylation contributes.
 
 # Introduction
 
 ## Prognostic gene expression programs in pancreatic cancer
 
-Pancreatic ductal adenocarcinoma (PDAC) has a five-year survival below 15%, and outcomes vary widely among patients diagnosed at the same stage [@SEER2026].
-
-- **Transcriptional subtypes.** Bulk transcriptomic studies have repeatedly identified subtypes with different prognoses, notably a classical tumor program and a basal-like program with worse survival [@Collisson2011; @Moffitt2015; @Bailey2016; @Raphael2017]. These subtypes underlie single-sample classifiers now used in clinical research [@Rashid2020].
-- **Programs, not discrete classes.** Each patient's tumor expresses several such programs, made up of tumor, stromal and immune components, in different proportions. Matrix factorization represents this directly: an expression matrix is approximated by patient-level program scores multiplied by gene-level program loadings [@Brunet2004; @Kotliar2019].
+PDAC has a five-year survival below 15% [@SEER2026]. Bulk transcriptomic studies have repeatedly found subtypes with different prognoses, most notably a classical tumor program and a basal-like program associated with shorter survival [@Collisson2011; @Moffitt2015; @Bailey2016; @Raphael2017]. These subtypes now underlie single-sample classifiers used in clinical research [@Rashid2020]. A tumor, however, is not a single type. Each patient's sample mixes tumor, stromal and immune components in different proportions. Matrix factorization represents this directly by approximating the expression matrix as patient-level program scores multiplied by gene-level program loadings [@Brunet2004; @Kotliar2019].
 
 ## The two-step pipeline and its limitations
 
-The usual analysis has two steps: factorize the expression data without using outcomes, then regress survival on the estimated program scores. Section 1.3 of the literature review sets out two limitations of this sequence, summarized here without repeating that discussion.
+The standard analysis factorizes expression without outcomes and then regresses survival on the estimated scores. Section 1.3 of the literature review sets out two limitations of this sequence, which we summarize without repeating the argument there. First, discovery ignores survival: a program that explains little expression variance but predicts survival strongly may never be found. Second, uncertainty is discarded: the estimated scores are treated as fixed covariates, which attenuates their survival coefficients [@Prentice1982; @Carroll2006].
 
-- **Discovery ignores survival.** A program that explains little expression variance but strongly predicts survival may never be found.
-- **Uncertainty is discarded.** Estimated scores are treated as fixed covariates, which attenuates their survival coefficients [@Prentice1982; @Carroll2006].
-
-Supervised alternatives exist:
-
-- supervised principal components [@Bair2004];
-- penalized Cox regression on genes [@Tibshirani1997; @Simon2011];
-- partial least squares Cox regression [@Nygard2008];
-- DeSurv, which fits a non-negative factorization and a Cox model jointly [@Young2026] and is the closest predecessor of this work.
-
-In DeSurv the survival term enters the factorization objective, so survival can shape the programs themselves. Its coefficients are penalized point estimates, and its rank and supervision strength are tuned by cross-validated concordance outside the fitted model. The current single-modality model of this chapter does not yet supervise its loadings (Section 2.1). What distinguishes it from DeSurv is posterior uncertainty in the survival coefficients, the choice of the effective number of programs by shrinkage, and the multimodal extension.
+Supervised alternatives include supervised principal components [@Bair2004], penalized Cox regression on genes [@Tibshirani1997; @Simon2011] and partial least squares Cox regression [@Nygard2008]. The closest predecessor of this work is DeSurv [@Young2026], which fits a non-negative factorization and a Cox model jointly. In DeSurv the survival term enters the factorization objective, so survival can shape the programs themselves. Its coefficients are penalized point estimates, and its rank and supervision strength are tuned by cross-validated concordance outside the fitted model. The single-modality model of this chapter does not yet let survival inform its loadings (Section 2.1). What distinguishes it from DeSurv at present is posterior uncertainty in the survival coefficients, an effective number of programs chosen by shrinkage, and a multimodal extension. Multimodal factor models such as MOFA [@Argelaguet2018] and iCluster [@Shen2009] integrate data types without a survival outcome.
 
 ## Contributions
 
-This chapter develops survival-supervised Bayesian matrix factorization (SSBMF). It combines empirical-Bayes matrix factorization [@Wang2021; @Willwerscheid2025] with a Cox proportional hazards model [@Cox1972; @Cox1975], fit jointly by coordinate-ascent variational inference [@Blei2017]. The contributions are:
+This chapter combines empirical-Bayes matrix factorization [@Wang2021; @Willwerscheid2025] with a Cox proportional hazards model [@Cox1972; @Cox1975], fitted together by coordinate-ascent variational inference [@Blei2017]. It makes four contributions.
 
-1. **A supervised factor model whose risk score needs no fitted patient-level parameters.** The Cox predictor uses each patient's expression projected onto the program loadings, $\eta = (YF)\beta$. A new patient's risk is therefore computed from their measurements alone. Posterior uncertainty in the survival coefficients is estimated within the model (tempered by $\alpha$ and conditional on the projection; Section 2.1).
-2. **Choosing the number of programs from one over-specified fit.** Empirical-Bayes shrinkage, combined with a consensus over ELBO, BIC, cross-validated likelihood and concordance, reduces an over-specified $K_{\mathrm{init}}$ to an effective number of programs $K_{\mathrm{eff}}$. This separates programs that explain expression variance from programs associated with survival.
-3. **External validation** in five held-out PDAC cohorts across RNA-seq, microarray and proteomic platforms. The comparisons are with independently tuned two-step factorization-then-Cox baselines, using DeSurv's preprocessing and gene-selection rule. A head-to-head comparison with DeSurv is future work.
-4. **A multimodal extension** for matched gene expression and DNA methylation, with a parsimony framework. Patient program scores are shared across modalities, while each modality has its own loadings and loading prior. The framework (intercept, signed loadings, marginal-likelihood prior fits and evidence-based factor pruning) makes the final number of factors independent of the starting rank in simulation. On real data it brings the multimodal model to the external concordance of the established single-modality model. On real data it has so far removed no factors, and methylation has not yet added discrimination.
+1. **A supervised factor model whose risk score needs no fitted patient-level parameters.** The Cox predictor projects each patient's expression onto the program loadings, so a new patient's risk is computed from their measurements alone. Posterior uncertainty in the survival coefficients is estimated within the model. It is tempered by a weight α and conditional on the projection (Section 2.1).
+2. **A shrinkage approach to the number of programs.** An over-specified starting rank is reduced to an effective number of programs, separating programs that explain expression from programs associated with survival.
+3. **External validation in five held-out PDAC cohorts** across RNA-seq, microarray and proteomic platforms. The comparators are independently tuned two-step pipelines, built with DeSurv's preprocessing and gene-selection rule. A direct comparison with DeSurv is future work.
+4. **A multimodal extension** for matched gene expression and DNA methylation, with a parsimony framework that makes the final number of programs independent of the starting rank in simulation.
 
-Section 2 presents both models and the simulation and data designs, Section 3 the results, and Section 4 a discussion. The multimodal work is in progress; Section 4.3 states what remains.
+## Specific aims for the remaining work
+
+**Aim 1 (complete). Establish and externally validate the single-modality model.** The model, its rank selection and its validation in five external cohorts are reported in Sections 3.1–3.4.
+
+**Aim 2. Let survival inform the programs without a tuning weight.** The single-modality model currently sets the survival weight in the loading update to zero ($\alpha_F=0$), so its programs are those of an unsupervised factorization. Aim 2 tests four ways to remove this weight while keeping the fit stable: factor rescaling as in the multimodal model, warm starts, a gradual increase of the survival term during fitting, and reordered updates.
+
+*Proposed success criteria:*
+
+- In simulation with a planted low-variance prognostic program, the planted program is recovered ($\lvert r\rvert\ge0.7$) and classified as survival-associated more often than with $\alpha_F=0$, without losing the high-variance programs.
+- Pooled external concordance is no worse than that of the current model (lower 95% limit of $\Delta C$ above $-0.02$).
+- If neither criterion is met, the proposal's claims about supervised discovery are withdrawn and the result is reported as negative.
+
+**Aim 3. Make the multimodal model choose its number of programs on real data, and determine what methylation contributes.** On TCGA the parsimony framework removes no programs, because 144 × 13,000 molecular values outweigh 75 survival events in the evidence used to prune. Aim 3 introduces explicit weights for each modality and for survival, so that the two modalities count equally and survival influences which programs are kept. It also compares variance-based and gene-linked (promoter) screening of CpGs.
+
+*Proposed success criteria:*
+
+- On real data, the final number of programs varies by at most one across starting ranks 5–15.
+- In simulation, recovery is no worse than in the current results.
+- Methylation is judged to add value if the paired-bootstrap difference in external concordance against an expression-only fit excludes zero, or if it yields a prognostic program that is absent from the expression-only fit.
 
 # Methods
 
 ## Single-modality model
 
-**Reconstruction.** For $n$ patients and $p$ genes, with log-scale expression standardized per platform,
+For $n$ patients and $p$ genes, with log-scale expression standardized within each platform, the reconstruction model is $Y = LF^\top + E$ with $E_{ij}\sim N(0,\tau_j^{-1})$. $L$ ($n\times K$) holds patient program scores and $F$ ($p\times K$) gene loadings. Every entry of $L$ and $F$ has a point-exponential prior whose mixing proportion and rate are estimated by empirical Bayes for each program [@Willwerscheid2025].
 
-$$
-Y = LF^\top + E,\qquad E_{ij}\sim N(0,\tau_j^{-1}).
-$$
-
-- $L\in\mathbb R^{n\times K}$ holds patient program scores.
-- $F\in\mathbb R^{p\times K}$ holds gene loadings.
-- Each entry of $L$ and $F$ has a point-exponential prior. The prior's mixing proportion and rate are estimated by empirical Bayes for each program [@Willwerscheid2025].
-
-**Survival.** A Cox model with Breslow handling of ties [@Breslow1974] and linear predictor
+Survival follows a Cox model with Breslow handling of ties [@Breslow1974] and linear predictor
 
 $$
 \eta_i=\sum_k (\hat z_F)_{ik}\,\tilde\beta_k,\qquad \hat Z_F = Y\,E[F]\,D^{-1},\quad D=\operatorname{diag}\lVert E[f_k]\rVert ,
 $$
 
-where $\hat Z_F$ is each patient's expression projected onto the unit-normalized loading vectors. The normalization only sets the units of $\tilde\beta$.
+where $\hat Z_F$ is each patient's expression projected onto the unit-normalized loadings. The normalization only sets the units of $\tilde\beta$. The coefficients have Normal priors $\tilde\beta_k\sim N(0,s^2_{\beta_k})$ with empirical-Bayes variances. Within each iteration $\hat Z_F$ is held at its current value, so the single-modality coefficient update has no second-moment correction for uncertainty in $F$. The multimodal model adds one (Section 2.2).
 
-- The survival coefficients have Normal priors, $\tilde\beta_k\sim N(0,s^2_{\beta_k})$, with variances estimated by empirical Bayes.
-- Within each iteration the projection $\hat Z_F$ is held at its current value. The single-modality $\tilde\beta$ update therefore has no second-moment correction for uncertainty in $F$ (literature review Section 1.3.3). The multimodal model adds one (Section 2.2).
+The model is fitted by coordinate-ascent variational inference, using a second-order approximation of the Cox partial likelihood that is refreshed every iteration. Two weights are applied. A weight $\alpha=0.5$ tempers the Cox term in the coefficient update, and $\alpha_F=0$ keeps the Cox term out of the loading update. With $\alpha_F=0$, survival informs the coefficients but not the loadings, so the programs found are those that explain expression variance and are also associated with survival. Removing these weights is Aim 2.
 
-**Fitting.** Coordinate-ascent variational inference, using a second-order (Taylor) approximation of the Cox partial likelihood that is refreshed every iteration.
+The starting rank is chosen by a consensus of four criteria: the evidence lower bound (ELBO), BIC, a bi-cross-validated genomic log-likelihood and cross-validated concordance, followed by a one-standard-error rule. <!-- CITE: Schwarz 1978; Owen & Perry 2009; Breiman et al. 1984 --> Programs in the over-specified fit are then classified into three groups:
 
-- Two weights are applied. A weight $\alpha=0.5$ tempers the Cox term in the $\tilde\beta$ update, and a weight $\alpha_F=0$ keeps the Cox term out of the $F$ update.
-- With $\alpha_F=0$, survival informs the coefficients but not the loadings. The programs found are therefore those that explain expression variance and are also associated with survival.
-- Removing these weights is part of the remaining work (Section 4.3).
+- survival-active: posterior mean $|\tilde\beta_k|>10^{-3}$, a cutoff set on the scale of the unit-normalized projection;
+- genomics-only: explaining at least 1% of the variance;
+- inactive.
 
-**Choosing $K$.**
+Optional extensions allow a cohort-specific genomic offset, a stratified baseline hazard, and cohort-specific survival coefficients $\tilde\beta_k^{(c)}$ that share one estimated prior variance.
 
-- $K_{\mathrm{init}}$ is chosen by a consensus of the ELBO, BIC, bi-cross-validated genomic log-likelihood and cross-validated concordance, followed by a one-standard-error rule.
-- Programs in the over-specified fit are then classified into three groups:
-  - survival-active: posterior mean $|\tilde\beta_k|>10^{-3}$, a cutoff set on the scale of the unit-normalized projection;
-  - genomics-only: explaining at least 1% of variance;
-  - inactive.
-- The rank used for the final fit therefore comes from one over-specified fit; $K_{\mathrm{init}}$ itself is still chosen with cross-validated criteria.
-
-**Cohorts.** Optional extensions allow a cohort-specific genomic offset, a stratified baseline hazard, and cohort-specific survival coefficients $\tilde\beta_k^{(c)}$ that share one estimated prior variance (shrinkage toward zero).
+**Initialization and convergence.** Scores and loadings are initialized from a truncated singular value decomposition. Fitting stops when the relative change in the ELBO falls below $10^{-5}$, or after 100 iterations.
 
 ## Multimodal model
 
-**Reconstruction.** For matched expression $Y_1$ and methylation $Y_2$ on the same $n$ patients,
+For matched expression $Y_1$ and methylation $Y_2$ on the same $n$ patients,
 
 $$
-Y_m = \mathbf 1\mu_m^\top + L F_m^\top + E_m,\qquad E_{mij}\sim N(0,\tau_{mj}^{-1}),\qquad m=1,2,
+Y_m = \mathbf 1\mu_m^\top + L F_m^\top + E_m,\qquad E_{mij}\sim N(0,\tau_{mj}^{-1}),\qquad m=1,2.
 $$
 
-- $L\ge 0$ holds shared program activity.
-- $F_m$ holds the loadings for modality $m$, describing how strongly each gene or CpG deviates from the baseline $\mu_m$ when the program is active.
-- The loading prior family is chosen per modality (point-exponential, point-Laplace or Normal), and its parameters are fit for each modality–program pair. A sparser prior can then be estimated for the much larger CpG set.
-- Cohorts and modalities enter the model differently. Additional cohorts add rows of $L$ (patients). Additional modalities add rows of $F$ (features), each block with its own prior.
+$L\ge 0$ holds program activity, shared across modalities. $F_m$ describes how far each gene or CpG moves from its baseline $\mu_m$ when a program is active. The loading prior family is chosen per modality (point-exponential, point-Laplace or Normal), and its parameters are fitted for each modality–program pair, so a sparser prior can be estimated for the much larger CpG set. Cohorts and modalities enter differently: additional cohorts add rows of $L$ (patients), and additional modalities add rows of $F$ (features), each block with its own prior.
 
-**Survival.** A Cox model with linear predictor
+Survival follows a Cox model with $\boldsymbol\eta=(Y_1F_1+Y_2F_2)\,\beta$ and $\beta_k\sim N(0,s^2_{\beta_k})$. The coefficient update uses the projection's posterior second moment, $E[Z_{ik}^2]=\bar Z_{ik}^2+\sum_{m,j}y_{mij}^2\operatorname{Var}(f_{mjk})$, rather than its plug-in square. This propagates loading uncertainty into the survival coefficients, the correction for attenuation motivated in literature review Section 1.3.3. There are no tempering weights: the reconstruction and survival terms enter each loading update as a plain sum. Because rescaling a program's scores, loadings and coefficient together leaves the model unchanged, each program is rescaled after its update so that its projection has unit standard deviation. A program is called survival-active when $|E\beta_k|/\mathrm{SD}(\beta_k)\ge1.96$. The base update equations are in the project derivation document; the intercept, signed priors and pruning will be added to it.
 
-$$
-\boldsymbol\eta=(Y_1F_1+Y_2F_2)\,\beta,\qquad \beta_k\sim N(0,s^2_{\beta_k}),
-$$
+**The parsimony framework** has four parts:
 
-The $\beta$ update uses the projection's posterior second moment, $E[Z_{ik}^2]=\bar Z_{ik}^2+\sum_{m,j}y_{mij}^2\operatorname{Var}(f_{mjk})$, rather than its plug-in square. This propagates loading uncertainty into the survival coefficients, which is the correction for attenuation motivated in literature review Section 1.3.3.
+1. a per-feature intercept $\mu_m$, re-estimated every iteration;
+2. signed point-Laplace loadings;
+3. marginal-likelihood fits of each prior with `ebnm`, which allow a whole program to shrink to zero;
+4. evidence-based pruning.
 
-The model uses no tempering weights: the reconstruction and survival terms enter every loading update as a plain sum.
+At the end of fitting, a program is removed if the ELBO is no lower without it, with the other programs held fixed. The ELBO here is the expected reconstruction log-likelihood, plus the Cox partial log-likelihood at the posterior-mean predictor, minus the Kullback–Leibler divergence of each posterior from its prior. The model is then refitted from the remaining programs, and this repeats until no program can be removed. <!-- CITE: flashier (Willwerscheid et al.) for the nullcheck idea -->
 
-- **Identifiability.** Multiplying a program's scores by $a_k$, dividing its loadings by $a_k$ and multiplying $\beta_k$ by $a_k$ leaves the model unchanged. The fitter therefore rescales each program after its update so that its projection has unit standard deviation.
-- **Derivation.** The base update equations are in the project derivation document. The intercept, signed priors and pruning will be added to it (supplement, to be added).
-- **Survival-active:** $|E\beta_k|/\mathrm{SD}(\beta_k)\ge1.96$.
+Feature precisions $\tau_{mj}$ are estimated by maximum likelihood without regularization. Without the intercept, spare non-negative programs absorbed feature means and could fit single features exactly, so they were never removed. Adding the intercept removed this problem. The fitter is initialized from a truncated singular value decomposition of the stacked data. It stops when the relative change in both the fitted reconstruction and the risk score falls below $10^{-4}$, or after 500 iterations.
 
-**Parsimony framework.**
+## Prediction in new cohorts
 
-1. A per-feature intercept $\mu_m$ is re-estimated every iteration, and the loadings take a signed point-Laplace prior.
-2. Each modality–program prior is fit by maximizing the marginal likelihood (`ebnm`). This lets an entire program shrink to the point mass at zero.
-3. When the iterations end, a factor is removed if the evidence lower bound does not fall without it, with the other factors held fixed. The bound is the expected reconstruction log-likelihood, plus the Cox partial log-likelihood at the posterior-mean predictor, minus the Kullback–Leibler divergence of each posterior from its prior. The fit is then restarted from the remaining factors, and this repeats until no factor can be removed.
-Feature precisions $\tau_{mj}$ are estimated per feature by maximum likelihood, without regularization. Without the intercept, spare non-negative factors absorbed feature means and could fit single features exactly, so they were never removed. Adding the intercept removed this problem in simulation (Section 3.5).
+All screening and preprocessing choices are made on the training data.
+
+- **Single-modality model.** Validation cohorts are log-transformed where needed, standardized within their own platform, and restricted to the training genes. The risk score is computed from the frozen loadings and coefficients.
+- **Multimodal model.** The validation data are restricted to the training features and scored with $\eta=(Y_1F_1+Y_2F_2)\beta$. The intercept enters only as a constant shift, which does not change concordance.
+- **Orientation.** The direction of every risk score is fixed from the training fit, before any validation outcome is seen.
+
+## Comparators
+
+- **Two-step pipeline.** An unsupervised empirical-Bayes factorization is followed by a Cox model on its scores. Its rank is chosen independently of the supervised model ($K=40$), and its Cox stage is penalized by LASSO with the penalty chosen by cross-validation. We also report a version with the rank matched to the supervised model ($K=7$), and the earlier unpenalized $K=20$ version.
+- **Multimodal comparisons.** For the multimodal model we report the same framework fitted to expression alone, the earlier version without the parsimony framework, two-step pipelines on each data configuration, and the established single-modality model scored on the same validation donors.
 
 ## Simulation designs
 
-**Single modality.** Multi-cohort simulations with shared and cohort-specific programs. These test recovery of prognostic programs and their cohort attribution, the effect of under- and over-specifying $K_{\mathrm{init}}$, and false-positive survival-active programs. [CROSS-REFERENCE: simulation design table]
+| | Single-modality (multi-cohort) | Multimodal |
+|---|---|---|
+| Purpose | Recovery and cohort attribution of programs; effect of the starting rank | Recovery of programs and of their number; prognostic recall |
+| Data | Two cohorts; shared and cohort-specific programs | Matched expression and methylation |
+| Scenarios | All shared; shared and cohort-specific; all cohort-specific | Two prognostic programs, $\beta=(0.7,0.35,0)$; adverse and protective, $(0.7,-0.7,0)$; one low-variance prognostic program, $\beta_3=1.1$ |
+| Patients and features | 150 per cohort; 1,000 genes | 120 training, 120 validation; 50 + 50 features |
+| True rank | 6 (e.g. 2 shared + 2 + 2 specific in the mixed scenario) | 3 |
+| Starting ranks | 2, 3, 4, 6, 12, 20 | 3–10, 15 |
+| Noise | Fixed design | Each true program explains about 10% of variance, or under 1% |
+| Survival | Proportional hazards | Weibull proportional hazards from the joint predictor <!-- CITE: Bender et al. 2005 --> |
+| Seeds | 15 | 3 |
 
-**Multimodal.** Matched expression and methylation blocks with $K=3$ true programs and Weibull proportional-hazards survival generated from the joint predictor. Three scenarios set the prognostic structure:
-
-- two prognostic programs ($\beta=(0.7,0.35,0)$);
-- one adverse and one protective program ($\beta=(0.7,-0.7,0)$);
-- a single low-variance prognostic program (score scale 0.15, $\beta_3=1.1$).
-
-Two noise levels:
-
-- each true program explains about 10% of the variance;
-- each true program explains under 1%.
-
-The sweep covers $K_{\mathrm{init}}=3,\dots,10$ and $15$, with three seeds per setting.
+: Simulation designs. {#tbl-sim-design}
 
 ## Data and preprocessing
 
-**Single-modality application.**
+**Single-modality application.** The model is trained on TCGA-PAAD (144 patients) and CPTAC (129) and validated in five held-out cohorts: Dijk, Moffitt GEO array, PACA-AU array, PACA-AU RNA-seq and Puleo array. <!-- CITE: cohort papers (Cao 2021 CPTAC; Puleo 2018; Dijk) --> Preprocessing is a log transformation where needed, standardization within each platform, and DeSurv's gene-selection rule: the top 3,000 genes per cohort by combined mean and variance rank, intersected across cohorts [@Young2026].
 
-- Training: TCGA-PAAD and CPTAC.
-- External validation: five held-out cohorts (Dijk, Moffitt GEO array, PACA-AU array, PACA-AU RNA-seq, Puleo array).
-- Preprocessing: log transformation where needed, per-platform standardization, and the DeSurv gene-selection rule (top 3,000 genes per cohort by combined mean and variance rank, intersected across cohorts) [@Young2026].
-
-**Multimodal application.**
-
-- Training: TCGA-PAAD, 144 patients (75 deaths).
-- Validation: ICGC PACA-AU. The main set is 50 primary-tumor PDAC donors (30 deaths). A sensitivity set adds intraductal papillary mucinous neoplasm with invasion and other histologies, for 67 donors (40 deaths).
-- Expression: log2-normalized.
-- Methylation: methylation beta-values on the 305,352 CpGs passing both cohorts' sex-chromosome filters. $k$-nearest-neighbor imputation is done within each cohort (0.07% of TCGA values were missing).
-- Screening is done on the training cohort only: 3,000 genes by the DeSurv rule and the 10,000 most variable CpGs.
+**Multimodal application.** The model is trained on TCGA-PAAD (144 patients, 75 deaths). It is validated on 50 primary-tumor PDAC donors from ICGC PACA-AU (30 deaths), with a sensitivity set of 67 donors (40 deaths) that adds IPMN with invasion and other histologies. Expression is on the log2 scale. Methylation beta-values are used on the 305,352 CpGs that pass both cohorts' sex-chromosome filters. Missing methylation values (0.07% in TCGA) are imputed by $k$-nearest neighbors within each cohort. <!-- CITE: Troyanskaya et al. 2001 --> Screening is done on the training cohort only: 3,000 genes by the DeSurv rule and the 10,000 most variable CpGs.
 
 ## Evaluation
 
-- **Discrimination:** Harrell's concordance [@Harrell1982] in held-out cohorts, with percentile bootstrap intervals. Differences between models use a paired bootstrap within each cohort (2,000 replicates), pooled by fixed-effect inverse-variance weighting.
-- **Orientation:** the direction of each risk score is fixed once, before any validation outcome is seen. Choosing it separately in each validation cohort would force every concordance to be at least 0.5 and inflate the results. A model that fails in a cohort can therefore show a concordance below 0.5.
-- **Factor recovery** (simulation): absolute correlation between true and estimated loadings, with a match counted at $|r|\ge0.7$.
-- **Prognostic recovery** (simulation): the share of true prognostic programs whose matched factor is survival-active with the correct sign, and the number of false survival-active factors.
+Discrimination is measured by Harrell's concordance [@Harrell1982] in held-out cohorts, with percentile bootstrap intervals. <!-- CITE: Efron & Tibshirani 1993 --> Differences between models use a paired bootstrap within each cohort (2,000 replicates), pooled by fixed-effect inverse-variance weighting. Because each risk score's direction is fixed from training, a model that fails in a cohort can show a concordance below 0.5. In simulation, a true program counts as recovered when the absolute correlation between true and estimated loadings is at least 0.7. Prognostic recall is the share of true prognostic programs whose matched program is survival-active with the correct sign; we also count false survival-active programs.
 
 # Results
 
-## The supervised model's external concordance exceeds that of an independently tuned two-step pipeline
+## The supervised model's external concordance slightly exceeds an independently tuned two-step pipeline
 
-The recommended single-modality configuration was trained on TCGA-PAAD and CPTAC with $K_{\mathrm{init}}=7$. Its mean external concordance across the five held-out cohorts was 0.627 (@tbl-external). The comparator is a two-step pipeline: unsupervised factorization with $K=40$ chosen independently, then a LASSO Cox model on the factor scores. It reached 0.601.
-
-- **Pooled difference:** $\Delta C=0.026$ (95% CI 0.0002 to 0.050).
-- **By cohort:** the supervised model was ahead in four of five cohorts, but no single cohort's difference was significant.
-- **Sensitivity to the baseline's rank:** with the two-step rank matched to the supervised model ($K=7$, unpenalized Cox), the difference was 0.011 ($-0.013$ to 0.033) and not significant. An earlier comparison with $K=20$ and an unpenalized Cox stage gave 0.042.
-
-Because $\alpha_F=0$, the factorization in both arms is unsupervised. The difference therefore reflects the priors, the shrunk and tempered survival stage, and the rank, not supervised discovery of programs.
+The single-modality model, trained on TCGA-PAAD and CPTAC with a starting rank of 7, had a mean external concordance of 0.627 across the five held-out cohorts (@tbl-external). The two-step pipeline with an independently chosen rank and a LASSO Cox stage reached 0.601. The pooled difference was $\Delta C=0.026$ (95% CI 0.0002 to 0.050). The supervised model was ahead in four of five cohorts, but no single cohort's difference was significant. With the two-step rank matched to the supervised model, the difference fell to 0.011 ($-0.013$ to 0.033) and was not significant; the earlier comparison with an unpenalized $K=20$ stage gave 0.042. Because $\alpha_F=0$, the factorization is unsupervised in both arms. The difference therefore reflects the priors, the shrunk and tempered survival stage and the rank, not supervised discovery of programs, and in practice the two approaches perform similarly.
 
 | Validation cohort | $n$ | Supervised model | Two-step ($K=40$, LASSO) |
 |---|---|---|---|
@@ -207,128 +184,93 @@ Because $\alpha_F=0$, the factorization in both arms is unsupervised. The differ
 | Puleo array | 288 | 0.645 (0.599, 0.688) | 0.618 |
 | **Mean** |  | **0.627** | **0.601** |
 
-: External concordance of the single-modality supervised model (95% bootstrap interval) and of the independently tuned two-step baseline. {#tbl-external}
+: External concordance of the single-modality model (95% bootstrap interval) and of the independently tuned two-step baseline. {#tbl-external}
 
-Survival by tertile of the frozen model's risk score is shown in @fig-km-risk. In every held-out cohort the low-risk third had the best survival. The log-rank test was significant in three cohorts: Puleo ($p<0.0001$), Dijk ($p=0.0005$) and PACA-AU RNA-seq ($p=0.021$). It was not significant in PACA-AU array ($p=0.075$) or Moffitt ($p=0.17$), which also had the lowest concordance.
+In every held-out cohort the patients in the lowest third of predicted risk had the best survival (@fig-km-risk). The log-rank test was significant in Puleo ($p<0.0001$), Dijk ($p=0.0005$) and PACA-AU RNA-seq ($p=0.021$). It was not significant in PACA-AU array ($p=0.075$) or Moffitt ($p=0.17$); Moffitt also had the lowest concordance.
 
 ![Overall survival by tertile of the frozen model's risk score within each held-out cohort. No validation outcome was used to fit, orient, or threshold the score.](figures/single_km_risk_external.png){#fig-km-risk width=95%}
 
 ## An over-specified fit retains two survival-associated programs and two expression programs
 
-From $K_{\mathrm{init}}=7$, four programs were retained: two survival-active and two that explain expression variance only (@fig-programs). The other three were shrunk to zero.
+From a starting rank of 7, four programs were retained and three shrunk to zero (@fig-programs). Program 7, associated with shorter survival, is enriched for *MET*, *ITGA3* and glycolytic genes, consistent with the basal-like program. Program 3, associated with longer survival, is enriched for epithelial (classical) genes. The other two retained programs explain expression without a survival association: one is stromal (collagens, *FAP*, *SPARC*, *CTHRC1*), and one combines immune genes (*IKZF1*, *IL10RA*) with quiescent-stroma genes (*COL14A1*, *TNXB*). Adverse or protective direction is read from each program's marginal survival association, because joint coefficients can change sign when correlated programs are fitted together.
 
-- **Program 7** is associated with worse survival. It is enriched for MET, ITGA3 and glycolytic genes, consistent with the basal-like program.
-- **Program 3** is associated with better survival. It is enriched for epithelial (classical) genes.
-- **Expression-only programs.** One is stromal (collagens, *FAP*, *SPARC*, *CTHRC1*). The other combines immune genes (*IKZF1*, *IL10RA*, *HCLS1*) with quiescent-stroma genes (*SPARCL1*, *FBLN5*). Each explains expression variance without a survival association.
-- **Direction.** The adverse or protective direction is read from the marginal survival association of each program's projection, because the joint coefficients' signs can reverse when correlated programs are fit together.
+![Gene weights of the four programs retained from a starting rank of 7 (top 12 genes per program, scaled to each program's largest weight).](figures/single_programs_heatmap.png){#fig-programs width=62%}
 
-![Gene weights of the four programs retained from $K_{\mathrm{init}}=7$ (top 20 genes per program). Programs 3 and 7 are survival-active; the stromal and immune programs explain expression variance only.](figures/single_programs_heatmap.png){#fig-programs width=70%}
-
-Both survival-active programs keep their direction in data the model never saw (@fig-km-programs). Across the 616 patients in the five held-out cohorts:
-
-- patients in the top third of Program 7 activity had the shortest survival (cohort-stratified log-rank $p<0.0001$);
-- patients in the top third of Program 3 activity had the longest ($p=0.004$).
+Both survival-associated programs kept their direction in data the model never saw (@fig-km-programs). Across the 616 patients of the five held-out cohorts, patients in the top third of Program 7 activity had the shortest survival (cohort-stratified log-rank $p<0.0001$), and those in the top third of Program 3 activity the longest ($p=0.004$).
 
 ![Overall survival by within-cohort tertile of Program 3 and Program 7 projection scores, pooled over the five held-out cohorts.](figures/single_km_programs_external.png){#fig-km-programs width=95%}
 
 ## Under-specifying the starting rank merges true programs; over-specifying does not
 
-In simulation, starting with fewer factors than truth ($K_{\mathrm{init}}=2$–4) produced estimated factors that each correlated strongly with two true programs: 7 of 27 estimated factors were merges. Starting at or above truth ($K_{\mathrm{init}}=6$, 12, 20) produced no merges (0 of 114).
+In simulation, starting below the true rank (2–4) produced estimated programs that each correlated strongly with two true programs: 7 of 27 estimated programs were such merges. Starting at or above the true rank (6, 12 or 20) produced no merges (0 of 114). The concordance gain from joint fitting also depended on the starting rank (@fig-delta-c). With shared and cohort-specific programs, the supervised model exceeded the two-step model at every starting rank of 3 or more, by up to 0.16 at a starting rank of 4 and by about 0.10 from 6 upward. With all programs shared it led only from a starting rank of 6, and with no shared programs the two models were within about 0.01. These results support over-specifying the starting rank and then shrinking.
 
-The concordance gain from joint fitting also depends on $K_{\mathrm{init}}$ (@fig-delta-c). In the scenario where shared and cohort-specific programs coexist (hybrid), the joint model's held-out concordance exceeded the two-step model's at every $K_{\mathrm{init}}\ge3$. The gain was largest at $K_{\mathrm{init}}=4$ (0.16) and stable at about 0.10 from $K_{\mathrm{init}}=6$ upward. In the scenario where all programs are shared, the joint model was ahead only from $K_{\mathrm{init}}=6$ upward, and below that it was slightly behind. With no shared programs, the two models were within about 0.01 of each other. Together these results support over-specifying $K_{\mathrm{init}}$ and then shrinking.
-
-![Difference in held-out concordance between the joint model and unsupervised EBMF followed by Cox regression, by simulation scenario and $K_{\mathrm{init}}$ (mean ± 1 SE over 15 seeds; both models fit to the same simulated data).](figures/single_delta_c_kinit.png){#fig-delta-c width=85%}
+![Difference in held-out concordance between the supervised model and a two-step pipeline (unpenalized Cox stage) in simulation, by scenario and starting rank (mean ± 1 SE over 15 seeds; both models fitted to the same data).](figures/single_delta_c_kinit.png){#fig-delta-c width=90%}
 
 ## The protective program's survival association is concentrated in one training cohort
 
-With cohort-specific survival coefficients, the adverse program's association was present in both training cohorts, while the protective program's association came mainly from CPTAC (@fig-percohort). In a ground-truth simulation, the model attributed the effect to the correct cohort in 15 of 20 seed–cohort cases at $K_{\mathrm{init}}=6$ and 17 of 20 at $K_{\mathrm{init}}=12$. With training cohorts of 144 and 129 patients and no interval on the per-cohort coefficients, the apparent CPTAC-specific effect is interpreted cautiously. Cohort-specific coefficients did not change external concordance.
+With cohort-specific survival coefficients, the adverse program's association was present in both training cohorts, while the protective program's came mainly from CPTAC (@fig-percohort). In a simulation with a known truth, the model attributed the effect to the correct cohort in 15 of 20 seed–cohort cases at a starting rank of 6, and in 17 of 20 at 12. With training cohorts of 144 and 129 patients and no interval on the per-cohort coefficients, we interpret the CPTAC-specific effect cautiously. Cohort-specific coefficients did not change external concordance.
 
-![Cohort-specific survival coefficients for the seven programs of the $K_{\mathrm{init}}=7$ fit. Program 7 has a similar coefficient in both training cohorts; Program 3's coefficient is nonzero only in CPTAC.](figures/single_percohort_beta.png){#fig-percohort width=85%}
-
-\FloatBarrier
-
-## With evidence-based pruning, the multimodal model's rank no longer depends on the starting rank
-
-Without the parsimony framework, the number of factors retained by the multimodal model equalled $K_{\mathrm{init}}$. Two causes were identified:
-
-1. Unregularized per-feature precisions let a spare factor fit a single feature exactly, which made the likelihood unbounded.
-2. Without an intercept, spare non-negative factors absorbed feature means.
-
-With the framework, the final number of factors no longer depends on the starting rank (@fig-mm-pruning; 486 fits over three scenarios, two noise levels, starting ranks 3–15 and three seeds).
-
-- **Moderate noise.** It stayed at 3.0–3.7 for every starting rank of 4 or more when each true program explained about 10% of variance. The pruned fits recovered essentially all true programs (2.96–3.00 of 3) and converged in every run, against 7–37% for the original fit. Their held-out concordance was slightly higher (0.794–0.798 against 0.781–0.786), with fewer false survival-active factors.
-- **High noise.** When each true program explained under 1% of variance, the pruned fit returned fewer than three factors, and its held-out concordance was far higher (0.79–0.81 against about 0.70).
-- **Low-variance prognostic program.** At moderate noise it was not recovered by either fit.
-
-![Final number of factors against the starting rank in simulation (true $K=3$, dashed; $y=x$, dotted), for the original multimodal fit and the fit with evidence-based pruning.](figures/multimodal_pruning_K_final.png){#fig-mm-pruning width=95%}
+![Cohort-specific survival coefficients of the seven programs (starting rank 7). Positive values indicate higher hazard.](figures/single_percohort_beta.png){#fig-percohort width=85%}
 
 \FloatBarrier
 
-## On matched expression and methylation, the multimodal model reaches the concordance of the established model; methylation adds little so far
+## With the parsimony framework, the multimodal model's rank no longer depends on the starting rank
 
-Models were trained on TCGA (144 patients) and evaluated on 50 ICGC primary PDAC donors (@tbl-mm-external). All 50 donors are also in the PACA-AU RNA-seq validation cohort used above.
+Without the parsimony framework the multimodal model kept every starting program. With it, the final number of programs no longer depended on the starting rank (@fig-mm-pruning). This was assessed in 486 fits: three scenarios, two noise levels, starting ranks 3–15 and three seeds.
 
-- **The framework.** With both modalities the multimodal model reached 0.685 (95% CI 0.579 to 0.779), and 0.676 with expression alone.
-- **The established single-modality model.** On the same 50 donors it scored 0.685. That model was trained on TCGA and CPTAC with per-platform standardization. The multimodal model therefore reaches parity from a single training cohort.
-- **The original multimodal fit,** without the intercept or pruning, reached 0.453.
-- **Methylation** added about 0.01, within the uncertainty.
-- **Programs.**
-  - The one survival-active program at $K_{\mathrm{init}}=7$ is the basal-like vs classical axis, which corresponds to the adverse single-modality program ($\lvert r\rvert=0.68$ on shared genes).
-  - The program corresponding to the protective single-modality program was retained but was not survival-active.
-  - Most of the fitted methylation signal went to a methylation-only program and an immune program, neither of them prognostic.
+- **Moderate noise.** When each true program explained about 10% of the variance, the final number stayed at 3.0–3.7 for every starting rank of 4 or more. The framework recovered essentially all true programs (2.96–3.00 of 3, against 2.74–2.78 without it). It converged in every run, against 7–37% without it. Held-out concordance was slightly higher (0.794–0.798 against 0.781–0.786), and there were fewer false survival-active programs (0.59–0.67 against 0.70–0.82 per fit).
+- **High noise.** When each true program explained under 1% of the variance, the framework returned fewer than three programs, and its held-out concordance was far higher: 0.79–0.81, against about 0.70.
+- **Low-variance prognostic program.** At moderate noise neither version recovered it.
+
+![Number of programs kept against the starting rank in simulation (true rank 3, dashed; $y=x$, dotted), with and without the parsimony framework; mean and range over three seeds.](figures/multimodal_pruning_K_final.png){#fig-mm-pruning width=100%}
+
+\FloatBarrier
+
+## On matched expression and methylation, the multimodal model reaches the established model's concordance; methylation adds little so far
+
+Models were trained on TCGA (144 patients) and evaluated on 50 ICGC primary PDAC donors, all of whom are also in the PACA-AU RNA-seq validation cohort used above (@tbl-mm-external). At the pre-specified starting rank of 7, which matches the single-modality model, the multimodal model reached a concordance of 0.685 (95% CI 0.579 to 0.779). The established single-modality model, trained on TCGA and CPTAC, also scored 0.685 on the same donors, so the multimodal model reached parity from a single training cohort. Fitted to expression alone, the same framework reached 0.676, so methylation added about 0.01, within the uncertainty. Without the parsimony framework, the multimodal model reached 0.453.
 
 | Model | Data | ICGC primary PDAC ($n=50$) |
 |---|---|---|
 | Multimodal, with the framework | expression + methylation | 0.685 (0.579, 0.779) |
 | Multimodal, with the framework | expression only | 0.676 (0.569, 0.770) |
 | Established single-modality model (TCGA + CPTAC) | expression | 0.685 (0.576, 0.785) |
-| Original multimodal fit | expression + methylation | 0.453 (0.319, 0.599) |
+| Multimodal, without the framework | expression + methylation | 0.453 (0.319, 0.599) |
 | Two-step, factorization then Cox | expression only | 0.525 (0.399, 0.651) |
 
-: External concordance (95% bootstrap interval) on ICGC primary PDAC; multimodal and two-step models trained on TCGA with $K_{\mathrm{init}}=7$. {#tbl-mm-external}
+: External concordance (95% bootstrap interval) on ICGC primary PDAC. Multimodal and two-step models were trained on TCGA with a starting rank of 7. {#tbl-mm-external}
 
-These results come with caveats:
+The only survival-active program at this rank was the basal-like versus classical axis. It was prognostic in ICGC (hazard ratio 1.99 per standard deviation of its score, $p=0.0003$) and corresponds to the adverse single-modality program ($\lvert r\rvert=0.68$ on shared genes). The program corresponding to the protective single-modality program was retained but was not survival-active. Most of the fitted methylation signal went to a methylation-only program (59%) and an immune program (21%), neither of them prognostic. This suggests that the 10,000 most variable CpGs mainly reflect cell composition.
 
-- **Wide intervals.** With 30 deaths, the intervals are wide.
-- **No pruning on real data.** Pruning removed no factors at any starting rank tried; the evidence supports every molecular factor.
-- **Starting rank matters.** Concordance was 0.557, 0.574, 0.500, 0.685, 0.650 and 0.547 at starting ranks 3, 4, 5, 7, 10 and 15.
-  - At rank 15, eleven of fifteen factors were survival-active.
-  - At rank 5 no factor was survival-active, so the risk score was constant.
-  - $K_{\mathrm{init}}=7$ was used to match the single-modality model.
-  - Because no factors were pruned, the starting rank fixes the final rank on real data.
-- **Convergence.** The fits at starting ranks 7 and 10 reached the 500-iteration cap before meeting the convergence criterion.
+The real-data results depend strongly on the starting rank. Pruning removed no programs at any starting rank, so the starting rank also set the final number. Concordance across starting ranks 3–15 had a median of 0.57 (range 0.50–0.685). At a starting rank of 5 no program was survival-active, so the risk score was constant. At 15, eleven of fifteen programs were survival-active and concordance fell to 0.547. Most real-data fits reached the 500-iteration limit before meeting the convergence criterion, although their risk scores had stabilized.
 
 # Discussion
 
 ## Implications of findings
 
-- **Single modality.** The supervised model's external concordance exceeded that of an independently tuned two-step pipeline, by a small margin significant only when pooled. It produced interpretable adverse and protective programs consistent with established PDAC subtypes, and both kept their direction in held-out cohorts.
-- **Choosing $K$.** Starting from an over-specified rank and shrinking avoided merged programs. The final classification of programs comes from that one fit.
-- **Multimodal model.** Parsimony depended on modelling choices that matter less with one modality: a baseline intercept, signed loadings and evidence-based removal of factors. With these, the multimodal model matched the established model's external concordance, but methylation added little.
+For a single modality, the supervised model gave external concordance slightly above that of an independently tuned two-step pipeline. The gain was significant only when pooled across cohorts and vanished when the pipeline was given the same rank. Its value lies less in prediction than in its outputs. It produced interpretable adverse and protective programs consistent with established PDAC subtypes, both kept their direction in held-out cohorts, and it reports posterior uncertainty for their survival associations. Starting from an over-specified rank and shrinking avoided merged programs. For multiple modalities, parsimony depended on modelling choices that matter less with one modality: a baseline intercept, signed loadings and evidence-based removal of programs. With these the multimodal model behaved as intended in simulation and matched the established model on real data, but methylation did not yet add discrimination.
 
 ## Limitations
 
-- **Supervision of the loadings.** In the single-modality model, survival informs the coefficients but not the loadings ($\alpha_F=0$). The discovery advantage described in Section 1.2 has therefore not been demonstrated. The programs found are high-variance programs that are also prognostic.
-- **Partial likelihood in the evidence bound.** The bound used for pruning plugs in the posterior-mean predictor rather than taking the expectation of the partial likelihood. It can therefore overstate the survival contribution of a factor.
-- **Survival has little influence on which factors are kept.** With 144 patients and 13,000 molecular features, reconstruction terms outnumber partial-likelihood terms by more than 10,000 to one. In the TCGA fit, survival changed the evidence for any factor by less than 3 nats, against $10^4$–$10^5$ for reconstruction. Factor selection is therefore driven by molecular variation. This is consistent with, but has not been shown to cause, the failure to recover low-variance prognostic programs. It is the multimodal form of the single-modality $\alpha_F$ question.
-- **Matched multi-omic cohorts are small.** The validation set has 50–67 donors, and ICGC includes mixed histologies.
-- **Unsettled preprocessing choices.** Feature screening for two modalities, and the methylation scale (beta-values versus a variance-stabilizing transformation), are not yet settled.
+The main limitation is that survival does not yet shape the programs. In the single-modality model the loading weight $\alpha_F$ is zero, so the discovery advantage motivated in Section 1.2 has not been shown, and the programs found are high-variance programs that are also prognostic. In the multimodal model, reconstruction terms outnumber partial-likelihood terms by more than 10,000 to one. Survival changed the evidence for any TCGA program by less than 3 nats, against $10^4$–$10^5$ for reconstruction, so the choice of programs is driven by molecular variation. This is consistent with, though not shown to cause, the failure to recover low-variance prognostic programs and the absence of pruning on real data.
+
+There are further limitations. The evidence bound used for pruning evaluates the partial likelihood at the posterior-mean predictor rather than taking its expectation. The matched multi-omic cohorts are small (50–67 validation donors) and ICGC includes mixed histologies. Feature screening for two modalities and the methylation scale (beta-values versus a variance-stabilizing transform) are not settled. Finally, the single-modality posterior intervals are tempered by $\alpha$ and conditional on the projection.
 
 ## Future directions and continuing work
 
-- **This project is in progress.** The multimodal model's replicated simulation study and its first real-data application are being completed.
-- **Supervision of the loadings.** Candidate ways to let survival inform them without a tuning weight:
-  - factor rescaling (already used in the multimodal model);
-  - warm starts;
-  - gradually increasing the survival weight during fitting;
-  - reordering the updates.
+This project is in progress. Aim 2 will test whether survival can inform the single-modality loadings without a tuning weight. The planned test is recovery of a planted low-variance prognostic program in simulation. Aim 3 will introduce modality and survival weights, so that the multimodal model chooses its number of programs on real data, and will test gene-linked CpG screening, to determine what methylation contributes. Further extensions include a factor-level shrinkage prior on the number of programs [@BhattacharyaDunson2011; @GriffithsGhahramani2011], joint modelling of several cohorts and modalities, the full 305,352-CpG fit on the computing cluster, a direct comparison with DeSurv, and preparation of the manuscript for journal submission.
 
-  The planned test is recovery of a low-variance prognostic program in simulation.
-- **Further extensions:**
-  - a factor-level shrinkage prior on $K$ [@BhattacharyaDunson2011; @GriffithsGhahramani2011];
-  - joint modelling of multiple cohorts and modalities together;
-  - the full 305,352-CpG fit on the computing cluster;
-  - preparation of the manuscript for journal submission.
+## Timeline
+
+| Period | Work |
+|---|---|
+| October–November 2026 | Prelim abstract (Nov 2) and proposal (Nov 16); Aim 3 modality and survival weights; gene-linked CpG screening |
+| December 2026 | Prelim oral exam (Dec 7) |
+| January–March 2027 | Aim 2 (survival in the loadings); full multimodal simulation study; DeSurv comparison |
+| April–May 2027 | Full-CpG multimodal fit on the cluster; manuscript draft |
+| Summer 2027 | Dissertation completion and defense [date to confirm] |
+
+: Timeline for the remaining work. {#tbl-timeline}
 
 # References {.unnumbered}
 

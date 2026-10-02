@@ -177,3 +177,13 @@ Full CAVI derivations (the single-modality derivation PDFs and `derivations/mult
    - S11: convergence statement; done.
 6. **Labels.** Replace internal labels ("New framework", "YFB" undefined, "the frozen model") with descriptive names. Define EBMF at first use.
 7. **After the full sweep and remaining starting ranks finish:** update §3.5–3.6 and remove the [Preliminary] and [PENDING] markers.
+- 2026-10-02 (late): The structural items from the review are done.
+  - Added: summary paragraph; Specific aims (Aim 1 complete; Aims 2–3 with proposed success criteria); timeline; simulation design table; methods paragraphs on prediction in new cohorts, comparators, and initialization/convergence.
+  - Methods, Results and Discussion rewritten as prose.
+  - Figures redrawn with descriptive labels (`paper/prelim/make_figures.R`): heatmap columns named; scenario names; sign convention on the per-cohort β figure; no embedded titles.
+  - Tables are single-spaced (longtable fix). The draft is now 24 pp.
+  - **Still open:**
+    - Add the missing citations, which are marked with HTML comments in the source. Drafted, verified entries are in `paper/prelim/notes/missing-references.bib`. Adding them requires editing the bios-dissertation master bib, which needs the user's approval.
+    - Confirm the proposed thresholds in the success criteria.
+    - Confirm the defense date.
+    - Confirm the author list.
