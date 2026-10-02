@@ -326,6 +326,32 @@ Work may move between Claude Code and Codex when usage limits are reached. Both 
   - Methylation check: asin halves the share of strongly skewed CpGs, but neither scale is Gaussian.
   - Tests: 515/515 plus real-data 7/7.
   - Next: WS3.1 (first β-scale real-data fit) and WS2.1 (F priors).
+- 2026-10-01 (evening):
+  - WS2.1 done: point-Laplace and Normal F priors via ebnm (`264a7bf`).
+  - WS2.2 done: signed/centered input for signed-prior modalities (`7411469`).
+  - F-sweep invariants precomputed, with identical results (`a738fd3`).
+  - WS4.1 done: Z_F defined in the qBeta derivation, PDF rebuilt (`746127f`).
+  - WS4.2 write-up done: candidate solutions and test design are in the 10/2 chapter §5.
+  - The 10/2 chapter draft is registered in `_quarto.yml`; its results sections are placeholders.
+  - Real-data fits running in background (`results/multimodal_real/run_multimodal_real_fit.R`), about 14 s per outer sweep at K = 7:
+    - point-exponential at K = 5, 7, 10;
+    - point-Laplace at K = 7, raw input;
+    - point-Laplace at K = 7, centered asin.
+  - Tests: 522/522.
+  - Next:
+    - Fill chapter §4 from `outputs/real_fit_cindex_*.csv` and render.
+    - WS2.3 K pruning (design below; needs the user's review before implementation).
+
+### WS2.3 design note (for review before implementing)
+Remove a factor flashier-style, by checking whether the ELBO prefers the fit without it.
+- **ELBO.** Σ_m E_q log N(Y_m | L F_mᵀ, τ_m) − KL(q_L ‖ g_L) − Σ_m KL(q_{F_m} ‖ g_{F_m}) + survival term.
+- **KL from quantities already computed.** For each EBNM coordinate with pseudo-observation (x, s²):
+  - KL = E_q log N(x; θ, s²) − log p̂(x), where p̂ is the marginal likelihood under the fitted prior;
+  - E_q log N(x; θ, s²) = −½ log 2πs² − (x² − 2x Eθ + Eθ²) / (2s²).
+  - The point-exponential and point-Laplace posteriors already compute log p̂(x) as `log_total`; the change is to return it.
+- **Survival term.** Choose between the Breslow partial log-likelihood at the plug-in η and the Cox working-model surrogate. This is a decision point.
+- **Removal rule.** After convergence, drop factor k if ELBO(without k) ≥ ELBO(with k). Refit and repeat. Report the number of factors removed.
+- **Verification.** Replicated K_init = 5…15 panel. Target: K_eff ≈ true K (3) for every K_init, with the survival-active programs kept.
 
 ## Verification (overall)
 - `Rscript tests/run_tests.R` passes after any change to the model code, with the new tests added to the count.
