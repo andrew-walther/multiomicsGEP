@@ -30,6 +30,20 @@ multimodal_yfb:
   prognostic_z_threshold: 1.96
 
 # ------------------------------------------------------------------------------
+# Matched TCGA/ICGC expression + methylation data (code/load_multiomics_data.R)
+# ------------------------------------------------------------------------------
+multiomics_data:
+  root: data/multiomicsGEP_code   # local, git-ignored copy of the TCGA/ICGC multi-omics files
+  pdac_root: data/PDAC_data       # local PDAC_data copy; TCGA survival comes from here
+  # Screening is fit on TCGA (training) only, within features present in both
+  # cohorts. Genes: DeSurv combined mean+variance rank (preprocessing$top_n_genes_desurv).
+  # CpGs: top-variance beta values. Decided 2026-10-01; the screening rule for the
+  # two-modality model is an open question (see DECISIONS.md).
+  n_cpgs: 10000
+  icgc_primary_histology: "Pancreatic Ductal Adenocarcinoma"
+  icgc_primary_sample_type: "Primary tumour"
+
+# ------------------------------------------------------------------------------
 # K selection / auto-prune thresholds
 # ------------------------------------------------------------------------------
 k_selection:

@@ -5,6 +5,67 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-01 — Matched TCGA/ICGC expression + methylation cohorts for the multimodal model
+
+**Decision.** The multimodal model's first real-data application trains on
+TCGA-PAAD and validates on ICGC (PACA-AU). Both cohorts have matched
+expression and methylation. `code/load_multiomics_data.R`
+(`build_multiomics_cohorts()`) builds both from the local `data/` copies:
+
+- **Expression.** TCGA uses log2(TMM-CPM + 1) as provided. ICGC is
+  unlogged in the source file, so log2(x + 1) is applied.
+- **Methylation.** Raw β-values in [0, 1], restricted to the 305,352 CpGs
+  present in both cohorts' sex-chromosome-filtered probe sets, matched by
+  probe name.
+- **Missing methylation values.** Filled by KNN imputation
+  (`impute::impute.knn`, k = 10) within each cohort, following Yusha's code.
+  This affected 0.07% of TCGA values.
+- **Survival.**
+  - TCGA survival comes from `TCGA_PAAD.survival_data.rds`; 6 of 150
+    patients were dropped for missing or non-positive time.
+  - ICGC survival comes from `info.expr`, collapsed to one row per donor; 12
+    of 79 donors were dropped.
+  - ICGC survival agrees exactly with `PACA_AU_seq.survival_data.rds` for
+    every RNA sample.
+- **Validation sets.**
+  - Main: ICGC donors whose samples are all primary tumours with PDAC
+    histology (n = 50, 30 events).
+  - Sensitivity: all ICGC donors with usable survival (n = 67, 40 events),
+    which adds IPMN with invasion, adenosquamous, acinar and signet-ring
+    tumours.
+  - Training: TCGA, n = 144, 75 events.
+- **Screening.** Done on TCGA only, within features present in both cohorts:
+  the top 3,000 genes by the DeSurv combined mean + variance rank, and the
+  top 10,000 CpGs by β variance.
+
+**Reason.** These are the matched-sample data Yusha provided. Restricting
+validation to primary PDAC matches the population of the training cohort.
+Screening on the training cohort only keeps the external C-index free of
+validation-set information. The β scale satisfies the current
+nonnegative point-exponential model, so a real-data fit can run before the
+signed F priors exist.
+
+**Methylation scale.** Across the 10k screened CpGs,
+asin(2β − 1) halves the share of CpGs with |skewness| > 1 (13% to 6.6%).
+Neither scale is Gaussian: median excess kurtosis is about −0.7 on both, and
+Shapiro–Wilk rejects normality for 92% and 82% of CpGs respectively, which
+fits bimodal methylation. The β-scale fit comes first, and the two scales are
+compared once the point-Laplace and Normal F priors are implemented.
+Output: `results/multimodal_real/outputs/methylation_distribution_*`.
+
+**Open question.** DeSurv's gene screening was designed for one modality.
+How to select features for the two-modality model is not settled: for
+example, the number of CpGs relative to genes, and variance-based versus
+survival-aware screening. This will be raised with the advisors (10/2
+progress-book chapter).
+
+**Affected files.** `code/load_multiomics_data.R`, `config/globals.yml`
+(`multiomics_data`), `tests/test_load_multiomics_data.R`,
+`tests/test_real_multiomics_loading.R`,
+`results/multimodal_real/check_methylation_distribution.R`.
+
+---
+
 ## 2026-09-18 — Multimodal YFB convergence and rank-selection protocol
 
 **Decision.** The isolated matched expression--methylation YFB fitter uses

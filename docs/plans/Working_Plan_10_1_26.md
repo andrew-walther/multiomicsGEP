@@ -215,6 +215,13 @@ This chapter is the end-to-end progress record for both advisors. Planned sectio
 Also: update `DECISIONS.md` for each decision made, `ROADMAP.md` when milestones are reached, and `PROJECT_STATUS.qmd`. Prelim deadlines are the abstract on 11/2 and the proposal on 11/16. The chapter's method and results sections should be reusable as drafts for the prelim.
 
 ## Decision points (to settle together before or while executing)
+**Settled 2026-10-01:**
+- (1) The main ICGC validation set is primary-tumour PDAC histology only. A sensitivity analysis uses all donors with usable survival.
+- (2) The first fit uses methylation β-values (0–1). asin(2β−1) is added once the signed F priors exist, and the two are compared.
+- (3) Screening for the first fits, decided on TCGA only: the DeSurv gene selection for expression and the 10k most variable CpGs. **Raise this in the 10/2 chapter as a discussion point.** DeSurv's screening was designed for one modality, so feature selection for the two-modality model is an open question.
+- (4) The Bioconductor `impute` package is added for KNN imputation of methylation.
+- (5) The new F priors (point-Laplace, Normal) are implemented with `ebnm`.
+
 1. Should ICGC validation be restricted to primary PDAC (n ≈ 50 with survival) or use all usable donors (n ≈ 67)?
 2. Methylation scale for the first fit: β-values, which the current nonnegative code supports, or arcsine (asin(2β−1)), which needs WS2.1 first.
 3. Feature screening for genes and CpGs: method and size.
@@ -313,6 +320,12 @@ Work may move between Claude Code and Codex when usage limits are reached. Both 
 ## Progress log
 - 2026-10-01: Plan written. Lab-meeting update given.
 - 2026-10-01: Step 0 done (results above). WS0 was already done in `6a5f0d7`/`79795ef`. Tests 509/509. Plan files committed. Next: WS2.1 (F prior options) and WS1 (data loader), working on both in parallel.
+- 2026-10-01: Decision points 1–5 settled (see Decision points). WS1 done:
+  - `code/load_multiomics_data.R` builds TCGA (n = 144, 75 events), ICGC primary PDAC (n = 50, 30 events) and ICGC all (n = 67, 40 events) on 3,000 genes + 10,000 CpGs. Output cached at `data/processed_multiomics_tcga_icgc.rds`.
+  - ICGC survival agrees exactly with PACA_AU_seq. The earlier "69 of 80" came from NA == NA comparisons.
+  - Methylation check: asin halves the share of strongly skewed CpGs, but neither scale is Gaussian.
+  - Tests: 515/515 plus real-data 7/7.
+  - Next: WS3.1 (first β-scale real-data fit) and WS2.1 (F priors).
 
 ## Verification (overall)
 - `Rscript tests/run_tests.R` passes after any change to the model code, with the new tests added to the count.
