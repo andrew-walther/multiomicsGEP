@@ -197,7 +197,7 @@ def demote_headings(text):
     return "\n".join(out)
 
 
-REFS_BLOCK_STANDALONE = "# References\n\n::: {#refs}\n:::\n\n```{=latex}\n\\clearpage\n```\n"
+REFS_BLOCK_STANDALONE = "# References {.unnumbered}\n\n::: {#refs}\n:::\n"
 
 APPENDIX_BLOCK = """```{=latex}
 % Appendix: \\appendix resets the chapter counter and switches the TOC prefix
@@ -247,10 +247,11 @@ def transform(chapter_text, header_text, source_label):
     body = body.replace(REFS_BLOCK_STANDALONE, "")
 
     # T3: split at the single '# Appendix' heading.
+    #     The appendix is optional: the chapter currently has none.
     parts = re.split(r"^# Appendix\s*$", body, flags=re.M)
-    if len(parts) != 2:
-        die("expected exactly one '# Appendix' heading")
-    main, appendix = parts
+    if len(parts) > 2:
+        die("expected at most one '# Appendix' heading")
+    main, appendix = parts if len(parts) == 2 else (body, None)
 
     # T4: the chapter title becomes the level-1 (\chapter) heading, so every
     #     body heading moves down one level: '#' -> '##' (3.1), '##' -> '###'.
@@ -260,9 +261,10 @@ def transform(chapter_text, header_text, source_label):
     #     '## A1. Title' -> '## Title' (the class numbers it B.1). The
     #     \applabel anchors are redefined as plain \label in the header, so
     #     'Appendix \ref{...}' prints B.1 here and A1 in the standalone.
-    appendix, n_app = re.subn(r"^## A\d+\. ", "## ", appendix, flags=re.M)
-    if n_app == 0:
-        die("found no '## A<n>. ' appendix subsection headings")
+    if appendix is not None:
+        appendix, n_app = re.subn(r"^## A\d+\. ", "## ", appendix, flags=re.M)
+        if n_app == 0:
+            die("found no '## A<n>. ' appendix subsection headings")
 
     # T6: assemble. Header template (title substituted), generated-file notice,
     #     preview harness, chapter heading, body, appendix, References.
@@ -271,7 +273,8 @@ def transform(chapter_text, header_text, source_label):
               "\nby tools/sync_to_prelim.sh in multiomicsGEP. Edit the multiomicsGEP chapter and\n"
               "commit; the post-commit hook regenerates and commits this copy.\n-->\n")
     out = (header.rstrip("\n") + "\n" + notice + "\n" + HARNESS + "\n# " + title + "\n" +
-           main.rstrip("\n") + "\n\n" + APPENDIX_BLOCK + appendix.rstrip("\n") + "\n\n" +
+           main.rstrip("\n") + "\n\n" +
+           (APPENDIX_BLOCK + appendix.rstrip("\n") + "\n\n" if appendix is not None else "") +
            REFS_BLOCK_PRELIM)
     return out
 
@@ -281,7 +284,9 @@ def transform(chapter_text, header_text, source_label):
 # ---------------------------------------------------------------------------
 
 def sync_figures(draft_text, src_dir, out_dir):
-    refs = sorted(set(re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", draft_text)))
+    # Both raw-LaTeX \includegraphics and Markdown ![caption](path) images.
+    refs = sorted(set(re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", draft_text)) |
+                  set(re.findall(r"!\[[^\]]*\]\((figures/[^)\s]+)\)", draft_text)))
     for r in refs:
         if not r.startswith("figures/"):
             die("figure path outside figures/: " + r)
