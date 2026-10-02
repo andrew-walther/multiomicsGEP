@@ -224,8 +224,6 @@ With cohort-specific survival coefficients, the adverse program's association wa
 \end{figure}
 ```
 
-\FloatBarrier
-
 ## With the parsimony framework, the multimodal model's rank no longer depends on the starting rank {#sec-res-mm-sim}
 
 Without the parsimony framework the multimodal model kept every starting program. With it, the final number of programs no longer depended on the starting rank (Figure \ref{fig:mm-pruning}). This was assessed in 486 fits: three scenarios, two noise levels, starting ranks 3–15 and three seeds. At moderate noise, where each true program explained about 10% of the variance, the final number stayed between 3.0 and 3.7 for every starting rank of 4 or more. The framework recovered essentially all true programs (2.96–3.00 of 3, against 2.74–2.78 without it) and converged in every run, against 7–37% of runs without it. Its held-out concordance was slightly higher (0.794–0.798 against 0.781–0.786), and it produced fewer false survival-active programs (0.59–0.67 against 0.70–0.82 per fit). At high noise, where each true program explained under 1% of the variance, the framework returned fewer than three programs, but its held-out concordance was much higher (0.79–0.81, against about 0.70). Neither version recovered the low-variance prognostic program at moderate noise.
@@ -238,8 +236,6 @@ Without the parsimony framework the multimodal model kept every starting program
 \end{figure}
 ```
 
-\FloatBarrier
-
 ## On matched expression and methylation, the multimodal model reaches the established model's concordance; methylation adds little so far {#sec-res-mm-real}
 
 Models were trained on TCGA (144 patients) and evaluated on 50 ICGC primary PDAC donors, all of whom are also in the PACA-AU RNA-seq validation cohort used above (Table \ref{tab:mm-external}). At the pre-specified starting rank of 7, which matches the single-modality model, the multimodal model reached a concordance of 0.685 (95% CI 0.579 to 0.779). The established single-modality model, trained on TCGA and CPTAC, also scored 0.685 on the same donors, so the multimodal model reached parity from a single training cohort. Fitted to expression alone, the same framework reached 0.676, so methylation added about 0.01, within the uncertainty. Without the parsimony framework, the multimodal model reached 0.453.
@@ -248,7 +244,7 @@ Models were trained on TCGA (144 patients) and evaluated on 50 ICGC primary PDAC
 \begin{table}[!htb]
 \small\centering
 \caption{External concordance (95\% bootstrap interval) on ICGC primary PDAC ($n=50$). Multimodal and two-step models were trained on TCGA with a starting rank of 7.}\label{tab:mm-external}
-\begin{tabular}{>{\raggedright\arraybackslash}p{6.2cm}>{\raggedright\arraybackslash}p{3.8cm}c}
+\begin{tabular}{>{\raggedright\arraybackslash}p{5.6cm}>{\raggedright\arraybackslash}p{4.6cm}c}
 \toprule
 Model & Data & Concordance \\
 \midrule
