@@ -295,12 +295,20 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #' @param K Over-specified initial factor count.
 #' @param control Named list overriding entries in `multimodal_yfb` config. In
 #'   addition to configured defaults it accepts `damping` and `tau_chunk_size`.
+#'   Factor pruning: `prior_update` ("em" or "ebnm" marginal-likelihood prior
+#'   fits for point-exponential L and F), `prune` (logical: after convergence,
+#'   remove any factor whose removal does not lower the ELBO, then refit), and
+#'   `survival_elbo` ("plugin": Breslow partial log-likelihood at E[eta];
+#'   "corrected": minus (1/2) sum_i w_i Var(eta_i), a second-order
+#'   approximation to E_q[log PL]).
+#' @param init Optional warm-start state (EL, EL2, EF, EF2, EBeta, EBeta2, Tau,
+#'   prior_L, prior_F), e.g. a fit with one factor removed. Used by pruning.
 #' @return A `multimodal_yfb_fit` object with posterior moments and diagnostics.
 #' @examples
 #' # fit_multimodal_yfb(Y, time, event, K = 7)
 #' @family multimodal_yfb
 #' @seealso [predict_multimodal_yfb()]
-fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
+fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL) {
   if (!is.list(control) || (length(control) > 0L && is.null(names(control)))) {
     stop("control must be an empty or named list.")
   }
@@ -311,12 +319,34 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
   } else NULL
   data <- preprocess_multimodal_yfb_training(Y, time, event, nonnegative)
   Y <- data$Y
+  Y_raw <- Y
   n <- nrow(Y$expression)
   if (length(K) != 1L || !is.finite(K) || K < 1L || K != as.integer(K)) {
     stop("K must be a positive integer.")
   }
   settings <- modifyList(multimodal_yfb_default_control(), control)
   settings$damping <- settings$damping %||% 1
+  settings$prior_update <- settings$prior_update %||% "em"
+  settings$prune <- isTRUE(settings$prune)
+  settings$survival_elbo <- settings$survival_elbo %||% "plugin"
+  settings$tau_model <- settings$tau_model %||% "feature"
+  # Intercept: Y_m = 1 mu_m^T + L F_m^T + E_m, with mu_m re-estimated each outer
+  # sweep as colMeans(Y_m - L F_m^T). F then describes deviations from the
+  # baseline, so it should normally have a signed prior. A constant shift of
+  # eta does not change the Cox partial likelihood, so survival is unaffected.
+  settings$intercept <- isTRUE(settings$intercept)
+  mu <- NULL
+  if (settings$intercept) {
+    mu <- lapply(Y_raw, colMeans)
+    Y <- Map(function(x, m) sweep(x, 2, m), Y_raw, mu)
+  }
+  if (!settings$tau_model %in% c("feature", "modality", "feature_eb")) {
+    stop("control$tau_model must be feature, modality or feature_eb.")
+  }
+  if (!settings$prior_update %in% c("em", "ebnm") ||
+      !settings$survival_elbo %in% c("plugin", "corrected")) {
+    stop("control$prior_update must be em or ebnm; control$survival_elbo plugin or corrected.")
+  }
   settings$prior_F <- settings$prior_F %||%
     list(expression = "point_exponential", methylation = "point_exponential")
   if (!is.list(settings$prior_F) || !setequal(names(settings$prior_F), names(Y)) ||
@@ -335,44 +365,60 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
     stop("Multimodal YFB controls must have valid positive scalar values.")
   }
 
-  decomposition <- svd(do.call(cbind, Y), nu = min(n, K), nv = min(n, K))
-  K <- min(K, ncol(decomposition$u))
-  EL <- abs(sweep(decomposition$u[, seq_len(K), drop = FALSE], 2,
-                  decomposition$d[seq_len(K)], "*"))
-  EF <- list()
-  first <- 1L
-  for (modality in names(Y)) {
-    p <- ncol(Y[[modality]])
-    EF[[modality]] <- abs(decomposition$v[first:(first + p - 1L), seq_len(K),
-                                           drop = FALSE])
-    first <- first + p
-  }
-  EL2 <- EL^2 + 1e-6
-  EF2 <- lapply(EF, function(x) x^2 + 1e-6)
-  Tau <- lapply(Y, function(x) rep(1 / max(stats::var(as.vector(x)), 1e-6), ncol(x)))
-  prior_L <- rep(list(list(pi = 0.5, rate = 1, point_mass = FALSE)), K)
-  # Loading prior family per modality (control$prior_F, default from globals):
-  # point_exponential (nonnegative F), point_laplace or normal (signed F)
-  prior_F <- lapply(names(Y), function(modality) {
-    family <- settings$prior_F[[modality]]
-    init <- switch(family,
-      point_exponential = list(family = family, pi = 0.5, rate = 1, point_mass = FALSE),
-      point_laplace = list(family = family, pi = 0.5, rate = 1, point_mass = FALSE),
-      normal = list(family = family, variance = 1, point_mass = FALSE))
-    rep(list(init), K)
-  })
-  names(prior_F) <- names(Y)
+  if (!is.null(init)) {
+    # Warm start (e.g. a pruned fit): take every moment and prior from init
+    K <- ncol(init$EL)
+    EL <- init$EL; EL2 <- init$EL2; EF <- init$EF; EF2 <- init$EF2
+    EBeta <- init$EBeta; EBeta2 <- init$EBeta2; Tau <- init$Tau
+    prior_L <- init$prior_L; prior_F <- init$prior_F
+  } else {
+    decomposition <- svd(do.call(cbind, Y), nu = min(n, K), nv = min(n, K))
+    K <- min(K, ncol(decomposition$u))
+    EL <- abs(sweep(decomposition$u[, seq_len(K), drop = FALSE], 2,
+                    decomposition$d[seq_len(K)], "*"))
+    EF <- list()
+    first <- 1L
+    for (modality in names(Y)) {
+      p <- ncol(Y[[modality]])
+      EF[[modality]] <- abs(decomposition$v[first:(first + p - 1L), seq_len(K),
+                                             drop = FALSE])
+      first <- first + p
+    }
+    EL2 <- EL^2 + 1e-6
+    EF2 <- lapply(EF, function(x) x^2 + 1e-6)
+    Tau <- lapply(Y, function(x) rep(1 / max(stats::var(as.vector(x)), 1e-6), ncol(x)))
+    prior_L <- rep(list(list(pi = 0.5, rate = 1, point_mass = FALSE)), K)
+    # Loading prior family per modality (control$prior_F, default from globals):
+    # point_exponential (nonnegative F), point_laplace or normal (signed F)
+    prior_F <- lapply(names(Y), function(modality) {
+      family <- settings$prior_F[[modality]]
+      init <- switch(family,
+        point_exponential = list(family = family, pi = 0.5, rate = 1, point_mass = FALSE),
+        point_laplace = list(family = family, pi = 0.5, rate = 1, point_mass = FALSE),
+        normal = list(family = family, variance = 1, point_mass = FALSE))
+      rep(list(init), K)
+    })
+    names(prior_F) <- names(Y)
 
-  projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
-  beta_warm_start <- multimodal_yfb_cox_warm_start(
-    projection$EZ, data$time, data$event
-  )
-  EBeta <- beta_warm_start$mean
-  EBeta2 <- pmax(beta_warm_start$second, EBeta^2)
+    projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
+    beta_warm_start <- multimodal_yfb_cox_warm_start(
+      projection$EZ, data$time, data$event
+    )
+    EBeta <- beta_warm_start$mean
+    EBeta2 <- pmax(beta_warm_start$second, EBeta^2)
+  }
+  # Per-factor KL(q || g) terms of the ELBO, refreshed at each factor update
+  kl_L <- kl_beta <- numeric(K)
+  kl_F <- lapply(Y, function(x) numeric(K))
 
   history <- vector("list", as.integer(settings$max_outer))
   converged <- FALSE
   for (outer in seq_len(as.integer(settings$max_outer))) {
+    if (settings$intercept) {
+      mu <- lapply(names(Y_raw), function(m) colMeans(Y_raw[[m]] - EL %*% t(EF[[m]])))
+      names(mu) <- names(Y_raw)
+      Y <- Map(function(x, m) sweep(x, 2, m), Y_raw, mu)
+    }
     projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
     predictor <- multimodal_yfb_predictor_moments(projection$EZ, projection$VZ,
                                                    EBeta, EBeta2)
@@ -389,8 +435,9 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
         residual <- multimodal_yfb_residual_minus_k(Y, EL, EF, k)
         updated_L <- multimodal_yfb_update_L_k(
           Y, residual, lapply(EF, `[`, , k), lapply(EF2, `[`, , k), Tau,
-          prior_L[[k]]
+          prior_L[[k]], prior_update = settings$prior_update
         )
+        kl_L[k] <- updated_L$kl
         damped_L <- multimodal_yfb_damp_moments(EL[, k], EL2[, k],
                                                  updated_L$mean, updated_L$second,
                                                  settings$damping)
@@ -410,8 +457,9 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
             Y[[modality]], Tau[[modality]], EL[, k], EL2[, k], residual[[modality]],
             working$w, h_minus_k, projection$EZ[, k], projection$VZ[, k],
             EF[[modality]][, k], EF2[[modality]][, k], EBeta[k], EBeta2[k],
-            prior_F[[modality]][[k]]
+            prior_F[[modality]][[k]], prior_update = settings$prior_update
           )
+          kl_F[[modality]][k] <- updated_F$kl
           damped_F <- multimodal_yfb_damp_moments(
             EF[[modality]][, k], EF2[[modality]][, k], updated_F$EF,
             updated_F$EF2, settings$damping
@@ -430,6 +478,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
         updated_beta <- multimodal_yfb_update_beta_k(
           projection$EZ[, k], projection$VZ[, k], working$w, h_minus_k
         )
+        kl_beta[k] <- updated_beta$kl
         damped_beta <- multimodal_yfb_damp_moments(
           EBeta[k], EBeta2[k], updated_beta$mean, updated_beta$second,
           settings$damping
@@ -453,7 +502,8 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
     tau_state <- multimodal_yfb_update_tau_chunked(
       Y, EL, EL2, EF, EF2, settings$tau_chunk_size
     )
-    Tau <- tau_state$Tau
+    Tau <- multimodal_yfb_tau_from_residuals(tau_state$expected_residual2, n,
+                                             settings$tau_model)$Tau
     projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
     predictor <- multimodal_yfb_predictor_moments(projection$EZ, projection$VZ,
                                                    EBeta, EBeta2)
@@ -472,6 +522,11 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
         data$time, data$event, predictor$mean
       )$log_partial_likelihood,
       max_moment_change = max(abs(new_moments - old_moments)),
+      elbo = multimodal_yfb_elbo(Y, data$time, data$event, EL, EL2, EF, EF2,
+                                 EBeta, EBeta2,
+                                 sum(kl_L) + sum(unlist(kl_F)) + sum(kl_beta),
+                                 settings$survival_elbo, settings$tau_model),
+      kl_parts = c(L = sum(kl_L), F = sum(unlist(kl_F)), beta = sum(kl_beta)),
       max_relative_reconstruction_change = max(reconstruction_change),
       max_relative_eta_change = multimodal_yfb_relative_change(old_eta, predictor$mean)
     )
@@ -516,11 +571,186 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list()) {
     K_eff_retained = sum(reconstruction_active | survival_active),
     controls = settings
   )
+  kl <- list(L = kl_L, F = kl_F, beta = kl_beta)
+  diagnostics$elbo <- multimodal_yfb_elbo(Y, data$time, data$event, EL, EL2, EF, EF2,
+                                          EBeta, EBeta2,
+                                          sum(kl_L) + sum(unlist(kl_F)) + sum(kl_beta),
+                                          settings$survival_elbo, settings$tau_model)
   out <- list(EL = EL, EL2 = EL2, EF = EF, EF2 = EF2, EBeta = EBeta,
               EBeta2 = EBeta2, Tau = Tau, prior_L = prior_L, prior_F = prior_F,
-              training_spec = data$training_spec, diagnostics = diagnostics)
+              kl = kl, mu = mu, training_spec = data$training_spec,
+              diagnostics = diagnostics)
   class(out) <- "multimodal_yfb_fit"
+
+  # Factor pruning (flashier-style nullcheck) ----
+  # Remove the factor whose removal raises the ELBO most (if any does not
+  # lower it), refit from the remaining factors, and repeat.
+  if (settings$prune && K > 1L) {
+    delta <- multimodal_yfb_nullcheck(out, Y_raw, data$time, data$event,
+                                      settings$survival_elbo, settings$tau_model,
+                                      settings$intercept)
+    if (max(delta) >= 0) {
+      drop <- which.max(delta)
+      keep <- setdiff(seq_len(K), drop)
+      pruned_init <- list(
+        EL = out$EL[, keep, drop = FALSE], EL2 = out$EL2[, keep, drop = FALSE],
+        EF = lapply(out$EF, function(x) x[, keep, drop = FALSE]),
+        EF2 = lapply(out$EF2, function(x) x[, keep, drop = FALSE]),
+        EBeta = out$EBeta[keep], EBeta2 = out$EBeta2[keep], Tau = out$Tau,
+        prior_L = out$prior_L[keep],
+        prior_F = lapply(out$prior_F, function(x) x[keep]))
+      refit <- fit_multimodal_yfb(Y_raw, time, event, K - 1L, control, init = pruned_init)
+      refit$diagnostics$pruning <- rbind(
+        data.frame(K_before = K, removed_factor = drop, elbo_gain = delta[drop],
+                   converged_before = converged),
+        out$diagnostics$pruning, refit$diagnostics$pruning)
+      return(refit)
+    }
+  }
   out
+}
+
+#' Residual precisions and their ELBO term under three precision models
+#'
+#' r2_mj = E_q||y_mj - L f_mj||^2 is the expected residual sum of squares of
+#' feature j in modality m (n subjects).
+#' - "feature": tau_mj = n / r2_mj (maximum likelihood; the original model).
+#'   Unbounded: a factor that fits one feature exactly sends tau_mj to
+#'   infinity, which keeps spare factors alive.
+#' - "modality": one tau_m = n p_m / sum_j r2_mj per modality.
+#' - "feature_eb": tau_mj ~ Gamma(a_m, b_m), with (a_m, b_m) fit by maximum
+#'   marginal likelihood within each modality. Conjugacy gives
+#'   q(tau_mj) = Gamma(a_m + n/2, b_m + r2_mj/2), E[tau_mj] = (a_m + n/2) / (b_m + r2_mj/2),
+#'   and the reconstruction ELBO term per feature is the log marginal
+#'   lgamma(a + n/2) - lgamma(a) + a log b - (a + n/2) log(b + r2/2) - (n/2) log(2 pi).
+#'
+#' @param r2 Named list (by modality) of expected residual sums of squares.
+#' @param n Number of subjects.
+#' @param tau_model "feature", "modality" or "feature_eb".
+#' @return List with `Tau` (named list of precision vectors, E[tau] for
+#'   feature_eb), `reconstruction` (scalar ELBO term), and `hyper` (Gamma
+#'   parameters for feature_eb).
+#' @examples
+#' multimodal_yfb_tau_from_residuals(list(expression = c(10, 12, 0.5)), 10, "feature_eb")
+#' @family multimodal_yfb
+multimodal_yfb_tau_from_residuals <- function(r2, n, tau_model = "feature") {
+  out <- lapply(names(r2), function(modality) {
+    r <- pmax(r2[[modality]], .Machine$double.eps)
+    p <- length(r)
+    if (tau_model == "feature") {
+      tau <- n / r
+      return(list(Tau = tau, reconstruction = sum(0.5 * n * log(tau / (2 * pi)) - 0.5 * tau * r),
+                  hyper = NULL))
+    }
+    if (tau_model == "modality") {
+      tau <- n * p / sum(r)
+      return(list(Tau = rep(tau, p),
+                  reconstruction = 0.5 * n * p * log(tau / (2 * pi)) - 0.5 * tau * sum(r),
+                  hyper = NULL))
+    }
+    log_marginal <- function(theta) {
+      a <- exp(theta[1]); b <- exp(theta[2])
+      sum(lgamma(a + n / 2) - lgamma(a) + a * log(b) - (a + n / 2) * log(b + r / 2) -
+            0.5 * n * log(2 * pi))
+    }
+    # start at the moment estimate: tau_j ~ n / r_j has mean m and variance v
+    tau_hat <- n / r
+    m <- mean(tau_hat); v <- max(stats::var(tau_hat), 1e-8 * m^2)
+    start <- log(c(m^2 / v, m / v))
+    opt <- stats::optim(start, function(th) -log_marginal(th), method = "BFGS")
+    a <- exp(opt$par[1]); b <- exp(opt$par[2])
+    list(Tau = (a + n / 2) / (b + r / 2), reconstruction = -opt$value,
+         hyper = c(a = a, b = b))
+  })
+  names(out) <- names(r2)
+  list(Tau = lapply(out, `[[`, "Tau"),
+       reconstruction = sum(vapply(out, `[[`, numeric(1), "reconstruction")),
+       hyper = lapply(out, `[[`, "hyper"))
+}
+
+#' Evidence lower bound of a multimodal YFB fit
+#'
+#' ELBO = sum_m sum_j [ (n/2) log(tau_mj / 2 pi) - (tau_mj / 2) E||y_mj - L f_mj||^2 ]
+#'        + S(eta) - KL,
+#' with tau at its maximum-likelihood value given the expected residuals, KL
+#' the summed coordinate KL(q || g) for L, F and beta, and S the survival
+#' term: the Breslow partial log-likelihood at E[eta] ("plugin"), or that
+#' minus (1/2) sum_i w_i Var(eta_i) ("corrected"; a second-order
+#' approximation to E_q[log PL], with w the Cox working curvature).
+#'
+#' @param Y Named observed modality matrices.
+#' @param time,event Training survival outcomes.
+#' @param EL,EL2,EF,EF2,EBeta,EBeta2 Posterior moments.
+#' @param kl_total Summed KL divergence of all coordinates.
+#' @param survival_elbo "plugin" or "corrected".
+#' @param tau_model Residual precision model; see [multimodal_yfb_tau_from_residuals()].
+#' @return Scalar ELBO with a `components` attribute.
+#' @examples
+#' # multimodal_yfb_elbo(Y, time, event, fit$EL, fit$EL2, fit$EF, fit$EF2,
+#' #                     fit$EBeta, fit$EBeta2, 0, "plugin")
+#' @family multimodal_yfb
+multimodal_yfb_elbo <- function(Y, time, event, EL, EL2, EF, EF2, EBeta, EBeta2,
+                                kl_total, survival_elbo = "plugin",
+                                tau_model = "feature") {
+  n <- nrow(EL)
+  tau_state <- multimodal_yfb_update_tau_chunked(Y, EL, EL2, EF, EF2, chunk_size = 1000L)
+  reconstruction <- multimodal_yfb_tau_from_residuals(
+    tau_state$expected_residual2, n, tau_model)$reconstruction
+  projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
+  predictor <- multimodal_yfb_predictor_moments(projection$EZ, projection$VZ, EBeta, EBeta2)
+  working <- multimodal_yfb_cox_working(time, event, predictor$mean)
+  survival <- working$log_partial_likelihood
+  if (survival_elbo == "corrected") {
+    survival <- survival - 0.5 * sum(working$w * pmax(predictor$variance, 0))
+  }
+  structure(reconstruction + survival - kl_total,
+            components = c(reconstruction = reconstruction, survival = survival,
+                           kl = kl_total))
+}
+
+#' ELBO change from removing each factor (flashier-style nullcheck)
+#'
+#' For each factor k, sets its scores, loadings and coefficient to zero (their
+#' KL terms then vanish), re-estimates tau, and recomputes the ELBO with the
+#' other factors held fixed. Holding the others fixed makes this a
+#' conservative test: a positive change means the data prefer the fit without
+#' factor k even before the remaining factors adapt.
+#'
+#' @param fit A `multimodal_yfb_fit` (with `kl`).
+#' @param Y,time,event Training data used for the fit.
+#' @param survival_elbo "plugin" or "corrected".
+#' @param tau_model Residual precision model.
+#' @param intercept Whether the fit has a per-feature intercept (then `Y` is raw).
+#' @return Numeric vector: ELBO(without k) - ELBO(with all factors), per k.
+#' @examples
+#' # multimodal_yfb_nullcheck(fit, Y, time, event)
+#' @family multimodal_yfb
+multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugin",
+                                     tau_model = "feature", intercept = FALSE) {
+  K <- ncol(fit$EL)
+  kl_k <- fit$kl$L + Reduce(`+`, fit$kl$F) + fit$kl$beta
+  # With an intercept, Y is the raw data and the intercept is re-estimated for
+  # each candidate set of factors (removing a nonnegative-score factor also
+  # moves its mean into the intercept)
+  centered <- function(EL, EF) {
+    if (!intercept) return(Y)
+    Map(function(x, f) sweep(x, 2, colMeans(x - EL %*% t(f))), Y, EF)
+  }
+  full <- multimodal_yfb_elbo(centered(fit$EL, fit$EF), time, event, fit$EL, fit$EL2,
+                              fit$EF, fit$EF2, fit$EBeta, fit$EBeta2, sum(kl_k),
+                              survival_elbo, tau_model)
+  vapply(seq_len(K), function(k) {
+    keep <- setdiff(seq_len(K), k)
+    if (length(keep) == 0L) return(-Inf)
+    EL_keep <- fit$EL[, keep, drop = FALSE]
+    EF_keep <- lapply(fit$EF, function(x) x[, keep, drop = FALSE])
+    reduced <- multimodal_yfb_elbo(
+      centered(EL_keep, EF_keep), time, event, EL_keep, fit$EL2[, keep, drop = FALSE],
+      lapply(fit$EF, function(x) x[, keep, drop = FALSE]),
+      lapply(fit$EF2, function(x) x[, keep, drop = FALSE]),
+      fit$EBeta[keep], fit$EBeta2[keep], sum(kl_k[keep]), survival_elbo, tau_model)
+    reduced - full
+  }, numeric(1))
 }
 
 `%||%` <- function(x, y) if (is.null(x)) y else x

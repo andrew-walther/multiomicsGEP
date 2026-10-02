@@ -88,7 +88,8 @@ test_files <- c(
   "tests/test_multimodal_yfb_fit.R",
   "tests/test_simulate_multimodal_yfb.R",
   "tests/test_load_multiomics_data.R",
-  "tests/test_multimodal_yfb_priors.R"
+  "tests/test_multimodal_yfb_priors.R",
+  "tests/test_multimodal_yfb_pruning.R"
 )
 
 # Run each test file

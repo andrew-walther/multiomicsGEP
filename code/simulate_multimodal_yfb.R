@@ -103,10 +103,10 @@ simulate_multimodal_yfb_cohort <- function(parameters, n, id_prefix) {
   Y <- lapply(names(parameters$F), function(modality) {
     signal <- L %*% t(parameters$F[[modality]])
     noise <- sweep(matrix(rnorm(n * nrow(parameters$F[[modality]])), n), 2,
-                   sqrt(parameters$Tau[[modality]]), "/")
+                   sqrt(parameters$Tau[[modality]]), "/") * (parameters$noise_scale %||% 1)
     # The production fitter requires raw inputs >= 0. Truncation is explicit
     # here; Tau remains the pre-truncation Gaussian precision for recovery.
-    pmax(signal + noise, 0)
+    if (isFALSE(parameters$truncate)) signal + noise else pmax(signal + noise, 0)
   })
   names(Y) <- names(parameters$F)
   ids <- paste0(id_prefix, seq_len(n))
@@ -139,6 +139,12 @@ simulate_multimodal_yfb_cohort <- function(parameters, n, id_prefix) {
 #' @param K_true Number of true factors.
 #' @param target_censoring Target censoring fraction in each cohort.
 #' @param seed RNG seed.
+#' @param noise_scale Multiplier on every feature's noise SD (default 1, the
+#'   original design, where each true factor explains < 1% of the variance).
+#'   0.25 gives a moderate signal-to-noise ratio (~25% variance explained).
+#' @param truncate If TRUE (default), truncate the molecular data at zero so it
+#'   meets the point-exponential (nonnegative) input requirement. FALSE keeps
+#'   the Gaussian data as generated, for signed loading priors and centering.
 #' @return Training/validation data plus true model parameters and scenario name.
 #' @examples
 #' simulate_multimodal_yfb_data("both_informative", n_train = 20, n_validation = 10)
@@ -147,7 +153,7 @@ simulate_multimodal_yfb_data <- function(scenario = "both_informative",
                                          n_train = 120L, n_validation = 120L,
                                          p_expression = 50L, p_methylation = 50L,
                                          K_true = 3L, target_censoring = 0.30,
-                                         seed = 1L) {
+                                         seed = 1L, truncate = TRUE, noise_scale = 1) {
   scenarios <- multimodal_yfb_scenarios()
   if (!scenario %in% names(scenarios)) {
     stop("scenario must be one of: ", paste(names(scenarios), collapse = ", "), ".")
@@ -174,7 +180,8 @@ simulate_multimodal_yfb_data <- function(scenario = "both_informative",
   parameters <- list(
     F = F, Tau = lapply(F, function(x) stats::rgamma(nrow(x), shape = 2, rate = 2)),
     beta = setting$beta, score_scale = score_scale, feature_names = feature_names,
-    weibull_shape = 1.5, weibull_scale = 0.01, target_censoring = target_censoring
+    weibull_shape = 1.5, weibull_scale = 0.01, target_censoring = target_censoring,
+    truncate = truncate, noise_scale = noise_scale
   )
   training <- simulate_multimodal_yfb_cohort(parameters, n_train, "train_")
   validation <- simulate_multimodal_yfb_cohort(parameters, n_validation, "validation_")

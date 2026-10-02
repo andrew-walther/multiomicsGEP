@@ -14,6 +14,9 @@
 #      "expression_family,methylation_family", e.g.
 #      MMYFB_PRIOR_F=point_laplace Rscript ... 7
 #      (default point_exponential).
+#      Framework: MMYFB_FRAMEWORK=pruned uses the 10/1 parsimony framework --
+#      per-feature intercept, point-Laplace loadings, ebnm prior fits and ELBO
+#      factor pruning (partial log-likelihood) -- on the raw inputs.
 #      Input scale: MMYFB_INPUT = raw (default: log2 expression, beta methylation),
 #      centered (features centered on TCGA means), or centered_asin (methylation
 #      transformed to asin(2*beta - 1) first). Centered inputs need signed priors.
@@ -52,10 +55,17 @@ source("code/load_multiomics_data.R")
 
 args <- commandArgs(trailingOnly = TRUE)
 K_values <- if (length(args)) as.integer(args) else c(5L, 7L, 10L)
+framework <- Sys.getenv("MMYFB_FRAMEWORK", "original")
+framework_control <- if (framework == "pruned") {
+  list(intercept = TRUE, prior_update = "ebnm", prune = TRUE,
+       survival_elbo = "plugin", tau_model = "feature")
+} else list()
+if (framework == "pruned") Sys.setenv(MMYFB_PRIOR_F = Sys.getenv("MMYFB_PRIOR_F", "point_laplace"))
 prior_arg <- strsplit(Sys.getenv("MMYFB_PRIOR_F", "point_exponential"), ",")[[1]]
 prior_F <- list(expression = prior_arg[1], methylation = prior_arg[length(prior_arg)])
 prior_tag <- if (all(unlist(prior_F) == "point_exponential")) "" else
   paste0("_", prior_F$expression, "-", prior_F$methylation)
+if (framework != "original") prior_tag <- paste0(prior_tag, "_", framework)
 out_dir <- "results/multimodal_real/outputs"
 dir.create(file.path(out_dir, "fits"), recursive = TRUE, showWarnings = FALSE)
 
@@ -117,7 +127,7 @@ for (K in K_values) {
   } else {
     message("K = ", K, ": fitting joint multimodal YFB")
     joint <- timed(fit_multimodal_yfb(tr$Y, tr$time, tr$event, K,
-                                      control = list(prior_F = prior_F)))
+                                      control = c(list(prior_F = prior_F), framework_control)))
     message("K = ", K, ": fitting expression-only YFB")
     expr_only <- timed(fit_multimodal_yfb_single_modality(
       tr$Y, tr$time, tr$event, "expression", K))
@@ -132,18 +142,19 @@ for (K in K_values) {
     joint_multimodal_yfb = list(
       risk = function(Y) predict_multimodal_yfb(fits$joint, Y)$risk_scores,
       info = data.frame(converged = dj$converged, iterations = dj$iterations,
+                        K_final = ncol(fits$joint$EL),
                         K_eff_reconstruction = dj$K_eff_reconstruction,
                         K_eff_survival = dj$K_eff_survival)),
     expression_only_yfb = list(
       risk = function(Y) predict_multimodal_yfb_single_modality(fits$expr_only, Y)$risk_scores,
-      info = data.frame(converged = fits$expr_only$history$converged,
+      info = data.frame(converged = fits$expr_only$history$converged, K_final = NA_integer_,
                         iterations = fits$expr_only$history$n_iter,
                         K_eff_reconstruction = sum(fits$expr_only$history$factor_pve[
                           fits$expr_only$history$n_iter, ] >= 0.01),
                         K_eff_survival = NA_integer_)),
     two_step_ebmf_cox = list(
       risk = function(Y) predict_multimodal_yfb_ebmf_cox(fits$two_step, Y),
-      info = data.frame(converged = NA, iterations = NA,
+      info = data.frame(converged = NA, K_final = NA_integer_, iterations = NA,
                         K_eff_reconstruction = fits$two_step$n_factors,
                         K_eff_survival = NA_integer_))
   )
@@ -151,7 +162,7 @@ for (K in K_values) {
     sc <- score_cohorts(arms[[arm]]$risk)
     rows[[length(rows) + 1L]] <- cbind(
       K_init = K, prior_F = paste(prior_F$expression, prior_F$methylation, sep = "/"),
-      input = input,
+      input = input, framework = framework,
       method = arm, sc, arms[[arm]]$info,
       runtime_seconds = attr(fits[[c(joint_multimodal_yfb = "joint",
         expression_only_yfb = "expr_only", two_step_ebmf_cox = "two_step")[[arm]]]],
