@@ -62,3 +62,4 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | Architectural decisions log | `DECISIONS.md` |
 | Prioritized next steps | `ROADMAP.md` |
 | **Current working plan** | `docs/plans/Working_Plan_10_1_26.md` — start open work here |
+| Prelim proposal chapter plan | `docs/plans/Prelim_Proposal_Plan_10_1_26.md` — outline, sync to `bios-dissertation`, α_F framing constraint |

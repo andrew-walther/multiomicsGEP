@@ -15,6 +15,19 @@ We haven't confirmed where the work stopped, so start here before anything else.
 4. Run `Rscript tests/run_tests.R` on the current working tree and record the pass count.
 5. Write down the branch decision: keep developing on `codex/multimodal-yfb`, or merge the finished parts to main first.
 
+### Step 0 results (2026-10-01)
+- **Current branch:** `codex/multimodal-yfb`, pushed to `origin`. It is 11 commits ahead of `main`.
+  - It contains the multimodal derivation, helpers, updates, fitter and prediction, plus this morning's checkpoint of the in-progress multimodal work (`6a5f0d7`) and the README/CLAUDE.md refresh (`79795ef`).
+- **`main`:** its 2 commits that the branch lacks (the March `fit_modular` plan and the MIT license) are the same patches as `f658acb` and `a647b32` on the branch (checked with `git range-diff`). `main` has no content the branch is missing.
+- **`fix/2026-09-04-review-findings`:** merged into `main` (commits `0808015` … `268a4f5`). The local branch no longer exists.
+- **`codex/multimodal-yfb-docs`:** fully contained in `codex/multimodal-yfb`, so it can be deleted.
+- **Old branches:**
+  - Already merged into `main`: 16 other local branches, which can be deleted whenever convenient.
+  - Not merged: `phase1-platform-norm` (2 commits) and `phase2-init-constraints` (1 commit). Both are from April–May; the second ended with the verdict "Discard". Leave them as they are unless they're needed.
+- **Housekeeping (WS0) already done:** `.gitignore` covers `/data/` and `Rplots.pdf`.
+- **Tests:** `Rscript tests/run_tests.R`: 509 passed, 0 failed (about 76 s).
+- **Decision:** keep developing on `codex/multimodal-yfb`. Merge it to `main` after the 10/2 meeting, once the multimodal real-data prototype is in place.
+
 ## Context
 - **Multimodal model:**
   - The implementation is written and tested in simulation on `codex/multimodal-yfb`, with much of the work still uncommitted.
@@ -65,6 +78,19 @@ We haven't confirmed where the work stopped, so start here before anything else.
    - Verify: 88/88, confirming the local copy is complete.
 
 ## Workstream 1 — Multimodal real-data preprocessing (10/1, priority)
+
+**Which file to use for each piece of data.** From the 10/1 inventory; check each one when writing the loader.
+
+| Cohort | Piece | File (under `data/multiomicsGEP_code/` unless noted) | Notes |
+|---|---|---|---|
+| TCGA (training) | Expression | `tcga/expr_log_normalized.rds` | 20,501 × 150, already log2(TMM-CPM+1). `expr_unlogged.rds` = `TCGA_PAAD$ex` (checked) |
+| TCGA | Methylation | `tcga/tcga_meth_filtered_sex.rds` → `$meth` | 305,492 × 150 β-values. Don't use `meth.normal` or the `.trans` versions |
+| TCGA | Survival | `data/PDAC_data/original/TCGA_PAAD.survival_data.rds` | Join on the 16-character barcode. Alternative source: `pc_classifier/data_reformatted_updated.rds` `$TCGA_PAAD$annotation` |
+| ICGC (validation) | Expression | `icgc/icgc_matched_data.rds` → `$expr` | 24,033 × 79, **not logged**; apply log2(x+1). DO33168 is already averaged over its two samples |
+| ICGC | Methylation | `icgc/icgc_matched_data.rds` → `$meth`, restricted to the TCGA filtered CpGs | Same β-values as `icgc_meth_filtered_sex.rds`, but with DO-ID columns that line up with `$expr` |
+| ICGC | Survival + clinical | `icgc/icgc_matched_data.rds` → `$info.expr` | `survival_months`, `censored` (`death` = event). De-duplicate by donor. Cross-check against `data/PDAC_data/original/PACA_AU_seq.survival_data.rds`, which agrees for 69 of 80 times |
+| Reference | Unsupervised baseline | `tcga/tcga_flash_K14.rds` | Yusha's flash fit (K = 14) for comparing factors |
+
 Create `code/load_multiomics_data.R`, with roxygen-documented functions, to build the matched objects in the format the existing helpers already expect (`multimodal_yfb_helpers.R` preprocessing contract).
 
 1. **TCGA (training cohort)**
@@ -122,11 +148,17 @@ Create `code/load_multiomics_data.R`, with roxygen-documented functions, to buil
 5. **Longleaf:** the full 305k-CpG fit. Note memory needs: a few dense copies of 305k × 150, plus per-feature τ and second moments.
 
 ## Workstream 4 — Single-modality YFB items still open
-1. **ZF notation (9/4, 9/18):**
+1. **Clarify what ZF means in the YFB derivation (9/4, 9/18).** The code is not wrong; the derivation just never says clearly what this quantity is.
    - The derivation writes η = (Y·E[F])β̃ with raw ZF. The code uses unit-L2-normalized columns, `ZF = Y %*% EF_norm` (`fit_cox_on_yf.R:643-647`), and prediction applies the stored norms.
-   - Update `derivations/cox_on_YF/` (and the subscript notation Yusha asked about) to define Ẑ = Y F̄ D⁻¹ explicitly.
+   - Add a definition to `derivations/cox_on_YF/` that states Ẑ = Y F̄ D⁻¹ (the projection score, with columns normalized), and settle the subscript notation Yusha asked about.
    - Write the multimodal raw-vs-normalized difference into both documents.
-2. **α / α_F, the Bayesian concern:**
+2. **α / α_F, the Bayesian concern.** This is a large problem and will take time. **Before 10/2: write proposed solutions only.** Start the experiments once the multimodal model has a working prototype on real data.
+   - Candidate approaches to write up, each with a mechanism and a test:
+     - The multimodal model's factor rescaling.
+     - A plain sum with a warm start from the α_F = 0 fit.
+     - Turning survival on in the F update gradually over iterations.
+     - Changing the order of the updates.
+     - Treating α as a likelihood power with a stated justification.
    - Try importing the multimodal canonicalization into single-modality YFB, then test α = 1 (no tempering) and α_F = 1 (plain sum).
    - If that is stable and C is within noise, drop both weights. This answers the 9/18 question "use sum of genomics + survival — does this break it?"
    - Note that YFB has never had a dedicated CV over α; the "validated by CV" comment in `globals.yml` comes from the LB model and should be corrected.
@@ -150,11 +182,37 @@ Create `code/load_multiomics_data.R`, with roxygen-documented functions, to buil
    - The stale sign-correction comment in `compute_bic.R:189-209`.
    - `fit_modular.R:834` calls `concordance()` without `reverse = TRUE`.
    - The `auto_prune_K` default `beta_thresh = 0.05` is stale.
+10. **CPTAC vs TCGA survival (9/4):** compare the KM curves and the baseline hazard between the two training cohorts. This shows whether a shared baseline hazard and shared β are reasonable, and supports the cohort-specific-coefficient interpretation.
 
-## Workstream 5 — Documentation and prelim (ongoing)
-- Add a new progress-book chapter for 10/2 (`docs/progress_book/chapters/2026-10-02.qmd`) with the real-data first results.
-- Update `DECISIONS.md` for each decision point below, `ROADMAP.md` when milestones are reached, and `PROJECT_STATUS.qmd`.
-- Prelim deadlines: abstract 11/2, proposal 11/16. The method section should cover single-modality + multimodal; the results should cover simulation + TCGA/ICGC.
+## Workstream 5 — 10/2 progress-book chapter (the end point of this plan)
+Pull the work above into a new chapter, `docs/progress_book/chapters/2026-10-02.qmd`. The previous chapter is `2026-09-18.qmd`. Register the new chapter in `docs/progress_book/_quarto.yml`, render with `quarto render`, and check that the GitHub Pages publish workflow picks it up.
+
+This chapter is the end-to-end progress record for both advisors. Planned sections:
+1. **Summary.** A short list of what changed since 9/18 and the main results.
+2. **Single-modality YFB: supervision in the F update.** This is a short section.
+   - Restate the problem: α_F = 0 keeps survival out of the F update, so F is the same as in unsupervised EBMF. α = 0.5 tempers the Cox likelihood for β.
+   - Present the proposed solutions (WS4.2) and the planned test design, including the low-variance prognostic program simulation.
+   - Add results only if any experiments were run.
+   - Include the ZF clarification (WS4.1).
+3. **Multimodal model form.** Naim has not seen it yet, so this section should stand on its own:
+   - Likelihood for each modality: Y_m = L F_mᵀ + E_m, with per-feature precision τ_mj.
+   - Priors: L is shared with a point-exponential prior. Each F_m has its own prior family (point-exponential, point-Laplace or Normal). β has a Normal empirical-Bayes prior.
+   - Survival: η = Σ_m Y_m F_m β, a Cox partial likelihood.
+   - The factor rescaling (identifiability) step, and how K_eff is determined.
+   - Summarize from `derivations/multimodal_YFB/multimodal_YFB_derivation.qmd` and link to the full derivation rather than repeating it.
+4. **Multimodal refinements and simulation (WS2).**
+   - Prior options for F.
+   - Centering.
+   - The K-pruning fix, with the replicated K_init panel and K_eff compared to the true K.
+   - The re-run of the converged smoke study.
+   - Modality balance at a realistic p_meth/p_expr ratio.
+5. **Real data (WS1 + WS3).**
+   - Data description: TCGA training set, ICGC validation set; n, events, genes and CpGs before and after screening.
+   - Preprocessing and transformations: log2, CpG matching, imputation, screening, standardization.
+   - Fit results: K_eff and survival-active factors, internal CV C and external ICGC C against the expression-only YFB and two-step baselines (delta-C table), and comparison of factors with the single-modality programs and with `tcga_flash_K14`.
+6. **Open questions and next steps,** including the decision points below that are still open.
+
+Also: update `DECISIONS.md` for each decision made, `ROADMAP.md` when milestones are reached, and `PROJECT_STATUS.qmd`. Prelim deadlines are the abstract on 11/2 and the proposal on 11/16. The chapter's method and results sections should be reusable as drafts for the prelim.
 
 ## Decision points (to settle together before or while executing)
 1. Should ICGC validation be restricted to primary PDAC (n ≈ 50 with survival) or use all usable donors (n ≈ 67)?
@@ -163,8 +221,98 @@ Create `code/load_multiomics_data.R`, with roxygen-documented functions, to buil
 4. Whether to add `impute` (Bioconductor) as a dependency.
 5. How to implement the F priors: `ebnm` or hand-written closed-form updates.
 
-## Suggested order for 10/1–10/2
-Step 0 (branch review) → WS0 → WS1 (steps 1–4 and 6) → WS3.1–3.2 with the current code → write the 10/2 chapter. WS2 and WS4 come after the 10/2 meeting.
+## Review of the meeting notes (8/27, 9/4, 9/18)
+Every item from the notes the user shared on 10/1 is listed here, so that none are dropped. Status as of 10/1:
+- **Done:** completed and documented.
+- **Planned:** has a workstream in this plan.
+- **Considered:** evaluated and deliberately not planned now, with the reason.
+Re-check this list before writing the 10/2 chapter, and again before the prelim.
+
+### 8/27 lab meeting
+| Item | Status | Where / note |
+|---|---|---|
+| Under-specify K_init (does the fit merge true factors?) | Done | 9/4 chapter §4; under-specified fits merge factors, over-specified fits do not |
+| Are both methods fit to the same simulated dataset? | Done | Yes, both arms use the same draws (`results/multi_cohort_sim/make_delta_fig.R`) |
+| Bar chart of ΔC between methods | Done | Same script |
+| False-positive rate of survival-active factors; does a cohort-specific effect change it? | Planned | WS4.5. Measured without `beta_cohort_id` only |
+| Let the model choose K; use C-index as the model-free metric | Single-modality: done. Multimodal: planned | Two-stage K selection exists for single-modality YFB. WS2.3 covers multimodal pruning |
+| C drops and recovers at K = 10–13; what differs at K = 13–15? | Planned (low priority) | WS4.8. Ruled out as a bad starting point; cause still unexplained |
+| Amber's approach: max over the full grid, then most parsimonious within 1 SE | Planned | WS4.7 (single-modality sweep) and WS2.3(c) (multimodal) |
+| Is the log-likelihood cross-validated? | Done | `code/compute_cv_loglik.R`; the 8/27 numbers were in-sample |
+| BIC on the regular log-likelihood; full log-likelihood hard in high dimensions | Done, with a caveat | `compute_bic.R` uses E_q log p plus the Cox partial log-likelihood, with a log(n patients) penalty. State the penalty choice in the chapter or proposal |
+| Penalize small β to zero (elastic net, as Amber did) | Considered | The EBNM prior already shrinks β; `DECISIONS.md` gives the argument. Revisit if WS4.3 priors fail |
+| Point-normal or Laplace prior on β, data-adaptive | Planned | WS4.3. Point-normal collapsed β to 0 on PDAC before; Laplace not yet tested on YFB |
+| Prior on K, or a constraint summed across factors | Considered | Not implemented (IBP-type prior is a literature item). The multimodal K-pruning work (WS2.3) comes first. List under future work in the proposal |
+| PCA/t-SNE to explain the factors | Planned | WS4.6 |
+| Naim: results and method are a good basis for a paper | n/a | Supports the proposal plan |
+
+### 9/4 meeting with Yusha
+| Item | Status | Where / note |
+|---|---|---|
+| Ridge vs Laplace prior for β (EBNM) | Planned | WS4.3. The current prior is Normal with an empirical-Bayes variance |
+| ~100 random initializations, average C when selecting K | Planned | WS4.4, using jittered SVD starts because pure random starts collapse. Apply to the multimodal K panel as well |
+| The unsupervised joint model misses low-variance prognostic factors | Planned | WS4.2 simulation design. The multimodal simulator already has a `low_variance` scenario; report it in WS2.4 |
+| \|β\| threshold relative to the largest β | Done | Implemented as `rel_thresh`, kept for simulation only |
+| Cohort indicator: fixed L column, β set to 0 | Done | `fit_cox_on_yf.R`; β_cohort = 0 by construction |
+| Revisit the CPTAC vs TCGA survival comparison | **Planned (new)** | WS4.10 below |
+| Cohort-specific coefficients: differences may reflect small samples | Done (interpretation) | State this explicitly when cohort-specific results are presented |
+| ZF notation (subscript?) | Planned | WS4.1 |
+| Multimodal: methylation needs a different, sparser prior; matched training and validation cohorts; all factors shared; methylation and expression anti-correlated | Planned | WS1, WS2.1, WS3. The anti-correlation check is WS3.3 |
+| Yusha to share matched TCGA/ICGC data | Done | In `data/` |
+| Cohorts vs modalities: extra columns vs extra rows | Planned | Methods framing in the chapter (WS5 §3) and the proposal |
+| Derive the key multimodal equations | Done | `derivations/multimodal_YFB/` |
+
+### 9/18 meeting with Yusha
+| Item | Status | Where / note |
+|---|---|---|
+| Let the user choose the F prior (point-exponential, point-Laplace, Normal) and give scenario-specific recommendations | Planned | WS2.1. Add a simulation comparison by scenario so a recommendation can be made |
+| Keep point-exponential for L | Done | Current design |
+| Intercept, or center Y so 0 is the baseline | Planned | WS2.2 |
+| Methylation on 0–1; check normality; optional asin(2x−1) | Planned | WS1, decision point 2. Add a normality check (histograms and QQ plots before and after the transform) |
+| Expression log-normalized (Gaussian errors) | Planned | WS1 |
+| ICGC: load the matched object, link by donor ID, average tumours from the same patient, `survival_months`/`censored`, log2(x+1) | Planned | WS1. The matched object already averages DO33168 |
+| Cross-check ICGC against PACA_AU_seq | **Planned (new check)** | WS1: survival times agree for 69 of 80 samples. Look at the 11 that don't before choosing a survival source |
+| Cross-check TCGA expression against Amber's PDAC_data tables | Done in the inventory | `expr_unlogged` = `TCGA_PAAD$ex` exactly. Record this in the WS1 loader test |
+| TCGA: use `meth`, not the normal or transformed versions | Planned | WS1 |
+| Filter ICGC CpGs to the TCGA set | Planned | WS1 (ICGC ⊂ TCGA) |
+| KNN imputation of missing methylation values | Planned | WS1, decision point 4 |
+| Fit TCGA, report C-index, compare gene factors with the earlier method | Planned | WS3 |
+| α_F: try the plain sum; how to order updates to avoid collapse | Planned (after the prototype) | WS4.2, optional step 6 |
+| Simulation goal: identify the correct number of survival-active factors | Planned | WS2.3/2.4: make survival-active count recovery a primary simulation metric |
+| Double-check the model section | Planned | WS5 §3. Reconcile the derivation with the code (rescaling step, K_eff claim, WS2.6) |
+| Consolidate the multi-omics data into one OneDrive folder and share it | **Planned (admin)** | Data are local in `data/`. Upload and share once preprocessing is settled |
+| Prelim content for this project | Planned | `docs/plans/Prelim_Proposal_Plan_10_1_26.md` |
+| Lab-meeting update before the prelim | Done | 10/1 |
+| Ask Dr. Lin for the sudden-unexpected-death datasets | Outside this project | Project 2. Status unknown; the bios-dissertation notes say the Project 2 application is waiting on that dataset |
+
+## Order of work (end to end)
+The lab-meeting update has been given (10/1). What remains is doing the work. **The priority is a working multimodal prototype on real data.**
+
+1. **Step 0 + WS0:** review the branches, housekeeping, and a test baseline.
+2. **WS2, multimodal refinements.** The derivation has advisor approval.
+   - Order: WS2.1 (F priors) → WS2.2 (centering) → WS2.3 (K pruning, with the replicated panel) → WS2.4 (converged smoke re-run).
+   - WS2.5–2.6 if time allows.
+3. **WS1 → WS3, real data.** Preprocess matched TCGA/ICGC, then fit the multimodal model and the baselines.
+   - If WS2 is not finished, run WS3.1 on the current point-exponential code with nonnegative inputs, so that some real-data results exist for 10/2.
+4. **WS4, short single-modality items.**
+   - WS4.1: the ZF clarification.
+   - WS4.2: the α/α_F proposed solutions, written up but not run.
+   - The α/α_F experiments and WS4.3–4.9 come after the multimodal prototype exists.
+5. **WS5:** write, render and publish the 10/2 progress-book chapter.
+6. **Optional, only after the first version of the chapter exists and the multimodal work is in good shape:** run the α/α_F experiments (WS4.2) and add the results to the chapter as a follow-up section. The multimodal implementation comes first.
+   - Deadline: the α_F question must be answered, or the proposal's framing scoped down, before the prelim proposal is due (11/16). See `docs/plans/Prelim_Proposal_Plan_10_1_26.md`.
+
+If time runs short before 10/2, keep steps 1, 3 (the minimal version) and 5, and report the unfinished parts of step 2 as in progress in the chapter.
+
+## Handoff between Claude Code and Codex
+Work may move between Claude Code and Codex when usage limits are reached. Both read this file; `AGENTS.md` is a symlink to `CLAUDE.md`.
+- After each step, add a dated line to the **Progress log** below: what was done, which files and commits, and what comes next.
+- Commit at the end of each step so the other tool starts from a clean tree.
+- Record any decision point that has been settled in `DECISIONS.md` and in the log.
+
+## Progress log
+- 2026-10-01: Plan written. Lab-meeting update given.
+- 2026-10-01: Step 0 done (results above). WS0 was already done in `6a5f0d7`/`79795ef`. Tests 509/509. Plan files committed. Next: WS2.1 (F prior options) and WS1 (data loader), working on both in parallel.
 
 ## Verification (overall)
 - `Rscript tests/run_tests.R` passes after any change to the model code, with the new tests added to the count.
