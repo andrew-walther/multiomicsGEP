@@ -3,50 +3,50 @@
 ## Executive summary {.unnumbered}
 
 ::: {.callout-tip appearance="simple"}
-**In one line:** the new fitting framework lets the model pick its own number of factors in simulation. On real data it raises external C on ICGC from about 0.45–0.49 to 0.68. That gain comes from the framework, because the same framework fit to expression alone reaches 0.676. Methylation has not yet added predictive value, and survival still has almost no say in which factors are kept.
+**In one line:** with a new fitting framework, the multimodal model chooses its own number of factors in simulation. On real data it now matches our established single-modality model: C = 0.685 on the same 50 ICGC donors, from one training cohort. Methylation has not yet added predictive value, and survival still barely affects which factors are retained.
 :::
 
 **Progress since 9/18**
 
-1. **Choosing K now works in simulation.** Spare factors used to survive for two reasons: unbounded per-feature precisions, and a missing intercept. With the fix, the final number of factors stays at about the true K = 3 for every starting value from 3 to 15. The original fit kept all of them. (§2)
-2. **Prognostic programs that carry variance are recovered with the correct signs**, held-out C ≈ 0.79, and every pruned fit converged. (§2)
-3. **First real-data results, trained on TCGA and validated on ICGC primary PDAC (n = 50).**
-   - The new framework reaches C = 0.685 (95% CI 0.579–0.779) on expression + methylation and 0.676 (0.569–0.770) on expression alone.
-   - The original multimodal fit reaches 0.453, the single-modality YFB fitter 0.491, and the two-step model 0.424.
-   - **The gain comes from the framework, not from methylation (+0.01).**
-   - The selected programs are recognizable PDAC biology: basal-like vs classical, normal vs activated stroma, exocrine and immune. The one survival-active program is the basal-like axis (ICGC HR 1.99 per SD, p = 0.0003), matching single-modality Program 7. (§4)
-4. **The single-modality results are strengthened.**
-   - Held-out Kaplan–Meier curves show survival separation in all five external cohorts, and the adverse and protective programs keep their direction.
-   - The reported C-indices are unchanged under a training-fixed risk orientation.
-   - Pooled gain over the two-step model: ΔC = 0.042 (95% CI 0.013–0.071). (§5)
-5. **Infrastructure.**
-   - A tested TCGA/ICGC data loader.
-   - Signed loading priors.
-   - A compiled loading sweep, 5× faster with identical results.
-   - The model can now be fit to a single modality.
-   - A prelim proposal draft (22 pp).
+1. **Choosing K works in simulation.**
+   - Spare factors survived for two reasons: unbounded per-feature precisions and a missing intercept.
+   - With the fix, the final number of factors stays near the true K = 3 for every starting value from 3 to 15 in the two scenarios where each program carries variance. The original fit kept every starting factor.
+   - The prognostic programs are found survival-active with the correct sign in 75–100% of runs. (§2)
+2. **First real-data results.** Trained on TCGA (144 patients); validated on ICGC primary PDAC (50 donors, 30 deaths).
+   - The new framework reaches C = 0.685 (95% CI 0.579–0.779) on expression + methylation and 0.676 on expression alone.
+   - Our recommended single-modality model scores 0.685 on the same donors. It was trained on TCGA + CPTAC.
+   - Weaker comparators reach 0.42–0.53.
+   - **Methylation adds +0.01, within the noise.** (§4)
+3. **The selected programs are recognizable PDAC biology.**
+   - The axes found are basal-like vs classical, normal vs activated stroma, exocrine, and immune.
+   - The one survival-active program is the basal-like axis (ICGC HR 1.99 per SD, p = 0.0003). It matches single-modality Program 7.
+   - Methylation enters mainly an immune program and a methylation-only program, neither prognostic. (§4)
+4. **The single-modality results now include held-out Kaplan–Meier curves.**
+   - In all five external cohorts the low-risk third has the best survival; log-rank p < 0.05 in three.
+   - The adverse and protective programs keep their direction (pooled p < 0.0001 and 0.004). (§5)
+5. **Infrastructure.** A tested TCGA/ICGC loader, signed loading priors, a 5× faster compiled sweep, single-modality fitting, and a 22-page prelim proposal draft.
 
-**Open problems**
+**Open problems and discussion points**
 
-- **A low-variance prognostic program is not recovered** in simulation, by either the original or the pruned fit.
-- **Survival has almost no influence on which factors are kept.** On real data it contributes under 3 nats, against 10⁴–10⁵ for reconstruction. This is the multimodal form of the α_F question. (§4)
-- **The real-data comparison is provisional.**
-  - The intervals are wide.
-  - The fit did not formally converge, although its risk score was stable.
-  - Starting ranks K_init = 3, 7 and 10 have finished, with C = 0.557, 0.685 and 0.650. Pruning removed no factors at these starting ranks.
-- **Methylation does not yet add predictive value** on this 50-donor validation set.
+- **Survival barely influences which factors are kept.** On real data it changes the evidence for any factor by less than 3 nats, against 10⁴–10⁵ for reconstruction. This may also be why a low-variance prognostic program is missed in simulation. It is the multimodal form of the single-modality α_F question. How should survival be made to affect factor retention? (§4, §7)
+- **Pruning removed no factors on real data** at K_init = 3, 7 and 10. The evidence supports many molecular factors, and the larger starting ranks are still running. (§4)
+- **What methylation contributes.** Most factors use one modality. Should CpGs be screened relative to genes, for example promoter CpGs of the selected genes, instead of the 10k most variable? (§3, §4)
 
-**For discussion**
+Terms used below:
 
-- **How should CpGs be screened relative to genes?** We currently keep 10k CpGs and 3k genes. (§3)
-- **Should shared expression–methylation programs be expected?** Most fitted factors use one modality. The only shared one is an immune program, which suggests methylation is recording cell composition. Should CpGs be screened to promoters of the selected genes? (§4)
-- **How should survival get a say in factor selection?** Candidates are modality and likelihood weights, survival-aware screening, or a separate retention rule. (§4, §7)
+- **YFB:** the supervised factor model with survival predictor η = (YF)β.
+- **Two-step:** unsupervised empirical-Bayes matrix factorization (EBMF), then a Cox model on the factor scores.
+- **Survival-active:** |E β_k| / SD(β_k) ≥ 1.96.
+- **Nullcheck:** the test that removes a factor if the evidence lower bound (ELBO) does not fall without it.
 
 ---
 
 ## §1 — The multimodal model
 
-This section restates the model for readers who have not seen the derivation. Every update equation is in `derivations/multimodal_YFB/multimodal_YFB_derivation.pdf`.
+This section restates the model for readers who have not seen the derivation.
+
+- **Base updates:** `derivations/multimodal_YFB/multimodal_YFB_derivation.pdf`.
+- **Added since 9/18:** the intercept, signed priors, ELBO and pruning. These are documented in `DECISIONS.md` (2026-10-01) and `code/fit_multimodal_yfb.R`, and will be added to the derivation.
 
 **Data.** For $n$ matched patients, $Y_1\in\mathbb R^{n\times p_1}$ is gene expression, $Y_2\in\mathbb R^{n\times p_2}$ is DNA methylation, and $(t_i,\delta_i)$ is survival.
 
@@ -58,8 +58,7 @@ $$
 
 - $L\ge0$ ($n\times K$, shared): how active program $k$ is in patient $i$.
 - $F_m$ ($p_m\times K$, one per modality): how far each gene or CpG moves from its baseline $\mu_{mj}$ when the program is active. A program can be active in one modality and absent in the other.
-- $\mu_m$ is a per-feature intercept, re-estimated every sweep. Each feature has its own residual precision $\tau_{mj}$.
-- More cohorts would add rows of $L$ (patients). More modalities add rows of $F$ (features), each block with its own prior.
+- $\mu_m$ is a per-feature intercept, re-estimated every sweep. Each feature has its own residual precision $\tau_{mj}$ (maximum likelihood, not regularized).
 
 **Survival.** A Cox model with linear predictor
 
@@ -67,21 +66,21 @@ $$
 \boldsymbol\eta = (Y_1F_1+Y_2F_2)\,\beta,\qquad Z_{ik}=\sum_m\sum_j y_{mij}f_{mjk}.
 $$
 
-- $Z$ projects a patient's measurements onto the loadings. A new patient's risk therefore needs only their data and the fitted $F$ and $\beta$, not an estimate of their $L$.
+- $Z$ projects a patient's measurements onto the loadings. A new patient's risk therefore needs only their data and the fitted $F$ and $\beta$.
 - Survival enters the $F$ and $\beta$ updates but not the $L$ update.
 - A constant shift in $\eta$ does not change the Cox partial likelihood, so the intercept leaves the survival model unchanged.
 
 **Priors.** Every hyperparameter is fit by empirical Bayes.
 
-- Scores: $l_{ik}\sim(1-\pi_{L_k})\delta_0+\pi_{L_k}\operatorname{Exp}(r_{L_k})$.
-- Loadings: $f_{mjk}\sim g_{F_{mk}}$, a separate prior for each modality–program pair. The family is chosen per modality: point-exponential, point-Laplace $(1-\pi)\delta_0+\pi\tfrac{\lambda}{2}e^{-\lambda|f|}$, or Normal.
-- Survival coefficients: $\beta_k\sim N(0,s^2_{\beta_k})$.
+- **Scores:** $l_{ik}\sim(1-\pi_{L_k})\delta_0+\pi_{L_k}\operatorname{Exp}(r_{L_k})$.
+- **Loadings:** the family is chosen per modality: point-exponential, point-Laplace $(1-\pi)\delta_0+\pi\tfrac{\lambda}{2}e^{-\lambda|f|}$, or Normal. Its parameters are fit separately for each modality–program pair.
+- **Survival coefficients:** $\beta_k\sim N(0,s^2_{\beta_k})$, with $s^2_{\beta_k}$ estimated as $\max(0,x_k^2-1/A_k)$. A program whose survival signal is weak ($z<1$) therefore gets $\beta_k=0$ exactly. This is why many programs show $\beta=0$ below.
 
 **Fitting.** Coordinate-ascent variational inference, with a Cox working approximation refreshed every outer sweep.
 
-- There are no tempering weights: reconstruction and survival enter the $F$ update as a plain sum.
-- The scale of each program is not identified. To fix it, each program is rescaled after its update so that $\mathrm{sd}(Z_{\cdot k})=1$.
-- The $\beta$ update uses $E[Z^2]$, which includes the variance of the loadings. This corrects the attenuation that comes from treating estimated scores as fixed.
+- **No tempering weights.** Reconstruction and survival enter the $F$ update as a plain sum.
+- **Scale.** Each program's scale is not identified, so it is rescaled after its update to $\mathrm{sd}(Z_{\cdot k})=1$.
+- **Attenuation.** The $\beta$ update uses $E[Z^2]$, which includes the variance of the loadings. This corrects for the attenuation that comes from treating estimated scores as fixed.
 
 ## §2 — Choosing K in the multimodal model
 
@@ -89,74 +88,73 @@ $$
 
 In September the number of "active" factors tracked $K_{\mathrm{init}}$. Three things explain this.
 
-1. **Unbounded per-feature precisions.** $\tau_{mj}=n/E\lVert y_{mj}-Lf_{mj}\rVert^2$ is unregularized maximum likelihood. A spare factor can load on a single feature and fit it exactly, which sends that feature's $\tau$ to infinity. In simulation this reached about $10^{16}$, against true values of at most 2.6. The likelihood gain is unbounded, so the factor is never worth removing.
-2. **No intercept.** On uncentered data (log2 expression, β methylation), nonnegative factors absorb the per-feature means. Centering the data alone does not help, because nonnegative scores cannot produce zero-mean columns.
-3. **The September simulations were too noisy to test this.** Each true factor explained about 0.7% of the variance, so the 1% "active" cutoff could not count even the true factors. The 5–9 active factors we saw were fitting noise in the high-variance features.
+1. **Unbounded per-feature precisions.** $\tau_{mj}=n/E\lVert y_{mj}-Lf_{mj}\rVert^2$ is unregularized maximum likelihood. Without an intercept, a spare factor can load on a single feature and fit it exactly, which sends that feature's $\tau$ to infinity. In simulation it reached about $10^{16}$, against true values of at most 2.6. Adding the intercept removed this degeneracy at moderate signal-to-noise; $\tau$ itself is still unregularized.
+2. **No intercept.** On uncentered data (log2 expression, methylation beta-values), nonnegative factors absorb the per-feature means. Centering the data alone does not help, because nonnegative scores cannot produce zero-mean columns.
+3. **The September simulations were too noisy to test this.** Each true factor explained about 0.7% of the variance, below the 1% "active" cutoff. The 5–9 active factors seen then were fitting noise in the high-variance features.
 
 ### The parsimony framework
 
-These options are added to `fit_multimodal_yfb()`. The defaults keep the original behavior.
+These options are added to `fit_multimodal_yfb()`; the defaults keep the original behavior.
 
 | Component | What it does |
 |---|---|
 | Intercept $\mu_m$ | Absorbs feature means. $F$ then describes deviations from baseline. |
 | Point-Laplace prior on $F$ | Signed, sparse loadings around the baseline. |
 | Marginal-likelihood prior fits (`ebnm`) | A whole program's prior can shrink to the point mass at zero. |
-| Evidence-based pruning | After convergence, remove the factor whose removal does not lower the ELBO, refit, and repeat. |
+| Nullcheck pruning | When the sweep loop ends, remove the factor whose removal does not lower the ELBO, refit from the rest, and repeat. |
 
-**The ELBO.** The pruning rule compares
+**The ELBO** compared by the nullcheck is
 
 $$
-\text{ELBO} = E_q\log p(Y\mid L,F,\mu,\tau) + \log PL(E[\eta]) - \sum \mathrm{KL}(q\Vert g),
+\text{ELBO} = E_q\log p(Y\mid L,F,\mu,\tau) + \log PL(E[\eta]) - \sum \mathrm{KL}(q\Vert g).
 $$
 
-- $\log PL(E[\eta])$ is the Breslow partial log-likelihood, evaluated at the posterior-mean predictor.
+- $\log PL(E[\eta])$ is the Breslow partial log-likelihood at the posterior-mean predictor.
 - Each KL term comes from the EBNM identity $\mathrm{KL}=E_q\log N(x;\theta,s^2)-\log p(x)$.
-- Every candidate factor set has its own intercept and $\tau$ re-estimated.
+- The nullcheck runs when the loop ends, whether it converged or reached the sweep cap.
+- It removes one factor at a time and holds the other factors' moments fixed; only $\mu$ and $\tau$ are re-estimated. This is a conservative test.
 
-**How factors are classified.** A factor that survives pruning either explains molecular variance, explains survival ($|E\beta_k|/\mathrm{SD}\beta_k\ge1.96$), or both. A survival-only factor stays if its gain in partial log-likelihood is larger than its KL cost.
+**How factors are classified.**
 
-**Single-seed evidence.** Moderate noise, true $K=3$, $n=120$, 50 + 50 features:
+- *Reconstruction-active:* share of variance explained (PVE) ≥ 1%.
+- *Survival-active:* $|E\beta_k|/\mathrm{SD}\beta_k\ge1.96$.
+- A factor can be both, either, or neither. The nullcheck does not require a retained factor to be either kind; for example, the real-data fit at $K_{\mathrm{init}}=10$ kept one factor that was neither.
 
-| Scenario | $K_{\mathrm{init}}$ | Final $K$ | True factors recovered ($\lvert r\rvert$) | Prognostic programs survival-active | Held-out C |
-|---|---|---|---|---|---|
-| Two prognostic programs | 5 | 3 | 1.00, 0.99, 0.99 | 2 of 2 | 0.805 |
-| Two prognostic programs | 12 | 3 | 1.00, 1.00, 0.99 | 2 of 2 | 0.805 |
-| Adverse + protective | 5 | 3 | 1.00, 1.00, 0.99 | 2 of 2, correct signs | 0.808 |
-| Adverse + protective | 12 | 5 | 1.00, 1.00, 0.99 | 2 of 2 (+2 survival-only duplicates) | 0.790 |
-| Low-variance prognostic | 5 or 12 | 3 | 1.00, 1.00, **0.47** | partially | 0.728 |
+**Other precision models, tested and not adopted.**
 
-**What doesn't work yet.**
+- One $\tau$ per modality removes the degeneracy but mis-weights heteroscedastic features. Nothing was pruned, and C fell to 0.65.
+- An empirical-Bayes Gamma prior on $\tau$ learns a heavy tail, so $\tau$ still reached about $10^{17}$.
 
-- **Low-variance prognostic program.** It is found only as a survival-only factor whose loadings match the truth partially ($\lvert r\rvert=0.47$). Survival is partly credited to the high-variance programs.
-- **Duplicates at large $K_{\mathrm{init}}$.** The fit can keep a reconstruction factor and a survival-only copy of the same program.
-- **The other precision models.** One $\tau$ per modality removes the degeneracy but mis-weights heteroscedastic features (no pruning; C fell to 0.65). An empirical-Bayes Gamma prior on $\tau$ learns a heavy tail, so $\tau$ still reached about $10^{17}$.
+### Simulation sweep (preliminary: 2 seeds)
 
-### Replicated sweep (preliminary: 2 seeds)
+**Design.**
 
-**Design.** The original fit and the pruned fit were run on identical simulated data:
+- Data: true $K=3$, $n=120$, 50 + 50 features, moderate noise (each true factor explains about 10% of variance).
+- Starting ranks: $K_{\mathrm{init}}=3,5,7,10,15$.
+- Scenarios: three. Seeds: two per setting.
+- Fits: 60, original vs pruned, on identical data. No fit errored.
+- The full sweep (both noise levels, $K_{\mathrm{init}}=3,\dots,10,15$, three seeds) is still running.
 
-- $K_{\mathrm{init}}=3,5,7,10,15$;
-- three scenarios;
-- moderate noise;
-- two seeds per setting, 60 fits in all, with no errors.
-
-The full sweep (both noise levels, $K_{\mathrm{init}}=3,\dots,10,15$, three seeds) is still running.
-
-![Final number of factors against $K_{\mathrm{init}}$ (true $K=3$, dashed; $y=x$, dotted). The original fit keeps every starting factor. The pruned fit returns about 3 factors whatever the starting rank.](../figs/2026-10-02_pruning_K_final.png)
+![Final number of factors against $K_{\mathrm{init}}$ (true $K=3$, dashed; $y=x$, dotted). The original fit keeps every starting factor; the pruned fit returns about 3 factors when the programs carry variance.](../figs/2026-10-02_pruning_K_final.png)
 
 | Scenario | Final $K$, original ($K_{\mathrm{init}}$ = 3 / 5 / 7 / 10 / 15) | Final $K$, pruned | True factors recovered, pruned | Prognostic programs survival-active, pruned | Held-out C, pruned |
 |---|---|---|---|---|---|
-| Two prognostic programs | 3 / 5 / 7 / 10 / 15 | 3 / 3 / 3 / 3 / 3.5 | 3 of 3 at every $K_{\mathrm{init}}$ | 100% (75% at 15) | 0.787–0.788 |
-| Adverse + protective | 3 / 5 / 7 / 10 / 15 | 2.5 / 3 / 3.5 / 3.5 / 3 | 3 of 3 from $K_{\mathrm{init}}\ge5$ | 75–100% | 0.783–0.795 |
-| Low-variance prognostic | 3 / 5 / 7 / 10 / 15 | 2 / 2.5 / 2.5 / 2.5 / 2.5 | 2 of 3 (the low-variance program is missed) | 0% | 0.61 |
+| Two prognostic programs | 3 / 5 / 7 / 10 / 15 | 3 / 3 / 3 / 3 / 3.5 | 3 of 3 at every $K_{\mathrm{init}}$ | 100% (75% at 15) | 0.785–0.788 |
+| Adverse + protective | 3 / 5 / 7 / 10 / 15 | 2.5 / 3 / 3.5 / 3.5 / 3 | 3 of 3 from $K_{\mathrm{init}}\ge5$ (2.5 at 3) | 75–100% | 0.766–0.795 |
+| Low-variance prognostic | 3 / 5 / 7 / 10 / 15 | 2 / 2.5 / 2.5 / 2.5 / 2.5 | 2 of 3 (1.5 at $K_{\mathrm{init}}=3$); the low-variance program is missed | 0% | 0.50–0.73 across seeds |
 
 What the sweep shows:
 
-- **$K$ no longer follows $K_{\mathrm{init}}$.** With pruning, the final number of factors stays near the truth from $K_{\mathrm{init}}=3$ to 15. The pruned fits also converged in every run; the original fit converged in 0–50% of runs.
-- **Variance-carrying prognostic programs are recovered with the right signs.** In the two scenarios where the prognostic programs carry variance, the fit recovers them and assigns survival to them with the correct sign.
-- **The low-variance prognostic program is lost by both methods,** and the survival association is credited to the wrong factor (one false survival-active factor). This is the main limitation; see §4 for why.
-- **Minor issues.** At $K_{\mathrm{init}}=3$ a true factor is sometimes pruned. At large $K_{\mathrm{init}}$ a survival-only duplicate of a prognostic program sometimes survives.
+- **$K$ no longer follows $K_{\mathrm{init}}$.**
+  - With pruning, the final count stays near the truth from $K_{\mathrm{init}}=3$ to 15 when every program carries variance. It is 2–2.5 when the prognostic program is low-variance.
+  - All 30 pruned fits converged. The original fit converged in 8 of 30, and in none of the two-prognostic runs.
+- **Variance-carrying prognostic programs are found with the right sign** in 75–100% of runs.
+  - Both programs are flagged in 50–100% of runs at each $K_{\mathrm{init}}$.
+  - Pruned fits still average 0.5–1 *false* survival-active factors in these scenarios. One example: a non-prognostic true factor flagged in one seed even at the correct $K=3$. Another: survival-only duplicates of a prognostic program at large $K_{\mathrm{init}}$.
+- **The low-variance prognostic program is lost by both methods.**
+  - In one seed (C = 0.73) its survival signal was credited to two wrong factors.
+  - In the other (C = 0.50) no factor was survival-active and the program was not recovered ($\lvert r\rvert=0.06$).
+- **At $K_{\mathrm{init}}=3$** a true factor is sometimes pruned.
 
 ![Recovery at moderate noise, mean over 2 seeds per setting: false survival-active factors, the share of prognostic programs found survival-active, and true factors recovered.](../figs/2026-10-02_pruning_recovery.png)
 
@@ -167,27 +165,29 @@ What the sweep shows:
 | Cohort | Role | Patients | Events | Notes |
 |---|---|---|---|---|
 | TCGA-PAAD | training | 144 | 75 | 6 of 150 dropped (missing or non-positive time) |
-| ICGC primary PDAC | external validation | 50 | 30 | primary tumors with PDAC histology |
+| ICGC primary PDAC | external validation | 50 | 30 | primary tumors with PDAC histology; all 50 are in the PACA-AU RNA-seq cohort |
 | ICGC, all donors | sensitivity | 67 | 40 | adds 10 IPMN with invasion, 4 adenosquamous, 2 acinar, 1 signet ring |
 
 **Preprocessing**
 
 - **Expression.** TCGA is log2(TMM-CPM + 1) as provided. ICGC is provided unlogged, so log2(x + 1) is applied. ICGC donor DO33168 has two RNA samples, which are averaged in the source object.
-- **Methylation.** β-values on the 305,352 CpGs that pass both cohorts' sex-chromosome filters, matched by probe name. KNN imputation fills the 0.07% of TCGA values that are missing, done within each cohort.
+- **Methylation.**
+  - Beta-values on the 305,352 CpGs that pass both cohorts' sex-chromosome filters, matched by probe name.
+  - KNN imputation, done within each cohort, fills missing values (0.07% in TCGA).
 - **Survival.**
-  - TCGA comes from the PDAC_data survival table.
-  - ICGC comes from `info.expr`, collapsed to one row per donor. It agrees exactly with the PACA_AU_seq table; an earlier "11 of 80 disagree" was an artifact of comparing NA with NA.
-- **Screening, on TCGA only.** 3,000 genes by the DeSurv combined mean + variance rank, and the 10,000 most variable CpGs.
+  - TCGA: from the PDAC_data survival table.
+  - ICGC: from `info.expr`, one row per donor. It agrees exactly with the PACA-AU RNA-seq survival table.
+- **Screening (TCGA only).** 3,000 genes by the DeSurv combined mean + variance rank, and the 10,000 most variable CpGs.
 
 **Methylation scale.** Across the 10,000 screened CpGs:
 
 | Scale | Median \|skewness\| | CpGs with \|skewness\| > 1 | Median excess kurtosis | Shapiro–Wilk rejects |
 |---|---|---|---|---|
-| β | 0.43 | 13% | −0.73 | 92% |
-| asin(2β − 1) | 0.34 | 6.6% | −0.70 | 82% |
+| beta-value | 0.43 | 13% | −0.73 | 92% |
+| asin(2·beta − 1) | 0.33 | 6.6% | −0.70 | 82% |
 
 - The arcsine transform halves the share of strongly skewed CpGs, but neither scale is Gaussian. Both are flatter than Normal, which fits bimodal methylation.
-- With the intercept and signed priors, either scale can now be used. The first fits use β-values.
+- With the intercept and signed priors, either scale can now be used. The fits below use beta-values.
 
 ![Per-CpG skewness on each methylation scale (TCGA, 10k screened CpGs)](../figs/2026-10-02_methylation_skew.png)
 
@@ -196,127 +196,144 @@ What the sweep shows:
 
 The screening uses DeSurv's single-modality gene rule and a variance rule for CpGs. Three questions are open:
 
-- **How many CpGs relative to genes?** We keep 10k CpGs and 3k genes, so methylation has more than three times as many features. Without per-modality weights it can dominate the reconstruction likelihood.
+- **How many CpGs relative to genes?** We keep 10k CpGs and 3k genes. Without per-modality weights, methylation can dominate the reconstruction likelihood.
 - **Variance-based or survival-aware screening?**
 - **CpGs screened separately, or mapped to the selected genes** (for example, promoter CpGs)?
 :::
 
 ## §4 — First real-data fits: TCGA → ICGC
 
-**Does the gain come from methylation or from the framework?** All fits use $K_{\mathrm{init}}=7$, the same TCGA patients and the same screened features.
+### External discrimination
+
+All multimodal and two-step fits below use $K_{\mathrm{init}}=7$, the same TCGA patients and the same screened features. The recommended single-modality model was trained on TCGA + CPTAC with its own preprocessing; its scores on these donors come from the published validation run.
 
 | Model | Data | ICGC primary PDAC (n = 50) | ICGC all donors (n = 67) | TCGA (training) |
 |---|---|---|---|---|
-| **New framework** | **expression + methylation** | **0.685** (0.579–0.779) | 0.639 (0.547–0.734) | 0.638 |
-| **New framework** | **expression only** | **0.676** (0.569–0.770) | 0.653 | 0.644 |
+| **New framework** | expression + methylation | **0.685** (0.579–0.779) | 0.639 (0.547–0.734) | 0.638 |
+| **New framework** | expression only | **0.676** (0.569–0.770) | 0.653 | 0.644 |
+| **Recommended single-modality model** (TCGA + CPTAC, per-platform z-std) | expression | **0.685** (0.576–0.785) | — | — |
 | Original multimodal fit (no intercept or pruning) | expression + methylation | 0.453 (0.319–0.599) | 0.442 | 0.597 |
-| Single-modality YFB fitter | expression only | 0.491 (0.364–0.633) | 0.480 (0.369–0.581) | 0.594 |
+| Single-modality fitter on TCGA, raw log2, 100-iteration cap (not converged) | expression | 0.491 (0.364–0.633) | 0.480 (0.369–0.581) | 0.594 |
+| Two-step EBMF → Cox | expression only | 0.525 (0.399–0.651) | 0.527 | 0.670 |
 | Two-step EBMF → Cox | expression + methylation | 0.424 (0.286–0.567) | 0.418 (0.310–0.531) | 0.579 |
 
-External C with 95% bootstrap CIs; the orientation is fixed from training.
+External C with 95% bootstrap CIs. The risk orientation is fixed from the training fit.
 
 What the comparison shows:
 
-- **The framework drives the gain.** The intercept, signed loadings, `ebnm` priors and pruning raise external C from about 0.45–0.49 to about 0.68, with or without methylation.
-- **Methylation adds about +0.01**, far inside the uncertainty for 50 donors.
+- **Parity with the established model.** Trained on TCGA alone, the new framework matches our recommended single-modality model on exactly the same 50 donors (0.685 vs 0.685). The intervals overlap almost completely.
+- **The framework fixed the old multimodal fit.** The original multimodal fit (0.453) and the weaker in-run comparators (0.42–0.53) are well below it.
+- **Methylation adds +0.01**, far inside the uncertainty for 50 donors.
+- **Stacking methylation hurts the two-step model,** from 0.525 to 0.424.
 
 | Starting rank $K_{\mathrm{init}}$ (expression + methylation) | 3 | 7 | 10 |
 |---|---|---|---|
-| Factors kept | 3 | 7 | 10 |
+| Factors kept (none pruned) | 3 | 7 | 10 |
 | Survival-active | 0 | 1 | 3 |
+| Converged within 500 sweeps | yes (398) | no | no |
 | ICGC primary C | 0.557 (0.420–0.699) | 0.685 (0.579–0.779) | 0.650 (0.529–0.763) |
 
-$K_{\mathrm{init}}=15$ and the other starting ranks are still running.
+Starting rank matters on real data, and which programs are survival-active depends on it. At $K_{\mathrm{init}}=10$, the three survival-active factors include one matching Program 3 ($\lvert r\rvert=0.68$). At $K_{\mathrm{init}}=7$ the only survival-active factor is the basal-like one. The other starting ranks, up to 15, are still running.
 
-**What the programs are.** Expression + methylation fit, $K_{\mathrm{init}}=7$. The hazard ratios are marginal, per SD of each program's projection.
+**Caveats.**
 
-| # | Program (top genes) | Modality | Variance share | Survival-active | HR in TCGA ($p$) | HR in ICGC ($p$) |
+- **Small validation set.** 50 donors and 30 deaths give wide intervals.
+- **Convergence.** The $K_{\mathrm{init}}=7$ and 10 fits, and the expression-only fit, stopped at the 500-sweep cap.
+  - The risk score had stabilized: the largest relative change in $\eta$ was $3.6\times10^{-4}$ at $K_{\mathrm{init}}=7$.
+  - The reconstruction criterion, the largest entry-wise change in $LF_m^\top$ relative to its largest entry, was still about 1.5%.
+  - A stopping rule based on the ELBO or the mean change is the planned fix.
+
+### What the programs are
+
+Expression + methylation fit, $K_{\mathrm{init}}=7$.
+
+- **Methylation share:** each program's fraction of the total fitted methylation signal, $\lVert L_k\rVert^2\lVert F_{2k}\rVert^2$. Counting "nonzero" CpGs depends on an arbitrary threshold under the point-Laplace prior, so shares are used instead.
+- **Hazard ratios:** marginal, per within-cohort SD of each program's projection. There are 14 unadjusted tests, so the table is descriptive.
+- **Source:** `results/multimodal_real/characterize_programs.R`, which writes `real_program_table_K07.csv`.
+
+| # | Program (top genes) | Methylation share | PVE | Survival-active | HR in TCGA ($p$) | HR in ICGC ($p$) |
 |---|---|---|---|---|---|---|
-| 4 | **Basal-like vs classical**: up *KRT5, KRT6A, KRT17, S100A2, MUC16*; down *CLDN18, REG4, LYZ* | expression | 3.6% | **yes** | **1.34 (0.006)** | **1.99 (0.0003)** |
-| 5 | **Normal vs activated stroma**: up *ADH1B, C7, CHRDL1*; down *COL11A1, MMP11, MSLN* | expression | 2.6% | no | 0.75 (0.04) | 0.83 (0.46) |
-| 1 | **Classical / gastric epithelial**: up *REG4, TFF1, CLDN18, CEACAM5*; down stromal genes | expression | 12.8% | no | 1.07 (0.58) | 0.79 (0.30) |
-| 2 | **Immune / lymphoid**: up *CCL19, CCL21, PTPRC, LTB, SELL* | expression + methylation (1,589 CpGs) | 4.3% | no | 0.85 (0.17) | 0.87 (0.54) |
-| 3 | Mixed: up *MIF, TNFRSF6B*; down *IL6ST, NCOA2* | expression | 16.7% | no | 1.00 (0.98) | 1.48 (0.05) |
-| 6 | **Exocrine / acinar**: up *CTRB2, CPB1, PNLIP, CELA3A, PRSS1* | expression | 16.0% | no | 0.92 (0.53) | 1.17 (0.37) |
-| 7 | **Methylation only** (4,477 CpGs) | methylation | 4.6% | no | 1.11 (0.36) | 0.87 (0.44) |
+| 4 | **Basal-like vs classical**: up *KRT5, KRT6A, KRT17, S100A2, MUC16*; down *CLDN18, REG4, LYZ* | 4.5% | 3.6% | **yes** | **1.34 (0.006)** | **1.99 (0.0003)** |
+| 5 | **Normal vs activated stroma**: up *ADH1B, C7, CHRDL1*; down *COL11A1, MMP11, MSLN* | 1.2% | 2.6% | no | 0.75 (0.04) | 0.83 (0.46) |
+| 1 | **Classical / gastric epithelial**: up *REG4, TFF1, CLDN18, CEACAM5*; down stromal genes | 4.8% | 12.8% | no | 1.07 (0.58) | 0.79 (0.30) |
+| 2 | **Immune / lymphoid**: up *CCL19, CCL21, PTPRC, LTB, SELL* | **20.9%** | 4.3% | no | 0.85 (0.17) | 0.87 (0.54) |
+| 3 | Mixed: up *MIF, TNFRSF6B*; down *IL6ST, NCOA2* | 0.3% | 16.7% | no | 1.00 (0.98) | 1.48 (0.05) |
+| 6 | **Exocrine / acinar**: up *CTRB2, CPB1, PNLIP, CELA3A, PRSS1* | 9.3% | 16.0% | no | 0.92 (0.53) | 1.17 (0.37) |
+| 7 | **Methylation only** (no expression loadings) | **58.9%** | 4.6% | no | 1.11 (0.36) | 0.87 (0.44) |
 
-**Known PDAC biology is recovered.** The fit finds the established PDAC axes:
+**Known PDAC biology is recovered:**
 
 - basal-like vs classical tumor;
 - normal vs activated stroma;
 - exocrine contamination;
 - immune infiltration.
 
-The one survival-active program is the basal-like vs classical axis, and it is strongly prognostic out of sample (ICGC HR 1.99 per SD, $p=0.0003$).
+The one survival-active program is the basal-like vs classical axis, and it is prognostic out of sample (ICGC HR 1.99 per SD, $p=0.0003$). It corresponds to single-modality Program 7 ($\lvert r\rvert=0.68$ over 1,781 shared genes). Factor 1 (classical/gastric, 12.8% of variance) corresponds to single-modality Program 3 ($\lvert r\rvert=0.79$), although here it is not survival-active. Every expression-loading factor has a counterpart in Yusha's unsupervised `tcga_flash_K14` fit ($\lvert r\rvert$ 0.60–0.87).
 
-**Why methylation adds no discrimination here.**
+**What methylation contributes.**
 
-- The expression programs are essentially the same with or without methylation. Matched loadings between the two fits correlate at $\lvert r\rvert$ 0.79–0.91, and the survival-active program matches at 0.88.
-- Methylation contributes the CpGs of the immune program, which plausibly reflect immune-cell content, and one methylation-only program. Neither is prognostic.
-- The prognostic basal-like program uses essentially no CpGs.
+- **Most expression programs barely change when methylation is added.** Matched loadings between the two fits correlate at $\lvert r\rvert$ 0.79–0.91 for four of the six expression-loading programs, including the survival-active program at 0.88. The immune (0.67) and stromal (0.52) programs match less well, so methylation does shift the immune and stromal structure somewhat.
+- **Most of the methylation signal goes to two non-prognostic programs.** The methylation-only program carries 59% and the immune program 21%. The immune share plausibly reflects immune-cell content. The exocrine program carries 9%.
+- **The prognostic basal-like program carries 4.5%.**
 
-This suggests that, at the current screening (10,000 most variable CpGs), methylation mainly records cell composition. CpG screening tied to the selected genes, such as promoter CpGs, is the natural next test.
+At the current screening (the 10,000 most variable CpGs), methylation therefore appears to record mainly cell composition. CpG screening tied to the selected genes, such as promoter CpGs, is the natural next test.
 
-**The programs match the single-modality ones.**
-- The joint fit's one survival-active factor (adverse direction) corresponds to single-modality **Program 7** ($\lvert r\rvert=0.68$ over 1,781 shared genes).
-- Its largest expression factor corresponds to **Program 3** ($\lvert r\rvert=0.79$), although here it is not survival-active.
-- Every factor has a counterpart in Yusha's unsupervised `tcga_flash_K14` fit ($\lvert r\rvert$ 0.60–0.87).
+### Why nothing was pruned at $K_{\mathrm{init}}=7$
 
-**Caveats.**
-- **Small validation set.** With 50 donors and 30 deaths the intervals are wide, and the joint model's interval overlaps the expression-only model's.
-- **Weak baselines.** Both baselines fall below 0.5 on ICGC, so part of the gap reflects their failure to transfer.
-- **The single-modality comparator differs in more than the data.** It uses the single-modality fitter, which has no intercept and no point-Laplace loadings. The same-framework expression-only fit above resolves this.
-- **Not formally converged.** The fit stopped at the 500-sweep cap. The risk score had stabilized (largest relative change in $\eta$ $3.6\times10^{-4}$), but the largest per-feature reconstruction change stayed around 1%. That maximum over 13,000 features is being held up by a few slowly moving features. Stopping on the ELBO or a mean change is the planned fix.
+The nullcheck asks, for each factor, how much the ELBO would fall without it, with the other factors held fixed:
 
-**Why nothing was pruned at $K_{\mathrm{init}}=7$.** The nullcheck asks, for each factor, how much the ELBO would fall without it:
-
-| Factor | Loads on | Reconstruction loss if removed | Survival loss | KL saved |
+| Factor | Program | Reconstruction loss if removed | Survival loss | KL saved |
 |---|---|---|---|---|
-| 1 | expression | −100,137 | 0.0 | +22,602 |
-| 2 | expression and methylation | −132,648 | 0.0 | +16,504 |
-| 3 | expression | −54,407 | 0.0 | +9,352 |
-| 4 (survival-active) | expression | −74,714 | −2.9 | +20,323 |
-| 5 | expression | −39,226 | −0.8 | +14,310 |
-| 6 | expression | −92,923 | 0.0 | +18,227 |
-| 7 | methylation | −301,982 | 0.0 | +28,895 |
+| 1 | classical | −100,137 | 0.0 | +22,602 |
+| 2 | immune | −132,648 | 0.0 | +16,504 |
+| 3 | mixed | −54,407 | 0.0 | +9,351 |
+| 4 | basal-like (survival-active) | −74,714 | −2.9 | +20,323 |
+| 5 | stroma | −39,226 | −0.8 | +14,310 |
+| 6 | exocrine | −92,923 | 0.0 | +18,227 |
+| 7 | methylation-only | −301,982 | 0.0 | +28,895 |
 
-The table answers the question, and it raises two discussion points.
-
-- **The data support all seven factors.** With 144 × 13,000 values, each factor gains far more in reconstruction than it costs in KL. This is consistent with the unsupervised flash fit, which keeps 14 factors on expression alone. Pruning should start removing factors only at larger $K_{\mathrm{init}}$, which the sweep will show.
-- **Survival is negligible in the ELBO at this scale.** It contributes under 3 nats to any factor, against $10^4$–$10^5$ for reconstruction. There are 144 partial-likelihood terms against about 1.9 million reconstruction terms. Survival therefore cannot affect which factors are kept, and this is also why the simulated low-variance prognostic program is lost. It is the same scale imbalance that the single-modality α/α_F weights were introduced for.
-- **The factors are mostly modality-specific.** Only factor 2 loads on both modalities. Factor 7 is methylation-only and the others are expression-only. The shared-score model allows shared programs but does not require them. Whether shared expression–methylation programs should be expected, and whether CpGs should be screened relative to the selected genes (§3), are questions for discussion.
-
-- **Arms.** All arms use the same training patients and screened features:
-  - joint multimodal YFB (the pruned framework);
-  - expression-only YFB on the same genes;
-  - two-step EBMF → Cox on the stacked modalities.
-  - Also included as a reference: the original multimodal fit at $K=7$.
-- **Starting ranks.** $K_{\mathrm{init}}=3,\dots,10,15$, matching the single-modality K sweep.
-- **Metric.** Harrell's C, with the risk orientation fixed from training, and a 1,000-sample bootstrap 95% CI. Reported for the ICGC primary-PDAC set and the all-donor sensitivity set.
-- **Factors.** Retained programs classified by role. Expression loadings are compared with the single-modality programs (P3 protective, P7 adverse, and the stromal and immune programs) and with Yusha's `tcga_flash_K14`.
-
-[TABLE + FIGURES: `real_sweep_summary.csv`, `real_sweep_factor_roles.png`, `real_sweep_cindex.png`, `real_factor_comparison.csv`]
+- **The data support all seven factors.** With 144 × 13,000 values, each factor gains far more in reconstruction than it costs in KL. This is consistent with the unsupervised flash fit, which keeps 14 factors on expression alone. Whether pruning starts at larger $K_{\mathrm{init}}$ is an open question; at $K_{\mathrm{init}}=10$ it still removed nothing.
+- **Survival is negligible in the ELBO at this scale.**
+  - It changes the evidence for any factor by under 3 nats, against $10^4$–$10^5$ for reconstruction.
+  - The partial likelihood has terms for 75 events, against about 1.9 million reconstruction terms.
+  - Survival therefore cannot affect which factors are kept. Our leading hypothesis is that the same imbalance explains why the simulated low-variance prognostic program is lost, but no experiment has isolated it yet. It is the same imbalance that the single-modality α/α_F weights were introduced for.
 
 ## §5 — Single-modality results: held-out survival stratification
 
-The recommended single-modality fit (YFB, K_init = 7, trained on TCGA-PAAD + CPTAC) retains four programs:
+The recommended single-modality fit (YFB, $K_{\mathrm{init}}=7$, trained on TCGA-PAAD + CPTAC) retains four programs:
 
 | Program | Role | Character | Example genes |
 |---|---|---|---|
 | Program 7 | Survival-associated (adverse) | Basal-like / glycolytic | *MET*, *ITGA3*, *ENO1*, *LDHA* |
 | Program 3 | Survival-associated (protective) | Classical / epithelial | *MLPH*, *CAPN5*, *TSPAN15* |
 | Stromal program | Expression only | Stromal | collagens, *FAP*, *SPARC* |
-| Immune program | Expression only | Immune | *IKZF1*, *IL10RA* |
+| Immune / quiescent stroma | Expression only | Immune and quiescent stroma | *IKZF1*, *IL10RA*, *SPARCL1* |
 
-Its mean external C across five held-out cohorts is 0.627, against 0.581 for the two-step baseline. It is higher in every cohort, although only Puleo's paired difference is individually significant. The pooled difference is $\Delta C=0.042$ (95% CI 0.013 to 0.071).
+**External discrimination.** Mean external C across five held-out cohorts is 0.627. Against two-step baselines (EBMF, then Cox):
 
-**The frozen model separates survival in every held-out cohort.**
-- Separation is clearest in Puleo (largest cohort, log-rank $p<0.0001$) and Dijk ($p=0.0005$).
-- It is weakest in Moffitt ($p=0.17$; C = 0.549).
+| Two-step baseline | Mean external C | YFB minus two-step, pooled (95% CI) |
+|---|---|---|
+| K = 40 chosen independently, LASSO Cox stage (the fairest) | 0.601 | **+0.026 (0.0002 to 0.050)**; YFB ahead in 4 of 5 cohorts, none individually significant |
+| K = 7 matched to YFB, unpenalized Cox | 0.623 | +0.011 (−0.013 to 0.033), not significant |
+| K = 20, unpenalized Cox (earlier comparison) | 0.581 | +0.042 (0.013 to 0.071) |
+
+- With $\alpha_F=0$, survival does not enter the single-modality factorization. The difference from the two-step pipeline therefore lies in the priors, the rank and the shrunk survival stage, not in supervised discovery of programs (§6).
+- The fair comparisons are recorded in `DECISIONS.md` (2026-08-20).
+
+**Survival stratification in held-out cohorts.** In every cohort the low-risk third has the best survival. The other curves do not always separate: in Puleo the low and middle thirds overlap, and in Moffitt and PACA-AU array the middle and high thirds overlap.
+
+| Cohort | Log-rank $p$ |
+|---|---|
+| Puleo | $<0.0001$ |
+| Dijk | 0.0005 |
+| PACA-AU RNA-seq | 0.021 |
+| PACA-AU array | 0.075 |
+| Moffitt | 0.17 (also the lowest C, 0.549) |
 
 ![Overall survival by within-cohort tertile of the frozen model's risk score. No validation outcome was used to fit, orient or threshold the score.](../figs/2026-10-02_km_risk_external.png)
 
 **Both survival-associated programs keep their direction out of sample.** Pooled over the 616 held-out patients, with log-rank tests stratified by cohort:
+
 - High Program 7 activity: worst survival ($p<0.0001$).
 - High Program 3 activity: best survival ($p=0.004$).
 
@@ -325,9 +342,9 @@ Its mean external C across five held-out cohorts is 0.627, against 0.581 for the
 ::: {.callout-important}
 ## How the reported C-indices are oriented
 
-- **The problem.** The script that produced the external C table chose each risk score's direction separately in every validation cohort, using that cohort's outcomes. The 9/4 review flagged this convention as circular.
-- **Why the numbers don't change.** The saved fit predates the 9/4 sign fix, so its $\eta$ is a good-prognosis score in all five cohorts. A single global flip, risk $=-\eta$, chosen before seeing any validation outcome, reproduces every reported C (0.634, 0.549, 0.648, 0.657, 0.645).
-- **Going forward.** Orientation is fixed from training only. A model that fails in a cohort will show C < 0.5 rather than being flipped. The reporting script now uses these frozen orientations, and its rerun reproduces the C-index and paired-difference tables exactly.
+- **The problem.** The script behind the external C table chose each risk score's direction separately in every validation cohort, using that cohort's outcomes. The 9/4 review flagged this convention as circular.
+- **The numbers stand.** The saved fit predates the 9/4 sign fix, so its $\eta$ is a good-prognosis score: the training fit puts $\beta_7=-0.040$ on the adverse program and $\beta_3=+0.012$ on the protective one. One global orientation, risk $=-\eta$, follows from those training coefficients. It reproduces every reported C (0.634, 0.549, 0.648, 0.657, 0.645).
+- **Going forward.** The reporting script now uses fixed orientations, and its rerun reproduces both tables exactly. A model that fails in a cohort will show C < 0.5 rather than being flipped.
 :::
 
 ## §6 — Single-modality YFB: $Z_F$, and the α_F question
@@ -347,11 +364,18 @@ $$
 
 ### α and α_F
 
-- **What the weights do.**
-  - α = 0.5 tempers the Cox term in the β update. It changes only β's posterior width.
-  - α_F = 0 keeps survival out of the F update, so F is the same as in unsupervised EBMF.
-- **The consequence.** The model keeps programs that explain a lot of expression variance and are also prognostic. It cannot find a low-variance prognostic program, which is the advantage of supervision that the literature review argues for.
-- **Why α_F was set to 0.** In early versions, survival in the F update started a feedback loop between F and L that ended in collapse. Under current preprocessing that no longer happens, but α_F > 0 also did not improve C: α_F = 0, 0.1, 0.3 and 0.5 gave mean external C of 0.6267, 0.6268, 0.6263 and 0.607.
+**What the weights do.**
+
+- α = 0.5 tempers the Cox term in the β update. It changes only β's posterior width.
+- α_F = 0 keeps survival out of the F update, so F is the same as in unsupervised EBMF.
+
+**The consequence.** The model keeps programs that explain a lot of expression variance and are also prognostic. It cannot find a low-variance prognostic program, which is the advantage of supervision that the literature review argues for. The goal is to remove the weights, not to tune them.
+
+**Why α_F was set to 0.** In early versions, survival in the F update started a feedback loop between F and L that ended in collapse. Under current preprocessing that no longer happens, but α_F > 0 also did not improve C:
+
+| α_F | 0 | 0.1 | 0.3 | 0.5 |
+|---|---|---|---|---|
+| Mean external C | 0.6267 | 0.6268 | 0.6263 | 0.607 |
 
 | # | Candidate | Mechanism | Changes the model? |
 |---|---|---|---|
@@ -362,29 +386,37 @@ $$
 | 5 | α as a likelihood power with a stated rule | Tempered posterior | Yes (fallback) |
 
 **Test design, fixed in advance.**
+
 - **Simulation.** Plant a low-variance prognostic program. Success means recovering its loading ($\lvert r\rvert\ge0.7$) and finding it survival-active more often than the α_F = 0 fit does, without losing the high-variance programs.
 - **Real data.** Pooled-bootstrap ΔC against 0.627.
 - **If supervision doesn't change F,** we report that, and the prelim framing is limited accordingly.
 
-**An implementation note.** With survival in the F update, every feature is coupled through $Z=YF$. An exact coordinate step then has to update one feature at a time, which is slow. The multimodal model already works this way. A block update over a whole column, with the coupling bounded by a diagonal term, keeps each step improving the objective and restores single-modality speed. Both models will need this.
+**An implementation note.** With survival in the F update, every feature is coupled through $Z=YF$. An exact coordinate step then has to update one feature at a time, which is slow. The multimodal model already works this way. A block update over a whole column, with the coupling bounded by a diagonal term, keeps each step improving the objective and restores single-modality speed.
 
 ## §7 — Open items and next steps
 
-- **Multimodal model.**
-  - Finish the full simulation sweep (§2) and the real-data $K_{\mathrm{init}}$ sweep (§4).
-  - Fix the survival-only duplicates.
-  - **Give survival a voice in factor selection.** At realistic $p$ the ELBO is dominated by reconstruction (§4). The options are:
-    - per-modality likelihood weights;
-    - survival-aware feature screening;
-    - a separate retention rule for survival-active factors.
-    This is the multimodal version of the α_F question, and the route to recovering low-variance prognostic programs.
-  - Change the stopping rule to the ELBO or a mean change, with $\eta$ stability still required.
-  - Find which part of the framework drives the real-data gain: intercept, signed loadings or pruning. Then decide whether the single-modality model should adopt it.
-  - Ask whether methylation can add predictive value. Options include CpG screening tied to the selected genes, giving survival more weight in factor selection, and larger matched cohorts.
-- **Feature selection and modality balance.** Settle these together (§3 discussion point).
-- **Runtime.**
-  - Done: the loading sweep is now compiled code, 5× faster on real data, with identical results.
-  - Remaining: `ebnm` prior refits take about half the time.
-  - Still needed: the full 305k-CpG fit on Longleaf, and the block update.
-- **Single modality.** Run the α/α_F experiments (§6). 
-- **Prelim.** The proposal chapter draft is in `paper/prelim/project3-ssbmf.qmd` (21 pp). Its multimodal results are pending.
+**Multimodal model**
+
+- Finish the full simulation sweep (§2) and the real-data $K_{\mathrm{init}}$ sweep (§4).
+- **Make survival affect which factors are retained.** At realistic $p$ the ELBO is dominated by reconstruction (§4). Options:
+  - per-modality likelihood weights;
+  - survival-aware feature screening;
+  - a separate retention rule for survival-active factors.
+
+  This is the multimodal version of the α_F question, and a candidate route to recovering low-variance prognostic programs.
+- Reduce false survival-active factors and survival-only duplicates (§2).
+- Change the stopping rule to the ELBO or the mean change, with $\eta$ stability still required. Run the nullcheck only on converged fits.
+- Find which part of the framework is responsible for the real-data result: intercept, signed loadings or pruning.
+- Test whether methylation can add predictive value: CpG screening tied to the selected genes, survival-aware screening, larger matched cohorts.
+
+**Feature selection and modality balance.** Settle these together (§3 discussion point).
+
+**Runtime**
+
+- Done: the loading sweep is now compiled code, 5× faster on real data, with identical results.
+- Remaining: `ebnm` prior refits take about half the time.
+- Still needed: the full 305k-CpG fit on Longleaf, and the block update.
+
+**Single modality.** Run the α/α_F experiments (§6).
+
+**Prelim.** The proposal chapter draft is in `paper/prelim/project3-ssbmf.qmd` (22 pp). The independent reviews of it and of this chapter are in `docs/reviews/`.
