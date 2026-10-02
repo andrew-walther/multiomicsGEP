@@ -3,17 +3,18 @@
 ## Executive summary {.unnumbered}
 
 ::: {.callout-tip appearance="simple"}
-**In one line:** the multimodal model now picks its own number of factors in simulation. Its first external validation on matched TCGA → ICGC expression and methylation is promising: C = 0.685, against 0.42–0.49 for the comparators. Survival still has almost no say in which factors are kept, and that is the main open problem.
+**In one line:** the new fitting framework lets the model pick its own number of factors in simulation. On real data it raises external C on ICGC from about 0.45–0.49 to 0.68. That gain comes from the framework, because the same framework fit to expression alone reaches 0.676. Methylation has not yet added predictive value, and survival still has almost no say in which factors are kept.
 :::
 
 **Progress since 9/18**
 
 1. **Choosing K now works in simulation.** Spare factors used to survive for two reasons: unbounded per-feature precisions, and a missing intercept. With the fix, the final number of factors stays at about the true K = 3 for every starting value from 3 to 15. The original fit kept all of them. (§2)
 2. **Prognostic programs that carry variance are recovered with the correct signs**, held-out C ≈ 0.79, and every pruned fit converged. (§2)
-3. **First real-data result, trained on TCGA and validated on ICGC primary PDAC (n = 50).**
-   - The joint expression + methylation model reaches C = 0.685 (95% CI 0.579–0.779).
-   - The expression-only fit reaches 0.491 and the two-step model 0.424.
-   - Its survival-active program matches single-modality Program 7 (adverse). (§4)
+3. **First real-data results, trained on TCGA and validated on ICGC primary PDAC (n = 50).**
+   - The new framework reaches C = 0.685 (95% CI 0.579–0.779) on expression + methylation and 0.676 (0.569–0.770) on expression alone.
+   - The original multimodal fit reaches 0.453, the single-modality YFB fitter 0.491, and the two-step model 0.424.
+   - **The gain comes from the framework, not from methylation (+0.01).**
+   - The survival-active program matches single-modality Program 7 (adverse). (§4)
 4. **The single-modality results are strengthened.**
    - Held-out Kaplan–Meier curves show survival separation in all five external cohorts, and the adverse and protective programs keep their direction.
    - The reported C-indices are unchanged under a training-fixed risk orientation.
@@ -32,8 +33,8 @@
 - **The real-data comparison is provisional.**
   - The intervals are wide.
   - The fit did not formally converge, although its risk score was stable.
-  - Only K_init = 7 has finished.
-  - The gain over expression-only is confounded with the new framework. [PENDING: same framework fit to expression alone]
+  - Starting ranks K_init = 3, 7 and 10 have finished, with C = 0.557, 0.685 and 0.650. Pruning removed no factors at these starting ranks.
+- **Methylation does not yet add predictive value** on this 50-donor validation set.
 
 **For discussion**
 
@@ -202,13 +203,30 @@ The screening uses DeSurv's single-modality gene rule and a variance rule for Cp
 
 ## §4 — First real-data fits: TCGA → ICGC
 
-**First completed fit: pruned framework, $K_{\mathrm{init}}=7$.** The other starting ranks are still running.
+**Does the gain come from methylation or from the framework?** All fits use $K_{\mathrm{init}}=7$, the same TCGA patients and the same screened features.
 
-| External C (95% bootstrap CI; orientation fixed from training) | ICGC primary PDAC (n = 50) | ICGC all donors (n = 67) | TCGA (training) |
+| Model | Data | ICGC primary PDAC (n = 50) | ICGC all donors (n = 67) | TCGA (training) |
+|---|---|---|---|---|
+| **New framework** | **expression + methylation** | **0.685** (0.579–0.779) | 0.639 (0.547–0.734) | 0.638 |
+| **New framework** | **expression only** | **0.676** (0.569–0.770) | 0.653 | 0.644 |
+| Original multimodal fit (no intercept or pruning) | expression + methylation | 0.453 (0.319–0.599) | 0.442 | 0.597 |
+| Single-modality YFB fitter | expression only | 0.491 (0.364–0.633) | 0.480 (0.369–0.581) | 0.594 |
+| Two-step EBMF → Cox | expression + methylation | 0.424 (0.286–0.567) | 0.418 (0.310–0.531) | 0.579 |
+
+External C with 95% bootstrap CIs; the orientation is fixed from training.
+
+What the comparison shows:
+
+- **The framework drives the gain.** The intercept, signed loadings, `ebnm` priors and pruning raise external C from about 0.45–0.49 to about 0.68, with or without methylation.
+- **Methylation adds about +0.01**, far inside the uncertainty for 50 donors.
+
+| Starting rank $K_{\mathrm{init}}$ (expression + methylation) | 3 | 7 | 10 |
 |---|---|---|---|
-| **Joint multimodal (expression + methylation)** | **0.685** (0.579–0.779) | **0.639** (0.547–0.734) | 0.638 |
-| Expression-only YFB, same genes | 0.491 (0.364–0.633) | 0.480 (0.369–0.581) | 0.594 |
-| Two-step EBMF → Cox, stacked modalities | 0.424 (0.286–0.567) | 0.418 (0.310–0.531) | 0.579 |
+| Factors kept | 3 | 7 | 10 |
+| Survival-active | 0 | 1 | 3 |
+| ICGC primary C | 0.557 (0.420–0.699) | 0.685 (0.579–0.779) | 0.650 (0.529–0.763) |
+
+$K_{\mathrm{init}}=15$ and the other starting ranks are still running.
 
 **The programs match the single-modality ones.**
 - The joint fit's one survival-active factor (adverse direction) corresponds to single-modality **Program 7** ($\lvert r\rvert=0.68$ over 1,781 shared genes).
@@ -218,7 +236,7 @@ The screening uses DeSurv's single-modality gene rule and a variance rule for Cp
 **Caveats.**
 - **Small validation set.** With 50 donors and 30 deaths the intervals are wide, and the joint model's interval overlaps the expression-only model's.
 - **Weak baselines.** Both baselines fall below 0.5 on ICGC, so part of the gap reflects their failure to transfer.
-- **The expression-only comparison is confounded.** That arm uses the single-modality fitter, which has no intercept, no point-Laplace loadings and no pruning. The gain may come from the framework rather than from methylation. The fair test is the multimodal framework fit to expression alone, which is next on the list.
+- **The single-modality comparator differs in more than the data.** It uses the single-modality fitter, which has no intercept and no point-Laplace loadings. The same-framework expression-only fit above resolves this.
 - **Not formally converged.** The fit stopped at the 500-sweep cap. The risk score had stabilized (largest relative change in $\eta$ $3.6\times10^{-4}$), but the largest per-feature reconstruction change stayed around 1%. That maximum over 13,000 features is being held up by a few slowly moving features. Stopping on the ELBO or a mean change is the planned fix.
 
 **Why nothing was pruned at $K_{\mathrm{init}}=7$.** The nullcheck asks, for each factor, how much the ELBO would fall without it:
@@ -332,7 +350,8 @@ $$
     - a separate retention rule for survival-active factors.
     This is the multimodal version of the α_F question, and the route to recovering low-variance prognostic programs.
   - Change the stopping rule to the ELBO or a mean change, with $\eta$ stability still required.
-  - Run the framework on expression alone, to separate the contribution of methylation from that of the framework (§4).
+  - Find which part of the framework drives the real-data gain: intercept, signed loadings or pruning. Then decide whether the single-modality model should adopt it.
+  - Ask whether methylation can add predictive value. Options include CpG screening tied to the selected genes, giving survival more weight in factor selection, and larger matched cohorts.
 - **Feature selection and modality balance.** Settle these together (§3 discussion point).
 - **Runtime.**
   - Done: the loading sweep is now compiled code, 5× faster on real data, with identical results.

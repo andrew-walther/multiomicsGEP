@@ -66,7 +66,7 @@ This chapter develops survival-supervised Bayesian matrix factorization (SSBMF).
 1. **A joint model whose risk score needs no fitted patient-level parameters.** The Cox predictor uses each patient's expression projected onto the program loadings, $\eta = (YF)\beta$. A new patient's risk is therefore computed from their measurements alone. Posterior uncertainty in the survival coefficients is estimated within the model.
 2. **Choosing the number of programs from one over-specified fit.** Empirical-Bayes shrinkage, combined with a consensus over ELBO, BIC, cross-validated likelihood and concordance, reduces an over-specified $K_{\mathrm{init}}$ to an effective number of programs $K_{\mathrm{eff}}$. This separates programs that explain expression variance from programs associated with survival.
 3. **External validation** in five held-out PDAC cohorts across RNA-seq, microarray and proteomic platforms, with comparisons to a two-step factorization-then-Cox baseline and to DeSurv.
-4. **A multimodal extension** for matched gene expression and DNA methylation. Patient program scores are shared across modalities, while each modality has its own loadings and loading prior. A parsimony framework (intercept, marginal-likelihood prior fits and evidence-based factor pruning) selects the factors explaining molecular variation and those explaining survival without cross-validating $K$.
+4. **A multimodal extension** for matched gene expression and DNA methylation, with a parsimony framework. Patient program scores are shared across modalities, while each modality has its own loadings and loading prior. The framework (intercept, marginal-likelihood prior fits and evidence-based factor pruning) chooses the number of factors without cross-validating $K$, and it substantially improves external discrimination.
 
 Section 2 presents both models and the simulation and data designs, Section 3 the results, and Section 4 a discussion. The multimodal work is in progress; Section 4.3 states what remains.
 
@@ -256,26 +256,30 @@ A prognostic program that explains little variation was not recovered by either 
 
 \FloatBarrier
 
-## In a first external validation, the multimodal model has higher concordance than expression-only and two-step models
+## In external validation, the new fitting framework raises concordance; methylation adds little so far
 
-The pruned model was trained on TCGA expression and methylation (144 patients). On 50 ICGC primary PDAC donors its external concordance was 0.685 (95% CI 0.579 to 0.779). On the same features, expression-only YFB reached 0.491 and the two-step model 0.424 (@tbl-mm-external). Its survival-active factor corresponded to the adverse single-modality program ($\lvert r\rvert=0.68$ on shared genes).
+Models were trained on TCGA (144 patients) and evaluated on 50 ICGC primary PDAC donors (@tbl-mm-external).
 
-| Model | ICGC primary PDAC ($n=50$) | ICGC all donors ($n=67$) |
+- **The framework.** The intercept, signed point-Laplace loadings, marginal-likelihood prior fits and pruning raised external concordance to 0.685 (95% CI 0.579 to 0.779) with both modalities.
+- **Comparators.** The original multimodal fit reached 0.453, the single-modality fitter on expression 0.491, and the two-step model 0.424.
+- **Methylation.** Fit to expression alone, the same framework reached 0.676. Methylation therefore added little discrimination in this first test.
+- **Programs.** The survival-active factor corresponded to the adverse single-modality program ($\lvert r\rvert=0.68$ on shared genes).
+
+| Model | Data | ICGC primary PDAC ($n=50$) |
 |---|---|---|
-| Joint multimodal | 0.685 (0.579, 0.779) | 0.639 (0.547, 0.734) |
-| Expression-only YFB | 0.491 (0.364, 0.633) | 0.480 (0.369, 0.581) |
-| Two-step EBMF → Cox | 0.424 (0.286, 0.567) | 0.418 (0.310, 0.531) |
+| New framework | expression + methylation | 0.685 (0.579, 0.779) |
+| New framework | expression only | 0.676 (0.569, 0.770) |
+| Original multimodal fit | expression + methylation | 0.453 (0.319, 0.599) |
+| Single-modality YFB fitter | expression only | 0.491 (0.364, 0.633) |
+| Two-step EBMF → Cox | expression + methylation | 0.424 (0.286, 0.567) |
 
-: External concordance (95% bootstrap interval) of models trained on TCGA, $K_{\mathrm{init}}=7$. {#tbl-mm-external}
+: External concordance (95% bootstrap interval) of models trained on TCGA with $K_{\mathrm{init}}=7$. {#tbl-mm-external}
 
 These results come with caveats:
 
-- **The intervals are wide and overlap** with only 30 deaths in the validation set.
-- **The baselines are weak here.** Both fail to transfer to ICGC.
-- **Convergence.** The fit had a stable risk score but had not met the formal convergence criterion.
-- **The comparison is confounded.** The expression-only comparator is the single-modality fitter, which has no intercept, no point-Laplace loadings and no pruning. The gain may therefore come from the framework rather than from methylation. The planned test is the same framework fit to expression alone.
-
-[PENDING: remaining starting ranks.]
+- **Wide intervals.** With 30 deaths, the intervals are wide.
+- **Convergence.** The fits had stable risk scores but had not met the formal convergence criterion.
+- **Starting rank.** Across starting ranks 3, 7 and 10, concordance was 0.557, 0.685 and 0.650. [PENDING: remaining starting ranks.]
 
 # Discussion
 
