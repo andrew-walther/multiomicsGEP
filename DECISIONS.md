@@ -5,6 +5,40 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-02 — Orientation of the reported single-modality external C-indices
+
+**Finding.** `run_external_ci_analysis.R` produces `external_cindex_ci.csv`, the
+source of the mean external C = 0.627. It calls `bootstrap_concordance_ci()`
+with `flip = NULL`, which orients each risk score using the validation
+cohort's own outcomes. The 2026-09-04 review flagged this convention as
+circular, but this script was not among the runners updated then.
+
+**Effect on the reported numbers: none.** The saved D4 fit predates the
+2026-09-04 sign-correction fix, so its η = Ẑβ is a good-prognosis score
+(β₇ = −0.040 on the adverse program, β₃ = +0.012 on the protective one).
+Raw concordance with `reverse = TRUE` is below 0.5 in all five cohorts.
+One global orientation, risk = −η, fixed without looking at any validation
+outcome, therefore reproduces every reported cohort C:
+
+| Cohort | C |
+|---|---|
+| Dijk | 0.634 |
+| Moffitt | 0.549 |
+| PACA-AU array | 0.648 |
+| PACA-AU seq | 0.657 |
+| Puleo | 0.645 |
+
+`results/benchmark_sim/make_km_figures.R` rebuilds the validation
+projections, checks that they match the saved scores to 1e-8, and uses
+risk = −η.
+
+**Follow-up.** Switch `run_external_ci_analysis.R` to a frozen orientation
+(`flip = TRUE` for D4, or refit D4 after the sign fix). The numbers will not
+change, but the script will no longer use the circular convention. Report
+concordance below 0.5 where it occurs rather than flipping it.
+
+---
+
 ## 2026-10-01 — Parsimony framework for the multimodal model: intercept, ebnm priors, ELBO pruning
 
 **Problem.** The number of reconstruction-active factors tracked K_init.

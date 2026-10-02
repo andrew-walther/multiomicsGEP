@@ -177,7 +177,8 @@ The sweep covers $K_{\mathrm{init}}=3,\dots,10$ and $15$, with three seeds per s
 
 ## Evaluation
 
-- **Discrimination:** Harrell's concordance [@Harrell1982] in held-out cohorts, with the risk direction fixed from the fitted model, and percentile bootstrap intervals. Differences between models use a pooled, cohort-weighted bootstrap.
+- **Discrimination:** Harrell's concordance [@Harrell1982] in held-out cohorts, with percentile bootstrap intervals. Differences between models use a pooled, cohort-weighted bootstrap.
+- **Orientation:** the direction of each risk score is fixed once, before any validation outcome is seen. Choosing it separately in each validation cohort would force every concordance to be at least 0.5 and inflate the results. A model that fails in a cohort can therefore show a concordance below 0.5.
 - **Factor recovery** (simulation): absolute correlation between true and estimated loadings, with a match counted at $|r|\ge0.7$.
 - **Prognostic recovery** (simulation): the share of true prognostic programs whose matched factor is survival-active with the correct sign, and the number of false survival-active factors.
 
@@ -198,6 +199,10 @@ The recommended single-modality configuration was trained on TCGA-PAAD and CPTAC
 
 : External concordance (95% bootstrap interval) of the single-modality model and the two-step baseline. {#tbl-external}
 
+The frozen model also separates patients by survival in each held-out cohort (@fig-km-risk). The patients in the top third of predicted risk had shorter survival than those in the bottom third. The separation was clearest in Puleo, the largest cohort (log-rank $p<0.0001$), and in Dijk ($p=0.0005$) and weakest in the Moffitt array cohort ($p=0.17$), which also had the lowest concordance.
+
+![Overall survival by tertile of the frozen model's risk score within each held-out cohort. No validation outcome was used to fit, orient, or threshold the score.](figures/single_km_risk_external.png){#fig-km-risk width=95%}
+
 ## An over-specified fit retains two survival-associated programs and two expression programs
 
 From $K_{\mathrm{init}}=7$, four programs were retained: two survival-active and two that explain expression variance only (@fig-programs). The other three were shrunk to zero.
@@ -209,7 +214,12 @@ From $K_{\mathrm{init}}=7$, four programs were retained: two survival-active and
 
 ![Gene weights of the four programs retained from $K_{\mathrm{init}}=7$ (top 20 genes per program). Programs 3 and 7 are survival-active; the stromal and immune programs explain expression variance only.](figures/single_programs_heatmap.png){#fig-programs width=70%}
 
-[FIGURE TO ADD: Kaplan–Meier curves by projection tertile for Programs 3 and 7 in the validation cohorts, regenerated from the current configuration]
+Both survival-active programs keep their direction in data the model never saw (@fig-km-programs). Across the 616 patients in the five held-out cohorts:
+
+- patients in the top third of Program 7 activity had the shortest survival (cohort-stratified log-rank $p<0.0001$);
+- patients in the top third of Program 3 activity had the longest ($p=0.004$).
+
+![Overall survival by within-cohort tertile of Program 3 and Program 7 projection scores, pooled over the five held-out cohorts.](figures/single_km_programs_external.png){#fig-km-programs width=95%}
 
 ## Under-specifying the starting rank merges true programs; over-specifying does not
 
