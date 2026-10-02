@@ -5,6 +5,78 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-01 — Parsimony framework for the multimodal model: intercept, ebnm priors, ELBO pruning
+
+**Problem.** The number of reconstruction-active factors tracked K_init.
+Diagnosis:
+
+1. **Unbounded per-feature precisions.** τ_mj = n / E‖y_mj − L f_mj‖² is
+   unregularized maximum likelihood. A spare factor can load on a single
+   feature and fit it exactly, which sends that feature's τ to infinity: up to
+   about 10¹⁶ in simulation, against true values ≤ 2.6. The likelihood gain
+   is unbounded, so such a factor is never worth removing.
+2. **No intercept.** On uncentered data (log2 expression, β methylation,
+   or the truncated September simulations), nonnegative factors absorb the
+   per-feature means and truncation artifacts. Centering alone does not work,
+   because nonnegative scores cannot produce zero-mean columns.
+3. **The September simulation design has very low signal-to-noise.** Each
+   true factor explains about 0.7% of the variance, and noise SDs range from
+   0.6 to 5.2 across features. The 1% PVE cutoff therefore could not count
+   even the true factors as active. The 5–9 "active" factors seen there were
+   fitting noise in the high-variance features.
+
+**Framework** (`fit_multimodal_yfb()` controls; the defaults keep the
+original behavior):
+
+- `intercept = TRUE`. Y_m = 1μ_mᵀ + LF_mᵀ + E_m, with μ_m re-estimated each
+  sweep (as suggested on 9/18). F describes deviations from baseline, so it
+  takes a signed prior (point-Laplace). L stays nonnegative and is read as
+  program activity. A constant shift in η does not change the Cox partial
+  likelihood.
+- `prior_update = "ebnm"`. The point-exponential L/F priors are fit by
+  marginal likelihood, so a whole column can shrink to the point mass.
+- `prune = TRUE`. A flashier-style nullcheck runs after convergence. It
+  removes the factor whose removal does not lower
+  ELBO = reconstruction + log PL(E η) − KL, refits from the remaining
+  factors, and repeats.
+  - The survival term is the Breslow partial log-likelihood at E[η], as the
+    user chose on 10/1. A variance-corrected alternative,
+    −½Σ w_i Var(η_i), is available for comparison.
+  - KL is computed per coordinate from the EBNM identity
+    KL = E_q log N(x; θ, s²) − log p(x).
+  - The nullcheck re-estimates the intercept and τ for each candidate
+    factor set.
+- `tau_model`. Options are `feature` (ML), `modality` (one τ per modality)
+  and `feature_eb` (Gamma prior).
+  - Per-feature τ is kept. With the intercept in place, the degeneracy did
+    not recur at moderate signal-to-noise.
+  - One τ per modality removes the degeneracy but mis-weights heteroscedastic
+    features: no pruning, and validation C fell from 0.74 to 0.65.
+  - The empirical-Bayes Gamma prior learns a heavy tail, so τ still reaches
+    about 10¹⁷.
+
+**First evidence.** One seed at moderate noise (true K = 3), with intercept,
+point-Laplace, ebnm and pruning:
+
+- both_informative: K_final = 3 from both K_init = 5 and K_init = 12, all true
+  factors recovered (|cor| ≥ 0.99), both prognostic programs survival-active,
+  validation C = 0.81.
+- adverse_protective: K = 3 from K_init = 5, with correct signs. From
+  K_init = 12 the fit kept 3 reconstruction factors plus 2 survival-only
+  duplicates of the prognostic programs.
+- The low-variance prognostic program is found only as a survival-only
+  factor with |cor| = 0.47, and survival is partly attributed to
+  high-variance programs.
+
+The replicated comparison is
+`results/benchmark_sim/run_multimodal_pruning_comparison.R`.
+
+**Affected files.** `code/fit_multimodal_yfb.R`,
+`code/multimodal_yfb_updates.R`, `code/simulate_multimodal_yfb.R`,
+`tests/test_multimodal_yfb_pruning.R`.
+
+---
+
 ## 2026-10-01 — Signed loading priors for the multimodal model (point-Laplace, Normal)
 
 **Decision.** `fit_multimodal_yfb()` takes `control$prior_F`, which sets the

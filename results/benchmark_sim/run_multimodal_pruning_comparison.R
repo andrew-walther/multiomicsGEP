@@ -25,7 +25,7 @@
 #   pruned     noprune + ELBO nullcheck, survival = partial log-lik at E[eta]
 #   pruned_vc  pruned with the variance-corrected survival term
 #
-# Parallelization: one forked worker per simulated dataset (parallel::mclapply);
+# Parallelization: one socket-cluster task per simulated dataset (parLapplyLB);
 # each fit is single-threaded and small (n = 120, p = 50 + 50).
 
 suppressPackageStartupMessages(library(survival))
@@ -112,7 +112,20 @@ run_one <- function(g) {
   }))
 }
 
-results <- parallel::mclapply(seq_len(nrow(grid)), run_one, mc.cores = cores)
+# Socket cluster (fresh R processes): forked workers segfault on macOS when
+# the BLAS library has been used in the parent process
+cl <- parallel::makeCluster(cores)
+parallel::clusterExport(cl, c("grid", "variants", "with_baseline", "score_fit", "run_one"))
+invisible(parallel::clusterEvalQ(cl, {
+  suppressPackageStartupMessages(library(survival))
+  for (f in c("code/multimodal_yfb_helpers.R", "code/preprocess_multimodal_yfb.R",
+              "code/multimodal_yfb_updates.R", "code/fit_multimodal_yfb.R",
+              "code/predict_multimodal_yfb.R", "code/simulate_multimodal_yfb.R")) source(f)
+}))
+results <- parallel::parLapplyLB(cl, seq_len(nrow(grid)), function(g) {
+  tryCatch(run_one(g), error = function(e) structure(conditionMessage(e), class = "try-error"))
+})
+parallel::stopCluster(cl)
 failed <- vapply(results, inherits, logical(1), "try-error")
 if (any(failed)) warning(sum(failed), " datasets failed in a worker: ",
                          paste(vapply(results[failed], as.character, ""), collapse = " | "))
