@@ -18,7 +18,6 @@ here too rather than maintaining a separate copy.
 - **Multimodal YFB proposal:** `derivations/multimodal_YFB/multimodal_YFB_derivation.{qmd,pdf}` contains the concise nine-page linear joint-YFB derivation; `multimodal_YFB_implementation.qmd` in the same directory specifies future R code, and `multimodal_YFB_technical_notes.{qmd,pdf}` preserves the extensive version; `verify_derivation.R` checks the algebra without fitting a model. Read it before multimodal work. An isolated implementation exists on the `codex/multimodal-yfb` branch (`code/*multimodal_yfb*.R`: fitter, updates, prediction, simulation, K-selection runner, with tests); it is work in progress, not the production single-modality model, and its defaults are not approved. Current status and review decisions belong in `PROJECT_STATUS.qmd` and `DECISIONS.md`.
 - **No `CLAUDE.md` duplication:** Do not maintain a second copy of project status here — update `PROJECT_STATUS.qmd` instead.
 - **Living documents:** Update `DECISIONS.md` when making any architectural choice (algorithm variant, hyperparameter decision, design tradeoff). Update `ROADMAP.md` when completing a milestone or identifying a new priority.
-- **License:** MIT (`LICENSE`).
 - **Commit style:** Detailed messages explaining what changed and why; no "Co-Authored-By" lines; no "Session N:" prefixes.
 - **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. Expected: all passing (530 as of 2026-10-02 on `codex/multimodal-yfb`).
 - **Real-data tests:** `Rscript tests/test_real_data_loading.R` — 88/88 passing (auto-skips if `PDAC_DATA_ROOT` not set).
@@ -34,7 +33,6 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 
 | What | Where |
 |------|-------|
-| Full project docs & session log | `PROJECT_STATUS.qmd` |
 | Code quick-reference (math ↔ R) | `code/SupervisedMF_Context.md` |
 | **Reusable CAVI fitting function** | `code/fit_modular.R` (factor-wise, canonical) |
 | Hold-out prediction | `code/predict.R` — `predict_supervised_mf()` |
@@ -47,7 +45,6 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | Cohort-specific survival coefficients | `code/update_beta_cohort.R` — `beta_cohort_id` argument on `fit_cox_on_yf()`. Distinct from `cohort_id` (genomics offset) and `strata_id` (baseline hazard) |
 | Cohort F update | `code/update_F_cohort.R` — `update_F_cohort_all()` (Normal conjugate) |
 | Companion doc for fit_modular.R | `docs/fit_modular.qmd` |
-| Global hyperparameter registry | `config/globals.yml` |
 | **LB benchmark runner** | `results/benchmark_sim/run_LB_benchmark.R` |
 | **YFB benchmark runner** | `results/benchmark_sim/run_YFB_benchmark.R` |
 | **K_init consensus sweep** | `results/benchmark_sim/run_k_init_sweep.R` — ELBO/BIC/log-likelihood/held-out-C consensus; `--reuse-cache`/`--reuse-cv-cache` |
@@ -56,22 +53,10 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | Pathway enrichment functions | `code/pathway_enrichment.R` — `load_d4_weights()`, `run_fgsea_program()`/`run_ora_program()`, `build_pdac_genesets()`, subtype/cohort/DeSurv-overlap concordance functions |
 | **Progress notebook (meeting-facing, one chapter per advisor meeting)** | `docs/progress_book/` — Quarto book, `quarto render` to build; add a new `chapters/YYYY-MM-DD.qmd` per meeting |
 | **L-update debugging guide** | `docs/update_L_fix.md` — read before any L-update work |
-| Test suite | `tests/run_tests.R` (530 passing, 2026-10-02) |
-| Real-data test suite | `tests/test_real_data_loading.R` (88/88, local-only) |
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |
-| Architectural decisions log | `DECISIONS.md` |
-| Prioritized next steps | `ROADMAP.md` |
 | **Current working plan** | `docs/plans/Meeting_Notes_Followup_10_2_26.md` — start open work here (write-up, feature-count sensitivity, survival weighting); `Working_Plan_10_1_26.md` records the 10/1–10/2 work |
 | Matched TCGA/ICGC expression + methylation loader | `code/load_multiomics_data.R` — `build_multiomics_cohorts()`; real-data checks `tests/test_real_multiomics_loading.R` (local) |
 | Multimodal parsimony framework (intercept, ebnm priors, ELBO pruning) and compiled sweep | `code/fit_multimodal_yfb.R` controls `intercept`/`prior_update`/`prune`/`tau_model`; `code/multimodal_yfb_sweep.cpp` |
 | Multimodal simulation and real-data runners | `results/benchmark_sim/run_multimodal_pruning_comparison.R`; `results/multimodal_real/run_multimodal_real_fit.R` + `summarize_multimodal_real.R` |
 | Prelim proposal chapter source | `paper/prelim/project3-ssbmf.qmd` → synced to `bios-dissertation/prelim/project-proposals/project3-ssbmf/draft/` by the installed post-commit hook (or `paper/prelim/tools/sync_to_prelim.sh` by hand; never pushes) |
 | Prelim proposal chapter plan | `docs/plans/Prelim_Proposal_Plan_10_1_26.md` — outline, sync to `bios-dissertation`, α_F framing constraint |
-
-## Chapter 4 writing rule
-
-Describe continuing work in narrative prose as additional methodology and
-expected evidence needed to complete the project; omit fixed-date timelines.
-Keep removed chapter material in `paper/prelim/notes/`. The advisor-meeting
-follow-up plan guides the later substantive revision; do not present its
-proposed methods or expected results as completed findings.
