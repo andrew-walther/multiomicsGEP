@@ -417,3 +417,47 @@ results so far, rather than waiting.
 4. **A3:** what the open multiple-cohorts issue is.
 5. **B2:** mean-only CpG filter or proportion rule.
 6. **A4:** statistics journal or subject-matter journal (after the write-up).
+
+---
+
+## Kickoff prompt for Workstream C
+
+Paste into a new session once the write-up session on `main` has finished.
+
+```text
+Resuming multiomicsGEP Workstream C (survival supervision of F). The write-up
+session on main has finished.
+
+Read first, before proposing anything:
+- the project CLAUDE.md;
+- the "How survival enters F" section and Workstream C of
+  docs/plans/Meeting_Notes_Followup_10_2_26.md, including "Findings from
+  scoping C1";
+- the DECISIONS.md entry "2026-10-02 — α_F = 0 cannot be the final method";
+- paper/writeup/implementation_plan.md, especially "Revisit after
+  feature/supervised-F".
+
+Branch setup:
+1. Run `git fetch`. Confirm main is clean and level with origin/main, and
+   report its head commit.
+2. feature/supervised-F already exists, locally and on origin. It was created
+   from 2f5dd64 and carries plan-only commits (the C1 plan and this prompt).
+   Bring it up to date by merging main into it; don't rebase and don't
+   force-push. If Meeting_Notes_Followup_10_2_26.md conflicts, show me the
+   resolution before committing.
+3. Run `Rscript tests/run_tests.R` on the updated branch and report the pass
+   count.
+
+Then do C1 in STEP mode: one step at a time, teach back each step, and wait
+for my OK before the next. Confirm the two scoping findings in the code, then
+propose step 1 (the trace_supervision history) before editing anything.
+
+Rules:
+- Run `git branch --show-current` before every commit. Stage only the files
+  you changed, and don't push without asking.
+- Keep the success criteria in the plan fixed; don't relax them after seeing
+  results.
+- When feature/supervised-F is later merged to main, update the sections
+  listed under "Revisit after feature/supervised-F" in
+  paper/writeup/implementation_plan.md.
+```
