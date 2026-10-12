@@ -218,20 +218,63 @@ agreed. Report the cross-validated survival partial log-likelihood (`code/comput
 alongside it: with 75 events, C is coarse and may not separate nearby settings, and the
 log-likelihood is a smoother check.
 
-**C0. Branch.** Merge `codex/multimodal-yfb` to `main` after the tests pass (Andrew's call), then do
-this work on a new branch, e.g. `feature/supervised-F`.
+**C0. Branch. Done 2026-10-12.** `codex/multimodal-yfb` was merged to `main` (`2f5dd64`, 531/531
+tests). Workstream C runs on `feature/supervised-F`, created from `main`. The write-up session shares
+the same checkout, so check `git branch --show-current` before every commit.
 
-**C1. Diagnostics, no method change (2–3 days).**
-- Add per-iteration logging to `fit_cox_on_yf()`, for each program: E[β̃_k], survival share
-  α_F·A_surv / A_F (median over genes), sd(YF_k), ‖F_k‖, ‖L_k‖.
-- Run the test bed at α_F ∈ {0, 0.5 (equal weights)} and at 0.5 with the precision doubled (the
-  exact plain-Bayes update).
-- Questions to answer:
-  - Is the planted program's direction pulled at all?
-  - What is the survival share today (re-measure the 10⁴ ratio)?
-  - Does the April runaway reproduce in simulation?
-- Deliverable: a short diagnostic note with one figure, added to the progress book. It also goes
-  into the write-up's methods discussion.
+**Findings from scoping C1** (from reading the code on 2026-10-12; C1 should confirm them):
+1. **The monitored objective and the F update use different weightings.** The ELBO that
+   `fit_cox_on_yf()` reports, and checks for convergence, is
+   (1−α)·genomics/divisor + α·survival/divisor, with α = 0.5 and a normalizer on each term
+   (`code/fit_cox_on_yf.R:780`). The F update instead mixes the raw, un-normalized genomics and
+   survival precisions with α_F (`code/fit_cox_on_yf.R:727`, `code/update_F_surv_YFB.R:136`). The
+   updates therefore do not climb the objective being monitored. Whatever weighting C4 chooses must
+   enter both.
+2. **F is the only route for survival into the factorization.** Under η = (YF)β the L update is
+   genomics-only (`code/fit_cox_on_yf.R:701`). With α_F = 0 survival is absent from the
+   factorization entirely.
+
+**C1. Diagnostics, no method change (2–3 days; one step at a time, each taught back before the
+next).**
+1. **Trace.** Add an opt-in `trace_supervision = FALSE` argument to `fit_cox_on_yf()`. When on,
+   `history` records per program k and iteration:
+   - E[β̃_k] and E[β̃_k²];
+   - survival's share of the loading precision, α_F·A_surv / A_F (median and 90th percentile over
+     genes), and the same share for B_F;
+   - sd(YF_k), ‖F_k‖ and ‖L_k‖.
+
+   Verify:
+   - with the trace off, output is bit-for-bit identical (new test);
+   - with it on, the logged share matches a hand computation on a toy fit;
+   - the full suite still passes (531).
+2. **Test bed.**
+   - Data: `simulate_multimodal_yfb_data(scenario = "low_variance_prognostic_factor")`, keeping
+     the expression block only, moderate noise, 10 seeds.
+   - Fit: `fit_cox_on_yf()` at K = 7 with the recommended settings, apart from the arms in step 3.
+   - Verify: the planted program explains under 1% of variance.
+3. **Arms.**
+   - α_F = 0;
+   - α_F = 0.5;
+   - the exact equal-weight Bayesian update: α_F = 0.5 with both precision terms doubled, using a
+     new flag that is off by default.
+
+   For each arm record:
+   - recovery of the planted program (absolute loading correlation ≥ 0.7 and the correct sign of β);
+   - false prognostic programs;
+   - held-out C;
+   - convergence.
+
+   The α_F = 0 arm should reproduce non-recovery. The runner is
+   `results/benchmark_sim/run_supervision_diagnostics.R`. Time one fit before running the rest.
+4. **Diagnostic note** with one figure: survival share and E[β̃] across iterations, by arm, for the
+   estimated program closest to the planted one. It answers four questions:
+   - Is the planted program's direction pulled at all?
+   - What is the survival share now (the April ratio of about 10⁻⁴ is stale)?
+   - Does the April scale runaway reproduce in simulation?
+   - How far apart are the monitored objective and the F update (finding 1)?
+
+   The note goes into the progress book, and any decision into `DECISIONS.md`. It also feeds the
+   write-up's methods discussion.
 
 **C2. Fix the scale (problem 3).**
 - Port the multimodal canonicalization (rescale each program to sd(YF_k) = 1 with matching changes
@@ -354,7 +397,7 @@ result stated before interpreting B1–B3.
 
 | When | Write-up (A) | Method (C) | Sensitivity (B) |
 |---|---|---|---|
-| 10/5–10/11 | A0 send derivation; A1 outline | C0 merge and branch; C1 diagnostics | B0 preparation; start B1, B5 |
+| 10/5–10/11 | A0 send derivation; A1 outline | C0 merge and branch (done 10/12); C1 diagnostics | B0 preparation; start B1, B5 |
 | 10/12–10/18 | A2: single-modality methods, simulation, real data | C2 canonicalization and tests; C3 supervised initialization | B2 CpG filters and histogram |
 | 10/19–10/25 | A2: multimodal methods, biology | C4 β prior and w_S comparison | B1 and B2 results; B4 |
 | 10/26–11/1 | A2: Results placeholders filled | C4 decision; C6 multimodal; C5 only if needed | B3 joint fits |
@@ -369,7 +412,7 @@ results so far, rather than waiting.
 
 1. **C4:** prior-based balance (β prior) or an explicit survival weight w_S; rate threshold for
    "recovered in a large majority of seeds".
-2. **C0:** merge `codex/multimodal-yfb` to `main` now.
+2. ~~**C0:** merge `codex/multimodal-yfb` to `main` now.~~ Done 2026-10-12 (`2f5dd64`).
 3. **A1:** replace the February manuscript stub, or start a new file.
 4. **A3:** what the open multiple-cohorts issue is.
 5. **B2:** mean-only CpG filter or proportion rule.
