@@ -5,6 +5,37 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-12 — Unified writeup format, location, and evidence boundaries
+
+**Decision.** Develop the advisor-facing writeup in `paper/writeup/` as an
+article-style technical report with a 15–20-page main text, plus derivation
+appendices. Methods, statistical results, and biological findings form separate
+sections. One Quarto source will render the report and included appendices to
+HTML and PDF. The first deliverable is a self-contained HTML planning page,
+source inventory, and implementation checklist; Andrew reviews that page before
+drafting begins. Native drafting is followed by an independent scientific review
+of the complete report.
+
+**Why.** The advisors need a consolidated account to judge the project and
+discuss journal suitability, while the report provides a manuscript foundation.
+This task excludes background/literature-review writing, bibliography
+development, new fitting experiments, and journal selection. Existing prelim and
+historical derivation files are retained as sources.
+
+**Evidence boundaries.** Describe α_F = 0 as the configuration behind the
+evaluated single-modality results, not as demonstrated survival-guided discovery
+of F. Use the independently tuned K = 40 LASSO two-step comparator for the
+principal paired comparison, identifying older comparisons separately. Distinguish
+retained molecular programs from survival-active programs and explain the role of
+external performance in the starting-rank recommendation. Identify CPTAC as
+proteomics. Report multimodal starting-rank sensitivity and incomplete real-data
+convergence, and keep prospective filtering, feature expansion, and survival
+weighting separate from completed findings. The new multimodal appendix must
+reconcile the base derivation with the intercept, signed priors, and pruning in
+the evaluated implementation.
+
+---
+
 ## 2026-10-02 — α_F = 0 cannot be the final method: survival must inform the program loadings
 
 **Decision.** The recommended single-modality configuration uses α_F = 0, so survival never enters the update of the loadings F (or of L). The model then finds the same programs as unsupervised factorization, and survival only affects β. After the 10/2 advisor meeting this is no longer an acceptable final method. The method will be finalized only once survival informs F strongly enough to recover a planted low-variance prognostic program in simulation, without instability and without losing external C. The plan is Workstream C of `docs/plans/Meeting_Notes_Followup_10_2_26.md`.

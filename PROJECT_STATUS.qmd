@@ -98,6 +98,27 @@ C-indices are unchanged under frozen, training-fixed risk orientations. The
 pooled improvement over the two-step baseline is $\Delta C = 0.042$
 (95% CI 0.013 to 0.071).
 
+## Advisor-facing project writeup (2026-10-12)
+
+The unified methods, results, and biology writeup is being organized in
+`paper/writeup/`. Its [planning page](paper/writeup/planning.html) describes an
+article-style technical report with a 15–20-page main text and separate
+single-modality and multimodal derivation appendices, rendered together to HTML
+and PDF. The [source inventory](paper/writeup/source_inventory.csv) maps 40
+existing sources to planned sections and distinguishes checked numerical
+selections from material still requiring reconciliation during drafting.
+The [implementation plan](paper/writeup/implementation_plan.md) records the
+verification requirements and remaining tasks.
+
+The planning page is the first deliverable and awaits Andrew's review before
+report drafting. No model-fitting experiment or algorithm change is part of
+this writing task. The report will distinguish the evaluated single-modality
+configuration with α_F = 0 from continuing supervision work; use the independently
+tuned regularized two-step comparator for the principal comparison; identify
+CPTAC as proteomics; and report multimodal rank sensitivity and incomplete
+real-data convergence alongside the performance and biological findings.
+Existing prelim and historical derivation sources are preserved.
+
 ## Repository Map
 
 ```

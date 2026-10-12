@@ -75,6 +75,34 @@ rendering also executes the checks and stops on assertion failure.
 
 ---
 
+## Project writeup
+
+The advisor-facing writeup is being organized in `paper/writeup/`. The
+[HTML planning page](paper/writeup/planning.html) covers the proposed Methods,
+Results, Biology, and derivation appendices, with a
+[source inventory](paper/writeup/source_inventory.csv) and
+[implementation checklist](paper/writeup/implementation_plan.md).
+The planning page awaits review; the full report has not yet been drafted.
+The target is an article-style technical report with a 15–20-page main text,
+plus appendices, rendered to HTML and PDF from the same Quarto source.
+
+Rebuild the planning page from the repository root:
+
+```bash
+quarto render paper/writeup/planning.qmd --to html
+```
+
+If the standalone installation reports `Bad CPU type in executable`, use the
+already-installed RStudio Quarto (verified locally):
+
+```bash
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/planning.qmd --to html
+```
+
+The page uses existing aggregate results and figures; rendering does not fit
+models or require patient-level data. Source links are relative to this
+repository, while its displayed content and image resources are self-contained.
+
 ## Repository Structure
 
 ```

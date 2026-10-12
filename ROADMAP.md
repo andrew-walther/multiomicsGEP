@@ -81,6 +81,15 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## 🔥 Immediate Priorities
 
+- [x] **Organize the unified writeup for advisor review (2026-10-12).**
+  The proposed sections, evidence assessment, figure/table plan, and 40-source
+  inventory are in `paper/writeup/planning.html`, with an editable Quarto source
+  and implementation checklist alongside.
+- [ ] **Review the planning page, then draft the unified technical report.**
+  Target a 15–20-page main text covering current methods, statistical results,
+  and biological findings, plus reconciled derivation appendices. The full
+  report remains pending; see `paper/writeup/implementation_plan.md`.
+
 - [ ] **Manuscript introduction with its own background (`paper/thesis/`)**
   `[Priority: Medium]` `[Effort: Medium]` — The prelim chapter's introduction
   refers to the literature review (Chapter 1, Sections 1.3.1–1.3.6) instead of
