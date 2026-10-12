@@ -4,7 +4,7 @@
 #               prior_beta="point_normal" vs "normal" on synthetic validation,
 #               PDAC training (merged TCGA_PAAD + CPTAC), and 5 external cohorts.
 #               Replaces run_cox_on_yf_benchmark.R.
-# Author:       Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created:      2026-05-04
 # Dependencies: code/fit_cox_on_yf.R, code/predict_cox_on_yf.R,
 #               code/train_test_split.R, code/preprocess_desurv.R,

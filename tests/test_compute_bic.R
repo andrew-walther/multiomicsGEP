@@ -3,7 +3,7 @@
 # Purpose: Tests for compute_joint_ll_bic() (code/compute_bic.R) -- joint
 #          (genomics + survival) log-likelihood and BIC for a
 #          fit_cox_on_yf() (YFB) model.
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-27
 # Usage:   Rscript tests/run_tests.R  (included via source)
 #          Rscript tests/test_compute_bic.R  (standalone)

@@ -36,7 +36,7 @@
 #   Output: results/benchmark_sim/outputs/k_init_sweep/k_init_sweep_results.csv
 #           results/benchmark_sim/outputs/k_init_sweep/k_init_sweep_fits.rds
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-19
 # Updated: 2026-08-27 -- extended K_INIT_VALUES to 2:20, added BIC/log-
 #          likelihood columns, parallelized the fit loop with mclapply, and

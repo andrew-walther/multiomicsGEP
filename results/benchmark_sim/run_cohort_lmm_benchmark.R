@@ -15,7 +15,7 @@
 #            YFB merged: K_eff=0 (beta->0), C-ext: 0.50 (point_normal)
 #                        / 0.54–0.64 (normal)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-22
 # Usage:   Rscript results/benchmark_sim/run_cohort_lmm_benchmark.R [--quick]
 #          --quick: K_LB=5, K_YFB=2, max_iter=30 (smoke test)

@@ -18,7 +18,7 @@
 #              initializers, so Wold-style held-out-cell masking is not
 #              available. Bi-cross-validation avoids both problems by
 #              holding out rows and columns jointly.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Dependencies: code/fit_cox_on_yf.R (fit_cox_on_yf, calc_cox_taylor_yf),
 #               code/predict_cox_on_yf.R (predict_cox_on_yf),

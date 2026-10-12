@@ -18,6 +18,11 @@
 # Longleaf path: set via PDAC_DATA_ROOT env var
 **/PDAC_data/
 **/data/original/
+# Local data copies (multiomics TCGA/ICGC files, ~2 GB) -- never commit
+/data/
+
+# R graphics device default output
+Rplots.pdf
 
 # LaTeX build artifacts from Quarto PDF rendering
 # Note: .tex files are source documents and are NOT ignored

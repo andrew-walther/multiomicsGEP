@@ -22,7 +22,7 @@
 #   Output:
 #     presentation/walther_lab_meeting_08_27_2026/assets/external_cindex.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-27
 # Dependencies: base R (grDevices, graphics), survival (via concordance_ci.R)
 # Usage:   Rscript presentation/walther_lab_meeting_08_27_2026/figs/make_external_cindex_fig.R

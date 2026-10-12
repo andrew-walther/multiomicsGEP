@@ -29,7 +29,7 @@
 #                                         with the matched EBMF factor's NES/padj)
 #     ebmf_fgsea_results.rds            (full fgsea output for EBMF_F1/F2, all collections)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-03
 # Usage:   Rscript results/benchmark_sim/run_ebmf_pathway_concordance.R
 #          (requires prior runs of run_ebmf_cox_external.R, run_pathway_enrichment.R,

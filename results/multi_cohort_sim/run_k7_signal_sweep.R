@@ -34,7 +34,7 @@
 #
 #   Output: results/multi_cohort_sim/outputs/k7_signal_sweep_results.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-20
 # Usage:   Rscript results/multi_cohort_sim/run_k7_signal_sweep.R [--quick]
 # ============================================================

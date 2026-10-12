@@ -16,7 +16,7 @@
 # Usage:
 #   Rscript results/modular_sim_factor/run_prior_k_comparison.R
 #
-# Author:       Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created:      2026-03-31
 # Dependencies: code/fit_modular.R (sources update_*.R), code/predict.R,
 #               code/train_test_split.R, code/select_K.R, survival, ebnm, limma

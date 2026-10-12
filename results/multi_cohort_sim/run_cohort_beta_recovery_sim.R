@@ -37,7 +37,7 @@
 #             cohort_beta_recovery_sim_results.csv  (one row per seed x arm)
 #             cohort_beta_recovery_sim_attribution.csv (per-seed cohort attribution detail)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   Rscript results/multi_cohort_sim/run_cohort_beta_recovery_sim.R
 #          Rscript results/multi_cohort_sim/run_cohort_beta_recovery_sim.R --quick

@@ -42,6 +42,83 @@ with point-normal priors.
 
 ---
 
+## Matched expression and methylation: derivation for review (2026-09-10)
+
+The [multimodal YFB mathematical proposal](derivations/multimodal_YFB/multimodal_YFB_derivation.pdf)
+and its [Quarto source](derivations/multimodal_YFB/multimodal_YFB_derivation.qmd)
+adapt the existing YFB parameterization to one training cohort with matched
+expression and methylation and one independent matched validation cohort.
+The model shares subject scores and survival coefficients, while fitting separate
+loading priors and feature-wise residual precisions by modality.
+
+The concise nine-page proposal derives the EBMF plus survival objective and
+L/F/β/Tau updates for linear joint YFB using the diagonal Cox working approximation.
+Separate point-exponential loading priors are estimated per modality and factor.
+The [implementation specification](derivations/multimodal_YFB/multimodal_YFB_implementation.qmd)
+maps numbered equations to proposed R updates and tests. The original extensive
+derivation remains in the same folder as technical notes. All 35 existing algebra
+checks pass, including loading interactions and posterior second moments.
+
+Following approval, an isolated runnable multimodal fitter, frozen predictor,
+matched-block simulation generator, and checkpointed K-selection runner were
+implemented under `code/` and tested through `tests/run_tests.R`. The established
+single-modality production model is unchanged. The multimodal fitter uses
+factor-scale canonicalization and a relative identifiable convergence criterion
+(maximum 500 sweeps); its K=5,...,15 replicated held-out selection study is the
+remaining prerequisite to choosing a multimodal default. The September 18
+progress-book chapter records the implementation and preliminary screening.
+
+**2026-10-01/02: choosing K and the first real-data application.**
+
+Why the number of active factors tracked $K_{\mathrm{init}}$:
+
+- Unregularized per-feature precisions let a spare factor fit a single
+  feature exactly, so its precision was unbounded (up to $10^{16}$ in
+  simulation).
+- The model had no intercept, so spare nonnegative factors absorbed feature
+  means.
+- In the September simulations each true factor explained under 1% of the
+  variance, so the design could not test this.
+
+The fix is a parsimony framework: a per-feature intercept, point-Laplace
+loadings, `ebnm` marginal-likelihood prior fits, and ELBO-based factor pruning
+using the Cox partial log-likelihood. In single-seed simulations at moderate
+noise it recovers the true $K=3$ from both $K_{\mathrm{init}}=5$ and $12$, with
+the prognostic programs survival-active and of the correct sign. A
+low-variance prognostic program is recovered only partially.
+
+Matched TCGA → ICGC expression + methylation data are loaded and tested
+(`code/load_multiomics_data.R`). The replicated simulation sweep
+($K_{\mathrm{init}}=3,\dots,10,15$) and the real-data fits are recorded in the
+2026-10-02 progress-book chapter. Decisions are in `DECISIONS.md`
+(2026-10-01, 2026-10-02).
+
+Single-modality reporting was checked in the same period. The external
+C-indices are unchanged under frozen, training-fixed risk orientations. The
+pooled improvement over the two-step baseline is $\Delta C = 0.042$
+(95% CI 0.013 to 0.071).
+
+## Advisor-facing project writeup (2026-10-12)
+
+The unified methods, results, and biology writeup is being organized in
+`paper/writeup/`. Its [planning page](paper/writeup/planning.html) describes an
+article-style technical report with a 15–20-page main text and separate
+single-modality and multimodal derivation appendices, rendered together to HTML
+and PDF. The [source inventory](paper/writeup/source_inventory.csv) maps 40
+existing sources to planned sections and distinguishes checked numerical
+selections from material still requiring reconciliation during drafting.
+The [implementation plan](paper/writeup/implementation_plan.md) records the
+verification requirements and remaining tasks.
+
+The planning page is the first deliverable and awaits Andrew's review before
+report drafting. No model-fitting experiment or algorithm change is part of
+this writing task. The report will distinguish the evaluated single-modality
+configuration with α_F = 0 from continuing supervision work; use the independently
+tuned regularized two-step comparator for the principal comparison; identify
+CPTAC as proteomics; and report multimodal rank sensitivity and incomplete
+real-data convergence alongside the performance and biological findings.
+Existing prelim and historical derivation sources are preserved.
+
 ## Repository Map
 
 ```
@@ -2369,3 +2446,16 @@ conclusion issues, but both made a published table actively misleading as origin
 | `DECISIONS.md`, `ROADMAP.md`, `CLAUDE.md` | Session entry, milestone, quick-reference updates |
 
 ---
+
+## Chapter 4 continuing-work framing (2026-10-02)
+
+At the author's request, the prelim chapter's dated timeline table was removed
+and retained in `paper/prelim/notes/removed-timeline-2026-10-02.md`. The
+continuing-work section now describes additional methodology and expected
+evidence without calendar commitments: survival-informed program discovery,
+feature-count/screening sensitivity, multimodal rank selection and external
+predictive and biological evaluation. Existing methods and results are
+unchanged. The advisor-meeting follow-up plan will guide a later substantive
+chapter update after methodological decisions and additional results are
+verified. The installed sync hook regenerates Chapter 4 in bios-dissertation;
+the full prelim must then be rebuilt there.

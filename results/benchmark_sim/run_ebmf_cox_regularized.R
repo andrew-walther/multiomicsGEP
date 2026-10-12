@@ -24,7 +24,7 @@
 #   Output: results/benchmark_sim/outputs/ebmf_cox_external/
 #             ebmf_cox_regularized_results.csv (one row per K x cohort)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-20
 # Usage:   PDAC_DATA_ROOT=<path> Rscript results/benchmark_sim/run_ebmf_cox_regularized.R
 # Requires: ebmf_cox_external_fit_k20.rds / _k40.rds already exist (run

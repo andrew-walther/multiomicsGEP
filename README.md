@@ -33,120 +33,116 @@ Inference is performed via **Coordinate Ascent Variational Inference (CAVI)**, w
 
 ---
 
+## Multimodal YFB (in progress)
+
+An extension of YFB to matched gene expression and DNA methylation (TCGA/ICGC),
+developed on the `codex/multimodal-yfb` branch.
+[PDF](derivations/multimodal_YFB/multimodal_YFB_derivation.pdf) and
+[editable Quarto source](derivations/multimodal_YFB/multimodal_YFB_derivation.qmd).
+The nine-page document derives linear joint YFB with separate loading priors,
+the diagonal Cox working approximation, and L/F/β/Tau updates. The linked
+[R implementation specification](derivations/multimodal_YFB/multimodal_YFB_implementation.qmd)
+maps the derivation to the isolated implementation. The runnable matched-block
+fitter, frozen predictor, simulation generator, and K-selection runner are in
+`code/fit_multimodal_yfb.R`, `code/predict_multimodal_yfb.R`,
+`code/simulate_multimodal_yfb.R`, and `code/run_multimodal_yfb_simulation.R`.
+The multimodal module is not the production single-modality PDAC model; its
+replicated K-selection study is still in progress.
+
+Options added on 2026-10-01 (defaults keep the original behaviour):
+
+- **Loading priors per modality.** `control$prior_F` sets point-exponential,
+  point-Laplace or Normal, with the signed priors fit by `ebnm`.
+- **Factor pruning, which together selects K.**
+  - a per-feature intercept (`intercept`);
+  - marginal-likelihood prior fits (`prior_update = "ebnm"`);
+  - an ELBO nullcheck that removes factors (`prune`), with the Cox partial
+    log-likelihood as the survival term.
+- **Faster sweep.** The per-feature loading sweep is compiled C++
+  (`code/multimodal_yfb_sweep.cpp`), with an automatic fallback to R.
+
+Matched TCGA (training) and ICGC (validation) expression + methylation cohorts are
+built by `code/load_multiomics_data.R`, which reads a local, git-ignored `data/`
+folder. The real-data runner is `results/multimodal_real/run_multimodal_real_fit.R`;
+the simulation comparison of fitting variants is
+`results/benchmark_sim/run_multimodal_pruning_comparison.R`.
+The original extensive derivation is preserved as technical notes in the same folder.
+Run the base-R mathematical checks with
+`Rscript derivations/multimodal_YFB/verify_derivation.R`.
+Rebuild the PDF with
+`quarto render derivations/multimodal_YFB/multimodal_YFB_derivation.qmd --to pdf`;
+rendering also executes the checks and stops on assertion failure.
+
+---
+
+## Project writeup
+
+The advisor-facing writeup is being organized in `paper/writeup/`. The
+[HTML planning page](paper/writeup/planning.html) covers the proposed Methods,
+Results, Biology, and derivation appendices, with a
+[source inventory](paper/writeup/source_inventory.csv) and
+[implementation checklist](paper/writeup/implementation_plan.md).
+The planning page awaits review; the full report has not yet been drafted.
+The target is an article-style technical report with a 15–20-page main text,
+plus appendices, rendered to HTML and PDF from the same Quarto source.
+
+Rebuild the planning page from the repository root:
+
+```bash
+quarto render paper/writeup/planning.qmd --to html
+```
+
+If the standalone installation reports `Bad CPU type in executable`, use the
+already-installed RStudio Quarto (verified locally):
+
+```bash
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/planning.qmd --to html
+```
+
+The page uses existing aggregate results and figures; rendering does not fit
+models or require patient-level data. Source links are relative to this
+repository, while its displayed content and image resources are self-contained.
+
 ## Repository Structure
 
 ```
 multiomicsGEP/
-│
-├── README.md                          ← You are here
-├── PROJECT_STATUS.qmd/.pdf           ← Full project documentation & session log
-├── DECISIONS.md                       ← Architectural/analytical decision log
-├── ROADMAP.md                         ← Prioritised next steps & completed items
-├── CLAUDE.md                          ← Claude Code entry point (thin; defers to above)
-│
-├── config/
-│   └── globals.yml                    ← Single source of truth for hyperparameters
-│                                         (K_max, alpha_grid, tol, synthetic DGP params)
-│
+├── README.md  LICENSE (MIT)
+├── CLAUDE.md                ← agent instructions (AGENTS.md is a symlink to it)
+├── PROJECT_STATUS.qmd/.pdf  ← full project documentation and development log
+├── DECISIONS.md             ← dated architectural and analytical decisions
+├── ROADMAP.md               ← prioritized next steps and completed items
+├── config/globals.yml       ← single source of truth for hyperparameters
 ├── code/
-│   ├── fit_modular.R                  ← ✅ Canonical CAVI loop (factor-wise Gauss-Seidel)
-│   ├── update_beta.R                  ← Modular β update (scalar EBNM, Cox survival)
-│   ├── update_L.R                     ← Modular L update (vector EBNM, dual-source)
-│   ├── update_F.R                     ← Modular F update (vector EBNM, pure genomics)
-│   ├── update_tau.R                   ← Modular τ update (closed-form MLE)
-│   ├── compute_elbo.R                 ← Full ELBO: genomics + survival + KL divergences
-│   ├── preprocess_desurv.R            ← Gene selection + preprocessing (log2, combined rank, per-platform z-std)
-│   ├── select_alpha_cv.R              ← Alpha mixing CV selection via 1-SE rule
-│   ├── predict.R                      ← Hold-out prediction (SVD pseudoinverse projection)
-│   ├── train_test_split.R             ← Stratified 80/20 split preserving event rate
-│   ├── feature_selection.R            ← Univariate Cox gene filtering (train-only)
-│   ├── select_K.R                     ← K selection: auto_prune_K() + select_K_cv() stub
-│   ├── Supervised_Bayesian_MF_V2.R    ← Monolithic reference implementation (V2, reference only)
-│   ├── SupervisedMF_Context.md        ← AI/developer quick-reference for the code
-│   └── legacy/                        ← Archived files (V1, early scripts)
-│       ├── Supervised_Bayesian_MF.R   ← V1 original (archived, known issues)
-│       ├── execute_update_beta.R      ← Early demo (superseded by demos/)
-│       └── multiomicsGEP_code.Rmd     ← Early exploratory notebook
-│
-├── docs/                              ← Companion documentation (PDF + HTML)
-│   ├── progress_book/                 ← Quarto book, one chapter per advisor meeting
-│   │                                     Rendered HTML: https://andrew-walther.github.io/multiomicsGEP/
-│   │                                     (auto-published on every push to main that touches this
-│   │                                     directory — .github/workflows/publish-progress-book.yml;
-│   │                                     `_book/` is also committed on main directly, so the whole
-│   │                                     book always re-renders fresh alongside each new chapter)
-│   ├── Makefile                       ← `make all` renders .qmd → .pdf + .html via Quarto
-│   ├── fit_modular.qmd/.pdf/.html     ← fit_modular.R walkthrough (full CAVI loop)
-│   ├── update_beta.qmd/.pdf/.html     ← β update: derivation, code, tests, demos
-│   ├── update_L.qmd/.pdf/.html        ← L update: derivation, code, tests, demos
-│   ├── update_F.qmd/.pdf/.html        ← F update: derivation, code, tests, demos
-│   ├── update_tau.qmd/.pdf/.html      ← τ update: derivation, code, tests, demos
-│   ├── PDAC_data_audit.qmd/.pdf/.html ← Audit of available PDAC cohorts & data quality
-│   ├── SSMF_DeSurv_Sim_Benchmark.md  ← DeSurv benchmark design notes
-│   └── update_L_fix.md               ← Debugging guide: A_surv/A_gen imbalance → β=0 fix
-│
-├── tests/                             ← 374 tests (run: Rscript tests/run_tests.R)
-│   ├── run_tests.R                    ← Master test runner
-│   ├── test_helpers.R                 ← Lightweight assertion framework (no testthat)
-│   ├── test_update_beta.R             ← 24 tests for update_beta.R
-│   ├── test_update_L.R                ← 28 tests for update_L.R
-│   ├── test_update_F.R                ← 26 tests for update_F.R
-│   ├── test_update_tau.R              ← 27 tests for update_tau.R
-│   ├── test_predict.R                 ← 19 tests for predict.R + train_test_split.R
-│   ├── test_elbo.R                    ← 15 tests for compute_elbo.R
-│   ├── test_preprocess_desurv.R       ← Tests for preprocess_desurv.R
-│   ├── test_select_alpha_cv.R         ← Tests for select_alpha_cv.R
-│   └── test_real_data_loading.R       ← Real-data pipeline tests (auto-skip if data absent)
-│
-├── demos/                             ← Interactive demonstrations (5 per module)
-│   ├── demo_update_beta.R
-│   ├── demo_update_L.R
-│   ├── demo_update_F.R
-│   └── demo_update_tau.R
-│
+│   ├── fit_modular.R        ← canonical CAVI loop for LB (η = Lβ)
+│   ├── fit_cox_on_yf.R      ← YFB (η = (YF)β); predict_cox_on_yf.R for hold-out scoring
+│   ├── update_*.R           ← modular CAVI updates (β, L, F, τ, and cohort/YFB variants)
+│   ├── compute_elbo.R  compute_bic.R  compute_cv_loglik.R   ← ELBO, BIC, held-out log-likelihood
+│   ├── select_K.R  select_alpha_cv.R  select_k_alpha_bo.R   ← K and alpha selection
+│   ├── preprocess_desurv.R  feature_selection.R  train_test_split.R  predict.R
+│   ├── pathway_enrichment.R  concordance_ci.R
+│   ├── *multimodal_yfb*.R   ← multimodal YFB fitter, updates, prediction, simulation (in progress)
+│   ├── Supervised_Bayesian_MF_V2.R   ← monolithic V2 reference (do not extend)
+│   ├── SupervisedMF_Context.md       ← math ↔ code quick reference
+│   └── legacy/              ← V1 and early scripts (archived)
+├── tests/                   ← run_tests.R plus one test file per module
 ├── results/
-│   ├── benchmark_sim/                 ← ✅ Formal benchmark pipeline (canonical)
-│   │   ├── run_LB_benchmark.R         ← LB model runner (η = Lβ, alpha CV, external validation)
-│   │   ├── run_YFB_benchmark.R        ← YFB model runner (η = (YF)β, Cox-on-YF)
-│   │   ├── run_phase1_diagnostics.R   ← Loading heatmaps
-│   │   ├── archive/                   ← 9 retired scripts (see archive/README.md)
-│   │   └── outputs/
-│   │       ├── LB_benchmark/          ← LB model outputs
-│   │       └── YFB_benchmark/         ← YFB model outputs
-│   ├── figures/                       ← Active per-cohort figure outputs
-│   ├── tables/                        ← Active per-cohort table outputs
-│   └── legacy/                        ← Retired simulation generations
-│       ├── full_sim/                  ← V2 monolithic simulation
-│       ├── modular_sim_block/         ← Block-wise modular (deprecated)
-│       ├── modular_sim_factor/        ← Factor-wise exploratory runner + PDAC/synthetic reports
-│       ├── figures/                   ← Legacy figure outputs (full_sim, modular_sim, synthetic)
-│       └── tables/                    ← Legacy table outputs
-│
-├── derivations/
-│   ├── MF_UpdateDerivations/
-│   │   ├── MF_Derivations_UpdateAlgo_REVISED.pdf  ← ✅ Corrected derivations (21 pages)
-│   │   ├── MF_Derivations_UpdateAlgo_REVISED.tex
-│   │   ├── MF_V2_Companion.pdf        ← ✅ Math ↔ code companion (17 pages)
-│   │   ├── MF_V2_Companion.tex
-│   │   └── MF_Derivations_UpdateAlgo_*.pdf  ← Historical drafts (contain errors R1–R8)
-│   ├── qB/                            ← q(β) derivation (11 pages)
-│   ├── qL/                            ← q(L) derivation (vector EBNM, dual-source)
-│   ├── qF/                            ← q(F) derivation (τ cancellation property)
-│   ├── qTau/                          ← q(τ) derivation (variance correction)
-│   ├── EBMF/                          ← Empirical Bayes MF background theory
-│   └── SurvivalMF/                    ← Survival + MF background notes
-│
-├── presentation/                      ← Lab meeting slide decks
-│   └── walther_lab_meeting_04_09_2026/
-│
-├── longleaf_setup/                    ← UNC Longleaf HPC SLURM scripts
-│   ├── README.md
-│   ├── install_packages.R
-│   └── run_*.sl                       ← SLURM job scripts
-│
-└── paper/
-    ├── multiomicsGEP_manuscript.qmd   ← Manuscript draft (in progress)
-    └── abstract_example.md
+│   ├── benchmark_sim/       ← formal benchmark pipeline: LB/YFB runners, K and alpha CV,
+│   │                          external validation, DeSurv and EBMF comparisons
+│   ├── figures/  tables/    ← per-cohort outputs
+│   └── legacy/              ← retired simulation generations
+├── derivations/             ← corrected CAVI derivations (MF_UpdateDerivations/), per-update
+│                              derivations (qB, qL, qF, qTau), multimodal_YFB/
+├── docs/
+│   ├── progress_book/       ← Quarto book, one chapter per advisor meeting
+│   │                          (https://andrew-walther.github.io/multiomicsGEP/)
+│   ├── plans/               ← working plans (current: Working_Plan_10_1_26.md)
+│   ├── reports/             ← dated analysis reports
+│   └── *.qmd/.pdf/.html     ← per-update walkthroughs, PDAC data audit
+├── presentation/            ← lab-meeting decks (latest: walther_lab_meeting_08_27_2026/)
+├── longleaf_setup/          ← UNC Longleaf SLURM scripts
+├── paper/                   ← manuscript draft (multiomicsGEP_manuscript.qmd)
+└── data/                    ← local TCGA/ICGC copies; git-ignored, never committed
 ```
 
 ---
@@ -259,7 +255,7 @@ The key mathematical concepts are:
 |---------|------|--------|-------|
 | V1 | `code/legacy/Supervised_Bayesian_MF.R` | Archived | Original implementation; 6 known algorithmic issues |
 | V2 | `code/Supervised_Bayesian_MF_V2.R` | Reference | Monolithic; all V1 issues corrected (A1–A6); kept for comparison |
-| Modular | `code/fit_modular.R` + `update_*.R` | ✅ **Current** | Factor-wise Gauss-Seidel CAVI; tested (374/374); recommended for all new work |
+| Modular | `code/fit_modular.R` + `update_*.R` | ✅ **Current** | Factor-wise Gauss-Seidel CAVI; tested (`Rscript tests/run_tests.R`); recommended for all new work |
 
 **V2 improvements over V1:**
 
@@ -276,14 +272,38 @@ The key mathematical concepts are:
 
 ## Project Status
 
-The model is fully implemented, tested, and benchmarked. See [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) for the complete development log.
+The single-modality model is implemented, tested, and benchmarked. The recommended
+configuration uses the YFB linear predictor (η = (YF)β) with DeSurv-aligned gene
+selection (genes ranked jointly by mean expression and variance within each platform,
+top 3,000 per cohort, about 2,064 after intersection). Trained on 273 PDAC patients
+(TCGA + CPTAC), it identifies two active prognostic programs, one associated with worse
+survival and one with better survival, with mean external concordance 0.627 across five
+independent PDAC cohorts (RNA-seq, microarray, proteomics).
 
-**Current state (2026-07-16):** 374/374 tests passing. The recommended configuration uses the YFB linear predictor (η = (YF)β) with DeSurv-aligned gene selection — genes ranked jointly by mean expression and variance within each platform, top 3,000 per cohort selected before normalization, yielding ~2,064 genes after intersection. Applied to 273 PDAC patients (TCGA + CPTAC training), the model identifies two active prognostic programs: one associated with worse survival and one with better survival. Mean external concordance index = 0.627 across five independent PDAC cohorts spanning RNA-seq, microarray, and proteomics platforms.
+Test suite (2026-10-01, `codex/multimodal-yfb`): 509 passing.
 
-**Next:** characterize factor-stability across seeds, then run a matched, same-protocol head-to-head against DeSurv. See `ROADMAP.md`.
+**Current work** (prioritized in `docs/plans/Working_Plan_10_1_26.md`; see `ROADMAP.md`):
+the multimodal YFB extension, matched TCGA/ICGC preprocessing, and whether survival
+supervision can be made to inform the factor matrix F (the `alpha_F` question).
+Full history: [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd); decision rationale: `DECISIONS.md`.
+
+---
+
+## License
+
+MIT (see `LICENSE`). PDAC and TCGA/ICGC data are not included and keep their own terms.
 
 ---
 
 ## Author
 
 Andrew Walther — May 2026
+
+## Chapter 4 proposal
+
+The canonical chapter is `paper/prelim/project3-ssbmf.qmd`. Its installed
+post-commit hook renders and commits the generated Chapter 4 copy in
+bios-dissertation; rerun that repository's `prelim/tools/build_prelim.py`
+to update the full prelim. Continuing work is described as methodological
+aims and expected results without a fixed-date timeline. A substantive
+revision will follow the advisor-meeting plan and verified additional results.

@@ -1,0 +1,159 @@
+% ============================================================
+% missing-references.bib
+% Draft BibTeX entries for references cited in project3-ssbmf.qmd that are
+% not yet in bios-dissertation/prelim/references.bib (the master bib).
+% Drafted 2026-10-02. Every field was checked against the source named in
+% missing-references-README.md; fields that could not be checked are left
+% out rather than guessed. Not yet merged into either bib file.
+%
+% Already in the master bib (do NOT add again):
+%   Argelaguet2018 (MOFA), Shen2009 (iCluster), Wang2021 (EBMF, JMLR),
+%   Willwerscheid2025 (ebnm, JSS), Bailey2016 (PACA-AU).
+% ============================================================
+
+% 1. flashier. No journal article or arXiv/bioRxiv preprint exists; the
+%    canonical citable record is the CRAN package (DOI minted by CRAN).
+%    Version 1.0.7 is the CRAN release and the version installed locally.
+@misc{Willwerscheid2023,
+  author = {Willwerscheid, Jason and Carbonetto, Peter and Wang, Wei and Stephens, Matthew},
+  title = {{flashier}: Empirical {Bayes} Matrix Factorization},
+  year = {2023},
+  note = {R package version 1.0.7},
+  doi = {10.32614/CRAN.package.flashier},
+  url = {https://CRAN.R-project.org/package=flashier}
+}
+
+% 2. CPTAC pancreatic ductal adenocarcinoma (training cohort).
+@article{Cao2021,
+  author = {Cao, Liwei and Huang, Chen and Cui Zhou, Daniel and Hu, Yingwei and Lih, T. Mamie and Savage, Sara R. and Krug, Karsten and Clark, David J. and Schnaubelt, Michael and Chen, Lijun and da Veiga Leprevost, Felipe and Eguez, Rodrigo Vargas and Yang, Weiming and Pan, Jianbo and Wen, Bo and Dou, Yongchao and Jiang, Wen and Liao, Yuxing and Shi, Zhiao and Terekhanova, Nadezhda V. and Cao, Song and Lu, Rita Jui-Hsien and Li, Yize and Liu, Ruiyang and Zhu, Houxiang and Ronning, Peter and Wu, Yige and Wyczalkowski, Matthew A. and Easwaran, Hariharan and Danilova, Ludmila and Mer, Arvind Singh and Yoo, Seungyeul and Wang, Joshua M. and Liu, Wenke and Haibe-Kains, Benjamin and Thiagarajan, Mathangi and Jewell, Scott D. and Hostetter, Galen and Newton, Chelsea J. and Li, Qing Kay and Roehrl, Michael H. and Feny{\"o}, David and Wang, Pei and Nesvizhskii, Alexey I. and Mani, D. R. and Omenn, Gilbert S. and Boja, Emily S. and Mesri, Mehdi and Robles, Ana I. and Rodriguez, Henry and Bathe, Oliver F. and Chan, Daniel W. and Hruban, Ralph H. and Ding, Li and Zhang, Bin},
+  title = {Proteogenomic characterization of pancreatic ductal adenocarcinoma},
+  journal = {Cell},
+  year = {2021},
+  volume = {184},
+  number = {19},
+  pages = {5031--5052.e26},
+  doi = {10.1016/j.cell.2021.08.023}
+}
+
+% 3. Puleo array (external validation cohort).
+@article{Puleo2018,
+  author = {Puleo, Francesco and Nicolle, R{\'e}my and Blum, Yuna and Cros, J{\'e}r{\^o}me and Marisa, Laetitia and Demetter, Pieter and Quertinmont, Eric and Svrcek, Magali and Elarouci, Nabila and Iovanna, Juan and Franchimont, Denis and Verset, Laurine and Galdon, Maria Gomez and Devi{\`e}re, Jacques and de Reyni{\`e}s, Aur{\'e}lien and Laurent-Puig, Pierre and Van Laethem, Jean-Luc and Bachet, Jean-Baptiste and Mar{\'e}chal, Rapha{\"e}l},
+  title = {Stratification of Pancreatic Ductal Adenocarcinomas Based on Tumor and Microenvironment Features},
+  journal = {Gastroenterology},
+  year = {2018},
+  volume = {155},
+  number = {6},
+  pages = {1999--2013.e3},
+  doi = {10.1053/j.gastro.2018.08.033}
+}
+
+% 4. Dijk (external validation cohort): RNA-seq of 90 resected PDAC
+%    specimens, Amsterdam UMC. Sample count matches the repo's Dijk cohort
+%    (90 samples, RNA-seq). Article number 337 (Sci Rep has no page ranges).
+@article{Dijk2020,
+  author = {Dijk, Frederike and Veenstra, Veronique L. and Soer, Eline C. and Dings, Mark P. G. and Zhao, Lan and Halfwerk, Johannes B. and Hooijer, Gerrit K. and Damhofer, Helene and Marzano, Marco and Steins, Anne and Waasdorp, Cynthia and Busch, Olivier R. and Besselink, Marc G. and Tol, Johanna A. and Welling, Lieke and van Rijssen, Lennart B. and Klompmaker, Sjors and Wilmink, Hanneke W. and van Laarhoven, Hanneke W. and Medema, Jan Paul and Vermeulen, Louis and van Hooff, Sander R. and Koster, Jan and Verheij, Joanne and van de Vijver, Marc J. and Wang, Xin and Bijlsma, Maarten F.},
+  title = {Unsupervised class discovery in pancreatic ductal adenocarcinoma reveals cell-intrinsic mesenchymal features and high concordance between existing classification systems},
+  journal = {Scientific Reports},
+  year = {2020},
+  volume = {10},
+  number = {1},
+  pages = {337},
+  doi = {10.1038/s41598-019-56826-9}
+}
+
+% 5. KNN imputation.
+@article{Troyanskaya2001,
+  author = {Troyanskaya, Olga and Cantor, Michael and Sherlock, Gavin and Brown, Pat and Hastie, Trevor and Tibshirani, Robert and Botstein, David and Altman, Russ B.},
+  title = {Missing value estimation methods for {DNA} microarrays},
+  journal = {Bioinformatics},
+  year = {2001},
+  volume = {17},
+  number = {6},
+  pages = {520--525},
+  doi = {10.1093/bioinformatics/17.6.520}
+}
+
+% 6. Bi-cross-validation.
+@article{OwenPerry2009,
+  author = {Owen, Art B. and Perry, Patrick O.},
+  title = {Bi-cross-validation of the {SVD} and the nonnegative matrix factorization},
+  journal = {The Annals of Applied Statistics},
+  year = {2009},
+  volume = {3},
+  number = {2},
+  pages = {564--594},
+  doi = {10.1214/08-AOAS227}
+}
+
+% 7. BIC.
+@article{Schwarz1978,
+  author = {Schwarz, Gideon},
+  title = {Estimating the Dimension of a Model},
+  journal = {The Annals of Statistics},
+  year = {1978},
+  volume = {6},
+  number = {2},
+  pages = {461--464},
+  doi = {10.1214/aos/1176344136}
+}
+
+% 8a. One-standard-error rule (original source). DOI omitted on purpose:
+%     the only DOI (10.1201/9781315139470) belongs to the 2017 Routledge
+%     reprint, not the 1984 Wadsworth edition cited here.
+@book{Breiman1984,
+  author = {Breiman, Leo and Friedman, Jerome H. and Olshen, Richard A. and Stone, Charles J.},
+  title = {Classification and Regression Trees},
+  publisher = {Wadsworth International Group},
+  address = {Belmont, CA},
+  year = {1984}
+}
+
+% 8b. One-standard-error rule (textbook source; ESL Sec. 7.10).
+@book{Hastie2009,
+  author = {Hastie, Trevor and Tibshirani, Robert and Friedman, Jerome},
+  title = {The Elements of Statistical Learning: Data Mining, Inference, and Prediction},
+  publisher = {Springer},
+  address = {New York},
+  edition = {2nd},
+  year = {2009},
+  doi = {10.1007/978-0-387-84858-7}
+}
+
+% 9. Percentile bootstrap. DOI omitted on purpose: 10.1201/9780429246593
+%    is the CRC Press re-issue (Crossref date 1994), not the 1993
+%    Chapman & Hall edition.
+@book{EfronTibshirani1993,
+  author = {Efron, Bradley and Tibshirani, Robert J.},
+  title = {An Introduction to the Bootstrap},
+  publisher = {Chapman \& Hall},
+  address = {New York},
+  year = {1993}
+}
+
+% 10. Weibull survival simulation.
+@article{Bender2005,
+  author = {Bender, Ralf and Augustin, Thomas and Blettner, Maria},
+  title = {Generating survival times to simulate {Cox} proportional hazards models},
+  journal = {Statistics in Medicine},
+  year = {2005},
+  volume = {24},
+  number = {11},
+  pages = {1713--1723},
+  doi = {10.1002/sim.2059}
+}
+
+% 12. Young2026 (DeSurv). UNCERTAIN: no published PNAS record was found in
+%     Crossref, PubMed or the DeSurv GitHub repository on 2026-10-02, so
+%     volume, number, pages and DOI are unknown and are NOT filled in. The
+%     entry is changed from @misc to @unpublished so it no longer renders
+%     with a dangling journal field. Replace with an @article (journal =
+%     {Proceedings of the National Academy of Sciences}, plus volume,
+%     number, pages = article number, doi) once the paper is out. If it is
+%     under review, the authors may prefer a note such as "Submitted";
+%     that status was not verified here.
+@unpublished{Young2026,
+  author = {Young, Amber M. and Yurovsky, Alisa and Peng, Xianlu Laura and Yeh, Jen Jen and Li, Didong and Rashid, Naim U.},
+  title = {Survival-guided matrix factorization identifies reproducible prognostic programs in pancreatic cancer},
+  year = {2026},
+  note = {Unpublished manuscript}
+}

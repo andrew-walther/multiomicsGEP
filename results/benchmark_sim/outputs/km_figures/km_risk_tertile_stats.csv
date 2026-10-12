@@ -1,0 +1,11 @@
+"facet","n","label"
+"Dijk",90,"n = 90   C = 0.634
+log-rank p = 0.00046"
+"Moffitt (array)",123,"n = 123   C = 0.549
+log-rank p = 0.17"
+"PACA-AU (array)",63,"n = 63   C = 0.648
+log-rank p = 0.075"
+"PACA-AU (RNA-seq)",52,"n = 52   C = 0.657
+log-rank p = 0.021"
+"Puleo (array)",288,"n = 288   C = 0.645
+log-rank p < 0.0001"

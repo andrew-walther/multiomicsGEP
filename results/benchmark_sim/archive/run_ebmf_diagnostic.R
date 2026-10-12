@@ -22,7 +22,7 @@
 #            EBMF factors neither batch-split nor survival-associated →
 #              the merged gene set may lack prognostic information entirely
 #
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-04-29
 # Dependencies: flashier (>= 1.0.0), survival, pheatmap
 # Inputs:  results/benchmark_sim/outputs/real_data/merged/v2_point_normal/

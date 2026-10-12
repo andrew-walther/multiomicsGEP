@@ -24,7 +24,7 @@
 #          Output: results/benchmark_sim/outputs/k_parsimony_followup/
 #            k_parsimony_followup_results.csv   (one row per K x method x cohort)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-13
 # Usage:   caffeinate -i Rscript results/benchmark_sim/run_k_parsimony_followup.R
 #          caffeinate -i Rscript results/benchmark_sim/run_k_parsimony_followup.R --quick

@@ -13,7 +13,7 @@
 #   Output:
 #     presentation/walther_lab_meeting_08_27_2026/assets/k_eff_step.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-27
 # Dependencies: ggplot2, dplyr, tidyr
 # Usage:   Rscript presentation/walther_lab_meeting_08_27_2026/figs/make_k_eff_step_fig.R

@@ -46,6 +46,13 @@ source("code/preprocess_desurv.R")
 source("results/multi_cohort_sim/fit_pca_cox.R")
 source("code/pathway_enrichment.R")
 source("code/concordance_ci.R")
+source("code/multimodal_yfb_helpers.R")
+source("code/preprocess_multimodal_yfb.R")
+source("code/multimodal_yfb_updates.R")
+source("code/fit_multimodal_yfb.R")
+source("code/predict_multimodal_yfb.R")
+source("code/simulate_multimodal_yfb.R")
+source("code/load_multiomics_data.R")
 
 # List all test files to run
 test_files <- c(
@@ -74,7 +81,15 @@ test_files <- c(
   "tests/test_stratified_cox.R",
   "tests/test_concordance_ci.R",
   "tests/test_compute_bic.R",
-  "tests/test_compute_cv_loglik.R"
+  "tests/test_compute_cv_loglik.R",
+  "tests/test_multimodal_yfb_helpers.R",
+  "tests/test_multimodal_yfb_preprocess_predict.R",
+  "tests/test_multimodal_yfb_updates.R",
+  "tests/test_multimodal_yfb_fit.R",
+  "tests/test_simulate_multimodal_yfb.R",
+  "tests/test_load_multiomics_data.R",
+  "tests/test_multimodal_yfb_priors.R",
+  "tests/test_multimodal_yfb_pruning.R"
 )
 
 # Run each test file

@@ -34,7 +34,7 @@
 #     docs/progress_book/figs/2026-09-04_threshold_sensitivity_heatmap.png
 #     docs/progress_book/figs/2026-09-04_threshold_vs_kinit.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   Rscript results/benchmark_sim/run_threshold_sensitivity.R
 #          (fast -- no fitting, just re-classifying 19 cached fits over a grid)

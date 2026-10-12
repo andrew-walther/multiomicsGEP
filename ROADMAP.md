@@ -4,6 +4,8 @@
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
+> **Active working plan (2026-10-02):** `docs/plans/Meeting_Notes_Followup_10_2_26.md` follows the 10/2 advisor meeting. Its deliverables are a unified write-up as the start of the manuscript; survival supervision of the program loadings F (α_F = 0 cannot be the final method, DECISIONS.md 2026-10-02); and a sensitivity analysis on the number of genes and CpGs. Start open work there. The 10/1 plan (`docs/plans/Working_Plan_10_1_26.md`) records the work done 10/1–10/2.
+>
 > **Status as of 2026-07-15.** Core model complete (modular CAVI, 374/374 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
 > cohorts across RNA-seq, microarray, and proteomics platforms). Multi-cohort simulation
@@ -78,6 +80,36 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 ---
 
 ## 🔥 Immediate Priorities
+
+- [x] **Organize the unified writeup for advisor review (2026-10-12).**
+  The proposed sections, evidence assessment, figure/table plan, and 40-source
+  inventory are in `paper/writeup/planning.html`, with an editable Quarto source
+  and implementation checklist alongside.
+- [ ] **Review the planning page, then draft the unified technical report.**
+  Target a 15–20-page main text covering current methods, statistical results,
+  and biological findings, plus reconciled derivation appendices. The full
+  report remains pending; see `paper/writeup/implementation_plan.md`.
+
+- [ ] **Manuscript introduction with its own background (`paper/thesis/`)**
+  `[Priority: Medium]` `[Effort: Medium]` — The prelim chapter's introduction
+  refers to the literature review (Chapter 1, Sections 1.3.1–1.3.6) instead of
+  restating it. A journal manuscript must stand alone, so its introduction
+  should restore that background with citations: PDAC subtyping and program
+  discovery (Collisson2011, Rashid2020, Brunet2004, Kotliar2019), the two-step
+  pipeline and supervised alternatives (Bair2004, Tibshirani1997, Nygard2008,
+  Simon2011), and attenuation from treating estimated scores as fixed
+  (Prentice1982, Carroll2006). Start when the manuscript draft is set up in
+  `paper/thesis/` (authors: Walther, Young, Liu, Rashid).
+
+- [ ] **Complete replicated K selection for matched expression/methylation YFB**
+  `[Priority: High]` `[Effort: Large]` — The approved raw joint-YFB derivation,
+  isolated fitter, frozen predictor, and matched simulations are implemented.
+  Run the checkpointed paired K=5,...,15 panel over independent seeds, selecting
+  the smallest K within one standard error of the best mean held-out C-index.
+  Report reconstruction-active, survival-active, and union-retained counts
+  separately; do not use marginal PVE as a rank-selection rule. Confirm recovery
+  in both the ordinary and adverse/protective-program simulation scenarios before
+  considering matched expression--methylation real data.
 
 - [ ] **Slow, thorough re-characterization of the selected gene programs' biological character,
   now that `beta_cohort_id` (cohort-specific survival coefficients) is integrated**
@@ -849,6 +881,14 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 ## ✅ Completed
 
+- [x] **Mathematical proposal for multimodal YFB** — Shared subject scores,
+  modality-specific empirical-Bayes loading priors, feature-wise precision updates,
+  Cox survival updates, prior-hyperparameter derivations, prediction rules, and
+  explicit weighting/normalization comparisons are documented in
+  `derivations/multimodal_YFB/multimodal_YFB_derivation.{qmd,pdf}`.
+  Base-R numerical checks accompany the derivation. This completes document
+  preparation, not advisor approval or model implementation. *(2026-09-10)*
+
 - [x] **Multi-cohort simulation study: shared vs. study-specific factor recovery** *(Complete — 2026-06-14)*
   Validated that YFB natively recovers the shared/study-specific distinction across 3 scenarios
   (all-shared, hybrid, nothing-shared), 5 arms (YFB/LB ± cohort indicator + unsupervised EBMF→Cox),
@@ -904,3 +944,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 - [x] **Prior sensitivity report** — point_normal vs point_laplace compared on synthetic and all PDAC training modes. point_normal recommended as default. *(Completed April 2026)*
 - [x] **24-page DeSurv benchmark report** — `results/benchmark_sim/ssbmf_summary_report.pdf`. Includes ARD justification over ELBO K-grid-search, alpha gradient notation, per-figure takeaways, side-by-side prior comparison (Fig 19), multi-modal failure documented. *(Completed April 2026)*
 - [x] **C-index honest reporting fix** — `get_cindex_comparison()` uses model's own `EL %*% EBeta`; corrected `concordance()` direction convention. *(Completed April 2026)*
+
+## Chapter 4 narrative revision — 2026-10-02
+
+- Removed the fixed-date chapter timeline at the author's request; original
+  source retained in `paper/prelim/notes/removed-timeline-2026-10-02.md`.
+- Reframed continuing work around additional methodology and expected
+  evidence, retaining current limitations and making no new result claims.
+- Advisor-meeting follow-up remains the authority for the later substantive
+  revision. No analytical code, model defaults or results changed.

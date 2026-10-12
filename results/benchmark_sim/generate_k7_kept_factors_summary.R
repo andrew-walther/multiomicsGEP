@@ -25,7 +25,7 @@
 #             K7_kept_factors_geneweight_heatmap.png
 #             K7_kept_factors_top_genes.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-20
 # Usage:   Rscript results/benchmark_sim/generate_k7_kept_factors_summary.R
 # ============================================================

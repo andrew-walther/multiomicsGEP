@@ -11,7 +11,7 @@
 #     T4_sbmf_desurv_overlap.csv
 #     F5_sbmf_vs_desurv.png
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-15
 # Usage:   Rscript results/benchmark_sim/run_sbmf_desurv_overlap.R
 #          (requires results/benchmark_sim/outputs/pathway_enrichment/pdac_genesets.rds

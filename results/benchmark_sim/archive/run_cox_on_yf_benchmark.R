@@ -15,7 +15,7 @@
 #   Rscript results/benchmark_sim/run_cox_on_yf_benchmark.R
 #   Rscript results/benchmark_sim/run_cox_on_yf_benchmark.R --quick
 #
-# Author:       Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created:      2026-05-04
 # Dependencies: code/fit_cox_on_yf.R, code/predict_cox_on_yf.R,
 #               code/preprocess_desurv.R, code/train_test_split.R

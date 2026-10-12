@@ -2,7 +2,7 @@
 # Script: train_test_split.R
 # Purpose: Stratified train/test splitting for hold-out evaluation
 #          of the SBMF model on survival data.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-03-31
 # Dependencies: none (base R only)
 # ============================================================

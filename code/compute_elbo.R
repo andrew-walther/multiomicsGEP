@@ -4,7 +4,7 @@
 #          Provides the two missing terms beyond the genomics proxy:
 #          (1) survival likelihood contribution and (2) KL divergences
 #          for q(L), q(F), q(beta) extracted from EBNM outputs.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-04-01
 # Dependencies: none (pure R arithmetic; sourced by fit_modular.R)
 # ============================================================

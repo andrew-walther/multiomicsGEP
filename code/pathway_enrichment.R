@@ -2,7 +2,7 @@
 # Script: pathway_enrichment.R
 # Purpose: Pathway / gene-set enrichment on the recommended D4 model's
 #          survival-active gene expression programs (Program 3, Program 7).
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-14
 # Dependencies: fgsea, clusterProfiler, msigdbr, org.Hs.eg.db
 # ============================================================

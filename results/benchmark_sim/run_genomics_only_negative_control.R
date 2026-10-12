@@ -22,7 +22,7 @@
 #   Output: results/benchmark_sim/outputs/pathway_enrichment/
 #             C4_genomics_only_negative_control.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-21
 # Usage:   PDAC_DATA_ROOT=... Rscript results/benchmark_sim/run_genomics_only_negative_control.R
 # Requires: local real data (5 external cohorts) via PDAC_DATA_ROOT

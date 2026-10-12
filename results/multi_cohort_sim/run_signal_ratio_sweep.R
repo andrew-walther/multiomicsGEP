@@ -16,7 +16,7 @@
 #          Output: results/multi_cohort_sim/outputs/
 #            signal_ratio_sweep_results.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-06-14
 # Usage:   Rscript results/multi_cohort_sim/run_signal_ratio_sweep.R [--quick]
 # ============================================================

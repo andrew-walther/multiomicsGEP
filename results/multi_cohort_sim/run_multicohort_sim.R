@@ -30,7 +30,7 @@
 #            multicohort_sim_results.csv   (one row per scenario × K_init × arm × seed)
 #            multicohort_sim_example.rds   (data + fits, first seed, per K_init, for figures)
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-06-14
 # Updated: 2026-08-27 -- ARD-based K_init sweep, YFB_base + EBMF arms only
 # Usage:   Rscript results/multi_cohort_sim/run_multicohort_sim.R [--quick]

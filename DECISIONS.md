@@ -5,6 +5,357 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-12 — Unified writeup format, location, and evidence boundaries
+
+**Decision.** Develop the advisor-facing writeup in `paper/writeup/` as an
+article-style technical report with a 15–20-page main text, plus derivation
+appendices. Methods, statistical results, and biological findings form separate
+sections. One Quarto source will render the report and included appendices to
+HTML and PDF. The first deliverable is a self-contained HTML planning page,
+source inventory, and implementation checklist; Andrew reviews that page before
+drafting begins. Native drafting is followed by an independent scientific review
+of the complete report.
+
+**Why.** The advisors need a consolidated account to judge the project and
+discuss journal suitability, while the report provides a manuscript foundation.
+This task excludes background/literature-review writing, bibliography
+development, new fitting experiments, and journal selection. Existing prelim and
+historical derivation files are retained as sources.
+
+**Evidence boundaries.** Describe α_F = 0 as the configuration behind the
+evaluated single-modality results, not as demonstrated survival-guided discovery
+of F. Use the independently tuned K = 40 LASSO two-step comparator for the
+principal paired comparison, identifying older comparisons separately. Distinguish
+retained molecular programs from survival-active programs and explain the role of
+external performance in the starting-rank recommendation. Identify CPTAC as
+proteomics. Report multimodal starting-rank sensitivity and incomplete real-data
+convergence, and keep prospective filtering, feature expansion, and survival
+weighting separate from completed findings. The new multimodal appendix must
+reconcile the base derivation with the intercept, signed priors, and pruning in
+the evaluated implementation.
+
+---
+
+## 2026-10-02 — α_F = 0 cannot be the final method: survival must inform the program loadings
+
+**Decision.** The recommended single-modality configuration uses α_F = 0, so survival never enters the update of the loadings F (or of L). The model then finds the same programs as unsupervised factorization, and survival only affects β. After the 10/2 advisor meeting this is no longer an acceptable final method. The method will be finalized only once survival informs F strongly enough to recover a planted low-variance prognostic program in simulation, without instability and without losing external C. The plan is Workstream C of `docs/plans/Meeting_Notes_Followup_10_2_26.md`.
+
+**Why.** Finding a prognostic program that explains little variance is the case a supervised factorization exists for. The 2026-08-20 evidence for keeping α_F = 0 (no gain in external C across α_F ∈ {0, 0.1, 0.3, 0.5}) does not address that case, because real-data C cannot show whether such a program was found. The advisors' position is that the plain Bayesian formulation should let the priors balance the factorization and survival terms, with an estimated mixing parameter if needed.
+
+**What we know about why survival has little effect** (`code/update_F_surv_YFB.R:27-31,136`):
+
+1. **Gating.** The survival terms in the F update are multiplied by E[β̃_k] and E[β̃_k²]. A program with β near 0 gets no survival information, so a prognostic direction that no program already points at is never found.
+2. **Scale.** The survival precision was about 10⁻⁴ of the genomics precision at initialization (2026-04-30 entry, April preprocessing; to be re-measured). Under the model as written this is the correct Bayesian weighting. A weight on the survival term is justified by misspecification of the low-rank Gaussian model, not imposed ad hoc.
+3. **Scale feedback.** LFᵀ does not fix the scale of F_k, but the survival term depends on it. This caused the April runaway. The multimodal model removes the freedom by rescaling each program to sd(YF_k) = 1 every iteration (`code/fit_multimodal_yfb.R:162-213`). The single-modality model does not.
+
+**Evidence that equal weights alone are not enough.** The multimodal F update already uses the equal-weight Bayesian update with that rescaling (`code/multimodal_yfb_updates.R:471-472`). It is stable, and it still does not recover a planted low-variance prognostic program (10/2 progress chapter, §B).
+
+**What this changes.**
+- α_F = 0 remains the configuration behind the reported single-modality results until Workstream C is done.
+- The 2026-08-20 manuscript-framing entry ("dual-source F is a tested-and-rejected alternative") is withdrawn as the final framing. It still describes correctly what the 16-configuration grid showed.
+- Any survival weight or prior is chosen by cross-validated C, with cross-validated partial log-likelihood reported alongside.
+
+---
+
+## 2026-10-02 — Prelim chapter: remaining work instead of specific aims; thesis-style floats
+
+**Decision.** The prelim chapter (`paper/prelim/project3-ssbmf.qmd`, Chapter 4 of the prelim) no longer has a Specific aims section with "success criteria". The planned work is a *Remaining work* subsection at the end of Methods, written as prose, and the evaluation of each piece is stated as part of the planned evaluation. The thresholds are unchanged: recovery at absolute loading correlation ≥ 0.7, lower 95% limit of ΔC above −0.02, final rank varying by at most one across starting ranks 5–15. Lists are converted to prose, as in Chapters 2 and 3. Tables and figures are raw LaTeX floats in Chapter 3's style: `[!htb]`, `\small\centering`, table captions above and figure captions below, booktabs rules, `tab:`/`fig:` labels. Internal section references use Quarto `@sec-` labels so that they number 4.x in the prelim.
+
+**Why.** The author asked for the prelim to describe the current state of the method and results plus the remaining work, not an aims-and-criteria structure. The author also asked for floats placed with their text and formatted to the thesis guidelines.
+
+**Trade-off.** The raw-LaTeX tables render only in PDF output, which is the only format the chapter targets. Quarto prints a harmless warning for raw tables with non-`tbl` labels, as it does for Chapter 3. The timeline is a non-floating table (`\captionof` in a minipage) because as the last float it was otherwise moved to a page of its own.
+
+**Files.** `paper/prelim/project3-ssbmf.qmd`; `paper/prelim/tools/` (`prelim_transform.py`, `install_hooks.sh`, `post_commit_hook.sh`); `results/benchmark_sim/make_km_figures.R` (untitled KM copies for the chapter).
+
+---
+
+## 2026-10-02 — Orientation of the reported single-modality external C-indices
+
+**Finding.** `run_external_ci_analysis.R` produces `external_cindex_ci.csv`, the
+source of the mean external C = 0.627. It calls `bootstrap_concordance_ci()`
+with `flip = NULL`, which orients each risk score using the validation
+cohort's own outcomes. The 2026-09-04 review flagged this convention as
+circular, but this script was not among the runners updated then.
+
+**Effect on the reported numbers: none.** The saved D4 fit predates the
+2026-09-04 sign-correction fix, so its η = Ẑβ is a good-prognosis score
+(β₇ = −0.040 on the adverse program, β₃ = +0.012 on the protective one).
+Raw concordance with `reverse = TRUE` is below 0.5 in all five cohorts.
+One global orientation, risk = −η, fixed without looking at any validation
+outcome, therefore reproduces every reported cohort C:
+
+| Cohort | C |
+|---|---|
+| Dijk | 0.634 |
+| Moffitt | 0.549 |
+| PACA-AU array | 0.648 |
+| PACA-AU seq | 0.657 |
+| Puleo | 0.645 |
+
+`results/benchmark_sim/make_km_figures.R` rebuilds the validation
+projections, checks that they match the saved scores to 1e-8, and uses
+risk = −η.
+
+**Follow-up (done 2026-10-02).** `run_external_ci_analysis.R` now passes
+frozen orientations to the bootstrap functions: `flip = TRUE` for D4
+(risk = −η), and `flip = FALSE` for the two-step EBMF→Cox score, which is
+already a training-fit Cox risk. The rerun reproduces
+`external_cindex_ci.csv` and `external_paired_diff_ci.csv` exactly.
+- Per cohort, the paired difference excludes zero only in Puleo.
+- Pooled (fixed effect), ΔC = 0.042 (95% CI 0.013 to 0.071).
+
+---
+
+## 2026-10-01 — Parsimony framework for the multimodal model: intercept, ebnm priors, ELBO pruning
+
+**Problem.** The number of reconstruction-active factors tracked K_init.
+Diagnosis:
+
+1. **Unbounded per-feature precisions.** τ_mj = n / E‖y_mj − L f_mj‖² is
+   unregularized maximum likelihood. A spare factor can load on a single
+   feature and fit it exactly, which sends that feature's τ to infinity: up to
+   about 10¹⁶ in simulation, against true values ≤ 2.6. The likelihood gain
+   is unbounded, so such a factor is never worth removing.
+2. **No intercept.** On uncentered data (log2 expression, β methylation,
+   or the truncated September simulations), nonnegative factors absorb the
+   per-feature means and truncation artifacts. Centering alone does not work,
+   because nonnegative scores cannot produce zero-mean columns.
+3. **The September simulation design has very low signal-to-noise.** Each
+   true factor explains about 0.7% of the variance, and noise SDs range from
+   0.6 to 5.2 across features. The 1% PVE cutoff therefore could not count
+   even the true factors as active. The 5–9 "active" factors seen there were
+   fitting noise in the high-variance features.
+
+**Framework** (`fit_multimodal_yfb()` controls; the defaults keep the
+original behavior):
+
+- `intercept = TRUE`. Y_m = 1μ_mᵀ + LF_mᵀ + E_m, with μ_m re-estimated each
+  sweep (as suggested on 9/18). F describes deviations from baseline, so it
+  takes a signed prior (point-Laplace). L stays nonnegative and is read as
+  program activity. A constant shift in η does not change the Cox partial
+  likelihood.
+- `prior_update = "ebnm"`. The point-exponential L/F priors are fit by
+  marginal likelihood, so a whole column can shrink to the point mass.
+- `prune = TRUE`. A flashier-style nullcheck runs after convergence. It
+  removes the factor whose removal does not lower
+  ELBO = reconstruction + log PL(E η) − KL, refits from the remaining
+  factors, and repeats.
+  - The survival term is the Breslow partial log-likelihood at E[η], as the
+    user chose on 10/1. A variance-corrected alternative,
+    −½Σ w_i Var(η_i), is available for comparison.
+  - KL is computed per coordinate from the EBNM identity
+    KL = E_q log N(x; θ, s²) − log p(x).
+  - The nullcheck re-estimates the intercept and τ for each candidate
+    factor set.
+- `tau_model`. Options are `feature` (ML), `modality` (one τ per modality)
+  and `feature_eb` (Gamma prior).
+  - Per-feature τ is kept. With the intercept in place, the degeneracy did
+    not recur at moderate signal-to-noise.
+  - One τ per modality removes the degeneracy but mis-weights heteroscedastic
+    features: no pruning, and validation C fell from 0.74 to 0.65.
+  - The empirical-Bayes Gamma prior learns a heavy tail, so τ still reaches
+    about 10¹⁷.
+
+**First evidence.** One seed at moderate noise (true K = 3), with intercept,
+point-Laplace, ebnm and pruning:
+
+- both_informative: K_final = 3 from both K_init = 5 and K_init = 12, all true
+  factors recovered (|cor| ≥ 0.99), both prognostic programs survival-active,
+  validation C = 0.81.
+- adverse_protective: K = 3 from K_init = 5, with correct signs. From
+  K_init = 12 the fit kept 3 reconstruction factors plus 2 survival-only
+  duplicates of the prognostic programs.
+- The low-variance prognostic program is found only as a survival-only
+  factor with |cor| = 0.47, and survival is partly attributed to
+  high-variance programs.
+
+The replicated comparison is
+`results/benchmark_sim/run_multimodal_pruning_comparison.R`.
+
+**Affected files.** `code/fit_multimodal_yfb.R`,
+`code/multimodal_yfb_updates.R`, `code/simulate_multimodal_yfb.R`,
+`tests/test_multimodal_yfb_pruning.R`.
+
+---
+
+## 2026-10-01 — Signed loading priors for the multimodal model (point-Laplace, Normal)
+
+**Decision.** `fit_multimodal_yfb()` takes `control$prior_F`, which sets the
+loading prior for each modality. The options are point-exponential (the
+default, giving nonnegative F), point-Laplace, and Normal; the last two give
+signed F. The score prior on L stays point-exponential.
+
+- **Posterior update.** Each feature still gets the exact Gauss–Seidel
+  update from its pseudo-observation x_j = B_j/A_j with variance 1/A_j. For
+  the signed families the posterior moments are closed form:
+  - Point-Laplace: a spike plus a mixture of two truncated Normals.
+  - Normal: conjugate.
+  - Both are checked against `ebnm` with the prior held fixed, agreeing to
+    1e-6.
+- **Prior update.** After each modality–factor sweep the prior is re-fit by
+  `ebnm::ebnm_point_laplace` or `ebnm::ebnm_normal` (mode fixed at 0). This
+  maximizes the marginal likelihood of the sweep's pseudo-observations, as
+  flashier does.
+- **Rescaling step.** The factor rescaling multiplies a Laplace rate by the
+  scale factor c and a Normal variance by 1/c².
+
+**Reason.** Advisor feedback on 9/18. Loadings can be negative because a
+program can lower expression or methylation of a feature relative to
+baseline. Methylation may need a sparser prior than expression. The user
+should be able to choose, and the simulation study should give a
+recommendation for each scenario. `ebnm` was chosen over hand-derived
+empirical-Bayes updates because it is already a dependency and its fits are
+tested.
+
+**Signed input.** A modality fit with a point-Laplace or Normal loading
+prior may now contain signed data, for example features centered on the
+training means (so 0 is the baseline, as suggested on 9/18) or
+asin(2β − 1) methylation. A modality fit with point-exponential loadings
+must still be nonnegative; the validator enforces this separately for each
+modality. Prediction centers the validation cohort on the training means.
+A constant shift of η leaves the C-index unchanged. The canonicalization
+and convergence rules are unchanged.
+
+**Affected files.** `code/multimodal_yfb_updates.R`,
+`code/fit_multimodal_yfb.R`, `config/globals.yml`
+(`multimodal_yfb$prior_F`), `tests/test_multimodal_yfb_priors.R`.
+
+---
+
+## 2026-10-01 — Matched TCGA/ICGC expression + methylation cohorts for the multimodal model
+
+**Decision.** The multimodal model's first real-data application trains on
+TCGA-PAAD and validates on ICGC (PACA-AU). Both cohorts have matched
+expression and methylation. `code/load_multiomics_data.R`
+(`build_multiomics_cohorts()`) builds both from the local `data/` copies:
+
+- **Expression.** TCGA uses log2(TMM-CPM + 1) as provided. ICGC is
+  unlogged in the source file, so log2(x + 1) is applied.
+- **Methylation.** Raw β-values in [0, 1], restricted to the 305,352 CpGs
+  present in both cohorts' sex-chromosome-filtered probe sets, matched by
+  probe name.
+- **Missing methylation values.** Filled by KNN imputation
+  (`impute::impute.knn`, k = 10) within each cohort, following Yusha's code.
+  This affected 0.07% of TCGA values.
+- **Survival.**
+  - TCGA survival comes from `TCGA_PAAD.survival_data.rds`; 6 of 150
+    patients were dropped for missing or non-positive time.
+  - ICGC survival comes from `info.expr`, collapsed to one row per donor; 12
+    of 79 donors were dropped.
+  - ICGC survival agrees exactly with `PACA_AU_seq.survival_data.rds` for
+    every RNA sample.
+- **Validation sets.**
+  - Main: ICGC donors whose samples are all primary tumours with PDAC
+    histology (n = 50, 30 events).
+  - Sensitivity: all ICGC donors with usable survival (n = 67, 40 events),
+    which adds IPMN with invasion, adenosquamous, acinar and signet-ring
+    tumours.
+  - Training: TCGA, n = 144, 75 events.
+- **Screening.** Done on TCGA only, within features present in both cohorts:
+  the top 3,000 genes by the DeSurv combined mean + variance rank, and the
+  top 10,000 CpGs by β variance.
+
+**Reason.** These are the matched-sample data Yusha provided. Restricting
+validation to primary PDAC matches the population of the training cohort.
+Screening on the training cohort only keeps the external C-index free of
+validation-set information. The β scale satisfies the current
+nonnegative point-exponential model, so a real-data fit can run before the
+signed F priors exist.
+
+**Methylation scale.** Across the 10k screened CpGs,
+asin(2β − 1) halves the share of CpGs with |skewness| > 1 (13% to 6.6%).
+Neither scale is Gaussian: median excess kurtosis is about −0.7 on both, and
+Shapiro–Wilk rejects normality for 92% and 82% of CpGs respectively, which
+fits bimodal methylation. The β-scale fit comes first, and the two scales are
+compared once the point-Laplace and Normal F priors are implemented.
+Output: `results/multimodal_real/outputs/methylation_distribution_*`.
+
+**Open question.** DeSurv's gene screening was designed for one modality.
+How to select features for the two-modality model is not settled: for
+example, the number of CpGs relative to genes, and variance-based versus
+survival-aware screening. This will be raised with the advisors (10/2
+progress-book chapter).
+
+**Affected files.** `code/load_multiomics_data.R`, `config/globals.yml`
+(`multiomics_data`), `tests/test_load_multiomics_data.R`,
+`tests/test_real_multiomics_loading.R`,
+`results/multimodal_real/check_methylation_distribution.R`.
+
+---
+
+## 2026-09-18 — Multimodal YFB convergence and rank-selection protocol
+
+**Decision.** The isolated matched expression--methylation YFB fitter uses
+factor-scale canonicalization followed by a relative, identifiable convergence
+criterion. It allows up to 500 outer sweeps and declares convergence only when
+both the maximum relative fitted-reconstruction change and maximum relative raw
+risk-predictor change are below $10^{-4}$. The raw likelihood and prediction
+parameterization are unchanged.
+
+**Reason.** The factorization has a scale symmetry: reciprocal changes in the
+shared score and modality-specific loading preserve both $LF_m^\top$ and the
+raw joint YFB predictor. Latent-moment or absolute-scale stopping rules can
+therefore report non-convergence for an otherwise stable fit. A borderline
+K=7 simulation fit met the scale-invariant criterion at sweep 314, showing the
+generic 300-sweep cap was insufficient.
+
+**Rank and retention.** Reconstruction-active factors (joint marginal PVE at
+least 1%) and survival-active factors ($|E(\beta_k)|/\operatorname{SD}(\beta_k)
+\geq1.96$) are reported independently, with their union retained for
+interpretation. Neither count selects $K_{\mathrm{init}}$. The selection
+procedure is a paired replicated simulation panel over K=5,...,15 and chooses
+the smallest K within one standard error of the best mean held-out C-index;
+held-out partial likelihood is reported only as a same-risk-set secondary
+diagnostic. This is the current route to a parsimonious reconstruction rank
+without discarding a survival-active program.
+
+**Factor-level shrinkage.** A shared Gamma-rate prototype did not reduce
+reconstruction-active factors and worsened held-out C-index, so it was removed.
+The present point-exponential coordinate priors are not claimed to be a
+whole-factor ARD mechanism. A group spike-and-slab or group-penalty extension
+would require a new derivation and a separate validation study.
+
+**Simulation recovery.** The simulation suite now includes an
+`adverse_protective` scenario with true coefficients $(0.70,-0.70,0)$ and
+reports both prognostic retention and direction recall. A full-convergence
+held-out check at K=12 recovered both true programs and both signs; it is a
+sanity check, not final power evidence.
+
+**Affected files.** `code/fit_multimodal_yfb.R`,
+`code/run_multimodal_yfb_simulation.R`,
+`code/simulate_multimodal_yfb.R`, `config/globals.yml`, and their focused
+tests; screening outputs are under `results/benchmark_sim/outputs/`.
+
+---
+
+## 2026-09-10 — Multimodal YFB derivation prepared for advisor review
+
+**Agreed design scope.** Adapt the current YFB method to matched expression and
+methylation in one training cohort, evaluated in one independent matched cohort.
+Use one shared score matrix, one survival coefficient per factor, separate
+empirical-Bayes loading priors by modality and factor, and feature-wise Gaussian
+residual precisions. A factor may be inactive in one modality.
+
+**Methodological deliverable.** The source and PDF in
+`derivations/multimodal_YFB/` derive the observation and survival estimation
+objectives, all parameter updates, prior estimation, and frozen external
+prediction. `verify_derivation.R` checks the algebra without implementing a
+fitter. The direct adaptation of current no-feedback YFB is distinguished from
+the requested joint survival-informed formulation. The latter requires
+same-factor feature interactions and projection uncertainty that cannot be
+recovered by partitioning the existing loading update alone.
+
+**Refined document scope (September 10).** The meeting derivation now selects
+the linear joint-YFB projection and diagonal Cox working approximation, with
+ordinary observation likelihood and separate point-exponential loading priors.
+It is nine pages, focused on the objective and coordinate updates. Separate priors
+do not guarantee equal modality influence. Alternatives remain in preserved
+technical notes, not in the meeting derivation. The companion implementation
+specification describes future code; a runnable fitter and the progress-book
+chapter follow refinement and review. No numerical defaults have changed.
+
+---
+
 ## 2026-09-04 (addendum) — Codex round-2 review of the fix-plan branch: two more real findings, both fixed
 
 **Context.** After Steps 1-6 of `docs/plans/review_findings_fix_plan_09_04_2026.md` were complete and

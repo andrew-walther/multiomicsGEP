@@ -1,0 +1,184 @@
+# September 18, 2026
+
+## Summary {.unnumbered}
+
+- **A matched expression--methylation raw joint-YFB model is now implemented as an isolated module, with frozen prediction and matched-cohort simulations.** The established single-modality YFB production code is unchanged. (§1)
+- **The raw multimodal parameterization required a numerical reparameterization.** Factor-scale canonicalization preserves fitted reconstructions and the raw predictor; convergence is now assessed with scale-invariant relative fitted changes. (§2)
+- **A full-convergence $K_{\mathrm{init}}=5,\ldots,15$ screening panel confirms that active-factor counts cannot select rank.** The next selection stage is a paired replicated held-out evaluation. (§3)
+- **The September 4 follow-up questions now have explicit status: Normal $\beta$ shrinkage and direct survival feedback are implemented; replicated K selection, prior sensitivity, and matched real cohorts remain open.** (§4)
+
+---
+
+## §1 — Matched multimodal YFB implementation
+
+The new model follows the reviewed derivation in `derivations/multimodal_YFB/`.
+Production helpers, preprocessing, updates, fitting, prediction, and simulation
+live in `code/`; focused tests live in `tests/`. The model is intentionally
+separate from the established single-mode YFB fitter.
+
+For matched expression and methylation blocks,
+
+$$
+Y_m=LF_m^\top+E_m, \qquad
+\eta_i=\sum_k\beta_k\sum_m\sum_jY_{mij}F_{mjk}.
+$$
+
+$L$ is a shared nonnegative score matrix, $F_m$ are modality-specific
+nonnegative loading matrices, and both modalities retain separate loading
+priors and feature precisions. Every $F_m$ update includes its reconstruction
+term and its Cox-working-model contribution. This is the intended supervised
+multimodal extension, not an unsupervised factorization followed by Cox
+regression.
+
+The simulation framework supplies independent matched training and validation
+cohorts with proportional-hazards survival generated from the same raw joint
+predictor. It compares joint multimodal YFB with unsupervised EBMF→Cox,
+expression-only and methylation-only YFB, and a stacked-risk Cox baseline.
+The full test harness passes (509/509), and all 35 derivation-algebra checks
+pass. The planned formal multi-replicate K-selection study has not yet been
+run.
+
+## §2 — Resolving raw-scale convergence
+
+The model has a factor-wise scale symmetry:
+
+$$
+(L_{\cdot k},F_{m\cdot k},\beta_k) \mapsto
+(a_kL_{\cdot k},F_{m\cdot k}/a_k,a_k\beta_k),\qquad a_k>0.
+$$
+
+This transformation leaves both $LF_m^\top$ and the raw predictor $\eta$
+unchanged. Initial fits could continue moving along this non-identifiable
+direction despite stable fitted data and risk scores. The fitter now sets the
+sample standard deviation of each factor's raw joint projection to one after
+its coordinate update, transforming posterior second moments and
+point-exponential prior rates consistently. This controls representation scale
+without normalizing the predictor or removing survival feedback.
+
+The stopping rule now tests the relative maximum change in each identifiable
+fitted reconstruction and in $\eta$:
+
+$$
+\frac{\max|q^{(t)}-q^{(t-1)}|}
+{\max\{1,\max|q^{(t)}|,\max|q^{(t-1)}|\}} < 10^{-4}.
+$$
+
+This is invariant to raw modality units. The initial 300-sweep cap was too
+short for a stable K=7 draw (it required 314 sweeps), so the isolated
+multimodal cap is 500. Raw latent moment change is retained as a diagnostic
+but is not a valid convergence criterion under scale exchangeability. A
+standardized Cox warm start prevents an all-zero coefficient fixed point, and
+the point-exponential update handles subnormal zero-information floating-point
+remainders explicitly.
+
+These changes must be recorded in future methods writing: they choose a
+numerical representative in an equivalent parameterization, rather than
+changing the fitted likelihood or risk score.
+
+## §3 — Preliminary K-init diagnostic
+
+Following the single-mode broad sweep and its contiguous $10$--$15$
+diagnostic, the multimodal model was fit at $K_{\mathrm{init}}=5,\ldots,15$
+on the same both-informative simulation draw (seed 20260919; 120 training
+and 120 validation patients; 50 features per modality). Every fit converged.
+
+| $K_{\mathrm{init}}$ | Recon.-active | Survival-active | Union retained | Held-out C-index |
+|---:|---:|---:|---:|---:|
+| 5 | 5 | 1 | 5 | 0.734 |
+| 6 | 6 | 1 | 6 | 0.732 |
+| 7 | 6 | 1 | 6 | 0.777 |
+| 8 | 7 | 2 | 7 | 0.744 |
+| 9 | 6 | 5 | 9 | 0.749 |
+| 10 | 6 | 4 | 9 | 0.747 |
+| 11 | 6 | 4 | 8 | 0.743 |
+| 12 | 9 | 3 | 9 | 0.792 |
+| 13 | 7 | 3 | 8 | 0.759 |
+| 14 | 7 | 6 | 10 | 0.712 |
+| 15 | 9 | 3 | 9 | 0.784 |
+
+The C-index and held-out partial likelihood peak at $K_{\mathrm{init}}=12$ in
+this one draw, but this is **not** a selected default. Although the fits
+converge numerically, marginal joint PVE $\geq1\%$ does not yield a
+K-invariant effective count, and nominal survival flags increase at some higher
+ranks. The K-selection runner therefore uses identical simulated training and
+validation cohorts for every K within a replicate, checkpoints every fit, and
+will select the smallest K within one standard error of the best mean held-out
+C-index across independent replicates. Held-out partial likelihood is reported
+as a secondary, same-risk-set diagnostic. Reconstruction-active,
+survival-active, and union-retained counts remain separate outputs rather than
+rank-selection rules.
+
+### Adverse and protective program recovery
+
+The new `adverse_protective` simulation sets the first two true joint programs
+to $\beta=(0.70,-0.70,0)$, so successful recovery requires both retention and
+the correct adverse/protective directions. At $K_{\mathrm{init}}=12$ on the
+same held-out draw, the fit converged with six reconstruction-active, four
+survival-active, and eight union-retained factors; it recovered both true
+prognostic programs and both signs (prognostic and direction recall = 1.0).
+The extra nominal survival factors are another reason the final rank must be
+selected from repeated held-out performance, not coefficient flags alone.
+
+### Reconstruction parsimony: tested and deferred extension
+
+The current point-exponential priors shrink individual score and loading
+coordinates; they are not a valid whole-factor ARD mechanism. A shared
+Gamma-rate prototype was tested as a factor-level relevance parameter, but it
+did not reduce the number of reconstruction-active factors and worsened
+held-out C-index. It was removed rather than retained as a nominal ARD option.
+
+Accordingly, reconstruction parsimony is currently obtained by externally
+selecting $K_{\mathrm{init}}$ from paired replicated held-out performance,
+then reporting the reconstruction/survival retention classes within that fit.
+A future group spike-and-slab or group-penalty extension would require a new
+derivation and its own recovery study; it is not part of the current method.
+
+## §4 — Follow-up questions from the September 4 meeting
+
+### Coefficient prior
+
+The multimodal derivation uses a Normal (ridge-type) prior for $\beta$, which
+has an exact conjugate update. This is consistent with single-mode YFB evidence
+that a Normal prior is necessary when PDAC survival signal is weak; point-normal
+shrinkage can collapse coefficients to zero in small folds. Laplace-prior
+comparison remains a planned sensitivity analysis, not a current model change.
+
+### Initialization, K selection, and factor retention
+
+The fitter uses nonnegative-SVD initialization plus a Cox warm start. The
+current K panel checks K sensitivity, not 100 random starts. Its initial result
+shows that convergence alone is insufficient: marginal PVE reporting is not a
+rank-selection method in this over-specified nonnegative factorization. The
+next evidence must come from paired replicated held-out C-index and partial
+likelihood, with the fixed-working objective kept as an optimization diagnostic.
+
+### Supervision and low-variance prognostic factors
+
+Unlike the single-mode compatibility implementation, survival directly enters
+the multimodal loading update. A low-variance prognostic-factor scenario is
+included to test whether this can retain clinical signal that is not dominant
+in reconstruction. Prognostic activity is currently based on
+$|E(\beta_k)|/\operatorname{SD}(\beta_k)\geq1.96$, which is invariant to the
+factor-scale transformation. Relative-to-largest-$|\beta|$ thresholding remains
+a simulation-only sensitivity analysis.
+
+### Cohorts and future real data
+
+No matched TCGA/ICGC expression--methylation cohorts are yet in scope, so no
+cohort indicator or cohort-specific multimodal coefficient has been added. The
+single-mode results caution that genomics-side cohort indicators can compete
+with prognostic structure and apparent cohort-specific effects can reflect
+limited sample size. A future cohort term must specify whether its factor is
+fixed, whether its survival coefficient is constrained to zero, and how
+survival comparability is checked.
+
+## Next steps
+
+1. Run the checkpointed paired $K_{\mathrm{init}}=5,\ldots,15$ panel over
+   independent seeds and apply the pre-specified one-standard-error rule.
+2. Refit the selected K and report reconstruction, survival, and union counts;
+   do not substitute a marginal-PVE threshold for rank selection.
+3. Run the approved smoke study only with converged controls and a defensible
+   K-selection procedure.
+4. Reconcile the scale-canonicalization note with the editable derivation
+   source before writing manuscript methods.

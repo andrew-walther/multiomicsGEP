@@ -1,7 +1,7 @@
 # ============================================================
 # Script:  test_multistart.R
 # Purpose: Tests for fit_supervised_mf_modular_multistart()
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-06
 # Usage:   Rscript tests/run_tests.R  (included via source)
 #          Rscript tests/test_multistart.R  (standalone)

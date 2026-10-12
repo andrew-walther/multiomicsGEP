@@ -12,7 +12,7 @@
 #
 #   Output: results/benchmark_sim/outputs/k_init_sweep/k5_vs_k7_bootstrap_ci.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-08-20
 # Usage:   Rscript results/benchmark_sim/run_k5_vs_k7_bootstrap_ci.R
 # Requires: PDAC_DATA_ROOT set (real data not in git).

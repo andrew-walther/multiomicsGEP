@@ -12,7 +12,7 @@
 #               2026-07-13) resolve this collapse mode? Added 2026-07-13.
 #          A factor is "dead" if every element of its EF column is <1e-8 in
 #          absolute value (sd(x)==0 or all(abs(x)<1e-8)).
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-13
 # Usage:   Rscript results/multi_cohort_sim/diagnose_factor_collapse.R
 # ============================================================

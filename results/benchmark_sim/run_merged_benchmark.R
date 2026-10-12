@@ -11,7 +11,7 @@
 #          K values read from globals.yml. Run run_merged_kcv.R first.
 #          YFB x joint QN excluded (structural beta->0, DECISIONS.md 2026-05-22).
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-05-25
 # Usage:   Rscript results/benchmark_sim/run_merged_benchmark.R [--quick]
 #          --quick: max_iter=30, skip top-gene table (smoke test)

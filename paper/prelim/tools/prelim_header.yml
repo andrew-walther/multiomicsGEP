@@ -1,0 +1,70 @@
+---
+title: "Chapter 4 — Project 3: {{TITLE}}"
+author: "Andrew J Walther"
+
+# ---------------------------------------------------------------------------
+# GENERATED FILE -- DO NOT EDIT. This YAML comes from
+# multiomicsGEP/paper/prelim/tools/prelim_header.yml
+# and the body from project3-ssbmf.qmd, via tools/sync_to_prelim.sh.
+#
+# Modelled on Chapter 2's draft YAML
+# (prelim/project-proposals/project1-spillover/draft/project1-spillover-draft.qmd):
+# a standalone .qmd that renders itself in the prelim class, with
+# bios-prelim.cls symlinked in from templates/skeleton/prelim/.
+#
+# Differences from the standalone multiomicsGEP render: no author/affiliation
+# block, no \linenumbers, no a4 geometry, and citeproc (APA csl) instead of
+# natbib/unsrt -- the chapter's @key citations work unchanged.
+#
+# Preamble: hyperref loaded first (as in Chapter 2), booktabs + array for the
+# raw LaTeX tables (\toprule, >{\raggedright\arraybackslash}p{}), the tabular
+# \setstretch hooks, tocdepth 2, and \applabel redefined as a plain \label so
+# "Appendix \ref{...}" prints the class's appendix number (B.1) here while
+# the standalone prints its hand-typed A1. Floats, equations and appendix
+# sections are \label/\ref, so they number 4.x / B.x automatically.
+# ---------------------------------------------------------------------------
+documentclass: bios-prelim
+classoption: [12pt, prelim]
+
+format:
+  pdf:
+    pdf-engine: pdflatex        # class uses fontenc+lmodern, not fontspec
+    colorlinks: false           # Quarto 1.10 colors links by default, overriding hidelinks
+    number-sections: true       # REQUIRED, see the lit-review draft's comment
+    toc: false                  # the class generates the TOC, not pandoc
+    top-level-division: chapter
+    keep-tex: true
+    latex-auto-install: false   # a hook-driven render must never update
+                                # TinyTeX packages; a missing package fails loud
+    include-in-header:
+      text: |
+        \renewcommand{\maketitle}{}   % no pandoc title block
+
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+        \frenchspacing
+
+        \usepackage[hidelinks,linktoc=none]{hyperref}
+        \usepackage{booktabs}
+        \usepackage{array}
+        % Defines the \FloatBarrier used in the chapter body (before Technical
+        % notes); without it the draft does not compile.
+        \usepackage{placeins}
+
+        % Tables otherwise inherit the class's global double-spacing.
+        \BeforeBeginEnvironment{tabular}{\begingroup\setstretch{1}}
+        \AfterEndEnvironment{tabular}{\endgroup}
+
+        \setcounter{tocdepth}{2}
+
+        % Appendix-subsection anchor; see project3-ssbmf.qmd's header.
+        \newcommand{\applabel}[2]{\label{#2}}
+
+crossref:
+  fig-prefix: "Figure"
+  tbl-prefix: "Table"
+
+bibliography: ../../../references.bib
+csl: ../../../../templates/source/dissertation-resources-amber/apa.csl
+link-citations: true
+---

@@ -1,7 +1,7 @@
 # ============================================================
 # Script:  test_select_k_alpha_bo.R
 # Purpose: Tests for select_k_alpha_bayesopt() (code/select_k_alpha_bo.R)
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-07-13
 # Usage:   Rscript tests/run_tests.R  (included via source)
 #          Rscript tests/test_select_k_alpha_bo.R  (standalone)

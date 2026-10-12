@@ -22,7 +22,7 @@
 #
 #   Output: results/multi_cohort_sim/outputs/top2_match_diagnostic.csv
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-04
 # Usage:   Rscript results/multi_cohort_sim/run_top2_match_diagnostic.R
 # ============================================================

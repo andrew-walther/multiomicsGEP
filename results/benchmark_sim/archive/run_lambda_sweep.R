@@ -17,7 +17,7 @@
 #          Those are included in the summary table by reading the saved RDS files,
 #          so only lambda ∈ {5, 10, 20} trigger new benchmark runs (9 fits total).
 #
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-04-29
 # Dependencies: yaml, survival (via run_ssbmf_benchmark.R)
 # Inputs:  results/benchmark_sim/run_ssbmf_benchmark.R

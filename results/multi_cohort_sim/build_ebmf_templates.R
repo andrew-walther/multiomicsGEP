@@ -13,7 +13,7 @@
 #          ground truth).  It is distinct from the BENCHMARK EBMF in the runner,
 #          which is fit to each SIMULATED Y and scored as a competing method.
 #
-# Author:  Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-06-14
 # Dependencies: flashier (optional), code/preprocess_desurv.R,
 #               results/benchmark_sim/benchmark_helpers.R (cfg must exist)

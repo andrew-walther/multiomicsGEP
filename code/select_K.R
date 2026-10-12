@@ -4,7 +4,7 @@
 #          for the SBMF model.
 #          Option A: fit large K and count active (non-pruned) factors.
 #          Option B: cross-validated C-index (stub for Longleaf HPC).
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-04-01
 # Dependencies: code/fit_modular.R (must be sourced first)
 # ============================================================
