@@ -5,6 +5,20 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-14 — Manuscript authorship: Young cited, not a coauthor for now
+
+**Decision.** The planned Project 3 manuscript lists Walther, Liu and Rashid
+as authors. Amber Young's work is cited, and she is not listed as a coauthor
+for now. This may change.
+
+**Why.** Author decision (Andrew, 2026-10-14). It replaces the four-author list
+in `docs/plans/Prelim_Proposal_Plan_10_1_26.md` (left as a dated record) and
+matches the coauthor list in bios-dissertation's ROADMAP (2026-10-13).
+
+**Files.** `ROADMAP.md` (manuscript introduction item).
+
+---
+
 ## 2026-10-12 — Unified writeup format, location, and evidence boundaries
 
 **Decision.** Develop the advisor-facing writeup in `paper/writeup/` as an

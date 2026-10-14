@@ -99,7 +99,8 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   pipeline and supervised alternatives (Bair2004, Tibshirani1997, Nygard2008,
   Simon2011), and attenuation from treating estimated scores as fixed
   (Prentice1982, Carroll2006). Start when the manuscript draft is set up in
-  `paper/thesis/` (authors: Walther, Young, Liu, Rashid).
+  `paper/thesis/` (authors: Walther, Liu, Rashid; Young's work is cited, and
+  she is not a coauthor for now; see DECISIONS.md 2026-10-14).
 
 - [ ] **Sync the manuscript to bios-dissertation (deferred 2026-10-13)**
   Once a working manuscript exists in `paper/thesis/`, add a copy script and a
