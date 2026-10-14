@@ -5,6 +5,31 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-14 — Writeup format after author review of the initial draft
+
+**Decision.** The writeup is a standalone, manuscript-ready narrative of the
+current method, results and biology, not an audit of earlier claims or a record
+of meetings. Title: *Survival-Supervised Bayesian Matrix Factorization for
+Prognostic Gene Expression Programs in Pancreatic Cancer* (the prelim chapter's
+working title), with no subtitle. The claim-centered evidence-gap table is
+dropped: supported findings go into the narrative, unmet goals into Continuing
+work. Section 5 becomes a Discussion. The rendered text carries no repository
+references, source IDs (dropped entirely, not hidden), dated-process
+references or drafting traces; `source_inventory.csv` remains the verification
+record outside the document. All
+exhibits define their abbreviations; Appendix C is dissolved into Evaluation
+and Results; no References section for now. Appendices A and B must show every
+derivation step down to the EBNM inputs.
+
+**Why.** Andrew's review of the rendered draft (2026-10-14): the document should
+move into a journal submission with little change and read as his own work.
+
+**Implementation.** `paper/writeup/implementation_plan.md` ("Author feedback on
+the initial draft") and `paper/writeup/review_prompt.md`. Codex reviews against
+these items; Claude applies them in the revision.
+
+---
+
 ## 2026-10-14 — Initial writeup draft: presentation and evidence choices
 
 **Decision.** The initial technical report (`paper/writeup/writeup.qmd`, with

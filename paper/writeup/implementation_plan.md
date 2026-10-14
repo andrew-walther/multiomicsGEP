@@ -1,5 +1,7 @@
 # Project Writeup Implementation Plan
 
+> **Current state (2026-10-14):** the initial draft exists (`0a7cfc9`, styling `a9f4b47`). Codex performs Task 4 using `review_prompt.md`. The **Author feedback on the initial draft** section below takes precedence over earlier requirements in this plan and in `drafting_prompt.md` where they conflict.
+>
 > **For agentic workers:** Claude Code executes Tasks 2, 3, and 5 on `writeup/draft`. Codex independently performs Task 4 after the draft exists; Claude addresses confirmed findings afterward. The October 14 request authorizes finalizing and committing these planning materials, not drafting the report in this session. Read the Review disposition before the author starts the separate drafting prompt.
 
 **Goal:** Produce an advisor-facing account of the current single-modality and multimodal methodology, statistical performance, and biological findings, suitable for development into a manuscript.
@@ -29,6 +31,30 @@ The review was checked as claims, not applied verbatim. Only source/code/metadat
 | Pruning after iteration cap | **Adopt.** S08's pruning branch checks `settings$prune && K > 1L`, without a successful-convergence guard. State this beside the unconverged real-data removal comparisons. |
 | Multimodal flash reference | **Adopt.** S44 builds references `d4` and `flash`; S32 stores `reference=flash` rows. Extend S32 selectors and describe this as loading correspondence, not predictive superiority. |
 | DeSurv citation | **Adopt in modified form.** Keep Young et al. attribution, using existing `Young2026` in S50 if a formal citation is rendered. The entry is `@unpublished`, submitted manuscript; reject inferring publication/PNAS details from old report or manifest wording. This needs no bibliography expansion or literature search. |
+
+## Author feedback on the initial draft (2026-10-14)
+
+Andrew reviewed the rendered draft. These requirements apply to the review (Task 4) and the subsequent revision, and supersede conflicting earlier requirements.
+
+**Principle.** The writeup is a standalone narrative of the current method, results, and biological findings, written so its text and exhibits can move into a journal manuscript. It is not meeting documentation and not an audit of earlier claims.
+
+| # | Requirement | Supersedes or amends |
+|---|---|---|
+| 1 | Title: *Survival-Supervised Bayesian Matrix Factorization for Prognostic Gene Expression Programs in Pancreatic Cancer* (prelim chapter's working title). No subtitle. | Draft title and subtitle |
+| 2 | Finalized document shows no drafting traces: no "initial draft awaiting independent review" header or status box, no mention of reviewers, agents, the source inventory, or untraced claims. It reads as written by Andrew. | Draft status markings (removed at finalization, after review) |
+| 3 | No repository references in the document: no scripts, file paths, functions, arguments, configuration labels, internal labels (D4, P3, flash k5), or source IDs. Source IDs are dropped entirely, not hidden in comments. Software packages may be named. `source_inventory.csv` remains the repository's verification record, kept current but not referenced by the document. | "Trace each claim to an exact path/selector" in the document; tracing now lives only in the inventory |
+| 4 | No dated or process references (meeting notes, plans, progress chapters, dated decisions, "September model", "October chapter", "August 21 report"). Describe items by content. | Narrative references to dated sources |
+| 5 | Exhibits are self-contained: every acronym and abbreviation defined in captions or table notes (e.g., Table 4); captions give population, metric, orientation and uncertainty without selectors. Noise levels are labelled by value (e.g., low/high noise), not "September". | Caption conventions |
+| 6 | Algorithms use numbered, indented formatting without a box that breaks across pages. | Algorithm boxes |
+| 7 | Figures are sharp and well sized (vector PDF for PDF, high-resolution PNG for HTML; fonts proportional to body text). Figure 1 (held-out risk-tertile curves) is to be redrawn. Redrawing from saved scores/aggregates is allowed; no refitting. Text stays monochrome; figures keep colour. | "Reuse existing figures" scope cut, for figures of poor quality |
+| 8 | Drop the claim-centered evidence-gap table and the claim-by-claim framing. Supported findings go into Results and Discussion; unmet goals go into Continuing work as plain aims. | Task 3 "Claim-centered evidence-gap table" requirement; R9 mapping of that table |
+| 9 | Section 5 becomes a manuscript-style Discussion: meaning and implications, limitations, continuing work (α_F = 0 statement kept there). | Interpretation section structure |
+| 10 | Remove Appendix C: the characterization methods become a concise methods subsection in Evaluation (scientific caveats retained); the single-modality simulation table and figure move into Results 3.1 with context, or one is dropped. | Characterization table placement; Appendix C |
+| 11 | No References section for now; DeSurv attributed in text (Young et al., submitted). | Formal citation via `Young2026` |
+| 12 | Reduce length and redundancy; organize as Methods, Evaluation, Results, Biology, Discussion. | Page target unchanged (15–20 main-text pages) |
+| 13 | Appendices A and B show complete derivations from the model and objective to the EBNM pseudo-observation $x = B/A$ and standard error $s = A^{-1/2}$, with every intermediate step and no unexplained jumps, and state where the evaluated algorithm departs from the joint model. | Appendix A "reuse and reconcile existing derivations" scope cut |
+
+Revisit markers remain required and hidden; they must be carried through the restructuring. R9 now covers the findings summary, the Discussion (implications, limitations) and Continuing work.
 
 ## Global constraints
 
@@ -79,7 +105,7 @@ Use balanced START/END pairs. A block depending on several rows may use nested b
 | R6 | Simulation recovery, merging, false prognostic programs, low-variance supervision evidence and convergence; Figure 1, simulation tables and supporting panels/captions. | M1–M7 |
 | R7 | Comparator definitions and prediction rules, single-/multimodal validation text, paired differences, Table 3/Figure 2, Table 4/Figure 5, risk KM curves and supporting comparator exhibits/captions. | M7–M8; effects of M2–M6 |
 | R8 | All Biology interpretations and final program identities; characterization methods whose inputs/sign/selection change; label-basis table; Figure 3, Table 5/Figure 6, program HR/KM, enrichment/subtype/overlap, cohort attribution, modality shares, CpG discussion and captions. | M8; effects of M2–M6 |
-| R9 | Findings summary, cross-model conclusions, evidence cutoff/code-result provenance, claim-centered evidence-gap table/caption, limitations and Continuing work. | M0–M8 |
+| R9 | Findings summary, cross-model conclusions, Discussion (implications, limitations) and Continuing work. (The claim-centered evidence-gap table is dropped per Author feedback item 8.) | M0–M8 |
 
 Drafter verification: list marker occurrences by ID and check that each named passage/exhibit above is covered, including captions and mathematical blocks. Codex checks this independently in Task 4. Following approved method results, update each ID from the new source selections; preserve or identify historical results rather than silently replacing their provenance.
 
@@ -103,6 +129,7 @@ Cut new analyses, fitting, simulations, enrichment, new signed correlations, CpG
 | `appendices/multimodal.qmd` | Multimodal derivations with intercepts, signed priors, uncertainty, scaling, and pruning. |
 | `figures/` | Only adapted or newly assembled presentation figures derived from saved results. Reuse existing figures by reference where sufficient. |
 | `drafting_prompt.md` | Claude handoff for Tasks 2, 3, and 5; target October 16. |
+| `review_prompt.md` | Codex handoff for Task 4, including the author feedback to review against. |
 | `review.md` | Codex independent draft findings, followed by Claude dispositions; not a drafter self-review. |
 
 ## Task 1: Planning page and inventory
@@ -187,7 +214,9 @@ Cut new analyses, fitting, simulations, enrichment, new signed correlations, CpG
 - [x] Verify selected results against CSVs, denominators, comparator identity, orientation conventions, and inventory; render both formats successfully and check no private patient file is a render dependency.
 - [x] Propose a full-draft checkpoint commit after verification.
 
-### Claim-centered evidence-gap table (Task 3 deliverable)
+### Claim-centered evidence-gap table (Task 3 deliverable; superseded)
+
+**Superseded 2026-10-14 by Author feedback item 8.** The table below is kept as the record of what the initial draft contained. Its substance moves into the Results/Discussion narrative where supported and into Continuing work where not.
 
 Place one table in Interpretation with columns **claim**, **existing evidence**, **source ID/path and selector**, **currently justified conclusion**, and **missing evidence**. Supply all six rows below. Mark the table and caption R9, plus any relevant row-level dependencies. It reports the present evidence, not an intention to run missing analyses during drafting.
 
@@ -204,7 +233,9 @@ Place one table in Interpretation with columns **claim**, **existing evidence**,
 
 **Files:** Read the draft, appendices, outputs and sources; write `review.md`. Do not edit the draft or analytical results.
 
-**Consumes:** Claude's completed draft; source inventory; Review focus; the Review disposition, methods table, completed/proposed list, evidence-gap table, and Revisit mapping.
+**Prompt:** `review_prompt.md`.
+
+**Consumes:** Claude's completed draft; source inventory; Review focus; the Review disposition; Author feedback on the initial draft; methods table, completed/proposed list, and Revisit mapping.
 
 **Produces:** Independent findings ranked by severity, with location, evidence and suggested fix. State limits of checks that cannot be completed.
 
@@ -212,8 +243,9 @@ Place one table in Interpretation with columns **claim**, **existing evidence**,
 - [ ] Check equations/algorithms against the evaluated implementation; inspect HTML/PDF and record missing references/assets or layout defects.
 - [ ] Check that biological methods are explained, claims follow the actual evidence, methods availability/dependence/post hoc caveats are included, and no new multimodal analysis is presented as completed.
 - [ ] Check every Revisit dependency is marked in source, including captions and appendices.
+- [ ] Review the draft against every Author feedback item, proposing concrete text or structure for each affected location (Part B of `review_prompt.md`).
 - [ ] Write `review.md`, then ask before committing it. Do not mark a drafter's own checks as this independent review.
-- [ ] Later handoff: Claude verifies each finding, fixes confirmed ones, records fixed/not-confirmed/deferred-with-reason dispositions, and rerenders. Andrew approves before merge. This later repair stage is not part of the initial drafting assignment.
+- [ ] Later handoff: Claude verifies each finding, applies all Author feedback items and the confirmed findings, records fixed/not-confirmed/deferred-with-reason dispositions, and rerenders. Andrew approves before merge. This later repair stage is not part of the initial drafting assignment.
 
 ## Task 5: Initial-draft documentation and delivery (Claude Code)
 

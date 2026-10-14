@@ -515,6 +515,8 @@ On branch writeup/draft, read paper/writeup/drafting_prompt.md and follow it.
 
 ### Prompt 3 — Codex: review the draft
 
+*Superseded 2026-10-14 by `paper/writeup/review_prompt.md`, which adds Andrew's feedback on the initial draft. Use: "On branch writeup/draft, read paper/writeup/review_prompt.md and follow it."*
+
 ```text
 On branch writeup/draft, review the write-up draft (paper/writeup/writeup.qmd and
 the appendices) against the "Review focus" and "Global constraints" in
@@ -532,6 +534,8 @@ committing review.md.
 ```
 
 ### Prompt 4 — Claude Code: fix review findings
+
+*Amended 2026-10-14: also apply every item in "Author feedback on the initial draft" in `paper/writeup/implementation_plan.md`.*
 
 ```text
 On branch writeup/draft, read paper/writeup/review.md. Verify each finding
