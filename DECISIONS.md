@@ -5,6 +5,31 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-14 — Finalize the writeup plan and drafting handoff
+
+**Decision.** Claude Code drafts Tasks 2, 3 and 5 on `writeup/draft`; Codex
+independently reviews the completed draft in Task 4. The initial-draft target
+is October 16, superseding October 14; review and author approval follow.
+No model work or new analyses are authorized by this writing handoff.
+
+**Evidence and tradeoffs.** The source-checked planning review is dispositioned
+in `paper/writeup/implementation_plan.md`. Biological labels require explicit
+methods and their inferential limits. Multimodal top-gene interpretation,
+rank-one shares, absolute loading correspondence, and unadjusted associations
+are separated from proposed enrichment and CpG characterization. Saved absolute
+correlations remain absolute; no new correlations are computed. Existing DeSurv-
+aligned preprocessing comparisons are not a head-to-head DeSurv benchmark.
+
+**Implementation.** The plan requires a six-claim evidence-gap table and R1–R9
+source markers for updates after `feature/supervised-F`. Reuse existing exhibits
+and derivations, keep secondary simulations concise, and omit unverified
+quantities or identify their missing evidence. The inventory contains 54 sources;
+source inspection does not imply every numerical claim has been verified.
+`paper/writeup/drafting_prompt.md` is the standalone handoff. Andrew starts
+Claude separately; this planning change does not draft or publish the report.
+
+---
+
 ## 2026-10-14 — Manuscript authorship: Young cited, not a coauthor for now
 
 **Decision.** The planned Project 3 manuscript lists Walther, Liu and Rashid

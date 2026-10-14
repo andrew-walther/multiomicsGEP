@@ -1,6 +1,6 @@
 # Project Writeup Implementation Plan
 
-> **For agentic workers:** Use `superpowers:executing-plans` for native drafting in the current checkout. Steps use checkbox syntax for tracking. The author-selected review of the HTML planning page is a mandatory checkpoint before Task 2. An independent scientific review follows the complete draft, not each section.
+> **For agentic workers:** Claude Code executes Tasks 2, 3, and 5 on `writeup/draft`. Codex independently performs Task 4 after the draft exists; Claude addresses confirmed findings afterward. The October 14 request authorizes finalizing and committing these planning materials, not drafting the report in this session. Read the Review disposition before the author starts the separate drafting prompt.
 
 **Goal:** Produce an advisor-facing account of the current single-modality and multimodal methodology, statistical performance, and biological findings, suitable for development into a manuscript.
 
@@ -8,11 +8,31 @@
 
 **Tech stack:** Existing Quarto and TinyTeX; Markdown and mathematical notation; existing aggregate CSV outputs and PNG/PDF figures. Any later tabulation code uses the project's existing R dependencies or base R; no new dependency or model-fitting runner is introduced.
 
-**Spec:** The user-approved plan in this chat; `planning.qmd` provides the detailed reviewable structure. If the planning page is revised on review, record the revision here before drafting.
+**Spec:** Andrew's October 14 instructions to check Claude's review claims, finalize planning, and prepare the handoff; `planning.qmd`; and the October 13 Sequencing and handoffs in `docs/plans/Meeting_Notes_Followup_10_2_26.md`. The latest draft target is October 16, superseding the earlier October 14 target. The source review is preserved in `plan_review_findings.md`.
+
+## Review disposition (2026-10-14)
+
+The review was checked as claims, not applied verbatim. Only source/code/metadata inspection was performed; no fits, tests of biological hypotheses, enrichment, or new correlations were run. Source IDs below refer to the expanded inventory. Detailed numerical extraction is still the drafter's obligation, not implied by inspecting an implementation.
+
+| Finding | Decision | Evidence and amendment |
+|---|---|---|
+| 1. Single-modality characterization methods | **Adopt in modified form.** | S41/S42 confirm E[F] ranking, `pos`, seed 1, size 10–500, and top-50/100/150 ORA; S53 confirms E[L] versus PurIST. S49 separates frozen projections/KM from signatures; S41/S51/S52 show mean-z signature scoring and the post hoc C4 exclusion. Add the requested methods table and dependence/multiplicity/availability caveats. Do not call the checks independent or the corrected control prespecified. Additionally, the helper's signature HR is per unit of the mean score, not automatically per SD, and its `max(C,1-C)` is outcome-oriented, not frozen-risk validation. |
+| 2. Multimodal characterization | **Adopt in modified form.** | S43/S44 confirm top 8 positive/6 negative gene lists, rank-one modality shares, standardized joint-projection HRs, and saved absolute correlations. No fgsea/ORA calls were found in the inspected multimodal R scripts. Add completed-versus-proposed work and label-basis columns. Reject recomputing signed r now: saved tables S31/S32 contain only absolute correlations; label that limitation. S47's signed EBMF enrichment is an example for later methodology, not a completed multimodal analysis or an automatically approved choice. |
+| 3. Evidence-gap table/source traps | **Adopt in modified form.** | S48's D1–D5 configurations and saved table compare LB/YFB preprocessing, not a fitted DeSurv comparator. Add distinct S45/S46 for EBMF factor/pathway correspondence and S32's flash-reference selector. The six-claim table is required in Task 3. State that a matched DeSurv/NMF benchmark was not verified in the reviewed sources, rather than asserting universal absence. The dated rank explanation in DECISIONS remains a hypothesis. Correlation supports correspondence, not identical programs or an alpha_F=0 supervision effect. |
+| 4. Revisit mechanism/Continuing work | **Adopt.** | The section was absent; the sequencing M0–M8 table explicitly requires it. Add R1–R9 source markers covering methods, algorithms, both appendices, evaluation, results, exhibits/captions, biology, and conclusions. Keep proposed supervision work in one Continuing work subsection; retain factual caveats at affected results and one current-algorithm statement in Methods. |
+| 5. Executable handoff/scope | **Adopt in modified form.** | The original Task 4 conflicts with the sequencing handoff. Reassign independent review to Codex, separate Claude's later repairs, and create `drafting_prompt.md`. Use the newly requested October 16 target. Reuse figures and derivations; reduce supporting S15/S19/S20 to concise text when verified. Retain sufficient Appendix A derivations plus a mathematical-versus-implemented table, and fully reconcile Appendix B. Omit unverified quantities or put the missing claim in the gap table. Do not freeze the review's pending-source count: verification status is per claim and must be updated as extraction proceeds. |
+
+| Minor suggestion | Decision and evidence |
+|---|---|
+| Program 6 naming | **Adopt in modified form.** Use the August 21 report's immune infiltrate with a vascular component as the primary label (S21); discuss mixed stromal genes where supported rather than treating two labels as interchangeable. |
+| Historical D4 sign | **Adopt.** S49 uses risk = −η and verifies it against the cached scores. S01 documents the historical sign issue. State the convention for this saved fit, not as a universal rule for current fitters. |
+| Pruning after iteration cap | **Adopt.** S08's pruning branch checks `settings$prune && K > 1L`, without a successful-convergence guard. State this beside the unconverged real-data removal comparisons. |
+| Multimodal flash reference | **Adopt.** S44 builds references `d4` and `flash`; S32 stores `reference=flash` rows. Extend S32 selectors and describe this as loading correspondence, not predictive superiority. |
+| DeSurv citation | **Adopt in modified form.** Keep Young et al. attribution, using existing `Young2026` in S50 if a formal citation is rendered. The entry is `@unpublished`, submitted manuscript; reject inferring publication/PNAS details from old report or manifest wording. This needs no bibliography expansion or literature search. |
 
 ## Global constraints
 
-- Work directly in `paper/writeup/` in the current project checkout; do not create a worktree.
+- Work on `writeup/draft` in the existing checkout. No worktree or second clone; Claude and Codex take turns. Check the branch before each commit and stop if it differs.
 - Target a 15–20-page main text, including exhibits; derivation appendices are additional.
 - Produce an article-style technical report, with numbered scientific sections, a findings summary, notation, and two algorithm boxes.
 - Include no literature review, bibliography development, journal shortlist, personal updates, or fixed-date research timeline.
@@ -24,7 +44,10 @@
 - Explain CPTAC's proteomics platform and distinguish the single-block analysis from matched expression–methylation integration.
 - Do not claim that survival shapes single-modality F under alpha_F=0 or that approximated objectives guarantee exact monotone CAVI.
 - Preserve the `AGENTS.md` symlink; edit its target `CLAUDE.md` for the concise writeup pointer.
-- Propose checkpoint commits and obtain explicit confirmation before pushing. Do not send or publish the report.
+- Ask before commits, merges, or pushes unless Andrew explicitly authorizes the specific action. This October 14 planning commit is explicitly authorized; a draft commit/merge/push is not. Stage only task-owned files. Do not send/publish the report.
+- Biological characterization must explain input, population, statistic/settings, multiplicity, and interpretation, with completed multimodal analyses separated from proposed M8 work.
+- Report evaluated alpha_F=0 accurately; keep prospective supervision methodology in one Continuing work subsection. Apply Revisit markers at all method-dependent source passages and exhibits.
+- Retain Young et al. attribution through existing `paper/ssbmf-refs.bib` entry `Young2026` if formal citations are used. No bibliography expansion; do not describe the submitted manuscript as a verified PNAS publication. Current planned manuscript authors are Walther, Liu, Rashid (DECISIONS.md, 2026-10-14).
 
 ## Review focus
 
@@ -33,6 +56,40 @@
 3. **Overlapping cohorts and selection evidence:** the matched 50-donor set is not an additional independent cohort; external-performance evidence used for rank recommendation must be disclosed.
 4. **Incomplete convergence and objective approximations:** describe iteration-cap fits as such, and the pruning objective as the implemented approximation rather than an exact survival expectation.
 5. **Biological overinterpretation:** enrichment and unadjusted associations support program characterization, not causal mechanism, novel survival-guided discovery, or demonstrated methylation benefit.
+
+## Revisit after feature/supervised-F
+
+M0–M8 are defined in the sequencing plan. These are dependencies of the current evaluated account, not results expected from future work. Mark **every affected source passage**, equation/algorithm block, table/figure definition, and caption. The same ID can occur at several locations; mark individual blocks rather than enclosing the whole document once. When a new passage depends on the same method choices, apply the relevant existing ID.
+
+```markdown
+<!-- REVISIT R1 START -->
+Current evaluated F-update passage, equation, or algorithm step.
+<!-- REVISIT R1 END -->
+```
+
+Use balanced START/END pairs. A block depending on several rows may use nested balanced IDs. Markers remain in Quarto source and are hidden in HTML/PDF; rendered scientific prose remains a coherent description of the evaluated configuration.
+
+| ID | Passages/exhibits to revisit | Method dependency |
+|---|---|---|
+| R1 | Single-modality F update, alpha/alpha_F, beta priors and supervision weights, initialization and stability rules; single-modality algorithm; Appendix A's affected update/objective derivations and mathematical-versus-implemented table. | M1–M3 |
+| R2 | Notation and definition/normalization of ZF, coefficient units/uncertainty, scale transformations, training/new-patient prediction, corresponding steps/equations in both algorithms and appendices. | M2; M4 |
+| R3 | Multimodal loadings/coefficient updates, priors/weights, normalization, objective, factor-removal/refitting algorithm, and Appendix B. | M4; M5 |
+| R4 | Starting/effective rank definitions, retained/survival-active classification, K recommendations/criteria, model/notation table, rank/recovery panels (Figure 4 and supporting K sweeps), and their captions. | M5; M6; M8 |
+| R5 | Evaluation design and sample/feature tables; preprocessing/feature counts, prior/initialization/convergence settings, robustness/sensitivity descriptions. | M0; M6; M7 |
+| R6 | Simulation recovery, merging, false prognostic programs, low-variance supervision evidence and convergence; Figure 1, simulation tables and supporting panels/captions. | M1–M7 |
+| R7 | Comparator definitions and prediction rules, single-/multimodal validation text, paired differences, Table 3/Figure 2, Table 4/Figure 5, risk KM curves and supporting comparator exhibits/captions. | M7–M8; effects of M2–M6 |
+| R8 | All Biology interpretations and final program identities; characterization methods whose inputs/sign/selection change; label-basis table; Figure 3, Table 5/Figure 6, program HR/KM, enrichment/subtype/overlap, cohort attribution, modality shares, CpG discussion and captions. | M8; effects of M2–M6 |
+| R9 | Findings summary, cross-model conclusions, evidence cutoff/code-result provenance, claim-centered evidence-gap table/caption, limitations and Continuing work. | M0–M8 |
+
+Drafter verification: list marker occurrences by ID and check that each named passage/exhibit above is covered, including captions and mathematical blocks. Codex checks this independently in Task 4. Following approved method results, update each ID from the new source selections; preserve or identify historical results rather than silently replacing their provenance.
+
+## Draft schedule and scope cuts
+
+Claude aims for a complete initial draft by **Friday, October 16, 2026**. This replaces the earlier October 14 draft target. Independent review and author approval still follow; a deadline does not make an unchecked report ready to share.
+
+Reuse existing figures with necessary caption/label corrections instead of redrawing them for polish. Reduce threshold sensitivity (S15), merge diagnostics (S19), and cohort attribution (S20) to one well-supported sentence each where possible; retain a necessary caveat if more space is required. Appendix A reuses and reconciles existing derivations plus a mathematical-versus-evaluated table; Appendix B receives full equation-level reconciliation because its evaluated additions are newer. Do not omit derivations or characterization methods to save time.
+
+Cut new analyses, fitting, simulations, enrichment, new signed correlations, CpG annotation, literature review, bibliography expansion, journal-template work, and exhaustive histories of discarded variants. If a quantity remains unverified at handoff, omit it or state the missing evidence in the claim-centered table; no placeholder numbers. Verifying existing files is required and is not permission to regenerate analytical results.
 
 ## File responsibilities
 
@@ -45,7 +102,8 @@
 | `appendices/single_modality.qmd` | Single-modality derivations reconciled with the evaluated algorithm. |
 | `appendices/multimodal.qmd` | Multimodal derivations with intercepts, signed priors, uncertainty, scaling, and pruning. |
 | `figures/` | Only adapted or newly assembled presentation figures derived from saved results. Reuse existing figures by reference where sufficient. |
-| `review.md` | Complete-draft scientific/presentation findings, their resolution, and final verification evidence. Create after the draft exists. |
+| `drafting_prompt.md` | Claude handoff for Tasks 2, 3, and 5; target October 16. |
+| `review.md` | Codex independent draft findings, followed by Claude dispositions; not a drafter self-review. |
 
 ## Task 1: Planning page and inventory
 
@@ -74,12 +132,14 @@
   ```
 
 - [x] Check every repository-relative link/asset and every inventory source path. Recompute the planning snapshot's means, row counts, and selected values from the named CSVs.
-  Expected: all files exist; 40 unique inventory IDs; mean single-modality C rounds to 0.627; principal pooled difference is 0.0259; main single-modality simulation has 540 rows and 15 seeds; full multimodal sweep has 486 rows with 162 per variant; selected matched C values round to 0.6852 and 0.6757 and both selected fits are unconverged.
-- [x] Inspect the rendered page in a browser: title/navigation, tables, mathematical notation, collapsed/expanded previews, and narrow-screen readability. Verify local section anchors in the HTML.
-- [x] Update project pointers to say **planning page available; full report awaiting approval**. Suggest a checkpoint commit covering the verified planning artifacts.
-- [ ] **Stop for planning-page review.** Approval of the implementation plan does not substitute for this separately selected checkpoint.
+  Expected: all files exist; 54 unique inventory IDs; mean single-modality C rounds to 0.627; principal pooled difference is 0.0259; main single-modality simulation has 540 rows and 15 seeds; full multimodal sweep has 486 rows with 162 per variant; selected matched C values round to 0.6852 and 0.6757 and both selected fits are unconverged.
+- [x] October 12 inspection (before the current revision): inspect the rendered page in a browser: title/navigation, tables, mathematical notation, collapsed/expanded previews, and narrow-screen readability. Verify local section anchors in the HTML.
+- [x] Update project pointers: finalized planning review and handoff available; report not drafted.
+- [x] Claude reviewed the plan; check all findings/minors and finalize revisions as Andrew requested on October 14. See Review disposition.
+- [x] Prepare Revisit mapping, claim-centered evidence-gap task, and Claude drafting prompt.
+- [ ] Andrew inspects dispositions and starts the separate Claude drafting handoff. This session does not write the report.
 
-## Task 2: Methods and derivations
+## Task 2: Methods and derivations (Claude Code)
 
 **Files:** Create `writeup.qmd`, `appendices/single_modality.qmd`, and `appendices/multimodal.qmd`; extend the source inventory.
 
@@ -91,7 +151,7 @@
 - [ ] Define notation/dimensions and write the evaluated single-modality likelihood, priors, normalized projection, working approximation, update order, convergence, prediction, rank recommendation, and factor classification.
 - [ ] Explain the single-block multi-cohort setting and separate genomic offsets, baseline-hazard strata, and cohort-specific survival coefficients; identify the proteomics training input.
 - [ ] Write the multimodal model and algorithm, including shared L, signed modality-specific F, feature intercepts/precisions, projection moments, scale canonicalization, and pruning/refitting.
-- [ ] Derive single-modality beta/L/F/tau updates, EBNM handoff, and objective calculation; identify the implemented alpha_F=0 restriction and plug-in score approximation.
+- [ ] Reconcile the existing single-modality beta/L/F/tau derivations, EBNM handoff, normalized projection, and objective. Add a compact table separating the mathematical joint model from the evaluated alpha_F=0 algorithm and plug-in score approximation; retain the derivation detail required to understand each evaluated update.
 - [ ] Derive multimodal intercept/L/F/beta/tau updates, second moments, feature coupling, canonicalization, and removal criterion; distinguish the plugin pruning objective from exact expected Cox likelihood.
 - [ ] Verify every algorithm step/equation against its implementation and evaluated configuration. Reuse independent algebra checks where they cover the relevant equation; do not change model code to make prose and code agree.
 - [ ] Render both formats:
@@ -102,53 +162,71 @@
   ```
 
   Expected: both exit 0; both appendices, equations, and algorithm boxes are readable and correctly referenced.
-- [ ] Propose a methods/derivation checkpoint commit after verification; continue native drafting without another section-level approval request.
+- [ ] Check the affected methods, algorithm steps and appendix equations carry their Revisit markers; propose a checkpoint and ask before committing. Continue the author-started drafting assignment without section-by-section approval requests.
 
-## Task 3: Statistical results and biological findings
+## Task 3: Statistical results and biological findings (Claude Code)
 
 **Files:** Complete `writeup.qmd`; update `source_inventory.csv`; add adapted assets only when necessary in `figures/`.
 
-**Consumes:** Approved exhibits; inventory entries S09–S28, S31–S32, S35–S36, S39–S40; the methods from Task 2.
+**Consumes:** Approved exhibits; inventory entries S09–S28, S31–S32, S35–S36, S39–S54; the methods from Task 2.
 
 **Produces:** Every numerical claim traces to a source selection, and every exhibit has a design, population, metric, and appropriate qualification.
 
 - [ ] Write the cohort/design table with exact sample/event counts, platform identities, transformations, screening, replication, noise settings, comparator definitions, and inference procedures.
 - [ ] Assemble single-modality simulation results by scenario/rank, distinguishing recovery, merging, prognostic classification, and held-out C; label the simulation comparator accurately.
 - [ ] Assemble five-cohort external performance with regularized baseline rows from S10 and principal pooled difference from S11; keep S12/S13 as supporting comparisons. Explain the role of external-performance evidence in the rank recommendation.
-- [ ] Characterize all four retained programs with gene weights, enrichment, subtype correspondence, overlap, and external association. Explain the sign conventions and exploratory nature of interpretation.
+- [ ] Include the biological-characterization methods table from planning.qmd, with columns analysis, input object, population, statistic/settings, multiplicity, and supported interpretation. Explain E[F] ranking, E[L]/PurIST tests, mean-z signatures, frozen projections, gene universes, BH scope, post hoc C4 controls, and overlapping evidence. Include the availability-based method-choice caveat.
+- [ ] Characterize all four retained programs by connecting their labels to those methods/results. Program 6 uses the updated immune/vascular label. State historical D4 risk = -eta; keep the signature helper's outcome-oriented C-index separate from predictive validation.
 - [ ] Assemble the full multimodal simulation summaries by variant/scenario/noise/rank; specify that 486 includes all three variants. Do not replace the selected variant's metrics with an across-variant average.
 - [ ] Assemble matched-donor comparisons and all starting ranks using explicit S28 selectors; include convergence and primary versus broader-histology sensitivity. Trace the documented established-model matched-donor comparison to its saved-score derivation before using it as a verified quantitative result.
-- [ ] Describe all seven multimodal programs, modality shares, correspondence, and unadjusted survival associations. Identify CpG interpretation as incomplete and evaluate the evidence for added methylation information separately from added prediction.
-- [ ] Write Interpretation and remaining evidence in narrative prose, distinguishing planned feature-count, filtering, weighting, and supervision studies from completed analyses.
+- [ ] Describe all seven multimodal programs with a label-basis column (top signed genes and named correspondence reference), explicit absolute r where that is all that was saved, within-modality rank-one shares, and 14 unadjusted joint-projection HR tests. Include the completed-versus-proposed list from planning.qmd in the report. No new signed correlations or enrichment.
+- [ ] Include S32's unsupervised flash-reference rows as correspondence evidence distinct from the expression-only/D4 references; do not treat them as a prediction benchmark. Note that removal checks can run after the iteration cap.
+- [ ] Write Interpretation with one Continuing work subsection for prospective supervision/rank/feature/characterization work; Methods describes the current evaluated configuration with a brief cross-reference.
+- [ ] Produce the six-claim evidence-gap table specified below. Omit unverifiable numbers from Results and record missing evidence instead.
+- [ ] Verify Revisit markers cover all affected passages, algorithms, equations, tables, figures, and captions.
 - [ ] Verify selected results against CSVs, denominators, comparator identity, orientation conventions, and inventory; render both formats successfully and check no private patient file is a render dependency.
 - [ ] Propose a full-draft checkpoint commit after verification.
 
-## Task 4: Complete-draft review and repair
+### Claim-centered evidence-gap table (Task 3 deliverable)
 
-**Files:** Review the full writeup and appendices; create `review.md`; modify the authored sources/assets where substantive findings require correction.
+Place one table in Interpretation with columns **claim**, **existing evidence**, **source ID/path and selector**, **currently justified conclusion**, and **missing evidence**. Supply all six rows below. Mark the table and caption R9, plus any relevant row-level dependencies. It reports the present evidence, not an intention to run missing analyses during drafting.
 
-**Consumes:** The draft, source inventory, current code/configurations, this plan, and the five Review Focus conditions.
+| Claim | Existing source starting points | Boundary/missing evidence |
+|---|---|---|
+| Value over EBMF/NMF alone | S18/S19 recovery; S45 factor correspondence and S46 pathway concordance; S32 flash-reference rows. | Correspondence/recovery is not survival superiority. An unsupervised decomposition has no C-index without a specified scoring rule. No NMF comparison was verified in the reviewed comparator sources. |
+| Value over two-step EBMF → Cox | S09–S13, with K=40 LASSO as the principal real-data comparison; S18 uses a differently configured simulation comparator. | Restrict conclusions to the exact benchmark; finalized-model/robustness comparisons await M6–M8. |
+| Value over DeSurv | S35 gene overlap; S48 describes LB/YFB preprocessing comparisons. | No matched predictive head-to-head was verified. The directory name is not evidence of a DeSurv fit. Keep attribution to Young et al.; do not imply superiority. |
+| K selection accounting for survival and reconstruction | S14/S15 rank/threshold outputs; S26–S28 multimodal rank/recovery; S01 dated decisions and S08 removal criterion. | Criteria disagree, external performance influenced K=7, real multimodal factors are not pruned, and the dated reconstruction-versus-K explanation remains unverified. Combined selection/replicated validation belongs to M5. |
+| Multimodal added value | S28 same-donor comparison; S31/S32 program and modality correspondence. | Similar C is not equivalence; both selected fits are unconverged. Prediction improvement, robust selection, and methylation-specific biological explanation are not demonstrated. |
+| Biological understanding | S21–S24/S35/S36/S40–S44/S49/S51–S54. | Explain methods and dependent evidence, post hoc controls, training concordance, unadjusted tests and unsigned matching. Mechanism, final-program validation and CpG annotation/enrichment remain gaps. |
 
-**Produces:** A report with resolved substantive accuracy/presentation findings and an auditable verification record.
+## Task 4: Independent complete-draft review (Codex)
 
-- [ ] Audit each quantitative claim's recorded path and selector; check source rows, model identity, cohort sizes, uncertainty, denominators, scenario grouping, and rounded values.
-- [ ] Render both formats. Search for unresolved cross-references, missing assets/citations, and visible editorial placeholders; inspect PDF pages visually for overflow, cropped figures, poor table breaks, and unreadable math.
-- [ ] Dispatch one independent scientific reviewer with the full draft, inventory, plan, and Review Focus. Request findings on unsupported claims, omissions, theory/implementation mismatch, biological interpretation, and coherence; do not request implementation of new analyses.
-- [ ] Resolve substantive findings, recording their evidence and disposition in `review.md`. If evidence is unavailable, narrow or remove the affected claim and describe the actual evidence gap.
-- [ ] Rerender both formats after repairs, repeat the checks affected by changes, and confirm the 15–20-page main-text target without sacrificing needed qualifications.
+**Files:** Read the draft, appendices, outputs and sources; write `review.md`. Do not edit the draft or analytical results.
 
-## Task 5: Documentation and delivery
+**Consumes:** Claude's completed draft; source inventory; Review focus; the Review disposition, methods table, completed/proposed list, evidence-gap table, and Revisit mapping.
+
+**Produces:** Independent findings ranked by severity, with location, evidence and suggested fix. State limits of checks that cannot be completed.
+
+- [ ] Check every quantitative claim against its path/selector, comparator, cohort size/overlap, risk orientation, denominator and uncertainty.
+- [ ] Check equations/algorithms against the evaluated implementation; inspect HTML/PDF and record missing references/assets or layout defects.
+- [ ] Check that biological methods are explained, claims follow the actual evidence, methods availability/dependence/post hoc caveats are included, and no new multimodal analysis is presented as completed.
+- [ ] Check every Revisit dependency is marked in source, including captions and appendices.
+- [ ] Write `review.md`, then ask before committing it. Do not mark a drafter's own checks as this independent review.
+- [ ] Later handoff: Claude verifies each finding, fixes confirmed ones, records fixed/not-confirmed/deferred-with-reason dispositions, and rerenders. Andrew approves before merge. This later repair stage is not part of the initial drafting assignment.
+
+## Task 5: Initial-draft documentation and delivery (Claude Code)
 
 **Files:** Update README, CLAUDE, PROJECT_STATUS, ROADMAP, and DECISIONS; finalize the inventory and review record.
 
-**Consumes:** Verified report outputs and review disposition.
+**Consumes:** Initial-draft render/source checks. Independent review dispositions are added only after they exist.
 
-**Produces:** Accessible HTML/PDF links and sufficient context for a future collaborator to maintain the report.
+**Produces:** Accessible draft HTML/PDF and an accurate handoff for independent review.
 
-- [ ] Replace planning-only status with the actual draft/review state; add render instructions and exact artifact locations. Record only completed work as completed.
+- [ ] Update README/CLAUDE/PROJECT_STATUS/ROADMAP/DECISIONS as relevant to **draft awaiting independent review**, with artifact/render instructions. Leave Task 4 unchecked; do not claim readiness to share or invent a review disposition.
 - [ ] Verify documentation links and the `AGENTS.md` symlink; inspect the final diff for unrelated changes and accidental private-data inclusion.
 - [ ] Deliver the report and explain the main organizational/mathematical choices, inputs/outputs, and remaining scientific limitations. Ask which parts warrant deeper review, in keeping with the project's post-implementation review practice.
-- [ ] Suggest the final checkpoint commit. Ask about pushing only if there are unpushed commits, and never push without explicit confirmation.
+- [ ] Check the branch is writeup/draft and ask before a draft commit; stage only task-owned files. Ask separately before any push/merge. End by handing the draft to Codex for Task 4, not by marking the whole workflow complete.
 
 ## Progress record
 
@@ -159,3 +237,8 @@
 - Execution choice: this deliverable is documentation, so verification consists of source/claim checks, rendering, and visual inspection rather than new model tests. No model code is changed. The explicit user review checkpoint overrides the skill's general continuous-execution instruction.
 - Tasks 2–5 remain pending; no report or derivation appendix has been drafted.
 - Task 1 deliverables verified and presented for the required planning-page review. No commit or push has been made. Suggested checkpoint: `Add advisor-facing writeup planning page and source inventory`.
+
+- 2026-10-14: checked Claude's committed plan review against source files. Finalized the plan and handoff on writeup/draft under explicit author authorization; no report drafting or new analyses. Independent review is reassigned to Codex. The native-drafting and initial no-commit statements above describe October 12 history and are superseded by this entry and the current workflow header.
+
+- 2026-10-14 verification: RStudio Quarto rendered the revised planning HTML successfully. Static checks passed for 54 unique inventory IDs and existing source paths, authored Markdown links, HTML anchors/local links, embedded image/script/stylesheet assets, the 10-row six-column characterization table, the four-row completed/proposed table, identical handoff tables, R1–R9 mappings, and the AGENTS symlink. Whitespace checks preserve the CSV's existing CRLF style. No models, statistical analyses or model tests were run.
+- Preview recovery: the old localhost server was unavailable. Automatic approval review rejected a repository-wide restart because it could expose unrelated private files. A narrower, approved temporary loopback server now allows only planning.html and its 34 explicit local links, with no directory listing. A fresh browser tab verified the October 14 page, updated methods table (11 rows including header), navigation, and no document overflow at the current 1265-pixel width. The earlier narrow-screen checks apply to October 12; no new narrow-screen claim is made. The preview script is temporary and is not part of the repository deliverable.

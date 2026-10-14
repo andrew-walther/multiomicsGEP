@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Andrew J Walther">
-<meta name="dcterms.date" content="2026-10-12">
+<meta name="dcterms.date" content="2026-10-14">
 
 <title>Project writeup: structure and evidence</title>
 <style>
@@ -2397,7 +2397,7 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">October 12, 2026</p>
+        <p class="date">October 14, 2026</p>
       </div>
     </div>
     
@@ -2430,6 +2430,7 @@ window.Quarto = {
 <div class="planning-summary">
 <p><strong>Deliverable for review:</strong> the structure, evidence inventory, and editorial rules for a substantial technical report. This page is the first deliverable; the report and its derivation appendices have not yet been drafted.</p>
 <p><strong>Agreed format:</strong> an article-style report with a 15–20-page main text, plus derivation appendices, rendered to HTML and PDF from one Quarto source. Its purpose is to give advisors a consolidated account of the project and establish a manuscript foundation before choosing a journal.</p>
+<p><strong>Review update:</strong> Claude’s <a href="plan_review_findings.md">planning review</a> has been checked against the cited files. The <a href="implementation_plan.md">Review disposition</a> records which recommendations were adopted or qualified. This revision explicitly specifies the biological characterization methods. The separate <a href="drafting_prompt.md">drafting prompt</a> assigns the initial draft to Claude Code on <code>writeup/draft</code>, with independent complete-draft review by Codex afterward. The draft target is October 16, 2026; it is not a declaration of readiness to share.</p>
 </div>
 <section id="sec-purpose" class="level2">
 <h2 class="anchored" data-anchor-id="sec-purpose">Purpose and reading strategy</h2>
@@ -2503,6 +2504,7 @@ window.Quarto = {
 <p><strong>Factor counts and rank selection.</strong> Separate the starting rank, the number of retained molecular programs, and the number classified as survival-active. Explain the current recommendation of starting rank 7 and the disagreement among evidence, complexity, and prediction criteria. The report must identify the role of external-cohort performance in this recommendation rather than describing it as wholly training-selected. Classification after fitting and explicit removal/refitting are different operations.</p>
 <p><strong>Multimodal formulation.</strong> Introduce shared nonnegative activities <span class="math inline">\(L\)</span>, per-feature intercepts <span class="math inline">\(\mu_m\)</span>, signed loadings <span class="math inline">\(F_m\)</span>, modality–factor-specific empirical-Bayes prior parameters, and feature-specific precisions. Describe the joint projection, loading-uncertainty contribution to coefficient updates, factor-scale normalization, and factor-removal/refitting procedure. Identify the actual controls used in the reported fits; package defaults and the evaluated configuration are not interchangeable.</p>
 <p><strong>Multiple cohorts and prediction.</strong> Keep the model with one feature block conceptually distinct from integration of two matched blocks. Explain per-platform standardization, optional genomic offsets, stratified baseline hazards, and cohort-specific coefficients. CPTAC contributes proteomics to the established pooled training analysis; it is not a second RNA-seq cohort. Prediction uses frozen fitted loadings and coefficients, with risk orientation determined before evaluation outcomes are used.</p>
+<p>For the historical saved D4 fit, state the exact convention used by <code>make_km_figures.R</code>: <strong>risk = −η</strong>, one fixed orientation used for all held-out cohorts. This fit predates the sign-correction change. Do not generalize that negation to every current fit or confuse it with the outcome-oriented descriptive C-index returned by the biological signature helper.</p>
 <p>Include one readable algorithm box per model. State the approximations explicitly: the Cox working surrogate and the objective used for multimodal pruning do not justify claiming exact joint coordinate ascent or a guaranteed monotone evidence bound.</p>
 </section>
 <section id="evaluation-framework-designs-and-comparisons" class="level3">
@@ -2510,7 +2512,114 @@ window.Quarto = {
 <p>Describe the single-modality simulation of shared and cohort-specific programs, including under- and over-specified starting ranks. Include the multimodal simulation’s scenarios, noise settings, starting-rank grid, replication, and fitted variants. Report simulation metrics according to their definitions in the runners, including factor matching, correct-sign prognostic recall, false prognostic programs, convergence, and discrimination.</p>
 <p>Give a cohort table distinguishing pooled TCGA/CPTAC training, the five external validation cohorts, matched TCGA training, the 50-donor ICGC primary-PDAC validation set, and the 67-donor sensitivity set. The matched 50-donor set overlaps the broader PACA-AU RNA-seq validation cohort; it is not an additional independent replication.</p>
 <p>Describe feature screening and transformations separately for the established single-block analysis and the matched multimodal analysis. Explain paired bootstrap differences and fixed-effect pooling separately from the arithmetic mean of cohort C-indices. The independently tuned, regularized two-step pipeline is the principal single-modality comparator. The rank-matched and older unpenalized comparisons provide supporting context.</p>
-<p>Biological characterization methods belong here: ranked gene-set enrichment, over-representation sensitivity checks, subtype concordance, DeSurv gene-set overlap, external survival associations, and comparison of program loadings across fits. Their results belong in Biology.</p>
+<section id="sec-characterization-methods" class="level4">
+<h4 class="anchored" data-anchor-id="sec-characterization-methods">Biological characterization methods</h4>
+<p>Include a compact methods table in the main report or a referenced appendix table, with an explanatory paragraph in Evaluation. Explain how each analysis supports interpretation rather than only naming a program’s biological function. The rows below distinguish the inputs, populations, statistics/settings, multiplicity, and conclusions. They describe existing analyses; they do not authorize rerunning them.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Analysis</th>
+<th>Input object</th>
+<th>Population</th>
+<th>Statistic and settings</th>
+<th>Multiplicity</th>
+<th>What the output supports</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ranked enrichment (fgsea)</td>
+<td>Nonnegative posterior means E[F], over the 2,064 selected genes</td>
+<td>Established single-modality fit; one program at a time</td>
+<td>Raw loading ranking; <code>scoreType=&quot;pos&quot;</code>; set sizes 10–500; seed 1. Hallmark, Reactome, KEGG, GO-BP, custom PDAC (Moffitt/Bailey and DeSurv lists). Explain normalized enrichment and leading-edge genes.</td>
+<td>BH within each program × collection; reporting padj &lt; 0.10. No stated control across programs/collections.</td>
+<td>Association of high-loading genes with predefined sets, not mechanism or survival-driven discovery. S21/S22/S41/S42.</td>
+</tr>
+<tr class="even">
+<td>Over-representation sensitivity</td>
+<td>Top 50, 100, or 150 genes by E[F]</td>
+<td>Same selected feature universe</td>
+<td>Hypergeometric over-representation via <code>enricher</code>; supplied background is the 2,064 selected genes, not the genome. Explain the cutoff sensitivity.</td>
+<td>Report the saved adjusted p-values and the within-call family; do not imply global error control.</td>
+<td>A threshold-based cross-check using the same gene universe, not independent replication. S21/S41/S42.</td>
+</tr>
+<tr class="odd">
+<td>Subtype concordance</td>
+<td>Training latent activities E[L], not YF projections</td>
+<td>TCGA, n = 144</td>
+<td>Spearman correlation with PurIST.prob; Kruskal–Wallis comparison across PurIST calls</td>
+<td>Saved test p-values are unadjusted; state that scope.</td>
+<td>Within-training correspondence to an established subtype axis. S23/S41/S53.</td>
+</tr>
+<tr class="even">
+<td>DeSurv gene-list overlap</td>
+<td>Top 270 genes by E[F]; DeSurv lists</td>
+<td>Both lists restricted to the selected shared-gene background</td>
+<td>Jaccard similarity and hypergeometric overlap test</td>
+<td>Reported overlap p-values are unadjusted</td>
+<td>Gene-list correspondence, not a predictive head-to-head comparison. The custom fgsea collection reuses the same lists. S35/S41.</td>
+</tr>
+<tr class="odd">
+<td>External signature association</td>
+<td>Mean of available leading-edge genes after within-cohort gene z-scoring</td>
+<td>Five held-out cohorts</td>
+<td>Univariable Cox HR per unit of that mean signature score; state gene coverage. C2 chooses the lowest-padj signature; C4 subsequently excludes PDAC_custom for genomics-only controls.</td>
+<td>Unadjusted association tests; C4 is a post hoc correction</td>
+<td>External descriptive associations of the selected signature, not necessarily the full program; not preregistered confirmation. S24/S40/S41/S51/S52.</td>
+</tr>
+<tr class="even">
+<td>Program directions and survival curves</td>
+<td>Marginal projection association for direction labels; frozen Program 3/7 projection scores and overall risk for curves</td>
+<td>Direction labels documented in decisions; five external cohorts for KM</td>
+<td>Marginal directions differ from conditional joint β signs. Within-cohort tertiles; pooled program curves with cohort-stratified log-rank. Historical D4 risk = −η.</td>
+<td>Descriptive grouping/tests; report actual scope</td>
+<td>Direction and held-out separation, without clinical cutoffs. Keep these scores distinct from signature scores and E[L]. S01/S36/S49.</td>
+</tr>
+<tr class="odd">
+<td>Multimodal top-gene interpretation</td>
+<td>Signed expression loadings: up to top 8 positive and 6 negative genes</td>
+<td>Matched TCGA fit at starting rank 7</td>
+<td>Manual interpretation of the output gene lists, not fgsea/ORA</td>
+<td>No enrichment test performed</td>
+<td>Provisional expression-supported labels; weaker characterization than the single-modality enrichment analysis. S31/S43.</td>
+</tr>
+<tr class="even">
+<td>Multimodal modality shares</td>
+<td>Posterior-mean L and modality-specific F</td>
+<td>Same fitted programs</td>
+<td>‖L_k‖²‖F_mk‖², divided by the sum of these rank-one squared norms within modality m</td>
+<td>Descriptive</td>
+<td>Relative fitted rank-one signal, not additive PVE or survival contribution. S31/S43.</td>
+</tr>
+<tr class="odd">
+<td>Multimodal correspondence</td>
+<td>Expression loading columns on shared genes</td>
+<td>Joint fit versus expression-only, established D4, or unsupervised flash reference</td>
+<td>Saved absolute Pearson correlations and best matches; identify the reference and common-gene count. Saved tables contain only |r|.</td>
+<td>Descriptive matching</td>
+<td>Pattern similarity with direction unavailable; do not imply sign agreement or a one-to-one match from independent best matches. S32/S43/S44.</td>
+</tr>
+<tr class="even">
+<td>Multimodal marginal survival association</td>
+<td>Z_k = Σ_m Y_m F_mk, standardized within cohort</td>
+<td>TCGA and ICGC primary PDAC</td>
+<td>Univariable HR per one SD of the joint projection, including methylation</td>
+<td>7 programs × 2 cohorts = 14 unadjusted tests</td>
+<td>Descriptive marginal association, distinct from joint posterior survival-active classification. S31/S43.</td>
+</tr>
+</tbody>
+</table>
+<p>Explain the dependence among the single-modality checks: DeSurv lists are used in both custom enrichment and overlap, and the selected gene universe is itself DeSurv-aligned. Do not count these as independent validations. Describe C4 as a post hoc response to the original borrowed-signature confounding. The updated pathway report explicitly says methods were chosen for availability and warrant methodological assessment before manuscript use. This is an interpretive qualification, not authorization for new analyses.</p>
+<p>The biological signature helper returns <code>max(C, 1−C)</code> for its descriptive C-index. If those values are mentioned, label the outcome-based orientation; never use them as frozen-risk predictive validation or substitute them for the principal external benchmark. Its HR scale is one unit of the mean z-scored-gene signature, not automatically one SD of that signature.</p>
+</section>
 </section>
 <section id="results-performance-and-recovery" class="level3">
 <h3 class="anchored" data-anchor-id="results-performance-and-recovery">3. Results: performance and recovery</h3>
@@ -2518,17 +2627,51 @@ window.Quarto = {
 <p><strong>Single-modality real data.</strong> Present per-cohort C-indices and uncertainty, the principal paired comparison, held-out survival curves, and the retained factor counts. Follow with a concise explanation of rank sensitivity and what cohort-specific coefficients reveal about the protective program. Avoid presenting performance-neutral optional extensions as successive model improvements.</p>
 <p><strong>Multimodal simulation.</strong> Present the completed full sweep, concentrating on the framework with intercepts, signed loadings, empirical-Bayes fitting, and pruning. Explain recovery and convergence by noise and scenario. Keep the variance-corrected objective comparison in supporting material unless its results alter the interpretation. Failure to recover the low-variance prognostic program must be described for the specific setting in which it occurs.</p>
 <p><strong>Multimodal real data.</strong> Lead with matched-donor comparisons at starting rank 7, then show all starting ranks, retained programs, and convergence. Expression-only fits of the same framework isolate the contribution of methylation. The established pooled model provides a useful benchmark, but its training data and preprocessing differ. Similar observed C-indices are not proof of statistical equivalence.</p>
+<p>The pruning check is not guarded by successful convergence: the current implementation can check removal and refit after reaching the iteration cap. Report that fact alongside the real-data pruning results rather than describing all removal comparisons as converged.</p>
 </section>
 <section id="biological-findings-programs-and-their-support" class="level3">
 <h3 class="anchored" data-anchor-id="biological-findings-programs-and-their-support">4. Biological findings: programs and their support</h3>
-<p><strong>Single-modality.</strong> Explain Program 7’s adverse/basal-like association and Program 3’s protective/classical association, together with the two retained stromal and immune/quiescent-stroma programs. Support labels using gene weights, enrichment, subtype concordance, gene-set overlap, and external associations. Distinguish joint coefficient signs, marginal program associations, and the orientation of the overall risk score.</p>
+<p><strong>Single-modality.</strong> Explain Program 7’s adverse/basal-like association and Program 3’s protective/classical association, together with the two retained stromal and immune programs. Use <strong>immune infiltrate with a vascular component</strong> as Program 6’s primary label, following the updated August 21 report; note mixed stromal genes where relevant instead of silently alternating labels. For each label, identify which rows of the characterization-methods table support it and what those outputs show. Distinguish joint coefficient signs, marginal program associations, and overall risk orientation.</p>
 <p><strong>Multimodal.</strong> Describe the basal-like/classical axis, classical/gastric, stromal, immune, exocrine, mixed, and methylation-only programs. Connect them to expression-only and established single-modality programs using the saved loading-correspondence results. Show the distribution of fitted signal within each modality. These shares describe molecular reconstruction, not contribution to survival prediction.</p>
 <p>The current multimodal biological evidence is strongest for expression-defined labels and an additional methylation-dominant structure. A mechanistic CpG interpretation requires annotation and characterization beyond the current program table. Cell-composition effects are an interpretation to assess, not a demonstrated causal explanation.</p>
+<p>Table 5 will include a <strong>label basis</strong> column identifying manual top-signed-gene interpretation and the named correspondence reference. Report |r| explicitly wherever the saved source has no sign. Do not compute new signed correlations for this drafting task.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Completed multimodal characterization</th>
+<th>Proposed characterization (M8; not completed evidence)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Signed top-expression-gene lists and manual provisional labels</td>
+<td>Sign-aware/two-sided enrichment of expression loadings; the existing EBMF pathway runner illustrates an alignment convention, not a completed multimodal analysis</td>
+</tr>
+<tr class="even">
+<td>Within-modality rank-one fitted-signal shares</td>
+<td>CpG annotation and genomic-context enrichment</td>
+</tr>
+<tr class="odd">
+<td>Absolute loading correlations with expression-only, D4, and unsupervised flash references</td>
+<td>Checks of cell-composition and technical explanations; direction-aware correspondence if later computed</td>
+</tr>
+<tr class="even">
+<td>Fourteen unadjusted, within-cohort standardized joint-projection Cox associations</td>
+<td>Characterization and validation of the final programs after method work</td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="interpretation-and-remaining-evidence" class="level3">
 <h3 class="anchored" data-anchor-id="interpretation-and-remaining-evidence">5. Interpretation and remaining evidence</h3>
 <p>The closing section should explain the value of interpretable molecular programs and survival shrinkage while acknowledging the small predictive difference from a carefully tuned two-step pipeline. It should identify the evidence needed for survival-guided recovery of low-variance programs, dependable multimodal rank selection on real data, convergence, feature-count sensitivity, and methylation-specific biological interpretation.</p>
-<p>Describe proposed feature expansion, CpG filtering, prior or likelihood-weight changes, and supervision experiments as continuing methodology. Omit fixed-date timelines and personal meeting updates. The report should give advisors enough evidence to judge the eventual balance between a methodological and an applied manuscript.</p>
+<p>Use one <strong>Continuing work</strong> subsection for prospective supervision, prior/weight, rank-selection, feature-count, and characterization plans. State there that α_F = 0 is not the intended final method and what later work will test. Methods states the evaluated algorithm and briefly points to this subsection; do not distribute proposed fixes throughout the report. Factual limitations may still be stated next to affected results. Omit fixed-date research timelines and personal updates.</p>
+<p>Add one claim-centered <strong>evidence-gap table</strong> to this section: value over EBMF/NMF alone; value over two-step EBMF → Cox; value over DeSurv; rank selection reflecting survival and reconstruction; multimodal added value; biology. Columns: claim, existing evidence, exact source ID/path/selector, conclusion currently justified, and missing evidence. The implementation plan specifies the source map. Distinguish missing scientific evidence from missing exposition. Do not assign a survival C-index to unsupervised factorization without an explicit prediction rule, or interpret DeSurv-aligned preprocessing/overlap as predictive superiority over DeSurv.</p>
+<p>Every method-dependent source passage, equation/algorithm block, table, figure, and caption must carry the hidden Revisit markers defined in the implementation plan. This allows revision after reviewed <code>feature/supervised-F</code> results exist without anticipating them now.</p>
 </section>
 <section id="derivation-appendices" class="level3">
 <h3 class="anchored" data-anchor-id="derivation-appendices">Derivation appendices</h3>
@@ -2690,8 +2833,8 @@ window.Quarto = {
 </tr>
 <tr class="even">
 <td>Table 5 / Figure 6: multimodal programs</td>
-<td>Connect biological labels, modality contributions, expression correspondence, and survival associations.</td>
-<td><a href="../../results/multimodal_real/outputs/real_program_modality_share_K07.png">Modality shares</a>, <a href="../../results/multimodal_real/outputs/real_program_loadings_K07.png">program loadings</a>; S31–S32.</td>
+<td>Connect provisional labels, their label basis, modality contributions, explicit |r| correspondence, and descriptive survival associations.</td>
+<td><a href="../../results/multimodal_real/outputs/real_program_modality_share_K07.png">Modality shares</a>, <a href="../../results/multimodal_real/outputs/real_program_loadings_K07.png">program loadings</a>; S31–S32/S43–S44.</td>
 </tr>
 </tbody>
 </table>
@@ -2720,7 +2863,7 @@ Preview: what methylation contributes to the fitted programs
 </section>
 <section id="sec-sources" class="level2">
 <h2 class="anchored" data-anchor-id="sec-sources">Source map and reconciliation rules</h2>
-<p>The <a href="source_inventory.csv">source inventory</a> records 40 source entries with repository paths, selectors, configuration, verification status, and caveats. Selectors prevent superficially similar comparisons from being conflated. For example, the expression-only run of the multimodal framework is identified by <code>config = pruned_expression_only</code> and <code>method = joint_multimodal_yfb</code>, not by the separate row named <code>expression_only_yfb</code>.</p>
+<p>The <a href="source_inventory.csv">source inventory</a> records 54 source entries with repository paths, selectors, configuration, verification status, and caveats. Selectors prevent superficially similar comparisons from being conflated. For example, the expression-only run of the multimodal framework is identified by <code>config = pruned_expression_only</code> and <code>method = joint_multimodal_yfb</code>, not by the separate row named <code>expression_only_yfb</code>.</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -2800,7 +2943,7 @@ Preview: what methylation contributes to the fitted programs
 <tr class="even">
 <td><code>source_inventory.csv</code></td>
 <td>Source paths, claim selectors, configurations, verification status, and caveats.</td>
-<td>Initial inventory available</td>
+<td>54 sources; claim verification continues during drafting</td>
 </tr>
 <tr class="odd">
 <td><code>implementation_plan.md</code></td>
@@ -2810,21 +2953,26 @@ Preview: what methylation contributes to the fitted programs
 <tr class="even">
 <td><code>writeup.qmd</code> → HTML and PDF</td>
 <td>Main scientific report, including both appendices in each output.</td>
-<td>Awaiting planning-page approval</td>
+<td>Awaiting Andrew’s Claude handoff</td>
 </tr>
 <tr class="odd">
 <td><code>appendices/single_modality.qmd</code></td>
 <td>Reconciled single-modality derivations.</td>
-<td>Awaiting planning-page approval</td>
+<td>Awaiting Andrew’s Claude handoff</td>
 </tr>
 <tr class="even">
 <td><code>appendices/multimodal.qmd</code></td>
 <td>Reconciled multimodal derivations.</td>
-<td>Awaiting planning-page approval</td>
+<td>Awaiting Andrew’s Claude handoff</td>
 </tr>
 <tr class="odd">
+<td><code>drafting_prompt.md</code></td>
+<td>Claude handoff for Tasks 2, 3, and 5; draft target October 16.</td>
+<td>Available</td>
+</tr>
+<tr class="even">
 <td><code>review.md</code></td>
-<td>Findings from the complete report’s independent scientific and presentation review.</td>
+<td>Codex’s independent complete-draft findings; Claude records subsequent dispositions.</td>
 <td>After the draft exists</td>
 </tr>
 </tbody>
@@ -2841,7 +2989,7 @@ Preview: what methylation contributes to the fitted programs
 <li><label><input type="checkbox" checked>Choose location, audience, report format, and main-text depth.</label></li>
 <li><label><input type="checkbox" checked>Establish section briefs and an initial source inventory.</label></li>
 <li><label><input type="checkbox" checked>Identify figures, tables, and interpretation gaps.</label></li>
-<li><label><input type="checkbox">Approve or revise this planning page.</label></li>
+<li><label><input type="checkbox" checked>Check Claude’s review claims and finalize planning revisions and dispositions (October 14).</label></li>
 <li><label><input type="checkbox">Draft Methods and reconcile both derivation appendices with the evaluated implementations.</label></li>
 <li><label><input type="checkbox">Assemble Results and Biology using the recorded source selectors.</label></li>
 <li><label><input type="checkbox">Render HTML/PDF and audit quantitative claims, labels, uncertainty, and layout.</label></li>
@@ -2849,7 +2997,7 @@ Preview: what methylation contributes to the fitted programs
 <li><label><input type="checkbox">Update the project documentation to reflect the delivered report.</label></li>
 </ul>
 <div class="review-box">
-<p><strong>Review requested before drafting.</strong> The main points to assess are the balance of Methods, Results, and Biology; the proposed exhibit set; and whether the distinction between evaluated evidence and unfinished methodology is clear. Approval of this page releases the drafting tasks in the <a href="implementation_plan.md">implementation plan</a>.</p>
+<p><strong>Author handoff.</strong> Read the Review disposition in the <a href="implementation_plan.md">implementation plan</a> before starting Claude Code with: “On branch writeup/draft, read paper/writeup/drafting_prompt.md and follow it.” This finalized planning deliverable does not start drafting automatically. Claude writes the initial report; Codex reviews it independently; Claude addresses confirmed findings before Andrew approves a merge.</p>
 </div>
 </section>
 
