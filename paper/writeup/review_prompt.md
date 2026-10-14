@@ -39,7 +39,7 @@ Andrew reviewed the rendered draft and asked for the changes below. For each ite
 
 **Guiding principle.** The writeup is a standalone account of the current method, results, and biological findings, written so that its text, figures, and tables can move into a journal manuscript with little change. It is not meeting documentation and not an audit of earlier claims.
 
-1. **Title and subtitle.** Title: *Survival-Supervised Bayesian Matrix Factorization for Prognostic Gene Expression Programs in Pancreatic Cancer* (the prelim chapter's working title). Drop the subtitle.
+1. **Title and subtitle.** Title: *Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer* (the prelim chapter's working title with "Gene Expression" replaced by "Molecular", which covers the RNA-seq, proteomics and methylation data). Drop the subtitle.
 2. **Authored appearance.** For the finalized document, remove every trace of the drafting process. That means the running header "Initial draft awaiting independent review", the status box, and any mention of drafts, reviewers, Claude, Codex, the source inventory, or "this report could not trace". The document should read as written by Andrew.
 3. **No repository references in the rendered text.** Remove:
    - code scripts, file paths, function names, arguments and configuration labels (for example `fit_cox_on_yf()`, `flip = FALSE`, `config == pruned`, `pruned_expression_only`, `prune`, `ebnm_point_laplace`, `plot_real_cindex_by_kinit.R`, output directory names);

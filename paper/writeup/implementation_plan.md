@@ -40,7 +40,7 @@ Andrew reviewed the rendered draft. These requirements apply to the review (Task
 
 | # | Requirement | Supersedes or amends |
 |---|---|---|
-| 1 | Title: *Survival-Supervised Bayesian Matrix Factorization for Prognostic Gene Expression Programs in Pancreatic Cancer* (prelim chapter's working title). No subtitle. | Draft title and subtitle |
+| 1 | Title: *Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer* (prelim title with "Molecular" for "Gene Expression"; "Multi-Omic" is a later option if the multimodal model proves effective). No subtitle. | Draft title and subtitle |
 | 2 | Finalized document shows no drafting traces: no "initial draft awaiting independent review" header or status box, no mention of reviewers, agents, the source inventory, or untraced claims. It reads as written by Andrew. | Draft status markings (removed at finalization, after review) |
 | 3 | No repository references in the document: no scripts, file paths, functions, arguments, configuration labels, internal labels (D4, P3, flash k5), or source IDs. Source IDs are dropped entirely, not hidden in comments. Software packages may be named. `source_inventory.csv` remains the repository's verification record, kept current but not referenced by the document. | "Trace each claim to an exact path/selector" in the document; tracing now lives only in the inventory |
 | 4 | No dated or process references (meeting notes, plans, progress chapters, dated decisions, "September model", "October chapter", "August 21 report"). Describe items by content. | Narrative references to dated sources |

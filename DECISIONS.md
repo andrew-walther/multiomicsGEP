@@ -9,9 +9,10 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 **Decision.** The writeup is a standalone, manuscript-ready narrative of the
 current method, results and biology, not an audit of earlier claims or a record
-of meetings. Title: *Survival-Supervised Bayesian Matrix Factorization for
-Prognostic Gene Expression Programs in Pancreatic Cancer* (the prelim chapter's
-working title), with no subtitle. The claim-centered evidence-gap table is
+of meetings. Title: *Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer* (the prelim chapter's
+working title with "Molecular" in place of "Gene Expression", since the data
+include RNA-seq, proteomics and methylation; "Multi-Omic" is the candidate
+if the multimodal model later shows clear added value), with no subtitle. The claim-centered evidence-gap table is
 dropped: supported findings go into the narrative, unmet goals into Continuing
 work. Section 5 becomes a Discussion. The rendered text carries no repository
 references, source IDs (dropped entirely, not hidden), dated-process
