@@ -101,6 +101,13 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   (Prentice1982, Carroll2006). Start when the manuscript draft is set up in
   `paper/thesis/` (authors: Walther, Young, Liu, Rashid).
 
+- [ ] **Sync the manuscript to bios-dissertation (deferred 2026-10-13)**
+  Once a working manuscript exists in `paper/thesis/`, add a copy script and a
+  trigger to `paper/prelim/tools/post_commit_hook.sh` that copy its source and
+  reading PDF to `bios-dissertation/manuscripts/project3-ssbmf/` as
+  `project_3_paper.*`, like Project 2's CTJ sync. Steps:
+  `bios-dissertation/manuscripts/project3-ssbmf/README.md`.
+
 - [ ] **Complete replicated K selection for matched expression/methylation YFB**
   `[Priority: High]` `[Effort: Large]` — The approved raw joint-YFB derivation,
   isolated fitter, frozen predictor, and matched simulations are implemented.
