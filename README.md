@@ -83,13 +83,14 @@ Results, Biology, and derivation appendices, with a
 [source inventory](paper/writeup/source_inventory.csv) and
 [implementation checklist](paper/writeup/implementation_plan.md).
 The planning review has been checked and the plan finalized (October 14).
-**Initial draft, awaiting independent review (October 14).** The report is
-`paper/writeup/writeup.qmd`, with derivation appendices in
+**Revised draft after independent review, awaiting Andrew's approval (October 14).**
+The report is `paper/writeup/writeup.qmd`, with derivation appendices in
 `paper/writeup/appendices/`, rendered to [HTML](paper/writeup/writeup.html) and
-[PDF](paper/writeup/writeup.pdf). It covers Methods (two algorithm boxes),
-Evaluation, single-modality and multimodal Results, Biology, Interpretation with
-a six-claim evidence-gap table, and Appendices A–C. Codex reviews the draft
-independently next; it is not ready to share until that review is resolved.
+[PDF](paper/writeup/writeup.pdf). It is organized as a manuscript: Methods,
+Evaluation, Results, Biological findings and Discussion, with complete
+derivations in Appendices A (single-modality) and B (multimodal). The review is
+[`review.md`](paper/writeup/review.md) and the disposition of every finding is
+[`review_dispositions.md`](paper/writeup/review_dispositions.md).
 
 Render the report from the repository root (the RStudio Quarto works on this
 computer; rendering reads only saved aggregates, figures and the bibliography,
@@ -103,10 +104,16 @@ and installs no LaTeX packages):
 /Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/writeup.qmd --to pdf
 ```
 
-One figure was redrawn for the report from the saved simulation sweep:
+The report's figures are drawn from saved fits, scores and aggregates (no
+fitting), as vector PDF and 300-dpi PNG at printed size. The survival-curve
+figures need the local held-out expression data:
 
 ```bash
 Rscript paper/writeup/figures/make_pruning_rank_figure.R
+```
+
+```bash
+PDAC_DATA_ROOT=data/PDAC_data Rscript paper/writeup/figures/make_writeup_figures.R
 ```
 
 Rebuild the planning page from the repository root:

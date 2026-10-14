@@ -1,163 +1,302 @@
 # Appendix A. Single-modality derivations {#sec-appendix-a .unnumbered}
 
-This appendix reconciles the existing single-modality derivations (S06, S07) with the evaluated D4 fit and the current implementation in `code/fit_cox_on_yf.R` and its update files (S04). It derives the updates the evaluated algorithm uses, states where the implementation departs from the joint mathematical model, and lists the approximations. Equation numbers continue from the main text.
-
-## A.1 Model and variational family {.unnumbered}
-
 <!-- REVISIT R1 START -->
 <!-- REVISIT R2 START -->
 
-The joint model combines the reconstruction @eq-recon with a Cox model for $(t_i, \delta_i)$ whose linear predictor is $\eta_i = \tilde z_i^\top\tilde\beta$, where $\tilde z_i = D^{-1}\bar F^\top y_i$ is the normalized projection of @eq-zf. Priors are $L_{ik} \sim g_{L,k}$ and $F_{jk} \sim g_{F,k}$ (point-exponential) and $\tilde\beta_k \sim g_{\beta,k} = N(0, \sigma_k^2)$. The variational family is fully factorized,
-$$
-q(L, F, \tilde\beta) = \prod_{i,k} q(L_{ik}) \prod_{j,k} q(F_{jk}) \prod_k q(\tilde\beta_k),
-$$
-with $\tau$ and the prior parameters treated as point estimates. Write $\bar L_{ik} = E_q L_{ik}$ and $\overline{L^2}_{ik} = E_q L_{ik}^2$, and similarly for $F$ and $\tilde\beta$.
-
-Two features of the predictor matter for every derivation below. First, $\tilde z_i$ is formed from the posterior mean $\bar F$, not from $F$ itself, and $D$ is computed from $\bar F$ at the start of each outer iteration. The projection is therefore a fixed covariate within an iteration: it has no posterior variance in the coefficient update. Second, $L$ does not appear in $\eta$.
+This appendix starts from the likelihood, priors and variational family of the single-modality model and derives, for each coordinate, the pseudo-observation $x = B/A$ and standard error $s = A^{-1/2}$ passed to the empirical-Bayes normal-means (EBNM) solver. It then states where the evaluated algorithm departs from the joint target. Throughout, $\bar\theta = E_q\theta$ and $\overline{\theta^2} = E_q\theta^2$ for the variational posterior $q$, and $E_{-\theta}$ denotes expectation under $q$ over every coordinate except $\theta$.
 
 <!-- REVISIT R2 END -->
 <!-- REVISIT R1 END -->
 
-## A.2 Cox working approximation {.unnumbered}
+## A.1 Model, target and evaluated algorithm {.unnumbered}
+
+<!-- REVISIT R1 START -->
+<!-- REVISIT R2 START -->
+
+**Reconstruction likelihood.** With $e_{ij} \sim N(0, \tau_j^{-1})$ in @eq-recon,
+$$
+\ell_Y = \sum_{i,j}\Big\{\tfrac12\log\frac{\tau_j}{2\pi} - \frac{\tau_j}{2}\Big(y_{ij} - \sum_k L_{ik}F_{jk}\Big)^2\Big\}.
+$$ {#eq-a-lY}
+
+**Cox partial likelihood.** Let $s_1 < s_2 < \cdots$ be the distinct death times, $\mathcal D_a$ the patients who die at $s_a$, $d_a = |\mathcal D_a|$, and $\mathcal R_a = \{i : t_i \ge s_a\}$ the risk set. With Breslow's handling of ties,
+$$
+\ell_C(\eta) = \sum_a\Big\{\sum_{i\in\mathcal D_a}\eta_i - d_a\log\sum_{i\in\mathcal R_a}e^{\eta_i}\Big\}.
+$$ {#eq-a-lC}
+The partial likelihood is not a full likelihood for the survival times; using it as the survival term defines a partial-likelihood joint target rather than a fully specified generative model.
+
+**Priors.** $L_{ik} \sim g_{L,k}$ and $F_{jk} \sim g_{F,k}$, each a point mass at zero mixed with an exponential distribution, and $\tilde\beta_k \sim g_{\beta,k} = N(0, \sigma_k^2)$, all independent. The residual precisions $\tau_j$ and the prior parameters are point estimates.
+
+**Joint target.** In the target, the predictor uses the random loadings, $\eta_i = \sum_k\tilde\beta_k\sum_j y_{ij}F_{jk}/d_k(F)$ with $d_k(F) = \lVert F_{\cdot k}\rVert_2$. With the mean-field family
+$$
+q(L, F, \tilde\beta) = \prod_{i,k} q(L_{ik})\prod_{j,k} q(F_{jk})\prod_k q(\tilde\beta_k),
+$$
+the variational objective is
+$$
+\mathcal L(q) = E_q\ell_Y + E_q\ell_C(\eta) - \sum_{i,k}\mathrm{KL}\big(q(L_{ik})\,\Vert\, g_{L,k}\big) - \sum_{j,k}\mathrm{KL}\big(q(F_{jk})\,\Vert\, g_{F,k}\big) - \sum_k\mathrm{KL}\big(q(\tilde\beta_k)\,\Vert\, g_{\beta,k}\big).
+$$ {#eq-a-target}
+
+**Evaluated algorithm.** Two features make the evaluated algorithm differ from coordinate ascent on @eq-a-target. First, at the start of sweep $r$ it fixes $D^{(r)} = \mathrm{diag}(\lVert\bar F^{(r-1)}_{\cdot k}\rVert_2)$ and the projection $\tilde Z^{(r)} = Y\bar F^{(r-1)}[D^{(r)}]^{-1}$ and treats $\tilde Z$ as a known covariate matrix for the rest of the sweep, so the coefficient update has no projection variance. Second, $E_q\ell_C$ is replaced by the expectation of the working quadratic of A.2. $L$ does not enter $\eta$ in either the target or the algorithm.
+
+<!-- REVISIT R2 END -->
+<!-- REVISIT R1 END -->
+
+## A.2 Cox working approximation {#sec-appendix-a-cox .unnumbered}
 
 <!-- REVISIT R1 START -->
 
-Let $\hat\eta$ be the predictor at the start of an iteration, $\hat\theta_i = \exp(\hat\eta_i)$, and $\hat H_0$ the Breslow cumulative baseline hazard with ties sharing a risk-set denominator. The score and the diagonal of the negative Hessian of $\log\mathrm{PL}$ with respect to $\eta_i$ are approximated by
+Let $\hat\eta$ be the predictor at the start of a sweep and
 $$
-u_i = \delta_i - \hat\theta_i\hat H_0(t_i), \qquad w_i = \hat\theta_i\hat H_0(t_i),
-$$ {#eq-a-score}
-with $w_i$ floored at $10^{-6}$. A second-order expansion with this diagonal curvature gives
+P_{ai} = \frac{\mathbf 1\{i\in\mathcal R_a\}\,e^{\hat\eta_i}}{\sum_{l\in\mathcal R_a}e^{\hat\eta_l}},
 $$
-\log\mathrm{PL}(\eta) \approx c - \tfrac12\sum_i w_i (z_i - \eta_i)^2, \qquad z_i = \hat\eta_i + u_i / w_i.
+the share of risk-set member $i$ at death time $s_a$.
+
+**Score.** Differentiating @eq-a-lC, $\partial\big(d_a\log\sum_{l\in\mathcal R_a}e^{\eta_l}\big)/\partial\eta_i = d_aP_{ai}$, so
+$$
+u_i = \frac{\partial\ell_C}{\partial\eta_i}\Big|_{\hat\eta} = \delta_i - \sum_a d_aP_{ai}.
+$$
+The Breslow cumulative baseline hazard is $\hat H_0(t) = \sum_{a: s_a\le t}d_a/\sum_{l\in\mathcal R_a}e^{\hat\eta_l}$. Because $i \in \mathcal R_a$ exactly when $s_a \le t_i$,
+$$
+a_i \equiv e^{\hat\eta_i}\hat H_0(t_i) = \sum_a d_aP_{ai}, \qquad u_i = \delta_i - a_i .
+$$
+
+**Exact curvature.** Differentiating again, $\partial^2\big(d_a\log\sum_{l\in\mathcal R_a}e^{\eta_l}\big)/\partial\eta_i\partial\eta_h = d_a(P_{ai}\mathbf 1\{i = h\} - P_{ai}P_{ah})$, so the negative Hessian is
+$$
+\mathcal H = \sum_a d_a\big\{\mathrm{diag}(P_a) - P_aP_a^\top\big\}, \qquad \mathcal H_{ii} = \sum_a d_aP_{ai}(1 - P_{ai}) = a_i - \sum_a d_aP_{ai}^2 .
+$$
+$\mathcal H$ couples patients through shared risk sets, and its diagonal is smaller than $a_i$.
+
+**Working replacement.** The algorithm keeps the exact score and replaces $\mathcal H$ by $W = \mathrm{diag}(w)$ with $w_i = \max(a_i, 10^{-6})$, a Poisson-style working curvature. The resulting surrogate is
+$$
+\ell_C(\eta) \approx \ell_C(\hat\eta) + \sum_i u_i(\eta_i - \hat\eta_i) - \tfrac12\sum_i w_i(\eta_i - \hat\eta_i)^2 .
+$$
+Expanding $(\eta_i - \hat\eta_i)^2 = \eta_i^2 - 2\eta_i\hat\eta_i + \hat\eta_i^2$ and collecting terms that do not involve $\eta$ into a constant $c$,
+$$
+\ell_C(\eta) \approx c + \sum_i\Big\{(u_i + w_i\hat\eta_i)\eta_i - \tfrac12 w_i\eta_i^2\Big\}.
+$$ {#eq-a-linear}
+For $w_i > 0$, completing the square with $z_i = \hat\eta_i + u_i/w_i$ gives $(u_i + w_i\hat\eta_i)\eta_i - \frac12w_i\eta_i^2 = w_iz_i\eta_i - \frac12w_i\eta_i^2 = -\frac12w_i(z_i - \eta_i)^2 + \frac12w_iz_i^2$, so
+$$
+\ell_C(\eta) \approx c' - \tfrac12\sum_i w_i(z_i - \eta_i)^2 .
 $$ {#eq-a-working}
-The exact Hessian of the partial likelihood is not diagonal; dropping its off-diagonal terms is the first approximation. When `strata_id` is supplied, risk sets and $\hat H_0$ are formed within strata; the evaluated fit has no strata.
+At the floor, $w_i = 10^{-6}$ while $u_i = \delta_i - a_i$ is retained. When risk sets are stratified, $P_{ai}$ and $\hat H_0$ are formed within strata; the evaluated fit has no strata. The surrogate is a working approximation, not the second-order Taylor expansion of $\ell_C$.
 
 <!-- REVISIT R1 END -->
 
-## A.3 EBNM handoff {.unnumbered}
+## A.3 Reduction to empirical-Bayes normal means {.unnumbered}
 
-Every coordinate update below reduces to the same form. If the expected log objective, as a function of one scalar parameter $\theta$, is $B\theta - \frac12 A\theta^2 + \text{const}$ with $A > 0$, it equals the log-likelihood of a single Gaussian observation
+For one scalar coordinate $\theta$ with prior $g$, the optimal mean-field factor satisfies
 $$
-x = B/A, \qquad x \mid \theta \sim N(\theta, s^2), \qquad s = A^{-1/2}.
-$$ {#eq-a-ebnm}
-The posterior under the prior $g$ is the empirical-Bayes normal-means posterior for $(x, s)$, computed by `ebnm`, which also estimates $g$ by marginal likelihood when $g$ is shared across a vector of observations. The KL term needed for the objective follows from the identity
+\log q^*(\theta) = E_{-\theta}\big[\text{log likelihood terms}\big] + \log g(\theta) + c .
 $$
-\mathrm{KL}(q \,\Vert\, g) = E_q\big[\log N(x; \theta, s^2)\big] - \log p(x),
-$$ {#eq-a-kl}
-where $p(x)$ is the marginal likelihood returned by `ebnm`.
-
-## A.4 Coefficient update {.unnumbered}
-
-<!-- REVISIT R1 START -->
-<!-- REVISIT R2 START -->
-
-Isolate factor $k$: $\eta_i = \tilde Z_{ik}\tilde\beta_k + \eta_{i,-k}$, with $\eta_{i,-k} = \sum_{l\ne k}\tilde Z_{il}\bar{\tilde\beta}_l$. Substituting into @eq-a-working and taking the expectation over $q(\tilde\beta_k)$ with $\tilde Z$ fixed, the terms in $\tilde\beta_k$ are
+In every update below, the expected likelihood terms are quadratic in $\theta$, $B\theta - \frac12A\theta^2 + c$ with $A > 0$. Completing the square,
 $$
-\tilde\beta_k \sum_i w_i \tilde Z_{ik}(z_i - \eta_{i,-k}) - \tfrac12\tilde\beta_k^2\sum_i w_i\tilde Z_{ik}^2 .
-$$
-The implementation multiplies the survival term by the weight $\alpha$:
-$$
-A_{\beta,k} = \alpha\sum_i w_i \tilde Z_{ik}^2, \qquad B_{\beta,k} = \alpha\sum_i w_i\tilde Z_{ik}(z_i - \eta_{i,-k}).
-$$ {#eq-a-beta}
-The pseudo-observation $B/A$ does not depend on $\alpha$; its standard error is inflated by $\alpha^{-1/2}$ ($\sqrt 2$ at the evaluated $\alpha = 0.5$). The prior is normal with variance estimated by `ebnm` from this single pseudo-observation, which gives $\hat\sigma_k^2 = \max(0, x^2 - s^2)$: a coefficient whose pseudo-observation is smaller than its standard error is set exactly to zero. With $\tilde Z$ treated as fixed, @eq-a-beta uses $\tilde Z_{ik}^2$ where the joint model would use $E(\tilde Z_{ik}^2)$; posterior uncertainty in $F$ does not reach the coefficient.
-
-<!-- REVISIT R2 END -->
-<!-- REVISIT R1 END -->
-
-## A.5 Activity update {.unnumbered}
-
-<!-- REVISIT R1 START -->
-
-Only the reconstruction term contains $L$. With the factor-$k$ residual $R^{(-k)} = Y - \sum_{l\ne k}\bar L_{\cdot l}\bar F_{\cdot l}^\top$, the expected log-likelihood of @eq-recon contributes, for patient $i$,
-$$
-L_{ik}\sum_j \tau_j R^{(-k)}_{ij}\bar F_{jk} - \tfrac12 L_{ik}^2\sum_j\tau_j\overline{F^2}_{jk},
+B\theta - \tfrac12A\theta^2 = -\tfrac12A\Big(\theta - \frac BA\Big)^2 + \frac{B^2}{2A},
 $$
 so
 $$
-A_{L,k} = \sum_j \tau_j \overline{F^2}_{jk}, \qquad B_{L,ik} = \sum_j \tau_j R^{(-k)}_{ij}\bar F_{jk},
-$$ {#eq-a-L}
-with one shared precision $A_{L,k}$ across patients and a point-exponential prior fitted by `ebnm` over the $n$ pseudo-observations. This is the standard empirical-Bayes matrix factorization update; it holds in every configuration of the single-modality model because $\eta$ does not depend on $L$.
+q^*(\theta) \propto N(x;\, \theta, s^2)\,g(\theta), \qquad x = B/A, \quad s = A^{-1/2}.
+$$ {#eq-a-ebnm}
+This is the posterior of $\theta$ given one Gaussian observation $x$ with standard error $s$. When $H$ coordinates $\theta_1, \dots, \theta_H$ share a prior, the prior is estimated by maximizing the marginal likelihood of their pseudo-observations,
+$$
+\hat g = \arg\max_g\sum_{h=1}^H\log p_g(x_h), \qquad p_g(x_h) = \int N(x_h;\, \theta, s_h^2)\,g(d\theta),
+$$
+and each $q(\theta_h)$ is the posterior under $\hat g$.
 
+**KL identity.** For the posterior under the same prior, $q(\theta) = N(x; \theta, s^2)g(\theta)/p_g(x)$, so $\log q(\theta) - \log g(\theta) = \log N(x; \theta, s^2) - \log p_g(x)$ and
+$$
+\mathrm{KL}(q\,\Vert\,g) = E_q\log N(x;\, \theta, s^2) - \log p_g(x).
+$$ {#eq-a-kl}
+For a vector of $H$ coordinates with a common precision $A$,
+$$
+\sum_h E_q\log N(x_h;\, \theta_h, A^{-1}) = \frac H2\log\frac{A}{2\pi} - \frac A2\sum_h\big(x_h^2 - 2x_h\bar\theta_h + \overline{\theta_h^2}\big).
+$$ {#eq-a-kl-vector}
+If $A = B = 0$ the coordinate receives no information and $q = g$. The implementation instead floors each $A$ at $10^{-10}$, which gives a very large $s$ and a posterior indistinguishable from the prior.
+
+## A.4 Posteriors under point-mass priors {.unnumbered}
+
+**Point-exponential prior.** Let $g = (1-\pi)\delta_0 + \pi\,\lambda e^{-\lambda\theta}\mathbf 1\{\theta > 0\}$. For the slab, expand the exponent and complete the square with $m = x - \lambda s^2$:
+$$
+-\frac{(\theta - x)^2}{2s^2} - \lambda\theta = -\frac{(\theta - m)^2}{2s^2} - \lambda x + \frac{\lambda^2 s^2}{2},
+$$
+which follows from $m^2 - x^2 = -2\lambda s^2x + \lambda^2s^4$. Hence $N(x; \theta, s^2)\lambda e^{-\lambda\theta} = \lambda\exp(-\lambda x + \lambda^2s^2/2)\,N(\theta; m, s^2)$, and integrating over $\theta > 0$ gives $\lambda\exp(-\lambda x + \lambda^2s^2/2)\,\Phi(m/s)$. The marginal likelihood and posterior weights are therefore
+$$
+p_g(x) = (1-\pi)N(x;\, 0, s^2) + \pi\lambda e^{-\lambda x + \lambda^2s^2/2}\,\Phi(m/s), \qquad
+\omega_0 = \frac{(1-\pi)N(x; 0, s^2)}{p_g(x)}, \quad \omega_+ = 1 - \omega_0,
+$$
+and the posterior is $\omega_0\delta_0$ plus $\omega_+$ times $N(m, s^2)$ truncated to $(0, \infty)$.
+
+**Truncated-normal moments.** Write $\theta = m + s\zeta$ with $\zeta$ standard normal conditioned on $\zeta > -a$, $a = m/s$, and let $r = \phi(a)/\Phi(a)$. Using $\int_{-a}^\infty \zeta\phi(\zeta)\,d\zeta = \phi(a)$ and, by parts, $\int_{-a}^\infty\zeta^2\phi(\zeta)\,d\zeta = \Phi(a) - a\phi(a)$, we have $E\zeta = r$ and $E\zeta^2 = 1 - ar$. Hence
+$$
+M_+(m) = E\theta = m + sr, \qquad S_+(m) = E\theta^2 = m^2 + 2msr + s^2(1 - ar) = m^2 + s^2 + msr,
+$$ {#eq-a-trunc}
+and the posterior moments are $\bar\theta = \omega_+M_+(m)$ and $\overline{\theta^2} = \omega_+S_+(m)$. For large negative $a$, $\log\Phi(a)$ and $r$ are evaluated with tail approximations for numerical stability. The point-Laplace case used in the multimodal model is derived in Appendix B.6.
+
+## A.5 Coefficient update {.unnumbered}
+
+<!-- REVISIT R1 START -->
+<!-- REVISIT R2 START -->
+
+Fix $k$ and write $a_i = \tilde Z_{ik}$, which is a known covariate within the sweep, and $H_i = \sum_{l\ne k}\tilde Z_{il}\tilde\beta_l$, which does not involve $\tilde\beta_k$. Then $\eta_i = H_i + a_i\tilde\beta_k$. The survival weight $\alpha$ multiplies the working term @eq-a-working, so the terms involving $\tilde\beta_k$ are $-\frac{\alpha}{2}\sum_iw_i(z_i - H_i - a_i\tilde\beta_k)^2$. Expanding the square,
+$$
+(z_i - H_i - a_i\tilde\beta_k)^2 = (z_i - H_i)^2 - 2a_i\tilde\beta_k(z_i - H_i) + a_i^2\tilde\beta_k^2,
+$$
+and taking $E_{-\tilde\beta_k}$, under which $E(z_i - H_i) = z_i - \bar H_i$ and $E(z_i - H_i)^2$ is a constant $c_i$,
+$$
+E_{-\tilde\beta_k}(z_i - H_i - a_i\tilde\beta_k)^2 = c_i - 2a_i\tilde\beta_k(z_i - \bar H_i) + a_i^2\tilde\beta_k^2 .
+$$
+Multiplying by $-\alpha w_i/2$ and summing over $i$,
+$$
+\tilde\beta_k\,\alpha\sum_iw_ia_i(z_i - \bar H_i) - \tfrac12\tilde\beta_k^2\,\alpha\sum_iw_ia_i^2 + c,
+$$
+so
+$$
+A_{\beta,k} = \alpha\sum_iw_i\tilde Z_{ik}^2, \qquad B_{\beta,k} = \alpha\sum_iw_i\tilde Z_{ik}(z_i - \bar H_i), \qquad x_{\beta,k} = \frac{\sum_iw_i\tilde Z_{ik}(z_i - \bar H_i)}{\sum_iw_i\tilde Z_{ik}^2}, \qquad s_{\beta,k} = A_{\beta,k}^{-1/2}.
+$$ {#eq-a-beta}
+For $\alpha > 0$ the pseudo-observation does not depend on $\alpha$, and the standard error is inflated by $\alpha^{-1/2}$ ($\sqrt 2$ at $\alpha = 0.5$), provided the floor on $A$ is inactive. In the joint target with random loadings, $\tilde Z_{ik}^2$ would be replaced by $E(\tilde Z_{ik}^2)$; the plug-in projection does not pass loading uncertainty to the coefficient.
+
+**Normal prior.** With $g_{\beta,k} = N(0, \sigma^2)$ the marginal distribution of $x$ is $N(0, s^2 + \sigma^2)$, with log-likelihood
+$$
+\ell(\sigma^2) = -\tfrac12\log\{2\pi(s^2 + \sigma^2)\} - \frac{x^2}{2(s^2 + \sigma^2)}, \qquad
+\ell'(\sigma^2) = \frac{x^2 - (s^2 + \sigma^2)}{2(s^2 + \sigma^2)^2}.
+$$
+The derivative is positive for $\sigma^2 < x^2 - s^2$ and negative beyond, so the maximizer over $\sigma^2 \ge 0$ is
+$$
+\hat\sigma_k^2 = \max(0,\, x^2 - s^2).
+$$
+For $\hat\sigma_k^2 > 0$, completing the square in $N(x; \tilde\beta, s^2)N(\tilde\beta; 0, \hat\sigma^2)$ gives precision $s^{-2} + \hat\sigma^{-2}$, so
+$$
+\bar{\tilde\beta}_k = \frac{x\,\hat\sigma^2}{\hat\sigma^2 + s^2}, \qquad \mathrm{Var}(\tilde\beta_k) = \frac{\hat\sigma^2s^2}{\hat\sigma^2 + s^2}.
+$$
+If $|x| \le s$, then $\hat\sigma_k^2 = 0$ and $q(\tilde\beta_k)$ is the point mass at zero.
+
+<!-- REVISIT R2 END -->
 <!-- REVISIT R1 END -->
 
-## A.6 Loading update {.unnumbered}
+## A.6 Activity update {.unnumbered}
 
 <!-- REVISIT R1 START -->
 
-**Reconstruction contribution.** By the same argument as @eq-a-L with the roles of $L$ and $F$ exchanged,
+$L$ appears only in $\ell_Y$. Define the random residual excluding factor $k$, $r_{ij}^{(-k)} = y_{ij} - \sum_{l\ne k}L_{il}F_{jl}$, and its mean $R_{ij}^{(-k)} = E_q r_{ij}^{(-k)} = y_{ij} - \sum_{l\ne k}\bar L_{il}\bar F_{jl}$, which uses the independence of $L_{il}$ and $F_{jl}$ under $q$. The terms of @eq-a-lY involving $L_{ik}$ are $-\frac{\tau_j}{2}(r_{ij}^{(-k)} - L_{ik}F_{jk})^2$. Expanding,
 $$
-A^{\mathrm{gen}}_{F,jk} = \tau_j\sum_i\overline{L^2}_{ik}, \qquad B^{\mathrm{gen}}_{F,jk} = \tau_j\sum_i R^{(-k)}_{ij}\bar L_{ik}.
+(r_{ij}^{(-k)} - L_{ik}F_{jk})^2 = (r_{ij}^{(-k)})^2 - 2L_{ik}r_{ij}^{(-k)}F_{jk} + L_{ik}^2F_{jk}^2 .
+$$
+Under $q$, $F_{jk}$ is independent of $r_{ij}^{(-k)}$, which involves only the other factors, so
+$$
+E_{-L_{ik}}(r_{ij}^{(-k)} - L_{ik}F_{jk})^2 = c_{ij} - 2L_{ik}R_{ij}^{(-k)}\bar F_{jk} + L_{ik}^2\overline{F_{jk}^2}.
+$$
+Multiplying by $-\tau_j/2$ and summing over $j$,
+$$
+A_{L,k} = \sum_j\tau_j\overline{F_{jk}^2}, \qquad B_{L,ik} = \sum_j\tau_jR_{ij}^{(-k)}\bar F_{jk}, \qquad x_{L,ik} = B_{L,ik}/A_{L,k}, \qquad s_{L,k} = A_{L,k}^{-1/2}.
+$$ {#eq-a-L}
+All $n$ pseudo-observations of factor $k$ share the precision $A_{L,k}$. The point-exponential prior $g_{L,k}$ is fitted by maximizing their joint marginal likelihood (A.3), and the posterior moments follow from A.4. Because $\eta$ does not depend on $L$, this update holds in every configuration of the model.
+
+<!-- REVISIT R1 END -->
+
+## A.7 Loading update {.unnumbered}
+
+<!-- REVISIT R1 START -->
+
+**Reconstruction terms.** Exchanging the roles of $L$ and $F$ in A.6, the terms of @eq-a-lY involving $F_{jk}$ are $-\frac{\tau_j}{2}\sum_i(r_{ij}^{(-k)} - L_{ik}F_{jk})^2$, and
+$$
+E_{-F_{jk}}(r_{ij}^{(-k)} - L_{ik}F_{jk})^2 = c_{ij} - 2F_{jk}R_{ij}^{(-k)}\bar L_{ik} + F_{jk}^2\overline{L_{ik}^2}.
+$$
+Multiplying by $-\tau_j/2$ and summing over $i$,
+$$
+A^{\mathrm{rec}}_{F,jk} = \tau_j\sum_i\overline{L_{ik}^2}, \qquad B^{\mathrm{rec}}_{F,jk} = \tau_j\sum_iR_{ij}^{(-k)}\bar L_{ik}.
 $$ {#eq-a-F-gen}
 
-**Survival contribution in the joint model.** Because $\eta$ depends on $F$, the joint model also has a survival term in the loading update. Treating the normalizing constant $d_k$ as fixed and writing $\tilde Z_{ik} = d_k^{-1}\sum_j y_{ij}F_{jk}$, the terms of @eq-a-working in $F_{jk}$ are, up to factors of $d_k$,
+**Survival terms of the target, with a fixed normalizer.** If $d_k$ depends on $F$, $\eta_i$ is not linear in $F_{jk}$ and the working term is not quadratic in it. Holding $d_k$ fixed, set $a_{ij} = y_{ij}/d_k$, $C_i = \sum_{h\ne j}a_{ih}F_{hk}$ and $H_i = \eta_{i,-k}$, so that $\eta_i = H_i + \tilde\beta_k(C_i + a_{ij}F_{jk})$. With $G_i = z_i - H_i - \tilde\beta_kC_i$,
 $$
-F_{jk}\,E(\tilde\beta_k)\sum_i w_i y_{ij}\big(z_i - \eta_{i,-k}\big) - \tfrac12 F_{jk}^2 E(\tilde\beta_k^2)\sum_i w_i y_{ij}^2 - F_{jk}E(\tilde\beta_k^2)\sum_i w_i y_{ij}\tilde Z^{(-j)}_{ik},
+(z_i - \eta_i)^2 = G_i^2 - 2a_{ij}F_{jk}\tilde\beta_kG_i + a_{ij}^2\tilde\beta_k^2F_{jk}^2 .
 $$
-where the last term couples feature $j$ to the other features through the projection excluding $j$. A full treatment would also differentiate $d_k$ with respect to $F_{jk}$.
+Under $q$, $\tilde\beta_k$, $H_i$ and $C_i$ are independent of each other and of $F_{jk}$, so $E(\tilde\beta_kG_i) = \bar{\tilde\beta}_k(z_i - \bar H_i) - \overline{\tilde\beta_k^2}\,\bar C_i$. Multiplying the expectation by $-w_i/2$ and summing over $i$ gives the coefficients
+$$
+A^{\mathrm{surv}}_{F,jk} = \overline{\tilde\beta_k^2}\sum_iw_i\frac{y_{ij}^2}{d_k^2}, \qquad
+B^{\mathrm{surv}}_{F,jk} = \bar{\tilde\beta}_k\sum_iw_i\frac{y_{ij}}{d_k}(z_i - \bar H_i) - \overline{\tilde\beta_k^2}\sum_iw_i\frac{y_{ij}}{d_k}\bar C_i .
+$$ {#eq-a-F-surv}
+The last term couples feature $j$ to the other features of factor $k$ through $\bar C_i$.
 
-**Implemented formula.** `update_F_surv_YFB_k()` combines the two sources with weights $1-\alpha_F$ and $\alpha_F$:
+**Implemented update.** The implementation combines the reconstruction terms with a simpler survival branch, using weights $1 - \alpha_F$ and $\alpha_F$:
 $$
-A_{F,jk} = (1-\alpha_F)A^{\mathrm{gen}}_{F,jk} + \alpha_F E(\tilde\beta_k^2)\sum_i w_iy_{ij}^2, \quad
-B_{F,jk} = (1-\alpha_F)B^{\mathrm{gen}}_{F,jk} + \alpha_F E(\tilde\beta_k)\sum_i w_iy_{ij}(z_i - \eta_{i,-k}).
+A_{F,jk} = (1-\alpha_F)A^{\mathrm{rec}}_{F,jk} + \alpha_F\overline{\tilde\beta_k^2}\sum_iw_iy_{ij}^2, \qquad
+B_{F,jk} = (1-\alpha_F)B^{\mathrm{rec}}_{F,jk} + \alpha_F\bar{\tilde\beta}_k\sum_iw_iy_{ij}(z_i - \bar\eta_{i,-k}),
 $$ {#eq-a-F}
-This survival branch uses the unnormalized $y_{ij}$, omits the feature-coupling term and the derivative of $d_k$, and updates all features of factor $k$ in one vectorized call. The plain Bayesian posterior corresponds to adding both sources with weight 1, which has the same pseudo-observation as $\alpha_F = 0.5$ and twice its precision (S38). **In the evaluated fit $\alpha_F = 0$**, so @eq-a-F reduces to @eq-a-F-gen and the survival branch is not used. The F update is then the reconstruction update of empirical-Bayes matrix factorization, with the point-exponential prior fitted by `ebnm` over the $p$ pseudo-observations.
+with $x_{F,jk} = B_{F,jk}/A_{F,jk}$ and $s_{F,jk} = A_{F,jk}^{-1/2}$. Compared with @eq-a-F-surv, this branch omits the normalizer $d_k$ and the coupling term, and it updates all features of factor $k$ simultaneously. With $\alpha_F = 0.5$ the pseudo-observation equals that of the unit-weight sum of the reconstruction terms and this branch, with half its precision; this is a statement about the same approximate kernel, not an exact posterior of the normalized joint target. **In the evaluated fit $\alpha_F = 0$**, so @eq-a-F reduces to @eq-a-F-gen: the loading update is the reconstruction update of empirical-Bayes matrix factorization, with the point-exponential prior fitted over the $p$ pseudo-observations of each factor.
 
 <!-- REVISIT R1 END -->
 
-## A.7 Precision update {.unnumbered}
+## A.8 Precision update {.unnumbered}
 
 <!-- REVISIT R1 START -->
 
-Maximizing the expected reconstruction log-likelihood over $\tau_j$ gives
+Write $\mu_{ij} = \sum_kL_{ik}F_{jk}$. Under $q$ the factors are independent, so $E\mu_{ij} = \sum_k\bar L_{ik}\bar F_{jk}$ and
 $$
-\tau_j = \frac{n}{\sum_i E_q\big(y_{ij} - L_i^\top F_j\big)^2}, \qquad E_q\big(y_{ij} - L_i^\top F_j\big)^2 = \big(y_{ij} - \bar L_i^\top\bar F_j\big)^2 + \sum_k\big(\overline{L^2}_{ik}\overline{F^2}_{jk} - \bar L_{ik}^2\bar F_{jk}^2\big),
+E\mu_{ij}^2 = \Big(\sum_k\bar L_{ik}\bar F_{jk}\Big)^2 + \sum_k\big(\overline{L_{ik}^2}\,\overline{F_{jk}^2} - \bar L_{ik}^2\bar F_{jk}^2\big),
+$$
+because $\mathrm{Var}(\mu_{ij}) = \sum_k\mathrm{Var}(L_{ik}F_{jk})$ and $\mathrm{Var}(L_{ik}F_{jk}) = \overline{L_{ik}^2}\,\overline{F_{jk}^2} - \bar L_{ik}^2\bar F_{jk}^2$. Hence
+$$
+Q_j = \sum_iE_q(y_{ij} - \mu_{ij})^2 = \sum_i\Big[(y_{ij} - E\mu_{ij})^2 + \sum_k\big(\overline{L_{ik}^2}\,\overline{F_{jk}^2} - \bar L_{ik}^2\bar F_{jk}^2\big)\Big].
+$$
+The expected log-likelihood in $\tau_j$ is $\frac n2\log\tau_j - \frac{\tau_j}{2}Q_j + c$; setting its derivative $n/(2\tau_j) - Q_j/2$ to zero gives
+$$
+\hat\tau_j = n/Q_j .
 $$ {#eq-a-tau}
-with a floor that bounds $\tau_j$ by $10^8$. There is no prior on $\tau_j$.
+The implementation floors $Q_j$ at $n \times 10^{-8}$, so $\hat\tau_j \le 10^8$. There is no prior on $\tau_j$.
 
 <!-- REVISIT R1 END -->
 
-## A.8 Monitoring objective and stopping rule {#sec-appendix-a-objective .unnumbered}
+## A.9 Monitoring statistic and stopping rule {#sec-appendix-a-objective .unnumbered}
 
 <!-- REVISIT R1 START -->
 
-After each outer iteration the implementation computes
+After each sweep the implementation computes
 $$
 J = (1-\alpha)\,G + \alpha\,p\,S + \sum_k\big(\kappa_{L,k} + \kappa_{F,k} + \kappa_{\beta,k}\big),
 $$ {#eq-a-J}
-where $G = \sum_j\big[\frac n2\log\tau_j - \frac{\tau_j}{2}\sum_i E_q(y_{ij} - L_i^\top F_j)^2\big]$ is the reconstruction log-likelihood without its constant, $S = \log\mathrm{PL}(\hat\eta) - \frac12\sum_i w_i\mathrm{Var}_q(\eta_i)$ with $\mathrm{Var}_q(\eta_i) = \sum_k\tilde Z_{ik}^2\mathrm{Var}_q(\tilde\beta_k)$, and each $\kappa$ is $-\mathrm{KL}$ computed by @eq-a-kl. The factor $p$ comes from the `per_p` normalization convention, which scales only this monitored quantity. The algorithm stops at the first iteration after the fifth with $|J_t - J_{t-1}|/|J_{t-1}| < 10^{-5}$. Because $J$ weights its components by $1-\alpha$ and $\alpha p$, and because $\log\mathrm{PL}$ is evaluated at the iteration's starting predictor, $J$ is a convergence monitor. It is not the evidence lower bound of the joint model, and the updates are not guaranteed to increase it.
+where $G = \sum_j\big[\frac n2\log\tau_j - \frac{\tau_j}{2}Q_j\big]$ is the reconstruction log-likelihood without its constant, $S = \ell_C(\hat\eta) - \frac12\sum_iw_i\mathrm{Var}_q(\eta_i)$ with $\mathrm{Var}_q(\eta_i) = \sum_k\tilde Z_{ik}^2\mathrm{Var}_q(\tilde\beta_k)$ evaluated at the sweep's starting predictor $\hat\eta$, and each $\kappa$ is a negative KL term computed from @eq-a-kl. The algorithm stops at the first sweep after the fifth with $|J_r - J_{r-1}|/|J_{r-1}| < 10^{-5}$.
+
+$J$ differs from the target @eq-a-target in four ways. Its reconstruction and survival components are weighted by $1-\alpha$ and $\alpha p$. Its survival term uses $\ell_C(\hat\eta)$ at the start of the sweep, whereas the expected working quadratic at the updated means would also include $\sum_iu_i(\bar\eta_i - \hat\eta_i) - \frac12\sum_iw_i(\bar\eta_i - \hat\eta_i)^2$. Its survival term uses the working curvature of A.2. And for the activities, whose $n$ pseudo-observations share one precision $A_{L,k}$, the implemented $\kappa_{L,k}$ includes the Gaussian log-normalizer $\frac12\log(A_{L,k}/2\pi)$ once rather than $n$ times as in @eq-a-kl-vector, so
+$$
+\kappa_{L,k}^{\mathrm{impl}} = \kappa_{L,k} + \frac{n-1}{2}\log\frac{A_{L,k}}{2\pi},
+$$
+a discrepancy that changes with $A_{L,k}$ across sweeps. These features affect only the stopping rule, not the coordinate updates. $J$ is therefore a convergence monitor, not an evidence lower bound, and the updates are not guaranteed to increase it.
 
 <!-- REVISIT R1 END -->
 
-## A.9 Orientation and prediction {.unnumbered}
+## A.10 Orientation and prediction {.unnumbered}
 
 <!-- REVISIT R2 START -->
 
-After the loop the implementation checks the training concordance of $\eta$ once and negates $\bar{\tilde\beta}$ if the score is discordant. Before September 4, 2026 this check omitted `reverse = TRUE` in `survival::concordance()`, so it was inverted, and it also replaced $E(\tilde\beta^2)$ by $E(\tilde\beta)^2$ when it negated. The saved D4 fit was produced by that code: its $\eta$ is a good-prognosis score and its stored coefficient variances are zero. It is scored as $\mathrm{risk} = -\eta$ for all held-out cohorts (S01, S49).
+After the loop, the implementation compares the training concordance of $\eta$ with 0.5 once and negates $\bar{\tilde\beta}$ if $\eta$ is discordant with risk. For the evaluated fit this check left $\eta$ concordant with longer survival, so the risk score is $-\eta$ for every held-out cohort, a direction fixed before validation. The stored second moments of $\tilde\beta$ for this fit equal the squared means, so its posterior variances are zero and no coefficient uncertainty can be reported.
 
-For a new patient with data standardized in its own cohort, prediction restricts $\bar F$ to the training genes measured in that cohort but keeps the training normalizing constants $D$, which were computed at the start of the final iteration: $\eta_{\mathrm{new}} = y_{\mathrm{new}}^\top\bar F_{\mathcal{G}}D^{-1}\bar{\tilde\beta}$, where $\mathcal{G}$ is the set of shared genes. Recomputing these projections from the saved fit reproduces the saved held-out scores to within $10^{-8}$ (S49).
+For a new patient with data standardized within its own cohort, prediction restricts $\bar F$ to the training features $\mathcal G$ measured in that cohort and keeps the stored norms $D_*$, formed from $\bar F$ at the start of the final sweep:
+$$
+\eta_{\mathrm{new}} = y_{\mathrm{new},\mathcal G}^\top\bar F_{\mathcal G}D_*^{-1}\bar{\tilde\beta}.
+$$
+$D_*$ differs slightly from the norms of the final $\bar F$ (by less than $2\times10^{-3}$ in absolute value for each retained program in the evaluated fit), and the stored norms include a ridge, $d_k = (\lVert\bar F_{\cdot k}\rVert_2^2 + 10^{-10})^{1/2}$, so a zero column gives a zero projection.
 
 <!-- REVISIT R2 END -->
 
-## A.10 Mathematical model versus evaluated algorithm {.unnumbered}
+## A.11 Joint target and evaluated algorithm {.unnumbered}
 
 <!-- REVISIT R1 START -->
 <!-- REVISIT R2 START -->
 
-| Component | Joint mathematical model | Implementation (`fit_cox_on_yf()`) | Evaluated D4 fit |
-|------------|----------------------|----------------------|----------------------|
-| Survival term | Exact Cox partial likelihood, expected under $q$ | Diagonal quadratic surrogate @eq-a-working at the iteration's starting $\hat\eta$ | Same; no strata |
-| Predictor | $\eta = \tilde z^\top\tilde\beta$ with $\tilde z$ a function of $F$ | $\tilde Z = Y\bar F D^{-1}$ from posterior means, fixed within an iteration | Same |
-| Coefficient update | Uses $E(\tilde Z^2)$ including loading uncertainty | Uses $\tilde Z^2$ (plug-in); survival term weighted by $\alpha$ | $\alpha = 0.5$; normal prior with per-factor variance |
-| Activity update | Reconstruction only | Reconstruction only | Same |
-| Loading update | Reconstruction plus survival with feature coupling and $\partial d_k/\partial F$ | Weighted sum @eq-a-F, survival branch without coupling or normalization derivative | $\alpha_F = 0$: reconstruction only |
-| Precision | Maximum likelihood or prior | Maximum likelihood @eq-a-tau | Same |
-| Objective | Evidence lower bound | Weighted monitor @eq-a-J | Stopped at iteration 20 |
-| Orientation | Not part of the model | One post-fit training check | Pre-September check; risk $= -\eta$ |
-| Coefficient uncertainty | Posterior variance of $\tilde\beta$ | $E(\tilde\beta^2)$ retained after the September fix | Stored variances are zero (historical code) |
+```{=latex}
+\needspace{0.4\textheight}
+```
 
-: Single-modality joint model, implementation, and evaluated fit. Sources: S04, S05, S06, S07, S49, S58. {#tbl-math-vs-impl}
+| Component | Joint target @eq-a-target | Evaluated algorithm |
+|------------|----------------------|----------------------|
+| Survival term | $E_q\ell_C(\eta)$, exact partial likelihood | Expected working quadratic @eq-a-working with diagonal Poisson-style curvature, at the sweep's starting predictor |
+| Predictor | $\eta$ uses random $F$ and $d_k(F)$ | Projection $\tilde Z = Y\bar F D^{-1}$ from posterior means, fixed within a sweep; prediction uses stored $D_*$ |
+| Coefficient update | Uses $E(\tilde Z_{ik}^2)$ | Uses $\tilde Z_{ik}^2$; working term weighted by $\alpha = 0.5$ |
+| Activity update | Reconstruction only | Reconstruction only |
+| Loading update | Reconstruction plus coupled survival term, requiring a fixed or differentiated $d_k$ | Reconstruction only ($\alpha_F = 0$) |
+| Precision | Maximum likelihood | Maximum likelihood with a floor |
+| Objective | $\mathcal L(q)$ | Monitoring statistic @eq-a-J, used only for stopping |
+| Coefficient uncertainty | Posterior variance of $\tilde\beta$ | Stored variances are zero for the evaluated fit |
+
+: Joint target and evaluated single-modality algorithm. Coordinate updates for $L$, $F$ and $\tau$ are exact for the reconstruction terms, so with $\alpha_F = 0$ they are the coordinate updates of empirical-Bayes matrix factorization, interleaved with an empirical-Bayes update of the Cox coefficients on fixed projections. {#tbl-math-vs-impl}
 
 <!-- REVISIT R2 END -->
 <!-- REVISIT R1 END -->
-
-The single-modality algorithm therefore performs exact coordinate updates of an empirical-Bayes factorization for $L$, $F$ and $\tau$, interleaved with a plug-in empirical-Bayes update of the Cox coefficients on fixed projections. The derivation of a survival-informed loading update that is stable is part of the continuing work (@sec-continuing).

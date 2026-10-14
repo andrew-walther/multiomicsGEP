@@ -118,27 +118,27 @@ revision. The [drafting handoff](paper/writeup/drafting_prompt.md) assigns Claud
 Tasks 2, 3 and 5 on `writeup/draft`; Codex performs the independent
 complete-draft review afterward.
 
-**Status (2026-10-14): initial draft awaiting independent review.** The report
-(`paper/writeup/writeup.qmd`, rendered to `writeup.html` and `writeup.pdf`) has a
-21-page main text, Appendix A (single-modality derivations reconciled with the
-evaluated fit), Appendix B (multimodal derivations with intercept, signed priors,
-projection moments, canonicalization and removal), and Appendix C (supporting
-exhibits). The [source inventory](paper/writeup/source_inventory.csv) now has 62
-IDs, each recording what was verified. Drafting checks found: the principal
-0.026 comparison is a C-index difference on 616 concatenated patients, not a
-fixed-effect pooled difference; all saved per-cohort external C-indices equal
-their frozen-orientation values; the established model's C = 0.685 on the 50
-matched ICGC donors has no saved source and is listed as an evidence gap; the
-saved D4 fit stores zero coefficient variances (pre-September sign-correction
-code); and under that fit's orientation (risk = −η) the joint coefficients of
-Programs 3 and 7 agree in sign with their marginal direction labels. Task 4
-(Codex review) has not started. No model-fitting experiment or algorithm change
-is part of this writing task. The report will distinguish the evaluated single-modality
-configuration with α_F = 0 from continuing supervision work; use the independently
-tuned regularized two-step comparator for the principal comparison; identify
-CPTAC as proteomics; and report multimodal rank sensitivity and incomplete
-real-data convergence alongside the performance and biological findings.
-Existing prelim and historical derivation sources are preserved.
+**Status (2026-10-14): revised draft after independent review, awaiting approval.**
+Codex reviewed the initial draft (`paper/writeup/review.md`); every finding was
+checked against code and saved outputs and applied, and dispositions are recorded
+in `paper/writeup/review_dispositions.md`. The report is now organized as a
+manuscript (Methods, Evaluation, Results, Biological findings, Discussion with
+implications, limitations and continuing work), without source IDs, repository
+references, dated process language, an evidence-gap table or a bibliography
+(DeSurv is attributed as Young et al., submitted). Appendices A and B derive every
+update from the likelihood, priors and variational family to the EBNM inputs.
+Scientific corrections from the review: the Cox working curvature is a
+Poisson-style diagonal replacement, not the Hessian diagonal; the single-modality
+stopping statistic is a monitor (its activity KL term counts the Gaussian
+normalizer once instead of n times); predictions use the norms stored at the start
+of the final sweep; the multimodal removal score uses KL penalties cached against
+earlier priors; the concatenated C is 0.6285 versus 0.6026. The two implementation
+defects (activity-KL normalizer, cached-prior KL) are documented, not fixed, and
+belong to the method work. The established model's matched-donor C = 0.685 is
+omitted (no saved source). All figures were redrawn from saved outputs as vector
+PDF and 300-dpi PNG. Remaining issue: the PDF main text is 27 pages against a
+15–20-page target. No model-fitting experiment or algorithm change is part of this
+writing task. Existing prelim and historical derivation sources are preserved.
 
 ## Repository Map
 

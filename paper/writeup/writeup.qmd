@@ -1,11 +1,8 @@
 ---
-title: "Supervised Bayesian factor models for molecular programs and survival in pancreatic cancer"
-subtitle: "Technical report on the evaluated methods, current evidence, and remaining work"
+title: "Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer"
 author: "Andrew J. Walther"
 date: "2026-10-14"
 date-format: "MMMM D, YYYY"
-bibliography: ../ssbmf-refs.bib
-link-citations: true
 number-sections: true
 toc: true
 crossref:
@@ -22,6 +19,7 @@ format:
     anchor-sections: true
     html-math-method: mathjax
     fig-align: center
+    default-image-extension: png
     grid:
       body-width: 900px
       sidebar-width: 240px
@@ -33,7 +31,7 @@ format:
         :root { --bs-body-color: #000; --bs-link-color: #000;
           --bs-link-hover-color: #000; --bs-primary: #000;
           --bs-emphasis-color: #000; --quarto-text-muted: #333; }
-        body, h1, h2, h3, h4, .title, .subtitle, .quarto-title-meta,
+        body, h1, h2, h3, h4, .title, .quarto-title-meta,
         .quarto-title-meta-heading, .quarto-title-meta-contents, caption,
         figcaption, .figure-caption, .table, th, td { color: #000 !important; }
         h1 { margin-top: 2.2rem; }
@@ -46,15 +44,7 @@ format:
         code, p code, td code { color: #000 !important; background: transparent !important; }
         .table { font-size: .88rem; }
         .table td { vertical-align: top; }
-        .draft-status { border: 1px solid #000; background: #fff;
-          padding: .9rem 1.2rem; margin: 1rem 0; }
-        .findings { border-left: 3px solid #000; background: #fff;
-          padding: 1rem 1.3rem; margin: 1rem 0; }
-        .callout, .callout.callout-style-simple, .callout.callout-style-default {
-          border-color: #000 !important; border-left-color: #000 !important; }
-        .callout .callout-header { background-color: #fff !important; }
-        .callout .callout-title-container, .callout-titled .callout-title-container {
-          color: #000 !important; }
+        .algorithm { margin: 1rem 0 1.2rem 0; }
         .anchorjs-link { color: #000 !important; }
         @media (max-width: 700px) {
           .table { font-size: .78rem; }
@@ -70,58 +60,34 @@ format:
     linestretch: 1.05
     pdf-engine: lualatex
     latex-auto-install: false
+    default-image-extension: pdf
     colorlinks: true
     linkcolor: black
     citecolor: black
     urlcolor: black
     filecolor: black
     toccolor: black
-    fig-pos: "htbp"
+    fig-pos: "H"
     include-in-header:
       text: |
         \usepackage{etoolbox}
-        \usepackage[htt]{hyphenat}
+        \usepackage{needspace}
         \AtBeginEnvironment{longtable}{\footnotesize}
         \raggedbottom
         \usepackage{fancyhdr}
         \pagestyle{fancy}
         \fancyhf{}
         \fancyfoot[C]{\thepage}
-        \fancyhead[R]{\footnotesize Initial draft awaiting independent review}
         \renewcommand{\headrulewidth}{0pt}
-        \AtBeginDocument{%
-          \definecolor{quarto-callout-note-color}{HTML}{000000}%
-          \definecolor{quarto-callout-note-color-frame}{HTML}{000000}%
-          \definecolor{quarto-callout-color-frame}{HTML}{000000}}
 execute:
   enabled: false
 ---
 
-<!-- REVISIT R9 START -->
-
-::: {.draft-status}
-**Status: initial draft awaiting independent review.** This report describes methods and evidence available through October 12, 2026. It has not yet been reviewed independently, and it is not ready to share beyond the immediate project team. Every quantitative statement is traced to a saved output in `paper/writeup/source_inventory.csv`; claims that could not be traced are omitted or listed as evidence gaps. The planned manuscript authors are Walther, Liu, and Rashid. DeSurv [@Young2026] is cited throughout as the source of the gene-screening rule and the published factor gene lists.
-:::
-
-<!-- REVISIT R9 END -->
-
-# Summary of current findings {.unnumbered}
+# Summary {.unnumbered}
 
 <!-- REVISIT R9 START -->
 
-::: {.findings}
-**What the models are.** Both models factor molecular data into nonnegative patient activities $L$ and feature loadings $F$, and link survival to the observable projection of each patient's data onto the loadings, $\eta = (YF)\beta$. The single-modality model fits one feature block. The multimodal model shares $L$ across matched expression and methylation blocks, adds per-feature intercepts and signed loadings, and propagates loading uncertainty into its coefficient updates.
-
-**What the evaluated single-modality configuration does.** In the configuration behind all single-modality results ($\alpha_F = 0$), survival informs the coefficients $\beta$ but not the loadings $F$ or the activities $L$. The programs are therefore the programs of an empirical-Bayes factorization of the training data; survival selects and weights them. This is not the intended final method (@sec-continuing).
-
-**Single-modality performance.** Trained on TCGA-PAAD RNA-seq and CPTAC proteomics ($n = 273$), the frozen model has a mean concordance of 0.627 across five held-out cohorts ($n = 616$). Against an independently tuned two-step comparator (40 unsupervised factors, LASSO Cox), the C-index difference computed on the 616 concatenated patients is 0.026 (95% bootstrap interval 0.000 to 0.050). Against a two-step comparator given the same rank of 7 the difference is 0.011 ($-0.013$ to $0.033$).
-
-**Single-modality biology.** Starting from rank 7, four programs are retained and two are classified as survival-active. The adverse program (7) aligns with the basal-like axis and the protective program (3) with the classical axis; the two genomics-only programs read as desmoplastic stroma (5) and immune infiltrate with a vascular component (6). These labels rest on enrichment, subtype concordance and gene-list overlap analyses that share inputs and were not prespecified.
-
-**Multimodal model.** In simulation, the framework with intercepts, signed loadings, empirical-Bayes priors and evidence-based pruning returns close to the true rank of 3 from every starting rank at moderate noise, and converges in all 162 of its fits. It does not recover a planted low-variance prognostic program at moderate noise. On real data, nothing is pruned at any starting rank, most fits reach the 500-sweep cap, and external concordance on 50 primary-PDAC ICGC donors varies from 0.50 to 0.69 across starting ranks. At starting rank 7 the joint fit has $C = 0.685$ and the expression-only fit of the same framework $C = 0.676$; both are unconverged. Methylation adds a methylation-dominant program and loads on an immune program; it does not demonstrably improve prediction.
-
-**Main open problems.** Survival-guided discovery of programs, a rank-selection rule that accounts for both survival and reconstruction on real data, full convergence of real multimodal fits, feature-count sensitivity, matched comparisons with DeSurv and unsupervised factorization, and a methylation-specific biological interpretation (@sec-gaps).
-:::
+We describe two Bayesian matrix factorization models that link molecular programs to overall survival in pancreatic ductal adenocarcinoma (PDAC). Both factor molecular data into nonnegative patient activities and feature loadings and enter survival through a Cox model on the projection of each patient's data onto the loadings, a score that can be computed for new patients. The single-modality model, trained on 273 patients from two cohorts measured on different platforms, has a mean concordance of 0.627 across five held-out cohorts (616 patients) and a small advantage over an independently tuned two-step factorization-then-Cox comparator. In the evaluated configuration survival shapes the coefficients but not the loadings. Its four retained programs correspond to the basal-like and classical tumor axes and to stromal and immune components. The multimodal model shares activities across matched expression and methylation and removes factors by an approximate evidence criterion. It recovers the true rank in simulation at lower noise, but on real data it removes no factor, most fits do not converge, and adding methylation does not demonstrably improve prediction.
 
 <!-- REVISIT R9 END -->
 
@@ -129,32 +95,37 @@ execute:
 
 ## Notation {#sec-notation}
 
-Patients are indexed by $i = 1, \dots, n$, molecular features by $j$, factors (programs) by $k = 1, \dots, K$, and data blocks (modalities) by $m$. Patient $i$ has observed time $t_i$ and event indicator $\delta_i$ (1 for death, 0 for censoring). The single-modality data are an $n \times p$ matrix $Y$; the multimodal data are matched blocks $Y_m$ of dimension $n \times p_m$, here expression ($m = \mathrm{expr}$) and DNA methylation ($m = \mathrm{meth}$). Methylation measurements are written $Y_{\mathrm{meth}}$; the symbol $\beta$ is reserved for survival coefficients.
+<!-- REVISIT R2 START -->
+<!-- REVISIT R5 START -->
 
-Three patient-level quantities must be kept apart: the **latent activities** $L \in \mathbb{R}_{\ge 0}^{n \times K}$, posterior scores in the reconstruction $Y \approx LF^\top$, defined only for training patients; the **projection scores**, the observable product of a patient's data with the posterior-mean loadings, which enter the Cox predictor and can be computed for new patients ($\tilde Z$ in @eq-zf, $Z$ in @eq-mm-z); and the **signature scores** used only in biological characterization, the mean of within-cohort z-scored expression over a selected gene set.
+Patients are indexed by $i = 1, \dots, n$, molecular features by $j$, factors (programs) by $k = 1, \dots, K$, and data blocks (modalities) by $m$. Patient $i$ has observed time $t_i$ and event indicator $\delta_i$ (1 for death, 0 for censoring). The single-modality data are an $n \times p$ matrix $Y$; the multimodal data are matched blocks $Y_m$ of dimension $n \times p_m$, here gene expression ($m = \mathrm{expr}$) and DNA methylation ($m = \mathrm{meth}$). The symbol $\beta$ is reserved for survival coefficients; methylation measurements are written $Y_{\mathrm{meth}}$. For any random quantity $\theta$ under the variational posterior $q$, $\bar\theta = E_q\theta$ and $\overline{\theta^2} = E_q\theta^2$.
+
+Three patient-level quantities are kept apart. The **latent activities** $L \in \mathbb{R}_{\ge 0}^{n \times K}$ are posterior scores in the reconstruction $Y \approx LF^\top$ and exist only for training patients. The **projection scores** are the product of a patient's data with the posterior-mean loadings; they enter the Cox predictor and can be computed for new patients. The **signature scores**, used only in biological characterization, are means of within-cohort standardized expression over a selected gene set.
+
+<!-- REVISIT R5 END -->
+<!-- REVISIT R2 END -->
 
 <!-- REVISIT R2 START -->
 <!-- REVISIT R4 START -->
 <!-- REVISIT R1 START -->
 <!-- REVISIT R3 START -->
 
-| | Single-modality model (evaluated configuration D4) | Multimodal model (evaluated framework) |
-|----------------|------------------------------------|------------------------------------|
-| Data | One block $Y$ ($n \times p$); training on TCGA-PAAD RNA-seq and CPTAC proteomics, per-platform standardized | Matched blocks $Y_{\mathrm{expr}}$, $Y_{\mathrm{meth}}$; TCGA-PAAD, log2 expression and methylation $\beta$-values |
-| Reconstruction | $Y = L F^\top + E$ | $Y_m = \mathbf{1}\mu_m^\top + L F_m^\top + E_m$, shared $L$ |
-| Activity prior $L_{ik}$ | Point-exponential, fitted per factor by empirical Bayes | Point-exponential, fitted per factor by marginal likelihood (`ebnm`) |
-| Loading prior | Point-exponential ($F \ge 0$) | Point-Laplace per modality and factor (signed $F_m$) |
-| Residual precision | Feature-specific $\tau_j$, maximum likelihood | Feature-specific $\tau_{mj}$, maximum likelihood |
-| Cox predictor | $\eta = \tilde Z \tilde\beta$, $\tilde Z = Y \bar F D^{-1}$ | $\eta = Z\beta$, $Z = \sum_m \tilde Y_m F_m$ |
-| Coefficient prior | Normal, variance estimated per factor | Normal, variance estimated per factor |
-| Survival in the loading update | None ($\alpha_F = 0$) | Yes, equal weight, with feature coupling |
-| Uncertainty in the coefficient update | Projection treated as fixed (plug-in) | Projection mean and variance from $q(F_m)$ |
-| Scale handling | Loadings normalized to unit length inside $\tilde Z$ | Each factor rescaled so that $\mathrm{sd}(Z_k) = 1$ after every update |
-| Stopping rule | Relative change $< 10^{-5}$ in a weighted monitoring objective; cap 300 | Relative change $< 10^{-4}$ in reconstruction and $\eta$; cap 500 sweeps |
-| Rank handling | Start at $K = 7$; classify factors after fitting | Start at $K_{\mathrm{init}}$; remove factors by an evidence check, then refit |
-| New-patient prediction | $\eta_{\mathrm{new}} = y_{\mathrm{new}}^\top \bar F D^{-1}\tilde\beta$, frozen orientation | $\eta_{\mathrm{new}} = \sum_m y_{m,\mathrm{new}}^\top \bar F_m \beta$, frozen orientation |
+```{=latex}
+\needspace{0.4\textheight}
+```
 
-: Model and notation summary. Settings are those of the evaluated fits, not package defaults. $\bar F$ denotes posterior means, $D = \mathrm{diag}(\lVert \bar F_{\cdot k}\rVert_2)$, and $\tilde Y_m$ is $Y_m$ centered at the current intercept. Sources: S04, S08, S29, S37. {#tbl-models}
+| | Single-modality model | Multimodal model |
+|----------------|------------------------------------|------------------------------------|
+| Data | One block $Y$; features standardized within each training cohort | Matched blocks $Y_{\mathrm{expr}}$, $Y_{\mathrm{meth}}$ on their measured scales |
+| Reconstruction | $Y = LF^\top + E$ | $Y_m = \mathbf{1}\mu_m^\top + LF_m^\top + E_m$, with $L$ shared |
+| Loading prior | Point-exponential ($F \ge 0$) | Point-Laplace per modality and factor (signed $F_m$) |
+| Cox predictor | $\eta = \tilde Z\tilde\beta$, $\tilde Z = Y\bar F D^{-1}$ (unit-length loading columns) | $\eta = Z\beta$, $Z = \sum_m \tilde Y_m F_m$ |
+| Survival in the loading update | None in the evaluated configuration ($\alpha_F = 0$) | Yes, with feature coupling |
+| Loading uncertainty in the coefficient update | Not propagated (fixed projection) | Propagated through $E(Z^2)$ |
+| Scale of each factor | Fixed by the unit-length normalization | Rescaled so that $\mathrm{sd}(Z_{\cdot k}) = 1$ after every update |
+| Rank | Fixed starting rank; factors classified after fitting | Factors removed by an approximate evidence criterion, then refitted |
+
+: Differences between the two models. Both use point-exponential activity priors and normal coefficient priors with variances estimated per factor by empirical Bayes, feature-specific residual precisions estimated by maximum likelihood, and a Cox proportional-hazards model for overall survival. $\bar F$, posterior-mean loadings; $D$, diagonal matrix of stored loading-column norms (@sec-single-model); $\mu_m$, feature intercepts; $\tilde Y_m = Y_m - \mathbf{1}\mu_m^\top$; sd, standard deviation over training patients. {#tbl-models}
 
 <!-- REVISIT R3 END -->
 <!-- REVISIT R1 END -->
@@ -170,48 +141,45 @@ Three patient-level quantities must be kept apart: the **latent activities** $L 
 $$
 y_{ij} = \sum_{k=1}^K L_{ik} F_{jk} + e_{ij}, \qquad e_{ij} \sim N(0, \tau_j^{-1}),
 $$ {#eq-recon}
-with independent point-exponential priors $L_{ik} \sim g_{L,k}$ and $F_{jk} \sim g_{F,k}$ (a point mass at zero mixed with an exponential distribution), whose parameters are estimated by empirical Bayes within each factor using the `ebnm` package. Each feature has its own residual precision $\tau_j$, estimated by maximum likelihood.
+with independent point-exponential priors $L_{ik} \sim g_{L,k}$ and $F_{jk} \sim g_{F,k}$ (a point mass at zero mixed with an exponential distribution) whose parameters are estimated by empirical Bayes within each factor, using the R package ebnm. Each feature has its own residual precision $\tau_j$, estimated by maximum likelihood.
 
-**Survival predictor.** Survival follows a Cox model whose linear predictor is the normalized projection of the patient's data onto the posterior-mean loadings:
+**Survival predictor.** Survival follows a Cox model whose linear predictor is the projection of the patient's data onto unit-length loading directions,
 $$
-\eta_i = \sum_{k=1}^K \tilde Z_{ik}\tilde\beta_k, \qquad \tilde Z = Y \bar F D^{-1}, \quad D = \mathrm{diag}\big(\lVert \bar F_{\cdot 1}\rVert_2, \dots, \lVert \bar F_{\cdot K}\rVert_2\big).
+\eta_i = \sum_{k=1}^K \tilde Z_{ik}\tilde\beta_k, \qquad \tilde Z = Y \bar F D^{-1}, \quad D = \mathrm{diag}(d_1, \dots, d_K),
 $$ {#eq-zf}
-Each column of $\bar F D^{-1}$ has unit Euclidean length, so $\tilde Z_{ik}$ is the coordinate of $y_i$ along program $k$'s loading direction. The normalization keeps $\tilde Z$ on a scale that does not grow with $p$; without it, coefficient shrinkage drove every $\tilde\beta_k$ to zero (S04). The coefficients $\tilde\beta_k$ have independent normal priors with zero mean and a variance estimated per factor, so they are interpreted per unit of normalized projection, not per standard deviation. Because $\tilde Z$ depends only on $Y$ and $\bar F$, the same formula scores training and new patients.
+with $\tilde\beta_k \sim N(0, \sigma_k^2)$ and $\sigma_k^2$ estimated per factor. In the joint target that motivates the method, the loadings are random and $d_k = \lVert F_{\cdot k}\rVert_2$ is a function of them ([Appendix A](#sec-appendix-a)). The evaluated algorithm instead fixes, at the start of each sweep $r$, the norms $d_k^{(r)} = \lVert \bar F^{(r-1)}_{\cdot k}\rVert_2$ of the current posterior-mean loadings and the projection $\tilde Z^{(r)} = Y\bar F^{(r-1)}[D^{(r)}]^{-1}$, and treats both as known covariates for the rest of the sweep. The saved fit stores the norms $D_*$ formed at the start of its final sweep, and every prediction uses $D_*$ with the final $\bar F$. Normalization removes the arbitrary Euclidean magnitude of each loading column, which the reconstruction does not determine: $L_{\cdot k}F_{\cdot k}^\top$ is unchanged when $L_{\cdot k}$ is multiplied and $F_{\cdot k}$ divided by the same constant. The coefficients are therefore per unit of normalized projection, not per standard deviation. A column of $\bar F$ that is identically zero gives a zero projection.
 
-**Cox working approximation.** The Cox partial likelihood is replaced at each sweep by a second-order expansion around the current predictor $\hat\eta$ with a diagonal Breslow curvature,
+**Cox working approximation.** Let $\hat\eta$ be the predictor at the start of a sweep and $a_i = \exp(\hat\eta_i)\hat H_0(t_i)$, where $\hat H_0$ is the Breslow cumulative baseline hazard; $a_i$ is the expected number of events for patient $i$ under $\hat\eta$. We retain the Breslow score $u_i = \delta_i - a_i$ and replace the exact negative Hessian of the log partial likelihood, which couples patients through shared risk sets, by the diagonal working curvature $w_i = \max(a_i, 10^{-6})$. Completing the square in the resulting quadratic gives
 $$
-\log \mathrm{PL}(\eta) \approx \mathrm{const} - \tfrac12 \sum_i w_i (z_i - \eta_i)^2, \qquad w_i = \hat\theta_i \hat H_0(t_i), \quad z_i = \hat\eta_i + (\delta_i - w_i)/w_i,
+\log \mathrm{PL}(\eta) \approx \mathrm{const} - \tfrac12 \sum_i w_i (z_i - \eta_i)^2, \qquad z_i = \hat\eta_i + u_i / w_i.
 $$ {#eq-cox-working}
-where $\hat\theta_i = \exp(\hat\eta_i)$ and $\hat H_0$ is the Breslow cumulative baseline hazard. Off-diagonal curvature is dropped. [Appendix A](#sec-appendix-a) derives each coordinate update from this surrogate.
+This is a Poisson-style working approximation, not the second-order Taylor expansion of the partial likelihood: the exact diagonal of the negative Hessian is smaller than $a_i$ ([Appendix A.2](#sec-appendix-a-cox)).
 
-**Where survival enters.** Two weights appear in the implementation. The survival weight $\alpha \in [0,1]$ multiplies the survival term in the coefficient update; the evaluated value is $\alpha = 0.5$, which leaves the pseudo-observation $B/A$ unchanged and halves its precision. The loading weight $\alpha_F$ mixes a reconstruction contribution, with weight $1 - \alpha_F$, and a survival contribution, with weight $\alpha_F$, in the update of $F$. The evaluated configuration uses $\alpha_F = 0$. The activities $L$ do not appear in $\eta$, so their update is a reconstruction update in every configuration. Consequently, in the evaluated fits survival determines $\tilde\beta$ but not $L$ or $F$; it affects which programs are scored as prognostic, not what the programs are. The coefficient update also treats $\tilde Z$ as fixed: it does not propagate posterior uncertainty in $F$ (@tbl-math-vs-impl).
+**Where survival enters.** The survival weight $\alpha \in (0,1]$ multiplies the working term in the coefficient update. The evaluated value $\alpha = 0.5$ leaves each coefficient's pseudo-observation unchanged and halves its precision. The loading weight $\alpha_F$ mixes a reconstruction contribution (weight $1 - \alpha_F$) and a survival contribution (weight $\alpha_F$) in the update of $F$; the evaluated configuration uses $\alpha_F = 0$. The activities $L$ do not appear in $\eta$. Survival therefore does not enter the updates of $L$ or $F$ in the evaluated fits: it determines $\tilde\beta$, and through the stopping rule it can affect which iterate is returned, so the fitted loadings need not equal those of a separately converged unsupervised factorization. The coefficient update treats $\tilde Z$ as fixed and does not propagate posterior uncertainty in $F$.
 
 <!-- REVISIT R2 END -->
 <!-- REVISIT R1 END -->
 
-## Single-modality fitting algorithm and prediction {#sec-single-algorithm}
-
 <!-- REVISIT R1 START -->
 <!-- REVISIT R2 START -->
 
-::: {.callout-note appearance="simple" icon=false}
-## Algorithm 1. Evaluated single-modality fit (`fit_cox_on_yf()`, configuration D4)
+::: {.algorithm}
+**Algorithm 1.** Single-modality fit and prediction.
 
-**Input:** standardized training matrix $Y$ ($n = 273$, $p = 2{,}064$), $(t_i, \delta_i)$, starting rank $K = 7$, $\alpha = 0.5$, $\alpha_F = 0$, normal coefficient prior.
+*Inputs:* training matrix $Y$ standardized within cohort; times and event indicators $(t_i, \delta_i)$; starting rank $K$; weights $\alpha$, $\alpha_F$; tolerance $\epsilon$; iteration cap $T$.
 
-1. **Initialize** $\bar L, \bar F$ from the absolute values of the leading $K$ singular vectors of $Y$ scaled by $\sqrt{d_k}$; set $\tilde\beta = 0$ and $\tau_j = 1/\widehat{\mathrm{var}}(y_{\cdot j})$.
-2. **For each outer iteration** (at most 300):
-   a. Form $D$ and $\tilde Z = Y\bar F D^{-1}$; compute $\eta = \tilde Z\bar{\tilde\beta}$ and the working quantities $(w, z)$ of @eq-cox-working. These are held fixed for the rest of the iteration.
-   b. **For $k = 1, \dots, K$:**
-      i. update $q(\tilde\beta_k)$ from $A = \alpha\sum_i w_i \tilde Z_{ik}^2$ and $B = \alpha\sum_i w_i \tilde Z_{ik}(z_i - \eta_{i,-k})$ by empirical-Bayes normal means with pseudo-observation $x = B/A$ and standard error $A^{-1/2}$;
-      ii. update $q(L_{\cdot k})$ from the reconstruction residual excluding factor $k$ (no survival term);
-      iii. update $q(F_{\cdot k})$ from the reconstruction residual only ($\alpha_F = 0$).
-   c. Update $\tau_j = n / \sum_i E(y_{ij} - L_i^\top F_j)^2$.
-   d. Compute the monitoring objective $J = (1-\alpha)G + \alpha p S - \mathrm{KL}$ ([Appendix A.8](#sec-appendix-a-objective)). Stop after iteration 5 if $|\Delta J|/|J| < 10^{-5}$.
-3. **Orientation.** Compare the training concordance of $\eta$ with 0.5 and, if needed, negate $\bar{\tilde\beta}$ once. The saved D4 fit predates the September 4 correction of this check, so its $\eta$ is a good-prognosis score; it is scored as $\mathrm{risk} = -\eta$ for every held-out cohort (@sec-orientation).
-4. **Classify** factors (@sec-classification).
+1. Initialize $\bar L$ and $\bar F$ from the absolute values of the leading $K$ left and right singular vectors of $Y$, each scaled by the square root of its singular value. Set $\bar{\tilde\beta} = 0$ and $\tau_j = 1/\widehat{\mathrm{var}}(y_{\cdot j})$.
+2. For sweeps $r = 1, \dots, T$:
+    a. Form $D^{(r)}$ and $\tilde Z^{(r)} = Y\bar F D^{-1}$, the predictor $\hat\eta = \tilde Z\bar{\tilde\beta}$, and the working quantities $(w, z)$ of @eq-cox-working. Hold these fixed for the rest of the sweep.
+    b. For $k = 1, \dots, K$:
+        i. update $q(\tilde\beta_k)$ by empirical-Bayes normal means with pseudo-observation $x = B/A$ and standard error $A^{-1/2}$, where $A = \alpha\sum_i w_i\tilde Z_{ik}^2$ and $B = \alpha\sum_i w_i\tilde Z_{ik}(z_i - \sum_{l \ne k}\tilde Z_{il}\bar{\tilde\beta}_l)$;
+        ii. update $q(L_{\cdot k})$ from the reconstruction residual that excludes factor $k$;
+        iii. update $q(F_{\cdot k})$ from the reconstruction residual, plus the survival term with weight $\alpha_F$.
+    c. Update $\tau_j = n / \sum_i E_q(y_{ij} - \sum_k L_{ik}F_{jk})^2$.
+    d. Compute the monitoring statistic $J_r$ ([Appendix A.8](#sec-appendix-a-objective)). After sweep 5, stop if $|J_r - J_{r-1}| / |J_{r-1}| < \epsilon$.
+3. Fix the risk direction once from training data (@sec-orientation).
 
-**Output:** $\bar L$, $\bar F$, $D$, $\bar{\tilde\beta}$, $\tau$. **Prediction:** for a new patient with standardized data $y_{\mathrm{new}}$ restricted to the training genes that are measured, $\mathrm{risk}_{\mathrm{new}} = -\,y_{\mathrm{new}}^\top \bar F D^{-1}\bar{\tilde\beta}$, with all quantities fixed from training.
+*Outputs:* $\bar L$, $\bar F$, stored norms $D_*$, $\bar{\tilde\beta}$, $\tau$. *Prediction:* for a new patient with data $y_{\mathrm{new}}$ standardized within its own cohort and restricted to the measured training features $\mathcal G$, $\eta_{\mathrm{new}} = y_{\mathrm{new},\mathcal G}^\top\bar F_{\mathcal G}D_*^{-1}\bar{\tilde\beta}$, with every quantity fixed from training.
 :::
 
 <!-- REVISIT R2 END -->
@@ -219,7 +187,7 @@ where $\hat\theta_i = \exp(\hat\eta_i)$ and $\hat H_0$ is the Breslow cumulative
 
 <!-- REVISIT R5 START -->
 
-The saved D4 fit met the stopping rule at iteration 20 (S04, S58). The monitoring objective weights the reconstruction and survival terms by $1-\alpha$ and $\alpha p$; it is used to decide when to stop and is not the evidence lower bound of a single generative model. The coefficient posterior variances stored with this historical fit equal zero to machine precision, consistent with the pre-September sign-correction code, which overwrote $E(\tilde\beta^2)$ with $E(\tilde\beta)^2$ when it negated the coefficients (S01, 2026-09-04 entry). The report therefore gives no coefficient uncertainty for this fit.
+The evaluated fit used $K = 7$, $\alpha = 0.5$, $\alpha_F = 0$, $\epsilon = 10^{-5}$ and $T = 300$, and met the stopping rule at sweep 20. The monitoring statistic $J$ weights its reconstruction and survival components differently, evaluates the partial likelihood at the sweep's starting predictor, and uses an approximate Kullback–Leibler (KL) bookkeeping for the activities ([Appendix A.8](#sec-appendix-a-objective)). It is a stopping criterion, not the evidence lower bound (ELBO) of the joint model, and the updates are not guaranteed to increase it. The coefficient posterior variances stored with the evaluated fit are zero, so no coefficient uncertainty is reported for it.
 
 <!-- REVISIT R5 END -->
 
@@ -227,7 +195,7 @@ The saved D4 fit met the stopping rule at iteration 20 (S04, S58). The monitorin
 
 <!-- REVISIT R2 START -->
 
-A concordance index requires a direction: which end of the score indicates higher risk. That direction must be fixed from training data alone; choosing it in each validation cohort from that cohort's outcomes would bias the index upward. For the saved D4 fit, $\eta = \tilde Z\tilde\beta$ is concordant with longer survival, and `make_km_figures.R` and `run_external_ci_analysis.R` use the single global convention $\mathrm{risk} = -\eta$ for all held-out cohorts (S01, S49). On the risk scale, the coefficient of Program 7 is $+0.040$ and that of Program 3 is $-0.012$. This convention is specific to the historical saved fit and is not a rule for current fits, whose orientation step was corrected on September 4.
+A concordance index requires the direction in which a score indicates higher risk. That direction must be fixed from training data alone; choosing it in each validation cohort from that cohort's outcomes would bias the index upward. For the evaluated fit, higher $\eta$ denotes longer survival, so the reported risk score is $-\eta$, applied identically to every held-out cohort. On this risk scale the coefficient of Program 7 is $+0.040$ and that of Program 3 is $-0.012$.
 
 <!-- REVISIT R2 END -->
 
@@ -235,19 +203,17 @@ A concordance index requires a direction: which end of the score indicates highe
 
 <!-- REVISIT R4 START -->
 
-Three counts must be kept apart. The **starting rank** $K_{\mathrm{init}}$ is the number of factors at initialization. A factor is **survival-active** if $|\bar{\tilde\beta}_k| > 0.001$. A factor that is not survival-active is **genomics-only** if its proportion of variance explained, $\mathrm{PVE}_k = \lVert \bar L_{\cdot k}\rVert^2 \lVert \bar F_{\cdot k}\rVert^2 / \lVert Y \rVert_F^2$, exceeds 1%, and **dead** otherwise. The **retained molecular programs** are the survival-active and genomics-only factors together. In the single-modality model this is a classification of one fitted model: no factor is removed and nothing is refitted. The two thresholds are operational. The coefficient threshold was set from the observed scale of $\tilde\beta$ in this model (S37), and neither threshold is a posterior probability.
+Three counts are kept apart. The **starting rank** $K_{\mathrm{init}}$ is the number of factors at initialization. A factor is **survival-active** if $|\bar{\tilde\beta}_k| > 0.001$. A factor that is not survival-active is **genomics-only** if its proportion of variance explained, $\mathrm{PVE}_k = \lVert \bar L_{\cdot k}\rVert^2 \lVert \bar F_{\cdot k}\rVert^2 / \lVert Y \rVert_F^2$, exceeds 1%, and **inactive** otherwise. The **retained programs** are the survival-active and genomics-only factors together. In the single-modality model this classifies one fitted model: no factor is removed and nothing is refitted. Both thresholds are operational; the coefficient threshold was set from the observed scale of $\tilde\beta$, and neither is a posterior probability.
 
-The starting rank of 7 has two sources. It was first chosen by five-fold cross-validated training concordance with a one-standard-error rule: the best mean was at $K = 8$ (0.651, SE 0.026), and $K = 7$ was the smallest rank within one standard error (0.633; S55). It was retained after a sweep over $K_{\mathrm{init}} = 2, \dots, 20$ in which the criteria disagreed (@sec-results-rank). External concordance in the five held-out cohorts reaches a plateau at $K_{\mathrm{init}} = 7$, and that plateau was part of the evidence for keeping 7. The recommendation is therefore not purely training-selected.
+The starting rank of 7 was first chosen by five-fold cross-validated training concordance with a one-standard-error rule: the best mean was at $K = 8$ (0.651, standard error 0.026), and $K = 7$ was the smallest rank within one standard error (0.633). It was retained after a sweep over $K_{\mathrm{init}} = 2, \dots, 20$ in which the criteria disagreed and external concordance reached a plateau at 7 (@sec-results-rank). The choice therefore also used validation performance.
 
 <!-- REVISIT R4 END -->
 
-## Multiple cohorts in the single-block model {#sec-multicohort}
+## Training on multiple cohorts {#sec-multicohort}
 
 <!-- REVISIT R5 START -->
 
-The established model fits one feature block pooled from two training cohorts on different platforms: TCGA-PAAD RNA-seq ($n = 144$) and CPTAC mass-spectrometry proteomics ($n = 129$). CPTAC is a proteomics cohort, not a second RNA-seq cohort (S03). Genes are screened separately in each cohort by the DeSurv combined mean-and-variance rank [@Young2026], keeping the top 3,000 per cohort; the intersection has 2,064 genes. Each cohort is then standardized gene by gene to mean 0 and standard deviation 1 (per-platform standardization). Held-out cohorts receive the same per-platform standardization and are scored on the training genes they measure.
-
-Three optional cohort terms are distinct model components: `cohort_id` adds cohort indicator columns to $L$ (a genomic offset), `strata_id` forms Cox risk sets within cohort (a cohort-specific baseline hazard), and `beta_cohort_id` gives each cohort its own partially pooled coefficients. The recommended configuration uses none of them; the decision record reports the last two as performance-neutral externally (S01).
+The single-modality model fits one feature block pooled from two training cohorts on different platforms: The Cancer Genome Atlas pancreatic adenocarcinoma cohort (TCGA-PAAD) by RNA sequencing (RNA-seq; $n = 144$) and the Clinical Proteomic Tumor Analysis Consortium cohort (CPTAC) by mass-spectrometry proteomics ($n = 129$). Genes are screened separately in each cohort by the combined mean-and-variance rank of DeSurv (Young et al., submitted), keeping the top 3,000 per cohort; the intersection has 2,064 genes. Each cohort is then standardized gene by gene to mean 0 and standard deviation 1. Held-out cohorts receive the same within-cohort standardization and are scored on the training genes they measure. The model has optional cohort-specific components (cohort indicator columns in $L$, a cohort-stratified baseline hazard, and cohort-specific coefficients); the evaluated configuration uses none of them.
 
 <!-- REVISIT R5 END -->
 
@@ -259,121 +225,127 @@ Three optional cohort terms are distinct model components: `cohort_id` adds coho
 $$
 Y_m = \mathbf{1}\mu_m^\top + L F_m^\top + E_m, \qquad (E_m)_{ij} \sim N(0, \tau_{mj}^{-1}),
 $$ {#eq-mm-recon}
-with a feature intercept $\mu_m$ re-estimated at each outer sweep, shared nonnegative activities $L$ (point-exponential prior per factor), modality-specific signed loadings $F_m$ with a point-Laplace prior $g_{mk}$ for each modality and factor, and feature-specific precisions $\tau_{mj}$. The intercept is what makes signed loadings appropriate: $F_m$ describes deviations from each feature's baseline, and $L$ remains interpretable as program activity. Prior parameters for $L$ and $F_m$ are estimated by marginal likelihood after each sweep, so a whole column can shrink to the point mass at zero.
+with a feature intercept $\mu_m$, shared nonnegative activities $L$ with a point-exponential prior per factor, modality-specific signed loadings $F_m$ with a point-Laplace prior $g_{mk}$ for each modality and factor, and feature-specific precisions $\tau_{mj}$. With an intercept, $F_m$ describes deviations from each feature's baseline and can take either sign, while $L$ remains interpretable as program activity. Prior parameters for $L$ and $F_m$ are estimated by marginal likelihood after each column update, so a whole column can shrink to the point mass at zero.
 
 **Survival predictor.** With $\tilde Y_m = Y_m - \mathbf{1}\mu_m^\top$, the joint projection and predictor are
 $$
 Z = \sum_m \tilde Y_m F_m, \qquad \eta_i = \sum_k Z_{ik}\beta_k, \qquad \beta_k \sim N(0, \sigma_k^2).
 $$ {#eq-mm-z}
-The projection is not normalized; instead, after every factor update, $(L_{\cdot k}, F_{mk}, \beta_k)$ is replaced by $(c_k L_{\cdot k}, F_{mk}/c_k, c_k\beta_k)$ with $c_k = \mathrm{sd}(Z_{\cdot k})$, which leaves both $L F_m^\top$ and $\eta$ unchanged and fixes $\mathrm{sd}(Z_{\cdot k}) = 1$ in training. This canonicalization removes the scale direction along which survival and reconstruction terms can otherwise drift (S01, 2026-10-02 entry). Posterior second moments and prior rates are transformed under the same change of variables. A constant shift of $\eta$ leaves the partial likelihood unchanged, so the intercept does not affect the survival term.
+The projection is not normalized. The map $(L_{\cdot k}, F_{mk}, \beta_k) \mapsto (c_k L_{\cdot k}, F_{mk}/c_k, c_k\beta_k)$ leaves both $LF_m^\top$ and $\eta$ unchanged, so the likelihood does not fix the scale of a factor. After every factor update the algorithm applies this map with $c_k = \mathrm{sd}(\bar Z_{\cdot k})$, which sets the training standard deviation of each mean projection to 1, and transforms posterior moments and prior parameters consistently ([Appendix B.9](#sec-appendix-b-scale)).
 
-**Updates.** The loading update adds reconstruction and Cox working terms with equal weight and couples features through the projection, so features are updated one at a time with the projection moments refreshed after each. The coefficient update uses $E(Z_{ik}^2) = E(Z_{ik})^2 + \mathrm{Var}(Z_{ik})$, so loading uncertainty shrinks the coefficient. [Appendix B](#sec-appendix-b) gives the derivations.
+**Updates.** The loading update adds the reconstruction and Cox working terms with equal weight. Because the working term depends on the whole projection, features are coupled and are updated one at a time, with the projection moments refreshed after each. The coefficient update uses $E(Z_{ik}^2) = \bar Z_{ik}^2 + \mathrm{Var}(Z_{ik})$, so loading uncertainty shrinks the coefficient. The working approximation is the diagonal one of @eq-cox-working, written without the division by $w_i$ and without a floor on $w_i$. The intercept is updated to maximize the reconstruction likelihood, and the coordinate updates use centered projection moments. [Appendix B](#sec-appendix-b) gives the derivations.
 
-**Evidence and factor removal.** The objective used for factor removal is
+**Factor removal.** Factors are removed using the score
 $$
-\mathcal{E} = \sum_{m,j}\Big[\tfrac n2 \log\tfrac{\hat\tau_{mj}}{2\pi} - \tfrac{\hat\tau_{mj}}2 E\lVert \tilde y_{mj} - L f_{mj}\rVert^2\Big] + \log \mathrm{PL}\big(E(\eta)\big) - \mathrm{KL}(q\,\Vert\, g),
+\mathcal{S} = \sum_{m,j}\Big[\tfrac n2 \log\tfrac{\hat\tau_{mj}}{2\pi} - \tfrac{\hat\tau_{mj}}2 \sum_i E_q(\tilde y_{mij} - l_i^\top f_{mj})^2\Big] + \log \mathrm{PL}(\bar\eta) - \sum \mathrm{KL},
 $$ {#eq-mm-elbo}
-with $\hat\tau$ at its maximum-likelihood value. The survival term is the partial log-likelihood at the posterior mean predictor (a plug-in), not its expectation under $q$. After the coordinate loop, the change in $\mathcal{E}$ from deleting each factor is computed with the other factors fixed and the intercept and precisions re-estimated; if a deletion does not lower $\mathcal{E}$, the factor with the largest gain is removed and the model refitted, repeatedly. The check runs whether or not the loop converged (S08).
+with $\hat\tau$ at its maximum-likelihood value. The survival term is the partial log-likelihood at the posterior-mean predictor $\bar\eta$, not its expectation under $q$. The KL terms are those cached at each coordinate's latest update, computed against the prior in force at that update; the priors are refitted afterwards without recomputing these penalties. After the coordinate loop, the change in $\mathcal S$ from deleting each factor is computed with the other factors fixed and the intercept and precisions re-estimated. If a deletion does not lower $\mathcal S$, the factor with the largest gain is removed and the model refitted, repeatedly. The check runs whether or not the loop converged. $\mathcal S$ is an approximate removal score: neither the exact marginal likelihood nor an ELBO at the current posterior and priors is guaranteed to improve when a factor is deleted.
 
 <!-- REVISIT R4 START -->
 
-**Classification.** A factor is reconstruction-active if its share of total sum of squares, $\sum_m\lVert \bar L_{\cdot k}\bar F_{mk}^\top\rVert_F^2 / \sum_m\lVert\tilde Y_m\rVert_F^2$, is at least 1%, and survival-active if $|E\beta_k|/\mathrm{sd}(\beta_k) \ge 1.96$. These are reported separately from removal.
+**Classification.** A factor is reconstruction-active if its share of the total centered sum of squares, $\sum_m\lVert \bar L_{\cdot k}\bar F_{mk}^\top\rVert_F^2 / \sum_m\lVert\tilde Y_m\rVert_F^2$, is at least 1%, and survival-active if $|\bar\beta_k|/\mathrm{sd}(\beta_k) \ge 1.96$. The 1.96 cutoff is an operational rule on the posterior mean and standard deviation, not an adjusted test. Classification is reported separately from removal.
 
 <!-- REVISIT R4 END -->
 
 <!-- REVISIT R3 END -->
 
-## Multimodal fitting algorithm {#sec-mm-algorithm}
-
 <!-- REVISIT R3 START -->
 <!-- REVISIT R2 START -->
 
-::: {.callout-note appearance="simple" icon=false}
-## Algorithm 2. Evaluated multimodal fit (`fit_multimodal_yfb()`, pruned framework)
+::: {.algorithm}
+**Algorithm 2.** Multimodal fit with factor removal, and prediction.
 
-**Input:** raw training blocks $Y_m$ (log2 expression, methylation $\beta$-values), $(t_i, \delta_i)$, starting rank $K_{\mathrm{init}}$. Controls: intercept on; point-Laplace loading priors; marginal-likelihood prior updates; feature-specific maximum-likelihood $\tau$; plug-in survival term; pruning on; at most 500 outer sweeps of 5 inner sweeps; tolerance $10^{-4}$.
+*Inputs:* training blocks $Y_m$ on their measured scales; $(t_i, \delta_i)$; starting rank $K_{\mathrm{init}}$; tolerance $\epsilon$; outer cap $T$; inner sweeps $S$.
 
-1. **Initialize** $\mu_m$ at column means; $\bar L$ and $\bar F_m$ from absolute singular vectors of the concatenated centered blocks; $\tau_{mj}$ from the pooled variance of each block; $\beta$ from a Cox fit on standardized initial projections, transformed back to the raw projection scale.
-2. **For each outer sweep** (at most 500):
-   a. Re-estimate $\mu_m$ and re-center $\tilde Y_m$. Compute $E(Z)$, $\mathrm{Var}(Z)$, $E(\eta)$, and the Cox working quantities $w_i$ and $h_i = u_i + w_i E(\eta_i)$; hold $(w, h)$ fixed for this outer sweep.
-   b. **Repeat 5 inner sweeps; for $k = 1, \dots, K$:**
-      i. update $q(L_{\cdot k})$ from both blocks' reconstruction residuals; refit its point-exponential prior;
-      ii. for each modality, update $q(f_{mjk})$ feature by feature with reconstruction and survival terms, refreshing $E(Z_{\cdot k})$ and $\mathrm{Var}(Z_{\cdot k})$ after each feature; refit the point-Laplace prior $g_{mk}$;
-      iii. update $q(\beta_k)$ with $A = \sum_i w_i E(Z_{ik}^2)$, $B = \sum_i E(Z_{ik}) h_{i,-k}$, and prior variance $\sigma_k^2 = \max(0, B^2/A^2 - 1/A)$;
-      iv. canonicalize factor $k$ so that $\mathrm{sd}(Z_{\cdot k}) = 1$.
-   c. Update $\tau_{mj} = n / E\lVert\tilde y_{mj} - L f_{mj}\rVert^2$.
-   d. Stop if the maximum relative change in each fitted reconstruction $\bar L\bar F_m^\top$ and in $E(\eta)$ is below $10^{-4}$.
-3. **Removal check.** Compute the change in @eq-mm-elbo from deleting each factor; if the largest change is $\ge 0$, delete that factor, refit from the remaining factors (returning to step 2 with a warm start), and repeat.
+1. Initialize $\mu_m$ at the column means; $\bar L$ and $\bar F_m$ from the absolute leading singular vectors of the concatenated centered blocks; $\tau_{mj}$ from the pooled variance of each block; and $\bar\beta$ from a Cox fit on standardized initial projections, transformed back to the projection scale.
+2. For outer sweeps $r = 1, \dots, T$:
+    a. Re-estimate $\mu_m$ and re-center $\tilde Y_m$. Compute $\bar Z$, $\mathrm{Var}(Z)$, $\bar\eta$, the working curvature $w_i$ and the linear term $h_i = u_i + w_i\bar\eta_i$. Hold $(w, h)$ fixed for this outer sweep.
+    b. Repeat $S$ inner sweeps; within each, for $k = 1, \dots, K$:
+        i. update $q(L_{\cdot k})$ from both blocks' reconstruction residuals, then refit its point-exponential prior;
+        ii. for each modality, update $q(f_{mjk})$ one feature at a time from the reconstruction and survival terms, refreshing $\bar Z_{\cdot k}$ and $\mathrm{Var}(Z_{\cdot k})$ after each feature, then refit the point-Laplace prior $g_{mk}$;
+        iii. update $q(\beta_k)$ by the normal-prior empirical-Bayes update with $A = \sum_i w_i E(Z_{ik}^2)$ and $B = \sum_i \bar Z_{ik}(h_i - w_i\bar\eta_{i,-k})$;
+        iv. rescale factor $k$ so that $\mathrm{sd}(\bar Z_{\cdot k}) = 1$.
+    c. Update $\tau_{mj} = n / \sum_i E_q(\tilde y_{mij} - l_i^\top f_{mj})^2$.
+    d. Stop if, for each modality, the relative change in $\bar L\bar F_m^\top$ and in $\bar\eta$ is below $\epsilon$.
+3. Compute the change in @eq-mm-elbo from deleting each factor. If the largest change is $\ge 0$, delete that factor, return to step 2 from the remaining factors' moments and priors, and repeat.
 
-**Output:** posterior moments, priors, $\mu_m$, $\tau$, classification. **Prediction:** $\mathrm{risk}_{\mathrm{new}} = \sum_m y_{m,\mathrm{new}}^\top\bar F_m\bar\beta$, with orientation fixed from training (`flip = FALSE`). Centering new data at the training intercept would change every score by the same constant and leave the C-index unchanged.
+*Outputs:* posterior moments and priors, $\mu_m$, $\tau$, classification. *Prediction:* $\eta_{\mathrm{new}} = \sum_m y_{m,\mathrm{new}}^\top\bar F_m\bar\beta$, with higher values denoting higher risk, a direction fixed before validation. Centering new data at the training intercept would change every score by the same constant and leave the concordance index unchanged.
 :::
 
 <!-- REVISIT R2 END -->
 <!-- REVISIT R3 END -->
 
-## Approximations and what the objectives do not guarantee {#sec-approximations}
+<!-- REVISIT R3 START -->
+
+The evaluated fits used $\epsilon = 10^{-4}$, $T = 500$ and $S = 5$, point-Laplace loading priors in both modalities, and feature-specific precisions.
+
+<!-- REVISIT R3 END -->
+
+## Approximations {#sec-approximations}
 
 <!-- REVISIT R1 START -->
 <!-- REVISIT R3 START -->
 
-Each coordinate update is exact for the quadratic Cox surrogate at fixed working quantities, but the surrogate changes between sweeps, its curvature is diagonal, the single-modality monitor reweights its components, and the multimodal removal objective evaluates survival at $E(\eta)$. Neither algorithm is therefore exact coordinate ascent on one evidence lower bound, and neither is guaranteed to increase monotonically. Appendices A and B list each approximation beside the update it affects.
+Each coordinate update is exact for the quadratic working surrogate at fixed working quantities. The surrogate changes between sweeps, and its diagonal curvature replaces the coupled Cox Hessian. The single-modality monitoring statistic reweights its components, and the multimodal removal score evaluates survival at $\bar\eta$ and uses cached KL penalties. Because the log partial likelihood is concave, the plug-in term $\log\mathrm{PL}(\bar\eta)$ is an upper approximation to its posterior expectation; subtracting $\frac12\sum_i w_i\mathrm{Var}(\eta_i)$ gives a variance-penalized alternative, but the full second-order correction would also involve the coupled Hessian and the covariance of $\eta$ across patients. Neither algorithm is therefore exact coordinate ascent on one ELBO, and neither is guaranteed to increase its monitored quantity monotonically. Appendices [A](#sec-appendix-a) and [B](#sec-appendix-b) state each approximation beside the update it affects.
 
 <!-- REVISIT R3 END -->
 <!-- REVISIT R1 END -->
 
-The evaluated single-modality configuration with $\alpha_F = 0$ is a stage in the development of the method, not its intended final form. Planned work on survival supervision of the loadings, coefficient priors, and rank selection is described in one place, @sec-continuing.
+# Evaluation {#sec-evaluation}
 
-# Evaluation framework {#sec-evaluation}
+## Data {#sec-data}
+
+<!-- REVISIT R5 START -->
+
+@tbl-cohorts lists the training and validation cohorts. The matched multimodal cohorts contain TCGA and ICGC patients with both expression and methylation. Methylation is restricted to the 305,352 CpG sites present in both cohorts after removing sex-chromosome probes; missing values (0.07% in TCGA) are imputed within cohort by $k$-nearest neighbors. The multimodal fits use log2 expression and methylation $\beta$-values without standardization.
+
+<!-- REVISIT R5 END -->
+
+<!-- REVISIT R5 START -->
+
+```{=latex}
+\needspace{0.7\textheight}
+```
+
+| Analysis | Cohort | Platform | Patients | Deaths | Role |
+|----------|----------|------------------|---:|---:|------------------------|
+| Single-modality | TCGA-PAAD | RNA-seq | 144 | 139$^a$ | Training; log2(count + 1) |
+| | CPTAC | Mass-spectrometry proteomics | 129 | | Training; normalized abundances |
+| | Dijk | RNA-seq | 90 | 81 | External validation |
+| | Moffitt | Microarray | 123 | 83 | External validation |
+| | PACA-AU | Microarray | 63 | 38 | External validation |
+| | PACA-AU | RNA-seq | 52 | 31 | External validation |
+| | Puleo | Microarray | 288 | 181 | External validation |
+| | Five external cohorts | | 616 | 414 | Scored on 1,989–2,050 of the 2,064 training genes |
+| Multimodal | TCGA-PAAD | RNA-seq and 450K methylation array | 144 | 75 | Training; 3,000 genes and 10,000 CpG sites |
+| | ICGC PACA-AU, primary PDAC | RNA-seq and methylation array | 50 | 30 | Main validation |
+| | ICGC PACA-AU, all donors | RNA-seq and methylation array | 67 | 40 | Sensitivity analysis |
+
+: Cohorts. Single-modality training genes were screened within each training cohort (top 3,000 by the DeSurv mean-and-variance rank; 2,064 in common), and every single-modality cohort was log-transformed where needed and standardized gene by gene within cohort. Multimodal features (3,000 genes by the same rank; the 10,000 highest-variance CpG sites) were screened on TCGA only. The ICGC primary-PDAC set contains primary tumors with PDAC histology; the all-donor set adds intraductal papillary mucinous neoplasm (IPMN) with invasion, adenosquamous, acinar and signet-ring tumors. $^a$Deaths in the two single-modality training cohorts together (139 among 273 patients). PACA-AU is the Australian pancreatic cancer cohort of the International Cancer Genome Consortium (ICGC); its microarray and RNA-seq series are analysed as separate validation cohorts. The 50 matched ICGC donors overlap the PACA-AU RNA-seq cohort and are not an additional independent replication; whether the two PACA-AU series share donors was not determined. CpG, cytosine–guanine dinucleotide methylation site; 450K, Illumina HumanMethylation450 array. {#tbl-cohorts}
+
+<!-- REVISIT R5 END -->
 
 ## Simulation designs {#sec-sim-designs}
 
 <!-- REVISIT R5 START -->
 <!-- REVISIT R6 START -->
 
-**Single-modality, multiple cohorts (S17, S18, S59).** Each dataset has two cohorts of 150 patients and 1,000 genes. True loading columns are the absolute values of unsupervised factorization programs estimated from the real training data, scaled to amplitude 12; feature noise precisions are drawn from Gamma(2, 2). Survival times follow a Weibull proportional-hazards model with predictor $\sum_k L_{ik}\beta_k$ over the shared programs (coefficients recycled from $1.5, -1.2, 0.8, -0.5$), and censoring is calibrated to 30%. Study-specific programs have zero loadings outside their cohort and no survival effect. Three scenarios vary the structure: all shared (six shared programs), hybrid (two shared and two specific per cohort), and nothing shared (three specific per cohort, so no program is prognostic). Each dataset is split 75/25 into training and test patients, stratified by event status. Two arms are fitted at starting ranks 2, 3, 4, 6, 12, and 20 with 15 seeds, giving 540 fits: the single-modality model with the evaluated settings, and a two-step arm consisting of a nonnegative empirical-Bayes factorization (`flashier`, at most $K_{\mathrm{init}}$ factors, backfitted) followed by an unpenalized Cox model on least-squares projection scores. Note that the data-generating predictor uses the latent activities $L$, whereas the model predicts from projections $YF$.
+**Single-modality model, two cohorts.** Each simulated dataset has two cohorts of 150 patients and 1,000 genes. True loading columns are the absolute values of loadings from an unsupervised empirical-Bayes matrix factorization (EBMF) of the real training data, scaled to amplitude 12; feature noise precisions are drawn from Gamma(2, 2). Survival times follow a Weibull proportional-hazards model whose predictor is $\sum_k L_{ik}\beta_k$ over the shared programs (coefficients recycled from $1.5, -1.2, 0.8, -0.5$), with censoring calibrated to 30%. Cohort-specific programs have zero loadings outside their cohort and no survival effect. Three scenarios vary the structure: all shared (six shared programs), hybrid (two shared and two cohort-specific programs per cohort), and nothing shared (three cohort-specific programs per cohort and no prognostic program). Each dataset is split 75/25 into training and test patients, stratified by event status, giving 75 test patients. Two arms are fitted at starting ranks 2, 3, 4, 6, 12 and 20 with 15 datasets per setting (540 fits): the single-modality model with the evaluated settings, and a two-step arm consisting of a nonnegative EBMF (R package flashier, at most $K_{\mathrm{init}}$ factors, with backfitting) followed by an unpenalized Cox model on least-squares projection scores. The data-generating predictor uses the latent activities $L$, whereas both arms predict from projections.
 
-**Multimodal (S25, S26, S59).** Each dataset has 120 training and 120 validation patients, 50 expression and 50 methylation features, and three true programs. Survival follows a Weibull model with predictor $\sum_m Y_m F_m \beta$, matching the model's predictor form. Three scenarios set $\beta$: two prognostic programs ($0.70, 0.35, 0$), adverse and protective ($0.70, -0.70, 0$), and a low-variance prognostic program whose activities are scaled by 0.15 ($\beta = 0, 0, 1.10$). Noise is set by a multiplier on every feature's noise standard deviation: 1 reproduces the September design and 0.25 is lower noise ("moderate"). Each feature is shifted by four noise standard deviations so the data are nonnegative and the original model can be fitted. Starting ranks are 3–10 and 15, with three seeds per setting. Three variants are fitted to every dataset: the original September model (no intercept, nonnegative loadings, moment prior updates, no pruning), the evaluated pruned framework (Algorithm 2), and the same framework with the variance-corrected survival term. The full sweep contains 486 fits, 162 per variant.
+**Multimodal model.** Each dataset has 120 training and 120 validation patients, 50 expression and 50 methylation features, and three true programs. Survival follows a Weibull model with predictor $\sum_m Y_m F_m \beta$, matching the model's predictor. Three scenarios set $\beta$: two prognostic programs ($0.70, 0.35, 0$), one adverse and one protective program ($0.70, -0.70, 0$), and a low-variance prognostic program whose activities are scaled by 0.15 ($\beta = 0, 0, 1.10$). Feature noise precisions are drawn from Gamma(2, 2), and each feature's noise standard deviation (SD) is multiplied by 1 (higher noise) or 0.25 (lower noise). Each feature is shifted by four noise SDs so that the data are nonnegative and the base model without intercepts can also be fitted. Starting ranks are 3 to 10 and 15, with three datasets per setting. Three variants are fitted to every dataset: a base model without feature intercepts or factor removal (nonnegative loadings, moment-based prior updates), the evaluated framework (Algorithm 2), and the same framework with the variance-penalized survival term in the removal score. The sweep contains 486 fits, 162 per variant.
 
 <!-- REVISIT R6 END -->
 <!-- REVISIT R5 END -->
 
-## Data {#sec-data}
-
-<!-- REVISIT R5 START -->
-
-| Analysis | Cohort | Platform | Patients | Events | Role and preprocessing |
-|----------|----------|----------|---:|---:|------------------------------------|
-| Single-modality | TCGA-PAAD | RNA-seq | 144 | 139 (pooled) | Training; log2(count+1); screened and standardized within cohort |
-| | CPTAC | Mass-spectrometry proteomics | 129 | | Training; provided normalized scale; screened and standardized within cohort |
-| | Dijk | RNA-seq | 90 | 81 | External validation |
-| | Moffitt | Microarray | 123 | 83 | External validation |
-| | PACA-AU array | Microarray | 63 | 38 | External validation |
-| | PACA-AU RNA-seq | RNA-seq | 52 | 31 | External validation |
-| | Puleo | Microarray | 288 | 181 | External validation |
-| | Five external cohorts | | 616 | 414 | Each standardized within cohort; scored on 1,989–2,050 of the 2,064 training genes |
-| Multimodal | TCGA-PAAD | RNA-seq + 450K methylation | 144 | 75 | Training; 3,000 genes (DeSurv rank) and 10,000 highest-variance CpGs, screened on TCGA only |
-| | ICGC PACA-AU, primary PDAC | RNA-seq + methylation | 50 | 30 | Main validation: all samples primary tumors with PDAC histology |
-| | ICGC PACA-AU, all donors | RNA-seq + methylation | 67 | 40 | Sensitivity: adds IPMN with invasion, adenosquamous, acinar and signet-ring tumors |
-
-: Cohorts and preprocessing. Events in the two single-modality training cohorts are reported pooled (139 deaths among 273 patients). The 50 matched ICGC donors overlap the PACA-AU RNA-seq external cohort and are not an additional independent replication; whether the PACA-AU array and RNA-seq cohorts share donors was not checked in the reviewed sources. Sources: S03, S09, S11, S30, S01 (2026-10-01 entry), and the orientation check recorded under S56. {#tbl-cohorts}
-
-<!-- REVISIT R5 END -->
-
-<!-- REVISIT R5 START -->
-
-The matched multimodal cohorts are built from the TCGA and ICGC files with expression and methylation for the same patients (S30). Methylation is restricted to the 305,352 CpGs present in both cohorts' sex-chromosome-filtered probe sets; missing values (0.07% in TCGA) are imputed within cohort by $k$-nearest neighbors. The evaluated multimodal fits use raw inputs: log2 expression and methylation $\beta$-values. Screening uses training data only.
-
-<!-- REVISIT R5 END -->
-
-## Comparators and prediction rules {#sec-comparators}
+## Comparators {#sec-comparators}
 
 <!-- REVISIT R7 START -->
 
-**Principal single-modality comparator.** An unsupervised empirical-Bayes factorization (`flashier`, signed point-normal priors, gene-specific variances, greedy fitting with backfitting, at most 40 factors) of the same $273 \times 2{,}064$ training matrix, followed by a LASSO Cox model on projection scores $Y\bar F D^{-1}$ with the penalty chosen by cross-validation (`lambda.min`). The factor count was not informed by the supervised model; 15 of the 40 factors received nonzero coefficients (S10). Held-out patients are scored with the frozen loadings and coefficients.
+**Principal single-modality comparator.** An unsupervised EBMF (R package flashier; signed point-normal priors, gene-specific variances, greedy fitting with backfitting, at most 40 factors) of the same $273 \times 2{,}064$ training matrix, followed by a Cox model with a least absolute shrinkage and selection operator (LASSO) penalty on the normalized projection scores, with the penalty chosen by cross-validation (R package glmnet). The number of factors was not informed by the supervised model; 15 of the 40 factors received nonzero coefficients. Held-out patients are scored with the frozen loadings and coefficients.
 
-**Supporting single-modality comparators.** A rank-matched two-step model (7 factors, unpenalized Cox; S12) and the earlier comparator (20 factors, unpenalized Cox; S13). Matching the rank gives the two-step model the supervised model's answer about complexity, and the unpenalized 20-factor model is not regularized; neither is the principal comparison. The output directory `desurv_comparison` contains our own models fitted with DeSurv-aligned and alternative preprocessing (configurations D1–D5); it is not a fitted DeSurv benchmark (S48).
+**Supporting single-modality comparators.** A rank-matched two-step model (7 factors, unpenalized Cox) and a 20-factor two-step model with unpenalized Cox. Matching the rank gives the two-step model the supervised model's choice of complexity, and the 20-factor model is not regularized, so neither is the principal comparison.
 
-**Multimodal comparators.** On the matched cohorts, the same framework fitted to expression alone (configuration `pruned_expression_only`) isolates the contribution of methylation. Two further arms are reported for completeness: an older isolated single-modality fitter on raw log2 expression (`expression_only_yfb`, which is not the expression-only fit of the evaluated framework) and two-step factorization followed by Cox on stacked or expression-only data (S28). The established single-modality model was trained on different data and preprocessing and is discussed separately (@sec-results-mm-real).
+**Multimodal comparators.** On the matched cohorts, the same framework fitted to expression alone isolates the contribution of methylation. Three further arms are reported: the single-modality model of @sec-single-model applied to raw log2 TCGA expression, and two-step EBMF followed by unpenalized Cox on expression alone or on stacked expression and methylation.
 
 <!-- REVISIT R7 END -->
 
@@ -381,27 +353,26 @@ The matched multimodal cohorts are built from the TCGA and ICGC files with expre
 
 <!-- REVISIT R7 START -->
 
-External performance is Harrell's concordance index with a risk orientation fixed from training. All per-cohort single-modality values in @tbl-external were re-computed during drafting from the saved risk scores with frozen orientation and agree with the saved values to four decimals (S56); some of the saved runners had computed the outcome-oriented $\max(C, 1 - C)$, which coincides with the frozen value in every cohort here. Confidence intervals are percentile bootstrap intervals over patients ($B = 2{,}000$ for single-modality, $1{,}000$ for multimodal; seed 1).
+External performance is Harrell's concordance index (C), with higher values indicating better discrimination and the risk direction fixed from training. Confidence intervals (CIs) are percentile bootstrap intervals over patients, with $B = 2{,}000$ resamples for the single-modality comparisons and $B = 1{,}000$ for the multimodal comparisons; differences resample patients jointly for both models. The intervals hold the fitted models fixed and do not include training uncertainty.
 
-Three summaries of the single-modality comparison are not interchangeable: the **mean external C** averages five cohort C-indices; the **concatenated difference** (principal and rank-matched comparisons) computes one C-index per model over all 616 patients, so comparable pairs cross cohorts, with an unstratified bootstrap; and the **inverse-variance pooled difference** (older comparator) combines per-cohort paired differences. None is an equivalence or non-inferiority test.
+Three summaries of the single-modality comparison are not interchangeable. The **mean external C** averages five cohort C-indices. The **concatenated difference**, used for the principal and rank-matched comparisons, computes one C-index per model over all 616 patients, so comparable pairs can cross cohorts. The **inverse-variance pooled difference**, used for the 20-factor comparator, combines per-cohort paired differences. None is an equivalence or non-inferiority test.
 
-Simulation summaries are means over seeds. In the single-modality simulation, test-set concordance is the outcome-oriented $\max(C, 1-C)$ (S17), which is biased upward when there is no signal: in the nothing-shared scenario both arms score about 0.54. In the multimodal simulation, validation concordance uses the frozen orientation. Program recovery is the absolute correlation between a true loading column and its best-matching estimated column; a program counts as recovered at $|r| \ge 0.7$.
+Simulation summaries are means over datasets. In the single-modality simulation, test-set concordance is the outcome-oriented $\max(C, 1-C)$, which is biased upward when there is no signal: in the nothing-shared scenario both arms score about 0.54. In the multimodal simulation, validation concordance uses the training-fixed direction. A true program counts as recovered when its absolute correlation with the best-matching estimated loading column is at least 0.7.
 
 <!-- REVISIT R7 END -->
 
-## Biological characterization methods {#sec-characterization-methods}
+## Biological characterization {#sec-characterization-methods}
 
 <!-- REVISIT R8 START -->
 
-The biological labels in @sec-biology come from existing analyses of the established single-modality fit and of the starting-rank-7 multimodal fit. @tbl-char-methods in [Appendix C](#sec-appendix-c) lists, for each analysis, the object analysed, the population, the statistic and settings, the multiplicity scope, and what the output can support. No analysis in this table was rerun for this report.
+The program labels in @sec-biology come from the following analyses of the evaluated single-modality fit and of the starting-rank-7 multimodal fit.
 
+- **Ranked enrichment.** For each single-modality program, the 2,064 selected genes were ranked by their nonnegative posterior-mean loadings and tested against predefined gene sets with the fgsea algorithm for ranked gene-set enrichment (one-sided toward high loadings; set sizes 10–500). Collections were Hallmark, Reactome, the Kyoto Encyclopedia of Genes and Genomes (KEGG), Gene Ontology biological process (GO-BP), and a PDAC collection of the Moffitt and Bailey subtype lists and the three DeSurv factor gene lists. The normalized enrichment score (NES) compares a set's running-sum statistic with its permutation distribution; leading-edge genes are the set members ranked before the running-sum maximum. P-values were adjusted by the Benjamini–Hochberg (BH) method within each program and collection, and sets are reported at adjusted $p < 0.10$. Over-representation analysis (ORA) of the top 50, 100 and 150 genes against the selected-gene background checked dependence on the cutoff. These analyses show which predefined sets are concentrated among a program's highest-loading genes.
+- **Subtype concordance and gene-list overlap.** Training activities $\bar L$ in TCGA ($n = 144$) were compared with the basal-like probability and calls of PurIST, a single-sample PDAC subtype classifier (Spearman correlation; Kruskal–Wallis test). The top 270 genes by loading were compared with the DeSurv factor lists, both restricted to the shared gene background (Jaccard similarity; hypergeometric test). P-values are unadjusted.
+- **External signature association.** For a selected set, the signature score is the mean within-cohort standardized expression of its leading-edge genes. A univariable Cox hazard ratio (HR) per unit of signature score was estimated in each external cohort. For the two genomics-only programs, the set was chosen after excluding the whole PDAC collection, a choice made after the first signature check for one of them scored a classical-tumor list. Signature scores are distinct from the frozen program projections used for survival curves, which group patients by within-cohort tertile and use cohort-stratified log-rank tests when cohorts are pooled.
+- **Multimodal programs.** Labels come from a manual reading of each program's eight highest positive and six most negative expression loadings; no enrichment test or CpG annotation was performed. Each program's share of a modality's fitted signal is $\lVert\bar L_{\cdot k}\rVert^2\lVert\bar F_{mk}\rVert^2$ divided by the sum of these rank-one squared norms within that modality. Correspondence with reference fits is the absolute Pearson correlation of loading columns over shared genes. Fourteen univariable Cox models (7 programs × 2 cohorts) give the HR per one within-cohort SD of the joint projection, without adjustment for multiplicity.
 
-
-<!-- REVISIT R8 END -->
-
-<!-- REVISIT R8 START -->
-
-Several of these analyses share inputs and are not independent validations. The custom fgsea collection and the gene-list overlap both use DeSurv's lists, and the selected gene universe was itself screened with DeSurv's rule. The subtype concordance uses training activities $E(L)$ in TCGA, which also trained the model. The original external signature check (C2) scored each program's lowest-padj set; for Program 6 that set was the DeSurv classical-tumor list, the same list used as Program 3's signature, so C2 measured the classical axis rather than Program 6. The corrected control (C4) excludes the entire PDAC_custom collection, including the Moffitt and Bailey lists, and was designed after C2's result; it is a post hoc correction. Multiple-testing control is within program and collection only. The pathway report itself states that these methods were chosen for availability rather than from a review of what the question requires and that the choice warrants assessment before manuscript use (S21). Two further cautions apply to the signature helper: its hazard ratio is per unit of the mean z-scored signature, not per standard deviation, and its concordance output is $\max(C, 1-C)$, which is outcome-oriented and cannot substitute for frozen-risk validation. Those concordance values are not used in this report.
+These analyses share inputs and are not independent validations. The PDAC collection and the gene-list overlap both use the DeSurv lists, and the selected gene universe was screened with DeSurv's rule. The subtype check uses training activities in the cohort that trained the model. Multiplicity is controlled within each program and collection, not across them. The external control for the genomics-only programs was designed after an earlier result. The methods were chosen from those available, and whether they are the best tools for these questions has not been assessed.
 
 <!-- REVISIT R8 END -->
 
@@ -411,17 +382,44 @@ Several of these analyses share inputs and are not independent validations. The 
 
 <!-- REVISIT R6 START -->
 
-@tbl-single-sim and @fig-single-sim in [Appendix C](#sec-appendix-c) summarize the 540 fits. At or above the true rank (6), the model recovers every shared program at $|r| \ge 0.7$ and nearly every study-specific program, and over-specifying the rank to 12 or 20 changes little. The two-step arm recovers fewer programs and stops changing beyond rank 6 because its greedy factorization stops adding factors. The model's test concordance exceeds the two-step arm's by about 0.10 in the hybrid scenario from rank 3 upward and by about 0.02 in the all-shared scenario from rank 6; with nothing prognostic both are near the outcome-oriented null of 0.54. With $\alpha_F = 0$ the model's $L$ and $F$ updates ignore survival, so these differences come from the fitting procedure (singular-vector initialization and coordinate updates versus greedy `flashier`), not from survival supervision. Possible merges, an estimate correlated above 0.5 with two true programs, occurred in a single-seed diagnostic only at starting ranks 2–4 (S19). Among programs without a survival effect, 22%–35% were classified survival-active in the hybrid scenario and 6%–10% with nothing shared.
+At starting ranks at or above the true rank (6, 12 and 20), the model's mean shared-program recovery was 97%–100% and its cohort-specific recovery 93%–100% (@tbl-single-sim). Over-specifying the rank changed little. The two-step arm recovered fewer programs (73%–89% of shared and 70%–83% of specific programs) and did not change beyond rank 6, because its greedy factorization stopped adding factors. The model's test concordance exceeded the two-step arm's by 0.10–0.16 in the hybrid scenario from starting rank 3 upward and by about 0.02 in the all-shared scenario from rank 6 (@fig-single-sim). At ranks 3 and 4 in the all-shared scenario the two-step arm was better by 0.02–0.03. With nothing prognostic, both arms were near the outcome-oriented null of 0.54. In the evaluated configuration the loading updates do not use survival, so these differences arise from the fitting procedure (initialization and coordinate updates versus greedy factorization) and the coefficient prior, not from survival-guided loadings. Among programs without a survival effect, 22%–35% were classified survival-active in the hybrid scenario at starting ranks 4–20, and 6%–10% with nothing shared.
 
 <!-- REVISIT R6 END -->
 
+<!-- REVISIT R6 START -->
 
+![Difference in test concordance between the single-modality model and the two-step arm in the two-cohort simulation, by scenario and starting rank (true rank 6). Bars are means over 15 simulated datasets, each scored on the same 75 test patients for both arms; error bars are $\pm 1$ standard error of the mean paired difference. Concordance is the outcome-oriented $\max(C, 1-C)$. The two-step arm is nonnegative empirical-Bayes matrix factorization followed by unpenalized Cox regression on projection scores. All shared: six shared prognostic programs. Hybrid: two shared prognostic and two cohort-specific non-prognostic programs per cohort. Nothing shared: three cohort-specific non-prognostic programs per cohort.](figures/single_sim_delta){#fig-single-sim fig-alt="Grouped bar chart of the mean concordance difference between the model and the two-step arm at starting ranks 2, 3, 4, 6, 12 and 20. Hybrid bars are 0.10 to 0.16 from rank 3; all-shared bars are slightly negative at ranks 3 and 4 and about 0.02 from rank 6; nothing-shared bars are near zero." width="100%"}
 
-
+<!-- REVISIT R6 END -->
 
 <!-- REVISIT R6 START -->
 
-A separate ten-seed simulation tested cohort-specific coefficients for a program that is prognostic in only one cohort (S20). The coefficient in the owning cohort exceeded the other cohort's in 15 of 20 cohort-by-seed cases at starting rank 6 and 17 of 20 at rank 12 (medians 0.060 versus 0.008, and 0.054 versus 0.008); one seed diverged, so medians are the reported summary.
+```{=latex}
+\needspace{0.5\textheight}
+```
+
+| Scenario | Starting rank | Shared recovered (model / two-step) | Specific recovered (model / two-step) | Prognostic active (model) | Non-prognostic active (model) |
+|------------|---:|:------:|:------:|:------:|:------:|
+| All shared | 4 | 0.59 / 0.54 | – | 0.60 | – |
+| All shared | 6 | 1.00 / 0.89 | – | 1.00 | – |
+| All shared | 12 | 0.98 / 0.89 | – | 0.96 | – |
+| All shared | 20 | 1.00 / 0.89 | – | 0.93 | – |
+| Hybrid | 4 | 0.80 / 0.27 | 0.57 / 0.65 | 0.80 | 0.23 |
+| Hybrid | 6 | 1.00 / 0.73 | 0.93 / 0.83 | 1.00 | 0.35 |
+| Hybrid | 12 | 1.00 / 0.73 | 0.98 / 0.83 | 1.00 | 0.22 |
+| Hybrid | 20 | 0.97 / 0.73 | 0.98 / 0.83 | 1.00 | 0.27 |
+| Nothing shared | 4 | – | 0.53 / 0.43 | – | 0.09 |
+| Nothing shared | 6 | – | 0.96 / 0.70 | – | 0.10 |
+| Nothing shared | 12 | – | 0.98 / 0.70 | – | 0.10 |
+| Nothing shared | 20 | – | 1.00 / 0.70 | – | 0.10 |
+
+: Program recovery and survival activity in the two-cohort simulation (true rank 6; means over 15 datasets of 300 patients, 225 for training). True shared and cohort-specific programs per scenario: all shared, 6 and 0; hybrid, 2 and 2 per cohort; nothing shared, 0 and 3 per cohort. "Recovered" is the fraction of true programs whose best-matching estimated loading column has absolute correlation at least 0.7. "Active" is the fraction of true prognostic (or non-prognostic) programs whose matched estimate has $|\bar{\tilde\beta}_k| > 0.001$. The two-step arm is nonnegative empirical-Bayes matrix factorization followed by unpenalized Cox regression. Dashes mark quantities undefined in a scenario. {#tbl-single-sim}
+
+<!-- REVISIT R6 END -->
+
+<!-- REVISIT R6 START -->
+
+A separate ten-dataset simulation tested cohort-specific coefficients for a program that is prognostic in only one cohort. The coefficient in the cohort with the effect exceeded the other cohort's in 15 of 20 cohort-by-dataset cases at starting rank 6 and in 17 of 20 at rank 12 (medians 0.060 versus 0.008, and 0.054 versus 0.008); one dataset diverged, so medians are reported.
 
 <!-- REVISIT R6 END -->
 
@@ -429,31 +427,35 @@ A separate ten-seed simulation tested cohort-specific coefficients for a program
 
 <!-- REVISIT R7 START -->
 
-@tbl-external gives per-cohort concordance. The frozen model's mean external C is 0.627 (0.549 in Moffitt to 0.657 in PACA-AU RNA-seq) and the principal comparator's 0.601. Over the 616 concatenated patients the C-indices are 0.629 and 0.603, a difference of 0.026 with 95% interval 0.000 to 0.050; the lower limit is 0.0002, so the advantage is marginal (S11, S56, S60). The rank-matched comparator, which is better in both PACA-AU cohorts, gives a difference of 0.011 ($-0.013$ to $0.033$; S12). The older unpenalized comparator gives 0.042 (0.013 to 0.071), with a per-cohort interval excluding zero only in Puleo (S13).
+The frozen model's mean external C was 0.627 (from 0.549 in Moffitt to 0.657 in PACA-AU RNA-seq) and the principal comparator's 0.601 (@tbl-external). Over the 616 concatenated patients, the C-indices were 0.6285 and 0.6026, a difference of 0.026 (95% CI 0.0002 to 0.050), so the advantage is small and its lower limit is close to zero. The rank-matched comparator, which was better in both PACA-AU cohorts, gave a difference of 0.011 ($-0.013$ to $0.033$). The 20-factor unpenalized comparator gave an inverse-variance pooled difference of 0.042 (0.013 to 0.071).
 
 <!-- REVISIT R7 END -->
 
 <!-- REVISIT R7 START -->
 
-| Cohort | $n$ | Events | Model C (95% CI) | Two-step, 40 factors, LASSO | Two-step, 7 factors | Two-step, 20 factors |
+```{=latex}
+\needspace{0.45\textheight}
+```
+
+| Cohort | $n$ | Deaths | Model C (95% CI) | Two-step, 40 factors, LASSO | Two-step, 7 factors | Two-step, 20 factors |
 |------------|---:|---:|:----------:|:------:|:------:|:------:|
 | Dijk | 90 | 81 | 0.634 (0.555, 0.708) | 0.600 | 0.577 | 0.592 |
 | Moffitt | 123 | 83 | 0.549 (0.467, 0.625) | 0.560 | 0.541 | 0.541 |
-| PACA-AU array | 63 | 38 | 0.648 (0.553, 0.747) | 0.623 | 0.665 | 0.597 |
+| PACA-AU microarray | 63 | 38 | 0.648 (0.553, 0.747) | 0.623 | 0.665 | 0.597 |
 | PACA-AU RNA-seq | 52 | 31 | 0.657 (0.544, 0.772) | 0.603 | 0.690 | 0.573 |
 | Puleo | 288 | 181 | 0.645 (0.599, 0.688) | 0.618 | 0.643 | 0.602 |
-| Mean of five | 616 | 414 | 0.627 | 0.601 | 0.623 | 0.581 |
-| Difference, model minus comparator | | | | 0.026 (0.000, 0.050)$^a$ | 0.011 ($-0.013$, 0.033)$^a$ | 0.042 (0.013, 0.071)$^b$ |
+| Mean of five cohorts | 616 | 414 | 0.627 | 0.601 | 0.623 | 0.581 |
+| Difference, model minus comparator (95% CI) | | | | 0.026 (0.0002, 0.050)$^a$ | 0.011 ($-0.013$, 0.033)$^a$ | 0.042 (0.013, 0.071)$^b$ |
 
-: External concordance of the frozen single-modality model (risk $= -\eta$) and two-step comparators. All C-indices use training-fixed orientation (S56). $^a$Difference of C-indices computed on the 616 concatenated patients, bootstrap over patients. $^b$Inverse-variance pooled per-cohort paired differences. The 40-factor LASSO model is the principal comparator; the rank-matched and 20-factor unpenalized models are supporting. Sources: S09, S10, S11, S12, S13, S56, S57, S60. {#tbl-external}
+: External concordance of the frozen single-modality model and three two-step comparators (factorization, then Cox regression on projection scores) in five held-out PDAC cohorts. C is Harrell's concordance index (higher is better), with every model's risk direction fixed from training. The model's CIs are percentile bootstrap intervals over patients ($B = 2{,}000$). The 40-factor comparator with a LASSO-penalized Cox model is the principal comparison; the rank-matched and 20-factor unpenalized comparators are supporting. $^a$Difference of C-indices computed once over the 616 concatenated patients; bootstrap over patients, both models on the same resamples. $^b$Inverse-variance pooled per-cohort paired differences. {#tbl-external}
 
 <!-- REVISIT R7 END -->
 
 <!-- REVISIT R7 START -->
 
-Within each cohort, patients were split into tertiles of the frozen risk score (@fig-km-risk). The low-risk tertile has the longest survival in every cohort; the log-rank test has $p < 0.05$ in Dijk ($p = 0.00046$), PACA-AU RNA-seq ($0.021$), and Puleo ($< 0.0001$), and not in PACA-AU array ($0.075$) or Moffitt ($0.17$) (S36). Tertiles are within-cohort descriptive groups, not fixed clinical cutoffs.
+Survival curves by within-cohort tertile of the frozen risk score generally favored the low-risk tertile (@fig-km-risk). Log-rank tests indicated differences among tertiles in three of five cohorts: Dijk ($p = 0.00046$), PACA-AU RNA-seq ($p = 0.021$) and Puleo ($p < 0.0001$), but not PACA-AU microarray ($p = 0.075$) or Moffitt ($p = 0.17$). Tertiles are descriptive within-cohort groups, not clinical cutoffs.
 
-![Overall survival by within-cohort tertile of the frozen single-modality risk score ($-\eta$) in the five external cohorts. Annotations give cohort size, concordance and the log-rank p-value. Source: S36, S49.](../../docs/progress_book/figs/2026-10-02_km_risk_external.png){#fig-km-risk fig-alt="Kaplan-Meier curves by risk tertile in five external PDAC cohorts." width="66%"}
+![Overall survival by within-cohort tertile of the frozen single-modality risk score in five held-out PDAC cohorts ($n = 616$, 414 deaths). The risk score is $-\eta$, a direction fixed from training. Tertiles are formed within each cohort. Lines are Kaplan–Meier estimates; crosses mark censored patients. Each panel gives the cohort size, Harrell's C, and the log-rank test across the three tertiles. Time is in months.](figures/km_risk_external){#fig-km-risk fig-alt="Five-panel Kaplan-Meier plot by risk tertile. The low-risk tertile lies above the others in most cohorts; curves overlap more in Moffitt." width="100%"}
 
 <!-- REVISIT R7 END -->
 
@@ -461,13 +463,17 @@ Within each cohort, patients were split into tertiles of the frozen risk score (
 
 <!-- REVISIT R4 START -->
 
-At starting rank 7 the established fit has three dead factors, two genomics-only programs (5 and 6), and two survival-active programs (3 and 7); the retained programs explain 1.9%–3.0% of the training variance each (S16, S58). @tbl-rank-sweep shows the starting-rank sweep. The evidence lower bound and BIC both prefer $K_{\mathrm{init}} = 3$; the joint log-likelihood keeps rising to $K_{\mathrm{init}} = 15$; cross-validated survival log partial likelihood is highest at 19; and external concordance is below 0.60 up to rank 6, then lies between 0.626 and 0.628 at every starting rank from 7 to 20 except 11 (0.600) and 13 (0.539). The number of survival-active programs is 1 at starting ranks 2–4 and 2 or 3 from rank 5 upward. Starting rank 7 is the smallest rank on the external-concordance plateau and the rank selected by training cross-validation (@sec-classification). The dated record attributes the dips at ranks 11 and 13 to single-start fitting failures, and an earlier explanation of the gap between ELBO and external performance in terms of reconstruction remains a hypothesis that was not verified (S01).
+At starting rank 7 the evaluated fit has three inactive factors, two genomics-only programs (5 and 6), and two survival-active programs (3 and 7); the retained programs each explain 1.9%–3.0% of the training variance. In the sweep over starting ranks (@tbl-rank-sweep), the monitoring statistic and the Bayesian information criterion (BIC) both favor $K_{\mathrm{init}} = 3$, the cross-validated survival log partial likelihood is highest at 19, and the joint log-likelihood (not shown) keeps rising to 15. External concordance is below 0.60 up to starting rank 6 and between 0.626 and 0.628 at every rank from 7 to 20 except 11 (0.600) and 13 (0.539). The number of survival-active programs is 1 at starting ranks 2–4 and 2 or 3 from rank 5 upward. Starting rank 7 is the smallest rank on the external-concordance plateau and the rank selected by training cross-validation.
 
 <!-- REVISIT R4 END -->
 
 <!-- REVISIT R4 START -->
 
-| Starting rank | Survival-active | Genomics-only | ELBO | BIC | CV log PL per event | Mean external C |
+```{=latex}
+\needspace{0.4\textheight}
+```
+
+| Starting rank | Survival-active | Genomics-only | Monitoring statistic $J$ ($\uparrow$) | BIC ($\downarrow$) | CV log PL per death ($\uparrow$) | Mean external C ($\uparrow$) |
 |---:|:---:|:---:|---:|---:|---:|---:|
 | 3 | 1 | 2 | $-806{,}783$ | 1,575,641 | $-3.222$ | 0.594 |
 | 5 | 3 | 1 | $-808{,}550$ | 1,581,604 | $-3.205$ | 0.596 |
@@ -478,13 +484,13 @@ At starting rank 7 the established fit has three dead factors, two genomics-only
 | 15 | 2 | 3 | $-826{,}829$ | 1,697,684 | $-3.195$ | 0.627 |
 | 20 | 2 | 3 | $-847{,}947$ | 1,767,490 | $-3.183$ | 0.627 |
 
-: Single-modality starting-rank sweep (selected rows of $K_{\mathrm{init}} = 2, \dots, 20$; all fits converged). ELBO is the monitoring objective at convergence; BIC uses $K_{\mathrm{init}}(n + p + 1)$ parameters; CV log PL is five-fold cross-validated Cox partial log-likelihood per event; external C uses the five held-out cohorts and was part of the evidence for the recommendation. Source: S14. {#tbl-rank-sweep}
+: Single-modality model at selected starting ranks $K_{\mathrm{init}}$ from a sweep over 2 to 20 (training $n = 273$; every fit met the stopping rule). Arrows give the preferred direction of each criterion. Survival-active: $|\bar{\tilde\beta}_k| > 0.001$. Genomics-only: not survival-active and proportion of variance explained (PVE) above 1%. $J$ is the monitoring statistic at the final sweep, not an evidence lower bound. BIC, Bayesian information criterion from the joint log-likelihood with $K_{\mathrm{init}}(n + p + 1)$ parameters. CV log PL, five-fold cross-validated Cox log partial likelihood per death. C, Harrell's concordance index averaged over the five held-out cohorts; it informed the choice of starting rank. {#tbl-rank-sweep}
 
 <!-- REVISIT R4 END -->
 
 <!-- REVISIT R4 START -->
 
-At starting rank 7 the classification is unchanged (two survival-active, two genomics-only) for coefficient thresholds from $10^{-4}$ to $10^{-2}$ combined with PVE thresholds from 0.1% to 2%. A PVE threshold of 5% removes both genomics-only programs; a coefficient threshold of 0 counts four programs as survival-active because two coefficients are of order $10^{-10}$; and a threshold of 0.05 counts none (S15).
+At starting rank 7 the classification (two survival-active, two genomics-only) is unchanged for coefficient thresholds from $10^{-4}$ to $10^{-2}$ combined with PVE thresholds from 0.1% to 2%. A PVE threshold of 5% removes both genomics-only programs; a coefficient threshold of 0 counts four programs as survival-active, because two coefficients are of order $10^{-10}$; and a threshold of 0.05 counts none.
 
 <!-- REVISIT R4 END -->
 
@@ -493,33 +499,37 @@ At starting rank 7 the classification is unchanged (two survival-active, two gen
 <!-- REVISIT R6 START -->
 <!-- REVISIT R4 START -->
 
-With pruning, the final number of programs depends much less on the starting rank (@fig-mm-rank). The original model has no removal step, so its final rank equals the starting rank in all 162 fits. At moderate noise the evaluated framework returns a mean of 3.2–3.3 programs in the two scenarios with high-variance prognostic programs and 2.5 in the low-variance scenario, averaged over starting ranks 3–15, and the means are close to constant from starting rank 4 upward. At the September noise level it returns fewer than three programs on average (1.7–2.0), and the final rank rises with the starting rank, from 1 at starting rank 3 to 2.3–3.3 at ranks 10 and 15; it is therefore not independent of the starting rank in that setting. All 162 fits of the evaluated framework met the convergence criterion, against 27 of 162 for the original model (S26).
+With factor removal, the final number of programs depends much less on the starting rank (@fig-mm-rank); the base model has no removal step, so its final rank equals the starting rank in all 162 fits. At lower noise, the evaluated framework returned a mean of 3.2–3.3 programs in the two scenarios with high-variance prognostic programs and 2.5 in the low-variance scenario, averaged over starting ranks, and the means were close to constant from starting rank 4 upward. At higher noise it returned fewer than three programs on average (1.7–2.0), and the final rank rose with the starting rank, from 1 at starting rank 3 to 2.3–3.3 at ranks 10 and 15. All 162 fits of the evaluated framework met the convergence criterion, against 27 of 162 for the base model.
 
 <!-- REVISIT R4 END -->
 
-@tbl-mm-sim reports recovery by scenario and noise. At moderate noise, the framework recovers all three programs in the two-prognostic scenario and 2.96 of 3 in the adverse-and-protective scenario, finds 87% of prognostic programs with the correct sign, and has validation C of 0.79–0.80. In the low-variance scenario at moderate noise it recovers about two programs, finds the low-variance prognostic program in none of the 27 fits (recall 0), and classifies 1.26 other programs per fit as survival-active, so survival is attributed to high-variance programs; validation C is 0.63. At the September noise level, recovery is lower (0.93–1.33 programs), but the low-variance prognostic program is found in 52% of fits (48% with the correct sign). That result comes from a setting in which every true program is weak, so it does not show that the method recovers a low-variance program alongside strong ones. The variance-corrected survival term gave nearly identical results (largest difference in any summary in -mm-sim, 0.04). Each cell averages 27 fits from only three simulated datasets per setting, which limits precision.
+At lower noise the framework recovered all three programs in the two-prognostic scenario and 2.96 of 3 in the adverse-and-protective scenario, found 87% of prognostic programs with the correct sign, and had validation C of 0.79–0.80 (@tbl-mm-sim). In the low-variance scenario it recovered about two programs, found the low-variance prognostic program in none of the 27 fits, and classified 1.26 other programs per fit as survival-active, attributing survival to high-variance programs; validation C was 0.63. At higher noise, recovery was lower (0.93–1.33 programs), but the low-variance prognostic program was found in 52% of fits (48% with the correct sign). In that setting every true program is weak, so the result does not show recovery of a low-variance program alongside strong ones. The variance-penalized survival term changed no summary in @tbl-mm-sim by more than 0.04. Each cell averages 27 fits from three simulated datasets per setting, which limits precision.
 
 <!-- REVISIT R6 END -->
 
 <!-- REVISIT R6 START -->
 
+```{=latex}
+\needspace{0.4\textheight}
+```
+
 | Noise | Scenario | Final rank | Programs recovered (of 3) | Prognostic found, correct sign | False survival-active | Validation C | Converged |
 |----------|--------------------|:---:|:---:|:---:|:---:|:---:|:---:|
-| Moderate | Two prognostic | 3.26 | 3.00 (2.74) | 0.87 | 0.67 | 0.80 | 1.00 (0.07) |
-| Moderate | Adverse + protective | 3.22 | 2.96 (2.78) | 0.87 | 0.59 | 0.79 | 1.00 (0.37) |
-| Moderate | Low-variance prognostic | 2.48 | 1.96 (2.00) | 0.00 | 1.26 | 0.63 | 1.00 (0.19) |
-| September | Two prognostic | 1.74 | 1.19 (0.11) | 0.57 | 0.44 | 0.79 | 1.00 (0.07) |
-| September | Adverse + protective | 1.96 | 1.33 (0.59) | 0.67 | 0.52 | 0.80 | 1.00 (0.22) |
-| September | Low-variance prognostic | 1.96 | 0.93 (0.15) | 0.48 | 1.15 | 0.81 | 1.00 (0.07) |
+| Lower | Two prognostic | 3.26 | 3.00 (2.74) | 0.87 | 0.67 | 0.80 | 1.00 (0.07) |
+| Lower | Adverse and protective | 3.22 | 2.96 (2.78) | 0.87 | 0.59 | 0.79 | 1.00 (0.37) |
+| Lower | Low-variance prognostic | 2.48 | 1.96 (2.00) | 0.00 | 1.26 | 0.63 | 1.00 (0.19) |
+| Higher | Two prognostic | 1.74 | 1.19 (0.11) | 0.57 | 0.44 | 0.79 | 1.00 (0.07) |
+| Higher | Adverse and protective | 1.96 | 1.33 (0.59) | 0.67 | 0.52 | 0.80 | 1.00 (0.22) |
+| Higher | Low-variance prognostic | 1.96 | 0.93 (0.15) | 0.48 | 1.15 | 0.81 | 1.00 (0.07) |
 
-: Multimodal simulation, evaluated pruned framework; values in parentheses are the original September model on the same datasets. Each cell averages 27 fits (starting ranks 3–10 and 15, three seeds). "Prognostic found, correct sign" is the fraction of true prognostic programs matched at $|r| \ge 0.7$ by a survival-active estimate with the correct coefficient sign. "False survival-active" counts survival-active estimates not matched to a true prognostic program. Validation C uses frozen orientation on 120 validation patients. Source: S26, S27. {#tbl-mm-sim}
+: Multimodal simulation (120 training and 120 validation patients, 50 expression and 50 methylation features, true rank 3). Noise multiplies every feature's noise SD by 0.25 (lower) or 1 (higher); feature precisions are drawn from Gamma(2, 2). Values are means over 27 fits per cell (starting ranks 3–10 and 15, three simulated datasets each) for the evaluated framework, with the base model without intercepts or factor removal in parentheses. "Recovered": absolute loading correlation at least 0.7 with the best-matching estimate. "Prognostic found, correct sign": fraction of true prognostic programs matched by a survival-active estimate (posterior mean at least 1.96 posterior SDs from zero) with the correct coefficient sign. "False survival-active": survival-active estimates per fit not matched to a true prognostic program. Validation C: Harrell's concordance with the training-fixed direction. "Converged": fraction meeting the stopping rule within 500 sweeps. No uncertainty intervals are given. {#tbl-mm-sim}
 
 <!-- REVISIT R6 END -->
 
 <!-- REVISIT R6 START -->
 <!-- REVISIT R4 START -->
 
-![Final number of programs after pruning, against starting rank, in the multimodal simulation (true rank 3, dashed line). Lines show the evaluated pruned framework in each scenario: points are means over three seeds and vertical bars span the seeds; points are offset horizontally for legibility. The original September model is not drawn: it has no removal step, so its final rank equals the starting rank in every fit. The variance-corrected variant is omitted because no summary in @tbl-mm-sim differs from the plotted framework by more than 0.04. Noise is a multiplier on every feature's noise standard deviation. Sources: S26, S62; drawn for this report by `figures/make_pruning_rank_figure.R` from the saved sweep, replacing the progress-chapter figure.](figures/multimodal_pruning_final_rank.png){#fig-mm-rank fig-alt="Two-panel line chart of final rank against starting rank. At moderate noise the three scenario lines stay near three programs; at September noise they start at one and rise to about two to three." width="80%"}
+![Final number of programs against starting rank in the multimodal simulation (true rank 3, dashed line) for the evaluated framework with factor removal. Each point is the mean over three simulated datasets, and vertical bars span the three values (not confidence intervals); points are offset horizontally for legibility. Noise multiplies every feature's noise SD by 0.25 or 1. Each dataset has 120 training patients and 50 expression and 50 methylation features. The base model has no removal step, so its final rank equals the starting rank and is not drawn.](figures/multimodal_pruning_final_rank){#fig-mm-rank fig-alt="Two-panel line chart of final rank against starting rank. At lower noise the three scenario lines stay near three programs; at higher noise they start at one and rise to about two to three." width="100%"}
 
 <!-- REVISIT R4 END -->
 <!-- REVISIT R6 END -->
@@ -528,49 +538,49 @@ With pruning, the final number of programs depends much less on the starting ran
 
 <!-- REVISIT R7 START -->
 
-@tbl-mm-real compares models on the same 50 primary-PDAC ICGC donors and the 67-donor sensitivity set at starting rank 7. The joint expression-and-methylation fit has $C = 0.685$ (0.579, 0.779) and the expression-only fit of the same framework $C = 0.676$ (0.569, 0.770). Both fits stopped at the 500-sweep cap without meeting the convergence criterion. The difference of 0.010 is small relative to either interval and was not tested; similar observed concordance is not evidence of equivalence. On all 67 donors the order reverses (0.639 and 0.653). The two-step comparators have concordance below 0.53, and the September version of the joint model 0.453.
-
-The October progress chapter (S39) reports that the established single-modality model has $C = 0.685$ on the same 50 donors. That value is hard-coded in the plotting script, and no saved score file or computation was found for it during drafting, so it is not used here as a verified result; it appears in the evidence-gap table (@tbl-gaps). The established model was in any case trained on different data (TCGA and CPTAC, per-platform standardized, 2,064 genes), and the 50 donors overlap the PACA-AU RNA-seq cohort on which it was already evaluated.
+On the 50 primary-PDAC ICGC donors at starting rank 7, the joint expression-and-methylation fit had $C = 0.685$ (0.579, 0.779) and the expression-only fit of the same framework $C = 0.676$ (0.569, 0.770) (@tbl-mm-real). Neither fit met the convergence criterion within 500 sweeps. The difference of 0.010 is small relative to either interval and was not tested; similar observed concordance is not evidence of equivalence. On all 67 donors the order reversed (0.639 and 0.653). The two-step comparators had concordance below 0.53, and the base joint model without intercepts or factor removal 0.453.
 
 <!-- REVISIT R7 END -->
 
 <!-- REVISIT R7 START -->
 
-| Model (training: TCGA, $n = 144$) | Data | ICGC primary PDAC ($n = 50$, 30 events) | ICGC all donors ($n = 67$, 40 events) | TCGA training | Converged |
-|----------------------------------|----------|:------:|:------:|:------:|:---:|
-| Evaluated framework, joint | Expression + methylation | 0.685 (0.579, 0.779) | 0.639 (0.547, 0.734) | 0.638 | No (500 sweeps) |
-| Evaluated framework, expression only | Expression | 0.676 (0.569, 0.770) | 0.653 (0.568, 0.744) | 0.644 | No |
-| September joint model | Expression + methylation | 0.453 (0.319, 0.599) | 0.442 (0.335, 0.562) | 0.597 | No |
-| Older isolated single-modality fitter | Expression | 0.491 (0.364, 0.633) | 0.480 (0.369, 0.581) | 0.594 | – |
-| Two-step factorization, then Cox | Expression | 0.525 (0.399, 0.651) | 0.527 (0.425, 0.641) | 0.670 | – |
-| Two-step factorization, then Cox | Expression + methylation | 0.424 (0.286, 0.567) | 0.418 (0.310, 0.531) | 0.579 | – |
+```{=latex}
+\needspace{0.45\textheight}
+```
 
-: Matched-donor comparisons at starting rank 7, frozen orientation, bootstrap 95% intervals. Selectors: `K_init == 7`; the joint and expression-only rows are `method == joint_multimodal_yfb` with `config == pruned` and `config == pruned_expression_only`; the older fitter is `method == expression_only_yfb`; the September model is `config == original`. Source: S28. {#tbl-mm-real}
+| Model | Data | ICGC primary PDAC ($n = 50$) | ICGC all donors ($n = 67$) | TCGA training |
+|------------------------------|------------|:------:|:------:|:------:|
+| Multimodal framework | Expr. + meth. | 0.685 (0.579, 0.779) | 0.639 (0.547, 0.734) | 0.638 |
+| Multimodal framework | Expr. | 0.676 (0.569, 0.770) | 0.653 (0.568, 0.744) | 0.644 |
+| Base multimodal model | Expr. + meth. | 0.453 (0.319, 0.599) | 0.442 (0.335, 0.562) | 0.597 |
+| Single-modality model | Expr. | 0.491 (0.364, 0.633) | 0.480 (0.369, 0.581) | 0.594 |
+| Two-step, then Cox | Expr. | 0.525 (0.399, 0.651) | 0.527 (0.425, 0.641) | 0.670 |
+| Two-step, then Cox | Expr. + meth. | 0.424 (0.286, 0.567) | 0.418 (0.310, 0.531) | 0.579 |
+
+: Concordance on matched ICGC donors at starting rank 7 (30 deaths among the 50 primary-PDAC donors, 40 among all 67). Every model was trained on the 144 TCGA patients (75 deaths) with expression (Expr.) from 3,000 genes and, where used, methylation (meth.) at 10,000 CpG sites. C is Harrell's concordance index with the risk direction fixed from training; intervals are percentile bootstrap 95% CIs over patients ($B = 1{,}000$). The base multimodal model has no intercepts or factor removal; the single-modality model is that of @sec-single-model applied to raw log2 expression; two-step is empirical-Bayes matrix factorization followed by unpenalized Cox regression. None of the three multimodal fits met the stopping rule (relative change below $10^{-4}$) within 500 sweeps. {#tbl-mm-real}
 
 <!-- REVISIT R7 END -->
 
 <!-- REVISIT R4 START -->
 <!-- REVISIT R7 START -->
 
-@tbl-mm-kinit shows every starting rank. No factor was removed at any starting rank: the final rank equals the starting rank in all nine fits (S28). Only the fits at ranks 3 and 4 met the convergence criterion; the other seven stopped at the cap, and the removal check ran on those unconverged fits (@sec-mm-model). Concordance on the 50 primary donors ranges from 0.500 at rank 5, where no program is survival-active and every patient receives the same score, to 0.685 at rank 7; the median over the nine ranks is 0.572. The number of survival-active programs ranges from 0 to 11 and rises with the starting rank, while concordance does not. Rank 7 was chosen in advance as the single-modality default, but it is also the rank with the highest validation concordance in this sweep, so the headline rank-7 results are favourable relative to the other ranks.
+No factor was removed at any starting rank: the final rank equals the starting rank in all nine fits (@tbl-mm-kinit). Only the fits at starting ranks 3 and 4 met the convergence criterion; the other seven stopped at the cap, and the removal check ran on those unconverged fits. Concordance on the 50 primary donors ranged from 0.500 at rank 5, where no program was survival-active and every patient received the same score, to 0.685 at rank 7; the median over the nine ranks was 0.572. The number of survival-active programs rose with the starting rank, from 0 to 11, while concordance did not. Rank 7 was chosen in advance as the single-modality default, but it is also the rank with the highest validation concordance in this sweep, so the rank-7 results are favorable relative to the other ranks. The reconstruction term of @eq-mm-elbo sums over $144 \times 13{,}000$ molecular values, whereas the survival term is a partial likelihood over 75 deaths, so survival can have little influence on which programs are retained.
+
+```{=latex}
+\needspace{0.4\textheight}
+```
 
 | Starting rank | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 15 |
 |---|---|---|---|---|---|---|---|---|---|
 | Final rank | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 15 |
 | Survival-active programs | 0 | 1 | 0 | 0 | 1 | 2 | 1 | 3 | 11 |
 | Converged | Yes | Yes | No | No | No | No | No | No | No |
-| ICGC primary C | 0.557 | 0.574 | 0.500 | 0.546 | 0.685 | 0.589 | 0.572 | 0.650 | 0.547 |
-| ICGC all-donor C | 0.499 | 0.502 | 0.500 | 0.522 | 0.639 | 0.545 | 0.547 | 0.610 | 0.532 |
+| C, ICGC primary PDAC ($n = 50$) | 0.557 | 0.574 | 0.500 | 0.546 | 0.685 | 0.589 | 0.572 | 0.650 | 0.547 |
+| C, ICGC all donors ($n = 67$) | 0.499 | 0.502 | 0.500 | 0.522 | 0.639 | 0.545 | 0.547 | 0.610 | 0.532 |
 
-: Joint multimodal fits across starting ranks (`config == pruned`, `method == joint_multimodal_yfb`). Source: S28. {#tbl-mm-kinit}
+: Joint multimodal fits of the evaluated framework at each starting rank (one fit per rank, trained on 144 TCGA patients with 75 deaths). Final rank: factors remaining after the removal check. Survival-active: posterior mean at least 1.96 posterior SDs from zero. Converged: met the stopping rule within 500 sweeps. C: Harrell's concordance index with the training-fixed direction; no intervals are shown. {#tbl-mm-kinit}
 
 <!-- REVISIT R7 END -->
-<!-- REVISIT R4 END -->
-
-<!-- REVISIT R4 START -->
-
-The October progress chapter (S39) attributes the absence of pruning to each program's molecular reconstruction gain being far larger than its complexity cost, with survival changing the evidence by at most a few units. That per-program decomposition was not traced to a saved output during drafting and is not quantified here. The plug-in survival term contributes on the scale of a 75-event partial likelihood, while the reconstruction term sums over $144 \times 13{,}000$ molecular values, so in the evaluated objective survival can have little influence on which programs are retained.
-
 <!-- REVISIT R4 END -->
 
 # Biological findings {#sec-biology}
@@ -579,38 +589,42 @@ The October progress chapter (S39) attributes the absence of pruning to each pro
 
 <!-- REVISIT R8 START -->
 
-The established fit retains four programs (@tbl-bio-single). Each label below is tied to the analyses of @tbl-char-methods that support it. Two general points apply. First, the loadings of these programs were estimated without survival ($\alpha_F = 0$), so the biology describes the dominant expression structure of the training data, which survival then weights; it is not evidence of survival-guided discovery. Second, the normalized enrichment scores are modest (1.05–1.29 for the sets cited), the fgsea test is one-sided toward high loadings, and multiplicity is controlled only within each program and collection.
+The evaluated fit retains four programs (@tbl-bio-single). Their loadings were estimated without survival ($\alpha_F = 0$), so the labels describe dominant expression structure of the training data that survival then weights; they are not evidence of survival-guided discovery. Normalized enrichment scores for the cited sets are modest (1.05–1.29), and multiplicity is controlled only within each program and collection.
 
-**Program 7: adverse, basal-like.** Its highest loadings combine glycolytic genes (GAPDH, ENO1, TPI1, PGK1, LDHA) with integrin and receptor-tyrosine-kinase genes (ITGA3, ITGB4, MET, CDCP1). Its enriched sets include DeSurv's basal-like list (padj 0.0006), KEGG growth-factor RTK–PI3K and RAS–ERK pathways (padj 0.001) and Bailey squamous (padj 0.03) (S22). Training activities correlate with PurIST basal-like probability ($\rho = 0.58$; S23); its top genes overlap only DeSurv's basal-like list (Jaccard 0.18; S35); the basal-like signature has HR above 1 in all five external cohorts (1.30–2.40 per unit of mean score, $p < 0.05$ in two; S24); and projection tertiles separate external survival (@fig-km-programs). It corresponds to an unsupervised factor of the same data ($r = 0.69$, next best 0.33; S45).
+**Program 7: adverse, basal-like.** Its highest loadings combine glycolytic genes (GAPDH, ENO1, TPI1, PGK1, LDHA) with integrin and receptor tyrosine kinase (RTK) genes (ITGA3, ITGB4, MET, CDCP1). Enriched sets include DeSurv's basal-like list (adjusted $p = 0.0006$), the KEGG growth-factor RTK–phosphoinositide 3-kinase (PI3K) and RAS–extracellular signal-regulated kinase (ERK) pathways (adjusted $p = 0.001$), and the Bailey squamous list (adjusted $p = 0.03$). Training activities correlate with the PurIST basal-like probability ($\rho = 0.58$); the top genes overlap only DeSurv's basal-like list (Jaccard 0.18); the basal-like signature has an HR above 1 in all five external cohorts (1.30–2.40 per unit of signature score, $p < 0.05$ in two); and projection tertiles separate external survival (@fig-km-programs). The program corresponds to a factor of the unsupervised factorization of the same data ($r = 0.69$; next best 0.33).
 
-**Program 3: protective, classical.** The top genes are epithelial and secretory (CAPN5, LPCAT4, MLPH, SLC45A3, TJP3, GALNT6). The classical label rests mainly on subtype concordance ($\rho = -0.58$) and the classical signature's HR below 1 in all five cohorts (0.42–0.88, $p < 0.05$ in three). The enrichment is less specific: DeSurv's classical and basal-like lists are both enriched (padj 0.017 each), with Moffitt classical and three integrin–FAK sets, and the top genes overlap both lists (Jaccard 0.13 and 0.10). Its unsupervised correspondence is less distinct ($r = -0.72$, next best 0.60).
+**Program 3: protective, classical.** The top genes are epithelial and secretory (CAPN5, LPCAT4, MLPH, SLC45A3, TJP3, GALNT6). The classical label rests mainly on subtype concordance ($\rho = -0.58$ with the basal-like probability) and on the classical signature's HR below 1 in all five cohorts (0.42–0.88, $p < 0.05$ in three). The enrichment is less specific: DeSurv's classical and basal-like lists are both enriched (adjusted $p = 0.017$ each), together with the Moffitt classical list and three integrin–focal adhesion kinase sets, and the top genes overlap both lists (Jaccard 0.13 and 0.10). Its unsupervised correspondence is less distinct ($r = -0.72$; next best 0.60).
 
-**Program 5: genomics-only, desmoplastic stroma.** Collagen and fibroblast genes dominate (COL1A2, COL3A1, COL5A2, THBS2, CDH11, SPARC); its twelve sets are led by Hallmark EMT (padj 0.0005), DeSurv's stromal-immune list and extracellular-matrix organization; its top genes overlap only the stromal-immune list (Jaccard 0.18); it leans weakly basal ($\rho = 0.30$); and its EMT signature is not consistently prognostic externally (HR 0.73–1.50, $p < 0.05$ in one cohort; S40).
+**Program 5: genomics-only, desmoplastic stroma.** Collagen and fibroblast genes dominate (COL1A2, COL3A1, COL5A2, THBS2, CDH11, SPARC). Its twelve enriched sets are led by the Hallmark epithelial–mesenchymal transition (EMT) set (adjusted $p = 0.0005$), DeSurv's stromal-immune list and extracellular matrix (ECM) organization. Its top genes overlap only the stromal-immune list (Jaccard 0.18), it leans weakly basal ($\rho = 0.30$), and its EMT signature is not consistently prognostic externally (HR 0.73–1.50, $p < 0.05$ in one cohort).
 
-**Program 6: genomics-only, immune infiltrate with a vascular component.** Lymphoid genes (IKZF1, AKNA, IL10RA, RCSD1, PREX1) are mixed with vascular and basement-membrane genes (APOLD1, COL14A1, TNXB, FBLN5, SLIT3, SPARCL1), so the label keeps both components, following the August 21 report (S21). Most of its 40 sets (S61) are immune GO terms, though the two lowest padj values are DeSurv's classical and stromal-immune lists. It is uncorrelated with the PurIST axis ($\rho = -0.03$) but differs across PurIST calls (Kruskal–Wallis $p = 0.007$), a non-monotonic relation. Scored on its own immune set after the post hoc C4 correction, it has no consistent external association (HR 0.53–1.39, none with $p < 0.05$; S40).
+**Program 6: genomics-only, immune infiltrate with a vascular component.** Lymphoid genes (IKZF1, AKNA, IL10RA, RCSD1, PREX1) are mixed with vascular and basement-membrane genes (APOLD1, COL14A1, TNXB, FBLN5, SLIT3, SPARCL1). Most of its 40 enriched sets are immune GO-BP terms, although the two smallest adjusted p-values belong to DeSurv's classical and stromal-immune lists. It is uncorrelated with the PurIST axis ($\rho = -0.03$) but differs across PurIST calls (Kruskal–Wallis $p = 0.007$), a non-monotonic relation. Scored on its own immune set, it has no consistent external association (HR 0.53–1.39, none with $p < 0.05$).
 
-Together, the four programs map onto DeSurv's three published factors, with DeSurv's combined stromal-immune factor divided between a stromal and an immune program. This is gene-list correspondence within a DeSurv-aligned gene universe, not an independent replication of DeSurv and not a predictive comparison with it. The August 21 report also noted that the three dead programs have no enriched sets; their posterior-mean loadings are exactly zero in the saved fit, so that observation follows from the fit and does not corroborate the classification independently.
+Together, the four programs correspond to DeSurv's three factors, with DeSurv's combined stromal-immune factor divided between a stromal and an immune program. This is gene-list correspondence within a gene universe screened by DeSurv's rule, not an independent replication of DeSurv and not a predictive comparison with it.
 
 <!-- REVISIT R8 END -->
 
 <!-- REVISIT R8 START -->
 
-| Program | Class | Label | Risk-scale coefficient | Supporting analyses (rows of @tbl-char-methods) |
+```{=latex}
+\needspace{0.5\textheight}
+```
+
+| Program | Class | Label | Risk-scale coefficient | Supporting analyses |
 |:---:|----------|------------|:---:|------------------------------------|
-| 7 | Survival-active | Adverse; basal-like | $+0.040$ | fgsea (DeSurv basal-like, RTK–PI3K/ERK); $\rho = 0.58$ with PurIST; overlap with DeSurv basal-like only; external signature HR $> 1$ in 5/5 cohorts; tertile curves |
-| 3 | Survival-active | Protective; classical | $-0.012$ | $\rho = -0.58$ with PurIST; external signature HR $< 1$ in 5/5 cohorts; tertile curves; fgsea and overlap include both classical and basal-like lists |
-| 5 | Genomics-only | Desmoplastic stroma | $\approx 0$ | fgsea (EMT, ECM); overlap with DeSurv stromal-immune only; weak basal lean; external signature not consistently prognostic |
-| 6 | Genomics-only | Immune infiltrate with a vascular component | $\approx 0$ | fgsea (immune GO terms; DeSurv lists); overlap with stromal-immune and classical lists; non-monotonic subtype relation; corrected external control null |
+| 7 | Survival-active | Adverse; basal-like | $+0.040$ | Enrichment of DeSurv basal-like and RTK–PI3K/ERK sets; $\rho = 0.58$ with PurIST basal-like probability; overlap with the DeSurv basal-like list only; signature HR $> 1$ in 5/5 cohorts; projection-tertile curves |
+| 3 | Survival-active | Protective; classical | $-0.012$ | $\rho = -0.58$ with PurIST basal-like probability; signature HR $< 1$ in 5/5 cohorts; projection-tertile curves; enrichment and overlap include both classical and basal-like DeSurv lists |
+| 5 | Genomics-only | Desmoplastic stroma | $\approx 0$ | Enrichment of EMT and ECM sets; overlap with the DeSurv stromal-immune list only; weak basal lean; signature not consistently prognostic |
+| 6 | Genomics-only | Immune infiltrate with a vascular component | $\approx 0$ | Enrichment of immune GO-BP terms and DeSurv lists; overlap with stromal-immune and classical lists; non-monotonic subtype relation; immune signature not prognostic |
 
-: Retained single-modality programs at starting rank 7. Risk-scale coefficients are $-\bar{\tilde\beta}_k$ of the saved fit, per unit of normalized projection; they agree in sign with the marginal direction labels. Sources: S16, S21–S24, S35, S40, S45, S58. {#tbl-bio-single}
+: Retained programs of the single-modality model at starting rank 7 (training $n = 273$). Survival-active: $|\bar{\tilde\beta}_k| > 0.001$; genomics-only: not survival-active with PVE above 1%. Risk-scale coefficients are $-\bar{\tilde\beta}_k$, per unit of normalized projection, and are conditional on the other programs; they agree in sign with the marginal direction labels. Enrichment: fgsea, BH-adjusted $p < 0.10$ within program and collection. $\rho$: Spearman correlation of TCGA training activities with the PurIST basal-like probability. Overlap: top 270 loading genes against the DeSurv factor lists. Signature HR: univariable Cox hazard ratio per unit of leading-edge signature score in each external cohort. DeSurv, Young et al., submitted; PurIST, a single-sample PDAC subtype classifier; RTK, receptor tyrosine kinase; PI3K, phosphoinositide 3-kinase; ERK, extracellular signal-regulated kinase; EMT, epithelial–mesenchymal transition; ECM, extracellular matrix; GO-BP, Gene Ontology biological process. {#tbl-bio-single}
 
 <!-- REVISIT R8 END -->
 
 <!-- REVISIT R8 START -->
 
-**Direction labels.** Adverse and protective labels follow the marginal association of each program's projection with survival (S01). The pathway report read the stored coefficients ($\tilde\beta_7 = -0.040$, $\tilde\beta_3 = +0.012$) as risk-scale values and described a sign disagreement with the marginal directions. Because the saved fit's $\eta$ is a good-prognosis score (@sec-orientation), the risk-scale coefficients are $+0.040$ for Program 7 and $-0.012$ for Program 3, which agree in sign with the marginal labels. These coefficients are conditional on the other programs and are not interchangeable with the marginal associations.
+Adverse and protective labels follow the marginal association of each program's projection with survival. On the risk scale, the coefficients of Programs 7 ($+0.040$) and 3 ($-0.012$) agree in sign with these labels. The coefficients are conditional on the other programs and are not interchangeable with the marginal associations.
 
-![Overall survival by within-cohort tertile of the frozen Program 3 and Program 7 projection scores, pooled over the five external cohorts ($n = 616$), with cohort-stratified log-rank tests annotated. These are projection scores, not training activities $E(L)$ or signature means. Source: S49; figure from the October 2 progress chapter.](../../docs/progress_book/figs/2026-10-02_km_programs_external.png){#fig-km-programs fig-alt="Kaplan-Meier curves by tertile of Program 3 and Program 7 projection scores in pooled external cohorts." width="66%"}
+![Overall survival by within-cohort tertile of the frozen Program 7 and Program 3 projection scores of the single-modality model, pooled over the five held-out PDAC cohorts ($n = 616$, 414 deaths). Projection scores are the patient's standardized expression projected onto the program's unit-length loading direction; they are distinct from training activities and from signature scores. Lines are Kaplan–Meier estimates; crosses mark censored patients. P-values are from log-rank tests stratified by cohort, unadjusted. Time is in months.](figures/km_programs_external){#fig-km-programs fig-alt="Two-panel Kaplan-Meier plot. The high Program 7 tertile has the shortest survival; the high Program 3 tertile has the longest." width="100%"}
 
 <!-- REVISIT R8 END -->
 
@@ -618,73 +632,47 @@ Together, the four programs map onto DeSurv's three published factors, with DeSu
 
 <!-- REVISIT R8 START -->
 
-The starting-rank-7 joint fit has seven programs (@tbl-bio-mm). Labels are provisional: they come from a manual reading of each program's eight highest positive and six most negative expression loadings, together with the saved loading correlations to three references. No enrichment test and no CpG annotation was performed for these programs. Because the saved correlations are absolute values, the tables cannot show whether a matched pair points in the same direction, and best matches chosen independently for each program need not form a one-to-one alignment; for example, both the immune and stromal programs have their best established-model match in Program 6.
+The starting-rank-7 joint fit has seven programs (@tbl-bio-mm). Labels are provisional. They come from a manual reading of each program's highest positive and most negative expression loadings, together with loading correlations to three reference fits. No enrichment test and no CpG annotation was performed. The correlations are absolute values, so they do not show whether a matched pair points in the same direction, and best matches chosen independently for each program need not form a one-to-one alignment; for example, both the immune and stromal programs have their best single-modality match in Program 6.
 
-| Program | Provisional label | Label basis: top signed expression genes; correspondence $|r|$ | Share of expr / meth signal | Class | HR per SD, TCGA ($p$) | HR per SD, ICGC ($p$) |
+```{=latex}
+\needspace{0.9\textheight}
+```
+
+| Program | Provisional label | Top signed expression genes; best $|r|$ with references SM, U and EO | Expression / methylation share | Class | HR per SD, TCGA ($p$) | HR per SD, ICGC ($p$) |
 |:---:|----------|------------------------------|:---:|:---:|:---:|:---:|
-| 1 | Classical / gastric | + REG4, TFF1, CLDN18, CEACAM5; $-$ CXCL12, ADAM12, CILP. D4 P3 0.79; flash k5 0.79; expr-only 0.87 | 23.5% / 4.8% | Reconstruction | 1.07 (0.58) | 0.79 (0.30) |
-| 2 | Immune | + CCL19, CORO1A, PTPRC, CCL21, LTB; $-$ FOXA2, H1F0. D4 P6 0.52; flash k9 0.63; expr-only 0.67 | 5.1% / 20.9% | Reconstruction | 0.85 (0.17) | 0.87 (0.54) |
-| 3 | Mixed (no label) | + MIF, TNFRSF6B, CCDC85B, SYT8; $-$ IL6ST, HIPK3, EDIL3. D4 best 0.36; flash k3 0.78; expr-only 0.79 | 31.5% / 0.3% | Reconstruction | 1.00 (0.98) | 1.48 (0.051) |
-| 4 | Basal-like vs classical | + S100A2, MUC16, KRT5, KRT6A, KRT17; $-$ CLDN18, LYZ, REG4. D4 P7 0.68; flash k8 0.70; expr-only 0.88 | 6.2% / 4.5% | Both | 1.34 (0.0055) | 1.99 (0.00033) |
-| 5 | Normal vs activated stroma | + ADH1B, C7, CHRDL1, PRUNE2; $-$ COL11A1, MMP11, MSLN, COL17A1. D4 P6 0.48; flash k2 0.60; expr-only 0.52 | 4.8% / 1.2% | Reconstruction | 0.75 (0.043) | 0.83 (0.46) |
-| 6 | Exocrine / acinar | + CTRB2, CPB1, CPA1, PNLIP, PRSS1; $-$ LRRC15, COL11A1, GREM1. D4 best 0.38; flash k6 0.87; expr-only 0.91 | 28.9% / 9.3% | Reconstruction | 0.92 (0.53) | 1.17 (0.37) |
-| 7 | Methylation-only | No expression loading; no expression correspondence | 0% / 58.9% | Reconstruction | 1.11 (0.36) | 0.87 (0.44) |
+| 1 | Classical / gastric | + REG4, TFF1, CLDN18, CEACAM5; $-$ CXCL12, ADAM12, CILP. SM 3: 0.79; U: 0.79; EO: 0.87 | 23.5% / 4.8% | R | 1.07 (0.58) | 0.79 (0.30) |
+| 2 | Immune | + CCL19, CORO1A, PTPRC, CCL21, LTB; $-$ FOXA2, H1F0. SM 6: 0.52; U: 0.63; EO: 0.67 | 5.1% / 20.9% | R | 0.85 (0.17) | 0.87 (0.54) |
+| 3 | Mixed (no label) | + MIF, TNFRSF6B, CCDC85B, SYT8; $-$ IL6ST, HIPK3, EDIL3. SM: 0.36; U: 0.78; EO: 0.79 | 31.5% / 0.3% | R | 1.00 (0.98) | 1.48 (0.051) |
+| 4 | Basal-like vs classical | + S100A2, MUC16, KRT5, KRT6A, KRT17; $-$ CLDN18, LYZ, REG4. SM 7: 0.68; U: 0.70; EO: 0.88 | 6.2% / 4.5% | R, S | 1.34 (0.0055) | 1.99 (0.00033) |
+| 5 | Normal vs activated stroma | + ADH1B, C7, CHRDL1, PRUNE2; $-$ COL11A1, MMP11, MSLN, COL17A1. SM 6: 0.48; U: 0.60; EO: 0.52 | 4.8% / 1.2% | R | 0.75 (0.043) | 0.83 (0.46) |
+| 6 | Exocrine / acinar | + CTRB2, CPB1, CPA1, PNLIP, PRSS1; $-$ LRRC15, COL11A1, GREM1. SM: 0.38; U: 0.87; EO: 0.91 | 28.9% / 9.3% | R | 0.92 (0.53) | 1.17 (0.37) |
+| 7 | Methylation-only | No expression loading | 0% / 58.9% | R | 1.11 (0.36) | 0.87 (0.44) |
 
-: Multimodal programs at starting rank 7. Label basis: manual reading of top signed expression genes, plus best absolute loading correlation with the established single-modality programs (D4; 1,781 shared genes), an unsupervised `flash` fit of TCGA expression (14 factors; 3,000 genes), and the expression-only fit of the same framework. Shares are within-modality rank-one shares of fitted signal. Class: reconstruction-active only, or both reconstruction- and survival-active. HRs are univariable, per one within-cohort SD of the joint projection, and unadjusted; 14 tests. ICGC is the 50-donor primary-PDAC set. Sources: S31, S32, S43, S44. {#tbl-bio-mm}
-
-<!-- REVISIT R8 END -->
-
-<!-- REVISIT R8 START -->
-
-The one survival-active program (4) is the basal-like versus classical axis. Its marginal hazard ratio per SD of the joint projection is 1.99 in ICGC ($p = 0.00033$) and 1.34 in TCGA ($p = 0.0055$). It corresponds to established Program 7 ($|r| = 0.68$), and the classical/gastric program (1) corresponds to established Program 3 ($|r| = 0.79$), although Program 1 is not survival-active here. Of the 14 marginal tests, three have $p < 0.05$ (Program 4 in both cohorts and Program 5 in TCGA); no correction for multiplicity was applied.
-
-Methylation contributes in two ways (@fig-mm-share). A methylation-only program carries 58.9% of the fitted methylation signal and has no expression loading. The immune program carries 20.9% of the methylation signal while being defined on the expression side by immune genes. Neither is survival-active, and neither has a marginal association with $p < 0.05$. The basal-like program carries 4.5% of the methylation signal. These shares describe the fitted rank-one reconstruction within each modality. They are not additive proportions of variance, because cross-terms between programs are excluded, and they say nothing about each program's contribution to survival prediction.
-
-The current evidence therefore supports expression-defined program labels and the existence of methylation-dominant structure in the screened CpGs. It does not establish what that structure is. The 10,000 CpGs were chosen by variance, and high-variance CpGs often track cell composition, so the immune and methylation-only programs may reflect composition or technical variation; this is an explanation to test, not a finding.
-
-![Share of each modality's fitted rank-one signal carried by each program of the starting-rank-7 joint fit. The asterisk marks the survival-active program. Shares are not additive variance explained and not survival contributions. Source: S31; figure from the October 2 progress chapter.](../../docs/progress_book/figs/2026-10-02_program_modality_share.png){#fig-mm-share fig-alt="Grouped bar chart of expression and methylation signal shares for seven multimodal programs." width="62%"}
+: Programs of the joint multimodal fit at starting rank 7 (TCGA training, $n = 144$). Genes are gene symbols with the largest positive (+) and negative ($-$) expression loadings. References, matched by the largest absolute Pearson correlation of loading columns over shared genes: SM, the single-modality model's programs (1,781 shared genes; program number given when the match is a retained program); U, an unsupervised empirical-Bayes factorization of TCGA expression (14 factors, 3,000 genes); EO, the expression-only fit of the multimodal framework. Share: the program's rank-one squared norm as a fraction of the sum over programs within each modality; shares are not additive variance explained. Class: R, reconstruction-active (at least 1% of the centered sum of squares); S, survival-active (posterior mean at least 1.96 posterior SDs from zero). HR: univariable Cox hazard ratio per one within-cohort SD of the joint projection, with unadjusted p-values from 14 tests; ICGC is the 50-donor primary-PDAC set. {#tbl-bio-mm}
 
 <!-- REVISIT R8 END -->
 
 <!-- REVISIT R8 START -->
 
-| Completed multimodal characterization | Proposed characterization (not completed evidence) |
-|------------------------------|------------------------------|
-| Signed top-expression-gene lists and manual provisional labels | Sign-aware, two-sided enrichment of expression loadings; the existing signed enrichment of unsupervised reference factors (S47) shows an alignment convention, not a completed multimodal analysis |
-| Within-modality rank-one fitted-signal shares | CpG annotation and genomic-context enrichment |
-| Absolute loading correlations with expression-only, established D4, and unsupervised `flash` references | Checks of cell-composition and technical explanations; direction-aware correspondence if later computed |
-| Fourteen unadjusted, within-cohort standardized joint-projection Cox associations | Characterization and validation of the final programs after the method work |
+The one survival-active program (4) is the basal-like versus classical axis. Its marginal HR per SD of the joint projection is 1.99 in ICGC ($p = 0.00033$) and 1.34 in TCGA ($p = 0.0055$). It corresponds to single-modality Program 7 ($|r| = 0.68$), and the classical/gastric program (1) corresponds to single-modality Program 3 ($|r| = 0.79$), although Program 1 is not survival-active here. Of the 14 marginal tests, three have $p < 0.05$ (Program 4 in both cohorts and Program 5 in TCGA), without correction for multiplicity.
 
-: Multimodal characterization completed to date and characterization that remains to be done. Sources: S31, S32, S43, S44, S47, S38. {#tbl-mm-completed}
+Methylation contributes in two ways (@fig-mm-share). A methylation-only program carries 58.9% of the fitted methylation signal and has no expression loading. The immune program carries 20.9% of the methylation signal while being defined on the expression side by immune genes. Neither is survival-active, and neither has a marginal association with $p < 0.05$. The basal-like program carries 4.5% of the methylation signal. These shares describe the fitted rank-one reconstruction within each modality; they are not additive proportions of variance, because cross-terms between programs are excluded, and they do not measure contributions to survival prediction.
+
+The evidence therefore supports expression-defined program labels and the existence of methylation-dominant structure among the screened CpG sites, but not what that structure is. The 10,000 CpG sites were chosen by variance, and high-variance CpG sites often track cell composition, so the immune and methylation-only programs may reflect composition or technical variation. This is an explanation to test, not a finding.
+
+![Share of each modality's fitted rank-one signal carried by each program of the starting-rank-7 joint multimodal fit (TCGA training, $n = 144$; 3,000 genes and 10,000 CpG sites). For modality $m$, the share of program $k$ is $\lVert\bar L_{\cdot k}\rVert^2\lVert\bar F_{mk}\rVert^2$ divided by the sum of these quantities over programs. The asterisk marks the survival-active program (posterior mean at least 1.96 posterior SDs from zero). Shares are neither additive variance explained nor survival contributions.](figures/multimodal_share){#fig-mm-share fig-alt="Grouped bar chart of expression and methylation shares for seven multimodal programs. The methylation-only program carries 59 percent of the methylation signal; the immune program 21 percent." width="100%"}
 
 <!-- REVISIT R8 END -->
 
-# Interpretation and remaining evidence {#sec-interpretation}
+# Discussion {#sec-discussion}
 
-## What the current evidence supports {#sec-supports}
-
-<!-- REVISIT R9 START -->
-
-The single-modality model yields a few interpretable programs and a risk score that transfers across platforms, but its advantage over a tuned two-step pipeline is small and marginal, and with $\alpha_F = 0$ that advantage comes from how programs are fitted and coefficients shrunk, not from survival-guided discovery. Its programs match the known basal-like/classical and stromal/immune axes of PDAC. The multimodal framework fixes the September model's failure to remove factors and works as designed in simulation when the true programs explain enough variance; on real data it has not shown that methylation improves prediction, nothing is pruned, and most fits are unconverged. Neither model recovers a planted low-variance prognostic program alongside strong ones, which is the case a supervised factorization exists for.
-
-<!-- REVISIT R9 END -->
-
-## Evidence gaps by claim {#sec-gaps}
+## Interpretation and implications {#sec-implications}
 
 <!-- REVISIT R9 START -->
 
-@tbl-gaps lists the six claims a manuscript would need to make, the evidence that exists, the conclusion it justifies now, and what is missing. It records the present state of the evidence; it does not imply that the missing analyses were run for this report.
+The single-modality model produces a small number of interpretable programs and a risk score that transfers across expression and proteomic platforms. Its four retained programs correspond to the basal-like and classical tumor axes and to stromal and immune components that are well described in PDAC, and the score separates survival in held-out cohorts measured on platforms not used in training. Its advantage over an independently tuned two-step pipeline is small: 0.026 in concatenated concordance, with a lower confidence limit near zero, and no advantage over a rank-matched two-step model. The concatenated estimand also includes comparisons across cohorts, so it does not establish a within-cohort advantage. In the evaluated configuration survival does not enter the loading updates, so the advantage reflects how programs are fitted and coefficients shrunk rather than survival-guided discovery of programs. That the model nonetheless finds recognizable biology from the dominant structure of the data is useful for interpretation but does not yet show what survival supervision adds.
 
-| Claim | Existing evidence | Source ID, path and selector | Currently justified conclusion | Missing evidence |
-|----------|--------------------|--------------------|--------------------|--------------------|
-| Value over EBMF or NMF alone | Simulated recovery of shared and specific programs; established Programs 3 and 7 correspond to unsupervised EBMF factors; their pathway results partly agree; multimodal programs correspond to an unsupervised `flash` fit | S18 (`multicohort_sim_results.csv`, scenario × K_init × arm); S19 (`top2_match_diagnostic.csv`); S45 (`T5_ebmf_factor_correspondence.csv`, program 3, 7); S46 (`T6_ebmf_pathway_concordance.csv`: 5 of 13 sets concordant); S32 (`real_factor_comparison.csv`, `reference == flash`) | The programs largely coincide with unsupervised structure; recovery differences in simulation reflect the fitting procedure, not supervision, under $\alpha_F = 0$ | A survival comparison with unsupervised factorization needs an explicit scoring rule (for example, factor scores entered into a Cox model). No NMF comparison was found in the reviewed comparator sources |
-| Value over two-step EBMF $\to$ Cox | Principal concatenated difference 0.026 (0.0002, 0.0498) against 40 factors with LASSO; rank-matched difference 0.011 ($-0.013$, 0.033); older unpenalized difference 0.042; simulation two-step arm with unpenalized Cox | S10 (`ebmf_cox_regularized_results.csv`, `k_tag == "k40"`); S11 (`yfb_vs_ebmf_k40_pooled_ci.csv`); S12 (`yfb_vs_ebmf_k7_matched_ci.csv`, `cohort == "POOLED"`); S13 (`external_paired_diff_ci.csv`, pooled row); S18 | A small, marginal advantage over the principal comparator in this benchmark; no advantage shown over the rank-matched comparator | Comparison of the final method with the same comparators in simulation and real data, with replicated starts |
-| Value over DeSurv | Gene-list overlap of the four programs with DeSurv's three factors; our models fitted with DeSurv-aligned preprocessing | S35 (`T4_sbmf_desurv_overlap.csv`, program × desurv_factor); S48 (`run_desurv_comparison.R`, configurations D1–D5) | Correspondence of gene lists within a DeSurv-aligned gene universe. No predictive comparison with DeSurv exists in the reviewed sources | A matched head-to-head with DeSurv on the same training and validation data. The directory name `desurv_comparison` does not indicate a DeSurv fit |
-| Rank selection accounting for survival and reconstruction | Single-modality sweep with disagreeing criteria and an external-concordance plateau from 7; threshold sensitivity; multimodal simulation final ranks; real multimodal fits never pruned; removal criterion with plug-in survival | S14 (`k_init_sweep_results.csv`); S55 (`kcv_yfb_desurv_corrected.csv`); S15 (`threshold_grid_K7.csv`); S26, S27 (`pruning_comparison*.csv`, `variant == "pruned"`); S28 (`real_sweep_summary.csv`, `K_final`); S01; S08 | Starting rank 7 is supported by training cross-validation and by external performance, which was used in the recommendation; criteria disagree; the multimodal removal step works in simulation but not on real data | A selection rule that combines survival and reconstruction, validated with replicated simulations and without validation outcomes. The dated explanation of the ELBO-versus-performance gap is unverified, and the October per-program evidence decomposition was not traced to a saved output |
-| Multimodal added value | Joint and expression-only fits of the same framework on the same 50 donors at starting rank 7; seven programs with modality shares and correspondence | S28 (`K_init == 7`, `cohort == "icgc_primary"`, `method == "joint_multimodal_yfb"`, `config == "pruned"` or `"pruned_expression_only"`); S31 (`real_program_table_K07.csv`); S32 | Similar observed concordance (0.685 and 0.676), both unconverged; methylation adds methylation-dominant structure | A test of improved prediction; converged fits; robustness to starting rank, CpG selection and feature counts. The established single-modality model's C on the same donors (0.685 in the October chapter) is hard-coded in `plot_real_cindex_by_kinit.R` and has no saved score source |
-| Biological understanding | Single-modality enrichment, subtype concordance, overlap and external signature checks; multimodal top genes, shares, absolute correspondence and 14 unadjusted HRs | S21–S24, S35, S36, S40–S44, S49, S51–S54 | Descriptive program labels consistent with known PDAC axes; checks share inputs, include a post hoc correction and within-training concordance, and use unadjusted tests and unsigned matching | Mechanism; characterization of the final programs; signed enrichment of multimodal loadings; CpG annotation; assessment of the characterization methods themselves |
-
-: Claim-centered evidence gaps. File names are abbreviated; the full repository path for each source ID is recorded in `source_inventory.csv`. {#tbl-gaps}
+The multimodal framework solves a specific problem of the base multimodal model, which could not remove unneeded factors: with intercepts, signed loadings and marginal-likelihood prior estimation, it returns close to the true rank in simulation when the true programs explain enough variance, and every simulated fit converges. On real data it adds molecular structure, a methylation-dominant program and methylation loading on an immune program, but no demonstrated improvement in prediction. The framework did not recover a planted low-variance prognostic program at lower noise. The single-modality loading update receives no survival information, so its evaluated configuration does not test whether survival supervision improves recovery of such programs. That question, which motivates supervised factorization, remains open.
 
 <!-- REVISIT R9 END -->
 
@@ -692,7 +680,9 @@ The single-modality model yields a few interpretable programs and a risk score t
 
 <!-- REVISIT R9 START -->
 
-The external cohorts differ in platform, size and event rate, and two of them come from the same ICGC project; the matched multimodal validation set overlaps one of them. The multimodal real-data results rest on one training cohort of 144 patients with 75 deaths and a 50-donor validation set, so concordance intervals are wide (about $\pm 0.10$). Rank 7 is favourable among the multimodal starting ranks evaluated. The multimodal simulation uses three datasets per setting. Feature screening keeps 3,000 genes and the 10,000 highest-variance CpGs, about 3% of those available, and the effect of that choice is unknown. The single-modality simulation reports outcome-oriented concordance. The saved historical single-modality fit predates the September orientation correction and has no stored coefficient uncertainty. The biological characterization methods were chosen for availability and have not been assessed.
+Several features of the fitted models limit the conclusions. The evaluated single-modality fit has no stored coefficient uncertainty. Both algorithms rely on a diagonal working approximation to the Cox partial likelihood, and their stopping and removal criteria are approximations: the single-modality monitoring statistic weights its components unequally and uses an approximate KL term for the activities, and the multimodal removal score evaluates survival at the posterior-mean predictor and uses KL penalties computed against earlier priors. How these approximations affect the stopping point and the selected rank has not been assessed. Most real multimodal fits did not converge, no factor was removed on real data, and survival has little weight in the removal score relative to reconstruction.
+
+The evidence is also limited by the data and evaluation. The multimodal results rest on one training cohort of 144 patients with 75 deaths and a 50-donor validation set, so concordance intervals are wide (about $\pm 0.10$), and rank 7 is favorable among the starting ranks evaluated. The external cohorts differ in platform, size and event rate; two come from the same ICGC project, and the matched multimodal validation set overlaps one of them. Bootstrap intervals hold the fitted models fixed. The single-modality starting rank was informed by external concordance. Feature screening keeps 3,000 genes and about 3% of the available CpG sites, and the effect of that choice is unknown. The single-modality simulation reports outcome-oriented concordance, and the multimodal simulation uses three datasets per setting. The biological characterization uses analyses that share inputs, includes a correction designed after an earlier result and a within-training subtype check, reports unadjusted tests and unsigned correspondence for the multimodal programs, and relies on methods whose suitability has not been assessed.
 
 <!-- REVISIT R9 END -->
 
@@ -701,21 +691,16 @@ The external cohorts differ in platform, size and event rate, and two of them co
 <!-- REVISIT R9 START -->
 <!-- REVISIT R1 START -->
 
-The configuration with $\alpha_F = 0$ is not the intended final method: a supervised factorization should be able to find a prognostic program that explains little molecular variance, and the evaluated configuration cannot, because survival never enters the loading update. The planned work, recorded in the October 2 follow-up plan and its October 13 sequencing (S38), has five parts. These are plans; no result from them is reported here.
+The configuration with $\alpha_F = 0$ is not the intended final method. A supervised factorization should be able to find a prognostic program that explains little molecular variance, and survival cannot help the loading updates select such a program unless it enters them. The continuing work has five aims.
 
-1. **Survival supervision of the loadings.** Diagnose why survival has little effect even when it enters the loading update: its contribution is multiplied by the current coefficient, so a direction no program already points at receives no survival information; its precision is small relative to the reconstruction term; and in the single-modality model the loading scale is not fixed. The work adds the multimodal scale canonicalization to the single-modality model, removes $\alpha_F$ as a separate setting, tests a supervised initialization, and compares a coefficient prior with an explicit survival weight. Success is defined in advance as recovery of a planted low-variance prognostic program in a large majority of simulation seeds, without instability and without loss of external concordance.
-2. **Notation and prediction.** Settle the definition of the normalized projection and the coefficient units once the scale canonicalization is in place, and carry the chosen supervision method into the multimodal model.
-3. **Rank selection.** Compare an evidence criterion with weighted survival against selection by cross-validated concordance plus reconstruction, with replicated simulation panels and a one-standard-error rule, for both models.
-4. **Robustness and comparators.** Repeat fits from jittered starts, compare loading prior families, vary the number of genes and CpGs, and run a comparator matrix in simulation and on real data that includes unsupervised factorization, the two-step pipeline, and DeSurv.
-5. **Biology of the final programs.** Recompute risk scores, survival curves and enrichment for the final programs, and add signed enrichment and CpG annotation for the multimodal programs.
+1. **Survival supervision of the loadings.** Determine why survival has little effect even when it enters the loading update. Its contribution is multiplied by the current coefficient, so a direction that no program already points along receives no survival information; its precision is small relative to the reconstruction term; and in the single-modality model the loading scale is not fixed during the update. The aim is a supervised loading update that recovers a planted low-variance prognostic program in most simulated datasets, without instability and without loss of external concordance.
+2. **Projection scale and prediction.** Settle the definition of the projection and the units of the coefficients under a common scale convention for both models, and carry the chosen supervision method into the multimodal model.
+3. **Rank selection.** Develop a rule that accounts for both survival and reconstruction without using validation outcomes, and evaluate it with replicated simulations for both models.
+4. **Robustness and comparators.** Assess sensitivity to initialization, loading prior family and the numbers of genes and CpG sites, and compare the final method with unsupervised factorization, the two-step pipeline and DeSurv on the same training and validation data.
+5. **Biology of the final programs.** Characterize the final programs, including sign-aware enrichment of multimodal loadings, annotation of the CpG sites, and tests of cell-composition and technical explanations for the methylation-dominant structure.
 
 <!-- REVISIT R1 END -->
 <!-- REVISIT R9 END -->
-
-# References {.unnumbered}
-
-::: {#refs}
-:::
 
 {{< pagebreak >}}
 
@@ -724,52 +709,3 @@ The configuration with $\alpha_F = 0$ is not the intended final method: a superv
 {{< pagebreak >}}
 
 {{< include appendices/multimodal.qmd >}}
-
-{{< pagebreak >}}
-
-# Appendix C. Supporting exhibits {#sec-appendix-c .unnumbered}
-
-These exhibits are referenced from the main text and placed here to keep the main text within its page target.
-
-<!-- REVISIT R8 START -->
-
-| Analysis | Input object | Population | Statistic and settings | Multiplicity | What the output supports |
-|------------|------------|------------|----------------------|------------|----------------------|
-| Ranked enrichment (fgsea) | Nonnegative posterior means $E(F)$ over the 2,064 selected genes | Established single-modality fit; one program at a time | Genes ranked by raw loading; `scoreType = "pos"` (one-sided, high loadings); set sizes 10–500; seed 1. Collections: Hallmark, Reactome, KEGG, GO-BP, and a custom PDAC collection (Moffitt and Bailey subtype lists and DeSurv's three factor lists). Normalized enrichment score (NES) compares a set's running-sum statistic with permutations; leading-edge genes are the set members ranked before the running-sum maximum. | Benjamini–Hochberg within each program $\times$ collection; reported at padj $< 0.10$. No control across programs or collections. | Association of high-loading genes with predefined sets; not mechanism or survival-driven discovery. S21, S22, S41, S42 |
-| Over-representation sensitivity | Top 50, 100, or 150 genes by $E(F)$ | Same selected gene universe | Hypergeometric test (`enricher`); background is the 2,064 selected genes, not the genome. Checks dependence on the cutoff. | Adjusted p-values within each call; no global error control. | Threshold-based cross-check on the same universe; not independent replication. S21, S41, S42 |
-| Subtype concordance | Training latent activities $E(L)$, not projection scores | TCGA, $n = 144$ | Spearman correlation with PurIST basal-like probability; Kruskal–Wallis test across PurIST calls | Unadjusted | Within-training correspondence to an established subtype axis. S23, S41, S53 |
-| DeSurv gene-list overlap | Top 270 genes by $E(F)$; DeSurv factor lists | Both lists restricted to the selected shared-gene background | Jaccard similarity; hypergeometric overlap test | Unadjusted | Gene-list correspondence; not a predictive comparison. The custom fgsea collection reuses the same lists. S35, S41 |
-| External signature association | Mean of within-cohort z-scored expression over the available leading-edge genes of one selected set | Five held-out cohorts | Univariable Cox HR per unit of the mean signature score. C2 scores each program's lowest-padj set; C4 excludes the whole PDAC_custom collection for the two genomics-only programs. Gene coverage reported. | Unadjusted; C4 is a post hoc correction | Descriptive external association of the selected signature, not necessarily of the whole program; not preregistered confirmation. S24, S40, S41, S51, S52 |
-| Program directions and survival curves | Marginal association of each program's projection for direction labels; frozen Program 3 and 7 projections and overall risk for curves | Direction labels from the dated decision record; five external cohorts for curves | Within-cohort tertiles; pooled program curves with cohort-stratified log-rank tests. Historical D4 risk $= -\eta$. | Descriptive | Direction and held-out separation, without clinical cutoffs. Distinct from signature scores and from $E(L)$. S01, S36, S49 |
-| Multimodal top-gene interpretation | Signed expression loadings: top 8 positive and top 6 negative genes | Matched TCGA fit, starting rank 7 | Manual reading of the gene lists; no fgsea or over-representation analysis | No test | Provisional expression-supported labels; weaker than the single-modality characterization. S31, S43 |
-| Multimodal modality shares | Posterior-mean $L$ and modality-specific $F_m$ | Same fitted programs | $\lVert \bar L_{\cdot k}\rVert^2\lVert \bar F_{mk}\rVert^2$ divided by the sum of these rank-one squared norms within modality $m$ | Descriptive | Relative fitted rank-one signal; not additive variance explained and not a survival contribution. S31, S43 |
-| Multimodal correspondence | Expression loading columns on shared genes | Joint fit versus expression-only fit, established D4 programs (1,781 shared genes), or an unsupervised `flash` fit of TCGA expression (14 factors, 3,000 genes) | Saved absolute Pearson correlations and best matches. Saved tables contain only $|r|$. | Descriptive | Pattern similarity with direction unavailable; independent best matches need not form a one-to-one alignment. S32, S43, S44 |
-| Multimodal marginal survival association | $Z_{\cdot k} = \sum_m \tilde Y_m \bar F_{mk}$, standardized within cohort | TCGA training and ICGC primary PDAC | Univariable Cox HR per one SD of the joint projection, which includes methylation | 7 programs $\times$ 2 cohorts $=$ 14 unadjusted tests | Descriptive marginal association, distinct from the joint survival-active classification. S31, S43 |
-
-: Biological characterization methods. "Unadjusted" means the saved p-values carry no correction for the number of tests. {#tbl-char-methods}
-
-<!-- REVISIT R8 END -->
-
-<!-- REVISIT R6 START -->
-
-![Difference in test concordance between the single-modality model and the two-step arm, by scenario and starting rank (true rank 6). Bars are means over 15 seeds with $\pm 1$ standard error; both arms are scored on the same simulated data. Concordance is the outcome-oriented $\max(C, 1-C)$, and the two-step arm uses nonnegative `flashier` and unpenalized Cox. With $\alpha_F = 0$ the difference reflects the fitting procedure, not survival-guided programs. Source: S18; figure reused from the September 4 progress chapter.](../../docs/progress_book/figs/2026-09-04_multicohort_delta_fig.png){#fig-single-sim fig-alt="Bar chart of mean C-index difference between the single-modality model and the two-step arm across starting ranks for three simulation scenarios." width="88%"}
-
-<!-- REVISIT R6 END -->
-
-<!-- REVISIT R6 START -->
-
-| Scenario | Starting rank | Shared recovered (model / two-step) | Specific recovered (model / two-step) | Prognostic programs active (model) | Non-prognostic active (model) | Test C (model / two-step) |
-|------------|---:|:------:|:------:|:------:|:------:|:------:|
-| All shared | 4 | 0.59 / 0.54 | – | 0.60 | – | 0.744 / 0.770 |
-| All shared | 6 | 1.00 / 0.89 | – | 1.00 | – | 0.873 / 0.853 |
-| All shared | 20 | 1.00 / 0.89 | – | 0.93 | – | 0.872 / 0.852 |
-| Hybrid | 4 | 0.80 / 0.27 | 0.57 / 0.65 | 0.80 | 0.23 | 0.772 / 0.615 |
-| Hybrid | 6 | 1.00 / 0.73 | 0.93 / 0.83 | 1.00 | 0.35 | 0.825 / 0.730 |
-| Hybrid | 20 | 0.97 / 0.73 | 0.98 / 0.83 | 1.00 | 0.27 | 0.826 / 0.729 |
-| Nothing shared | 4 | – | 0.53 / 0.43 | – | 0.09 | 0.542 / 0.555 |
-| Nothing shared | 6 | – | 0.96 / 0.70 | – | 0.10 | 0.541 / 0.545 |
-| Nothing shared | 20 | – | 1.00 / 0.70 | – | 0.10 | 0.542 / 0.544 |
-
-: Single-modality simulation, means over 15 seeds at three of the six starting ranks (true rank 6). "Recovered" is the fraction of true programs matched at $|r| \ge 0.7$. "Active" is the fraction of true prognostic (or non-prognostic) programs whose matched estimate has $|\tilde\beta| > 0.001$. Test C is the outcome-oriented $\max(C, 1-C)$ on 75 test patients per seed. The two-step arm is nonnegative `flashier` followed by unpenalized Cox, not the principal real-data comparator. Source: S18. {#tbl-single-sim}
-
-<!-- REVISIT R6 END -->
