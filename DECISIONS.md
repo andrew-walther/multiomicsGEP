@@ -35,6 +35,8 @@ while drafting:
   model's diagonal, which equals the starting rank by construction; the zoomed
   axis shows that at the September noise level the final rank still rises with
   the starting rank.
+- **Monochrome text (author request).** Report text, headings, links,
+  callout boxes and PDF hyperlinks are black on white; only figures use colour.
 - **Length.** The characterization-methods table, the single-modality
   simulation table and its figure moved to Appendix C; the main text is 21 PDF
   pages, slightly above the 15–20-page target.

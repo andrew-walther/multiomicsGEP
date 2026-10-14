@@ -29,15 +29,33 @@ format:
     include-in-header:
       text: |
         <style>
-        body { color: #24343c; }
-        h1 { color: #173c45; margin-top: 2.2rem; }
-        h2 { color: #245d66; }
+        /* Monochrome text styling: black text on white; figures keep colour */
+        :root { --bs-body-color: #000; --bs-link-color: #000;
+          --bs-link-hover-color: #000; --bs-primary: #000;
+          --bs-emphasis-color: #000; --quarto-text-muted: #333; }
+        body, h1, h2, h3, h4, .title, .subtitle, .quarto-title-meta,
+        .quarto-title-meta-heading, .quarto-title-meta-contents, caption,
+        figcaption, .figure-caption, .table, th, td { color: #000 !important; }
+        h1 { margin-top: 2.2rem; }
+        a, a:hover, a:visited { color: #000 !important; text-decoration: underline; }
+        #TOC a, #TOC a.active, .sidebar nav[role="doc-toc"] a,
+        .sidebar nav[role="doc-toc"] ul > li > a.active {
+          color: #000 !important; text-decoration: none; }
+        .sidebar nav[role="doc-toc"] ul > li > a.active { font-weight: 700;
+          border-left-color: #000 !important; }
+        code, p code, td code { color: #000 !important; background: transparent !important; }
         .table { font-size: .88rem; }
         .table td { vertical-align: top; }
-        .draft-status { border-left: 4px solid #b08b34; background: #f8f6ee;
+        .draft-status { border: 1px solid #000; background: #fff;
           padding: .9rem 1.2rem; margin: 1rem 0; }
-        .findings { border-left: 4px solid #287a83; background: #f0f6f7;
+        .findings { border-left: 3px solid #000; background: #fff;
           padding: 1rem 1.3rem; margin: 1rem 0; }
+        .callout, .callout.callout-style-simple, .callout.callout-style-default {
+          border-color: #000 !important; border-left-color: #000 !important; }
+        .callout .callout-header { background-color: #fff !important; }
+        .callout .callout-title-container, .callout-titled .callout-title-container {
+          color: #000 !important; }
+        .anchorjs-link { color: #000 !important; }
         @media (max-width: 700px) {
           .table { font-size: .78rem; }
           .table th, .table td { overflow-wrap: anywhere; }
@@ -53,6 +71,11 @@ format:
     pdf-engine: lualatex
     latex-auto-install: false
     colorlinks: true
+    linkcolor: black
+    citecolor: black
+    urlcolor: black
+    filecolor: black
+    toccolor: black
     fig-pos: "htbp"
     include-in-header:
       text: |
@@ -66,6 +89,10 @@ format:
         \fancyfoot[C]{\thepage}
         \fancyhead[R]{\footnotesize Initial draft awaiting independent review}
         \renewcommand{\headrulewidth}{0pt}
+        \AtBeginDocument{%
+          \definecolor{quarto-callout-note-color}{HTML}{000000}%
+          \definecolor{quarto-callout-note-color-frame}{HTML}{000000}%
+          \definecolor{quarto-callout-color-frame}{HTML}{000000}}
 execute:
   enabled: false
 ---
