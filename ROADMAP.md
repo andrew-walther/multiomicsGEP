@@ -89,10 +89,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Source-checked dispositions, characterization methods, evidence-gap requirements,
   and supervised-F revision markers are recorded in the implementation plan.
   `paper/writeup/drafting_prompt.md` assigns Claude drafting and Codex review.
-- [ ] **Draft the unified technical report, then review it independently.**
-  Target a 15–20-page main text covering current methods, statistical results,
-  and biological findings, plus reconciled derivation appendices. The full
-  report remains pending, with an initial-draft target of October 16; see
+- [x] **Draft the unified technical report (2026-10-14).** Initial draft in
+  `paper/writeup/writeup.qmd` → HTML/PDF: 21-page main text plus derivation
+  Appendices A–B and supporting Appendix C; source inventory extended to 62 IDs.
+- [ ] **Independent review of the draft (Codex), then Claude's fixes and
+  Andrew's approval before merging `writeup/draft`.** See Prompts 3–4 in
+  `docs/plans/Meeting_Notes_Followup_10_2_26.md` and Task 4 in
   `paper/writeup/implementation_plan.md`.
 
 - [ ] **Manuscript introduction with its own background (`paper/thesis/`)**

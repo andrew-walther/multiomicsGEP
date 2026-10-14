@@ -83,12 +83,31 @@ Results, Biology, and derivation appendices, with a
 [source inventory](paper/writeup/source_inventory.csv) and
 [implementation checklist](paper/writeup/implementation_plan.md).
 The planning review has been checked and the plan finalized (October 14).
-The [Claude Code drafting prompt](paper/writeup/drafting_prompt.md) assigns
-Tasks 2, 3 and 5 on `writeup/draft`, targeting an initial draft by October 16.
-Codex independently reviews the complete draft afterward. The report has not
-yet been drafted; Andrew starts the handoff after reading the review dispositions.
-The target is an article-style technical report with a 15–20-page main text,
-plus appendices, rendered to HTML and PDF from the same Quarto source.
+**Initial draft, awaiting independent review (October 14).** The report is
+`paper/writeup/writeup.qmd`, with derivation appendices in
+`paper/writeup/appendices/`, rendered to [HTML](paper/writeup/writeup.html) and
+[PDF](paper/writeup/writeup.pdf). It covers Methods (two algorithm boxes),
+Evaluation, single-modality and multimodal Results, Biology, Interpretation with
+a six-claim evidence-gap table, and Appendices A–C. Codex reviews the draft
+independently next; it is not ready to share until that review is resolved.
+
+Render the report from the repository root (the RStudio Quarto works on this
+computer; rendering reads only saved aggregates, figures and the bibliography,
+and installs no LaTeX packages):
+
+```bash
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/writeup.qmd --to html
+```
+
+```bash
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/writeup.qmd --to pdf
+```
+
+One figure was redrawn for the report from the saved simulation sweep:
+
+```bash
+Rscript paper/writeup/figures/make_pruning_rank_figure.R
+```
 
 Rebuild the planning page from the repository root:
 

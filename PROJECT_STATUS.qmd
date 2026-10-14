@@ -115,10 +115,25 @@ Claude Code's planning review has been checked against the cited sources; the
 specify characterization methods, completed versus proposed multimodal biology,
 a six-claim evidence-gap table, and source markers for the later supervised-F
 revision. The [drafting handoff](paper/writeup/drafting_prompt.md) assigns Claude
-Tasks 2, 3 and 5 on `writeup/draft`, targeting October 16; Codex performs the
-independent complete-draft review afterward. Andrew starts that separate handoff;
-no report has been drafted yet. No model-fitting experiment or algorithm change is part of
-this writing task. The report will distinguish the evaluated single-modality
+Tasks 2, 3 and 5 on `writeup/draft`; Codex performs the independent
+complete-draft review afterward.
+
+**Status (2026-10-14): initial draft awaiting independent review.** The report
+(`paper/writeup/writeup.qmd`, rendered to `writeup.html` and `writeup.pdf`) has a
+21-page main text, Appendix A (single-modality derivations reconciled with the
+evaluated fit), Appendix B (multimodal derivations with intercept, signed priors,
+projection moments, canonicalization and removal), and Appendix C (supporting
+exhibits). The [source inventory](paper/writeup/source_inventory.csv) now has 62
+IDs, each recording what was verified. Drafting checks found: the principal
+0.026 comparison is a C-index difference on 616 concatenated patients, not a
+fixed-effect pooled difference; all saved per-cohort external C-indices equal
+their frozen-orientation values; the established model's C = 0.685 on the 50
+matched ICGC donors has no saved source and is listed as an evidence gap; the
+saved D4 fit stores zero coefficient variances (pre-September sign-correction
+code); and under that fit's orientation (risk = −η) the joint coefficients of
+Programs 3 and 7 agree in sign with their marginal direction labels. Task 4
+(Codex review) has not started. No model-fitting experiment or algorithm change
+is part of this writing task. The report will distinguish the evaluated single-modality
 configuration with α_F = 0 from continuing supervision work; use the independently
 tuned regularized two-step comparator for the principal comparison; identify
 CPTAC as proteomics; and report multimodal rank sensitivity and incomplete

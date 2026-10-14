@@ -5,6 +5,45 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-14 — Initial writeup draft: presentation and evidence choices
+
+**Decision.** The initial technical report (`paper/writeup/writeup.qmd`, with
+Appendices A–C) is a draft awaiting Codex's independent review. Choices made
+while drafting:
+
+- **Comparator exhibit from CSVs.** The single-modality comparison is a table
+  built from the saved per-cohort C-indices. The August 21 interval figure is
+  not reused: its title claims a "significant advantage" and its per-cohort
+  intervals have no saved CSV.
+- **Principal difference described as computed.** The 0.026 (0.0002, 0.0498)
+  difference is a C-index difference over the 616 concatenated external
+  patients, with an unstratified bootstrap. It is not a fixed-effect pooled
+  estimate; the older 0.042 comparison is inverse-variance pooled.
+- **Orientation verified, not assumed.** Every saved per-cohort C-index (D4 and
+  the three two-step comparators) was recomputed from the saved risk scores with
+  frozen training orientation and matched; some runners had saved
+  max(C, 1 − C), which coincides here.
+- **Unverified value omitted.** The established model's C = 0.685 on the 50
+  matched ICGC donors is hard-coded in `plot_real_cindex_by_kinit.R` with no
+  saved score source, so it appears only in the evidence-gap table.
+- **Direction labels.** Under the historical D4 fit's orientation
+  (risk = −η), the joint coefficients of Programs 3 and 7 agree in sign with the
+  marginal labels; the August 21 report's "suppression" reading used the stored
+  signs. Marginal labels are kept.
+- **Figures.** The multimodal final-rank figure was redrawn from the saved sweep
+  (`paper/writeup/figures/make_pruning_rank_figure.R`) without the original
+  model's diagonal, which equals the starting rank by construction; the zoomed
+  axis shows that at the September noise level the final rank still rises with
+  the starting rank.
+- **Length.** The characterization-methods table, the single-modality
+  simulation table and its figure moved to Appendix C; the main text is 21 PDF
+  pages, slightly above the 15–20-page target.
+
+**Not changed.** No model code, defaults, saved results, historical derivations,
+prelim chapter or manuscript stub.
+
+---
+
 ## 2026-10-14 — Finalize the writeup plan and drafting handoff
 
 **Decision.** Claude Code drafts Tasks 2, 3 and 5 on `writeup/draft`; Codex
