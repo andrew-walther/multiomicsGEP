@@ -5,6 +5,25 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-14 — Multimodal monitoring objective: include cross-factor terms of E[η²]
+
+**Fix.** `multimodal_yfb_fixed_working_objective()` in `code/fit_multimodal_yfb.R`
+computed the expected Cox working term with E(η_i²) = Σ_k E(Z_ik²)E(β_k²),
+omitting the cross-factor terms Σ_{k≠l} E(Z_ik)E(β_k)E(Z_il)E(β_l). It now uses
+`multimodal_yfb_predictor_moments()`, so E(η_i²) = E(η_i)² + Var(η_i) under the
+mean-field posterior.
+
+**Effect.** The quantity is stored only as the per-sweep diagnostic
+`fixed_working_objective`. It does not enter convergence, pruning, the ELBO, or
+any reported result, so no saved fit or result changes. Found while reconciling
+Appendix B of the writeup draft.
+
+**Test.** `MMYFB-Fit-T8` in `tests/test_multimodal_yfb_fit.R` compares the
+objective's survival part with an explicit double sum; it failed before the fix
+(difference 9.57) and passes after. Full suite: 532 passed.
+
+---
+
 ## 2026-10-14 — Manuscript authorship: Young cited, not a coauthor for now
 
 **Decision.** The planned Project 3 manuscript lists Walther, Liu and Rashid
