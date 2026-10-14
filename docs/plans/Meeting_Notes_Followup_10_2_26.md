@@ -395,6 +395,8 @@ result stated before interpreting B1–B3.
 
 ## Order of work
 
+*Superseded on 2026-10-13 by "Sequencing and handoffs" below; kept as the original schedule.*
+
 | When | Write-up (A) | Method (C) | Sensitivity (B) |
 |---|---|---|---|
 | 10/5–10/11 | A0 send derivation; A1 outline | C0 merge and branch (done 10/12); C1 diagnostics | B0 preparation; start B1, B5 |
@@ -420,44 +422,182 @@ results so far, rather than waiting.
 
 ---
 
-## Kickoff prompt for Workstream C
+## Sequencing and handoffs (decided 2026-10-13)
 
-Paste into a new session once the write-up session on `main` has finished.
+This section replaces the earlier Workstream C kickoff prompt and the parallel schedule in "Order of
+work". The write-up comes first because Andrew shares it on Friday 10/16 (draft targeted for
+Wednesday 10/14). Method work follows, and its results then revise the write-up, which is the
+foundation for the manuscript.
+
+**One session at a time, one checkout.** Claude Code and Codex take turns in
+`~/GithubProjects/multiomicsGEP`; no worktrees and no second clone. Each task has its own branch off
+`main`. Run `git branch --show-current` before every commit, stage only the files you changed, and
+don't push without asking.
+
+| Step | Who | Branch | Prompt |
+|---|---|---|---|
+| 1. Review the planning page; Codex revises it and writes the drafting prompt | Andrew + Codex | `writeup/draft` (new, off `main`) | Prompt 1 |
+| 2. Draft the write-up | Claude Code | `writeup/draft` | Prompt 2 (written by Codex in step 1) |
+| 3. Review the draft | Codex | `writeup/draft` | Prompt 3 |
+| 4. Fix the review findings; Andrew approves; merge to `main` | Claude Code | `writeup/draft` | Prompt 4 |
+| 5. Method work (M0–M8 below) | Claude Code | `feature/supervised-F`, after merging `main` | Prompt 5 |
+| 6. Review the method work, once at the end | Codex | `feature/supervised-F` | Prompt 6 |
+| 7. Revise the write-up from its "Revisit after feature/supervised-F" list | Claude Code | `writeup/revision` (off `main` after step 6 merges) | Prompt 7 |
+
+### Method work scope (step 5)
+
+Goal: a strong single-modality YFB model (expression) and multimodal YFB model (expression +
+methylation), with results in simulation and on real data that show value over EBMF/NMF alone, the
+two-step EBMF → Cox method and DeSurv; a K-selection procedure whose K_eff accounts for both
+survival and reconstruction; and an explanation of the biology of the final programs.
+
+| # | Work | Covers |
+|---|---|---|
+| M0 | Merge `main` into `feature/supervised-F`; run the test suite and report the count | Setup |
+| M1 | C1 diagnostics: `trace_supervision`, planted low-variance test bed, three α_F arms, diagnostic note | Why supervision currently has little effect |
+| M2 | C2 scale canonicalization in `fit_cox_on_yf()`; drop α_F as a separate knob; then define ZF (normalized projection) and settle the subscript notation in `derivations/cox_on_YF/` (10/1 plan WS4.1) | α_F; ZF clarification |
+| M3 | C3 supervised initialization; C4 β prior versus survival weight, including the β prior family comparison (Normal, point-Laplace, point-normal; 10/1 plan WS4.3); C5 only if needed | α_F; prior variation |
+| M4 | C6: carry the chosen method into the multimodal model | Multimodal method |
+| M5 | K selection for both models: compare the weighted ELBO with pruning by cross-validated C plus reconstruction; replicated K panels; 1-SE rule (10/1 plan WS4.7) | Parsimonious K_eff |
+| M6 | Robustness: jittered SVD starts × 20–100 (10/1 plan WS4.4); F prior families; Workstream B feature counts | Multiple seeds; prior variation; feature count |
+| M7 | Comparator matrix for both models, simulation and real data: EBMF/NMF alone, two-step EBMF → Cox, DeSurv. First confirm whether a head-to-head DeSurv run exists; the current DeSurv scripts compare preprocessing and gene overlap | Value over existing methods |
+| M8 | C7 real-data confirmation; rerun the biology for the final programs (risk scores, KM curves, pathway enrichment, CpG interpretation for the multimodal programs) | Biology |
+
+**Working mode for step 5.** Work through M0–M8 without stopping for step-by-step teach-back, and
+give Andrew a summary at the end. Stop only for:
+1. the recovery rate that counts as "a large majority of seeds", set before the C4 runs;
+2. the C4 choice between a prior on β and a survival weight;
+3. the K-selection criterion in M5;
+4. any result that fails a pre-specified success criterion (report it; don't work around it).
+
+Each stop comes with a short recommendation.
+
+### Prompt 1 — Codex: planning-page review and drafting prompt
 
 ```text
-Resuming multiomicsGEP Workstream C (survival supervision of F). The write-up
-session on main has finished.
+Read paper/writeup/planning.qmd (rendered as planning.html),
+paper/writeup/implementation_plan.md, paper/writeup/source_inventory.csv, and the
+"Sequencing and handoffs" section of docs/plans/Meeting_Notes_Followup_10_2_26.md.
 
-Read first, before proposing anything:
+First create the branch writeup/draft from main (git switch -c writeup/draft main).
+All write-up work happens there.
+
+I will give you feedback on the planning page. Then:
+1. Revise planning.qmd and implementation_plan.md to reflect my feedback, and
+   re-render planning.html.
+2. Add a section "Revisit after feature/supervised-F" to implementation_plan.md.
+   List every passage of the planned write-up that depends on the method work
+   (M0-M8 in the sequencing section): the single-modality F update and alpha_F,
+   the definition of ZF, K selection, comparator results, and the final programs
+   and their biology.
+3. Add a task that produces an evidence-gap table in the write-up: each claim the
+   manuscript needs to make, the existing evidence and its source file, and what
+   is missing. Claims to cover: value over EBMF/NMF alone, over two-step
+   EBMF -> Cox, and over DeSurv; K selection that accounts for survival and
+   reconstruction; the multimodal model's added value; the biology.
+4. Write the drafting prompt for Claude Code to paper/writeup/drafting_prompt.md.
+   It must:
+   - work on writeup/draft and execute Tasks 2, 3 and 5 of implementation_plan.md;
+   - target a complete draft by Wednesday 10/14 for sharing on Friday 10/16, and
+     state what is cut to make that feasible;
+   - leave Task 4's independent review to Codex (step 3 of the sequence);
+   - change no model code, defaults or results;
+   - mark every passage on the "Revisit" list so it can be updated later.
+Run git branch --show-current before committing, stage only your files, and
+ask before committing or pushing.
+```
+
+### Prompt 2 — Claude Code: draft the write-up
+
+```text
+On branch writeup/draft, read paper/writeup/drafting_prompt.md and follow it.
+```
+
+### Prompt 3 — Codex: review the draft
+
+```text
+On branch writeup/draft, review the write-up draft (paper/writeup/writeup.qmd and
+the appendices) against the "Review focus" and "Global constraints" in
+paper/writeup/implementation_plan.md and against source_inventory.csv.
+Check:
+- every quantitative claim against its recorded path and selector;
+- equations and algorithm boxes against the code and the evaluated configuration;
+- comparator identity, cohort sizes, orientation conventions and denominators;
+- overstated claims, especially about survival shaping F under alpha_F = 0 and
+  about the biology;
+- that every passage on the "Revisit after feature/supervised-F" list is marked.
+Write findings to paper/writeup/review.md, ranked by severity, each with
+location, evidence and a suggested fix. Do not edit the draft. Ask before
+committing review.md.
+```
+
+### Prompt 4 — Claude Code: fix review findings
+
+```text
+On branch writeup/draft, read paper/writeup/review.md. Verify each finding
+against the source before acting on it; fix the confirmed ones, and record the
+disposition of every finding (fixed, not confirmed with reason, or deferred to
+the method work) in review.md. Re-render HTML and PDF, then summarize the changes
+and ask me before merging writeup/draft to main.
+```
+
+### Prompt 5 — Claude Code: method work
+
+```text
+Resuming multiomicsGEP method work (Workstream C and the M0-M8 scope). The
+write-up has been drafted, reviewed and merged to main.
+
+Read first:
 - the project CLAUDE.md;
-- the "How survival enters F" section and Workstream C of
-  docs/plans/Meeting_Notes_Followup_10_2_26.md, including "Findings from
-  scoping C1";
-- the DECISIONS.md entry "2026-10-02 — α_F = 0 cannot be the final method";
-- paper/writeup/implementation_plan.md, especially "Revisit after
-  feature/supervised-F".
+- docs/plans/Meeting_Notes_Followup_10_2_26.md: "How survival enters F",
+  Workstream C including "Findings from scoping C1", and "Sequencing and
+  handoffs" (scope M0-M8 and the working mode);
+- DECISIONS.md, entry "2026-10-02 — alpha_F = 0 cannot be the final method";
+- paper/writeup/implementation_plan.md, section "Revisit after
+  feature/supervised-F", and the write-up's evidence-gap table.
 
-Branch setup:
-1. Run `git fetch`. Confirm main is clean and level with origin/main, and
-   report its head commit.
-2. feature/supervised-F already exists, locally and on origin. It was created
-   from 2f5dd64 and carries plan-only commits (the C1 plan and this prompt).
-   Bring it up to date by merging main into it; don't rebase and don't
-   force-push. If Meeting_Notes_Followup_10_2_26.md conflicts, show me the
-   resolution before committing.
-3. Run `Rscript tests/run_tests.R` on the updated branch and report the pass
-   count.
+Then:
+1. git fetch; confirm main is clean and report its head. Switch to
+   feature/supervised-F and merge main into it (no rebase, no force-push).
+   Run Rscript tests/run_tests.R and report the pass count.
+2. Work through M0-M8 in order without stopping for teach-back. Stop only at the
+   four decision points listed under "Working mode for step 5", each with a
+   recommendation.
+3. Keep the success criteria in Workstream C fixed; don't relax them after
+   seeing results. Record decisions in DECISIONS.md and results in the progress
+   book.
+4. At the end, give me a summary: what changed, results against each success
+   criterion, and what the write-up's "Revisit" list now needs.
+Run git branch --show-current before every commit, stage only your files, and
+don't push without asking.
+```
 
-Then do C1 in STEP mode: one step at a time, teach back each step, and wait
-for my OK before the next. Confirm the two scoping findings in the code, then
-propose step 1 (the trace_supervision history) before editing anything.
+### Prompt 6 — Codex: review the method work
 
-Rules:
-- Run `git branch --show-current` before every commit. Stage only the files
-  you changed, and don't push without asking.
-- Keep the success criteria in the plan fixed; don't relax them after seeing
-  results.
-- When feature/supervised-F is later merged to main, update the sections
-  listed under "Revisit after feature/supervised-F" in
-  paper/writeup/implementation_plan.md.
+```text
+Review the method work on feature/supervised-F (git diff main...feature/supervised-F).
+Read the "Sequencing and handoffs" section and Workstream C of
+docs/plans/Meeting_Notes_Followup_10_2_26.md first.
+Check:
+- that the code matches the derivations and DECISIONS.md entries it cites;
+- that the success criteria were applied as pre-specified, not adjusted after
+  the results;
+- that tests assert correct behavior, not just output shape; run
+  Rscript tests/run_tests.R and report the count;
+- simulation and comparator design (seeds, planted program, baselines,
+  cross-validation without leakage);
+- that reported numbers trace to saved outputs.
+Write findings to docs/reviews/<date>_supervised_F_review.md, ranked by
+severity, each with location, evidence and a suggested fix. Do not edit the
+code. Ask before committing.
+```
+
+### Prompt 7 — Claude Code: revise the write-up
+
+```text
+feature/supervised-F has been reviewed and merged to main. Create
+writeup/revision from main. Update the write-up from the "Revisit after
+feature/supervised-F" list in paper/writeup/implementation_plan.md and from the
+method-work summary, refresh the evidence-gap table, re-render HTML and PDF,
+and ask me before committing.
 ```
