@@ -47,3 +47,57 @@ Revision of the writeup on `writeup/draft` (2026-10-14) in response to `review.m
 2. **Implementation defects (A3, A5).** The activity-KL normalizer in `compute_ebnm_kl` and the cached old-prior KL in the multimodal updates are documented in the report but not fixed. Fixing them changes the stopping and removal behaviour of saved fits, which belongs to the method work, not to this writing branch.
 3. **Not independently regenerated:** full bootstrap distributions, the historical fitting environment of the evaluated single-modality fit, and the cross-cohort donor overlap beyond the matched ICGC subset. These are the same limits the review recorded.
 4. **HTML runtime check.** HTML was inspected structurally (5 embedded figures, resolved cross-references). It was not opened in a browser at mobile width.
+
+## Verification round (`verification.md`)
+
+Codex verified the revision at `17a8bb1` and found that several dispositions above overstated completion: A8/B14 (derivations), B6 (captions), B7 (algorithm pagination) and A11 (markers). Each verification finding was checked against code or the rendered PDF before it was applied. Required corrections are kept separate from optional wording and length suggestions.
+
+### Required corrections
+
+| Finding | Disposition | Evidence and change |
+|---|---|---|
+| V1 Multimodal precision floor | **Fixed** (confirmed) | `fit_multimodal_yfb.R:508` calls `multimodal_yfb_tau_from_residuals()`, which uses `pmax(r2, .Machine$double.eps)` (`:640`). The error branch is in the unused helper `multimodal_yfb_updates.R:577`. B.8 now separates the mathematical boundary ($Q = 0$ makes the likelihood unbounded) from the protected computation $n/\max(Q, \epsilon_{\rm mach})$, used in fitting and in the removal score. |
+| V2 Zero column in the normalized target | **Fixed** | A.1 defines $u_k(F) = F_{\cdot k}/d_k(F)$ for $d_k > 0$ and $u_k = 0$ for a zero column. It states that this convention defines the target, does not change the evaluated fits (whose stored norms include a ridge), and that the Gaussian updates additionally hold $d_k$ fixed. Methods §1.2 carries the same convention. |
+| V3 Contradictory orientation account | **Fixed** (confirmed) | Current code flips when the risk-oriented `reverse = TRUE` training C is below 0.5 (`fit_cox_on_yf.R:891–904`). The saved fit was produced under a different convention. A.10 now uses Codex's replacement and states only the fixed convention of the evaluated fit ($\mathrm{risk} = -\eta$) and the absence of recoverable coefficient variance. |
+| V4 Second-moment statement attributed to the exact target | **Fixed** | A.5 says the $E(\tilde Z^2)$ coefficient belongs to the random-projection working quadratic, and that the exact target is nonquadratic and nonconjugate. The Table 10 (A.11) cell is reworded the same way. |
+| V5 Remaining derivation steps | **Fixed** | (1) A.5 now has the full Gaussian convolution and square completion, giving $N(x;b,s^2)N(b;0,v) = N(x;0,s^2+v)N(b;m,V)$, with each coefficient matched. B.7 references it. (2) B.6 shows the reconstruction-loading expansion explicitly. (3) B.8 shows the precision derivative. (4) The prior-only boundary ($A = 0$, hence $B = 0$) is stated for B.5–B.7. It matches `multimodal_yfb_updates.R:39–49` (prior moments returned) and `:524–527` (prior-only $\beta$), including the error raised when $A = 0$ and $B \ne 0$. A.3's floor is now labelled as single-modality only. |
+| V6 Algorithm and table pagination | **Fixed** (checked in the PDF) | Each algorithm is wrapped in a PDF-only `minipage`, so it is unbreakable; the HTML keeps plain lists. Algorithm 1 is wholly on p.4 and Algorithm 2 on p.7, each with its inputs and outputs. The duplicate heads had one cause: a longtable started too low on a page, broke before its first row, and repeated `\endhead` on the next page. Table heights were measured from the rendered PDF (Table 7 ≈ 0.54, Table 8 ≈ 0.49, Table 9 ≈ 0.74 of the text height). Sized `\needspace` reserves are now used only where needed. The three figures that could float above those tables (Figures 3–5) are pinned in place, and the orphaned A.11 heading gets a reserve too. A scripted check confirms every table's caption and last row are on the same page, with no repeated head. |
+| V7 Caption self-containment | **Fixed** | All items on the checklist are covered locally. Table 1 defines expr/meth, $n$, $p$, $K$, $L$, $F$, $D_*$ and SD. Tables 2, 4, 6, 7, 8 and 9 and Figures 1–5 define TCGA(-PAAD), CPTAC, RNA-seq, PDAC, ICGC, PACA-AU, CI, LASSO, CV, PL, SD, CpG and DeSurv as they occur. Table 5 gives $n = 273$ and $p = 2{,}064$. Table 3 defines $\bar{\tilde\beta}_k$ and the model arm. Tables 10–11 define KL, sd and their symbols. The earlier claim that every caption defined its abbreviations was not true at `17a8bb1`; it is true now. |
+| V8 Revisit gaps | **Fixed** | Added an R1 block around A.3's single-modality floor and an R1 block around A.4 (point-exponential posterior). All three sources are balanced (scripted check). |
+
+### Smaller corrections (P3)
+
+| Finding | Disposition | Change |
+|---|---|---|
+| V9 Normalization exceptions | **Fixed** | Table 1 uses $D_*$ and states the constant-column exception. The predictor paragraph now says "loading columns, each divided by a norm". Figure 4 now says "loading column divided by its stored training norm". The multimodal scale paragraph, Algorithm 2 step iv, B.9 (with threshold $\sqrt{\epsilon_{\rm mach}}$, `fit_multimodal_yfb.R:197`) and B.13 state that numerically constant columns are not rescaled. |
+| V10 Classification and removal boundaries | **Fixed** (confirmed) | Methods, B.7 and Table 9 use $|\bar\beta_k|/\max\{\mathrm{sd}(\beta_k), 10^{-12}\}$ (`fit_multimodal_yfb.R:553–556`): a point mass is inactive. Removal runs only while $K > 1$ (`:591`), as stated in Methods, Algorithm 2, B.11 and B.13. B.11 now says a deletion "does not decrease" the score. |
+| V11 Figure provenance | **Not changed; disposition corrected** | Confirmed: `make_writeup_figures.R` reads local held-out expression to recompute frozen program projections, and no saved projection file exists. The earlier wording "saved fits, scores and aggregates only" is corrected here. The dependency is stated in the script header, in the README command (`PDAC_DATA_ROOT=...`) and in S63. No patient-level cache was created or committed. No model is fitted. |
+| V12 Single-block comparator settings | **Fixed** (confirmed) | `run_multimodal_yfb_simulation.R:139–149` caps the fit at 100 sweeps and uses unstandardized input. It is now labelled "single-block fit … to unstandardized log2 TCGA expression (at most 100 sweeps)" in Comparators and in Table 7, where the row is "Single-block model". The row is kept. |
+| V13 Wording and rounding | **Fixed** | Summary: "mean ranks close to the true value at lower noise, with poorer recovery when the prognostic program has low variance". Appendix links now point to A.9. The matched-donor difference is "about 0.01" (saved 0.0095). Discussion: "no statistically established advantage". The "not prognostic" table wording went with the deleted table. |
+
+### Additional correction found during this round
+
+The Discussion said the held-out cohorts were "measured on platforms not used in training". Two of the five are RNA-seq, which is a training platform. It now says "three of them on a microarray platform not used in training".
+
+### Length and layout
+
+Following Codex's ranking, least loss first:
+
+1. **Layout (rank 1).** Removed blanket `fig-pos: H` and the oversized blanket `needspace` reserves. Relaxed the float fractions. Gave only the tables that need one a measured reserve. Moved explanatory paragraphs ahead of large tables so text fills the space they leave.
+2. **Rank 2.** Deleted the single-modality program table; its content is in the §4.1 paragraphs.
+3. **Rank 3.** Reduced Table 1 to four contrasting rows.
+4. **Rank 4.** Cut the cohort-specific coefficient paragraph and the threshold-sensitivity paragraph to one sentence each.
+5. **Rank 5.** Table 3 now shows ranks 6 and 20, with the rank-4 and rank-12 values in its note.
+6. **Rank 7.** Removed repetition of Table 9's numbers in §4.2 and the duplicated direction explanation in §4.1.
+7. **Other.** Shortened Table 8's row labels. Tightened Limitations and Continuing work without dropping a limitation or an aim. Reduced two figure heights slightly (program curves 3.1 → 2.9 in, modality shares 3.0 → 2.7 in) at the same 9-pt plot text.
+
+Not applied: ranks 6 (dropping comparator rows from Table 7) and 8 (moving Methods exposition into the appendices). Both lose moderate information and need Andrew's decision.
+
+**Result:** the PDF is 39 pages. The main text is pages 1–24 (title, contents and Summary on page 1; Methods through Discussion on pages 2–24), down from 27. Appendix A begins on page 25 and Appendix B on page 33. The 15–20-page target is still not met.
+
+### Still unresolved
+
+1. Main-text length is 24 pages against a 15–20 target. The remaining options (Codex ranks 6 and 8, or a shorter Methods) need author judgement.
+2. Implementation defects A3 and A5 remain documented for the method work and are not fixed.
+3. Figure regeneration needs the local held-out expression data (V11).
+4. The HTML has not been checked at phone width. Codex confirmed MathJax renders at normal width.

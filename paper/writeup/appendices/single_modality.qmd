@@ -26,7 +26,7 @@ The partial likelihood is not a full likelihood for the survival times; using it
 
 **Priors.** $L_{ik} \sim g_{L,k}$ and $F_{jk} \sim g_{F,k}$, each a point mass at zero mixed with an exponential distribution, and $\tilde\beta_k \sim g_{\beta,k} = N(0, \sigma_k^2)$, all independent. The residual precisions $\tau_j$ and the prior parameters are point estimates.
 
-**Joint target.** In the target, the predictor uses the random loadings, $\eta_i = \sum_k\tilde\beta_k\sum_j y_{ij}F_{jk}/d_k(F)$ with $d_k(F) = \lVert F_{\cdot k}\rVert_2$. With the mean-field family
+**Joint target.** In the target, the predictor uses the random loadings, $\eta_i = \sum_k\tilde\beta_k\,y_i^\top u_k(F)$, where the normalized direction is $u_k(F) = F_{\cdot k}/d_k(F)$ with $d_k(F) = \lVert F_{\cdot k}\rVert_2$ when $d_k(F) > 0$, and $u_k(F) = 0$ when the column is identically zero, an event with positive probability under the point-mass prior. This convention defines the target; it does not change the evaluated fits, whose stored norms include a small ridge (A.10). The Gaussian coordinate updates below additionally hold $d_k$ fixed. With the mean-field family
 $$
 q(L, F, \tilde\beta) = \prod_{i,k} q(L_{ik})\prod_{j,k} q(F_{jk})\prod_k q(\tilde\beta_k),
 $$
@@ -109,9 +109,17 @@ For a vector of $H$ coordinates with a common precision $A$,
 $$
 \sum_h E_q\log N(x_h;\, \theta_h, A^{-1}) = \frac H2\log\frac{A}{2\pi} - \frac A2\sum_h\big(x_h^2 - 2x_h\bar\theta_h + \overline{\theta_h^2}\big).
 $$ {#eq-a-kl-vector}
-If $A = B = 0$ the coordinate receives no information and $q = g$. The implementation instead floors each $A$ at $10^{-10}$, which gives a very large $s$ and a posterior indistinguishable from the prior.
+If $A = B = 0$ the coordinate receives no information and the update is prior-only, $q = g$; the normal-means inputs $x = B/A$ and $s = A^{-1/2}$ require $A > 0$.
+
+<!-- REVISIT R1 START -->
+
+The single-modality implementation floors each $A$ at $10^{-10}$, which gives a very large $s$ and a posterior indistinguishable from the prior. The multimodal implementation handles the boundary separately (B.5).
+
+<!-- REVISIT R1 END -->
 
 ## A.4 Posteriors under point-mass priors {.unnumbered}
+
+<!-- REVISIT R1 START -->
 
 **Point-exponential prior.** Let $g = (1-\pi)\delta_0 + \pi\,\lambda e^{-\lambda\theta}\mathbf 1\{\theta > 0\}$. For the slab, expand the exponent and complete the square with $m = x - \lambda s^2$:
 $$
@@ -129,6 +137,8 @@ $$
 M_+(m) = E\theta = m + sr, \qquad S_+(m) = E\theta^2 = m^2 + 2msr + s^2(1 - ar) = m^2 + s^2 + msr,
 $$ {#eq-a-trunc}
 and the posterior moments are $\bar\theta = \omega_+M_+(m)$ and $\overline{\theta^2} = \omega_+S_+(m)$. For large negative $a$, $\log\Phi(a)$ and $r$ are evaluated with tail approximations for numerical stability. The point-Laplace case used in the multimodal model is derived in Appendix B.6.
+
+<!-- REVISIT R1 END -->
 
 ## A.5 Coefficient update {.unnumbered}
 
@@ -151,9 +161,17 @@ so
 $$
 A_{\beta,k} = \alpha\sum_iw_i\tilde Z_{ik}^2, \qquad B_{\beta,k} = \alpha\sum_iw_i\tilde Z_{ik}(z_i - \bar H_i), \qquad x_{\beta,k} = \frac{\sum_iw_i\tilde Z_{ik}(z_i - \bar H_i)}{\sum_iw_i\tilde Z_{ik}^2}, \qquad s_{\beta,k} = A_{\beta,k}^{-1/2}.
 $$ {#eq-a-beta}
-For $\alpha > 0$ the pseudo-observation does not depend on $\alpha$, and the standard error is inflated by $\alpha^{-1/2}$ ($\sqrt 2$ at $\alpha = 0.5$), provided the floor on $A$ is inactive. In the joint target with random loadings, $\tilde Z_{ik}^2$ would be replaced by $E(\tilde Z_{ik}^2)$; the plug-in projection does not pass loading uncertainty to the coefficient.
+For $\alpha > 0$ the pseudo-observation does not depend on $\alpha$, and the standard error is inflated by $\alpha^{-1/2}$ ($\sqrt 2$ at $\alpha = 0.5$), provided the floor on $A$ is inactive. Under the working-quadratic approximation with random loadings, the quadratic coefficient would involve $E(\tilde Z_{ik}^2)$; the evaluated plug-in update instead uses $\tilde Z_{ik}^2$ and does not pass loading uncertainty to the coefficient. Under the exact target, $E_q\ell_C$ is not quadratic in $\tilde\beta_k$ and has no conjugate update.
 
-**Normal prior.** With $g_{\beta,k} = N(0, \sigma^2)$ the marginal distribution of $x$ is $N(0, s^2 + \sigma^2)$, with log-likelihood
+**Normal prior.** Let $g_{\beta,k} = N(0, v)$ with $v > 0$, and write $b$ for $\tilde\beta_k$. Expanding both squares and completing the square in $b$,
+$$
+\frac{(x - b)^2}{s^2} + \frac{b^2}{v} = \frac{(b - m)^2}{V} + \frac{x^2}{s^2 + v}, \qquad V = \frac{s^2v}{s^2 + v}, \quad m = \frac{xv}{s^2 + v},
+$$
+which follows because the coefficient of $b^2$ is $1/s^2 + 1/v = 1/V$, the coefficient of $b$ is $-2x/s^2 = -2m/V$, and the remaining constant is $x^2/s^2 - m^2/V = x^2/(s^2 + v)$. Restoring the normalizing constants, $(2\pi s^2)^{-1/2}(2\pi v)^{-1/2} = \{2\pi(s^2 + v)\}^{-1/2}(2\pi V)^{-1/2}$, so
+$$
+N(x;\, b, s^2)\,N(b;\, 0, v) = N(x;\, 0, s^2 + v)\,N(b;\, m, V).
+$$
+Integrating over $b$ gives the marginal $x \sim N(0, s^2 + v)$, and the remaining factor is the posterior $N(m, V)$. Writing $\sigma^2$ for $v$, the marginal log-likelihood is
 $$
 \ell(\sigma^2) = -\tfrac12\log\{2\pi(s^2 + \sigma^2)\} - \frac{x^2}{2(s^2 + \sigma^2)}, \qquad
 \ell'(\sigma^2) = \frac{x^2 - (s^2 + \sigma^2)}{2(s^2 + \sigma^2)^2}.
@@ -162,7 +180,7 @@ The derivative is positive for $\sigma^2 < x^2 - s^2$ and negative beyond, so th
 $$
 \hat\sigma_k^2 = \max(0,\, x^2 - s^2).
 $$
-For $\hat\sigma_k^2 > 0$, completing the square in $N(x; \tilde\beta, s^2)N(\tilde\beta; 0, \hat\sigma^2)$ gives precision $s^{-2} + \hat\sigma^{-2}$, so
+For $\hat\sigma_k^2 > 0$, the factorization above with $v = \hat\sigma_k^2$ gives
 $$
 \bar{\tilde\beta}_k = \frac{x\,\hat\sigma^2}{\hat\sigma^2 + s^2}, \qquad \mathrm{Var}(\tilde\beta_k) = \frac{\hat\sigma^2s^2}{\hat\sigma^2 + s^2}.
 $$
@@ -266,7 +284,7 @@ a discrepancy that changes with $A_{L,k}$ across sweeps. These features affect o
 
 <!-- REVISIT R2 START -->
 
-After the loop, the implementation compares the training concordance of $\eta$ with 0.5 once and negates $\bar{\tilde\beta}$ if $\eta$ is discordant with risk. For the evaluated fit this check left $\eta$ concordant with longer survival, so the risk score is $-\eta$ for every held-out cohort, a direction fixed before validation. The stored second moments of $\tilde\beta$ for this fit equal the squared means, so its posterior variances are zero and no coefficient uncertainty can be reported.
+For the evaluated single-modality fit, higher $\eta$ denotes longer survival. All external evaluations therefore use $\mathrm{risk} = -\eta$, a direction fixed from training. The stored second moments of $\tilde\beta$ equal the squared means, so this fit has no recoverable coefficient variance.
 
 For a new patient with data standardized within its own cohort, prediction restricts $\bar F$ to the training features $\mathcal G$ measured in that cohort and keeps the stored norms $D_*$, formed from $\bar F$ at the start of the final sweep:
 $$
@@ -276,27 +294,27 @@ $D_*$ differs slightly from the norms of the final $\bar F$ (by less than $2\tim
 
 <!-- REVISIT R2 END -->
 
+```{=latex}
+\needspace{0.45\textheight}
+```
+
 ## A.11 Joint target and evaluated algorithm {.unnumbered}
 
 <!-- REVISIT R1 START -->
 <!-- REVISIT R2 START -->
 
-```{=latex}
-\needspace{0.4\textheight}
-```
-
 | Component | Joint target @eq-a-target | Evaluated algorithm |
 |------------|----------------------|----------------------|
 | Survival term | $E_q\ell_C(\eta)$, exact partial likelihood | Expected working quadratic @eq-a-working with diagonal Poisson-style curvature, at the sweep's starting predictor |
-| Predictor | $\eta$ uses random $F$ and $d_k(F)$ | Projection $\tilde Z = Y\bar F D^{-1}$ from posterior means, fixed within a sweep; prediction uses stored $D_*$ |
-| Coefficient update | Uses $E(\tilde Z_{ik}^2)$ | Uses $\tilde Z_{ik}^2$; working term weighted by $\alpha = 0.5$ |
+| Predictor | $\eta$ uses random $F$ and the direction $u_k(F)$ | Projection $\tilde Z = Y\bar F D^{-1}$ from posterior means, fixed within a sweep; prediction uses stored $D_*$ |
+| Coefficient update | Nonconjugate under the exact target; the random-projection working quadratic uses $E(\tilde Z_{ik}^2)$ | Plug-in working quadratic with $\tilde Z_{ik}^2$; working term weighted by $\alpha = 0.5$ |
 | Activity update | Reconstruction only | Reconstruction only |
 | Loading update | Reconstruction plus coupled survival term, requiring a fixed or differentiated $d_k$ | Reconstruction only ($\alpha_F = 0$) |
 | Precision | Maximum likelihood | Maximum likelihood with a floor |
 | Objective | $\mathcal L(q)$ | Monitoring statistic @eq-a-J, used only for stopping |
 | Coefficient uncertainty | Posterior variance of $\tilde\beta$ | Stored variances are zero for the evaluated fit |
 
-: Joint target and evaluated single-modality algorithm. Coordinate updates for $L$, $F$ and $\tau$ are exact for the reconstruction terms, so with $\alpha_F = 0$ they are the coordinate updates of empirical-Bayes matrix factorization, interleaved with an empirical-Bayes update of the Cox coefficients on fixed projections. {#tbl-math-vs-impl}
+: Joint target and evaluated single-modality algorithm. Coordinate updates for $L$, $F$ and $\tau$ are exact for the reconstruction terms, so with $\alpha_F = 0$ they are the coordinate updates of empirical-Bayes matrix factorization, interleaved with an empirical-Bayes update of the Cox coefficients on fixed projections. $\mathcal L(q)$, variational objective; KL, Kullback–Leibler divergence; $\alpha$, $\alpha_F$, survival weights in the coefficient and loading updates; $D_*$, stored loading-column norms. {#tbl-math-vs-impl}
 
 <!-- REVISIT R2 END -->
 <!-- REVISIT R1 END -->

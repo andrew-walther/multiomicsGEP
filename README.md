@@ -90,7 +90,9 @@ The report is `paper/writeup/writeup.qmd`, with derivation appendices in
 Evaluation, Results, Biological findings and Discussion, with complete
 derivations in Appendices A (single-modality) and B (multimodal). The review is
 [`review.md`](paper/writeup/review.md) and the disposition of every finding is
-[`review_dispositions.md`](paper/writeup/review_dispositions.md).
+[`review_dispositions.md`](paper/writeup/review_dispositions.md); Codex's
+verification of the revision is
+[`verification.md`](paper/writeup/verification.md).
 
 Render the report from the repository root (the RStudio Quarto works on this
 computer; rendering reads only saved aggregates, figures and the bibliography,

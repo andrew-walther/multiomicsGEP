@@ -167,7 +167,7 @@ p2 <- ggplot(prog, aes(time, surv, colour = group)) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.25)) +
   labs(x = "Months", y = "Overall survival probability") +
   theme(legend.position = "bottom")
-save_both(p2, "km_programs_external", height = 3.1)
+save_both(p2, "km_programs_external", height = 2.9)
 print(lab); print(plab)
 
 # Figure: modality share of each multimodal program ----
@@ -187,7 +187,7 @@ p3 <- ggplot(s, aes(program, share, fill = modality)) +
   labs(x = "Program", y = "Share of the modality's\nfitted signal") +
   theme(axis.text.x = element_text(angle = 25, hjust = 1), legend.position = "top",
         panel.grid.major.x = element_blank())
-save_both(p3, "multimodal_share", height = 3.0)
+save_both(p3, "multimodal_share", height = 2.7)
 
 # Figure: single-modality simulation, model minus two-step test C ----
 sim <- read.csv("results/multi_cohort_sim/outputs/multicohort_sim_results.csv")

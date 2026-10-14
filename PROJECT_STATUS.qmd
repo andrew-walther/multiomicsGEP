@@ -136,8 +136,12 @@ earlier priors; the concatenated C is 0.6285 versus 0.6026. The two implementati
 defects (activity-KL normalizer, cached-prior KL) are documented, not fixed, and
 belong to the method work. The established model's matched-donor C = 0.685 is
 omitted (no saved source). All figures were redrawn from saved outputs as vector
-PDF and 300-dpi PNG. Remaining issue: the PDF main text is 27 pages against a
-15–20-page target. No model-fitting experiment or algorithm change is part of this
+PDF and 300-dpi PNG. Codex then verified the revision
+(`paper/writeup/verification.md`); its findings V1–V13 were checked and applied
+(dispositions in the same file), including the zero-column normalized target,
+the protected multimodal precision floor, completed derivation steps, local
+caption definitions and unbroken algorithms and tables. Remaining issue: the PDF
+main text is 24 pages (down from 27) against a 15–20-page target. No model-fitting experiment or algorithm change is part of this
 writing task. Existing prelim and historical derivation sources are preserved.
 
 ## Repository Map

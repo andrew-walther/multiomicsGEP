@@ -82,13 +82,17 @@ Multiplying by $-\tau_{mj}/2$ and summing over both modalities and all features,
 $$
 A_{L,k} = \sum_{m,j}\tau_{mj}\overline{f_{mjk}^2}, \qquad B_{L,ik} = \sum_{m,j}\tau_{mj}R_{mij}^{(-k)}\bar f_{mjk}, \qquad x_{L,ik} = B_{L,ik}/A_{L,k}, \qquad s_{L,k} = A_{L,k}^{-1/2}.
 $$ {#eq-b-L}
-Each $q(l_{ik})$ is the point-exponential posterior of A.4 under the current $g_{L,k}$. After the column is updated, $(\pi_{L,k}, \lambda_{L,k})$ is re-estimated by maximizing the marginal likelihood of the $n$ pseudo-observations (A.3), which can return $\pi_{L,k} = 0$ and so remove the column.
+Each $q(l_{ik})$ is the point-exponential posterior of A.4 under the current $g_{L,k}$. Here and in B.6–B.7, $x = B/A$ and $s = A^{-1/2}$ require $A > 0$; when a coordinate receives no information ($A = 0$, and hence $B = 0$), the implementation returns the prior-only update rather than dividing by zero, and it treats $A = 0$ with a nonzero $B$ as an error. After the column is updated, $(\pi_{L,k}, \lambda_{L,k})$ is re-estimated by maximizing the marginal likelihood of the $n$ pseudo-observations (A.3), which can return $\pi_{L,k} = 0$ and so remove the column.
 
 ## B.6 Modality-specific loadings {.unnumbered}
 
 <!-- REVISIT R2 START -->
 
-**Reconstruction terms.** As in A.7, within modality $m$,
+**Reconstruction terms.** The terms of @eq-b-lY involving $f_{mjk}$ are $-\frac{\tau_{mj}}{2}\sum_i(r_{mij}^{(-k)} - l_{ik}f_{mjk})^2$, with $r^{(-k)}$ and its mean $R^{(-k)}$ as in B.5. Expanding the square and using the independence of $l_{ik}$ from $r_{mij}^{(-k)}$ under $q$,
+$$
+E_{-f_{mjk}}(r_{mij}^{(-k)} - l_{ik}f_{mjk})^2 = c_{mij} - 2f_{mjk}R_{mij}^{(-k)}\bar l_{ik} + f_{mjk}^2\overline{l_{ik}^2}.
+$$
+Multiplying by $-\tau_{mj}/2$ and summing over $i$,
 $$
 A^{\mathrm{rec}}_{mjk} = \tau_{mj}\sum_i\overline{l_{ik}^2}, \qquad B^{\mathrm{rec}}_{mjk} = \tau_{mj}\sum_i\bar l_{ik}R_{mij}^{(-k)}.
 $$
@@ -143,7 +147,7 @@ so
 $$
 A_{\beta,k} = \sum_iw_i\big\{\bar Z_{ik}^2 + \mathrm{Var}(Z_{ik})\big\}, \qquad B_{\beta,k} = \sum_i\bar Z_{ik}\big(h_i - w_i\bar V_i\big), \qquad x_{\beta,k} = B_{\beta,k}/A_{\beta,k}, \qquad s_{\beta,k} = A_{\beta,k}^{-1/2}.
 $$ {#eq-b-beta}
-Unlike @eq-a-beta, $A_{\beta,k}$ includes the projection variance, so loading uncertainty shrinks the coefficient, and there is no weight $\alpha$. As in A.5, the prior variance is $\hat\sigma_k^2 = \max(0, x_{\beta,k}^2 - s_{\beta,k}^2)$; if it is zero, $q(\beta_k) = \delta_0$ and the KL term is zero. Otherwise
+Unlike @eq-a-beta, $A_{\beta,k}$ includes the projection variance, so loading uncertainty shrinks the coefficient, and there is no weight $\alpha$. As in A.5 (which derives the Gaussian marginal and posterior), the prior variance is $\hat\sigma_k^2 = \max(0, x_{\beta,k}^2 - s_{\beta,k}^2)$; if it is zero, $q(\beta_k) = \delta_0$ and the KL term is zero. Otherwise
 $$
 \mathrm{Var}(\beta_k) = \big(A_{\beta,k} + \hat\sigma_k^{-2}\big)^{-1}, \qquad \bar\beta_k = \mathrm{Var}(\beta_k)\,B_{\beta,k},
 $$
@@ -151,7 +155,7 @@ which equals the posterior mean $x\hat\sigma^2/(\hat\sigma^2 + s^2)$ of A.5. For
 $$
 \mathrm{KL}(q\,\Vert\,g) = \tfrac12\Big[\frac{v + \bar\beta^2}{\sigma^2} - 1 - \log\frac{v}{\sigma^2}\Big].
 $$
-A factor is classified survival-active when $|\bar\beta_k|/\mathrm{sd}(\beta_k) \ge 1.96$, an operational rule on the posterior mean and standard deviation, not an adjusted test. The coefficients are initialized from a Cox fit on standardized initial projections, transformed back to the projection scale.
+A factor is classified survival-active when $|\bar\beta_k|/\max\{\mathrm{sd}(\beta_k), 10^{-12}\} \ge 1.96$, so a coefficient at the point mass is inactive; this is an operational rule on the posterior mean and standard deviation, not an adjusted test. The coefficients are initialized from a Cox fit on standardized initial projections, transformed back to the projection scale.
 
 <!-- REVISIT R2 END -->
 
@@ -161,11 +165,15 @@ Summing the expected squared residual of A.8 over patients within each modality 
 $$
 Q_{mj} = \sum_i\Big[\Big(\tilde y_{mij} - \sum_k\bar l_{ik}\bar f_{mjk}\Big)^2 + \sum_k\big(\overline{l_{ik}^2}\,\overline{f_{mjk}^2} - \bar l_{ik}^2\bar f_{mjk}^2\big)\Big],
 $$
-and maximizing $\frac n2\log\tau_{mj} - \frac{\tau_{mj}}{2}Q_{mj}$ gives
+The expected log-likelihood in $\tau_{mj}$ is $\frac n2\log\tau_{mj} - \frac{\tau_{mj}}{2}Q_{mj} + c$, with derivative
 $$
-\hat\tau_{mj} = n/Q_{mj}.
+\frac{\partial}{\partial\tau_{mj}}\Big\{\frac n2\log\tau_{mj} - \frac{\tau_{mj}}{2}Q_{mj}\Big\} = \frac{n}{2\tau_{mj}} - \frac{Q_{mj}}{2},
+$$
+which is zero at
+$$
+\hat\tau_{mj} = n/Q_{mj} \qquad (Q_{mj} > 0).
 $$ {#eq-b-tau}
-These are unregularized maximum-likelihood values. If $Q_{mj} = 0$ the maximum likelihood estimate does not exist; the implementation stops with an error rather than imposing a floor. One precision per modality and a Gamma prior on $\tau_{mj}$ are implemented alternatives that were not used.
+These are unregularized maximum-likelihood values. If $Q_{mj} = 0$ the likelihood is unbounded in $\tau_{mj}$ and no finite maximum-likelihood precision exists. The evaluated fitting path, and the removal score, compute $\tau_{mj} = n/\max(Q_{mj}, \epsilon_{\mathrm{mach}})$ with $\epsilon_{\mathrm{mach}} \approx 2.2\times10^{-16}$. One precision per modality and a Gamma prior on $\tau_{mj}$ are implemented alternatives that were not used.
 
 ## B.9 Scale canonicalization {#sec-appendix-b-scale .unnumbered}
 
@@ -183,7 +191,7 @@ The priors are transformed by the same map, so that each transformed prior is th
 $$
 \lambda_{L,k} \mapsto \lambda_{L,k}/c_k, \qquad \lambda_{mk} \mapsto c_k\lambda_{mk}, \qquad \sigma_k^2 \mapsto c_k^2\sigma_k^2 .
 $$ {#eq-b-canon}
-Prior density values themselves change by the Jacobian $1/c_k$ or $c_k$; what is preserved is the probability of each transformed event. Because the posterior and the prior are transformed by the same bijection, each KL divergence is unchanged. After the map, $\mathrm{sd}(\bar Z_{\cdot k}) = 1$ in training, so a coefficient is per training SD of the mean joint projection. When $\mathrm{sd}(\bar Z_{\cdot k})$ is numerically zero, the implementation uses $c_k = 1$, and that column does not acquire SD one. Canonicalization changes neither the fitted reconstruction nor the predictor, but it is applied between coordinate updates and therefore changes the path of the algorithm.
+Prior density values themselves change by the Jacobian $1/c_k$ or $c_k$; what is preserved is the probability of each transformed event. Because the posterior and the prior are transformed by the same bijection, each KL divergence is unchanged. After the map, $\mathrm{sd}(\bar Z_{\cdot k}) = 1$ in training, so a coefficient is per training SD of the mean joint projection. When $\mathrm{sd}(\bar Z_{\cdot k}) \le \sqrt{\epsilon_{\mathrm{mach}}}$, the implementation uses $c_k = 1$, and that column does not acquire SD one. Canonicalization changes neither the fitted reconstruction nor the predictor, but it is applied between coordinate updates and therefore changes the path of the algorithm.
 
 <!-- REVISIT R2 END -->
 
@@ -203,7 +211,7 @@ When the coordinate loop ends, by meeting the criterion or by reaching the cap, 
 $$
 \Delta_k = \mathcal S\big(\text{factors} \ne k\big) - \mathcal S\big(\text{all factors}\big),
 $$ {#eq-b-delta}
-where $\mathcal S$ is @eq-mm-elbo evaluated with factor $k$'s activities, loadings and coefficient set to zero and its KL terms removed, the other factors' posteriors held fixed, and $\mu$ and $\tau$ re-estimated. The KL terms of $\mathcal S$ are the cached penalties of B.5 and B.6, computed against the priors in force at each coordinate's latest update. If $\max_k\Delta_k \ge 0$, the factor with the largest $\Delta_k$ is deleted, the algorithm restarts from the remaining factors' moments and priors with $K - 1$ factors, and the check repeats after that fit. A deletion therefore improves the implemented removal score before the remaining factors adapt. It is not guaranteed to improve the exact marginal likelihood or an ELBO evaluated at the current posterior and current priors.
+where $\mathcal S$ is @eq-mm-elbo evaluated with factor $k$'s activities, loadings and coefficient set to zero and its KL terms removed, the other factors' posteriors held fixed, and $\mu$ and $\tau$ re-estimated. The KL terms of $\mathcal S$ are the cached penalties of B.5 and B.6, computed against the priors in force at each coordinate's latest update. The check runs only when at least two factors remain, so the last factor is never removed. If $\max_k\Delta_k \ge 0$, the factor with the largest $\Delta_k$ is deleted, the algorithm restarts from the remaining factors' moments and priors with $K - 1$ factors, and the check repeats after that fit. A deletion therefore does not decrease the implemented removal score, evaluated before the remaining factors adapt. It is not guaranteed to improve the exact marginal likelihood or an ELBO evaluated at the current posterior and current priors.
 
 <!-- REVISIT R4 END -->
 
@@ -219,10 +227,6 @@ For a new patient with features aligned to the training features, $\eta_{\mathrm
 
 ## B.13 Base model and evaluated framework {.unnumbered}
 
-```{=latex}
-\needspace{0.4\textheight}
-```
-
 | Component | Base multimodal model | Evaluated framework | Section |
 |------------|----------------------|----------------------|------|
 | Intercept | None; requires nonnegative data | $\mu_{mj}$ re-estimated each outer sweep and for each removal candidate | B.3 |
@@ -230,9 +234,9 @@ For a new patient with features aligned to the training features, $\eta_{\mathrm
 | Prior estimation | Moment-based updates | Marginal likelihood; can return the point mass | B.5, B.6 |
 | Loading update | Reconstruction and survival terms with equal weight, sequential, with feature coupling | Same | B.6 |
 | Coefficient update | Uses $E(Z^2)$; normal prior with fitted variance | Same | B.7 |
-| Scale | Not fixed during fitting | Rescaled to $\mathrm{sd}(\bar Z_{\cdot k}) = 1$ after each factor update | B.9 |
-| Rank | Fixed $K$ | Removal check with plug-in survival term and cached KL penalties, then refit | B.11 |
+| Scale | Not fixed during fitting | Rescaled to $\mathrm{sd}(\bar Z_{\cdot k}) = 1$ after each factor update, except numerically constant columns | B.9 |
+| Rank | Fixed $K$ | Removal check (while $K > 1$) with plug-in survival term and cached KL penalties, then refit | B.11 |
 
-: Components of the base multimodal model and of the evaluated framework. {#tbl-mm-reconcile}
+: Components of the base multimodal model and of the evaluated framework. sd, standard deviation over training patients; KL, Kullback–Leibler divergence; $\bar Z$, mean projection. {#tbl-mm-reconcile}
 
 <!-- REVISIT R3 END -->
