@@ -314,6 +314,8 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #'   point-Laplace prior on beta_1..beta_K, held fixed within each sweep and
 #'   refit from the K pseudo-observations afterwards, after `beta_warmup`
 #'   outer iterations at its starting value 0.5 delta_0 + 0.5 Laplace(1)).
+#'   `prune_protect_survival` (default FALSE) excludes programs satisfying
+#'   |Eβ| >= 1.96 SD(β) from each pruning nullcheck, including warm refits.
 #' @param init Optional warm-start state (EL, EL2, EF, EF2, EBeta, EBeta2, Tau,
 #'   prior_L, prior_F, and g_beta for a shared beta prior), e.g. a fit with one
 #'   factor removed. Used by pruning; a warm start skips the beta warm-up.
@@ -326,6 +328,8 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   if (!is.list(control) || (length(control) > 0L && is.null(names(control)))) {
     stop("control must be an empty or named list.")
   }
+  # Keep an explicitly disabled option identical to the historical control.
+  if (!isTRUE(control$prune_protect_survival)) control$prune_protect_survival <- NULL
   # Signed loading priors allow signed (e.g. centered) data in that modality
   prior_F_requested <- modifyList(multimodal_yfb_default_control(), control)$prior_F
   nonnegative <- if (is.list(prior_F_requested) && !is.null(names(prior_F_requested))) {
@@ -645,7 +649,8 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   if (settings$prune && K > 1L) {
     delta <- multimodal_yfb_nullcheck(out, Y_raw, data$time, data$event,
                                       settings$survival_elbo, settings$tau_model,
-                                      settings$intercept)
+                                      settings$intercept,
+                                      isTRUE(settings$prune_protect_survival))
     if (max(delta) >= 0) {
       drop <- which.max(delta)
       keep <- setdiff(seq_len(K), drop)
@@ -778,12 +783,14 @@ multimodal_yfb_elbo <- function(Y, time, event, EL, EL2, EF, EF2, EBeta, EBeta2,
 #' @param survival_elbo "plugin" or "corrected".
 #' @param tau_model Residual precision model.
 #' @param intercept Whether the fit has a per-feature intercept (then `Y` is raw).
+#' @param protect_survival Protect |Eβ| >= 1.96 SD(β); return -Inf for those candidates.
 #' @return Numeric vector: ELBO(without k) - ELBO(with all factors), per k.
 #' @examples
 #' # multimodal_yfb_nullcheck(fit, Y, time, event)
 #' @family multimodal_yfb
 multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugin",
-                                     tau_model = "feature", intercept = FALSE) {
+                                     tau_model = "feature", intercept = FALSE,
+                                     protect_survival = FALSE) {
   K <- ncol(fit$EL)
   kl_k <- fit$kl$L + Reduce(`+`, fit$kl$F) + fit$kl$beta
   # With an intercept, Y is the raw data and the intercept is re-estimated for
@@ -797,6 +804,9 @@ multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugi
                               fit$EF, fit$EF2, fit$EBeta, fit$EBeta2, sum(kl_k),
                               survival_elbo, tau_model)
   vapply(seq_len(K), function(k) {
+    # Keep the exact agreed inequality, including its zero-variance boundary.
+    if (protect_survival && abs(fit$EBeta[k]) >=
+        1.96 * sqrt(pmax(fit$EBeta2[k] - fit$EBeta[k]^2, 0))) return(-Inf)
     keep <- setdiff(seq_len(K), k)
     if (length(keep) == 0L) return(-Inf)
     EL_keep <- fit$EL[, keep, drop = FALSE]

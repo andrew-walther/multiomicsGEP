@@ -19,6 +19,15 @@ execute:
   warning: false
 ---
 
+## Protected-pruning evaluation (2026-10-15)
+
+Protected pruning and a new starting rank were not adopted: the fixed assessment requires
+ELBO convergence for every fit, while the multimodal fitter records output-change convergence.
+The panel was stopped without a completed result batch. The conditional 1-SE analysis was not
+run. The comparator and robustness work uses the original handoff configurations at K = 7.
+The implementation is isolated on `m5/k-selection`; see DECISIONS.md for the exact boundary
+case in the protection formula and the reason evaluation stopped.
+
 ## Project Overview
 
 This project implements a **Supervised Bayesian Matrix Factorization** model

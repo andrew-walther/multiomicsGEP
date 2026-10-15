@@ -263,3 +263,62 @@ run_test("Supervision-T12: prune removes empty programs and keeps the signal", {
   assert_true(nrow(fit$pruning) == 3L && all(fit$pruning$elbo_gain >= 0),
               msg = "three removals, each not lowering the ELBO")
 })
+
+# Protection must change the candidate set, including the literal 0 >= 0 boundary.
+run_test("Supervision-T13: protected pruning excludes credible coefficients", {
+  f <- fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 8L,
+                     prior_LF = "point_laplace", canonicalize = TRUE,
+                     verbose = FALSE, sign_correction = FALSE)
+  f$EBeta <- c(2, 0.01, 0); f$EBeta2 <- f$EBeta^2 + c(0.01, 1, 0)
+  f$neg_kl[1] <- -1e9  # removal is ELBO-favored despite credible survival activity
+  raw <- prune_yf_nullcheck(f, .sv$Y, .sv$time, .sv$status)
+  protected <- prune_yf_nullcheck(f, .sv$Y, .sv$time, .sv$status,
+                                 protect_survival = TRUE)
+  assert_true(raw[1] > 0, msg = "active program would be removed without protection")
+  assert_true(all(is.finite(raw)), msg = "unprotected gains remain available")
+  assert_true(all(protected[c(1, 3)] == -Inf), msg = "credible and zero-variance boundary protected")
+  assert_near(protected[2], raw[2], tol = 0, msg = "eligible gain unchanged")
+})
+
+run_test("Supervision-T14: output convergence uses both fitted quantities", {
+  a <- list(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 12L,
+            prior_LF = "point_laplace", canonicalize = TRUE, verbose = FALSE)
+  el <- do.call(fit_cox_on_yf, c(a, converge_on = "elbo"))
+  ou <- do.call(fit_cox_on_yf, c(a, converge_on = "outputs"))
+  assert_true(is.logical(ou$history$outputs_converged), msg = "final output criterion recorded")
+  assert_true(identical(el$history$converged, el$history$elbo_converged),
+              msg = "default stopping flag remains ELBO-based")
+  assert_true(all(ou$history$output_change >= 0), msg = "finite output changes recorded")
+  assert_true(!ou$history$converged || ou$history$outputs_converged,
+              msg = "outputs stopping requires both quantities below threshold")
+})
+
+run_test("Supervision-T15: default fits and pruning match feature/supervised-F bit for bit", {
+  old <- new.env(parent = globalenv())
+  src <- system2("git", c("show", "feature/supervised-F:code/fit_cox_on_yf.R"), stdout = TRUE)
+  tryCatch(eval(parse(text = src), old), error = function(e) {
+    if (!grepl("!is.null(real_Y)", conditionMessage(e), fixed = TRUE)) stop(e)
+  })
+  for (pr in c(FALSE, TRUE)) {
+    a <- list(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 12L,
+              prior_LF = "point_laplace", canonicalize = TRUE, verbose = FALSE, prune = pr)
+    before <- do.call(old$fit_cox_on_yf, a)
+    now <- do.call(fit_cox_on_yf, a)
+    off <- do.call(fit_cox_on_yf, c(a, prune_protect_survival = FALSE))
+    assert_true(identical(before, now) && identical(now, off),
+                msg = "default object and explicit FALSE reproduce the baseline")
+  }
+})
+
+run_test("Supervision-T16: output-change diagnostic agrees with two consecutive states", {
+  a <- list(.sv$Y, .sv$time, .sv$status, K = 3L, prior_LF = "point_laplace",
+            canonicalize = TRUE, verbose = FALSE, sign_correction = FALSE,
+            converge_on = "elbo")
+  one <- do.call(fit_cox_on_yf, c(a, max_iter = 1L))
+  two <- do.call(fit_cox_on_yf, c(a, max_iter = 2L))
+  expected <- max(multimodal_yfb_relative_change(one$EL %*% t(one$EF), two$EL %*% t(two$EF)),
+    multimodal_yfb_relative_change(as.vector(.sv$Y %*% one$EF %*% one$EBeta),
+                                   as.vector(.sv$Y %*% two$EF %*% two$EBeta)))
+  assert_near(two$history$output_change[2], expected, tol = 1e-12,
+              msg = "both fitted quantities enter the recorded maximum")
+})

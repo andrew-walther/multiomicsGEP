@@ -5,6 +5,35 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Protected-pruning evaluation blocked; retain the handoff configurations
+
+**Decision for the comparator and robustness work:** protected pruning is **not adopted**
+for either model, and no new starting rank is selected. Use starting K = 7, single modality
+without pruning and the selected multimodal M4 configuration with ordinary ELBO pruning,
+as listed in `docs/plans/Codex_Handoff_M6_M7_10_15_26.md`.
+
+**Mandatory criterion not assessable as specified:** Prompt E requires every panel fit to
+converge under an ELBO stopping rule. The existing multimodal fitter stops on the relative
+change in reconstruction and predictor (`code/fit_multimodal_yfb.R`, outer convergence check),
+and does not record a per-iteration full ELBO. Its `diagnostics$converged` is not evidence of
+ELBO convergence. Adding a multimodal ELBO stopping rule was not among the permitted changes.
+Following the instruction to stop a prompt that cannot be done as specified, the panel was
+stopped before its first complete rank batch; no simulation result or empirical failure rate
+is claimed. This is a blocked adoption assessment, not a failed completed panel. The conditional
+real-data 1-SE analysis is therefore ineligible and was not run. No parameters were tuned.
+
+**Implemented for review on `m5/k-selection` only:** opt-in protection in both nullchecks,
+passed through pruning refits; opt-in single-modality output stopping and final diagnostics;
+fixed-design panel and conditional 1-SE runners. Defaults reproduce `feature/supervised-F`
+bit for bit in regression checks, including unprotected pruning. Explicit `converge_on`
+records output changes; omitting it preserves the default object. These changes are not used
+by the subsequent branches because adoption was not established.
+
+**Formula boundary:** the required inequality |E[β]| ≥ 1.96 SD(β) also protects a point mass
+at zero (0 ≥ 0). Implemented literally and covered by tests; this differs from claiming a
+coefficient is credibly nonzero and could prevent removal of empty programs. It was not
+silently changed to a strict inequality or a positive-variance rule.
+
 ## 2026-10-15 — KL sign fix, multimodal supervision (M4), and two open items: single-modality convergence and K selection (awaiting decisions)
 
 **KL sign error in the canonical single-modality objective (fixed).** In `fit_cox_on_yf(canonicalize

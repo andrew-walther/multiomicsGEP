@@ -65,3 +65,33 @@ run_test("MMYFB-Sup-T3: shared beta prior is held during the warm-up and refit a
   assert_true(!identical(refit$g_beta, g0), msg = "prior refit after the warm-up")
   assert_true(all(is.finite(refit$EBeta)), msg = "finite coefficients")
 })
+
+run_test("MMYFB-Sup-T4: protected nullcheck excludes survival-active programs", {
+  fit <- fit_multimodal_yfb(.mms$Y, .mms$time, .mms$event, 3L,
+                            control = c(.mms_ctrl, list(max_outer = 2L)))
+  fit$EBeta <- c(2, 0.01, 0); fit$EBeta2 <- fit$EBeta^2 + c(0.01, 1, 0)
+  fit$kl$beta[1] <- 1e9  # deletion raises the ELBO in the unprotected state
+  raw <- multimodal_yfb_nullcheck(fit, .mms$Y, .mms$time, .mms$event,
+                                 intercept = TRUE)
+  pro <- multimodal_yfb_nullcheck(fit, .mms$Y, .mms$time, .mms$event,
+                                 intercept = TRUE, protect_survival = TRUE)
+  assert_true(raw[1] > 0, msg = "active factor removal would increase ELBO")
+  assert_true(all(pro[c(1, 3)] == -Inf), msg = "credible coefficients never candidates")
+  assert_near(pro[2], raw[2], tol = 0, msg = "unprotected candidate unchanged")
+})
+
+run_test("MMYFB-Sup-T5: default pruning sequence matches feature/supervised-F", {
+  old <- new.env(parent = globalenv())
+  src <- system2("git", c("show", "feature/supervised-F:code/fit_multimodal_yfb.R"), stdout = TRUE)
+  eval(parse(text = src), old)
+  for (pr in c(FALSE, TRUE)) {
+    a <- list(.mms$Y, .mms$time, .mms$event, 3L,
+              control = c(.mms_ctrl, list(prune = pr, max_outer = 8L)))
+    before <- do.call(old$fit_multimodal_yfb, a)
+    now <- do.call(fit_multimodal_yfb, a)
+    a$control$prune_protect_survival <- FALSE
+    off <- do.call(fit_multimodal_yfb, a)
+    assert_true(identical(before, now) && identical(now, off),
+                msg = "default and explicit FALSE reproduce baseline, including pruning")
+  }
+})
