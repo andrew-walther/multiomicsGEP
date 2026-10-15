@@ -10,8 +10,8 @@ Current checkpoint: Task0 and Task7 are complete. Task1's original800-cell
 panel rejects both protected models. The approved 160-cell full-state Single
 rerun improves recovery but fails recovery/convergence/rank and is not adopted.
 Single K selection needs review before an additional remedy; the approved
-K7/no-pruning fallback remains available. Task2 diagnostic code is prepared but
-not yet applied or run; Tasks3–6 remain pending. No benchmark replacement is
+K7/no-pruning fallback remains available. Task2 diagnostic code is implemented and verified584/0, with its ten-arm
+training-only diagnosis next; Tasks3–6 remain pending. No benchmark replacement is
 proposed. All ten benchmark manifest entries and the immutable tag were verified
 unchanged at this checkpoint (2026-10-15).
 The chronological updates below retain the earlier execution failures; the
@@ -315,3 +315,56 @@ No external data were scored or used for this assessment.
 
 Task1-5 result checkpoint: fresh full suite **573 passed, 0 failed**. All ten
 benchmark manifest checks pass; annotated tag and peeled commit remain unchanged.
+
+
+## Task2-1 preparation: exact training-only diagnosis
+
+The prepared opt-in trace is now implemented; no real diagnostic fit has run.
+Multimodal traces retain each outer/inner sweep and recursive pruning stage,
+including prior before/after, beta moments, raw pseudo-observations/precisions,
+canonical scales, live programs, ELBO components and unchanged convergence
+quantities. Full and centered molecular predictions and centered eta are extra
+observations, not replacement convergence criteria. Single's existing trace
+also observes its actual shared-prior refit and raw beta update quantities.
+
+The fixed diagnostic arms are selected, fixed starting shared Laplace, shared
+Normal with the same ten-iteration warmup, historical per-program Normal, and
+selected without supervised start, for both models at K7/seed42. Inputs are the
+unchanged144 TCGA training donors (3000 genes/10000 CpGs), extracted from the
+existing imputed cache with Andrew's approval; no external scores select arms.
+The runner retains per-arm errors/warnings and appends the three relevant
+frozen TCGA benchmark training rows to its comparison. R1 fixed/shared-Normal
+controls are opt-in; this diagnostic experiment adopts no remedy.
+
+Teach-back: tracing copies values already computed by the fitter; it does not
+feed them back into updates. Raw x/A and canonical scale remain separate because
+beta changes units during normalization. Effective slab probability sums only
+weights on positive-scale components, so a single weight on scale0 is correctly
+recognized as a point mass. Large matrices are not saved in every trace record;
+only per-program vectors and per-modality changes are retained. The scalar
+coefficient helper accepts a Normal prior for the specified family contrast;
+its conjugate posterior is checked analytically. The diagnosis runner has ten
+independent cells, captures errors within each arm, and refuses to overwrite
+completed checkpoints. A Longleaf array wrapper is provided without submission.
+
+Software verification: the new Single prior test failed before implementation
+and passed afterward (5/5 diagnosis tests). The molecular-change test failed
+when its fields were absent; the no-intercept test caught NULL intercept handling;
+both pass afterward (6/6 multimodal trace tests). One temporary test invocation
+used a nonexistent summary helper after all assertions passed; rerunning with
+the project's report_results helper exits0. Full-suite verification is pending
+before the preregistration commit and any real-data execution.
+
+Task2-1 software verification update (before any real-data fit): the first full
+suite returned581 passed/3 failed. All three failures came from the new Single
+trace trying to read g_beta in historical per-program fits, where no shared
+prior exists. Restricted the additional prior records to shared-prior fits;
+existing per-program traces remain unchanged. The affected supervision tests
+and new diagnosis tests now pass22/22; the full suite is being rerun. This is a
+software correction before the diagnostic attempt, not a scientific retry or
+a change to its arms, criteria, inputs or defaults.
+
+Task2-1 final pre-run verification: **584 passed, 0 failed**, including
+base-branch/default identity checks, all6 multimodal trace tests and all5
+diagnosis tests. Longleaf wrapper syntax passes. No diagnostic real-data fit
+has run before this preregistration commit.

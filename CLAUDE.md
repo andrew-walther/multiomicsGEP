@@ -91,3 +91,9 @@ into pruning refits. `run_posterior_k_panel.R` evaluates the unchanged 160-cell
 protected single panel against the saved original reference. The completed
 experiment improves recovery but fails the unchanged adoption rule (recovery, convergence and rank); see the attempt log. Defaults and the
 benchmark remain unchanged.
+
+Task2's fixed TCGA-only diagnostic runner is
+`results/multimodal_real/run_round2_collapse_diagnosis.R`. Its opt-in trace and
+diagnostic prior controls preserve the default fit. Read the attempt history
+before execution or interpretation; training contrasts do not adopt a remedy,
+and external cohorts cannot select one.

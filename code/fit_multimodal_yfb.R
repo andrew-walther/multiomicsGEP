@@ -314,6 +314,13 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #'   point-Laplace prior on beta_1..beta_K, held fixed within each sweep and
 #'   refit from the K pseudo-observations afterwards, after `beta_warmup`
 #'   outer iterations at its starting value 0.5 delta_0 + 0.5 Laplace(1)).
+#'   Diagnostic controls (opt-in): `trace=TRUE` records the shared prior before
+#'   and after each sweep, posterior beta means/SDs, last-sweep raw x and A,
+#'   canonical scales, live-program count, ELBO components and output changes
+#'   for each outer iteration, retaining every pruning stage. `beta_prior_fix`
+#'   holds a shared prior at its starting value beyond warm-up. `beta_prior`
+#'   also accepts `shared_normal` (Normal(0,1) warm-up then one shared EB variance).
+#'   These controls do not change the default path or convergence rule.
 #'   `prune_protect_survival` (default FALSE) excludes programs satisfying
 #'   |Eβ| >= 1.96 SD(β) and SD(β)>0 from each nullcheck, including warm refits.
 #' @param init Optional warm-start state (EL, EL2, EF, EF2, EBeta, EBeta2, Tau,
@@ -328,6 +335,10 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   if (!is.list(control) || (length(control) > 0L && is.null(names(control)))) {
     stop("control must be an empty or named list.")
   }
+  # Disabled diagnostics and prior controls preserve the historical object exactly.
+  if (!isTRUE(control$trace)) control$trace <- NULL
+  if (!isTRUE(control$beta_prior_fix)) control$beta_prior_fix <- NULL
+  trace_enabled <- isTRUE(control$trace)
   # Keep an explicitly disabled option identical to the historical control.
   if (!isTRUE(control$prune_protect_survival)) control$prune_protect_survival <- NULL
   # Signed loading priors allow signed (e.g. centered) data in that modality
@@ -446,11 +457,14 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   }
   # Shared beta prior (C6): starting value, warm-up only on a fresh fit
   beta_prior_mode <- settings$beta_prior %||% "eb_normal"
-  if (!beta_prior_mode %in% c("eb_normal", "shared_point_laplace"))
-    stop("control$beta_prior must be eb_normal or shared_point_laplace.")
-  shared_beta <- beta_prior_mode == "shared_point_laplace"
-  if (shared_beta && is.null(g_beta))
-    g_beta <- ebnm::laplacemix(c(0.5, 0.5), c(0, 0), c(0, 1))
+  if (!beta_prior_mode %in% c("eb_normal", "shared_point_laplace", "shared_normal"))
+    stop("control$beta_prior must be eb_normal, shared_point_laplace or shared_normal.")
+  shared_beta <- beta_prior_mode != "eb_normal"
+  beta_family <- if (beta_prior_mode == "shared_normal") "normal" else "point_laplace"
+  if (shared_beta && is.null(g_beta)) {
+    g_beta <- if (beta_family == "normal") ashr::normalmix(1, 0, 1) else
+      ebnm::laplacemix(c(0.5, 0.5), c(0, 0), c(0, 1))
+  }
   beta_warmup <- if (is.null(init)) as.integer(settings$beta_warmup %||% 10L) else 0L
   beta_x <- beta_s <- numeric(K)
   # Per-factor KL(q || g) terms of the ELBO, refreshed at each factor update
@@ -458,8 +472,16 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   kl_F <- lapply(Y, function(x) numeric(K))
 
   history <- vector("list", as.integer(settings$max_outer))
+  if (trace_enabled) trace <- vector("list", as.integer(settings$max_outer))
   converged <- FALSE
   for (outer in seq_len(as.integer(settings$max_outer))) {
+    if (trace_enabled) {
+      prior_before <- g_beta
+      # Observe the previous intercept before its outer-iteration update.
+      old_trace_mu <- mu
+      prior_sweeps <- vector("list", as.integer(settings$max_inner))
+      beta_A <- canonical_scale <- numeric(K)
+    }
     if (settings$intercept) {
       mu <- lapply(names(Y_raw), function(m) colMeans(Y_raw[[m]] - EL %*% t(EF[[m]])))
       names(mu) <- names(Y_raw)
@@ -523,16 +545,17 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
           (current_eta - EBeta[k] * projection$EZ[, k])
         updated_beta <- if (shared_beta) {
           multimodal_yfb_update_beta_shared_k(projection$EZ[, k], projection$VZ[, k],
-                                              working$w, h_minus_k, g_beta)
+                                              working$w, h_minus_k, g_beta, prior_family = beta_family)
         } else {
           multimodal_yfb_update_beta_k(
             projection$EZ[, k], projection$VZ[, k], working$w, h_minus_k
           )
         }
-        if (shared_beta) {
+        if (shared_beta || trace_enabled) {
           beta_x[k] <- updated_beta$x
           beta_s[k] <- if (updated_beta$A > 0) sqrt(1 / updated_beta$A) else 1e6
         }
+        if (trace_enabled) beta_A[k] <- updated_beta$A
         kl_beta[k] <- updated_beta$kl
         damped_beta <- multimodal_yfb_damp_moments(
           EBeta[k], EBeta2[k], updated_beta$mean, updated_beta$second,
@@ -543,6 +566,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         canonical <- multimodal_yfb_canonicalize_factors(
           Y, EL, EL2, EF, EF2, EBeta, EBeta2, prior_L, prior_F, factors = k
         )
+        if (trace_enabled) canonical_scale[k] <- canonical$scale[k]
         EL <- canonical$EL
         EL2 <- canonical$EL2
         EF <- canonical$EF
@@ -554,10 +578,15 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
       }
       # Shared beta prior: refit from the sweep's K pseudo-observations after
       # the warm-up (held fixed within the sweep, as for the loading priors)
-      if (shared_beta && outer > beta_warmup && K > 0L) {
-        g_beta <- ebnm::ebnm(beta_x, beta_s, prior_family = "point_laplace",
+      if (trace_enabled) sweep_prior_before <- g_beta
+      if (shared_beta && !isTRUE(settings$beta_prior_fix) && outer > beta_warmup && K > 0L) {
+        g_beta <- ebnm::ebnm(beta_x, beta_s, prior_family = beta_family,
                              g_init = g_beta)$fitted_g
       }
+      if (trace_enabled) prior_sweeps[[inner]] <- list(
+        prior_before = sweep_prior_before, prior_after = g_beta,
+        beta_mean = EBeta, beta_sd = sqrt(pmax(EBeta2 - EBeta^2, 0)),
+        x = beta_x, A = beta_A, canonical_scale = canonical_scale)
     }
 
     tau_state <- multimodal_yfb_update_tau_chunked(
@@ -591,6 +620,34 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
       max_relative_reconstruction_change = max(reconstruction_change),
       max_relative_eta_change = multimodal_yfb_relative_change(old_eta, predictor$mean)
     )
+    if (trace_enabled) {
+      live <- vapply(seq_len(K), function(k) {
+        sum(vapply(EF, function(f) sum(f[, k]^2), numeric(1))) > 1e-8
+      }, logical(1))
+      trace[[outer]] <- list(K = K, iteration = outer, prior_before = prior_before,
+        prior_after = g_beta, prior_sweeps = prior_sweeps,
+        beta_mean = EBeta, beta_sd = sqrt(pmax(EBeta2 - EBeta^2, 0)),
+        x = beta_x, A = beta_A, canonical_scale = canonical_scale,
+        live_programs = sum(live),
+        elbo_components = attr(history[[outer]]$elbo, "components"),
+        reconstruction_change = reconstruction_change,
+        full_reconstruction_change = vapply(names(Y), function(m) {
+          multimodal_yfb_relative_change(
+            sweep(old_reconstruction[[m]], 2,
+              if (is.null(old_trace_mu)) rep(0, ncol(Y[[m]])) else old_trace_mu[[m]], "+"),
+            sweep(EL %*% t(EF[[m]]), 2,
+              if (is.null(mu)) rep(0, ncol(Y[[m]])) else mu[[m]], "+"))
+        }, numeric(1)),
+        centered_reconstruction_change = vapply(names(Y), function(m) {
+          multimodal_yfb_relative_change(
+            scale(old_reconstruction[[m]], scale = FALSE),
+            scale(EL %*% t(EF[[m]]), scale = FALSE))
+        }, numeric(1)),
+        eta_change = history[[outer]]$max_relative_eta_change,
+        centered_eta_change = multimodal_yfb_relative_change(
+          old_eta - mean(old_eta), predictor$mean - mean(predictor$mean)),
+        eta_mean = mean(predictor$mean), eta_sd = stats::sd(predictor$mean))
+    }
     # Posterior moments can move along equivalent latent-factor allocations even
     # after the fitted data and raw predictor stabilize.  Convergence is therefore
     # assessed on the identifiable fitted reconstruction and η = Σ_m Y_m F_m β.
@@ -632,6 +689,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     K_eff_retained = sum(reconstruction_active | survival_active),
     controls = settings
   )
+  if (trace_enabled) diagnostics$trace <- trace[seq_len(length(history))]
   kl <- list(L = kl_L, F = kl_F, beta = kl_beta)
   diagnostics$elbo <- multimodal_yfb_elbo(Y, data$time, data$event, EL, EL2, EF, EF2,
                                           EBeta, EBeta2,
@@ -662,6 +720,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         prior_L = out$prior_L[keep],
         prior_F = lapply(out$prior_F, function(x) x[keep]), g_beta = out$g_beta)
       refit <- fit_multimodal_yfb(Y_raw, time, event, K - 1L, control, init = pruned_init)
+      if (trace_enabled) refit$diagnostics$trace <- c(out$diagnostics$trace, refit$diagnostics$trace)
       refit$diagnostics$pruning <- rbind(
         data.frame(K_before = K, removed_factor = drop, elbo_gain = delta[drop],
                    converged_before = converged),

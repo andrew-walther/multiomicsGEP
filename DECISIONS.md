@@ -15,6 +15,21 @@ selection threshold. The complete rank panel is pre-registered in
 `docs/plans/Round2_attempts_log.md`. No adoption is claimed before its results;
 the interim-writeup benchmark and fitting defaults remain unchanged.
 
+## 2026-10-15 — Observe training-only prior collapse before selecting a remedy
+
+Task2 adds opt-in traces to retain the actual shared-prior refits, beta moments,
+raw pseudo-observations/precisions and unchanged convergence quantities. The
+specified fixed-shared-Laplace and shared-Normal/warmup contrasts are opt-in;
+no fitting default or stopping criterion changes. Full and centered molecular
+prediction changes diagnose intercept allocation, rather than replace the
+established raw-output stopping rule. Small tests verify diagnostic identity.
+
+The ten fixed TCGA-only contrasts and their hypothesis checks are registered
+before fitting in `docs/plans/Round2_attempts_log.md`. The unchanged imputed
+training cache extraction is explicitly authorized by Andrew. No external
+outcomes or scores choose a remedy. This decision authorizes diagnosis only;
+simulation and training CV must pass before any remedy can be proposed.
+
 ## 2026-10-15 — Reject full-state protected pruning under the unchanged rule
 
 Andrew's approved additional experiment completed all160 protected Single fits,

@@ -438,3 +438,15 @@ model nor its adoption criteria and is not an approved benchmark replacement.
 The completed 160-cell full-state panel is not adopted: recovery improved but
 recovery, convergence and rank requirements did not all pass. Consult the Round2
 attempt history before another experiment; existing output folders refuse overwrite.
+
+
+For the fixed TCGA-only collapse diagnosis, run
+`Rscript results/multimodal_real/run_round2_collapse_diagnosis.R all` only after
+its preregistration commit. The ten arms write separate checkpoints to
+`results/multimodal_real/outputs/round2/diagnosis1/`; the existing TCGA-only cache
+must be present at ignored `data/round2_tcga_training.rds`. `control$trace=TRUE`
+observes multimodal beta priors/moments, pseudo-observations and convergence
+quantities; `beta_prior_fix=TRUE` and `beta_prior="shared_normal"` are diagnostic
+opt-ins. `trace_supervision=TRUE` observes Single's actual prior refits as well.
+None changes defaults or the convergence criteria. See the attempt log for the
+fixed contrasts and the Longleaf wrapper for individual cells.

@@ -517,20 +517,22 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
 #' @param EZ_k,VZ_k Projection posterior mean and variance for one factor.
 #' @param w,h_minus_k Frozen Cox working quantities.
 #' @param g Fitted ebnm prior (e.g. a `laplacemix`).
+#' @param prior_family Shared prior family: point_laplace (default) or normal.
 #' @return Posterior moments, the pseudo-observation `x`, precision `A`,
 #'   signal `B`, and the coordinate KL term.
 #' @examples
 #' multimodal_yfb_update_beta_shared_k(c(1, -1, 2), c(0, 0, 0), c(1, 1, 1),
 #'   c(0.5, -0.2, 1), ebnm::laplacemix(c(0.5, 0.5), c(0, 0), c(0, 1)))
 #' @family multimodal_yfb_updates
-multimodal_yfb_update_beta_shared_k <- function(EZ_k, VZ_k, w, h_minus_k, g) {
+multimodal_yfb_update_beta_shared_k <- function(EZ_k, VZ_k, w, h_minus_k, g,
+                                                prior_family = "point_laplace") {
   A <- sum(w * (EZ_k^2 + pmax(VZ_k, 0)))
   B <- sum(EZ_k * h_minus_k)
   if (!is.finite(A) || A <= 0) {
     return(list(A = 0, B = B, x = 0, mean = 0, second = 0, variance = 0, kl = 0))
   }
   x <- B / A
-  fit <- ebnm::ebnm(x, sqrt(1 / A), prior_family = "point_laplace",
+  fit <- ebnm::ebnm(x, sqrt(1 / A), prior_family = prior_family,
                     g_init = g, fix_g = TRUE)
   mean <- fit$posterior$mean
   second <- fit$posterior$sd^2 + mean^2

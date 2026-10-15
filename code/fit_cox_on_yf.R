@@ -469,7 +469,9 @@ yf_subset_posterior_state <- function(state,keep) {
 #'   rule; "outputs" requires relative changes of LF' and YFβ both < 1e-4.
 #'   Explicitly passing either value records both final criteria; omitting the
 #'   argument preserves the default fit object bit for bit.
-#' @param trace_supervision logical (default FALSE). When TRUE, `history$trace`
+#' @param trace_supervision logical (default FALSE). When TRUE, `history$prior_trace`
+#'   also records each non-cohort sweep's beta prior before/after refitting and
+#'   its raw coefficient pseudo-observations/precisions. `history$trace`
 #'                 records, per iteration (rows) and program k (columns):
 #'                 E[beta_k], E[beta_k^2]; survival's share of the F-update
 #'                 precision, w_surv A_surv / A_F (median and 90th percentile over
@@ -912,6 +914,7 @@ fit_cox_on_yf <- function(Y, time, status,
     trace_names <- c("beta_mean", "beta_second", "shareA_median", "shareA_p90",
                      "shareB_median", "shareB_p90", "shareA_unweighted_median",
                      "sd_YF", "norm_F", "norm_L")
+    if (!use_beta_cohort && beta_prior_mode == "shared") history$prior_trace <- vector("list", max_iter)
     history$trace <- setNames(
       lapply(trace_names, function(nm) matrix(NA_real_, max_iter, K)), trace_names)
   }
@@ -933,6 +936,10 @@ fit_cox_on_yf <- function(Y, time, status,
   # Main CAVI Loop
   # ==========================================================================
   for (iter in 1:max_iter) {
+    if (trace_supervision && !use_beta_cohort && beta_prior_mode == "shared") {
+      trace_prior_before <- g_beta
+      trace_x <- trace_s <- trace_A <- numeric(K)
+    }
 
     if (record_output_convergence) {
       old_reconstruction <- EL %*% t(EF)
@@ -1028,6 +1035,11 @@ fit_cox_on_yf <- function(Y, time, status,
                                      alpha = if (canonicalize) w_S else alpha_iter,
                                      survival_divisor = if (canonicalize) 1 else beta_divisor,
                                      g_fixed = if (beta_prior_mode == "shared") g_beta else NULL)
+        if (trace_supervision && beta_prior_mode == "shared") {
+          trace_x[k] <- res_beta$x
+          trace_s[k] <- res_beta$s
+          trace_A[k] <- res_beta$A
+        }
         EBeta[k]    <- res_beta$mean
         EBeta2[k]   <- res_beta$second
         if (beta_prior_mode == "shared") { beta_x[k] <- res_beta$x; beta_s[k] <- res_beta$s }
@@ -1151,6 +1163,14 @@ fit_cox_on_yf <- function(Y, time, status,
         ebnm::ebnm(beta_x, beta_s, prior_family = "point_normal", scale = beta_slab_sd)
       else ebnm::ebnm(beta_x, beta_s, prior_family = prior_beta)
       g_beta <- fit_g$fitted_g
+    }
+
+    if (trace_supervision && !use_beta_cohort && beta_prior_mode == "shared") {
+      # Raw pseudo-observations precede the end-of-sweep canonical rescaling.
+      # Record the exact prior used, and the refit passed to the next sweep.
+      history$prior_trace[[iter]] <- list(prior_before = trace_prior_before,
+        prior_after = g_beta, x = trace_x, s = trace_s, A = trace_A,
+        beta_mean = EBeta, beta_sd = sqrt(pmax(EBeta2 - EBeta^2, 0)))
     }
 
     # Fail loud on divergence: a non-finite loading or coefficient otherwise
@@ -1293,8 +1313,10 @@ fit_cox_on_yf <- function(Y, time, status,
       history$delta_Beta <- history$delta_Beta[1:iter]
       history$delta_elbo_rel <- history$delta_elbo_rel[1:iter]
       history$factor_pve <- history$factor_pve[1:iter, , drop = FALSE]
-      if (trace_supervision)
+      if (trace_supervision) {
         history$trace <- lapply(history$trace, function(m) m[1:iter, , drop = FALSE])
+        if (!use_beta_cohort && beta_prior_mode == "shared") history$prior_trace <- history$prior_trace[seq_len(iter)]
+      }
       break
     }
 

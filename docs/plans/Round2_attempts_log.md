@@ -305,3 +305,77 @@ No external data were scored or used for this assessment.
 
 Task1-5 result checkpoint: fresh full suite **573 passed, 0 failed**. All ten
 benchmark manifest checks pass; annotated tag and peeled commit remain unchanged.
+
+## Task 2 attempt 1 — trace the specified TCGA contrasts before choosing a remedy
+
+**Before execution:** this entry, runner header, opt-in controls and tests are
+committed before any diagnostic fit. Prepared tiny synthetic unit tests are
+software verification and are not used to select a statistical configuration.
+
+**Hypothesis:** refitting the shared point-Laplace beta prior produces a point
+mass at zero; subsequent updates under that prior keep beta exactly zero. A
+fixed starting prior separates this mechanism from the supervised initialization.
+The Normal/warm-up and per-factor historical arms distinguish shared prior
+estimation from its family. The no-start contrast isolates supervised initialization.
+
+**Exact implementation change:** opt-in multimodal trace records the prior before
+and after each inner sweep, posterior beta means/SDs, raw update x and A,
+canonical scale, live loading columns, ELBO parts and the actual output changes.
+Additional read-only diagnostics measure full molecular prediction changes
+including the intercept, centered molecular changes, and centered Cox predictor
+changes. They diagnose intercept allocation without changing any stopping rule.
+Single's existing trace opt-in also records its actual sweep prior before/after,
+raw coefficient x/s/A and posterior beta moments.
+All recursive pruning stages remain in the trace. Explicit trace=FALSE and
+beta_prior_fix=FALSE preserve the original object. The specified diagnostic
+controls beta_prior_fix=TRUE and beta_prior="shared_normal" are new opt-ins;
+no default, objective, stopping rule or threshold changes.
+
+**Arms/data:** K7, seed42, unchanged 144 TCGA matched patients, expression3000
+and methylation10000; selected, fixed starting shared Laplace(pi=.5,scale1),
+shared Normal(0,1) with the same warmup10 then EB refit, historical per-factor
+Normal without supervised start, selected without supervised start. Repeat all
+five for the expression block alone with fit_cox_on_yf and its selected settings.
+The single per-factor counterpart retains w_S=1 and uses per-program Normal
+beta/no supervised start. Single remains unpruned as the handoff fallback;
+multimodal retains ordinary unprotected pruning. Use each model's original cap
+and convergence rule. The explicit historical reference is not presented as a
+one-option contrast. Every other diagnostic contrast changes exactly one option.
+
+**Input authorization:** Andrew approved extracting the existing cache's unchanged
+$training block (including its original methylation imputation) to ignored
+`data/round2_tcga_training.rds`. Frozen patient/feature IDs and order match.
+No ICGC outcomes, predictions or metrics select these arms or any remedy.
+
+**Pass/fail and report:** diagnose the hypothesis only when a point-mass refit
+(effective slab probability=sum of weights on positive-scale components=0)
+is followed by all beta means/SDs exactly zero in the next and subsequent
+updates. Record the first occurrence and any contrary case without assuming
+causality. For each cap, report which actual reconstruction/eta change exceeds
+the unchanged tolerance, plus centered-eta change as a diagnostic only.
+A remedy still requires the later fixed simulation and 5-fold training-CV
+criteria; this diagnostic comparison adopts nothing. All warnings/errors are
+checkpointed per arm. Comparison tables carry the relevant frozen TCGA benchmark
+rows. Raw update pseudo-observations/precisions and canonical scales are distinct
+columns, so unit changes remain visible.
+
+**Execution after commit:**
+`Rscript results/multimodal_real/run_round2_collapse_diagnosis.R all`.
+Fresh output `results/multimodal_real/outputs/round2/diagnosis1/`; existing arm
+checkpoints refuse overwrite. Six PSOCK workers, one serial fit each. Longleaf
+array wrapper prepared (10 cells,8GB/cell,12h); no jobs submitted. Default identity
+against feature/supervised-F and the full suite must pass before this commit.
+
+Task2-1 software verification update (before any real-data fit): the first full
+suite returned581 passed/3 failed. All three failures came from the new Single
+trace trying to read g_beta in historical per-program fits, where no shared
+prior exists. Restricted the additional prior records to shared-prior fits;
+existing per-program traces remain unchanged. The affected supervision tests
+and new diagnosis tests now pass22/22; the full suite is being rerun. This is a
+software correction before the diagnostic attempt, not a scientific retry or
+a change to its arms, criteria, inputs or defaults.
+
+Task2-1 final pre-run verification: **584 passed, 0 failed**, including
+base-branch/default identity checks, all6 multimodal trace tests and all5
+diagnosis tests. Longleaf wrapper syntax passes. No diagnostic real-data fit
+has run before this preregistration commit.
