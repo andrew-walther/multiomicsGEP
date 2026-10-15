@@ -279,9 +279,13 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
     sum(log(Tau[[modality]]) - Tau[[modality]] *
       tau_state$expected_residual2[[modality]] / nrow(EL))
   }, numeric(1))) * nrow(EL) / 2
-  eta <- EZ %*% EBeta
-  eta_variance <- VZ %*% EBeta2 + EZ^2 %*% EBeta2 - (EZ %*% EBeta)^2
-  reconstruction + sum(h * eta - 0.5 * w * (eta^2 + pmax(eta_variance, 0)))
+  # E(eta_i^2) = E(eta_i)^2 + Var(eta_i), with the mean-field variance
+  # sum_k [Var(Z_ik) E(beta_k^2) + E(Z_ik)^2 Var(beta_k)]. (The earlier
+  # expression dropped the cross-factor terms of E(eta_i^2); DECISIONS.md
+  # 2026-10-14.)
+  predictor <- multimodal_yfb_predictor_moments(EZ, VZ, EBeta, EBeta2)
+  reconstruction + sum(h * predictor$mean -
+                         0.5 * w * (predictor$mean^2 + predictor$variance))
 }
 
 #' Fit the isolated raw-projection multimodal YFB model

@@ -140,4 +140,51 @@ run_test("MMYFB-Fit-T7: an empty control list uses configured defaults", {
   assert_true(is.list(fit$diagnostics$controls))
   assert_true(fit$diagnostics$controls$max_outer == 500)
 })
+run_test("MMYFB-Fit-T8: monitoring objective uses E[eta^2] with cross-factor terms", {
+  # Expected surrogate survival term: sum_i [h_i E(eta_i) - 0.5 w_i E(eta_i^2)],
+  # with E(eta_i^2) = sum_k sum_l E(Z_ik beta_k Z_il beta_l). Under the
+  # mean-field posterior, the k = l terms are E(Z_ik^2) E(beta_k^2) and the
+  # k != l terms are E(Z_ik) E(beta_k) E(Z_il) E(beta_l). The explicit double
+  # sum below is independent of multimodal_yfb_predictor_moments().
+  d <- .mm_fit_fixture()
+  Y <- lapply(d$Y, unname)
+  n <- nrow(Y[[1]])
+  EL <- matrix(c(0.5, 1.0, 0.8, 0.3, 1.2, 0.7, 0.9, 0.4, 1.1, 0.6, 0.2, 1.3,
+                 0.4, 0.9, 0.2, 1.1, 0.5, 0.8, 0.3, 1.0, 0.6, 0.7, 1.2, 0.1), n, 2)
+  EL2 <- EL^2 + 0.05
+  EF <- list(expression = matrix(c(0.6, 0.2, -0.3, 0.9), 2),
+             methylation = matrix(c(0.4, -0.5, 0.7, 0.1), 2))
+  EF2 <- lapply(EF, function(f) f^2 + 0.02)
+  EBeta <- c(0.8, -0.6)
+  EBeta2 <- EBeta^2 + c(0.1, 0.2)
+  Tau <- lapply(Y, function(x) rep(1, ncol(x)))
+  projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
+  w <- seq(0.2, 1.3, length.out = n)
+  h <- seq(-0.5, 0.6, length.out = n)
+
+  objective <- function(w, h) {
+    multimodal_yfb_fixed_working_objective(Y, EL, EL2, EF, EF2, Tau,
+                                           projection$EZ, projection$VZ,
+                                           EBeta, EBeta2, w, h)
+  }
+  survival_part <- objective(w, h) - objective(0 * w, 0 * h)
+
+  EZ <- projection$EZ
+  EZ2 <- projection$EZ2
+  K <- ncol(EZ)
+  E_eta2 <- vapply(seq_len(n), function(i) {
+    total <- 0
+    for (k in seq_len(K)) for (l in seq_len(K)) {
+      total <- total + if (k == l) EZ2[i, k] * EBeta2[k]
+                       else EZ[i, k] * EBeta[k] * EZ[i, l] * EBeta[l]
+    }
+    total
+  }, numeric(1))
+  E_eta <- as.vector(EZ %*% EBeta)
+  expected <- sum(h * E_eta - 0.5 * w * E_eta2)
+  # The cross-factor terms must be material here, or the test cannot detect
+  # their omission
+  assert_true(abs(sum(w * EZ[, 1] * EBeta[1] * EZ[, 2] * EBeta[2])) > 1e-2)
+  assert_near(survival_part, expected, tol = 1e-10)
+})
 if (sys.nframe() == 0L) report_results("test_multimodal_yfb_fit.R")
