@@ -32,6 +32,14 @@ here too rather than maintaining a separate copy.
 
 - **Multimodal comparator audit:** `results/multimodal_real/run_supervised_multimodal_comparison.R` records actual two-step ranks and the fixed four-arm evaluation on `m7/multimodal-comparators`; see the dated progress-book and decision entries for results.
 
+## Robustness and comparator follow-up
+
+The five-prompt branch/results index is
+`docs/reports/Codex_M6_M7_Summary_10_15_26.md`; read its limitations before using
+the tables. E did not adopt protection or a new K. `m6/robustness` contains the
+training-only robustness runner; current findings belong in `PROJECT_STATUS.qmd`
+and `DECISIONS.md`, not this instruction file.
+
 ## Quick Reference
 
 Active pointers only — completed one-off analyses and dated reports are indexed in `PROJECT_STATUS.qmd`,

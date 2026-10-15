@@ -1,0 +1,5 @@
+"top_n","p","n_active_full","active_programs","full_converged"
+1000,662,3,"2;3;6",TRUE
+2000,1365,3,"2;3;5",TRUE
+3000,2064,2,"2;3",TRUE
+5000,3600,3,"2;4;5",TRUE

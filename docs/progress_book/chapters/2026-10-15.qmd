@@ -251,3 +251,44 @@ where ordinary Harrell ties would give 0.5; both indicate no discrimination.
 
 The full suite passes 549 tests. Results, warning and donor-consistency records are in
 `results/multimodal_real/outputs/supervised/`.
+
+
+## Robustness and comparator follow-up
+
+The five-prompt evidence, independent branch commits and limitations are gathered
+in [the consolidated report](../../../docs/reports/Codex_M6_M7_Summary_10_15_26.md).
+Protected pruning was not adopted: multimodal ELBO convergence could not be
+assessed under the allowed edits. DeSurv was unavailable. The high-noise comparator
+table uses only ten of twenty datasets and cannot establish a full comparison.
+The TCGA→ICGC selected multimodal fit reached its cap with all β moments zero;
+its constant predictions provide no discrimination.
+
+In 40 calibrated datasets, all 880 robustness fits completed. Recovery for the
+default, best-of-20 jittered, and Normal-loading arms was respectively 17,17,15
+at noise .25 and 19,17,17 at noise 1 (each out of 20). ELBO selection lost two
+high-noise recoveries and gained none. All selected starts converged, but 28 of
+800 individual jittered fits and two default fits reached the cap.
+
+The unchanged training CV rerun compares point-Laplace versus Normal β: mean C
+.651199 versus .653153, paired difference −.001954 (SE .003055). Each has one
+capped fold instead of five. The point-Laplace β choice remains unchanged.
+
+| Top features per cohort | Intersecting genes | Mean fold C | SE | Mean active / fold | Capped folds / 5 | Full-training active | Full fit converged |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 1000 | 662 | 0.650200 | 0.017200 | 1.2 | 1 | 3 | Yes |
+| 2000 | 1365 | 0.648933 | 0.022598 | 2.4 | 0 | 3 | Yes |
+| 3000 | 2064 | 0.651199 | 0.023631 | 2.2 | 1 | 2 | Yes |
+| 5000 | 3600 | 0.655413 | 0.027386 | 2.0 | 2 | 3 | Yes |
+
+The observed means differ by at most .0065, with SEs .017–.027. These results do not justify changing the selected 3,000-per-cohort setting. All four full-training fits converged.
+
+
+Feature screening and scaling precede folds, as in the original protocol, so
+absolute training CV may be optimistic. No external cohort was scored in the
+robustness analysis. The branch's full suite passes 550 tests.
+
+The robustness process wrote all final tables, then exited 1 with a trailing
+parse error after a diagnostic-only source edit during execution. Saved fit
+counts and summary arithmetic were independently checked; the current runner
+parses and passes 550 tests. No rerun or tuning was attempted. This execution
+anomaly is documented in the report and `outputs/supervised_robustness/execution_status.md`.
