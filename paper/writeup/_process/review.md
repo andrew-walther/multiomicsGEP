@@ -14,7 +14,7 @@ Priority convention: **P1** blocks a defensible central conclusion; **P2** is a 
 
 ### A1 [P2] Define the joint model separately from the plug-in algorithm
 
-**Location:** Methods §§1.1–1.3, `writeup.qmd:146–187`; Appendix A §§A.1, A.6, A.10 (`single_modality.qmd:10–16,92–105,149–163`).
+**Location:** Methods §§1.1–1.3, `../writeup.qmd:146–187`; Appendix A §§A.1, A.6, A.10 (`single_modality.qmd:10–16,92–105,149–163`).
 
 Appendix A first defines the supposed joint survival model using posterior-mean loadings and fixed projections, then derives a survival term for random loadings. Under the first definition that loading term does not exist. A normalized random-loading predictor is also not exactly quadratic in one loading because its norm changes with that loading.
 
@@ -29,7 +29,7 @@ Explicitly specify whether the normalizer is a function (D(F)\) or an externally
 
 ### A2 [P2] The working curvature is not the exact Cox Hessian diagonal
 
-**Location:** `writeup.qmd:181–185`; Appendix A §A.2; Appendix B §B.2 and §B.11.
+**Location:** `../writeup.qmd:181–185`; Appendix A §A.2; Appendix B §B.2 and §B.11.
 
 The text says that only off-diagonal curvature is dropped. In fact the implemented (w_i=\theta_i\hat H_0(t_i)\) also omits a term from the exact diagonal. For distinct event times (a\), event counts (d_a\), risk sets (R_a\), define
 
@@ -76,7 +76,7 @@ There is a second limitation: the survival monitor uses the partial log-likeliho
 
 ### A4 [P2] Use the stored prediction normalizer, and remove the feature-count invariance claim
 
-**Location:** Table 1, Equation 2, Algorithm 1 output/prediction; `writeup.qmd:152–180,213–215`; Appendix A §A.9.
+**Location:** Table 1, Equation 2, Algorithm 1 output/prediction; `../writeup.qmd:152–180,213–215`; Appendix A §A.9.
 
 The displayed final predictor defines (D\) as the norm of the final loadings. The saved fit instead stores norms computed at the **start of the last sweep**, before its final loading updates. Appendix A.9 already acknowledges this. Evidence: `code/fit_cox_on_yf.R:643–646,734–737,926`; `code/predict_cox_on_yf.R:104–120`. Inspection of the saved fit confirms small nonzero discrepancies for all four retained columns; this is an actual difference, not merely a theoretical possibility.
 
@@ -87,7 +87,7 @@ Also replace “keeps [the projection] on a scale that does not grow with (p\)�
 
 ### A5 [P2] Multimodal removal uses cached penalties from earlier priors
 
-**Location:** Methods Equation 6 (`writeup.qmd:274–276`); Appendix B §§B.2, B.6, B.11.
+**Location:** Methods Equation 6 (`../writeup.qmd:274–276`); Appendix B §§B.2, B.6, B.11.
 
 `code/multimodal_yfb_updates.R:359–367,491–502` updates posteriors under the existing priors, estimates new priors, but returns KL values calculated using the old-prior marginal likelihood. This applies to both activities and loadings. The fitter and deletion checks sum those cached penalties (`code/fit_multimodal_yfb.R:528–531,577–581,734,742–754`), rather than recalculating KL against all current priors. B.6 acknowledges this for loadings only.
 
@@ -95,7 +95,7 @@ Also replace “keeps [the projection] on a scale that does not grow with (p\)�
 
 ### A6 [P2] Qualify the variance correction and centering invariance
 
-**Location:** `writeup.qmd:268,319`; Appendix B §§B.1–B.3, B.11 (`multimodal.qmd:21,25–37,147`).
+**Location:** `../writeup.qmd:268,319`; Appendix B §§B.1–B.3, B.11 (`multimodal.qmd:21,25–37,147`).
 
 Jensen's inequality establishes
 \(E\ell_C(\eta)\le\ell_C(E\eta)\), but does not establish that the gap grows monotonically with the marginal variances. For example, adding the same random shift (U\) to every predictor increases all marginal variances while leaving the Cox likelihood and its Jensen gap unchanged. The full second-order expectation correction is
@@ -112,7 +112,7 @@ Raw versus intercept-centered **frozen** predictions differ by a patient-indepen
 
 ### A7 [P2] Weaken the “every shared program” simulation claim
 
-**Location:** Results §3.1, `writeup.qmd:414`; compare Table 15 and the saved multicohort simulation output.
+**Location:** Results §3.1, `../writeup.qmd:414`; compare Table 15 and the saved multicohort simulation output.
 
 At starting rank at least 6, shared recovery is not always 100%: all-shared rank 12 is 0.97778 and hybrid rank 20 is 0.96667. The current statement contradicts the draft's own Table 15.
 
@@ -126,7 +126,7 @@ Many final coordinate formulas agree with the implementation, but the route from
 
 ### A13 [P2] Do not turn the absence of supervision into an unevaluated recovery failure
 
-**Location:** Discussion `writeup.qmd:668` ("Neither model recovers ...") and Continuing work `:704` ("cannot").
+**Location:** Discussion `../writeup.qmd:668` ("Neither model recovers ...") and Continuing work `:704` ("cannot").
 
 The single-modality experiment described in Evaluation uses shared/cohort-specific programs; it does not test the multimodal planted low-variance scenario. The multimodal failure at lower noise is supported, but a failure of **both** models on this experiment is not demonstrated. Nor does α_F=0 imply that an unsupervised factorization can never recover low-variance structure; it means survival cannot directly help the loading updates select it.
 
@@ -134,7 +134,7 @@ The single-modality experiment described in Evaluation uses shared/cohort-specif
 
 ### A9 [P3] Correct two numerical/algorithm details
 
-- **Concatenated C:** `writeup.qmd:432` gives 0.629 for the single-modality model. Frozen-score recomputation gives **0.6284820**, which rounds to **0.628**, not 0.629, at three decimals. The comparator gives 0.6025621 → 0.603 and the difference 0.0259199 → 0.026. Use four decimals (0.6285 versus 0.6026) where helpful to avoid rounding confusion.
+- **Concatenated C:** `../writeup.qmd:432` gives 0.629 for the single-modality model. Frozen-score recomputation gives **0.6284820**, which rounds to **0.628**, not 0.629, at three decimals. The comparator gives 0.6025621 → 0.603 and the difference 0.0259199 → 0.026. Use four decimals (0.6285 versus 0.6026) where helpful to avoid rounding confusion.
 - **Multimodal stopping denominator:** Appendix B.10 uses only the new fitted quantity. The code uses \(\max(1,\|X_{\rm old}\|_\infty,\|X_{\rm new}\|_\infty)\) (`code/fit_multimodal_yfb.R:64–69,514–540`). Apply this definition to each reconstruction block and the mean predictor.
 
 ### A10 [P3] State the scale and feedback boundaries precisely
@@ -150,8 +150,8 @@ The single-modality experiment described in Evaluation uses shared/cohort-specif
 
 All 9 Revisit IDs occur in the main source. All START/END pairs are properly nested and balanced across all three sources. All existing figure definitions/captions and tables fall within markers. However, method-dependent unmarked passages remain:
 
-- `writeup.qmd:132–134`: projection/activity notation and interpretation — add R2 (and R5 where cohort/data definitions change).
-- `writeup.qmd:324`: evaluated configuration and future method statement — move to Continuing work under R9/R1, or mark before moving.
+- `../writeup.qmd:132–134`: projection/activity notation and interpretation — add R2 (and R5 where cohort/data definitions change).
+- `../writeup.qmd:324`: evaluated configuration and future method statement — move to Continuing work under R9/R1, or mark before moving.
 - `single_modality.qmd:3`: evaluated-method reconciliation introduction — R1/R2 if retained after process-language removal.
 - `single_modality.qmd:163`: exactness/conclusion and future supervision — R1/R9.
 
@@ -159,7 +159,7 @@ The generic normal-means/KL identities in A.3 are method-independent and need no
 
 ### A12 [P3] Avoid implying uniformly ordered survival curves
 
-**Location:** `writeup.qmd:454`, “low-risk tertile has the longest survival in every cohort.”
+**Location:** `../writeup.qmd:454`, “low-risk tertile has the longest survival in every cohort.”
 
 The plotted curves cross, notably in Moffitt; no saved tertile medians were found in the reviewed KM summary. A significant log-rank test is not proof of uniform ordering or a longer median for every group.
 
@@ -185,7 +185,7 @@ These are the author's requested changes, not claims that they have already been
 
 ### B1. Title and subtitle
 
-**Locations:** YAML `writeup.qmd:2–3`; PDF title page, HTML title and PDF metadata.
+**Locations:** YAML `../writeup.qmd:2–3`; PDF title page, HTML title and PDF metadata.
 
 Use exactly **Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer**. Remove the subtitle in both formats and metadata. The aspirational title must not lead Methods/Discussion to claim direct loading supervision for the evaluated single-modality algorithm.
 
@@ -341,7 +341,7 @@ Concrete cuts/reorganization:
 - Fold biological methods into Evaluation; place useful simulation exhibits in Results. Their new space is offset by the foregoing cuts, not by shrinking fonts.
 - Expand derivations in Appendices A/B without treating appendix length as part of the 15–20-page main-text target.
 
-There are also specific layout defects: Algorithm1 continues as a framed fragment on p.5; Table6 splits onto p.16; Table11 spans pp.21–22; References has one orphan entry line on p.24; Table13 has only its final rows at the top of p.34; Table14 spans pp.35–37; Table15 continues for three rows onto p.38. Deletion/restructuring removes several; use shorter tables, sensible page starts and unboxed algorithms for the rest. Do not solve them by reducing type further. Fix the malformed plain text “in -mm-sim, 0.04” at `writeup.qmd:500` to a proper table reference (currently present in HTML and PDF).
+There are also specific layout defects: Algorithm1 continues as a framed fragment on p.5; Table6 splits onto p.16; Table11 spans pp.21–22; References has one orphan entry line on p.24; Table13 has only its final rows at the top of p.34; Table14 spans pp.35–37; Table15 continues for three rows onto p.38. Deletion/restructuring removes several; use shorter tables, sensible page starts and unboxed algorithms for the rest. Do not solve them by reducing type further. Fix the malformed plain text “in -mm-sim, 0.04” at `../writeup.qmd:500` to a proper table reference (currently present in HTML and PDF).
 
 ### B14. Complete, gap-free derivation additions
 

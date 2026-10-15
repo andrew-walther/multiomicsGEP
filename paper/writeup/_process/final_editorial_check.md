@@ -1,13 +1,13 @@
 # Final editorial check
 
-**Checked:** 2026-10-14 on `writeup/draft` at `d80b724`; clean tree, 2 commits ahead of origin. Sources read: `writeup.qmd` (Summary through Continuing work, in full), both appendices where they changed, `verification_round2.md`, and the "Second verification" section of `review_dispositions.md`. Rendered PDF: 39 pages; main text ends on p.24, Appendix A starts on p.25. Nothing was edited, rendered, run, committed or pushed for this check.
+**Checked:** 2026-10-14 on `writeup/draft` at `d80b724`; clean tree, 2 commits ahead of origin. Sources read: `../writeup.qmd` (Summary through Continuing work, in full), both appendices where they changed, `verification_round2.md`, and the "Second verification" section of `review_dispositions.md`. Rendered PDF: 39 pages; main text ends on p.24, Appendix A starts on p.25. Nothing was edited, rendered, run, committed or pushed for this check.
 
 ## 1. N1 and N2
 
 | Item | Verdict | Evidence |
 |---|---|---|
-| N1 Ridge in the first sweep-normalizer formulas | **Correctly applied** | `writeup.qmd` §1.2 and `appendices/single_modality.qmd` A.1 both give $d_k^{(r)} = (\lVert\bar F^{(r-1)}_{\cdot k}\rVert_2^2 + 10^{-10})^{1/2}$. This matches `code/fit_cox_on_yf.R:643–646` (`sqrt(colSums(EF_global^2) + 1e-10)`) and A.10. The random target's zero-direction convention is kept separate. Rendered: the formula appears in the PDF on p.3 and p.25, and three times in the HTML. |
-| N2 Disposition-file pointer | **Correctly applied** | `PROJECT_STATUS.qmd:141` now points to `paper/writeup/review_dispositions.md`. |
+| N1 Ridge in the first sweep-normalizer formulas | **Correctly applied** | `../writeup.qmd` §1.2 and `../appendices/single_modality.qmd` A.1 both give $d_k^{(r)} = (\lVert\bar F^{(r-1)}_{\cdot k}\rVert_2^2 + 10^{-10})^{1/2}$. This matches `code/fit_cox_on_yf.R:643–646` (`sqrt(colSums(EF_global^2) + 1e-10)`) and A.10. The random target's zero-direction convention is kept separate. Rendered: the formula appears in the PDF on p.3 and p.25, and three times in the HTML. |
+| N2 Disposition-file pointer | **Correctly applied** | `PROJECT_STATUS.qmd:141` now points to `paper/writeup/_process/review_dispositions.md`. |
 
 ## 2–3. Coherence, contradictions, redundancy, undefined terms, references
 

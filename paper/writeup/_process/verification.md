@@ -16,7 +16,7 @@ Only this file was written. Nothing is marked fixed by this verification. No rep
 
 | Earlier finding | Verdict | Evidence in revision and implementation |
 |---|---|---|
-| **A1 Joint target versus evaluated algorithm** | **Incomplete** | `writeup.qmd:144–158` and Appendix A.1 now distinguish random loadings, the partial-likelihood target, and sweep-fixed posterior-mean projections. This is correct. However, A.1:29 divides by a random loading norm without defining the zero-column case under its spike prior; A.5:154 and Table 11/A.11:292 still attribute a second-moment quadratic update to the exact target. Fix V2/V4. |
+| **A1 Joint target versus evaluated algorithm** | **Incomplete** | `../writeup.qmd:144–158` and Appendix A.1 now distinguish random loadings, the partial-likelihood target, and sweep-fixed posterior-mean projections. This is correct. However, A.1:29 divides by a random loading norm without defining the zero-column case under its spike prior; A.5:154 and Table 11/A.11:292 still attribute a second-moment quadratic update to the exact target. Fix V2/V4. |
 | **A2 Cox working curvature/floor** | **Verified** | Appendix A.2:45–80 gives the Breslow score, full coupled negative Hessian, its diagonal, the replacement curvature, square completion, and separate raw score/floored weight. This matches `code/fit_cox_on_yf.R:103–119`. B.2:36–42 correctly uses unfloored weights and division-free h, matching `code/multimodal_yfb_helpers.R:51–86`. |
 | **A3 Activity KL bookkeeping and monitoring** | **Verified as a disclosure; code defect remains** | A.3 gives the correct vector normalizer. A.9:251–261 gives the correct discrepancy sign and sweep-start survival limitation. The scalar activity precision from `code/update_L_surv_YFB.R:78–100` is passed into `compute_ebnm_kl()` at `fit_cox_on_yf.R:707–708`; `code/compute_elbo.R:78–86` counts its normalizer once. The issue was independently rechecked, not merely accepted from the earlier review. Results/Table 5 call the output a monitoring statistic. No corrective fitting has occurred. |
 | **A4 Stored D_* and feature-count normalization claim** | **Verified, with residual wording precision** | Algorithm 1 output/prediction and A.10:271–275 use the saved preceding-sweep normalizer D_*; code `fit_cox_on_yf.R:643–646,734–737,926` and `predict_cox_on_yf.R:104–120` agree. The saved fit confirms the small norm discrepancies. The feature-count-invariance claim is gone. Table 1/Equation 2/Figure 4 still use “unit-length” too literally for final loadings divided by stored norms; see V9. |
@@ -79,7 +79,7 @@ Use short local notes; expanding abbreviations does not require restoring source
 
 ### V1 [P2, introduced] Multimodal precision boundary describes the wrong code path
 
-**Location:** `appendices/multimodal.qmd:168`, rendered Appendix B.8, PDF p.40.
+**Location:** `../appendices/multimodal.qmd:168`, rendered Appendix B.8, PDF p.40.
 
 The new sentence says a zero expected residual makes the implementation stop with an error instead of imposing a floor. The evaluated fitter calls the chunked residual calculation and then `multimodal_yfb_tau_from_residuals()` (`code/fit_multimodal_yfb.R:505–509`). That helper floors residual sums at `.Machine$double.eps` before dividing (`:639–645`). The error belongs to the other update helper at `code/multimodal_yfb_updates.R:577–578`, not this fitting path.
 
@@ -87,7 +87,7 @@ The new sentence says a zero expected residual makes the implementation stop wit
 
 ### V2 [P2, remaining after A1] Define the random normalized target at a zero column
 
-**Location:** `single_modality.qmd:27–35`; motivating target in `writeup.qmd:148`.
+**Location:** `single_modality.qmd:27–35`; motivating target in `../writeup.qmd:148`.
 
 The spike-and-exponential prior gives a column positive probability of being identically zero, but the target divides by d_k(F)=||F_k||. The evaluated algorithm's ridge, described later for D_*, does not define that random-loading target. This is a genuine support/boundary issue, not a typographical one.
 
@@ -169,7 +169,7 @@ Add a small R1 block around the single-block numerical precision-floor rule and 
 
 ### V9 [P3] Propagate normalization exceptions into summaries and captions
 
-**Locations:** Table 1 `writeup.qmd:122–128`; Equation 2 description; main multimodal scale paragraph `:234`; Algorithm 2 `:267`; Figure 4 caption `:627`; B.13:233.
+**Locations:** Table 1 `../writeup.qmd:122–128`; Equation 2 description; main multimodal scale paragraph `:234`; Algorithm 2 `:267`; Figure 4 caption `:627`; B.13:233.
 
 - For saved single-modality predictions use D_* consistently, or explicitly state that D in Table 1 is shorthand for D_*. The final F divided by the preceding sweep's stored norms is not exactly unit length, and inactive columns have zero direction. Replace Figure 4's “unit-length loading direction” with “loading column scaled by its fixed training normalizer.”
 - For multimodal mean projections, say “unit training SD for nonconstant columns; effectively constant columns are left unchanged.” Appendix B.9 already states the c_k=1 fallback correctly. If an exact threshold is given, the code uses SD≤sqrt(ε_machine).
@@ -178,7 +178,7 @@ These are small refinements relative to the major A4/A10 fixes, not reasons to r
 
 ### V10 [P3] State classification/removal boundary conventions
 
-**Locations:** main classification `writeup.qmd:246`, Algorithm 2 removal `:270`; B.7:154 and B.11:206; relevant captions.
+**Locations:** main classification `../writeup.qmd:246`, Algorithm 2 removal `:270`; B.7:154 and B.11:206; relevant captions.
 
 - The coefficient classification uses |β̄|/max(SD(β),10^−12) in the actual fitter (`:553–556`). Bare 0/0 is undefined for a shrunk coefficient point mass. Include the protected denominator or explicitly declare a coefficient point mass at zero inactive.
 - The deletion check requires K>1 (`fit_multimodal_yfb.R:591`); state that this implementation does not prune the final factor to rank zero.
@@ -186,7 +186,7 @@ These are small refinements relative to the major A4/A10 fixes, not reasons to r
 
 ### V11 [P3 reproducibility qualification] Figure reconstruction is not aggregate-only
 
-**Location:** `figures/make_writeup_figures.R:85–109`; source inventory S63.
+**Location:** `../figures/make_writeup_figures.R:85–109`; source inventory S63.
 
 The script reads the saved fit, training gene names and held-out saved risk scores, but also calls the local raw-expression loader to reconstruct frozen per-program projections. The script header and S63 disclose this correctly. The pruning-rank script reads the saved sweep CSV only. Neither refits a molecular factorization or a Cox model; Kaplan–Meier/log-rank calculations for the permitted redraw are separate descriptive computations.
 
@@ -194,7 +194,7 @@ The requested “only saved fits, scores and aggregates” assertion cannot be c
 
 ### V12 [P3 completeness] State the isolated comparator's realized settings if retained
 
-**Location:** Comparators `writeup.qmd:350` and Table 7 caption `:560`.
+**Location:** Comparators `../writeup.qmd:350` and Table 7 caption `:560`.
 
 The identification as a single-block version of the model is correct: `code/run_multimodal_yfb_simulation.R:139–150` calls the same single-modality fitter with point-exponential loadings, a normal coefficient prior and its default survival weights. This should not be flagged as a different mathematical method. However, that wrapper uses an iteration cap of 100 by default, rather than the principal fit's 300, and receives unstandardized expression; the main runner does not pass a replacement control for this arm (`results/multimodal_real/run_multimodal_real_fit.R:143–145`). The text discloses the raw-expression scale but leaves its realized stopping setup unspecified.
 
@@ -202,7 +202,7 @@ The identification as a single-block version of the model is correct: `code/run_
 
 ### V13 [P3] Small remaining wording/rounding/reference corrections
 
-- Summary `writeup.qmd:88`: “recovers the true rank ... at lower noise” is stronger than the detailed mean ranks 3.26/3.22/2.48. Say “returns mean ranks close to the true value at lower noise, with poorer recovery in the low-variance scenario.” Do not imply every fit selects exactly three factors.
+- Summary `../writeup.qmd:88`: “recovers the true rank ... at lower noise” is stronger than the detailed mean ranks 3.26/3.22/2.48. Say “returns mean ranks close to the true value at lower noise, with poorer recovery in the low-variance scenario.” Do not imply every fit selects exactly three factors.
 - Main text `:179,190` calls the monitoring section “Appendix A.8”; its destination is now **A.9**. Links resolve, but their displayed labels are stale.
 - Main text `:541` calls the matched difference 0.010. The saved difference is .6852071−.6757396=.0094675. Use “about 0.01” or “0.0095”; strict three-decimal rounding is 0.009. This imprecision predates the revision and does not change the conclusion.
 - Table 9's “signature not prognostic”/“immune signature not prognostic” should be “no consistent association detected”/“no significant association detected,” retaining the distinction between nonsignificance and an established null.

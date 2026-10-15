@@ -83,22 +83,22 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [x] **Organize the unified writeup for advisor review (2026-10-12).**
   The proposed sections, evidence assessment, figure/table plan, and 54-source
-  inventory are in `paper/writeup/planning.html`, with an editable Quarto source
+  inventory are in `paper/writeup/_process/planning.html`, with an editable Quarto source
   and implementation checklist alongside.
 - [x] **Check the independent planning review and finalize the handoff (2026-10-14).**
   Source-checked dispositions, characterization methods, evidence-gap requirements,
   and supervised-F revision markers are recorded in the implementation plan.
-  `paper/writeup/drafting_prompt.md` assigns Claude drafting and Codex review.
+  `paper/writeup/_process/drafting_prompt.md` assigns Claude drafting and Codex review.
 - [x] **Draft the unified technical report (2026-10-14).** Initial draft in
   `paper/writeup/writeup.qmd` → HTML/PDF. Following review, the report has a
   24-page main text plus derivation Appendices A–B; source inventory has 63 IDs.
 - [x] **Independent review and verification of the revised draft (2026-10-14).**
   Scientific corrections, derivations, captions and pagination verified in
-  `paper/writeup/verification_round2.md`; its two minor corrections are applied.
+  `paper/writeup/_process/verification_round2.md`; its two minor corrections are applied.
 - [ ] **Resolve main-text length and obtain Andrew's approval before merging
   `writeup/draft`.** The 15–20-page target remains unmet. See Prompts 3–4 in
   `docs/plans/Meeting_Notes_Followup_10_2_26.md` and Task 4 in
-  `paper/writeup/implementation_plan.md`.
+  `paper/writeup/_process/implementation_plan.md`.
 
 - [ ] **Manuscript introduction with its own background (`paper/thesis/`)**
   `[Priority: Medium]` `[Effort: Medium]` — The prelim chapter's introduction

@@ -78,10 +78,10 @@ rendering also executes the checks and stops on assertion failure.
 ## Project writeup
 
 The advisor-facing writeup is being organized in `paper/writeup/`. The
-[HTML planning page](paper/writeup/planning.html) covers the proposed Methods,
+[HTML planning page](paper/writeup/_process/planning.html) covers the proposed Methods,
 Results, Biology, and derivation appendices, with a
-[source inventory](paper/writeup/source_inventory.csv) and
-[implementation checklist](paper/writeup/implementation_plan.md).
+[source inventory](paper/writeup/_process/source_inventory.csv) and
+[implementation checklist](paper/writeup/_process/implementation_plan.md).
 The planning review has been checked and the plan finalized (October 14).
 **Interim writeup, approved and merged to `main` (October 14).**
 The report is `paper/writeup/writeup.qmd`, with derivation appendices in
@@ -89,14 +89,14 @@ The report is `paper/writeup/writeup.qmd`, with derivation appendices in
 [PDF](paper/writeup/writeup.pdf). It is organized as a manuscript: Methods,
 Evaluation, Results, Biological findings and Discussion, with complete
 derivations in Appendices A (single-modality) and B (multimodal). The review is
-[`review.md`](paper/writeup/review.md) and the disposition of every finding is
-[`review_dispositions.md`](paper/writeup/review_dispositions.md); Codex's
+[`review.md`](paper/writeup/_process/review.md) and the disposition of every finding is
+[`review_dispositions.md`](paper/writeup/_process/review_dispositions.md); Codex's
 verification of the revision is
-[`verification.md`](paper/writeup/verification.md). The second verification is
-[`verification_round2.md`](paper/writeup/verification_round2.md); its two minor
+[`verification.md`](paper/writeup/_process/verification.md). The second verification is
+[`verification_round2.md`](paper/writeup/_process/verification_round2.md); its two minor
 corrections are applied. A final editorial round
-([`final_editorial_check.md`](paper/writeup/final_editorial_check.md),
-[`verification_round3.md`](paper/writeup/verification_round3.md)) moved the algorithms
+([`final_editorial_check.md`](paper/writeup/_process/final_editorial_check.md),
+[`verification_round3.md`](paper/writeup/_process/verification_round3.md)) moved the algorithms
 into the appendices; the 22-page main text is accepted for this interim version.
 
 Render the report from the repository root (the RStudio Quarto works on this
@@ -126,14 +126,14 @@ PDAC_DATA_ROOT=data/PDAC_data Rscript paper/writeup/figures/make_writeup_figures
 Rebuild the planning page from the repository root:
 
 ```bash
-quarto render paper/writeup/planning.qmd --to html
+quarto render paper/writeup/_process/planning.qmd --to html
 ```
 
 If the standalone installation reports `Bad CPU type in executable`, use the
 already-installed RStudio Quarto (verified locally):
 
 ```bash
-/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/planning.qmd --to html
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/_process/planning.qmd --to html
 ```
 
 The page uses existing aggregate results and figures; rendering does not fit

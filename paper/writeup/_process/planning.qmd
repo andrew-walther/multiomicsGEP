@@ -205,24 +205,24 @@ Use a small set of figures in the main text. Detailed grids and supporting sensi
 |---|---|---|
 | Table 1: model and notation | Compare the two reconstruction models, predictors, priors, uncertainty treatment, and fitting choices. | Current fitters, prediction code, and derivation notes (S04–S08). |
 | Table 2: evaluation design | Give simulation settings and cohort/sample definitions in compact panels. | Simulation runners, cohort audit, loader, and prelim chapter (S02–S03, S17, S25, S30). |
-| Figure 1: single-modality simulation | Show recovery/merging and performance against starting rank. | [Current simulation figure](../../docs/progress_book/figs/2026-09-04_multicohort_delta_fig.png); S18–S20. |
-| Table 3 / Figure 2: external prediction | Give per-cohort C and intervals, with the independently tuned regularized comparator and pooled difference. | [Regularized-comparator figure](../../docs/progress_book/figs/2026-08-21_yfb_vs_ebmf_lasso_k40_ci.png); S09–S13. |
-| Figure 3: survival and single-modality biology | Use selected held-out survival curves and a readable four-program loading/enrichment panel. | [Risk curves](../../docs/progress_book/figs/2026-10-02_km_risk_external.png), [program curves](../../docs/progress_book/figs/2026-10-02_km_programs_external.png), [retained-program heatmap](../../docs/progress_book/figs/2026-08-21_k7_kept_factors_heatmap.png); S16, S21–S24. |
-| Figure 4: multimodal simulation | Show retained rank and recovery across starting ranks and noise conditions. | [Rank figure](../../docs/progress_book/figs/2026-10-02_pruning_K_final.png), [recovery figure](../../docs/progress_book/figs/2026-10-02_pruning_recovery.png); S25–S27. |
-| Table 4 / Figure 5: matched validation | Compare models on the same donors and show starting-rank sensitivity and convergence. | [Starting-rank figure](../../results/multimodal_real/outputs/real_cindex_by_kinit.png); S28–S30. |
-| Table 5 / Figure 6: multimodal programs | Connect provisional labels, their label basis, modality contributions, explicit \|r\| correspondence, and descriptive survival associations. | [Modality shares](../../results/multimodal_real/outputs/real_program_modality_share_K07.png), [program loadings](../../results/multimodal_real/outputs/real_program_loadings_K07.png); S31–S32/S43–S44. |
+| Figure 1: single-modality simulation | Show recovery/merging and performance against starting rank. | [Current simulation figure](../../../docs/progress_book/figs/2026-09-04_multicohort_delta_fig.png); S18–S20. |
+| Table 3 / Figure 2: external prediction | Give per-cohort C and intervals, with the independently tuned regularized comparator and pooled difference. | [Regularized-comparator figure](../../../docs/progress_book/figs/2026-08-21_yfb_vs_ebmf_lasso_k40_ci.png); S09–S13. |
+| Figure 3: survival and single-modality biology | Use selected held-out survival curves and a readable four-program loading/enrichment panel. | [Risk curves](../../../docs/progress_book/figs/2026-10-02_km_risk_external.png), [program curves](../../../docs/progress_book/figs/2026-10-02_km_programs_external.png), [retained-program heatmap](../../../docs/progress_book/figs/2026-08-21_k7_kept_factors_heatmap.png); S16, S21–S24. |
+| Figure 4: multimodal simulation | Show retained rank and recovery across starting ranks and noise conditions. | [Rank figure](../../../docs/progress_book/figs/2026-10-02_pruning_K_final.png), [recovery figure](../../../docs/progress_book/figs/2026-10-02_pruning_recovery.png); S25–S27. |
+| Table 4 / Figure 5: matched validation | Compare models on the same donors and show starting-rank sensitivity and convergence. | [Starting-rank figure](../../../results/multimodal_real/outputs/real_cindex_by_kinit.png); S28–S30. |
+| Table 5 / Figure 6: multimodal programs | Connect provisional labels, their label basis, modality contributions, explicit \|r\| correspondence, and descriptive survival associations. | [Modality shares](../../../results/multimodal_real/outputs/real_program_modality_share_K07.png), [program loadings](../../../results/multimodal_real/outputs/real_program_loadings_K07.png); S31–S32/S43–S44. |
 
 <details>
 <summary>Preview: the multimodal rank-selection result to explain</summary>
 
-![Existing full-sweep figure proposed for adaptation. Recovering the true rank depends on scenario and noise; captions in the writeup will state those conditions.](../../docs/progress_book/figs/2026-10-02_pruning_K_final.png){fig-alt="Existing multimodal simulation figure comparing final rank against starting rank, separated by noise and prognostic scenario."}
+![Existing full-sweep figure proposed for adaptation. Recovering the true rank depends on scenario and noise; captions in the writeup will state those conditions.](../../../docs/progress_book/figs/2026-10-02_pruning_K_final.png){fig-alt="Existing multimodal simulation figure comparing final rank against starting rank, separated by noise and prognostic scenario."}
 
 </details>
 
 <details>
 <summary>Preview: what methylation contributes to the fitted programs</summary>
 
-![Existing modality-share figure proposed for adaptation. The shares describe each modality's fitted reconstruction signal, not survival-prediction contributions.](../../results/multimodal_real/outputs/real_program_modality_share_K07.png){fig-alt="Existing multimodal program plot showing the share of fitted expression and methylation signal carried by each program."}
+![Existing modality-share figure proposed for adaptation. The shares describe each modality's fitted reconstruction signal, not survival-prediction contributions.](../../../results/multimodal_real/outputs/real_program_modality_share_K07.png){fig-alt="Existing multimodal program plot showing the share of fitted expression and methylation signal carried by each program."}
 
 </details>
 
@@ -232,14 +232,14 @@ The [source inventory](source_inventory.csv) records 54 source entries with repo
 
 | Content | Primary sources | Use and limits |
 |---|---|---|
-| Narrative scaffold | [Prelim chapter](../prelim/project3-ssbmf.qmd); [October progress chapter](../../docs/progress_book/chapters/2026-10-02.qmd) | Reuse explanatory structure; reconcile numbers and claims with the saved outputs and current code. |
-| Current decisions | [Decisions log](../../DECISIONS.md); [advisor follow-up plan](../../docs/plans/Meeting_Notes_Followup_10_2_26.md) | The dated record governs which choices remain current. Older conclusions may have been superseded. |
-| Single-modality mathematics | [Detailed YFB updates](../../docs/notes/YFB_update_derivations_detailed_05_08_26.qmd); [consistency audit](../../docs/notes/YFB_mathematical_consistency_audit_05_08_26.qmd); [current fitter](../../code/fit_cox_on_yf.R) | Derive the implementation being reported; do not import LB-specific survival terms into YFB. |
-| Multimodal mathematics | [Base derivation](../../derivations/multimodal_YFB/multimodal_YFB_derivation.qmd); [current fitter](../../code/fit_multimodal_yfb.R); [updates](../../code/multimodal_yfb_updates.R) | Reconcile the older proposal with the intercept, signed priors, uncertainty, scaling, and pruning in the evaluated framework. |
-| Data definitions | [Cohort audit](../../docs/PDAC_data_audit.qmd); [matched loader](../../code/load_multiomics_data.R) | Resolve platform identity, sample definitions, preprocessing, and cohort overlap. Raw patient data are not needed to render the report. |
-| Single-modality numerical evidence | [External C table](../../results/benchmark_sim/outputs/desurv_comparison/external_cindex_ci.csv); [regularized comparator](../../results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_regularized_results.csv); [principal pooled difference](../../presentation/walther_lab_meeting_08_27_2026/assets/yfb_vs_ebmf_k40_pooled_ci.csv) | The external C table's two-step rows refer to the older comparator; use the separate regularized output for the main comparison. |
-| Single-modality biology | [Updated pathway report](../../docs/reports/pathway_enrichment_report_08_21_26.qmd); [retained-program enrichment](../../results/benchmark_sim/outputs/pathway_enrichment/T5_enrichment_kept.csv) | Characterization is exploratory; avoid implying causal mechanisms or survival-driven changes to F. |
-| Multimodal numerical evidence | [Full simulation output](../../results/benchmark_sim/outputs/multimodal_yfb_pruning/pruning_comparison.csv); [real-data summary](../../results/multimodal_real/outputs/real_sweep_summary.csv); [program table](../../results/multimodal_real/outputs/real_program_table_K07.csv) | Use full rather than quick simulation files; filter real-data rows by configuration, method, rank, and cohort. |
+| Narrative scaffold | [Prelim chapter](../../prelim/project3-ssbmf.qmd); [October progress chapter](../../../docs/progress_book/chapters/2026-10-02.qmd) | Reuse explanatory structure; reconcile numbers and claims with the saved outputs and current code. |
+| Current decisions | [Decisions log](../../../DECISIONS.md); [advisor follow-up plan](../../../docs/plans/Meeting_Notes_Followup_10_2_26.md) | The dated record governs which choices remain current. Older conclusions may have been superseded. |
+| Single-modality mathematics | [Detailed YFB updates](../../../docs/notes/YFB_update_derivations_detailed_05_08_26.qmd); [consistency audit](../../../docs/notes/YFB_mathematical_consistency_audit_05_08_26.qmd); [current fitter](../../../code/fit_cox_on_yf.R) | Derive the implementation being reported; do not import LB-specific survival terms into YFB. |
+| Multimodal mathematics | [Base derivation](../../../derivations/multimodal_YFB/multimodal_YFB_derivation.qmd); [current fitter](../../../code/fit_multimodal_yfb.R); [updates](../../../code/multimodal_yfb_updates.R) | Reconcile the older proposal with the intercept, signed priors, uncertainty, scaling, and pruning in the evaluated framework. |
+| Data definitions | [Cohort audit](../../../docs/PDAC_data_audit.qmd); [matched loader](../../../code/load_multiomics_data.R) | Resolve platform identity, sample definitions, preprocessing, and cohort overlap. Raw patient data are not needed to render the report. |
+| Single-modality numerical evidence | [External C table](../../../results/benchmark_sim/outputs/desurv_comparison/external_cindex_ci.csv); [regularized comparator](../../../results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_regularized_results.csv); [principal pooled difference](../../../presentation/walther_lab_meeting_08_27_2026/assets/yfb_vs_ebmf_k40_pooled_ci.csv) | The external C table's two-step rows refer to the older comparator; use the separate regularized output for the main comparison. |
+| Single-modality biology | [Updated pathway report](../../../docs/reports/pathway_enrichment_report_08_21_26.qmd); [retained-program enrichment](../../../results/benchmark_sim/outputs/pathway_enrichment/T5_enrichment_kept.csv) | Characterization is exploratory; avoid implying causal mechanisms or survival-driven changes to F. |
+| Multimodal numerical evidence | [Full simulation output](../../../results/benchmark_sim/outputs/multimodal_yfb_pruning/pruning_comparison.csv); [real-data summary](../../../results/multimodal_real/outputs/real_sweep_summary.csv); [program table](../../../results/multimodal_real/outputs/real_program_table_K07.csv) | Use full rather than quick simulation files; filter real-data rows by configuration, method, rank, and cohort. |
 
 **Reconciliation order.** Establish analytical intent from the dated decisions. Establish what was actually fitted from the runner, saved configuration, and implementation. Establish numerical results from the matching saved outputs. Use narrative reports to explain those results. Where these disagree, document the discrepancy and resolve it before carrying the claim into the report.
 
@@ -247,16 +247,16 @@ The [source inventory](source_inventory.csv) records 54 source entries with repo
 
 The selected format combines an article's coherent methods/results narrative with the SpatialCRT example's short findings summary and compact tables. Compared with a compact application report, it gives the models and algorithms enough space for statistical review. Compared with a submission manuscript, it allows explicit descriptions of unfinished methodology without pretending the method is finalized.
 
-The PDF will use 11-point text, one-inch margins, modest line spacing, page numbers, and a compact contents list. HTML will provide section navigation and embedded figures/resources. Equations, figures, and tables will use cross-format Quarto markup rather than PDF-only blocks. The final report will use one main source and two included appendix sources.
+The PDF will use 11-point text, one-inch margins, modest line spacing, page numbers, and a compact contents list. HTML will provide section navigation and embedded ../figures/resources. Equations, figures, and tables will use cross-format Quarto markup rather than PDF-only blocks. The final report will use one main source and two included appendix sources.
 
 | Artifact | Responsibility | Status |
 |---|---|---|
 | `planning.qmd` → `planning.html` | Reviewable outline, evidence assessment, sources, and exhibit plan. | Available for review |
 | `source_inventory.csv` | Source paths, claim selectors, configurations, verification status, and caveats. | 54 sources; claim verification continues during drafting |
 | `implementation_plan.md` | Task checklist, file responsibilities, review rules, and verification commands. | Available |
-| `writeup.qmd` → HTML and PDF | Main scientific report, including both appendices in each output. | Awaiting Andrew’s Claude handoff |
-| `appendices/single_modality.qmd` | Reconciled single-modality derivations. | Awaiting Andrew’s Claude handoff |
-| `appendices/multimodal.qmd` | Reconciled multimodal derivations. | Awaiting Andrew’s Claude handoff |
+| `../writeup.qmd` → HTML and PDF | Main scientific report, including both appendices in each output. | Awaiting Andrew’s Claude handoff |
+| `../appendices/single_modality.qmd` | Reconciled single-modality derivations. | Awaiting Andrew’s Claude handoff |
+| `../appendices/multimodal.qmd` | Reconciled multimodal derivations. | Awaiting Andrew’s Claude handoff |
 | `drafting_prompt.md` | Claude handoff for Tasks 2, 3, and 5; draft target October 16. | Available |
 | `review.md` | Codex's independent complete-draft findings; Claude records subsequent dispositions. | After the draft exists |
 
@@ -265,13 +265,13 @@ Rendering will read existing aggregate outputs and figures. It will not launch s
 To rebuild this planning page from the repository root:
 
 ```bash
-quarto render paper/writeup/planning.qmd --to html
+quarto render paper/writeup/_process/planning.qmd --to html
 ```
 
 On this computer, the standalone Quarto installation's Intel-only theme compiler fails on ARM. The already-installed RStudio Quarto successfully renders the page:
 
 ```bash
-/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/planning.qmd --to html
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/_process/planning.qmd --to html
 ```
 
 ## Editorial checklist and review checkpoint {#sec-review}
@@ -287,5 +287,5 @@ On this computer, the standalone Quarto installation's Intel-only theme compiler
 - [ ] Update the project documentation to reflect the delivered report.
 
 ::: {.review-box}
-**Author handoff.** Read the Review disposition in the [implementation plan](implementation_plan.md) before starting Claude Code with: “On branch writeup/draft, read paper/writeup/drafting_prompt.md and follow it.” This finalized planning deliverable does not start drafting automatically. Claude writes the initial report; Codex reviews it independently; Claude addresses confirmed findings before Andrew approves a merge.
+**Author handoff.** Read the Review disposition in the [implementation plan](implementation_plan.md) before starting Claude Code with: “On branch writeup/draft, read paper/writeup/_process/drafting_prompt.md and follow it.” This finalized planning deliverable does not start drafting automatically. Claude writes the initial report; Codex reviews it independently; Claude addresses confirmed findings before Andrew approves a merge.
 :::

@@ -15,6 +15,20 @@ selection threshold. The complete rank panel is pre-registered in
 `docs/plans/Round2_attempts_log.md`. No adoption is claimed before its results;
 the interim-writeup benchmark and fitting defaults remain unchanged.
 
+## 2026-10-15 — Write-up process records moved to paper/writeup/_process/
+
+The write-up folder should show only the deliverable, its appendices and figures.
+The process records are retained in a flat `_process/` folder as the audit trail
+and are needed for the Prompt 7 revision after the method work. No analysis,
+result, code or wording of the write-up was changed.
+
+Moved with git: planning.qmd, planning.html, implementation_plan.md,
+drafting_prompt.md, plan_review_prompt.md, plan_review_findings.md,
+review_prompt.md, review.md, review_dispositions.md, final_editorial_check.md,
+verification.md, verification_round2.md, verification_round3.md and
+source_inventory.csv. Live pointers and relative process links now reflect that
+location. Earlier dated entries below retain their historical paths verbatim.
+
 ## 2026-10-15 — Protected-pruning evaluation blocked; retain the handoff configurations
 
 **Decision for the comparator and robustness work:** protected pruning is **not adopted**

@@ -2,23 +2,23 @@
 
 ## Assignment and authority
 
-On **writeup/draft**, execute **Tasks 2, 3 and 5** of `paper/writeup/implementation_plan.md`. Produce the initial technical report and both included derivation appendices. Aim for a complete initial draft by **Friday, October 16, 2026**. This supersedes the earlier October 14 target; it does not imply independent review or author approval will be complete by then.
+On **writeup/draft**, execute **Tasks 2, 3 and 5** of `paper/writeup/_process/implementation_plan.md`. Produce the initial technical report and both included derivation appendices. Aim for a complete initial draft by **Friday, October 16, 2026**. This supersedes the earlier October 14 target; it does not imply independent review or author approval will be complete by then.
 
 Run `git status -sb`, `git branch --show-current`, and `git log --oneline -1` before writing. The branch must be `writeup/draft`. If it differs, stop and ask rather than switching automatically. Work in this checkout only, one session at a time; no worktree or second clone. Preserve unrelated files/changes. Ask before a draft commit, push, or merge; this prompt does not authorize those actions. Check the branch again immediately before any separately authorized commit and stage only your files.
 
 Read project/global instructions, then:
 
-1. `paper/writeup/planning.qmd` and its rendered HTML.
-2. `paper/writeup/implementation_plan.md`, including **Review disposition**, **Global constraints**, **Review focus**, **Revisit after feature/supervised-F**, the scope cuts, and evidence-gap table task.
-3. `paper/writeup/source_inventory.csv`; use exact paths/configurations/selectors and distinguish inspected code from verified numerical evidence.
+1. `paper/writeup/_process/planning.qmd` and its rendered HTML.
+2. `paper/writeup/_process/implementation_plan.md`, including **Review disposition**, **Global constraints**, **Review focus**, **Revisit after feature/supervised-F**, the scope cuts, and evidence-gap table task.
+3. `paper/writeup/_process/source_inventory.csv`; use exact paths/configurations/selectors and distinguish inspected code from verified numerical evidence.
 4. The Sequencing and handoffs section of `docs/plans/Meeting_Notes_Followup_10_2_26.md` and the current dated decisions in `DECISIONS.md`.
-5. `paper/writeup/plan_review_findings.md` as background, with the checked dispositions in the implementation plan taking precedence over the review's unchecked claims.
+5. `paper/writeup/_process/plan_review_findings.md` as background, with the checked dispositions in the implementation plan taking precedence over the review's unchecked claims.
 
 Andrew requested this finalized handoff after a review of the plan. Do not reopen the planning cycle or start method work. Surface a concrete contradiction or missing source when it prevents a defensible statement; otherwise apply the specified evidence boundaries and continue drafting.
 
 ## Deliverables
 
-- `paper/writeup/writeup.qmd`, rendered to `writeup.html` and `writeup.pdf`, including `appendices/single_modality.qmd` and `appendices/multimodal.qmd` in both outputs.
+- `paper/writeup/writeup.qmd`, rendered to `../writeup.html` and `../writeup.pdf`, including `../appendices/single_modality.qmd` and `../appendices/multimodal.qmd` in both outputs.
 - An article-style main text of approximately 15–20 pages including exhibits: findings summary; Methods with two algorithm boxes; Evaluation framework; single-modality then multimodal Results; Biology; Interpretation with one Continuing work subsection; two derivation appendices outside the main-text page target.
 - Updated source inventory tracing each quantitative claim to an exact source path/configuration/selector and recording what was actually verified. Existing source IDs must remain stable.
 - Necessary presentation assets only under `paper/writeup/figures/`; reuse existing figures with corrected captions/labels when sufficient.

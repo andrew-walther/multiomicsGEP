@@ -330,3 +330,30 @@ task give:
 - anything that failed or looked wrong.
 
 Claude Code reviews `round2/supervised` before anything is merged.
+
+
+## Task 7 (Andrew's added request): write-up folder housekeeping
+
+Do this at a stopping point, never while a script is running, on
+`round2/supervised`. Its own commit must start `Task 7`. Change no analysis,
+result, code or wording of the write-up. Delete nothing.
+
+Move these files with `git mv` into flat `paper/writeup/_process/`:
+planning.qmd, planning.html, implementation_plan.md, drafting_prompt.md,
+plan_review_prompt.md, plan_review_findings.md, review_prompt.md, review.md,
+review_dispositions.md, final_editorial_check.md, verification.md,
+verification_round2.md, verification_round3.md, source_inventory.csv.
+Leave writeup.qmd/html/pdf, appendices/ and figures/ in place. Add a short README
+explaining the deliverable and process-record locations. Repair relative links
+inside process records and live pointers in CLAUDE.md, PROJECT_STATUS.qmd,
+README.md, ROADMAP.md and the meeting-note prompts/sequencing table. Do not rewrite
+dated DECISIONS entries; add today's relocation entry with the full file list.
+
+Verify old-path searches, list intentional historical pointers, and render both
+`writeup.qmd` and `_process/planning.qmd` from `paper/writeup/` with
+`QUARTO_PANDOC=/opt/homebrew/bin/pandoc quarto render <source>`. Both must succeed.
+If writeup.html/pdf differ only in render timestamps/metadata, restore them with
+`git checkout -- paper/writeup/writeup.html paper/writeup/writeup.pdf`; report any
+substantive difference. Commit planning.html only if its links changed. Run the
+full R suite, report its count, and report Task 7's moves/references/verifications
+in `docs/plans/Codex_to_Claude_Round2.md`.

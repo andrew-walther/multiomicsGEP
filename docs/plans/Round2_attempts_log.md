@@ -77,3 +77,8 @@ external cohorts or tuning. Scientific results pending.
 Task1-2 verification before execution: entry tests 3/3; fresh full suite
 **564 passed, 0 failed**. Execution waits until the added Task 7 housekeeping
 finishes; no scientific cell has yet run in either attempt.
+
+Task 7 housekeeping completed at this pre-run pause: fourteen process records
+relocated, both renders successful with native Quarto, protected deliverables
+unchanged, full suite 564/0. No scientific configuration or attempt design changed.
+Task1-2 is still the next scientific execution.

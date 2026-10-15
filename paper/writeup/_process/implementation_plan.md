@@ -124,10 +124,10 @@ Cut new analyses, fitting, simulations, enrichment, new signed correlations, CpG
 | `planning.qmd` / `planning.html` | Self-contained review page with outline, source map, evidence assessment, and exhibit plan. |
 | `source_inventory.csv` | One source entry per ID; section, use, repository path, selector, configuration, verification status, caveat. Extend it to trace every quantitative claim in the final report. |
 | `implementation_plan.md` | The execution checklist, checkpoints, verification contract, and progress record. |
-| `writeup.qmd` / `writeup.html` / `writeup.pdf` | Main report; both rendered outputs include the derivation appendices. |
-| `appendices/single_modality.qmd` | Single-modality derivations reconciled with the evaluated algorithm. |
-| `appendices/multimodal.qmd` | Multimodal derivations with intercepts, signed priors, uncertainty, scaling, and pruning. |
-| `figures/` | Only adapted or newly assembled presentation figures derived from saved results. Reuse existing figures by reference where sufficient. |
+| `../writeup.qmd` / `../writeup.html` / `../writeup.pdf` | Main report; both rendered outputs include the derivation appendices. |
+| `../appendices/single_modality.qmd` | Single-modality derivations reconciled with the evaluated algorithm. |
+| `../appendices/multimodal.qmd` | Multimodal derivations with intercepts, signed priors, uncertainty, scaling, and pruning. |
+| `../figures/` | Only adapted or newly assembled presentation figures derived from saved results. Reuse existing figures by reference where sufficient. |
 | `drafting_prompt.md` | Claude handoff for Tasks 2, 3, and 5; target October 16. |
 | `review_prompt.md` | Codex handoff for Task 4, including the author feedback to review against. |
 | `review.md` | Codex independent draft findings, followed by Claude dispositions; not a drafter self-review. |
@@ -147,15 +147,15 @@ Cut new analyses, fitting, simulations, enrichment, new signed correlations, CpG
 - [x] Render from the repository root:
 
   ```bash
-  quarto render paper/writeup/planning.qmd --to html
+  quarto render paper/writeup/_process/planning.qmd --to html
   ```
 
-  Expected: exit 0 and `paper/writeup/planning.html`; image/style resources are embedded, and no fitting code executes.
+  Expected: exit 0 and `paper/writeup/_process/planning.html`; image/style resources are embedded, and no fitting code executes.
 
   Local rendering note: the standalone Quarto 1.3.450 theme compiler is x86_64 and fails with `Bad CPU type in executable`. RStudio's already-installed ARM-native Quarto 1.10.18 successfully renders the page using:
 
   ```bash
-  /Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/planning.qmd --to html
+  /Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/_process/planning.qmd --to html
   ```
 
 - [x] Check every repository-relative link/asset and every inventory source path. Recompute the planning snapshot's means, row counts, and selected values from the named CSVs.
@@ -168,7 +168,7 @@ Cut new analyses, fitting, simulations, enrichment, new signed correlations, CpG
 
 ## Task 2: Methods and derivations (Claude Code)
 
-**Files:** Create `writeup.qmd`, `appendices/single_modality.qmd`, and `appendices/multimodal.qmd`; extend the source inventory.
+**Files:** Create `../writeup.qmd`, `../appendices/single_modality.qmd`, and `../appendices/multimodal.qmd`; extend the source inventory.
 
 **Consumes:** Approved section briefs; inventory entries S01–S08, S29–S30, S33–S34, S37–S38; realized settings from the evaluated runners/fits.
 
@@ -193,7 +193,7 @@ Cut new analyses, fitting, simulations, enrichment, new signed correlations, CpG
 
 ## Task 3: Statistical results and biological findings (Claude Code)
 
-**Files:** Complete `writeup.qmd`; update `source_inventory.csv`; add adapted assets only when necessary in `figures/`.
+**Files:** Complete `../writeup.qmd`; update `source_inventory.csv`; add adapted assets only when necessary in `../figures/`.
 
 **Consumes:** Approved exhibits; inventory entries S09–S28, S31–S32, S35–S36, S39–S54; the methods from Task 2.
 
@@ -275,13 +275,13 @@ Place one table in Interpretation with columns **claim**, **existing evidence**,
 - 2026-10-14 verification: RStudio Quarto rendered the revised planning HTML successfully. Static checks passed for 54 unique inventory IDs and existing source paths, authored Markdown links, HTML anchors/local links, embedded image/script/stylesheet assets, the 10-row six-column characterization table, the four-row completed/proposed table, identical handoff tables, R1–R9 mappings, and the AGENTS symlink. Whitespace checks preserve the CSV's existing CRLF style. No models, statistical analyses or model tests were run.
 - Preview recovery: the old localhost server was unavailable. Automatic approval review rejected a repository-wide restart because it could expose unrelated private files. A narrower, approved temporary loopback server now allows only planning.html and its 34 explicit local links, with no directory listing. A fresh browser tab verified the October 14 page, updated methods table (11 rows including header), navigation, and no document overflow at the current 1265-pixel width. The earlier narrow-screen checks apply to October 12; no new narrow-screen claim is made. The preview script is temporary and is not part of the repository deliverable.
 
-- 2026-10-14 (Claude Code, drafting): Tasks 2, 3 and 5 executed on `writeup/draft`. Status: **initial draft awaiting independent review**; Task 4 not started. Deliverables: `writeup.qmd` → `writeup.html`, `writeup.pdf` (38 pages: 21-page main text, Appendices A–C); `appendices/single_modality.qmd`, `appendices/multimodal.qmd`; `figures/make_pruning_rank_figure.R` → `figures/multimodal_pruning_final_rank.png`; source inventory extended from 54 to 62 IDs (33 existing entries' verification status/caveat updated, IDs unchanged).
+- 2026-10-14 (Claude Code, drafting): Tasks 2, 3 and 5 executed on `writeup/draft`. Status: **initial draft awaiting independent review**; Task 4 not started. Deliverables: `../writeup.qmd` → `../writeup.html`, `../writeup.pdf` (38 pages: 21-page main text, Appendices A–C); `../appendices/single_modality.qmd`, `../appendices/multimodal.qmd`; `../figures/make_pruning_rank_figure.R` → `../figures/multimodal_pruning_final_rank.png`; source inventory extended from 54 to 62 IDs (33 existing entries' verification status/caveat updated, IDs unchanged).
 - Render commands (RStudio Quarto; `latex-auto-install: false`, so rendering installs nothing): `quarto render paper/writeup/writeup.qmd --to html` and `--to pdf`. Both exit 0 with no warnings. The first PDF attempt failed on math in appendix headings and Quarto attempted a TinyTeX package update before failing; auto-install was then disabled. No other dependency changes.
 - Source checks: every number in the report was read from the CSV/RDS named in the inventory. Saved per-cohort C-indices for D4 and the K40, K7 and K20 comparators were recomputed from saved risk scores with frozen orientation and matched (S56). Multimodal simulation summaries were recomputed from raw rows (S26), not the summary file. No model was fitted and no analysis script was rerun.
 - Output checks: no unresolved cross-references or broken HTML anchors; five figures embedded in HTML; Revisit markers hidden in both outputs and balanced/nested in source (R1 13 blocks, R2 14, R3 5, R4 10, R5 5, R6 8, R7 8, R8 9, R9 6). PDF pages inspected as images; an overflow of code-formatted paths in the evidence-gap table was fixed with `hyphenat`. HTML was checked structurally; a browser view of the local file was not available.
 - Remaining gaps and limitations: main text is 21 pages (target 15–20); the established model's matched-donor C (0.685) and the October per-program evidence decomposition have no saved source; the K40 per-cohort paired intervals have no CSV; the pathway "suppression" reading conflicts with the verified orientation (resolved in text; flagged for review); the multimodal `fixed_working_objective` diagnostic omits cross-factor terms (code not changed). No commit has been made.
 - 2026-10-14 follow-ups: (1) Andrew requested monochrome text; HTML CSS and PDF link/callout colours set to black, figures keep colour. A pixel check of the PDF finds colour only on the five figure pages; the HTML was checked for the CSS but not viewed in a browser. (2) The monitoring-objective defect noted above was fixed separately on `fix/multimodal-monitor-objective` (`d1f8b77`, 532 tests passing); it does not affect any reported result.
-- 2026-10-14 (Claude Code, revision): applied `review.md` (Part A verified against code and saved outputs; all 14 Part B items). Dispositions for every finding are in `review_dispositions.md`. Restructured report (Summary paragraph, Methods, Evaluation, Results, Biology, Discussion; Appendices A–B only), rewrote both appendices as complete derivations, removed source IDs/repository/process references, the evidence-gap table, Appendix C and the bibliography. Figures redrawn from saved outputs by `figures/make_writeup_figures.R` and `figures/make_pruning_rank_figure.R` (vector PDF / 300-dpi PNG); inventory S39/S62 updated and S63 added. Both formats render without warnings; Revisit markers balanced; no table splits across pages. PDF 42 pages, main text 27 (target 15–20; cuts need author judgement). Implementation defects A3/A5 documented, not fixed. No model code, defaults, data or saved results changed.
+- 2026-10-14 (Claude Code, revision): applied `review.md` (Part A verified against code and saved outputs; all 14 Part B items). Dispositions for every finding are in `review_dispositions.md`. Restructured report (Summary paragraph, Methods, Evaluation, Results, Biology, Discussion; Appendices A–B only), rewrote both appendices as complete derivations, removed source IDs/repository/process references, the evidence-gap table, Appendix C and the bibliography. Figures redrawn from saved outputs by `../figures/make_writeup_figures.R` and `../figures/make_pruning_rank_figure.R` (vector PDF / 300-dpi PNG); inventory S39/S62 updated and S63 added. Both formats render without warnings; Revisit markers balanced; no table splits across pages. PDF 42 pages, main text 27 (target 15–20; cuts need author judgement). Implementation defects A3/A5 documented, not fixed. No model code, defaults, data or saved results changed.
 - 2026-10-14 (Claude Code, verification round): checked and applied `verification.md` V1–V13 and its incomplete A/B items (dispositions appended to `review_dispositions.md`). Required corrections: protected multimodal precision floor, zero-column normalized target, orientation wording, working-quadratic attribution, remaining derivation steps, local caption definitions, Revisit gaps, unbroken algorithms (PDF minipage) and tables (measured needspace, three pinned figures). Low-loss length changes (Codex ranks 1–5 and 7) applied; ranks 6 and 8 left for the author. PDF 39 pages, main text 24 (was 27). No model code, defaults, data or saved results changed.
 - 2026-10-14 (Codex, second verification corrections): Andrew authorized N1/N2 from `verification_round2.md`. The first evaluated sweep-normalizer formulas in Methods §1.2 and Appendix A.1 now include the numerical ridge already disclosed in A.10; the project-status disposition pointer is corrected. Review/status pointers are updated. Further length cuts and final approval remain pending; the local-expression figure dependency remains disclosed. No model code, defaults, figures, data or saved results changed.
 - Verification: HTML and PDF rendered successfully; both corrected formulas are present, PDF pages 3/25 visually checked, and only those pages' extracted text changed. Pagination remains 39 total / 24 main-text pages, with algorithms and tables on the same pages. Revisit markers remain balanced/nested; `git diff --check` passes.
