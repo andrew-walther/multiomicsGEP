@@ -19,6 +19,22 @@ execute:
   warning: false
 ---
 
+## Approved profiled-curvature experiment prepared (2026-10-15)
+
+An opt-in working-intercept profile is implemented after the exact failed-fold
+trace passed. It removes constant-direction curvature from the Cox surrogate
+while leaving genomic reconstruction, prediction and defaults unchanged.
+The additional14 focused software checks pass, including dense covariance
+calculations and default/off identity against the protected base branch.
+The full suite passes625/625; the preregistration commit precedes any
+scientific fit.
+
+The experiment changes one flag from each model's framework controls, using
+Normal beta priors without a supervised start. It retains every original
+criterion and explicitly preserves the collapsed reference fold's C=NA.
+It does not settle the distinct shared-prior scale question or adopt a model.
+See Task2-4 in the attempt log and the profiled-curvature proposal.
+
 ## Multimodal framework instability inside training CV (2026-10-15)
 
 The fixed-prior evaluation completed100 fits without errors/warnings and was

@@ -6,6 +6,7 @@
 # Dependencies: base R; yaml; multimodal YFB helper, preprocessing, and update modules
 # ============================================================
 
+source("code/profile_cox_intercept.R")
 source("code/multimodal_yfb_helpers.R")
 source("code/preprocess_multimodal_yfb.R")
 source("code/multimodal_yfb_updates.R")
@@ -323,6 +324,10 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #'   These controls do not change the default path or convergence rule.
 #'   `prune_protect_survival` (default FALSE) excludes programs satisfying
 #'   |Eβ| >= 1.96 SD(β) and SD(β)>0 from each nullcheck, including warm refits.
+#'   Opt-in `profile_cox_intercept=TRUE` profiles the arbitrary working
+#'   constant from the Cox quadratic by weighted-centering only its survival
+#'   design. Genomics, prediction, original output convergence and pruning
+#'   scores remain unchanged. Currently requires per-factor Normal beta priors.
 #' @param init Optional warm-start state (EL, EL2, EF, EF2, EBeta, EBeta2, Tau,
 #'   prior_L, prior_F, and g_beta for a shared beta prior), e.g. a fit with one
 #'   factor removed. Used by pruning; a warm start skips the beta warm-up.
@@ -338,6 +343,11 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   # Disabled diagnostics and prior controls preserve the historical object exactly.
   if (!isTRUE(control$trace)) control$trace <- NULL
   if (!isTRUE(control$beta_prior_fix)) control$beta_prior_fix <- NULL
+  profile_enabled <- isTRUE(control$profile_cox_intercept)
+  if(!is.null(control$profile_cox_intercept) &&
+     (!is.logical(control$profile_cox_intercept) || length(control$profile_cox_intercept)!=1L ||
+      is.na(control$profile_cox_intercept)))stop("profile_cox_intercept must be TRUE or FALSE.")
+  if(!profile_enabled)control$profile_cox_intercept <- NULL
   trace_enabled <- isTRUE(control$trace)
   # Keep an explicitly disabled option identical to the historical control.
   if (!isTRUE(control$prune_protect_survival)) control$prune_protect_survival <- NULL
@@ -460,6 +470,8 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   if (!beta_prior_mode %in% c("eb_normal", "shared_point_laplace", "shared_normal"))
     stop("control$beta_prior must be eb_normal, shared_point_laplace or shared_normal.")
   shared_beta <- beta_prior_mode != "eb_normal"
+  if(profile_enabled && shared_beta)
+    stop("Profiled Cox curvature currently requires per-factor Normal beta priors.")
   beta_family <- if (beta_prior_mode == "shared_normal") "normal" else "point_laplace"
   if (shared_beta && is.null(g_beta)) {
     g_beta <- if (beta_family == "normal") ashr::normalmix(1, 0, 1) else
@@ -491,6 +503,11 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     predictor <- multimodal_yfb_predictor_moments(projection$EZ, projection$VZ,
                                                    EBeta, EBeta2)
     working <- multimodal_yfb_cox_working(data$time, data$event, predictor$mean)
+    # Only the survival design is weighted-centered. Genomic residuals and
+    # predictions use the original Y; Xc' W Xc is the profiled curvature.
+    survival_Y <- if(profile_enabled)lapply(Y,profile_cox_center,w=working$w) else Y
+    if(profile_enabled)
+      working$h <- working$u + working$w*profile_cox_center(predictor$mean,working$w)
     old_eta <- predictor$mean
     old_reconstruction <- lapply(names(Y), function(modality) {
       EL %*% t(EF[[modality]])
@@ -515,14 +532,14 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
 
         for (modality in names(Y)) {
           residual <- multimodal_yfb_residual_minus_k(Y, EL, EF, k)
-          projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
+          projection <- multimodal_yfb_projection_moments(survival_Y, EF, EF2)
           current_eta <- multimodal_yfb_predictor_moments(
             projection$EZ, projection$VZ, EBeta, EBeta2
           )$mean
           h_minus_k <- working$h - working$w *
             (current_eta - EBeta[k] * projection$EZ[, k])
           updated_F <- multimodal_yfb_update_F_mk(
-            Y[[modality]], Tau[[modality]], EL[, k], EL2[, k], residual[[modality]],
+            survival_Y[[modality]], Tau[[modality]], EL[, k], EL2[, k], residual[[modality]],
             working$w, h_minus_k, projection$EZ[, k], projection$VZ[, k],
             EF[[modality]][, k], EF2[[modality]][, k], EBeta[k], EBeta2[k],
             prior_F[[modality]][[k]], prior_update = settings$prior_update
@@ -537,7 +554,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
           prior_F[[modality]][[k]] <- updated_F$prior
         }
 
-        projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
+        projection <- multimodal_yfb_projection_moments(survival_Y, EF, EF2)
         current_eta <- multimodal_yfb_predictor_moments(
           projection$EZ, projection$VZ, EBeta, EBeta2
         )$mean
@@ -603,9 +620,11 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         old_reconstruction[[modality]], EL %*% t(EF[[modality]])
       )
     }, numeric(1))
+    working_projection <- if(profile_enabled)
+      multimodal_yfb_projection_moments(survival_Y,EF,EF2) else projection
     history[[outer]] <- list(
       fixed_working_objective = multimodal_yfb_fixed_working_objective(
-        Y, EL, EL2, EF, EF2, Tau, projection$EZ, projection$VZ, EBeta,
+        Y, EL, EL2, EF, EF2, Tau, working_projection$EZ, working_projection$VZ, EBeta,
         EBeta2, working$w, working$h
       ),
       partial_log_likelihood = multimodal_yfb_cox_working(

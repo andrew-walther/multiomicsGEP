@@ -120,3 +120,12 @@ all criteria and defaults remain unchanged, with no external data for selection.
 `results/multimodal_real/run_framework_fold_trace.R` is the fixed Task2
 framework CV fold1 trace. Read its preregistration before execution. It changes
 observation only and must reproduce the saved posterior/history exactly.
+
+The additional approved Task2 profiled-curvature experiment uses
+`code/profile_cox_intercept.R` and opt-in `profile_cox_intercept=TRUE`;
+its runner is `results/benchmark_sim/run_round2_profiled_cox.R`.
+Read Task2-4 in the attempt log and
+`docs/plans/Round2_profiled_curvature_proposal.md` before execution.
+The default/off path must stay identical to `feature/supervised-F`.
+The experiment uses framework Normal beta priors; shared-prior combinations
+are explicitly unsupported. The paired-CV rule and C=NA remain unchanged.

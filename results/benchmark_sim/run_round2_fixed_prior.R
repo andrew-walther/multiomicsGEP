@@ -1,11 +1,14 @@
 # ============================================================
 # Script: run_round2_fixed_prior.R
-# Purpose: Evaluate the fixed shared beta prior on the fixed simulation and TCGA CV beds.
+# Purpose: Evaluate fixed/preregistered candidate panels on fixed simulation and TCGA CV beds.
 # Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: existing fitters and benchmark helpers, yaml, survival, parallel
 # Run: Rscript results/benchmark_sim/run_round2_fixed_prior.R [cores|prepare|finalize]
 # ============================================================
+# R1 remains the default100-cell fixed-prior design below. The approved opt-in
+# profiled route is entered by run_round2_profiled_cox.R, with its separately
+# committed one-change design,92 new fits and10 unchanged CV references.
 # Task2-2, committed BEFORE execution. One change from selected: hold the
 # initial shared point-Laplace beta prior (pi=.5,scale1) fixed beyond warmup.
 # R1 full-TCGA diagnostic already fails credible-program/output-convergence
@@ -48,27 +51,36 @@ fixed_prior_folds <- function(event) {
 }
 
 #' Create the fixed80 simulation and20 TCGA fold fit specifications
-#' @return100 unique rows; each row identifies exactly one independent fit.
+#' @param candidate Fixed or profiled; the latter adds two full-training fits.
+#' @return100 unique rows for fixed,102 for profiled; each row identifies exactly one independent fit.
 #' @examples
 #' nrow(fixed_prior_design())
-fixed_prior_design <- function() {
+fixed_prior_design <- function(candidate="fixed") {
+  stopifnot(candidate %in% c("fixed","profiled"))
   sim <- expand.grid(model=c("single","multimodal"),seed=20261015L+1:20,
     noise=c(.25,1),stringsAsFactors=FALSE)
-  sim$kind <- "simulation";sim$arm <- "fixed";sim$fold <- NA_integer_
-  cv <- expand.grid(model=c("single","multimodal"),arm=c("fixed","framework"),
+  sim$kind <- "simulation";sim$arm <- candidate;sim$fold <- NA_integer_
+  cv <- expand.grid(model=c("single","multimodal"),arm=c(candidate,"framework"),
     fold=1:5,stringsAsFactors=FALSE)
   cv$kind <- "training_cv";cv$seed <- 42L;cv$noise <- NA_real_
-  rbind(sim,cv[names(sim)])
+  d <- rbind(sim,cv[names(sim)])
+  if(candidate=="profiled") {
+    full <- data.frame(model=c("single","multimodal"),seed=42L,noise=NA_real_,
+      kind="training_full",arm=candidate,fold=NA_integer_)
+    d <- rbind(d,full[names(d)])
+  }
+  d
 }
 
 #' Select fixed-prior and framework settings without changing other fit options
 #' @param model Single or multimodal model name.
-#' @param arm Fixed or framework reference as in the completed diagnosis.
+#' @param arm Fixed, framework reference, or profiled remedy.
 #' @return Existing diagnostic argument list with trace disabled only.
 #' @examples
 #' fixed_prior_controls("multimodal","fixed")
 fixed_prior_controls <- function(model,arm) {
-  a <- collapse_arm_controls(model,arm)
+  a <- collapse_arm_controls(model,if(arm=="profiled")"framework" else arm)
+  if(arm=="profiled")a$profile_cox_intercept <- TRUE
   if(model=="single")a$trace_supervision <- FALSE else a$trace <- FALSE
   a
 }
@@ -86,12 +98,13 @@ fixed_prior_scale <- function(train,validation) {
 
 #' Fit one pre-specified simulation or TCGA fold with isolated failure records
 #' @param i Integer row of fixed_prior_design().
+#' @param candidate Fixed or profiled curvature remedy.
 #' @param out_dir Fresh attempt output folder.
 #' @return One metrics/error row; saves a checkpoint and ignored fit RDS.
 #' @examples
 #' # fixed_prior_cell(1L,"results/benchmark_sim/outputs/round2/fixed_prior")
-fixed_prior_cell <- function(i,out_dir) {
-  d <- fixed_prior_design();stopifnot(i %in% seq_len(nrow(d)))
+fixed_prior_cell <- function(i,out_dir,candidate="fixed") {
+  d <- fixed_prior_design(candidate);stopifnot(i %in% seq_len(nrow(d)))
   x <- d[i,];path <- file.path(out_dir,"cells",sprintf("cell_%03d",i))
   if(file.exists(paste0(path,".csv")))stop("Cell exists; do not overwrite")
   warnings <- character();t0 <- proc.time()[["elapsed"]]
@@ -116,14 +129,16 @@ fixed_prior_cell <- function(i,out_dir) {
       stopifnot(identical(rownames(tr$Y$expression),spec$subject_ids),
         identical(lapply(tr$Y,colnames),spec$feature_names),
         identical(names(tr$time),spec$subject_ids),identical(names(tr$event),spec$subject_ids))
-      fold <- fixed_prior_folds(tr$event);va <- fold==x$fold
+      fold <- fixed_prior_folds(tr$event);va <- if(x$kind=="training_full")rep(FALSE,length(fold)) else fold==x$fold
       time <- tr$time[!va];event <- tr$event[!va];vt <- tr$time[va];ve <- tr$event[va]
+      validation_rows <- if(x$kind=="training_full")rep(TRUE,length(va)) else va
+      vt <- tr$time[validation_rows];ve <- tr$event[validation_rows]
       if(x$model=="single") {
-        z <- fixed_prior_scale(tr$Y$expression[!va,,drop=FALSE],tr$Y$expression[va,,drop=FALSE])
+        z <- fixed_prior_scale(tr$Y$expression[!va,,drop=FALSE],tr$Y$expression[validation_rows,,drop=FALSE])
         train <- z$training;val <- z$validation
       } else {
         train <- lapply(tr$Y,function(y)y[!va,,drop=FALSE])
-        val <- lapply(tr$Y,function(y)y[va,,drop=FALSE])
+        val <- lapply(tr$Y,function(y)y[validation_rows,,drop=FALSE])
       }
     }
     a <- fixed_prior_controls(x$model,x$arm);set.seed(x$seed)
@@ -138,6 +153,13 @@ fixed_prior_cell <- function(i,out_dir) {
       conv <- fit$diagnostics$converged;iters <- fit$diagnostics$iterations
       caps <- sum(!as.logical(fit$diagnostics$pruning$converged_before));F <- do.call(rbind,fit$EF)
     }
+    prior_metrics <- NULL
+    if(candidate=="profiled" && x$arm=="profiled") {
+      used <- if(x$model=="single")isTRUE(fit$profile_cox_intercept) else
+        isTRUE(fit$diagnostics$controls$profile_cox_intercept)
+      if(!used)stop("Fit did not use the requested profiled Cox curvature")
+      prior_metrics <- data.frame(profiled_curvature=TRUE)
+    }
     saveRDS(fit,paste0(path,".rds"))
     sd <- sqrt(pmax(fit$EBeta2-fit$EBeta^2,0))
     active <- sd>0 & abs(fit$EBeta)>=1.96*sd
@@ -148,10 +170,12 @@ fixed_prior_cell <- function(i,out_dir) {
       recovered <- abs(rho)>=.7 && sign(rho*fit$EBeta[k])==1
       false <- sum(active[setdiff(seq_along(active),if(abs(rho)>=.7)k else integer())])
     }
-    data.frame(error=NA_character_,n_train=length(time),n_validation=length(vt),
+    metrics <- data.frame(error=NA_character_,n_train=length(time),n_validation=length(vt),
       C=frozen_reverse_cindex(risk,vt,ve),risk_sd=stats::sd(risk),
       K_final=ncol(fit$EL),n_active=sum(active),recovered=recovered,
       cor_planted=abs(rho),false_active=false,converged=conv,iterations=iters,pruning_caps=caps)
+    if(!is.null(prior_metrics))metrics <- cbind(metrics,prior_metrics)
+    metrics
   },error=function(e)data.frame(error=conditionMessage(e))),warning=function(w) {
     warnings <<- c(warnings,conditionMessage(w));invokeRestart("muffleWarning")
   })
@@ -166,10 +190,11 @@ fixed_prior_cell <- function(i,out_dir) {
 #' Summarize fixed criteria without removing failed seeds or undefined folds
 #' @param res All100 checkpoint rows, with missing metric columns filled NA.
 #' @param reference Saved original K7 simulation reference rows.
-#' @return Simulation and CV tables; missing or errored fits cannot pass.
+#' @param candidate Fixed or profiled curvature remedy.
+#' @return Simulation/CV tables and optional full-training checks; failures cannot pass.
 #' @examples
 #' # fixed_prior_summary(results,reference)
-fixed_prior_summary <- function(res,reference) {
+fixed_prior_summary <- function(res,reference,candidate="fixed") {
   sim <- res[res$kind=="simulation",]
   sm <- do.call(rbind,lapply(split(sim,list(sim$model,sim$noise),drop=TRUE),function(x) {
     ref <- reference[reference$model==x$model[1] & reference$noise==x$noise[1],]
@@ -184,7 +209,7 @@ fixed_prior_summary <- function(res,reference) {
   }))
   cv <- res[res$kind=="training_cv",]
   cm <- do.call(rbind,lapply(split(cv,cv$model),function(x) {
-    a <- x[x$arm=="fixed",];b <- x[x$arm=="framework",]
+    a <- x[x$arm==candidate,];b <- x[x$arm=="framework",]
     z <- merge(a,b,by="fold",suffixes=c("_fixed","_reference"))
     valid <- nrow(z)==5L && all(is.na(z$error_fixed)) && all(is.na(z$error_reference)) &&
       all(is.finite(z$C_fixed)) && all(is.finite(z$C_reference))
@@ -195,7 +220,26 @@ fixed_prior_summary <- function(res,reference) {
       pass=valid && m>= -se,converged_candidate=sum(a$converged %in% TRUE),
       converged_reference=sum(b$converged %in% TRUE),errors=sum(!is.na(x$error)))
   }))
-  list(simulation=sm,training_cv=cm)
+  full <- res[res$kind=="training_full",]
+  if(nrow(full)) {
+    full$no_collapse <- is.na(full$error) & !is.na(full$n_active) & full$n_active>=1L &
+      is.finite(full$risk_sd) & full$risk_sd>0
+  }
+  if(candidate=="profiled") {
+    cm$candidate_finite_folds <- cm$reference_finite_folds <- 0L
+    cm$candidate_mean_if_all5 <- cm$reference_mean_if_all5 <- NA_real_
+    for(i in seq_len(nrow(cm))) {
+      z <- cv[cv$model==cm$model[i],]
+      a <- z[z$arm==candidate,];b <- z[z$arm=="framework",]
+      cm$candidate_finite_folds[i] <- sum(is.finite(a$C) & is.na(a$error))
+      cm$reference_finite_folds[i] <- sum(is.finite(b$C) & is.na(b$error))
+      if(nrow(a)==5L && cm$candidate_finite_folds[i]==5L)
+        cm$candidate_mean_if_all5[i] <- mean(a$C)
+      if(nrow(b)==5L && cm$reference_finite_folds[i]==5L)
+        cm$reference_mean_if_all5[i] <- mean(b$C)
+    }
+  }
+  list(simulation=sm,training_cv=cm,training_full=full)
 }
 
 #' Compare checkpoint keys without CSV's all-NA integer/logical type ambiguity
@@ -210,15 +254,58 @@ fixed_prior_checkpoint_matches <- function(row,design_row) {
       identical(as.character(row[[n]]),as.character(design_row[[n]])),logical(1)))
 }
 
+#' Reuse the ten unchanged TCGA CV framework references from completed R1
+#' @param out_dir Prepared fresh profiled-curvature attempt folder.
+#' @param source_dir Completed fixed-prior attempt folder.
+#' @return Invisibly the ten checkpoint source/MD5 records, copied without refitting.
+#' @examples
+#' # fixed_prior_reuse_cv("results/benchmark_sim/outputs/round2/profiled")
+fixed_prior_reuse_cv <- function(out_dir,
+  source_dir="results/benchmark_sim/outputs/round2/fixed_prior") {
+  if(!file.exists(file.path(source_dir,"results.csv")))stop("R1 must complete before reference reuse")
+  if(!identical(readLines(file.path(out_dir,"training_source.txt")),
+    readLines(file.path(source_dir,"training_source.txt"))) ||
+    !identical(unname(tools::md5sum(file.path(out_dir,"folds.csv"))),
+      unname(tools::md5sum(file.path(source_dir,"folds.csv")))))
+    stop("CV reference training cache or folds differ")
+  d <- fixed_prior_design("profiled");old <- fixed_prior_design()
+  complete <- read.csv(file.path(source_dir,"results.csv"))
+  if(nrow(complete)!=nrow(old) ||
+    !all(vapply(seq_len(nrow(old)),function(i)
+      fixed_prior_checkpoint_matches(complete[i,],old[i,]),logical(1))))
+    stop("R1 aggregate is incomplete or differs from its fixed design")
+  ids <- which(d$kind=="training_cv" & d$arm=="framework")
+  records <- list()
+  for(i in ids) {
+    src <- file.path(source_dir,"cells",sprintf("cell_%03d.csv",i))
+    dst <- file.path(out_dir,"cells",sprintf("cell_%03d.csv",i))
+    row <- read.csv(src)
+    if(!fixed_prior_checkpoint_matches(row,old[i,]) ||
+      !fixed_prior_checkpoint_matches(row,d[i,]) || !is.na(row$error))
+      stop("Invalid cached framework reference at cell",i)
+    if(file.exists(dst))stop("Reference checkpoint exists; never overwrite")
+    row$reference_source <- src;row$reference_md5 <- unname(tools::md5sum(src))
+    write.csv(row,dst,row.names=FALSE)
+    records[[length(records)+1L]] <- data.frame(cell=i,source=src,md5=row$reference_md5)
+  }
+  records <- do.call(rbind,records)
+  write.csv(records,file.path(out_dir,"reused_cv_references.csv"),row.names=FALSE)
+  invisible(records)
+}
+
 #' Execute all100 fixed-prior evaluation cells after preregistration
 #' @param cores Positive number of serial PSOCK workers.
 #' @param out_dir Fresh attempt folder, never overwrites earlier fits.
-#' @param mode All locally, prepare Longleaf inputs only, or finalize100 checkpoints.
+#' @param mode All locally, prepare Longleaf inputs only, or finalize all checkpoints.
+#' @param candidate Fixed or profiled curvature remedy; default retains R1 design.
 #' @return Invisibly aggregate results; writes tables before reporting any errors.
 #' @examples
 #' # run_fixed_prior_panel(6L)
 run_fixed_prior_panel <- function(cores=6L,
-  out_dir="results/benchmark_sim/outputs/round2/fixed_prior",mode="all") {
+  out_dir="results/benchmark_sim/outputs/round2/fixed_prior",mode="all",candidate="fixed") {
+  stopifnot(candidate %in% c("fixed","profiled"))
+  if(candidate=="profiled" && out_dir=="results/benchmark_sim/outputs/round2/fixed_prior")
+    stop("A fresh profiled output folder is required")
   if(!mode %in% c("all","prepare","finalize"))stop("mode must be all, prepare or finalize")
   if(mode!="finalize" && dir.exists(out_dir))stop("Fresh output folder required")
   if(mode=="finalize" && (!dir.exists(out_dir) || file.exists(file.path(out_dir,"results.csv"))))
@@ -227,7 +314,7 @@ run_fixed_prior_panel <- function(cores=6L,
   reference <- read.csv("results/benchmark_sim/outputs/k_selection/round2/attempt3/results.csv")
   reference <- reference[reference$K==7L & reference$arm=="reference",]
   stopifnot(nrow(reference)==80L,all(is.na(reference$error)),!anyDuplicated(reference[c("model","seed","noise")]))
-  d <- fixed_prior_design()
+  d <- fixed_prior_design(candidate)
   if(mode!="finalize") {
   dir.create(file.path(out_dir,"cells"),recursive=TRUE)
   write.csv(d,file.path(out_dir,"design.csv"),row.names=FALSE)
@@ -238,6 +325,7 @@ run_fixed_prior_panel <- function(cores=6L,
   writeLines(paste("training_md5",tools::md5sum("data/round2_tcga_training.rds")),
     file.path(out_dir,"training_source.txt"))
   }
+  if(candidate=="profiled" && mode!="finalize")fixed_prior_reuse_cv(out_dir)
   if(mode=="prepare")return(invisible(d))
   expected_md5 <- paste("training_md5",tools::md5sum("data/round2_tcga_training.rds"))
   if(!identical(readLines(file.path(out_dir,"training_source.txt")),expected_md5))
@@ -249,11 +337,13 @@ run_fixed_prior_panel <- function(cores=6L,
   invisible(parallel::clusterEvalQ(cl,{
     load_panel_code();source("code/concordance_ci.R")
   }))
-  rows <- tryCatch(parallel::parLapplyLB(cl,seq_len(nrow(d)),fixed_prior_cell,out_dir=out_dir,chunk.size=1L),
+  ids <- if(candidate=="profiled")which(!(d$kind=="training_cv" & d$arm=="framework")) else seq_len(nrow(d))
+  fresh <- tryCatch(parallel::parLapplyLB(cl,ids,fixed_prior_cell,out_dir=out_dir,candidate=candidate,chunk.size=1L),
     finally=parallel::stopCluster(cl))
+  rows <- lapply(file.path(out_dir,"cells",sprintf("cell_%03d.csv",seq_len(nrow(d)))),read.csv)
   } else {
     paths <- file.path(out_dir,"cells",sprintf("cell_%03d.csv",seq_len(nrow(d))))
-    if(!all(file.exists(paths)))stop("All100 cell checkpoints required before finalizing")
+    if(!all(file.exists(paths)))stop("All design cell checkpoints required before finalizing")
     rows <- lapply(paths,read.csv)
     for(i in seq_along(rows)) {
       if(!fixed_prior_checkpoint_matches(rows[[i]],d[i,]))
@@ -263,11 +353,11 @@ run_fixed_prior_panel <- function(cores=6L,
   cols <- unique(unlist(lapply(rows,names)))
   res <- do.call(rbind,lapply(rows,function(x) {x[setdiff(cols,names(x))]<-NA;x[cols]}))
   write.csv(res,file.path(out_dir,"results.csv"),row.names=FALSE)
-  s <- fixed_prior_summary(res,reference)
+  s <- fixed_prior_summary(res,reference,candidate)
   write.csv(s$simulation,file.path(out_dir,"simulation_summary.csv"),row.names=FALSE)
   old <- read.csv("results/multimodal_real/outputs/round2/diagnosis1/comparison_all.csv")
   # A frozen training C is a labelled reference, not a fivefold CV estimate.
-  cm <- s$training_cv;cm$source <- "round2_training_cv";cm$arm <- "fixed_vs_framework"
+  cm <- s$training_cv;cm$source <- "round2_training_cv";cm$arm <- paste0(candidate,"_vs_framework")
   benchmark <- old[old$source=="benchmark_snapshot",c("source","model","arm","n","K","active","training_C")]
   rows <- list(cm,benchmark);cols <- unique(unlist(lapply(rows,names)))
   cm <- do.call(rbind,lapply(rows,function(x) {x[setdiff(cols,names(x))]<-NA;x[cols]}))
@@ -276,6 +366,12 @@ run_fixed_prior_panel <- function(cores=6L,
   rows <- list(cv,old[old$source=="benchmark_snapshot",]);cols <- unique(unlist(lapply(rows,names)))
   comparison <- do.call(rbind,lapply(rows,function(x) {x[setdiff(cols,names(x))]<-NA;x[cols]}))
   write.csv(comparison,file.path(out_dir,"training_cv_with_benchmark.csv"),row.names=FALSE)
+  if(nrow(s$training_full)) {
+    full <- s$training_full;full$source <- "round2_training_full";full$training_C <- full$C
+    rows <- list(full,old[old$source=="benchmark_snapshot" | old$arm %in% c("selected","framework"),]);cols <- unique(unlist(lapply(rows,names)))
+    full <- do.call(rbind,lapply(rows,function(x) {x[setdiff(cols,names(x))]<-NA;x[cols]}))
+    write.csv(full,file.path(out_dir,"training_full_with_benchmark.csv"),row.names=FALSE)
+  }
   print(s)
   if(any(!is.na(res$error)))stop("Fit errors retained in checkpoints and summaries; inspect results.csv")
   invisible(res)

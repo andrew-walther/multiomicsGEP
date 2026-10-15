@@ -1054,3 +1054,7 @@ prevent a universal-convergence claim. The Round2 handoff holds all tables.
 - [ ] After exact failed-fold trace reproduction, evaluate Andrew's approved
   opt-in profiled Cox curvature under the unchanged criteria. The remedy's
   software prototypes do not constitute a scientific result.
+
+- [x] Implement the approved profiled working-intercept option and14 focused
+  math/protocol checks, preserving default/off identity to the protected branch.
+  Scientific evaluation remains pending the full-suite/preregistration commit.

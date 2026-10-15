@@ -40,6 +40,7 @@ real_status <- NULL
 # PART 1 — LIBRARIES AND MODULE SOURCES
 # ==============================================================================
 
+source("code/profile_cox_intercept.R")
 library(survival)
 library(ebnm)
 
@@ -459,6 +460,10 @@ yf_subset_posterior_state <- function(state,keep) {
 #'   preserving EL/EL2, EF/EF2, beta moments, Tau and persistent loading/shared
 #'   beta priors. Requires no cohort offset and N_frozen=0; means need not be
 #'   supplied separately. Initial uncertainty and beta affect the first update.
+#' @param profile_cox_intercept Opt-in profiled working Cox intercept. Weighted
+#'   centering applies only to survival updates; reconstruction, raw prediction
+#'   and the original ELBO monitor/rule remain unchanged. Requires canonical
+#'   per-program Normal beta, no cohort/strata effects and no pruning.
 #' @param prune_preserve_posterior Logical, default FALSE. Carry that full state
 #'   into each pruning refit rather than reinitializing from L/F means. Also
 #'   returns posterior_state for continuation. This changes only initialization;
@@ -542,8 +547,15 @@ fit_cox_on_yf <- function(Y, time, status,
                            converge_on = c("elbo", "outputs"),
                            trace_supervision = FALSE,
                            posterior_init = NULL,
-                           prune_preserve_posterior = FALSE) {
+                           prune_preserve_posterior = FALSE,
+                           profile_cox_intercept = FALSE) {
 
+  if(!is.logical(profile_cox_intercept) || length(profile_cox_intercept)!=1L ||
+     is.na(profile_cox_intercept))stop("profile_cox_intercept must be TRUE or FALSE.")
+  if(profile_cox_intercept && (!canonicalize || beta_prior_mode[1]!="per_program" ||
+     prior_beta!="normal" || !is.null(cohort_id) || !is.null(strata_id) ||
+     !is.null(beta_cohort_id) || prune))
+    stop("Profiled Cox curvature requires canonical per-program Normal beta, no cohort/strata effects, and no pruning.")
   record_output_convergence <- !missing(converge_on)
   call_args <- mget(names(formals(sys.function())), envir = environment())
   n <- nrow(Y); p <- ncol(Y)
@@ -987,6 +999,9 @@ fit_cox_on_yf <- function(Y, time, status,
     taylor <- calc_cox_taylor_yf(eta, time, status, strata = strata_id)
     z      <- eta + taylor$u / taylor$w    # working response z_i
     w      <- taylor$w                     # W_{ii} diagonal Hessian weights
+    survival_Y <- if(profile_cox_intercept)profile_cox_center(Y,w) else Y
+    if(profile_cox_intercept)
+      z <- profile_cox_center(eta,w) + taylor$u/w
     YtWY_diag <- as.vector(t(Y^2) %*% w)  # p-vector: diag(Y'diag(w)Y)
 
     history$rmse[iter] <- sqrt(mean((Y - EL_aug %*% t(EF_aug))^2))
@@ -1005,8 +1020,8 @@ fit_cox_on_yf <- function(Y, time, status,
       if (canonicalize) {
         # Current projections (earlier programs already moved this sweep) and
         # their variance under q(F): Var(Y F_k) = Y^2 Var(F_k)
-        ZF   <- Y %*% EF_aug[, 1:K, drop = FALSE]
-        VZ_k <- as.vector(Y^2 %*% pmax(EF2_aug[, k] - EF_aug[, k]^2, 0))
+        ZF   <- survival_Y %*% EF_aug[, 1:K, drop = FALSE]
+        VZ_k <- as.vector(survival_Y^2 %*% pmax(EF2_aug[, k] - EF_aug[, k]^2, 0))
       }
       # Cluster B: z_no_k computed w.r.t. ZF (not EL as in Cluster A)
       z_no_k <- if (use_beta_cohort) compute_z_no_k_cohort(z, ZF, EBeta, beta_cohort_idx, k)
@@ -1083,8 +1098,8 @@ fit_cox_on_yf <- function(Y, time, status,
             multimodal_yfb_fit_exponential_prior_ebnm(B_gen / A_gen, 1 / A_gen)
           else multimodal_yfb_fit_signed_prior(B_gen / A_gen, 1 / A_gen, prior_LF)
         }
-        VZ_k <- as.vector(Y^2 %*% pmax(EF2_aug[, k] - EF_aug[, k]^2, 0))
-        A_surv_k <- EBeta2[k] * as.vector(crossprod(w, Y^2))
+        VZ_k <- as.vector(survival_Y^2 %*% pmax(EF2_aug[, k] - EF_aug[, k]^2, 0))
+        A_surv_k <- EBeta2[k] * as.vector(crossprod(w, survival_Y^2))
         if (max(A_gen + w_S * A_surv_k) < 1e-8) {
           # Dead program: neither likelihood carries information about F_k.
           # With the prior held fixed, its posterior would equal the prior
@@ -1097,8 +1112,8 @@ fit_cox_on_yf <- function(Y, time, status,
                       details = list(A = A_gen + w_S * A_surv_k, B = B_gen))
         } else {
           upd <- multimodal_yfb_update_F_mk(
-            Y, Tau, EL_aug[, k], EL2_aug[, k], R_k, w_S * w, w_S * w * z_no_k,
-            as.vector(Y %*% EF_aug[, k]), VZ_k, EF_aug[, k], EF2_aug[, k],
+            survival_Y, Tau, EL_aug[, k], EL2_aug[, k], R_k, w_S * w, w_S * w * z_no_k,
+            as.vector(survival_Y %*% EF_aug[, k]), VZ_k, EF_aug[, k], EF2_aug[, k],
             EBeta[k], EBeta2[k], prior_F_state[[k]], prior_update = "ebnm")
         }
         prior_F_state[[k]] <- upd$prior
@@ -1462,6 +1477,8 @@ fit_cox_on_yf <- function(Y, time, status,
       EBeta=result$EBeta,EBeta2=result$EBeta2,Tau=result$Tau,
       prior_F=prior_F_state,g_beta=result$g_beta)
   }
+
+  if(profile_cox_intercept)result$profile_cox_intercept <- TRUE
 
   # Pruning (canonical only): drop the program whose removal raises the ELBO
   # most, if any removal does not lower it, and refit from a warm start.

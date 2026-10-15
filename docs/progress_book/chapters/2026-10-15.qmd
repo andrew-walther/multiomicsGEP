@@ -659,3 +659,35 @@ No remedy has been fitted at this checkpoint. Source edits still wait for
 the fresh full suite/result commit. The prospective test uses the existing
 framework priors/initialization and changes only the working-intercept
 profile flag; it will not combine the unresolved shared-prior scale question.
+
+
+### What the profiled-curvature implementation changes (scientific results pending)
+
+The helper `code/profile_cox_intercept.R` takes a numeric patient vector or
+patient-by-feature matrix and frozen nonnegative Cox weights. It subtracts
+the weighted mean, preserving dimensions/names; zero total curvature returns
+the original input. Base R `colSums` and `sweep` implement this without a
+patient-by-patient covariance matrix or a new package dependency.
+
+Both fitters use this centered design only for survival projection means,
+loading uncertainty, beta updates and the survival contribution to F updates.
+Genomic residuals remain on the original observations. This is equivalent to
+the dense profiled quadratic Hc=diag(w)-ww'/sum(w), including cross-subject
+covariance induced by uncertain loadings. The existing compiled scalar sweep
+is reused. Canonicalization and raw prediction retain their original inputs.
+
+The option is FALSE by default and disabled objects match the protected
+base-branch definitions. Supported experimental priors are per-factor Normal;
+shared priors fail explicitly rather than combining the unresolved prior-scale
+question. Single additionally requires canonical fitting, no cohort/strata
+effects and no pruning. Its original ELBO monitor/rule remains unchanged;
+the multimodal output rule also stays fixed. Convergence can still fail.
+
+The evaluation runner records80 new simulation fits,10 new candidate CV fits,
+two full-TCGA fits and10 unchanged cached framework CV references. It checks
+input/fold hashes, per-fit keys and provenance, preserves undefined C, and
+reports each arm's own mean only with all5 finite folds. Error/warning records
+are kept independently. Dense precision/linear-term and covariance-objective
+checks test the actual model path; separate checks verify raw genomic
+residuals, base-branch identity and full-training routing. No scientific
+profiled fit or external score has run at this checkpoint.

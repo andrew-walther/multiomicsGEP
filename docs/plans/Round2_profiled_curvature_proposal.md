@@ -63,3 +63,8 @@ checks pass (plus9/9 original R1 protocol checks). These are synthetic
 software checks, not scientific candidate fits or the full project suite.
 The expected full-suite total after applying/registering them is625; report
 the actual count at that future checkpoint.
+
+Task2-4 preregistration verification: focused23/23 (14 new plus9 existing)
+and fresh full suite **625 passed,0 failed**. Default/off fits match
+protected-base fitter definitions. The SLURM wrapper passes bash syntax
+checking. No scientific profiled-curvature fit has run before this commit.

@@ -497,3 +497,13 @@ The Round2 framework-fold diagnostic is
 `Rscript results/multimodal_real/run_framework_fold_trace.R`. It repeats the
 unchanged failed TCGA CV fold with observational tracing and checks exact
 posterior/history identity against the saved fit; it does not change scoring.
+
+The experimental opt-in `profile_cox_intercept=TRUE` profiles the arbitrary
+constant from the frozen Cox working quadratic. It weighted-centers only the
+survival design; reconstruction and raw prediction use the original matrices.
+It supports per-factor Normal beta in the multimodal fitter, and canonical
+per-program Normal beta without cohort/strata effects or pruning in Single.
+Defaults are unchanged. Run its preregistered training-only evaluation with
+`Rscript results/benchmark_sim/run_round2_profiled_cox.R 6`; `prepare` and
+`finalize` support the92-task Longleaf wrapper. This is an unadopted experiment;
+read the Round2 attempt log and profiled-curvature proposal first.

@@ -5,6 +5,28 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Test the approved profiled working Cox intercept as an opt-in
+
+Andrew approved this additional remedy after a saved-state curvature diagnosis,
+conditional on exact failed-fold reproduction. Task2-3 passes all13 identity
+checks. The new option profiles the arbitrary constant predictor from the
+frozen quadratic: Hc=diag(w)-ww'/sum(w). Weighted-centering only the survival
+design implements the same quadratic and its full cross-subject uncertainty,
+while retaining observed genomic matrices and raw prediction.
+
+The prospective Task2-4 changes only this flag on each model's existing
+framework settings: per-program/per-factor Normal beta, no supervised start,
+K7, Single no pruning, multimodal ordinary pruning. It retains original
+ELBO/pruning monitors, model-specific convergence rules/caps, simulation beds,
+false-positive/recovery criteria, TCGA cache and five fixed folds. It cannot
+combine a shared prior with this test or replace the benchmark automatically.
+The already undefined reference fold remains NA, so the paired-CV criterion
+cannot pass without a separate decision; no rule is changed here.
+
+The implementation and fixed102-record evaluation (92 new fits,10 cached
+references) are preregistered before execution. Scientific results are pending.
+The proposal records the derivation, supported cases and mathematical limits.
+
 ## 2026-10-15 — Do not adopt the fixed shared beta prior after the full evaluation
 
 All100 predeclared fits completed without execution errors/warnings. Single

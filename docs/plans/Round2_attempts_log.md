@@ -886,3 +886,91 @@ profile flag; it will not combine the unresolved shared-prior scale question.
 Task2-3 result-checkpoint verification: fresh full suite **611 passed,0 failed**.
 All13 exact reproduction checks pass; only safe factor-level diagnostic CSVs
 and hash/status records are committed, with the model RDS kept ignored.
+
+### Task2-4: approved profiled Cox working intercept (preregistered before fitting)
+
+**Authorization/prerequisite.** Andrew explicitly approves this additional
+remedy outside the prior ladder. Task2-3 must first reproduce R1 cell84 exactly;
+its13 posterior/history checks pass, including all500 history rows.
+The collapse at outer167/inner1 coincides with every per-factor pseudo-z
+falling below1, and occurs with the loading pattern retained. Read-only
+saved-state calculations show58% constant-component curvature for the matched
+prognostic program. The diagonal approximation penalizes a direction along
+which the actual Cox partial likelihood is invariant.
+
+**One change.** Set profile_cox_intercept=TRUE on each model's existing
+framework controls, otherwise unchanged: per-program/per-factor Normal beta,
+no supervised initialization, point-Laplace molecular priors, w_S1 in Single,
+K7, Single unpruned, multimodal ordinary unprotected pruning. This does not
+combine the separate shared-prior/canonicalization issue with a curvature
+remedy. Unsupported shared-prior combinations fail explicitly.
+
+Profile the arbitrary constant in the fixed quadratic, giving
+Hc=diag(w)-ww'/sum(w), hc=u+Hc eta0. An exactly equivalent implementation
+weighted-centers only the survival design under frozen w, including its
+loading-uncertainty moments, and centers the old predictor in its working
+response. Genomic residuals/precisions, raw prediction, canonicalization,
+reported ELBOs/pruning scores and original convergence monitors/rules/caps stay
+unchanged. The multimodal fixed-working monitor reports its actual profiled
+quadratic; Single retains its original ELBO monitor and rule. Refreshing either
+working approximation does not guarantee monotonicity of the original monitor.
+Zero total curvature preserves the zero-information path; no tuned constant
+or new prior, observed-data change, default or threshold is introduced.
+The derivation and limitations are in
+docs/plans/Round2_profiled_curvature_proposal.md.
+
+**Simulation and training arms.**80 new simulations on the original beds:
+20 seeds20261016:20261035, noise .25/1, both models, n400/validation120,
+p50 per modality, beta3=3.3. Reuse the original80 K7 simulation reference
+rows, with unchanged false-positive bounds. TCGA uses the approved144-patient,
+3000-gene/10000-CpG imputed training cache and original event-stratified fivefold
+assignments(seed42). Single scaling is estimated within each training fold.
+Screening/imputation stays fixed: this is conditional CV, not a nested raw
+pipeline. Fit10 new candidate CV fits and both full-TCGA candidates. Reuse
+exactly10 unchanged R1 framework CV references after checking the complete100
+source keys, cache/fold hashes, per-cell keys/errors and source checksums.
+Total102 records,92 new fits; no external cohort for selection.
+
+**Unchanged pass/fail.** Recovery>=16/20 at each noise; null-active mean
+<=original model/noise reference+.5; every simulation fit converged under
+its original rule (ELBO for Single, output change for multimodal). The
+retained-rank gate is not adopted. Training CV requires all5 finite matched
+pairs and mean delta>=-sd(delta)/sqrt5, without dropped/error/constant folds.
+The existing multimodal framework fold1 remains C=NA, so that paired
+criterion cannot pass unchanged; success on another criterion cannot conceal
+it. Report a candidate's own mean only when all its5 folds are finite,
+separately from the paired comparison and labelled finite counts.
+
+Full-training no-collapse requires>=1 credible program (SD>0 and
+|Ebeta|>=1.96SD) AND nonconstant risk. All caps remain failures against the
+convergence goal. Every real-data table retains labelled frozen benchmark
+rows. This is not automatic adoption: only all-criterion evidence can support
+a proposal pending Claude review and Andrew approval, with the prescribed
+one-time external report only for a final configuration selected without
+external values. No external tuning, rule amendment, C=.5 substitution or
+new reference is authorized by this experiment.
+
+**Software and execution.** The new behavior first fails8 model/math and6
+protocol checks on the old project. Private implementations pass8/8,
+6/6 and9/9 existing R1 checks. Dense independently computed covariance
+quadratics agree with actual precision, linear terms and the fixed-working
+monitor; raw genomic residuals are preserved. Default/off objects match
+the previous implementation; existing base-branch identity tests also remain
+required. Before scientific execution, apply the opt-in code, register tests,
+run the full suite, record its actual count and commit this entry/code.
+Do not infer the full count from private tests.
+
+Runner: results/benchmark_sim/run_round2_profiled_cox.R6.
+Fresh output: results/benchmark_sim/outputs/round2/profiled/.
+Longleaf wrapper: round2_profiled_cox.slurm,92 new serial tasks,8GB each,
+12hours; prepare freezes the10 references, finalize aggregates102 records.
+No jobs are submitted. Local execution uses six serial socket workers and
+the recorded R1 BLAS environment; package/runtime provenance is preserved.
+Patient-level folds.csv and all data/RDS stay ignored; only safe aggregate/
+per-fit metrics, hashes and provenance may be committed. Any error/warning
+is retained per fit, never silently retried or overwritten.
+
+Task2-4 preregistration verification: focused23/23 (14 new plus9 existing)
+and fresh full suite **625 passed,0 failed**. Default/off fits match
+protected-base fitter definitions. The SLURM wrapper passes bash syntax
+checking. No scientific profiled-curvature fit has run before this commit.
