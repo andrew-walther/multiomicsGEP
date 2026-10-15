@@ -675,3 +675,7 @@ Task2-2 final pre-run verification: fresh full suite **608 passed,0 failed**,
 including all nine new fixed-prior protocol tests and unchanged-default checks.
 Longleaf wrapper syntax passes. No candidate simulation/CV fit ran before
 this preregistration commit.
+
+Task4 result-checkpoint verification: fresh full suite **608 passed,0 failed**.
+The40-dataset retry exited0; all200 rows and40 cell checkpoints are preserved.
+No model/default change follows the two supervised caps.

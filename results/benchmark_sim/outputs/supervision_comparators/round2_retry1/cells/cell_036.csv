@@ -1,0 +1,6 @@
+"seed","noise","runtime","method","program","cor_planted","recovered","false_active","C","K_final","n_active","converged","iterations","applicable","reason","error","warnings"
+20261031,1,1.105,"ebmf_alone",1,0.270447166542689,FALSE,NA,NA,1,NA,NA,NA,TRUE,NA,NA,""
+20261031,1,1.105,"ebmf_cox",1,0.270447166542689,FALSE,1,0.579099678456592,1,1,NA,4,TRUE,NA,NA,""
+20261031,1,1.105,"ebmf_lasso_cox",NA,NA,FALSE,NA,NA,1,NA,NA,NA,FALSE,"one factor: ordinary Cox only; lasso not applicable",NA,""
+20261031,1,1.105,"pca_cox",4,0.209049386517468,FALSE,4,0.616720257234727,7,4,NA,4,TRUE,NA,NA,""
+20261031,1,1.105,"supervised",4,0.879101269197015,TRUE,1,0.6991961414791,7,2,TRUE,21,TRUE,NA,NA,""
