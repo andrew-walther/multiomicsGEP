@@ -82,3 +82,33 @@ programs dominate the factorization and the planted program is found once.
 
 The null survival-active rate rises by 0.15 and 0.50 per fit over α_F = 0. The second is at the
 limit of the +0.5 margin.
+
+## Supervised initialization and the β prior (C3 + C4)
+
+Every arm uses the canonical configuration with w_S = 1. Program K starts from the null-model Cox
+score direction $Y^\top u_0$, where $u_0$ are the martingale residuals of the null model. The shared
+β prior is held at its starting value for 10 iterations, then refit from the K coefficients after
+each sweep.
+
+| Arm | Recovered, noise 0.25 | Recovered, noise 1 | Null survival-active / fit | Converged |
+|---|---|---|---|---|
+| α_F = 0 | 0/20 | 0/20 | 0.45; 0.15 | 20; 20 |
+| canonical (C2) | 1/20 | 6/20 | 0.60; 0.65 | 20; 20 |
+| + supervised start | 1/20 | 7/20 | 0.60; 0.60 | 20; 20 |
+| + shared normal prior, warm-up | 1/20 | 6/20 | 0.75; 0.60 | 20; 20 |
+| + point-Laplace prior | 1/20 | 5/20 | 0.35; 0.35 | 20; 20 |
+| + point-normal, slab SD 1 | 1/20 | 5/20 | 0.50; 0.40 | 10; 13 |
+| fixed N(0, 2²) (reference) | 1/20 | 5/20 | 0.85; 0.70 | 20; 20 |
+
+: C3 + C4 arms; the two values per cell are noise 0.25 and noise 1. {#tbl-c3c4}
+
+No arm comes close to the 16/20 threshold. The supervised start correlates only 0.38 (noise 0.25)
+and 0.56 (noise 1) with the planted loadings, and the program it seeds collapses in almost every
+seed.
+
+**How much can survival alone recover here?** A Cox model fit directly on the 50 genes (ridge or
+lasso, cross-validated) recovers the planted direction in 0/20 or 4/20 seeds at noise 0.25, and in
+4/20 or 13/20 at noise 1. The true predictor's validation C is 0.68 at noise 0.25. With 120 patients
+and about 84 events, the survival data do not determine the direction well enough for 80% recovery
+at the lower noise level, by this or any other method. Whether to keep this test bed, calibrate it,
+or set the threshold relative to the survival-only reference is open; C5 waits on that decision.

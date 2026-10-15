@@ -192,3 +192,44 @@ run_test("Supervision-T8: canonical F sweep solves the survival least squares", 
   assert_true(max(abs(diag_update - target)) > 0.05,
               msg = "the diagonal update differs from the exact solution")
 })
+
+# ---------------------------------------------------------------------------
+# T9: shared beta prior -- fixed prior is never refit; warm-up holds the
+# initial prior for exactly beta_warmup iterations, then it is refit
+# ---------------------------------------------------------------------------
+run_test("Supervision-T9: shared beta prior honors beta_prior_fix and beta_warmup", {
+  base <- list(.sv$Y, .sv$time, .sv$status, K = 3L, prior_LF = "point_laplace",
+               prior_beta = "normal", canonicalize = TRUE, verbose = FALSE,
+               beta_prior_mode = "shared")
+  g0 <- ashr::normalmix(1, 0, 2)
+  fx <- do.call(fit_cox_on_yf, c(base, max_iter = 15L, beta_prior_init = list(g0),
+                                 beta_prior_fix = TRUE))
+  assert_true(identical(fx$g_beta, g0), msg = "fixed prior unchanged")
+  wu <- do.call(fit_cox_on_yf, c(base, max_iter = 4L, beta_prior_init = list(g0),
+                                 beta_warmup = 4L))
+  assert_true(identical(wu$g_beta, g0), msg = "prior held during the warm-up")
+  rf <- do.call(fit_cox_on_yf, c(base, max_iter = 5L, beta_prior_init = list(g0),
+                                 beta_warmup = 4L))
+  assert_true(!identical(rf$g_beta, g0), msg = "prior refit after the warm-up")
+  err <- tryCatch(fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 2L,
+                                beta_prior_mode = "shared", verbose = FALSE),
+                  error = function(e) e)
+  assert_true(inherits(err, "error"), msg = "shared prior requires canonicalize")
+})
+
+# ---------------------------------------------------------------------------
+# T10: supervised initialization starts program K along the Cox score
+# direction: its first-iteration score correlates with the null martingale
+# residuals far more than the unsupervised start does
+# ---------------------------------------------------------------------------
+run_test("Supervision-T10: init_supervised starts a program along the score direction", {
+  args <- list(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 1L, prior_LF = "point_laplace",
+               prior_beta = "normal", canonicalize = TRUE, verbose = FALSE)
+  sup  <- do.call(fit_cox_on_yf, c(args, init_supervised = TRUE))
+  uns  <- do.call(fit_cox_on_yf, args)
+  u0   <- calc_cox_taylor_yf(rep(0, .sv$n), .sv$time, .sv$status)$u
+  r_s  <- abs(cor(.sv$Y %*% sup$EF[, 3], u0))
+  r_u  <- max(abs(suppressWarnings(cor(.sv$Y %*% uns$EF, u0))), na.rm = TRUE)
+  assert_true(r_s > 0.5 && r_s > r_u + 0.1,
+              msg = sprintf("supervised |cor| %.2f vs unsupervised max %.2f", r_s, r_u))
+})

@@ -60,6 +60,26 @@ ARM_SETS <- list(
     alpha_F_0  = list(alpha_F = 0),
     canon_wS_0 = list(canonicalize = TRUE, w_S = 0),
     canon_wS_1 = list(canonicalize = TRUE, w_S = 1)
+  ),
+  # C3 + C4 (DECISIONS.md 2026-10-15): supervised initialization of program K
+  # from the null Cox score direction, beta-prior warm-up (10 iterations at the
+  # initial shared prior), and beta prior families, all under equal weights.
+  # Arms fixed before any C3/C4 fit was run.
+  c3c4 = list(
+    alpha_F_0       = list(alpha_F = 0),
+    canon_wS_1      = list(canonicalize = TRUE, w_S = 1),
+    c3_init         = list(canonicalize = TRUE, w_S = 1, init_supervised = TRUE),
+    c3_init_warm    = list(canonicalize = TRUE, w_S = 1, init_supervised = TRUE,
+                           beta_prior_mode = "shared", beta_warmup = 10L),
+    c4_point_laplace = list(canonicalize = TRUE, w_S = 1, init_supervised = TRUE,
+                            beta_prior_mode = "shared", beta_warmup = 10L,
+                            prior_beta = "point_laplace"),
+    c4_point_normal_slab1 = list(canonicalize = TRUE, w_S = 1, init_supervised = TRUE,
+                                 beta_prior_mode = "shared", beta_warmup = 10L,
+                                 prior_beta = "point_normal", beta_slab_sd = 1),
+    ref_normal_wide_fixed = list(canonicalize = TRUE, w_S = 1, init_supervised = TRUE,
+                                 beta_prior_mode = "shared", beta_prior_fix = TRUE,
+                                 beta_prior_init = ashr::normalmix(1, 0, 2))
   )
 )
 
@@ -132,6 +152,10 @@ score_fit <- function(fit, tb) {
     cor_f1 = best_cor[1], cor_f2 = best_cor[2], cor_planted = best_cor[j],
     match_k       = k,
     n_programs    = sum(colSums(fit$EF^2) > 1e-8),
+    # Program K (the supervised start when init_supervised = TRUE): alive at
+    # the end, and its loading correlation with the planted program
+    last_alive    = sum(fit$EF[, ncol(fit$EF)]^2) > 1e-8,
+    cor_last      = abs(r[j, ncol(fit$EF)]),
     beta_match    = fit$EBeta[k],
     beta_z_match  = fit$EBeta[k] / max(beta_sd[k], 1e-12),
     recovered     = best_cor[j] >= 0.7 &&
@@ -201,7 +225,8 @@ summ <- do.call(rbind, lapply(split(res, list(res$arm, res$noise), drop = TRUE),
   arm = d0$arm[1], noise = d0$noise[1], n = nrow(d0), errors = sum(!is.na(d0$error)),
   recovered = sum(d$recovered),
   cor_planted_median = median(d$cor_planted), cor_f1_median = median(d$cor_f1),
-  cor_f2_median = median(d$cor_f2), n_programs_median = median(d$n_programs), match_active_z = sum(d$match_active_z),
+  cor_f2_median = median(d$cor_f2), n_programs_median = median(d$n_programs),
+  last_alive = sum(d$last_alive), match_active_z = sum(d$match_active_z),
   false_z_mean = mean(d$false_z), false_thresh_mean = mean(d$false_thresh),
   c_validation_mean = mean(d$c_validation), c_oracle_mean = mean(d$c_oracle),
   converged = sum(d$converged), elbo_decreases_total = sum(d$elbo_decreases),

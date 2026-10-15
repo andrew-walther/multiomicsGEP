@@ -350,6 +350,28 @@ canonicalize_yf_factors <- function(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
 #'                 predict_cox_on_yf() computes Y_test EF beta. Not supported
 #'                 with alpha_F > 0, N_burnin > 0, cox_warmstart,
 #'                 alpha_schedule or beta_cohort_id.
+#' @param init_supervised logical (default FALSE; canonicalize = TRUE only).
+#'                 Workstream C step C3: program K starts from the Cox score
+#'                 direction of the null model, F_K = Y' u0 with u0 the
+#'                 martingale residuals at eta = 0, and L_K = R F_K / ||F_K||^2
+#'                 with R the data minus programs 1..K-1. Its scores then
+#'                 correlate with survival from the first sweep, so beta_K is
+#'                 estimated away from 0 before F moves.
+#' @param beta_prior_mode "per_program" (default): each beta_k update fits its
+#'                 own ebnm prior to its single pseudo-observation.
+#'                 "shared" (canonicalize = TRUE only; step C4): one prior g on
+#'                 beta_1..beta_K, held fixed during each sweep and refit by
+#'                 marginal likelihood from the K pseudo-observations after the
+#'                 sweep (the pattern used for the loadings).
+#' @param beta_prior_init NULL or an ebnm prior object: the starting shared prior.
+#'                 NULL gives N(0, 1) for "normal", 0.5 delta_0 + 0.5 N(0, 1) for
+#'                 "point_normal" and 0.5 delta_0 + 0.5 Laplace(scale 1) for
+#'                 "point_laplace" (beta is a log hazard ratio per SD of score).
+#' @param beta_warmup integer (default 0): iterations during which the shared
+#'                 prior is held at beta_prior_init before it is refit.
+#' @param beta_prior_fix logical (default FALSE): never refit the shared prior.
+#' @param beta_slab_sd NULL or positive: for prior_beta = "point_normal", fix the
+#'                 slab SD at this value and estimate only the mixing weight.
 #' @param trace_supervision logical (default FALSE). When TRUE, `history$trace`
 #'                 records, per iteration (rows) and program k (columns):
 #'                 E[beta_k], E[beta_k^2]; survival's share of the F-update
@@ -410,6 +432,12 @@ fit_cox_on_yf <- function(Y, time, status,
                            beta_cohort_id  = NULL,
                            w_S             = NULL,
                            canonicalize    = FALSE,
+                           init_supervised = FALSE,
+                           beta_prior_mode = c("per_program", "shared"),
+                           beta_prior_init = NULL,
+                           beta_warmup     = 0L,
+                           beta_prior_fix  = FALSE,
+                           beta_slab_sd    = NULL,
                            trace_supervision = FALSE) {
 
   n <- nrow(Y); p <- ncol(Y)
@@ -426,6 +454,18 @@ fit_cox_on_yf <- function(Y, time, status,
     if (!prior_LF %in% c("point_exponential", "point_laplace", "normal"))
       stop("canonicalize = TRUE supports prior_LF point_exponential, point_laplace or normal.")
     prior_F_state <- vector("list", K)   # loading priors held across sweeps
+  }
+  beta_prior_mode <- match.arg(beta_prior_mode)
+  if (!canonicalize && (init_supervised || beta_prior_mode == "shared"))
+    stop("init_supervised and beta_prior_mode = 'shared' require canonicalize = TRUE.")
+  if (beta_prior_mode == "shared") {
+    if (!prior_beta %in% c("normal", "point_normal", "point_laplace"))
+      stop("beta_prior_mode = 'shared' supports prior_beta normal, point_normal or point_laplace.")
+    g_beta <- if (!is.null(beta_prior_init)) beta_prior_init else switch(prior_beta,
+      normal        = ashr::normalmix(1, 0, 1),
+      point_normal  = ashr::normalmix(c(0.5, 0.5), c(0, 0),
+                                      c(0, if (is.null(beta_slab_sd)) 1 else beta_slab_sd)),
+      point_laplace = ebnm::laplacemix(c(0.5, 0.5), c(0, 0), c(0, 1)))
   }
   # Weights applied to the genomics and survival terms of the F update
   # (used by the trace; the update itself receives alpha_F or w_S directly).
@@ -590,6 +630,15 @@ fit_cox_on_yf <- function(Y, time, status,
     EF <- EF_init
   } else {
     stop(sprintf("Unknown init_method: '%s'. Use 'svd', 'random', 'deflation', or 'custom'.", init_method))
+  }
+
+  if (init_supervised) {
+    # C3: program K starts along the null-model Cox score direction Y'u0
+    u0 <- calc_cox_taylor_yf(rep(0, n), time, status, strata = strata_id)$u
+    d  <- as.vector(crossprod(Y_for_svd, u0))
+    EF[, K] <- d
+    R_K <- Y_for_svd - EL[, -K, drop = FALSE] %*% t(EF[, -K, drop = FALSE])
+    EL[, K] <- as.vector(R_K %*% d) / sum(d^2)
   }
 
   EL2 <- EL^2
@@ -761,6 +810,7 @@ fit_cox_on_yf <- function(Y, time, status,
     kl_L    <- numeric(K)
     kl_F    <- numeric(K)
     kl_beta <- numeric(K)
+    beta_x  <- numeric(K); beta_s <- numeric(K)
 
     # ------------------------------------------------------------------------
     # STEP 1: Cox Taylor Expansion
@@ -831,9 +881,11 @@ fit_cox_on_yf <- function(Y, time, status,
                                      if (canonicalize) ZF[, k]^2 + VZ_k else ZF[, k]^2,
                                      prior_family = prior_beta,
                                      alpha = if (canonicalize) w_S else alpha_iter,
-                                     survival_divisor = if (canonicalize) 1 else beta_divisor)
+                                     survival_divisor = if (canonicalize) 1 else beta_divisor,
+                                     g_fixed = if (beta_prior_mode == "shared") g_beta else NULL)
         EBeta[k]    <- res_beta$mean
         EBeta2[k]   <- res_beta$second
+        if (beta_prior_mode == "shared") { beta_x[k] <- res_beta$x; beta_s[k] <- res_beta$s }
       }
       kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
                                       res_beta$A, res_beta$x,
@@ -946,6 +998,15 @@ fit_cox_on_yf <- function(Y, time, status,
       }
 
     }  # end k-loop
+
+    # Shared beta prior: refit from the sweep's K pseudo-observations after
+    # the warm-up (held fixed during the sweep, as for the loading priors)
+    if (beta_prior_mode == "shared" && !beta_prior_fix && iter > beta_warmup) {
+      fit_g <- if (prior_beta == "point_normal" && !is.null(beta_slab_sd))
+        ebnm::ebnm(beta_x, beta_s, prior_family = "point_normal", scale = beta_slab_sd)
+      else ebnm::ebnm(beta_x, beta_s, prior_family = prior_beta)
+      g_beta <- fit_g$fitted_g
+    }
 
     # Fail loud on divergence: a non-finite loading or coefficient otherwise
     # propagates silently (ebnm returns zeros and the fit looks converged).
@@ -1171,7 +1232,8 @@ fit_cox_on_yf <- function(Y, time, status,
     survival_divisor = survival_divisor,
     beta_divisor     = beta_divisor,
     canonicalize     = canonicalize,
-    w_S              = w_S
+    w_S              = w_S,
+    g_beta           = if (beta_prior_mode == "shared") g_beta else NULL
   )
   if (!is.null(cohort_id) && C_cols > 0) {
     result$L_cohort   <- L_cohort

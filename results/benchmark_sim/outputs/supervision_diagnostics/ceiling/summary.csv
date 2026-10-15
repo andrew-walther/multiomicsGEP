@@ -1,0 +1,3 @@
+"noise","n","ridge_recovered","lasso_recovered","score_dir_recovered","ridge_median","lasso_median","score_dir_median"
+0.25,20,0,4,0,0.410613231727433,0.429745167220034,0.379161667961431
+1,20,4,13,2,0.604880490583105,0.754940926442286,0.55936329079842

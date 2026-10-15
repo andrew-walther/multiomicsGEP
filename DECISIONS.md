@@ -5,6 +5,48 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — C3 + C4 fail the success criteria; the test bed limits recovery (awaiting decision)
+
+**Result.** Supervised initialization (C3), the β-prior warm-up and the β prior families (C4), all
+under equal weights (w_S = 1) on the canonical configuration, fail the pre-specified criteria.
+Arms were fixed before any run; 20 seeds per noise level
+(`results/benchmark_sim/outputs/supervision_diagnostics/c3c4/summary.csv`):
+
+| Arm | Recovered, noise 0.25 | Recovered, noise 1 | Null survival-active / fit (0.25; 1) | Converged (0.25; 1) |
+|---|---|---|---|---|
+| α_F = 0 (baseline) | 0/20 | 0/20 | 0.45; 0.15 | 20; 20 |
+| canonical, w_S = 1 (C2) | 1/20 | 6/20 | 0.60; 0.65 | 20; 20 |
+| + supervised init (C3) | 1/20 | 7/20 | 0.60; 0.60 | 20; 20 |
+| + shared normal β prior, 10-iteration warm-up | 1/20 | 6/20 | 0.75; 0.60 | 20; 20 |
+| + shared point-Laplace β prior, warm-up | 1/20 | 5/20 | 0.35; 0.35 | 20; 20 |
+| + point-normal β prior, slab SD 1 fixed, warm-up | 1/20 | 5/20 | 0.50; 0.40 | **10; 13** |
+| reference: fixed N(0, 2²) β prior | 1/20 | 5/20 | 0.85; 0.70 | 20; 20 |
+
+Criteria: recovery ≥ 16/20 at each noise level fails for every arm. The convergence criterion also
+fails for the fixed-slab point-normal arm. The false-positive criterion (baseline + 0.5) holds for
+every arm except the warm-up normal arm at noise 1 (+0.45, inside) and the wide-normal reference at
+noise 1 (+0.55, outside).
+
+**Why C3 does not help.**
+- The supervised start is a poor estimate of the planted direction. The null-model score direction
+  Y'u₀ has median |cor| 0.38 (noise 0.25) and 0.56 (noise 1) with the planted loadings, and is
+  ≥ 0.7 in 0/20 and 2/20 seeds.
+- The supervised program does not survive. It is zero at the end of the fit in 20/20 seeds at
+  noise 0.25 and 19/20 at noise 1 (column `last_alive`): its scores lose the genomics anchor, and
+  β follows. The null-model score-direction figures are in `ceiling/summary.csv`.
+
+**The test bed limits any method.** A Cox model fit directly on all 50 genes with survival only
+(glmnet, ridge and lasso, λ by 10-fold CV; `run_supervision_ceiling.R`, `outputs/.../ceiling/`)
+recovers the planted loadings at |cor| ≥ 0.7 in 0/20 (ridge) and 4/20 (lasso) seeds at noise 0.25,
+and in 4/20 and 13/20 at noise 1. The oracle C of the true predictor on the validation cohort is
+0.68 at noise 0.25. With n = 120 and about 84 events, the survival data do not identify the
+direction well enough for ≥ 16/20 recovery at noise 0.25, whatever the factorization does.
+
+**Status.** Per the 2026-10-15 order, C5 (joint or collapsed (F_k, β_k) update) is next, but is not
+started until Andrew decides how to handle the test-bed limit. The thresholds are not changed here.
+
+---
+
 ## 2026-10-15 — Survival-supervised F update: scale canonicalization and an exact coordinate update (C2)
 
 **Decision.** `fit_cox_on_yf(canonicalize = TRUE)` is the configuration for all further

@@ -102,6 +102,11 @@ compute_z_no_k <- function(z, EL, EBeta, k) {
 #' @param survival_divisor numeric: divides A_k and B_k (default 1 = no-op).
 #'                     Phase 1a objective normalization (see DECISIONS.md).
 #'                     x_k is invariant to this divisor; only s_k changes.
+#' @param g_fixed      NULL (default) or a fitted ebnm prior (`fitted_g`). When
+#'                     supplied, the posterior is computed under this prior
+#'                     without re-estimating it (ebnm fix_g = TRUE). Used for a
+#'                     beta prior shared across programs and refit after each
+#'                     sweep (fit_cox_on_yf(beta_prior_mode = "shared")).
 #'
 #' @return Named list:
 #'   $mean        -- posterior mean E_q[beta_k]
@@ -128,7 +133,8 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
                           prior_family = "point_normal",
                           alpha        = 0.5,
                           A_floor      = 1e-10,
-                          survival_divisor = 1) {
+                          survival_divisor = 1,
+                          g_fixed      = NULL) {
 
   # ------------------------------------------------------------------
   # Precision (A_k): error-in-variables correction, scaled by alpha
@@ -170,7 +176,9 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
   # estimation — ebnm() learns the prior variance from data.
   # (REVISED.tex lines 911-914)
   # ------------------------------------------------------------------
-  res <- ebnm(x = x_k, s = s_k, prior_family = prior_family)
+  res <- if (is.null(g_fixed)) ebnm(x = x_k, s = s_k, prior_family = prior_family)
+         else ebnm(x = x_k, s = s_k, prior_family = prior_family,
+                   g_init = g_fixed, fix_g = TRUE)
 
   beta_mean   <- res$posterior$mean
   beta_sd     <- res$posterior$sd
