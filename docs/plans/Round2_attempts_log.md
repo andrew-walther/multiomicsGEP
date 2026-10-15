@@ -108,3 +108,69 @@ outputs remain untouched. Scientific results pending.
 
 Task1-3 verification before execution: real-cell reporting test RED→GREEN,
 4/4 panel tests; fresh full suite **565 passed, 0 failed**.
+
+Task1-3 interim single portion (all320 cells, no errors): protected recovery2/20
+in each of eight groups; ELBO convergence20/20, false-active margins all pass,
+medianK2 (noise.25)/1 (noise1) at every startingK. Recovery and rank fail, so
+no adoption. Single's objective is already variance-corrected; no new approved
+ladder rung is available. Issue needs Andrew; see the interim handoff and
+single_summary_interim.csv. Multimodal results are still pending; no run was
+changed or terminated on this assessment.
+
+
+### Andrew's clarification while Task1-3 was running
+
+Andrew approved option 1: Task5 may use the unchanged K7/no-pruning single
+fallback. He also asked that supervised K selection remain an active objective,
+recognizing the strong earlier alpha_F=0 result. The failed protected-pruning
+panel does not invalidate that benchmark or the unpruned supervised simulation
+result (17/20 and 19/20 recovery). Any viable prior remedy from Task2 can motivate
+rechecking supervised K selection under the unchanged criteria; this approval
+does not authorize changing a threshold, test bed, default or adoption rule.
+The recorded 2026-07-13 real-data K4/K5 warm-start alternatives have K_eff=2 and
+mean external C=.6270, versus K7's .6267/K_eff=2. The older K_eff=4 beta-boost
+entry is explicitly superseded in DECISIONS.md. Retained rank and survival-active
+rank must remain distinct in subsequent reports.
+
+## Task 1 attempt 4 — observe the single-modality pruning transition
+
+**Before execution:** register and commit before running this diagnosis. The
+completed 320-cell single portion of Task1-3 has 2/20 recovery in every group,
+although the earlier unpruned selected model recovered17/20 and19/20. Andrew
+asked that supervised K selection continue while approving the unchanged K7
+fallback for Task5. The multimodal part of Task1-3 is still running unchanged.
+
+**Hypothesis/exact change:** instrumentation only. Record each posterior state
+presented to the existing single pruning nullcheck and its exact returned gains.
+This distinguishes loss of credible protection before deletion from loss during
+a subsequent refit. No fitter source, fitting argument, moment initialization,
+prior, threshold, objective or convergence rule is changed. The observer is a
+process-local binding, restored on success or error. It consumes no RNG draws.
+Saved real-data supervised fit has a nondegenerate shared prior; do not presume
+that a point-mass prior explains every single-modality pruning loss.
+
+**Arms/data:** no new statistical arm; exactly the selected protected single
+configuration from Task1-3, first prescribed seed20261016, K7, noise.25 and1,
+same calibrated n400/p50 data, original caps/tolerance. These two fixed case
+traces diagnose a transition, not its frequency or a new adoption rule. No seed
+substitution is allowed if a case does not exhibit the failure. No external data.
+
+**Pass/fail/report:** record loading correlation/recovery, matched beta/SD,
+credible protection, matched deletion gain, actual dropped program, shared
+prior slab probability/scale and convergence at each pruning stage. Identify
+the first loss only if observed. No remedy is adopted from a case study.
+The unit test must show an identical fit and identical nullcheck gains, and
+restoration of the original binding after both success and error. The existing
+attempt folder must refuse overwrite. Full suite must pass before committing.
+
+**Execution after commit:**
+`Rscript results/benchmark_sim/run_single_pruning_trace.R`;
+fresh `results/benchmark_sim/outputs/k_selection/round2/attempt4_trace/`.
+No running panel or fitter source is edited.
+
+Task1-4 pre-run verification: the state-capture assertion failed against the
+non-observing stub, then passed with an identical full fit and exact nullcheck
+gains. Original bindings restore after success and error; old attempt folders
+refuse overwrite. Fresh full suite **567 passed, 0 failed**. Task1-3 is still
+running, with 783/800 checkpoints and no recorded execution errors; its source
+has not been edited. This diagnosis does not change that panel or its design.

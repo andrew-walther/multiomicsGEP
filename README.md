@@ -409,3 +409,10 @@ The Round 2 K panel runs with
 an existing attempt and writes per-cell checkpoints beneath
 `results/benchmark_sim/outputs/k_selection/round2/attempt3/`. Its fixed design and
 adoption criteria are recorded in the attempt history before fitting.
+
+To observe the unchanged single-modality pruning transitions, run
+`Rscript results/benchmark_sim/run_single_pruning_trace.R` after its preregistration
+commit. It records the first prescribed seed at both noise levels in a fresh
+`outputs/k_selection/round2/attempt4_trace/` folder and refuses overwrite.
+The local 800-cell rank panel can also be dispatched one cell per Longleaf array
+with `results/benchmark_sim/round2_k_selection.slurm`; no jobs are submitted by R.
