@@ -75,6 +75,7 @@ test_files <- c(
   "tests/test_fit_modular_cohort.R",
   "tests/test_fit_yf_cohort.R",
   "tests/test_fit_yf_frozen_f.R",
+  "tests/test_fit_yf_supervision.R",
   "tests/test_normalization.R",
   "tests/test_fit_pca_cox.R",
   "tests/test_pathway_enrichment.R",

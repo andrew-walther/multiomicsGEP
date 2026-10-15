@@ -263,6 +263,21 @@ calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
 #'                 doing so (harmless now that the two agree; still correct if
 #'                 they didn't).
 #' @param verbose  Logical: print iteration logs? (default TRUE)
+#' @param w_S      NULL (default) or a nonnegative scalar survival weight for the
+#'                 F update. NULL keeps the alpha_F-weighted update. When supplied,
+#'                 alpha_F is ignored and q(f_k) combines both likelihoods
+#'                 unweighted, with the survival term multiplied by w_S:
+#'                 A_F = A_gen + w_S A_surv, B_F = B_gen + w_S B_surv.
+#'                 w_S = 1 is the plain (equal-weight) Bayesian posterior.
+#' @param trace_supervision logical (default FALSE). When TRUE, `history$trace`
+#'                 records, per iteration (rows) and program k (columns):
+#'                 E[beta_k], E[beta_k^2]; survival's share of the F-update
+#'                 precision, w_surv A_surv / A_F (median and 90th percentile over
+#'                 features), and of the signal, |w_surv B_surv| /
+#'                 (|w_gen B_gen| + |w_surv B_surv|); the unweighted precision
+#'                 share A_surv / (A_gen + A_surv) (median); sd(Y EF_k), ||EF_k||
+#'                 and ||EL_k||. Here (w_gen, w_surv) = (1 - alpha_F, alpha_F), or
+#'                 (1, w_S) when w_S is supplied. The fit itself is unchanged.
 #'
 #' @param beta_cohort_id NULL (default) or an n-vector of cohort labels for
 #'                 COHORT-SPECIFIC SURVIVAL COEFFICIENTS beta_k^{c(i)}
@@ -311,9 +326,18 @@ fit_cox_on_yf <- function(Y, time, status,
                            cohort_id       = NULL,
                            sigma_F_cohort  = 1.0,
                            strata_id       = NULL,
-                           beta_cohort_id  = NULL) {
+                           beta_cohort_id  = NULL,
+                           w_S             = NULL,
+                           trace_supervision = FALSE) {
 
   n <- nrow(Y); p <- ncol(Y)
+
+  if (!is.null(w_S) && (!is.numeric(w_S) || length(w_S) != 1 || !is.finite(w_S) || w_S < 0))
+    stop("w_S must be NULL or a finite nonnegative scalar.")
+  # Weights applied to the genomics and survival terms of the F update
+  # (used by the trace; the update itself receives alpha_F or w_S directly).
+  F_w_gen  <- if (is.null(w_S)) 1 - alpha_F else 1
+  F_w_surv <- if (is.null(w_S)) alpha_F else w_S
 
   # ---- Cohort-specific survival coefficients (Stage 2, DECISIONS.md 2026-09-04) --
   # beta_cohort_id is a THIRD, independent grouping variable -- distinct from
@@ -335,8 +359,8 @@ fit_cox_on_yf <- function(Y, time, status,
     beta_cohort_levels <- levels(beta_cohort_id)
     if (C_beta < 2)
       stop("beta_cohort_id must have at least 2 distinct levels (got ", C_beta, ").")
-    if (alpha_F > 0)
-      stop("beta_cohort_id is not supported with alpha_F > 0: update_F_surv_YFB_k()'s ",
+    if (alpha_F > 0 || (!is.null(w_S) && w_S > 0))
+      stop("beta_cohort_id is not supported with alpha_F > 0 or w_S > 0: update_F_surv_YFB_k()'s ",
            "EBeta_k/EBeta2_k arguments are scalars, and `EBeta[k]` on a K x C_beta ",
            "cohort-beta matrix would silently index the wrong (flattened) element ",
            "rather than error. alpha_F > 0 is not the default and has no cohort-beta ",
@@ -590,6 +614,13 @@ fit_cox_on_yf <- function(Y, time, status,
     converged  = FALSE,
     n_iter     = max_iter
   )
+  if (trace_supervision) {
+    trace_names <- c("beta_mean", "beta_second", "shareA_median", "shareA_p90",
+                     "shareB_median", "shareB_p90", "shareA_unweighted_median",
+                     "sd_YF", "norm_F", "norm_L")
+    history$trace <- setNames(
+      lapply(trace_names, function(nm) matrix(NA_real_, max_iter, K)), trace_names)
+  }
 
   if (verbose) {
     cat("=== Cox-on-YF (Cluster B) — Factor-Wise CAVI ===\n")
@@ -730,13 +761,32 @@ fit_cox_on_yf <- function(Y, time, status,
                                       YtWY_diag    = YtWY_diag,
                                       YtWz_no_k    = YtWz_no_k,
                                       prior_family = prior_LF,
-                                      alpha        = alpha_F)
+                                      alpha        = alpha_F,
+                                      w_surv       = w_S)
         EF[, k]      <- res_F$mean
         EF2[, k]     <- res_F$second
         EF_aug[, k]  <- res_F$mean    # keep augmented matrix in sync
         EF2_aug[, k] <- res_F$second
         kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
                                      res_F$A, res_F$x, res_F$mean, res_F$second)
+        if (trace_supervision) {
+          sA  <- F_w_surv * res_F$A_surv / res_F$A
+          bg  <- abs(F_w_gen * res_F$B_gen); bs <- abs(F_w_surv * res_F$B_surv)
+          sB  <- ifelse(bg + bs > 0, bs / (bg + bs), 0)
+          sA0 <- res_F$A_surv / (res_F$A_gen + res_F$A_surv)
+          history$trace$shareA_median[iter, k] <- stats::median(sA)
+          history$trace$shareA_p90[iter, k]    <- stats::quantile(sA, 0.9, names = FALSE)
+          history$trace$shareB_median[iter, k] <- stats::median(sB)
+          history$trace$shareB_p90[iter, k]    <- stats::quantile(sB, 0.9, names = FALSE)
+          history$trace$shareA_unweighted_median[iter, k] <- stats::median(sA0)
+        }
+      }
+      if (trace_supervision) {
+        history$trace$beta_mean[iter, k]   <- EBeta[k]
+        history$trace$beta_second[iter, k] <- EBeta2[k]
+        history$trace$sd_YF[iter, k]       <- stats::sd(as.vector(Y %*% EF[, k]))
+        history$trace$norm_F[iter, k]      <- sqrt(sum(EF[, k]^2))
+        history$trace$norm_L[iter, k]      <- sqrt(sum(EL[, k]^2))
       }
 
     }  # end k-loop
@@ -835,6 +885,8 @@ fit_cox_on_yf <- function(Y, time, status,
       history$delta_Beta <- history$delta_Beta[1:iter]
       history$delta_elbo_rel <- history$delta_elbo_rel[1:iter]
       history$factor_pve <- history$factor_pve[1:iter, , drop = FALSE]
+      if (trace_supervision)
+        history$trace <- lapply(history$trace, function(m) m[1:iter, , drop = FALSE])
       break
     }
 
