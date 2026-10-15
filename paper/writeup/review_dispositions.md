@@ -121,3 +121,29 @@ Both corrected formulas appear in HTML; PDF pages 3 and 25 were inspected as
 images. Only those two pages' extracted text changed. The PDF remains 39 pages,
 with the main text ending on p.24, algorithms on pp.4/7 and every table on its
 previous single page. Revisit markers remain balanced and nested.
+
+## Final editorial check (`final_editorial_check.md`)
+
+Andrew asked for the required corrections E1–E5 and Methods cuts M1–M4. Suggestions O1–O4 and cut M5 were not applied.
+
+| Item | Disposition | Change |
+|---|---|---|
+| E1 Table 7 caption versus row label | **Fixed** | The caption now says "the single-block model is a fit of the model of @sec-single-model…". |
+| E2 Base model missing from Comparators | **Fixed** | §2.3 now lists four further arms, starting with the base multimodal model (no feature intercepts or factor removal; nonnegative loadings; moment-based prior updates). |
+| E3 Unsupported claim in Continuing work | **Fixed** | Item 1 now rests on the reported multimodal result (survival enters the loading update, but the planted low-variance program was not recovered) and gives the mechanisms as plausible reasons, not findings. |
+| E4 Uncited exhibits | **Fixed** | Table 1 is cited in Notation, Table 10 in A.11, and Table 11 in B.13. A scripted check finds no uncited table or figure and no dangling reference. |
+| E5 Abbreviations at first prose use | **Fixed** | §2.1 defines ICGC and PACA-AU in its first sentence and CpG at its first use. |
+| M1 Algorithms out of the main text | **Applied** | Algorithms 1 and 2, with their Revisit markers, now open Appendices A and B under "Fitting algorithm". Each still fits on one PDF page (p.23 and p.32). Methods keeps a short "Fitting" paragraph per model with the update order, the evaluated settings and a link. Simulation and Table 6 references read "Algorithm 2, Appendix B". |
+| M2 Single-modality predictor and Cox approximation | **Applied** | The sweep-fixed normalizer, ridge and zero-column details are left to A.1/A.10. The `@eq-cox-working` display is removed; Algorithm 1 now cites @eq-a-working. Methods keeps @eq-zf, the fixed-covariate and stored-$D_*$ statements, and a statement that the Poisson-style diagonal curvature is not the second-order Taylor expansion. |
+| M3 Multimodal removal | **Applied** | The @eq-mm-elbo display moved to B.11, under a new anchor `sec-appendix-b-removal`; references from §3.5 and B.11 still resolve. Methods describes the score in words and keeps every qualification: plug-in survival term, cached KL penalties against earlier priors, does-not-decrease rule, unconverged fits, $K > 1$, and no evidence or ELBO guarantee. |
+| M4 Approximations subsection | **Applied** | §1.6 is removed. Limitations now says neither algorithm is exact coordinate ascent on one ELBO or guaranteed to increase its monitored quantity. The Jensen and variance-penalty discussion remains in B.11. |
+
+**Layout.**
+- Figure 5 now follows the paragraph that cites it, and the "evidence therefore supports…" paragraph moved below Table 9. Both moves remove page-sized gaps around the large multimodal programs table.
+- A.11 starts on a fresh page, because the earlier space reserve printed a stray table header.
+- No table splits across pages or repeats its header.
+- To fit the page, Continuing work items 1, 3 and 4 were shortened. Each still states its aim, and item 3 keeps "evaluated in replicated simulations".
+
+**Result:** the PDF is 39 pages. The main text runs from p.1 to p.22 (from p.24 before these cuts). Appendix A starts on p.23 and Appendix B on p.32.
+
+**Still open:** the main text is still above the 15–20-page target. Further reductions would need M5, condensing §2.2 Simulation designs, or O1–O4, all at Andrew's discretion.

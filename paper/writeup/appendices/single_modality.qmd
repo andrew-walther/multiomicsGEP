@@ -8,6 +8,42 @@ This appendix starts from the likelihood, priors and variational family of the s
 <!-- REVISIT R2 END -->
 <!-- REVISIT R1 END -->
 
+## Fitting algorithm {#sec-appendix-a-alg .unnumbered}
+
+<!-- REVISIT R1 START -->
+<!-- REVISIT R2 START -->
+
+::: {.algorithm}
+```{=latex}
+\par\noindent\begin{minipage}{\linewidth}
+\setlength{\parskip}{0.5em}
+```
+
+**Algorithm 1.** Single-modality fit and prediction.
+
+*Inputs:* training matrix $Y$ standardized within cohort; times and event indicators $(t_i, \delta_i)$; starting rank $K$; weights $\alpha$, $\alpha_F$; tolerance $\epsilon$; iteration cap $T$.
+
+1. Initialize $\bar L$ and $\bar F$ from the absolute values of the leading $K$ left and right singular vectors of $Y$, each scaled by the square root of its singular value. Set $\bar{\tilde\beta} = 0$ and $\tau_j = 1/\widehat{\mathrm{var}}(y_{\cdot j})$.
+2. For sweeps $r = 1, \dots, T$:
+    a. Form $D^{(r)}$ and $\tilde Z^{(r)} = Y\bar F D^{-1}$, the predictor $\hat\eta = \tilde Z\bar{\tilde\beta}$, and the working quantities $(w, z)$ of @eq-a-working. Hold these fixed for the rest of the sweep.
+    b. For $k = 1, \dots, K$:
+        i. update $q(\tilde\beta_k)$ by empirical-Bayes normal means with pseudo-observation $x = B/A$ and standard error $A^{-1/2}$, where $A = \alpha\sum_i w_i\tilde Z_{ik}^2$ and $B = \alpha\sum_i w_i\tilde Z_{ik}(z_i - \sum_{l \ne k}\tilde Z_{il}\bar{\tilde\beta}_l)$;
+        ii. update $q(L_{\cdot k})$ from the reconstruction residual that excludes factor $k$;
+        iii. update $q(F_{\cdot k})$ from the reconstruction residual, plus the survival term with weight $\alpha_F$.
+    c. Update $\tau_j = n / \sum_i E_q(y_{ij} - \sum_k L_{ik}F_{jk})^2$.
+    d. Compute the monitoring statistic $J_r$ ([Appendix A.9](#sec-appendix-a-objective)). After sweep 5, stop if $|J_r - J_{r-1}| / |J_{r-1}| < \epsilon$.
+3. Fix the risk direction once from training data (@sec-orientation).
+
+*Outputs:* $\bar L$, $\bar F$, stored norms $D_*$, $\bar{\tilde\beta}$, $\tau$. *Prediction:* for a new patient with data $y_{\mathrm{new}}$ standardized within its own cohort and restricted to the measured training features $\mathcal G$, $\eta_{\mathrm{new}} = y_{\mathrm{new},\mathcal G}^\top\bar F_{\mathcal G}D_*^{-1}\bar{\tilde\beta}$, with every quantity fixed from training.
+
+```{=latex}
+\end{minipage}
+```
+:::
+
+<!-- REVISIT R2 END -->
+<!-- REVISIT R1 END -->
+
 ## A.1 Model, target and evaluated algorithm {.unnumbered}
 
 <!-- REVISIT R1 START -->
@@ -294,11 +330,11 @@ $D_*$ differs slightly from the norms of the final $\bar F$ (by less than $2\tim
 
 <!-- REVISIT R2 END -->
 
-```{=latex}
-\needspace{0.45\textheight}
-```
+{{< pagebreak >}}
 
 ## A.11 Joint target and evaluated algorithm {.unnumbered}
+
+@tbl-math-vs-impl compares the joint target with the evaluated algorithm, component by component.
 
 <!-- REVISIT R1 START -->
 <!-- REVISIT R2 START -->

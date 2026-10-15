@@ -141,7 +141,9 @@ PDF and 300-dpi PNG. Codex then verified the revision
 (dispositions in `paper/writeup/review_dispositions.md`), including the zero-column normalized target,
 the protected multimodal precision floor, completed derivation steps, local
 caption definitions and unbroken algorithms and tables. Remaining issue: the PDF
-main text is 24 pages (down from 27) against a 15–20-page target. No model-fitting experiment or algorithm change is part of this
+main text is 22 pages (down from 27) against a 15–20-page target, after a final
+editorial check (`paper/writeup/final_editorial_check.md`) moved both algorithms
+and derivation-level detail into the appendices. No model-fitting experiment or algorithm change is part of this
 writing task. The second verification (`paper/writeup/verification_round2.md`)
 confirmed the scientific corrections, derivations, captions and pagination. Its
 two minor corrections are applied: the first sweep-normalizer formulas now

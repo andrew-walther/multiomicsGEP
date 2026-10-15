@@ -4,6 +4,43 @@
 
 This appendix derives the updates of the evaluated multimodal framework from its likelihood, priors and variational family, ending each coordinate update at the normal-means inputs $x = B/A$ and $s = A^{-1/2}$. It uses the notation and the general results of Appendix A: the reduction to normal means and the KL identity (A.3), point-exponential posteriors (A.4), and the normal coefficient prior (A.5).
 
+## Fitting algorithm {#sec-appendix-b-alg .unnumbered}
+
+<!-- REVISIT R3 START -->
+<!-- REVISIT R2 START -->
+
+::: {.algorithm}
+```{=latex}
+\par\noindent\begin{minipage}{\linewidth}
+\setlength{\parskip}{0.5em}
+```
+
+**Algorithm 2.** Multimodal fit with factor removal, and prediction.
+
+*Inputs:* training blocks $Y_m$ on their measured scales; $(t_i, \delta_i)$; starting rank $K_{\mathrm{init}}$; tolerance $\epsilon$; outer cap $T$; inner sweeps $S$.
+
+1. Initialize $\mu_m$ at the column means; $\bar L$ and $\bar F_m$ from the absolute leading singular vectors of the concatenated centered blocks; $\tau_{mj}$ from the pooled variance of each block; and $\bar\beta$ from a Cox fit on standardized initial projections, transformed back to the projection scale.
+2. For outer sweeps $r = 1, \dots, T$:
+    a. Re-estimate $\mu_m$ and re-center $\tilde Y_m$. Compute $\bar Z$, $\mathrm{Var}(Z)$, $\bar\eta$, the working curvature $w_i$ and the linear term $h_i = u_i + w_i\bar\eta_i$. Hold $(w, h)$ fixed for this outer sweep.
+    b. Repeat $S$ inner sweeps; within each, for $k = 1, \dots, K$:
+        i. update $q(L_{\cdot k})$ from both blocks' reconstruction residuals, then refit its point-exponential prior;
+        ii. for each modality, update $q(f_{mjk})$ one feature at a time from the reconstruction and survival terms, refreshing $\bar Z_{\cdot k}$ and $\mathrm{Var}(Z_{\cdot k})$ after each feature, then refit the point-Laplace prior $g_{mk}$;
+        iii. update $q(\beta_k)$ by the normal-prior empirical-Bayes update with $A = \sum_i w_i E(Z_{ik}^2)$ and $B = \sum_i \bar Z_{ik}(h_i - w_i\bar\eta_{i,-k})$;
+        iv. rescale factor $k$ so that $\mathrm{sd}(\bar Z_{\cdot k}) = 1$, unless the projection is numerically constant.
+    c. Update $\tau_{mj} = n / \sum_i E_q(\tilde y_{mij} - l_i^\top f_{mj})^2$.
+    d. Stop if, for each modality, the relative change in $\bar L\bar F_m^\top$ and in $\bar\eta$ is below $\epsilon$.
+3. If $K > 1$, compute the change in @eq-mm-elbo from deleting each factor. If the largest change is $\ge 0$, delete that factor, return to step 2 from the remaining factors' moments and priors, and repeat.
+
+*Outputs:* posterior moments and priors, $\mu_m$, $\tau$, classification. *Prediction:* $\eta_{\mathrm{new}} = \sum_m y_{m,\mathrm{new}}^\top\bar F_m\bar\beta$, with higher values denoting higher risk, a direction fixed before validation. Centering new data at the training intercept would change every score by the same constant and leave the concordance index unchanged.
+
+```{=latex}
+\end{minipage}
+```
+:::
+
+<!-- REVISIT R2 END -->
+<!-- REVISIT R3 END -->
+
 ## B.1 Model and target {.unnumbered}
 
 For modalities $m \in \{\mathrm{expr}, \mathrm{meth}\}$, patients $i$, features $j$ and factors $k$,
@@ -203,11 +240,15 @@ $$
 $$
 and the algorithm stops when every such change is below $10^{-4}$, or after 500 outer sweeps. These quantities are invariant to the map of B.9, which is why they are used instead of changes in posterior moments.
 
-## B.11 Removal score and factor removal {.unnumbered}
+## B.11 Removal score and factor removal {#sec-appendix-b-removal .unnumbered}
 
 <!-- REVISIT R4 START -->
 
-When the coordinate loop ends, by meeting the criterion or by reaching the cap, the removal check computes for each factor $k$
+The removal score is
+$$
+\mathcal{S} = \sum_{m,j}\Big[\tfrac n2 \log\tfrac{\hat\tau_{mj}}{2\pi} - \tfrac{\hat\tau_{mj}}2 \sum_i E_q(\tilde y_{mij} - l_i^\top f_{mj})^2\Big] + \log \mathrm{PL}(\bar\eta) - \sum \mathrm{KL},
+$$ {#eq-mm-elbo}
+with $\hat\tau$ at its maximum-likelihood value and the sum of KL terms taken over all coordinates. When the coordinate loop ends, by meeting the criterion or by reaching the cap, the removal check computes for each factor $k$
 $$
 \Delta_k = \mathcal S\big(\text{factors} \ne k\big) - \mathcal S\big(\text{all factors}\big),
 $$ {#eq-b-delta}
@@ -226,6 +267,8 @@ For a new patient with features aligned to the training features, $\eta_{\mathrm
 <!-- REVISIT R2 END -->
 
 ## B.13 Base model and evaluated framework {.unnumbered}
+
+@tbl-mm-reconcile lists the components that distinguish the evaluated framework from the base multimodal model.
 
 | Component | Base multimodal model | Evaluated framework | Section |
 |------------|----------------------|----------------------|------|
