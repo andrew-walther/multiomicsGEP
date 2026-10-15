@@ -15,6 +15,21 @@ selection threshold. The complete rank panel is pre-registered in
 `docs/plans/Round2_attempts_log.md`. No adoption is claimed before its results;
 the interim-writeup benchmark and fitting defaults remain unchanged.
 
+## 2026-10-15 — Reject full-state protected pruning under the unchanged rule
+
+Andrew's approved additional experiment completed all160 protected Single fits,
+with no execution errors/warnings. Preserving posterior state improves recovery
+from2/20 to15–19/20, demonstrating a material refit-initialization effect.
+It does not meet adoption: K_init5/noise.25 recovers15/20; five final fits cap;
+high-noise median rank is1 at every starting K. False-positive margins all pass.
+No conditional1-SE run, threshold adjustment or default change follows.
+
+The Single ladder's corrected-survival objective already applies. Further Single
+remedies need review/Andrew's decision; continue the separate Task2 ladder.
+The approved K7/no-pruning fallback can support Task5. Full tables, cap details
+and attempt history are in `docs/plans/Codex_to_Claude_Round2.md` and
+`docs/plans/Round2_attempts_log.md`, attempt5. The benchmark remains unchanged.
+
 ## 2026-10-15 — Complete the corrected rank panel; adopt neither protected model
 
 The 800-cell panel completed without errors/warnings using each model's own

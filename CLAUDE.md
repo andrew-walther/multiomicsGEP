@@ -88,6 +88,6 @@ panel's Longleaf wrapper are documented in the Round 2 attempt history.
 Andrew approved an additional opt-in Task1 remedy after the stage trace:
 `prune_preserve_posterior=TRUE` carries the retained full single-modality state
 into pruning refits. `run_posterior_k_panel.R` evaluates the unchanged 160-cell
-protected single panel against the saved original reference. Treat it as an
-experiment until the attempt log and DECISIONS record an assessment; defaults
-and the benchmark remain unchanged.
+protected single panel against the saved original reference. The completed
+experiment improves recovery but fails the unchanged adoption rule (recovery, convergence and rank); see the attempt log. Defaults and the
+benchmark remain unchanged.

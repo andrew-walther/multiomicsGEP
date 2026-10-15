@@ -1,0 +1,2 @@
+"model","adopted","initialization","reason"
+"single",FALSE,"full_posterior","recovery_pass;convergence_pass;rank_pass"

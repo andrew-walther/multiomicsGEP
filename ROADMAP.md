@@ -1012,7 +1012,7 @@ Evidence and independent branch commits:
 - [x] Correct the positive-SD protection boundary and verify unchanged default fits.
 - [x] Locate a supervised single-program loss during a refit after deletion of
   another program, using a pre-registered unchanged-model trace.
-- [ ] Evaluate Andrew's approved full-posterior single refits on the unchanged
+- [x] Evaluate Andrew's approved full-posterior single refits on the unchanged
   160-cell protected panel; retain the recovery, false-positive, convergence
   and true-rank requirements at every starting K/noise group.
 - [ ] Diagnose the multimodal shared-prior collapse on unchanged TCGA inputs;
@@ -1026,3 +1026,6 @@ approval. Attempt designs and outcomes: `docs/plans/Round2_attempts_log.md`.
   convergence (zero execution errors/warnings); neither model meets the full
   adoption rule. Single fails recovery/rank. MM fails median rank at K = 5, noise = 1
   and final convergence at K = 15, noise = 1; intermediate caps remain visible.
+
+The full-state experiment improved recovery but failed the fixed rule; Single
+K selection remains unresolved and needs review before another remedy.

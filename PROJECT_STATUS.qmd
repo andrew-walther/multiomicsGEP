@@ -19,6 +19,16 @@ execute:
   warning: false
 ---
 
+## Full-state pruning result (2026-10-15)
+
+The160-cell full-state Single rerun improves recovery to15–19/20 from2/20,
+but fails the fixed recovery, convergence and retained-rank requirements.
+Every false-positive margin passes; five final fits and25 intermediate stages
+cap. No protected configuration or new K is adopted. The complete table is in
+`docs/plans/Codex_to_Claude_Round2.md`. Single K selection needs a decision before
+an additional remedy; Task2's training-only multimodal diagnosis is next.
+The benchmark and fitting defaults remain unchanged.
+
 ## Completed Round2 protected-pruning panel (2026-10-15)
 
 All800 cells completed with zero errors/warnings. Neither model is adopted:

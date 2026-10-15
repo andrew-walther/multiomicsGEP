@@ -7,10 +7,13 @@ or main branches are authorized. The benchmark is unchanged and no replacement
 configuration has been proposed or approved.
 
 Current checkpoint: Task0 and Task7 are complete. Task1's original800-cell
-panel rejects both protected models; the two-case trace identifies a single
-refit loss. Andrew approved the opt-in full-state remedy, now ready for its
-160-cell rerun after573/0 tests. Task2 diagnostic code is prepared but not yet
-applied or run; Tasks3–6 remain pending. No benchmark replacement is proposed.
+panel rejects both protected models. The approved 160-cell full-state Single
+rerun improves recovery but fails recovery/convergence/rank and is not adopted.
+Single K selection needs review before an additional remedy; the approved
+K7/no-pruning fallback remains available. Task2 diagnostic code is prepared but
+not yet applied or run; Tasks3–6 remain pending. No benchmark replacement is
+proposed. All ten benchmark manifest entries and the immutable tag were verified
+unchanged at this checkpoint (2026-10-15).
 The chronological updates below retain the earlier execution failures; the
 complete attempt history is in `Round2_attempts_log.md`.
 
@@ -273,3 +276,42 @@ The new path returns n×K and p×K posterior moments, K beta moments, p precisio
 persistent loading priors and the shared beta prior; all fields use the same
 retained indices. Existing coordinate updates and criteria are unchanged.
 No posterior-state candidate result is claimed yet; execution follows this commit.
+
+
+### Task1-5 completed: full-state refits improve recovery but are not adopted
+
+All 160 new fits completed with zero execution errors or warnings. The comparison
+retains all 160 original reference and 160 mean-only protected rows. Full-state
+recovery is 15–19/20 instead of 2/20, and every false-positive margin passes.
+However, K_init=5/noise=.25 misses the recovery threshold (15/20); five final
+fits hit the 300-iteration ELBO cap; high-noise median K is 1 at every starting K.
+The candidate therefore fails recovery, convergence and rank. No 1-SE run is
+eligible, no configuration is adopted, and the benchmark/defaults stay unchanged.
+
+| K_init | Noise | Recovery /20 | False active | Reference + .5 | Final ELBO converged /20 | Median K | Intermediate caps |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5 | 0.25 | 15 | 1.15 | 1.75 | 19 | 3 | 2 |
+| 5 | 1 | 18 | 0.20 | 0.90 | 20 | 1 | 0 |
+| 7 | 0.25 | 17 | 1.10 | 1.65 | 19 | 3 | 4 |
+| 7 | 1 | 19 | 0.15 | 0.85 | 19 | 1 | 5 |
+| 10 | 0.25 | 17 | 1.15 | 1.80 | 19 | 3 | 6 |
+| 10 | 1 | 19 | 0.20 | 0.90 | 19 | 1 | 8 |
+| 15 | 0.25 | 16 | 1.10 | 1.80 | 20 | 3 | 0 |
+| 15 | 1 | 19 | 0.30 | 0.90 | 20 | 1 | 0 |
+
+The five final caps are seed20261026 at noise .25 with K_init5/7/10 (final K3),
+and seed20261017 at noise1 with K_init7/10 (final K2). Intermediate caps total25,
+reported separately from returned-fit flags. Outputs:
+`results/benchmark_sim/outputs/k_selection/round2/attempt5_posterior/`;
+`adoption.csv` records `adopted=FALSE`. Original reference table MD5:
+`d45c207936855fe274ad14209474bf34`.
+
+This completes Andrew's additional full-state experiment. The listed Single
+ladder has no remaining applicable remedy: its survival objective is already
+variance-corrected, and the failure is not convergence alone. Further changes
+require a new decision; the approved K7/no-pruning fallback remains available
+for Task5. Continue Task2's separate multimodal diagnosis and prescribed ladder.
+No external data were scored or used for this assessment.
+
+Task1-5 result checkpoint: fresh full suite **573 passed, 0 failed**. All ten
+benchmark manifest checks pass; annotated tag and peeled commit remain unchanged.

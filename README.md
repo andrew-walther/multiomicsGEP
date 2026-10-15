@@ -434,3 +434,7 @@ because projection uncertainty enters the beta precision, and the retained beta
 sets the first Cox working predictor. This path currently supports canonical
 fits without cohort offsets or frozen-F iterations. It changes neither the
 model nor its adoption criteria and is not an approved benchmark replacement.
+
+The completed 160-cell full-state panel is not adopted: recovery improved but
+recovery, convergence and rank requirements did not all pass. Consult the Round2
+attempt history before another experiment; existing output folders refuse overwrite.
