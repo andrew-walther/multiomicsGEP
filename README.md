@@ -476,3 +476,10 @@ benchmark-linked results and the open remedy ladder. Andrew deferred Task3's
 real-data DeSurv head-to-head for review. Prepared DeSurv commands above must
 not be executed without renewed authorization; no real-data DeSurv fit or
 external scoring has run. Task4 omits DeSurv as explicitly approved.
+
+The Round2 comparator rerun is
+`Rscript results/benchmark_sim/run_supervision_comparators.R 6`. It uses the
+unchanged five methods with explicit EBMF rank0/rank1 rules and per-arm errors,
+writing a fresh `results/benchmark_sim/outputs/supervision_comparators/round2/`
+folder. Read the preregistered design before executing; old outputs are never
+overwritten. DeSurv is omitted as Andrew approved.

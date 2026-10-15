@@ -571,3 +571,27 @@ preserved and reported, with no unilateral correction.
 Task3 preparation/defer checkpoint: fresh full suite **593 passed,0 failed**,
 including all nine author-adapter/driver tests. Both Longleaf scripts pass
 bash syntax checks. No scientific DeSurv run was started.
+
+## Task4 preparation — clean five-comparator rerun
+
+Andrew approved omitting DeSurv. The original five-arm calibrated panel is
+unchanged; new per-arm checkpoints prevent an EBMF/Cox failure from discarding
+other methods. Rank0 means not recovered, C undefined, retained in n20;
+rank1 uses ordinary Cox and marks lasso inapplicable. The runner reports
+rank0/rank1/rank>=2 and fitting errors separately. Six focused intent tests
+pass after reproducing the original small-rank failures. The attempt history
+records the fixed design before execution. No scientific rerun has begun.
+
+The added row/try helpers create explicit failures; the EBMF helper scores
+three dependent arms without erasing molecular recovery on a Cox error.
+The summary helper reports full sample counts and labelled finite-metric
+counts, and the rank helper counts each EBMF dataset once. Inputs are the
+unchanged simulation bed and real retained loading matrix; outputs are five
+rows per dataset plus fixed-denominator tables. A valid rank0 flash object
+cannot pass through ldf(), so its p-by-zero loadings are constructed directly.
+Cox warnings and fitting errors remain visible. Lasso's nonzero count is
+reported without treating it as Bayesian credibility. No new package is used.
+
+Task4 final pre-run verification: fresh full suite **599 passed,0 failed**,
+including all six small-rank/error-isolation intent tests. The five-arm design
+is committed before the40-dataset scientific rerun.

@@ -78,6 +78,7 @@ test_files <- c(
   "tests/test_fit_yf_supervision.R",
   "tests/test_yf_posterior_start.R",
   "tests/test_supervision_comparators.R",
+  "tests/test_comparator_small_rank.R",
   "tests/test_supervised_robustness.R",
   "tests/test_k_selection_panel.R",
   "tests/test_single_pruning_trace.R",

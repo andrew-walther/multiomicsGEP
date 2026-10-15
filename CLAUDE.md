@@ -108,3 +108,7 @@ benchmark-linked results and the open remedy ladder. Andrew deferred Task3's
 real-data DeSurv head-to-head for review. Prepared DeSurv commands above must
 not be executed without renewed authorization; no real-data DeSurv fit or
 external scoring has run. Task4 omits DeSurv as explicitly approved.
+
+Task4's comparator runner now preserves all method rows and full denominators
+for EBMF rank0/rank1 and isolated failures. The Round2 attempt log controls
+its five-arm rerun; DeSurv is omitted by Andrew's explicit decision.

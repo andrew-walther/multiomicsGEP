@@ -499,3 +499,46 @@ unchanged. The result checkpoint adopts no configuration.
 Task3 preparation/defer checkpoint: fresh full suite **593 passed,0 failed**,
 including all nine author-adapter/driver tests. Both Longleaf scripts pass
 bash syntax checks. No scientific DeSurv run was started.
+
+## Task4 bounded rerun — fixed small-rank handling and full denominators
+
+Before scientific execution: this design and all code/tests are committed.
+The original calibrated bed, sample sizes, seed vector20261016:20261035,
+noise .25/1, p50, beta3=3.3, and five original methods are unchanged. Andrew
+explicitly approved omitting DeSurv from signed-Gaussian data; Task3's
+separate real-data comparison is deferred. This bounded task is independent
+of Task2's open remedy ladder and follows its completed diagnostic checkpoint.
+
+Exact changes: preserve every method row even when another arm errors; use
+ordinary Cox for an EBMF rank1 fit and explicitly mark lasso inapplicable;
+for rank0, keep all rows in the20-dataset denominator, count recoveryFALSE,
+C=NA. Check actual flash$n_factors before ldf(), which throws on valid rank0.
+Record numbers of rank0/rank1/rank>=2 separately from failures. Cox-z selects
+the two-step program; lasso uses that ranking and its own coefficient sign.
+Lasso nonzeros are not posterior credible intervals, so their false-active
+quantity staysNA. Method-specific warnings/errors stay explicit.
+
+Arms: EBMF alone, EBMF->Cox, EBMF->lasso-Cox, PCA->Cox(K7), unchanged selected
+canonical shared-point-Laplace supervised model(K7,no pruning,w_S1,warmup10).
+There are40 independent datasets,200 method rows. Recovery and C definitions
+are unchanged. Summaries keep n20 per method/noise, with denominators for
+finite C/correlation explicitly labelled; errors count as not recovered and
+cannot silently disappear. No new adoption rule or tuning occurs here.
+
+Verification: six new tests were RED against the old runner, then GREEN in
+an isolated draft. A first draft passed5/6; the remaining failure exposed
+ldf() on rank0, corrected using the fitted object's actual retained count.
+Tests cover rank0, rank1, isolated Cox and supervised errors, full denominator,
+and distinguishing EBMF errors from zero factors. No package code changes.
+Full-suite verification is required before committing/running.
+
+Run: Rscript results/benchmark_sim/run_supervision_comparators.R 6.
+Fresh output results/benchmark_sim/outputs/supervision_comparators/round2/;
+40 per-dataset checkpoints, results.csv, summary.csv, ebmf_rank_counts.csv.
+Fresh-folder guard prevents overwrites. Six serial PSOCK workers, one dataset
+per task; no nested BLAS parallelism. All tables write before any final
+nonzero exit for retained per-arm errors. No external cohorts or real data.
+
+Task4 final pre-run verification: fresh full suite **599 passed,0 failed**,
+including all six small-rank/error-isolation intent tests. The five-arm design
+is committed before the40-dataset scientific rerun.
