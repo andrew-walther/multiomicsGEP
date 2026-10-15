@@ -112,3 +112,37 @@ lasso, cross-validated) recovers the planted direction in 0/20 or 4/20 seeds at 
 and about 84 events, the survival data do not determine the direction well enough for 80% recovery
 at the lower noise level, by this or any other method. Whether to keep this test bed, calibrate it,
 or set the threshold relative to the survival-only reference is open; C5 waits on that decision.
+
+## Calibrated test bed
+
+The test bed was recalibrated so that the survival data identify the planted direction. The rule
+was fixed in advance: the smallest training size, then the smallest planted coefficient, at which a
+survival-only Cox lasso recovers the planted program in at least 18 of 20 seeds at both noise
+levels. Only n = 400 with planted log hazard ratio 3.3 qualifies (lasso 18/20 and 20/20). The planted
+program still explains under 0.5% of expression variance. The recovery threshold stays at 80%.
+
+| Arm | Recovered (0.25; 1) | Null survival-active / fit | Converged | Validation C |
+|---|---|---|---|---|
+| α_F = 0 | 1; 1 | 1.15; 0.35 | 20; 20 | 0.641; 0.540 |
+| canonical, w_S = 1 (C2) | 18; 20 | 1.35; 0.35 | 20; 19 | 0.771; 0.761 |
+| + supervised start | 20; 20 | 1.00; 0.30 | 20; 19 | 0.770; 0.761 |
+| + shared normal β prior, warm-up | 20; 20 | 1.60; 0.65 | 20; 20 | 0.769; 0.761 |
+| **+ shared point-Laplace β prior, warm-up** | **17; 19** | **1.10; 0.25** | **20; 20** | **0.763; 0.765** |
+| + point-normal, slab SD 1 | 17; 19 | 1.20; 0.30 | 20; 18 | 0.763; 0.766 |
+| fixed N(0, 2²) (reference) | 20; 20 | 1.70; 0.70 | 20; 20 | 0.771; 0.760 |
+
+: Calibrated test bed (n = 400, planted log HR 3.3; oracle C 0.85 and 0.95). {#tbl-cal}
+
+Without survival in the loadings, the planted program is missed (1/20), and validation C falls to
+0.64 and 0.54. Every survival-supervised arm recovers it in most seeds and reaches validation C of
+about 0.76–0.77.
+
+The chosen configuration is the supervised start with a shared point-Laplace prior on β, which meets
+every simulation criterion:
+- recovery 85% and 95%;
+- fewer null survival-active programs than α_F = 0;
+- every fit converges;
+- the most stable updates of all arms.
+
+The normal-prior warm-up arm also passes, with higher recovery but more false positives. The
+real-data check (lower 95% limit of ΔC against α_F = 0 above −0.02) comes next.

@@ -5,7 +5,69 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
-## 2026-10-15 — C3 + C4 fail the success criteria; the test bed limits recovery (awaiting decision)
+## 2026-10-15 — Calibrated test bed; supervised start with a shared point-Laplace β prior meets the simulation criteria
+
+**Decision 1 (Andrew, 2026-10-15): calibrate the test bed, keep the 80% threshold.** The rule, fixed
+before the grid was run: take the smallest training size, then the smallest planted coefficient, at
+which a survival-only Cox lasso on all genes recovers the planted program (|cor| ≥ 0.7) in ≥ 18/20
+seeds at both noise levels. Grid: n ∈ {120, 240, 400} × planted log hazard ratio β₃ ∈ {1.10, 1.65,
+2.2, 3.3} (`run_supervision_ceiling.R`, `outputs/supervision_diagnostics/ceiling/summary.csv`).
+Only **n = 400, β₃ = 3.3** qualifies: the lasso recovers 18/20 at noise 0.25 and 20/20 at noise 1,
+with about 280 events. Training size alone did not suffice; at β₃ = 1.10 the lasso stays at
+16/20 even with n = 1000.
+
+The planted program's share of expression variance does not depend on β₃: it is at most 0.49%
+(noise 0.25) and 0.04% (noise 1). The oracle validation C is 0.85 and 0.95. `simulate_multimodal_yfb_data()`
+gained an optional `beta` override (NULL keeps every scenario unchanged).
+
+A secondary observation: recovery is scored against the planted loadings F₃. On z-standardized
+data the prognostic direction is F₃ ⊙ sd_j, which correlates 0.94 (median) with F₃. Scoring against
+it would add about two seeds of lasso recovery at noise 0.25. The criterion was left as written.
+
+**Results on the calibrated bed** (20 seeds per noise level; `c2_n400_b3.3`, `c3c4_n400_b3.3`;
+α_F = 0 baseline null survival-active per fit: 1.15 at noise 0.25, 0.35 at noise 1):
+
+| Arm | Recovered (0.25; 1) | Null survival-active | Converged | max ‖F‖ / start | Validation C (0.25; 1) |
+|---|---|---|---|---|---|
+| α_F = 0 | 1; 1 | 1.15; 0.35 | 20; 20 | 1.0; 1.1 | 0.641; 0.540 |
+| C2 canonical, w_S = 1 | 18; 20 | 1.35; 0.35 | 20; **19** | 19; 7.5 | 0.771; 0.761 |
+| C3 supervised start | 20; 20 | 1.00; 0.30 | 20; **19** | 19; 30 | 0.770; 0.761 |
+| C3 start + shared normal β prior, warm-up | 20; 20 | 1.60; 0.65 | 20; 20 | 12; 28 | 0.769; 0.761 |
+| **C4 start + shared point-Laplace β prior, warm-up** | **17; 19** | **1.10; 0.25** | **20; 20** | **4.1; 3.3** | **0.763; 0.765** |
+| C4 start + point-normal, slab SD 1 | 17; 19 | 1.20; 0.30 | 20; **18** | 3.1; 3.3 | 0.763; 0.766 |
+| fixed N(0, 2²) reference | 20; 20 | **1.70**; 0.70 | 20; 20 | 12; 28 | 0.771; 0.760 |
+
+‖L_k‖ never exceeds 1.55 times the largest starting program norm in any arm. Under
+canonicalization ‖F_k‖ legitimately grows when a program turns toward a low-variance direction,
+because unit score SD then needs larger loadings. β̃ and the within-update score SD stay bounded in
+every canonical arm, so no arm has a runaway in the sense of divergence. The runaway metric was
+corrected to compare against the largest starting program norm: the per-program ratio misfired for
+the supervised program, which starts with ‖L‖ ≈ 4e-4. The non-converged fits are one seed
+(20261017, noise 1), which reaches the 300-iteration cap in three arms while recovering the planted
+program with bounded coefficients.
+
+**Decision 2: the single-modality survival-supervised configuration** is
+`fit_cox_on_yf(canonicalize = TRUE, w_S = 1, init_supervised = TRUE, beta_prior_mode = "shared",
+prior_beta = "point_laplace", beta_warmup = 10, prior_LF = "point_laplace")`. By the decided order,
+C2 alone fails (convergence 19/20). C3 + C4 is the next step, so work stops there and C5 and C5b are
+not needed. Two C3 + C4 arms meet every simulation criterion. The point-Laplace prior is chosen
+because:
+- it has the most margin on the criteria that are close: false positives are below the α_F = 0
+  baseline (the normal warm-up arm is 0.05 inside the +0.5 limit), and every fit converges;
+- its updates are the most stable: the largest score SD right after an F update is 2.6, against
+  7–19 for the normal priors;
+- it is the prior the 2026-10-15 order anticipated: a heavier tail leaves a real effect largely
+  unshrunk and keeps null programs at 0.
+
+Traded away: recovery is 17/20 and 19/20, against 20/20 for the normal warm-up arm, so the margin on
+the recovery threshold is one seed at noise 0.25. The real-data ΔC criterion is still open (C7/M8).
+
+**Not yet the default.** The defaults of `fit_cox_on_yf()` are unchanged until the real-data
+criterion is checked. Every reported result still uses α_F = 0.
+
+---
+
+## 2026-10-15 — C3 + C4 fail the success criteria; the test bed limits recovery (superseded by the calibrated test bed, entry above)
 
 **Result.** Supervised initialization (C3), the β-prior warm-up and the β prior families (C4), all
 under equal weights (w_S = 1) on the canonical configuration, fail the pre-specified criteria.

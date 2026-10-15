@@ -9,7 +9,10 @@
 # Dependencies: survival, ebnm, parallel; code/fit_cox_on_yf.R,
 #               code/predict_cox_on_yf.R, code/concordance_ci.R,
 #               code/simulate_multimodal_yfb.R
-# Run: Rscript results/benchmark_sim/run_supervision_diagnostics.R <arm_set> [n_seeds] [cores]
+# Run: Rscript results/benchmark_sim/run_supervision_diagnostics.R <arm_set> [n_seeds] [cores] [n_train] [beta3]
+#      n_train and beta3 (planted log hazard ratio) default to the original
+#      bed (120, 1.10); the calibrated bed is 400, 3.3 (DECISIONS.md
+#      2026-10-15), written to <arm_set>_n400_b3.3.
 # ============================================================
 #
 # Data (fixed for every arm set): simulate_multimodal_yfb_data(
@@ -33,7 +36,8 @@
 #   c_validation  C on the validation cohort, orientation frozen at fit time
 #   n_programs    programs with nonzero loadings (||EF_k||^2 > 1e-8)
 #   converged     fit_cox_on_yf() convergence flag; runaway: max over
-#                 iterations of ||F_k|| or ||L_k|| relative to iteration 1.
+#                 iterations and programs of ||F_k|| or ||L_k|| relative to the
+#                 largest program norm at iteration 1.
 #                 Under canonicalization ||F_k|| legitimately grows when a
 #                 program turns toward a low-variance direction, so instability
 #                 is read from max_sd_YF (largest sd(Y EF_k) right after an F
@@ -88,10 +92,14 @@ arm_set <- if (length(args) >= 1) args[1] else "c1"
 n_seeds <- if (length(args) >= 2) as.integer(args[2]) else 10L
 cores   <- if (length(args) >= 3) as.integer(args[3]) else 6L
 NOISE   <- if (arm_set == "c1") 0.25 else c(0.25, 1)
+N_TRAIN <- if (length(args) >= 4) as.integer(args[4]) else 120L
+BETA3   <- if (length(args) >= 5) as.numeric(args[5]) else 1.10
 if (!arm_set %in% names(ARM_SETS)) stop("Unknown arm set: ", arm_set)
 arms    <- ARM_SETS[[arm_set]]
 K_FIT   <- 7L
-out_dir <- file.path("results/benchmark_sim/outputs/supervision_diagnostics", arm_set)
+out_dir <- file.path("results/benchmark_sim/outputs/supervision_diagnostics",
+                     if (N_TRAIN == 120L && BETA3 == 1.10) arm_set
+                     else sprintf("%s_n%d_b%s", arm_set, N_TRAIN, BETA3))
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
 # prior_LF = point_laplace: on z-standardized (signed, centered) data the
@@ -115,7 +123,8 @@ load_code <- function() {
 #' @return list(Ytr, Yva, time/status for both cohorts, F_true, beta_true, pve3)
 make_testbed <- function(seed, noise = 0.25) {
   d <- simulate_multimodal_yfb_data("low_variance_prognostic_factor",
-                                    n_train = 120L, n_validation = 120L,
+                                    n_train = N_TRAIN, n_validation = 120L,
+                                    beta = c(0, 0, BETA3),
                                     p_expression = 50L, p_methylation = 50L,
                                     seed = seed, truncate = FALSE, noise_scale = noise)
   Ytr_raw <- d$training$Y$expression
@@ -144,7 +153,10 @@ score_fit <- function(fit, tb) {
   active_z <- abs(fit$EBeta) >= 1.96 * beta_sd & beta_sd > 0
   matched  <- if (best_cor[j] >= 0.7) k else integer(0)
   tr <- fit$history$trace
-  rel <- function(m) max(apply(m, 2, function(v) max(v, na.rm = TRUE) / max(v[1], 1e-12)))
+  # Runaway: largest norm of any program at any iteration relative to the
+  # largest program norm at iteration 1 (a per-program ratio misfires for a
+  # program that starts near zero, such as the supervised start)
+  rel <- function(m) max(m, na.rm = TRUE) / max(m[1, ], 1e-12, na.rm = TRUE)
   risk <- predict_cox_on_yf(tb$Yva, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
   elbo <- fit$history$elbo_full
   data.frame(
@@ -205,7 +217,7 @@ load_code()
 cat(sprintf("Arm set %s: %d seeds x %d arms = %d fits on %d cores\n",
             arm_set, n_seeds, length(arms), nrow(grid), cores))
 cl <- makeCluster(cores)
-clusterExport(cl, c("arms", "FIT_DEFAULTS", "out_dir", "load_code", "make_testbed",
+clusterExport(cl, c("arms", "N_TRAIN", "BETA3", "FIT_DEFAULTS", "out_dir", "load_code", "make_testbed",
                     "score_fit", "run_cell", "grid"))
 invisible(clusterEvalQ(cl, load_code()))
 rows <- parLapplyLB(cl, seq_len(nrow(grid)),
