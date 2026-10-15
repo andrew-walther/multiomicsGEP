@@ -12,5 +12,6 @@ Before Round 2, all ten SHA256 entries passed in
 `results/benchmark_snapshot_2026-10-14/`. The annotated benchmark tag resolves to
 `a352f17ca9cff523caa80756aa2af085e62551e1`; neither tag nor snapshot was changed.
 Created `round2/supervised` from clean `feature/supervised-F` at `2bebbd4`.
-Task 0 integration is in progress, using `--no-ff` merges and a full test run
-before each commit. No scientific attempt has run yet.
+Task 0 integration completed in the required order with `--no-ff` merges,
+preserving all entries and tests. Successive full-suite counts were 553, 554,
+556, 559 and 559, all with zero failures. No scientific attempt has run yet.

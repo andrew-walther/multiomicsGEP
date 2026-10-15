@@ -161,6 +161,20 @@ counts and summary arithmetic were independently checked; the current runner
 parses and passes 550 tests. No rerun or tuning was attempted. This execution
 anomaly is documented in the report and `outputs/supervised_robustness/execution_status.md`.
 
+## 2026-10-15 — DeSurv head-to-head blocked by missing implementation
+
+No installed or vendored DeSurv fitter was found in the R libraries, checkout or data folders.
+Prompt A stops at this prerequisite, as instructed; no replacement method is implemented and
+no external-comparison result is claimed. The authors' replication repository documents the
+`rashidlab/DeSurv` companion package; a usable version and its documented tuning/prediction
+interfaces are needed. The nonnegative method's compatibility with the requested centered D4
+inputs must also be established before fitting. Audit: `outputs/desurv_h2h/BLOCKED.md` under
+`results/benchmark_sim/`.
+
+**Controlling configuration from Prompt E (ac572f6 on `m5/k-selection`):** the adoption
+assessment was blocked by unavailable multimodal ELBO convergence. Protected pruning was not
+adopted; starting K remains 7. Subsequent work uses the handoff configurations without tuning.
+
 ## 2026-10-15 — KL sign fix, multimodal supervision (M4), and two open items: single-modality convergence and K selection (awaiting decisions)
 
 **KL sign error in the canonical single-modality objective (fixed).** In `fit_cox_on_yf(canonicalize

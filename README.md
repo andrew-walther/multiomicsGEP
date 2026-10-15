@@ -396,3 +396,10 @@ rerunning. These experiments do not score external cohorts. Run
 
 The recorded D experiment saved all tables but exited 1 after a trailing parse
 error; see the report and `execution_status.md` before treating it as a clean run.
+
+## Round 2 integration
+
+`round2/supervised` integrates the five Round 1 branches and passes 559 tests.
+See `docs/plans/Codex_to_Claude_Round2.md` for current progress and
+`docs/plans/Round2_attempts_log.md` for designs committed before experiments.
+The approved benchmark snapshot and tag remain unchanged.

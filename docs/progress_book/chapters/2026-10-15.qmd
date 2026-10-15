@@ -292,3 +292,11 @@ parse error after a diagnostic-only source edit during execution. Saved fit
 counts and summary arithmetic were independently checked; the current runner
 parses and passes 550 tests. No rerun or tuning was attempted. This execution
 anomaly is documented in the report and `outputs/supervised_robustness/execution_status.md`.
+
+## DeSurv comparison prerequisite
+
+The head-to-head comparison stopped before fitting because no installed or vendored DeSurv
+implementation was available. The authors provide a companion-package repository, but it was
+not installed or reimplemented under this handoff. No C-index or bootstrap table is claimed.
+See `results/benchmark_sim/outputs/desurv_h2h/BLOCKED.md` for searched locations and requirements
+to resume. The protected-pruning assessment did not authorize a configuration change; K remains 7.

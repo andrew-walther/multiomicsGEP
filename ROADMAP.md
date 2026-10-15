@@ -1002,3 +1002,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 Evidence and independent branch commits:
 `docs/reports/Codex_M6_M7_Summary_10_15_26.md`. No configuration change was adopted.
+
+- DeSurv head-to-head prerequisite (2026-10-15): obtain a usable version of the authors'
+  companion package and its tuning/prediction procedure; confirm input-scale compatibility.
+  Audit: `results/benchmark_sim/outputs/desurv_h2h/BLOCKED.md`. No benchmark has been run.

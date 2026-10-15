@@ -40,6 +40,11 @@ the tables. E did not adopt protection or a new K. `m6/robustness` contains the
 training-only robustness runner; current findings belong in `PROJECT_STATUS.qmd`
 and `DECISIONS.md`, not this instruction file.
 
+Round 2 work is cumulative on `round2/supervised`. Its controlling specification is
+`docs/plans/Codex_Handoff_Round2_10_16_26.md`; status and attempts are in
+`docs/plans/Codex_to_Claude_Round2.md` and `docs/plans/Round2_attempts_log.md`.
+The benchmark tag and `results/benchmark_snapshot_2026-10-14/` are immutable.
+
 ## Quick Reference
 
 Active pointers only — completed one-off analyses and dated reports are indexed in `PROJECT_STATUS.qmd`,
