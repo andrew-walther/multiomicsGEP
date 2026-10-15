@@ -19,6 +19,20 @@ execute:
   warning: false
 ---
 
+## Training-only multimodal collapse diagnosis (2026-10-15)
+
+All ten fixed TCGA diagnostic arms completed without execution errors/warnings.
+The selected shared point-Laplace prior becomes an exact point mass at
+outer99/inner1; beta is identically zero from the next inner sweep onward.
+Removing the supervised start still collapses (outer54/inner3). Fixed Laplace
+and shared Normal avoid exact absorption but retain no credible program;
+only the historical per-factor multimodal arm retains one. All five
+multimodal fits hit the unchanged500-iteration output cap with actual molecular
+prediction movement; none is adopted. Full tables include frozen benchmark
+training rows in the Round2 handoff. The prescribed remedy ladder remains open.
+Andrew deferred the separate DeSurv real-data head-to-head for review and
+approved omitting DeSurv from the signed-Gaussian comparator panel.
+
 ## Full-state pruning result (2026-10-15)
 
 The160-cell full-state Single rerun improves recovery to15–19/20 from2/20,

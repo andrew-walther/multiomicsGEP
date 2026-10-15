@@ -10,8 +10,11 @@ Current checkpoint: Task0 and Task7 are complete. Task1's original800-cell
 panel rejects both protected models. The approved 160-cell full-state Single
 rerun improves recovery but fails recovery/convergence/rank and is not adopted.
 Single K selection needs review before an additional remedy; the approved
-K7/no-pruning fallback remains available. Task2 diagnostic code is implemented and verified584/0, with its ten-arm
-training-only diagnosis next; Tasks3–6 remain pending. No benchmark replacement is
+K7/no-pruning fallback remains available. Task2's ten-arm training diagnosis is complete: selected/no-start shared-prior
+absorption is observed, fixed/shared-Normal do not give a usable fit, and all
+five multimodal arms cap. The remedy ladder remains open. Andrew deferred
+Task3's real-data head-to-head for review and omitted DeSurv from Task4;
+Task3 software preparation is retained. Tasks4–6 remain pending. No benchmark replacement is
 proposed. All ten benchmark manifest entries and the immutable tag were verified
 unchanged at this checkpoint (2026-10-15).
 The chronological updates below retain the earlier execution failures; the
@@ -368,3 +371,171 @@ Task2-1 final pre-run verification: **584 passed, 0 failed**, including
 base-branch/default identity checks, all6 multimodal trace tests and all5
 diagnosis tests. Longleaf wrapper syntax passes. No diagnostic real-data fit
 has run before this preregistration commit.
+
+
+### Task2-1 interim: Single TCGA arms finished; multimodal arms pending
+
+All five Single arms finish without errors/warnings. These144 TCGA donors and
+3000 expression features differ from the pooled D4 training experiment. This
+is diagnosis, not remedy selection; no external cohort has been scored.
+
+| Source | Model / arm | Credible programs | Training C | Converged |
+|---|---|---:|---:|---|
+| round2 | single / fixed | 0 | 0.638645 | TRUE |
+| round2 | single / framework | 3 | 0.651632 | FALSE |
+| round2 | single / no_start | 1 | 0.654967 | FALSE |
+| round2 | single / normal | 3 | 0.661636 | TRUE |
+| round2 | single / selected | 1 | 0.654791 | TRUE |
+| benchmark_snapshot | multimodal_framework / pruned | 1 | 0.637768 | FALSE |
+| benchmark_snapshot | single_alpha_F0 / pruned_expression_only | NA | 0.593717 | NA |
+| benchmark_snapshot | expression_only_framework / pruned_expression_only | 1 | 0.643559 | FALSE |
+
+The selected/no-start/fixed shared-Laplace prior never becomes a point mass
+in these Single traces; effective slab probability remains at least.5. Shared
+Normal remains positive-scale (effective probability1). The fixed arm has no
+credible program despite nonconstant risk. Framework/no-start Single fits hit
+the300-iteration ELBO cap; selected/fixed/Normal converge in297/297/298 iterations.
+Table: `results/multimodal_real/outputs/round2/diagnosis1/single_interim_comparison.csv`.
+
+
+### Task3 software preparation while the unchanged Task2 fits run
+
+No head-to-head scientific fit or external scoring has started. Isolated library:
+ignored `data/round2_R_library/`. DeSurv1.0.1 is installed from
+`rashidlab/DeSurv@cc9d4c2486b3125704ab71eea61f35e040a40080`; paper pipeline pinned
+at `0a870a78673296a3802aeddfee0514e4a8b0f9ae`. The first install failed for missing
+cvwrapr. Installed cvwrapr1.0 at `9188a9e0b5fb94f227bdd19a8b9e4f46b08a8723` from
+its [maintainer's documented repository](https://kjytay.github.io/cvwrapr/).
+Compilation then failed to find cmath; a successful compiler probe and retry
+used only temporary SDKROOT and CPLUS_INCLUDE_PATH pointing to the existing
+CommandLineTools SDK. No package source or system configuration changed.
+
+A tiny nonnegative software-only fit at the reported parameters completed with
+finite objective components and nonnegative W/H. The first reporting assertion
+incorrectly treated the package's loss list as a scalar; corrected reporting
+passes without a fitting change. This is not a simulation assessment or a basis
+for choosing parameters. The adapter's three tests failed before implementation
+and pass against the authors' preprocessing/projection APIs.
+
+Adapter teach-back: `desurv_author_prepare()` accepts author-loaded genes-by-
+patient cohorts, aligns their sample IDs, keeps the same eligible patients,
+performs the authors' outer union with zero fill, then calls the package's
+per-cohort feature filtering and within-sample rank transform. For validation,
+frozen training genes missing from a platform are zero-filled before ranking.
+The output is the package's nonnegative matrix and survival metadata. It keeps
+the authors' duplicate-gene assignment behavior rather than the project raw
+helper's first-duplicate convention. `desurv_author_risk()` takes W, beta and an
+author-preprocessed validation matrix, restricts to the union of training-chosen
+top genes, and computes X'W beta with fixed Cox orientation. Missing frozen
+projection genes fail loudly. No new package dependency beyond the approved
+method's required dependency was introduced.
+
+The local PDAC raw loader matches the pinned paper loader byte for byte, and
+all required expression/survival/subtype files are present. It already log2(x+1)
+transforms the RNA cohorts. The DeSurv path must not apply another log. The
+existing D4 wrapper's additional log flag appears to log these cohorts again;
+this is a preprocessing concern for review, not an authorized benchmark change.
+The tagged pipeline and benchmark remain intact; no new code has made the
+benchmark irreproducible. Task3 execution still follows Task2's stopping point.
+
+
+Task3 runner preparation now passes9 focused tests. No scientific execution yet.
+`desurv_reported_controls()` preserves the paper's reported numeric parameters
+and full4000/4000 seed limits. `desurv_seed_fit()` calls the unmodified author
+optimizer, saves each fit, records convergence/errors/warnings separately, and
+refuses overwrite; its software fixture reproduces the direct author's W/H/beta
+and objective exactly. `desurv_author_merge()` keeps raw values separate from
+screening/ranks so full tuning receives raw inputs and preprocesses within
+folds. `desurv_bo_controls()` gives the paper's full50+100-evaluation,30-start,
+5-fold specification. `desurv_bo_summary()` sources the unchanged pinned paper
+helper from an ignored cache, checks MD5, and follows paper03's one-SE rank
+postprocessing literally, retaining the other overall-best parameters. This
+surprising rank-only override is the authors' script behavior, not a new choice.
+
+`run_desurv_h2h()` checks the package and raw-loader versions, verifies ordered
+training outcomes and sample counts against D4's pipeline, fits all100 seeds
+and a consensus final fit, refits the specified Single model with seed42, then
+makes the one external comparison with frozen benchmark rows and paired
+bootstrap. It has prepare/finalize modes for an independent100-seed Longleaf
+array, plus a separate full-BO mode. Missing seed statuses stop finalization;
+failed seeds remain explicit and the successful-count consensus frequency is
+exactly the paper's. A non-finite final fit stops before scoring. DeSurv W is
+genes-by-program and its input X is genes-by-patient; the project Single uses
+patients-by-genes. Orientation is fixed by their Cox predictors, and D4 uses
+its frozen documented sign. The author package does the matrix optimization;
+base R/parallel manages isolated checkpointing, and the project's existing
+survival bootstrap supplies the paired intervals. Controlled matrices and fits
+are ignored RDS files, never staged.
+
+Longleaf scripts are prepared, not submitted: `round2_desurv_seeds.slurm`
+(100 independent full fits,1CPU/4GB/2h each, prepare then finalize) and
+`round2_desurv_full_bo.slurm` (one adaptive30CPU/48GB/48h search). Full BO needs
+DiceKriging/lhs and the unchanged paper R/bo_helpers.R cache on Longleaf;
+its hash is checked before submission work and in R postprocessing. The local
+reported-parameter comparison does not require those BO dependencies. The
+fixed design is in the attempt log; full-suite verification and a commit still
+precede any head-to-head scientific execution.
+
+
+## Task2-1 completed TCGA diagnosis (2026-10-15)
+
+Commit `ccebdf8` preceded all ten fits; its full suite passed584/0. The process
+completed with exit0, ten status checkpoints, no errors or warnings. Single
+fits took100–102 seconds; multimodal fits took2384–2556 seconds each. All returned
+K7, with no pruning refits. Fits and trace CSVs are in
+`results/multimodal_real/outputs/round2/diagnosis1/`; real-data RDS files are
+ignored. All new training results are shown beside frozen benchmark rows:
+
+| Source/model | Arm | K | Active | Risk SD | Training C | Converged/iterations |
+|---|---|---:|---:|---:|---:|---|
+| round2/single | selected | 7 | 1 | 0.350339 | 0.654791 | TRUE/297 |
+| round2/single | fixed | 7 | 0 | 0.309121 | 0.638645 | TRUE/297 |
+| round2/single | normal | 7 | 3 | 0.396799 | 0.661636 | TRUE/298 |
+| round2/single | framework | 7 | 3 | 0.456210 | 0.651632 | FALSE/300 |
+| round2/single | no_start | 7 | 1 | 0.346748 | 0.654967 | FALSE/300 |
+| round2/multimodal | selected | 7 | 0 | 0.000000 | NA | FALSE/500 |
+| round2/multimodal | fixed | 7 | 0 | 0.059893 | 0.635837 | FALSE/500 |
+| round2/multimodal | normal | 7 | 0 | 0.000000 | 0.629695 | FALSE/500 |
+| round2/multimodal | framework | 7 | 1 | 0.255337 | 0.646367 | FALSE/500 |
+| round2/multimodal | no_start | 7 | 0 | 0.000000 | NA | FALSE/500 |
+| benchmark_snapshot/multimodal_framework | pruned | 7 | 1 | NA | 0.637768 | FALSE/NA |
+| benchmark_snapshot/single_alpha_F0 | pruned_expression_only | NA | NA | NA | 0.593717 | NA/NA |
+| benchmark_snapshot/expression_only_framework | pruned_expression_only | 7 | 1 | NA | 0.643559 | FALSE/NA |
+
+The absorbing-prior hypothesis holds in both affected arms. In selected
+multimodal, slab probability reaches exactly0 at outer99/inner1; all beta means
+and SDs become exactly0 at outer99/inner2 and stay0 thereafter. Without the
+supervised start, these events occur at outer54/inner3 and54/inner4. The prior
+at extinction retains a nominal Laplace scale1, with zero slab weight; this is
+not a numerical scale-zero diagnosis. Fixed Laplace never loses its .5 slab
+weight, but has zero credible programs. Shared Normal avoids exact point-mass
+absorption but ends with risk SD1.61e-7 and zero credible programs. Historical
+per-factor Normal retains one credible program. None of Single's shared-prior
+contrasts has a zero slab probability. No configuration is adopted.
+
+Every multimodal arm hits the unchanged500-iteration output cap. Final raw
+expression/methylation reconstruction changes are respectively:
+selected .000446/.008929; fixed .001263/.015696; Normal .000456/.007998;
+framework .001139/.006451; no-start .001139/.006375. Both exceed1e-4 in all
+arms. Including intercepts or centering predictions does not remove molecular
+movement (see `cap_diagnosis.csv`). Selected and no-start eta changes are0;
+fixed/framework eta changes are .000424/.001163, Normal2.23e-10. Every arm's
+last100 ELBO differences is positive: no observed ELBO oscillation supports
+choosing damping at this point. This does not prove every coordinate is
+monotone. No stopping criterion, iteration cap, prior default or benchmark changed.
+
+The newly fitted framework training C .646367 differs from the frozen
+framework's .637768. It is a current-code diagnostic refit, not a tagged-code
+reproduction; no equality or superiority claim follows. This difference and
+the framework's output cap remain explicit. No external score selects a remedy.
+
+Next causally applicable rung: constrain the refitted shared Laplace slab
+probability below at1/K (R2); R1 fixed-prior diagnostic already fails the
+necessary full-training credible-program and convergence requirements, but
+its required simulation/CV evaluation has not yet been performed. Those
+unrun parts must not be described as completed. Continue the prescribed
+ladder with a committed design and unchanged simulation/CV criteria.
+
+Task2-1 result-checkpoint verification: fresh full suite **584 passed,0 failed**;
+all ten benchmark SHA256 entries pass and the annotated/peeled tag IDs remain
+unchanged. The result checkpoint adopts no configuration.

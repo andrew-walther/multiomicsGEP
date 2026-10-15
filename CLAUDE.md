@@ -97,3 +97,14 @@ Task2's fixed TCGA-only diagnostic runner is
 diagnostic prior controls preserve the default fit. Read the attempt history
 before execution or interpretation; training contrasts do not adopt a remedy,
 and external cohorts cannot select one.
+
+Task3's pinned DeSurv package is installed in ignored `data/round2_R_library/`;
+its preprocessing/projection adapter is being prepared. The head-to-head remains
+pending. Read the Round2 handoff for author SHAs, installation details and the
+raw-loader log-transform concern before changing any preprocessing.
+
+The ten-arm TCGA diagnosis has completed; consult the Round2 handoff for
+benchmark-linked results and the open remedy ladder. Andrew deferred Task3's
+real-data DeSurv head-to-head for review. Prepared DeSurv commands above must
+not be executed without renewed authorization; no real-data DeSurv fit or
+external scoring has run. Task4 omits DeSurv as explicitly approved.

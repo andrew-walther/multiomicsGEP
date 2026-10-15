@@ -15,6 +15,47 @@ selection threshold. The complete rank panel is pre-registered in
 `docs/plans/Round2_attempts_log.md`. No adoption is claimed before its results;
 the interim-writeup benchmark and fitting defaults remain unchanged.
 
+## 2026-10-15 — Diagnose absorbing shared prior; retain the benchmark
+
+The ten pre-registered TCGA contrasts completed without errors/warnings.
+Selected multimodal slab probability becomes0 at outer99/inner1, followed by
+permanent zero beta moments from inner2. Without supervised initialization the
+same sequence occurs at outer54/inner3–4. Fixed starting Laplace and shared
+Normal do not provide a credible prognostic program, and every multimodal arm
+hits the output cap. Real molecular prediction changes persist after centering
+and including intercepts; last100 ELBO differences are positive. These results
+motivate the prescribed constrained-probability rung, not a criterion/default
+change. See the attempt log and Round2 handoff for every row, including the
+frozen benchmark comparisons. No external selection or adoption occurred.
+
+## 2026-10-15 — Andrew defers DeSurv head-to-head and omits its simulation arm
+
+Andrew explicitly deferred Task3's separate real-data head-to-head for review.
+Installation and prepared, tested author-pipeline software are retained; no
+DeSurv real-data fit or external scoring has run. The signed-Gaussian Task4
+panel uses its five specified comparators and omits DeSurv as Andrew approved.
+Ranking signed data changes the loading interpretation, and the reported
+270-gene setting would clamp to all50 simulated features; a dedicated comparison
+design would need review. These scope decisions do not change our model or
+benchmark and do not prevent completing the five-comparator panel.
+
+## 2026-10-15 — Pin the approved authors' DeSurv software and preserve its pipeline
+
+Install DeSurv1.0.1 from `rashidlab/DeSurv` commit
+`cc9d4c2486b3125704ab71eea61f35e040a40080` in ignored project-local
+`data/round2_R_library/`, leaving the active model library unchanged. The paper
+pipeline is pinned at `rashidlab/DeSurv-paper` commit
+`0a870a78673296a3802aeddfee0514e4a8b0f9ae`. Required cvwrapr1.0 is pinned to
+maintainer commit `9188a9e0b5fb94f227bdd19a8b9e4f46b08a8723`. No package source
+was modified. Existing SDK header paths were supplied temporarily for compilation.
+
+The head-to-head will use the authors' own rank preprocessing and union-of-top-
+genes X'W beta projection on the same eligible patients as D4. The raw loader
+already performs its platform log transformations; the DeSurv adapter adds none.
+The apparent additional log in the existing D4 wrapper is flagged for review,
+with no change to the benchmark. Installation and a tiny software smoke test
+succeed; no real-data comparison or parameter selection has yet occurred.
+
 ## 2026-10-15 — Observe training-only prior collapse before selecting a remedy
 
 Task2 adds opt-in traces to retain the actual shared-prior refits, beta moments,

@@ -1029,3 +1029,9 @@ approval. Attempt designs and outcomes: `docs/plans/Round2_attempts_log.md`.
 
 The full-state experiment improved recovery but failed the fixed rule; Single
 K selection remains unresolved and needs review before another remedy.
+
+TCGA collapse diagnosis is complete (Round2): exact shared-prior absorption is
+observed, and all multimodal diagnostic arms cap with molecular predictions
+still changing. The remedy ladder remains open. Andrew deferred the separate
+DeSurv real-data head-to-head for review; the five-comparator simulation panel
+will omit DeSurv as approved. See the Round2 handoff for benchmark-linked tables.

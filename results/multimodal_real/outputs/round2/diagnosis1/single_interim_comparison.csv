@@ -1,0 +1,9 @@
+source,model,arm,n,K,active,risk_sd,training_C,converged,iterations,pruning_caps,reconstruction_change,eta_change,error,warnings,runtime_seconds
+round2,single,fixed,144,7,0,0.309121324003541,0.638645138645139,TRUE,297,0,NA,0.00104702902077007,NA,,102.012
+round2,single,framework,144,7,3,0.456209595821986,0.651632151632152,FALSE,300,0,NA,0.00175830112590165,NA,,100.883
+round2,single,no_start,144,7,1,0.346748234078511,0.654966654966655,FALSE,300,0,NA,0.000340644210091969,NA,,101.081
+round2,single,normal,144,7,3,0.39679940523973,0.661635661635662,TRUE,298,0,NA,0.000229491587455922,NA,,102.015
+round2,single,selected,144,7,1,0.350338577422033,0.654791154791155,TRUE,297,0,NA,0.000312200359419393,NA,,101.247
+benchmark_snapshot,multimodal_framework,pruned,144,7,1,,0.637767637767638,FALSE,,,,,,,
+benchmark_snapshot,single_alpha_F0,pruned_expression_only,144,NA,NA,,0.593717093717094,NA,,,,,,,
+benchmark_snapshot,expression_only_framework,pruned_expression_only,144,7,1,,0.643559143559144,FALSE,,,,,,,

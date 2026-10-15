@@ -1,0 +1,9 @@
+model,arm,min_slab_pi,first_zero_prior_outer,first_zero_prior_inner,first_all_zero_beta_outer,first_all_zero_beta_inner,all_later_beta_zero
+single,selected,0.5,NA,NA,NA,NA,False
+single,fixed,0.5,NA,NA,NA,NA,False
+single,normal,1.0,NA,NA,NA,NA,False
+single,no_start,0.5,NA,NA,NA,NA,False
+multimodal,selected,0.0,99,1,99,2,True
+multimodal,fixed,0.5,NA,NA,NA,NA,False
+multimodal,normal,1.0,NA,NA,NA,NA,False
+multimodal,no_start,0.0,54,3,54,4,True

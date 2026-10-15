@@ -450,3 +450,29 @@ quantities; `beta_prior_fix=TRUE` and `beta_prior="shared_normal"` are diagnosti
 opt-ins. `trace_supervision=TRUE` observes Single's actual prior refits as well.
 None changes defaults or the convergence criteria. See the attempt log for the
 fixed contrasts and the Longleaf wrapper for individual cells.
+
+
+DeSurv software preparation uses the isolated ignored library
+`data/round2_R_library/`. Add it with
+`.libPaths(c(normalizePath("data/round2_R_library"), .libPaths()))` before loading
+DeSurv. The pinned package/paper SHAs and installation notes are in the Round2
+handoff. `results/benchmark_sim/desurv_author_adapter.R` wraps the authors'
+rank preprocessing and frozen top-gene X'W beta projection; its focused tests
+run with `Rscript -e 'source("tests/test_desurv_author_adapter.R");report_results()'`.
+The head-to-head scientific comparison remains pending.
+
+The prepared head-to-head entry is `results/benchmark_sim/run_desurv_h2h.R`:
+`all 2` runs the reported-parameter protocol locally; `prepare` creates the
+training cache for `round2_desurv_seeds.slurm`, and `finalize` requires all100
+seed statuses before consensus/external reporting. `bo 30` is the full author
+training-only search (`round2_desurv_full_bo.slurm`), using the unchanged pinned
+paper `R/bo_helpers.R` copied to ignored `data/round2_desurv_paper_bo_helpers.R`.
+The runner checks the package/loader/helper versions, preserves the benchmark,
+and refuses existing outputs. Execute only after its preregistration commit
+and the preceding Task2 stopping point.
+
+The ten-arm TCGA diagnosis has completed; consult the Round2 handoff for
+benchmark-linked results and the open remedy ladder. Andrew deferred Task3's
+real-data DeSurv head-to-head for review. Prepared DeSurv commands above must
+not be executed without renewed authorization; no real-data DeSurv fit or
+external scoring has run. Task4 omits DeSurv as explicitly approved.

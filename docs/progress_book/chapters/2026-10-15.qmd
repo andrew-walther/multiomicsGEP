@@ -422,3 +422,63 @@ variance-corrected, and the failure is not convergence alone. Further changes
 require a new decision; the approved K7/no-pruning fallback remains available
 for Task5. Continue Task2's separate multimodal diagnosis and prescribed ladder.
 No external data were scored or used for this assessment.
+
+
+## Task2-1 completed TCGA diagnosis (2026-10-15)
+
+Commit `ccebdf8` preceded all ten fits; its full suite passed584/0. The process
+completed with exit0, ten status checkpoints, no errors or warnings. Single
+fits took100–102 seconds; multimodal fits took2384–2556 seconds each. All returned
+K7, with no pruning refits. Fits and trace CSVs are in
+`results/multimodal_real/outputs/round2/diagnosis1/`; real-data RDS files are
+ignored. All new training results are shown beside frozen benchmark rows:
+
+| Source/model | Arm | K | Active | Risk SD | Training C | Converged/iterations |
+|---|---|---:|---:|---:|---:|---|
+| round2/single | selected | 7 | 1 | 0.350339 | 0.654791 | TRUE/297 |
+| round2/single | fixed | 7 | 0 | 0.309121 | 0.638645 | TRUE/297 |
+| round2/single | normal | 7 | 3 | 0.396799 | 0.661636 | TRUE/298 |
+| round2/single | framework | 7 | 3 | 0.456210 | 0.651632 | FALSE/300 |
+| round2/single | no_start | 7 | 1 | 0.346748 | 0.654967 | FALSE/300 |
+| round2/multimodal | selected | 7 | 0 | 0.000000 | NA | FALSE/500 |
+| round2/multimodal | fixed | 7 | 0 | 0.059893 | 0.635837 | FALSE/500 |
+| round2/multimodal | normal | 7 | 0 | 0.000000 | 0.629695 | FALSE/500 |
+| round2/multimodal | framework | 7 | 1 | 0.255337 | 0.646367 | FALSE/500 |
+| round2/multimodal | no_start | 7 | 0 | 0.000000 | NA | FALSE/500 |
+| benchmark_snapshot/multimodal_framework | pruned | 7 | 1 | NA | 0.637768 | FALSE/NA |
+| benchmark_snapshot/single_alpha_F0 | pruned_expression_only | NA | NA | NA | 0.593717 | NA/NA |
+| benchmark_snapshot/expression_only_framework | pruned_expression_only | 7 | 1 | NA | 0.643559 | FALSE/NA |
+
+The absorbing-prior hypothesis holds in both affected arms. In selected
+multimodal, slab probability reaches exactly0 at outer99/inner1; all beta means
+and SDs become exactly0 at outer99/inner2 and stay0 thereafter. Without the
+supervised start, these events occur at outer54/inner3 and54/inner4. The prior
+at extinction retains a nominal Laplace scale1, with zero slab weight; this is
+not a numerical scale-zero diagnosis. Fixed Laplace never loses its .5 slab
+weight, but has zero credible programs. Shared Normal avoids exact point-mass
+absorption but ends with risk SD1.61e-7 and zero credible programs. Historical
+per-factor Normal retains one credible program. None of Single's shared-prior
+contrasts has a zero slab probability. No configuration is adopted.
+
+Every multimodal arm hits the unchanged500-iteration output cap. Final raw
+expression/methylation reconstruction changes are respectively:
+selected .000446/.008929; fixed .001263/.015696; Normal .000456/.007998;
+framework .001139/.006451; no-start .001139/.006375. Both exceed1e-4 in all
+arms. Including intercepts or centering predictions does not remove molecular
+movement (see `cap_diagnosis.csv`). Selected and no-start eta changes are0;
+fixed/framework eta changes are .000424/.001163, Normal2.23e-10. Every arm's
+last100 ELBO differences is positive: no observed ELBO oscillation supports
+choosing damping at this point. This does not prove every coordinate is
+monotone. No stopping criterion, iteration cap, prior default or benchmark changed.
+
+The newly fitted framework training C .646367 differs from the frozen
+framework's .637768. It is a current-code diagnostic refit, not a tagged-code
+reproduction; no equality or superiority claim follows. This difference and
+the framework's output cap remain explicit. No external score selects a remedy.
+
+Next causally applicable rung: constrain the refitted shared Laplace slab
+probability below at1/K (R2); R1 fixed-prior diagnostic already fails the
+necessary full-training credible-program and convergence requirements, but
+its required simulation/CV evaluation has not yet been performed. Those
+unrun parts must not be described as completed. Continue the prescribed
+ladder with a committed design and unchanged simulation/CV criteria.
