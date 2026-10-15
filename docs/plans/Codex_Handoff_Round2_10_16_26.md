@@ -35,6 +35,64 @@ Standard for every decision (Andrew): valid, robust, defensible, and performing 
 - never change a rule after seeing results;
 - report failures as failures, and never select or tune on external validation data.
 
+## Goal and iteration protocol
+
+**Goal:** a survival-supervised model, for single modality and for expression + methylation, whose
+retained programs explain both the survival signal and the molecular data with a parsimonious set,
+and which meets every success criterion:
+- **simulation:** planted program recovered in ≥ 16/20 seeds at both noise levels; null
+  survival-active programs ≤ reference + 0.5 per fit; every fit converges under its model's rule;
+  median K_final equal to the true 3 (once K selection is adopted);
+- **real data:** no collapse (at least one credibly prognostic program, nonconstant risk);
+  training-CV C not below the reference model's by more than one paired SE; the external
+  non-inferiority check as pre-specified (lower 95% limit of ΔC above −0.02) reported.
+
+**Keep working until one of these holds for each open issue** (Task 1 K selection, Task 2
+multimodal collapse; Tasks 3–5 are bounded and finish when done):
+1. **Resolved:** a configuration meets every criterion above. Record it in `DECISIONS.md` as
+   *proposed, pending Claude's review and Andrew's approval*, and move on.
+2. **Ladder exhausted:** every remedy on that issue's ladder (below) has been tried and failed.
+   Write up what was learned and stop that issue.
+3. **Needs Andrew:** the only way forward changes a criterion, a threshold, the data, the test bed,
+   or a default; or the evidence contradicts an earlier decision. Stop that issue, write the
+   question with a recommendation, and continue with other work.
+
+**Rules for iterating:**
+- **Before each attempt,** add an entry to `docs/plans/Round2_attempts_log.md`: the hypothesis it
+  tests, the exact change, the arms, and the pass/fail rule. Commit that entry before running.
+- **After each attempt,** append the result (pass or fail per criterion, with numbers and output
+  paths) to the same entry. Never delete or rewrite a failed attempt.
+- **One change per attempt,** motivated by the diagnosis of the previous one. Do not sweep
+  hyperparameter grids looking for a pass. A remedy that needs a tuned constant counts as a
+  weight; it goes last and needs a training-CV selection rule written down in advance.
+- **Selection** uses only simulation and training data (TCGA, or TCGA + CPTAC). External data
+  (ICGC, the 5 single-modality cohorts) are scored once, for the final proposed configuration, as a
+  report.
+- **Time limit:** at most **6 attempts per issue** before writing an interim report to Andrew in
+  `docs/plans/Codex_to_Claude_Round2.md`. Continue past 6 only while each attempt is a new rung of
+  the ladder, not a variation of a failed one.
+
+**Remedy ladder for Task 2 (multimodal collapse)**, simplest first; the diagnosis in Task 2.2
+decides which rungs apply:
+1. R1–R3 of Task 2.3: fixed shared β prior; refit prior with π bounded below at 1/K; per-factor priors
+   with the supervised start only.
+2. A longer warm-up or a staged fit: fit the 10/1 framework to convergence, then switch on the
+   survival supervision from that warm start.
+3. Damping of the β and F updates (`control$damping` exists), if the cap is caused by oscillation.
+4. A joint or collapsed (F_k, β_k) update for the supervised program (Workstream C5): derive it in
+   `derivations/cox_on_YF/`, check it numerically, then fit.
+5. Last resort: a survival weight w_S chosen by training-CV C from {1, 2, 5, 10} (C5b).
+
+**Remedy ladder for Task 1 (K selection),** if the adoption rule fails:
+1. Diagnose which criterion fails, at which K_init.
+2. If only convergence fails for single modality: report the panel under the output rule (already
+   specified) and stop for Andrew.
+3. If protection keeps spurious programs (false positives above the margin): report and stop for
+   Andrew. The 1.96 threshold is a criterion, so it is not tuned.
+4. If pruning still removes the planted program: try pruning with the survival term at the
+   variance-corrected ELBO (`survival_elbo = "corrected"`, already implemented in the multimodal
+   model) before anything else.
+
 ## Rules for every task
 
 - **Branch.** Work on one cumulative branch, `round2/supervised`, created in Task 0. Make one or
@@ -139,7 +197,8 @@ Do not load ICGC in this task until step 4.
    stratified by event).
 
    Adoption rule: among candidates passing (i), choose the simplest whose mean training-CV C is
-   not below the 10/1 framework's by more than one paired SE. If none passes, report that and stop.
+   not below the 10/1 framework's by more than one paired SE. If none passes, continue down the
+   Task 2 remedy ladder under the iteration protocol.
 4. **One external check.** Only for the adopted remedy, fit on all of TCGA and score ICGC (primary
    n = 50 and all n = 67) against the 10/1 framework and the expression-only model, exactly as in
    `run_supervised_multimodal_comparison.R`, with the paired bootstrap. This is a report, not a
@@ -219,11 +278,14 @@ with exit 0. Compare it with the saved tables, which should match exactly.
 
 ## Order and handback
 
-Order: 0 → 1 → 2 → 3 → 4 → 5 → 6.
+Order: 0 → 1 → 2 → 3 → 4 → 5 → 6. Iterate on Tasks 1 and 2 under the iteration protocol until each
+is resolved, its ladder is exhausted, or it needs Andrew.
 - Tasks 3 and 4 do not depend on Task 2. If Task 2 stops, continue with them.
 - Task 5 depends on Tasks 1 and 2.
 
-At the end, write `docs/plans/Codex_to_Claude_Round2.md`. For each task give:
+At the end, write `docs/plans/Codex_to_Claude_Round2.md`, plus interim versions when the protocol
+calls for them. Point to `docs/plans/Round2_attempts_log.md` for the attempt history. For each
+task give:
 - status;
 - commits and test count;
 - key tables;
