@@ -147,3 +147,7 @@ Andrew asked for the required corrections E1–E5 and Methods cuts M1–M4. Sugg
 **Result:** the PDF is 39 pages. The main text runs from p.1 to p.22 (from p.24 before these cuts). Appendix A starts on p.23 and Appendix B on p.32.
 
 **Still open:** the main text is still above the 15–20-page target. Further reductions would need M5, condensing §2.2 Simulation designs, or O1–O4, all at Andrew's discretion.
+
+## Third verification correction (`verification_round3.md`)
+
+Andrew authorized correction R3-1. Continuing work item 1 now limits the failure to recover the planted low-variance prognostic program to the lower-noise multimodal simulation with strong reconstruction programs. This agrees with Section 3.4 and Table 6 and does not deny the higher-noise recovery result. Both renders were refreshed successfully; only PDF p.22's text changed, its layout was visually inspected, and the 39-total/22-main-text pagination is unchanged. No model code, defaults, data, figure assets or saved results changed. Required corrections are resolved; interim approval and acceptance of the length remain pending.

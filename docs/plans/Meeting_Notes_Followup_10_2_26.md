@@ -558,7 +558,10 @@ Read first:
   handoffs" (scope M0-M8 and the working mode);
 - DECISIONS.md, entry "2026-10-02 — alpha_F = 0 cannot be the final method";
 - paper/writeup/implementation_plan.md, section "Revisit after
-  feature/supervised-F", and the write-up's evidence-gap table.
+  feature/supervised-F"; the write-up's Continuing work section
+  (paper/writeup/writeup.qmd, Discussion); and the hidden
+  <!-- REVISIT R1-R9 --> markers in writeup.qmd and the appendices, which flag
+  every passage the method work can change.
 
 Then:
 1. git fetch; confirm main is clean and report its head. Switch to
@@ -599,9 +602,13 @@ code. Ask before committing.
 ### Prompt 7 — Claude Code: revise the write-up
 
 ```text
-feature/supervised-F has been reviewed and merged to main. Create
-writeup/revision from main. Update the write-up from the "Revisit after
-feature/supervised-F" list in paper/writeup/implementation_plan.md and from the
-method-work summary, refresh the evidence-gap table, re-render HTML and PDF,
-and ask me before committing.
+feature/supervised-F has been reviewed and merged to main. Create writeup/revision
+from main. Using the method-work summary and the "Revisit after
+feature/supervised-F" list in paper/writeup/implementation_plan.md, rewrite every
+passage inside a REVISIT marker whose method changed, and update the Discussion
+and Continuing work (R9). Redraw figures from saved outputs only (no refitting).
+Keep the manuscript conventions: no source IDs, repository paths or dated
+references; self-contained captions; algorithms in the appendices; no table split
+across pages. Re-render and inspect HTML and PDF, record the changes in
+paper/writeup/review_dispositions.md, and ask me before committing.
 ```
