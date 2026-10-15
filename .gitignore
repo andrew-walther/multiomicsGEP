@@ -44,3 +44,6 @@ Rplots.pdf
 .positai
 # Large binary model outputs
 results/**/*.rds
+
+# Patient-level training CV manifests remain local with the controlled inputs.
+results/benchmark_sim/outputs/round2/*/folds.csv

@@ -5,6 +5,21 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Diagnose framework CV collapse without substituting a concordance score
+
+Andrew requests continued investigation of nonconstant risk in the multimodal
+framework after TCGA CV fold1 returned beta means and second moments exactly
+zero. Keep C=NA and the existing paired-fold criterion. Other completed folds
+retain prognostic programs, as does the full-TCGA diagnostic.
+
+The historical per-factor Normal update re-estimates each prior variance as
+max(0,x²−1/A) every sweep; the failed fold's saved state sets all seven to0.
+Unlike the selected shared-prior point mass, these per-factor variances can
+revive. Task2-3 repeats the unchanged fold with observational tracing only
+and checks exact posterior/history identity before interpreting the trace.
+No prior, scoring rule, threshold, default or benchmark is changed. The
+attempt log records the fixed diagnostic and its validity rule.
+
 ## 2026-10-16 — Resume protected-pruning assessment under Andrew's corrections
 
 Protection now requires positive posterior SD as well as |Eβ|≥1.96 SD(β), so

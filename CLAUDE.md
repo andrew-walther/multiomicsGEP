@@ -116,3 +116,7 @@ its five-arm rerun; DeSurv is omitted by Andrew's explicit decision.
 Task2 R1's fixed-prior evaluation is `run_round2_fixed_prior.R` in the benchmark
 folder. Its committed attempt history governs80 simulations and20 TCGA CV fits;
 all criteria and defaults remain unchanged, with no external data for selection.
+
+`results/multimodal_real/run_framework_fold_trace.R` is the fixed Task2
+framework CV fold1 trace. Read its preregistration before execution. It changes
+observation only and must reproduce the saved posterior/history exactly.

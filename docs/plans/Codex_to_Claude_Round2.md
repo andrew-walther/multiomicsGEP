@@ -678,3 +678,79 @@ this preregistration commit.
 Task4 result-checkpoint verification: fresh full suite **608 passed,0 failed**.
 The40-dataset retry exited0; all200 rows and40 cell checkpoints are preserved.
 No model/default change follows the two supervised caps.
+
+Task2 R1 interim: all80 simulations complete without errors. Single recovers
+17/20 and19/20, with false-positive margins passing, but one low-noise fit
+caps (seed20261026,300 iterations). Multimodal recovers19/20 and20/20, with
+all false-positive and output-convergence criteria passing. These results do
+not override the failed full-TCGA credible-program/convergence requirements.
+TCGA CV is still running; no criterion, control or running script is changed.
+
+Training CV's patient-level folds.csv is local/ignored because it contains
+patient IDs and event indicators. Only aggregate/per-fit metrics are committed;
+reproduction uses the fixed seed42 event-stratified rule and approved local
+training cache. Transfer the fold manifest securely with controlled inputs
+when reusing references on Longleaf. No running analysis changed.
+
+CV interpretation: this evaluation conditions on the handoff's existing
+screened/imputed TCGA cache. It does not redo raw-data screening or methylation
+imputation separately inside each fold. Single's centering/scaling is estimated
+within the training fold. Both candidate and reference use the same fixed
+cache/folds. These are conditional CV comparisons, not fully nested raw-data
+pipeline validation; the approved imputation/test bed is not changed.
+
+### Fixed-bed interpretation for review (no analysis change)
+
+The approved generator explicitly uses eta=(Y_expression F_expression+
+Y_methylation F_methylation)beta (`code/simulate_multimodal_yfb.R`, cohort
+hazard calculation). Its Gaussian molecular residuals therefore enter the
+survival predictor too. Raising the molecular noise multiplier need not make
+survival recovery harder, because it also changes prognostic variation.
+Single's fixed bed takes expression only from that joint generator, while its
+stored c_oracle uses the full joint eta; this is not an attainable
+expression-only oracle. The original recovery correlation still compares
+fitted loadings after expression z-standardization to the original raw F truth.
+Those feature units differ. These are limitations/interpretation points of the
+approved bed and score, not Round2 changes. Nothing is regenerated, redefined
+or tuned in response. Review this framing before making claims in the write-up.
+
+A zero single-program recovery count also does not imply no predictive value:
+PCA->Cox has low-noise validation C .687753 in Task4. Its recovery criterion
+selects one component by Cox z and applies the specified loading-correlation/
+sign rule; a predictive span can exist without one matching axis.
+
+
+Task2-2 framework CV collapse and Andrew's direction: completed multimodal
+framework fold1 has beta means and second moments exactly0, no credible
+program, risk SD0, C=NA, and hits500 iterations. Other completed framework
+folds2/3 retain one prognostic program. Andrew explicitly requests continued
+diagnosis of the constant prediction, not a tied-risk C=.5 substitution.
+Keep the committed scorer and all five finite paired-fold requirements.
+Compare this failed training fold with the successful full-TCGA framework
+diagnosis and the other folds; do not tune on external data. The ongoing
+R1 evaluation remains unchanged. No scoring amendment or new remedy is
+adopted. This is an additional instability in the reference itself.
+
+### Multimodal framework instability in a training fold
+
+The historical framework's completed fold1 returns zero beta posterior means
+and second moments; C remains undefined. Folds2/3 retain a prognostic program.
+The saved-state per-factor EB update estimates variance max(0,x²−1/A), with
+all seven pseudo-z magnitudes below1 in fold1. Beta KL is0 from outer167
+onward. Unlike the shared point-mass prior, these variances are re-estimated
+each coordinate and can revive; an unchanged-fold trace will establish the
+trajectory. Andrew explicitly requests this diagnosis rather than assigning
+C=.5. The reference instability is not resolved, and no configuration is
+adopted. The preregistered trace must reproduce the original posterior and
+history exactly; only observation changes.
+
+The diagnostic takes the original event-stratified fold and raw imputed
+training matrices, enables the existing trace, and records beta moments and
+pseudo-observations after each inner sweep. Its summary distinguishes a
+temporary all-zero sweep from persistent loss through the last sweep.
+It uses no external cohort, changes no prior or convergence rule, and reports
+the frozen benchmark rows alongside the repeated fold's metrics.
+
+Task2-3 preregistration verification: new focused checks3/3 passed after
+RED0/3; full suite **611 passed,0 failed** before the diagnostic commit.
+The trace has not yet been fitted at this checkpoint.

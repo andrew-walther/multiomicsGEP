@@ -492,3 +492,8 @@ and20 training-CV fits, preserving all failures and frozen benchmark rows.
 `prepare`/`finalize` support `round2_fixed_prior.slurm`; do not submit jobs here.
 This evaluates a remedy; the full-TCGA diagnostic failures remain necessary
 adoption failures even if another table looks favorable.
+
+The Round2 framework-fold diagnostic is
+`Rscript results/multimodal_real/run_framework_fold_trace.R`. It repeats the
+unchanged failed TCGA CV fold with observational tracing and checks exact
+posterior/history identity against the saved fit; it does not change scoring.

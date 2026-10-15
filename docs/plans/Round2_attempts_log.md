@@ -679,3 +679,75 @@ this preregistration commit.
 Task4 result-checkpoint verification: fresh full suite **608 passed,0 failed**.
 The40-dataset retry exited0; all200 rows and40 cell checkpoints are preserved.
 No model/default change follows the two supervised caps.
+
+Task2-2 interim simulation result (all80 simulation cells complete; CV still
+running, no adoption): errors0. Single low/high recovery17/20,19/20;
+null-active1.00,.35 against reference1.15,.35 (all margins pass);
+ELBO-converged19/20,20/20. Seed20261026/noise .25 caps at300.
+Multimodal low/high recovery19/20,20/20; null-active .35,0 against
+reference .75,.65 (all margins pass); output-converged20/20 at both noises.
+Single therefore fails universal simulation convergence. Multimodal passes
+the simulation gates but the full-TCGA fixed-prior diagnosis has zero credible
+programs and caps, so this is not an adoption. Saved via the committed summary
+function as outputs/round2/fixed_prior/simulation_summary_interim.csv.
+All20 training-CV fit specifications remain unchanged and are completing.
+
+Task2-2 data handling: folds.csv contains patient IDs and event indicators and
+remains local/ignored, alongside controlled input/model files. Aggregate and
+per-fit metrics contain no individual outcomes and may be committed. The
+seed42 fold rule and a hash of the local fold manifest preserve the design
+without committing a patient-level clinical manifest. This changes git
+tracking only, not the running analysis or reference reuse.
+
+Read-only interpretation audit during R1 CV: the frozen bed's survival eta
+uses both observed modalities (including molecular residual variation).
+Single's stored oracle is joint eta, while Single fits expression only;
+its recovery target remains original raw F after per-gene standardization of
+Y. Preserve all approved generators, thresholds and scores exactly. These
+facts are recorded as framing limitations in the Claude handoff, not a reason
+to change the bed or reinterpret a failed adoption criterion as passing.
+
+
+Task2-2 framework CV collapse and Andrew's direction: completed multimodal
+framework fold1 has beta means and second moments exactly0, no credible
+program, risk SD0, C=NA, and hits500 iterations. Other completed framework
+folds2/3 retain one prognostic program. Andrew explicitly requests continued
+diagnosis of the constant prediction, not a tied-risk C=.5 substitution.
+Keep the committed scorer and all five finite paired-fold requirements.
+Compare this failed training fold with the successful full-TCGA framework
+diagnosis and the other folds; do not tune on external data. The ongoing
+R1 evaluation remains unchanged. No scoring amendment or new remedy is
+adopted. This is an additional instability in the reference itself.
+
+### Task2-3: unchanged framework fold1 trace (preregistered before fitting)
+
+Hypothesis: the historical per-factor Normal model also loses survival signal
+on a TCGA training fold because each variance MLE max(0,x²−1/A) can be zero.
+Its variance is refitted every coordinate, so unlike a fixed shared point mass
+this need not be absorbing. The saved fold1 has beta and second moments0;
+its beta KL is0 from outer167 onward, while folds2/3 and full TCGA retain
+signal. Read-only final-state pseudo-z magnitudes are .245,.503,.651,.910,
+.019,.311,.524; all seven variance MLEs are0. Projection uncertainty
+contributes at most .000381 of A at this saved state. This does not yet
+explain the earlier trajectory or imply an external-data defect.
+
+Exact change: enable observational trace only for R1 cell84, seed42/fold1,
+same frozen TCGA matrices, per-factor Normal, no supervised initialization,
+K7, ordinary pruning, original500 cap/output rule. Use the existing full-TCGA
+framework trace as a descriptive comparison; do not refit or select on it.
+Runner: results/multimodal_real/run_framework_fold_trace.R.
+Output: results/multimodal_real/outputs/round2/framework_fold_trace/.
+No external data or C=.5 substitution. Andrew requests continued collapse
+diagnosis and leaves C=NA. No criterion, prior, default or test bed changes.
+
+Pass/fail for diagnostic validity: all saved posterior fields and history
+must be identical to original cell84. Report every inner-sweep pseudo-z and
+zero/nonzero posterior sequence, including revival, persistent extinction,
+and cap. A mismatch blocks interpretation. This diagnostic cannot adopt a
+configuration and does not count as a successful remedy. Fresh outputs only.
+Expected serial runtime about1hour,8GB; no HPC submission. Code/report
+checkpoint and full R suite precede this diagnostic fit.
+
+Task2-3 preregistration verification: new focused checks3/3 passed after
+RED0/3; full suite **611 passed,0 failed** before the diagnostic commit.
+The trace has not yet been fitted at this checkpoint.

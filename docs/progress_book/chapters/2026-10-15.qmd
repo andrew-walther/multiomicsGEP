@@ -536,3 +536,23 @@ warning is retained per row; no package/default was changed to silence it.
 This completes the bounded Task4 rerun, including rank/denominator reporting.
 Task2's remedy ladder remains open and is the priority. No real-data or
 external-cohort selection occurred in this simulation task.
+
+### Multimodal framework instability in a training fold
+
+The historical framework's completed fold1 returns zero beta posterior means
+and second moments; C remains undefined. Folds2/3 retain a prognostic program.
+The saved-state per-factor EB update estimates variance max(0,x²−1/A), with
+all seven pseudo-z magnitudes below1 in fold1. Beta KL is0 from outer167
+onward. Unlike the shared point-mass prior, these variances are re-estimated
+each coordinate and can revive; an unchanged-fold trace will establish the
+trajectory. Andrew explicitly requests this diagnosis rather than assigning
+C=.5. The reference instability is not resolved, and no configuration is
+adopted. The preregistered trace must reproduce the original posterior and
+history exactly; only observation changes.
+
+The diagnostic takes the original event-stratified fold and raw imputed
+training matrices, enables the existing trace, and records beta moments and
+pseudo-observations after each inner sweep. Its summary distinguishes a
+temporary all-zero sweep from persistent loss through the last sweep.
+It uses no external cohort, changes no prior or convergence rule, and reports
+the frozen benchmark rows alongside the repeated fold's metrics.
