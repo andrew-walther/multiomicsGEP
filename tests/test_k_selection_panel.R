@@ -44,3 +44,16 @@ run_test('KPanel-T2: use each model rule; do not mistake unavailable MM ELBO for
   bad<-g[-1,];s<-k_panel_summary(bad)
   assert_false(s$complete[s$model==g$model[1] & s$arm==g$arm[1]])
 })
+run_test('KPanel-T3: entry point writes the fixed design without changing inherited bindings', {
+  dest<-tempfile('panel_entry_')
+  # Zero workers stops before any fit. The design must already have been saved,
+  # and an inherited locked graphics::grid must not intercept configuration.
+  err<-tryCatch(run_k_selection_panel(0L,output_dir=dest),error=function(e)e)
+  assert_true(inherits(err,'error'))
+  assert_true(file.exists(file.path(dest,'design.csv')),
+    msg='entry reached worker setup rather than failing on a locked binding')
+  design<-read.csv(file.path(dest,'design.csv'))
+  assert_equal(nrow(design),800L)
+  assert_false(grepl('locked binding',conditionMessage(err),fixed=TRUE))
+  unlink(dest,recursive=TRUE)
+})

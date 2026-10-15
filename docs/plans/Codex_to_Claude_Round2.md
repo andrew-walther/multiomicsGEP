@@ -35,3 +35,15 @@ intermediate pruning caps are retained. No empirical adoption result yet.
 Pending Task 1 assessment. The handoff's corrected positive-SD protection rule
 and each model's own convergence rule control Task 1. No criteria or defaults
 have been changed. Task 2 selection and diagnosis will use training data only.
+
+
+### Task 1 execution update
+
+`1d5ae7a` committed the design before launch (563/0 tests). Task1-1 exited before
+any cell: `grid <<-` reached a locked graphics binding. It has no scientific
+result. Task1-2 fixes local runner scoping/export only, with an isolated entry-point
+regression test and the exact same design/criteria in a fresh attempt2 folder.
+No tuning or fitter change is involved in that retry.
+
+Task1-2 pre-run verification: **564 passed, 0 failed**. The panel retry is
+paused before launch to perform Andrew's added Task 7 at this stopping point.

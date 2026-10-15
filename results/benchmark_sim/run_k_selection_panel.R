@@ -6,7 +6,8 @@
 # Dependencies: survival, ebnm, yaml, parallel; existing benchmark fitters
 # Run: Rscript results/benchmark_sim/run_k_selection_panel.R [cores]
 # ============================================================
-# Attempt Task1-1, fixed BEFORE execution and committed in Round2_attempts_log.md.
+# Attempt Task1-2: identical science to Task1-1; fix entry-point variable scoping.
+# Fixed BEFORE execution and committed in Round2_attempts_log.md.
 # Only scientific change: protection now requires SD(beta)>0 as Andrew decided.
 # Seeds20261015+1:20; noise {.25,1}; K_init{5,7,10,15}; n_train400,
 # n_validation120,p50 per modality,beta3=3.3, unchanged calibrated beds.
@@ -150,17 +151,20 @@ k_panel_summary <- function(res) {
 
 #' Run the pre-registered panel once, with independent error isolation
 #' @param cores Positive socket-worker count; one serial cell per worker.
+#' @param output_dir Fresh attempt folder; existing cell folders are never overwritten.
 #' @return Invisibly the summary; writes cells, results, summary and adoption CSVs.
 #' @examples
 #' # run_k_selection_panel(6L)
-run_k_selection_panel <- function(cores=6L) {
-  out_dir<<-"results/benchmark_sim/outputs/k_selection/round2/attempt1"
+run_k_selection_panel <- function(cores=6L,
+  output_dir="results/benchmark_sim/outputs/k_selection/round2/attempt2") {
+  out_dir <- output_dir
   if(dir.exists(file.path(out_dir,"cells")))stop("Attempt output already exists; do not overwrite")
   dir.create(file.path(out_dir,"cells"),recursive=TRUE)
-  cfg<<-yaml::read_yaml("config/globals.yml");grid<<-k_panel_grid()
+  cfg <- yaml::read_yaml("config/globals.yml");grid <- k_panel_grid()
   write.csv(grid,file.path(out_dir,"design.csv"),row.names=FALSE)
   cl<-parallel::makeCluster(cores)
-  parallel::clusterExport(cl,c("load_panel_code","panel_cell","grid","cfg","out_dir"))
+  parallel::clusterExport(cl,c("load_panel_code","panel_cell","grid","cfg","out_dir"),
+    envir=environment())
   invisible(parallel::clusterEvalQ(cl,load_panel_code()))
   rows<-tryCatch(parallel::parLapplyLB(cl,seq_len(nrow(grid)),panel_cell),
     finally=parallel::stopCluster(cl))

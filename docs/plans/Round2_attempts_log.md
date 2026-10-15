@@ -53,3 +53,27 @@ outputs are preserved. No real-data cohort is loaded. Conditional training-only
 **Verification before execution:** dead-boundary tests failed against old code,
 then 23/23 protection tests and 2/2 panel tests passed. Full-suite result is
 563 passed, 0 failed (fresh full suite before the pre-run commit). Results pending.
+
+**Result, Task1-1:** execution failed before the grid or any fit was dispatched.
+Exact error: `cannot change value of locked binding for 'grid'`, from `grid <<-`.
+The function's superassignment searched into the graphics package rather than
+creating a local grid. Zero scientific cells completed; no criterion was assessed.
+Output: `outputs/k_selection/round2/attempt1/execution_status.md`.
+
+## Task 1 attempt 2 — repair runner scope; unchanged scientific design
+
+**Before execution:** pre-registered and committed before retrying.
+**Hypothesis and exact change:** local configuration variables plus an explicit
+`clusterExport(..., envir=environment())` prevent inherited locked bindings from
+intercepting the entry point. Add an output-folder argument solely for isolated
+entry tests/fresh attempts. No fitter, data, arm, metric or adoption rule changes.
+**Arms and pass/fail:** exactly the 800 cells and every criterion of Task1-1.
+A zero-worker entry-point test failed before the fix and now must reach worker
+setup after writing the 800-row design. The previous failed launch is preserved.
+**Execution after this entry's commit:** same command, fresh
+`results/benchmark_sim/outputs/k_selection/round2/attempt2/`. No overwriting,
+external cohorts or tuning. Scientific results pending.
+
+Task1-2 verification before execution: entry tests 3/3; fresh full suite
+**564 passed, 0 failed**. Execution waits until the added Task 7 housekeeping
+finishes; no scientific cell has yet run in either attempt.

@@ -12,7 +12,7 @@
 # SD(fold C)/sqrt(5); smallest qualifying K. No external cohorts loaded.
 # Run ONLY after the simulation adoption table explicitly adopts single modality.
 
-out_dir <- "results/benchmark_sim/outputs/k_selection/round2/attempt1"
+out_dir <- "results/benchmark_sim/outputs/k_selection/round2/attempt2"
 adoption <- read.csv(file.path(out_dir,"adoption.csv"))
 if (!any(adoption$model == "single" & adoption$adopted))
   stop("Protected pruning not adopted for single modality; the conditional 1-SE run is ineligible.")
