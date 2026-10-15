@@ -8,6 +8,39 @@ This replaces the open items of `Codex_Handoff_M6_M7_10_15_26.md`. Read, in this
 - `docs/plans/Meeting_Notes_Followup_10_2_26.md`: "What the meeting concluded", Workstream B and
   Workstream C.
 
+## Benchmark: the current best state (do not lose or overwrite)
+
+The approved interim write-up is the project's current best state. Every new result is reported
+side by side with it.
+- **Code and write-up:** git tag `benchmark-interim-writeup-2026-10-14` (`a352f17`, `main`).
+- **Fits and result tables:** `results/benchmark_snapshot_2026-10-14/`, read-only; verify with
+  `shasum -a 256 -c MANIFEST.sha256` in that folder before and after round 2.
+- **Single modality (D4):** α_F = 0, K = 7, mean external C 0.627 over 5 cohorts.
+- **Multimodal (10/1 framework):** ICGC primary C 0.685, matching single modality on the same donors.
+
+Rules:
+- Never modify, move or regenerate the snapshot or the tag.
+- Every new real-data result table includes the benchmark row from the snapshot, not a refit.
+- A configuration may be *proposed* to replace the benchmark only if it is at least as good on
+  every goal below and better on at least one. Replacement needs Andrew's approval.
+- If a round-2 change makes a benchmark number irreproducible from the tagged code, stop and
+  report it.
+
+## Project goals (what every task serves)
+
+1. Survival shapes the programs, including a prognostic program that explains little molecular
+   variance.
+2. Parsimony: the model selects a small set of programs, each explaining the molecular data, the
+   survival signal, or both.
+3. A principled, defensible, fully Bayesian formulation (priors balance the terms; tuned weights
+   only as a last resort); stable and convergent; decisions made before seeing results.
+4. External performance at least as good as the benchmark, with value over EBMF/NMF alone, two-step
+   EBMF → Cox and DeSurv.
+5. Multimodal value: methylation either improves prediction over expression alone or finds
+   programs expression alone does not (the two framings the advisors accept).
+6. Interpretable biology of the final programs. The full characterization (M8) follows Claude's
+   review of round 2; round 2 only reports what step 2.4 asks for.
+
 ## What Andrew decided (2026-10-16)
 
 1. **K selection (round-1 Prompt E) is resumed with two corrections:**
@@ -201,8 +234,13 @@ Do not load ICGC in this task until step 4.
    Task 2 remedy ladder under the iteration protocol.
 4. **One external check.** Only for the adopted remedy, fit on all of TCGA and score ICGC (primary
    n = 50 and all n = 67) against the 10/1 framework and the expression-only model, exactly as in
-   `run_supervised_multimodal_comparison.R`, with the paired bootstrap. This is a report, not a
-   selection step.
+   `run_supervised_multimodal_comparison.R`, with the paired bootstrap, alongside the benchmark
+   rows from the snapshot. This is a report, not a selection step. For goal 5, also report:
+   - ΔC of the multimodal model against the expression-only model on the same donors (framing 1);
+   - each retained program's modality shares and survival-active status;
+   - each program's loading correlation with the benchmark multimodal programs
+     (`real_program_table_K07.csv`) and with the single-modality D4 programs: which programs are
+     new, and whether any methylation-dominant program is prognostic (framing 2).
 
 ## Task 3: DeSurv head-to-head (single modality, real data)
 
