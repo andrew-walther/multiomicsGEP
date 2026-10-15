@@ -754,3 +754,98 @@ the frozen benchmark rows alongside the repeated fold's metrics.
 Task2-3 preregistration verification: new focused checks3/3 passed after
 RED0/3; full suite **611 passed,0 failed** before the diagnostic commit.
 The trace has not yet been fitted at this checkpoint.
+
+
+### Auxiliary mathematical audit during Task2-3 (no real-data fit or remedy)
+
+Canonicalization maps (L,F,beta) to (aL,F/a,a beta), factor by factor.
+It transforms L/F priors but has no beta-prior argument; the shared prior
+g_beta is not transformed by the caller. Preserving fitted products alone
+therefore does not establish preservation of KL(q_beta||g_beta) under a
+shared fixed prior. A deterministic two-program software calculation uses
+scales2.581989/1.154701 and a shared N(0,1) prior: eta changes0, while the
+correct Normal KL changes1.629438/1.209438 to3.627545/1.098930.
+The current carried beta KL is not recomputed by canonicalization.
+
+This is a prior/parameterization consistency question for review, distinct
+from the historical per-factor Normal CV collapse; that update re-estimates
+its own variance at each coordinate. It does not demonstrate that scale
+handling causes the observed zero beta. In the saved selected/no-start
+traces the per-sweep scales are already close to1 at prior extinction
+(selected outer99 range .998530–1.000556; no-start outer54 .998964–1.003347),
+although first-outer scales are much larger. No prior, canonicalization,
+objective, default or candidate is changed on this evidence. Any proposed
+shared-prior configuration needs this formulation checked in addition to
+the numerical adoption criteria; product-invariance tests alone are
+insufficient mathematical validation. No new real-data fit or score follows.
+
+
+### Saved framework loading-pattern comparison (descriptive, no new fit)
+
+All comparisons use existing fits and the same frozen feature order. For
+benchmark program4 (the frozen fit's sole credible program), the largest
+absolute loading correlations by block are:
+
+| Saved fit | Expression r | Methylation r | Combined r | Credible programs | Training C | Fold-validation C |
+|---|---:|---:|---:|---:|---:|---:|
+| Frozen benchmark full TCGA | 1 | 1 | 1 | 1 | .637768 | NA |
+| Current full-TCGA framework diagnosis | .915133 | .898948 | .895973 | 1 | .646367 | NA |
+| Current framework CV fold1 | .787112 | .685382 | .752163 | 0 | NA | NA |
+
+Each strongest match above is program4. Relative to the current full-TCGA
+program4, fold1's correlations are .938139 (expression), .846790
+(methylation), .933739 (combined), yet its beta is exactly0. Thus the
+loading pattern remains recognizable; this is not removal of the program
+by pruning (fold1 has K7 and no pruning refit). This comparison is a
+description of saved fits, not a cross-validation estimate using a
+full-training loading matrix, an external selection criterion, or proof of
+benchmark reproducibility. No fit, score convention or model is changed.
+
+
+### Task2-2 final fixed-prior evaluation: not adopted
+
+The100-fit local evaluation exited0:80 simulations and20 TCGA CV fits,
+with0 fitting errors and0 nonempty warning records. All100 design keys,
+the unchanged training-cache MD5 and the local fold-manifest SHA256 were
+verified. Output: results/benchmark_sim/outputs/round2/fixed_prior/.
+
+| Model | Noise | Recovered | Null active / reference | Converged |
+|---|---:|---:|---:|---:|
+| Single | .25 | 17/20 | 1.00 / 1.15 | 19/20 |
+| Single | 1 | 19/20 | .35 / .35 | 20/20 |
+| Multimodal | .25 | 19/20 | .35 / .75 | 20/20 |
+| Multimodal | 1 | 20/20 | 0 / .65 | 20/20 |
+
+Recovery and false-positive margins pass throughout. Single's low-noise
+seed20261026 hits300 iterations, so universal simulation convergence fails.
+These are unchanged K7 beds; K selection has not been adopted.
+
+| Source/model | Fixed-prior CV mean C | Framework CV mean C | Delta / paired SE | Converged candidate/reference | Frozen training C |
+|---|---:|---:|---:|---:|---:|
+| Round2 Single (5 pairs) | .608225 | .623985 | -.015761 / .006968 | 5/5, 5/5 | NA |
+| Round2 multimodal (5 specified pairs) | NA | NA | NA / NA | 0/5, 0/5 | NA |
+| Frozen multimodal benchmark, full TCGA | NA | NA | NA | NA | .637768 |
+| Frozen alpha_F0 expression-only benchmark, full TCGA | NA | NA | NA | NA | .593717 |
+| Frozen expression-only framework, full TCGA | NA | NA | NA | NA | .643559 |
+
+Single fails the one-paired-SE CV rule. Multimodal's reference fold1 has
+C=NA/risk SD0; no finite five-pair difference exists, so the rule cannot
+pass. The candidate's own five C values are all finite, mean .599978,
+but none of its five fits has a credible program, and all cap at500.
+All five reference fits also cap at500; reference credible-program counts
+by fold are0,1,1,0,0. Its finite fold C values2–5 are .541502,.586047,
+.485437,.359223. No conditional four-fold mean is substituted.
+
+The frozen training rows above are labelled non-CV references, not
+comparisons against a refitted benchmark. Earlier full-TCGA fixed-prior
+diagnosis likewise has0 credible programs and a500 cap. Thus R1 fails
+necessary real-data criteria despite the multimodal simulation passes.
+No fixed prior, K, default or benchmark change is adopted. No external
+cohort is scored. The unchanged-fold trace continues, and Andrew approves
+the separate prospective profiled-curvature experiment after exact trace
+reproduction; its implementation is still private and no scientific
+profiled-curvature fit has run.
+
+Task2-2 final checkpoint verification: fresh full suite **611 passed,0 failed**.
+All100 fit records are retained; clinical folds.csv and all RDS/data remain
+ignored. Only aggregate/per-fit metrics and hash/package provenance are staged.

@@ -19,6 +19,27 @@ execute:
   warning: false
 ---
 
+## Multimodal framework instability inside training CV (2026-10-15)
+
+The fixed-prior evaluation completed100 fits without errors/warnings and was
+not adopted: Single fails one simulation convergence case and its paired CV
+margin; all multimodal CV fits cap and none of the fixed-prior fits is credible.
+The historical-framework
+fold1 loses all beta means and second moments, despite retaining the molecular
+loading pattern; folds2/3 and full TCGA retain prognostic programs. Andrew asks
+for continued diagnosis, keeping undefined C as NA. An unchanged-fold trace,
+preregistered in commit ef4a929 after611/611 tests, is running and must reproduce
+the saved posterior/history exactly before interpretation.
+
+The historical per-factor Normal update estimates variance max(0,x²−1/A);
+all seven estimates are0 at the saved failed-fold state. These priors can revive,
+unlike a fixed shared point mass: the existing full-TCGA trace shows revival
+for three programs. A separate audit flags how factor-specific canonicalization
+interacts with an untransformed common beta prior; preserving predictions
+alone does not establish prior-KL invariance. Neither finding adopts a model
+or changes a default, criterion or score. See the Round2 handoff and attempt log
+for the benchmark-linked loading comparisons and mathematical caveat.
+
 ## Completed supervision comparator panel (2026-10-15)
 
 The five-comparator rerun completed40 datasets/200 rows with zero fitting

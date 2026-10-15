@@ -5,6 +5,25 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Do not adopt the fixed shared beta prior after the full evaluation
+
+All100 predeclared fits completed without execution errors/warnings. Single
+recovery17/20 and19/20 and all false-positive margins pass, but one low-noise
+fit caps at300. Its TCGA CV delta is -.015761 with paired SE .006968, failing
+the one-SE rule. Multimodal simulation passes all40 recovery/convergence
+requirements; its fixed-prior TCGA CV fits have no credible programs and all
+hit500, as does the full-training diagnostic. The framework's constant-risk
+fold1 leaves the five-pair CV comparison undefined; keep C=NA, as Andrew
+directed. No scoring change or row deletion makes that comparison pass.
+
+The benchmark, defaults and K remain unchanged. Continue diagnosis and the
+approved remedy work. Andrew approved testing an opt-in profiled Cox working
+intercept after exact reproduction of the failed framework fold. That
+mathematical change removes constant-direction curvature while retaining raw
+genomic data, prediction and all original adoption rules; it has not been
+fitted on real data. The proposal and attempt log record the scope, including
+the distinct shared-prior scale-consistency question.
+
 ## 2026-10-15 — Diagnose framework CV collapse without substituting a concordance score
 
 Andrew requests continued investigation of nonconstant risk in the multimodal

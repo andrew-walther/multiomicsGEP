@@ -1,0 +1,2 @@
+"model","seed","noise","kind","arm","fold","runtime_seconds","warnings","error","n_train","n_validation","C","risk_sd","K_final","n_active","recovered","cor_planted","false_active","converged","iterations","pruning_caps"
+"single",20261034,0.25,"simulation","fixed",NA,0.697999999999993,"",NA,400,120,0.758987072782008,1.0633638806895,7,2,TRUE,0.869434210166523,1,TRUE,16,0

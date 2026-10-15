@@ -1040,3 +1040,17 @@ The bounded five-comparator rerun is complete:40 datasets/200 method rows,
 zero errors, full20-seed denominators and explicit EBMF rank0/rank1 handling.
 Supervised recovery17/20 and19/20 exceeds these comparators, but two caps
 prevent a universal-convergence claim. The Round2 handoff holds all tables.
+
+### Training-fold collapse and prior consistency (2026-10-15)
+
+- [ ] Complete the unchanged-framework fold1 trace and verify exact saved-fit identity;
+  preserve C=NA and continue Task2's training-only diagnosis and remedy ladder.
+- [ ] Review the common beta prior under factor-specific canonicalization before
+  describing any shared-prior candidate as a principled replacement. The Round2
+  handoff distinguishes this mathematical question from per-factor CV collapse.
+
+- [x] Complete the fixed-prior100-fit evaluation; reject adoption for the failed
+  Single convergence/CV and multimodal credible-program/convergence requirements.
+- [ ] After exact failed-fold trace reproduction, evaluate Andrew's approved
+  opt-in profiled Cox curvature under the unchanged criteria. The remedy's
+  software prototypes do not constitute a scientific result.

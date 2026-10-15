@@ -1,0 +1,6 @@
+"model","n_folds","candidate_C","reference_C","delta","paired_SE","pass","converged_candidate","converged_reference","errors","source","arm","n","K","active","training_C"
+"multimodal",5,NA,NA,NA,NA,FALSE,0,0,0,"round2_training_cv","fixed_vs_framework",NA,NA,NA,NA
+"single",5,0.608224599156653,0.623985167526997,-0.0157605683703438,0.00696842480618861,FALSE,5,5,0,"round2_training_cv","fixed_vs_framework",NA,NA,NA,NA
+"multimodal_framework",NA,NA,NA,NA,NA,NA,NA,NA,NA,"benchmark_snapshot","pruned",144,7,1,0.637767637767638
+"single_alpha_F0",NA,NA,NA,NA,NA,NA,NA,NA,NA,"benchmark_snapshot","pruned_expression_only",144,NA,NA,0.593717093717094
+"expression_only_framework",NA,NA,NA,NA,NA,NA,NA,NA,NA,"benchmark_snapshot","pruned_expression_only",144,7,1,0.643559143559144
