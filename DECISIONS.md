@@ -5,6 +5,46 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Survival supervision of F: order of approaches and success thresholds
+
+**Decision.** Survival supervision of the loadings is pursued in a fixed order. The method stays
+fully Bayesian with one objective for as long as possible:
+1. scale canonicalization (C2);
+2. supervised initialization of one program from the Cox score direction, with a short warm-up in
+   which the β prior is held fixed (C3), and a heavier-tailed β prior (point-Laplace, or
+   point-normal with a fixed slab), under equal weights (C4);
+3. if that fails: a joint or collapsed (F_k, β_k) update (C5);
+4. only if that also fails: a survival weight w_S on the Cox term, chosen by cross-validated C
+   (C5b).
+
+Work stops at the first step that meets every success criterion. A failure at any step is reported
+to Andrew before the next step starts. Thresholds, fixed before any C3–C5 runs:
+- planted low-variance program recovered (|loading correlation| ≥ 0.7, correct sign of β) in
+  ≥ 80% of 20 seeds at each noise level (multipliers 0.25 and 1);
+- mean survival-active null programs per fit at most the α_F = 0 baseline plus 0.5;
+- convergence, no norm runaway, and the real-data ΔC criterion are unchanged.
+
+**Why.** Survival supervision is what separates the model from two-step EBMF → Cox, so it should
+come from the model rather than from a tuned weight. A weighted Cox term also leaves the ELBO
+without a fixed target, which ELBO-based pruning needs.
+
+Two reasons a prior alone may not suffice:
+- Under the mean-field split q(F)q(β), the F update sees survival's direction only through
+  E[β̃_k]. A wider normal prior raises E[β̃_k²] while E[β̃_k] ≈ 0, adding precision without
+  direction.
+- Setting β by hand does not persist, because β is re-estimated before F moves.
+
+Hence the program, not β, is initialized, and the joint update comes before the weight.
+
+**Traded away.** A tuned w_S might reach the recovery threshold sooner. It is kept as the last
+resort. Requiring 20 seeds at both noise levels costs about four times the C1 compute per arm
+(20 seeds × 2 noise levels versus 10 × 1).
+
+**Implementation.** `docs/plans/Meeting_Notes_Followup_10_2_26.md`, Workstream C (order, C3–C5b,
+success criteria) and the step-5 working mode.
+
+---
+
 ## 2026-10-14 — Writeup format after author review of the initial draft
 
 **Decision.** The writeup is a standalone, manuscript-ready narrative of the
