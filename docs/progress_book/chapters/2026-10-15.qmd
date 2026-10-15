@@ -309,3 +309,78 @@ model is judged by its own convergence rule. The dead-program boundary is fixed
 and tested without changing default fits. The complete rank panel is registered
 before execution in `docs/plans/Round2_attempts_log.md`; no empirical result or
 new configuration is claimed yet. The benchmark snapshot is unchanged.
+
+## Single-modality pruning loses a protected direction during refitting
+
+A pre-registered observation of the first prescribed simulation seed uses the
+unchanged selected protected model. It records every nullcheck state/gain without
+editing the fitter or consuming random numbers.
+
+| Noise | Initial K = 7 loading correlation | After first refit (K = 6) | Terminal correlation | Terminal K | All stages converged |
+|---:|---:|---:|---:|---:|---|
+| .25 | .895844 | .390941 | .477163 | 2 | Yes |
+| 1 | .958283 | .715245 | .734053 | 1 | Yes |
+
+At noise .25 the planted program is strongly prognostic and protected; a different
+program is deleted. Recovery is then lost during the refit. The shared beta prior
+stays nondegenerate in both cases. Thus a point-mass prior does not explain these
+two traces. They diagnose a transition and do not estimate its frequency.
+
+The old refit reinitializes uncertainty, beta, precision and loading priors from
+L/F means. Andrew approved an opt-in full-posterior refit experiment using the
+same full 160-cell protected single panel and unchanged adoption rule. No remedy
+is adopted from these two cases. The earlier alpha_F=0 benchmark remains valid;
+K = 7/no-pruning is the approved fallback for subsequent feature sensitivity while
+supervised K selection continues. See attempts4–5 in the Round2 attempt history.
+
+
+## Completed protected-pruning panel: recovery, rank and convergence
+
+The process exited 0 after 93.23 minutes with 800 unique cells, zero errors and zero
+warnings. Every original reference/selected/protected row is retained in
+`results/benchmark_sim/outputs/k_selection/round2/attempt3/` (`results.csv`,
+`summary.csv`, `adoption.csv`, individual checkpoints). No external cohort was
+loaded. Final fit flags and intermediate pruning caps are separate below.
+
+single protected arm:
+
+| K_init | Noise | Recovered/20 | False/fit | Reference+.5 | Final converged/20 | MedianK | Intermediate caps |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5 | 0.25 | 2 | 1.10 | 1.75 | 20 | 2 | 1 |
+| 5 | 1 | 2 | 0.25 | 0.90 | 20 | 1 | 0 |
+| 7 | 0.25 | 2 | 1.10 | 1.65 | 20 | 2 | 1 |
+| 7 | 1 | 2 | 0.25 | 0.85 | 20 | 1 | 1 |
+| 10 | 0.25 | 2 | 1.10 | 1.80 | 20 | 2 | 0 |
+| 10 | 1 | 2 | 0.30 | 0.90 | 20 | 1 | 1 |
+| 15 | 0.25 | 2 | 1.10 | 1.80 | 20 | 2 | 0 |
+| 15 | 1 | 2 | 0.25 | 0.90 | 20 | 1 | 0 |
+
+multimodal protected arm:
+
+| K_init | Noise | Recovered/20 | False/fit | Reference+.5 | Final converged/20 | MedianK | Intermediate caps |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5 | 0.25 | 19 | 0.50 | 1.75 | 20 | 3 | 0 |
+| 5 | 1 | 20 | 0.15 | 1.05 | 20 | 2 | 0 |
+| 7 | 0.25 | 18 | 0.55 | 1.25 | 20 | 3 | 0 |
+| 7 | 1 | 20 | 0.15 | 1.15 | 20 | 3 | 0 |
+| 10 | 0.25 | 17 | 0.70 | 1.10 | 20 | 3 | 1 |
+| 10 | 1 | 19 | 0.30 | 0.95 | 20 | 3 | 0 |
+| 15 | 0.25 | 18 | 0.60 | 1.25 | 20 | 3 | 0 |
+| 15 | 1 | 20 | 0.50 | 1.25 | 19 | 3 | 0 |
+
+Single fails recovery/rank in all groups. The objective is already variance-
+corrected; the approved full-state remedy investigates the refit loss without
+altering criteria. Multimodal passes every recovery and false-positive group,
+but fails rank at K = 5, noise = 1 and convergence at K = 15, noise = 1. The latter is
+seed 20261033 (finalK = 5,500 iterations,loading correlation .934102,output flagFALSE).
+Protected MM also has one capped intermediate stage (K = 10/noise .25). The selected
+unprotected MM arm has one final cap and one intermediate cap; the 10/1 reference
+has no final cap and one intermediate cap. Single protected has four capped
+intermediate stages despite every returned final fit converging. These are
+reported limitations; no model meets every success criterion.
+
+No new starting K, protection default or benchmark replacement is adopted.
+The conditional 1-SE analysis is not eligible from Task1-3. Continue Andrew's
+approved Single full-state remedy and subsequently the prescribed Task2
+training-only collapse diagnosis. MM's current failures are rank/convergence,
+not a failed recovery criterion; do not tune1.96, rank 3 or the output tolerance.

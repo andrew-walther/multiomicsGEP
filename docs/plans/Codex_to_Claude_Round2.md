@@ -6,6 +6,14 @@ Current cumulative branch: `round2/supervised`. No pushes or merges into the bas
 or main branches are authorized. The benchmark is unchanged and no replacement
 configuration has been proposed or approved.
 
+Current checkpoint: Task0 and Task7 are complete. Task1's original800-cell
+panel rejects both protected models; the two-case trace identifies a single
+refit loss. Andrew approved the opt-in full-state remedy, now ready for its
+160-cell rerun after573/0 tests. Task2 diagnostic code is prepared but not yet
+applied or run; Tasks3–6 remain pending. No benchmark replacement is proposed.
+The chronological updates below retain the earlier execution failures; the
+complete attempt history is in `Round2_attempts_log.md`.
+
 ## Task 0 — integrate Round 1 (complete)
 
 Benchmark manifest before work: ten files passed. Benchmark tag resolves to
@@ -184,3 +192,84 @@ the original fitter and running Task1-3 panel remain unchanged. No new
 configuration or selection rule is proposed. The identity/error-restoration and
 no-overwrite tests pass; full suite **567 passed, 0 failed** before committing
 this design. Scientific case traces run only after this preregistration commit.
+
+### Task 1 case-trace result and Andrew's additional remedy approval
+
+Task1-4 completed (pre-run commit93954f1,567/0 tests). In the first prescribed
+low-noise case the planted program is protected at K = 7 (|cor| .895844), a different
+program is deleted, and recovery is lost during the K = 6 refit (best |cor| .390941;
+terminal K2:.477163). At noise 1 it remains recovered but rank falls to1
+(.958283→.715245 after first refit → .734053 terminal). Every stage converges;
+no errors/warnings. The prior is nondegenerate throughout these two cases.
+See `attempt4_trace/stages.csv`; no seeds were substituted.
+
+The current single refit carries only L/F means and the shared beta prior,
+resetting posterior variances, beta, feature precision and persistent F priors.
+Andrew approved one new opt-in full-state refit remedy beyond the handoff's
+Task1 ladder. Prepare its tests without changing the running panel; commit its
+exact design before rerunning the same adoption criteria. Default fits and
+protected-pruning thresholds are unchanged. This is an approved investigation,
+not an adopted model or benchmark replacement.
+
+
+### Completed Task1-3 original panel — neither model adopted
+
+The process exited 0 after 93.23 minutes with 800 unique cells, zero errors and zero
+warnings. Every original reference/selected/protected row is retained in
+`results/benchmark_sim/outputs/k_selection/round2/attempt3/` (`results.csv`,
+`summary.csv`, `adoption.csv`, individual checkpoints). No external cohort was
+loaded. Final fit flags and intermediate pruning caps are separate below.
+
+single protected arm:
+
+| K_init | Noise | Recovered/20 | False/fit | Reference+.5 | Final converged/20 | MedianK | Intermediate caps |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5 | 0.25 | 2 | 1.10 | 1.75 | 20 | 2 | 1 |
+| 5 | 1 | 2 | 0.25 | 0.90 | 20 | 1 | 0 |
+| 7 | 0.25 | 2 | 1.10 | 1.65 | 20 | 2 | 1 |
+| 7 | 1 | 2 | 0.25 | 0.85 | 20 | 1 | 1 |
+| 10 | 0.25 | 2 | 1.10 | 1.80 | 20 | 2 | 0 |
+| 10 | 1 | 2 | 0.30 | 0.90 | 20 | 1 | 1 |
+| 15 | 0.25 | 2 | 1.10 | 1.80 | 20 | 2 | 0 |
+| 15 | 1 | 2 | 0.25 | 0.90 | 20 | 1 | 0 |
+
+multimodal protected arm:
+
+| K_init | Noise | Recovered/20 | False/fit | Reference+.5 | Final converged/20 | MedianK | Intermediate caps |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 5 | 0.25 | 19 | 0.50 | 1.75 | 20 | 3 | 0 |
+| 5 | 1 | 20 | 0.15 | 1.05 | 20 | 2 | 0 |
+| 7 | 0.25 | 18 | 0.55 | 1.25 | 20 | 3 | 0 |
+| 7 | 1 | 20 | 0.15 | 1.15 | 20 | 3 | 0 |
+| 10 | 0.25 | 17 | 0.70 | 1.10 | 20 | 3 | 1 |
+| 10 | 1 | 19 | 0.30 | 0.95 | 20 | 3 | 0 |
+| 15 | 0.25 | 18 | 0.60 | 1.25 | 20 | 3 | 0 |
+| 15 | 1 | 20 | 0.50 | 1.25 | 19 | 3 | 0 |
+
+Single fails recovery/rank in all groups. The objective is already variance-
+corrected; the approved full-state remedy investigates the refit loss without
+altering criteria. Multimodal passes every recovery and false-positive group,
+but fails rank at K = 5, noise = 1 and convergence at K = 15, noise = 1. The latter is
+seed 20261033 (finalK = 5,500 iterations,loading correlation .934102,output flagFALSE).
+Protected MM also has one capped intermediate stage (K = 10/noise .25). The selected
+unprotected MM arm has one final cap and one intermediate cap; the 10/1 reference
+has no final cap and one intermediate cap. Single protected has four capped
+intermediate stages despite every returned final fit converging. These are
+reported limitations; no model meets every success criterion.
+
+No new starting K, protection default or benchmark replacement is adopted.
+The conditional 1-SE analysis is not eligible from Task1-3. Continue Andrew's
+approved Single full-state remedy and subsequently the prescribed Task2
+training-only collapse diagnosis. MM's current failures are rank/convergence,
+not a failed recovery criterion; do not tune1.96, rank 3 or the output tolerance.
+
+### Task1-5 ready to execute
+
+The approved full-state remedy and unchanged 160-cell design are committed before
+running. Fresh full suite: **573 passed, 0 failed**, including exact retained
+state transfer, its numerical use in the first update, malformed-state errors,
+no-overwrite guards, and bit-for-bit default identity against the base branch.
+The new path returns n×K and p×K posterior moments, K beta moments, p precisions,
+persistent loading priors and the shared beta prior; all fields use the same
+retained indices. Existing coordinate updates and criteria are unchanged.
+No posterior-state candidate result is claimed yet; execution follows this commit.

@@ -19,6 +19,38 @@ execute:
   warning: false
 ---
 
+## Completed Round2 protected-pruning panel (2026-10-15)
+
+All800 cells completed with zero errors/warnings. Neither model is adopted:
+single modality fails recovery and retained rank; multimodal meets the recovery
+and false-positive margins but misses median rank 3 atK_init5/noise 1 and has one
+final output-convergence cap atK_init15/noise 1. Intermediate caps are reported
+separately (four single protected, one multimodal protected). These completed
+results replace the earlier Round1 inability to assess multimodal convergence.
+The complete criteria tables are in the Round2 handoff and progress chapter.
+
+Andrew's additional full-state single refit experiment is prepared under the
+unchanged criteria. No benchmark or fitting default changes. Task2 will
+investigate real-data multimodal collapse using unchanged TCGA training inputs.
+
+## Round2 supervised-pruning diagnosis (2026-10-15)
+
+The positive-SD protection correction is tested and preserves default fits.
+The single-modality portion of the fixed rank panel fails recovery and retained
+rank despite final ELBO convergence. A fixed case trace shows that the planted
+program is protected before deletion of a different program, then lost during
+the refit: loading |cor| .896 at K = 7 becomes .391 at K = 6. The shared beta prior
+remains nondegenerate. The first high-noise case keeps the signal but ends at
+rank1. The trace changes no fitting arguments or source code.
+
+Andrew approved testing full posterior states in pruning refits as an additional
+opt-in remedy, using the same 160 protected single cells and adoption criteria.
+The earlier alpha_F=0 benchmark remains valid; no protected-pruning configuration
+or new K is adopted from the case study. Andrew also approved the unchanged
+K = 7/no-pruning single fallback for the later feature sensitivity while this issue
+is pursued. Current attempts and results belong in
+`docs/plans/Codex_to_Claude_Round2.md` and `docs/plans/Round2_attempts_log.md`.
+
 ## Protected-pruning evaluation (2026-10-15)
 
 Protected pruning and a new starting rank were not adopted: the fixed assessment requires

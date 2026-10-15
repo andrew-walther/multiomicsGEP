@@ -1,0 +1,2 @@
+"seed","noise","K","model","arm","error","runtime","recovered","false_active","K_final","converged","elbo_converged","outputs_converged","c_validation","cor_planted","n_active","iterations","pruning_caps","runaway_F","runaway_L","max_abs_beta","warnings"
+20261018,1,5,"single","reference",NA,0.922000000000001,FALSE,0,5,TRUE,TRUE,FALSE,0.445583211322596,0.103761285201947,0,27,0,1.01434169284736,1.47096672178157,0.0872141834428245,""

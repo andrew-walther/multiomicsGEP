@@ -15,6 +15,50 @@ selection threshold. The complete rank panel is pre-registered in
 `docs/plans/Round2_attempts_log.md`. No adoption is claimed before its results;
 the interim-writeup benchmark and fitting defaults remain unchanged.
 
+## 2026-10-15 — Complete the corrected rank panel; adopt neither protected model
+
+The 800-cell panel completed without errors/warnings using each model's own
+convergence rule. Single protected pruning recovers2/20 at every starting K and
+noise; final median K is2(low noise) or1(high noise). Every returned fit passes
+the ELBO flag and false-positive margins, but recovery/rank fail. Four earlier
+pruning stages cap. The survival objective is already variance-corrected.
+
+Multimodal protection meets recovery and false-positive margins in every group.
+It fails retained rank at K = 5, noise = 1(median2) and output convergence at K = 15, noise = 1
+(19/20;seed 20261033 reaches500 iterations at finalK = 5,correlation .934). One other
+intermediate protected stage caps. Neither model meets every criterion; no
+protected pruning or new starting K is adopted, and the conditional 1-SE run is
+not eligible from this panel. No threshold, rank target or tolerance is tuned.
+
+The full-state single refit is an additional investigation explicitly approved
+by Andrew, recorded below; it has not yet produced a new scientific result.
+The remaining multimodal rank/cap findings stay open for the training-only
+collapse work and review. The benchmark remains unchanged. Tables and complete
+attempt history: `docs/plans/Codex_to_Claude_Round2.md` and
+`docs/plans/Round2_attempts_log.md` (attempt3 outputs).
+
+## 2026-10-15 — Validate full posterior states in single-modality pruning refits
+
+**Decision (Andrew):** test a full-state pruning refit as one additional opt-in
+remedy beyond the Round2 handoff's listed K-selection ladder. Do not change a
+threshold, criterion, simulation bed or fitting default. This authorizes a test,
+not adoption or benchmark replacement.
+
+The pre-registered first-seed case trace identifies a refit loss: at noise .25,
+the K = 7 planted program is credibly prognostic and protected (loading |cor| .896),
+a different program is deleted, and the K = 6 refit loses recovery (best |cor| .391).
+The shared beta prior remains nondegenerate. At noise 1 the signal survives but
+rank shrinks to1. These two cases do not estimate a recovery rate; all stages
+converge. The old refit keeps L/F means and the shared beta prior, but resets
+posterior variances, beta, noise precision and persistent loading-prior state.
+
+The approved experiment preserves those retained states while leaving all
+coordinate updates and the pruning objective unchanged. It repeats all 160
+single protected cells and reuses the unchanged source-panel reference rows.
+The simulation adoption rule still applies at every starting rank and both noise
+levels. See Task1-4 and Task1-5 in `docs/plans/Round2_attempts_log.md`. No result
+from the new remedy is claimed before its pre-run commit and full execution.
+
 ## 2026-10-15 — Write-up process records moved to paper/writeup/_process/
 
 The write-up folder should show only the deliverable, its appendices and figures.

@@ -21,6 +21,10 @@
 # every fit converged under its own rule, median final K=3. Missing/error rows
 # cannot pass. No tuning. Frozen risk orientation. No real/external data loaded.
 # 800 independent cells, socket workers only (one serial fit per worker).
+# Local execution exceeds one hour; workers observed below 700MB RSS each.
+# Longleaf: round2_k_selection.slurm, 4GB/cell, no jobs submitted.
+# Task1-5 may request posterior_start=TRUE for the approved opt-in single
+# remedy; the original 800-cell entry point keeps posterior_start=FALSE.
 # Each completed cell, including errors/warnings, is written before aggregation.
 # Refuse overwrite of an existing attempt. Never edit this or its fitters while running.
 
@@ -45,14 +49,17 @@ load_panel_code <- function() {
 
 #' Fit and score a fixed panel cell, retaining a failure as a row
 #' @param i Row number in the fixed grid.
+#' @param posterior_start Opt-in full posterior preservation in single protected refits.
 #' @return One data-frame row of metrics or an explicit error.
 #' @examples
 #' # panel_cell(1L)
-panel_cell <- function(i) {
+panel_cell <- function(i,posterior_start=FALSE) {
   x <- grid[i, ]; t0 <- proc.time()[["elapsed"]]
   id <- x
   fit_warnings <- character()
   answer <- withCallingHandlers(tryCatch({
+    if(posterior_start && !(x$model=="single" && x$arm=="protected"))
+      stop("posterior_start applies only to the protected single-modality arm")
     if (x$model == "single") {
       tb <- make_testbed(x$seed, x$noise)
       a <- list(K = x$K, max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
@@ -61,6 +68,7 @@ panel_cell <- function(i) {
         list(canonicalize = TRUE, w_S = 1, init_supervised = TRUE,
              beta_prior_mode = "shared", prior_beta = "point_laplace", beta_warmup = 10L,
              prune = TRUE, prune_protect_survival = TRUE) else list(alpha_F = 0))
+      if(posterior_start)a$prune_preserve_posterior <- TRUE
       fit <- do.call(fit_cox_on_yf, c(list(tb$Ytr, tb$ttr, tb$str), a))
       sc <- score_fit(fit, tb)
       metrics <- data.frame(recovered = sc$recovered, false_active = sc$false_z,
@@ -104,6 +112,7 @@ panel_cell <- function(i) {
   }, error = function(e) cbind(id, error = conditionMessage(e),
                               runtime = proc.time()[["elapsed"]] - t0)),
     warning=function(w) {fit_warnings <<- c(fit_warnings,conditionMessage(w));invokeRestart("muffleWarning")})
+  if(posterior_start)answer$posterior_start <- TRUE
   answer$warnings <- paste(unique(fit_warnings),collapse=" | ")
   write.csv(answer,file.path(out_dir,"cells",sprintf("cell_%04d.csv",i)),row.names=FALSE)
   answer

@@ -71,3 +71,31 @@ run_test('KPanel-T4: a real unpruned fit retains metrics when pruning history is
   assert_true(file.exists(file.path(env$out_dir,'cells','cell_0001.csv')))
   unlink(env$out_dir,recursive=TRUE)
 })
+run_test('KPanel-T5: posterior-state refitting is forwarded only when requested', {
+  load_panel_code()
+  env<-new.env(parent=.GlobalEnv)
+  env$grid<-data.frame(seed=42L,noise=.25,K=3L,model='single',arm='protected')
+  env$cfg<-list(cavi=list(max_iter=2L,tol=1e-5))
+  env$out_dir<-tempfile('panel_posterior_');dir.create(file.path(env$out_dir,'cells'),recursive=TRUE)
+  original<-fit_cox_on_yf;seen<-logical()
+  # Test the adapter separately from posterior-state fitting, covered by its
+  # numerical tests. Removing the observed flag keeps this a tiny old-API fit.
+  env$fit_cox_on_yf<-function(...) {
+    a<-list(...);seen<<-c(seen,isTRUE(a$prune_preserve_posterior))
+    a$prune_preserve_posterior<-NULL;do.call(original,a)
+  }
+  cell<-panel_cell;environment(cell)<-env
+  off<-cell(1L);on<-cell(1L,posterior_start=TRUE)
+  assert_true(is.na(off$error) && is.na(on$error),msg='both adapter paths complete')
+  assert_true(any(seen) && !seen[1],msg='posterior state is opt-in at the fitter boundary')
+  unlink(env$out_dir,recursive=TRUE)
+})
+run_test('KPanel-T6: posterior panel refuses an existing attempt before any fit', {
+  source('results/benchmark_sim/run_posterior_k_panel.R')
+  p<-tempfile('posterior_panel_exists_');dir.create(p)
+  writeLines('preserve',file.path(p,'checkpoint'))
+  e<-tryCatch(run_posterior_k_panel(out_dir=p),error=function(e)e)
+  assert_true(inherits(e,'error'),msg='existing output refused')
+  assert_true(identical(readLines(file.path(p,'checkpoint')),'preserve'),msg='old checkpoint untouched')
+  unlink(p,recursive=TRUE)
+})

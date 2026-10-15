@@ -259,6 +259,26 @@ prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
 # PART 2 — fit_cox_on_yf()
 # ==============================================================================
 
+#' Subset a canonical single-modality posterior without resetting its state
+#' @param state Posterior state returned by prune_preserve_posterior=TRUE.
+#' @param keep Unique retained program indices, in the desired order.
+#' @return State with score/loading moments, beta moments and loading priors
+#'   subset together; feature precisions and the shared beta prior unchanged.
+#' @examples
+#' # yf_subset_posterior_state(fit$posterior_state,c(1L,3L))
+#' @family supervised_yfb
+#' @seealso [fit_cox_on_yf()]
+yf_subset_posterior_state <- function(state,keep) {
+  K <- ncol(state$EL)
+  if(!is.numeric(keep) || !length(keep) || anyNA(keep) || any(!is.finite(keep)) ||
+    any(keep!=as.integer(keep)) || any(keep<1L | keep>K) || anyDuplicated(keep))
+    stop("keep must contain unique retained program indices.")
+  out <- state
+  for(nm in c("EL","EL2","EF","EF2"))out[[nm]] <- state[[nm]][,keep,drop=FALSE]
+  for(nm in c("EBeta","EBeta2","prior_F"))out[[nm]] <- state[[nm]][keep]
+  out
+}
+
 #' Fit Cox-on-YF (Cluster B) Supervised Matrix Factorization via CAVI
 #'
 #' Implements the Cluster B reformulation where the survival linear predictor is
@@ -435,6 +455,14 @@ prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
 #'                 (warm start, shared beta prior carried over, no warm-up),
 #'                 and repeat. The result has fewer than K columns and
 #'                 `$pruning` records each removal.
+#' @param posterior_init NULL (default) or a full canonical posterior state,
+#'   preserving EL/EL2, EF/EF2, beta moments, Tau and persistent loading/shared
+#'   beta priors. Requires no cohort offset and N_frozen=0; means need not be
+#'   supplied separately. Initial uncertainty and beta affect the first update.
+#' @param prune_preserve_posterior Logical, default FALSE. Carry that full state
+#'   into each pruning refit rather than reinitializing from L/F means. Also
+#'   returns posterior_state for continuation. This changes only initialization;
+#'   the prior families, coordinate updates, objective and pruning rule are fixed.
 #' @param prune_protect_survival Logical, default FALSE. Protect programs with
 #'   |E[β_k]| >= 1.96 sqrt(E[β_k²] - E[β_k]²) and SD(β_k)>0 from the ELBO nullcheck.
 #' @param converge_on Stopping criterion: default "elbo" preserves the existing
@@ -510,11 +538,40 @@ fit_cox_on_yf <- function(Y, time, status,
                            prune           = FALSE,
                            prune_protect_survival = FALSE,
                            converge_on = c("elbo", "outputs"),
-                           trace_supervision = FALSE) {
+                           trace_supervision = FALSE,
+                           posterior_init = NULL,
+                           prune_preserve_posterior = FALSE) {
 
   record_output_convergence <- !missing(converge_on)
   call_args <- mget(names(formals(sys.function())), envir = environment())
   n <- nrow(Y); p <- ncol(Y)
+  if(!is.logical(prune_preserve_posterior) || length(prune_preserve_posterior)!=1L ||
+     is.na(prune_preserve_posterior))stop("prune_preserve_posterior must be TRUE or FALSE.")
+  if(prune_preserve_posterior || !is.null(posterior_init)) {
+    if(!canonicalize || !is.null(cohort_id) || N_frozen>0)
+      stop("Posterior-state starts require canonicalize=TRUE, no cohort offset and N_frozen=0.")
+  }
+  if(!is.null(posterior_init)) {
+    required <- c("EL","EL2","EF","EF2","EBeta","EBeta2","Tau","prior_F","g_beta")
+    if(!is.list(posterior_init) || !all(required %in% names(posterior_init)))
+      stop("posterior_init must contain every posterior moment, precision and persistent prior.")
+    for(nm in c("EL","EL2","EF","EF2")) {
+      nr <- if(nm %in% c("EL","EL2"))n else p
+      x <- posterior_init[[nm]]
+      if(!is.matrix(x) || !is.numeric(x) || !identical(dim(x),c(as.integer(nr),as.integer(K))) ||
+        any(!is.finite(x)))stop("posterior_init has invalid dimensions or values for ",nm)
+    }
+    if(length(posterior_init$EBeta)!=K || length(posterior_init$EBeta2)!=K ||
+      any(!is.finite(c(posterior_init$EBeta,posterior_init$EBeta2))) ||
+      length(posterior_init$Tau)!=p || any(!is.finite(posterior_init$Tau)) ||
+      any(posterior_init$Tau<=0) || length(posterior_init$prior_F)!=K)
+      stop("posterior_init beta moments, precisions and priors must match the retained programs.")
+    multimodal_yfb_validate_moments(posterior_init$EL,posterior_init$EL2,"posterior_init EL")
+    multimodal_yfb_validate_moments(posterior_init$EF,posterior_init$EF2,"posterior_init EF")
+    multimodal_yfb_validate_moments(posterior_init$EBeta,posterior_init$EBeta2,"posterior_init beta")
+    EL_init <- posterior_init$EL;EF_init <- posterior_init$EF
+    if(beta_prior_mode[1]=="shared")beta_prior_init <- posterior_init$g_beta
+  }
   converge_on <- match.arg(converge_on)
   if (record_output_convergence && !exists("multimodal_yfb_relative_change", mode = "function"))
     source("code/fit_multimodal_yfb.R")
@@ -530,7 +587,9 @@ fit_cox_on_yf <- function(Y, time, status,
     if (is.null(w_S)) w_S <- 1
     if (!prior_LF %in% c("point_exponential", "point_laplace", "normal"))
       stop("canonicalize = TRUE supports prior_LF point_exponential, point_laplace or normal.")
-    prior_F_state <- vector("list", K)   # loading priors held across sweeps
+    prior_F_state <- if(is.null(posterior_init)) vector("list", K) else posterior_init$prior_F
+    # Loading priors are the persistent factor-specific priors. The L prior is
+    # re-estimated from its pseudo-observations at every coordinate update.
   }
   beta_prior_mode <- match.arg(beta_prior_mode)
   if (!canonicalize && (init_supervised || beta_prior_mode == "shared" || prune))
@@ -718,10 +777,10 @@ fit_cox_on_yf <- function(Y, time, status,
     EL[, K] <- as.vector(R_K %*% d) / sum(d^2)
   }
 
-  EL2 <- EL^2
-  EF2 <- EF^2
+  EL2 <- if(is.null(posterior_init)) EL^2 else posterior_init$EL2
+  EF2 <- if(is.null(posterior_init)) EF^2 else posterior_init$EF2
 
-  if (canonicalize) {
+  if (canonicalize && is.null(posterior_init)) {
     # Start every program at sd(Y EF_k) = 1 so beta starts on its final scale.
     cz <- canonicalize_yf_factors(Y, EL, EL2, EF, EF2, rep(0, K), rep(0, K), K)
     EL <- cz$EL; EL2 <- cz$EL2; EF <- cz$EF; EF2 <- cz$EF2
@@ -740,7 +799,9 @@ fit_cox_on_yf <- function(Y, time, status,
   # Optionally warm-start beta via Cox regression on ZF = Y·EF.
   # cox_warmstart=FALSE (default) matches Cluster A behavior: EBeta starts at 0.
   # cox_warmstart=TRUE calibrates EBeta to the ZF scale before CAVI begins.
-  if (cox_warmstart) {
+  if (!is.null(posterior_init)) {
+    EBeta <- posterior_init$EBeta
+  } else if (cox_warmstart) {
     # Normalize EF before projecting: CAVI uses ZF = Y·EF_norm (unit-L2-norm columns).
     # Without normalization, ‖ZF‖ ~ O(√(p·n)) and Cox returns β ~ 1e-9 — machine
     # epsilon on the CAVI scale — so the warm-start has no effect.
@@ -769,9 +830,12 @@ fit_cox_on_yf <- function(Y, time, status,
   } else {
     EBeta <- rep(0, K)
   }
-  EBeta2 <- EBeta^2
+  EBeta2 <- if(is.null(posterior_init)) EBeta^2 else posterior_init$EBeta2
 
-  if (verbose && !cox_warmstart) {
+  if (verbose && !is.null(posterior_init)) {
+    cat(sprintf("    [init] Full posterior warm start; retained EBeta range: [%.3e, %.3e]\n",
+                min(EBeta), max(EBeta)))
+  } else if (verbose && !cox_warmstart) {
     cat(sprintf("    [init] EBeta initialized to 0 (cox_warmstart=FALSE)\n"))
   }
 
@@ -830,7 +894,7 @@ fit_cox_on_yf <- function(Y, time, status,
     }
   }
 
-  Tau <- 1.0 / pmax(apply(Y, 2, var), 1e-8)
+  Tau <- if(is.null(posterior_init)) 1.0 / pmax(apply(Y, 2, var), 1e-8) else posterior_init$Tau
   y_frob2 <- sum(Y^2)
 
   history <- list(
@@ -1371,6 +1435,12 @@ fit_cox_on_yf <- function(Y, time, status,
     result$beta_cohort_levels <- beta_cohort_levels
   }
 
+  if(prune_preserve_posterior || !is.null(posterior_init)) {
+    result$posterior_state <- list(EL=result$EL,EL2=result$EL2,EF=result$EF,EF2=result$EF2,
+      EBeta=result$EBeta,EBeta2=result$EBeta2,Tau=result$Tau,
+      prior_F=prior_F_state,g_beta=result$g_beta)
+  }
+
   # Pruning (canonical only): drop the program whose removal raises the ELBO
   # most, if any removal does not lower it, and refit from a warm start.
   if (prune && K > 1) {
@@ -1382,6 +1452,9 @@ fit_cox_on_yf <- function(Y, time, status,
         K = K - 1L, EL_init = EL[, keep, drop = FALSE], EF_init = EF[, keep, drop = FALSE],
         init_method = "custom", init_supervised = FALSE, beta_warmup = 0L,
         beta_prior_init = if (beta_prior_mode == "shared") g_beta else NULL))
+      refit_args["posterior_init"] <- list(NULL)
+      if(prune_preserve_posterior)
+        refit_args$posterior_init <- yf_subset_posterior_state(result$posterior_state,keep)
       if (beta_prior_mode == "shared") refit_args["beta_prior_init"] <- list(g_beta)
       if (!record_output_convergence) refit_args$converge_on <- NULL
       refit <- do.call(fit_cox_on_yf, refit_args)

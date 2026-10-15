@@ -416,3 +416,21 @@ commit. It records the first prescribed seed at both noise levels in a fresh
 `outputs/k_selection/round2/attempt4_trace/` folder and refuses overwrite.
 The local 800-cell rank panel can also be dispatched one cell per Longleaf array
 with `results/benchmark_sim/round2_k_selection.slurm`; no jobs are submitted by R.
+
+The approved full-posterior refit experiment uses
+`Rscript results/benchmark_sim/run_posterior_k_panel.R 6`. It first requires the
+complete original 800-cell table, then fits the 160 protected single-modality
+cells in a fresh `attempt5_posterior/` folder and compares them with the saved
+reference and mean-only rows. It changes only the pruning-refit initialization.
+
+For this opt-in experiment, `fit_cox_on_yf(..., canonicalize=TRUE,
+prune_preserve_posterior=TRUE)` returns `posterior_state` and carries retained
+states into pruning refits. The state contains n-by-K score moments, p-by-K
+loading moments, K beta moments, p feature precisions, persistent loading priors
+and the shared beta prior. `yf_subset_posterior_state()` keeps the same program
+indices in every field. `posterior_init=state` resumes from these quantities;
+default pruning refits still initialize from L/F means. Preserving second moments matters
+because projection uncertainty enters the beta precision, and the retained beta
+sets the first Cox working predictor. This path currently supports canonical
+fits without cohort offsets or frozen-F iterations. It changes neither the
+model nor its adoption criteria and is not an approved benchmark replacement.

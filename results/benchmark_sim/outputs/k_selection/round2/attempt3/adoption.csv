@@ -1,0 +1,3 @@
+"model","adopted","reason"
+"single",FALSE,"recovery_pass;rank_pass"
+"multimodal",FALSE,"convergence_pass;rank_pass"

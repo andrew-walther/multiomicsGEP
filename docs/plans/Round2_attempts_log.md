@@ -174,3 +174,93 @@ gains. Original bindings restore after success and error; old attempt folders
 refuse overwrite. Fresh full suite **567 passed, 0 failed**. Task1-3 is still
 running, with 783/800 checkpoints and no recorded execution errors; its source
 has not been edited. This diagnosis does not change that panel or its design.
+
+**Result, Task1-4:** both pre-specified cases completed without errors or
+warnings, and every observed fit converged. At noise .25 the K = 7 fit recovered
+the planted program (|cor| .895844,beta−.914905,SD.056769), protected it with
+nullcheck gain−Inf, and deleted a different program3. The K = 6 refit lost recovery
+(best |cor| .390941); the terminal K2 fit has |cor| .477163. At noise 1 recovery
+survives (.958283→.715245 after the first refit→.734053 at terminal K1), so the
+rank criterion fails there independently of recovery. Effective shared-prior
+slab probability stays positive in both cases (.5 initially, near1 terminal).
+A point-mass beta prior is not the cause observed in these cases. Source audit:
+mean-only refits reset EL2/EF2 to squared means, beta moments to zero, Tau to
+initial feature variances, and the persistent loading-prior state to empty.
+Output: `outputs/k_selection/round2/attempt4_trace/stages.csv`; raw state objects
+are ignored RDS files. This two-case diagnosis estimates no population frequency.
+
+Andrew explicitly approved testing full-posterior pruning refits as an additional
+opt-in remedy beyond the listed Task1 ladder. All criteria/defaults remain fixed.
+Implementation/tests are being prepared in separate temporary copies while the
+unchanged original panel finishes; no candidate scientific fit has run yet.
+
+## Task 1 attempt 5 — full posterior state in single protected-pruning refits
+
+**Before execution:** this entry and the exact runner/opt-in implementation are
+committed before any candidate scientific fit. Andrew explicitly approved this
+additional remedy after Task1-4 showed the protected program was lost during a
+refit after a different program was deleted. This approval adds a remedy; it
+changes no criterion, threshold, data, test bed or default.
+
+**Hypothesis/one change:** preserving the retained posterior state prevents the
+refit initialization from erasing the prognostic direction. Carry EL/EL2, EF/EF2,
+beta/second moments, feature precisions, persistent F priors and the shared beta
+prior into each refit. The L prior is fit from its pseudo-observations on every
+coordinate update and has no separately held state. Keep the existing refit
+warm-up 0, update order, EBNM calls, objective and nullcheck unchanged. The new
+`prune_preserve_posterior=TRUE` path is opt-in; FALSE/default stays bit-identical.
+
+**Arms/data:** all 160 protected single cells, seeds20261016:20261035, noise .25/1,
+K_init5/7/10/15, unchanged n = 400 / p = 50,β₃ = 3.3 calibrated bed, selected signed
+point-Laplace/shared-beta configuration. Reuse the 160 unchanged alpha_F=0
+reference rows and retain the 160 old mean-only protected rows from Task1-3.
+The new runner refuses to start until the original800-cell panel is complete,
+unique and error-free; it records that source table's checksum. No external data.
+
+**Adoption rule:** the same four conditions in all eight K/noise groups:
+recovery>=16/20; mean false prognostic<=reference+.5; all 20 final fits converge
+under the single ELBO rule; median K=3. Single last-iteration output flags and
+all intermediate refit caps remain separate reported diagnostics as in Task1-3.
+Missing/error cells cannot pass. No additional seed case, threshold, start,
+prior or fitting tolerance may be selected from these results. If simulation
+adopts, run the handoff's training-only 1-SE analysis with this same candidate.
+The benchmark can change only after Claude review and Andrew approval.
+
+**Software verification:** original API fails the new tests as unsupported.
+Temporary implementation tests verify exact state subsetting, nonzero retained
+beta in the first working predictor, retained F variance in beta precision,
+FALSE/default identity, malformed-state errors and exact recursive state transfer
+using a deliberately dead-column unit fixture. The scientific bed is untouched.
+The adapter test verifies the flag is forwarded only when requested. Full suite
+and base-branch identity tests must pass after the original panel stops and the
+prepared copies are applied, before this attempt's commit.
+
+**Execution after commit:**
+`Rscript results/benchmark_sim/run_posterior_k_panel.R 6`;
+fresh `outputs/k_selection/round2/attempt5_posterior/`. Six socket workers,
+one serial fit per worker, scheduling chunks of1 (no scientific change).
+Longleaf160-cell wrapper prepared; no jobs submitted. Results pending.
+
+
+**Full result, Task1-3:** exited 0;800/800 unique cells,errors 0,warnings 0,93.23min.
+Single protected recovery2/20 and median K2(.25)/1(1) at all four starting K;
+false margins and all returned ELBO flags pass. Four intermediate Single stages
+cap. MM protected recovered19/20;20/20(K = 5),18;20(K = 7),17;19(K = 10),18;20(K = 15).
+Every MM false-positive margin passes. MedianK3 exceptK = 5, noise = 1=2. Final output
+convergence20/20 exceptK = 15, noise = 1=19/20 (seed 20261033,finalK = 5,cap 500,
+cor .934102). MM protected also has one intermediate cap. Reference MM has zero
+final/one intermediate cap; ordinary selected MM one final/one intermediate.
+Officialadoption.csv rejects Single(recovery,rank) and MM(convergence,rank).
+No newK/protection is adopted; no 1-SE run. Full tables are in the attempt3 folder
+and the interim handoff/progress chapter. This completes the prior pending MM
+portion; no failed attempt or earlier interim entry was rewritten. Andrew's
+approved Task1-5 remedy continues for Single; Task2 will address MM collapse.
+
+Task1-5 final pre-run verification: **573 passed, 0 failed** after applying the
+prepared code only once the original panel and workers had exited. All four
+posterior-state tests and six panel/adapter tests pass; existing regression
+checks confirm bit-for-bit base-branch/default identity. A standalone regression
+invocation initially omitted the prediction module (one harness error); loading
+the master suite's normal dependencies gives17/17. The full suite passes after
+a final logging-only clarification and matching the adoption CSV's established
+`adopted` column. No candidate scientific fit has run before this commit.
