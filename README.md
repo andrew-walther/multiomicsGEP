@@ -344,3 +344,13 @@ bios-dissertation; rerun that repository's `prelim/tools/build_prelim.py`
 to update the full prelim. Continuing work is described as methodological
 aims and expected results without a fixed-date timeline. A substantive
 revision will follow the advisor-meeting plan and verified additional results.
+
+## Planted comparator experiment
+
+Run `Rscript results/benchmark_sim/run_supervision_comparators.R 6` from the root for the
+fixed 40-dataset socket-cluster design (flashier, glmnet, ebnm, survival, yaml required).
+The first run stopped at high-noise EBMF fits retaining zero or one factor, which cannot
+support the requested lasso arm. No workaround was applied. Review `partial_summary.csv`,
+`dataset_failures.csv` and `results.csv` in `outputs/supervision_comparators/` under the
+benchmark directory; the partial high-noise comparison is conditional on successful fits.
+Undefined C values and nonconvergence remain explicit.

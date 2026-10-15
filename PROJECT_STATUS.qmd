@@ -19,6 +19,14 @@ execute:
   warning: false
 ---
 
+## Planted comparator evaluation (2026-10-15)
+
+The noise-0.25 panel gives supervised recovery 17/20 versus 0/20 for unsupervised EBMF,
+two-step EBMF–Cox (with or without lasso), and PCA–Cox. One supervised fit does not converge.
+The high-noise panel is incomplete: ten datasets have zero/one-factor EBMF outputs and
+cannot support the requested lasso arm. The prompt stopped without a workaround; complete
+dataset and defined-C denominators are recorded in the partial table. See DECISIONS.md.
+
 ## Project Overview
 
 This project implements a **Supervised Bayesian Matrix Factorization** model

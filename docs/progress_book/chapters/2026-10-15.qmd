@@ -194,3 +194,16 @@ survival), and has fewer false prognostic programs.
   modality, where survival gains too little to offset the program's cost.
 
 The rule for the number of programs is the next decision.
+
+## Comparators on the calibrated planted bed
+
+The fixed 20-seed comparison completed at noise 0.25. Recovery is 17/20 for the selected
+supervised model and 0/20 for EBMF alone, EBMF–Cox, EBMF–lasso-Cox and PCA–Cox. Mean validation
+C is 0.763, 0.634 and 0.688 for supervised, EBMF–Cox and PCA–Cox, respectively. One supervised
+fit did not converge; lasso has one undefined C, so its full mean is unavailable.
+
+At noise 1, eight datasets have only one EBMF factor (unsupported by glmnet) and two have
+none. The prompt stopped without altering the design. The ten complete datasets are a
+selected subset and do not support a full-seed comparison. Raw rows, failure messages,
+actual denominators and defined-score counts are in
+`results/benchmark_sim/outputs/supervision_comparators/`. No DeSurv arm was available.
