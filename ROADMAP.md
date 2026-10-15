@@ -971,3 +971,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   evidence, retaining current limitations and making no new result claims.
 - Advisor-meeting follow-up remains the authority for the later substantive
   revision. No analytical code, model defaults or results changed.
+
+- Constant multimodal two-step C investigated (2026-10-15): ceilings 6/7/8 retain the same
+  six factors and identical risks. Reporting now shows the retained rank. No stage-1
+  rank-forcing change is needed.
+
+- Multimodal real-data method issue (2026-10-15): selected shared-prior configuration
+  gives constant risks and hits the iteration cap. The 10/1 reference also does not
+  converge. Resolve on training diagnostics before claiming a validated multimodal
+  prognostic method; no alternative was chosen from ICGC performance.

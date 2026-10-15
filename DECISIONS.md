@@ -5,6 +5,62 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Constant two-step C reflects the same six retained EBMF factors
+
+The requested greedy ceilings 6, 7 and 8 are passed through correctly:
+`results/multimodal_real/run_multimodal_real_fit.R:144` passes K, and
+`code/run_multimodal_yfb_simulation.R:54` supplies it as `greedy_Kmax = K`.
+The three cached pruned-framework fits all retain six EBMF factors. Their loading
+matrices, Cox coefficients and training risks are identical (maximum absolute differences
+are all zero). This explains identical all-donor C = 0.4181577 and primary-PDAC C = 0.4236686;
+there is no evidence that the requested ceiling was ignored. The rank audit is in
+`results/multimodal_real/outputs/supervised/two_step_rank_audit.csv`.
+
+**Reporting correction only:** the real-data runner and summarizer previously wrote
+`K_final = NA` for the two-step baseline. They now report its retained factor count.
+No rank is forced, and no core fitter is changed. The 10/1 framework comparator retains
+its original joint loading updates; it omits the later supervised initialization and shared
+β-prior changes. The selected expression-only model uses platform-wise z-standardization on
+the same 3,000 expression genes (ICGC once, with primary donors subset afterward), while joint arms use the cached raw log2/beta-scale inputs.
+
+**Preprocessing correction before expression scoring:** read-only review found that the initial
+runner would standardize primary and all-donor ICGC subsets separately. The corrected runner
+standardizes all ICGC donors once and selects primary rows by ID; a behavioral test verifies
+identical standardized values and linear risks for shared donors. The correction was made
+before any selected-expression scores existed. It changes no fit controls or model selection.
+
+**Selected multimodal real-data result:** the fixed M4 configuration reaches 500 outer
+iterations without convergence, retains seven programs and estimates every β posterior as
+a point mass at zero. Both ICGC risk vectors are exactly constant zero, so the existing
+frozen-C helper returns NA (not a usable validation C in this fixed analysis).
+The existing multimodal runner uses a different convention: `survival::concordance`
+assigns tied risks C = 0.5. The new runner retains its pre-specified frozen-C helper;
+this discrepancy for constant predictors is reported rather than changing the metric
+after observing collapse. Both conventions indicate no discrimination. No alternative prior, warm-up,
+weight, rank or stopping rule is tried. Passing the small simulation bed did not establish
+that the selected configuration produces prognostic programs on these real-data inputs.
+
+**Fixed four-arm TCGA → ICGC comparison (starting K = 7):**
+
+| Model | Primary PDAC C (n=50) | All-donor C (n=67) | K_final | Survival-active | Converged |
+|---|---:|---:|---:|---:|---|
+| Selected multimodal M4 | NA (constant risks) | NA (constant risks) | 7 | 0 | No, 500 iterations |
+| 10/1 pruned framework | 0.701 | 0.665 | 7 | 1 | No, 500 iterations |
+| Two-step stacked EBMF → Cox | 0.424 | 0.418 | 6 | 0 (Cox Wald z) | Not returned |
+| Selected expression-only | 0.588 | 0.616 | 7 | 1 | Yes |
+
+Flashier emitted a maximum-iteration warning for the two-step fit; it is retained in
+`outputs/supervised/warnings.csv`. No convergence claim is made for that wrapper.
+The shared-donor audit gives identical risks for all 50 primary donors in primary/all
+scoring for every method. Full suite: 549 passed, 0 failed. Quantitative files are in
+`results/multimodal_real/outputs/supervised/`. No configuration is adopted from these
+validation results; the multimodal real-data collapse remains an unresolved method issue.
+
+**Configuration from Prompt E (ac572f6):** protected pruning was not adopted because the
+required multimodal ELBO-convergence criterion was unavailable. Starting K remains 7,
+using the handoff single-modality and M4 multimodal configurations. The DeSurv prerequisite
+was not available in Prompt A. No model is retuned on ICGC.
+
 ## 2026-10-15 — KL sign fix, multimodal supervision (M4), and two open items: single-modality convergence and K selection (awaiting decisions)
 
 **KL sign error in the canonical single-modality objective (fixed).** In `fit_cox_on_yf(canonicalize

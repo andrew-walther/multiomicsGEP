@@ -194,3 +194,33 @@ survival), and has fewer false prognostic programs.
   modality, where survival gains too little to offset the program's cost.
 
 The rule for the number of programs is the next decision.
+
+## The constant two-step multimodal C-index
+
+The greedy ceilings 6, 7 and 8 all yield the same six-factor EBMF fit: loadings, coefficients
+and training risks are identical. Thus all-donor C = 0.418 and primary-PDAC C = 0.424 repeat
+exactly. The requested ceiling is passed correctly; the baseline is allowed to stop below
+it. The reporting scripts now expose the actual retained rank. The audit table is in
+`results/multimodal_real/outputs/supervised/two_step_rank_audit.csv`; no core fitter changed.
+
+The selected M4 multimodal configuration reached the 500-iteration cap without convergence
+on TCGA. It retained seven programs but all β posteriors collapsed to zero, giving exactly
+constant ICGC risks and an undefined C under the existing helper. This real-data failure
+is retained without tuning the prior, warm-up, rank or stopping rule.
+
+| Model | Primary ICGC C | All-donor C | Programs | Survival-active | Converged |
+|---|---:|---:|---:|---:|---|
+| Selected multimodal | NA, constant | NA, constant | 7 | 0 | No |
+| 10/1 pruned framework | 0.701 | 0.665 | 7 | 1 | No |
+| Stacked EBMF–Cox | 0.424 | 0.418 | 6 | 0 (Wald z) | Unrecorded; iteration warning |
+| Selected expression-only | 0.588 | 0.616 | 7 | 1 | Yes |
+
+Primary PDAC includes 50 donors; all-donor scoring includes 67 and is secondary. Both
+joint fits hit 500 iterations. No prior, rank or stopping rule was tuned. All 50 shared
+donors receive identical risks in the primary/all analyses for every arm. The expression
+platform is standardized once before selecting primary donors; the review correction
+preceded expression scoring. The fixed frozen-C helper returns NA for constant risks,
+where ordinary Harrell ties would give 0.5; both indicate no discrimination.
+
+The full suite passes 549 tests. Results, warning and donor-consistency records are in
+`results/multimodal_real/outputs/supervised/`.

@@ -1,0 +1,9 @@
+"method","cohort","n","K_init","K_final","n_active","active_programs","converged","C","runtime"
+"selected_multimodal","validation_primary",50,7,7,0,"",FALSE,NA,1526.493
+"selected_multimodal","validation_all",67,7,7,0,"",FALSE,NA,1526.493
+"pruned_10_1","validation_primary",50,7,7,1,"4",FALSE,0.700591715976331,1666.25
+"pruned_10_1","validation_all",67,7,7,1,"4",FALSE,0.66467859509609,1666.25
+"two_step_ebmf_cox","validation_primary",50,7,6,0,"",NA,0.423668639053254,100.137
+"two_step_ebmf_cox","validation_all",67,7,6,0,"",NA,0.418157720344599,100.137
+"selected_expression","validation_primary",50,7,7,1,"2",TRUE,0.588165680473373,41.4069999999999
+"selected_expression","validation_all",67,7,7,1,"2",TRUE,0.616302186878728,41.4069999999999
