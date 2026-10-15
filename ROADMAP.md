@@ -971,3 +971,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   evidence, retaining current limitations and making no new result claims.
 - Advisor-meeting follow-up remains the authority for the later substantive
   revision. No analytical code, model defaults or results changed.
+
+- Planted comparator run (2026-10-15): noise-0.25 comparison complete; noise-1 comparison
+  blocked for ten datasets by zero/one-factor EBMF outputs. Decide how those methods should
+  be defined in that case before any rerun; no padding or tuning was applied.

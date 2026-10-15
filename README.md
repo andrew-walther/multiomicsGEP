@@ -353,3 +353,13 @@ revision will follow the advisor-meeting plan and verified additional results.
 The assessment is blocked on the difference between multimodal output convergence and the
 required ELBO stopping criterion; protection and a new starting rank were not adopted.
 See the 2026-10-15 decision and progress-book entry before running these scripts.
+
+## Planted comparator experiment
+
+Run `Rscript results/benchmark_sim/run_supervision_comparators.R 6` from the root for the
+fixed 40-dataset socket-cluster design (flashier, glmnet, ebnm, survival, yaml required).
+The first run stopped at high-noise EBMF fits retaining zero or one factor, which cannot
+support the requested lasso arm. No workaround was applied. Review `partial_summary.csv`,
+`dataset_failures.csv` and `results.csv` in `outputs/supervision_comparators/` under the
+benchmark directory; the partial high-noise comparison is conditional on successful fits.
+Undefined C values and nonconvergence remain explicit.

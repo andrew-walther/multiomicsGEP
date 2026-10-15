@@ -34,6 +34,34 @@ at zero (0 ≥ 0). Implemented literally and covered by tests; this differs from
 coefficient is credibly nonzero and could prevent removal of empty programs. It was not
 silently changed to a strict inequality or a positive-variance rule.
 
+## 2026-10-15 — Planted comparator run stopped at zero/one-factor EBMF outputs
+
+The fixed 40-dataset comparator run completed all arms on 20/20 noise-0.25 datasets and
+10/20 noise-1 datasets. At noise 1, eight EBMF fits retained one factor (`glmnet` requires
+at least two columns), and two retained no factors. Prompt B stops here without padding
+predictors, changing EBMF, or retuning. Results from the ten complete high-noise datasets
+are conditional on successful EBMF/lasso construction and are not a full 20-seed comparison.
+No DeSurv arm was run because Prompt A found no usable implementation.
+
+At noise 0.25, supervised recovery is 17/20, versus 0/20 for EBMF alone, either two-step
+method and PCA–Cox. Mean validation C is 0.763 (supervised), 0.634 (EBMF–Cox), 0.688
+(PCA–Cox). One supervised fit did not converge. One lasso fit gives an undefined C under
+the existing frozen-C helper; its mean across all 20 is therefore unavailable (19 defined
+scores have mean 0.639). These missing metrics are retained explicitly, not silently dropped.
+At noise 1, four of the ten completed lasso fits and one supervised fit have undefined C.
+Tables: `results/benchmark_sim/outputs/supervision_comparators/partial_summary.csv`;
+failures and raw rows are stored alongside it.
+
+The two-step candidate program is selected by largest absolute unpenalized Cox z, including
+for the lasso arm (which has no coefficient Wald z). Its recovery sign uses the lasso
+coefficient; nonzero lasso coefficients are not called posterior survival-active programs.
+Projection scores use YF, matching the established single-modality comparator. No model
+choice is adopted from these results.
+
+**Configuration from Prompt E (ac572f6):** protected pruning was not adopted because the
+multimodal ELBO-convergence requirement was unavailable. K = 7 and the original handoff
+configuration apply here; the baseline branch remains `feature/supervised-F`.
+
 ## 2026-10-15 — KL sign fix, multimodal supervision (M4), and two open items: single-modality convergence and K selection (awaiting decisions)
 
 **KL sign error in the canonical single-modality objective (fixed).** In `fit_cox_on_yf(canonicalize

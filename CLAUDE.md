@@ -28,6 +28,8 @@ here too rather than maintaining a separate copy.
 
 - **Protected-pruning evaluation:** opt-in changes and fixed runners are on `m5/k-selection`; adoption was blocked. The controlling fallback decision is recorded at the top of `DECISIONS.md`.
 
+- **Planted comparator evaluation:** runner and partial tables are on `m7/sim-comparators`; see the 2026-10-15 decision for the zero/one-factor EBMF blocker and incomplete high-noise denominator.
+
 ## Quick Reference
 
 Active pointers only — completed one-off analyses and dated reports are indexed in `PROJECT_STATUS.qmd`,
