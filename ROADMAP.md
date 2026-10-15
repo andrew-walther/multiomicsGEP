@@ -90,10 +90,13 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   and supervised-F revision markers are recorded in the implementation plan.
   `paper/writeup/drafting_prompt.md` assigns Claude drafting and Codex review.
 - [x] **Draft the unified technical report (2026-10-14).** Initial draft in
-  `paper/writeup/writeup.qmd` → HTML/PDF: 21-page main text plus derivation
-  Appendices A–B and supporting Appendix C; source inventory extended to 62 IDs.
-- [ ] **Independent review of the draft (Codex), then Claude's fixes and
-  Andrew's approval before merging `writeup/draft`.** See Prompts 3–4 in
+  `paper/writeup/writeup.qmd` → HTML/PDF. Following review, the report has a
+  24-page main text plus derivation Appendices A–B; source inventory has 63 IDs.
+- [x] **Independent review and verification of the revised draft (2026-10-14).**
+  Scientific corrections, derivations, captions and pagination verified in
+  `paper/writeup/verification_round2.md`; its two minor corrections are applied.
+- [ ] **Resolve main-text length and obtain Andrew's approval before merging
+  `writeup/draft`.** The 15–20-page target remains unmet. See Prompts 3–4 in
   `docs/plans/Meeting_Notes_Followup_10_2_26.md` and Task 4 in
   `paper/writeup/implementation_plan.md`.
 

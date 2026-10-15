@@ -92,7 +92,10 @@ derivations in Appendices A (single-modality) and B (multimodal). The review is
 [`review.md`](paper/writeup/review.md) and the disposition of every finding is
 [`review_dispositions.md`](paper/writeup/review_dispositions.md); Codex's
 verification of the revision is
-[`verification.md`](paper/writeup/verification.md).
+[`verification.md`](paper/writeup/verification.md). The second verification is
+[`verification_round2.md`](paper/writeup/verification_round2.md); its two minor
+corrections are applied. The 24-page main text still exceeds the 15–20-page target;
+further cuts and final approval remain pending.
 
 Render the report from the repository root (the RStudio Quarto works on this
 computer; rendering reads only saved aggregates, figures and the bibliography,

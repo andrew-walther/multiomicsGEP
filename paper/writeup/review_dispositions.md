@@ -101,3 +101,23 @@ Not applied: ranks 6 (dropping comparator rows from Table 7) and 8 (moving Metho
 2. Implementation defects A3 and A5 remain documented for the method work and are not fixed.
 3. Figure regeneration needs the local held-out expression data (V11).
 4. The HTML has not been checked at phone width. Codex confirmed MathJax renders at normal width.
+
+## Second verification (`verification_round2.md`)
+
+Codex verified the scientific corrections, added algebra, local caption definitions
+and PDF pagination at `fbf8317`. Andrew authorized the remaining minor updates.
+
+| Finding | Disposition | Change |
+|---|---|---|
+| N1 First sweep-normalizer formulas omit the ridge | **Applied** | Methods §1.2 and Appendix A.1 now explicitly use the square root of the preceding posterior-mean loading norm squared plus `10^-10`, matching `code/fit_cox_on_yf.R:643–646` and A.10. The random target's separate zero-direction convention is unchanged. |
+| N2 Wrong disposition-file pointer | **Applied** | `PROJECT_STATUS.qmd` now points to this file instead of attributing the dispositions to `verification.md`. |
+
+The 24-page main text and V11's local-expression dependency remain disclosed.
+No further length cuts, figure regeneration, model changes or new analyses are
+part of these corrections. Final approval remains pending.
+
+Verification after correction: HTML and PDF renders both exited successfully.
+Both corrected formulas appear in HTML; PDF pages 3 and 25 were inspected as
+images. Only those two pages' extracted text changed. The PDF remains 39 pages,
+with the main text ending on p.24, algorithms on pp.4/7 and every table on its
+previous single page. Revisit markers remain balanced and nested.

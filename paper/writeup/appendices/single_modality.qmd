@@ -35,7 +35,7 @@ $$
 \mathcal L(q) = E_q\ell_Y + E_q\ell_C(\eta) - \sum_{i,k}\mathrm{KL}\big(q(L_{ik})\,\Vert\, g_{L,k}\big) - \sum_{j,k}\mathrm{KL}\big(q(F_{jk})\,\Vert\, g_{F,k}\big) - \sum_k\mathrm{KL}\big(q(\tilde\beta_k)\,\Vert\, g_{\beta,k}\big).
 $$ {#eq-a-target}
 
-**Evaluated algorithm.** Two features make the evaluated algorithm differ from coordinate ascent on @eq-a-target. First, at the start of sweep $r$ it fixes $D^{(r)} = \mathrm{diag}(\lVert\bar F^{(r-1)}_{\cdot k}\rVert_2)$ and the projection $\tilde Z^{(r)} = Y\bar F^{(r-1)}[D^{(r)}]^{-1}$ and treats $\tilde Z$ as a known covariate matrix for the rest of the sweep, so the coefficient update has no projection variance. Second, $E_q\ell_C$ is replaced by the expectation of the working quadratic of A.2. $L$ does not enter $\eta$ in either the target or the algorithm.
+**Evaluated algorithm.** Two features make the evaluated algorithm differ from coordinate ascent on @eq-a-target. First, at the start of sweep $r$ it fixes $D^{(r)} = \mathrm{diag}\big((\lVert\bar F^{(r-1)}_{\cdot k}\rVert_2^2 + 10^{-10})^{1/2}\big)$ and the projection $\tilde Z^{(r)} = Y\bar F^{(r-1)}[D^{(r)}]^{-1}$ and treats $\tilde Z$ as a known covariate matrix for the rest of the sweep, so the coefficient update has no projection variance. Second, $E_q\ell_C$ is replaced by the expectation of the working quadratic of A.2. $L$ does not enter $\eta$ in either the target or the algorithm.
 
 <!-- REVISIT R2 END -->
 <!-- REVISIT R1 END -->
