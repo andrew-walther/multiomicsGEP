@@ -539,3 +539,35 @@ ladder with a committed design and unchanged simulation/CV criteria.
 Task2-1 result-checkpoint verification: fresh full suite **584 passed,0 failed**;
 all ten benchmark SHA256 entries pass and the annotated/peeled tag IDs remain
 unchanged. The result checkpoint adopts no configuration.
+
+## Task3 stopping point — deferred by Andrew (2026-10-15)
+
+Andrew explicitly deferred the separate real-data head-to-head for review.
+The pinned installation, author-pipeline adapter, reported-parameter driver
+and two Longleaf wrappers are retained as preparation. Nine focused software
+tests pass; they are now registered in the master suite. No DeSurv real-data
+fit, consensus run, tuning run or external scoring has occurred. The prepared
+commands are dormant pending renewed authorization. This task is deferred,
+not completed as a scientific comparison; no DeSurv result table exists.
+
+The adapter takes raw author-format expression cohorts (genes x patients),
+keeps the same eligible patients, merges by the paper's zero-filled union,
+uses the package's own feature filter and within-sample ranks, and projects
+with paper05's frozen union-of-top-genes X'W beta rule. The driver preserves
+reported parameters at full precision, independent seed checkpoints and failed
+seeds, then the authors' consensus procedure. Its full BO path receives raw
+training values so fold preprocessing occurs inside CV. Inputs and model RDSs
+stay ignored. Neither adapter changes our fitters or benchmark preprocessing.
+The source pins, independent patient/outcome alignment checks, fixed orientation
+and helper checksum are deliberate safeguards against comparing different
+patients or silently modifying the authors' pipeline. Missing package/library
+or data files fail loudly. Longleaf wrappers are prepared, never submitted.
+
+Review concerns remain: the existing D4 wrapper appears to apply an additional
+log after the author raw loader; the paper's BO summary changes K under its
+one-SE rule while retaining the other overall-best parameters. Both are
+preserved and reported, with no unilateral correction.
+
+Task3 preparation/defer checkpoint: fresh full suite **593 passed,0 failed**,
+including all nine author-adapter/driver tests. Both Longleaf scripts pass
+bash syntax checks. No scientific DeSurv run was started.

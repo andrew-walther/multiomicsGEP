@@ -459,7 +459,7 @@ DeSurv. The pinned package/paper SHAs and installation notes are in the Round2
 handoff. `results/benchmark_sim/desurv_author_adapter.R` wraps the authors'
 rank preprocessing and frozen top-gene X'W beta projection; its focused tests
 run with `Rscript -e 'source("tests/test_desurv_author_adapter.R");report_results()'`.
-The head-to-head scientific comparison remains pending.
+Andrew deferred the head-to-head scientific comparison for review.
 
 The prepared head-to-head entry is `results/benchmark_sim/run_desurv_h2h.R`:
 `all 2` runs the reported-parameter protocol locally; `prepare` creates the

@@ -495,3 +495,7 @@ panel, which will retain the five specified comparators.
 Task2-1 result-checkpoint verification: fresh full suite **584 passed,0 failed**;
 all ten benchmark SHA256 entries pass and the annotated/peeled tag IDs remain
 unchanged. The result checkpoint adopts no configuration.
+
+Task3 preparation/defer checkpoint: fresh full suite **593 passed,0 failed**,
+including all nine author-adapter/driver tests. Both Longleaf scripts pass
+bash syntax checks. No scientific DeSurv run was started.

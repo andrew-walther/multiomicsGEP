@@ -99,8 +99,8 @@ before execution or interpretation; training contrasts do not adopt a remedy,
 and external cohorts cannot select one.
 
 Task3's pinned DeSurv package is installed in ignored `data/round2_R_library/`;
-its preprocessing/projection adapter is being prepared. The head-to-head remains
-pending. Read the Round2 handoff for author SHAs, installation details and the
+its preprocessing/projection adapter, driver and Longleaf wrappers are prepared
+and tested. Andrew deferred the head-to-head for review. Read the Round2 handoff for author SHAs, installation details and the
 raw-loader log-transform concern before changing any preprocessing.
 
 The ten-arm TCGA diagnosis has completed; consult the Round2 handoff for

@@ -482,3 +482,12 @@ necessary full-training credible-program and convergence requirements, but
 its required simulation/CV evaluation has not yet been performed. Those
 unrun parts must not be described as completed. Continue the prescribed
 ladder with a committed design and unchanged simulation/CV criteria.
+
+## DeSurv comparison deferred for review
+
+Andrew deferred the real-data head-to-head. Pinned author software is installed
+in an isolated ignored library, and the adapter/driver/Longleaf wrappers have
+nine focused software tests. No real-data DeSurv fit or external prediction
+has run; there are no new scientific results. The Round2 handoff records the
+software pins, exact author preprocessing/projection, and review concerns.
+Andrew also approved omitting DeSurv from the signed-Gaussian simulation panel.
