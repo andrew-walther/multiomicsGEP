@@ -146,3 +146,24 @@ every simulation criterion:
 
 The normal-prior warm-up arm also passes, with higher recovery but more false positives. The
 real-data check (lower 95% limit of ΔC against α_F = 0 above −0.02) comes next.
+
+## Real data: external validation of the supervised model
+
+The selected configuration was refitted on the reported training data (TCGA + CPTAC, K = 7) and
+scored on the five external cohorts. It is compared with the reported α_F = 0 model.
+
+| Cohort | Supervised − reported (95% CI) |
+|---|---|
+| Dijk | −0.050 (−0.113, 0.012) |
+| Moffitt | −0.001 (−0.071, 0.065) |
+| PACA-AU array | +0.010 (−0.054, 0.069) |
+| PACA-AU seq | +0.029 (−0.038, 0.097) |
+| Puleo | −0.002 (−0.033, 0.027) |
+| **Mean of cohorts** | **−0.003 (−0.029, 0.024)** |
+
+: External ΔC, supervised minus reported α_F = 0 model; cohort-stratified paired bootstrap. {#tbl-real-dc}
+
+Mean external C is 0.624 for the supervised model and 0.627 for the reported one. The pre-specified
+criterion, a lower 95% limit above −0.02, fails by 0.009. The point estimate is zero, and with five
+cohorts the interval is about ±0.027 wide, so the criterion requires a gain of about +0.007 to pass.
+The supervised model keeps three survival-active programs where the unsupervised fit keeps one.

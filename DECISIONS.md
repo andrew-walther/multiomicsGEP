@@ -5,6 +5,42 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Real-data check of the supervised single-modality configuration: ΔC criterion fails narrowly (awaiting decision)
+
+**Result.** The selected configuration (canonical, w_S = 1, supervised start, shared point-Laplace
+β prior, point-Laplace L/F) was fitted on D4's training data (TCGA + CPTAC, n = 273, 139 events,
+p = 2064, K = 7) and scored on the 5 external cohorts. The primary estimand was fixed before running:
+the mean over cohorts of the per-cohort ΔC against the reported α_F = 0 model (D4, cached risk
+scores, frozen orientation risk = −η), with a cohort-stratified paired bootstrap (B = 2000)
+(`results/benchmark_sim/run_supervised_real_check.R`, `outputs/supervised_real_check/delta_c.csv`).
+
+| | Supervised − D4 | α_F = 0, point-Laplace − D4 |
+|---|---|---|
+| Dijk (n = 90) | −0.050 (−0.113, 0.012) | −0.029 |
+| Moffitt (123) | −0.001 (−0.071, 0.065) | +0.010 |
+| PACA-AU array (63) | +0.010 (−0.054, 0.069) | +0.023 |
+| PACA-AU seq (52) | +0.029 (−0.038, 0.097) | +0.046 |
+| Puleo (288) | −0.002 (−0.033, 0.027) | −0.007 |
+| **Mean of cohorts (primary)** | **−0.003 (−0.029, 0.024)** | +0.009 (−0.011, 0.030) |
+| Concatenated | −0.008 (−0.028, 0.013) | −0.005 (−0.022, 0.011) |
+
+Mean external C: supervised 0.624, D4 0.627, α_F = 0 with point-Laplace 0.635.
+
+**The criterion (lower 95% limit > −0.02) fails:** the lower limit is −0.029. The point estimate is
+essentially zero. The bootstrap SE of the mean difference is about 0.0135, so the lower limit
+clears −0.02 only when the point estimate is at least about +0.007. A method with the same external
+performance as D4 fails this margin about half the time.
+
+**Programs.** The supervised fit keeps all 7 programs (none collapse). 3 are survival-active
+(|E β̃| ≥ 1.96 SD): programs 2 (+0.32), 4 (−0.18) and 5 (−0.17), in units of log hazard ratio per
+SD of score. The α_F = 0 point-Laplace fit has 1 survival-active program. Rank-one shares of the
+squared norm are similar in the two fits, 0.15 down to 0.02.
+
+**Status.** Reported to Andrew before any further step (working mode, stop 4). M4 code (supervised
+start and shared β prior in the multimodal fitter) is written but not yet evaluated or committed.
+
+---
+
 ## 2026-10-15 — Calibrated test bed; supervised start with a shared point-Laplace β prior meets the simulation criteria
 
 **Decision 1 (Andrew, 2026-10-15): calibrate the test bed, keep the 80% threshold.** The rule, fixed
