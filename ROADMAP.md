@@ -971,3 +971,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   evidence, retaining current limitations and making no new result claims.
 - Advisor-meeting follow-up remains the authority for the later substantive
   revision. No analytical code, model defaults or results changed.
+
+- DeSurv head-to-head prerequisite (2026-10-15): obtain a usable version of the authors'
+  companion package and its tuning/prediction procedure; confirm input-scale compatibility.
+  Audit: `results/benchmark_sim/outputs/desurv_h2h/BLOCKED.md`. No benchmark has been run.
