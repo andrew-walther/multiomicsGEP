@@ -19,6 +19,17 @@ execute:
   warning: false
 ---
 
+## Completed supervision comparator panel (2026-10-15)
+
+The five-comparator rerun completed40 datasets/200 rows with zero fitting
+errors and full20-seed denominators. Supervised recovery is17/20 and19/20
+versus0/20 for each comparator, with two300-iteration caps and one undefined
+high-noise risk C retained. High-noise EBMF returns2 zero-factor and8 one-factor
+fits; lasso is explicitly inapplicable at ranks0/1. These results support a
+recovery contrast but do not meet universal convergence. DeSurv is omitted
+as Andrew approved. Full tables/warnings and the preserved sandbox failure
+are in the Round2 handoff. Task2's remedy ladder remains open.
+
 ## Training-only multimodal collapse diagnosis (2026-10-15)
 
 All ten fixed TCGA diagnostic arms completed without execution errors/warnings.

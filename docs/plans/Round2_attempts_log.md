@@ -554,3 +554,124 @@ committed before retrying. No failed run is overwritten or discarded.
 
 Task4 socket-retry pre-run verification: fresh **599 passed,0 failed**;
 no scientific code changed from dd11923.
+
+## Task2 attempt2 — complete fixed-shared-prior simulation/CV evaluation (R1)
+
+**Before execution:** commit this entry, runner header, wrapper and tests before
+any candidate simulation or training-CV fit. The ten-arm diagnosis is already
+complete and separately committed589656a. This attempt changes exactly one
+option from each selected model: beta_prior_fix=TRUE. No extra warmup, scale,
+threshold, weight, cap or data change. Trace is disabled only as an observational
+performance option whose numerical identity is already tested.
+
+**Hypothesis:** preventing shared-prior refitting avoids exact absorbing slab
+weight0, but may still fail credible-program/convergence or recovery criteria.
+Full-TCGA fixed-prior diagnostics already fail the necessary credible-program
+and output-convergence requirements. Complete the handoff's specified
+simulation/CV evaluation; do not select or adopt R1 by ignoring those failures.
+
+**Arms/test bed:** selected K7 Single (no pruning) and selected K7 multimodal
+(ordinary unprotected pruning), fixed initial shared Laplace(pi=.5,scale1).
+Original calibrated n400/validation120,p50 per modality,beta3=3.3,
+seeds20261016:20261035,noise .25/1:80 new simulation fits. Compare false-active
+counts to the80 unchanged saved K7 reference rows in Task1-3 results.csv:
+alpha_F0 Single and10/1 multimodal. They are reused, never overwritten/refit.
+
+**Training evaluation:** same144 TCGA patients,3000 genes,10000 imputed CpGs
+from the approved unchanged cache, with IDs/order checked against frozen fit
+metadata. Five event-stratified folds, seed42, shared across models/candidate
+and reference. For Single, estimate column center/SD within training folds
+and apply these to held-out patients; no validation values set the transform.
+Multimodal retains its existing training-defined intercept/projection behavior.
+Fit fixed-prior and each model's diagnostic-framework reference in each fold,
+seed42:20 CV fits. References are exactly collapse_arm_controls(...,"framework"):
+Single canonicalw_S1,per-programNormal,no supervised start; multimodal10/1
+per-factorNormal,no supervised start. These are the already committed diagnosis
+controls, not a new reference chosen after CV. The simulation Single reference
+remains the handoff's alpha_F0 reference; training and simulation references are
+explicitly labelled. No ICGC or other external cohort is loaded/scored.
+
+**Pass/fail:** each model must recover>=16/20 at both noises, mean null
+survival-active<=its specified simulation reference+.5, and all20 returned
+fits converge under its own original rule. Intermediate pruning caps remain
+separate. No median-K gate until K selection is adopted. The paired fivefold
+mean deltaC must be>=minus one paired SE (sd of five differences/sqrt5).
+An error/missing seed/fold or undefined C cannot pass by dropping rows. Full
+TCGA credible/nonconstant/convergence requirements also remain necessary; R1
+currently fails those. No external check or replacement proposal follows a
+failure. Simulation validation C is descriptive, never used to select an arm.
+
+**Outputs/run:** results/benchmark_sim/run_round2_fixed_prior.R6; fresh
+results/benchmark_sim/outputs/round2/fixed_prior/.100 independent checkpoints,
+results.csv,simulation_summary.csv,training_cv_summary.csv,
+training_cv_with_benchmark.csv,folds.csv,simulation_references.csv. Frozen
+benchmark rows are explicitly non-CV rows alongside new CV results; no frozen
+training C is presented as a CV estimate. Every fit records errors/warnings,
+iterations,convergence,pruning caps,risk SD and active-program count. RDS inputs/
+fits remain ignored. Same full-prior diagnostic rows remain in diagnosis1.
+Longleaf wrapper100 cells,8GB/cell,12h, serial fits; prepare/finalize modes
+support independent cells, all100 required for aggregation. Never submit jobs.
+Fresh-folder/MD5 guards prevent overwriting and a changed training cache.
+
+**Software verification:** seven tests were RED0/7 before the new runner,
+then GREEN7/7; the added invalid-mode guard passes (8/8 total). Tests verify
+the exact80+20 design, balanced deterministic folds, training-only scaling,
+one-option controls, no denominator deletion after failure, paired SE and
+undefined-C handling, isolated exact error checkpoint and no overwrite.
+Fresh full suite must pass before the preregistration commit and fits.
+
+
+## Task4 completed five-comparator panel (2026-10-15)
+
+Pre-run commits dd11923 and d353322; full suite599/0 before each. The first
+sandbox launch failed before any dataset because a PSOCK socket could not
+open; its design and execution_status.md remain in round2/. The unchanged
+host-socket retry completed with exit0:40 datasets,200 method rows, zero
+fitting errors. Outputs:
+`results/benchmark_sim/outputs/supervision_comparators/round2_retry1/`.
+DeSurv was omitted by Andrew's explicit decision; no arm or threshold changed.
+
+| Method | Noise | Recovered/n | Validation C (finite n) | Null active/fit | Median K | ELBO-converged |
+|---|---:|---:|---:|---:|---:|---|
+| ebmf_alone | 0.25 | 0/20 | NA (0) | NA | 2 | not reported |
+| ebmf_cox | 0.25 | 0/20 | 0.634182 (20) | 1.15 | 2 | not reported |
+| ebmf_lasso_cox | 0.25 | 0/20 | 0.638527 (19) | NA | 2 | not reported |
+| pca_cox | 0.25 | 0/20 | 0.687753 (20) | 4.25 | 7 | not reported |
+| supervised | 0.25 | 17/20 | 0.763449 (20) | 1.1 | 7 | 19/20 |
+| ebmf_alone | 1 | 0/20 | NA (0) | NA | 1.5 | not reported |
+| ebmf_cox | 1 | 0/20 | 0.538504 (18) | 0.45 | 1.5 | not reported |
+| ebmf_lasso_cox | 1 | 0/20 | 0.553546 (6) | NA | 1.5 | not reported |
+| pca_cox | 1 | 0/20 | 0.596066 (20) | 3.3 | 7 | not reported |
+| supervised | 1 | 19/20 | 0.765290 (19) | 0.25 | 7 | 19/20 |
+
+EBMF rank counts: low noise0 zero-factor,0 one-factor,20 at least2; high
+noise2 zero-factor,8 one-factor,10 at least2. No EBMF fitting error. Every
+method/noise denominator is20, including constant-risk and inapplicable
+cases. At high noise lasso is applicable to10 datasets and has finite C in6;
+its undefined scores are retained. EBMF-alone has no fitted survival risk,
+so its C is undefined by design. The summaries label every finite-C count.
+Lasso's nonzero count is not Bayesian credibility; false-active isNA.
+
+The supervised fit caps at300 iterations for seed20261026/noise .25 and
+seed20261017/noise1; both recover the planted program. At seed20261018/noise1
+it has no active program and undefined constant-risk C, counted as not
+recovered. Consequently this panel does not establish universal convergence
+or satisfy all project criteria. It is a comparator report, not adoption.
+There are30 warning-bearing lasso rows: installed glmnet warns that a future
+release will change the Cox tie default from Breslow to Efron. The exact
+warning is retained per row; no package/default was changed to silence it.
+
+This completes the bounded Task4 rerun, including rank/denominator reporting.
+Task2's remedy ladder remains open and is the priority. No real-data or
+external-cohort selection occurred in this simulation task.
+
+Task2-2 software update before any scientific fit: the ninth test reproduced
+CSV's all-NA integer column reloading as logical, which would reject valid
+Longleaf checkpoints. Compare design-key values as character (includingNA),
+still rejecting a changed seed. RED8/9, then GREEN9/9. No arm/data/criterion
+change; this correction is part of the original pre-run implementation.
+
+Task2-2 final pre-run verification: fresh full suite **608 passed,0 failed**,
+including all nine new fixed-prior protocol tests and unchanged-default checks.
+Longleaf wrapper syntax passes. No candidate simulation/CV fit ran before
+this preregistration commit.

@@ -15,6 +15,19 @@ selection threshold. The complete rank panel is pre-registered in
 `docs/plans/Round2_attempts_log.md`. No adoption is claimed before its results;
 the interim-writeup benchmark and fitting defaults remain unchanged.
 
+## 2026-10-15 — Complete comparator panel with full denominators and caps explicit
+
+The unchanged five-arm calibrated rerun completed40 datasets/200 rows with
+zero fitting errors. Supervised recovery is17/20 and19/20 at low/high noise;
+each comparator recovers0/20. Two supervised fits hit the original300-iteration
+cap, and one high-noise supervised fit has constant risk/undefined C. These
+failures remain in the20-seed denominators; no universal-convergence claim or
+adoption follows. High-noise EBMF yields2 rank0,8 rank1,10 rank>=2 fits.
+Cox handles rank1; lasso inapplicability and finite-C counts remain explicit.
+The exact30 installed-glmnet warnings are retained. No criterion, default,
+external validation choice or benchmark changed. Tables and the zero-fit
+sandbox/socket failure preceding the successful retry are in the Round2 handoff.
+
 ## 2026-10-15 — Diagnose absorbing shared prior; retain the benchmark
 
 The ten pre-registered TCGA contrasts completed without errors/warnings.

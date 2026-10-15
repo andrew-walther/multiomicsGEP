@@ -1035,3 +1035,8 @@ observed, and all multimodal diagnostic arms cap with molecular predictions
 still changing. The remedy ladder remains open. Andrew deferred the separate
 DeSurv real-data head-to-head for review; the five-comparator simulation panel
 will omit DeSurv as approved. See the Round2 handoff for benchmark-linked tables.
+
+The bounded five-comparator rerun is complete:40 datasets/200 method rows,
+zero errors, full20-seed denominators and explicit EBMF rank0/rank1 handling.
+Supervised recovery17/20 and19/20 exceeds these comparators, but two caps
+prevent a universal-convergence claim. The Round2 handoff holds all tables.

@@ -14,7 +14,8 @@ K7/no-pruning fallback remains available. Task2's ten-arm training diagnosis is 
 absorption is observed, fixed/shared-Normal do not give a usable fit, and all
 five multimodal arms cap. The remedy ladder remains open. Andrew deferred
 Task3's real-data head-to-head for review and omitted DeSurv from Task4;
-Task3 software preparation is retained. Tasks4–6 remain pending. No benchmark replacement is
+Task3 software preparation is retained. Task4 is complete (40 datasets/200 rows, zero errors; two supervised caps);
+Tasks5–6 remain pending. No benchmark replacement is
 proposed. All ten benchmark manifest entries and the immutable tag were verified
 unchanged at this checkpoint (2026-10-15).
 The chronological updates below retain the earlier execution failures; the
@@ -604,3 +605,72 @@ retry record is committed. This is an environment retry, not tuning.
 
 Task4 socket-retry pre-run verification: fresh **599 passed,0 failed**;
 no scientific code changed from dd11923.
+
+## Task2 R1 evaluation preparation
+
+The next committed attempt completes the fixed shared prior's required80
+simulation and20 training-CV fits. It changes only beta_prior_fix=TRUE,
+uses the original model rules and explicit simulation/framework references,
+and adopts nothing unless all criteria pass. The full-TCGA diagnosis already
+fails credible-program and convergence requirements, so a favorable partial
+table cannot establish adoption. The attempt log records the exact design.
+
+The new runner creates the100-cell grid and fixed event-stratified folds;
+its scaling helper estimates means/SDs from training patients only. The cell
+function fits one specified model/arm, scores frozen orientation, and saves
+metrics or the exact error independently. Summary logic keeps all20 seeds
+and all five paired folds; an undefined C cannot pass by deletion. Prepare/
+finalize modes support the Longleaf array, with a frozen training-cache hash
+and all100 checkpoints required. Inputs are the approved TCGA-only cache or
+original simulated beds; outputs are CSV records and ignored fit RDSs.
+Eight focused tests pass. No default fitter change or new dependency is used.
+
+
+## Task4 completed five-comparator panel (2026-10-15)
+
+Pre-run commits dd11923 and d353322; full suite599/0 before each. The first
+sandbox launch failed before any dataset because a PSOCK socket could not
+open; its design and execution_status.md remain in round2/. The unchanged
+host-socket retry completed with exit0:40 datasets,200 method rows, zero
+fitting errors. Outputs:
+`results/benchmark_sim/outputs/supervision_comparators/round2_retry1/`.
+DeSurv was omitted by Andrew's explicit decision; no arm or threshold changed.
+
+| Method | Noise | Recovered/n | Validation C (finite n) | Null active/fit | Median K | ELBO-converged |
+|---|---:|---:|---:|---:|---:|---|
+| ebmf_alone | 0.25 | 0/20 | NA (0) | NA | 2 | not reported |
+| ebmf_cox | 0.25 | 0/20 | 0.634182 (20) | 1.15 | 2 | not reported |
+| ebmf_lasso_cox | 0.25 | 0/20 | 0.638527 (19) | NA | 2 | not reported |
+| pca_cox | 0.25 | 0/20 | 0.687753 (20) | 4.25 | 7 | not reported |
+| supervised | 0.25 | 17/20 | 0.763449 (20) | 1.1 | 7 | 19/20 |
+| ebmf_alone | 1 | 0/20 | NA (0) | NA | 1.5 | not reported |
+| ebmf_cox | 1 | 0/20 | 0.538504 (18) | 0.45 | 1.5 | not reported |
+| ebmf_lasso_cox | 1 | 0/20 | 0.553546 (6) | NA | 1.5 | not reported |
+| pca_cox | 1 | 0/20 | 0.596066 (20) | 3.3 | 7 | not reported |
+| supervised | 1 | 19/20 | 0.765290 (19) | 0.25 | 7 | 19/20 |
+
+EBMF rank counts: low noise0 zero-factor,0 one-factor,20 at least2; high
+noise2 zero-factor,8 one-factor,10 at least2. No EBMF fitting error. Every
+method/noise denominator is20, including constant-risk and inapplicable
+cases. At high noise lasso is applicable to10 datasets and has finite C in6;
+its undefined scores are retained. EBMF-alone has no fitted survival risk,
+so its C is undefined by design. The summaries label every finite-C count.
+Lasso's nonzero count is not Bayesian credibility; false-active isNA.
+
+The supervised fit caps at300 iterations for seed20261026/noise .25 and
+seed20261017/noise1; both recover the planted program. At seed20261018/noise1
+it has no active program and undefined constant-risk C, counted as not
+recovered. Consequently this panel does not establish universal convergence
+or satisfy all project criteria. It is a comparator report, not adoption.
+There are30 warning-bearing lasso rows: installed glmnet warns that a future
+release will change the Cox tie default from Breslow to Efron. The exact
+warning is retained per row; no package/default was changed to silence it.
+
+This completes the bounded Task4 rerun, including rank/denominator reporting.
+Task2's remedy ladder remains open and is the priority. No real-data or
+external-cohort selection occurred in this simulation task.
+
+Task2-2 final pre-run verification: fresh full suite **608 passed,0 failed**,
+including all nine new fixed-prior protocol tests and unchanged-default checks.
+Longleaf wrapper syntax passes. No candidate simulation/CV fit ran before
+this preregistration commit.

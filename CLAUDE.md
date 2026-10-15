@@ -112,3 +112,7 @@ external scoring has run. Task4 omits DeSurv as explicitly approved.
 Task4's comparator runner now preserves all method rows and full denominators
 for EBMF rank0/rank1 and isolated failures. The Round2 attempt log controls
 its five-arm rerun; DeSurv is omitted by Andrew's explicit decision.
+
+Task2 R1's fixed-prior evaluation is `run_round2_fixed_prior.R` in the benchmark
+folder. Its committed attempt history governs80 simulations and20 TCGA CV fits;
+all criteria and defaults remain unchanged, with no external data for selection.

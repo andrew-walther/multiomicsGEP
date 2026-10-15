@@ -483,3 +483,12 @@ unchanged five methods with explicit EBMF rank0/rank1 rules and per-arm errors,
 writing a fresh `results/benchmark_sim/outputs/supervision_comparators/round2/`
 folder. Read the preregistered design before executing; old outputs are never
 overwritten. DeSurv is omitted as Andrew approved.
+
+Task2 R1's required simulation/CV evaluation is
+`Rscript results/benchmark_sim/run_round2_fixed_prior.R 6`, writing fresh
+`results/benchmark_sim/outputs/round2/fixed_prior/`. Read its preregistration
+before running. It evaluates the fixed shared prior only, with80 simulations
+and20 training-CV fits, preserving all failures and frozen benchmark rows.
+`prepare`/`finalize` support `round2_fixed_prior.slurm`; do not submit jobs here.
+This evaluates a remedy; the full-TCGA diagnostic failures remain necessary
+adoption failures even if another table looks favorable.

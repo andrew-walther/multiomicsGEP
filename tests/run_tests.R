@@ -100,6 +100,7 @@ test_files <- c(
   "tests/test_multimodal_yfb_supervision.R",
   "tests/test_multimodal_yfb_trace.R",
   "tests/test_collapse_diagnosis.R",
+  "tests/test_fixed_prior_panel.R",
   "tests/test_multimodal_comparator_rank.R",
   "tests/test_desurv_author_adapter.R",
   "tests/test_desurv_h2h.R"
