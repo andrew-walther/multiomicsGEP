@@ -118,7 +118,10 @@ revision. The [drafting handoff](paper/writeup/drafting_prompt.md) assigns Claud
 Tasks 2, 3 and 5 on `writeup/draft`; Codex performs the independent
 complete-draft review afterward.
 
-**Status (2026-10-14): revised draft after independent review, awaiting approval.**
+**Status (2026-10-14): interim writeup approved and merged to `main`.** It describes the evaluated
+configuration (α_F = 0); REVISIT markers flag the passages the method work will change, and
+Prompt 7 of the 10/2 plan revises it afterwards. The main text is 22 pages, accepted for the
+interim version.
 Codex reviewed the initial draft (`paper/writeup/review.md`); every finding was
 checked against code and saved outputs and applied, and dispositions are recorded
 in `paper/writeup/review_dispositions.md`. The report is now organized as a

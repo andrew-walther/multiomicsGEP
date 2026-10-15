@@ -83,7 +83,7 @@ Results, Biology, and derivation appendices, with a
 [source inventory](paper/writeup/source_inventory.csv) and
 [implementation checklist](paper/writeup/implementation_plan.md).
 The planning review has been checked and the plan finalized (October 14).
-**Revised draft after independent review, awaiting Andrew's approval (October 14).**
+**Interim writeup, approved and merged to `main` (October 14).**
 The report is `paper/writeup/writeup.qmd`, with derivation appendices in
 `paper/writeup/appendices/`, rendered to [HTML](paper/writeup/writeup.html) and
 [PDF](paper/writeup/writeup.pdf). It is organized as a manuscript: Methods,
@@ -94,8 +94,10 @@ derivations in Appendices A (single-modality) and B (multimodal). The review is
 verification of the revision is
 [`verification.md`](paper/writeup/verification.md). The second verification is
 [`verification_round2.md`](paper/writeup/verification_round2.md); its two minor
-corrections are applied. The 24-page main text still exceeds the 15–20-page target;
-further cuts and final approval remain pending.
+corrections are applied. A final editorial round
+([`final_editorial_check.md`](paper/writeup/final_editorial_check.md),
+[`verification_round3.md`](paper/writeup/verification_round3.md)) moved the algorithms
+into the appendices; the 22-page main text is accepted for this interim version.
 
 Render the report from the repository root (the RStudio Quarto works on this
 computer; rendering reads only saved aggregates, figures and the bibliography,
