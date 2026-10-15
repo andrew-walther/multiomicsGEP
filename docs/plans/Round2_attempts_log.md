@@ -542,3 +542,15 @@ nonzero exit for retained per-arm errors. No external cohorts or real data.
 Task4 final pre-run verification: fresh full suite **599 passed,0 failed**,
 including all six small-rank/error-isolation intent tests. The five-arm design
 is committed before the40-dataset scientific rerun.
+
+Task4 execution failure before any fit: committed dd11923, fresh599/0 suite.
+The sandbox blocked PSOCK serverSocket port11504. Only design.csv exists;
+zero datasets/fit results. Preserve the original round2 folder and its
+execution_status.md. Retry the exact committed design/code using host socket
+access, via source()+run_comparator_panel(6L,out_dir=.../round2_retry1).
+The output folder and execution permission are the only changes. No arm,
+seed, threshold, sample, prior or stopping criterion changes. This entry is
+committed before retrying. No failed run is overwritten or discarded.
+
+Task4 socket-retry pre-run verification: fresh **599 passed,0 failed**;
+no scientific code changed from dd11923.

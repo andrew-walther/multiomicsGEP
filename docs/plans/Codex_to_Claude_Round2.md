@@ -595,3 +595,12 @@ reported without treating it as Bayesian credibility. No new package is used.
 Task4 final pre-run verification: fresh full suite **599 passed,0 failed**,
 including all six small-rank/error-isolation intent tests. The five-arm design
 is committed before the40-dataset scientific rerun.
+
+Task4's first launch (dd11923) exited1 before any fit because the sandbox
+could not open PSOCK port11504. Only design.csv was written. The failure is
+preserved in outputs/supervision_comparators/round2/execution_status.md.
+An unchanged host-socket retry uses fresh round2_retry1 outputs after the
+retry record is committed. This is an environment retry, not tuning.
+
+Task4 socket-retry pre-run verification: fresh **599 passed,0 failed**;
+no scientific code changed from dd11923.
