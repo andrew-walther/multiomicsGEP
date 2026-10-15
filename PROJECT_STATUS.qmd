@@ -28,8 +28,10 @@ The historical-framework
 fold1 loses all beta means and second moments, despite retaining the molecular
 loading pattern; folds2/3 and full TCGA retain prognostic programs. Andrew asks
 for continued diagnosis, keeping undefined C as NA. An unchanged-fold trace,
-preregistered in commit ef4a929 after611/611 tests, is running and must reproduce
-the saved posterior/history exactly before interpretation.
+preregistered in commit ef4a929 after611/611 tests, has completed with exact
+agreement on all13 posterior/history checks. All coefficients disappear
+at outer167/inner1 and stay zero through the remaining1670 inner sweeps.
+The approved profiled-curvature experiment has not yet been fitted.
 
 The historical per-factor Normal update estimates variance max(0,x²−1/A);
 all seven estimates are0 at the saved failed-fold state. These priors can revive,

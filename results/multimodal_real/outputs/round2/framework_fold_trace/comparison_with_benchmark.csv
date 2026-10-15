@@ -1,0 +1,5 @@
+"source","model","arm","n","K","active","training_C","cv_C","risk_sd","converged","iterations","runtime_seconds","pruning_caps","reconstruction_change","eta_change","error","warnings"
+"round2_training_cv","multimodal","framework_trace_fold1",115,7,0,NA,NA,0,FALSE,500,2142.164,NA,NA,NA,NA,NA
+"benchmark_snapshot","multimodal_framework","pruned",144,7,1,0.637767637767638,NA,NA,FALSE,NA,NA,NA,NA,NA,NA,NA
+"benchmark_snapshot","single_alpha_F0","pruned_expression_only",144,NA,NA,0.593717093717094,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+"benchmark_snapshot","expression_only_framework","pruned_expression_only",144,7,1,0.643559143559144,NA,NA,FALSE,NA,NA,NA,NA,NA,NA,NA

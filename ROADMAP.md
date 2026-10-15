@@ -1043,8 +1043,8 @@ prevent a universal-convergence claim. The Round2 handoff holds all tables.
 
 ### Training-fold collapse and prior consistency (2026-10-15)
 
-- [ ] Complete the unchanged-framework fold1 trace and verify exact saved-fit identity;
-  preserve C=NA and continue Task2's training-only diagnosis and remedy ladder.
+- [x] Complete the unchanged-framework fold1 trace: all13 saved-fit identity checks
+  pass; preserve C=NA and continue Task2's training-only diagnosis and remedy ladder.
 - [ ] Review the common beta prior under factor-specific canonicalization before
   describing any shared-prior candidate as a principled replacement. The Round2
   handoff distinguishes this mathematical question from per-factor CV collapse.

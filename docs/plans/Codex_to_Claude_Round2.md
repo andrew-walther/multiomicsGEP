@@ -849,3 +849,43 @@ profiled-curvature fit has run.
 Task2-2 final checkpoint verification: fresh full suite **611 passed,0 failed**.
 All100 fit records are retained; clinical folds.csv and all RDS/data remain
 ignored. Only aggregate/per-fit metrics and hash/package provenance are staged.
+
+
+### Task2-3 result: exact reproduction; loss at outer167/inner1
+
+The unchanged-fold trace exited0 in2142.164 seconds, with no warnings.
+All13 checks in identity.csv are TRUE: every saved posterior/prior field
+and the complete500-iteration history equal original R1 cell84 exactly.
+No numerical fit changed when observation was enabled.
+
+Of2500 inner sweeps, the first all-zero posterior occurs at sweep831,
+outer167/inner1. The maximum absolute pseudo-z falls from1.368511,
+1.262920 and1.128647 in outer166/inner3–5 to .966195 at the next sweep.
+Programs3 and4 are the last two nondegenerate coefficients. All1670
+sweeps from831 through2500 have zero means/SDs; there is no later revival.
+Earlier revival is real: programs1/3/4/5/6 revive7/8/2/1/2 times,
+respectively. The existing full-TCGA framework trace never loses all
+coefficients, and its program4 is nondegenerate throughout2500 sweeps.
+This supports the per-coordinate variance-boundary diagnosis, not shared
+point-mass absorption, a scoring defect or removal by pruning.
+
+The repeated fold retains K7, has no credible program, risk SD0/C=NA,
+and reaches the unchanged500 cap. Its comparison_with_benchmark.csv retains
+all frozen benchmark training rows. The frozen multimodal benchmark
+training C remains .637768 (one credible program); this is not a CV row.
+
+Outputs: results/multimodal_real/outputs/round2/framework_fold_trace/:
+identity.csv, fold1_trace.csv, fold1_boundaries.csv,
+full_training_boundaries.csv, comparison_with_benchmark.csv,
+training_source.txt and warnings.txt. The fit RDS remains ignored.
+
+Andrew's explicit approval of the separate profiled-curvature test was
+conditional on this reproduction, and that prerequisite now passes.
+No remedy has been fitted at this checkpoint. Source edits still wait for
+the fresh full suite/result commit. The prospective test uses the existing
+framework priors/initialization and changes only the working-intercept
+profile flag; it will not combine the unresolved shared-prior scale question.
+
+Task2-3 result-checkpoint verification: fresh full suite **611 passed,0 failed**.
+All13 exact reproduction checks pass; only safe factor-level diagnostic CSVs
+and hash/status records are committed, with the model RDS kept ignored.
