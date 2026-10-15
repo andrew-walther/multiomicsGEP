@@ -1,0 +1,3 @@
+# Read-only local copies; the tracked MANIFEST.sha256 verifies them
+single_modality/
+multimodal/
