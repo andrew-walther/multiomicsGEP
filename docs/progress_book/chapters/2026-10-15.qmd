@@ -300,3 +300,12 @@ implementation was available. The authors provide a companion-package repository
 not installed or reimplemented under this handoff. No C-index or bootstrap table is claimed.
 See `results/benchmark_sim/outputs/desurv_h2h/BLOCKED.md` for searched locations and requirements
 to resume. The protected-pruning assessment did not authorize a configuration change; K remains 7.
+
+
+## Protected-pruning reassessment (2026-10-16)
+
+Andrew clarified that protection requires positive posterior SD and that each
+model is judged by its own convergence rule. The dead-program boundary is fixed
+and tested without changing default fits. The complete rank panel is registered
+before execution in `docs/plans/Round2_attempts_log.md`; no empirical result or
+new configuration is claimed yet. The benchmark snapshot is unchanged.

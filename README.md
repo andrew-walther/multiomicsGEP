@@ -403,3 +403,9 @@ error; see the report and `execution_status.md` before treating it as a clean ru
 See `docs/plans/Codex_to_Claude_Round2.md` for current progress and
 `docs/plans/Round2_attempts_log.md` for designs committed before experiments.
 The approved benchmark snapshot and tag remain unchanged.
+
+The Round 2 K panel runs with
+`Rscript results/benchmark_sim/run_k_selection_panel.R 6`; it refuses to overwrite
+an existing attempt and writes per-cell checkpoints beneath
+`results/benchmark_sim/outputs/k_selection/round2/attempt1/`. Its fixed design and
+adoption criteria are recorded in the attempt history before fitting.

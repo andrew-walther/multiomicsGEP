@@ -276,7 +276,8 @@ run_test("Supervision-T13: protected pruning excludes credible coefficients", {
                                  protect_survival = TRUE)
   assert_true(raw[1] > 0, msg = "active program would be removed without protection")
   assert_true(all(is.finite(raw)), msg = "unprotected gains remain available")
-  assert_true(all(protected[c(1, 3)] == -Inf), msg = "credible and zero-variance boundary protected")
+  assert_true(protected[1] == -Inf, msg = "credible coefficient protected")
+  assert_near(protected[3], raw[3], tol = 0, msg = "zero-SD coefficient remains eligible")
   assert_near(protected[2], raw[2], tol = 0, msg = "eligible gain unchanged")
 })
 
@@ -321,4 +322,18 @@ run_test("Supervision-T16: output-change diagnostic agrees with two consecutive 
                                    as.vector(.sv$Y %*% two$EF %*% two$EBeta)))
   assert_near(two$history$output_change[2], expected, tol = 1e-12,
               msg = "both fitted quantities enter the recorded maximum")
+})
+
+
+run_test("Supervision-T17: a dead program is selected for removal under protection", {
+  f <- fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 3L,
+    prior_LF = "point_laplace", canonicalize = TRUE, verbose = FALSE)
+  f$EL <- cbind(f$EL, 0); f$EL2 <- cbind(f$EL2, 0)
+  f$EF <- cbind(f$EF, 0); f$EF2 <- cbind(f$EF2, 0)
+  f$EBeta <- c(2, 2, 0); f$EBeta2 <- f$EBeta^2 + c(.01, .01, 0)
+  f$neg_kl <- c(f$neg_kl, 0)
+  delta <- prune_yf_nullcheck(f, .sv$Y, .sv$time, .sv$status, protect_survival = TRUE)
+  assert_near(delta[3], 0, tol = 1e-8, msg = "dead factor costs neither fit nor KL")
+  assert_true(max(delta) >= 0 && which.max(delta) == 3L,
+    msg = "existing greedy rule removes the dead program")
 })

@@ -15,3 +15,41 @@ Created `round2/supervised` from clean `feature/supervised-F` at `2bebbd4`.
 Task 0 integration completed in the required order with `--no-ff` merges,
 preserving all entries and tests. Successive full-suite counts were 553, 554,
 556, 559 and 559, all with zero failures. No scientific attempt has run yet.
+
+## Task 1 attempt 1 — positive-SD protection and the prescribed rank panel
+
+**Status before execution:** pre-registered; no panel fit has run. This design
+and its implementation are committed before execution.
+
+**Hypothesis:** excluding zero-variance β point masses from protection allows
+dead programs to be removed while retaining credibly prognostic programs.
+**Exact scientific change:** protection now requires |Eβ|≥1.96 SD(β) **and**
+SD(β)>0 in both nullchecks. Protection remains opt-in. Default/off paths retain
+bit-for-bit identity to `feature/supervised-F` in regression tests. The specified
+convergence clarification is applied to assessment, not to fitting defaults.
+
+**Arms and fixed data:** 800 cells, seeds 20261016:20261035, noise {.25,1},
+K_init {5,7,10,15}, calibrated n_train400/n_validation120, p50 per modality,
+β3=3.3. Single: selected model with protected pruning; α_F=0 reference with
+signed point-Laplace L/F. Multimodal: selected model with/without protection,
+and 10/1 framework reference. All other settings match the handoff.
+
+**Pass/fail:** in every K/noise group, recovery≥16/20, mean false prognostic
+programs≤that model's reference+.5, 20/20 converged, median retained K=3.
+Single uses its ELBO flag; multimodal uses its output-change flag. Single's
+last-iteration output criterion and intermediate pruning caps are also reported;
+neither changes the adoption rule. The returned fit's convergence flag is the
+criterion, with pre-pruning caps exposed separately. Errors/missing cells cannot
+pass. No threshold, default, test bed or parameter tuning is permitted.
+
+**Execution:** after this entry's commit, run
+`Rscript results/benchmark_sim/run_k_selection_panel.R 6`. Each cell, including
+errors/warnings, checkpoints independently to
+`results/benchmark_sim/outputs/k_selection/round2/attempt1/cells/`; aggregates,
+summary and adoption assessment are in that attempt folder. The existing Round 1
+outputs are preserved. No real-data cohort is loaded. Conditional training-only
+1-SE fitting is eligible only if single-modality simulation adoption passes.
+
+**Verification before execution:** dead-boundary tests failed against old code,
+then 23/23 protection tests and 2/2 panel tests passed. Full-suite result is
+563 passed, 0 failed (fresh full suite before the pre-run commit). Results pending.

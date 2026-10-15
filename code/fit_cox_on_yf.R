@@ -234,7 +234,7 @@ yf_canonical_elbo <- function(Y, time, status, EL, EL2, EF, EF2, EBeta, EBeta2,
 #'   means the program does not improve the objective.
 #' @family F_surv_YFB_update
 #' @examples
-#' @param protect_survival Protect coefficients satisfying |Eβ| >= 1.96 SD(β).
+#' @param protect_survival Protect coefficients satisfying |Eβ| >= 1.96 SD(β) and SD(β)>0.
 #' # delta <- prune_yf_nullcheck(fit, Y, time, status)
 prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
                                 protect_survival = FALSE) {
@@ -243,9 +243,10 @@ prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
   full <- yf_canonical_elbo(Y, time, status, fit$EL, fit$EL2, fit$EF, fit$EF2,
                             fit$EBeta, fit$EBeta2, sum(nk), fit$w_S, strata)
   vapply(seq_len(K), function(k) {
-    # Literal agreed inequality: a point mass at zero also satisfies 0 >= 0.
-    if (protect_survival && abs(fit$EBeta[k]) >=
-        1.96 * sqrt(pmax(fit$EBeta2[k] - fit$EBeta[k]^2, 0))) return(-Inf)
+    # A dead zero-variance coefficient must remain removable.
+    beta_sd <- sqrt(pmax(fit$EBeta2[k] - fit$EBeta[k]^2, 0))
+    if (protect_survival && beta_sd > 0 &&
+        abs(fit$EBeta[k]) >= 1.96 * beta_sd) return(-Inf)
     keep <- setdiff(seq_len(K), k)
     yf_canonical_elbo(Y, time, status, fit$EL[, keep, drop = FALSE],
                       fit$EL2[, keep, drop = FALSE], fit$EF[, keep, drop = FALSE],
@@ -435,7 +436,7 @@ prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
 #'                 and repeat. The result has fewer than K columns and
 #'                 `$pruning` records each removal.
 #' @param prune_protect_survival Logical, default FALSE. Protect programs with
-#'   |E[β_k]| >= 1.96 sqrt(E[β_k²] - E[β_k]²) from the ELBO nullcheck.
+#'   |E[β_k]| >= 1.96 sqrt(E[β_k²] - E[β_k]²) and SD(β_k)>0 from the ELBO nullcheck.
 #' @param converge_on Stopping criterion: default "elbo" preserves the existing
 #'   rule; "outputs" requires relative changes of LF' and YFβ both < 1e-4.
 #'   Explicitly passing either value records both final criteria; omitting the

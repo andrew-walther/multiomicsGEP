@@ -76,7 +76,8 @@ run_test("MMYFB-Sup-T4: protected nullcheck excludes survival-active programs", 
   pro <- multimodal_yfb_nullcheck(fit, .mms$Y, .mms$time, .mms$event,
                                  intercept = TRUE, protect_survival = TRUE)
   assert_true(raw[1] > 0, msg = "active factor removal would increase ELBO")
-  assert_true(all(pro[c(1, 3)] == -Inf), msg = "credible coefficients never candidates")
+  assert_true(pro[1] == -Inf, msg = "credible coefficient never a candidate")
+  assert_near(pro[3], raw[3], tol = 0, msg = "zero-SD coefficient remains eligible")
   assert_near(pro[2], raw[2], tol = 0, msg = "unprotected candidate unchanged")
 })
 
@@ -94,4 +95,20 @@ run_test("MMYFB-Sup-T5: default pruning sequence matches feature/supervised-F", 
     assert_true(identical(before, now) && identical(now, off),
                 msg = "default and explicit FALSE reproduce baseline, including pruning")
   }
+})
+
+
+run_test("MMYFB-Sup-T6: a dead program is selected for removal under protection", {
+  f <- fit_multimodal_yfb(.mms$Y, .mms$time, .mms$event, 2L,
+    control = c(.mms_ctrl, list(max_outer = 2L)))
+  f$EL <- cbind(f$EL, 0); f$EL2 <- cbind(f$EL2, 0)
+  f$EF <- lapply(f$EF, function(x) cbind(x, 0))
+  f$EF2 <- lapply(f$EF2, function(x) cbind(x, 0))
+  f$EBeta <- c(2, 2, 0); f$EBeta2 <- f$EBeta^2 + c(.01, .01, 0)
+  f$kl <- list(L=c(f$kl$L, 0), F=lapply(f$kl$F, function(x) c(x, 0)), beta=c(f$kl$beta, 0))
+  delta <- multimodal_yfb_nullcheck(f, .mms$Y, .mms$time, .mms$event,
+    intercept = TRUE, protect_survival = TRUE)
+  assert_near(delta[3], 0, tol = 1e-8, msg = "dead factor costs neither fit nor KL")
+  assert_true(max(delta) >= 0 && which.max(delta) == 3L,
+    msg = "existing greedy rule removes the dead program")
 })

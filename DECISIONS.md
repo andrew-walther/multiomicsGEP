@@ -5,6 +5,16 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-16 — Resume protected-pruning assessment under Andrew's corrections
+
+Protection now requires positive posterior SD as well as |Eβ|≥1.96 SD(β), so
+point-mass-zero programs remain eligible for ELBO pruning. Single-modality fits
+are assessed under their ELBO rule; multimodal fits under their established
+output-change rule. These corrections implement Andrew's decision, not a new
+selection threshold. The complete rank panel is pre-registered in
+`docs/plans/Round2_attempts_log.md`. No adoption is claimed before its results;
+the interim-writeup benchmark and fitting defaults remain unchanged.
+
 ## 2026-10-15 — Protected-pruning evaluation blocked; retain the handoff configurations
 
 **Decision for the comparator and robustness work:** protected pruning is **not adopted**

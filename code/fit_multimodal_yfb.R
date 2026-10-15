@@ -315,7 +315,7 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #'   refit from the K pseudo-observations afterwards, after `beta_warmup`
 #'   outer iterations at its starting value 0.5 delta_0 + 0.5 Laplace(1)).
 #'   `prune_protect_survival` (default FALSE) excludes programs satisfying
-#'   |Eβ| >= 1.96 SD(β) from each pruning nullcheck, including warm refits.
+#'   |Eβ| >= 1.96 SD(β) and SD(β)>0 from each nullcheck, including warm refits.
 #' @param init Optional warm-start state (EL, EL2, EF, EF2, EBeta, EBeta2, Tau,
 #'   prior_L, prior_F, and g_beta for a shared beta prior), e.g. a fit with one
 #'   factor removed. Used by pruning; a warm start skips the beta warm-up.
@@ -804,9 +804,10 @@ multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugi
                               fit$EF, fit$EF2, fit$EBeta, fit$EBeta2, sum(kl_k),
                               survival_elbo, tau_model)
   vapply(seq_len(K), function(k) {
-    # Keep the exact agreed inequality, including its zero-variance boundary.
-    if (protect_survival && abs(fit$EBeta[k]) >=
-        1.96 * sqrt(pmax(fit$EBeta2[k] - fit$EBeta[k]^2, 0))) return(-Inf)
+    # Protect only credibly prognostic coefficients with positive uncertainty.
+    beta_sd <- sqrt(pmax(fit$EBeta2[k] - fit$EBeta[k]^2, 0))
+    if (protect_survival && beta_sd > 0 &&
+        abs(fit$EBeta[k]) >= 1.96 * beta_sd) return(-Inf)
     keep <- setdiff(seq_len(K), k)
     if (length(keep) == 0L) return(-Inf)
     EL_keep <- fit$EL[, keep, drop = FALSE]

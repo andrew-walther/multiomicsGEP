@@ -12,7 +12,7 @@
 # SD(fold C)/sqrt(5); smallest qualifying K. No external cohorts loaded.
 # Run ONLY after the simulation adoption table explicitly adopts single modality.
 
-out_dir <- "results/benchmark_sim/outputs/k_selection"
+out_dir <- "results/benchmark_sim/outputs/k_selection/round2/attempt1"
 adoption <- read.csv(file.path(out_dir,"adoption.csv"))
 if (!any(adoption$model == "single" & adoption$adopted))
   stop("Protected pruning not adopted for single modality; the conditional 1-SE run is ineligible.")
@@ -48,7 +48,8 @@ fit <- fit_cox_on_yf(Y_train,time_train,status_train,K=chosen,
   max_iter=cfg$cavi$max_iter,tol=cfg$cavi$tol,prior_LF="point_laplace",
   canonicalize=TRUE,w_S=1,init_supervised=TRUE,beta_prior_mode="shared",
   prior_beta="point_laplace",beta_warmup=10L,prune=TRUE,prune_protect_survival=TRUE,verbose=FALSE)
-active <- abs(fit$EBeta)>=1.96*sqrt(pmax(fit$EBeta2-fit$EBeta^2,0))
+beta_sd <- sqrt(pmax(fit$EBeta2-fit$EBeta^2,0))
+active <- abs(fit$EBeta)>=1.96*beta_sd & beta_sd>0
 write.csv(data.frame(K_init=chosen,K_final=ncol(fit$EF),program=seq_along(active),
   beta=fit$EBeta,survival_active=active,converged=fit$history$converged),
   file.path(out_dir,"real_1se_full_fit.csv"),row.names=FALSE)
