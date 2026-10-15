@@ -407,5 +407,5 @@ The approved benchmark snapshot and tag remain unchanged.
 The Round 2 K panel runs with
 `Rscript results/benchmark_sim/run_k_selection_panel.R 6`; it refuses to overwrite
 an existing attempt and writes per-cell checkpoints beneath
-`results/benchmark_sim/outputs/k_selection/round2/attempt2/`. Its fixed design and
+`results/benchmark_sim/outputs/k_selection/round2/attempt3/`. Its fixed design and
 adoption criteria are recorded in the attempt history before fitting.

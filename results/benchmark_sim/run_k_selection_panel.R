@@ -6,7 +6,7 @@
 # Dependencies: survival, ebnm, yaml, parallel; existing benchmark fitters
 # Run: Rscript results/benchmark_sim/run_k_selection_panel.R [cores]
 # ============================================================
-# Attempt Task1-2: identical science to Task1-1; fix entry-point variable scoping.
+# Attempt Task1-3: identical science; handle absent pruning histories in reporting.
 # Fixed BEFORE execution and committed in Round2_attempts_log.md.
 # Only scientific change: protection now requires SD(beta)>0 as Andrew decided.
 # Seeds20261015+1:20; noise {.25,1}; K_init{5,7,10,15}; n_train400,
@@ -69,7 +69,7 @@ panel_cell <- function(i) {
         outputs_converged = fit$history$outputs_converged,
         c_validation = sc$c_validation, cor_planted = sc$cor_planted,
         n_active = sc$n_active_z, iterations = sc$n_iter,
-        pruning_caps = sum(!fit$pruning$converged_before),
+        pruning_caps = sum(!as.logical(fit$pruning$converged_before)),
         runaway_F = sc$runaway_F, runaway_L = sc$runaway_L,
         max_abs_beta = sc$max_abs_beta)
     } else {
@@ -97,7 +97,7 @@ panel_cell <- function(i) {
         outputs_converged = max(h$max_relative_reconstruction_change, h$max_relative_eta_change) < 1e-4,
         c_validation = multimodal_yfb_survival_metrics(risk, d$validation$time, d$validation$event)$c_index,
         cor_planted = abs(rho), n_active = sum(active), iterations = fit$diagnostics$iterations,
-        pruning_caps = sum(!fit$diagnostics$pruning$converged_before),
+        pruning_caps = sum(!as.logical(fit$diagnostics$pruning$converged_before)),
         runaway_F = NA_real_, runaway_L = NA_real_, max_abs_beta = max(abs(fit$EBeta)))
     }
     cbind(id, error = NA_character_, runtime = proc.time()[["elapsed"]] - t0, metrics)
@@ -156,7 +156,7 @@ k_panel_summary <- function(res) {
 #' @examples
 #' # run_k_selection_panel(6L)
 run_k_selection_panel <- function(cores=6L,
-  output_dir="results/benchmark_sim/outputs/k_selection/round2/attempt2") {
+  output_dir="results/benchmark_sim/outputs/k_selection/round2/attempt3") {
   out_dir <- output_dir
   if(dir.exists(file.path(out_dir,"cells")))stop("Attempt output already exists; do not overwrite")
   dir.create(file.path(out_dir,"cells"),recursive=TRUE)

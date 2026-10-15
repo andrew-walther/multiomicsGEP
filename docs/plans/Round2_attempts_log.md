@@ -82,3 +82,29 @@ Task 7 housekeeping completed at this pre-run pause: fourteen process records
 relocated, both renders successful with native Quarto, protected deliverables
 unchanged, full suite 564/0. No scientific configuration or attempt design changed.
 Task1-2 is still the next scientific execution.
+
+**Result, Task1-2:** stopped the coordinator and six identified workers before
+editing code (exit143). Saved 209 cell rows: 48 complete metric rows and 161
+reporting errors, with zero malformed checkpoint files. The error was
+`invalid argument type` from applying `!` to NULL when no pruning history exists.
+It occurred after fitting; these are reporting errors, not established model
+failures. Every raw checkpoint is retained; `results_partial.csv` and
+`execution_status.md` in the attempt2 folder document the partial execution.
+No adoption criterion is assessed from this incomplete/error-affected panel.
+
+## Task 1 attempt 3 — repair absent-history reporting; unchanged science
+
+**Before execution:** pre-registered and committed before running.
+**Hypothesis/exact change:** coerce absent pruning-history flags to logical(0)
+before negation in the cap counter, so unpruned fits report zero intermediate
+caps instead of losing metrics. Apply the same two-line reporting fix to both
+models. NA flags remain NA; no warnings are silently removed.
+**Arms and pass/fail:** exactly Task1-1's 800 cells and every unchanged criterion.
+No fitter, prior, threshold, test bed or stopping rule changes. A real-fit
+integration test reproduces the prior reporting error before the fix.
+**After this entry's commit:** same command, fresh
+`results/benchmark_sim/outputs/k_selection/round2/attempt3/`. Task1-1 and Task1-2
+outputs remain untouched. Scientific results pending.
+
+Task1-3 verification before execution: real-cell reporting test RED→GREEN,
+4/4 panel tests; fresh full suite **565 passed, 0 failed**.

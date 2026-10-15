@@ -57,3 +57,17 @@ run_test('KPanel-T3: entry point writes the fixed design without changing inheri
   assert_false(grepl('locked binding',conditionMessage(err),fixed=TRUE))
   unlink(dest,recursive=TRUE)
 })
+run_test('KPanel-T4: a real unpruned fit retains metrics when pruning history is absent', {
+  load_panel_code()
+  env<-new.env(parent=.GlobalEnv)
+  env$grid<-data.frame(seed=42L,noise=.25,K=3L,model='single',arm='reference')
+  env$cfg<-list(cavi=list(max_iter=2L,tol=1e-5))
+  env$out_dir<-tempfile('panel_real_cell_');dir.create(file.path(env$out_dir,'cells'),recursive=TRUE)
+  cell<-panel_cell;environment(cell)<-env
+  result<-cell(1L)
+  assert_true(is.na(result$error),msg=paste('real fit reporting error:',result$error))
+  assert_equal(result$pruning_caps,0L)
+  assert_true(is.finite(result$K_final) && result$K_final==3L)
+  assert_true(file.exists(file.path(env$out_dir,'cells','cell_0001.csv')))
+  unlink(env$out_dir,recursive=TRUE)
+})

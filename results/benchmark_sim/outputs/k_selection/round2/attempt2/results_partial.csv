@@ -1,0 +1,210 @@
+seed,noise,K,model,arm,error,runtime,warnings,recovered,false_active,K_final,converged,elbo_converged,outputs_converged,c_validation,cor_planted,n_active,iterations,pruning_caps,runaway_F,runaway_L,max_abs_beta
+20261016,0.25,5,single,reference,invalid argument type,1.146,,,,,,,,,,,,,,,
+20261017,0.25,5,single,reference,invalid argument type,0.484,,,,,,,,,,,,,,,
+20261018,0.25,5,single,reference,invalid argument type,0.472,,,,,,,,,,,,,,,
+20261019,0.25,5,single,reference,invalid argument type,1.467,,,,,,,,,,,,,,,
+20261020,0.25,5,single,reference,invalid argument type,0.558,,,,,,,,,,,,,,,
+20261021,0.25,5,single,reference,invalid argument type,2.148,,,,,,,,,,,,,,,
+20261022,0.25,5,single,reference,invalid argument type,1.215,,,,,,,,,,,,,,,
+20261023,0.25,5,single,reference,invalid argument type,2.02,,,,,,,,,,,,,,,
+20261024,0.25,5,single,reference,invalid argument type,0.790000000000001,,,,,,,,,,,,,,,
+20261025,0.25,5,single,reference,invalid argument type,1.525,,,,,,,,,,,,,,,
+20261026,0.25,5,single,reference,invalid argument type,0.359,,,,,,,,,,,,,,,
+20261027,0.25,5,single,reference,invalid argument type,1.037,,,,,,,,,,,,,,,
+20261028,0.25,5,single,reference,invalid argument type,1.657,,,,,,,,,,,,,,,
+20261029,0.25,5,single,reference,invalid argument type,0.594000000000001,,,,,,,,,,,,,,,
+20261030,0.25,5,single,reference,invalid argument type,1.241,,,,,,,,,,,,,,,
+20261031,0.25,5,single,reference,invalid argument type,1.016,,,,,,,,,,,,,,,
+20261032,0.25,5,single,reference,invalid argument type,0.809999999999999,,,,,,,,,,,,,,,
+20261033,0.25,5,single,reference,invalid argument type,0.396999999999998,,,,,,,,,,,,,,,
+20261034,0.25,5,single,reference,invalid argument type,0.367999999999999,,,,,,,,,,,,,,,
+20261035,0.25,5,single,reference,invalid argument type,0.699999999999999,,,,,,,,,,,,,,,
+20261016,1,5,single,reference,invalid argument type,0.937000000000001,,,,,,,,,,,,,,,
+20261017,1,5,single,reference,invalid argument type,0.626999999999999,,,,,,,,,,,,,,,
+20261018,1,5,single,reference,invalid argument type,1.147,,,,,,,,,,,,,,,
+20261019,1,5,single,reference,invalid argument type,0.612000000000002,,,,,,,,,,,,,,,
+20261020,1,5,single,reference,invalid argument type,0.643000000000001,,,,,,,,,,,,,,,
+20261021,1,5,single,reference,invalid argument type,1.654,,,,,,,,,,,,,,,
+20261022,1,5,single,reference,invalid argument type,0.544,,,,,,,,,,,,,,,
+20261023,1,5,single,reference,invalid argument type,0.489999999999998,,,,,,,,,,,,,,,
+20261024,1,5,single,reference,invalid argument type,0.492000000000001,,,,,,,,,,,,,,,
+20261025,1,5,single,reference,invalid argument type,0.823999999999998,,,,,,,,,,,,,,,
+20261026,1,5,single,reference,invalid argument type,0.401,,,,,,,,,,,,,,,
+20261027,1,5,single,reference,invalid argument type,0.806000000000001,,,,,,,,,,,,,,,
+20261028,1,5,single,reference,invalid argument type,0.327999999999999,,,,,,,,,,,,,,,
+20261029,1,5,single,reference,invalid argument type,0.294,,,,,,,,,,,,,,,
+20261030,1,5,single,reference,invalid argument type,0.946999999999999,,,,,,,,,,,,,,,
+20261031,1,5,single,reference,invalid argument type,0.773000000000003,,,,,,,,,,,,,,,
+20261032,1,5,single,reference,invalid argument type,0.312999999999995,,,,,,,,,,,,,,,
+20261033,1,5,single,reference,invalid argument type,0.330999999999996,,,,,,,,,,,,,,,
+20261034,1,5,single,reference,invalid argument type,0.817999999999998,,,,,,,,,,,,,,,
+20261035,1,5,single,reference,invalid argument type,0.292000000000002,,,,,,,,,,,,,,,
+20261016,0.25,7,single,reference,invalid argument type,0.991,,,,,,,,,,,,,,,
+20261017,0.25,7,single,reference,invalid argument type,0.739999999999995,,,,,,,,,,,,,,,
+20261018,0.25,7,single,reference,invalid argument type,4.024,,,,,,,,,,,,,,,
+20261019,0.25,7,single,reference,invalid argument type,0.504999999999995,,,,,,,,,,,,,,,
+20261020,0.25,7,single,reference,invalid argument type,0.741999999999997,,,,,,,,,,,,,,,
+20261021,0.25,7,single,reference,invalid argument type,3.275,,,,,,,,,,,,,,,
+20261022,0.25,7,single,reference,invalid argument type,1.282,,,,,,,,,,,,,,,
+20261023,0.25,7,single,reference,invalid argument type,2.085,,,,,,,,,,,,,,,
+20261024,0.25,7,single,reference,invalid argument type,1.143,,,,,,,,,,,,,,,
+20261025,0.25,7,single,reference,invalid argument type,1.463,,,,,,,,,,,,,,,
+20261026,0.25,7,single,reference,invalid argument type,0.545000000000002,,,,,,,,,,,,,,,
+20261027,0.25,7,single,reference,invalid argument type,0.906999999999996,,,,,,,,,,,,,,,
+20261028,0.25,7,single,reference,invalid argument type,1.507,,,,,,,,,,,,,,,
+20261029,0.25,7,single,reference,invalid argument type,0.410000000000004,,,,,,,,,,,,,,,
+20261030,0.25,7,single,reference,invalid argument type,2.789,,,,,,,,,,,,,,,
+20261031,0.25,7,single,reference,invalid argument type,0.546999999999997,,,,,,,,,,,,,,,
+20261032,0.25,7,single,reference,invalid argument type,1.082,,,,,,,,,,,,,,,
+20261033,0.25,7,single,reference,invalid argument type,0.579999999999998,,,,,,,,,,,,,,,
+20261034,0.25,7,single,reference,invalid argument type,0.576,,,,,,,,,,,,,,,
+20261035,0.25,7,single,reference,invalid argument type,0.863999999999997,,,,,,,,,,,,,,,
+20261016,1,7,single,reference,invalid argument type,1.803,,,,,,,,,,,,,,,
+20261017,1,7,single,reference,invalid argument type,0.640000000000001,,,,,,,,,,,,,,,
+20261018,1,7,single,reference,invalid argument type,0.725999999999999,,,,,,,,,,,,,,,
+20261019,1,7,single,reference,invalid argument type,0.789000000000001,,,,,,,,,,,,,,,
+20261020,1,7,single,reference,invalid argument type,0.772000000000006,,,,,,,,,,,,,,,
+20261021,1,7,single,reference,invalid argument type,1.797,,,,,,,,,,,,,,,
+20261022,1,7,single,reference,invalid argument type,1.016,,,,,,,,,,,,,,,
+20261023,1,7,single,reference,invalid argument type,0.531,,,,,,,,,,,,,,,
+20261024,1,7,single,reference,invalid argument type,0.493,,,,,,,,,,,,,,,
+20261025,1,7,single,reference,invalid argument type,1.056,,,,,,,,,,,,,,,
+20261026,1,7,single,reference,invalid argument type,0.632,,,,,,,,,,,,,,,
+20261027,1,7,single,reference,invalid argument type,1.143,,,,,,,,,,,,,,,
+20261028,1,7,single,reference,invalid argument type,0.522,,,,,,,,,,,,,,,
+20261029,1,7,single,reference,invalid argument type,0.4,,,,,,,,,,,,,,,
+20261030,1,7,single,reference,invalid argument type,1.03,,,,,,,,,,,,,,,
+20261031,1,7,single,reference,invalid argument type,1.276,,,,,,,,,,,,,,,
+20261032,1,7,single,reference,invalid argument type,0.824,,,,,,,,,,,,,,,
+20261033,1,7,single,reference,invalid argument type,0.869999999999999,,,,,,,,,,,,,,,
+20261034,1,7,single,reference,invalid argument type,1.871,,,,,,,,,,,,,,,
+20261035,1,7,single,reference,invalid argument type,0.478999999999999,,,,,,,,,,,,,,,
+20261016,0.25,10,single,reference,invalid argument type,1.449,,,,,,,,,,,,,,,
+20261017,0.25,10,single,reference,invalid argument type,1.203,,,,,,,,,,,,,,,
+20261018,0.25,10,single,reference,invalid argument type,1.452,,,,,,,,,,,,,,,
+20261019,0.25,10,single,reference,invalid argument type,2.915,,,,,,,,,,,,,,,
+20261020,0.25,10,single,reference,invalid argument type,0.969000000000001,,,,,,,,,,,,,,,
+20261021,0.25,10,single,reference,invalid argument type,4.834,,,,,,,,,,,,,,,
+20261022,0.25,10,single,reference,invalid argument type,0.704000000000001,,,,,,,,,,,,,,,
+20261023,0.25,10,single,reference,invalid argument type,2.181,,,,,,,,,,,,,,,
+20261024,0.25,10,single,reference,invalid argument type,0.722000000000001,,,,,,,,,,,,,,,
+20261025,0.25,10,single,reference,invalid argument type,1.612,,,,,,,,,,,,,,,
+20261026,0.25,10,single,reference,invalid argument type,0.720000000000002,,,,,,,,,,,,,,,
+20261027,0.25,10,single,reference,invalid argument type,1.297,,,,,,,,,,,,,,,
+20261028,0.25,10,single,reference,invalid argument type,1.865,,,,,,,,,,,,,,,
+20261029,0.25,10,single,reference,invalid argument type,0.592999999999996,,,,,,,,,,,,,,,
+20261030,0.25,10,single,reference,invalid argument type,3.193,,,,,,,,,,,,,,,
+20261031,0.25,10,single,reference,invalid argument type,0.963000000000001,,,,,,,,,,,,,,,
+20261032,0.25,10,single,reference,invalid argument type,1.474,,,,,,,,,,,,,,,
+20261033,0.25,10,single,reference,invalid argument type,0.685000000000002,,,,,,,,,,,,,,,
+20261034,0.25,10,single,reference,invalid argument type,0.658000000000001,,,,,,,,,,,,,,,
+20261035,0.25,10,single,reference,invalid argument type,1.409,,,,,,,,,,,,,,,
+20261016,1,10,single,reference,invalid argument type,1.547,,,,,,,,,,,,,,,
+20261017,1,10,single,reference,invalid argument type,1.208,,,,,,,,,,,,,,,
+20261018,1,10,single,reference,invalid argument type,1.17100000000001,,,,,,,,,,,,,,,
+20261019,1,10,single,reference,invalid argument type,1.563,,,,,,,,,,,,,,,
+20261020,1,10,single,reference,invalid argument type,1.267,,,,,,,,,,,,,,,
+20261021,1,10,single,reference,invalid argument type,3.79000000000001,,,,,,,,,,,,,,,
+20261022,1,10,single,reference,invalid argument type,0.890999999999998,,,,,,,,,,,,,,,
+20261023,1,10,single,reference,invalid argument type,0.969000000000001,,,,,,,,,,,,,,,
+20261024,1,10,single,reference,invalid argument type,0.699999999999996,,,,,,,,,,,,,,,
+20261025,1,10,single,reference,invalid argument type,1.432,,,,,,,,,,,,,,,
+20261026,1,10,single,reference,invalid argument type,0.974999999999994,,,,,,,,,,,,,,,
+20261027,1,10,single,reference,invalid argument type,1.663,,,,,,,,,,,,,,,
+20261028,1,10,single,reference,invalid argument type,0.616,,,,,,,,,,,,,,,
+20261029,1,10,single,reference,invalid argument type,0.706999999999994,,,,,,,,,,,,,,,
+20261030,1,10,single,reference,invalid argument type,1.29600000000001,,,,,,,,,,,,,,,
+20261031,1,10,single,reference,invalid argument type,1.16999999999999,,,,,,,,,,,,,,,
+20261032,1,10,single,reference,invalid argument type,0.805000000000007,,,,,,,,,,,,,,,
+20261033,1,10,single,reference,invalid argument type,0.948999999999998,,,,,,,,,,,,,,,
+20261034,1,10,single,reference,invalid argument type,1.73099999999999,,,,,,,,,,,,,,,
+20261035,1,10,single,reference,invalid argument type,0.5,,,,,,,,,,,,,,,
+20261016,0.25,15,single,reference,invalid argument type,1.583,,,,,,,,,,,,,,,
+20261017,0.25,15,single,reference,invalid argument type,1.387,,,,,,,,,,,,,,,
+20261018,0.25,15,single,reference,invalid argument type,1.556,,,,,,,,,,,,,,,
+20261019,0.25,15,single,reference,invalid argument type,2.69,,,,,,,,,,,,,,,
+20261020,0.25,15,single,reference,invalid argument type,1.39100000000001,,,,,,,,,,,,,,,
+20261021,0.25,15,single,reference,invalid argument type,5.244,,,,,,,,,,,,,,,
+20261022,0.25,15,single,reference,invalid argument type,0.902999999999992,,,,,,,,,,,,,,,
+20261023,0.25,15,single,reference,invalid argument type,2.58499999999999,,,,,,,,,,,,,,,
+20261024,0.25,15,single,reference,invalid argument type,1.026,,,,,,,,,,,,,,,
+20261025,0.25,15,single,reference,invalid argument type,2.327,,,,,,,,,,,,,,,
+20261026,0.25,15,single,reference,invalid argument type,1.06400000000001,,,,,,,,,,,,,,,
+20261027,0.25,15,single,reference,invalid argument type,1.628,,,,,,,,,,,,,,,
+20261028,0.25,15,single,reference,invalid argument type,2.556,,,,,,,,,,,,,,,
+20261029,0.25,15,single,reference,invalid argument type,1.318,,,,,,,,,,,,,,,
+20261030,0.25,15,single,reference,invalid argument type,2.694,,,,,,,,,,,,,,,
+20261031,0.25,15,single,reference,invalid argument type,1.22,,,,,,,,,,,,,,,
+20261032,0.25,15,single,reference,invalid argument type,1.543,,,,,,,,,,,,,,,
+20261033,0.25,15,single,reference,invalid argument type,1.565,,,,,,,,,,,,,,,
+20261034,0.25,15,single,reference,invalid argument type,1.643,,,,,,,,,,,,,,,
+20261035,0.25,15,single,reference,invalid argument type,2.088,,,,,,,,,,,,,,,
+20261016,1,15,single,reference,invalid argument type,0.924000000000001,,,,,,,,,,,,,,,
+20261017,1,15,single,reference,invalid argument type,1.737,,,,,,,,,,,,,,,
+20261018,1,15,single,reference,invalid argument type,1.98,,,,,,,,,,,,,,,
+20261019,1,15,single,reference,invalid argument type,2.17,,,,,,,,,,,,,,,
+20261020,1,15,single,reference,invalid argument type,1.695,,,,,,,,,,,,,,,
+20261021,1,15,single,reference,invalid argument type,3.009,,,,,,,,,,,,,,,
+20261022,1,15,single,reference,invalid argument type,1.896,,,,,,,,,,,,,,,
+20261023,1,15,single,reference,invalid argument type,1.044,,,,,,,,,,,,,,,
+20261024,1,15,single,reference,invalid argument type,1.026,,,,,,,,,,,,,,,
+20261025,1,15,single,reference,invalid argument type,0.789000000000001,,,,,,,,,,,,,,,
+20261026,1,15,single,reference,invalid argument type,1.169,,,,,,,,,,,,,,,
+20261027,1,15,single,reference,invalid argument type,2.309,,,,,,,,,,,,,,,
+20261028,1,15,single,reference,invalid argument type,0.863,,,,,,,,,,,,,,,
+20261029,1,15,single,reference,invalid argument type,0.835000000000001,,,,,,,,,,,,,,,
+20261030,1,15,single,reference,invalid argument type,1.457,,,,,,,,,,,,,,,
+20261031,1,15,single,reference,invalid argument type,1.569,,,,,,,,,,,,,,,
+20261032,1,15,single,reference,invalid argument type,0.962999999999994,,,,,,,,,,,,,,,
+20261033,1,15,single,reference,invalid argument type,1.169,,,,,,,,,,,,,,,
+20261034,1,15,single,reference,invalid argument type,2.397,,,,,,,,,,,,,,,
+20261035,1,15,single,reference,invalid argument type,1.01,,,,,,,,,,,,,,,
+20261016,0.25,5,single,protected,NA,8.356,,FALSE,1,2,TRUE,TRUE,TRUE,0.751529760801038,0.476051585982463,1,65,0,1.01906808854874,1.26536368508205,1.04952707861046
+20261017,0.25,5,single,protected,NA,2.551,,FALSE,1,2,TRUE,TRUE,FALSE,0.701381315885133,0.113615518884968,1,22,0,1.00959690924302,1.17507400848232,0.504555654312996
+20261018,0.25,5,single,protected,NA,9.884,,FALSE,0,2,TRUE,TRUE,TRUE,NA,0.151061624052897,0,111,0,1.01696417024478,1.23893234049373,0
+20261019,0.25,5,single,protected,NA,9.24000000000001,,FALSE,0,2,TRUE,TRUE,TRUE,NA,0.100987156353005,0,113,0,1.01623799889848,1.26141560560529,2.83823595606226e-07
+20261020,0.25,5,single,protected,NA,2.488,,FALSE,0,1,TRUE,TRUE,TRUE,NA,0.113196474321688,0,21,0,1.0100922793747,1.27728018868772,0.0270191089521033
+20261021,0.25,5,single,protected,NA,7.139,,TRUE,1,2,TRUE,TRUE,TRUE,0.732763426872329,0.900031324447528,2,80,0,1.28070251909057,1.36882389295492,0.748380023066422
+20261022,0.25,5,single,protected,NA,5.545,,TRUE,1,3,TRUE,TRUE,TRUE,0.685919875534811,0.957181459768149,2,84,0,1.0932180467684,1.27905120131628,0.900251881398529
+20261023,0.25,5,single,protected,NA,9.15700000000001,,FALSE,2,2,TRUE,TRUE,TRUE,0.596801190254789,0.10593043790808,2,99,0,1.0169097589486,1.22553818721694,0.312337149272626
+20261024,0.25,5,single,protected,NA,3.19800000000001,,FALSE,0,2,TRUE,TRUE,TRUE,0.561051286731155,0.143116793899586,0,20,0,1.00878090020226,1.22764183642311,0.0851656131077373
+20261025,0.25,5,single,protected,NA,3.637,,FALSE,2,2,TRUE,TRUE,TRUE,0.796855458281222,0.122895657851121,2,40,0,1.02047092968305,1.2517655655594,1.3409800454351
+20261026,0.25,5,single,protected,NA,14.565,,FALSE,1,2,TRUE,TRUE,FALSE,0.545120382282669,0.131312500467797,1,19,1,1.01300276251493,1.20096298764139,0.236166159006948
+20261027,0.25,5,single,protected,NA,2.94799999999999,,FALSE,1,1,TRUE,TRUE,FALSE,0.765452847805789,0.686738098393745,1,19,0,1.01043865617176,1.28065233950005,1.69802056387185
+20261016,0.25,7,single,protected,NA,11.583,,FALSE,1,2,TRUE,TRUE,TRUE,0.750417207491192,0.477163167458077,1,69,0,1.01265457353294,1.31803707534966,1.05464067522169
+20261017,0.25,7,single,protected,NA,4.162,,FALSE,1,2,TRUE,TRUE,TRUE,0.701381315885133,0.113614583486074,1,23,0,1.0156125696794,1.18245358090861,0.499254307370595
+20261018,0.25,7,single,protected,NA,16.132,,FALSE,0,2,TRUE,TRUE,TRUE,NA,0.151061624052933,0,111,0,1.01696417024345,1.23893234049387,0
+20261019,0.25,7,single,protected,NA,15.828,,FALSE,0,2,TRUE,TRUE,TRUE,NA,0.100987157584929,0,113,0,1.01623799064801,1.26141560799694,1.76367974798705e-07
+20261020,0.25,7,single,protected,NA,4.533,,FALSE,0,1,TRUE,TRUE,TRUE,NA,0.113196474321723,0,21,0,1.0100922793747,1.27728018868772,0.0270191089521026
+20261021,0.25,7,single,protected,NA,11.823,,TRUE,1,2,TRUE,TRUE,TRUE,0.732763426872329,0.900031324447419,2,80,0,1.28070252802461,1.36882388833386,0.748380023485214
+20261022,0.25,7,single,protected,NA,9.95599999999999,,TRUE,1,3,TRUE,TRUE,TRUE,0.685919875534811,0.957181459768026,2,84,0,1.09321806876845,1.27905164265763,0.900251881404993
+20261023,0.25,7,single,protected,NA,13.256,,FALSE,2,2,TRUE,TRUE,TRUE,0.596801190254789,0.105930437908098,2,99,0,1.01690975894625,1.22553818721678,0.312337149274636
+20261024,0.25,7,single,protected,NA,4.72099999999999,,FALSE,0,2,TRUE,TRUE,TRUE,0.561051286731155,0.143116794138554,0,20,0,1.00879188814942,1.22765595511797,0.0851419393068482
+20261025,0.25,7,single,protected,NA,5.86200000000001,,FALSE,2,2,TRUE,TRUE,TRUE,0.796855458281222,0.122895657786198,2,40,0,1.02051438187406,1.25177327580061,1.3409800437544
+20261026,0.25,7,single,protected,NA,17.712,,FALSE,1,2,TRUE,TRUE,FALSE,0.545120382282669,0.131312500467797,1,19,1,1.01300276179043,1.20096298937625,0.236166147544901
+20261027,0.25,7,single,protected,NA,5.29000000000001,,FALSE,1,1,TRUE,TRUE,FALSE,0.765452847805789,0.686738098393707,1,19,0,1.01043865627304,1.28065233914702,1.69802056387161
+20261023,1,10,single,protected,NA,5.125,,FALSE,1,1,TRUE,TRUE,FALSE,0.495770982433312,0.258658270235399,1,8,0,1.20376683382376,1,0.252381436635883
+20261024,1,10,single,protected,NA,5.152,,FALSE,0,1,TRUE,TRUE,FALSE,NA,0.113332185207664,0,8,0,1.03654108224792,1.23680770835704,5.54612456105576e-06
+20261025,1,10,single,protected,NA,5.281,,FALSE,1,1,TRUE,TRUE,FALSE,0.583553937789543,0.0118573088946165,1,18,0,1.04107859018068,1.27422748816295,0.15671886047261
+20261026,1,10,single,protected,NA,5.805,,FALSE,0,1,TRUE,TRUE,FALSE,0.512671509281679,0.0270322746536452,0,14,0,1.02974792490665,1.40292343046729,0.049899555754275
+20261027,1,10,single,protected,NA,4,,TRUE,0,1,TRUE,TRUE,FALSE,0.69377339231031,0.897263545421592,1,10,0,1.02650384462357,1.42698132763656,1.11357997048255
+20261028,1,10,single,protected,NA,10.005,,FALSE,1,1,TRUE,TRUE,FALSE,0.508817766165905,0.0522351482324695,1,49,0,1.05721204784071,1.49064202705937,7.99583081656557e-12
+20261029,1,10,single,protected,NA,4.019,,FALSE,0,1,TRUE,TRUE,FALSE,0.520863541163203,0.0972702599904232,0,10,0,1.02902157089243,1.25913139921825,0.0535727802686464
+20261030,1,10,single,protected,NA,14.547,,FALSE,0,1,TRUE,TRUE,FALSE,0.484223878230537,0.0911976607911891,0,70,0,1.03905015478637,1.5122967147234,5.72855314799642e-08
+20261031,1,10,single,protected,NA,2.987,,FALSE,0,1,TRUE,TRUE,TRUE,NA,0,0,6,0,0,0,0
+20261032,1,10,single,protected,NA,5.061,,FALSE,0,1,TRUE,TRUE,FALSE,0.546134663341646,0.0465736719270364,0,19,0,1.02933227257107,1.25917615974318,0.00595469759133996
+20261033,1,10,single,protected,NA,3.34400000000001,,FALSE,1,1,TRUE,TRUE,FALSE,0.733454665784249,0.489508871679791,1,12,0,1.03048476271705,1.22476607787278,0.437176034622726
+20261034,1,10,single,protected,NA,4.655,,FALSE,0,1,TRUE,TRUE,FALSE,0.515434083601286,0.0670290759252559,0,16,0,1.02612791205232,1.50398289094569,0.0823083089613448
+20261035,1,10,single,protected,NA,11.611,,FALSE,2,2,TRUE,TRUE,FALSE,0.590775269872424,0.290936185508687,2,47,0,1.03908576129059,1.34619208718751,0.350507770513157
+20261016,0.25,15,single,protected,NA,24.333,,FALSE,1,2,TRUE,TRUE,TRUE,0.750417207491192,0.477163167444112,1,69,0,1.012648782861,1.31800397953682,1.05464067522531
+20261017,0.25,15,single,protected,NA,11.675,,FALSE,1,2,TRUE,TRUE,TRUE,0.701381315885133,0.113614583486961,1,23,0,1.01561258773355,1.1824537687766,0.499254323411399
+20261029,0.25,5,multimodal,reference,NA,22.193,,TRUE,1,3,TRUE,NA,TRUE,0.853711790393013,0.98631629143925,2,1,0,NA,NA,2.33440416431881
+20261030,0.25,5,multimodal,reference,invalid argument type,14.322,,,,,,,,,,,,,,,
+20261031,0.25,5,multimodal,reference,NA,12.241,,FALSE,2,2,TRUE,NA,TRUE,0.817837465564738,0.171938810222055,2,1,0,NA,NA,0.790459983723045
+20261032,0.25,5,multimodal,reference,NA,10.751,,TRUE,0,3,TRUE,NA,TRUE,0.813129357087529,0.937044873324719,1,1,0,NA,NA,1.67380446665598
+20261033,0.25,5,multimodal,reference,NA,12.505,,FALSE,2,2,TRUE,NA,TRUE,0.79685703334611,0.199641085249273,2,1,0,NA,NA,1.04512315326617
+20261034,0.25,5,multimodal,reference,NA,11.334,,TRUE,1,3,TRUE,NA,TRUE,0.873384097751018,0.930927773864396,2,1,0,NA,NA,1.77526234264906
+20261035,0.25,5,multimodal,reference,NA,11.509,,FALSE,2,2,TRUE,NA,TRUE,0.655283018867925,0.0983380024268021,2,1,0,NA,NA,0.777366928891905
+20261016,1,5,multimodal,reference,NA,14.795,,FALSE,1,1,TRUE,NA,TRUE,0.640816326530612,0.192044579461864,1,1,0,NA,NA,0.420857803211448
+20261016,0.25,10,multimodal,reference,NA,30.242,,TRUE,0,3,TRUE,NA,TRUE,0.836083812349342,0.957824780017825,1,1,0,NA,NA,1.8155265302406
+20261017,0.25,10,multimodal,reference,NA,20.457,,TRUE,0,3,TRUE,NA,TRUE,0.868956743002545,0.963191094541674,1,1,0,NA,NA,2.53127466222374

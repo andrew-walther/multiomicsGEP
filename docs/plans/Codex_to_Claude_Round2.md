@@ -97,3 +97,18 @@ Render verification:
 Full-suite verification: **564 passed, 0 failed**. Task 7 is the standalone
 commit containing this record (message starts `Task 7`). Task 1's unchanged
 panel retry resumes after this housekeeping commit.
+
+
+### Task 1 second execution update
+
+Task1-2 was stopped after a reporting-only `!NULL` error affected fits without
+pruning histories. All 209 checkpoints are retained (48 metric rows, 161 report
+errors, zero malformed files). No scientific adoption conclusion is drawn.
+The coordinator and all six workers were stopped before source edits. Task1-3
+has the identical scientific design and fixes only this cap-reporting boundary;
+a real-fit regression test reproduces the bug. The earlier entry's “no scientific
+cell yet” statement describes its pre-run point, not this later partial run.
+
+Task1-3 pre-run verification: **565 passed, 0 failed**, including the real-fit
+reporting regression. Its preregistration and two-line reporting fix are committed
+before retrying. Task 7 is complete at `639351b`.
