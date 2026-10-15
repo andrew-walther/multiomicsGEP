@@ -194,3 +194,17 @@ survival), and has fewer false prognostic programs.
   modality, where survival gains too little to offset the program's cost.
 
 The rule for the number of programs is the next decision.
+
+## Protected pruning and starting rank
+
+The protected-pruning adoption assessment could not be completed as specified: the multimodal
+fitter's convergence flag refers to reconstruction/predictor changes, whereas the fixed rule
+requires ELBO convergence for every fit. The panel was stopped before a complete rank batch;
+there is no completed result table. Protected pruning was not adopted for either model, and the
+conditional real-data 1-SE run was not performed. Starting K remains 7 with the handoff
+configurations. The exact protection inequality also protects a zero coefficient with zero
+variance; that boundary was implemented literally, without tuning. See DECISIONS.md.
+
+The opt-in implementation and fixed runners are retained on `m5/k-selection` for review.
+The default-fit comparisons against `feature/supervised-F` preserve the full fitted objects
+and pruning sequences.

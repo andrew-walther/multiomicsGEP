@@ -234,13 +234,18 @@ yf_canonical_elbo <- function(Y, time, status, EL, EL2, EF, EF2, EBeta, EBeta2,
 #'   means the program does not improve the objective.
 #' @family F_surv_YFB_update
 #' @examples
+#' @param protect_survival Protect coefficients satisfying |Eβ| >= 1.96 SD(β).
 #' # delta <- prune_yf_nullcheck(fit, Y, time, status)
-prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL) {
+prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
+                                protect_survival = FALSE) {
   K <- ncol(fit$EF)
   nk <- fit$neg_kl
   full <- yf_canonical_elbo(Y, time, status, fit$EL, fit$EL2, fit$EF, fit$EF2,
                             fit$EBeta, fit$EBeta2, sum(nk), fit$w_S, strata)
   vapply(seq_len(K), function(k) {
+    # Literal agreed inequality: a point mass at zero also satisfies 0 >= 0.
+    if (protect_survival && abs(fit$EBeta[k]) >=
+        1.96 * sqrt(pmax(fit$EBeta2[k] - fit$EBeta[k]^2, 0))) return(-Inf)
     keep <- setdiff(seq_len(K), k)
     yf_canonical_elbo(Y, time, status, fit$EL[, keep, drop = FALSE],
                       fit$EL2[, keep, drop = FALSE], fit$EF[, keep, drop = FALSE],
@@ -429,6 +434,12 @@ prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL) {
 #'                 (warm start, shared beta prior carried over, no warm-up),
 #'                 and repeat. The result has fewer than K columns and
 #'                 `$pruning` records each removal.
+#' @param prune_protect_survival Logical, default FALSE. Protect programs with
+#'   |E[β_k]| >= 1.96 sqrt(E[β_k²] - E[β_k]²) from the ELBO nullcheck.
+#' @param converge_on Stopping criterion: default "elbo" preserves the existing
+#'   rule; "outputs" requires relative changes of LF' and YFβ both < 1e-4.
+#'   Explicitly passing either value records both final criteria; omitting the
+#'   argument preserves the default fit object bit for bit.
 #' @param trace_supervision logical (default FALSE). When TRUE, `history$trace`
 #'                 records, per iteration (rows) and program k (columns):
 #'                 E[beta_k], E[beta_k^2]; survival's share of the F-update
@@ -496,10 +507,16 @@ fit_cox_on_yf <- function(Y, time, status,
                            beta_prior_fix  = FALSE,
                            beta_slab_sd    = NULL,
                            prune           = FALSE,
+                           prune_protect_survival = FALSE,
+                           converge_on = c("elbo", "outputs"),
                            trace_supervision = FALSE) {
 
+  record_output_convergence <- !missing(converge_on)
   call_args <- mget(names(formals(sys.function())), envir = environment())
   n <- nrow(Y); p <- ncol(Y)
+  converge_on <- match.arg(converge_on)
+  if (record_output_convergence && !exists("multimodal_yfb_relative_change", mode = "function"))
+    source("code/fit_multimodal_yfb.R")
 
   if (!is.null(w_S) && (!is.numeric(w_S) || length(w_S) != 1 || !is.finite(w_S) || w_S < 0))
     stop("w_S must be NULL or a finite nonnegative scalar.")
@@ -852,6 +869,10 @@ fit_cox_on_yf <- function(Y, time, status,
   # ==========================================================================
   for (iter in 1:max_iter) {
 
+    if (record_output_convergence) {
+      old_reconstruction <- EL %*% t(EF)
+      old_eta_outputs <- as.vector(Y %*% EF %*% EBeta)
+    }
     EL_old    <- EL
     EBeta_old <- EBeta
 
@@ -1151,6 +1172,15 @@ fit_cox_on_yf <- function(Y, time, status,
     # ========================================================================
     # STEP 4: Convergence Check
     # ========================================================================
+    if (record_output_convergence) {
+      reconstruction_change <- multimodal_yfb_relative_change(
+        old_reconstruction, EL %*% t(EF))
+      eta_change <- multimodal_yfb_relative_change(old_eta_outputs,
+        as.vector(Y %*% EF %*% EBeta))
+      if (iter == 1L) history$output_change <- numeric(max_iter)
+      history$output_change[iter] <- max(reconstruction_change, eta_change)
+      history$outputs_converged <- history$output_change[iter] < 1e-4
+    }
     delta_L    <- mean(abs(EL - EL_old))
     delta_Beta <- mean(abs(EBeta - EBeta_old))
     history$delta_L[iter]    <- delta_L
@@ -1178,14 +1208,18 @@ fit_cox_on_yf <- function(Y, time, status,
     # beta/L can plateau during the frozen phase on their own, and without this
     # guard the loop would exit before F ever gets a chance to unfreeze,
     # silently defeating the N_frozen mechanism (DECISIONS.md 2026-08-20).
-    if (iter > 5 && iter > N_frozen &&
-        is.finite(history$delta_elbo_rel[iter]) &&
-        history$delta_elbo_rel[iter] < tol) {
+    elbo_converged <- is.finite(history$delta_elbo_rel[iter]) &&
+      history$delta_elbo_rel[iter] < tol
+    if (record_output_convergence) history$elbo_converged <- elbo_converged
+    stop_now <- if (converge_on == "elbo") elbo_converged else history$outputs_converged
+    if (iter > 5 && iter > N_frozen && stop_now) {
       if (verbose) {
         cat(sprintf("\n  Converged at iteration %d  (relative ELBO change = %.2e)\n",
                     iter, history$delta_elbo_rel[iter]))
       }
       history$converged  <- TRUE
+      if (record_output_convergence)
+        history$output_change <- history$output_change[seq_len(iter)]
       history$n_iter     <- iter
       history$rmse       <- history$rmse[1:iter]
       history$elbo_proxy <- history$elbo_proxy[1:iter]
@@ -1339,7 +1373,8 @@ fit_cox_on_yf <- function(Y, time, status,
   # Pruning (canonical only): drop the program whose removal raises the ELBO
   # most, if any removal does not lower it, and refit from a warm start.
   if (prune && K > 1) {
-    delta <- prune_yf_nullcheck(result, Y, time, status, strata = strata_id)
+    delta <- prune_yf_nullcheck(result, Y, time, status, strata = strata_id,
+                                protect_survival = prune_protect_survival)
     if (max(delta) >= 0) {
       drop <- which.max(delta); keep <- setdiff(seq_len(K), drop)
       refit_args <- modifyList(call_args, list(
@@ -1347,6 +1382,7 @@ fit_cox_on_yf <- function(Y, time, status,
         init_method = "custom", init_supervised = FALSE, beta_warmup = 0L,
         beta_prior_init = if (beta_prior_mode == "shared") g_beta else NULL))
       if (beta_prior_mode == "shared") refit_args["beta_prior_init"] <- list(g_beta)
+      if (!record_output_convergence) refit_args$converge_on <- NULL
       refit <- do.call(fit_cox_on_yf, refit_args)
       refit$pruning <- rbind(
         data.frame(K_before = K, removed_program = drop, elbo_gain = delta[drop],

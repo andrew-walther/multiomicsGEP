@@ -344,3 +344,12 @@ bios-dissertation; rerun that repository's `prelim/tools/build_prelim.py`
 to update the full prelim. Continuing work is described as methodological
 aims and expected results without a fixed-date timeline. A substantive
 revision will follow the advisor-meeting plan and verified additional results.
+
+## Protected-pruning evaluation
+
+`results/benchmark_sim/run_k_selection_panel.R` contains the fixed simulation design;
+`run_k_selection_real_1se.R` is conditional on a positive adoption record in
+`outputs/k_selection/adoption.csv`. Run from the repository root with `Rscript`.
+The assessment is blocked on the difference between multimodal output convergence and the
+required ELBO stopping criterion; protection and a new starting rank were not adopted.
+See the 2026-10-15 decision and progress-book entry before running these scripts.
