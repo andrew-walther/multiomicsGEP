@@ -149,6 +149,15 @@ Reading off the coefficients:
                        \label{eq:BFsurv}
 \end{align}
 
+\begin{correctionbox}[Correction (2026-10-15)]
+Equation~\eqref{eq:BFsurv} is incomplete. Removing only the other programs ($z_{\text{no-}k}$)
+leaves the other genes of program $k$ in the residual, contrary to the definition of
+$\tilde\eta_{\text{no-}j}$ above. The complete term subtracts
+$\E[\tilde\beta_k^2]\sum_i w_i\,y_{ij}\bigl((z_F)_{ik}-y_{ij}\E[f_{jk}]\bigr)$ and makes the update a
+sequential sweep over genes. See \texttt{derivations/cox\_on\_YF/canonical\_ZF/}. Results with
+$\alpha_F = 0$ do not use this term and are unaffected.
+\end{correctionbox}
+
 \subsection{Combined EBNM Inputs}
 
 Mixing the two sources with weight $\alpha \in [0,1]$:

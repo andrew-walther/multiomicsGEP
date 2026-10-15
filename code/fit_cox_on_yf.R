@@ -54,6 +54,9 @@ source("code/update_tau.R")         # compute_var_term, update_tau
 source("code/compute_elbo.R")       # compute_ebnm_kl, compute_survival_elbo, compute_normal_kl
 source("code/update_F_cohort.R")    # update_F_cohort_col, update_F_cohort_all
 source("code/deflation_init.R")     # deflation_svd_init -- init_method="deflation"
+# Exact sequential loading sweep and prior fits shared with the multimodal
+# model; used only by canonicalize = TRUE (multimodal_yfb_update_F_mk etc.)
+if (!exists("multimodal_yfb_update_F_mk")) source("code/multimodal_yfb_updates.R")
 
 # compute_R_k is defined in update_L.R (Cluster A); re-source just that function
 # by sourcing update_L.R here. The Cluster B update files use only compute_R_k,
@@ -141,6 +144,59 @@ calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
     logPL  <- logPL + res$logPL
   }
   list(u = u, w = w, logPL = logPL)
+}
+
+# ------------------------------------------------------------------------------
+#' Rescale each program so that its training projection has unit SD
+#'
+#' Scale canonicalization for the Cox-on-YF model (Workstream C, step C2; the
+#' single-modality port of `multimodal_yfb_canonicalize_factors()`). The
+#' factorization Y ≈ L Fᵀ and the predictor η = (Y F) β are unchanged when
+#' program k is rescaled by c_k > 0 as
+#'   F_k → F_k / c_k,  L_k → c_k L_k,  β_k → c_k β_k
+#' (second moments by c_k⁻² , c_k², c_k²). Choosing c_k = sd(Y F_k) fixes the
+#' otherwise free scale of F_k, so the survival term in the F update cannot
+#' feed back through the L update (problem 3 in the Workstream C plan). The
+#' ebnm priors on L, F and β are re-estimated at every update and are scale
+#' families, so they need no transformation here.
+#'
+#' @param Y      n x p data matrix used for the projection.
+#' @param EL,EL2 n x K posterior mean / second moment of L (first K columns).
+#' @param EF,EF2 p x K posterior mean / second moment of F (first K columns).
+#' @param EBeta,EBeta2 K-vectors: posterior mean / second moment of β.
+#' @param K      number of programs to rescale (the first K columns).
+#' @param prior_F NULL or a length-K list of loading priors held across sweeps
+#'               (multimodal format: family, pi, rate or variance, point_mass);
+#'               rescaled with F so the prior describes the same loadings.
+#' @return list(EL, EL2, EF, EF2, EBeta, EBeta2, prior_F, scale): the rescaled moments
+#'   and the K-vector of applied scales c_k (1 for a program with sd 0).
+#' @examples
+#' Y <- matrix(rnorm(20), 10, 2)
+#' canonicalize_yf_factors(Y, matrix(1, 10, 1), matrix(1, 10, 1),
+#'                         matrix(1, 2, 1), matrix(1, 2, 1), 0.5, 0.3, 1)$scale
+#' @family F_surv_YFB_update
+canonicalize_yf_factors <- function(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
+                                    prior_F = NULL) {
+  scale <- vapply(seq_len(K), function(k) stats::sd(as.vector(Y %*% EF[, k])), numeric(1))
+  # A program whose projection has collapsed (sd < 1e-6, against 1 for a live
+  # canonical program) is dead: rescaling it would inflate numerical residue
+  # in F to unit scale and destabilize the next updates, so it is left as is.
+  scale[!is.finite(scale) | scale < 1e-6] <- 1
+  for (k in seq_len(K)) {
+    EF[, k]  <- EF[, k] / scale[k];  EF2[, k] <- EF2[, k] / scale[k]^2
+    EL[, k]  <- EL[, k] * scale[k];  EL2[, k] <- EL2[, k] * scale[k]^2
+    EBeta[k] <- EBeta[k] * scale[k]; EBeta2[k] <- EBeta2[k] * scale[k]^2
+    # A loading prior held across sweeps moves with F_k -> F_k / c: an
+    # exponential or Laplace rate is multiplied by c, a Normal variance by 1/c^2
+    pk <- prior_F[[k]]
+    if (!is.null(pk) && !isTRUE(pk$point_mass)) {
+      if (identical(pk$family, "normal")) pk$variance <- pk$variance / scale[k]^2
+      else pk$rate <- pk$rate * scale[k]
+      prior_F[[k]] <- pk
+    }
+  }
+  list(EL = EL, EL2 = EL2, EF = EF, EF2 = EF2, EBeta = EBeta, EBeta2 = EBeta2,
+       prior_F = prior_F, scale = scale)
 }
 
 # ==============================================================================
@@ -269,6 +325,31 @@ calc_cox_taylor_yf <- function(eta, time, status, strata = NULL) {
 #'                 unweighted, with the survival term multiplied by w_S:
 #'                 A_F = A_gen + w_S A_surv, B_F = B_gen + w_S B_surv.
 #'                 w_S = 1 is the plain (equal-weight) Bayesian posterior.
+#' @param canonicalize logical (default FALSE). When TRUE (Workstream C, step
+#'                 C2), the survival predictor is the raw projection
+#'                 ZF = Y EF with every program rescaled to sd(Y EF_k) = 1 on
+#'                 the training data after initialization and at the end of
+#'                 every iteration (`canonicalize_yf_factors()`), instead of
+#'                 Y EF / ||EF_k||. alpha_F is then not used: every survival
+#'                 term (F update, beta update, monitored ELBO) carries the
+#'                 same weight w_S (NULL means w_S = 1, the plain Bayesian
+#'                 posterior), and the monitored ELBO is
+#'                 E[log p(Y)] + w_S * survival term + KL terms, the objective
+#'                 the updates climb. The F update is then the exact
+#'                 sequential (gene-by-gene) coordinate update of
+#'                 `multimodal_yfb_update_F_mk()`, which removes the other
+#'                 genes' contribution to program k's projection from each
+#'                 gene's survival term (the vector update used otherwise omits
+#'                 it), under a loading prior held fixed during the sweep and
+#'                 refit afterwards; prior_LF must be point_exponential,
+#'                 point_laplace or normal. The beta update and the survival
+#'                 ELBO include the projection variance Var(Y F_k) from q(F),
+#'                 and the survival ELBO is evaluated at the end of each
+#'                 iteration. `alpha`, `norm_convention` and
+#'                 `boost_beta` are ignored. `EF_norms` is returned as 1s, so
+#'                 predict_cox_on_yf() computes Y_test EF beta. Not supported
+#'                 with alpha_F > 0, N_burnin > 0, cox_warmstart,
+#'                 alpha_schedule or beta_cohort_id.
 #' @param trace_supervision logical (default FALSE). When TRUE, `history$trace`
 #'                 records, per iteration (rows) and program k (columns):
 #'                 E[beta_k], E[beta_k^2]; survival's share of the F-update
@@ -328,12 +409,24 @@ fit_cox_on_yf <- function(Y, time, status,
                            strata_id       = NULL,
                            beta_cohort_id  = NULL,
                            w_S             = NULL,
+                           canonicalize    = FALSE,
                            trace_supervision = FALSE) {
 
   n <- nrow(Y); p <- ncol(Y)
 
   if (!is.null(w_S) && (!is.numeric(w_S) || length(w_S) != 1 || !is.finite(w_S) || w_S < 0))
     stop("w_S must be NULL or a finite nonnegative scalar.")
+  if (canonicalize) {
+    if (alpha_F > 0)
+      stop("alpha_F is not used with canonicalize = TRUE; set the survival weight with w_S.")
+    if (N_burnin > 0 || cox_warmstart || !is.null(alpha_schedule) || !is.null(beta_cohort_id))
+      stop("canonicalize = TRUE does not support N_burnin, cox_warmstart, alpha_schedule ",
+           "or beta_cohort_id.")
+    if (is.null(w_S)) w_S <- 1
+    if (!prior_LF %in% c("point_exponential", "point_laplace", "normal"))
+      stop("canonicalize = TRUE supports prior_LF point_exponential, point_laplace or normal.")
+    prior_F_state <- vector("list", K)   # loading priors held across sweeps
+  }
   # Weights applied to the genomics and survival terms of the F update
   # (used by the trace; the update itself receives alpha_F or w_S directly).
   F_w_gen  <- if (is.null(w_S)) 1 - alpha_F else 1
@@ -464,6 +557,7 @@ fit_cox_on_yf <- function(Y, time, status,
   # --------------------------------------------------------------------------
   # Initialization
   # --------------------------------------------------------------------------
+  init_nonneg <- prior_LF %in% c("point_exponential", "gamma", "exponential")
   if (init_method == "svd") {
     svd_init <- svd(Y_for_svd, nu = K, nv = K)
     d_k <- sqrt(pmax(svd_init$d[1:K], 0))
@@ -471,8 +565,12 @@ fit_cox_on_yf <- function(Y, time, status,
     # SVD vector points all-negative, giving degenerate ZF = Y·EF columns of all
     # zeros. Under point_exponential prior (non-negative), abs() is equally valid
     # and prevents the degenerate column pathology.
-    EL  <- abs(svd_init$u %*% diag(d_k, K, K))
-    EF  <- abs(svd_init$v %*% diag(d_k, K, K))
+    EL  <- svd_init$u %*% diag(d_k, K, K)
+    EF  <- svd_init$v %*% diag(d_k, K, K)
+    # abs() only for a nonnegative prior: with a signed prior (point_laplace,
+    # normal, point_normal) it discards the signs that the first L update
+    # needs and the programs collapse to zero (2026-10-15, Workstream C).
+    if (init_nonneg) { EL <- abs(EL); EF <- abs(EF) }
   } else if (init_method == "random") {
     y_sd <- sd(Y)
     EL   <- matrix(rnorm(n * K, sd = 0.1 * y_sd), n, K)
@@ -483,8 +581,8 @@ fit_cox_on_yf <- function(Y, time, status,
     # factors cannot start out near-tied in amplitude the way batch SVD
     # columns from close singular values can -- see DECISIONS.md 2026-07-13.
     defl <- deflation_svd_init(Y_for_svd, K)
-    EL <- abs(defl$EL)
-    EF <- abs(defl$EF)
+    EL <- if (init_nonneg) abs(defl$EL) else defl$EL
+    EF <- if (init_nonneg) abs(defl$EF) else defl$EF
   } else if (init_method == "custom") {
     if (is.null(EL_init) || is.null(EF_init))
       stop("init_method='custom' requires both EL_init (n x K) and EF_init (p x K).")
@@ -496,6 +594,12 @@ fit_cox_on_yf <- function(Y, time, status,
 
   EL2 <- EL^2
   EF2 <- EF^2
+
+  if (canonicalize) {
+    # Start every program at sd(Y EF_k) = 1 so beta starts on its final scale.
+    cz <- canonicalize_yf_factors(Y, EL, EL2, EF, EF2, rep(0, K), rep(0, K), K)
+    EL <- cz$EL; EL2 <- cz$EL2; EF <- cz$EF; EF2 <- cz$EF2
+  }
 
   # Augment EL/EF matrices with cohort indicator columns (same as fit_modular.R).
   if (!is.null(cohort_id) && C_cols > 0) {
@@ -672,7 +776,8 @@ fit_cox_on_yf <- function(Y, time, status,
     # n x K so ZF %*% EBeta (EBeta is K-vector) is well-defined.
     # With cohort_id=NULL, EF_aug = EF (K columns), so this is a no-op.
     EF_global <- EF_aug[, 1:K, drop = FALSE]          # p x K
-    EF_norms  <- sqrt(colSums(EF_global^2) + 1e-10)   # K-vector
+    EF_norms  <- if (canonicalize) rep(1, K)             # canonical: ZF = Y EF
+                 else sqrt(colSums(EF_global^2) + 1e-10)   # K-vector
     EF_norm   <- sweep(EF_global, 2, EF_norms, "/")    # p x K, unit-norm columns
     ZF        <- Y %*% EF_norm                         # n x K: normalized projection scores
     eta    <- if (use_beta_cohort) rowSums(ZF * t(EBeta)[beta_cohort_idx, , drop = FALSE])
@@ -695,6 +800,12 @@ fit_cox_on_yf <- function(Y, time, status,
     for (k in 1:K) {
 
       R_k    <- compute_R_k(Y, EL_aug, EF_aug, k)
+      if (canonicalize) {
+        # Current projections (earlier programs already moved this sweep) and
+        # their variance under q(F): Var(Y F_k) = Y^2 Var(F_k)
+        ZF   <- Y %*% EF_aug[, 1:K, drop = FALSE]
+        VZ_k <- as.vector(Y^2 %*% pmax(EF2_aug[, k] - EF_aug[, k]^2, 0))
+      }
       # Cluster B: z_no_k computed w.r.t. ZF (not EL as in Cluster A)
       z_no_k <- if (use_beta_cohort) compute_z_no_k_cohort(z, ZF, EBeta, beta_cohort_idx, k)
                 else compute_z_no_k(z, ZF, EBeta, k)
@@ -716,9 +827,11 @@ fit_cox_on_yf <- function(Y, time, status,
         EBeta[k, ]   <- res_beta$mean
         EBeta2[k, ]  <- res_beta$second
       } else {
-        res_beta    <- update_beta_k(w, z_no_k, ZF[, k], ZF[, k]^2,
-                                     prior_family = prior_beta, alpha = alpha_iter,
-                                     survival_divisor = beta_divisor)
+        res_beta    <- update_beta_k(w, z_no_k, ZF[, k],
+                                     if (canonicalize) ZF[, k]^2 + VZ_k else ZF[, k]^2,
+                                     prior_family = prior_beta,
+                                     alpha = if (canonicalize) w_S else alpha_iter,
+                                     survival_divisor = if (canonicalize) 1 else beta_divisor)
         EBeta[k]    <- res_beta$mean
         EBeta2[k]   <- res_beta$second
       }
@@ -747,7 +860,48 @@ fit_cox_on_yf <- function(Y, time, status,
       #   multi-platform data where genomics-only EF drifts to platform contrast.
       #   The instability required degenerate zero-column SVD init (pmax bug, now
       #   fixed with abs()). Test stability empirically before raising alpha_F.
-      if (!freeze_F) {
+      if (!freeze_F && canonicalize) {
+        # Exact sequential sweep over genes (multimodal_yfb_update_F_mk). The
+        # survival terms are scaled by w_S through the working weights:
+        # A_j = tau_j sum E[l^2] + w_S E[beta^2] sum_i w_i y_ij^2
+        # B_j = tau_j (R_k' E[l])_j + w_S { E[beta] (Y'(w z_-k))_j
+        #       - E[beta^2] sum_i w_i y_ij (Z_k - y_j E[f_j])_i }
+        R_k    <- compute_R_k(Y, EL_aug, EF_aug, k)
+        A_gen  <- Tau * sum(EL2_aug[, k])
+        B_gen  <- Tau * as.vector(crossprod(R_k, EL_aug[, k]))
+        if (is.null(prior_F_state[[k]])) {
+          prior_F_state[[k]] <- if (prior_LF == "point_exponential")
+            multimodal_yfb_fit_exponential_prior_ebnm(B_gen / A_gen, 1 / A_gen)
+          else multimodal_yfb_fit_signed_prior(B_gen / A_gen, 1 / A_gen, prior_LF)
+        }
+        VZ_k <- as.vector(Y^2 %*% pmax(EF2_aug[, k] - EF_aug[, k]^2, 0))
+        A_surv_k <- EBeta2[k] * as.vector(crossprod(w, Y^2))
+        if (max(A_gen + w_S * A_surv_k) < 1e-8) {
+          # Dead program: neither likelihood carries information about F_k.
+          # With the prior held fixed, its posterior would equal the prior
+          # (zero mean, positive second moment), which revives L_k and beta_k
+          # from nothing. Set it to exactly zero instead (equivalent to
+          # pruning it while keeping K columns).
+          upd <- list(EF = rep(0, p), EF2 = rep(0, p), kl = 0,
+                      prior = list(family = prior_LF, pi = 0, rate = NA_real_,
+                                   variance = 0, point_mass = TRUE),
+                      details = list(A = A_gen + w_S * A_surv_k, B = B_gen))
+        } else {
+          upd <- multimodal_yfb_update_F_mk(
+            Y, Tau, EL_aug[, k], EL2_aug[, k], R_k, w_S * w, w_S * w * z_no_k,
+            as.vector(Y %*% EF_aug[, k]), VZ_k, EF_aug[, k], EF2_aug[, k],
+            EBeta[k], EBeta2[k], prior_F_state[[k]], prior_update = "ebnm")
+        }
+        prior_F_state[[k]] <- upd$prior
+        EF[, k] <- upd$EF; EF2[, k] <- upd$EF2
+        EF_aug[, k] <- upd$EF; EF2_aug[, k] <- upd$EF2
+        kl_F[k] <- upd$kl
+        # Unweighted survival terms for the trace
+        res_F <- list(A = upd$details$A, A_gen = A_gen,
+                      A_surv = A_surv_k,
+                      B_gen = B_gen,
+                      B_surv = if (w_S > 0) (upd$details$B - B_gen) / w_S else 0 * B_gen)
+      } else if (!freeze_F) {
         R_k        <- compute_R_k(Y, EL_aug, EF_aug, k)
         YtWz_no_k  <- as.vector(t(Y) %*% (w * z_no_k))  # p-vector
         # EBeta[k]/EBeta2[k] on a K x C_beta cohort-beta matrix would index the
@@ -769,16 +923,18 @@ fit_cox_on_yf <- function(Y, time, status,
         EF2_aug[, k] <- res_F$second
         kl_F[k]  <- compute_ebnm_kl(res_F$ebnm_result$log_likelihood,
                                      res_F$A, res_F$x, res_F$mean, res_F$second)
+      }
+      if (!freeze_F) {
         if (trace_supervision) {
           sA  <- F_w_surv * res_F$A_surv / res_F$A
           bg  <- abs(F_w_gen * res_F$B_gen); bs <- abs(F_w_surv * res_F$B_surv)
           sB  <- ifelse(bg + bs > 0, bs / (bg + bs), 0)
           sA0 <- res_F$A_surv / (res_F$A_gen + res_F$A_surv)
-          history$trace$shareA_median[iter, k] <- stats::median(sA)
-          history$trace$shareA_p90[iter, k]    <- stats::quantile(sA, 0.9, names = FALSE)
-          history$trace$shareB_median[iter, k] <- stats::median(sB)
-          history$trace$shareB_p90[iter, k]    <- stats::quantile(sB, 0.9, names = FALSE)
-          history$trace$shareA_unweighted_median[iter, k] <- stats::median(sA0)
+          history$trace$shareA_median[iter, k] <- stats::median(sA, na.rm = TRUE)
+          history$trace$shareA_p90[iter, k]    <- stats::quantile(sA, 0.9, names = FALSE, na.rm = TRUE)
+          history$trace$shareB_median[iter, k] <- stats::median(sB, na.rm = TRUE)
+          history$trace$shareB_p90[iter, k]    <- stats::quantile(sB, 0.9, names = FALSE, na.rm = TRUE)
+          history$trace$shareA_unweighted_median[iter, k] <- stats::median(sA0, na.rm = TRUE)
         }
       }
       if (trace_supervision) {
@@ -790,6 +946,13 @@ fit_cox_on_yf <- function(Y, time, status,
       }
 
     }  # end k-loop
+
+    # Fail loud on divergence: a non-finite loading or coefficient otherwise
+    # propagates silently (ebnm returns zeros and the fit looks converged).
+    if (!all(is.finite(EF)) || !all(is.finite(EL)) || !all(is.finite(EBeta)))
+      stop(sprintf("fit_cox_on_yf() diverged at iteration %d: non-finite loadings or ",
+                   iter), "survival coefficients (max |E[beta]| before failure: ",
+           signif(max(abs(EBeta_old)), 3), ").")
 
     # Cohort F update — identical block to fit_modular.R.
     # Also frozen during the N_frozen phase to keep EF_aug fully fixed.
@@ -823,13 +986,27 @@ fit_cox_on_yf <- function(Y, time, status,
     # Full ELBO under Cluster B: ZF = Y·EF is the survival predictor.
     # Pass ZF^2 as EL2 (element-wise squared): ZF is observed, so its
     # posterior second moment equals its squared value (no variance term).
-    surv_elbo               <- compute_survival_elbo(
+    surv_elbo <- if (canonicalize) {
+      # End-of-iteration objective: Cox partial log-likelihood re-expanded at
+      # the current predictor, with Var(eta) from q(beta) and q(F)
+      ZF_end <- Y %*% EF_aug[, 1:K, drop = FALSE]
+      VZ_end <- (Y^2) %*% pmax(EF2_aug[, 1:K, drop = FALSE] - EF_aug[, 1:K, drop = FALSE]^2, 0)
+      tay_end <- calc_cox_taylor_yf(as.vector(ZF_end %*% EBeta), time, status,
+                                    strata = strata_id)
+      compute_survival_elbo(tay_end$logPL, tay_end$w, ZF_end, ZF_end^2 + VZ_end,
+                            EBeta, EBeta2)
+    } else compute_survival_elbo(
       taylor$logPL, w, ZF, ZF^2, EBeta, EBeta2,
       cohort_idx = if (use_beta_cohort) beta_cohort_idx else NULL
     )
-    history$elbo_full[iter] <- (1 - alpha) * (res_tau$elbo_proxy / genomics_divisor) +
-                               alpha * (surv_elbo / survival_divisor) +
-                               sum(kl_L) + sum(kl_F) + sum(kl_beta)
+    history$elbo_full[iter] <- if (canonicalize) {
+      # Same weighting as the updates: genomics + w_S * survival + KL terms
+      res_tau$elbo_proxy + w_S * surv_elbo + sum(kl_L) + sum(kl_F) + sum(kl_beta)
+    } else {
+      (1 - alpha) * (res_tau$elbo_proxy / genomics_divisor) +
+        alpha * (surv_elbo / survival_divisor) +
+        sum(kl_L) + sum(kl_F) + sum(kl_beta)
+    }
     if (!is.null(cohort_id) && C_cols > 0) {
       history$elbo_full[iter] <- history$elbo_full[iter] +
         compute_normal_kl(
@@ -837,6 +1014,18 @@ fit_cox_on_yf <- function(Y, time, status,
           EF2_aug[, K + seq_len(C_cols), drop = FALSE],
           sigma_F_cohort
         )
+    }
+
+    # Scale canonicalization (after the ELBO, which used this iteration's ZF).
+    # Leaves L F', eta and the ELBO unchanged; fixes sd(Y EF_k) = 1 for the
+    # next iteration's ZF.
+    if (canonicalize) {
+      cz <- canonicalize_yf_factors(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
+                                    prior_F = prior_F_state)
+      EL <- cz$EL; EL2 <- cz$EL2; EF <- cz$EF; EF2 <- cz$EF2
+      EBeta <- cz$EBeta; EBeta2 <- cz$EBeta2; prior_F_state <- cz$prior_F
+      EL_aug[, 1:K] <- EL; EL2_aug[, 1:K] <- EL2
+      EF_aug[, 1:K] <- EF; EF2_aug[, 1:K] <- EF2
     }
 
     # ========================================================================
@@ -980,7 +1169,9 @@ fit_cox_on_yf <- function(Y, time, status,
     norm_convention  = norm_convention,
     genomics_divisor = genomics_divisor,
     survival_divisor = survival_divisor,
-    beta_divisor     = beta_divisor
+    beta_divisor     = beta_divisor,
+    canonicalize     = canonicalize,
+    w_S              = w_S
   )
   if (!is.null(cohort_id) && C_cols > 0) {
     result$L_cohort   <- L_cohort

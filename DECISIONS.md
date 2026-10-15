@@ -5,6 +5,77 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Survival-supervised F update: scale canonicalization and an exact coordinate update (C2)
+
+**Decision.** `fit_cox_on_yf(canonicalize = TRUE)` is the configuration for all further
+survival-supervision work (C3 onward). It differs from the earlier configuration in four ways:
+1. **Scale.** Each program is rescaled to sd(Y F_k) = 1 on the training data after initialization
+   and every iteration, with L and β̃ rescaled to match. The Cox predictor is the raw projection
+   Y F β̃; β̃_k is a log hazard ratio per training SD of program k's score.
+2. **Exact F update.** The survival term of q(f_jk) now subtracts the other genes of program k
+   (`derivations/cox_on_YF/canonical_ZF/`). The earlier derivation (eq. BFsurv) removed only the
+   other programs. Each gene then regressed the whole program-k residual on itself, and the update
+   overshot by roughly the number of correlated genes. The corrected update is a sequential sweep
+   over genes under a loading prior held fixed during the sweep; it reuses the multimodal model's
+   `multimodal_yfb_update_F_mk()`.
+3. **One weight.** α_F is dropped. Every survival term (F update, β̃ update, monitored ELBO) carries
+   the same weight w_S, with w_S = 1 the plain posterior. The β̃ update and the survival ELBO include
+   Var(Y F_k) from q(F).
+4. **Dead programs.** A program with no information from either likelihood (max_j A_jk < 1e-8) is
+   set to zero with a point-mass prior. With the prior held fixed, its posterior would otherwise
+   equal the prior and revive L_k and β̃_k from nothing.
+
+The defaults of `fit_cox_on_yf()` are unchanged, so every reported result reproduces.
+
+**Related fixes found on the way (2026-10-15):**
+- The `"svd"` and `"deflation"` initializations took abs() of the singular vectors for every
+  prior. With a signed L/F prior this discards the signs and every program collapses at iteration
+  2, even with a strong rank-2 signal. abs() is now applied only for nonnegative priors. Reported
+  single-modality fits use point-exponential and are unaffected.
+- `fit_cox_on_yf()` now stops with an error when loadings or coefficients become non-finite. Before,
+  a divergence propagated as zeros and looked like a converged fit with no programs.
+- `multimodal_yfb_fit_signed_prior()` and `multimodal_yfb_fit_exponential_prior_ebnm()` return the
+  point mass directly when every pseudo-observation is zero. That is the exact marginal-likelihood
+  maximizer, and ebnm's optimizer failed at that boundary.
+
+**Test-bed choice.** The planted test bed (z-standardized expression block of the multimodal
+`low_variance_prognostic_factor` scenario, K = 7) uses the point-Laplace L/F prior. The recommended
+point-exponential prior collapses to zero programs on this centered data (6 of 10 seeds in C1; 4 of
+5 at p = 300). Centered scores are signed, and a nonnegative score prior cannot represent them. The
+real-data refit in C7 will have to settle the L/F prior with the method.
+
+**Evidence** (`results/benchmark_sim/outputs/supervision_diagnostics/c1`, `c2`; 20 seeds per noise
+level for C2):
+
+| Arm | Noise | Recovered | Converged | max \|E β̃\| | Null survival-active / fit | Validation C |
+|---|---|---|---|---|---|---|
+| α_F = 0 (earlier configuration) | 0.25 | 0/20 | 20/20 | — | 0.45 | 0.553 |
+| canonical, w_S = 1 | 0.25 | 1/20 | 20/20 | 0.93 | 0.60 | 0.557 |
+| α_F = 0 (earlier configuration) | 1 | 0/20 | 20/20 | — | 0.15 | 0.521 |
+| canonical, w_S = 1 | 1 | 6/20 | 20/20 | 1.81 | 0.65 | 0.641 |
+
+(β̃ in the earlier configuration is on a different scale and is not comparable.) Under the earlier
+configuration with the corrected initialization, α_F = 0.5 reproduces the April runaway in
+simulation (‖F_k‖ up to 169 times its starting value). With canonicalization and the exact update
+there are no errors, every fit converges, and the largest program score right after an F update
+has SD 4.1 against 1 at the canonical scale. A w_S = 0 canonical fit reproduces the α_F = 0
+factorization up to scale (test Supervision-T6).
+
+**What C2 does not do.** Recovery is 1/20 and 6/20, far below the 80% threshold. That is expected:
+C2 removes the instability and the derivation error, and C3–C5 address recovery.
+
+**Traded away.** The exact sweep costs one pass over genes per program and iteration, roughly
+twice the vector update on the test bed.
+
+**Files.** `code/fit_cox_on_yf.R` (`canonicalize`, `w_S`, `canonicalize_yf_factors()`, init and
+divergence fixes), `code/update_F_surv_YFB.R` (`w_surv`), `code/multimodal_yfb_updates.R` (prior
+boundary), `tests/test_fit_yf_supervision.R` (T1–T8),
+`results/benchmark_sim/run_supervision_diagnostics.R`,
+`derivations/cox_on_YF/canonical_ZF/canonical_ZF_exact_F_update.{qmd,pdf}`, correction box in
+`derivations/cox_on_YF/qF_supervised/qF_supervised_derivation.{tex,pdf}`.
+
+---
+
 ## 2026-10-15 — Survival supervision of F: order of approaches and success thresholds
 
 **Decision.** Survival supervision of the loadings is pursued in a fixed order. The method stays

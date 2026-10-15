@@ -13,7 +13,9 @@
 # ============================================================
 #
 # Data (fixed for every arm set): simulate_multimodal_yfb_data(
-#   "low_variance_prognostic_factor", noise_scale = 0.25, truncate = FALSE),
+#   "low_variance_prognostic_factor", noise_scale, truncate = FALSE), with
+#   noise_scale 0.25 (C1, 10 seeds) or 0.25 and 1 (C2 on, 20 seeds each;
+#   DECISIONS.md 2026-10-15),
 # expression block only (n = 120 training, 120 validation, p = 50, 3 true
 # programs). Program 3 is the planted prognostic program: score scale 0.15,
 # true coefficient 1.10; programs 1-2 explain the variance and have
@@ -31,7 +33,12 @@
 #   c_validation  C on the validation cohort, orientation frozen at fit time
 #   n_programs    programs with nonzero loadings (||EF_k||^2 > 1e-8)
 #   converged     fit_cox_on_yf() convergence flag; runaway: max over
-#                 iterations of ||F_k|| or ||L_k|| relative to iteration 1
+#                 iterations of ||F_k|| or ||L_k|| relative to iteration 1.
+#                 Under canonicalization ||F_k|| legitimately grows when a
+#                 program turns toward a low-variance direction, so instability
+#                 is read from max_sd_YF (largest sd(Y EF_k) right after an F
+#                 update, before rescaling; 1 is the canonical value) and
+#                 max_abs_beta
 #
 # Parallelization: socket cluster, one task per (seed, arm). Fits are small
 # (n = 120, p = 50, K = 7) and single-threaded.
@@ -46,6 +53,13 @@ ARM_SETS <- list(
     alpha_F_0.5 = list(alpha_F = 0.5),
     equal_wt    = list(w_S = 1),
     ref_point_exponential = list(alpha_F = 0, prior_LF = "point_exponential")
+  ),
+  # C2: scale canonicalization (sd(Y EF_k) = 1), alpha_F dropped; w_S = 0 is
+  # the unsupervised-F reference, w_S = 1 the plain Bayesian posterior
+  c2 = list(
+    alpha_F_0  = list(alpha_F = 0),
+    canon_wS_0 = list(canonicalize = TRUE, w_S = 0),
+    canon_wS_1 = list(canonicalize = TRUE, w_S = 1)
   )
 )
 
@@ -53,6 +67,7 @@ args    <- commandArgs(trailingOnly = TRUE)
 arm_set <- if (length(args) >= 1) args[1] else "c1"
 n_seeds <- if (length(args) >= 2) as.integer(args[2]) else 10L
 cores   <- if (length(args) >= 3) as.integer(args[3]) else 6L
+NOISE   <- if (arm_set == "c1") 0.25 else c(0.25, 1)
 if (!arm_set %in% names(ARM_SETS)) stop("Unknown arm set: ", arm_set)
 arms    <- ARM_SETS[[arm_set]]
 K_FIT   <- 7L
@@ -78,11 +93,11 @@ load_code <- function() {
 #' Build the expression-only test-bed dataset for one seed
 #' @param seed Integer RNG seed.
 #' @return list(Ytr, Yva, time/status for both cohorts, F_true, beta_true, pve3)
-make_testbed <- function(seed) {
+make_testbed <- function(seed, noise = 0.25) {
   d <- simulate_multimodal_yfb_data("low_variance_prognostic_factor",
                                     n_train = 120L, n_validation = 120L,
                                     p_expression = 50L, p_methylation = 50L,
-                                    seed = seed, truncate = FALSE, noise_scale = 0.25)
+                                    seed = seed, truncate = FALSE, noise_scale = noise)
   Ytr_raw <- d$training$Y$expression
   F_true  <- d$truth$F$expression
   # Planted program's share of the centered training variance: rank-one signal
@@ -132,6 +147,8 @@ score_fit <- function(fit, tb) {
     elbo_decreases = sum(diff(elbo) < -1e-8 * abs(head(elbo, -1))),
     runaway_F     = rel(tr$norm_F),
     runaway_L     = rel(tr$norm_L),
+    max_sd_YF     = max(tr$sd_YF, na.rm = TRUE),
+    max_abs_beta  = max(abs(tr$beta_mean), na.rm = TRUE),
     shareA_final_match = tail(tr$shareA_median[, k], 1),
     shareA_unweighted_final_match = tail(tr$shareA_unweighted_median[, k], 1),
     row.names = NULL
@@ -139,25 +156,26 @@ score_fit <- function(fit, tb) {
 }
 
 #' Fit one (seed, arm) cell, save its trace, return the score row
-run_cell <- function(seed, arm) {
-  tb  <- make_testbed(seed)
+run_cell <- function(seed, arm, noise) {
+  tb  <- make_testbed(seed, noise)
   t0  <- proc.time()[["elapsed"]]
   fit <- tryCatch(do.call(fit_cox_on_yf, c(list(tb$Ytr, tb$ttr, tb$str),
                                            modifyList(FIT_DEFAULTS, arms[[arm]]))),
                   error = function(e) e)
   secs <- proc.time()[["elapsed"]] - t0
   if (inherits(fit, "error"))
-    return(data.frame(seed = seed, arm = arm, error = conditionMessage(fit), runtime = secs))
+    return(data.frame(seed = seed, noise = noise, arm = arm, error = conditionMessage(fit),
+                      runtime = secs))
   saveRDS(list(trace = fit$history$trace, elbo = fit$history$elbo_full,
                EBeta = fit$EBeta, EBeta2 = fit$EBeta2, EF = fit$EF,
                F_true = tb$F_true),
-          file.path(out_dir, sprintf("trace_seed%d_%s.rds", seed, arm)))
-  cbind(data.frame(seed = seed, arm = arm, error = NA_character_, runtime = secs),
+          file.path(out_dir, sprintf("trace_seed%d_noise%s_%s.rds", seed, noise, arm)))
+  cbind(data.frame(seed = seed, noise = noise, arm = arm, error = NA_character_, runtime = secs),
         score_fit(fit, tb))
 }
 
 seeds <- 20261015L + seq_len(n_seeds)
-grid  <- expand.grid(seed = seeds, arm = names(arms), stringsAsFactors = FALSE)
+grid  <- expand.grid(seed = seeds, noise = NOISE, arm = names(arms), stringsAsFactors = FALSE)
 
 load_code()
 cat(sprintf("Arm set %s: %d seeds x %d arms = %d fits on %d cores\n",
@@ -166,7 +184,8 @@ cl <- makeCluster(cores)
 clusterExport(cl, c("arms", "FIT_DEFAULTS", "out_dir", "load_code", "make_testbed",
                     "score_fit", "run_cell", "grid"))
 invisible(clusterEvalQ(cl, load_code()))
-rows <- parLapplyLB(cl, seq_len(nrow(grid)), function(i) run_cell(grid$seed[i], grid$arm[i]))
+rows <- parLapplyLB(cl, seq_len(nrow(grid)),
+                    function(i) run_cell(grid$seed[i], grid$arm[i], grid$noise[i]))
 stopCluster(cl)
 
 all_cols <- unique(unlist(lapply(rows, names)))
@@ -176,16 +195,20 @@ if (n_err > 0) warning(n_err, " fits failed: ", paste(unique(res$error[!is.na(re
 write.csv(res, file.path(out_dir, "results.csv"), row.names = FALSE)
 
 ok <- is.na(res$error)
-summ <- do.call(rbind, lapply(split(res[ok, ], res$arm[ok]), function(d) data.frame(
-  arm = d$arm[1], n = nrow(d), recovered = sum(d$recovered),
+summ <- do.call(rbind, lapply(split(res, list(res$arm, res$noise), drop = TRUE), function(d0) {
+  d <- d0[is.na(d0$error), ]
+  data.frame(
+  arm = d0$arm[1], noise = d0$noise[1], n = nrow(d0), errors = sum(!is.na(d0$error)),
+  recovered = sum(d$recovered),
   cor_planted_median = median(d$cor_planted), cor_f1_median = median(d$cor_f1),
   cor_f2_median = median(d$cor_f2), n_programs_median = median(d$n_programs), match_active_z = sum(d$match_active_z),
   false_z_mean = mean(d$false_z), false_thresh_mean = mean(d$false_thresh),
   c_validation_mean = mean(d$c_validation), c_oracle_mean = mean(d$c_oracle),
   converged = sum(d$converged), elbo_decreases_total = sum(d$elbo_decreases),
   runaway_F_max = max(d$runaway_F), runaway_L_max = max(d$runaway_L),
+  max_sd_YF = max(d$max_sd_YF), max_abs_beta = max(d$max_abs_beta),
   shareA_match_median = median(d$shareA_final_match),
   shareA_unweighted_median = median(d$shareA_unweighted_final_match),
-  pve_planted_max = max(d$pve_planted), runtime_median = median(d$runtime))))
+  pve_planted_max = max(d$pve_planted), runtime_median = median(d$runtime))}))
 write.csv(summ, file.path(out_dir, "summary.csv"), row.names = FALSE)
 print(summ, digits = 3)

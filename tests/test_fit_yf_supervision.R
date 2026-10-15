@@ -103,3 +103,92 @@ run_test("Supervision-T4: w_S = 0 reproduces alpha_F = 0; w_S = 1 differs", {
                                 w_S = -1, verbose = FALSE), error = function(e) e)
   assert_true(inherits(err, "error"), msg = "negative w_S rejected")
 })
+
+# ---------------------------------------------------------------------------
+# T5: one canonicalization step leaves L F', E[L F' second moments], eta and
+# the survival ELBO term unchanged, and sets sd(Y EF_k) = 1
+# ---------------------------------------------------------------------------
+run_test("Supervision-T5: canonicalization preserves LF', eta and the ELBO terms", {
+  set.seed(8); n <- 40L; p <- 12L; K <- 3L
+  Y <- scale(matrix(rnorm(n * p), n, p))
+  EL <- matrix(rnorm(n * K), n, K); EL2 <- EL^2 + 0.1
+  EF <- matrix(rnorm(p * K), p, K) * c(1, 5, 0.2)[col(matrix(0, p, K))]
+  EF2 <- EF^2 + 0.05
+  EBeta <- c(0.3, -0.1, 0.8); EBeta2 <- EBeta^2 + 0.02
+  cz <- canonicalize_yf_factors(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K)
+  assert_near(cz$EL %*% t(cz$EF), EL %*% t(EF), tol = 1e-10, msg = "L F'")
+  assert_near(cz$EL2 %*% t(cz$EF2), EL2 %*% t(EF2), tol = 1e-10, msg = "E[l^2] E[f^2]")
+  assert_near(Y %*% cz$EF %*% cz$EBeta, Y %*% EF %*% EBeta, tol = 1e-10, msg = "eta")
+  assert_near(apply(Y %*% cz$EF, 2, sd), rep(1, K), tol = 1e-10, msg = "unit SD projections")
+  w <- runif(n, 0.2, 1)
+  e0 <- compute_survival_elbo(-50, w, Y %*% EF, (Y %*% EF)^2, EBeta, EBeta2)
+  e1 <- compute_survival_elbo(-50, w, Y %*% cz$EF, (Y %*% cz$EF)^2, cz$EBeta, cz$EBeta2)
+  assert_near(e1, e0, tol = 1e-8, msg = "survival ELBO term")
+})
+
+# ---------------------------------------------------------------------------
+# T6: with w_S = 0, a canonical fit recovers the alpha_F = 0 factorization up
+# to the scale of each program (survival enters neither L nor F in both)
+# ---------------------------------------------------------------------------
+run_test("Supervision-T6: canonical fit with w_S = 0 matches alpha_F = 0 up to scale", {
+  set.seed(21); n <- 80L; p <- 30L
+  Ys <- scale(matrix(rnorm(n * 2), n, 2) %*% matrix(rnorm(2 * p), 2, p) +
+              matrix(rnorm(n * p, sd = 0.7), n, p))
+  # Tight tolerance: the two monitors stop at different iterations at 1e-5
+  args <- list(Ys, rexp(n), rbinom(n, 1, 0.7), K = 2L, max_iter = 600L, tol = 1e-9,
+               prior_LF = "point_laplace", prior_beta = "normal", verbose = FALSE)
+  leg <- do.call(fit_cox_on_yf, args)
+  can <- do.call(fit_cox_on_yf, c(args, canonicalize = TRUE, w_S = 0))
+  assert_true(all(colSums(leg$EF^2) > 0), msg = "both programs retained")
+  r <- abs(diag(cor(leg$EF, can$EF)))
+  assert_true(all(r > 0.9999), msg = sprintf("loading columns proportional (min |cor| %.5f)", min(r)))
+  rel <- max(abs(leg$EL %*% t(leg$EF) - can$EL %*% t(can$EF))) / max(abs(leg$EL %*% t(leg$EF)))
+  assert_true(rel < 1e-3, msg = sprintf("same reconstruction (rel diff %.2e)", rel))
+})
+
+# ---------------------------------------------------------------------------
+# T7: canonical fit returns unit-SD projections, EF_norms = 1, and
+# predict_cox_on_yf() on the training data returns Y EF beta
+# ---------------------------------------------------------------------------
+run_test("Supervision-T7: canonical fit is self-consistent for prediction", {
+  fit <- fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 30L,
+                       prior_LF = "point_laplace", prior_beta = "normal",
+                       canonicalize = TRUE, verbose = FALSE)
+  live <- colSums(fit$EF^2) > 1e-12
+  assert_near(apply(.sv$Y %*% fit$EF[, live, drop = FALSE], 2, sd), rep(1, sum(live)),
+              tol = 1e-8, msg = "sd(Y EF_k) = 1")
+  assert_true(all(fit$EF_norms == 1) && fit$w_S == 1, msg = "EF_norms = 1, default w_S = 1")
+  pr <- predict_cox_on_yf(.sv$Y, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
+  assert_near(pr, as.vector(.sv$Y %*% fit$EF %*% fit$EBeta), tol = 1e-10, msg = "prediction")
+  err <- tryCatch(fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 2L,
+                                canonicalize = TRUE, alpha_F = 0.5, verbose = FALSE),
+                  error = function(e) e)
+  assert_true(inherits(err, "error"), msg = "alpha_F rejected with canonicalize")
+})
+
+# ---------------------------------------------------------------------------
+# T8: the survival part of the canonical F update is exact coordinate ascent.
+# With negligible genomics precision, a flat prior and fixed beta, repeated
+# sweeps with the fitter's inputs (working weights w, h = w * z_no_k)
+# converge to the weighted least-squares solution of beta * Y f ~ z_no_k,
+# f = (Y'WY)^{-1} Y'W z_no_k / beta. The diagonal (vector) update does not.
+# ---------------------------------------------------------------------------
+run_test("Supervision-T8: canonical F sweep solves the survival least squares", {
+  set.seed(14); n <- 60L; p <- 6L
+  Y <- matrix(rnorm(n * p), n, p) %*% chol(0.5 * diag(p) + 0.5)  # correlated genes
+  w <- runif(n, 0.3, 1); znk <- rnorm(n); beta <- 0.7
+  target <- solve(crossprod(Y, w * Y), crossprod(Y, w * znk)) / beta
+  Tau <- rep(1e-10, p); EL <- rep(0, n)
+  prior <- list(family = "normal", variance = 1e8, point_mass = FALSE)
+  EF <- rep(0, p); EF2 <- rep(0, p)
+  for (it in 1:400) {
+    upd <- multimodal_yfb_update_F_mk(Y, Tau, EL, EL, Y, w, w * znk,
+                                      as.vector(Y %*% EF), rep(0, n), EF, EF2,
+                                      beta, beta^2, prior, prior_update = "ebnm")
+    EF <- upd$EF; EF2 <- upd$EF2
+  }
+  assert_near(EF, as.vector(target), tol = 1e-5, msg = "sweep reaches the WLS solution")
+  diag_update <- as.vector(crossprod(Y, w * znk)) / (beta * colSums(w * Y^2))
+  assert_true(max(abs(diag_update - target)) > 0.05,
+              msg = "the diagonal update differs from the exact solution")
+})

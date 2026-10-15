@@ -253,7 +253,9 @@ multimodal_yfb_coordinate_kl <- function(x, s2, mean, second, log_ml) {
 multimodal_yfb_fit_exponential_prior_ebnm <- function(x, s2, init = NULL) {
   ok <- is.finite(x) & is.finite(s2) & s2 > 0
   dead <- list(family = "point_exponential", pi = 0, rate = NA_real_, point_mass = TRUE)
-  if (!any(ok)) return(dead)
+  # No signal: the point mass is the marginal-likelihood maximizer (see
+  # multimodal_yfb_fit_signed_prior())
+  if (!any(ok) || all(abs(x[ok]) <= 1e-10 * sqrt(s2[ok]))) return(dead)
   g_init <- if (!is.null(init) && !isTRUE(init$point_mass) && is.finite(init$rate %||% NA))
     ebnm::gammamix(pi = c(1 - init$pi, init$pi), shape = c(1, 1), scale = c(0, 1 / init$rate),
                    shift = c(0, 0))
@@ -281,7 +283,10 @@ multimodal_yfb_fit_exponential_prior_ebnm <- function(x, s2, init = NULL) {
 #' @family multimodal_yfb_updates
 multimodal_yfb_fit_signed_prior <- function(x, s2, family, init = NULL) {
   ok <- is.finite(x) & is.finite(s2) & s2 > 0
-  if (!any(ok)) {
+  # No signal (every |x| negligible against its s): the marginal-likelihood
+  # maximizer is the point mass at zero, and ebnm's optimizer can fail at
+  # that boundary, so return it directly
+  if (!any(ok) || all(abs(x[ok]) <= 1e-10 * sqrt(s2[ok]))) {
     return(list(family = family, pi = 0, rate = NA_real_, variance = 0, point_mass = TRUE))
   }
   if (family == "normal") {
