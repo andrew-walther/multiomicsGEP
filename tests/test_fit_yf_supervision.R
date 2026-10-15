@@ -233,3 +233,33 @@ run_test("Supervision-T10: init_supervised starts a program along the score dire
   assert_true(r_s > 0.5 && r_s > r_u + 0.1,
               msg = sprintf("supervised |cor| %.2f vs unsupervised max %.2f", r_s, r_u))
 })
+
+# ---------------------------------------------------------------------------
+# T11: canonical fit stores -KL terms (<= 0) and its last monitored ELBO
+# equals yf_canonical_elbo() at the returned moments (before Phase C)
+# ---------------------------------------------------------------------------
+run_test("Supervision-T11: canonical ELBO terms have the right sign and recompute", {
+  fit <- fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 40L,
+                       prior_LF = "point_laplace", canonicalize = TRUE,
+                       sign_correction = FALSE, verbose = FALSE)
+  assert_true(all(fit$neg_kl <= 1e-8), msg = "stored -KL terms are nonpositive")
+  e <- yf_canonical_elbo(.sv$Y, .sv$time, .sv$status, fit$EL, fit$EL2, fit$EF, fit$EF2,
+                         fit$EBeta, fit$EBeta2, sum(fit$neg_kl), fit$w_S)
+  assert_near(e, tail(fit$history$elbo_full, 1), tol = 1e-6 * abs(e),
+              msg = "monitored ELBO recomputes at the returned moments")
+})
+
+# ---------------------------------------------------------------------------
+# T12: pruning removes programs that carry nothing and keeps a real one
+# ---------------------------------------------------------------------------
+run_test("Supervision-T12: prune removes empty programs and keeps the signal", {
+  set.seed(21); n <- 80L; p <- 30L
+  Ys <- scale(matrix(rnorm(n * 2), n, 2) %*% matrix(rnorm(2 * p), 2, p) +
+              matrix(rnorm(n * p, sd = 0.7), n, p))
+  fit <- fit_cox_on_yf(Ys, rexp(n), rbinom(n, 1, 0.7), K = 5L, max_iter = 200L,
+                       prior_LF = "point_laplace", canonicalize = TRUE, prune = TRUE,
+                       verbose = FALSE)
+  assert_true(ncol(fit$EF) == 2L, msg = sprintf("2 programs kept (got %d)", ncol(fit$EF)))
+  assert_true(nrow(fit$pruning) == 3L && all(fit$pruning$elbo_gain >= 0),
+              msg = "three removals, each not lowering the ELBO")
+})

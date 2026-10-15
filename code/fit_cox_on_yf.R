@@ -199,6 +199,56 @@ canonicalize_yf_factors <- function(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
        prior_F = prior_F, scale = scale)
 }
 
+# ------------------------------------------------------------------------------
+#' ELBO of a canonical Cox-on-YF fit at given posterior moments
+#'
+#' The objective monitored by fit_cox_on_yf(canonicalize = TRUE):
+#' E_q[log p(Y | L, F, tau)] at the optimal tau, plus w_S times the Cox term
+#' (partial log-likelihood re-expanded at E[eta], with Var(eta) from q(beta)
+#' and q(F)), plus the stored -KL terms. Used by the pruning nullcheck.
+#'
+#' @param Y,time,status,strata Data as in fit_cox_on_yf().
+#' @param EL,EL2,EF,EF2 Posterior moments (n x K, p x K).
+#' @param EBeta,EBeta2 K-vectors.
+#' @param neg_kl Sum of the stored -KL terms of the programs included.
+#' @param w_S Survival weight.
+#' @return Scalar ELBO.
+#' @family F_surv_YFB_update
+#' @examples
+#' # Used internally by prune_yf_nullcheck().
+yf_canonical_elbo <- function(Y, time, status, EL, EL2, EF, EF2, EBeta, EBeta2,
+                              neg_kl, w_S = 1, strata = NULL) {
+  genomics <- update_tau(Y, EL, EL2, EF, EF2)$elbo_proxy
+  if (ncol(EF) == 0) return(genomics + neg_kl)
+  ZF <- Y %*% EF
+  VZ <- (Y^2) %*% pmax(EF2 - EF^2, 0)
+  tay <- calc_cox_taylor_yf(as.vector(ZF %*% EBeta), time, status, strata = strata)
+  genomics + w_S * compute_survival_elbo(tay$logPL, tay$w, ZF, ZF^2 + VZ, EBeta, EBeta2) + neg_kl
+}
+
+#' ELBO change from removing each program (flashier-style nullcheck)
+#'
+#' @param fit A fit_cox_on_yf(canonicalize = TRUE) result (needs $neg_kl).
+#' @param Y,time,status,strata Training data.
+#' @return K-vector: ELBO(without program k) - ELBO(full). A nonnegative value
+#'   means the program does not improve the objective.
+#' @family F_surv_YFB_update
+#' @examples
+#' # delta <- prune_yf_nullcheck(fit, Y, time, status)
+prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL) {
+  K <- ncol(fit$EF)
+  nk <- fit$neg_kl
+  full <- yf_canonical_elbo(Y, time, status, fit$EL, fit$EL2, fit$EF, fit$EF2,
+                            fit$EBeta, fit$EBeta2, sum(nk), fit$w_S, strata)
+  vapply(seq_len(K), function(k) {
+    keep <- setdiff(seq_len(K), k)
+    yf_canonical_elbo(Y, time, status, fit$EL[, keep, drop = FALSE],
+                      fit$EL2[, keep, drop = FALSE], fit$EF[, keep, drop = FALSE],
+                      fit$EF2[, keep, drop = FALSE], fit$EBeta[keep], fit$EBeta2[keep],
+                      sum(nk[keep]), fit$w_S, strata) - full
+  }, numeric(1))
+}
+
 # ==============================================================================
 # PART 2 — fit_cox_on_yf()
 # ==============================================================================
@@ -372,6 +422,13 @@ canonicalize_yf_factors <- function(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
 #' @param beta_prior_fix logical (default FALSE): never refit the shared prior.
 #' @param beta_slab_sd NULL or positive: for prior_beta = "point_normal", fix the
 #'                 slab SD at this value and estimate only the mixing weight.
+#' @param prune logical (default FALSE; canonicalize = TRUE only). After
+#'                 convergence, remove the program whose removal raises the
+#'                 ELBO most if any removal does not lower it
+#'                 (`prune_yf_nullcheck()`), refit from the remaining programs
+#'                 (warm start, shared beta prior carried over, no warm-up),
+#'                 and repeat. The result has fewer than K columns and
+#'                 `$pruning` records each removal.
 #' @param trace_supervision logical (default FALSE). When TRUE, `history$trace`
 #'                 records, per iteration (rows) and program k (columns):
 #'                 E[beta_k], E[beta_k^2]; survival's share of the F-update
@@ -438,8 +495,10 @@ fit_cox_on_yf <- function(Y, time, status,
                            beta_warmup     = 0L,
                            beta_prior_fix  = FALSE,
                            beta_slab_sd    = NULL,
+                           prune           = FALSE,
                            trace_supervision = FALSE) {
 
+  call_args <- mget(names(formals(sys.function())), envir = environment())
   n <- nrow(Y); p <- ncol(Y)
 
   if (!is.null(w_S) && (!is.numeric(w_S) || length(w_S) != 1 || !is.finite(w_S) || w_S < 0))
@@ -456,8 +515,8 @@ fit_cox_on_yf <- function(Y, time, status,
     prior_F_state <- vector("list", K)   # loading priors held across sweeps
   }
   beta_prior_mode <- match.arg(beta_prior_mode)
-  if (!canonicalize && (init_supervised || beta_prior_mode == "shared"))
-    stop("init_supervised and beta_prior_mode = 'shared' require canonicalize = TRUE.")
+  if (!canonicalize && (init_supervised || beta_prior_mode == "shared" || prune))
+    stop("init_supervised, beta_prior_mode = 'shared' and prune require canonicalize = TRUE.")
   if (beta_prior_mode == "shared") {
     if (!prior_beta %in% c("normal", "point_normal", "point_laplace"))
       stop("beta_prior_mode = 'shared' supports prior_beta normal, point_normal or point_laplace.")
@@ -632,7 +691,7 @@ fit_cox_on_yf <- function(Y, time, status,
     stop(sprintf("Unknown init_method: '%s'. Use 'svd', 'random', 'deflation', or 'custom'.", init_method))
   }
 
-  if (init_supervised) {
+  if (init_supervised && init_method != "custom") {
     # C3: program K starts along the null-model Cox score direction Y'u0
     u0 <- calc_cox_taylor_yf(rep(0, n), time, status, strata = strata_id)$u
     d  <- as.vector(crossprod(Y_for_svd, u0))
@@ -947,7 +1006,7 @@ fit_cox_on_yf <- function(Y, time, status,
         prior_F_state[[k]] <- upd$prior
         EF[, k] <- upd$EF; EF2[, k] <- upd$EF2
         EF_aug[, k] <- upd$EF; EF2_aug[, k] <- upd$EF2
-        kl_F[k] <- upd$kl
+        kl_F[k] <- -upd$kl   # multimodal helper returns +KL; history stores -KL
         # Unweighted survival terms for the trace
         res_F <- list(A = upd$details$A, A_gen = A_gen,
                       A_surv = A_surv_k,
@@ -1233,7 +1292,8 @@ fit_cox_on_yf <- function(Y, time, status,
     beta_divisor     = beta_divisor,
     canonicalize     = canonicalize,
     w_S              = w_S,
-    g_beta           = if (beta_prior_mode == "shared") g_beta else NULL
+    g_beta           = if (beta_prior_mode == "shared") g_beta else NULL,
+    neg_kl           = kl_L + kl_F + kl_beta   # per-program -KL terms (last iteration)
   )
   if (!is.null(cohort_id) && C_cols > 0) {
     result$L_cohort   <- L_cohort
@@ -1274,6 +1334,26 @@ fit_cox_on_yf <- function(Y, time, status,
     result$EBeta_pooled <- EBeta_pooled
     result$beta_cohort_id    <- beta_cohort_id
     result$beta_cohort_levels <- beta_cohort_levels
+  }
+
+  # Pruning (canonical only): drop the program whose removal raises the ELBO
+  # most, if any removal does not lower it, and refit from a warm start.
+  if (prune && K > 1) {
+    delta <- prune_yf_nullcheck(result, Y, time, status, strata = strata_id)
+    if (max(delta) >= 0) {
+      drop <- which.max(delta); keep <- setdiff(seq_len(K), drop)
+      refit_args <- modifyList(call_args, list(
+        K = K - 1L, EL_init = EL[, keep, drop = FALSE], EF_init = EF[, keep, drop = FALSE],
+        init_method = "custom", init_supervised = FALSE, beta_warmup = 0L,
+        beta_prior_init = if (beta_prior_mode == "shared") g_beta else NULL))
+      if (beta_prior_mode == "shared") refit_args["beta_prior_init"] <- list(g_beta)
+      refit <- do.call(fit_cox_on_yf, refit_args)
+      refit$pruning <- rbind(
+        data.frame(K_before = K, removed_program = drop, elbo_gain = delta[drop],
+                   converged_before = history$converged),
+        refit$pruning)
+      return(refit)
+    }
   }
   result
 }

@@ -305,8 +305,18 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #'   `survival_elbo` ("plugin": Breslow partial log-likelihood at E[eta];
 #'   "corrected": minus (1/2) sum_i w_i Var(eta_i), a second-order
 #'   approximation to E_q[log PL]).
+#'   Survival supervision (Workstream C6; DECISIONS.md 2026-10-15), both off
+#'   by default: `init_supervised` (logical: factor K starts along the
+#'   null-model Cox score direction, F_m,K = Y_m' u0 on centered data, with
+#'   nonnegative scores L_K = max(0, residual projection); needs signed
+#'   loading priors) and `beta_prior` ("eb_normal", the per-factor normal
+#'   prior fit to one coefficient; or "shared_point_laplace", one
+#'   point-Laplace prior on beta_1..beta_K, held fixed within each sweep and
+#'   refit from the K pseudo-observations afterwards, after `beta_warmup`
+#'   outer iterations at its starting value 0.5 delta_0 + 0.5 Laplace(1)).
 #' @param init Optional warm-start state (EL, EL2, EF, EF2, EBeta, EBeta2, Tau,
-#'   prior_L, prior_F), e.g. a fit with one factor removed. Used by pruning.
+#'   prior_L, prior_F, and g_beta for a shared beta prior), e.g. a fit with one
+#'   factor removed. Used by pruning; a warm start skips the beta warm-up.
 #' @return A `multimodal_yfb_fit` object with posterior moments and diagnostics.
 #' @examples
 #' # fit_multimodal_yfb(Y, time, event, K = 7)
@@ -378,7 +388,9 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     EL <- init$EL; EL2 <- init$EL2; EF <- init$EF; EF2 <- init$EF2
     EBeta <- init$EBeta; EBeta2 <- init$EBeta2; Tau <- init$Tau
     prior_L <- init$prior_L; prior_F <- init$prior_F
+    g_beta <- init$g_beta
   } else {
+    g_beta <- NULL
     decomposition <- svd(do.call(cbind, Y), nu = min(n, K), nv = min(n, K))
     K <- min(K, ncol(decomposition$u))
     EL <- abs(sweep(decomposition$u[, seq_len(K), drop = FALSE], 2,
@@ -407,6 +419,20 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     })
     names(prior_F) <- names(Y)
 
+    if (isTRUE(settings$init_supervised)) {
+      # Factor K starts along the null Cox score direction Y_m' u0 (C3)
+      if (any(vapply(settings$prior_F[names(Y)], identical, logical(1), "point_exponential")))
+        stop("init_supervised needs signed loading priors (point_laplace or normal).")
+      u0 <- multimodal_yfb_cox_working(data$time, data$event, rep(0, n))$u
+      Yc <- lapply(Y, function(x) sweep(x, 2, colMeans(x)))
+      d  <- lapply(Yc, function(x) as.vector(crossprod(x, u0)))
+      fit_other <- Reduce(`+`, lapply(names(Y), function(m)
+        (Yc[[m]] - EL[, -K, drop = FALSE] %*% t(EF[[m]][, -K, drop = FALSE])) %*% d[[m]]))
+      EL[, K] <- pmax(as.vector(fit_other) / sum(unlist(d)^2), 0)
+      for (m in names(Y)) { EF[[m]][, K] <- d[[m]]; EF2[[m]][, K] <- d[[m]]^2 + 1e-6 }
+      EL2[, K] <- EL[, K]^2 + 1e-6
+    }
+
     projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
     beta_warm_start <- multimodal_yfb_cox_warm_start(
       projection$EZ, data$time, data$event
@@ -414,6 +440,15 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     EBeta <- beta_warm_start$mean
     EBeta2 <- pmax(beta_warm_start$second, EBeta^2)
   }
+  # Shared beta prior (C6): starting value, warm-up only on a fresh fit
+  beta_prior_mode <- settings$beta_prior %||% "eb_normal"
+  if (!beta_prior_mode %in% c("eb_normal", "shared_point_laplace"))
+    stop("control$beta_prior must be eb_normal or shared_point_laplace.")
+  shared_beta <- beta_prior_mode == "shared_point_laplace"
+  if (shared_beta && is.null(g_beta))
+    g_beta <- ebnm::laplacemix(c(0.5, 0.5), c(0, 0), c(0, 1))
+  beta_warmup <- if (is.null(init)) as.integer(settings$beta_warmup %||% 10L) else 0L
+  beta_x <- beta_s <- numeric(K)
   # Per-factor KL(q || g) terms of the ELBO, refreshed at each factor update
   kl_L <- kl_beta <- numeric(K)
   kl_F <- lapply(Y, function(x) numeric(K))
@@ -482,9 +517,18 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         )$mean
         h_minus_k <- working$h - working$w *
           (current_eta - EBeta[k] * projection$EZ[, k])
-        updated_beta <- multimodal_yfb_update_beta_k(
-          projection$EZ[, k], projection$VZ[, k], working$w, h_minus_k
-        )
+        updated_beta <- if (shared_beta) {
+          multimodal_yfb_update_beta_shared_k(projection$EZ[, k], projection$VZ[, k],
+                                              working$w, h_minus_k, g_beta)
+        } else {
+          multimodal_yfb_update_beta_k(
+            projection$EZ[, k], projection$VZ[, k], working$w, h_minus_k
+          )
+        }
+        if (shared_beta) {
+          beta_x[k] <- updated_beta$x
+          beta_s[k] <- if (updated_beta$A > 0) sqrt(1 / updated_beta$A) else 1e6
+        }
         kl_beta[k] <- updated_beta$kl
         damped_beta <- multimodal_yfb_damp_moments(
           EBeta[k], EBeta2[k], updated_beta$mean, updated_beta$second,
@@ -503,6 +547,12 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         EBeta2 <- canonical$EBeta2
         prior_L <- canonical$prior_L
         prior_F <- canonical$prior_F
+      }
+      # Shared beta prior: refit from the sweep's K pseudo-observations after
+      # the warm-up (held fixed within the sweep, as for the loading priors)
+      if (shared_beta && outer > beta_warmup && K > 0L) {
+        g_beta <- ebnm::ebnm(beta_x, beta_s, prior_family = "point_laplace",
+                             g_init = g_beta)$fitted_g
       }
     }
 
@@ -586,7 +636,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   out <- list(EL = EL, EL2 = EL2, EF = EF, EF2 = EF2, EBeta = EBeta,
               EBeta2 = EBeta2, Tau = Tau, prior_L = prior_L, prior_F = prior_F,
               kl = kl, mu = mu, training_spec = data$training_spec,
-              diagnostics = diagnostics)
+              g_beta = g_beta, diagnostics = diagnostics)
   class(out) <- "multimodal_yfb_fit"
 
   # Factor pruning (flashier-style nullcheck) ----
@@ -605,7 +655,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         EF2 = lapply(out$EF2, function(x) x[, keep, drop = FALSE]),
         EBeta = out$EBeta[keep], EBeta2 = out$EBeta2[keep], Tau = out$Tau,
         prior_L = out$prior_L[keep],
-        prior_F = lapply(out$prior_F, function(x) x[keep]))
+        prior_F = lapply(out$prior_F, function(x) x[keep]), g_beta = out$g_beta)
       refit <- fit_multimodal_yfb(Y_raw, time, event, K - 1L, control, init = pruned_init)
       refit$diagnostics$pruning <- rbind(
         data.frame(K_before = K, removed_factor = drop, elbo_gain = delta[drop],

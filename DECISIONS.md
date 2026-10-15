@@ -5,7 +5,90 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
-## 2026-10-15 — Real-data check of the supervised single-modality configuration: ΔC criterion fails narrowly (awaiting decision)
+## 2026-10-15 — KL sign fix, multimodal supervision (M4), and two open items: single-modality convergence and K selection (awaiting decisions)
+
+**KL sign error in the canonical single-modality objective (fixed).** In `fit_cox_on_yf(canonicalize
+= TRUE)` the loading KL terms came from `multimodal_yfb_update_F_mk()`, which returns +KL, while
+the monitored objective stores −KL (`compute_ebnm_kl()`). The updates were unaffected; the
+monitored objective, and therefore the stopping iteration, were wrong. Fixed. New test
+Supervision-T11 checks that the stored terms are ≤ 0 and that the last monitored ELBO recomputes
+exactly from the returned moments. Every canonical result was rerun:
+- recovery is unchanged except one seed (calibrated C2 at noise 1, 20 → 19);
+- null survival-active rates move by at most 0.15 per fit;
+- **convergence:** in the calibrated C3 + C4 arms, the selected point-Laplace configuration now
+  converges in 19/20 fits at each noise level (previously 20/20).
+
+**Open item 1: the selected single-modality configuration fails the convergence criterion
+(19/20, 19/20).** The two non-converged fits are the same two datasets in every arm except the
+fixed wide-normal reference (seed 20261026 at noise 0.25, seed 20261017 at noise 1). Neither
+diverges. Each settles into a stable oscillation of relative size about 1e-4 (the ELBO swings by
+about 5 out of 26,000) and reaches the 300-iteration cap. The coefficient on the planted program
+alternates between 0.974 and 0.982, and the planted program is recovered. The oscillation involves
+a near-zero program whose coefficient toggles around 0 under the point-mass prior.
+
+**Real-data check after the fix** (`outputs/supervised_real_check/delta_c.csv`): the supervised fit
+now converges in 244 iterations. ΔC is −0.006 (−0.032, 0.021) for the mean of cohorts, still
+outside the −0.02 margin; mean external C is 0.621 against 0.627. The α_F = 0 point-Laplace arm is
+unchanged. The decision to proceed (entry below) stands.
+
+**Training-CV comparison of the two passing β priors** (`run_supervised_train_cv.R`,
+`outputs/supervised_train_cv/`, 5 folds stratified by cohort and event): mean fold C 0.651
+(point-Laplace) against 0.652 (normal), paired difference −0.001 (SE 0.0015); CV partial
+log-likelihood −779.6 for both. The two are indistinguishable, so the point-Laplace choice stands and
+the external cohorts are not re-scored. These fits started before the KL fix and every fold ran to
+the 300-iteration cap; only the stopping point differs, not the updates. Rerun in M6.
+
+**M4: the supervision carries into the multimodal model and meets every simulation criterion.** On
+the calibrated two-modality bed (low-variance prognostic scenario, n = 400, planted log HR 3.3,
+p = 50 + 50, K_init = 7, 20 seeds per noise level; `run_multimodal_supervision.R`,
+`outputs/multimodal_supervision/K7/`):
+
+| Arm | Recovered (0.25; 1) | Null survival-active / fit | Converged | Programs kept (median) | Validation C |
+|---|---|---|---|---|---|
+| 10/1 framework (intercept, point-Laplace F, ebnm, pruning) | 17; 16 | 0.75; 0.65 | 40/40 | 3 | 0.826; 0.892 |
+| + supervised start + shared point-Laplace β prior, warm-up 10 | **18; 20** | **0.55; 0.15** | **40/40** | **3** | **0.844; 0.943** |
+
+The truth is 3 programs (two reconstruction, one prognostic). The supervised multimodal model
+prunes to that number and keeps the prognostic one. Code: `fit_multimodal_yfb(control =
+list(init_supervised, beta_prior = "shared_point_laplace", beta_warmup))`,
+`multimodal_yfb_update_beta_shared_k()`. Defaults are off, and default fits are bit-for-bit
+identical to `main`. Tests: `tests/test_multimodal_yfb_supervision.R`.
+**Selected multimodal configuration:** the second row.
+
+**Open item 2 (M5 decision): K selection.** `fit_cox_on_yf(prune = TRUE)` adds the same ELBO
+nullcheck pruning as the multimodal model (`prune_yf_nullcheck()`; test Supervision-T12). On the
+two non-converged single-modality datasets it converges, but it **removes the planted program**
+(|cor| 0.90 → 0.13 and 0.93 → 0.12, keeping 2 and 1 programs). In single modality, the planted
+program's gain in the Cox term is smaller than its KL and reconstruction cost. In the multimodal
+model the same rule keeps it, because the program has loadings in both modalities. Candidate
+rules are listed in the stop message to Andrew; none is applied yet.
+
+---
+
+## 2026-10-15 — Proceed after the ΔC miss: external C unchanged within the precision of five cohorts
+
+**Decision (Andrew, 2026-10-15, on Claude's recommendation).** The real-data criterion is recorded
+as **not met**: the lower 95% limit is −0.029, against −0.02. The point estimate is −0.003, and the
+criterion is not met for lack of precision rather than because of a demonstrated loss. The selected
+supervised configuration is kept, and the work continues with M4–M8. The write-up will state the
+miss plainly, as "external C unchanged within the precision five cohorts allow", and will not call
+it a pass.
+
+**Why.**
+- The aim of Workstream C is programs shaped by survival without losing external C, not a higher
+  external C. The simulation shows the first part.
+- With an interval of about ±0.027, a method exactly as good as the reported one fails this margin
+  about half the time.
+- Re-choosing the configuration against the external cohorts would select on validation data.
+
+**Follow-up (M6).** The two configurations that passed in simulation (shared point-Laplace versus
+shared normal β prior with warm-up) are compared by cross-validated C on the training data and
+reported. The external cohorts are re-scored only if that comparison clearly favors the other
+configuration.
+
+---
+
+## 2026-10-15 — Real-data check of the supervised single-modality configuration: ΔC criterion fails narrowly
 
 **Result.** The selected configuration (canonical, w_S = 1, supervised start, shared point-Laplace
 β prior, point-Laplace L/F) was fitted on D4's training data (TCGA + CPTAC, n = 273, 139 events,

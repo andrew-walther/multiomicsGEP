@@ -167,3 +167,30 @@ Mean external C is 0.624 for the supervised model and 0.627 for the reported one
 criterion, a lower 95% limit above −0.02, fails by 0.009. The point estimate is zero, and with five
 cohorts the interval is about ±0.027 wide, so the criterion requires a gain of about +0.007 to pass.
 The supervised model keeps three survival-active programs where the unsupervised fit keeps one.
+
+## Multimodal model with survival supervision
+
+The supervised start and the shared point-Laplace prior on β were carried into the multimodal model
+(expression + methylation), which already had the exact loading update, the scale
+canonicalization and ELBO-based pruning. Calibrated two-modality bed, starting rank 7, true rank 3:
+
+| Arm | Recovered (0.25; 1) | Null survival-active / fit | Converged | Programs kept | Validation C |
+|---|---|---|---|---|---|
+| framework of 10/1 | 17; 16 | 0.75; 0.65 | 40/40 | 3 | 0.826; 0.892 |
+| + survival supervision | **18; 20** | **0.55; 0.15** | **40/40** | **3** | **0.844; 0.943** |
+
+: Multimodal model on the calibrated bed (20 seeds per noise level). {#tbl-mm-sup}
+
+With supervision, the multimodal model recovers the planted program in 90% and 100% of datasets,
+keeps exactly the three true programs (two that explain the variance and one that explains
+survival), and has fewer false prognostic programs.
+
+## Open: single-modality convergence and the choice of number of programs
+
+- After an error in the monitored objective was fixed, the selected single-modality configuration
+  converges in 19 of 20 fits at each noise level. The two exceptions oscillate stably
+  (relative size 10⁻⁴) and still recover the planted program.
+- Pruning by the ELBO, which works in the multimodal model, removes the planted program in single
+  modality, where survival gains too little to offset the program's cost.
+
+The rule for the number of programs is the next decision.
