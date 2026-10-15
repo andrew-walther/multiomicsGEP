@@ -39,6 +39,79 @@ on branch `feature/supervised-F`. Read first:
 
 ---
 
+## Prompt E — M5: protected pruning, the K_init panel, and the 1-SE rule (run first)
+
+Agreed with Andrew on 2026-10-15. Background: ELBO pruning (`fit_cox_on_yf(prune = TRUE)`,
+`prune_yf_nullcheck()`; multimodal `multimodal_yfb_nullcheck()`) keeps the true 3 programs in the
+multimodal simulation, but removes the planted survival program in single modality. Two fits of the
+selected single-modality configuration also oscillate stably at the iteration cap
+(DECISIONS.md 2026-10-15). The advisors asked for: the model choosing K, a replicated K_init panel
+with K_eff ≈ true K and survival programs kept, and Amber's rule (best K over a grid, then the
+most parsimonious K within 1 SE of it on held-out C).
+
+```text
+On a new branch m5/k-selection off feature/supervised-F, read
+docs/plans/Codex_Handoff_M6_M7_10_15_26.md (context and rules; for this
+prompt only, you MAY edit code/fit_cox_on_yf.R, code/fit_multimodal_yfb.R
+and code/multimodal_yfb_updates.R as described below, keeping every default
+fit bit-for-bit unchanged).
+
+1. Protected pruning. Add an option (fit_cox_on_yf(prune_protect_survival =
+   FALSE); multimodal control$prune_protect_survival, default FALSE) under
+   which a program whose coefficient is credibly nonzero
+   (|E[beta_k]| >= 1.96 * sqrt(E[beta_k^2] - E[beta_k]^2)) is never removed
+   by the ELBO nullcheck: among the remaining programs, remove the one with
+   the largest ELBO gain if that gain is >= 0, refit, repeat. Pass the option
+   through the pruning refits. Tests (tests/test_fit_yf_supervision.R and
+   tests/test_multimodal_yfb_supervision.R): a survival-active program is
+   kept when its removal would raise the ELBO; with the option FALSE the
+   pruning sequence is identical to before; default fits identical to the
+   current branch (compare against git show feature/supervised-F:<file>).
+
+2. Stopping rule, reported alongside, not adopted. Add
+   fit_cox_on_yf(converge_on = c("elbo", "outputs")), default "elbo".
+   "outputs" stops when the relative change of L F' and of eta = Y F beta
+   are both < 1e-4, using multimodal_yfb_relative_change() as
+   fit_multimodal_yfb() does. In the runs below record convergence under
+   both rules for every fit (fit with "elbo"; also report whether the
+   "outputs" criterion was met at the last iteration).
+
+3. K_init panel in simulation (pre-specified; write it in the script
+   header before running). Calibrated beds as in
+   results/benchmark_sim/run_supervision_diagnostics.R (n_train = 400,
+   beta3 = 3.3) and results/benchmark_sim/run_multimodal_supervision.R,
+   noise 0.25 and 1, 20 seeds, K_init in {5, 7, 10, 15}. Arms:
+   single modality: selected configuration (DECISIONS.md) + prune = TRUE +
+   prune_protect_survival = TRUE; reference alpha_F = 0 (for false
+   positives). Multimodal: selected configuration with and without
+   prune_protect_survival. Metrics as in those runners plus K_final.
+   Adoption rule (fixed now): adopt protected pruning for a model if, at
+   every K_init and both noise levels, recovery >= 16/20, mean null
+   survival-active <= reference + 0.5, every fit converges (ELBO rule), and
+   the median K_final is 3. Record the outcome in DECISIONS.md either way;
+   if any part fails, say which and stop there (do not tune).
+
+4. Real data, single modality (only if step 3 adopts protected pruning for
+   single modality): Amber's 1-SE rule. With the selected configuration
+   plus protected pruning, run 5-fold cross-validated C on the training data
+   for K_init in {3, 5, 7, 9, 11, 13}, using the folds and code of
+   results/benchmark_sim/run_supervised_train_cv.R (training data only; do
+   not load external cohorts). Take the K_init with the highest mean fold
+   C, then the smallest K_init whose mean is within one SE (SD of fold C /
+   sqrt(5)) of it. Report the table, the chosen K_init, and K_final and
+   survival-active programs of the full-data fit at that K_init.
+
+Scripts: results/benchmark_sim/run_k_selection_panel.R and
+results/benchmark_sim/run_k_selection_real_1se.R; outputs under
+results/benchmark_sim/outputs/k_selection/. Update the progress book and
+DECISIONS.md. Run the full test suite before each commit.
+```
+
+After Prompt E, Prompts A–D use the configuration that E records in DECISIONS.md (with protected
+pruning and the chosen K_init if adopted; otherwise as listed above).
+
+---
+
 ## Prompt A — M7: DeSurv head-to-head (single modality, real data)
 
 ```text
