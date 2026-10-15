@@ -98,26 +98,62 @@ C-indices are unchanged under frozen, training-fixed risk orientations. The
 pooled improvement over the two-step baseline is $\Delta C = 0.042$
 (95% CI 0.013 to 0.071).
 
-## Advisor-facing project writeup (2026-10-12)
+## Advisor-facing project writeup (2026-10-14)
 
 The unified methods, results, and biology writeup is being organized in
 `paper/writeup/`. Its [planning page](paper/writeup/planning.html) describes an
 article-style technical report with a 15–20-page main text and separate
 single-modality and multimodal derivation appendices, rendered together to HTML
-and PDF. The [source inventory](paper/writeup/source_inventory.csv) maps 40
+and PDF. The [source inventory](paper/writeup/source_inventory.csv) maps 54
 existing sources to planned sections and distinguishes checked numerical
 selections from material still requiring reconciliation during drafting.
 The [implementation plan](paper/writeup/implementation_plan.md) records the
 verification requirements and remaining tasks.
 
-The planning page is the first deliverable and awaits Andrew's review before
-report drafting. No model-fitting experiment or algorithm change is part of
-this writing task. The report will distinguish the evaluated single-modality
-configuration with α_F = 0 from continuing supervision work; use the independently
-tuned regularized two-step comparator for the principal comparison; identify
-CPTAC as proteomics; and report multimodal rank sensitivity and incomplete
-real-data convergence alongside the performance and biological findings.
-Existing prelim and historical derivation sources are preserved.
+Claude Code's planning review has been checked against the cited sources; the
+[review dispositions](paper/writeup/implementation_plan.md) and revised plan
+specify characterization methods, completed versus proposed multimodal biology,
+a six-claim evidence-gap table, and source markers for the later supervised-F
+revision. The [drafting handoff](paper/writeup/drafting_prompt.md) assigns Claude
+Tasks 2, 3 and 5 on `writeup/draft`; Codex performs the independent
+complete-draft review afterward.
+
+**Status (2026-10-14): interim writeup approved and merged to `main`.** It describes the evaluated
+configuration (α_F = 0); REVISIT markers flag the passages the method work will change, and
+Prompt 7 of the 10/2 plan revises it afterwards. The main text is 22 pages, accepted for the
+interim version.
+Codex reviewed the initial draft (`paper/writeup/review.md`); every finding was
+checked against code and saved outputs and applied, and dispositions are recorded
+in `paper/writeup/review_dispositions.md`. The report is now organized as a
+manuscript (Methods, Evaluation, Results, Biological findings, Discussion with
+implications, limitations and continuing work), without source IDs, repository
+references, dated process language, an evidence-gap table or a bibliography
+(DeSurv is attributed as Young et al., submitted). Appendices A and B derive every
+update from the likelihood, priors and variational family to the EBNM inputs.
+Scientific corrections from the review: the Cox working curvature is a
+Poisson-style diagonal replacement, not the Hessian diagonal; the single-modality
+stopping statistic is a monitor (its activity KL term counts the Gaussian
+normalizer once instead of n times); predictions use the norms stored at the start
+of the final sweep; the multimodal removal score uses KL penalties cached against
+earlier priors; the concatenated C is 0.6285 versus 0.6026. The two implementation
+defects (activity-KL normalizer, cached-prior KL) are documented, not fixed, and
+belong to the method work. The established model's matched-donor C = 0.685 is
+omitted (no saved source). All figures were redrawn from saved outputs as vector
+PDF and 300-dpi PNG. Codex then verified the revision
+(`paper/writeup/verification.md`); its findings V1–V13 were checked and applied
+(dispositions in `paper/writeup/review_dispositions.md`), including the zero-column normalized target,
+the protected multimodal precision floor, completed derivation steps, local
+caption definitions and unbroken algorithms and tables. Remaining issue: the PDF
+main text is 22 pages (down from 27) against a 15–20-page target, after a final
+editorial check (`paper/writeup/final_editorial_check.md`) moved both algorithms
+and derivation-level detail into the appendices. No model-fitting experiment or algorithm change is part of this
+writing task. The second verification (`paper/writeup/verification_round2.md`)
+confirmed the scientific corrections, derivations, captions and pagination. Its
+two minor corrections are applied: the first sweep-normalizer formulas now
+include the evaluated numerical ridge, and the disposition-file pointer above
+is corrected. Figure regeneration still requires local held-out expression;
+further length cuts and final approval remain Andrew's decision. Existing prelim
+and historical derivation sources are preserved.
 
 ## Repository Map
 

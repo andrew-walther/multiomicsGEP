@@ -5,6 +5,98 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-14 — Writeup format after author review of the initial draft
+
+**Decision.** The writeup is a standalone, manuscript-ready narrative of the
+current method, results and biology, not an audit of earlier claims or a record
+of meetings. Title: *Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer* (the prelim chapter's
+working title with "Molecular" in place of "Gene Expression", since the data
+include RNA-seq, proteomics and methylation; "Multi-Omic" is the candidate
+if the multimodal model later shows clear added value), with no subtitle. The claim-centered evidence-gap table is
+dropped: supported findings go into the narrative, unmet goals into Continuing
+work. Section 5 becomes a Discussion. The rendered text carries no repository
+references, source IDs (dropped entirely, not hidden), dated-process
+references or drafting traces; `source_inventory.csv` remains the verification
+record outside the document. All
+exhibits define their abbreviations; Appendix C is dissolved into Evaluation
+and Results; no References section for now. Appendices A and B must show every
+derivation step down to the EBNM inputs.
+
+**Why.** Andrew's review of the rendered draft (2026-10-14): the document should
+move into a journal submission with little change and read as his own work.
+
+**Implementation.** `paper/writeup/implementation_plan.md` ("Author feedback on
+the initial draft") and `paper/writeup/review_prompt.md`. Codex reviews against
+these items; Claude applies them in the revision.
+
+---
+
+## 2026-10-14 — Initial writeup draft: presentation and evidence choices
+
+**Decision.** The initial technical report (`paper/writeup/writeup.qmd`, with
+Appendices A–C) is a draft awaiting Codex's independent review. Choices made
+while drafting:
+
+- **Comparator exhibit from CSVs.** The single-modality comparison is a table
+  built from the saved per-cohort C-indices. The August 21 interval figure is
+  not reused: its title claims a "significant advantage" and its per-cohort
+  intervals have no saved CSV.
+- **Principal difference described as computed.** The 0.026 (0.0002, 0.0498)
+  difference is a C-index difference over the 616 concatenated external
+  patients, with an unstratified bootstrap. It is not a fixed-effect pooled
+  estimate; the older 0.042 comparison is inverse-variance pooled.
+- **Orientation verified, not assumed.** Every saved per-cohort C-index (D4 and
+  the three two-step comparators) was recomputed from the saved risk scores with
+  frozen training orientation and matched; some runners had saved
+  max(C, 1 − C), which coincides here.
+- **Unverified value omitted.** The established model's C = 0.685 on the 50
+  matched ICGC donors is hard-coded in `plot_real_cindex_by_kinit.R` with no
+  saved score source, so it appears only in the evidence-gap table.
+- **Direction labels.** Under the historical D4 fit's orientation
+  (risk = −η), the joint coefficients of Programs 3 and 7 agree in sign with the
+  marginal labels; the August 21 report's "suppression" reading used the stored
+  signs. Marginal labels are kept.
+- **Figures.** The multimodal final-rank figure was redrawn from the saved sweep
+  (`paper/writeup/figures/make_pruning_rank_figure.R`) without the original
+  model's diagonal, which equals the starting rank by construction; the zoomed
+  axis shows that at the September noise level the final rank still rises with
+  the starting rank.
+- **Monochrome text (author request).** Report text, headings, links,
+  callout boxes and PDF hyperlinks are black on white; only figures use colour.
+- **Length.** The characterization-methods table, the single-modality
+  simulation table and its figure moved to Appendix C; the main text is 21 PDF
+  pages, slightly above the 15–20-page target.
+
+**Not changed.** No model code, defaults, saved results, historical derivations,
+prelim chapter or manuscript stub.
+
+---
+
+## 2026-10-14 — Finalize the writeup plan and drafting handoff
+
+**Decision.** Claude Code drafts Tasks 2, 3 and 5 on `writeup/draft`; Codex
+independently reviews the completed draft in Task 4. The initial-draft target
+is October 16, superseding October 14; review and author approval follow.
+No model work or new analyses are authorized by this writing handoff.
+
+**Evidence and tradeoffs.** The source-checked planning review is dispositioned
+in `paper/writeup/implementation_plan.md`. Biological labels require explicit
+methods and their inferential limits. Multimodal top-gene interpretation,
+rank-one shares, absolute loading correspondence, and unadjusted associations
+are separated from proposed enrichment and CpG characterization. Saved absolute
+correlations remain absolute; no new correlations are computed. Existing DeSurv-
+aligned preprocessing comparisons are not a head-to-head DeSurv benchmark.
+
+**Implementation.** The plan requires a six-claim evidence-gap table and R1–R9
+source markers for updates after `feature/supervised-F`. Reuse existing exhibits
+and derivations, keep secondary simulations concise, and omit unverified
+quantities or identify their missing evidence. The inventory contains 54 sources;
+source inspection does not imply every numerical claim has been verified.
+`paper/writeup/drafting_prompt.md` is the standalone handoff. Andrew starts
+Claude separately; this planning change does not draft or publish the report.
+
+---
+
 ## 2026-10-14 — Multimodal monitoring objective: include cross-factor terms of E[η²]
 
 **Fix.** `multimodal_yfb_fixed_working_objective()` in `code/fit_multimodal_yfb.R`

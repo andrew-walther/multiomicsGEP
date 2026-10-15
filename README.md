@@ -82,9 +82,46 @@ The advisor-facing writeup is being organized in `paper/writeup/`. The
 Results, Biology, and derivation appendices, with a
 [source inventory](paper/writeup/source_inventory.csv) and
 [implementation checklist](paper/writeup/implementation_plan.md).
-The planning page awaits review; the full report has not yet been drafted.
-The target is an article-style technical report with a 15–20-page main text,
-plus appendices, rendered to HTML and PDF from the same Quarto source.
+The planning review has been checked and the plan finalized (October 14).
+**Interim writeup, approved and merged to `main` (October 14).**
+The report is `paper/writeup/writeup.qmd`, with derivation appendices in
+`paper/writeup/appendices/`, rendered to [HTML](paper/writeup/writeup.html) and
+[PDF](paper/writeup/writeup.pdf). It is organized as a manuscript: Methods,
+Evaluation, Results, Biological findings and Discussion, with complete
+derivations in Appendices A (single-modality) and B (multimodal). The review is
+[`review.md`](paper/writeup/review.md) and the disposition of every finding is
+[`review_dispositions.md`](paper/writeup/review_dispositions.md); Codex's
+verification of the revision is
+[`verification.md`](paper/writeup/verification.md). The second verification is
+[`verification_round2.md`](paper/writeup/verification_round2.md); its two minor
+corrections are applied. A final editorial round
+([`final_editorial_check.md`](paper/writeup/final_editorial_check.md),
+[`verification_round3.md`](paper/writeup/verification_round3.md)) moved the algorithms
+into the appendices; the 22-page main text is accepted for this interim version.
+
+Render the report from the repository root (the RStudio Quarto works on this
+computer; rendering reads only saved aggregates, figures and the bibliography,
+and installs no LaTeX packages):
+
+```bash
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/writeup.qmd --to html
+```
+
+```bash
+/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render paper/writeup/writeup.qmd --to pdf
+```
+
+The report's figures are drawn from saved fits, scores and aggregates (no
+fitting), as vector PDF and 300-dpi PNG at printed size. The survival-curve
+figures need the local held-out expression data:
+
+```bash
+Rscript paper/writeup/figures/make_pruning_rank_figure.R
+```
+
+```bash
+PDAC_DATA_ROOT=data/PDAC_data Rscript paper/writeup/figures/make_writeup_figures.R
+```
 
 Rebuild the planning page from the repository root:
 

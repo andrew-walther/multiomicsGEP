@@ -1,0 +1,285 @@
+# Appendix B. Multimodal derivations {#sec-appendix-b .unnumbered}
+
+<!-- REVISIT R3 START -->
+
+This appendix derives the updates of the evaluated multimodal framework from its likelihood, priors and variational family, ending each coordinate update at the normal-means inputs $x = B/A$ and $s = A^{-1/2}$. It uses the notation and the general results of Appendix A: the reduction to normal means and the KL identity (A.3), point-exponential posteriors (A.4), and the normal coefficient prior (A.5).
+
+## Fitting algorithm {#sec-appendix-b-alg .unnumbered}
+
+<!-- REVISIT R3 START -->
+<!-- REVISIT R2 START -->
+
+::: {.algorithm}
+```{=latex}
+\par\noindent\begin{minipage}{\linewidth}
+\setlength{\parskip}{0.5em}
+```
+
+**Algorithm 2.** Multimodal fit with factor removal, and prediction.
+
+*Inputs:* training blocks $Y_m$ on their measured scales; $(t_i, \delta_i)$; starting rank $K_{\mathrm{init}}$; tolerance $\epsilon$; outer cap $T$; inner sweeps $S$.
+
+1. Initialize $\mu_m$ at the column means; $\bar L$ and $\bar F_m$ from the absolute leading singular vectors of the concatenated centered blocks; $\tau_{mj}$ from the pooled variance of each block; and $\bar\beta$ from a Cox fit on standardized initial projections, transformed back to the projection scale.
+2. For outer sweeps $r = 1, \dots, T$:
+    a. Re-estimate $\mu_m$ and re-center $\tilde Y_m$. Compute $\bar Z$, $\mathrm{Var}(Z)$, $\bar\eta$, the working curvature $w_i$ and the linear term $h_i = u_i + w_i\bar\eta_i$. Hold $(w, h)$ fixed for this outer sweep.
+    b. Repeat $S$ inner sweeps; within each, for $k = 1, \dots, K$:
+        i. update $q(L_{\cdot k})$ from both blocks' reconstruction residuals, then refit its point-exponential prior;
+        ii. for each modality, update $q(f_{mjk})$ one feature at a time from the reconstruction and survival terms, refreshing $\bar Z_{\cdot k}$ and $\mathrm{Var}(Z_{\cdot k})$ after each feature, then refit the point-Laplace prior $g_{mk}$;
+        iii. update $q(\beta_k)$ by the normal-prior empirical-Bayes update with $A = \sum_i w_i E(Z_{ik}^2)$ and $B = \sum_i \bar Z_{ik}(h_i - w_i\bar\eta_{i,-k})$;
+        iv. rescale factor $k$ so that $\mathrm{sd}(\bar Z_{\cdot k}) = 1$, unless the projection is numerically constant.
+    c. Update $\tau_{mj} = n / \sum_i E_q(\tilde y_{mij} - l_i^\top f_{mj})^2$.
+    d. Stop if, for each modality, the relative change in $\bar L\bar F_m^\top$ and in $\bar\eta$ is below $\epsilon$.
+3. If $K > 1$, compute the change in @eq-mm-elbo from deleting each factor. If the largest change is $\ge 0$, delete that factor, return to step 2 from the remaining factors' moments and priors, and repeat.
+
+*Outputs:* posterior moments and priors, $\mu_m$, $\tau$, classification. *Prediction:* $\eta_{\mathrm{new}} = \sum_m y_{m,\mathrm{new}}^\top\bar F_m\bar\beta$, with higher values denoting higher risk, a direction fixed before validation. Centering new data at the training intercept would change every score by the same constant and leave the concordance index unchanged.
+
+```{=latex}
+\end{minipage}
+```
+:::
+
+<!-- REVISIT R2 END -->
+<!-- REVISIT R3 END -->
+
+## B.1 Model and target {.unnumbered}
+
+For modalities $m \in \{\mathrm{expr}, \mathrm{meth}\}$, patients $i$, features $j$ and factors $k$,
+$$
+y_{mij} = \mu_{mj} + \sum_k l_{ik}f_{mjk} + e_{mij}, \qquad e_{mij} \sim N(0, \tau_{mj}^{-1}),
+$$ {#eq-b-model}
+so that
+$$
+\ell_Y = \sum_{m,i,j}\Big\{\tfrac12\log\frac{\tau_{mj}}{2\pi} - \frac{\tau_{mj}}{2}\Big(y_{mij} - \mu_{mj} - \sum_kl_{ik}f_{mjk}\Big)^2\Big\}.
+$$ {#eq-b-lY}
+The priors are
+$$
+l_{ik} \sim g_{L,k} = (1-\pi_{L,k})\delta_0 + \pi_{L,k}\,\mathrm{Exp}(\lambda_{L,k}), \qquad
+f_{mjk} \sim g_{mk} = (1-\pi_{mk})\delta_0 + \pi_{mk}\,\mathrm{Laplace}(0, \lambda_{mk}^{-1}),
+$$ {#eq-b-priors}
+and $\beta_k \sim N(0, \sigma_k^2)$. Survival enters through the Breslow partial log-likelihood $\ell_C(\eta)$ of @eq-a-lC with
+$$
+\eta_i = \sum_kZ_{ik}\beta_k, \qquad Z_{ik} = \sum_{m,j}\tilde y_{mij}f_{mjk}, \qquad \tilde y_{mij} = y_{mij} - \mu_{mj}.
+$$ {#eq-b-eta}
+The intercepts $\mu_{mj}$, precisions $\tau_{mj}$ and prior parameters are point estimates. With the mean-field family $q = \prod_{i,k}q(l_{ik})\prod_{m,j,k}q(f_{mjk})\prod_kq(\beta_k)$, the target is
+$$
+\mathcal L(q) = E_q\ell_Y + E_q\ell_C(\eta) - \sum_{i,k}\mathrm{KL}(q(l_{ik})\Vert g_{L,k}) - \sum_{m,j,k}\mathrm{KL}(q(f_{mjk})\Vert g_{mk}) - \sum_k\mathrm{KL}(q(\beta_k)\Vert N(0,\sigma_k^2)).
+$$
+Unlike the single-modality algorithm, the multimodal algorithm treats $F_m$ as random inside the projection, so the coefficient and loading updates carry projection uncertainty.
+
+## B.2 Working approximation {.unnumbered}
+
+<!-- REVISIT R2 START -->
+
+The coordinate updates replace $E_q\ell_C$ by the expectation of the working quadratic @eq-a-linear at the predictor $\hat\eta = \bar\eta$ from the start of the outer sweep, written without dividing by $w_i$:
+$$
+\ell_C(\eta) \approx c + \sum_i\big(h_i\eta_i - \tfrac12w_i\eta_i^2\big), \qquad h_i = u_i + w_i\bar\eta_i, \quad w_i = a_i,
+$$ {#eq-b-working}
+with $u_i$ and $a_i$ as in A.2. There is no floor on $w_i$. The quantities $(w, h)$ are held fixed for the inner sweeps of an outer sweep. The expected surrogate is
+$$
+\sum_i\Big[h_iE_q\eta_i - \tfrac12w_iE_q\eta_i^2\Big].
+$$
+
+<!-- REVISIT R2 END -->
+
+## B.3 Intercept {.unnumbered}
+
+Only $\ell_Y$ is used to update $\mu_{mj}$. Its derivative is
+$$
+\frac{\partial E_q\ell_Y}{\partial\mu_{mj}} = \tau_{mj}\sum_i\Big(y_{mij} - \mu_{mj} - \sum_k\bar l_{ik}\bar f_{mjk}\Big),
+$$
+and setting it to zero gives
+$$
+\hat\mu_{mj} = \frac1n\sum_i\Big(y_{mij} - \sum_k\bar l_{ik}\bar f_{mjk}\Big).
+$$ {#eq-b-mu}
+The intercept is updated at the start of each outer sweep and for each candidate in the removal check, after which every block is re-centered, $\tilde Y_m = Y_m - \mathbf 1\hat\mu_m^\top$, and the projection moments are recomputed from the centered data. With fixed loadings, replacing $\tilde y$ by $y$ in @eq-b-eta shifts every $\eta_i$ by the same constant $\sum_{m,j,k}\mu_{mj}f_{mjk}\beta_k$, which leaves the exact partial likelihood and the concordance index unchanged. Under $q$, however, this shift is random, and the expected working surrogate need not be invariant to it. Updating the intercept from the reconstruction alone is therefore an implementation choice, not a consequence of shift invariance.
+
+## B.4 Projection and predictor moments {.unnumbered}
+
+<!-- REVISIT R2 START -->
+
+Under $q$ the loadings of different features are independent, so
+$$
+\bar Z_{ik} = \sum_{m,j}\tilde y_{mij}\bar f_{mjk}, \qquad \mathrm{Var}(Z_{ik}) = \sum_{m,j}\tilde y_{mij}^2\,\mathrm{Var}(f_{mjk}), \qquad E(Z_{ik}^2) = \bar Z_{ik}^2 + \mathrm{Var}(Z_{ik}).
+$$ {#eq-b-zmom}
+Factors are independent of each other and $\beta$ is independent of $F$, so $\bar\eta_i = \sum_k\bar Z_{ik}\bar\beta_k$ and
+$$
+\mathrm{Var}(\eta_i) = \sum_k\mathrm{Var}(Z_{ik}\beta_k) = \sum_k\big\{E(Z_{ik}^2)\overline{\beta_k^2} - \bar Z_{ik}^2\bar\beta_k^2\big\} = \sum_k\big\{\overline{\beta_k^2}\,\mathrm{Var}(Z_{ik}) + \bar Z_{ik}^2\,\mathrm{Var}(\beta_k)\big\}.
+$$ {#eq-b-etamom}
+The two forms agree because $(\bar Z^2 + V_Z)(\bar\beta^2 + V_\beta) - \bar Z^2\bar\beta^2 = (\bar\beta^2 + V_\beta)V_Z + \bar Z^2V_\beta$. Predictors of different patients share the random loadings and coefficients and are therefore correlated; only their marginal moments are used below.
+
+<!-- REVISIT R2 END -->
+
+## B.5 Shared activities {.unnumbered}
+
+$\eta$ does not depend on $L$, so only $\ell_Y$ contributes. Define the random residual $r_{mij}^{(-k)} = \tilde y_{mij} - \sum_{l\ne k}l_{il}f_{mjl}$ with mean $R_{mij}^{(-k)} = \tilde y_{mij} - \sum_{l\ne k}\bar l_{il}\bar f_{mjl}$. As in A.6,
+$$
+E_{-l_{ik}}(r_{mij}^{(-k)} - l_{ik}f_{mjk})^2 = c_{mij} - 2l_{ik}R_{mij}^{(-k)}\bar f_{mjk} + l_{ik}^2\overline{f_{mjk}^2}.
+$$
+Multiplying by $-\tau_{mj}/2$ and summing over both modalities and all features,
+$$
+A_{L,k} = \sum_{m,j}\tau_{mj}\overline{f_{mjk}^2}, \qquad B_{L,ik} = \sum_{m,j}\tau_{mj}R_{mij}^{(-k)}\bar f_{mjk}, \qquad x_{L,ik} = B_{L,ik}/A_{L,k}, \qquad s_{L,k} = A_{L,k}^{-1/2}.
+$$ {#eq-b-L}
+Each $q(l_{ik})$ is the point-exponential posterior of A.4 under the current $g_{L,k}$. Here and in B.6–B.7, $x = B/A$ and $s = A^{-1/2}$ require $A > 0$; when a coordinate receives no information ($A = 0$, and hence $B = 0$), the implementation returns the prior-only update rather than dividing by zero, and it treats $A = 0$ with a nonzero $B$ as an error. After the column is updated, $(\pi_{L,k}, \lambda_{L,k})$ is re-estimated by maximizing the marginal likelihood of the $n$ pseudo-observations (A.3), which can return $\pi_{L,k} = 0$ and so remove the column.
+
+## B.6 Modality-specific loadings {.unnumbered}
+
+<!-- REVISIT R2 START -->
+
+**Reconstruction terms.** The terms of @eq-b-lY involving $f_{mjk}$ are $-\frac{\tau_{mj}}{2}\sum_i(r_{mij}^{(-k)} - l_{ik}f_{mjk})^2$, with $r^{(-k)}$ and its mean $R^{(-k)}$ as in B.5. Expanding the square and using the independence of $l_{ik}$ from $r_{mij}^{(-k)}$ under $q$,
+$$
+E_{-f_{mjk}}(r_{mij}^{(-k)} - l_{ik}f_{mjk})^2 = c_{mij} - 2f_{mjk}R_{mij}^{(-k)}\bar l_{ik} + f_{mjk}^2\overline{l_{ik}^2}.
+$$
+Multiplying by $-\tau_{mj}/2$ and summing over $i$,
+$$
+A^{\mathrm{rec}}_{mjk} = \tau_{mj}\sum_i\overline{l_{ik}^2}, \qquad B^{\mathrm{rec}}_{mjk} = \tau_{mj}\sum_i\bar l_{ik}R_{mij}^{(-k)}.
+$$
+
+**Survival terms.** Fix $(m, j, k)$ and write $f = f_{mjk}$, $a_i = \tilde y_{mij}$, $U_i = Z_{ik} - a_if$ (the projection excluding feature $j$ of modality $m$) and $V_i = \eta_{i,-k} = \sum_{l\ne k}Z_{il}\beta_l$. Then
+$$
+\eta_i = \beta_k(a_if + U_i) + V_i, \qquad
+\eta_i^2 = a_i^2f^2\beta_k^2 + 2a_if\big(\beta_k^2U_i + \beta_kV_i\big) + (\beta_kU_i + V_i)^2 .
+$$
+Under $q$, $f$, $\beta_k$, $U_i$ and $V_i$ are mutually independent, so $E(\beta_k^2U_i) = \overline{\beta_k^2}\,\bar U_i$ and $E(\beta_kV_i) = \bar\beta_k\bar V_i$. Substituting into $h_i\eta_i - \frac12w_i\eta_i^2$ and keeping the terms in $f$,
+$$
+f\,a_i\Big[\bar\beta_k\big(h_i - w_i\bar V_i\big) - w_i\overline{\beta_k^2}\,\bar U_i\Big] - \tfrac12f^2\,w_ia_i^2\,\overline{\beta_k^2}.
+$$
+The quadratic coefficient uses $\overline{\beta_k^2}$ because $\beta_k$ multiplies $f$ inside a square.
+
+**Combined update.** Adding the reconstruction terms and summing over patients,
+$$
+A_{mjk} = \tau_{mj}\sum_i\overline{l_{ik}^2} + \overline{\beta_k^2}\sum_iw_i\tilde y_{mij}^2,
+$$ {#eq-b-FA}
+$$
+B_{mjk} = \tau_{mj}\sum_i\bar l_{ik}R^{(-k)}_{mij} + \bar\beta_k\sum_i\tilde y_{mij}\big(h_i - w_i\bar V_i\big) - \overline{\beta_k^2}\sum_iw_i\tilde y_{mij}\bar U_i ,
+$$ {#eq-b-FB}
+with $x_{mjk} = B_{mjk}/A_{mjk}$ and $s_{mjk} = A_{mjk}^{-1/2}$. The last term of @eq-b-FB couples feature $j$ to every other feature of factor $k$ through $\bar U_i$: the survival information a feature receives depends on how much of the projection the other features already supply. Features are therefore updated one at a time (Gauss–Seidel), and after each update the projection moments are refreshed by the change in that feature's moments, $\bar Z_{ik} \leftarrow \bar Z_{ik} + \tilde y_{mij}(\bar f^{\mathrm{new}} - \bar f^{\mathrm{old}})$ and $\mathrm{Var}(Z_{ik}) \leftarrow \mathrm{Var}(Z_{ik}) + \tilde y_{mij}^2\{\mathrm{Var}(f^{\mathrm{new}}) - \mathrm{Var}(f^{\mathrm{old}})\}$. Both survival terms vanish only when $\bar\beta_k$ and $\overline{\beta_k^2}$ are both small; a coefficient with near-zero mean but substantial variance still contributes through $\overline{\beta_k^2}$, and a point mass at zero removes both.
+
+<!-- REVISIT R2 END -->
+
+**Point-Laplace posterior.** With prior $(1-\pi)\delta_0 + \pi\frac\lambda2e^{-\lambda|f|}$, the positive half-line is handled exactly as the point-exponential slab of A.4 with $\lambda$ replaced by $\lambda/2$ in the prefactor: with $m_+ = x - \lambda s^2$,
+$$
+\int_0^\infty N(x;\, f, s^2)\,\tfrac{\pi\lambda}{2}e^{-\lambda f}\,df = \tfrac{\pi\lambda}{2}\,e^{-\lambda x + \lambda^2s^2/2}\,\Phi(m_+/s).
+$$
+For the negative half-line substitute $f = -f'$ with $f' > 0$. Then $N(x; -f', s^2) = N(-x; f', s^2)$, and completing the square as in A.4 with $x$ replaced by $-x$ gives, with $m_- = -x - \lambda s^2$,
+$$
+\int_{-\infty}^0 N(x;\, f, s^2)\,\tfrac{\pi\lambda}{2}e^{\lambda f}\,df = \tfrac{\pi\lambda}{2}\,e^{\lambda x + \lambda^2s^2/2}\,\Phi(m_-/s).
+$$
+Normalizing the three components gives the posterior weights $\omega_0 \propto (1-\pi)N(x; 0, s^2)$, $\omega_+$ and $\omega_-$ proportional to the two integrals, and the marginal likelihood $p_g(x)$ as their sum. The positive component is $N(m_+, s^2)$ truncated to $(0, \infty)$ and the negative component is the negative of $N(m_-, s^2)$ truncated to $(0, \infty)$. With $M_+$ and $S_+$ from @eq-a-trunc,
+$$
+\bar f = \omega_+M_+(m_+) - \omega_-M_+(m_-), \qquad \overline{f^2} = \omega_+S_+(m_+) + \omega_-S_+(m_-).
+$$ {#eq-b-laplace}
+Tail evaluations of $\log\Phi$ and $\phi/\Phi$ use asymptotic expansions for numerical stability.
+
+**Prior refit and cached penalties.** The point-Laplace parameters $(\pi_{mk}, \lambda_{mk})$ are held fixed while the features of modality $m$ and factor $k$ are updated, and are then re-estimated by maximizing the marginal likelihood of that sweep's $p_m$ pseudo-observations. The KL penalties stored for these coordinates are computed by @eq-a-kl against the prior used during the sweep, not the refitted prior. The same holds for the activities in B.5.
+
+## B.7 Survival coefficients {.unnumbered}
+
+<!-- REVISIT R2 START -->
+
+Write $\eta_i = Z_{ik}\beta_k + V_i$. Expanding $(Z_{ik}\beta_k + V_i)^2 = Z_{ik}^2\beta_k^2 + 2Z_{ik}V_i\beta_k + V_i^2$ and using the independence of $Z_{ik}$ and $V_i$ under $q$, the terms of the expected surrogate in $\beta_k$ are
+$$
+\beta_k\sum_i\bar Z_{ik}\big(h_i - w_i\bar V_i\big) - \tfrac12\beta_k^2\sum_iw_iE(Z_{ik}^2),
+$$
+so
+$$
+A_{\beta,k} = \sum_iw_i\big\{\bar Z_{ik}^2 + \mathrm{Var}(Z_{ik})\big\}, \qquad B_{\beta,k} = \sum_i\bar Z_{ik}\big(h_i - w_i\bar V_i\big), \qquad x_{\beta,k} = B_{\beta,k}/A_{\beta,k}, \qquad s_{\beta,k} = A_{\beta,k}^{-1/2}.
+$$ {#eq-b-beta}
+Unlike @eq-a-beta, $A_{\beta,k}$ includes the projection variance, so loading uncertainty shrinks the coefficient, and there is no weight $\alpha$. As in A.5 (which derives the Gaussian marginal and posterior), the prior variance is $\hat\sigma_k^2 = \max(0, x_{\beta,k}^2 - s_{\beta,k}^2)$; if it is zero, $q(\beta_k) = \delta_0$ and the KL term is zero. Otherwise
+$$
+\mathrm{Var}(\beta_k) = \big(A_{\beta,k} + \hat\sigma_k^{-2}\big)^{-1}, \qquad \bar\beta_k = \mathrm{Var}(\beta_k)\,B_{\beta,k},
+$$
+which equals the posterior mean $x\hat\sigma^2/(\hat\sigma^2 + s^2)$ of A.5. For $q = N(\bar\beta, v)$ and $g = N(0, \sigma^2)$, taking the expectation of $\log q - \log g = -\frac12\log(v/\sigma^2) - (\beta - \bar\beta)^2/(2v) + \beta^2/(2\sigma^2)$ under $q$ gives
+$$
+\mathrm{KL}(q\,\Vert\,g) = \tfrac12\Big[\frac{v + \bar\beta^2}{\sigma^2} - 1 - \log\frac{v}{\sigma^2}\Big].
+$$
+A factor is classified survival-active when $|\bar\beta_k|/\max\{\mathrm{sd}(\beta_k), 10^{-12}\} \ge 1.96$, so a coefficient at the point mass is inactive; this is an operational rule on the posterior mean and standard deviation, not an adjusted test. The coefficients are initialized from a Cox fit on standardized initial projections, transformed back to the projection scale.
+
+<!-- REVISIT R2 END -->
+
+## B.8 Precisions {.unnumbered}
+
+Summing the expected squared residual of A.8 over patients within each modality and feature,
+$$
+Q_{mj} = \sum_i\Big[\Big(\tilde y_{mij} - \sum_k\bar l_{ik}\bar f_{mjk}\Big)^2 + \sum_k\big(\overline{l_{ik}^2}\,\overline{f_{mjk}^2} - \bar l_{ik}^2\bar f_{mjk}^2\big)\Big],
+$$
+The expected log-likelihood in $\tau_{mj}$ is $\frac n2\log\tau_{mj} - \frac{\tau_{mj}}{2}Q_{mj} + c$, with derivative
+$$
+\frac{\partial}{\partial\tau_{mj}}\Big\{\frac n2\log\tau_{mj} - \frac{\tau_{mj}}{2}Q_{mj}\Big\} = \frac{n}{2\tau_{mj}} - \frac{Q_{mj}}{2},
+$$
+which is zero at
+$$
+\hat\tau_{mj} = n/Q_{mj} \qquad (Q_{mj} > 0).
+$$ {#eq-b-tau}
+These are unregularized maximum-likelihood values. If $Q_{mj} = 0$ the likelihood is unbounded in $\tau_{mj}$ and no finite maximum-likelihood precision exists. The evaluated fitting path, and the removal score, compute $\tau_{mj} = n/\max(Q_{mj}, \epsilon_{\mathrm{mach}})$ with $\epsilon_{\mathrm{mach}} \approx 2.2\times10^{-16}$. One precision per modality and a Gamma prior on $\tau_{mj}$ are implemented alternatives that were not used.
+
+## B.9 Scale canonicalization {#sec-appendix-b-scale .unnumbered}
+
+<!-- REVISIT R2 START -->
+
+For $c_k > 0$ consider the map $(l_{\cdot k}, f_{mk}, \beta_k) \mapsto (c_kl_{\cdot k}, f_{mk}/c_k, c_k\beta_k)$. Substituting, $(c_kl_{ik})(f_{mjk}/c_k) = l_{ik}f_{mjk}$, so each $LF_m^\top$ is unchanged; $Z_{ik} \mapsto Z_{ik}/c_k$, so $Z_{ik}\beta_k \mapsto (Z_{ik}/c_k)(c_k\beta_k) = Z_{ik}\beta_k$ and $\eta$ is unchanged. The likelihood therefore does not determine the scale of a factor, and coordinate updates can drift along this direction. After each factor's coefficient update the implementation sets $c_k = \mathrm{sd}(\bar Z_{\cdot k})$ over training patients and applies the map to the variational distributions, which transforms their moments as
+$$
+\bar l_{\cdot k} \mapsto c_k\bar l_{\cdot k}, \quad \overline{l^2_{\cdot k}} \mapsto c_k^2\overline{l^2_{\cdot k}}, \quad
+\bar f_{mk} \mapsto \bar f_{mk}/c_k, \quad \overline{f^2_{mk}} \mapsto \overline{f^2_{mk}}/c_k^2, \quad
+\bar\beta_k \mapsto c_k\bar\beta_k, \quad \overline{\beta_k^2} \mapsto c_k^2\overline{\beta_k^2},
+$$
+and hence $\bar Z_{\cdot k} \mapsto \bar Z_{\cdot k}/c_k$ and $\mathrm{Var}(Z_{\cdot k}) \mapsto \mathrm{Var}(Z_{\cdot k})/c_k^2$.
+
+The priors are transformed by the same map, so that each transformed prior is the distribution of the transformed coordinate (its pushforward). If $l \sim \mathrm{Exp}(\lambda)$ then $c\,l \sim \mathrm{Exp}(\lambda/c)$; if $f \sim \mathrm{Laplace}(0, \lambda^{-1})$ then $f/c \sim \mathrm{Laplace}(0, (c\lambda)^{-1})$; and if $\beta \sim N(0, \sigma^2)$ then $c\beta \sim N(0, c^2\sigma^2)$. The point-mass weights are unchanged. Hence
+$$
+\lambda_{L,k} \mapsto \lambda_{L,k}/c_k, \qquad \lambda_{mk} \mapsto c_k\lambda_{mk}, \qquad \sigma_k^2 \mapsto c_k^2\sigma_k^2 .
+$$ {#eq-b-canon}
+Prior density values themselves change by the Jacobian $1/c_k$ or $c_k$; what is preserved is the probability of each transformed event. Because the posterior and the prior are transformed by the same bijection, each KL divergence is unchanged. After the map, $\mathrm{sd}(\bar Z_{\cdot k}) = 1$ in training, so a coefficient is per training SD of the mean joint projection. When $\mathrm{sd}(\bar Z_{\cdot k}) \le \sqrt{\epsilon_{\mathrm{mach}}}$, the implementation uses $c_k = 1$, and that column does not acquire SD one. Canonicalization changes neither the fitted reconstruction nor the predictor, but it is applied between coordinate updates and therefore changes the path of the algorithm.
+
+<!-- REVISIT R2 END -->
+
+## B.10 Stopping rule {.unnumbered}
+
+For a fitted quantity $X$ (each $\bar L\bar F_m^\top$, and $\bar\eta$), the relative change between consecutive outer sweeps is
+$$
+\frac{\max|X_{\mathrm{new}} - X_{\mathrm{old}}|}{\max\big(1,\ \max|X_{\mathrm{old}}|,\ \max|X_{\mathrm{new}}|\big)},
+$$
+and the algorithm stops when every such change is below $10^{-4}$, or after 500 outer sweeps. These quantities are invariant to the map of B.9, which is why they are used instead of changes in posterior moments.
+
+## B.11 Removal score and factor removal {#sec-appendix-b-removal .unnumbered}
+
+<!-- REVISIT R4 START -->
+
+The removal score is
+$$
+\mathcal{S} = \sum_{m,j}\Big[\tfrac n2 \log\tfrac{\hat\tau_{mj}}{2\pi} - \tfrac{\hat\tau_{mj}}2 \sum_i E_q(\tilde y_{mij} - l_i^\top f_{mj})^2\Big] + \log \mathrm{PL}(\bar\eta) - \sum \mathrm{KL},
+$$ {#eq-mm-elbo}
+with $\hat\tau$ at its maximum-likelihood value and the sum of KL terms taken over all coordinates. When the coordinate loop ends, by meeting the criterion or by reaching the cap, the removal check computes for each factor $k$
+$$
+\Delta_k = \mathcal S\big(\text{factors} \ne k\big) - \mathcal S\big(\text{all factors}\big),
+$$ {#eq-b-delta}
+where $\mathcal S$ is @eq-mm-elbo evaluated with factor $k$'s activities, loadings and coefficient set to zero and its KL terms removed, the other factors' posteriors held fixed, and $\mu$ and $\tau$ re-estimated. The KL terms of $\mathcal S$ are the cached penalties of B.5 and B.6, computed against the priors in force at each coordinate's latest update. The check runs only when at least two factors remain, so the last factor is never removed. If $\max_k\Delta_k \ge 0$, the factor with the largest $\Delta_k$ is deleted, the algorithm restarts from the remaining factors' moments and priors with $K - 1$ factors, and the check repeats after that fit. A deletion therefore does not decrease the implemented removal score, evaluated before the remaining factors adapt. It is not guaranteed to improve the exact marginal likelihood or an ELBO evaluated at the current posterior and current priors.
+
+<!-- REVISIT R4 END -->
+
+The survival component of $\mathcal S$ is $\ell_C(\bar\eta)$, whereas the target uses $E_q\ell_C(\eta)$. Because $\ell_C$ is concave in $\eta$, Jensen's inequality gives $E_q\ell_C(\eta) \le \ell_C(\bar\eta)$, so the plug-in term is an upper approximation to its posterior expectation. Jensen's inequality does not imply that the gap grows with every marginal variance: adding the same random shift to every $\eta_i$ increases each $\mathrm{Var}(\eta_i)$ but leaves $\ell_C$, and hence the gap, unchanged. A second-order expansion gives $E_q\ell_C(\eta) \approx \ell_C(\bar\eta) - \frac12\mathrm{tr}\{\mathcal H\,\mathrm{Cov}_q(\eta)\}$, with $\mathcal H$ the exact negative Hessian of A.2 and $\mathrm{Cov}_q(\eta)$ the full patient-by-patient covariance. The variance-penalized alternative used in the simulation, $\ell_C(\bar\eta) - \frac12\sum_iw_i\mathrm{Var}(\eta_i)$, replaces $\mathcal H$ by the diagonal working curvature and ignores the covariances. Neither form makes $\mathcal S$ a lower bound on the marginal likelihood, and the coordinate updates are not guaranteed to increase it. On real data the reconstruction component, which sums over every feature of both modalities, dominates $\mathcal S$.
+
+## B.12 Prediction {.unnumbered}
+
+<!-- REVISIT R2 START -->
+
+For a new patient with features aligned to the training features, $\eta_{\mathrm{new}} = \sum_my_{m,\mathrm{new}}^\top\bar F_m\bar\beta$, using data that are not centered. With fixed posterior means, centering at the training intercept would shift every score by the constant $\sum_m\hat\mu_m^\top\bar F_m\bar\beta$, which changes neither the ranking of patients nor the concordance index. Higher $\eta$ denotes higher risk, a direction fixed before validation.
+
+<!-- REVISIT R2 END -->
+
+## B.13 Base model and evaluated framework {.unnumbered}
+
+@tbl-mm-reconcile lists the components that distinguish the evaluated framework from the base multimodal model.
+
+| Component | Base multimodal model | Evaluated framework | Section |
+|------------|----------------------|----------------------|------|
+| Intercept | None; requires nonnegative data | $\mu_{mj}$ re-estimated each outer sweep and for each removal candidate | B.3 |
+| Loading prior | Point-exponential ($f \ge 0$) | Point-Laplace (signed) per modality and factor | B.6 |
+| Prior estimation | Moment-based updates | Marginal likelihood; can return the point mass | B.5, B.6 |
+| Loading update | Reconstruction and survival terms with equal weight, sequential, with feature coupling | Same | B.6 |
+| Coefficient update | Uses $E(Z^2)$; normal prior with fitted variance | Same | B.7 |
+| Scale | Not fixed during fitting | Rescaled to $\mathrm{sd}(\bar Z_{\cdot k}) = 1$ after each factor update, except numerically constant columns | B.9 |
+| Rank | Fixed $K$ | Removal check (while $K > 1$) with plug-in survival term and cached KL penalties, then refit | B.11 |
+
+: Components of the base multimodal model and of the evaluated framework. sd, standard deviation over training patients; KL, Kullback–Leibler divergence; $\bar Z$, mean projection. {#tbl-mm-reconcile}
+
+<!-- REVISIT R3 END -->
