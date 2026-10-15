@@ -971,3 +971,21 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   evidence, retaining current limitations and making no new result claims.
 - Advisor-meeting follow-up remains the authority for the later substantive
   revision. No analytical code, model defaults or results changed.
+
+## Supervised robustness and comparator follow-up (2026-10-15)
+
+- [x] Evaluate fixed jittered starts, Normal loading priors, refreshed training CV
+  and training-only feature-count sensitivity on `m6/robustness` (550 passing tests;
+  all tables verified, but trailing process exit 1 recorded in the report).
+- [x] Audit identical multimodal two-step concordance and run the four-arm comparison;
+  report constant selected-model risks, caps and EBMF warning without tuning.
+- [ ] Resolve the unavailable multimodal ELBO convergence assessment before any
+  protected-pruning adoption or conditional 1-SE analysis.
+- [ ] Obtain a usable DeSurv fitter and documented training-only selection procedure.
+- [ ] Decide how to handle EBMF zero/one-factor lasso failures before a complete
+  high-noise comparator study; the current conditional subset is insufficient.
+- [ ] Review the real-data multimodal coefficient collapse and convergence caps
+  before extending validation. Do not choose fixes against ICGC outcomes.
+
+Evidence and independent branch commits:
+`docs/reports/Codex_M6_M7_Summary_10_15_26.md`. No configuration change was adopted.

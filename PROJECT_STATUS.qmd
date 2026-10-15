@@ -19,6 +19,31 @@ execute:
   warning: false
 ---
 
+## Supervised robustness and comparator follow-up (2026-10-15)
+
+The [consolidated report](docs/reports/Codex_M6_M7_Summary_10_15_26.md) contains
+all five independent branches, commits, tests and key tables. Protected pruning
+and a new K were not adopted because the required multimodal ELBO convergence
+criterion could not be assessed under the permitted changes. DeSurv fitting is
+blocked on a usable implementation; high-noise simulation comparators are partial.
+The selected TCGA→ICGC multimodal model returned constant risks and hit the cap.
+Those results are not evidence of a successful comparison or model improvement.
+
+On `m6/robustness`, 880 simulated fits completed. ELBO-selected starts offer no
+recovery gain; two high-noise datasets lose recovery compared with default.
+The unchanged training CV rerun gives mean C .651199 vs .653153 for point-Laplace
+versus Normal β, with one capped fold each. The β-prior conclusion is unchanged.
+Full-suite checks: 550 passing, zero failing on this branch. Feature-count results
+and their preprocessing caveat are in the report and progress chapter. No external
+cohort was loaded by the robustness runner; no configuration was retuned.
+
+
+The robustness process wrote all final tables, then exited 1 with a trailing
+parse error after a diagnostic-only source edit during execution. Saved fit
+counts and summary arithmetic were independently checked; the current runner
+parses and passes 550 tests. No rerun or tuning was attempted. This execution
+anomaly is documented in the report and `outputs/supervised_robustness/execution_status.md`.
+
 ## Project Overview
 
 This project implements a **Supervised Bayesian Matrix Factorization** model

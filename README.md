@@ -344,3 +344,20 @@ bios-dissertation; rerun that repository's `prelim/tools/build_prelim.py`
 to update the full prelim. Continuing work is described as methodological
 aims and expected results without a fixed-date timeline. A substantive
 revision will follow the advisor-meeting plan and verified additional results.
+
+## Supervised robustness and comparator follow-up (2026-10-15)
+
+The consolidated [five-prompt report](docs/reports/Codex_M6_M7_Summary_10_15_26.md)
+records separate branches, test counts, tables and limitations. Protected pruning
+was not adopted; K_init=7 and the handoff configurations remain controlling.
+On `m6/robustness`, run `Rscript results/benchmark_sim/run_supervised_robustness.R 6`
+from the repository root with the existing local PDAC data available. Outputs go to
+`results/benchmark_sim/outputs/supervised_robustness/`: all simulated starts,
+ELBO-selected starts, convergence, preserved old/new training CV, and feature-count
+sensitivity. The unchanged original CV runner also refreshes its own CSVs. Existing
+backup CSVs are protected from overwrite; archive a prior output folder before
+rerunning. These experiments do not score external cohorts. Run
+`Rscript tests/run_tests.R` for the full suite (550 passing on this branch).
+
+The recorded D experiment saved all tables but exited 1 after a trailing parse
+error; see the report and `execution_status.md` before treating it as a clean run.

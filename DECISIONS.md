@@ -5,6 +5,49 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Robustness and comparator follow-up; no configuration change
+
+The E assessment on `m5/k-selection` did not adopt protected pruning or a new
+starting K: the required multimodal ELBO convergence assessment is unavailable
+under the allowed edits. This was a blocked criterion, not a failed empirical
+panel. The conditional 1-SE analysis was not run. A–D therefore start from
+`feature/supervised-F`: K_init=7, selected single model without pruning, selected
+multimodal model with ordinary pruning and no protection. No tuning was attempted.
+
+The full evidence and independent branch commits are in
+`docs/reports/Codex_M6_M7_Summary_10_15_26.md`. DeSurv was unavailable, so its
+comparison stopped before fitting. Simulation comparators are complete at noise
+.25 but conditional on only ten successful datasets at noise 1; the dataset-level
+failure handler discarded/skipped other arms on the ten failing datasets. The
+selected real-data multimodal fit collapsed to zero survival coefficients and
+reached its cap; it must not be described as a validated improvement. Constant
+scores are NA under the frozen helper (older Harrell tie handling gives .5).
+
+For robustness, best-of-20 ELBO-selected jittered starts recovered 17/20 at both
+noise levels versus 17/20 and 19/20 for default starts. Normal L/F recovered
+15/20 and 17/20. All 880 fits were retained; 28/800 jittered and 2/40 default
+fits reached the cap, while all chosen starts and Normal L/F fits converged.
+No alternate initialization or loading prior is adopted.
+
+The unchanged training CV rerun compares **β priors**, keeping L/F point-Laplace.
+Mean C is .651199 vs .653153; paired point-Laplace minus Normal is −.001954
+(SE .003055), versus −.001072 (SE .001515) previously. Each prior now has one
+capped fold, previously five. The comparison remains inconclusive and the
+point-Laplace β choice stands. Training feature-count results are sensitivity
+analyses with screening/standardization before folds, matching the original
+protocol; they do not select a new configuration or use external cohorts.
+
+Feature-count mean fold C (top1000/2000/3000/5000 per cohort) was
+.650200/.648933/.651199/.655413, with SE .017200/.022598/.023631/.027386.
+Full-training active counts were 3/3/2/3 and all full fits converged; capped
+CV folds were 1/0/1/2 of five. No feature-count change is adopted.
+
+The robustness process wrote all final tables, then exited 1 with a trailing
+parse error after a diagnostic-only source edit during execution. Saved fit
+counts and summary arithmetic were independently checked; the current runner
+parses and passes 550 tests. No rerun or tuning was attempted. This execution
+anomaly is documented in the report and `outputs/supervised_robustness/execution_status.md`.
+
 ## 2026-10-15 — KL sign fix, multimodal supervision (M4), and two open items: single-modality convergence and K selection (awaiting decisions)
 
 **KL sign error in the canonical single-modality objective (fixed).** In `fit_cox_on_yf(canonicalize
