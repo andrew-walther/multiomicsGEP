@@ -6,20 +6,50 @@ Current cumulative branch: `round2/supervised`. No pushes or merges into the bas
 or main branches are authorized. The benchmark is unchanged and no replacement
 configuration has been proposed or approved.
 
-Current checkpoint: Task0 and Task7 are complete. Task1's original800-cell
-panel rejects both protected models. The approved 160-cell full-state Single
-rerun improves recovery but fails recovery/convergence/rank and is not adopted.
-Single K selection needs review before an additional remedy; the approved
-K7/no-pruning fallback remains available. Task2's ten-arm training diagnosis is complete: selected/no-start shared-prior
-absorption is observed, fixed/shared-Normal do not give a usable fit, and all
-five multimodal arms cap. The remedy ladder remains open. Andrew deferred
-Task3's real-data head-to-head for review and omitted DeSurv from Task4;
-Task3 software preparation is retained. Task4 is complete (40 datasets/200 rows, zero errors; two supervised caps);
-Tasks5–6 remain pending. No benchmark replacement is
-proposed. All ten benchmark manifest entries and the immutable tag were verified
-unchanged at this checkpoint (2026-10-15).
+Current checkpoint (pause requested by Andrew): Task0 integration, Task4's
+40-dataset/200-row comparator rerun and Task7 housekeeping are complete.
+Task1's original panel and full-state refit remedy are not adopted; further
+Single K selection needs review, with approved K7/no-pruning fallback retained.
+Task2 diagnosis, fixed-prior evaluation, exact failed-fold trace and the
+approved profiled-curvature panel are complete, but Task2 remains unresolved.
+Profiling restores nonconstant risk in all five candidate CV folds; all five
+still cap, four lack credible programs, and the full multimodal fit also caps.
+Single CV passes, but one simulation and full training fail convergence.
+Task3's real-data DeSurv comparison is deferred by Andrew; Tasks5–6 are pending.
+The next prior-consistency observer is prepared and tested, never executed.
+No new scientific fit is to start before Andrew resumes work. Full suite:
+631 passed,0 failed. Benchmark tag/snapshot and write-up deliverables are unchanged;
+no external Round2 score has run and no replacement is proposed.
+
+Resume priorities: review unresolved K selection and the KL/prior-scale
+questions; prospectively log/commit the observational prior audit before
+running it; continue the applicable Task2 remedy ladder under the original
+criteria and address the undefined original-reference pair with Andrew.
+Task5 feature expansion follows the Task1/2 stopping decisions; Task6 is an
+optional clean robustness rerun. Task3 requires renewed authorization.
+The final sections contain the profiled-panel tables and the relation to the
+approved write-up. This is an interim pause checkpoint, not completion of Round2.
+
 The chronological updates below retain the earlier execution failures; the
 complete attempt history is in `Round2_attempts_log.md`.
+
+## Commit and verification index at the pause
+
+All work is on `round2/supervised`; none is pushed. The pause-result commit
+follows5a56f66 and is identifiable by its `Task 2 Record profiled-curvature`
+subject. Historical test counts belong to their checkpoints; the current
+suite is631/631.
+
+| Task | Main commits | Verification and status |
+|---|---|---|
+| 0 | 2131c30, eb6b290, f2c2a85, bf3e050, b9a3952 | five integrations; final559/559; complete |
+| 1 | 1d5ae7a, 221b3a6, 860a8ff, 93954f1, 06a18d5, 95b8cc4 | full-state result573/573; no adoption; needs review |
+| 2 | ccebdf8, 589656a, d5ccf3f, ef4a929, 51822db, 083f94b, 5a56f66, pause-result commit | diagnosis584/584; fixed panel608 before/611 after; exact trace611/611; profile prereg625/625; pause631/631; unresolved |
+| 3 | f37d646 |593/593; software prepared; real-data head-to-head deferred |
+| 4 | dd11923, d353322, b941d53 |599/599 before fits,608/608 at results; complete |
+| 5 | none | feature expansion pending Task1/2 stopping decisions |
+| 6 | none | optional clean robustness rerun pending |
+| 7 | 639351b |564/564;14 moves, live references and both renders verified; complete |
 
 ## Task 0 — integrate Round 1 (complete)
 
@@ -926,3 +956,181 @@ Task2-4 preregistration verification: focused23/23 (14 new plus9 existing)
 and fresh full suite **625 passed,0 failed**. Default/off fits match
 protected-base fitter definitions. The SLURM wrapper passes bash syntax
 checking. No scientific profiled-curvature fit has run before this commit.
+
+
+### Additional software invariant found during Task2-4 (no model change)
+
+A deterministic zero-pseudo-observation helper call returns a refitted
+point-mass molecular prior while returning posterior moments computed under
+the previous nondegenerate prior. For F with Normal prior variance1, the
+returned second moment is .1851852 and stored KL .4357921, while the new
+prior is delta0. For the actual point-Laplace loading family (pi=.5,rate1),
+the returned second moment is .04679413 and KL .2366599, again with a
+returned delta0 prior. A shared-score example similarly returns mean
+.3246915, second moment .4220161 and KL .1185925 with a new delta0 prior.
+
+These q distributions are not absolutely continuous with respect to the
+returned point prior; their KL to that returned prior is infinite. The
+finite stored KL instead refers to the prior used before hyperparameter
+refitting. This is a concrete prior/posterior consistency gap, predating
+Round2, that product-invariance/default-identity tests do not check.
+It affects interpretation of the reported ELBO/pruning criterion as the
+variational objective of the returned state. It is not established as the
+cause of the real-data collapse or Single oscillation. The completed full-TCGA
+selected/framework states do not have a point-mass/positive-second-moment
+support conflict on inspection; finite prior-lag discrepancies require
+further observation. No benchmark result, default, helper or running script
+is changed on this finding; record it for methodological review.
+
+Single's completed simulation seed20261026/noise .25 shows oscillation in
+both fixed-prior and profiled-framework fits. Over the last50 iterations,
+relative ELBO increments are negative16 and17 times, respectively; ranges
+are [-.000197505,.000128715] and[-.000180143,.000116265].
+Final output changes .143724 and .105693 also fail the output tolerance.
+This is not simply a near-convergence cap; the original ELBO rule remains
+the criterion. No extra iterations, damping or rule change is applied.
+
+
+### Pause checkpoint preparation — prior audit prepared, not executed
+
+Andrew requested a pause after the running Task2-4 panel finishes and its
+results are committed. No additional scientific fit will start before that
+pause. The next diagnostic is prepared only, not an executed attempt and not
+a model remedy; it must receive its prospective attempt-log entry and commit
+before any execution after resumption.
+
+`round2_prior_consistency_helpers.R` computes posterior slab probabilities
+and E[|F|] from each existing point-Laplace quadratic (A,B), then evaluates
+E_q[log g] under the prior used for the update and the returned refitted prior.
+The difference yields the corresponding F-prior KL correction; a support
+conflict is retained as infinity. The observer returns the original update
+object unchanged and records aggregate iteration/factor diagnostics. It uses
+base R probability functions and the existing truncated-Normal moment helper;
+no dependency, fitted prior or posterior is replaced.
+
+`run_round2_prior_consistency_trace.R` is prepared to repeat only the already
+completed Single simulation seed20261026/noise .25 with identical controls.
+It must reproduce the entire saved fit exactly. It records every warning,
+partial loading trace on error, prior-density differences and a diagnostic
+F-prior-adjusted monitor. That monitor corrects only the measured F-prior
+contribution; it is not a corrected full objective or an adoption criterion.
+The analytic/native slab-probability tolerance is a software check only.
+Six focused tests cover numerical quadrature, units, incompatible support,
+a fixed-q prior-density identity, the no-spike boundary and unchanged update
+objects. These tests do not establish a remedy for any scientific failure.
+
+
+### Relation to the approved interim write-up
+
+The approved `paper/writeup/writeup.pdf` remains the benchmark report, not a
+report of these unadopted Round2 experiments. Its single-modality result is
+alpha_F=0, starting K7 with four retained biological programs and external
+mean C=.627. That evidence remains intact; it does not establish that survival
+shapes the loading updates. The new supervised recovery results answer part
+of that open question on the fixed simulation panel, but convergence and
+rank-selection failures prevent replacing the write-up's evaluated method.
+The write-up's four classified retained programs are not evidence that the
+new survival-protected deletion/refitting algorithm satisfies its K criterion.
+
+The write-up already reports multimodal convergence limitations, no proven
+prediction gain from methylation, low-variance recovery failure, a diagonal
+Cox approximation and KL penalties cached against earlier priors. Round2 has
+made several of these limitations more precise: collapse can arise from the
+shared coefficient prior, the unchanged framework can also lose all risk in
+one fixed training-CV fold, the working curvature penalizes a constant-risk
+direction, and tiny helper fixtures expose posterior/prior KL inconsistency.
+The latter is stronger mathematical evidence about the approximate removal
+score, not proof that it caused the real-data failures. The write-up already
+qualifies that score; its historical results are not invalidated by finding
+an unadopted supervised configuration fails. A future methods revision needs
+to address these issues before making stronger Bayesian/convergence claims.
+
+The simulation comparator panel supplies new controlled evidence for
+supervised recovery, with every failure and full denominator retained. It
+does not yet show external non-inferiority, biological superiority or
+multimodal predictive gain. No new Round2 external cohort has been scored.
+DeSurv's separate real-data head-to-head is deferred by Andrew; omission from
+the signed-Gaussian panel is also his explicit decision. Feature expansion
+and final program interpretation remain future work. Process-file moves in
+Task7 are housekeeping; the write-up's analysis and wording are unchanged.
+
+Checkpoint software verification (2026-10-15): fresh
+`Rscript tests/run_tests.R` completed with **631 passed,0 failed**.
+This includes the six prior-consistency fixtures. The prepared observational
+simulation rerun has not been executed; no new remedy was tested by those fixtures.
+
+
+## Task2-4 completed: profiled Cox curvature is not adopted (2026-10-15)
+
+The preregistered panel finished with exit0:102 records,92 new fits and10
+unchanged cached framework CV references, zero execution errors and zero
+warning-bearing records. All original controls, criteria, fixed simulation
+beds, TCGA cache and folds were retained. Output directory:
+`results/benchmark_sim/outputs/round2/profiled/`.
+
+| Model | Noise | Recovered /20 | False active | Reference false active | Converged /20 |
+|---|---:|---:|---:|---:|---:|
+| Single | .25 | 18 | 1.35 | 1.15 | 19 |
+| Single | 1 | 20 | .40 | .35 | 20 |
+| Multimodal | .25 | 16 | .80 | .75 | 20 |
+| Multimodal | 1 | 19 | .40 | .65 | 20 |
+
+Every recovery and false-positive criterion passes. Single seed20261026 at
+noise .25 reaches300 iterations; its oscillation is documented above. All40
+multimodal simulations converge. These are the approved recovery/false-positive
+criteria, not proof that protected K selection is resolved.
+
+| Source/model | Mean candidate CV C | Reference CV C | Paired delta | Paired SE | CV converged | Frozen training C |
+|---|---:|---:|---:|---:|---:|---:|
+| Round2 Single, profiled | .624776 | .623985 | .000791 | .000791 | 5/5 | — |
+| Round2 multimodal, profiled | .563678 | NA | NA | NA | 0/5 | — |
+| Frozen multimodal framework | — | — | — | — | — | .637768 |
+| Frozen single alpha_F=0, matching TCGA comparison | — | — | — | — | — | .593717 |
+| Frozen expression-only framework | — | — | — | — | — | .643559 |
+
+Single passes its five-pair one-SE comparison. Multimodal has five finite
+candidate scores, but only four finite original-reference scores: the
+predeclared paired comparison remains undefined and fails eligibility. The
+candidate's own mean uses all five folds; no undefined reference is replaced
+or dropped. All five profiled multimodal folds now have nonconstant risk,
+including formerly collapsed fold1; their credible-program counts are
+0,1,0,0,0. Every multimodal candidate CV fit reaches500 iterations, as did
+all five cached reference fits. All five Single candidate and reference CV
+fits converge. Frozen training C values are labelled historical training
+quantities, not CV estimates or external scores.
+
+| Source/model | Training C | Credible programs | Nonconstant risk | Converged | Iterations | K_final |
+|---|---:|---:|---|---|---:|---:|
+| Round2 Single, profiled | .651632 | 3 | yes | no | 300 | 7 |
+| Round2 multimodal, profiled | .639172 | 1 | yes | no | 500 | 7 |
+| Frozen multimodal framework | .637768 | 1 | — | no | — | 7 |
+| Frozen single alpha_F=0, matching TCGA comparison | .593717 | — | — | — | — | — |
+| Frozen expression-only framework | .643559 | 1 | — | no | — | 7 |
+
+Both full-training candidates pass the defined no-collapse check and fail
+convergence. No full-training factor is deleted. Eight of92 new fits cap:
+one Single simulation, the full Single fit, five multimodal CV fits and the
+full multimodal fit; another five caps belong to the unchanged cached
+multimodal references. No intermediate pruning cap is reported. Detailed
+per-fit C, activity counts, risk SD, rank, caps and warnings are in
+`results.csv`, `training_cv_with_benchmark.csv` and
+`training_full_with_benchmark.csv`; the latter two retain frozen rows.
+
+**Decision: do not adopt.** Profiling removes exact constant-risk collapse
+in this candidate's five training-CV folds, but does not deliver stable,
+credibly prognostic programs throughout CV or universal convergence. The
+original paired-reference issue remains open. No external cohort is scored,
+no criterion/default is changed, and the benchmark remains the current best
+state. Further Task2 work is paused by Andrew, not resolved or ladder-exhausted.
+The prior/posterior KL and common-beta-prior scale questions remain separate
+review items, not established explanations for these results.
+
+Final checkpoint verification: full R suite **631 passed,0 failed** (including
+six new prior-consistency fixtures); prepared observer syntax parses. The
+observer itself has not been run and requires prospective registration and
+commit before execution. All ten benchmark SHA256 checks pass after the
+panel; tag object0fea14903a75606e495267f2f35712eac10d9fc6 still peels to
+a352f17ca9cff523caa80756aa2af085e62551e1. The writeup.qmd/html/pdf files
+have no diff against that tag. Patient-level folds.csv and RDS/data are
+ignored and excluded from the commit. No push, protected-branch edit or
+merge has occurred.

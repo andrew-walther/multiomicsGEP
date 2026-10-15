@@ -1058,3 +1058,17 @@ prevent a universal-convergence claim. The Round2 handoff holds all tables.
 - [x] Implement the approved profiled working-intercept option and14 focused
   math/protocol checks, preserving default/off identity to the protected branch.
   Scientific evaluation remains pending the full-suite/preregistration commit.
+
+
+### Pause after the profiled-curvature panel (2026-10-15)
+
+- [x] Complete the approved102-record training/simulation evaluation with all
+  failures, original undefined reference scores and benchmark rows retained.
+- [ ] Resolve convergence and credible-program retention before proposing any
+  supervised replacement. The current option is not adopted.
+- [ ] Review molecular prior/posterior KL consistency and common beta-prior
+  canonicalization; a prepared observational rerun is not yet executed.
+- [ ] Resume only when Andrew requests it. Continue Task2's applicable ladder;
+  Task5 waits on Task1/2 stopping decisions, Task3 remains explicitly deferred.
+
+Full suite631/631. The approved write-up and frozen benchmark remain unchanged.

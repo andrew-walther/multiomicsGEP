@@ -104,6 +104,7 @@ test_files <- c(
   "tests/test_framework_fold_trace.R",
   "tests/test_profiled_curvature.R",
   "tests/test_profiled_protocol.R",
+  "tests/test_prior_consistency.R",
   "tests/test_multimodal_comparator_rank.R",
   "tests/test_desurv_author_adapter.R",
   "tests/test_desurv_h2h.R"

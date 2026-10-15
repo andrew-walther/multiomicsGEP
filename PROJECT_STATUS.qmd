@@ -19,6 +19,23 @@ execute:
   warning: false
 ---
 
+## Round2 pause checkpoint: supervised stability remains unresolved (2026-10-15)
+
+The profiled-curvature panel completes102 records with zero execution errors
+or warnings. All simulation recovery/false-positive requirements pass, but
+one Single fit caps. Single CV passes; full Single and all six new multimodal
+real-data fits cap. Every multimodal candidate CV risk is nonconstant, but
+four folds lack credible programs. Full multimodal training retains one.
+The unchanged reference's undefined CV fold prevents the prescribed paired
+comparison. No configuration is adopted or externally scored.
+
+Andrew requested a pause after committing this checkpoint. Full suite631/631;
+benchmark snapshot/tag and writeup.qmd/html/pdf are unchanged. Tasks0/4/7 are
+complete, Task1 needs review, Task2 remains open, Task3 is deferred and Tasks5–6
+are pending. A prior-consistency observer is prepared, not executed; it needs
+prospective registration before a future run. See the Round2 handoff for all
+benchmark-linked tables, mathematical review questions and resume priorities.
+
 ## Approved profiled-curvature experiment prepared (2026-10-15)
 
 An opt-in working-intercept profile is implemented after the exact failed-fold
@@ -47,7 +64,7 @@ for continued diagnosis, keeping undefined C as NA. An unchanged-fold trace,
 preregistered in commit ef4a929 after611/611 tests, has completed with exact
 agreement on all13 posterior/history checks. All coefficients disappear
 at outer167/inner1 and stay zero through the remaining1670 inner sweeps.
-The approved profiled-curvature experiment has not yet been fitted.
+The approved profiled-curvature experiment is reported at the pause checkpoint above.
 
 The historical per-factor Normal update estimates variance max(0,x²−1/A);
 all seven estimates are0 at the saved failed-fold state. These priors can revive,

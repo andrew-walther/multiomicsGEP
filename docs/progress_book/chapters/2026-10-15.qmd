@@ -691,3 +691,79 @@ are kept independently. Dense precision/linear-term and covariance-objective
 checks test the actual model path; separate checks verify raw genomic
 residuals, base-branch identity and full-training routing. No scientific
 profiled fit or external score has run at this checkpoint.
+
+
+## Task2-4 completed: profiled Cox curvature is not adopted (2026-10-15)
+
+The preregistered panel finished with exit0:102 records,92 new fits and10
+unchanged cached framework CV references, zero execution errors and zero
+warning-bearing records. All original controls, criteria, fixed simulation
+beds, TCGA cache and folds were retained. Output directory:
+`results/benchmark_sim/outputs/round2/profiled/`.
+
+| Model | Noise | Recovered /20 | False active | Reference false active | Converged /20 |
+|---|---:|---:|---:|---:|---:|
+| Single | .25 | 18 | 1.35 | 1.15 | 19 |
+| Single | 1 | 20 | .40 | .35 | 20 |
+| Multimodal | .25 | 16 | .80 | .75 | 20 |
+| Multimodal | 1 | 19 | .40 | .65 | 20 |
+
+Every recovery and false-positive criterion passes. Single seed20261026 at
+noise .25 reaches300 iterations; its oscillation is documented above. All40
+multimodal simulations converge. These are the approved recovery/false-positive
+criteria, not proof that protected K selection is resolved.
+
+| Source/model | Mean candidate CV C | Reference CV C | Paired delta | Paired SE | CV converged | Frozen training C |
+|---|---:|---:|---:|---:|---:|---:|
+| Round2 Single, profiled | .624776 | .623985 | .000791 | .000791 | 5/5 | — |
+| Round2 multimodal, profiled | .563678 | NA | NA | NA | 0/5 | — |
+| Frozen multimodal framework | — | — | — | — | — | .637768 |
+| Frozen single alpha_F=0, matching TCGA comparison | — | — | — | — | — | .593717 |
+| Frozen expression-only framework | — | — | — | — | — | .643559 |
+
+Single passes its five-pair one-SE comparison. Multimodal has five finite
+candidate scores, but only four finite original-reference scores: the
+predeclared paired comparison remains undefined and fails eligibility. The
+candidate's own mean uses all five folds; no undefined reference is replaced
+or dropped. All five profiled multimodal folds now have nonconstant risk,
+including formerly collapsed fold1; their credible-program counts are
+0,1,0,0,0. Every multimodal candidate CV fit reaches500 iterations, as did
+all five cached reference fits. All five Single candidate and reference CV
+fits converge. Frozen training C values are labelled historical training
+quantities, not CV estimates or external scores.
+
+| Source/model | Training C | Credible programs | Nonconstant risk | Converged | Iterations | K_final |
+|---|---:|---:|---|---|---:|---:|
+| Round2 Single, profiled | .651632 | 3 | yes | no | 300 | 7 |
+| Round2 multimodal, profiled | .639172 | 1 | yes | no | 500 | 7 |
+| Frozen multimodal framework | .637768 | 1 | — | no | — | 7 |
+| Frozen single alpha_F=0, matching TCGA comparison | .593717 | — | — | — | — | — |
+| Frozen expression-only framework | .643559 | 1 | — | no | — | 7 |
+
+Both full-training candidates pass the defined no-collapse check and fail
+convergence. No full-training factor is deleted. Eight of92 new fits cap:
+one Single simulation, the full Single fit, five multimodal CV fits and the
+full multimodal fit; another five caps belong to the unchanged cached
+multimodal references. No intermediate pruning cap is reported. Detailed
+per-fit C, activity counts, risk SD, rank, caps and warnings are in
+`results.csv`, `training_cv_with_benchmark.csv` and
+`training_full_with_benchmark.csv`; the latter two retain frozen rows.
+
+**Decision: do not adopt.** Profiling removes exact constant-risk collapse
+in this candidate's five training-CV folds, but does not deliver stable,
+credibly prognostic programs throughout CV or universal convergence. The
+original paired-reference issue remains open. No external cohort is scored,
+no criterion/default is changed, and the benchmark remains the current best
+state. Further Task2 work is paused by Andrew, not resolved or ladder-exhausted.
+The prior/posterior KL and common-beta-prior scale questions remain separate
+review items, not established explanations for these results.
+
+Final checkpoint verification: full R suite **631 passed,0 failed** (including
+six new prior-consistency fixtures); prepared observer syntax parses. The
+observer itself has not been run and requires prospective registration and
+commit before execution. All ten benchmark SHA256 checks pass after the
+panel; tag object0fea14903a75606e495267f2f35712eac10d9fc6 still peels to
+a352f17ca9cff523caa80756aa2af085e62551e1. The writeup.qmd/html/pdf files
+have no diff against that tag. Patient-level folds.csv and RDS/data are
+ignored and excluded from the commit. No push, protected-branch edit or
+merge has occurred.

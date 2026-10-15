@@ -129,3 +129,11 @@ Read Task2-4 in the attempt log and
 The default/off path must stay identical to `feature/supervised-F`.
 The experiment uses framework Normal beta priors; shared-prior combinations
 are explicitly unsupported. The paired-CV rule and C=NA remain unchanged.
+
+A prepared prior-consistency observer is
+`results/benchmark_sim/run_round2_prior_consistency_trace.R`, with aggregate
+point-Laplace moment helpers and focused tests. It has **not been run**.
+Before executing, preregister and commit a separate diagnostic attempt in
+`docs/plans/Round2_attempts_log.md`. It repeats one completed simulation and
+requires exact saved-fit identity; its adjusted monitor is diagnostic only,
+never a replacement convergence or adoption criterion.

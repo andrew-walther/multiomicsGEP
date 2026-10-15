@@ -507,3 +507,11 @@ Defaults are unchanged. Run its preregistered training-only evaluation with
 `Rscript results/benchmark_sim/run_round2_profiled_cox.R 6`; `prepare` and
 `finalize` support the92-task Longleaf wrapper. This is an unadopted experiment;
 read the Round2 attempt log and profiled-curvature proposal first.
+
+A prepared prior-consistency observer is
+`results/benchmark_sim/run_round2_prior_consistency_trace.R`, with aggregate
+point-Laplace moment helpers and focused tests. It has **not been run**.
+Before executing, preregister and commit a separate diagnostic attempt in
+`docs/plans/Round2_attempts_log.md`. It repeats one completed simulation and
+requires exact saved-fit identity; its adjusted monitor is diagnostic only,
+never a replacement convergence or adoption criterion.

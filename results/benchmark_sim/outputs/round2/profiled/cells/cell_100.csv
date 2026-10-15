@@ -1,0 +1,2 @@
+"model","seed","noise","kind","arm","fold","runtime_seconds","warnings","error","n_train","n_validation","C","risk_sd","K_final","n_active","recovered","cor_planted","false_active","converged","iterations","pruning_caps","reference_source","reference_md5"
+"multimodal",42,NA,"training_cv","framework",5,2159.165,NA,NA,116,28,0.359223300970874,0.10335559410718,7,0,NA,NA,NA,FALSE,500,0,"results/benchmark_sim/outputs/round2/fixed_prior/cells/cell_100.csv","3a3c212d0b05a517ca92db67ffce71cc"

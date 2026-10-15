@@ -1,0 +1,6 @@
+"model","n_folds","candidate_C","reference_C","delta","paired_SE","pass","converged_candidate","converged_reference","errors","reference_finite_folds","candidate_finite_folds","reference_mean_if_all5","candidate_mean_if_all5","source","arm","n","K","active","training_C"
+"multimodal",5,NA,NA,NA,NA,FALSE,0,0,0,4,5,NA,0.563678140176175,"round2_training_cv","profiled_vs_framework",NA,NA,NA,NA
+"single",5,0.624775681360989,0.623985167526997,0.000790513833992201,0.000790513833992201,TRUE,5,5,0,5,5,0.623985167526997,0.624775681360989,"round2_training_cv","profiled_vs_framework",NA,NA,NA,NA
+"multimodal_framework",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"benchmark_snapshot","pruned",144,7,1,0.637767637767638
+"single_alpha_F0",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"benchmark_snapshot","pruned_expression_only",144,NA,NA,0.593717093717094
+"expression_only_framework",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"benchmark_snapshot","pruned_expression_only",144,7,1,0.643559143559144

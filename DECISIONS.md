@@ -5,6 +5,31 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Do not adopt profiled curvature; pause at the completed panel
+
+The approved opt-in test completes102 records (92 new fits,10 cached references)
+without execution errors/warnings. Simulation recovery and false-positive
+criteria pass, but one Single simulation caps. Single CV passes its paired
+margin; full Single and all six new multimodal real-data fits cap. All five
+multimodal CV risks are nonconstant; four folds have no credible program.
+Full multimodal training retains one credible program, but does not converge.
+Its own five-fold C is .563678; the unchanged reference has one undefined
+score, so the original five-pair criterion remains ineligible. No NA is
+replaced or dropped. No candidate is adopted or externally scored.
+
+Andrew requests a pause after this result checkpoint. Further Task2 remedies
+remain open. Small helper fixtures show that posterior moments and returned
+refitted molecular priors can have incompatible support while the cached KL
+refers to the old prior. This predates Round2 and is not yet an established
+cause of the real-data failure. A process-local observer and six correctness
+tests are prepared; its simulation rerun has not been executed and must be
+prospectively logged/committed before running after resumption. No model,
+objective, threshold or default is repaired on that evidence alone.
+
+Full result/benchmark tables and resume priorities are in
+`docs/plans/Codex_to_Claude_Round2.md` and `Round2_attempts_log.md`.
+The benchmark and writeup.qmd/html/pdf remain unchanged. Full suite631/631.
+
 ## 2026-10-15 — Test the approved profiled working Cox intercept as an opt-in
 
 Andrew approved this additional remedy after a saved-state curvature diagnosis,
