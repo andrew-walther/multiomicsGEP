@@ -83,7 +83,8 @@ for (path in files) {
     two_step_ebmf_cox = function(Y) predict_multimodal_yfb_ebmf_cox(fits$two_step, Y))
   for (m in names(base)) {
     rows[[length(rows) + 1]] <- cbind(
-      data.frame(config = info$config, K_init = info$K_init, method = m, K_final = NA,
+      data.frame(config = info$config, K_init = info$K_init, method = m,
+                 K_final = if (m == "two_step_ebmf_cox") fits$two_step$n_factors else NA_integer_,
                  n_variance_only = NA, n_survival_only = NA, n_both = NA,
                  n_survival_active = NA, converged = NA, elbo = NA),
       score(base[[m]], cohorts))

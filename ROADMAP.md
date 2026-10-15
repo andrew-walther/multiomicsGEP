@@ -975,3 +975,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 - Planted comparator run (2026-10-15): noise-0.25 comparison complete; noise-1 comparison
   blocked for ten datasets by zero/one-factor EBMF outputs. Decide how those methods should
   be defined in that case before any rerun; no padding or tuning was applied.
+
+- Constant multimodal two-step C investigated (2026-10-15): ceilings 6/7/8 retain the same
+  six factors and identical risks. Reporting now shows the retained rank. No stage-1
+  rank-forcing change is needed.
+
+- Multimodal real-data method issue (2026-10-15): selected shared-prior configuration
+  gives constant risks and hits the iteration cap. The 10/1 reference also does not
+  converge. Resolve on training diagnostics before claiming a validated multimodal
+  prognostic method; no alternative was chosen from ICGC performance.

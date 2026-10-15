@@ -1,0 +1,5 @@
+"method","n_shared","max_risk_difference"
+"selected_multimodal",50,0
+"pruned_10_1",50,0
+"two_step_ebmf_cox",50,0
+"selected_expression",50,0

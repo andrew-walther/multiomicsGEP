@@ -36,6 +36,22 @@ The high-noise panel is incomplete: ten datasets have zero/one-factor EBMF outpu
 cannot support the requested lasso arm. The prompt stopped without a workaround; complete
 dataset and defined-C denominators are recorded in the partial table. See DECISIONS.md.
 
+## Multimodal comparator check (2026-10-15)
+
+The selected multimodal M4 configuration collapses every β posterior to zero on the real
+TCGA training inputs and fails to converge by 500 iterations. It produces constant ICGC
+risks. The 10/1 framework also hits the cap but retains one prognostic program (primary
+ICGC C 0.701, all donors 0.665). Two-step EBMF–Cox retains six factors (C 0.424/0.418;
+maximum-iteration warning, convergence flag unavailable). The selected expression-only
+model converges with one active program (C 0.588/0.616). No model is retuned on validation.
+The repeated two-step C at ceilings 6/7/8 comes from identical retained six-factor fits;
+it is not an ignored ceiling. Reporting scripts now expose this retained rank.
+
+The fixed comparison, warning and shared-donor scoring audit are on
+`m7/multimodal-comparators` under `results/multimodal_real/outputs/supervised/`.
+The suite passes 549 tests. See DECISIONS.md for the constant-risk convention and the
+pre-scoring correction that standardizes ICGC once before primary-donor subsetting.
+
 ## Project Overview
 
 This project implements a **Supervised Bayesian Matrix Factorization** model

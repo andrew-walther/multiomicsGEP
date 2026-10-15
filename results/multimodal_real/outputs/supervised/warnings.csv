@@ -1,0 +1,2 @@
+method,source,message
+"two_step_ebmf_cox","flashier::report.maxiter.reached","Maximum number of iterations reached; original wrapper does not return a convergence flag"

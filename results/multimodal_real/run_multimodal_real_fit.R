@@ -166,7 +166,7 @@ for (K in K_values) {
                         K_eff_survival = NA_integer_)),
     two_step_ebmf_cox = list(
       risk = function(Y) predict_multimodal_yfb_ebmf_cox(fits$two_step, Y),
-      info = data.frame(converged = NA, K_final = NA_integer_, elbo = NA_real_,
+      info = data.frame(converged = NA, K_final = fits$two_step$n_factors, elbo = NA_real_,
                         n_pruned = NA_integer_, iterations = NA,
                         K_eff_reconstruction = fits$two_step$n_factors,
                         K_eff_survival = NA_integer_))

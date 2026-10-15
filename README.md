@@ -363,3 +363,19 @@ support the requested lasso arm. No workaround was applied. Review `partial_summ
 `dataset_failures.csv` and `results.csv` in `outputs/supervision_comparators/` under the
 benchmark directory; the partial high-noise comparison is conditional on successful fits.
 Undefined C values and nonconvergence remain explicit.
+
+## Multimodal comparator audit
+
+Run `Rscript results/multimodal_real/run_supervised_multimodal_comparison.R` from the
+repository root to audit cached retained ranks and fit the fixed K = 7 comparison. It uses
+`data/processed_multiomics_tcga_icgc.rds`, writes each completed fit and comparison table to
+`results/multimodal_real/outputs/supervised/`, and stops on a fit error. This is a potentially
+long serial real-data run. Joint fits use raw log2 expression and beta-scale methylation;
+the selected expression-only arm uses platform-wise z-standardization on the same genes.
+ICGC is standardized once across all donors, then primary-PDAC rows are selected by ID.
+Resume reuses this experiment's own checkpoints; remove them before changing inputs or code.
+
+The cached ceilings 6, 7 and 8 all retain the same six-factor EBMF fit, explaining the
+identical two-step C-index. The existing real-data reporting scripts now expose the
+retained two-step rank instead of reporting it as unavailable. No fixed-rank constraint
+has been added to the greedy EBMF procedure.

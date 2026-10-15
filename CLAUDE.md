@@ -30,6 +30,8 @@ here too rather than maintaining a separate copy.
 
 - **Planted comparator evaluation:** runner and partial tables are on `m7/sim-comparators`; see the 2026-10-15 decision for the zero/one-factor EBMF blocker and incomplete high-noise denominator.
 
+- **Multimodal comparator audit:** `results/multimodal_real/run_supervised_multimodal_comparison.R` records actual two-step ranks and the fixed four-arm evaluation on `m7/multimodal-comparators`; see the dated progress-book and decision entries for results.
+
 ## Quick Reference
 
 Active pointers only — completed one-off analyses and dated reports are indexed in `PROJECT_STATUS.qmd`,
