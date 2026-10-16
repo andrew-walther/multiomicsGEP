@@ -19,6 +19,20 @@ execute:
   warning: false
 ---
 
+## Full-probe methylation variability completed (2026-10-15)
+
+All305492 TCGA probes are summarized on the established144 training patients,
+with observed raw beta means, SDs, arcsine SDs and explicit missingness.
+The requested SD histograms and mean-versus-SD density plot are available in
+`results/multimodal_real/outputs/feature_sensitivity/cpg_qc/` and the updated
+six-page advisor progress PDF. Mean/proportion rules retain182996/221222
+probes; no filter or SD cutoff is adopted. Median beta SD .0600 overall versus
+.1793 in the frozen screened10k confirms enrichment for variability, not a
+prediction advantage. Input/reference identities and hashes are unchanged;
+independent moment checks agree to numerical precision. Full suite642/642.
+Cross-reactive/SNP QC provenance remains unverified. The fixed-K7
+feature-count/performance study is next; supervision/pruning remain open.
+
 ## Advisor priorities after resumption (2026-10-15)
 
 Andrew requests visible progress on the original10/2 deliverables: the unified

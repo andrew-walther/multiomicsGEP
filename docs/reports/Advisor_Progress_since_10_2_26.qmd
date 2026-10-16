@@ -47,7 +47,7 @@ requirements. Several central feature-sensitivity requests are still open.
 | Unified methods/results/biology write-up | Approved interim PDF and reproducible frozen results | Complete as an interim account |
 | Survival shapes loadings $F$ | Implemented experimentally; replicated recovery evidence | Partial; adoption requirements fail |
 | More features at fixed $K$ | Limited expression experiment, 662–3,600 shared genes | Full-range curves and agreement remain open |
-| Probe-wise methylation variability | Screened-10k pooled-value/skewness plots | Full-probe mean/SD inventory and SD histogram remain open |
+| Probe-wise methylation variability | Full 305,492-probe observed-value inventory and SD histograms | Complete descriptively; filter choice remains open |
 | Parsimonious retained programs | Protected/full-state pruning evaluated and rejected | Rank selection unresolved |
 | Multimodal value | Methylation-dominant and shared molecular structure | Predictive benefit and validated added biology unproven |
 
@@ -232,21 +232,40 @@ require prepared Longleaf arrays, which will not be submitted automatically.
 
 \newpage
 
-# Methylation variability and a defensible value-add claim
+# Full-probe methylation variability: completed
 
-## Immediate descriptive deliverable
+The descriptive run covers **305,492 available TCGA probes on the same 144
+training patients**. It uses observed raw beta values before imputation.
+All probe SDs are defined; 29,414 individual values are missing and remain
+missing in these calculations. No survival outcome, model fit or new cutoff
+is used. The screened reference IDs and patient order match the frozen fit.
 
-For each available TCGA training CpG, compute mean raw beta, observed sample
-count, sample SD/variance and the fractions below .1 and above .9. Describe
-both the meeting's mean filter and its 95% extreme-proportion comparison,
-including their overlap with the screened 10k baseline. Produce **histograms
-of per-probe SD**, on beta and arcsine scales, and a mean-versus-SD plot.
-Label missingness/imputation and verified versus unknown upstream probe QC.
-Do not choose a new SD cutoff from the plots or silently change the baseline.
+| Descriptive set | CpGs | Overlap with frozen screened 10k |
+|---|---:|---:|
+| All available TCGA probes | 305,492 | 10,000 |
+| Mean beta in [.1,.9] | 182,996 | 9,990 |
+| Neither extreme fraction reaches 95% | 221,222 | 10,000 |
+| Both filters | 182,996 | 9,990 |
+| Frozen screened reference IDs | 10,000 | 10,000 |
 
-The existing figures describe pooled methylation values and per-CpG
-skewness in the screened 10k set; they cannot substitute for that inventory
-or SD histogram. This requested deliverable is next after this report.
+The proportion rule retains 38,226 probes excluded by the mean rule. The mean
+rule would also exclude 10 currently screened probes; **neither rule is adopted**.
+Median beta SD is **.0600** over all probes, versus **.1793** in the frozen
+screened set using raw observations (.1792 in the existing imputed cache).
+This confirms that the top-variance screen substantially enriches variability;
+it does not show which feature universe explains survival better.
+
+![Per-probe sample SD across observed TCGA training patients, beta and arcsine scales. Each panel has its own axes; counts differ by descriptive group. Undefined observations are retained in the inventory, and no probe has undefined SD here. Filters are comparisons, not adopted preprocessing.](../../results/multimodal_real/outputs/feature_sensitivity/cpg_qc/cpg_sd_histogram.png){width="100%"}
+
+The companion mean-versus-SD density plot and safe aggregate tables are in
+[the CpG output directory](../../results/multimodal_real/outputs/feature_sensitivity/cpg_qc/).
+Cross-reactive/SNP probe-filter provenance remains unverified; no new QC or
+imputation was applied. This completes the requested descriptive inventory
+and SD histogram, while the feature-count/performance experiment remains open.
+
+\newpage
+
+# Multimodal value and manuscript integration
 
 ## Two acceptable multimodal contributions
 
@@ -281,7 +300,8 @@ be incorporated after review without presenting unresolved goals as achieved.
 All numbers above are saved results; this report runs no model or new
 external scoring. The benchmark tag is
 `benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
-The current checkpoint before this report is `f0858ec`, with 631 passing
+The saved model checkpoint before this report is `f0858ec`; the CpG design
+is committed at `dc69f6d`, with 642 passing
 software tests. Full per-task commits, failures and tables are indexed in
 [the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
 [attempt history](../plans/Round2_attempts_log.md). The

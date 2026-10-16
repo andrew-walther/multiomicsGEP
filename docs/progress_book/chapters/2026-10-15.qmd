@@ -799,3 +799,49 @@ provisional biological labels. Neither the methylation-only nor immune
 component is credibly prognostic. K7 itself is not a failure; the roles,
 stability and redundancy need evaluation. No model or external score ran.
 Rendered PDF visually checked; full suite631 passed,0 failed.
+
+
+## Task5-QC1 result: full-probe methylation variability completed
+
+Preregistered in dc69f6d; serial run completed with exit0, no errors and zero
+warning records. All305492 available TCGA probes are described on the unchanged
+144 training patients. Frozen screened probe IDs and training patient order
+match the cache. No imputation, survival fit, filter/default adoption or
+external scoring occurred. Outputs:
+`results/multimodal_real/outputs/feature_sensitivity/cpg_qc/`.
+
+| Descriptive group | Probes | Overlap with frozen screened10k |
+|---|---:|---:|
+| All available TCGA |305492|10000|
+| Mean beta in[.1,.9] |182996|9990|
+| Neither observed extreme fraction>=.95 |221222|10000|
+| Both filters |182996|9990|
+| Mean-only |0|0|
+| Proportion-only |38226|10|
+| Frozen/current screened reference |10000|10000|
+
+Every probe has defined sample SD; no probe is constant. There are29414
+missing raw entries, retained as missing in observed-value summaries. Of
+these,2130 occur in the screened reference; the unchanged cached imputation
+contains none. Median beta SD is .060008 across all probes, .179288 in raw
+screened probes and .179186 in the imputed screened cache. Median arcsine SD
+is .153757/.417231/.416941, respectively. Median probe mean beta is
+.461005/.350031/.350125. These are data descriptions, not survival results.
+The current10k screen is strongly enriched for variability; that does not
+establish the best feature universe. The mean filter would discard10 of the
+currently selected probes and is not adopted. Upstream cross-reactive/SNP
+filtering remains unverified; this is an explicit provenance gap.
+
+The requested SD histograms and mean-versus-SD binned plot were visually
+checked. No SD threshold was selected. An independent check on21 probes
+(including the most-missing probe) agrees with base-R mean/SD to maxima
+4.44e-16/4.16e-17, and transformed SD to5.55e-17. Cached values at observed
+raw entries agree exactly. Input hashes remain unchanged; zero warnings.
+The full probe inventory RDS remains local/ignored; only aggregate tables,
+plots and non-identifying hashes/provenance are committed.
+
+The advisor progress PDF is updated to six pages with these results and the
+SD figure; changed pages were visually checked. The original write-up is
+unchanged. Fresh post-run full suite **642 passed,0 failed**. No new
+performance, biological or supervision claim is made. Next: the fixed-K7
+expression feature-count study and its training-only factor-agreement curve.

@@ -1090,4 +1090,5 @@ analyses as completion of these advisor requests.
 - [x] Produce the advisor progress PDF from saved evidence and include the
   benchmark seven-program role table, distinguishing classified Single
   retention from deletion/refitting. Andrew approved the revised sequence.
-- [ ] Produce the full-CpG mean/SD inventory and variability histograms next.
+- [x] Produce the full-CpG mean/SD inventory and variability histograms:305492 probes,144 training patients; no filter adopted.
+- [ ] Produce fixed-K7 expression feature-count and factor-agreement curves through the eligible universe.

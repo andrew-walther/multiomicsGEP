@@ -5,6 +5,22 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Complete descriptive CpG variability; retain existing feature rules
+
+The preregistered Task5-QC1 describes305492 TCGA probes on144 unchanged
+training patients without imputation or outcome use. Mean-beta and
+extreme-proportion rules retain182996 and221222 probes. The mean rule
+would exclude10 currently screened probes. Median beta SD .0600 over all
+probes versus .1793 in the screened10k confirms the current screen's strong
+variability enrichment; it does not establish predictive benefit of a filter.
+
+Neither comparison rule nor any new SD cutoff is adopted. Existing model
+inputs/defaults and the benchmark remain unchanged. Cross-reactive/SNP QC
+provenance is explicitly unverified. The requested inventory/histograms are
+complete; the next approved task tests increasing nested feature counts at
+fixed K7. Full tables/plots are in the Round2 handoff and six-page advisor
+progress report. No new external score or survival fit was run.
+
 ## 2026-10-15 — Approve fixed-K feature sensitivity before the supervision remedies settle
 
 Andrew explicitly approved the revised sequence: advisor progress report,

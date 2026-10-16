@@ -1,0 +1,4 @@
+"source","n_probes","n_missing","n_undefined_sd","median_mean_beta","median_sd_beta","median_sd_asin"
+"observed_all",305492,29414,0,0.461004799250541,0.0600080422781766,0.153756918607588
+"observed_frozen_screened",10000,2130,0,0.35003069255138,0.179288056868364,0.417231414057342
+"cached_imputed_frozen_screened",10000,0,0,0.350124891427696,0.179185944700666,0.416940821769942
