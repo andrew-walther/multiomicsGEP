@@ -52,7 +52,7 @@ format:
         }
         </style>
   pdf:
-    toc: false
+    toc: true
     documentclass: article
     toc-depth: 1
     papersize: letter
@@ -91,6 +91,10 @@ execute:
   enabled: false
 ---
 
+```{=latex}
+\clearpage
+```
+
 # Summary {.unnumbered}
 
 <!-- REVISIT R9 START -->
@@ -121,13 +125,6 @@ rank selection and reproducible added multimodal biology remain requirements
 for the intended final method.
 
 <!-- REVISIT R9 END -->
-
-```{=latex}
-\clearpage
-\setcounter{tocdepth}{1}
-\tableofcontents
-\bigskip
-```
 
 # Methods {#sec-methods}
 

@@ -550,3 +550,23 @@ Final book publication: gh-pages commitb5fe3c322e5fbfc9ed6486e3f33e6c9bcbdcc063
 built successfully and live content was verified. Only rendered book content
 was pushed; source/model branch remains local. Full tests710/0, benchmark10/10;
 working scientific recommendation remains review before another registered case.
+
+
+## Meeting discussion guide and write-up order
+
+The October16 book chapter now opens with the meeting brief's four discussion
+questions: model interpretation, validation/feature sensitivity, biological
+value, and the supported manuscript claim/evidence still needed. Existing
+result tables remain the progress update; the opening provides a route through
+the full write-up without duplicating its detail. Andrew requested restoring
+the table of contents before the summary; the PDF now does so, keeping the
+short Background/Aim, Method, Results and Conclusions paragraphs together.
+This is a documentation-only follow-up; no fit, default, criterion or scientific
+recommendation changes. The next methodological priority remains review of
+stopping/objective consistency before separately registered execution.
+
+Verification: full suite710/0; benchmark manifest10/10 before/after;
+108 local book references resolve. The write-up HTML/PDF render, and the
+contents-first PDF/structured summary layout was visually checked (44 pages).
+Rendered book publication commit27bae873bfc42436baa76f383cc3956809c47ea6;
+source/model branch remains local.

@@ -1,5 +1,25 @@
 # October 16, 2026
 
+## Meeting overview and discussion guide
+
+Use this chapter for the brief update since October 2, then the project
+write-up for the method, validation and biological evidence. The aim is to
+agree on the strongest supported manuscript claim and the evidence still
+needed to support it.
+
+| Write-up section | Question for discussion |
+|---|---|
+| Methods and model comparison | What do patient activities, molecular loadings and projection scores represent, and which formulation produced the reported results? |
+| Validation and feature sensitivity | How strong are prediction and program stability relative to the actual comparators, and where do broader feature sets change the result? |
+| Biological findings | Do the basal/classical and stromal/immune programs provide useful biological separation? What would establish added value from methylation? |
+| Discussion and continuing work | What can the manuscript claim now, and which unresolved issues must be addressed before submission? |
+
+**Proposed manuscript focus:** a Bayesian program model connecting
+cross-cohort risk prediction with interpretable tumor and microenvironmental
+structure. Current evidence supports developing that narrative; claims that
+survival supervision improves program discovery, or that methylation adds
+predictive or biological value, still require validation.
+
 ## Progress since October 2
 
 The feature studies now cover the full shared-gene universe and the requested
