@@ -1280,3 +1280,59 @@ Feature preparation checkpoint: fresh full suite **651 passed,0 failed**,
 including nine new agreement/manifest checks. No feature-performance fit has
 run. The original benchmark/write-up are unchanged; the initialization
 decision remains pending.
+
+
+## Task2-5: unchanged Single loading-prior consistency audit (prospective)
+
+This is the bounded observational diagnostic already included in the approved
+priority plan, executed while the independent feature-curve initialization
+decision is pending. It is not a remedy, new test bed, parameter selection or
+claim that debugging replaces the feature deliverables. The report/CpG tasks
+are complete; no feature-performance fit is authorized by this entry.
+
+Hypothesis: the F update returns moments under its incoming point-Laplace
+prior, then refits and returns a different prior, while retaining KL against
+the incoming prior. Quantify that discrepancy during one actual completed
+simulation, beyond the existing synthetic counterexample. One observational
+change only: a process-local wrapper records old/new priors and moments and
+returns the original loading-update object unchanged.
+
+Repeat ONLY Task2-4 cell021: seed20261026, noise .25,400 training/120 simulated
+validation subjects,p50,K7; framework per-program Normal beta, no supervised
+start, profile_cox_intercept TRUE, w_S1, no pruning, the original300-iteration
+ELBO rule/cap. No weight, prior, initialization, bed, convergence criterion or
+scorer is changed. No external or patient-level real-data input is read.
+The saved original fit is
+`results/benchmark_sim/outputs/round2/profiled/cells/cell_021.rds`.
+Its original result is recoveryTRUE and convergenceFALSE at300; neither can
+be reclassified by this diagnostic. The simulated validation outcomes are
+not used to select or repair anything.
+
+Per loading block record incoming/returned pi and rate, reconstructed slab
+mass and absolute moment, native returned slab mass and second-moment sum,
+old/new expected log prior, cached KL and the F-prior KL correction. Analytic
+support conflicts and returned point priors with strictly positive native
+second moments are counted separately; a tiny probability discrepancy alone
+does not establish the native posterior support. The monitor adjustment is
+only the measured F-prior contribution, not a corrected full ELBO.
+
+Validity requires exact identity of the ENTIRE saved fit, plus every named
+field and complete history, and max analytic/native slab-probability gap
+<=1e-7 (existing software tolerance, not an adoption threshold). Preserve all
+warnings, partial rows and errors; any mismatch blocks interpretation. Keep
+all finite/nonfinite adjustments and support conflicts; no missing cases,
+extra iterations, retry, damping or new prior update is allowed. Report the
+original convergence failure unchanged. No adoption is possible in this audit.
+
+Runner: `Rscript results/benchmark_sim/run_round2_prior_consistency_trace.R`.
+Fresh output:
+`results/benchmark_sim/outputs/round2/prior_consistency_seed26/`.
+Local serial, minutes,1GB; no HPC job. Safe CSVs/provenance only may be
+committed; fit RDS remains ignored. The already prepared observer is extended
+only with native moment telemetry, tested RED/GREEN before this commit.
+Run the full suite and record its actual count before committing this entry;
+no audit fit runs until the commit exists.
+
+Task2-5 preregistration verification: strengthened native-telemetry fixture
+RED5/6 then GREEN6/6; fresh full suite **651 passed,0 failed**. No audit fit
+has run before this commit.

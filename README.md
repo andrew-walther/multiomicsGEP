@@ -538,3 +538,12 @@ cases and uses shared-gene loading correlations and normalized projections.
 These utilities do not fit models. See the approved plan and input preflight:
 the frozen D4 activity rank4/7 makes its prescribed warm inverse singular;
 the primary-curve initialization decision must be resolved before fitting.
+
+
+Task2-5's bounded prior-consistency audit uses
+`Rscript results/benchmark_sim/run_round2_prior_consistency_trace.R` only after
+its prospective entry is committed. It repeats one saved Single simulation,
+requires exact entire-fit identity, and records native returned moments beside
+reconstructed prior-density calculations. The observer returns the original
+update unchanged. An F-prior-only monitor adjustment is diagnostic, not a new
+ELBO/convergence rule or a model remedy. Fresh output only; see the attempt log.

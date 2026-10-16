@@ -156,3 +156,11 @@ no feature-count fit is implied by their presence. The cold-primary versus
 rank-deficient continuation decision is recorded in the active priority plan
 and Round2 handoff. Do not start a performance panel before that decision and
 its prospective committed design. No model defaults were changed.
+
+
+Task2-5 registers the bounded prior-consistency observation before execution.
+Its additional native second-moment telemetry confirms point-prior support
+conflicts independently of tiny reconstructed-probability differences. Read
+its actual run status in the attempt log. It does not repair an update or
+change convergence/adoption criteria, and does not authorize feature fits
+before Andrew's separate continuation/cold-primary decision.

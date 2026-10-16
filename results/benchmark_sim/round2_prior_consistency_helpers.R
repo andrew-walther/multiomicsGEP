@@ -88,6 +88,8 @@ round2_prior_audit_wrapper <- function(original,sink) {
       old_pi=if(isTRUE(old$point_mass))0 else old$pi,old_rate=old$rate,
       new_pi=if(isTRUE(out$prior$point_mass))0 else out$prior$pi,new_rate=out$prior$rate,
       continuous_mass=sum(q$slab_prob),mean_abs_sum=sum(q$mean_abs),
+      native_continuous_mass=sum(out$details$slab_prob),
+      posterior_second_moment_sum=sum(out$EF2),
       slab_probability_discrepancy=max(abs(q$slab_prob-out$details$slab_prob)),
       expected_log_prior_old=before,expected_log_prior_new=after,
       prior_step_delta=delta,stored_kl=out$kl,corrected_kl=out$kl-delta))

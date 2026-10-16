@@ -5,9 +5,11 @@
 # Created: 2026-10-15
 # Dependencies: existing fixed-panel modules and prior-consistency helpers
 # ============================================================
-# Prepared diagnostic, NOT RUN. Before execution, preregister Task2-5 in the
-# attempt log and commit it. Deferred at the usage-limit checkpoint; this
-# observer changes no shared fitting source and is not a remedy.
+# Task2-5 observation only: follow its committed prospective attempt-log entry.
+# This observer changes no shared fitting source and is not a remedy.
+# Record analytic support conflicts separately from point-prior cases with
+# positive native returned posterior second moments; do not infer native
+# support solely from tiny reconstructed-probability discrepancies.
 # Repeat ONLY completed Task2-4 cell21: Single seed20261026/noise .25,
 # same bed400/120,p50,K7,framework Normal beta,no supervised start,
 # profile_cox_intercept TRUE, original300 cap/ELBO criterion, no pruning.
@@ -80,6 +82,8 @@ if(sys.nframe()==0L) {
     converged=fit$history$converged,loading_blocks=nrow(d),
     posterior_support_conflicts=sum(d$expected_log_prior_new==-Inf),
     last50_support_conflicts=sum(d$expected_log_prior_new[late]==-Inf),
+    native_point_prior_conflicts=sum(d$new_pi==0 & d$posterior_second_moment_sum>0),
+    last50_native_point_prior_conflicts=sum(d$new_pi[late]==0 & d$posterior_second_moment_sum[late]>0),
     max_probability_discrepancy=max(d$slab_probability_discrepancy),
     exact_fit_identity=identical(fit,original_fit),
     nonfinite_F_prior_adjusted_monitors=sum(!is.finite(monitor$F_prior_KL_adjusted_monitor)),

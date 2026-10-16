@@ -68,6 +68,8 @@ run_test("PriorConsistency-T6: observer returns the original update and detects 
  fn<-round2_prior_audit_wrapper(multimodal_yfb_update_F_mk,save_row)
  got<-do.call(fn,args)
  assert_true(identical(got,expected),msg="observational wrapper changes no update")
+ assert_true(record$native_continuous_mass>0 && record$posterior_second_moment_sum>0,
+   msg="native returned posterior independently confirms point-prior support conflict")
  assert_true(record$iteration==2L && record$factor==1L &&
    is.finite(record$stored_kl) && is.infinite(record$corrected_kl) &&
    record$corrected_kl>0,msg="known support mismatch and caller context preserved")
