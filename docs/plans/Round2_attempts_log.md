@@ -1744,3 +1744,36 @@ valid projection moments and identified nonfinite Cox working inputs. All10
 benchmark hashes pass. Progress HTML/PDF and the author-requested bounded
 manuscript update render successfully; no new fit is part of that editorial
 update. Source inventory and verification record retain the claim evidence.
+
+## Task2-B1: saved-state loading likelihood balance (prospective)
+
+The approved advisor-priority plan asks for per-loading reconstruction and
+survival precision/numerator contributions. Describe four saved full TCGA
+states: frozen joint and expression-only benchmarks, unadopted profiled joint
+cell102 and the M1 methylation-only10k fit. All hit500 sweeps. No fit, new C,
+external outcome, model choice or survival-weight selection is performed.
+
+At each terminal state reconstruct its intercept-centered molecular blocks,
+current Cox working quantities and, only for the profiled fit, its existing
+weighted-centered survival design. For every modality/program compute A_gen,
+A_surv, B_gen and B_surv exactly as in the F-update coordinate conditional,
+excluding that coordinate's own current projection contribution. Hold other
+moments fixed for every coordinate: this is not an executed sequential sweep
+or a claim about the trajectory causing collapse. Report medians/p90/max,
+A_surv/(A_gen+A_surv), |B_surv|/(|B_gen|+|B_surv|), undefined counts and beta
+point-mass gating. Separate cached objective components, with their stale-prior
+KL caveat; a raw objective ratio is not the F-update information share.
+
+Diagnostic success: finite conformable contributions, exact saved input
+fingerprints before/after, all saved benchmark rows retained alongside the
+unadopted fits. No numerical precision/share threshold is adopted. Zero total
+information gives NA; beta mean0 alone need not gate survival if E[beta²]>0.
+Five software fixtures pass: RED0/4 then GREEN4/4, plus a fifth check against
+the actual F-update first-coordinate A/B. They verify hand algebra, scale-
+invariant shares, point-mass gating, and undefined cases. Fresh full suite
+677 passed,0 failed. Run audit_loading_balance.R only after this commit.
+
+Andrew's intervening request prioritizes resolving the25k numerical failure.
+Complete this already prepared bounded read-only audit at its checkpoint,
+then address stable Cox arithmetic separately; do not treat its ratios as a
+substitute for making large-CpG fitting numerically usable.

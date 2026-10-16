@@ -207,3 +207,11 @@ Read its committed attempt before running
 inputs via process-local tracing, preserves the original error/results and
 keeps detailed patient state ignored. It is not a scientific remedy; follow
 its actual terminal status before any further count fit or corrective change.
+
+Task2-B1 is the bounded saved-state loading-balance observation at
+`results/multimodal_real/audit_loading_balance.R`. Read its prospective log
+before execution. The helper preserves separate reconstruction/survival
+conditional terms; ratios are descriptive, not a selected weight or an
+executed sequential sweep. Prior penalties and cached objective components
+are distinct. Andrew subsequently prioritizes fixing25k Cox underflow; this
+audit must not replace that requested work.

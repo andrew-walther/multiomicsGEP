@@ -1675,3 +1675,12 @@ pass and benchmark tag object0fea14903a75606e495267f2f35712eac10d9fc6 is unchang
 Current manuscript intentionally includes the author-requested sensitivity
 revision; approved interim remains retrievable from the tag. No numeric
 remedy, new external score, default change or model adoption is claimed.
+
+Task2-B1 saved-state likelihood-balance audit is prospectively registered;
+five focused fixtures pass and fresh full suite677/0. Four saved capped TCGA
+fits only, including two frozen benchmarks, no new fit/score or selected
+weight. Execute after its commit. Andrew's latest clarification asks to solve
+the25k arithmetic hangup; he does not accept inferring that CpG expansion is
+inherently infeasible. Imputation is verified; numeric Cox risk-set underflow
+and rapid predictor expansion must be distinguished. Opt-in arithmetic repair
+and the same25k case are next, under a separate committed prospective design.

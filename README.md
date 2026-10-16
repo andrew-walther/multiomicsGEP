@@ -622,3 +622,10 @@ state at the first failure. `code/multimodal_moment_audit.R` identifies invalid
 fields using the existing guard exactly. Successful diagnostic reproduction
 is not successful model fitting; no numerical remedy or altered controls are
 included. Original failed result rows are never overwritten.
+
+`results/multimodal_real/audit_loading_balance.R` implements the approved
+Task2-B1 saved-state observation after its prospective commit. It separates
+per-coordinate reconstruction/survival A/B contributions, with the tested
+formulas in `code/loading_balance_audit.R`; no sequential sweep or fit runs.
+Ratios exclude priors, preserve undefined zero-information cases and do not
+select a survival weight. Cached objective components are reported separately.
