@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>11&nbsp; Survival supervision of the loadings (October 2026, in progress) – SSBMF Progress Notebook</title>
+<title>11&nbsp; Methods development record: survival supervision (October 2026) – SSBMF Progress Notebook</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -117,7 +117,7 @@ window.Quarto = {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/2026-10-15.html"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Survival supervision of the loadings (October 2026, in progress)</span></a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/2026-10-15.html"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Methods development record: survival supervision (October 2026)</span></a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -211,7 +211,7 @@ window.Quarto = {
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../chapters/2026-10-15.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Survival supervision of the loadings (October 2026, in progress)</span></span></a>
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Methods development record: survival supervision (October 2026)</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -278,7 +278,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Survival supervision of the loadings (October 2026, in progress)</span></h1>
+<h1 class="title"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Methods development record: survival supervision (October 2026)</span></h1>
 </div>
 
 
@@ -295,6 +295,19 @@ window.Quarto = {
 </header>
 
 
+<div class="callout callout-style-default callout-note callout-titled" title="Purpose and reading guide">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Purpose and reading guide
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This chapter is a chronological methods-development record: why the survival-supervised loading updates changed, what each experiment tested, and which attempts failed. It supports the mathematical/software audit; it is not the concise advisor-meeting update or a validated final method. Read the <a href="../chapters/2026-10-16.html">October16 meeting summary</a> for progress since October2. Sections below describe their own checkpoints; later failures supersede early statements of universal convergence. The approved benchmark still uses <span class="math inline">\(\alpha_F=0\)</span>, and no supervised replacement is adopted.</p>
+</div>
+</div>
 <section id="executive-summary" class="level2 unnumbered">
 <h2 class="unnumbered anchored" data-anchor-id="executive-summary">Executive summary</h2>
 <ol type="1">
@@ -305,7 +318,7 @@ window.Quarto = {
 <li>the survival term of the single-modality F update left the other genes of the same program in the residual, so each gene re-explained the whole program and the update overshot;</li>
 <li>with a signed loading prior, the SVD start discarded signs and every program collapsed.</li>
 </ul></li>
-<li><strong>Scale canonicalization with the corrected update is stable:</strong> every fit converges, and the coefficients stay bounded.</li>
+<li><strong>Initial C2 test-bed result:</strong> all fits in that bounded early panel converge, and the coefficients stay bounded. Later sections document nonconvergence in other evaluations.</li>
 <li><strong>Recovery is still low:</strong> 1/20 seeds at noise 0.25 and 6/20 at noise 1, against the 80% threshold. This is the starting point for supervised initialization and the β prior (C3–C4).</li>
 </ol>
 </section>
