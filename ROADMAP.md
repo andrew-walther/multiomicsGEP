@@ -1114,3 +1114,14 @@ analyses as completion of these advisor requests.
   point, with original default/base-fit identity preserved.
 - [ ] Complete the same25k full-fit test and resolve remaining predictor
   drift/convergence before interpreting a completed large-CpG curve.
+
+
+### 2026-10-15: regrouping checkpoint
+
+- Completed the same25k CpG arithmetic test: original numeric failure removed;
+  unchanged500 cap still reached, with extreme risk scores. Not adopted.
+- Recorded provisional10k/25k loading agreement; four strong and three weak
+  matches, with both fits unconverged. Updated meeting report and manuscript.
+- Pause further fitting for Andrew's requested review. Next scientific decision
+  concerns working-step stability and prior/objective consistency before more
+  large-CpG panels; supervised replacement, rank and multimodal value stay open.

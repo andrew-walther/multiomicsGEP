@@ -3467,7 +3467,7 @@ Table 9: Feature-count sensitivity of the single-modality model on 273 training
 <div id="tbl-cpg-count" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-cpg-count-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 10: Full-training results on the same 144 TCGA patients, with saved benchmark rows labelled frozen. Dashes denote undefined values after numerical failure. Molecular inputs differ; these rows are contextual training comparisons, not matched CV estimates or estimates of incremental methylation benefit. Credible means <span class="math inline">\(|E\beta|\ge1.96\,\mathrm{SD}(\beta)\)</span> with positive posterior SD. No new external score was computed. Larger counts and methylation CV remain unrun; no loading correlation across CpG counts is available because only the 10,000-CpG full fit was saved. C, Harrell’s concordance index; TCGA, The Cancer Genome Atlas; CpG, cytosine–guanine methylation site; CV, cross-validation; SD, standard deviation.
+Table 10: Full-training results on the same 144 TCGA patients, with saved benchmark rows labelled frozen. Dashes denote undefined values after numerical failure. Molecular inputs differ; these rows are contextual training comparisons, not matched CV estimates or estimates of incremental methylation benefit. Credible means <span class="math inline">\(|E\beta|\ge1.96\,\mathrm{SD}(\beta)\)</span> with positive posterior SD. No new external score was computed. Larger counts and methylation CV remain unrun. The stable-arithmetic row is unconverged; its high training C is not evidence of improved prediction. C, Harrell’s concordance index; TCGA, The Cancer Genome Atlas; CpG, cytosine–guanine methylation site; CV, cross-validation; SD, standard deviation.
 </figcaption>
 <div aria-describedby="tbl-cpg-count-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <table class="caption-top table">
@@ -3515,18 +3515,28 @@ Table 10: Full-training results on the same 144 TCGA patients, with saved bench
 <td>500-sweep cap</td>
 </tr>
 <tr class="even">
-<td>Methylation-only expansion</td>
+<td>Methylation-only expansion, original arithmetic</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">25,000</td>
 <td style="text-align: right;">—</td>
 <td style="text-align: right;">—</td>
 <td>Numerical failure</td>
 </tr>
+<tr class="odd">
+<td>Same 25k case, stable arithmetic</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">25,000</td>
+<td style="text-align: right;">.983854</td>
+<td style="text-align: right;">7</td>
+<td>500-sweep cap</td>
+</tr>
 </tbody>
 </table>
 </div>
 </figure>
 </div>
+<p>The same 25,000-CpG case with stable arithmetic completed without warnings or execution errors in 44.3 minutes, but reached the unchanged 500-sweep cap. Risk-score SD was 39,086, and log partial likelihood was −40,177; final relative risk and reconstruction changes were .00589 and .0622 against the original .0001 tolerance. Seven coefficients met the numerical credibility rule, but the extreme, unconverged estimates do not establish prognostic discovery. High training concordance measures ordering and does not validate predictor scale or generalization. Thus the arithmetic failure is repaired, while optimization instability remains unresolved.</p>
+<p>A provisional comparison of these saved 10,000- and 25,000-CpG fits on the same patients and 10,000 common probes matches all seven programs. Signed loading correlations are .945, .922, .925, .118, .038, −.087 and .923; corresponding activity correlations are .982, .878, .968, .513, .764, .235 and .941. Risk-score correlation is .245. Both fits cap, and arithmetic differs, so these results describe saved-fit agreement rather than a converged feature-count effect. They do not justify transferring biological labels or adopting a larger feature set.</p>
 <p>A separate read-only audit of the frozen joint fit’s sole credible program finds median survival fractions of loading precision of <span class="math inline">\(2.03\times10^{-7}\)</span> for expression and <span class="math inline">\(9.00\times10^{-10}\)</span> for methylation; fractions of the absolute numerator terms are <span class="math inline">\(7.27\times10^{-5}\)</span> and <span class="math inline">\(4.40\times10^{-6}\)</span>. These compare isolated-coordinate likelihood contributions at a capped terminal state, exclude priors, and do not establish trajectory causes or absence of cumulative supervision effects. They are not ratios of the total reconstruction and survival likelihoods.</p>
 <p>Within the eligible CpG universe, an observed mean methylation in <span class="math inline">\([0.1,0.9]\)</span> retains 182,934 probes; requiring neither extreme tail (below 0.1 or above 0.9) to contain at least 95% of observed patients retains 221,142. These are descriptive alternatives, not adopted filters or SD cutoffs. Prediction and loading stability after these filters remain unevaluated.</p>
 <!-- REVISIT R7 END -->

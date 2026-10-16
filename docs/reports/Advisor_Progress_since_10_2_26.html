@@ -2343,6 +2343,7 @@ window.Quarto = {
   <li><a href="#what-enters-the-larger-write-up" id="toc-what-enters-the-larger-write-up" class="nav-link" data-scroll-target="#what-enters-the-larger-write-up">What enters the larger write-up</a></li>
   <li><a href="#evidence-and-provenance" id="toc-evidence-and-provenance" class="nav-link" data-scroll-target="#evidence-and-provenance">Evidence and provenance</a></li>
   </ul></li>
+  <li><a href="#regrouping-checkpoint" id="toc-regrouping-checkpoint" class="nav-link" data-scroll-target="#regrouping-checkpoint">Regrouping checkpoint</a></li>
   </ul>
 <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="Advisor_Progress_since_10_2_26.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
 </div>
@@ -2987,18 +2988,78 @@ window.Quarto = {
 <td>No, 500 cap</td>
 </tr>
 <tr class="even">
-<td>New methylation-only expansion</td>
+<td>New methylation-only expansion, original arithmetic</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">25,000</td>
 <td style="text-align: right;">Undefined</td>
 <td style="text-align: right;">Undefined</td>
 <td>Execution error</td>
 </tr>
+<tr class="odd">
+<td>Same 25k case, stable arithmetic</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">25,000</td>
+<td style="text-align: right;">.983854</td>
+<td style="text-align: right;">7</td>
+<td>No, 500 cap</td>
+</tr>
 </tbody>
 </table>
 <p>The methylation-only reference has nonconstant risk (SD .1173), but its one nonzero coefficient is not credible under the original rule. Four programs meet the existing retained classification; no program is deleted. Runtime was 964 seconds, with R allocation high-water 1,076 MB and no warnings/errors. Thus this is a failed convergence/credible-prognostic result, not a successful supervised methylation model. The unchanged 25k full-training cell stopped after 28 seconds at the F-update check for finite Cox/projection moments and nonnegative variances; no fit or score is available. An approved identical-settings replay now locates the failure at outer iteration 6, inner sweep 1, program 1. Projection means/variances are valid; Cox working weights and numerators each contain 17 nonfinite values. Finite risk predictors span about 5,734 units: global exponential shifting underflows 143/144 weights to zero and leaves 17 zero risk-set sums, including six event rows. This is a numerical failure upstream of the loading update, alongside rapid risk-score expansion. Stable arithmetic alone would not establish a convergent model.</p>
-<p><strong>The arithmetic failure has now been repaired at the captured point.</strong> An opt-in log-space evaluation of the same Breslow quantities gives no nonfinite working values; weights sum to 74.9999999999582 against 75 deaths. The original calculation has 17 nonfinite weights and 17 nonfinite numerators. Default arithmetic, priors and scientific criteria remain unchanged. The full 25k same-case rerun is underway under its original cap; it has passed the original crash point but risk scores still drift. Its terminal model result is pending. This is not an inherent 10k-CpG limit or evidence of an imputation failure.</p>
-<p><strong>CpG loading correlations across feature counts remain unavailable:</strong> only the 10k full fit was saved, and the 25k run has no fitted loadings. The planned comparison matches programs by activity and computes loading correlations on common CpGs, retaining undefined/dead matches. Expression loading correlations are complete; the separate saved joint-fit audit above is not a CpG-count comparison. Larger counts, methylation CV and filter comparisons remain unrun. No controls or criteria are tuned.</p>
+<p><strong>The arithmetic failure has now been repaired at the captured point.</strong> An opt-in log-space evaluation of the same Breslow quantities gives no nonfinite working values; weights sum to 74.9999999999582 against 75 deaths. The original calculation has 17 nonfinite weights and 17 nonfinite numerators. Default arithmetic, priors and scientific criteria remain unchanged. The full 25k same-case rerun now finishes without warnings or execution errors, but fails convergence at the unchanged 500-iteration cap (44.3 minutes). Training C is .983854, with risk SD 39,086 and log partial likelihood −40,177. The final relative risk and reconstruction changes are .00589 and .0622, both above the original .0001 tolerance. Seven coefficients meet the numerical credibility rule, but their interpretation is unreliable in this unconverged fit. High ranking concordance coexists with extreme, unstable predictor magnitudes; it is not a validated gain or a successful supervised model. This is not an inherent 10k-CpG limit or evidence of an imputation failure. The arithmetic hangup is repaired; the unstable fitting trajectory remains unresolved.</p>
+<p><strong>The requested common-CpG loading correlations are now available.</strong> The saved 10k and 25k fits match all seven programs by activity on the same 144 patients and 10,000 common probes:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Matched program</th>
+<th style="text-align: right;">Activity correlation</th>
+<th style="text-align: right;">Common-CpG loading correlation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.982</td>
+<td style="text-align: right;">.945</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">.878</td>
+<td style="text-align: right;">.922</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">.968</td>
+<td style="text-align: right;">.925</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">.513</td>
+<td style="text-align: right;">.118</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">.764</td>
+<td style="text-align: right;">.038</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">.235</td>
+<td style="text-align: right;">−.087</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">.941</td>
+<td style="text-align: right;">.923</td>
+</tr>
+</tbody>
+</table>
+<p>Risk-score correlation is .245. Several molecular patterns persist, while others change substantially. Both fits cap, and the 25k fit uses repaired arithmetic, so these are <strong>provisional saved-fit correlations</strong>, not a clean converged feature-count curve or evidence that feature count alone caused the differences. No biological labels are transferred. Larger counts, methylation CV, filter comparisons and joint count curves remain unrun. No controls or criteria are tuned.</p>
 </section>
 </section>
 </section>
@@ -3100,12 +3161,17 @@ window.Quarto = {
 </tr>
 </tbody>
 </table>
-<p>Andrew has requested incorporation of applicable verified findings into the larger write-up. A bounded revision adds the expression feature-count results, CpG expansion failures and unavailable CpG loading comparison, without changing the evaluated benchmark model or claiming a supervised replacement. The approved interim version remains preserved in its immutable tag. Further methodological and biological revisions require their original review gates.</p>
+<p>Andrew has requested incorporation of applicable verified findings into the larger write-up. A bounded revision adds the expression feature-count results, CpG expansion failures, the arithmetic repair and provisional CpG loading comparison, without changing the evaluated benchmark model or claiming a supervised replacement. The approved interim version remains preserved in its immutable tag. Further methodological and biological revisions require their original review gates.</p>
 </section>
 <section id="evidence-and-provenance" class="level2">
 <h2 class="anchored" data-anchor-id="evidence-and-provenance">Evidence and provenance</h2>
 <p>All numbers above are saved results; this report runs no model or new external scoring. The benchmark tag is <code>benchmark-interim-writeup-2026-10-14</code>; all 10 snapshot hashes match. The method-panel checkpoint is <code>f0858ec</code>; the CpG design is <code>dc69f6d</code>, the full-range expression design is <code>6597b4b</code>, and its reporting correction is <code>6371e42</code>. The current software suite has 684 passing tests. Full per-task commits, failures and tables are indexed in <a href="../plans/Codex_to_Claude_Round2.md">the Round 2 handoff</a> and <a href="../plans/Round2_attempts_log.md">attempt history</a>. The <a href="../plans/Advisor_Priorities_and_Execution_10_15_26.md">approved priority plan</a> links these deliverables to the October 2 meeting and write-up revision markers. Software tests validate specified behavior; their count is not proof that all statistical goals have been met.</p>
 </section>
+</section>
+<section id="regrouping-checkpoint" class="level1">
+<h1>Regrouping checkpoint</h1>
+<p>The benchmark is retained. The complete gene-count study, full-probe mean/SD inventory, saved-program role comparison and diagnosed numerical repair are concrete progress. They do not resolve the central requirement: a convergent survival-supervised model with defensible rank, preserved external performance and demonstrated multimodal value. The evaluated single-modality benchmark still uses <span class="math inline">\(\alpha_F=0\)</span>.</p>
+<p>Pause further fitting for review. The next priority should be a bounded review of the Cox working-step stability and prior/objective consistency, using the saved failure states before additional large-feature panels. Stable risk-set arithmetic allows the calculation to continue, but does not guarantee an improving likelihood or convergent variational updates. A proposed remedy needs a prospective design and the unchanged simulation and training-validation gates. Longer runs, clipping, new weights or new convergence criteria should not be inferred from the present result.</p>
 </section>
 
 </main>

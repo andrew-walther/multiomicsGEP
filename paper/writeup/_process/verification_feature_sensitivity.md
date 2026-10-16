@@ -64,3 +64,21 @@ Stable-arithmetic/saved-balance addition:
 - New source entriesS71/S72 bring the inventory to72 unique IDs; referenced
   paths exist. Revisit markers are balanced and HTML anchors/xrefs pass.
   No assistant attribution in either PDF. Fresh full suite684/0.
+
+
+Terminal arithmetic/checkpoint revision:
+- Same M3 process exits0, no warning/error;500 cap, not converged. Stable
+  arithmetic fixes the earlier execution failure but extreme predictors and
+  training C=.983854 are explicitly not interpreted as a successful model.
+- A1 comparison exits0 after M3 termination; common10000 probe identities,
+  patient order and input hashes verified. All seven correlations and risk
+  agreement reported as provisional, with both caps/arithmetic difference.
+- Main manuscript42 pages and progress report13 pages render HTML/PDF exit0.
+  New tables inspected at readable resolution; affected manuscript pages19–42
+  and all report pages visually checked. Correlation table kept together;
+  regrouping assessment starts a fresh page. No clipped content.
+- HTML anchor checks pass;5 manuscript/3 report images embedded. Inventory73
+  unique IDs, no assistant attribution in PDF text. Earlier derivations unchanged.
+- Fresh full suite684/0 before commit, all10 SHA256 snapshot hashes unchanged.
+  No new default, scientific criterion or model adoption; no further fit before
+  Andrew's requested regrouping. Benchmark tag/snapshot are preserved.

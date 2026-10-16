@@ -2796,3 +2796,21 @@ are unconverged. This documents molecular/prognostic roles, without proving
 optimal rank, incremental prediction or probe-level selection. The benchmark
 and original write-up remain unchanged. See the Round2 handoff and report
 for exact tables, limits and remaining count/filter/joint comparisons.
+
+
+## Regrouping after stable-arithmetic CpG case (2026-10-15)
+
+The25k methylation-only case now completes with opt-in log-space Cox
+arithmetic but fails convergence at500 iterations. Training C=.983854,
+riskSD39086 and logPL=-40177 signal an extreme, unreliable fit, not an
+improved model. Original failure and frozen benchmark rows are retained.
+Provisional10k/25k common-CpG loading correlations are.945/.922/.925/.118/
+.038/-.087/.923; risk r=.245. Both fits cap and arithmetic differs.
+
+The arithmetic failure is fixed; optimization stability and supervised model
+adoption remain unresolved. Full-range expression and full-probe histograms
+are completed evidence. The evaluated benchmark Single still has alpha_F=0;
+multimodal value and rank are unproven. Andrew requests pausing after the
+recorded checkpoint for review, with no additional fit before regrouping.
+The progress report and bounded working-manuscript revision contain the new
+results; the approved interim tag/snapshot remain immutable. Full suite684/0.

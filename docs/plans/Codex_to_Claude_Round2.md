@@ -1751,3 +1751,72 @@ Revisit markers,72 source IDs and presentation attribution checks pass.
 Fresh full suite684 passed,0 failed. The original25k failed row remains:
 M3's full same-case outcome is still pending, and no loading-count correlation
 has run. No loaded scientific source or live progress file was edited/staged.
+
+
+### Task5-M3 terminal result and Task5-A1 agreement: regrouping checkpoint
+
+The SAME process99846 exits0 at its unchanged500 cap. Stable arithmetic
+passes the identified numerical failure but scientific convergence FAILS.
+No warnings/errors; runtime2660.496s (44.3min). Full-training25k C=.983853984,
+logPL=-40176.962256, riskSD39086.312543, credible7/retained7. Final relative
+eta/reconstruction changes=.005891900/.06215805 versus tol1e-4. Predictor
+range at the start of outer500 is312267.6–520103.6; logPL worsens in178/499
+outer transitions. LogPL alone need not be monotone in joint fitting; this
+observation does not establish a cause. High training C with these extreme,
+unconverged estimates is NOT a predictive gain or meaningful discovery.
+Saved terminal history is an aggregate export, not another experiment.
+
+Benchmark context (same144 TCGA training patients; different molecular inputs):
+
+| Source | Genes | CpGs | Training C | Credible | Convergence |
+|---|---:|---:|---:|---:|---|
+| Frozen joint |3000|10000|.637768|1|No,500 cap|
+| Frozen expression-only |3000|0|.643559|1|No,500 cap|
+| Original methylation-only |0|10000|.612671|0|No,500 cap|
+| Original methylation-only |0|25000|NA|NA|Original numeric error|
+| Stable-arithmetic same case |0|25000|.983854|7|No,500 cap|
+
+A1 executes only after authoritative M3 termination, exits0 and verifies
+unchanged inputs. Same144 patients/common10000 probes; all7 activity pairs
+match identical indices. Both fits are capped;25k arithmetic differs.
+
+| Program | Activity r | Common-CpG loading r |
+|---:|---:|---:|
+|1|.982335|.945217|
+|2|.877731|.921874|
+|3|.968273|.925401|
+|4|.512932|.118295|
+|5|.764353|.038005|
+|6|.234632|-.086562|
+|7|.940994|.922771|
+
+Risk r=.244887983. Accurate comparison succeeds; no minimum correlation was
+specified and no stability/adoption criterion is invented. Complete matrices,
+matching margins and convergence/arithmetic labels preserve weak matches.
+This is provisional saved-fit agreement, not a clean converged count curve.
+No new fitting, CV, external scoring, biology transfer or feature selection.
+Outputs: results/multimodal_real/outputs/feature_sensitivity/logspace_case/
+(case.csv,results_with_benchmark.csv,input_hashes.csv,progress.csv,
+terminal_history.csv; patient-level fit.rds ignored) and cpg_count_agreement/
+(program_pairs.csv, full matrices, risk_agreement.csv, input hashes,
+interpretation.txt and companion benchmark-context table).
+
+**North-star assessment and next decision.** Full-range expression24/24 fits
+converge, full CpG descriptive inventory and exact imputation reconstruction
+are complete, and the larger-CpG numeric crash is diagnosed/repaired opt-in.
+These are concrete advances. A converged, defensible survival-supervised
+replacement is NOT established; benchmark Single retains alpha_F=0.
+Pruning/rank adoption fails; multimodal incremental survival/biological value
+is unproven; CpG/joint CV curves, filters and final allowed external report
+remain open. Task3 is explicitly deferred; Task6 optional clean rerun is unrun;
+Tasks0/4/7 completed. Earlier selected supervised Single external NI FAILS
+(lower95% delta=-.031708 below-.02), contrary to the stale goal description.
+The unchanged benchmark remains the current best state.
+
+Andrew explicitly requests pausing after this report/commit. Start no further
+fit. Recommend reviewing working-step stability and prior/objective consistency
+from saved states before any larger-dimensional panel; numeric stabilization
+cannot guarantee an improving variational trajectory. No extra model remedy,
+weight, damping, cap or criterion change is authorized by this recommendation.
+Both presentation documents incorporate the bounded findings without claiming
+adoption. Fresh full suite684 passed,0 failed; snapshot10/10 SHA256 pass.

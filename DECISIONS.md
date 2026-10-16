@@ -5,6 +5,17 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Pause after stable-arithmetic CpG test; no model adoption
+
+Andrew requests regrouping after the current fit/results are recorded. The
+opt-in25k case avoids the original numerical error but remains unconverged
+at500 iterations, with training C=.983854, riskSD39086 and logPL=-40177.
+No benchmark/default replacement. Provisional10k/25k loading correlations
+are reported with both caps and differing numerical arithmetic disclosed.
+The calculation is now possible; reliable fitting at this dimension remains
+unresolved. Pause further fitting for review of working-step stability and
+prior/objective consistency. No extra remedy or altered criterion is adopted.
+
 ## 2026-10-15 — Test stable Cox arithmetic without changing the model
 
 Andrew asks to resolve the25k CpG numerical failure rather than infer a

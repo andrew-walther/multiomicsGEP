@@ -219,3 +219,14 @@ Only10k methylation has a saved full fit, so count agreement is unavailable;
 do not substitute saved joint-fit agreement for that comparison. This is a
 bounded manuscript update, not approval of a new model or altered criterion.
 The approved interim remains preserved in the immutable tag/snapshot.
+
+
+## Approved pause checkpoint: 2026-10-15
+
+Andrew requests pausing after the current25k fit, saved loading comparison
+and report/commit. Those bounded runs now terminate: arithmetic crash removed,
+scientific fit still capped500 with extreme predictors; provisional common-CpG
+agreement recorded. Do not start another fitting experiment before regrouping.
+The current progress report/manuscript include the results; benchmark unchanged.
+Review working-step stability and prior/objective consistency before deciding
+the next prospective remedy. Larger count/CV/filter/joint panels remain open.
