@@ -229,10 +229,11 @@ window.Quarto = {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#progress-since-october-2" id="toc-progress-since-october-2" class="nav-link active" data-scroll-target="#progress-since-october-2"><span class="header-section-number">12.1</span> Progress since October 2</a></li>
-  <li><a href="#increasing-the-number-of-genes" id="toc-increasing-the-number-of-genes" class="nav-link" data-scroll-target="#increasing-the-number-of-genes"><span class="header-section-number">12.2</span> Increasing the number of genes</a></li>
-  <li><a href="#increasing-the-number-of-cpgs" id="toc-increasing-the-number-of-cpgs" class="nav-link" data-scroll-target="#increasing-the-number-of-cpgs"><span class="header-section-number">12.3</span> Increasing the number of CpGs</a></li>
-  <li><a href="#meeting-plan-what-remains" id="toc-meeting-plan-what-remains" class="nav-link" data-scroll-target="#meeting-plan-what-remains"><span class="header-section-number">12.4</span> Meeting plan: what remains</a></li>
+  <li><a href="#meeting-overview-and-discussion-guide" id="toc-meeting-overview-and-discussion-guide" class="nav-link active" data-scroll-target="#meeting-overview-and-discussion-guide"><span class="header-section-number">12.1</span> Meeting overview and discussion guide</a></li>
+  <li><a href="#progress-since-october-2" id="toc-progress-since-october-2" class="nav-link" data-scroll-target="#progress-since-october-2"><span class="header-section-number">12.2</span> Progress since October 2</a></li>
+  <li><a href="#increasing-the-number-of-genes" id="toc-increasing-the-number-of-genes" class="nav-link" data-scroll-target="#increasing-the-number-of-genes"><span class="header-section-number">12.3</span> Increasing the number of genes</a></li>
+  <li><a href="#increasing-the-number-of-cpgs" id="toc-increasing-the-number-of-cpgs" class="nav-link" data-scroll-target="#increasing-the-number-of-cpgs"><span class="header-section-number">12.4</span> Increasing the number of CpGs</a></li>
+  <li><a href="#meeting-plan-what-remains" id="toc-meeting-plan-what-remains" class="nav-link" data-scroll-target="#meeting-plan-what-remains"><span class="header-section-number">12.5</span> Meeting plan: what remains</a></li>
   </ul>
 </nav>
     </div>
@@ -258,13 +259,48 @@ window.Quarto = {
 </header>
 
 
-<section id="progress-since-october-2" class="level2" data-number="12.1">
-<h2 data-number="12.1" class="anchored" data-anchor-id="progress-since-october-2"><span class="header-section-number">12.1</span> Progress since October 2</h2>
+<section id="meeting-overview-and-discussion-guide" class="level2" data-number="12.1">
+<h2 data-number="12.1" class="anchored" data-anchor-id="meeting-overview-and-discussion-guide"><span class="header-section-number">12.1</span> Meeting overview and discussion guide</h2>
+<p>Use this chapter for the brief update since October 2, then the project write-up for the method, validation and biological evidence. The aim is to agree on the strongest supported manuscript claim and the evidence still needed to support it.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Write-up section</th>
+<th>Question for discussion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Methods and model comparison</td>
+<td>What do patient activities, molecular loadings and projection scores represent, and which formulation produced the reported results?</td>
+</tr>
+<tr class="even">
+<td>Validation and feature sensitivity</td>
+<td>How strong are prediction and program stability relative to the actual comparators, and where do broader feature sets change the result?</td>
+</tr>
+<tr class="odd">
+<td>Biological findings</td>
+<td>Do the basal/classical and stromal/immune programs provide useful biological separation? What would establish added value from methylation?</td>
+</tr>
+<tr class="even">
+<td>Discussion and continuing work</td>
+<td>What can the manuscript claim now, and which unresolved issues must be addressed before submission?</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Proposed manuscript focus:</strong> a Bayesian program model connecting cross-cohort risk prediction with interpretable tumor and microenvironmental structure. Current evidence supports developing that narrative; claims that survival supervision improves program discovery, or that methylation adds predictive or biological value, still require validation.</p>
+</section>
+<section id="progress-since-october-2" class="level2" data-number="12.2">
+<h2 data-number="12.2" class="anchored" data-anchor-id="progress-since-october-2"><span class="header-section-number">12.2</span> Progress since October 2</h2>
 <p>The feature studies now cover the full shared-gene universe and the requested CpG variability inventory. More genes give similar conditional prediction performance, but the programs change. CpG fitting exposed a numerical failure that is repaired experimentally; convergence remains unresolved.</p>
 <p><strong>The benchmark is retained:</strong> Single external C=0.627 with <span class="math inline">\(\alpha_F=0\)</span> (survival does not guide its loading updates). The joint benchmark has ICGC primary C=0.685 versus C=0.676 for the expression-only framework on the same donors; both fits are unconverged. No fully validated survival-supervised replacement or incremental predictive benefit from methylation has been established.</p>
 </section>
-<section id="increasing-the-number-of-genes" class="level2" data-number="12.2">
-<h2 data-number="12.2" class="anchored" data-anchor-id="increasing-the-number-of-genes"><span class="header-section-number">12.2</span> Increasing the number of genes</h2>
+<section id="increasing-the-number-of-genes" class="level2" data-number="12.3">
+<h2 data-number="12.3" class="anchored" data-anchor-id="increasing-the-number-of-genes"><span class="header-section-number">12.3</span> Increasing the number of genes</h2>
 <p>We fitted nested gene sets on the same 273 TCGA+CPTAC training patients, using the Single benchmark settings, <span class="math inline">\(K=7\)</span>, no pruning and cold starts. All <strong>24 full-training/CV fits converged</strong>, through all 17,900 shared genes. The nominal 5,000 target gives 5,001 shared genes under the unchanged ranking.</p>
 <table class="caption-top table">
 <colgroup>
@@ -354,8 +390,8 @@ window.Quarto = {
 </table>
 <p>These are matched programs, not all seven starting columns; constant or unmatched programs have no defined correlation. Similar prediction can coexist with changes in individual programs. Screening/scaling preceded the folds, so this is conditional CV rather than a fully nested preprocessing evaluation. No new external scoring was used.</p>
 </section>
-<section id="increasing-the-number-of-cpgs" class="level2" data-number="12.3">
-<h2 data-number="12.3" class="anchored" data-anchor-id="increasing-the-number-of-cpgs"><span class="header-section-number">12.3</span> Increasing the number of CpGs</h2>
+<section id="increasing-the-number-of-cpgs" class="level2" data-number="12.4">
+<h2 data-number="12.4" class="anchored" data-anchor-id="increasing-the-number-of-cpgs"><span class="header-section-number">12.4</span> Increasing the number of CpGs</h2>
 <p>The observed-value mean/SD inventory covers <strong>305,492 raw probes</strong> in 144 TCGA patients. The unchanged model-eligible universe contains <strong>305,352</strong>; its imputation exactly reproduces the frozen 10k matrix. Within that universe, the mean-in-[0.1,0.9] rule retains 182,934 probes and the 95%-extreme-proportion rule retains 221,142. These are descriptive alternatives; no filter or SD cutoff has been adopted, and upstream probe-QC completeness remains unverified.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -401,8 +437,8 @@ window.Quarto = {
 </table>
 <p>Stable arithmetic fixes the execution error without changing the likelihood; it does not fix the fit. The 25k risk SD reaches about 39,086, and risk and reconstruction still move beyond the original tolerance. Its high training C is not a validated gain. Four matched programs have common-probe loading correlation above 0.92, while three are weakly matched; risk correlation is 0.245. Both fits cap and arithmetic differs, so this is provisional agreement, not a clean converged feature-count comparison. Larger counts, CV, filter comparisons and joint curves remain open.</p>
 </section>
-<section id="meeting-plan-what-remains" class="level2" data-number="12.4">
-<h2 data-number="12.4" class="anchored" data-anchor-id="meeting-plan-what-remains"><span class="header-section-number">12.4</span> Meeting plan: what remains</h2>
+<section id="meeting-plan-what-remains" class="level2" data-number="12.5">
+<h2 data-number="12.5" class="anchored" data-anchor-id="meeting-plan-what-remains"><span class="header-section-number">12.5</span> Meeting plan: what remains</h2>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 50%">
