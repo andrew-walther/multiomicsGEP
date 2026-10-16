@@ -2031,3 +2031,54 @@ limitation rather than advertise a completed mathematical diagnosis.
 Corrective software verification: Cycle-T4b RED with.0064 discrepancy, then
 all8 focused tests GREEN; fresh full suite692 passed,0 failed. No second
 scientific replay has run. Shared fitter/update sources remain unchanged.
+
+## Task2-7: corrected complete-cycle observer (prospective, 2026-10-16)
+
+Andrew explicitly approves "one corrected replay" after the Task2-6
+observer error was disclosed. This is a separate diagnostic attempt; the
+invalid Task2-6 outputs are preserved, not overwritten or reclassified.
+
+Hypothesis, fixed arms, controls, distribution coverage and scientific gates
+are exactly Task2-6's. The one analytical correction is the observer-only
+Gaussian expectation: (Y−EL EFᵀ)²+EL2 EF2ᵀ−(EL²)(EF²)ᵀ. This restores the
+between-program mean cross-products that were absent from its first
+objective summary. No model function, prior, initialization, curvature,
+scale, likelihood, stopping rule, data, seed or test bed changes.
+
+Repeat ONLY saved Single profiled cell021, seed20261026/noise.25, n400 plus
+120 simulated validation,p50,K7, per-factor Normal beta, point-Laplace L/F,
+profile TRUE,w_S1,no start/pruning, original300 cap and ELBO rule. Saved
+reference SHA256 remains5b83bf02f24603e9be1ebc337b7cb3f9beba9bf53d7c2a0458885d429132b820.
+Use a fixed corrected mode in the same runner, with fresh
+`outputs/round2/working_cycle_seed26_corrected/` and ignored
+`data/round2_working_cycle_seed26_corrected.rds`. Existing paths refuse reuse.
+Freeze all source hashes immediately before execution, as in Task2-6.
+
+Validity still requires exact ENTIRE saved-fit/history identity, unchanged
+hashes, complete last50 coverage and native moment agreement<=1e-12. Preserve
+all errors/warnings/nonfinite components. Current L/beta reference priors
+remain distinct from implemented carried priors: a finite reference objective
+does not certify a common implemented variational target. Use the same
+1e-8 descriptive finite-transition tolerance; all original scientific
+recovery/false-positive/model-convergence/rank/CV/credible/external gates
+remain unchanged and cannot be passed by this diagnostic.
+
+Required before the prospective commit: the independent multi-program
+reconstruction fixture (RED.0064, then GREEN), all eight previous density,
+algebra and identity fixtures, driver mode/path isolation checks, and the
+fresh full suite including protected-base default identity. Commit before
+`Rscript results/benchmark_sim/run_working_cycle_audit.R corrected`.
+Serial local, minutes, approximately1GB; no new parallelism/HPC submission.
+
+Stop after this one replay. Failure of identity, density, coverage or
+source checks blocks interpretation; no automatic retry or new case. Report
+which transitions lose the independently evaluated reference objective,
+distinguishing joint EB prior/posterior changes from isolated fixed-prior
+coordinates. Do not turn a marginal empirical-Bayes block's intermediate
+fixed-q prior loss into proof its joint update is wrong. No numerical or
+scientific remedy follows automatically. Update the October16 meeting
+chapter/report with the actual outcome before the final Pages refresh.
+Task2-7 preregistration verification: path checks RED0/2 then GREEN2/2;
+all8 density/objective checks pass, including the independent two-program
+reconstruction regression. Fresh full suite694 passed,0 failed. No Task2-7
+scientific replay has run before this commit.

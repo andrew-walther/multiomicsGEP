@@ -253,3 +253,7 @@ cross-term omission; read VALIDITY.md and the attempt outcome. A corrected
 observer does not authorize a repeat of the no-retry attempt. The October16
 meeting chapter is `docs/progress_book/chapters/2026-10-16.qmd`; keep its
 diagnostic status synchronized with the actual attempt history.
+Andrew separately approved Task2-7's corrected observer replay. Its fixed
+`corrected` runner mode has fresh paths; registration, full tests and the
+prospective commit must precede execution. Read the outcome before repeating
+anything. This approval does not extend to a model remedy or another panel.

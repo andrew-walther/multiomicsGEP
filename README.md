@@ -21,10 +21,18 @@ Its first replay preserved the saved fit but produced an invalid objective
 summary because of an observer-only cross-term omission. The corrected
 observer passes the multi-program test; do not rerun it without a separately
 registered and approved replay. Existing outputs are retained with VALIDITY.md.
+Andrew approved the separate Task2-7 replay; after its prospective commit use
+`Rscript results/benchmark_sim/run_working_cycle_audit.R corrected` exactly once.
+That fixed mode uses separate output/telemetry paths and rejects other modes.
 
 The October 16 meeting update is `docs/progress_book/chapters/2026-10-16.qmd`.
-Render the book with the native RStudio Quarto command documented below;
-the rendered `_book/` content is published to the existing `gh-pages` branch.
+Render from the repository root with:
+
+```bash
+QUARTO_PANDOC=/opt/homebrew/bin/pandoc /Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render docs/progress_book
+```
+
+The rendered `_book/` content is published to the existing `gh-pages` branch.
 
 This project implements a **Supervised Bayesian Matrix Factorization** model that jointly decomposes high-dimensional genomics data — such as gene expression or DNA methylation matrices — while simultaneously modelling patient survival outcomes via a Cox proportional hazards model.
 

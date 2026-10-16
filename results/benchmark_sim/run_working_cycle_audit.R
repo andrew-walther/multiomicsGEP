@@ -4,17 +4,32 @@
 # Created: 2026-10-16
 # Dependencies: existing panel modules and working_cycle_audit_helpers.R
 # ============================================================
-# Task2-6: run ONLY after its prospective code/log commit. Andrew approved
+# Task2-6/Task2-7: run ONLY after the corresponding prospective code/log commit. Andrew approved
 # the complete-cycle observer on2026-10-16. This is one unchanged cell021
 # replay, NOT a remedy or adoption panel. No external/real data are loaded.
 # See the attempt log for fixed arms, original criteria and stopping rule.
 # Serial local; ~minutes,1GB. No nested workers or HPC submission.
 # Detailed telemetry remains ignored in data/; commit compact aggregates only.
+# Corrected Task2-7 run: Rscript results/benchmark_sim/run_working_cycle_audit.R corrected
 source("results/benchmark_sim/run_round2_fixed_prior.R")
 source("results/benchmark_sim/working_cycle_audit_helpers.R")
+
+#' Select the fixed paths for one of the two registered diagnostic attempts
+#' @param mode Empty character vector for historical Task2-6, or "corrected" for Task2-7.
+#' @return Named out/detailed paths; any other mode fails explicitly.
+#' @examples
+#' cycle_audit_paths("corrected")
+cycle_audit_paths <- function(mode=character()) {
+  if(!identical(mode,character()) && !identical(mode,"corrected"))
+    stop("Only the original or registered corrected attempt is permitted")
+  suffix<-if(length(mode))"_corrected" else ""
+  list(out=paste0("results/benchmark_sim/outputs/round2/working_cycle_seed26",suffix),
+    detailed=paste0("data/round2_working_cycle_seed26",suffix,".rds"))
+}
+
 if(sys.nframe()==0L) {
-  out<-"results/benchmark_sim/outputs/round2/working_cycle_seed26"
-  detailed<-"data/round2_working_cycle_seed26.rds"
+  paths_for_attempt<-cycle_audit_paths(commandArgs(trailingOnly=TRUE))
+  out<-paths_for_attempt$out;detailed<-paths_for_attempt$detailed
   if(dir.exists(out) || file.exists(detailed))stop("Fresh audit output required")
   source_fit<-"results/benchmark_sim/outputs/round2/profiled/cells/cell_021.rds"
   paths<-c(source_fit,"code/fit_cox_on_yf.R","code/multimodal_yfb_updates.R",
