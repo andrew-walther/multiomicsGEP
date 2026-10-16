@@ -1,8 +1,7 @@
 ---
-title: "Progress since the October 2 advisor meeting"
+title: "Project Update - October 16"
 subtitle: "Survival supervision, feature sensitivity and multimodal evidence"
-author: "Andrew J. Walther"
-date: "2026-10-16"
+author: "Andrew Walther"
 format:
   html:
     embed-resources: true
