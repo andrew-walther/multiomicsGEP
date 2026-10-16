@@ -12,8 +12,8 @@
 
 ## Start here when work resumes
 
-**State:** The bounded mathematical/evidence review is delivered below for
-Andrew's review. Stop and regroup before any new diagnostic replay, remedy
+**State:** The bounded mathematical/evidence review and approved corrected
+observer are delivered below for Andrew's review. Stop before any new replay, remedy
 implementation or fitting panel. The project objective remains unmet; the
 former broad goal is not resumed by this review.
 Last scientific/report checkpoint: `0c0c717` on `round2/supervised`; no fitting
@@ -127,6 +127,18 @@ are retained with a validity warning. Stop the scientific diagnostic under
 its no-retry rule pending a separate replay decision/registration. Continue
 the authorized October16 chapter and GitHub Pages publication. See the current
 handoff and append-only attempt log; this is not a new model failure or remedy.
+
+**Superseding corrected result:** Andrew approved a separate Task2-7 replay.
+It passes exact fit/density-coverage checks. Posterior fixed-prior steps show
+no late losses; F-prior refits and working refreshes do. Joint L/beta
+comparisons retain unresolved losses. The next recommendation is a reviewed
+fixed-q loading-prior EM step with coherent KL, not an implemented remedy or
+chosen weight. Read Task2-7/VALIDITY.md for numbers and reference-prior limits;
+the full suite passes694/0. Update/publish the meeting chapter and regroup.
+The meeting chapter/report is now refreshed with this result. GitHub Pages
+built commitb5a413a on the publication branch; source/model branches remain
+local and protected branches untouched. Publication and this bounded observer
+are complete; regroup before a new remedy. No project-level adoption gate passed.
 
 The [current handoff review package](Codex_to_Claude_Round2.md#bounded-supervision-review--2026-10-16)
 contains the equation/evidence table, complete Task2 remedy ledger and one

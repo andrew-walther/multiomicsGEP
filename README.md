@@ -33,6 +33,8 @@ QUARTO_PANDOC=/opt/homebrew/bin/pandoc /Applications/RStudio.app/Contents/Resour
 ```
 
 The rendered `_book/` content is published to the existing `gh-pages` branch.
+The [October 16 meeting chapter](https://andrew-walther.github.io/multiomicsGEP/chapters/2026-10-16.html)
+contains the current corrected diagnostic and its limitations.
 
 This project implements a **Supervised Bayesian Matrix Factorization** model that jointly decomposes high-dimensional genomics data — such as gene expression or DNA methylation matrices — while simultaneously modelling patient survival outcomes via a Cox proportional hazards model.
 

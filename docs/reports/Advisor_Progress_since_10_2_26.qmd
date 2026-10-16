@@ -501,7 +501,7 @@ external scoring. The benchmark tag is
 `benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
 The method-panel checkpoint is `f0858ec`; the CpG design is `dc69f6d`,
 the full-range expression design is `6597b4b`, and its reporting correction
-is `6371e42`. The current software suite has 692 passing tests. Full per-task commits, failures and tables are indexed in
+is `6371e42`. The current software suite has 694 passing tests. Full per-task commits, failures and tables are indexed in
 [the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
 [attempt history](../plans/Round2_attempts_log.md). The
 [approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)
@@ -538,7 +538,18 @@ simulation fit and history exactly, without warnings, and retained its
 300-iteration convergence failure. Post-run multi-program validation exposed
 an observer-only reconstruction cross-term omission. The original objective
 summary is preserved but invalid for ascent diagnosis. The observer correction
-passes eight focused tests; a further replay needs separate prospective
-registration and Andrew's decision. No model remedy, benchmark or criterion
+passes eight focused tests; a separately approved corrected replay has now completed with exact saved-fit identity and complete late-cycle coverage. No model remedy, benchmark or criterion
 has changed. The complete current account is adapted into the October 16
 chapter of the progress book.
+
+
+The corrected late50-cycle observation has zero decreases in each of350
+fixed-prior posterior steps for loadings, subject scores and coefficients;
+loading-prior refits lose the reference objective50/350 times and working
+refreshes18/50 times. Scale and precision updates have no such late losses.
+This supports reviewing a fixed-posterior loading-prior maximization step
+before damping or weights. Joint empirical-Bayes subject-score/coefficient
+comparisons retain additional losses whose optimizer/density/reference-prior
+interpretation remains unresolved. This is a local quadratic diagnostic,
+not a certified common implemented ELBO, a cure for the25k trajectory or
+an adopted remedy. The October16 chapter provides the full table and limits.

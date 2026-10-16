@@ -2082,3 +2082,33 @@ Task2-7 preregistration verification: path checks RED0/2 then GREEN2/2;
 all8 density/objective checks pass, including the independent two-program
 reconstruction regression. Fresh full suite694 passed,0 failed. No Task2-7
 scientific replay has run before this commit.
+
+Task2-7 outcome afterc94c182: exit0,42.867s, zero warnings; entire saved fit
+and all18 component/history checks identical, source/input hashes unchanged.
+All20700 observations retained locally; last50 coverage complete, maximum
+native/ledger moment gap2.22e-16. Original fit still fails convergence at300.
+Safe corrected summaries are in outputs/round2/working_cycle_seed26_corrected/.
+The original invalid attempt is preserved separately.
+
+Late50 finite comparisons: F/L/beta posterior updates each0/350 decreases;
+F-prior refit50/350 (minimum−.0253224), working refresh18/50 (minimum−.00206559),
+canonicalization0/50 and tau0/50, at the registered1e-8 descriptive tolerance.
+Do not infer only refresh is responsible, a mixing weight is needed, or the
+fixed-prior F coordinate is faulty. Joint L prior+posterior differences
+include17/350 decreases (minimum−1.09106); joint beta16/350 (minimum−1.13e-8,
+near tolerance). Their optimizer/density/reference-prior interpretation is
+unresolved; isolated prior-step loss is not a joint EB failure by itself.
+VALIDITY.md preserves these limitations and the exact finite comparison counts.
+
+Recommendation: derive/review a prior-consistent fixed-q F-prior EM step
+and coherent KL before damping/weights, subject to a separate decision and
+prospective single-change design. L/beta reference priors still do not certify
+a common implemented objective. No remedy is implemented, no external data
+scored and no model criterion/default changes. Stop at this result and refresh
+the authorized meeting account. Latest full suite694 passed,0 failed.
+Crosscheck against the existing Task2-5 F-prior trace:2100 keys identical,
+2074 finite prior-density changes agree within3.64e-12. The earlier
+native/analytic probability gap6.66e-16 is reused on the identical saved
+trajectory, not relabelled a new probability test of all L/beta densities.
+Joint-block summaries compare pre_L/pre_beta with the corresponding
+posterior rows at identical iteration/factor keys, retaining nonfinite cases.

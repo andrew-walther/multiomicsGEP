@@ -1,0 +1,6 @@
+One unchanged simulation replay; no remedy or scientific adoption.
+L/beta reference priors are ephemeral, transformed for density bookkeeping only.
+The fitter does not carry these priors through canonicalization; no common implemented objective is certified.
+Infinite KL transitions remain nonfinite; adjacent finite differences are descriptive.
+The anchored expected quadratic is not exact E_q logPL or a global lower bound.
+Original300 cap and convergence failure remain unchanged. Stop and regroup.

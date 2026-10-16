@@ -9,6 +9,15 @@ decision and registration. Full suite692/0. No supervised replacement is
 validated. Keep the existing scientific gates and defer trace archival to a
 separate retention decision; detailed new telemetry remains ignored.
 
+The separately approved corrected replay now passes exact saved-fit and
+late-coverage checks. F-prior refits and working refreshes can lose the local
+reference objective while fixed-prior posterior steps pass. Joint L/beta
+losses still require interpretation. Review the proposed fixed-q loading-prior
+step before implementation; latest full suite694/0. No method is adopted.
+The October16 chapter is published on GitHub Pages (publicationb5a413a), with
+the corrected observation and limitations. This reporting milestone is complete;
+the supervision, valid rank and multimodal-value research goals remain open.
+
 > A living task list of potential extensions, methodological improvements, and dissemination
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.

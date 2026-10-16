@@ -5,15 +5,19 @@ checkpoint preamble. The complete earlier handoff is preserved verbatim in
 [the chronological history](Codex_to_Claude_Round2_history_10_15_26.md).
 Historical statements there describe their own checkpoint, not current status.
 
-**Latest execution checkpoint (2026-10-16):** Andrew approved the complete-cycle
-observer. Its one Task2-6 replay reproduced the entire saved fit exactly, but
-post-run multi-program validation exposed an observer-only reconstruction
-cross-term omission. The objective diagnostic is invalid, with original outputs
-preserved and marked in `working_cycle_seed26/VALIDITY.md`. The observer is
-corrected and eight focused tests pass; no scientific remedy or corrected
-replay has run. A separately registered replay requires Andrew's decision
-under the original no-retry rule. The October16 progress-book chapter carries
-this status. Earlier proposals below remain proposals, not successful results.
+**Latest execution checkpoint (2026-10-16):** Andrew separately approved Task2-7.
+Afterc94c182 it completes in42.867s with exact entire-fit identity, complete
+late50 density coverage and no warnings. Latest full suite694/0. Finite late
+posterior steps show0/350 losses for each of F/L/beta, but F-prior refits
+lose the reference objective50/350 times and refresh18/50. Joint L/beta
+comparisons have additional unresolved losses; see the corrected output's
+VALIDITY.md and attempt log. This is not certification of a common implemented
+objective or a cause of M3. Recommendation: derive/review fixed-q loading-prior
+EM with coherent KL before damping/weights; no remedy is implemented. Stop and
+regroup before that new decision. The invalid Task2-6 remains preserved:
+its observer omitted reconstruction cross-products; the corrected independent
+multi-program test detects that defect. The October16 chapter/report includes
+both the invalid first attempt and the corrected result with its limits.
 
 ## Start here
 
@@ -24,16 +28,17 @@ this status. Earlier proposals below remain proposals, not successful results.
 4. Use [the attempt log](Round2_attempts_log.md) for exact designs/results and
    the chronological history for detailed implementation explanations.
 
-**State:** The bounded equation/evidence review below is delivered for review;
-stop and regroup before implementation or scientific execution. The north star
+**State:** The bounded equation/evidence review and approved corrected observer
+are delivered. Stop and regroup before implementing a remedy. The north star
 remains unmet; completing this review does not resume the former broad goal.
-Branch `round2/supervised`; no push, merge or protected-branch edit authorized.
-No fitting job remains running. Scientific/report checkpoint `0c0c717`;
-restart-plan checkpoint `f8c895b`. No new configuration is adopted.
+Branch `round2/supervised` remains local; only rendered gh-pages publication
+is authorized. No merge or protected-branch edit is authorized. No fitting
+job remains running. Preceding CpG/report checkpoint `0c0c717`, planning base
+`f8c895b`, corrected-observer preregistration `c94c182`. No configuration adopted.
 
-**Recommendation:** Keep the north star as the project objective. The bounded
-review below is delivered; regroup on its proposed complete-cycle observer
-before implementation or another scientific fitting panel. The active plan
+**Recommendation:** Keep the north star as the project objective. The corrected
+observer supports reviewing prior-consistent loading-prior maximization before
+damping/weights; regroup before implementing that new proposal. The active plan
 defines subsequent milestones.
 Do not mark the existing scientific goal complete just to replace it with a
 smaller goal. Its older state description incorrectly says external performance
@@ -68,7 +73,7 @@ is unchanged; the failed Single noninferiority result below is authoritative.
 | 7 Write-up housekeeping | Complete:14 process files moved, live pointers fixed, write-up and planning renders verified. |639351b;564/564|
 
 Historical test counts are not current suite totals. Latest full suite has
-684 passing tests and0 failures. Software tests do not establish the scientific
+694 passing tests and0 failures. Software tests do not establish the scientific
 success criteria. See the history/attempt log for full commits, seeds and arms.
 
 ## What is solved, and what remains scientifically open
@@ -183,9 +188,9 @@ unrun. Old source fingerprints must not be bypassed after arithmetic changes.
 
 ## Next handoff and stop rule
 
-The bounded mathematical/evidence review below supplies a specific prospective
-experiment and the applicable ladder/approval. Regroup before implementation
-or any fitting panel. Keep original thresholds, model-specific
+The review and corrected observer below supply the evidence for the next
+prior-consistency proposal. Regroup before remedy implementation or any
+fitting panel. Keep original thresholds, model-specific
 convergence rules, benchmark/default identity, one-change attempts and training-
 only selection. Retain DeSurv deferral and no push/merge authorization.
 Write verified findings into the meeting report and current write-up; final
@@ -193,12 +198,12 @@ configuration/biology claims retain review and Andrew's approval gates.
 
 ## Bounded supervision review — 2026-10-16
 
-**Recommendation:** Locate the first loss of a coherent objective across a
-complete working cycle, rather than repeat the F-only KL audit. Implement an
-isolated observer, not a new fitter path, damping constant or survival weight. The proposed
-experiment below is unexecuted and needs Andrew's decision and a committed
-prospective attempt before execution. It separates update and monitor gaps;
-it does not assume these gaps explain every cap. R2 and R3 remain untried.
+**Review recommendation and subsequent status:** The review recommended a
+complete-cycle observer before another remedy. Andrew approved it and then
+separately approved the corrected replay after the first observer error.
+The corrected result is summarized above and in Task2-7/VALIDITY.md. The
+design below is retained to explain what was observed, not to authorize a
+repeat. It does not establish a cause for every cap. R2 and R3 remain untried.
 
 ### Equations and evidence
 
@@ -288,7 +293,7 @@ No new patient-level computation or scientific fit was needed for this review.
 | Log-space risk-set arithmetic | Numeric repair demonstrated, opt-in | M2/M3 exact failing point repaired;25k still caps500 with riskSD39086/logPL−40177. Not a supervision remedy or default adoption. |
 | Prior-consistency / loading-balance observations | Completed diagnostics, not remedies | Task2-5 and B1. Fixed-q loading-prior maximization and a fully coherent current-state objective remain unimplemented. |
 
-### One proposed next experiment: observe the complete working cycle
+### Complete-cycle diagnostic design, subsequently approved and executed
 
 **Question:** After accounting for all current priors, does the remaining
 late Single oscillation originate within the frozen-quadratic updates or
@@ -394,15 +399,14 @@ not a silent reference substitution. Only a final selected configuration
 reaches the permitted external report (lower95% deltaC limit>−.02), with
 frozen benchmark rows; external cohorts cannot choose a remedy.
 
-**Decision requested:** Approve or decline this one complete-cycle observer
-and single unchanged simulation replay before production implementation.
-Recommendation: approve it because the F-only adjustment already failed to
-explain late oscillation. Use the transition evidence to choose a specific
-prior/update repair or damping proposal; retain R2/R3 for the distinct
-absorption problem after resolving shared-prior units. Do not authorize a new fitting
-panel, a new reference or relaxed convergence by implication. The broader
-method remains unresolved, and the existing failed external Single result
-and all capped fits stand.
+**Decision after execution:** Review the next opt-in fixed-q point-Laplace
+F-prior step (pi=S/p, rate=S/T) with KL against the returned prior. It addresses
+a demonstrated local non-ascent step, not every remaining failure. A future
+implementation/panel needs its own decision, algebra tests and committed
+single-change design. Retain R2/R3 for the distinct absorption problem after
+resolving shared-prior units. No new reference, relaxed convergence or default
+change follows from this diagnostic. The broader method remains unresolved;
+the failed external Single result and all capped fits stand.
 
 **Review verification (2026-10-16):** Fresh `Rscript tests/run_tests.R`
 completed with exit0:684 passed,0 failed. All24 local Markdown links/anchors
@@ -465,6 +469,16 @@ All108 landing/adjacent/new-chapter local links/assets resolve; search indexes
 the new chapter. The report HTML/PDF is synchronized. Publication targets
 only the rendered gh-pages site, preserving its history and leaving main and
 feature/supervised-F untouched.
+
+Final publication verification (2026-10-16): the corrected-evidence refresh
+is live at `https://andrew-walther.github.io/multiomicsGEP/chapters/2026-10-16.html`.
+GitHub Pages reports built for gh-pages commitb5a413a3b562ac8176cb325284ab5e64a1a101aa.
+Only rendered content was pushed, preserving publication history; this source
+branch was not pushed or merged. All108 local landing/adjacent/chapter
+references and the search entry verify; the live chapter and all three figures
+were checked. Both report formats render; the fresh result-checkpoint suite
+passes694/0. All10 benchmark hashes remain unchanged. Stop and regroup before
+any proposed prior remedy or additional fitting panel.
 
 - [Active plan and goal hierarchy](Advisor_Priorities_and_Execution_10_15_26.md)
 - [Original Round2 rules/criteria](Codex_Handoff_Round2_10_16_26.md)
