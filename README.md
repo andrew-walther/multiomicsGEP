@@ -515,3 +515,14 @@ Before executing, preregister and commit a separate diagnostic attempt in
 `docs/plans/Round2_attempts_log.md`. It repeats one completed simulation and
 requires exact saved-fit identity; its adjusted monitor is diagnostic only,
 never a replacement convergence or adoption criterion.
+
+
+The approved full-CpG descriptive study is
+`Rscript results/multimodal_real/summarize_cpg_variability.R run`, after its
+Task5-QC1 preregistration commit. It describes all raw TCGA probes on the
+established training patients, preserving missingness and reporting per-probe
+means/SDs, predeclared filter overlaps, beta/arcsine SD histograms and a
+mean-versus-SD density plot. It does not impute, fit a model or choose a filter.
+Fresh safe aggregates/plots go under
+`results/multimodal_real/outputs/feature_sensitivity/cpg_qc/`; the probe inventory
+RDS stays local/ignored. Input and benchmark identities/hashes are verified.

@@ -137,3 +137,14 @@ Before executing, preregister and commit a separate diagnostic attempt in
 `docs/plans/Round2_attempts_log.md`. It repeats one completed simulation and
 requires exact saved-fit identity; its adjusted monitor is diagnostic only,
 never a replacement convergence or adoption criterion.
+
+
+The revised advisor-priority plan is approved:
+`docs/plans/Advisor_Priorities_and_Execution_10_15_26.md`. Its first report is
+`docs/reports/Advisor_Progress_since_10_2_26.pdf`. The next descriptive study,
+`results/multimodal_real/summarize_cpg_variability.R`, must follow Task5-QC1's
+committed design before execution. It preserves raw TCGA missingness, uses
+only the existing training patients, verifies frozen screened probe IDs and
+applies no new preprocessing/default/SD cutoff. The local inventory is ignored;
+only aggregate plots/tables/provenance are committed. Read its actual result
+status in the Round2 handoff, not this pointer.

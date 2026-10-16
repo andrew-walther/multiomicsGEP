@@ -1166,3 +1166,88 @@ no package/default was changed. All five pages are visually checked; the
 crowded CI table was corrected. Full suite631 passed,0 failed. Benchmark
 and original write-up remain unchanged; no fit or external score ran.
 Next deliverable: full-TCGA-CpG descriptive inventory and variability plots.
+
+
+## Task5-QC1: full-probe TCGA methylation variability (prospective)
+
+Andrew approved the revised order before implementation. This descriptive
+attempt addresses the10/2 per-probe mean/SD histogram request, before any
+feature-count model fits. It changes no model, filter, preprocessing,
+imputation, criterion or default and uses no survival outcomes or external
+scores. No full-probe mean/SD analysis has run at this preregistration.
+
+Inputs: raw TCGA `tcga_meth_filtered_sex.rds`$meth (305492 probes x150 samples),
+existing TCGA-only training cache (144 patients x10000 screened probes), and
+the frozen joint fit's training_spec feature/patient manifest as the screened reference.
+Patient matching is by cache IDs, preserving its144-patient order. The raw
+universe is all305492 available TCGA probes, not a newly approved shared
+TCGA/ICGC universe. No ICGC values, outcomes or scores are used. Input MD5
+and a non-identifying patient-ID hash are retained; raw/cached inputs and the
+snapshot must not change. Cross-reactive/SNP-filter provenance is currently
+unverified; the run applies no additional QC.
+
+For each probe on observed raw beta values: count observed/missing, mean,
+sample variance/SD using n_observed-1, arcsine-scale SD after asin(2*beta-1),
+and proportions <.1, >.9 and outside[.1,.9]. Probes with n<2 have undefined
+SD; n=0 also has undefined mean/filter membership. They remain in inventory
+and aggregate denominators. No missing value is filled. Constants stay zero.
+The unchanged cached screened imputation is summarized separately, without
+rerunning imputation.
+
+Descriptive groups: all available; mean filter .1<=mean<=.9; proportion
+filter retaining probes with neither extreme fraction>=.95; both; mean-only;
+proportion-only; current screened set. The two extreme fractions are tested
+separately, not combined. Unknown membership is reported. Screened probe IDs
+must match the frozen benchmark exactly as sets. There is no new SD cutoff.
+
+Figures: per-probe SD histograms on beta/arcsine scales,80 bins, separate axes
+for each group/scale; mean-beta versus SD binned density. Histograms display
+all/mean/proportion/screened groups; finite/missing SD counts remain explicit.
+They do not estimate a survival benefit or choose features from outcomes.
+Probe inventory RDS stays ignored/local. Commit only aggregate tables,
+provenance and plots. Fresh output only:
+`results/multimodal_real/outputs/feature_sensitivity/cpg_qc/`.
+
+Software validity: known means/sample variances and transform moments match
+independent calculations; block size does not change values; missing/constant
+and boundary cases are correct; invalid range/identities fail; filter counts
+and histogram bins conserve finite observations; the driver preserves input
+hashes and refuses overwrite. All warnings and errors are retained. A failure
+is reported, not silently retried or used to change a cutoff. This attempt
+has no model-adoption pass rule; it cannot satisfy supervision/pruning goals.
+
+Runner: `Rscript results/multimodal_real/summarize_cpg_variability.R run`.
+Serial local run, minutes, several-GB input peak;10k-row summaries bound the
+extra working memory. No jobs or parallel workers submitted. Preregister,
+run the full suite, record the actual count and commit BEFORE execution.
+
+
+### CpG software teach-back
+
+`align_cpg_training()` aligns a probe-by-patient raw matrix to the existing
+patient-by-probe cache by patient names and retains every raw probe. It fails
+on missing/duplicate/incompatible IDs. `cpg_variability_table()` takes raw
+beta values and returns one row per probe; two-pass centered sums give sample
+variance, while observed counts preserve missing-data denominators. Transforming
+individual observations gives arcsine SD. Blocks control memory only.
+`summarize_cpg_filters()` counts the predeclared groups, missing SDs, constants
+and screened overlap. `cpg_variability_plots()` returns two ggplots; finite
+observations enter bins, and aggregate tables retain excluded-undefined counts.
+Separate axes reflect different units and group sizes; no cutoff is fitted.
+`run_cpg_variability()` reads only TCGA molecular inputs and frozen probe IDs,
+verifies the reference set, saves a local inventory plus safe aggregates and
+figures, and checks inputs stay unchanged. Existing base-R row arithmetic,
+yaml config and ggplot2 avoid new dependencies. Cached post-imputation
+reference statistics are labelled separately; full raw data are not imputed.
+These functions describe the data and do not fit survival or change the model.
+
+Software preflight clarification before any descriptive run: the frozen
+loading matrix has no row names. Its training_spec stores feature and patient
+identities; the driver verifies those fields, not row positions. The
+end-to-end fixture was tightened to this real archive schema (RED), then the
+driver was corrected (GREEN). No result, test bed or statistical rule changes.
+
+Task5-QC1 preregistration verification: focused11/11 pass after real-archive
+manifest RED/GREEN check. Fresh full suite **642 passed,0 failed**. Frozen
+feature IDs and patient order match the unchanged cache. No full-probe
+variability result has been computed before this commit.
