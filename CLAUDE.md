@@ -215,3 +215,11 @@ conditional terms; ratios are descriptive, not a selected weight or an
 executed sequential sweep. Prior penalties and cached objective components
 are distinct. Andrew subsequently prioritizes fixing25k Cox underflow; this
 audit must not replace that requested work.
+
+Andrew requests resolving the25k CpG numeric hangup. Task5-M3 is an opt-in
+same-likelihood arithmetic check, not a new model weight or default:
+`control$cox_arithmetic="logspace"` uses stable risk-set sums in working and
+monitoring calculations. Read the prospective attempt and mathematical note
+before `results/multimodal_real/run_logspace_cpg_case.R`. Default/original
+objects must remain identical to the protected base; no imputation, caps,
+priors or adoption rules change. Numeric repair does not prove convergence.

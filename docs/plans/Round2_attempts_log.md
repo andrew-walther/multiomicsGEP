@@ -1777,3 +1777,57 @@ Andrew's intervening request prioritizes resolving the25k numerical failure.
 Complete this already prepared bounded read-only audit at its checkpoint,
 then address stable Cox arithmetic separately; do not treat its ratios as a
 substitute for making large-CpG fitting numerically usable.
+
+Task2-B1 completed after1692431, before numerical-source edits. All four
+saved-state audits finish without fitting; source/input fingerprints unchanged.
+Among non-point-mass programs, median survival precision shares range from
+6.30e-11 to3.03e-7; median absolute-numerator shares from8.70e-7 to1.82e-4.
+Frozen joint credible program4 expression/methylation shares are2.03e-7/
+9.00e-10 for precision and7.27e-5/4.40e-6 for numerator. This is conditional
+on capped terminal states and excludes priors: no trajectory-causality,
+universal balance or weight-selection claim. Objective components are saved
+separately with the existing KL caveat. Safe tables: outputs/round2/loading_balance/.
+
+## Task5-M3: opt-in stable Cox arithmetic in the same25k case (prospective)
+
+Andrew asks to solve the CpG expansion hangup or give clear causes/resolutions.
+The unchanged replay identifies risk-set underflow with finite predictors and
+valid projection moments. One analytical change: control$cox_arithmetic=
+"logspace", evaluating the SAME Breslow likelihood and diagonal working terms
+via suffix log-sum-exp and cumulative log-hazard. No new weight, clipping,
+prior, imputation, K, initialization, damping, stopping rule, criterion or
+reference. Default/original arithmetic and protected-base fit remain identical.
+The option is carried through working, monitoring and removal calculations.
+Mathematical description: Cox_Logspace_Arithmetic_10_15_26.md.
+
+Before fitting, evaluate the captured outer6 working point with original and
+log-space arithmetic. Require the original nonfinite failure, finite new
+working quantities and sum(w)=death count within1e-8 (software numerical
+identity check, not a model-selection/adoption threshold). Then fit only the
+original full25k cell7 with seed42,144 TCGA patients, original fixed500/5 caps
+and every M1 setting except arithmetic. Observe outer predictor ranges without
+changing fit arguments. Preserve any failure/cap and saved posterior locally.
+
+Report the terminal row with original failed25k, original capped10k and frozen
+joint/expression benchmark rows, labelled different molecular inputs. Record
+training C with original risk orientation (constant risk remains NA), stable
+logPL, credible programs under the original positive-SD rule, retained count,
+convergence, iterations, runtime and all warnings/errors. No external outcome.
+Numerical success means getting past the identified arithmetic failure with
+finite quantities, not satisfying every scientific goal. No model adoption
+or automatic larger panel follows from that alone; remaining failure determines
+next diagnosis. Do not silently extend caps or reduce feature count.
+
+Seven focused checks pass after RED0/5 then GREEN5/5 and additional GREEN7/7:
+tied-time hand algebra; extreme finite predictors; original agreement/shift
+identities; numerical score derivative/no-event cases; default/off full-fit
+identity; opt-in objective propagation; exact protected-base default identity.
+The full suite must pass and this design be committed before the captured
+real-data point or case is evaluated. Runner: run_logspace_cpg_case.R.
+
+Task5-M3 preregistration checkpoint: fresh full suite684 passed,0 failed;
+seven focused arithmetic tests pass, including default fit identity against
+feature/supervised-F and actual objective propagation. No real-data captured-
+point evaluation or new25k fit has run before this commit. M1's frozen input
+and remaining source hashes must match; the two arithmetic-dispatch sources
+have explicit new fingerprints, with unchanged default behavior verified.

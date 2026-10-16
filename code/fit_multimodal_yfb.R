@@ -328,6 +328,9 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #'   constant from the Cox quadratic by weighted-centering only its survival
 #'   design. Genomics, prediction, original output convergence and pruning
 #'   scores remain unchanged. Currently requires per-factor Normal beta priors.
+#'   Opt-in `cox_arithmetic="logspace"` evaluates the same Breslow risk sums
+#'   and working weights in log space. Default/original arithmetic, priors,
+#'   curvature approximation, convergence and likelihood weights are unchanged.
 #' @param init Optional warm-start state (EL, EL2, EF, EF2, EBeta, EBeta2, Tau,
 #'   prior_L, prior_F, and g_beta for a shared beta prior), e.g. a fit with one
 #'   factor removed. Used by pruning; a warm start skips the beta warm-up.
@@ -348,6 +351,11 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
      (!is.logical(control$profile_cox_intercept) || length(control$profile_cox_intercept)!=1L ||
       is.na(control$profile_cox_intercept)))stop("profile_cox_intercept must be TRUE or FALSE.")
   if(!profile_enabled)control$profile_cox_intercept <- NULL
+  # Arithmetic only: preserve the original default and its returned controls.
+  cox_arithmetic <- control$cox_arithmetic %||% "original"
+  if (length(cox_arithmetic) != 1L || !cox_arithmetic %in% c("original", "logspace"))
+    stop("control$cox_arithmetic must be original or logspace.")
+  if (identical(cox_arithmetic, "original")) control$cox_arithmetic <- NULL
   trace_enabled <- isTRUE(control$trace)
   # Keep an explicitly disabled option identical to the historical control.
   if (!isTRUE(control$prune_protect_survival)) control$prune_protect_survival <- NULL
@@ -448,7 +456,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
       # Factor K starts along the null Cox score direction Y_m' u0 (C3)
       if (any(vapply(settings$prior_F[names(Y)], identical, logical(1), "point_exponential")))
         stop("init_supervised needs signed loading priors (point_laplace or normal).")
-      u0 <- multimodal_yfb_cox_working(data$time, data$event, rep(0, n))$u
+      u0 <- multimodal_yfb_cox_working(data$time, data$event, rep(0, n), arithmetic = cox_arithmetic)$u
       Yc <- lapply(Y, function(x) sweep(x, 2, colMeans(x)))
       d  <- lapply(Yc, function(x) as.vector(crossprod(x, u0)))
       fit_other <- Reduce(`+`, lapply(names(Y), function(m)
@@ -502,7 +510,8 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
     predictor <- multimodal_yfb_predictor_moments(projection$EZ, projection$VZ,
                                                    EBeta, EBeta2)
-    working <- multimodal_yfb_cox_working(data$time, data$event, predictor$mean)
+    working <- multimodal_yfb_cox_working(data$time, data$event, predictor$mean,
+                                             arithmetic = cox_arithmetic)
     # Only the survival design is weighted-centered. Genomic residuals and
     # predictions use the original Y; Xc' W Xc is the profiled curvature.
     survival_Y <- if(profile_enabled)lapply(Y,profile_cox_center,w=working$w) else Y
@@ -628,13 +637,13 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         EBeta2, working$w, working$h
       ),
       partial_log_likelihood = multimodal_yfb_cox_working(
-        data$time, data$event, predictor$mean
+        data$time, data$event, predictor$mean, arithmetic = cox_arithmetic
       )$log_partial_likelihood,
       max_moment_change = max(abs(new_moments - old_moments)),
       elbo = multimodal_yfb_elbo(Y, data$time, data$event, EL, EL2, EF, EF2,
                                  EBeta, EBeta2,
                                  sum(kl_L) + sum(unlist(kl_F)) + sum(kl_beta),
-                                 settings$survival_elbo, settings$tau_model),
+                                 settings$survival_elbo, settings$tau_model, cox_arithmetic),
       kl_parts = c(L = sum(kl_L), F = sum(unlist(kl_F)), beta = sum(kl_beta)),
       max_relative_reconstruction_change = max(reconstruction_change),
       max_relative_eta_change = multimodal_yfb_relative_change(old_eta, predictor$mean)
@@ -713,7 +722,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   diagnostics$elbo <- multimodal_yfb_elbo(Y, data$time, data$event, EL, EL2, EF, EF2,
                                           EBeta, EBeta2,
                                           sum(kl_L) + sum(unlist(kl_F)) + sum(kl_beta),
-                                          settings$survival_elbo, settings$tau_model)
+                                          settings$survival_elbo, settings$tau_model, cox_arithmetic)
   out <- list(EL = EL, EL2 = EL2, EF = EF, EF2 = EF2, EBeta = EBeta,
               EBeta2 = EBeta2, Tau = Tau, prior_L = prior_L, prior_F = prior_F,
               kl = kl, mu = mu, training_spec = data$training_spec,
@@ -727,7 +736,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     delta <- multimodal_yfb_nullcheck(out, Y_raw, data$time, data$event,
                                       settings$survival_elbo, settings$tau_model,
                                       settings$intercept,
-                                      isTRUE(settings$prune_protect_survival))
+                                      isTRUE(settings$prune_protect_survival), cox_arithmetic)
     if (max(delta) >= 0) {
       drop <- which.max(delta)
       keep <- setdiff(seq_len(K), drop)
@@ -824,6 +833,7 @@ multimodal_yfb_tau_from_residuals <- function(r2, n, tau_model = "feature") {
 #' @param kl_total Summed KL divergence of all coordinates.
 #' @param survival_elbo "plugin" or "corrected".
 #' @param tau_model Residual precision model; see [multimodal_yfb_tau_from_residuals()].
+#' @param cox_arithmetic Original arithmetic (default) or opt-in logspace risk sums.
 #' @return Scalar ELBO with a `components` attribute.
 #' @examples
 #' # multimodal_yfb_elbo(Y, time, event, fit$EL, fit$EL2, fit$EF, fit$EF2,
@@ -831,14 +841,15 @@ multimodal_yfb_tau_from_residuals <- function(r2, n, tau_model = "feature") {
 #' @family multimodal_yfb
 multimodal_yfb_elbo <- function(Y, time, event, EL, EL2, EF, EF2, EBeta, EBeta2,
                                 kl_total, survival_elbo = "plugin",
-                                tau_model = "feature") {
+                                tau_model = "feature", cox_arithmetic = "original") {
   n <- nrow(EL)
   tau_state <- multimodal_yfb_update_tau_chunked(Y, EL, EL2, EF, EF2, chunk_size = 1000L)
   reconstruction <- multimodal_yfb_tau_from_residuals(
     tau_state$expected_residual2, n, tau_model)$reconstruction
   projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
   predictor <- multimodal_yfb_predictor_moments(projection$EZ, projection$VZ, EBeta, EBeta2)
-  working <- multimodal_yfb_cox_working(time, event, predictor$mean)
+  working <- multimodal_yfb_cox_working(time, event, predictor$mean,
+                                           arithmetic = cox_arithmetic)
   survival <- working$log_partial_likelihood
   if (survival_elbo == "corrected") {
     survival <- survival - 0.5 * sum(working$w * pmax(predictor$variance, 0))
@@ -860,6 +871,7 @@ multimodal_yfb_elbo <- function(Y, time, event, EL, EL2, EF, EF2, EBeta, EBeta2,
 #' @param Y,time,event Training data used for the fit.
 #' @param survival_elbo "plugin" or "corrected".
 #' @param tau_model Residual precision model.
+#' @param cox_arithmetic Original arithmetic (default) or opt-in logspace risk sums.
 #' @param intercept Whether the fit has a per-feature intercept (then `Y` is raw).
 #' @param protect_survival Protect |Eβ| >= 1.96 SD(β); return -Inf for those candidates.
 #' @return Numeric vector: ELBO(without k) - ELBO(with all factors), per k.
@@ -868,7 +880,7 @@ multimodal_yfb_elbo <- function(Y, time, event, EL, EL2, EF, EF2, EBeta, EBeta2,
 #' @family multimodal_yfb
 multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugin",
                                      tau_model = "feature", intercept = FALSE,
-                                     protect_survival = FALSE) {
+                                     protect_survival = FALSE, cox_arithmetic = "original") {
   K <- ncol(fit$EL)
   kl_k <- fit$kl$L + Reduce(`+`, fit$kl$F) + fit$kl$beta
   # With an intercept, Y is the raw data and the intercept is re-estimated for
@@ -880,7 +892,7 @@ multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugi
   }
   full <- multimodal_yfb_elbo(centered(fit$EL, fit$EF), time, event, fit$EL, fit$EL2,
                               fit$EF, fit$EF2, fit$EBeta, fit$EBeta2, sum(kl_k),
-                              survival_elbo, tau_model)
+                              survival_elbo, tau_model, cox_arithmetic)
   vapply(seq_len(K), function(k) {
     # Protect only credibly prognostic coefficients with positive uncertainty.
     beta_sd <- sqrt(pmax(fit$EBeta2[k] - fit$EBeta[k]^2, 0))
@@ -894,7 +906,7 @@ multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugi
       centered(EL_keep, EF_keep), time, event, EL_keep, fit$EL2[, keep, drop = FALSE],
       lapply(fit$EF, function(x) x[, keep, drop = FALSE]),
       lapply(fit$EF2, function(x) x[, keep, drop = FALSE]),
-      fit$EBeta[keep], fit$EBeta2[keep], sum(kl_k[keep]), survival_elbo, tau_model)
+      fit$EBeta[keep], fit$EBeta2[keep], sum(kl_k[keep]), survival_elbo, tau_model, cox_arithmetic)
     reduced - full
   }, numeric(1))
 }

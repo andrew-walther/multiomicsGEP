@@ -1684,3 +1684,19 @@ the25k arithmetic hangup; he does not accept inferring that CpG expansion is
 inherently infeasible. Imputation is verified; numeric Cox risk-set underflow
 and rapid predictor expansion must be distinguished. Opt-in arithmetic repair
 and the same25k case are next, under a separate committed prospective design.
+
+Task2-B1 completes before arithmetic-source edits. Across saved capped fits,
+non-point-mass program median survival precision shares are6.30e-11–3.03e-7,
+and absolute-numerator shares8.70e-7–1.82e-4. Frozen joint program4 expression/
+methylation values are2.03e-7/9.00e-10 (precision),7.27e-5/4.40e-6 (numerator).
+These are frozen independent-coordinate likelihood shares excluding priors,
+not executed-sweep telemetry, a causal explanation or an adopted weight.
+
+Andrew's clarification explicitly prioritizes resolving the25k expansion
+failure. Task5-M3 adds opt-in same-likelihood log-space Cox arithmetic and a
+bounded same25k case; no model/default/cap/criterion changes. Seven focused
+checks pass after RED0/5; fresh full suite684 passed,0 failed. No captured-
+point real-data evaluation or candidate fit has run before this prospective
+commit. Remaining data/source identities are checked, and protected-base
+original/default full-fit equality is tested. Numeric usability and scientific
+convergence are separate outcomes; no blanket claim against large CpG sets.

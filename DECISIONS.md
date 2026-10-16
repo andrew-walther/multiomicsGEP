@@ -5,6 +5,17 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Test stable Cox arithmetic without changing the model
+
+Andrew asks to resolve the25k CpG numerical failure rather than infer a
+feature-count limit. Use opt-in log-space risk-set arithmetic for the same
+Breslow likelihood and diagonal working terms; preserve the original default,
+all priors, initialization, preprocessing, K and convergence/adoption rules.
+No clipping or tuned survival weight. The bounded Task5-M3 case first checks
+the captured failing point, then repeats the unchanged25k full-training fit.
+Success of arithmetic alone is not convergence or approval of a new default.
+Original failed/capped and frozen benchmark rows remain in the comparison.
+
 ## 2026-10-15 — Document CpG expansion failures and incorporate verified sensitivity findings
 
 Andrew approves documenting problems from expansion beyond10k CpGs and

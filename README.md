@@ -629,3 +629,12 @@ per-coordinate reconstruction/survival A/B contributions, with the tested
 formulas in `code/loading_balance_audit.R`; no sequential sweep or fit runs.
 Ratios exclude priors, preserve undefined zero-information cases and do not
 select a survival weight. Cached objective components are reported separately.
+
+`control$cox_arithmetic="logspace"` is an opt-in numeric implementation of the
+same multimodal Breslow working terms. `code/cox_working_logspace.R` uses
+suffix log-risk sums and cumulative log-hazard to avoid zero denominators
+from a single global exponential shift. Original arithmetic remains default;
+no clipping, new model weight or convergence change is introduced. See
+`docs/plans/Cox_Logspace_Arithmetic_10_15_26.md`. The bounded25k test is
+`Rscript results/multimodal_real/run_logspace_cpg_case.R`, only after Task5-M3's
+prospective commit. It preserves original failures and benchmark context.

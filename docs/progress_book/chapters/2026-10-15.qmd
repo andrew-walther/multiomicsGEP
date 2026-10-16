@@ -923,3 +923,20 @@ benchmark-linked tables and the CpG diagnosis without claiming a supervised
 replacement or changing the preserved benchmark tag/snapshot. Full suite
 672 passed,0 failed. Additional numeric remedies are separate prospective
 work, not inferred from this reporting authorization.
+
+## Loading-update balance and numerical-repair design
+
+The saved-state loading audit completes without refitting. Non-point-mass
+program median survival precision shares are6.30e-11–3.03e-7, and median
+absolute-numerator shares8.70e-7–1.82e-4. Frozen joint credible program4 has
+expression/methylation shares2.03e-7/9.00e-10 for precision,7.27e-5/4.40e-6
+for numerator. These are isolated-coordinate likelihood contributions at
+capped terminal states, excluding priors; they do not identify trajectory
+causes or select a survival weight. Saved objective components are separate.
+
+Andrew asks to resolve the25k failure rather than treat it as an intrinsic
+CpG-count limit. A same-likelihood log-space Cox calculation is prepared,
+opt-in with default/base identity tests. Task5-M3 prospectively registers
+captured-point numerical verification followed by one unchanged25k case.
+No preprocessing, prior, K, convergence cap, rule or survival weight changes.
+Fresh full suite684 passed,0 failed; no scientific M3 run before its commit.
