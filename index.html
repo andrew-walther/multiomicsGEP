@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.19">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Andrew Walther">
-<meta name="dcterms.date" content="2026-10-12">
+<meta name="dcterms.date" content="2026-10-16">
 
 <title>SSBMF Progress Notebook</title>
 <style>
@@ -45,10 +45,10 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-3afd7f6f85b379ea934fa0964bb45a75.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-93f184f27b88d8509a63edf5b6815180.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -78,7 +78,7 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -209,6 +209,18 @@ window.Quarto = {
  <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">October 2, 2026</span></span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./chapters/2026-10-15.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Survival supervision of the loadings (October 2026, in progress)</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./chapters/2026-10-16.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span></a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -249,7 +261,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 12, 2026</p>
+      <p class="date">October 16, 2026</p>
     </div>
   </div>
   
@@ -266,6 +278,7 @@ window.Quarto = {
 <p>Running record of SSBMF project progress with one chapter per week. Each chapter covers what changed in the method, what was run to validate it (on real cohorts and on simulation), whether the new results make sense, and what’s still open. Figures and tables that came up in discussion are included directly; anything that needs the full statistical detail is linked out under that chapter’s “Deep dive.”</p>
 <p>For a complete session-by-session build log (every script, test, and decision), see <code>PROJECT_STATUS.qmd</code> at the repo root. This notebook is the meeting-facing summary, not a replacement for that log.</p>
 <p>Chapters are listed in the sidebar in date order; click a date to jump straight to that meeting.</p>
+<p>The <a href="./chapters/2026-10-16.html">October 16 update</a> is the latest account of survival-supervision validation, full-range expression sensitivity and the CpG arithmetic repair. Earlier chapters describe their own checkpoints. The evaluated single-modality benchmark still uses <span class="math inline">\(\alpha_F=0\)</span>; a fully validated survival-supervised replacement remains an open research goal.</p>
 <section id="project-synopsis" class="level2">
 <h2 class="anchored" data-anchor-id="project-synopsis">Project synopsis</h2>
 <p>Supervised Bayesian Matrix Factorization (SSBMF) jointly factorizes a genomics matrix (gene expression) and a patient survival outcome, so the resulting gene expression programs (GEPs) are chosen to be both genomically coherent <em>and</em> prognostically relevant, unlike standard unsupervised factorization (PCA, NMF), which has no reason to recover clinically meaningful structure.</p>
