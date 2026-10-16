@@ -5,6 +5,16 @@ checkpoint preamble. The complete earlier handoff is preserved verbatim in
 [the chronological history](Codex_to_Claude_Round2_history_10_15_26.md).
 Historical statements there describe their own checkpoint, not current status.
 
+**Latest execution checkpoint (2026-10-16):** Andrew approved the complete-cycle
+observer. Its one Task2-6 replay reproduced the entire saved fit exactly, but
+post-run multi-program validation exposed an observer-only reconstruction
+cross-term omission. The objective diagnostic is invalid, with original outputs
+preserved and marked in `working_cycle_seed26/VALIDITY.md`. The observer is
+corrected and eight focused tests pass; no scientific remedy or corrected
+replay has run. A separately registered replay requires Andrew's decision
+under the original no-retry rule. The October16 progress-book chapter carries
+this status. Earlier proposals below remain proposals, not successful results.
+
 ## Start here
 
 1. Read `CLAUDE.md` and this summary.
@@ -405,6 +415,56 @@ No scientific fit, external scoring or remedy execution occurred. Commit
 on `round2/supervised` only, with branch rechecked immediately beforehand.
 
 ## Provenance and history
+
+### Observer implementation walkthrough
+
+Purpose: observe the existing Single algorithm without changing its fitted
+state. The inputs are the original update arguments/results and the active
+simulation call; outputs are aggregate transition records and exact-fit
+identity checks. No dependency was added. Base-R densities and matrix products
+are used so the calculation can be checked against independent algebra.
+
+| Function/block | Logic, inputs/outputs and design limitation |
+|---|---|
+| `cycle_log_prior(q,g)` | Sum expected log density under the mixed spike/continuous measure. A support conflict gives−Inf, never a finite clipped penalty. |
+| `cycle_posterior(A,B,g,mean,second,log_ml)` | Recover slab/absolute moments and E log q from the actual normal-means normalizer. Native moments are retained; entropy is not guessed from those moments. Normal, point-Laplace and point-exponential families have separate density formulas. |
+| `cycle_kl(q,g)` | E log q−E log g in the same units, with infinite KL preserved. This is a declared-prior calculation, not certification that g is carried by the fitter. |
+| `cycle_scale(q,g,c)` | Scale means/absolute moments by c and second moments by c². Continuous entropy changes by−Pr(nonzero)log(c); the spike has no Jacobian. Transform the reference prior together; actual carried-prior status is labelled separately. |
+| `cycle_prior(fitted_g,family)` | Read the actual ebnm single-slab distribution without adding an empirical threshold. Multiple continuous slabs fail explicitly rather than being silently collapsed. |
+| `cycle_likelihood(state,work)` | Evaluate Gaussian reconstruction and the anchored expected profiled Cox quadratic. Reconstruction uses squared mean residual plus posterior variance, including all cross-program products. The initial observer missed those products and is invalidated; the corrected two-program fixture detects that error. |
+| `cycle_snapshot(frame)` | Copy the current Y/moment/precision references from the active call; no assignment is made into the fitter frame. The bounded runner uses no cohort augmentation. |
+| `cycle_observer()` and its `record` collector | Keep the density/prior ledger across updates. Record incomplete initialization coverage, finite/nonfinite components and native moment agreement. Transformed transient L/beta references do not become implemented priors. |
+| Local `wrapper` | Invoke the original function with unchanged arguments, examine its result, and construct a separate proposed snapshot before the caller assigns it. Separate posterior, prior, tau, scale and refresh events; return the original result unchanged. |
+| Observer `run(callback)` | Temporarily install wrappers in the existing global fitting environment and restore the original functions with on.exit, including errors. The software fixture checks the entire returned fit/history. |
+| Driver | Reuse fixed cell021 controls/generator, refuse existing output, retain errors/warnings, verify exact identity/hashes, and save detailed rows only under ignored data/. Compact per-iteration/event summaries retain nonfinite counts. The original summaries have a validity warning and must not diagnose the fitter. |
+
+The corrected reconstruction identity is
+E[(Y−LFᵀ)²]=(Y−EL EFᵀ)²+EL2 EF2ᵀ−(EL²)(EF²)ᵀ, elementwise squares.
+The log-density identity is E log q=E log g+E log N(x;theta,s²)−log m(x).
+Both matter: a correct entropy calculation cannot rescue an incorrect
+likelihood expectation. Eight focused tests now cover the mathematical
+pieces and observation identity; the full suite passes692/0. Scientific
+convergence and adoption remain independent requirements.
+
+### Repository footprint and meeting publication
+
+Against local origin/main before this work,166443 added lines comprise144461
+CSV lines (87%) and7937 R source/test lines. Six traces contribute105006 CSV
+lines. This is not160k new lines of model code. No evidence was deleted.
+Review archival/storage separately with provenance and a restore procedure;
+do not merely discard traces needed to support the diagnoses. The new detailed
+20700-row record remains ignored; Git receives compact summaries and the
+validity warning.
+
+The October16 chapter adapts the advisor report's tables/figures into the
+existing book headings/navigation and adds the mathematical review and
+invalid diagnostic status. Native RStudio Quarto renders all13 pages; the
+old standalone Quarto's bundled Sass has incompatible architecture. An older
+chapter's broken supporting-report link now points to a packaged resource.
+All108 landing/adjacent/new-chapter local links/assets resolve; search indexes
+the new chapter. The report HTML/PDF is synchronized. Publication targets
+only the rendered gh-pages site, preserving its history and leaving main and
+feature/supervised-F untouched.
 
 - [Active plan and goal hierarchy](Advisor_Priorities_and_Execution_10_15_26.md)
 - [Original Round2 rules/criteria](Codex_Handoff_Round2_10_16_26.md)

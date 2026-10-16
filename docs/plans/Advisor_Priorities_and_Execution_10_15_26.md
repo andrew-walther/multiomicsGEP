@@ -120,6 +120,14 @@ weight, convergence rule or unreviewed remedy.
 
 ### Bounded review delivered — 2026-10-16
 
+**Execution update:** Andrew approved the observer. Task2-6 reproduced the
+complete saved fit, but an observer reconstruction cross-term error invalidates
+its full-objective interpretation. The correction is tested; original outputs
+are retained with a validity warning. Stop the scientific diagnostic under
+its no-retry rule pending a separate replay decision/registration. Continue
+the authorized October16 chapter and GitHub Pages publication. See the current
+handoff and append-only attempt log; this is not a new model failure or remedy.
+
 The [current handoff review package](Codex_to_Claude_Round2.md#bounded-supervision-review--2026-10-16)
 contains the equation/evidence table, complete Task2 remedy ledger and one
 prospective experiment. It supersedes the earlier generic request to choose

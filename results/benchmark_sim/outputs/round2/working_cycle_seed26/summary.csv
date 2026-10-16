@@ -1,0 +1,2 @@
+"seed","noise","iterations","converged","exact_fit_identity","rows","last50_complete","max_moment_gap","implemented_common_prior","runtime_seconds"
+20261026,0.25,300,FALSE,TRUE,20700,TRUE,2.22044604925031e-16,FALSE,42.345

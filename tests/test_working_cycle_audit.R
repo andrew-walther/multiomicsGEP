@@ -70,6 +70,19 @@ run_test("Cycle-T5: Normal and positive-slab densities have correct KL", {
   assert_near(cycle_kl(q,g),multimodal_yfb_coordinate_kl(p$x,p$s2,
     p$mean,p$second,p$log_ml),tol=1e-12)
 })
+run_test("Cycle-T4b: reconstruction includes cross-products between different programs", {
+  Y<-matrix(c(1,3,2,-1,2,4),3,2)
+  L<-matrix(c(.1,.2,.3,.4,.5,.6),3,2)
+  F<-matrix(c(.2,-.4,.3,.1),2,2)
+  s<-list(Y=Y,EL=L,EL2=L^2+.05,EF=F,EF2=F^2+.02,
+    EBeta=c(.6,-.2),EBeta2=c(.5,.1),Tau=c(1,2))
+  work<-list(w=c(.3,1,.7),u=c(.2,-.1,-.1),eta0=c(-.2,.4,.1),logPL=-2)
+  expected_r2<-(Y-L%*%t(F))^2+compute_var_term(L,s$EL2,F,s$EF2)
+  expected<-3*sum(log(s$Tau))/2-sum(sweep(expected_r2,2,s$Tau,"*"))/2-
+    length(Y)*log(2*pi)/2
+  assert_near(cycle_likelihood(s,work)$reconstruction,expected,tol=1e-12,
+    msg="two-program cross terms must not disappear")
+})
 run_test("Cycle-T6: fixed-prior loading posterior improves the full fixed quadratic", {
   Y<-matrix(c(1,3,2,-1,2,4),3,2);w<-c(.3,1,.7)
   s<-list(Y=Y,EL=matrix(.1,3,1),EL2=matrix(.2,3,1),EF=matrix(c(.2,-.4),2,1),

@@ -2,7 +2,7 @@
 title: "Progress since the October 2 advisor meeting"
 subtitle: "Survival supervision, feature sensitivity and multimodal evidence"
 author: "Andrew J. Walther"
-date: "2026-10-15"
+date: "2026-10-16"
 format:
   html:
     embed-resources: true
@@ -64,8 +64,7 @@ constant-risk predictions in its five candidate CV folds. These are specific
 software corrections and diagnoses, not proof of the complete scientific goal.
 
 **Current decision.** No replacement is proposed. Preserve the benchmark,
-report failures, and now prioritize the advisor's fixed-$K$ feature study
-alongside bounded method remedies. Andrew approved that revised sequence.
+report failures, and review working-step and prior/objective consistency before another large feature-count fitting panel. The October 16 progress-book chapter contains the current mathematical review.
 
 \newpage
 
@@ -502,7 +501,7 @@ external scoring. The benchmark tag is
 `benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
 The method-panel checkpoint is `f0858ec`; the CpG design is `dc69f6d`,
 the full-range expression design is `6597b4b`, and its reporting correction
-is `6371e42`. The current software suite has 684 passing tests. Full per-task commits, failures and tables are indexed in
+is `6371e42`. The current software suite has 692 passing tests. Full per-task commits, failures and tables are indexed in
 [the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
 [attempt history](../plans/Round2_attempts_log.md). The
 [approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)
@@ -530,3 +529,16 @@ not guarantee an improving likelihood or convergent variational updates.
 A proposed remedy needs a prospective design and the unchanged simulation
 and training-validation gates. Longer runs, clipping, new weights or new
 convergence criteria should not be inferred from the present result.
+
+
+## October 16 diagnostic validation update
+
+One approved observation-only replay reproduced the entire saved Single
+simulation fit and history exactly, without warnings, and retained its
+300-iteration convergence failure. Post-run multi-program validation exposed
+an observer-only reconstruction cross-term omission. The original objective
+summary is preserved but invalid for ascent diagnosis. The observer correction
+passes eight focused tests; a further replay needs separate prospective
+registration and Andrew's decision. No model remedy, benchmark or criterion
+has changed. The complete current account is adapted into the October 16
+chapter of the progress book.

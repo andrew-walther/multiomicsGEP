@@ -118,7 +118,10 @@ cycle_prior <- function(g,family) {
 #' # cycle_likelihood(state,working)
 cycle_likelihood <- function(s,work) {
   meanY<-s$EL%*%t(s$EF)
-  r2<-s$Y^2-2*s$Y*meanY+s$EL2%*%t(s$EF2)
+  # Retain cross-program products in the squared mean reconstruction.
+  # E[L²]E[F²] replaces only each program's own squared mean, not
+  # cross-products between distinct programs.
+  r2<-(s$Y-meanY)^2+s$EL2%*%t(s$EF2)-(s$EL^2)%*%t(s$EF^2)
   rec<-nrow(s$Y)*sum(log(s$Tau))/2-
     sum(sweep(r2,2,s$Tau,"*"))/2-length(s$Y)*log(2*pi)/2
   YC<-profile_cox_center(s$Y,work$w)

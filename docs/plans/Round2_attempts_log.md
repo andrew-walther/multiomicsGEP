@@ -2013,3 +2013,21 @@ Fresh full suite691 passed,0 failed before the prospective commit. Reference
 cell021 SHA256 is `5b83bf02f24603e9be1ebc337b7cb3f9beba9bf53d7c2a0458885d429132b820`;
 unchanged Single fitter SHA256 is `9ee9fb0eb824bba4cae94a617dafa13689c2b029c0539904f5eb47a6383a4e89`;
 unchanged modular F-update SHA256 is `e8d5986ffdcf6c0e2955be177278d989f3355ff9ecf90d9145ab2837704eb43c`.
+
+Task2-6 outcome: the one replay after88df7d3 completed in42.345s with zero
+warnings, exact entire-fit identity,20700 diagnostic rows and complete late50
+coverage; maximum native/ledger moment gap2.22e-16. The scientific fit remains
+unconverged at300. Post-run review found the observer's expected reconstruction
+residual omitted between-program mean cross-products. Its one-program
+objective fixture did not exercise that term. New Cycle-T4b failed by.0064,
+then passed with the corrected observer expression. All8 focused tests pass.
+The original telemetry/summaries are preserved and marked INVALID for full
+objective/ascent interpretation in VALIDITY.md. No posterior-step loss counts
+are evidence of a fitter defect. No model source or fit output changed.
+Follow the no-retry stop: no corrected replay without Andrew's separate
+decision and prospective registration/commit. Detailed rows remain ignored;
+compact outputs include the validity warning. The book must report this
+limitation rather than advertise a completed mathematical diagnosis.
+Corrective software verification: Cycle-T4b RED with.0064 discrepancy, then
+all8 focused tests GREEN; fresh full suite692 passed,0 failed. No second
+scientific replay has run. Shared fitter/update sources remain unchanged.

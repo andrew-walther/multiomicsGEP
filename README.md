@@ -17,6 +17,14 @@ go to `results/benchmark_sim/outputs/round2/working_cycle_seed26/`; detailed
 telemetry stays ignored in `data/round2_working_cycle_seed26.rds`. Transformed
 L/beta reference priors are explicitly distinguished from implemented carried
 priors. See Task2-6 in `docs/plans/Round2_attempts_log.md` for its stop rule.
+Its first replay preserved the saved fit but produced an invalid objective
+summary because of an observer-only cross-term omission. The corrected
+observer passes the multi-program test; do not rerun it without a separately
+registered and approved replay. Existing outputs are retained with VALIDITY.md.
+
+The October 16 meeting update is `docs/progress_book/chapters/2026-10-16.qmd`.
+Render the book with the native RStudio Quarto command documented below;
+the rendered `_book/` content is published to the existing `gh-pages` branch.
 
 This project implements a **Supervised Bayesian Matrix Factorization** model that jointly decomposes high-dimensional genomics data — such as gene expression or DNA methylation matrices — while simultaneously modelling patient survival outcomes via a Cox proportional hazards model.
 

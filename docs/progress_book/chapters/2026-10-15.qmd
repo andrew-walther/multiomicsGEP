@@ -256,7 +256,7 @@ The full suite passes 549 tests. Results, warning and donor-consistency records 
 ## Robustness and comparator follow-up
 
 The five-prompt evidence, independent branch commits and limitations are gathered
-in [the consolidated report](../../../docs/reports/Codex_M6_M7_Summary_10_15_26.md).
+in [the consolidated report](../resources/Codex_M6_M7_Summary_10_15_26.md).
 Protected pruning was not adopted: multimodal ELBO convergence could not be
 assessed under the allowed edits. DeSurv was unavailable. The high-noise comparator
 table uses only ten of twenty datasets and cannot establish a full comparison.

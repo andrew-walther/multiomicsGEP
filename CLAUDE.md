@@ -248,3 +248,8 @@ Single replay with process-local wrappers. Read the actual attempt status
 before execution; prior-reference bookkeeping is not a new model or a
 certification of a common implemented objective. Detailed telemetry remains
 ignored; compact summaries and provenance are sufficient for Git.
+The first replay's objective summary was invalidated by an observer-only
+cross-term omission; read VALIDITY.md and the attempt outcome. A corrected
+observer does not authorize a repeat of the no-retry attempt. The October16
+meeting chapter is `docs/progress_book/chapters/2026-10-16.qmd`; keep its
+diagnostic status synchronized with the actual attempt history.

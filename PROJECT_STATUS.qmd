@@ -19,6 +19,28 @@ execute:
   warning: false
 ---
 
+## October 16 meeting chapter and complete-cycle observation
+
+The advisor report is adapted into `docs/progress_book/chapters/2026-10-16.qmd`,
+with the complete expression curve, CpG variability inventory, capped25k
+stable-arithmetic result, provisional loading agreement and the current
+mathematical review. The native RStudio Quarto renders the book; the older
+standalone Quarto has an incompatible bundled Sass executable. Publication
+is authorized to the existing gh-pages branch only, without merging model code.
+
+The registered complete-cycle observer reproduces the entire saved Single
+cell021 fit/history exactly, but its first objective summary is invalid:
+post-run validation found an observer-only reconstruction cross-term omission.
+Original outputs are preserved with VALIDITY.md. The correction passes eight
+focused tests; another replay requires a separate registration/decision under
+the attempt's stop rule. No scientific remedy or criterion is changed. Refer
+to Task2-6 in the append-only attempt log for actual execution status.
+
+Repository footprint review against local origin/main found144461 of166443
+added lines in saved CSVs (about87%), versus7937 in R source/tests. Detailed
+trace retention can be reviewed separately; no historical evidence was deleted.
+The new detailed telemetry is ignored, with compact provenance/summaries in Git.
+
 ## Stable Cox arithmetic verified; full CpG case pending (2026-10-15)
 
 Opt-in log-space evaluation repairs the exact captured25k failure point:

@@ -1,0 +1,2592 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>11&nbsp; Survival supervision of the loadings (October 2026, in progress) – SSBMF Progress Notebook</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../chapters/2026-10-16.html" rel="next">
+<link href="../chapters/2026-10-02.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-93f184f27b88d8509a63edf5b6815180.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/2026-10-15.html"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Survival supervision of the loadings (October 2026, in progress)</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">SSBMF Progress Notebook</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">About this notebook</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-04-29.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">April 29, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-05-07.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">May 7, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-05-28.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">May 28, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-07-15.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">July 15, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-08-03.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">August 3, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-08-21.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">August 21, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-08-27.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">August 27, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-09-04.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">September 4, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-09-18.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">September 18, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-10-02.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">October 2, 2026</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-10-15.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Survival supervision of the loadings (October 2026, in progress)</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-10-16.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#executive-summary" id="toc-executive-summary" class="nav-link active" data-scroll-target="#executive-summary">Executive summary</a></li>
+  <li><a href="#test-bed" id="toc-test-bed" class="nav-link" data-scroll-target="#test-bed"><span class="header-section-number">11.1</span> Test bed</a></li>
+  <li><a href="#diagnostics-of-the-earlier-f-update-c1" id="toc-diagnostics-of-the-earlier-f-update-c1" class="nav-link" data-scroll-target="#diagnostics-of-the-earlier-f-update-c1"><span class="header-section-number">11.2</span> Diagnostics of the earlier F update (C1)</a></li>
+  <li><a href="#scale-canonicalization-and-the-corrected-update-c2" id="toc-scale-canonicalization-and-the-corrected-update-c2" class="nav-link" data-scroll-target="#scale-canonicalization-and-the-corrected-update-c2"><span class="header-section-number">11.3</span> Scale canonicalization and the corrected update (C2)</a></li>
+  <li><a href="#supervised-initialization-and-the-β-prior-c3-c4" id="toc-supervised-initialization-and-the-β-prior-c3-c4" class="nav-link" data-scroll-target="#supervised-initialization-and-the-β-prior-c3-c4"><span class="header-section-number">11.4</span> Supervised initialization and the β prior (C3 + C4)</a></li>
+  <li><a href="#calibrated-test-bed" id="toc-calibrated-test-bed" class="nav-link" data-scroll-target="#calibrated-test-bed"><span class="header-section-number">11.5</span> Calibrated test bed</a></li>
+  <li><a href="#real-data-external-validation-of-the-supervised-model" id="toc-real-data-external-validation-of-the-supervised-model" class="nav-link" data-scroll-target="#real-data-external-validation-of-the-supervised-model"><span class="header-section-number">11.6</span> Real data: external validation of the supervised model</a></li>
+  <li><a href="#multimodal-model-with-survival-supervision" id="toc-multimodal-model-with-survival-supervision" class="nav-link" data-scroll-target="#multimodal-model-with-survival-supervision"><span class="header-section-number">11.7</span> Multimodal model with survival supervision</a></li>
+  <li><a href="#open-single-modality-convergence-and-the-choice-of-number-of-programs" id="toc-open-single-modality-convergence-and-the-choice-of-number-of-programs" class="nav-link" data-scroll-target="#open-single-modality-convergence-and-the-choice-of-number-of-programs"><span class="header-section-number">11.8</span> Open: single-modality convergence and the choice of number of programs</a></li>
+  <li><a href="#protected-pruning-and-starting-rank" id="toc-protected-pruning-and-starting-rank" class="nav-link" data-scroll-target="#protected-pruning-and-starting-rank"><span class="header-section-number">11.9</span> Protected pruning and starting rank</a></li>
+  <li><a href="#comparators-on-the-calibrated-planted-bed" id="toc-comparators-on-the-calibrated-planted-bed" class="nav-link" data-scroll-target="#comparators-on-the-calibrated-planted-bed"><span class="header-section-number">11.10</span> Comparators on the calibrated planted bed</a></li>
+  <li><a href="#the-constant-two-step-multimodal-c-index" id="toc-the-constant-two-step-multimodal-c-index" class="nav-link" data-scroll-target="#the-constant-two-step-multimodal-c-index"><span class="header-section-number">11.11</span> The constant two-step multimodal C-index</a></li>
+  <li><a href="#robustness-and-comparator-follow-up" id="toc-robustness-and-comparator-follow-up" class="nav-link" data-scroll-target="#robustness-and-comparator-follow-up"><span class="header-section-number">11.12</span> Robustness and comparator follow-up</a></li>
+  <li><a href="#desurv-comparison-prerequisite" id="toc-desurv-comparison-prerequisite" class="nav-link" data-scroll-target="#desurv-comparison-prerequisite"><span class="header-section-number">11.13</span> DeSurv comparison prerequisite</a></li>
+  <li><a href="#protected-pruning-reassessment-2026-10-16" id="toc-protected-pruning-reassessment-2026-10-16" class="nav-link" data-scroll-target="#protected-pruning-reassessment-2026-10-16"><span class="header-section-number">11.14</span> Protected-pruning reassessment (2026-10-16)</a></li>
+  <li><a href="#single-modality-pruning-loses-a-protected-direction-during-refitting" id="toc-single-modality-pruning-loses-a-protected-direction-during-refitting" class="nav-link" data-scroll-target="#single-modality-pruning-loses-a-protected-direction-during-refitting"><span class="header-section-number">11.15</span> Single-modality pruning loses a protected direction during refitting</a></li>
+  <li><a href="#completed-protected-pruning-panel-recovery-rank-and-convergence" id="toc-completed-protected-pruning-panel-recovery-rank-and-convergence" class="nav-link" data-scroll-target="#completed-protected-pruning-panel-recovery-rank-and-convergence"><span class="header-section-number">11.16</span> Completed protected-pruning panel: recovery, rank and convergence</a></li>
+  <li><a href="#full-posterior-pruning-refit-assessment" id="toc-full-posterior-pruning-refit-assessment" class="nav-link" data-scroll-target="#full-posterior-pruning-refit-assessment"><span class="header-section-number">11.17</span> Full posterior pruning-refit assessment</a>
+  <ul class="collapse">
+  <li><a href="#task1-5-completed-full-state-refits-improve-recovery-but-are-not-adopted" id="toc-task1-5-completed-full-state-refits-improve-recovery-but-are-not-adopted" class="nav-link" data-scroll-target="#task1-5-completed-full-state-refits-improve-recovery-but-are-not-adopted"><span class="header-section-number">11.17.1</span> Task1-5 completed: full-state refits improve recovery but are not adopted</a></li>
+  </ul></li>
+  <li><a href="#task2-1-completed-tcga-diagnosis-2026-10-15" id="toc-task2-1-completed-tcga-diagnosis-2026-10-15" class="nav-link" data-scroll-target="#task2-1-completed-tcga-diagnosis-2026-10-15"><span class="header-section-number">11.18</span> Task2-1 completed TCGA diagnosis (2026-10-15)</a></li>
+  <li><a href="#desurv-comparison-deferred-for-review" id="toc-desurv-comparison-deferred-for-review" class="nav-link" data-scroll-target="#desurv-comparison-deferred-for-review"><span class="header-section-number">11.19</span> DeSurv comparison deferred for review</a></li>
+  <li><a href="#task4-completed-five-comparator-panel-2026-10-15" id="toc-task4-completed-five-comparator-panel-2026-10-15" class="nav-link" data-scroll-target="#task4-completed-five-comparator-panel-2026-10-15"><span class="header-section-number">11.20</span> Task4 completed five-comparator panel (2026-10-15)</a>
+  <ul class="collapse">
+  <li><a href="#multimodal-framework-instability-in-a-training-fold" id="toc-multimodal-framework-instability-in-a-training-fold" class="nav-link" data-scroll-target="#multimodal-framework-instability-in-a-training-fold"><span class="header-section-number">11.20.1</span> Multimodal framework instability in a training fold</a></li>
+  <li><a href="#saved-framework-loading-pattern-comparison-descriptive-no-new-fit" id="toc-saved-framework-loading-pattern-comparison-descriptive-no-new-fit" class="nav-link" data-scroll-target="#saved-framework-loading-pattern-comparison-descriptive-no-new-fit"><span class="header-section-number">11.20.2</span> Saved framework loading-pattern comparison (descriptive, no new fit)</a></li>
+  <li><a href="#task2-2-final-fixed-prior-evaluation-not-adopted" id="toc-task2-2-final-fixed-prior-evaluation-not-adopted" class="nav-link" data-scroll-target="#task2-2-final-fixed-prior-evaluation-not-adopted"><span class="header-section-number">11.20.3</span> Task2-2 final fixed-prior evaluation: not adopted</a></li>
+  <li><a href="#task2-3-result-exact-reproduction-loss-at-outer167inner1" id="toc-task2-3-result-exact-reproduction-loss-at-outer167inner1" class="nav-link" data-scroll-target="#task2-3-result-exact-reproduction-loss-at-outer167inner1"><span class="header-section-number">11.20.4</span> Task2-3 result: exact reproduction; loss at outer167/inner1</a></li>
+  <li><a href="#what-the-profiled-curvature-implementation-changes-scientific-results-pending" id="toc-what-the-profiled-curvature-implementation-changes-scientific-results-pending" class="nav-link" data-scroll-target="#what-the-profiled-curvature-implementation-changes-scientific-results-pending"><span class="header-section-number">11.20.5</span> What the profiled-curvature implementation changes (scientific results pending)</a></li>
+  </ul></li>
+  <li><a href="#task2-4-completed-profiled-cox-curvature-is-not-adopted-2026-10-15" id="toc-task2-4-completed-profiled-cox-curvature-is-not-adopted-2026-10-15" class="nav-link" data-scroll-target="#task2-4-completed-profiled-cox-curvature-is-not-adopted-2026-10-15"><span class="header-section-number">11.21</span> Task2-4 completed: profiled Cox curvature is not adopted (2026-10-15)</a></li>
+  <li><a href="#advisor-request-audit-and-revised-priorities-after-resumption" id="toc-advisor-request-audit-and-revised-priorities-after-resumption" class="nav-link" data-scroll-target="#advisor-request-audit-and-revised-priorities-after-resumption"><span class="header-section-number">11.22</span> Advisor-request audit and revised priorities after resumption</a></li>
+  <li><a href="#advisor-facing-progress-account-and-joint-program-roles" id="toc-advisor-facing-progress-account-and-joint-program-roles" class="nav-link" data-scroll-target="#advisor-facing-progress-account-and-joint-program-roles"><span class="header-section-number">11.23</span> Advisor-facing progress account and joint-program roles</a></li>
+  <li><a href="#task5-qc1-result-full-probe-methylation-variability-completed" id="toc-task5-qc1-result-full-probe-methylation-variability-completed" class="nav-link" data-scroll-target="#task5-qc1-result-full-probe-methylation-variability-completed"><span class="header-section-number">11.24</span> Task5-QC1 result: full-probe methylation variability completed</a></li>
+  <li><a href="#fixed-k-expression-curve-preflight-complete-initialization-decision-pending" id="toc-fixed-k-expression-curve-preflight-complete-initialization-decision-pending" class="nav-link" data-scroll-target="#fixed-k-expression-curve-preflight-complete-initialization-decision-pending"><span class="header-section-number">11.25</span> Fixed-K expression curve: preflight complete, initialization decision pending</a></li>
+  <li><a href="#full-range-expression-sensitivity-and-first-cpg-expansion-results" id="toc-full-range-expression-sensitivity-and-first-cpg-expansion-results" class="nav-link" data-scroll-target="#full-range-expression-sensitivity-and-first-cpg-expansion-results"><span class="header-section-number">11.26</span> Full-range expression sensitivity and first CpG expansion results</a></li>
+  <li><a href="#cpg-numeric-failure-reproduced-manuscript-sensitivity-update-requested" id="toc-cpg-numeric-failure-reproduced-manuscript-sensitivity-update-requested" class="nav-link" data-scroll-target="#cpg-numeric-failure-reproduced-manuscript-sensitivity-update-requested"><span class="header-section-number">11.27</span> CpG numeric failure reproduced; manuscript sensitivity update requested</a></li>
+  <li><a href="#loading-update-balance-and-numerical-repair-design" id="toc-loading-update-balance-and-numerical-repair-design" class="nav-link" data-scroll-target="#loading-update-balance-and-numerical-repair-design"><span class="header-section-number">11.28</span> Loading-update balance and numerical-repair design</a></li>
+  <li><a href="#stable-arithmetic-cpg-checkpoint-and-requested-pause" id="toc-stable-arithmetic-cpg-checkpoint-and-requested-pause" class="nav-link" data-scroll-target="#stable-arithmetic-cpg-checkpoint-and-requested-pause"><span class="header-section-number">11.29</span> Stable-arithmetic CpG checkpoint and requested pause</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Survival supervision of the loadings (October 2026, in progress)</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="executive-summary" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="executive-summary">Executive summary</h2>
+<ol type="1">
+<li><strong>Test bed.</strong> A planted prognostic program that explains 0.27% (noise multiplier 0.25) or 0.02% (noise 1) of expression variance, alongside two non-prognostic programs that carry the variance. Fit at K = 7; 20 seeds per noise level.</li>
+<li><strong>Survival barely entered the loadings before.</strong> At α_F = 0 it does not enter at all. With α_F = 0.5 its median share of a loading’s precision is under 1%, and α_F = 0.5 reproduces the April scale runaway in simulation (‖F_k‖ up to 169 times its starting value).</li>
+<li><strong>Two errors found and fixed:</strong>
+<ul>
+<li>the survival term of the single-modality F update left the other genes of the same program in the residual, so each gene re-explained the whole program and the update overshot;</li>
+<li>with a signed loading prior, the SVD start discarded signs and every program collapsed.</li>
+</ul></li>
+<li><strong>Scale canonicalization with the corrected update is stable:</strong> every fit converges, and the coefficients stay bounded.</li>
+<li><strong>Recovery is still low:</strong> 1/20 seeds at noise 0.25 and 6/20 at noise 1, against the 80% threshold. This is the starting point for supervised initialization and the β prior (C3–C4).</li>
+</ol>
+</section>
+<section id="test-bed" class="level2" data-number="11.1">
+<h2 data-number="11.1" class="anchored" data-anchor-id="test-bed"><span class="header-section-number">11.1</span> Test bed</h2>
+<p>Data come from the multimodal simulation’s low-variance prognostic scenario, expression block only (n = 120 training and 120 validation patients, p = 50 genes, 3 true programs). Program 3 has score scale 0.15 and log hazard ratio 1.10; programs 1 and 2 carry the variance and are not prognostic. Each cohort is z-standardized. A fit <strong>recovers</strong> the planted program when some estimated program has absolute loading correlation ≥ 0.7 with it and a coefficient of the correct sign. A program is <strong>survival-active</strong> when its posterior mean coefficient is at least 1.96 posterior SDs from zero.</p>
+<p>The fits use a point-Laplace prior on L and F. The recommended point-exponential prior collapses to zero programs on this centered data in 6 of 10 seeds: centered scores are signed, and a nonnegative score prior cannot represent them.</p>
+</section>
+<section id="diagnostics-of-the-earlier-f-update-c1" class="level2" data-number="11.2">
+<h2 data-number="11.2" class="anchored" data-anchor-id="diagnostics-of-the-earlier-f-update-c1"><span class="header-section-number">11.2</span> Diagnostics of the earlier F update (C1)</h2>
+<div id="tbl-c1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-c1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11.1: C1 arms at noise 0.25 (oracle C 0.666).
+</figcaption>
+<div aria-describedby="tbl-c1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Arm</th>
+<th>Recovered (of 10)</th>
+<th>Median |cor| with planted</th>
+<th>Null survival-active / fit</th>
+<th>Converged</th>
+<th>Validation C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>α_F = 0</td>
+<td>0</td>
+<td>0.17</td>
+<td>0.4</td>
+<td>10</td>
+<td>0.534</td>
+</tr>
+<tr class="even">
+<td>α_F = 0.5</td>
+<td>0</td>
+<td>0.11</td>
+<td>0.4</td>
+<td>10</td>
+<td>0.533</td>
+</tr>
+<tr class="odd">
+<td>equal weights (α_F = 0.5, precisions doubled)</td>
+<td>1</td>
+<td>0.23</td>
+<td>0.6</td>
+<td>10</td>
+<td>0.558</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figs/2026-10-15_c1_supervision_trace.png" class="img-fluid figure-img"></p>
+<figcaption>Survival’s median share of the F-update precision and <span class="math inline">\(|E[\beta]|\)</span> for the estimated program closest to the planted one, by iteration (one line per seed). Values of exactly zero are drawn at 10⁻⁶.</figcaption>
+</figure>
+</div>
+<p>The diagnostics answer the four questions from the plan:</p>
+<ul>
+<li><strong>Is the planted direction pulled at all?</strong> Barely. The closest program is a variance program whose coefficient is near 0, so survival information is gated out.</li>
+<li><strong>Survival’s share now.</strong> Median 0.7% of the loading precision at α_F = 0.5 and 14% with equal weights, both for programs that already carry a nonzero coefficient.</li>
+<li><strong>Does the April runaway reproduce?</strong> Yes, at α_F = 0.5: ‖F_k‖ reaches 169 times its starting value.</li>
+<li><strong>Objective versus update.</strong> The monitored objective weights survival p/(1−α)·α = 50 times more than genomics, while the F update weights them equally. The monitored value decreases 32–82 times per arm across 10 fits, so it is not the objective the updates climb. The large survival weight also inflates the denominator of the relative-change test, so fits can stop early.</li>
+</ul>
+</section>
+<section id="scale-canonicalization-and-the-corrected-update-c2" class="level2" data-number="11.3">
+<h2 data-number="11.3" class="anchored" data-anchor-id="scale-canonicalization-and-the-corrected-update-c2"><span class="header-section-number">11.3</span> Scale canonicalization and the corrected update (C2)</h2>
+<p>Each program is rescaled to unit SD of its training score after every iteration; β̃_k is then a log hazard ratio per SD. α_F is dropped: every survival term carries one weight w_S, and w_S = 1 is the plain posterior. The F update now removes the other genes of the program from each gene’s survival term and runs as a sequential sweep over genes, the same update the multimodal model uses. The derivation and the correction are in <code>derivations/cox_on_YF/canonical_ZF/</code>.</p>
+<div id="tbl-c2" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-c2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11.2: C2 arms (oracle C 0.678 at noise 0.25, 0.839 at noise 1).
+</figcaption>
+<div aria-describedby="tbl-c2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Arm</th>
+<th>Noise</th>
+<th>Recovered (of 20)</th>
+<th>Null survival-active / fit</th>
+<th>Converged</th>
+<th>Validation C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>α_F = 0 (earlier)</td>
+<td>0.25</td>
+<td>0</td>
+<td>0.45</td>
+<td>20</td>
+<td>0.553</td>
+</tr>
+<tr class="even">
+<td>canonical, w_S = 1</td>
+<td>0.25</td>
+<td>1</td>
+<td>0.60</td>
+<td>20</td>
+<td>0.557</td>
+</tr>
+<tr class="odd">
+<td>α_F = 0 (earlier)</td>
+<td>1</td>
+<td>0</td>
+<td>0.15</td>
+<td>20</td>
+<td>0.521</td>
+</tr>
+<tr class="even">
+<td>canonical, w_S = 1</td>
+<td>1</td>
+<td>6</td>
+<td>0.65</td>
+<td>20</td>
+<td>0.641</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figs/2026-10-15_c2_supervision_trace.png" class="img-fluid figure-img"></p>
+<figcaption>As above for C2, by noise level.</figcaption>
+</figure>
+</div>
+<p>With canonicalization the coefficients stay below 2 in absolute value, and every fit converges. Survival’s share of the loading precision rises to between 10% and 100% for the closest program at noise 1, and the planted program is found in 6 of 20 seeds there. At noise 0.25, the variance programs dominate the factorization and the planted program is found once.</p>
+<p>The null survival-active rate rises by 0.15 and 0.50 per fit over α_F = 0. The second is at the limit of the +0.5 margin.</p>
+</section>
+<section id="supervised-initialization-and-the-β-prior-c3-c4" class="level2" data-number="11.4">
+<h2 data-number="11.4" class="anchored" data-anchor-id="supervised-initialization-and-the-β-prior-c3-c4"><span class="header-section-number">11.4</span> Supervised initialization and the β prior (C3 + C4)</h2>
+<p>Every arm uses the canonical configuration with w_S = 1. Program K starts from the null-model Cox score direction <span class="math inline">\(Y^\top u_0\)</span>, where <span class="math inline">\(u_0\)</span> are the martingale residuals of the null model. The shared β prior is held at its starting value for 10 iterations, then refit from the K coefficients after each sweep.</p>
+<div id="tbl-c3c4" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-c3c4-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11.3: C3 + C4 arms; the two values per cell are noise 0.25 and noise 1.
+</figcaption>
+<div aria-describedby="tbl-c3c4-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Arm</th>
+<th>Recovered, noise 0.25</th>
+<th>Recovered, noise 1</th>
+<th>Null survival-active / fit</th>
+<th>Converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>α_F = 0</td>
+<td>0/20</td>
+<td>0/20</td>
+<td>0.45; 0.15</td>
+<td>20; 20</td>
+</tr>
+<tr class="even">
+<td>canonical (C2)</td>
+<td>1/20</td>
+<td>6/20</td>
+<td>0.60; 0.65</td>
+<td>20; 20</td>
+</tr>
+<tr class="odd">
+<td>+ supervised start</td>
+<td>1/20</td>
+<td>7/20</td>
+<td>0.60; 0.60</td>
+<td>20; 20</td>
+</tr>
+<tr class="even">
+<td>+ shared normal prior, warm-up</td>
+<td>1/20</td>
+<td>6/20</td>
+<td>0.75; 0.60</td>
+<td>20; 20</td>
+</tr>
+<tr class="odd">
+<td>+ point-Laplace prior</td>
+<td>1/20</td>
+<td>5/20</td>
+<td>0.35; 0.35</td>
+<td>20; 20</td>
+</tr>
+<tr class="even">
+<td>+ point-normal, slab SD 1</td>
+<td>1/20</td>
+<td>5/20</td>
+<td>0.50; 0.40</td>
+<td>10; 13</td>
+</tr>
+<tr class="odd">
+<td>fixed N(0, 2²) (reference)</td>
+<td>1/20</td>
+<td>5/20</td>
+<td>0.85; 0.70</td>
+<td>20; 20</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>No arm comes close to the 16/20 threshold. The supervised start correlates only 0.38 (noise 0.25) and 0.56 (noise 1) with the planted loadings, and the program it seeds collapses in almost every seed.</p>
+<p><strong>How much can survival alone recover here?</strong> A Cox model fit directly on the 50 genes (ridge or lasso, cross-validated) recovers the planted direction in 0/20 or 4/20 seeds at noise 0.25, and in 4/20 or 13/20 at noise 1. The true predictor’s validation C is 0.68 at noise 0.25. With 120 patients and about 84 events, the survival data do not determine the direction well enough for 80% recovery at the lower noise level, by this or any other method. Whether to keep this test bed, calibrate it, or set the threshold relative to the survival-only reference is open; C5 waits on that decision.</p>
+</section>
+<section id="calibrated-test-bed" class="level2" data-number="11.5">
+<h2 data-number="11.5" class="anchored" data-anchor-id="calibrated-test-bed"><span class="header-section-number">11.5</span> Calibrated test bed</h2>
+<p>The test bed was recalibrated so that the survival data identify the planted direction. The rule was fixed in advance: the smallest training size, then the smallest planted coefficient, at which a survival-only Cox lasso recovers the planted program in at least 18 of 20 seeds at both noise levels. Only n = 400 with planted log hazard ratio 3.3 qualifies (lasso 18/20 and 20/20). The planted program still explains under 0.5% of expression variance. The recovery threshold stays at 80%.</p>
+<div id="tbl-cal" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-cal-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11.4: Calibrated test bed (n = 400, planted log HR 3.3; oracle C 0.85 and 0.95).
+</figcaption>
+<div aria-describedby="tbl-cal-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Arm</th>
+<th>Recovered (0.25; 1)</th>
+<th>Null survival-active / fit</th>
+<th>Converged</th>
+<th>Validation C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>α_F = 0</td>
+<td>1; 1</td>
+<td>1.15; 0.35</td>
+<td>20; 20</td>
+<td>0.641; 0.540</td>
+</tr>
+<tr class="even">
+<td>canonical, w_S = 1 (C2)</td>
+<td>18; 20</td>
+<td>1.35; 0.35</td>
+<td>20; 19</td>
+<td>0.771; 0.761</td>
+</tr>
+<tr class="odd">
+<td>+ supervised start</td>
+<td>20; 20</td>
+<td>1.00; 0.30</td>
+<td>20; 19</td>
+<td>0.770; 0.761</td>
+</tr>
+<tr class="even">
+<td>+ shared normal β prior, warm-up</td>
+<td>20; 20</td>
+<td>1.60; 0.65</td>
+<td>20; 20</td>
+<td>0.769; 0.761</td>
+</tr>
+<tr class="odd">
+<td><strong>+ shared point-Laplace β prior, warm-up</strong></td>
+<td><strong>17; 19</strong></td>
+<td><strong>1.10; 0.25</strong></td>
+<td><strong>20; 20</strong></td>
+<td><strong>0.763; 0.765</strong></td>
+</tr>
+<tr class="even">
+<td>+ point-normal, slab SD 1</td>
+<td>17; 19</td>
+<td>1.20; 0.30</td>
+<td>20; 18</td>
+<td>0.763; 0.766</td>
+</tr>
+<tr class="odd">
+<td>fixed N(0, 2²) (reference)</td>
+<td>20; 20</td>
+<td>1.70; 0.70</td>
+<td>20; 20</td>
+<td>0.771; 0.760</td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>Without survival in the loadings, the planted program is missed (1/20), and validation C falls to 0.64 and 0.54. Every survival-supervised arm recovers it in most seeds and reaches validation C of about 0.76–0.77.</p>
+<p>The chosen configuration is the supervised start with a shared point-Laplace prior on β, which meets every simulation criterion: - recovery 85% and 95%; - fewer null survival-active programs than α_F = 0; - every fit converges; - the most stable updates of all arms.</p>
+<p>The normal-prior warm-up arm also passes, with higher recovery but more false positives. The real-data check (lower 95% limit of ΔC against α_F = 0 above −0.02) comes next.</p>
+</section>
+<section id="real-data-external-validation-of-the-supervised-model" class="level2" data-number="11.6">
+<h2 data-number="11.6" class="anchored" data-anchor-id="real-data-external-validation-of-the-supervised-model"><span class="header-section-number">11.6</span> Real data: external validation of the supervised model</h2>
+<p>The selected configuration was refitted on the reported training data (TCGA + CPTAC, K = 7) and scored on the five external cohorts. It is compared with the reported α_F = 0 model.</p>
+<div id="tbl-real-dc" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-real-dc-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11.5: External ΔC, supervised minus reported α_F = 0 model; cohort-stratified paired bootstrap.
+</figcaption>
+<div aria-describedby="tbl-real-dc-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Cohort</th>
+<th>Supervised − reported (95% CI)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Dijk</td>
+<td>−0.050 (−0.113, 0.012)</td>
+</tr>
+<tr class="even">
+<td>Moffitt</td>
+<td>−0.001 (−0.071, 0.065)</td>
+</tr>
+<tr class="odd">
+<td>PACA-AU array</td>
+<td>+0.010 (−0.054, 0.069)</td>
+</tr>
+<tr class="even">
+<td>PACA-AU seq</td>
+<td>+0.029 (−0.038, 0.097)</td>
+</tr>
+<tr class="odd">
+<td>Puleo</td>
+<td>−0.002 (−0.033, 0.027)</td>
+</tr>
+<tr class="even">
+<td><strong>Mean of cohorts</strong></td>
+<td><strong>−0.003 (−0.029, 0.024)</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>Mean external C is 0.624 for the supervised model and 0.627 for the reported one. The pre-specified criterion, a lower 95% limit above −0.02, fails by 0.009. The point estimate is zero, and with five cohorts the interval is about ±0.027 wide, so the criterion requires a gain of about +0.007 to pass. The supervised model keeps three survival-active programs where the unsupervised fit keeps one.</p>
+</section>
+<section id="multimodal-model-with-survival-supervision" class="level2" data-number="11.7">
+<h2 data-number="11.7" class="anchored" data-anchor-id="multimodal-model-with-survival-supervision"><span class="header-section-number">11.7</span> Multimodal model with survival supervision</h2>
+<p>The supervised start and the shared point-Laplace prior on β were carried into the multimodal model (expression + methylation), which already had the exact loading update, the scale canonicalization and ELBO-based pruning. Calibrated two-modality bed, starting rank 7, true rank 3:</p>
+<div id="tbl-mm-sup" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-mm-sup-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11.6: Multimodal model on the calibrated bed (20 seeds per noise level).
+</figcaption>
+<div aria-describedby="tbl-mm-sup-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Arm</th>
+<th>Recovered (0.25; 1)</th>
+<th>Null survival-active / fit</th>
+<th>Converged</th>
+<th>Programs kept</th>
+<th>Validation C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>framework of 10/1</td>
+<td>17; 16</td>
+<td>0.75; 0.65</td>
+<td>40/40</td>
+<td>3</td>
+<td>0.826; 0.892</td>
+</tr>
+<tr class="even">
+<td>+ survival supervision</td>
+<td><strong>18; 20</strong></td>
+<td><strong>0.55; 0.15</strong></td>
+<td><strong>40/40</strong></td>
+<td><strong>3</strong></td>
+<td><strong>0.844; 0.943</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+</figure>
+</div>
+<p>With supervision, the multimodal model recovers the planted program in 90% and 100% of datasets, keeps exactly the three true programs (two that explain the variance and one that explains survival), and has fewer false prognostic programs.</p>
+</section>
+<section id="open-single-modality-convergence-and-the-choice-of-number-of-programs" class="level2" data-number="11.8">
+<h2 data-number="11.8" class="anchored" data-anchor-id="open-single-modality-convergence-and-the-choice-of-number-of-programs"><span class="header-section-number">11.8</span> Open: single-modality convergence and the choice of number of programs</h2>
+<ul>
+<li>After an error in the monitored objective was fixed, the selected single-modality configuration converges in 19 of 20 fits at each noise level. The two exceptions oscillate stably (relative size 10⁻⁴) and still recover the planted program.</li>
+<li>Pruning by the ELBO, which works in the multimodal model, removes the planted program in single modality, where survival gains too little to offset the program’s cost.</li>
+</ul>
+<p>The rule for the number of programs is the next decision.</p>
+</section>
+<section id="protected-pruning-and-starting-rank" class="level2" data-number="11.9">
+<h2 data-number="11.9" class="anchored" data-anchor-id="protected-pruning-and-starting-rank"><span class="header-section-number">11.9</span> Protected pruning and starting rank</h2>
+<p>The protected-pruning adoption assessment could not be completed as specified: the multimodal fitter’s convergence flag refers to reconstruction/predictor changes, whereas the fixed rule requires ELBO convergence for every fit. The panel was stopped before a complete rank batch; there is no completed result table. Protected pruning was not adopted for either model, and the conditional real-data 1-SE run was not performed. Starting K remains 7 with the handoff configurations. The exact protection inequality also protects a zero coefficient with zero variance; that boundary was implemented literally, without tuning. See DECISIONS.md.</p>
+<p>The opt-in implementation and fixed runners are retained on <code>m5/k-selection</code> for review. The default-fit comparisons against <code>feature/supervised-F</code> preserve the full fitted objects and pruning sequences.</p>
+</section>
+<section id="comparators-on-the-calibrated-planted-bed" class="level2" data-number="11.10">
+<h2 data-number="11.10" class="anchored" data-anchor-id="comparators-on-the-calibrated-planted-bed"><span class="header-section-number">11.10</span> Comparators on the calibrated planted bed</h2>
+<p>The fixed 20-seed comparison completed at noise 0.25. Recovery is 17/20 for the selected supervised model and 0/20 for EBMF alone, EBMF–Cox, EBMF–lasso-Cox and PCA–Cox. Mean validation C is 0.763, 0.634 and 0.688 for supervised, EBMF–Cox and PCA–Cox, respectively. One supervised fit did not converge; lasso has one undefined C, so its full mean is unavailable.</p>
+<p>At noise 1, eight datasets have only one EBMF factor (unsupported by glmnet) and two have none. The prompt stopped without altering the design. The ten complete datasets are a selected subset and do not support a full-seed comparison. Raw rows, failure messages, actual denominators and defined-score counts are in <code>results/benchmark_sim/outputs/supervision_comparators/</code>. No DeSurv arm was available.</p>
+</section>
+<section id="the-constant-two-step-multimodal-c-index" class="level2" data-number="11.11">
+<h2 data-number="11.11" class="anchored" data-anchor-id="the-constant-two-step-multimodal-c-index"><span class="header-section-number">11.11</span> The constant two-step multimodal C-index</h2>
+<p>The greedy ceilings 6, 7 and 8 all yield the same six-factor EBMF fit: loadings, coefficients and training risks are identical. Thus all-donor C = 0.418 and primary-PDAC C = 0.424 repeat exactly. The requested ceiling is passed correctly; the baseline is allowed to stop below it. The reporting scripts now expose the actual retained rank. The audit table is in <code>results/multimodal_real/outputs/supervised/two_step_rank_audit.csv</code>; no core fitter changed.</p>
+<p>The selected M4 multimodal configuration reached the 500-iteration cap without convergence on TCGA. It retained seven programs but all β posteriors collapsed to zero, giving exactly constant ICGC risks and an undefined C under the existing helper. This real-data failure is retained without tuning the prior, warm-up, rank or stopping rule.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 18%">
+<col style="width: 18%">
+<col style="width: 18%">
+<col style="width: 18%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th style="text-align: right;">Primary ICGC C</th>
+<th style="text-align: right;">All-donor C</th>
+<th style="text-align: right;">Programs</th>
+<th style="text-align: right;">Survival-active</th>
+<th>Converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Selected multimodal</td>
+<td style="text-align: right;">NA, constant</td>
+<td style="text-align: right;">NA, constant</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>10/1 pruned framework</td>
+<td style="text-align: right;">0.701</td>
+<td style="text-align: right;">0.665</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td>No</td>
+</tr>
+<tr class="odd">
+<td>Stacked EBMF–Cox</td>
+<td style="text-align: right;">0.424</td>
+<td style="text-align: right;">0.418</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0 (Wald z)</td>
+<td>Unrecorded; iteration warning</td>
+</tr>
+<tr class="even">
+<td>Selected expression-only</td>
+<td style="text-align: right;">0.588</td>
+<td style="text-align: right;">0.616</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>Primary PDAC includes 50 donors; all-donor scoring includes 67 and is secondary. Both joint fits hit 500 iterations. No prior, rank or stopping rule was tuned. All 50 shared donors receive identical risks in the primary/all analyses for every arm. The expression platform is standardized once before selecting primary donors; the review correction preceded expression scoring. The fixed frozen-C helper returns NA for constant risks, where ordinary Harrell ties would give 0.5; both indicate no discrimination.</p>
+<p>The full suite passes 549 tests. Results, warning and donor-consistency records are in <code>results/multimodal_real/outputs/supervised/</code>.</p>
+</section>
+<section id="robustness-and-comparator-follow-up" class="level2" data-number="11.12">
+<h2 data-number="11.12" class="anchored" data-anchor-id="robustness-and-comparator-follow-up"><span class="header-section-number">11.12</span> Robustness and comparator follow-up</h2>
+<p>The five-prompt evidence, independent branch commits and limitations are gathered in <a href="../resources/Codex_M6_M7_Summary_10_15_26.md">the consolidated report</a>. Protected pruning was not adopted: multimodal ELBO convergence could not be assessed under the allowed edits. DeSurv was unavailable. The high-noise comparator table uses only ten of twenty datasets and cannot establish a full comparison. The TCGA→ICGC selected multimodal fit reached its cap with all β moments zero; its constant predictions provide no discrimination.</p>
+<p>In 40 calibrated datasets, all 880 robustness fits completed. Recovery for the default, best-of-20 jittered, and Normal-loading arms was respectively 17,17,15 at noise .25 and 19,17,17 at noise 1 (each out of 20). ELBO selection lost two high-noise recoveries and gained none. All selected starts converged, but 28 of 800 individual jittered fits and two default fits reached the cap.</p>
+<p>The unchanged training CV rerun compares point-Laplace versus Normal β: mean C .651199 versus .653153, paired difference −.001954 (SE .003055). Each has one capped fold instead of five. The point-Laplace β choice remains unchanged.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Top features per cohort</th>
+<th style="text-align: right;">Intersecting genes</th>
+<th style="text-align: right;">Mean fold C</th>
+<th style="text-align: right;">SE</th>
+<th style="text-align: right;">Mean active / fold</th>
+<th style="text-align: right;">Capped folds / 5</th>
+<th style="text-align: right;">Full-training active</th>
+<th>Full fit converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1000</td>
+<td style="text-align: right;">662</td>
+<td style="text-align: right;">0.650200</td>
+<td style="text-align: right;">0.017200</td>
+<td style="text-align: right;">1.2</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>2000</td>
+<td style="text-align: right;">1365</td>
+<td style="text-align: right;">0.648933</td>
+<td style="text-align: right;">0.022598</td>
+<td style="text-align: right;">2.4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>3000</td>
+<td style="text-align: right;">2064</td>
+<td style="text-align: right;">0.651199</td>
+<td style="text-align: right;">0.023631</td>
+<td style="text-align: right;">2.2</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td>5000</td>
+<td style="text-align: right;">3600</td>
+<td style="text-align: right;">0.655413</td>
+<td style="text-align: right;">0.027386</td>
+<td style="text-align: right;">2.0</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>The observed means differ by at most .0065, with SEs .017–.027. These results do not justify changing the selected 3,000-per-cohort setting. All four full-training fits converged.</p>
+<p>Feature screening and scaling precede folds, as in the original protocol, so absolute training CV may be optimistic. No external cohort was scored in the robustness analysis. The branch’s full suite passes 550 tests.</p>
+<p>The robustness process wrote all final tables, then exited 1 with a trailing parse error after a diagnostic-only source edit during execution. Saved fit counts and summary arithmetic were independently checked; the current runner parses and passes 550 tests. No rerun or tuning was attempted. This execution anomaly is documented in the report and <code>outputs/supervised_robustness/execution_status.md</code>.</p>
+</section>
+<section id="desurv-comparison-prerequisite" class="level2" data-number="11.13">
+<h2 data-number="11.13" class="anchored" data-anchor-id="desurv-comparison-prerequisite"><span class="header-section-number">11.13</span> DeSurv comparison prerequisite</h2>
+<p>The head-to-head comparison stopped before fitting because no installed or vendored DeSurv implementation was available. The authors provide a companion-package repository, but it was not installed or reimplemented under this handoff. No C-index or bootstrap table is claimed. See <code>results/benchmark_sim/outputs/desurv_h2h/BLOCKED.md</code> for searched locations and requirements to resume. The protected-pruning assessment did not authorize a configuration change; K remains 7.</p>
+</section>
+<section id="protected-pruning-reassessment-2026-10-16" class="level2" data-number="11.14">
+<h2 data-number="11.14" class="anchored" data-anchor-id="protected-pruning-reassessment-2026-10-16"><span class="header-section-number">11.14</span> Protected-pruning reassessment (2026-10-16)</h2>
+<p>Andrew clarified that protection requires positive posterior SD and that each model is judged by its own convergence rule. The dead-program boundary is fixed and tested without changing default fits. The complete rank panel is registered before execution in <code>docs/plans/Round2_attempts_log.md</code>; no empirical result or new configuration is claimed yet. The benchmark snapshot is unchanged.</p>
+</section>
+<section id="single-modality-pruning-loses-a-protected-direction-during-refitting" class="level2" data-number="11.15">
+<h2 data-number="11.15" class="anchored" data-anchor-id="single-modality-pruning-loses-a-protected-direction-during-refitting"><span class="header-section-number">11.15</span> Single-modality pruning loses a protected direction during refitting</h2>
+<p>A pre-registered observation of the first prescribed simulation seed uses the unchanged selected protected model. It records every nullcheck state/gain without editing the fitter or consuming random numbers.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Noise</th>
+<th style="text-align: right;">Initial K = 7 loading correlation</th>
+<th style="text-align: right;">After first refit (K = 6)</th>
+<th style="text-align: right;">Terminal correlation</th>
+<th style="text-align: right;">Terminal K</th>
+<th>All stages converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">.25</td>
+<td style="text-align: right;">.895844</td>
+<td style="text-align: right;">.390941</td>
+<td style="text-align: right;">.477163</td>
+<td style="text-align: right;">2</td>
+<td>Yes</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.958283</td>
+<td style="text-align: right;">.715245</td>
+<td style="text-align: right;">.734053</td>
+<td style="text-align: right;">1</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>At noise .25 the planted program is strongly prognostic and protected; a different program is deleted. Recovery is then lost during the refit. The shared beta prior stays nondegenerate in both cases. Thus a point-mass prior does not explain these two traces. They diagnose a transition and do not estimate its frequency.</p>
+<p>The old refit reinitializes uncertainty, beta, precision and loading priors from L/F means. Andrew approved an opt-in full-posterior refit experiment using the same full 160-cell protected single panel and unchanged adoption rule. No remedy is adopted from these two cases. The earlier alpha_F=0 benchmark remains valid; K = 7/no-pruning is the approved fallback for subsequent feature sensitivity while supervised K selection continues. See attempts4–5 in the Round2 attempt history.</p>
+</section>
+<section id="completed-protected-pruning-panel-recovery-rank-and-convergence" class="level2" data-number="11.16">
+<h2 data-number="11.16" class="anchored" data-anchor-id="completed-protected-pruning-panel-recovery-rank-and-convergence"><span class="header-section-number">11.16</span> Completed protected-pruning panel: recovery, rank and convergence</h2>
+<p>The process exited 0 after 93.23 minutes with 800 unique cells, zero errors and zero warnings. Every original reference/selected/protected row is retained in <code>results/benchmark_sim/outputs/k_selection/round2/attempt3/</code> (<code>results.csv</code>, <code>summary.csv</code>, <code>adoption.csv</code>, individual checkpoints). No external cohort was loaded. Final fit flags and intermediate pruning caps are separate below.</p>
+<p>single protected arm:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">K_init</th>
+<th style="text-align: right;">Noise</th>
+<th style="text-align: right;">Recovered/20</th>
+<th style="text-align: right;">False/fit</th>
+<th style="text-align: right;">Reference+.5</th>
+<th style="text-align: right;">Final converged/20</th>
+<th style="text-align: right;">MedianK</th>
+<th style="text-align: right;">Intermediate caps</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.10</td>
+<td style="text-align: right;">1.75</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.10</td>
+<td style="text-align: right;">1.65</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">0.85</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.10</td>
+<td style="text-align: right;">1.80</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.30</td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1.10</td>
+<td style="text-align: right;">1.80</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p>multimodal protected arm:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">K_init</th>
+<th style="text-align: right;">Noise</th>
+<th style="text-align: right;">Recovered/20</th>
+<th style="text-align: right;">False/fit</th>
+<th style="text-align: right;">Reference+.5</th>
+<th style="text-align: right;">Final converged/20</th>
+<th style="text-align: right;">MedianK</th>
+<th style="text-align: right;">Intermediate caps</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">0.50</td>
+<td style="text-align: right;">1.75</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0.15</td>
+<td style="text-align: right;">1.05</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">0.55</td>
+<td style="text-align: right;">1.25</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0.15</td>
+<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">0.70</td>
+<td style="text-align: right;">1.10</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">0.30</td>
+<td style="text-align: right;">0.95</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">0.60</td>
+<td style="text-align: right;">1.25</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">0.50</td>
+<td style="text-align: right;">1.25</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p>Single fails recovery/rank in all groups. The objective is already variance- corrected; the approved full-state remedy investigates the refit loss without altering criteria. Multimodal passes every recovery and false-positive group, but fails rank at K = 5, noise = 1 and convergence at K = 15, noise = 1. The latter is seed 20261033 (finalK = 5,500 iterations,loading correlation .934102,output flagFALSE). Protected MM also has one capped intermediate stage (K = 10/noise .25). The selected unprotected MM arm has one final cap and one intermediate cap; the 10/1 reference has no final cap and one intermediate cap. Single protected has four capped intermediate stages despite every returned final fit converging. These are reported limitations; no model meets every success criterion.</p>
+<p>No new starting K, protection default or benchmark replacement is adopted. The conditional 1-SE analysis is not eligible from Task1-3. Continue Andrew’s approved Single full-state remedy and subsequently the prescribed Task2 training-only collapse diagnosis. MM’s current failures are rank/convergence, not a failed recovery criterion; do not tune1.96, rank 3 or the output tolerance.</p>
+</section>
+<section id="full-posterior-pruning-refit-assessment" class="level2" data-number="11.17">
+<h2 data-number="11.17" class="anchored" data-anchor-id="full-posterior-pruning-refit-assessment"><span class="header-section-number">11.17</span> Full posterior pruning-refit assessment</h2>
+<section id="task1-5-completed-full-state-refits-improve-recovery-but-are-not-adopted" class="level3" data-number="11.17.1">
+<h3 data-number="11.17.1" class="anchored" data-anchor-id="task1-5-completed-full-state-refits-improve-recovery-but-are-not-adopted"><span class="header-section-number">11.17.1</span> Task1-5 completed: full-state refits improve recovery but are not adopted</h3>
+<p>All 160 new fits completed with zero execution errors or warnings. The comparison retains all 160 original reference and 160 mean-only protected rows. Full-state recovery is 15–19/20 instead of 2/20, and every false-positive margin passes. However, K_init=5/noise=.25 misses the recovery threshold (15/20); five final fits hit the 300-iteration ELBO cap; high-noise median K is 1 at every starting K. The candidate therefore fails recovery, convergence and rank. No 1-SE run is eligible, no configuration is adopted, and the benchmark/defaults stay unchanged.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">K_init</th>
+<th style="text-align: right;">Noise</th>
+<th style="text-align: right;">Recovery /20</th>
+<th style="text-align: right;">False active</th>
+<th style="text-align: right;">Reference + .5</th>
+<th style="text-align: right;">Final ELBO converged /20</th>
+<th style="text-align: right;">Median K</th>
+<th style="text-align: right;">Intermediate caps</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">1.75</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">0.20</td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">1.10</td>
+<td style="text-align: right;">1.65</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">0.15</td>
+<td style="text-align: right;">0.85</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">1.80</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">0.20</td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">8</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">1.10</td>
+<td style="text-align: right;">1.80</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">0.30</td>
+<td style="text-align: right;">0.90</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<p>The five final caps are seed20261026 at noise .25 with K_init5/7/10 (final K3), and seed20261017 at noise1 with K_init7/10 (final K2). Intermediate caps total25, reported separately from returned-fit flags. Outputs: <code>results/benchmark_sim/outputs/k_selection/round2/attempt5_posterior/</code>; <code>adoption.csv</code> records <code>adopted=FALSE</code>. Original reference table MD5: <code>d45c207936855fe274ad14209474bf34</code>.</p>
+<p>This completes Andrew’s additional full-state experiment. The listed Single ladder has no remaining applicable remedy: its survival objective is already variance-corrected, and the failure is not convergence alone. Further changes require a new decision; the approved K7/no-pruning fallback remains available for Task5. Continue Task2’s separate multimodal diagnosis and prescribed ladder. No external data were scored or used for this assessment.</p>
+</section>
+</section>
+<section id="task2-1-completed-tcga-diagnosis-2026-10-15" class="level2" data-number="11.18">
+<h2 data-number="11.18" class="anchored" data-anchor-id="task2-1-completed-tcga-diagnosis-2026-10-15"><span class="header-section-number">11.18</span> Task2-1 completed TCGA diagnosis (2026-10-15)</h2>
+<p>Commit <code>ccebdf8</code> preceded all ten fits; its full suite passed584/0. The process completed with exit0, ten status checkpoints, no errors or warnings. Single fits took100–102 seconds; multimodal fits took2384–2556 seconds each. All returned K7, with no pruning refits. Fits and trace CSVs are in <code>results/multimodal_real/outputs/round2/diagnosis1/</code>; real-data RDS files are ignored. All new training results are shown beside frozen benchmark rows:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source/model</th>
+<th>Arm</th>
+<th style="text-align: right;">K</th>
+<th style="text-align: right;">Active</th>
+<th style="text-align: right;">Risk SD</th>
+<th style="text-align: right;">Training C</th>
+<th>Converged/iterations</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>round2/single</td>
+<td>selected</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.350339</td>
+<td style="text-align: right;">0.654791</td>
+<td>TRUE/297</td>
+</tr>
+<tr class="even">
+<td>round2/single</td>
+<td>fixed</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.309121</td>
+<td style="text-align: right;">0.638645</td>
+<td>TRUE/297</td>
+</tr>
+<tr class="odd">
+<td>round2/single</td>
+<td>normal</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.396799</td>
+<td style="text-align: right;">0.661636</td>
+<td>TRUE/298</td>
+</tr>
+<tr class="even">
+<td>round2/single</td>
+<td>framework</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.456210</td>
+<td style="text-align: right;">0.651632</td>
+<td>FALSE/300</td>
+</tr>
+<tr class="odd">
+<td>round2/single</td>
+<td>no_start</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.346748</td>
+<td style="text-align: right;">0.654967</td>
+<td>FALSE/300</td>
+</tr>
+<tr class="even">
+<td>round2/multimodal</td>
+<td>selected</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.000000</td>
+<td style="text-align: right;">NA</td>
+<td>FALSE/500</td>
+</tr>
+<tr class="odd">
+<td>round2/multimodal</td>
+<td>fixed</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.059893</td>
+<td style="text-align: right;">0.635837</td>
+<td>FALSE/500</td>
+</tr>
+<tr class="even">
+<td>round2/multimodal</td>
+<td>normal</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.000000</td>
+<td style="text-align: right;">0.629695</td>
+<td>FALSE/500</td>
+</tr>
+<tr class="odd">
+<td>round2/multimodal</td>
+<td>framework</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.255337</td>
+<td style="text-align: right;">0.646367</td>
+<td>FALSE/500</td>
+</tr>
+<tr class="even">
+<td>round2/multimodal</td>
+<td>no_start</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.000000</td>
+<td style="text-align: right;">NA</td>
+<td>FALSE/500</td>
+</tr>
+<tr class="odd">
+<td>benchmark_snapshot/multimodal_framework</td>
+<td>pruned</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.637768</td>
+<td>FALSE/NA</td>
+</tr>
+<tr class="even">
+<td>benchmark_snapshot/single_alpha_F0</td>
+<td>pruned_expression_only</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.593717</td>
+<td>NA/NA</td>
+</tr>
+<tr class="odd">
+<td>benchmark_snapshot/expression_only_framework</td>
+<td>pruned_expression_only</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0.643559</td>
+<td>FALSE/NA</td>
+</tr>
+</tbody>
+</table>
+<p>The absorbing-prior hypothesis holds in both affected arms. In selected multimodal, slab probability reaches exactly0 at outer99/inner1; all beta means and SDs become exactly0 at outer99/inner2 and stay0 thereafter. Without the supervised start, these events occur at outer54/inner3 and54/inner4. The prior at extinction retains a nominal Laplace scale1, with zero slab weight; this is not a numerical scale-zero diagnosis. Fixed Laplace never loses its .5 slab weight, but has zero credible programs. Shared Normal avoids exact point-mass absorption but ends with risk SD1.61e-7 and zero credible programs. Historical per-factor Normal retains one credible program. None of Single’s shared-prior contrasts has a zero slab probability. No configuration is adopted.</p>
+<p>Every multimodal arm hits the unchanged500-iteration output cap. Final raw expression/methylation reconstruction changes are respectively: selected .000446/.008929; fixed .001263/.015696; Normal .000456/.007998; framework .001139/.006451; no-start .001139/.006375. Both exceed1e-4 in all arms. Including intercepts or centering predictions does not remove molecular movement (see <code>cap_diagnosis.csv</code>). Selected and no-start eta changes are0; fixed/framework eta changes are .000424/.001163, Normal2.23e-10. Every arm’s last100 ELBO differences is positive: no observed ELBO oscillation supports choosing damping at this point. This does not prove every coordinate is monotone. No stopping criterion, iteration cap, prior default or benchmark changed.</p>
+<p>The newly fitted framework training C .646367 differs from the frozen framework’s .637768. It is a current-code diagnostic refit, not a tagged-code reproduction; no equality or superiority claim follows. This difference and the framework’s output cap remain explicit. No external score selects a remedy.</p>
+<p>Next causally applicable rung: constrain the refitted shared Laplace slab probability below at1/K (R2); R1 fixed-prior diagnostic already fails the necessary full-training credible-program and convergence requirements, but its required simulation/CV evaluation has not yet been performed. Those unrun parts must not be described as completed. Continue the prescribed ladder with a committed design and unchanged simulation/CV criteria.</p>
+</section>
+<section id="desurv-comparison-deferred-for-review" class="level2" data-number="11.19">
+<h2 data-number="11.19" class="anchored" data-anchor-id="desurv-comparison-deferred-for-review"><span class="header-section-number">11.19</span> DeSurv comparison deferred for review</h2>
+<p>Andrew deferred the real-data head-to-head. Pinned author software is installed in an isolated ignored library, and the adapter/driver/Longleaf wrappers have nine focused software tests. No real-data DeSurv fit or external prediction has run; there are no new scientific results. The Round2 handoff records the software pins, exact author preprocessing/projection, and review concerns. Andrew also approved omitting DeSurv from the signed-Gaussian simulation panel.</p>
+</section>
+<section id="task4-completed-five-comparator-panel-2026-10-15" class="level2" data-number="11.20">
+<h2 data-number="11.20" class="anchored" data-anchor-id="task4-completed-five-comparator-panel-2026-10-15"><span class="header-section-number">11.20</span> Task4 completed five-comparator panel (2026-10-15)</h2>
+<p>Pre-run commits dd11923 and d353322; full suite599/0 before each. The first sandbox launch failed before any dataset because a PSOCK socket could not open; its design and execution_status.md remain in round2/. The unchanged host-socket retry completed with exit0:40 datasets,200 method rows, zero fitting errors. Outputs: <code>results/benchmark_sim/outputs/supervision_comparators/round2_retry1/</code>. DeSurv was omitted by Andrew’s explicit decision; no arm or threshold changed.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 15%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th style="text-align: right;">Noise</th>
+<th style="text-align: right;">Recovered/n</th>
+<th style="text-align: right;">Validation C (finite n)</th>
+<th style="text-align: right;">Null active/fit</th>
+<th style="text-align: right;">Median K</th>
+<th>ELBO-converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ebmf_alone</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">0/20</td>
+<td style="text-align: right;">NA (0)</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">2</td>
+<td>not reported</td>
+</tr>
+<tr class="even">
+<td>ebmf_cox</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">0/20</td>
+<td style="text-align: right;">0.634182 (20)</td>
+<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">2</td>
+<td>not reported</td>
+</tr>
+<tr class="odd">
+<td>ebmf_lasso_cox</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">0/20</td>
+<td style="text-align: right;">0.638527 (19)</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">2</td>
+<td>not reported</td>
+</tr>
+<tr class="even">
+<td>pca_cox</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">0/20</td>
+<td style="text-align: right;">0.687753 (20)</td>
+<td style="text-align: right;">4.25</td>
+<td style="text-align: right;">7</td>
+<td>not reported</td>
+</tr>
+<tr class="odd">
+<td>supervised</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">17/20</td>
+<td style="text-align: right;">0.763449 (20)</td>
+<td style="text-align: right;">1.1</td>
+<td style="text-align: right;">7</td>
+<td>19/20</td>
+</tr>
+<tr class="even">
+<td>ebmf_alone</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0/20</td>
+<td style="text-align: right;">NA (0)</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">1.5</td>
+<td>not reported</td>
+</tr>
+<tr class="odd">
+<td>ebmf_cox</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0/20</td>
+<td style="text-align: right;">0.538504 (18)</td>
+<td style="text-align: right;">0.45</td>
+<td style="text-align: right;">1.5</td>
+<td>not reported</td>
+</tr>
+<tr class="even">
+<td>ebmf_lasso_cox</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0/20</td>
+<td style="text-align: right;">0.553546 (6)</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">1.5</td>
+<td>not reported</td>
+</tr>
+<tr class="odd">
+<td>pca_cox</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0/20</td>
+<td style="text-align: right;">0.596066 (20)</td>
+<td style="text-align: right;">3.3</td>
+<td style="text-align: right;">7</td>
+<td>not reported</td>
+</tr>
+<tr class="even">
+<td>supervised</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">19/20</td>
+<td style="text-align: right;">0.765290 (19)</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: right;">7</td>
+<td>19/20</td>
+</tr>
+</tbody>
+</table>
+<p>EBMF rank counts: low noise0 zero-factor,0 one-factor,20 at least2; high noise2 zero-factor,8 one-factor,10 at least2. No EBMF fitting error. Every method/noise denominator is20, including constant-risk and inapplicable cases. At high noise lasso is applicable to10 datasets and has finite C in6; its undefined scores are retained. EBMF-alone has no fitted survival risk, so its C is undefined by design. The summaries label every finite-C count. Lasso’s nonzero count is not Bayesian credibility; false-active isNA.</p>
+<p>The supervised fit caps at300 iterations for seed20261026/noise .25 and seed20261017/noise1; both recover the planted program. At seed20261018/noise1 it has no active program and undefined constant-risk C, counted as not recovered. Consequently this panel does not establish universal convergence or satisfy all project criteria. It is a comparator report, not adoption. There are30 warning-bearing lasso rows: installed glmnet warns that a future release will change the Cox tie default from Breslow to Efron. The exact warning is retained per row; no package/default was changed to silence it.</p>
+<p>This completes the bounded Task4 rerun, including rank/denominator reporting. Task2’s remedy ladder remains open and is the priority. No real-data or external-cohort selection occurred in this simulation task.</p>
+<section id="multimodal-framework-instability-in-a-training-fold" class="level3" data-number="11.20.1">
+<h3 data-number="11.20.1" class="anchored" data-anchor-id="multimodal-framework-instability-in-a-training-fold"><span class="header-section-number">11.20.1</span> Multimodal framework instability in a training fold</h3>
+<p>The historical framework’s completed fold1 returns zero beta posterior means and second moments; C remains undefined. Folds2/3 retain a prognostic program. The saved-state per-factor EB update estimates variance max(0,x²−1/A), with all seven pseudo-z magnitudes below1 in fold1. Beta KL is0 from outer167 onward. Unlike the shared point-mass prior, these variances are re-estimated each coordinate and can revive; an unchanged-fold trace will establish the trajectory. Andrew explicitly requests this diagnosis rather than assigning C=.5. The reference instability is not resolved, and no configuration is adopted. The preregistered trace must reproduce the original posterior and history exactly; only observation changes.</p>
+<p>The diagnostic takes the original event-stratified fold and raw imputed training matrices, enables the existing trace, and records beta moments and pseudo-observations after each inner sweep. Its summary distinguishes a temporary all-zero sweep from persistent loss through the last sweep. It uses no external cohort, changes no prior or convergence rule, and reports the frozen benchmark rows alongside the repeated fold’s metrics.</p>
+</section>
+<section id="saved-framework-loading-pattern-comparison-descriptive-no-new-fit" class="level3" data-number="11.20.2">
+<h3 data-number="11.20.2" class="anchored" data-anchor-id="saved-framework-loading-pattern-comparison-descriptive-no-new-fit"><span class="header-section-number">11.20.2</span> Saved framework loading-pattern comparison (descriptive, no new fit)</h3>
+<p>All comparisons use existing fits and the same frozen feature order. For benchmark program4 (the frozen fit’s sole credible program), the largest absolute loading correlations by block are:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Saved fit</th>
+<th style="text-align: right;">Expression r</th>
+<th style="text-align: right;">Methylation r</th>
+<th style="text-align: right;">Combined r</th>
+<th style="text-align: right;">Credible programs</th>
+<th style="text-align: right;">Training C</th>
+<th style="text-align: right;">Fold-validation C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Frozen benchmark full TCGA</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.637768</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td>Current full-TCGA framework diagnosis</td>
+<td style="text-align: right;">.915133</td>
+<td style="text-align: right;">.898948</td>
+<td style="text-align: right;">.895973</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.646367</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="odd">
+<td>Current framework CV fold1</td>
+<td style="text-align: right;">.787112</td>
+<td style="text-align: right;">.685382</td>
+<td style="text-align: right;">.752163</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+</tbody>
+</table>
+<p>Each strongest match above is program4. Relative to the current full-TCGA program4, fold1’s correlations are .938139 (expression), .846790 (methylation), .933739 (combined), yet its beta is exactly0. Thus the loading pattern remains recognizable; this is not removal of the program by pruning (fold1 has K7 and no pruning refit). This comparison is a description of saved fits, not a cross-validation estimate using a full-training loading matrix, an external selection criterion, or proof of benchmark reproducibility. No fit, score convention or model is changed.</p>
+</section>
+<section id="task2-2-final-fixed-prior-evaluation-not-adopted" class="level3" data-number="11.20.3">
+<h3 data-number="11.20.3" class="anchored" data-anchor-id="task2-2-final-fixed-prior-evaluation-not-adopted"><span class="header-section-number">11.20.3</span> Task2-2 final fixed-prior evaluation: not adopted</h3>
+<p>The100-fit local evaluation exited0:80 simulations and20 TCGA CV fits, with0 fitting errors and0 nonempty warning records. All100 design keys, the unchanged training-cache MD5 and the local fold-manifest SHA256 were verified. Output: results/benchmark_sim/outputs/round2/fixed_prior/.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th style="text-align: right;">Noise</th>
+<th style="text-align: right;">Recovered</th>
+<th style="text-align: right;">Null active / reference</th>
+<th style="text-align: right;">Converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Single</td>
+<td style="text-align: right;">.25</td>
+<td style="text-align: right;">17/20</td>
+<td style="text-align: right;">1.00 / 1.15</td>
+<td style="text-align: right;">19/20</td>
+</tr>
+<tr class="even">
+<td>Single</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">19/20</td>
+<td style="text-align: right;">.35 / .35</td>
+<td style="text-align: right;">20/20</td>
+</tr>
+<tr class="odd">
+<td>Multimodal</td>
+<td style="text-align: right;">.25</td>
+<td style="text-align: right;">19/20</td>
+<td style="text-align: right;">.35 / .75</td>
+<td style="text-align: right;">20/20</td>
+</tr>
+<tr class="even">
+<td>Multimodal</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">20/20</td>
+<td style="text-align: right;">0 / .65</td>
+<td style="text-align: right;">20/20</td>
+</tr>
+</tbody>
+</table>
+<p>Recovery and false-positive margins pass throughout. Single’s low-noise seed20261026 hits300 iterations, so universal simulation convergence fails. These are unchanged K7 beds; K selection has not been adopted.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source/model</th>
+<th style="text-align: right;">Fixed-prior CV mean C</th>
+<th style="text-align: right;">Framework CV mean C</th>
+<th style="text-align: right;">Delta / paired SE</th>
+<th style="text-align: right;">Converged candidate/reference</th>
+<th style="text-align: right;">Frozen training C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Round2 Single (5 pairs)</td>
+<td style="text-align: right;">.608225</td>
+<td style="text-align: right;">.623985</td>
+<td style="text-align: right;">-.015761 / .006968</td>
+<td style="text-align: right;">5/5, 5/5</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td>Round2 multimodal (5 specified pairs)</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA / NA</td>
+<td style="text-align: right;">0/5, 0/5</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="odd">
+<td>Frozen multimodal benchmark, full TCGA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">.637768</td>
+</tr>
+<tr class="even">
+<td>Frozen alpha_F0 expression-only benchmark, full TCGA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">.593717</td>
+</tr>
+<tr class="odd">
+<td>Frozen expression-only framework, full TCGA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">.643559</td>
+</tr>
+</tbody>
+</table>
+<p>Single fails the one-paired-SE CV rule. Multimodal’s reference fold1 has C=NA/risk SD0; no finite five-pair difference exists, so the rule cannot pass. The candidate’s own five C values are all finite, mean .599978, but none of its five fits has a credible program, and all cap at500. All five reference fits also cap at500; reference credible-program counts by fold are0,1,1,0,0. Its finite fold C values2–5 are .541502,.586047, .485437,.359223. No conditional four-fold mean is substituted.</p>
+<p>The frozen training rows above are labelled non-CV references, not comparisons against a refitted benchmark. Earlier full-TCGA fixed-prior diagnosis likewise has0 credible programs and a500 cap. Thus R1 fails necessary real-data criteria despite the multimodal simulation passes. No fixed prior, K, default or benchmark change is adopted. No external cohort is scored. The unchanged-fold trace continues, and Andrew approves the separate prospective profiled-curvature experiment after exact trace reproduction; its implementation is still private and no scientific profiled-curvature fit has run.</p>
+</section>
+<section id="task2-3-result-exact-reproduction-loss-at-outer167inner1" class="level3" data-number="11.20.4">
+<h3 data-number="11.20.4" class="anchored" data-anchor-id="task2-3-result-exact-reproduction-loss-at-outer167inner1"><span class="header-section-number">11.20.4</span> Task2-3 result: exact reproduction; loss at outer167/inner1</h3>
+<p>The unchanged-fold trace exited0 in2142.164 seconds, with no warnings. All13 checks in identity.csv are TRUE: every saved posterior/prior field and the complete500-iteration history equal original R1 cell84 exactly. No numerical fit changed when observation was enabled.</p>
+<p>Of2500 inner sweeps, the first all-zero posterior occurs at sweep831, outer167/inner1. The maximum absolute pseudo-z falls from1.368511, 1.262920 and1.128647 in outer166/inner3–5 to .966195 at the next sweep. Programs3 and4 are the last two nondegenerate coefficients. All1670 sweeps from831 through2500 have zero means/SDs; there is no later revival. Earlier revival is real: programs1/3/4/5/6 revive7/8/2/1/2 times, respectively. The existing full-TCGA framework trace never loses all coefficients, and its program4 is nondegenerate throughout2500 sweeps. This supports the per-coordinate variance-boundary diagnosis, not shared point-mass absorption, a scoring defect or removal by pruning.</p>
+<p>The repeated fold retains K7, has no credible program, risk SD0/C=NA, and reaches the unchanged500 cap. Its comparison_with_benchmark.csv retains all frozen benchmark training rows. The frozen multimodal benchmark training C remains .637768 (one credible program); this is not a CV row.</p>
+<p>Outputs: results/multimodal_real/outputs/round2/framework_fold_trace/: identity.csv, fold1_trace.csv, fold1_boundaries.csv, full_training_boundaries.csv, comparison_with_benchmark.csv, training_source.txt and warnings.txt. The fit RDS remains ignored.</p>
+<p>Andrew’s explicit approval of the separate profiled-curvature test was conditional on this reproduction, and that prerequisite now passes. No remedy has been fitted at this checkpoint. Source edits still wait for the fresh full suite/result commit. The prospective test uses the existing framework priors/initialization and changes only the working-intercept profile flag; it will not combine the unresolved shared-prior scale question.</p>
+</section>
+<section id="what-the-profiled-curvature-implementation-changes-scientific-results-pending" class="level3" data-number="11.20.5">
+<h3 data-number="11.20.5" class="anchored" data-anchor-id="what-the-profiled-curvature-implementation-changes-scientific-results-pending"><span class="header-section-number">11.20.5</span> What the profiled-curvature implementation changes (scientific results pending)</h3>
+<p>The helper <code>code/profile_cox_intercept.R</code> takes a numeric patient vector or patient-by-feature matrix and frozen nonnegative Cox weights. It subtracts the weighted mean, preserving dimensions/names; zero total curvature returns the original input. Base R <code>colSums</code> and <code>sweep</code> implement this without a patient-by-patient covariance matrix or a new package dependency.</p>
+<p>Both fitters use this centered design only for survival projection means, loading uncertainty, beta updates and the survival contribution to F updates. Genomic residuals remain on the original observations. This is equivalent to the dense profiled quadratic Hc=diag(w)-ww’/sum(w), including cross-subject covariance induced by uncertain loadings. The existing compiled scalar sweep is reused. Canonicalization and raw prediction retain their original inputs.</p>
+<p>The option is FALSE by default and disabled objects match the protected base-branch definitions. Supported experimental priors are per-factor Normal; shared priors fail explicitly rather than combining the unresolved prior-scale question. Single additionally requires canonical fitting, no cohort/strata effects and no pruning. Its original ELBO monitor/rule remains unchanged; the multimodal output rule also stays fixed. Convergence can still fail.</p>
+<p>The evaluation runner records80 new simulation fits,10 new candidate CV fits, two full-TCGA fits and10 unchanged cached framework CV references. It checks input/fold hashes, per-fit keys and provenance, preserves undefined C, and reports each arm’s own mean only with all5 finite folds. Error/warning records are kept independently. Dense precision/linear-term and covariance-objective checks test the actual model path; separate checks verify raw genomic residuals, base-branch identity and full-training routing. No scientific profiled fit or external score has run at this checkpoint.</p>
+</section>
+</section>
+<section id="task2-4-completed-profiled-cox-curvature-is-not-adopted-2026-10-15" class="level2" data-number="11.21">
+<h2 data-number="11.21" class="anchored" data-anchor-id="task2-4-completed-profiled-cox-curvature-is-not-adopted-2026-10-15"><span class="header-section-number">11.21</span> Task2-4 completed: profiled Cox curvature is not adopted (2026-10-15)</h2>
+<p>The preregistered panel finished with exit0:102 records,92 new fits and10 unchanged cached framework CV references, zero execution errors and zero warning-bearing records. All original controls, criteria, fixed simulation beds, TCGA cache and folds were retained. Output directory: <code>results/benchmark_sim/outputs/round2/profiled/</code>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 13%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th style="text-align: right;">Noise</th>
+<th style="text-align: right;">Recovered /20</th>
+<th style="text-align: right;">False active</th>
+<th style="text-align: right;">Reference false active</th>
+<th style="text-align: right;">Converged /20</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Single</td>
+<td style="text-align: right;">.25</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">1.35</td>
+<td style="text-align: right;">1.15</td>
+<td style="text-align: right;">19</td>
+</tr>
+<tr class="even">
+<td>Single</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">.40</td>
+<td style="text-align: right;">.35</td>
+<td style="text-align: right;">20</td>
+</tr>
+<tr class="odd">
+<td>Multimodal</td>
+<td style="text-align: right;">.25</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">.80</td>
+<td style="text-align: right;">.75</td>
+<td style="text-align: right;">20</td>
+</tr>
+<tr class="even">
+<td>Multimodal</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">.40</td>
+<td style="text-align: right;">.65</td>
+<td style="text-align: right;">20</td>
+</tr>
+</tbody>
+</table>
+<p>Every recovery and false-positive criterion passes. Single seed20261026 at noise .25 reaches300 iterations; its oscillation is documented above. All40 multimodal simulations converge. These are the approved recovery/false-positive criteria, not proof that protected K selection is resolved.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source/model</th>
+<th style="text-align: right;">Mean candidate CV C</th>
+<th style="text-align: right;">Reference CV C</th>
+<th style="text-align: right;">Paired delta</th>
+<th style="text-align: right;">Paired SE</th>
+<th style="text-align: right;">CV converged</th>
+<th style="text-align: right;">Frozen training C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Round2 Single, profiled</td>
+<td style="text-align: right;">.624776</td>
+<td style="text-align: right;">.623985</td>
+<td style="text-align: right;">.000791</td>
+<td style="text-align: right;">.000791</td>
+<td style="text-align: right;">5/5</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr class="even">
+<td>Round2 multimodal, profiled</td>
+<td style="text-align: right;">.563678</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">0/5</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr class="odd">
+<td>Frozen multimodal framework</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">.637768</td>
+</tr>
+<tr class="even">
+<td>Frozen single alpha_F=0, matching TCGA comparison</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">.593717</td>
+</tr>
+<tr class="odd">
+<td>Frozen expression-only framework</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">.643559</td>
+</tr>
+</tbody>
+</table>
+<p>Single passes its five-pair one-SE comparison. Multimodal has five finite candidate scores, but only four finite original-reference scores: the predeclared paired comparison remains undefined and fails eligibility. The candidate’s own mean uses all five folds; no undefined reference is replaced or dropped. All five profiled multimodal folds now have nonconstant risk, including formerly collapsed fold1; their credible-program counts are 0,1,0,0,0. Every multimodal candidate CV fit reaches500 iterations, as did all five cached reference fits. All five Single candidate and reference CV fits converge. Frozen training C values are labelled historical training quantities, not CV estimates or external scores.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 12%">
+<col style="width: 12%">
+<col style="width: 16%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source/model</th>
+<th style="text-align: right;">Training C</th>
+<th style="text-align: right;">Credible programs</th>
+<th>Nonconstant risk</th>
+<th>Converged</th>
+<th style="text-align: right;">Iterations</th>
+<th style="text-align: right;">K_final</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Round2 Single, profiled</td>
+<td style="text-align: right;">.651632</td>
+<td style="text-align: right;">3</td>
+<td>yes</td>
+<td>no</td>
+<td style="text-align: right;">300</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr class="even">
+<td>Round2 multimodal, profiled</td>
+<td style="text-align: right;">.639172</td>
+<td style="text-align: right;">1</td>
+<td>yes</td>
+<td>no</td>
+<td style="text-align: right;">500</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr class="odd">
+<td>Frozen multimodal framework</td>
+<td style="text-align: right;">.637768</td>
+<td style="text-align: right;">1</td>
+<td>—</td>
+<td>no</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr class="even">
+<td>Frozen single alpha_F=0, matching TCGA comparison</td>
+<td style="text-align: right;">.593717</td>
+<td style="text-align: right;">—</td>
+<td>—</td>
+<td>—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr class="odd">
+<td>Frozen expression-only framework</td>
+<td style="text-align: right;">.643559</td>
+<td style="text-align: right;">1</td>
+<td>—</td>
+<td>no</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">7</td>
+</tr>
+</tbody>
+</table>
+<p>Both full-training candidates pass the defined no-collapse check and fail convergence. No full-training factor is deleted. Eight of92 new fits cap: one Single simulation, the full Single fit, five multimodal CV fits and the full multimodal fit; another five caps belong to the unchanged cached multimodal references. No intermediate pruning cap is reported. Detailed per-fit C, activity counts, risk SD, rank, caps and warnings are in <code>results.csv</code>, <code>training_cv_with_benchmark.csv</code> and <code>training_full_with_benchmark.csv</code>; the latter two retain frozen rows.</p>
+<p><strong>Decision: do not adopt.</strong> Profiling removes exact constant-risk collapse in this candidate’s five training-CV folds, but does not deliver stable, credibly prognostic programs throughout CV or universal convergence. The original paired-reference issue remains open. No external cohort is scored, no criterion/default is changed, and the benchmark remains the current best state. Further Task2 work is paused by Andrew, not resolved or ladder-exhausted. The prior/posterior KL and common-beta-prior scale questions remain separate review items, not established explanations for these results.</p>
+<p>Final checkpoint verification: full R suite <strong>631 passed,0 failed</strong> (including six new prior-consistency fixtures); prepared observer syntax parses. The observer itself has not been run and requires prospective registration and commit before execution. All ten benchmark SHA256 checks pass after the panel; tag object0fea14903a75606e495267f2f35712eac10d9fc6 still peels to a352f17ca9cff523caa80756aa2af085e62551e1. The writeup.qmd/html/pdf files have no diff against that tag. Patient-level folds.csv and RDS/data are ignored and excluded from the commit. No push, protected-branch edit or merge has occurred.</p>
+</section>
+<section id="advisor-request-audit-and-revised-priorities-after-resumption" class="level2" data-number="11.22">
+<h2 data-number="11.22" class="anchored" data-anchor-id="advisor-request-audit-and-revised-priorities-after-resumption"><span class="header-section-number">11.22</span> Advisor-request audit and revised priorities after resumption</h2>
+<p>Andrew requests a direct accounting of progress against the10/2 meeting, including the original fixed-K sliding feature-count study up to the available universe, probe-wise methylation variability, survival supervision and multimodal biological/predictive value. The audited evidence and proposed implementation sequence are in <code>../../plans/Advisor_Priorities_and_Execution_10_15_26.md</code>.</p>
+<p>The earlier Single supervised external result does not pass non-inferiority; the limited gene-count experiment and screened10k skewness plots do not finish the requested full-range feature-count/SD study. The proposal separates benchmark sensitivity from unadopted method remedies. It requires approval of the Task5 sequencing change before implementation; no new scientific fit has run. Documentation-checkpoint full suite631 passed,0 failed.</p>
+</section>
+<section id="advisor-facing-progress-account-and-joint-program-roles" class="level2" data-number="11.23">
+<h2 data-number="11.23" class="anchored" data-anchor-id="advisor-facing-progress-account-and-joint-program-roles"><span class="header-section-number">11.23</span> Advisor-facing progress account and joint-program roles</h2>
+<p>The five-page report <code>../../reports/Advisor_Progress_since_10_2_26.pdf</code> records the evidence since10/2 and the approved revised execution order. It explicitly retains the earlier Single external non-inferiority failure, limited feature coverage and real-data convergence failures. The seven frozen joint-program roles are tabulated: six expression-bearing programs, including the credible basal-like/classical axis, and a methylation-only program; immune structure has substantial methylation loading. These are provisional biological labels. Neither the methylation-only nor immune component is credibly prognostic. K7 itself is not a failure; the roles, stability and redundancy need evaluation. No model or external score ran. Rendered PDF visually checked; full suite631 passed,0 failed.</p>
+</section>
+<section id="task5-qc1-result-full-probe-methylation-variability-completed" class="level2" data-number="11.24">
+<h2 data-number="11.24" class="anchored" data-anchor-id="task5-qc1-result-full-probe-methylation-variability-completed"><span class="header-section-number">11.24</span> Task5-QC1 result: full-probe methylation variability completed</h2>
+<p>Preregistered in dc69f6d; serial run completed with exit0, no errors and zero warning records. All305492 available TCGA probes are described on the unchanged 144 training patients. Frozen screened probe IDs and training patient order match the cache. No imputation, survival fit, filter/default adoption or external scoring occurred. Outputs: <code>results/multimodal_real/outputs/feature_sensitivity/cpg_qc/</code>.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Descriptive group</th>
+<th style="text-align: right;">Probes</th>
+<th style="text-align: right;">Overlap with frozen screened10k</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>All available TCGA</td>
+<td style="text-align: right;">305492</td>
+<td style="text-align: right;">10000</td>
+</tr>
+<tr class="even">
+<td>Mean beta in[.1,.9]</td>
+<td style="text-align: right;">182996</td>
+<td style="text-align: right;">9990</td>
+</tr>
+<tr class="odd">
+<td>Neither observed extreme fraction&gt;=.95</td>
+<td style="text-align: right;">221222</td>
+<td style="text-align: right;">10000</td>
+</tr>
+<tr class="even">
+<td>Both filters</td>
+<td style="text-align: right;">182996</td>
+<td style="text-align: right;">9990</td>
+</tr>
+<tr class="odd">
+<td>Mean-only</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr class="even">
+<td>Proportion-only</td>
+<td style="text-align: right;">38226</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="odd">
+<td>Frozen/current screened reference</td>
+<td style="text-align: right;">10000</td>
+<td style="text-align: right;">10000</td>
+</tr>
+</tbody>
+</table>
+<p>Every probe has defined sample SD; no probe is constant. There are29414 missing raw entries, retained as missing in observed-value summaries. Of these,2130 occur in the screened reference; the unchanged cached imputation contains none. Median beta SD is .060008 across all probes, .179288 in raw screened probes and .179186 in the imputed screened cache. Median arcsine SD is .153757/.417231/.416941, respectively. Median probe mean beta is .461005/.350031/.350125. These are data descriptions, not survival results. The current10k screen is strongly enriched for variability; that does not establish the best feature universe. The mean filter would discard10 of the currently selected probes and is not adopted. Upstream cross-reactive/SNP filtering remains unverified; this is an explicit provenance gap.</p>
+<p>The requested SD histograms and mean-versus-SD binned plot were visually checked. No SD threshold was selected. An independent check on21 probes (including the most-missing probe) agrees with base-R mean/SD to maxima 4.44e-16/4.16e-17, and transformed SD to5.55e-17. Cached values at observed raw entries agree exactly. Input hashes remain unchanged; zero warnings. The full probe inventory RDS remains local/ignored; only aggregate tables, plots and non-identifying hashes/provenance are committed.</p>
+<p>The advisor progress PDF is updated to six pages with these results and the SD figure; changed pages were visually checked. The original write-up is unchanged. Fresh post-run full suite <strong>642 passed,0 failed</strong>. No new performance, biological or supervision claim is made. Next: the fixed-K7 expression feature-count study and its training-only factor-agreement curve.</p>
+</section>
+<section id="fixed-k-expression-curve-preflight-complete-initialization-decision-pending" class="level2" data-number="11.25">
+<h2 data-number="11.25" class="anchored" data-anchor-id="fixed-k-expression-curve-preflight-complete-initialization-decision-pending"><span class="header-section-number">11.25</span> Fixed-K expression curve: preflight complete, initialization decision pending</h2>
+<p>The common training universe contains17900 genes on273 patients. Reusing the existing rankings reaches2064,5001,10000 and17900 shared genes. The frozen baseline gene order and standardized subset values agree exactly. Its activity matrix has rank4 of7, making the prescribed warm-start inverse singular. A cold-primary design is proposed before any feature fit. The matched expression-only framework also retains K7, so pooled Single four classified versus joint seven does not isolate the methylation contribution. Independent feature-manifest/agreement helpers pass nine focused checks and the full suite651/651. No new feature-performance result is claimed.</p>
+</section>
+<section id="full-range-expression-sensitivity-and-first-cpg-expansion-results" class="level2" data-number="11.26">
+<h2 data-number="11.26" class="anchored" data-anchor-id="full-range-expression-sensitivity-and-first-cpg-expansion-results"><span class="header-section-number">11.26</span> Full-range expression sensitivity and first CpG expansion results</h2>
+<p>The approved cold-primary fixed-K7/alpha_F0 expression study completes24/24 converged fits, zero warnings/errors, through17900 common genes. Counts and conditional training-CV means are2064:.6084,5001:.5773,10000:.6088 and17900:.6068. Frozen D4 has historical mean external C=.626699; no external cohort was rescored for this feature study. Retained classifications are4/4/4/3, without deletion. All-gene risk correlation to the fresh baseline is.505; dense nonzero loading means do not validate gene-level selection. More inputs may reduce arbitrary screening, but no predictive gain, noninferiority result or new default is established. Full tables/curves are in results/benchmark_sim/outputs/feature_expansion/cold_primary/.</p>
+<p>The eligible305352-CpG training universe reproduces frozen10k values, ranking and patients exactly, using unchanged whole-universe imputation. Supplied mean/extreme-proportion masks retain182934/221142 probes; neither is adopted. The unfiltered methylation-only curve starts with the following full144-patient training results. Molecular inputs differ, so these are contextual training comparisons, not matched CV or incremental-modality estimates.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Source</th>
+<th style="text-align: right;">Genes</th>
+<th style="text-align: right;">CpGs</th>
+<th style="text-align: right;">Training C</th>
+<th style="text-align: right;">Credible programs</th>
+<th>Convergence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Frozen joint benchmark</td>
+<td style="text-align: right;">3000</td>
+<td style="text-align: right;">10000</td>
+<td style="text-align: right;">.637768</td>
+<td style="text-align: right;">1</td>
+<td>500 cap</td>
+</tr>
+<tr class="even">
+<td>Frozen expression-only benchmark</td>
+<td style="text-align: right;">3000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">.643559</td>
+<td style="text-align: right;">1</td>
+<td>500 cap</td>
+</tr>
+<tr class="odd">
+<td>New methylation-only reference</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10000</td>
+<td style="text-align: right;">.612671</td>
+<td style="text-align: right;">0</td>
+<td>500 cap</td>
+</tr>
+<tr class="even">
+<td>New methylation-only expansion</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">25000</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td>Moment-validity error</td>
+</tr>
+</tbody>
+</table>
+<p>The10k fit took963.827s with nonconstant riskSD.117264, no warnings/errors; the25k fit stopped after27.981s at the F-update Cox/projection-moment guard. Neither constitutes a successful supervised methylation model. Preserve NA for the failed fit. Larger counts/CV remain unrun. Andrew approved a bounded unchanged-settings diagnostic to identify the invalid field, not a remedy.</p>
+<p>The saved joint-role audit matches all seven benchmark/newer profiled activities (.832–.999) and gives risk correlation.954; both fits cap500. Program4 is the sole credible coefficient in each. Program7 is methylation- only in both, with within-block norm shares58.9%/68.7% and loading correlation.993. This supports distinct molecular roles without establishing optimal K, convergence or added prediction. Norm shares are not additive PVE or survival fractions; newer biological labels are not inferred. The advisor progress report contains the full benchmark-linked tables in HTML/PDF; the original write-up and immutable snapshot are unchanged.</p>
+</section>
+<section id="cpg-numeric-failure-reproduced-manuscript-sensitivity-update-requested" class="level2" data-number="11.27">
+<h2 data-number="11.27" class="anchored" data-anchor-id="cpg-numeric-failure-reproduced-manuscript-sensitivity-update-requested"><span class="header-section-number">11.27</span> CpG numeric failure reproduced; manuscript sensitivity update requested</h2>
+<p>Task5-M2 repeats the unchanged25k cell after prospective commit df455e0 and reproduces its exact error after32.218s, zero warnings. First invalid inputs occur at outer6/inner1/program1:17 nonfinite Cox working weights/numerators; projection moments are finite and variances positive. Predictor span5734 causes143/144 globally shifted exponentials to underflow to zero and17 risk-set sums to become zero (6 event rows). Source/data fingerprints match. This locates the numerical failure but does not resolve rapidly expanding predictors or convergence. No remedy/guard/default is changed.</p>
+<p>Andrew accepts documenting problems at larger CpG counts and requests the factor-loading correlations and updates to the progress report and larger write-up where applicable. Only the10k full fit exists, so CpG correlations across counts cannot be estimated yet; the failed25k row stays undefined. The shared-gene loading correlations from the completed expression curve are reported. The bounded manuscript revision adds those verified results, benchmark-linked tables and the CpG diagnosis without claiming a supervised replacement or changing the preserved benchmark tag/snapshot. Full suite 672 passed,0 failed. Additional numeric remedies are separate prospective work, not inferred from this reporting authorization.</p>
+</section>
+<section id="loading-update-balance-and-numerical-repair-design" class="level2" data-number="11.28">
+<h2 data-number="11.28" class="anchored" data-anchor-id="loading-update-balance-and-numerical-repair-design"><span class="header-section-number">11.28</span> Loading-update balance and numerical-repair design</h2>
+<p>The saved-state loading audit completes without refitting. Non-point-mass program median survival precision shares are6.30e-11–3.03e-7, and median absolute-numerator shares8.70e-7–1.82e-4. Frozen joint credible program4 has expression/methylation shares2.03e-7/9.00e-10 for precision,7.27e-5/4.40e-6 for numerator. These are isolated-coordinate likelihood contributions at capped terminal states, excluding priors; they do not identify trajectory causes or select a survival weight. Saved objective components are separate.</p>
+<p>Andrew asks to resolve the25k failure rather than treat it as an intrinsic CpG-count limit. A same-likelihood log-space Cox calculation is prepared, opt-in with default/base identity tests. Task5-M3 prospectively registers captured-point numerical verification followed by one unchanged25k case. No preprocessing, prior, K, convergence cap, rule or survival weight changes. Fresh full suite684 passed,0 failed; no scientific M3 run before its commit.</p>
+</section>
+<section id="stable-arithmetic-cpg-checkpoint-and-requested-pause" class="level2" data-number="11.29">
+<h2 data-number="11.29" class="anchored" data-anchor-id="stable-arithmetic-cpg-checkpoint-and-requested-pause"><span class="header-section-number">11.29</span> Stable-arithmetic CpG checkpoint and requested pause</h2>
+<p>The SAME process99846 exits0 at its unchanged500 cap. Stable arithmetic passes the identified numerical failure but scientific convergence FAILS. No warnings/errors; runtime2660.496s (44.3min). Full-training25k C=.983853984, logPL=-40176.962256, riskSD39086.312543, credible7/retained7. Final relative eta/reconstruction changes=.005891900/.06215805 versus tol1e-4. Predictor range at the start of outer500 is312267.6–520103.6; logPL worsens in178/499 outer transitions. LogPL alone need not be monotone in joint fitting; this observation does not establish a cause. High training C with these extreme, unconverged estimates is NOT a predictive gain or meaningful discovery. Saved terminal history is an aggregate export, not another experiment.</p>
+<p>Benchmark context (same144 TCGA training patients; different molecular inputs):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Source</th>
+<th style="text-align: right;">Genes</th>
+<th style="text-align: right;">CpGs</th>
+<th style="text-align: right;">Training C</th>
+<th style="text-align: right;">Credible</th>
+<th>Convergence</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Frozen joint</td>
+<td style="text-align: right;">3000</td>
+<td style="text-align: right;">10000</td>
+<td style="text-align: right;">.637768</td>
+<td style="text-align: right;">1</td>
+<td>No,500 cap</td>
+</tr>
+<tr class="even">
+<td>Frozen expression-only</td>
+<td style="text-align: right;">3000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">.643559</td>
+<td style="text-align: right;">1</td>
+<td>No,500 cap</td>
+</tr>
+<tr class="odd">
+<td>Original methylation-only</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10000</td>
+<td style="text-align: right;">.612671</td>
+<td style="text-align: right;">0</td>
+<td>No,500 cap</td>
+</tr>
+<tr class="even">
+<td>Original methylation-only</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">25000</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+<td>Original numeric error</td>
+</tr>
+<tr class="odd">
+<td>Stable-arithmetic same case</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">25000</td>
+<td style="text-align: right;">.983854</td>
+<td style="text-align: right;">7</td>
+<td>No,500 cap</td>
+</tr>
+</tbody>
+</table>
+<p>A1 executes only after authoritative M3 termination, exits0 and verifies unchanged inputs. Same144 patients/common10000 probes; all7 activity pairs match identical indices. Both fits are capped;25k arithmetic differs.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">Program</th>
+<th style="text-align: right;">Activity r</th>
+<th style="text-align: right;">Common-CpG loading r</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">.982335</td>
+<td style="text-align: right;">.945217</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">.877731</td>
+<td style="text-align: right;">.921874</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">.968273</td>
+<td style="text-align: right;">.925401</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">.512932</td>
+<td style="text-align: right;">.118295</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">.764353</td>
+<td style="text-align: right;">.038005</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">.234632</td>
+<td style="text-align: right;">-.086562</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">.940994</td>
+<td style="text-align: right;">.922771</td>
+</tr>
+</tbody>
+</table>
+<p>Risk r=.244887983. Accurate comparison succeeds; no minimum correlation was specified and no stability/adoption criterion is invented. Complete matrices, matching margins and convergence/arithmetic labels preserve weak matches. This is provisional saved-fit agreement, not a clean converged count curve. No new fitting, CV, external scoring, biology transfer or feature selection. Outputs: results/multimodal_real/outputs/feature_sensitivity/logspace_case/ (case.csv,results_with_benchmark.csv,input_hashes.csv,progress.csv, terminal_history.csv; patient-level fit.rds ignored) and cpg_count_agreement/ (program_pairs.csv, full matrices, risk_agreement.csv, input hashes, interpretation.txt and companion benchmark-context table).</p>
+<p>The benchmark remains unchanged; no model adopted. Andrew requests pausing for regrouping after this report/commit. No further fitting before review.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../chapters/2026-10-02.html" class="pagination-link" aria-label="October 2, 2026">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">October 2, 2026</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../chapters/2026-10-16.html" class="pagination-link" aria-label="October 16, 2026">
+        <span class="nav-page-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

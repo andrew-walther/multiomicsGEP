@@ -1,5 +1,14 @@
 # multiomicsGEP — Research Roadmap
 
+**October16 checkpoint:** The advisor progress report is adapted into the
+October16 progress-book chapter, with the complete expression curve, CpG
+inventory, stable-arithmetic25k cap and current method review. The complete-
+cycle observer's first objective summary is invalidated by an observer-only
+cross-term error; the correction is tested, but a new replay requires its own
+decision and registration. Full suite692/0. No supervised replacement is
+validated. Keep the existing scientific gates and defer trace archival to a
+separate retention decision; detailed new telemetry remains ignored.
+
 > A living task list of potential extensions, methodological improvements, and dissemination
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
