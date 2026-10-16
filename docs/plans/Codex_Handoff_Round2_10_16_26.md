@@ -11,7 +11,7 @@
 This replaces the open items of `Codex_Handoff_M6_M7_10_15_26.md`. Read, in this order:
 - `CLAUDE.md`;
 - the 2026-10-15 entries at the top of `DECISIONS.md` (on `feature/supervised-F`);
-- `docs/plans/Codex_to_Claude_M6_M7_10_15_26.md` and
+- `docs/plans/archive/Codex_to_Claude_M6_M7_10_15_26.md` and
   `git show m6/robustness:docs/reports/Codex_M6_M7_Summary_10_15_26.md` (round-1 results);
 - `docs/plans/Meeting_Notes_Followup_10_2_26.md`: "What the meeting concluded", Workstream B and
   Workstream C.
@@ -168,7 +168,7 @@ From `feature/supervised-F`, create `round2/supervised` and merge, with `--no-ff
 `m7/desurv-h2h`. Resolve conflicts in `DECISIONS.md`, the progress-book chapter, `PROJECT_STATUS.qmd`
 and `tests/run_tests.R` by keeping every entry, in date order. Run the full suite; every test
 from every branch must pass. Commit the round-1 handoff note
-`docs/plans/Codex_to_Claude_M6_M7_10_15_26.md` if it is not already tracked.
+`docs/plans/archive/Codex_to_Claude_M6_M7_10_15_26.md` if it is not already tracked.
 
 ## Task 1: protection fix and the K_init panel (round-1 Prompt E, resumed)
 

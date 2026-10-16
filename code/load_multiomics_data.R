@@ -13,7 +13,7 @@
 #   time  = named positive follow-up times (months), names = subject IDs
 #   event = named 0/1 event indicators (1 = death)
 #
-# Source files (see docs/plans/Working_Plan_10_1_26.md, Workstream 1):
+# Source files (see docs/plans/archive/Working_Plan_10_1_26.md, Workstream 1):
 #   TCGA expression  tcga/expr_log_normalized.rds        log2(TMM-CPM + 1), genes x 150
 #   TCGA methylation tcga/tcga_meth_filtered_sex.rds$meth beta values, CpGs x 150
 #   TCGA survival    PDAC_data/original/TCGA_PAAD.survival_data.rds

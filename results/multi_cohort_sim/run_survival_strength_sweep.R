@@ -1,6 +1,6 @@
 # ============================================================
 # Script:  results/multi_cohort_sim/run_survival_strength_sweep.R
-# Purpose: Phase 2 of docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md
+# Purpose: Phase 2 of docs/plans/archive/ssbmf_post_lab_meeting_action_plan_07_08_2026.md
 #          -- joint model (YFB) vs. two-step baselines (EBMF+Cox, PCA+Cox) as
 #          the true prognostic effect size is scaled from 0 (survival
 #          completely off) to large, holding the genomics DGP fixed.

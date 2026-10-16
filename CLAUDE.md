@@ -235,7 +235,7 @@ biological-label transfer is authorized by this descriptive comparison.
 Planning consolidation: use the active priority plan for the bounded next
 work block and goal hierarchy, and the concise Round2 handoff for status.
 The former long handoff is preserved verbatim at
-`docs/plans/Codex_to_Claude_Round2_history_10_15_26.md`; its old live/pending
+`docs/plans/archive/Codex_to_Claude_Round2_history_10_15_26.md`; its old live/pending
 statements are historical. Planning changes do not resume the paused goal.
 Original handoffs retain scientific criteria and provenance; their obsolete
 branch/merge sequences are not restart instructions. Read current status

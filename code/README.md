@@ -13,9 +13,8 @@ Hyperparameters are read from `config/globals.yml`.
 | `fit_modular_multistart.R` | Multiple-initialization wrapper for the LB fit |
 | `deflation_init.R`, `warmstart_from_fit.R` | Initialization: deflation start, warm start of a smaller-K refit |
 
-Each source file ends in a stand-alone runner that stops when no data are set,
-after the functions are defined. Load one with
-`tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) NULL)`.
+`source()` a fitter to load its functions. Each fitter also ends in a runner
+block that executes only under `Rscript code/<file>.R`.
 
 ## CAVI updates
 

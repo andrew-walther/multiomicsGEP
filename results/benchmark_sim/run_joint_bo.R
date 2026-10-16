@@ -1,7 +1,7 @@
 # ============================================================
 # Script:  results/benchmark_sim/run_joint_bo.R
 # Purpose: Step 3 of the K-parsimony follow-up plan
-#          (docs/plans/ssbmf_k_parsimony_followup_plan_07_13_2026.md).
+#          (docs/plans/archive/ssbmf_k_parsimony_followup_plan_07_13_2026.md).
 #          Jointly tunes (K, alpha) via Bayesian optimization
 #          (code/select_k_alpha_bo.R) on the D4 recommended config, testing
 #          whether DeSurv's own approach -- joint (k, alpha, penalty) BO

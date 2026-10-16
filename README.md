@@ -49,6 +49,11 @@ retains two prognostic programs, one associated with worse and one with better
 survival, and reaches a mean concordance of 0.627 across five held-out PDAC
 cohorts (n = 616).
 
+![Kaplan–Meier curves by within-cohort risk tertile in five external PDAC cohorts](paper/writeup/figures/km_risk_external.png)
+
+*Overall survival by within-cohort tertile of the frozen risk score in the five
+external cohorts. The model was trained on TCGA-PAAD and CPTAC-PDAC only.*
+
 **Multimodal extension (in progress).** A joint YFB model for matched gene
 expression and DNA methylation (TCGA training, ICGC validation) is implemented in
 `code/fit_multimodal_yfb.R` with prediction, simulation and K-selection
@@ -65,20 +70,29 @@ choice are in [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) and
 
 ### Requirements
 
-R (developed with R 4.5) and
+R (developed with R 4.5). The core model needs
 
 ```r
 install.packages(c("survival", "ebnm", "yaml"))
 ```
+
+Other analyses need further packages:
+
+| Use | Packages |
+|-----|----------|
+| Multimodal model | `Rcpp` (with a C++ compiler); Bioconductor `impute` for the methylation loader |
+| Comparators and tuning | `flashier`, `glmnet`, `rBayesianOptimization`, `GPfit` |
+| Pathway analysis and figures | `fgsea`, `msigdbr`, `ggplot2`, `pheatmap`; Bioconductor `clusterProfiler` |
+| Optional quantile normalization | Bioconductor `preprocessCore` |
+
+Install Bioconductor packages with `BiocManager::install()`.
 
 Scripts use paths relative to the repository root; run them from there.
 
 ### Minimal example
 
 ```r
-# The script ends with a stand-alone runner that stops when no data are set;
-# the function definitions are already loaded by then.
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) NULL)
+source("code/fit_cox_on_yf.R")
 source("code/predict_cox_on_yf.R")
 
 set.seed(1)

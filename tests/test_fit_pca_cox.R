@@ -4,7 +4,7 @@
 # TDD test suite for fit_pca_cox() / predict_pca_cox()
 # (results/multi_cohort_sim/fit_pca_cox.R) -- the PCA+Cox two-step baseline
 # used by Phase 2's joint-vs-2-step value-add simulation
-# (docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md).
+# (docs/plans/archive/ssbmf_post_lab_meeting_action_plan_07_08_2026.md).
 #
 # NOTE: requires the survival package.
 # =============================================================================

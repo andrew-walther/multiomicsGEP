@@ -3,7 +3,7 @@
 # FILE:        code/fit_modular.R
 # AUTHOR:      Andrew Walther
 # DATE:        March 2026
-# DERIVATIONS: derivations/MF_UpdateDerivations/MF_V2_Companion.tex
+# DERIVATIONS: derivations/MF_UpdateDerivations/archive/MF_V2_Companion.tex
 #              derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf
 #
 # DESCRIPTION:
@@ -869,9 +869,11 @@ fit_supervised_mf_modular <- function(Y, time, status,
 
 # ==============================================================================
 # PART 3 — DATA_MODE Runner Block
+# Runs only under `Rscript code/fit_modular.R`; skipped when the file is
+# sourced (sys.nframe() > 0), so source() only defines the functions.
 # ==============================================================================
 
-if (DATA_MODE == "simulated") {
+if (sys.nframe() == 0L && DATA_MODE == "simulated") {
 
   # DGP identical to results/run_modular_simulation.R lines 131-152:
   # same seed (42), same B_true, same Weibull survival model.
@@ -938,7 +940,7 @@ if (DATA_MODE == "simulated") {
               nonzero_est_threshold, all(abs(est[!nonzero_mask]) < nonzero_est_threshold),
               est[!nonzero_mask]))
 
-} else if (DATA_MODE == "real") {
+} else if (sys.nframe() == 0L && DATA_MODE == "real") {
 
   stopifnot(
     !is.null(real_Y),

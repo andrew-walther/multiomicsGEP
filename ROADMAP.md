@@ -22,7 +22,7 @@ the supervision, valid rank and multimodal-value research goals remain open.
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Active working plan (2026-10-02):** `docs/plans/Meeting_Notes_Followup_10_2_26.md` follows the 10/2 advisor meeting. Its deliverables are a unified write-up as the start of the manuscript; survival supervision of the program loadings F (α_F = 0 cannot be the final method, DECISIONS.md 2026-10-02); and a sensitivity analysis on the number of genes and CpGs. Start open work there. The 10/1 plan (`docs/plans/Working_Plan_10_1_26.md`) records the work done 10/1–10/2.
+> **Active working plan (2026-10-02):** `docs/plans/Meeting_Notes_Followup_10_2_26.md` follows the 10/2 advisor meeting. Its deliverables are a unified write-up as the start of the manuscript; survival supervision of the program loadings F (α_F = 0 cannot be the final method, DECISIONS.md 2026-10-02); and a sensitivity analysis on the number of genes and CpGs. Start open work there. The 10/1 plan (`docs/plans/archive/Working_Plan_10_1_26.md`) records the work done 10/1–10/2.
 >
 > **Status as of 2026-07-15.** Core model complete (modular CAVI, 374/374 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
@@ -190,7 +190,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 - [x] **Factor classification (survival-active/genomics-only/dead) + K-init sweep + best-of-
   multistart ELBO comparison (Analysis A)** *(Complete, 2026-08-19, branch
   `meeting/2026-08-21-prep`)*
-  Per `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md` Step 1 + Analysis A:
+  Per `docs/plans/archive/ssbmf_factor_classification_k_selection_08_13_2026.md` Step 1 + Analysis A:
   added `classify_factors()` (`code/select_K.R`) distinguishing survival-active from
   genomics-only-but-survival-silent factors, replacing `auto_prune_K()`'s binary active/shrunk
   split. Swept K_init ∈ {5,6,7,8,9,10,15,20} on real TCGA+CPTAC data (D4 preprocessing), then
@@ -279,7 +279,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   $(K,\alpha)$ Bayesian-optimization search with its identified acquisition-search issue fixed
   (all lower priority, none currently blocking); HPC/Longleaf workflow, dev-tooling backlog, and the
   larger matched DeSurv head-to-head as future/manuscript-stage work. Full spec with approach, effort
-  estimates, and a priority table: `docs/plans/ssbmf_open_items_followup_plan_07_15_2026.md`.
+  estimates, and a priority table: `docs/plans/archive/ssbmf_open_items_followup_plan_07_15_2026.md`.
 
 - [x] **Executive summary / progress report for research team** *(Complete, 2026-07-15, branch
   `item2-executive-summary`)* Two deliverables: a long-form progress report
@@ -294,7 +294,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [ ] **TO-DO (flagged by user, 2026-07-14): comprehensive HTML project document ("visual executive
   summary") — do not start until the entire consolidated plan is complete**
-  Full spec: `docs/plans/ssbmf_progress_consolidation_and_remaining_work_07_14_2026.md`, Part B,
+  Full spec: `docs/plans/archive/ssbmf_progress_consolidation_and_remaining_work_07_14_2026.md`, Part B,
   Item 6. A standalone HTML document — illustrative text, figures, workflow diagrams — describing
   current project state, key decisions constituting the current method, and its capabilities; the
   user's framing is "a demo of the method as a visual executive summary," meant to get the user,
@@ -325,7 +325,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [x] **Re-verify Phase 3's K=2/K=4 results with multistart and warm-start before treating as conclusive**
   *(Complete, 2026-07-13, branch `phase3-followup-warmstart` — Step 1 of
-  `docs/plans/ssbmf_k_parsimony_followup_plan_07_13_2026.md`)*
+  `docs/plans/archive/ssbmf_k_parsimony_followup_plan_07_13_2026.md`)*
   Result: **K=4 and K=5 both reach K=7-level external performance (mean C=0.6270 vs. K=7's 0.6267)
   once warm-started from the converged K=7 fit's top-K PVE-ranked columns** — Phase 3's
   "K=7 is not free to shrink" does not survive better optimization at these two K values.
@@ -431,7 +431,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [x] **Phase 1 (objective normalization, λ retirement, train/test preprocessing fix)**
   *(Complete, merged to `main` 2026-07-12)*
-  Post-lab-meeting action plan Phase 1 (`docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`):
+  Post-lab-meeting action plan Phase 1 (`docs/plans/archive/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`):
   normalized the unnormalized ~p-fold genomics/survival ELBO-term scale gap by boosting the
   survival contribution for the ELBO monitor only (not shrinking genomics — shrinking genomics
   collapses LB's L/F to exactly zero via a bilinear feedback loop; boosting β's own precision was
@@ -731,7 +731,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   only at this point.
 
 - [ ] **Joint (K, α) tuning via Bayesian optimization, to match DeSurv's search procedure** `[Priority: Low-Medium]` `[Effort: Medium]`
-  Plan only, not implemented: `docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`. Motivation:
+  Plan only, not implemented: `docs/plans/archive/joint_k_alpha_bayesopt_plan_07_12_2026.md`. Motivation:
   DeSurv jointly tunes `k, α, λ` via Bayesian optimization; we tune only K via grid-search CV with
   α fixed at 0.5. This confirmed methodology difference is part of why K=7-vs-DeSurv's-k=3 isn't a
   fair apples-to-apples comparison (`DECISIONS.md` 2026-07-12). A joint `(K, α)` BO search (no

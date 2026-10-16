@@ -1,6 +1,6 @@
 # ============================================================
 # Script:  results/benchmark_sim/run_yfb_dualF_diagnostic_D4.R
-# Purpose: Step 0 of docs/plans/yfb_dual_source_F_experiments_08_20_2026.md.
+# Purpose: Step 0 of docs/plans/archive/yfb_dual_source_F_experiments_08_20_2026.md.
 #          Reconfirm the alpha_F>0 dual-source-F failure (DECISIONS.md
 #          2026-05-22) under the CURRENT recommended D4 preprocessing
 #          (per-platform z-std + DeSurv combined_rank top-3000 per-cohort
