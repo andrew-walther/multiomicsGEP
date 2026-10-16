@@ -1527,3 +1527,16 @@ Final expression checkpoint: fresh full suite657/0 after implementation,
 pages visually inspected, HTML embeds three figures, and all10 benchmark
 SHA256 entries pass. Main write-up QMD/HTML/PDF have no diff versus the tag.
 No external scoring, default change or benchmark replacement.
+
+### CpG expansion preparation registered, not yet executed
+
+Task5-P1 registers original whole-universe TCGA reconstruction before any fit.
+The planned methylation-only curve is10k/25k/50k/100k/all eligible, with10k
+only the reference. Guard tests4/4 pass after RED0/4. The preflight also
+retains the tested mean[.1,.9] and95%-extreme-tail descriptive masks for a
+later separate filter comparison, as Andrew reiterates. No SD cutoff was
+specified or invented. No filter/default is adopted. Exact original10k
+values and ranking must pass before further modeling.
+
+Task5-P1 software checkpoint: fresh full suite661 passed,0 failed; four guard
+fixtures pass. No reconstruction run before its prospective commit.

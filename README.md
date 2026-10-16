@@ -582,3 +582,13 @@ shared genes; conditional CV means .608/.577/.609/.607. Safe tables and two
 curves are in the cold_primary output folder. Dense nonzero loading means do
 not establish gene-level selection; no feature count/default is adopted. The
 advisor report is updated in both HTML and PDF.
+
+The CpG preparation preflight is
+`Rscript results/multimodal_real/prepare_feature_universe.R`, executed only
+after Task5-P1's prospective commit. It reconstructs the original305352-probe
+training universe with the same KNN algorithm before variance screening and
+requires exact frozen10k/order/value identity. Warnings remain visible in its
+audit CSV. No model or external outcome is scored; local patient matrices stay
+ignored. `code/cpg_feature_sensitivity.R` supplies the tested exact-reconstruction
+and nested count guards. Original mean/extreme-proportion filters are described
+separately; no SD threshold or new filter is adopted by preparation.

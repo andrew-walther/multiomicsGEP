@@ -5,6 +5,20 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Expand CpGs through the full eligible universe; separate filtering
+
+Andrew reiterates that10k CpGs is too restrictive as the study endpoint and
+asks to evaluate the supplied filters. The planned methylation-only ladder
+is10k/25k/50k/100k/all eligible;10k is the frozen reference only. Preserve the
+original305352-probe shared eligibility and imputation before screening,
+requiring exact frozen matrix/rank identity in Task5-P1 before any fit.
+
+Keep count sensitivity distinct from observed-mean[.1,.9] and95%-extreme-tail
+filter comparisons. These masks are described and saved locally, not adopted
+as new defaults. No high/low-SD cutoff was specified, so none is introduced.
+No external survival score selects a filter or count; supervised model and
+benchmark adoption gates remain unchanged.
+
 ## 2026-10-15 — Retain the benchmark after full-range expression sensitivity
 
 The authorized fixed-K7/alpha_F0 cold-primary study reaches all17900 common

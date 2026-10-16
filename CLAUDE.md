@@ -177,3 +177,10 @@ Use only ignored local patient inputs/fits and safe aggregate outputs.
 performance/agreement figures and safe loading summaries from all24 terminal
 fits. Its input patient/fitted RDS remain ignored. Consult the live status and
 Round2 handoff for results, limitations and the next methylation preflight.
+
+CpG expansion preparation is `results/multimodal_real/prepare_feature_universe.R`;
+read Task5-P1 before execution. Its guards are in `code/cpg_feature_sensitivity.R`.
+It must reconstruct the unchanged whole-universe imputation and exact frozen
+10k matrix/rank before any fit. Probe-count expansion reaches the full eligible
+universe;10k is a reference only. Describe the supplied mean/proportion filters
+separately; no SD cutoff or default change is authorized by this preflight.

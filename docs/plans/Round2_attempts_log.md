@@ -1498,3 +1498,57 @@ values before fitting; do not silently change eligibility, imputation or mean
 filter. Warm continuation remains deferred. Tasks1/2 remain unresolved;
 Task3 deferred; Task4/7 complete; Task6 optional/unrun. This is not final goal
 completion or a replacement supervised model.
+
+## Task5-P1: original full-CpG training-input reconstruction (prospective)
+
+Purpose: prepare the approved methylation count curve through the entire
+eligible universe, not repeat a10k-only experiment. Counts are10k/25k/50k/
+100k/all positive-variance eligible probes (original shared universe305352;
+raw TCGA305492,140 excluded by the existing shared-probe rule). This is a
+bounded data-only preflight, with no model, survival score, choice of a
+feature count, or adoption. Log/commit this entry and software before running.
+
+Retain the existing sex-filtered input files, TCGA patient/survival eligibility,
+patient order, shared-probe identities, and whole-universe missing-row KNN
+imputation before variance ranking. Validation contributes only the original
+probe-availability IDs, never expression/outcomes/clinical data/scores. Exact
+same impute::impute.knn input submatrix and default arguments as the current
+loader; expose/log its warnings instead of suppressing them. This observation
+change does not alter the imputation algorithm. Keep observed entries exact.
+
+Required before any fit:144 ordered training patients with identical time/event
+vectors, all305352 eligible probes, finite beta values, bit-identical frozen10k
+matrix and variance-ranked probe order, identical frozen expression subset.
+Any mismatch/error is written and stops this preflight; no new tolerance,
+subset-specific imputation, filter, retry or cache replacement is allowed.
+Publish all warnings, eligible counts and aggregate checks. The immutable
+snapshot and original training cache remain read-only. Record versions/hashes;
+local full matrices, patient identities and probe inventory stay ignored.
+
+Andrew reiterates the importance of using hundreds of thousands of CpGs and
+evaluating his filters. Retain his exact supplied observed-value rules:
+mean beta in[.1,.9], and separately neither tail (<.1 or >.9) reaching95%.
+Use the existing tested QC functions to describe each mask within the original
+eligible universe, before imputation. No high-/low-SD cutoff was specified;
+do not invent one. Save these masks locally for a separate prospective filter
+comparison after the count-only reference curve. Descriptive filter counts
+are not adoption or proof of predictive/biological benefit. Original 10k is a
+reference/check only, never the upper limit of the planned curve.
+
+Runner: Rscript results/multimodal_real/prepare_feature_universe.R.
+New local cache: data/round2_tcga_feature_universe.rds; never commit.
+Safe output: results/multimodal_real/outputs/feature_sensitivity/universe_preflight/.
+Serial local preparation, expected minutes, memory up to several GB; HPC8GB/
+one CPU if needed. No fit/Longleaf job submission in this attempt. The raw
+TCGA expression matrix is labelled raw, not a newly approved shared-gene set.
+
+Four new guard tests: original variance ordering/constants/unavailable targets,
+wrong frozen screen rejected, exact probe-wise reconstruction allowing column
+reordering, and patient-order/nonfinite/value perturbation failures. RED0/4
+then GREEN4/4. Helpers live in code/cpg_feature_sensitivity.R so the completed
+expression panel's frozen source hashes remain unchanged. Run the full suite
+and record its count before commit/execution; no reconstruction run yet.
+
+Task5-P1 preregistration verification: guards RED0/4 then GREEN4/4; full
+suite **661 passed,0 failed** after final module separation. Preparation
+syntax parses. No reconstruction or model has run before this commit.
