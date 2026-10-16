@@ -159,12 +159,6 @@ multiomicsGEP/
 - [Project write-up](paper/writeup/writeup.pdf): methods, evaluation, results and full derivations
 - [Progress notebook](https://andrew-walther.github.io/multiomicsGEP/)
 
-## Related work
-
-[DeSurv](https://github.com/rashidlab/DeSurv) (Young et al.) is a penalized
-survival-supervised NMF developed in the same group and applied to the same PDAC
-cohorts; this project's gene selection follows its preprocessing.
-
 ## License
 
 MIT (see [`LICENSE`](LICENSE)). The PDAC, TCGA and ICGC data are not included and
