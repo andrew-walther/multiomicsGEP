@@ -784,3 +784,18 @@ the requested full-range feature-count/SD study. The proposal separates
 benchmark sensitivity from unadopted method remedies. It requires approval
 of the Task5 sequencing change before implementation; no new scientific fit
 has run. Documentation-checkpoint full suite631 passed,0 failed.
+
+
+## Advisor-facing progress account and joint-program roles
+
+The five-page report `../../reports/Advisor_Progress_since_10_2_26.pdf`
+records the evidence since10/2 and the approved revised execution order.
+It explicitly retains the earlier Single external non-inferiority failure,
+limited feature coverage and real-data convergence failures. The seven
+frozen joint-program roles are tabulated: six expression-bearing programs,
+including the credible basal-like/classical axis, and a methylation-only
+program; immune structure has substantial methylation loading. These are
+provisional biological labels. Neither the methylation-only nor immune
+component is credibly prognostic. K7 itself is not a failure; the roles,
+stability and redundancy need evaluation. No model or external score ran.
+Rendered PDF visually checked; full suite631 passed,0 failed.

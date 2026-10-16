@@ -28,8 +28,8 @@ defensible predictive or biological contribution from methylation. The
 revised plan is `docs/plans/Advisor_Priorities_and_Execution_10_15_26.md`.
 It distinguishes the limited completed feature study (662–3600 shared genes)
 and screened10k skewness plots from the outstanding full-range/SD analyses.
-No new analysis or replacement model is claimed. Approval of the proposed
-benchmark-sensitivity sequencing precedes implementation; all original
+No new analysis or replacement model is claimed. Andrew approved the
+benchmark-sensitivity sequencing before implementation; all original
 criteria and the frozen benchmark remain intact.
 
 ## Round2 pause checkpoint: supervised stability remains unresolved (2026-10-15)
@@ -2689,3 +2689,14 @@ unchanged. The advisor-meeting follow-up plan will guide a later substantive
 chapter update after methodological decisions and additional results are
 verified. The installed sync hook regenerates Chapter 4 in bios-dissertation;
 the full prelim must then be rebuilt there.
+
+
+## Advisor-facing progress report available (2026-10-15)
+
+`docs/reports/Advisor_Progress_since_10_2_26.pdf` is a five-page account of
+completed and outstanding advisor requests, built from saved evidence only.
+It includes recovery, external non-inferiority failure, feature CV and the
+frozen seven-program role table. Seven joint programs may be appropriate;
+parsimony requires role/stability/redundancy evidence, not forced deletion.
+The current write-up and benchmark remain unchanged. Full suite631/631;
+full-CpG mean/SD analysis is the next approved deliverable.

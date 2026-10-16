@@ -1,0 +1,291 @@
+---
+title: "Progress since the October 2 advisor meeting"
+subtitle: "Survival supervision, feature sensitivity and multimodal evidence"
+author: "Andrew J. Walther — research progress prepared with Codex"
+date: "2026-10-15"
+format:
+  pdf:
+    documentclass: article
+    papersize: letter
+    fontsize: 10pt
+    geometry: margin=0.8in
+    pdf-engine: lualatex
+    latex-auto-install: false
+    colorlinks: true
+    linkcolor: black
+    urlcolor: black
+    keep-tex: false
+    include-in-header:
+      text: |
+        \usepackage{needspace}
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{array}
+        \setlength{\emergencystretch}{3em}
+execute:
+  enabled: false
+---
+
+# What the work has established
+
+The approved October 14 write-up remains the project's benchmark. Its
+single-block model has mean external concordance **0.627** across five
+cohorts, with $\alpha_F=0$: survival informs the coefficients but not the
+loading updates. The matched expression–methylation framework has ICGC
+primary-PDAC concordance **0.685**, without demonstrated improvement over
+expression alone. Neither result has been replaced.
+
+Since that write-up, the experiments have produced positive evidence that
+survival-informed fitting can recover a low-variance prognostic program in
+simulation, a clean simulation comparator panel, and reproducible diagnoses
+of real-data instability. They have **not established a final supervised
+method** satisfying convergence, rank selection and external performance
+requirements. Several central feature-sensitivity requests are still open.
+
+| October 2 request | Evidence available | Status |
+|---|---|---|
+| Unified methods/results/biology write-up | Approved interim PDF and reproducible frozen results | Complete as an interim account |
+| Survival shapes loadings $F$ | Implemented experimentally; replicated recovery evidence | Partial; adoption requirements fail |
+| More features at fixed $K$ | Limited expression experiment, 662–3,600 shared genes | Full-range curves and agreement remain open |
+| Probe-wise methylation variability | Screened-10k pooled-value/skewness plots | Full-probe mean/SD inventory and SD histogram remain open |
+| Parsimonious retained programs | Protected/full-state pruning evaluated and rejected | Rank selection unresolved |
+| Multimodal value | Methylation-dominant and shared molecular structure | Predictive benefit and validated added biology unproven |
+
+**What is concretely solved.** Dead point-mass programs no longer receive
+survival protection in the opt-in pruning rule. Full posterior information
+can be retained through opt-in pruning refits. Comparator rank-zero/rank-one
+cases and individual errors remain in denominators. The failed historical
+framework CV fold is exactly reproducible. A curvature experiment removes
+constant-risk predictions in its five candidate CV folds. These are specific
+software corrections and diagnoses, not proof of the complete scientific goal.
+
+**Current decision.** No replacement is proposed. Preserve the benchmark,
+report failures, and now prioritize the advisor's fixed-$K$ feature study
+alongside bounded method remedies. Andrew approved that revised sequence.
+
+\newpage
+
+# Does survival now influence $F$?
+
+**In experimental code, yes.** The canonical single-modality update combines
+reconstruction and survival precision/signal contributions,
+$A_F=A_{\rm gen}+w_S A_{\rm surv}$ and
+$B_F=B_{\rm gen}+w_S B_{\rm surv}$, with $w_S=1$ in the evaluated
+unweighted formulation. It also fixes projection scale and can use
+survival-informed initialization. The benchmark's $\alpha_F=0$ update omits
+those survival contributions. It remains close to factorization followed
+by survival regression in this important sense, although its stopping rule
+means its loadings need not equal a separately converged unsupervised fit.
+
+## Recovery evidence and its limits
+
+The clean comparator rerun covers 40 simulated datasets and 200 method results,
+with no fitting errors. Its supervised arm recovers the planted program in
+17/20 low-noise and 19/20 high-noise datasets. The four comparator arms do not
+recover the planted survival-active program under the specified joint
+criterion; EBMF alone has no fitted survival risk by design. Two supervised
+fits reach their iteration cap, and one high-noise prediction is constant.
+This is controlled simulation evidence, not an external-cohort result.
+
+The latest, separately approved profiled-curvature experiment changes only
+an opt-in flag from the framework controls. Its simulations give:
+
+| Model | Noise | Recovery /20 | False active | Reference false active | Converged /20 |
+|---|---:|---:|---:|---:|---:|
+| Single | .25 | 18 | 1.35 | 1.15 | 19 |
+| Single | 1 | 20 | .40 | .35 | 20 |
+| Multimodal | .25 | 16 | .80 | .75 | 20 |
+| Multimodal | 1 | 19 | .40 | .65 | 20 |
+
+All recovery and false-positive criteria pass; Single convergence does not.
+The fixed beds are retained. These results do not establish validity for all
+feature counts, rank selection or the final Bayesian objective.
+
+## External performance has not established non-inferiority
+
+The earlier selected supervised Single candidate, evaluated before Round 2,
+was compared with the frozen D4 reference on five cohorts (616 patients).
+
+| Model | Mean external C | Delta versus D4 (95% interval) |
+|---|---:|---|
+| Frozen D4, $\alpha_F=0$ | .626699 | Reference |
+| Earlier supervised candidate | .620725 | $-.005974\;[-.031708,.020662]$ |
+| Earlier $\alpha_F=0$, point-Laplace L/F arm | .635304 | $.008605\;[-.011261,.030378]$ |
+
+The supervised arm fails the required lower limit $>-0.02$. The earlier
+$\alpha_F=0$ arm passes that requirement but does not supervise $F$.
+
+The latter arm changes loading priors as well as retaining $\alpha_F=0$;
+it is not the frozen D4 fit. No model is selected from these external scores.
+No new Round 2 external cohort has been scored. Simulation recovery alone
+therefore does not close the supervision requirement.
+
+\newpage
+
+# Multimodal stability and the meaning of seven programs
+
+The selected supervised multimodal fit collapsed to zero risk on TCGA.
+Training-only tracing identified shared coefficient-prior absorption.
+Replacing it by a fixed prior did not produce a converged, credibly
+prognostic real-data fit. An unchanged historical-framework CV fold also
+lost all coefficient means and second moments; the exact trace reproduces
+all 13 saved-state/history checks, locating the persistent loss at outer
+iteration 167, inner sweep 1.
+
+The approved working-intercept profile removes a penalty on the arbitrary
+constant-risk direction. All five candidate CV risks are nonconstant, but
+all five reach 500 iterations, and credible-program counts are 0,1,0,0,0.
+Its own five-fold mean C is .563678. The original reference has one undefined
+score, so the prescribed five-finite-pair comparison remains ineligible.
+Single candidate CV C=.624776 versus .623985 passes its paired one-SE rule.
+
+| Source/model, full TCGA | Training C | Credible programs | Final K | Converged |
+|---|---:|---:|---:|---|
+| Frozen joint framework | .637768 | 1 | 7 | No |
+| Frozen expression-only framework | .643559 | 1 | 7 | No |
+| Frozen matching Single $\alpha_F=0$ comparison | .593717 | — | — | — |
+| Round 2 profiled joint framework | .639172 | 1 | 7 | No, 500 cap |
+| Round 2 profiled Single framework | .651632 | 3 | 7 | No, 300 cap |
+
+These are training quantities, not the external benchmark values .685/.627.
+The profile panel completes 92 new fits plus 10 cached references without
+execution errors or warnings. Eight new fits cap. It is not adopted.
+
+## Seven may be appropriate; the roles must justify the count
+
+A joint fit can retain expression-dominant, methylation-dominant and
+prognostic programs, with overlapping roles. Fewer programs are not
+inherently better. The frozen joint fit already provides this descriptive
+role evidence:
+
+| Program | Provisional interpretation | Expression share | Methylation share | Survival-active |
+|---:|---|---:|---:|---|
+| 1 | Classical/gastric | 23.5% | 4.8% | No |
+| 2 | Immune | 5.1% | 20.9% | No |
+| 3 | Mixed, unlabelled | 31.5% | 0.3% | No |
+| 4 | Basal-like versus classical | 6.2% | 4.5% | Yes |
+| 5 | Normal versus activated stroma | 4.8% | 1.2% | No |
+| 6 | Exocrine/acinar | 28.9% | 9.3% | No |
+| 7 | Methylation-only | 0% | 58.9% | No |
+
+All rows are from the frozen benchmark, not inferred labels for the newer
+fit. Shares normalize fitted rank-one squared norms within a modality;
+they are not additive variance explained or survival contributions. Labels
+are provisional; CpG annotation and enrichment were not performed.
+
+The Single write-up's four retained programs classify one K=7 fit; three
+other fitted programs are inactive under its operational thresholds.
+No deletion/refitting produced those four. Thus “7 versus 4” compares
+classification/model settings as well as modalities. A matched role and
+redundancy audit is required before interpreting it as excess joint rank.
+
+\newpage
+
+# How much of the feature-count request is complete?
+
+A limited earlier Single experiment varied the screening count per cohort,
+then intersected the selected features. Requested count and fitted dimension
+are different quantities:
+
+| Requested/cohort | Shared genes | Mean training CV C | CV SE | Capped folds | Frozen D4 external C |
+|---:|---:|---:|---:|---:|---:|
+| 1,000 | 662 | .650200 | .017200 | 1/5 | — |
+| 2,000 | 1,365 | .648933 | .022598 | 0/5 | — |
+| 3,000 | 2,064 | .651199 | .023631 | 1/5 | — |
+| 5,000 | 3,600 | .655413 | .027386 | 2/5 | — |
+| Frozen D4 reference | 2,064 | — | — | — | .626699 |
+
+This earlier curve uses the selected experimental Single configuration:
+canonicalization, $w_S=1$, supervised initialization and a shared point-Laplace
+coefficient prior. It is not the frozen $\alpha_F=0$ D4 configuration.
+All four full-training fits converge. The observed differences are small
+relative to their uncertainty and do not justify a new feature count.
+Screening/scaling preceded folds; these are conditional CV results, not a
+fully nested raw-data pipeline. The runner exited nonzero after saving its
+tables because its source was edited during execution. Saved fits/counts
+and summary arithmetic were independently verified; a clean-process rerun
+remains optional unfinished work. This limitation is not hidden.
+
+This experiment does **not** complete the advisor request: it stops well
+short of the maximum feature universe, omits CpG-count expansion and does
+not provide the requested factor-agreement curve.
+
+## Approved next experiment: feature count varies; K does not
+
+Start with one modality, fixed **K=7 and deletion off**. Freeze the model,
+patients, ranking, folds and convergence rule, and increase nested feature
+sets through the full eligible universe. Report the actual number after
+intersection, not an assumed 20k/300k maximum. First use the benchmark/fallback
+as labelled sensitivity analysis; do not wait indefinitely for a supervised
+replacement or describe this as solving supervision.
+
+For each set report C and held-out partial log-likelihood, convergence/caps,
+runtime/memory, loading shrinkage and program roles. Match programs using
+training activities, then correlate loadings on common features and compare
+projection/risk agreement. Preserve ambiguous matches and undefined
+correlations. Warm-start larger sets as specified; cold-fit the largest set
+for comparison. Do not change K, weights and feature counts together.
+
+Next do methylation alone, then matched joint fits varying one modality at
+a time. External outcomes cannot select feature counts. Large CpG fits may
+require prepared Longleaf arrays, which will not be submitted automatically.
+
+\newpage
+
+# Methylation variability and a defensible value-add claim
+
+## Immediate descriptive deliverable
+
+For each available TCGA training CpG, compute mean raw beta, observed sample
+count, sample SD/variance and the fractions below .1 and above .9. Describe
+both the meeting's mean filter and its 95% extreme-proportion comparison,
+including their overlap with the screened 10k baseline. Produce **histograms
+of per-probe SD**, on beta and arcsine scales, and a mean-versus-SD plot.
+Label missingness/imputation and verified versus unknown upstream probe QC.
+Do not choose a new SD cutoff from the plots or silently change the baseline.
+
+The existing figures describe pooled methylation values and per-CpG
+skewness in the screened 10k set; they cannot substitute for that inventory
+or SD histogram. This requested deliverable is next after this report.
+
+## Two acceptable multimodal contributions
+
+**Prediction:** compare joint, expression-only and methylation-only fits
+on the same patients, folds and expression feature counts. Report paired
+uncertainty. Matching expression-only C is not predictive improvement, and
+training C alone is not external performance.
+
+**Additional biology:** assess stable molecular structure absent from
+expression-only fitting. The methylation-only and immune components already
+provide descriptive candidates. Neither is survival-active in the benchmark;
+58.9% methylation share is not evidence of 58.9% survival explanation.
+Annotation, enrichment, reproducibility across feature sets and checks of
+composition/technical explanations are needed for a stronger biological claim.
+
+## What enters the larger write-up
+
+| Revision dependency | Evidence available for review | Still required |
+|---|---|---|
+| R1–R3: updates, scale and objective | Implemented supervision, curvature diagnosis, prior/KL caveats | Stable defensible final formulation |
+| R4: rank/classification | Failed pruning panels; distinction between seven fitted/four classified | Valid rank choice and matched program-role audit |
+| R5–R7: evaluation/results | Recovery/comparator tables, external failure, limited feature CV | Full-range sensitivity and final allowed external report |
+| R8: biology | Frozen program roles, provisional labels and limitations | Final-program CpG annotation and confounding checks |
+| R9: implications/continuing work | Clear progress and unresolved requirements | Conclusions supported by the final reviewed evidence |
+
+The initial PDF remains unchanged. This report supplies an auditable progress
+account and revision evidence; it does not replace it. Further findings can
+be incorporated after review without presenting unresolved goals as achieved.
+
+## Evidence and provenance
+
+All numbers above are saved results; this report runs no model or new
+external scoring. The benchmark tag is
+`benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
+The current checkpoint before this report is `f0858ec`, with 631 passing
+software tests. Full per-task commits, failures and tables are indexed in
+[the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
+[attempt history](../plans/Round2_attempts_log.md). The
+[approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)
+links these deliverables to the October 2 meeting and write-up revision markers.
+Software tests validate specified behavior; their count is not proof that
+all statistical goals have been met.

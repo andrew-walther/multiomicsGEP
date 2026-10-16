@@ -5,6 +5,21 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Approve fixed-K feature sensitivity before the supervision remedies settle
+
+Andrew explicitly approved the revised sequence: advisor progress report,
+full-CpG mean/SD histograms, then nested feature-count curves at fixed K7
+using the benchmark/fallback. Supervision and pruning remain separate open
+work. This overrides original Task5's sequencing prerequisite only; all
+success criteria, defaults, frozen results and external-selection rules stand.
+
+Andrew also clarifies that retaining seven joint programs can be appropriate
+if their expression, methylation and prognostic contributions justify them.
+Audit roles and redundancy rather than treating deletion as the objective.
+The Single write-up's four retained programs are classifications of a K7 fit,
+not four factors after deletion/refitting. The approved plan and advisor
+progress report preserve that distinction.
+
 ## 2026-10-15 — Record resumed advisor priorities and a proposed sequencing change
 
 Andrew requests resumption with explicit attention to the10/2 meeting goals:

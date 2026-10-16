@@ -1,6 +1,6 @@
 # Advisor priorities and revised Round2 execution plan
 
-> **For agentic workers:** Use `superpowers:executing-plans` to implement the approved tasks in this document. Work directly in the existing checkout; do not create a worktree or delegate. This is a prospective reprioritization plan, not a record of completed analyses.
+> **For agentic workers:** Use `superpowers:executing-plans` to implement the approved tasks in this document. Work directly in the existing checkout; do not create a worktree or delegate. Andrew approved this order on2026-10-15. Individual task checkboxes record implementation; planned analyses are not completed results.
 
 **Goal:** Produce clear advisor-facing evidence on survival supervision, feature-count sensitivity, parsimony and multimodal value while retaining the approved interim write-up and benchmark.
 
@@ -19,7 +19,7 @@
 | Has external performance been preserved? | The earlier selected supervised Single arm had mean external C=.620725 vs frozen D4 .626699; delta=-.005974,95% interval[-.031708,.020662]. | It **fails** the predeclared lower-limit>- .02 requirement. No Round2 external scoring has occurred. |
 | Do more genes work? | Round1 requested1000/2000/3000/5000 features per cohort, yielding662/1365/2064/3600 shared genes. Mean CV C=.650200/.648933/.651199/.655413; capped folds1/0/1/2. All four full fits converge. | Limited evidence exists, with a documented nonzero runner exit after saved tables. No full-range experiment, 10k/all-gene result or completed factor-agreement curve. |
 | Have we supplied the requested methylation histogram? | Existing plots show pooled values and per-probe skewness for screened10k CpGs, beta and arcsine scales. | **No** full-probe per-CpG mean/SD inventory or requested SD histogram identified in the audited files. |
-| Does real multimodal pruning select a smaller K? | The latest full supervised-framework candidate remains K7; the frozen framework also removes none. Protected/full-state pruning fails adoption criteria in simulation. | **Unresolved**. Seven factors explaining some variance is not proof that seven are optimal or necessary for survival. |
+| Does real multimodal pruning select a smaller K? | The latest full supervised-framework candidate remains K7; the frozen framework also removes none. Protected/full-state pruning fails adoption criteria in simulation. | **Unresolved**. K7 may appropriately represent expression, methylation and prognostic structure. Its adequacy needs role, stability and redundancy evidence; deletion itself is not the objective. |
 | Does the new multimodal method work? | Algebra/default-identity tests, replicated simulations, isolated failures and exact failed-fold tracing are available. Profiling produces nonconstant risk in all five candidate CV folds. | Partly validated; all five CV fits and full training still cap, four CV folds lack credible programs. Not a fully validated final method. |
 | Does methylation add value? | The write-up reports methylation-dominant structure and shared immune loading, without demonstrated predictive improvement; the discussed methylation components are not prognostic. | Added molecular structure is descriptive evidence. Better survival explanation/prediction and robust additional biological value remain unproven. |
 | Are priors alone balancing all terms adequately? | Scale freedom, beta gating, shared-prior absorption and constant-direction working curvature have been investigated. Sparse loading priors do not automatically balance total likelihood contributions as p grows. | **Unresolved**. No universal balancing remedy is adopted. The prior/KL consistency question needs separate review. |
@@ -47,17 +47,18 @@ Engineering issues actually addressed include positive-SD protection (dead point
 4. More CpGs change computation and total reconstruction information. Do not label a larger ELBO or nonzero risk as better prediction, convergence or survival-informed biology.
 5. Preserve partial failures: caps, rank-deficient warm starts, memory limits, invalid scores, unavailable raw/QC information and cold-versus-warm discrepancies remain visible.
 
-## Proposed order and deliverables
+## Approved order and deliverables
 
 ### 1. Advisor-facing account of progress since 10/2 — first
 
 **Files:** Create `docs/reports/Advisor_Progress_since_10_2_26.qmd` and its rendered PDF; update the Round2 handoff and progress chapter. Do not add process records beside the write-up deliverable.
 
-- [ ] Build the report from saved evidence only, with no new fits. Show the benchmark, the supervised candidate's failed external non-inferiority result, planted recovery, K-selection failures, the limited feature experiment and the current multimodal failure.
-- [ ] Label each advisor request complete, partial or open. Include the actual main result tables and distinguish historical results from proposed work.
-- [ ] Explain alpha_F=0 precisely: survival fits coefficients and may affect the returned stopping point, but does not guide F; it is close to factorization-then-survival in this important sense. Experimental canonical fitting has a different F update and is not alpha_F=0.
-- [ ] Map available new evidence to write-up revision markers R1–R9. Do not claim a replacement model or add unvalidated biology.
-- [ ] Render the addendum successfully with the established Quarto/Pandoc workaround and verify the main write-up still matches the benchmark.
+- [x] Build the report from saved evidence only, with no new fits. Show the benchmark, the supervised candidate's failed external non-inferiority result, planted recovery, K-selection failures, the limited feature experiment and the current multimodal failure.
+- [x] Label each advisor request complete, partial or open. Include the actual main result tables and distinguish historical results from proposed work.
+- [x] Explain alpha_F=0 precisely: survival fits coefficients and may affect the returned stopping point, but does not guide F; it is close to factorization-then-survival in this important sense. Experimental canonical fitting has a different F update and is not alpha_F=0.
+- [x] Audit the seven joint programs by expression/methylation contribution, credible survival association, overlap of roles and redundancy. Seven retained programs may be appropriate; do not make deletion itself a success criterion. Frozen roles do not establish roles for an unadopted newer fit. Distinguish Single four classified programs from deletion to K4.
+- [x] Map available new evidence to write-up revision markers R1–R9. Do not claim a replacement model or add unvalidated biology.
+- [x] Render the addendum successfully with the established Quarto/Pandoc workaround and verify the main write-up still matches the benchmark.
 
 **Completion:** A readable advisor-facing PDF and a short list of findings eligible for review/integration. This gives a visible deliverable before another long fitting panel.
 
@@ -78,7 +79,7 @@ Engineering issues actually addressed include positive-SD protection (dead point
 
 **Files:** Create the specified Task5 runner `results/benchmark_sim/run_feature_expansion.R`, continuation helper/test files after reading existing warm-start interfaces, and fresh aggregate outputs under `results/benchmark_sim/outputs/feature_expansion/`. Write a prospective attempt entry before fitting.
 
-**Proposed baseline:** The approved alpha_F=0 D4 configuration, not an unadopted supervised remedy. This is benchmark sensitivity and cannot be described as resolving supervision. Using this now requires approval of the sequencing change described below.
+**Approved sensitivity baseline:** The approved alpha_F=0 D4 configuration, not an unadopted supervised remedy. This is benchmark sensitivity and cannot be described as resolving supervision. Andrew approved starting this labelled sensitivity study before the supervision remedies settle.
 
 - [ ] Freeze current model settings, patient set, preprocessing, ranking and training folds. Publish a nested feature-set manifest and actual counts before fitting. Reconcile Task5's current2064→5000→10000→all-shared targets with per-cohort screening/intersection; stop for a decision if the existing ranking cannot produce those sets without a new rule. Never describe5000 requested per cohort as5000 shared genes.
 - [ ] Fit the increasing nested sets with **K=7 and pruning off**. Include the current screened baseline and the maximum eligible shared set, reporting when a nominal target exceeds availability. Keep model, folds, initialization protocol and convergence rule fixed.
@@ -123,17 +124,17 @@ Engineering issues actually addressed include positive-SD protection (dead point
 
 **Completion:** A defensible predictive or biological contribution, or an explicit negative result; a reviewed manuscript revision that distinguishes these outcomes.
 
-## Sequencing decision needed
+## Approved sequencing decision (2026-10-15)
 
 The original Round2 Task5 says Tasks1/2 must settle the configurations first.
 The earlier10/2 Workstream B explicitly allowed feature sensitivity with the
 current method while supervision work continued. Andrew's latest request
-puts these experiments back near the front. This plan proposes using the
+puts these experiments back near the front. Andrew approved using the
 frozen benchmark/fallback for a **labelled fixed-K sensitivity study now**,
 while the unadopted supervised method remains under investigation. It does
 not waive any adoption criterion or claim that alpha_F=0 solves the goal.
 
-Approve this revised order before new analysis code or fitting starts.
+Andrew approved this revised order in the pending-question reply before implementation.
 Descriptive evidence gathering and this plan do not constitute a new
 scientific attempt. Keep the same goal/branch; clicking Resume in the app
 reactivates the paused goal. A new chat is optional, using this plan and the

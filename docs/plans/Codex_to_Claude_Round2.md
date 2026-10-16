@@ -12,8 +12,8 @@ and requests explicit prioritization of the10/2 advisor deliverables. Read
 It audits what is solved/partial/open and proposes: advisor progress report,
 full-CpG variability summaries, increasing nested feature sets at fixed K7,
 then matched multimodal comparisons alongside bounded supervision remedies.
-The proposed benchmark/fallback sensitivity order needs confirmation because
-original Task5 required Tasks1/2 to settle first. No new analysis has run.
+Andrew approved the benchmark/fallback sensitivity order in his reply; this
+changes original Task5 sequencing, not adoption criteria. No new fit has run.
 The limited Round1 feature-count experiment and existing skewness plots are
 acknowledged; neither completes the requested full-range feature/SD study.
 The earlier supervised Single external non-inferiority failure is explicit.
@@ -1146,3 +1146,23 @@ a352f17ca9cff523caa80756aa2af085e62551e1. The writeup.qmd/html/pdf files
 have no diff against that tag. Patient-level folds.csv and RDS/data are
 ignored and excluded from the commit. No push, protected-branch edit or
 merge has occurred.
+
+
+## Approved-priority deliverable1: advisor-facing progress report
+
+Created `docs/reports/Advisor_Progress_since_10_2_26.qmd` and its five-page
+PDF from saved evidence only. It covers the failed earlier supervised
+external non-inferiority result, recovery/false-positive/convergence tables,
+limited feature CV, multimodal training failures and the frozen seven-program
+role table. It distinguishes four classified Single programs from deletion
+to K4, and says K7 may appropriately represent expression, methylation and
+prognostic structure. Roles overlap; fitted shares are not additive PVE or
+survival contributions, and frozen labels are not transferred to a new fit.
+
+Andrew approved the revised feature-sensitivity order before implementation.
+Report renders with native RStudio Quarto and external Pandoc. Initial
+LuaLaTeX font-cache failure is resolved by a temporary writable TEXMF cache;
+no package/default was changed. All five pages are visually checked; the
+crowded CI table was corrected. Full suite631 passed,0 failed. Benchmark
+and original write-up remain unchanged; no fit or external score ran.
+Next deliverable: full-TCGA-CpG descriptive inventory and variability plots.

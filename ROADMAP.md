@@ -1085,3 +1085,9 @@ Confirm use of the benchmark/fallback for this sensitivity study before
 implementation; the supervised replacement and real-data pruning remain
 unresolved. Do not interpret the existing limited gene-count or skewness
 analyses as completion of these advisor requests.
+
+
+- [x] Produce the advisor progress PDF from saved evidence and include the
+  benchmark seven-program role table, distinguishing classified Single
+  retention from deletion/refitting. Andrew approved the revised sequence.
+- [ ] Produce the full-CpG mean/SD inventory and variability histograms next.
