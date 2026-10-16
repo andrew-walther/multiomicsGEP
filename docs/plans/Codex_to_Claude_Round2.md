@@ -1552,3 +1552,12 @@ will be evaluated separately rather than restricting the reference to10k.
 Task5-M1 preregistration checkpoint: full suite664/0, three new scoring tests
 pass after RED0/3, all30 design cells prepared and two frozen training rows
 reproduced. P1 source/cache fingerprints remain unchanged. No M1 fit yet.
+
+Interim publication checkpoint: advisor report remains eight pages in HTML
+and PDF and now records verified full-CpG preparation and the five-count plan.
+Fresh full suite664/0 after the preregistration commit. Task5-M1 cell1 (full
+10k) is running with its original controls; no result row exists yet. Do not
+edit its script or loaded helpers. Larger counts have not run. Andrew's
+latest clarification favors reducing arbitrary screening when model-level
+performance/structure hold up; this is a motivation, not evidence already
+established or a changed adoption gate.

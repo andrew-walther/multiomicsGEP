@@ -187,3 +187,20 @@ gain if performance/stability hold up; this remains a motivation, not a changed
 adoption gate or a demonstrated noninferiority result. See the updated HTML/PDF
 advisor report and safe cold_primary result tables. Methylation/joint curves
 remain open; original shared-probe IDs number305352 versus305492 raw TCGA.
+
+### Full-CpG preparation checkpoint
+
+Task5-P1 (da9bce1/aff0d03) reconstructs305352 eligible probes on144 patients
+with exact frozen10k values/ranking and no warnings. Both supplied descriptive
+masks are available:182934 mean-rule,221142 proportion-rule probes. The
+30-cell methylation-only count design through all probes is committed at
+aff0d03. Its first10k full fit is running; no M1 performance result yet.
+
+Andrew reiterates the intended benefit: broader inputs can reduce arbitrary
+screening if prediction and meaningful molecular structure hold up, allowing
+Bayesian weighting/shrinkage rather than enforcing a small top-variance set.
+Distinguish successful input reconstruction from demonstrated model-level
+performance or validated CpG selection. Evaluate both supplied filters
+separately; retain current assay QC and probe-availability rules and introduce
+no unspecified SD cutoff or new default. Report agreement/roles descriptively;
+no new correlation threshold becomes an adoption criterion.

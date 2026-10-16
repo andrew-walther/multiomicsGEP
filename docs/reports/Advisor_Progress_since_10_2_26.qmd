@@ -290,10 +290,15 @@ Survival-informed F, supervised K selection and multimodal value remain open.
 
 Next: methylation alone, then joint curves varying one modality at a time.
 The original loader's shared-probe eligibility includes 305,352 CpGs, 140
-fewer than the full TCGA descriptive inventory. Reconstructing that exact
-training imputation and matching the frozen 10k subset must precede fits.
-External outcomes cannot select counts; large fits may require prepared
-HPC arrays. Warm continuation remains deferred for review.
+fewer than the full TCGA descriptive inventory. That exact training imputation has now been reconstructed: all frozen 10k
+values, probe ranking, patient order and expression values match exactly.
+The next study uses 10k/25k/50k/100k/all 305,352 probes, not a 10k endpoint.
+It starts with methylation alone, fixed K=7 and the historical framework;
+filter policies will be evaluated separately. Within this eligible universe,
+the supplied mean rule retains 182,934 CpGs and the extreme-proportion rule
+221,142. No SD threshold or new default is adopted. External outcomes cannot
+select counts; large fits may require prepared HPC arrays. Warm continuation
+remains deferred for review.
 
 \newpage
 
@@ -367,7 +372,7 @@ external scoring. The benchmark tag is
 `benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
 The method-panel checkpoint is `f0858ec`; the CpG design is `dc69f6d`,
 the full-range expression design is `6597b4b`, and its reporting correction
-is `6371e42`. The current software suite has 657 passing tests. Full per-task commits, failures and tables are indexed in
+is `6371e42`. The current software suite has 664 passing tests. Full per-task commits, failures and tables are indexed in
 [the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
 [attempt history](../plans/Round2_attempts_log.md). The
 [approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)

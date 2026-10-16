@@ -1092,3 +1092,10 @@ analyses as completion of these advisor requests.
   retention from deletion/refitting. Andrew approved the revised sequence.
 - [x] Produce the full-CpG mean/SD inventory and variability histograms:305492 probes,144 training patients; no filter adopted.
 - [x] Produce fixed-K7 expression curves through17,900 shared genes:24/24 converged, conditional CV .608/.577/.609/.607, material program/risk changes; no new default. CpG/joint curves remain open.
+
+- [x] Reconstruct the original305352-CpG eligible training universe and verify
+  exact frozen10k values/ranking (Task5-P1); supplied mean/proportion masks
+  retain182934/221142 probes. No filter/default adopted.
+- [ ] Complete methylation-only10k/25k/50k/100k/all count sensitivity, then
+  separate filter and joint comparisons. The30-cell design is registered;
+  first10k full fit running, larger-count performance unverified.
