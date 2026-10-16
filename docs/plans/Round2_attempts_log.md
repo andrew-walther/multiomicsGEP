@@ -1411,3 +1411,28 @@ This is an existing convention, not orientation selected on held-out outcomes.
 New fits use the current training-only orientation. No archived fit is edited.
 Prepared-input checks pass, exact baseline/order identity and all24 design
 cells verified; no model fit has run. Full suite **654 passed,0 failed**.
+
+
+### Task5-F1 reporting correction before continuation
+
+Cell1 completed: p2064/full training,20 iterations, convergenceTRUE, four
+retained/two operational survival-active, C0.6562590484 (frozen0.6563073062).
+The process then falsely reported a failure: read.csv inferred an all-empty
+error column as logical NA, and nzchar(NA) is TRUE. Separately this R gc()
+table has eight columns; fixed column6 records raw counts, not MB. Neither
+bug changed fitting, predictions, convergence or scientific controls.
+
+Use character columns for terminal error/warning reads and the final gc()
+column for MB. Regression tests RED12/15 then GREEN15/15 explicitly verify
+successful/failed CSV round trips and both gc layouts. Preserve the original
+cell1 CSV as cell_01_original_telemetry.csv; mark its invalid MB unavailable
+in the published cell row, retaining every other value and the existing fit.
+No scientific rerun, no new attempt axis, and no criterion changed. Refresh
+only runner/helper provenance hashes before continuation, preserving the
+original hashes in git. Commit this correction with the fresh full test count
+before running the remaining cells.
+
+Correction verification: full suite **657 passed,0 failed**. Re-reading cell1
+through the runner exits0, explicitly preserving the existing terminal cell
+without refitting. The aggregate table now preserves its empty diagnostics
+and unavailable memory value alongside the frozen benchmark.

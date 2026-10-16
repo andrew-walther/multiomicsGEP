@@ -109,3 +109,21 @@ run_test("Feature-T12: survival metrics reject nonfinite predictions", {
   failed<-tryCatch({feature_survival_metrics(1:5,rep(1,5),c(1:4,NA));FALSE},error=function(e)identical(conditionMessage(e),"Finite aligned survival outcomes and risk required."))
   assert_true(failed)
 })
+run_test("Feature-T13: a successful terminal CSV keeps empty error text through round trip", {
+  path<-tempfile(fileext=".csv")
+  write.csv(data.frame(error="",warnings="",C=.65),path,row.names=FALSE)
+  z<-feature_read_terminal(path);unlink(path)
+  assert_equal(z$error,"");assert_equal(z$warnings,"");assert_near(z$C,.65,tol=1e-14)
+})
+run_test("Feature-T14: a failed terminal CSV preserves its diagnostic", {
+  path<-tempfile(fileext=".csv")
+  write.csv(data.frame(error="fit failed",warnings="boundary",C=NA_real_),path,row.names=FALSE)
+  z<-feature_read_terminal(path);unlink(path)
+  assert_equal(z$error,"fit failed");assert_equal(z$warnings,"boundary");assert_true(is.na(z$C))
+})
+run_test("Feature-T15: allocation peaks use MB with and without the R memory-limit columns", {
+  old<-matrix(c(0,0,0,0,1000,26.8,0,0,0,0,2000,15.4),2,6,byrow=TRUE)
+  new<-cbind(old[,1:4],matrix(c(NA,NA,16384,0),2,2),old[,5:6])
+  assert_near(feature_gc_peak_mb(old),42.2,tol=1e-12)
+  assert_near(feature_gc_peak_mb(new),42.2,tol=1e-12)
+})

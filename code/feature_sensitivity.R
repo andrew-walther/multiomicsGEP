@@ -165,3 +165,27 @@ feature_survival_metrics <- function(time,status,risk) {
     survival::Surv(time,status)~risk,reverse=TRUE)$concordance)
   list(C=C,logPL=calc_cox_taylor_yf(risk,time,status)$logPL,risk_sd=risk_sd)
 }
+
+# Terminal reporting ----
+
+#' Read a terminal fit row without turning empty error text into logical NA
+#' @param path Path to one per-fit CSV with error and warnings columns.
+#' @return Data frame preserving success as empty text and failures verbatim.
+#' @examples
+#' # feature_read_terminal("cell_01.csv")
+#' @family feature_sensitivity
+feature_read_terminal <- function(path) {
+  read.csv(path,colClasses=c(error="character",warnings="character"),stringsAsFactors=FALSE)
+}
+
+#' Extract R allocation high-water MB across supported gc table layouts
+#' The last column is max-used MB; R versions with memory limits insert
+#' extra columns, so a fixed numeric index can instead select cell counts.
+#' @param memory Matrix returned by gc().
+#' @return Sum of Ncells and Vcells peak MB, not operating-system RSS.
+#' @examples
+#' feature_gc_peak_mb(gc())
+#' @family feature_sensitivity
+feature_gc_peak_mb <- function(memory) {
+  sum(memory[,ncol(memory)])
+}

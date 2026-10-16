@@ -142,7 +142,7 @@ for(id in ids) {
   row$warnings <- paste(unique(warnings),collapse=" | ")
   row$runtime_seconds <- proc.time()[3]-started
   # R allocation high-water mark, not operating-system resident memory.
-  memory <- gc();row$gc_peak_mb <- sum(memory[,6])
+  memory <- gc();row$gc_peak_mb <- feature_gc_peak_mb(memory)
   write.csv(row,paste0(prefix,".csv"),row.names=FALSE)
   print(row)
 }
@@ -150,7 +150,7 @@ for(id in ids) {
 # Publish all terminal cells alongside the labelled frozen training reference.
 # Training reference C is not a CV estimate; no external cohort is scored.
 files <- list.files(out,pattern="^cell_[0-9]+[.]csv$",full.names=TRUE)
-rows <- c(lapply(files,read.csv,stringsAsFactors=FALSE),
+rows <- c(lapply(files,feature_read_terminal),
   list(read.csv(file.path(out,"benchmark_rows.csv"),stringsAsFactors=FALSE)))
 columns <- unique(unlist(lapply(rows,names)))
 for(i in seq_along(rows))for(nm in setdiff(columns,names(rows[[i]])))rows[[i]][[nm]] <- NA

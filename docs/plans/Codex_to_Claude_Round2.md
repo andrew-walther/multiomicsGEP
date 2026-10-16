@@ -1448,3 +1448,15 @@ suite654 passed,0 failed. Preparation confirms all24 cell definitions, exact
 frozen baseline gene order/matrix and the17900-gene maximum. Frozen D4's
 historical risk=-eta orientation is retained, as previously documented;
 training C0.656307. No external outcome was loaded and no model fitted.
+
+Task5-F1 cell1 has completed (20 iterations, four retained programs, training
+C0.656259 versus frozen0.656307). Two reporting-only defects were exposed:
+empty-error CSV type inference and an R-version-dependent memory-column
+index. Regression tests15/15 pass after RED12/15. The completed fit is
+preserved; memory telemetry is unavailable for cell1, with the raw CSV kept.
+Remaining23 cells await the verified correction commit.
+
+Reporting correction verified:657 passed,0 failed; completed-cell integration
+exits0 and preserves the saved fit without refitting. The summary runner
+produces conditional-CV curves and the preregistered full-fit agreement tables
+only once all24 cells exist. Remaining23 fits can proceed after this commit.

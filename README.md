@@ -566,3 +566,13 @@ prospective attempt controls execution. Local inputs/fits are ignored; safe
 CSV tables preserve failures and include a labelled frozen training reference.
 `feature_survival_metrics()` in `code/feature_sensitivity.R` keeps constant-risk
 concordance undefined and uses the existing Cox partial-likelihood calculation.
+
+Terminal feature-study CSVs preserve empty success diagnostics as text. R
+allocation peak MB uses the gc table's final column across R versions. The
+first fit's original invalid memory value is retained separately and omitted
+from the corrected scientific row; fitting and scores are unchanged.
+
+After all24 cells finish, run
+`Rscript results/benchmark_sim/summarize_feature_expansion.R` for aggregate
+performance, the fixed-K curve, and baseline/preceding-count program agreement.
+It requires all cells and preserves undefined quantities; no model is selected.
