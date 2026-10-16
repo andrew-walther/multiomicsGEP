@@ -223,3 +223,10 @@ monitoring calculations. Read the prospective attempt and mathematical note
 before `results/multimodal_real/run_logspace_cpg_case.R`. Default/original
 objects must remain identical to the protected base; no imputation, caps,
 priors or adoption rules change. Numeric repair does not prove convergence.
+
+Task5-A1 prepares the requested provisional10k/25k CpG loading agreement:
+`results/multimodal_real/compare_cpg_count_programs.R`. Read its prospective
+entry and wait for M3's same live process to terminate. It starts no model;
+missing/errored output means comparison unavailable. Record original versus
+log-space arithmetic and both convergence states; no minimum-r rule or
+biological-label transfer is authorized by this descriptive comparison.

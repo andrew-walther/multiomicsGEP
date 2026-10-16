@@ -1847,3 +1847,35 @@ cap, model tuning or extra count cell is introduced. Do not edit its script,
 core fitter/helpers, predictor or new log-space kernel while it runs. A
 later terminal result must supersede this live checkpoint. Only the completed
 captured-point CSV is committed now; progress.csv remains live/uncommitted.
+
+## Task5-A1: provisional saved CpG-count agreement (prospective)
+
+Andrew requests loading correlations across CpG counts. After M3 terminates
+without an execution error and saves its posterior, compare the original10k
+methylation-only fit to the new25k log-space fit on the same144 patients and
+common10000 probes. Statistical formulation and scientific controls match,
+but numerical arithmetic differs; original10k is capped. Label this a
+provisional saved-fit comparison, not a complete converged count curve or a
+pure test of floating-point-path effects. No new fit, C, external outcome,
+feature count/weight selection, correlation threshold or biological label.
+
+Use the already tested multimodal_feature_agreement(): greedy non-reused
+absolute activity matching, signed common-CpG loading correlations, complete
+activity/loading/projection matrices, risk correlation and original ambiguity
+margins. Retain dead/undefined/unmatched cases. Every pair records both counts,
+arithmetic choices, convergence and iterations. Companion terminal table
+preserves original failed/capped and frozen benchmark context without rescoring.
+
+Success is accurate alignment on identical patient order and common probe
+IDs, with unchanged input fingerprints; it is not a minimum correlation.
+Wait for the SAME live M3 process to finish; this script never starts a fit.
+Missing/errored M3 output stops the comparison and remains unavailable.
+Runner: results/multimodal_real/compare_cpg_count_programs.R. No new helper:
+reuse the existing tested matcher and typed terminal reader. Driver syntax
+parses; full suite must pass before this prospective commit and any execution.
+
+Task5-A1 preregistration verification: fresh full suite684 passed,0 failed;
+new driver parses and reuses existing tested matching/typed terminal helpers.
+M3 is still live, so no saved25k comparison has executed before this commit.
+No loaded scientific source was edited. Only post-terminal characterization
+is prepared; no extra count fit or altered stopping rule is authorized here.

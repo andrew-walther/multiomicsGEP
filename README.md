@@ -638,3 +638,11 @@ no clipping, new model weight or convergence change is introduced. See
 `docs/plans/Cox_Logspace_Arithmetic_10_15_26.md`. The bounded25k test is
 `Rscript results/multimodal_real/run_logspace_cpg_case.R`, only after Task5-M3's
 prospective commit. It preserves original failures and benchmark context.
+
+After the existing25k arithmetic case terminates successfully,
+`Rscript results/multimodal_real/compare_cpg_count_programs.R` produces the
+prospectively registered provisional10k/25k CpG loading comparison (Task5-A1).
+It reuses the tested activity matcher, reports signed common-probe loading
+correlations and undefined matches, and records both fits' arithmetic/caps.
+It does not refit, select a count or transfer biological labels; a saved
+unconverged comparison is not a validated feature-count curve.

@@ -1725,3 +1725,21 @@ stable survival updates. The diagnosed Cox arithmetic bug is repaired at the
 failed state; rapidly expanding predictors remain a separate stability issue.
 A saved25k fit is still needed before reporting CpG-count loading agreement;
 never treat failed fitting as zero correlation or successful feature selection.
+
+Task5-A1 prospectively prepares the advisor-requested10k/25k common-CpG
+loading comparison for AFTER the current M3 fit terminates. Fresh full suite
+684 passed,0 failed. No comparison has executed; no25k posterior exists yet.
+The live M3 handle is still99846, at outer120 in the latest observed log;
+working arithmetic is finite, but predictors continue expanding. The live
+progress CSV remains unstaged; do not restart or edit any loaded source.
+
+Implementation review for compare_cpg_count_programs.R: it reads the typed
+terminal row (preserving empty success diagnostics), requires a saved successful
+execution result, aligns both fits to the original TCGA patients/probe IDs,
+then calls the existing tested non-reused activity matcher. Outputs include
+signed common-CpG loading correlations, complete matching matrices, risk
+agreement, convergence/arithmetic labels and unchanged input hashes. It uses
+base-R CSV/RDS operations and the existing matcher, without new dependencies.
+An execution error or missing fit stops the comparison; capped fits can be
+described but cannot support a converged count-sensitivity or biological claim.
+No extra model, score, filter, correlation threshold or selected count is added.
