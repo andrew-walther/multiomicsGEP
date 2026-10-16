@@ -1,5 +1,39 @@
 # multiomicsGEP — Research Roadmap
 
+**Future research: transferable risk classifications (2026-10-16 meeting).**
+Current low/middle/high risk groups are defined by within-cohort score
+tertiles, following within-cohort expression standardization. They describe
+relative prognosis within each dataset; identical labels do not establish
+equivalent scores or absolute survival risk across datasets.
+
+- [ ] Develop and independently evaluate a reference preprocessing procedure
+  and fixed risk thresholds that can be applied consistently across cohorts
+  and to individual future patients. Threshold selection must be confined to
+  development data; validation must apply the fixed procedure without
+  recalculating cohort-specific quantiles. Assess discrimination, category
+  stability and survival separation; assess calibration if reporting absolute
+  survival probabilities. Choosing a median split instead of tertiles alone
+  would not establish transferability.
+- [ ] Examine how overall risk categories relate to adverse/protective
+  program projections and associated gene sets. The combined score can
+  reflect multiple programs; high overall risk does not by itself identify
+  one adverse program. Distinguish marginal program-survival associations
+  from conditional contributions in the joint model and from causal claims.
+
+This records a future research question, not an adopted classification rule
+or authorization for new analyses. Fixed thresholds and reference
+preprocessing require a separate prospective design.
+
+**Writeup accuracy follow-up (2026-10-16):** The bounded manuscript revision
+corrects cohort accounting, qualifies repeated-donor inference and the
+historical log-transform chain, adds references/provenance, and moves detailed
+diagnostics to Appendix C. Item-level dispositions are in
+`paper/writeup/_process/Accuracy_Review_Dispositions_10_16_26.md`.
+Still requiring separate decisions: donor-aware external inference,
+evaluation of any preprocessing alternative, and complete assay/software/gene-set
+release provenance. These reporting changes do not resume fitting panels or
+adopt a supervised/multimodal replacement.
+
 > A living task list of potential extensions, methodological improvements, and dissemination
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.

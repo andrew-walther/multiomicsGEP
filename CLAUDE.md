@@ -20,6 +20,9 @@ implementation. Each plan has review gates for Andrew. Remind Andrew of them at 
 
 ## Key Instructions
 
+- **Writeup circulation and evidence:** `paper/writeup/writeup.{qmd,pdf,html}` on main contains the reviewed manuscript. Consult its README and accuracy-review dispositions for limitations and the pinned research commit behind experimental diagnostics. This documentation transfer does not adopt experimental model code or supersede the current plans above.
+- **Deliverable attribution:** Do not name assistant tools or include tool-attribution lines in presentation deliverables or code; this supersedes earlier author-line templates.
+
 - **Canonical CAVI loop:** `code/fit_modular.R`. `Supervised_Bayesian_MF_V2.R` is reference-only — do not extend. V1 (`code/legacy/`) — do not modify. (`full_sim/` and `modular_sim_block/` are legacy/deprecated.)
 - **Formal benchmark pipeline:** `results/benchmark_sim/` — alpha CV, external validation, DeSurv comparison. Exploratory/development fits lived in `results/modular_sim_factor/` (now archived to `results/legacy/modular_sim_factor/`).
 - **Modular updates:** `code/update_beta.R`, `code/update_L.R`, `code/update_F.R`, `code/update_tau.R`.

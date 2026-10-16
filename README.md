@@ -47,7 +47,7 @@ and variance within each platform; 2,064 genes shared across cohorts). Trained o
 273 patients (TCGA-PAAD and CPTAC-PDAC) with K = 7 initial programs, the model
 retains two prognostic programs, one associated with worse and one with better
 survival, and reaches a mean concordance of 0.627 across five held-out PDAC
-cohorts (n = 616).
+dataset series (616 records, including repeated PACA-AU donors).
 
 ![Kaplan–Meier curves by within-cohort risk tertile in five external PDAC cohorts](paper/writeup/figures/km_risk_external.png)
 
@@ -65,6 +65,18 @@ Development history, benchmark tables and the reasoning behind each modelling
 choice are in [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) and
 [`DECISIONS.md`](DECISIONS.md). Advisor-meeting updates are collected in the
 [progress notebook](https://andrew-walther.github.io/multiomicsGEP/).
+
+The [writeup](paper/writeup/writeup.qmd) includes real-data workflow diagrams
+separating pooled expression training/external scoring and matched TCGA
+training/ICGC validation, with distinct stage shapes and explicit design
+callouts. Rebuild these aggregate-only diagrams with
+`Rscript paper/writeup/figures/make_real_data_workflows.R`; rendering commands
+are in [the writeup README](paper/writeup/README.md).
+
+The [accuracy-review tracker](paper/writeup/_process/Accuracy_Review_Dispositions_10_16_26.md)
+records manuscript corrections and remaining donor-dependence, historical
+preprocessing and acquisition-provenance questions. Historical estimates
+remain labelled as such; these documentation corrections do not adopt a new model.
 
 ## Getting started
 

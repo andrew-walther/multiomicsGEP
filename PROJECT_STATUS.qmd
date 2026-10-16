@@ -19,6 +19,26 @@ execute:
   warning: false
 ---
 
+## Writeup accuracy revision (2026-10-16)
+
+The manuscript separates cohort records from unique people and labels the
+historical record-level bootstrap intervals and pooled log-rank p-values
+as descriptive because repeated PACA-AU donors were not modeled. It retains
+the saved estimates, alpha_F0 limitation and unconverged multimodal results.
+The appendices distinguish mathematical prior pushforwards from the
+coefficient-prior state actually carried by the code; diagnostic detail and
+source/software provenance are in Appendix C.
+
+A read-only reconstruction verifies that the current documented TCGA
+training path applies log2(x+1) in the internal loader and again downstream,
+and reproduces the prepared273x2064 matrix and frozen screened gene order
+exactly. Thus the earlier platform correction does not certify the whole
+preprocessing chain as appropriate. No single-log alternative, model fit,
+external rescore or donor-aware reanalysis was run. These remain separate
+analytical decisions. Complete acquisition/gene-set release provenance is
+also outstanding. Item-level dispositions are under `paper/writeup/_process/`;
+the immutable benchmark is unchanged.
+
 ## Correction: CPTAC is RNA-seq (2026-10-16)
 
 The CPTAC training cohort (n = 129) is RNA-seq, not proteomics as earlier

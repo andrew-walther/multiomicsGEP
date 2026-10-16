@@ -5,6 +5,34 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-16 — Qualify manuscript inference and historical preprocessing
+
+Andrew authorizes addressing the writeup accuracy review. Correct the
+document and evidence inventory while retaining frozen estimates and model
+defaults. Historical record-level bootstrap intervals and pooled log-rank
+p-values omit repeated PACA-AU donors and must not establish donor-aware
+significance. Choosing an estimand and donor-aware reanalysis requires a
+separate prospective decision; a manuscript correction does not authorize
+new external model selection.
+
+The earlier CPTAC platform correction below remains valid. Its blanket
+statement that preprocessing is correct is qualified: the current internal
+loader and downstream flags apply log2(x+1) twice to TCGA, Dijk and PACA-AU
+RNA-seq. A read-only reconstruction reproduces the prepared273x2064
+training matrix and frozen gene order exactly. This documents the present
+historical chain, without certifying every acquisition or quantifying an
+alternative's effect. Do not silently change transformations and continue
+quoting the saved benchmark as if it evaluated those new inputs.
+
+Keep primary multimodal validation at50 primary-PDAC ICGC donors and the
+nested67-donor broader-histology sensitivity set separately labelled. The
+limited sample, unconverged fits, local prior-bookkeeping result, incomplete
+historical manifests and unvalidated methylation increment remain limitations.
+All review items receive an explicit disposition; a reporting correction
+does not complete the corresponding scientific study.
+
+---
+
 ## 2026-10-16 — Correction: CPTAC is RNA-seq, not proteomics
 
 Project documents since April 2026 described the CPTAC-PDAC training cohort
