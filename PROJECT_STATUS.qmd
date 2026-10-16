@@ -2866,3 +2866,21 @@ agreement across the entire feature range. The completed curve concerns
 Single benchmark training/CV; matched TCGA expression-only, CpG/filter/joint,
 large-p noise, rank and final multimodal/biology work remain open. The long
 October15 development log is retained in the book with an explicit methods-development label.
+
+
+## Advisor framing and bookkeeping review (2026-10-16)
+
+The write-up has a structured Background/Aim, Method, Results and Conclusions
+overview before the PDF contents, plus a DeSurv related-method citation.
+The2-page meeting brief supplies a model/validation/biology/manuscript route.
+Narrative source/provenance is in paper/writeup/_process/
+Narrative_and_Advisor_Reading_Guide_10_16_26.md. Frozen joint C.685 versus
+expression-only framework.676 are both unconverged; no equivalence or
+incremental-benefit claim is supported.
+
+The audit attributes82.3% of176342 added text lines to CSV and0.9% to
+production R; six traces account for105006 lines. It recommends lossless
+compression with provenance/consumer verification, retaining scientific and
+regression evidence. Four necessary case/density tests bring the suite to
+710/0. Task2-9 registers one simulation-only fixed-q case prospectively;
+no scientific result exists before that commit. Original gates unchanged.

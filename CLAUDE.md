@@ -266,3 +266,11 @@ canonical Single fitter or multimodal control. Read
 scientific evaluation is unrun, supported modes are intentionally restricted,
 and the existing tail-moment approximation remains a numerical limitation.
 No prepared scientific run is authorized by this pointer.
+
+
+The fixed-q single-case mechanism runner is
+`results/benchmark_sim/run_fixed_q_loading_case.R`; Task2-9 in the attempt
+log controls its exact one-change design, registration and no-retry stop.
+Read actual outcome status before execution; this pointer is not a request
+to repeat a completed case. Advisor/narrative and repository-size reviews
+are indexed in the current handoff.

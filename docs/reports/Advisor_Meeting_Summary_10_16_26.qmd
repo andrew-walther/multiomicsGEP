@@ -1,5 +1,5 @@
 ---
-title: "Advisor meeting update — October 16, 2026"
+title: "Advisor briefing: progress since October 2"
 subtitle: "Progress since October 2 and the manuscript direction"
 author: "Andrew J. Walther"
 date: "2026-10-16"
@@ -28,7 +28,8 @@ but reliable convergence remains the main methodological obstacle.
 
 The benchmark is retained: Single external C=0.627 across five cohorts with
 $\alpha_F=0$ (survival does not guide its loading updates). Joint ICGC primary
-C=0.685 matches expression alone; no incremental predictive benefit is shown.
+C=0.685 versus expression-only C=0.676; both fits are unconverged and
+incremental predictive benefit is unproven.
 
 ## What increasing the feature count shows
 
@@ -86,3 +87,24 @@ scientific validation still determines the claims.
 Accompanying documents provide the detailed evidence report, the full
 method/results/biology write-up, and a journal shortlist with sources and
 remaining manuscript-readiness requirements.
+
+
+## Guide to the project write-up
+
+Start with the structured summary, then use four questions to align on the
+current evidence and the intended manuscript:
+
+| Read | Main question for discussion |
+|---|---|
+| Methods and model-comparison table | What do activities, loadings and projection scores mean, and which formulation supports the reported results? |
+| External validation and feature-count results | How convincing are prediction and program stability relative to the actual comparator? |
+| Biological findings | Do basal-like/classical versus stromal/immune programs give useful biological separation, and what would establish added methylation value? |
+| Discussion and continuing work | What is the strongest defensible manuscript claim now, and what evidence is essential before submission? |
+
+**Proposed narrative:** Bayesian program models connect cross-cohort risk
+prediction with interpretable tumor and microenvironmental structure, and
+provide a framework for testing what broader molecular inputs contribute.
+The present evidence supports that starting point. The stronger claim that
+survival improves program discovery requires the ongoing methodological
+validation; neither uncertainty calibration nor added multimodal value is
+established merely by the model's formulation.

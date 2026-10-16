@@ -2153,3 +2153,63 @@ point-Laplace posterior lookup error in the R fallback. A separate regression
 fails RED with `weights[["pos"]]` out of bounds; stripping A/B scalar names
 restores identical named/unnamed results. Both engine fixture runs pass after
 the metadata fix. Values, posterior formulas and C++ kernel are unchanged.
+
+
+## Task2-9 — One fixed-q loading-prior mechanism case (prospective)
+
+2026-10-16: Andrew requests completing advisor/narrative preparation and the
+bookkeeping audit, then continuing the methodological plan. Resume only the
+one-case comparison already specified in Round2_fixed_q_loading_prior_proposal.md.
+Commit this driver/design before execution; no fit has run at registration.
+
+Exact candidate: run_fixed_q_loading_case.R, no CLI alternatives. Original
+profiled Single cell021 test bed seed20261026,noise.25,n400training/120simulated
+validation,p50,K7,point-Laplace L/F,per-program Normal beta,w_S1,profileTRUE,
+no supervised start/pruning, original300 cap/ELBO tolerance. Sole change:
+loading_prior_update="fixed_q_em", including its necessary KL correction.
+Reuse saved reference without refitting, SHA256
+5b83bf02f24603e9be1ebc337b7cb3f9beba9bf53d7c2a0458885d429132b820.
+No real or external data, new weight, preprocessing, bed/default or criterion.
+
+Observe actual returned prior gains/KL without changing update outputs.
+Retain four predetermined scalar states: first coordinate of the first informative non-point-prior
+block; last coordinate of the last such block; closest positive/negative
+standardized slab location to h=-8 across all observed coordinates; largest
+|B|/sqrt(A). Independently integrate these posteriors on rescaled half-lines,
+report native mean/second/normalizer discrepancies. This selection is a
+numerical stress check, not model selection or exhaustive density validation.
+The known tail approximation remains; unresolved accuracy blocks claims of
+exact density consistency/global ascent. No new accuracy tolerance replaces
+any scientific rule. Existing1e-8 observer tolerance only describes finite
+local prior-gain losses. Report original recovery/sign/.7 rule, credibility,
+false-program count, validation C, native convergence/cap and terminal norms.
+One seed cannot meet an adoption or recovery-rate criterion.
+
+Required tests: sole-control equality, independent mixed-density quadrature,
+known tail-error detection, recovery/sign/false-program reporting, full suite
+and protected-base identity. Source/reference hashes must remain identical
+through execution. Fresh fixed output only:
+results/benchmark_sim/outputs/round2/fixed_q_seed26/; full fit ignored at
+data/round2_fixed_q_seed26.rds, detailed telemetry ignored under outputs.
+Commit compact comparison/prior-summary/four-density-check/provenance only.
+Serial local, minutes, ~1GB; no nested workers or HPC submission.
+
+All original future validation gates remain:80 simulations,20 seeds/model/noise,
+>=16/20 recovery at each noise, false programs<=reference+.5, every fit
+converged without runaway; original five-finite-pair CV rule and undefined
+reference C; credible/nonconstant training risk; original rank and final
+external lower95% deltaC>-.02 gate. No new adoption panel or external scoring.
+
+Stopping: one candidate execution only. On error, nonfinite posterior/KL,
+negative local gain beyond registered numerical tolerance, hash mismatch or
+unresolved density accuracy, retain failure and stop interpretation; no retry
+or automatic second remedy/panel. Even if locally valid, stop at this one
+case and report the remaining scientific uncertainty. Do not edit running
+script/helpers. Command after prospective commit:
+Rscript results/benchmark_sim/run_fixed_q_loading_case.R
+
+Task2-9 registration verification: four new checks were RED before the
+case helpers existed, then GREEN. Fresh full suite710 passed/0 failed in
+104.22s, including protected-base identity. All108 local book links resolve;
+the2-page advisor guide and overview-first44-page write-up render. No
+candidate fit/output exists before this registration commit.

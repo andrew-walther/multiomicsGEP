@@ -7,7 +7,7 @@ Historical statements there describe their own checkpoint, not current status.
 
 **Latest implementation/report checkpoint (2026-10-16):** Andrew authorized
 proceeding after Task2-7. The fixed-q point-Laplace F-prior step and atomic KL
-correction are implemented opt-in, with12 focused checks and full suite706/0.
+correction are implemented opt-in, with12 focused checks; current suite710/0 includes four new case checks.
 No new scientific fit has run; this is not adoption or resolution of M3.
 The existing extreme-tail moment approximation remains a quantified limitation
 (absolute E|F| error3.54e-5 near h=8.01). Read
@@ -51,8 +51,8 @@ is unchanged; the failed Single noninferiority result below is authoritative.
 - Immutable snapshot: `results/benchmark_snapshot_2026-10-14/`; all10 SHA256
   entries passed before/after the latest scientific/report checkpoint.
 - Single D4: alpha_F=0, K7, mean external C=.626699 over5 cohorts.
-- Joint framework: ICGC primary C=.685, matching expression-only on the
-  same donors; not evidence of incremental prediction.
+- Joint framework: ICGC primary C=.685 versus expression-only framework
+  C=.676 on the same donors; both unconverged, no demonstrated increment.
 - `paper/writeup/writeup.qmd` and HTML/PDF now contain Andrew-authorized
   bounded sensitivity/diagnostic revisions. The approved interim is preserved
   in the tag; current manuscript edits do not replace the benchmark model.
@@ -73,7 +73,7 @@ is unchanged; the failed Single noninferiority result below is authoritative.
 | 7 Write-up housekeeping | Complete:14 process files moved, live pointers fixed, write-up and planning renders verified. |639351b;564/564|
 
 Historical test counts are not current suite totals. Latest full suite has
-706 passing tests and0 failures. Software tests do not establish the scientific
+710 passing tests and0 failures. Software tests do not establish the scientific
 success criteria. See the history/attempt log for full commits, seeds and arms.
 
 ## What is solved, and what remains scientifically open
@@ -538,3 +538,29 @@ all HTML/PDF outputs render. Local book checks find108 references with no
 missing target. Full suite706/0 and focused12/12 under both R/C++ paths;
 all10 benchmark hashes match before/after. No scientific fit or external
 scoring in this block; source/model branch remains local.
+
+
+## Advisor narrative and repository audit — current work block
+
+The write-up opens with Background/Aim, Method, Results and Conclusions.
+The meeting handout guides discussion of the actual model, validation,
+biological interpretation and the claim requiring further evidence. Narrative
+organization was checked against Amber's DeSurv paper/thesis/defense material,
+without transferring its numerical results or discovery claims. DeSurv is
+cited as a related method; its predictive head-to-head remains deferred.
+Current meeting summaries now use the frozen joint.685 versus expression-only
+framework.676 values; the earlier phrase "matching expression alone" was too
+imprecise and did not establish equivalence or increment.
+
+Repository audit:176342 accumulated added lines versus local origin/main,
+82.3% CSV,0.9% production R. Six traces account for105006 lines. All706
+parsed test bodies are distinct; reviewed overlaps target separate behaviors.
+No tests/evidence deleted. See Repository_Bloat_and_Test_Review_10_16_26.md
+in docs/reports for scoped findings, limits and a compression recommendation.
+The new narrative guide is under paper/writeup/_process/.
+
+Task2-9 is prepared for exactly one registered simulated candidate, reusing
+cell021; no candidate fit has run at this preregistration checkpoint. Four
+case/density/metric checks and full suite710/0 pass. All original criteria,
+reference hashes and no-retry stopping rules apply. No core fitter/default
+change was made in this block; source/model branches stay local.

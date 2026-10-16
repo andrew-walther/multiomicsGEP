@@ -5,6 +5,24 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-16 — Prepare advisor narrative, review bloat, resume one bounded case
+
+Andrew requests a structured overview and guided advisor discussion before
+continuing the methodological plan. Use DeSurv's problem/method/evidence
+organization as a reference, not evidence for this project's claims; retain
+its related-method citation. Use frozen joint C.685 versus expression-only
+framework.676, both unconverged, without claiming equivalence or increment.
+
+The audit finds82.3% CSV and0.9% production R in the176342-line branch diff.
+No exactly duplicated test bodies or safe semantic deletion was established;
+retain tests/evidence and recommend separate lossless trace compression with
+consumer/provenance checks. No cleanup or history rewrite executed.
+
+Resume only the proposed fixed-q Single cell021 mechanism check, registered
+as Task2-9 before execution. Four density/control/recovery checks and full
+suite710/0 pass. No new default, bed, criterion or external score. Do not
+expand automatically from its outcome.
+
 ## 2026-10-16 — Implement fixed-posterior loading-prior consistency opt-in
 
 After the corrected observer, Andrew requested proceeding with the recommended

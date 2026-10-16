@@ -520,3 +520,17 @@ all HTML/PDF outputs render. Local book checks find108 references with no
 missing target. Full suite706/0 and focused12/12 under both R/C++ paths;
 all10 benchmark hashes match before/after. No scientific fit or external
 scoring in this block; source/model branch remains local.
+
+
+## Current authorized order — advisor preparation, audit, method continuation
+
+Andrew requests a structured overview and a brief route through the write-up
+for the upcoming meeting, informed by DeSurv's narrative but supported by this
+project's evidence. First render the updated full write-up/meeting summary and
+refresh the concise book. Review code/test bloat before methodological work.
+The audit distinguishes accumulated branch diff from uncommitted changes;
+no evidence/test deletion or history rewrite follows merely from line count.
+Then prepare the exact one-case fixed-q proposal's driver, tests and prospective
+attempt entry; commit before any execution. Keep its original controls,
+one-change comparison, density limitations and stop rule. No broad panel,
+new external evaluation, default change or protected-branch/source push.

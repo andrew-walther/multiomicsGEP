@@ -9,7 +9,8 @@ that is repaired experimentally; convergence remains unresolved.
 
 **The benchmark is retained:** Single external C=0.627 with $\alpha_F=0$
 (survival does not guide its loading updates). The joint benchmark has ICGC
-primary C=0.685, matching expression alone on the same donors. No fully
+primary C=0.685 versus C=0.676 for the expression-only framework on the
+same donors; both fits are unconverged. No fully
 validated survival-supervised replacement or incremental predictive benefit
 from methylation has been established.
 

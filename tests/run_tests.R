@@ -108,6 +108,7 @@ test_files <- c(
   "tests/test_working_cycle_audit.R",
   "tests/test_working_cycle_paths.R",
   "tests/test_loading_prior_fixed_q.R",
+  "tests/test_fixed_q_loading_case.R",
   "tests/test_cpg_variability.R",
   "tests/test_feature_sensitivity.R",
   "tests/test_cpg_feature_manifest.R",

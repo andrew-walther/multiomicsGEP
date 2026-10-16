@@ -1176,3 +1176,13 @@ agreement across the entire feature range. The completed curve concerns
 Single benchmark training/CV; matched TCGA expression-only, CpG/filter/joint,
 large-p noise, rank and final multimodal/biology work remain open. The long
 October15 development log is retained in the book with an explicit methods-development label.
+
+
+## Advisor overview and bounded mechanism check — 2026-10-16
+
+The full write-up leads with a one-page structured overview; the2-page meeting
+brief guides model, validation, biology and manuscript discussion. The size/
+test audit finds the large branch diff dominated by saved CSV traces and
+recommends lossless compression after reader checks, not indiscriminate
+deletion. Task2-9 prepares one fixed-q comparison against saved cell021;
+full suite710/0. Scientific result pending at registration.

@@ -704,3 +704,11 @@ execution: none has run, existing extreme-tail moment approximation remains,
 and a prospective committed driver/design is still required. This is not a
 validated replacement. Meeting results are summarized in the October16 book
 chapter; full tables and limitations remain in the advisor report/write-up.
+
+
+The next one-case mechanism check is
+`Rscript results/benchmark_sim/run_fixed_q_loading_case.R`; read Task2-9 in
+the attempt log and commit its registration before running. It accepts no
+alternate cells, reuses the saved profiled reference and writes compact
+simulation-only outputs. Four selected independent density checks preserve
+the known tail-moment limitation; one case cannot establish adoption.

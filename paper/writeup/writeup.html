@@ -25,7 +25,26 @@ ul.task-list li input[type="checkbox"] {
 width: 0.8em;
 margin: 0 0.8em 0.2em -1em;  vertical-align: middle;
 }
-</style>
+
+div.csl-bib-body { }
+div.csl-entry {
+clear: both;
+}
+.hanging-indent div.csl-entry {
+margin-left:2em;
+text-indent:-2em;
+}
+div.csl-left-margin {
+min-width:2em;
+float:left;
+}
+div.csl-right-inline {
+margin-left:2em;
+padding-left:1em;
+}
+div.csl-indent {
+margin-left: 2em;
+}</style>
 
 
 <script>/*!
@@ -2380,6 +2399,7 @@ window.Quarto = {
   <li><a href="#sec-limitations" id="toc-sec-limitations" class="nav-link" data-scroll-target="#sec-limitations"><span class="header-section-number">5.2</span> Limitations</a></li>
   <li><a href="#sec-continuing" id="toc-sec-continuing" class="nav-link" data-scroll-target="#sec-continuing"><span class="header-section-number">5.3</span> Continuing work</a></li>
   </ul></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   <li><a href="#sec-appendix-a" id="toc-sec-appendix-a" class="nav-link" data-scroll-target="#sec-appendix-a">Appendix A. Single-modality derivations</a>
   <ul class="collapse">
   <li><a href="#sec-appendix-a-alg" id="toc-sec-appendix-a-alg" class="nav-link" data-scroll-target="#sec-appendix-a-alg">Fitting algorithm</a></li>
@@ -2451,7 +2471,10 @@ window.Quarto = {
 <section id="summary" class="level1 unnumbered">
 <h1 class="unnumbered">Summary</h1>
 <!-- REVISIT R9 START -->
-<p>We describe two Bayesian matrix factorization models that link molecular programs to overall survival in pancreatic ductal adenocarcinoma (PDAC). Both factor molecular data into nonnegative patient activities and feature loadings and enter survival through a Cox model on the projection of each patient’s data onto the loadings, a score that can be computed for new patients. The single-modality model, trained on 273 patients from two cohorts measured on different platforms, has a mean concordance of 0.627 across five held-out cohorts (616 patients) and a small advantage over an independently tuned two-step factorization-then-Cox comparator. In the evaluated configuration survival shapes the coefficients but not the loadings. Its four retained programs correspond to the basal-like and classical tumor axes and to stromal and immune components. The multimodal model shares activities across matched expression and methylation and removes factors by an approximate evidence criterion. In simulation at lower noise it returns mean ranks close to the true value, with poorer recovery when the prognostic program has low variance; on real data it removes no factor, most fits do not converge, and adding methylation does not demonstrably improve prediction.</p>
+<p><strong>Background and aim.</strong> Bulk pancreatic tumors mix tumor, stromal and immune signals. We study whether Bayesian molecular-program models can distinguish these roles, predict survival across cohorts and integrate matched modalities.</p>
+<p><strong>Method.</strong> Empirical-Bayes factorization estimates patient activities and feature loadings; a Cox model uses projection scores computable for new patients. We evaluate single-block and joint expression–methylation models through simulations, held-out cohorts, feature expansion and biological characterization.</p>
+<p><strong>Results.</strong> The single-block benchmark achieves mean concordance 0.627 across five held-out cohorts (616 patients), versus 0.601 for an independently tuned factorization-then-Cox comparator. Four retained programs separate basal-like/classical tumor signals from stromal/immune structure. Prediction changes little through 17,900 genes, with strong program agreement from 5,001 to 10,000. Joint concordance is 0.685 versus expression-only 0.676 on 50 ICGC donors; both fits are unconverged and added methylation benefit is unproven.</p>
+<p><strong>Conclusions.</strong> Current evidence supports cross-cohort prediction and interpretable molecular structure. The benchmark uses <span class="math inline">\(\alpha_F=0\)</span>: survival does not guide its loadings. Reliable survival-guided discovery, rank selection and reproducible added multimodal biology remain requirements for the intended final method.</p>
 <!-- REVISIT R9 END -->
 </section>
 <section id="sec-methods" class="level1" data-number="1">
@@ -2591,7 +2614,7 @@ Z = \sum_m \tilde Y_m F_m, \qquad \eta_i = \sum_k Z_{ik}\beta_k, \qquad \beta_k 
 <div id="tbl-cohorts" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-cohorts-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 2: Training and validation cohorts (screening and standardization are described in <a href="#sec-multicohort" class="quarto-xref">Section 1.4</a> and <a href="#sec-data" class="quarto-xref">Section 2.1</a>). The ICGC primary-PDAC set contains primary tumors with PDAC histology; the all-donor set adds intraductal papillary mucinous neoplasm (IPMN) with invasion, adenosquamous, acinar and signet-ring tumors. <span class="math inline">\(^a\)</span>Deaths in the two single-modality training cohorts together (139 among 273 patients). PACA-AU is the Australian pancreatic cancer cohort of the International Cancer Genome Consortium (ICGC); its microarray and RNA-seq series are analysed as separate validation cohorts. The 50 matched ICGC donors overlap the PACA-AU RNA-seq cohort and are not an additional independent replication; whether the two PACA-AU series share donors was not determined. CpG, cytosine–guanine dinucleotide methylation site; 450K, Illumina HumanMethylation450 array. TCGA-PAAD, The Cancer Genome Atlas pancreatic adenocarcinoma cohort; CPTAC, Clinical Proteomic Tumor Analysis Consortium; RNA-seq, RNA sequencing; PDAC, pancreatic ductal adenocarcinoma; DeSurv, a survival-supervised factorization method (Young et al., submitted).
+Table 2: Training and validation cohorts (screening and standardization are described in <a href="#sec-multicohort" class="quarto-xref">Section 1.4</a> and <a href="#sec-data" class="quarto-xref">Section 2.1</a>). The ICGC primary-PDAC set contains primary tumors with PDAC histology; the all-donor set adds intraductal papillary mucinous neoplasm (IPMN) with invasion, adenosquamous, acinar and signet-ring tumors. <span class="math inline">\(^a\)</span>Deaths in the two single-modality training cohorts together (139 among 273 patients). PACA-AU is the Australian pancreatic cancer cohort of the International Cancer Genome Consortium (ICGC); its microarray and RNA-seq series are analysed as separate validation cohorts. The 50 matched ICGC donors overlap the PACA-AU RNA-seq cohort and are not an additional independent replication; whether the two PACA-AU series share donors was not determined. CpG, cytosine–guanine dinucleotide methylation site; 450K, Illumina HumanMethylation450 array. TCGA-PAAD, The Cancer Genome Atlas pancreatic adenocarcinoma cohort; CPTAC, Clinical Proteomic Tumor Analysis Consortium; RNA-seq, RNA sequencing; PDAC, pancreatic ductal adenocarcinoma; DeSurv, a survival-supervised factorization method <span class="citation" data-cites="Young2026">(<a href="#ref-Young2026" role="doc-biblioref">Young et al. 2026</a>)</span>.
 </figcaption>
 <div aria-describedby="tbl-cohorts-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <table class="caption-top table">
@@ -2720,6 +2743,7 @@ Table 2: Training and validation cohorts (screening and standardization are des
 </section>
 <section id="sec-comparators" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="sec-comparators"><span class="header-section-number">2.3</span> Comparators</h2>
+<p><strong>Relationship to DeSurv.</strong> DeSurv couples nonnegative matrix factorization to a Cox model so that survival guides the gene programs during discovery <span class="citation" data-cites="Young2026">(<a href="#ref-Young2026" role="doc-biblioref">Young et al. 2026</a>)</span>. Our proposed distinction is empirical-Bayes estimation of program distributions and uncertainty, with a shared-activity extension for matched modalities. Projection-based prediction is common to both approaches; it is not a unique contribution here. A predictive head-to-head using the authors’ current DeSurv package remains deferred. Gene-list correspondence below is biological context, not evidence of predictive superiority.</p>
 <!-- REVISIT R7 START -->
 <p><strong>Principal single-modality comparator.</strong> An unsupervised EBMF (R package flashier; signed point-normal priors, gene-specific variances, greedy fitting with backfitting, at most 40 factors) of the same <span class="math inline">\(273 \times 2{,}064\)</span> training matrix, followed by a Cox model with a least absolute shrinkage and selection operator (LASSO) penalty on the normalized projection scores, with the penalty chosen by cross-validation (R package glmnet). The number of factors was not informed by the supervised model; 15 of the 40 factors received nonzero coefficients. Held-out patients are scored with the frozen loadings and coefficients.</p>
 <p><strong>Supporting single-modality comparators.</strong> A rank-matched two-step model (7 factors, unpenalized Cox) and a 20-factor two-step model with unpenalized Cox. Matching the rank gives the two-step model the supervised model’s choice of complexity, and the 20-factor model is not regularized, so neither is the principal comparison.</p>
@@ -3721,8 +3745,16 @@ Table 11: Programs of the joint multimodal fit at starting rank 7 (TCGA trainin
 </ol>
 <!-- REVISIT R1 END -->
 <!-- REVISIT R9 END -->
-<div style="page-break-after: always;"></div>
 </section>
+</section>
+<section id="references" class="level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-Young2026" class="csl-entry" role="listitem">
+Young, Amber M., Alisa Yurovsky, Xianlu Laura Peng, Jen Jen Yeh, Didong Li, and Naim U. Rashid. 2026. <span>“Survival-Guided Matrix Factorization Identifies Reproducible Prognostic Programs in Pancreatic Cancer.”</span> Unpublished manuscript.
+</div>
+</div>
+<div style="page-break-after: always;"></div>
 </section>
 <section id="sec-appendix-a" class="level1 unnumbered">
 <h1 class="unnumbered">Appendix A. Single-modality derivations</h1>

@@ -2,8 +2,9 @@
 
 Updated 2026-10-16. Andrew authorized proceeding with the recommended
 prior-consistency implementation after the corrected observer. This is an
-opt-in implementation and prospective evaluation specification. No scientific
-fit is authorized by this document; the session's no-new-fit restriction remains.
+opt-in implementation and prospective evaluation specification. The earlier implementation block ran no scientific fit. Andrew subsequently
+requested resuming the methodological plan after advisor preparation/audit;
+Task2-9 prospectively specifies its single next case and commit-before-run gate.
 
 ## Exact change and derivation
 
@@ -137,3 +138,17 @@ passes afterward. Scalar values and the C++ kernel are unchanged. Both
 engines pass the same focused checks. This is a separate metadata fix, not
 an additional analytical remedy; the historical R fallback previously errored
 on these named inputs. The protected-base usual-path identity remains tested.
+
+
+## Task2-9 code walkthrough
+
+The fixed case driver adds no configurable grid. Its controls helper changes
+one field of the existing profiled arm. Its diagnostic integration uses
+half-line Gaussian kernels in stable coordinates and does not change fitting.
+Its metric helper reuses original recovery/sign/credibility and frozen scoring
+rules. The executable block verifies the reference hash, refuses old output,
+records source hashes, fits once, and saves compact comparison/local-prior/
+four-selected-density checks. Full fit and update telemetry remain ignored.
+Warnings/errors are retained; the wrapper is restored even after failure.
+Four density checks cannot certify the full trajectory or a common objective.
+No new package dependency, parallelism or real-data input is introduced.
