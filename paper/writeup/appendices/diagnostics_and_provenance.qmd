@@ -1,0 +1,100 @@
+# Appendix C. Diagnostics and provenance {#sec-appendix-c .unnumbered}
+
+These supplementary diagnostics preserve unsuccessful and unconverged results.
+They do not define a selected model, new weight, feature filter or adoption rule.
+
+## C.1 Methylation arithmetic, agreement and loading balance {.unnumbered}
+
+The same 25,000-CpG case with stable arithmetic completed without warnings or execution errors in 44.3 minutes, but reached the unchanged 500-sweep cap. Risk-score SD was 39,086, and log partial likelihood was −40,177; final relative risk and reconstruction changes were .00589 and .0622 against the original .0001 tolerance. Seven coefficients met the numerical credibility rule, but the extreme, unconverged estimates do not establish prognostic discovery. High training concordance measures ordering and does not validate predictor scale or generalization. Thus the arithmetic failure is repaired, while optimization instability remains unresolved.
+
+A provisional comparison of these saved 10,000- and 25,000-CpG fits on the same patients and 10,000 common probes matches all seven programs. Signed loading correlations are .945, .922, .925, .118, .038, −.087 and .923; corresponding activity correlations are .982, .878, .968, .513, .764, .235 and .941. Risk-score correlation is .245. Both fits cap, and arithmetic differs, so these results describe saved-fit agreement rather than a converged feature-count effect. They do not justify transferring biological labels or adopting a larger feature set.
+
+A separate read-only audit of the frozen joint fit's sole credible program finds median survival fractions of loading precision of $2.03\times10^{-7}$ for expression and $9.00\times10^{-10}$ for methylation; fractions of the absolute numerator terms are $7.27\times10^{-5}$ and $4.40\times10^{-6}$. These compare isolated-coordinate likelihood contributions at a capped terminal state, exclude priors, and do not establish trajectory causes or absence of cumulative supervision effects. They are not ratios of the total reconstruction and survival likelihoods.
+
+Within the eligible CpG universe, an observed mean methylation in $[0.1,0.9]$ retains 182,934 probes; requiring neither extreme tail (below 0.1 or above 0.9) to contain at least 95% of observed patients retains 221,142. These are descriptive alternatives, not adopted filters or SD cutoffs. Prediction and loading stability after these filters remain unevaluated.
+
+
+## C.2 Loading-prior consistency observation {#sec-supp-prior-consistency .unnumbered}
+
+An observation-only replay reproduced a saved nonconverged simulation exactly.
+It identified a local inconsistency: loading posteriors use an incoming prior,
+then a marginal prior refit changes that prior without updating the cached KL.
+An opt-in repair holds the posterior fixed, maximizes its expected point-Laplace
+log prior with $\pi=S/p$ and rate $S/T$, where $S=\sum_j\Pr_q(F_j\ne0)$ and
+$T=\sum_jE_q|F_j|$, and corrects KL against the returned prior.
+
+One fixed-settings simulation check reaches the original ELBO stopping rule
+in 10 iterations rather than the reference's 300-iteration cap, with unchanged
+planted-program recovery and false-active count. All 67 observed prior steps
+have nonnegative recorded gains, and four selected density checks agree with
+independent integration. However, the existing output diagnostic remains
+false: maximum relative reconstruction/predictor movement is 0.01915 versus $10^{-4}$.
+The monitor also decreases three times. Thus local prior consistency does
+not establish settled outputs or global ascent.
+
+Neither this case nor the earlier local-quadratic observation certifies a
+common implemented ELBO. The existing extreme-tail moment approximation,
+other prior bookkeeping and changing Cox surrogate remain limitations.
+No configuration is adopted; broader simulation and training-validation gates
+remain outstanding. The benchmark and biological findings remain unchanged.
+
+## C.3 Cohort and software provenance {#sec-data-provenance .unnumbered}
+
+The source studies are TCGA-PAAD [@Raphael2017], CPTAC [@Cao2021], Dijk [@Dijk2020], Moffitt [@Moffitt2015], ICGC/PACA-AU [@Bailey2016] and Puleo [@Puleo2018]. The public identifiers below describe source studies, not complete acquisition manifests for the supplied local matrices.
+
+The supplied multimodal collection has 150 TCGA patients and 79 ICGC donors
+with both assays. TCGA excludes four missing and two nonpositive survival
+times, leaving 144 patients (75 deaths, 69 censored). ICGC excludes 11 missing
+and one nonpositive time, leaving 67 donors (40 deaths, 27 censored). Within
+ICGC, 57 donors meet primary-PDAC criteria before survival exclusions and
+50 remain (30 deaths, 20 censored). The other 17 retained donors have invasive
+IPMN (10), adenosquamous (4), acinar (2) or signet-ring (1) histology. Repeated
+RNA clinical rows are collapsed to a unique donor in the multimodal loader.
+These counts describe the local supplied collection, not the full enrollment
+or all assay overlap potentially available from either consortium.
+
+The single-modality external collection contains 616 cohort records and
+414 death records. PACA-AU contributes 63 microarray records from 63 donors
+and 52 RNA-seq records from 51 donors; 47 donors appear in both series.
+Together they represent 67 people and 42 distinct deaths. If the other three
+series contain distinct people, the full collection represents 568 people
+and 387 deaths. Repeated donors' survival records agree. These counts do not
+recalculate discrimination or repair uncertainty from record-level inference.
+
+| Source study | Public project or accession | Provenance boundary |
+|---|---|---|
+| TCGA-PAAD | [GDC: TCGA-PAAD](https://portal.gdc.cancer.gov/projects/TCGA-PAAD) | Source study; the local matched expression input is log2(TMM-CPM + 1), distinct from the single-block input |
+| CPTAC pancreas | [GDC: CPTAC-3](https://portal.gdc.cancer.gov/projects/CPTAC-3) | Local analysis uses RNA-seq supplied on a log2 scale; exact upstream normalization is not fully documented |
+| Dijk | [ArrayExpress: E-MTAB-6830](https://www.ebi.ac.uk/biostudies/arrayexpress/studies/E-MTAB-6830) | Source-study accession documented in the supplied cohort compilation |
+| Moffitt | [GEO: GSE71729](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE71729) | Source-study accession; primary-tumor and usable-survival filters define the analyzed subset |
+| Puleo | [ArrayExpress: E-MTAB-6134](https://www.ebi.ac.uk/biostudies/arrayexpress/studies/E-MTAB-6134) | Source-study accession documented in the supplied cohort compilation |
+| ICGC/PACA-AU | [EGA parent study: EGAS00001000154](https://ega-archive.org/studies/EGAS00001000154) | Parent study, not a complete assay-specific manifest for each supplied expression and methylation matrix |
+
+The source-study publications are cited above. These accessions establish
+study identity; they do not assert a fresh download or complete reconciliation
+of each local matrix to an archive release. Assay-specific acquisition versions,
+especially for the supplied ICGC methylation object, remain a provenance gap.
+
+**Historical expression preprocessing.** The internal loader and downstream
+preprocessing each apply log2(x + 1) to TCGA, Dijk and PACA-AU RNA-seq;
+CPTAC arrives on a log2 scale and is not transformed again. A read-only
+reconstruction of the current documented training chain reproduced all
+273 by 2,064 prepared training values and the frozen gene order exactly
+(maximum absolute difference zero). No model was refitted and no external
+score was recomputed. This verifies that chain against the prepared cache;
+it does not certify every historical data acquisition or establish the effect
+of using one log step. The label correction from proteomics to RNA-seq does
+not, by itself, establish that every preprocessing step was appropriate.
+
+**Software.** The saved expression-expansion session records R 4.5.2 on
+aarch64 macOS, ebnm 1.1-42, survival 3.8-6, Matrix 1.7-5 and yaml 2.3.12.
+These are study-specific saved provenance, not inferred versions for older
+fits. The saved custom-gene-set manifest records msigdbr 26.1.0 and R 4.5.2;
+it does not establish the exact underlying MSigDB database release. Source
+database publications therefore identify resources rather than certify the
+historical collection versions. Complete historical session records and
+assay/gene-set release manifests remain needed for final reproducibility.
+K-nearest-neighbor imputation uses the impute package's algorithm
+[@Troyanskaya2001]. The DeSurv manuscript is cited as unpublished author
+material [@Young2026]; no journal publication or DOI is inferred from a
+repository's journal label.

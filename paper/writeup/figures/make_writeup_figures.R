@@ -184,7 +184,7 @@ p3 <- ggplot(s, aes(program, share, fill = modality)) +
   scale_fill_manual(values = c(Expression = "#2a78d6", Methylation = "#eb6834"), name = NULL) +
   scale_y_continuous(labels = function(x) paste0(round(100 * x), "%"),
                      expand = expansion(mult = c(0, 0.05))) +
-  labs(x = "Program", y = "Share of the modality's\nfitted signal") +
+  labs(x = "Program", y = "Normalized rank-one\nsquared-norm share") +
   theme(axis.text.x = element_text(angle = 25, hjust = 1), legend.position = "top",
         panel.grid.major.x = element_blank())
 save_both(p3, "multimodal_share", height = 2.7)
