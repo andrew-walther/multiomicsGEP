@@ -1628,3 +1628,38 @@ Task5-M1 preregistration verification: scoring fixtures RED0/3 then GREEN3/3;
 fresh full suite **664 passed,0 failed**. All30 design cells and frozen
 training benchmark rows generated without fitting. P1 source/cache hashes
 remain identical after reconstruction. No M1 model has run before this commit.
+
+## Task5-Roles1: saved joint-program characterization (prospective)
+
+Hypothesis: the seven retained joint programs may have distinct expression,
+methylation and prognostic roles despite no reduction in K. This audit is
+descriptive, not a remedy or an adoption test. Compare only the frozen full
+TCGA joint benchmark and the already fitted unadopted profiled-curvature
+cell102, using the identical original144 training patients and molecular
+matrices. Both saved fits reached their original500-iteration cap. No new
+fit, survival score, external outcome, enrichment or biological-label transfer.
+
+Run results/multimodal_real/run_saved_program_roles.R after this commit.
+Report rank-one molecular squared-norm shares normalized separately within
+each modality; these are not additive PVE or survival-explained fractions.
+Report coefficient moments, the unchanged configured positive-SD credibility
+rule, exact nonzero loading-mean counts, and beta per SD of raw YF projection.
+Use existing non-reused greedy absolute activity-correlation matching,
+retaining undefined/ambiguous matches and signed correlations. Loading
+correlations are computed separately by modality on common features. Preserve
+fitted coefficient orientation. No correlation threshold or selection gate.
+
+Software verification: five new fixtures pass (initial RED0/4, GREEN4/4
+following an integer-count correction, then GREEN5/5 after the two-block
+fixture). They verify raw-projection preservation, rescaling/permutation,
+dead-factor NA handling, within-block norm shares, positive-SD credibility,
+exact patient-order rejection and two-block feature identities. Fresh full
+suite669 passed,0 failed. Input hashes must be identical before and after
+the audit. Frozen benchmark appears alongside the unadopted fit in each
+comparison. This entry is committed before running the audit.
+
+Task5-M1 cell1 terminal: full10k methylation-only training C=.6126711,
+risk SD=.1172642, zero credible coefficients, retained classification4,
+500-iteration cap (not converged),963.827s, R allocation high-water1075.7MB,
+no warnings/errors. This is not evidence of an adopted supervised model.
+Continue unchanged predeclared count cells as resources permit; no tuning.

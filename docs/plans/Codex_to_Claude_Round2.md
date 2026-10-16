@@ -1561,3 +1561,18 @@ edit its script or loaded helpers. Larger counts have not run. Andrew's
 latest clarification favors reducing arbitrary screening when model-level
 performance/structure hold up; this is a motivation, not evidence already
 established or a changed adoption gate.
+
+### First methylation-count result and saved-role audit registration
+
+Task5-M1 cell1 finished:10k CpGs, full144-patient training C=.6126711,
+risk SD=.1172642, zero credible coefficients, retained classification4,
+500-iteration cap,963.827s,1075.7MB R allocation high-water, no warnings/errors.
+No convergence or supervised-model success claim; larger counts remain
+unrun at this checkpoint. Frozen contextual training C is .637768 joint
+and .643559 expression-only, with different molecular inputs.
+
+Task5-Roles1 prospectively registers read-only characterization of frozen
+joint versus saved unadopted profiled cell102, both unconverged. No new fit,
+survival score, biological label transfer or external outcome. Five new
+agreement/role fixtures pass; fresh full suite669 passed,0 failed. Execute
+only after this registration commit. Scientific defaults/criteria unchanged.

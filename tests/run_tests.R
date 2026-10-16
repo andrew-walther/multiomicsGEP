@@ -109,6 +109,7 @@ test_files <- c(
   "tests/test_feature_sensitivity.R",
   "tests/test_cpg_feature_manifest.R",
   "tests/test_multimodal_feature_metrics.R",
+  "tests/test_multimodal_program_agreement.R",
   "tests/test_multimodal_comparator_rank.R",
   "tests/test_desurv_author_adapter.R",
   "tests/test_desurv_h2h.R"

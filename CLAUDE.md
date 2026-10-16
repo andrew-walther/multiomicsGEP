@@ -191,3 +191,12 @@ Longleaf array wrapper. Follow its prospective entry before running any model.
 It uses the historical framework, fixed K7/no deletion, the exact P1 matrix,
 and all five counts through305352. Filters remain a separate comparison;
 constant-risk C stays NA and no external cohort selects a count or model.
+
+Saved-program role/agreement audit: read Task5-Roles1 before running
+`results/multimodal_real/run_saved_program_roles.R`. Its tested helpers in
+`code/multimodal_program_agreement.R` preserve the raw multimodal projection,
+require exact patient order, compare loadings within modality and describe
+within-block rank-one norm shares (not additive PVE). Both saved full fits
+are unconverged; no external scoring, enrichment, label transfer or adoption.
+Task5-M1 first10k methylation fit has finished at the500 cap with nonconstant
+risk but zero credible coefficients. Preserve this failure in count summaries.

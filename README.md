@@ -603,3 +603,13 @@ selects a count. Safe tables live under `feature_sensitivity/methylation_count/`
 For larger jobs, the independent-cell SLURM wrapper requests8GB/one CPU;
 submission is manual. `code/multimodal_feature_sensitivity.R` preserves undefined
 concordance for collapsed risk and uses the existing Breslow partial likelihood.
+
+Saved joint-program roles can be audited without refitting with
+`Rscript results/multimodal_real/run_saved_program_roles.R`, after the
+Task5-Roles1 prospective commit. `code/multimodal_program_agreement.R`
+aligns exact training patients, preserves raw multimodal projections, matches
+activities and reports common-feature correlations separately by modality.
+Its norm shares describe molecular rank-one magnitude, not additive PVE;
+credible coefficients require positive posterior SD. Both audited fits hit
+the original cap, so their roles remain descriptive, without transferred
+biological labels or a model-adoption claim.
