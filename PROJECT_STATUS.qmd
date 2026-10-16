@@ -19,6 +19,16 @@ execute:
   warning: false
 ---
 
+## Correction: CPTAC is RNA-seq (2026-10-16)
+
+The CPTAC training cohort (n = 129) is RNA-seq, not proteomics as earlier
+versions of this document stated. It is supplied on the log2 scale, whereas
+TCGA_PAAD is supplied untransformed; preprocessing was already correct. The
+pooled-training collapse without per-cohort standardization stands as an
+empirical finding, but it reflects a between-cohort technical difference
+between two RNA-seq datasets, not an assay difference. Details and the list of
+affected records are in the 2026-10-16 correction entry of `DECISIONS.md`.
+
 ## Project Overview
 
 This project implements a **Supervised Bayesian Matrix Factorization** model
@@ -505,7 +515,7 @@ Only remove true duplicates or items added in error.
 - [ ] **Multi-dataset shared factor space:** Shared F and β with per-cohort L
   and τ. Requires new update equations and extension of `fit_modular.R`.
 
-- [ ] **Multi-modal integration:** Each modality (RNA-seq, proteomics, methylation)
+- [ ] **Multi-modal integration:** Each modality (expression, methylation)
   gets its own F^(m) and τ^(m) sharing a common L. Requires new `update_F_<m>.R`
   and extended `update_L.R` accumulating signal across modalities.
 
@@ -841,7 +851,7 @@ data.
 | Moffitt_GEO_array | Microarray | 123 | TRUE | ~50 | ~0.99 |
 | PACA_AU_array | Microarray | 63 | TRUE | ~60 | ~0.99 |
 | Puleo_array | Microarray | 288 | TRUE | ~80 | ~0.99 |
-| CPTAC | Proteomics | 129 | TRUE | 259 | ~0.99 |
+| CPTAC | RNA-seq | 129 | TRUE | 259 | ~0.99 |
 
 CPTAC required max_iter = 300 (was 100, then 250); it converged at iteration 259.
 
@@ -889,13 +899,13 @@ paragraphs after each figure, e.g.:
 - KM: which factors show significant stratification
 - PH test: pass/fail with action language
 - C-index: contextual (supervised wins/comparable/lower vs PCA)
-- τ: platform-specific interpretation (RNA-seq/Microarray/Proteomics)
+- τ: platform-specific interpretation (RNA-seq/Microarray)
 
 **Cross-dataset sections:**
 - Executive summary table (all 7 datasets: convergence, RMSE, C-index)
 - Cross-platform PACA-AU pair comparison (β correlation, top-gene Jaccard)
 - Within-modality comparisons (RNA-seq trio, microarray trio)
-- CPTAC proteomics standalone section
+- CPTAC standalone section
 - Pooled RNA-seq section (dataset membership, pooled fit results, batch caveat)
 
 `ds_display()` helper replaces underscores with spaces in all LaTeX caption
@@ -1067,7 +1077,7 @@ PN K_eff vs. PN K=5 hold-out C-index improvement was positive for all cohorts
 - **Fit Settings table:** Added notes that K is now data-driven and prior family is
   compared in later sections.
 - **CPTAC section:** Removed duplicated factor summary table; replaced with concise
-  proteomics spotlight with cross-references to new sections.
+  CPTAC spotlight with cross-references to new sections.
 - **Prior Comparison section:** Fixed broken sentence fragment; quantified top gains;
   noted the missing PL + K_eff experiment.
 - **K Selection section:** Moved CV runtime note after the tables; interpretation now
@@ -1242,7 +1252,7 @@ implementation (Phases 0–3A) followed by continued development in this session
    `select_top_variable_genes()`, `rank_transform_subjects()`, `preprocess_desurv_cohort()`,
    `intersect_preprocessed_cohorts()`, `merge_preprocessed_cohorts()`.
 2. Pipeline matches DeSurv (Young et al. 2025): log₂(counts+1) for RNA-seq → top-2000 variable
-   genes → rank-transform per subject. Proteomics/microarray skip log₂ step.
+   genes → rank-transform per subject. Inputs supplied on a log scale (microarray, CPTAC) skip the log₂ step.
 
 #### 16.2 — Alpha CV selection
 
@@ -1286,7 +1296,7 @@ Added 6 new figure types to the synthetic benchmark (total: 11 figures per run):
 
 #### 16.7 — PDAC gene intersection and real-data benchmark
 
-1. TCGA_PAAD (n=144, RNA-seq) × CPTAC (n=129, proteomics): 838 shared genes after top-2000
+1. TCGA_PAAD (n=144, RNA-seq) × CPTAC (n=129, RNA-seq): 838 shared genes after top-2000
    filtering. Combined n_train=273, event rates ~52% (TCGA) / 50% (CPTAC).
 2. 5-fold CV over 7 alpha values running on PDAC data. External cohort projections to 5 cohorts
    (Dijk, Moffitt_GEO_array, PACA_AU_array, PACA_AU_seq, Puleo_array) to follow.
@@ -1365,7 +1375,7 @@ selection *before* intersecting gene universes, leaving only ~838 common genes. 
 added to `code/preprocess_desurv.R` (`preprocess_merged_cohorts()`):
 
 1. Intersect raw gene universes across all training cohorts (→ ~17,900 genes for TCGA+CPTAC)
-2. log₂(x+1) transform [RNA-seq only; proteomics skipped]
+2. log₂(x+1) transform [TCGA only; CPTAC is supplied log2-transformed]
 3. Quantile normalization across all merged samples (`preprocessCore::normalize.quantiles()`)
 4. Select top-2,000 genes by merged-matrix variance
 5. Per-subject rank transform (optional; toggled via `rank_transform` parameter)
@@ -1655,7 +1665,7 @@ spike-and-slab collapses to the same active set as the normal prior at these sig
 #### 21.5 — YFB benchmark status (2026-05-05)
 
 YFB single-cohort modes with normal prior are functional (C=0.55–0.63, tcga_only). YFB
-merged still collapses to K_eff=0 — platform mixing (RNA-seq + proteomics) suppresses
+merged still collapses to K_eff=0 — TCGA + CPTAC cohort mixing suppresses
 A_surv/A_gen to 0.0000–0.0011 at iter 1. The F matrix still captures survival-relevant
 column structure, yielding external C=0.57–0.64 despite K_eff=0 (beta effectively zero).
 Cox warm-start (`cox_warmstart=TRUE`) was tested on merged and did not rescue beta.
@@ -1928,11 +1938,11 @@ strategies: joint QN+rank (prior standard), per-platform z-std, joint QN without
 joint z-std, and log-only. CV K-selection (biological floor K≥3) applied separately for each of
 the 10 unique preprocessing×model combinations.
 
-**Critical finding:** Per-platform z-standardization is the only viable preprocessing for mixed
-RNA-seq + proteomics training. 10 of 12 non-per-platform configurations produce $\hat{\beta}=0$
+**Critical finding:** Per-platform z-standardization is the only viable preprocessing for pooled
+TCGA + CPTAC training. 10 of 12 non-per-platform configurations produce $\hat{\beta}=0$
 for all factors (K_eff=0). The root cause is platform-dominated SVD: without per-platform
-z-std before merging, the top singular vectors of the merged Y matrix capture the RNA-seq vs.
-proteomics contrast, not biological variation.
+z-std before merging, the top singular vectors of the merged Y matrix capture the between-cohort
+(TCGA vs. CPTAC) contrast, not biological variation.
 
 | Winner | Model | Preprocessing | Cohort | K | K_eff | Mean ext. C |
 |--------|-------|---------------|--------|---|-------|-------------|

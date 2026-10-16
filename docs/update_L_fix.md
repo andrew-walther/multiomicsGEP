@@ -35,7 +35,7 @@ where:
 **The chicken-and-egg cycle:**
 
 1. At initialization, EBeta ≈ 0 (Cox warm-start on SVD factors of the merged matrix
-   is near-zero because SVD is dominated by the RNA-seq vs. proteomics batch factor)
+   is near-zero because SVD is dominated by the TCGA vs. CPTAC between-cohort factor)
 2. A\_surv ≈ 0 → L update is entirely genomics-driven
 3. L converges to reconstruction-optimal directions (batch-dominated)
 4. β update sees batch-dominated factors → selects nothing → EBeta stays 0

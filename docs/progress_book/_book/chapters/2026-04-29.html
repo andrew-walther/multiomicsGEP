@@ -249,6 +249,9 @@ window.Quarto = {
 
 
 <p>Training on the merged TCGA_PAAD (RNA-seq) + CPTAC (proteomics) cohort (<span class="math inline">\(n=273\)</span>), the model kept returning <span class="math inline">\(\hat\beta_k = 0\)</span> for every factor. It reconstructed expression fine but learned no survival signal at all, so risk prediction was just a constant hazard. This entry covers the diagnosis and the first fix.</p>
+<blockquote class="blockquote">
+<p>Correction (2026-10-16): CPTAC is RNA-seq, not proteomics. The platform contrast described here is a between-cohort difference between two separately processed RNA-seq datasets; see the 2026-10-16 correction entry in <code>DECISIONS.md</code>.</p>
+</blockquote>
 <section id="method-updates" class="level2" data-number="1.1">
 <h2 data-number="1.1" class="anchored" data-anchor-id="method-updates"><span class="header-section-number">1.1</span> Method updates</h2>
 <ul>
