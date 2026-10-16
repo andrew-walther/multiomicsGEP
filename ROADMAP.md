@@ -1072,3 +1072,16 @@ prevent a universal-convergence claim. The Round2 handoff holds all tables.
   Task5 waits on Task1/2 stopping decisions, Task3 remains explicitly deferred.
 
 Full suite631/631. The approved write-up and frozen benchmark remain unchanged.
+
+
+### Advisor-requested priorities after resumption (2026-10-15)
+
+The reviewed evidence and proposed order are in
+`docs/plans/Advisor_Priorities_and_Execution_10_15_26.md`.
+Prioritize the advisor progress report, full-CpG mean/SD histogram and a nested
+feature-count curve at fixed K7 through the available universe. Start with
+one modality, then vary expression/CpGs separately in matched joint fits.
+Confirm use of the benchmark/fallback for this sensitivity study before
+implementation; the supervised replacement and real-data pruning remain
+unresolved. Do not interpret the existing limited gene-count or skewness
+analyses as completion of these advisor requests.

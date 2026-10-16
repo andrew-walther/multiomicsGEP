@@ -19,6 +19,19 @@ execute:
   warning: false
 ---
 
+## Advisor priorities after resumption (2026-10-15)
+
+Andrew requests visible progress on the original10/2 deliverables: the unified
+write-up, survival-informed loadings, fixed-K feature-count sensitivity up
+to the available universe, per-CpG mean/SD summaries and histograms, and a
+defensible predictive or biological contribution from methylation. The
+revised plan is `docs/plans/Advisor_Priorities_and_Execution_10_15_26.md`.
+It distinguishes the limited completed feature study (662–3600 shared genes)
+and screened10k skewness plots from the outstanding full-range/SD analyses.
+No new analysis or replacement model is claimed. Approval of the proposed
+benchmark-sensitivity sequencing precedes implementation; all original
+criteria and the frozen benchmark remain intact.
+
 ## Round2 pause checkpoint: supervised stability remains unresolved (2026-10-15)
 
 The profiled-curvature panel completes102 records with zero execution errors

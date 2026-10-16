@@ -6,6 +6,18 @@ Current cumulative branch: `round2/supervised`. No pushes or merges into the bas
 or main branches are authorized. The benchmark is unchanged and no replacement
 configuration has been proposed or approved.
 
+Latest direction (2026-10-15, after the pause): Andrew authorizes resumption
+and requests explicit prioritization of the10/2 advisor deliverables. Read
+`Advisor_Priorities_and_Execution_10_15_26.md` before any further long fit.
+It audits what is solved/partial/open and proposes: advisor progress report,
+full-CpG variability summaries, increasing nested feature sets at fixed K7,
+then matched multimodal comparisons alongside bounded supervision remedies.
+The proposed benchmark/fallback sensitivity order needs confirmation because
+original Task5 required Tasks1/2 to settle first. No new analysis has run.
+The limited Round1 feature-count experiment and existing skewness plots are
+acknowledged; neither completes the requested full-range feature/SD study.
+The earlier supervised Single external non-inferiority failure is explicit.
+
 Current checkpoint (pause requested by Andrew): Task0 integration, Task4's
 40-dataset/200-row comparator rerun and Task7 housekeeping are complete.
 Task1's original panel and full-state refit remedy are not adopted; further

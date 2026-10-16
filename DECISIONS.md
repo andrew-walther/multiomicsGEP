@@ -5,6 +5,26 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Record resumed advisor priorities and a proposed sequencing change
+
+Andrew requests resumption with explicit attention to the10/2 meeting goals:
+the write-up, supervision of F, increasing nested feature sets at fixed K,
+full-probe methylation variability and a defensible multimodal contribution.
+The evidence audit and prospective order are in
+`docs/plans/Advisor_Priorities_and_Execution_10_15_26.md`.
+
+The existing gene-count study covers662–3600 shared genes, not the full
+universe; the methylation plots show screened10k pooled values/skewness, not
+the requested per-probe SD histogram. The earlier selected supervised Single
+candidate fails the external non-inferiority requirement. These gaps remain
+explicit. No new analysis, model, threshold or default is adopted.
+
+A proposed sequence starts with an advisor progress report and full-CpG
+descriptive statistics, then labelled fixed-K benchmark/fallback sensitivity
+while supervision remedies remain open. This would alter original Task5's
+prerequisite order; approval is requested before implementation. All original
+success criteria, external-data restrictions and benchmark protections stand.
+
 ## 2026-10-15 — Do not adopt profiled curvature; pause at the completed panel
 
 The approved opt-in test completes102 records (92 new fits,10 cached references)

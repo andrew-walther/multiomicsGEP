@@ -767,3 +767,20 @@ a352f17ca9cff523caa80756aa2af085e62551e1. The writeup.qmd/html/pdf files
 have no diff against that tag. Patient-level folds.csv and RDS/data are
 ignored and excluded from the commit. No push, protected-branch edit or
 merge has occurred.
+
+
+## Advisor-request audit and revised priorities after resumption
+
+Andrew requests a direct accounting of progress against the10/2 meeting,
+including the original fixed-K sliding feature-count study up to the available
+universe, probe-wise methylation variability, survival supervision and
+multimodal biological/predictive value. The audited evidence and proposed
+implementation sequence are in
+`../../plans/Advisor_Priorities_and_Execution_10_15_26.md`.
+
+The earlier Single supervised external result does not pass non-inferiority;
+the limited gene-count experiment and screened10k skewness plots do not finish
+the requested full-range feature-count/SD study. The proposal separates
+benchmark sensitivity from unadopted method remedies. It requires approval
+of the Task5 sequencing change before implementation; no new scientific fit
+has run. Documentation-checkpoint full suite631 passed,0 failed.
