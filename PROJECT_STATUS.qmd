@@ -19,6 +19,23 @@ execute:
   warning: false
 ---
 
+## Stable Cox arithmetic verified; full CpG case pending (2026-10-15)
+
+Opt-in log-space evaluation repairs the exact captured25k failure point:
+all working quantities finite, total working weight75 to numerical tolerance.
+Defaults/base fit objects stay identical; no changed prior, preprocessing,
+likelihood weight or stopping rule. The same25k full fit is live under the
+original500 cap; arithmetic is finite but risk predictors still drift.
+No reliable larger-CpG fit or count-agreement result is claimed yet.
+
+The progress report and larger write-up include the verified arithmetic
+point check and saved-state loading-balance audit. At the capped frozen joint
+fit's credible program, median survival precision fractions are2.03e-7 for
+expression and9.00e-10 for methylation. These conditional likelihood shares
+exclude priors and do not prove trajectory causes or negligible cumulative
+supervision. Current renders:11-page progress report,43-page manuscript;
+source inventory72 entries. Fresh full suite684/0. Benchmark remains intact.
+
 ## CpG expansion diagnosis and requested write-up update (2026-10-15)
 
 The unchanged25k methylation-only replay reproduces the failure at outer6.

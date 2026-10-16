@@ -81,6 +81,33 @@ those survival contributions. It remains close to factorization followed
 by survival regression in this important sense, although its stopping rule
 means its loadings need not equal a separately converged unsupervised fit.
 
+## Loading-update balance measured at saved states
+
+A read-only audit separates the reconstruction and survival terms for each
+loading coordinate while holding the other moments fixed. The fractions
+below are medians across features, on a 0–1 scale:
+$A_{\rm surv}/(A_{\rm gen}+A_{\rm surv})$ and
+$|B_{\rm surv}|/(|B_{\rm gen}|+|B_{\rm surv}|)$. They exclude priors and are
+not variance explained, causal effects or a selected mixing weight.
+
+| Saved fit / program | Block | Survival precision fraction | Survival numerator fraction |
+|---|---|---:|---:|
+| Frozen joint / 4 | Expression | $2.03\times10^{-7}$ | $7.27\times10^{-5}$ |
+| Frozen joint / 4 | Methylation | $9.00\times10^{-10}$ | $4.40\times10^{-6}$ |
+| Frozen expression-only / 7 | Expression | $1.61\times10^{-7}$ | $4.41\times10^{-5}$ |
+| Profiled joint / 4 | Expression | $8.22\times10^{-8}$ | $6.62\times10^{-5}$ |
+| Profiled joint / 4 | Methylation | $4.26\times10^{-10}$ | $4.81\times10^{-6}$ |
+| Methylation-only 10k / 6 | Methylation | $2.83\times10^{-7}$ | $1.35\times10^{-4}$ |
+
+All four fits use the same 144 TCGA patients and reach 500 iterations without
+convergence. These are isolated-coordinate likelihood contributions at capped
+terminal states, not sequential-update telemetry or proof of what caused
+collapse. The survival terms are small in these states; cumulative effects
+and empirical prior refits are not assessed by these fractions. Point-mass
+zero coefficients gate both survival terms; a zero mean alone need not do so
+when the coefficient second moment remains positive. Saved objective/removal
+components are reported separately and retain their prior/KL caveat.
+
 ## Recovery evidence and its limits
 
 The clean comparator rerun covers 40 simulated datasets and 200 method results,
@@ -356,7 +383,17 @@ means/variances are valid; Cox working weights and numerators each contain
 exponential shifting underflows 143/144 weights to zero and leaves 17 zero
 risk-set sums, including six event rows. This is a numerical failure upstream
 of the loading update, alongside rapid risk-score expansion. Stable arithmetic
-alone would not establish a convergent model. No remedy has been fitted.
+alone would not establish a convergent model.
+
+**The arithmetic failure has now been repaired at the captured point.**
+An opt-in log-space evaluation of the same Breslow quantities gives no
+nonfinite working values; weights sum to 74.9999999999582 against 75 deaths.
+The original calculation has 17 nonfinite weights and 17 nonfinite numerators.
+Default arithmetic, priors and scientific criteria remain unchanged. The
+full 25k same-case rerun is underway under its original cap; it has passed
+the original crash point but risk scores still drift. Its terminal model
+result is pending. This is not an inherent 10k-CpG limit or evidence of an
+imputation failure.
 
 **CpG loading correlations across feature counts remain unavailable:** only
 the 10k full fit was saved, and the 25k run has no fitted loadings. The planned
@@ -442,7 +479,7 @@ external scoring. The benchmark tag is
 `benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
 The method-panel checkpoint is `f0858ec`; the CpG design is `dc69f6d`,
 the full-range expression design is `6597b4b`, and its reporting correction
-is `6371e42`. The current software suite has 672 passing tests. Full per-task commits, failures and tables are indexed in
+is `6371e42`. The current software suite has 684 passing tests. Full per-task commits, failures and tables are indexed in
 [the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
 [attempt history](../plans/Round2_attempts_log.md). The
 [approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)

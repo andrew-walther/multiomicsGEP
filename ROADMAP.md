@@ -1110,5 +1110,7 @@ analyses as completion of these advisor requests.
   the progress report and larger write-up at Andrew's request, preserving
   benchmark comparisons and the approved interim tag. CpG loading agreement
   across counts remains unavailable because25k failed before a saved fit.
-- [ ] Resolve numerical Cox risk-set underflow separately from rapid predictor
-  expansion/convergence before interpreting a completed large-CpG curve.
+- [x] Repair and verify Cox risk-set arithmetic at the captured25k failure
+  point, with original default/base-fit identity preserved.
+- [ ] Complete the same25k full-fit test and resolve remaining predictor
+  drift/convergence before interpreting a completed large-CpG curve.

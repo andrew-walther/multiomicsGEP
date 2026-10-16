@@ -50,3 +50,17 @@ Final verification:
 - No assistant attribution in either rendered PDF. No model/default change.
 - Fresh full R suite672 passed,0 failed;10 snapshot SHA256 entries pass.
   Benchmark tag object remains0fea14903a75606e495267f2f35712eac10d9fc6.
+
+Stable-arithmetic/saved-balance addition:
+- Include completed captured-point numerical repair and conditional loading
+  likelihood fractions, explicitly excluding priors/trajectory-causality claims.
+- No new terminal25k result is available; the live full-case outcome stays
+  pending, with original failed rows retained. No CpG correlation is invented.
+- Both formats render: manuscript43 pages and progress report11 pages.
+  Changed pages inspected at readable resolution, remaining affected manuscript
+  pages and all progress pages checked in contact sheets. Tables/captions are
+  together, with no clipping; page19's remaining whitespace reserves the full
+  CpG table on page20. No derivation or earlier result was changed.
+- New source entriesS71/S72 bring the inventory to72 unique IDs; referenced
+  paths exist. Revisit markers are balanced and HTML anchors/xrefs pass.
+  No assistant attribution in either PDF. Fresh full suite684/0.

@@ -1743,3 +1743,11 @@ base-R CSV/RDS operations and the existing matcher, without new dependencies.
 An execution error or missing fit stops the comparison; capped fits can be
 described but cannot support a converged count-sensitivity or biological claim.
 No extra model, score, filter, correlation threshold or selected count is added.
+
+Interim reports now include the saved loading-balance evidence and completed
+captured-point arithmetic repair. Progress report11 pages; manuscript43 pages;
+both HTML/PDF renders succeed, new/affected pages visually checked, anchors,
+Revisit markers,72 source IDs and presentation attribution checks pass.
+Fresh full suite684 passed,0 failed. The original25k failed row remains:
+M3's full same-case outcome is still pending, and no loading-count correlation
+has run. No loaded scientific source or live progress file was edited/staged.
