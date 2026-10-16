@@ -4,6 +4,10 @@ subtitle: "Survival supervision, feature sensitivity and multimodal evidence"
 author: "Andrew J. Walther — research progress prepared with Codex"
 date: "2026-10-15"
 format:
+  html:
+    embed-resources: true
+    toc: true
+    theme: cosmo
   pdf:
     documentclass: article
     papersize: letter

@@ -165,7 +165,7 @@ Task5's prescribed continuation formula therefore has singular L-transpose-L.
 Carrying zero columns into new loading rows also risks keeping them dead,
 which is consequential when asking whether more features reveal new programs.
 
-**Proposed decision:** use the same cold SVD start protocol at each of the
+**Approved decision:** Andrew authorized using judgment and prioritizing progress; use the same cold SVD start protocol at each of the
 four fixed-K7 feature counts as the primary sensitivity curve. Keep the
 frozen alpha_F=0 settings, cohort preprocessing, convergence rule and original
 training-CV fold protocol. Evaluate full training plus five folds per count
@@ -173,4 +173,4 @@ training-CV fold protocol. Evaluate full training plus five folds per count
 agreement, caps and resource use with benchmark rows. Do not score external
 cohorts or choose a weight/feature count from them. Defer warm continuation
 until a rank-deficient policy is reviewed. This changes Task5's continuation
-requirement only if Andrew approves before fitting; no adoption rule changes.
+requirement with Andrew’s approval before fitting; no adoption rule changes. The prospective performance-panel design must still be committed before fitting.

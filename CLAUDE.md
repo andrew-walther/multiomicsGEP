@@ -132,8 +132,8 @@ are explicitly unsupported. The paired-CV rule and C=NA remain unchanged.
 
 A prepared prior-consistency observer is
 `results/benchmark_sim/run_round2_prior_consistency_trace.R`, with aggregate
-point-Laplace moment helpers and focused tests. It has **not been run**.
-Before executing, preregister and commit a separate diagnostic attempt in
+point-Laplace moment helpers and focused tests. Its bounded Task2-5 observation is complete; see the result in the handoff.
+Any additional execution requires a separate prospective diagnostic attempt in
 `docs/plans/Round2_attempts_log.md`. It repeats one completed simulation and
 requires exact saved-fit identity; its adjusted monitor is diagnostic only,
 never a replacement convergence or adoption criterion.
@@ -162,5 +162,5 @@ Task2-5 registers the bounded prior-consistency observation before execution.
 Its additional native second-moment telemetry confirms point-prior support
 conflicts independently of tiny reconstructed-probability differences. Read
 its actual run status in the attempt log. It does not repair an update or
-change convergence/adoption criteria, and does not authorize feature fits
-before Andrew's separate continuation/cold-primary decision.
+change convergence/adoption criteria, and does not by itself authorize feature fits. Andrew subsequently approved cold-primary
+judgment; the feature-panel design must still be committed before fitting.

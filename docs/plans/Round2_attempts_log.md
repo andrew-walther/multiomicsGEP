@@ -1336,3 +1336,14 @@ no audit fit runs until the commit exists.
 Task2-5 preregistration verification: strengthened native-telemetry fixture
 RED5/6 then GREEN6/6; fresh full suite **651 passed,0 failed**. No audit fit
 has run before this commit.
+
+
+Task2-5 result: exit0,13.544s, zero warnings; exact entire-fit identity and
+18/18 component checks. Analytic/native probability error6.66e-16. Three
+support conflicts independently confirmed by positive native EF2 with a
+returned point prior, at iterations2/3/8; none in the last50. The F-prior-only
+adjustment retains17 negative late increments; the fit remains unconverged
+at300. No full-objective correction or model remedy is established. Safe
+aggregate outputs are in `outputs/round2/prior_consistency_seed26/`; local fit
+RDS is excluded. Fresh suite651/0. Andrew subsequently authorized cold-primary
+feature sensitivity and requested HTML progress output; no feature fit yet.

@@ -9,7 +9,7 @@ configuration has been proposed or approved.
 Active feature-study checkpoint: the advisor progress report and full-CpG
 variability study are complete (7b44250/dc69f6d/6061ef8). The report is six
 pages. Expression input preflight reaches17900 shared genes, but the frozen
-D4 warm-start inverse is singular; Andrew's cold-primary decision is pending.
+D4 warm-start inverse is singular; Andrew authorized cold-primary judgment.
 No feature-count performance fit has run. The independent agreement utilities
 and safe design tables are prepared; see the final section for exact status.
 
@@ -25,7 +25,7 @@ The limited Round1 feature-count experiment and existing skewness plots are
 acknowledged; neither completes the requested full-range feature/SD study.
 The earlier supervised Single external non-inferiority failure is explicit.
 
-Current checkpoint (pause requested by Andrew): Task0 integration, Task4's
+Historical pause checkpoint (superseded by the resumption above): Task0 integration, Task4's
 40-dataset/200-row comparator rerun and Task7 housekeeping are complete.
 Task1's original panel and full-state refit remedy are not adopted; further
 Single K selection needs review, with approved K7/no-pruning fallback retained.
@@ -1412,3 +1412,27 @@ no audit fit runs until the commit exists.
 Task2-5 preregistration verification: strengthened native-telemetry fixture
 RED5/6 then GREEN6/6; fresh full suite **651 passed,0 failed**. No audit fit
 has run before this commit.
+
+
+## Task2-5 completed; cold-primary feature study authorized
+
+The unchanged simulation audit exited0 in13.544 seconds, with no warnings.
+The entire saved fit and all18 field/history checks match exactly. Across2100
+loading updates, maximum reconstructed/native probability discrepancy is
+6.66e-16. Three early returned point priors have strictly positive native
+posterior second moments (iterations2,3,8); KL against those returned point
+priors is infinite despite finite cached KL. No such support conflicts occur
+in the last50 iterations. The F-prior-only diagnostic adjustment still leaves
+17 negative monitor increments in the last50 iterations. It does not remove
+late oscillation, correct the full ELBO, establish the cause of collapse, or
+change the original convergenceFALSE/300 result. No remedy is adopted.
+Aggregate evidence: `results/benchmark_sim/outputs/round2/prior_consistency_seed26/`.
+Fresh full suite: **651 passed,0 failed**. No patient data are in this audit.
+
+Andrew authorized judgment on the singular continuation issue and requested
+progress. The primary fixed-K7 expression curve will use cold starts at each
+of2064/5001/10000/17900 shared genes, preserving benchmark alpha_F0 settings.
+Warm continuation is deferred for review; no adoption criterion changes.
+Its prospective performance-panel design still precedes any fitting.
+Andrew also requested HTML alongside the six-page PDF progress report; the
+same source now supports self-contained HTML without changing the PDF text.

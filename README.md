@@ -537,7 +537,8 @@ on aligned Single-block YFB fits. The latter preserves dead-factor NA/unmatched
 cases and uses shared-gene loading correlations and normalized projections.
 These utilities do not fit models. See the approved plan and input preflight:
 the frozen D4 activity rank4/7 makes its prescribed warm inverse singular;
-the primary-curve initialization decision must be resolved before fitting.
+Andrew approved cold starts for the primary curve; its prospective design must
+still be committed before fitting.
 
 
 Task2-5's bounded prior-consistency audit uses
@@ -547,3 +548,11 @@ requires exact entire-fit identity, and records native returned moments beside
 reconstructed prior-density calculations. The observer returns the original
 update unchanged. An F-prior-only monitor adjustment is diagnostic, not a new
 ELBO/convergence rule or a model remedy. Fresh output only; see the attempt log.
+
+
+The advisor progress report is available as both
+`docs/reports/Advisor_Progress_since_10_2_26.html` (self-contained) and `.pdf`.
+Render HTML with RStudio's Quarto on PATH and
+`QUARTO_PANDOC=/opt/homebrew/bin/pandoc quarto render docs/reports/Advisor_Progress_since_10_2_26.qmd --to html`.
+The completed Task2-5 observation reproduced its saved fit exactly; aggregate
+results are in the Round2 handoff. It did not establish a model repair.

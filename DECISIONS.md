@@ -5,6 +5,21 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Use cold starts for fixed-K feature sensitivity
+
+Andrew authorized judgment and prioritizing progress after the frozen D4
+activity matrix made the prescribed continuation inverse singular (rank4/7).
+Use cold SVD starts at each of2064/5001/10000/17900 shared genes, fixed K7,
+with unchanged benchmark alpha_F0 settings and training-only evaluation.
+Defer warm continuation for review. This changes initialization in the
+sensitivity design, not any default, adoption criterion or benchmark.
+The performance attempt must be logged and committed before execution.
+
+The bounded Task2-5 audit reproduced its original fit exactly and confirmed
+three early loading posterior/returned-prior support conflicts. Its partial
+monitor correction did not remove late oscillation. Retain this as a review
+finding, not an adopted repair or established explanation for real-data collapse.
+
 ## 2026-10-15 — Complete descriptive CpG variability; retain existing feature rules
 
 The preregistered Task5-QC1 describes305492 TCGA probes on144 unchanged
