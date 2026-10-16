@@ -147,3 +147,30 @@ to actual tables/figures and one of: complete, partial, unresolved, or needs
 decision. Report what new evidence was produced, the interpretation it
 supports, what failed and the next bounded action. Do not use elapsed time,
 fit counts or test counts alone as evidence of scientific progress.
+
+
+## Expression preflight: available universe and continuation decision
+
+The existing D4 preprocessing yields17900 common genes over273 training
+patients. Existing per-cohort combined ranks give the nested shared counts:
+2064 (top3000/cohort),5001 (top6607/cohort),10000 (top11602/cohort), and
+17900 (all). The nominal5000 target is crossed at5001 because both cohort
+rank lists are intersected; no tie-breaking/ranking rule is changed. The
+baseline gene order equals frozen D4's; its standardized matrix is exactly
+the corresponding subset of the full17900-gene matrix. No model is fitted
+in this preflight and no external cohort is loaded.
+
+The frozen D4 activity matrix has rank4 of7; columns1,2,4 are exactly zero.
+Task5's prescribed continuation formula therefore has singular L-transpose-L.
+Carrying zero columns into new loading rows also risks keeping them dead,
+which is consequential when asking whether more features reveal new programs.
+
+**Proposed decision:** use the same cold SVD start protocol at each of the
+four fixed-K7 feature counts as the primary sensitivity curve. Keep the
+frozen alpha_F=0 settings, cohort preprocessing, convergence rule and original
+training-CV fold protocol. Evaluate full training plus five folds per count
+(24 new fits); report C, partial log-likelihood, shrinkage, program roles,
+agreement, caps and resource use with benchmark rows. Do not score external
+cohorts or choose a weight/feature count from them. Defer warm continuation
+until a rank-deficient policy is reviewed. This changes Task5's continuation
+requirement only if Andrew approves before fitting; no adoption rule changes.

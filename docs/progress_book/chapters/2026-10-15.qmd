@@ -845,3 +845,16 @@ SD figure; changed pages were visually checked. The original write-up is
 unchanged. Fresh post-run full suite **642 passed,0 failed**. No new
 performance, biological or supervision claim is made. Next: the fixed-K7
 expression feature-count study and its training-only factor-agreement curve.
+
+
+## Fixed-K expression curve: preflight complete, initialization decision pending
+
+The common training universe contains17900 genes on273 patients. Reusing the
+existing rankings reaches2064,5001,10000 and17900 shared genes. The frozen
+baseline gene order and standardized subset values agree exactly. Its
+activity matrix has rank4 of7, making the prescribed warm-start inverse
+singular. A cold-primary design is proposed before any feature fit. The
+matched expression-only framework also retains K7, so pooled Single four
+classified versus joint seven does not isolate the methylation contribution.
+Independent feature-manifest/agreement helpers pass nine focused checks and
+the full suite651/651. No new feature-performance result is claimed.

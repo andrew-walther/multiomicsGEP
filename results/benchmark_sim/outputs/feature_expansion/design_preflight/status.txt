@@ -1,0 +1,5 @@
+Training-only input preflight; no model fit or external cohort loaded.
+D4 gene order matches the frozen list, and standardized baseline values are exactly the subset of the full matrix.
+Existing per-cohort combined ranking is preserved. The target5000 is crossed at5001 after intersection; no arbitrary tie removal.
+Cold-primary versus rank-deficient continuation requires Andrew decision before fitting.
+Private prepared input: data/round2_feature_universe_preflight.rds (ignored).

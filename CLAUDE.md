@@ -148,3 +148,11 @@ only the existing training patients, verifies frozen screened probe IDs and
 applies no new preprocessing/default/SD cutoff. The local inventory is ignored;
 only aggregate plots/tables/provenance are committed. Read its actual result
 status in the Round2 handoff, not this pointer.
+
+
+Feature-study preparation/agreement utilities are in `code/feature_sensitivity.R`.
+They preserve the existing cohort ranking and undefined dead-factor correlations;
+no feature-count fit is implied by their presence. The cold-primary versus
+rank-deficient continuation decision is recorded in the active priority plan
+and Round2 handoff. Do not start a performance panel before that decision and
+its prospective committed design. No model defaults were changed.

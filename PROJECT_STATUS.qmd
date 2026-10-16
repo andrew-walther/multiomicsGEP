@@ -2714,3 +2714,16 @@ frozen seven-program role table. Seven joint programs may be appropriate;
 parsimony requires role/stability/redundancy evidence, not forced deletion.
 The current write-up and benchmark remain unchanged. Full suite631/631;
 full-CpG mean/SD analysis is the next approved deliverable.
+
+
+## Fixed-K feature-study input preflight (2026-10-15)
+
+The D4 training universe contains17900 common genes. Existing ranking yields
+nested shared sets2064/5001/10000/17900, with exact frozen baseline gene order
+and unchanged standardized values on those genes. No performance fit has run.
+The frozen activity matrix has rank4/7 and three exact zero columns, making
+original Task5's warm-start inverse undefined. A cold-start primary curve is
+proposed; Andrew's decision is pending. Preparation and program-agreement
+utilities preserve constants as NA/unmatched cases, common-gene identities
+and projection-SD coefficient units. Full suite651/651. See the priority plan
+and handoff; the benchmark and original write-up remain unchanged.

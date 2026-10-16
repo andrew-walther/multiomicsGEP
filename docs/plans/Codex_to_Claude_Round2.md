@@ -6,6 +6,13 @@ Current cumulative branch: `round2/supervised`. No pushes or merges into the bas
 or main branches are authorized. The benchmark is unchanged and no replacement
 configuration has been proposed or approved.
 
+Active feature-study checkpoint: the advisor progress report and full-CpG
+variability study are complete (7b44250/dc69f6d/6061ef8). The report is six
+pages. Expression input preflight reaches17900 shared genes, but the frozen
+D4 warm-start inverse is singular; Andrew's cold-primary decision is pending.
+No feature-count performance fit has run. The independent agreement utilities
+and safe design tables are prepared; see the final section for exact status.
+
 Latest direction (2026-10-15, after the pause): Andrew authorizes resumption
 and requests explicit prioritization of the10/2 advisor deliverables. Read
 `Advisor_Priorities_and_Execution_10_15_26.md` before any further long fit.
@@ -1297,3 +1304,55 @@ SD figure; changed pages were visually checked. The original write-up is
 unchanged. Fresh post-run full suite **642 passed,0 failed**. No new
 performance, biological or supervision claim is made. Next: the fixed-K7
 expression feature-count study and its training-only factor-agreement curve.
+
+
+## Task5 expression preflight and agreement software (no feature fit)
+
+The D4 training universe has17900 shared genes on273 patients. Its frozen
+baseline gene order is reproduced exactly, and its standardized matrix is
+exactly the corresponding subset of the all-gene matrix. Existing per-cohort
+combined ranking reaches shared counts2064/5001/10000/17900 at screening
+sizes3000/6607/11602/17900. No ranking rule or tie-breaking changes. The nominal
+5000 target is crossed at5001 and will be plotted at its actual count.
+Safe design tables are in
+`results/benchmark_sim/outputs/feature_expansion/design_preflight/`.
+
+The frozen D4 activity matrix has rank4 of7 and exact zero columns1,2,4.
+Thus original Task5's inverse(L-transpose-L) continuation is undefined. A
+cold-start primary curve at all four counts is proposed, preserving fixed K7,
+alpha_F=0 benchmark settings, five training folds and all original criteria;
+warm continuation would wait for a rank-deficient policy. This decision is
+pending Andrew; no feature-count fit has started.
+
+`code/feature_sensitivity.R` supplies only independent preparation/agreement
+utilities. `feature_count_manifest()` consumes cohort-specific log-scale
+training matrices and the existing rankings, reports the reached shared counts
+and unavailable targets, and returns nested gene sets. It changes neither
+preprocessing nor model fitting. `feature_cor()` calculates centered Pearson
+correlations, preserving NA for constant columns. `feature_program_agreement()`
+uses the existing greedy non-reused activity matching pattern, aligns loading
+rows on common gene identities, compares proper normalized projection/risk
+scores and reports beta times projection SD. This avoids raw coefficient-unit
+comparisons. Matching matrices, unmatched slots and continuous best-match
+margins stay visible; no match-quality threshold is selected.
+
+Inputs to agreement must represent the same ordered patients. Named row-order
+mismatches fail, and the future runner must retain the ordered identity manifest
+for unnamed matrices. Constant factors remain unmatched, rather than forcing
+correlation0 or a fabricated match. Signed correlations remain signed; frozen
+biological labels are not automatically assigned. Existing base-R operations,
+preprocessing and prediction avoid dependencies. Nine focused checks pass
+from RED to GREEN, including scale/permutation/common-feature/constant and
+patient-order cases. Full-suite count is recorded after completion below.
+
+The matched expression-only multimodal framework itself retains K7 in the
+frozen results. The pooled Single classified4 versus joint7 comparison also
+changes training population and model settings; it does not isolate a
+methylation effect. A retained K7 can be appropriate if its nonredundant
+molecular/prognostic roles and stability justify it. Fewer factors alone are
+not an adoption criterion for the real-data study.
+
+Feature preparation checkpoint: fresh full suite **651 passed,0 failed**,
+including nine new agreement/manifest checks. No feature-performance fit has
+run. The original benchmark/write-up are unchanged; the initialization
+decision remains pending.

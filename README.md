@@ -526,3 +526,15 @@ mean-versus-SD density plot. It does not impute, fit a model or choose a filter.
 Fresh safe aggregates/plots go under
 `results/multimodal_real/outputs/feature_sensitivity/cpg_qc/`; the probe inventory
 RDS stays local/ignored. Input and benchmark identities/hashes are verified.
+
+
+`code/feature_sensitivity.R` provides preparation and agreement utilities for
+the planned fixed-K expression study. Source it, then use
+`feature_count_manifest(cohort_matrices,genes,targets,baseline_top_n)` on
+training log-scale matrices, or
+`feature_program_agreement(old_fit,old_genes,new_fit,new_genes,old_Y,new_Y)`
+on aligned Single-block YFB fits. The latter preserves dead-factor NA/unmatched
+cases and uses shared-gene loading correlations and normalized projections.
+These utilities do not fit models. See the approved plan and input preflight:
+the frozen D4 activity rank4/7 makes its prescribed warm inverse singular;
+the primary-curve initialization decision must be resolved before fitting.
