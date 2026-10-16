@@ -256,7 +256,7 @@ window.Quarto = {
   </ul></li>
   <li><a href="#working-step-review-and-next-experiment" id="toc-working-step-review-and-next-experiment" class="nav-link" data-scroll-target="#working-step-review-and-next-experiment"><span class="header-section-number">12.7</span> Working-step review and next experiment</a>
   <ul class="collapse">
-  <li><a href="#complete-cycle-diagnostic-first-result-invalid" id="toc-complete-cycle-diagnostic-first-result-invalid" class="nav-link" data-scroll-target="#complete-cycle-diagnostic-first-result-invalid"><span class="header-section-number">12.7.1</span> Complete-cycle diagnostic: first result invalid</a></li>
+  <li><a href="#complete-cycle-diagnostic-corrected-result-and-limits" id="toc-complete-cycle-diagnostic-corrected-result-and-limits" class="nav-link" data-scroll-target="#complete-cycle-diagnostic-corrected-result-and-limits"><span class="header-section-number">12.7.1</span> Complete-cycle diagnostic: corrected result and limits</a></li>
   </ul></li>
   <li><a href="#for-discussion" id="toc-for-discussion" class="nav-link" data-scroll-target="#for-discussion"><span class="header-section-number">12.8</span> For discussion</a></li>
   <li><a href="#deep-dive" id="toc-deep-dive" class="nav-link" data-scroll-target="#deep-dive">Deep dive</a></li>
@@ -292,7 +292,7 @@ window.Quarto = {
 <li><strong>The full expression-count study is complete.</strong> All 24 fixed-K7 fits converge through 17,900 shared genes. Conditional CV performance does not clearly improve, and program agreement changes.</li>
 <li><strong>The requested CpG mean/SD inventory is complete.</strong> It describes 305,492 probes; the unchanged model-eligible universe has 305,352. Neither supplied filter nor an SD cutoff has been adopted.</li>
 <li><strong>The 25k-CpG arithmetic failure is repaired, but fitting remains unstable.</strong> The same case reaches its 500-iteration cap with extreme predictors. Training C=0.984 is not a validated gain.</li>
-<li><strong>The complete-cycle diagnosis remains pending.</strong> An observation-only replay preserved the entire original fit, but its objective calculation was invalidated by an observer error. The correction is tested; a further replay requires its own registration and decision.</li>
+<li><strong>The corrected complete-cycle diagnostic is complete.</strong> Posterior steps pass the local ascent check in the observed simulation; loading-prior refits and working refreshes can lose the reference objective. This supports prior-consistency review before damping or weights, without establishing a convergent remedy.</li>
 </ol>
 <p>This chapter adapts the advisor progress report into the notebook and adds the October 16 mathematical review. Earlier chapters describe their own checkpoints; the findings below supersede any earlier claim of universal convergence or successful final supervision.</p>
 </section>
@@ -347,7 +347,7 @@ window.Quarto = {
 </tbody>
 </table>
 <p><strong>What is concretely solved.</strong> Dead point-mass programs no longer receive survival protection in the opt-in pruning rule. Full posterior information can be retained through opt-in pruning refits. Comparator rank-zero/rank-one cases and individual errors remain in denominators. The failed historical framework CV fold is exactly reproducible. A curvature experiment removes constant-risk predictions in its five candidate CV folds. These are specific software corrections and diagnoses, not proof of the complete scientific goal.</p>
-<p><strong>Current decision.</strong> Preserve the benchmark. Review working-step and prior/objective consistency before another large-feature fitting panel. The complete-cycle diagnostic described below has an invalid first objective summary; no replacement model is adopted.</p>
+<p><strong>Current decision.</strong> Preserve the benchmark. Review working-step and prior/objective consistency before another large-feature fitting panel. The corrected complete-cycle diagnostic is reported below, with the invalid first summary preserved. No replacement model is adopted.</p>
 </section>
 <section id="does-survival-now-influence-f" class="level2" data-number="12.2">
 <h2 data-number="12.2" class="anchored" data-anchor-id="does-survival-now-influence-f"><span class="header-section-number">12.2</span> Does survival now influence <span class="math inline">\(F\)</span>?</h2>
@@ -1134,17 +1134,64 @@ window.Quarto = {
 </table>
 <p>Fixed-W coordinate calculations and refreshes must be examined separately. The diagonal working curvature dominates the exact Hessian at its current expansion point, but this is not a global quadratic lower-bound guarantee. A falling Cox partial likelihood alone is also insufficient to diagnose a faulty joint update: reconstruction and prior terms can change at the same time.</p>
 <p><strong>Approved diagnostic.</strong> Replay only the saved Single seed20261026/noise0.25 case with unchanged controls. Observe posterior distributions and all L/F/beta prior contributions, the anchored quadratic including uncertainty, and the effects of prior refits, scale changes and refresh. Require exact identity of the entire saved fit and history. Transformed reference priors are distinguished from priors actually carried by the implementation. The diagnostic cannot replace the convergence monitor or pass a scientific adoption gate.</p>
-<section id="complete-cycle-diagnostic-first-result-invalid" class="level3" data-number="12.7.1">
-<h3 data-number="12.7.1" class="anchored" data-anchor-id="complete-cycle-diagnostic-first-result-invalid"><span class="header-section-number">12.7.1</span> Complete-cycle diagnostic: first result invalid</h3>
-<p>The one registered replay finishes in 42.3 seconds, without warnings, and reproduces the entire saved fit and history exactly. It still fails convergence at 300 iterations. Density bookkeeping covers the final 50 cycles, with native moment disagreement no larger than <span class="math inline">\(2.22\times10^{-16}\)</span>. The current full software suite passes 692 tests; this does not validate the scientific goals.</p>
-<p>Post-run validation identified an error in the observer, not the model: its reconstruction expectation omitted cross-products between different programs. The original one-program fixture missed this; an independent two-program fixture detects it. The observer is corrected and all eight focused tests pass. The original objective telemetry is preserved and explicitly invalidated. Its apparent posterior-step losses cannot diagnose the fitter. A corrected replay requires a separate prospective entry and decision under the registered stop rule; no scientific remedy has been implemented.</p>
+<section id="complete-cycle-diagnostic-corrected-result-and-limits" class="level3" data-number="12.7.1">
+<h3 data-number="12.7.1" class="anchored" data-anchor-id="complete-cycle-diagnostic-corrected-result-and-limits"><span class="header-section-number">12.7.1</span> Complete-cycle diagnostic: corrected result and limits</h3>
+<p>The one registered replay finishes in 42.3 seconds, without warnings, and reproduces the entire saved fit and history exactly. It still fails convergence at 300 iterations. Density bookkeeping covers the final 50 cycles, with native moment disagreement no larger than <span class="math inline">\(2.22\times10^{-16}\)</span>. The current full software suite passes 694 tests; this does not validate the scientific goals.</p>
+<p>Post-run validation identified an error in the observer, not the model: its reconstruction expectation omitted cross-products between different programs. The original one-program fixture missed this; an independent two-program fixture detects it. The observer is corrected and all eight focused tests pass. The original objective telemetry is preserved and explicitly invalidated. Its apparent posterior-step losses cannot diagnose the fitter. The invalid attempt remains preserved. A separately approved and registered corrected replay now completes in 42.9 seconds with exact entire-fit identity, complete late-cycle density coverage and no warnings. No scientific remedy has been implemented.</p>
+<p>The corrected late-cycle results are:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 42%">
+<col style="width: 57%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Transition, last 50 iterations</th>
+<th style="text-align: right;">Reference-objective decreases / finite comparisons</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>F posterior with prior/working terms fixed</td>
+<td style="text-align: right;">0 / 350</td>
+</tr>
+<tr class="even">
+<td>L posterior with newly fitted prior/working terms fixed</td>
+<td style="text-align: right;">0 / 350</td>
+</tr>
+<tr class="odd">
+<td>Coefficient posterior with newly fitted prior/working terms fixed</td>
+<td style="text-align: right;">0 / 350</td>
+</tr>
+<tr class="even">
+<td>Loading-prior refit with posterior fixed</td>
+<td style="text-align: right;">50 / 350</td>
+</tr>
+<tr class="odd">
+<td>Cox working refresh with posterior fixed</td>
+<td style="text-align: right;">18 / 50</td>
+</tr>
+<tr class="even">
+<td>Scale transformation with reference priors transformed</td>
+<td style="text-align: right;">0 / 50</td>
+</tr>
+<tr class="odd">
+<td>Noise-precision update</td>
+<td style="text-align: right;">0 / 50</td>
+</tr>
+</tbody>
+</table>
+<p>The smallest loading-prior change is −0.0253; the smallest refresh change is −0.00207. These observations do not support blaming the fixed-prior loading coordinate or treating refresh as the only issue. They support examining a fixed-posterior loading-prior maximization step before choosing damping or a survival weight.</p>
+<p>The coefficient and subject-score marginal empirical-Bayes fits change prior and posterior jointly. Their intermediate prior losses alone do not diagnose that joint operation. Even their combined reference comparisons include 17/350 subject-score decreases (minimum −1.09) and 16/350 coefficient decreases (minimum about <span class="math inline">\(-1.13\times10^{-8}\)</span>, near the diagnostic tolerance). Optimizer accuracy, reconstructed density accuracy and reference-prior interpretation remain to be checked before assigning a cause. These observations are retained, not silently excluded.</p>
+<p>This is an expected local quadratic with explicitly transformed reference priors, not a certified common implemented ELBO or the exact expected Cox likelihood. It does not explain the multimodal or 25k-CpG trajectory by itself. The original fit still caps at 300, and all scientific adoption requirements remain unchanged.</p>
+<p><strong>Next decision.</strong> Review a single opt-in fixed-posterior point-Laplace loading-prior step, <span class="math inline">\(\pi=S/p\)</span> and rate <span class="math inline">\(S/T\)</span>, with <span class="math inline">\(S=\sum_j\Pr_q(F_j\ne0)\)</span> and <span class="math inline">\(T=\sum_jE_q|F_j|\)</span>, and KL evaluated against that returned prior. This is a proposed consistency repair, not an executed remedy. It needs separate approval, algebra tests and a committed prospective design before fitting. The shared-prior absorption ladder remains a separate issue.</p>
 <p><strong>Remedy status.</strong> Fixed shared priors and the approved profiled-intercept experiment failed adoption. The exact pi-floor and per-factor-prior-with-supervised-start remedies remain untried. A staged fit cannot use a capped framework as a converged start. Damping, joint/collapsed F–beta updates and last-resort training-CV survival weights remain untried. No ladder is exhausted and no weight is selected here.</p>
 </section>
 </section>
 <section id="for-discussion" class="level2" data-number="12.8">
 <h2 data-number="12.8" class="anchored" data-anchor-id="for-discussion"><span class="header-section-number">12.8</span> For discussion</h2>
 <ul>
-<li>Validate the corrected observer under a separately registered replay before deciding a remedy, then register one exact change before fitting. Keep the original recovery, false-positive, convergence, credibility and paired-CV gates.</li>
+<li>Decide whether to derive and test the proposed prior-consistent loading-prior step, then register one exact change before fitting. Keep the original recovery, false-positive, convergence, credibility and paired-CV gates.</li>
 <li>Resolve the undefined reference CV fold prospectively if a comparison needs a different rule. It remains undefined in the existing results.</li>
 <li>Resume the unfinished methylation/filter/joint feature curves only under a reviewed design. K7 can be justified by program roles; forcing deletion is not itself the objective.</li>
 <li>Evaluate matched predictive increment and additional reproducible molecular structure separately. Final program labels and biological claims still require annotation, confounding checks and review.</li>
