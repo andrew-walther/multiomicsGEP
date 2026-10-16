@@ -975,9 +975,11 @@ fit_cox_on_yf <- function(Y, time, status,
 
 # ==============================================================================
 # PART 3 — DATA_MODE Runner Block (for standalone Rscript use)
+# Skipped when the file is sourced (sys.nframe() > 0), so source() only
+# defines the functions.
 # ==============================================================================
 
-if (DATA_MODE == "real") {
+if (sys.nframe() == 0L && DATA_MODE == "real") {
   stopifnot(!is.null(real_Y), !is.null(real_time), !is.null(real_status))
   res <- fit_cox_on_yf(real_Y, real_time, real_status,
                        K = 5, max_iter = 100, tol = 1e-3, verbose = TRUE)

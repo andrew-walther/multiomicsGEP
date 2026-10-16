@@ -2085,7 +2085,7 @@ the deck (no critical issues). Key corrections made during revision:
 |------|--------|
 | `presentation/walther_lab_meeting_06_18_2026/` | New/revised deck, figures, 3 figure generators, revision notes |
 | `results/benchmark_sim/run_ebmf_cox_external.R` | New unsupervised EBMF→Cox external baseline + outputs |
-| `docs/plans/rashidlab_meeting_feedback_04_09_26.md` | April feedback notes |
+| `docs/plans/archive/rashidlab_meeting_feedback_04_09_26.md` | April feedback notes |
 | `DECISIONS.md` | 2026-06-15 (EBMF baseline) and 2026-06-16 (deck corrections) entries |
 | `ROADMAP.md` | Status → 2026-06-16; adverse/protective relabel; EBMF baseline + deck milestones |
 
@@ -2094,7 +2094,7 @@ the deck (no critical issues). Key corrections made during revision:
 # Session 27 — Post-lab-meeting Phase 1: objective normalization, λ retirement, preprocessing fix (2026-07-12)
 
 Branch `objective-normalization` (cut from `main` at `07a429a`), merged to `main`. Implements
-Phase 1 of `docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`, the plan that triages
+Phase 1 of `docs/plans/archive/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`, the plan that triages
 the Rashid lab's 6/18/2026 feedback.
 
 ## 27.1 — Objective normalization (Phase 1a): two rejected designs before a stable one
@@ -2208,7 +2208,7 @@ Full reasoning, the empirical comparison table, and the CV table are in `DECISIO
 # Session 28 — Phase 2: joint model vs. two-step value-add (2026-07-12)
 
 Branch `validation-two-step` (cut from `main` after Phase 1's merge and post-merge correction).
-Implements Phase 2 of `docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`.
+Implements Phase 2 of `docs/plans/archive/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`.
 
 ## 28.1 — PCA+Cox two-step baseline
 
@@ -2357,7 +2357,7 @@ free" — refitting at smaller K directly (not just counting active factors from
 real performance loss at every smaller K tested here, on every held-out cohort, with the caveat
 above applying most to K=2/K=4 specifically. Whether DeSurv's joint (K,α,λ) Bayesian-optimization
 tuning would find a smaller K with comparable *external* performance remains untested — a plan for
-this exists (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`), not yet implemented.
+this exists (`docs/plans/archive/joint_k_alpha_bayesopt_plan_07_12_2026.md`), not yet implemented.
 
 ## 29.2 — Files changed
 
@@ -2378,7 +2378,7 @@ than silently skipped.)*
 
 Branch `pathway-enrichment-plan` (cut fresh from `main`; the original branch of the same name
 predated ~8,000 lines of subsequent work and was unusable as a base — only its plan document,
-`docs/plans/pathway_enrichment_plan.md`, was retrieved and carried forward). Goal: assign biology
+`docs/plans/archive/pathway_enrichment_plan.md`, was retrieved and carried forward). Goal: assign biology
 to Program 7 (Adverse) and Program 3 (Protective), the recommended model's two survival-active
 ($K_{\text{eff}}=2$) gene expression programs.
 
@@ -2486,7 +2486,7 @@ conclusion issues, but both made a published table actively misleading as origin
 | `results/benchmark_sim/generate_pathway_enrichment_figures.R` (new) | Regenerate F1-F3 from cached results |
 | `results/benchmark_sim/benchmark_helpers.R` | Added `sampID` field to `load_pdac_raw()`'s return |
 | `docs/reports/pathway_enrichment_report_07_15_26.{qmd,pdf,html}` (new) | Full analysis report |
-| `docs/plans/pathway_enrichment_plan.md` (new) | Retrieved plan document |
+| `docs/plans/archive/pathway_enrichment_plan.md` (new) | Retrieved plan document |
 | `tests/test_pathway_enrichment.R` (new, 44 tests) | Main suite: 355/355 (was 311/311 at session start) |
 | `tests/test_real_data_loading.R` (+11 tests) | Real-data suite: 88/88 (was 77/77) |
 | `DECISIONS.md`, `ROADMAP.md`, `CLAUDE.md` | Session entry, milestone, quick-reference updates |

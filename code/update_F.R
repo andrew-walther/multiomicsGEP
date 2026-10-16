@@ -5,7 +5,7 @@
 #
 # DERIVATION REFERENCE:
 #   derivations/qF/qF_update_derivation.tex  (self-contained)
-#   derivations/MF_UpdateDerivations/MF_V2_Companion.tex  Section 5
+#   derivations/MF_UpdateDerivations/archive/MF_V2_Companion.tex  Section 5
 #   derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex
 #
 # MATHEMATICAL SUMMARY:

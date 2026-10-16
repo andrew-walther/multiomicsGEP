@@ -1,6 +1,6 @@
 # Prelim Project Proposal Plan — Project 3 (SSBMF / multiomicsGEP) (10/1/26)
 
-This is the plan for writing this project's proposal chapter for the prelim (Chapter 4 of the prelim document). It is separate from the research plan in `docs/plans/Working_Plan_10_1_26.md`. That plan produces the results; this one turns them into a chapter. The chapter source should also serve as the starting draft for a later journal manuscript.
+This is the plan for writing this project's proposal chapter for the prelim (Chapter 4 of the prelim document). It is separate from the research plan in `docs/plans/archive/Working_Plan_10_1_26.md`. That plan produces the results; this one turns them into a chapter. The chapter source should also serve as the starting draft for a later journal manuscript.
 
 **Deadlines:**
 - Standalone abstract upload: 11/2.

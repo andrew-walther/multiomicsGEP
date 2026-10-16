@@ -408,4 +408,4 @@ This clean separation makes `update_beta.R` entirely self-contained given w, z, 
 | `demos/demo_update_beta.R` | 5 narrative demonstration scenarios |
 | `derivations/qB/qBeta_update_derivation.tex` | Self-contained 11-page derivation of q(β) |
 | `derivations/qB/qBeta_update_derivation.pdf` | Compiled PDF of the derivation |
-| `derivations/MF_UpdateDerivations/MF_V2_Companion.tex/.pdf` | Math ↔ code mapping (17 pages) |
+| `derivations/MF_UpdateDerivations/archive/MF_V2_Companion.tex/.pdf` | Math ↔ code mapping (17 pages) |

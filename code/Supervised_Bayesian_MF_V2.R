@@ -2,7 +2,7 @@
 # TITLE:       Supervised Bayesian Matrix Factorization — V2 (Corrected)
 # AUTHOR:      Andrew Walther
 # DATE:        March 2026  (Rebuilt from February 19, 2026)
-# DERIVATIONS: derivations/MF_UpdateDerivations/MF_V2_Companion.tex
+# DERIVATIONS: derivations/MF_UpdateDerivations/archive/MF_V2_Companion.tex
 #
 # DESCRIPTION:
 #   Coordinate Ascent Variational Inference (CAVI) for the joint model:

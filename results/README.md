@@ -1,57 +1,59 @@
-# results/ — Directory Layout
+# results/
 
-## Active structure
+Analysis runners and their saved outputs. Run every script from the repository
+root with `Rscript`. Runners read hyperparameters from `config/globals.yml` and
+real data from `PDAC_DATA_ROOT`. Patient-level inputs and fitted `.rds` objects
+are git-ignored; aggregate tables and figures are tracked.
 
-```
-results/
-  benchmark_sim/         ← canonical home for all formal benchmark work
-    run_LB_benchmark.R   ← Cluster A runner (Lβ linear predictor)
-    run_YFB_benchmark.R  ← Cluster B runner (YFβ / Cox-on-YF reformulation)
-    run_phase1_diagnostics.R  ← loading heatmaps (merged / tcga_only / cptac_only × prior)
-    archive/             ← 9 retired scripts (see archive/README.md for details)
-    outputs/             ← benchmark CSV and figure outputs
-      LB_benchmark/      ← Cluster A outputs (untracked)
-      YFB_benchmark/     ← Cluster B outputs (untracked)
+## Layout
 
-  figures/               ← active cohort-level figure outputs
-    CPTAC/, TCGA_PAAD/, Dijk/, Moffitt_GEO_array/,
-    PACA_AU_array/, PACA_AU_seq/, PDAC_pooled_rnaseq/, Puleo_array/
+| Folder | Contents |
+|--------|----------|
+| `benchmark_sim/` | Single-modality benchmark and follow-up analyses on simulated and PDAC data; outputs in `benchmark_sim/outputs/<analysis>/` |
+| `multimodal_real/` | Expression + methylation fits on matched TCGA/ICGC data; outputs in `multimodal_real/outputs/` |
+| `multi_cohort_sim/` | Simulation of shared and cohort-specific programs across cohorts |
+| `cohort_lmm_sim/` | Synthetic check of the cohort-effect model |
+| `figures/`, `tables/` | Per-cohort outputs from the May 2026 analyses |
+| `legacy/`, `benchmark_sim/archive/` | Retired runners and outputs, kept for reference and not re-run |
 
-  tables/                ← active cohort-level table outputs
-    CPTAC/, CPTAC_Keff/, CPTAC_pl/, CPTAC_pl_Keff/,
-    Dijk/, Dijk_Keff/, Dijk_pl/, Dijk_pl_Keff/,
-    Moffitt_GEO_array/, Moffitt_GEO_array_Keff/, ...
-    PDAC_cross_dataset/, PDAC_pooled_rnaseq/, TCGA_PAAD/, ...
+## Main entry points
 
-  legacy/                ← deprecated simulation generations; not re-run
-    full_sim/            ← V1 monolithic runner + report (uses Supervised_Bayesian_MF_V2.R)
-    modular_sim_block/   ← block-wise CAVI runner + report (superseded by factor-wise)
-    modular_sim_factor/  ← exploratory factor-wise runner + PDAC / synthetic reports
-    figures/
-      full_sim/, modular_sim/, synthetic/
-    tables/
-      full_sim/, modular_sim/, synthetic/
-```
+**Benchmark**
 
-## Benchmark reports
+| Script | Purpose |
+|--------|---------|
+| `benchmark_sim/run_YFB_benchmark.R` | YFB model (η = (YF)β): simulation and real-data benchmark, the recommended configuration |
+| `benchmark_sim/run_LB_benchmark.R` | LB model (η = Lβ), same design |
+| `benchmark_sim/run_k_init_sweep.R` | Starting-rank consensus across ELBO, BIC, log-likelihood and held-out C |
+| `benchmark_sim/run_K_cv.R` | Cross-validated K selection |
+| `benchmark_sim/run_desurv_comparison.R` | Preprocessing comparison that chose the DeSurv-style gene selection (configuration D4) |
+| `benchmark_sim/run_external_ci_analysis.R` | External-cohort concordance with bootstrap confidence intervals |
 
-Formal results reports live in `docs/reports/` with a `_MM_DD_YY` date suffix so versions
-are unambiguous as the benchmark evolves.
+**Comparators**
 
-| Report | Description |
-|--------|-------------|
-| `docs/reports/ssbmf_summary_report_04_29_26.{qmd,pdf,html}` | Frozen DeSurv benchmark (Cluster A, 2026-04-29). Internal paths are stale post-move — static reference only. |
-| `docs/reports/ssbmf_summary_report_MM_DD_YY.qmd` | Future LB/YFB benchmark report will go here. |
+| Script | Purpose |
+|--------|---------|
+| `benchmark_sim/run_ebmf_cox_external.R` | Two-step comparator: unsupervised EBMF, then Cox on the factor scores |
+| `benchmark_sim/run_sbmf_desurv_overlap.R` | Gene overlap between fitted programs and DeSurv's published programs |
 
-## Where new outputs land
+**Interpretation**
 
-- **Cluster A (LB) outputs** → `results/benchmark_sim/outputs/LB_benchmark/`
-- **Cluster B (YFB) outputs** → `results/benchmark_sim/outputs/YFB_benchmark/`
-- **New benchmark reports** → `docs/reports/ssbmf_summary_report_MM_DD_YY.{qmd,pdf,html}`
-- **New figure outputs** → `results/figures/<cohort>/`
-- **New table outputs** → `results/tables/<cohort>/`
+| Script | Purpose |
+|--------|---------|
+| `benchmark_sim/run_pathway_enrichment.R` | Gene-set enrichment of fitted programs |
+| `benchmark_sim/run_subtype_concordance.R` | Agreement of program scores with published PDAC subtypes |
+| `benchmark_sim/make_km_figures.R` | Kaplan–Meier figures for external cohorts |
 
-## What NOT to touch
+**Multimodal**
 
-- `results/legacy/` — retired outputs; no active scripts depend on them
-- `results/benchmark_sim/archive/` — retired runner scripts; see `archive/README.md`
+| Script | Purpose |
+|--------|---------|
+| `multimodal_real/run_multimodal_real_fit.R` | Fit on matched TCGA expression and methylation, validated on ICGC |
+| `multimodal_real/summarize_multimodal_real.R` | Tables and figures from the saved fits |
+| `benchmark_sim/run_multimodal_pruning_comparison.R` | Simulation comparison of multimodal fitting variants |
+
+The remaining scripts in `benchmark_sim/` and `multimodal_real/` are diagnostic
+and sensitivity studies. Each one's design and outcome is recorded in
+`DECISIONS.md` or the dated reports in
+`docs/reports/`; read the record before re-running one. Most refuse to overwrite
+existing outputs.

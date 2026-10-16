@@ -1,6 +1,6 @@
 # ============================================================
 # Script:  results/multi_cohort_sim/run_k_recovery_sim.R
-# Purpose: Analysis B (docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md).
+# Purpose: Analysis B (docs/plans/archive/ssbmf_factor_classification_k_selection_08_13_2026.md).
 #          Validates ARD's ability to recover a KNOWN number of survival-active
 #          (shared) and genomics-only (study-specific, non-prognostic) factors
 #          when CAVI is started at K_init >> K_true.

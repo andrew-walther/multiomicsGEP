@@ -362,4 +362,4 @@ This is the true coordinate ascent behavior: each factor update is conditioned o
 | `code/Supervised_Bayesian_MF_V2.R` | Original monolithic implementation (reference; do not modify) |
 | `results/run_modular_simulation.R` | Deprecated blockwise benchmark script |
 | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` | Corrected derivations (21 pages) |
-| `derivations/MF_UpdateDerivations/MF_V2_Companion.pdf` | Math ↔ code mapping (17 pages) |
+| `derivations/MF_UpdateDerivations/archive/MF_V2_Companion.pdf` | Math ↔ code mapping (17 pages) |
