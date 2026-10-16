@@ -117,12 +117,13 @@ Rscript tests/run_tests.R
 
 ### Data
 
+Every cohort is bulk tumour gene expression, measured by RNA-seq or microarray.
 Patient data are not distributed with this repository. Scripts read the PDAC
 cohorts from the directory in `PDAC_DATA_ROOT`. Sample sizes and censoring are
 for the patients used in the analysis.
 
-| Cohort | Platform | n | Censored | Role |
-|--------|----------|---|----------|------|
+| Cohort | Expression platform | n | Censored | Role |
+|--------|---------------------|---|----------|------|
 | TCGA-PAAD | RNA-seq | 144 | 48% | Training |
 | CPTAC-PDAC | RNA-seq | 129 | 50% | Training |
 | Dijk | RNA-seq | 90 | 10% | External validation |
