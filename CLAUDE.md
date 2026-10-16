@@ -172,3 +172,8 @@ Read Task5-F1 before execution: cold-primary is authorized, alpha_F0/K7/default
 benchmark controls remain fixed, and patient folds condition on the existing
 screen/scaling. No external selection or benchmark replacement is authorized.
 Use only ignored local patient inputs/fits and safe aggregate outputs.
+
+`results/benchmark_sim/summarize_feature_expansion.R` builds the fixed-K
+performance/agreement figures and safe loading summaries from all24 terminal
+fits. Its input patient/fitted RDS remain ignored. Consult the live status and
+Round2 handoff for results, limitations and the next methylation preflight.

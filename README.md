@@ -576,3 +576,9 @@ After all24 cells finish, run
 `Rscript results/benchmark_sim/summarize_feature_expansion.R` for aggregate
 performance, the fixed-K curve, and baseline/preceding-count program agreement.
 It requires all cells and preserves undefined quantities; no model is selected.
+
+The completed expression feature study has24/24 converged fits through17,900
+shared genes; conditional CV means .608/.577/.609/.607. Safe tables and two
+curves are in the cold_primary output folder. Dense nonzero loading means do
+not establish gene-level selection; no feature count/default is adopted. The
+advisor report is updated in both HTML and PDF.

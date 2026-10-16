@@ -5,6 +5,21 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Retain the benchmark after full-range expression sensitivity
+
+The authorized fixed-K7/alpha_F0 cold-primary study reaches all17900 common
+genes; all24 fits converge without warnings/errors. Conditional CV means
+.6084/.5773/.6088/.6068 do not show a clear predictive gain; full-fit classified
+retention is4/4/4/3 and all-gene risk correlates .505 with baseline. No external
+score or new default follows. Frozen D4 training C .656307 remains beside
+fresh baseline .656259; the historical sign/uncertainty differences are explicit.
+
+Andrew emphasizes reducing arbitrary screening as a possible benefit of full
+inputs even without a C gain, conditional on preserved performance/stability.
+Keep that objective. This sensitivity panel does not establish noninferiority
+or gene-level selection; no new threshold or adoption criterion is introduced.
+Methylation-only/joint curves follow after exact existing-imputation checks.
+
 ## 2026-10-15 — Use cold starts for fixed-K feature sensitivity
 
 Andrew authorized judgment and prioritizing progress after the frozen D4

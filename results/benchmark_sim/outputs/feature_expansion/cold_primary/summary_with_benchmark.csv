@@ -1,0 +1,6 @@
+"source","p","K","training_C","conditional_CV_C","conditional_CV_SE","finite_CV_folds","converged_CV_folds","training_converged","retained","active","total_seconds","constant_columns"
+"feature_sensitivity",2064,7,0.656259048354406,0.608403617327405,0.0461954629177263,5,5,TRUE,4,2,17.71,0
+"feature_sensitivity",5001,7,0.615915452176431,0.577288812986524,0.0265835583665472,5,5,TRUE,4,2,53.284,0
+"feature_sensitivity",10000,7,0.616977125760062,0.6087890831777,0.0396511018611674,5,5,TRUE,4,2,178.337,0
+"feature_sensitivity",17900,7,0.619148730817489,0.606790643030893,0.0185617237833407,5,5,TRUE,3,2,304.156,240
+"benchmark_snapshot",2064,7,0.656307306244571,NA,NA,NA,NA,TRUE,NA,NA,NA,NA

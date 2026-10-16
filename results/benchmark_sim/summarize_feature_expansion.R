@@ -98,3 +98,55 @@ writeLines(c("CV conditions on screening/scaling before patient folds; not neste
   "Frozen external mean C approximately .627 is historical, not the training/CV comparison."),
   file.path(out,"interpretation.txt"))
 print(summary)
+
+# Agreement curve on full-training fits ----
+# Show the matching denominator: a high correlation among surviving matches
+# does not establish preservation of every original program.
+a <- do.call(rbind,pairs)
+r <- do.call(rbind,risk)
+comparison <- data.frame(p=counts[-1],matched=0L,activity=NA_real_,loading=NA_real_,
+  projection=NA_real_,risk=NA_real_)
+for(i in seq_len(nrow(comparison))) {
+  take <- a[a$reference=="fresh_baseline"&a$p==comparison$p[i],]
+  matched <- !is.na(take$old_factor)&!is.na(take$new_factor)
+  comparison$matched[i] <- sum(matched)
+  for(field in c("activity","loading","projection")) {
+    values <- take[[paste0(field,"_correlation")]][matched]
+    values <- values[is.finite(values)]
+    comparison[i,field] <- if(length(values))stats::median(values) else NA_real_
+  }
+  comparison$risk[i] <- r$risk_correlation[r$reference=="fresh_baseline"&r$p==comparison$p[i]]
+}
+write.csv(comparison,file.path(out,"agreement_curve.csv"),row.names=FALSE)
+png(file.path(out,"feature_count_agreement.png"),width=1500,height=850,res=160)
+par(mar=c(5,5,3,1))
+matplot(comparison$p,comparison[,c("activity","loading","projection","risk")],
+  type="b",pch=1:4,lty=1:4,col=c("#176b91","#ad5a10","#3d7d41","#733b88"),
+  ylim=c(-1,1),xlab="Shared expression genes",ylab="Correlation with fresh 2,064-gene fit",
+  main="Full-training agreement: median over matched programs")
+text(comparison$p,rep(-.50,nrow(comparison)),labels=paste("Matched:",comparison$matched),pos=c(4,3,2),cex=.8)
+legend("bottomleft",c("Activity median","Shared-loading median","Projection median","Risk score"),
+  col=c("#176b91","#ad5a10","#3d7d41","#733b88"),pch=1:4,lty=1:4,bty="n",cex=.8)
+dev.off()
+
+# Loading shrinkage, without inventing a gene-retention threshold ----
+loading_rows <- list()
+for(i in 0:nrow(rows)) {
+  if(i==0L) {
+    fit <- readRDS("results/benchmark_snapshot_2026-10-14/single_modality/desurv_comparison_fits.rds")$D4
+    source_label <- "benchmark_snapshot";cell <- NA_integer_;fold <- 0L
+  } else {
+    cell <- rows$cell[i];fold <- rows$fold[i];source_label <- "feature_sensitivity"
+    fit <- readRDS(file.path(out,sprintf("cell_%02d.rds",cell)))$fit
+  }
+  for(k in seq_len(ncol(fit$EF))) {
+    variance <- fit$EF2[,k]-fit$EF[,k]^2
+    loading_rows[[length(loading_rows)+1L]] <- data.frame(source=source_label,
+      cell=cell,fold=fold,p=nrow(fit$EF),factor=k,
+      nonzero_posterior_means=sum(fit$EF[,k]!=0),
+      mean_abs_loading=mean(abs(fit$EF[,k])),median_abs_loading=stats::median(abs(fit$EF[,k])),
+      mean_posterior_variance=mean(variance),min_posterior_variance=min(variance),
+      negative_variance_entries=sum(variance<0))
+  }
+}
+write.csv(do.call(rbind,loading_rows),file.path(out,"loading_shrinkage_with_benchmark.csv"),row.names=FALSE)

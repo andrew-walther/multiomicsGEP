@@ -1,0 +1,8 @@
+"reference","p","risk_correlation"
+"frozen_D4",2064,0.999999958688211
+"fresh_baseline",5001,0.654707525138073
+"preceding_count",5001,0.654707525138073
+"fresh_baseline",10000,0.638468893003205
+"preceding_count",10000,0.9720513544854
+"fresh_baseline",17900,0.505000845297443
+"preceding_count",17900,0.667272010474387

@@ -6,12 +6,11 @@ Current cumulative branch: `round2/supervised`. No pushes or merges into the bas
 or main branches are authorized. The benchmark is unchanged and no replacement
 configuration has been proposed or approved.
 
-Active feature-study checkpoint: the advisor progress report and full-CpG
-variability study are complete (7b44250/dc69f6d/6061ef8). The report is six
-pages. Expression input preflight reaches17900 shared genes, but the frozen
-D4 warm-start inverse is singular; Andrew authorized cold-primary judgment.
-No feature-count performance fit has run. The independent agreement utilities
-and safe design tables are prepared; see the final section for exact status.
+Active feature-study checkpoint: the advisor report (HTML/PDF), full-CpG
+variability and fixed-K expression curves through17900 shared genes are
+complete. All24 expression fits converge; no new configuration is adopted.
+Methylation-only and joint count curves remain next. See the latest result
+section below; historical pause/preparation statements are superseded.
 
 Latest direction (2026-10-15, after the pause): Andrew authorizes resumption
 and requests explicit prioritization of the10/2 advisor deliverables. Read
@@ -1460,3 +1459,71 @@ Reporting correction verified:657 passed,0 failed; completed-cell integration
 exits0 and preserves the saved fit without refitting. The summary runner
 produces conditional-CV curves and the preregistered full-fit agreement tables
 only once all24 cells exist. Remaining23 fits can proceed after this commit.
+
+
+## Task5-F1 completed: full-range fixed-K expression sensitivity
+
+All24 fits finish with exit0, converge under the unchanged rule and yield
+finite C; zero warnings/errors. Five patient folds at each of four counts,
+plus full fits, use unchanged benchmark alpha_F0/K7/no-deletion controls.
+Screening/scaling precede folds: conditional CV, not nested validation.
+
+| Genes | Training C | Conditional CV C ± SE | CV converged | Retained / active |
+|---:|---:|---:|---:|---:|
+| 2,064 | 0.656259 | 0.608404 ± 0.046195 | 5/5 | 4 / 2 |
+| 5,001 | 0.615915 | 0.577289 ± 0.026584 | 5/5 | 4 / 2 |
+| 10,000 | 0.616977 | 0.608789 ± 0.039651 | 5/5 | 4 / 2 |
+| 17,900 | 0.619149 | 0.606791 ± 0.018562 | 5/5 | 3 / 2 |
+| Frozen D4: 2,064 | .656307 | Not rescored | Historical full fit converged | 4 / 2 |
+
+The full fits take20/25/31/37 iterations; maximum fold211/300. Total measured
+fit time553.487 seconds; maximum R allocation estimate819.3MB (not RSS).
+First-cell memory is unavailable, with its original invalid telemetry saved.
+All-gene input retains240 constant columns under unchanged preprocessing.
+No external cohort is scored and no feature count/default is adopted.
+
+Full-training matches to the fresh2064 baseline:4/4/3 defined pairs at
+5001/10000/17900; median common-loading correlations .297/.333/.566,
+activity .301/.306/.408, projection .485/.467/.534, risk .655/.638/.505.
+Adjacent5k-to10k risk correlation .972,10k-toall .667. Preserve all unmatched
+and ambiguous comparisons. Greedy matches do not distinguish rotation from
+biological change. Loading summaries show dense posterior means in every
+nonzero full-fit program; no gene-level threshold or selection claim is made.
+
+Fresh baseline loading/activity maxima differ from archive by about1e-10;
+its oriented risk correlation is .9999999587. Small coefficient differences
+and training-C delta .000048 remain explicit. The archive's beta second
+moments equal squared means, consistent with the documented historical
+variance-discarding bug; current uncertainty is retained. Historical D4 uses
+fixed risk=-eta. Neither the archive nor its benchmark is overwritten.
+The older limited feature study used point-Laplace L/F and beta; its CV means
+are not directly comparable to this benchmark point-exponential/Normal curve.
+
+Andrew clarified that avoiding arbitrary screening may favor full-feature
+fitting without a C improvement, provided performance/stability are preserved.
+Retain this rationale; these five-fold results do not establish noninferiority
+or reliable gene-level signal/noise separation. No threshold/gate is changed.
+
+Outputs: `results/benchmark_sim/outputs/feature_expansion/cold_primary/`:
+`results_with_benchmark.csv`, `summary_with_benchmark.csv`,
+`loading_shrinkage_with_benchmark.csv`, `program_agreement.csv`,
+`agreement_curve.csv`, `risk_agreement.csv`, two PNG curves,
+`baseline_reproduction.csv`, `independent_validation.txt`, per-cell rows and
+program classifications. Patient/fitted RDS stay ignored. Mean/SE arithmetic
+independently matches all five fold rows to1e-14. Both plots visually checked;
+progress report HTML/PDF updated. Full suite **657 passed,0 failed**.
+
+Next: methylation-only feature curve, then joint one-modality-at-a-time curves.
+Read-only probe-ID preflight confirms original shared universe305352 versus
+305492 raw TCGA probes (140 extra TCGA-only). No ICGC outcome or score was
+used. Reconstruct the original TCGA imputation and verify exact frozen10k
+values before fitting; do not silently change eligibility, imputation or mean
+filter. Warm continuation remains deferred. Tasks1/2 remain unresolved;
+Task3 deferred; Task4/7 complete; Task6 optional/unrun. This is not final goal
+completion or a replacement supervised model.
+
+Final expression checkpoint: fresh full suite657/0 after implementation,
+24-cell independent checks pass, both report formats render, all eight PDF
+pages visually inspected, HTML embeds three figures, and all10 benchmark
+SHA256 entries pass. Main write-up QMD/HTML/PDF have no diff versus the tag.
+No external scoring, default change or benchmark replacement.

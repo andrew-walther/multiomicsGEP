@@ -50,7 +50,7 @@ requirements. Several central feature-sensitivity requests are still open.
 |---|---|---|
 | Unified methods/results/biology write-up | Approved interim PDF and reproducible frozen results | Complete as an interim account |
 | Survival shapes loadings $F$ | Implemented experimentally; replicated recovery evidence | Partial; adoption requirements fail |
-| More features at fixed $K$ | Limited expression experiment, 662–3,600 shared genes | Full-range curves and agreement remain open |
+| More features at fixed $K$ | Full-range expression curve through17,900 shared genes | Expression complete; CpG/joint curves remain open |
 | Probe-wise methylation variability | Full 305,492-probe observed-value inventory and SD histograms | Complete descriptively; filter choice remains open |
 | Parsimonious retained programs | Protected/full-state pruning evaluated and rejected | Rank selection unresolved |
 | Multimodal value | Methylation-dominant and shared molecular structure | Predictive benefit and validated added biology unproven |
@@ -210,29 +210,90 @@ tables because its source was edited during execution. Saved fits/counts
 and summary arithmetic were independently verified; a clean-process rerun
 remains optional unfinished work. This limitation is not hidden.
 
-This experiment does **not** complete the advisor request: it stops well
+That limited experiment did **not** complete the advisor request: it stops well
 short of the maximum feature universe, omits CpG-count expansion and does
 not provide the requested factor-agreement curve.
 
-## Approved next experiment: feature count varies; K does not
+## Full-range expression feature sensitivity: completed
 
-Start with one modality, fixed **K=7 and deletion off**. Freeze the model,
-patients, ranking, folds and convergence rule, and increase nested feature
-sets through the full eligible universe. Report the actual number after
-intersection, not an assumed 20k/300k maximum. First use the benchmark/fallback
-as labelled sensitivity analysis; do not wait indefinitely for a supervised
-replacement or describe this as solving supervision.
+The approved cold-start study fixes **K=7, deletion off and $\alpha_F=0$**,
+using the same 273 TCGA+CPTAC training patients. It expands nested shared
+gene sets through all 17,900 measured common genes. Cohort screening cutoffs
+are 3,000/6,607/11,602/17,900; the nominal 5,000 shared-gene target crosses
+at 5,001. Screening and platform standardization precede the fixed five
+patient folds, so this is **conditional CV**, not a nested preprocessing
+assessment. Cold starts were authorized because the frozen activity matrix
+has rank4/7 and its prescribed continuation inverse is singular.
 
-For each set report C and held-out partial log-likelihood, convergence/caps,
-runtime/memory, loading shrinkage and program roles. Match programs using
-training activities, then correlate loadings on common features and compare
-projection/risk agreement. Preserve ambiguous matches and undefined
-correlations. Warm-start larger sets as specified; cold-fit the largest set
-for comparison. Do not change K, weights and feature counts together.
+| Shared genes | Training C | Conditional CV C ± SE | CV converged | Retained / survival-active |
+|---|---:|---:|---:|---:|
+| 2,064 | 0.6563 | 0.6084 ± 0.0462 | 5/5 | 4 / 2 |
+| 5,001 | 0.6159 | 0.5773 ± 0.0266 | 5/5 | 4 / 2 |
+| 10,000 | 0.6170 | 0.6088 ± 0.0397 | 5/5 | 4 / 2 |
+| 17,900 | 0.6191 | 0.6068 ± 0.0186 | 5/5 | 3 / 2 |
+| Frozen D4: 2,064 | 0.6563 | Not newly scored | Historical full fit converged | 4 / 2 |
 
-Next do methylation alone, then matched joint fits varying one modality at
-a time. External outcomes cannot select feature counts. Large CpG fits may
-require prepared Longleaf arrays, which will not be submitted automatically.
+**All 24 fits converge**, with finite C and no recorded warnings or errors;
+the slowest fold takes 211 iterations, below the original 300 cap. The full
+fits take 20/25/31/37 iterations. Total measured fitting time is 9.2 minutes;
+the maximum R allocation high-water estimate is 819 MB, not OS resident
+memory. The first fit's allocation estimate is unavailable after a reporting
+bug; its original record and unchanged fit are preserved. The all-gene set
+contains 240 constant standardized columns, retained under existing rules.
+
+Including the full measured universe could reduce arbitrary screening choices
+even without a prediction gain, provided performance and stability are
+preserved. That is a reason to evaluate it, not a requirement that C must
+increase. This sensitivity study does not establish noninferiority or
+reliable gene-level signal/noise selection.
+
+More genes do not show a clear gain in this conditional-CV experiment.
+The point estimates fluctuate, and all-gene mean C 0.6068 is close to the
+2,064-gene mean 0.6084. All full fits have two operational survival-active
+programs; classified retention changes 4→4→4→3. These are shrinkage
+classifications from seven-slot fits, not deletion/refitting or credible-
+interval counts. The earlier limited experiment used point-Laplace molecular
+and coefficient priors; its C values are not a direct continuation of this
+benchmark point-exponential/Normal curve.
+
+![Conditional CV performance and classified program retention at fixed K. Error bars are fold-level SE, not external confidence intervals.](../../results/benchmark_sim/outputs/feature_expansion/cold_primary/feature_count_performance.png){width=100%}
+
+### Do the same programs persist?
+
+Against the fresh 2,064-gene fit, median common-gene loading correlations
+are 0.297/0.333/0.566 at 5,001/10,000/17,900 genes. Activity correlations
+are 0.301/0.306/0.408; risk correlations are 0.655/0.638/0.505. Matching
+finds 4/4/3 nonconstant program pairs, leaving dead/unmatched factors
+explicit. The 10k and 5k risk scores correlate 0.972, while all-gene versus10k
+correlation is0.667. Full matrices and program-specific results are saved.
+
+Individual programs and risk scores therefore change materially even when
+CV means are similar. Greedy factor correlations do not distinguish latent
+rotation from biological change; enrichment and broader stability checks
+are still needed. A similar C alone does not establish the same biology.
+
+![Full-training factor and risk agreement against the fresh baseline. Medians include only defined matched pairs; the matching counts remain visible.](../../results/benchmark_sim/outputs/feature_expansion/cold_primary/feature_count_agreement.png){width=100%}
+
+Loading summaries also distinguish program shrinkage from gene selection:
+each nonzero full-fit program has nonzero posterior means for every included
+gene. This is not evidence that every gene is informative; no gene-level
+selection threshold was introduced. The current experiment tests tolerance
+of larger inputs, not a validated gene-selection procedure.
+
+The fresh baseline molecular loadings reproduce the archived fit to about
+$10^{-10}$ and its oriented risk correlates 0.99999996. The small training-C
+difference (0.656259 versus 0.656307) and changed coefficient second moments
+are retained; the archive predates the documented sign/variance fixes.
+The frozen external mean C 0.627 remains historical evidence and was not
+rescored or used to choose a feature count. **No new default is adopted.**
+Survival-informed F, supervised K selection and multimodal value remain open.
+
+Next: methylation alone, then joint curves varying one modality at a time.
+The original loader's shared-probe eligibility includes 305,352 CpGs, 140
+fewer than the full TCGA descriptive inventory. Reconstructing that exact
+training imputation and matching the frozen 10k subset must precede fits.
+External outcomes cannot select counts; large fits may require prepared
+HPC arrays. Warm continuation remains deferred for review.
 
 \newpage
 
@@ -291,7 +352,7 @@ composition/technical explanations are needed for a stronger biological claim.
 |---|---|---|
 | R1–R3: updates, scale and objective | Implemented supervision, curvature diagnosis, prior/KL caveats | Stable defensible final formulation |
 | R4: rank/classification | Failed pruning panels; distinction between seven fitted/four classified | Valid rank choice and matched program-role audit |
-| R5–R7: evaluation/results | Recovery/comparator tables, external failure, limited feature CV | Full-range sensitivity and final allowed external report |
+| R5–R7: evaluation/results | Recovery/comparator tables, external failure, full-range expression CV | CpG/joint sensitivity and final allowed external report |
 | R8: biology | Frozen program roles, provisional labels and limitations | Final-program CpG annotation and confounding checks |
 | R9: implications/continuing work | Clear progress and unresolved requirements | Conclusions supported by the final reviewed evidence |
 
@@ -304,9 +365,9 @@ be incorporated after review without presenting unresolved goals as achieved.
 All numbers above are saved results; this report runs no model or new
 external scoring. The benchmark tag is
 `benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
-The saved model checkpoint before this report is `f0858ec`; the CpG design
-is committed at `dc69f6d`, with 642 passing
-software tests. Full per-task commits, failures and tables are indexed in
+The method-panel checkpoint is `f0858ec`; the CpG design is `dc69f6d`,
+the full-range expression design is `6597b4b`, and its reporting correction
+is `6371e42`. The current software suite has 657 passing tests. Full per-task commits, failures and tables are indexed in
 [the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
 [attempt history](../plans/Round2_attempts_log.md). The
 [approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)

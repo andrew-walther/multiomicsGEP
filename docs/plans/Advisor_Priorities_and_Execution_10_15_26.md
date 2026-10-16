@@ -81,12 +81,12 @@ Engineering issues actually addressed include positive-SD protection (dead point
 
 **Approved sensitivity baseline:** The approved alpha_F=0 D4 configuration, not an unadopted supervised remedy. This is benchmark sensitivity and cannot be described as resolving supervision. Andrew approved starting this labelled sensitivity study before the supervision remedies settle.
 
-- [ ] Freeze current model settings, patient set, preprocessing, ranking and training folds. Publish a nested feature-set manifest and actual counts before fitting. Reconcile Task5's current2064→5000→10000→all-shared targets with per-cohort screening/intersection; stop for a decision if the existing ranking cannot produce those sets without a new rule. Never describe5000 requested per cohort as5000 shared genes.
-- [ ] Fit the increasing nested sets with **K=7 and pruning off**. Include the current screened baseline and the maximum eligible shared set, reporting when a nominal target exceeds availability. Keep model, folds, initialization protocol and convergence rule fixed.
-- [ ] Use Task5's continuation protocol; initialize new loading rows from current activities by least squares, preserving existing rows, then let all rows update. Test default cold-fit identity and the prescribed small-example objective comparison. Report rather than hide any warm-start/cold-start failure. Cold-fit the largest set as the prescribed comparison.
-- [ ] At every step report5-fold training-CV C and partial log-likelihood, convergence/caps, runtime/memory, active/retained program classifications and loading shrinkage summaries.
-- [ ] Match programs by training-activity correlation; report the matching matrix, loading correlations on common genes, projection-score/risk agreement and coefficients only in aligned units. Flag ambiguous or constant factors rather than forcing an interpretation.
-- [ ] Plot C and factor agreement versus **actual** feature count. Do not choose a winner using external C; preserve the specified final external-report gate.
+- [x] Freeze current model settings, patient set, preprocessing, ranking and training folds. Publish a nested feature-set manifest and actual counts before fitting. Reconcile Task5's current2064→5000→10000→all-shared targets with per-cohort screening/intersection; stop for a decision if the existing ranking cannot produce those sets without a new rule. Never describe5000 requested per cohort as5000 shared genes.
+- [x] Fit the increasing nested sets with **K=7 and pruning off**. Include the current screened baseline and the maximum eligible shared set, reporting when a nominal target exceeds availability. Keep model, folds, initialization protocol and convergence rule fixed.
+- [x] Resolve the prescribed warm continuation explicitly: frozen activity rank4/7 makes its inverse undefined. Andrew authorized cold-primary judgment; all counts use cold starts. Warm continuation and its comparison test are deferred, not implemented or passed.
+- [x] At every step report5-fold training-CV C and partial log-likelihood, convergence/caps, runtime/memory, active/retained program classifications and loading shrinkage summaries.
+- [x] Match programs by training-activity correlation; report the matching matrix, loading correlations on common genes, projection-score/risk agreement and coefficients only in aligned units. Flag ambiguous or constant factors rather than forcing an interpretation.
+- [x] Plot C and factor agreement versus **actual** feature count. Do not choose a winner using external C; preserve the specified final external-report gate.
 
 **Completion:** One expression feature-count table and performance/agreement curves through the full feasible universe, with failures explicit. No K sweep or model-weight change is combined with this experiment.
 
@@ -106,7 +106,7 @@ Engineering issues actually addressed include positive-SD protection (dead point
 
 **Files:** Existing `run_round2_prior_consistency_trace.R`, attempt log and method-specific derivations/tests; any actual remedy gets its own prospective entry and commit.
 
-- [ ] Run the already prepared observational audit only after logging and committing its exact design. It must reproduce the complete saved fit and does not repair the model. Report its finding briefly; do not let diagnosis become an open-ended substitute for the feature deliverables.
+- [x] Run the already prepared observational audit only after logging and committing its exact design. It must reproduce the complete saved fit and does not repair the model. Report its finding briefly; do not let diagnosis become an open-ended substitute for the feature deliverables.
 - [ ] At fixed settings measure per-loading reconstruction/survival precision and signal contributions, coefficient gating and scale changes; report total objective/removal-score components separately. A raw global likelihood ratio is not the per-coordinate F-update balance.
 - [ ] Use the approved remedy ladders and original adoption criteria. Do not add inverse-p weights, estimated mixing parameters, SD cutoffs, longer caps or a new reference without the required decision and prospective design.
 - [ ] Evaluate whether adding noise features in the originally specified large-p simulation changes pruning/recovery, separately from true additional signal. This addresses the meeting's B5 hypothesis and does not redefine the original adoption panel.
@@ -174,3 +174,16 @@ agreement, caps and resource use with benchmark rows. Do not score external
 cohorts or choose a weight/feature count from them. Defer warm continuation
 until a rank-deficient policy is reviewed. This changes Task5's continuation
 requirement with Andrew’s approval before fitting; no adoption rule changes. The prospective performance-panel design must still be committed before fitting.
+
+
+### Completed expression checkpoint and interpretation
+
+Task5-F1 now completes the expression curve through17900 common genes:
+24/24 converged; CV means .6084/.5773/.6088/.6068, full retention4/4/4/3.
+Agreement changes materially; no new count/default is adopted. Dense nonzero
+loading means do not establish gene-level signal/noise selection. Andrew
+emphasizes that full inputs can reduce arbitrary filtering even without a C
+gain if performance/stability hold up; this remains a motivation, not a changed
+adoption gate or a demonstrated noninferiority result. See the updated HTML/PDF
+advisor report and safe cold_primary result tables. Methylation/joint curves
+remain open; original shared-probe IDs number305352 versus305492 raw TCGA.

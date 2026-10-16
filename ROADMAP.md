@@ -1091,4 +1091,4 @@ analyses as completion of these advisor requests.
   benchmark seven-program role table, distinguishing classified Single
   retention from deletion/refitting. Andrew approved the revised sequence.
 - [x] Produce the full-CpG mean/SD inventory and variability histograms:305492 probes,144 training patients; no filter adopted.
-- [ ] Produce fixed-K7 expression feature-count and factor-agreement curves through the eligible universe.
+- [x] Produce fixed-K7 expression curves through17,900 shared genes:24/24 converged, conditional CV .608/.577/.609/.607, material program/risk changes; no new default. CpG/joint curves remain open.

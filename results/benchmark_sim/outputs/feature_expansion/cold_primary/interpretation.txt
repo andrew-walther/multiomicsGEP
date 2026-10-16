@@ -1,0 +1,5 @@
+CV conditions on screening/scaling before patient folds; not nested preprocessing CV.
+Error bars are fold-level SE, not an external performance confidence interval.
+No feature count/default adopted; no external scoring.
+Operational activity is not Bayesian credibility; constant/dead correlations remain NA.
+Frozen external mean C approximately .627 is historical, not the training/CV comparison.

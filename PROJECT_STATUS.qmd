@@ -19,6 +19,20 @@ execute:
   warning: false
 ---
 
+## Full-range expression feature sensitivity completed (2026-10-15)
+
+At fixed K7/alpha_F0, all24 cold-start training fits converge across
+2064/5001/10000/17900 common genes. Conditional five-fold C means are
+.6084/.5773/.6088/.6068 (SE .0462/.0266/.0397/.0186). Full fits retain
+4/4/4/3 programs with two operational survival-active programs each; no
+program deletion occurs. Risk correlation to the2064 baseline falls to.505
+at all genes. More inputs may reduce arbitrary screening, but performance
+noninferiority, stable biology and gene-level selection are not established.
+No new default/external score; frozen benchmark remains unchanged.
+Tables/curves: `results/benchmark_sim/outputs/feature_expansion/cold_primary/`;
+updated advisor report is available as HTML and PDF. Full suite657/0.
+Methylation-only and joint curves, supervised F, and K selection remain open.
+
 ## Full-probe methylation variability completed (2026-10-15)
 
 All305492 TCGA probes are summarized on the established144 training patients,

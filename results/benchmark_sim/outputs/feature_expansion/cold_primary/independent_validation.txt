@@ -1,0 +1,4 @@
+24/24 unique terminal cells; all converged; all finite C; zero errors/warnings.
+Four mean/SE values independently reproduced from all five fold CSVs to1e-14.
+Baseline molecular maximum absolute difference approximately1e-10; frozen risk orientation preserved.
+No external scoring; no configuration adopted.
