@@ -1347,3 +1347,67 @@ at300. No full-objective correction or model remedy is established. Safe
 aggregate outputs are in `outputs/round2/prior_consistency_seed26/`; local fit
 RDS is excluded. Fresh suite651/0. Andrew subsequently authorized cold-primary
 feature sensitivity and requested HTML progress output; no feature fit yet.
+
+## Task5-F1: fixed-K7 cold-primary expression feature sensitivity (prospective)
+
+Andrew approved the revised advisor-first order and authorized judgment to
+proceed after the prescribed frozen warm inverse proved singular. One
+experimental axis: feature count. Four nested sets use the unchanged D4
+combined mean/variance cohort screening and intersection:2064/5001/10000/17900
+shared genes (per-cohort cutoffs3000/6607/11602/17900). The5000 target crosses
+at5001; no arbitrary trim. Full common measured universe is17900. Same273
+TCGA+CPTAC training patients, same existing log flags and per-platform z
+standardization, no external loading. Existing constant columns are retained.
+
+All24 fits use K7, cold SVD, alpha_F0, alpha/configured maximum iterations and
+tolerance from globals.yml, point-exponential L/F, per-program Normal beta,
+no canonicalization, no supervised start, no cohort indicator, no pruning.
+This is sensitivity of the benchmark formulation, not a supervised remedy.
+Warm continuation is deferred; no model default or adoption rule changes.
+Five event-stratified folds from create_stratified_folds(status,5,seed42) are
+identical across counts, plus one full fit per count; seed42 for each fit.
+Selection/scaling are fixed before patient CV, so label it CONDITIONAL CV,
+not a fully nested preprocessing assessment. CV sign orientation uses only
+training outcomes under the existing CV convention; full fits retain the
+benchmark sign correction. No feature count or weight is adopted from this
+study, and no external cohort is rescored.
+
+Record all24 rows: held-out C and Cox partial log-likelihood, training C for
+full fits, risk SD, operational shrinkage categories using existing configured
+thresholds, convergence/caps, iterations, warnings/errors, runtime, R allocation
+high-water MB (not OS RSS), and constant-feature counts. Constant risk C=NA,
+never substituted0.5; errors stay visible. Global ELBOs across different p
+are not comparable. Operational activity is not posterior credibility.
+
+After full fits, use the tested agreement utility against the fresh2064-gene
+fit and the preceding feature count: non-reused activity matching, common-gene
+signed loading correlations, normalized YF projection/risk correlations,
+beta per projection SD and best-match margins; undefined/dead entries remain
+NA/unmatched. Save full matrices locally and safe aggregate pairs/tables.
+Compare the fresh2064 full fit directly with frozen D4; discrepancies must
+be explained before biological claims. Label frozen benchmark training rows
+alongside new C/logPL tables; the frozen external mean0.627 remains separate
+historical evidence, not a new CV estimate. No external scores select settings.
+
+Runner: `Rscript results/benchmark_sim/run_feature_expansion.R prepare`, then
+`... all` (serial) or a single cell1-24. Prepare freezes ordered local patients,
+genes/folds/controls and input hashes; that RDS stays ignored. Aggregate design
+and per-fit CSVs are safe; no patient-level predictions or outcomes committed.
+Expected local budget: up to a few hours, increasing with p; each cell is
+checkpointed. Independent HPC cells require one CPU,4GB; no submission here.
+Do not edit any running script or loaded helper. The runner and this design
+must be committed, with a fresh passing full suite, before any model fit.
+
+New scorer tests require actual risk direction and equality to the existing
+partial-likelihood calculation, constant-risk C=NA and null logPL, and rejection
+of nonfinite predictions with the intended error. RED9/12 then GREEN12/12.
+The author-line cleanup and HTML/PDF regeneration are presentation changes,
+not a second scientific change. Scientific defaults remain unchanged.
+
+Pre-fit reference verification: archived D4 predates the sign correction, as
+already documented in the2026-10-02 decision. Preserve its frozen risk=-eta
+orientation, yielding training C0.6563073062 (raw stored eta C0.3436926938).
+This is an existing convention, not orientation selected on held-out outcomes.
+New fits use the current training-only orientation. No archived fit is edited.
+Prepared-input checks pass, exact baseline/order identity and all24 design
+cells verified; no model fit has run. Full suite **654 passed,0 failed**.

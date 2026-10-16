@@ -1,7 +1,6 @@
 # ============================================================
 # Script: feature_sensitivity.R
 # Purpose: Build nested feature manifests and compare fitted programs without forcing dead matches.
-# Author: Codex (reviewed by Andrew Walther)
 # Created: 2026-10-15
 # Dependencies: base R; existing DeSurv preprocessing and YFB prediction
 # ============================================================
@@ -142,4 +141,27 @@ feature_program_agreement <- function(old_fit,old_genes,new_fit,new_genes,old_Y,
   }
   list(pairs=pairs,activity_correlation=r,loading_correlation=rf,projection_correlation=rz,
     risk_correlation=as.numeric(feature_cor(a$risk_scores,b$risk_scores)))
+}
+
+# Survival scoring ----
+
+#' Score fixed Cox risk without substituting a concordance for constant risk
+#' Uses the existing Cox working routine for held-out partial log-likelihood.
+#' Higher risk means shorter survival; no orientation is chosen using these outcomes.
+#' @param time,status Finite aligned survival times and binary event indicators.
+#' @param risk Finite numeric risk vector on the same ordered subjects.
+#' @return List with C (NA for constant risk), logPL and risk_sd.
+#' @examples
+#' # feature_survival_metrics(1:5,rep(1,5),5:1)
+#' @family feature_sensitivity
+#' @seealso calc_cox_taylor_yf
+feature_survival_metrics <- function(time,status,risk) {
+  if(length(time)!=length(status) || length(time)!=length(risk) ||
+     length(time)<2L || any(!is.finite(c(time,status,risk))) ||
+     any(!status%in%c(0,1)))
+    stop("Finite aligned survival outcomes and risk required.")
+  risk_sd <- stats::sd(risk)
+  C <- if(risk_sd==0)NA_real_ else as.numeric(survival::concordance(
+    survival::Surv(time,status)~risk,reverse=TRUE)$concordance)
+  list(C=C,logPL=calc_cox_taylor_yf(risk,time,status)$logPL,risk_sd=risk_sd)
 }

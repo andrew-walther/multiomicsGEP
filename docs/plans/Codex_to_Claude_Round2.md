@@ -1436,3 +1436,15 @@ Warm continuation is deferred for review; no adoption criterion changes.
 Its prospective performance-panel design still precedes any fitting.
 Andrew also requested HTML alongside the six-page PDF progress report; the
 same source now supports self-contained HTML without changing the PDF text.
+
+Task5-F1 prepares the authorized24-fit cold-primary expression study; see its
+prospective entry for exact controls, conditional-CV limitation and agreement
+analysis. The source now renders HTML and PDF with Andrew's author line only;
+future presentation deliverables/code omit tool attribution at his request.
+The protected benchmark write-up remains unchanged.
+
+Task5-F1 verification before fitting: scorer RED9/12 then GREEN12/12; full
+suite654 passed,0 failed. Preparation confirms all24 cell definitions, exact
+frozen baseline gene order/matrix and the17900-gene maximum. Frozen D4's
+historical risk=-eta orientation is retained, as previously documented;
+training C0.656307. No external outcome was loaded and no model fitted.

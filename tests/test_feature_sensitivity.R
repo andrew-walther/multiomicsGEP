@@ -1,7 +1,6 @@
 # ============================================================
 # Script: test_feature_sensitivity.R
 # Purpose: Verify nested feature manifests and program agreement with dead factors.
-# Author: Codex (reviewed by Andrew Walther)
 # Created: 2026-10-15
 # Dependencies: base R, existing preprocessing/prediction and test helpers
 # ============================================================
@@ -96,3 +95,17 @@ run_test("Feature-T9: named patient-order mismatches cannot yield agreement stat
   assert_true(inherits(err,"error"),msg="same number of rows does not establish same patients/order")
 })
 if(sys.nframe()==0L){report_results("feature sensitivity");if(.test_env$failed>0L)quit(status=1L)}
+run_test("Feature-T10: survival metrics preserve risk direction and actual partial likelihood", {
+  z<-feature_survival_metrics(1:5,rep(1,5),5:1)
+  assert_near(z$C,1,tol=1e-14)
+  assert_near(z$logPL,calc_cox_taylor_yf(5:1,1:5,rep(1,5))$logPL,tol=1e-12)
+  assert_near(z$risk_sd,stats::sd(5:1),tol=1e-14)
+})
+run_test("Feature-T11: constant risk stays undefined for C, with finite null partial likelihood", {
+  z<-feature_survival_metrics(1:5,rep(1,5),rep(0,5))
+  assert_true(is.na(z$C));assert_near(z$logPL,-log(factorial(5)),tol=1e-12)
+})
+run_test("Feature-T12: survival metrics reject nonfinite predictions", {
+  failed<-tryCatch({feature_survival_metrics(1:5,rep(1,5),c(1:4,NA));FALSE},error=function(e)identical(conditionMessage(e),"Finite aligned survival outcomes and risk required."))
+  assert_true(failed)
+})

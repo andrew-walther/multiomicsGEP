@@ -11,6 +11,8 @@ here too rather than maintaining a separate copy.
 
 ## Key Instructions
 
+- **Deliverable and code attribution:** Do not name assistant tools or include tool-attribution lines in presentation deliverables or code. Tool names remain appropriate in explicit review handoffs. Andrew requested this on 2026-10-15; it supersedes earlier template author lines.
+
 - **Canonical CAVI loop:** `code/fit_modular.R`. `Supervised_Bayesian_MF_V2.R` is reference-only — do not extend. V1 (`code/legacy/`) — do not modify. (`full_sim/` and `modular_sim_block/` are legacy/deprecated.)
 - **Formal benchmark pipeline:** `results/benchmark_sim/` — alpha CV, external validation, DeSurv comparison. Exploratory/development fits lived in `results/modular_sim_factor/` (now archived to `results/legacy/modular_sim_factor/`).
 - **Modular updates:** `code/update_beta.R`, `code/update_L.R`, `code/update_F.R`, `code/update_tau.R`.
@@ -164,3 +166,9 @@ conflicts independently of tiny reconstructed-probability differences. Read
 its actual run status in the attempt log. It does not repair an update or
 change convergence/adoption criteria, and does not by itself authorize feature fits. Andrew subsequently approved cold-primary
 judgment; the feature-panel design must still be committed before fitting.
+
+Fixed-K expression sensitivity is `results/benchmark_sim/run_feature_expansion.R`.
+Read Task5-F1 before execution: cold-primary is authorized, alpha_F0/K7/default
+benchmark controls remain fixed, and patient folds condition on the existing
+screen/scaling. No external selection or benchmark replacement is authorized.
+Use only ignored local patient inputs/fits and safe aggregate outputs.

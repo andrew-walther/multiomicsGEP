@@ -556,3 +556,13 @@ Render HTML with RStudio's Quarto on PATH and
 `QUARTO_PANDOC=/opt/homebrew/bin/pandoc quarto render docs/reports/Advisor_Progress_since_10_2_26.qmd --to html`.
 The completed Task2-5 observation reproduced its saved fit exactly; aggregate
 results are in the Round2 handoff. It did not establish a model repair.
+
+The fixed-K expression study is `results/benchmark_sim/run_feature_expansion.R`:
+run `Rscript results/benchmark_sim/run_feature_expansion.R prepare` once, then
+replace `prepare` with `all` (serial24 fits) or a cell number1-24. It uses only
+training cohorts and the frozen benchmark settings, with four nested feature
+counts and five fixed conditional-CV folds plus full training. Its committed
+prospective attempt controls execution. Local inputs/fits are ignored; safe
+CSV tables preserve failures and include a labelled frozen training reference.
+`feature_survival_metrics()` in `code/feature_sensitivity.R` keeps constant-risk
+concordance undefined and uses the existing Cox partial-likelihood calculation.
