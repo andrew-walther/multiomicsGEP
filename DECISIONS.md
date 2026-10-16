@@ -22,6 +22,9 @@ Resume only the proposed fixed-q Single cell021 mechanism check, registered
 as Task2-9 before execution. Four density/control/recovery checks and full
 suite710/0 pass. No new default, bed, criterion or external score. Do not
 expand automatically from its outcome.
+Task2-9 then completes: native ELBO stopping at10, but output movement.01915
+exceeds the existing1e-4 diagnostic. Local prior gains/four density checks pass;
+no configuration adopted. Review stopping/objective consistency before expansion.
 
 ## 2026-10-16 — Implement fixed-posterior loading-prior consistency opt-in
 

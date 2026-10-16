@@ -91,3 +91,7 @@ comparisons and joint curves remain open.
 complete the matched expression-only, methylation-only and joint feature
 curves. Retained programs must be justified by reproducible molecular and
 prognostic roles; fewer programs alone are not evidence of a better model.
+
+An initial prior-consistency repair improves local prior updates, but its
+fitted outputs still move beyond the existing stability diagnostic when the
+stopping rule triggers. No new supervised configuration is adopted.

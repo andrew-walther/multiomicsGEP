@@ -5,18 +5,20 @@ checkpoint preamble. The complete earlier handoff is preserved verbatim in
 [the chronological history](Codex_to_Claude_Round2_history_10_15_26.md).
 Historical statements there describe their own checkpoint, not current status.
 
-**Latest implementation/report checkpoint (2026-10-16):** Andrew authorized
-proceeding after Task2-7. The fixed-q point-Laplace F-prior step and atomic KL
-correction are implemented opt-in, with12 focused checks; current suite710/0 includes four new case checks.
-No new scientific fit has run; this is not adoption or resolution of M3.
-The existing extreme-tail moment approximation remains a quantified limitation
-(absolute E|F| error3.54e-5 near h=8.01). Read
-[the exact proposal and code walkthrough](Round2_fixed_q_loading_prior_proposal.md)
-before execution. Scientific fitting remains outside this session's scope.
-The short October16 chapter distinguishes strong5k→10k gene agreement from
-less uniform whole-range agreement; the long October15 development log is
-retained in the book and explicitly labelled a methods-development record. Report/manuscript
-retain the detailed scientific evidence and unresolved gates.
+**Latest checkpoint (2026-10-16):** Task2-9 ran once after02a658a. Fixed-q
+candidate meets the original ELBO rule in10 iterations versus reference300 cap,
+but its existing output diagnostic is FALSE (relative LF/eta change.01915
+versus1e-4). Both recover the planted program, with2 credible/1 false-active
+programs. All67 observed prior updates have nonnegative gains/finite KL;
+four selected density checks agree closely. This is a local repair, not a
+validated stable replacement; stop and review the stopping/objective mismatch
+before expansion. See fixed_q_seed26/VALIDITY.md and the attempt log.
+
+Advisor deliverables now include a one-page structured overview before the
+write-up contents and a2-page meeting/reading guide. The bloat audit finds
+82.3% CSV and0.9% production R in the176342-line branch diff; no tests or
+evidence deleted. Latest software suite710/0. Source/model branch stays local;
+only rendered book publication is authorized. No new configuration adopted.
 
 ## Start here
 
@@ -29,7 +31,7 @@ retain the detailed scientific evidence and unresolved gates.
 
 **State:** The bounded equation/evidence review and approved corrected observer
 are delivered. The approved next consistency repair is implemented opt-in;
-scientific evaluation remains unrun. The north star
+one mechanism case is complete; broader scientific validation remains unrun. The north star
 remains unmet; completing this review does not resume the former broad goal.
 Branch `round2/supervised` remains local; only rendered gh-pages publication
 is authorized. No merge or protected-branch edit is authorized. No fitting
@@ -564,3 +566,13 @@ cell021; no candidate fit has run at this preregistration checkpoint. Four
 case/density/metric checks and full suite710/0 pass. All original criteria,
 reference hashes and no-retry stopping rules apply. No core fitter/default
 change was made in this block; source/model branches stay local.
+
+Final verification for Task2-9/reporting: full suite710/0 after execution;
+all10 benchmark hashes match. Advisor brief remains2 pages; full write-up
+44 pages including derivation appendices/references, with a shorter diagnostic
+section and structured overview on the first page. No tests/evidence deleted.
+
+Final book publication: gh-pages commitb5fe3c322e5fbfc9ed6486e3f33e6c9bcbdcc063
+built successfully and live content was verified. Only rendered book content
+was pushed; source/model branch remains local. Full tests710/0, benchmark10/10;
+working scientific recommendation remains review before another registered case.

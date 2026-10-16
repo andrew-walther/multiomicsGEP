@@ -571,7 +571,7 @@ an adopted remedy. The audit record retains the full table and limits; the Octob
 ## Current method implementation checkpoint
 
 The next consistency repair is now implemented opt-in, with software-fixture
-validation; no scientific fit has evaluated it. Holding the loading posterior
+validation and one bounded simulation check, without adoption. Holding the loading posterior
 fixed, the point-Laplace prior uses $\pi=S/p$ and rate $S/T$, where
 $S=\sum_j\Pr_q(F_j\ne0)$ and $T=\sum_jE_q|F_j|$. Its KL is corrected to the
 returned prior at the same step. The posterior sweep and historical default
@@ -588,3 +588,10 @@ No benchmark, feature count, filter or supervised configuration is adopted.
 The next prospective experiment and original gates are specified in
 `docs/plans/Round2_fixed_q_loading_prior_proposal.md`; scientific execution
 requires its fixed driver and registration commit before running.
+
+
+The first fixed-settings consistency check meets the native ELBO rule in10
+iterations rather than the saved reference's300 cap, while recovery and
+false-active counts are unchanged. Output movement is still.01915 versus
+the existing1e-4 diagnostic, so reliable optimization is not established.
+The next priority is stopping/objective consistency before a larger panel.

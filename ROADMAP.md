@@ -1186,3 +1186,11 @@ test audit finds the large branch diff dominated by saved CSV traces and
 recommends lossless compression after reader checks, not indiscriminate
 deletion. Task2-9 prepares one fixed-q comparison against saved cell021;
 full suite710/0. Scientific result pending at registration.
+
+
+Task2-9 terminal: one candidate reaches native ELBO stopping in10 iterations
+versus reference300 cap, yet max relative output movement is.01915 versus
+1e-4 and outputs_converged stays false. Local prior gains and four density
+checks pass. Planted recovery/false-active count are unchanged; no gain or
+configuration adopted. Stop before expansion and review stopping/objective
+consistency; detailed result is in fixed_q_seed26/VALIDITY.md and the attempt log.

@@ -2213,3 +2213,30 @@ case helpers existed, then GREEN. Fresh full suite710 passed/0 failed in
 104.22s, including protected-base identity. All108 local book links resolve;
 the2-page advisor guide and overview-first44-page write-up render. No
 candidate fit/output exists before this registration commit.
+
+
+Task2-9 terminal outcome after02a658a: exit0,2.659s,no warnings, source/reference
+hashes unchanged. Native ELBO stopping at10 versus reference300 cap; however
+existing outputs_converged is FALSE, max relative LF/eta change.01914876
+versus1e-4. Last ELBO relative change9.997123e-6 versus1e-5. Preserve both
+native success and unsettled outputs; no rule was changed. Candidate monitor
+has3 decreases. The reference's output change is.105693 with98 monitor decreases.
+
+Both recover the planted program (candidate|r|.894630/reference.895639),
+2 credible/1 false-active programs each. Simulated validation C.756846 versus
+.753722 is not a demonstrated gain. All67 observed prior helper calls have
+finite KL and nonnegative recorded gains. Four selected independent density
+checks have maximum mean/second/normalizer errors5.55e-17/1.39e-17/7.06e-14.
+These selected checks do not certify all states or a common implemented ELBO.
+The established tail approximation remains a general numerical limitation.
+
+Saved-history postprocessing (no refit) adds stopping_checks.csv from
+history$delta_elbo_rel/output_change/elbo_converged/outputs_converged and
+counts negative monitor increments. See fixed_q_seed26/VALIDITY.md. Full fit
+and telemetry remain ignored; no new long CSV. Stop under the one-case rule.
+Do not expand on the strength of10 iterations. Next recommendation: review
+stopping/objective consistency before a panel, retaining original gates.
+
+Final software/report checks after Task2-9: full suite710/0 in106.49s,
+all10 benchmark hashes match, rendered write-up/meeting/evidence/book outputs.
+No retry or panel follows. Detailed run objects stay ignored.

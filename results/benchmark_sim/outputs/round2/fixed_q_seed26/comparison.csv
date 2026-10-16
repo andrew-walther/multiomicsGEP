@@ -1,0 +1,3 @@
+"iterations","converged","validation_C","risk_sd","cor_planted","recovered","n_active","false_active","max_loading_norm","max_activity_norm","arm"
+300,FALSE,0.753721742326778,0.949262475254901,0.895638517056699,TRUE,2,1,0.947534985696268,85.3860493747368,"reference"
+10,TRUE,0.756846167983827,0.983459734503974,0.894629542197458,TRUE,2,1,0.948052971099449,88.8672435089375,"candidate"

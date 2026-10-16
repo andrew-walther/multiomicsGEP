@@ -79,3 +79,10 @@ lossless compression of the six trace files over deleting tests. Before any
 conversion, map readers, preserve exact decompressed-byte SHA256 values and
 verify existing summaries reproduce. No compression, deletion, broad refactor,
 new quick-test default or test-suite policy change was executed in this audit.
+
+
+Follow-up in this block: four focused tests were added for the bounded case's
+sole control change, independent density calculation, known tail-error detection
+and correct recovery/sign/false-program reporting. Full suite710/0; these
+protect the new numerical check rather than duplicate the audited706 cases.
+New case outputs are compact aggregates; detailed fit/update telemetry stay ignored.

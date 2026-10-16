@@ -152,3 +152,13 @@ four-selected-density checks. Full fit and update telemetry remain ignored.
 Warnings/errors are retained; the wrapper is restored even after failure.
 Four density checks cannot certify the full trajectory or a common objective.
 No new package dependency, parallelism or real-data input is introduced.
+
+
+## Terminal Task2-9 result
+
+One execution after02a658a: native ELBO rule stops at10, but existing output
+convergence remains false (.01915 movement versus1e-4). Local prior gains and
+four selected independent density checks pass; planted recovery and false
+count are unchanged. No adoption or broad panel. Next: review the stopping
+monitor/objective against output movement under a new prospective design.
+Do not repeat this completed case. See its VALIDITY.md and attempt log.

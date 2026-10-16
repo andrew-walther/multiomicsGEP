@@ -263,7 +263,7 @@ The opt-in fixed-posterior point-Laplace F-prior/KL consistency implementation
 is `code/loading_prior_fixed_q.R`, selected with `loading_prior_update` in the
 canonical Single fitter or multimodal control. Read
 `docs/plans/Round2_fixed_q_loading_prior_proposal.md` and Task2-8 before use:
-scientific evaluation is unrun, supported modes are intentionally restricted,
+the one-case outcome is recorded in Task2-9, supported modes are restricted,
 and the existing tail-moment approximation remains a numerical limitation.
 No prepared scientific run is authorized by this pointer.
 

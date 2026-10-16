@@ -534,3 +534,19 @@ Then prepare the exact one-case fixed-q proposal's driver, tests and prospective
 attempt entry; commit before any execution. Keep its original controls,
 one-change comparison, density limitations and stop rule. No broad panel,
 new external evaluation, default change or protected-branch/source push.
+
+
+### Terminal one-case result and next priority
+
+Task2-9 completes once after02a658a. Fixed-q local gains/density spot checks
+pass; native ELBO rule stops at10 iterations, but output movement remains
+.01915 versus existing1e-4 diagnostic. Both reference/candidate recover the
+planted program with1 false-active program; no single-case performance claim
+or adoption. The next priority is stopping/objective consistency, before an
+expanded panel. Register any new observation/analytical change separately;
+no automatic replay, higher cap, stopping-rule substitution or external data.
+
+Final book publication: gh-pages commitb5fe3c322e5fbfc9ed6486e3f33e6c9bcbdcc063
+built successfully and live content was verified. Only rendered book content
+was pushed; source/model branch remains local. Full tests710/0, benchmark10/10;
+working scientific recommendation remains review before another registered case.

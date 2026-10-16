@@ -624,28 +624,27 @@ Within the eligible CpG universe, an observed mean methylation in $[0.1,0.9]$ re
 
 ## Loading-prior consistency diagnostic {#sec-results-prior-consistency}
 
-An observation-only replay reproduced a saved nonconverged Single simulation
-fit and history exactly. In its last 50 iterations, fixed-prior loading,
-activity and coefficient posterior steps each had zero reference-objective
-decreases across 350 updates; loading-prior refits had 50/350 and Cox working
-refreshes 18/50, at a descriptive numerical tolerance of $10^{-8}$.
-The reference objective is an anchored expected local quadratic with explicitly
-transformed reference priors; it is not a certified common implemented ELBO
-or the exact expected Cox partial likelihood. Joint activity/coefficient
-empirical-Bayes comparisons retain additional losses with unresolved optimizer,
-density-accuracy and prior-interpretation explanations. An initial observer's
-reconstruction cross-term error was corrected and its invalid summaries retained.
-
-A consistency repair is implemented opt-in but has no scientific fit result:
-keep the sequential loading posterior fixed, maximize its expected point-Laplace
+An observation-only replay reproduced a saved nonconverged simulation exactly.
+It identified a local inconsistency: loading posteriors use an incoming prior,
+then a marginal prior refit changes that prior without updating the cached KL.
+An opt-in repair holds the posterior fixed, maximizes its expected point-Laplace
 log prior with $\pi=S/p$ and rate $S/T$, where $S=\sum_j\Pr_q(F_j\ne0)$ and
-$T=\sum_jE_q|F_j|$, and evaluate KL against the returned prior. Independent
-quadrature and software fixtures test the algebra, boundaries and unchanged
-posterior sweep. The existing extreme-tail moment approximation remains a
-numerical limitation. Neither this local repair nor a small terminal survival
-precision contribution establishes stable supervision or justifies a mixing
-weight. The evaluated benchmark results and biological labels below are unchanged;
-prospective simulation and training-validation gates remain unmet.
+$T=\sum_jE_q|F_j|$, and corrects KL against the returned prior.
+
+One fixed-settings simulation check reaches the original ELBO stopping rule
+in 10 iterations rather than the reference's 300-iteration cap, with unchanged
+planted-program recovery and false-active count. All 67 observed prior steps
+have nonnegative recorded gains, and four selected density checks agree with
+independent integration. However, the existing output diagnostic remains
+false: maximum relative reconstruction/predictor movement is 0.01915 versus $10^{-4}$.
+The monitor also decreases three times. Thus local prior consistency does
+not establish settled outputs or global ascent.
+
+Neither this case nor the earlier local-quadratic observation certifies a
+common implemented ELBO. The existing extreme-tail moment approximation,
+other prior bookkeeping and changing Cox surrogate remain limitations.
+No configuration is adopted; broader simulation and training-validation gates
+remain outstanding. The benchmark and biological findings below are unchanged.
 
 # Biological findings {#sec-biology}
 

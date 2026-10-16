@@ -2884,3 +2884,11 @@ compression with provenance/consumer verification, retaining scientific and
 regression evidence. Four necessary case/density tests bring the suite to
 710/0. Task2-9 registers one simulation-only fixed-q case prospectively;
 no scientific result exists before that commit. Original gates unchanged.
+
+
+Task2-9 terminal: one candidate reaches native ELBO stopping in10 iterations
+versus reference300 cap, yet max relative output movement is.01915 versus
+1e-4 and outputs_converged stays false. Local prior gains and four density
+checks pass. Planted recovery/false-active count are unchanged; no gain or
+configuration adopted. Stop before expansion and review stopping/objective
+consistency; detailed result is in fixed_q_seed26/VALIDITY.md and the attempt log.

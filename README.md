@@ -700,15 +700,15 @@ pruning; multimodal also requires damping=1 and point-Laplace F throughout.
 Historical behavior remains default. Run `Rscript tests/run_tests.R` to check
 quadrature, boundaries, scale, same-sweep identity and default identity.
 Read `docs/plans/Round2_fixed_q_loading_prior_proposal.md` before any scientific
-execution: none has run, existing extreme-tail moment approximation remains,
-and a prospective committed driver/design is still required. This is not a
+execution: its bounded one-case outcome is in Task2-9; the tail approximation remains,
+and every additional fit requires a separate prospective committed design. This is not a
 validated replacement. Meeting results are summarized in the October16 book
 chapter; full tables and limitations remain in the advisor report/write-up.
 
 
-The next one-case mechanism check is
-`Rscript results/benchmark_sim/run_fixed_q_loading_case.R`; read Task2-9 in
-the attempt log and commit its registration before running. It accepts no
-alternate cells, reuses the saved profiled reference and writes compact
-simulation-only outputs. Four selected independent density checks preserve
-the known tail-moment limitation; one case cannot establish adoption.
+The completed mechanism check is
+`results/benchmark_sim/run_fixed_q_loading_case.R`. Task2-9 records its fixed
+simulation, saved reference and no-retry rule. Native ELBO stopping passes
+at10 iterations, but the existing output movement diagnostic fails. Do not
+repeat the runner or infer adoption; read fixed_q_seed26/VALIDITY.md and the
+current handoff before further work. Detailed fit/telemetry remain ignored.
