@@ -29,11 +29,7 @@ execute:
   enabled: false
 ---
 
-For the concise meeting handout, see
-[the October16 summary](Advisor_Meeting_Summary_10_16_26.pdf).
-This longer report retains detailed evidence and limitations.
-
-# What the work has established
+# Progress Summary
 
 The approved October 14 write-up remains the project's benchmark. Its
 single-block model has mean external concordance **0.627** across five
@@ -243,7 +239,7 @@ outcome was used.
 
 \newpage
 
-# How much of the feature-count request is complete?
+# Feature-Count Sensitivity Analysis
 
 A limited earlier Single experiment varied the screening count per cohort,
 then intersected the selected features. Requested count and fitted dimension
@@ -440,7 +436,7 @@ No controls or criteria are tuned.
 
 \newpage
 
-# Full-probe methylation variability: completed
+# Full-probe methylation variability study
 
 The descriptive run covers **305,492 available TCGA probes on the same 144
 training patients**. It uses observed raw beta values before imputation.
@@ -488,109 +484,3 @@ provide descriptive candidates. Neither is survival-active in the benchmark;
 58.9% methylation share is not evidence of 58.9% survival explanation.
 Annotation, enrichment, reproducibility across feature sets and checks of
 composition/technical explanations are needed for a stronger biological claim.
-
-## What enters the larger write-up
-
-| Revision dependency | Evidence available for review | Still required |
-|---|---|---|
-| R1–R3: updates, scale and objective | Implemented supervision, curvature diagnosis, prior/KL caveats | Stable defensible final formulation |
-| R4: rank/classification | Failed pruning panels; distinction between seven fitted/four classified | Valid rank choice, redundancy and converged role stability |
-| R5–R7: evaluation/results | Recovery/comparator tables, external failure, full-range expression CV | CpG/joint sensitivity and final allowed external report |
-| R8: biology | Frozen/newer role agreement, provisional benchmark labels and limitations | Final-program CpG annotation and confounding checks |
-| R9: implications/continuing work | Clear progress and unresolved requirements | Conclusions supported by the final reviewed evidence |
-
-Andrew has requested incorporation of applicable verified findings into the
-larger write-up. A bounded revision adds the expression feature-count results,
-CpG expansion failures, the arithmetic repair and provisional CpG loading comparison, without changing
-the evaluated benchmark model or claiming a supervised replacement. The
-approved interim version remains preserved in its immutable tag. Further
-methodological and biological revisions require their original review gates.
-
-## Evidence and provenance
-
-All numbers above are saved results; this report runs no model or new
-external scoring. The benchmark tag is
-`benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
-The method-panel checkpoint is `f0858ec`; the CpG design is `dc69f6d`,
-the full-range expression design is `6597b4b`, and its reporting correction
-is `6371e42`. The current software suite has 706 passing tests. Full per-task commits, failures and tables are indexed in
-[the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
-[attempt history](../plans/Round2_attempts_log.md). The
-[approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)
-links these deliverables to the October 2 meeting and write-up revision markers.
-Software tests validate specified behavior; their count is not proof that
-all statistical goals have been met.
-
-
-\newpage
-
-# Regrouping checkpoint
-
-The benchmark is retained. The complete gene-count study, full-probe
-mean/SD inventory, saved-program role comparison and diagnosed numerical
-repair are concrete progress. They do not resolve the central requirement:
-a convergent survival-supervised model with defensible rank, preserved
-external performance and demonstrated multimodal value. The evaluated
-single-modality benchmark still uses $\alpha_F=0$.
-
-Pause further fitting for review. The next priority should be a bounded
-review of the Cox working-step stability and prior/objective consistency,
-using the saved failure states before additional large-feature panels.
-Stable risk-set arithmetic allows the calculation to continue, but does
-not guarantee an improving likelihood or convergent variational updates.
-A proposed remedy needs a prospective design and the unchanged simulation
-and training-validation gates. Longer runs, clipping, new weights or new
-convergence criteria should not be inferred from the present result.
-
-
-## October 16 diagnostic validation update
-
-One approved observation-only replay reproduced the entire saved Single
-simulation fit and history exactly, without warnings, and retained its
-300-iteration convergence failure. Post-run multi-program validation exposed
-an observer-only reconstruction cross-term omission. The original objective
-summary is preserved but invalid for ascent diagnosis. The observer correction
-passes eight focused tests; a separately approved corrected replay has now completed with exact saved-fit identity and complete late-cycle coverage. No model remedy, benchmark or criterion
-has changed. The complete current account is adapted into the October 16
-chapter of the progress book.
-
-
-The corrected late50-cycle observation has zero decreases in each of350
-fixed-prior posterior steps for loadings, subject scores and coefficients;
-loading-prior refits lose the reference objective50/350 times and working
-refreshes18/50 times. Scale and precision updates have no such late losses.
-This supports reviewing a fixed-posterior loading-prior maximization step
-before damping or weights. Joint empirical-Bayes subject-score/coefficient
-comparisons retain additional losses whose optimizer/density/reference-prior
-interpretation remains unresolved. This is a local quadratic diagnostic,
-not a certified common implemented ELBO, a cure for the25k trajectory or
-an adopted remedy. The audit record retains the full table and limits; the October16 chapter summarizes them.
-
-
-## Current method implementation checkpoint
-
-The next consistency repair is now implemented opt-in, with software-fixture
-validation and one bounded simulation check, without adoption. Holding the loading posterior
-fixed, the point-Laplace prior uses $\pi=S/p$ and rate $S/T$, where
-$S=\sum_j\Pr_q(F_j\ne0)$ and $T=\sum_jE_q|F_j|$. Its KL is corrected to the
-returned prior at the same step. The posterior sweep and historical default
-path are preserved. This addresses the demonstrated prior-step mismatch;
-it does not certify the complete algorithm or resolve Cox working refreshes.
-The existing truncated-Normal extreme-tail approximation remains a numerical
-limitation to assess before interpreting an extreme-state evaluation.
-
-The full-range gene curve above completes the Single benchmark training/CV
-sensitivity, not the matched TCGA framework expression-only curve. That curve,
-remaining methylation/filter/joint curves, large-p added-noise simulations,
-rank selection and final biological validation remain open meeting items.
-No benchmark, feature count, filter or supervised configuration is adopted.
-The next prospective experiment and original gates are specified in
-`docs/plans/Round2_fixed_q_loading_prior_proposal.md`; scientific execution
-requires its fixed driver and registration commit before running.
-
-
-The first fixed-settings consistency check meets the native ELBO rule in10
-iterations rather than the saved reference's300 cap, while recovery and
-false-active counts are unchanged. Output movement is still.01915 versus
-the existing1e-4 diagnostic, so reliable optimization is not established.
-The next priority is stopping/objective consistency before a larger panel.
