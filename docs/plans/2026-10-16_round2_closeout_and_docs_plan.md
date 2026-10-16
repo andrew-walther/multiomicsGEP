@@ -40,7 +40,7 @@
 1. A frozen-tag reference must resolve: after tagging, `git show <tag>:docs/plans/Round2_attempts_log.md` works from a fresh clone.
 2. A ported file must not depend on an unported file: source each ported file in a clean R session.
 3. Shrinking documents must not lose a live pointer: grep `main` for links into removed sections and for files that no longer exist.
-4. The pinned book chapter and `PROJECT_STATUS.qmd` must not drift apart: one source, included in the other.
+4. The pinned book chapter and `PROJECT_STATUS.qmd` must not drift apart: `PROJECT_STATUS.qmd` links to the chapter for the model and results instead of restating them.
 5. The headline C = 0.627 must use a training-fixed risk direction (see Task 4, step 4).
 
 ---
@@ -103,12 +103,24 @@ One to two pages, for a biostatistician reading cold. Sections:
 - [ ] **Step 6:** Cut LB to one line in `README.md` (model table row, benchmark command), `code/README.md`, `code/SupervisedMF_Context.md` (LB update table) and `results/README.md`. The LB code stays; the YFB fitter reuses its update functions.
 - [ ] **Step 7:** Render `PROJECT_STATUS.qmd` to PDF; grep `main` for links to removed sections or missing files; commit and push.
 
-### Task 5: Pinned "current state" chapter in the progress book
+### Task 5: Pinned "Current method and findings" chapter in the progress book
 
 **Files:**
 - Create: `docs/progress_book/current_state.qmd`
 - Modify: `docs/progress_book/_quarto.yml` (insert `current_state.qmd` directly after `index.qmd` in `book.chapters`)
 
-- [ ] **Step 1:** `current_state.qmd` holds a title ("Current method and findings"), one line saying it is kept current rather than dated, and the body of `PROJECT_STATUS.qmd` through a Quarto include, so there is one source. Try `{{< include ../../PROJECT_STATUS_body.qmd >}}` with the body split out of `PROJECT_STATUS.qmd` into `PROJECT_STATUS_body.qmd`, and include the same fragment from `PROJECT_STATUS.qmd`.
-- [ ] **Step 2:** Render the book and check that the chapter appears second in the sidebar, figures resolve, and `PROJECT_STATUS.pdf` still renders. If an include from outside the book folder fails, keep the fragment inside `docs/progress_book/` and include it from `PROJECT_STATUS.qmd` instead.
-- [ ] **Step 3:** Publish with `docs/progress_book/publish_gh_pages.sh` after Andrew reviews the rendered chapter. **Gate.**
+The chapter is the illustrated reference for the current model, kept current rather than dated. It is not a text summary. It holds:
+
+1. **Model**, in mathematical notation: the factorization Y = L Fᵀ + E with feature precisions τ_j, the Cox model with η = (YF)β, the priors on L, F and β, and the variational factorization. Use the notation of the writeup's Appendix A.
+2. **Data and preprocessing**: cohort table and the pipeline as specified in `docs/methods/preprocessing.md` (preprocessing plan, Task A1). A schematic is welcome: the writeup's real-data workflow figures.
+3. **Simulation evaluation**: figures for planted-program recovery and model-versus-two-step C (for example `paper/writeup/figures/single_sim_delta`).
+4. **Real-data evaluation**: external C per cohort and the KM figure by risk tertile (`km_risk_external`), plus `km_programs_external`.
+5. **Programs and biology**: what each retained program is, its survival direction and the pathway and subtype interpretation, with a figure.
+6. **Multimodal status**: what the joint model currently shows, with `multimodal_share`, and its limitations.
+7. **Open questions**: linked to `ROADMAP.md` Part 2.
+
+Figures are reused from `paper/writeup/figures/` (relative paths), not regenerated.
+
+- [ ] **Step 1:** Write `current_state.qmd` with these sections. Keep `PROJECT_STATUS.qmd` short and text-based: its Model and Results sections link to this chapter instead of duplicating it, so there is still one source for each piece. **Gate:** Andrew reviews the rendered chapter.
+- [ ] **Step 2:** Render the book; check the chapter is second in the sidebar, equations render, and every figure loads.
+- [ ] **Step 3:** Publish with `docs/progress_book/publish_gh_pages.sh` after approval.
