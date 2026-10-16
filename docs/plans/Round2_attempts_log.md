@@ -1948,3 +1948,68 @@ cannot guarantee an improving variational trajectory. No extra model remedy,
 weight, damping, cap or criterion change is authorized by this recommendation.
 Both presentation documents incorporate the bounded findings without claiming
 adoption. Fresh full suite684 passed,0 failed; snapshot10/10 SHA256 pass.
+
+## Task2-6: complete working-cycle observation (prospective, 2026-10-16)
+
+Andrew approved the bounded observer proposed in the current handoff on
+2026-10-16 ("ok proceed"). This is an explicitly approved diagnostic
+extension after the interim review, not a remedy rung or an adoption attempt.
+
+Hypothesis: the late Single oscillation can be localized to frozen-working
+posterior/prior changes versus refresh, after accounting for complete density
+information. Exact single change: reversible process-local observation only.
+All original function results and fit arguments remain unchanged.
+
+Fixed arms: saved profiled Task2-4 cell021 versus one observer-enabled replay
+of the same Single seed20261026/noise.25, n400/validation120,p50,K7, original
+framework per-factor Normal beta, point-Laplace L/F, profile TRUE,w_S1,
+no supervised start/pruning, original300 cap/ELBO rule. Use existing
+make_testbed() and fixed_prior_controls(); no new bed, patient data or external
+score. Freeze source/reference hashes before replay. Runner:
+`Rscript results/benchmark_sim/run_working_cycle_audit.R`.
+
+Observe posterior formation, prior refits, tau, canonicalization and working
+refresh separately. Reconstruct mixed-measure entropy from the incoming prior,
+actual A/B, native moments and actual normalizers, not moments alone. Include
+the anchor constant, profiled full projection uncertainty and L/F/beta KL.
+Record unevaluated initialization coverage and incompatible support as such.
+L/beta priors are not carried through canonicalization by the fitter: retain
+their transformed copies as explicit mathematical references, never claim
+they are actual implemented carried priors. The F prior is carried. This
+distinction may block certification of a common implemented objective.
+
+Validity: exact ENTIRE saved-fit/history identity, unchanged hashes, complete
+late50-cycle density coverage, native/ledger moments within1e-12, all warnings
+and errors retained. Anchored-quadratic/KL software comparisons use existing
+1e-8 quadrature and1e-12 unit tolerances; analytical/native slab comparisons
+retain1e-7. Finite reference-objective losses below−1e-8 are descriptive
+transition flags, not a changed convergence/adoption threshold. Infinite
+transitions are not subtracted. No diagnostic replaces the original monitor.
+
+The original scientific gates all stand: recovery>=16/20 per noise, false
+active<=reference+.5, universal model-specific convergence, median rank3
+when rank adoption is considered, real nonconstant risk/credible positive-SD
+coefficient, five finite matched CV pairs with mean delta>=minus pairedSE,
+and the eventual lower95% external deltaC limit>−.02. This diagnostic cannot
+pass those gates. Reference C=NA stays undefined; no external selection.
+
+Stop after this one replay. Identity/density/coverage failure blocks
+interpretation, with no retry, additional arm or silent repair. A within-step
+loss motivates derivation review; a prior-step loss motivates consistency
+review; refresh-only losses motivate working-step review, not an automatic
+damping constant. None proves the cause of multimodal/M3 instability. Return
+to Andrew before implementing any remedy or starting another panel.
+
+Detailed rows remain ignored in `data/round2_working_cycle_seed26.rds`;
+only compact iteration/transition summaries, identity, hashes, warnings and
+interpretation enter `outputs/round2/working_cycle_seed26/`. Local serial,
+minutes and approximately1GB; no nested parallelism/HPC submission. Existing
+tests remain required, including default identity against the protected base.
+Seven new fixtures were RED0/7 then GREEN7/7, including full observer-off/on
+fit identity, independent dense covariance, mixed KL quadrature, support,
+units and the actual F-update A/B. Full suite must pass and this entry/code
+must be committed before scientific replay. No replay has run at this entry.
+Fresh full suite691 passed,0 failed before the prospective commit. Reference
+cell021 SHA256 is `5b83bf02f24603e9be1ebc337b7cb3f9beba9bf53d7c2a0458885d429132b820`;
+unchanged Single fitter SHA256 is `9ee9fb0eb824bba4cae94a617dafa13689c2b029c0539904f5eb47a6383a4e89`;
+unchanged modular F-update SHA256 is `e8d5986ffdcf6c0e2955be177278d989f3355ff9ecf90d9145ab2837704eb43c`.

@@ -105,6 +105,7 @@ test_files <- c(
   "tests/test_profiled_curvature.R",
   "tests/test_profiled_protocol.R",
   "tests/test_prior_consistency.R",
+  "tests/test_working_cycle_audit.R",
   "tests/test_cpg_variability.R",
   "tests/test_feature_sensitivity.R",
   "tests/test_cpg_feature_manifest.R",

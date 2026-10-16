@@ -5,6 +5,22 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-16 — Observe the complete working cycle before another remedy
+
+Andrew approved the bounded diagnostic in the current Round2 review handoff.
+Replay only the existing Single seed20261026/noise.25 simulation with
+observation enabled; exact saved-fit identity is required. Reconstruct mixed
+posterior density and anchored quadratic components rather than treating
+cached KL or constant-free quadratics as a common objective. L/beta priors
+are transient; mathematically transformed copies are labelled references,
+not priors carried by the fitter. No remedy/default/adoption rule changes.
+Keep detailed telemetry ignored and commit compact summaries/provenance.
+Task2-6 controls execution and stopping; an outcome does not authorize a
+new remedy or scientific panel. Andrew also requests an October16 progress-
+book chapter adapted from the advisor report and publication to the existing
+GitHub Pages site. Publication is limited to rendered book content on
+gh-pages; main and feature/supervised-F remain untouched.
+
 ## 2026-10-15 — Consolidate restart plans and distinguish bounded goals
 
 Andrew authorizes consolidation of the prior planning/handoff documents.

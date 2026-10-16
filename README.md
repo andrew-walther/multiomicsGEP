@@ -6,6 +6,18 @@
 
 ## Overview
 
+The complete-cycle diagnostic in
+`results/benchmark_sim/run_working_cycle_audit.R` observes one registered,
+unchanged Single simulation. After its Task2-6 preregistration commit, run
+`Rscript results/benchmark_sim/run_working_cycle_audit.R` from the repository
+root. It requires the local saved profiled cell021 and refuses existing output.
+It reconstructs posterior density/KL and anchored working-objective components;
+it does not change fitting, convergence or model selection. Compact summaries
+go to `results/benchmark_sim/outputs/round2/working_cycle_seed26/`; detailed
+telemetry stays ignored in `data/round2_working_cycle_seed26.rds`. Transformed
+L/beta reference priors are explicitly distinguished from implemented carried
+priors. See Task2-6 in `docs/plans/Round2_attempts_log.md` for its stop rule.
+
 This project implements a **Supervised Bayesian Matrix Factorization** model that jointly decomposes high-dimensional genomics data — such as gene expression or DNA methylation matrices — while simultaneously modelling patient survival outcomes via a Cox proportional hazards model.
 
 The core insight is that standard unsupervised factorization (e.g. PCA, NMF) finds latent structure that explains genomic variance, but has no reason to recover factors that are *clinically meaningful*. By supervising the factorization with survival data, this model discovers **Gene Expression Programs (GEPs)** that are both genomically coherent and prognostically relevant.

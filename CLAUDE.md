@@ -240,3 +240,11 @@ statements are historical. Planning changes do not resume the paused goal.
 Original handoffs retain scientific criteria and provenance; their obsolete
 branch/merge sequences are not restart instructions. Read current status
 before repeating any diagnostic or invoking a prepared runner.
+
+Andrew approved the complete-cycle observer in the current review handoff.
+Its prospective design is Task2-6 in `docs/plans/Round2_attempts_log.md`;
+`results/benchmark_sim/run_working_cycle_audit.R` performs one unchanged
+Single replay with process-local wrappers. Read the actual attempt status
+before execution; prior-reference bookkeeping is not a new model or a
+certification of a common implemented objective. Detailed telemetry remains
+ignored; compact summaries and provenance are sufficient for Git.
