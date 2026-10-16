@@ -5,6 +5,22 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Consolidate restart plans and distinguish bounded goals
+
+Andrew authorizes consolidation of the prior planning/handoff documents.
+Use `Advisor_Priorities_and_Execution_10_15_26.md` for current priorities and
+the recommended goal hierarchy; use `Codex_to_Claude_Round2.md` for concise
+current results/status. Its former content is preserved byte-for-byte in
+`Codex_to_Claude_Round2_history_10_15_26.md`. Original handoff criteria and
+meeting requirements remain; obsolete execution sequences are marked historical.
+
+Recommend keeping the north star as the project objective and using a bounded
+next execution goal: review the saved failures/equations, reconcile the remedy
+ladder, and propose one exact experiment, then regroup before scientific fitting.
+A completed failed-remedy evaluation does not mean the scientific objective is
+achieved. No goal object, criterion, default, benchmark or scientific result
+changes here. The existing broad goal remains paused pending Andrew's resumption.
+
 ## 2026-10-15 — Pause after stable-arithmetic CpG test; no model adoption
 
 Andrew requests regrouping after the current fit/results are recorded. The

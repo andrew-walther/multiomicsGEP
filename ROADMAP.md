@@ -1125,3 +1125,18 @@ analyses as completion of these advisor requests.
 - Pause further fitting for Andrew's requested review. Next scientific decision
   concerns working-step stability and prior/objective consistency before more
   large-CpG panels; supervised replacement, rank and multimodal value stay open.
+
+
+### 2026-10-15: consolidated restart documents and bounded goals
+
+Start with `docs/plans/Advisor_Priorities_and_Execution_10_15_26.md` and the
+concise `Codex_to_Claude_Round2.md` in that folder. The former long handoff
+is preserved verbatim as `Codex_to_Claude_Round2_history_10_15_26.md`.
+Original meeting notes/experiment specifications remain historical sources;
+obsolete branch/prompt instructions do not override the active plan.
+
+Keep the north star as the project objective. The next recommended execution
+goal is a bounded evidence/equation review and one prospective experiment,
+ending in regrouping before fitting. Subsequent remedy evaluation, remaining
+feature curves, rank/multimodal value and final write-up are separate milestones.
+Planning consolidation does not resume the paused scientific goal.

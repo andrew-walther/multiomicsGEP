@@ -1,5 +1,11 @@
 # Comparator inventory (M7 preparation, 2026-10-15)
 
+> **Historical comparator inventory, not current execution status.**
+> Round2 subsequently completed the five-arm simulation panel and Andrew
+> deferred the real-data DeSurv head-to-head. Use the
+> [current handoff](Codex_to_Claude_Round2.md) for results and authorization;
+> retain this survey for provenance rather than restarting its listed analyses.
+
 Read-only survey of the existing comparator analyses for the single-modality (YFB) and multimodal
 models. Nothing was rerun. The survey was compiled by a delegated search and spot-checked against
 the files cited.

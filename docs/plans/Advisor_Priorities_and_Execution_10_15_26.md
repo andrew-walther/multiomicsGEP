@@ -23,6 +23,53 @@ with a parsimonious set of molecular/prognostic programs, preserved external
 performance and a demonstrated contribution from methylation. More fits or
 a higher training C are not substitutes for these requirements.
 
+### Recommended goal hierarchy
+
+Use a hierarchy in the plan, with **one bounded active execution goal at a
+time**. Keep the north star as the project objective; do not use the entire
+remaining research program as the next uninterrupted autonomous goal.
+
+| Level | Goal | Completion evidence |
+|---|---|---|
+| Project objective | Valid, convergent survival-supervised Single and expression+methylation models with justified programs, preserved performance and interpretable multimodal contribution. | Every original scientific criterion satisfied; proposed configuration reviewed and approved. This objective is not complete. |
+| Next active goal | Produce a review-ready explanation of the remaining supervision/optimization failure and one justified prospective next experiment. | Equation/evidence review, remedy-ladder ledger, one exact proposed design with unchanged gates, and a short recommendation/decision request. Stop and regroup before scientific fitting. |
+| Subsequent goal | Evaluate the agreed single-change remedy. | Behavior/algebra/default-identity tests plus the registered simulation/training results; explicit pass/fail by criterion. A failed remedy can complete this bounded evaluation goal without completing the project objective. |
+| Later milestones | Complete the remaining feature curves; justify rank/program roles and multimodal value; finalize the reviewed write-up. | The tables, stability checks, paired comparisons and review gates specified below, with unavailable or failed results explicit. |
+
+**Suggested next-goal text:**
+
+> Review the saved supervised-model failures and the F/β update equations.
+> Distinguish repaired Cox arithmetic from unresolved working-step, prior,
+> scale and convergence issues. Produce a concise evidence-based diagnosis,
+> a ledger of tried/inapplicable/untried remedies, and one prospective next
+> experiment under the original criteria. Preserve the benchmark and all
+> failures. Do not run a new scientific fit. Stop with the review package
+> and regroup with Andrew before implementation or a fitting panel.
+
+The existing broad goal remains paused. Do not mark it achieved to switch
+focus, or silently resume it while editing these documents. On resumption,
+use this smaller scope explicitly; if the goal interface supports editing
+its objective, use the bounded text above and retain the project objective
+here. Otherwise retain the paused project goal and execute a separately
+agreed bounded work block. No goal object is created or changed by this plan.
+
+### Which document controls what?
+
+| Document | Role |
+|---|---|
+| This plan | Current priorities, next bounded goal, sequencing and restart checkpoints. |
+| `Codex_to_Claude_Round2.md` | Concise current status, result tables, task/commit index and review questions. |
+| `Codex_Handoff_Round2_10_16_26.md` | Original criteria, remedy ladders and per-task rules, with later explicit Andrew decisions summarized in the current handoff. |
+| `Round2_attempts_log.md` | Append-only exact prospective designs and results; do not rewrite failed attempts. |
+| `Codex_to_Claude_Round2_history_10_15_26.md` | Verbatim former handoff; chronological explanations and historical checkpoints, not restart instructions. |
+| `Meeting_Notes_Followup_10_2_26.md` | Advisor motivations, original workstreams and writing requirements; historical branch/prompt sequence superseded for Round2. |
+| `Codex_Handoff_M6_M7_10_15_26.md` and comparator inventory | Historical Round1 specifications/survey; do not re-execute their branch instructions. |
+
+Direct instructions from Andrew take precedence. Historical plans do not
+reactivate completed jobs or override the current pause, branch restriction,
+benchmark preservation or unchanged scientific criteria. The dated decision
+record remains the audit trail; no dated entry is rewritten by consolidation.
+
 ### Restart priorities and decision checkpoints
 
 | Order | Work | Concrete deliverable and gate |

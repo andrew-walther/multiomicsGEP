@@ -173,7 +173,7 @@ multiomicsGEP/
 ├── docs/
 │   ├── progress_book/       ← Quarto book, one chapter per advisor meeting
 │   │                          (https://andrew-walther.github.io/multiomicsGEP/)
-│   ├── plans/               ← working plans (current: Working_Plan_10_1_26.md)
+│   ├── plans/               ← working plans (start: Advisor_Priorities_and_Execution_10_15_26.md)
 │   ├── reports/             ← dated analysis reports
 │   └── *.qmd/.pdf/.html     ← per-update walkthroughs, PDAC data audit
 ├── presentation/            ← lab-meeting decks (latest: walther_lab_meeting_08_27_2026/)
@@ -319,7 +319,7 @@ independent PDAC cohorts (RNA-seq, microarray, proteomics).
 
 Test suite (2026-10-01, `codex/multimodal-yfb`): 509 passing.
 
-**Current work** (prioritized in `docs/plans/Working_Plan_10_1_26.md`; see `ROADMAP.md`):
+**Earlier work overview** (historical scope from `docs/plans/Working_Plan_10_1_26.md`; for current priorities use the restart links below):
 the multimodal YFB extension, matched TCGA/ICGC preprocessing, and whether survival
 supervision can be made to inform the factor matrix F (the `alpha_F` question).
 Full history: [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd); decision rationale: `DECISIONS.md`.
@@ -399,7 +399,7 @@ error; see the report and `execution_status.md` before treating it as a clean ru
 
 ## Round 2 integration
 
-`round2/supervised` integrates the five Round 1 branches and passes 559 tests.
+`round2/supervised` integrates the five Round 1 branches (559 tests at that integration checkpoint).
 See `docs/plans/Codex_to_Claude_Round2.md` for current progress and
 `docs/plans/Round2_attempts_log.md` for designs committed before experiments.
 The approved benchmark snapshot and tag remain unchanged.
@@ -646,3 +646,14 @@ It reuses the tested activity matcher, reports signed common-probe loading
 correlations and undefined matches, and records both fits' arithmetic/caps.
 It does not refit, select a count or transfer biological labels; a saved
 unconverged comparison is not a validated feature-count curve.
+
+
+### Current restart plan and goal scope
+
+Read the [active plan and goal hierarchy](docs/plans/Advisor_Priorities_and_Execution_10_15_26.md)
+and [concise Round2 status](docs/plans/Codex_to_Claude_Round2.md) before
+running another analysis. The next recommended goal is a bounded diagnosis
+and one proposed experiment, ending in review before fitting. The broad
+scientific goal remains paused; benchmark and all original criteria remain.
+The [former handoff](docs/plans/Codex_to_Claude_Round2_history_10_15_26.md)
+is preserved verbatim for history, not current execution instructions.

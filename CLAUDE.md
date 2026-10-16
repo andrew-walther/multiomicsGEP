@@ -75,7 +75,7 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | **Progress notebook (meeting-facing, one chapter per advisor meeting)** | `docs/progress_book/` — Quarto book, `quarto render` to build; add a new `chapters/YYYY-MM-DD.qmd` per meeting |
 | **L-update debugging guide** | `docs/update_L_fix.md` — read before any L-update work |
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |
-| **Current working plan** | `docs/plans/Meeting_Notes_Followup_10_2_26.md` — start open work here (write-up, feature-count sensitivity, survival weighting); `Working_Plan_10_1_26.md` records the 10/1–10/2 work |
+| **Current working plan and goal hierarchy** | `docs/plans/Advisor_Priorities_and_Execution_10_15_26.md` — restart here; `Codex_to_Claude_Round2.md` in the same folder is the current status summary. `Meeting_Notes_Followup_10_2_26.md` preserves advisor requirements; older schedules are historical. |
 | Matched TCGA/ICGC expression + methylation loader | `code/load_multiomics_data.R` — `build_multiomics_cohorts()`; real-data checks `tests/test_real_multiomics_loading.R` (local) |
 | Multimodal parsimony framework (intercept, ebnm priors, ELBO pruning) and compiled sweep | `code/fit_multimodal_yfb.R` controls `intercept`/`prior_update`/`prune`/`tau_model`; `code/multimodal_yfb_sweep.cpp` |
 | Multimodal simulation and real-data runners | `results/benchmark_sim/run_multimodal_pruning_comparison.R`; `results/multimodal_real/run_multimodal_real_fit.R` + `summarize_multimodal_real.R` |
@@ -230,3 +230,13 @@ entry and wait for M3's same live process to terminate. It starts no model;
 missing/errored output means comparison unavailable. Record original versus
 log-space arithmetic and both convergence states; no minimum-r rule or
 biological-label transfer is authorized by this descriptive comparison.
+
+
+Planning consolidation: use the active priority plan for the bounded next
+work block and goal hierarchy, and the concise Round2 handoff for status.
+The former long handoff is preserved verbatim at
+`docs/plans/Codex_to_Claude_Round2_history_10_15_26.md`; its old live/pending
+statements are historical. Planning changes do not resume the paused goal.
+Original handoffs retain scientific criteria and provenance; their obsolete
+branch/merge sequences are not restart instructions. Read current status
+before repeating any diagnostic or invoking a prepared runner.

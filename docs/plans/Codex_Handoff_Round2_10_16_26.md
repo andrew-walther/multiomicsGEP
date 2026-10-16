@@ -1,5 +1,13 @@
 # Codex handoff, round 2: integrate, fix, diagnose, compare, expand features (2026-10-16)
 
+> **Original Round2 specification; criteria and task rules remain controlling.**
+> For current results, pauses, Andrew's later decisions and revised sequencing,
+> start with [the current handoff](Codex_to_Claude_Round2.md) and
+> [the active plan/goal hierarchy](Advisor_Priorities_and_Execution_10_15_26.md).
+> This specification is not a command to repeat completed work. Later approved
+> cold-primary sensitivity, Task3 deferral, bounded manuscript revisions and
+> current pause are summarized there. Defaults and adoption criteria are unchanged.
+
 This replaces the open items of `Codex_Handoff_M6_M7_10_15_26.md`. Read, in this order:
 - `CLAUDE.md`;
 - the 2026-10-15 entries at the top of `DECISIONS.md` (on `feature/supervised-F`);

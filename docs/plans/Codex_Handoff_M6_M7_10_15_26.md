@@ -1,5 +1,13 @@
 # Codex handoff: M6 robustness and M7 comparators (2026-10-15)
 
+> **Historical Round1 specification — do not execute these prompts as a restart.**
+> Its branching instructions and selected configurations describe the original
+> experiment, not the current approved state. Round2 superseded the open work.
+> Start with [current status](Codex_to_Claude_Round2.md) and the
+> [active plan](Advisor_Priorities_and_Execution_10_15_26.md).
+> Current work stays on `round2/supervised`; no new Round1 branches, pushes,
+> protected-branch edits or merges. Original prompts below are preserved.
+
 Context for every prompt below: survival supervision of the loadings (Workstream C) is implemented
 on branch `feature/supervised-F`. Read first:
 - `CLAUDE.md`;

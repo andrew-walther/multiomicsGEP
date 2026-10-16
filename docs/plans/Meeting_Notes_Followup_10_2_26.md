@@ -1,5 +1,32 @@
 # Meeting Notes and Follow-up Plan — SSBMF Project (October 2, 2026)
 
+## Current reading guide (2026-10-15)
+
+The meeting conclusions and original workstreams below remain the advisor
+requirements. Execution has since advanced through Round2; do not restart
+this file's old branch, merge or prompt sequence.
+
+- [Current plan and bounded goal hierarchy](Advisor_Priorities_and_Execution_10_15_26.md)
+  controls the next work block; [current handoff](Codex_to_Claude_Round2.md)
+  summarizes actual results. Work remains paused for regrouping.
+- Interim write-up is delivered; the working HTML/PDF now includes verified
+  sensitivity/diagnostic findings. The approved interim tag/snapshot is preserved.
+- Expression fixed-K7 sensitivity through17900 shared genes and full-probe
+  methylation mean/SD histograms are complete. CpG/joint feature curves and
+  filtering comparisons remain partial; common-CpG correlations are provisional.
+- Survival-informed F is implemented experimentally, but a stable final method
+  is unproven. The benchmark still uses alpha_F=0; the stable-arithmetic25k
+  case still caps500. Rank and demonstrated multimodal value remain open.
+- Next: bounded review of update/objective/prior consistency, then one proposed
+  experiment and regrouping before fitting. See the active plan for acceptance
+  evidence, original gates and deferred work. Current work uses only
+  `round2/supervised`; no push/merge or protected-branch edits are authorized.
+
+The dated schedules, implementation suggestions and prompts below are kept
+as the historical source. Later Round2 rules preserve defaults, external-data
+restrictions and prospective registration; suggestions here are not permission
+to change those rules. No dated decision entry is revised by this reading guide.
+
 Sources: Andrew's written notes and the Zoom summary from the 10/2 meeting with Yusha and Naim, plus
 two post-meeting clarification sessions. The results discussed are in
 `docs/progress_book/chapters/2026-10-02.qmd`. This plan supersedes the open-work sections of
@@ -195,6 +222,10 @@ whether the biology turns out to be the main finding.
 Verify: D1 and D2 are sent; every number traces to a file in the repo.
 
 ## Workstream C — Survival supervision of F  `[Priority 1 for method work]`
+
+> Original scientific motivation and remedy ideas follow. Implementation
+> status, attempted remedies and current authorization are in the current
+> handoff and active plan; do not execute the old kickoff/branch instructions.
 
 Goal (D3): survival shapes the program loadings strongly enough to recover a low-variance prognostic
 program, without instability and without losing external C.
@@ -467,6 +498,10 @@ results so far, rather than waiting.
 ---
 
 ## Sequencing and handoffs (decided 2026-10-13)
+
+> **Historical sequence.** Its branches/merge instructions and Prompts1–7
+> below are superseded for current Round2 execution. Read the current guide
+> at the top of this file before acting; the source wording is retained.
 
 This section replaces the earlier Workstream C kickoff prompt and the parallel schedule in "Order of
 work". The write-up comes first because Andrew shares it on Friday 10/16 (draft targeted for
