@@ -1820,3 +1820,21 @@ cannot guarantee an improving variational trajectory. No extra model remedy,
 weight, damping, cap or criterion change is authorized by this recommendation.
 Both presentation documents incorporate the bounded findings without claiming
 adoption. Fresh full suite684 passed,0 failed; snapshot10/10 SHA256 pass.
+
+
+### Restart plan updated while goal remains paused
+
+Andrew requests planning for the next work block, not resumed analysis.
+`Advisor_Priorities_and_Execution_10_15_26.md` now starts with the authoritative
+restart order: bounded mathematical/evidence review → one justified stable
+supervision remedy under original gates → remaining CpG/joint sensitivity →
+rank and multimodal value → reviewed write-up conclusions. The first resumed
+block ends with a diagnosis/proposal and regrouping before any fitting panel.
+Completed expression/histogram/diagnostic work is not repeated by default.
+The plan corrects stale feature-study status and records the capped25k result,
+provisional loading agreement, failed earlier external NI and deferred work.
+No scientific remedy, threshold, default or new execution is adopted here.
+The goal stays paused; no model or data-analysis job is started by this update.
+
+Planning-update verification: fresh full suite684 passed,0 failed; diff
+whitespace check passes. Only the active plan and this handoff are changed.

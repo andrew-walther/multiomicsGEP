@@ -1,14 +1,118 @@
 # Advisor priorities and revised Round2 execution plan
 
-> **For agentic workers:** Use `superpowers:executing-plans` to implement the approved tasks in this document. Work directly in the existing checkout; do not create a worktree or delegate. Andrew approved this order on2026-10-15. Individual task checkboxes record implementation; planned analyses are not completed results.
+> **For agentic workers:** Use `superpowers:executing-plans` to implement the approved tasks in this document. Work directly in the existing checkout; do not create a worktree or delegate. Andrew approved the earlier sequence on2026-10-15. The restart priorities below supersede that sequence for planning; new scientific attempts still require prospective registration and any decision required by the original handoff. Individual task checkboxes record implementation; planned analyses are not completed results.
 
 **Goal:** Produce clear advisor-facing evidence on survival supervision, feature-count sensitivity, parsimony and multimodal value while retaining the approved interim write-up and benchmark.
 
-**Architecture:** Separate benchmark sensitivity from experimental method development. First report the evidence already available, then describe all eligible CpGs and vary nested feature sets at fixed K=7, one modality at a time. Revisit pruning and supervision remedies as distinct experiments so changes in rank, features and likelihood formulation are not confounded.
+**Architecture:** Separate benchmark sensitivity from experimental method development. On restart, review the saved instability and update equations, then test one justified supervision remedy under the original gates. Resume the remaining fixed-K feature curves after that review; keep rank, features, filters and likelihood changes in distinct experiments.
 
 **Tech stack:** Existing R fitters, loaders, test suite and plotting tools; Quarto with the working external Pandoc configuration; existing Longleaf SLURM conventions for large fits.
 
 **Specification:** Andrew's resumed-work messages and screenshots on 2026-10-15; `Meeting_Notes_Followup_10_2_26.md` (meeting conclusions and Workstreams A/B/C); `Codex_Handoff_Round2_10_16_26.md`; `Codex_to_Claude_Round2.md`; `paper/writeup/_process/implementation_plan.md` (R1–R9 revision dependencies).
+
+## Start here when work resumes
+
+**State:** Goal paused at Andrew's request. Planning updates do not resume it.
+Last scientific/report checkpoint: `0c0c717` on `round2/supervised`; no fitting
+jobs are running. The current write-up is a bounded revision of the interim
+account; the approved interim tag and snapshot remain unchanged. Do not
+repeat the completed expression panel, histograms or25k diagnostic by default.
+
+**North star:** Survival must inform F in a defensible, convergent model,
+with a parsimonious set of molecular/prognostic programs, preserved external
+performance and a demonstrated contribution from methylation. More fits or
+a higher training C are not substitutes for these requirements.
+
+### Restart priorities and decision checkpoints
+
+| Order | Work | Concrete deliverable and gate |
+|---:|---|---|
+| 1 | Review the current evidence and update equations | One short diagnosis linking the25k extreme-predictor trajectory, Cox working approximation, prior/objective consistency and F-survival balance. Separate established defects from hypotheses; identify the next applicable untried remedy. Regroup before another fitting panel. |
+| 2 | Restore reliable survival-supervised fitting | One prospectively registered remedy at a time, first checked algebraically and on small existing fixtures/saved training cases, then judged by the unchanged simulation and training-CV criteria. No replacement unless every required gate passes. |
+| 3 | Complete feature-count sensitivity on a stable formulation | Resume methylation-only, then joint one-modality-at-a-time curves through the full eligible universe; report prediction, loading agreement and resources. Preserve count-only and filter comparisons separately. |
+| 4 | Justify retained programs and multimodal value | Assess molecular/prognostic roles, redundancy and stability; then matched predictive increment or reproducible additional biology. K7 is acceptable if justified; forcing deletion is not the objective. |
+| 5 | Complete the reviewed write-up | Keep verified progress and failures current; integrate final model/biology claims only after their validation and review gates. Preserve the approved interim benchmark throughout. |
+
+The write-up remains the main deliverable at every checkpoint. This order
+prioritizes the unresolved scientific bottleneck while preserving the
+completed advisor-facing evidence. It does not prescribe a new likelihood,
+weight, convergence rule or unreviewed remedy.
+
+### First resumed work block: bounded review, then regroup
+
+- [ ] Read the latest checkpoint in `Codex_to_Claude_Round2.md`, the M2/M3/A1
+  and prior-consistency entries in `Round2_attempts_log.md`, and the updated
+  progress report before implementing or fitting. Verify branch, clean state,
+  benchmark hashes and that no prior job remains live.
+- [ ] Compare the actual F/β updates and priors with the derivations, using
+  `code/cox_working_logspace.R`, `code/profile_cox_intercept.R`,
+  `code/multimodal_yfb_updates.R`, `code/multimodal_yfb_helpers.R`,
+  `code/fit_multimodal_yfb.R` and `code/fit_cox_on_yf.R` as the implementation
+  references. Read the multimodal derivation and corrected Single update
+  notes first. Review the working approximation versus the intended objective,
+  the constant-risk direction, scale transformations of posterior moments
+  and priors, and prior/posterior support consistency. Do not assume a new
+  kernel alone repairs the optimization algorithm.
+- [ ] Use saved evidence first: M3 `case.csv` and `terminal_history.csv`,
+  M2's ignored failure state, the exact prior-consistency trace, and
+  `results/multimodal_real/outputs/round2/loading_balance/`. Small terminal conditional survival
+  fractions are descriptive; they do not prove that a weight is needed or
+  diagnose the full trajectory. A falling Cox likelihood alone does not prove
+  a faulty joint update. Any new execution requires its own committed attempt.
+- [ ] Produce a short findings table: observation, supported cause, remaining
+  hypothesis, minimal proposed check/remedy and the existing ladder rung or
+  approval it uses. Explicitly distinguish prior absorption to β=0,
+  nonconvergence with nonzero risk, and repaired arithmetic underflow.
+- [ ] Regroup with Andrew at that deliverable, before a scientific fitting
+  panel. Prefer review of a specific derivation or falsifiable next experiment
+  over another broad sweep. A fresh session may use this plan and the handoff;
+  neither a new session nor clicking Resume changes scientific authorization.
+
+### Requirements before and after the next remedy
+
+- [ ] Reconcile the completed attempt history with the original Task2 ladder;
+  list tried, inapplicable and untried rungs with evidence. Do not call the
+  entire ladder exhausted. In particular, a staged start requires a genuinely
+  converged starting fit; the saved capped framework is not such a start.
+- [ ] Follow the existing order: applicable prior remedies, staged fitting,
+  damping if oscillation is supported, derived joint/collapsed F–β update,
+  then last-resort training-CV survival weight. No new damping value, weight,
+  parameter grid or outside-ladder change is chosen in this plan.
+- [ ] Before implementing a chosen opt-in change, register its hypothesis,
+  one exact change, fixed arms and pass/fail rule; commit before execution.
+  Add behavior/algebra tests and protected-base default-identity checks.
+- [ ] Keep the original gates: recovery≥16/20 at both noise levels; null-active
+  mean≤reference+0.5; every fit converges under its model's rule; median rank3
+  when evaluating rank adoption; nonconstant real-data risk and≥1 credible
+  coefficient with positive SD; training-CV noninferiority within one paired
+  SE. Undefined reference C remains undefined. External reporting occurs only
+  at the permitted final gate, with lower95% ΔC limit>−.02; it cannot select
+  the remedy. No benchmark replacement without review and Andrew's approval.
+- [ ] End each bounded attempt with a result table and a progress decision:
+  resolved, a specific failed/inapplicable rung, or needs Andrew. Apply the
+  handoff's six-attempt interim-report limit and the existing stop rules.
+  Do not start another long panel merely because a process completed normally.
+
+### Deferred work to resume only after that review
+
+- Methylation-only counts remain10k/25k/50k/100k/all305352; joint CpG counts
+  remain the separately specified10k/30k/100k/all. Do not silently harmonize
+  their test beds. Reuse exact input reconstruction, fixed K7/no deletion,
+  original conditional-CV caveats and common-feature matching. Any changed
+  arithmetic/source path needs a new prospective design and fingerprints;
+  the old driver's hash guard must not be bypassed or its design overwritten.
+- Evaluate the supplied mean[.1,.9] and95%-extreme-proportion filters as
+  separate frozen comparisons, without selecting an SD cutoff. Report probe
+  eligibility/QC gaps, unchanged imputation and the full feasible endpoint.
+- Compare expression-only, methylation-only and joint models on identical
+  donors/folds. Report credible status, modality-specific reconstruction and
+  matched loadings/activities as well as C. Nonzero dense loadings do not
+  demonstrate feature selection; comparable C does not establish stable biology.
+- Return to rank selection after the fitting/objective issue is resolved or
+  reaches its formal stopping point; retain the failed pruning results.
+  Characterize justified K7 roles without inventing a desired deletion count.
+- DeSurv head-to-head stays deferred by Andrew; optional Task6 robustness
+  cleanup is lower priority. Tasks0/4/7 are complete and should not be repeated.
 
 ## Current status: what is and is not solved
 
@@ -17,20 +121,20 @@
 | Does survival inform F? | The opt-in canonical Single update uses A_gen+w_S A_surv and B_gen+w_S B_surv, w_S=1; this is actual supervision of F. The evaluated benchmark still has alpha_F=0. | Implemented experimentally; a stable replacement meeting all criteria is **not established**. |
 | Is supervised recovery better? | The completed comparator panel recovers17/20 and19/20 planted low-variance programs. The latest profiled panel gives Single18/20 and20/20 and multimodal16/20 and19/20. | Recovery/false-positive evidence is positive; some convergence requirements fail. Simulation success alone does not validate the complete method. |
 | Has external performance been preserved? | The earlier selected supervised Single arm had mean external C=.620725 vs frozen D4 .626699; delta=-.005974,95% interval[-.031708,.020662]. | It **fails** the predeclared lower-limit>- .02 requirement. No Round2 external scoring has occurred. |
-| Do more genes work? | Round1 requested1000/2000/3000/5000 features per cohort, yielding662/1365/2064/3600 shared genes. Mean CV C=.650200/.648933/.651199/.655413; capped folds1/0/1/2. All four full fits converge. | Limited evidence exists, with a documented nonzero runner exit after saved tables. No full-range experiment, 10k/all-gene result or completed factor-agreement curve. |
-| Have we supplied the requested methylation histogram? | Existing plots show pooled values and per-probe skewness for screened10k CpGs, beta and arcsine scales. | **Completed in Task5-QC1:** all305492 TCGA probes on144 patients, observed-value means/SDs and requested histograms; no filter adopted. |
+| Do more genes work? | Completed fixed-K7 alpha_F0 curve at2064/5001/10000/17900 shared genes; all24 fits converge. Mean conditional CV C=.6084/.5773/.6088/.6068. Loading/activity/risk agreement is reported. | Full-range expression sensitivity complete; no validated gene-selection or noninferiority claim, and program agreement changes. |
+| Have we supplied the requested methylation histogram? | Task5-QC1 covers305492 TCGA probes on144 patients, observed means/SDs, SD histograms and filter-overlap counts. Exact model-input reconstruction covers305352 eligible probes. | Completed descriptively; no new filter or SD cutoff adopted. |
 | Does real multimodal pruning select a smaller K? | The latest full supervised-framework candidate remains K7; the frozen framework also removes none. Protected/full-state pruning fails adoption criteria in simulation. | **Unresolved**. K7 may appropriately represent expression, methylation and prognostic structure. Its adequacy needs role, stability and redundancy evidence; deletion itself is not the objective. |
 | Does the new multimodal method work? | Algebra/default-identity tests, replicated simulations, isolated failures and exact failed-fold tracing are available. Profiling produces nonconstant risk in all five candidate CV folds. | Partly validated; all five CV fits and full training still cap, four CV folds lack credible programs. Not a fully validated final method. |
 | Does methylation add value? | The write-up reports methylation-dominant structure and shared immune loading, without demonstrated predictive improvement; the discussed methylation components are not prognostic. | Added molecular structure is descriptive evidence. Better survival explanation/prediction and robust additional biological value remain unproven. |
 | Are priors alone balancing all terms adequately? | Scale freedom, beta gating, shared-prior absorption and constant-direction working curvature have been investigated. Sparse loading priors do not automatically balance total likelihood contributions as p grows. | **Unresolved**. No universal balancing remedy is adopted. The prior/KL consistency question needs separate review. |
 
-Engineering issues actually addressed include positive-SD protection (dead point-mass programs are not protected), opt-in retention of full posterior state during pruning refits, comparator handling of rank0/rank1 and isolated failures, exact saved-fold reproduction, and default/off identity checks. These are useful corrections and diagnoses, not substitutes for the unresolved scientific goals above. Current full suite631/631 at f0858ec; counts are software evidence, not a claim of scientific correctness.
+Engineering issues actually addressed include positive-SD protection (dead point-mass programs are not protected), opt-in retention of full posterior state during pruning refits, comparator handling of rank0/rank1 and isolated failures, exact saved-fold reproduction, and default/off identity checks. These are useful corrections and diagnoses, not substitutes for the unresolved scientific goals above. Latest scientific/report checkpoint0c0c717 has full suite684/684; counts are software evidence, not a claim of scientific correctness.
 
 ## Global constraints
 
 - Continue on `round2/supervised`; no pushes, protected-branch edits or merges.
 - Preserve tag `benchmark-interim-writeup-2026-10-14` and the snapshot. Verify its10 SHA256 entries before and after work; keep benchmark rows in every new real-data result table.
-- Preserve the approved `paper/writeup/writeup.qmd`, HTML and PDF until a reviewed revision is ready. The initial unified write-up is already delivered; this work supplies evidence for its revision.
+- Preserve the approved interim in its immutable tag/snapshot. Andrew authorized bounded updates to the working write-up with verified sensitivity/diagnostic findings; final model adoption and biological claims retain their review gates.
 - Register and commit each scientific attempt before running. One analytical change per attempt; fixed original criteria/caps/defaults. Never edit a running script or its loaded helpers.
 - Training data/simulation only for selection. Keep external outcomes and scores out of feature, model and weight selection. The later Round2 rule of one final external report supersedes the earlier Workstream B request to score ICGC at each feature count.
 - The feature-count study is sensitivity analysis, not automatic adoption. Bayesian shrinkage's ability to tolerate many features is a hypothesis to test.
@@ -47,7 +151,10 @@ Engineering issues actually addressed include positive-SD protection (dead point
 4. More CpGs change computation and total reconstruction information. Do not label a larger ELBO or nonzero risk as better prediction, convergence or survival-informed biology.
 5. Preserve partial failures: caps, rank-deficient warm starts, memory limits, invalid scores, unavailable raw/QC information and cold-versus-warm discrepancies remain visible.
 
-## Approved order and deliverables
+## Earlier approved deliverables and completion checklist
+
+The restart order above takes precedence for the next work block. These
+checklists retain the original scope and document completed versus open work.
 
 ### 1. Advisor-facing account of progress since 10/2 — first
 
@@ -94,7 +201,7 @@ Engineering issues actually addressed include positive-SD protection (dead point
 
 **Files:** Create the specified Task5 runner `results/multimodal_real/run_feature_expansion_multimodal.R`, focused continuation/protocol tests and large-feature SLURM wrapper; fresh results under `results/multimodal_real/outputs/feature_sensitivity/`.
 
-- [ ] Freeze the approved historical framework settings and a fixed K=7/no-deletion sensitivity arm. This is a labelled fallback experiment; its existing convergence limitations remain part of the result.
+- [x] Freeze the approved historical framework settings and a fixed K=7/no-deletion sensitivity arm. This is a labelled fallback experiment; its existing convergence limitations remain part of the result.
 - [ ] First evaluate methylation alone over the original meeting checkpoints10k/25k/50k/100k/all eligible, subject to actual availability and a prospectively frozen eligibility/filter rule. Do not introduce the mean filter into an otherwise count-only experiment without a distinct predeclared comparison.
 - [ ] Then vary expression in joint fits with CpGs fixed at10k; vary CpGs over Task5's10k/30k/100k/all with expression fixed. Matched expression-only/methylation-only/joint comparisons must use the same TCGA patients, folds, expression count, K and controls.
 - [ ] Report the same C, partial-likelihood, convergence, feature/program retention, matching and resource measures as the expression study. Record expression/methylation reconstruction separately; raw objectives across different p are not a predictive comparison.
@@ -107,7 +214,7 @@ Engineering issues actually addressed include positive-SD protection (dead point
 **Files:** Existing `run_round2_prior_consistency_trace.R`, attempt log and method-specific derivations/tests; any actual remedy gets its own prospective entry and commit.
 
 - [x] Run the already prepared observational audit only after logging and committing its exact design. It must reproduce the complete saved fit and does not repair the model. Report its finding briefly; do not let diagnosis become an open-ended substitute for the feature deliverables.
-- [ ] At fixed settings measure per-loading reconstruction/survival precision and signal contributions, coefficient gating and scale changes; report total objective/removal-score components separately. A raw global likelihood ratio is not the per-coordinate F-update balance.
+- [x] At fixed settings measure per-loading reconstruction/survival precision and signal contributions, coefficient gating and scale changes; report total objective/removal-score components separately. A raw global likelihood ratio is not the per-coordinate F-update balance.
 - [ ] Use the approved remedy ladders and original adoption criteria. Do not add inverse-p weights, estimated mixing parameters, SD cutoffs, longer caps or a new reference without the required decision and prospective design.
 - [ ] Evaluate whether adding noise features in the originally specified large-p simulation changes pruning/recovery, separately from true additional signal. This addresses the meeting's B5 hypothesis and does not redefine the original adoption panel.
 - [ ] Keep real-data K7/no-deletion results and simulated rank-selection results separate. Do not force deletion merely because fewer factors are preferred.
@@ -188,7 +295,7 @@ adoption gate or a demonstrated noninferiority result. See the updated HTML/PDF
 advisor report and safe cold_primary result tables. Methylation/joint curves
 remain open; original shared-probe IDs number305352 versus305492 raw TCGA.
 
-### Full-CpG preparation checkpoint
+### Historical full-CpG preparation checkpoint (superseded by terminal checkpoint below)
 
 Task5-P1 (da9bce1/aff0d03) reconstructs305352 eligible probes on144 patients
 with exact frozen10k values/ranking and no warnings. Both supplied descriptive
@@ -198,8 +305,9 @@ aff0d03. Its first10k full fit capped at500 with zero credible coefficients,
 training C=.612671 and nonconstant risk. The25k full cell stopped at the F-update moment-validity guard after28s.
 No usable fit/score. The approved unchanged-settings diagnostic now
 identifies global exponential underflow in Cox risk sets at outer6; valid
-projection moments, but rapidly expanding predictors. No remedy has been
-run. CV and larger counts remain unrun; CpG count correlations are unavailable.
+projection moments, but rapidly expanding predictors. At that earlier checkpoint no remedy had run. Since then the opt-in stable
+arithmetic case completed at500 without convergence; provisional CpG-count
+correlations are now available. CV and larger counts remain unrun.
 
 Andrew reiterates the intended benefit: broader inputs can reduce arbitrary
 screening if prediction and meaningful molecular structure hold up, allowing
@@ -210,13 +318,14 @@ separately; retain current assay QC and probe-availability rules and introduce
 no unspecified SD cutoff or new default. Report agreement/roles descriptively;
 no new correlation threshold becomes an adoption criterion.
 
-### Reporting update authorized
+### Historical reporting authorization (terminal results now incorporated)
 
 Andrew requests applicable sensitivity findings in the larger write-up as
 well as the progress report. Add completed expression performance/loading
 agreement and partial CpG results/diagnosis with explicit benchmark context.
-Only10k methylation has a saved full fit, so count agreement is unavailable;
-do not substitute saved joint-fit agreement for that comparison. This is a
+The initial update had only a saved10k methylation fit. The terminal update
+now includes the saved25k stable-arithmetic fit and provisional common-CpG
+agreement; the separate joint-fit audit is not substituted for that comparison. This is a
 bounded manuscript update, not approval of a new model or altered criterion.
 The approved interim remains preserved in the immutable tag/snapshot.
 
@@ -230,3 +339,18 @@ agreement recorded. Do not start another fitting experiment before regrouping.
 The current progress report/manuscript include the results; benchmark unchanged.
 Review working-step stability and prior/objective consistency before deciding
 the next prospective remedy. Larger count/CV/filter/joint panels remain open.
+
+
+### Terminal evidence for restart priorities
+
+The25k case completes at500 with no execution errors but fails convergence:
+training C=.983854, riskSD39086, logPL=-40177, final relative risk/reconstruction
+changes=.00589/.0622 against tolerance.0001. It does not establish successful
+supervision or a useful high-dimensional fit. The original10k also caps.
+Common-CpG loading r=.945/.922/.925/.118/.038/-.087/.923; risk r=.245.
+Both are capped and numerical arithmetic differs: provisional agreement only.
+The numerical underflow failure is repaired opt-in; imputation is not the
+identified cause. A stable fully supervised replacement is still unproven.
+The original selected supervised Single external noninferiority check failed;
+the paused goal's older state description is stale on that point. This plan
+and the latest handoff, not that description, govern interpretation.
