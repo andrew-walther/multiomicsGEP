@@ -1700,3 +1700,28 @@ point real-data evaluation or candidate fit has run before this prospective
 commit. Remaining data/source identities are checked, and protected-base
 original/default full-fit equality is tested. Numeric usability and scientific
 convergence are separate outcomes; no blanket claim against large CpG sets.
+
+### Stable Cox arithmetic: verified point repair, full25k case still live
+
+Task5-M3 after73c4f0b makes all working values finite at the captured outer6
+failure point; sum(w)=74.9999999999582 equals75 deaths to numerical tolerance.
+Original arithmetic has17 nonfinite weights plus17 nonfinite numerators.
+Finite new logPL is-311554.982429466. This is numeric correctness at a fixed
+state, not a model-performance claim or a converged solution. Fresh full
+suite684 passed,0 failed, including original/default protected-base identity.
+
+The original25k cell with only opt-in arithmetic changed is currently live
+(session99846, log /private/tmp/r2_logspace_cpg_case.log). At the checkpoint
+it reaches outer53 without the original crash, but predictors keep expanding.
+Retain the original500 cap and every outcome; no further count fit has run.
+Do not restart or edit loaded code. Poll this same session; the complete
+case.csv/fit.rds will be written only at terminal status. Live progress.csv
+is deliberately unstaged. Input imputation remains finite/exact; no evidence
+of an imputation cause or an inherent10k feature limit.
+
+Andrew's annotation asks to solve the issue or state the hangup/resolutions:
+low rank does not remove the need to estimate p-by-K loadings or guarantee
+stable survival updates. The diagnosed Cox arithmetic bug is repaired at the
+failed state; rapidly expanding predictors remain a separate stability issue.
+A saved25k fit is still needed before reporting CpG-count loading agreement;
+never treat failed fitting as zero correlation or successful feature selection.

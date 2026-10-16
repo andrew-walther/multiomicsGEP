@@ -1831,3 +1831,19 @@ feature/supervised-F and actual objective propagation. No real-data captured-
 point evaluation or new25k fit has run before this commit. M1's frozen input
 and remaining source hashes must match; the two arithmetic-dispatch sources
 have explicit new fingerprints, with unchanged default behavior verified.
+
+Task5-M3 captured-point check passes after73c4f0b. Original arithmetic has34
+nonfinite working entries (17 weights and17 numerators), undefined logPL and
+weight total; log-space arithmetic has0 nonfinite working entries, finite
+logPL -311554.982429466 and sum(w)=74.9999999999582 against75 deaths.
+This fixes the diagnosed arithmetic failure at that exact saved predictor.
+The original data/design/source identities pass except the two explicitly
+updated opt-in dispatcher sources. Fresh full suite684 passed,0 failed.
+
+The full25k same-case fit is live (exec session99846); it has passed outer6
+and reached53 with finite predictors, but the predictor range continues
+expanding. This is not yet a terminal/converged fit. No early stop, altered
+cap, model tuning or extra count cell is introduced. Do not edit its script,
+core fitter/helpers, predictor or new log-space kernel while it runs. A
+later terminal result must supersede this live checkpoint. Only the completed
+captured-point CSV is committed now; progress.csv remains live/uncommitted.
