@@ -33,7 +33,7 @@ to recover clinically meaningful structure.
 - **Current recommended form:** YFB (`code/fit_cox_on_yf.R`), $\eta = (YF)\beta$. The
   survival predictor is computed directly from observed expression, avoiding train/test
   projection mismatch.
-- **Data:** PDAC patient cohorts spanning RNA-seq, microarray, and proteomics platforms
+- **Data:** PDAC patient cohorts spanning RNA-seq and microarray platforms
   (TCGA-PAAD + CPTAC training; 5 independent cohorts held out for external validation).
 - **Research question:** does coupling factorization to survival find real prognostic
   structure, and is that structure worth the added model complexity? Evaluated against

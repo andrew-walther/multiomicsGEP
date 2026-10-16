@@ -5,6 +5,54 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-16 — Correction: CPTAC is RNA-seq, not proteomics
+
+Project documents since April 2026 described the CPTAC-PDAC training cohort
+(n = 129) as mass-spectrometry proteomics. It is RNA-seq; Andrew confirmed the
+platform. The local matrix has 28,057 features named by gene symbol, including
+antisense lncRNAs (`-AS1`) and pseudogenes, which a proteomics matrix would not
+contain. Its metadata records `log.transformed = TRUE` (values 0–24.8); the
+TCGA_PAAD matrix records `log.transformed = FALSE` (RSEM-type values up to
+6.7×10⁶). After the project's log2(x + 1) step for TCGA only, the two cohorts
+have medians 7.8 and 7.1 and lower quartiles 3.4 and 2.0.
+
+- **Preprocessing:** unchanged and correct. `platform_log_transform` skips the
+  log2 step for CPTAC because the file is already on the log2 scale; only the
+  stated reason ("proteomics") was wrong. No code, default or result changes.
+- **Findings that stand:** the pooled TCGA + CPTAC collapse to β̂ = 0 without
+  per-cohort standardization, the 10 of 12 collapsing preprocessing
+  configurations, and the top SVD component separating the two cohorts are
+  observations on the data and do not depend on the label.
+- **Explanation that changes:** entries below attribute those findings to an
+  "RNA-seq vs. proteomics" assay contrast. The contrast is a between-cohort
+  technical difference between two separately processed RNA-seq datasets.
+  Candidate sources are the different delivered scales and upstream
+  quantification, the different annotation universes (20,531 vs. 28,057
+  symbols; 17,900 shared) and different patient sources. Which of these
+  dominates has not been examined.
+- **Reasoning that loses support:** the 2026-05-22 cohort-indicator trade-off
+  that a linear indicator cannot capture a non-linear cross-assay difference
+  is unsupported (not refuted). The writeup-revision directive to identify
+  CPTAC as proteomics is reversed. The title rationale for "Molecular" still
+  holds through methylation. Statements that the external cohorts include
+  proteomics were separately wrong: they are RNA-seq (Dijk, PACA-AU seq) and
+  microarray (Moffitt, PACA-AU array, Puleo).
+- **Terminology:** "per-platform z-standardization" standardizes each cohort
+  separately. The name is kept as an established label.
+- **Corrected in place:** `paper/writeup/writeup.qmd`,
+  `paper/prelim/project3-ssbmf.qmd`, `PROJECT_STATUS.qmd`, `ROADMAP.md`,
+  `docs/PDAC_data_audit.qmd`, `docs/progress_book/index.qmd`,
+  `docs/update_L_fix.md`, the `config/globals.yml` comment.
+- **Dated records left as written:** entries in this file (each marked with a
+  one-line correction), the 2026-04-29 and 2026-05-28 progress-book chapters
+  (marked), and, unmarked, `docs/reports/`, `docs/progress_report/`,
+  `presentation/`, `docs/plans/`, `docs/superpowers/plans/`,
+  `paper/writeup/_process/`, `results/benchmark_sim/outputs/ebmf_diagnostic/`,
+  `results/legacy/`, and the archived runners and CSV outputs that label CPTAC
+  "Proteomics".
+
+---
+
 ## 2026-10-16 — Prepare advisor narrative, review bloat, resume one bounded case
 
 Andrew requests a structured overview and guided advisor discussion before
@@ -948,6 +996,8 @@ success criteria) and the step-5 working mode.
 
 ## 2026-10-14 — Writeup format after author review of the initial draft
 
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
+
 **Decision.** The writeup is a standalone, manuscript-ready narrative of the
 current method, results and biology, not an audit of earlier claims or a record
 of meetings. Title: *Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer* (the prelim chapter's
@@ -1072,6 +1122,8 @@ matches the coauthor list in bios-dissertation's ROADMAP (2026-10-13).
 ---
 
 ## 2026-10-12 — Unified writeup format, location, and evidence boundaries
+
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
 
 **Decision.** Develop the advisor-facing writeup in `paper/writeup/` as an
 article-style technical report with a 15–20-page main text, plus derivation
@@ -4228,6 +4280,8 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 
 ## 2026-05-25 — Merged-cohort benchmark: 6-configuration apples-to-apples comparison
 
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
+
 - **Design:** Six model configurations (2 models × 2 preprocessing × 2 cohort indicator settings)
   evaluated on merged TCGA_PAAD + CPTAC training with K selected by cross-validated C-index (1-SE rule,
   K_grid=2:10, 5 folds). Prior: normal throughout — point_normal is excluded because it produces β→0
@@ -4303,6 +4357,8 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 
 ## 2026-05-22 — YFB β→0 on merged data: structural diagnosis and two bug fixes
 
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
+
 - **Finding:** The β→0 collapse in YFB (η = ZF·β) on merged TCGA+CPTAC is a structural property of the model, not fixable by initialization strategies (Cox warm-start, burn-in, higher α). Diagnosis via `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R`.
 - **Root cause:** The YFB F update is genomics-only (`update_F_k` uses only Y reconstruction; survival signal does not flow to F). On merged multi-platform data, the genomics-optimal EF captures platform contrast (RNA-seq vs proteomics), giving ZF factors with no survival correlation (Cox p≈0.8). With B_beta ≈ 0 in every iteration, β converges to 0 regardless of initialization. LB escapes this because EL is dual-source (genomics + α·w·β² survival term), pulling EL toward survival-predictive directions.
 - **Two genuine bugs fixed in `fit_cox_on_yf.R`:**
@@ -4318,6 +4374,8 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 ---
 
 ## 2026-05-22 — Cohort indicator extension: fixed L columns absorb platform offset
+
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
 
 - **Decision:** Augment both LB (`fit_supervised_mf_modular`) and YFB (`fit_cox_on_yf`) with
   a `cohort_id` parameter that appends C−1 fixed binary columns to L (corner-point encoding,
@@ -4404,6 +4462,8 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 
 ## 2026-05-25 — Frozen-F β pre-conditioning: N_frozen parameter added to fit_cox_on_yf()
 
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
+
 - **Decision:** Added `N_frozen` parameter (default 0, backward compatible) to
   `fit_cox_on_yf()`. During the first `N_frozen` CAVI iterations, EF is held fixed
   at its SVD initialization while β and L update freely. After `N_frozen` iterations,
@@ -4447,6 +4507,8 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 ---
 
 ## 2026-05-25 — Low-K cohort benchmark: cohort_id is essential at K=5 for LB on merged data
+
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
 
 - **Finding:** At K=5, the LB model (η = Lβ) also collapses to β→0 on merged TCGA+CPTAC
   (K_eff=0), not just the YFB model. At K=20, ARD has enough capacity to simultaneously
@@ -5203,6 +5265,8 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 
 ## 2026-04-29 — Lambda increase ruled out for merged-cohort training (EL collapse)
 
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
+
 - **Decision:** Amplifying the survival objective via λ > 1 is ruled out as a strategy for recovering non-zero β in the merged TCGA_PAAD + CPTAC training setting. The default λ=1.0 is retained. For merged training, λ tuning is actively harmful.
 - **Reason:** A full λ × prior sweep (λ ∈ {1, 5, 10, 20} × {point_normal, point_laplace, normal}, v2 preprocessing) was run on the merged cohort. At λ=5, the CAVI degenerates completely: the entire L loading matrix collapses to zero (max|EL| < machine epsilon), not merely β. At λ=10 and λ=20, the same collapse occurs. The root cause is that amplifying the survival gradient in the L update overwhelms the genomics reconstruction signal; CAVI responds by driving L to zero (zeroing out the entire linear predictor) rather than shifting weight toward survival-informative directions.
 - **Context:** The earlier sandbox (n=250, p=1000, K=5 synthetic data) found λ=1 flat vs. λ=p/n. The merged-cohort collapse is a qualitatively different, more severe failure: EL→0, not just β→0. The batch structure of the merged matrix (RNA-seq vs. proteomics platform factor) likely amplifies the instability.
@@ -5269,6 +5333,8 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 
 ## 2026-04-24 — Multi-modal TCGA+CPTAC merge documented as expected failure
 
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
+
 - **Decision:** The merged TCGA RNA-seq + CPTAC proteomics training mode (838-gene intersection, n=273) is documented as a known failure case rather than a valid benchmark condition. All β̂_k = 0 in both priors.
 - **Reason:** When RNA-seq and proteomics are intersected at gene symbols and rank-normalised, PC1 separates the two platforms rather than separating patients by biology. The ARD prior correctly diagnoses that none of the learned factors carry survival signal — they carry platform identity instead. This is not a model failure; it is the model correctly reporting that no prognostic structure exists in this feature space.
 - **Trade-offs:** Excluding merged results from the primary benchmark simplifies the comparison table. The failure case is retained in Section 6 of the report as a methodological lesson, motivating the shared-L multi-modal extension (separate F matrices per modality, shared L supervised by survival).
@@ -5277,6 +5343,8 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 ---
 
 ## 2026-04-24 — DeSurv-aligned preprocessing pipeline added
+
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics; see the 2026-10-16 correction entry.
 
 - **Decision:** Added `code/preprocess_desurv.R` — a preprocessing module that matches the DeSurv paper (Young et al. 2025, PNAS) pipeline: log₂(counts+1) for RNA-seq → select top-2000 most-variable genes per cohort → rank-transform each subject's expression vector.
 - **Reason:** DeSurv serves as the primary external benchmark. Using the same preprocessing ensures any C-index difference reflects model architecture, not data transformation choices. Proteomics/microarray platforms skip the log₂ step (already on a normalized scale).

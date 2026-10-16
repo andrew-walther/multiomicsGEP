@@ -44,7 +44,7 @@ execute:
 
 This document provides a structured inventory of the PDAC (Pancreatic Ductal Adenocarcinoma)
 datasets available for use with the supervised Bayesian matrix factorization model implemented
-in `multiomicsGEP`. Seven datasets are available, spanning RNA-seq, microarray, and proteomics
+in `multiomicsGEP`. Seven datasets are available, spanning RNA-seq and microarray
 platforms. Each dataset includes a gene expression matrix, survival data (time-to-event with
 censoring), and CAF (cancer-associated fibroblast) subtype annotations.
 
@@ -85,7 +85,7 @@ subtype analysis. It is not required for the matrix factorization pipeline.
 inventory <- data.frame(
   Dataset = c("TCGA_PAAD", "CPTAC", "Dijk", "Moffitt_GEO_array",
               "PACA_AU_array", "PACA_AU_seq", "Puleo_array"),
-  Platform = c("RNA-seq", "Proteomics", "RNA-seq", "Microarray",
+  Platform = c("RNA-seq", "RNA-seq", "RNA-seq", "Microarray",
                "Microarray", "RNA-seq", "Microarray"),
   Genes = c(20531, 28057, 49677, 19749, 47265, 56206, 20087),
   Samples_Total = c(181, 140, 90, 357, 131, 92, 309),
@@ -108,7 +108,7 @@ knitr::kable(inventory, align = c("l", "l", "r", "r", "r", "r", "r", "r", "c", "
   time and event) and dataset-specific filtering applied by `load_data_internal()`.
 - *Log2_Applied* indicates whether `load_data_internal()` applies a `log2(x + 1)` transformation
   to the expression matrix. Datasets already on a log or normalised scale (microarray,
-  proteomics) are not re-transformed.
+  CPTAC RNA-seq) are not re-transformed.
 - *Time_Range* is in months for all datasets.
 
 # Per-Dataset Profiles
@@ -141,13 +141,16 @@ annotation. Recommended as the smoke-test target.
 
 ## CPTAC
 
-**Source:** Clinical Proteomic Tumor Analysis Consortium — PDAC proteomics.
+**Source:** Clinical Proteomic Tumor Analysis Consortium — PDAC cohort (Cao et al. 2021).
 
-**Platform:** Mass spectrometry proteomics (already normalised; not log-transformed).
+**Platform:** RNA-seq, supplied log2-transformed (`metadata$log.transformed = TRUE`), so it
+is not re-transformed. Earlier versions of this audit called it proteomics (corrected
+2026-10-16).
 
-**Dimensions:** 28,057 proteins × 140 samples (134 after filtering).
+**Dimensions:** 28,057 genes (including antisense lncRNA and pseudogene symbols) × 140
+samples (134 after filtering).
 
-**Expression range:** 0 -- 24.8 (normalised abundance, likely log2-transformed upstream).
+**Expression range:** 0 -- 24.8 (log2 scale).
 
 **Feature annotation:** `featInfo` is a list of length 1 (minimal annotation).
 
@@ -155,11 +158,9 @@ annotation. Recommended as the smoke-test target.
 
 **Survival:** 68 events / 66 censored (49.3%). Follow-up: 0 -- 45.5 months.
 
-**Note:** This is a *proteomics* dataset, not transcriptomics. The supervised MF model
-was derived for gene expression, but the mathematical framework (Y = LF' + E with Cox PH)
-applies to any continuous omics matrix. Results should be interpreted in the proteomics context
-(protein abundance programs rather than gene expression programs). Features are proteins, not
-genes — top-feature tables will report protein identifiers rather than gene symbols.
+**Note:** TCGA_PAAD is supplied untransformed and CPTAC on the log2 scale, with different
+upstream quantification and annotation (17,900 shared gene symbols). These differences are
+candidate sources of the between-cohort contrast seen when the two cohorts are pooled.
 
 ## Dijk
 
@@ -417,8 +418,10 @@ seconds on a 2024 MacBook Pro. Runtime scales linearly with n × p × K.
 3. **Cross-platform comparisons:** PACA_AU_array and PACA_AU_seq share the same patient
    cohort on different platforms — factor recovery comparison is a natural future analysis.
 
-4. **CPTAC caveat:** This is a proteomics dataset. Results should be interpreted as protein
-   abundance programs rather than gene expression programs.
+4. **CPTAC caveat:** CPTAC is RNA-seq supplied on the log2 scale, whereas TCGA_PAAD is
+   supplied untransformed; differences in delivered scale and upstream quantification are a
+   candidate source of the between-cohort contrast. (Corrected 2026-10-16; earlier versions
+   called CPTAC proteomics.)
 
 5. **Dijk caveat:** Very low censoring (10%) — nearly all patients experienced the event.
    Cox model estimation will be strong but generalisability may be limited.

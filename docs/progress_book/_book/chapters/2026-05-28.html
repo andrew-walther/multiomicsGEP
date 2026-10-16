@@ -77,7 +77,7 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -271,6 +271,9 @@ window.Quarto = {
 <section id="results-updates" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="results-updates"><span class="header-section-number">3.2</span> Results updates</h2>
 <p><strong>Critical finding: preprocessing is not a free choice.</strong> 10 of the 12 non-per-platform configurations collapsed to <span class="math inline">\(\hat\beta=0\)</span> for every factor. Only <strong>per-platform z-standardization</strong> consistently recovers non-zero survival coefficients. Without it, the top singular vectors of the merged matrix capture the RNA-seq/proteomics platform contrast rather than biology, and the survival update has no real biological signal to use.</p>
+<blockquote class="blockquote">
+<p>Correction (2026-10-16): CPTAC is RNA-seq, not proteomics. The platform contrast described here is a between-cohort difference between two separately processed RNA-seq datasets; see the 2026-10-16 correction entry in <code>DECISIONS.md</code>.</p>
+</blockquote>
 <p><strong>Cohort indicator helps only in specific configurations, not universally.</strong> It absorbs the platform offset when preprocessing hasn’t already removed it (+0.020 for LB with joint QN, meaningfully helpful there), but is neutral to harmful once per-platform z-standardization is already in place (+0.004 for LB, −0.013 for YFB, where at low <span class="math inline">\(K\)</span> it competes with the 2 biological factors for variance). Recommendation: keep it available as a robustness option for LB when per-platform preprocessing can’t be guaranteed, but exclude it from the primary YFB configuration.</p>
 <p><strong>DeSurv gene selection improved external concordance in both model families:</strong> +0.012 for YFB (D4 vs. the earlier per-platform-only D2), +0.006 for LB (D3 vs.&nbsp;D1). YFB also outperformed LB on the same DeSurv gene set by +0.014 (D4 vs.&nbsp;D3); the two effects are additive. Every one of the 5 configurations tested (D1–D5) converged to exactly <strong>2 active survival factors</strong> regardless of how many factors were requested (K ranged 3–8), with one adverse-direction and one protective-direction program every time. The same 2-factor structure appears in every preprocessing configuration tested, which supports it being a real property of the data rather than a fitting artifact.</p>
 <table class="caption-top table">

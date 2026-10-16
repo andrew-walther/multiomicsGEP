@@ -5,6 +5,8 @@ returning $\hat\beta_k = 0$ for every factor. It reconstructed expression fine b
 survival signal at all, so risk prediction was just a constant hazard. This entry covers the
 diagnosis and the first fix.
 
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics. The platform contrast described here is a between-cohort difference between two separately processed RNA-seq datasets; see the 2026-10-16 correction entry in `DECISIONS.md`.
+
 ## Method updates
 
 - **Preprocessing fix.** The original pipeline selected the top 2,000 variable genes within each

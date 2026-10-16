@@ -22,6 +22,8 @@ consistently recovers non-zero survival coefficients. Without it, the top singul
 merged matrix capture the RNA-seq/proteomics platform contrast rather than biology, and the survival
 update has no real biological signal to use.
 
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics. The platform contrast described here is a between-cohort difference between two separately processed RNA-seq datasets; see the 2026-10-16 correction entry in `DECISIONS.md`.
+
 **Cohort indicator helps only in specific configurations, not universally.** It absorbs the platform offset when preprocessing
 hasn't already removed it (+0.020 for LB with joint QN, meaningfully helpful there), but is neutral
 to harmful once per-platform z-standardization is already in place (+0.004 for LB, −0.013 for YFB,

@@ -26,7 +26,7 @@ the supervision, valid rank and multimodal-value research goals remain open.
 >
 > **Status as of 2026-07-15.** Core model complete (modular CAVI, 374/374 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
-> cohorts across RNA-seq, microarray, and proteomics platforms). Multi-cohort simulation
+> cohorts across RNA-seq and microarray platforms). Multi-cohort simulation
 > study complete: shared vs. study-specific factor recovery validated across 3 scenarios and
 > 5 arms; proposal and key results in `docs/reports/multicohort_sim_proposal_06_14_26.pdf`.
 > See `docs/reports/desurv_alignment_report_05_27_26.pdf` for the real-data benchmark.
@@ -72,7 +72,7 @@ the supervision, valid rank and multimodal-value research goals remain open.
 > parameterization.
 >
 > **Key preprocessing finding:** Per-platform z-standardization applied before merging is
-> required for mixed RNA-seq + proteomics training. 10 of 12 non-per-platform preprocessing
+> required for pooled TCGA + CPTAC training. 10 of 12 non-per-platform preprocessing
 > configurations collapse to β=0 (K_eff=0). YFB point_normal K-CV still returns C=0.5 for
 > all K (spike-small-n collapse; open item). Both models use SVD initialization with
 > post-convergence sign check (global β negation if training C<0.5).
@@ -514,8 +514,8 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Extended 6-config comparison to 18 by adding joint quantile-no-rank, joint z-standardization,
   and log-only preprocessing. Biological K floor K_final = max(K_1se, 3) applied throughout.
   Winner: M5 (YFB × per-platform z-std × no cohort_id, K=3), mean external C=0.626, K_eff=2/3.
-  Key finding: per-platform z-standardization is the *only* viable preprocessing for mixed
-  RNA-seq + proteomics training data. 10 of 12 non-per-platform configs collapse to β=0 (K_eff=0).
+  Key finding: per-platform z-standardization is the *only* viable preprocessing for pooled
+  TCGA + CPTAC training data. 10 of 12 non-per-platform configs collapse to β=0 (K_eff=0).
   Rank transform is not the driver of YFB β→0 on joint-QN data (M13/M14 also collapse without it).
   Recommended for manuscript: M5 (primary), M4 (sensitivity). See DECISIONS.md 2026-05-25.
   *Files: `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
@@ -679,14 +679,14 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Merge CPTAC and TCGA_PAAD (batch-corrected) as a training set and hold out Dijk,
   Moffitt_GEO_array, PACA_AU_array, PACA_AU_seq, and Puleo_array as independent test cohorts.
   This tests generalisation of learned gene expression programs across platforms (RNA-seq,
-  microarray, proteomics) and patient populations. More training data than the current 80/20
+  microarray) and patient populations. More training data than the current 80/20
   within-cohort split. Requires R4 (inter-dataset normalisation) as a prerequisite.
   *Notes: `code/train_test_split.R` and `code/predict.R` are already in place for the projection step. Batch correction (ComBat or similar) not yet implemented — add to R4. See `results/modular_sim_factor/PDAC/` for current within-cohort results.*
 
 - [x] **Inter-dataset normalisation before cohort merging** `[Priority: High]` `[Effort: Medium]` *(Complete — v2 preprocessing, 2026-04-29)*
   Before merging cohorts (required for R3), apply quantile normalisation or z-score
   standardisation across datasets beyond the current per-cohort column-centring. Addresses
-  platform-specific mean/variance shifts between RNA-seq, microarray, and proteomics. Essential
+  platform-specific mean/variance shifts between cohorts and between RNA-seq and microarray. Essential
   for any analysis that combines data across assay types.
   *Notes: Implemented as `preprocess_merged_cohorts()` in `code/preprocess_desurv.R`. Pipeline: intersect raw gene universes → log₂(x+1) [RNA-seq only] → `preprocessCore::normalize.quantiles()` across all merged samples → top-2000 by merged-matrix variance → per-subject rank transform. Gated by `preprocessing_version = "v2"` in `run_real_data_benchmark()`. See DECISIONS.md 2026-04-29 entry.*
 
@@ -810,8 +810,8 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [ ] **Per-platform noise variance (τ) investigation** `[Priority: Low]` `[Effort: Medium]`
   The current model uses a single shared noise precision τ (estimated per gene, shared across
-  subjects and cohorts). In merged multi-platform training (TCGA RNA-seq + CPTAC proteomics),
-  the true noise variance almost certainly differs between platforms. A per-platform τ would
+  subjects and cohorts). In merged multi-platform training (TCGA + CPTAC, both RNA-seq but processed separately),
+  the noise variance may differ between cohorts. A per-platform τ would
   better reflect the generative structure and may reduce the genomics-term scale imbalance
   that drives β→0 in the L update. Requires a new q(τ) derivation for the grouped case.
   *Files: `code/update_tau.R`, `code/fit_modular.R`, `code/fit_cox_on_yf.R`*

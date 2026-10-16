@@ -78,7 +78,7 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -285,7 +285,7 @@ window.Quarto = {
 <ul>
 <li><strong>Model:</strong> <span class="math inline">\(Y = LF^\top + E\)</span> (genomics) coupled to a Cox proportional hazards model on survival, fit by Coordinate Ascent Variational Inference (CAVI) with Empirical Bayes Normal Means (EBNM) sub-updates for sparsity.</li>
 <li><strong>Current recommended form:</strong> YFB (<code>code/fit_cox_on_yf.R</code>), <span class="math inline">\(\eta = (YF)\beta\)</span>. The survival predictor is computed directly from observed expression, avoiding train/test projection mismatch.</li>
-<li><strong>Data:</strong> PDAC patient cohorts spanning RNA-seq, microarray, and proteomics platforms (TCGA-PAAD + CPTAC training; 5 independent cohorts held out for external validation).</li>
+<li><strong>Data:</strong> PDAC patient cohorts spanning RNA-seq and microarray platforms (TCGA-PAAD + CPTAC training; 5 independent cohorts held out for external validation).</li>
 <li><strong>Research question:</strong> does coupling factorization to survival find real prognostic structure, and is that structure worth the added model complexity? Evaluated against three baselines: DeSurv (a published joint method), a two-step factorize-then-Cox baseline, and unsupervised EBMF.</li>
 </ul>
 <p>For the full model specification and math, see <code>PROJECT_STATUS.qmd</code> at the repo root or the project <code>README.md</code>.</p>
