@@ -1,6 +1,6 @@
 # Round 2: current status and review handoff
 
-Updated2026-10-15. This is the current summary, replacing the former layered
+Updated2026-10-16. This is the current summary, replacing the former layered
 checkpoint preamble. The complete earlier handoff is preserved verbatim in
 [the chronological history](Codex_to_Claude_Round2_history_10_15_26.md).
 Historical statements there describe their own checkpoint, not current status.
@@ -14,15 +14,17 @@ Historical statements there describe their own checkpoint, not current status.
 4. Use [the attempt log](Round2_attempts_log.md) for exact designs/results and
    the chronological history for detailed implementation explanations.
 
-**State:** Goal paused at Andrew's request; planning updates do not resume it.
+**State:** The bounded equation/evidence review below is delivered for review;
+stop and regroup before implementation or scientific execution. The north star
+remains unmet; completing this review does not resume the former broad goal.
 Branch `round2/supervised`; no push, merge or protected-branch edit authorized.
 No fitting job remains running. Scientific/report checkpoint `0c0c717`;
-restart-plan checkpoint `3e2757d`. No new configuration is proposed or adopted.
+restart-plan checkpoint `f8c895b`. No new configuration is adopted.
 
-**Recommendation:** Keep the north star as the project objective, but use a
-smaller active goal when resuming: produce a review-ready diagnosis and one
-prospective next experiment, then regroup before another scientific fitting
-panel. The active plan defines its deliverables and subsequent milestones.
+**Recommendation:** Keep the north star as the project objective. The bounded
+review below is delivered; regroup on its proposed complete-cycle observer
+before implementation or another scientific fitting panel. The active plan
+defines subsequent milestones.
 Do not mark the existing scientific goal complete just to replace it with a
 smaller goal. Its older state description incorrectly says external performance
 is unchanged; the failed Single noninferiority result below is authoritative.
@@ -171,13 +173,236 @@ unrun. Old source fingerprints must not be bypassed after arithmetic changes.
 
 ## Next handoff and stop rule
 
-The next deliverable is a bounded mathematical/evidence review with a specific
-prospective next experiment and the applicable ladder/approval identified.
-Regroup before any fitting panel. Keep original thresholds, model-specific
+The bounded mathematical/evidence review below supplies a specific prospective
+experiment and the applicable ladder/approval. Regroup before implementation
+or any fitting panel. Keep original thresholds, model-specific
 convergence rules, benchmark/default identity, one-change attempts and training-
 only selection. Retain DeSurv deferral and no push/merge authorization.
 Write verified findings into the meeting report and current write-up; final
 configuration/biology claims retain review and Andrew's approval gates.
+
+## Bounded supervision review — 2026-10-16
+
+**Recommendation:** Locate the first loss of a coherent objective across a
+complete working cycle, rather than repeat the F-only KL audit. Implement an
+isolated observer, not a new fitter path, damping constant or survival weight. The proposed
+experiment below is unexecuted and needs Andrew's decision and a committed
+prospective attempt before execution. It separates update and monitor gaps;
+it does not assume these gaps explain every cap. R2 and R3 remain untried.
+
+### Equations and evidence
+
+For one loading, with the Cox quadratic and other moments fixed, the current
+sequential sweep uses
+
+\[
+A_j=\tau_j\sum_i E[L_{ik}^2]+E[\beta_k^2]y_j^\top W y_j,\qquad
+B_j=\tau_j R_j^\top E[L_k]+E[\beta_k]y_j^\top h_{-k}
+ -E[\beta_k^2]y_j^\top W E[Z_{k,-j}].
+\]
+
+The last term removes the other features of the same program. It is present
+in `multimodal_yfb_update_F_mk()` and the canonical Single caller; the earlier
+omission is already corrected, not a new diagnosis. The helper refreshes
+projection means/variances after each coordinate. For profiled curvature,
+weighted-centered survival covariates implement
+\(H_c=W-ww^\top/\sum w\); reconstruction residuals stay on their original
+scale. These statements concern the fixed quadratic, not exact Cox ascent.
+
+| Unresolved issue / established observation | Supported cause or limitation | Remaining uncertainty | Minimal falsifiable check; ladder relationship |
+|---|---|---|---|
+| Shared-prior exact collapse: selected TCGA arm loses slab mass at outer99/inner1, all beta moments at inner2; no-start at54/3 then54/4. | A returned delta0 shared prior forces every subsequent beta posterior to delta0. R1 prevents this absorption but does not validate fitting. | Why marginal refitting selects the boundary, and whether avoiding it yields credible, convergent programs. | R2, fixed lower slab probability1/K, remains untried; first reconcile its shared-prior units. Do not infer R2 succeeds from R1. |
+| Per-factor Normal fold1 reaches all-zero beta at167/1 while loading program4 remains recognizable. | Its scalar variance MLE is max(0,x²−1/A); all pseudo-z magnitudes fall below1. This differs from an absorbing fixed shared prior: earlier revivals occurred. | Whether local curvature, changing loadings or prior estimation drives the crossing. | Freeze the same state and independently verify A/B, including uncertainty; profiling has already tested the constant-direction part and did not deliver convergence. |
+| Both canonical models can cap with nonzero risk; Single seed20261026 oscillates. | Fixed-W scalar algebra does not ensure ascent after refreshing the local surrogate. W−H is PSD at the expansion point only. Five inner sweeps are a cap, not evidence that the working problem is solved. | Which transition first loses a coherent objective: coordinate sweep, hyperparameter refit, scale change or working refresh. | Proposed complete working-cycle observer below. A lower Cox logPL alone cannot diagnose a joint-update defect. |
+| Returned F prior and posterior can have incompatible support; cached KL remains finite. | Posteriors use the incoming prior; the subsequent marginal prior fit uses sequential pseudo-data, then returns a different prior without updating those posteriors/KLs. A product of these changing pseudo-data marginals is not the fixed-q hyperparameter objective. | How much this changes the optimization trajectory. The exact audit has3 early native support conflicts and none late; F-only monitor adjustment retains17 negative late increments. | Account for L, F and beta distributions/priors together in the proposed observer. Fixed-q EM is a possible later repair, not an executed remedy or sufficient explanation of oscillation. |
+| Canonicalization preserves fitted products but does not transform a carried shared beta prior. | (L,F,beta)→(cL,F/c,c beta) transforms second moments and molecular priors, but the helper has no g_beta argument. KL to an unchanged shared prior need not be invariant. | Magnitude/trajectory effect; scales near extinction were close to1. Fresh per-factor variance estimation is a different case. | Transform q and its prior together in an independent density/KL identity test; a common shared prior generally becomes factor-specific under unequal c. R2 needs a declared parameterization before implementation. |
+| M2 original25k arithmetic fails with finite eta and valid projection variance; M3 completes numerically but caps. | One global exponential shift zeros143/144 weights and17 risk sums. Log-space risk sums remove that demonstrated arithmetic failure. | Cause of the remaining expanding predictors/reconstruction movement; separation, scale drift and surrogate instability remain hypotheses. | Use saved M2 state for a local check with the already validated log-space arithmetic; do not rerun M3 or call high training C a gain. |
+| Terminal survival precision fractions are6.30e-11–3.03e-7 in four capped fits. | These are conditional likelihood terms excluding priors, evaluated independently per coordinate. A beta point mass gates both terms; a zero mean with positive second moment need not. | Cumulative/sequential influence, early trajectory, and whether unwanted feature redundancy is present. | Inspect A/B and prior changes in their own units; no fraction threshold or inverse-p weight follows. Survival weighting is the last rung. |
+
+Working-step validity has a concrete mathematical limit: for two subjects,
+one event before the second subject is censored, eta0=(-a,0), and a move to
+eta=(0,0), write p=1/(1+exp(a)). The diagonal quadratic gives
+Q=−log(1+exp(a))+(1−p)a−p a²/2, which approaches0 as a grows; the true new
+logPL is−log2. Thus the local quadratic can exceed the likelihood. This is
+an algebraic counterexample to a global-minorizer claim, not evidence that
+this particular move caused a saved failure. Profiling removes the constant
+direction but does not supply a global ascent guarantee.
+
+Scale freedom also cannot explain away M3: a consistent gauge transformation
+preserves eta and reconstruction, whereas both still change at the cap.
+Measurement scaling is separate: rescaling Y and its reconstruction loading
+by d changes raw YF by d². Keep the original preprocessing fixed; this is no
+authorization to normalize a modality or change the predictor.
+
+**Evidence anchors:** [corrected Single derivation](../../derivations/cox_on_YF/canonical_ZF/canonical_ZF_exact_F_update.qmd),
+[multimodal derivation](../../derivations/multimodal_YFB/multimodal_YFB_derivation.qmd),
+[technical notes](../../derivations/multimodal_YFB/multimodal_YFB_technical_notes.qmd)
+(Cox expansion, coupled prior estimation, KL and scale sections),
+[profile proposal](Round2_profiled_curvature_proposal.md),
+[arithmetic note](Cox_Logspace_Arithmetic_10_15_26.md), and attempt-log
+Task2-1/2/3/4/5, Task2-B1, Task5-M2/M3/A1.
+Implementation references: `code/multimodal_yfb_updates.R` (F A/B, signed
+prior refit and returned KL), `code/fit_multimodal_yfb.R` (inner loop,
+canonicalization, damping and monitors), `code/fit_cox_on_yf.R` (canonical
+Single caller), `code/profile_cox_intercept.R`, `code/cox_working_logspace.R`.
+The technical-note formulas are mathematical references, not proof of code
+identity: actual controls select signed priors/intercepts; the current
+multimodal helper has no historical working-weight floor.
+
+Direct saved-evidence links by issue: [prior support summary](../../results/benchmark_sim/outputs/round2/prior_consistency_seed26/summary.csv),
+[exact fit identity](../../results/benchmark_sim/outputs/round2/prior_consistency_seed26/identity.csv),
+[loading-prior trace](../../results/benchmark_sim/outputs/round2/prior_consistency_seed26/loading_prior_trace.csv),
+[TCGA cap components](../../results/multimodal_real/outputs/round2/diagnosis1/cap_diagnosis.csv),
+[loading-balance interpretation](../../results/multimodal_real/outputs/round2/loading_balance/interpretation.txt),
+[cached objective components](../../results/multimodal_real/outputs/round2/loading_balance/saved_objective_components.csv),
+[M2 cause summary](../../results/multimodal_real/outputs/feature_sensitivity/moment_diagnosis/root_cause_summary.csv),
+[M3 terminal case](../../results/multimodal_real/outputs/feature_sensitivity/logspace_case/case.csv),
+and [M3 history](../../results/multimodal_real/outputs/feature_sensitivity/logspace_case/terminal_history.csv). These preserve
+the3 support conflicts, exact original fit identity and M3 terminal failure.
+No new patient-level computation or scientific fit was needed for this review.
+
+### Remedy ledger — do not call the ladder exhausted
+
+| Step | Status | Evidence / prerequisite |
+|---|---|---|
+| R1 fixed shared point-Laplace beta prior | Tried; failed adoption |80 simulations+20 CV fits. Single convergence19/20 at low noise and CV delta−.015761 versus SE.006968 fail; multimodal full/CV fits cap, no credible coefficients. |
+| R2 refitted shared prior with pi≥1/K | Untried; applicable to shared absorption | No registered R2 panel. It does not address historical Normal collapse, and its shared-prior/canonicalization units must be specified. Not ruled out by R1. |
+| R3 per-factor Normal beta with supervised start only | Untried exact combination | Historical framework **without** supervised start was diagnosed, not this one-option R3 arm. No simulation/CV adoption evaluation of the exact combination is recorded. |
+| Shared Normal warm-up / no supervised start contrasts | Diagnostic only; tried | Ten-arm TCGA study: shared Normal has near-zero risk/no credibility; removing the start still absorbs. Not substitutes for R2/R3. |
+| Longer warm-up | Untried | Warmup10 was used; no longer value tested. A tuned constant is not free: the protocol treats it as a weight requiring a prospective selection rule. |
+| Staged fit from a converged framework | Currently inapplicable to saved capped starts | Full framework and all five framework CV fits cap500. A cap cannot be relabelled convergence; no longer cap or altered stopping rule is authorized. This does not rule out staged fitting if a genuine converged start later exists. |
+| Damping beta/F updates | Untried; evidence differs by model | Single late oscillation is documented; earlier multimodal diagnostic ELBO increments were positive. Existing damping blends means and variances, not posterior densities, and carries undamped KL/prior outputs. A valid objective account is needed; no arbitrary damping value chosen. |
+| Joint/collapsed (F_k,beta_k) update | Untried | Corrected scalar F update is not a joint update. Derive in cox_on_YF and check numerically before a prospective fit. |
+| Survival weight {1,2,5,10} | Untried; last resort | Training-CV selection only after applicable preceding steps/decisions. Tiny terminal fractions do not justify promoting it. |
+| Profiled working intercept | Additional approved remedy; tried, failed adoption | Single recovery18/20,20/20; multimodal16/20,19/20. One Single simulation caps; all five multimodal CV fits and both full candidates cap. Multimodal paired gate undefined. |
+| Log-space risk-set arithmetic | Numeric repair demonstrated, opt-in | M2/M3 exact failing point repaired;25k still caps500 with riskSD39086/logPL−40177. Not a supervision remedy or default adoption. |
+| Prior-consistency / loading-balance observations | Completed diagnostics, not remedies | Task2-5 and B1. Fixed-q loading-prior maximization and a fully coherent current-state objective remain unimplemented. |
+
+### One proposed next experiment: observe the complete working cycle
+
+**Question:** After accounting for all current priors, does the remaining
+late Single oscillation originate within the frozen-quadratic updates or
+only when the approximation is refreshed? The completed F-only audit cannot
+answer this. Another repeat of its three early support conflicts would add
+little; the new information must be a complete transition decomposition.
+
+**Exact single change:** Add process-local observation of the full
+current-state working objective, including L/F/beta KL, at update boundaries.
+Return every original update unchanged. No prior, posterior, curvature,
+initialization, damping, scale convention, convergence rule or fit control
+changes. This is a proposed diagnostic extension, not a remedy rung or a
+new convergence monitor. It needs a separate committed prospective attempt
+and Andrew's approval before its observational replay.
+
+**Fixed arms:** (a) saved Task2-4 cell021 as the unmodified reference;
+(b) exactly one observer-enabled replay of that same Single simulation,
+seed20261026/noise.25, n400/validation120,p50,K7, per-factor Normal beta,
+point-Laplace L/F, no supervised start, profile_cox_intercept TRUE,w_S1,
+no pruning, original300 cap/ELBO rule. Reuse the existing generator and
+controls, not a new test bed. Require exact identity of the entire fit and
+history, as in Task2-5. Freeze source/reference hashes before registration.
+Do not add a multimodal or25k arm; transfer to their instability is unproven.
+
+**New observation:** Capture the actual posterior distributions, not only
+their moments, using the incoming prior and each coordinate's own A/B at
+the instant of update. Retain these distributions across updates and transform
+them with the existing canonicalization. For every cycle, separately evaluate
+(i) posterior-coordinate changes with priors and working terms frozen,
+(ii) prior refits at fixed posterior, (iii) canonicalization with corresponding
+prior/distribution units, and (iv) the working refresh at unchanged terminal
+q. Include L, F and beta, reconstruction, uncertainty and KL; do not reuse
+cached normalizers against a different prior. Record actual carried priors
+separately from a mathematically transformed reference prior; if a prior is
+not retained by the fitter, identify that gap rather than silently supply one
+and claim a common implemented objective. Include tau changes separately.
+An initialized distribution that cannot be reconstructed from saved moments
+must remain unevaluated until that coordinate has actually been updated;
+do not infer its entropy from two moments. Preserve the complete record and
+mark coverage explicitly, especially the final50 cycles.
+
+Use an anchored quadratic
+Q=logPL(eta0)+u'(eta−eta0)−(eta−eta0)'Hc(eta−eta0)/2; its expectation also
+subtracts tr(Hc Cov(eta))/2. Its additive constant changes on refresh;
+the code's constant-free fixed_working_objective cannot be compared across
+different anchors as a common objective. Keep this local working objective,
+the refreshed approximation and the actual Cox logPL as distinct columns.
+Even with coherent KL, this remains an expected local quadratic, not an exact
+evaluation of E_q logPL or a proven global lower bound. No computed diagnostic
+replaces the original history or stopping rule.
+Keep infinite KL/support conflicts; do not subtract infinities or treat a
+finite partial objective as complete. No external patient/outcome input.
+
+**Required tests before execution:** independent dense-quadratic A/B and
+expected-objective calculations on correlated-feature fixtures; coordinate
+ascent at fixed priors/W (including the within-program residual subtraction);
+independent mixed-distribution KL/quadrature for point-Laplace and
+point-exponential q, analytic Normal KL, and old/new prior-density identities;
+spike/no-spike/zero-information and incompatible-support cases; density/KL
+invariance when q and its prior are rescaled together; correct anchored
+constant and uncertainty at refresh; observer-on/off full-object identity.
+Use existing prior-audit numerical conventions (quadrature1e-8,
+moment/unit checks1e-12, analytic/native probability1e-7); these are software
+checks, not scientific thresholds. Run the full suite and protected-base
+default-identity tests before the prospective code/log commit.
+
+**Decision and stopping rule:** Register/commit first, replay once into a
+fresh aggregate-only folder, then stop. Identity failure, incomplete late-cycle
+distribution coverage or inconsistent density reconstruction blocks causal
+interpretation; preserve the error/partial output with no retry or new case.
+If a frozen-prior coordinate reduces the independently evaluated fixed
+working objective beyond the tested numerical agreement, derive/fix that
+update before trying damping. If loss occurs at prior refits, prioritize a
+consistent hyperparameter step; for signed F the fixed-q candidate is
+pi_new=S/p, rate_new=S/T, S=sum Pr_q(F≠0), T=sum E_q|F|, with explicit
+support/boundary handling. If fixed-working steps pass and loss appears only
+on refresh, that supports investigating the working-step strategy (including
+the damping rung), not an automatic choice of a damping value. If nonfinite
+KL prevents localization, report the support obstruction rather than claim
+an ascent diagnosis. These are prospective branches, not reported results.
+No outcome alone proves a cure for M3. Return to Andrew before implementing
+any remedy; no automatic follow-on panel.
+
+This review is the interim handback required by the six-attempt protocol;
+diagnostic entries do not establish ladder exhaustion. The proposed observer
+is not a new remedy rung and is not automatically authorized as a continuation
+past that limit. Andrew must decide on this bounded extension.
+
+**Original scientific criteria remain binding:** This diagnostic cannot pass
+an adoption gate. Any later remedy needs a separate committed design on
+the original two models, seeds20261016:20261035, noise.25/1, n400/validation120,
+p50 per modality, K7, original controls/caps and references: recovery≥16/20
+at each noise, null-active mean≤reference+.5, every fit converged by its
+model's rule (Single ELBO; multimodal output changes); median rank3 applies
+when rank adoption is evaluated. Training evaluation retains the same144
+TCGA patients/cache, seed42 event-stratified five folds, training-only Single
+scaling and conditional screening/imputation caveat. Require all five finite
+paired C values and mean delta≥−sd(delta)/sqrt5, full-training nonconstant
+risk and≥1 credible coefficient with positive SD, and report every cap.
+The existing reference fold C=NA prevents that paired gate passing as
+written; it remains NA. Changing it needs Andrew and prospective criteria,
+not a silent reference substitution. Only a final selected configuration
+reaches the permitted external report (lower95% deltaC limit>−.02), with
+frozen benchmark rows; external cohorts cannot choose a remedy.
+
+**Decision requested:** Approve or decline this one complete-cycle observer
+and single unchanged simulation replay before production implementation.
+Recommendation: approve it because the F-only adjustment already failed to
+explain late oscillation. Use the transition evidence to choose a specific
+prior/update repair or damping proposal; retain R2/R3 for the distinct
+absorption problem after resolving shared-prior units. Do not authorize a new fitting
+panel, a new reference or relaxed convergence by implication. The broader
+method remains unresolved, and the existing failed external Single result
+and all capped fits stand.
+
+**Review verification (2026-10-16):** Fresh `Rscript tests/run_tests.R`
+completed with exit0:684 passed,0 failed. All24 local Markdown links/anchors
+resolve; `git diff --check` passes. Only this handoff and the active plan
+changed; no code, configuration, tests, results or manuscript changed.
+All10 benchmark SHA256 entries pass before and after review; the immutable
+tag still peels to `a352f17ca9cff523caa80756aa2af085e62551e1`.
+The process check before the suite found no active R fitting process.
+No scientific fit, external scoring or remedy execution occurred. Commit
+on `round2/supervised` only, with branch rechecked immediately beforehand.
 
 ## Provenance and history
 

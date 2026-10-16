@@ -12,7 +12,10 @@
 
 ## Start here when work resumes
 
-**State:** Goal paused at Andrew's request. Planning updates do not resume it.
+**State:** The bounded mathematical/evidence review is delivered below for
+Andrew's review. Stop and regroup before any new diagnostic replay, remedy
+implementation or fitting panel. The project objective remains unmet; the
+former broad goal is not resumed by this review.
 Last scientific/report checkpoint: `0c0c717` on `round2/supervised`; no fitting
 jobs are running. The current write-up is a bounded revision of the interim
 account; the approved interim tag and snapshot remain unchanged. Do not
@@ -32,7 +35,7 @@ remaining research program as the next uninterrupted autonomous goal.
 | Level | Goal | Completion evidence |
 |---|---|---|
 | Project objective | Valid, convergent survival-supervised Single and expression+methylation models with justified programs, preserved performance and interpretable multimodal contribution. | Every original scientific criterion satisfied; proposed configuration reviewed and approved. This objective is not complete. |
-| Next active goal | Produce a review-ready explanation of the remaining supervision/optimization failure and one justified prospective next experiment. | Equation/evidence review, remedy-ladder ledger, one exact proposed design with unchanged gates, and a short recommendation/decision request. Stop and regroup before scientific fitting. |
+| Bounded review delivered | Explain the remaining supervision/optimization failure and specify one justified prospective next experiment. | Equation/evidence review, remedy-ladder ledger, exact observer design with unchanged gates, and decision request are in the current handoff. Stop and regroup before implementation/scientific fitting. |
 | Subsequent goal | Evaluate the agreed single-change remedy. | Behavior/algebra/default-identity tests plus the registered simulation/training results; explicit pass/fail by criterion. A failed remedy can complete this bounded evaluation goal without completing the project objective. |
 | Later milestones | Complete the remaining feature curves; justify rank/program roles and multimodal value; finalize the reviewed write-up. | The tables, stability checks, paired comparisons and review gates specified below, with unavailable or failed results explicit. |
 
@@ -87,11 +90,11 @@ weight, convergence rule or unreviewed remedy.
 
 ### First resumed work block: bounded review, then regroup
 
-- [ ] Read the latest checkpoint in `Codex_to_Claude_Round2.md`, the M2/M3/A1
+- [x] Read the latest checkpoint in `Codex_to_Claude_Round2.md`, the M2/M3/A1
   and prior-consistency entries in `Round2_attempts_log.md`, and the updated
   progress report before implementing or fitting. Verify branch, clean state,
   benchmark hashes and that no prior job remains live.
-- [ ] Compare the actual F/β updates and priors with the derivations, using
+- [x] Compare the actual F/β updates and priors with the derivations, using
   `code/cox_working_logspace.R`, `code/profile_cox_intercept.R`,
   `code/multimodal_yfb_updates.R`, `code/multimodal_yfb_helpers.R`,
   `code/fit_multimodal_yfb.R` and `code/fit_cox_on_yf.R` as the implementation
@@ -100,13 +103,13 @@ weight, convergence rule or unreviewed remedy.
   the constant-risk direction, scale transformations of posterior moments
   and priors, and prior/posterior support consistency. Do not assume a new
   kernel alone repairs the optimization algorithm.
-- [ ] Use saved evidence first: M3 `case.csv` and `terminal_history.csv`,
+- [x] Use saved evidence first: M3 `case.csv` and `terminal_history.csv`,
   M2's ignored failure state, the exact prior-consistency trace, and
   `results/multimodal_real/outputs/round2/loading_balance/`. Small terminal conditional survival
   fractions are descriptive; they do not prove that a weight is needed or
   diagnose the full trajectory. A falling Cox likelihood alone does not prove
   a faulty joint update. Any new execution requires its own committed attempt.
-- [ ] Produce a short findings table: observation, supported cause, remaining
+- [x] Produce a short findings table: observation, supported cause, remaining
   hypothesis, minimal proposed check/remedy and the existing ladder rung or
   approval it uses. Explicitly distinguish prior absorption to β=0,
   nonconvergence with nonzero risk, and repaired arithmetic underflow.
@@ -115,9 +118,62 @@ weight, convergence rule or unreviewed remedy.
   over another broad sweep. A fresh session may use this plan and the handoff;
   neither a new session nor clicking Resume changes scientific authorization.
 
+### Bounded review delivered — 2026-10-16
+
+The [current handoff review package](Codex_to_Claude_Round2.md#bounded-supervision-review--2026-10-16)
+contains the equation/evidence table, complete Task2 remedy ledger and one
+prospective experiment. It supersedes the earlier generic request to choose
+another remedy immediately; no new scientific result or configuration is adopted.
+
+**Diagnosis:** The within-program F residual correction is present. Fixed
+quadratic coordinate algebra, prior/objective consistency, and ascent after
+refreshing Cox working terms are separate questions. Shared-prior absorption,
+per-factor Normal variance-boundary collapse and nonconvergence with nonzero
+risk have different evidence. The F-prior audit establishes a support/KL gap,
+but its partial monitor correction does not explain late oscillation.
+Canonicalization preserves products but does not by itself preserve a carried
+shared beta prior. Stable Cox arithmetic repairs M2's underflow, while M3's
+expanding predictor and changing reconstruction remain unresolved. Small
+terminal survival fractions exclude priors and do not select a mixing weight.
+
+**Ledger:** R1 and the additional approved profiled-intercept remedy failed
+adoption; log-space arithmetic is a demonstrated numerical repair only.
+Exact R2 (pi floor1/K) and R3 (per-factor Normal with supervised start only)
+remain untried, as do longer warm-up, damping, joint/collapsed F–beta and
+last-resort survival weighting. The staged-converged-start rung is currently
+inapplicable to the saved capped framework fits. No ladder is exhausted.
+
+**Recommended next experiment:** An isolated observer of the complete
+working cycle in one unchanged Single seed20261026/noise.25 simulation replay,
+compared exactly with saved Task2-4 cell021. This changes observation only,
+not a model update. Independently account for current L/F/beta distributions
+and priors, coordinate steps, hyperparameter refits, scale transformations,
+tau changes and anchored working refresh. Unlike the completed F-only audit,
+it must locate loss within a frozen quadratic versus after refresh, or report
+why support/coverage prevents localization. Full posterior distributions are
+required; moments alone do not determine entropy. Exact controls, arms,
+software tests, decision branches and stopping rule are in the handoff.
+
+**Andrew's decision:** Approve or decline this diagnostic extension before
+implementation/execution. It requires its own prospective attempt-log entry,
+full tests and commit before replay. Execute once, then regroup; no remedy
+or fitting panel follows automatically. A positive diagnostic does not waive
+the original recovery, false-positive, convergence, rank-when-applicable,
+credibility, paired-CV or final external gates. The existing undefined
+reference fold remains undefined and prevents the paired-CV gate passing
+as written; changing it requires a separate decision. External data remain
+unavailable for remedy selection. R2/R3 are still options for the distinct
+absorption issue, subject to a coherent shared-prior parameterization.
+
+**This review's scope:** Documentation only, based on code, derivations and
+saved aggregate evidence. No remedy, new fit, thresholds/defaults, benchmark,
+test bed or external scoring change. Scientific/report checkpoint0c0c717 and
+planning basef8c895b are retained. Completion of this bounded review is not
+completion of the north star. Verification details are recorded in the handoff.
+
 ### Requirements before and after the next remedy
 
-- [ ] Reconcile the completed attempt history with the original Task2 ladder;
+- [x] Reconcile the completed attempt history with the original Task2 ladder;
   list tried, inapplicable and untried rungs with evidence. Do not call the
   entire ladder exhausted. In particular, a staged start requires a genuinely
   converged starting fit; the saved capped framework is not such a start.
