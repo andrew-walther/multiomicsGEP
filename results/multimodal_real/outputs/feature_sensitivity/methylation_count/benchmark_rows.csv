@@ -1,0 +1,3 @@
+"source","model","evaluation","p","p_expression","C","logPL","risk_sd","credible","retained","converged","iterations"
+"benchmark_snapshot","joint","training",10000,3000,0.637767637767638,-303.945226916994,0.276168188141011,1,7,FALSE,500
+"benchmark_snapshot","expression_only","training",0,3000,0.643559143559144,-302.606479844075,0.36743215714231,1,7,FALSE,500

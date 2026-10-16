@@ -592,3 +592,14 @@ audit CSV. No model or external outcome is scored; local patient matrices stay
 ignored. `code/cpg_feature_sensitivity.R` supplies the tested exact-reconstruction
 and nested count guards. Original mean/extreme-proportion filters are described
 separately; no SD threshold or new filter is adopted by preparation.
+
+The methylation-only count runner is
+`results/multimodal_real/run_feature_expansion_multimodal.R`: generate its
+frozen `design`, then run cell `1`, individual cells1-30, or serial `all` only
+after Task5-M1's prospective commit. Counts10k/25k/50k/100k/all305352 use
+unchanged imputation/ranking and the historical framework at K7/no deletion.
+Conditional CV preserves missing scores/caps; no filter or external score
+selects a count. Safe tables live under `feature_sensitivity/methylation_count/`.
+For larger jobs, the independent-cell SLURM wrapper requests8GB/one CPU;
+submission is manual. `code/multimodal_feature_sensitivity.R` preserves undefined
+concordance for collapsed risk and uses the existing Breslow partial likelihood.

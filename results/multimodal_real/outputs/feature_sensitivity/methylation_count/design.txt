@@ -1,0 +1,40 @@
+Count-only methylation sensitivity. Conditional CV after fixed imputation/screening.
+No mean/proportion/SD filter; those require a separate prospective comparison.
+No external score, model adoption, altered cap or constant-risk substitution.
+List of 14
+ $ max_outer             : int 500
+ $ max_inner             : int 5
+ $ tol                   : num 1e-04
+ $ pve_threshold         : num 0.01
+ $ prognostic_z_threshold: num 1.96
+ $ prior_F               :List of 2
+  ..$ expression : chr "point_exponential"
+  ..$ methylation: chr "point_laplace"
+ $ intercept             : logi TRUE
+ $ prior_update          : chr "ebnm"
+ $ prune                 : logi FALSE
+ $ survival_elbo         : chr "plugin"
+ $ tau_model             : chr "feature"
+ $ init_supervised       : logi FALSE
+ $ beta_prior            : chr "eb_normal"
+ $ profile_cox_intercept : logi FALSE
+R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS 27.0.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+loaded via a namespace (and not attached):
+[1] compiler_4.5.2 Matrix_1.7-5   tools_4.5.2    survival_3.8-6 yaml_2.3.12   
+[6] splines_4.5.2  grid_4.5.2     lattice_0.22-9

@@ -184,3 +184,10 @@ It must reconstruct the unchanged whole-universe imputation and exact frozen
 10k matrix/rank before any fit. Probe-count expansion reaches the full eligible
 universe;10k is a reference only. Describe the supplied mean/proportion filters
 separately; no SD cutoff or default change is authorized by this preflight.
+
+The Task5-M1 methylation-only count driver is
+`results/multimodal_real/run_feature_expansion_multimodal.R`, with a manual
+Longleaf array wrapper. Follow its prospective entry before running any model.
+It uses the historical framework, fixed K7/no deletion, the exact P1 matrix,
+and all five counts through305352. Filters remain a separate comparison;
+constant-risk C stays NA and no external cohort selects a count or model.

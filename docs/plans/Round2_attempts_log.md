@@ -1552,3 +1552,79 @@ and record its count before commit/execution; no reconstruction run yet.
 Task5-P1 preregistration verification: guards RED0/4 then GREEN4/4; full
 suite **661 passed,0 failed** after final module separation. Preparation
 syntax parses. No reconstruction or model has run before this commit.
+
+Task5-P1 result (after da9bce1): exit0 in24.719 seconds, zero warnings. The
+305352-probe144-patient reconstruction imputes29307 entries in8133 probes;
+no missing values remain. Frozen10k values/order/ranking and expression
+subset match exactly, as do patient/survival vectors. All requested counts
+10k/25k/50k/100k/305352 are available. Within this shared universe, the
+observed-mean rule retains182934 probes (9990 of frozen10k), proportion rule
+221142 (all10k), both182934;38208 pass only the proportion rule. These counts
+differ from the full305492-probe descriptive inventory because the original
+eligibility excludes140 TCGA-only probes. Neither filter is adopted. Safe
+aggregate outputs: feature_sensitivity/universe_preflight/. Full RDS ignored.
+
+## Task5-M1: unfiltered methylation-only feature-count curve (prospective)
+
+Execute the approved one-modality-first study with10k/25k/50k/100k/all305352
+CpGs. The10k frozen subset is a reference, not a study endpoint. One variable:
+feature count, using nested original variance ranks and the unchanged P1
+whole-universe imputation. No mean/proportion/SD filter is applied in this
+reference curve. Andrew's filter request will have a separate prospective
+comparison, so count and filtering effects remain identifiable.
+
+Fixed144 TCGA patients, K7/no deletion, cold SVD starts, same five event-
+stratified folds from create_stratified_folds(event,5,seed42), seed42 each fit.
+Historical10/1 framework: raw beta scale, per-feature fitted intercept,
+point-Laplace loadings, point-exponential scores, ebnm prior update, EB Normal
+beta, feature-specific precision, plugin survival ELBO and original diagonal
+Cox working curvature. No supervised initialization, shared beta prior,
+profiled curvature, weighting, damping change or protection. Caps/inner
+sweeps/tolerance/classification thresholds remain from globals.yml (500/5/
+1e-4 and the original1.96 criterion). Pruning is off as approved for the
+fixed-K count study. This is the historical-framework fallback, with its known
+convergence limitations; it is not the alpha_F0 pooled-expression formulation
+and not an adopted supervised remedy.
+
+Full training plus five folds per count =30 new fits. The fitter estimates
+intercepts within each training fold; imputation and variance screening
+precede folds, so label scores conditional CV. Predict using the existing raw
+multimodal projection, with no outcome-based sign flip. Constant risk remains
+C=NA, never0.5; no omitted fold in an aggregate mean. Preserve every cap,
+warning/error and terminal row. No extra iterations or altered stopping rule.
+
+Record C and actual Breslow logPL, risk SD, original retained classification,
+credible beta count requiring positive posterior SD, program loadings/units,
+full-training reconstruction RMSE, iterations/convergence, runtime and R
+allocation high-water MB (not OS RSS). Retain posterior fits locally and safe
+program summaries. After the panel, compare full-fit activities and common-
+CpG loadings/risk to baseline and preceding count, preserving undefined or
+ambiguous matches. No claim that dense posterior means prove gene/CpG
+selection. No feature count/filter/model is adopted or selected externally.
+
+Every score table includes frozen joint and expression-only TCGA training
+rows (.637768/.643559), with molecular inputs labelled. These are contextual
+historical training references, not matched methylation-only CV estimates or
+an incremental-modality test. No ICGC outcome/score is read or recomputed.
+No benchmark/tag/snapshot edits or replacement. General code identity/hashes
+and prepared data/design are frozen prospectively before model execution.
+
+Runner: Rscript results/multimodal_real/run_feature_expansion_multimodal.R
+with design (no fit), then1 for the first full10k fit, or all for the30-cell
+serial panel; terminal cells are preserved. Local feasibility starts with
+cell1; larger cells run only as resources permit. HPC wrapper
+feature_expansion_methylation.slurm is an independent30-cell array, one CPU,
+8GB/cell,12h; never submit automatically. If larger counts are infeasible,
+report those exact cells unrun, not silently reduce their probe count.
+Local inputs/fits remain ignored. All errors/warnings are retained.
+
+Design generation validates all30 cells and computes only the two frozen
+training reference rows. Three new scoring tests RED0/3 then GREEN3/3 verify
+perfect risk ordering, Cox shift invariance, constant-risk C=NA with exact
+null logPL, and nonfinite failure. Full suite must pass before commit and
+any fit; no M1 model has run before that commit.
+
+Task5-M1 preregistration verification: scoring fixtures RED0/3 then GREEN3/3;
+fresh full suite **664 passed,0 failed**. All30 design cells and frozen
+training benchmark rows generated without fitting. P1 source/cache hashes
+remain identical after reconstruction. No M1 model has run before this commit.

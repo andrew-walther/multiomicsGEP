@@ -1540,3 +1540,15 @@ values and ranking must pass before further modeling.
 
 Task5-P1 software checkpoint: fresh full suite661 passed,0 failed; four guard
 fixtures pass. No reconstruction run before its prospective commit.
+
+Task5-P1 completed after da9bce1:305352 eligible CpGs,144 patients,24.719s,
+zero warnings; original29307 missing values in8133 probes imputed, exact
+frozen10k value/order/ranking and expression/patient/survival checks pass.
+Within this universe the mean mask retains182934 and proportion mask221142.
+The unfiltered30-fit methylation-only reference curve is prospectively
+registered as Task5-M1; no new model has run before its commit. Filters
+will be evaluated separately rather than restricting the reference to10k.
+
+Task5-M1 preregistration checkpoint: full suite664/0, three new scoring tests
+pass after RED0/3, all30 design cells prepared and two frozen training rows
+reproduced. P1 source/cache fingerprints remain unchanged. No M1 fit yet.
