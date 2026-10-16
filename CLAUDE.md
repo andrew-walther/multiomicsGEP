@@ -9,6 +9,15 @@ here too rather than maintaining a separate copy.
 
 ---
 
+## Start here (2026-10-16)
+
+The next work is defined by three plans indexed in [`docs/plans/README.md`](docs/plans/README.md),
+in this order: round2 close-out and documentation restructure
+(`2026-10-16_round2_closeout_and_docs_plan.md`); the preprocessing specification, Task A1 of
+`2026-10-16_preprocessing_alignment_and_unified_model_plan.md`; the feature-selection experiment
+(`2026-10-16_feature_selection_experiment_plan.md`); then preprocessing alignment and one model
+implementation. Each plan has review gates for Andrew. Remind Andrew of them at the start of a session.
+
 ## Key Instructions
 
 - **Canonical CAVI loop:** `code/fit_modular.R`. `Supervised_Bayesian_MF_V2.R` is reference-only — do not extend. V1 (`code/legacy/`) — do not modify. (`full_sim/` and `modular_sim_block/` are legacy/deprecated.)
