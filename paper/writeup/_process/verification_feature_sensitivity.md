@@ -1,0 +1,52 @@
+# Feature-sensitivity manuscript update
+
+Andrew requests inclusion of applicable verified findings in the larger
+write-up and the progress account. This bounded revision preserves the
+original method and benchmark results and adds feature-count sensitivity.
+The approved interim source/rendered version remains in the immutable
+benchmark tag. No configuration replaces the benchmark.
+
+Changes:
+- Evaluation subsection: fixed-K cold-start expression design, conditional
+  CV and activity-based common-feature matching; separate CpG count design.
+- Results subsection: complete expression performance/classification and
+  signed common-gene loading correlations; benchmark rows; partial CpG
+  results, exact unchanged25k error diagnosis and unavailable CpG correlations.
+- Limitations/continuing work: replace the blanket unknown-screening statement
+  with the evaluated expression evidence and unfinished methylation study.
+- Inventory: new S64–S70 trace these claims to saved results and unchanged code.
+
+Scientific boundaries:
+- No new fit, external score, enrichment or feature/filter/default adoption
+  is part of the editorial revision. It uses already registered experiments.
+- Frozen coefficient uncertainty differs from current fitting because the
+  saved historical fit discarded its variance; this is disclosed.
+- Similar CV point estimates are not noninferiority, matching is descriptive,
+  dense nonzero means do not validate feature selection, and failed25k fitting
+  provides no cross-count loading correlation.
+- Numeric underflow is located upstream of valid projection moments. Stable
+  arithmetic alone would not establish algorithmic convergence.
+
+Verification results are appended after rendering and visual/source checks.
+
+The initial render showed the existing starting-rank table splitting after
+insertion of the new Evaluation text. A PDF-only needspace guard was added
+before that table; no content or numerical result in it was changed. The
+CpG table uses dashes explicitly defined as undefined after execution failure.
+Both newly added tables keep their captions/populations and benchmark rows.
+
+Final verification:
+- Both HTML/PDF renders exit0. Manuscript42 pages; progress report10 pages.
+  All manuscript pages were checked in a contact-sheet pass, with new Methods,
+  Results and corrected rank-table pages inspected at readable resolution;
+  new progress-report pages were also visually checked. No clipped content.
+- A PDF-only clearpage, rather than the initial needspace-only attempt, keeps
+  the original rank-table caption and all eight rows together on page14.
+- HTML local anchors pass (196 manuscript,40 progress); no unresolved xrefs.
+  Existing5 manuscript figures and3 progress figures remain embedded.
+- Balanced/nested Revisit markers;70 unique inventory IDs and every new
+  source path exists. Generated HTML trailing spaces removed; CSV retains
+  its existing CRLF format. Whitespace check passes with CR-at-EOL allowed.
+- No assistant attribution in either rendered PDF. No model/default change.
+- Fresh full R suite672 passed,0 failed;10 snapshot SHA256 entries pass.
+  Benchmark tag object remains0fea14903a75606e495267f2f35712eac10d9fc6.

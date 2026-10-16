@@ -81,7 +81,7 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | Multimodal simulation and real-data runners | `results/benchmark_sim/run_multimodal_pruning_comparison.R`; `results/multimodal_real/run_multimodal_real_fit.R` + `summarize_multimodal_real.R` |
 | Prelim proposal chapter source | `paper/prelim/project3-ssbmf.qmd` → synced to `bios-dissertation/prelim/project-proposals/project3-ssbmf/draft/` by the installed post-commit hook (or `paper/prelim/tools/sync_to_prelim.sh` by hand; never pushes) |
 | Prelim proposal chapter plan | `docs/plans/Prelim_Proposal_Plan_10_1_26.md` — outline, sync to `bios-dissertation`, α_F framing constraint |
-| Advisor-facing writeup (interim version approved 2026-10-14; revise after the method work via Prompt 7) | `paper/writeup/writeup.qmd` → `writeup.html`/`writeup.pdf`, appendices in `paper/writeup/appendices/`; planning page, source inventory, implementation plan and prompts in `paper/writeup/_process/`. Read `PROJECT_STATUS.qmd` for the review state. |
+| Advisor-facing writeup (approved interim preserved in the benchmark tag; bounded feature-sensitivity revision authorized 2026-10-15) | `paper/writeup/writeup.qmd` → `writeup.html`/`writeup.pdf`, appendices in `paper/writeup/appendices/`; planning page, source inventory, implementation plan and prompts in `paper/writeup/_process/`. Read `PROJECT_STATUS.qmd` for the review state. |
 
 The opt-in single pruning observer is
 `results/benchmark_sim/run_single_pruning_trace.R`; it records process-local

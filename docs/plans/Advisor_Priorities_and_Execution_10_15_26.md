@@ -196,8 +196,10 @@ masks are available:182934 mean-rule,221142 proportion-rule probes. The
 30-cell methylation-only count design through all probes is committed at
 aff0d03. Its first10k full fit capped at500 with zero credible coefficients,
 training C=.612671 and nonconstant risk. The25k full cell stopped at the F-update moment-validity guard after28s.
-No usable fit/score; further count fits await a diagnostic decision. CV
-and larger counts remain unrun.
+No usable fit/score. The approved unchanged-settings diagnostic now
+identifies global exponential underflow in Cox risk sets at outer6; valid
+projection moments, but rapidly expanding predictors. No remedy has been
+run. CV and larger counts remain unrun; CpG count correlations are unavailable.
 
 Andrew reiterates the intended benefit: broader inputs can reduce arbitrary
 screening if prediction and meaningful molecular structure hold up, allowing
@@ -207,3 +209,13 @@ performance or validated CpG selection. Evaluate both supplied filters
 separately; retain current assay QC and probe-availability rules and introduce
 no unspecified SD cutoff or new default. Report agreement/roles descriptively;
 no new correlation threshold becomes an adoption criterion.
+
+### Reporting update authorized
+
+Andrew requests applicable sensitivity findings in the larger write-up as
+well as the progress report. Add completed expression performance/loading
+agreement and partial CpG results/diagnosis with explicit benchmark context.
+Only10k methylation has a saved full fit, so count agreement is unavailable;
+do not substitute saved joint-fit agreement for that comparison. This is a
+bounded manuscript update, not approval of a new model or altered criterion.
+The approved interim remains preserved in the immutable tag/snapshot.

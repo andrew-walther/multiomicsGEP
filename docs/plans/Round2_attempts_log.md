@@ -1720,3 +1720,27 @@ Task5-M2 preregistration checkpoint: fresh full suite672 passed,0 failed;
 three focused fixtures pass after observed RED0/3. Driver syntax parses.
 No real-data diagnostic replay has run before this commit. Existing core
 fitter/update/prediction files and M1 immutable inputs are unchanged.
+
+Task5-M2 completed after df455e0. The original error reproduces exactly,
+32.218s, zero warnings, unchanged input fingerprints,176 F-update calls.
+First invalid entry: outer6/inner1/program1. Both w and h_minus_k have17
+nonfinite values; EZ and VZ are finite, with minimum VZ6.39e-7 (positive).
+The preceding outer5/inner5/program7 call has all finite inputs.
+
+Saved-state inspection locates the numerical failure upstream in the Cox
+working helper: all144 predictors are finite, range[-358.7754,5375.2718],
+span5734.047. After subtracting one global maximum,143 exp weights become
+exact zero;17 risk-set denominators are zero, including6 event rows. The
+resulting hazard arithmetic gives17 nonfinite working w/h values. This is
+not negative loading/projection variance. The risk expansion remains a
+separate algorithmic stability problem: stable Cox arithmetic would prevent
+this numerical failure but would not prove convergence or credible recovery.
+No clipping, new scaling, prior change or scientific remedy was applied.
+Aggregate state is in moment_diagnosis/root_cause_summary.csv; detailed
+patient-level state stays ignored. No additional fit is run by this diagnosis.
+
+Task5-M2 reporting checkpoint: full suite672/0; exact error reproduced with
+valid projection moments and identified nonfinite Cox working inputs. All10
+benchmark hashes pass. Progress HTML/PDF and the author-requested bounded
+manuscript update render successfully; no new fit is part of that editorial
+update. Source inventory and verification record retain the claim evidence.

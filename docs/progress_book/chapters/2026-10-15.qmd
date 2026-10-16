@@ -901,3 +901,25 @@ optimal K, convergence or added prediction. Norm shares are not additive
 PVE or survival fractions; newer biological labels are not inferred.
 The advisor progress report contains the full benchmark-linked tables in
 HTML/PDF; the original write-up and immutable snapshot are unchanged.
+
+## CpG numeric failure reproduced; manuscript sensitivity update requested
+
+Task5-M2 repeats the unchanged25k cell after prospective commit df455e0 and
+reproduces its exact error after32.218s, zero warnings. First invalid inputs
+occur at outer6/inner1/program1:17 nonfinite Cox working weights/numerators;
+projection moments are finite and variances positive. Predictor span5734
+causes143/144 globally shifted exponentials to underflow to zero and17
+risk-set sums to become zero (6 event rows). Source/data fingerprints match.
+This locates the numerical failure but does not resolve rapidly expanding
+predictors or convergence. No remedy/guard/default is changed.
+
+Andrew accepts documenting problems at larger CpG counts and requests the
+factor-loading correlations and updates to the progress report and larger
+write-up where applicable. Only the10k full fit exists, so CpG correlations
+across counts cannot be estimated yet; the failed25k row stays undefined.
+The shared-gene loading correlations from the completed expression curve
+are reported. The bounded manuscript revision adds those verified results,
+benchmark-linked tables and the CpG diagnosis without claiming a supervised
+replacement or changing the preserved benchmark tag/snapshot. Full suite
+672 passed,0 failed. Additional numeric remedies are separate prospective
+work, not inferred from this reporting authorization.

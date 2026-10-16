@@ -1,0 +1,2 @@
+"cell","p","seed","calls","captured_invalid_inputs","original_error","diagnostic_error","same_error","runtime_seconds","warnings"
+7,25000,42,176,TRUE,"Cox working and projection moments must be finite with nonnegative variances.","Cox working and projection moments must be finite with nonnegative variances.",TRUE,32.218,""

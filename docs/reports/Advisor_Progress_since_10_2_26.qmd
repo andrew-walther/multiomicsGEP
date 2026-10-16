@@ -349,9 +349,22 @@ was 964 seconds, with R allocation high-water 1,076 MB and no warnings/errors.
 Thus this is a failed convergence/credible-prognostic result, not a successful
 supervised methylation model. The unchanged 25k full-training cell stopped after 28 seconds at the
 F-update check for finite Cox/projection moments and nonnegative variances;
-no fit or score is available. The combined error does not identify which
-quantity failed. Further count fits are paused for a diagnostic decision;
-CV and larger counts remain unrun. No controls or criteria are tuned.
+no fit or score is available. An approved identical-settings replay now
+locates the failure at outer iteration 6, inner sweep 1, program 1. Projection
+means/variances are valid; Cox working weights and numerators each contain
+17 nonfinite values. Finite risk predictors span about 5,734 units: global
+exponential shifting underflows 143/144 weights to zero and leaves 17 zero
+risk-set sums, including six event rows. This is a numerical failure upstream
+of the loading update, alongside rapid risk-score expansion. Stable arithmetic
+alone would not establish a convergent model. No remedy has been fitted.
+
+**CpG loading correlations across feature counts remain unavailable:** only
+the 10k full fit was saved, and the 25k run has no fitted loadings. The planned
+comparison matches programs by activity and computes loading correlations on
+common CpGs, retaining undefined/dead matches. Expression loading correlations
+are complete; the separate saved joint-fit audit above is not a CpG-count
+comparison. Larger counts, methylation CV and filter comparisons remain unrun.
+No controls or criteria are tuned.
 
 
 \newpage
@@ -415,9 +428,12 @@ composition/technical explanations are needed for a stronger biological claim.
 | R8: biology | Frozen/newer role agreement, provisional benchmark labels and limitations | Final-program CpG annotation and confounding checks |
 | R9: implications/continuing work | Clear progress and unresolved requirements | Conclusions supported by the final reviewed evidence |
 
-The initial PDF remains unchanged. This report supplies an auditable progress
-account and revision evidence; it does not replace it. Further findings can
-be incorporated after review without presenting unresolved goals as achieved.
+Andrew has requested incorporation of applicable verified findings into the
+larger write-up. A bounded revision adds the expression feature-count results,
+CpG expansion failures and unavailable CpG loading comparison, without changing
+the evaluated benchmark model or claiming a supervised replacement. The
+approved interim version remains preserved in its immutable tag. Further
+methodological and biological revisions require their original review gates.
 
 ## Evidence and provenance
 
@@ -426,7 +442,7 @@ external scoring. The benchmark tag is
 `benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
 The method-panel checkpoint is `f0858ec`; the CpG design is `dc69f6d`,
 the full-range expression design is `6597b4b`, and its reporting correction
-is `6371e42`. The current software suite has 669 passing tests. Full per-task commits, failures and tables are indexed in
+is `6371e42`. The current software suite has 672 passing tests. Full per-task commits, failures and tables are indexed in
 [the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
 [attempt history](../plans/Round2_attempts_log.md). The
 [approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)

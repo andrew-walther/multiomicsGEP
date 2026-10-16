@@ -5,6 +5,24 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-15 — Document CpG expansion failures and incorporate verified sensitivity findings
+
+Andrew approves documenting problems from expansion beyond10k CpGs and
+requests loading correlations across feature counts, progress-report updates
+and applicable updates to the larger write-up. The identical-settings25k
+replay identifies Cox risk-set exponential underflow at outer6, with valid
+projection moments and a predictor range spanning5734 units. This is an
+execution failure, not evidence that large CpG universes are inherently
+unsuitable. Numerical repair and stable fitting remain separate questions;
+no remedy/default/criterion is adopted.
+
+Only10k has a saved methylation-only full fit, so cross-count CpG loading
+correlations are unavailable. Expression count correlations are complete.
+The current write-up may now receive the bounded verified sensitivity and
+failure account requested by Andrew; the approved interim version remains
+preserved in the immutable tag and snapshot. No configuration is proposed
+to replace the benchmark and no new external scoring is authorized.
+
 ## 2026-10-15 — Expand CpGs through the full eligible universe; separate filtering
 
 Andrew reiterates that10k CpGs is too restrictive as the study endpoint and

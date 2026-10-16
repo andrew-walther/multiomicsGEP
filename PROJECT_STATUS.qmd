@@ -19,6 +19,24 @@ execute:
   warning: false
 ---
 
+## CpG expansion diagnosis and requested write-up update (2026-10-15)
+
+The unchanged25k methylation-only replay reproduces the failure at outer6.
+Finite risk predictors span5734 units; global exponential shifting gives143
+zero weights and17 zero risk-set sums. Cox working quantities become
+nonfinite while projection means/variances remain valid. No numeric remedy
+or model-setting change has been applied. Only10k has a saved full fit;
+CpG loading correlations across counts are unavailable, not zero.
+
+Andrew requests documenting these limits and incorporating applicable
+verified findings into the larger write-up. Its current revision adds the
+completed expression feature-count performance/loading correlations and
+partial methylation-count results/diagnosis, with benchmark rows and explicit
+convergence/selection limits. This is a manuscript update, not adoption of a
+new model. The approved interim remains preserved at the immutable tag;
+all snapshot hashes must pass. Progress report and write-up render in HTML
+and PDF; the source inventory records the new evidence. Full suite672/0.
+
 ## Full-range expression feature sensitivity completed (2026-10-15)
 
 At fixed K7/alpha_F0, all24 cold-start training fits converge across

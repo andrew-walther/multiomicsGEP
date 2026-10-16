@@ -1102,6 +1102,13 @@ analyses as completion of these advisor requests.
   performance unverified. Saved joint-program roles show expression/methylation
   structure and one credible program in both benchmark and profiled fits,
   but both fits remain unconverged; no optimal-rank claim.
-- [ ] Diagnose the25k methylation-only F-update moment-validity failure before
+- [x] Diagnose the25k methylation-only F-update moment-validity failure before
   further count fits; preserve its undefined score and the10k cap/zero-credible
   result. No numerical remedy or altered scientific settings are approved.
+
+- [x] Incorporate verified expression sensitivity and partial CpG results into
+  the progress report and larger write-up at Andrew's request, preserving
+  benchmark comparisons and the approved interim tag. CpG loading agreement
+  across counts remains unavailable because25k failed before a saved fit.
+- [ ] Resolve numerical Cox risk-set underflow separately from rapid predictor
+  expansion/convergence before interpreting a completed large-CpG curve.

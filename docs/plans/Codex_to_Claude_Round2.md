@@ -1631,3 +1631,47 @@ Task5-M2 preregistration verification: fresh full suite672 passed,0 failed;
 three diagnostic fixtures pass. No replay before the prospective commit.
 The progress-book chapter now also records the completed expression curve,
 full-CpG preparation, saved joint-role audit and both CpG terminal results.
+
+Task5-M2 completed after df455e0: exact original error at outer6/inner1/k1,
+176 F calls,32.218s, zero warnings. Inputs/data/source fingerprints unchanged.
+EZ/VZ finite and VZ positive; Cox w/h have17 nonfinite values. The saved
+finite predictor spans5734 units; global-max exponential shifting underflows
+143/144 weights to zero, leaving17 zero risk-set sums (6 event rows).
+This identifies Cox risk-set numerical underflow, alongside rapid predictor
+expansion; a numeric fix alone would not demonstrate scientific stability.
+No remedy or subsequent cell was executed. Safe aggregate tables are under
+feature_sensitivity/moment_diagnosis/, with original benchmark-linked rows;
+detailed state is ignored/local.
+
+Andrew now explicitly asks to document larger-CpG limitations, include
+loading correlations where fits exist, and update the larger write-up where
+applicable. This authorizes a bounded manuscript update from saved verified
+feature/diagnostic evidence; the benchmark tag/snapshot remain immutable.
+Only10k methylation has a saved full fit, so cross-count CpG loading
+correlation is currently unavailable, not zero or inferred from a failed run.
+The expression common-feature correlations are already complete. Further
+scientific numeric remedies require their own prospective design; none are
+implied by this editorial authorization.
+
+The larger write-up now incorporates the bounded author-requested evidence:
+Evaluation feature-count design; Results expression performance/loading
+correlations and partial CpG failure tables; Limitations/Continuing work
+reflect the available evidence. No new biological labels or supervised-model
+adoption is claimed. Source inventory addsS64–S70. Current manuscript source
+and renders intentionally differ from the benchmark after Andrew's request;
+the approved interim remains preserved at the unchanged tag. Both new tables
+include saved benchmark context. The meeting progress report explicitly
+separates unavailable CpG-count correlations from complete expression
+correlations and the distinct saved-joint-fit audit.
+
+Final verification for the diagnosis/manuscript work block: fresh full suite
+672 passed,0 failed; diagnostic fixture RED0/3 then GREEN3/3. Both report
+formats render successfully (manuscript42 pages, meeting progress10 pages).
+Visual checks cover all manuscript pages in contact sheets plus readable
+new/changed pages, including the corrected unbroken rank table. HTML anchors,
+embedded figures, balanced Revisit markers and70 source-inventory IDs pass.
+No assistant attribution in either presentation PDF. Snapshot10/10 hashes
+pass and benchmark tag object0fea14903a75606e495267f2f35712eac10d9fc6 is unchanged.
+Current manuscript intentionally includes the author-requested sensitivity
+revision; approved interim remains retrievable from the tag. No numeric
+remedy, new external score, default change or model adoption is claimed.

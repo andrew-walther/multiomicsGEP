@@ -1,0 +1,5 @@
+"field","n","nonfinite","negative","minimum","maximum","invalid","outer","inner","factor","modality","call"
+"w",144,17,0,0,69,TRUE,6,1,1,"methylation",176
+"h_minus_k",144,17,0,0,245.970896288112,TRUE,6,1,1,"methylation",176
+"EZ_k",144,0,0,0.157741075028031,4.24704114895106,FALSE,6,1,1,"methylation",176
+"VZ_k",144,0,0,6.38762885807313e-07,5.52335304224515e-06,FALSE,6,1,1,"methylation",176

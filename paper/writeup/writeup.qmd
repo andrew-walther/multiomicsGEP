@@ -1,7 +1,7 @@
 ---
 title: "Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer"
 author: "Andrew J. Walther"
-date: "2026-10-14"
+date: "2026-10-15"
 date-format: "MMMM D, YYYY"
 number-sections: true
 toc: true
@@ -294,6 +294,18 @@ Simulation summaries are means over datasets. In the single-modality simulation,
 
 <!-- REVISIT R7 END -->
 
+## Feature-count sensitivity {#sec-feature-count-methods}
+
+<!-- REVISIT R5 START -->
+<!-- REVISIT R7 START -->
+
+We varied nested feature sets at fixed $K=7$, retaining the single-modality settings with $\alpha_F=0$ and fitting each count from a cold start. Screening by the existing cohort-specific ranks yielded 2,064, 5,001, 10,000 and all 17,900 shared gene identifiers across the 273 training patients. Each count had one full-training fit and the same five event-stratified training folds. Imputation, screening and cohort standardization preceded fold splitting, so the reported concordance is conditional cross-validation (CV), not an evaluation of the entire preprocessing pipeline. It is not directly comparable to external concordance. Larger-set factors were paired to baseline factors by greedy, non-reused absolute correlations of training activities; signed loading correlations were then computed on common features. Constant factors remained undefined or unmatched. This descriptive matching does not establish unique or identical programs.
+
+A separate methylation-only sensitivity used the multimodal framework with the original priors, working approximation, intercept and precision updates, $K=7$ and removal disabled. The planned nested counts were 10,000, 25,000, 50,000, 100,000 and all 305,352 eligible CpGs. The original whole-universe imputation was retained before screening, and the original 10,000-probe values and ranks reproduced exactly. Count expansion did not introduce a mean or variability filter. No external outcome selected a feature count, filter or numerical remedy.
+
+<!-- REVISIT R7 END -->
+<!-- REVISIT R5 END -->
+
 ## Biological characterization {#sec-characterization-methods}
 
 <!-- REVISIT R8 START -->
@@ -387,6 +399,10 @@ At starting rank 7 the evaluated fit has three inactive factors, two genomics-on
 <!-- REVISIT R4 END -->
 
 <!-- REVISIT R4 START -->
+
+```{=latex}
+\clearpage
+```
 
 | Starting rank | Survival-active | Genomics-only | Monitoring statistic $J$ ($\uparrow$) | BIC ($\downarrow$) | CV log PL per death ($\uparrow$) | Mean external C ($\uparrow$) |
 |---:|:---:|:---:|---:|---:|---:|---:|
@@ -500,6 +516,47 @@ No factor was removed at any starting rank: the final rank equals the starting r
 <!-- REVISIT R7 END -->
 <!-- REVISIT R4 END -->
 
+## Feature-count sensitivity {#sec-results-feature-count}
+
+<!-- REVISIT R7 START -->
+
+All 24 single-modality fits converged without warnings or errors. Conditional CV concordance did not increase consistently as features were added (@tbl-feature-count). The largest set had mean C of 0.607 versus 0.608 for the current screened set; similar point estimates do not establish non-inferiority. Four, four, four and three programs were retained by the existing classification, respectively; every full fit had two operationally survival-active programs. No factor was deleted or refitted. The largest set included 240 constant standardized columns, kept under the existing preprocessing rule.
+
+```{=latex}
+\needspace{0.28\textheight}
+```
+
+| Fit | Shared genes | Training C | Conditional CV C (SE) | Retained |
+|-------------------------|---:|---:|:---:|---:|
+| Frozen benchmark | 2,064 | .656307 | Not recomputed | 4 |
+| Fresh screened fit | 2,064 | .656259 | .6084 (.0462) | 4 |
+| Expanded | 5,001 | .615915 | .5773 (.0266) | 4 |
+| Expanded | 10,000 | .616977 | .6088 (.0397) | 4 |
+| All shared | 17,900 | .619149 | .6068 (.0186) | 3 |
+
+: Feature-count sensitivity of the single-modality model on 273 training patients, fixed $K=7$, $\alpha_F=0$ and cold starts. Each new row has five finite, converged CV folds; SE is their mean-concordance standard error. Risk direction is fixed from training. The frozen benchmark is a saved fit, not a new CV estimate; its external mean C remains 0.627 and was not rescored. Retained counts classify programs without deletion and do not represent selected genes. CV, cross-validation; C, Harrell's concordance index; SE, standard error. {#tbl-feature-count}
+
+Programs changed despite similar concordance. At 5,001, 10,000 and 17,900 genes, median signed common-gene loading correlations with matched baseline programs were .297, .333 and .566 (four, four and three defined pairs). Corresponding activity correlations were .301, .306 and .408, and risk-score correlations were .655, .638 and .505. These are medians among defined matches, not all-factor identity measures. The fresh screened fit reproduces the frozen loading/activity means to about $10^{-10}$ and its risk correlates above .999999 with the frozen score. Its stored coefficient uncertainty differs because the historical fit discarded that variance. Loading means are dense in retained nonzero columns: these results do not validate gene-level signal/noise selection or justify transferring the original biological labels to larger fits.
+
+The methylation-only reference produced nonconstant risk but no credibly prognostic coefficient and reached the 500-sweep cap (@tbl-cpg-count). The 25,000-CpG fit failed before a fitted model could be saved. An identical-settings replay located the first invalid working inputs at outer sweep 6: finite predictors spanned about 5,734 units, global exponential shifting underflowed 143 of 144 weights to zero, and 17 risk-set denominators became zero. Projection means and variances were valid. This identifies a numerical failure in the Cox working calculation alongside rapid predictor expansion; it does not show that more CpGs are intrinsically unsuitable, and numerical stabilization alone would not establish convergence.
+
+```{=latex}
+\needspace{0.30\textheight}
+```
+
+| Fit | Genes | CpGs | C | Credible | Outcome |
+|---------------------------|---:|---:|---:|---:|----------------|
+| Frozen joint | 3,000 | 10,000 | .637768 | 1 | 500-sweep cap |
+| Frozen expression-only | 3,000 | 0 | .643559 | 1 | 500-sweep cap |
+| Methylation-only reference | 0 | 10,000 | .612671 | 0 | 500-sweep cap |
+| Methylation-only expansion | 0 | 25,000 | — | — | Numerical failure |
+
+: Full-training results on the same 144 TCGA patients, with saved benchmark rows labelled frozen. Dashes denote undefined values after numerical failure. Molecular inputs differ; these rows are contextual training comparisons, not matched CV estimates or estimates of incremental methylation benefit. Credible means $|E\beta|\ge1.96\,\mathrm{SD}(\beta)$ with positive posterior SD. No new external score was computed. Larger counts and methylation CV remain unrun; no loading correlation across CpG counts is available because only the 10,000-CpG full fit was saved. C, Harrell's concordance index; TCGA, The Cancer Genome Atlas; CpG, cytosine–guanine methylation site; CV, cross-validation; SD, standard deviation. {#tbl-cpg-count}
+
+Within the eligible CpG universe, an observed mean methylation in $[0.1,0.9]$ retains 182,934 probes; requiring neither extreme tail (below 0.1 or above 0.9) to contain at least 95% of observed patients retains 221,142. These are descriptive alternatives, not adopted filters or SD cutoffs. Prediction and loading stability after these filters remain unevaluated.
+
+<!-- REVISIT R7 END -->
+
 # Biological findings {#sec-biology}
 
 ## Single-modality programs {#sec-bio-single}
@@ -586,7 +643,7 @@ The multimodal framework solves a specific problem of the base multimodal model,
 
 The evaluated single-modality fit has no stored coefficient uncertainty. Both algorithms rely on a diagonal working approximation to the Cox partial likelihood, and their stopping and removal criteria are approximations: the single-modality monitoring statistic weights its components unequally and uses an approximate KL term for the activities, and the multimodal removal score evaluates survival at the posterior-mean predictor and uses KL penalties computed against earlier priors. Neither algorithm is therefore exact coordinate ascent on one ELBO or guaranteed to increase its monitored quantity. How these approximations affect the stopping point and the selected rank has not been assessed. Most real multimodal fits did not converge, none removed a factor, and survival carries little weight in the removal score.
 
-The multimodal results rest on one training cohort of 144 patients with 75 deaths and a 50-donor validation set, so concordance intervals are wide (about $\pm 0.10$), and rank 7 is favorable among the starting ranks evaluated. The external cohorts differ in platform, size and event rate; two come from the same ICGC project, and the matched multimodal validation set overlaps one of them. Bootstrap intervals hold the fitted models fixed. The single-modality starting rank was informed by external concordance. Feature screening keeps 3,000 genes and about 3% of the available CpG sites, and the effect of that choice is unknown. The single-modality simulation reports outcome-oriented concordance, and the multimodal simulation uses three datasets per setting. The biological characterization uses analyses that share inputs, includes a correction designed after an earlier result and a within-training subtype check, reports unadjusted tests and unsigned correspondence for the multimodal programs, and relies on methods whose suitability has not been assessed.
+The multimodal results rest on one training cohort of 144 patients with 75 deaths and a 50-donor validation set, so concordance intervals are wide (about $\pm 0.10$), and rank 7 is favorable among the starting ranks evaluated. The external cohorts differ in platform, size and event rate; two come from the same ICGC project, and the matched multimodal validation set overlaps one of them. Bootstrap intervals hold the fitted models fixed. The single-modality starting rank was informed by external concordance. The original feature screening keeps 3,000 genes per training cohort and about 3% of the available CpG sites. Fixed-rank expansion now shows changing single-modality programs without a clear concordance gain, but methylation count sensitivity is incomplete because of convergence and numerical failures (@sec-results-feature-count). The single-modality simulation reports outcome-oriented concordance, and the multimodal simulation uses three datasets per setting. The biological characterization uses analyses that share inputs, includes a correction designed after an earlier result and a within-training subtype check, reports unadjusted tests and unsigned correspondence for the multimodal programs, and relies on methods whose suitability has not been assessed.
 
 <!-- REVISIT R9 END -->
 
@@ -595,7 +652,7 @@ The multimodal results rest on one training cohort of 144 patients with 75 death
 <!-- REVISIT R9 START -->
 <!-- REVISIT R1 START -->
 
-The configuration with $\alpha_F = 0$ is not the intended final method. A supervised factorization should be able to find a prognostic program that explains little molecular variance, and survival cannot help the loading updates select such a program unless it enters them. The continuing work has five aims.
+The configuration with $\alpha_F = 0$ is not the intended final method. A supervised factorization should be able to find a prognostic program that explains little molecular variance, and survival cannot help the loading updates select such a program unless it enters them. The fixed-rank feature study broadens the evaluated input range but does not resolve survival-informed loading discovery or validate feature selection (@sec-results-feature-count). The continuing work has five aims.
 
 1. **Survival supervision of the loadings.** In the lower-noise multimodal simulation, where strong reconstruction programs accompanied a planted low-variance prognostic program, the latter was not recovered despite survival entering the loading update. Plausible reasons: the survival contribution is multiplied by the current coefficient, so a direction no program already points along receives none; its precision is small relative to reconstruction; and the single-modality loading scale is not fixed during the update. The aim is an update that recovers such a program in most simulated datasets without instability or loss of external concordance.
 2. **Projection scale and prediction.** Adopt one scale convention for the projection and coefficients in both models, and carry the chosen supervision method into the multimodal model.
