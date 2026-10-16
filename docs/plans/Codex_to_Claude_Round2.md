@@ -1576,3 +1576,47 @@ joint versus saved unadopted profiled cell102, both unconverged. No new fit,
 survival score, biological label transfer or external outcome. Five new
 agreement/role fixtures pass; fresh full suite669 passed,0 failed. Execute
 only after this registration commit. Scientific defaults/criteria unchanged.
+
+Task5-Roles1 completed after0c6851e: safe CSVs in
+results/multimodal_real/outputs/feature_sensitivity/saved_program_roles/.
+Seven activity matches preserve indices (.832–.999), risk correlation.954,
+one credible program4 in each fit. Program7 remains methylation-only, with
+methylation norm share58.9% benchmark versus68.7% newer; program4 has
+expression/methylation shares6.2%/4.5% versus7.6%/2.7%. Shares are normalized
+rank-one norms, not additive PVE or survival fractions. Both fits cap500;
+this supports distinct molecular roles, not convergence or optimal K.
+No external scoring/biological-label transfer; input hashes unchanged.
+
+M1 cell7 (full25k) is now running, unchanged controls and caps. No full
+30-cell local launch: remaining cells require their actual timing/resource
+assessment. Larger features remain the target; no silent restriction to10k.
+
+Correction to the immediately preceding live status: M1 cell7 completed
+with an execution error after27.981s, not convergence. F-update moment guard
+rejects a Cox/projection input; current aggregate message cannot identify
+which. No score/fit exists; the failed row is preserved with benchmark rows.
+No further count cells launched. A bounded unchanged-settings diagnostic
+trace versus deferral is pending Andrew's response. No scientific remedy or
+filter/criterion/default change is inferred from this numeric failure.
+
+Implementation review: the new agreement helper adapts saved multimodal
+fits to the existing activity matcher using prefixed feature IDs and unit
+normalizers, preserving raw sum(Y_m F_m) projection. It then replaces pooled
+loading correlations by within-modality common-feature correlations, because
+blocks have different units. Inputs are fitted posterior objects plus named
+raw training matrices with exact patient order; outputs are matched-factor
+tables and correlation matrices. Constant factors produce undefined entries,
+not fabricated agreement. The role helper computes rank-one squared norms
+within each block and coefficient uncertainty/per-projection-SD units; dense
+nonzero means are not interpreted as validated selection. Base R matrix
+operations suffice; yaml reads the existing configured credibility cutoff.
+The saved-role runner only reads two capped fits, checks source fingerprints
+and writes aggregate CSVs. No update equation or model default was edited.
+
+Final checkpoint for this work block: fresh full suite669 passed,0 failed;
+all10 snapshot SHA256 checks pass; frozen rounded molecular shares reproduce
+exactly and four source-by-modality norm shares sum to one. Main write-up
+QMD/HTML/PDF have no diff against the immutable tag. Progress HTML/PDF render
+successfully; the10-page PDF was visually checked, including the new role and
+methylation tables. No scientific script remains running. Only a diagnostic
+decision is pending for the count experiment; the overall goal is incomplete.

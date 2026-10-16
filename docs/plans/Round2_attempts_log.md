@@ -1663,3 +1663,25 @@ risk SD=.1172642, zero credible coefficients, retained classification4,
 500-iteration cap (not converged),963.827s, R allocation high-water1075.7MB,
 no warnings/errors. This is not evidence of an adopted supervised model.
 Continue unchanged predeclared count cells as resources permit; no tuning.
+
+Task5-Roles1 executed after0c6851e. Both saved fits retain one credible
+program (4) and reach500 without convergence. All seven activity matches
+preserve their original indices (correlations .8315255–.9989893); risk
+correlation .9541891. Program4 activity .9467298, expression/methylation
+loading correlations .9155589/.9034111. Program7 has zero expression norm
+in both and methylation share .589483/.686649, loading correlation .9931784.
+The newer program3 methylation block is exactly zero. Within-block nonzero
+loading means remain dense, so this is not validated feature selection.
+All saved input fingerprints unchanged. No new fitting/scoring/outcomes.
+
+Task5-M1 cell7 terminal: unchanged full25k run stops after27.981s with
+"Cox working and projection moments must be finite with nonnegative variances."
+No fit/score/iteration checkpoint was saved; C, logPL and classification are
+undefined. Guard is code/multimodal_yfb_updates.R in the F update; it jointly
+checks w, h_minus_k, EZ and VZ, so the message does not identify the specific
+invalid quantity or its origin. R allocation high-water1259.9MB, no warnings.
+Terminal row and benchmark context are retained. No further fit launched;
+no longer cap, scaling, prior, variance clipping or other remedy applied.
+Andrew asked whether to authorize a bounded unchanged-settings diagnostic
+trace or leave the failure for review. Larger counts and CV remain unrun,
+not silently omitted or labelled infeasible solely from this failure.

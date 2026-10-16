@@ -180,8 +180,37 @@ are provisional; CpG annotation and enrichment were not performed.
 The Single write-up's four retained programs classify one K=7 fit; three
 other fitted programs are inactive under its operational thresholds.
 No deletion/refitting produced those four. Thus “7 versus 4” compares
-classification/model settings as well as modalities. A matched role and
-redundancy audit is required before interpreting it as excess joint rank.
+classification/model settings as well as modalities. The saved-fit role audit below addresses molecular/prognostic roles;
+redundancy and convergence still require resolution before interpreting this
+as excess joint rank.
+
+
+## Saved-fit role and agreement audit
+
+The newer profiled joint fit preserves a recognizable mixture of molecular
+roles. Activity matching pairs all seven programs to the same benchmark
+indices; correlations range .832–.999. The sole credibly prognostic program
+remains program 4. No biological labels are transferred to the newer fit.
+
+| Matched program | Expression norm share, benchmark / newer | Methylation norm share, benchmark / newer | Credible, benchmark / newer |
+|---:|---:|---:|---|
+| 1 | 23.5% / 18.0% | 4.8% / 1.4% | No / No |
+| 2 | 5.1% / 14.0% | 20.9% / 17.5% | No / No |
+| 3 | 31.5% / 30.4% | 0.3% / 0% | No / No |
+| 4 | 6.2% / 7.6% | 4.5% / 2.7% | Yes / Yes |
+| 5 | 4.8% / 1.7% | 1.2% / 1.5% | No / No |
+| 6 | 28.9% / 28.2% | 9.3% / 8.2% | No / No |
+| 7 | 0% / 0% | 58.9% / 68.7% | No / No |
+
+Both fits reached 500 iterations without convergence. Risk-score correlation
+is .954; program 4 activity correlation is .947, with expression/methylation
+loading correlations .916/.903. Program 7 remains methylation-only, with
+activity correlation .999 and methylation loading correlation .993. These
+are descriptive agreement measures, not evidence of incremental prediction
+or optimal K. Molecular norm shares are not additive PVE or survival fractions.
+Nonzero loading means are dense within the nonzero blocks; this audit does
+not validate probe-level feature selection. No new survival score or external
+outcome was used.
 
 \newpage
 
@@ -300,6 +329,31 @@ the supplied mean rule retains 182,934 CpGs and the extreme-proportion rule
 select counts; large fits may require prepared HPC arrays. Warm continuation
 remains deferred for review.
 
+\Needspace{22\baselineskip}
+
+The first methylation-only result is now available; it is the 10k reference,
+not the endpoint of the study. All rows below concern the same 144 training
+patients, but use different molecular inputs and are not matched CV estimates.
+
+| Model | Genes | CpGs | Training C | Credible programs | Converged |
+|---|---:|---:|---:|---:|---|
+| Frozen joint benchmark | 3,000 | 10,000 | .637768 | 1 | No, 500 cap |
+| Frozen expression-only benchmark | 3,000 | 0 | .643559 | 1 | No, 500 cap |
+| New methylation-only reference | 0 | 10,000 | .612671 | 0 | No, 500 cap |
+| New methylation-only expansion | 0 | 25,000 | Undefined | Undefined | Execution error |
+
+The methylation-only reference has nonconstant risk (SD .1173), but its one
+nonzero coefficient is not credible under the original rule. Four programs
+meet the existing retained classification; no program is deleted. Runtime
+was 964 seconds, with R allocation high-water 1,076 MB and no warnings/errors.
+Thus this is a failed convergence/credible-prognostic result, not a successful
+supervised methylation model. The unchanged 25k full-training cell stopped after 28 seconds at the
+F-update check for finite Cox/projection moments and nonnegative variances;
+no fit or score is available. The combined error does not identify which
+quantity failed. Further count fits are paused for a diagnostic decision;
+CV and larger counts remain unrun. No controls or criteria are tuned.
+
+
 \newpage
 
 # Full-probe methylation variability: completed
@@ -356,9 +410,9 @@ composition/technical explanations are needed for a stronger biological claim.
 | Revision dependency | Evidence available for review | Still required |
 |---|---|---|
 | R1–R3: updates, scale and objective | Implemented supervision, curvature diagnosis, prior/KL caveats | Stable defensible final formulation |
-| R4: rank/classification | Failed pruning panels; distinction between seven fitted/four classified | Valid rank choice and matched program-role audit |
+| R4: rank/classification | Failed pruning panels; distinction between seven fitted/four classified | Valid rank choice, redundancy and converged role stability |
 | R5–R7: evaluation/results | Recovery/comparator tables, external failure, full-range expression CV | CpG/joint sensitivity and final allowed external report |
-| R8: biology | Frozen program roles, provisional labels and limitations | Final-program CpG annotation and confounding checks |
+| R8: biology | Frozen/newer role agreement, provisional benchmark labels and limitations | Final-program CpG annotation and confounding checks |
 | R9: implications/continuing work | Clear progress and unresolved requirements | Conclusions supported by the final reviewed evidence |
 
 The initial PDF remains unchanged. This report supplies an auditable progress
@@ -372,7 +426,7 @@ external scoring. The benchmark tag is
 `benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
 The method-panel checkpoint is `f0858ec`; the CpG design is `dc69f6d`,
 the full-range expression design is `6597b4b`, and its reporting correction
-is `6371e42`. The current software suite has 664 passing tests. Full per-task commits, failures and tables are indexed in
+is `6371e42`. The current software suite has 669 passing tests. Full per-task commits, failures and tables are indexed in
 [the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
 [attempt history](../plans/Round2_attempts_log.md). The
 [approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)

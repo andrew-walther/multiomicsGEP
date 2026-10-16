@@ -194,7 +194,10 @@ Task5-P1 (da9bce1/aff0d03) reconstructs305352 eligible probes on144 patients
 with exact frozen10k values/ranking and no warnings. Both supplied descriptive
 masks are available:182934 mean-rule,221142 proportion-rule probes. The
 30-cell methylation-only count design through all probes is committed at
-aff0d03. Its first10k full fit is running; no M1 performance result yet.
+aff0d03. Its first10k full fit capped at500 with zero credible coefficients,
+training C=.612671 and nonconstant risk. The25k full cell stopped at the F-update moment-validity guard after28s.
+No usable fit/score; further count fits await a diagnostic decision. CV
+and larger counts remain unrun.
 
 Andrew reiterates the intended benefit: broader inputs can reduce arbitrary
 screening if prediction and meaningful molecular structure hold up, allowing

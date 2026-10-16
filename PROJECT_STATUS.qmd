@@ -2741,3 +2741,23 @@ proposed; Andrew's decision is pending. Preparation and program-agreement
 utilities preserve constants as NA/unmatched cases, common-gene identities
 and projection-SD coefficient units. Full suite651/651. See the priority plan
 and handoff; the benchmark and original write-up remain unchanged.
+
+## Full-range feature sensitivity: verified progress (2026-10-15)
+
+The advisor progress report is available in HTML/PDF. The expression study
+now completes24 converged fits through17900 shared genes, with conditional
+CV means.608/.577/.609/.607 and changing program agreement; no new count is
+adopted. Exact305352-CpG reconstruction passes against the frozen10k values
+and ranks. The first methylation-only10k reference has training C=.612671,
+nonconstant risk, zero credible coefficients and a500-iteration cap; it is
+not a successful supervised model. The25k full-training cell stopped with
+an invalid Cox/projection-moment error after28s; no score is available.
+Further count fits await a bounded diagnostic decision.
+
+A read-only role audit of frozen and newer profiled joint fits matches all
+seven activities (.832–.999), retains one credible program4 in each, and
+finds program7 methylation-only in both (norm shares58.9%/68.7%). Both fits
+are unconverged. This documents molecular/prognostic roles, without proving
+optimal rank, incremental prediction or probe-level selection. The benchmark
+and original write-up remain unchanged. See the Round2 handoff and report
+for exact tables, limits and remaining count/filter/joint comparisons.

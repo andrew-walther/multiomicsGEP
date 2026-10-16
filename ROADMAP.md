@@ -1098,4 +1098,10 @@ analyses as completion of these advisor requests.
   retain182934/221142 probes. No filter/default adopted.
 - [ ] Complete methylation-only10k/25k/50k/100k/all count sensitivity, then
   separate filter and joint comparisons. The30-cell design is registered;
-  first10k full fit running, larger-count performance unverified.
+  first10k full fit capped with zero credible coefficients; larger-count
+  performance unverified. Saved joint-program roles show expression/methylation
+  structure and one credible program in both benchmark and profiled fits,
+  but both fits remain unconverged; no optimal-rank claim.
+- [ ] Diagnose the25k methylation-only F-update moment-validity failure before
+  further count fits; preserve its undefined score and the10k cap/zero-credible
+  result. No numerical remedy or altered scientific settings are approved.
