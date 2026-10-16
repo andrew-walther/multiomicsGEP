@@ -1,6 +1,6 @@
 ---
 title: "Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer"
-author: "Andrew J. Walther"
+author: "Andrew Walther"
 date: "2026-10-16"
 date-format: "MMMM D, YYYY"
 number-sections: true
@@ -86,7 +86,6 @@ format:
         \fancyhf{}
         \fancyfoot[C]{\thepage}
         \renewcommand{\headrulewidth}{0pt}
-bibliography: ../ssbmf-refs.bib
 execute:
   enabled: false
 ---
@@ -283,7 +282,7 @@ The projection is not normalized. The map $(L_{\cdot k}, F_{mk}, \beta_k) \mapst
 | | ICGC PACA-AU, primary PDAC | RNA-seq and methylation array | 50 | 30 | Main validation |
 | | ICGC PACA-AU, all donors | RNA-seq and methylation array | 67 | 40 | Sensitivity analysis |
 
-: Training and validation cohorts (screening and standardization are described in @sec-multicohort and @sec-data). The ICGC primary-PDAC set contains primary tumors with PDAC histology; the all-donor set adds intraductal papillary mucinous neoplasm (IPMN) with invasion, adenosquamous, acinar and signet-ring tumors. $^a$Deaths in the two single-modality training cohorts together (139 among 273 patients). PACA-AU is the Australian pancreatic cancer cohort of the International Cancer Genome Consortium (ICGC); its microarray and RNA-seq series are analysed as separate validation cohorts. The 50 matched ICGC donors overlap the PACA-AU RNA-seq cohort and are not an additional independent replication; whether the two PACA-AU series share donors was not determined. CpG, cytosine–guanine dinucleotide methylation site; 450K, Illumina HumanMethylation450 array. TCGA-PAAD, The Cancer Genome Atlas pancreatic adenocarcinoma cohort; CPTAC, Clinical Proteomic Tumor Analysis Consortium; RNA-seq, RNA sequencing; PDAC, pancreatic ductal adenocarcinoma; DeSurv, a survival-supervised factorization method [@Young2026]. {#tbl-cohorts}
+: Training and validation cohorts (screening and standardization are described in @sec-multicohort and @sec-data). The ICGC primary-PDAC set contains primary tumors with PDAC histology; the all-donor set adds intraductal papillary mucinous neoplasm (IPMN) with invasion, adenosquamous, acinar and signet-ring tumors. $^a$Deaths in the two single-modality training cohorts together (139 among 273 patients). PACA-AU is the Australian pancreatic cancer cohort of the International Cancer Genome Consortium (ICGC); its microarray and RNA-seq series are analysed as separate validation cohorts. The 50 matched ICGC donors overlap the PACA-AU RNA-seq cohort and are not an additional independent replication; whether the two PACA-AU series share donors was not determined. CpG, cytosine–guanine dinucleotide methylation site; 450K, Illumina HumanMethylation450 array. TCGA-PAAD, The Cancer Genome Atlas pancreatic adenocarcinoma cohort; CPTAC, Clinical Proteomic Tumor Analysis Consortium; RNA-seq, RNA sequencing; PDAC, pancreatic ductal adenocarcinoma; DeSurv, a survival-supervised factorization method. {#tbl-cohorts}
 
 <!-- REVISIT R5 END -->
 
@@ -302,8 +301,7 @@ The projection is not normalized. The map $(L_{\cdot k}, F_{mk}, \beta_k) \mapst
 ## Comparators {#sec-comparators}
 
 **Relationship to DeSurv.** DeSurv couples nonnegative matrix factorization
-to a Cox model so that survival guides the gene programs during discovery
-[@Young2026]. Our proposed distinction is empirical-Bayes estimation of
+to a Cox model so that survival guides the gene programs during discovery. Our proposed distinction is empirical-Bayes estimation of
 program distributions and uncertainty, with a shared-activity extension for
 matched modalities. Projection-based prediction is common to both approaches;
 it is not a unique contribution here. A predictive head-to-head using the
@@ -748,11 +746,6 @@ The configuration with $\alpha_F = 0$ is not the intended final method. A superv
 
 <!-- REVISIT R1 END -->
 <!-- REVISIT R9 END -->
-
-# References {.unnumbered}
-
-::: {#refs}
-:::
 
 {{< pagebreak >}}
 
