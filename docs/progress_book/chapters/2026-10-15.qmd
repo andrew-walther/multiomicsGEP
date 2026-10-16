@@ -1,4 +1,15 @@
-# Survival supervision of the loadings (October 2026, in progress)
+# Methods development record: survival supervision (October 2026)
+
+::: {.callout-note title="Purpose and reading guide"}
+This chapter is a chronological methods-development record: why the
+survival-supervised loading updates changed, what each experiment tested,
+and which attempts failed. It supports the mathematical/software audit;
+it is not the concise advisor-meeting update or a validated final method.
+Read the [October16 meeting summary](2026-10-16.qmd) for progress since
+October2. Sections below describe their own checkpoints; later failures
+supersede early statements of universal convergence. The approved benchmark
+still uses $\alpha_F=0$, and no supervised replacement is adopted.
+:::
 
 ## Executive summary {.unnumbered}
 
@@ -12,8 +23,8 @@
    - the survival term of the single-modality F update left the other genes of the same program in
      the residual, so each gene re-explained the whole program and the update overshot;
    - with a signed loading prior, the SVD start discarded signs and every program collapsed.
-4. **Scale canonicalization with the corrected update is stable:** every fit converges, and the
-   coefficients stay bounded.
+4. **Initial C2 test-bed result:** all fits in that bounded early panel converge, and the
+   coefficients stay bounded. Later sections document nonconvergence in other evaluations.
 5. **Recovery is still low:** 1/20 seeds at noise 0.25 and 6/20 at noise 1, against the 80%
    threshold. This is the starting point for supervised initialization and the β prior (C3–C4).
 

@@ -687,3 +687,20 @@ and one proposed experiment, ending in review before fitting. The broad
 scientific goal remains paused; benchmark and all original criteria remain.
 The [former handoff](docs/plans/Codex_to_Claude_Round2_history_10_15_26.md)
 is preserved verbatim for history, not current execution instructions.
+
+
+### Opt-in loading-prior consistency update
+
+`code/loading_prior_fixed_q.R` implements fixed-posterior point-Laplace
+F-prior estimation and corrects KL to the returned prior. For software
+fixtures, `fit_cox_on_yf(..., canonicalize=TRUE, prior_LF="point_laplace",
+loading_prior_update="fixed_q_em")` selects it; the multimodal selector is
+`control$loading_prior_update`. Requires per-program Normal beta and no
+pruning; multimodal also requires damping=1 and point-Laplace F throughout.
+Historical behavior remains default. Run `Rscript tests/run_tests.R` to check
+quadrature, boundaries, scale, same-sweep identity and default identity.
+Read `docs/plans/Round2_fixed_q_loading_prior_proposal.md` before any scientific
+execution: none has run, existing extreme-tail moment approximation remains,
+and a prospective committed driver/design is still required. This is not a
+validated replacement. Meeting results are summarized in the October16 book
+chapter; full tables and limitations remain in the advisor report/write-up.

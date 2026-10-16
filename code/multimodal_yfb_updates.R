@@ -169,6 +169,9 @@ multimodal_yfb_signed_posterior <- function(A, B, prior) {
       !is.finite(A) || !is.finite(B) || A < 0) {
     stop("A must be a finite nonnegative scalar and B must be finite.")
   }
+  # Feature names on scalar A/B otherwise turn weights["pos"] into
+  # weights["pos.gene"], breaking the R fallback's named component lookup.
+  A <- unname(A); B <- unname(B)
   family <- prior$family
   if (!family %in% c("point_laplace", "normal")) {
     stop("Signed prior family must be point_laplace or normal.")
@@ -398,6 +401,8 @@ multimodal_yfb_update_loading_prior <- function(slab_prob, mean) {
   list(pi = total_slab / length(mean), rate = total_slab / total_mean, point_mass = FALSE)
 }
 
+source("code/loading_prior_fixed_q.R")
+
 #' Sequentially update one modality's loading column
 #'
 #' Implements the exact scalar Gauss-Seidel update: reconstruction and Cox
@@ -412,7 +417,10 @@ multimodal_yfb_update_loading_prior <- function(slab_prob, mean) {
 #' @param EF_k,EF2_k Current loading posterior moments for this modality-factor.
 #' @param EBeta_k,EBeta2_k Coefficient posterior moments for this factor.
 #' @param prior_update For point-exponential loadings: "em" (moment update)
-#'   or "ebnm" (marginal-likelihood fit). Signed priors always use ebnm.
+#'   or "ebnm" (marginal-likelihood fit). Signed priors historically use ebnm.
+#' @param loading_prior_update "historical" (default) or opt-in "fixed_q_em".
+#'   The latter changes only point-Laplace F-prior maximization and its KL,
+#'   holding the just-completed posterior sweep fixed.
 #' @param prior Fixed modality-factor prior for this sweep: point-exponential
 #'   (`family` NULL or "point_exponential"), "point_laplace" or "normal".
 #' @return Updated loading/projection moments, fitted prior, and per-feature diagnostics.
@@ -423,7 +431,8 @@ multimodal_yfb_update_loading_prior <- function(slab_prob, mean) {
 multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
                                         h_minus_k, EZ_k, VZ_k, EF_k, EF2_k,
                                         EBeta_k, EBeta2_k, prior,
-                                        prior_update = "em") {
+                                        prior_update = "em",
+                                        loading_prior_update = "historical") {
   if (!is.matrix(Y_m) || !is.matrix(R_mk) || !identical(dim(Y_m), dim(R_mk)) ||
       !is.numeric(Tau_m) || length(Tau_m) != ncol(Y_m) || length(EL_k) != nrow(Y_m) ||
       length(w) != nrow(Y_m) || length(h_minus_k) != nrow(Y_m) ||
@@ -438,6 +447,13 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
       any(!is.finite(EZ_k)) || any(!is.finite(VZ_k)) || any(VZ_k < -1e-10)) {
     stop("Cox working and projection moments must be finite with nonnegative variances.")
   }
+
+  if (!identical(loading_prior_update, "historical") &&
+      !identical(loading_prior_update, "fixed_q_em"))
+    stop("loading_prior_update must be historical or fixed_q_em.")
+  if (identical(loading_prior_update, "fixed_q_em") &&
+      !identical(prior$family, "point_laplace"))
+    stop("fixed_q_em supports only point-Laplace F priors.")
 
   EF_new <- EF_k
   EF2_new <- EF2_k
@@ -491,6 +507,13 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
     details <- stats::setNames(lapply(fields, function(f) {
       vapply(details, function(d) as.numeric(d[[f]]), numeric(1))
     }), fields)
+  }
+  if (identical(loading_prior_update, "fixed_q_em")) {
+    # q and projection moments stay fixed while g maximizes E_q log g.
+    # Replacing g requires an atomic KL correction to that same q.
+    fitted <- loading_prior_fixed_q(details, prior)
+    return(list(EF=EF_new, EF2=EF2_new, EZ=EZ_new, VZ=pmax(VZ_new, 0),
+                prior=fitted$prior, details=details, kl=fitted$kl))
   }
   get <- function(field) details[[field]]
   new_prior <- if (signed) {

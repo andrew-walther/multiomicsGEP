@@ -113,7 +113,7 @@ weight, convergence rule or unreviewed remedy.
   hypothesis, minimal proposed check/remedy and the existing ladder rung or
   approval it uses. Explicitly distinguish prior absorption to β=0,
   nonconvergence with nonzero risk, and repaired arithmetic underflow.
-- [ ] Regroup with Andrew at that deliverable, before a scientific fitting
+- [x] Regroup with Andrew at that deliverable, before a scientific fitting
   panel. Prefer review of a specific derivation or falsifiable next experiment
   over another broad sweep. A fresh session may use this plan and the handoff;
   neither a new session nor clicking Resume changes scientific authorization.
@@ -477,3 +477,46 @@ identified cause. A stable fully supervised replacement is still unproven.
 The original selected supervised Single external noninferiority check failed;
 the paused goal's older state description is stale on that point. This plan
 and the latest handoff, not that description, govern interpretation.
+
+
+## Approved implementation and meeting-document consolidation — 2026-10-16
+
+Andrew instructed proceeding with the proposed prior-consistency repair and
+updating all three deliverables. Its fixed-posterior point-Laplace prior and
+KL correction are now opt-in;12 focused checks and full suite706/0 pass.
+No scientific fit has run. The existing tail-moment approximation has a
+quantified limitation, so exact global-objective claims remain unsupported.
+Use Round2_fixed_q_loading_prior_proposal.md for the derivation, code
+walkthrough, supported controls, exact one-case prospective arms, original
+criteria and stopping rule. Before a scientific run, its fixed driver and
+final execution registration must be committed. This does not resume the
+broad paused goal or authorize an adoption/external panel.
+
+Meeting documents now distinguish strong5,001→10,000 gene program/risk
+agreement from less uniform agreement against2,064 or all17,900 genes.
+The completed Single training/CV curve is not the still-open matched TCGA
+framework expression curve. CpG/filter/joint curves, large-p noise studies,
+rank and multimodal/biology validation remain open. October16 is a concise
+meeting chapter; internal registration/approval/observer bookkeeping remains
+in this plan and the handoff. The long October15 methods log is preserved
+in the book, clearly labelled as a methods-development record. Refresh all HTML/PDF outputs
+and publish only rendered gh-pages; source branch stays local.
+
+Andrew clarifies the deliverable: a concise advisor update since10/2 plus
+the full method/results/biology write-up, supporting manuscript drafting and
+journal choice. The new Advisor_Meeting_Summary_10_16_26 HTML/PDF is the
+brief meeting document; the longer report retains detailed evidence.
+Journal_Targeting_10_16_26.md under paper/writeup/_process/ records a
+provisional publisher-scope shortlist and remaining evidence requirements.
+Retain the methods-development chapter in the book with an explicit purpose
+note, as Andrew subsequently requested; do not remove it from navigation.
+
+Final publication verification: GitHub Pages reports rendered commit
+`c12c3aa36e7f675291111f260fe77c70244f9e80` built successfully. October16 is
+concise and separates adjacent-count program agreement from whole-range
+agreement; chapter11 remains with its explicit methods-record purpose.
+Meeting handout2 pages, detailed report13 pages, full write-up43 pages;
+all HTML/PDF outputs render. Local book checks find108 references with no
+missing target. Full suite706/0 and focused12/12 under both R/C++ paths;
+all10 benchmark hashes match before/after. No scientific fit or external
+scoring in this block; source/model branch remains local.

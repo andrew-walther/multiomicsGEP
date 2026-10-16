@@ -1,6 +1,6 @@
 # About this notebook {.unnumbered}
 
-Running record of SSBMF project progress with one chapter per week. Each chapter covers what changed in the method, what was run to
+Running record of SSBMF project progress with one chapter per advisor meeting. Each chapter covers what changed in the method, what was run to
 validate it (on real cohorts and on simulation), whether the new results
 make sense, and what's still open. Figures and tables that came up in
 discussion are included directly; anything that needs the full statistical

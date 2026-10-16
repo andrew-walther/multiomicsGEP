@@ -5,6 +5,22 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-16 — Implement fixed-posterior loading-prior consistency opt-in
+
+After the corrected observer, Andrew requested proceeding with the recommended
+repair. Keep each F sweep posterior fixed, estimate its point-Laplace prior
+with pi=S/p and rate=S/T, and correct KL against that returned prior.
+Historical defaults remain unchanged. Restrict the prototype to per-factor
+Normal beta, point-Laplace F, no pruning and multimodal damping=1 so its KL
+belongs to the returned posterior. This repairs one local mismatch, not Cox
+refresh or the full variational objective. Preserve the quantified existing
+tail-moment approximation; no scientific fit, adoption or external scoring.
+Exact proposal/limits: docs/plans/Round2_fixed_q_loading_prior_proposal.md.
+Full suite706/0. Refresh the concise meeting chapter and full reports;
+publish rendered gh-pages only. Preserve the long development chapter as
+a clearly labelled methods-development chapter and distinguish adjacent-count gene
+agreement from agreement with the small screened baseline.
+
 ## 2026-10-16 — Observe the complete working cycle before another remedy
 
 Andrew approved the bounded diagnostic in the current Round2 review handoff.

@@ -1,7 +1,7 @@
 ---
 title: "Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer"
 author: "Andrew J. Walther"
-date: "2026-10-15"
+date: "2026-10-16"
 date-format: "MMMM D, YYYY"
 number-sections: true
 toc: true
@@ -536,7 +536,23 @@ All 24 single-modality fits converged without warnings or errors. Conditional CV
 
 : Feature-count sensitivity of the single-modality model on 273 training patients, fixed $K=7$, $\alpha_F=0$ and cold starts. Each new row has five finite, converged CV folds; SE is their mean-concordance standard error. Risk direction is fixed from training. The frozen benchmark is a saved fit, not a new CV estimate; its external mean C remains 0.627 and was not rescored. Retained counts classify programs without deletion and do not represent selected genes. CV, cross-validation; C, Harrell's concordance index; SE, standard error. {#tbl-feature-count}
 
-Programs changed despite similar concordance. At 5,001, 10,000 and 17,900 genes, median signed common-gene loading correlations with matched baseline programs were .297, .333 and .566 (four, four and three defined pairs). Corresponding activity correlations were .301, .306 and .408, and risk-score correlations were .655, .638 and .505. These are medians among defined matches, not all-factor identity measures. The fresh screened fit reproduces the frozen loading/activity means to about $10^{-10}$ and its risk correlates above .999999 with the frozen score. Its stored coefficient uncertainty differs because the historical fit discarded that variance. Loading means are dense in retained nonzero columns: these results do not validate gene-level signal/noise selection or justify transferring the original biological labels to larger fits.
+Program agreement depends on the comparison. From 5,001 to 10,000 genes,
+all four nonconstant matched programs have common-gene loading correlations
+.960–.994 and activity correlations .933–.993; risk scores correlate .972.
+Thus this expansion preserves programs well. From 10,000 to all 17,900 genes,
+three defined pairs have loading correlations .737–.915 and risk correlation
+.667. Relative to the smaller 2,064-gene baseline, median signed loading
+correlations are .297/.333/.566 at 5,001/10,000/17,900 genes (four/four/three
+defined pairs), with risk correlations .655/.638/.505. Two baseline-to-5k/10k
+loading matches are strong and two weak; constant/unmatched factors have
+undefined correlations. Similar concordance therefore coexists with strong
+agreement over some expansions and less uniform agreement across the full
+range. The fresh screened fit reproduces the frozen loading/activity means
+to about $10^{-10}$ and risk correlation exceeds .999999; stored coefficient
+uncertainty differs because the historical fit discarded that variance.
+Dense loading means in retained nonzero columns do not validate gene-level
+selection or justify transferring the original biological labels to larger fits.
+
 
 The methylation-only reference produced nonconstant risk but no credibly prognostic coefficient and reached the 500-sweep cap (@tbl-cpg-count). The 25,000-CpG fit failed before a fitted model could be saved. An identical-settings replay located the first invalid working inputs at outer sweep 6: finite predictors spanned about 5,734 units, global exponential shifting underflowed 143 of 144 weights to zero, and 17 risk-set denominators became zero. Projection means and variances were valid. A log-space evaluation of the same risk sums makes the working quantities finite at that captured predictor, with working weights summing to 75 deaths to numerical tolerance. This arithmetic correction does not change the likelihood or diagonal approximation. This identifies a numerical failure in the Cox working calculation alongside rapid predictor expansion; it does not show that more CpGs are intrinsically unsuitable, and numerical stabilization alone would not establish convergence.
 
@@ -563,6 +579,31 @@ A separate read-only audit of the frozen joint fit's sole credible program finds
 Within the eligible CpG universe, an observed mean methylation in $[0.1,0.9]$ retains 182,934 probes; requiring neither extreme tail (below 0.1 or above 0.9) to contain at least 95% of observed patients retains 221,142. These are descriptive alternatives, not adopted filters or SD cutoffs. Prediction and loading stability after these filters remain unevaluated.
 
 <!-- REVISIT R7 END -->
+
+## Loading-prior consistency diagnostic {#sec-results-prior-consistency}
+
+An observation-only replay reproduced a saved nonconverged Single simulation
+fit and history exactly. In its last 50 iterations, fixed-prior loading,
+activity and coefficient posterior steps each had zero reference-objective
+decreases across 350 updates; loading-prior refits had 50/350 and Cox working
+refreshes 18/50, at a descriptive numerical tolerance of $10^{-8}$.
+The reference objective is an anchored expected local quadratic with explicitly
+transformed reference priors; it is not a certified common implemented ELBO
+or the exact expected Cox partial likelihood. Joint activity/coefficient
+empirical-Bayes comparisons retain additional losses with unresolved optimizer,
+density-accuracy and prior-interpretation explanations. An initial observer's
+reconstruction cross-term error was corrected and its invalid summaries retained.
+
+A consistency repair is implemented opt-in but has no scientific fit result:
+keep the sequential loading posterior fixed, maximize its expected point-Laplace
+log prior with $\pi=S/p$ and rate $S/T$, where $S=\sum_j\Pr_q(F_j\ne0)$ and
+$T=\sum_jE_q|F_j|$, and evaluate KL against the returned prior. Independent
+quadrature and software fixtures test the algebra, boundaries and unchanged
+posterior sweep. The existing extreme-tail moment approximation remains a
+numerical limitation. Neither this local repair nor a small terminal survival
+precision contribution establishes stable supervision or justifies a mixing
+weight. The evaluated benchmark results and biological labels below are unchanged;
+prospective simulation and training-validation gates remain unmet.
 
 # Biological findings {#sec-biology}
 

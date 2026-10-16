@@ -300,6 +300,9 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #' @param K Over-specified initial factor count.
 #' @param control Named list overriding entries in `multimodal_yfb` config. In
 #'   addition to configured defaults it accepts `damping` and `tau_chunk_size`.
+#'   `loading_prior_update="fixed_q_em"` opts into fixed-posterior point-Laplace
+#'   F-prior maximization and KL correction (historical by default). Requires
+#'   point-Laplace F in every modality, damping=1, no pruning, eb_normal beta.
 #'   Factor pruning: `prior_update` ("em" or "ebnm" marginal-likelihood prior
 #'   fits for point-exponential L and F), `prune` (logical: after convergence,
 #'   remove any factor whose removal does not lower the ELBO, then refit), and
@@ -375,6 +378,11 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   settings <- modifyList(multimodal_yfb_default_control(), control)
   settings$damping <- settings$damping %||% 1
   settings$prior_update <- settings$prior_update %||% "em"
+  # Do not add an absent control to settings: default returned fits stay identical.
+  loading_prior_update <- settings$loading_prior_update %||% "historical"
+  if (!identical(loading_prior_update, "historical") &&
+      !identical(loading_prior_update, "fixed_q_em"))
+    stop("loading_prior_update must be historical or fixed_q_em.")
   settings$prune <- isTRUE(settings$prune)
   settings$survival_elbo <- settings$survival_elbo %||% "plugin"
   settings$tau_model <- settings$tau_model %||% "feature"
@@ -403,6 +411,10 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
       !all(unlist(settings$prior_F) %in% c("point_exponential", "point_laplace", "normal"))) {
     stop("control$prior_F must name a prior (point_exponential, point_laplace or normal) for each modality.")
   }
+  if (identical(loading_prior_update, "fixed_q_em") &&
+      (any(unlist(settings$prior_F) != "point_laplace") || settings$damping != 1 ||
+       settings$prune || (settings$beta_prior %||% "eb_normal") != "eb_normal"))
+    stop("fixed_q_em requires point-Laplace F, damping=1, no pruning and eb_normal beta.")
   settings$tau_chunk_size <- settings$tau_chunk_size %||% 1000L
   numeric_controls <- c("max_outer", "max_inner", "tol", "pve_threshold",
                         "prognostic_z_threshold", "damping", "tau_chunk_size")
@@ -551,7 +563,8 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
             survival_Y[[modality]], Tau[[modality]], EL[, k], EL2[, k], residual[[modality]],
             working$w, h_minus_k, projection$EZ[, k], projection$VZ[, k],
             EF[[modality]][, k], EF2[[modality]][, k], EBeta[k], EBeta2[k],
-            prior_F[[modality]][[k]], prior_update = settings$prior_update
+            prior_F[[modality]][[k]], prior_update = settings$prior_update,
+            loading_prior_update = loading_prior_update
           )
           kl_F[[modality]][k] <- updated_F$kl
           damped_F <- multimodal_yfb_damp_moments(

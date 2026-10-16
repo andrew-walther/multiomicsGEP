@@ -5,19 +5,18 @@ checkpoint preamble. The complete earlier handoff is preserved verbatim in
 [the chronological history](Codex_to_Claude_Round2_history_10_15_26.md).
 Historical statements there describe their own checkpoint, not current status.
 
-**Latest execution checkpoint (2026-10-16):** Andrew separately approved Task2-7.
-Afterc94c182 it completes in42.867s with exact entire-fit identity, complete
-late50 density coverage and no warnings. Latest full suite694/0. Finite late
-posterior steps show0/350 losses for each of F/L/beta, but F-prior refits
-lose the reference objective50/350 times and refresh18/50. Joint L/beta
-comparisons have additional unresolved losses; see the corrected output's
-VALIDITY.md and attempt log. This is not certification of a common implemented
-objective or a cause of M3. Recommendation: derive/review fixed-q loading-prior
-EM with coherent KL before damping/weights; no remedy is implemented. Stop and
-regroup before that new decision. The invalid Task2-6 remains preserved:
-its observer omitted reconstruction cross-products; the corrected independent
-multi-program test detects that defect. The October16 chapter/report includes
-both the invalid first attempt and the corrected result with its limits.
+**Latest implementation/report checkpoint (2026-10-16):** Andrew authorized
+proceeding after Task2-7. The fixed-q point-Laplace F-prior step and atomic KL
+correction are implemented opt-in, with12 focused checks and full suite706/0.
+No new scientific fit has run; this is not adoption or resolution of M3.
+The existing extreme-tail moment approximation remains a quantified limitation
+(absolute E|F| error3.54e-5 near h=8.01). Read
+[the exact proposal and code walkthrough](Round2_fixed_q_loading_prior_proposal.md)
+before execution. Scientific fitting remains outside this session's scope.
+The short October16 chapter distinguishes strong5k→10k gene agreement from
+less uniform whole-range agreement; the long October15 development log is
+retained in the book and explicitly labelled a methods-development record. Report/manuscript
+retain the detailed scientific evidence and unresolved gates.
 
 ## Start here
 
@@ -29,7 +28,8 @@ both the invalid first attempt and the corrected result with its limits.
    the chronological history for detailed implementation explanations.
 
 **State:** The bounded equation/evidence review and approved corrected observer
-are delivered. Stop and regroup before implementing a remedy. The north star
+are delivered. The approved next consistency repair is implemented opt-in;
+scientific evaluation remains unrun. The north star
 remains unmet; completing this review does not resume the former broad goal.
 Branch `round2/supervised` remains local; only rendered gh-pages publication
 is authorized. No merge or protected-branch edit is authorized. No fitting
@@ -37,8 +37,8 @@ job remains running. Preceding CpG/report checkpoint `0c0c717`, planning base
 `f8c895b`, corrected-observer preregistration `c94c182`. No configuration adopted.
 
 **Recommendation:** Keep the north star as the project objective. The corrected
-observer supports reviewing prior-consistent loading-prior maximization before
-damping/weights; regroup before implementing that new proposal. The active plan
+observer supports evaluating prior-consistent loading-prior maximization before
+damping/weights; use the new proposal, with its numerical limits and original gates. The active plan
 defines subsequent milestones.
 Do not mark the existing scientific goal complete just to replace it with a
 smaller goal. Its older state description incorrectly says external performance
@@ -73,7 +73,7 @@ is unchanged; the failed Single noninferiority result below is authoritative.
 | 7 Write-up housekeeping | Complete:14 process files moved, live pointers fixed, write-up and planning renders verified. |639351b;564/564|
 
 Historical test counts are not current suite totals. Latest full suite has
-694 passing tests and0 failures. Software tests do not establish the scientific
+706 passing tests and0 failures. Software tests do not establish the scientific
 success criteria. See the history/attempt log for full commits, seeds and arms.
 
 ## What is solved, and what remains scientifically open
@@ -494,3 +494,47 @@ requires tests, README/CLAUDE updates and the project's teach-back conventions.
 Consolidation verification: original handoff preserved byte-for-byte; new local
 Markdown links resolve. Fresh full suite684 passed,0 failed. Documentation
 only; no fit, benchmark, manuscript content or goal object changed.
+
+## Current meeting-plan alignment and implementation
+
+The completed expression study is Single benchmark training/CV sensitivity
+(the training portion of B4), with original external/report restrictions.
+B1 matched TCGA framework expression-only, B2 remaining count/filter fits,
+B3 joint curves, B5 large-p noise simulations, supervision adoption, rank,
+multimodal value and final biological characterization remain open.
+No new correlation cutoff or configuration is selected.
+
+The saved adjacent-count evidence clarifies the meeting summary:
+5,001→10,000 genes has4 defined matched loading correlations.960–.994,
+activity correlations.933–.993 and risk r=.972. The2,064→5,001 comparison
+has loading |r|.115–.962 and risk r=.655;10,000→17,900 has3 matches,
+loading |r|.737–.915 and risk r=.667. Similar C does not require every
+program to match. Undefined matches stay undefined. Reports now state both
+strong local agreement and the full-range limitation.
+
+Implementation teach-back, inputs/outputs, boundary behavior and R numerical
+notes are in Round2_fixed_q_loading_prior_proposal.md. Historical default
+paths pass protected-base identity; no scientific criterion changes. The
+next one-case proposal is precise but requires a final fixed driver and
+prospective execution commit before fitting, outside the present no-fit block.
+
+
+Meeting deliverables: the concise summary is
+`docs/reports/Advisor_Meeting_Summary_10_16_26.qmd` (HTML/PDF), with the
+longer advisor report as evidence detail and `paper/writeup/writeup.qmd`
+(HTML/PDF) as the method/results/biology manuscript draft. Provisional
+journal positioning and readiness gaps are in
+`paper/writeup/_process/Journal_Targeting_10_16_26.md`, based on official
+publisher scopes. No journal/submission decision is made. Andrew requests
+keeping the methods-development chapter in the book, clearly labelled;
+the October16 meeting chapter excludes session approval/registration items.
+
+Final publication verification: GitHub Pages reports rendered commit
+`c12c3aa36e7f675291111f260fe77c70244f9e80` built successfully. October16 is
+concise and separates adjacent-count program agreement from whole-range
+agreement; chapter11 remains with its explicit methods-record purpose.
+Meeting handout2 pages, detailed report13 pages, full write-up43 pages;
+all HTML/PDF outputs render. Local book checks find108 references with no
+missing target. Full suite706/0 and focused12/12 under both R/C++ paths;
+all10 benchmark hashes match before/after. No scientific fit or external
+scoring in this block; source/model branch remains local.

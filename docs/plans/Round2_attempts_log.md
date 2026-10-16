@@ -2112,3 +2112,44 @@ native/analytic probability gap6.66e-16 is reused on the identical saved
 trajectory, not relabelled a new probability test of all L/beta densities.
 Joint-block summaries compare pre_L/pre_beta with the corresponding
 posterior rows at identical iteration/factor keys, retaining nonfinite cases.
+
+
+## Task2-8 — Fixed-q loading-prior implementation; scientific evaluation unrun
+
+2026-10-16: Andrew authorized proceeding with the recommended consistency
+repair and current report/book/manuscript updates. Implement only the
+point-Laplace F-prior maximizer at fixed q plus its necessary KL correction,
+opt-in loading_prior_update="fixed_q_em". Historical remains the default;
+no posterior-sweep kernel, cap, test bed, benchmark, threshold, preprocessing
+or external restriction changes. Unsupported damping/pruning/shared-beta
+combinations fail loudly. No new scientific fit in this session.
+
+The complete derivation, supported controls,12 focused fixtures, numerical
+limits and teach-back are in Round2_fixed_q_loading_prior_proposal.md.
+Tests observed RED before implementation, then GREEN; the full suite passes
+706/0 including protected-base default identity. The same-sweep regression
+requires entire EF/EF2/EZ/VZ/details equality; quadrature independently tests
+E|F| and mixed-measure KL. Boundary/no-information/no-spike, scale invariance,
+missing normalizer failure and actual caller forwarding are covered.
+
+Independent kernel integration also finds E|F| error3.54e-5 near the existing
+h=8.01 asymptotic branch (A=1/8.01²,B=0,pi=1,rate=1); at h=32 error6.35e-10.
+No tail arithmetic is changed here. Algebraic prior maximization does not
+prove exact numerical density bookkeeping or global algorithm ascent.
+This known approximation must be checked on future actual diagnostic states.
+
+Prospective next scientific check: same saved profiled Single cell021 versus
+one new candidate, exact single change fixed_q_em, original seed20261026,
+noise.25,n400/120,p50,K7,Normal beta,no supervised start/pruning,w_S1,
+profileTRUE,original300 cap/ELBO rule. Reference SHA256 and all original
+adoption criteria are in the proposal. The reference is reused, not rerun.
+This entry is preparation, not execution authorization: a fixed fresh-path
+driver/source hashes/final registration commit are required before running.
+Stop after that one case, preserve failures, no retry or automatic expansion.
+No real/external outcome is used and no method is adopted.
+
+Additional engine verification exposed the pre-existing named-scalar
+point-Laplace posterior lookup error in the R fallback. A separate regression
+fails RED with `weights[["pos"]]` out of bounds; stripping A/B scalar names
+restores identical named/unnamed results. Both engine fixture runs pass after
+the metadata fix. Values, posterior formulas and C++ kernel are unchanged.

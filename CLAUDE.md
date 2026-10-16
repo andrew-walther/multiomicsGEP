@@ -257,3 +257,12 @@ Andrew separately approved Task2-7's corrected observer replay. Its fixed
 `corrected` runner mode has fresh paths; registration, full tests and the
 prospective commit must precede execution. Read the outcome before repeating
 anything. This approval does not extend to a model remedy or another panel.
+
+
+The opt-in fixed-posterior point-Laplace F-prior/KL consistency implementation
+is `code/loading_prior_fixed_q.R`, selected with `loading_prior_update` in the
+canonical Single fitter or multimodal control. Read
+`docs/plans/Round2_fixed_q_loading_prior_proposal.md` and Task2-8 before use:
+scientific evaluation is unrun, supported modes are intentionally restricted,
+and the existing tail-moment approximation remains a numerical limitation.
+No prepared scientific run is authorized by this pointer.

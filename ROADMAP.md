@@ -1158,3 +1158,21 @@ goal is a bounded evidence/equation review and one prospective experiment,
 ending in regrouping before fitting. Subsequent remedy evaluation, remaining
 feature curves, rank/multimodal value and final write-up are separate milestones.
 Planning consolidation does not resume the paused scientific goal.
+
+
+## 2026-10-16: prior-consistency prototype and clarified feature reporting
+
+Fixed-q point-Laplace loading-prior maximization with atomic KL correction is
+implemented opt-in, with12 focused checks and full suite706/0. Scientific
+validation remains unrun; the existing extreme-tail moment approximation is
+a recorded limitation. The exact next one-case proposal and stopping rule are
+in docs/plans/Round2_fixed_q_loading_prior_proposal.md. No default/adoption,
+new external score or benchmark change. Original simulation/CV/convergence
+and final external criteria remain required.
+
+The meeting chapter, advisor report and full write-up distinguish strong
+5,001→10,000-gene agreement (loading r.960–.994; risk r.972) from weaker
+agreement across the entire feature range. The completed curve concerns
+Single benchmark training/CV; matched TCGA expression-only, CpG/filter/joint,
+large-p noise, rank and final multimodal/biology work remain open. The long
+October15 development log is retained in the book with an explicit methods-development label.

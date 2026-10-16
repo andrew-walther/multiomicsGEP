@@ -460,6 +460,10 @@ yf_subset_posterior_state <- function(state,keep) {
 #'   preserving EL/EL2, EF/EF2, beta moments, Tau and persistent loading/shared
 #'   beta priors. Requires no cohort offset and N_frozen=0; means need not be
 #'   supplied separately. Initial uncertainty and beta affect the first update.
+#' @param loading_prior_update "historical" (default) or "fixed_q_em". Opt-in
+#'   fixed-posterior point-Laplace F-prior maximization with KL to the returned
+#'   prior. Requires canonical per-program Normal beta, no cohort/strata effects
+#'   and no pruning; no loading sweep, Cox approximation or stopping rule changes.
 #' @param profile_cox_intercept Opt-in profiled working Cox intercept. Weighted
 #'   centering applies only to survival updates; reconstruction, raw prediction
 #'   and the original ELBO monitor/rule remain unchanged. Requires canonical
@@ -548,7 +552,8 @@ fit_cox_on_yf <- function(Y, time, status,
                            trace_supervision = FALSE,
                            posterior_init = NULL,
                            prune_preserve_posterior = FALSE,
-                           profile_cox_intercept = FALSE) {
+                           profile_cox_intercept = FALSE,
+                           loading_prior_update = "historical") {
 
   if(!is.logical(profile_cox_intercept) || length(profile_cox_intercept)!=1L ||
      is.na(profile_cox_intercept))stop("profile_cox_intercept must be TRUE or FALSE.")
@@ -556,6 +561,14 @@ fit_cox_on_yf <- function(Y, time, status,
      prior_beta!="normal" || !is.null(cohort_id) || !is.null(strata_id) ||
      !is.null(beta_cohort_id) || prune))
     stop("Profiled Cox curvature requires canonical per-program Normal beta, no cohort/strata effects, and no pruning.")
+  if (!identical(loading_prior_update, "historical") &&
+      !identical(loading_prior_update, "fixed_q_em"))
+    stop("loading_prior_update must be historical or fixed_q_em.")
+  if (identical(loading_prior_update, "fixed_q_em") &&
+      (!canonicalize || prior_LF != "point_laplace" || beta_prior_mode[1] != "per_program" ||
+       prior_beta != "normal" || !is.null(cohort_id) || !is.null(strata_id) ||
+       !is.null(beta_cohort_id) || prune))
+    stop("fixed_q_em requires canonical point-Laplace F, per-program Normal beta, no cohort/strata effects or pruning.")
   record_output_convergence <- !missing(converge_on)
   call_args <- mget(names(formals(sys.function())), envir = environment())
   n <- nrow(Y); p <- ncol(Y)
@@ -1114,7 +1127,8 @@ fit_cox_on_yf <- function(Y, time, status,
           upd <- multimodal_yfb_update_F_mk(
             survival_Y, Tau, EL_aug[, k], EL2_aug[, k], R_k, w_S * w, w_S * w * z_no_k,
             as.vector(survival_Y %*% EF_aug[, k]), VZ_k, EF_aug[, k], EF2_aug[, k],
-            EBeta[k], EBeta2[k], prior_F_state[[k]], prior_update = "ebnm")
+            EBeta[k], EBeta2[k], prior_F_state[[k]], prior_update = "ebnm",
+            loading_prior_update = loading_prior_update)
         }
         prior_F_state[[k]] <- upd$prior
         EF[, k] <- upd$EF; EF2[, k] <- upd$EF2
@@ -1479,6 +1493,8 @@ fit_cox_on_yf <- function(Y, time, status,
   }
 
   if(profile_cox_intercept)result$profile_cox_intercept <- TRUE
+  if(identical(loading_prior_update,"fixed_q_em"))
+    result$loading_prior_update <- loading_prior_update
 
   # Pruning (canonical only): drop the program whose removal raises the ELBO
   # most, if any removal does not lower it, and refit from a warm start.

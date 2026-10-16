@@ -30,6 +30,10 @@ execute:
   enabled: false
 ---
 
+For the concise meeting handout, see
+[the October16 summary](Advisor_Meeting_Summary_10_16_26.pdf).
+This longer report retains detailed evidence and limitations.
+
 # What the work has established
 
 The approved October 14 write-up remains the project's benchmark. Its
@@ -313,19 +317,28 @@ benchmark point-exponential/Normal curve.
 
 ![Conditional CV performance and classified program retention at fixed K. Error bars are fold-level SE, not external confidence intervals.](../../results/benchmark_sim/outputs/feature_expansion/cold_primary/feature_count_performance.png){width=100%}
 
-### Do the same programs persist?
+### Strong agreement from 5k to 10k genes; less uniform across the full range
 
-Against the fresh 2,064-gene fit, median common-gene loading correlations
-are 0.297/0.333/0.566 at 5,001/10,000/17,900 genes. Activity correlations
-are 0.301/0.306/0.408; risk correlations are 0.655/0.638/0.505. Matching
-finds 4/4/3 nonconstant program pairs, leaving dead/unmatched factors
-explicit. The 10k and 5k risk scores correlate 0.972, while all-gene versus10k
-correlation is0.667. Full matrices and program-specific results are saved.
+The 5,001- and 10,000-gene fits have four matched nonconstant programs:
+common-gene loading correlations are **0.960–0.994**, activity correlations
+0.933–0.993 and risk-score correlation **0.972**. This is strong agreement
+for that expansion. Their conditional CV means are 0.577 and 0.609, with
+SEs 0.027 and 0.040; the study does not establish a predictive improvement.
 
-Individual programs and risk scores therefore change materially even when
-CV means are similar. Greedy factor correlations do not distinguish latent
-rotation from biological change; enrichment and broader stability checks
-are still needed. A similar C alone does not establish the same biology.
+| Comparison | Matched programs | Common-gene loading absolute r range | Risk r |
+|---|---:|---:|---:|
+| 2,064 → 5,001 genes | 4 | 0.115–0.962 | 0.655 |
+| 5,001 → 10,000 genes | 4 | 0.960–0.994 | 0.972 |
+| 10,000 → 17,900 genes | 3 | 0.737–0.915 | 0.667 |
+
+The earlier median correlations of 0.297/0.333/0.566 compare each larger
+fit with the **2,064-gene baseline**, not with the preceding count. Two
+baseline-to-5k/10k loading matches are strong and two weak. At all genes,
+three nonconstant pairs remain. Constant/unmatched factors are undefined,
+not counted as zero correlation. Thus prediction is broadly similar and
+some expansions preserve programs very well; stability is not uniform over
+the whole range. Matching alone cannot distinguish rotation from biological
+change, and biological interpretation still needs validation.
 
 ![Full-training factor and risk agreement against the fresh baseline. Medians include only defined matched pairs; the matching counts remain visible.](../../results/benchmark_sim/outputs/feature_expansion/cold_primary/feature_count_agreement.png){width=100%}
 
@@ -501,7 +514,7 @@ external scoring. The benchmark tag is
 `benchmark-interim-writeup-2026-10-14`; all 10 snapshot hashes match.
 The method-panel checkpoint is `f0858ec`; the CpG design is `dc69f6d`,
 the full-range expression design is `6597b4b`, and its reporting correction
-is `6371e42`. The current software suite has 694 passing tests. Full per-task commits, failures and tables are indexed in
+is `6371e42`. The current software suite has 706 passing tests. Full per-task commits, failures and tables are indexed in
 [the Round 2 handoff](../plans/Codex_to_Claude_Round2.md) and
 [attempt history](../plans/Round2_attempts_log.md). The
 [approved priority plan](../plans/Advisor_Priorities_and_Execution_10_15_26.md)
@@ -552,4 +565,26 @@ before damping or weights. Joint empirical-Bayes subject-score/coefficient
 comparisons retain additional losses whose optimizer/density/reference-prior
 interpretation remains unresolved. This is a local quadratic diagnostic,
 not a certified common implemented ELBO, a cure for the25k trajectory or
-an adopted remedy. The October16 chapter provides the full table and limits.
+an adopted remedy. The audit record retains the full table and limits; the October16 chapter summarizes them.
+
+
+## Current method implementation checkpoint
+
+The next consistency repair is now implemented opt-in, with software-fixture
+validation; no scientific fit has evaluated it. Holding the loading posterior
+fixed, the point-Laplace prior uses $\pi=S/p$ and rate $S/T$, where
+$S=\sum_j\Pr_q(F_j\ne0)$ and $T=\sum_jE_q|F_j|$. Its KL is corrected to the
+returned prior at the same step. The posterior sweep and historical default
+path are preserved. This addresses the demonstrated prior-step mismatch;
+it does not certify the complete algorithm or resolve Cox working refreshes.
+The existing truncated-Normal extreme-tail approximation remains a numerical
+limitation to assess before interpreting an extreme-state evaluation.
+
+The full-range gene curve above completes the Single benchmark training/CV
+sensitivity, not the matched TCGA framework expression-only curve. That curve,
+remaining methylation/filter/joint curves, large-p added-noise simulations,
+rank selection and final biological validation remain open meeting items.
+No benchmark, feature count, filter or supervised configuration is adopted.
+The next prospective experiment and original gates are specified in
+`docs/plans/Round2_fixed_q_loading_prior_proposal.md`; scientific execution
+requires its fixed driver and registration commit before running.
