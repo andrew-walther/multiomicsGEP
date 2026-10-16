@@ -2,16 +2,16 @@
 
 ## Assignment
 
-On branch `writeup/draft` (draft commit `0a7cfc9`, monochrome styling `a9f4b47`), review the initial writeup: `paper/writeup/writeup.qmd`, `appendices/single_modality.qmd`, `appendices/multimodal.qmd`, and the rendered `writeup.html` and `writeup.pdf`. This is Task 4 of `paper/writeup/implementation_plan.md`.
+On branch `writeup/draft` (draft commit `0a7cfc9`, monochrome styling `a9f4b47`), review the initial writeup: `paper/writeup/writeup.qmd`, `../appendices/single_modality.qmd`, `../appendices/multimodal.qmd`, and the rendered `../writeup.html` and `../writeup.pdf`. This is Task 4 of `paper/writeup/_process/implementation_plan.md`.
 
 Run `git status -sb` and `git branch --show-current` first; the branch must be `writeup/draft`. If it differs, stop and ask. Work in this checkout only (no worktree or second clone).
 
-**Write findings to `paper/writeup/review.md`. Do not edit the draft, appendices, figures, source inventory, code, or saved results.** Rank findings by severity. Give each one a location (section, table/figure number, or appendix equation), the evidence, and a concrete suggested fix: replacement wording, a proposed structure, or the exact correction. Claude Code applies the confirmed findings afterward (Prompt 4), and Andrew approves before merging. Ask before committing `review.md`. Do not push.
+**Write findings to `paper/writeup/_process/review.md`. Do not edit the draft, appendices, figures, source inventory, code, or saved results.** Rank findings by severity. Give each one a location (section, table/figure number, or appendix equation), the evidence, and a concrete suggested fix: replacement wording, a proposed structure, or the exact correction. Claude Code applies the confirmed findings afterward (Prompt 4), and Andrew approves before merging. Ask before committing `review.md`. Do not push.
 
 Read first:
 
-1. `paper/writeup/implementation_plan.md`: **Author feedback on the initial draft (2026-10-14)** (this section takes precedence over earlier plan requirements where they conflict), Review focus, Global constraints, and the Revisit mapping.
-2. `paper/writeup/source_inventory.csv` (62 entries; each records what was verified).
+1. `paper/writeup/_process/implementation_plan.md`: **Author feedback on the initial draft (2026-10-14)** (this section takes precedence over earlier plan requirements where they conflict), Review focus, Global constraints, and the Revisit mapping.
+2. `paper/writeup/_process/source_inventory.csv` (62 entries; each records what was verified).
 3. The draft sources and both rendered outputs.
 
 ## Part A: scientific and numerical correctness

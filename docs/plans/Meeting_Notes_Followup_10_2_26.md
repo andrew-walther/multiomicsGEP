@@ -475,8 +475,8 @@ Each stop comes with a short recommendation.
 ### Prompt 1 — Codex: planning-page review and drafting prompt
 
 ```text
-Read paper/writeup/planning.qmd (rendered as planning.html),
-paper/writeup/implementation_plan.md, paper/writeup/source_inventory.csv, and the
+Read paper/writeup/_process/planning.qmd (rendered as planning.html),
+paper/writeup/_process/implementation_plan.md, paper/writeup/_process/source_inventory.csv, and the
 "Sequencing and handoffs" section of docs/plans/Meeting_Notes_Followup_10_2_26.md.
 
 First create the branch writeup/draft from main (git switch -c writeup/draft main).
@@ -495,7 +495,7 @@ I will give you feedback on the planning page. Then:
    is missing. Claims to cover: value over EBMF/NMF alone, over two-step
    EBMF -> Cox, and over DeSurv; K selection that accounts for survival and
    reconstruction; the multimodal model's added value; the biology.
-4. Write the drafting prompt for Claude Code to paper/writeup/drafting_prompt.md.
+4. Write the drafting prompt for Claude Code to paper/writeup/_process/drafting_prompt.md.
    It must:
    - work on writeup/draft and execute Tasks 2, 3 and 5 of implementation_plan.md;
    - target a complete draft by Wednesday 10/14 for sharing on Friday 10/16, and
@@ -510,17 +510,17 @@ ask before committing or pushing.
 ### Prompt 2 — Claude Code: draft the write-up
 
 ```text
-On branch writeup/draft, read paper/writeup/drafting_prompt.md and follow it.
+On branch writeup/draft, read paper/writeup/_process/drafting_prompt.md and follow it.
 ```
 
 ### Prompt 3 — Codex: review the draft
 
-*Superseded 2026-10-14 by `paper/writeup/review_prompt.md`, which adds Andrew's feedback on the initial draft. Use: "On branch writeup/draft, read paper/writeup/review_prompt.md and follow it."*
+*Superseded 2026-10-14 by `paper/writeup/_process/review_prompt.md`, which adds Andrew's feedback on the initial draft. Use: "On branch writeup/draft, read paper/writeup/_process/review_prompt.md and follow it."*
 
 ```text
 On branch writeup/draft, review the write-up draft (paper/writeup/writeup.qmd and
 the appendices) against the "Review focus" and "Global constraints" in
-paper/writeup/implementation_plan.md and against source_inventory.csv.
+paper/writeup/_process/implementation_plan.md and against source_inventory.csv.
 Check:
 - every quantitative claim against its recorded path and selector;
 - equations and algorithm boxes against the code and the evaluated configuration;
@@ -528,17 +528,17 @@ Check:
 - overstated claims, especially about survival shaping F under alpha_F = 0 and
   about the biology;
 - that every passage on the "Revisit after feature/supervised-F" list is marked.
-Write findings to paper/writeup/review.md, ranked by severity, each with
+Write findings to paper/writeup/_process/review.md, ranked by severity, each with
 location, evidence and a suggested fix. Do not edit the draft. Ask before
 committing review.md.
 ```
 
 ### Prompt 4 — Claude Code: fix review findings
 
-*Amended 2026-10-14: also apply every item in "Author feedback on the initial draft" in `paper/writeup/implementation_plan.md`.*
+*Amended 2026-10-14: also apply every item in "Author feedback on the initial draft" in `paper/writeup/_process/implementation_plan.md`.*
 
 ```text
-On branch writeup/draft, read paper/writeup/review.md. Verify each finding
+On branch writeup/draft, read paper/writeup/_process/review.md. Verify each finding
 against the source before acting on it; fix the confirmed ones, and record the
 disposition of every finding (fixed, not confirmed with reason, or deferred to
 the method work) in review.md. Re-render HTML and PDF, then summarize the changes
@@ -557,7 +557,7 @@ Read first:
   Workstream C including "Findings from scoping C1", and "Sequencing and
   handoffs" (scope M0-M8 and the working mode);
 - DECISIONS.md, entry "2026-10-02 — alpha_F = 0 cannot be the final method";
-- paper/writeup/implementation_plan.md, section "Revisit after
+- paper/writeup/_process/implementation_plan.md, section "Revisit after
   feature/supervised-F"; the write-up's Continuing work section
   (paper/writeup/writeup.qmd, Discussion); and the hidden
   <!-- REVISIT R1-R9 --> markers in writeup.qmd and the appendices, which flag
@@ -604,11 +604,11 @@ code. Ask before committing.
 ```text
 feature/supervised-F has been reviewed and merged to main. Create writeup/revision
 from main. Using the method-work summary and the "Revisit after
-feature/supervised-F" list in paper/writeup/implementation_plan.md, rewrite every
+feature/supervised-F" list in paper/writeup/_process/implementation_plan.md, rewrite every
 passage inside a REVISIT marker whose method changed, and update the Discussion
 and Continuing work (R9). Redraw figures from saved outputs only (no refitting).
 Keep the manuscript conventions: no source IDs, repository paths or dated
 references; self-contained captions; algorithms in the appendices; no table split
 across pages. Re-render and inspect HTML and PDF, record the changes in
-paper/writeup/review_dispositions.md, and ask me before committing.
+paper/writeup/_process/review_dispositions.md, and ask me before committing.
 ```

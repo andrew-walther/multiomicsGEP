@@ -5,8 +5,8 @@ Review the proposed writeup plan and identify gaps or areas to reinforce **befor
 ## Read first
 
 - `CLAUDE.md` and the current writeup evidence-boundary and authorship entries in `DECISIONS.md`.
-- `paper/writeup/planning.html`, the document Andrew is reviewing, together with its source `paper/writeup/planning.qmd`.
-- `paper/writeup/implementation_plan.md` and `paper/writeup/source_inventory.csv`.
+- `paper/writeup/_process/planning.html`, the document Andrew is reviewing, together with its source `paper/writeup/_process/planning.qmd`.
+- `paper/writeup/_process/implementation_plan.md` and `paper/writeup/_process/source_inventory.csv`.
 - The **Sequencing and handoffs** section of `docs/plans/Meeting_Notes_Followup_10_2_26.md`. It records the newer plan for Claude to draft and Codex to review, which may not yet be reflected throughout the planning materials.
 
 Run `git status -sb` and `git branch --show-current` to establish the current state. Do not switch branches, create branches/worktrees, reset, stash, commit, push, or merge for this review. Preserve any existing changes.
