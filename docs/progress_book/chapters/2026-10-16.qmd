@@ -1,24 +1,35 @@
 # October 16, 2026
 
-## Meeting overview and discussion guide
+## Executive summary
 
-Use this chapter for the brief update since October 2, then the project
-write-up for the method, validation and biological evidence. The aim is to
-agree on the strongest supported manuscript claim and the evidence still
-needed to support it.
+The project write-up brings together the Bayesian molecular-program model,
+simulation and cross-cohort prediction results, feature sensitivity, and
+biological interpretation in pancreatic cancer. Its central question is
+whether molecular programs can distinguish tumor and microenvironmental
+signals while providing useful survival prediction.
 
-| Write-up section | Question for discussion |
-|---|---|
-| Methods and model comparison | What do patient activities, molecular loadings and projection scores represent, and which formulation produced the reported results? |
-| Validation and feature sensitivity | How strong are prediction and program stability relative to the actual comparators, and where do broader feature sets change the result? |
-| Biological findings | Do the basal/classical and stromal/immune programs provide useful biological separation? What would establish added value from methylation? |
-| Discussion and continuing work | What can the manuscript claim now, and which unresolved issues must be addressed before submission? |
-
-**Proposed manuscript focus:** a Bayesian program model connecting
-cross-cohort risk prediction with interpretable tumor and microenvironmental
-structure. Current evidence supports developing that narrative; claims that
-survival supervision improves program discovery, or that methylation adds
-predictive or biological value, still require validation.
+- **Method and prediction.** Empirical-Bayes factorization estimates patient
+  activities and molecular loadings; projection scores support prediction in
+  new patients. The evaluated single-block model achieves mean external
+  concordance **0.627 across five cohorts (616 patients)**, versus **0.601**
+  for the independently tuned factorization-then-Cox comparator.
+- **Biological interpretation.** Four retained expression programs separate
+  basal-like/classical tumor signals from stromal/immune structure. These
+  annotations provide a basis for the manuscript narrative; their biological
+  interpretation remains provisional. The joint expression–methylation model
+  adds molecular structure, but added predictive or biological value from
+  methylation is not yet established.
+- **Progress since October 2.** All 24 gene-count fits converged through
+  17,900 genes, with broadly similar conditional CV performance and especially
+  strong program agreement between 5,001 and 10,000 genes. The full CpG
+  variability inventory and requested filter summaries are complete.
+- **Methodological progress and remaining limitation.** Stable log-space Cox
+  arithmetic removes the original 25k-CpG numerical failure. A separate
+  prior-consistency repair improves local prior updates, but fitted outputs
+  remain unsettled when its stopping rule triggers. Neither establishes a
+  validated supervised replacement: the retained Single benchmark still uses
+  $\alpha_F=0$, and reliable survival-guided loading discovery remains the
+  immediate methodological priority.
 
 ## Progress since October 2
 

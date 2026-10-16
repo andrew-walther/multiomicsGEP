@@ -596,3 +596,18 @@ Verification: full suite710/0; benchmark manifest10/10 before/after;
 contents-first PDF/structured summary layout was visually checked (44 pages).
 Rendered book publication commit27bae873bfc42436baa76f383cc3956809c47ea6;
 source/model branch remains local.
+
+
+### Meeting chapter executive summary
+
+Andrew requests replacing the October16 opening discussion-guide table with
+an executive summary. The chapter now summarizes the write-up's model,
+external prediction evidence and provisional biology, then gene/CpG study
+progress and the numerical/prior-consistency findings. It retains the
+alpha_F0 benchmark limitation and unresolved output stability; no new fit,
+criterion or adoption decision follows. The existing detailed result sections
+remain below the overview. This supersedes the earlier discussion-guide
+layout, not the scientific priorities.
+
+Verification: full suite710/0; benchmark hashes10/10 before/after;
+108 local book references resolve. Rendered publication is gh-pages b27b73e.
