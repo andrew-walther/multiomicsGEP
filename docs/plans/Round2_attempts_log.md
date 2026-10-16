@@ -1685,3 +1685,38 @@ no longer cap, scaling, prior, variance clipping or other remedy applied.
 Andrew asked whether to authorize a bounded unchanged-settings diagnostic
 trace or leave the failure for review. Larger counts and CV remain unrun,
 not silently omitted or labelled infeasible solely from this failure.
+
+## Task5-M2: observe the unchanged25k moment failure (prospective)
+
+Andrew explicitly approved a bounded diagnostic rerun with identical settings.
+Hypothesis: the aggregate F-update guard obscures which working/projection
+quantity first becomes invalid. Repeat only M1 cell7 (full144 TCGA,25k CpGs,
+seed42, same frozen design and source fingerprints). No new fit controls,
+preprocessing, initial state, model equations, stopping rule or remedy.
+
+Use process-local trace() at entry to multimodal_yfb_update_F_mk(), recording
+outer/inner/program/modality and counts/ranges for w, h_minus_k, EZ_k and VZ_k.
+Negative h/EZ are allowed; exactly reproduce the original guard's w>=0,
+VZ>=-1e-10 and finite-value conditions. Keep the preceding valid call and
+first invalid call as aggregate CSVs. Detailed argument/current-fit state
+is saved only to ignored data/round2_methylation_moment_failure.rds for
+inspection; no patient arrays or per-patient outcomes are committed.
+
+Diagnostic success requires the original error message and an invalid-input
+capture; a different error, successful fit or missed observation is a failed
+reproduction, never a remedy. Original terminal result rows remain intact;
+copy their benchmark-linked table for context, without rescoring any model.
+The script itself exits0 only after successful reproduction/input-identity
+checks, which does not mean the scientific fit succeeds. No further count
+cell or corrective scientific run follows without its own justified design.
+Runner: results/multimodal_real/diagnose_methylation_moments.R.
+
+Three fixtures RED0/3 then GREEN3/3 verify correct signed-value handling,
+nonfinite/negative-variance field identification and exact F-update output
+identity with entry observation on/off. Full suite must pass before this
+prospective commit; no diagnostic real-data rerun has yet executed.
+
+Task5-M2 preregistration checkpoint: fresh full suite672 passed,0 failed;
+three focused fixtures pass after observed RED0/3. Driver syntax parses.
+No real-data diagnostic replay has run before this commit. Existing core
+fitter/update/prediction files and M1 immutable inputs are unchanged.

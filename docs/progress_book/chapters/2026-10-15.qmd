@@ -858,3 +858,46 @@ matched expression-only framework also retains K7, so pooled Single four
 classified versus joint seven does not isolate the methylation contribution.
 Independent feature-manifest/agreement helpers pass nine focused checks and
 the full suite651/651. No new feature-performance result is claimed.
+
+## Full-range expression sensitivity and first CpG expansion results
+
+The approved cold-primary fixed-K7/alpha_F0 expression study completes24/24
+converged fits, zero warnings/errors, through17900 common genes. Counts and
+conditional training-CV means are2064:.6084,5001:.5773,10000:.6088 and17900:.6068.
+Frozen D4 has historical mean external C=.626699; no external cohort was
+rescored for this feature study. Retained classifications are4/4/4/3, without
+deletion. All-gene risk correlation to the fresh baseline is.505; dense
+nonzero loading means do not validate gene-level selection. More inputs may
+reduce arbitrary screening, but no predictive gain, noninferiority result or
+new default is established. Full tables/curves are in
+results/benchmark_sim/outputs/feature_expansion/cold_primary/.
+
+The eligible305352-CpG training universe reproduces frozen10k values, ranking
+and patients exactly, using unchanged whole-universe imputation. Supplied
+mean/extreme-proportion masks retain182934/221142 probes; neither is adopted.
+The unfiltered methylation-only curve starts with the following full144-patient
+training results. Molecular inputs differ, so these are contextual training
+comparisons, not matched CV or incremental-modality estimates.
+
+| Source | Genes | CpGs | Training C | Credible programs | Convergence |
+|---|---:|---:|---:|---:|---|
+| Frozen joint benchmark |3000|10000|.637768|1|500 cap|
+| Frozen expression-only benchmark |3000|0|.643559|1|500 cap|
+| New methylation-only reference |0|10000|.612671|0|500 cap|
+| New methylation-only expansion |0|25000|NA|NA|Moment-validity error|
+
+The10k fit took963.827s with nonconstant riskSD.117264, no warnings/errors;
+the25k fit stopped after27.981s at the F-update Cox/projection-moment guard.
+Neither constitutes a successful supervised methylation model. Preserve NA
+for the failed fit. Larger counts/CV remain unrun. Andrew approved a bounded
+unchanged-settings diagnostic to identify the invalid field, not a remedy.
+
+The saved joint-role audit matches all seven benchmark/newer profiled
+activities (.832–.999) and gives risk correlation.954; both fits cap500.
+Program4 is the sole credible coefficient in each. Program7 is methylation-
+only in both, with within-block norm shares58.9%/68.7% and loading
+correlation.993. This supports distinct molecular roles without establishing
+optimal K, convergence or added prediction. Norm shares are not additive
+PVE or survival fractions; newer biological labels are not inferred.
+The advisor progress report contains the full benchmark-linked tables in
+HTML/PDF; the original write-up and immutable snapshot are unchanged.

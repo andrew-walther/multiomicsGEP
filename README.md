@@ -613,3 +613,12 @@ Its norm shares describe molecular rank-one magnitude, not additive PVE;
 credible coefficients require positive posterior SD. Both audited fits hit
 the original cap, so their roles remain descriptive, without transferred
 biological labels or a model-adoption claim.
+
+For the preserved25k-CpG numeric failure, the explicitly authorized diagnostic
+is `Rscript results/multimodal_real/diagnose_methylation_moments.R`, only after
+Task5-M2's prospective commit. It repeats the same immutable cell and adds an
+entry observer, saving aggregate guard-input summaries and an ignored local
+state at the first failure. `code/multimodal_moment_audit.R` identifies invalid
+fields using the existing guard exactly. Successful diagnostic reproduction
+is not successful model fitting; no numerical remedy or altered controls are
+included. Original failed result rows are never overwritten.

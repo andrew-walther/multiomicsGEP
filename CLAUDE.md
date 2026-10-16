@@ -200,3 +200,10 @@ within-block rank-one norm shares (not additive PVE). Both saved full fits
 are unconverged; no external scoring, enrichment, label transfer or adoption.
 Task5-M1 first10k methylation fit has finished at the500 cap with nonconstant
 risk but zero credible coefficients. Preserve this failure in count summaries.
+
+Andrew approved Task5-M2, a bounded identical-settings25k failure diagnostic.
+Read its committed attempt before running
+`results/multimodal_real/diagnose_methylation_moments.R`. It observes F-update
+inputs via process-local tracing, preserves the original error/results and
+keeps detailed patient state ignored. It is not a scientific remedy; follow
+its actual terminal status before any further count fit or corrective change.

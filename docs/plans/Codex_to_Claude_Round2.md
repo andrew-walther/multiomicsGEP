@@ -1620,3 +1620,14 @@ QMD/HTML/PDF have no diff against the immutable tag. Progress HTML/PDF render
 successfully; the10-page PDF was visually checked, including the new role and
 methylation tables. No scientific script remains running. Only a diagnostic
 decision is pending for the count experiment; the overall goal is incomplete.
+
+Andrew subsequently authorized the unchanged-settings25k diagnosis (Task5-M2).
+Its observer/guard fixtures pass3/3 after RED0/3, including exact F-update
+output identity on/off. The prospective entry must be committed with a fresh
+passing full suite before real-data execution. No remedy is authorized by
+this diagnostic approval. Original failed rows and frozen benchmark survive.
+
+Task5-M2 preregistration verification: fresh full suite672 passed,0 failed;
+three diagnostic fixtures pass. No replay before the prospective commit.
+The progress-book chapter now also records the completed expression curve,
+full-CpG preparation, saved joint-role audit and both CpG terminal results.
