@@ -38,10 +38,10 @@ format:
 
 This document sits at the top of the modular companion hierarchy. The four update modules each have their own self-contained companion documents that describe the mathematics, function signatures, tests, and demos for each individual coordinate update:
 
-- `docs/update_beta.qmd` — q(β): scalar EBNM for Cox survival coefficients
-- `docs/update_L.qmd` — q(L): vector EBNM for patient loadings, dual-source (genomics + survival)
-- `docs/update_F.qmd` — q(F): vector EBNM for factor weights, pure genomics
-- `docs/update_tau.qmd` — q(τ): closed-form MLE for noise precision
+- `docs/lb_walkthroughs/update_beta.qmd` — q(β): scalar EBNM for Cox survival coefficients
+- `docs/lb_walkthroughs/update_L.qmd` — q(L): vector EBNM for patient loadings, dual-source (genomics + survival)
+- `docs/lb_walkthroughs/update_F.qmd` — q(F): vector EBNM for factor weights, pure genomics
+- `docs/lb_walkthroughs/update_tau.qmd` — q(τ): closed-form MLE for noise precision
 
 `fit_modular.R` orchestrates these four modules. It does not re-implement their mathematics; it calls the exported functions from each module in the correct order, manages state (the posterior moment matrices EL, EL2, EF, EF2, EBeta, EBeta2, Tau), and handles initialization, the Cox Taylor linearisation, and convergence checking.
 
@@ -351,10 +351,10 @@ This is the true coordinate ascent behavior: each factor update is conditioned o
 | File | Role |
 |---|---|
 | `code/fit_modular.R` | This module — full CAVI loop |
-| `docs/update_beta.qmd` | Companion doc for q(β) update |
-| `docs/update_L.qmd` | Companion doc for q(L) update |
-| `docs/update_F.qmd` | Companion doc for q(F) update |
-| `docs/update_tau.qmd` | Companion doc for q(τ) update |
+| `docs/lb_walkthroughs/update_beta.qmd` | Companion doc for q(β) update |
+| `docs/lb_walkthroughs/update_L.qmd` | Companion doc for q(L) update |
+| `docs/lb_walkthroughs/update_F.qmd` | Companion doc for q(F) update |
+| `docs/lb_walkthroughs/update_tau.qmd` | Companion doc for q(τ) update |
 | `code/update_beta.R` | q(β) module: `compute_z_no_k`, `update_beta_k`, `update_beta_all` |
 | `code/update_L.R` | q(L) module: `compute_R_k`, `update_L_k`, `update_L_all` |
 | `code/update_F.R` | q(F) module: `update_F_k`, `update_F_all` |

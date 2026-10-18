@@ -56,7 +56,7 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | Cross-validated held-out log-likelihood | `code/compute_cv_loglik.R` — `cv_survival_loglik()`, `bicv_genomics_loglik()`; companion to `compute_bic.R`, reported separately |
 | Cohort-specific survival coefficients | `code/update_beta_cohort.R` — `beta_cohort_id` argument on `fit_cox_on_yf()`. Distinct from `cohort_id` (genomics offset) and `strata_id` (baseline hazard) |
 | Cohort F update | `code/update_F_cohort.R` — `update_F_cohort_all()` (Normal conjugate) |
-| Companion doc for fit_modular.R | `docs/fit_modular.qmd` |
+| Companion doc for fit_modular.R | `docs/lb_walkthroughs/fit_modular.qmd` |
 | **LB benchmark runner** | `results/benchmark_sim/run_LB_benchmark.R` |
 | **YFB benchmark runner** | `results/benchmark_sim/run_YFB_benchmark.R` |
 | **K_init consensus sweep** | `results/benchmark_sim/run_k_init_sweep.R` — ELBO/BIC/log-likelihood/held-out-C consensus; `--reuse-cache`/`--reuse-cv-cache` |
@@ -64,7 +64,7 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | DeSurv preprocessing | `code/preprocess_desurv.R` |
 | Pathway enrichment functions | `code/pathway_enrichment.R` — `load_d4_weights()`, `run_fgsea_program()`/`run_ora_program()`, `build_pdac_genesets()`, subtype/cohort/DeSurv-overlap concordance functions |
 | **Progress notebook (meeting-facing, one chapter per advisor meeting)** | `docs/progress_book/` — Quarto book, `quarto render` to build; add a new `chapters/YYYY-MM-DD.qmd` per meeting |
-| **L-update debugging guide** | `docs/update_L_fix.md` — read before any L-update work |
+| **L-update debugging guide** | `docs/lb_walkthroughs/update_L_fix.md` — read before any L-update work |
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |
 | **Current working plan** | `docs/plans/Meeting_Notes_Followup_10_2_26.md` — start open work here (write-up, feature-count sensitivity, survival weighting); `docs/plans/archive/Working_Plan_10_1_26.md` records the 10/1–10/2 work |
 | Matched TCGA/ICGC expression + methylation loader | `code/load_multiomics_data.R` — `build_multiomics_cohorts()`; real-data checks `tests/test_real_multiomics_loading.R` (local) |
