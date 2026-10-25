@@ -1,7 +1,7 @@
 # SSBMF — Post-Lab-Meeting Action Plan
 
 **Date:** 2026-07-08
-**Source feedback:** `docs/plans/rashid_lab_meeting_notes_06_18_2026.md` (Rashid lab, 6/18/2026)
+**Source feedback:** `docs/meetings/2026-06-18-rashid-lab-meeting-notes.md` (Rashid lab, 6/18/2026)
 **Branching:** one branch per phase (Phase 1 = `objective-normalization`); see integration strategy
 below — **do not touch `main` until each branch's net-benefit gate is confirmed.**
 
@@ -162,7 +162,7 @@ when survival has no signal they are equivalent. Depends on Phase 1 (α must be 
   *Success:* a clearly separated curve with a one-sentence takeaway defensible to the lab —
   "the joint model recovers prognostic structure the 2-step misses, and only when survival carries it."
 - **α=0 reproduces the unsupervised 2-step exactly** (internal sanity control).
-- *Deliverable:* a short Quarto report in `docs/reports/` with the sweep figures.
+- *Deliverable:* a short Quarto report in `docs/findings/` with the sweep figures.
 
 - **Survival-strength sweep:** extend the DGP (`results/multi_cohort_sim/generate_multicohort_data.R`,
   `config/globals.yml` synthetic block) to vary the prognostic effect 0 → large on 1–2 factors,
@@ -173,7 +173,7 @@ when survival has no signal they are equivalent. Depends on Phase 1 (α must be 
 - **Equivalence at signal = 0:** joint (α tuned) ≈ 2-step in C-index and factor recovery; divergence =
   objective bug. **Separation at signal > 0:** joint exceeds 2-step, gap grows with signal.
 - **α=0 internal control:** joint at α=0 reproduces the unsupervised 2-step exactly.
-- **Deliverable:** short Quarto diagnostic report in `docs/reports/` with sweep curves (use the
+- **Deliverable:** short Quarto diagnostic report in `docs/findings/` with sweep curves (use the
   `dataviz` skill for figures). **Independent review** (spin up a reviewer agent per the protocol above), then **commit.**
 
 ---
@@ -253,7 +253,7 @@ DeSurv), answering the GO/gene-ID feedback.
   reported programs, giving external corroboration of what the model found.
 
 - Execute the already-written plan on branch `pathway-enrichment-plan`
-  (`docs/plans/pathway_enrichment_plan.md`); gene lists in
+  (`docs/plans/2026-07-14-pathway-enrichment-plan.md`); gene lists in
   `presentation/.../assets/active_factor_genes.csv`.
 - Mind the sign/suppression gotcha (memory `feedback-yfb-km-sign-suppression`): joint β sign can invert
   vs marginal KM direction — label factors empirically.

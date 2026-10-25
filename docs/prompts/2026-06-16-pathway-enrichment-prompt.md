@@ -2,7 +2,7 @@
 
 Copy the block below into a **new** Claude Code session to build the implementation plan
 for the gene-set / pathway enrichment feature. The session is expected to **produce a
-plan, not code**, and to save that plan to `docs/plans/pathway_enrichment_plan.md`.
+plan, not code**, and to save that plan to `docs/plans/2026-07-14-pathway-enrichment-plan.md`.
 
 ---
 
@@ -55,7 +55,7 @@ QUESTIONS THE PLAN SHOULD ANSWER
    memory): do our adverse/protective programs recover similar biology (e.g. their
    D1 Classical+iCAF coupling)?
 5. Outputs & placement: runner script, result tables/figures, and a short dated
-   report — follow repo conventions (code/ or results/benchmark_sim/; docs/reports/
+   report — follow repo conventions (code/ or results/benchmark_sim/; docs/findings/
    for the report). Reproducibility (seeds, gene-set collection versions).
 6. New R package dependencies (fgsea/clusterProfiler/msigdbr/org.Hs.eg.db) — flag for
    discussion before adding, per project conventions.
@@ -103,5 +103,5 @@ DELIVERABLE FOR THIS SESSION
 Produce a numbered implementation plan with verification checks per step, the
 figure/table/comparison list above scoped concretely (inputs, methods, output paths),
 and the open decisions you need me to weigh in on. **Save the finalized plan to
-`docs/plans/pathway_enrichment_plan.md`** (Markdown). Do not write feature code yet.
+`docs/plans/2026-07-14-pathway-enrichment-plan.md`** (Markdown). Do not write feature code yet.
 ```

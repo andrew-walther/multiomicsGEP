@@ -64,4 +64,4 @@ reformulation from the previous entry is viable, not just a cleaner derivation o
 
 ## Deep dive
 
-- Full write-up: [`SSBMF_Status_Update_5_07_26`](../../../progress_report/SSBMF_Status_Update_5_07_26.pdf)
+- Full write-up: [`2026-05-07-ssbmf-status-update`](../../../progress_report/2026-05-07-ssbmf-status-update.pdf)

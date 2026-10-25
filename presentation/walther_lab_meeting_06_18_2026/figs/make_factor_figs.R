@@ -5,7 +5,7 @@
 #          the internal D4/D5 configuration labels baked into the report PNGs.
 #
 #          Reuses the exact fits, gene sets, and plotting logic from
-#          docs/reports/desurv_factor_diagnostics_05_27_26.qmd, changing only the
+#          docs/findings/2026-05-27-desurv-factor-diagnostics-report.qmd, changing only the
 #          figure/panel titles to describe each model by its characteristics
 #          (projection predictor, DeSurv-aligned, ± cohort indicator).
 #

@@ -693,10 +693,10 @@ Only remove true duplicates or items added in error.
 **Comprehensive documentation: companion docs, roxygen2, and inline comments.**
 
 1. **Created `docs/` directory** with companion documentation for all four modules:
-   - `docs/update_beta.qmd` -- Overview, math background, function reference, test + demo explanations
-   - `docs/update_L.qmd` -- Dual-source precision/signal, compute_R_k shared dependency
-   - `docs/update_F.qmd` -- tau cancellation property, pure genomics
-   - `docs/update_tau.qmd` -- Closed-form MLE, variance correction, ELBO proxy
+   - `docs/lb_walkthroughs/update_beta.qmd` -- Overview, math background, function reference, test + demo explanations
+   - `docs/lb_walkthroughs/update_L.qmd` -- Dual-source precision/signal, compute_R_k shared dependency
+   - `docs/lb_walkthroughs/update_F.qmd` -- tau cancellation property, pure genomics
+   - `docs/lb_walkthroughs/update_tau.qmd` -- Closed-form MLE, variance correction, ELBO proxy
 
 2. **Created `docs/Makefile`**: `make all` renders all 4 `.md` files to PDF + HTML
    (Helvetica/Menlo fonts for Unicode Greek letter support).
@@ -784,7 +784,7 @@ Only remove true duplicates or items added in error.
    - Designed for both synthetic and real-data modes (real-data support added fully
      in Session 10).
 
-3. **Created `docs/fit_modular.qmd/.pdf/.html`**:
+3. **Created `docs/lb_walkthroughs/fit_modular.qmd/.pdf/.html`**:
    - Full code walkthrough for `fit_modular.R`, covering factor-wise loop structure,
      Taylor linearization, convergence criterion, and comparison with block-wise runner.
 
@@ -1468,7 +1468,7 @@ injecting external initializations. 171/171 tests still passing.
   prior ruled out, warm-start root cause localization)
 - `ROADMAP.md`: status updated, inter-dataset normalisation marked complete, EBMF warm-start
   marked complete, new "Debug update_L_k()" item added as next priority
-- `docs/update_L_fix.md` (new): full debugging guide for the L-update fix — mechanism, four
+- `docs/lb_walkthroughs/update_L_fix.md` (new): full debugging guide for the L-update fix — mechanism, four
   candidate fixes (reorder inner loop, β burn-in, ridge Cox init, A\_surv/A\_gen normalization),
   recommended investigation sequence, success criteria
 
@@ -1534,7 +1534,7 @@ failure on merged TCGA_PAAD + CPTAC; external generalization is mixed.
 #### 20.1 — Branch + design doc
 
 - Created branch `fix-L-update-beta-cycle` from `main`.
-- Committed `docs/beta_zero_fix_design.md` (420 lines) as the source-of-truth for Cluster A
+- Committed `docs/plans/2026-04-29-beta-zero-fix-design-spec.md` (420 lines) as the source-of-truth for Cluster A
   / B / C: diagnostic chain, root-cause analysis (chicken-and-egg cycle + scale imbalance),
   five-phase plan with explicit session boundaries.
 
@@ -1554,7 +1554,7 @@ failure on merged TCGA_PAAD + CPTAC; external generalization is mixed.
    reconstruction-meaningful directions before survival pressure is applied.
 5. **Fix 4 — `normalize_AB` parameter** in `update_L_k` (default FALSE): rescales A_surv
    (and B_surv consistently) up to match A_gen's magnitude. **Reformulated** from
-   `docs/beta_zero_fix_design.md` §4.8 — the original "divide both by their means" formula
+   `docs/plans/2026-04-29-beta-zero-fix-design-spec.md` §4.8 — the original "divide both by their means" formula
    collapsed L to zero in the smoke fit (verified: inflated 1/√A_L noise scale, over-shrunk
    EBNM). The retained reformulation preserves the original EBNM noise interpretation.
 6. **All four threaded** through `fit_supervised_mf_modular()` with backward-compatible
@@ -1610,7 +1610,7 @@ predicted Cluster B trigger (§3 row "EBeta non-zero but unstable").
 #### 20.6 — Implication for Phase 4 (Cluster B)
 
 The training-side β=0 failure is solved as a *recoverability* problem, but not as a
-*generalization* problem. The Cox-on-YF reformulation (`docs/beta_zero_fix_design.md` §5)
+*generalization* problem. The Cox-on-YF reformulation (`docs/plans/2026-04-29-beta-zero-fix-design-spec.md` §5)
 addresses both the cold-start cycle (no A_surv ≈ 0 trap on F) and the train/test mismatch
 (prediction uses the same `Y · F · β̃` formula as training). Phase 4 work begins with
 derivations in `derivations/qF_supervised/` per design doc §5.5.
@@ -1692,7 +1692,7 @@ Cox warm-start (`cox_warmstart=TRUE`) was tested on merged and did not rescue be
 
 #### 21.6 — 05/05 benchmark report
 
-`docs/reports/ssbmf_summary_report_05_05_26.qmd` rendered to PDF and HTML. Report covers:
+`docs/findings/2026-05-05-ssbmf-summary-report.qmd` rendered to PDF and HTML. Report covers:
 alpha CV tables, training convergence, LB and YFB bar charts (external C-index by cohort),
 LB vs YFB vs archived-baseline comparison, full external validation tables for all modes,
 KM curves (high/low risk stratification) for both models, cox warm-start diagnostic table,
@@ -1750,7 +1750,7 @@ to handle platform effects implicitly; cohort columns may be more valuable at lo
 **YFB result:** Cohort extension does not resolve YFB β→0 — platform mixing drives this at the
 F-update level, not the L-update level.
 
-Full evaluation report: `docs/reports/cohort_lmm_benchmark_report.{qmd,pdf,html}`.
+Full evaluation report: `docs/findings/2026-05-22-cohort-lmm-benchmark-report.{qmd,pdf,html}`.
 
 ## 23.2 — YFB β→0 on Merged Data: Exhaustive Diagnostic
 
@@ -1841,7 +1841,7 @@ point), then unfreeze F. Avoids instability because EF doesn't move during β in
 | `results/benchmark_sim/run_yfb_beta_fix_diagnostic.R` | YFB β→0 exhaustive diagnostic (V0–V8) |
 | `results/benchmark_sim/outputs/cohort_lmm_benchmark/` | Benchmark CSVs and RDS |
 | `results/benchmark_sim/outputs/yfb_beta_fix/` | Diagnostic CSVs |
-| `docs/reports/cohort_lmm_benchmark_report.{qmd,pdf,html}` | Comprehensive cohort extension report |
+| `docs/findings/2026-05-22-cohort-lmm-benchmark-report.{qmd,pdf,html}` | Comprehensive cohort extension report |
 | `DECISIONS.md` | Three new entries (cohort extension, YFB β→0 diagnosis, dual-source F) |
 | `ROADMAP.md` | Open items updated; YFB β→0 CAVI-local exhausted; frozen-F noted |
 
@@ -1850,7 +1850,7 @@ point), then unfreeze F. Avoids instability because EF doesn't move during β in
 # Session 22 — Four-Phase Improvement Evaluation (2026-05-06)
 
 Branch: `pre-merge-synthesis-05_06_26` (base: `ac5b215`, "Rewrite ROADMAP and README for
-biostatistician readability"). Synthesis report: `docs/reports/ssbmf_summary_report_05_06_26.pdf`.
+biostatistician readability"). Synthesis report: `docs/findings/2026-05-06-ssbmf-summary-report.pdf`.
 All tests: 192/192 passing after adding KCV-T13 and KCV-T14.
 
 ## 22.1 — Phase 1: Per-Platform Standardization for YFB Merged Training
@@ -1931,7 +1931,7 @@ Tests: added KCV-T13 (YFB structure) and KCV-T14 (YFB fold count) → 192/192 pa
 
 ## 22.5 — Synthesis Report
 
-`docs/reports/ssbmf_summary_report_05_06_26.qmd` covers all four phases.
+`docs/findings/2026-05-06-ssbmf-summary-report.qmd` covers all four phases.
 Phase 4 section includes: LB K-CV table+plot, YFB K-CV table+plot,
 LB vs. YFB head-to-head table+plot, and interpretation of the anti-concordance finding.
 Rendered to PDF and HTML. Committed: `88815b7`.
@@ -1970,8 +1970,8 @@ z-std before merging, the top singular vectors of the merged Y matrix capture th
 | M4 | LB | Per-platform z-std | Yes | 3 | 1 | 0.618 |
 
 *Files: `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
-`docs/reports/merged_benchmark_report_5_25_26.{qmd,pdf}`,
-`docs/progress_report/SSBMF_Status_Update_5_27_26.qmd`.*
+`docs/findings/2026-05-25-merged-benchmark-report.{qmd,pdf}`,
+`docs/progress_report/2026-05-27-ssbmf-status-update.qmd`.*
 
 ## 24.2 — DeSurv Gene Selection Alignment (2026-05-27)
 
@@ -2004,7 +2004,7 @@ DECISIONS.md 2026-05-27.
 k_merged_yfb_desurv: 7, k_merged_yfb_desurv_cohort: 8),
 `results/benchmark_sim/run_desurv_comparison.R`,
 `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv`,
-`docs/reports/desurv_alignment_report_05_27_26.{qmd,pdf}`.*
+`docs/findings/2026-05-27-desurv-alignment-report.{qmd,pdf}`.*
 
 ## 24.3 — Factor Diagnostics Report (2026-05-27)
 
@@ -2032,7 +2032,7 @@ Comprehensive diagnostic evaluation of D1–D5 on merged TCGA+CPTAC training coh
 Top-gene weight tables for D4 Factors 3 and 7 are the starting point for pathway enrichment
 analysis and PDAC subtype comparison (Moffitt basal/classical, Bailey et al. 2016).
 
-*Files: `docs/reports/desurv_factor_diagnostics_05_27_26.{qmd,pdf}`.*
+*Files: `docs/findings/2026-05-27-desurv-factor-diagnostics-report.{qmd,pdf}`.*
 
 ## 24.4 — Open Items Entering Next Session
 
@@ -2052,9 +2052,9 @@ analysis and PDAC subtype comparison (Moffitt basal/classical, Bailey et al. 201
 | `config/globals.yml` | k_merged_{lb,yfb}_desurv: 7; k_merged_yfb_desurv_cohort: 8 |
 | `results/benchmark_sim/run_desurv_comparison.R` | New runner: D1–D5 K-CV + benchmark |
 | `results/benchmark_sim/outputs/desurv_comparison/` | results CSV + fits RDS |
-| `docs/reports/desurv_alignment_report_05_27_26.{qmd,pdf}` | D1–D5 external validation |
-| `docs/reports/desurv_factor_diagnostics_05_27_26.{qmd,pdf}` | Convergence, K-M, gene programs |
-| `docs/progress_report/SSBMF_Status_Update_5_28_26.{qmd,pdf}` | Meeting document |
+| `docs/findings/2026-05-27-desurv-alignment-report.{qmd,pdf}` | D1–D5 external validation |
+| `docs/findings/2026-05-27-desurv-factor-diagnostics-report.{qmd,pdf}` | Convergence, K-M, gene programs |
+| `docs/progress_report/2026-05-28-ssbmf-status-update.{qmd,pdf}` | Meeting document |
 | `tests/run_tests.R` | 246/246 (2 new DeSurv alignment tests added) |
 | `DECISIONS.md` | 2026-05-27 entry: D4 adoption, D5 cohort indicator finding |
 | `ROADMAP.md` | Header updated to 2026-05-28; diagnostics report + pathway enrichment added |
@@ -2071,7 +2071,7 @@ Completed the shared vs. study-specific factor-recovery simulation: EBMF-grounde
 × 5 model arms (YFB/LB ± cohort indicator + unsupervised EBMF) × 5 seeds. The projection model
 recovers shared factors at |r|≈0.90–0.92 and types shared vs. study-specific with accuracy up to
 1.00; in the hybrid regime it reaches C=0.81 vs EBMF→Cox 0.72; the negative control sits at chance
-for every arm (no fabricated signal). Proposal/results: `docs/reports/multicohort_sim_proposal_06_14_26.{qmd,pdf}`.
+for every arm (no fabricated signal). Proposal/results: `docs/plans/2026-06-14-multicohort-sim-proposal.{qmd,pdf}`.
 
 ## 26.2 — Real-data unsupervised baseline (EBMF→Cox)
 
@@ -2105,7 +2105,7 @@ the deck (no critical issues). Key corrections made during revision:
 |------|--------|
 | `presentation/walther_lab_meeting_06_18_2026/` | New/revised deck, figures, 3 figure generators, revision notes |
 | `results/benchmark_sim/run_ebmf_cox_external.R` | New unsupervised EBMF→Cox external baseline + outputs |
-| `docs/plans/archive/rashidlab_meeting_feedback_04_09_26.md` | April feedback notes |
+| `docs/meetings/2026-04-09-rashidlab-meeting-feedback.md` | April feedback notes |
 | `DECISIONS.md` | 2026-06-15 (EBMF baseline) and 2026-06-16 (deck corrections) entries |
 | `ROADMAP.md` | Status → 2026-06-16; adverse/protective relabel; EBMF baseline + deck milestones |
 
@@ -2114,7 +2114,7 @@ the deck (no critical issues). Key corrections made during revision:
 # Session 27 — Post-lab-meeting Phase 1: objective normalization, λ retirement, preprocessing fix (2026-07-12)
 
 Branch `objective-normalization` (cut from `main` at `07a429a`), merged to `main`. Implements
-Phase 1 of `docs/plans/archive/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`, the plan that triages
+Phase 1 of `docs/plans/2026-07-08-ssbmf-post-lab-meeting-action-plan.md`, the plan that triages
 the Rashid lab's 6/18/2026 feedback.
 
 ## 27.1 — Objective normalization (Phase 1a): two rejected designs before a stable one
@@ -2228,7 +2228,7 @@ Full reasoning, the empirical comparison table, and the CV table are in `DECISIO
 # Session 28 — Phase 2: joint model vs. two-step value-add (2026-07-12)
 
 Branch `validation-two-step` (cut from `main` after Phase 1's merge and post-merge correction).
-Implements Phase 2 of `docs/plans/archive/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`.
+Implements Phase 2 of `docs/plans/2026-07-08-ssbmf-post-lab-meeting-action-plan.md`.
 
 ## 28.1 — PCA+Cox two-step baseline
 
@@ -2245,7 +2245,7 @@ New `results/multi_cohort_sim/run_survival_strength_sweep.R` and a
 YFB (joint, tuned α=0.5) against PCA+Cox and EBMF+Cox (existing) two-step baselines, plus LB (joint)
 as a secondary reference and YFB at α=0 as the internal control.
 
-**Honest results** (full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`):
+**Honest results** (full report: `docs/findings/2026-07-12-joint-vs-twostep-sweep-report.{qmd,pdf,html}`):
 - **Equivalence at zero signal:** YFB=0.517±0.008 vs. PCA+Cox=0.533±0.017 vs. EBMF+Cox=0.540±0.017
   — within ~1 SE of each other and of chance; consistent with equivalence though the raw gaps
   (0.016–0.023) sit slightly above an idealized <0.01 target.
@@ -2267,7 +2267,7 @@ as a secondary reference and YFB at α=0 as the internal control.
 | `results/multi_cohort_sim/run_survival_strength_sweep.R` (new) | The sweep runner |
 | `config/globals.yml` | New `survival_strength_sweep` config block |
 | `tests/test_fit_pca_cox.R` (new) | 9 tests |
-| `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}` (new) | Full report |
+| `docs/findings/2026-07-12-joint-vs-twostep-sweep-report.{qmd,pdf,html}` (new) | Full report |
 | `DECISIONS.md`, `ROADMAP.md` | Phase 2 entry/milestone |
 
 ## 28.4 — Comprehensive extension, same day: 10 seeds, 4 DGP scenarios
@@ -2323,7 +2323,7 @@ evidence it affects the real PDAC fits. Logged as a genuine, understood algorith
 | `results/multi_cohort_sim/plot_survival_strength_sweep.R` | Faceted-by-scenario plot (script itself created in an earlier commit; modified here for faceting) |
 | `results/multi_cohort_sim/diagnose_factor_collapse.R` (new) | Root-cause diagnostic for Result 4 |
 | `config/globals.yml` | `n_seeds`, `scenarios` block |
-| `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}` | Result 4 (scenario robustness + diagnosis) |
+| `docs/findings/2026-07-12-joint-vs-twostep-sweep-report.{qmd,pdf,html}` | Result 4 (scenario robustness + diagnosis) |
 | `DECISIONS.md`, `ROADMAP.md` | Same-day follow-up entry + new CAVI-collapse and Phase 3 items |
 
 ---
@@ -2377,7 +2377,7 @@ free" — refitting at smaller K directly (not just counting active factors from
 real performance loss at every smaller K tested here, on every held-out cohort, with the caveat
 above applying most to K=2/K=4 specifically. Whether DeSurv's joint (K,α,λ) Bayesian-optimization
 tuning would find a smaller K with comparable *external* performance remains untested — a plan for
-this exists (`docs/plans/archive/joint_k_alpha_bayesopt_plan_07_12_2026.md`), not yet implemented.
+this exists (`docs/plans/2026-07-12-joint-k-alpha-bayesopt-plan.md`), not yet implemented.
 
 ## 29.2 — Files changed
 
@@ -2398,7 +2398,7 @@ than silently skipped.)*
 
 Branch `pathway-enrichment-plan` (cut fresh from `main`; the original branch of the same name
 predated ~8,000 lines of subsequent work and was unusable as a base — only its plan document,
-`docs/plans/archive/pathway_enrichment_plan.md`, was retrieved and carried forward). Goal: assign biology
+`docs/plans/2026-07-14-pathway-enrichment-plan.md`, was retrieved and carried forward). Goal: assign biology
 to Program 7 (Adverse) and Program 3 (Protective), the recommended model's two survival-active
 ($K_{\text{eff}}=2$) gene expression programs.
 
@@ -2505,8 +2505,8 @@ conclusion issues, but both made a published table actively misleading as origin
 | `results/benchmark_sim/run_sbmf_desurv_overlap.R` (new) | Gene-overlap, F5/T4 |
 | `results/benchmark_sim/generate_pathway_enrichment_figures.R` (new) | Regenerate F1-F3 from cached results |
 | `results/benchmark_sim/benchmark_helpers.R` | Added `sampID` field to `load_pdac_raw()`'s return |
-| `docs/reports/pathway_enrichment_report_07_15_26.{qmd,pdf,html}` (new) | Full analysis report |
-| `docs/plans/archive/pathway_enrichment_plan.md` (new) | Retrieved plan document |
+| `docs/findings/2026-07-15-pathway-enrichment-report.{qmd,pdf,html}` (new) | Full analysis report |
+| `docs/plans/2026-07-14-pathway-enrichment-plan.md` (new) | Retrieved plan document |
 | `tests/test_pathway_enrichment.R` (new, 44 tests) | Main suite: 355/355 (was 311/311 at session start) |
 | `tests/test_real_data_loading.R` (+11 tests) | Real-data suite: 88/88 (was 77/77) |
 | `DECISIONS.md`, `ROADMAP.md`, `CLAUDE.md` | Session entry, milestone, quick-reference updates |

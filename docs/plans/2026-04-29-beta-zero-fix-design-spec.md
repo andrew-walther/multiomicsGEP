@@ -2,7 +2,7 @@
 
 **Created:** 2026-04-29
 **Status:** Design phase — both clusters documented, Cluster A approved for implementation
-**Companion docs:** `docs/update_L_fix.md` (Cluster A debugging guide), `derivations/qL/qL_update_derivation.tex` (reference for Cluster B math)
+**Companion docs:** `docs/lb_walkthroughs/update_L_fix.md` (Cluster A debugging guide), `derivations/qL/qL_update_derivation.tex` (reference for Cluster B math)
 **Related plan file:** `~/.claude/plans/here-s-the-combined-comprehensive-gleaming-lightning.md`
 
 ---
@@ -96,7 +96,7 @@ The cluster choice ultimately depends on **what fails after Cluster A**:
 
 ## §4. Cluster A Design — In-Model Fixes
 
-This cluster is documented in detail in [`docs/update_L_fix.md`](update_L_fix.md). The implementation plan below is the actionable summary.
+This cluster is documented in detail in [`docs/lb_walkthroughs/update_L_fix.md`](../lb_walkthroughs/update_L_fix.md). The implementation plan below is the actionable summary.
 
 ### 4.1 Step 1 — Instrument first
 
@@ -370,17 +370,17 @@ Drop EBNM in favor of explicit L1/L2 penalties; reformulate as a convex (or bico
 🔄 **SESSION BOUNDARY 1 — between Phases 1 and 2.**
 *Pause when:* design doc is approved.
 *Reason:* the design phase and implementation phase are different cognitive modes. A fresh session for implementation gets a clean context window dedicated to R code, test running, and git branch management — without the design discussion crowding the context.
-*Resume prompt for new session:* "Implement Cluster A from `docs/beta_zero_fix_design.md` §4 on a new branch `fix-L-update-beta-cycle`. Start with Step 1 (instrumentation) and proceed through the decision gate at §4.6."
+*Resume prompt for new session:* "Implement Cluster A from `docs/plans/2026-04-29-beta-zero-fix-design-spec.md` §4 on a new branch `fix-L-update-beta-cycle`. Start with Step 1 (instrumentation) and proceed through the decision gate at §4.6."
 
 🔄 **SESSION BOUNDARY 2 — between Phases 2 and 3.**
 *Pause when:* Cluster A is implemented and 171/171 tests pass.
 *Reason:* validation involves long-running R fits across multiple cohorts, plot inspection, and write-ups. The implementation session's context is dominated by code-level details that aren't useful for validation analysis.
-*Resume prompt for new session:* "Validate Cluster A per `docs/beta_zero_fix_design.md` §4.9. Run on merged TCGA+CPTAC + external cohorts. Update `docs/update_L_fix.md` and `DECISIONS.md` with results."
+*Resume prompt for new session:* "Validate Cluster A per `docs/plans/2026-04-29-beta-zero-fix-design-spec.md` §4.9. Run on merged TCGA+CPTAC + external cohorts. Update `docs/lb_walkthroughs/update_L_fix.md` and `DECISIONS.md` with results."
 
 🔄 **SESSION BOUNDARY 3 — between Phases 3 and 4.**
 *Pause when:* Cluster A validation is complete and the decision gate (§4.6, §4.9) is resolved.
 *Reason:* derivation work is math-heavy LaTeX and benefits from a session dedicated to algebra, not entangled with R debugging or validation results.
-*Resume prompt for new session:* "Sketch Cluster B derivations in `derivations/qF_supervised/` per `docs/beta_zero_fix_design.md` §5.5. Use existing `derivations/qL/qL_update_derivation.tex` as a structural template — F now plays the role L currently plays."
+*Resume prompt for new session:* "Sketch Cluster B derivations in `derivations/qF_supervised/` per `docs/plans/2026-04-29-beta-zero-fix-design-spec.md` §5.5. Use existing `derivations/qL/qL_update_derivation.tex` as a structural template — F now plays the role L currently plays."
 
 🔄 **SESSION BOUNDARY 4 — between Phases 4 and 5.**
 *Pause when:* derivations are complete and reviewed.

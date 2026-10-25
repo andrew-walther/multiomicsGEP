@@ -55,5 +55,5 @@ are git-ignored; aggregate tables and figures are tracked.
 The remaining scripts in `benchmark_sim/` and `multimodal_real/` are diagnostic
 and sensitivity studies. Each one's design and outcome is recorded in
 `DECISIONS.md` or the dated reports in
-`docs/reports/`; read the record before re-running one. Most refuse to overwrite
+`docs/findings/`; read the record before re-running one. Most refuse to overwrite
 existing outputs.

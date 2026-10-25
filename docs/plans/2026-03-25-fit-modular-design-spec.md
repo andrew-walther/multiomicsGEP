@@ -11,7 +11,7 @@
 Implement V3 Algorithm 1 ("Supervised MF CAVI Update Procedure") as a reusable R function
 `fit_supervised_mf_modular()` in `code/fit_modular.R`, using the four existing modular update
 functions (`update_L_k`, `update_F_k`, `update_beta_k`, `update_tau`). Pair it with a
-companion document `docs/fit_modular.qmd` in the same style as the existing `update_*.qmd` docs.
+companion document `docs/lb_walkthroughs/fit_modular.qmd` in the same style as the existing `update_*.qmd` docs.
 
 ---
 
@@ -110,11 +110,11 @@ doing so executes its top-level simulation and plotting code.
 
 ---
 
-## Deliverable 2: `docs/fit_modular.qmd`
+## Deliverable 2: `docs/lb_walkthroughs/fit_modular.qmd`
 
 ### Style
 
-Matches `docs/update_beta.qmd` / `update_L.qmd` / `update_F.qmd` / `update_tau.qmd`:
+Matches `docs/lb_walkthroughs/update_beta.qmd` / `update_L.qmd` / `update_F.qmd` / `update_tau.qmd`:
 
 ```yaml
 ---
@@ -171,9 +171,9 @@ All mathematical expressions use Quarto LaTeX: `$...$` inline, `$$...$$` display
 | File | Action |
 |------|--------|
 | `code/fit_modular.R` | **New** — function + DATA_MODE runner |
-| `docs/fit_modular.qmd` | **New** — companion doc |
-| `docs/fit_modular.pdf` | **New** — rendered output |
-| `docs/fit_modular.html` | **New** — rendered output |
+| `docs/lb_walkthroughs/fit_modular.qmd` | **New** — companion doc |
+| `docs/lb_walkthroughs/fit_modular.pdf` | **New** — rendered output |
+| `docs/lb_walkthroughs/fit_modular.html` | **New** — rendered output |
 | `docs/Makefile` | **Update** — add fit_modular.qmd to SRCS |
 | `CLAUDE.md` | **Update** — add fit_modular.R to quick-reference table |
 | Memory / PROJECT_STATUS | **Update** — after implementation |

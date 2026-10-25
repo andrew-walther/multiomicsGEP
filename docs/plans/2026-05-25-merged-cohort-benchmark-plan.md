@@ -69,8 +69,8 @@ Results are stored in globals.yml so they can be reused across script runs.
 | `results/benchmark_sim/run_merged_kcv.R` | **Create** | K-CV on merged data for 3 preprocessing×model combos |
 | `results/benchmark_sim/run_merged_benchmark.R` | **Create** | Fit all 6 configurations; evaluate on 5 external cohorts; save CSV + RDS |
 | `results/benchmark_sim/outputs/merged_benchmark/` | Create (auto) | CSV tables + RDS fits |
-| `docs/reports/merged_benchmark_report.qmd` | **Create** | Quarto report: C-index comparison table, loading heatmaps, top gene lists |
-| `docs/reports/merged_benchmark_report.pdf` | Create (auto) | Rendered PDF |
+| `docs/findings/2026-05-25-merged-benchmark-report.qmd` | **Create** | Quarto report: C-index comparison table, loading heatmaps, top gene lists |
+| `docs/findings/2026-05-25-merged-benchmark-report.pdf` | Create (auto) | Rendered PDF |
 | `DECISIONS.md` | Modify | Record findings and recommended configuration |
 | `ROADMAP.md` | Modify | Mark prior open items resolved; add any new items |
 
@@ -771,9 +771,9 @@ git commit -m "Add merged benchmark results: C-index table and top-gene lists fo
 Synthesizes all results into a readable document for biostatistician collaborators. Sections: design table, C-index heatmap, model summary, top-gene lists, conclusions.
 
 **Files:**
-- Create: `docs/reports/merged_benchmark_report.qmd`
+- Create: `docs/findings/2026-05-25-merged-benchmark-report.qmd`
 
-- [ ] **Step 1: Create `docs/reports/merged_benchmark_report.qmd`**
+- [ ] **Step 1: Create `docs/findings/2026-05-25-merged-benchmark-report.qmd`**
 
 ```qmd
 ---
@@ -921,7 +921,7 @@ if (!is.null(top_genes)) {
 After results CSV is available:
 
 ```bash
-quarto render docs/reports/merged_benchmark_report.qmd --to pdf 2>&1 | tail -10
+quarto render docs/findings/2026-05-25-merged-benchmark-report.qmd --to pdf 2>&1 | tail -10
 ```
 
 Expected: no errors, `merged_benchmark_report.pdf` created.
@@ -929,7 +929,7 @@ Expected: no errors, `merged_benchmark_report.pdf` created.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add docs/reports/merged_benchmark_report.qmd
+git add docs/findings/2026-05-25-merged-benchmark-report.qmd
 git commit -m "Add merged_benchmark_report.qmd: C-index heatmap, model summary, top genes, conclusions"
 ```
 
@@ -968,7 +968,7 @@ Add a new entry at the top of DECISIONS.md (after the header block):
 
 - **Files:** `results/benchmark_sim/run_merged_kcv.R`,
   `results/benchmark_sim/run_merged_benchmark.R`,
-  `docs/reports/merged_benchmark_report.{qmd,pdf}`,
+  `docs/findings/2026-05-25-merged-benchmark-report.{qmd,pdf}`,
   `results/benchmark_sim/outputs/merged_benchmark/`
 ```
 

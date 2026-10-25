@@ -74,7 +74,7 @@ K_FIT       <- mc$k_fit   # true K for the hybrid scenario (K_shared=2, K_specif
                           # as the reference/"K_true" value, no longer passed to model fits below
 BETA_THRESH <- cfg$k_selection$beta_threshold
 
-# K_INIT: Analysis C (docs/plans/archive/ssbmf_factor_classification_k_selection_08_13_2026.md) --
+# K_INIT: Analysis C (docs/plans/2026-08-13-ssbmf-factor-classification-k-selection-plan.md) --
 # each arm's model fit uses an over-specified K_INIT >> K_FIT=K_true=6, letting ARD prune,
 # instead of fitting at K_FIT directly. Confirms the original signal-ratio finding (YFB beats
 # EBMF->Cox when survival signal is strong) holds under ARD pruning from over-specified K.

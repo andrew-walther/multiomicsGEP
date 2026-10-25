@@ -38,14 +38,14 @@ adopt a supervised/multimodal replacement.
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
 >
-> **Active working plan (2026-10-02):** `docs/plans/Meeting_Notes_Followup_10_2_26.md` follows the 10/2 advisor meeting. Its deliverables are a unified write-up as the start of the manuscript; survival supervision of the program loadings F (α_F = 0 cannot be the final method, DECISIONS.md 2026-10-02); and a sensitivity analysis on the number of genes and CpGs. Start open work there. The 10/1 plan (`docs/plans/archive/Working_Plan_10_1_26.md`) records the work done 10/1–10/2.
+> **Active working plan (2026-10-02):** `docs/meetings/2026-10-02-meeting-notes-followup.md` follows the 10/2 advisor meeting. Its deliverables are a unified write-up as the start of the manuscript; survival supervision of the program loadings F (α_F = 0 cannot be the final method, DECISIONS.md 2026-10-02); and a sensitivity analysis on the number of genes and CpGs. Start open work there. The 10/1 plan (`docs/plans/2026-10-01-working-plan.md`) records the work done 10/1–10/2.
 >
 > **Status as of 2026-07-15.** Core model complete (modular CAVI, 374/374 tests passing).
 > Two model variants fully implemented, benchmarked, and externally validated (5 held-out PDAC
 > cohorts across RNA-seq and microarray platforms). Multi-cohort simulation
 > study complete: shared vs. study-specific factor recovery validated across 3 scenarios and
-> 5 arms; proposal and key results in `docs/reports/multicohort_sim_proposal_06_14_26.pdf`.
-> See `docs/reports/desurv_alignment_report_05_27_26.pdf` for the real-data benchmark.
+> 5 arms; proposal and key results in `docs/plans/2026-06-14-multicohort-sim-proposal.pdf`.
+> See `docs/findings/2026-05-27-desurv-alignment-report.pdf` for the real-data benchmark.
 > 6/18/2026 lab-meeting deck delivered and merged to main (`905279b`); unsupervised EBMF→Cox
 > external baseline added (mean external C=0.564, K=20 — DECISIONS.md 2026-06-15; **refreshed
 > 2026-07-16 to 0.581 under the corrected preprocessing — the cached output had gone stale after the
@@ -73,7 +73,7 @@ adopt a supervised/multimodal replacement.
 > enrichment, PurIST subtype concordance, external-cohort survival, SBMF-vs-DeSurv gene overlap)
 > agree Program 7 is basal-like/squamous/MET-EGFR-driven and Program 3 is classical/differentiated-
 > epithelial — the established PDAC subtype-survival axis. Full report:
-> `docs/reports/pathway_enrichment_report_07_15_26.pdf`.
+> `docs/findings/2026-07-15-pathway-enrichment-report.pdf`.
 >
 > **Study-specific baseline hazard** (6/18 `+ strata(study)` feedback) is implemented as an optional
 > stratified Cox partial likelihood (`strata_id=` in both fit functions; Breslow risk sets within
@@ -131,7 +131,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   `paper/writeup/_process/verification_round2.md`; its two minor corrections are applied.
 - [ ] **Resolve main-text length and obtain Andrew's approval before merging
   `writeup/draft`.** The 15–20-page target remains unmet. See Prompts 3–4 in
-  `docs/plans/Meeting_Notes_Followup_10_2_26.md` and Task 4 in
+  `docs/meetings/2026-10-02-meeting-notes-followup.md` and Task 4 in
   `paper/writeup/_process/implementation_plan.md`.
 
 - [ ] **Manuscript introduction with its own background (`paper/thesis/`)**
@@ -169,7 +169,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   to be started immediately.
   The existing 5-method characterization of Programs 3/7 (fgsea + ORA gene-set enrichment, PurIST
   subtype concordance, external-cohort hazard-ratio consistency, SBMF-vs-DeSurv gene overlap;
-  `code/pathway_enrichment.R`, `docs/reports/pathway_enrichment_report_07_15_26.pdf`, DECISIONS.md
+  `code/pathway_enrichment.R`, `docs/findings/2026-07-15-pathway-enrichment-report.pdf`, DECISIONS.md
   2026-07-15) was run and reported without a slow walkthrough of what each method actually tests —
   Andrew does not currently have working understanding of the methods themselves, only the
   headline conclusion. It also predates `beta_cohort_id` (Stage 2, DECISIONS.md 2026-09-04) and so
@@ -206,7 +206,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 - [x] **Factor classification (survival-active/genomics-only/dead) + K-init sweep + best-of-
   multistart ELBO comparison (Analysis A)** *(Complete, 2026-08-19, branch
   `meeting/2026-08-21-prep`)*
-  Per `docs/plans/archive/ssbmf_factor_classification_k_selection_08_13_2026.md` Step 1 + Analysis A:
+  Per `docs/plans/2026-08-13-ssbmf-factor-classification-k-selection-plan.md` Step 1 + Analysis A:
   added `classify_factors()` (`code/select_K.R`) distinguishing survival-active from
   genomics-only-but-survival-silent factors, replacing `auto_prune_K()`'s binary active/shrunk
   split. Swept K_init ∈ {5,6,7,8,9,10,15,20} on real TCGA+CPTAC data (D4 preprocessing), then
@@ -295,12 +295,12 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   $(K,\alpha)$ Bayesian-optimization search with its identified acquisition-search issue fixed
   (all lower priority, none currently blocking); HPC/Longleaf workflow, dev-tooling backlog, and the
   larger matched DeSurv head-to-head as future/manuscript-stage work. Full spec with approach, effort
-  estimates, and a priority table: `docs/plans/archive/ssbmf_open_items_followup_plan_07_15_2026.md`.
+  estimates, and a priority table: `docs/plans/2026-07-15-ssbmf-open-items-followup-plan.md`.
 
 - [x] **Executive summary / progress report for research team** *(Complete, 2026-07-15, branch
   `item2-executive-summary`)* Two deliverables: a long-form progress report
-  (`docs/reports/ssbmf_progress_report_07_15_26.{qmd,pdf,html}`) and a 2-page meeting-ready
-  executive summary (`docs/progress_report/SSBMF_Status_Update_07_15_26.{qmd,pdf,html}`), both
+  (`docs/findings/2026-07-15-ssbmf-progress-report.{qmd,pdf,html}`) and a 2-page meeting-ready
+  executive summary (`docs/progress_report/2026-07-15-ssbmf-status-update.{qmd,pdf,html}`), both
   incorporating Item 1's pathway-enrichment result. Preceded by a whole-branch net-benefit-gate
   review, a compliance check against every 6/18 feedback item, a performance-optimality check, a
   three-axis performance re-validation (joint-vs-2-step with/without signal, shared-vs-specific
@@ -310,7 +310,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [ ] **TO-DO (flagged by user, 2026-07-14): comprehensive HTML project document ("visual executive
   summary") — do not start until the entire consolidated plan is complete**
-  Full spec: `docs/plans/archive/ssbmf_progress_consolidation_and_remaining_work_07_14_2026.md`, Part B,
+  Full spec: `docs/plans/2026-07-14-ssbmf-progress-consolidation-and-remaining-work-plan.md`, Part B,
   Item 6. A standalone HTML document — illustrative text, figures, workflow diagrams — describing
   current project state, key decisions constituting the current method, and its capabilities; the
   user's framing is "a demo of the method as a visual executive summary," meant to get the user,
@@ -341,7 +341,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [x] **Re-verify Phase 3's K=2/K=4 results with multistart and warm-start before treating as conclusive**
   *(Complete, 2026-07-13, branch `phase3-followup-warmstart` — Step 1 of
-  `docs/plans/archive/ssbmf_k_parsimony_followup_plan_07_13_2026.md`)*
+  `docs/plans/2026-07-13-ssbmf-k-parsimony-followup-plan.md`)*
   Result: **K=4 and K=5 both reach K=7-level external performance (mean C=0.6270 vs. K=7's 0.6267)
   once warm-started from the converged K=7 fit's top-K PVE-ranked columns** — Phase 3's
   "K=7 is not free to shrink" does not survive better optimization at these two K values.
@@ -418,7 +418,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   is exactly sparse and disjoint). YFB has not collapsed in any real-template scenario tested
   (`default`/`low_snr`/`high_K`, 0/180 fits), but **LB has, occasionally, even with real templates**
   (`low_snr`/`high_K`, 10/180 fits) — so this is not purely a contrived-synthetic-data phenomenon.
-  Full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`. New reusable code:
+  Full report: `docs/findings/2026-07-12-joint-vs-twostep-sweep-report.{qmd,pdf,html}`. New reusable code:
   `results/multi_cohort_sim/fit_pca_cox.R`, `results/multi_cohort_sim/plot_survival_strength_sweep.R`,
   `results/multi_cohort_sim/diagnose_factor_collapse.R`. Details: DECISIONS.md 2026-07-12.
 
@@ -447,7 +447,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [x] **Phase 1 (objective normalization, λ retirement, train/test preprocessing fix)**
   *(Complete, merged to `main` 2026-07-12)*
-  Post-lab-meeting action plan Phase 1 (`docs/plans/archive/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`):
+  Post-lab-meeting action plan Phase 1 (`docs/plans/2026-07-08-ssbmf-post-lab-meeting-action-plan.md`):
   normalized the unnormalized ~p-fold genomics/survival ELBO-term scale gap by boosting the
   survival contribution for the ELBO monitor only (not shrinking genomics — shrinking genomics
   collapses LB's L/F to exactly zero via a bilinear feedback loop; boosting β's own precision was
@@ -498,7 +498,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Synthetic: offset absorption |cor|=0.995, factor recovery +88–109% vs baseline.
   Real PDAC: LB_cohort gains on RNA-seq external cohorts (PACA_AU_seq +0.019, PACA_AU_array +0.007)
   but loses on Dijk/Puleo (mean C 0.604 vs LB_base 0.618). YFB β→0 unchanged.
-  Full evaluation: `docs/reports/cohort_lmm_benchmark_report.qmd` and DECISIONS.md 2026-05-22.
+  Full evaluation: `docs/findings/2026-05-22-cohort-lmm-benchmark-report.qmd` and DECISIONS.md 2026-05-22.
   *Files: `code/update_F_cohort.R`, `code/compute_elbo.R`, `code/fit_modular.R`, `code/fit_cox_on_yf.R`,
   `tests/test_update_F_cohort.R`, `tests/test_fit_modular_cohort.R`, `tests/test_fit_yf_cohort.R`.
   Validation: `results/cohort_lmm_sim/run_synthetic.R`, `results/benchmark_sim/run_cohort_lmm_benchmark.R`.*
@@ -535,7 +535,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Rank transform is not the driver of YFB β→0 on joint-QN data (M13/M14 also collapse without it).
   Recommended for manuscript: M5 (primary), M4 (sensitivity). See DECISIONS.md 2026-05-25.
   *Files: `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
-  `code/preprocess_desurv.R` (normalize_method param), `docs/reports/merged_benchmark_report.qmd`.
+  `code/preprocess_desurv.R` (normalize_method param), `docs/findings/2026-05-25-merged-benchmark-report.qmd`.
   Results: `outputs/merged_benchmark/merged_benchmark_results_extended.csv`. DECISIONS.md 2026-05-25.*
 
 - [x] **Align gene selection with DeSurv: combined mean+variance ranking, top-3000** *(Complete — 2026-05-27)*
@@ -546,8 +546,8 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   mean C=0.614 (−0.022 vs D4); per-platform z-std already absorbs the platform offset,
   making the cohort indicator counterproductive at K=7–8. See DECISIONS.md 2026-05-27.
   *Files: code/preprocess_desurv.R, results/benchmark_sim/run_desurv_comparison.R,
-  docs/reports/desurv_alignment_report_05_27_26.qmd,
-  docs/progress_report/SSBMF_Status_Update_5_28_26.qmd*
+  docs/findings/2026-05-27-desurv-alignment-report.qmd,
+  docs/progress_report/2026-05-28-ssbmf-status-update.qmd*
 
 - [x] **Factor diagnostics report: convergence, survival associations, gene programs** *(Complete — 2026-05-27)*
   Full diagnostic evaluation of D1–D5 on merged TCGA+CPTAC training cohort. All five
@@ -561,7 +561,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   Signal replicates across all 5 external cohorts. Proportional hazards assumption not
   violated (Schoenfeld global p>0.05). Heatmaps and top-gene tables for all active factors
   provided as starting point for pathway enrichment.
-  *Files: docs/reports/desurv_factor_diagnostics_05_27_26.{qmd,pdf}*
+  *Files: docs/findings/2026-05-27-desurv-factor-diagnostics-report.{qmd,pdf}*
 
 - [x] **A/B comparison: SSBMF vs unsupervised EBMF on real PDAC data** *(All 3 parts complete, 2026-08-03)*
   Fit an unsupervised EBMF model (no survival objective) on the same merged TCGA+CPTAC training
@@ -620,7 +620,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   is the correct per-sample tumor axis and was used instead).
   *Files: `code/pathway_enrichment.R`; `results/benchmark_sim/run_pathway_enrichment.R`,
   `run_subtype_concordance.R`, `run_external_cohort_robustness.R`, `run_sbmf_desurv_overlap.R`;
-  `docs/reports/pathway_enrichment_report_07_15_26.{qmd,pdf,html}`.*
+  `docs/findings/2026-07-15-pathway-enrichment-report.{qmd,pdf,html}`.*
 
 - [ ] **Prior comparison follow-up** `[Priority: Medium]` `[Effort: Small]`
   Current benchmarks test point_normal vs normal for both models. Key finding: for the YFB model
@@ -747,7 +747,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   only at this point.
 
 - [ ] **Joint (K, α) tuning via Bayesian optimization, to match DeSurv's search procedure** `[Priority: Low-Medium]` `[Effort: Medium]`
-  Plan only, not implemented: `docs/plans/archive/joint_k_alpha_bayesopt_plan_07_12_2026.md`. Motivation:
+  Plan only, not implemented: `docs/plans/2026-07-12-joint-k-alpha-bayesopt-plan.md`. Motivation:
   DeSurv jointly tunes `k, α, λ` via Bayesian optimization; we tune only K via grid-search CV with
   α fixed at 0.5. This confirmed methodology difference is part of why K=7-vs-DeSurv's-k=3 isn't a
   fair apples-to-apples comparison (`DECISIONS.md` 2026-07-12). A joint `(K, α)` BO search (no
@@ -797,7 +797,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   - YFB point_normal: C=0.5 for all K (β→0 collapse in folds; open item).
   193/193 tests passing (KCV-T15 added for YFB sign fix verification).
   *Files: `code/select_K.R`, `tests/test_select_K_cv.R`, `results/benchmark_sim/run_K_cv.R`.
-  Results: `results/benchmark_sim/outputs/K_cv/`. Report: `docs/reports/ssbmf_summary_report_05_06_26.pdf`.*
+  Results: `results/benchmark_sim/outputs/K_cv/`. Report: `docs/findings/2026-05-06-ssbmf-summary-report.pdf`.*
 
 - [x] **YFB sign correction in K-CV** *(Complete — 2026-05-20)*
   `sign_correction=FALSE` parameter added to `fit_cox_on_yf()`; passed in YFB branch of
@@ -909,7 +909,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
     legacy/                 ← V1, V2 monolithic (already there); ADD Supervised_Bayesian_MF_V2.R
     demos/                  ← MOVE top-level demos/ here (executable examples per module)
   docs/                     ← companion .qmd/.pdf/.html (already clean)
-    context/                ← MOVE code/SupervisedMF_Context.md, docs/PDAC_data_audit.qmd here
+    context/                ← MOVE code/SupervisedMF_Context.md, docs/findings/2026-03-31-pdac-data-audit/PDAC_data_audit.qmd here
   derivations/              ← mathematical derivations (already clean per-update)
     archive/                ← MOVE derivations/EBMF/, derivations/SurvivalMF/ early sketches
                                MOVE dated .tex drafts from MF_UpdateDerivations/ (keep only REVISED + Companion)
@@ -950,7 +950,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   and does not grow monotonically. Recommendation from simulation: include cohort indicator as
   default and use |β̂| magnitude thresholding rather than binary nonzero classification.
   *Files: `results/multi_cohort_sim/`, `config/globals.yml` (`synthetic_multicohort` block),
-  `docs/reports/multicohort_sim_proposal_06_14_26.{qmd,pdf}`. Branch: `multi-cohort-sim`.*
+  `docs/plans/2026-06-14-multicohort-sim-proposal.{qmd,pdf}`. Branch: `multi-cohort-sim`.*
 
 - [x] **YFB K-CV sign fix (2026-05-20)** — `sign_correction=FALSE` parameter added to
   `fit_cox_on_yf()` and passed in `select_K_cv(model="YFB")`. Before fix: C<0.5 for all K
@@ -972,7 +972,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   YFB synthetic result: C-index 0.12 → 0.91 (K_eff=4). LB external results (all modes, α=0.50):
   TCGA-only K_eff=2, C=0.55–0.66; CPTAC-only K_eff=3, C=0.55–0.67; merged K_eff=3, C=0.51–0.67.
   *Files: `code/fit_modular.R`, `code/select_alpha_cv.R`, `code/fit_cox_on_yf.R`,
-  `code/predict_cox_on_yf.R`. Report: `docs/reports/ssbmf_summary_report_05_05_26.pdf`.*
+  `code/predict_cox_on_yf.R`. Report: `docs/findings/2026-05-05-ssbmf-summary-report.pdf`.*
 
 - [x] **Benchmark pipeline consolidation (2026-05-04)** — Replaced scattered diagnostic scripts
   with two canonical benchmark runners: `run_LB_benchmark.R` (LB model, η = Lβ) and
@@ -987,7 +987,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   EBNM-shrunk loadings but prediction used OLS-projected loadings. Implementation: `code/fit_cox_on_yf.R`,
   `code/predict_cox_on_yf.R`, `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R`,
   derivations in `derivations/cox_on_YF/`. Synthetic: C-index 0.605 vs PCA 0.471 (3 active factors).
-  Full PDAC benchmark comparison in `docs/reports/ssbmf_summary_report_05_05_26.pdf`.
+  Full PDAC benchmark comparison in `docs/findings/2026-05-05-ssbmf-summary-report.pdf`.
 - [x] **Core modular CAVI implementation** — `code/fit_modular.R` with four independently-tested update modules. 171/171 tests passing. *(Completed March 2026)*
 - [x] **Hold-out prediction pipeline** — `code/predict.R` (`predict_supervised_mf()`), `code/train_test_split.R` (`stratified_split()`). 80/20 stratified hold-out. *(Completed March 2026)*
 - [x] **Prior family comparison (PN vs PL × K=5 vs K_eff)** — Four-condition benchmark across 7 PDAC cohorts. Point-laplace preferred at fixed K; K selection dominates prior choice. *(Completed April 2026)*

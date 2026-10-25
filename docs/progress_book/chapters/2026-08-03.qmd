@@ -63,5 +63,5 @@ than either check alone, since neither depends on the joint model's own objectiv
 
 ## Deep dive
 
-- Full write-up: [`SSBMF_Status_Update_08_03_26`](../../../progress_report/SSBMF_Status_Update_08_03_26.html)
-- Pathway enrichment methodology and DeSurv overlap detail: [`pathway_enrichment_report_07_15_26`](../../../reports/pathway_enrichment_report_07_15_26.html)
+- Full write-up: [`2026-08-03-ssbmf-status-update`](../../../progress_report/2026-08-03-ssbmf-status-update.html)
+- Pathway enrichment methodology and DeSurv overlap detail: [`2026-07-15-pathway-enrichment-report`](../../../findings/2026-07-15-pathway-enrichment-report.html)

@@ -6,7 +6,7 @@
 #          programs, no survival effect) identified by classify_factors()
 #          (DECISIONS.md 2026-08-19). Requested for the 8/21 progress-book
 #          chapter: a gene table plus a heatmap in the style of Figure 3 of
-#          docs/reports/pathway_enrichment_report_07_15_26.pdf, but scoped
+#          docs/findings/2026-07-15-pathway-enrichment-report.pdf, but scoped
 #          to these 4 factors specifically (not all 7).
 #
 #          Kept-factor indices {3,5,6,7} are hardcoded from the verified

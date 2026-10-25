@@ -69,11 +69,11 @@ have medians 7.8 and 7.1 and lower quartiles 3.4 and 2.0.
   separately. The name is kept as an established label.
 - **Corrected in place:** `paper/writeup/writeup.qmd`,
   `paper/prelim/project3-ssbmf.qmd`, `PROJECT_STATUS.qmd`, `ROADMAP.md`,
-  `docs/PDAC_data_audit.qmd`, `docs/progress_book/index.qmd`,
-  `docs/update_L_fix.md`, the `config/globals.yml` comment.
+  `docs/findings/2026-03-31-pdac-data-audit/PDAC_data_audit.qmd`, `docs/progress_book/index.qmd`,
+  `docs/lb_walkthroughs/update_L_fix.md`, the `config/globals.yml` comment.
 - **Dated records left as written:** entries in this file (each marked with a
   one-line correction), the 2026-04-29 and 2026-05-28 progress-book chapters
-  (marked), and, unmarked, `docs/reports/`, `docs/progress_report/`,
+  (marked), and, unmarked, `docs/findings/`, `docs/progress_report/`,
   `presentation/`, `docs/plans/`, `docs/superpowers/plans/`,
   `paper/writeup/_process/`, `results/benchmark_sim/outputs/ebmf_diagnostic/`,
   `results/legacy/`, and the archived runners and CSV outputs that label CPTAC
@@ -201,7 +201,7 @@ as authors. Amber Young's work is cited, and she is not listed as a coauthor
 for now. This may change.
 
 **Why.** Author decision (Andrew, 2026-10-14). It replaces the four-author list
-in `docs/plans/Prelim_Proposal_Plan_10_1_26.md` (left as a dated record) and
+in `docs/plans/2026-10-01-prelim-proposal-plan.md` (left as a dated record) and
 matches the coauthor list in bios-dissertation's ROADMAP (2026-10-13).
 
 **Files.** `ROADMAP.md` (manuscript introduction item).
@@ -243,7 +243,7 @@ the evaluated implementation.
 
 ## 2026-10-02 — α_F = 0 cannot be the final method: survival must inform the program loadings
 
-**Decision.** The recommended single-modality configuration uses α_F = 0, so survival never enters the update of the loadings F (or of L). The model then finds the same programs as unsupervised factorization, and survival only affects β. After the 10/2 advisor meeting this is no longer an acceptable final method. The method will be finalized only once survival informs F strongly enough to recover a planted low-variance prognostic program in simulation, without instability and without losing external C. The plan is Workstream C of `docs/plans/Meeting_Notes_Followup_10_2_26.md`.
+**Decision.** The recommended single-modality configuration uses α_F = 0, so survival never enters the update of the loadings F (or of L). The model then finds the same programs as unsupervised factorization, and survival only affects β. After the 10/2 advisor meeting this is no longer an acceptable final method. The method will be finalized only once survival informs F strongly enough to recover a planted low-variance prognostic program in simulation, without instability and without losing external C. The plan is Workstream C of `docs/meetings/2026-10-02-meeting-notes-followup.md`.
 
 **Why.** Finding a prognostic program that explains little variance is the case a supervised factorization exists for. The 2026-08-20 evidence for keeping α_F = 0 (no gain in external C across α_F ∈ {0, 0.1, 0.3, 0.5}) does not address that case, because real-data C cannot show whether such a program was found. The advisors' position is that the plain Bayesian formulation should let the priors balance the factorization and survival terms, with an estimated mixing parameter if needed.
 
@@ -563,7 +563,7 @@ chapter follow refinement and review. No numerical defaults have changed.
 
 ## 2026-09-04 (addendum) — Codex round-2 review of the fix-plan branch: two more real findings, both fixed
 
-**Context.** After Steps 1-6 of `docs/plans/review_findings_fix_plan_09_04_2026.md` were complete and
+**Context.** After Steps 1-6 of `docs/plans/2026-09-04-review-findings-fix-plan.md` were complete and
 pushed on `fix/2026-09-04-review-findings`, Codex was asked to review the branch (commit `73ece4e`) a
 second time. It confirmed the tied-event, `EBeta2`, orientation-circularity, and CV-scoring-gap fixes
 were correct, and flagged two more real issues plus one wording nit.
@@ -608,7 +608,7 @@ test added). Chapter re-rendered with `quarto render` to confirm it still compil
 
 **Codex re-reviewed `73ece4e..71b5331` and approved**, confirming P1/P2/P3 above were addressed
 correctly and finding no new blocker (also independently re-ran `test_fit_yf_cohort.R`'s full harness:
-18/18 passing). This closes out the review-findings fix plan (`docs/plans/review_findings_fix_plan_09_04_2026.md`,
+18/18 passing). This closes out the review-findings fix plan (`docs/plans/2026-09-04-review-findings-fix-plan.md`,
 Steps 1-6) with an independent second-round sign-off. Branch `fix/2026-09-04-review-findings` is ready
 to merge to `main` whenever wanted — that remains a user decision tied to lab-meeting timing, not
 automatic.
@@ -617,8 +617,8 @@ automatic.
 
 ## 2026-09-04 (addendum) — Review-findings fix plan, Steps 1-4 complete (branch `fix/2026-09-04-review-findings`, not merged to `main`); a stale-cache interaction discovered while re-running `run_k_init_sweep.R`
 
-**Context.** Implementing `docs/plans/review_findings_fix_plan_09_04_2026.md` (produced from the two-round
-Codex review, `docs/reviews/2026-09-04_progress_notebook_review.md`). Steps 1-4 are code-complete, tested
+**Context.** Implementing `docs/plans/2026-09-04-review-findings-fix-plan.md` (produced from the two-round
+Codex review, `docs/reviews/2026-09-04-progress-notebook-review.md`). Steps 1-4 are code-complete, tested
 (468/468 passing, up from 443 at the start), and committed on the branch; `main` is untouched. Steps 5-6
 (chapter regeneration, full test suite sign-off) remain.
 
@@ -1264,7 +1264,7 @@ little to the risk score in practice, even when ARD doesn't fully zero it out.
 
 ## 2026-08-20 — Manuscript framing: dual-source F is a tested-and-rejected alternative, not an unexamined gap
 
-**Context:** the YFB derivation doc (`docs/notes/YFB_derivation_05_08_26.pdf`) writes $F$ in a form
+**Context:** the YFB derivation doc (`docs/notes/2026-05-08-yfb-derivation-notes.pdf`) writes $F$ in a form
 that structurally permits survival to inform gene-program loadings (a dual-source $F$, analogous to
 DeSurv's joint $W$ update), but the recommended, validated configuration fixes `alpha_F=0`
 (genomics-only $F$). Read on its own, the derivation could be mistaken for describing an
@@ -1569,7 +1569,7 @@ the pooled evidence can. Results: `results/benchmark_sim/outputs/k_init_sweep/k5
 ## 2026-08-19 — Three-way factor classification (survival-active / genomics-only / dead) added; K_init sweep + best-of-multistart ELBO comparison recommends K=7 (2 survival-active + 2 genomics-only factors), with K=9 as a near-tied alternative
 
 **Motivation:** two methodological gaps flagged for the manuscript
-(`docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`):
+(`docs/plans/2026-08-13-ssbmf-factor-classification-k-selection-plan.md`):
 
 1. K=7 for the recommended D4 model (YFB, DeSurv-aligned preprocessing) was chosen by
    cross-validated held-out C-index — which uses survival outcomes to pick model structure,
@@ -1688,7 +1688,7 @@ treated as a training-only artifact, not real signal).
 validating that K_eff_survival/K_eff_genomics track *known* ground-truth counts, not just each
 other) and Analysis C (re-running the signal-ratio sweep with K_init ≫ K_true to confirm the
 YFB-vs-EBMF→Cox comparison holds under ARD pruning). Both remain scoped in
-`docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`.
+`docs/plans/2026-08-13-ssbmf-factor-classification-k-selection-plan.md`.
 
 **Correction (2026-08-21):** this entry's "K=5/K=6's ELBO advantage over K=7 (−808,404 and
 −812,248 vs. −810,540)" and the later "K=5/K=6 are excluded" framing overstate K=6. Checking
@@ -1705,7 +1705,7 @@ closer to ~3,200–3,500 against the same CSV. Caught reviewing `docs/progress_b
 
 ## 2026-08-20 — Dual-source F (N_frozen x alpha_F grid): validated null result, alpha_F=0 default kept
 
-**Question:** Step 2 of `docs/plans/yfb_dual_source_F_experiments_08_20_2026.md` — does letting β
+**Question:** Step 2 of `docs/plans/2026-08-20-yfb-dual-source-f-experiments-plan.md` — does letting β
 warm up before F becomes dual-source (via `N_frozen`, frozen-F preconditioning) unlock a genuine
 performance benefit from `alpha_F>0`, given the cold-start sweep immediately below found `alpha_F`
 alone flat-to-worse vs. baseline? A convergence-check bug (`iter > 5` with no `iter > N_frozen`
@@ -1786,7 +1786,7 @@ gradient inform F's update, not just genomics reconstruction) caused RMSE to blo
 750-800) and β to collapse to 0. That test predates the per-platform z-standardization fix
 (`DECISIONS.md` 2026-07-15) — its preprocessing (`preprocess_merged_cohorts(rank_transform=TRUE)`)
 is the exact configuration `CLAUDE.md` documents as collapsing β regardless of model. Before
-investing in a fix for that instability (`docs/plans/yfb_dual_source_F_experiments_08_20_2026.md`,
+investing in a fix for that instability (`docs/plans/2026-08-20-yfb-dual-source-f-experiments-plan.md`,
 Step 1), Step 0 reran the `alpha_F` sweep under the actually-recommended D4 preprocessing
 (per-platform z-std, combined_rank top-3000 per-cohort gene selection, K=7 fixed) to check the
 instability still exists.
@@ -1914,19 +1914,19 @@ holds up under a properly-built independent baseline too (large, YFB-uninformed 
 
 **Not done (ROADMAP.md Part 3, deferred to a follow-up):** pathway-enrichment concordance between
 EBMF_F1/F2's gene loadings and Program 3/7's existing fgsea results
-(`docs/reports/pathway_enrichment_report_07_15_26.qmd`) — the correlation result above is a
+(`docs/findings/2026-07-15-pathway-enrichment-report.qmd`) — the correlation result above is a
 gene-loading-level check, not yet a biological-pathway-level one.
 
 **Files:** `results/benchmark_sim/run_ebmf_factor_correspondence.R` (new); outputs in
 `results/benchmark_sim/outputs/pathway_enrichment/` (`T5_ebmf_factor_correspondence.csv`,
 `T5_ebmf_factor_correlation_full.csv`, `F6_ebmf_factor_correspondence_heatmap.png`); noted in
-`docs/progress_report/SSBMF_Status_Update_08_03_26.qmd`.
+`docs/progress_report/2026-08-03-ssbmf-status-update.qmd`.
 
 ---
 
 ## 2026-07-16 — Fixed PDF layout overflow and non-portable HTML in the pathway enrichment report
 
-**Problem, user-reported.** `docs/reports/pathway_enrichment_report_07_15_26.pdf` had a figure (F3,
+**Problem, user-reported.** `docs/findings/2026-07-15-pathway-enrichment-report.pdf` had a figure (F3,
 the gene-weight heatmap) visibly cut off/bleeding off the bottom of its page, with the preceding
 figure's page numbers also looking clipped; the `.html` version showed broken-image placeholders in
 place of every figure.
@@ -1958,8 +1958,8 @@ large` warnings, down from 4); visually re-inspected the previously-broken pages
 render completely with full captions on their own pages. No change to any analysis, number, or
 figure content — this is a rendering/layout fix only.
 
-**Files:** `docs/reports/pathway_enrichment_report_07_15_26.qmd` (chunk options + YAML),
-`docs/reports/pathway_enrichment_report_07_15_26.{pdf,html}` (re-rendered).
+**Files:** `docs/findings/2026-07-15-pathway-enrichment-report.qmd` (chunk options + YAML),
+`docs/findings/2026-07-15-pathway-enrichment-report.{pdf,html}` (re-rendered).
 
 ---
 
@@ -2057,7 +2057,7 @@ output), `results/benchmark_sim/run_external_ci_analysis.R` (new),
 external_cindex_ci.csv, external_paired_diff_ci.csv}` (new),
 `results/benchmark_sim/outputs/ebmf_cox_external/{ebmf_cox_external_results.csv (refreshed),
 ebmf_cox_external_riskscores.rds}` (new), `ROADMAP.md` (corrected stale 0.564 figure),
-`docs/reports/ssbmf_progress_report_07_15_26.qmd/.pdf/.html` (duplicated-paragraph fix, post-review).
+`docs/findings/2026-07-15-ssbmf-progress-report.qmd/.pdf/.html` (duplicated-paragraph fix, post-review).
 
 ---
 
@@ -2092,8 +2092,8 @@ descriptive model language (YFB, cohort indicator, DeSurv-aligned gene selection
 external-audience-facing documents — the labels are retained only inside code filters, never in text
 a reader sees.
 
-**Files:** `docs/reports/ssbmf_progress_report_07_15_26.qmd/.pdf/.html`,
-`docs/progress_report/SSBMF_Status_Update_07_15_26.qmd/.pdf/.html`. No code or result changes —
+**Files:** `docs/findings/2026-07-15-ssbmf-progress-report.qmd/.pdf/.html`,
+`docs/progress_report/2026-07-15-ssbmf-status-update.qmd/.pdf/.html`. No code or result changes —
 corrections are entirely in report prose.
 
 ---
@@ -2142,7 +2142,7 @@ recovery, (3) external PDAC cohorts. Two of the three were already computed unde
 
 **Conclusion:** no performance is being left on the table by the current defaults, and the
 recommended (YFB) model's simulation behavior is stable under the corrected code. Documented in the
-progress report `docs/reports/ssbmf_progress_report_07_15_26`.
+progress report `docs/findings/2026-07-15-ssbmf-progress-report`.
 
 *Files: `results/multi_cohort_sim/outputs/multicohort_sim_results.csv` (regenerated under corrected
 model); no code changes. Baseline for comparison preserved during the session.*
@@ -2153,7 +2153,7 @@ model); no code changes. Baseline for comparison preserved during the session.*
 
 **Context.** Independent of the net-benefit gate (tests + C-index-regression check, entry below),
 ran two additional review passes before presenting the progress report: (a) an item-by-item
-compliance check against the original `docs/plans/rashid_lab_meeting_notes_06_18_2026.md` feedback,
+compliance check against the original `docs/meetings/2026-06-18-rashid-lab-meeting-notes.md` feedback,
 and (b) whether the recommended configuration is actually the best-performing choice or whether
 performance is being left on the table.
 
@@ -2185,7 +2185,7 @@ indicator actively hurts ($-0.010$). No performance is being forgone by current 
 section (full per-item table) and used to correct two minor documentation issues found in the
 process (see net-benefit gate entry below).
 
-**Files:** no code changes; `docs/reports/ssbmf_progress_report_07_15_26.qmd` (new section).
+**Files:** no code changes; `docs/findings/2026-07-15-ssbmf-progress-report.qmd` (new section).
 
 ---
 
@@ -2291,7 +2291,7 @@ on top-N genes (confirmatory) against MSigDB Hallmark/Reactome/KEGG/GO:BP and a 
 collection (Moffitt basal/classical, Bailey 4-subtype, DeSurv D1-D3 factor gene lists — all
 recovered from local reference data or the DeSurv SI appendix, no fabricated gene lists). All 7
 programs enriched; reporting focuses on Programs 3 and 7. Full report:
-`docs/reports/pathway_enrichment_report_07_15_26.{qmd,pdf,html}`.
+`docs/findings/2026-07-15-pathway-enrichment-report.{qmd,pdf,html}`.
 
 **A correction to the 2026-06-16 planning draft, caught during implementation (not by the plan
 itself):** that draft's decision on subtype labels pointed to "MS"/"MS_K2" as the per-sample tumor
@@ -2508,7 +2508,7 @@ Full test suite: 311/311 passing (299 + 12 new tests: 7 for the BO wrapper, 5 fo
 **Motivation.** Step 1 (entry below) found the CAVI factor-collapse artifact could be fixed by
 warm-starting K=4/K=5 from an already-converged K=7 fit's PVE-ranked columns, but that this was "a
 one-off warm-start hack" requiring a pre-existing higher-K fit. Step 2's goal
-(`docs/plans/ssbmf_k_parsimony_followup_plan_07_13_2026.md`) was to make this permanent and general:
+(`docs/plans/2026-07-13-ssbmf-k-parsimony-followup-plan.md`) was to make this permanent and general:
 add a deflation-style init (rank-1 SVD of Y for factor 1, rank-1 SVD of the residual for factor 2,
 etc.) to `fit_cox_on_yf`/`fit_supervised_mf_modular`, verify it fixes the `sparse_synthetic` collapse
 scenario, and confirm no regression.
@@ -2578,7 +2578,7 @@ test suite: 299/299 passing.*
 suspiciously fast convergence (7-9 iterations to a near-zero β) as consistent with the CAVI
 factor-collapse failure mode from Phase 2, and could not rule out that this — rather than a genuine
 capacity ceiling — explained their poor external performance. This is Step 1 of
-`docs/plans/ssbmf_k_parsimony_followup_plan_07_13_2026.md`: re-fit K ∈ {2,3,4,5} with two
+`docs/plans/2026-07-13-ssbmf-k-parsimony-followup-plan.md`: re-fit K ∈ {2,3,4,5} with two
 improved-optimization strategies and compare against the original fresh-SVD numbers.
 
 **New code:** `code/warmstart_from_fit.R` (`extract_top_k_by_pve()` — selects a converged fit's
@@ -2728,7 +2728,7 @@ caveat above). The K=7→K_eff=2 gap is better understood as CV-selected capacit
 produce few large-|β| factors, not as 5 factors that could simply be removed. Whether DeSurv's joint
 (K, α, λ) Bayesian-optimization tuning would find a smaller K with comparable *external* performance
 (as opposed to comparable internal/training performance) remains untested here — a plan for this
-exists (`docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md`), not yet implemented.
+exists (`docs/plans/2026-07-12-joint-k-alpha-bayesopt-plan.md`), not yet implemented.
 
 *Files: `results/benchmark_sim/run_k_parsimony_curve.R` (new),
 `results/benchmark_sim/outputs/k_parsimony_curve/k_parsimony_curve_results.csv` (new).*
@@ -2743,7 +2743,7 @@ to it when survival carries none. Implemented as a simulation sweep
 (`results/multi_cohort_sim/run_survival_strength_sweep.R`) scaling the true prognostic effect
 (`beta_shared`) from 0 to large across 6 levels × 5 seeds, comparing YFB (joint, tuned α=0.5)
 against new PCA+Cox and existing EBMF+Cox two-step baselines (LB included as a secondary
-reference). Full report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}`.
+reference). Full report: `docs/findings/2026-07-12-joint-vs-twostep-sweep-report.{qmd,pdf,html}`.
 
 **Result 1 (equivalence at zero signal):** YFB=0.517±0.008, PCA+Cox=0.533±0.017,
 EBMF+Cox=0.540±0.017. All within ~1 SE of each other and of chance — consistent with equivalence,
@@ -2819,7 +2819,7 @@ PDAC fits. Logged as a known, understood algorithmic limitation (LB apparently m
 not resolved here; candidate follow-ups (multistart best-ELBO selection via the existing
 `code/fit_modular_multistart.R`, or a greedy-init variant) go in `ROADMAP.md`.
 
-Updated report: `docs/reports/joint_vs_twostep_sweep_07_12_2026.{qmd,pdf,html}` (now includes a
+Updated report: `docs/findings/2026-07-12-joint-vs-twostep-sweep-report.{qmd,pdf,html}` (now includes a
 per-scenario results table and this failure-mode analysis). Config:
 `synthetic_multicohort.survival_strength_sweep.{n_seeds,scenarios}` (`config/globals.yml`).
 
@@ -3054,7 +3054,7 @@ O(n) — an unnormalized ~p-fold scale gap. This makes the `alpha` mixing weight
 because the genomics side starts ~p times larger regardless of alpha's value. The fix needed to
 reach the actual CAVI update coefficients (the A/B precision-and-signal terms passed into each
 EBNM sub-problem), not just the reported ELBO monitor, per the post-lab-meeting action plan
-(`docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`, Phase 1a).
+(`docs/plans/2026-07-08-ssbmf-post-lab-meeting-action-plan.md`, Phase 1a).
 
 **Two candidate directions were tried and empirically rejected for the LB (Cluster A,
 `code/fit_modular.R`) model** before arriving at the shipped design. Both were tested at toy scale
@@ -3235,7 +3235,7 @@ near-unimodal landscape per the 2026-05-06 "Phase 3 — multi-initialization" 30
 **Status:** Working draft for the 2026-06-15 advisor meeting; subject to revision after feedback.
 
 **Files:** `results/multi_cohort_sim/{generate_multicohort_data,build_ebmf_templates,sim_scoring,run_multicohort_sim,run_signal_ratio_sweep}.R`,
-`config/globals.yml` (`synthetic_multicohort`), `docs/reports/multicohort_sim_proposal_06_14_26.{qmd,pdf}`.
+`config/globals.yml` (`synthetic_multicohort`), `docs/plans/2026-06-14-multicohort-sim-proposal.{qmd,pdf}`.
 The standalone results report was consolidated into the proposal (Part II removed for brevity;
 full tables and sweep figures available from the runner outputs).
 
@@ -3360,7 +3360,7 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 
 - **Files:** `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
   `code/preprocess_desurv.R` (new `normalize_method` param), `config/globals.yml` (8 K keys),
-  `docs/reports/merged_benchmark_report.qmd`,
+  `docs/findings/2026-05-25-merged-benchmark-report.qmd`,
   `results/benchmark_sim/outputs/merged_benchmark/merged_benchmark_results_extended.csv`
 
 ---
@@ -3436,7 +3436,7 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
   - **Not recommended: M1 (lowest mean C=0.599); M6 (cohort indicator hurts YFB at low K).**
 
 - **Files:** `results/benchmark_sim/run_merged_kcv.R`, `results/benchmark_sim/run_merged_benchmark.R`,
-  `docs/reports/merged_benchmark_report.{qmd,pdf}`,
+  `docs/findings/2026-05-25-merged-benchmark-report.{qmd,pdf}`,
   `results/benchmark_sim/outputs/merged_benchmark/`
 
 
@@ -4275,7 +4275,7 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 
 ## 2026-04-29 — Cluster A in-model fixes resolve training-side β=0; external generalization mixed
 
-- **Decision:** Adopt the four Cluster A fixes from `docs/beta_zero_fix_design.md` §4 in
+- **Decision:** Adopt the four Cluster A fixes from `docs/plans/2026-04-29-beta-zero-fix-design-spec.md` §4 in
   `code/fit_modular.R` and `code/update_L.R`. Specifically:
   1. **Inner-loop reorder** β → L → F is now **canonical** (previously L → F → β). No new
      parameter — the reorder is unconditional. Justified by the symmetric `z_no_k` /
@@ -4317,7 +4317,7 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
   reformulation" rather than rewritten.
 - **Implication:** Cluster A solves the immediate training-side failure but does not deliver
   cross-cohort generalization. This is the design doc's predicted Cluster B trigger
-  (`docs/beta_zero_fix_design.md` §3 row "EBeta non-zero but unstable"). Phase 4 (Cluster
+  (`docs/plans/2026-04-29-beta-zero-fix-design-spec.md` §3 row "EBeta non-zero but unstable"). Phase 4 (Cluster
   B — Cox-on-YF reformulation, `derivations/qF_supervised/`) is now the next priority.
 - **Affected files:** `code/fit_modular.R` (instrumentation, reorder, N_burnin, alpha_schedule,
   normalize_AB threading); `code/update_L.R` (normalize_AB rescale of A_surv/B_surv);

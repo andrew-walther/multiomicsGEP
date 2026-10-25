@@ -18,7 +18,7 @@ programs (Young et al., PNAS 2026).
 | Top genes (exported) | `presentation/walther_lab_meeting_06_18_2026/assets/active_factor_genes.csv` | Program 3 (Protective): CAPN5, LPCAT4, MLPH, SLC45A3, TJP3, PLEKHA6, MTMR11, GALNT6. Program 7 (Adverse): ITGA3, MET, BCAR3, FAM3C, GAPDH, ENO1, TPI1, PGK1. |
 | Direction convention | **Program 7 = ADVERSE, Program 3 = PROTECTIVE** by the marginal (YF)-projection survival direction (DECISIONS.md 2026-06-16) | Joint-β signs (β̂₇=−0.041, β̂₃=+0.011) are *opposite* and must **not** drive labels (suppression among correlated programs). |
 | F prior | point-exponential (non-negative) → all weights ≥ 0 | Rank genes by weight; enrichment is effectively **one-sided** (no "depleted" sets). Drives the method recommendation in §2. |
-| Existing doc | `docs/reports/pathway_enrichment_overview.qmd` (2026-05-30, 910 lines) | A **conceptual primer/illustration** ("what it is, why it matters"), NOT the analysis. **It predates the 2026-06-16 correction** — its code comment labels Factor 3 as adverse (β>0). Keep it as a primer; the new report is the analysis. Do not inherit its labeling. |
+| Existing doc | `docs/notes/2026-05-30-pathway-enrichment-overview-notes.qmd` (2026-05-30, 910 lines) | A **conceptual primer/illustration** ("what it is, why it matters"), NOT the analysis. **It predates the 2026-06-16 correction** — its code comment labels Factor 3 as adverse (β>0). Keep it as a primer; the new report is the analysis. Do not inherit its labeling. |
 | Package status | `fgsea`, `clusterProfiler`, `msigdbr`, `org.Hs.eg.db`, `ComplexHeatmap` all **MISSING**; `preprocessCore`, `flashier`, `survival`, `ggplot2`, `pheatmap` installed | New dependencies required — see Open Decision **D1** (must approve before any install). |
 
 ---
@@ -30,7 +30,7 @@ programs (Young et al., PNAS 2026).
 | Reusable functions (roxygen, headers) | `code/pathway_enrichment.R` | `code/` for reusable, documented functions |
 | Orchestration runner | `results/benchmark_sim/run_pathway_enrichment.R` | matches `run_desurv_comparison.R` etc. |
 | Outputs (tables, figures, manifest) | `results/benchmark_sim/outputs/pathway_enrichment/` | `outputs/<analysis>/` |
-| Dated analysis report | `docs/reports/pathway_enrichment_report_06_DD_26.{qmd,pdf,html}` | `docs/reports/<name>_MM_DD_YY` |
+| Dated analysis report | `docs/findings/pathway_enrichment_report_06_DD_26.{qmd,pdf,html}` | `docs/findings/<name>_MM_DD_YY` |
 | Custom PDAC gene-set object | `results/benchmark_sim/outputs/pathway_enrichment/pdac_genesets.rds` | reproducibility |
 | Gene-set version manifest | `.../pathway_enrichment/genesets_manifest.txt` | seeds + collection versions |
 
@@ -144,7 +144,7 @@ marginal direction convention. → **verify:** narrative cross-check in the repo
 pathway to its program's survival direction; flag any contradiction explicitly rather than smoothing it.
 
 **Step 11 — Report.**
-`docs/reports/pathway_enrichment_report_06_DD_26.qmd` assembling F1–F5, T1–T4, C1–C3, methods (collections,
+`docs/findings/pathway_enrichment_report_06_DD_26.qmd` assembling F1–F5, T1–T4, C1–C3, methods (collections,
 versions, background, seeds), and a "direction convention" callout. Render PDF+HTML. → **verify:**
 `quarto render` succeeds; all figures/tables present; reproducibility manifest embedded.
 
@@ -213,7 +213,7 @@ F5/T4 proceed; if the SI lists are not cleanly extractable, fall back to the rep
 **D4 — Primary method — CONFIRMED.** fgsea ranked-by-weight primary; ORA top-N confirmatory.
 
 **D5 — Report vs overview — CONFIRMED.** New dated analysis report; keep
-`pathway_enrichment_overview.qmd` as the conceptual primer (predates the direction correction).
+`2026-05-30-pathway-enrichment-overview-notes.qmd` as the conceptual primer (predates the direction correction).
 
 ---
 

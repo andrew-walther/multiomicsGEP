@@ -11,7 +11,7 @@ I will say **"go ahead"** when I'm satisfied and ready to begin execution. Until
 ## Documents to Read
 
 ### Primary — drives the plan
-- **Meeting notes (4/27/26):** `/docs/plans/Meeting_Notes_Followup_4_27_26.md`
+- **Meeting notes (4/27/26):** `/docs/meetings/2026-04-27-meeting-notes-followup.md`
 
 ### Secondary — background context only
 - **Earlier plan (pre-meeting, never executed):** `/Users/ajwalther/.claude/plans/what-are-the-key-luminous-treehouse.md`

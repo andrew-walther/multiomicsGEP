@@ -1494,7 +1494,7 @@ software conventions; they are not substitutes for the derivation.
 - [Quantifying the role of transcript levels in mediating DNA methylation effects on complex traits and diseases](https://www.nature.com/articles/s41467-022-35196-3)
   (Nature Communications, 2022). Biological context for the sign comparison.
 - Local mathematical references: \path{derivations/cox_on_YF/} and
-  \path{docs/notes/YFB_update_derivations_detailed_05_08_26.qmd}.
+  \path{docs/notes/2026-05-08-yfb-update-derivations-detailed-notes.qmd}.
   These describe earlier YFB formulas; the audit in Section 2
   identifies where they cannot be carried over unchanged.
 - Local implementation references: \path{code/fit_cox_on_yf.R};

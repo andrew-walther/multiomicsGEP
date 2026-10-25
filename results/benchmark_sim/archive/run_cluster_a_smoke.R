@@ -1,6 +1,6 @@
 # ============================================================
 # Script: run_cluster_a_smoke.R
-# Purpose: Smoke fit (Step 5 of docs/beta_zero_fix_design.md §4.6) on the
+# Purpose: Smoke fit (Step 5 of docs/plans/2026-04-29-beta-zero-fix-design-spec.md §4.6) on the
 #          merged TCGA_PAAD + CPTAC v2-preprocessed training set with the
 #          new Cluster A fixes (instrumentation + inner-loop reorder +
 #          N_burnin + alpha_schedule). Reports the decision-gate metrics:

@@ -9,7 +9,7 @@
 > reviewed, not partially.
 >
 > **Provenance:** this plan was produced from a two-round Codex code review
-> (`docs/reviews/2026-09-04_progress_notebook_review.md`, reviewed at commit `a650491` then updated
+> (`docs/reviews/2026-09-04-progress-notebook-review.md`, reviewed at commit `a650491` then updated
 > through `6196b59`) plus direct independent verification of the highest-priority findings against
 > the current code, done in a Claude Code session on 2026-09-04. See that session's transcript or
 > `DECISIONS.md` (2026-09-04 entries) for the full narrative. This file is the actionable version.

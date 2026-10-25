@@ -3,7 +3,7 @@
 Sources: Andrew's written notes and the Zoom summary from the 10/2 meeting with Yusha and Naim, plus
 two post-meeting clarification sessions. The results discussed are in
 `docs/progress_book/chapters/2026-10-02.qmd`. This plan supersedes the open-work sections of
-`Working_Plan_10_1_26.md`; that file is still the record of what was done on 10/1–10/2.
+`2026-10-01-working-plan.md`; that file is still the record of what was done on 10/1–10/2.
 
 **Timeline:** prelim chapter due 11/16, prelim exam 12/7, target final defense April 2027,
 graduation May 2027. Naim asked for the paper writing to speed up: draft as complete a paper as
@@ -159,9 +159,9 @@ Andrew). Use the existing `paper/ssbmf-refs.bib`.
 1. **Introduction:** PDAC subtypes, supervised factorization, DeSurv and how this model differs.
 2. **Methods**
    - Single-modality model: η = (YF)β, priors, CAVI updates, ELBO, ARD-based K selection.
-     Sources: `docs/notes/YFB_derivation_05_08_26.qmd`,
+     Sources: `docs/notes/2026-05-08-yfb-derivation-notes.qmd`,
      `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf`,
-     `docs/update_*.qmd`, `code/SupervisedMF_Context.md`.
+     `docs/lb_walkthroughs/update_*.qmd`, `code/SupervisedMF_Context.md`.
    - **Survival supervision of F:** placeholder until Workstream C is done. It will contain the
      update, the scale canonicalization and whatever C4 decides about weights or the β prior.
    - Multiple cohorts: per-platform z-standardization; the optional `cohort_id`, `strata_id` and
@@ -477,7 +477,7 @@ Each stop comes with a short recommendation.
 ```text
 Read paper/writeup/_process/planning.qmd (rendered as planning.html),
 paper/writeup/_process/implementation_plan.md, paper/writeup/_process/source_inventory.csv, and the
-"Sequencing and handoffs" section of docs/plans/Meeting_Notes_Followup_10_2_26.md.
+"Sequencing and handoffs" section of docs/meetings/2026-10-02-meeting-notes-followup.md.
 
 First create the branch writeup/draft from main (git switch -c writeup/draft main).
 All write-up work happens there.
@@ -553,7 +553,7 @@ write-up has been drafted, reviewed and merged to main.
 
 Read first:
 - the project CLAUDE.md;
-- docs/plans/Meeting_Notes_Followup_10_2_26.md: "How survival enters F",
+- docs/meetings/2026-10-02-meeting-notes-followup.md: "How survival enters F",
   Workstream C including "Findings from scoping C1", and "Sequencing and
   handoffs" (scope M0-M8 and the working mode);
 - DECISIONS.md, entry "2026-10-02 — alpha_F = 0 cannot be the final method";
@@ -584,7 +584,7 @@ don't push without asking.
 ```text
 Review the method work on feature/supervised-F (git diff main...feature/supervised-F).
 Read the "Sequencing and handoffs" section and Workstream C of
-docs/plans/Meeting_Notes_Followup_10_2_26.md first.
+docs/meetings/2026-10-02-meeting-notes-followup.md first.
 Check:
 - that the code matches the derivations and DECISIONS.md entries it cites;
 - that the success criteria were applied as pre-specified, not adjusted after

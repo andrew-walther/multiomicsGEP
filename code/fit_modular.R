@@ -313,7 +313,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
   # See DECISIONS.md 2026-07-12.
   beta_divisor <- if (boost_beta) survival_divisor else 1
 
-  # ---- Progressive α schedule [A2 of docs/beta_zero_fix_design.md §4.4] ----
+  # ---- Progressive α schedule [A2 of docs/plans/2026-04-29-beta-zero-fix-design-spec.md §4.4] ----
   # alpha_schedule = list(warmup_iters, ramp_iters) ramps α from 0 (pure
   # genomics) up to the target `alpha` over the ramp window, then holds.
   # Lets L settle into reconstruction-meaningful directions before survival
@@ -482,7 +482,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
   }
   EBeta2 <- EBeta^2      # zero variance initially; updated at first EBNM call
 
-  # ---- Instrumentation [§4.1 of docs/beta_zero_fix_design.md] -----------
+  # ---- Instrumentation [§4.1 of docs/plans/2026-04-29-beta-zero-fix-design-spec.md] -----------
   # Quantifies the Cox warm-start output. If max(|EBeta|) is already non-zero
   # but the full CAVI still collapses β to zero, the cold-start is not the
   # entry point — the A_surv/A_gen scale imbalance dominates. If ~0, the
@@ -494,7 +494,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
   }
 
   # ==========================================================================
-  # β-only Burn-in [Fix 2 of docs/beta_zero_fix_design.md §4.3]
+  # β-only Burn-in [Fix 2 of docs/plans/2026-04-29-beta-zero-fix-design-spec.md §4.3]
   #
   # Run N_burnin iterations of pure β-updates with EL held fixed at the
   # SVD-initialized values. Treats L as a point estimate (EL2_init = EL^2,

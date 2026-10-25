@@ -1,7 +1,7 @@
 # YFB Dual-Source F Update — Experiment Plan
 
 **Date:** 2026-08-20
-**Source:** Review of `docs/notes/YFB_derivation_05_08_26.pdf` (Section 13 caveat) against
+**Source:** Review of `docs/notes/2026-05-08-yfb-derivation-notes.pdf` (Section 13 caveat) against
 `DECISIONS.md` 2026-05-04, 2026-05-22, 2026-07-15, and the DeSurv comparison
 ([[reference-desurv-paper]]). Not yet implemented — this is a plan only.
 

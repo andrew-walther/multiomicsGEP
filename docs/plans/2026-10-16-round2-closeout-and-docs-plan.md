@@ -57,7 +57,7 @@ Keep the branch itself until Task 3 is merged; delete it afterwards only on Andr
 
 ### Task 2: Findings report
 
-**Files:** Create `docs/reports/Round2_findings_2026-10.md` (on `main`).
+**Files:** Create `docs/findings/YYYY-MM-DD-round2-findings.md` (on `main`).
 
 One to two pages, for a biostatistician reading cold. Sections:
 
@@ -92,7 +92,7 @@ One to two pages, for a biostatistician reading cold. Sections:
 
 - [ ] **Step 1:** Copy the current `PROJECT_STATUS.qmd`, its PDF and `ROADMAP.md` into `docs/archive/` under the names above. If round2's versions are newer (after Task 1), archive those instead, from the tag.
 - [ ] **Step 2:** Rewrite `PROJECT_STATUS.qmd` as the current-best-state document with exactly these sections: *Model* (YFB, priors, α_F = 0, K = 7 with factor classification); *Data and preprocessing* (cohorts, per-cohort z-standardization, DeSurv-style gene selection); *Results* (external C per cohort and mean, KM figure, programs and biology in brief); *Known limitations* (F not survival-informed; pruning not adopted; multimodal adds no demonstrated predictive gain); *Open questions* (pointing to `ROADMAP.md` Part 2). Target: 3–5 rendered pages. **Gate.**
-- [ ] **Step 3:** Restructure `ROADMAP.md` into Part 1 (history in date order, one line per milestone or dropped approach, each citing its `DECISIONS.md` date) and Part 2 (open work, prioritized; the first item is the feature-selection experiment in `docs/plans/2026-10-16_feature_selection_experiment_plan.md`). The history of the old `PROJECT_STATUS.qmd` moves into Part 1 in condensed form. **Gate.**
+- [ ] **Step 3:** Restructure `ROADMAP.md` into Part 1 (history in date order, one line per milestone or dropped approach, each citing its `DECISIONS.md` date) and Part 2 (open work, prioritized; the first item is the feature-selection experiment in `docs/plans/2026-10-16-feature-selection-experiment-plan.md`). The history of the old `PROJECT_STATUS.qmd` moves into Part 1 in condensed form. **Gate.**
 - [ ] **Step 4:** Check the headline: recompute the five external C values for the frozen D4 fit with the training-fixed direction used by `paper/writeup/figures/make_writeup_figures.R`, and confirm they match the writeup figure (0.634, 0.549, 0.648, 0.657, 0.645; mean 0.627). If any differ, stop and report before editing any document. `oriented_cindex()` (max(C, 1 − C)) chooses the direction on the evaluation data and must not be used for reported results.
 - [ ] **Step 5:** Rewrite `CLAUDE.md` to about 60 lines: pointers to the documents in the table above; the existing writing rules; and these guardrails:
   - one experiment per branch off `main`, started from a short plan in `docs/plans/`;

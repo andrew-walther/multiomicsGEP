@@ -65,7 +65,7 @@ M7–M18: new configurations:
 | `config/globals.yml` | **Modify** | Add 6 new K placeholder keys; update `k_merged_yfb_perplatform` from 2 to 3 |
 | `results/benchmark_sim/run_merged_kcv.R` | **Rewrite** | Loop over all 5 preprocessing configs; apply K floor; use `set_key()` (not `replace_null_key()`) |
 | `results/benchmark_sim/run_merged_benchmark.R` | **Rewrite** | Loop over all 5 preprocessing configs; re-runs M5/M6 at new K |
-| `docs/reports/merged_benchmark_report.qmd` | **Modify** | Extend table/heatmap to 18 models; update conclusions |
+| `docs/findings/2026-05-25-merged-benchmark-report.qmd` | **Modify** | Extend table/heatmap to 18 models; update conclusions |
 
 ---
 
@@ -1061,7 +1061,7 @@ git commit -m "Add extended benchmark results: 18-config comparison across all p
 Extends the report to cover all 18 configurations. The heatmap, summary table, and conclusions are updated with actual findings.
 
 **Files:**
-- Modify: `docs/reports/merged_benchmark_report.qmd`
+- Modify: `docs/findings/2026-05-25-merged-benchmark-report.qmd`
 
 - [ ] **Step 1: Replace the setup chunk and table sections in `merged_benchmark_report.qmd`**
 
@@ -1114,7 +1114,7 @@ Replace the Conclusions section placeholder with actual findings after benchmark
 - [ ] **Step 2: Verify Quarto renders with existing data (before extended results are available)**
 
 ```bash
-quarto render docs/reports/merged_benchmark_report.qmd --to pdf 2>&1 | tail -5
+quarto render docs/findings/2026-05-25-merged-benchmark-report.qmd --to pdf 2>&1 | tail -5
 ```
 
 Expected: renders without error (Conclusions section shows placeholder text).
@@ -1128,8 +1128,8 @@ After examining `results/benchmark_sim/outputs/merged_benchmark/merged_benchmark
 - State the recommended configuration with rationale (include YFB prediction advantage)
 
 ```bash
-quarto render docs/reports/merged_benchmark_report.qmd 2>&1 | tail -5
-git add docs/reports/merged_benchmark_report.qmd docs/reports/merged_benchmark_report.pdf
+quarto render docs/findings/2026-05-25-merged-benchmark-report.qmd 2>&1 | tail -5
+git add docs/findings/2026-05-25-merged-benchmark-report.qmd docs/findings/2026-05-25-merged-benchmark-report.pdf
 git commit -m "Update merged benchmark report: 18-config results and final recommended configuration"
 ```
 

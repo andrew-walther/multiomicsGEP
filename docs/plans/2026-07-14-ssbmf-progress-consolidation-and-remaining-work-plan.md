@@ -7,9 +7,9 @@ Code session) who needs to get oriented without re-reading 34 commits and two pr
 Part B is the actual remaining-work plan, written to be executed end to end by a new session.
 
 **Source plans this consolidates:**
-- `docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md` (6 phases; Phases 1-3 complete,
+- `docs/plans/2026-07-08-ssbmf-post-lab-meeting-action-plan.md` (6 phases; Phases 1-3 complete,
   Phases 4 and 6 not started, Phase 5 = same work as this plan's Step 5 below)
-- `docs/plans/ssbmf_k_parsimony_followup_plan_07_13_2026.md` (6 steps; Steps 1-4 complete, Steps 5-6
+- `docs/plans/2026-07-13-ssbmf-k-parsimony-followup-plan.md` (6 steps; Steps 1-4 complete, Steps 5-6
   not started)
 
 ---
@@ -46,7 +46,7 @@ prediction (K_eff=2), and this K_eff=2 result is robust and real, not a tuning a
 step's numbers are provisional or need re-verification, only re-reading if you need the detail.
 
 ### What was drafted but not yet executed
-- `docs/plans/pathway_enrichment_plan.md` (a 12-step implementation plan, decided/reviewed in a
+- `docs/plans/2026-07-14-pathway-enrichment-plan.md` (a 12-step implementation plan, decided/reviewed in a
   2026-06-16 planning session) — exists only on a now badly-stale branch `pathway-enrichment-plan`;
   see Part B, Step 5.
 - A scratchpad-only start on the `SSBMF-paper` manuscript repo scaffold (uncommitted, in a temp
@@ -90,7 +90,7 @@ didn't change which factors are active).
    1-4 above) and is unusable as a base. Retrieve *only* the plan document from it, then delete and
    recreate the branch off current `main`:
    ```
-   git show pathway-enrichment-plan:docs/plans/pathway_enrichment_plan.md > /tmp/pathway_plan.md
+   git show pathway-enrichment-plan:docs/plans/2026-07-14-pathway-enrichment-plan.md > /tmp/pathway_plan.md
    git branch -D pathway-enrichment-plan   # old branch, being replaced
    git checkout -b pathway-enrichment-plan main
    ```
@@ -218,7 +218,7 @@ README's own build instructions — the Quarto mention is unedited generic boile
    differentiated by EB-prior shrinkage, posterior uncertainty, error-in-variables E[L²],
    heteroscedastic τ), framed as a *pending* head-to-head, not a superiority claim.
    **Use the original plan's own Appendix** ("Phase 6 starting reference library & gap analysis," in
-   `docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`) as the starting point rather than
+   `docs/plans/2026-07-08-ssbmf-post-lab-meeting-action-plan.md`) as the starting point rather than
    re-deriving a gap list from scratch — it already has the 18-source Zotero library grouped by
    pillar (unsupervised MF/integration, single-cell integration, supervised/semi-supervised NMF, EB/
    Bayesian MF, Bayesian survival, PDAC/cancer-genomics) and a prioritized gap list (HIGH: PDAC

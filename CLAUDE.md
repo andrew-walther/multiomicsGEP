@@ -13,9 +13,9 @@ here too rather than maintaining a separate copy.
 
 The next work is defined by three plans indexed in [`docs/plans/README.md`](docs/plans/README.md),
 in this order: round2 close-out and documentation restructure
-(`2026-10-16_round2_closeout_and_docs_plan.md`); the preprocessing specification, Task A1 of
-`2026-10-16_preprocessing_alignment_and_unified_model_plan.md`; the feature-selection experiment
-(`2026-10-16_feature_selection_experiment_plan.md`); then preprocessing alignment and one model
+(`2026-10-16-round2-closeout-and-docs-plan.md`); the preprocessing specification, Task A1 of
+`2026-10-16-preprocessing-alignment-and-unified-model-plan.md`; the feature-selection experiment
+(`2026-10-16-feature-selection-experiment-plan.md`); then preprocessing alignment and one model
 implementation. Each plan has review gates for Andrew. Remind Andrew of them at the start of a session.
 
 ## Key Instructions
@@ -66,10 +66,10 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | **Progress notebook (meeting-facing, one chapter per advisor meeting)** | `docs/progress_book/` — Quarto book, `quarto render` to build; add a new `chapters/YYYY-MM-DD.qmd` per meeting |
 | **L-update debugging guide** | `docs/lb_walkthroughs/update_L_fix.md` — read before any L-update work |
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |
-| **Current working plan** | `docs/plans/Meeting_Notes_Followup_10_2_26.md` — start open work here (write-up, feature-count sensitivity, survival weighting); `docs/plans/archive/Working_Plan_10_1_26.md` records the 10/1–10/2 work |
+| **Current working plan** | `docs/meetings/2026-10-02-meeting-notes-followup.md` — start open work here (write-up, feature-count sensitivity, survival weighting); `docs/plans/2026-10-01-working-plan.md` records the 10/1–10/2 work |
 | Matched TCGA/ICGC expression + methylation loader | `code/load_multiomics_data.R` — `build_multiomics_cohorts()`; real-data checks `tests/test_real_multiomics_loading.R` (local) |
 | Multimodal parsimony framework (intercept, ebnm priors, ELBO pruning) and compiled sweep | `code/fit_multimodal_yfb.R` controls `intercept`/`prior_update`/`prune`/`tau_model`; `code/multimodal_yfb_sweep.cpp` |
 | Multimodal simulation and real-data runners | `results/benchmark_sim/run_multimodal_pruning_comparison.R`; `results/multimodal_real/run_multimodal_real_fit.R` + `summarize_multimodal_real.R` |
 | Prelim proposal chapter source | `paper/prelim/project3-ssbmf.qmd` → synced to `bios-dissertation/prelim/project-proposals/project3-ssbmf/draft/` by the installed post-commit hook (or `paper/prelim/tools/sync_to_prelim.sh` by hand; never pushes) |
-| Prelim proposal chapter plan | `docs/plans/Prelim_Proposal_Plan_10_1_26.md` — outline, sync to `bios-dissertation`, α_F framing constraint |
+| Prelim proposal chapter plan | `docs/plans/2026-10-01-prelim-proposal-plan.md` — outline, sync to `bios-dissertation`, α_F framing constraint |
 | Advisor-facing writeup (interim version approved 2026-10-14; revise after the method work via Prompt 7) | `paper/writeup/writeup.qmd` → `writeup.html`/`writeup.pdf`, appendices in `paper/writeup/appendices/`; planning page, source inventory, implementation plan and prompts alongside. Read `PROJECT_STATUS.qmd` for the review state. |

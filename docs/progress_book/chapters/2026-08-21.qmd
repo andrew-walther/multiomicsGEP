@@ -410,9 +410,9 @@ The 3 dead factors return zero enriched sets, which independently corroborates t
 genomics-only/dead split. Full detail, including the caveat above:
 
 - **Current, 4-factor scope:**
-  [`pathway_enrichment_report_08_21_26`](../../../reports/pathway_enrichment_report_08_21_26.html)
+  [`2026-08-21-pathway-enrichment-report`](../../../findings/2026-08-21-pathway-enrichment-report.html)
 - Superseded, 2-factor scope (Programs 3/7 findings unchanged):
-  [`pathway_enrichment_report_07_15_26`](../../../reports/pathway_enrichment_report_07_15_26.html)
+  [`2026-07-15-pathway-enrichment-report`](../../../findings/2026-07-15-pathway-enrichment-report.html)
 - Figures and per-program tables: `results/benchmark_sim/outputs/pathway_enrichment/`
 
 ---
@@ -420,7 +420,7 @@ genomics-only/dead split. Full detail, including the caveat above:
 ## Choosing $K$: CV for external C-index vs. K-selection from model ELBO
 
 Two questions behind "$K=7$, $K_{\text{eff}}=2$": how $K=7$ was chosen, and whether that procedure
-reliably finds the right number of programs. Plan: `docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md`.
+reliably finds the right number of programs. Plan: `docs/plans/2026-08-13-ssbmf-factor-classification-k-selection-plan.md`.
 Exact numbers: DECISIONS.md (2026-08-19, 2026-08-20).
 
 ### $K$ selection by ARD pruning and ELBO

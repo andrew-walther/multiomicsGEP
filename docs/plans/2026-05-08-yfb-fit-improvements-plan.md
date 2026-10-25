@@ -154,4 +154,4 @@ The target outcomes are:
   baseline: per-platform standardization, no rank transform, and small-K
   fitting.
 - The intended saved draft path for later execution is
-  `docs/plans/YFB-fit-improvements-05_08_26.md`.
+  `docs/plans/2026-05-08-yfb-fit-improvements-plan.md`.

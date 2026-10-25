@@ -1,6 +1,6 @@
 # Prelim Project Proposal Plan — Project 3 (SSBMF / multiomicsGEP) (10/1/26)
 
-This is the plan for writing this project's proposal chapter for the prelim (Chapter 4 of the prelim document). It is separate from the research plan in `docs/plans/archive/Working_Plan_10_1_26.md`. That plan produces the results; this one turns them into a chapter. The chapter source should also serve as the starting draft for a later journal manuscript.
+This is the plan for writing this project's proposal chapter for the prelim (Chapter 4 of the prelim document). It is separate from the research plan in `docs/plans/2026-10-01-working-plan.md`. That plan produces the results; this one turns them into a chapter. The chapter source should also serve as the starting draft for a later journal manuscript.
 
 **Deadlines:**
 - Standalone abstract upload: 11/2.
@@ -141,7 +141,7 @@ Full CAVI derivations (the single-modality derivation PDFs and `derivations/mult
     - The declarations file is optional.
     - **Not yet installed or run.** Installing the post-commit hook and the first sync, which commits in bios-dissertation, need the user's go-ahead.
   - Author list: to confirm.
-- 2026-10-02: An independent review was done (`docs/reviews/2026-10-02_prelim_proposal_review.md`).
+- 2026-10-02: An independent review was done (`docs/reviews/2026-10-02-prelim-proposal-review.md`).
   - Its accuracy must-fixes M1–M8 are applied. The main changes:
     - Fair two-step baselines: +0.026 against the K = 40 LASSO baseline, +0.011 against the K-matched one.
     - The "joint fitting" framing is removed; it conflicted with the α_F constraint.

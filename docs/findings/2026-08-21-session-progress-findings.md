@@ -5,7 +5,7 @@ Tracks execution of the multi-session plan for the 2026-08-21 advisor meeting. B
 
 - [x] **Prerequisites** — merged `claude/recent-project-updates-n04uuo` into `main` (PR #3,
       `191c2f8`); reconciled and pushed `meeting/2026-08-21-prep` off updated `main`.
-- [x] **Phase 0 — Pre-read** — `docs/plans/Meeting_Notes_Followup_8_3_26.md`,
+- [x] **Phase 0 — Pre-read** — `docs/meetings/2026-08-03-meeting-notes-followup.md`,
       `docs/progress_book/`, `code/fit_cox_on_yf.R` (YFB — corrected from the originally-cited
       `code/SupervisedMF_Context.md`, which documents the older LB model), `config/globals.yml`.
 - [x] **Phase 1 — Model specification chapter** — `docs/progress_book/chapters/2026-08-21.qmd`:

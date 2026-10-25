@@ -546,7 +546,7 @@ gsea_f3 |> arrange(padj) |> head(10)
 
 ## 7 · Codebase Integration Plan
 
-The pathway enrichment analysis will be implemented as a self-contained module following the conventions established throughout the codebase: a reusable `code/` module with documented functions, a dedicated runner script under `results/benchmark_sim/`, structured outputs in a versioned subdirectory, and a dated report in `docs/reports/`.
+The pathway enrichment analysis will be implemented as a self-contained module following the conventions established throughout the codebase: a reusable `code/` module with documented functions, a dedicated runner script under `results/benchmark_sim/`, structured outputs in a versioned subdirectory, and a dated report in `docs/findings/`.
 
 ### 7.1 New files
 
@@ -555,7 +555,7 @@ new_files <- data.frame(
   File = c(
     "`code/pathway_enrichment.R`",
     "`results/benchmark_sim/run_pathway_enrichment.R`",
-    "`docs/reports/pathway_enrichment_report_MM_DD_YY.qmd`"
+    "`docs/findings/pathway_enrichment_report_MM_DD_YY.qmd`"
   ),
   Role = c(
     "Reusable functions — gene ranking, GSEA, ORA, plotting, subtype comparison",
@@ -565,7 +565,7 @@ new_files <- data.frame(
   Pattern = c(
     "Same as `code/update_beta.R`, `code/preprocess_desurv.R`, etc.",
     "Same as `run_desurv_comparison.R`, `run_LB_benchmark.R`, etc.",
-    "Same as `desurv_alignment_report_05_27_26.qmd`, etc."
+    "Same as `2026-05-27-desurv-alignment-report.qmd`, etc."
   ),
   stringsAsFactors = FALSE
 )
@@ -848,7 +848,7 @@ conn <- data.frame(
     "`benchmark_helpers.R`",
     "`config/globals.yml`",
     "`DECISIONS.md`",
-    "`docs/reports/`"
+    "`docs/findings/`"
   ),
   `Role in pathway enrichment` = c(
     "Primary input — D4 EF matrix (factor weights) and EL matrix (patient loadings)",

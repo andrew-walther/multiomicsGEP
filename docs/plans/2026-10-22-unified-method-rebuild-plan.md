@@ -11,9 +11,9 @@
 **Spec:** the *Requirements* and *Package interface* sections below (from the 10/16 advisor meeting and Andrew's 10/22 feedback), plus the derivation produced by Tasks 1–3 (`derivations/unified_ssbmf/`), which becomes the controlling specification for Tasks 4–8.
 
 **Relation to earlier plans.** This plan sets the order of method work from 2026-10-22.
-- `2026-10-16_round2_closeout_and_docs_plan.md`: Task 1 (freeze the round2 branch under a tag) is a prerequisite here (Task 0). The documentation restructure can proceed independently.
-- `2026-10-16_preprocessing_alignment_and_unified_model_plan.md`: Task A1 becomes Task 13 here. Tasks A2–A4 are replaced by Tasks 4–8 and 15–17.
-- `2026-10-16_feature_selection_experiment_plan.md`: unchanged in design, deferred to Part 7 (run with the package).
+- `2026-10-16-round2-closeout-and-docs-plan.md`: Task 1 (freeze the round2 branch under a tag) is a prerequisite here (Task 0). The documentation restructure can proceed independently.
+- `2026-10-16-preprocessing-alignment-and-unified-model-plan.md`: Task A1 becomes Task 13 here. Tasks A2–A4 are replaced by Tasks 4–8 and 15–17.
+- `2026-10-16-feature-selection-experiment-plan.md`: unchanged in design, deferred to Part 7 (run with the package).
 - Round2 remedies not yet tried (lower bound on the β inclusion probability, survival weighting, block weighting, different scale fixing) are candidates in Tasks 2, 3 and 11–12, not separate experiments.
 
 ---
@@ -387,7 +387,7 @@ Under the Gaussian model each of the n × p_m entries counts as an independent o
 
 Start only after Gate 6a (expression experiments) or 6b (CpG and joint experiments); all use the package.
 - Gene-count (2k → 17.9k), CpG-count (10k → 305k) and joint curves: where performance levels off, and how stable the programs are.
-- Feature screening: unsupervised mean/variance vs + survival screen at matched sizes (`2026-10-16_feature_selection_experiment_plan.md`).
+- Feature screening: unsupervised mean/variance vs + survival screen at matched sizes (`2026-10-16-feature-selection-experiment-plan.md`).
 - Biology of the new programs (enrichment, CpG annotation to genes); DeSurv head-to-head if authorized.
 
 ---

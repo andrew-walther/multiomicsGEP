@@ -84,7 +84,7 @@ knitr::kable(tab, booktabs = TRUE, row.names = FALSE,
 
 ## 4. Factor Diagnostics: Convergence, Survival Associations, and Gene Programs
 
-Full diagnostics for all five configurations are in `docs/reports/desurv_factor_diagnostics_05_27_26.pdf`. Key findings:
+Full diagnostics for all five configurations are in `docs/findings/2026-05-27-desurv-factor-diagnostics-report.pdf`. Key findings:
 
 **ARD shrinkage consistently identifies two active programs.** All five configurations converge to $K_{\text{eff}} = 2$ active programs regardless of the total factors requested ($K = 3$–$8$). The empirical Bayes normal mixture prior shrinks inactive factors to $\hat{\beta} \approx 0$; the two surviving programs carry opposite survival directions — one adverse, one protective — in every configuration.
 

@@ -171,7 +171,7 @@ update_L_k <- function(Tau, EF_k, EF2_k, w, EBeta_k, EBeta2_k,
   B_surv <- w * z_no_k * EBeta_k / survival_divisor              # n-vector (raw)
 
   # ------------------------------------------------------------------
-  # Optional rescaling [Fix 4 of docs/beta_zero_fix_design.md §4.8]
+  # Optional rescaling [Fix 4 of docs/plans/2026-04-29-beta-zero-fix-design-spec.md §4.8]
   #
   # Without rescaling, A_gen ≈ sum_j(τ_j · E[f_jk²]) ~ p · scale, while
   # A_surv ~ O(1) per subject — a structural ~p× imbalance that makes the

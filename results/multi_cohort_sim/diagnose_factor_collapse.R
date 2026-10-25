@@ -2,7 +2,7 @@
 # Script:  results/multi_cohort_sim/diagnose_factor_collapse.R
 # Purpose: Root-cause the factor-collapse failure mode discovered in the
 #          `sparse_synthetic` scenario of run_survival_strength_sweep.R
-#          (see Result 4, docs/reports/joint_vs_twostep_sweep_07_12_2026.qmd,
+#          (see Result 4, docs/findings/2026-07-12-joint-vs-twostep-sweep-report.qmd,
 #          and DECISIONS.md 2026-07-12). Runs targeted checks per seed:
 #            1. YFB at alpha=0 (survival term removed) -- still collapses?
 #            2. LB (same update_L.R/update_F.R machinery) -- collapses worse?

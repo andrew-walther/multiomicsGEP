@@ -11,7 +11,7 @@
 #            syn_cindex.png           - held-out C-index by arm/scenario (incl. EBMF)
 #            syn_recovery_heatmap.png - true vs estimated patient-loading matrix L
 #
-#          Source figure logic mirrors docs/reports/multicohort_sim_proposal_06_14_26.qmd
+#          Source figure logic mirrors docs/plans/2026-06-14-multicohort-sim-proposal.qmd
 #          (the true-vs-estimated L heatmap and the C-index panel are lifted from it),
 #          recast as standalone, audience-facing PNGs with no internal config labels.
 #

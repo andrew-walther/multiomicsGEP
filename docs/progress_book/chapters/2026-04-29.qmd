@@ -54,4 +54,4 @@ structural than a tuning issue.
 
 ## Deep dive
 
-- Full write-up: [`SSBMF_Status_Update_4_29_26`](../../../progress_report/SSBMF_Status_Update_4_29_26.pdf)
+- Full write-up: [`2026-04-29-ssbmf-status-update`](../../../progress_report/2026-04-29-ssbmf-status-update.pdf)

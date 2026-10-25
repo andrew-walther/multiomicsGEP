@@ -143,6 +143,6 @@ claim, one way or the other.
 ## Deep dive
 
 - Full write-up with all figures and the per-item disposition of 6/18 feedback:
-  [`ssbmf_progress_report_07_15_26`](../../../reports/ssbmf_progress_report_07_15_26.html)
+  [`2026-07-15-ssbmf-progress-report`](../../../findings/2026-07-15-ssbmf-progress-report.html)
 - Pathway enrichment methodology and all five confirmation methods in detail:
-  [`pathway_enrichment_report_07_15_26`](../../../reports/pathway_enrichment_report_07_15_26.html)
+  [`2026-07-15-pathway-enrichment-report`](../../../findings/2026-07-15-pathway-enrichment-report.html)

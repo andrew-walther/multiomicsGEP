@@ -106,7 +106,7 @@ These notes direct the revision process for the 6/18/2026 lab meeting slide deck
   - Is the "mean c-index" referring to the average over 5 seeds?
 - Move the call-out box to another line across the slide that has "Takeaway" as a heading and then "Joint supervision beats unsupervised two-step approach on data with known ground truth"
 - I think it would be really useful to show the by-cohort factor recovery heatmap as well. This really illustrates which recovered factors are shared and specific to each cohort (this figure might fit better context-wise on slide 11 but there is more space on slide 12 — you can add a slide between 11 and 12 as well to include this figure!):
-  - The cohort recovery heatmap is in the appendix — a version is also included on page 8 of `multicohort_sim_proposal_06_14_26` that has great presentation too (this could be a standalone slide with title "Synthetic Results - Factor Recovery Heatmap")
+  - The cohort recovery heatmap is in the appendix — a version is also included on page 8 of `2026-06-14-multicohort-sim-proposal` that has great presentation too (this could be a standalone slide with title "Synthetic Results - Factor Recovery Heatmap")
 
 ### Slide 13
 - Change title to "PDAC Cohorts - Prognostic Gene Programs"

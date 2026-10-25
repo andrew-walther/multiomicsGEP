@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Create `code/fit_modular.R` — a reusable `fit_supervised_mf_modular()` function implementing V3 Algorithm 1 (factor-wise Gauss-Seidel CAVI) using the four existing modular update functions — paired with a Quarto companion doc `docs/fit_modular.qmd`.
+**Goal:** Create `code/fit_modular.R` — a reusable `fit_supervised_mf_modular()` function implementing V3 Algorithm 1 (factor-wise Gauss-Seidel CAVI) using the four existing modular update functions — paired with a Quarto companion doc `docs/lb_walkthroughs/fit_modular.qmd`.
 
-**Architecture:** The R file contains (1) library/source preamble, (2) `calc_cox_taylor` helper copied verbatim from V2.R, (3) `fit_supervised_mf_modular()` function, and (4) a `DATA_MODE`-gated runner block. The function uses the `_k` variants of each update module inside a k-loop — unlike `run_modular_simulation.R` which uses `_all` block updates. The companion doc matches the style of `docs/update_beta.qmd` (cosmo HTML + xelatex PDF, rendered LaTeX math, consistent section headers).
+**Architecture:** The R file contains (1) library/source preamble, (2) `calc_cox_taylor` helper copied verbatim from V2.R, (3) `fit_supervised_mf_modular()` function, and (4) a `DATA_MODE`-gated runner block. The function uses the `_k` variants of each update module inside a k-loop — unlike `run_modular_simulation.R` which uses `_all` block updates. The companion doc matches the style of `docs/lb_walkthroughs/update_beta.qmd` (cosmo HTML + xelatex PDF, rendered LaTeX math, consistent section headers).
 
 **Tech Stack:** R, `ebnm`, `survival`, Quarto (xelatex + cosmo theme)
 
@@ -15,9 +15,9 @@
 | File | Action | Responsibility |
 |------|--------|---------------|
 | `code/fit_modular.R` | **Create** | `fit_supervised_mf_modular()` function + DATA_MODE runner |
-| `docs/fit_modular.qmd` | **Create** | Companion doc: math, algorithm walkthrough, function reference, DATA_MODE, distinction from run_modular_simulation.R |
-| `docs/fit_modular.pdf` | **Create** (rendered) | PDF output |
-| `docs/fit_modular.html` | **Create** (rendered) | HTML output |
+| `docs/lb_walkthroughs/fit_modular.qmd` | **Create** | Companion doc: math, algorithm walkthrough, function reference, DATA_MODE, distinction from run_modular_simulation.R |
+| `docs/lb_walkthroughs/fit_modular.pdf` | **Create** (rendered) | PDF output |
+| `docs/lb_walkthroughs/fit_modular.html` | **Create** (rendered) | HTML output |
 | `docs/Makefile` | **Modify** | Add `fit_modular.qmd` to `SRCS` |
 | `CLAUDE.md` | **Modify** | Add `fit_modular.R` and `fit_modular.qmd` to quick-reference table |
 
@@ -520,12 +520,12 @@
 
 ---
 
-## Task 5: Write `docs/fit_modular.qmd`
+## Task 5: Write `docs/lb_walkthroughs/fit_modular.qmd`
 
 **Files:**
-- Create: `docs/fit_modular.qmd`
+- Create: `docs/lb_walkthroughs/fit_modular.qmd`
 
-The companion doc follows the exact structure and YAML of `docs/update_beta.qmd`. All math uses Quarto LaTeX (`$...$` inline, `$$...$$` display). Section headers match the convention from the other companion docs.
+The companion doc follows the exact structure and YAML of `docs/lb_walkthroughs/update_beta.qmd`. All math uses Quarto LaTeX (`$...$` inline, `$$...$$` display). Section headers match the convention from the other companion docs.
 
 - [ ] **Step 1: Write the YAML frontmatter and Overview section**
 
@@ -834,10 +834,10 @@ The companion doc follows the exact structure and YAML of `docs/update_beta.qmd`
   | `code/update_tau.R` | $\tau$ update: `update_tau` |
   | `code/Supervised_Bayesian_MF_V2.R` | Monolithic V2 implementation (reference) |
   | `results/run_modular_simulation.R` | Block-update simulation benchmark |
-  | `docs/update_L.qmd` | Companion doc for $q(L)$ update |
-  | `docs/update_F.qmd` | Companion doc for $q(F)$ update |
-  | `docs/update_beta.qmd` | Companion doc for $q(\beta)$ update |
-  | `docs/update_tau.qmd` | Companion doc for $\tau$ update |
+  | `docs/lb_walkthroughs/update_L.qmd` | Companion doc for $q(L)$ update |
+  | `docs/lb_walkthroughs/update_F.qmd` | Companion doc for $q(F)$ update |
+  | `docs/lb_walkthroughs/update_beta.qmd` | Companion doc for $q(\beta)$ update |
+  | `docs/lb_walkthroughs/update_tau.qmd` | Companion doc for $\tau$ update |
   | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_3_11_26_V3.pdf` | V3 Algorithm 1 derivation |
   ```
 
@@ -847,7 +847,7 @@ The companion doc follows the exact structure and YAML of `docs/update_beta.qmd`
 
 **Files:**
 - Modify: `docs/Makefile`
-- Modify: `docs/fit_modular.qmd` (if any render errors need fixing)
+- Modify: `docs/lb_walkthroughs/fit_modular.qmd` (if any render errors need fixing)
 
 - [ ] **Step 1: Update `docs/Makefile` to include `fit_modular.qmd`**
 
@@ -878,7 +878,7 @@ The companion doc follows the exact structure and YAML of `docs/update_beta.qmd`
 - [ ] **Step 3: Open and visually inspect HTML output**
 
   ```bash
-  open docs/fit_modular.html
+  open docs/lb_walkthroughs/fit_modular.html
   ```
 
   Verify:
@@ -946,7 +946,7 @@ project's goals. Add a deprecation notice to its header so future readers unders
 
   ```
   | Modular CAVI loop (V3 Algorithm 1) | `code/fit_modular.R` |
-  | Companion doc for full CAVI loop | `docs/fit_modular.qmd` |
+  | Companion doc for full CAVI loop | `docs/lb_walkthroughs/fit_modular.qmd` |
   | Factor-wise simulation runner | `results/run_factor_modular_simulation.R` |
   | Factor-wise simulation report | `results/factor_modular_sim_report.qmd` |
   ```
@@ -957,7 +957,7 @@ project's goals. Add a deprecation notice to its header so future readers unders
 - [ ] **Step 2: Commit all remaining files**
 
   ```bash
-  git add docs/fit_modular.qmd docs/fit_modular.pdf docs/fit_modular.html \
+  git add docs/lb_walkthroughs/fit_modular.qmd docs/lb_walkthroughs/fit_modular.pdf docs/lb_walkthroughs/fit_modular.html \
           docs/Makefile CLAUDE.md
   git commit -m "Add fit_modular.qmd companion doc and update Makefile + CLAUDE.md
 

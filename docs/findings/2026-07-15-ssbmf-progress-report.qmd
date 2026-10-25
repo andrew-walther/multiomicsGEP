@@ -658,4 +658,4 @@ workflow) — are open and not represented as done.
 status"; `ROADMAP.md` status banner; `results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_results.csv`;
 `results/benchmark_sim/outputs/k_parsimony_curve/`; `results/benchmark_sim/outputs/k_parsimony_followup/`;
 `results/multi_cohort_sim/outputs/survival_strength_sweep_results.csv`;
-`docs/reports/pathway_enrichment_report_07_15_26`. No fits were re-run to produce this report.*
+`docs/findings/2026-07-15-pathway-enrichment-report`. No fits were re-run to produce this report.*

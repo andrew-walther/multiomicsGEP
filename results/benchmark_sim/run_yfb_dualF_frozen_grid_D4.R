@@ -1,7 +1,7 @@
 # ============================================================
 # Script:  results/benchmark_sim/run_yfb_dualF_frozen_grid_D4.R
 # Purpose: Step 2 (Experiment B) of
-#          docs/plans/archive/yfb_dual_source_F_experiments_08_20_2026.md.
+#          docs/plans/2026-08-20-yfb-dual-source-f-experiments-plan.md.
 #
 #          Tests whether letting beta warm up (via the existing N_frozen
 #          frozen-F preconditioning, DECISIONS.md 2026-05-22) BEFORE

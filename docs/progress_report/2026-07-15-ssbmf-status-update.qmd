@@ -147,4 +147,4 @@ five independent methods: gene-set enrichment, PurIST subtype concordance
   right call); (4) requested workflow items (automated commit review, RAG literature database, HPC
   workflow) and a review of DeSurv's own simulation construction remain on the backlog.
 
-*Full detail, figures, and per-item disposition of the 6/18 feedback: `docs/reports/ssbmf_progress_report_07_15_26`.*
+*Full detail, figures, and per-item disposition of the 6/18 feedback: `docs/findings/2026-07-15-ssbmf-progress-report`.*

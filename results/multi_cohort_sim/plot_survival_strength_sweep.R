@@ -1,7 +1,7 @@
 # ============================================================
 # Script:  results/multi_cohort_sim/plot_survival_strength_sweep.R
 # Purpose: Generate the C-index-vs-strength comparison figure for
-#          docs/reports/joint_vs_twostep_sweep_07_12_2026.qmd from the
+#          docs/findings/2026-07-12-joint-vs-twostep-sweep-report.qmd from the
 #          results CSV produced by run_survival_strength_sweep.R.
 #          One facet per DGP scenario (default, sparse_synthetic, low_snr,
 #          high_K) -- added 2026-07-12 same-day follow-up once the

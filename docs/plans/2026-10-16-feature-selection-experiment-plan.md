@@ -1,6 +1,6 @@
 # Feature-selection comparison: experiment plan
 
-> **For agentic workers:** Use superpowers:executing-plans (or subagent-driven-development) task by task, with test-driven steps. Andrew approves each **Gate** before the next task. Start only after the round2 close-out plan's Tasks 1–3 (`docs/plans/2026-10-16_round2_closeout_and_docs_plan.md`), because Task E4 uses `code/feature_sensitivity.R` ported there, and after Task A1 of `docs/plans/2026-10-16_preprocessing_alignment_and_unified_model_plan.md`, which documents the pipeline this experiment uses. The experiment runs on the current single-modality pipeline as it is; if Task A2/A3 later changes preprocessing, its results are re-run in Task A4.
+> **For agentic workers:** Use superpowers:executing-plans (or subagent-driven-development) task by task, with test-driven steps. Andrew approves each **Gate** before the next task. Start only after the round2 close-out plan's Tasks 1–3 (`docs/plans/2026-10-16-round2-closeout-and-docs-plan.md`), because Task E4 uses `code/feature_sensitivity.R` ported there, and after Task A1 of `docs/plans/2026-10-16-preprocessing-alignment-and-unified-model-plan.md`, which documents the pipeline this experiment uses. The experiment runs on the current single-modality pipeline as it is; if Task A2/A3 later changes preprocessing, its results are re-run in Task A4.
 
 **Goal:** Test whether a survival-informed gene screen lets the model reach the same prediction and program structure with fewer genes than the current unsupervised mean/variance screen.
 

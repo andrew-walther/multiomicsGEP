@@ -2,7 +2,7 @@
 # results/multi_cohort_sim/fit_pca_cox.R
 #
 # PCA + Cox two-step baseline for Phase 2's joint-vs-2-step value-add
-# simulation (docs/plans/archive/ssbmf_post_lab_meeting_action_plan_07_08_2026.md).
+# simulation (docs/plans/2026-07-08-ssbmf-post-lab-meeting-action-plan.md).
 #
 # Stage 1: unsupervised PCA on training Y (survival-blind).
 # Stage 2: Cox regression on the top-K principal component scores.

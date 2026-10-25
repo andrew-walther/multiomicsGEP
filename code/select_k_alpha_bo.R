@@ -1,11 +1,11 @@
 # ============================================================
 # Script:  select_k_alpha_bo.R
 # Purpose: Joint (K, alpha) tuning via Bayesian optimization -- Step 3 of
-#          docs/plans/archive/ssbmf_k_parsimony_followup_plan_07_13_2026.md. Tests
+#          docs/plans/2026-07-13-ssbmf-k-parsimony-followup-plan.md. Tests
 #          whether jointly tuning K and alpha (rather than fixing alpha=0.5
 #          and tuning K alone) can reach a smaller K with comparable external
 #          performance -- the DeSurv-aligned comparison sketched in
-#          docs/plans/archive/joint_k_alpha_bayesopt_plan_07_12_2026.md.
+#          docs/plans/2026-07-12-joint-k-alpha-bayesopt-plan.md.
 #
 #          Reuses code/select_K.R's select_K_cv() as the per-point CV
 #          objective (called with a single-element K_grid), rather than

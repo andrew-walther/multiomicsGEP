@@ -1,6 +1,6 @@
 # ============================================================
 # Script:  results/benchmark_sim/run_k_init_sweep.R
-# Purpose: Analysis A (docs/plans/archive/ssbmf_factor_classification_k_selection_08_13_2026.md).
+# Purpose: Analysis A (docs/plans/2026-08-13-ssbmf-factor-classification-k-selection-plan.md).
 #          Fits YFB on the real TCGA+CPTAC training data across K_init =
 #          2..20, and classifies factors at each fit with classify_factors(),
 #          to check whether K_eff_survival stays stable regardless of the

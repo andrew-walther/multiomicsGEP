@@ -1,6 +1,6 @@
 ---
 title: "Pathway Enrichment on the Four Retained Gene Programs (K=7)"
-subtitle: "Supersedes `pathway_enrichment_report_07_15_26`: extends the analysis from the 2 survival-active programs to the full 4-factor retained set"
+subtitle: "Supersedes `2026-07-15-pathway-enrichment-report`: extends the analysis from the 2 survival-active programs to the full 4-factor retained set"
 author: "Andrew Walther"
 date: "2026-08-21"
 format:

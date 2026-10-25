@@ -71,8 +71,8 @@ configurations.
 
 ## Deep dive
 
-- Preprocessing/cohort-indicator benchmark: [`cohort_lmm_benchmark_report_5_22_26`](../../../reports/cohort_lmm_benchmark_report_5_22_26.html)
-- DeSurv gene-selection comparison: [`desurv_alignment_report_05_27_26`](../../../reports/desurv_alignment_report_05_27_26.html)
-- Factor convergence/diagnostics detail: [`desurv_factor_diagnostics_05_27_26`](../../../reports/desurv_factor_diagnostics_05_27_26.html)
-- Original write-ups: [`SSBMF_Status_Update_5_27_26`](../../../progress_report/SSBMF_Status_Update_5_27_26.html),
-  [`SSBMF_Status_Update_5_28_26`](../../../progress_report/SSBMF_Status_Update_5_28_26.pdf)
+- Preprocessing/cohort-indicator benchmark: [`2026-05-22-cohort-lmm-benchmark-report`](../../../findings/2026-05-22-cohort-lmm-benchmark-report.html)
+- DeSurv gene-selection comparison: [`2026-05-27-desurv-alignment-report`](../../../findings/2026-05-27-desurv-alignment-report.html)
+- Factor convergence/diagnostics detail: [`2026-05-27-desurv-factor-diagnostics-report`](../../../findings/2026-05-27-desurv-factor-diagnostics-report.html)
+- Original write-ups: [`2026-05-27-ssbmf-status-update`](../../../progress_report/2026-05-27-ssbmf-status-update.html),
+  [`2026-05-28-ssbmf-status-update`](../../../progress_report/2026-05-28-ssbmf-status-update.pdf)

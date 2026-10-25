@@ -1,6 +1,6 @@
 # Lab Meeting Notes — SSBMF Project (August 27, 2026)
 
-> **Note for Claude Code:** This document mirrors `Meeting_Notes_Followup_8_21_26.md`'s structure —
+> **Note for Claude Code:** This document mirrors `2026-08-21-meeting-notes-followup.md`'s structure —
 > a planning-facing transcription of what was asked, not a narrative report (that's
 > `docs/progress_book/chapters/2026-09-04.qmd` and `DECISIONS.md`). **Provenance note, unlike the
 > 8/21 version:** this was reconstructed on 2026-09-04 from the asks as recorded in the

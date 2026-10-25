@@ -1,7 +1,7 @@
 # SSBMF — K-Parsimony Follow-Up & Validation Plan
 
 **Date:** 2026-07-13
-**Source:** Phase 3 of `docs/plans/ssbmf_post_lab_meeting_action_plan_07_08_2026.md`
+**Source:** Phase 3 of `docs/plans/2026-07-08-ssbmf-post-lab-meeting-action-plan.md`
 (`DECISIONS.md` 2026-07-13) found that the recommended config's K=7 is not free to shrink in a
 single-seed comparison — but flagged that K=2/K=4's poor performance is suspicious (fast convergence
 to near-zero β), consistent with the CAVI factor-collapse vulnerability documented in Phase 2
@@ -89,7 +89,7 @@ factors causing SVD-init CAVI to hit a degenerate fixed point).
 jointly tuning K, α, and an elastic-net-style penalty on β via Bayesian optimization, rather than
 our current fixed-α, no-penalty, K-only CV.
 
-**Implementation:** follow `docs/plans/joint_k_alpha_bayesopt_plan_07_12_2026.md` (already drafted,
+**Implementation:** follow `docs/plans/2026-07-12-joint-k-alpha-bayesopt-plan.md` (already drafted,
 not yet implemented). Present the concrete implementation plan in-session before writing code (this
 one genuine judgment call — an untried, larger piece of new methodology — is worth a quick sanity
 check even under the "automate the sequence" intent above, since scope/complexity here could
@@ -117,7 +117,7 @@ stronger, doubly-verified version of Phase 3's original finding either way.
 ## Step 5 — Pathway enrichment (always run, after Step 4)
 
 **Branch:** `pathway-enrichment-plan` (already exists, commit `d7aee46`, plan at
-`docs/plans/pathway_enrichment_plan.md`).
+`docs/plans/2026-07-14-pathway-enrichment-plan.md`).
 
 **Goal:** biological interpretation of the final recommended config's active factors.
 

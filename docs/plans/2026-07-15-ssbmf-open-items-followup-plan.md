@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-15
 **Purpose:** A saved "next steps" backlog for every open item surfaced by Item 2's progress report
-(`docs/reports/ssbmf_progress_report_07_15_26.qmd`, §7 "Honest open items and shortfalls") and its
+(`docs/findings/2026-07-15-ssbmf-progress-report.qmd`, §7 "Honest open items and shortfalls") and its
 preceding review passes (`DECISIONS.md`, 2026-07-15 entries). Not yet approved for execution — this
 is a menu to pick from in a future session, not an in-progress plan. Nothing here should be started
 without picking it up explicitly and confirming scope first (per the project's standing convention:

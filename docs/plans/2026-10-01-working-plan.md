@@ -288,7 +288,7 @@ Re-check this list before writing the 10/2 chapter, and again before the prelim.
 | Simulation goal: identify the correct number of survival-active factors | Planned | WS2.3/2.4: make survival-active count recovery a primary simulation metric |
 | Double-check the model section | Planned | WS5 §3. Reconcile the derivation with the code (rescaling step, K_eff claim, WS2.6) |
 | Consolidate the multi-omics data into one OneDrive folder and share it | **Planned (admin)** | Data are local in `data/`. Upload and share once preprocessing is settled |
-| Prelim content for this project | Planned | `docs/plans/Prelim_Proposal_Plan_10_1_26.md` |
+| Prelim content for this project | Planned | `docs/plans/2026-10-01-prelim-proposal-plan.md` |
 | Lab-meeting update before the prelim | Done | 10/1 |
 | Ask Dr. Lin for the sudden-unexpected-death datasets | Outside this project | Project 2. Status unknown; the bios-dissertation notes say the Project 2 application is waiting on that dataset |
 
@@ -307,7 +307,7 @@ The lab-meeting update has been given (10/1). What remains is doing the work. **
    - The α/α_F experiments and WS4.3–4.9 come after the multimodal prototype exists.
 5. **WS5:** write, render and publish the 10/2 progress-book chapter.
 6. **Optional, only after the first version of the chapter exists and the multimodal work is in good shape:** run the α/α_F experiments (WS4.2) and add the results to the chapter as a follow-up section. The multimodal implementation comes first.
-   - Deadline: the α_F question must be answered, or the proposal's framing scoped down, before the prelim proposal is due (11/16). See `docs/plans/Prelim_Proposal_Plan_10_1_26.md`.
+   - Deadline: the α_F question must be answered, or the proposal's framing scoped down, before the prelim proposal is due (11/16). See `docs/plans/2026-10-01-prelim-proposal-plan.md`.
 
 If time runs short before 10/2, keep steps 1, 3 (the minimal version) and 5, and report the unfinished parts of step 2 as in progress in the chapter.
 

@@ -1,7 +1,7 @@
 # ============================================================
 # Script:  results/benchmark_sim/run_k_parsimony_followup.R
 # Purpose: Step 1 of the K-parsimony follow-up plan
-#          (docs/plans/archive/ssbmf_k_parsimony_followup_plan_07_13_2026.md).
+#          (docs/plans/2026-07-13-ssbmf-k-parsimony-followup-plan.md).
 #          Phase 3 (DECISIONS.md 2026-07-13) found K=7 is not free to shrink
 #          in a single-seed comparison, but flagged K=2/K=4's suspiciously
 #          fast convergence to near-zero beta as consistent with the CAVI

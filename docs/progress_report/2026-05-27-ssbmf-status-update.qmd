@@ -197,7 +197,7 @@ $\Delta C = +0.012$, exceeding the pre-specified $\pm 0.005$ practical threshold
 improvement in 4 of 5 external cohorts. New-patient risk scores require only
 $\eta_{\text{new}} = Y_{\text{new}} F \hat\beta$ — no sample-level latent variable
 approximation. Factor loadings $F$ are directly interpretable as gene weights defining each
-prognostic program. See `docs/reports/desurv_alignment_report_05_27_26.pdf` for the full
+prognostic program. See `docs/findings/2026-05-27-desurv-alignment-report.pdf` for the full
 D1–D4 comparison.
 
 **M4 (sensitivity):** LB with cohort indicator reaches mean C = `r mc["M4"]` — effectively

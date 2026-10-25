@@ -1109,7 +1109,7 @@ Three documentation artifacts are required before the implementation is
 considered complete:
 
 1. **`docs/update_F_cohort.qmd`** — Companion document following the
-   established pattern (`docs/update_F.qmd` as template).  Sections:
+   established pattern (`docs/lb_walkthroughs/update_F.qmd` as template).  Sections:
    code walkthrough, math-to-code mapping, test descriptions, demo
    walkthroughs.  Rendered to PDF (xelatex) and HTML (cosmo) via
    `make -C docs all`.
@@ -1215,7 +1215,7 @@ C_ext <- sapply(ext_cohorts, function(cohort_data) {
 
 ## Evaluation Procedure — Reporting
 
-Write `docs/reports/ssbmf_cohort_lmm_results_MM_DD_YY.qmd` capturing:
+Write `docs/findings/ssbmf_cohort_lmm_results_MM_DD_YY.qmd` capturing:
 
 1. **Synthetic validation tables** — $\hat{\boldsymbol{\beta}}$ recovery
    correlation, $F_{\text{global}}$ RMSE comparison, $F_{\text{cohort}}$
@@ -1261,7 +1261,7 @@ session corresponds to a single focused PR against `main`.
 | **B** (1 session) | `code/update_F_cohort.R` + `tests/test_update_F_cohort.R` + `demos/demo_update_F_cohort.R` + `docs/update_F_cohort.qmd` | 15/15 new tests pass |
 | **C** (1 session) | Modifications to `compute_R_k`, `update_F_all`, `compute_var_term`, `compute_elbo.R`, `fit_modular.R` + `tests/test_fit_modular_cohort.R` | 193 + ~25 = ~218 tests; backward-compat regression passes |
 | **D** (1 session) | `results/cohort_lmm_sim/run_synthetic.R` — Stage 1 synthetic validation | All 6 Stage-1 acceptance criteria green |
-| **E** (1–2 sessions) | `results/benchmark_sim/run_cohort_lmm_benchmark.R` — Stage 2 real-data + `docs/reports/ssbmf_cohort_lmm_results_MM_DD_YY.qmd` | Stage-2 acceptance criteria; report rendered |
+| **E** (1–2 sessions) | `results/benchmark_sim/run_cohort_lmm_benchmark.R` — Stage 2 real-data + `docs/findings/ssbmf_cohort_lmm_results_MM_DD_YY.qmd` | Stage-2 acceptance criteria; report rendered |
 
 Sessions B and C together cover the full implementation of §2.2–2.6 and
 constitute the highest-risk work.  Session A (derivation) is the prerequisite

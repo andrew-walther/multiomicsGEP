@@ -37,7 +37,7 @@ Keep `merged-benchmark` intact as the baseline reference. The DeSurv comparison 
 | `tests/test_preprocess_desurv.R` | Modify | Add T1.13–T1.16 (4 new tests; suite becomes 246/246) |
 | `config/globals.yml` | Modify | Add `top_n_genes_desurv: 3000`; add `k_merged_lb_desurv: null`, `k_merged_yfb_desurv: null` keys |
 | `results/benchmark_sim/run_desurv_comparison.R` | Create | K-CV + benchmark for 4 configs (D1–D4); saves to `outputs/desurv_comparison/` |
-| `docs/reports/desurv_alignment_report_05_27_26.qmd` | Create | Quarto report comparing D1–D4 per-cohort C-index; renders to PDF + HTML |
+| `docs/findings/2026-05-27-desurv-alignment-report.qmd` | Create | Quarto report comparing D1–D4 per-cohort C-index; renders to PDF + HTML |
 | `ROADMAP.md` | Modify | Mark DeSurv gene selection item complete; add comparison item |
 | `DECISIONS.md` | Modify | Document alignment decision and benchmark comparison result |
 | `CLAUDE.md` | Modify | Update test count; update `top_n_genes_desurv` key reference |
@@ -976,9 +976,9 @@ EOF
 ## Task 5: Write comparison report and update documentation
 
 **Files:**
-- Create: `docs/reports/desurv_alignment_report_05_27_26.qmd`
+- Create: `docs/findings/2026-05-27-desurv-alignment-report.qmd`
 - Modify: `ROADMAP.md`, `DECISIONS.md`, `CLAUDE.md`
-- Conditionally modify: `docs/progress_report/SSBMF_Status_Update_5_27_26.qmd` (if DeSurv wins)
+- Conditionally modify: `docs/progress_report/2026-05-27-ssbmf-status-update.qmd` (if DeSurv wins)
 
 ### Decision rule (apply before writing any documentation)
 
@@ -1009,7 +1009,7 @@ primary decision driver** since D2/M5 is the recommended manuscript configuratio
 
 ---
 
-- [ ] **Step 5.1: Create `docs/reports/desurv_alignment_report_05_27_26.qmd`**
+- [ ] **Step 5.1: Create `docs/findings/2026-05-27-desurv-alignment-report.qmd`**
 
 ```qmd
 ---
@@ -1156,14 +1156,14 @@ Based on the actual numbers from `aggregate(c_index ~ model + label, data = res,
 
 ```bash
 cd /Users/ajwalther/GithubProjects/multiomicsGEP
-quarto render docs/reports/desurv_alignment_report_05_27_26.qmd --to pdf
-quarto render docs/reports/desurv_alignment_report_05_27_26.qmd --to html
+quarto render docs/findings/2026-05-27-desurv-alignment-report.qmd --to pdf
+quarto render docs/findings/2026-05-27-desurv-alignment-report.qmd --to html
 ```
-Expected: no LaTeX errors; PDF and HTML written to `docs/reports/`.
+Expected: no LaTeX errors; PDF and HTML written to `docs/findings/`.
 
 - [ ] **Step 5.4b: If DeSurv wins (delta_yfb > +0.005) — update the progress report**
 
-Open `docs/progress_report/SSBMF_Status_Update_5_27_26.qmd` and update Section 5
+Open `docs/progress_report/2026-05-27-ssbmf-status-update.qmd` and update Section 5
 ("Recommendation: Final Configuration for Manuscript"). Change the primary config row
 from M5 to D4 and add a note:
 
@@ -1180,8 +1180,8 @@ Notes: Supersedes M5; DeSurv-aligned gene selection gains +<delta> mean C
 
 Re-render both PDF and HTML:
 ```bash
-quarto render docs/progress_report/SSBMF_Status_Update_5_27_26.qmd --to pdf
-quarto render docs/progress_report/SSBMF_Status_Update_5_27_26.qmd --to html
+quarto render docs/progress_report/2026-05-27-ssbmf-status-update.qmd --to pdf
+quarto render docs/progress_report/2026-05-27-ssbmf-status-update.qmd --to html
 ```
 
 Also add a flag at the end of Section 7 (Open Items):
@@ -1201,7 +1201,7 @@ Mark the DeSurv gene selection item complete:
   selection (before normalization) in preprocess_merged_cohorts(). D3/D4 comparison
   on 5 external PDAC cohorts: [state result]. See DECISIONS.md 2026-05-27.
   *Files: code/preprocess_desurv.R, results/benchmark_sim/run_desurv_comparison.R,
-  docs/reports/desurv_alignment_report_05_27_26.qmd*
+  docs/findings/2026-05-27-desurv-alignment-report.qmd*
 ```
 
 Add a new item if DeSurv alignment changes the recommended config:
@@ -1254,15 +1254,15 @@ Update the model status line if the recommended config changes based on D3/D4 re
 Update the Quick Reference table to add the new runner:
 ```
 | **DeSurv comparison runner** | `results/benchmark_sim/run_desurv_comparison.R` |
-| **DeSurv comparison report** | `docs/reports/desurv_alignment_report_05_27_26.{qmd,pdf,html}` |
+| **DeSurv comparison report** | `docs/findings/2026-05-27-desurv-alignment-report.{qmd,pdf,html}` |
 ```
 
 - [ ] **Step 5.8: Final commit**
 
 ```bash
-git add docs/reports/desurv_alignment_report_05_27_26.qmd
-git add docs/reports/desurv_alignment_report_05_27_26.pdf
-git add docs/reports/desurv_alignment_report_05_27_26.html
+git add docs/findings/2026-05-27-desurv-alignment-report.qmd
+git add docs/findings/2026-05-27-desurv-alignment-report.pdf
+git add docs/findings/2026-05-27-desurv-alignment-report.html
 git add ROADMAP.md DECISIONS.md CLAUDE.md
 git commit -m "$(cat <<'EOF'
 DeSurv alignment report, ROADMAP and DECISIONS update
