@@ -4,7 +4,7 @@
 
 **Goal:** Close `round2/supervised` without merging it, keep what it learned in one short report, port only vetted code to `main`, and restructure the working documents so the current method and results are easy to see.
 
-**Architecture:** Round2 is frozen under a tag. `main` receives a findings report, the approved code and records, and slimmer canonical documents. Old long-form versions of `PROJECT_STATUS` and `ROADMAP` are kept once in `docs/archive/`.
+**Architecture:** Round2 is frozen under a tag. `main` receives a findings report, the approved code and records, and slimmer canonical documents. Old long-form versions of `PROJECT_STATUS` and `ROADMAP` are kept once in `docs/findings/` as superseded snapshots.
 
 **Tech stack:** git, R test suite (`Rscript tests/run_tests.R`), Quarto (RStudio's copy at `/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto`, with `QUARTO_PANDOC=/opt/homebrew/bin/pandoc`).
 
@@ -87,10 +87,10 @@ One to two pages, for a biostatistician reading cold. Sections:
 ### Task 4: Restructure the canonical documents
 
 **Files:**
-- Create: `docs/archive/PROJECT_STATUS_through_2026-10-16.qmd` (+ `.pdf`), `docs/archive/ROADMAP_through_2026-10-16.md`, `docs/archive/README.md` (two lines: what these are and the date)
+- Create: `docs/findings/YYYY-MM-DD-project-status-snapshot.qmd` (+ `.pdf`) and `docs/findings/YYYY-MM-DD-roadmap-snapshot.md`, dated the day the copy is made, each with a row in `docs/findings/README.md` (status: superseded, by the rewritten `PROJECT_STATUS.qmd` and `ROADMAP.md`)
 - Modify: `PROJECT_STATUS.qmd`, `ROADMAP.md`, `CLAUDE.md`, `README.md`, `code/README.md`, `code/SupervisedMF_Context.md`, `results/README.md`
 
-- [ ] **Step 1:** Copy the current `PROJECT_STATUS.qmd`, its PDF and `ROADMAP.md` into `docs/archive/` under the names above. If round2's versions are newer (after Task 1), archive those instead, from the tag.
+- [ ] **Step 1:** Copy the current `PROJECT_STATUS.qmd`, its PDF and `ROADMAP.md` into `docs/findings/` under the names above. If round2's versions are newer (after Task 1), archive those instead, from the tag.
 - [ ] **Step 2:** Rewrite `PROJECT_STATUS.qmd` as the current-best-state document with exactly these sections: *Model* (YFB, priors, α_F = 0, K = 7 with factor classification); *Data and preprocessing* (cohorts, per-cohort z-standardization, DeSurv-style gene selection); *Results* (external C per cohort and mean, KM figure, programs and biology in brief); *Known limitations* (F not survival-informed; pruning not adopted; multimodal adds no demonstrated predictive gain); *Open questions* (pointing to `ROADMAP.md` Part 2). Target: 3–5 rendered pages. **Gate.**
 - [ ] **Step 3:** Restructure `ROADMAP.md` into Part 1 (history in date order, one line per milestone or dropped approach, each citing its `DECISIONS.md` date) and Part 2 (open work, prioritized; the first item is the feature-selection experiment in `docs/plans/2026-10-16-feature-selection-experiment-plan.md`). The history of the old `PROJECT_STATUS.qmd` moves into Part 1 in condensed form. **Gate.**
 - [ ] **Step 4:** Check the headline: recompute the five external C values for the frozen D4 fit with the training-fixed direction used by `paper/writeup/figures/make_writeup_figures.R`, and confirm they match the writeup figure (0.634, 0.549, 0.648, 0.657, 0.645; mean 0.627). If any differ, stop and report before editing any document. `oriented_cindex()` (max(C, 1 − C)) chooses the direction on the evaluation data and must not be used for reported results.
