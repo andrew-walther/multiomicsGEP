@@ -1005,3 +1005,23 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   evidence, retaining current limitations and making no new result claims.
 - Advisor-meeting follow-up remains the authority for the later substantive
   revision. No analytical code, model defaults or results changed.
+
+## 2026-10-25 — docs folder reorganized by type
+
+- Documents now sit in type folders under `docs/`: `plans/`, `findings/`,
+  `reviews/`, `prompts/`, `meetings/` and `notes/`, named
+  `YYYY-MM-DD-topic-type`. `docs/plans/archive/` and `docs/reports/` are gone;
+  superseded documents keep their type folder and are marked superseded. Each
+  folder's README lists date, document, purpose and status, and
+  `docs/README.md` holds the old → new rename table.
+- `progress_book/`, `progress_report/` (now with date-first names) and
+  `lb_walkthroughs/` keep their folders; the PDAC data audit moved to
+  `docs/findings/2026-03-31-pdac-data-audit/`.
+- References were updated everywhere except `paper/prelim/project3-ssbmf.qmd`
+  (to avoid firing the Chapter 4 sync to bios-dissertation),
+  `paper/writeup/_process/` records, generated HTML and the bios-dissertation
+  repository; `docs/README.md` lists them. Relative links and `docs/...` paths
+  resolve, and the test suite passes.
+- This was done on `main` only. `round2/supervised` was not merged, following
+  the 2026-10-16 close-out plan; its documents are reorganized when that plan
+  brings its findings to `main`.
