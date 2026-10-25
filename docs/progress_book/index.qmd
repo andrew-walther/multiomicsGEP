@@ -1,6 +1,6 @@
 # About this notebook {.unnumbered}
 
-Running record of SSBMF project progress with one chapter per week. Each chapter covers what changed in the method, what was run to
+Running record of SSBMF project progress with one chapter per advisor meeting. Each chapter covers what changed in the method, what was run to
 validate it (on real cohorts and on simulation), whether the new results
 make sense, and what's still open. Figures and tables that came up in
 discussion are included directly; anything that needs the full statistical
@@ -12,6 +12,12 @@ meeting-facing summary, not a replacement for that log.
 
 Chapters are listed in the sidebar in date order; click a date to jump
 straight to that meeting.
+
+The [October 16 update](chapters/2026-10-16.qmd) is the latest account of
+survival-supervision validation, full-range expression sensitivity and the
+CpG arithmetic repair. Earlier chapters describe their own checkpoints.
+The evaluated single-modality benchmark still uses $\alpha_F=0$; a fully
+validated survival-supervised replacement remains an open research goal.
 
 ## Project synopsis
 
