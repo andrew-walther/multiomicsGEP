@@ -1,0 +1,62 @@
+# October 26, 2026
+
+::: {.callout-note title="Placeholder"}
+This chapter is a placeholder for the October 26 meeting (moved from
+October 23). Sections will be filled in as work is completed.
+:::
+
+## Suggested heading topics
+
+Candidate topics for Topics 1–3, drawn from the current plans. Pick the ones the work actually covers and rename the headings below once it is done.
+
+**Method and algorithm**
+
+- **Why the method work restarted** — convergence, supervision and bookkeeping problems
+- **Rebuild plan** — one model for one or more data blocks, as an R package
+- **Model specification and objective** — the Cox term in the ELBO and monotone updates
+- **Survival supervision of $F$** — finding low-variance prognostic programs
+- **Factor selection and pruning** — program roles from one fit, no refitting
+- **What counts as a working method** — criteria to agree on before new experiments
+
+**Multimodal model**
+
+- **Multimodal convergence** — sweep-cap fits, failed pruning, the 25k-CpG fix
+- **Balancing modalities** — each block's contribution to patient activities
+
+**Data and preprocessing**
+
+- **Preprocessing alignment** — one pipeline for single-modality and multimodal fits
+- **Double log2 transform** — effect on TCGA, Dijk and PACA-AU and the benchmark
+
+**Feature experiments (waiting on a working model)**
+
+- **Feature-count variation** — prediction and programs as genes or CpGs increase
+- **Survival-association feature screening** — survival-informed vs. mean/variance screen
+
+**Project housekeeping**
+
+- **Closing round 2** — findings report, port vetted code, simplify documents
+
+## Executive summary
+
+To be written.
+
+## Topic 1
+
+To be written.
+
+## Topic 2
+
+To be written.
+
+## Topic 3
+
+To be written.
+
+## Issues and questions
+
+To be written.
+
+## Next steps
+
+To be written.

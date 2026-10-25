@@ -1058,5 +1058,85 @@
     "crumbs": [
       "<span class='chapter-number'>12</span>  <span class='chapter-title'>October 16, 2026</span>"
     ]
+  },
+  {
+    "objectID": "chapters/2026-10-26.html",
+    "href": "chapters/2026-10-26.html",
+    "title": "13  October 26, 2026",
+    "section": "",
+    "text": "13.1 Suggested heading topics\nCandidate topics for Topics 1–3, drawn from the current plans. Pick the ones the work actually covers and rename the headings below once it is done.\nMethod and algorithm\nMultimodal model\nData and preprocessing\nFeature experiments (waiting on a working model)\nProject housekeeping",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>October 26, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-10-26.html#suggested-heading-topics",
+    "href": "chapters/2026-10-26.html#suggested-heading-topics",
+    "title": "13  October 26, 2026",
+    "section": "",
+    "text": "Why the method work restarted — convergence, supervision and bookkeeping problems\nRebuild plan — one model for one or more data blocks, as an R package\nModel specification and objective — the Cox term in the ELBO and monotone updates\nSurvival supervision of \\(F\\) — finding low-variance prognostic programs\nFactor selection and pruning — program roles from one fit, no refitting\nWhat counts as a working method — criteria to agree on before new experiments\n\n\n\nMultimodal convergence — sweep-cap fits, failed pruning, the 25k-CpG fix\nBalancing modalities — each block’s contribution to patient activities\n\n\n\nPreprocessing alignment — one pipeline for single-modality and multimodal fits\nDouble log2 transform — effect on TCGA, Dijk and PACA-AU and the benchmark\n\n\n\nFeature-count variation — prediction and programs as genes or CpGs increase\nSurvival-association feature screening — survival-informed vs. mean/variance screen\n\n\n\nClosing round 2 — findings report, port vetted code, simplify documents",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>October 26, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-10-26.html#executive-summary",
+    "href": "chapters/2026-10-26.html#executive-summary",
+    "title": "13  October 26, 2026",
+    "section": "13.2 Executive summary",
+    "text": "13.2 Executive summary\nTo be written.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>October 26, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-10-26.html#topic-1",
+    "href": "chapters/2026-10-26.html#topic-1",
+    "title": "13  October 26, 2026",
+    "section": "13.3 Topic 1",
+    "text": "13.3 Topic 1\nTo be written.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>October 26, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-10-26.html#topic-2",
+    "href": "chapters/2026-10-26.html#topic-2",
+    "title": "13  October 26, 2026",
+    "section": "13.4 Topic 2",
+    "text": "13.4 Topic 2\nTo be written.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>October 26, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-10-26.html#topic-3",
+    "href": "chapters/2026-10-26.html#topic-3",
+    "title": "13  October 26, 2026",
+    "section": "13.5 Topic 3",
+    "text": "13.5 Topic 3\nTo be written.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>October 26, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-10-26.html#issues-and-questions",
+    "href": "chapters/2026-10-26.html#issues-and-questions",
+    "title": "13  October 26, 2026",
+    "section": "13.6 Issues and questions",
+    "text": "13.6 Issues and questions\nTo be written.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>October 26, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-10-26.html#next-steps",
+    "href": "chapters/2026-10-26.html#next-steps",
+    "title": "13  October 26, 2026",
+    "section": "13.7 Next steps",
+    "text": "13.7 Next steps\nTo be written.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>October 26, 2026</span>"
+    ]
   }
 ]
