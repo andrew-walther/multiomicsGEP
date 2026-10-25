@@ -47,7 +47,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="../site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap-93f184f27b88d8509a63edf5b6815180.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/bootstrap/bootstrap-3afd7f6f85b379ea934fa0964bb45a75.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -206,24 +206,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../chapters/2026-10-02.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">October 2, 2026</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../chapters/2026-10-15.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Methods development record: survival supervision (October 2026)</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../chapters/2026-10-16.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../chapters/2026-10-26.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">October 26, 2026</span></span></a>
   </div>
 </li>
     </ul>
@@ -520,8 +502,8 @@ B_{jk} = \tau_j \sum_i R^{-k}_{ij}\, \bar l_{ik}
 <p>The caveat is process, not evidence. This line of investigation was pursued on our own initiative rather than at the group’s direction, and the specific methods were chosen for availability rather than from a deliberate review of what the question needs. Worth a conversation to confirm the approach is the right one before the biological labels get carried into the manuscript.</p>
 <p><strong>The 2 genomics-only factors are now characterized too</strong>, in a report written for this cycle. The July analysis filtered every output table to the 2 survival-active programs, so the other kept factors’ enrichment was computed and then discarded. Reporting it turns out to matter: Program 5 reads as desmoplastic stroma (7 collagens, SPARC, THBS2, FAP) and Program 6 as immune infiltrate (IKZF1, AKNA, IL10RA, HCLS1), and each of the 4 kept factors maps onto exactly one of DeSurv’s 3 published factors, with DeSurv’s combined StromalImmune factor split across our Programs 5 and 6. The 3 dead factors return zero enriched sets, which independently corroborates the genomics-only/dead split. Full detail, including the caveat above:</p>
 <ul>
-<li><strong>Current, 4-factor scope:</strong> <a href="../../../reports/pathway_enrichment_report_08_21_26.html"><code>pathway_enrichment_report_08_21_26</code></a></li>
-<li>Superseded, 2-factor scope (Programs 3/7 findings unchanged): <a href="../../../reports/pathway_enrichment_report_07_15_26.html"><code>pathway_enrichment_report_07_15_26</code></a></li>
+<li><strong>Current, 4-factor scope:</strong> <a href="../../../findings/2026-08-21-pathway-enrichment-report.html"><code>2026-08-21-pathway-enrichment-report</code></a></li>
+<li>Superseded, 2-factor scope (Programs 3/7 findings unchanged): <a href="../../../findings/2026-07-15-pathway-enrichment-report.html"><code>2026-07-15-pathway-enrichment-report</code></a></li>
 <li>Figures and per-program tables: <code>results/benchmark_sim/outputs/pathway_enrichment/</code></li>
 </ul>
 <hr>
@@ -529,7 +511,7 @@ B_{jk} = \tau_j \sum_i R^{-k}_{ij}\, \bar l_{ik}
 </section>
 <section id="choosing-k-cv-for-external-c-index-vs.-k-selection-from-model-elbo" class="level2" data-number="6.3">
 <h2 data-number="6.3" class="anchored" data-anchor-id="choosing-k-cv-for-external-c-index-vs.-k-selection-from-model-elbo"><span class="header-section-number">6.3</span> Choosing <span class="math inline">\(K\)</span>: CV for external C-index vs.&nbsp;K-selection from model ELBO</h2>
-<p>Two questions behind “<span class="math inline">\(K=7\)</span>, <span class="math inline">\(K_{\text{eff}}=2\)</span>”: how <span class="math inline">\(K=7\)</span> was chosen, and whether that procedure reliably finds the right number of programs. Plan: <code>docs/plans/ssbmf_factor_classification_k_selection_08_13_2026.md</code>. Exact numbers: DECISIONS.md (2026-08-19, 2026-08-20).</p>
+<p>Two questions behind “<span class="math inline">\(K=7\)</span>, <span class="math inline">\(K_{\text{eff}}=2\)</span>”: how <span class="math inline">\(K=7\)</span> was chosen, and whether that procedure reliably finds the right number of programs. Plan: <code>docs/plans/2026-08-13-ssbmf-factor-classification-k-selection-plan.md</code>. Exact numbers: DECISIONS.md (2026-08-19, 2026-08-20).</p>
 <section id="k-selection-by-ard-pruning-and-elbo" class="level3" data-number="6.3.1">
 <h3 data-number="6.3.1" class="anchored" data-anchor-id="k-selection-by-ard-pruning-and-elbo"><span class="header-section-number">6.3.1</span> <span class="math inline">\(K\)</span> selection by ARD pruning and ELBO</h3>
 <p><strong>Method.</strong> The shrinkage prior on <span class="math inline">\(\tilde\beta\)</span> prunes unneeded factors within a single large-<span class="math inline">\(K\)</span> fit (Automatic Relevance Determination, ARD): give the model more programs than it needs and it drives the useless ones’ survival coefficients to zero on its own, without consulting the survival outcome to pick <span class="math inline">\(K\)</span>. Fit YFB on the D4 training data at <span class="math inline">\(K_{\text{init}} \in \{5,\dots,20\}\)</span>, classify every factor in each fit, and record each fit’s ELBO and external C-index.</p>
@@ -659,7 +641,7 @@ B_{jk} = \tau_j \sum_i R^{-k}_{ij}\, \bar l_{ik}
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="../figs/2026-08-21_k7_kept_factors_heatmap.png" class="img-fluid figure-img" width="1110"></p>
+<p><img src="../figs/2026-08-21_k7_kept_factors_heatmap.png" class="img-fluid figure-img"></p>
 <figcaption>Top-20 genes per factor for the 4 kept programs. Color = raw gene weight (point-exponential prior, so all weights are non-negative); each block of genes is essentially specific to one program.</figcaption>
 </figure>
 </div>
@@ -680,7 +662,7 @@ B_{jk} = \tau_j \sum_i R^{-k}_{ij}\, \bar l_{ik}
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="../figs/2026-08-21_yfb_vs_ebmf_lasso_k40_ci.png" class="img-fluid figure-img" width="488"></p>
+<p><img src="../figs/2026-08-21_yfb_vs_ebmf_lasso_k40_ci.png" class="img-fluid figure-img"></p>
 <figcaption>Bootstrapped difference in external C-index (YFB minus the independent two-step baseline: K=40, never informed by YFB, LASSO stage 2). The pooled interval excludes zero.</figcaption>
 </figure>
 </div>
@@ -697,7 +679,7 @@ B_{jk} = \tau_j \sum_i R^{-k}_{ij}\, \bar l_{ik}
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="../figs/2026-08-21_k7_signal_sweep_comparison.png" class="img-fluid figure-img" width="520"></p>
+<p><img src="../figs/2026-08-21_k7_signal_sweep_comparison.png" class="img-fluid figure-img"></p>
 <figcaption>Held-out C-index vs.&nbsp;true survival-signal strength, in simulation, using the same two-step design (K=20, never informed by YFB, LASSO stage 2).</figcaption>
 </figure>
 </div>
