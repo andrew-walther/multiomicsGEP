@@ -42,11 +42,18 @@ ctl <- ssbmf_control()
 results <- list(); scores <- list(); diag <- list()
 for (mod in names(models)) {
   dd <- ssbmf_data(models[[mod]], tr$time, tr$event, orientation = "samples_by_features")
-  t0 <- Sys.time()
-  cv <- ssbmf_cv(dd, K_grid = K_grid, nfolds = 5, control = ctl, seed = 1, cores = cores)
-  fit <- cv$fit
-  message(sprintf("%s: CV and refit %.1f min; K_init = %d", mod, as.numeric(difftime(Sys.time(), t0, units = "mins")), cv$best))
-  saveRDS(list(cv = cv, fit = fit), file.path(out_dir, sprintf("frozen_fit_%s.rds", mod)))   # git-ignored
+  f_frozen <- file.path(out_dir, sprintf("frozen_fit_%s.rds", mod))                       # git-ignored
+  if (file.exists(f_frozen)) {
+    # a frozen fit is reused, never refitted (it was chosen on training data only)
+    fr <- readRDS(f_frozen); cv <- fr$cv; fit <- fr$fit
+    message(sprintf("%s: reusing the frozen fit (K_init = %d)", mod, cv$best))
+  } else {
+    t0 <- Sys.time()
+    cv <- ssbmf_cv(dd, K_grid = K_grid, nfolds = 5, control = ctl, seed = 1, cores = cores)
+    fit <- cv$fit
+    message(sprintf("%s: CV and refit %.1f min; K_init = %d", mod, as.numeric(difftime(Sys.time(), t0, units = "mins")), cv$best))
+    saveRDS(list(cv = cv, fit = fit), f_frozen)
+  }
   write.csv(cbind(model = mod, cv$cv), file.path(out_dir, sprintf("cv_by_K_%s.csv", mod)), row.names = FALSE)
   roles <- cbind(model = mod, fit$roles, coef(fit, level = 0.95)[, c("lower", "upper")],
                  surv_share = apply(fit$surv_share, 1, max))
@@ -73,6 +80,7 @@ write.csv(ext, file.path(out_dir, "icgc_C.csv"), row.names = FALSE)
 bt <- paired_donor_bootstrap(list(ICGC_primary = list(risk_new = scores$joint, risk_ref = scores$expression_only,
                                                       time = va$time, status = va$event, donor = names(va$time))),
                              B = 2000, seed = 1)
+saveRDS(scores, file.path(out_dir, "icgc_scores.rds"))                                     # git-ignored
 write.csv(cbind(comparison = "joint - expression only", bt$per_cohort),
           file.path(out_dir, "icgc_paired_bootstrap.csv"), row.names = FALSE)
 print(diag); print(ext); print(bt$per_cohort)

@@ -55,7 +55,7 @@ paired_donor_bootstrap <- function(cohorts, B = 2000, seed = 1) {
   obs <- vapply(names(cohorts), function(co) {
     x <- cohorts[[co]]; cindex(x$risk_new, x$time, x$status) - cindex(x$risk_ref, x$time, x$status)
   }, 0)
-  draws <- t(replicate(B, {
+  draws <- do.call(rbind, lapply(seq_len(B), function(b) {
     ds <- unlist(lapply(split(donors, grp), function(g) sample(g, length(g), replace = TRUE)), use.names = FALSE)
     stat(ds)
   }))

@@ -1,0 +1,5 @@
+"model","K","w_surv","mean_C","se_C","converged_folds","max_step_decreases"
+"expression_only",3,1,0.557233411272482,0.0202220433147945,5,0
+"expression_only",5,1,0.574150873671261,0.0282510824632906,5,0
+"expression_only",7,1,0.616436912036371,0.0394634054551235,4,0
+"expression_only",10,1,0.597269521330321,0.0439754519734387,5,0
