@@ -16,7 +16,9 @@
 #' @param fix_g if TRUE, keep `g_init` fixed (posterior only)
 #' @return list(`mean`, `mean2`, `kl` (summed), `g`, `loglik`)
 #' @keywords internal
+#' @noRd
 .ebnm_fit <- function(x, s, family, g_init = NULL, fix_g = FALSE) {
+  s[is.na(s)] <- Inf
   s_big <- 1e6 * max(c(1, abs(x[is.finite(s) & is.finite(x)]), s[is.finite(s)]))
   s <- ifelse(is.finite(s), s, s_big)
   x[!is.finite(x)] <- 0

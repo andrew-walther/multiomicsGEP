@@ -29,6 +29,7 @@
 #' @param verbose print a table.
 #' @return data.frame with `update`, `parameter`, `grad_before`, `grad_after`.
 #' @keywords internal
+#' @noRd
 .verify_stationarity <- function(seed = 1, verbose = TRUE) {
   sim <- ssbmf_simulate(n = 60, p = c(a = 30, b = 60), K = 3, seed = seed)
   data <- ssbmf_data(sim$X, sim$time, sim$status)

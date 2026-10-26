@@ -51,6 +51,7 @@
 #' @param ri optional result of `.risk_index()`
 #' @return numeric n-vector
 #' @keywords internal
+#' @noRd
 .logsumexp_risk <- function(eta, time, strata = NULL, ri = NULL) {
   if (is.null(ri)) ri <- .risk_index(time, strata)
   out <- numeric(length(eta))
@@ -66,6 +67,7 @@
 #' @param status event indicator
 #' @return scalar log partial likelihood
 #' @keywords internal
+#' @noRd
 .cox_loglik <- function(eta, time, status, strata = NULL, ri = NULL) {
   lse <- .logsumexp_risk(eta, time, strata, ri)
   sum(status * (eta - lse))
@@ -85,6 +87,7 @@
 #' @param ri result of `.risk_index()`
 #' @return list(`S`, `P`, `rho`)
 #' @keywords internal
+#' @noRd
 .cox_moment <- function(eta_bar, v, status, ri) {
   a <- eta_bar + 0.5 * v
   n <- length(a)

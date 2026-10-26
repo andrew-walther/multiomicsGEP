@@ -55,6 +55,7 @@
 #' @param d prepared data (from `.prep_data()`)
 #' @return the state with `obj` refreshed; `obj$total` is the objective
 #' @keywords internal
+#' @noRd
 .objective <- function(st, d) {
   st$obj$rec <- vapply(seq_len(d$M), function(m) .recon_block(st, d, m), 0)
   st$obj$S <- .surv_state(st, d)$S

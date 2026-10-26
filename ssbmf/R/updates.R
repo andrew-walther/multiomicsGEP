@@ -17,6 +17,7 @@
 
 #' Update the feature intercepts mu_m (exact maximizer)
 #' @keywords internal
+#' @noRd
 .update_mu <- function(st, d) {
   for (m in seq_len(d$M)) {
     Rplus <- sweep(st$R[[m]], 2, st$mu[[m]], "+")       # Y - E[L] E[F]^T
@@ -28,6 +29,7 @@
 
 #' Update the precisions tau_m (exact maximizer, capped)
 #' @keywords internal
+#' @noRd
 .update_tau <- function(st, d) {
   for (m in seq_len(d$M)) {
     ss <- pmax(.ss_block(st, m), 0)
@@ -40,6 +42,7 @@
 
 #' Update q(L_.k) and g_L,k by EBNM on block-pooled pseudo-observations
 #' @keywords internal
+#' @noRd
 .update_L <- function(st, d, k, safeguard = TRUE) {
   h <- numeric(d$n); a <- 0
   for (m in seq_len(d$M)) {
@@ -71,7 +74,7 @@
   e2 <- st$b[k]^2 + st$s2[k]
   if (d$w_surv == 0 || e2 == 0) return(list(c = numeric(d$p[m]), A = numeric(d$p[m])))
   cm <- .surv_state(st, d)
-  A <- e2 * drop(crossprod(d$Yc2[[m]], cm$P))
+  A <- pmax(e2 * drop(crossprod(d$Yc2[[m]], cm$P)), 0)
   cc <- st$b[k] * drop(crossprod(d$Yc[[m]], cm$rho)) -
     st$s2[k] * drop(crossprod(d$Yc[[m]], cm$P * st$Zbar[, k])) + A * st$EF[[m]][, k]
   list(c = cc, A = A)
@@ -79,6 +82,7 @@
 
 #' Update q(F_m,.k) and g_m,k: reconstruction (exact) plus survival message
 #' @keywords internal
+#' @noRd
 .update_F <- function(st, d, m, k, safeguard = TRUE) {
   tau <- st$tau[[m]]; wm <- d$w_block[m]
   aR <- wm * tau * sum(st$EL2[, k])
@@ -116,7 +120,7 @@
   dVar <- (fit$mean2 - fit$mean^2) - (st$EF2[[m]][, k] - st$EF[[m]][, k]^2)
   st$R[[m]] <- st$R[[m]] - outer(st$EL[, k], dF)
   st$Zbar[, k] <- st$Zbar[, k] + drop(d$Yc[[m]] %*% dF)
-  st$V[, k] <- st$V[, k] + drop(d$Yc2[[m]] %*% dVar)
+  st$V[, k] <- pmax(st$V[, k] + drop(d$Yc2[[m]] %*% dVar), 0)
   st$EF[[m]][, k] <- fit$mean; st$EF2[[m]][, k] <- fit$mean2
   st$gF[[m]][[k]] <- fit$g; st$klF[[m]][k] <- fit$kl
   st
@@ -131,13 +135,14 @@
 #' @noRd
 .msg_beta <- function(st, d) {
   cm <- .surv_state(st, d)
-  A <- drop(crossprod(st$Zbar^2 + st$V, cm$P))
+  A <- pmax(drop(crossprod(st$Zbar^2 + pmax(st$V, 0), cm$P)), 0)
   cc <- drop(crossprod(st$Zbar, cm$rho)) + st$b * drop(crossprod(st$Zbar^2, cm$P))
   list(c = cc, A = A)
 }
 
 #' Update q(beta) and sigma_beta^2 (shared Normal prior fitted by marginal likelihood)
 #' @keywords internal
+#' @noRd
 .update_beta <- function(st, d, safeguard = TRUE) {
   if (d$w_surv == 0) return(st)
   for (inner in seq_len(d$beta_inner)) {
