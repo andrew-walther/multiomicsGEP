@@ -2,7 +2,7 @@
 
 Updated2026-10-16. This is the current summary, replacing the former layered
 checkpoint preamble. The complete earlier handoff is preserved verbatim in
-[the chronological history](archive/2026-10-15-round2-history-note.md).
+[the chronological history](2026-10-15-round2-history-note.md).
 Historical statements there describe their own checkpoint, not current status.
 
 **Latest checkpoint (2026-10-16):** Task2-9 ran once after02a658a. Fixed-q
@@ -485,7 +485,7 @@ any proposed prior remedy or additional fitting panel.
 - [Active plan and goal hierarchy](2026-10-15-advisor-priorities-and-execution-plan.md)
 - [Original Round2 rules/criteria](2026-10-16-round2-handoff-plan.md)
 - [Exact prospective attempts and results](2026-10-16-round2-attempts-log.md)
-- [Unabridged former handoff](archive/2026-10-15-round2-history-note.md)
+- [Unabridged former handoff](2026-10-15-round2-history-note.md)
 - [Original advisor notes](Meeting_Notes_Followup_10_2_26.md)
 
 The history is preserved verbatim at consolidation. Do not append new current
