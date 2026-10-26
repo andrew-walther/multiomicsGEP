@@ -30,7 +30,7 @@ ssbmf_cv(
 must be installed (not only loaded with \code{pkgload::load_all()}).}
 
 \item{w_grid}{optional survival weights w_S to cross-validate jointly with
-K (the last-resort balance rule of the derivation, Section 9). Among
+K (the last-resort balance rule of the derivation, Section 8). Among
 settings within one standard error of the best, the smallest w_S and then
 the smallest K are chosen.}
 }

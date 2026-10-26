@@ -1,3 +1,4 @@
 # Fits from real data and simulation panels are not committed; summaries are.
 outputs/**/fits/
 outputs/**/*.rds
+outputs/**/*.log

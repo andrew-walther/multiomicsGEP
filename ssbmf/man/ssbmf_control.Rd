@@ -42,7 +42,7 @@ unweighted model; 0 gives unsupervised factorization with beta not fitted).}
 \item{weight_rule}{\code{"none"} (default) or \code{"effective_features"}: multiply
 each block weight by p_eff,m / p_m (at most 1), the effective number of
 independent features estimated from the residuals of the initial fit
-(derivation, Section 9).}
+(derivation, Section 8).}
 
 \item{init}{"svd" (default) or "survival" (last program started at the
 survival score direction).}
