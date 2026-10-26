@@ -1,62 +1,231 @@
 # October 26, 2026
 
-::: {.callout-note title="Placeholder"}
-This chapter is a placeholder for the October 26 meeting (moved from
-October 23). Sections will be filled in as work is completed.
-:::
+## Summary
 
-## Suggested heading topics
+The single-modality model with expression only still holds the benchmark, with a mean external
+concordance (C) of 0.627 across five cohorts. That model does not use survival to learn its
+gene loadings. Since October 16 we audited the fitting algorithm and found four problems, listed
+below. They explain why attempts to let survival guide the loadings have failed, and why the
+joint expression and methylation model does not converge on real data. Five targeted fixes to the
+existing code each repaired a specific defect, but none produced a model that converges and
+recovers a low-variance prognostic program in simulation.
 
-Candidate topics for Topics 1–3, drawn from the current plans. Pick the ones the work actually covers and rename the headings below once it is done.
+We are therefore rebuilding the method as an R package, `ssbmf`, from a written model
+specification. Every update in the package must improve one stated objective. Short tests on the
+current code continue alongside it. Two analyses that do not depend on a converged model are
+complete: a correction for an expression transform that was applied twice in three cohorts, which
+leaves the benchmark unchanged, and a comparison of survival-based and unsupervised gene screening
+in training cross-validation.
 
-**Method and algorithm**
+Decisions for this meeting: the criteria that define a working model, whether a fixed survival
+weight is acceptable if the model cannot set that balance itself, the proposed preprocessing
+alignments, and whether to score the gene-screening comparison on the external cohorts.
 
-- **Why the method work restarted** — convergence, supervision and bookkeeping problems
-- **Rebuild plan** — one model for one or more data blocks, as an R package
-- **Model specification and objective** — the Cox term in the ELBO and monotone updates
-- **Survival supervision of $F$** — finding low-variance prognostic programs
-- **Factor selection and pruning** — program roles from one fit, no refitting
-- **What counts as a working method** — criteria to agree on before new experiments
+## Problems found in the current fitting algorithm
 
-**Multimodal model**
+**Survival has almost no influence on the loadings.** The update for a loading F_jk combines a
+precision from reconstructing the expression data with a precision from the Cox model. In four
+saved fits, the survival share of that precision was between 6 × 10⁻¹¹ and 3 × 10⁻⁷ for every
+program with a nonzero coefficient. With a share that small the loadings are learned from
+reconstruction alone, whatever the survival data say. The model is then a two-step method in
+practice: the programs come from matrix factorization, and survival only chooses coefficients for
+them. A prognostic program that explains little expression variance cannot be found this way.
 
-- **Multimodal convergence** — sweep-cap fits, failed pruning, the 25k-CpG fix
-- **Balancing modalities** — each block's contribution to patient activities
+**The joint expression and methylation fit does not converge, and pruning removes nothing on real
+data.** The TCGA fit with seven starting programs stops at the 500-sweep limit with its risk scores
+still changing, and the same happens in all five training cross-validation folds. Pruning is meant
+to remove programs that the empirical-Bayes priors shrink to zero, but in these capped fits no
+program is removed. At 25,000 CpGs the Cox risk-set sums underflowed. Computing them on the log
+scale fixed that error, but the fit still hit the sweep limit, and its risk scores reached a
+standard deviation of about 39,000.
 
-**Data and preprocessing**
+**The fitting objective is not tracked consistently.** Three steps change the model without the
+objective accounting for them. After the loading prior is refitted, the Kullback–Leibler terms are
+still computed against the previous prior, so the reported objective mixes two priors. The
+rescaling of programs inside the loop (L → cL, F → F/c, β → cβ) transforms the posterior moments
+but not the shared prior on β. The Cox term enters through a second-order expansion at the
+current linear predictor, and that expansion is not a lower bound on the Cox partial likelihood:
+refreshing it lowered the objective in 18 of 50 refreshes in one audit. Coordinate ascent on such
+a surrogate has no guarantee of improving anything, which is consistent with the oscillation and
+capped fits we see. The joint model's Cox working weights also have no lower bound, unlike the
+single-modality code.
 
-- **Preprocessing alignment** — one pipeline for single-modality and multimodal fits
-- **Double log2 transform** — effect on TCGA, Dijk and PACA-AU and the benchmark
+**Survival coefficients can become stuck at zero.** With a shared point-Laplace prior on β, the
+empirical-Bayes refit can set the prior's nonzero mass to zero. Once it does, every coefficient's
+posterior is a point mass at zero and no later update can move it. In the TCGA fit this happened
+within the first two inner iterations of sweep 99. With a separate Normal prior per program, the
+variance estimate max(0, x² − s²) is zero whenever the standardized coefficient falls below one,
+which produced an all-zero β in one cross-validation fold. That state is not permanent, though,
+and coefficients did return in earlier sweeps.
 
-**Feature experiments (waiting on a working model)**
+## Fixes tried on the current code
 
-- **Feature-count variation** — prediction and programs as genes or CpGs increase
-- **Survival-association feature screening** — survival-informed vs. mean/variance screen
+Each fix was registered before it ran and judged by fixed criteria: convergence, recovery of a
+planted program in simulation, no loss in training cross-validated C, and coefficients credibly
+different from zero.
 
-**Project housekeeping**
+| Fix | What it repaired | What remained |
+|---|---|---|
+| Log-scale Cox risk-set arithmetic | The numerical underflow at 25,000 CpGs. The same likelihood is computed stably. | The fit still stops at the sweep limit with extreme risk scores |
+| Fixed (not refitted) shared prior on β | Stops the coefficients from being absorbed at zero | Single modality: 19 of 20 low-noise simulations converge, and CV C drops by 0.016 (SE 0.007). Joint model: no fit converges and no coefficient is credible |
+| Profiled Cox intercept in the expansion | Removes the constant direction from the Cox curvature | Planted programs are recovered in 16 to 20 of 20 simulations, but all five joint CV fits and both full fits hit the limit |
+| Loading prior refitted at a fixed posterior, with consistent Kullback–Leibler terms | The prior and posterior no longer disagree | Meets the objective's stopping rule in 10 sweeps instead of 300, yet the loadings still change by 2% per sweep against a tolerance of 0.01% |
+| Pruning that protects survival programs and keeps the fitted posterior when refitting | Recovery of the planted program improves | Fails the fixed rule on recovery, convergence and choice of rank. Rank selection by pruning is unresolved |
 
-- **Closing round 2** — findings report, port vetted code, simplify documents
+Not yet tried on the current code: a lower bound of 1/K on the prior inclusion probability of β,
+a Normal β prior with a supervised start, longer warm-up, damping, a joint update of each program's
+loadings and coefficient, and a survival weight. The rebuild takes these up in its derivation
+instead of adding more options to the existing fitters, which already carry about 30 option
+flags each.
 
-## Executive summary
+## Data preprocessing
 
-To be written.
+**Audit.** We traced every preprocessing step for both analyses, from source file to model
+input, with the function that applies each. The two analyses differ in twelve places. The ones
+that matter most are a different TCGA expression source (RSEM values in the single-modality
+analysis, normalized counts per million in the joint analysis), per-cohort z-scores in one versus
+log-scale values with an optional intercept in the other, different scaling of validation cohorts,
+and different rules for features missing from a validation cohort. The full audit, with eleven
+proposed alignments, is in `docs/findings/2026-10-26-preprocessing-audit.md`.
 
-## Topic 1
+**Nonnegative factors on z-scored data.** The single-modality model fits nonnegative L and F to
+z-scored expression, so 47% of the entries it reconstructs are negative. A product of nonnegative
+matrices cannot go below zero. In the benchmark fit, 69% of the reconstruction error falls on
+those negative entries, and almost all of it is the floor ΣY² that no nonnegative fit can go below.
+That floor alone is 55% of the total variation in the data. The fitted noise precisions absorb this
+structured error, and they set the weight of the reconstruction term against the survival term.
+The rebuilt model adds a feature intercept, and its provisional loading prior is signed
+(point-Laplace), so programs can describe values below the mean.
 
-To be written.
+**The double log transform.** TCGA, Dijk and PACA-AU RNA-seq were transformed with log₂(x + 1)
+twice: once by the data loader and again by the project's preprocessing. The second log
+compresses single-log values from 9 to 23 into 3.3 to 4.6. We refitted the benchmark with each
+cohort logged once and nothing else changed. A control refit of the original pipeline reproduced
+the frozen benchmark exactly.
 
-## Topic 2
+| Cohort | n | Benchmark C | Single-log C | Difference (95% bootstrap CI) |
+|---|---|---|---|---|
+| Dijk | 90 | 0.634 | 0.630 | −0.004 (−0.012, 0.002) |
+| Moffitt array | 123 | 0.549 | 0.541 | −0.008 (−0.018, 0.001) |
+| PACA-AU array | 63 | 0.648 | 0.645 | −0.004 (−0.019, 0.012) |
+| PACA-AU RNA-seq | 52 | 0.657 | 0.665 | +0.008 (−0.004, 0.024) |
+| Puleo array | 288 | 0.645 | 0.645 | +0.001 (−0.003, 0.004) |
+| Mean | | 0.627 | 0.625 | −0.001 |
 
-To be written.
+The single-log screen keeps 2,218 genes, 1,985 of them among the benchmark's 2,064, and the two
+risk scores correlate at 0.99 or more in every cohort. The correction does not change the
+benchmark, and the published numbers stand. Three of the five single-log cross-validation fits
+hit the 300-iteration limit, another instance of the convergence problem. We propose to log every
+RNA-seq cohort once in all new work.
 
-## Topic 3
+## Survival-associated gene screening
 
-To be written.
+**Question.** Can a survival screen give the same prediction and programs with fewer genes than
+the current unsupervised mean and variance screen?
 
-## Issues and questions
+**Design.** On the 273 training patients, we compared three gene sets at K = 7 on the same five
+folds. U2064 is the benchmark's 2,064 genes. U(N) is the same unsupervised screen made smaller.
+S(N) ranks the 2,064 benchmark genes by the Wald p-value of a Cox model for each gene, stratified
+by cohort and fitted on the fold's training patients only, and keeps the top N. The pairs are
+matched in size: 251, 500 and 1,000 genes. All 42 fits converged. No external cohort was used.
 
-To be written.
+In one fold every unsupervised gene set, including the benchmark set, produced a fit with no
+survival-active program. Its risk score was constant up to rounding error, about 10⁻⁸, and the
+concordance it reported came from that noise. We count C as undefined in that fold. No
+survival-screened fit had this problem.
 
-## Next steps
+| Genes | Unsupervised C (SE) | Survival-screened C (SE) | Paired difference (SE) |
+|---|---|---|---|
+| 251 | 0.557 (0.044) | 0.628 (0.037) | +0.038 (0.032) |
+| 500 | 0.618 (0.031) | 0.630 (0.035) | −0.016 (0.015) |
+| 1,000 | 0.619 (0.027) | 0.654 (0.029) | +0.014 (0.008) |
+| 2,064 (benchmark) | 0.579 (0.046) | | |
 
-To be written.
+Unsupervised means use four folds and paired differences use the four folds where both are
+defined.
+
+**Programs.** The benchmark fit has two survival-active programs, the adverse and protective
+programs described in earlier chapters. All three survival-screened fits recover both, with
+activity correlations of 0.87 to 0.97 and loading correlations of 0.93 to 0.99, and their risk
+scores correlate with the benchmark's at 0.96 or more. The unsupervised 251-gene fit loses both
+programs, and its risk score correlates with the benchmark's at 0.42.
+
+**What it means.** The concordance differences are within about two standard errors, so they are
+suggestive at best. The program results are clearer. A 251-gene survival screen keeps the
+benchmark's prognostic structure, and an unsupervised set of the same size does not. The screen
+supplies, through the choice of genes, the supervision that the current fitting algorithm fails to
+give the loadings. These results are conditional on scaling done before the folds and use one
+seed. External scoring of the frozen fits is the next step if you agree. If the rebuilt model lets
+survival guide the loadings, the comparison should be repeated with it.
+
+## Rebuilding the method as an R package
+
+**Why.** The problems above come from how the algorithm was assembled, not from one bug. The
+fitters have grown by patches, each with its own option flags, and no single objective covers all
+their steps. A derivation-first rebuild is easier to check than every combination of those
+options.
+
+**Model.** One model handles one or more data types for the same patients. Each block has its own
+feature intercept and loadings F_m, the patient activities L are shared across blocks, and
+survival enters through a Cox model on the projection scores, η = Σ_m Ỹ_m F_m β. New patients are
+scored in closed form from their molecular data. Expression alone is the one-block case of the
+same function, so there is one implementation. Priors are fitted by empirical Bayes. Cohorts enter
+as strata of the Cox model.
+
+**Fitting principles.** Every coordinate update must not decrease one stated objective. The tests
+check this at every step instead of assuming it. The Cox term is replaced by a bound on its
+expected value, E log Σ_j exp(η_j) ≤ log Σ_j exp(η̄_j + v_j/2), where η̄_j and v_j are the
+posterior mean and variance of η_j. Unlike the current expansion, this keeps the objective a true
+lower bound. A fixed-curvature bound was also considered and rejected, because it overstates the
+survival precision by one to two orders of magnitude and would make the intervals for β too narrow. Each prior refit recomputes its
+Kullback–Leibler term, there is no rescaling inside the loop, and the β prior is chosen so that
+zero is not an absorbing state.
+
+**Interface.** The package follows DeSurv's layout: `ssbmf_data()` to validate inputs,
+`ssbmf_fit()` to fit, `predict()` for risk scores of new patients, `coef()` for coefficients with
+posterior intervals, `ssbmf_classify()` for program roles, and `ssbmf_cv()` for training
+cross-validation.
+
+**What counts as a working model.** We propose these criteria and thresholds, to be fixed before
+results are seen:
+
+| | Criterion | Threshold |
+|---|---|---|
+| O1 | Monotone objective | No step lowers the objective by more than 10⁻⁸ of its magnitude |
+| O2 | Convergence | Relative change below 10⁻⁶ within 1,000 sweeps in ≥ 95% of simulation fits and every real-data fit |
+| O3 | Recovery of high-variance programs | Best-match correlation ≥ 0.9 in ≥ 90% of simulation fits |
+| O4 | Recovery of a low-variance prognostic program | Matched (correlation ≥ 0.7), survival-active and correctly signed in ≥ 80% of datasets, and more often than the two-step comparator |
+| O5 | Expression-only prediction | Mean external C ≥ 0.617 over the five cohorts |
+| O6 | Joint model | Joint and expression-only fits converge, and ICGC C compared with a paired donor-level bootstrap |
+| O7 | Coefficient uncertainty | 90% intervals for β cover the truth in 80–95% of simulation fits |
+| O8 | Package | Passes `R CMD check`, and examples and vignettes run |
+
+**Progress.** The package skeleton passes `R CMD check`, and the model specification is written,
+with its objective, every update and a numerical check of the Cox bound. Choices made without
+review so far (the Cox bound, signed loadings) are listed for later review. Implementation, the simulation panel and the
+real-data fits are running now. Results will be preliminary at this meeting.
+
+## Work continuing on the current method
+
+Two short tests on the existing code answer questions the rebuild also needs. The first asks
+whether survival can guide the loadings in the single-modality model once its contribution is
+made larger: fits on the planted-program simulation with survival weights of 1, 10², 10⁴ and 10⁶,
+measuring the survival share of the loading precision, recovery of the planted program,
+convergence, held-out C and reconstruction error. The second adds four controls to the joint model,
+one per bookkeeping problem above, and asks whether it then converges on TCGA. Each test stops
+after two failed attempts, and its finding passes to the rebuild.
+
+Several experiments wait for a converged joint model: the CpG-count and joint expression-by-CpG
+curves, program roles across starting ranks, and the CpG version of the screening comparison.
+
+## Questions for the advisors
+
+1. Are criteria O1–O8 and their thresholds the right definition of a working model? Should any be
+   relaxed or added before results come in?
+2. If the model cannot set the balance between survival and reconstruction on its own, is a fixed
+   survival weight chosen by training cross-validation acceptable, reported as a tuning parameter?
+3. Which of the proposed preprocessing alignments should we adopt? In particular: one log for
+   every RNA-seq cohort, an intercept with log-scale data in place of z-scores, and one TCGA
+   expression source for both analyses.
+4. Should the frozen gene-screening fits be scored once on the five external cohorts now, or after
+   the rebuilt model is available?

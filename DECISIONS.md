@@ -5,6 +5,31 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-26 — Merge the October 15–16 diagnostics, approve rebuild Gate 0, measure the double log
+
+**Decided (Andrew, with `docs/plans/2026-10-26-parallel-work-sessions-plan.md`).**
+- `round2/supervised` is tagged `archive/round2-supervised-2026-10` and merged into `main`
+  (611d034). Its model changes are opt-in with defaults unchanged; suite 710/710; the benchmark
+  snapshot MANIFEST check passes. Its documents were renamed into the date-first scheme.
+- Rebuild Gate 0 (D1–D11) accepted as recommended: a fresh package `ssbmf/` in this repository,
+  criteria O1–O8 as tabled, projection predictor, Cox strata for cohorts, no missing-block
+  prediction in version 1, two-step comparator, `testthat`/`devtools`, Andrew as author,
+  features × samples input. The rebuild runs on `rebuild/unified-ssbmf` with its review gates
+  turned into review after the fact; it does not touch `main`.
+- Feature-selection Gate E2 defaults: N ∈ {250, 500, 1000} matched to U(N); cohort-stratified Wald
+  screen on fold-training patients; no survival-only arm.
+- One external scoring of the single-log correction is part of the plan's approval.
+
+**Measured, awaiting decision.** Logging TCGA, Dijk and PACA-AU RNA-seq once instead of twice
+leaves the benchmark unchanged (external mean C 0.625 vs 0.627, every per-cohort interval includes
+zero, risk r ≥ 0.99; `docs/findings/2026-10-26-single-log-check.md`). Recommended: single log in all
+new work, the frozen benchmark and interim write-up numbers left as they are with a note. The
+preprocessing audit (`docs/findings/2026-10-26-preprocessing-audit.md`) proposes eleven further
+alignments; none is adopted. The survival-screen comparison (`docs/findings/2026-10-26-survival-screen-cv.md`)
+is training CV only; external scoring waits for Andrew.
+
+---
+
 ## 2026-10-16 — Qualify manuscript inference and historical preprocessing
 
 Andrew authorizes addressing the writeup accuracy review. Correct the
