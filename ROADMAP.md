@@ -34,6 +34,24 @@ evaluation of any preprocessing alternative, and complete assay/software/gene-se
 release provenance. These reporting changes do not resume fitting panels or
 adopt a supervised/multimodal replacement.
 
+**October16 checkpoint:** The advisor progress report is adapted into the
+October16 progress-book chapter, with the complete expression curve, CpG
+inventory, stable-arithmetic25k cap and current method review. The complete-
+cycle observer's first objective summary is invalidated by an observer-only
+cross-term error; the correction is tested, but a new replay requires its own
+decision and registration. Full suite692/0. No supervised replacement is
+validated. Keep the existing scientific gates and defer trace archival to a
+separate retention decision; detailed new telemetry remains ignored.
+
+The separately approved corrected replay now passes exact saved-fit and
+late-coverage checks. F-prior refits and working refreshes can lose the local
+reference objective while fixed-prior posterior steps pass. Joint L/beta
+losses still require interpretation. Review the proposed fixed-q loading-prior
+step before implementation; latest full suite694/0. No method is adopted.
+The October16 chapter is published on GitHub Pages (publicationb5a413a), with
+the corrected observation and limitations. This reporting milestone is complete;
+the supervision, valid rank and multimodal-value research goals remain open.
+
 > A living task list of potential extensions, methodological improvements, and dissemination
 > goals for the multiomicsGEP project. Organized by theme. Add, edit, and check off items
 > as the project evolves.
@@ -1025,3 +1043,210 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 - This was done on `main` only. `round2/supervised` was not merged, following
   the 2026-10-16 close-out plan; its documents are reorganized when that plan
   brings its findings to `main`.
+
+## October 15–16 diagnostic work (merged into main 2026-10-26)
+
+- Planted comparator run (2026-10-15): noise-0.25 comparison complete; noise-1 comparison
+  blocked for ten datasets by zero/one-factor EBMF outputs. Decide how those methods should
+  be defined in that case before any rerun; no padding or tuning was applied.
+
+- Constant multimodal two-step C investigated (2026-10-15): ceilings 6/7/8 retain the same
+  six factors and identical risks. Reporting now shows the retained rank. No stage-1
+  rank-forcing change is needed.
+
+- Multimodal real-data method issue (2026-10-15): selected shared-prior configuration
+  gives constant risks and hits the iteration cap. The 10/1 reference also does not
+  converge. Resolve on training diagnostics before claiming a validated multimodal
+  prognostic method; no alternative was chosen from ICGC performance.
+
+## Supervised robustness and comparator follow-up (2026-10-15)
+
+- [x] Evaluate fixed jittered starts, Normal loading priors, refreshed training CV
+  and training-only feature-count sensitivity on `m6/robustness` (550 passing tests;
+  all tables verified, but trailing process exit 1 recorded in the report).
+- [x] Audit identical multimodal two-step concordance and run the four-arm comparison;
+  report constant selected-model risks, caps and EBMF warning without tuning.
+- [ ] Resolve the unavailable multimodal ELBO convergence assessment before any
+  protected-pruning adoption or conditional 1-SE analysis.
+- [ ] Obtain a usable DeSurv fitter and documented training-only selection procedure.
+- [ ] Decide how to handle EBMF zero/one-factor lasso failures before a complete
+  high-noise comparator study; the current conditional subset is insufficient.
+- [ ] Review the real-data multimodal coefficient collapse and convergence caps
+  before extending validation. Do not choose fixes against ICGC outcomes.
+
+Evidence and independent branch commits:
+`docs/findings/2026-10-15-m6-m7-summary.md`. No configuration change was adopted.
+
+- DeSurv head-to-head prerequisite (2026-10-15): obtain a usable version of the authors'
+  companion package and its tuning/prediction procedure; confirm input-scale compatibility.
+  Audit: `results/benchmark_sim/outputs/desurv_h2h/BLOCKED.md`. No benchmark has been run.
+
+## Round2 pruning and collapse follow-up
+
+- [x] Correct the positive-SD protection boundary and verify unchanged default fits.
+- [x] Locate a supervised single-program loss during a refit after deletion of
+  another program, using a pre-registered unchanged-model trace.
+- [x] Evaluate Andrew's approved full-posterior single refits on the unchanged
+  160-cell protected panel; retain the recovery, false-positive, convergence
+  and true-rank requirements at every starting K/noise group.
+- [ ] Diagnose the multimodal shared-prior collapse on unchanged TCGA inputs;
+  continue the handoff's remedy ladder using simulation and training CV only.
+
+The approved interim write-up remains the benchmark. A new configuration is a
+proposal only after all criteria pass and still needs Claude review and Andrew
+approval. Attempt designs and outcomes: `docs/plans/2026-10-16-round2-attempts-log.md`.
+
+- [x] Complete the 800-cell protected-pruning panel using model-specific
+  convergence (zero execution errors/warnings); neither model meets the full
+  adoption rule. Single fails recovery/rank. MM fails median rank at K = 5, noise = 1
+  and final convergence at K = 15, noise = 1; intermediate caps remain visible.
+
+The full-state experiment improved recovery but failed the fixed rule; Single
+K selection remains unresolved and needs review before another remedy.
+
+TCGA collapse diagnosis is complete (Round2): exact shared-prior absorption is
+observed, and all multimodal diagnostic arms cap with molecular predictions
+still changing. The remedy ladder remains open. Andrew deferred the separate
+DeSurv real-data head-to-head for review; the five-comparator simulation panel
+will omit DeSurv as approved. See the Round2 handoff for benchmark-linked tables.
+
+The bounded five-comparator rerun is complete:40 datasets/200 method rows,
+zero errors, full20-seed denominators and explicit EBMF rank0/rank1 handling.
+Supervised recovery17/20 and19/20 exceeds these comparators, but two caps
+prevent a universal-convergence claim. The Round2 handoff holds all tables.
+
+### Training-fold collapse and prior consistency (2026-10-15)
+
+- [x] Complete the unchanged-framework fold1 trace: all13 saved-fit identity checks
+  pass; preserve C=NA and continue Task2's training-only diagnosis and remedy ladder.
+- [ ] Review the common beta prior under factor-specific canonicalization before
+  describing any shared-prior candidate as a principled replacement. The Round2
+  handoff distinguishes this mathematical question from per-factor CV collapse.
+
+- [x] Complete the fixed-prior100-fit evaluation; reject adoption for the failed
+  Single convergence/CV and multimodal credible-program/convergence requirements.
+- [ ] After exact failed-fold trace reproduction, evaluate Andrew's approved
+  opt-in profiled Cox curvature under the unchanged criteria. The remedy's
+  software prototypes do not constitute a scientific result.
+
+- [x] Implement the approved profiled working-intercept option and14 focused
+  math/protocol checks, preserving default/off identity to the protected branch.
+  Scientific evaluation remains pending the full-suite/preregistration commit.
+
+
+### Pause after the profiled-curvature panel (2026-10-15)
+
+- [x] Complete the approved102-record training/simulation evaluation with all
+  failures, original undefined reference scores and benchmark rows retained.
+- [ ] Resolve convergence and credible-program retention before proposing any
+  supervised replacement. The current option is not adopted.
+- [ ] Review molecular prior/posterior KL consistency and common beta-prior
+  canonicalization; a prepared observational rerun is not yet executed.
+- [ ] Resume only when Andrew requests it. Continue Task2's applicable ladder;
+  Task5 waits on Task1/2 stopping decisions, Task3 remains explicitly deferred.
+
+Full suite631/631. The approved write-up and frozen benchmark remain unchanged.
+
+
+### Advisor-requested priorities after resumption (2026-10-15)
+
+The reviewed evidence and proposed order are in
+`docs/plans/2026-10-15-advisor-priorities-and-execution-plan.md`.
+Prioritize the advisor progress report, full-CpG mean/SD histogram and a nested
+feature-count curve at fixed K7 through the available universe. Start with
+one modality, then vary expression/CpGs separately in matched joint fits.
+Confirm use of the benchmark/fallback for this sensitivity study before
+implementation; the supervised replacement and real-data pruning remain
+unresolved. Do not interpret the existing limited gene-count or skewness
+analyses as completion of these advisor requests.
+
+
+- [x] Produce the advisor progress PDF from saved evidence and include the
+  benchmark seven-program role table, distinguishing classified Single
+  retention from deletion/refitting. Andrew approved the revised sequence.
+- [x] Produce the full-CpG mean/SD inventory and variability histograms:305492 probes,144 training patients; no filter adopted.
+- [x] Produce fixed-K7 expression curves through17,900 shared genes:24/24 converged, conditional CV .608/.577/.609/.607, material program/risk changes; no new default. CpG/joint curves remain open.
+
+- [x] Reconstruct the original305352-CpG eligible training universe and verify
+  exact frozen10k values/ranking (Task5-P1); supplied mean/proportion masks
+  retain182934/221142 probes. No filter/default adopted.
+- [ ] Complete methylation-only10k/25k/50k/100k/all count sensitivity, then
+  separate filter and joint comparisons. The30-cell design is registered;
+  first10k full fit capped with zero credible coefficients; larger-count
+  performance unverified. Saved joint-program roles show expression/methylation
+  structure and one credible program in both benchmark and profiled fits,
+  but both fits remain unconverged; no optimal-rank claim.
+- [x] Diagnose the25k methylation-only F-update moment-validity failure before
+  further count fits; preserve its undefined score and the10k cap/zero-credible
+  result. No numerical remedy or altered scientific settings are approved.
+
+- [x] Incorporate verified expression sensitivity and partial CpG results into
+  the progress report and larger write-up at Andrew's request, preserving
+  benchmark comparisons and the approved interim tag. CpG loading agreement
+  across counts remains unavailable because25k failed before a saved fit.
+- [x] Repair and verify Cox risk-set arithmetic at the captured25k failure
+  point, with original default/base-fit identity preserved.
+- [ ] Complete the same25k full-fit test and resolve remaining predictor
+  drift/convergence before interpreting a completed large-CpG curve.
+
+
+### 2026-10-15: regrouping checkpoint
+
+- Completed the same25k CpG arithmetic test: original numeric failure removed;
+  unchanged500 cap still reached, with extreme risk scores. Not adopted.
+- Recorded provisional10k/25k loading agreement; four strong and three weak
+  matches, with both fits unconverged. Updated meeting report and manuscript.
+- Pause further fitting for Andrew's requested review. Next scientific decision
+  concerns working-step stability and prior/objective consistency before more
+  large-CpG panels; supervised replacement, rank and multimodal value stay open.
+
+
+### 2026-10-15: consolidated restart documents and bounded goals
+
+Start with `docs/plans/2026-10-15-advisor-priorities-and-execution-plan.md` and the
+concise `2026-10-16-round2-return-note.md` in that folder. The former long handoff
+is preserved verbatim as `2026-10-15-round2-history-note.md`.
+Original meeting notes/experiment specifications remain historical sources;
+obsolete branch/prompt instructions do not override the active plan.
+
+Keep the north star as the project objective. The next recommended execution
+goal is a bounded evidence/equation review and one prospective experiment,
+ending in regrouping before fitting. Subsequent remedy evaluation, remaining
+feature curves, rank/multimodal value and final write-up are separate milestones.
+Planning consolidation does not resume the paused scientific goal.
+
+
+## 2026-10-16: prior-consistency prototype and clarified feature reporting
+
+Fixed-q point-Laplace loading-prior maximization with atomic KL correction is
+implemented opt-in, with12 focused checks and full suite706/0. Scientific
+validation remains unrun; the existing extreme-tail moment approximation is
+a recorded limitation. The exact next one-case proposal and stopping rule are
+in docs/plans/2026-10-16-round2-fixed-q-loading-prior-proposal.md. No default/adoption,
+new external score or benchmark change. Original simulation/CV/convergence
+and final external criteria remain required.
+
+The meeting chapter, advisor report and full write-up distinguish strong
+5,001→10,000-gene agreement (loading r.960–.994; risk r.972) from weaker
+agreement across the entire feature range. The completed curve concerns
+Single benchmark training/CV; matched TCGA expression-only, CpG/filter/joint,
+large-p noise, rank and final multimodal/biology work remain open. The long
+October15 development log is retained in the book with an explicit methods-development label.
+
+
+## Advisor overview and bounded mechanism check — 2026-10-16
+
+The full write-up leads with a one-page structured overview; the2-page meeting
+brief guides model, validation, biology and manuscript discussion. The size/
+test audit finds the large branch diff dominated by saved CSV traces and
+recommends lossless compression after reader checks, not indiscriminate
+deletion. Task2-9 prepares one fixed-q comparison against saved cell021;
+full suite710/0. Scientific result pending at registration.
+
+
+Task2-9 terminal: one candidate reaches native ELBO stopping in10 iterations
+versus reference300 cap, yet max relative output movement is.01915 versus
+1e-4 and outputs_converged stays false. Local prior gains and four density
+checks pass. Planted recovery/false-active count are unchanged; no gain or
+configuration adopted. Stop before expansion and review stopping/objective
+consistency; detailed result is in fixed_q_seed26/VALIDITY.md and the attempt log.

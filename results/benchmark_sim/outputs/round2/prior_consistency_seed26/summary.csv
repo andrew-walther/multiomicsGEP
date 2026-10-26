@@ -1,0 +1,2 @@
+"seed","noise","iterations","converged","loading_blocks","posterior_support_conflicts","last50_support_conflicts","native_point_prior_conflicts","last50_native_point_prior_conflicts","max_probability_discrepancy","exact_fit_identity","nonfinite_F_prior_adjusted_monitors","runtime_seconds"
+20261026,0.25,300,FALSE,2100,3,0,3,0,6.66133814775094e-16,TRUE,3,13.544

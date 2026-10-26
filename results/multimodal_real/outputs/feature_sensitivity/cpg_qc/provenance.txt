@@ -1,0 +1,6 @@
+training_patient_ids_md5 57a8f22fd0ff1946215a4035219066da
+All available TCGA probes are described; this is not a new shared-feature eligibility rule.
+Frozen screened IDs are verified against the benchmark fit; its scores are not recomputed.
+Raw observed summaries precede imputation; the existing screened cache is reported separately.
+No outcomes, survival scores, new filter/default, or SD cutoff are used.
+R 4.5.2 ggplot2 4.0.3

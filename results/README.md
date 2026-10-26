@@ -13,6 +13,7 @@ are git-ignored; aggregate tables and figures are tracked.
 | `multimodal_real/` | Expression + methylation fits on matched TCGA/ICGC data; outputs in `multimodal_real/outputs/` |
 | `multi_cohort_sim/` | Simulation of shared and cohort-specific programs across cohorts |
 | `cohort_lmm_sim/` | Synthetic check of the cohort-effect model |
+| `benchmark_snapshot_2026-10-14/` | Read-only copy of the approved benchmark state; see its README and checksum manifest |
 | `figures/`, `tables/` | Per-cohort outputs from the May 2026 analyses |
 | `legacy/`, `benchmark_sim/archive/` | Retired runners and outputs, kept for reference and not re-run |
 
@@ -54,6 +55,9 @@ are git-ignored; aggregate tables and figures are tracked.
 
 The remaining scripts in `benchmark_sim/` and `multimodal_real/` are diagnostic
 and sensitivity studies. Each one's design and outcome is recorded in
-`DECISIONS.md` or the dated reports in
+`docs/plans/2026-10-16-round2-attempts-log.md`, `DECISIONS.md` or the dated reports in
 `docs/findings/`; read the record before re-running one. Most refuse to overwrite
 existing outputs.
+
+`.slurm` files submit the larger runners as job arrays on UNC Longleaf; see
+`longleaf_setup/README.md`.

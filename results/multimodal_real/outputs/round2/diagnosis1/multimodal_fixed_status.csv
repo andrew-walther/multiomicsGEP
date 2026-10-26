@@ -1,0 +1,2 @@
+"source","model","arm","n","K","active","risk_sd","training_C","converged","iterations","pruning_caps","reconstruction_change","eta_change","error","warnings","runtime_seconds"
+"round2","multimodal","fixed",144,7,0,0.0598931853973811,0.635837135837136,FALSE,500,0,0.0156956897282477,0.000424225399203199,NA,"",2398.373

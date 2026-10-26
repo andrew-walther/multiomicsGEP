@@ -6,6 +6,7 @@
 # Dependencies: base R; yaml; multimodal YFB helper, preprocessing, and update modules
 # ============================================================
 
+source("code/profile_cox_intercept.R")
 source("code/multimodal_yfb_helpers.R")
 source("code/preprocess_multimodal_yfb.R")
 source("code/multimodal_yfb_updates.R")
@@ -299,14 +300,43 @@ multimodal_yfb_fixed_working_objective <- function(Y, EL, EL2, EF, EF2, Tau,
 #' @param K Over-specified initial factor count.
 #' @param control Named list overriding entries in `multimodal_yfb` config. In
 #'   addition to configured defaults it accepts `damping` and `tau_chunk_size`.
+#'   `loading_prior_update="fixed_q_em"` opts into fixed-posterior point-Laplace
+#'   F-prior maximization and KL correction (historical by default). Requires
+#'   point-Laplace F in every modality, damping=1, no pruning, eb_normal beta.
 #'   Factor pruning: `prior_update` ("em" or "ebnm" marginal-likelihood prior
 #'   fits for point-exponential L and F), `prune` (logical: after convergence,
 #'   remove any factor whose removal does not lower the ELBO, then refit), and
 #'   `survival_elbo` ("plugin": Breslow partial log-likelihood at E[eta];
 #'   "corrected": minus (1/2) sum_i w_i Var(eta_i), a second-order
 #'   approximation to E_q[log PL]).
+#'   Survival supervision (Workstream C6; DECISIONS.md 2026-10-15), both off
+#'   by default: `init_supervised` (logical: factor K starts along the
+#'   null-model Cox score direction, F_m,K = Y_m' u0 on centered data, with
+#'   nonnegative scores L_K = max(0, residual projection); needs signed
+#'   loading priors) and `beta_prior` ("eb_normal", the per-factor normal
+#'   prior fit to one coefficient; or "shared_point_laplace", one
+#'   point-Laplace prior on beta_1..beta_K, held fixed within each sweep and
+#'   refit from the K pseudo-observations afterwards, after `beta_warmup`
+#'   outer iterations at its starting value 0.5 delta_0 + 0.5 Laplace(1)).
+#'   Diagnostic controls (opt-in): `trace=TRUE` records the shared prior before
+#'   and after each sweep, posterior beta means/SDs, last-sweep raw x and A,
+#'   canonical scales, live-program count, ELBO components and output changes
+#'   for each outer iteration, retaining every pruning stage. `beta_prior_fix`
+#'   holds a shared prior at its starting value beyond warm-up. `beta_prior`
+#'   also accepts `shared_normal` (Normal(0,1) warm-up then one shared EB variance).
+#'   These controls do not change the default path or convergence rule.
+#'   `prune_protect_survival` (default FALSE) excludes programs satisfying
+#'   |Eβ| >= 1.96 SD(β) and SD(β)>0 from each nullcheck, including warm refits.
+#'   Opt-in `profile_cox_intercept=TRUE` profiles the arbitrary working
+#'   constant from the Cox quadratic by weighted-centering only its survival
+#'   design. Genomics, prediction, original output convergence and pruning
+#'   scores remain unchanged. Currently requires per-factor Normal beta priors.
+#'   Opt-in `cox_arithmetic="logspace"` evaluates the same Breslow risk sums
+#'   and working weights in log space. Default/original arithmetic, priors,
+#'   curvature approximation, convergence and likelihood weights are unchanged.
 #' @param init Optional warm-start state (EL, EL2, EF, EF2, EBeta, EBeta2, Tau,
-#'   prior_L, prior_F), e.g. a fit with one factor removed. Used by pruning.
+#'   prior_L, prior_F, and g_beta for a shared beta prior), e.g. a fit with one
+#'   factor removed. Used by pruning; a warm start skips the beta warm-up.
 #' @return A `multimodal_yfb_fit` object with posterior moments and diagnostics.
 #' @examples
 #' # fit_multimodal_yfb(Y, time, event, K = 7)
@@ -316,6 +346,22 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   if (!is.list(control) || (length(control) > 0L && is.null(names(control)))) {
     stop("control must be an empty or named list.")
   }
+  # Disabled diagnostics and prior controls preserve the historical object exactly.
+  if (!isTRUE(control$trace)) control$trace <- NULL
+  if (!isTRUE(control$beta_prior_fix)) control$beta_prior_fix <- NULL
+  profile_enabled <- isTRUE(control$profile_cox_intercept)
+  if(!is.null(control$profile_cox_intercept) &&
+     (!is.logical(control$profile_cox_intercept) || length(control$profile_cox_intercept)!=1L ||
+      is.na(control$profile_cox_intercept)))stop("profile_cox_intercept must be TRUE or FALSE.")
+  if(!profile_enabled)control$profile_cox_intercept <- NULL
+  # Arithmetic only: preserve the original default and its returned controls.
+  cox_arithmetic <- control$cox_arithmetic %||% "original"
+  if (length(cox_arithmetic) != 1L || !cox_arithmetic %in% c("original", "logspace"))
+    stop("control$cox_arithmetic must be original or logspace.")
+  if (identical(cox_arithmetic, "original")) control$cox_arithmetic <- NULL
+  trace_enabled <- isTRUE(control$trace)
+  # Keep an explicitly disabled option identical to the historical control.
+  if (!isTRUE(control$prune_protect_survival)) control$prune_protect_survival <- NULL
   # Signed loading priors allow signed (e.g. centered) data in that modality
   prior_F_requested <- modifyList(multimodal_yfb_default_control(), control)$prior_F
   nonnegative <- if (is.list(prior_F_requested) && !is.null(names(prior_F_requested))) {
@@ -332,6 +378,11 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   settings <- modifyList(multimodal_yfb_default_control(), control)
   settings$damping <- settings$damping %||% 1
   settings$prior_update <- settings$prior_update %||% "em"
+  # Do not add an absent control to settings: default returned fits stay identical.
+  loading_prior_update <- settings$loading_prior_update %||% "historical"
+  if (!identical(loading_prior_update, "historical") &&
+      !identical(loading_prior_update, "fixed_q_em"))
+    stop("loading_prior_update must be historical or fixed_q_em.")
   settings$prune <- isTRUE(settings$prune)
   settings$survival_elbo <- settings$survival_elbo %||% "plugin"
   settings$tau_model <- settings$tau_model %||% "feature"
@@ -360,6 +411,10 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
       !all(unlist(settings$prior_F) %in% c("point_exponential", "point_laplace", "normal"))) {
     stop("control$prior_F must name a prior (point_exponential, point_laplace or normal) for each modality.")
   }
+  if (identical(loading_prior_update, "fixed_q_em") &&
+      (any(unlist(settings$prior_F) != "point_laplace") || settings$damping != 1 ||
+       settings$prune || (settings$beta_prior %||% "eb_normal") != "eb_normal"))
+    stop("fixed_q_em requires point-Laplace F, damping=1, no pruning and eb_normal beta.")
   settings$tau_chunk_size <- settings$tau_chunk_size %||% 1000L
   numeric_controls <- c("max_outer", "max_inner", "tol", "pve_threshold",
                         "prognostic_z_threshold", "damping", "tau_chunk_size")
@@ -378,7 +433,9 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     EL <- init$EL; EL2 <- init$EL2; EF <- init$EF; EF2 <- init$EF2
     EBeta <- init$EBeta; EBeta2 <- init$EBeta2; Tau <- init$Tau
     prior_L <- init$prior_L; prior_F <- init$prior_F
+    g_beta <- init$g_beta
   } else {
+    g_beta <- NULL
     decomposition <- svd(do.call(cbind, Y), nu = min(n, K), nv = min(n, K))
     K <- min(K, ncol(decomposition$u))
     EL <- abs(sweep(decomposition$u[, seq_len(K), drop = FALSE], 2,
@@ -407,6 +464,20 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     })
     names(prior_F) <- names(Y)
 
+    if (isTRUE(settings$init_supervised)) {
+      # Factor K starts along the null Cox score direction Y_m' u0 (C3)
+      if (any(vapply(settings$prior_F[names(Y)], identical, logical(1), "point_exponential")))
+        stop("init_supervised needs signed loading priors (point_laplace or normal).")
+      u0 <- multimodal_yfb_cox_working(data$time, data$event, rep(0, n), arithmetic = cox_arithmetic)$u
+      Yc <- lapply(Y, function(x) sweep(x, 2, colMeans(x)))
+      d  <- lapply(Yc, function(x) as.vector(crossprod(x, u0)))
+      fit_other <- Reduce(`+`, lapply(names(Y), function(m)
+        (Yc[[m]] - EL[, -K, drop = FALSE] %*% t(EF[[m]][, -K, drop = FALSE])) %*% d[[m]]))
+      EL[, K] <- pmax(as.vector(fit_other) / sum(unlist(d)^2), 0)
+      for (m in names(Y)) { EF[[m]][, K] <- d[[m]]; EF2[[m]][, K] <- d[[m]]^2 + 1e-6 }
+      EL2[, K] <- EL[, K]^2 + 1e-6
+    }
+
     projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
     beta_warm_start <- multimodal_yfb_cox_warm_start(
       projection$EZ, data$time, data$event
@@ -414,13 +485,35 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     EBeta <- beta_warm_start$mean
     EBeta2 <- pmax(beta_warm_start$second, EBeta^2)
   }
+  # Shared beta prior (C6): starting value, warm-up only on a fresh fit
+  beta_prior_mode <- settings$beta_prior %||% "eb_normal"
+  if (!beta_prior_mode %in% c("eb_normal", "shared_point_laplace", "shared_normal"))
+    stop("control$beta_prior must be eb_normal, shared_point_laplace or shared_normal.")
+  shared_beta <- beta_prior_mode != "eb_normal"
+  if(profile_enabled && shared_beta)
+    stop("Profiled Cox curvature currently requires per-factor Normal beta priors.")
+  beta_family <- if (beta_prior_mode == "shared_normal") "normal" else "point_laplace"
+  if (shared_beta && is.null(g_beta)) {
+    g_beta <- if (beta_family == "normal") ashr::normalmix(1, 0, 1) else
+      ebnm::laplacemix(c(0.5, 0.5), c(0, 0), c(0, 1))
+  }
+  beta_warmup <- if (is.null(init)) as.integer(settings$beta_warmup %||% 10L) else 0L
+  beta_x <- beta_s <- numeric(K)
   # Per-factor KL(q || g) terms of the ELBO, refreshed at each factor update
   kl_L <- kl_beta <- numeric(K)
   kl_F <- lapply(Y, function(x) numeric(K))
 
   history <- vector("list", as.integer(settings$max_outer))
+  if (trace_enabled) trace <- vector("list", as.integer(settings$max_outer))
   converged <- FALSE
   for (outer in seq_len(as.integer(settings$max_outer))) {
+    if (trace_enabled) {
+      prior_before <- g_beta
+      # Observe the previous intercept before its outer-iteration update.
+      old_trace_mu <- mu
+      prior_sweeps <- vector("list", as.integer(settings$max_inner))
+      beta_A <- canonical_scale <- numeric(K)
+    }
     if (settings$intercept) {
       mu <- lapply(names(Y_raw), function(m) colMeans(Y_raw[[m]] - EL %*% t(EF[[m]])))
       names(mu) <- names(Y_raw)
@@ -429,7 +522,13 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
     predictor <- multimodal_yfb_predictor_moments(projection$EZ, projection$VZ,
                                                    EBeta, EBeta2)
-    working <- multimodal_yfb_cox_working(data$time, data$event, predictor$mean)
+    working <- multimodal_yfb_cox_working(data$time, data$event, predictor$mean,
+                                             arithmetic = cox_arithmetic)
+    # Only the survival design is weighted-centered. Genomic residuals and
+    # predictions use the original Y; Xc' W Xc is the profiled curvature.
+    survival_Y <- if(profile_enabled)lapply(Y,profile_cox_center,w=working$w) else Y
+    if(profile_enabled)
+      working$h <- working$u + working$w*profile_cox_center(predictor$mean,working$w)
     old_eta <- predictor$mean
     old_reconstruction <- lapply(names(Y), function(modality) {
       EL %*% t(EF[[modality]])
@@ -454,17 +553,18 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
 
         for (modality in names(Y)) {
           residual <- multimodal_yfb_residual_minus_k(Y, EL, EF, k)
-          projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
+          projection <- multimodal_yfb_projection_moments(survival_Y, EF, EF2)
           current_eta <- multimodal_yfb_predictor_moments(
             projection$EZ, projection$VZ, EBeta, EBeta2
           )$mean
           h_minus_k <- working$h - working$w *
             (current_eta - EBeta[k] * projection$EZ[, k])
           updated_F <- multimodal_yfb_update_F_mk(
-            Y[[modality]], Tau[[modality]], EL[, k], EL2[, k], residual[[modality]],
+            survival_Y[[modality]], Tau[[modality]], EL[, k], EL2[, k], residual[[modality]],
             working$w, h_minus_k, projection$EZ[, k], projection$VZ[, k],
             EF[[modality]][, k], EF2[[modality]][, k], EBeta[k], EBeta2[k],
-            prior_F[[modality]][[k]], prior_update = settings$prior_update
+            prior_F[[modality]][[k]], prior_update = settings$prior_update,
+            loading_prior_update = loading_prior_update
           )
           kl_F[[modality]][k] <- updated_F$kl
           damped_F <- multimodal_yfb_damp_moments(
@@ -476,15 +576,25 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
           prior_F[[modality]][[k]] <- updated_F$prior
         }
 
-        projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
+        projection <- multimodal_yfb_projection_moments(survival_Y, EF, EF2)
         current_eta <- multimodal_yfb_predictor_moments(
           projection$EZ, projection$VZ, EBeta, EBeta2
         )$mean
         h_minus_k <- working$h - working$w *
           (current_eta - EBeta[k] * projection$EZ[, k])
-        updated_beta <- multimodal_yfb_update_beta_k(
-          projection$EZ[, k], projection$VZ[, k], working$w, h_minus_k
-        )
+        updated_beta <- if (shared_beta) {
+          multimodal_yfb_update_beta_shared_k(projection$EZ[, k], projection$VZ[, k],
+                                              working$w, h_minus_k, g_beta, prior_family = beta_family)
+        } else {
+          multimodal_yfb_update_beta_k(
+            projection$EZ[, k], projection$VZ[, k], working$w, h_minus_k
+          )
+        }
+        if (shared_beta || trace_enabled) {
+          beta_x[k] <- updated_beta$x
+          beta_s[k] <- if (updated_beta$A > 0) sqrt(1 / updated_beta$A) else 1e6
+        }
+        if (trace_enabled) beta_A[k] <- updated_beta$A
         kl_beta[k] <- updated_beta$kl
         damped_beta <- multimodal_yfb_damp_moments(
           EBeta[k], EBeta2[k], updated_beta$mean, updated_beta$second,
@@ -495,6 +605,7 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         canonical <- multimodal_yfb_canonicalize_factors(
           Y, EL, EL2, EF, EF2, EBeta, EBeta2, prior_L, prior_F, factors = k
         )
+        if (trace_enabled) canonical_scale[k] <- canonical$scale[k]
         EL <- canonical$EL
         EL2 <- canonical$EL2
         EF <- canonical$EF
@@ -504,6 +615,17 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         prior_L <- canonical$prior_L
         prior_F <- canonical$prior_F
       }
+      # Shared beta prior: refit from the sweep's K pseudo-observations after
+      # the warm-up (held fixed within the sweep, as for the loading priors)
+      if (trace_enabled) sweep_prior_before <- g_beta
+      if (shared_beta && !isTRUE(settings$beta_prior_fix) && outer > beta_warmup && K > 0L) {
+        g_beta <- ebnm::ebnm(beta_x, beta_s, prior_family = beta_family,
+                             g_init = g_beta)$fitted_g
+      }
+      if (trace_enabled) prior_sweeps[[inner]] <- list(
+        prior_before = sweep_prior_before, prior_after = g_beta,
+        beta_mean = EBeta, beta_sd = sqrt(pmax(EBeta2 - EBeta^2, 0)),
+        x = beta_x, A = beta_A, canonical_scale = canonical_scale)
     }
 
     tau_state <- multimodal_yfb_update_tau_chunked(
@@ -520,23 +642,53 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         old_reconstruction[[modality]], EL %*% t(EF[[modality]])
       )
     }, numeric(1))
+    working_projection <- if(profile_enabled)
+      multimodal_yfb_projection_moments(survival_Y,EF,EF2) else projection
     history[[outer]] <- list(
       fixed_working_objective = multimodal_yfb_fixed_working_objective(
-        Y, EL, EL2, EF, EF2, Tau, projection$EZ, projection$VZ, EBeta,
+        Y, EL, EL2, EF, EF2, Tau, working_projection$EZ, working_projection$VZ, EBeta,
         EBeta2, working$w, working$h
       ),
       partial_log_likelihood = multimodal_yfb_cox_working(
-        data$time, data$event, predictor$mean
+        data$time, data$event, predictor$mean, arithmetic = cox_arithmetic
       )$log_partial_likelihood,
       max_moment_change = max(abs(new_moments - old_moments)),
       elbo = multimodal_yfb_elbo(Y, data$time, data$event, EL, EL2, EF, EF2,
                                  EBeta, EBeta2,
                                  sum(kl_L) + sum(unlist(kl_F)) + sum(kl_beta),
-                                 settings$survival_elbo, settings$tau_model),
+                                 settings$survival_elbo, settings$tau_model, cox_arithmetic),
       kl_parts = c(L = sum(kl_L), F = sum(unlist(kl_F)), beta = sum(kl_beta)),
       max_relative_reconstruction_change = max(reconstruction_change),
       max_relative_eta_change = multimodal_yfb_relative_change(old_eta, predictor$mean)
     )
+    if (trace_enabled) {
+      live <- vapply(seq_len(K), function(k) {
+        sum(vapply(EF, function(f) sum(f[, k]^2), numeric(1))) > 1e-8
+      }, logical(1))
+      trace[[outer]] <- list(K = K, iteration = outer, prior_before = prior_before,
+        prior_after = g_beta, prior_sweeps = prior_sweeps,
+        beta_mean = EBeta, beta_sd = sqrt(pmax(EBeta2 - EBeta^2, 0)),
+        x = beta_x, A = beta_A, canonical_scale = canonical_scale,
+        live_programs = sum(live),
+        elbo_components = attr(history[[outer]]$elbo, "components"),
+        reconstruction_change = reconstruction_change,
+        full_reconstruction_change = vapply(names(Y), function(m) {
+          multimodal_yfb_relative_change(
+            sweep(old_reconstruction[[m]], 2,
+              if (is.null(old_trace_mu)) rep(0, ncol(Y[[m]])) else old_trace_mu[[m]], "+"),
+            sweep(EL %*% t(EF[[m]]), 2,
+              if (is.null(mu)) rep(0, ncol(Y[[m]])) else mu[[m]], "+"))
+        }, numeric(1)),
+        centered_reconstruction_change = vapply(names(Y), function(m) {
+          multimodal_yfb_relative_change(
+            scale(old_reconstruction[[m]], scale = FALSE),
+            scale(EL %*% t(EF[[m]]), scale = FALSE))
+        }, numeric(1)),
+        eta_change = history[[outer]]$max_relative_eta_change,
+        centered_eta_change = multimodal_yfb_relative_change(
+          old_eta - mean(old_eta), predictor$mean - mean(predictor$mean)),
+        eta_mean = mean(predictor$mean), eta_sd = stats::sd(predictor$mean))
+    }
     # Posterior moments can move along equivalent latent-factor allocations even
     # after the fitted data and raw predictor stabilize.  Convergence is therefore
     # assessed on the identifiable fitted reconstruction and η = Σ_m Y_m F_m β.
@@ -578,15 +730,16 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
     K_eff_retained = sum(reconstruction_active | survival_active),
     controls = settings
   )
+  if (trace_enabled) diagnostics$trace <- trace[seq_len(length(history))]
   kl <- list(L = kl_L, F = kl_F, beta = kl_beta)
   diagnostics$elbo <- multimodal_yfb_elbo(Y, data$time, data$event, EL, EL2, EF, EF2,
                                           EBeta, EBeta2,
                                           sum(kl_L) + sum(unlist(kl_F)) + sum(kl_beta),
-                                          settings$survival_elbo, settings$tau_model)
+                                          settings$survival_elbo, settings$tau_model, cox_arithmetic)
   out <- list(EL = EL, EL2 = EL2, EF = EF, EF2 = EF2, EBeta = EBeta,
               EBeta2 = EBeta2, Tau = Tau, prior_L = prior_L, prior_F = prior_F,
               kl = kl, mu = mu, training_spec = data$training_spec,
-              diagnostics = diagnostics)
+              g_beta = g_beta, diagnostics = diagnostics)
   class(out) <- "multimodal_yfb_fit"
 
   # Factor pruning (flashier-style nullcheck) ----
@@ -595,7 +748,8 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
   if (settings$prune && K > 1L) {
     delta <- multimodal_yfb_nullcheck(out, Y_raw, data$time, data$event,
                                       settings$survival_elbo, settings$tau_model,
-                                      settings$intercept)
+                                      settings$intercept,
+                                      isTRUE(settings$prune_protect_survival), cox_arithmetic)
     if (max(delta) >= 0) {
       drop <- which.max(delta)
       keep <- setdiff(seq_len(K), drop)
@@ -605,8 +759,9 @@ fit_multimodal_yfb <- function(Y, time, event, K, control = list(), init = NULL)
         EF2 = lapply(out$EF2, function(x) x[, keep, drop = FALSE]),
         EBeta = out$EBeta[keep], EBeta2 = out$EBeta2[keep], Tau = out$Tau,
         prior_L = out$prior_L[keep],
-        prior_F = lapply(out$prior_F, function(x) x[keep]))
+        prior_F = lapply(out$prior_F, function(x) x[keep]), g_beta = out$g_beta)
       refit <- fit_multimodal_yfb(Y_raw, time, event, K - 1L, control, init = pruned_init)
+      if (trace_enabled) refit$diagnostics$trace <- c(out$diagnostics$trace, refit$diagnostics$trace)
       refit$diagnostics$pruning <- rbind(
         data.frame(K_before = K, removed_factor = drop, elbo_gain = delta[drop],
                    converged_before = converged),
@@ -691,6 +846,7 @@ multimodal_yfb_tau_from_residuals <- function(r2, n, tau_model = "feature") {
 #' @param kl_total Summed KL divergence of all coordinates.
 #' @param survival_elbo "plugin" or "corrected".
 #' @param tau_model Residual precision model; see [multimodal_yfb_tau_from_residuals()].
+#' @param cox_arithmetic Original arithmetic (default) or opt-in logspace risk sums.
 #' @return Scalar ELBO with a `components` attribute.
 #' @examples
 #' # multimodal_yfb_elbo(Y, time, event, fit$EL, fit$EL2, fit$EF, fit$EF2,
@@ -698,14 +854,15 @@ multimodal_yfb_tau_from_residuals <- function(r2, n, tau_model = "feature") {
 #' @family multimodal_yfb
 multimodal_yfb_elbo <- function(Y, time, event, EL, EL2, EF, EF2, EBeta, EBeta2,
                                 kl_total, survival_elbo = "plugin",
-                                tau_model = "feature") {
+                                tau_model = "feature", cox_arithmetic = "original") {
   n <- nrow(EL)
   tau_state <- multimodal_yfb_update_tau_chunked(Y, EL, EL2, EF, EF2, chunk_size = 1000L)
   reconstruction <- multimodal_yfb_tau_from_residuals(
     tau_state$expected_residual2, n, tau_model)$reconstruction
   projection <- multimodal_yfb_projection_moments(Y, EF, EF2)
   predictor <- multimodal_yfb_predictor_moments(projection$EZ, projection$VZ, EBeta, EBeta2)
-  working <- multimodal_yfb_cox_working(time, event, predictor$mean)
+  working <- multimodal_yfb_cox_working(time, event, predictor$mean,
+                                           arithmetic = cox_arithmetic)
   survival <- working$log_partial_likelihood
   if (survival_elbo == "corrected") {
     survival <- survival - 0.5 * sum(working$w * pmax(predictor$variance, 0))
@@ -727,13 +884,16 @@ multimodal_yfb_elbo <- function(Y, time, event, EL, EL2, EF, EF2, EBeta, EBeta2,
 #' @param Y,time,event Training data used for the fit.
 #' @param survival_elbo "plugin" or "corrected".
 #' @param tau_model Residual precision model.
+#' @param cox_arithmetic Original arithmetic (default) or opt-in logspace risk sums.
 #' @param intercept Whether the fit has a per-feature intercept (then `Y` is raw).
+#' @param protect_survival Protect |Eβ| >= 1.96 SD(β); return -Inf for those candidates.
 #' @return Numeric vector: ELBO(without k) - ELBO(with all factors), per k.
 #' @examples
 #' # multimodal_yfb_nullcheck(fit, Y, time, event)
 #' @family multimodal_yfb
 multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugin",
-                                     tau_model = "feature", intercept = FALSE) {
+                                     tau_model = "feature", intercept = FALSE,
+                                     protect_survival = FALSE, cox_arithmetic = "original") {
   K <- ncol(fit$EL)
   kl_k <- fit$kl$L + Reduce(`+`, fit$kl$F) + fit$kl$beta
   # With an intercept, Y is the raw data and the intercept is re-estimated for
@@ -745,8 +905,12 @@ multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugi
   }
   full <- multimodal_yfb_elbo(centered(fit$EL, fit$EF), time, event, fit$EL, fit$EL2,
                               fit$EF, fit$EF2, fit$EBeta, fit$EBeta2, sum(kl_k),
-                              survival_elbo, tau_model)
+                              survival_elbo, tau_model, cox_arithmetic)
   vapply(seq_len(K), function(k) {
+    # Protect only credibly prognostic coefficients with positive uncertainty.
+    beta_sd <- sqrt(pmax(fit$EBeta2[k] - fit$EBeta[k]^2, 0))
+    if (protect_survival && beta_sd > 0 &&
+        abs(fit$EBeta[k]) >= 1.96 * beta_sd) return(-Inf)
     keep <- setdiff(seq_len(K), k)
     if (length(keep) == 0L) return(-Inf)
     EL_keep <- fit$EL[, keep, drop = FALSE]
@@ -755,7 +919,7 @@ multimodal_yfb_nullcheck <- function(fit, Y, time, event, survival_elbo = "plugi
       centered(EL_keep, EF_keep), time, event, EL_keep, fit$EL2[, keep, drop = FALSE],
       lapply(fit$EF, function(x) x[, keep, drop = FALSE]),
       lapply(fit$EF2, function(x) x[, keep, drop = FALSE]),
-      fit$EBeta[keep], fit$EBeta2[keep], sum(kl_k[keep]), survival_elbo, tau_model)
+      fit$EBeta[keep], fit$EBeta2[keep], sum(kl_k[keep]), survival_elbo, tau_model, cox_arithmetic)
     reduced - full
   }, numeric(1))
 }

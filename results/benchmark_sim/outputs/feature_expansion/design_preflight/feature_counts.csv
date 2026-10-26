@@ -1,0 +1,5 @@
+target_shared,screen_n_per_cohort,actual_shared,maximum_available,source
+2064,3000,2064,17900,frozen_benchmark_input_set
+5000,6607,5001,17900,prospective_feature_design
+10000,11602,10000,17900,prospective_feature_design
+17900,17900,17900,17900,prospective_feature_design

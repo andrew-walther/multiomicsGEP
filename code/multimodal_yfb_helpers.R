@@ -6,6 +6,8 @@
 # Dependencies: base R
 # ============================================================
 
+source("code/cox_working_logspace.R")
+
 #' Validate posterior mean and second-moment arrays
 #'
 #' Ensures that a posterior second moment is finite and no smaller than the
@@ -44,11 +46,15 @@ multimodal_yfb_validate_moments <- function(mean, second, name,
 #' @param time Positive numeric follow-up times.
 #' @param event Numeric 0/1 event indicators.
 #' @param eta Finite numeric mean linear predictor.
+#' @param arithmetic Original arithmetic (default) or opt-in logspace risk sums.
 #' @return List with `u`, `w`, `h`, and Breslow `log_partial_likelihood`.
 #' @examples
 #' multimodal_yfb_cox_working(c(1, 2), c(1, 0), c(0, 0))
 #' @family multimodal_yfb_helpers
-multimodal_yfb_cox_working <- function(time, event, eta) {
+multimodal_yfb_cox_working <- function(time, event, eta, arithmetic = "original") {
+  if (identical(arithmetic, "logspace"))
+    return(multimodal_yfb_cox_working_logspace(time, event, eta))
+  if (!identical(arithmetic, "original")) stop("Unknown Cox arithmetic; use original or logspace.")
   n <- length(time)
   if (!is.numeric(time) || !is.numeric(event) || !is.numeric(eta) ||
       length(event) != n || length(eta) != n || n == 0L) {

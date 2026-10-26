@@ -142,6 +142,9 @@ simulate_multimodal_yfb_cohort <- function(parameters, n, id_prefix) {
 #' @param noise_scale Multiplier on every feature's noise SD (default 1, the
 #'   original design, where each true factor explains < 1% of the variance).
 #'   0.25 gives a moderate signal-to-noise ratio (~25% variance explained).
+#' @param beta NULL (default) uses the scenario's survival coefficients; a
+#'   length-`K_true` numeric vector overrides them (used to calibrate the
+#'   single-modality supervision test bed, DECISIONS.md 2026-10-15).
 #' @param truncate If TRUE (default), truncate the molecular data at zero so it
 #'   meets the point-exponential (nonnegative) input requirement. FALSE keeps
 #'   the Gaussian data as generated, for signed loading priors and centering.
@@ -153,7 +156,8 @@ simulate_multimodal_yfb_data <- function(scenario = "both_informative",
                                          n_train = 120L, n_validation = 120L,
                                          p_expression = 50L, p_methylation = 50L,
                                          K_true = 3L, target_censoring = 0.30,
-                                         seed = 1L, truncate = TRUE, noise_scale = 1) {
+                                         seed = 1L, truncate = TRUE, noise_scale = 1,
+                                         beta = NULL) {
   scenarios <- multimodal_yfb_scenarios()
   if (!scenario %in% names(scenarios)) {
     stop("scenario must be one of: ", paste(names(scenarios), collapse = ", "), ".")
@@ -163,6 +167,11 @@ simulate_multimodal_yfb_data <- function(scenario = "both_informative",
     stop("Training/validation sample sizes and feature counts must be at least two.")
   }
   setting <- scenarios[[scenario]]
+  if (!is.null(beta)) {
+    if (!is.numeric(beta) || length(beta) != K_true || any(!is.finite(beta)))
+      stop("beta must be NULL or a finite numeric vector of length K_true.")
+    setting$beta <- beta
+  }
   p_methylation <- setting$p_methylation %||% p_methylation
   score_scale <- setting$score_scale %||% rep(1, K_true)
   methylation_scale <- setting$methylation_scale %||% 1

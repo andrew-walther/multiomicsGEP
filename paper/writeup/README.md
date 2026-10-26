@@ -12,22 +12,6 @@ dispositions](_process/Accuracy_Review_Dispositions_10_16_26.md) distinguish
 applied document corrections from donor-aware inference, preprocessing and
 provenance work that remains scientifically unresolved.
 
-## Research provenance
-
-The reviewed manuscript and its saved figures are published on `main`.
-Its experimental results and accuracy checks refer to research commit
-[`d890f7a`](https://github.com/andrew-walther/multiomicsGEP/tree/d890f7abdfab37c388de8edb11e4b7dc312c9649)
-on `round2/supervised`. The source inventory points to evidence at that
-commit; some diagnostic code, aggregate outputs and plans are present there
-but have not been integrated into `main`. The recorded 710-test result also
-applies to that research revision. Transferring the manuscript does not
-adopt those experimental model changes.
-
-Rendering the manuscript uses the supplied sources and figures and does not
-require those experiments. To reproduce historical figure calculations or
-diagnostics, consult the pinned research revision, its registered designs
-and its data requirements; these are distinct from rendering the writeup.
-
 ## Contents
 
 | Path | Contents |

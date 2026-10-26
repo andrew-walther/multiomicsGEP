@@ -1,5 +1,32 @@
 # Meeting Notes and Follow-up Plan — SSBMF Project (October 2, 2026)
 
+## Current reading guide (2026-10-15)
+
+The meeting conclusions and original workstreams below remain the advisor
+requirements. Execution has since advanced through Round2; do not restart
+this file's old branch, merge or prompt sequence.
+
+- [Current plan and bounded goal hierarchy](2026-10-15-advisor-priorities-and-execution-plan.md)
+  controls the next work block; [current handoff](2026-10-16-round2-return-note.md)
+  summarizes actual results. Work remains paused for regrouping.
+- Interim write-up is delivered; the working HTML/PDF now includes verified
+  sensitivity/diagnostic findings. The approved interim tag/snapshot is preserved.
+- Expression fixed-K7 sensitivity through17900 shared genes and full-probe
+  methylation mean/SD histograms are complete. CpG/joint feature curves and
+  filtering comparisons remain partial; common-CpG correlations are provisional.
+- Survival-informed F is implemented experimentally, but a stable final method
+  is unproven. The benchmark still uses alpha_F=0; the stable-arithmetic25k
+  case still caps500. Rank and demonstrated multimodal value remain open.
+- Next: bounded review of update/objective/prior consistency, then one proposed
+  experiment and regrouping before fitting. See the active plan for acceptance
+  evidence, original gates and deferred work. Current work uses only
+  `round2/supervised`; no push/merge or protected-branch edits are authorized.
+
+The dated schedules, implementation suggestions and prompts below are kept
+as the historical source. Later Round2 rules preserve defaults, external-data
+restrictions and prospective registration; suggestions here are not permission
+to change those rules. No dated decision entry is revised by this reading guide.
+
 Sources: Andrew's written notes and the Zoom summary from the 10/2 meeting with Yusha and Naim, plus
 two post-meeting clarification sessions. The results discussed are in
 `docs/progress_book/chapters/2026-10-02.qmd`. This plan supersedes the open-work sections of
@@ -163,7 +190,7 @@ Andrew). Use the existing `paper/ssbmf-refs.bib`.
      `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf`,
      `docs/lb_walkthroughs/update_*.qmd`, `code/SupervisedMF_Context.md`.
    - **Survival supervision of F:** placeholder until Workstream C is done. It will contain the
-     update, the scale canonicalization and whatever C4 decides about weights or the β prior.
+     update, the scale canonicalization and whatever C3–C5b settle (β prior, joint update or weight).
    - Multiple cohorts: per-platform z-standardization; the optional `cohort_id`, `strata_id` and
      `beta_cohort_id` terms (see A3).
    - Multimodal model: shared L, modality-specific F_m, intercept, `ebnm` priors, pruning.
@@ -196,19 +223,28 @@ Verify: D1 and D2 are sent; every number traces to a file in the repo.
 
 ## Workstream C — Survival supervision of F  `[Priority 1 for method work]`
 
+> Original scientific motivation and remedy ideas follow. Implementation
+> status, attempted remedies and current authorization are in the current
+> handoff and active plan; do not execute the old kickoff/branch instructions.
+
 Goal (D3): survival shapes the program loadings strongly enough to recover a low-variance prognostic
 program, without instability and without losing external C.
 
 **Test bed for every step:** the planted low-variance prognostic scenario. Use the multimodal
 simulation's "low-variance prognostic" scenario run with one modality, and the single-modality
-benchmark simulator with an added prognostic program that explains under 1% of variance. Use at
-least 10 seeds per setting.
+benchmark simulator with an added prognostic program that explains under 1% of variance. C1 used
+10 seeds; every comparison from C3 on uses **20 seeds per setting**, at both noise levels of the
+multimodal simulation (noise SD multiplier 0.25, as in C1, and 1). With 10 seeds, 8/10 has a 95% interval of about
+0.44–0.97, too wide to separate options.
 
 **Pre-specified success criteria** (thresholds as in the prelim chapter, `DECISIONS.md`
-2026-10-02):
+2026-10-02; rates set by Andrew on 2026-10-15, before any C3–C5 runs):
 - the planted program is recovered, with absolute loading correlation ≥ 0.7 and the correct sign
-  of β, in a large majority of seeds (Andrew to set the rate before C4 runs);
-- false prognostic programs do not increase relative to α_F = 0;
+  of β, in **≥ 80% of seeds at each noise level**. The interim write-up found no recovery at the
+  lower noise level, so that level is the real test;
+- false prognostic programs do not increase relative to α_F = 0: the mean number of
+  survival-active programs that match no planted prognostic program is at most the α_F = 0
+  baseline **plus 0.5 per fit**;
 - every fit converges, with no runaway in ‖F_k‖ or ‖L_k‖;
 - on real data, the lower 95% limit of ΔC against the α_F = 0 model on the 5 external cohorts stays
   above −0.02.
@@ -228,8 +264,8 @@ the same checkout, so check `git branch --show-current` before every commit.
    (1−α)·genomics/divisor + α·survival/divisor, with α = 0.5 and a normalizer on each term
    (`code/fit_cox_on_yf.R:780`). The F update instead mixes the raw, un-normalized genomics and
    survival precisions with α_F (`code/fit_cox_on_yf.R:727`, `code/update_F_surv_YFB.R:136`). The
-   updates therefore do not climb the objective being monitored. Whatever weighting C4 chooses must
-   enter both.
+   updates therefore do not climb the objective being monitored. Whatever C3–C5b settle must enter
+   both.
 2. **F is the only route for survival into the factorization.** Under η = (YF)β the L update is
    genomics-only (`code/fit_cox_on_yf.R:701`). With α_F = 0 survival is absent from the
    factorization entirely.
@@ -284,40 +320,76 @@ next).**
   - α_F = 0 fits are unchanged up to scale;
   - the existing suite still passes.
 - Rerun C1. Expected: no runaway at any α_F, which makes C3–C4 interpretable.
-- Then drop α_F as a separate knob: the update becomes equal-weight Bayes, plus at most one survival
-  weight w_S from C4.
+- Then drop α_F as a separate knob: the update becomes equal-weight Bayes (w_S = 1), plus at most
+  one survival weight w_S from C5b.
+
+**Order of C3–C5 (decided 2026-10-15; `DECISIONS.md`).** Keep the model fully Bayesian with one
+objective for as long as possible, and add tuning only as a last resort:
+1. C2 canonicalization;
+2. C3 supervised initialization together with C4 heavier-tailed β prior, all under equal weights;
+3. if that fails the success criteria: C5, the joint or collapsed (F_k, β_k) update;
+4. only if that also fails: C5b, the survival weight w_S.
+
+Stop at the first step that meets every success criterion. Two reasons for this order. First,
+survival supervision is what separates the model from two-step EBMF → Cox, and it should come from
+the model, not a tuned weight. Second, a weighted Cox term leaves the ELBO without a fixed target,
+which ELBO-based pruning (C6, M5) needs.
 
 **C3. Start a survival-relevant program (problem 1).** Two options; implement the first, the
 second only if needed.
 - **Supervised initialization:** initialize one program's loadings from the Cox score direction
-  Yᵀ(martingale residuals) of a null or α_F = 0 fit. Its β then starts away from 0.
+  Yᵀ(martingale residuals) of a null or α_F = 0 fit. Its scores then correlate with survival from
+  the first sweep, so the data estimate β away from 0. Initialize the program, not β: the
+  coefficients are updated first in each sweep, so a β set by hand is re-estimated from
+  uninformative scores and returns near 0 before F moves. (Freezing β was tried in the August
+  α_F grid with no gain, though before canonicalization and not on this test bed.)
+- **β prior warm-up:** hold the β prior at its initial (fixed) value for the first few sweeps,
+  so empirical Bayes does not shrink it before the supervised program has formed. This is a
+  warm-up for the prior, not for β.
 - **Greedy supervised program:** after a fit converges, add a program initialized from the Cox
   score direction of the current residual risk, backfit, and keep it only if the selection metric
   improves. This follows the greedy-then-backfit pattern of `flashier`.
+- Jittered starts (M6) can be run alongside, keeping the fit with the highest ELBO.
 
-**C4. Weight survival or loosen the β prior (problem 2).** Compare on the test bed:
-- equal weights (the plain Bayesian model) as the baseline;
-- **prior on β:** empirical Bayes (current) versus a fixed wider variance versus a hierarchical or
-  heavier-tailed prior. This is the "let the priors balance it" option the advisors proposed:
-  E[β̃_k²] sets how much survival can move F_k;
-- **one survival weight w_S** on the Cox term (a tempered likelihood), chosen by cross-validated C
-  from a small grid. Note: w_S cannot be estimated by maximizing the ELBO, because the weighted
-  ELBO changes with w_S and has no fixed target. If a data-driven estimate is wanted later,
-  consider generalized-Bayes learning-rate methods (SafeBayes, Grünwald; Holmes and Walker 2017).
-  These have not been checked in detail.
+**C4. β prior, with equal weights (problem 2).** Compare on the test bed:
+- equal weights with the current empirical-Bayes normal prior on β as the baseline;
+- a **heavier-tailed prior**: point-Laplace, or point-normal with a fixed slab. After C2, β is a
+  log hazard ratio per SD of program score, so a fixed slab has a stable meaning. Such a prior
+  leaves a real effect largely unshrunk and keeps null programs at 0, which protects the
+  false-positive criterion;
+- a fixed wider normal variance only as a reference. Widening a normal prior is not expected to
+  help on its own. While E[β̃_k] ≈ 0 it raises E[β̃_k²], which is survival's share of the loading
+  precision A_F, but not E[β̃_k], which carries survival's direction in B_F. Survival then adds
+  precision without direction and shrinks F_k.
 
-Pick the simplest option that meets the success criteria. A prior-based solution is preferred over
-a weight if both meet them: it needs no extra tuning and fits the Bayesian framing.
+This is the "let the priors balance it" option the advisors proposed.
 
-**C5. Revise the update scheme, only if C2–C4 fall short.**
-- Joint update of (F_k, β_k) in one block instead of separate coordinate steps. The mean-field
-  split q(F)q(β) ignores their posterior correlation, which is part of why gating is so strong.
-- Damped F updates.
-- Several β updates per F update, or another update order.
+**C5. Joint or collapsed (F_k, β_k) update, if C3–C4 fall short.**
+- The mean-field split q(F)q(β) lets the F update see β only through E[β̃_k] and E[β̃_k²]. A
+  prognostic direction whose sign is uncertain averages to E[β̃_k] ≈ 0, so survival contributes
+  no direction. This is a likely root cause of the gating, and no choice of prior on β fixes it.
+- Update (F_k, β_k) as one block, or integrate β_k out under its normal prior and the Cox working
+  approximation. The F_k update then gains a survival term that rewards aligning the program's
+  scores with the working response, whatever β_k's sign, even while E[β̃_k] is near 0.
+- The model stays fully Bayesian with one objective. The cost is that this program's F update is
+  no longer the plain EBNM step and needs a rank-one update. Derive it in `derivations/cox_on_YF/`
+  and check it numerically before fitting.
+- Secondary options, if needed: damped F updates; several β updates per F update, or another
+  update order.
+
+**C5b. Survival weight w_S, last resort, only if C5 falls short.**
+- One survival weight w_S on the Cox term (a tempered likelihood; generalized Bayes, Bissiri,
+  Holmes and Walker 2016), chosen by cross-validated C from a small grid such as {1, 2, 5, 10}.
+  Report the cross-validated partial log-likelihood alongside.
+- `fit_cox_on_yf(w_S = )` already exists (C1, `99c1d27`); w_S = 1 is the equal-weight update.
+- w_S cannot be estimated by maximizing the ELBO, because the weighted ELBO changes with w_S and
+  has no fixed target. If a data-driven estimate is wanted later, consider generalized-Bayes
+  learning-rate methods (SafeBayes, Grünwald; Holmes and Walker 2017). These have not been checked
+  in detail.
 
 **C6. Carry the result into the multimodal model.**
-- Use the same β prior or weight, plus modality weights w_m ∝ 1/p_m if Workstream B shows that
-  methylation dominates at larger p.
+- Use the same β prior, update or weight (whichever C3–C5b settles), plus modality weights
+  w_m ∝ 1/p_m if Workstream B shows that methylation dominates at larger p.
 - Pruning: either the weighted ELBO, or prune and select K by cross-validated C (`code/select_K.R`).
   Compare the two on the multimodal simulation and on TCGA → ICGC.
 
@@ -327,7 +399,8 @@ a weight if both meet them: it needs no extra tuning and fits the Bayesian frami
 - Report ΔC against the α_F = 0 model and the two-step baselines.
 - Compare the programs against Programs 3 and 7. Rerun pathway enrichment if the programs change.
 
-Record C2, C4 and C6 outcomes in `DECISIONS.md`. Add C1 and C4 results to the progress book.
+Record C2, the C3–C5b outcome and C6 in `DECISIONS.md`. Add C1 and C3–C5b results to the progress
+book.
 
 ## Workstream B — Feature-count sensitivity  `[Priority 2; runs in the background during A and C]`
 
@@ -412,8 +485,10 @@ results so far, rather than waiting.
 
 ## Decisions needed (Andrew and advisors)
 
-1. **C4:** prior-based balance (β prior) or an explicit survival weight w_S; rate threshold for
-   "recovered in a large majority of seeds".
+1. ~~**C4:** prior-based balance (β prior) or an explicit survival weight w_S; rate threshold for
+   "recovered in a large majority of seeds".~~ Decided 2026-10-15: prior route first, then the
+   joint/collapsed update (C5), w_S last; recovery in ≥ 80% of 20 seeds at each noise level (see
+   Workstream C and `DECISIONS.md`).
 2. ~~**C0:** merge `codex/multimodal-yfb` to `main` now.~~ Done 2026-10-12 (`2f5dd64`).
 3. **A1:** replace the February manuscript stub, or start a new file.
 4. **A3:** what the open multiple-cohorts issue is.
@@ -423,6 +498,10 @@ results so far, rather than waiting.
 ---
 
 ## Sequencing and handoffs (decided 2026-10-13)
+
+> **Historical sequence.** Its branches/merge instructions and Prompts1–7
+> below are superseded for current Round2 execution. Read the current guide
+> at the top of this file before acting; the source wording is retained.
 
 This section replaces the earlier Workstream C kickoff prompt and the parallel schedule in "Order of
 work". The write-up comes first because Andrew shares it on Friday 10/16 (draft targeted for
@@ -436,13 +515,13 @@ don't push without asking.
 
 | Step | Who | Branch | Prompt |
 |---|---|---|---|
-| 1. Review the planning page; Codex revises it and writes the drafting prompt | Andrew + Codex | `writeup/draft` (new, off `main`) | Prompt 1 |
-| 2. Draft the write-up | Claude Code | `writeup/draft` | Prompt 2 (written by Codex in step 1) |
-| 3. Review the draft | Codex | `writeup/draft` | Prompt 3 |
-| 4. Fix the review findings; Andrew approves; merge to `main` | Claude Code | `writeup/draft` | Prompt 4 |
+| 1. Review the planning page; Codex revises it and writes the drafting prompt | Andrew + Codex | `writeup/draft` (new, off `main`) | Prompt 1; `paper/writeup/_process/planning.qmd` |
+| 2. Draft the write-up | Claude Code | `writeup/draft` | Prompt 2 (written by Codex in step 1); `paper/writeup/_process/drafting_prompt.md` |
+| 3. Review the draft | Codex | `writeup/draft` | Prompt 3; `paper/writeup/_process/review_prompt.md` |
+| 4. Fix the review findings; Andrew approves; merge to `main` | Claude Code | `writeup/draft` | Prompt 4; `paper/writeup/_process/review.md` |
 | 5. Method work (M0–M8 below) | Claude Code | `feature/supervised-F`, after merging `main` | Prompt 5 |
 | 6. Review the method work, once at the end | Codex | `feature/supervised-F` | Prompt 6 |
-| 7. Revise the write-up from its "Revisit after feature/supervised-F" list | Claude Code | `writeup/revision` (off `main` after step 6 merges) | Prompt 7 |
+| 7. Revise the write-up from its "Revisit after feature/supervised-F" list | Claude Code | `writeup/revision` (off `main` after step 6 merges) | Prompt 7; `paper/writeup/_process/implementation_plan.md` |
 
 ### Method work scope (step 5)
 
@@ -456,7 +535,7 @@ survival and reconstruction; and an explanation of the biology of the final prog
 | M0 | Merge `main` into `feature/supervised-F`; run the test suite and report the count | Setup |
 | M1 | C1 diagnostics: `trace_supervision`, planted low-variance test bed, three α_F arms, diagnostic note | Why supervision currently has little effect |
 | M2 | C2 scale canonicalization in `fit_cox_on_yf()`; drop α_F as a separate knob; then define ZF (normalized projection) and settle the subscript notation in `derivations/cox_on_YF/` (10/1 plan WS4.1) | α_F; ZF clarification |
-| M3 | C3 supervised initialization; C4 β prior versus survival weight, including the β prior family comparison (Normal, point-Laplace, point-normal; 10/1 plan WS4.3); C5 only if needed | α_F; prior variation |
+| M3 | In the decided order: C3 supervised initialization and β prior warm-up with C4 β prior family comparison (Normal, point-Laplace, point-normal; 10/1 plan WS4.3), under equal weights; then C5 joint/collapsed (F_k, β_k) update if needed; C5b survival weight w_S only as a last resort | α_F; prior variation |
 | M4 | C6: carry the chosen method into the multimodal model | Multimodal method |
 | M5 | K selection for both models: compare the weighted ELBO with pruning by cross-validated C plus reconstruction; replicated K panels; 1-SE rule (10/1 plan WS4.7) | Parsimonious K_eff |
 | M6 | Robustness: jittered SVD starts × 20–100 (10/1 plan WS4.4); F prior families; Workstream B feature counts | Multiple seeds; prior variation; feature count |
@@ -465,10 +544,14 @@ survival and reconstruction; and an explanation of the biology of the final prog
 
 **Working mode for step 5.** Work through M0–M8 without stopping for step-by-step teach-back, and
 give Andrew a summary at the end. Stop only for:
-1. the recovery rate that counts as "a large majority of seeds", set before the C4 runs;
-2. the C4 choice between a prior on β and a survival weight;
+1. ~~the recovery rate that counts as "a large majority of seeds", set before the C4 runs~~
+   (decided 2026-10-15: ≥ 80% of 20 seeds at each noise level);
+2. ~~the C4 choice between a prior on β and a survival weight~~ (decided 2026-10-15: the order
+   C3–C4 → C5 → C5b in Workstream C);
 3. the K-selection criterion in M5;
 4. any result that fails a pre-specified success criterion (report it; don't work around it).
+   This includes a failure at each step of the C3–C4 → C5 → C5b order: report it and wait for
+   Andrew before starting the next step.
 
 Each stop comes with a short recommendation.
 

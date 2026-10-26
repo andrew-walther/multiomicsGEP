@@ -169,6 +169,9 @@ multimodal_yfb_signed_posterior <- function(A, B, prior) {
       !is.finite(A) || !is.finite(B) || A < 0) {
     stop("A must be a finite nonnegative scalar and B must be finite.")
   }
+  # Feature names on scalar A/B otherwise turn weights["pos"] into
+  # weights["pos.gene"], breaking the R fallback's named component lookup.
+  A <- unname(A); B <- unname(B)
   family <- prior$family
   if (!family %in% c("point_laplace", "normal")) {
     stop("Signed prior family must be point_laplace or normal.")
@@ -253,7 +256,9 @@ multimodal_yfb_coordinate_kl <- function(x, s2, mean, second, log_ml) {
 multimodal_yfb_fit_exponential_prior_ebnm <- function(x, s2, init = NULL) {
   ok <- is.finite(x) & is.finite(s2) & s2 > 0
   dead <- list(family = "point_exponential", pi = 0, rate = NA_real_, point_mass = TRUE)
-  if (!any(ok)) return(dead)
+  # No signal: the point mass is the marginal-likelihood maximizer (see
+  # multimodal_yfb_fit_signed_prior())
+  if (!any(ok) || all(abs(x[ok]) <= 1e-10 * sqrt(s2[ok]))) return(dead)
   g_init <- if (!is.null(init) && !isTRUE(init$point_mass) && is.finite(init$rate %||% NA))
     ebnm::gammamix(pi = c(1 - init$pi, init$pi), shape = c(1, 1), scale = c(0, 1 / init$rate),
                    shift = c(0, 0))
@@ -281,7 +286,10 @@ multimodal_yfb_fit_exponential_prior_ebnm <- function(x, s2, init = NULL) {
 #' @family multimodal_yfb_updates
 multimodal_yfb_fit_signed_prior <- function(x, s2, family, init = NULL) {
   ok <- is.finite(x) & is.finite(s2) & s2 > 0
-  if (!any(ok)) {
+  # No signal (every |x| negligible against its s): the marginal-likelihood
+  # maximizer is the point mass at zero, and ebnm's optimizer can fail at
+  # that boundary, so return it directly
+  if (!any(ok) || all(abs(x[ok]) <= 1e-10 * sqrt(s2[ok]))) {
     return(list(family = family, pi = 0, rate = NA_real_, variance = 0, point_mass = TRUE))
   }
   if (family == "normal") {
@@ -393,6 +401,8 @@ multimodal_yfb_update_loading_prior <- function(slab_prob, mean) {
   list(pi = total_slab / length(mean), rate = total_slab / total_mean, point_mass = FALSE)
 }
 
+source("code/loading_prior_fixed_q.R")
+
 #' Sequentially update one modality's loading column
 #'
 #' Implements the exact scalar Gauss-Seidel update: reconstruction and Cox
@@ -407,7 +417,10 @@ multimodal_yfb_update_loading_prior <- function(slab_prob, mean) {
 #' @param EF_k,EF2_k Current loading posterior moments for this modality-factor.
 #' @param EBeta_k,EBeta2_k Coefficient posterior moments for this factor.
 #' @param prior_update For point-exponential loadings: "em" (moment update)
-#'   or "ebnm" (marginal-likelihood fit). Signed priors always use ebnm.
+#'   or "ebnm" (marginal-likelihood fit). Signed priors historically use ebnm.
+#' @param loading_prior_update "historical" (default) or opt-in "fixed_q_em".
+#'   The latter changes only point-Laplace F-prior maximization and its KL,
+#'   holding the just-completed posterior sweep fixed.
 #' @param prior Fixed modality-factor prior for this sweep: point-exponential
 #'   (`family` NULL or "point_exponential"), "point_laplace" or "normal".
 #' @return Updated loading/projection moments, fitted prior, and per-feature diagnostics.
@@ -418,7 +431,8 @@ multimodal_yfb_update_loading_prior <- function(slab_prob, mean) {
 multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
                                         h_minus_k, EZ_k, VZ_k, EF_k, EF2_k,
                                         EBeta_k, EBeta2_k, prior,
-                                        prior_update = "em") {
+                                        prior_update = "em",
+                                        loading_prior_update = "historical") {
   if (!is.matrix(Y_m) || !is.matrix(R_mk) || !identical(dim(Y_m), dim(R_mk)) ||
       !is.numeric(Tau_m) || length(Tau_m) != ncol(Y_m) || length(EL_k) != nrow(Y_m) ||
       length(w) != nrow(Y_m) || length(h_minus_k) != nrow(Y_m) ||
@@ -433,6 +447,13 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
       any(!is.finite(EZ_k)) || any(!is.finite(VZ_k)) || any(VZ_k < -1e-10)) {
     stop("Cox working and projection moments must be finite with nonnegative variances.")
   }
+
+  if (!identical(loading_prior_update, "historical") &&
+      !identical(loading_prior_update, "fixed_q_em"))
+    stop("loading_prior_update must be historical or fixed_q_em.")
+  if (identical(loading_prior_update, "fixed_q_em") &&
+      !identical(prior$family, "point_laplace"))
+    stop("fixed_q_em supports only point-Laplace F priors.")
 
   EF_new <- EF_k
   EF2_new <- EF2_k
@@ -487,6 +508,13 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
       vapply(details, function(d) as.numeric(d[[f]]), numeric(1))
     }), fields)
   }
+  if (identical(loading_prior_update, "fixed_q_em")) {
+    # q and projection moments stay fixed while g maximizes E_q log g.
+    # Replacing g requires an atomic KL correction to that same q.
+    fitted <- loading_prior_fixed_q(details, prior)
+    return(list(EF=EF_new, EF2=EF2_new, EZ=EZ_new, VZ=pmax(VZ_new, 0),
+                prior=fitted$prior, details=details, kl=fitted$kl))
+  }
   get <- function(field) details[[field]]
   new_prior <- if (signed) {
     multimodal_yfb_fit_signed_prior(get("x"), get("s2"), prior$family, prior)
@@ -500,6 +528,40 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
        prior = new_prior, details = details,
        kl = multimodal_yfb_coordinate_kl(get("x"), get("s2"), get("mean"),
                                          get("second"), get("log_ml")))
+}
+
+#' Update one survival coefficient under a fixed shared prior
+#'
+#' Posterior of beta_k under a prior g shared by all factors and held fixed
+#' during the sweep (ebnm with fix_g = TRUE); g is refit across factors after
+#' the sweep by the caller. The likelihood term is the same Cox working
+#' quadratic as [multimodal_yfb_update_beta_k()], including Var(Z_k).
+#'
+#' @param EZ_k,VZ_k Projection posterior mean and variance for one factor.
+#' @param w,h_minus_k Frozen Cox working quantities.
+#' @param g Fitted ebnm prior (e.g. a `laplacemix`).
+#' @param prior_family Shared prior family: point_laplace (default) or normal.
+#' @return Posterior moments, the pseudo-observation `x`, precision `A`,
+#'   signal `B`, and the coordinate KL term.
+#' @examples
+#' multimodal_yfb_update_beta_shared_k(c(1, -1, 2), c(0, 0, 0), c(1, 1, 1),
+#'   c(0.5, -0.2, 1), ebnm::laplacemix(c(0.5, 0.5), c(0, 0), c(0, 1)))
+#' @family multimodal_yfb_updates
+multimodal_yfb_update_beta_shared_k <- function(EZ_k, VZ_k, w, h_minus_k, g,
+                                                prior_family = "point_laplace") {
+  A <- sum(w * (EZ_k^2 + pmax(VZ_k, 0)))
+  B <- sum(EZ_k * h_minus_k)
+  if (!is.finite(A) || A <= 0) {
+    return(list(A = 0, B = B, x = 0, mean = 0, second = 0, variance = 0, kl = 0))
+  }
+  x <- B / A
+  fit <- ebnm::ebnm(x, sqrt(1 / A), prior_family = prior_family,
+                    g_init = g, fix_g = TRUE)
+  mean <- fit$posterior$mean
+  second <- fit$posterior$sd^2 + mean^2
+  list(A = A, B = B, x = x, mean = mean, second = second,
+       variance = fit$posterior$sd^2,
+       kl = multimodal_yfb_coordinate_kl(x, 1 / A, mean, second, fit$log_likelihood))
 }
 
 #' Update one shared Normal-prior survival coefficient

@@ -1,0 +1,2 @@
+"source","model","cell","p","p_expression","fold","evaluation","C","logPL","risk_sd","credible","retained","converged","iterations","reconstruction_rmse","runtime_seconds","gc_peak_mb","warnings","error"
+"methylation_count","methylation_only",7,25000,0,0,"training",NA,NA,NA,NA,NA,FALSE,NA,NA,27.981,1259.9,"","Cox working and projection moments must be finite with nonnegative variances."

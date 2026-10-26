@@ -1,0 +1,3 @@
+model,adopted,reason
+single,FALSE,"Assessment stopped: multimodal ELBO convergence unavailable; no completed panel"
+multimodal,FALSE,"Required ELBO convergence not recorded by existing fitter"

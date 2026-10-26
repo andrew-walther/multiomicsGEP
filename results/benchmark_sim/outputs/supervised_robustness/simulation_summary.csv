@@ -1,0 +1,7 @@
+"arm","noise","n","recovered","false_active","nonconverged","C","best_recovery_differs"
+"best_of_20",0.25,20,17,1.15,0,0.763106630413695,0
+"default",0.25,20,17,1.1,1,0.763449470521933,NA
+"normal_prior",0.25,20,15,0.95,0,0.752826193694652,NA
+"best_of_20",1,20,17,0.45,0,NA,2
+"default",1,20,19,0.25,1,NA,NA
+"normal_prior",1,20,17,0.4,0,NA,NA

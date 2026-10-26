@@ -1,0 +1,103 @@
+---
+title: "Survival-supervised loadings under $\\eta = (YF)\\tilde\\beta$: projection scale, notation and the exact F update"
+author: "Andrew Walther"
+date: 2026-10-15
+format:
+  pdf:
+    toc: false
+    number-sections: true
+    geometry: margin=1in
+---
+
+This note settles the definition of the program scores $Z_F$ and their subscripts, and corrects the
+survival term of the $q(F)$ update in `qF_supervised/qF_supervised_derivation.tex` (equation
+`eq:BFsurv`). It describes `fit_cox_on_yf(canonicalize = TRUE)`. The earlier configuration
+(`canonicalize = FALSE`, $\alpha_F$) is unchanged and is described by the earlier derivations.
+
+# Notation
+
+- $Y \in \mathbb{R}^{n\times p}$: expression, rows $i$ = patients, columns $j$ = genes; z-standardized per platform
+- $L \in \mathbb{R}^{n\times K}$, $F \in \mathbb{R}^{p\times K}$: scores and loadings, $Y \approx LF^\top$; columns indexed by program $k$
+- $Z_F = YF \in \mathbb{R}^{n\times K}$: program scores (projections); entry $z_{ik} = \sum_j y_{ij} f_{jk}$, column $z_{\cdot k} = Y f_{\cdot k}$
+- $\tilde\beta \in \mathbb{R}^K$: survival coefficients; $\eta_i = \sum_k z_{ik}\tilde\beta_k$
+- $u_i, w_i$: score and diagonal curvature of the Cox partial log-likelihood at the current $\eta$
+- $\zeta_i = \eta_i + u_i/w_i$: working response
+- $\zeta_{-k,i} = \zeta_i - \sum_{k'\ne k} \bar z_{ik'}\bar\beta_{k'}$: working response with every program except $k$ removed
+
+Bars denote posterior means under $q$: $\bar f_{jk} = \mathbb E_q f_{jk}$, $\bar z_{ik} = \sum_j y_{ij}\bar f_{jk}$.
+Subscripts are always (patient $i$, gene $j$, program $k$). Earlier documents wrote $\mathbf{Z}_F$,
+"ZF" and $(z_F)_{ik}$ for the same matrix.
+
+# Scale of the projection
+
+$Y\approx LF^\top$ and $\eta = YF\tilde\beta$ are unchanged by
+$f_{\cdot k}\to f_{\cdot k}/c_k$, $l_{\cdot k}\to c_k l_{\cdot k}$, $\tilde\beta_k\to c_k\tilde\beta_k$ for any $c_k>0$.
+The reconstruction term does not fix $c_k$, but the survival term depends on it, which is the
+feedback loop behind the April instability. The fitter fixes the scale by
+$$
+\operatorname{sd}_i(\bar z_{ik}) = 1 \quad\text{on the training data},
+$$
+applied after initialization and at the end of every iteration, with second moments scaled by
+$c_k^{\mp2}$ and any loading prior held across sweeps transformed with $f$ (Laplace or exponential
+rate $\times c_k$, normal variance $/c_k^2$). The ebnm priors on $L$ and $\tilde\beta$ are refit at every
+update and are scale families, so they need no transformation. Consequences:
+
+- $\tilde\beta_k$ is a log hazard ratio per training standard deviation of program $k$'s score.
+- Prediction for a new patient is $\hat\eta = y^\top\bar F\bar{\tilde\beta}$ with the training $\bar F$; no
+  further normalization. (The earlier configuration used $Y\bar F_{\cdot k}/\lVert\bar F_{\cdot k}\rVert$
+  inside the Cox term while its $F$ update was derived for $Y\bar F_{\cdot k}$, so the survival
+  pseudo-observation was on a different scale from the reconstruction one.)
+- A program whose score has collapsed ($\operatorname{sd} < 10^{-6}$) is left unscaled.
+
+# The $q(f_{jk})$ update
+
+The Taylor-approximated Cox term is $-\tfrac12\sum_i w_i(\zeta_i-\eta_i)^2$. Write
+$\eta_i = \eta_{-k,i} + \tilde\beta_k\bigl(y_{ij}f_{jk} + \sum_{j'\ne j} y_{ij'}f_{j'k}\bigr)$. Under the mean-field
+$q$, the terms in $f_{jk}$ give, with survival weight $w_S$ ($w_S=1$ is the plain posterior),
+$$
+A_{jk} = \tau_j\sum_i\mathbb E l_{ik}^2 + w_S\,\mathbb E\tilde\beta_k^2\sum_i w_i y_{ij}^2,
+$$
+$$
+B_{jk} = \tau_j\sum_i r_{-k,ij}\bar l_{ik}
+ + w_S\Bigl[\bar\beta_k\sum_i w_i y_{ij}\zeta_{-k,i}
+ - \mathbb E\tilde\beta_k^2\sum_i w_i y_{ij}\bigl(\bar z_{ik}-y_{ij}\bar f_{jk}\bigr)\Bigr],
+$$
+and $q(f_{jk})$ is the posterior under the loading prior $g_k$ for one observation $x=B/A$ with
+variance $1/A$. Here $r_{-k}$ is the reconstruction residual without program $k$.
+
+**Correction.** `eq:BFsurv` of the earlier derivation omits the last term,
+$-\mathbb E\tilde\beta_k^2\sum_i w_iy_{ij}(\bar z_{ik}-y_{ij}\bar f_{jk})$: it removes the other programs
+from $\eta$ but not the other genes of program $k$. Each gene then regresses the whole program-$k$
+residual on itself, and with correlated genes the update overshoots by roughly the number of
+correlated genes. The derivation's own definition of $\eta_{\text{no-}j}$ includes those genes; the
+error is in the step to $z_{\text{no-}k}$. The configurations behind the reported single-modality
+results use $\alpha_F = 0$, where the survival term is absent, so they are unaffected; the
+2026-08-20 $\alpha_F$ grid used the incomplete term.
+
+Because $B_{jk}$ depends on $\bar f_{j'k}$ for $j'\ne j$, the update is a sequential sweep over genes,
+refreshing $\bar z_{\cdot k}$ and $\operatorname{Var}(z_{\cdot k})$ after each gene, with $g_k$ held
+fixed during the sweep and refit by marginal likelihood from the sweep's $(x, 1/A)$ afterwards.
+This is the update the multimodal model uses (`multimodal_yfb_update_F_mk()`); the
+single-modality fitter calls it with working weights $w_Sw_i$ and $w_Sw_i\zeta_{-k,i}$. At
+convergence of the sweep with fixed $\tilde\beta$ and negligible $\tau$ it solves the weighted least
+squares problem $\tilde\beta_k Yf_{\cdot k}\approx\zeta_{-k}$ (test Supervision-T8).
+
+A program with $\max_j A_{jk} < 10^{-8}$ carries no information from either likelihood. With $g_k$
+held fixed its posterior would be the prior (zero mean, positive second moment), which revives
+$l_{\cdot k}$ and $\tilde\beta_k$ from nothing; the fitter sets $f_{\cdot k}=0$ with a point-mass prior
+instead, which is equivalent to pruning it while keeping $K$ columns.
+
+# $q(\tilde\beta_k)$ and the monitored objective
+
+The coefficient update uses $\mathbb E z_{ik}^2 = \bar z_{ik}^2 + \sum_j y_{ij}^2\operatorname{Var}(f_{jk})$:
+$A_{\beta,k} = w_S\sum_i w_i\,\mathbb E z_{ik}^2$, $B_{\beta,k} = w_S\sum_i w_i\bar z_{ik}\zeta_{-k,i}$.
+The monitored objective is
+$$
+\mathbb E_q\log p(Y\mid L,F,\tau) + w_S\,\widehat{\ell}_{\text{Cox}} - \text{KL terms},
+$$
+with the Cox term re-expanded at the end of each iteration at the current $\bar\eta$ and including
+$\operatorname{Var}_q(\eta_i)$. It carries the same weight $w_S$ as every update, which removes the
+mismatch between the monitored quantity and the updates in the earlier configuration
+(survival weighted $\alpha p/(1-\alpha)$ in the monitor against $\alpha_F/(1-\alpha_F)$ in the $F$ update).
+The Cox Taylor approximation and the per-update prior refits mean the objective is not guaranteed
+to increase at every iteration.

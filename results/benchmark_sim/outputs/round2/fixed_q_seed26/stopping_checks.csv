@@ -1,0 +1,3 @@
+"iterations","native_ELBO_converged","outputs_converged","last_ELBO_relative_change","last_max_relative_output_change","negative_ELBO_steps","last_delta_L","last_delta_beta","arm"
+300,FALSE,FALSE,0.000172120984339759,0.105693004459869,98,0.0039688083645436,0.000709793785236549,"reference"
+10,TRUE,FALSE,9.99712344571553e-06,0.0191487629033688,3,0.00306990691669706,0.0038810746759648,"candidate"

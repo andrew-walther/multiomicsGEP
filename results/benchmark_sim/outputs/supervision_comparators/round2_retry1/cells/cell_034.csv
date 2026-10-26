@@ -1,0 +1,6 @@
+"seed","noise","runtime","method","program","cor_planted","recovered","false_active","C","K_final","n_active","converged","iterations","applicable","reason","error","warnings"
+20261029,1,1.402,"ebmf_alone",2,0.097851440360318,FALSE,NA,NA,2,NA,NA,NA,TRUE,NA,NA,""
+20261029,1,1.402,"ebmf_cox",2,0.097851440360318,FALSE,0,0.543579829225068,2,0,NA,3,TRUE,NA,NA,""
+20261029,1,1.402,"ebmf_lasso_cox",2,0.097851440360318,FALSE,NA,NA,2,0,NA,NA,TRUE,NA,NA,"Starting in glmnet 5.1, the default Cox tie-handling method will change from 'breslow' to 'efron' (matching survival::coxph). To silence this message and lock in the v5.0 default, pass cox.ties = 'breslow' explicitly. To preview the v5.1 behavior, pass cox.ties = 'efron'."
+20261029,1,1.402,"pca_cox",7,0.228633355066003,FALSE,3,0.520380215885291,7,3,NA,3,TRUE,NA,NA,""
+20261029,1,1.402,"supervised",4,0.819229607983826,TRUE,0,0.853874657644595,7,1,TRUE,22,TRUE,NA,NA,""

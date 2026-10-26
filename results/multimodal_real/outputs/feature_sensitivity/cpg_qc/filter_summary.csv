@@ -1,0 +1,8 @@
+"subset","n_probes","n_sd_beta","n_sd_asin","n_sd_missing","n_constant","n_screened","n_mean_unknown","n_proportion_unknown"
+"All available",305492,305492,305492,0,0,10000,0,0
+"Mean filter",182996,182996,182996,0,0,9990,0,0
+"Proportion filter",221222,221222,221222,0,0,10000,0,0
+"Both filters",182996,182996,182996,0,0,9990,0,0
+"Mean only",0,0,0,0,0,0,0,0
+"Proportion only",38226,38226,38226,0,0,10,0,0
+"Current screened set",10000,10000,10000,0,0,10000,0,0

@@ -1,0 +1,110 @@
+---
+title: "Advisor briefing: progress since October 2"
+subtitle: "Progress since October 2 and the manuscript direction"
+author: "Andrew J. Walther"
+date: "2026-10-16"
+format:
+  html:
+    embed-resources: true
+    theme: cosmo
+  pdf:
+    documentclass: article
+    fontsize: 10pt
+    geometry: margin=0.8in
+    pdf-engine: lualatex
+    latex-auto-install: false
+    colorlinks: true
+execute:
+  enabled: false
+---
+
+## Main message
+
+We have completed the full-range Single gene-count sensitivity study and
+requested CpG variability inventory. Prediction stays broadly similar as
+genes increase; programs are particularly stable from about 5k to 10k genes.
+Larger CpG fits exposed a numerical failure that is repaired experimentally,
+but reliable convergence remains the main methodological obstacle.
+
+The benchmark is retained: Single external C=0.627 across five cohorts with
+$\alpha_F=0$ (survival does not guide its loading updates). Joint ICGC primary
+C=0.685 versus expression-only C=0.676; both fits are unconverged and
+incremental predictive benefit is unproven.
+
+## What increasing the feature count shows
+
+Same 273 TCGA+CPTAC training patients, $K=7$, no pruning and cold starts;
+all 24 full-training/CV gene fits converge.
+
+| Shared genes | Conditional CV C ± SE | Retained programs |
+|---:|---:|---:|
+| 2,064 | 0.608 ± 0.046 | 4 |
+| 5,001 | 0.577 ± 0.027 | 4 |
+| 10,000 | 0.609 ± 0.040 | 4 |
+| 17,900 (all) | 0.607 ± 0.019 | 3 |
+
+There is no clear predictive gain. Screening/scaling preceded folds; this
+is conditional CV, not fully nested preprocessing evaluation. No count is adopted.
+
+| Expansion | Matched programs | Common-gene loading $|r|$ | Risk r |
+|---|---:|---:|---:|
+| 2,064 → 5,001 | 4 | 0.115–0.962 | 0.655 |
+| 5,001 → 10,000 | 4 | **0.960–0.994** | **0.972** |
+| 10,000 → 17,900 | 3 | 0.737–0.915 | 0.667 |
+
+Strong agreement over 5k–10k does not mean every program is stable across
+the entire range. Constant/unmatched factors have undefined correlations.
+
+The CpG inventory covers 305,492 raw probes; 305,352 are model-eligible.
+Observed mean/SD histograms and both requested filter-overlap summaries are
+complete; no filter or SD cutoff is adopted. The 10k methylation-only fit
+caps at 500 with zero credible coefficients. Original 25k fitting fails from
+Cox risk-set underflow. Stable log-space arithmetic removes that error, but
+the same case still caps at 500 with extreme predictors: training C=0.984
+is not a validated improvement. Larger counts and matched CV/joint curves
+remain unfinished.
+
+## What this means for the method and manuscript
+
+Survival-guided loading updates are implemented experimentally, but a fully
+validated supervised replacement, rank selection and added multimodal value
+remain unresolved. The next method work addresses prior/objective consistency;
+software tests alone do not establish a successful scientific remedy.
+
+The full write-up describes the method, benchmark results and provisional
+biology. Existing evidence supports expression-defined programs and
+methylation-dominant structure, not its biological cause or added prognostic
+value. Final labels need annotation/enrichment and composition/batch checks.
+
+**Advisor discussion:** agree on the manuscript's central contribution and
+prioritize stable supervision before the remaining matched feature curves.
+A computational-methods paper with a convincing PDAC evaluation could fit
+*Bioinformatics Advances*; a stronger statistical-methods emphasis could fit
+*Statistics in Biosciences*. These are provisional scope-based options,
+not a submission decision. The current write-up can support drafting now;
+scientific validation still determines the claims.
+
+Accompanying documents provide the detailed evidence report, the full
+method/results/biology write-up, and a journal shortlist with sources and
+remaining manuscript-readiness requirements.
+
+
+## Guide to the project write-up
+
+Start with the structured summary, then use four questions to align on the
+current evidence and the intended manuscript:
+
+| Read | Main question for discussion |
+|---|---|
+| Methods and model-comparison table | What do activities, loadings and projection scores mean, and which formulation supports the reported results? |
+| External validation and feature-count results | How convincing are prediction and program stability relative to the actual comparator? |
+| Biological findings | Do basal-like/classical versus stromal/immune programs give useful biological separation, and what would establish added methylation value? |
+| Discussion and continuing work | What is the strongest defensible manuscript claim now, and what evidence is essential before submission? |
+
+**Proposed narrative:** Bayesian program models connect cross-cohort risk
+prediction with interpretable tumor and microenvironmental structure, and
+provide a framework for testing what broader molecular inputs contribute.
+The present evidence supports that starting point. The stronger claim that
+survival improves program discovery requires the ongoing methodological
+validation; neither uncertainty calibration nor added multimodal value is
+established merely by the model's formulation.

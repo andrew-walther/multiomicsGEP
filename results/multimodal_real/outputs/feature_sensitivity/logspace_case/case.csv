@@ -1,0 +1,2 @@
+"source","model","p","evaluation","C","logPL","risk_sd","credible","retained","converged","iterations","runtime_seconds","warnings","error"
+"logspace_25k","methylation_only",25000,"training",0.983853983853984,-40176.9622564604,39086.3125426669,7,7,FALSE,500,2660.496,"",""

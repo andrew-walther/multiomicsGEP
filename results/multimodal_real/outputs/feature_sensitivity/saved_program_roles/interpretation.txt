@@ -1,0 +1,23 @@
+Both saved fits hit500 iterations; roles are descriptive and not a model adoption.
+No new survival scoring or biological enrichment/label transfer was performed.
+Shares normalize rank-one molecular norms separately in each modality; not PVE or survival contributions.
+Greedy activity matching preserves undefined and ambiguous cases; coefficients retain fitted orientation.
+R version 4.5.2 (2025-10-31)
+Platform: aarch64-apple-darwin20
+Running under: macOS 27.0.1
+
+Matrix products: default
+BLAS:   /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+loaded via a namespace (and not attached):
+[1] compiler_4.5.2 tools_4.5.2    yaml_2.3.12   

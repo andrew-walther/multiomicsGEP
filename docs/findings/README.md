@@ -20,3 +20,6 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 | 2026-07-15 | [ssbmf-progress-report](2026-07-15-ssbmf-progress-report.qmd) | Long progress report since 6/18: objective fixes, simulations, K parsimony, external validation, biology | complete |
 | 2026-08-21 | [pathway-enrichment-report](2026-08-21-pathway-enrichment-report.qmd) | Enrichment for all four retained K = 7 programs, including the genomics-only programs | complete (current reference) |
 | 2026-08-21 | [session-progress-findings](2026-08-21-session-progress-findings.md) | Phase checklist of the 8/21 meeting-prep work (model chapter, factor classification, K recovery, EBMF comparisons) with results | complete for Phases 0–4; Phase 5 never scoped |
+| 2026-10-15 | [m6-m7-summary](2026-10-15-m6-m7-summary.md) | Robustness (jittered starts, Normal loading priors, feature counts) and comparator results, with branch commits | complete (no configuration adopted) |
+| 2026-10-16 | [advisor-progress-since-10-02](2026-10-16-advisor-progress-since-10-02.qmd) | Five-page advisor report of the evidence since 10/2 and the revised execution order (`.qmd`, `.html`, `.pdf`) | complete |
+| 2026-10-16 | [advisor-meeting-summary](2026-10-16-advisor-meeting-summary.qmd) | Two-page brief for the 10/16 meeting: model, validation, biology, manuscript (`.qmd`, `.html`, `.pdf`) | complete |

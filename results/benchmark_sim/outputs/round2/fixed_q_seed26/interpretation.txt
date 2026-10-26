@@ -1,0 +1,9 @@
+One preregistered simulation candidate after02a658a; no automatic retry or expansion.
+Original ELBO stopping rule passes at10 iterations, reference caps300.
+Existing output diagnostic fails: maximum relative LF/eta change.01914876 versus1e-4.
+Both recover the planted program; both have2 credible and1 false-active program.
+Validation C.756846 versus.753722 is a one-case observation, not a performance gain.
+All67 actual loading-prior calls have finite KL and nonnegative recorded gains.
+Four selected independent density checks agree closely; not exhaustive validation.
+Three candidate ELBO decreases remain; local prior ascent is not global objective ascent.
+No benchmark/default/criterion adoption. Stop and review stopping/objective consistency.

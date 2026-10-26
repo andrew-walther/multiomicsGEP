@@ -1,0 +1,1 @@
+Cell1 gc_peak_mb unavailable: original fixed column6 was a raw-count column on R4.6. Original CSV retained verbatim; all scientific values and fit preserved. Remaining fits use final gc column (MB).

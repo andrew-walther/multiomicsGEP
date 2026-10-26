@@ -1,0 +1,10 @@
+"model","seed","noise","kind","arm","fold","runtime_seconds","warnings","error","n_train","n_validation","C","risk_sd","K_final","n_active","recovered","cor_planted","false_active","converged","iterations","pruning_caps","profiled_curvature","reference_source","reference_md5","no_collapse","source","training_C","n","K","active","reconstruction_change","eta_change"
+"single",42,NA,"training_full","profiled",NA,105.123,NA,NA,144,144,0.651632151632152,0.456488110283683,7,3,NA,NA,NA,FALSE,300,0,TRUE,NA,NA,TRUE,"round2_training_full",0.651632151632152,NA,NA,NA,NA,NA
+"multimodal",42,NA,"training_full","profiled",NA,2837.559,NA,NA,144,144,0.639171639171639,0.278681383798014,7,1,NA,NA,NA,FALSE,500,0,TRUE,NA,NA,TRUE,"round2_training_full",0.639171639171639,NA,NA,NA,NA,NA
+"single",NA,NA,NA,"selected",NA,101.247,NA,NA,NA,NA,NA,0.350338577422033,NA,NA,NA,NA,NA,TRUE,297,0,NA,NA,NA,NA,"round2",0.654791154791155,144,7,1,NA,0.000312200359419393
+"single",NA,NA,NA,"framework",NA,100.883,NA,NA,NA,NA,NA,0.456209595821986,NA,NA,NA,NA,NA,FALSE,300,0,NA,NA,NA,NA,"round2",0.651632151632152,144,7,3,NA,0.00175830112590165
+"multimodal",NA,NA,NA,"selected",NA,2474.181,NA,NA,NA,NA,NA,0,NA,NA,NA,NA,NA,FALSE,500,0,NA,NA,NA,NA,"round2",NA,144,7,0,0.00892927936972325,0
+"multimodal",NA,NA,NA,"framework",NA,2533.568,NA,NA,NA,NA,NA,0.255336640025853,NA,NA,NA,NA,NA,FALSE,500,0,NA,NA,NA,NA,"round2",0.646367146367146,144,7,1,0.00645116168015166,0.00116307731258414
+"multimodal_framework",NA,NA,NA,"pruned",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,NA,"benchmark_snapshot",0.637767637767638,144,7,1,NA,NA
+"single_alpha_F0",NA,NA,NA,"pruned_expression_only",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"benchmark_snapshot",0.593717093717094,144,NA,NA,NA,NA
+"expression_only_framework",NA,NA,NA,"pruned_expression_only",NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,FALSE,NA,NA,NA,NA,NA,NA,"benchmark_snapshot",0.643559143559144,144,7,1,NA,NA

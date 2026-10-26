@@ -1,0 +1,2 @@
+"outer","inner","factor","n","eta_min","eta_max","eta_span","eta_nonfinite","shifted_exp_zero","risk_sum_zero_rows","event_rows_zero_risk_sum","working_w_nonfinite","working_h_nonfinite","projection_EZ_nonfinite","projection_VZ_nonfinite","projection_VZ_min","beta_max_abs"
+6,1,1,144,-358.775358502187,5375.27196292738,5734.04732142956,0,143,17,6,17,17,0,0,6.38762885807313e-07,711.787582454488

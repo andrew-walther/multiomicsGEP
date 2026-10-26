@@ -8,7 +8,7 @@ Hyperparameters are read from `config/globals.yml`.
 
 | File | Contents |
 |------|----------|
-| `fit_cox_on_yf.R` | `fit_cox_on_yf()`: CAVI fit of the YFB model (η = (YF)β), the recommended configuration. Optional cohort offsets, stratified baseline hazard and cohort-specific β |
+| `fit_cox_on_yf.R` | `fit_cox_on_yf()`: CAVI fit of the YFB model (η = (YF)β), the recommended configuration. Optional cohort offsets, stratified baseline hazard, cohort-specific β and ELBO-based program pruning |
 | `fit_modular.R` | `fit_supervised_mf_modular()`: CAVI fit of the LB model (η = Lβ) |
 | `fit_modular_multistart.R` | Multiple-initialization wrapper for the LB fit |
 | `deflation_init.R`, `warmstart_from_fit.R` | Initialization: deflation start, warm start of a smaller-K refit |
@@ -72,6 +72,16 @@ One file per variational factor; the fitters source these.
 | File | Contents |
 |------|----------|
 | `pathway_enrichment.R` | Gene-set enrichment (fgsea, ORA) of fitted programs and subtype concordance |
+
+## Diagnostic and sensitivity-study utilities
+
+Opt-in helpers for specific diagnostic studies; the default fits do not use them.
+Each study's design and outcome is recorded in `docs/plans/`.
+
+`cox_working_logspace.R`, `profile_cox_intercept.R`, `loading_prior_fixed_q.R`,
+`loading_balance_audit.R`, `multimodal_moment_audit.R`,
+`multimodal_program_agreement.R`, `feature_sensitivity.R`,
+`cpg_feature_sensitivity.R`, `multimodal_feature_sensitivity.R`
 
 ## Reference and archived code
 

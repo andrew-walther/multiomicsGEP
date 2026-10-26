@@ -72,6 +72,12 @@ suppressPackageStartupMessages(library(ebnm))
 #'                    the dual-source F update with alpha > 0 has a positive-
 #'                    feedback instability documented in DECISIONS.md 2026-04-30.
 #' @param A_floor     numeric: minimum value for each A_F[j] (default 1e-10)
+#' @param w_surv      NULL (default) or a nonnegative scalar. When supplied, the
+#'                    alpha mixing is replaced by the unweighted Bayesian sum with
+#'                    a survival weight: A_F = A_gen + w_surv * A_surv,
+#'                    B_F = B_gen + w_surv * B_surv. w_surv = 1 is the exact
+#'                    equal-weight posterior (alpha = 0.5 with both terms doubled).
+#'                    NULL keeps the alpha-weighted update unchanged.
 #'
 #' @return Named list:
 #'   $mean        -- p-vector: posterior mean E_q[f_{jk}]
@@ -98,7 +104,8 @@ update_F_surv_YFB_k <- function(Tau, EL_k, EL2_k, R_k,
                                  YtWz_no_k    = NULL,
                                  prior_family = "point_exponential",
                                  alpha        = 0,        # alpha_F=0: pure genomics
-                                 A_floor      = 1e-10) {
+                                 A_floor      = 1e-10,
+                                 w_surv       = NULL) {
 
   p <- length(Tau)
 
@@ -133,8 +140,15 @@ update_F_surv_YFB_k <- function(Tau, EL_k, EL2_k, R_k,
   # ------------------------------------------------------------------
   # Alpha-weighted combination and precision floor
   # ------------------------------------------------------------------
-  A_F <- pmax((1 - alpha) * A_gen + alpha * A_surv, A_floor)
-  B_F <- (1 - alpha) * B_gen + alpha * B_surv
+  # w_surv supplied: unweighted Bayesian sum, survival term scaled by w_surv
+  # (w_surv = 1 is the plain posterior that combines both likelihoods).
+  if (is.null(w_surv)) {
+    A_F <- pmax((1 - alpha) * A_gen + alpha * A_surv, A_floor)
+    B_F <- (1 - alpha) * B_gen + alpha * B_surv
+  } else {
+    A_F <- pmax(A_gen + w_surv * A_surv, A_floor)
+    B_F <- B_gen + w_surv * B_surv
+  }
 
   # ------------------------------------------------------------------
   # EBNM pseudo-observation and noise (p-vectors)

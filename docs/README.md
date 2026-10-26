@@ -130,3 +130,26 @@ Use the table to find the new name for an old path. A row for a `.qmd` covers it
 | `docs/reviews/2026-10-02_chapter_review.md` | `docs/reviews/2026-10-02-chapter-review.md` |
 | `docs/reviews/2026-10-02_prelim_proposal_review.md` | `docs/reviews/2026-10-02-prelim-proposal-review.md` |
 | `docs/PDAC_data_audit.qmd` | `docs/findings/2026-03-31-pdac-data-audit/PDAC_data_audit.qmd` |
+
+## Renamed at the October 26 merge
+
+The October 15–16 diagnostic documents were merged into `main` on 2026-10-26 (tag
+`archive/round2-supervised-2026-10` holds the original paths).
+
+| Old path | New path |
+|---|---|
+| `docs/reports/Advisor_Meeting_Summary_10_16_26.{qmd,html,pdf}` | `docs/findings/2026-10-16-advisor-meeting-summary.{qmd,html,pdf}` |
+| `docs/reports/Advisor_Progress_since_10_2_26.{qmd,html,pdf}` | `docs/findings/2026-10-16-advisor-progress-since-10-02.{qmd,html,pdf}` |
+| `docs/reports/Codex_M6_M7_Summary_10_15_26.md` | `docs/findings/2026-10-15-m6-m7-summary.md` |
+| `docs/reports/Repository_Bloat_and_Test_Review_10_16_26.md` | `docs/reviews/2026-10-16-repository-bloat-and-test-review.md` |
+| `docs/plans/Advisor_Priorities_and_Execution_10_15_26.md` | `docs/plans/2026-10-15-advisor-priorities-and-execution-plan.md` |
+| `docs/plans/Cox_Logspace_Arithmetic_10_15_26.md` | `docs/plans/2026-10-15-cox-logspace-arithmetic-plan.md` |
+| `docs/plans/Round2_profiled_curvature_proposal.md` | `docs/plans/2026-10-15-round2-profiled-curvature-proposal.md` |
+| `docs/plans/archive/Codex_Handoff_M6_M7_10_15_26.md` | `docs/plans/2026-10-15-m6-m7-handoff-plan.md` |
+| `docs/plans/archive/Codex_to_Claude_M6_M7_10_15_26.md` | `docs/plans/2026-10-15-m6-m7-return-note.md` |
+| `docs/plans/archive/Codex_to_Claude_Round2_history_10_15_26.md` | `docs/plans/2026-10-15-round2-history-note.md` |
+| `docs/plans/archive/Comparator_Inventory_10_15_26.md` | `docs/plans/2026-10-15-comparator-inventory.md` |
+| `docs/plans/Codex_Handoff_Round2_10_16_26.md` | `docs/plans/2026-10-16-round2-handoff-plan.md` |
+| `docs/plans/Codex_to_Claude_Round2.md` | `docs/plans/2026-10-16-round2-return-note.md` |
+| `docs/plans/Round2_attempts_log.md` | `docs/plans/2026-10-16-round2-attempts-log.md` |
+| `docs/plans/Round2_fixed_q_loading_prior_proposal.md` | `docs/plans/2026-10-16-round2-fixed-q-loading-prior-proposal.md` |
