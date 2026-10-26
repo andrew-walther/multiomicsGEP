@@ -101,6 +101,7 @@ ssbmf_fit <- function(data, K, control = ssbmf_control()) {
     scores = `dimnames<-`(Zbar, list(data$samples, prog)),
     score_sd = stats::setNames(apply(Zbar, 2, stats::sd), prog),
     pve = .pve(st, d, prog),
+    surv_share = .surv_share(st, d, prog),
     features = data$features, n = data$n, events = sum(data$status),
     strata_levels = if (is.null(data$strata)) NULL else levels(data$strata),
     control = control, call = call,
@@ -123,4 +124,24 @@ ssbmf_fit <- function(data, K, control = ssbmf_control()) {
   }, numeric(length(prog)))
   out <- matrix(out, length(prog), d$M, dimnames = list(prog, d$blocks))
   out
+}
+
+#' Survival share of the loading-update precision
+#'
+#' For each program and block, the median over features of
+#' w_S A_jk / (a^R_jk + w_S A_jk): the fraction of the precision of
+#' q(F_m,jk) that comes from the Cox term (derivation, Section 4.3).
+#' @keywords internal
+#' @noRd
+.surv_share <- function(st, d, prog) {
+  P <- .surv_state(st, d)$P
+  out <- vapply(seq_len(d$M), function(m) {
+    yP <- drop(crossprod(d$Yc2[[m]], P))
+    vapply(seq_along(prog), function(k) {
+      A <- d$w_surv * (st$b[k]^2 + st$s2[k]) * yP
+      aR <- d$w_block[m] * st$tau[[m]] * sum(st$EL2[, k])
+      stats::median(ifelse(A + aR > 0, A / (A + aR), 0))
+    }, 0)
+  }, numeric(length(prog)))
+  matrix(out, length(prog), d$M, dimnames = list(prog, d$blocks))
 }

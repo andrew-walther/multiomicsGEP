@@ -55,7 +55,7 @@
   dL <- fit$mean - st$EL[, k]
   for (m in seq_len(d$M)) new$R[[m]] <- st$R[[m]] - outer(dL, st$EF[[m]][, k])
   new$EL[, k] <- fit$mean; new$EL2[, k] <- fit$mean2
-  new$gL[[k]] <- fit$g; new$klL[k] <- fit$kl
+  new$gL[k] <- list(fit$g); new$klL[k] <- fit$kl
   new <- .objective(new, d)
   if (!safeguard || .accept(st, new)) return(new)
   st$counters$rejections[["L"]] <- st$counters$rejections[["L"]] + 1
@@ -122,7 +122,7 @@
   st$Zbar[, k] <- st$Zbar[, k] + drop(d$Yc[[m]] %*% dF)
   st$V[, k] <- pmax(st$V[, k] + drop(d$Yc2[[m]] %*% dVar), 0)
   st$EF[[m]][, k] <- fit$mean; st$EF2[[m]][, k] <- fit$mean2
-  st$gF[[m]][[k]] <- fit$g; st$klF[[m]][k] <- fit$kl
+  st$gF[[m]][k] <- list(fit$g); st$klF[[m]][k] <- fit$kl
   st
 }
 
