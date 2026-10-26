@@ -1,0 +1,397 @@
+---
+title: "Survival-supervised Bayesian matrix factorization for one or more data blocks: model, objective and updates"
+author: "Andrew Walther"
+date: 2026-10-26
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    geometry: margin=1in
+  html:
+    toc: true
+    number-sections: true
+---
+
+This document is the specification behind the `ssbmf` R package. Sections 1–2
+state the model and the choices it fixes; Section 3 states the objective and
+the treatment of the Cox term; Sections 4–6 derive every update; Section 7
+gives the algorithm. `verify_derivation.R` in this folder checks the bound of
+Section 3 and the stationarity of the updates numerically. Choices marked
+**provisional** were made without review and are listed in Section 8.
+
+# Generative model
+
+Samples $i = 1,\dots,n$; blocks $m = 1,\dots,M$ with features
+$j = 1,\dots,p_m$; programs $k = 1,\dots,K$. Block $m$ is the $n \times p_m$
+matrix $Y_m$ (samples by features internally; the package accepts either
+orientation).
+
+$$
+Y_m = \mathbf 1 \mu_m^\top + L F_m^\top + E_m, \qquad (E_m)_{ij} \sim N(0, 1/\tau_{mj}),
+$$
+
+$$
+L_{ik} \sim g_{L,k}, \qquad (F_m)_{jk} \sim g_{m,k}, \qquad \beta_k \sim g_\beta,
+$$
+
+with all priors independent across entries given their parameters. Survival
+$(t_i, \delta_i)$, with an optional stratum $s_i$, follows a Cox model whose
+log partial likelihood (Breslow handling of ties) is
+
+$$
+\ell_{\mathrm{PL}}(\eta) = \sum_{i:\delta_i = 1}\Big[\eta_i - \log \sum_{j \in R_i} e^{\eta_j}\Big],
+\qquad R_i = \{j : t_j \ge t_i,\ s_j = s_i\},
+$$
+
+with the projection predictor
+
+$$
+\eta_i = \sum_{k} \beta_k Z_{ik}, \qquad Z_{ik} = \sum_m \sum_j \tilde y_{m,ij} (F_m)_{jk},
+\qquad \tilde Y_m = Y_m - \mathbf 1 \bar y_m^\top .
+$$
+
+$\bar y_m$ are the training feature means, fixed before fitting, so a new
+patient is scored as $\eta^{\text{new}} = \sum_m (y^{\text{new}}_m - \bar y_m)^\top F_m \beta$
+without refitting. Survival depends on $F$ and $\beta$, not on $L$.
+
+The likelihood is raised to block weights $w_m$ and a survival weight $w_S$:
+
+$$
+p_w(Y, t, \delta \mid \cdot) \propto \prod_m p(Y_m \mid \cdot)^{w_m}\; \exp\{w_S\,\ell_{\mathrm{PL}}(\eta)\}.
+$$
+
+The default is $w_m = w_S = 1$, the unweighted Bayesian model. The symbols are
+carried through every formula so that a balance rule (Part 4 of the rebuild
+plan) changes no derivation.
+
+# Choices fixed by the model
+
+**Feature intercept.** Each block has its own $\mu_m$, estimated. With an
+intercept, nonnegative or sparse loadings can model data on its natural scale
+(log expression, methylation $\beta$-values); the old single-modality model
+needed per-cohort z-scoring partly because it had none. Cohort differences in
+location are not modeled in $\mu$ (one intercept per feature); cohorts enter
+only as Cox strata (D4).
+
+**Prior families.** $g_{L,k}$ is point-exponential (activities are
+nonnegative, a point mass at zero lets a program switch off). For $F_m$ there
+are two candidates. Point-exponential gives nonnegative loadings: each program
+can only raise features above $\mu_m$, so values below average must be
+explained by a lower intercept and other programs. Point-Laplace gives signed,
+sparse loadings: a program can raise some features and lower others, which
+matches centered data and methylation, at some cost in interpretability.
+**Provisional default: point-Laplace for $F_m$**, because it can represent
+below-average values directly; both families are run in the simulation panel.
+$g_\beta$ is a Normal $N(0, \sigma_\beta^2)$ shared by all programs, with
+$\sigma_\beta^2$ fitted by marginal likelihood (Section 5.4).
+
+**Identifiability and scale.** The likelihood is unchanged by
+$(L_{\cdot k}, F_{\cdot k}, \beta_k) \to (L_{\cdot k}/c, c F_{\cdot k}, \beta_k/c)$
+for $c > 0$, and the fitted priors are scale families, so the objective is
+nearly invariant along this direction. Nothing is rescaled inside the fitting
+loop (as in flashier): every rescaling would be a step outside the objective.
+Reported output uses a canonical scale: each program's projection score $Z_k$
+has unit standard deviation over the training samples, $F_{\cdot k}$ is
+multiplied and $L_{\cdot k}$ and $\beta_k$ divided by $\mathrm{sd}(Z_k)$. This
+leaves $L F_m^\top$ and $\eta$ unchanged, so `predict()` is unaffected.
+
+**Meaning of K.** $K$ is an upper bound. A point mass in $g_{L,k}$ or
+$g_{m,k}$ can switch a program off during fitting. After fitting, each
+program receives a role from posterior quantities: *survival-active* if the
+local false sign rate of $\beta_k$ is at most 0.05; *reconstruction-only* if
+it is not survival-active and explains at least 0.1% of the centered variance
+of some block; *inactive* otherwise. Nothing is deleted or refitted.
+
+**Reduction to one block.** With $M = 1$ the model is the single-modality
+model: $Y = \mathbf 1\mu^\top + L F^\top + E$, $\eta = \tilde Y F \beta$.
+There is one implementation. It differs from the frozen benchmark
+configuration (YFB with per-cohort z-scoring, DeSurv gene selection,
+$K = 7$, $\alpha_F = 0$) in these ways: (i) a feature intercept is fitted;
+(ii) survival enters the update of $F$ with weight $w_S$ (the benchmark used
+$\alpha_F = 0$); (iii) no canonicalization or sign correction inside the
+loop; (iv) $\beta$ has a shared Normal prior fitted by marginal likelihood
+and a Gaussian posterior; (v) the Cox term is treated by the bound of Section
+3 instead of a working quadratic; (vi) loadings may be signed. The expression-
+only real-data comparison is therefore a non-inferiority check (O5), not a
+reproduction. The input matrix is whatever preprocessing produces; for the
+first real-data runs this is the benchmark's per-cohort z-scored matrix.
+
+# Objective
+
+## Variational family
+
+Mean field: $q = \prod_{ik} q(L_{ik}) \prod_{m,j,k} q(F_{m,jk}) \prod_k q(\beta_k)$,
+with $\mu_m$, $\tau_m$ and the prior parameters point-estimated. Write
+$\bar\ell_{ik} = E L_{ik}$, $\ell^{(2)}_{ik} = E L_{ik}^2$,
+$\bar f_{m,jk}$, $f^{(2)}_{m,jk}$ likewise, and $q(\beta_k) = N(b_k, s_k^2)$.
+
+## The bound
+
+$$
+\mathcal L(q, \mu, \tau, g) = \sum_m w_m\, \mathcal R_m + w_S\, \mathcal S
+- \sum_k \mathrm{KL}_{L,k} - \sum_{m,k} \mathrm{KL}_{m,k} - \sum_k \mathrm{KL}_{\beta,k},
+$$
+
+where each KL is $\mathrm{KL}(q \,\|\, g)$ against the prior currently held
+(the prior refitted at the last update of that column; Section 5.5).
+
+**Reconstruction.** With residual $r_{m,ij} = y_{m,ij} - \mu_{mj} - \sum_k \bar\ell_{ik}\bar f_{m,jk}$,
+
+$$
+\mathcal R_m = \sum_j \Big[\tfrac n2 \log\frac{\tau_{mj}}{2\pi} - \tfrac{\tau_{mj}}2 \sum_i
+\Big( r_{m,ij}^2 + \sum_k \big(\ell^{(2)}_{ik} f^{(2)}_{m,jk} - \bar\ell_{ik}^2 \bar f_{m,jk}^2\big)\Big)\Big].
+$$
+
+This is exact: $E_q (y - \mu - \sum_k L_k F_k)^2$ under mean field.
+
+**Moments of the predictor.** $\eta_i$ is bilinear in $F$ and $\beta$. Under
+mean field, with $\bar Z_{ik} = \sum_{m,j} \tilde y_{m,ij}\bar f_{m,jk}$ and
+$V_{ik} = \sum_{m,j} \tilde y_{m,ij}^2 (f^{(2)}_{m,jk} - \bar f_{m,jk}^2)$,
+
+$$
+\bar\eta_i = \sum_k b_k \bar Z_{ik}, \qquad
+v_i = \operatorname{Var}_q \eta_i = \sum_k \big[s_k^2 \bar Z_{ik}^2 + (b_k^2 + s_k^2) V_{ik}\big].
+$$
+
+The cross-program terms cancel because programs and features are independent
+under $q$.
+
+**Cox term.** $E_q \ell_{\mathrm{PL}} = \sum_{i:\delta_i=1} [\bar\eta_i - E_q \log\sum_{j\in R_i} e^{\eta_j}]$.
+The second expectation has no closed form. Three treatments were considered.
+
+(a) *Working quadratic* (the current code): expand $\ell_{\mathrm{PL}}$ to
+second order at the current $\bar\eta$. This is an approximation, not a bound.
+Refreshing the expansion point changes the objective, and the round2 audit
+found the refreshed objective lower in 18 of 50 refreshes. Coordinate ascent
+on it has no guarantee. Rejected.
+
+(b) *Fixed-curvature bound* (Böhning). The Hessian of
+$\mathrm{LSE}(\eta_R) = \log\sum_{j\in R} e^{\eta_j}$ is
+$\mathrm{diag}(\pi) - \pi\pi^\top \preceq \tfrac12 I$, so for any anchor $\psi$
+$$
+\mathrm{LSE}(\eta_R) \le \mathrm{LSE}(\psi_R) + \pi(\psi)^\top(\eta_R - \psi_R) + \tfrac14 \|\eta_R - \psi_R\|^2 .
+$$
+Taking $E_q$ gives an exact lower bound on $E_q\ell_{\mathrm{PL}}$ that is
+quadratic in every coordinate, maximized over $\psi$ at $\psi = \bar\eta$.
+After that maximization the bound equals
+$\ell_{\mathrm{PL}}(\bar\eta) - \tfrac14\sum_j d_j v_j$, with $d_j$ the number
+of events whose risk set contains $j$. The exact second-order term is
+$\tfrac12\sum_j P_j v_j$ with $P_j = \sum_{i:\delta_i=1, j \in R_i}\pi_{ij}$, of
+order the cumulative hazard (about 1), while $d_j/2$ is of order the number
+of events (tens to hundreds). The bound therefore inflates the precision that
+survival contributes to $q(\beta)$ and $q(F)$ by one to two orders of
+magnitude: posterior intervals for $\beta$ would be far too narrow (O7) and
+the steps very short. Kept only as a reference in `verify_derivation.R`.
+
+(c) *Moment (Jensen) bound*. By Jensen's inequality,
+$E_q \log\sum_j e^{\eta_j} \le \log\sum_j E_q e^{\eta_j}$, and if $q(\eta_j)$ is
+Gaussian, $E_q e^{\eta_j} = \exp(\bar\eta_j + v_j/2)$. This gives
+
+$$
+\mathcal S = \sum_{i:\delta_i=1}\Big[\bar\eta_i - \log\sum_{j\in R_i}\exp\big(\bar\eta_j + \tfrac12 v_j\big)\Big].
+$$
+
+Its second-order behaviour in $v$ is $\tfrac12\sum_j P_j v_j$, the correct
+order. Two caveats. First, $q(\eta_j)$ is exactly Gaussian only if $F$ is held
+fixed; with random $F$ it is a sum over many features of products, close to
+Gaussian when many features load, so (c) is a bound under a Gaussian
+approximation. Second, Jensen treats the $\eta_j$ within a risk set as if they
+varied independently, while they share $\beta$; for $\beta_k$ this replaces the
+within-risk-set variance of $Z_k$ by its uncentered second moment, a small
+overstatement of the precision when $Z_k$ is centered.
+
+**Provisional choice: (c).** It has the correct curvature, so $q(\beta)$ has
+calibrated width (O7) and survival steps are not artificially short; its
+caveats are checked numerically (`verify_derivation.R` compares (b) and (c)
+with Monte Carlo values of $E_q\ell_{\mathrm{PL}}$ at realistic states,
+including point-Laplace $F$ and ties). $\mathcal L$ with (c) is *the*
+objective: a deterministic function of the variational moments, evaluated
+exactly after every update. Monotonicity (O1) is stated and tested for
+$\mathcal L$.
+
+# Updates with the Cox term
+
+## Derivatives of $\mathcal S$
+
+Let $a_j = \bar\eta_j + v_j/2$, $\pi_{ij} = e^{a_j}/\sum_{l\in R_i} e^{a_l}$
+for $j \in R_i$, $P_j = \sum_{i:\delta_i=1,\ j\in R_i}\pi_{ij}$ and the
+residual $\rho_j = \delta_j - P_j$ (a martingale residual with the moment
+weights). Then $\partial\mathcal S/\partial\bar\eta_j = \rho_j$ and
+$\partial\mathcal S/\partial v_j = -P_j/2$. All of $\pi$, $P$, $\rho$ are
+computed in $O(n\log n)$ by sorting times within strata and taking
+cumulative sums in log space.
+
+## Conjugate-computation form
+
+$q(F_{m,jk})$ enters $\mathcal S$ only through its first two moments
+$(\bar f, f^{(2)})$. Holding everything else fixed,
+
+$$
+\frac{\partial \mathcal S}{\partial f^{(2)}_{m,jk}} = -\tfrac12 (b_k^2 + s_k^2) \sum_i P_i \tilde y_{m,ij}^2 \equiv -\tfrac12 A_{m,jk},
+$$
+$$
+\frac{\partial \mathcal S}{\partial \bar f_{m,jk}} = b_k \sum_i \rho_i \tilde y_{m,ij} - s_k^2 \sum_i P_i \bar Z_{ik} \tilde y_{m,ij} + A_{m,jk}\,\bar f_{m,jk} \equiv c_{m,jk}.
+$$
+
+Replacing $\mathcal S$ by its first-order expansion in the moments,
+$c\,\bar f - \tfrac12 A\, f^{(2)} = E_q[c F - \tfrac12 A F^2]$, is a Gaussian
+pseudo-likelihood in $F_{m,jk}$ with precision $A$ and linear coefficient
+$c$. This is conjugate-computation variational inference (Khan and Lin,
+2017): the Gaussian "message" from the non-conjugate term is its gradient in
+the mean parameters. Its fixed points are stationary points of
+$\mathcal L$, and a step of size $\rho\in(0,1]$ in the message,
+$(c, A) \leftarrow (1-\rho)(c, A)_{\text{old}} + \rho(c, A)_{\text{new}}$,
+is a natural-gradient step.
+
+**Safeguard.** A full step need not increase $\mathcal L$. After every update
+of $q(F_{m,\cdot k})$ or $q(\beta)$ the objective is evaluated exactly. If it
+decreased, $\rho$ is halved (up to 8 times); if no $\rho$ increases
+$\mathcal L$, the update is rejected and $q$ is left unchanged. Every accepted
+update therefore increases $\mathcal L$ by construction, and the fit records
+the number of halvings and rejections. Exact closed-form coordinate maxima
+(intercept, precisions, $L$) need no safeguard.
+
+## Update of $q(F_{m,\cdot k})$ and $g_{m,k}$
+
+The reconstruction part is exactly Gaussian in $F_{m,jk}$, with precision and
+linear coefficient
+
+$$
+a^{\mathrm{R}}_{m,jk} = w_m \tau_{mj}\sum_i \ell^{(2)}_{ik}, \qquad
+h^{\mathrm{R}}_{m,jk} = w_m \tau_{mj}\sum_i \bar\ell_{ik}\Big(y_{m,ij} - \mu_{mj} - \sum_{k'\ne k}\bar\ell_{ik'}\bar f_{m,jk'}\Big).
+$$
+
+Adding the survival message gives the pseudo-observation
+
+$$
+x_j = \frac{h^{\mathrm R}_{m,jk} + w_S\, c_{m,jk}}{a^{\mathrm R}_{m,jk} + w_S A_{m,jk}},\qquad
+s_j^2 = \frac1{a^{\mathrm R}_{m,jk} + w_S A_{m,jk}}.
+$$
+
+`ebnm` with the block's prior family, applied to $(x_j, s_j)_{j=1}^{p_m}$,
+returns the prior $g_{m,k}$ maximizing the marginal likelihood and the exact
+posterior under it; this jointly maximizes the surrogate over
+$(q(F_{m,\cdot k}), g_{m,k})$. The KL is recovered from the EBMF identity
+
+$$
+\mathrm{KL}_{m,k} = \sum_j E_q \log N(x_j; F_{m,jk}, s_j^2) - \log p_{\hat g}(x),
+$$
+
+with $\log p_{\hat g}(x)$ the `ebnm` log marginal likelihood. All features of
+the column use messages computed at the start of the update (a Jacobi step),
+which can overshoot when many correlated features move together; the
+safeguard handles this. With $w_S = 0$ the update is the unsupervised EBMF
+(flashier) update.
+
+## Update of $q(\beta)$ and $\sigma_\beta^2$
+
+For $q(\beta_k) = N(b_k, s_k^2)$, mean parameters $(b_k, b_k^2 + s_k^2)$:
+
+$$
+A^\beta_k = \sum_i P_i (\bar Z_{ik}^2 + V_{ik}), \qquad
+c^\beta_k = \sum_i \rho_i \bar Z_{ik} + b_k \sum_i P_i \bar Z_{ik}^2 .
+$$
+
+Pseudo-observations $x_k = c^\beta_k / A^\beta_k$, $s_k^2 = 1/(w_S A^\beta_k)$
+for all $k$ at once; `ebnm` with the Normal family (mode 0) fits
+$\sigma_\beta^2$ by marginal likelihood and returns
+$q(\beta_k) = N\big(\sigma_\beta^2 x_k/(\sigma_\beta^2 + s_k^2),\ \sigma_\beta^2 s_k^2/(\sigma_\beta^2 + s_k^2)\big)$.
+The safeguard applies. The $\beta$ update is iterated (up to 25 inner steps)
+until the messages stop changing, so each outer $\beta$ update is close to a
+coordinate maximum.
+
+**Absorbing zero.** A per-program Normal prior with variance set from the
+posterior alone (EM: $\sigma_k^2 = E\beta_k^2$) is absorbing: once
+$\sigma_k^2 = 0$, $q(\beta_k) = \delta_0$ and the next EM step returns 0. A
+shared point-Laplace prior whose slab weight $\hat\pi$ is fitted to near 0 has
+the same behaviour for all programs at once. Here $\sigma_\beta^2$ is fitted
+by *marginal* likelihood of the pseudo-observations, $\hat\sigma^2_\beta =
+\arg\max \sum_k \log N(x_k; 0, \sigma^2 + s_k^2)$, jointly with $q$. The
+pseudo-observation $x_k$ is computed from the data (the score
+$\sum_i\rho_i\bar Z_{ik}$ at the current predictor), not from the previous
+posterior, so $\hat\sigma^2_\beta > 0$ as soon as one program's score exceeds
+its noise level, $x_k^2 > s_k^2$, whatever the current $q(\beta)$. Zero is
+therefore not absorbing: $\beta = 0$ is a fixed point only when no program
+carries survival signal at the current $F$. One gating effect remains: the
+directional survival message to $F_{\cdot k}$ is proportional to $b_k$, so a
+program with $b_k = 0$ receives no pull toward the survival direction. The
+survival-score initialization (Section 6) addresses this.
+
+## Prior refits and KL bookkeeping
+
+Every prior refit happens inside an `ebnm` call that also returns the exact
+posterior under the refitted prior, and the stored KL for that column is
+computed against that prior. No KL is ever evaluated against a stale prior,
+and no prior is refitted without its posterior (the old multimodal code did
+both).
+
+# Updates without the Cox term
+
+**Intercept.** $\mu_{mj} = \frac1n \sum_i (y_{m,ij} - \sum_k \bar\ell_{ik}\bar f_{m,jk})$, the exact maximizer.
+
+**Precisions.** $\tau_{mj} = n / \sum_i E_q(y_{m,ij} - \mu_{mj} - \sum_k L_{ik}F_{m,jk})^2$,
+capped at $\tau_{\max,mj} = 10^{6}/\widehat{\operatorname{Var}}(y_{m,\cdot j})$.
+$\mathcal R_m$ is concave in $\tau_{mj}$, so the capped value is the
+constrained maximizer.
+
+**Activities.** Survival does not involve $L$. For column $k$, pooling the
+blocks,
+
+$$
+a^L_{ik} = \sum_m w_m \sum_j \tau_{mj} f^{(2)}_{m,jk},\qquad
+h^L_{ik} = \sum_m w_m \sum_j \tau_{mj}\bar f_{m,jk}\Big(y_{m,ij} - \mu_{mj} - \sum_{k'\ne k}\bar\ell_{ik'}\bar f_{m,jk'}\Big),
+$$
+
+and `ebnm` (point-exponential) on $x_i = h^L_{ik}/a^L_{ik}$,
+$s_i = (a^L_{ik})^{-1/2}$ gives the exact coordinate maximum over
+$(q(L_{\cdot k}), g_{L,k})$.
+
+# Initialization
+
+1. Center each block at its training means and divide it by its root mean
+   square, so blocks of different size and scale contribute comparably;
+   concatenate the blocks and take the rank-$K$ truncated SVD $U D V^\top$.
+2. For nonnegative $L$: for each component take the sign whose positive part
+   of $U_{\cdot k}$ has the larger norm, $L_{\cdot k} = \max(0, \pm U_{\cdot k})\sqrt{D_k}$
+   plus $10^{-3}$, and set $F_m$ to the least-squares loadings given $L$
+   (clipped at 0 for point-exponential $F$).
+3. $\mu_m = \bar y_m$, $\tau_{mj}$ from the initial residuals, posterior
+   second moments equal to squared means, $q(\beta) = N(0, 0)$ and
+   $\sigma^2_\beta$ fitted at the first $\beta$ update.
+4. Optional (`init = "survival"`): replace the last program's loadings by the
+   survival score direction, $F_{m,\cdot K} \propto \tilde Y_m^\top u^0$, with
+   $u^0$ the null-model Cox martingale residuals, restricted to the sign
+   allowed by the prior. Off by default.
+
+# Algorithm
+
+```
+input: blocks Y_m, (t, δ, strata), K, weights w_m, w_S, tolerances
+1  initialize (Section 6); compute ℒ
+2  repeat for sweep = 1, 2, ..., max_sweeps:
+3     μ_m, τ_m for every block                          (exact)
+4     for k = 1..K: q(L_·k), g_L,k                      (exact, ebnm)
+5     for m = 1..M, k = 1..K: q(F_m,·k), g_m,k          (message step + safeguard)
+6     q(β), σ²_β, iterated to message convergence       (message step + safeguard)
+7     evaluate ℒ; record the change after every step of 3–6
+8     stop when |ℒ_new − ℒ_old| < tol · |ℒ_new|          (tol = 1e-6 by default)
+9  report: moments, priors, ℒ trace and its components, the number of
+   steps that lowered ℒ by more than 1e-8·|ℒ| (must be 0), halvings,
+   rejections, convergence flag
+```
+
+The per-step check in line 7 is how O1 is measured.
+
+# Provisional choices made without review
+
+1. Cox treatment (c), the Gaussian-moment Jensen bound, with message
+   (natural-gradient) updates and an exact-objective safeguard.
+2. Point-Laplace default for $F_m$; point-exponential for $L$; shared Normal
+   prior for $\beta$ fitted by marginal likelihood.
+3. Role thresholds: lfsr $\le 0.05$ for survival-active; 0.1% of a block's
+   centered variance for reconstruction-only.
+4. Precision cap $\tau \le 10^6/\widehat{\operatorname{Var}}(y_j)$;
+   convergence tolerance $10^{-6}$ relative, 1,000 sweeps.
+5. Initialization by scaled concatenated SVD; survival-score initialization
+   off by default.
+6. Canonical reporting scale: unit standard deviation of each program score.
