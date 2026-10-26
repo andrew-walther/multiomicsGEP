@@ -23,3 +23,4 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 | 2026-10-15 | [m6-m7-summary](2026-10-15-m6-m7-summary.md) | Robustness (jittered starts, Normal loading priors, feature counts) and comparator results, with branch commits | complete (no configuration adopted) |
 | 2026-10-16 | [advisor-progress-since-10-02](2026-10-16-advisor-progress-since-10-02.qmd) | Five-page advisor report of the evidence since 10/2 and the revised execution order (`.qmd`, `.html`, `.pdf`) | complete |
 | 2026-10-16 | [advisor-meeting-summary](2026-10-16-advisor-meeting-summary.qmd) | Two-page brief for the 10/16 meeting: model, validation, biology, manuscript (`.qmd`, `.html`, `.pdf`) | complete |
+| 2026-10-26 | [single-log-check](2026-10-26-single-log-check.md) | Effect of the double log₂(x + 1) on three RNA-seq cohorts: refit of the benchmark on single-logged data, training CV and one external scoring | complete (no material change; recommendation for Andrew) |
