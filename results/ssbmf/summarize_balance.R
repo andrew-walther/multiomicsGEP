@@ -22,6 +22,7 @@ cols <- names(w1)
 rows <- rbind(w1, read_jobs("balance_eff"), read_jobs("balance_cvw"))
 # compare like with like: cell C2 has only K_init = 6 for the CV arm
 rows$fit_id <- paste(rows$cell, rows$seed, rows$K_init, rows$arm)
+write.csv(rows[!rows$arm %in% c("ssbmf_point_laplace", "two_step"), ], file.path(base, "balance_rows.csv"), row.names = FALSE)
 
 summ <- do.call(rbind, lapply(split(rows, list(rows$cell, rows$arm), drop = TRUE), function(x) {
   f <- x[!duplicated(x$fit_id), ]
