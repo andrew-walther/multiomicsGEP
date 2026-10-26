@@ -8,6 +8,13 @@
 # Dependencies: ssbmf (loaded from ./ssbmf with pkgload), survival, parallel
 # Usage: Rscript results/ssbmf/run_sim_panel.R [cores] [cells]   (from the repository root)
 #        e.g. Rscript results/ssbmf/run_sim_panel.R 8 A,A2,B,C,C2,C3
+#        Environment (optional, for the balance panel of rebuild Part 4):
+#          SSBMF_PANEL_ARMS  comma-separated arms (default: the three w = 1 arms);
+#                            extra arms "ssbmf_eff" (effective-feature block
+#                            weight) and "ssbmf_cvw" (w_S chosen by 5-fold
+#                            training CV over SSBMF_W_GRID, default 1,1e2,1e3,1e4,1e5)
+#          SSBMF_PANEL_OUT   output folder (default results/ssbmf/outputs/sim_panel)
+#          SSBMF_PANEL_K     comma-separated K_init values (default 4,6,8)
 # Memory: the two-block cells hold 200 x 12,000 matrices (about 20 MB each,
 #         several copies per fit); 8 parallel fits use well under 8 GB.
 # ============================================================
@@ -23,7 +30,7 @@ library(survival)
 args <- commandArgs(trailingOnly = TRUE)
 cores <- if (length(args) >= 1) as.integer(args[1]) else 8L
 cells_run <- if (length(args) >= 2) strsplit(args[2], ",")[[1]] else c("A", "A2", "B", "C", "C2", "C3")
-out_dir <- "results/ssbmf/outputs/sim_panel"
+out_dir <- Sys.getenv("SSBMF_PANEL_OUT", "results/ssbmf/outputs/sim_panel")
 dir.create(file.path(out_dir, "jobs"), recursive = TRUE, showWarnings = FALSE)
 
 # Cells (sim_design.md) ----
@@ -36,9 +43,10 @@ cells <- list(
   C3 = list(p = c(expression = 2000), noise = "lower", lowvar = TRUE, lowvar_pve = 0.0025)
 )
 K_true <- 4L
-K_grid <- c(4L, 6L, 8L)
+K_grid <- as.integer(strsplit(Sys.getenv("SSBMF_PANEL_K", "4,6,8"), ",")[[1]])
 seeds <- 1:5
-arms <- c("ssbmf_point_laplace", "ssbmf_point_exponential", "two_step")
+arms <- strsplit(Sys.getenv("SSBMF_PANEL_ARMS", "ssbmf_point_laplace,ssbmf_point_exponential,two_step"), ",")[[1]]
+w_grid <- as.numeric(strsplit(Sys.getenv("SSBMF_W_GRID", "1,100,1000,10000,100000"), ",")[[1]])
 
 # Metrics ----
 
@@ -87,13 +95,22 @@ fit_arm <- function(arm, dd, sim, K) {
                    keep & pval <= 0.10, val_risk, sim)
     share <- NA_real_
   } else {
-    fam <- sub("ssbmf_", "", arm)
-    fit <- ssbmf_fit(dd, K, ssbmf_control(prior_F = fam))
+    chosen_w <- NA_real_
+    if (arm == "ssbmf_eff") {
+      fit <- ssbmf_fit(dd, K, ssbmf_control(weight_rule = "effective_features"))
+    } else if (arm == "ssbmf_cvw") {
+      cvw <- ssbmf_cv(dd, K_grid = K, w_grid = w_grid, nfolds = 5, seed = 1)
+      fit <- cvw$fit; chosen_w <- cvw$best_w_surv
+    } else {
+      fit <- ssbmf_fit(dd, K, ssbmf_control(prior_F = sub("ssbmf_", "", arm)))
+    }
     cf <- coef(fit, level = 0.90)
     ev <- evaluate(do.call(rbind, lapply(fit$F, `[[`, "mean")), cf$mean, cf$lower, cf$upper,
                    fit$roles$role == "survival_active", predict(fit, newdata = sim$validation$X), sim)
     share <- fit$surv_share
   }
+  ev$w_surv <- if (arm == "ssbmf_cvw") chosen_w else if (arm == "two_step") 0 else 1
+  ev$block_weight <- if (!is.null(fit$weights)) min(fit$weights$block) else 1
   ev$arm <- arm; ev$K_init <- K
   ev$converged <- fit$converged; ev$sweeps <- fit$sweeps
   ev$step_decreases <- fit$step_decreases; ev$worst_relative_step <- fit$worst_relative_step
@@ -128,7 +145,7 @@ t_start <- Sys.time()
 # Socket workers (forked workers crash in the macOS Accelerate BLAS)
 cl <- parallel::makePSOCKcluster(cores)
 parallel::clusterCall(cl, function(wd) { setwd(wd); NULL }, getwd())
-parallel::clusterExport(cl, c("load_ssbmf", "cells", "K_true", "arms", "jobs", "out_dir", "evaluate", "fit_arm", "run_job"))
+parallel::clusterExport(cl, c("load_ssbmf", "cells", "K_true", "arms", "w_grid", "jobs", "out_dir", "evaluate", "fit_arm", "run_job"))
 parallel::clusterEvalQ(cl, { load_ssbmf(); library(survival); NULL })
 rows <- parallel::parLapplyLB(cl, seq_len(nrow(jobs)), function(i) try(run_job(i), silent = TRUE))
 parallel::stopCluster(cl)
