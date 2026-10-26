@@ -14,10 +14,10 @@ format:
 
 This document is the specification behind the `ssbmf` R package. Sections 1–2
 state the model and the choices it fixes; Section 3 states the objective and
-the treatment of the Cox term; Sections 4–6 derive every update; Section 7
+the treatment of the Cox term; Sections 4–6 derive every update and the start; Section 7
 gives the algorithm. `verify_derivation.R` in this folder checks the bound of
 Section 3 and the stationarity of the updates numerically. Choices marked
-**provisional** were made without review and are listed in Section 8.
+**provisional** were made without review and are listed in Section 9.
 
 # Generative model
 
@@ -83,7 +83,7 @@ matches centered data and methylation, at some cost in interpretability.
 **Provisional default: point-Laplace for $F_m$**, because it can represent
 below-average values directly; both families are run in the simulation panel.
 $g_\beta$ is a Normal $N(0, \sigma_\beta^2)$ shared by all programs, with
-$\sigma_\beta^2$ fitted by marginal likelihood (Section 5.4).
+$\sigma_\beta^2$ fitted by marginal likelihood (Section 4.4).
 
 **Identifiability and scale.** The likelihood is unchanged by
 $(L_{\cdot k}, F_{\cdot k}, \beta_k) \to (L_{\cdot k}/c, c F_{\cdot k}, \beta_k/c)$
@@ -133,7 +133,7 @@ $$
 $$
 
 where each KL is $\mathrm{KL}(q \,\|\, g)$ against the prior currently held
-(the prior refitted at the last update of that column; Section 5.5).
+(the prior refitted at the last update of that column; Section 4.5).
 
 **Reconstruction.** With residual $r_{m,ij} = y_{m,ij} - \mu_{mj} - \sum_k \bar\ell_{ik}\bar f_{m,jk}$,
 
@@ -382,6 +382,39 @@ input: blocks Y_m, (t, δ, strata), K, weights w_m, w_S, tolerances
 
 The per-step check in line 7 is how O1 is measured.
 
+# Balance between survival and reconstruction
+
+Under the Gaussian model each of the $n p_m$ entries of block $m$ is an
+independent observation, while the Cox term carries information of the
+order of the number of events. The survival share of the precision of
+$q(F_{m,jk})$, $w_S A_{m,jk} / (a^{\mathrm R}_{m,jk} + w_S A_{m,jk})$, measures
+this directly (the fit reports its median over features, `surv_share`).
+Two rules are implemented, in the order of the rebuild plan; neither is used
+by default.
+
+**Effective number of features** (`weight_rule = "effective_features"`,
+no tuning parameter). If features are correlated beyond the $K$ programs,
+counting every entry as independent overstates the information in the
+block. With residuals $R_m$ of the initial rank-$K$ fit and
+$S = R_m^\top R_m / n_{\mathrm{df}}$ ($n_{\mathrm{df}} = n - K - 1$), the participation
+ratio $p_{\mathrm{eff}} = (\operatorname{tr} S)^2 / \operatorname{tr} S^2$ equals $p_m$ for
+independent features of equal variance. Because $E\operatorname{tr} S^2 \approx
+\operatorname{tr}\Sigma^2 + (\operatorname{tr}\Sigma)^2/n_{\mathrm{df}}$, the estimate uses
+$\operatorname{tr} S^2 - (\operatorname{tr} S)^2/n_{\mathrm{df}}$, computed through the $n\times n$
+Gram matrix. The block weight is $w_m = \min(1, p_{\mathrm{eff}}/p_m)$, fixed
+before the main loop, so the objective (with these weights) is unchanged in
+form and every monotonicity argument above holds.
+
+**Survival weight chosen by training cross-validation** (last resort).
+`ssbmf_cv(w_grid = ...)` cross-validates $w_S$ jointly with $K$; among
+settings within one standard error of the best mean C, the smallest $w_S$ and
+then the smallest $K$ are chosen. A power likelihood $\exp\{w_S\ell_{\mathrm{PL}}\}$
+cannot in general be learned by maximizing the marginal likelihood (the
+weight is not a parameter of a proper model); calibration approaches for
+such weights (general Bayesian updating, Bissiri, Holmes and Walker; the
+choice of the loss scale, Holmes and Walker; SafeBayes, Grünwald) have not
+been checked against their sources here and are not implemented.
+
 # Provisional choices made without review
 
 1. Cox treatment (c), the Gaussian-moment Jensen bound, with message
@@ -395,3 +428,6 @@ The per-step check in line 7 is how O1 is measured.
 5. Initialization by scaled concatenated SVD; survival-score initialization
    off by default.
 6. Canonical reporting scale: unit standard deviation of each program score.
+7. Balance rules (Section 8) implemented but off by default; the effective-
+   feature estimate uses initial residuals and the bias-corrected
+   participation ratio.

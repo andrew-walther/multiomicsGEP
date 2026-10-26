@@ -11,6 +11,7 @@ ssbmf_control(
   prior_F = "point_laplace",
   w_surv = 1,
   w_block = NULL,
+  weight_rule = c("none", "effective_features"),
   init = c("svd", "survival"),
   seed = 1,
   max_halvings = 8,
@@ -37,6 +38,11 @@ block or a named vector by block (default "point_laplace"; also
 unweighted model; 0 gives unsupervised factorization with beta not fitted).}
 
 \item{w_block}{optional named vector of block weights w_m (default 1 each).}
+
+\item{weight_rule}{\code{"none"} (default) or \code{"effective_features"}: multiply
+each block weight by p_eff,m / p_m (at most 1), the effective number of
+independent features estimated from the residuals of the initial fit
+(derivation, Section 9).}
 
 \item{init}{"svd" (default) or "survival" (last program started at the
 survival score direction).}

@@ -10,7 +10,8 @@ ssbmf_cv(
   nfolds = 5,
   control = ssbmf_control(),
   seed = 1,
-  cores = 1
+  cores = 1,
+  w_grid = NULL
 )
 }
 \arguments{
@@ -24,11 +25,17 @@ ssbmf_cv(
 
 \item{seed}{seed for the fold assignment.}
 
-\item{cores}{number of cores for the fold fits (\code{parallel::mclapply};
-1 = sequential).}
+\item{cores}{number of parallel socket workers for the fold fits
+(1 = sequential). Workers load ssbmf with \code{library()}, so the package
+must be installed (not only loaded with \code{pkgload::load_all()}).}
+
+\item{w_grid}{optional survival weights w_S to cross-validate jointly with
+K (the last-resort balance rule of the derivation, Section 9). Among
+settings within one standard error of the best, the smallest w_S and then
+the smallest K are chosen.}
 }
 \value{
-list with \code{cv} (data.frame: \code{K}, \code{mean_C}, \code{se_C},
+list with \code{cv} (data.frame: \code{K}, \code{w_surv}, \code{mean_C}, \code{se_C},
 \code{converged_folds}, \code{max_step_decreases}), \code{fold_C} (per fold), \code{folds},
 \code{best} (selected K) and \code{fit} (refit on all data).
 }

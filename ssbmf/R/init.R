@@ -69,3 +69,22 @@
   st$obj <- list(rec = numeric(d$M), S = 0, total = -Inf)
   st
 }
+
+#' Effective number of independent features of a block
+#'
+#' From residuals R (n x p, centered), S = R^T R / n_df. The participation
+#' ratio p_eff = (tr S)^2 / tr(S^2) equals p for independent features of equal
+#' variance; with n_df < p the sample tr(S^2) is inflated by about
+#' (tr S)^2 / n_df, which is subtracted (computed through the n x n Gram matrix).
+#' @param R residual matrix
+#' @param n_df residual degrees of freedom
+#' @return p_eff (between 1 and p)
+#' @keywords internal
+#' @noRd
+.effective_features <- function(R, n_df) {
+  G <- tcrossprod(R) / n_df
+  trS <- sum(diag(G)); trS2 <- sum(G^2) - trS^2 / n_df
+  p <- ncol(R)
+  if (trS2 <= 0) return(p)
+  min(p, max(1, trS^2 / trS2))
+}

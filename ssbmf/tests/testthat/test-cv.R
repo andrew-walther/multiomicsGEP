@@ -1,7 +1,7 @@
 test_that("ssbmf_cv() returns per-K summaries, applies the one-SE rule and refits", {
   x <- sim_dd(n = 100, p = c(a = 40), K = 2, beta = c(1, 0), seed = 12)
   cv <- ssbmf_cv(x$dd, K_grid = c(1, 2, 4), nfolds = 3, control = ssbmf_control(max_sweeps = 100))
-  expect_identical(cv$cv$K, c(1, 2, 4))
+  expect_identical(cv$cv$K, c(1, 2, 4)); expect_identical(cv$best_w_surv, 1)
   expect_true(all(cv$fold_C$C >= 0 & cv$fold_C$C <= 1))
   i <- which.max(cv$cv$mean_C)
   ok <- cv$cv$K[cv$cv$mean_C >= cv$cv$mean_C[i] - cv$cv$se_C[i]]

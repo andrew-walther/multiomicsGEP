@@ -35,6 +35,12 @@ ssbmf_fit <- function(data, K, control = ssbmf_control()) {
   set.seed(control$seed)
   d <- .prep_data(data, control)
   st <- .init_state(d, K, control$init)
+  p_eff <- NULL
+  if (control$weight_rule == "effective_features") {
+    p_eff <- vapply(seq_len(d$M), function(m) .effective_features(st$R[[m]] - outer(rep(1, d$n), colMeans(st$R[[m]])),
+                                                                   d$n - K - 1), 0)
+    d$w_block <- d$w_block * pmin(1, p_eff / d$p)
+  }
 
   # Setup pass: give every column a fitted prior and KL so that the objective
   # is defined; afterwards every step is checked against it.
@@ -67,7 +73,9 @@ ssbmf_fit <- function(data, K, control = ssbmf_control()) {
     }
     if (rel < control$tol) { converged <- TRUE; break }
   }
-  .build_fit(st, d, data, control, trace, step_dec, worst, converged, sweep_i, match.call())
+  fit <- .build_fit(st, d, data, control, trace, step_dec, worst, converged, sweep_i, match.call())
+  fit$weights <- list(block = d$w_block, surv = d$w_surv, p_eff = p_eff)
+  fit
 }
 
 #' Assemble the fitted object

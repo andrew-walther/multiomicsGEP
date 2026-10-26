@@ -49,36 +49,56 @@
 #' @param nfolds number of folds (default 5).
 #' @param control settings from [ssbmf_control()].
 #' @param seed seed for the fold assignment.
-#' @param cores number of cores for the fold fits (`parallel::mclapply`;
-#'   1 = sequential).
-#' @return list with `cv` (data.frame: `K`, `mean_C`, `se_C`,
+#' @param cores number of parallel socket workers for the fold fits
+#'   (1 = sequential). Workers load ssbmf with `library()`, so the package
+#'   must be installed (not only loaded with `pkgload::load_all()`).
+#' @param w_grid optional survival weights w_S to cross-validate jointly with
+#'   K (the last-resort balance rule of the derivation, Section 8). Among
+#'   settings within one standard error of the best, the smallest w_S and then
+#'   the smallest K are chosen.
+#' @return list with `cv` (data.frame: `K`, `w_surv`, `mean_C`, `se_C`,
 #'   `converged_folds`, `max_step_decreases`), `fold_C` (per fold), `folds`,
 #'   `best` (selected K) and `fit` (refit on all data).
 #' @family fit
 #' @export
-ssbmf_cv <- function(data, K_grid, nfolds = 5, control = ssbmf_control(), seed = 1, cores = 1) {
+ssbmf_cv <- function(data, K_grid, nfolds = 5, control = ssbmf_control(), seed = 1, cores = 1,
+                     w_grid = NULL) {
   if (!inherits(data, "ssbmf_data")) stop("`data` must be created with ssbmf_data().")
   folds <- .make_folds(data$status, data$strata, nfolds, seed)
-  jobs <- expand.grid(K = K_grid, fold = seq_len(nfolds))
+  if (is.null(w_grid)) w_grid <- control$w_surv
+  jobs <- expand.grid(K = K_grid, w = w_grid, fold = seq_len(nfolds))
   run <- function(r) {
     K <- jobs$K[r]; f <- jobs$fold[r]
+    ctl <- control; ctl$w_surv <- jobs$w[r]
     tr <- which(folds != f); te <- which(folds == f)
-    fit <- ssbmf_fit(.subset_data(data, tr), K, control)
+    fit <- ssbmf_fit(.subset_data(data, tr), K, ctl)
     dte <- .subset_data(data, te)
     risk <- predict(fit, newdata = dte)
-    data.frame(K = K, fold = f,
+    data.frame(K = K, w_surv = jobs$w[r], fold = f,
                C = .cindex(risk, dte$time, dte$status, dte$strata),
                converged = fit$converged, step_decreases = fit$step_decreases, sweeps = fit$sweeps)
   }
-  res <- if (cores > 1) parallel::mclapply(seq_len(nrow(jobs)), run, mc.cores = cores) else lapply(seq_len(nrow(jobs)), run)
-  bad <- vapply(res, function(x) inherits(x, "try-error") || !is.data.frame(x), TRUE)
-  if (any(bad)) stop("Some cross-validation fits failed: ", paste(vapply(res[bad], as.character, ""), collapse = "; "))
+  if (cores > 1) {
+    # Socket workers, not forks: forked processes can crash in the macOS
+    # Accelerate BLAS. Workers load the installed ssbmf from the same library.
+    cl <- parallel::makePSOCKcluster(cores)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+    parallel::clusterCall(cl, function(lib) { .libPaths(lib); library(ssbmf); NULL }, .libPaths())
+    res <- parallel::parLapplyLB(cl, seq_len(nrow(jobs)), run)
+  } else {
+    res <- lapply(seq_len(nrow(jobs)), run)
+  }
   fold_C <- do.call(rbind, res)
-  cv <- do.call(rbind, lapply(split(fold_C, fold_C$K), function(x) {
-    data.frame(K = x$K[1], mean_C = mean(x$C), se_C = stats::sd(x$C) / sqrt(nrow(x)),
+  cv <- do.call(rbind, lapply(split(fold_C, list(fold_C$K, fold_C$w_surv), drop = TRUE), function(x) {
+    data.frame(K = x$K[1], w_surv = x$w_surv[1], mean_C = mean(x$C), se_C = stats::sd(x$C) / sqrt(nrow(x)),
                converged_folds = sum(x$converged), max_step_decreases = max(x$step_decreases))
   }))
+  cv <- cv[order(cv$w_surv, cv$K), ]
+  rownames(cv) <- NULL
   i_best <- which.max(cv$mean_C)
-  best <- min(cv$K[cv$mean_C >= cv$mean_C[i_best] - cv$se_C[i_best]])
-  list(cv = cv, fold_C = fold_C, folds = folds, best = best, fit = ssbmf_fit(data, best, control))
+  ok <- cv[cv$mean_C >= cv$mean_C[i_best] - cv$se_C[i_best], ]
+  ok <- ok[order(ok$w_surv, ok$K), ][1, ]
+  ctl <- control; ctl$w_surv <- ok$w_surv
+  list(cv = cv, fold_C = fold_C, folds = folds, best = ok$K, best_w_surv = ok$w_surv,
+       fit = ssbmf_fit(data, ok$K, ctl))
 }

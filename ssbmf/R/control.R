@@ -12,6 +12,10 @@
 #' @param w_surv survival weight w_S multiplying the Cox term (default 1, the
 #'   unweighted model; 0 gives unsupervised factorization with beta not fitted).
 #' @param w_block optional named vector of block weights w_m (default 1 each).
+#' @param weight_rule `"none"` (default) or `"effective_features"`: multiply
+#'   each block weight by p_eff,m / p_m (at most 1), the effective number of
+#'   independent features estimated from the residuals of the initial fit
+#'   (derivation, Section 8).
 #' @param init "svd" (default) or "survival" (last program started at the
 #'   survival score direction).
 #' @param seed random seed used for initialization.
@@ -32,10 +36,11 @@
 #' @export
 ssbmf_control <- function(max_sweeps = 1000, tol = 1e-6, prior_L = "point_exponential",
                           prior_F = "point_laplace", w_surv = 1, w_block = NULL,
+                          weight_rule = c("none", "effective_features"),
                           init = c("svd", "survival"), seed = 1, max_halvings = 8,
                           beta_inner = 25, tau_cap = 1e6, role_lfsr = 0.05, role_pve = 1e-3,
                           verbose = 0) {
-  init <- match.arg(init)
+  init <- match.arg(init); weight_rule <- match.arg(weight_rule)
   fams <- c("point_exponential", "point_laplace", "point_normal", "normal")
   if (!prior_L %in% c("point_exponential")) stop("`prior_L` must be 'point_exponential' (L is nonnegative).")
   if (!all(prior_F %in% fams)) stop("Unknown `prior_F` family.")

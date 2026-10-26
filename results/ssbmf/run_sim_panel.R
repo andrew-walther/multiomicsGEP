@@ -12,7 +12,12 @@
 #         several copies per fit); 8 parallel fits use well under 8 GB.
 # ============================================================
 
-suppressMessages(pkgload::load_all("ssbmf", quiet = TRUE))
+Sys.setenv(VECLIB_MAXIMUM_THREADS = "1", OMP_NUM_THREADS = "1")   # one BLAS thread per worker
+load_ssbmf <- function() {
+  lib <- Sys.getenv("SSBMF_LIB")
+  if (nzchar(lib)) library(ssbmf, lib.loc = lib) else suppressMessages(pkgload::load_all("ssbmf", quiet = TRUE))
+}
+load_ssbmf()
 library(survival)
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -120,8 +125,15 @@ run_job <- function(i) {
 }
 
 t_start <- Sys.time()
-rows <- parallel::mclapply(seq_len(nrow(jobs)), run_job, mc.cores = cores, mc.preschedule = FALSE)
+# Socket workers (forked workers crash in the macOS Accelerate BLAS)
+cl <- parallel::makePSOCKcluster(cores)
+parallel::clusterCall(cl, function(wd) { setwd(wd); NULL }, getwd())
+parallel::clusterExport(cl, c("load_ssbmf", "cells", "K_true", "arms", "jobs", "out_dir", "evaluate", "fit_arm", "run_job"))
+parallel::clusterEvalQ(cl, { load_ssbmf(); library(survival); NULL })
+rows <- parallel::parLapplyLB(cl, seq_len(nrow(jobs)), function(i) try(run_job(i), silent = TRUE))
+parallel::stopCluster(cl)
 failed <- vapply(rows, function(x) inherits(x, "try-error"), TRUE)
+if (any(failed)) message(paste(unlist(rows[failed]), collapse = "\n"))
 if (any(failed)) message("Jobs that failed: ", paste(which(failed), collapse = ", "))
 all_rows <- do.call(rbind, rows[!failed])
 write.csv(all_rows, file.path(out_dir, "sim_panel_rows.csv"), row.names = FALSE)
