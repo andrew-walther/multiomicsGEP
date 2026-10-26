@@ -14,7 +14,8 @@
 #' @param family one of "point_exponential", "point_laplace", "normal", "point_normal"
 #' @param g_init optional prior to start the optimization from
 #' @param fix_g if TRUE, keep `g_init` fixed (posterior only)
-#' @return list(`mean`, `mean2`, `kl` (summed), `g`, `loglik`)
+#' @return list(`mean`, `mean2`, `kl` (summed), `g`, `loglik`), or
+#'   `list(failed = TRUE)` if ebnm's optimizer fails twice
 #' @keywords internal
 #' @noRd
 .ebnm_fit <- function(x, s, family, g_init = NULL, fix_g = FALSE) {
@@ -40,9 +41,13 @@
     if (fix_g) ebnm::ebnm(x, s, prior_family = family, g_init = g_init, fix_g = TRUE, output = out)
     else ebnm::ebnm(x, s, prior_family = family, mode = 0, g_init = g_init, output = out),
     error = function(e) {
-      if (is.null(g_init) || fix_g) stop(e)
-      ebnm::ebnm(x, s, prior_family = family, mode = 0, output = out)
+      if (fix_g) stop(e)
+      # retry from the default start; if ebnm still fails, report failure and
+      # let the caller keep the current state (counted as a rejected step)
+      tryCatch(ebnm::ebnm(x, s, prior_family = family, mode = 0, output = out),
+               error = function(e2) NULL)
     })
+  if (is.null(fit)) return(list(failed = TRUE))
   m1 <- fit$posterior$mean
   m2 <- pmax(fit$posterior$second_moment, m1^2)
   ell <- sum(-0.5 * log(2 * pi * s^2) - ((x - m1)^2 + (m2 - m1^2)) / (2 * s^2))

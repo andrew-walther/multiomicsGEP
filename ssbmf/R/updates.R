@@ -51,6 +51,10 @@
     a <- a + d$w_block[m] * sum(st$tau[[m]] * st$EF2[[m]][, k])
   }
   fit <- .ebnm_fit(h / a, rep(1 / sqrt(a), d$n), d$prior_L, g_init = st$gL[[k]])
+  if (isTRUE(fit$failed)) {
+    st$counters$rejections[["L"]] <- st$counters$rejections[["L"]] + 1
+    return(st)
+  }
   new <- st
   dL <- fit$mean - st$EL[, k]
   for (m in seq_len(d$M)) new$R[[m]] <- st$R[[m]] - outer(dL, st$EF[[m]][, k])
@@ -96,6 +100,7 @@
     A <- (1 - step) * msg_old$A + step * msg_new$A
     prec <- aR + d$w_surv * A
     fit <- .ebnm_fit((hR + d$w_surv * cc) / prec, 1 / sqrt(prec), d$prior_F[m], g_init = st$gF[[m]][[k]])
+    if (isTRUE(fit$failed)) { if (!surv_on) break; step <- step / 2; next }
     new <- .set_F(st, d, m, k, fit)
     new$msgF[[m]][[k]] <- list(c = cc, A = A)
     new$obj$rec[m] <- .recon_block(new, d, m)
@@ -153,6 +158,7 @@
       cc <- (1 - step) * msg_old$c + step * msg_new$c
       A <- (1 - step) * msg_old$A + step * msg_new$A
       fit <- .ebnm_fit(cc / A, 1 / sqrt(d$w_surv * A), "normal", g_init = st$gbeta)
+      if (isTRUE(fit$failed)) { step <- step / 2; next }
       new <- st
       new$b <- fit$mean; new$s2 <- fit$mean2 - fit$mean^2
       new$gbeta <- fit$g; new$klB <- fit$kl

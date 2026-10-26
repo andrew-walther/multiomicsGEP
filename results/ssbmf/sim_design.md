@@ -73,3 +73,19 @@ No parameter is changed after seeing results. If O1–O3 fail, the work
 returns to the derivation. If O4 fails at w_S = 1, the balance options of
 rebuild Part 4 are tried in the plan's order, and any survival weight
 chosen by training cross-validation is reported as the last resort.
+
+## Balance panel (rebuild Part 4), added after the w = 1 panel
+
+O4 was not met at w_S = 1, so the balance options were run on the O4 cells
+(C, C2, C3) with the same datasets and metrics, in the rebuild plan's order:
+
+1. `ssbmf_eff`: effective-feature block weight (no tuning parameter), all
+   K_init.
+2. `ssbmf_cvw`: w_S chosen by 5-fold training CV with the one-standard-error
+   rule (smallest w_S, then smallest K), the last resort. Grid {1, 10, 100}.
+   The grid {1, 1e2, 1e3, 1e4, 1e5} first written in the runner was reduced
+   after one pilot dataset (cell C3, seed 2, K_init = 6): fits at
+   w_S >= 1,000 took 2.5-5 minutes each with 400-2,300 rejected steps and
+   gave no better loading recovery (|r| 0.41-0.42) or validation C than
+   w_S = 100. One-block cells use all K_init; the two-block cell C2 uses
+   K_init = 6 only, for run time.

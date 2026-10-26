@@ -1,0 +1,2 @@
+"K_init","converged","sweeps","step_decreases","rejections","objective","n_survival_active","n_reconstruction_only","training_C","cv_fits_converged","cv_fits","cv_fits_with_decrease"
+5,TRUE,297,0,0,-655302.24428535,2,3,0.665669336936589,19,20,0

@@ -38,3 +38,8 @@ test_that("entries with no information get the prior as posterior", {
   expect_true(all(is.finite(f$mean)))
   expect_equal(f$mean[3], 0, tolerance = 1e-6)
 })
+
+test_that("an ebnm failure is reported, not raised", {
+  local_mocked_bindings(ebnm = function(...) stop("non-finite value supplied by 'nlm'"), .package = "ebnm")
+  expect_true(isTRUE(ssbmf:::.ebnm_fit(rnorm(10), rep(1, 10), "point_laplace")$failed))
+})
