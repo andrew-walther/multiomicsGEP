@@ -161,8 +161,8 @@ The second expectation has no closed form. Three treatments were considered.
 
 (a) *Working quadratic* (the current code): expand $\ell_{\mathrm{PL}}$ to
 second order at the current $\bar\eta$. This is an approximation, not a bound.
-Refreshing the expansion point changes the objective, and the round2 audit
-found the refreshed objective lower in 18 of 50 refreshes. Coordinate ascent
+Refreshing the expansion point changes the objective, and an audit of the current
+code found the refreshed objective lower in 18 of 50 refreshes. Coordinate ascent
 on it has no guarantee. Rejected.
 
 (b) *Fixed-curvature bound* (Böhning). The Hessian of
