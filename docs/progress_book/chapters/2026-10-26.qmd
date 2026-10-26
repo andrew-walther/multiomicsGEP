@@ -12,9 +12,11 @@ recovers a low-variance prognostic program in simulation.
 
 We are therefore rebuilding the method as an R package, `ssbmf`, from a written model
 specification. Every update in the package must improve one stated objective. Preliminary
-simulations from this morning show that the rebuilt model fixes monotonicity and convergence: every
-step improves the objective, and all 180 fits converge with one or two data types. It still does
-not find a low-variance prognostic program more often than a two-step method. Survival's weak pull
+results from this morning show that the rebuilt model fixes monotonicity and convergence: every
+step improves the objective, all 180 simulation fits converge, and on the expression data it
+matches the benchmark (mean external C 0.628 against 0.627). It still does not find a low-variance
+prognostic program more often than a two-step method, and in the joint expression and methylation
+fit the methylation data dominate and no program is prognostic. Survival's weak pull
 on the loadings is therefore a property of the model, from the relative size of the survival and
 reconstruction likelihoods, and not a coding error. Short tests on the current code continue
 alongside the rebuild. Two analyses that do not depend on a converged model are
@@ -210,37 +212,75 @@ results are seen:
 with its objective, every update and a numerical check of the Cox bound. Choices made without
 review so far (the Cox bound, signed loadings) are listed for later review.
 
-**First simulation results (preliminary).** These come from a reduced panel run this morning,
-before review. Each dataset has 200 training and 200 validation patients. There are two designs:
-one block of 2,000 expression features, and two blocks of 2,000 expression features plus 10,000
-correlated features. Each design was fitted with 4, 6 and 8 starting programs on five datasets per
-cell, all with the survival term at its natural weight of 1. We compared the rebuilt model with
-signed (point-Laplace) loadings, the rebuilt model with nonnegative (point-exponential) loadings,
-and a two-step comparator: the same model fitted without survival, followed by a Cox model on its
-programs.
+**First results (preliminary, not yet reviewed).** The package passes `R CMD check` with no errors,
+warnings or notes, and its 216 tests pass. The tests cover the Cox computations against
+`survival::coxph` and the monotonicity of each update. The simulations used a reduced panel. Each
+dataset had 200 training and 200 validation patients and four planted programs, with one block of
+2,000 features or two blocks of 2,000 and 10,000. Fits started from 4, 6 and 8 programs, with five
+datasets per setting. The two-step comparator is the same model fitted without survival, followed
+by a Cox model on its programs.
 
-| Criterion | Result |
-|---|---|
-| Monotone objective (O1) | Met. No step lowered the objective in any of the 180 rebuilt fits. The worst change was −9.9 × 10⁻¹³, which is rounding error |
-| Convergence (O2) | Met. All 180 fits converged, in a median of 17 to 97 sweeps by cell and at most 279, two-block designs included |
-| High-variance programs (O3) | Met. All 630 planted programs were recovered with correlation ≥ 0.9 |
-| Low-variance prognostic program (O4) | Not met. When the program explains 1% of the variance, both rebuilt versions and the two-step method recover it in 15 of 15 datasets. At 0.25%, the rebuilt model recovers it in 2 (signed) and 3 (nonnegative) of 15 datasets, against 4 of 15 for two-step |
-| Coefficient intervals (O7) | Met overall. 90% intervals for β cover the truth in 82% of fits: 85–90% with one block, 70–75% with two |
+| Criterion | Result | Status |
+|---|---|---|
+| O1 Monotone objective | No decrease in any of 180 simulation fits or any real-data fit; worst change −9.9 × 10⁻¹³ | Met |
+| O2 Convergence | 180 of 180 simulation fits, every frozen real-data fit; one cross-validation fold fit stopped at 1,000 sweeps | Met |
+| O3 High-variance programs | 630 of 630 recovered with correlation ≥ 0.9 | Met |
+| O4 Low-variance prognostic program | At 1% of variance, found in 15 of 15 datasets by every method, so supervision adds nothing. At 0.25%, found in 2–3 of 15 against 4 of 15 for two-step | Not met |
+| O5 Expression-only real data | Mean external C 0.628 against 0.627 for the benchmark (paired donor-level difference +0.002, 95% CI −0.021 to 0.024) | Met |
+| O6 Joint real data | Both fits converge. ICGC C is 0.554 joint against 0.707 expression only (difference −0.153, 95% CI −0.266 to −0.051) | Met as defined, but the joint fit is worse |
+| O7 Coefficient intervals | 90% intervals cover the truth in 82% of fits: 85–90% with one block, 70–75% with two | Met overall |
+| O8 Package | Check passes; quickstart runs; vignettes not yet written | Partly met |
 
-The survival share of the loading-update precision for the prognostic program has medians between
-10⁻⁵ and 4 × 10⁻⁴. That is the same order as in the current code, and this time the objective is
-computed correctly.
+*Supervision is weak because of the model.* In simulation, the survival share of the
+loading-update precision for the prognostic program had medians of 10⁻⁵ to 4 × 10⁻⁴. On the real
+expression data it was about 5 × 10⁻⁷, the same order as in the current code. The objective is now
+computed correctly, so the coding errors were not the cause. The model counts every matrix entry as
+an independent Gaussian observation. That gives reconstruction 10³ to 10⁶ times the information the
+Cox model contributes to a program's loadings, so the loadings follow the reconstruction.
 
-**What this means.** The rebuild fixes the algorithm. Every update improves the objective, the
-fits converge with one or two data types, and the bookkeeping problems are gone. It does not fix
-supervision. Survival's weak influence on the loadings is a property of the model itself: a Cox
-partial likelihood over 200 patients carries far less information than the reconstruction of
-2,000 to 12,000 features, so the loadings follow the reconstruction. The earlier coding errors
-were not the cause. The question of how to balance the two terms is now the central open
-question. The rebuild is next testing the balance options in a set order: first a weight on each
-data block based on its effective number of features, then a survival weight chosen by training
-cross-validation, as a last resort and reported as a tuning parameter. Fits to the real data
-follow. The full results will be written up after review.
+*Balance options tried.* Two options were tried in the planned order on the low-variance settings.
+A weight on each block by its effective number of features lowered the reconstruction weight to
+0.06–0.23. Recovery then fell, to 0 of 15 in the hardest setting, so the option was dropped. A
+survival weight chosen by training cross-validation from {1, 10, 100} made the 0.25% program
+survival-active in 12 of 15 datasets and raised validation C from 0.543 to 0.603, above the two-step
+method's 0.584. The recovered loadings were a mixture, with a mean correlation with the planted
+program of 0.40 against the 0.7 threshold. The weighted likelihood also made the β intervals far
+too narrow: 90% intervals covered the truth in only 27% of fits. When the program is easy to find,
+cross-validation keeps a weight of 1 or 10 and nothing changes.
+
+*Expression-only real data.* The setup matches the benchmark: the same 273 patients and 2,064
+genes, cohorts as Cox strata. Training cross-validation over 5, 7, 10 and 15 starting programs gave
+mean C of 0.640 to 0.656. The one-standard-error rule chose 5. The frozen fit converged in 297
+sweeps, with two survival-active programs and three reconstruction-only programs. Their
+coefficients per SD of the program score are 0.47 (95% interval 0.32 to 0.62) and −0.19 (−0.35 to
+−0.04).
+
+| Cohort | n | Rebuilt model | Benchmark | Two-step, same K |
+|---|---|---|---|---|
+| Dijk | 90 | 0.616 | 0.634 | 0.598 |
+| Moffitt array | 123 | 0.533 | 0.549 | 0.531 |
+| PACA-AU array | 63 | 0.655 | 0.648 | 0.667 |
+| PACA-AU RNA-seq | 52 | 0.692 | 0.657 | 0.701 |
+| Puleo array | 288 | 0.646 | 0.645 | 0.649 |
+| Mean | 616 | 0.628 | 0.627 | 0.629 |
+
+*Expression and methylation, TCGA to ICGC.* Training used 144 TCGA patients with 3,000 genes and
+10,000 CpGs. Both the joint and the expression-only fit converged. In the joint fit, the
+empirical-Bayes prior on β shrank to a variance of about 2 × 10⁻⁷, so all three programs are
+reconstruction-only and the risk score carries no information. Its first program explains 35% of
+the methylation variance and 8% of the expression variance. The expression-only fit has two
+survival-active programs and an ICGC C of 0.707 on 50 donors. The same counting of matrix entries
+lets 10,000 CpGs outweigh 3,000 genes, now with a correct objective.
+
+**What this means.** The rebuild fixes the algorithm: the objective is a true bound, every step
+improves it, fits converge with one or two data types, and expression-only prediction matches the
+benchmark. It does not fix supervision, and the joint model is dominated by methylation. Both come
+from how the likelihood weighs survival against reconstruction and one data type against the other.
+How to set that balance is now the central question. The options still open are a survival weight
+chosen by cross-validation (at the cost of calibrated β intervals), supervision on a smaller
+survival-screened feature set (the screening result above points this way), per-block weights for
+the joint model chosen by training cross-validation, or a methylation set reduced to the size of the
+expression set.
 
 ## Work continuing on the current method
 
@@ -257,11 +297,13 @@ curves, program roles across starting ranks, and the CpG version of the screenin
 
 ## Questions for the advisors
 
-1. The rebuilt model converges, but survival still barely shapes the loadings because the
-   reconstruction likelihood is so much larger. How should the two be balanced? The options in
-   order are a weight on each data block by its effective number of features, then a survival
-   weight chosen by training cross-validation and reported as a tuning parameter. Is a survival
-   weight acceptable, or should the model be changed so that it sets the balance itself?
+1. The rebuilt model converges, but survival still barely shapes the loadings, and methylation
+   outweighs expression in the joint fit, because every matrix entry counts as one observation.
+   How should the terms be balanced? A survival weight chosen by training cross-validation finds
+   prognostic signal but breaks the calibration of the β intervals. Is that acceptable, or should
+   supervision act on a smaller survival-screened feature set, or should the model be changed so
+   that it sets the balance itself? For the joint model, should block weights be chosen by training
+   cross-validation, or should the methylation set be reduced to the size of the expression set?
 2. Are criteria O1–O8 and their thresholds the right definition of a working model? Should any be
    relaxed or added before more results come in? In particular, should O4 be judged at 0.25% or
    at 1% of variance explained?
