@@ -1,0 +1,25 @@
+Package: ssbmf
+Type: Package
+Title: Survival-Supervised Bayesian Matrix Factorization
+Version: 0.0.0.9000
+Authors@R: person("Andrew", "Walther", email = "awalther@unc.edu", role = c("aut", "cre"))
+Description: Fits a Bayesian matrix factorization of one or more molecular data
+    blocks measured on the same patients jointly with a Cox proportional hazards
+    model for survival. Patient activities are shared across blocks, feature
+    loadings are block specific, and the survival linear predictor is the
+    projection of the centered data onto the loadings, so new patients are
+    scored in closed form. Priors are fitted by empirical Bayes and the fit
+    maximizes one stated variational objective.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1)
+Imports:
+    ebnm (>= 1.1.0),
+    stats,
+    survival
+Suggests:
+    flashier,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3

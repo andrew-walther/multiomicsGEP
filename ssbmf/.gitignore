@@ -1,0 +1,3 @@
+# Package build and check artifacts
+/*.tar.gz
+/*.Rcheck/
