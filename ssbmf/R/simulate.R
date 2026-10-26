@@ -20,7 +20,9 @@
 #'   `c(0.7, 0.35, 0, ...)`, or, with `low_variance_prognostic = TRUE`,
 #'   0 for every program except the last (1.0).
 #' @param low_variance_prognostic if `TRUE`, the last program's loadings are
-#'   scaled down so that it explains about 1% of each block's variance.
+#'   scaled down so that it explains `low_variance_pve` of each block's variance.
+#' @param low_variance_pve target proportion of variance for the low-variance
+#'   program (default 0.01).
 #' @param feature_correlation `"none"` or `"block"`: with `"block"`, features
 #'   come in groups of 20 that share a nuisance factor not related to the
 #'   programs (within-group correlation about 0.3 in the noise), as real
@@ -38,7 +40,7 @@
 #' sim <- ssbmf_simulate(n = 100, p = c(expression = 200, methylation = 300), K = 3, seed = 1)
 #' str(sim$X)
 #' @export
-ssbmf_simulate <- function(n, p, K, beta = NULL, low_variance_prognostic = FALSE,
+ssbmf_simulate <- function(n, p, K, beta = NULL, low_variance_prognostic = FALSE, low_variance_pve = 0.01,
                            feature_correlation = c("none", "block"), noise = c("lower", "higher"),
                            n_validation = n, censoring = 0.3, seed = 1) {
   feature_correlation <- match.arg(feature_correlation); noise <- match.arg(noise)
@@ -64,12 +66,12 @@ ssbmf_simulate <- function(n, p, K, beta = NULL, low_variance_prognostic = FALSE
       E <- sqrt(0.7) * E + sqrt(0.3) * sd_e * G[, grp] * rep(sample(c(-1, 1), pm, TRUE), each = N)
     }
     if (low_variance_prognostic) {
-      # scale the last program so that it explains about 1% of the block variance
+      # scale the last program so that it explains low_variance_pve of the block variance
       signal_other <- L[, -K, drop = FALSE] %*% t(Fm[, -K, drop = FALSE])
       tot_other <- sum(scale(signal_other, scale = FALSE)^2) + sum(scale(E, scale = FALSE)^2)
       lk <- scale(L[, K], scale = FALSE)
       v_k <- sum(lk^2) * sum(Fm[, K]^2)
-      Fm[, K] <- Fm[, K] * sqrt(0.01 / 0.99 * tot_other / v_k)
+      Fm[, K] <- Fm[, K] * sqrt(low_variance_pve / (1 - low_variance_pve) * tot_other / v_k)
     }
     mu <- stats::rnorm(pm, 5, 1)
     Ym <- outer(rep(1, N), mu) + L %*% t(Fm) + E

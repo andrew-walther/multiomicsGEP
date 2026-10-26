@@ -10,6 +10,7 @@ ssbmf_simulate(
   K,
   beta = NULL,
   low_variance_prognostic = FALSE,
+  low_variance_pve = 0.01,
   feature_correlation = c("none", "block"),
   noise = c("lower", "higher"),
   n_validation = n,
@@ -29,7 +30,10 @@ ssbmf_simulate(
 0 for every program except the last (1.0).}
 
 \item{low_variance_prognostic}{if \code{TRUE}, the last program's loadings are
-scaled down so that it explains about 1\% of each block's variance.}
+scaled down so that it explains \code{low_variance_pve} of each block's variance.}
+
+\item{low_variance_pve}{target proportion of variance for the low-variance
+program (default 0.01).}
 
 \item{feature_correlation}{\code{"none"} or \code{"block"}: with \code{"block"}, features
 come in groups of 20 that share a nuisance factor not related to the
