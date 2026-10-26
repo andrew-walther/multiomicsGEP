@@ -242,8 +242,8 @@ ul.task-list li input[type="checkbox"] {
 <section id="summary" class="level2" data-number="13.1">
 <h2 data-number="13.1" class="anchored" data-anchor-id="summary"><span class="header-section-number">13.1</span> Summary</h2>
 <p>The single-modality model with expression only still holds the benchmark, with a mean external concordance (C) of 0.627 across five cohorts. That model does not use survival to learn its gene loadings. Since October 16 we audited the fitting algorithm and found four problems, listed below. They explain why attempts to let survival guide the loadings have failed, and why the joint expression and methylation model does not converge on real data. Five targeted fixes to the existing code each repaired a specific defect, but none produced a model that converges and recovers a low-variance prognostic program in simulation.</p>
-<p>We are therefore rebuilding the method as an R package, <code>ssbmf</code>, from a written model specification. Every update in the package must improve one stated objective. Short tests on the current code continue alongside it. Two analyses that do not depend on a converged model are complete: a correction for an expression transform that was applied twice in three cohorts, which leaves the benchmark unchanged, and a comparison of survival-based and unsupervised gene screening in training cross-validation.</p>
-<p>Decisions for this meeting: the criteria that define a working model, whether a fixed survival weight is acceptable if the model cannot set that balance itself, the proposed preprocessing alignments, and whether to score the gene-screening comparison on the external cohorts.</p>
+<p>We are therefore rebuilding the method as an R package, <code>ssbmf</code>, from a written model specification. Every update in the package must improve one stated objective. Preliminary simulations from this morning show that the rebuilt model fixes monotonicity and convergence: every step improves the objective, and all 180 fits converge with one or two data types. It still does not find a low-variance prognostic program more often than a two-step method. Survival’s weak pull on the loadings is therefore a property of the model, from the relative size of the survival and reconstruction likelihoods, and not a coding error. Short tests on the current code continue alongside the rebuild. Two analyses that do not depend on a converged model are complete: a correction for an expression transform that was applied twice in three cohorts, which leaves the benchmark unchanged, and a comparison of survival-based and unsupervised gene screening in training cross-validation.</p>
+<p>Decisions for this meeting: how to balance survival against reconstruction, which is now the central question, including whether a survival weight chosen by cross-validation is acceptable; the criteria that define a working model; the proposed preprocessing alignments, and whether to score the gene-screening comparison on the external cohorts.</p>
 </section>
 <section id="problems-found-in-the-current-fitting-algorithm" class="level2" data-number="13.2">
 <h2 data-number="13.2" class="anchored" data-anchor-id="problems-found-in-the-current-fitting-algorithm"><span class="header-section-number">13.2</span> Problems found in the current fitting algorithm</h2>
@@ -481,7 +481,44 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 </tbody>
 </table>
-<p><strong>Progress.</strong> The package skeleton passes <code>R CMD check</code>, and the model specification is written, with its objective, every update and a numerical check of the Cox bound. Choices made without review so far (the Cox bound, signed loadings) are listed for later review. Implementation, the simulation panel and the real-data fits are running now. Results will be preliminary at this meeting.</p>
+<p><strong>Progress.</strong> The package skeleton passes <code>R CMD check</code>, and the model specification is written, with its objective, every update and a numerical check of the Cox bound. Choices made without review so far (the Cox bound, signed loadings) are listed for later review.</p>
+<p><strong>First simulation results (preliminary).</strong> These come from a reduced panel run this morning, before review. Each dataset has 200 training and 200 validation patients. There are two designs: one block of 2,000 expression features, and two blocks of 2,000 expression features plus 10,000 correlated features. Each design was fitted with 4, 6 and 8 starting programs on five datasets per cell, all with the survival term at its natural weight of 1. We compared the rebuilt model with signed (point-Laplace) loadings, the rebuilt model with nonnegative (point-exponential) loadings, and a two-step comparator: the same model fitted without survival, followed by a Cox model on its programs.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Criterion</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Monotone objective (O1)</td>
+<td>Met. No step lowered the objective in any of the 180 rebuilt fits. The worst change was −9.9 × 10⁻¹³, which is rounding error</td>
+</tr>
+<tr class="even">
+<td>Convergence (O2)</td>
+<td>Met. All 180 fits converged, in a median of 17 to 97 sweeps by cell and at most 279, two-block designs included</td>
+</tr>
+<tr class="odd">
+<td>High-variance programs (O3)</td>
+<td>Met. All 630 planted programs were recovered with correlation ≥ 0.9</td>
+</tr>
+<tr class="even">
+<td>Low-variance prognostic program (O4)</td>
+<td>Not met. When the program explains 1% of the variance, both rebuilt versions and the two-step method recover it in 15 of 15 datasets. At 0.25%, the rebuilt model recovers it in 2 (signed) and 3 (nonnegative) of 15 datasets, against 4 of 15 for two-step</td>
+</tr>
+<tr class="odd">
+<td>Coefficient intervals (O7)</td>
+<td>Met overall. 90% intervals for β cover the truth in 82% of fits: 85–90% with one block, 70–75% with two</td>
+</tr>
+</tbody>
+</table>
+<p>The survival share of the loading-update precision for the prognostic program has medians between 10⁻⁵ and 4 × 10⁻⁴. That is the same order as in the current code, and this time the objective is computed correctly.</p>
+<p><strong>What this means.</strong> The rebuild fixes the algorithm. Every update improves the objective, the fits converge with one or two data types, and the bookkeeping problems are gone. It does not fix supervision. Survival’s weak influence on the loadings is a property of the model itself: a Cox partial likelihood over 200 patients carries far less information than the reconstruction of 2,000 to 12,000 features, so the loadings follow the reconstruction. The earlier coding errors were not the cause. The question of how to balance the two terms is now the central open question. The rebuild is next testing the balance options in a set order: first a weight on each data block based on its effective number of features, then a survival weight chosen by training cross-validation, as a last resort and reported as a tuning parameter. Fits to the real data follow. The full results will be written up after review.</p>
 </section>
 <section id="work-continuing-on-the-current-method" class="level2" data-number="13.7">
 <h2 data-number="13.7" class="anchored" data-anchor-id="work-continuing-on-the-current-method"><span class="header-section-number">13.7</span> Work continuing on the current method</h2>
@@ -491,8 +528,8 @@ ul.task-list li input[type="checkbox"] {
 <section id="questions-for-the-advisors" class="level2" data-number="13.8">
 <h2 data-number="13.8" class="anchored" data-anchor-id="questions-for-the-advisors"><span class="header-section-number">13.8</span> Questions for the advisors</h2>
 <ol type="1">
-<li>Are criteria O1–O8 and their thresholds the right definition of a working model? Should any be relaxed or added before results come in?</li>
-<li>If the model cannot set the balance between survival and reconstruction on its own, is a fixed survival weight chosen by training cross-validation acceptable, reported as a tuning parameter?</li>
+<li>The rebuilt model converges, but survival still barely shapes the loadings because the reconstruction likelihood is so much larger. How should the two be balanced? The options in order are a weight on each data block by its effective number of features, then a survival weight chosen by training cross-validation and reported as a tuning parameter. Is a survival weight acceptable, or should the model be changed so that it sets the balance itself?</li>
+<li>Are criteria O1–O8 and their thresholds the right definition of a working model? Should any be relaxed or added before more results come in? In particular, should O4 be judged at 0.25% or at 1% of variance explained?</li>
 <li>Which of the proposed preprocessing alignments should we adopt? In particular: one log for every RNA-seq cohort, an intercept with log-scale data in place of z-scores, and one TCGA expression source for both analyses.</li>
 <li>Should the frozen gene-screening fits be scored once on the five external cohorts now, or after the rebuilt model is available?</li>
 </ol>
