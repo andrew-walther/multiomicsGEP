@@ -1,0 +1,15 @@
+# Simulation panel verdicts (w_S = 1)
+
+- ssbmf fits with no step lowering the objective by > 1e-8 |obj|: 100% (180/180); worst relative step -9.9e-13
+- ssbmf fits converged within 1,000 sweeps: 100% (180/180)
+- high-variance programs recovered at |r| >= 0.9: 100% (630/630)
+- 90% intervals covering the true coefficient: 82% (577/701)
+- cell C2, ssbmf_point_laplace: low-variance program recovered (|r| >= 0.7, survival-active, correct sign): 100% (15/15)
+- cell C3, ssbmf_point_laplace: low-variance program recovered (|r| >= 0.7, survival-active, correct sign): 13% (2/15)
+- cell C, ssbmf_point_laplace: low-variance program recovered (|r| >= 0.7, survival-active, correct sign): 100% (15/15)
+- cell C2, ssbmf_point_exponential: low-variance program recovered (|r| >= 0.7, survival-active, correct sign): 100% (15/15)
+- cell C3, ssbmf_point_exponential: low-variance program recovered (|r| >= 0.7, survival-active, correct sign): 20% (3/15)
+- cell C, ssbmf_point_exponential: low-variance program recovered (|r| >= 0.7, survival-active, correct sign): 100% (15/15)
+- cell C2, two_step: low-variance program recovered (|r| >= 0.7, survival-active, correct sign): 100% (15/15)
+- cell C3, two_step: low-variance program recovered (|r| >= 0.7, survival-active, correct sign): 27% (4/15)
+- cell C, two_step: low-variance program recovered (|r| >= 0.7, survival-active, correct sign): 100% (15/15)
