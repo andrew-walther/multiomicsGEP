@@ -1,0 +1,22 @@
+
+Part 2: stationarity of each coordinate update by central finite differences
+   update parameter grad_before grad_after max_grad
+ F[a][,1]      x_27          NA  -4.55e-10 4.55e-10
+ F[a][,1]      x_25          NA   1.94e-07 1.94e-07
+ F[a][,1]      x_14          NA   9.00e-08 9.00e-08
+ F[a][,1]       x_6          NA  -1.41e-08 1.41e-08
+ F[b][,1]      x_52          NA  -4.55e-10 4.55e-10
+ F[b][,1]      x_31          NA   4.55e-10 4.55e-10
+ F[b][,1]      x_22          NA   0.00e+00 0.00e+00
+ F[b][,1]      x_57          NA   3.71e-07 3.71e-07
+     beta       b_1     0.72510  -6.82e-09 6.82e-09
+     beta   log s_1     0.14836  -7.37e-07 7.37e-07
+     beta       b_2    -0.05165  -3.77e-08 3.77e-08
+     beta   log s_2    -0.01953  -7.65e-07 7.65e-07
+     beta       b_3     0.07219  -7.28e-09 7.28e-09
+     beta   log s_3    -0.00403  -6.77e-07 6.77e-07
+    L[,1]      x_28          NA   1.82e-09 1.82e-09
+    L[,1]       x_6          NA  -9.09e-10 9.09e-10
+    L[,1]      x_53          NA   0.00e+00 0.00e+00
+    L[,1]      x_21          NA  -1.82e-09 1.82e-09
+Maximum absolute finite-difference gradient after updates: 7.65e-07 per posterior SD of each entry (threshold 1e-6)

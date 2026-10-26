@@ -12,5 +12,7 @@
 "_PACKAGE"
 
 ## usethis namespace: start
+#' @importFrom stats coef predict sd
+#' @importFrom survival Surv strata
 ## usethis namespace: end
 NULL

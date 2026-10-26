@@ -103,7 +103,7 @@ run_stationarity <- function() {
   cat("\nPart 2: stationarity of each coordinate update by central finite differences\n")
   pkgload::load_all("ssbmf", quiet = TRUE, export_all = TRUE)   # run from the repository root
   ok <- ssbmf:::.verify_stationarity(seed = 1, verbose = TRUE)
-  cat(sprintf("Maximum absolute finite-difference gradient after updates: %.2e (threshold 1e-6 relative)\n",
+  cat(sprintf("Maximum absolute finite-difference gradient after updates: %.2e per posterior SD of each entry (threshold 1e-6)\n",
               max(ok$max_grad)))
   invisible(ok)
 }
