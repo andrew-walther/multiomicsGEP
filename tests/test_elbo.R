@@ -265,3 +265,32 @@ run_test("convergence uses relative ELBO change, not parameter deltas", {
   assert_true(any(is.finite(res$history$delta_elbo_rel[-1])),
               "Expected finite relative ELBO deltas after the first iteration")
 })
+
+# =============================================================================
+# Section: compute_ebnm_kl against the exact KL (scalar precision A)
+# =============================================================================
+# The L update passes one precision A_L for all n patients. The Gaussian
+# log-normalizer 0.5*log(A/(2*pi)) must then enter once per pseudo-observation,
+# not once in total. For a fixed N(0, s0^2) prior the posterior is Normal and
+#   E_q[log g] - E_q[log q]
+#     = sum_i [ -0.5*log(2*pi*s0^2) - (m_i^2 + v_i)/(2*s0^2) + 0.5*log(2*pi*e*v_i) ],
+# which compute_ebnm_kl must reproduce.
+
+run_test("compute_ebnm_kl matches exact KL with scalar A and vector x", {
+  set.seed(11)
+  n  <- 25
+  A  <- 4                                  # one precision shared by all n
+  x  <- rnorm(n, sd = 1.5)
+  s0 <- 1.2
+  res <- ebnm::ebnm_normal(x, s = rep(1 / sqrt(A), n), mode = 0, scale = s0)
+  m   <- res$posterior$mean
+  v   <- res$posterior$sd^2
+  kl_exact <- sum(-0.5 * log(2 * pi * s0^2) - (m^2 + v) / (2 * s0^2) +
+                    0.5 * log(2 * pi * exp(1) * v))
+  kl_scalar <- compute_ebnm_kl(res$log_likelihood, A, x, m, m^2 + v)
+  kl_vector <- compute_ebnm_kl(res$log_likelihood, rep(A, n), x, m, m^2 + v)
+  assert_true(abs(kl_scalar - kl_exact) < 1e-8,
+              sprintf("scalar A: KL %.6f vs exact %.6f", kl_scalar, kl_exact))
+  assert_true(abs(kl_vector - kl_exact) < 1e-8,
+              sprintf("vector A: KL %.6f vs exact %.6f", kl_vector, kl_exact))
+})

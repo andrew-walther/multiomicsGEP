@@ -134,8 +134,10 @@ run_test("Supervision-T6: canonical fit with w_S = 0 matches alpha_F = 0 up to s
   set.seed(21); n <- 80L; p <- 30L
   Ys <- scale(matrix(rnorm(n * 2), n, 2) %*% matrix(rnorm(2 * p), 2, p) +
               matrix(rnorm(n * p, sd = 0.7), n, p))
-  # Tight tolerance: the two monitors stop at different iterations at 1e-5
-  args <- list(Ys, rexp(n), rbinom(n, 1, 0.7), K = 2L, max_iter = 600L, tol = 1e-9,
+  # The two paths use different stopping monitors, so compare them after the
+  # same number of sweeps (tol = 0 runs all max_iter sweeps) rather than at
+  # wherever each monitor stops.
+  args <- list(Ys, rexp(n), rbinom(n, 1, 0.7), K = 2L, max_iter = 400L, tol = 0,
                prior_LF = "point_laplace", prior_beta = "normal", verbose = FALSE)
   leg <- do.call(fit_cox_on_yf, args)
   can <- do.call(fit_cox_on_yf, c(args, canonicalize = TRUE, w_S = 0))
@@ -143,7 +145,7 @@ run_test("Supervision-T6: canonical fit with w_S = 0 matches alpha_F = 0 up to s
   r <- abs(diag(cor(leg$EF, can$EF)))
   assert_true(all(r > 0.9999), msg = sprintf("loading columns proportional (min |cor| %.5f)", min(r)))
   rel <- max(abs(leg$EL %*% t(leg$EF) - can$EL %*% t(can$EF))) / max(abs(leg$EL %*% t(leg$EF)))
-  assert_true(rel < 1e-3, msg = sprintf("same reconstruction (rel diff %.2e)", rel))
+  assert_true(rel < 1e-5, msg = sprintf("same reconstruction (rel diff %.2e)", rel))
 })
 
 # ---------------------------------------------------------------------------

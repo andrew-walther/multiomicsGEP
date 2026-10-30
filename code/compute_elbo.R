@@ -77,6 +77,11 @@
 # ------------------------------------------------------------------------------
 compute_ebnm_kl <- function(ebnm_log_lik, A, x, mean_q, second_q) {
 
+  # A scalar precision shared by all pseudo-observations (the L update passes
+  # one A_L for all n patients) must contribute its log-normalizer once per
+  # observation, so replicate it to length(x) before summing.
+  if (length(A) == 1L && length(x) > 1L) A <- rep_len(A, length(x))
+
   # E_q[sum_i log N(x_i; theta_i, 1/A_i)]
   # = sum_i [ 0.5*log(A_i/(2*pi)) - A_i/2*(x_i^2 - 2*x_i*mu_i + E[theta_i^2]) ]
   expected_pseudo_lik <- 0.5 * sum(log(A / (2 * pi))) -
