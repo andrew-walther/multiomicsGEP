@@ -75,6 +75,35 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -212,14 +241,15 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#summary" id="toc-summary" class="nav-link active" data-scroll-target="#summary"><span class="header-section-number">14.1</span> Summary</a></li>
+  <li><a href="#takeaways" id="toc-takeaways" class="nav-link active" data-scroll-target="#takeaways"><span class="header-section-number">14.1</span> Takeaways</a></li>
   <li><a href="#where-the-project-stands" id="toc-where-the-project-stands" class="nav-link" data-scroll-target="#where-the-project-stands"><span class="header-section-number">14.2</span> Where the project stands</a></li>
   <li><a href="#issue-tracker" id="toc-issue-tracker" class="nav-link" data-scroll-target="#issue-tracker"><span class="header-section-number">14.3</span> Issue tracker</a></li>
-  <li><a href="#progress-since-october-26" id="toc-progress-since-october-26" class="nav-link" data-scroll-target="#progress-since-october-26"><span class="header-section-number">14.4</span> Progress since October 26</a></li>
-  <li><a href="#survival-supervision-of-the-loadings-what-we-tried-and-what-comes-next" id="toc-survival-supervision-of-the-loadings-what-we-tried-and-what-comes-next" class="nav-link" data-scroll-target="#survival-supervision-of-the-loadings-what-we-tried-and-what-comes-next"><span class="header-section-number">14.5</span> Survival supervision of the loadings: what we tried and what comes next</a></li>
-  <li><a href="#preprocessing-decisions" id="toc-preprocessing-decisions" class="nav-link" data-scroll-target="#preprocessing-decisions"><span class="header-section-number">14.6</span> Preprocessing decisions</a></li>
-  <li><a href="#how-the-model-changed-since-the-march-derivation" id="toc-how-the-model-changed-since-the-march-derivation" class="nav-link" data-scroll-target="#how-the-model-changed-since-the-march-derivation"><span class="header-section-number">14.7</span> How the model changed since the March derivation</a></li>
-  <li><a href="#open-questions" id="toc-open-questions" class="nav-link" data-scroll-target="#open-questions"><span class="header-section-number">14.8</span> Open questions</a></li>
+  <li><a href="#cleanup-results" id="toc-cleanup-results" class="nav-link" data-scroll-target="#cleanup-results"><span class="header-section-number">14.4</span> Cleanup results</a></li>
+  <li><a href="#precision-balance-and-the-revised-fitter" id="toc-precision-balance-and-the-revised-fitter" class="nav-link" data-scroll-target="#precision-balance-and-the-revised-fitter"><span class="header-section-number">14.5</span> Precision balance and the revised fitter</a></li>
+  <li><a href="#registered-simulation-and-failures" id="toc-registered-simulation-and-failures" class="nav-link" data-scroll-target="#registered-simulation-and-failures"><span class="header-section-number">14.6</span> Registered simulation and failures</a></li>
+  <li><a href="#preprocessing-decisions" id="toc-preprocessing-decisions" class="nav-link" data-scroll-target="#preprocessing-decisions"><span class="header-section-number">14.7</span> Preprocessing decisions</a></li>
+  <li><a href="#how-the-model-changed-since-the-march-derivation" id="toc-how-the-model-changed-since-the-march-derivation" class="nav-link" data-scroll-target="#how-the-model-changed-since-the-march-derivation"><span class="header-section-number">14.8</span> How the model changed since the March derivation</a></li>
+  <li><a href="#open-questions" id="toc-open-questions" class="nav-link" data-scroll-target="#open-questions"><span class="header-section-number">14.9</span> Open questions</a></li>
   </ul>
 </nav>
     </div>
@@ -245,40 +275,296 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="summary" class="level2" data-number="14.1">
-<h2 data-number="14.1" class="anchored" data-anchor-id="summary"><span class="header-section-number">14.1</span> Summary</h2>
-<p>This chapter restarts the project from a single list of open problems. Several lines of work since early October (diagnostic experiments, a rebuild of the method as a package, and short tests on the current code) each fixed specific defects. None of them made survival shape the gene loadings, which is the method’s contribution. We have now put every known problem in one tracker with its diagnosis, proposed solution and status, fixed the problems that were already well understood, and set the order for the rest.</p>
-<p><strong>Takeaways for this meeting</strong></p>
+<section id="takeaways" class="level2" data-number="14.1">
+<h2 data-number="14.1" class="anchored" data-anchor-id="takeaways"><span class="header-section-number">14.1</span> Takeaways</h2>
 <ul>
-<li><strong>Supervision is still the central problem, and it is a balance problem.</strong> In the current model the loadings F are learned from reconstruction alone, so the fitted model is matrix factorization followed by a Cox model. Raising a single survival weight does not fix this: on the real training data a weight of 100 raises survival’s share of the loading precision only from about 1e-06 to 1e-04, and the weight that gives survival an equal share (10⁴) stops every fold from converging (0 of 5 converged; cross-validated C 0.555).</li>
-<li><strong>The cleanup items are done, and they do not change the benchmark.</strong> Fixing an error in the objective’s bookkeeping and logging every cohort once leaves the external C at 0.625 against 0.627 for the frozen benchmark. The bookkeeping fix does make training cross-validation fits converge: 5 of 5 folds, against 2 of 5 before.</li>
-<li><strong>The next step is a new fitter that follows a written specification.</strong> It keeps the projection predictor η = (YF)β and adds the pieces that should let survival carry real weight without destabilizing the fit. A simulation with a pre-registered success criterion decides whether it works. If it does not, we will write down exactly where it fails before trying anything else.</li>
-<li><strong>5 of the 20 tracked issues are resolved</strong>; the rest are ordered by priority below.</li>
+<li><p><strong>The known bookkeeping and preprocessing defects are repaired.</strong> The exact KL calculation, single logarithm and training-fixed comparator risk direction are checked. The final test suite passes 742 checks with 0 failures.</p></li>
+<li><p><strong>Balancing total loss does not guarantee meaningful loading supervision.</strong> The precision audit shows the per-gene contribution explicitly. The new implementation tests normalized projections, sparse nonnegative factors and a coefficient prior whose slab cannot disappear.</p></li>
+<li><p><strong>The registered supervision gate failed.</strong> Recovery, false survival activity and convergence are evaluated together, even when a loading resembles the planted program. Real-data model selection remains conditional on passing the simulation gate. No new external cohort was scored.</p></li>
+<li><p><strong>The existing comparator provides a recovery control.</strong> In the weakest large-feature cell it recovers the planted program in 10 datasets, with mean false-active count 1.000 and 10 converged fits. The corrected simulation permits recovery under that comparator.</p></li>
 </ul>
 </section>
 <section id="where-the-project-stands" class="level2" data-number="14.2">
 <h2 data-number="14.2" class="anchored" data-anchor-id="where-the-project-stands"><span class="header-section-number">14.2</span> Where the project stands</h2>
-<p>Three lines of work ran in October.</p>
-<ul>
-<li><strong>Diagnostic experiments (October 15–16).</strong> These found and documented the defects in the supervised fitting path. The pre-registered test of the supervised model on the external cohorts was null: the change in C was −0.003 (95% interval −0.029 to 0.024), which did not meet the pre-registered −0.02 margin. It will be reported as a null result.</li>
-<li><strong>A rebuild of the method as an R package.</strong> The rebuilt fitter improves its objective at every step and converges in every simulation fit, and on expression data it matches the benchmark. It does not recover a low-variance prognostic program more often than a two-step method (13–20% against 27% when the program carries 0.25% of the expression variance), and in the joint expression and methylation fit the methylation block dominates (external C 0.554 against 0.707 for expression alone). The rebuild is kept as a reference. Its code for the Cox working quantities and the KL terms will be reused, and a new unified implementation will be written once supervision works.</li>
-<li><strong>Short tests on the current code.</strong> The main test, described under the supervision section below, asked whether a larger survival weight is enough. It is not.</li>
-</ul>
-<p>The diagnosis common to all three is that the two likelihoods are on very different scales: reconstruction sums over every patient-by-gene entry, while the Cox likelihood sums over the events. The proposed solution and the order of work are in the next sections.</p>
+<p>The expression benchmark remains a historical predictive result, rather than evidence that survival learned the expression factors. Earlier diagnostic work and a separate unified implementation repaired individual defects but did not establish recovery of a weak prognostic program. The current evaluation keeps the projection predictor η = (YF)β and tests that missing methodological claim directly. A latent predictor η = Lβ, scored in new patients by fitting activities with the loadings fixed, remains an unadopted fallback.</p>
+<p>The local development inventory is retained in full. Nothing was deleted. It contains 34 entries, of which 30 are already incorporated into the primary implementation. The table uses anonymous inventory labels so the meeting narrative remains about methods rather than version-control names.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 36%">
+<col style="width: 11%">
+<col style="width: 9%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Entry</th>
+<th style="text-align: left;">Purpose</th>
+<th style="text-align: left;">Incorporated</th>
+<th style="text-align: left;">Date</th>
+<th style="text-align: left;">Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Rank or initialization study</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-07-13</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">Correctness audit</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-30</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">Correctness audit</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-30</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">Multimodal methods</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-12</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">Multimodal methods</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-09-17</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-05-25</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">Rank or initialization study</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-05-30</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-15</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">9</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-04-29</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-30</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">11</td>
+<td style="text-align: left;">Survival supervision</td>
+<td style="text-align: left;">no</td>
+<td style="text-align: left;">2026-10-30</td>
+<td style="text-align: left;">Retain for review</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">12</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-07-13</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">13</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-06-16</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">14</td>
+<td style="text-align: left;">Rank or initialization study</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-15</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">15</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-15</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">16</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-15</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">17</td>
+<td style="text-align: left;">Multimodal methods</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-15</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">18</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-15</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">19</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-30</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">20</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-05-05</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">21</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-08-21</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">22</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-08-27</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">23</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-05-27</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">24</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-06-14</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">25</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-07-12</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">26</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">no</td>
+<td style="text-align: left;">2026-05-06</td>
+<td style="text-align: left;">Retain for review</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">27</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">no</td>
+<td style="text-align: left;">2026-05-06</td>
+<td style="text-align: left;">Retain for review</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">28</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-07-13</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">29</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-05-06</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">30</td>
+<td style="text-align: left;">Rank or initialization study</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-05-06</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">31</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-05-20</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">32</td>
+<td style="text-align: left;">Unified method reference</td>
+<td style="text-align: left;">no</td>
+<td style="text-align: left;">2026-10-26</td>
+<td style="text-align: left;">Retain for review</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">33</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-10-24</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">34</td>
+<td style="text-align: left;">Historical method or documentation work</td>
+<td style="text-align: left;">yes</td>
+<td style="text-align: left;">2026-07-15</td>
+<td style="text-align: left;">Archive candidate; retain until decision</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </section>
 <section id="issue-tracker" class="level2" data-number="14.3">
 <h2 data-number="14.3" class="anchored" data-anchor-id="issue-tracker"><span class="header-section-number">14.3</span> Issue tracker</h2>
-<p>Each row is one problem, merged across the reviews and audits we received. Status is updated in the same file each chapter. Priority 1 items block the method’s main claim; priority 2 items block the multimodal model or a correct report; priority 3 items are later work.</p>
+<p>The tracker merges duplicate issues across the algorithm specification, correctness review and derivation comparison. An implemented update is not considered a successful method until its decision test passes.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <colgroup>
 <col style="width: 1%">
 <col style="width: 3%">
-<col style="width: 24%">
-<col style="width: 29%">
-<col style="width: 25%">
-<col style="width: 15%">
+<col style="width: 22%">
+<col style="width: 27%">
+<col style="width: 23%">
+<col style="width: 14%">
+<col style="width: 7%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -288,6 +574,7 @@ ul.task-list li input[type="checkbox"] {
 <th style="text-align: left;">Diagnosis</th>
 <th style="text-align: left;">Proposed solution</th>
 <th style="text-align: left;">Status</th>
+<th style="text-align: left;">Evidence</th>
 </tr>
 </thead>
 <tbody>
@@ -297,7 +584,8 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Survival does not shape the gene loadings F; the fitted model behaves as matrix factorization followed by Cox.</td>
 <td style="text-align: left;">Reconstruction precision sums over n×p entries and Cox over the events, so survival supplies 10^-6 to 10^-4 of the loading precision on real data. Weighting survival up to an equal share (about 10^4) breaks convergence in the current code.</td>
 <td style="text-align: left;">Scale the Cox working weights by a balance factor γ and add the pieces that should keep a strongly weighted fit stable: damping, a non-collapsing β prior, a survival-informed start, sparse nonnegative priors.</td>
-<td style="text-align: left;">in progress: single-weight test done (no single weight works in the current code); new fitter next</td>
+<td style="text-align: left;">implemented; corrected scientific gate failed; not adopted</td>
+<td style="text-align: left;">Registered simulation summaries and gate tables</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">1</td>
@@ -305,7 +593,8 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">The earlier survival term in the F update updated all genes at once and omitted the coupling between genes of the same program.</td>
 <td style="text-align: left;">Every correlated gene regressed the full residual onto itself, overshooting the predictor and causing runaway feedback between L and F.</td>
 <td style="text-align: left;">Gene-by-gene (Gauss–Seidel) update with the coupling term and the projection refreshed after each gene, with precision damping.</td>
-<td style="text-align: left;">partly done: the canonical path already has the coupled update; damping is new</td>
+<td style="text-align: left;">implemented and tested in opt-in fitter</td>
+<td style="text-align: left;">Coupled sweep and independent posterior checks</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">1</td>
@@ -313,7 +602,8 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">A low-variance prognostic program never gets a nonzero coefficient, so survival never pulls a factor toward it.</td>
 <td style="text-align: left;">The survival gradient on F_k is multiplied by β_k. A start from the top SVD directions misses the program, so β_k ≈ 0 and the gradient is zero.</td>
 <td style="text-align: left;">Hybrid start: K−2 factors from NMF/SVD plus two columns from the positive and negative parts of the univariate Cox score, then a short β warm-up.</td>
-<td style="text-align: left;">open</td>
+<td style="text-align: left;">implemented; disabled in unsupervised reference</td>
+<td style="text-align: left;">Hybrid-start and unsupervised-reference tests</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">1</td>
@@ -321,7 +611,8 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Survival coefficients collapse to exactly zero on real multimodal data and in some CV folds, and then stay there.</td>
 <td style="text-align: left;">Both current β priors have an absorbing zero: the per-factor Normal variance estimate hits 0 when |x/s| ≤ 1, and the shared point-Laplace slab weight can hit 0 when only one of K factors is prognostic.</td>
 <td style="text-align: left;">Point-normal prior on β with the slab proportion bounded to [1/K, 0.5] and a minimum slab scale.</td>
-<td style="text-align: left;">open</td>
+<td style="text-align: left;">implemented and tested; survival activity still requires validation</td>
+<td style="text-align: left;">Null-prior and optimizer-fixture tests</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">1</td>
@@ -330,6 +621,7 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">A helper summed over the length of the precision vector, which is 1 for the L update.</td>
 <td style="text-align: left;">Replicate the scalar precision before summing; test against the exact KL.</td>
 <td style="text-align: left;">done: fixed and tested; the benchmark rerun shows unchanged external C and better convergence (5 of 5 CV folds, against 2 of 5)</td>
+<td style="text-align: left;">Exact scalar/vector KL tests</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">1</td>
@@ -338,6 +630,7 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">This uses the outcome being evaluated and biases null C upward.</td>
 <td style="text-align: left;">Fix the direction once from the training fit.</td>
 <td style="text-align: left;">done: fixed; rescoring the saved risks changes none of the 20 comparator values</td>
+<td style="text-align: left;">Training-fixed comparator rescore</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">1</td>
@@ -346,6 +639,43 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">The cohort loader and the preprocessing step both applied log2(x+1).</td>
 <td style="text-align: left;">Log once; test each cohort’s scale against its setting.</td>
 <td style="text-align: left;">done: fixed and tested; external C unchanged (mean 0.625 vs 0.627)</td>
+<td style="text-align: left;">Loader checks and saved benchmark rerun</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Survival uncertainty</td>
+<td style="text-align: left;">Large survival weights can make several unmatched factors appear prognostic.</td>
+<td style="text-align: left;">Large likelihood weights increase conditional coefficient precision; mixed and survival-only directions may appear active without recovered expression programs.</td>
+<td style="text-align: left;">Assess the registered false-active criterion; a different uncertainty model requires a new statistical decision.</td>
+<td style="text-align: left;">registered false-active criterion failed; uncertainty/model decision open</td>
+<td style="text-align: left;">Paired recovery and false-active tables</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Numerical posterior stability</td>
+<td style="text-align: left;">Extreme normal-means messages can lose posterior variance or yield inconsistent KL.</td>
+<td style="text-align: left;">Subtracting large Gaussian terms causes cancellation; constrained coefficient optimization can fail at a boundary.</td>
+<td style="text-align: left;">Cancel the Gaussian term analytically; verify moments and KL by quadrature; warn on a profile-likelihood fallback.</td>
+<td style="text-align: left;">implemented and independently checked; isolated opt-in kernel</td>
+<td style="text-align: left;">Saved pseudo-message fixtures and quadrature tests</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Simulation design</td>
+<td style="text-align: left;">Raw-risk and prepared reconstruction loadings differed in the original simulation.</td>
+<td style="text-align: left;">SD division maps the reconstruction loading to F/SD while raw-expression risk maps to F×SD.</td>
+<td style="text-align: left;">Generate Cox risk from normalized F/SD_train and retain that same direction in validation; preserve the original gate.</td>
+<td style="text-align: left;">corrected and algebraically tested; complete corrected grid failed scientific gate</td>
+<td style="text-align: left;">Shared-loading unit test and corrected-design saved grid</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Program interpretation</td>
+<td style="text-align: left;">A loading can predict survival after its reconstruction activity becomes exactly zero.</td>
+<td style="text-align: left;">The projection uses observed expression rather than L; zero L does not remove F from the risk predictor.</td>
+<td style="text-align: left;">Report survival-only columns explicitly; resolve joint-support or program-identification assumptions before another method change.</td>
+<td style="text-align: left;">numerical scale identified; statistical decision open</td>
+<td style="text-align: left;">Saved factor tables and survival-only scale-invariance tests</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">2</td>
@@ -353,7 +683,8 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Joint expression and methylation fits hit the sweep cap without converging.</td>
 <td style="text-align: left;">Rescaling each factor by a data-dependent SD changes the next sweep’s precisions; the β prior is not carried through rescaling; KL values were cached out of sync with the prior.</td>
 <td style="text-align: left;">Rescale L to unit RMS with the exact inverse map on F; normalize F inside the predictor so β never needs rescaling; compute KL directly from each ebnm result.</td>
-<td style="text-align: left;">open</td>
+<td style="text-align: left;">partly done: normalization and numerical repair; approximate objective may decrease</td>
+<td style="text-align: left;">Saved objective and output-convergence traces</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">2</td>
@@ -362,6 +693,7 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Projection and precisions are unnormalized sums over features, so the block with more features dominates.</td>
 <td style="text-align: left;">Weight each block by its feature count and scale each block’s projection by 1/(M√p_m); make log-space risk sets and a curvature floor the default.</td>
 <td style="text-align: left;">open (after supervision works)</td>
+<td style="text-align: left;">Earlier multimodal results; new work deferred</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">2</td>
@@ -369,7 +701,8 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Single-block and multimodal models differ: z-scored data with nonnegative factors in one, intercepts and signed loadings in the other.</td>
 <td style="text-align: left;">Z-scoring creates negative values that LF^T ≥ 0 cannot reconstruct; the multimodal model abandoned nonnegativity instead.</td>
 <td style="text-align: left;">One model with M = 1 as the single-block case: divide each feature by its within-cohort SD without centering (Y ≥ 0), and center only inside the Cox projection.</td>
-<td style="text-align: left;">open</td>
+<td style="text-align: left;">implemented for the opt-in single-block model</td>
+<td style="text-align: left;">Opt-in input scaling and projection tests</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">2</td>
@@ -377,7 +710,8 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">PACA-AU donors appear in two external series (47 shared donors plus one duplicate), so pooled intervals resample records rather than donors.</td>
 <td style="text-align: left;">568 unique donors across 616 records.</td>
 <td style="text-align: left;">One record per donor in pooled analyses, donor-level or cohort-stratified bootstrap.</td>
-<td style="text-align: left;">open (recorded as a preprocessing decision)</td>
+<td style="text-align: left;">decision recorded; pooled reanalysis deferred</td>
+<td style="text-align: left;">Preprocessing audit and recorded donor rule</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">2</td>
@@ -386,6 +720,7 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">The tests called git on a branch that is not pushed in that form.</td>
 <td style="text-align: left;">Store the baselines as test fixtures.</td>
 <td style="text-align: left;">done</td>
+<td style="text-align: left;">Versioned baseline fixtures and full test suite</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">2</td>
@@ -394,6 +729,7 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Reporting lagged the analysis.</td>
 <td style="text-align: left;">Report the null result; lead with the matched comparison (+0.011, −0.013 to 0.033); list every use of the external cohorts.</td>
 <td style="text-align: left;">open (writeup revision)</td>
+<td style="text-align: left;">Earlier registered null result and reporting dispositions</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">2</td>
@@ -401,15 +737,17 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">The single-block risk score may carry the opposite sign to the documented hazard convention.</td>
 <td style="text-align: left;">A post-fit global flip based on training C can override the sign the partial likelihood chose.</td>
 <td style="text-align: left;">Check the saved benchmark fit; fix or document the convention.</td>
-<td style="text-align: left;">open</td>
+<td style="text-align: left;">done: positive hazard direction; training-only reporting orientation documented</td>
+<td style="text-align: left;">Hazard-orientation regression test</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">2</td>
 <td style="text-align: left;">β uncertainty</td>
 <td style="text-align: left;">Stored β variances may be zero where the derivation implies they are positive.</td>
-<td style="text-align: left;">To be checked against the saved fit.</td>
-<td style="text-align: left;">Store Var(β) + E[β]^2 consistently and add a test.</td>
-<td style="text-align: left;">open</td>
+<td style="text-align: left;">Historical saved variances are positive; extreme messages in the new engine exposed cancellation when subtracting large second moments.</td>
+<td style="text-align: left;">Carry variances separately; evaluate same-prior posteriors and KL stably; retain second moments for updates.</td>
+<td style="text-align: left;">implemented and tested; invalid earlier uncertainty states retained</td>
+<td style="text-align: left;">Saved coefficient-variance audit and strong-message regression tests</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">3</td>
@@ -417,7 +755,8 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Exponential priors without a point mass at zero never prune; post-hoc deletion either deletes nothing (multimodal) or rotates the prognostic program away (single block).</td>
 <td style="text-align: left;">Exponential priors have no mass at zero. Deleting a factor while holding the rest frozen is dominated by the reconstruction term; refitting at K−1 lets the protected program absorb the deleted variance.</td>
 <td style="text-align: left;">Point-exponential priors on L and F; no deletion refits; report survival-active, genomics-only and inactive factors from the fitted K; choose K and the supervision strength by training CV with the one-SE rule.</td>
-<td style="text-align: left;">open</td>
+<td style="text-align: left;">partly done: no deletion refits and post-fit roles; rank selection deferred</td>
+<td style="text-align: left;">Saved factor classifications; no deletion refits</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">3</td>
@@ -426,6 +765,7 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Projecting thousands of background genes adds noise; screening on survival first means the factorization no longer discovers the prognostic program.</td>
 <td style="text-align: left;">Keep the unsupervised mean/variance screen as primary; survival screening only as an ablation; report a feature-count sensitivity curve.</td>
 <td style="text-align: left;">open</td>
+<td style="text-align: left;">Approved preprocessing decisions</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">3</td>
@@ -434,6 +774,7 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Unscaled pooling makes the top factor a between-cohort technical difference; the indicator wastes a factor.</td>
 <td style="text-align: left;">Scale within cohort; no indicator column; stratified Cox risk sets and per-cohort residual precisions where needed.</td>
 <td style="text-align: left;">adopted in the current pipeline</td>
+<td style="text-align: left;">Existing cohort diagnostics and approved defaults</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">3</td>
@@ -442,6 +783,7 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">Comparators deferred; writeup has no executed code.</td>
 <td style="text-align: left;">Add PurIST as a prognostic comparator, DeSurv head to head, elastic-net Cox and clinical covariates; compute every number and figure from saved results.</td>
 <td style="text-align: left;">open</td>
+<td style="text-align: left;">Writeup dispositions and deferred comparator list</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">3</td>
@@ -450,37 +792,33 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">An all-zero ebnm return looks converged.</td>
 <td style="text-align: left;">Not pursued, since all work runs locally; the new fitter must flag an all-zero fit as a failure.</td>
 <td style="text-align: left;">deferred (known platform risk)</td>
+<td style="text-align: left;">Known platform risk; explicit degenerate-fit checks</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </section>
-<section id="progress-since-october-26" class="level2" data-number="14.4">
-<h2 data-number="14.4" class="anchored" data-anchor-id="progress-since-october-26"><span class="header-section-number">14.4</span> Progress since October 26</h2>
-<p><strong>Objective bookkeeping.</strong> The approximate ELBO counted the Gaussian normalizing constant of the patient-activity update once instead of once per patient. The ELBO is what decides when a fit stops (and, in the supervised path, which factors are pruned), so every fit could stop at a different point. A new test compares the KL term with its exact value; it failed before the fix and passes after.</p>
-<p><strong>Expression transform.</strong> Three RNA-seq cohorts were log-transformed twice, once when loaded and again in preprocessing. Every cohort is now logged once, and a test checks each cohort’s scale against its setting.</p>
-<p><strong>Benchmark after both fixes.</strong> We refitted the benchmark configuration with the corrected objective, once with the old transform and once with the single log, and scored each full-data fit once on the five external cohorts. The refit with the old transform reproduces the frozen benchmark in every cohort, so the comparison isolates the transform.</p>
+<section id="cleanup-results" class="level2" data-number="14.4">
+<h2 data-number="14.4" class="anchored" data-anchor-id="cleanup-results"><span class="header-section-number">14.4</span> Cleanup results</h2>
+<p>The KL helper previously counted a shared Gaussian normalizer only once instead of once per patient. Exact-value tests now cover both scalar and vector precisions. The RNA-seq preprocessing previously logged some cohorts twice; each cohort is now logged once. The earlier benchmark rerun after these fixes is reproduced below from its saved results, without another external evaluation.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
-<caption>External concordance after the bookkeeping fix. Mean C: frozen 0.627, single log 0.625.</caption>
 <colgroup>
-<col style="width: 17%">
-<col style="width: 3%">
-<col style="width: 16%">
-<col style="width: 20%">
-<col style="width: 17%">
-<col style="width: 25%">
+<col style="width: 23%">
+<col style="width: 5%">
+<col style="width: 9%">
+<col style="width: 32%">
+<col style="width: 28%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Cohort</th>
 <th style="text-align: right;">n</th>
-<th style="text-align: left;">Frozen benchmark</th>
-<th style="text-align: left;">Refit, old transform</th>
-<th style="text-align: left;">Refit, single log</th>
-<th style="text-align: left;">Difference (95% interval)</th>
+<th style="text-align: left;">Frozen</th>
+<th style="text-align: left;">Refit with old transform</th>
+<th style="text-align: left;">Refit with single log</th>
 </tr>
 </thead>
 <tbody>
@@ -490,7 +828,6 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">0.634</td>
 <td style="text-align: left;">0.634</td>
 <td style="text-align: left;">0.630</td>
-<td style="text-align: left;">-0.004 (-0.012, +0.002)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Moffitt_GEO_array</td>
@@ -498,7 +835,6 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">0.549</td>
 <td style="text-align: left;">0.549</td>
 <td style="text-align: left;">0.540</td>
-<td style="text-align: left;">-0.009 (-0.019, +0.001)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">PACA_AU_array</td>
@@ -506,7 +842,6 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">0.648</td>
 <td style="text-align: left;">0.648</td>
 <td style="text-align: left;">0.645</td>
-<td style="text-align: left;">-0.003 (-0.018, +0.013)</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">PACA_AU_seq</td>
@@ -514,7 +849,6 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">0.657</td>
 <td style="text-align: left;">0.657</td>
 <td style="text-align: left;">0.664</td>
-<td style="text-align: left;">+0.007 (-0.004, +0.022)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Puleo_array</td>
@@ -522,166 +856,1394 @@ ul.task-list li input[type="checkbox"] {
 <td style="text-align: left;">0.645</td>
 <td style="text-align: left;">0.645</td>
 <td style="text-align: left;">0.645</td>
-<td style="text-align: left;">+0.001 (-0.003, +0.004)</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>In training cross-validation with the single log, mean C is 0.640 (SE 0.017) with 5 of 5 folds converged, against 0.642 with 2 of 5 before the fix. The fix leaves the benchmark numbers as they were and makes the fits converge.</p>
-<p><strong>Risk direction in the comparators.</strong> Two comparator scripts set each validation cohort’s risk direction by taking the larger of C and 1 − C, which uses the outcome being evaluated. Both now fix the direction from the training fit. Rescoring the saved comparator risks changes 0 of 20 values, so the reported comparator numbers stand.</p>
-<p><strong>Tests.</strong> Four tests depended on a local copy of an old branch. Their baselines are now stored with the tests, and the full suite passes for anyone who clones the repository.</p>
-<p><strong>Branches.</strong> Of 32 local branches, 28 are fully merged and can be deleted. Nothing has been deleted yet.</p>
+<p>Mean external C is 0.627 in the frozen benchmark and 0.625 in the single-log rerun. With single logging, the corrected stopping calculation gives 5 converged training folds versus 2 before correction. Mean training-CV C is 0.640 with SE 0.017.</p>
+<p>Comparator scoring now fixes orientation from training data. Rescoring saved risks changed 0 of 20 comparator values. Positive η denotes higher hazard. A training-concordance sign correction is a reporting convention rather than a further likelihood optimization, and is frozen for held-out patients. All 7 stored coefficient variances in the saved single-log fit are positive; their minimum is 8.6e-12. An estimated prior can still collapse with weak evidence, which is a different issue from incorrectly storing a posterior second moment.</p>
 </section>
-<section id="survival-supervision-of-the-loadings-what-we-tried-and-what-comes-next" class="level2" data-number="14.5">
-<h2 data-number="14.5" class="anchored" data-anchor-id="survival-supervision-of-the-loadings-what-we-tried-and-what-comes-next"><span class="header-section-number">14.5</span> Survival supervision of the loadings: what we tried and what comes next</h2>
-<p><strong>Is a larger survival weight enough?</strong> No.&nbsp;In a simulation with 50 genes, a weight of 1 already gives survival most of the loading precision for the planted program and recovers it in 18 to 20 of 20 datasets; larger weights recover it less often and flag nearly every program as prognostic. On the real training data (2,064 genes) the picture is different:</p>
+<section id="precision-balance-and-the-revised-fitter" class="level2" data-number="14.5">
+<h2 data-number="14.5" class="anchored" data-anchor-id="precision-balance-and-the-revised-fitter"><span class="header-section-number">14.5</span> Precision balance and the revised fitter</h2>
+<p>Reconstruction precision for gene j in factor k is <span class="math inline">\(A_{R,jk}=\tau_j\sum_i E[L_{ik}^2]\)</span>. Survival precision is <span class="math inline">\(A_{S,jk}=\gamma E[\beta_k^2]s_k^2\sum_i w_i\tilde Y_{ij}^2\)</span>. Their ratio determines whether survival can move a loading. A feature/event weight alone does not control that ratio.</p>
+<p>This is a conditional audit at the transformed saved training state, using its stored residual precision. It is not a new fit under the proposed input scale. It uses 273 patients, 2218 genes and 139 events. The single-log gene screen changes the retained feature set, so the audit reports its actual dimensions.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <colgroup>
-<col style="width: 21%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 24%">
+<col style="width: 30%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Factor</th>
+<th style="text-align: left;">Weight</th>
+<th style="text-align: left;">Median survival share</th>
+<th style="text-align: left;">Weight for one-tenth share</th>
+<th style="text-align: left;">Weight for equal precision</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">15.957</td>
+<td style="text-align: left;">7.8e-05</td>
+<td style="text-align: left;">2.3e+04</td>
+<td style="text-align: left;">2.0e+05</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">15.957</td>
+<td style="text-align: left;">5.0e-12</td>
+<td style="text-align: left;">3.5e+11</td>
+<td style="text-align: left;">3.2e+12</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">15.957</td>
+<td style="text-align: left;">3.0e-11</td>
+<td style="text-align: left;">6.0e+10</td>
+<td style="text-align: left;">5.4e+11</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">15.957</td>
+<td style="text-align: left;">5.8e-08</td>
+<td style="text-align: left;">3.1e+07</td>
+<td style="text-align: left;">2.7e+08</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">15.957</td>
+<td style="text-align: left;">3.4e-12</td>
+<td style="text-align: left;">5.3e+11</td>
+<td style="text-align: left;">4.8e+12</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">6</td>
+<td style="text-align: left;">15.957</td>
+<td style="text-align: left;">5.4e-12</td>
+<td style="text-align: left;">3.3e+11</td>
+<td style="text-align: left;">3.0e+12</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">15.957</td>
+<td style="text-align: left;">1.0e-03</td>
+<td style="text-align: left;">1.8e+03</td>
+<td style="text-align: left;">1.6e+04</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The new fitter divides nonnegative expression by within-cohort SD and centers only inside the projection. Patient activities and gene loadings have point-exponential priors. The projection uses normalized loading columns, while activity RMS normalization is applied at sweep boundaries. Coefficients and their prior remain in the same projection units under this rescaling.</p>
+<p>A hybrid start uses nonnegative reconstruction directions plus the positive and negative Cox-score directions. The unsupervised reference disables that survival-informed start. Coefficient updates use a bounded point-normal prior. The gene-wise update includes within-program coupling and refreshes the projection after each gene. Survival messages are damped before computing the posterior. KL is computed using the same normal-means messages and fitted prior, without a later replacement of the prior or a deletion refit. Small variances are stored directly rather than recovered by subtracting large second moments. Predictor and reconstruction uncertainty are sums of nonnegative variance contributions.</p>
+<p>DeSurv uses a different balance: reconstruction divided by squared data norm, event-normalized Cox loss, gradient-norm matching, bounded multiplicative updates and backtracking against its actual loss. These operations help explain why its stability does not establish stability of the proposed variational updates.</p>
+</section>
+<section id="registered-simulation-and-failures" class="level2" data-number="14.6">
+<h2 data-number="14.6" class="anchored" data-anchor-id="registered-simulation-and-failures"><span class="header-section-number">14.6</span> Registered simulation and failures</h2>
+<p>The design uses 10 paired datasets per cell, with feature counts 50 and 2000 and planted centered variance shares 0.25, 1, 5 percent. The arms are an unsupervised factorization followed by Cox, the share-calibrated supervision grid, the existing canonical fitter and a training-CV Cox lasso. Each training dataset contains 400 patients and its synthetic validation cohort contains 120; the initial rank is 7, with at most 300 sweeps. Synthetic validation is independent of training. No real validation cohort is used for any choice.</p>
+<p>The gate requires the same supervision-grid arm to improve recovery by the registered 3 datasets out of 10 in at least 2 variance cells, with mean false-active count at most 1 and at least 9 converged fits per qualifying cell. Recovery requires a loading match, correct coefficient direction and posterior survival activity together. Errors and missing checkpoints stay in the denominator. Failed factor fits receive the conservative false-active penalty specified before execution.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 7%">
+<col style="width: 10%">
+<col style="width: 9%">
+<col style="width: 17%">
+<col style="width: 15%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">attempt</th>
+<th style="text-align: right;">expected</th>
+<th style="text-align: right;">saved</th>
+<th style="text-align: right;">missing</th>
+<th style="text-align: right;">errors</th>
+<th style="text-align: right;">nonconverged</th>
+<th style="text-align: right;">undefined_C</th>
+<th style="text-align: left;">gate_passed</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">attempt1</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">280</td>
+<td style="text-align: right;">284</td>
+<td style="text-align: right;">285</td>
+<td style="text-align: right;">284</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">attempt2</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">149</td>
+<td style="text-align: right;">161</td>
+<td style="text-align: right;">149</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">attempt3</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">155</td>
+<td style="text-align: right;">161</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">attempt4</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">140</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">attempt5</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">90</td>
+<td style="text-align: right;">270</td>
+<td style="text-align: right;">274</td>
+<td style="text-align: right;">293</td>
+<td style="text-align: right;">270</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">attempt6</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">129</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">attempt7</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">153</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The first attempt could not calibrate most supervised arms because dead columns have zero reconstruction precision. The next attempt excluded dead columns, but exposed posterior numerical failures. The corrected comparison also removes survival-score initialization from the unsupervised reference. An intermediate attempt rescales normal-means problems, checks both posterior moments, reduces damping and returns the last coherent fit with a failure reason whenever a numerical calculation fails. An exponential-posterior repair keeps the same fitted prior but cancels the common Gaussian term before evaluating its moments and KL. Independent numerical integration verifies that calculation. A constrained profile- likelihood fallback repairs a reproduced coefficient-prior optimizer failure and emits a saved warning. A later boundary correction normalizes tiny positive activities and fixes the otherwise free loading scale when an activity vanishes. A separate variance audit then found that coefficient uncertainty could disappear through second-moment subtraction. That invalid run was stopped with all checkpoints retained. The final attempt carries each variance separately and uses stable same-prior posterior/KL calculations throughout. No prior or likelihood weight was changed by these numerical corrections. A subsequent design audit found that the generated survival direction used raw-expression units while the reconstruction loading used SD-divided units. The earlier grids therefore serve as numerical diagnostics and do not test recovery of one shared loading. The corrected grid generates survival from the unit-normalized prepared reconstruction loading and holds that training direction fixed in synthetic validation. An algebraic test verifies this identity. The coefficient now has prepared-projection units, so predictive strength is not comparable across attempts. The original gate is retained.</p>
+<p>An independently integrated synthetic pseudo-message demonstrates the numerical failure. Its pseudo-observation is 9.2e+08 with SE 3.1e+06 at sweep 46. Quadrature gives posterior variance 8.539. The returned normal-means second moment is 2.699, versus 11.238 from integration. The earlier compiled result is close to the latter but also has some cancellation error. Substituting either result silently would conceal a numerical problem.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 13%">
+<col style="width: 7%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">rho</th>
+<th style="text-align: left;">converged</th>
+<th style="text-align: left;">recovered</th>
+<th style="text-align: right;">false_active</th>
+<th style="text-align: right;">sweeps</th>
+<th style="text-align: left;">error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2e-01</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: left;">Sequential posterior mismatch</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2e-02</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: left;">Bounded β marginal likelihood did not converge</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2e-03</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: left;">Invalid ebnm posterior or KL</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2e-04</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">Invalid ebnm posterior or KL</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Reducing damping alone did not repair the diagnosed example before the stable posterior evaluation. These exploratory reproductions diagnose numerical behavior; they are not additional successful gate datasets. The objective is a diagonal-Taylor approximation with a sweep-fixed projection normalizer. Decreases are explicitly reported, rather than described as guaranteed coordinate ascent.</p>
+<p>The variance cells refer to raw centered expression. SD division changes the relative signal variance; the corresponding prepared variance shares and oracle discrimination are reported below from the generated datasets.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">p</th>
+<th style="text-align: right;">variance</th>
+<th style="text-align: right;">raw_share</th>
+<th style="text-align: right;">prepared_share</th>
+<th style="text-align: right;">training_eta_sd</th>
+<th style="text-align: right;">oracle_C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: right;">0.0048163</td>
+<td style="text-align: right;">3.537793</td>
+<td style="text-align: right;">0.9038223</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: right;">0.0041173</td>
+<td style="text-align: right;">9.926779</td>
+<td style="text-align: right;">0.9612543</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: right;">0.0144764</td>
+<td style="text-align: right;">3.958697</td>
+<td style="text-align: right;">0.9108130</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: right;">0.0122069</td>
+<td style="text-align: right;">16.478828</td>
+<td style="text-align: right;">0.9770178</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: right;">0.0374920</td>
+<td style="text-align: right;">5.018316</td>
+<td style="text-align: right;">0.9197835</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: right;">0.0327916</td>
+<td style="text-align: right;">26.747892</td>
+<td style="text-align: right;">0.9864163</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Matched-factor precision shares below refer to the experimental engine at its saved final state; inactive columns have undefined shares.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 3%">
+<col style="width: 9%">
+<col style="width: 15%">
+<col style="width: 1%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 8%">
+<col style="width: 7%">
+<col style="width: 4%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Genes</th>
+<th style="text-align: right;">Variance percent</th>
+<th style="text-align: left;">Arm</th>
+<th style="text-align: right;">N</th>
+<th style="text-align: right;">Recovered</th>
+<th style="text-align: right;">Converged</th>
+<th style="text-align: right;">Mean false active</th>
+<th style="text-align: left;">Mean validation C</th>
+<th style="text-align: right;">C denominator</th>
+<th style="text-align: right;">Undefined C</th>
+<th style="text-align: right;">Errors</th>
+<th style="text-align: left;">Final matched precision share</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Unsupervised then Cox</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.4</td>
+<td style="text-align: left;">0.645</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">0.0e+00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Lower share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">5.3</td>
+<td style="text-align: left;">0.881</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">9.4e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Middle share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">6.1</td>
+<td style="text-align: left;">0.879</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">4.4e-01</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Higher share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6.7</td>
+<td style="text-align: left;">0.879</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">5.0e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Existing canonical fitter</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">1.5</td>
+<td style="text-align: left;">0.852</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Cox lasso</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">0.899</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Unsupervised then Cox</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.4</td>
+<td style="text-align: left;">0.657</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">0.0e+00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Lower share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">6.1</td>
+<td style="text-align: left;">0.879</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">6.1e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Middle share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">6.6</td>
+<td style="text-align: left;">0.890</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">6.5e-01</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Higher share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">6.8</td>
+<td style="text-align: left;">0.883</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">8.1e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Existing canonical fitter</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">3.7</td>
+<td style="text-align: left;">0.895</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Cox lasso</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">0.906</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Unsupervised then Cox</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.8</td>
+<td style="text-align: left;">0.681</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">0.0e+00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Lower share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">5.4</td>
+<td style="text-align: left;">0.911</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">7.1e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Middle share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">6.6</td>
+<td style="text-align: left;">0.904</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">7.4e-01</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Higher share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">6.6</td>
+<td style="text-align: left;">0.905</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">8.9e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Existing canonical fitter</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">2.9</td>
+<td style="text-align: left;">0.904</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Cox lasso</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">0.917</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Unsupervised then Cox</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.6</td>
+<td style="text-align: left;">0.687</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">0.0e+00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Lower share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">6.8</td>
+<td style="text-align: left;">0.460</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">2.6e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Middle share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">8.2e-01</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Higher share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">1.0e+00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Existing canonical fitter</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: left;">0.905</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.25</td>
+<td style="text-align: left;">Cox lasso</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">0.899</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Unsupervised then Cox</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.3</td>
+<td style="text-align: left;">0.745</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">0.0e+00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Lower share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6.8</td>
+<td style="text-align: left;">0.859</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">8.0e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Middle share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">6.6e-01</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Higher share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">8.3e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Existing canonical fitter</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.5</td>
+<td style="text-align: left;">0.953</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: left;">Cox lasso</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">0.942</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Unsupervised then Cox</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.1</td>
+<td style="text-align: left;">0.832</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">0.0e+00</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Lower share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: left;">0.815</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">3.0e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Middle share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6.8</td>
+<td style="text-align: left;">0.737</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">4.9e-01</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Higher share grid</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">8.7e-01</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Existing canonical fitter</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.1</td>
+<td style="text-align: left;">0.909</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">5.00</td>
+<td style="text-align: left;">Cox lasso</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">0.965</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">NA</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 20%">
+<col style="width: 15%">
+<col style="width: 11%">
+<col style="width: 10%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">variance</th>
+<th style="text-align: left;">arm</th>
+<th style="text-align: right;">recovered</th>
+<th style="text-align: right;">baseline_recovered</th>
+<th style="text-align: right;">recovery_gain</th>
+<th style="text-align: right;">mean_false</th>
+<th style="text-align: right;">converged</th>
+<th style="text-align: left;">qualifies</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: left;">share0.05</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6.8</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: left;">share0.05</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6.8</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: left;">share0.05</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-1</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-1</td>
+<td style="text-align: right;">6.8</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: left;">share0.5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: left;">share0.5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: left;">share0.5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-1</td>
+<td style="text-align: right;">7.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Registered supervision gate: failed</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">arm</th>
+<th style="text-align: right;">qualifying_cells</th>
+<th style="text-align: left;">passed</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">share0.05</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">share0.5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Reported C means use converged fits with valid stored uncertainty; their denominators are shown explicitly. Failed states and undefined scores remain in the failure inventory.</p>
+<p>A loading-recovery result alone does not establish calibrated survival inference or stable joint fitting. The gate keeps those requirements together. No real-data training CV or post-pass ablation is justified by a failed gate. Survival-only loading directions are reported separately: their activities are zero, so they predict outcome without reconstructing an expression program. Their numerical scale is identified, but their scientific interpretation is an unresolved model question.</p>
+<p>The final diagnostic replays use saved weights and exactly reproduce their registered loading means; they are not additional gate datasets. Their coefficient and loading variances are carried separately, avoiding loss from subtracting large second moments.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 9%">
+<col style="width: 12%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 15%">
+<col style="width: 22%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">variance</th>
+<th style="text-align: left;">recovered</th>
+<th style="text-align: right;">false_active</th>
+<th style="text-align: left;">converged</th>
+<th style="text-align: right;">decreases</th>
+<th style="text-align: right;">share_final_live</th>
+<th style="text-align: right;">largest_mean_difference</th>
+<th style="text-align: right;">first_decrease</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.1557397</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">0.6972988</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: right;">84</td>
+<td style="text-align: right;">0.0681239</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 14%">
+<col style="width: 16%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 13%">
+<col style="width: 16%">
+<col style="width: 5%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">variance</th>
+<th style="text-align: right;">mean_reconstruction_loss</th>
+<th style="text-align: right;">expected_reconstruction_loss</th>
+<th style="text-align: right;">F_norm_ratio</th>
+<th style="text-align: right;">L_norm_ratio</th>
+<th style="text-align: right;">median_tau</th>
+<th style="text-align: right;">min_tau</th>
+<th style="text-align: right;">max_gene_relative_loss</th>
+<th style="text-align: right;">max_loading_energy_fraction</th>
+<th style="text-align: right;">max_beta</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: right;">1.026870e-01</td>
+<td style="text-align: right;">1.031430e-01</td>
+<td style="text-align: right;">1.167295e+00</td>
+<td style="text-align: right;">1.155069</td>
+<td style="text-align: right;">1.000262</td>
+<td style="text-align: right;">0.0055456</td>
+<td style="text-align: right;">1.531056e+01</td>
+<td style="text-align: right;">0.0148815</td>
+<td style="text-align: right;">8.981310</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: right;">9.390241e+02</td>
+<td style="text-align: right;">9.391062e+02</td>
+<td style="text-align: right;">3.993305e+01</td>
+<td style="text-align: right;">1.148109</td>
+<td style="text-align: right;">1.001862</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">1.785168e+06</td>
+<td style="text-align: right;">0.9990742</td>
+<td style="text-align: right;">27.706546</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: right;">4.531055e+14</td>
+<td style="text-align: right;">4.538032e+14</td>
+<td style="text-align: right;">2.567138e+07</td>
+<td style="text-align: right;">1.291070</td>
+<td style="text-align: right;">1.002433</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">1.334497e+18</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: right;">7.955664</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 5%">
+<col style="width: 28%">
+<col style="width: 12%">
+<col style="width: 10%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">variance</th>
+<th style="text-align: right;">gamma</th>
+<th style="text-align: right;">rho</th>
+<th style="text-align: right;">max_projection_correlation</th>
+<th style="text-align: right;">min_beta_sd</th>
+<th style="text-align: right;">max_abs_z</th>
+<th style="text-align: right;">live_projection_columns</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: right;">62233.06</td>
+<td style="text-align: right;">0.02</td>
+<td style="text-align: right;">0.8352935</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">24699.49</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: right;">44480.78</td>
+<td style="text-align: right;">0.02</td>
+<td style="text-align: right;">0.7338726</td>
+<td style="text-align: right;">0.0001616</td>
+<td style="text-align: right;">171466.96</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: right;">34794.36</td>
+<td style="text-align: right;">0.02</td>
+<td style="text-align: right;">1.0000000</td>
+<td style="text-align: right;">0.0000376</td>
+<td style="text-align: right;">25295.58</td>
+<td style="text-align: right;">5</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
 <col style="width: 7%">
 <col style="width: 17%">
-<col style="width: 27%">
-<col style="width: 24%">
+<col style="width: 10%">
+<col style="width: 22%">
+<col style="width: 23%">
+<col style="width: 18%">
 </colgroup>
 <thead>
 <tr class="header">
-<th style="text-align: left;">Survival weight</th>
-<th style="text-align: left;">CV mean C</th>
-<th style="text-align: right;">Folds converged (of 5)</th>
-<th style="text-align: left;">Survival share of loading precision</th>
-<th style="text-align: right;">Survival-active programs (mean)</th>
+<th style="text-align: right;">variance</th>
+<th style="text-align: right;">largest_F_jump_sweep</th>
+<th style="text-align: right;">F_jump_ratio</th>
+<th style="text-align: right;">largest_beta_increase_sweep</th>
+<th style="text-align: right;">largest_objective_drop_sweep</th>
+<th style="text-align: right;">largest_objective_drop</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">1</td>
-<td style="text-align: left;">0.656</td>
-<td style="text-align: right;">4</td>
-<td style="text-align: left;">1.2e-06</td>
-<td style="text-align: right;">2.6</td>
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">1.012681</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">-65787.15</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">1 (survival-informed start)</td>
-<td style="text-align: left;">0.656</td>
-<td style="text-align: right;">4</td>
-<td style="text-align: left;">1.2e-06</td>
-<td style="text-align: right;">2.6</td>
+<td style="text-align: right;">0.0100</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">2.810167</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">-386033041.96</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">100</td>
-<td style="text-align: left;">0.648</td>
-<td style="text-align: right;">5</td>
-<td style="text-align: left;">1.1e-04</td>
-<td style="text-align: right;">6.2</td>
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">4.566959</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">-26744508.95</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;">variance</th>
+<th style="text-align: right;">orphan</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0.0025</td>
+<td style="text-align: right;">2</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">10,000</td>
-<td style="text-align: left;">0.555</td>
+<td style="text-align: right;">0.0100</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: left;">5.3e-01</td>
-<td style="text-align: right;">7.0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">0.0500</td>
+<td style="text-align: right;">0</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>These fits ran before the bookkeeping fix, which changes stopping but not the precision shares. Survival’s share grows in proportion to the weight. It reaches a share comparable to reconstruction only near 10⁴, and there the fit no longer converges.</p>
-<p><strong>Proposed solution.</strong> The new fitter follows a written specification (tracker items 1–7 and 9):</p>
-<ul>
-<li>the survival curvature is scaled by a factor γ that depends on a supervision strength α;</li>
-<li>the gene loadings are updated one gene at a time with the within-program coupling term and damping;</li>
-<li>the survival coefficient prior is a point-normal whose slab cannot vanish;</li>
-<li>two of the starting factors come from the Cox score directions so a prognostic program starts with a nonzero coefficient;</li>
-<li>point-exponential priors on L and F, nonnegative input data, and centering only inside the Cox projection.</li>
-</ul>
-<p><strong>A caution we will test first.</strong> At the training data’s size, the γ in the specification is about 15 for α = 0.5, inside the range of weights already tested above. A per-gene count suggests that under the specification’s own scaling the survival share is still about 1/n rather than of order one. Balancing the two likelihoods as totals requires a weight near 10⁴. The question the new fitter answers is whether damping, the non-collapsing prior and the survival-informed start keep the fit stable at a weight that large. DeSurv solves the same balance problem for NMF with a Cox model, so we will also compare against how it normalizes its loss.</p>
-<p><strong>Decision test.</strong> Simulation with 50 and 2,000 genes, a planted prognostic program carrying 0.25%, 1% or 5% of the expression variance, and 10 datasets per setting. Supervision counts as working if, at 2,000 genes, some γ recovers the program in at least 3 more of 10 datasets than the unsupervised fit in at least two variance settings, with at most one falsely prognostic program on average and at least 90% of fits converged. The criterion is registered before the run. If the test fails we will stop, record where the fit fails (survival share, coefficients and objective per sweep), and decide with the advisors whether to return to a latent predictor η = Lβ, in which survival enters the patient-activity update directly and new patients are scored by fitting their activities with the loadings held fixed.</p>
+<p>The fixed cases reach a maximum expected reconstruction-loss ratio of 4.5e+14 and a minimum residual precision of 8.7e-20. Estimated noise variances sharply downweight the affected features. Finite posterior moments therefore do not establish stable joint fitting or a faithful expression reconstruction. The jump table identifies the largest observed end-of-sweep changes; it does not attribute the first loss to a particular within-sweep block. Changing the noise model or the normalized objective requires a stated methodological decision.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../resources/yfb-supervision-2026-10-30-diagnostic-traces.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<figcaption>Fixed diagnostic replays. Dots mark objective decreases. Objective change is divided by its absolute starting value; loading norms use log10 of the ratio to their start. All panels in a row share the same axes. These deterministic traces are not replicate means or uncertainty intervals.</figcaption>
+</figure>
+</div>
+</div>
+</div>
 </section>
-<section id="preprocessing-decisions" class="level2" data-number="14.6">
-<h2 data-number="14.6" class="anchored" data-anchor-id="preprocessing-decisions"><span class="header-section-number">14.6</span> Preprocessing decisions</h2>
-<p>The audit of the preprocessing listed eleven alignments. We recommend the following.</p>
-<table class="caption-top table">
+<section id="preprocessing-decisions" class="level2" data-number="14.7">
+<h2 data-number="14.7" class="anchored" data-anchor-id="preprocessing-decisions"><span class="header-section-number">14.7</span> Preprocessing decisions</h2>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 3%">
+<col style="width: 16%">
+<col style="width: 54%">
+<col style="width: 26%">
 </colgroup>
 <thead>
 <tr class="header">
-<th>#</th>
-<th>Alignment</th>
-<th>Recommendation</th>
+<th style="text-align: right;">item</th>
+<th style="text-align: left;">step</th>
+<th style="text-align: left;">decision</th>
+<th style="text-align: left;">status</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>1</td>
-<td>Log transform</td>
-<td>Log2(x + 1) once for every RNA-seq cohort (adopted).</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">RNA-seq transform</td>
+<td style="text-align: left;">One logarithm per cohort</td>
+<td style="text-align: left;">Implemented</td>
 </tr>
 <tr class="even">
-<td>2</td>
-<td>TCGA expression source</td>
-<td>Keep the source the benchmark uses and record it.</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">TCGA expression source</td>
+<td style="text-align: left;">Retain the benchmark RSEM source</td>
+<td style="text-align: left;">Recorded for pipeline alignment</td>
 </tr>
 <tr class="odd">
-<td>3</td>
-<td>Expression scaling</td>
-<td>Divide each gene by its within-cohort SD without centering, so the data stay nonnegative; center only inside the Cox projection. Applies to the new fitter.</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">Expression scale</td>
+<td style="text-align: left;">Within-cohort SD division without centering; projection centered</td>
+<td style="text-align: left;">Implemented in opt-in fitter</td>
 </tr>
 <tr class="even">
-<td>4</td>
-<td>Validation scaling</td>
-<td>Scale each validation cohort by its own within-cohort SD, consistent with 3.</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">Validation scale</td>
+<td style="text-align: left;">Each validation cohort uses its own feature SD</td>
+<td style="text-align: left;">Recorded; no new external evaluation</td>
 </tr>
 <tr class="odd">
-<td>5</td>
-<td>Gene universe and screen</td>
-<td>Gene names from the training data; keep the per-cohort top-3,000 mean/variance screen with intersection; survival screening only as an ablation.</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">Gene screen</td>
+<td style="text-align: left;">Training-only names; top-3000 combined mean/variance rank per cohort with intersection</td>
+<td style="text-align: left;">Retained; survival screen only an ablation</td>
 </tr>
 <tr class="even">
-<td>6–7</td>
-<td>Missing features, duplicate symbols</td>
-<td>Keep the rules the benchmark uses and record them.</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: left;">Missing validation genes</td>
+<td style="text-align: left;">Intersect genes and remove matching loading rows</td>
+<td style="text-align: left;">Retain existing rule</td>
 </tr>
 <tr class="odd">
-<td>8</td>
-<td>Methylation scale</td>
-<td>Keep β-values for now; revisit M-values with the multimodal model.</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">Duplicate symbols</td>
+<td style="text-align: left;">First occurrence in wrapper; earlier median collapse in some loaders remains to align</td>
+<td style="text-align: left;">Recorded with loader exception</td>
 </tr>
 <tr class="even">
-<td>9</td>
-<td>Methylation imputation</td>
-<td>Keep KNN imputation and state the 50 versus 67 donors explicitly.</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">Methylation scale</td>
+<td style="text-align: left;">Keep beta-values; defer M-values</td>
+<td style="text-align: left;">Recorded</td>
 </tr>
 <tr class="odd">
-<td>10</td>
-<td>Probe filters</td>
-<td>Apply cross-reactive and SNP probe filters when multimodal work resumes.</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: left;">Methylation imputation</td>
+<td style="text-align: left;">Within-cohort KNN; 50 primary donors versus 67 donors in imputation pool</td>
+<td style="text-align: left;">Recorded</td>
 </tr>
 <tr class="even">
-<td>11</td>
-<td>Repeated donors</td>
-<td>One record per donor (568 unique) in pooled analyses, with donor-level or cohort-stratified resampling.</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">Probe QC</td>
+<td style="text-align: left;">Cross-reactive and SNP filters when multimodal work resumes</td>
+<td style="text-align: left;">Deferred</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">11</td>
+<td style="text-align: left;">Pooled external inference</td>
+<td style="text-align: left;">One record per donor; 568 unique donors; donor-level or cohort-stratified resampling</td>
+<td style="text-align: left;">Recorded; no new pooled analysis</td>
 </tr>
 </tbody>
 </table>
+</div>
+</div>
+<p>The approved preprocessing decisions are recorded separately from completed pipeline changes. Single logging is adopted. The existing benchmark TCGA expression source is retained. Training-only gene names and the per-cohort mean/variance screen with intersection remain primary; survival pre-screening is reserved for an ablation.</p>
+<p>For the new fitter, within-cohort division by SD preserves nonnegative expression and centering occurs only in the projection. Validation uses its own within-cohort SD, so scoring requires a cohort-level distribution rather than a frozen transformation for a single new patient. Missing validation genes follow the existing intersection rule with matching loading rows removed. The wrapper retains the first duplicate symbol; the earlier median collapse inside some cohort loaders remains a documented inconsistency to resolve when those loaders are next changed.</p>
+<p>Methylation remains on the β-value scale with within-cohort KNN imputation. The primary validation set and the larger donor pool used for imputation must be distinguished. Cross-reactive and SNP probe filters are required when multimodal work resumes. Pooled external analyses must use unique donors with donor-level or cohort-stratified resampling. These decisions do not authorize another external analysis.</p>
 </section>
-<section id="how-the-model-changed-since-the-march-derivation" class="level2" data-number="14.7">
-<h2 data-number="14.7" class="anchored" data-anchor-id="how-the-model-changed-since-the-march-derivation"><span class="header-section-number">14.7</span> How the model changed since the March derivation</h2>
-<p>The March derivation used a latent predictor η = Lβ, so survival entered the update of the patient activities L directly, and a second-order expansion of the Cox likelihood. The October model uses the projection predictor η = (YF)β so that new patients can be scored without refitting, an exact Breslow score with an expected-information curvature, and point-exponential priors. In the evaluated October fit no update of L or F contains a survival term, which is why the fitted model behaves as a two-step method. Every change is recorded with its date and reason in the project’s decision log. We are keeping the projection predictor for the next attempt and holding the latent predictor, scored for new patients by fitting their activities with the loadings fixed, as the fallback.</p>
+<section id="how-the-model-changed-since-the-march-derivation" class="level2" data-number="14.8">
+<h2 data-number="14.8" class="anchored" data-anchor-id="how-the-model-changed-since-the-march-derivation"><span class="header-section-number">14.8</span> How the model changed since the March derivation</h2>
+<p>The original latent predictor η = Lβ put survival directly in the activity update. The later projection predictor η = (YF)β permits direct scoring of new patients, but survival can affect the factorization only through the loading update. The new experimental implementation makes that term explicit, normalizes the projection, changes prior estimation and monitors the full approximate objective. These changes are recorded in the decision log. The projection formulation remains under evaluation; the latent formulation has not been adopted as a replacement.</p>
 </section>
-<section id="open-questions" class="level2" data-number="14.8">
-<h2 data-number="14.8" class="anchored" data-anchor-id="open-questions"><span class="header-section-number">14.8</span> Open questions</h2>
-<ol type="1">
-<li>Is the decision test above (recovery at 2,000 genes, false positives, convergence) the right bar for “survival supervises the loadings”?</li>
-<li>If the projection predictor cannot be made to work at a balanced weight, should we return to the latent predictor with fold-in scoring, or first try a different balance such as a weight chosen by cross-validation with coefficient intervals from a separate refit?</li>
-<li>Do you agree with the preprocessing recommendations, in particular nonnegative within-cohort scaling (3) and one record per donor (11)?</li>
-<li>Which cohort should be held out from every model choice until the final claim?</li>
-</ol>
+<section id="open-questions" class="level2" data-number="14.9">
+<h2 data-number="14.9" class="anchored" data-anchor-id="open-questions"><span class="header-section-number">14.9</span> Open questions</h2>
+<ul>
+<li>Should the projection model be rederived with a consistently normalized objective and an acceptance rule, before further fitting experiments?</li>
+<li>If the gate remains unmet, should the next registered study use a latent predictor with fold-in prediction, or first derive a coherent projection objective?</li>
+<li>How should uncertainty be reported under a strongly tempered Cox likelihood, given that conditional posterior activity can increase without stable recovery or improved prediction?</li>
+<li>Should factors be allowed to predict survival after their reconstruction activity becomes exactly zero, and what then defines an expression program?</li>
+<li>Which external cohort should remain unused for the final claim after the methodology is fixed?</li>
+</ul>
 
 
 </section>

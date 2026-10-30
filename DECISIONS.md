@@ -5656,3 +5656,59 @@ Bounded coefficient prior fitting keeps the same parameter space. A saved
 line-search failure is handled by a profile-likelihood search with a warning;
 failed fallback remains a diagnosed fit failure. Original simulation results
 are not replaced; attempt S-4 is registered before execution.
+
+
+## 2026-10-30 — Canonical boundary cases and explicit posterior variances
+
+Normalize every positive activity RMS, including tiny moments. If L_k is
+exactly zero while F_k survives in YF, its loading scale is unidentified by
+reconstruction; set that column to unit norm and push its prior scale forward.
+This preserves reconstruction, normalized prediction, coefficient prior and
+KL. Report these survival-only loading columns separately. Use an exact norm
+for live loading columns and a finite denominator only at an exactly zero
+column. Defer all unsupervised coefficient fitting until after reconstruction,
+so the reference's factorization and stopping are outcome-independent.
+
+Extreme coefficient means also cause variance loss when subtracting two
+second moments. Carry `VBeta`, `VL`, and `VF` separately and compute uncertainty
+with nonnegative variance algebra. At each fitted centered Normal mixture,
+compute the posterior's variance directly and its KL as Bernoulli KL plus
+posterior slab probability times the conditional Normal KL. The same exact
+posterior is used; no prior or learning-rate change is introduced. This
+supersedes the earlier intermediate statement that returned Normal moments
+and marginal likelihoods are used unchanged: those numerical values fail a
+saved strong-message reproduction too. Second moments remain available but
+are formed from squared means plus the separate variance.
+
+The fifth driver was stopped after a completed checkpoint showed lost
+coefficient variance. Preserve all saved and unstarted records explicitly.
+The sixth attempt is separately registered with the original arms and gate.
+No invalid uncertainty calculation can be counted as a valid gate fit.
+
+### 2026-10-30 — use one prepared loading in the simulation's reconstruction and risk
+
+The first six supervision grids incorrectly combined a raw-expression risk
+direction with an SD-transformed reconstruction loading. Retain them as
+numerical/design diagnostics rather than a valid shared-loading recovery test.
+The seventh registration uses F/SD_train in both components, normalizing that
+direction only for Cox coefficient units and retaining the training direction
+for validation. Preserve the original raw variance cells and the gate; save
+prepared variance shares and oracle discrimination explicitly. This correction
+does not change the fitter, prior bounds, gate thresholds or external-data rule.
+
+
+### 2026-10-30 — retain the benchmark after the corrected supervision gate failed
+
+The corrected shared-loading grid completed all 360 fits with
+0 raw numerical errors, 0 coefficient-variance losses and
+153 nonconverged fits. No share-target arm meets the original combined
+recovery, false-active and convergence requirements in two large-feature cells.
+Do not adopt the new fitter, merge the supervision branch, run conditional
+real-data model selection or score external cohorts on this basis. The earlier
+six grids are numerical/design diagnostics; they cannot establish recovery
+because their raw-risk and prepared reconstruction directions differed.
+
+Next resolve the inferential role of likelihood tempering, the normalized
+objective and the interpretation of survival-only directions. A latent-risk
+fallback remains a prospective choice. The execution report and standalone
+problem statement retain all failures and identify these decisions.

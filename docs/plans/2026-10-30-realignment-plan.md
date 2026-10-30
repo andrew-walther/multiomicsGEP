@@ -169,7 +169,9 @@ prompt has the details.
 
 ## Phase C progress (updated 2026-10-30)
 
-Work is on `cleanup/before-next-step`, branched from `main` at 69ece3b.
+The original cleanup commits were incorporated into main before this execution.
+The remaining sign/variance audit is 4feec24, now pushed to main. Supervision
+was evaluated separately on `fix/yfb-supervision` and remains unmerged.
 
 | Item | Status | Evidence |
 |---|---|---|
@@ -178,17 +180,46 @@ Work is on `cleanup/before-next-step`, branched from `main` at 69ece3b.
 | C3 benchmark rerun | **done** | `run_single_log_check.R --out results/benchmark_sim/outputs/kl_fix_rerun_2026-10-30`, with D4 settings and the KL fix. The external C is essentially unchanged: the double-log refit reproduces the frozen benchmark exactly in every cohort, and the single-log mean is 0.625 against 0.627 frozen, the same as 0.625 on 10/26. Every per-cohort change is under 0.01. Training CV for single log: mean C 0.640 (SE 0.017), and **5 of 5 folds converge, against 2 of 5 before the fix**. With double log, mean C is 0.608, and all 5 converged both before and after. Conclusion: the frozen numbers stand, and the KL fix mainly repairs convergence. |
 | C4 orientation | **done** (b85d390) | Both comparator scripts use `frozen_reverse_cindex()`. Rescoring the saved risks changes none of the 20 cohort-arm C values (`outputs/ebmf_cox_external/2026-10-30-orientation-rescore.csv`), so the reported comparator numbers stand. |
 | C5 test portability | **done** (1703bc6) | The baselines are in `tests/fixtures/feature-supervised-F/`, read with `read_baseline_source()`. No test calls git. 711/711 pass. |
-| C6 sign and β variance | **done** | `tests/test_risk_variance_audit.R`: positive coefficient means higher hazard; exact fixed-prior variance preserved. Saved single-log D4 variances are all positive. Training sign correction is a documented reporting convention. Full suite: 713 passed, 0 failed. |
-| C7 branch inventory | **done** | `docs/progress_book/data/2026-10-30-branch-inventory.csv`. 27 of 32 local branches are merged into main. Nothing was deleted. |
+| C6 sign and β variance | **done** (4feec24) | `tests/test_risk_variance_audit.R`: positive coefficient means higher hazard; exact fixed-prior variance preserved. Saved single-log D4 variances are all positive. Training sign correction is a documented reporting convention. Full suite: 713 passed, 0 failed. |
+| C7 branch inventory | **done** | `docs/progress_book/data/2026-10-30-branch-inventory.csv`. 30 of 34 local branches are merged into main (refreshed inventory). Nothing was deleted. |
 | C8 BO-T12 on Linux | **dropped** | All work runs locally. It goes on the tracker as a known platform risk. |
 
 ## Review handoff
 
-*Codex fills this in when it finishes or stops; the review session adds its verdict below.*
+- Execution report: [2026-10-30 execution report](../reviews/2026-10-30-codex-execution-report.md).
+- Source and saved-evidence checkpoint: **28a1837**; opt-in fitting engine
+  **fe7064b**, corrected shared-loading design **ad331c8**, exact replay guard
+  **fe97c04**. The final documentation commit follows that evidence checkpoint.
+- Gate S: **failed** on the corrected shared-loading grid. All 360 fits are
+  saved; no target qualifies in any large-feature cell. There are 153
+  nonconverged fits, zero raw numerical-error checkpoints and zero lost
+  coefficient-variance records. See `attempt7/gate_cells.csv`, `gate.csv`,
+  `counts.csv` and `metrics.csv` under the new supervision output directory.
+  Earlier grids are retained as numerical/design diagnostics; their risk and
+  reconstruction directions used different units. Nothing is pooled or omitted.
 
-- Execution report: (path)
-- Items done / partly done / not done: (table or link)
-- Gate S: (passed / failed / not reached), with the evidence
-- Decisions needed from Andrew:
+| Plan item | Disposition | Commit and reviewable evidence |
+|---|---|---|
+| C1–C5 | Done before this execution; retained | Original commits in the cleanup table above; saved benchmark/rescore outputs; full suite |
+| C6 | Done and pushed on main | 4feec24; exact variance and hazard-direction checks; final suite refines the sign fixture |
+| C7 | Done; inventory refreshed, no deletions | Branch-inventory CSV and chapter inventory table |
+| C8 | Not run, as specified | Known Linux platform risk remains on the tracker |
+| P | Decisions recorded; deferred pipeline changes distinguished | 12ebee8; DECISIONS, preprocessing audit §5 and chapter decision table |
+| S0 | Done | 12ebee8/28a1837; conditional analytical/direct-sum precision audit and installed DeSurv source comparison |
+| S1 | Implemented opt-in; numerical/specification deviations documented | fe7064b/28a1837; exact posterior/KL, variance, invariance, unsupervised-start and coupled-quadrature tests |
+| S2 | Complete corrected grid; scientific gate failed | ad331c8/28a1837; all seven attempts retained, complete-denominator tables and exact fixed-case replays |
+| Post-pass ablations | Not run: gate failed | Original conditional requirement retained |
+| S3 training CV | Not run: gate failed | No new real-data model choice or external cohort score |
+| D | Updated chapter, tracker, living documents and handoff | Chapter reads saved CSV/RDS evidence; full book render and final validation recorded in the report |
+
+**Decisions needed from Andrew:** resolve the inferential meaning of the Cox
+weight; whether to derive a consistent normalized objective and acceptance
+rule (including feature-noise adaptation); whether survival-only directions
+are admissible programs; whether to evaluate structured coefficient uncertainty
+or the latent-risk/fold-in fallback next. The [standalone problem statement](../findings/2026-10-30-yfb-supervision-problem-statement.md)
+contains the exact failures, equations and supporting diagnostics. No new
+model, default, rank or external selection is adopted. Independent review must
+precede any supervision merge. The reviewer section of the execution prompt
+was not executed, and its verdict is deliberately left below for that session.
 
 **Review verdict:** (review session: findings, whether Gate S is passed, failed or not reached, and a merge / revise / stop recommendation)

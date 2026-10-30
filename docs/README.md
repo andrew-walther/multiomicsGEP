@@ -153,3 +153,9 @@ The October 15–16 diagnostic documents were merged into `main` on 2026-10-26 (
 | `docs/plans/Codex_to_Claude_Round2.md` | `docs/plans/2026-10-16-round2-return-note.md` |
 | `docs/plans/Round2_attempts_log.md` | `docs/plans/2026-10-16-round2-attempts-log.md` |
 | `docs/plans/Round2_fixed_q_loading_prior_proposal.md` | `docs/plans/2026-10-16-round2-fixed-q-loading-prior-proposal.md` |
+
+The October 30 method evaluation is indexed in the
+[execution report](reviews/2026-10-30-codex-execution-report.md),
+[precision and numerical findings](findings/2026-10-30-yfb-supervision-diagnosis.md),
+and [progress-book chapter](progress_book/chapters/2026-10-30.qmd).
+The registered gate controls whether training CV may proceed.

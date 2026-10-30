@@ -19,6 +19,41 @@ execute:
   warning: false
 ---
 
+## Normalized-projection supervision evaluation (2026-10-30)
+
+The bookkeeping and single-log corrections are retained in the primary model.
+The hazard-sign and posterior-variance audit found positive stored coefficient
+variances and documented the training-only orientation convention. The
+experimental fitter now evaluates normalized, centered expression projections
+with sparse nonnegative factors, a bounded coefficient prior, damped coupled
+loading updates and explicit numerical failure states. It remains opt-in;
+its implementation alone does not establish survival supervision.
+
+The corrected shared-loading simulation completed all 360 fits and failed the
+registered recovery/false-active/convergence gate. It has 0 numerical-error
+checkpoints, 0 invalid coefficient-variance states and 153 nonconverged fits.
+The earlier six grids used inconsistent reconstruction/risk units and remain
+numerical diagnostics. The corrected design and analytical regression test
+use one SD-transformed loading in both components. Real-data training CV,
+post-pass ablations and scientific adoption remain deferred. The standalone
+[problem statement](docs/findings/2026-10-30-yfb-supervision-problem-statement.md)
+sets out the uncertainty, objective and survival-only-program questions.
+
+The precision audit and registered paired simulations are recorded in the
+[October 30 chapter](docs/progress_book/chapters/2026-10-30.qmd) and
+[numerical diagnosis](docs/findings/2026-10-30-yfb-supervision-diagnosis.md).
+Original execution failures remain saved separately from corrected attempts.
+Boundary canonicalization preserves live factors at small scales and identifies
+loading scales when activities collapse. Posterior variances are carried
+separately from second moments, with independently checked same-prior KL
+calculations; subtraction at extreme means can otherwise erase uncertainty.
+Independent integration motivated a stable exponential posterior calculation,
+which is isolated from the historical update kernel. No external cohort has
+been scored by this evaluation. Real-data training CV is conditional on the
+registered recovery, false-active and convergence gate. The final execution
+report records its verdict and all unresolved work.
+
+
 ## Writeup accuracy revision (2026-10-16)
 
 The manuscript separates cohort records from unique people and labels the

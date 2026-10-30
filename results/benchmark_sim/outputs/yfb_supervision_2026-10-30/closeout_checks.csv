@@ -1,0 +1,7 @@
+check,status,evidence
+final full suite,pass,742 passed; clean exit 0; intentional optimizer-fixture warning
+full Quarto book,pass,quarto render docs/progress_book; clean exit 0
+published figure asset,pass,SHA256 matches saved diagnostic PNG in source and rendered resources
+chapter audience and provenance rules,pass,"Main text has no reviewer names, paths, branches or placeholders; values rendered from saved inputs"
+protected inputs,pass,"Frozen tag and snapshot, prior chapter source and execution prompt unchanged"
+review scope,reserved,Independent verdict remains unfilled; supervision unmerged

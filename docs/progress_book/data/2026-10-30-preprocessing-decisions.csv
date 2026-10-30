@@ -1,0 +1,12 @@
+item,step,decision,status
+1,RNA-seq transform,One logarithm per cohort,Implemented
+2,TCGA expression source,Retain the benchmark RSEM source,Recorded for pipeline alignment
+3,Expression scale,Within-cohort SD division without centering; projection centered,Implemented in opt-in fitter
+4,Validation scale,Each validation cohort uses its own feature SD,Recorded; no new external evaluation
+5,Gene screen,Training-only names; top-3000 combined mean/variance rank per cohort with intersection,Retained; survival screen only an ablation
+6,Missing validation genes,Intersect genes and remove matching loading rows,Retain existing rule
+7,Duplicate symbols,First occurrence in wrapper; earlier median collapse in some loaders remains to align,Recorded with loader exception
+8,Methylation scale,Keep beta-values; defer M-values,Recorded
+9,Methylation imputation,Within-cohort KNN; 50 primary donors versus 67 donors in imputation pool,Recorded
+10,Probe QC,Cross-reactive and SNP filters when multimodal work resumes,Deferred
+11,Pooled external inference,One record per donor; 568 unique donors; donor-level or cohort-stratified resampling,Recorded; no new pooled analysis

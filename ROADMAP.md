@@ -1,5 +1,26 @@
 # multiomicsGEP — Research Roadmap
 
+**Normalized-projection supervision (2026-10-30).**
+
+- [x] Complete the hazard-orientation and posterior-variance audit; preserve
+  historical defaults and document the training-only orientation convention.
+- [x] Implement an opt-in nonnegative normalized-projection fitter, exact
+  posterior/KL checks and explicit numerical failure states.
+- [x] Diagnose precision-share calibration and exponential-posterior numerical
+  errors; retain independently integrated fixtures and all original attempts.
+- [x] Complete the registered corrected-design grid and numerical diagnoses;
+  the scientific gate failed. Retain the problem statement for the next model decision.
+- [ ] Establish the pre-registered improvement in recovery with controlled
+  false activity and reliable convergence. Simulation results, rather than
+  implementation completion, control adoption.
+- [ ] Only after that gate passes, evaluate training CV and component ablations.
+  Multimodal fitting, external selection and a unified replacement are deferred.
+
+The [execution report](docs/reviews/2026-10-30-codex-execution-report.md)
+and [meeting chapter](docs/progress_book/chapters/2026-10-30.qmd) contain the
+saved-results verdict and next decisions.
+
+
 **Future research: transferable risk classifications (2026-10-16 meeting).**
 Current low/middle/high risk groups are defined by within-cohort score
 tertiles, following within-cohort expression standardization. They describe

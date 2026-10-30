@@ -11,16 +11,21 @@ here too rather than maintaining a separate copy.
 
 ## Start here (2026-10-30)
 
-The current plan is [`docs/plans/2026-10-30-realignment-plan.md`](docs/plans/2026-10-30-realignment-plan.md):
-first clean up the open review items (Phase C: KL normalizer, single log, orientation in the comparator scripts,
-sign and β-variance checks), then make survival supervise F under η = (YF)β, following
-[`docs/plans/2026-10-30-Unified-Architecture-Alignment.md`](docs/plans/2026-10-30-Unified-Architecture-Alignment.md)
-(Phase S, with a pre-registered Gate S). The execution prompt is
-[`docs/prompts/2026-10-30-codex-execution-prompt.md`](docs/prompts/2026-10-30-codex-execution-prompt.md). The 10/30
-progress-book chapter and its issue tracker record the progress. `rebuild/unified-ssbmf` is kept unmerged as a reference.
-Remind Andrew of the plan and its gate at the start of a session. The remaining
-single-block sign/variance audit is covered by `tests/test_risk_variance_audit.R`;
-its convention and findings are recorded in `DECISIONS.md`.
+The current plan is [`docs/plans/2026-10-30-realignment-plan.md`](docs/plans/2026-10-30-realignment-plan.md).
+Start with its review handoff and the
+[`execution report`](docs/reviews/2026-10-30-codex-execution-report.md), then the
+October 30 progress-book chapter and issue tracker. The cleanup audit is complete;
+implementation and registered evaluation are separate from scientific adoption.
+The supervision work must receive the independent review before merging.
+`rebuild/unified-ssbmf` remains an unmerged reference. Remind Andrew of the
+registered recovery/false-active/convergence gate when continuing this work.
+
+The opt-in fitter and numerical kernel are separate from historical defaults.
+Use `VBeta`, `VL`, and `VF` as their variance carriers; subtracting large second
+moments can erase uncertainty. The seventh simulation registration corrects
+shared-loading units; earlier attempts remain numerical/design diagnostics.
+Read the registrations before running or replacing any attempt. Current
+findings and decisions belong in `PROJECT_STATUS.qmd` and `DECISIONS.md`.
 
 ## Key Instructions
 
@@ -35,7 +40,7 @@ its convention and findings are recorded in `DECISIONS.md`.
 - **Where documents go:** `docs/` type folders — `plans/`, `findings/`, `reviews/`, `prompts/`, `meetings/`, `notes/` — named `YYYY-MM-DD-topic-type.ext` (all hyphens, date first, the day it was written). No archive folder: mark a replaced document superseded in its folder's README. Add a row (date, link, purpose, status) to that README for every new document. See `docs/README.md`.
 - **Living documents:** Update `DECISIONS.md` when making any architectural choice (algorithm variant, hyperparameter decision, design tradeoff). Update `ROADMAP.md` when completing a milestone or identifying a new priority.
 - **Commit style:** Detailed messages explaining what changed and why; no "Co-Authored-By" lines; no "Session N:" prefixes.
-- **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. Expected: all passing (532 as of 2026-10-14 on `fix/multimodal-monitor-objective`).
+- **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. The latest verified count and expected diagnostic warnings are recorded in the execution report; tests must all pass before completion.
 - **Real-data tests:** `Rscript tests/test_real_data_loading.R` — 88/88 passing (auto-skips if `PDAC_DATA_ROOT` not set).
 - **Real data:** Not in git (`**/PDAC_data/` and the local `/data/` folder of TCGA/ICGC copies are git-ignored; never commit them). Stored locally at `~/Library/CloudStorage/OneDrive-.../UNC Dissertation (Liu)/PDAC_data`. For Longleaf: `export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC`.
 - **Current model status:** Both LB (`code/fit_modular.R`, η = Lβ) and YFB (`code/fit_cox_on_yf.R`, η = (YF)β) are fully implemented. **Recommended configuration:** YFB × per-platform z-std × DeSurv gene selection × no cohort indicator, K=7 default (K selection is a two-stage ARD framework — K_init from an ELBO/BIC/log-likelihood/CV-C consensus, then `classify_factors()` shrinkage gives K_eff from that one over-specified fit), K_eff=2, mean external C≈0.627 across 5 held-out PDAC cohorts. Optional `cohort_id` (genomics offset), `strata_id` (stratified baseline hazard, off by default — performance-neutral), and `beta_cohort_id` (cohort-specific survival coefficients) parameters exist; see the Quick Reference table below. Full history, benchmark numbers, and the reasoning behind each choice live in `PROJECT_STATUS.qmd`; the dated rationale entries are in `DECISIONS.md` — read those before revisiting any of this, don't rely on this summary alone.
@@ -104,7 +109,7 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | **Progress notebook (meeting-facing, one chapter per advisor meeting)** | `docs/progress_book/` — Quarto book, `quarto render` to build; add a new `chapters/YYYY-MM-DD.qmd` per meeting |
 | **L-update debugging guide** | `docs/lb_walkthroughs/update_L_fix.md` — read before any L-update work |
 | Corrected derivations | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` |
-| **Current working plan** | `docs/plans/2026-10-26-parallel-work-sessions-plan.md` and `docs/plans/2026-10-22-unified-method-rebuild-plan.md`. The October 15–16 diagnostic work (merged 2026-10-26, tag `archive/round2-supervised-2026-10`) is summarized in `docs/plans/2026-10-16-round2-return-note.md`, with every registered study and outcome in `docs/plans/2026-10-16-round2-attempts-log.md`; `docs/meetings/2026-10-02-meeting-notes-followup.md` preserves the October 2 advisor requirements. |
+| **Current working plan** | `docs/plans/2026-10-30-realignment-plan.md` (execution handoff and independent review pending); the October 26 parallel-work and October 22 rebuild plans are historical context. The October 15–16 diagnostic work (merged 2026-10-26, tag `archive/round2-supervised-2026-10`) is summarized in `docs/plans/2026-10-16-round2-return-note.md`, with every registered study and outcome in `docs/plans/2026-10-16-round2-attempts-log.md`; `docs/meetings/2026-10-02-meeting-notes-followup.md` preserves the October 2 advisor requirements. |
 | Matched TCGA/ICGC expression + methylation loader | `code/load_multiomics_data.R` — `build_multiomics_cohorts()`; real-data checks `tests/test_real_multiomics_loading.R` (local) |
 | Multimodal parsimony framework (intercept, ebnm priors, ELBO pruning) and compiled sweep | `code/fit_multimodal_yfb.R` controls `intercept`/`prior_update`/`prune`/`tau_model`; `code/multimodal_yfb_sweep.cpp` |
 | Multimodal simulation and real-data runners | `results/benchmark_sim/run_multimodal_pruning_comparison.R`; `results/multimodal_real/run_multimodal_real_fit.R` + `summarize_multimodal_real.R` |

@@ -2516,3 +2516,89 @@ legacy comparison confirms old generated inputs and outcomes are unchanged.
 **Decision.** Apply the original gate only to this corrected grid. Preserve
 all original checkpoints, missing records, and raw/penalized diagnostics.
 No external cohort scoring and no retuning the gate or choosing variance cells.
+
+
+## 2026-10-30 — Supervision execution outcomes (after all registrations)
+
+The corrected shared-loading grid completed all **360/360** fits, with
+**0 raw numerical-error checkpoints**,
+**0 lost-variance records**, and
+**153 nonconverged fits**. **Gate S failed:** none of the
+three share-target arms qualifies in the required two large-feature cells.
+The original criteria are unchanged. Earlier grids are retained as numerical
+and design diagnostics because their risk and reconstruction directions used
+different units.
+
+| attempt | saved | missing | task_level_errors | raw_checkpoint_errors | variance_loss_records | sweep_cap_records | nonconverged | undefined_C |
+|---|---|---|---|---|---|---|---|---|
+| attempt1 | 80 | 280 | 56 | 4 | 0 | 1 | 285 | 284 |
+| attempt2 | 360 | 0 | 0 | 149 | 0 | 12 | 161 | 149 |
+| attempt3 | 360 | 0 | 0 | 155 | 0 | 6 | 161 | 0 |
+| attempt4 | 360 | 0 | 0 | 0 | 53 | 115 | 140 | 0 |
+| attempt5 | 90 | 270 | NA | 0 | 4 | 22 | 293 | 270 |
+| attempt6 | 360 | 0 | 0 | 0 | 0 | 129 | 129 | 0 |
+| attempt7 | 360 | 0 | 0 | 0 | 0 | 153 | 153 | 0 |
+
+Missing files, fitting exceptions, variance loss and caps are distinct and can
+overlap in the conservative nonconvergence total. Task-level status is
+unavailable for the deliberately interrupted fifth driver; its stop reason
+and complete missing-record denominator are saved. Undefined C is counted
+explicitly. Partial-state C does not establish a successful fit.
+
+| attempt | all_zero_returned_states | nonfinite_returned_eta | inactive_factor_total | orphan_factor_total | unavailable_factor_states | warning_records | objective_decreases |
+|---|---|---|---|---|---|---|---|
+| attempt1 | 0 | 0 | 261 | 0 | 228 | 4 | 479 |
+| attempt2 | 0 | 0 | 431 | 45 | 149 | 60 | 1325 |
+| attempt3 | 0 | 0 | 882 | 302 | 0 | 60 | 2951 |
+| attempt4 | 0 | 0 | 781 | 267 | 0 | 124 | 13708 |
+| attempt5 | 0 | 0 | 238 | 82 | 225 | 31 | 3318 |
+| attempt6 | 0 | 0 | 844 | 305 | 0 | 112 | 16600 |
+| attempt7 | 0 | 0 | 823 | 293 | 0 | 145 | 16862 |
+
+Warning-record counts are cumulative within datasets in the original driver;
+they are not independent warning-event counts. Zero/nonfinite counts concern
+returned states; unavailable states are explicit. Objective decreases concern
+the monitored approximation and cannot be described as monotone exact ascent.
+
+| variance | arm | recovered | baseline_recovered | recovery_gain | mean_false | converged | qualifies |
+|---|---|---|---|---|---|---|---|
+| 0.0025 | share0.05 | 0 | 0 | 0 | 6.8 | 2 | FALSE |
+| 0.01 | share0.05 | 0 | 0 | 0 | 6.8 | 1 | FALSE |
+| 0.05 | share0.05 | 0 | 1 | -1 | 7 | 1 | FALSE |
+| 0.0025 | share0.2 | 0 | 0 | 0 | 7 | 0 | FALSE |
+| 0.01 | share0.2 | 0 | 0 | 0 | 7 | 0 | FALSE |
+| 0.05 | share0.2 | 0 | 1 | -1 | 6.8 | 1 | FALSE |
+| 0.0025 | share0.5 | 0 | 0 | 0 | 7 | 0 | FALSE |
+| 0.01 | share0.5 | 0 | 0 | 0 | 7 | 0 | FALSE |
+| 0.05 | share0.5 | 0 | 1 | -1 | 7 | 0 | FALSE |
+
+The exact cell and arm verdicts are in `attempt7/gate_cells.csv` and
+`attempt7/gate.csv`. All fit-level failures and derived penalties are in the
+attempt-specific `metrics.csv`; raw checkpoints are unchanged.
+
+The fixed diagnostic replays match registered loading means exactly. A loading
+match can coexist with a sweep cap, unmatched activity and severe distortion
+of reconstruction. Feature-specific residual precisions become extremely
+small on affected genes; all posterior calculations can remain finite while
+joint fitting is unstable. The fixed cases are diagnostic, not extra gate
+observations.
+
+| variance | recovered | false_active | converged | decreases | largest_mean_difference | first_decrease |
+|---|---|---|---|---|---|---|
+| 0.0025 | FALSE | 6 | TRUE | 1 | 0 | 2 |
+| 0.01 | FALSE | 4 | FALSE | 17 | 0 | 2 |
+| 0.05 | TRUE | 4 | FALSE | 84 | 0 | 2 |
+
+| variance | expected_reconstruction_loss | min_tau | max_loading_energy_fraction |
+|---|---|---|---|
+| 0.0025 | 0.103143039382764 | 0.00554563962473137 | 0.0148814777294625 |
+| 0.01 | 939.106205910707 | 4.16326340616329e-08 | 0.999074191437772 |
+| 0.05 | 453803162951241 | 8.7483777770172e-20 | 0.999999999999997 |
+
+The fitted engine is fe7064b and corrected design is ad331c8. Diagnostic-only
+changes follow in 4a0e15a and f60a6d5. The full suite passes 742/742 with
+a clean exit. No external cohort was scored. Post-pass ablations and real
+training CV were not run because the controlling corrected-design gate failed.
+Original failures remain visible beside the corrected result; no attempts are
+pooled. See the execution report and standalone problem statement for the
+fixed-case trajectories, numerical repairs, deviations and next model decisions.
