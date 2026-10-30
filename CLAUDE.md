@@ -9,15 +9,16 @@ here too rather than maintaining a separate copy.
 
 ---
 
-## Start here (2026-10-26)
+## Start here (2026-10-30)
 
-Two plans define the current work, indexed in [`docs/plans/README.md`](docs/plans/README.md):
-[`2026-10-26-parallel-work-sessions-plan.md`](docs/plans/2026-10-26-parallel-work-sessions-plan.md)
-coordinates short tests on the current code (branch `fix/current-method`) with the rebuild of the
-method as the `ssbmf` R package (branch `rebuild/unified-ssbmf`), and
-[`2026-10-22-unified-method-rebuild-plan.md`](docs/plans/2026-10-22-unified-method-rebuild-plan.md)
-specifies the rebuild and the criteria O1–O8 for a working model. Both have review gates for Andrew.
-Remind Andrew of them at the start of a session.
+The current plan is [`docs/plans/2026-10-30-realignment-plan.md`](docs/plans/2026-10-30-realignment-plan.md):
+first clean up the open review items (Phase C: KL normalizer, single log, orientation in the comparator scripts,
+sign and β-variance checks), then make survival supervise F under η = (YF)β, following
+[`docs/plans/2026-10-30-Unified-Architecture-Alignment.md`](docs/plans/2026-10-30-Unified-Architecture-Alignment.md)
+(Phase S, with a pre-registered Gate S). The execution prompt is
+[`docs/prompts/2026-10-30-codex-execution-prompt.md`](docs/prompts/2026-10-30-codex-execution-prompt.md). The 10/30
+progress-book chapter and its issue tracker record the progress. `rebuild/unified-ssbmf` is kept unmerged as a reference.
+Remind Andrew of the plan and its gate at the start of a session.
 
 ## Key Instructions
 
