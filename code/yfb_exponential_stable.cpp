@@ -7,13 +7,13 @@
 #include <Rcpp.h>
 #include <cmath>
 using namespace Rcpp;
-struct ExpPost {double mean, second, kl;};
+struct ExpPost {double mean, second, variance, kl;};
 
 // Cancel N(x;0,1/A) before computing spike/slab odds or KL. The slab
 // integral is I=integral λ exp((B-λ)t - At²/2)dt, t>=0. This avoids
 // subtracting large Gaussian terms when A is tiny and x=B/A is huge.
 static ExpPost exp_post(double A,double B,double pi,double rate) {
-  if(pi==0) return {0,0,0};
+  if(pi==0) return {0,0,0,0};
   if(!(A>0) || !std::isfinite(A+B+pi+rate) || pi<0 || pi>1 || rate<=0)
     stop("Invalid stable exponential message");
   double se=1/std::sqrt(A), h=(B-rate)*se, sm, ss, logI;
@@ -33,7 +33,15 @@ static ExpPost exp_post(double A,double B,double pi,double rate) {
   double l0=pi<1 ? std::log1p(-pi) : R_NegInf;
   double l1=std::log(pi)+logI, high=std::max(l0,l1);
   double logN=high+std::log(std::exp(l0-high)+std::exp(l1-high));
-  double prob=std::exp(l1-logN), mean=prob*sm, second=prob*ss;
+  double prob=std::exp(l1-logN), mean=prob*sm;
+  double slabvar;
+  if(h < -20) slabvar=ss-sm*sm;
+  else {
+    double mills=std::exp(R::dnorm(h,0,1,1)-R::pnorm(h,0,1,1,1));
+    slabvar=se*se*(1-h*mills-mills*mills);
+  }
+  double variance=prob*slabvar+prob*(1-prob)*sm*sm;
+  double second=mean*mean+variance;
   double kl=B*mean-.5*A*second-logN;
   // For a well-separated positive Gaussian slab, use its entropy form;
   // the quadratic terms otherwise cancel to machine zero at huge A.
@@ -41,24 +49,24 @@ static ExpPost exp_post(double A,double B,double pi,double rate) {
     .5*std::log(2*M_PI*std::exp(1.0)/A);
   if(!std::isfinite(mean+second+kl) || second<mean*mean-1e-8*std::max(1.0,second))
     stop("Invalid stable exponential posterior");
-  return {mean,second,kl};
+  return {mean,second,variance,kl};
 }
 
 // [[Rcpp::export]]
 List yfb_exp_vector_cpp(NumericVector A,NumericVector B,double pi,double rate) {
-  int p=A.size();NumericVector mean(p),second(p),kl(p);
+  int p=A.size();NumericVector mean(p),second(p),variance(p),kl(p);
   for(int j=0;j<p;++j) {auto q=exp_post(A[j],B[j],pi,rate);
-    mean[j]=q.mean;second[j]=q.second;kl[j]=q.kl;}
-  return List::create(_["mean"]=mean,_["second"]=second,_["kl"]=kl);
+    mean[j]=q.mean;second[j]=q.second;variance[j]=q.variance;kl[j]=q.kl;}
+  return List::create(_["mean"]=mean,_["second"]=second,_["variance"]=variance,_["kl"]=kl);
 }
 
 // [[Rcpp::export]]
 List yfb_exp_sweep_cpp(NumericMatrix Y,NumericVector tau,double sumL2,
  NumericVector wy2,NumericVector LR,NumericVector yh,NumericVector w,
- NumericVector Z0,NumericVector V0,NumericVector F0,NumericVector F20,
+ NumericVector Z0,NumericVector V0,NumericVector F0,NumericVector F20,NumericVector VF0,
  double beta,double beta2,double pi,double rate) {
  int n=Y.nrow(),p=Y.ncol();
- NumericVector Z=clone(Z0),V=clone(V0),F=clone(F0),F2=clone(F20);
+ NumericVector Z=clone(Z0),V=clone(V0),F=clone(F0),F2=clone(F20),VF=clone(VF0);
  NumericVector x(p),s2(p),A(p),B(p),kl(p);
  for(int j=0;j<p;++j) {
    double coupling=0;
@@ -67,11 +75,11 @@ List yfb_exp_sweep_cpp(NumericMatrix Y,NumericVector tau,double sumL2,
    A[j]=tau[j]*sumL2+beta2*wy2[j];
    B[j]=tau[j]*LR[j]+beta*yh[j]-beta2*coupling;
    auto q=exp_post(A[j],B[j],pi,rate);
-   double dm=q.mean-F[j],dv=(q.second-q.mean*q.mean)-(F2[j]-F[j]*F[j]);
+   double dm=q.mean-F[j],dv=q.variance-VF[j];
    for(int i=0;i<n;++i) {Z[i]+=Y(i,j)*dm;V[i]+=Y(i,j)*Y(i,j)*dv;}
-   F[j]=q.mean;F2[j]=q.second;kl[j]=q.kl;
+   F[j]=q.mean;F2[j]=q.second;VF[j]=q.variance;kl[j]=q.kl;
    x[j]=A[j]>0 ? B[j]/A[j] : NA_REAL;s2[j]=A[j]>0 ? 1/A[j] : R_PosInf;
  }
- return List::create(_["EF"]=F,_["EF2"]=F2,_["EZ"]=Z,_["VZ"]=V,
+ return List::create(_["EF"]=F,_["EF2"]=F2,_["VF"]=VF,_["EZ"]=Z,_["VZ"]=V,
    _["x"]=x,_["s2"]=s2,_["A"]=A,_["B"]=B,_["kl"]=kl);
 }

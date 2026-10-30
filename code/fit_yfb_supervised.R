@@ -11,45 +11,77 @@ source("code/yfb_exponential_stable.R")
 
 # Normal means and Cox quantities ----
 
-#' Solve normal means with a synchronized prior, posterior and exact KL
+#' Evaluate centered Normal or point-normal posterior with separate variance
+#' @param x,A Pseudo-observations and positive precisions.
+#' @param g Centered normalmix prior with at most one positive slab SD.
+#' @return Mean, variance, second moment and coordinate KL vectors.
+#' @examples
+#' yfb_normal_posterior(1,2,ashr::normalmix(1,0,1))
+#' @family yfb_supervised
+ yfb_normal_posterior <- function(x,A,g) {
+  positive<-which(g$sd>0 & g$pi>0)
+  if(!length(positive)) return(list(mean=x*0,variance=x*0,second=x*0,kl=x*0))
+  if(length(positive)!=1 || any(g$mean!=0)) stop("Centered single-slab Normal prior required")
+  slab<-positive[1];sigma2<-g$sd[slab]^2;prob0<-g$pi[slab]
+  v<-1/(A+1/sigma2);m<-v*A*x
+  r<-A*sigma2
+  logBF<--.5*log1p(r)+.5*m*(A*x)
+  prob<-if(prob0==1)rep(1,length(x)) else plogis(qlogis(prob0)+logBF)
+  mean<-prob*m;variance<-prob*v+prob*(1-prob)*m^2
+  # Disjoint spike/slab supports make the KL a Bernoulli KL plus the
+  # slab probability times a Normal KL. No huge Gaussian subtraction.
+  bern<-x*0
+  ii<-prob>0;bern[ii]<-prob[ii]*(log(prob[ii])-log(prob0))
+  ii<-prob<1;bern[ii]<-bern[ii]+(1-prob[ii])*(log1p(-prob[ii])-log1p(-prob0))
+  normalKL<-.5*(log1p(r)-r/(1+r)+m^2/sigma2)
+  list(mean=mean,variance=variance,second=mean^2+variance,kl=bern+prob*normalKL)
+}
+
+#' Solve normal means with stable moments and KL at the same fitted prior
 #' @param x Pseudo-observations.
 #' @param A Positive precision, scalar or vector.
-#' @param family ebnm prior family.
-#' @param g Optional fixed ebnm prior.
-#' @return List of posterior mean, second moment, prior, and positive KL.
+#' @param family One of point_exponential, point_normal or normal (centered).
+#' @param g Optional fixed prior; otherwise estimated by ebnm.
+#' @return Posterior mean, separate variance, second moment, fitted prior and KL.
 #' @examples
-#' yfb_ebnm(c(1,2), 2, "point_exponential")
+#' yfb_ebnm(c(1,2),2,"point_exponential")
 #' @family yfb_supervised
-#' @seealso compute_ebnm_kl
- yfb_ebnm <- function(x, A, family, g = NULL) {
-  A <- rep_len(A,length(x))
+#' @seealso yfb_normal_posterior, yfb_stable_exp
+ yfb_ebnm <- function(x,A,family,g=NULL) {
+  A<-rep_len(A,length(x))
   if(any(!is.finite(c(x,A))) || any(A<=0)) stop("Invalid normal-means message")
-  # Normal-means equivariance keeps the median pseudo-SE near one. This
-  # avoids near-point-mass optimizer errors at precisions above 10^20.
-  cs<-median(1/sqrt(A)); xs<-x/cs; As<-A*cs^2
-  gs<-g
+  if(!family %in% c("point_exponential","point_normal","normal")) stop("Unsupported prior")
+  cs<-median(1/sqrt(A));xs<-x/cs;As<-A*cs^2;gs<-g
   if(!is.null(gs)) for(field in intersect(c("scale","sd","mean","shift"),names(gs)))
     gs[[field]]<-gs[[field]]/cs
-  args <- list(x=xs,s=1/sqrt(As),prior_family=family,
-    output=c("posterior_mean","posterior_second_moment","fitted_g","log_likelihood"))
-  if(is.null(gs)) args$mode <- 0 else {args$g_init<-gs;args$fix_g<-TRUE}
-  q <- do.call(ebnm::ebnm,args)
-  mean <- q$posterior$mean; second <- q$posterior$second_moment
-  kl <- -compute_ebnm_kl(q$log_likelihood,As,xs,mean,second)
-  if(family=="point_exponential") {
-    # Same fitted prior and exact EBNM posterior, evaluated stably after
-    # canceling the common Gaussian term. Direct ebnm moments lose variance
-    # on the saved weak-message fixture; never mix that q with another KL.
-    gg<-q$fitted_g
-    stable<-yfb_stable_exp(As,xs*As,gg$pi[2],if(gg$pi[2]==0)1 else 1/gg$scale[2])
-    mean<-stable$mean;second<-stable$second;kl<-sum(stable$kl)
-  }
-  if(any(!is.finite(c(mean,second,kl))) || kl < -1e-5*length(x))
-    stop("Invalid ebnm posterior or KL")
-  gout<-q$fitted_g
+  if(is.null(gs)) gs<-ebnm::ebnm(xs,1/sqrt(As),prior_family=family,mode=0,
+                                 output="fitted_g")$fitted_g
+  stable<-if(family=="point_exponential") {
+    yfb_stable_exp(As,xs*As,gs$pi[2],if(gs$pi[2]==0)1 else 1/gs$scale[2])
+  } else yfb_normal_posterior(xs,As,gs)
+  if(any(!is.finite(unlist(stable))) || any(stable$variance<0) ||
+     sum(stable$kl)< -1e-5*length(x)) stop("Invalid normal-means posterior or KL")
+  if(family!="point_exponential" && any(gs$pi[gs$sd>0]>0) && any(stable$variance<=0))
+    stop("Posterior variance lost at finite precision")
+  gout<-gs
   for(field in intersect(c("scale","sd","mean","shift"),names(gout)))
     gout[[field]]<-gout[[field]]*cs
-  list(mean=mean*cs,second=second*cs^2,g=gout,kl=kl)
+  mean<-stable$mean*cs;variance<-stable$variance*cs^2
+  if(any(!is.finite(c(mean,variance))) ||
+     (family!="point_exponential" && any(gs$pi[gs$sd>0]>0) && any(variance<=0)))
+    stop("Posterior variance underflow after rescaling")
+  list(mean=mean,variance=variance,second=mean^2+variance,g=gout,kl=sum(stable$kl))
+}
+
+#' Compute predictor variance without subtracting huge second moments
+#' @param Z,V Projection means and variances, n by K.
+#' @param beta,vbeta Coefficient means and separate variances, length K.
+#' @return Nonnegative n-vector Var(η)=Z² vβ + V (β²+vβ).
+#' @examples
+#' yfb_predictor_variance(matrix(1,2,1),matrix(.1,2,1),2,.2)
+#' @family yfb_supervised
+ yfb_predictor_variance <- function(Z,V,beta,vbeta) {
+  drop(Z^2%*%vbeta+V%*%(beta^2+vbeta))
 }
 
 #' Fit a bounded point-normal prior by marginal likelihood
@@ -133,19 +165,21 @@ source("code/yfb_exponential_stable.R")
 #' @param Yc Centered subject-by-gene matrix.
 #' @param F,F2 Gene-by-factor posterior means and second moments.
 #' @param s Optional sweep-fixed scaling constants.
+#' @param VF Optional separate loading variance matrix; the fitter always supplies it.
 #' @return Z,V (subject-by-factor), and s (factor vector).
 #' @examples
 #' yfb_projection(matrix(1,3,2),matrix(1,2,2),matrix(1.1,2,2))
 #' @family yfb_supervised
- yfb_projection <- function(Yc,F,F2,s=NULL) {
+ yfb_projection <- function(Yc,F,F2,s=NULL,VF=NULL) {
   # Use the exact norm away from zero. An additive epsilon would violate
   # scale invariance for small, live factors; dead factors use a finite floor.
   if(is.null(s)) {
     norms<-sqrt(colSums(F^2));norms[norms==0]<-1
     s<-1/norms
   }
-  list(Z=sweep(Yc%*%F,2,s,"*"),
-       V=sweep(Yc^2%*%pmax(F2-F^2,0),2,s^2,"*"),s=s)
+  if(is.null(VF))VF<-pmax(F2-F^2,0)
+  list(Z=Yc%*%sweep(F,2,s,"*"),
+       V=Yc^2%*%sweep(VF,2,s^2,"*"),s=s)
 }
 
 #' Scale nonnegative features within each cohort without centering
@@ -180,11 +214,14 @@ source("code/yfb_exponential_stable.R")
 #' @family yfb_supervised
 #' @seealso yfb_projection
  yfb_canonicalize <- function(st) {
+  if(is.null(st$VL))st$VL<-pmax(st$L2-st$L^2,0)
+  if(is.null(st$VF))st$VF<-pmax(st$F2-st$F^2,0)
   rms<-sqrt(colMeans(st$L2));live<-rms>0
   if(any(!live & colSums(abs(st$L))>0)) stop("Nonzero activity with zero second moment")
   cc<-rms;cc[!live]<-1
   st$L<-sweep(st$L,2,cc,"/");st$L2<-sweep(st$L2,2,cc^2,"/")
   st$F<-sweep(st$F,2,cc,"*");st$F2<-sweep(st$F2,2,cc^2,"*")
+  st$VL<-sweep(st$VL,2,cc^2,"/");st$VF<-sweep(st$VF,2,cc^2,"*")
   for(k in seq_along(cc)) {
     st$gL[[k]]$scale<-st$gL[[k]]$scale/cc[k]
     st$gF[[k]]$scale<-st$gF[[k]]$scale*cc[k]
@@ -192,8 +229,10 @@ source("code/yfb_exponential_stable.R")
   norms<-sqrt(colSums(st$F^2));st$orphan<-which(!live & norms>0)
   for(k in st$orphan) {
     st$F[,k]<-st$F[,k]/norms[k];st$F2[,k]<-st$F2[,k]/norms[k]^2
+    st$VF[,k]<-st$VF[,k]/norms[k]^2
     st$gF[[k]]$scale<-st$gF[[k]]$scale/norms[k]
   }
+  st$L2<-st$L^2+st$VL;st$F2<-st$F^2+st$VF
   st
 }
 
@@ -251,9 +290,10 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
   }
   F<-sweep(F,2,pmax(sqrt(colSums(F^2)),1e-10),"/")
   L<-pmax(Y%*%F,1e-6); L2<-L^2+.01;F2<-F^2+.001
-  tau<-rep(1,p); b<-rep(0,K);b2<-rep(.01,K)
+  VL<-matrix(.01,n,K);VF<-matrix(.001,p,K)
+  tau<-rep(1,p); b<-rep(0,K);b2<-rep(.01,K);VBeta<-rep(.01,K)
   klL<-klF<-numeric(K);klB<-0;gL<-gF<-vector("list",K)
-  projection<-yfb_projection(Yc,F,F2);Z<-projection$Z;V<-projection$V
+  projection<-yfb_projection(Yc,F,F2,VF=VF);Z<-projection$Z;V<-projection$V
   gB<-ashr::normalmix(c(1-1/K,1/K),c(0,0),c(0,1))
   # Brief coefficient warm-up avoids an absorbing β=0 initialization.
   for(warm in if(gamma>0)seq_len(10) else integer()) {
@@ -262,7 +302,7 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
       A<-max(sum(tay$w*(Z[,k]^2+V[,k])),1e-10)
       B<-sum(Z[,k]*(tay$h-tay$w*(drop(Z%*%b)-Z[,k]*b[k])))
       q<-yfb_ebnm(B/A,A,"point_normal",gB)
-      b[k]<-q$mean;b2[k]<-q$second
+      b[k]<-q$mean;b2[k]<-q$second;VBeta[k]<-q$variance
     }
   }
   hist<-list();converged<-FALSE;flags<-character(); old_obj<-NA_real_
@@ -271,8 +311,8 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
   tryCatch({
   for(iter in seq_len(max_iter)) {
     last_state<-list(L=L,L2=L2,F=F,F2=F2,tau=tau,b=b,b2=b2,
-      gL=gL,gF=gF,gB=gB,Z=Z,V=V,pr=yfb_projection(Yc,F,F2))
-    projection<-yfb_projection(Yc,F,F2);Z<-projection$Z;V<-projection$V;s<-projection$s
+      gL=gL,gF=gF,gB=gB,Z=Z,V=V,VL=VL,VF=VF,VBeta=VBeta,pr=yfb_projection(Yc,F,F2,VF=VF))
+    projection<-yfb_projection(Yc,F,F2,VF=VF);Z<-projection$Z;V<-projection$V;s<-projection$s
     eta<-drop(Z%*%b);tay<-yfb_cox(time,event,eta,strata)
     w<-gamma*tay$w;h<-gamma*tay$h
     share<-numeric(K)
@@ -290,7 +330,7 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
       Rk<-R+outer(L[,k],F[,k])
       A<-max(sum(tau*F2[,k]),1e-10)
       q<-yfb_ebnm(drop(Rk%*%(tau*F[,k]))/A,A,"point_exponential")
-      L[,k]<-q$mean;L2[,k]<-q$second;gL[[k]]<-q$g;klL[k]<-q$kl
+      L[,k]<-q$mean;L2[,k]<-q$second;VL[,k]<-q$variance;gL[[k]]<-q$g;klL[k]<-q$kl
       # Refit g_F on vector pseudo-observations, then hold it fixed during
       # the exact gene-wise sweep. Reconstruction and projection matrices
       # differ: use Rk for the former and s_k Yc for the latter.
@@ -311,37 +351,38 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
       yfb_stable_compile()
       z<-yfb_exp_sweep_cpp(aY,tau,sum(L2[,k]),colSums(aY^2*(rho*w)),
         drop(crossprod(Rk,L[,k])),drop(crossprod(aY,rho*hm)),rho*w,
-        Z[,k],V[,k],F[,k],F2[,k],b[k],b2[k],prior$pi,
+        Z[,k],V[,k],F[,k],F2[,k],VF[,k],b[k],b2[k],prior$pi,
         if(isTRUE(prior$point_mass))1 else prior$rate)
       # One fixed-prior evaluation at the recorded sequential messages
       # checks the same posterior and computes its stable, atomic KL.
       q<-if(isTRUE(prior$point_mass)) priorfit else
         yfb_ebnm(z$x,1/z$s2,"point_exponential",gp)
       if(max(abs(q$mean-z$EF))>1e-5*max(1,abs(z$EF)) ||
-         max(abs(q$second-z$EF2))>1e-5*max(1,abs(z$EF2)))
+         max(abs(q$second-z$EF2))>1e-5*max(1,abs(z$EF2)) ||
+         max(abs(q$variance-z$VF))>1e-5*max(1,abs(z$VF)))
         stop("Sequential posterior mismatch")
-      F[,k]<-q$mean;F2[,k]<-q$second;gF[[k]]<-q$g;klF[k]<-q$kl
-      pr<-yfb_projection(Yc,F,F2,s);Z<-pr$Z;V<-pr$V
+      F[,k]<-q$mean;F2[,k]<-q$second;VF[,k]<-q$variance;gF[[k]]<-q$g;klF[k]<-q$kl
+      pr<-yfb_projection(Yc,F,F2,s,VF=VF);Z<-pr$Z;V<-pr$V
       share[k]<-median(aS/(aR+aS))
       if(gamma>0) {
         A<-max(sum(w*(Z[,k]^2+V[,k])),1e-10)
         B<-sum(Z[,k]*(h-w*(drop(Z%*%b)-Z[,k]*b[k])))
         q<-yfb_ebnm(B/A,A,"point_normal",gB)
-        b[k]<-q$mean;b2[k]<-q$second;klB<-klB+q$kl
+        b[k]<-q$mean;b2[k]<-q$second;VBeta[k]<-q$variance;klB<-klB+q$kl
       }
       R<-Y-L%*%t(F)
     }
     # Canonicalize only at the sweep boundary: s stays fixed inside the
     # sweep; the next projection is invariant and β/gβ need no transformation.
-    canonical<-yfb_canonicalize(list(L=L,L2=L2,F=F,F2=F2,gL=gL,gF=gF,b=b,b2=b2,gB=gB))
+    canonical<-yfb_canonicalize(list(L=L,L2=L2,F=F,F2=F2,VL=VL,VF=VF,gL=gL,gF=gF,b=b,b2=b2,VBeta=VBeta,gB=gB))
     L<-canonical$L;L2<-canonical$L2;F<-canonical$F;F2<-canonical$F2
-    gL<-canonical$gL;gF<-canonical$gF
+    gL<-canonical$gL;gF<-canonical$gF;VL<-canonical$VL;VF<-canonical$VF
     R<-Y-L%*%t(F)
-    Q<-colSums(R^2)+colSums(L2%*%t(F2)-L^2%*%t(F^2))
+    Q<-colSums(R^2)+colSums(VL%*%t(F^2)+L^2%*%t(VF)+VL%*%t(VF))
     tau<-n/pmax(Q,n*1e-8)
-    pr<-yfb_projection(Yc,F,F2);Z<-pr$Z;V<-pr$V
+    pr<-yfb_projection(Yc,F,F2,VF=VF);Z<-pr$Z;V<-pr$V
     eta<-drop(Z%*%b); now<-yfb_cox(time,event,eta,strata)
-    var_eta<-drop((Z^2+V)%*%b2-Z^2%*%(b^2))
+    var_eta<-yfb_predictor_variance(Z,V,b,VBeta)
     obj<-.5*n*sum(log(tau/(2*pi)))-.5*sum(tau*Q)-sum(klL+klF)
     if(gamma>0) obj<-obj+gamma*(now$log_partial_likelihood-.5*sum(now$w*var_eta))-klB
     decreased<-is.finite(old_obj) && obj<old_obj-1e-8*max(1,abs(old_obj))
@@ -384,7 +425,7 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
     gB<-yfb_beta_prior(B/A,A,K)
     for(k in seq_len(K)) {
       aa<-A[k];bb<-sum(Z[,k]*(tay$h-tay$w*(drop(Z%*%b)-Z[,k]*b[k])))
-      q<-yfb_ebnm(bb/aa,aa,"point_normal",gB);b[k]<-q$mean;b2[k]<-q$second
+      q<-yfb_ebnm(bb/aa,aa,"point_normal",gB);b[k]<-q$mean;b2[k]<-q$second;VBeta[k]<-q$variance
     }
   }
   history<-if(length(hist))do.call(rbind,hist) else data.frame(iter=0L,
@@ -392,8 +433,8 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
     share_median=NA_real_,share_max=NA_real_,max_beta=max(abs(b)),
     norm_L=sqrt(sum(L^2)),norm_F=sqrt(sum(F^2)))
   list(EL=L,EL2=L2,EF=setNames(list(F),names(X)),EF2=setNames(list(F2),names(X)),
-    EBeta=b,EBeta2=b2,g_beta=gB,g_L=gL,g_F=gF,Tau=tau,s=pr$s,
-    Z=Z,VZ=V,eta=drop(Z%*%b),history=history,converged=converged,
+    EBeta=b,EBeta2=b2,VBeta=VBeta,VL=VL,VF=setNames(list(VF),names(X)),g_beta=gB,g_L=gL,g_F=gF,Tau=tau,s=pr$s,
+    Z=Z,VZ=V,eta=drop(Z%*%b),eta_variance=yfb_predictor_variance(Z,V,b,VBeta),history=history,converged=converged,
     flags=flags,failure=failure,orphan=which(colSums(L2)==0 & colSums(F^2)>0),inactive=which(colSums(F^2)==0 | colSums(L^2)==0),gamma=gamma,rho=rho,
     roles=classify_factors(list(EL=L,EF=F,EBeta=b),Y,
       beta_thresh=cfg$k_selection$beta_threshold,pve_thresh=cfg$k_selection$pve_threshold))

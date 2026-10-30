@@ -54,33 +54,49 @@ yfb_gate_cells <- function(summary) {
 #' # summarize_yfb_attempt("attempt2")
 summarize_yfb_attempt <- function(attempt) {
  out<-file.path("results/benchmark_sim/outputs/yfb_supervision_2026-10-30",attempt)
- if(attempt %in% c("attempt4","attempt5")) source("results/benchmark_sim/run_yfb_supervision_decision.R")
+ if(attempt %in% c("attempt4","attempt5","attempt6")) source("results/benchmark_sim/run_yfb_supervision_decision.R")
  design<-read.csv(file.path(out,"design.csv"))
  arms<-c("unsupervised","share0.05","share0.2","share0.5","canonical_w1","lasso")
  records<-list();j<-0L
  for(i in seq_len(nrow(design))) {
-  if(attempt %in% c("attempt4","attempt5")) dstate<-yfb_decision_data(design$seed[i],design$p[i],design$variance[i])
+  if(attempt %in% c("attempt4","attempt5","attempt6")) dstate<-yfb_decision_data(design$seed[i],design$p[i],design$variance[i])
   for(arm in arms) {
   d<-design[i,];path<-file.path(out,sprintf("p%d_v%s_s%02d_%s.rds",d$p,d$variance,d$seed,arm))
   j<-j+1L
   saved<-if(file.exists(path))readRDS(path) else NULL
   records[[j]]<-if(!is.null(saved))saved$metrics else
-    cbind(d,arm=arm,gamma=NA_real_,rho=if(attempt %in% c("attempt3","attempt4","attempt5")).02 else .2,actual_share=NA_real_,elapsed=NA_real_,
+    cbind(d,arm=arm,gamma=NA_real_,rho=if(attempt %in% c("attempt3","attempt4","attempt5","attempt6")).02 else .2,actual_share=NA_real_,elapsed=NA_real_,
       cor_planted=NA_real_,recovered=FALSE,false_active=7,converged=FALSE,
       c_validation=NA_real_,share=NA_real_,sweeps=NA_real_,decreases=NA_real_,
       max_beta=NA_real_,flags="missing",error="No checkpoint; inspect task_status.txt",warnings="")
+  records[[j]]$raw_error<-records[[j]]$error
+  records[[j]]$raw_flags<-records[[j]]$flags
+  records[[j]]$lost_beta_variances<-0L
   records[[j]]$n_inactive<-NA_real_
   records[[j]]$all_zero_state<-NA
   records[[j]]$nonfinite_eta<-NA
   if(!is.null(saved$fit)) {
-    ff<-saved$fit$EF;if(is.list(ff))ff<-ff[[1]]
+    ff<-saved$fit$EF
+    if(is.list(ff) && !is.null(saved$fit$g_beta)) {
+      gb<-saved$fit$g_beta
+      nondegenerate<-any(gb$pi[gb$sd>0]>0)
+      vv<-if(!is.null(saved$fit$VBeta))saved$fit$VBeta else
+        saved$fit$EBeta2-saved$fit$EBeta^2
+      lost<-if(nondegenerate)sum(!is.finite(vv)|vv<=0) else 0L
+      records[[j]]$lost_beta_variances<-lost
+      if(lost>0) {
+        records[[j]]$error<-paste(records[[j]]$error,"Stored coefficient variance lost",sep="; ")
+        records[[j]]$flags<-paste(records[[j]]$flags,"variance_loss",sep=";")
+      }
+    }
+    if(is.list(ff))ff<-ff[[1]]
     records[[j]]$n_inactive<-sum(colSums(ff^2)==0 | colSums(saved$fit$EL^2)==0)
     records[[j]]$all_zero_state<-all(ff==0) || all(saved$fit$EL==0)
     if(!is.null(saved$fit$eta)) records[[j]]$nonfinite_eta<-any(!is.finite(saved$fit$eta))
   }
   records[[j]]$share_final_match<-NA_real_
   records[[j]]$share_final_live<-NA_real_
-  if(attempt %in% c("attempt4","attempt5") && !is.null(saved$fit) && is.list(saved$fit$EF)) {
+  if(attempt %in% c("attempt4","attempt5","attempt6") && !is.null(saved$fit) && is.list(saved$fit$EF)) {
     f<-saved$fit;sh<-yfb_precision_share_final(f,dstate$Y,dstate$time,dstate$event)
     rr<-suppressWarnings(cor(dstate$truth,f$EF[[1]]));rr[!is.finite(rr)]<-0
     records[[j]]$share_final_match<-sh[which.max(abs(rr))]
@@ -98,7 +114,7 @@ summarize_yfb_attempt <- function(attempt) {
  mean_or_na<-function(x)if(all(is.na(x)))NA_real_ else mean(x,na.rm=TRUE)
  summary<-do.call(rbind,lapply(groups,function(z)data.frame(p=z$p[1],variance=z$variance[1],
   arm=z$arm[1],n=nrow(z),recovered=sum(z$recovered),raw_recovered=sum(z$raw_recovered),
-  raw_mean_false=mean_or_na(z$raw_false_active),converged=sum(z$converged),
+  raw_mean_false=mean_or_na(z$raw_false_active),raw_converged=sum(z$raw_converged),converged=sum(z$converged),
   mean_false=mean_or_na(z$false_active),mean_C=mean_or_na(z$c_validation),
   C_undefined=sum(!is.finite(z$c_validation)),errors=sum(nzchar(z$error)),
   missing=sum(z$flags=="missing"),warnings=sum(nzchar(z$warnings)),
@@ -109,6 +125,7 @@ summarize_yfb_attempt <- function(attempt) {
  raw_summary<-summary
  raw_summary$recovered<-raw_summary$raw_recovered
  raw_summary$mean_false<-raw_summary$raw_mean_false
+ raw_summary$converged<-raw_summary$raw_converged
  raw_evaluated<-yfb_gate_cells(raw_summary)
  write.csv(raw_evaluated$gate,file.path(out,"raw_gate_diagnostic.csv"),row.names=FALSE)
  evaluated<-yfb_gate_cells(summary)
@@ -117,13 +134,14 @@ summarize_yfb_attempt <- function(attempt) {
  write.csv(cells,file.path(out,"gate_cells.csv"),row.names=FALSE)
  write.csv(gate,file.path(out,"gate.csv"),row.names=FALSE)
  counts<-data.frame(attempt=attempt,expected=nrow(rows),saved=nrow(rows)-sum(rows$flags=="missing"),
-   missing=sum(rows$flags=="missing"),errors=sum(nzchar(rows$error)),
+   missing=sum(grepl("missing",rows$flags)),raw_errors=sum(nzchar(rows$raw_error)),errors=sum(nzchar(rows$error)),
    nonconverged=sum(!rows$converged),undefined_C=sum(!is.finite(rows$c_validation)),
    warning_records=sum(nzchar(rows$warnings)),
    all_zero_returned_states=sum(rows$all_zero_state,na.rm=TRUE),
    inactive_factor_total=sum(rows$n_inactive,na.rm=TRUE),
    unavailable_factor_states=sum(is.na(rows$n_inactive)&rows$arm!="lasso"),
-   nonfinite_returned_eta=sum(rows$nonfinite_eta,na.rm=TRUE),gate_passed=any(gate$passed))
+   nonfinite_returned_eta=sum(rows$nonfinite_eta,na.rm=TRUE),
+   variance_loss_records=sum(rows$lost_beta_variances>0),gate_passed=any(gate$passed))
  write.csv(counts,file.path(out,"counts.csv"),row.names=FALSE)
  print(counts);print(gate)
  invisible(summary)

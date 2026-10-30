@@ -2457,3 +2457,40 @@ penalty and removes an unintended zero-error restriction: the actual gate
 requires 90% convergence, not 100%. Raw diagnostic counts are retained beside
 penalized counts. These are scoring corrections to the registration, not new
 thresholds, and no gate is relaxed after seeing a passing result.
+
+## 2026-10-30 — Supervision decision test, attempt S-6 (registered before execution)
+
+**Observed failure and stop of S-5.** A completed small-p checkpoint had a
+nonzero coefficient near 4.8×10^4 but a stored variance of zero under a
+nondegenerate prior. The same audit finds zero or negative subtracted
+variances in S-4. These can hide false survival activity. The S-5 driver was
+interrupted; socket workers finished their current checkpoints. Every saved
+record is retained and every unstarted record is explicit missing data, not
+a valid scientific gate. No completed fit is overwritten.
+
+**Exact numerical correction.** Carry variances of L, F and β separately from
+second moments. A tiny positive variance cannot in general be recovered from
+E[θ²]−E[θ]² when the mean is large. Evaluate centered Normal/point-normal
+posteriors analytically at the fitted prior. Their KL is the Bernoulli spike/
+slab KL plus posterior slab probability times the conditional Normal KL.
+The exponential kernel also returns its variance directly. Use sums of
+nonnegative variance terms for reconstruction and prediction, including
+Var(η)=Z² Var(β)+Var(Z)(β²+Var(β)), rather than subtracting huge second moments.
+Second moments remain available for the update formulas, and `VBeta`, `VL`
+and `VF` are the authoritative variance carriers. Priors, bounds and the
+statistical objective are unchanged. Direct ebnm posterior values and its
+marginal likelihood are unreliable on the saved extreme-scale reproduction;
+this extends the already documented numerical evaluation exception.
+
+Three new regression checks fail without this correction: strong point-normal
+variance and KL, strong exponential variance, and a nonzero predictor variance
+that would be lost by subtracting large moments. Existing moderate and
+quadrature checks continue to pass. Old stored-variance failures are marked
+invalid in derived gate metrics, with their raw values retained separately.
+
+**Arms and gate.** Run the same complete six-arm grid under attempt6: ten
+paired seeds, both feature counts, all three variance cells, K and controls
+from globals, reduced damping .02 with the original .2 calibration denominator.
+Retain S-5's canonicalization and strict reconstruction-only reference. Keep
+Gate S unchanged, use one dataset per socket work item, and report raw
+alongside conservative failed-fit counts. No external cohort is accessed.

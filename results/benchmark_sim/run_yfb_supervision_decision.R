@@ -68,7 +68,7 @@ yfb_decision_data <- function(seed,p,share) {
 yfb_precision_share_final <- function(fit,Y,time,event) {
   F<-fit$EF[[1]];live<-colSums(F^2)>0 & colSums(fit$EL2)>0
   yc<-scale(Y,scale=FALSE)
-  pr<-yfb_projection(yc,F,fit$EF2[[1]])
+  pr<-yfb_projection(yc,F,fit$EF2[[1]],VF=if(!is.null(fit$VF))fit$VF[[1]] else NULL)
   tay<-yfb_cox(time,event,drop(pr$Z%*%fit$EBeta))
   rec<-outer(fit$Tau,colSums(fit$EL2))
   sur<-outer(colSums(yc^2*tay$w),fit$EBeta2*pr$s^2)*fit$gamma*fit$rho
@@ -87,7 +87,7 @@ yfb_precision_share_final <- function(fit,Y,time,event) {
 yfb_decision_score <- function(fit,d,canonical=FALSE) {
   F<-if(canonical)fit$EF else fit$EF[[1]]
   r<-suppressWarnings(cor(d$truth,F));r[!is.finite(r)]<-0;k<-which.max(abs(r))
-  sd<-sqrt(pmax(fit$EBeta2-fit$EBeta^2,0))
+  sd<-sqrt(if(!is.null(fit$VBeta))fit$VBeta else pmax(fit$EBeta2-fit$EBeta^2,0))
   active<-abs(fit$EBeta)>=1.96*sd & sd>0
   matched<-abs(r[k])>=.7
   risk<-if(canonical)predict_cox_on_yf(d$Yv,F,fit$EBeta,EF_norms=fit$EF_norms)$risk_scores else {
@@ -161,7 +161,7 @@ yfb_decision_task <- function(row,out,fit_rho=.2) {
   # γ chosen once per dataset from the unsupervised fit's precision audit,
   # with the damping accounted for; γ remains fixed through every fitted arm.
   if(is.null(u)) stop("Unsupervised reference failed; cannot calibrate gamma")
-  pr<-yfb_projection(scale(d$Y,scale=FALSE),u$EF[[1]],u$EF2[[1]])
+  pr<-yfb_projection(scale(d$Y,scale=FALSE),u$EF[[1]],u$EF2[[1]],VF=if(!is.null(u$VF))u$VF[[1]] else NULL)
   tay<-yfb_cox(d$time,d$event,u$eta)
   rec<-outer(u$Tau,colSums(u$EL2))
   surv<-outer(colSums(scale(d$Y,scale=FALSE)^2*tay$w),u$EBeta2*pr$s^2)
@@ -198,7 +198,7 @@ if(sys.nframe()==0L) {
  seeds<-if(length(args)>1)as.integer(args[2]) else 10L
  attempt<-if(length(args)>2)args[3] else "attempt1"
  out<-file.path("results/benchmark_sim/outputs/yfb_supervision_2026-10-30",attempt)
- fit_rho<-if(attempt %in% c("attempt3","attempt4","attempt5")) .02 else .2
+ fit_rho<-if(attempt %in% c("attempt3","attempt4","attempt5","attempt6")) .02 else .2
  dir.create(out,recursive=TRUE,showWarnings=FALSE)
  design<-expand.grid(seed=seq_len(seeds),p=c(50L,2000L),variance=c(.0025,.01,.05))
  write.csv(design,file.path(out,"design.csv"),row.names=FALSE)
