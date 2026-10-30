@@ -49,3 +49,17 @@ run_test("YFB screen: rejected sweeps restore state and cannot report convergenc
   assert_equal(nrow(f$history),1L)
   assert_true(f$rejected_trials>=1)
 }))
+run_test("YFB screen: normalized criterion equals its independently calculated value", local({
+  Y<-matrix(c(1,3),2,1);L<-matrix(c(1,2),2,1);F<-matrix(.5,1,1)
+  VL<-matrix(c(.1,.2),2,1);VF<-matrix(.2,1,1)
+  st<-list(L=L,F=F,L2=L^2+VL,F2=F^2+VF,VL=VL,VF=VF,
+    b=.4,VBeta=.3,tau=2,klL=.2,klF=.3,klB=.4)
+  # Residual energy 4.25; factor uncertainty 1.135. Normalized projection
+  # means (-1,1) have variance .8, giving Var(η_i)=.3+.8*(.16+.3)=.668.
+  expected<-log(2/(2*pi))-5.385-.5+2*(-log1p(exp(.8))-.334)-.4
+  got<-yfb_bound_objective(Y,c(1,2),c(1,0),st,2)
+  assert_near(got,expected,1e-12)
+  cc<-3;st$L<-st$L/cc;st$L2<-st$L2/cc^2;st$VL<-st$VL/cc^2
+  st$F<-st$F*cc;st$F2<-st$F2*cc^2;st$VF<-st$VF*cc^2
+  assert_near(yfb_bound_objective(Y,c(1,2),c(1,0),st,2),expected,1e-12)
+}))

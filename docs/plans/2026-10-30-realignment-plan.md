@@ -184,6 +184,15 @@ was evaluated separately on `fix/yfb-supervision` and remains unmerged.
 | C7 branch inventory | **done** | `docs/progress_book/data/2026-10-30-branch-inventory.csv`. 30 of 34 local branches are merged into main (refreshed inventory). Nothing was deleted. |
 | C8 BO-T12 on Linux | **dropped** | All work runs locally. It goes on the tracker as a known platform risk. |
 
+## Approved targeted follow-up after initial execution
+
+The user approved additional mechanism tests in chat. See the
+[targeted findings](../findings/2026-10-30-yfb-targeted-diagnostics-findings.md)
+and [prospective registration](2026-10-30-yfb-targeted-diagnostics-plan.md).
+The twelve fits partly stabilize reconstruction but none meets every screen
+criterion; the original Gate S remains failed. Full suite is now 749 passing
+checks. The independent review verdict below remains reserved.
+
 ## Review handoff
 
 - Execution report: [2026-10-30 execution report](../reviews/2026-10-30-codex-execution-report.md).

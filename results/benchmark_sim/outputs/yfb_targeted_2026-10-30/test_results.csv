@@ -1,0 +1,5 @@
+check,passed,failed,status
+initial feature red,1,5,intentional missing controls/reference functions
+focused final,7,0,clean
+initial full suite,748,0,clean exit 0
+final full suite,749,0,clean exit 0; intentional optimizer fixture warning

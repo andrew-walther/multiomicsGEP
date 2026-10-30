@@ -159,3 +159,5 @@ The October 30 method evaluation is indexed in the
 [precision and numerical findings](findings/2026-10-30-yfb-supervision-diagnosis.md),
 and [progress-book chapter](progress_book/chapters/2026-10-30.qmd).
 The registered gate controls whether training CV may proceed.
+
+The latest approved follow-up is the [targeted YFB mechanism screen](findings/2026-10-30-yfb-targeted-diagnostics-findings.md): matched noise feedback, guarded updates and fixed-design coefficient uncertainty.

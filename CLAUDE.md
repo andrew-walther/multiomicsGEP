@@ -24,6 +24,13 @@ The opt-in fitter and numerical kernel are separate from historical defaults.
 Use `VBeta`, `VL`, and `VF` as their variance carriers; subtracting large second
 moments can erase uncertainty. The seventh simulation registration corrects
 shared-loading units; earlier attempts remain numerical/design diagnostics.
+The approved S-8 mechanism screen adds opt-in fixed-precision and guarded
+updates and a separate exact Gaussian coefficient reference; its registration
+is `docs/plans/2026-10-30-yfb-targeted-diagnostics-plan.md`. Stalled guarded
+updates are failures, not convergence. Results and limits are in
+`docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md`: fixed noise
+prevents the tested explosions, but no case passes all screening criteria.
+These controls do not adopt a new model.
 Read the registrations before running or replacing any attempt. Current
 findings and decisions belong in `PROJECT_STATUS.qmd` and `DECISIONS.md`.
 

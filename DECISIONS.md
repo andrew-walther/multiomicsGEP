@@ -5712,3 +5712,19 @@ Next resolve the inferential role of likelihood tempering, the normalized
 objective and the interpretation of survival-only directions. A latent-risk
 fallback remains a prospective choice. The execution report and standalone
 problem statement retain all failures and identify these decisions.
+
+
+### 2026-10-30 — targeted YFB controls identify partial remedies, not adoption
+
+The approved twelve-fit screen shows that fixed feature precisions prevent
+the observed reconstruction explosions. Guarded updates stabilize expected
+reconstruction but produce only one converged recovery case, with two
+false-active factors; eight fits cap and three stall. No case passes all
+screening criteria. Frozen noise remains a diagnostic, not a chosen prior.
+
+In a fixed Gaussian working experiment, exact coefficient inference still
+produces nearly all-null activity under the saved large survival multiplier.
+Keep YFB and sparse priors, but derive a coherent information balance and
+normalized update before another full-grid claim. Do not substitute posterior
+SDs after fitting or treat guarded stalls as convergence. The original gate,
+external-data restriction and independent-review requirement remain unchanged.

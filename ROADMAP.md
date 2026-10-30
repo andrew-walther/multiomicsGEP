@@ -2,6 +2,12 @@
 
 **Normalized-projection supervision (2026-10-30).**
 
+The [targeted follow-up](docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md)
+partly stabilizes reconstruction with fixed noise and guarded updates. Next
+resolve normalized update directions and information weighting: exact Gaussian
+coefficient inference alone does not repair the large-weight false activity.
+The scientific gate remains unmet.
+
 - [x] Complete the hazard-orientation and posterior-variance audit; preserve
   historical defaults and document the training-only orientation convention.
 - [x] Implement an opt-in nonnegative normalized-projection fitter, exact

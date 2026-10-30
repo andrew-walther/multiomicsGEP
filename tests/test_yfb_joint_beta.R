@@ -11,6 +11,7 @@ run_test("YFB joint beta: orthogonal spike/slab posterior matches scalar formula
   assert_near(sum(q$weights),1,1e-12)
   mf<-yfb_meanfield_beta(X,y,2,pi0,sigma)
   assert_true(mf$converged);assert_near(mf$mean,q$mean,1e-8)
+  assert_near(mf$variance,q$variance,1e-8)
 }))
 run_test("YFB joint beta: correlated Gaussian posterior has the exact covariance", local({
   X<-cbind(c(1,2,-1),c(1,1,-2));y<-c(.2,-1,.7)

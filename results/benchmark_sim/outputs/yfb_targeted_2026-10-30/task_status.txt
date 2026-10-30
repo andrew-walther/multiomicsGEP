@@ -1,0 +1,3 @@
+variance=0.0025 complete
+variance=0.01 complete
+variance=0.05 complete

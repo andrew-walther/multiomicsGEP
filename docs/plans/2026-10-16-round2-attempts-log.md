@@ -2614,3 +2614,22 @@ K, saved γ and nominal damping remain unchanged; normalization and guard
 semantics, retry budget, metrics and stopping rules are specified in the plan.
 The Gaussian coefficient experiment explicitly separates posterior approximation
 and likelihood tempering and is not full-Cox frequentist coverage validation.
+
+
+### S-8 outcome
+
+All twelve registered fits saved without numerical exceptions. One guarded
+adaptive-noise case converges and recovers the program but has two false-active
+factors. Eight fits hit the cap, three report backtrack_stalled, and zero pass
+all screening conditions. Fixed precisions exactly retain the supplied vector
+and prevent the matched reconstruction explosions. All guarded accepted states
+preserve their specified criterion within tolerance. This does not establish
+an exact normalized generative ELBO or a new full-grid gate pass.
+
+The 800-row coefficient experiment has 50 paired responses per setting. Both
+methods recover the planted coefficient in all weight-one controls; the exact
+joint posterior still flags about 6.9 of seven null coefficients at the saved
+large weight. No mean-field fit caps. This isolates a Gaussian working-target
+tempering mechanism, not full-Cox coverage. Final full suite: 749 passed, zero
+failed, clean exit; initial red checks are preserved. Source checkpoint0bf3740;
+full evidence and teach-back are in the targeted findings and output README.

@@ -15,7 +15,12 @@ branches <- rd(file.path(DATA,"2026-10-30-branch-inventory.csv"))
 preprocessing <- rd(file.path(DATA,"2026-10-30-preprocessing-decisions.csv"))
 audit <- rd(file.path(OUT,"precision_audit.csv"))
 variance <- rd(file.path(OUT,"sign_variance_audit.csv"))
-tests <- rd(file.path(OUT,"test_results.csv"))
+TARGET <- file.path(BM,"yfb_targeted_2026-10-30")
+tests <- rd(file.path(TARGET,"test_results.csv"))
+targeted <- rd(file.path(TARGET,"summary.csv"))
+noise_screen <- rd(file.path(TARGET,"noise_comparison.csv"))
+beta_screen <- rd(file.path(TARGET,"beta_summary.csv"))
+screen_controls <- rd(file.path(TARGET,"study_controls.csv"))
 num <- rd(file.path(OUT,"numerical_failure.csv"))
 damping <- rd(file.path(OUT,"damping_diagnosis.csv"))
 replays <- rd(file.path(OUT,"attempt7_diagnostics/diagnostic_replays.csv"))
@@ -374,6 +379,65 @@ normalizes the projection, changes prior estimation and monitors the full
 approximate objective. These changes are recorded in the decision log.
 The projection formulation remains under evaluation; the latent formulation
 has not been adopted as a replacement.
+
+## Targeted follow-up: separating noise feedback and coefficient certainty
+
+The follow-up uses `r nrow(targeted)` fits on the same fixed synthetic cases,
+with matched initial precisions. Holding τ fixed isolates noise feedback;
+guarded variants also use a fixed risk-set curvature bound and whole-sweep
+acceptance. These are mechanism tests, not additional gate datasets.
+
+```{r targeted-noise}
+kable(noise_screen,row.names=FALSE,digits=4)
+```
+
+Freezing precision prevents the reconstruction explosion in these cases.
+The guard also keeps reconstruction bounded. There are
+`r sum(targeted$converged)` converged fits and
+`r sum(grepl("backtrack_stalled",targeted$flags))` explicitly stalled fits;
+`r sum(targeted$success)` meet all screening conditions. The converged
+recovery case still has unmatched survival-active factors.
+
+```{r targeted-fits}
+kable(targeted[,c("variance","arm","expected_reconstruction_ratio","recovered",
+ "false_active","converged","flags","sweeps","rejected_trials","success")],row.names=FALSE,digits=4)
+```
+
+```{r targeted-trajectories, out.width="100%", fig.cap="Matched diagnostic cases. Each row uses common axes; both vertical axes are log10. Lines end at the last accepted state and can end because of stalled backtracking rather than convergence. Objectives from different criteria are not compared."}
+source_plot <- file.path(TARGET,"trajectories.png")
+public_plot <- "../resources/yfb-targeted-2026-10-30-trajectories.png"
+if(unname(tools::md5sum(source_plot))!=unname(tools::md5sum(public_plot)))
+ stop("Targeted diagnostic figure differs from saved evidence")
+knitr::include_graphics(public_plot)
+```
+
+A separate fixed-design Gaussian working experiment uses
+`r screen_controls$n` observations, `r screen_controls$K` coefficients and
+`r screen_controls$response_seeds` response seeds per setting. Exact
+inclusion-pattern inference and independent-coordinate inference share the
+same prior. At weight one the planted coefficient is recovered in every
+response per design. At the large saved weight, exact inference also flags
+nearly all null coefficients. Correcting coefficient covariance alone therefore
+does not address the effect of the large likelihood weight.
+
+```{r targeted-beta}
+kable(beta_screen[,c("design","signal","weight","method","n","mean_false",
+ "recovered","mean_sd","nonconverged")],row.names=FALSE,digits=4)
+```
+
+This is not full-Cox coverage validation. The weighted Gaussian target treats
+noise as smaller than the generating noise; its exact posterior is correct
+for that target but overconfident for these generated observations. The
+result supports examining the information weight itself rather than replacing
+coefficient SDs after fitting.
+
+The guard evaluates an explicit normalized moment criterion and rejects
+non-improving proposals. Its normalization still depends on posterior means;
+no fixed-generative-model ELBO claim is established. Stalling shows that
+F-message damping alone cannot always produce an improving whole-state step.
+Fixed τ and guarded updates remain diagnostic controls, not adopted defaults.
+The next priority is a consistent normalized update and information balance
+that strengthens factor supervision without overstating survival information.
 
 ## Open questions
 

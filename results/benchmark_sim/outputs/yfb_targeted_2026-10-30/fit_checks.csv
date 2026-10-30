@@ -1,0 +1,13 @@
+"variance","arm","accepted_objective_decreases","min_beta_variance","numerical_failure"
+0.0025,"adaptive",108,1.6363451229701e-16,FALSE
+0.0025,"fixed",93,7.33027337367064e-09,FALSE
+0.0025,"guard_adaptive",0,4.6744440515715e-11,FALSE
+0.0025,"guard_fixed",0,4.68091214087929e-11,FALSE
+0.01,"adaptive",18,2.7151018733018e-08,FALSE
+0.01,"fixed",2,6.6259426126503e-09,FALSE
+0.01,"guard_adaptive",0,7.68260053997165e-11,FALSE
+0.01,"guard_fixed",0,7.94248237787853e-11,FALSE
+0.05,"adaptive",83,1.4161089301073e-09,FALSE
+0.05,"fixed",6,5.69675082433368e-09,FALSE
+0.05,"guard_adaptive",0,2.95474814167062e-11,FALSE
+0.05,"guard_fixed",0,2.96302852108275e-11,FALSE

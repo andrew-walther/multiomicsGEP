@@ -19,6 +19,23 @@ execute:
   warning: false
 ---
 
+## Targeted YFB mechanism tests (2026-10-30)
+
+Twelve matched synthetic fits separate adaptive noise feedback from guarded
+updates. Fixed residual precisions prevent the reconstruction explosions in
+all three cases. One guarded adaptive-noise fit recovers the planted factor
+and converges, but retains two false-active factors. Eight fits reach the cap
+and three stop explicitly on failed backtracking; none meets all screening
+criteria. This is partial stabilization, not a passed recovery gate.
+
+Exact spike/slab inference in a separate Gaussian working experiment reproduces
+nearly all-null activity at the large survival weight; correcting mean-field
+covariance alone is insufficient. These are controlled working-likelihood
+results, not full-Cox coverage validation. Full suite: 749 passing checks.
+The [targeted findings](docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md)
+and October 30 notebook contain the complete inventory, derivation and limits.
+No default, external choice or replacement model is adopted.
+
 ## Normalized-projection supervision evaluation (2026-10-30)
 
 The bookkeeping and single-log corrections are retained in the primary model.

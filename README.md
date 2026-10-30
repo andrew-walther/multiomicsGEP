@@ -239,3 +239,24 @@ remain under their own terms of use.
 ## Author
 
 Andrew Walther
+
+## Targeted YFB diagnostics
+
+The experimental fitter additionally accepts `tau_init`, `tau_fixed=TRUE`, and
+`guard=TRUE`. Fixed τ isolates noise feedback. The guard uses a fixed Cox
+curvature bound and checks the same normalized moment criterion after every
+candidate sweep, restoring all moments, priors and KL terms on rejection.
+`backtrack_stalled` is a failure, not convergence. These options do not change
+default numerical results and are not adopted scientific defaults.
+
+Run the registered small screen with
+`Rscript results/benchmark_sim/run_yfb_targeted_diagnostics.R` and the separate
+Gaussian-working-likelihood uncertainty experiment with
+`Rscript results/benchmark_sim/run_yfb_beta_uncertainty_screen.R`.
+Existing checkpoints are retained; the coefficient screen refuses overwrite.
+`code/yfb_joint_beta.R` is an exact fixed-design reference, not a joint β
+update integrated into the YFB fitter. It must not be presented as full-Cox
+coverage validation. The registration is
+[the targeted diagnostic plan](docs/plans/2026-10-30-yfb-targeted-diagnostics-plan.md).
+
+Results, derivation and complete failure inventory: [targeted findings](docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md). Fixed τ stabilizes the tested reconstructions; supervision remains unresolved.

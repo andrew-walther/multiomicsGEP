@@ -1,0 +1,17 @@
+"design","signal","weight","method","n","mean_false","se_false","recovered","mean_sd","nonconverged"
+"correlated","null",1,"joint",50,0,0,NA,0.0178876723145648,0
+"orthogonal","null",1,"joint",50,0,0,NA,0.0104663898456887,0
+"correlated","planted",1,"joint",50,0,0,50,0.0453074423929585,0
+"orthogonal","planted",1,"joint",50,0,0,50,0.0161398694772622,0
+"correlated","null",62233.062792662,"joint",50,6.86,0.0495695759225642,NA,0.000605788615412385,0
+"orthogonal","null",62233.062792662,"joint",50,6.92,0.0387561713321444,NA,0.000200312994349208,0
+"correlated","planted",62233.062792662,"joint",50,5.88,0.0464230765979198,50,0.000604036618124477,0
+"orthogonal","planted",62233.062792662,"joint",50,5.92,0.0387561713321444,50,0.000200312994349365,0
+"correlated","null",1,"mean_field",50,0,0,NA,0.00764939246301359,0
+"orthogonal","null",1,"mean_field",50,0,0,NA,0.0104663898456887,0
+"correlated","planted",1,"mean_field",50,0,0,50,0.011624713058145,0
+"orthogonal","planted",1,"mean_field",50,0,0,50,0.0161398694772622,0
+"correlated","null",62233.062792662,"mean_field",50,6.86,0.0495695759225642,NA,0.000196465666469158,0
+"orthogonal","null",62233.062792662,"mean_field",50,6.92,0.0387561713321444,NA,0.000200312994349208,0
+"correlated","planted",62233.062792662,"mean_field",50,5.88,0.0464230765979198,50,0.000197030455346906,0
+"orthogonal","planted",62233.062792662,"mean_field",50,5.92,0.0387561713321444,50,0.000200312994349208,0
