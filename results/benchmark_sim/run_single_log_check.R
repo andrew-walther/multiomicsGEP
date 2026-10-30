@@ -32,7 +32,11 @@ source("code/select_K.R")
 source("code/feature_sensitivity.R")
 library(survival)
 
-out <- "results/benchmark_sim/outputs/single_log_check"
+# --out <dir> writes elsewhere (the 2026-10-30 rerun after the KL fix uses
+# outputs/kl_fix_rerun_2026-10-30 so the 10/26 outputs stay as they were).
+args <- commandArgs(trailingOnly = TRUE)
+out <- if ("--out" %in% args) args[which(args == "--out") + 1] else
+  "results/benchmark_sim/outputs/single_log_check"
 dir.create(file.path(out, "fits"), recursive = TRUE, showWarnings = FALSE)
 snap <- "results/benchmark_snapshot_2026-10-14/single_modality"
 train_cohorts <- cfg$pdac$training_cohorts
