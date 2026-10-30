@@ -25,10 +25,11 @@ source("code/concordance_ci.R")
 #' contribution in the original two-modality generator.
 #' @param seed,p RNG seed and gene count.
 #' @param share Desired raw centered variance share of the planted rank-one signal.
+#' @param truth_mode Historical raw-risk direction or shared prepared loading.
 #' @return List of cohorts, scaled truth, and independently regenerated outcomes.
 #' @examples
 #' yfb_decision_data(1,50,.01)
-yfb_decision_data <- function(seed,p,share) {
+yfb_decision_data <- function(seed,p,share,truth_mode="legacy") {
   d<-simulate_multimodal_yfb_data("low_variance_prognostic_factor",n_train=400,
     n_validation=120,p_expression=p,p_methylation=50,seed=seed,
     truncate=FALSE,noise_scale=.25,beta=c(0,0,3.3))
@@ -43,17 +44,27 @@ yfb_decision_data <- function(seed,p,share) {
   offset<-pmax(-pmin(apply(tr,2,min),apply(va,2,min)),0)+.1
   tr<-sweep(tr,2,offset,"+");va<-sweep(va,2,offset,"+")
   sdtr<-apply(tr,2,sd);sdva<-apply(va,2,sd)
+  Y<-yfb_scale(tr,rep(1,nrow(tr)));Yv<-yfb_scale(va,rep(1,nrow(va)))
   truth<-F[,3]*sdtr
+  if(truth_mode=="shared") {
+    truth<-F[,3]/sdtr
+    truth<-truth/sqrt(sum(truth^2))
+  }
   # Keep the calibrated coefficient per unit raw projected expression. A
   # centered projection changes only the baseline hazard, not relative risk.
   outcomes<-function(X) {
-    eta<-drop(scale(X,scale=FALSE)%*%F[,3])*3.3
+    direction<-if(truth_mode=="shared")truth else F[,3]
+    eta<-drop(scale(X,scale=FALSE)%*%direction)*3.3
     et<-(-log(runif(nrow(X)))/(.01*exp(eta)))^(1/1.5)
     cb<-rexp(nrow(X));cs<-multimodal_yfb_calibrate_censoring(et,cb,.3)
     list(time=pmin(et,cb*cs),event=as.numeric(et<=cb*cs),eta=eta)
   }
-  ot<-outcomes(tr);ov<-outcomes(va)
-  list(Y=yfb_scale(tr,rep(1,nrow(tr))),Yv=yfb_scale(va,rep(1,nrow(va))),
+  ot<-outcomes(if(truth_mode=="shared")Y else tr)
+  ov<-outcomes(if(truth_mode=="shared")Yv else va)
+  list(Y=Y,Yv=Yv,
+    raw_F3=F[,3],training_sd=sdtr,activity3=a*d$training$L[,3],
+    training_component3=outer(a*d$training$L[,3],F[,3]/sdtr),training_eta=ot$eta,
+    prepared_share=sum(scale(sweep(a*S,2,sdtr,"/"),scale=FALSE)^2)/sum(scale(Y,scale=FALSE)^2),
     time=ot$time,event=ot$event,tv=ov$time,ev=ov$event,
     truth=truth,oracle=ov$eta,actual_share=sum((a*Sc)^2)/sum(scale(tr,scale=FALSE)^2))
 }
@@ -132,7 +143,8 @@ yfb_calibrate_gamma <- function(rec,surv,live,target,rho) {
 #' # Invoked by socket workers.
 yfb_decision_task <- function(row,out,fit_rho=.2) {
   cfg<-yaml::read_yaml("config/globals.yml")
-  d<-yfb_decision_data(row$seed,row$p,row$variance)
+  d<-yfb_decision_data(row$seed,row$p,row$variance,
+    truth_mode=if(basename(out)=="attempt7")"shared" else "legacy")
   prefix<-sprintf("p%d_v%s_s%02d",row$p,row$variance,row$seed)
   warnings_seen<-character()
   record<-function(arm,expr,gamma=NA_real_) {
@@ -198,7 +210,7 @@ if(sys.nframe()==0L) {
  seeds<-if(length(args)>1)as.integer(args[2]) else 10L
  attempt<-if(length(args)>2)args[3] else "attempt1"
  out<-file.path("results/benchmark_sim/outputs/yfb_supervision_2026-10-30",attempt)
- fit_rho<-if(attempt %in% c("attempt3","attempt4","attempt5","attempt6")) .02 else .2
+ fit_rho<-if(attempt %in% c("attempt3","attempt4","attempt5","attempt6","attempt7")) .02 else .2
  dir.create(out,recursive=TRUE,showWarnings=FALSE)
  design<-expand.grid(seed=seq_len(seeds),p=c(50L,2000L),variance=c(.0025,.01,.05))
  write.csv(design,file.path(out,"design.csv"),row.names=FALSE)

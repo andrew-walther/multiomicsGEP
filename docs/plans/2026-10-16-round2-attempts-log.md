@@ -2494,3 +2494,25 @@ from globals, reduced damping .02 with the original .2 calibration denominator.
 Retain S-5's canonicalization and strict reconstruction-only reference. Keep
 Gate S unchanged, use one dataset per socket work item, and report raw
 alongside conservative failed-fit counts. No external cohort is accessed.
+
+### Supervision attempt 7 — correct the shared-loading simulation units (registered before running)
+
+**Diagnosis.** Attempts 1–6 generated Cox risk using the raw loading F but
+reconstructed SD-divided expression using F/SD. The recovery target F×SD
+matched the generated risk in prepared coordinates, not the reconstruction
+loading. Those grids remain numerical and design diagnostics; they cannot
+establish the shared-loading model's recovery gate.
+
+**Correction.** Generate risk from the unit-normalized prepared reconstruction
+loading F/SD_train and use that same training direction in validation. Keep
+the raw centered variance shares and all six arms, ten seeds, two feature
+counts, damping .02, fixed calibration weights, and literal Gate S unchanged.
+The coefficient 3.3 is now per unit normalized prepared projection; predictive
+strength across attempts is consequently not directly comparable. Save the
+prepared variance share separately. No fitter change from fe7064b. A unit
+test checks the reconstruction and Cox directions algebraically; an exact
+legacy comparison confirms old generated inputs and outcomes are unchanged.
+
+**Decision.** Apply the original gate only to this corrected grid. Preserve
+all original checkpoints, missing records, and raw/penalized diagnostics.
+No external cohort scoring and no retuning the gate or choosing variance cells.
