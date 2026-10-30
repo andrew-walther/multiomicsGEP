@@ -238,7 +238,7 @@ Without the parsimony framework the multimodal model kept every starting program
 \end{figure}
 ```
 
-## On matched expression and methylation, the multimodal model reaches the established model's concordance; methylation adds little so far {#sec-res-mm-real}
+## On matched expression and methylation, the multimodal model reaches the established model's concordance, and methylation adds little so far {#sec-res-mm-real}
 
 Models were trained on TCGA (144 patients) and evaluated on 50 ICGC primary PDAC donors, all of whom are also in the PACA-AU RNA-seq validation cohort used above (Table \ref{tab:mm-external}). At the pre-specified starting rank of 7, which matches the single-modality model, the multimodal model reached a concordance of 0.685 (95% CI 0.579 to 0.779). The established single-modality model, trained on TCGA and CPTAC, also scored 0.685 on the same donors, so the multimodal model matched it with a single training cohort. Fitted to expression alone, the same framework reached 0.676, so methylation added about 0.01, within the uncertainty. Without the parsimony framework, the multimodal model reached 0.453.
 
