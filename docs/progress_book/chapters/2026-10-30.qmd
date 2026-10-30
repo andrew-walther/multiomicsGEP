@@ -285,6 +285,12 @@ kable(gate_cells[,c("variance","arm","recovered","baseline_recovered","recovery_
 kable(gate,row.names=FALSE,caption=paste("Registered supervision gate:",verdict))
 ```
 
+The unsupervised reference records reconstruction convergence and then uses
+a fixed coefficient-update stage. Its flag does not separately establish Cox
+convergence. The supervision-grid flags require joint objective and output
+stopping. This distinction leaves the failed gate unchanged: the grid arms
+exceed the false-active budget and fail their own convergence requirements.
+
 Reported C means use converged fits with valid stored uncertainty; their
 denominators are shown explicitly. Failed states and undefined scores remain
 in the failure inventory.

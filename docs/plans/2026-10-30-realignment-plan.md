@@ -189,7 +189,8 @@ was evaluated separately on `fix/yfb-supervision` and remains unmerged.
 - Execution report: [2026-10-30 execution report](../reviews/2026-10-30-codex-execution-report.md).
 - Source and saved-evidence checkpoint: **28a1837**; opt-in fitting engine
   **fe7064b**, corrected shared-loading design **ad331c8**, exact replay guard
-  **fe97c04**. The final documentation commit follows that evidence checkpoint.
+  **fe97c04**. Documentation and rendered-book checkpoint: **4bcd07f**; final handoff
+  clarifications follow it.
 - Gate S: **failed** on the corrected shared-loading grid. All 360 fits are
   saved; no target qualifies in any large-feature cell. There are 153
   nonconverged fits, zero raw numerical-error checkpoints and zero lost
@@ -202,7 +203,7 @@ was evaluated separately on `fix/yfb-supervision` and remains unmerged.
 |---|---|---|
 | C1–C5 | Done before this execution; retained | Original commits in the cleanup table above; saved benchmark/rescore outputs; full suite |
 | C6 | Done and pushed on main | 4feec24; exact variance and hazard-direction checks; final suite refines the sign fixture |
-| C7 | Done; inventory refreshed, no deletions | Branch-inventory CSV and chapter inventory table |
+| C7 | Done; inventory refreshed, no deletions | 4bcd07f; branch-inventory CSV and chapter inventory table |
 | C8 | Not run, as specified | Known Linux platform risk remains on the tracker |
 | P | Decisions recorded; deferred pipeline changes distinguished | 12ebee8; DECISIONS, preprocessing audit §5 and chapter decision table |
 | S0 | Done | 12ebee8/28a1837; conditional analytical/direct-sum precision audit and installed DeSurv source comparison |
@@ -210,7 +211,7 @@ was evaluated separately on `fix/yfb-supervision` and remains unmerged.
 | S2 | Complete corrected grid; scientific gate failed | ad331c8/28a1837; all seven attempts retained, complete-denominator tables and exact fixed-case replays |
 | Post-pass ablations | Not run: gate failed | Original conditional requirement retained |
 | S3 training CV | Not run: gate failed | No new real-data model choice or external cohort score |
-| D | Updated chapter, tracker, living documents and handoff | Chapter reads saved CSV/RDS evidence; full book render and final validation recorded in the report |
+| D | Updated chapter, tracker, living documents and handoff | 4bcd07f; chapter reads saved CSV/RDS evidence; full book render and final validation recorded in the report |
 
 **Decisions needed from Andrew:** resolve the inferential meaning of the Cox
 weight; whether to derive a consistent normalized objective and acceptance

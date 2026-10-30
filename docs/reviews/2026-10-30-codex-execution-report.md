@@ -93,7 +93,8 @@ the immutable benchmark snapshot/tag are unchanged. No new external cohort
 was scored. Real-data training CV and component ablations are conditional on
 passing Gate S, rather than deliverables to run after a failed gate.
 
-Source and saved-evidence checkpoint: **28a1837**. The registered fitter is
+Source and saved-evidence checkpoint: **28a1837**. Documentation and rendered
+book checkpoint: **4bcd07f**; final handoff clarifications follow it. The registered fitter is
 **fe7064b**, corrected design **ad331c8**, and replay guard **fe97c04**.
 
 ## Plan coverage and evidence
@@ -106,14 +107,14 @@ Source and saved-evidence checkpoint: **28a1837**. The registered fitter is
 | C4 comparator orientation | Inherited complete; retained | b85d390; saved orientation rescore, not a new external evaluation |
 | C5 test portability | Inherited complete; retained | 1703bc6; versioned fixtures and full suite |
 | C6 hazard direction and β variance | Done | 4feec24; hazard regression, exact fixed-prior variance check, saved aggregate variance audit |
-| C7 local branch inventory | Done, refreshed | `docs/progress_book/data/2026-10-30-branch-inventory.csv`; nothing deleted |
+| C7 local branch inventory | Done, refreshed (4bcd07f) | `docs/progress_book/data/2026-10-30-branch-inventory.csv`; nothing deleted |
 | C8 Linux-only all-zero case | Deferred as specified | Tracker retains the platform risk; new fitter reports degeneracy explicitly |
 | P preprocessing decisions | Recorded | 12ebee8; DECISIONS and audit §5 dispositions; chapter decision table |
 | S0 precision and DeSurv audit | Done | Conditional analytical/direct-sum audit; `precision_audit.csv`; exact installed DeSurv revision inspected |
 | S1 opt-in fitter and tests | Implemented with documented numerical refinements | 12ebee8, 2be72e5, 06a14bc, 1d644e5, fe3ca0c, dae6eef, fe7064b, ad331c8; focused fixtures and full suite |
 | S2 registered decision test | Complete; corrected scientific gate failed | Seven separately retained attempts, registrations and complete-denominator summaries |
 | S3 real training CV | Conditional; see final gate | No external selection or unauthorized real-data model choice |
-| D chapter and living documents | Updated | October 30 chapter, issue tracker, decisions, roadmap, project status and document indexes |
+| D chapter and living documents | Updated (4bcd07f) | October 30 chapter, issue tracker, decisions, roadmap, project status and document indexes |
 | Review handoff | Supplied | This report and the plan's handoff section; independent review verdict deliberately unfilled |
 
 The original cleanup work was already on main when this execution began. The
@@ -281,7 +282,9 @@ Fit the bounded common β prior, then update L, F gene by gene, and β factor by
 factor. Carry the within-factor gene coupling through the sequential projection
 refresh. Canonicalize activities and inverse-rescale loadings and priors;
 update residual precisions from expected squared error. Evaluate the approximate
-objective and output changes. Classify the fitted factors without deletion
+objective and output changes. After burn-in, convergence requires relative
+objective change below tol, the largest relative reconstruction/risk norm
+change below √tol, and no reported objective decrease on that sweep. Classify the fitted factors without deletion
 or reduced-rank refitting.
 
 **Design choices.** A list interface preserves the modality boundary, but only
@@ -305,7 +308,11 @@ reuse the established absolute coefficient threshold from globals; the
 registered gate instead uses |E[β]|/SD(β) ≥ 1.96. The role labels are
 descriptive and do not validate posterior survival activity. The proposed scaling
 uses each validation cohort's distribution and is not a frozen transform for
-one future patient. No multimodal extension or external prediction pipeline
+one future patient. The unsupervised reference has a fixed 20-sweep untempered coefficient stage;
+its reported convergence concerns reconstruction, without a separate Cox-stage
+stopping claim. The new-arm gate fails its own false-active and convergence
+requirements regardless of that reference-stage limitation.
+No multimodal extension or external prediction pipeline
 has been adopted here.
 
 **R-specific notes.** `ebnm` fits priors and evaluates normal means; `ashr`
