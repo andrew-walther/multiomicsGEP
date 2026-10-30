@@ -84,7 +84,17 @@ ARM_SETS <- list(
     ref_normal_wide_fixed = list(canonicalize = TRUE, w_S = 1, init_supervised = TRUE,
                                  beta_prior_mode = "shared", beta_prior_fix = TRUE,
                                  beta_prior_init = ashr::normalmix(1, 0, 2))
-  )
+  ),
+  # A1 (docs/plans/2026-10-26-parallel-work-sessions-plan.md): is the survival
+  # contribution to the F update too small? Survival weight w_S in
+  # {1, 1e2, 1e4, 1e6} x supervised start off/on, canonical exact sequential F
+  # update (which includes the within-program coupling term), per-program
+  # Normal beta prior. The w_S = 1 arms repeat canon_wS_1 and c3_init.
+  a1_ws = unlist(lapply(c(1, 1e2, 1e4, 1e6), function(ws) {
+    setNames(lapply(c(FALSE, TRUE), function(init)
+      list(canonicalize = TRUE, w_S = ws, init_supervised = init)),
+      sprintf("wS_%g_init%d", ws, c(0L, 1L)))
+  }), recursive = FALSE)
 )
 
 args    <- commandArgs(trailingOnly = TRUE)
@@ -187,6 +197,16 @@ score_fit <- function(fit, tb) {
     max_abs_beta  = max(abs(tr$beta_mean), na.rm = TRUE),
     shareA_final_match = tail(tr$shareA_median[, k], 1),
     shareA_unweighted_final_match = tail(tr$shareA_unweighted_median[, k], 1),
+    # Survival share of the F precision, w_S A_surv / A_F (median over
+    # features), largest over the programs alive at the end
+    shareA_final_max = max(c(tail(tr$shareA_median, 1)[colSums(fit$EF^2) > 1e-8], 0),
+                           na.rm = TRUE),
+    # A1 recovery: matched (|r| >= 0.7), correct sign and survival-active
+    recovered_active = best_cor[j] >= 0.7 &&
+                       sign(fit$EBeta[k] * r[j, k]) == sign(tb$beta_true[j]) &&
+                       active_z[k],
+    # Reconstruction loss on the training data, ||Y - E[L] E[F]'||^2 / ||Y||^2
+    recon_rel     = sum((tb$Ytr - fit$EL %*% t(fit$EF))^2) / sum(tb$Ytr^2),
     row.names = NULL
   )
 }
@@ -246,6 +266,12 @@ summ <- do.call(rbind, lapply(split(res, list(res$arm, res$noise), drop = TRUE),
   max_sd_YF = max(d$max_sd_YF), max_abs_beta = max(d$max_abs_beta),
   shareA_match_median = median(d$shareA_final_match),
   shareA_unweighted_median = median(d$shareA_unweighted_final_match),
+  shareA_max_median = median(d$shareA_final_max),
+  recovered_active = sum(d$recovered_active),
+  recon_rel_median = median(d$recon_rel), recon_rel_max = max(d$recon_rel),
+  # c_validation is NA when the risk score is constant (no active coefficient)
+  c_validation_na = sum(is.na(d$c_validation)),
+  c_validation_mean_finite = mean(d$c_validation, na.rm = TRUE),
   pve_planted_max = max(d$pve_planted), runtime_median = median(d$runtime))}))
 write.csv(summ, file.path(out_dir, "summary.csv"), row.names = FALSE)
 print(summ, digits = 3)
