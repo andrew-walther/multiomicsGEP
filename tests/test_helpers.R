@@ -114,3 +114,18 @@ reset_counts <- function() {
   .test_env$errors  <- character(0)
   invisible(NULL)
 }
+
+#' Read a frozen baseline source file from tests/fixtures/feature-supervised-F
+#'
+#' Replaces `git show feature/supervised-F:<file>`, which only worked with
+#' that local branch present.
+#'
+#' @param file Repository path of the original file, e.g. "code/fit_cox_on_yf.R".
+#' @return Character vector of source lines, as `system2(..., stdout = TRUE)` returned.
+#' @examples
+#' # src <- read_baseline_source("code/fit_cox_on_yf.R")
+read_baseline_source <- function(file) {
+  path <- file.path("tests/fixtures/feature-supervised-F", basename(file))
+  if (!file.exists(path)) stop("Missing baseline fixture: ", path)
+  readLines(path)
+}

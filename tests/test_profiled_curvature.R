@@ -16,8 +16,7 @@ tryCatch(source("code/fit_cox_on_yf.R"),error=function(e){
 #' @examples
 #' # profile_base_fitter("code/fit_cox_on_yf.R","fit_cox_on_yf")
 profile_base_fitter <- function(file,name) {
-  text <- system2("git",c("show",paste0("feature/supervised-F:",file)),stdout=TRUE)
-  if(!is.null(attr(text,"status")))stop("Cannot read protected baseline")
+  text <- read_baseline_source(file)
   env <- new.env(parent=.GlobalEnv)
   for(e in parse(text=text))
     if(is.call(e) && identical(e[[1]],as.name("<-")) &&

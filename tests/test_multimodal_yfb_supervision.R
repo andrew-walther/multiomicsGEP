@@ -83,7 +83,7 @@ run_test("MMYFB-Sup-T4: protected nullcheck excludes survival-active programs", 
 
 run_test("MMYFB-Sup-T5: default pruning sequence matches feature/supervised-F", {
   old <- new.env(parent = globalenv())
-  src <- system2("git", c("show", "feature/supervised-F:code/fit_multimodal_yfb.R"), stdout = TRUE)
+  src <- read_baseline_source("code/fit_multimodal_yfb.R")
   eval(parse(text = src), old)
   for (pr in c(FALSE, TRUE)) {
     a <- list(.mms$Y, .mms$time, .mms$event, 3L,

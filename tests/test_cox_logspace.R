@@ -61,7 +61,7 @@ run_test("LogCox-T6: the objective monitor uses the same opt-in arithmetic", {
  assert_true(is.finite(z));assert_near(attr(z,"components")['survival'],0,tol=1e-12)
 })
 run_test("LogCox-T7: default full fit remains identical to protected base-branch function", {
- source_text<-system2("git",c("show","feature/supervised-F:code/fit_multimodal_yfb.R"),stdout=TRUE)
+ source_text<-read_baseline_source("code/fit_multimodal_yfb.R")
  expr<-Filter(function(e)is.call(e)&&identical(e[[1]],as.name("<-"))&&
    identical(e[[2]],as.name("fit_multimodal_yfb")),parse(text=source_text))
  assert_equal(length(expr),1L);base_fit<-eval(expr[[1]][[3]],.GlobalEnv)

@@ -298,7 +298,7 @@ run_test("Supervision-T14: output convergence uses both fitted quantities", {
 
 run_test("Supervision-T15: default fits and pruning match feature/supervised-F bit for bit", {
   old <- new.env(parent = globalenv())
-  src <- system2("git", c("show", "feature/supervised-F:code/fit_cox_on_yf.R"), stdout = TRUE)
+  src <- read_baseline_source("code/fit_cox_on_yf.R")
   tryCatch(eval(parse(text = src), old), error = function(e) {
     if (!grepl("!is.null(real_Y)", conditionMessage(e), fixed = TRUE)) stop(e)
   })
