@@ -1220,11 +1220,11 @@
     ]
   },
   {
-    "objectID": "chapters/2026-10-30.html#questions-for-the-advisors",
-    "href": "chapters/2026-10-30.html#questions-for-the-advisors",
+    "objectID": "chapters/2026-10-30.html#open-questions",
+    "href": "chapters/2026-10-30.html#open-questions",
     "title": "14  October 30, 2026",
-    "section": "14.8 Questions for the advisors",
-    "text": "14.8 Questions for the advisors\n\nIs the decision test above (recovery at 2,000 genes, false positives, convergence) the right bar for “survival supervises the loadings”?\nIf the projection predictor cannot be made to work at a balanced weight, should we return to the latent predictor with fold-in scoring, or first try a different balance such as a weight chosen by cross-validation with coefficient intervals from a separate refit?\nDo you agree with the preprocessing recommendations, in particular nonnegative within-cohort scaling (3) and one record per donor (11)?\nWhich cohort should be held out from every model choice until the final claim?",
+    "section": "14.8 Open questions",
+    "text": "14.8 Open questions\n\nIs the decision test above (recovery at 2,000 genes, false positives, convergence) the right bar for “survival supervises the loadings”?\nIf the projection predictor cannot be made to work at a balanced weight, should we return to the latent predictor with fold-in scoring, or first try a different balance such as a weight chosen by cross-validation with coefficient intervals from a separate refit?\nDo you agree with the preprocessing recommendations, in particular nonnegative within-cohort scaling (3) and one record per donor (11)?\nWhich cohort should be held out from every model choice until the final claim?",
     "crumbs": [
       "<span class='chapter-number'>14</span>  <span class='chapter-title'>October 30, 2026</span>"
     ]
