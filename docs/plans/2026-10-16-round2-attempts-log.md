@@ -2602,3 +2602,15 @@ training CV were not run because the controlling corrected-design gate failed.
 Original failures remain visible beside the corrected result; no attempts are
 pooled. See the execution report and standalone problem statement for the
 fixed-case trajectories, numerical repairs, deviations and next model decisions.
+
+## 2026-10-30 — S-8 targeted mechanism screen (registered before execution)
+
+The user approved the four-step quick diagnostic plan in chat. The controlling
+registration is `2026-10-30-yfb-targeted-diagnostics-plan.md`: twelve new paired
+fits (three seed-1 shared-loading cases; matched adaptive/fixed τ; native/guarded
+updates), plus a fixed-design coefficient experiment. Preserve all S-7 records.
+This is a mechanism screen, not a replacement or relaxation of Gate S. Priors,
+K, saved γ and nominal damping remain unchanged; normalization and guard
+semantics, retry budget, metrics and stopping rules are specified in the plan.
+The Gaussian coefficient experiment explicitly separates posterior approximation
+and likelihood tempering and is not full-Cox frequentist coverage validation.
