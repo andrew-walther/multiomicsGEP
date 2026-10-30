@@ -5638,3 +5638,21 @@ A smoke test exposed point-mass columns: the compiled sweep intentionally has
 no pseudo-observation for a fully dead prior. Keep q=g=δ₀ and KL=0 directly,
 instead of passing its undefined pseudo-observation back to ebnm. This is a
 boundary-case implementation correction, made before the registered run.
+
+## 2026-10-30 — Stable evaluation of the point-exponential EBNM posterior
+
+Independent integration of a saved synthetic failure confirms that subtracting
+large Gaussian terms can erase posterior variance in the normal-means result.
+The experimental fitter therefore retains ebnm's fitted point-exponential
+prior but evaluates its posterior and KL after canceling the common Gaussian
+term. The stable identity is KL = B Eθ − A Eθ²/2 − log(1−π+πI), with
+I = ∫₀∞ λ exp((B−λ)θ−Aθ²/2)dθ. This is the same model and posterior, rather
+than an interpolated posterior with an incompatible KL. It is an explicit
+numerical deviation from taking ebnm's returned values unchanged. Normal and
+point-normal updates still use direct ebnm extraction. The historical loading
+kernel is unchanged; the stable kernel is isolated to the opt-in fitter.
+
+Bounded coefficient prior fitting keeps the same parameter space. A saved
+line-search failure is handled by a profile-likelihood search with a warning;
+failed fallback remains a diagnosed fit failure. Original simulation results
+are not replaced; attempt S-4 is registered before execution.

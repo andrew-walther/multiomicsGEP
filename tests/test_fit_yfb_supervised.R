@@ -80,3 +80,13 @@ run_test("YFBS: zero signal with very large precision is the exact point mass", 
   assert_near(q$second,rep(0,50),1e-30)
   assert_near(q$kl,0,1e-10)
 })
+run_test("YFBS: bounded marginal prior fits the saved optimizer-failure fixture", {
+  msg<-readRDS("tests/fixtures/yfb-bounded-prior-failure.rds")
+  g<-yfb_beta_prior(msg$x,msg$A,msg$K)
+  assert_true(g$pi[2]>=1/msg$K && g$pi[2]<=.5 && g$sd[2]>=.05)
+  # The returned constrained fit must beat the allowed starting prior.
+  ll<-function(g)sum(log(g$pi[1]*dnorm(msg$x,0,1/sqrt(msg$A))+
+    g$pi[2]*dnorm(msg$x,0,sqrt(1/msg$A+g$sd[2]^2))))
+  start<-ashr::normalmix(c(.75,.25),c(0,0),c(0,max(.05,sd(msg$x))))
+  assert_true(ll(g)>=ll(start)-1e-7)
+})

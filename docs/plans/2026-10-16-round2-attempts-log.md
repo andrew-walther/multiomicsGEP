@@ -2343,3 +2343,45 @@ under attempt3. Ten paired seeds per dimension and variance cell. Keep Gate S
 exactly unchanged, including the false-active and convergence requirements.
 This is a numerical-stability attempt, not a relaxation of the scientific gate.
 The prior family and slab bounds are unchanged. No external data are accessed.
+
+S-1 completion: the original driver exited after writing all dataset task
+statuses. Calibration failed for most datasets; the aggregator retains every
+missing arm in the registered denominator. Exact counts are saved in
+`attempt1/counts.csv`, with task failures in `task_status.txt`; Gate S was not
+reached as a valid full comparison. No real training CV was run from S-1.
+
+## 2026-10-30 — Supervision decision test, attempt S-4 (registered before execution)
+
+**Independent numerical diagnosis.** Direct quadrature of the saved synthetic
+pseudo-message confirms a posterior variance near 8.54 while the ebnm moment
+implies approximately zero. The compiled approximation retains the variance
+but has smaller cancellation error too. The reference integral cancels the
+common N(x;0,s²) term before integration. This supplies a diagnosed correction,
+not a new prior or a statistical tuning choice.
+
+**Correction and explicit deviation.** Keep ebnm's marginal-likelihood prior
+fit, but evaluate point-exponential posterior moments and KL with a stable
+closed form at that exact fitted prior and those exact pseudo-messages. Let
+I=∫λ exp((B−λ)θ−Aθ²/2)dθ and N=1−π+πI. Then
+KL=B Eθ−A Eθ²/2−log N. This is algebraically the same EBNM posterior and KL,
+but deliberately departs from extracting unreliable posterior moments and KL
+unchanged from ebnm's returned numerical values. Use a separate opt-in compiled
+kernel; do not change the shared historical kernel. Independent quadrature
+checks both weak and moderate messages. The stable gene sweep uses the same
+coupling and damping as before.
+
+A second saved fixture reproduces bounded β optimizer failure at a constrained
+boundary. If L-BFGS-B fails, profile over the slab proportion and search log SD
+within the same permitted bounds. This keeps the same marginal-likelihood
+problem; it does not change the prior family, its bounds or γ. Emit a warning
+whenever the fallback is used and retain it with the fit. If it fails, return
+a numerical failure. Tests reproduce the original error and verify a bounded
+solution whose likelihood beats the allowed starting prior.
+
+**Arms and gate.** Repeat the complete paired grid from S-3 under attempt4,
+with ρ=.02 and γ calibrated using .2 as before. Keep all six arms, ten seeds,
+feature counts, variance cells and Gate S unchanged. Keep every earlier
+attempt separately, including errors and missing records. This tests whether
+numerically faithful updates repair the observed failure; it makes no claim
+in advance that they solve recovery, false activity or convergence. No real
+or external validation data enter this test.

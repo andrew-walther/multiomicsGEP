@@ -178,7 +178,7 @@ if(sys.nframe()==0L) {
  seeds<-if(length(args)>1)as.integer(args[2]) else 10L
  attempt<-if(length(args)>2)args[3] else "attempt1"
  out<-file.path("results/benchmark_sim/outputs/yfb_supervision_2026-10-30",attempt)
- fit_rho<-if(attempt=="attempt3") .02 else .2
+ fit_rho<-if(attempt %in% c("attempt3","attempt4")) .02 else .2
  dir.create(out,recursive=TRUE,showWarnings=FALSE)
  design<-expand.grid(seed=seq_len(seeds),p=c(50L,2000L),variance=c(.0025,.01,.05))
  write.csv(design,file.path(out,"design.csv"),row.names=FALSE)

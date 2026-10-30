@@ -7,6 +7,7 @@
 source("code/compute_elbo.R")
 source("code/multimodal_yfb_updates.R")
 source("code/select_K.R")
+source("code/yfb_exponential_stable.R")
 
 # Normal means and Cox quantities ----
 
@@ -35,6 +36,14 @@ source("code/select_K.R")
   q <- do.call(ebnm::ebnm,args)
   mean <- q$posterior$mean; second <- q$posterior$second_moment
   kl <- -compute_ebnm_kl(q$log_likelihood,As,xs,mean,second)
+  if(family=="point_exponential") {
+    # Same fitted prior and exact EBNM posterior, evaluated stably after
+    # canceling the common Gaussian term. Direct ebnm moments lose variance
+    # on the saved weak-message fixture; never mix that q with another KL.
+    gg<-q$fitted_g
+    stable<-yfb_stable_exp(As,xs*As,gg$pi[2],if(gg$pi[2]==0)1 else 1/gg$scale[2])
+    mean<-stable$mean;second<-stable$second;kl<-sum(stable$kl)
+  }
   if(any(!is.finite(c(mean,second,kl))) || kl < -1e-5*length(x))
     stop("Invalid ebnm posterior or KL")
   gout<-q$fitted_g
@@ -70,8 +79,33 @@ source("code/select_K.R")
   } else {
     z <- optim(c(max(lower_pi,.25),log(max(.05,sd(x),na.rm=TRUE))),objective,
       method="L-BFGS-B",lower=c(lower_pi,log(.05)),upper=c(.5,Inf))
-    if(z$convergence!=0) stop("Bounded β marginal likelihood did not converge")
-    par <- z$par
+    if(z$convergence!=0) {
+      # The saved fixture triggers a line-search failure at a constrained
+      # boundary. Profile π with a bounded scalar search, then search log σ.
+      # σ > max|x| cannot maximize this centered Normal-mixture likelihood:
+      # every slab density is decreasing there. Search each local grid basin.
+      upper<-max(.05,abs(x))
+      profile<-function(logsd) {
+        val<-function(pi)objective(c(pi,logsd))
+        r<-optimize(val,c(lower_pi,.5),tol=1e-10)
+        candidates<-c(lower_pi,r$minimum,.5)
+        values<-vapply(candidates,val,0.)
+        list(value=min(values),pi=candidates[which.min(values)],logsd=logsd)
+      }
+      grid<-seq(log(.05),log(upper),length.out=17)
+      candidates<-lapply(grid,profile)
+      if(upper>.05) for(j in 2:16) {
+        vals<-vapply(candidates[seq_len(17)],`[[`,0.,"value")
+        if(vals[j]<=vals[j-1] && vals[j]<=vals[j+1]) {
+          r<-optimize(function(v)profile(v)$value,grid[c(j-1,j+1)],tol=1e-9)
+          candidates[[length(candidates)+1]]<-profile(r$minimum)
+        }
+      }
+      best<-candidates[[which.min(vapply(candidates,`[[`,0.,"value"))]]
+      if(!is.finite(best$value)) stop("Bounded β profile likelihood is nonfinite")
+      par<-c(best$pi,best$logsd)
+      warning("Bounded β optimizer used the profile-likelihood fallback")
+    } else par <- z$par
   }
   ashr::normalmix(c(1-par[1],par[1]),c(0,0),c(0,exp(par[2])))
 }
@@ -237,15 +271,15 @@ fit_yfb_supervised <- function(X,time,event,K=7,alpha=.5,gamma=NULL,rho=.2,
       gp<-priorfit$g
       prior<-list(family="point_exponential",pi=gp$pi[2],rate=1/gp$scale[2],
                   point_mass=gp$pi[2]==0)
-      # Existing compiled Gauss–Seidel engine: its reconstruction statistics
+      # Opt-in stable Gauss–Seidel engine: its reconstruction statistics
       # are passed separately from the centered projection matrix.
-      if(!multimodal_yfb_use_cpp()) stop("Compiled sweep required for this experimental fitter")
-      z<-mmyfb_F_sweep_cpp(aY,tau,sum(L2[,k]),colSums(aY^2*(rho*w)),
+      yfb_stable_compile()
+      z<-yfb_exp_sweep_cpp(aY,tau,sum(L2[,k]),colSums(aY^2*(rho*w)),
         drop(crossprod(Rk,L[,k])),drop(crossprod(aY,rho*hm)),rho*w,
-        Z[,k],V[,k],F[,k],F2[,k],b[k],b2[k],0L,isTRUE(prior$point_mass),
-        prior$pi,prior$rate,NA_real_)
-      # One ebnm call at the recorded sequential messages returns the same
-      # posterior and gives its marginal likelihood for the atomic KL.
+        Z[,k],V[,k],F[,k],F2[,k],b[k],b2[k],prior$pi,
+        if(isTRUE(prior$point_mass))1 else prior$rate)
+      # One fixed-prior evaluation at the recorded sequential messages
+      # checks the same posterior and computes its stable, atomic KL.
       q<-if(isTRUE(prior$point_mass)) priorfit else
         yfb_ebnm(z$x,1/z$s2,"point_exponential",gp)
       if(max(abs(q$mean-z$EF))>1e-5*max(1,abs(z$EF)) ||
