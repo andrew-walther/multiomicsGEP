@@ -138,6 +138,7 @@ yfb_calibrate_gamma <- function(rec,surv,live,target,rho) {
 #' Fit all paired arms for one generated dataset and checkpoint each result
 #' @param row Dataset design row.
 #' @param out Output directory; never overwrites a successful checkpoint.
+#' @param fit_rho Fixed survival precision damping for the registered attempt.
 #' @return Small status string; errors are saved as rows, not omitted.
 #' @examples
 #' # Invoked by socket workers.

@@ -6,7 +6,7 @@
 # ============================================================
 out<-"results/benchmark_sim/outputs/yfb_supervision_2026-10-30"
 rows<-list()
-for(attempt in paste0("attempt",seq_len(6))) {
+for(attempt in paste0("attempt",seq_len(7))) {
   files<-list.files(file.path(out,attempt),pattern="rds$",full.names=TRUE)
   for(path in files) {
     saved<-readRDS(path);f<-saved$fit

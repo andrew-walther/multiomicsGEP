@@ -5,13 +5,16 @@
 # Dependencies: registered runner and saved synthetic checkpoints
 # ============================================================
 source("results/benchmark_sim/run_yfb_supervision_decision.R")
-out<-"results/benchmark_sim/outputs/yfb_supervision_2026-10-30"
+base<-"results/benchmark_sim/outputs/yfb_supervision_2026-10-30"
+args<-commandArgs(TRUE);attempt<-if(length(args))args[1] else "attempt7"
+out<-file.path(base,paste0(attempt,"_diagnostics"))
+dir.create(out,recursive=TRUE,showWarnings=FALSE)
 rows<-list()
 # Inspect the smallest share-target arm, seed 1, in every large-p variance
 # cell. These are exact diagnostic replays, not additional gate datasets.
 for(variance in c(.0025,.01,.05)) {
-  path<-file.path(out,"attempt4",sprintf("p2000_v%s_s01_share0.05.rds",variance))
-  saved<-readRDS(path);d<-yfb_decision_data(1,2000,variance)
+  path<-file.path(base,attempt,sprintf("p2000_v%s_s01_share0.05.rds",variance))
+  saved<-readRDS(path);d<-yfb_decision_data(1,2000,variance,truth_mode=if(attempt=="attempt7")"shared" else "legacy")
   f<-fit_yfb_supervised(list(expression=d$Y),d$time,d$event,
     K=yaml::read_yaml("config/globals.yml")$benchmark$k_merged_yfb_desurv,
     gamma=saved$metrics$gamma,rho=saved$metrics$rho,scaled=TRUE)

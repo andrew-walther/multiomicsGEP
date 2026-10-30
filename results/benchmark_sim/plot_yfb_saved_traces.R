@@ -50,7 +50,9 @@ plot_yfb_saved_traces <- function(out) {
 }
 
 if(sys.nframe()==0L) {
-  out<-"results/benchmark_sim/outputs/yfb_supervision_2026-10-30"
+  base<-"results/benchmark_sim/outputs/yfb_supervision_2026-10-30"
+  args<-commandArgs(TRUE);attempt<-if(length(args))args[1] else "attempt7"
+  out<-file.path(base,paste0(attempt,"_diagnostics"))
   png(file.path(out,"diagnostic_traces.png"),width=1760,height=1600,res=160,
       type=if(Sys.info()[["sysname"]]=="Darwin")"quartz" else getOption("bitmapType"))
   plot_yfb_saved_traces(out)

@@ -57,9 +57,13 @@ summarize_yfb_attempt <- function(attempt) {
  if(attempt %in% c("attempt4","attempt5","attempt6","attempt7")) source("results/benchmark_sim/run_yfb_supervision_decision.R")
  design<-read.csv(file.path(out,"design.csv"))
  arms<-c("unsupervised","share0.05","share0.2","share0.5","canonical_w1","lasso")
- records<-list();j<-0L
+ records<-list();metadata<-list();j<-0L
  for(i in seq_len(nrow(design))) {
   if(attempt %in% c("attempt4","attempt5","attempt6","attempt7")) dstate<-yfb_decision_data(design$seed[i],design$p[i],design$variance[i],truth_mode=if(attempt=="attempt7")"shared" else "legacy")
+  if(attempt=="attempt7")metadata[[i]]<-data.frame(design[i,],
+    truth_mode="shared",raw_share=dstate$actual_share,prepared_share=dstate$prepared_share,
+    training_eta_sd=sd(dstate$training_eta),
+    oracle_C=frozen_reverse_cindex(dstate$oracle,dstate$tv,dstate$ev))
   for(arm in arms) {
   d<-design[i,];path<-file.path(out,sprintf("p%d_v%s_s%02d_%s.rds",d$p,d$variance,d$seed,arm))
   j<-j+1L
@@ -109,6 +113,7 @@ summarize_yfb_attempt <- function(attempt) {
  cols<-names(records[[1]])
  rows<-do.call(rbind,lapply(records,function(z)z[,cols]))
  rows<-yfb_apply_failure_penalty(rows,yaml::read_yaml("config/globals.yml")$benchmark$k_merged_yfb_desurv)
+ if(length(metadata))write.csv(do.call(rbind,metadata),file.path(out,"simulation_units.csv"),row.names=FALSE)
  write.csv(rows,file.path(out,"metrics.csv"),row.names=FALSE)
  groups<-split(rows,interaction(rows$p,rows$variance,rows$arm,drop=TRUE))
  mean_or_na<-function(x)if(all(is.na(x)))NA_real_ else mean(x,na.rm=TRUE)
@@ -134,7 +139,12 @@ summarize_yfb_attempt <- function(attempt) {
  write.csv(cells,file.path(out,"gate_cells.csv"),row.names=FALSE)
  write.csv(gate,file.path(out,"gate.csv"),row.names=FALSE)
  counts<-data.frame(attempt=attempt,expected=nrow(rows),saved=nrow(rows)-sum(rows$flags=="missing"),
-   missing=sum(grepl("missing",rows$flags)),raw_errors=sum(nzchar(rows$raw_error)),errors=sum(nzchar(rows$error)),
+   missing=sum(grepl("missing",rows$flags)),
+   raw_checkpoint_errors=sum(nzchar(rows$raw_error)&!grepl("missing",rows$raw_flags)),
+   sweep_cap_records=sum(!rows$raw_converged &
+     rows$sweeps>=yaml::read_yaml("config/globals.yml")$cavi$max_iter &
+     !nzchar(rows$raw_error),na.rm=TRUE),
+   objective_decreases=sum(rows$decreases,na.rm=TRUE),raw_errors=sum(nzchar(rows$raw_error)),errors=sum(nzchar(rows$error)),
    nonconverged=sum(!rows$converged),undefined_C=sum(!is.finite(rows$c_validation)),
    warning_records=sum(nzchar(rows$warnings)),
    all_zero_returned_states=sum(rows$all_zero_state,na.rm=TRUE),
