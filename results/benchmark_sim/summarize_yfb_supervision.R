@@ -37,17 +37,30 @@ yfb_gate_cells <- function(summary) {
 #' # summarize_yfb_attempt("attempt2")
 summarize_yfb_attempt <- function(attempt) {
  out<-file.path("results/benchmark_sim/outputs/yfb_supervision_2026-10-30",attempt)
+ if(attempt=="attempt4") source("results/benchmark_sim/run_yfb_supervision_decision.R")
  design<-read.csv(file.path(out,"design.csv"))
  arms<-c("unsupervised","share0.05","share0.2","share0.5","canonical_w1","lasso")
  records<-list();j<-0L
- for(i in seq_len(nrow(design))) for(arm in arms) {
+ for(i in seq_len(nrow(design))) {
+  if(attempt=="attempt4") dstate<-yfb_decision_data(design$seed[i],design$p[i],design$variance[i])
+  for(arm in arms) {
   d<-design[i,];path<-file.path(out,sprintf("p%d_v%s_s%02d_%s.rds",d$p,d$variance,d$seed,arm))
   j<-j+1L
-  records[[j]]<-if(file.exists(path))readRDS(path)$metrics else
+  saved<-if(file.exists(path))readRDS(path) else NULL
+  records[[j]]<-if(!is.null(saved))saved$metrics else
     cbind(d,arm=arm,gamma=NA_real_,rho=if(attempt %in% c("attempt3","attempt4")).02 else .2,actual_share=NA_real_,elapsed=NA_real_,
       cor_planted=NA_real_,recovered=FALSE,false_active=7,converged=FALSE,
       c_validation=NA_real_,share=NA_real_,sweeps=NA_real_,decreases=NA_real_,
       max_beta=NA_real_,flags="missing",error="No checkpoint; inspect task_status.txt",warnings="")
+  records[[j]]$share_final_match<-NA_real_
+  records[[j]]$share_final_live<-NA_real_
+  if(attempt=="attempt4" && !is.null(saved$fit) && is.list(saved$fit$EF)) {
+    f<-saved$fit;sh<-yfb_precision_share_final(f,dstate$Y,dstate$time,dstate$event)
+    rr<-suppressWarnings(cor(dstate$truth,f$EF[[1]]));rr[!is.finite(rr)]<-0
+    records[[j]]$share_final_match<-sh[which.max(abs(rr))]
+    records[[j]]$share_final_live<-if(all(is.na(sh)))NA_real_ else median(sh,na.rm=TRUE)
+  }
+ }
  }
  for(i in seq_along(records)) if(!"rho" %in% names(records[[i]]))
    records[[i]]$rho<-.2
@@ -61,7 +74,8 @@ summarize_yfb_attempt <- function(attempt) {
   mean_false=mean_or_na(z$false_active),mean_C=mean_or_na(z$c_validation),
   C_undefined=sum(!is.finite(z$c_validation)),errors=sum(nzchar(z$error)),
   missing=sum(z$flags=="missing"),warnings=sum(nzchar(z$warnings)),
-  mean_share=mean_or_na(z$share),decreases=sum(z$decreases,na.rm=TRUE),
+  mean_share=mean_or_na(z$share),mean_share_matched=mean_or_na(z$share_final_match),
+  mean_share_live=mean_or_na(z$share_final_live),decreases=sum(z$decreases,na.rm=TRUE),
   max_beta=if(all(is.na(z$max_beta)))NA_real_ else max(z$max_beta,na.rm=TRUE))))
  write.csv(summary,file.path(out,"summary.csv"),row.names=FALSE)
  evaluated<-yfb_gate_cells(summary)

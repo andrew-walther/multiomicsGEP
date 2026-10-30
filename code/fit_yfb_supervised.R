@@ -2,7 +2,7 @@
 # Script: fit_yfb_supervised.R
 # Purpose: Opt-in M=1 nonnegative EB factorization with scaled YF Cox supervision.
 # Created: 2026-10-30
-# Dependencies: ebnm, ashr, yaml, Rcpp; existing compiled loading sweep
+# Dependencies: ebnm, ashr, yaml, Rcpp; isolated stable exponential kernel
 # ============================================================
 source("code/compute_elbo.R")
 source("code/multimodal_yfb_updates.R")
@@ -11,7 +11,7 @@ source("code/yfb_exponential_stable.R")
 
 # Normal means and Cox quantities ----
 
-#' Solve normal means and extract the exact KL from the same ebnm result
+#' Solve normal means with a synchronized prior, posterior and exact KL
 #' @param x Pseudo-observations.
 #' @param A Positive precision, scalar or vector.
 #' @param family ebnm prior family.
@@ -191,9 +191,11 @@ source("code/yfb_exponential_stable.R")
 #' # fit_yfb_supervised(list(expression=X),time,event,K=7,gamma=10)
 #' @family yfb_supervised
 #' @seealso yfb_projection, yfb_beta_prior
-fit_yfb_supervised <- function(X,time,event,K=7,alpha=.5,gamma=NULL,rho=.2,
+fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
   cohort=NULL,strata=NULL,max_iter=NULL,tol=NULL,hybrid=TRUE,beta_bound=TRUE,scaled=FALSE) {
   cfg<-yaml::read_yaml("config/globals.yml")
+  if(is.null(K)) K<-cfg$benchmark$k_merged_yfb_desurv
+  if(is.null(alpha)) alpha<-cfg$benchmark$alpha
   if(is.null(max_iter)) max_iter<-cfg$cavi$max_iter
   if(is.null(tol)) tol<-cfg$cavi$tol
   if(!is.list(X) || length(X)!=1L) stop("Only M=1 is implemented")
@@ -317,9 +319,17 @@ fit_yfb_supervised <- function(X,time,event,K=7,alpha=.5,gamma=NULL,rho=.2,
     rec<-L%*%t(F)
     change<-max(sqrt(sum((rec-old_rec)^2)/max(1,sum(old_rec^2))),
                 sqrt(sum((eta-old_eta)^2)/max(1,sum(old_eta^2))))
+    live<-colSums(F^2)>0 & colSums(L2)>0
     hist[[iter]]<-data.frame(iter=iter,objective=obj,objective_decreased=decreased,
-      change=change,share_median=median(share),share_max=max(share),
+      change=change,share_median=if(any(live))median(share[live]) else NA_real_,
+      share_max=if(any(live))max(share[live]) else NA_real_,
       max_beta=max(abs(b)),norm_L=sqrt(sum(L^2)),norm_F=sqrt(sum(F^2)))
+    for(j in seq_len(K)) {
+      hist[[iter]][[paste0("share_",j)]]<-if(live[j])share[j] else NA_real_
+      hist[[iter]][[paste0("beta_",j)]]<-b[j]
+      hist[[iter]][[paste0("norm_L_",j)]]<-sqrt(sum(L[,j]^2))
+      hist[[iter]][[paste0("norm_F_",j)]]<-sqrt(sum(F[,j]^2))
+    }
     if(any(!is.finite(c(eta,obj,L,F,b,b2)))) {flags<-c(flags,"nonfinite");break}
     if(all(L==0) || all(F==0)) {flags<-c(flags,"all_zero");break}
     if(iter>cfg$cavi$burn_in && !decreased && is.finite(old_obj) &&

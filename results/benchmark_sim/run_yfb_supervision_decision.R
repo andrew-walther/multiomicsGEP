@@ -58,6 +58,25 @@ yfb_decision_data <- function(seed,p,share) {
     truth=truth,oracle=ov$eta,actual_share=sum((a*Sc)^2)/sum(scale(tr,scale=FALSE)^2))
 }
 
+#' Recompute per-factor loading precision shares at a saved final state
+#' @param fit Experimental fitter result with named-list EF and its moments.
+#' @param Y Scaled, nonnegative patient-by-feature training matrix.
+#' @param time,event Training survival outcomes.
+#' @return Factor vector of median gene shares; NA for dead columns.
+#' @examples
+#' # yfb_precision_share_final(fit,Y,time,event)
+yfb_precision_share_final <- function(fit,Y,time,event) {
+  F<-fit$EF[[1]];live<-colSums(F^2)>0 & colSums(fit$EL2)>0
+  yc<-scale(Y,scale=FALSE)
+  pr<-yfb_projection(yc,F,fit$EF2[[1]])
+  tay<-yfb_cox(time,event,drop(pr$Z%*%fit$EBeta))
+  rec<-outer(fit$Tau,colSums(fit$EL2))
+  sur<-outer(colSums(yc^2*tay$w),fit$EBeta2*pr$s^2)*fit$gamma*fit$rho
+  out<-rep(NA_real_,ncol(F))
+  out[live]<-apply((sur/(rec+sur))[,live,drop=FALSE],2,median)
+  out
+}
+
 #' Score loading recovery and posterior survival activity without reorientation
 #' @param fit Fitter result, with matrix EF for the canonical comparator.
 #' @param d Generated paired cohorts.
@@ -112,6 +131,7 @@ yfb_calibrate_gamma <- function(rec,surv,live,target,rho) {
 #' @examples
 #' # Invoked by socket workers.
 yfb_decision_task <- function(row,out,fit_rho=.2) {
+  cfg<-yaml::read_yaml("config/globals.yml")
   d<-yfb_decision_data(row$seed,row$p,row$variance)
   prefix<-sprintf("p%d_v%s_s%02d",row$p,row$variance,row$seed)
   warnings_seen<-character()
@@ -124,7 +144,7 @@ yfb_decision_task <- function(row,out,fit_rho=.2) {
       invokeRestart("muffleWarning")
     }),error=function(e)e)
     if(inherits(ans,"error")) {
-      metrics<-data.frame(cor_planted=NA_real_,recovered=FALSE,false_active=7,
+      metrics<-data.frame(cor_planted=NA_real_,recovered=FALSE,false_active=cfg$benchmark$k_merged_yfb_desurv,
         converged=FALSE,c_validation=NA_real_,share=NA_real_,sweeps=NA_integer_,
         decreases=NA_integer_,max_beta=NA_real_,flags="error",error=conditionMessage(ans))
       fit<-NULL
@@ -135,7 +155,7 @@ yfb_decision_task <- function(row,out,fit_rho=.2) {
     fit
   }
   u<-record("unsupervised",{
-    f<-fit_yfb_supervised(list(expression=d$Y),d$time,d$event,K=7,gamma=0,scaled=TRUE)
+    f<-fit_yfb_supervised(list(expression=d$Y),d$time,d$event,K=cfg$benchmark$k_merged_yfb_desurv,gamma=0,scaled=TRUE)
     list(fit=f,metrics=yfb_decision_score(f,d))
   },0)
   # γ chosen once per dataset from the unsupervised fit's precision audit,
@@ -149,19 +169,19 @@ yfb_decision_task <- function(row,out,fit_rho=.2) {
   for(target in c(.05,.2,.5)) {
     gamma<-yfb_calibrate_gamma(rec,surv,live,target,.2)
     record(paste0("share",target),{
-      f<-fit_yfb_supervised(list(expression=d$Y),d$time,d$event,K=7,gamma=gamma,rho=fit_rho,scaled=TRUE)
+      f<-fit_yfb_supervised(list(expression=d$Y),d$time,d$event,K=cfg$benchmark$k_merged_yfb_desurv,gamma=gamma,rho=fit_rho,scaled=TRUE)
       list(fit=f,metrics=yfb_decision_score(f,d))
     },gamma)
   }
   record("canonical_w1",{
-    f<-fit_cox_on_yf(d$Y,d$time,d$event,K=7,max_iter=300,tol=1e-5,
+    f<-fit_cox_on_yf(d$Y,d$time,d$event,K=cfg$benchmark$k_merged_yfb_desurv,max_iter=cfg$cavi$max_iter,tol=cfg$cavi$tol,
       prior_LF="point_laplace",prior_beta="normal",canonicalize=TRUE,w_S=1,
-      alpha=.5,verbose=FALSE,trace_supervision=TRUE,sign_correction=FALSE)
+      alpha=cfg$benchmark$alpha,verbose=FALSE,trace_supervision=TRUE,sign_correction=FALSE)
     list(fit=f,metrics=yfb_decision_score(f,d,TRUE))
   },1)
   record("lasso",{
     set.seed(row$seed+9000)
-    f<-glmnet::cv.glmnet(d$Y,survival::Surv(d$time,d$event),family="cox",alpha=1,nfolds=5)
+    f<-glmnet::cv.glmnet(d$Y,survival::Surv(d$time,d$event),family="cox",alpha=1,nfolds=cfg$cavi$n_cv_folds)
     risk<-drop(predict(f,d$Yv,s="lambda.min",type="link"))
     cf<-drop(as.matrix(coef(f,s="lambda.min")))
     rr<-suppressWarnings(cor(cf,d$truth));if(!is.finite(rr))rr<-0

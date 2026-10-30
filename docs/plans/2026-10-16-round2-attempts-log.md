@@ -2385,3 +2385,21 @@ attempt separately, including errors and missing records. This tests whether
 numerically faithful updates repair the observed failure; it makes no claim
 in advance that they solve recovery, false activity or convergence. No real
 or external validation data enter this test.
+
+Diagnostic follow-up (no arm or criterion change): completed checkpoints remain
+unchanged. Later diagnostics exclude dead columns from precision-share traces
+and retain factor-specific coefficients and norms. The original aggregate
+trace medians included artificial scale floors for dead columns and must not
+be interpreted as meaningful survival precision. Final-state matched-factor
+and live-factor shares are recomputed in derived metrics from each saved state;
+they are explicitly distinguished from the original sweep trace. This affects
+no recovery, false-active, convergence or gate verdict. Configured K, alpha,
+iteration cap, tolerance and fold count are read from globals rather than
+restated as fitting defaults; values are unchanged for these registrations.
+
+A full-suite run after adding quadrature tests exposed seven failures because
+a test assigned to the global mathematical constant pi. The test is isolated
+in a local environment and an assertion checks that pi remains unchanged.
+An intermediate edit to that isolation had an unmatched parenthesis; it was
+caught on loading and corrected before the final acceptance run. Neither
+failure occurred in a simulation worker or changed any registered result.

@@ -23,3 +23,18 @@ run_test("Gate S: all three boundaries must hold in two paired cells", {
   bad<-x;bad$errors[5]<-1
   assert_false(yfb_gate_cells(bad)$gate$passed)
 })
+
+run_test("Final-state precision share is invariant to reciprocal factor scaling", {
+  set.seed(82);Y<-matrix(rexp(40*10),40,10)
+  F<-matrix(rexp(30),10,3);L<-matrix(rexp(120),40,3)
+  f<-list(EF=list(F),EF2=list(F^2+.01),EL2=L^2+.1,Tau=rep(2,10),
+          EBeta=c(.2,-.3,.1),EBeta2=c(.2,-.3,.1)^2+.01,gamma=10,rho=.2)
+  t<-rexp(40);e<-rep(c(0,1),20)
+  a<-yfb_precision_share_final(f,Y,t,e)
+  cc<-c(.1,2,5);f$EF[[1]]<-sweep(F,2,cc,"*")
+  f$EF2[[1]]<-sweep(f$EF2[[1]],2,cc^2,"*")
+  f$EL2<-sweep(f$EL2,2,cc^2,"/")
+  assert_near(a,yfb_precision_share_final(f,Y,t,e),1e-12)
+  f$gamma<-0
+  assert_near(yfb_precision_share_final(f,Y,t,e),rep(0,3),1e-12)
+})

@@ -90,3 +90,16 @@ run_test("YFBS: bounded marginal prior fits the saved optimizer-failure fixture"
   start<-ashr::normalmix(c(.75,.25),c(0,0),c(0,max(.05,sd(msg$x))))
   assert_true(ll(g)>=ll(start)-1e-7)
 })
+run_test("YFBS: loading-precision traces exclude dead factors", {
+  set.seed(32)
+  x<-matrix(rexp(100*20),100,20)
+  a<-fit_yfb_supervised(list(expression=x),rexp(100),rep(c(0,1),50),K=7,
+                         gamma=1,max_iter=8)
+  h<-a$history
+  expected<-vapply(seq_len(nrow(h)),function(i) {
+    vals<-as.numeric(h[i,paste0("share_",seq_len(7))])
+    if(all(is.na(vals)))NA_real_ else median(vals,na.rm=TRUE)
+  },0.)
+  assert_near(h$share_median,expected,1e-12)
+  assert_true(any(is.na(as.matrix(h[,paste0("share_",seq_len(7))]))))
+})
