@@ -2279,3 +2279,67 @@ No criterion will be edited after results. Only a pass permits real training CV.
 If passed, run paired one-at-a-time ablations removing the hybrid start, damping,
 and β bound at the winning target. If failed, diagnose saved sweep trajectories
 before registering another numbered attempt. Original results remain immutable.
+
+S-1 launch note: the first sandboxed launch could not open a local server
+socket, before worker creation or any fit. Reran the identical registered
+command with local-socket permission. No statistical result came from the
+failed launch. Focused tests exposed and repaired a residual-variance matrix
+expression and undefined dead-prior pseudo-observations before launch; the
+regression fixtures are retained. These did not change the registered arms.
+
+## 2026-10-30 — Supervision decision test, attempt S-2 (registered before execution)
+
+**Diagnosis from S-1.** Dead factor columns had A_R=0 while the finite floor in
+projection scaling produced a nonzero A_S. The common median over all genes
+and factors was then undefined when most columns were dead. Those datasets
+saved the unsupervised checkpoint but could not start their supervised arms.
+This is a calibration error, not evidence that supervision works or fails.
+Original checkpoints and task errors remain under attempt1. Report their
+counts alongside S-2; missing arms cannot be treated as converged or recovered.
+
+**Single correction.** Compute the median share over live factors only, defined
+by positive loading norm and positive activity second moments. Solve the
+median-share equation numerically in log γ, rather than commuting the median
+through an odds transformation. A regression test excludes dead columns and
+asserts the attained target. This changes no fitting update or outcome metric.
+
+**Arms and gate.** Repeat all S-1 paired seeds, dimensions, variance cells,
+controls and six arms under attempt2, with the corrected calibration only.
+The original Gate S is unchanged: a single target at p=2000 must improve
+recovery by ≥3/10 in at least two variance cells, each with mean false-active
+≤1 and ≥90% convergence. No external cohort is accessed. S-1 is retained as
+a failed execution and is not pooled into S-2.
+
+## 2026-10-30 — Supervision decision test, attempt S-3 (registered before execution)
+
+**Diagnoses from S-2 and small reproductions.** Strong messages produce
+pseudo-observations around 10^9 with SE around 10^6. In a reproduced factor,
+ebnm's returned second moment loses the slab variance, while the compiled
+sequential posterior retains it. Another reproduced all-zero pseudo-vector
+with precision above 10^22 yields a slightly negative KL from optimizer
+round-off. A fixed failing message is saved as a regression fixture. Four
+paired damping diagnostics (ρ=.2,.02,.002,.0002 at the same γ) all fail,
+through posterior disagreement, marginal-likelihood optimization, or KL.
+Thus damping alone has not repaired the model.
+
+**Additional comparison defect.** The γ=0 reference inherited the Cox-score
+initialization, so it was not a strictly unsupervised factorization. A new test
+fails when its loadings depend on enabling that start. Force the start off
+when γ=0; its subsequent Cox fit remains allowed. S-1/S-2 cannot establish a
+clean comparison with an unsupervised reference and are retained separately.
+
+**Corrections.** Normalize each ebnm problem by its median pseudo-SE and map
+posterior moments and prior scales back; KL is invariant under this map.
+Require agreement of both first and second loading moments with the compiled
+sweep. Numerical failures return the last coherent state, a failure flag,
+failing sweep and message, and all completed sweep traces. They cannot be
+reported as convergence. Use ρ=.02 for the revised supervised arms, retaining
+the γ values calibrated with the original .2 denominator; this deliberately
+reduces their effective F messages tenfold without reducing β's likelihood
+weight. Report the attained shares rather than calling them target matches.
+
+**Design and gate.** Repeat the full S-1 grid and six arms with these corrections
+under attempt3. Ten paired seeds per dimension and variance cell. Keep Gate S
+exactly unchanged, including the false-active and convergence requirements.
+This is a numerical-stability attempt, not a relaxation of the scientific gate.
+The prior family and slab bounds are unchanged. No external data are accessed.

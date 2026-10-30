@@ -23,15 +23,24 @@ source("code/select_K.R")
  yfb_ebnm <- function(x, A, family, g = NULL) {
   A <- rep_len(A,length(x))
   if(any(!is.finite(c(x,A))) || any(A<=0)) stop("Invalid normal-means message")
-  args <- list(x=x,s=1/sqrt(A),prior_family=family,
+  # Normal-means equivariance keeps the median pseudo-SE near one. This
+  # avoids near-point-mass optimizer errors at precisions above 10^20.
+  cs<-median(1/sqrt(A)); xs<-x/cs; As<-A*cs^2
+  gs<-g
+  if(!is.null(gs)) for(field in intersect(c("scale","sd","mean","shift"),names(gs)))
+    gs[[field]]<-gs[[field]]/cs
+  args <- list(x=xs,s=1/sqrt(As),prior_family=family,
     output=c("posterior_mean","posterior_second_moment","fitted_g","log_likelihood"))
-  if(is.null(g)) args$mode <- 0 else {args$g_init<-g;args$fix_g<-TRUE}
+  if(is.null(gs)) args$mode <- 0 else {args$g_init<-gs;args$fix_g<-TRUE}
   q <- do.call(ebnm::ebnm,args)
   mean <- q$posterior$mean; second <- q$posterior$second_moment
-  kl <- -compute_ebnm_kl(q$log_likelihood,A,x,mean,second)
+  kl <- -compute_ebnm_kl(q$log_likelihood,As,xs,mean,second)
   if(any(!is.finite(c(mean,second,kl))) || kl < -1e-5*length(x))
     stop("Invalid ebnm posterior or KL")
-  list(mean=mean,second=second,g=q$fitted_g,kl=kl)
+  gout<-q$fitted_g
+  for(field in intersect(c("scale","sd","mean","shift"),names(gout)))
+    gout[[field]]<-gout[[field]]*cs
+  list(mean=mean*cs,second=second*cs^2,g=gout,kl=kl)
 }
 
 #' Fit a bounded point-normal prior by marginal likelihood
@@ -167,7 +176,7 @@ fit_yfb_supervised <- function(X,time,event,K=7,alpha=.5,gamma=NULL,rho=.2,
   Yc<-scale(Y,scale=FALSE)
   sv<-svd(Y,nu=K,nv=K)
   F<-abs(sv$v[,seq_len(K),drop=FALSE])
-  if(hybrid) {
+  if(hybrid && gamma>0) {
     score<-drop(crossprod(Yc,yfb_cox(time,event,rep(0,n),strata)$u))
     F[,K-1]<-pmax(score,0);F[,K]<-pmax(-score,0)
   }
@@ -189,7 +198,11 @@ fit_yfb_supervised <- function(X,time,event,K=7,alpha=.5,gamma=NULL,rho=.2,
   }
   hist<-list();converged<-FALSE;flags<-character(); old_obj<-NA_real_
   old_rec<-L%*%t(F);old_eta<-drop(Z%*%b)
+  failure<-NULL; last_state<-NULL
+  tryCatch({
   for(iter in seq_len(max_iter)) {
+    last_state<-list(L=L,L2=L2,F=F,F2=F2,tau=tau,b=b,b2=b2,
+      gL=gL,gF=gF,gB=gB,Z=Z,V=V,pr=yfb_projection(Yc,F,F2))
     projection<-yfb_projection(Yc,F,F2);Z<-projection$Z;V<-projection$V;s<-projection$s
     eta<-drop(Z%*%b);tay<-yfb_cox(time,event,eta,strata)
     w<-gamma*tay$w;h<-gamma*tay$h
@@ -235,7 +248,9 @@ fit_yfb_supervised <- function(X,time,event,K=7,alpha=.5,gamma=NULL,rho=.2,
       # posterior and gives its marginal likelihood for the atomic KL.
       q<-if(isTRUE(prior$point_mass)) priorfit else
         yfb_ebnm(z$x,1/z$s2,"point_exponential",gp)
-      if(max(abs(q$mean-z$EF))>1e-5*max(1,abs(z$EF))) stop("Sequential posterior mismatch")
+      if(max(abs(q$mean-z$EF))>1e-5*max(1,abs(z$EF)) ||
+         max(abs(q$second-z$EF2))>1e-5*max(1,abs(z$EF2)))
+        stop("Sequential posterior mismatch")
       F[,k]<-q$mean;F2[,k]<-q$second;gF[[k]]<-q$g;klF[k]<-q$kl
       pr<-yfb_projection(Yc,F,F2,s);Z<-pr$Z;V<-pr$V
       share[k]<-median(aS/(aR+aS))
@@ -279,6 +294,13 @@ fit_yfb_supervised <- function(X,time,event,K=7,alpha=.5,gamma=NULL,rho=.2,
     }
     old_obj<-obj;old_rec<-rec;old_eta<-eta
   }
+  },error=function(e) {failure<<-list(message=conditionMessage(e),sweep=iter,
+    factor=k,norm_L=sqrt(sum(L^2)),norm_F=sqrt(sum(F^2)),max_beta=max(abs(b)),
+    pseudo_range=if(exists("z",inherits=FALSE))range(z$x,na.rm=TRUE) else NULL)})
+  if(!is.null(failure)) {
+    for(nm in names(last_state)) assign(nm,last_state[[nm]])
+    flags<-c(flags,"numerical_failure");converged<-FALSE
+  }
   if(!converged && !length(flags)) flags<-"max_iter"
   # Unsupervised factorization followed by an untempered Cox fit; survival
   # never entered its L/F updates. Use identical machinery for fair comparison.
@@ -292,10 +314,14 @@ fit_yfb_supervised <- function(X,time,event,K=7,alpha=.5,gamma=NULL,rho=.2,
       q<-yfb_ebnm(bb/aa,aa,"point_normal",gB);b[k]<-q$mean;b2[k]<-q$second
     }
   }
+  history<-if(length(hist))do.call(rbind,hist) else data.frame(iter=0L,
+    objective=NA_real_,objective_decreased=FALSE,change=NA_real_,
+    share_median=NA_real_,share_max=NA_real_,max_beta=max(abs(b)),
+    norm_L=sqrt(sum(L^2)),norm_F=sqrt(sum(F^2)))
   list(EL=L,EL2=L2,EF=setNames(list(F),names(X)),EF2=setNames(list(F2),names(X)),
     EBeta=b,EBeta2=b2,g_beta=gB,g_L=gL,g_F=gF,Tau=tau,s=pr$s,
-    Z=Z,VZ=V,eta=drop(Z%*%b),history=do.call(rbind,hist),converged=converged,
-    flags=flags,inactive=which(colSums(F^2)==0 | colSums(L^2)==0),gamma=gamma,rho=rho,
+    Z=Z,VZ=V,eta=drop(Z%*%b),history=history,converged=converged,
+    flags=flags,failure=failure,inactive=which(colSums(F^2)==0 | colSums(L^2)==0),gamma=gamma,rho=rho,
     roles=classify_factors(list(EL=L,EF=F,EBeta=b),Y,
       beta_thresh=cfg$k_selection$beta_threshold,pve_thresh=cfg$k_selection$pve_threshold))
 }

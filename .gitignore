@@ -47,3 +47,6 @@ results/**/*.rds
 
 # Patient-level training CV manifests remain local with the controlled inputs.
 results/benchmark_sim/outputs/round2/*/folds.csv
+
+# Patient-level training cache from the October 30 precision audit (never commit).
+results/benchmark_sim/outputs/yfb_supervision_2026-10-30/training_only.rds

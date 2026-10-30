@@ -83,7 +83,26 @@ yfb_decision_score <- function(fit,d,canonical=FALSE) {
     sweeps=if(canonical)fit$history$n_iter else nrow(fit$history),
     decreases=if(canonical)sum(diff(fit$history$elbo_full)< -1e-8*abs(head(fit$history$elbo_full,-1))) else sum(fit$history$objective_decreased),
     max_beta=max(abs(fit$EBeta)),flags=if(canonical)"" else paste(fit$flags,collapse=";"),
-    error="",stringsAsFactors=FALSE)
+    error=if(!canonical && !is.null(fit$failure))fit$failure$message else "",stringsAsFactors=FALSE)
+}
+
+#' Calibrate a fixed multiplier on identifiable, live loading columns
+#' @param rec,surv Gene-by-factor nonnegative reconstruction and survival precision.
+#' @param live Logical factor mask; dead columns carry no defined relative precision.
+#' @param target Desired median survival share in (0,1).
+#' @param rho Fixed damping applied to the survival loading message.
+#' @return Positive gamma solving median(ργA_S/(A_R+ργA_S)) = target.
+#' @examples
+#' yfb_calibrate_gamma(matrix(2,3,2),matrix(.1,3,2),c(TRUE,FALSE),.2,.2)
+yfb_calibrate_gamma <- function(rec,surv,live,target,rho) {
+  ratio<-as.vector(surv[,live,drop=FALSE]/rec[,live,drop=FALSE])
+  if(!length(ratio) || any(!is.finite(ratio)) || any(ratio<=0))
+    stop("Cannot calibrate positive precision on live factors")
+  # Solve directly: even-length sample medians need not commute exactly
+  # with the nonlinear odds transformation.
+  root<-uniroot(function(logg)median(plogis(log(ratio)+log(rho)+logg))-target,
+                c(-700,700),tol=1e-10)$root
+  exp(root)
 }
 
 #' Fit all paired arms for one generated dataset and checkpoint each result
@@ -92,7 +111,7 @@ yfb_decision_score <- function(fit,d,canonical=FALSE) {
 #' @return Small status string; errors are saved as rows, not omitted.
 #' @examples
 #' # Invoked by socket workers.
-yfb_decision_task <- function(row,out) {
+yfb_decision_task <- function(row,out,fit_rho=.2) {
   d<-yfb_decision_data(row$seed,row$p,row$variance)
   prefix<-sprintf("p%d_v%s_s%02d",row$p,row$variance,row$seed)
   warnings_seen<-character()
@@ -110,7 +129,7 @@ yfb_decision_task <- function(row,out) {
         decreases=NA_integer_,max_beta=NA_real_,flags="error",error=conditionMessage(ans))
       fit<-NULL
     } else {fit<-ans$fit;metrics<-ans$metrics}
-    metrics<-cbind(row,arm=arm,gamma=gamma,actual_share=d$actual_share,
+    metrics<-cbind(row,arm=arm,gamma=gamma,rho=fit_rho,actual_share=d$actual_share,
       elapsed=proc.time()[3]-started,metrics,warnings=paste(unique(warnings_seen),collapse=" | "))
     saveRDS(list(metrics=metrics,fit=fit),path)
     fit
@@ -124,14 +143,13 @@ yfb_decision_task <- function(row,out) {
   if(is.null(u)) stop("Unsupervised reference failed; cannot calibrate gamma")
   pr<-yfb_projection(scale(d$Y,scale=FALSE),u$EF[[1]],u$EF2[[1]])
   tay<-yfb_cox(d$time,d$event,u$eta)
-  ratios<-outer(colSums(scale(d$Y,scale=FALSE)^2*tay$w),u$EBeta2*pr$s^2)/
-    outer(u$Tau,colSums(u$EL2))
-  ratio<-median(ratios)
-  if(!is.finite(ratio) || ratio<=0) stop("Cannot calibrate a positive survival share")
+  rec<-outer(u$Tau,colSums(u$EL2))
+  surv<-outer(colSums(scale(d$Y,scale=FALSE)^2*tay$w),u$EBeta2*pr$s^2)
+  live<-colSums(u$EF[[1]]^2)>0 & colSums(u$EL2)>0
   for(target in c(.05,.2,.5)) {
-    gamma<-target/(1-target)/(.2*ratio)
+    gamma<-yfb_calibrate_gamma(rec,surv,live,target,.2)
     record(paste0("share",target),{
-      f<-fit_yfb_supervised(list(expression=d$Y),d$time,d$event,K=7,gamma=gamma,rho=.2,scaled=TRUE)
+      f<-fit_yfb_supervised(list(expression=d$Y),d$time,d$event,K=7,gamma=gamma,rho=fit_rho,scaled=TRUE)
       list(fit=f,metrics=yfb_decision_score(f,d))
     },gamma)
   }
@@ -160,12 +178,13 @@ if(sys.nframe()==0L) {
  seeds<-if(length(args)>1)as.integer(args[2]) else 10L
  attempt<-if(length(args)>2)args[3] else "attempt1"
  out<-file.path("results/benchmark_sim/outputs/yfb_supervision_2026-10-30",attempt)
+ fit_rho<-if(attempt=="attempt3") .02 else .2
  dir.create(out,recursive=TRUE,showWarnings=FALSE)
  design<-expand.grid(seed=seq_len(seeds),p=c(50L,2000L),variance=c(.0025,.01,.05))
  write.csv(design,file.path(out,"design.csv"),row.names=FALSE)
  cl<-parallel::makePSOCKcluster(cores,outfile=file.path(out,"workers.log"))
  on.exit(parallel::stopCluster(cl))
- parallel::clusterExport(cl,c("out","yfb_decision_data","yfb_decision_score","yfb_decision_task"))
+ parallel::clusterExport(cl,c("out","fit_rho","yfb_decision_data","yfb_decision_score","yfb_decision_task","yfb_calibrate_gamma"))
  parallel::clusterEvalQ(cl,{
    Sys.setenv(OPENBLAS_NUM_THREADS=1,OMP_NUM_THREADS=1,VECLIB_MAXIMUM_THREADS=1)
    source("code/fit_yfb_supervised.R");source("code/simulate_multimodal_yfb.R")
@@ -173,6 +192,6 @@ if(sys.nframe()==0L) {
    multimodal_yfb_use_cpp();NULL
  })
  status<-parallel::parLapplyLB(cl,split(design,seq_len(nrow(design))),function(row)
-   tryCatch(yfb_decision_task(row,out),error=function(e)paste("TASK ERROR",conditionMessage(e))))
+   tryCatch(yfb_decision_task(row,out,fit_rho),error=function(e)paste("TASK ERROR",conditionMessage(e))))
  writeLines(unlist(status),file.path(out,"task_status.txt"))
 }

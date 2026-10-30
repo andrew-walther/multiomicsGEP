@@ -52,3 +52,31 @@ run_test("YFBS: collapsed point-exponential columns retain exact zero KL", {
                          gamma=1,max_iter=3)
   assert_finite(a$EF[[1]]);assert_true(all(a$EF2[[1]]>=a$EF[[1]]^2-1e-10))
 })
+run_test("YFBS: numerical failure retains coherent moments and a diagnosed flag", {
+  original <- yfb_ebnm
+  calls <- 0L
+  assign("yfb_ebnm",function(...) {
+    calls <<- calls+1L
+    # Ten warm-up passes at three factors precede the first activity update.
+    if(calls==31L) stop("injected numerical failure")
+    original(...)
+  },envir=.GlobalEnv)
+  a<-tryCatch(fit_yfb_supervised(list(expression=ys),ts,ds,K=3,max_iter=8),
+              finally=assign("yfb_ebnm",original,envir=.GlobalEnv))
+  assert_false(a$converged);assert_true("numerical_failure" %in% a$flags)
+  assert_equal(a$failure$message,"injected numerical failure")
+  assert_finite(a$EF[[1]]);assert_finite(a$eta)
+})
+run_test("YFBS: an unsupervised factorization never uses the Cox-score start", {
+  a<-fit_yfb_supervised(list(expression=ys),ts,ds,K=3,gamma=0,hybrid=TRUE,max_iter=8)
+  b<-fit_yfb_supervised(list(expression=ys),ts,ds,K=3,gamma=0,hybrid=FALSE,max_iter=8)
+  assert_near(a$EF[[1]],b$EF[[1]],1e-12)
+  assert_near(a$EL,b$EL,1e-12)
+})
+run_test("YFBS: zero signal with very large precision is the exact point mass", {
+  msg<-readRDS("tests/fixtures/yfb-large-precision-message.rds")
+  q<-yfb_ebnm(msg$x,msg$A,"point_exponential")
+  assert_near(q$mean,rep(0,50),1e-30)
+  assert_near(q$second,rep(0,50),1e-30)
+  assert_near(q$kl,0,1e-10)
+})
