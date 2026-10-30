@@ -5581,3 +5581,60 @@ single-log D4 fit has strictly positive variances in every factor. An empirical
 Bayes prior can nevertheless collapse to a point mass with weak evidence; that
 is distinct from losing variance during storage. The new opt-in fitter will
 bound the point-normal slab instead of modifying historical defaults.
+
+## 2026-10-30 — Adopt preprocessing alignments for the supervision evaluation
+
+The approved realignment plan adopts single logging, the existing TCGA RSEM
+source (`original/TCGA_PAAD.rds`), and training-only gene names selected by
+per-cohort combined mean/variance ranks with intersection. For the new fitter
+only, divide nonnegative single-logged expression by each cohort's feature SD
+without centering; center inside the survival projection. Validation uses its
+own within-cohort SD, a distribution-adaptive transform that requires a cohort
+rather than a single new patient. No external outcomes enter scaling or choice.
+
+Keep the D4 missing-feature rule (intersect genes and subset matching loading
+rows). Keep the wrapper's first-occurrence duplicate-symbol rule. The internal
+PACA-AU loaders already median-collapse symbols before that wrapper; adopting
+one rule across raw sources will require removing that earlier aggregation
+when those pipelines are next changed. No such loader change is authorized here.
+Keep methylation β-values and within-cohort KNN imputation; the primary set has
+50 donors, while the existing imputation pool contains all 67 usable donors.
+Cross-reactive and SNP probe filtering is required when multimodal work resumes.
+Pooled external analyses must use one record per donor (568 unique individuals),
+with donor-level or cohort-stratified resampling. These records do not authorize
+a new external analysis. Survival pre-screening remains an ablation only.
+
+## 2026-10-30 — Normalized-projection implementation details and balance audit
+
+The new engine is opt-in; historical defaults are unchanged. Its reconstruction
+and Cox projection use different matrices, so the existing compiled sequential
+sweep is reused through its separate sufficient statistics. Fit a common
+point-exponential prior for a loading column, freeze it during the gene-wise
+sweep, and extract KL from an ebnm fixed-prior evaluation at the same recorded
+sequential messages. Do not adopt the old sweep's post-posterior prior refit.
+
+The bounded point-normal marginal likelihood is optimized over slab proportion
+and log SD, then evaluated by ebnm with that exact prior fixed. This avoids
+post-hoc clipping of an unconstrained prior, which would invalidate its KL.
+
+Two explicit specification refinements preserve the intended invariances. Use
+the exact loading norm for live factors, with a finite floor only at zero,
+instead of an additive epsilon that changes under arbitrary rescaling. Perform
+RMS canonicalization at the sweep boundary, carrying both moments and prior
+scales, so the projection scaling remains fixed during the gene-wise sweep.
+β and its prior remain in the normalized projection units throughout.
+
+The analytical and direct-sum training precision audit confirms that the simple
+feature/event γ does not ensure substantial loading supervision. Use the
+registered median-precision-share targets instead. DeSurv's installed revision
+cc9d4c2486b3125704ab71eea61f35e040a40080 normalizes squared reconstruction by
+2‖X‖², and Cox log likelihood by 2/N_event, scales Cox gradients relative to
+reconstruction gradients, clamps multiplicative loading ratios to [0.2,5], and
+backtracks against its actual penalized loss (src/functions.cpp, lines 118–132,
+198–249). Its α therefore has a different meaning from the proposed γ.
+Source: https://github.com/rashidlab/DeSurv/blob/cc9d4c2486b3125704ab71eea61f35e040a40080/src/functions.cpp.
+
+A smoke test exposed point-mass columns: the compiled sweep intentionally has
+no pseudo-observation for a fully dead prior. Keep q=g=δ₀ and KL=0 directly,
+instead of passing its undefined pseudo-observation back to ebnm. This is a
+boundary-case implementation correction, made before the registered run.

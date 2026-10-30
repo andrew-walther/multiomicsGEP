@@ -2240,3 +2240,42 @@ stopping/objective consistency before a panel, retaining original gates.
 Final software/report checks after Task2-9: full suite710/0 in106.49s,
 all10 benchmark hashes match, rendered write-up/meeting/evidence/book outputs.
 No retry or panel follows. Detailed run objects stay ignored.
+
+## 2026-10-30 — Supervision decision test, attempt S-1 (registered before execution)
+
+**Question.** Do the normalized projection, nonnegative priors, bounded β prior,
+hybrid start and damped sequential F messages jointly improve program recovery?
+
+**Fixed design.** Ten paired seeds (1–10), n=400 training and 120 independent
+synthetic validation patients, p∈{50,2000}, planted raw centered variance share
+∈{0.0025,0.01,0.05}; K=7; 300 sweeps, tolerance 1e-5. Extend the calibrated A1
+bed (noise .25, coefficient 3.3). Rescale the third activity to each variance
+share and regenerate expression-only survival outcomes (the original generator
+also included methylation). Feature offsets preserve Gaussian noise and ensure
+nonnegative inputs; center only in the Cox projection. Report actual shares.
+This design differs from the signed A1 input and is required by the new prior.
+
+**Arms.** Unsupervised new engine (γ=0), three fixed γ values targeting median
+F survival precision share 0.05, 0.2, 0.5 at the paired unsupervised fit, canonical
+historical fitter w_S=1 with point-Laplace priors, and five-fold training-CV Cox
+lasso at lambda.min. Calibrate γ once from the untempered two-step reference,
+including the fixed ρ=.2 damping in the denominator. Do not update γ during
+fitting. The common median is over genes and factors, not an oracle match.
+No real or external cohort is used for any choice.
+
+**Metrics.** A1 recovered-active: loading |r|≥.7, coefficient of correct sign,
+and |Eβ|≥1.96 posterior SD. False-active counts every significant unmatched
+factor (including all factors when no loading match reaches .7). Failed fits
+remain non-converged, unrecovered, with seven false-active programs. Count
+undefined validation C separately. Save each fit, all sweep traces, warnings,
+errors, inactive factors and each arm's γ. Lasso is a prediction ceiling;
+its loading coefficient correlation is descriptive, without a factor-count gate.
+
+**Gate S, unchanged.** At p=2000 a single share-target arm must exceed γ=0
+recovery by at least 3 of 10 datasets in at least two variance cells, with mean
+false-active ≤1 and ≥90% convergence. Apply the false-active and convergence
+requirements in each of those qualifying cells (the conservative interpretation).
+No criterion will be edited after results. Only a pass permits real training CV.
+If passed, run paired one-at-a-time ablations removing the hybrid start, damping,
+and β bound at the winning target. If failed, diagnose saved sweep trajectories
+before registering another numbered attempt. Original results remain immutable.

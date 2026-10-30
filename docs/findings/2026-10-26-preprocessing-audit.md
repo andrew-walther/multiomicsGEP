@@ -198,7 +198,8 @@ The input scale and the loading prior disagree. Either the data should stay nonn
 
 ## 5. Proposed alignments
 
-Each item is one proposed choice per step. None is adopted. The saved benchmark numbers must not be quoted for inputs that differ from those that produced them.
+The recommendations below were proposed on October 26. The approved October 30
+dispositions follow this historical list; they supersede its pending-decision labels. The saved benchmark numbers must not be quoted for inputs that differ from those that produced them.
 
 1. **Log transform: exactly once for every RNA-seq cohort.** Remove the `platform_log_transform` step for cohorts that `load_data_internal()` already logs (TCGA, Dijk, PACA-AU RNA-seq), or move all logging into the project code and leave the loader to read files only. Add a test that a raw input comes out as log2(x+1) applied once. *For Andrew's decision.*
 2. **One TCGA expression source in both analyses.** Either use `TCGA_PAAD.rds` (RSEM, logged once) for the multimodal analysis as well, or use the TMM-CPM file for the single-modality analysis. The first keeps the five-cohort benchmark intact. The second matches the normalization intended for ICGC. *For Andrew's decision.*
@@ -221,3 +222,24 @@ Each item is one proposed choice per step. None is adopted. The saved benchmark 
 - Upstream methylation probe QC beyond sex-chromosome removal.
 - The number of imputed ICGC methylation values.
 - The effect of any proposed change other than the single log (measured separately in [the single-log check](2026-10-26-single-log-check.md)) on fitted programs or external C-index.
+
+## October 30 dispositions for Section 5
+The approved realignment plan adopts single logging, the existing TCGA RSEM
+source (`original/TCGA_PAAD.rds`), and training-only gene names selected by
+per-cohort combined mean/variance ranks with intersection. For the new fitter
+only, divide nonnegative single-logged expression by each cohort's feature SD
+without centering; center inside the survival projection. Validation uses its
+own within-cohort SD, a distribution-adaptive transform that requires a cohort
+rather than a single new patient. No external outcomes enter scaling or choice.
+
+Keep the D4 missing-feature rule (intersect genes and subset matching loading
+rows). Keep the wrapper's first-occurrence duplicate-symbol rule. The internal
+PACA-AU loaders already median-collapse symbols before that wrapper; adopting
+one rule across raw sources will require removing that earlier aggregation
+when those pipelines are next changed. No such loader change is authorized here.
+Keep methylation β-values and within-cohort KNN imputation; the primary set has
+50 donors, while the existing imputation pool contains all 67 usable donors.
+Cross-reactive and SNP probe filtering is required when multimodal work resumes.
+Pooled external analyses must use one record per donor (568 unique individuals),
+with donor-level or cohort-stratified resampling. These records do not authorize
+a new external analysis. Survival pre-screening remains an ablation only.
