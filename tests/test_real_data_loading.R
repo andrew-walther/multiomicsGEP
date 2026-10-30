@@ -452,6 +452,29 @@ if (!real_data_available) {
 }
 
 # =============================================================================
+# T8: every cohort is logged exactly once. A cohort whose loader output is
+# already on a log scale (max below 30; log2(TPM+1) tops out near 20, while
+# raw TPM/counts run to thousands) must not be logged again in preprocessing.
+# =============================================================================
+
+cat("\n=== T8: single log2(x+1) per cohort ===\n")
+
+if (!real_data_available) {
+  cat("  [SKIPPED] T8.1 (single log): PDAC_DATA_ROOT not set/found\n")
+} else {
+  run_test("T8.1: platform_log_transform is FALSE for every cohort the loader already logs", {
+    flags <- unlist(cfg$pdac$platform_log_transform)
+    for (ds in names(flags)) {
+      mx <- max(load_pdac_raw(ds, pdac_root)$Y, na.rm = TRUE)
+      if (mx < 30) assert_false(flags[[ds]],
+        msg = sprintf("%s loader output max %.1f is already log scale but flag is TRUE", ds, mx))
+      else assert_true(flags[[ds]],
+        msg = sprintf("%s loader output max %.1f is raw scale but flag is FALSE", ds, mx))
+    }
+  })
+}
+
+# =============================================================================
 # Summary
 # =============================================================================
 

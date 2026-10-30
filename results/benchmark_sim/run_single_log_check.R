@@ -48,7 +48,11 @@ harrell_c <- function(risk, time, status) {
 }
 
 # Flags: historical (double) versus each cohort logged once (single) ----
-flags <- list(double = unlist(cfg$pdac$platform_log_transform),
+# The double arm is spelled out because globals.yml now holds the single-log flags.
+double_flags <- setNames(rep(FALSE, length(cfg$pdac$platform_log_transform)),
+                         names(cfg$pdac$platform_log_transform))
+double_flags[c("TCGA_PAAD", "Dijk", "PACA_AU_seq")] <- TRUE
+flags <- list(double = double_flags,
               single = setNames(rep(FALSE, length(cfg$pdac$platform_log_transform)),
                                 names(cfg$pdac$platform_log_transform)))
 

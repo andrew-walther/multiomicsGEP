@@ -206,15 +206,17 @@ pdac:
   external_cohorts: ["Dijk", "Moffitt_GEO_array", "PACA_AU_array", "PACA_AU_seq", "Puleo_array"]
   # Default local path; override with PDAC_DATA_ROOT env var
   data_root_default: "~/OneDrive - University of North Carolina at Chapel Hill/UNC Dissertation (Liu)/PDAC_data"
-  # TRUE = supplied on raw scale (apply log2(x+1)); FALSE = supplied on a log/normalised scale
-  # (microarray; CPTAC is RNA-seq supplied log2-transformed)
+  # TRUE = apply log2(x+1) in preprocessing; FALSE = the loader already returns log scale.
+  # All FALSE since 2026-10-30: the cohort loader (load_data_internal.R) already logs TCGA_PAAD,
+  # Dijk and PACA_AU_seq, so TRUE logged them twice. The frozen 2026-10-14 benchmark used the old
+  # double-log flags (TCGA_PAAD, Dijk, PACA_AU_seq = true); see DECISIONS.md, 2026-10-30.
   platform_log_transform:
-    TCGA_PAAD: true
+    TCGA_PAAD: false
     CPTAC: false
-    Dijk: true
+    Dijk: false
     Moffitt_GEO_array: false
     PACA_AU_array: false
-    PACA_AU_seq: true
+    PACA_AU_seq: false
     Puleo_array: false
 
 # ------------------------------------------------------------------------------

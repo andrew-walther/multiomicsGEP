@@ -5,6 +5,27 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-10-30 — Realignment plan approved; KL normalizer fixed; every RNA-seq cohort logged once
+
+**Decided (Andrew, with `docs/plans/2026-10-30-realignment-plan.md`).**
+- Keep the projection predictor η = (YF)β and implement the specification in
+  `docs/plans/2026-10-30-Unified-Architecture-Alignment.md`. Returning to η = Lβ with fold-in
+  prediction is the recorded fallback if supervision of F cannot be made to work under the projection.
+- Open review items are fixed first (Phase C of the plan) and merged to `main`.
+- `rebuild/unified-ssbmf` stays unmerged as a reference.
+
+**Fixed.**
+- `compute_ebnm_kl()` now counts the Gaussian log-normalizer once per pseudo-observation when the
+  precision is a scalar (the L update). Before, it entered once in total, which biased `elbo_full`
+  and `neg_kl` in `fit_cox_on_yf()` and therefore the canonical path's stopping and pruning steps.
+  Results from the canonical path that relied on those steps predate the fix.
+- Preprocessing alignment #1 is adopted: `config/globals.yml` sets `platform_log_transform` to
+  false for every cohort, because the cohort loader already logs TCGA-PAAD, Dijk and PACA-AU
+  RNA-seq. The frozen 2026-10-14 benchmark and interim write-up numbers used the double log and are
+  left as they are; the 10/26 check found the change leaves external C essentially unchanged
+  (0.625 vs 0.627). The test `T8.1` in `tests/test_real_data_loading.R` checks each cohort's
+  loader scale against its flag.
+
 ## 2026-10-26 — Merge the October 15–16 diagnostics, approve rebuild Gate 0, measure the double log
 
 **Decided (Andrew, with `docs/plans/2026-10-26-parallel-work-sessions-plan.md`).**
