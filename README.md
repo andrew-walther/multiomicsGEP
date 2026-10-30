@@ -194,3 +194,7 @@ remain under their own terms of use.
 ## Author
 
 Andrew Walther
+
+The hazard-orientation and posterior-variance regression checks are included in
+`Rscript tests/run_tests.R`. Positive Cox risk denotes shorter survival; any
+training-based reporting orientation is frozen for held-out evaluation.

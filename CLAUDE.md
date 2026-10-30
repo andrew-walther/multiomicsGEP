@@ -18,7 +18,9 @@ sign and β-variance checks), then make survival supervise F under η = (YF)β, 
 (Phase S, with a pre-registered Gate S). The execution prompt is
 [`docs/prompts/2026-10-30-codex-execution-prompt.md`](docs/prompts/2026-10-30-codex-execution-prompt.md). The 10/30
 progress-book chapter and its issue tracker record the progress. `rebuild/unified-ssbmf` is kept unmerged as a reference.
-Remind Andrew of the plan and its gate at the start of a session.
+Remind Andrew of the plan and its gate at the start of a session. The remaining
+single-block sign/variance audit is covered by `tests/test_risk_variance_audit.R`;
+its convention and findings are recorded in `DECISIONS.md`.
 
 ## Key Instructions
 

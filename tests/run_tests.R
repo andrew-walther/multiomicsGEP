@@ -57,6 +57,7 @@ source("code/load_multiomics_data.R")
 # List all test files to run
 test_files <- c(
   "tests/test_update_beta.R",
+  "tests/test_risk_variance_audit.R",
   "tests/test_update_beta_cohort.R",
   "tests/test_update_L.R",
   "tests/test_update_F.R",

@@ -5568,3 +5568,16 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 - **Reason:** A two-stage approach (first factor Y, then regress loadings on survival) does not jointly optimize the factors for survival prediction. Sharing L with a joint objective ensures the learned gene expression programs are informative for both reconstruction and prognosis.
 - **Trade-offs:** The joint objective couples genomics and survival gradients; the relative scale of the two terms is dataset-dependent and not normalized (p >> n means the genomics term dominates). This is a known limitation — adding a λ scaling parameter is an identified future direction.
 - **Affected files:** `code/fit_modular.R`, `code/update_L.R`, `code/update_beta.R`, `derivations/MF_UpdateDerivations/`
+
+
+## 2026-10-30 — Hazard orientation and posterior coefficient uncertainty
+
+The single-block implementation uses positive η for higher hazard. Its optional
+post-fit sign correction chooses orientation using training concordance with
+`reverse = TRUE`; this is a reporting convention, not a further maximization of
+the Cox partial likelihood. It must remain frozen on held-out patients. The
+correction preserves E[β²], and the update stores Var(β) + E[β]². The saved
+single-log D4 fit has strictly positive variances in every factor. An empirical
+Bayes prior can nevertheless collapse to a point mass with weak evidence; that
+is distinct from losing variance during storage. The new opt-in fitter will
+bound the point-normal slab instead of modifying historical defaults.
