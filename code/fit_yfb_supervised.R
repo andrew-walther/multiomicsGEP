@@ -140,7 +140,10 @@ source("code/yfb_exponential_stable.R")
  yfb_projection <- function(Yc,F,F2,s=NULL) {
   # Use the exact norm away from zero. An additive epsilon would violate
   # scale invariance for small, live factors; dead factors use a finite floor.
-  if(is.null(s)) s<-1/pmax(sqrt(colSums(F^2)),1e-10)
+  if(is.null(s)) {
+    norms<-sqrt(colSums(F^2));norms[norms==0]<-1
+    s<-1/norms
+  }
   list(Z=sweep(Yc%*%F,2,s,"*"),
        V=sweep(Yc^2%*%pmax(F2-F^2,0),2,s^2,"*"),s=s)
 }
@@ -162,6 +165,36 @@ source("code/yfb_exponential_stable.R")
     Y[ii,]<-sweep(X[ii,,drop=FALSE],2,sdj,"/")
   }
   Y
+}
+
+#' Canonicalize activity/loading moments without changing prediction or priors
+#'
+#' Live activities have mean E[L²]=1 even when their original RMS is tiny.
+#' If an activity is exactly zero but its loading survives through YF,
+#' normalize that loading to unit norm: its scale is otherwise unidentified.
+#' Both transformations push forward the fitted exponential prior scales.
+#' @param st List L,L2,F,F2,gL,gF and optional untouched coefficient fields.
+#' @return Same state with canonical moments/priors and orphan factor indices.
+#' @examples
+#' # yfb_canonicalize(state)
+#' @family yfb_supervised
+#' @seealso yfb_projection
+ yfb_canonicalize <- function(st) {
+  rms<-sqrt(colMeans(st$L2));live<-rms>0
+  if(any(!live & colSums(abs(st$L))>0)) stop("Nonzero activity with zero second moment")
+  cc<-rms;cc[!live]<-1
+  st$L<-sweep(st$L,2,cc,"/");st$L2<-sweep(st$L2,2,cc^2,"/")
+  st$F<-sweep(st$F,2,cc,"*");st$F2<-sweep(st$F2,2,cc^2,"*")
+  for(k in seq_along(cc)) {
+    st$gL[[k]]$scale<-st$gL[[k]]$scale/cc[k]
+    st$gF[[k]]$scale<-st$gF[[k]]$scale*cc[k]
+  }
+  norms<-sqrt(colSums(st$F^2));st$orphan<-which(!live & norms>0)
+  for(k in st$orphan) {
+    st$F[,k]<-st$F[,k]/norms[k];st$F2[,k]<-st$F2[,k]/norms[k]^2
+    st$gF[[k]]$scale<-st$gF[[k]]$scale/norms[k]
+  }
+  st
 }
 
 # Fitting ----
@@ -223,7 +256,7 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
   projection<-yfb_projection(Yc,F,F2);Z<-projection$Z;V<-projection$V
   gB<-ashr::normalmix(c(1-1/K,1/K),c(0,0),c(0,1))
   # Brief coefficient warm-up avoids an absorbing β=0 initialization.
-  for(warm in seq_len(10)) {
+  for(warm in if(gamma>0)seq_len(10) else integer()) {
     tay<-yfb_cox(time,event,drop(Z%*%b),strata)
     for(k in seq_len(K)) {
       A<-max(sum(tay$w*(Z[,k]^2+V[,k])),1e-10)
@@ -300,13 +333,9 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
     }
     # Canonicalize only at the sweep boundary: s stays fixed inside the
     # sweep; the next projection is invariant and β/gβ need no transformation.
-    cc<-sqrt(colMeans(L2));cc[cc<1e-10]<-1
-    L<-sweep(L,2,cc,"/");L2<-sweep(L2,2,cc^2,"/")
-    F<-sweep(F,2,cc,"*");F2<-sweep(F2,2,cc^2,"*")
-    for(k in seq_len(K)) {
-      gL[[k]]$scale<-gL[[k]]$scale/cc[k]
-      gF[[k]]$scale<-gF[[k]]$scale*cc[k]
-    }
+    canonical<-yfb_canonicalize(list(L=L,L2=L2,F=F,F2=F2,gL=gL,gF=gF,b=b,b2=b2,gB=gB))
+    L<-canonical$L;L2<-canonical$L2;F<-canonical$F;F2<-canonical$F2
+    gL<-canonical$gL;gF<-canonical$gF
     R<-Y-L%*%t(F)
     Q<-colSums(R^2)+colSums(L2%*%t(F2)-L^2%*%t(F^2))
     tau<-n/pmax(Q,n*1e-8)
@@ -321,7 +350,7 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
                 sqrt(sum((eta-old_eta)^2)/max(1,sum(old_eta^2))))
     live<-colSums(F^2)>0 & colSums(L2)>0
     hist[[iter]]<-data.frame(iter=iter,objective=obj,objective_decreased=decreased,
-      change=change,share_median=if(any(live))median(share[live]) else NA_real_,
+      change=change,orphan_count=length(canonical$orphan),share_median=if(any(live))median(share[live]) else NA_real_,
       share_max=if(any(live))max(share[live]) else NA_real_,
       max_beta=max(abs(b)),norm_L=sqrt(sum(L^2)),norm_F=sqrt(sum(F^2)))
     for(j in seq_len(K)) {
@@ -365,7 +394,7 @@ fit_yfb_supervised <- function(X,time,event,K=NULL,alpha=NULL,gamma=NULL,rho=.2,
   list(EL=L,EL2=L2,EF=setNames(list(F),names(X)),EF2=setNames(list(F2),names(X)),
     EBeta=b,EBeta2=b2,g_beta=gB,g_L=gL,g_F=gF,Tau=tau,s=pr$s,
     Z=Z,VZ=V,eta=drop(Z%*%b),history=history,converged=converged,
-    flags=flags,failure=failure,inactive=which(colSums(F^2)==0 | colSums(L^2)==0),gamma=gamma,rho=rho,
+    flags=flags,failure=failure,orphan=which(colSums(L2)==0 & colSums(F^2)>0),inactive=which(colSums(F^2)==0 | colSums(L^2)==0),gamma=gamma,rho=rho,
     roles=classify_factors(list(EL=L,EF=F,EBeta=b),Y,
       beta_thresh=cfg$k_selection$beta_threshold,pve_thresh=cfg$k_selection$pve_threshold))
 }

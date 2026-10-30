@@ -6,6 +6,23 @@
 # Run: Rscript results/benchmark_sim/summarize_yfb_supervision.R attempt1 [attempt2 ...]
 # ============================================================
 
+#' Enforce the registered conservative penalty without losing raw diagnostics
+#' @param rows Per-fit records, including convergence, errors and flags.
+#' @param K Number of fitted factors, used as the failed-fit false-active penalty.
+#' @return Records with raw metrics preserved; failed factor fits are unrecovered.
+#' @examples
+#' # yfb_apply_failure_penalty(records,K)
+yfb_apply_failure_penalty <- function(rows,K) {
+ rows$raw_recovered<-rows$recovered;rows$raw_false_active<-rows$false_active
+ rows$raw_converged<-rows$converged
+ failed<-!rows$converged | nzchar(rows$error) |
+   grepl("numerical_failure|nonfinite|all_zero|missing",rows$flags)
+ rows$recovered[failed]<-FALSE;rows$converged[failed]<-FALSE
+ rows$false_active[failed & rows$arm!="lasso"]<-K
+ rows$false_active[rows$arm=="lasso"]<-NA_real_
+ rows
+}
+
 #' Evaluate the pre-registered recovery, false-active and convergence gate
 #' @param summary One row per feature-count, variance-cell and arm, with n,
 #'   recovered, mean_false, converged, and errors.
@@ -23,7 +40,7 @@ yfb_gate_cells <- function(summary) {
  cells$recovery_gain<-cells$recovered-cells$baseline_recovered
  cells$qualifies<-cells$n==criteria$seeds & cells$recovery_gain>=criteria$minimum_gain &
    cells$mean_false<=criteria$maximum_false_active &
-   cells$converged>=criteria$minimum_converged & cells$errors==0
+   cells$converged>=criteria$minimum_converged
  gate<-do.call(rbind,lapply(split(cells,cells$arm),function(z)
    data.frame(arm=z$arm[1],qualifying_cells=sum(z$qualifies),
               passed=sum(z$qualifies)>=criteria$minimum_cells)))
@@ -37,18 +54,18 @@ yfb_gate_cells <- function(summary) {
 #' # summarize_yfb_attempt("attempt2")
 summarize_yfb_attempt <- function(attempt) {
  out<-file.path("results/benchmark_sim/outputs/yfb_supervision_2026-10-30",attempt)
- if(attempt=="attempt4") source("results/benchmark_sim/run_yfb_supervision_decision.R")
+ if(attempt %in% c("attempt4","attempt5")) source("results/benchmark_sim/run_yfb_supervision_decision.R")
  design<-read.csv(file.path(out,"design.csv"))
  arms<-c("unsupervised","share0.05","share0.2","share0.5","canonical_w1","lasso")
  records<-list();j<-0L
  for(i in seq_len(nrow(design))) {
-  if(attempt=="attempt4") dstate<-yfb_decision_data(design$seed[i],design$p[i],design$variance[i])
+  if(attempt %in% c("attempt4","attempt5")) dstate<-yfb_decision_data(design$seed[i],design$p[i],design$variance[i])
   for(arm in arms) {
   d<-design[i,];path<-file.path(out,sprintf("p%d_v%s_s%02d_%s.rds",d$p,d$variance,d$seed,arm))
   j<-j+1L
   saved<-if(file.exists(path))readRDS(path) else NULL
   records[[j]]<-if(!is.null(saved))saved$metrics else
-    cbind(d,arm=arm,gamma=NA_real_,rho=if(attempt %in% c("attempt3","attempt4")).02 else .2,actual_share=NA_real_,elapsed=NA_real_,
+    cbind(d,arm=arm,gamma=NA_real_,rho=if(attempt %in% c("attempt3","attempt4","attempt5")).02 else .2,actual_share=NA_real_,elapsed=NA_real_,
       cor_planted=NA_real_,recovered=FALSE,false_active=7,converged=FALSE,
       c_validation=NA_real_,share=NA_real_,sweeps=NA_real_,decreases=NA_real_,
       max_beta=NA_real_,flags="missing",error="No checkpoint; inspect task_status.txt",warnings="")
@@ -63,7 +80,7 @@ summarize_yfb_attempt <- function(attempt) {
   }
   records[[j]]$share_final_match<-NA_real_
   records[[j]]$share_final_live<-NA_real_
-  if(attempt=="attempt4" && !is.null(saved$fit) && is.list(saved$fit$EF)) {
+  if(attempt %in% c("attempt4","attempt5") && !is.null(saved$fit) && is.list(saved$fit$EF)) {
     f<-saved$fit;sh<-yfb_precision_share_final(f,dstate$Y,dstate$time,dstate$event)
     rr<-suppressWarnings(cor(dstate$truth,f$EF[[1]]));rr[!is.finite(rr)]<-0
     records[[j]]$share_final_match<-sh[which.max(abs(rr))]
@@ -75,11 +92,13 @@ summarize_yfb_attempt <- function(attempt) {
    records[[i]]$rho<-.2
  cols<-names(records[[1]])
  rows<-do.call(rbind,lapply(records,function(z)z[,cols]))
+ rows<-yfb_apply_failure_penalty(rows,yaml::read_yaml("config/globals.yml")$benchmark$k_merged_yfb_desurv)
  write.csv(rows,file.path(out,"metrics.csv"),row.names=FALSE)
  groups<-split(rows,interaction(rows$p,rows$variance,rows$arm,drop=TRUE))
  mean_or_na<-function(x)if(all(is.na(x)))NA_real_ else mean(x,na.rm=TRUE)
  summary<-do.call(rbind,lapply(groups,function(z)data.frame(p=z$p[1],variance=z$variance[1],
-  arm=z$arm[1],n=nrow(z),recovered=sum(z$recovered),converged=sum(z$converged),
+  arm=z$arm[1],n=nrow(z),recovered=sum(z$recovered),raw_recovered=sum(z$raw_recovered),
+  raw_mean_false=mean_or_na(z$raw_false_active),converged=sum(z$converged),
   mean_false=mean_or_na(z$false_active),mean_C=mean_or_na(z$c_validation),
   C_undefined=sum(!is.finite(z$c_validation)),errors=sum(nzchar(z$error)),
   missing=sum(z$flags=="missing"),warnings=sum(nzchar(z$warnings)),
@@ -87,6 +106,11 @@ summarize_yfb_attempt <- function(attempt) {
   mean_share_live=mean_or_na(z$share_final_live),mean_inactive=mean_or_na(z$n_inactive),decreases=sum(z$decreases,na.rm=TRUE),
   max_beta=if(all(is.na(z$max_beta)))NA_real_ else max(z$max_beta,na.rm=TRUE))))
  write.csv(summary,file.path(out,"summary.csv"),row.names=FALSE)
+ raw_summary<-summary
+ raw_summary$recovered<-raw_summary$raw_recovered
+ raw_summary$mean_false<-raw_summary$raw_mean_false
+ raw_evaluated<-yfb_gate_cells(raw_summary)
+ write.csv(raw_evaluated$gate,file.path(out,"raw_gate_diagnostic.csv"),row.names=FALSE)
  evaluated<-yfb_gate_cells(summary)
  cells<-evaluated$cells;gate<-evaluated$gate
  write.csv(evaluated$criteria,file.path(out,"gate_criteria.csv"),row.names=FALSE)

@@ -2403,3 +2403,57 @@ in a local environment and an assertion checks that pi remains unchanged.
 An intermediate edit to that isolation had an unmatched parenthesis; it was
 caught on loading and corrected before the final acceptance run. Neither
 failure occurred in a simulation worker or changed any registered result.
+
+S-2 and S-3 completion: all 360 registered records in each attempt were
+checkpointed. S-2 has 149 errored fits and 161 non-converged records; S-3 has
+155 numerical-failure records and 161 non-converged records. Their exact
+summaries and unchanged gate verdicts are saved separately. S-3 retains finite
+partial-state validation predictions even for numerical failures; this does
+not turn them into successful fits. Neither attempt passes Gate S.
+
+Both original drivers encountered a trailing parse error after saving task
+statuses because their source file had been edited while the processes were
+active. Cached-checkpoint driver resumes use the frozen source and rerun no
+fits. This is recorded separately from model failures. The same precaution
+is applied to the final driver before declaring execution complete.
+
+## 2026-10-30 — Supervision decision test, attempt S-5 (registered before execution)
+
+**Further diagnosis from S-4 fixed-seed traces.** A loading can survive in the
+YF predictor after its activity posterior is exactly zero. Its scale then has
+no reconstruction constraint, and activity RMS normalization cannot identify
+that scale. The saved low-variance replay has such a loading norm above 10^9.
+A second replay has positive activity second moments around 10^-22 that the
+implementation skipped because its RMS was below an arbitrary threshold.
+The saved table `canonicalization_diagnosis.csv` identifies the columns.
+The old positive floor in projection normalization also breaks the required
+scale invariance for small live loading columns; a regression fails by about
+two units on a nonzero hand-calculated fixture.
+
+**Numerical correction, same model.** Normalize every strictly positive activity
+RMS, however small. When an activity is exactly zero but its loading survives,
+normalize that loading to unit norm and push its prior scale forward. This
+leaves reconstruction, normalized projection moments, β, its prior and KL
+unchanged; independent tests check those identities. Use the exact loading
+norm for every live column, with an arbitrary finite denominator only for a
+truly zero column. Report survival-only loading columns explicitly. This
+prevents arbitrary units from interacting with absolute precision floors.
+No prior, likelihood weight or rank-selection criterion changes.
+
+Also defer the reconstruction-only reference's coefficient warm-up until its
+factorization is complete. Although its score-based start had already been
+disabled, the earlier warm-up could still influence risk-based stopping.
+The reference now has no outcome-dependent factor updates or stopping values;
+its same untempered coefficient stage follows reconstruction. A regression
+checks that its first normal-means update is an activity update, not β.
+
+**Arms and gate.** Repeat all S-4 paired seeds, dimensions, variance cells and
+six arms under attempt5, with the same reduced damping and calibration
+convention. Keep the original Gate S exactly. Use one dataset per socket
+work item to avoid imbalanced default chunks; RNG seeds and statistical
+controls are unchanged. Preserve S-4 raw checkpoints and its failed gate.
+The derived scoring audit also enforces the already registered failed-fit
+penalty and removes an unintended zero-error restriction: the actual gate
+requires 90% convergence, not 100%. Raw diagnostic counts are retained beside
+penalized counts. These are scoring corrections to the registration, not new
+thresholds, and no gate is relaxed after seeing a passing result.

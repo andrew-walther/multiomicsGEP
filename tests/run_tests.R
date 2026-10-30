@@ -61,6 +61,7 @@ test_files <- c(
   "tests/test_fit_yfb_supervised.R",
   "tests/test_yfb_decision_calibration.R",
   "tests/test_yfb_stable_exponential.R",
+  "tests/test_yfb_canonicalization.R",
   "tests/test_update_beta_cohort.R",
   "tests/test_update_L.R",
   "tests/test_update_F.R",

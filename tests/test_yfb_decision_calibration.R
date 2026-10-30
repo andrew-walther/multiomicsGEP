@@ -21,7 +21,7 @@ run_test("Gate S: all three boundaries must hold in two paired cells", {
   bad<-x;bad$recovered[4]<-3
   assert_false(yfb_gate_cells(bad)$gate$passed)
   bad<-x;bad$errors[5]<-1
-  assert_false(yfb_gate_cells(bad)$gate$passed)
+  assert_true(yfb_gate_cells(bad)$gate$passed)
 })
 
 run_test("Final-state precision share is invariant to reciprocal factor scaling", {
@@ -37,4 +37,14 @@ run_test("Final-state precision share is invariant to reciprocal factor scaling"
   assert_near(a,yfb_precision_share_final(f,Y,t,e),1e-12)
   f$gamma<-0
   assert_near(yfb_precision_share_final(f,Y,t,e),rep(0,3),1e-12)
+})
+run_test("Failed fits receive the registered conservative gate penalty", {
+  x<-data.frame(arm=c("share0.05","share0.05","share0.05","lasso"),
+    recovered=TRUE,false_active=c(2,0,4,NA),converged=c(TRUE,FALSE,FALSE,TRUE),
+    error=c("","","numerical failure",""),flags=c("","max_iter","numerical_failure",""))
+  z<-yfb_apply_failure_penalty(x,7)
+  assert_equal(z$recovered,c(TRUE,FALSE,FALSE,TRUE))
+  assert_near(z$false_active[1:3],c(2,7,7),1e-12)
+  assert_true(is.na(z$false_active[4]))
+  assert_equal(z$raw_recovered,rep(TRUE,4))
 })
