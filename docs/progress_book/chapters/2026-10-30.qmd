@@ -1,0 +1,238 @@
+# October 30, 2026
+
+```{r setup}
+library(knitr)
+ROOT <- "../../.."
+BM   <- file.path(ROOT, "results/benchmark_sim/outputs")
+DATA <- file.path(ROOT, "docs/progress_book/data")
+# Fail loudly: every number in this chapter comes from a saved file.
+rd <- function(p) {
+  if (!file.exists(p)) stop("Missing result file: ", p)
+  read.csv(p, stringsAsFactors = FALSE)
+}
+tracker  <- rd(file.path(DATA, "2026-10-30-issue-tracker.csv"))
+branches <- rd(file.path(DATA, "2026-10-30-branch-inventory.csv"))
+ext      <- rd(file.path(BM, "kl_fix_rerun_2026-10-30/external_results.csv"))
+cv_new   <- rd(file.path(BM, "kl_fix_rerun_2026-10-30/cv_summary.csv"))
+cv_old   <- rd(file.path(BM, "single_log_check/cv_summary.csv"))
+orient   <- rd(file.path(BM, "ebmf_cox_external/2026-10-30-orientation-rescore.csv"))
+a1       <- rd(file.path(BM, "a1_real_ws_cv/summary_wS_1_init1-wS_1_init0-wS_100_init0-wS_10000_init0.csv"))
+
+f3 <- function(x) formatC(x, format = "f", digits = 3)
+ext_mean <- ext[ext$cohort == "mean", ]
+ext_coh  <- ext[ext$cohort != "mean", ]
+cvn <- function(d, arm, col) d[d$arm == arm, col]
+n_done <- sum(grepl("^(done|adopted)", tracker$status))
+a1_row <- function(arm) a1[a1$arm == arm, ]
+```
+
+## Summary
+
+This chapter restarts the project from a single list of open problems. Several lines of work since
+early October (diagnostic experiments, a rebuild of the method as a package, and short tests on the
+current code) each fixed specific defects. None of them made survival shape the gene loadings,
+which is the method's contribution. We have now put every known problem in one tracker with its
+diagnosis, proposed solution and status, fixed the problems that were already well understood, and
+set the order for the rest.
+
+**Takeaways for this meeting**
+
+- **Supervision is still the central problem, and it is a balance problem.** In the current model
+  the loadings F are learned from reconstruction alone, so the fitted model is matrix factorization
+  followed by a Cox model. Raising a single survival weight does not fix this: on the real training
+  data a weight of 100 raises survival's share of the loading precision only from about
+  `r formatC(a1_row("wS_1_init0")$shareA_active_median, format = "e", digits = 0)` to
+  `r formatC(a1_row("wS_100_init0")$shareA_active_median, format = "e", digits = 0)`, and the
+  weight that gives survival an equal share (10⁴) stops every fold from converging
+  (`r a1_row("wS_10000_init0")$converged` of 5 converged; cross-validated C
+  `r f3(a1_row("wS_10000_init0")$mean_fold_C)`).
+- **The cleanup items are done, and they do not change the benchmark.** Fixing an error in the
+  objective's bookkeeping and logging every cohort once leaves the external C at
+  `r f3(ext_mean$C_single)` against `r f3(ext_mean$C_frozen)` for the frozen benchmark. The
+  bookkeeping fix does make training cross-validation fits converge: `r cvn(cv_new, "single", "n_converged")`
+  of 5 folds, against `r cvn(cv_old, "single", "n_converged")` of 5 before.
+- **The next step is a new fitter that follows a written specification.** It keeps the projection
+  predictor η = (YF)β and adds the pieces that should let survival carry real weight without
+  destabilizing the fit. A simulation with a pre-registered success criterion decides whether it
+  works. If it does not, we will write down exactly where it fails before trying anything else.
+- **`r n_done` of the `r nrow(tracker)` tracked issues are resolved**; the rest are ordered by
+  priority below.
+
+## Where the project stands
+
+Three lines of work ran in October.
+
+- **Diagnostic experiments (October 15–16).** These found and documented the defects in the
+  supervised fitting path. The pre-registered test of the supervised model on the external cohorts
+  was null: the change in C was −0.003 (95% interval −0.029 to 0.024), which did not meet the
+  pre-registered −0.02 margin. It will be reported as a null result.
+- **A rebuild of the method as an R package.** The rebuilt fitter improves its objective at every
+  step and converges in every simulation fit, and on expression data it matches the benchmark. It
+  does not recover a low-variance prognostic program more often than a two-step method (13–20%
+  against 27% when the program carries 0.25% of the expression variance), and in the joint
+  expression and methylation fit the methylation block dominates (external C 0.554 against 0.707
+  for expression alone). The rebuild is kept as a reference. Its code for the Cox working
+  quantities and the KL terms will be reused, and a new unified implementation will be written once
+  supervision works.
+- **Short tests on the current code.** The main test, described under the supervision section
+  below, asked whether a larger survival weight is enough. It is not.
+
+The diagnosis common to all three is that the two likelihoods are on very different scales:
+reconstruction sums over every patient-by-gene entry, while the Cox likelihood sums over the
+events. The proposed solution and the order of work are in the next sections.
+
+## Issue tracker
+
+Each row is one problem, merged across the reviews and audits we received. Status is updated in
+the same file each chapter. Priority 1 items block the method's main claim; priority 2 items block
+the multimodal model or a correct report; priority 3 items are later work.
+
+```{r tracker}
+tab <- tracker[order(tracker$priority, as.integer(tracker$id)),
+               c("priority", "area", "issue", "diagnosis", "solution", "status")]
+names(tab) <- c("Priority", "Area", "Issue", "Diagnosis", "Proposed solution", "Status")
+kable(tab, row.names = FALSE)
+```
+
+## Progress since October 26
+
+```{r cleanup-numbers}
+ext_tab <- data.frame(
+  Cohort = ext_coh$cohort,
+  n = ext_coh$n,
+  `Frozen benchmark` = f3(ext_coh$C_frozen),
+  `Refit, old transform` = f3(ext_coh$C_double_refit),
+  `Refit, single log` = f3(ext_coh$C_single),
+  `Difference (95% interval)` = sprintf("%+.3f (%+.3f, %+.3f)", ext_coh$diff_single_minus_frozen,
+                                        ext_coh$diff_ci_lo, ext_coh$diff_ci_hi),
+  check.names = FALSE)
+n_orient_changed <- sum(orient$changed)
+```
+
+**Objective bookkeeping.** The approximate ELBO counted the Gaussian normalizing constant of the
+patient-activity update once instead of once per patient. The ELBO is what decides when a fit
+stops (and, in the supervised path, which factors are pruned), so every fit could stop at a
+different point. A new test compares the KL term with its exact value; it failed before the fix
+and passes after.
+
+**Expression transform.** Three RNA-seq cohorts were log-transformed twice, once when loaded and
+again in preprocessing. Every cohort is now logged once, and a test checks each cohort's scale
+against its setting.
+
+**Benchmark after both fixes.** We refitted the benchmark configuration with the corrected
+objective, once with the old transform and once with the single log, and scored each full-data
+fit once on the five external cohorts. The refit with the old transform reproduces the frozen
+benchmark in every cohort, so the comparison isolates the transform.
+
+```{r ext-table}
+kable(ext_tab, row.names = FALSE,
+      caption = sprintf("External concordance after the bookkeeping fix. Mean C: frozen %s, single log %s.",
+                        f3(ext_mean$C_frozen), f3(ext_mean$C_single)))
+```
+
+In training cross-validation with the single log, mean C is `r f3(cvn(cv_new, "single", "mean_C"))`
+(SE `r f3(cvn(cv_new, "single", "se_C"))`) with `r cvn(cv_new, "single", "n_converged")` of 5 folds
+converged, against `r f3(cvn(cv_old, "single", "mean_C"))` with `r cvn(cv_old, "single", "n_converged")`
+of 5 before the fix. The fix leaves the benchmark numbers as they were and makes the fits converge.
+
+**Risk direction in the comparators.** Two comparator scripts set each validation cohort's risk
+direction by taking the larger of C and 1 − C, which uses the outcome being evaluated. Both now fix
+the direction from the training fit. Rescoring the saved comparator risks changes
+`r n_orient_changed` of `r nrow(orient)` values, so the reported comparator numbers stand.
+
+**Tests.** Four tests depended on a local copy of an old branch. Their baselines are now stored
+with the tests, and the full suite passes for anyone who clones the repository.
+
+**Branches.** Of `r nrow(branches)` local branches, `r sum(branches$merged_into_main == "yes")`
+are fully merged and can be deleted. Nothing has been deleted yet.
+
+## Survival supervision of the loadings: what we tried and what comes next
+
+**Is a larger survival weight enough?** No. In a simulation with 50 genes, a weight of 1 already
+gives survival most of the loading precision for the planted program and recovers it in 18 to 20
+of 20 datasets; larger weights recover it less often and flag nearly every program as prognostic.
+On the real training data (2,064 genes) the picture is different:
+
+```{r a1-table}
+a1_tab <- data.frame(
+  `Survival weight` = c("1", "1 (survival-informed start)", "100", "10,000"),
+  `CV mean C` = f3(a1$mean_fold_C[match(c("wS_1_init0", "wS_1_init1", "wS_100_init0", "wS_10000_init0"), a1$arm)]),
+  `Folds converged (of 5)` = a1$converged[match(c("wS_1_init0", "wS_1_init1", "wS_100_init0", "wS_10000_init0"), a1$arm)],
+  `Survival share of loading precision` = formatC(a1$shareA_active_median[match(c("wS_1_init0", "wS_1_init1", "wS_100_init0", "wS_10000_init0"), a1$arm)], format = "e", digits = 1),
+  `Survival-active programs (mean)` = a1$n_active_mean[match(c("wS_1_init0", "wS_1_init1", "wS_100_init0", "wS_10000_init0"), a1$arm)],
+  check.names = FALSE)
+kable(a1_tab, row.names = FALSE)
+```
+
+These fits ran before the bookkeeping fix, which changes stopping but not the precision shares.
+Survival's share grows in proportion to the weight. It reaches a share comparable to reconstruction
+only near 10⁴, and there the fit no longer converges.
+
+**Proposed solution.** The new fitter follows a written specification (tracker items 1–7 and 9):
+
+- the survival curvature is scaled by a factor γ that depends on a supervision strength α;
+- the gene loadings are updated one gene at a time with the within-program coupling term and
+  damping;
+- the survival coefficient prior is a point-normal whose slab cannot vanish;
+- two of the starting factors come from the Cox score directions so a prognostic program starts
+  with a nonzero coefficient;
+- point-exponential priors on L and F, nonnegative input data, and centering only inside the Cox
+  projection.
+
+**A caution we will test first.** At the training data's size, the γ in the specification is about
+15 for α = 0.5, inside the range of weights already tested above. A per-gene count suggests that
+under the specification's own scaling the survival share is still about 1/n rather than of order
+one. Balancing the two likelihoods as totals requires a weight near 10⁴. The question the new
+fitter answers is whether damping, the non-collapsing prior and the survival-informed start keep the
+fit stable at a weight that large. DeSurv solves the same balance problem for NMF with a Cox
+model, so we will also compare against how it normalizes its loss.
+
+**Decision test.** Simulation with 50 and 2,000 genes, a planted prognostic program carrying
+0.25%, 1% or 5% of the expression variance, and 10 datasets per setting. Supervision counts as
+working if, at 2,000 genes, some γ recovers the program in at least 3 more of 10 datasets than the
+unsupervised fit in at least two variance settings, with at most one falsely prognostic program
+on average and at least 90% of fits converged. The criterion is registered before the run. If the
+test fails we will stop, record where the fit fails (survival share, coefficients and objective per
+sweep), and decide with the advisors whether to return to a latent predictor η = Lβ, in which
+survival enters the patient-activity update directly and new patients are scored by fitting their
+activities with the loadings held fixed.
+
+## Preprocessing decisions
+
+The audit of the preprocessing listed eleven alignments. We recommend the following.
+
+| # | Alignment | Recommendation |
+|---|---|---|
+| 1 | Log transform | Log2(x + 1) once for every RNA-seq cohort (adopted). |
+| 2 | TCGA expression source | Keep the source the benchmark uses and record it. |
+| 3 | Expression scaling | Divide each gene by its within-cohort SD without centering, so the data stay nonnegative; center only inside the Cox projection. Applies to the new fitter. |
+| 4 | Validation scaling | Scale each validation cohort by its own within-cohort SD, consistent with 3. |
+| 5 | Gene universe and screen | Gene names from the training data; keep the per-cohort top-3,000 mean/variance screen with intersection; survival screening only as an ablation. |
+| 6–7 | Missing features, duplicate symbols | Keep the rules the benchmark uses and record them. |
+| 8 | Methylation scale | Keep β-values for now; revisit M-values with the multimodal model. |
+| 9 | Methylation imputation | Keep KNN imputation and state the 50 versus 67 donors explicitly. |
+| 10 | Probe filters | Apply cross-reactive and SNP probe filters when multimodal work resumes. |
+| 11 | Repeated donors | One record per donor (568 unique) in pooled analyses, with donor-level or cohort-stratified resampling. |
+
+## How the model changed since the March derivation
+
+The March derivation used a latent predictor η = Lβ, so survival entered the update of the patient
+activities L directly, and a second-order expansion of the Cox likelihood. The October model uses
+the projection predictor η = (YF)β so that new patients can be scored without refitting, an exact
+Breslow score with an expected-information curvature, and point-exponential priors. In the
+evaluated October fit no update of L or F contains a survival term, which is why the fitted model
+behaves as a two-step method. Every change is recorded with its date and reason in the project's
+decision log. We are keeping the projection predictor for the next attempt and holding the latent
+predictor, scored for new patients by fitting their activities with the loadings fixed, as the
+fallback.
+
+## Questions for the advisors
+
+1. Is the decision test above (recovery at 2,000 genes, false positives, convergence) the right
+   bar for "survival supervises the loadings"?
+2. If the projection predictor cannot be made to work at a balanced weight, should we return to the
+   latent predictor with fold-in scoring, or first try a different balance such as a weight chosen
+   by cross-validation with coefficient intervals from a separate refit?
+3. Do you agree with the preprocessing recommendations, in particular nonnegative within-cohort
+   scaling (3) and one record per donor (11)?
+4. Which cohort should be held out from every model choice until the final claim?
