@@ -1,0 +1,8 @@
+attempt,fitter_revision,runner_revision,notes
+attempt1,12ebee8,12ebee8,Original failed calibration; retain missing arms
+attempt2,12ebee8,12ebee8 plus live-factor calibration later committed in 2be72e5,Registration saved before launch; no separate intermediate commit
+attempt3,2be72e5,2be72e5,Rescaled messages; reduced damping; corrected start
+attempt4,06a14bc,06a14bc,Stable exponential kernel and constrained-prior profile fallback
+attempt5,dae6eef,dae6eef,Interrupted after observed coefficient variance loss; all saved and missing records retained
+attempt6,fe7064b,fe7064b,Separate variances and stable same-prior Normal mixture posterior and KL
+attempt7,fe7064b,ad331c8,Shared prepared loading in reconstruction and Cox; unchanged gate; later 4a0e15a adds diagnostics only

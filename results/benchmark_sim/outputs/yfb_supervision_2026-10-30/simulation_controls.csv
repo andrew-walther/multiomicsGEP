@@ -1,0 +1,2 @@
+"n_train","n_validation","K","max_iter","tolerance","cv_folds","noise","planted_beta","damping","calibration_damping","alpha","workers","BLAS_threads"
+400,120,7,300,1e-05,5,0.25,3.3,0.02,0.2,0.5,4,1

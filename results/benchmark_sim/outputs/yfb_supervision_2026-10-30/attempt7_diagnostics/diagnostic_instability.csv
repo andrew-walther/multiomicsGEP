@@ -1,0 +1,4 @@
+"variance","largest_F_jump_sweep","F_jump_ratio","largest_beta_increase_sweep","largest_objective_drop_sweep","largest_objective_drop"
+0.0025,9,1.0126812741453,6,2,-65787.1512017399
+0.01,20,2.81016742078599,27,26,-386033041.956246
+0.05,10,4.56695928121628,18,18,-26744508.9544565

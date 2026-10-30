@@ -1,0 +1,5 @@
+check,passed,failed,process_status
+cleanup,713,0,clean exit 0
+opt-in fitter,732,0,intermediate tally; see historical log; superseded by clean final suite
+final shared-loading and variance suite,741,0,clean exit 0
+closeout including independent coupled quadrature,742,0,clean exit 0; intentional optimizer-fixture warning
