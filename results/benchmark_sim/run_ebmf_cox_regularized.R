@@ -40,6 +40,7 @@ suppressPackageStartupMessages({ library(yaml); library(survival); library(glmne
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")
+source("code/concordance_ci.R")   # frozen_reverse_cindex()
 source("code/preprocess_desurv.R")
 
 TOP_N_DESURV     <- cfg$preprocessing$top_n_genes_desurv
@@ -49,8 +50,10 @@ EXTERNAL_COHORTS <- cfg$pdac$external_cohorts
 OUT_DIR <- "results/benchmark_sim/outputs/ebmf_cox_external"
 
 oriented_cindex <- function(risk, time, status) {
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
+  # risk is the training Cox linear predictor (higher = worse), so its
+  # orientation is fixed by the training fit; validation outcomes are not
+  # used to choose a direction. NA for a constant risk score.
+  frozen_reverse_cindex(risk, time, status)
 }
 project_scores <- function(Ymat, Fmat, F_norms) Ymat %*% sweep(Fmat, 2, F_norms, "/")
 

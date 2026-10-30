@@ -52,6 +52,7 @@ suppressPackageStartupMessages({
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")  # load_pdac_raw, PLATFORM_LOG_TRANSFORM
+source("code/concordance_ci.R")   # frozen_reverse_cindex()
 source("code/preprocess_desurv.R")                   # preprocess_merged_cohorts, preprocess_desurv_cohort
 
 b <- cfg$benchmark
@@ -83,17 +84,19 @@ cat(sprintf("Quick mode: %s | K_EBMF_MAX: %d | top_n: %d\n",
 # --------------------------------------------------------------------------
 #' Oriented concordance: orient the risk score so higher = worse prognosis.
 #'
-#' Cox maximises the partial likelihood, so the training concordance is > 0.5
-#' by construction; this max(c, 1-c) form applies the training-concordance sign
-#' correction at scoring time, matching the supervised LB / YFB external scoring.
+#' The risk score is the training Cox linear predictor, so higher already means
+#' worse prognosis. Earlier versions took max(c, 1-c), which chose the direction
+#' from the validation outcomes; the direction is now fixed by the training fit.
 #'
 #' @param risk    numeric vector of linear-predictor risk scores.
 #' @param time    numeric vector of follow-up times.
 #' @param status  integer event indicator (1 = event).
-#' @return scalar oriented C-index in [0.5, 1].
+#' @return scalar C-index (NA for a constant risk score).
 oriented_cindex <- function(risk, time, status) {
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
+  # risk is the training Cox linear predictor (higher = worse), so its
+  # orientation is fixed by the training fit; validation outcomes are not
+  # used to choose a direction. NA for a constant risk score.
+  frozen_reverse_cindex(risk, time, status)
 }
 
 # --------------------------------------------------------------------------
