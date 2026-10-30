@@ -25,6 +25,8 @@ for(variance in c(.0025,.01,.05)) {
   m$variance<-variance;m$share_final_live<-median(shares,na.rm=TRUE)
   m$largest_mean_difference<-if(is.null(saved$fit))NA_real_ else
     max(abs(f$EF[[1]]-saved$fit$EF[[1]]))
+  if(!is.finite(m$largest_mean_difference) || m$largest_mean_difference>1e-8)
+    stop("Diagnostic replay does not reproduce registered loading means")
   m$first_decrease<-if(any(f$history$objective_decreased))
     min(f$history$iter[f$history$objective_decreased]) else NA_integer_
   rows[[length(rows)+1]]<-m
