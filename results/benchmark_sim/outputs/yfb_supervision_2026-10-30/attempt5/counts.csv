@@ -1,2 +1,2 @@
-"attempt","expected","saved","missing","raw_checkpoint_errors","sweep_cap_records","objective_decreases","raw_errors","errors","nonconverged","undefined_C","warning_records","all_zero_returned_states","inactive_factor_total","unavailable_factor_states","nonfinite_returned_eta","variance_loss_records","gate_passed"
-"attempt5",360,90,270,0,22,3318,270,274,293,270,31,0,238,225,0,4,FALSE
+"attempt","task_level_errors","expected","saved","missing","raw_checkpoint_errors","sweep_cap_records","objective_decreases","raw_errors","errors","nonconverged","undefined_C","warning_records","all_zero_returned_states","inactive_factor_total","orphan_factor_total","records_with_orphan","unavailable_factor_states","nonfinite_returned_eta","variance_loss_records","gate_passed"
+"attempt5",NA,360,90,270,0,22,3318,270,274,293,270,31,0,238,82,33,225,0,4,FALSE

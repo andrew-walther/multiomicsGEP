@@ -56,6 +56,15 @@ summarize_yfb_attempt <- function(attempt) {
  out<-file.path("results/benchmark_sim/outputs/yfb_supervision_2026-10-30",attempt)
  if(attempt %in% c("attempt4","attempt5","attempt6","attempt7")) source("results/benchmark_sim/run_yfb_supervision_decision.R")
  design<-read.csv(file.path(out,"design.csv"))
+ status_path<-file.path(out,"task_status.txt")
+ task_errors<-NA_integer_
+ if(file.exists(status_path)) {
+   status<-readLines(status_path)
+   if(length(status)!=nrow(design))stop("Task status length differs from registered design")
+   task_errors<-sum(grepl("^TASK ERROR",status))
+   write.csv(cbind(design,status=status)[grepl("^TASK ERROR",status),],
+     file.path(out,"task_failure_inventory.csv"),row.names=FALSE)
+ }
  arms<-c("unsupervised","share0.05","share0.2","share0.5","canonical_w1","lasso")
  records<-list();metadata<-list();j<-0L
  for(i in seq_len(nrow(design))) {
@@ -77,6 +86,7 @@ summarize_yfb_attempt <- function(attempt) {
   records[[j]]$raw_flags<-records[[j]]$flags
   records[[j]]$lost_beta_variances<-0L
   records[[j]]$n_inactive<-NA_real_
+  records[[j]]$n_orphan<-NA_real_
   records[[j]]$all_zero_state<-NA
   records[[j]]$nonfinite_eta<-NA
   if(!is.null(saved$fit)) {
@@ -95,6 +105,7 @@ summarize_yfb_attempt <- function(attempt) {
     }
     if(is.list(ff))ff<-ff[[1]]
     records[[j]]$n_inactive<-sum(colSums(ff^2)==0 | colSums(saved$fit$EL^2)==0)
+    records[[j]]$n_orphan<-sum(colSums(saved$fit$EL2)==0 & colSums(ff^2)>0)
     records[[j]]$all_zero_state<-all(ff==0) || all(saved$fit$EL==0)
     if(!is.null(saved$fit$eta)) records[[j]]$nonfinite_eta<-any(!is.finite(saved$fit$eta))
   }
@@ -121,10 +132,12 @@ summarize_yfb_attempt <- function(attempt) {
   arm=z$arm[1],n=nrow(z),recovered=sum(z$recovered),raw_recovered=sum(z$raw_recovered),
   raw_mean_false=mean_or_na(z$raw_false_active),raw_converged=sum(z$raw_converged),converged=sum(z$converged),
   mean_false=mean_or_na(z$false_active),mean_C=mean_or_na(z$c_validation),
+  mean_valid_C=mean_or_na(z$c_validation[z$converged & !nzchar(z$error)]),
+  valid_C_n=sum(z$converged & !nzchar(z$error) & is.finite(z$c_validation)),
   C_undefined=sum(!is.finite(z$c_validation)),errors=sum(nzchar(z$error)),
   missing=sum(z$flags=="missing"),warnings=sum(nzchar(z$warnings)),
   mean_share=mean_or_na(z$share),mean_share_matched=mean_or_na(z$share_final_match),
-  mean_share_live=mean_or_na(z$share_final_live),mean_inactive=mean_or_na(z$n_inactive),decreases=sum(z$decreases,na.rm=TRUE),
+  mean_share_live=mean_or_na(z$share_final_live),mean_inactive=mean_or_na(z$n_inactive),mean_orphan=mean_or_na(z$n_orphan),decreases=sum(z$decreases,na.rm=TRUE),
   max_beta=if(all(is.na(z$max_beta)))NA_real_ else max(z$max_beta,na.rm=TRUE))))
  write.csv(summary,file.path(out,"summary.csv"),row.names=FALSE)
  raw_summary<-summary
@@ -138,7 +151,7 @@ summarize_yfb_attempt <- function(attempt) {
  write.csv(evaluated$criteria,file.path(out,"gate_criteria.csv"),row.names=FALSE)
  write.csv(cells,file.path(out,"gate_cells.csv"),row.names=FALSE)
  write.csv(gate,file.path(out,"gate.csv"),row.names=FALSE)
- counts<-data.frame(attempt=attempt,expected=nrow(rows),saved=nrow(rows)-sum(rows$flags=="missing"),
+ counts<-data.frame(attempt=attempt,task_level_errors=task_errors,expected=nrow(rows),saved=nrow(rows)-sum(rows$flags=="missing"),
    missing=sum(grepl("missing",rows$flags)),
    raw_checkpoint_errors=sum(nzchar(rows$raw_error)&!grepl("missing",rows$raw_flags)),
    sweep_cap_records=sum(!rows$raw_converged &
@@ -149,6 +162,8 @@ summarize_yfb_attempt <- function(attempt) {
    warning_records=sum(nzchar(rows$warnings)),
    all_zero_returned_states=sum(rows$all_zero_state,na.rm=TRUE),
    inactive_factor_total=sum(rows$n_inactive,na.rm=TRUE),
+   orphan_factor_total=sum(rows$n_orphan,na.rm=TRUE),
+   records_with_orphan=sum(rows$n_orphan>0,na.rm=TRUE),
    unavailable_factor_states=sum(is.na(rows$n_inactive)&rows$arm!="lasso"),
    nonfinite_returned_eta=sum(rows$nonfinite_eta,na.rm=TRUE),
    variance_loss_records=sum(rows$lost_beta_variances>0),gate_passed=any(gate$passed))
