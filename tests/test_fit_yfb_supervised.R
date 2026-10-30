@@ -103,3 +103,11 @@ run_test("YFBS: loading-precision traces exclude dead factors", {
   assert_near(h$share_median,expected,1e-12)
   assert_true(any(is.na(as.matrix(h[,paste0("share_",seq_len(7))]))))
 })
+run_test("YFBS: projection agrees with a nonzero hand-calculated fixture", {
+  yc<-matrix(c(1,-1,0,2,-2,0),3,2)
+  F<-matrix(c(3,4),2,1);F2<-matrix(c(10,20),2,1)
+  q<-yfb_projection(yc,F,F2)
+  assert_near(q$Z,matrix(c(11/5,-11/5,0),3),1e-12)
+  assert_near(q$V,matrix(c(17/25,17/25,0),3),1e-12)
+  assert_near(drop(q$Z%*%.5),c(1.1,-1.1,0),1e-12)
+})

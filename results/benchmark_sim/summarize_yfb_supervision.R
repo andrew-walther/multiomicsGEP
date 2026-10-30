@@ -52,6 +52,15 @@ summarize_yfb_attempt <- function(attempt) {
       cor_planted=NA_real_,recovered=FALSE,false_active=7,converged=FALSE,
       c_validation=NA_real_,share=NA_real_,sweeps=NA_real_,decreases=NA_real_,
       max_beta=NA_real_,flags="missing",error="No checkpoint; inspect task_status.txt",warnings="")
+  records[[j]]$n_inactive<-NA_real_
+  records[[j]]$all_zero_state<-NA
+  records[[j]]$nonfinite_eta<-NA
+  if(!is.null(saved$fit)) {
+    ff<-saved$fit$EF;if(is.list(ff))ff<-ff[[1]]
+    records[[j]]$n_inactive<-sum(colSums(ff^2)==0 | colSums(saved$fit$EL^2)==0)
+    records[[j]]$all_zero_state<-all(ff==0) || all(saved$fit$EL==0)
+    if(!is.null(saved$fit$eta)) records[[j]]$nonfinite_eta<-any(!is.finite(saved$fit$eta))
+  }
   records[[j]]$share_final_match<-NA_real_
   records[[j]]$share_final_live<-NA_real_
   if(attempt=="attempt4" && !is.null(saved$fit) && is.list(saved$fit$EF)) {
@@ -75,7 +84,7 @@ summarize_yfb_attempt <- function(attempt) {
   C_undefined=sum(!is.finite(z$c_validation)),errors=sum(nzchar(z$error)),
   missing=sum(z$flags=="missing"),warnings=sum(nzchar(z$warnings)),
   mean_share=mean_or_na(z$share),mean_share_matched=mean_or_na(z$share_final_match),
-  mean_share_live=mean_or_na(z$share_final_live),decreases=sum(z$decreases,na.rm=TRUE),
+  mean_share_live=mean_or_na(z$share_final_live),mean_inactive=mean_or_na(z$n_inactive),decreases=sum(z$decreases,na.rm=TRUE),
   max_beta=if(all(is.na(z$max_beta)))NA_real_ else max(z$max_beta,na.rm=TRUE))))
  write.csv(summary,file.path(out,"summary.csv"),row.names=FALSE)
  evaluated<-yfb_gate_cells(summary)
@@ -86,7 +95,11 @@ summarize_yfb_attempt <- function(attempt) {
  counts<-data.frame(attempt=attempt,expected=nrow(rows),saved=nrow(rows)-sum(rows$flags=="missing"),
    missing=sum(rows$flags=="missing"),errors=sum(nzchar(rows$error)),
    nonconverged=sum(!rows$converged),undefined_C=sum(!is.finite(rows$c_validation)),
-   warning_records=sum(nzchar(rows$warnings)),gate_passed=any(gate$passed))
+   warning_records=sum(nzchar(rows$warnings)),
+   all_zero_returned_states=sum(rows$all_zero_state,na.rm=TRUE),
+   inactive_factor_total=sum(rows$n_inactive,na.rm=TRUE),
+   unavailable_factor_states=sum(is.na(rows$n_inactive)&rows$arm!="lasso"),
+   nonfinite_returned_eta=sum(rows$nonfinite_eta,na.rm=TRUE),gate_passed=any(gate$passed))
  write.csv(counts,file.path(out,"counts.csv"),row.names=FALSE)
  print(counts);print(gate)
  invisible(summary)
