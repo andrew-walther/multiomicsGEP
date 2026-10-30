@@ -79,12 +79,15 @@ Do not change `fit_cox_on_yf()` defaults. Read the ssbmf package on `rebuild/uni
   - mean false-active ≤ 1;
   - ≥ 90% of fits converge.
 - If the gate passes, run a one-at-a-time ablation at the best γ, removing the hybrid start, damping and the β prior in turn, to show which pieces matter.
-- If it fails, do not tune further. Write diagnostics instead:
+- If it fails, diagnose before changing anything:
   - per-sweep traces of survival share, β, ‖L‖ and the objective;
   - the sweep where instability starts;
   - which piece fails first.
 
-  Record the failure, and stop Phase S. Andrew then decides whether the η = Lβ fallback is next.
+  Fix what the diagnosis points to, register the revised arms as a new numbered attempt, and rerun
+  them, reporting the original failure next to the new result. Repeat while a diagnosed idea
+  remains. If none remains, write the problem statement, and Andrew decides whether the η = Lβ
+  fallback is next.
 
 **S3. Real-data training CV, only if Gate S passes.** Adapt `results/benchmark_sim/run_a1_real_ws_cv.R` to the new fitter on the single-log D4 data. Use training data only, and do not score any external cohort (Naim item 6: keep at least one cohort untouched for the final claim).
 
@@ -144,7 +147,7 @@ Later code consolidation follows the Gemini layout: a few core scripts that beco
 Claude did Phase C on 2026-10-30, and Codex does the rest. When Codex finishes or stops, it writes an execution report and fills in the "Review handoff" section below. A Claude session then reviews the work against this plan with the review prompt at the end of the execution prompt, records its verdict here, and Andrew decides on the merge. This closes the loop back to the session that wrote the plan.
 
 1. Copy this plan to `docs/plans/2026-10-30-realignment-plan.md` and add its row to the README.
-2. Write `docs/prompts/2026-10-30-codex-execution-prompt.md`: the order of phases (C → P records → S0 → S1 → S2 → gate → S3 or diagnostics → D), the stop conditions, and the project rules (attribution, commit style, plain prose, tests after every change to an update script, report failures).
+2. Write `docs/prompts/2026-10-30-codex-execution-prompt.md`: the order of phases (C → P records → S0 → S1 → S2 → gate → S3 or diagnostics → D), how to handle problems (revised: diagnose and solve rather than stop), and the project rules (attribution, commit style, plain prose, tests after every change to an update script, report failures).
 3. Update the CLAUDE.md "Start here" section, commit on main and push. Claude does no other execution.
 
 ## Verification (end to end)
@@ -153,13 +156,16 @@ Claude did Phase C on 2026-10-30, and Codex does the rest. When Codex finishes o
 - The benchmark rerun completes and its outputs are saved. The chapter renders with `quarto render docs/progress_book`, and its tables come from CSV/RDS files.
 - Gate S is reported against the criteria registered before the run, including when it fails.
 
-## Stop conditions for Codex
+## Problems during execution (revised 2026-10-30)
 
-Stop and write a status note in the chapter, without working around the problem, if:
-- tests fail and the cause is unclear;
-- the benchmark rerun changes external C by more than 0.02 without explanation;
-- Gate S fails, after the diagnosis described in S2 and a written problem statement (S0 is a check, not a stop: it changes the γ grid);
-- any step would touch external cohorts in a way that informs model choices.
+Andrew prefers that Codex diagnose and solve problems rather than stop. On any failure (tests,
+convergence, an unexpected benchmark change, Gate S, or a specification piece that does not work as
+written), Codex finds the root cause, fixes it with a test, and logs every attempt. A fix after a
+failed Gate S is registered as a new attempt before it is rerun, and the original failure is
+reported next to it. Codex stops only when it has no remaining idea backed by a diagnosis, and then
+writes a standalone problem statement. Hard limits: no external cohort informs any choice, the
+frozen benchmark is untouched, and nothing is reported as done while tests fail. The execution
+prompt has the details.
 
 ## Phase C progress (updated 2026-10-30)
 

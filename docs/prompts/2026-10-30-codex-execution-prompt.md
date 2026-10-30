@@ -32,7 +32,7 @@ nonnegative matrix factorization jointly with a Cox model (η = (YF)β). Read th
    numbers in the chapter come from saved CSV/RDS files through R chunks, not typed by hand.
    Also update `DECISIONS.md`, `ROADMAP.md`, `PROJECT_STATUS.qmd` and the `docs/` READMEs.
 
-5. Close the loop for review. When you finish, or when you stop on a stop condition, write
+5. Close the loop for review. When you finish, or when you run out of diagnosed ideas, write
    `docs/reviews/2026-MM-DD-codex-execution-report.md` (the date you finish), add its row to
    `docs/reviews/README.md`, and fill in the "Review handoff" section at the end of the plan:
    - for each plan item: done, partly done, or not done, with the commit and the evidence (test
@@ -64,17 +64,31 @@ nonnegative matrix factorization jointly with a Cox model (η = (YF)β). Read th
 - Run long jobs in the background with a socket cluster, not `mclapply`. Forking segfaulted on
   macOS in the A1 runs.
 
-## Stop conditions
+## When something goes wrong: diagnose and solve, don't stop
 
-Stop, write a status note in the chapter and commit it, without working around the problem, if:
-- tests fail and the cause is unclear;
-- the benchmark rerun moves external C by more than 0.02 without explanation;
-- Gate S fails. Before you stop, diagnose: per-sweep traces of survival share, β, ‖L‖ and the
-  objective; the sweep where instability starts; which piece fails first. Then write a standalone
-  problem statement that Andrew can take to another reviewer: what was tried, the numbers, and the
-  exact point where it fails. DeSurv solved this balance problem for NMF + Cox, so compare
-  against its mechanism explicitly.
-- a step would use external cohorts to inform a model choice.
+When you hit a problem, diagnose it and try to solve it; do not just stop. That covers failing
+tests, non-convergence, an unexpected benchmark change, a failed Gate S, or a specification piece
+that does not work as written. For each problem:
+
+1. Find the root cause before changing anything. Use per-sweep traces, small reproductions and
+   comparisons with DeSurv or the rebuilt package. Do not try fixes at random.
+2. Make the fix, add a test that fails without it, and rerun what it affects.
+3. Record every attempt, failed ones included, in `docs/plans/2026-10-16-round2-attempts-log.md`
+   and in the chapter: what was wrong, what you changed and what happened.
+
+Gate S needs one rule to stay honest. If the registered run fails and a fix follows, register
+the revised arms as a new, numbered attempt before rerunning them. Report the original failure
+next to the new result, and never edit the original criterion after seeing results.
+
+Keep going until the plan is done or you have no remaining idea backed by a diagnosis. In that
+case, write a standalone problem statement that Andrew can take to another reviewer: what was
+tried, the numbers, the exact point of failure, and your best hypotheses. Then finish the review
+handoff.
+
+Hard limits that hold whatever the problem:
+- Never use the external validation cohorts to choose anything.
+- Never modify `results/benchmark_snapshot_2026-10-14/` or the benchmark tag.
+- Never report work as done while tests fail.
 
 ## After Codex: review prompt for Claude
 
