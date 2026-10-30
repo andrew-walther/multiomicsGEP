@@ -32,6 +32,16 @@ nonnegative matrix factorization jointly with a Cox model (η = (YF)β). Read th
    numbers in the chapter come from saved CSV/RDS files through R chunks, not typed by hand.
    Also update `DECISIONS.md`, `ROADMAP.md`, `PROJECT_STATUS.qmd` and the `docs/` READMEs.
 
+5. Close the loop for review. When you finish, or when you stop on a stop condition, write
+   `docs/reviews/2026-MM-DD-codex-execution-report.md` (the date you finish), add its row to
+   `docs/reviews/README.md`, and fill in the "Review handoff" section at the end of the plan:
+   - for each plan item: done, partly done, or not done, with the commit and the evidence (test
+     output, result file, or chapter section);
+   - every deviation from the plan and why;
+   - every failure, non-converged fit or skipped record, with numbers;
+   - the decisions that Andrew must make next.
+   Commit and push. Do not merge `fix/yfb-supervision` into `main`; a review session reads it first.
+
 ## Chapter rules (the chapter is the main deliverable for the next advisor meeting)
 
 - Open with a short list of takeaways that can be shared as is: what was fixed, what was learned,
@@ -65,3 +75,20 @@ Stop, write a status note in the chapter and commit it, without working around t
   exact point where it fails. DeSurv solved this balance problem for NMF + Cox, so compare
   against its mechanism explicitly.
 - a step would use external cohorts to inform a model choice.
+
+## After Codex: review prompt for Claude
+
+Andrew pastes this into a Claude session at the repository root once Codex has finished:
+
+> Review the Codex execution of `docs/plans/2026-10-30-realignment-plan.md`. Read the plan's
+> "Phase C progress" and "Review handoff" sections and the report under `docs/reviews/` that the
+> handoff names. Check the work against the plan, not against the report: run
+> `Rscript tests/run_tests.R`; read the diff of `fix/yfb-supervision` against `main`; check that
+> `code/fit_yfb_supervised.R` matches §4 of
+> `docs/plans/2026-10-30-Unified-Architecture-Alignment.md` and the plan's S1 list (bounded
+> point-normal β prior, damping, hybrid start, KL from ebnm output, no deletion refits); confirm
+> that the S2 arms and Gate S were registered before the run and that the gate verdict follows from
+> the saved results; and check that the 10/30 chapter's numbers come from saved files and that it
+> follows the chapter rules. Report findings ranked by severity, say whether Gate S is
+> passed, failed or not reached, and recommend merge, revise or stop. Then update the plan's
+> "Review handoff" section with the verdict, and wait for Andrew before merging anything.

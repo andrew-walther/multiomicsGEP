@@ -226,7 +226,7 @@ decision log. We are keeping the projection predictor for the next attempt and h
 predictor, scored for new patients by fitting their activities with the loadings fixed, as the
 fallback.
 
-## Questions for the advisors
+## Open questions
 
 1. Is the decision test above (recovery at 2,000 genes, false positives, convergence) the right
    bar for "survival supervises the loadings"?

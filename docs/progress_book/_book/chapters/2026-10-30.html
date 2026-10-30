@@ -219,7 +219,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#survival-supervision-of-the-loadings-what-we-tried-and-what-comes-next" id="toc-survival-supervision-of-the-loadings-what-we-tried-and-what-comes-next" class="nav-link" data-scroll-target="#survival-supervision-of-the-loadings-what-we-tried-and-what-comes-next"><span class="header-section-number">14.5</span> Survival supervision of the loadings: what we tried and what comes next</a></li>
   <li><a href="#preprocessing-decisions" id="toc-preprocessing-decisions" class="nav-link" data-scroll-target="#preprocessing-decisions"><span class="header-section-number">14.6</span> Preprocessing decisions</a></li>
   <li><a href="#how-the-model-changed-since-the-march-derivation" id="toc-how-the-model-changed-since-the-march-derivation" class="nav-link" data-scroll-target="#how-the-model-changed-since-the-march-derivation"><span class="header-section-number">14.7</span> How the model changed since the March derivation</a></li>
-  <li><a href="#questions-for-the-advisors" id="toc-questions-for-the-advisors" class="nav-link" data-scroll-target="#questions-for-the-advisors"><span class="header-section-number">14.8</span> Questions for the advisors</a></li>
+  <li><a href="#open-questions" id="toc-open-questions" class="nav-link" data-scroll-target="#open-questions"><span class="header-section-number">14.8</span> Open questions</a></li>
   </ul>
 </nav>
     </div>
@@ -674,8 +674,8 @@ ul.task-list li input[type="checkbox"] {
 <h2 data-number="14.7" class="anchored" data-anchor-id="how-the-model-changed-since-the-march-derivation"><span class="header-section-number">14.7</span> How the model changed since the March derivation</h2>
 <p>The March derivation used a latent predictor η = Lβ, so survival entered the update of the patient activities L directly, and a second-order expansion of the Cox likelihood. The October model uses the projection predictor η = (YF)β so that new patients can be scored without refitting, an exact Breslow score with an expected-information curvature, and point-exponential priors. In the evaluated October fit no update of L or F contains a survival term, which is why the fitted model behaves as a two-step method. Every change is recorded with its date and reason in the project’s decision log. We are keeping the projection predictor for the next attempt and holding the latent predictor, scored for new patients by fitting their activities with the loadings fixed, as the fallback.</p>
 </section>
-<section id="questions-for-the-advisors" class="level2" data-number="14.8">
-<h2 data-number="14.8" class="anchored" data-anchor-id="questions-for-the-advisors"><span class="header-section-number">14.8</span> Questions for the advisors</h2>
+<section id="open-questions" class="level2" data-number="14.8">
+<h2 data-number="14.8" class="anchored" data-anchor-id="open-questions"><span class="header-section-number">14.8</span> Open questions</h2>
 <ol type="1">
 <li>Is the decision test above (recovery at 2,000 genes, false positives, convergence) the right bar for “survival supervises the loadings”?</li>
 <li>If the projection predictor cannot be made to work at a balanced weight, should we return to the latent predictor with fold-in scoring, or first try a different balance such as a weight chosen by cross-validation with coefficient intervals from a separate refit?</li>

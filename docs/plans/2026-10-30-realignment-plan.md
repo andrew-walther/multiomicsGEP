@@ -141,7 +141,7 @@ Later code consolidation follows the Gemini layout: a few core scripts that beco
 
 ## Handoff mechanics
 
-Claude does Phase C first (2026-10-30), then hands the rest to Codex. Progress on Phase C is recorded at the end of this file.
+Claude did Phase C on 2026-10-30, and Codex does the rest. When Codex finishes or stops, it writes an execution report and fills in the "Review handoff" section below. A Claude session then reviews the work against this plan with the review prompt at the end of the execution prompt, records its verdict here, and Andrew decides on the merge. This closes the loop back to the session that wrote the plan.
 
 1. Copy this plan to `docs/plans/2026-10-30-realignment-plan.md` and add its row to the README.
 2. Write `docs/prompts/2026-10-30-codex-execution-prompt.md`: the order of phases (C → P records → S0 → S1 → S2 → gate → S3 or diagnostics → D), the stop conditions, and the project rules (attribution, commit style, plain prose, tests after every change to an update script, report failures).
@@ -175,3 +175,14 @@ Work is on `cleanup/before-next-step`, branched from `main` at 69ece3b.
 | C6 sign and β variance | **open, for Codex** | Starting points: Phase C's global flip in `fit_cox_on_yf()` (around lines 1362–1420) can override the partial-likelihood sign; `update_beta.R:185` stores variance plus mean². Check the saved D4 fit's `EBeta`/`EBeta2` and the sign of the adverse program. |
 | C7 branch inventory | **done** | `docs/progress_book/data/2026-10-30-branch-inventory.csv`. 27 of 32 local branches are merged into main. Nothing was deleted. |
 | C8 BO-T12 on Linux | **dropped** | All work runs locally. It goes on the tracker as a known platform risk. |
+
+## Review handoff
+
+*Codex fills this in when it finishes or stops; the review session adds its verdict below.*
+
+- Execution report: (path)
+- Items done / partly done / not done: (table or link)
+- Gate S: (passed / failed / not reached), with the evidence
+- Decisions needed from Andrew:
+
+**Review verdict:** (review session: findings, whether Gate S is passed, failed or not reached, and a merge / revise / stop recommendation)
