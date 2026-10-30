@@ -1,0 +1,1 @@
+Stopped the driver after observing lost coefficient variance under a nondegenerate prior. Current socket tasks may finish their checkpoints; unstarted records remain explicit missing records. No result is treated as a successful gate from this attempt.
