@@ -4,7 +4,7 @@ Written 2026-11-02. This plan says when work moves from this repository into the
 package and the `SSBMF-paper` manuscript, and what moves, so that neither is put off until
 "everything is done".
 
-## The three repositories
+## The three repositories and the role of each
 
 | Repository | Role | What belongs there |
 |---|---|---|
@@ -17,7 +17,7 @@ package version. Patient data is in none of the three: it stays in the git-ignor
 folder (and later in a shared lab location), and the paper repository has the scripts and the
 instructions for obtaining TCGA, CPTAC and the validation cohorts.
 
-## The working rule
+## How code moves from development into the package
 
 Develop and test ideas here. When a piece is shown to work, re-implement it cleanly in `SSBMF`
 with tests, and check that it reproduces the development result on the same data. From then on,
@@ -68,7 +68,7 @@ and rerun the paper's analyses on that version.
 - Decide between CRAN and Bioconductor before Stage 2's interface is final, because Bioconductor
   expects its own data structures.
 
-## What stays here
+## What stays in this repository
 
 Experimental fitters, diagnostic controls, attempt logs, saved diagnostic results and the progress
 book stay in this repository as the record of how the method was developed. They are not cleaned
