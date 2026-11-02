@@ -31,6 +31,13 @@ updates are failures, not convergence. Results and limits are in
 `docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md`: fixed noise
 prevents the tested explosions, but no case passes all screening criteria.
 These controls do not adopt a new model.
+**Priority order (Andrew, 2026-11-02).** (1) Diagnose the root causes of the
+YFB model's supervision failure and fix them; the next registered test is the
+downweighted-genomics attempt S-9 (`docs/prompts/2026-10-30-downweighted-genomics-prompt.md`).
+(2) Only if YFB makes no progress, try the latent parameterization η = Lβ with
+fold-in prediction for new patients (advisor notes in `docs/notes/2026-10-30-yusha-MF_NewPatient_FoldIn.pdf`),
+or develop LB and YFB side by side. (3) Once a single-modality model works,
+extend it to one unified M-modality model that fits one or more modalities.
 Read the registrations before running or replacing any attempt. Current
 findings and decisions belong in `PROJECT_STATUS.qmd` and `DECISIONS.md`.
 
