@@ -1,6 +1,6 @@
-# Codex prompt: register and run the downweighted-genomics test (attempt S-8)
+# Codex prompt: register and run the downweighted-genomics test (attempt S-9)
 
-Written 2026-10-30. Andrew approved registering this test. Paste everything below the line into
+Written 2026-10-30. Andrew approved registering this test. Numbering: S-8 is the targeted mechanism screen already in the attempts log, so this test is S-9. Paste everything below the line into
 Codex from the repository root, on branch `fix/yfb-supervision`.
 
 ---
@@ -70,7 +70,7 @@ Check the algebra numerically (finite differences of L(q) against each update) b
 
 ## Step 3. Registration (before running anything)
 
-Add attempt **S-8** to `docs/plans/2026-10-16-round2-attempts-log.md` and write
+Add attempt **S-9** to `docs/plans/2026-10-16-round2-attempts-log.md` and write
 `docs/plans/2026-10-30-downweighted-genomics-plan.md`. Register three parts:
 
 1. **Pilot.** The three targeted cases (0.25%, 1%, 5% planted variance; p = 2,000; the same
@@ -86,7 +86,7 @@ Add attempt **S-8** to `docs/plans/2026-10-16-round2-attempts-log.md` and write
    datasets per cell; the same seeds and the unsupervised paired reference). Gate S is
    unchanged: at p = 2,000, a recovery gain of at least 3/10 over the unsupervised fit in at least
    two variance cells, mean false-active at most 1, and at least 90% of fits converged.
-   Report S-7 next to S-8.
+   Report S-7 next to S-9.
 
 ## Step 4. Run, diagnose, document
 
