@@ -12,6 +12,11 @@ Continue on `fix/yfb-supervision`. Read these first:
 - `docs/plans/2026-10-30-realignment-plan.md`: the "Problems during execution" rules and Gate S.
 - `docs/prompts/2026-10-30-codex-execution-prompt.md`: the project rules and chapter rules, which
   still apply.
+- `docs/plans/2026-11-01-multiomicsGEP-diagnostic-and-tdd-guide.md`: a Gemini guide. Its Issue 1
+  proposes this same fractional genomics likelihood with matched prior scaling, which bears directly
+  on the KL question in Step 1.3. Issues 2–4 cover anchoring τ, a consistent normalized objective
+  and too many survival-active factors, and it ends with a test gate suite. Treat it as unchecked
+  advice: use what the derivation supports and record what you adopt or reject and why.
 - `DECISIONS.md`, the July entry near "Two candidate directions were tried and empirically rejected"
   (around line 4029). Shrinking the genomics precision in the latent-L model drove L, F and β to
   exactly zero within 2–3 iterations, because L and F co-adapt bilinearly.
