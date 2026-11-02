@@ -29,6 +29,20 @@ feature precisions τ_j also feed a reconstruction blow-up. The test is this: if
 likelihood is downweighted and the Cox likelihood stays at weight 1, does survival shape F while β
 stays calibrated and the fit stays bounded and converges?
 
+## How to work: root causes and tests first
+
+Work from the model derivation and the update algorithm, not from symptoms. For each problem,
+name the mechanism that causes it and fix that mechanism. A change that only hides a symptom
+does not count as a fix, for example clipping, extra damping without a derived reason, or a
+preprocessing step that removes the visible failure. The per-cohort z-standardization is the
+cautionary example: it stabilized the predictor but put negative values into a nonnegative
+factorization and hid the scale problem.
+
+Use test-driven development. From the derivation, write tests that encode its mathematical
+properties before writing the implementation: the objective does not decrease, the KL terms are
+exact, rescaling invariances hold, and the limiting cases (λ_G = 1; no survival signal) reduce
+to the known fits. Watch each test fail before the implementation exists, then make it pass.
+
 ## Step 1. Derivation (write before any code)
 
 Write `derivations/yfb_downweighted_genomics/2026-10-30-downweighted-genomics-derivation.qmd`
