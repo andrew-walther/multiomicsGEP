@@ -1,33 +1,35 @@
-branch,merged_into_main,on_remote,last_commit_date,last_commit,recommendation
-cavi-deflation-init,yes,no,2026-07-13,"K-parsimony follow-up Step 2: deflation-init does NOT reproduce Step 1's rescue (negative result)","safe to delete locally: fully merged into main"
-cleanup/before-next-step,no,no,2026-10-30,"Let the single-log check write to a chosen output folder","keep until merged (current cleanup work)"
-codex/multimodal-yfb,yes,yes,2026-10-12,"Add advisor-facing writeup planning page and record its scope","safe to delete locally: fully merged into main"
-codex/multimodal-yfb-docs,yes,no,2026-09-17,"Archive September progress notebook review","safe to delete locally: fully merged into main"
-cohort-cols-L,yes,yes,2026-05-25,"Add caffeinate sleep prevention to long-running job steps in merged benchmark plan","safe to delete locally: fully merged into main"
-desurv-gene-selection,yes,yes,2026-05-30,"Ignore Quarto render cache directories (*_cache/)","safe to delete locally: fully merged into main"
-feature/supervised-F,yes,yes,2026-10-15,"Keep the benchmark snapshot copies out of git; the manifest verifies them","safe to delete locally: fully merged into main"
-fix-L-update-beta-cycle,yes,no,2026-04-29,"Document Cluster A: training-side β=0 resolved; external generalization mixed","safe to delete locally: fully merged into main"
-fix/current-method,yes,yes,2026-10-30,"Add A1 findings: a larger survival weight does not supervise F","safe to delete locally: fully merged into main"
-joint-k-alpha-bayesopt,yes,no,2026-07-13,"K-parsimony follow-up Step 3: joint (K;alpha) BO finds K=8; not a smaller K","safe to delete locally: fully merged into main"
-lab-meeting-06-18,yes,yes,2026-06-16,"Add DeSurv comparison backup slide (accurate to Young et al. PNAS 2026)","safe to delete locally: fully merged into main"
-m5/k-selection,yes,no,2026-10-15,"Add protected pruning options and record blocked adoption assessment","safe to delete locally: fully merged into main"
-m6/robustness,yes,no,2026-10-15,"Evaluate selected model robustness and training feature sensitivity","safe to delete locally: fully merged into main"
-m7/desurv-h2h,yes,no,2026-10-15,"Document missing DeSurv prerequisite for head-to-head comparison","safe to delete locally: fully merged into main"
-m7/multimodal-comparators,yes,no,2026-10-15,"Audit retained EBMF rank and evaluate fixed multimodal comparators","safe to delete locally: fully merged into main"
-m7/sim-comparators,yes,no,2026-10-15,"Evaluate planted comparators and record unsupported low-rank EBMF cases","safe to delete locally: fully merged into main"
-main,yes,yes,2026-10-30,"Add the 10/30 realignment plan and its execution prompt","keep"
-meeting-synthesis-4-30,yes,no,2026-05-05,"Rewrite ROADMAP and README for biostatistician readability","safe to delete locally: fully merged into main"
-meeting/2026-08-21-prep,yes,yes,2026-08-21,"Extend pathway enrichment to the 2 genomics-only programs (V2 report)","safe to delete locally: fully merged into main"
-meeting/2026-08-27-prep,yes,no,2026-08-27,"Clean up stale K=20 fallback string after independent deck review","safe to delete locally: fully merged into main"
-merged-benchmark,yes,yes,2026-05-27,"Add DeSurv alignment implementation plan and ROADMAP entry","safe to delete locally: fully merged into main"
-multi-cohort-sim,yes,yes,2026-06-14,"Retire results report; update ROADMAP and DECISIONS for multi-cohort sim","safe to delete locally: fully merged into main"
-objective-normalization,yes,no,2026-07-12,"Document Phase 1 completion: updated D4 metrics; K_eff open item; session log","safe to delete locally: fully merged into main"
-phase1-platform-norm,no,no,2026-05-06,"Canonical YFB merged result: K=3; no_rank; per_platform_standardize","archive: May 2026 experiment not merged; tag then delete if Andrew agrees"
-phase2-init-constraints,no,no,2026-05-06,"Phase 2 (init constraints): implement; test; sweep; verdict=Discard","archive: May 2026 experiment not merged; tag then delete if Andrew agrees"
-phase3-followup-warmstart,yes,no,2026-07-13,"K-parsimony follow-up Step 1: K=7's necessity was an optimization artifact at K=4-5","safe to delete locally: fully merged into main"
-phase3-multistart,yes,no,2026-05-06,"Phase 3 (multi-initialization): implement wrapper; sweep; verdict=Discard","safe to delete locally: fully merged into main"
-phase4-k-cv,yes,no,2026-05-06,"Phase 4 K-CV results: normal→K=3; point_normal→K=8 (spike artifact); recommend K=5","safe to delete locally: fully merged into main"
-pre-merge-synthesis-05_06_26,yes,yes,2026-05-20,"Fix YFB K-CV sign orientation; delete stale benchmark artifacts","safe to delete locally: fully merged into main"
-rebuild/unified-ssbmf,no,yes,2026-10-26,"Add the per-arm row files of the balance panels","keep unmerged as a reference for the unified implementation"
-round2/supervised,yes,yes,2026-10-24,"Add placeholder progress-book chapter for the October 26 meeting","safe to delete locally: fully merged into main"
-stratified-cohort-baseline-hazard,yes,no,2026-07-15,"Address independent review of stratified Cox partial likelihood","safe to delete locally: fully merged into main"
+branch,merged_into_main,on_remote,last_commit_date,last_commit,purpose,recommendation
+cavi-deflation-init,yes,no,2026-07-13,K-parsimony follow-up Step 2: deflation-init does NOT reproduce Step 1's rescue (negative result),K-parsimony follow-up Step 2: deflation-init does NOT reproduce Step 1's rescue (negative result),archive candidate: fully merged; deletion requires a decision
+cleanup/before-next-step,yes,no,2026-10-30,"Rerun the D4 benchmark after the KL fix, with single and double log","Rerun the D4 benchmark after the KL fix, with single and double log",archive candidate: fully merged; deletion requires a decision
+cleanup/sign-variance-audit,yes,no,2026-10-30,Verify hazard orientation and posterior coefficient variance,Verify hazard orientation and posterior coefficient variance,archive candidate: fully merged; deletion requires a decision
+codex/multimodal-yfb,yes,yes,2026-10-12,Add advisor-facing writeup planning page and record its scope,Add advisor-facing writeup planning page and record its scope,archive candidate: fully merged; deletion requires a decision
+codex/multimodal-yfb-docs,yes,no,2026-09-17,Archive September progress notebook review,Archive September progress notebook review,archive candidate: fully merged; deletion requires a decision
+cohort-cols-L,yes,yes,2026-05-25,Add caffeinate sleep prevention to long-running job steps in merged benchmark plan,Add caffeinate sleep prevention to long-running job steps in merged benchmark plan,archive candidate: fully merged; deletion requires a decision
+desurv-gene-selection,yes,yes,2026-05-30,Ignore Quarto render cache directories (*_cache/),Ignore Quarto render cache directories (*_cache/),archive candidate: fully merged; deletion requires a decision
+feature/supervised-F,yes,yes,2026-10-15,Keep the benchmark snapshot copies out of git; the manifest verifies them,Keep the benchmark snapshot copies out of git; the manifest verifies them,archive candidate: fully merged; deletion requires a decision
+fix-L-update-beta-cycle,yes,no,2026-04-29,Document Cluster A: training-side β=0 resolved; external generalization mixed,Document Cluster A: training-side β=0 resolved; external generalization mixed,archive candidate: fully merged; deletion requires a decision
+fix/current-method,yes,yes,2026-10-30,Add A1 findings: a larger survival weight does not supervise F,Add A1 findings: a larger survival weight does not supervise F,archive candidate: fully merged; deletion requires a decision
+fix/yfb-supervision,no,yes,2026-10-30,Retain the corrected shared-loading gate result and exact diagnostic replays,Diagnose calibration failures and register corrected supervision attempts,keep: unmerged supervision evaluation pending review
+joint-k-alpha-bayesopt,yes,no,2026-07-13,"K-parsimony follow-up Step 3: joint (K,alpha) BO finds K=8, not a smaller K","K-parsimony follow-up Step 3: joint (K,alpha) BO finds K=8, not a smaller K",archive candidate: fully merged; deletion requires a decision
+lab-meeting-06-18,yes,yes,2026-06-16,Add DeSurv comparison backup slide (accurate to Young et al. PNAS 2026),Add DeSurv comparison backup slide (accurate to Young et al. PNAS 2026),archive candidate: fully merged; deletion requires a decision
+m5/k-selection,yes,no,2026-10-15,Add protected pruning options and record blocked adoption assessment,Add protected pruning options and record blocked adoption assessment,archive candidate: fully merged; deletion requires a decision
+m6/robustness,yes,no,2026-10-15,Evaluate selected model robustness and training feature sensitivity,Evaluate selected model robustness and training feature sensitivity,archive candidate: fully merged; deletion requires a decision
+m7/desurv-h2h,yes,no,2026-10-15,Document missing DeSurv prerequisite for head-to-head comparison,Document missing DeSurv prerequisite for head-to-head comparison,archive candidate: fully merged; deletion requires a decision
+m7/multimodal-comparators,yes,no,2026-10-15,Audit retained EBMF rank and evaluate fixed multimodal comparators,Audit retained EBMF rank and evaluate fixed multimodal comparators,archive candidate: fully merged; deletion requires a decision
+m7/sim-comparators,yes,no,2026-10-15,Evaluate planted comparators and record unsupported low-rank EBMF cases,Evaluate planted comparators and record unsupported low-rank EBMF cases,archive candidate: fully merged; deletion requires a decision
+main,yes,yes,2026-10-30,Verify hazard orientation and posterior coefficient variance,Verify hazard orientation and posterior coefficient variance,keep: active primary branch
+meeting-synthesis-4-30,yes,no,2026-05-05,Rewrite ROADMAP and README for biostatistician readability,Rewrite ROADMAP and README for biostatistician readability,archive candidate: fully merged; deletion requires a decision
+meeting/2026-08-21-prep,yes,yes,2026-08-21,Extend pathway enrichment to the 2 genomics-only programs (V2 report),Extend pathway enrichment to the 2 genomics-only programs (V2 report),archive candidate: fully merged; deletion requires a decision
+meeting/2026-08-27-prep,yes,no,2026-08-27,Clean up stale K=20 fallback string after independent deck review,Clean up stale K=20 fallback string after independent deck review,archive candidate: fully merged; deletion requires a decision
+merged-benchmark,yes,yes,2026-05-27,Add DeSurv alignment implementation plan and ROADMAP entry,Add DeSurv alignment implementation plan and ROADMAP entry,archive candidate: fully merged; deletion requires a decision
+multi-cohort-sim,yes,yes,2026-06-14,Retire results report; update ROADMAP and DECISIONS for multi-cohort sim,Retire results report; update ROADMAP and DECISIONS for multi-cohort sim,archive candidate: fully merged; deletion requires a decision
+objective-normalization,yes,no,2026-07-12,"Document Phase 1 completion: updated D4 metrics, K_eff open item, session log","Document Phase 1 completion: updated D4 metrics, K_eff open item, session log",archive candidate: fully merged; deletion requires a decision
+phase1-platform-norm,no,no,2026-05-06,"Canonical YFB merged result: K=3, no_rank, per_platform_standardize","Canonical YFB merged result: K=3, no_rank, per_platform_standardize","keep: unmerged work, review before archiving"
+phase2-init-constraints,no,no,2026-05-06,"Phase 2 (init constraints): implement, test, sweep, verdict=Discard","Phase 2 (init constraints): implement, test, sweep, verdict=Discard","keep: unmerged work, review before archiving"
+phase3-followup-warmstart,yes,no,2026-07-13,K-parsimony follow-up Step 1: K=7's necessity was an optimization artifact at K=4-5,K-parsimony follow-up Step 1: K=7's necessity was an optimization artifact at K=4-5,archive candidate: fully merged; deletion requires a decision
+phase3-multistart,yes,no,2026-05-06,"Phase 3 (multi-initialization): implement wrapper, sweep, verdict=Discard","Phase 3 (multi-initialization): implement wrapper, sweep, verdict=Discard",archive candidate: fully merged; deletion requires a decision
+phase4-k-cv,yes,no,2026-05-06,"Phase 4 K-CV results: normal→K=3, point_normal→K=8 (spike artifact); recommend K=5","Phase 4 K-CV results: normal→K=3, point_normal→K=8 (spike artifact); recommend K=5",archive candidate: fully merged; deletion requires a decision
+pre-merge-synthesis-05_06_26,yes,yes,2026-05-20,Fix YFB K-CV sign orientation; delete stale benchmark artifacts,Fix YFB K-CV sign orientation; delete stale benchmark artifacts,archive candidate: fully merged; deletion requires a decision
+rebuild/unified-ssbmf,no,yes,2026-10-26,Add the per-arm row files of the balance panels,Add the per-arm row files of the balance panels,"keep: unmerged work, review before archiving"
+round2/supervised,yes,yes,2026-10-24,Add placeholder progress-book chapter for the October 26 meeting,Add placeholder progress-book chapter for the October 26 meeting,archive candidate: fully merged; deletion requires a decision
+stratified-cohort-baseline-hazard,yes,no,2026-07-15,Address independent review of stratified Cox partial likelihood,Address independent review of stratified Cox partial likelihood,archive candidate: fully merged; deletion requires a decision

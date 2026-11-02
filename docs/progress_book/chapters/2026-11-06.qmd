@@ -6,7 +6,10 @@ is done.
 ## Potential Topics
 
 - **Rashid Lab Meeting Update (November 5th, 2026)** (finalized)
-- Other topics will be added once the work behind them is done.
+- Executive Summary
+- Key Issues Resolved
+- Attempts to resolve model supervision issues
+- Open Items & Questions
 
 ## Rashid Lab Meeting Update (November 5th, 2026)
 

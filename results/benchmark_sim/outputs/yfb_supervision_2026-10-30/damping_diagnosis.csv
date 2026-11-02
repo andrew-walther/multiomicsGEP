@@ -1,0 +1,5 @@
+"cor_planted","recovered","false_active","converged","c_validation","share","sweeps","decreases","max_beta","flags","error","rho"
+0.975228418362254,TRUE,5,FALSE,0.717779868297272,0.999997742891452,45,26,1.61473038570688,"numerical_failure","Sequential posterior mismatch",0.2
+0.896846237575391,TRUE,4,FALSE,0.699529633113829,0.998701809272777,19,0,1.41315849277097,"numerical_failure","Bounded β marginal likelihood did not converge",0.02
+0.96536038948828,TRUE,4,FALSE,0.712135465663217,0.723853693841924,13,6,1.63940220552041,"numerical_failure","Invalid ebnm posterior or KL",0.002
+0.749070779087759,TRUE,4,FALSE,0.654374412041392,0.0786279048437486,8,5,1.34658810261991,"numerical_failure","Invalid ebnm posterior or KL",2e-04
