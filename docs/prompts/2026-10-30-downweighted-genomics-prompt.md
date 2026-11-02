@@ -93,7 +93,7 @@ Add attempt **S-9** to `docs/plans/2026-10-16-round2-attempts-log.md` and write
 - Run the pilot, then the calibration check, then the grid if the pilot passed. Use PSOCK workers,
   one BLAS thread each, in the background.
 - The diagnose-and-solve rules apply. Any fix after a failed registered run becomes a new numbered
-  attempt, S-9 and onward, registered before it is rerun. The original criterion is never edited.
+  attempt, S-10 and onward, registered before it is rerun. The original criterion is never edited.
 - If the pilot shows the July collapse, diagnose it (per-sweep ‖L‖, ‖F‖, β, the prior scales and
   the KL terms). Try the other KL option from Step 1.3 as a registered attempt before concluding.
 - Write `docs/findings/2026-10-30-downweighted-genomics-findings.md`. Update the 10/30 chapter
