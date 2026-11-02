@@ -4,7 +4,7 @@
     "href": "index.html",
     "title": "SSBMF Progress Notebook",
     "section": "",
-    "text": "About this notebook\nRunning record of SSBMF project progress with one chapter per advisor meeting. Each chapter covers what changed in the method, what was run to validate it (on real cohorts and on simulation), whether the new results make sense, and what’s still open. Figures and tables that came up in discussion are included directly; anything that needs the full statistical detail is linked out under that chapter’s “Deep dive.”\nFor a complete session-by-session build log (every script, test, and decision), see PROJECT_STATUS.qmd at the repo root. This notebook is the meeting-facing summary, not a replacement for that log.\nChapters are listed in the sidebar in date order; click a date to jump straight to that meeting.\nThe October 30 update is the latest account of precision balance, numerical posterior checks and the registered survival-supervision decision test. Earlier chapters describe their own checkpoints. The evaluated single-modality benchmark still uses \\(\\alpha_F=0\\); a fully validated survival-supervised replacement remains an open research goal.",
+    "text": "About this notebook\nRunning record of SSBMF project progress with one chapter per advisor meeting. Each chapter covers what changed in the method, what was run to validate it (on real cohorts and on simulation), whether the new results make sense, and what’s still open. Figures and tables that came up in discussion are included directly; anything that needs the full statistical detail is linked out under that chapter’s “Deep dive.”\nFor a complete session-by-session build log (every script, test, and decision), see PROJECT_STATUS.qmd at the repo root. This notebook is the meeting-facing summary, not a replacement for that log.\nChapters are listed in the sidebar in date order; click a date to jump straight to that meeting.\nThe October 30 update is the latest account of precision balance, numerical posterior checks and the registered survival-supervision decision test. Earlier chapters describe their own checkpoints. The evaluated single-modality benchmark still uses \\(\\alpha_F=0\\); a fully validated survival-supervised replacement remains an open research goal. The November 6 chapter is this week’s working chapter and is filled in as the work is done.",
     "crumbs": [
       "About this notebook"
     ]
@@ -1247,6 +1247,36 @@
     "text": "14.10 Open questions\n\nShould the projection model be rederived with a consistently normalized objective and an acceptance rule, before further fitting experiments?\nIf the gate remains unmet, should the next registered study use a latent predictor with fold-in prediction, or first derive a coherent projection objective?\nHow should uncertainty be reported under a strongly tempered Cox likelihood, given that conditional posterior activity can increase without stable recovery or improved prediction?\nShould factors be allowed to predict survival after their reconstruction activity becomes exactly zero, and what then defines an expression program?\nWhich external cohort should remain unused for the final claim after the methodology is fixed?",
     "crumbs": [
       "<span class='chapter-number'>14</span>  <span class='chapter-title'>October 30, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-11-06.html",
+    "href": "chapters/2026-11-06.html",
+    "title": "15  November 6, 2026",
+    "section": "",
+    "text": "15.1 Potential Topics\nWorking chapter for the week of November 2–6. Sections are added as the work is done.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>November 6, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-11-06.html#potential-topics",
+    "href": "chapters/2026-11-06.html#potential-topics",
+    "title": "15  November 6, 2026",
+    "section": "",
+    "text": "Rashid Lab Meeting Update (November 5th, 2026) (finalized)\nOther topics will be added once the work behind them is done.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>November 6, 2026</span>"
+    ]
+  },
+  {
+    "objectID": "chapters/2026-11-06.html#rashid-lab-meeting-update-november-5th-2026",
+    "href": "chapters/2026-11-06.html#rashid-lab-meeting-update-november-5th-2026",
+    "title": "15  November 6, 2026",
+    "section": "15.2 Rashid Lab Meeting Update (November 5th, 2026)",
+    "text": "15.2 Rashid Lab Meeting Update (November 5th, 2026)\nTo be filled in.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>November 6, 2026</span>"
     ]
   }
 ]

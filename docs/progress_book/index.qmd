@@ -18,6 +18,8 @@ precision balance, numerical posterior checks and the registered survival-superv
 decision test. Earlier chapters describe their own checkpoints.
 The evaluated single-modality benchmark still uses $\alpha_F=0$; a fully
 validated survival-supervised replacement remains an open research goal.
+The [November 6 chapter](chapters/2026-11-06.qmd) is this week's working
+chapter and is filled in as the work is done.
 
 ## Project synopsis
 
