@@ -2,12 +2,12 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.19">
+<meta name="generator" content="quarto-1.10.20">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Andrew Walther">
-<meta name="dcterms.date" content="2026-10-30">
+<meta name="dcterms.date" content="2026-11-02">
 
 <title>SSBMF Progress Notebook</title>
 <style>
@@ -45,7 +45,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-17888a1159294d3eb470f19f6f52f5a5.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap-8cc404aacf9528d5424b1e914da1fcb0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
@@ -233,6 +233,12 @@ window.Quarto = {
  <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">October 30, 2026</span></span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./chapters/2026-11-06.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">November 6, 2026</span></span></a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -273,7 +279,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">October 30, 2026</p>
+      <p class="date">November 2, 2026</p>
     </div>
   </div>
   
@@ -290,7 +296,7 @@ window.Quarto = {
 <p>Running record of SSBMF project progress with one chapter per advisor meeting. Each chapter covers what changed in the method, what was run to validate it (on real cohorts and on simulation), whether the new results make sense, and what’s still open. Figures and tables that came up in discussion are included directly; anything that needs the full statistical detail is linked out under that chapter’s “Deep dive.”</p>
 <p>For a complete session-by-session build log (every script, test, and decision), see <code>PROJECT_STATUS.qmd</code> at the repo root. This notebook is the meeting-facing summary, not a replacement for that log.</p>
 <p>Chapters are listed in the sidebar in date order; click a date to jump straight to that meeting.</p>
-<p>The <a href="./chapters/2026-10-16.html">October 16 update</a> is the latest account of survival-supervision validation, full-range expression sensitivity and the CpG arithmetic repair. Earlier chapters describe their own checkpoints. The evaluated single-modality benchmark still uses <span class="math inline">\(\alpha_F=0\)</span>; a fully validated survival-supervised replacement remains an open research goal.</p>
+<p>The <a href="./chapters/2026-10-16.html">October 16 update</a> is the latest account of survival-supervision validation, full-range expression sensitivity and the CpG arithmetic repair. Earlier chapters describe their own checkpoints. The evaluated single-modality benchmark still uses <span class="math inline">\(\alpha_F=0\)</span>; a fully validated survival-supervised replacement remains an open research goal. The <a href="./chapters/2026-11-06.html">November 6 chapter</a> is this week’s working chapter and is filled in as the work is done.</p>
 <section id="project-synopsis" class="level2">
 <h2 class="anchored" data-anchor-id="project-synopsis">Project synopsis</h2>
 <p>Supervised Bayesian Matrix Factorization (SSBMF) jointly factorizes a genomics matrix (gene expression) and a patient survival outcome, so the resulting gene expression programs (GEPs) are chosen to be both genomically coherent <em>and</em> prognostically relevant, unlike standard unsupervised factorization (PCA, NMF), which has no reason to recover clinically meaningful structure.</p>
