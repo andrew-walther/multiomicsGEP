@@ -1,15 +1,69 @@
 # Current project state {.unnumbered}
 
-Updated November 2, 2026. The project aims to learn molecular loadings that
+Updated November 3, 2026. The project aims to learn molecular loadings that
 respond reliably to survival while preserving interpretable molecular programs.
 
-| Priority | Work | Status | Next checkpoint |
-|---|---|---|---|
-| 1 | YFB survival supervision | Open | Derive and register S-9, then evaluate recovery, false activity and convergence |
-| 2 | Supervision review | Open | Complete the independent review before merging the experimental fitter |
-| 3 | LB with fold-in prediction | Conditional | Investigate if the YFB route stalls |
-| 4 | Unified multimodal fitter | Deferred | Revisit if running the unified model with one modality can resolve supervision |
-| 5 | Single-modality R package | Conditional | Start once the single-modality acceptance criteria are met |
+## Research status
+
+| Stage | Work | Evidence or next checkpoint |
+|---|---|---|
+| Done | Historical benchmark, expression sensitivity, Round2 diagnostics | Historical external prediction benchmark and dated findings |
+| In progress | Resolve survival supervision | Derive and register S-9, then assess recovery, false activity and convergence |
+| Next | Independent supervision review | Review the registered results before merging the experimental fitter |
+| Conditional | LB with fold-in prediction | Investigate if the YFB route stalls |
+| Conditional | Unified multimodal model | Use insights from modality-specific priors or shared factors if they solve supervision at M = 1 |
+| Conditional | R package | Start after single-modality acceptance |
+
+## Model architecture
+
+![Three model states showing matrix dimensions, paired survival outcomes, and where supervision enters.](figures/supervision-states.svg)
+
+The historical YFB configuration estimates molecular loadings without survival
+feedback and uses projected expression to estimate survival coefficients. The
+target YFB formulation lets Cox information influence $F$. In LB, the Cox
+predictor depends directly on $L$. A unified extension uses shared patient
+scores and modality-specific loadings, priors, and noise. A result at $M=1$
+must pass the same supervision gate before the unified fitter becomes the
+common implementation.
+
+The comparison draws on the visual separation of reconstruction and Cox
+regression in Young et al., DeSurv Figure 1. Figure 2 and supplement Figures
+S1–S3 motivate separating convergence, recovery and held-out performance in
+the evidence section. The diagrams depict this project's EBMF implementations
+and research goals. [DeSurv reproduction materials](https://github.com/rashidlab/DeSurv-paper).
+
+## Fitting and prediction
+
+![The variational objective and one sweep of the experimental YFB fitter.](figures/variational-updates.svg)
+
+In the experimental YFB fitter, the molecular term is an expected Gaussian
+log likelihood with gene-wise precision. The Cox working approximation uses
+risk-set derivatives and posterior predictor uncertainty. KL terms account for
+the variational posteriors relative to their priors. Each sweep forms the Cox
+working quantities, updates $L,F,\beta$ by factor and then updates $\tau$
+if its precision is free. Factor scaling is canonicalized before tracking
+objective and parameter movement. The S-9 weighting change is a proposed
+experiment, with its derivation and acceptance criteria to be recorded before
+fitting.
+
+![YFB held-out prediction from feature alignment through C-index.](figures/held-out-prediction.svg)
+
+Training fixes the loading matrix, its column norms where used, and survival
+coefficients. Held-out expression is aligned to the training feature space
+under the benchmark preprocessing contract. The projection gives a risk
+score for each patient. Concordance evaluates the ordering of comparable
+observed survival pairs using the training-fixed risk orientation.
+
+## Evidence
+
+| Result | What it establishes |
+|---|---|
+| Historical YFB mean external C-index 0.627 across five series | Discrimination using the frozen predictive benchmark with zero loading feedback |
+| Attempt 7 completed 360 fits, 153 nonconverged | The corrected shared-loading design failed the registered supervision gate |
+| S-8 fixed noise prevented the tested explosions | The targeted controls identified a numerical mechanism. No case passed the screening criteria. |
+
+See the [October 30 chapter](chapters/2026-10-30.qmd) for saved tables and
+diagnostic plots.
 
 <details>
 <summary>What has been completed</summary>
@@ -45,3 +99,76 @@ external dataset series. The curves compare within-cohort risk tertiles.
 See the [October 30 chapter](chapters/2026-10-30.qmd) for the experimental
 evaluation and the [roadmap](https://github.com/andrew-walther/multiomicsGEP/blob/fix/yfb-supervision/ROADMAP.md)
 for the wider backlog.
+
+## Open decisions
+
+The saved response stays in this browser. Export the JSON and share it in a
+later project session to record the decision in the repository.
+
+```{=html}
+<form id="archive-decision">
+  <fieldset>
+    <legend>Long-term home for the synthetic checkpoint archive</legend>
+    <p>The older checkpoints can be restored from the pinned project revision.
+      A separate archive is useful if the files should have their own lifecycle.</p>
+    <label><input type="radio" name="choice" value="git-history" required>
+      Use the pinned repository revision</label><br>
+    <label><input type="radio" name="choice" value="external">
+      Use a separate durable archive</label>
+    <p><label for="archive-note">Destination or notes</label><br>
+      <textarea id="archive-note" name="note" rows="3"></textarea></p>
+    <button type="submit">Save decision</button>
+    <button type="button" id="archive-export" disabled>Export JSON</button>
+    <p id="archive-status" role="status" aria-live="polite"></p>
+  </fieldset>
+</form>
+<script>
+(() => {
+  const key = "multiomicsGEP.checkpoint-archive.v1";
+  const form = document.getElementById("archive-decision");
+  const status = document.getElementById("archive-status");
+  const exportButton = document.getElementById("archive-export");
+  let decision;
+  const showSaved = () => {
+    exportButton.disabled = false;
+    status.textContent = "Saved " + new Date(decision.savedAt).toLocaleString();
+  };
+  try {
+    decision = JSON.parse(localStorage.getItem(key));
+    if (decision?.choice) {
+      form.elements.choice.value = decision.choice;
+      form.elements.note.value = decision.note;
+      showSaved();
+    }
+  } catch {
+    status.textContent = "Saved browser storage is unavailable. You can still export after saving.";
+  }
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!form.elements.choice.value) return;
+    decision = {
+      id: "checkpoint-archive-destination",
+      choice: form.elements.choice.value,
+      note: form.elements.note.value.trim(),
+      savedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(key, JSON.stringify(decision));
+      showSaved();
+    } catch {
+      exportButton.disabled = false;
+      status.textContent = "Browser storage is unavailable. Export this response before closing.";
+    }
+  });
+  exportButton.addEventListener("click", () => {
+    if (!decision) return;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(decision, null, 2)], {type: "application/json"}));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "multiomicsGEP-decision.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+})();
+</script>
+```

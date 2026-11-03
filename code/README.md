@@ -93,3 +93,23 @@ Each study's design and outcome is recorded in `docs/plans/`.
 `fit_yfb_supervised.R` provides the opt-in YFB fitter used in the October 30
 supervision evaluation. See the [execution report](../docs/reviews/2026-10-30-codex-execution-report.md)
 for the evaluated configurations and unresolved criteria.
+
+## Model families and shared code
+
+| Family | Fit and prediction | Dedicated updates |
+|---|---|---|
+| LB | `fit_modular.R`, `fit_modular_multistart.R`, `predict.R` | `update_L.R` and `update_F.R`. YFB also sources `update_L.R` for the reconstruction residual helper. |
+| Historical YFB | `fit_cox_on_yf.R`, `predict_cox_on_yf.R` | `update_L_surv_YFB.R`, `update_F_surv_YFB.R`, `update_beta_cohort.R` |
+| Experimental YFB | `fit_yfb_supervised.R` | `yfb_exponential_stable.R`, `yfb_diagnostic_controls.R` and the coupled loading sweep |
+| Multimodal YFB | `fit_multimodal_yfb.R`, `predict_multimodal_yfb.R` | `preprocess_multimodal_yfb.R`, `multimodal_yfb_helpers.R`, `multimodal_yfb_updates.R`, `multimodal_yfb_sweep.cpp` |
+
+LB and historical YFB source `update_beta.R`, `update_tau.R`,
+`compute_elbo.R`, `update_F_cohort.R` and `deflation_init.R`. The experimental
+and multimodal YFB paths share parts of the Cox and loading update machinery.
+The historical YFB canonical path also calls the multimodal loading update.
+The V1 and V2 monoliths are reference implementations.
+
+Start a physical split by extracting and testing the shared reconstruction
+residual helper. Align the Cox calculations only after comparing tie and
+stratum handling, extreme predictors, and benchmark parity. Keep the current
+entry paths callable during any directory migration.

@@ -137,3 +137,8 @@ intercept (`profile_cox_intercept`, `code/profile_cox_intercept.R`), log-space C
 None is adopted. Their runners live in `results/benchmark_sim/` and `results/multimodal_real/`; read
 the study's entry in `docs/plans/2026-10-16-round2-attempts-log.md` before running one, and do not
 repeat a completed study without a new registered entry.
+
+The tracker includes standalone architecture, update-cycle and prediction
+SVGs under `docs/progress_book/figures/`. Rebuild them with
+`python3 docs/progress_book/figures/build_diagrams.py`. The [code map](code/README.md)
+separates LB, historical YFB, experimental YFB, multimodal and shared scripts.

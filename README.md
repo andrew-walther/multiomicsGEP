@@ -263,3 +263,9 @@ coverage validation. The registration is
 [the targeted diagnostic plan](docs/plans/2026-10-30-yfb-targeted-diagnostics-plan.md).
 
 Results, derivation and complete failure inventory: [targeted findings](docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md). Fixed τ stabilizes the tested reconstructions; supervision remains unresolved.
+
+The [project tracker](docs/progress_book/current-state.qmd) includes the three
+model states, fitting and held-out prediction diagrams, and a browser-local
+decision form. Rebuild the SVGs with
+`python3 docs/progress_book/figures/build_diagrams.py`, then render the
+progress book using RStudio Quarto.
