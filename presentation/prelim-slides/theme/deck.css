@@ -57,7 +57,7 @@
 
 /* Aims slide: one coloured box per aim, its test underneath ------------------- */
 .reveal .p3-aims { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.55em; margin-top: 0.3em; }
-.reveal .p3-aim { border-radius: 8px; overflow: hidden; font-size: 0.74em; line-height: 1.32; display: flex; flex-direction: column; }
+.reveal .p3-aim { border-radius: 8px; overflow: hidden; font-size: 0.92em; line-height: 1.32; display: flex; flex-direction: column; }
 .reveal .p3-aim .head { color: #fff; font-weight: 700; padding: 0.5em 0.65em; font-size: 1.12em; }
 .reveal .p3-aim .body { padding: 0.5em 0.65em; flex: 1; }
 .reveal .p3-aim .test { padding: 0.45em 0.65em; border-top: 2px dashed rgba(0,0,0,0.18); }
@@ -87,3 +87,7 @@
 
 /* Outline slide: the title rule already separates the heading. */
 .reveal .agenda-rows .agenda-row:first-child { border-top: none; }
+
+/* Two-card slides with room to spare (the fitted vs finalized model slide). */
+.reveal .p3-cards.roomy .p3-card { font-size: 1.0em; padding: 0.6em 0.9em; }
+.reveal .p3-cards.roomy .p3-card li { margin-bottom: 0.45em; }

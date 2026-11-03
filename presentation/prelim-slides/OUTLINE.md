@@ -71,7 +71,7 @@ Pauses on the equations and figures will add to the read-aloud time.
 
 ## Open items
 
-- Slides 12 and 23 leave space at the bottom and could take larger text.
+- Andrew's review pass on organization and content structure.
 
 ## Sources
 

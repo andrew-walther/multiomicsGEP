@@ -317,7 +317,7 @@ Each prior's parameters are fitted by empirical Bayes, program by program (ebnm 
 
 ## So far survival sets the coefficients but not the loadings {data-menu-title="Fitted vs finalized" data-footer-part="Methods"}
 
-::: {.p3-cards .two}
+::: {.p3-cards .two .roomy}
 ::: {.p3-card .grey}
 <h3>Model fitted so far</h3>
 
@@ -644,6 +644,8 @@ estimated programs were merges
 <div class="p3-aim a3"><div class="head">Methylation linked to expression</div><div class="body">Programs that load on genes and CpG sites together, for example hypomethylated promoters of basal-like genes with higher expression</div><div class="test"><b>Test</b>CpG sites mapped to genes and promoters, validation in matched ICGC data</div></div>
 <div class="p3-aim a4"><div class="head">Number of programs from the data</div><div class="body">A rank chosen without using the validation cohorts</div><div class="test"><b>Test</b>The same final rank across starting ranks in training</div></div>
 </div>
+
+<div class="p3-take" style="margin-top:0.8em;">Each aim is paired with a test that could fail</div>
 
 ::: {.notes}
 [1 min | running 19.25]
