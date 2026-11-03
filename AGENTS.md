@@ -142,3 +142,8 @@ The tracker includes standalone architecture, update-cycle and prediction
 SVGs under `docs/progress_book/figures/`. Rebuild them with
 `python3 docs/progress_book/figures/build_diagrams.py`. The [code map](code/README.md)
 separates LB, historical YFB, experimental YFB, multimodal and shared scripts.
+
+Maintain the tracker’s Completed Results checklist alongside saved evidence.
+Count a checked diagnostic as a completed result while keeping its acceptance
+verdict explicit. Update the displayed checklist count when adding or
+changing items.

@@ -269,3 +269,6 @@ model states, fitting and held-out prediction diagrams, and a browser-local
 decision form. Rebuild the SVGs with
 `python3 docs/progress_book/figures/build_diagrams.py`, then render the
 progress book using RStudio Quarto.
+
+The tracker’s **Completed Results** section distinguishes saved historical and
+diagnostic findings from evidence still needed for the final supervised method.

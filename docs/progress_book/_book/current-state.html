@@ -256,8 +256,21 @@ window.Quarto = {
   <ul>
   <li><a href="#research-status" id="toc-research-status" class="nav-link active" data-scroll-target="#research-status">Research status</a></li>
   <li><a href="#model-architecture" id="toc-model-architecture" class="nav-link" data-scroll-target="#model-architecture">Model architecture</a></li>
-  <li><a href="#fitting-and-prediction" id="toc-fitting-and-prediction" class="nav-link" data-scroll-target="#fitting-and-prediction">Fitting and prediction</a></li>
+  <li><a href="#fitting-and-prediction" id="toc-fitting-and-prediction" class="nav-link" data-scroll-target="#fitting-and-prediction">Fitting and prediction</a>
+  <ul class="collapse">
+  <li><a href="#sampling-model-and-empirical-bayes-priors" id="toc-sampling-model-and-empirical-bayes-priors" class="nav-link" data-scroll-target="#sampling-model-and-empirical-bayes-priors">Sampling model and empirical Bayes priors</a></li>
+  <li><a href="#variational-fitting-criterion" id="toc-variational-fitting-criterion" class="nav-link" data-scroll-target="#variational-fitting-criterion">Variational fitting criterion</a></li>
+  </ul></li>
   <li><a href="#evidence" id="toc-evidence" class="nav-link" data-scroll-target="#evidence">Evidence</a></li>
+  <li><a href="#completed-results" id="toc-completed-results" class="nav-link" data-scroll-target="#completed-results">Completed Results</a>
+  <ul class="collapse">
+  <li><a href="#methodology" id="toc-methodology" class="nav-link" data-scroll-target="#methodology">Methodology</a></li>
+  <li><a href="#simulation" id="toc-simulation" class="nav-link" data-scroll-target="#simulation">Simulation</a></li>
+  <li><a href="#real-data-application" id="toc-real-data-application" class="nav-link" data-scroll-target="#real-data-application">Real-data application</a></li>
+  <li><a href="#biological-characterization" id="toc-biological-characterization" class="nav-link" data-scroll-target="#biological-characterization">Biological characterization</a></li>
+  <li><a href="#sensitivity-and-reproducibility" id="toc-sensitivity-and-reproducibility" class="nav-link" data-scroll-target="#sensitivity-and-reproducibility">Sensitivity and reproducibility</a></li>
+  <li><a href="#conditional-multimodal-extension" id="toc-conditional-multimodal-extension" class="nav-link" data-scroll-target="#conditional-multimodal-extension">Conditional multimodal extension</a></li>
+  </ul></li>
   <li><a href="#open-decisions" id="toc-open-decisions" class="nav-link" data-scroll-target="#open-decisions">Open decisions</a></li>
   </ul>
 </nav>
@@ -353,14 +366,49 @@ window.Quarto = {
 <figcaption>The variational objective and one sweep of the experimental YFB fitter.</figcaption>
 </figure>
 </div>
-<p>In the experimental YFB fitter, the molecular term is an expected Gaussian log likelihood with gene-wise precision. The Cox working approximation uses risk-set derivatives and posterior predictor uncertainty. KL terms account for the variational posteriors relative to their priors. Its monitored surrogate has the following form when survival is active.</p>
+<section id="sampling-model-and-empirical-bayes-priors" class="level3">
+<h3 class="anchored" data-anchor-id="sampling-model-and-empirical-bayes-priors">Sampling model and empirical Bayes priors</h3>
+<p>For <span class="math inline">\(n\)</span> patients, <span class="math inline">\(p\)</span> molecular features and <span class="math inline">\(K\)</span> factors, let <span class="math inline">\(Y\in\mathbb R^{n\times p}\)</span>, <span class="math inline">\(L\in\mathbb R^{n\times K}\)</span> and <span class="math inline">\(F\in\mathbb R^{p\times K}\)</span>. The experimental single-modality fitter uses</p>
 <p><span class="math display">\[
-E_q[\log p(Y\mid L,F,\tau)]
-+\gamma\left[\ell_{\mathrm{Cox}}(E_q[\eta])
--\tfrac12\sum_i w_i\operatorname{Var}_q(\eta_i)\right]
--\mathrm{KL}_L-\mathrm{KL}_F-\mathrm{KL}_\beta .
+Y_{ij}\mid L,F,\tau_j\sim
+\mathcal N\!\left(\sum_{k=1}^K L_{ik}F_{jk},\tau_j^{-1}\right),
+\qquad
+h_i(t)=h_{0,s_i}(t)\exp(\eta_i).
 \]</span></p>
-<p>The <span class="math inline">\(w_i\)</span> are Cox working curvatures. Each sweep forms the Cox working quantities, updates <span class="math inline">\(L,F,\beta\)</span> by factor and then updates <span class="math inline">\(\tau\)</span> if its precision is free. Factor scaling is canonicalized before tracking objective and parameter movement. The S-9 weighting change is a proposed experiment, with its derivation and acceptance criteria to be recorded before fitting.</p>
+<p>Here <span class="math inline">\(s_i\)</span> is the patient’s stratum, or a common stratum for an unstratified fit. With observed time <span class="math inline">\(t_i\)</span> and event indicator <span class="math inline">\(d_i\)</span>, the Breslow Cox log partial likelihood is</p>
+<p><span class="math display">\[
+\ell_{\mathrm{Cox}}(\eta)=\sum_{i:d_i=1}
+\left[\eta_i-\log\sum_{r:t_r\ge t_i,\ s_r=s_i}\exp(\eta_r)\right].
+\]</span></p>
+<p>Tied events use the same risk set. YFB uses <span class="math inline">\(\eta=Z\beta\)</span> with <span class="math inline">\(Z=Y_c F D\)</span>, where <span class="math inline">\(Y_c\)</span> is centered expression and <span class="math inline">\(D_{kk}=\|E_q[F_{\cdot k}]\|_2^{-1}\)</span> for a live loading column. The working projection treats <span class="math inline">\(D\)</span> as fixed within a sweep and uses a finite scale for zero columns. LB instead uses <span class="math inline">\(\eta=L\beta\)</span>.</p>
+<p>The experimental fit uses point-exponential priors for activities and loadings, and a shared point-normal prior for survival coefficients:</p>
+<p><span class="math display">\[
+\begin{aligned}
+L_{ik}\mid g_{Lk}&amp;\sim g_{Lk}=(1-\pi_{Lk})\delta_0+
+                         \pi_{Lk}\operatorname{Exp}(\lambda_{Lk}),\\
+F_{jk}\mid g_{Fk}&amp;\sim g_{Fk}=(1-\pi_{Fk})\delta_0+
+                         \pi_{Fk}\operatorname{Exp}(\lambda_{Fk}),\\
+\beta_k\mid g_\beta&amp;\sim g_\beta=(1-\pi_\beta)\delta_0+
+                         \pi_\beta\mathcal N(0,\sigma_\beta^2).
+\end{aligned}
+\]</span></p>
+<p>The atom <span class="math inline">\(\delta_0\)</span> places a point mass at zero, the <span class="math inline">\(\pi\)</span>’s are slab probabilities, and the exponential parameters are rates. The fitter estimates the prior parameters by empirical Bayes. The default experimental coefficient fit bounds its shared prior parameters. Precision <span class="math inline">\(\tau_j\)</span> is a point estimate updated from expected squared residuals, or held fixed in the fixed-noise diagnostic. In the multimodal extension, each input block <span class="math inline">\(Y^{(m)}\)</span> has its own <span class="math inline">\(F^{(m)}\)</span>, loading prior and precision, with a shared <span class="math inline">\(L\)</span>. The allowed loading prior family can differ by modality.</p>
+</section>
+<section id="variational-fitting-criterion" class="level3">
+<h3 class="anchored" data-anchor-id="variational-fitting-criterion">Variational fitting criterion</h3>
+<p>Let <span class="math inline">\(q=q_Lq_Fq_\beta\)</span> denote the factorized variational approximation, and let <span class="math inline">\(G_L,G_F,G_\beta\)</span> denote the corresponding product priors above. For positive survival weight <span class="math inline">\(\gamma\)</span>, the <strong>unguarded</strong> experimental fit monitors the following local approximation:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\widetilde{\mathcal L}(q)
+={}&amp; E_q[\log p(Y\mid L,F,\tau)] \\
+&amp;+\gamma\left[\ell_{\mathrm{Cox}}(E_q[\eta])
+-\tfrac12\sum_i w_i\operatorname{Var}_q(\eta_i)\right]\\
+&amp;-\operatorname{KL}(q_L\Vert G_L)
+-\operatorname{KL}(q_F\Vert G_F)
+-\operatorname{KL}(q_\beta\Vert G_\beta).
+\end{aligned}
+\]</span></p>
+<p>The <span class="math inline">\(w_i\)</span> are the diagonal working curvatures. The Gaussian expectation uses posterior moments of both <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span>. This is a Cox working approximation, with a separate bound-based acceptance criterion in guarded runs. The sweep computes Cox working quantities, updates <span class="math inline">\(L,F,\beta\)</span> by factor, canonicalizes the factor scales and updates free precision. The frozen historical benchmark used zero loading feedback (<span class="math inline">\(\alpha_F=0\)</span>) while still fitting survival coefficients. The planned S-9 genomic weighting change is a separate experiment.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="figures/held-out-prediction.svg" class="img-fluid figure-img"></p>
@@ -368,6 +416,7 @@ E_q[\log p(Y\mid L,F,\tau)]
 </figure>
 </div>
 <p>Training fixes the loading matrix, its column norms where used, and survival coefficients. Held-out expression is aligned to the training feature space under the benchmark preprocessing contract. The projection gives a risk score for each patient. Concordance evaluates the ordering of comparable observed survival pairs using the training-fixed risk orientation.</p>
+</section>
 </section>
 <section id="evidence" class="level2">
 <h2 class="anchored" data-anchor-id="evidence">Evidence</h2>
@@ -410,18 +459,66 @@ Inspect the fixed diagnostic replays
 </div>
 <p>These traces follow selected saved designs and are deterministic replays. Read the October 30 chapter for the normalization and the replay conditions.</p>
 </details>
-<details>
-<summary>
-What has been completed
-</summary>
-<p>The historical YFB benchmark, single-modality expression sensitivity curve, Round2 diagnostics, and October supervision mechanism tests have completed records. The October tests isolated noise feedback and coefficient behavior. The recovery, false-active and convergence criteria remain unmet.</p>
-</details>
-<details>
-<summary>
-How YFB scores survival
-</summary>
-<p>YFB projects observed expression onto the fitted feature loadings and uses those projected scores in the Cox predictor, <span class="math inline">\(\eta = (YF)\beta\)</span>. The frozen benchmark used <span class="math inline">\(\alpha_F = 0\)</span>, so its survival coefficients quantify prognosis using molecular loadings estimated without survival feedback. S-9 investigates whether reweighting the genomics term can produce reliable supervision.</p>
-</details>
+</section>
+<section id="completed-results" class="level2">
+<h2 class="anchored" data-anchor-id="completed-results">Completed Results</h2>
+<progress value="9" max="23" aria-label="Evidence items completed">
+9 of 23
+</progress>
+<p><strong>9 of 23 evidence items documented.</strong> The count tracks this checklist, with each line counted once. Checked historical or diagnostic items have a saved result even when it was negative. Open items describe evidence needed for the intended survival-supervised method. Publication readiness depends on the supervision gate and the final evidence, rather than the count.</p>
+<section id="methodology" class="level3">
+<h3 class="anchored" data-anchor-id="methodology">Methodology</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">Document LB and YFB predictors, model updates, and the historical benchmark.</label></li>
+<li><label><input type="checkbox" checked="">Audit precision balance, posterior variance, and numerical failure modes with registered mechanism tests. See the <a href="./chapters/2026-10-30.html">October 30 findings</a>.</label></li>
+<li><label><input type="checkbox">Register and pass a loading-supervision test with recovery, false-active, and convergence criteria. S-9 is the next experiment.</label></li>
+<li><label><input type="checkbox">Establish a reproducible final fitting specification with preprocessing, rank and weight selection inside training, failure handling, and independent review.</label></li>
+</ul>
+</section>
+<section id="simulation" class="level3">
+<h3 class="anchored" data-anchor-id="simulation">Simulation</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">Complete the corrected shared-loading grid and report recovery, false activity, and nonconvergence. The gate failed.</label></li>
+<li><label><input type="checkbox" checked="">Complete matched mechanism diagnostics with fixed and adaptive noise and explicit stall reporting. See the <a href="./chapters/2026-10-30.html">October 30 evidence</a>.</label></li>
+<li><label><input type="checkbox">Show final-method recovery and held-out discrimination under strong, weak, and mixed prognostic signals against matched unsupervised and survival baselines. Include rank recovery and replicate uncertainty.</label></li>
+<li><label><input type="checkbox">Verify null false activity, convergence across seeds, and stability across restarts. Use a null design with zero survival signal.</label></li>
+</ul>
+</section>
+<section id="real-data-application" class="level3">
+<h3 class="anchored" data-anchor-id="real-data-application">Real-data application</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">Report historical PDAC external discrimination with five held-out series and saved cohort results. The mean C-index was 0.627.</label></li>
+<li><label><input type="checkbox" checked="">Establish the historical comparisons with the unsupervised Cox pipeline and quantify external concordance uncertainty. See the <a href="./chapters/2026-09-04.html">September 4 chapter</a>.</label></li>
+<li><label><input type="checkbox">Freeze the final training and validation protocol. Refit the accepted method and compare held-out C-index and uncertainty across cohorts against matched unsupervised, DeSurv, and applicable clinical baselines.</label></li>
+<li><label><input type="checkbox">Report cohort-specific hazard ratios and uncertainty for final programs, donor-aware pooled inference where applicable, and risk-group curves using a training-selected threshold. Assess calibration if reporting absolute risk.</label></li>
+</ul>
+</section>
+<section id="biological-characterization" class="level3">
+<h3 class="anchored" data-anchor-id="biological-characterization">Biological characterization</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">Characterize historical survival-active factors with enrichment, PurIST concordance, external survival associations, and DeSurv overlap. See the <a href="./chapters/2026-07-15.html">July 15 chapter</a>.</label></li>
+<li><label><input type="checkbox">Re-characterize final programs and document agreement or differences relative to unsupervised and DeSurv programs.</label></li>
+<li><label><input type="checkbox">Test program stability under resampling and across cohorts. Document rank-dependent splits and what the molecular and survival terms each contribute.</label></li>
+<li><label><input type="checkbox">Characterize the remaining historical genomics-only factors where relevant to interpreting the benchmark.</label></li>
+</ul>
+</section>
+<section id="sensitivity-and-reproducibility" class="level3">
+<h3 class="anchored" data-anchor-id="sensitivity-and-reproducibility">Sensitivity and reproducibility</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" checked="">Audit historical rank, threshold and initialization sensitivity. See the <a href="./chapters/2026-09-04.html">September 4 chapter</a>.</label></li>
+<li><label><input type="checkbox" checked="">Complete the historical expression feature-count curve and audit preprocessing choices. See the <a href="./chapters/2026-10-16.html">October 16</a> and <a href="./chapters/2026-10-26.html">October 26</a> chapters.</label></li>
+<li><label><input type="checkbox">Check the accepted method across rank, supervision strength, initialization, priors, and fixed versus learned noise. Report whether results depend on preprocessing, feature screening or feature count.</label></li>
+<li><label><input type="checkbox">Reproduce final tables and figures from a frozen analysis snapshot with cohort definitions, software versions, and an auditable train/validation split.</label></li>
+</ul>
+</section>
+<section id="conditional-multimodal-extension" class="level3">
+<h3 class="anchored" data-anchor-id="conditional-multimodal-extension">Conditional multimodal extension</h3>
+<ul class="task-list">
+<li><label><input type="checkbox">Demonstrate single-modality parity at <span class="math inline">\(M=1\)</span> under the unified specification.</label></li>
+<li><label><input type="checkbox">Compare expression, methylation, and joint fits on matched samples, including modality-specific priors and feature-count sensitivity.</label></li>
+<li><label><input type="checkbox">Validate modality balance, convergence, and the incremental prediction and biological evidence from the joint fit.</label></li>
+</ul>
+<p>The evidence categories draw on DeSurv main Figures 2–4 and supplement Figures S1–S10. Their examples include null and mixed simulations, initialization, rank selection, factor correspondence, training-derived risk thresholds, external cohort hazard ratios, subtype composition and the tradeoff between expression variance and survival contribution. <a href="https://github.com/rashidlab/DeSurv-paper">DeSurv reproduction materials</a>.</p>
 <details>
 <summary>
 See the historical predictive result
@@ -435,6 +532,7 @@ See the historical predictive result
 </div>
 </details>
 <p>See the <a href="./chapters/2026-10-30.html">October 30 chapter</a> for the experimental evaluation and the <a href="https://github.com/andrew-walther/multiomicsGEP/blob/fix/yfb-supervision/ROADMAP.md">roadmap</a> for the wider backlog.</p>
+</section>
 </section>
 <section id="open-decisions" class="level2">
 <h2 class="anchored" data-anchor-id="open-decisions">Open decisions</h2>
