@@ -84,7 +84,7 @@
     "href": "current-state.html#open-decisions",
     "title": "Current project state",
     "section": "Open decisions",
-    "text": "Open decisions\nThe saved response stays in this browser. Export the JSON and share it in a later project session to record the decision in the repository.\n\n  \n    Long-term home for the synthetic checkpoint archive\n    The older checkpoints can be restored from the pinned project revision.\n      A separate archive is useful if the files should have their own lifecycle.\n    \n      Use the pinned repository revision\n    \n      Use a separate durable archive\n    Destination or notes\n      \n    Save decision\n    Export JSON",
+    "text": "Open decisions\nLong-term home for the synthetic checkpoint archive. The options are to use the pinned repository revision or to store the files in a separate durable archive. The older checkpoints can be restored from the pinned revision, and the raw files remain in the checkout pending the decision.\nShare your choice in the project chat to update this record.",
     "crumbs": [
       "Current project state"
     ]
