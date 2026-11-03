@@ -1,0 +1,207 @@
+/*-- scss:defaults --*/
+
+/* Source Sans 3: the body font. Embedded in the rendered HTML, so text looks
+   and wraps the same on any presenting computer. */
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap');
+
+/*-- scss:rules --*/
+
+/* ==========================================================================
+   Prelim deck overrides, layered on top of unc-gillings.css (Amber Young's
+   defense theme, copied unchanged). Every change from Amber's look lives in
+   this file so the differences stay easy to see and undo.
+
+   Contrast (WCAG 2.1; AA needs 4.5:1 for body text, 3:1 for large text):
+   - white on Navy #13294B ............ 14.5:1
+   - Navy on Carolina Blue #4B9CD3 ..... 4.8:1  (used for dividers below)
+   - white on Carolina Blue ............ 3.0:1  (large text only; washes out
+                                                 on a projector)
+   ========================================================================== */
+
+/* Pandoc wraps the divider text in a <p>, which shrinks to the title's width;
+   with a short title ("Backup") the subtitle then wraps in a narrow column.
+   Make that paragraph full width. */
+.reveal .section-divider .divider-inner > p { width: 100%; }
+
+/* Section dividers on Carolina Blue with Navy text --------------------------
+   Use as: ## {.section-divider .divider-carolina data-background-color="#4B9CD3"} */
+.reveal .section-divider.divider-carolina { background: var(--unc-carolina-blue); }
+.reveal .divider-carolina .divider-inner { color: var(--unc-navy); }
+.reveal .divider-carolina .divider-inner .divider-sub {
+  color: var(--unc-navy);
+  font-weight: 400;
+  opacity: 0.9;
+}
+.reveal .divider-inner .divider-label {
+  display: block;
+  font-size: 0.42em; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 0.4em;
+}
+
+/* Comparison variant: Carolina Blue with white text (style-options deck). */
+.reveal .divider-carolina-white .divider-inner,
+.reveal .divider-carolina-white .divider-inner .divider-sub { color: #fff; }
+
+/* Comparison variant: white ground, Navy title, thick Carolina rule. */
+.reveal .section-divider.divider-light { background: #fff; }
+.reveal .divider-light .divider-inner { color: var(--unc-navy); }
+.reveal .divider-light .divider-inner .divider-rule {
+  display: block; width: 40%; margin: 0.35em auto 0.25em;
+  border-top: 10px solid var(--unc-carolina-blue);
+}
+.reveal .divider-light .divider-inner .divider-sub { color: var(--unc-grey); }
+
+/* Agenda --------------------------------------------------------------------- */
+/* Columns: Amber's three-column outline without the hex logos. */
+.reveal .agenda-cols { margin-top: 1.6em !important; }
+.reveal .agenda-cols .column { padding-top: 0.4em; }
+.reveal .agenda-cols .agenda-num {
+  display: block; font-size: 2.2em; font-weight: 700; color: var(--unc-carolina-blue);
+  line-height: 1;
+}
+.reveal .agenda-cols h3 { margin-top: 0.3em; }
+
+/* Rows: one project per row, label on the left, one-liner on the right. */
+.reveal .agenda-rows .agenda-row {
+  display: grid; grid-template-columns: 1.6em 12em 1fr; gap: 0.8em;
+  align-items: baseline;
+  padding: 0.75em 0; border-bottom: 2px solid var(--unc-light-grey);
+}
+.reveal .agenda-rows .agenda-row:first-child { border-top: 6px solid var(--unc-carolina-blue); }
+.reveal .agenda-rows .agenda-num { font-size: 1.6em; font-weight: 700; color: var(--unc-carolina-blue); }
+.reveal .agenda-rows .agenda-name { font-weight: 600; color: var(--unc-navy); }
+
+/* Body font ------------------------------------------------------------------- */
+/* Source Sans 3 for body text. Headings keep the reveal "simple" theme's
+   condensed News Cycle (also embedded), which leaves room for sentence-length
+   claim titles. */
+.reveal { font-family: "Source Sans 3", "Source Sans Pro", Helvetica, sans-serif; }
+
+/* Footer part label --------------------------------------------------------- */
+/* Set by footer-part.html: the current part, right-aligned next to the slide
+   number. Carolina Blue on Navy is 4.8:1. */
+.reveal .footer .footer-part {
+  position: absolute;
+  right: 100px; top: 50%; transform: translateY(-50%);
+  color: var(--unc-carolina-blue);
+  font-weight: 600;
+}
+
+/* Slide number: Amber's Navy box sits on the bottom edge, below the footer
+   text's center line. Raise it so all footer items share one center line
+   (box is 32px tall in a 45.5px bar). */
+.reveal .slide-number { bottom: 6.75px !important; }
+
+/* Footer menu icon ------------------------------------------------------------ */
+/* The slide-menu button (three lines, bottom left) is an SVG background
+   image whose fill Quarto sets to dark blue, which disappears on the Navy
+   footer bar. Replace it with the same icon (Bootstrap "list") in white. */
+.reveal .slide-menu-button .fa-bars::before {
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" class="bi bi-list" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>') !important;
+}
+
+/* Center the icon vertically on the footer bar. The bar is 45.5px tall
+   (10px padding above and below one 25.5px line of footer text), so the
+   button gets the same height at the bottom edge and centers its icon. */
+.reveal .slide-menu-button {
+  bottom: 0 !important;
+  height: 45.5px;
+  display: flex; align-items: center;
+  line-height: 0;
+}
+.reveal .slide-menu-button a,
+.reveal .slide-menu-button i { display: flex; align-items: center; }
+.reveal .slide-menu-button .fas::before { vertical-align: 0 !important; }
+
+/* Title slide ------------------------------------------------------------------ */
+.reveal .title-slide-custom .title-meta {
+  font-size: 0.95em; color: var(--unc-grey);
+  margin-top: 1.3em; padding-top: 0.6em;
+  border-top: 1px solid var(--unc-light-grey);
+}
+
+/* Comparison variant: left-aligned title slide from the Rashid lab template. */
+.reveal .title-left { text-align: left; padding-left: 5%; }
+.reveal .title-left h1.talk-title {
+  border-bottom: 3px solid var(--unc-carolina-blue) !important;
+  padding-bottom: 0.3em;
+}
+
+/* Acknowledgments ---------------------------------------------------------------- */
+.reveal .thanks-cols { font-size: 1.1em; }
+.reveal .thanks-cols h4 { margin-top: 0.9em; margin-bottom: 0.2em; }
+.reveal .thanks-cols p { margin: 0; line-height: 1.45; }
+/* "Questions welcome", centered in the open space below the acknowledgments. */
+.reveal .questions-welcome {
+  text-align: center;
+  font-size: 2.0em; font-weight: 600;
+  color: var(--unc-carolina-blue);
+  margin-top: 2.2em;
+}
+.reveal .contact-email {
+  text-align: center;
+  font-size: 1.1em;
+  color: var(--unc-grey);
+  margin-top: 0.3em;
+}
+
+/* Figure placeholder in the test deck: show the area a figure will fill. */
+.reveal .fig-ph.fig-area {
+  min-height: 720px; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+}
+
+/* ==========================================================================
+   Comparison-only rules for style-options.qmd (not used by the test deck)
+   ========================================================================== */
+
+/* Light footer (Rashid lab style). A slide with data-state="footer-light"
+   adds the class "footer-light" to the reveal viewport while it is shown. */
+.footer-light .reveal .footer,
+.footer-light .reveal .footer.footer-default {
+  background: #fff !important;
+  color: var(--unc-grey) !important;
+  border-top: 2px solid var(--unc-light-grey);
+  text-align: center;
+}
+.footer-light .reveal .footer p { color: var(--unc-grey) !important; }
+.footer-light .reveal .slide-number {
+  background: transparent !important;
+  color: var(--unc-navy) !important;
+}
+.footer-light .reveal .slide-number a { color: var(--unc-navy) !important; }
+
+/* Font options. Source Sans 3 is the open-source successor of Source Sans
+   Pro, the Rashid template's font; it is embedded in the rendered HTML, so
+   it looks the same on any computer. System fonts depend on the machine. */
+.reveal section.font-system h2,
+.reveal section.font-system h3,
+.reveal section.font-system h4 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.reveal section.font-source,
+.reveal section.font-source h2,
+.reveal section.font-source h3,
+.reveal section.font-source h4,
+.reveal section.font-source li,
+.reveal section.font-source p {
+  font-family: "Source Sans 3", "Source Sans Pro", Helvetica, sans-serif;
+}
+
+/* Font A (previous default): the computer's system font for body text. */
+.reveal section.font-system-body p,
+.reveal section.font-system-body li,
+.reveal section.font-system-body td,
+.reveal section.font-system-body th {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Font D (current default; same as the global rule above): condensed
+   headings (News Cycle, unchanged) with Source Sans 3 for body text. */
+.reveal section.font-source-body p,
+.reveal section.font-source-body li,
+.reveal section.font-source-body td,
+.reveal section.font-source-body th {
+  font-family: "Source Sans 3", "Source Sans Pro", Helvetica, sans-serif;
+}

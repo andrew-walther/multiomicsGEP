@@ -1,0 +1,783 @@
+/*-- scss:defaults --*/
+
+/*-- scss:rules --*/
+
+/* ==========================================================================
+   UNC Gillings / Lineberger Brand Theme for RevealJS
+
+   Brand Colors (from identity.unc.edu and unclineberger.org):
+   - Carolina Blue: #4B9CD3 (primary accent)
+   - Navy: #13294B (headers, dark backgrounds)
+   - Hyperlink Blue: #007FAE (links on white)
+   - Healthcare Yellow: #FBAF3D (warning accents)
+   - Cool Grey: #505962 (secondary text)
+   - Black: #151515 (body text)
+   - White: #FFFFFF (backgrounds)
+   ========================================================================== */
+
+/* CSS Custom Properties */
+:root {
+  /* Primary palette */
+  --unc-carolina-blue: #4B9CD3;
+  --unc-navy: #13294B;
+  --unc-black: #151515;
+  --unc-white: #FFFFFF;
+
+  /* Secondary/accent */
+  --unc-hyperlink: #007FAE;
+  --unc-yellow: #FBAF3D;
+  --unc-grey: #505962;
+  --unc-light-grey: #E8E8E8;
+
+  /* Functional colors */
+  --unc-success: #2E7D32;
+  --unc-warning: #FBAF3D;
+  --unc-error: #C62828;
+  --unc-info: #4B9CD3;
+
+  /* Background tints */
+  --unc-blue-tint: #EBF4FA;
+  --unc-navy-tint: #E8EBF0;
+  --unc-yellow-tint: #FEF7E8;
+}
+
+/* ==========================================================================
+   Base Styles - Optimized for 1920x1080
+   ========================================================================== */
+
+.reveal {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 34px;
+  color: var(--unc-black);
+  line-height: 1.5;
+}
+
+.reveal .slides {
+  text-align: left;
+}
+
+.reveal .slides section {
+  /* Let RevealJS handle positioning via margin setting */
+  padding: 40px 60px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.reveal .slides > section {
+  padding-top: 30px;
+}
+
+/* ==========================================================================
+   Typography
+   ========================================================================== */
+
+/* Slide titles */
+.reveal h1,
+.reveal h2 {
+  color: var(--unc-navy);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.6em;
+  border-bottom: 4px solid var(--unc-carolina-blue);
+  padding-bottom: 0.25em;
+  line-height: 1.2;
+}
+
+.reveal h1 {
+  font-size: 2.0em;
+}
+
+.reveal h2 {
+  font-size: 1.5em;
+  margin-top: 0;
+}
+
+.reveal h3 {
+  color: var(--unc-navy);
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.reveal h4 {
+  color: var(--unc-grey);
+  font-size: 0.95em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Body text */
+.reveal p,
+.reveal li {
+  line-height: 1.5;
+  color: var(--unc-black);
+}
+
+.reveal strong {
+  color: var(--unc-navy);
+  font-weight: 600;
+}
+
+/* Links */
+.reveal a {
+  color: var(--unc-hyperlink);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.reveal a:hover {
+  border-bottom-color: var(--unc-hyperlink);
+}
+
+/* ==========================================================================
+   Lists
+   ========================================================================== */
+
+.reveal ul,
+.reveal ol {
+  margin-left: 1em;
+}
+
+.reveal li {
+  margin-bottom: 0.4em;
+}
+
+.reveal li::marker {
+  color: var(--unc-carolina-blue);
+}
+
+.reveal li p {
+  margin: 0;
+}
+
+/* Nested lists */
+.reveal ul ul,
+.reveal ol ol {
+  font-size: 0.95em;
+  margin-top: 0.3em;
+  margin-bottom: 0.3em;
+}
+
+.reveal ul ul li,
+.reveal ol ol li {
+  margin-bottom: 0.3em;
+}
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+
+.reveal table {
+  width: auto;
+  min-width: 60%;
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72em;
+  margin: 0.8em 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.reveal table th {
+  background: var(--unc-navy);
+  color: var(--unc-white);
+  font-weight: 600;
+  padding: 0.7em 1em;
+  text-align: left;
+  border: none;
+}
+
+.reveal table td {
+  padding: 0.6em 1em;
+  border-bottom: 1px solid var(--unc-light-grey);
+  vertical-align: middle;
+}
+
+.reveal table tr:nth-child(even) {
+  background: var(--unc-blue-tint);
+}
+
+.reveal table tr:hover {
+  background: #D6E9F5;
+}
+
+/* Table with centered content */
+.reveal table td:not(:first-child) {
+  text-align: center;
+}
+
+/* ==========================================================================
+   Code Blocks
+   ========================================================================== */
+
+.reveal pre {
+  background: var(--unc-navy-tint);
+  border-left: 4px solid var(--unc-carolina-blue);
+  border-radius: 4px;
+  padding: 1em;
+  font-size: 0.65em;
+  overflow-x: auto;
+  box-shadow: 0 2px 4px rgba(19, 41, 75, 0.1);
+}
+
+.reveal code {
+  font-family: "SF Mono", "Fira Code", "Monaco", "Consolas", monospace;
+  font-size: 0.85em;
+}
+
+.reveal p code,
+.reveal li code {
+  background: var(--unc-blue-tint);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  color: var(--unc-navy);
+}
+
+code.sourceCode {
+  font-size: 0.8em;
+}
+
+/* ==========================================================================
+   Callout Boxes (Quarto)
+   ========================================================================== */
+
+/* Base callout styles */
+.callout {
+  border-radius: 8px;
+  padding: 1em 1.2em;
+  margin: 0.8em 0;
+  border-left: 5px solid;
+  font-size: 0.88em;
+}
+
+.callout-title {
+  font-weight: 600;
+  font-size: 1.0em;
+  margin-bottom: 0.4em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.callout p:last-child {
+  margin-bottom: 0;
+}
+
+/* Note (blue - default) */
+.callout-note {
+  background: var(--unc-blue-tint);
+  border-left-color: var(--unc-carolina-blue);
+}
+
+.callout-note .callout-title {
+  color: var(--unc-navy);
+}
+
+/* Tip (green - success) */
+.callout-tip {
+  background: #E8F5E9;
+  border-left-color: var(--unc-success);
+}
+
+.callout-tip .callout-title {
+  color: var(--unc-success);
+}
+
+/* Warning (yellow) */
+.callout-warning {
+  background: var(--unc-yellow-tint);
+  border-left-color: var(--unc-yellow);
+}
+
+.callout-warning .callout-title {
+  color: #B8860B;
+}
+
+/* Important (red) */
+.callout-important {
+  background: #FFEBEE;
+  border-left-color: var(--unc-error);
+}
+
+.callout-important .callout-title {
+  color: var(--unc-error);
+}
+
+/* Caution (orange) */
+.callout-caution {
+  background: #FFF3E0;
+  border-left-color: #E65100;
+}
+
+.callout-caution .callout-title {
+  color: #E65100;
+}
+
+/* ==========================================================================
+   Slide Components
+   ========================================================================== */
+
+/* Slide number */
+.reveal .slide-number {
+  background: var(--unc-navy);
+  color: var(--unc-white);
+  font-size: 0.6em;
+  padding: 5px 10px;
+  border-radius: 4px 0 0 0;
+  bottom: 0 !important;
+  right: 0 !important;
+}
+
+/* Progress bar */
+.reveal .progress {
+  background: var(--unc-light-grey);
+  height: 4px;
+}
+
+.reveal .progress span {
+  background: var(--unc-carolina-blue);
+}
+
+/* Footer */
+.reveal .footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--unc-navy);
+  color: var(--unc-white);
+  font-size: 0.55em;
+  padding: 8px 20px;
+  box-sizing: border-box;
+}
+
+/* Controls */
+.reveal .controls {
+  color: var(--unc-carolina-blue);
+}
+
+/* ==========================================================================
+   Title Slide
+   ========================================================================== */
+
+.reveal .title-slide,
+.reveal section.title-slide,
+#title-slide {
+  text-align: center;
+}
+
+.reveal .title-slide h1,
+.reveal section.title-slide h1,
+#title-slide h1,
+.reveal .quarto-title-block h1 {
+  border-bottom: none;
+  color: var(--unc-navy);
+  font-size: 2.4em;
+  margin-bottom: 0.2em;
+  line-height: 1.1;
+}
+
+.reveal .title-slide .subtitle,
+.reveal .quarto-title-subtitle,
+.quarto-title .subtitle {
+  color: var(--unc-carolina-blue);
+  font-size: 1.3em;
+  font-weight: 400;
+  margin-bottom: 1.5em;
+}
+
+.reveal .title-slide .author,
+.reveal .quarto-title-author-name,
+.quarto-title-authors {
+  color: var(--unc-grey);
+  font-size: 1.1em;
+}
+
+.reveal .title-slide .date,
+.reveal .quarto-title-date,
+.quarto-title-meta-contents {
+  color: var(--unc-grey);
+  font-size: 0.9em;
+  margin-top: 0.5em;
+}
+
+/* Title-slide affiliation + contact block */
+.reveal .affil {
+  display: block;
+  font-size: 0.58em;
+  font-weight: 400;
+  color: var(--unc-grey);
+  line-height: 1.5;
+}
+
+.reveal .affil:first-of-type {
+  margin-top: 0.5em;
+}
+
+.reveal .contact {
+  display: inline-block;
+  font-size: 0.5em;
+  color: var(--unc-grey);
+  margin-top: 0.7em;
+  padding-top: 0.45em;
+  border-top: 1px solid var(--unc-light-grey);
+}
+
+/* ==========================================================================
+   Columns & Layout
+   ========================================================================== */
+
+.reveal .columns {
+  display: flex;
+  gap: 2.5em;
+  align-items: flex-start;
+}
+
+.reveal .column {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Clean column styling - no borders by default */
+.reveal .column:first-child {
+  padding-right: 0;
+}
+
+.reveal .column:last-child {
+  padding-left: 0;
+}
+
+/* ==========================================================================
+   Images & Figures
+   ========================================================================== */
+
+.reveal img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  /* Prevent images from stretching - maintain aspect ratio */
+  object-fit: contain;
+}
+
+.reveal figure {
+  margin: 0.5em auto;
+  text-align: center;
+}
+
+.reveal figure img {
+  display: block;
+  margin: 0 auto;
+}
+
+.reveal figcaption {
+  font-size: 0.8em;
+  color: var(--unc-grey);
+  margin-top: 0.5em;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Fragments & Animations
+   ========================================================================== */
+
+.reveal .fragment.highlight-blue {
+  color: var(--unc-carolina-blue);
+}
+
+.reveal .fragment.highlight-current-blue.current-fragment {
+  color: var(--unc-carolina-blue);
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+/* Large-text slides: modest bump over base for slides with room */
+.reveal .slides section.large-text h2 {
+  font-size: 1.55em;
+}
+.reveal .slides section.large-text > p,
+.reveal .slides section.large-text li > p,
+.reveal .slides section.large-text > ul > li,
+.reveal .slides section.large-text > ol > li,
+.reveal .slides section.large-text .column > p,
+.reveal .slides section.large-text .column > ul > li,
+.reveal .slides section.large-text .column > ol > li {
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+
+.small {
+  font-size: 0.85em;
+}
+
+.smaller {
+  font-size: 0.75em;
+}
+
+.tiny {
+  font-size: 0.65em;
+}
+
+.scroll {
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.center {
+  text-align: center;
+}
+
+.muted {
+  color: var(--unc-grey);
+}
+
+/* Highlight boxes */
+.highlight-box {
+  background: var(--unc-blue-tint);
+  border: 2px solid var(--unc-carolina-blue);
+  border-radius: 8px;
+  padding: 1em;
+  margin: 1em 0;
+}
+
+.highlight-box-navy {
+  background: var(--unc-navy-tint);
+  border: 2px solid var(--unc-navy);
+  border-radius: 8px;
+  padding: 1em;
+  margin: 1em 0;
+}
+
+/* ==========================================================================
+   Figure Height Constraints for Presentation Readability
+   ========================================================================== */
+
+/* When images have an explicit height style (e.g., height="55vh"),
+   ensure revealjs respects it while maintaining aspect ratio */
+.reveal .slides section img[style*="height"] {
+  object-fit: contain;
+  width: auto !important;
+  max-width: 100%;
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+  .reveal .slides section {
+    page-break-inside: avoid;
+  }
+
+  .reveal table th {
+    background: var(--unc-navy) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media screen and (max-width: 900px) {
+  .reveal {
+    font-size: 24px;
+  }
+
+  .reveal table {
+    font-size: 0.7em;
+  }
+}
+
+/* ==========================================================================
+   Dark Background Slides (Section Transitions)
+   ========================================================================== */
+
+/* When slide has dark background, make all text white */
+.reveal .slide-background[data-background-color="#13294B"] + .slides section[data-background-color="#13294B"],
+.reveal section[data-background-color="#13294B"] {
+  color: var(--unc-white) !important;
+}
+
+.reveal section[data-background-color="#13294B"] h1,
+.reveal section[data-background-color="#13294B"] h2,
+.reveal section[data-background-color="#13294B"] h3,
+.reveal section[data-background-color="#13294B"] p,
+.reveal section[data-background-color="#13294B"] li {
+  color: var(--unc-white) !important;
+}
+
+.reveal section[data-background-color="#13294B"] h1,
+.reveal section[data-background-color="#13294B"] h2 {
+  border-bottom-color: var(--unc-carolina-blue) !important;
+}
+
+/* Also handle the .has-dark-background class that RevealJS adds */
+.reveal .has-dark-background,
+.reveal .has-dark-background h1,
+.reveal .has-dark-background h2,
+.reveal .has-dark-background h3,
+.reveal .has-dark-background p,
+.reveal .has-dark-background li,
+.reveal .has-dark-background span {
+  color: var(--unc-white) !important;
+}
+
+/* ==========================================================================
+   Quarto footer / slide-number overrides
+   Force the navy footer bar with white text over Quarto's light default
+   footer (whose text would otherwise be dark-navy-on-navy and unreadable),
+   and lift the page-number pill above it.
+   ========================================================================== */
+.reveal .footer,
+.reveal .footer.footer-default {
+  display: block !important;
+  background: var(--unc-navy) !important;
+  color: #fff !important;
+  position: absolute;
+  bottom: 0; left: 0; width: 100%;
+  margin: 0;
+  padding: 10px 70px;
+  font-size: 0.5em;
+  box-sizing: border-box;
+  text-align: left;
+  z-index: 15;
+}
+.reveal .footer p,
+.reveal .footer a { color: #fff !important; margin: 0; }
+
+.reveal .slide-number {
+  z-index: 30 !important;
+  background: var(--unc-navy) !important;
+  color: #fff !important;
+  font-size: 16px !important;
+  font-weight: 600;
+  padding: 8px 14px !important;
+  bottom: 0 !important;
+  right: 0 !important;
+}
+.reveal .slide-number a { color: #fff !important; }
+
+/* ==========================================================================
+   Math sizing — enlarge MathJax so equations read at slide scale (mainly the
+   backup objective / algorithm / definition slides).
+   ========================================================================== */
+.reveal mjx-container[display="true"] {
+  font-size: 1.5em !important;
+  margin: 0.7em 0 !important;
+}
+.reveal section p mjx-container,
+.reveal section li mjx-container {
+  font-size: 1.15em;
+}
+
+/* Cap figure height so a tall image can never overflow the slide and trigger
+   reveal's whole-slide auto-shrink (which happens with lazy-loaded images
+   whose height isn't known when the scale is computed). object-fit: contain
+   (set above) keeps the aspect ratio. */
+.reveal .slides section img {
+  max-height: 92vh;
+}
+
+/* Slide 13 factor–signature heatmaps sit side by side in half-width columns.
+   By default a width:100% image fills the column width, which (for these tall,
+   narrow panels) makes it taller than the slide and clips the rotated column
+   labels at the bottom. Cap by HEIGHT instead so each panel fits the slide
+   height exactly and its 15-16 row labels get generous vertical spacing. */
+
+/* Single-image (auto-stretch) slides: tighten the title block and surrounding
+   padding so the figure claims nearly the whole slide. The reduced section
+   padding gives the stretched image more width AND height; since these figures
+   have a fixed aspect ratio, the extra height also lets them grow wider. */
+.reveal .slides section:has(> img.r-stretch) {
+  padding: 10px 18px 6px;
+}
+.reveal .slides > section:has(> img.r-stretch) {
+  padding-top: 14px;
+}
+.reveal .slides section:has(> img.r-stretch) h2 {
+  margin-bottom: 0.2em;
+  padding-bottom: 0.12em;
+}
+.reveal .slides section img.r-stretch {
+  max-height: 99vh;
+}
+
+/* ==========================================================================
+   Combined-defense additions: section dividers, custom title slide,
+   full-bleed figures, BATON-C boxes, backup-slide density. Merged from the
+   three source decks so all sections share one consistent style.
+   ========================================================================== */
+
+/* Section / part dividers: navy ground, large centered white title. Works for
+   both the .section-divider and .divider class names used by the source decks. */
+.reveal .section-divider h2,
+.reveal .divider h2,
+.reveal .title-slide-custom h2 { display: none; }   /* hide the empty heading rule */
+
+.reveal .section-divider,
+.reveal .divider { background: var(--unc-navy); }
+
+.reveal .section-divider .divider-inner,
+.reveal .divider .divider-inner {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 80vh;
+  font-size: 2.6em; font-weight: 600; color: #fff; text-align: center;
+  line-height: 1.15;
+}
+.reveal .divider-inner img {
+  display: block;
+  margin-left: auto; margin-right: auto;
+}
+.reveal .divider-inner .divider-sub {
+  display: block;
+  max-width: 72%; margin-left: auto; margin-right: auto;
+  font-size: 0.5em; font-weight: 400; color: var(--unc-carolina-blue);
+  margin-top: 0.5em; line-height: 1.3;
+}
+
+/* Full-width figure: break a wide figure out of the section side padding so a
+   short, wide schematic can use the whole slide width. */
+.reveal .slides section img.bleed-fig {
+  width: 99vw !important;
+  max-width: 99vw !important;
+  height: auto !important;
+  margin-left: calc(50% - 49.5vw);
+  display: block;
+}
+
+/* BATON-C takeaway boxes. */
+.reveal .box {
+  background: var(--unc-blue-tint);
+  border-left: 6px solid var(--unc-carolina-blue);
+  padding: 0.5em 0.9em; border-radius: 4px; margin: 0.6em 0;
+}
+
+/* Backup (reference) slides: denser text than the main talk. */
+.reveal .backup-slide, .reveal .backup { font-size: 0.94em; }
+.reveal .backup-slide li, .reveal .backup li { margin-bottom: 0.3em; line-height: 1.4; }
+.reveal .backup h2 { color: var(--unc-grey); }
+.reveal .backup-slide table { font-size: 0.82em; }
+.reveal .backup-slide table th,
+.reveal .backup-slide table td { padding: 0.40em 0.6em; }
+
+/* Figure placeholders (BATON-C backup). */
+.reveal .fig-ph {
+  border: 3px dashed var(--unc-carolina-blue); background: #f3f8fc; border-radius: 10px;
+  padding: 0.7em 1em; margin: 0.3em auto; color: #234; font-size: 0.82em;
+}
+.reveal .fig-ph .tag { color: var(--unc-navy); font-weight: 700; letter-spacing: 0.02em; }
+.reveal .fig-ph .src { color: var(--unc-grey); font-size: 0.9em; font-style: italic; }
+
+/* Custom title slide: vertically center the content block on the slide. */
+.reveal .title-slide-custom h1 { border-bottom: none; }
+.reveal section.title-slide-custom {
+  display: flex !important; flex-direction: column; justify-content: center;
+  min-height: 88vh;
+}
