@@ -2,8 +2,10 @@
 
 Analysis runners and their saved outputs. Run every script from the repository
 root with `Rscript`. Runners read hyperparameters from `config/globals.yml` and
-real data from `PDAC_DATA_ROOT`. Patient-level inputs and fitted `.rds` objects
-are git-ignored; aggregate tables and figures are tracked.
+real data from `PDAC_DATA_ROOT`. Raw inputs and real-data fits are generally git-ignored. The tracked results
+include aggregate tables, figures, synthetic checkpoints, and seven legacy
+individual risk-score CSVs. Confirm redistribution permissions for the legacy
+exports before reusing them in a new release.
 
 ## Layout
 

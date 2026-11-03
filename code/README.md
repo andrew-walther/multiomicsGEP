@@ -87,3 +87,9 @@ Each study's design and outcome is recorded in `docs/plans/`.
 
 - `Supervised_Bayesian_MF_V2.R`: earlier single-file implementation, kept for comparison. Do not extend.
 - `legacy/`: original V1 implementation and early scripts.
+
+## Experimental supervision
+
+`fit_yfb_supervised.R` provides the opt-in YFB fitter used in the October 30
+supervision evaluation. See the [execution report](../docs/reviews/2026-10-30-codex-execution-report.md)
+for the evaluated configurations and unresolved criteria.
