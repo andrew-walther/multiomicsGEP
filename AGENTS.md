@@ -154,3 +154,13 @@ from `docs/progress_book/chapters/_2026-10-15-methods-record.qmd`. Keep the
 October 15 public URL as an alias when regenerating the book.
 
 Record tracker decisions from the project chat in the chapter source.
+
+The November 6 notebook includes an aggregate comparison of saved canonical
+YFB and rank-7 EBMF fits. Rebuild its figures with
+`Rscript docs/progress_book/figures/verify_october_yfb.R` from the repository root.
+The script uses local PDAC training data and historical preprocessing for
+alignment with the saved fits. Keep patient-level inputs and outputs out of Git.
+
+Regenerate the November 6 planted-factor simulation figure with
+`Rscript docs/progress_book/figures/plot_planted_yfb.R`. The plot reports
+all replicates for recovery and only defined values for concordance.

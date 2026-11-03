@@ -277,3 +277,12 @@ The tracker compares the sequential two-step fit and proposed joint YFB fit
 using matrix diagrams and separate arrows for molecular and survival inputs.
 The October methods development record is available within the October 16
 progress-book chapter.
+
+The November 6 progress notebook compares the saved October supervised YFB
+fit with rank-7 EBMF and EBMF followed by Cox. From the repository root, run
+`Rscript docs/progress_book/figures/verify_october_yfb.R` to regenerate its
+aggregate figures and print the paired concordance and program summaries.
+The script needs the local PDAC training data and the saved benchmark fits.
+
+Run `Rscript docs/progress_book/figures/plot_planted_yfb.R` to regenerate
+the simulation figure from the saved replicate table.

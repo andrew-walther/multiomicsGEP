@@ -32,3 +32,4 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 | 2026-10-30 | [yfb-supervision-problem-statement](2026-10-30-yfb-supervision-problem-statement.md) | Standalone statistical failure, numerical repairs, exact gate evidence and next model decisions | unresolved method question; no external selection |
 
 | 2026-10-30 | [yfb-targeted-diagnostics-findings](2026-10-30-yfb-targeted-diagnostics-findings.md) | Twelve matched noise/guarded-update fits and exact versus mean-field Gaussian coefficient diagnostics | complete; partial stabilization; no screening success |
+| 2026-11-03 | [joint-yfb-verification](2026-11-03-joint-yfb-verification-findings.md) | October replay, external PDAC discrimination, EBMF program correspondence, gene annotations and planted-factor recovery | complete verification of the historical fit |
