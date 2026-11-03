@@ -139,7 +139,8 @@ the study's entry in `docs/plans/2026-10-16-round2-attempts-log.md` before runni
 repeat a completed study without a new registered entry.
 
 The tracker includes standalone architecture, update-cycle and prediction
-SVGs under `docs/progress_book/figures/`. Rebuild them with
+SVGs under `docs/progress_book/figures/`, including the matrix comparison of
+two-step and joint fitting. Rebuild them with
 `python3 docs/progress_book/figures/build_diagrams.py`. The [code map](code/README.md)
 separates LB, historical YFB, experimental YFB, multimodal and shared scripts.
 

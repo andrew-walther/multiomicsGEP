@@ -273,6 +273,7 @@ progress book using RStudio Quarto.
 The tracker’s **Completed Results** section distinguishes saved historical and
 diagnostic findings from evidence still needed for the final supervised method.
 
-The tracker also compares two-step EBMF then Cox with the proposed joint fit.
+The tracker compares the sequential two-step fit and proposed joint YFB fit
+using matrix diagrams and separate arrows for molecular and survival inputs.
 The October methods development record is available within the October 16
 progress-book chapter.
