@@ -61,7 +61,7 @@
 .reveal .p3-aim .head { color: #fff; font-weight: 700; padding: 0.5em 0.65em; font-size: 1.12em; }
 .reveal .p3-aim .body { padding: 0.5em 0.65em; flex: 1; }
 .reveal .p3-aim .test { padding: 0.45em 0.65em; border-top: 2px dashed rgba(0,0,0,0.18); }
-.reveal .p3-aim .test b { display: block; color: var(--unc-navy); margin-bottom: 0.15em; }
+.reveal .p3-aim .test b, .reveal .p3-aim .body b { display: block; color: var(--unc-navy); margin-bottom: 0.15em; }
 .reveal .p3-aim.a1 { background: var(--unc-blue-tint); } .reveal .p3-aim.a1 .head { background: var(--unc-navy); }
 .reveal .p3-aim.a2 { background: #e7f5ed; }              .reveal .p3-aim.a2 .head { background: #2f7a4f; }
 .reveal .p3-aim.a3 { background: #eeeafa; }              .reveal .p3-aim.a3 .head { background: #5b4a8a; }
@@ -91,3 +91,8 @@
 /* Two-card slides with room to spare (the fitted vs finalized model slide). */
 .reveal .p3-cards.roomy .p3-card { font-size: 1.0em; padding: 0.6em 0.9em; }
 .reveal .p3-cards.roomy .p3-card li { margin-bottom: 0.45em; }
+
+/* Aims slide: share three rows (heading, purpose, test) across all four boxes
+   with subgrid, so every "Test" block starts at the same height. */
+.reveal .p3-aims { grid-template-rows: auto auto auto; }
+.reveal .p3-aim { display: grid; grid-row: span 3; grid-template-rows: subgrid; }

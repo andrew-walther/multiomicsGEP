@@ -639,10 +639,10 @@ estimated programs were merges
 ## What the finalized and multi-data-type models are designed to show {data-menu-title="Planned results" data-footer-part="Results"}
 
 <div class="p3-aims">
-<div class="p3-aim a1"><div class="head">Survival-guided programs</div><div class="body">Programs that predict survival even when they explain little expression variance</div><div class="test"><b>Test</b>Planted-program simulation, then training cross-validation in PDAC against the two-step model</div></div>
-<div class="p3-aim a2"><div class="head">Uncertainty carried through</div><div class="body">Uncertainty in the programs reflected in the survival coefficients</div><div class="test"><b>Test</b>Interval coverage of β in simulation</div></div>
-<div class="p3-aim a3"><div class="head">Methylation linked to expression</div><div class="body">Programs that load on genes and CpG sites together, for example hypomethylated promoters of basal-like genes with higher expression</div><div class="test"><b>Test</b>CpG sites mapped to genes and promoters, validation in matched ICGC data</div></div>
-<div class="p3-aim a4"><div class="head">Number of programs from the data</div><div class="body">A rank chosen without using the validation cohorts</div><div class="test"><b>Test</b>The same final rank across starting ranks in training</div></div>
+<div class="p3-aim a1"><div class="head">Survival-guided programs</div><div class="body"><b>Purpose</b>Programs that predict survival even when they explain little expression variance</div><div class="test"><b>Test</b>Planted-program simulation, then training cross-validation in PDAC against the two-step model</div></div>
+<div class="p3-aim a2"><div class="head">Uncertainty carried through</div><div class="body"><b>Purpose</b>Uncertainty in the programs reflected in the survival coefficients</div><div class="test"><b>Test</b>Interval coverage of β in simulation</div></div>
+<div class="p3-aim a3"><div class="head">Methylation linked to expression</div><div class="body"><b>Purpose</b>Programs that load on genes and CpG sites together, for example hypomethylated promoters of basal-like genes with higher expression</div><div class="test"><b>Test</b>CpG sites mapped to genes and promoters, validation in matched ICGC data</div></div>
+<div class="p3-aim a4"><div class="head">Number of programs from the data</div><div class="body"><b>Purpose</b>A rank chosen without using the validation cohorts</div><div class="test"><b>Test</b>The same final rank across starting ranks in training</div></div>
 </div>
 
 <div class="p3-take" style="margin-top:0.8em;">Each aim is paired with a test that could fail</div>
