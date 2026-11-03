@@ -13,7 +13,7 @@ respond reliably to survival while preserving interpretable molecular programs.
 | Conditional | LB with fold-in prediction | Investigate if the YFB route stalls |
 | Conditional | Unified multimodal model | Use insights from modality-specific priors or shared factors if they solve supervision at M = 1 |
 | Conditional | R package | Start after the simulation gate and PDAC training cross-validation pass |
-| In progress | Prelim Part III talk | Draft deck in `presentation/prelim-slides/` (2026-11-03); content freezes 2026-11-30, exam 2026-12-07 |
+| In progress | Prelim Part III talk | Draft deck in `presentation/prelim-slides/` (2026-11-03). Content freezes 2026-11-30, exam 2026-12-07 |
 
 ## Model architecture
 
@@ -31,7 +31,7 @@ The comparison draws on the visual separation of reconstruction and Cox
 regression in Young et al., DeSurv Figure 1. Figure 2 and supplement Figures
 S1–S3 motivate separating convergence, recovery and held-out performance in
 the evidence section. The diagrams depict this project's EBMF implementations
-and research goals. [DeSurv reproduction materials](https://github.com/rashidlab/DeSurv-paper).
+and research goals. The DeSurv figures are available in the [DeSurv reproduction materials](https://github.com/rashidlab/DeSurv-paper).
 
 ### Two-step versus joint fitting
 
@@ -44,13 +44,13 @@ the factor loadings stay fixed. In the proposed joint model, Cox information
 enters the factor updates themselves. YFB targets the feature loadings through
 the expression projection. LB supplies direct survival information to the
 patient scores, with an indirect effect on loadings through reconstruction.
-For LB prediction, estimate a new patient’s activities from expression
+LB prediction estimates a new patient’s activities from expression
 with the training loadings fixed. Joint updates can change which programs
 are recovered at a fixed starting rank.
 
 The historical YFB benchmark had zero survival feedback into the loadings.
 It uses its own priors and selection procedure, so it is distinct from the
-two-step comparator. Its external discrimination establishes a predictive reference. Testing the
+two-step comparator. Its external discrimination serves as the predictive reference. Testing the
 value of joint supervision requires matched two-step and joint fits with the
 same training splits and held-out evaluation, plus planted-factor recovery,
 false activity and convergence in simulation.
@@ -199,11 +199,11 @@ Read the October 30 chapter for the normalization and the replay conditions.
 
 <progress value="9" max="23" aria-label="Evidence items completed">9 of 23</progress>
 
-**9 of 23 evidence items documented.** The count tracks this checklist, with
-each line counted once. Checked historical or diagnostic items have a saved
-result even when it was negative. Open items describe evidence needed for
-the intended survival-supervised method. Publication readiness depends on
-the supervision gate and the final evidence, rather than the count.
+**9 of 23 evidence items documented.** Each line of this checklist counts once.
+Checked historical or diagnostic items have a saved result, even when it was
+negative. Open items describe evidence still needed for the survival-supervised
+method. Publication readiness depends on the supervision gate and the final
+evidence, not on this count.
 
 **Re-verification required.** Many checked results use the historical
 $\alpha_F=0$ fit, which turns off survival feedback into the molecular
@@ -257,7 +257,7 @@ Figures S1–S10. Their examples include null and mixed simulations,
 initialization, rank selection, factor correspondence, training-derived
 risk thresholds, external cohort hazard ratios, subtype composition and
 the tradeoff between expression variance and survival contribution.
-[DeSurv reproduction materials](https://github.com/rashidlab/DeSurv-paper).
+The DeSurv figures are available in the [DeSurv reproduction materials](https://github.com/rashidlab/DeSurv-paper).
 
 <details>
 <summary>See the historical predictive result</summary>

@@ -17,7 +17,7 @@ gene programs, then shifts focus toward the manuscript.
 
 ## Method updates
 
-Nothing changed in the model or pipeline this cycle; this was a validation and comparison cycle
+Nothing changed in the model or pipeline this cycle. This was a validation and comparison cycle
 building directly on 7/15.
 
 ## Results updates
@@ -33,15 +33,15 @@ knitr::include_graphics("../figs/2026-08-03_geneweight_heatmap.png")
 
 EBMF's own factor 1 tracks Program 3 (r = −0.72) and factor 2 tracks Program 7 (r = +0.69). Each is
 clearly the best match for its program among all 20 unsupervised factors. That means this 2-program
-structure exists in the data independent of the survival term; the survival term identifies it
+structure exists in the data independent of the survival term. The survival term identifies it
 rather than creates it. SBMF
 is a supervised re-weighting of EBMF's own factor structure: a variation on EBMF, not a separate
 model class that happens to also fit survival.
 
 **Direct comparison to DeSurv's published gene programs:** Program 7 (adverse) overlaps DeSurv's
-basal-like-tumor factor at Jaccard `r j7` (hypergeometric $p\approx3\times10^{-16}$); Program 3
+basal-like-tumor factor at Jaccard `r j7` (hypergeometric $p\approx3\times10^{-16}$), and Program 3
 (protective) overlaps DeSurv's classical-tumor factor at Jaccard `r j3` ($p\approx1\times10^{-7}$).
-Different model classes converge on the same tumor biology; that convergence is the point here, not
+Different model classes converge on the same tumor biology. That convergence is the point here, not
 a head-to-head performance claim. A matched, same-protocol comparison against DeSurv is still the
 pending next step for an actual performance claim.
 
@@ -59,7 +59,7 @@ than either check alone, since neither depends on the joint model's own objectiv
   today's gene-overlap comparison, but as a performance claim, not just a biology-convergence claim.
 - Shift in focus starting now: manuscript writing (introduction and background/literature review).
   The companion manuscript repository is already scaffolded with an intro draft and a populated
-  reference library; next step is to continue and expand that draft.
+  reference library. The next step is to continue and expand that draft.
 
 ## Deep dive
 
