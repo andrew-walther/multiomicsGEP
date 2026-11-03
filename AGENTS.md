@@ -152,3 +152,5 @@ changing items.
 The October methods development record is included in the October 16 chapter
 from `docs/progress_book/chapters/_2026-10-15-methods-record.qmd`. Keep the
 October 15 public URL as an alias when regenerating the book.
+
+Record tracker decisions from the project chat in the chapter source.

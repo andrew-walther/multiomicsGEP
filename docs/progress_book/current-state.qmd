@@ -268,73 +268,9 @@ for the wider backlog.
 
 ## Open decisions
 
-The saved response stays in this browser. Export the JSON and share it in a
-later project session to record the decision in the repository.
+**Long-term home for the synthetic checkpoint archive.** The options are
+to use the pinned repository revision or to store the files in a separate
+durable archive. The older checkpoints can be restored from the pinned
+revision, and the raw files remain in the checkout pending the decision.
 
-```{=html}
-<form id="archive-decision">
-  <fieldset>
-    <legend>Long-term home for the synthetic checkpoint archive</legend>
-    <p>The older checkpoints can be restored from the pinned project revision.
-      A separate archive is useful if the files should have their own lifecycle.</p>
-    <label><input type="radio" name="choice" value="git-history" required>
-      Use the pinned repository revision</label><br>
-    <label><input type="radio" name="choice" value="external">
-      Use a separate durable archive</label>
-    <p><label for="archive-note">Destination or notes</label><br>
-      <textarea id="archive-note" name="note" rows="3"></textarea></p>
-    <button type="submit">Save decision</button>
-    <button type="button" id="archive-export" disabled>Export JSON</button>
-    <p id="archive-status" role="status" aria-live="polite"></p>
-  </fieldset>
-</form>
-<script>
-(() => {
-  const key = "multiomicsGEP.checkpoint-archive.v1";
-  const form = document.getElementById("archive-decision");
-  const status = document.getElementById("archive-status");
-  const exportButton = document.getElementById("archive-export");
-  let decision;
-  const showSaved = () => {
-    exportButton.disabled = false;
-    status.textContent = "Saved " + new Date(decision.savedAt).toLocaleString();
-  };
-  try {
-    decision = JSON.parse(localStorage.getItem(key));
-    if (decision?.choice) {
-      form.elements.choice.value = decision.choice;
-      form.elements.note.value = decision.note;
-      showSaved();
-    }
-  } catch {
-    status.textContent = "Saved browser storage is unavailable. You can still export after saving.";
-  }
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!form.elements.choice.value) return;
-    decision = {
-      id: "checkpoint-archive-destination",
-      choice: form.elements.choice.value,
-      note: form.elements.note.value.trim(),
-      savedAt: new Date().toISOString()
-    };
-    try {
-      localStorage.setItem(key, JSON.stringify(decision));
-      showSaved();
-    } catch {
-      exportButton.disabled = false;
-      status.textContent = "Browser storage is unavailable. Export this response before closing.";
-    }
-  });
-  exportButton.addEventListener("click", () => {
-    if (!decision) return;
-    const url = URL.createObjectURL(new Blob([JSON.stringify(decision, null, 2)], {type: "application/json"}));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "multiomicsGEP-decision.json";
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
-})();
-</script>
-```
+Share your choice in the project chat to update this record.
