@@ -10,6 +10,7 @@ book:
   date: last-modified
   chapters:
     - index.qmd
+    - current-state.qmd
     - chapters/2026-04-29.qmd
     - chapters/2026-05-07.qmd
     - chapters/2026-05-28.qmd

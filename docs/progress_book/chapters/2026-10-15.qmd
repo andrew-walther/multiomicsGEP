@@ -267,7 +267,7 @@ The full suite passes 549 tests. Results, warning and donor-consistency records 
 ## Robustness and comparator follow-up
 
 The five-prompt evidence, independent branch commits and limitations are gathered
-in [the consolidated report](../resources/2026-10-15-m6-m7-summary.md).
+in [the consolidated report](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-10-15-m6-m7-summary.md).
 Protected pruning was not adopted: multimodal ELBO convergence could not be
 assessed under the allowed edits. DeSurv was unavailable. The high-noise comparator
 table uses only ten of twenty datasets and cannot establish a full comparison.

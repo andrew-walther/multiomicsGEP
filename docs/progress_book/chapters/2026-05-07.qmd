@@ -64,4 +64,4 @@ reformulation from the previous entry is viable, not just a cleaner derivation o
 
 ## Deep dive
 
-- Full write-up: [`2026-05-07-ssbmf-status-update`](../../../progress_report/2026-05-07-ssbmf-status-update.pdf)
+- Full write-up: [`2026-05-07-ssbmf-status-update`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/progress_report/2026-05-07-ssbmf-status-update.pdf)

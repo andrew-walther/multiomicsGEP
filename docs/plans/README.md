@@ -4,8 +4,7 @@ Plans, design specs and proposals, written before the work. Results of plans
 that ran are in [`../findings/`](../findings/README.md); meeting follow-ups that
 set the work are in [`../meetings/`](../meetings/README.md).
 
-Current order of method work: the 2026-10-22 rebuild plan sets it, and the three
-2026-10-16 plans are reordered by it (see each row).
+Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
@@ -45,9 +44,9 @@ Current order of method work: the 2026-10-22 rebuild plan sets it, and the three
 | 2026-10-16 | [round2-fixed-q-loading-prior-proposal](2026-10-16-round2-fixed-q-loading-prior-proposal.md) | Opt-in fixed-posterior loading prior with consistent KL | complete (one case run; not adopted) |
 | 2026-10-16 | [round2-closeout-and-docs-plan](2026-10-16-round2-closeout-and-docs-plan.md) | Freeze `round2/supervised` under a tag without merging, write one findings report, port vetted code, restructure the canonical documents | partly done: tagged `archive/round2-supervised-2026-10` and merged into main 2026-10-26 (Task 3 replaced by the merge); findings report folded into the 10/26 progress-book chapter; Tasks 4–5 after the meeting |
 | 2026-10-16 | [preprocessing-alignment-and-unified-model-plan](2026-10-16-preprocessing-alignment-and-unified-model-plan.md) | One documented preprocessing pipeline and one model implementation for single-modality and multimodal results | not started (Task A1 becomes rebuild Task 13; A2–A4 replaced by the rebuild plan) |
-| 2026-10-16 | [feature-selection-experiment-plan](2026-10-16-feature-selection-experiment-plan.md) | Unsupervised versus survival-screened gene selection at matched gene counts | not started (deferred to rebuild plan Part 7) |
-| 2026-10-22 | [unified-method-rebuild-plan](2026-10-22-unified-method-rebuild-plan.md) | Gated rebuild of the method from a written specification as the `ssbmf` R package | active (Gate 0 approved 2026-10-26 with the parallel-work plan) |
-| 2026-10-26 | [parallel-work-sessions-plan](2026-10-26-parallel-work-sessions-plan.md) | Coordinates work on the current method (session A) with the rebuild (session B); round2 merge and the 10/26 meeting deliverables | active (approved 2026-10-26) |
+| 2026-10-16 | [feature-selection-experiment-plan](2026-10-16-feature-selection-experiment-plan.md) | Unsupervised versus survival-screened gene selection at matched gene counts | training CV completed October 26, external selection deferred |
+| 2026-10-22 | [unified-method-rebuild-plan](2026-10-22-unified-method-rebuild-plan.md) | Gated rebuild of the method from a written specification as the `ssbmf` R package | historical reference |
+| 2026-10-26 | [parallel-work-sessions-plan](2026-10-26-parallel-work-sessions-plan.md) | Coordinates work on the current method (session A) with the rebuild (session B); round2 merge and the 10/26 meeting deliverables | superseded by the October 30 realignment |
 | 2026-10-30 | [Unified-Architecture-Alignment](2026-10-30-Unified-Architecture-Alignment.md) | Gemini diagnostic and solution proposal: consolidated diagnostics and a proposed unified architecture for the single-modality and multimodal models | proposal (unchecked external advice, not decisions) |
 | 2026-10-30 | [realignment-plan](2026-10-30-realignment-plan.md) | Cleanup of open review items, then survival supervision of F under the YFB specification, the 10/30 chapter and the issue tracker | executed; corrected supervision gate failed; independent review pending; supersedes the 10/26 parallel-work plan |
 | 2026-10-30 | [yfb-targeted-diagnostics-plan](2026-10-30-yfb-targeted-diagnostics-plan.md) | Matched noise-feedback, guarded-update and coefficient-uncertainty screens | complete; twelve fits and coefficient screen; no scientific adoption |

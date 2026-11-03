@@ -6,8 +6,8 @@ The meeting conclusions and original workstreams below remain the advisor
 requirements. Execution has since advanced through Round2; do not restart
 this file's old branch, merge or prompt sequence.
 
-- [Current plan and bounded goal hierarchy](2026-10-15-advisor-priorities-and-execution-plan.md)
-  controls the next work block; [current handoff](2026-10-16-round2-return-note.md)
+- [Current plan and bounded goal hierarchy](../plans/2026-10-15-advisor-priorities-and-execution-plan.md)
+  controls the next work block; [current handoff](../plans/2026-10-16-round2-return-note.md)
   summarizes actual results. Work remains paused for regrouping.
 - Interim write-up is delivered; the working HTML/PDF now includes verified
   sensitivity/diagnostic findings. The approved interim tag/snapshot is preserved.

@@ -54,4 +54,4 @@ structural than a tuning issue.
 
 ## Deep dive
 
-- Full write-up: [`2026-04-29-ssbmf-status-update`](../../../progress_report/2026-04-29-ssbmf-status-update.pdf)
+- Full write-up: [`2026-04-29-ssbmf-status-update`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/progress_report/2026-04-29-ssbmf-status-update.pdf)

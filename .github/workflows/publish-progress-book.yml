@@ -11,8 +11,8 @@
 #          packages or real PDAC data, so this stays a fast, self-contained
 #          CI job.
 #
-#          Manual/local equivalent: docs/progress_book/publish_gh_pages.sh
-#          (same end result, useful for previewing before pushing).
+#          Local preview: docs/progress_book/publish_gh_pages.sh
+#          (renders locally before pushing).
 #
 #          docs/progress_book/_book/ is ALSO tracked directly on main (so
 #          the rendered HTML is browsable from the repo itself, not only

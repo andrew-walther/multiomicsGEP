@@ -71,8 +71,8 @@ configurations.
 
 ## Deep dive
 
-- Preprocessing/cohort-indicator benchmark: [`2026-05-22-cohort-lmm-benchmark-report`](../../../findings/2026-05-22-cohort-lmm-benchmark-report.html)
-- DeSurv gene-selection comparison: [`2026-05-27-desurv-alignment-report`](../../../findings/2026-05-27-desurv-alignment-report.html)
-- Factor convergence/diagnostics detail: [`2026-05-27-desurv-factor-diagnostics-report`](../../../findings/2026-05-27-desurv-factor-diagnostics-report.html)
-- Original write-ups: [`2026-05-27-ssbmf-status-update`](../../../progress_report/2026-05-27-ssbmf-status-update.html),
-  [`2026-05-28-ssbmf-status-update`](../../../progress_report/2026-05-28-ssbmf-status-update.pdf)
+- Preprocessing/cohort-indicator benchmark: [`2026-05-22-cohort-lmm-benchmark-report`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-05-22-cohort-lmm-benchmark-report.html)
+- DeSurv gene-selection comparison: [`2026-05-27-desurv-alignment-report`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-05-27-desurv-alignment-report.html)
+- Factor convergence/diagnostics detail: [`2026-05-27-desurv-factor-diagnostics-report`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-05-27-desurv-factor-diagnostics-report.html)
+- Original write-ups: [`2026-05-27-ssbmf-status-update`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/progress_report/2026-05-27-ssbmf-status-update.html),
+  [`2026-05-28-ssbmf-status-update`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/progress_report/2026-05-28-ssbmf-status-update.pdf)

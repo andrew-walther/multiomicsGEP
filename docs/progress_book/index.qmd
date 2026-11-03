@@ -10,6 +10,9 @@ For a complete session-by-session build log (every script, test, and
 decision), see `PROJECT_STATUS.qmd` at the repo root. This notebook is the
 meeting-facing summary, not a replacement for that log.
 
+Open the [current project state](current-state.qmd) for priorities, milestones
+and examples from the saved results.
+
 Chapters are listed in the sidebar in date order; click a date to jump
 straight to that meeting.
 

@@ -1,0 +1,47 @@
+# Current project state {.unnumbered}
+
+Updated November 2, 2026. The project aims to learn molecular loadings that
+respond reliably to survival while preserving interpretable molecular programs.
+
+| Priority | Work | Status | Next checkpoint |
+|---|---|---|---|
+| 1 | YFB survival supervision | Open | Derive and register S-9, then evaluate recovery, false activity and convergence |
+| 2 | Supervision review | Open | Complete the independent review before merging the experimental fitter |
+| 3 | LB with fold-in prediction | Conditional | Investigate if the YFB route stalls |
+| 4 | Unified multimodal fitter | Deferred | Revisit if running the unified model with one modality can resolve supervision |
+| 5 | Single-modality R package | Conditional | Start once the single-modality acceptance criteria are met |
+
+<details>
+<summary>What has been completed</summary>
+
+The historical YFB benchmark, single-modality expression sensitivity curve,
+Round2 diagnostics, and October supervision mechanism tests have completed
+records. The October tests isolated noise feedback and coefficient behavior.
+The recovery, false-active and convergence criteria remain unmet.
+
+</details>
+
+<details>
+<summary>How YFB scores survival</summary>
+
+YFB projects observed expression onto the fitted feature loadings and uses
+those projected scores in the Cox predictor, $\eta = (YF)\beta$. The frozen
+benchmark used $\alpha_F = 0$, so its survival coefficients quantify prognosis
+using molecular loadings estimated without survival feedback. S-9 investigates
+whether reweighting the genomics term can produce reliable supervision.
+
+</details>
+
+<details>
+<summary>See the historical predictive result</summary>
+
+The frozen configuration achieved mean concordance of 0.627 across five
+external dataset series. The curves compare within-cohort risk tertiles.
+
+![Overall survival by historical risk tertile across external PDAC cohorts](figs/2026-10-02_km_risk_external.png)
+
+</details>
+
+See the [October 30 chapter](chapters/2026-10-30.qmd) for the experimental
+evaluation and the [roadmap](https://github.com/andrew-walther/multiomicsGEP/blob/fix/yfb-supervision/ROADMAP.md)
+for the wider backlog.
