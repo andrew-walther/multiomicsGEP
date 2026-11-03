@@ -24,7 +24,57 @@
     "href": "current-state.html",
     "title": "Current project state",
     "section": "",
-    "text": "Updated November 2, 2026. The project aims to learn molecular loadings that respond reliably to survival while preserving interpretable molecular programs.\n\n\n\n\n\n\n\n\n\nPriority\nWork\nStatus\nNext checkpoint\n\n\n\n\n1\nYFB survival supervision\nOpen\nDerive and register S-9, then evaluate recovery, false activity and convergence\n\n\n2\nSupervision review\nOpen\nComplete the independent review before merging the experimental fitter\n\n\n3\nLB with fold-in prediction\nConditional\nInvestigate if the YFB route stalls\n\n\n4\nUnified multimodal fitter\nDeferred\nRevisit if running the unified model with one modality can resolve supervision\n\n\n5\nSingle-modality R package\nConditional\nStart once the single-modality acceptance criteria are met\n\n\n\n\n\nWhat has been completed\n\nThe historical YFB benchmark, single-modality expression sensitivity curve, Round2 diagnostics, and October supervision mechanism tests have completed records. The October tests isolated noise feedback and coefficient behavior. The recovery, false-active and convergence criteria remain unmet.\n\n\n\nHow YFB scores survival\n\nYFB projects observed expression onto the fitted feature loadings and uses those projected scores in the Cox predictor, \\(\\eta = (YF)\\beta\\). The frozen benchmark used \\(\\alpha_F = 0\\), so its survival coefficients quantify prognosis using molecular loadings estimated without survival feedback. S-9 investigates whether reweighting the genomics term can produce reliable supervision.\n\n\n\nSee the historical predictive result\n\nThe frozen configuration achieved mean concordance of 0.627 across five external dataset series. The curves compare within-cohort risk tertiles.\n\n\n\nOverall survival by historical risk tertile across external PDAC cohorts\n\n\n\nSee the October 30 chapter for the experimental evaluation and the roadmap for the wider backlog.",
+    "text": "Research status\nUpdated November 3, 2026. The project aims to learn molecular loadings that respond reliably to survival while preserving interpretable molecular programs.",
+    "crumbs": [
+      "Current project state"
+    ]
+  },
+  {
+    "objectID": "current-state.html#research-status",
+    "href": "current-state.html#research-status",
+    "title": "Current project state",
+    "section": "",
+    "text": "Stage\nWork\nEvidence or next checkpoint\n\n\n\n\nDone\nHistorical benchmark, expression sensitivity, Round2 diagnostics\nHistorical external prediction benchmark and dated findings\n\n\nIn progress\nResolve survival supervision\nDerive and register S-9, then assess recovery, false activity and convergence\n\n\nNext\nIndependent supervision review\nReview the registered results before merging the experimental fitter\n\n\nConditional\nLB with fold-in prediction\nInvestigate if the YFB route stalls\n\n\nConditional\nUnified multimodal model\nUse insights from modality-specific priors or shared factors if they solve supervision at M = 1\n\n\nConditional\nR package\nStart after single-modality acceptance",
+    "crumbs": [
+      "Current project state"
+    ]
+  },
+  {
+    "objectID": "current-state.html#model-architecture",
+    "href": "current-state.html#model-architecture",
+    "title": "Current project state",
+    "section": "Model architecture",
+    "text": "Model architecture\n\n\n\nThree model states showing matrix dimensions, paired survival outcomes, and where supervision enters.\n\n\nThe historical YFB configuration estimates molecular loadings without survival feedback and uses projected expression to estimate survival coefficients. The target YFB formulation lets Cox information influence \\(F\\). In LB, the Cox predictor depends directly on \\(L\\). A unified extension uses shared patient scores and modality-specific loadings, priors, and noise. A result at \\(M=1\\) must pass the same supervision gate before the unified fitter becomes the common implementation.\nThe comparison draws on the visual separation of reconstruction and Cox regression in Young et al., DeSurv Figure 1. Figure 2 and supplement Figures S1–S3 motivate separating convergence, recovery and held-out performance in the evidence section. The diagrams depict this project’s EBMF implementations and research goals. DeSurv reproduction materials.",
+    "crumbs": [
+      "Current project state"
+    ]
+  },
+  {
+    "objectID": "current-state.html#fitting-and-prediction",
+    "href": "current-state.html#fitting-and-prediction",
+    "title": "Current project state",
+    "section": "Fitting and prediction",
+    "text": "Fitting and prediction\n\n\n\nThe variational objective and one sweep of the experimental YFB fitter.\n\n\nIn the experimental YFB fitter, the molecular term is an expected Gaussian log likelihood with gene-wise precision. The Cox working approximation uses risk-set derivatives and posterior predictor uncertainty. KL terms account for the variational posteriors relative to their priors. Its monitored surrogate has the following form when survival is active.\n\\[\nE_q[\\log p(Y\\mid L,F,\\tau)]\n+\\gamma\\left[\\ell_{\\mathrm{Cox}}(E_q[\\eta])\n-\\tfrac12\\sum_i w_i\\operatorname{Var}_q(\\eta_i)\\right]\n-\\mathrm{KL}_L-\\mathrm{KL}_F-\\mathrm{KL}_\\beta .\n\\]\nThe \\(w_i\\) are Cox working curvatures. Each sweep forms the Cox working quantities, updates \\(L,F,\\beta\\) by factor and then updates \\(\\tau\\) if its precision is free. Factor scaling is canonicalized before tracking objective and parameter movement. The S-9 weighting change is a proposed experiment, with its derivation and acceptance criteria to be recorded before fitting.\n\n\n\nYFB held-out prediction from feature alignment through C-index.\n\n\nTraining fixes the loading matrix, its column norms where used, and survival coefficients. Held-out expression is aligned to the training feature space under the benchmark preprocessing contract. The projection gives a risk score for each patient. Concordance evaluates the ordering of comparable observed survival pairs using the training-fixed risk orientation.",
+    "crumbs": [
+      "Current project state"
+    ]
+  },
+  {
+    "objectID": "current-state.html#evidence",
+    "href": "current-state.html#evidence",
+    "title": "Current project state",
+    "section": "Evidence",
+    "text": "Evidence\n\n\n\n\n\n\n\nResult\nWhat it establishes\n\n\n\n\nHistorical YFB mean external C-index 0.627 across five series\nDiscrimination using the frozen predictive benchmark with zero loading feedback\n\n\nAttempt 7 completed 360 fits, 153 nonconverged\nThe corrected shared-loading design failed the registered supervision gate\n\n\nS-8 fixed noise prevented the tested explosions\nThe targeted controls identified a numerical mechanism. No case passed the screening criteria.\n\n\n\nSee the October 30 chapter for saved tables and diagnostic plots.\n\n\nInspect the fixed diagnostic replays\n\n\n\n\nFixed diagnostic replays showing objective movement and loading norms.\n\n\nThese traces follow selected saved designs and are deterministic replays. Read the October 30 chapter for the normalization and the replay conditions.\n\n\n\nWhat has been completed\n\nThe historical YFB benchmark, single-modality expression sensitivity curve, Round2 diagnostics, and October supervision mechanism tests have completed records. The October tests isolated noise feedback and coefficient behavior. The recovery, false-active and convergence criteria remain unmet.\n\n\n\nHow YFB scores survival\n\nYFB projects observed expression onto the fitted feature loadings and uses those projected scores in the Cox predictor, \\(\\eta = (YF)\\beta\\). The frozen benchmark used \\(\\alpha_F = 0\\), so its survival coefficients quantify prognosis using molecular loadings estimated without survival feedback. S-9 investigates whether reweighting the genomics term can produce reliable supervision.\n\n\n\nSee the historical predictive result\n\nThe frozen configuration achieved mean concordance of 0.627 across five external dataset series. The curves compare within-cohort risk tertiles.\n\n\n\nOverall survival by historical risk tertile across external PDAC cohorts\n\n\n\nSee the October 30 chapter for the experimental evaluation and the roadmap for the wider backlog.",
+    "crumbs": [
+      "Current project state"
+    ]
+  },
+  {
+    "objectID": "current-state.html#open-decisions",
+    "href": "current-state.html#open-decisions",
+    "title": "Current project state",
+    "section": "Open decisions",
+    "text": "Open decisions\nThe saved response stays in this browser. Export the JSON and share it in a later project session to record the decision in the repository.\n\n  \n    Long-term home for the synthetic checkpoint archive\n    The older checkpoints can be restored from the pinned project revision.\n      A separate archive is useful if the files should have their own lifecycle.\n    \n      Use the pinned repository revision\n    \n      Use a separate durable archive\n    Destination or notes\n      \n    Save decision\n    Export JSON",
     "crumbs": [
       "Current project state"
     ]

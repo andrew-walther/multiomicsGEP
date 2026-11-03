@@ -43,3 +43,17 @@ and MUST NOT be committed or copied into presentation resources.
 Reproduce only using the registered engine and simulation revision. The
 attempts log records each registration before execution. Do not pool repeated
 attempts, choose a weight from synthetic validation C, or change the gate.
+
+## Older checkpoint archive
+
+Attempts 1–6 contain 1,610 synthetic checkpoints (199.37 MiB before archiving).
+A temporary compressed archive was restored and all 1,610 files matched
+`checkpoint_hashes.csv`. The pinned published revision
+`3e9fecc99c72065da91994986eb1eb8c4d214dd6` also preserves the original
+directory layout. The tracker records the choice of a pinned Git revision
+or a separate durable archive. The raw files remain available at their
+current paths pending that decision.
+
+Keep attempt 7 available for the saved-fit diagnostics, geometry checks,
+targeted diagnostic runs and coefficient uncertainty screen. Retain the
+registered summaries, hash manifest, design records and test fixtures in Git.

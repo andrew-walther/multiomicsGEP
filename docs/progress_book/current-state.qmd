@@ -39,7 +39,17 @@ and research goals. [DeSurv reproduction materials](https://github.com/rashidlab
 In the experimental YFB fitter, the molecular term is an expected Gaussian
 log likelihood with gene-wise precision. The Cox working approximation uses
 risk-set derivatives and posterior predictor uncertainty. KL terms account for
-the variational posteriors relative to their priors. Each sweep forms the Cox
+the variational posteriors relative to their priors. Its monitored surrogate has
+the following form when survival is active.
+
+$$
+E_q[\log p(Y\mid L,F,\tau)]
++\gamma\left[\ell_{\mathrm{Cox}}(E_q[\eta])
+-\tfrac12\sum_i w_i\operatorname{Var}_q(\eta_i)\right]
+-\mathrm{KL}_L-\mathrm{KL}_F-\mathrm{KL}_\beta .
+$$
+
+The $w_i$ are Cox working curvatures. Each sweep forms the Cox
 working quantities, updates $L,F,\beta$ by factor and then updates $\tau$
 if its precision is free. Factor scaling is canonicalized before tracking
 objective and parameter movement. The S-9 weighting change is a proposed
@@ -64,6 +74,16 @@ observed survival pairs using the training-fixed risk orientation.
 
 See the [October 30 chapter](chapters/2026-10-30.qmd) for saved tables and
 diagnostic plots.
+
+<details>
+<summary>Inspect the fixed diagnostic replays</summary>
+
+![Fixed diagnostic replays showing objective movement and loading norms.](resources/yfb-supervision-2026-10-30-diagnostic-traces.png)
+
+These traces follow selected saved designs and are deterministic replays.
+Read the October 30 chapter for the normalization and the replay conditions.
+
+</details>
 
 <details>
 <summary>What has been completed</summary>

@@ -159,6 +159,7 @@
 <text x="969" y="447" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Supervised updates</text>
 <text x="969" y="470" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">YFB: feedback to F</text>
 <text x="969" y="491" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">LB: direct feedback to L</text>
+<path d="M970 506v7H430v-7" fill="none" stroke="#395775" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
 <text x="34" y="530" font-family="system-ui,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#102a43">Goal: the survival term changes the molecular representation while preserving recovery, calibration and convergence.</text>
 <rect x="18" y="561" width="1104" height="162" rx="12" fill="white" stroke="#b4c7da"/>
 <text x="34" y="588" font-family="system-ui,sans-serif" font-size="19" font-weight="700" text-anchor="start" fill="#102a43">C  Multimodal extension with modality-specific priors</text>

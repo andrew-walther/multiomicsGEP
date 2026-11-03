@@ -23,7 +23,7 @@ div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
   width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */
   vertical-align: middle;
 }
 </style>
@@ -118,7 +118,7 @@ window.Quarto = {
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./current-state.html">Current project state</a></li></ol></nav>
-        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
         <i class="bi bi-search"></i>
@@ -132,7 +132,7 @@ window.Quarto = {
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header">
     <div class="sidebar-title mb-0 py-0">
-      <a href="./">SSBMF Progress Notebook</a> 
+      <a href="./">SSBMF Progress Notebook</a>
     </div>
       </div>
         <div class="mt-2 flex-shrink-0 align-items-center">
@@ -140,7 +140,7 @@ window.Quarto = {
         <div id="quarto-search" class="" title="Search"></div>
         </div>
         </div>
-    <div class="sidebar-menu-container"> 
+    <div class="sidebar-menu-container">
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container">
@@ -249,8 +249,18 @@ window.Quarto = {
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+
+  <ul>
+  <li><a href="#research-status" id="toc-research-status" class="nav-link active" data-scroll-target="#research-status">Research status</a></li>
+  <li><a href="#model-architecture" id="toc-model-architecture" class="nav-link" data-scroll-target="#model-architecture">Model architecture</a></li>
+  <li><a href="#fitting-and-prediction" id="toc-fitting-and-prediction" class="nav-link" data-scroll-target="#fitting-and-prediction">Fitting and prediction</a></li>
+  <li><a href="#evidence" id="toc-evidence" class="nav-link" data-scroll-target="#evidence">Evidence</a></li>
+  <li><a href="#open-decisions" id="toc-open-decisions" class="nav-link" data-scroll-target="#open-decisions">Open decisions</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -264,65 +274,142 @@ window.Quarto = {
 
 <div class="quarto-title-meta">
 
-    
-  
-    
+
+
+
   </div>
-  
+
 
 
 </header>
 
 
-<p>Updated November 2, 2026. The project aims to learn molecular loadings that respond reliably to survival while preserving interpretable molecular programs.</p>
+<p>Updated November 3, 2026. The project aims to learn molecular loadings that respond reliably to survival while preserving interpretable molecular programs.</p>
+<section id="research-status" class="level2">
+<h2 class="anchored" data-anchor-id="research-status">Research status</h2>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
 </colgroup>
 <thead>
 <tr class="header">
-<th>Priority</th>
+<th>Stage</th>
 <th>Work</th>
-<th>Status</th>
-<th>Next checkpoint</th>
+<th>Evidence or next checkpoint</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>1</td>
-<td>YFB survival supervision</td>
-<td>Open</td>
-<td>Derive and register S-9, then evaluate recovery, false activity and convergence</td>
+<td>Done</td>
+<td>Historical benchmark, expression sensitivity, Round2 diagnostics</td>
+<td>Historical external prediction benchmark and dated findings</td>
 </tr>
 <tr class="even">
-<td>2</td>
-<td>Supervision review</td>
-<td>Open</td>
-<td>Complete the independent review before merging the experimental fitter</td>
+<td>In progress</td>
+<td>Resolve survival supervision</td>
+<td>Derive and register S-9, then assess recovery, false activity and convergence</td>
 </tr>
 <tr class="odd">
-<td>3</td>
-<td>LB with fold-in prediction</td>
+<td>Next</td>
+<td>Independent supervision review</td>
+<td>Review the registered results before merging the experimental fitter</td>
+</tr>
+<tr class="even">
 <td>Conditional</td>
+<td>LB with fold-in prediction</td>
 <td>Investigate if the YFB route stalls</td>
 </tr>
-<tr class="even">
-<td>4</td>
-<td>Unified multimodal fitter</td>
-<td>Deferred</td>
-<td>Revisit if running the unified model with one modality can resolve supervision</td>
-</tr>
 <tr class="odd">
-<td>5</td>
-<td>Single-modality R package</td>
 <td>Conditional</td>
-<td>Start once the single-modality acceptance criteria are met</td>
+<td>Unified multimodal model</td>
+<td>Use insights from modality-specific priors or shared factors if they solve supervision at M = 1</td>
+</tr>
+<tr class="even">
+<td>Conditional</td>
+<td>R package</td>
+<td>Start after single-modality acceptance</td>
 </tr>
 </tbody>
 </table>
+</section>
+<section id="model-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="model-architecture">Model architecture</h2>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/supervision-states.svg" class="img-fluid figure-img"></p>
+<figcaption>Three model states showing matrix dimensions, paired survival outcomes, and where supervision enters.</figcaption>
+</figure>
+</div>
+<p>The historical YFB configuration estimates molecular loadings without survival feedback and uses projected expression to estimate survival coefficients. The target YFB formulation lets Cox information influence <span class="math inline">\(F\)</span>. In LB, the Cox predictor depends directly on <span class="math inline">\(L\)</span>. A unified extension uses shared patient scores and modality-specific loadings, priors, and noise. A result at <span class="math inline">\(M=1\)</span> must pass the same supervision gate before the unified fitter becomes the common implementation.</p>
+<p>The comparison draws on the visual separation of reconstruction and Cox regression in Young et al., DeSurv Figure 1. Figure 2 and supplement Figures S1–S3 motivate separating convergence, recovery and held-out performance in the evidence section. The diagrams depict this project’s EBMF implementations and research goals. <a href="https://github.com/rashidlab/DeSurv-paper">DeSurv reproduction materials</a>.</p>
+</section>
+<section id="fitting-and-prediction" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-and-prediction">Fitting and prediction</h2>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/variational-updates.svg" class="img-fluid figure-img"></p>
+<figcaption>The variational objective and one sweep of the experimental YFB fitter.</figcaption>
+</figure>
+</div>
+<p>In the experimental YFB fitter, the molecular term is an expected Gaussian log likelihood with gene-wise precision. The Cox working approximation uses risk-set derivatives and posterior predictor uncertainty. KL terms account for the variational posteriors relative to their priors. Its monitored surrogate has the following form when survival is active.</p>
+<p><span class="math display">\[
+E_q[\log p(Y\mid L,F,\tau)]
++\gamma\left[\ell_{\mathrm{Cox}}(E_q[\eta])
+-\tfrac12\sum_i w_i\operatorname{Var}_q(\eta_i)\right]
+-\mathrm{KL}_L-\mathrm{KL}_F-\mathrm{KL}_\beta .
+\]</span></p>
+<p>The <span class="math inline">\(w_i\)</span> are Cox working curvatures. Each sweep forms the Cox working quantities, updates <span class="math inline">\(L,F,\beta\)</span> by factor and then updates <span class="math inline">\(\tau\)</span> if its precision is free. Factor scaling is canonicalized before tracking objective and parameter movement. The S-9 weighting change is a proposed experiment, with its derivation and acceptance criteria to be recorded before fitting.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/held-out-prediction.svg" class="img-fluid figure-img"></p>
+<figcaption>YFB held-out prediction from feature alignment through C-index.</figcaption>
+</figure>
+</div>
+<p>Training fixes the loading matrix, its column norms where used, and survival coefficients. Held-out expression is aligned to the training feature space under the benchmark preprocessing contract. The projection gives a risk score for each patient. Concordance evaluates the ordering of comparable observed survival pairs using the training-fixed risk orientation.</p>
+</section>
+<section id="evidence" class="level2">
+<h2 class="anchored" data-anchor-id="evidence">Evidence</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Result</th>
+<th>What it establishes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Historical YFB mean external C-index 0.627 across five series</td>
+<td>Discrimination using the frozen predictive benchmark with zero loading feedback</td>
+</tr>
+<tr class="even">
+<td>Attempt 7 completed 360 fits, 153 nonconverged</td>
+<td>The corrected shared-loading design failed the registered supervision gate</td>
+</tr>
+<tr class="odd">
+<td>S-8 fixed noise prevented the tested explosions</td>
+<td>The targeted controls identified a numerical mechanism. No case passed the screening criteria.</td>
+</tr>
+</tbody>
+</table>
+<p>See the <a href="./chapters/2026-10-30.html">October 30 chapter</a> for saved tables and diagnostic plots.</p>
+<details>
+<summary>
+Inspect the fixed diagnostic replays
+</summary>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="resources/yfb-supervision-2026-10-30-diagnostic-traces.png" class="img-fluid figure-img"></p>
+<figcaption>Fixed diagnostic replays showing objective movement and loading norms.</figcaption>
+</figure>
+</div>
+<p>These traces follow selected saved designs and are deterministic replays. Read the October 30 chapter for the normalization and the replay conditions.</p>
+</details>
 <details>
 <summary>
 What has been completed
@@ -348,8 +435,78 @@ See the historical predictive result
 </div>
 </details>
 <p>See the <a href="./chapters/2026-10-30.html">October 30 chapter</a> for the experimental evaluation and the <a href="https://github.com/andrew-walther/multiomicsGEP/blob/fix/yfb-supervision/ROADMAP.md">roadmap</a> for the wider backlog.</p>
+</section>
+<section id="open-decisions" class="level2">
+<h2 class="anchored" data-anchor-id="open-decisions">Open decisions</h2>
+<p>The saved response stays in this browser. Export the JSON and share it in a later project session to record the decision in the repository.</p>
+<form id="archive-decision">
+  <fieldset>
+    <legend>Long-term home for the synthetic checkpoint archive</legend>
+    <p>The older checkpoints can be restored from the pinned project revision.
+      A separate archive is useful if the files should have their own lifecycle.</p>
+    <label><input type="radio" name="choice" value="git-history" required="">
+      Use the pinned repository revision</label><br>
+    <label><input type="radio" name="choice" value="external">
+      Use a separate durable archive</label>
+    <p><label for="archive-note">Destination or notes</label><br>
+      <textarea id="archive-note" name="note" rows="3"></textarea></p>
+    <button type="submit">Save decision</button>
+    <button type="button" id="archive-export" disabled="">Export JSON</button>
+    <p id="archive-status" role="status" aria-live="polite"></p>
+  </fieldset>
+</form>
+<script>
+(() => {
+  const key = "multiomicsGEP.checkpoint-archive.v1";
+  const form = document.getElementById("archive-decision");
+  const status = document.getElementById("archive-status");
+  const exportButton = document.getElementById("archive-export");
+  let decision;
+  const showSaved = () => {
+    exportButton.disabled = false;
+    status.textContent = "Saved " + new Date(decision.savedAt).toLocaleString();
+  };
+  try {
+    decision = JSON.parse(localStorage.getItem(key));
+    if (decision?.choice) {
+      form.elements.choice.value = decision.choice;
+      form.elements.note.value = decision.note;
+      showSaved();
+    }
+  } catch {
+    status.textContent = "Saved browser storage is unavailable. You can still export after saving.";
+  }
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!form.elements.choice.value) return;
+    decision = {
+      id: "checkpoint-archive-destination",
+      choice: form.elements.choice.value,
+      note: form.elements.note.value.trim(),
+      savedAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(key, JSON.stringify(decision));
+      showSaved();
+    } catch {
+      exportButton.disabled = false;
+      status.textContent = "Browser storage is unavailable. Export this response before closing.";
+    }
+  });
+  exportButton.addEventListener("click", () => {
+    if (!decision) return;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(decision, null, 2)], {type: "application/json"}));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "multiomicsGEP-decision.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+})();
+</script>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -363,7 +520,7 @@ See the historical predictive result
     anchorJS.add('.anchored');
     const isCodeAnnotation = (el) => {
       for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {                     
+        if (clz.startsWith('code-annotation-')) {
           return true;
         }
       }
@@ -383,11 +540,11 @@ See the historical predictive result
         button.setAttribute("data-bs-toggle", "tooltip");
         button.setAttribute("data-bs-placement", "left");
         button.setAttribute("data-bs-title", "Copied!");
-        tooltip = new bootstrap.Tooltip(button, 
-          { trigger: "manual", 
+        tooltip = new bootstrap.Tooltip(button,
+          { trigger: "manual",
             customClass: "code-copy-button-tooltip",
             offset: [0, -8]});
-        tooltip.show();    
+        tooltip.show();
       }
       setTimeout(function() {
         if (tooltip) {
@@ -464,7 +621,7 @@ See the historical predictive result
       if (onUntriggerFn) {
         config.onUntrigger = onUntriggerFn;
       }
-      window.tippy(el, config); 
+      window.tippy(el, config);
     }
     const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
     for (var i=0; i<noterefs.length; i++) {
@@ -539,7 +696,7 @@ See the historical predictive result
       tippyHover(xref, undefined, function(instance) {
         instance.disable();
         let url = xref.getAttribute('href');
-        let hash = undefined; 
+        let hash = undefined;
         if (url.startsWith('#')) {
           hash = url;
         } else {
@@ -567,7 +724,7 @@ See the historical predictive result
               if (note !== null) {
                 const html = processXRef(id, note);
                 instance.setContent(html);
-              } 
+              }
             }).finally(() => {
               instance.enable();
               instance.show();
@@ -591,7 +748,7 @@ See the historical predictive result
               }
               const html = processXRef(null, note);
               instance.setContent(html);
-            } 
+            }
           }).finally(() => {
             instance.enable();
             instance.show();
@@ -631,7 +788,7 @@ See the historical predictive result
               height = bottom - top;
             }
             if (top !== null && height !== null && parent !== null) {
-              // cook up a div (if necessary) and position it 
+              // cook up a div (if necessary) and position it
               let div = window.document.getElementById("code-annotation-line-highlight");
               if (div === null) {
                 div = window.document.createElement("div");
@@ -756,7 +913,7 @@ See the historical predictive result
   <div class="nav-page nav-page-previous">
       <a href="./index.html" class="pagination-link" aria-label="About this notebook">
         <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">About this notebook</span>
-      </a>          
+      </a>
   </div>
   <div class="nav-page nav-page-next">
       <a href="./chapters/2026-04-29.html" class="pagination-link" aria-label="April 29, 2026">

@@ -51,6 +51,8 @@ def diagram(filename, title, panels):
                 svg.append(f'<path d="M{x+268} {y+82}h-21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>')
             elif j < len(boxes) - 1:
                 svg.append(f'<path d="M{x+246} {y+82}h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>')
+        if matrix_intro and heading.startswith("B "):
+            svg.append(f'<path d="M970 {y+123}v7H430v-7" fill="none" stroke="#395775" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow)"/>')
         label(34, y + 147, footer, 15, 600)
     (OUTPUT / filename).write_text("\n".join(svg + ["</svg>"]) + "\n", encoding="utf-8")
 

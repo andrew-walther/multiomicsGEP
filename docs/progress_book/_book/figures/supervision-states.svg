@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 747" role="img">
+<title>From a predictive benchmark to survival-guided programs</title>
+<rect width="100%" height="100%" rx="12" fill="#f5f8fc"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#395775"/></marker></defs>
+<text x="24" y="37" font-family="system-ui,sans-serif" font-size="25" font-weight="700" text-anchor="start" fill="#102a43">From a predictive benchmark to survival-guided programs</text>
+<rect x="64" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="75" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="86" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="97" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="108" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="119" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="130" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="141" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="152" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="163" y="72" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="64" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="75" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="86" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="97" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="108" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="119" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="130" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="141" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="152" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="163" y="83" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="64" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="75" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="86" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="97" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="108" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="119" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="130" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="141" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="152" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="163" y="94" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="64" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="75" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="86" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="97" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="108" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="119" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="130" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="141" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="152" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.99"/>
+<rect x="163" y="105" width="10" height="10" fill="#c6d7e8" opacity="0.65"/>
+<rect x="64" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="75" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="86" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="97" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="108" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="119" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="130" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="141" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<rect x="152" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.48"/>
+<rect x="163" y="116" width="10" height="10" fill="#c6d7e8" opacity="0.8200000000000001"/>
+<text x="64" y="153" font-family="system-ui,sans-serif" font-size="15" font-weight="700" text-anchor="start" fill="#102a43">Y: patients × genes</text>
+<rect x="277" y="72" width="10" height="10" fill="#91caa9" opacity="0.48"/>
+<rect x="288" y="72" width="10" height="10" fill="#91caa9" opacity="0.8200000000000001"/>
+<rect x="299" y="72" width="10" height="10" fill="#91caa9" opacity="0.48"/>
+<rect x="277" y="83" width="10" height="10" fill="#91caa9" opacity="0.65"/>
+<rect x="288" y="83" width="10" height="10" fill="#91caa9" opacity="0.99"/>
+<rect x="299" y="83" width="10" height="10" fill="#91caa9" opacity="0.65"/>
+<rect x="277" y="94" width="10" height="10" fill="#91caa9" opacity="0.8200000000000001"/>
+<rect x="288" y="94" width="10" height="10" fill="#91caa9" opacity="0.48"/>
+<rect x="299" y="94" width="10" height="10" fill="#91caa9" opacity="0.8200000000000001"/>
+<rect x="277" y="105" width="10" height="10" fill="#91caa9" opacity="0.99"/>
+<rect x="288" y="105" width="10" height="10" fill="#91caa9" opacity="0.65"/>
+<rect x="299" y="105" width="10" height="10" fill="#91caa9" opacity="0.99"/>
+<rect x="277" y="116" width="10" height="10" fill="#91caa9" opacity="0.48"/>
+<rect x="288" y="116" width="10" height="10" fill="#91caa9" opacity="0.8200000000000001"/>
+<rect x="299" y="116" width="10" height="10" fill="#91caa9" opacity="0.48"/>
+<text x="277" y="153" font-family="system-ui,sans-serif" font-size="15" font-weight="700" text-anchor="start" fill="#102a43">L: patient scores</text>
+<rect x="458" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<rect x="469" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="480" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<rect x="491" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="502" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<rect x="513" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="524" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<rect x="535" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="546" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<rect x="557" y="72" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="458" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.65"/>
+<rect x="469" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.99"/>
+<rect x="480" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.65"/>
+<rect x="491" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.99"/>
+<rect x="502" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.65"/>
+<rect x="513" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.99"/>
+<rect x="524" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.65"/>
+<rect x="535" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.99"/>
+<rect x="546" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.65"/>
+<rect x="557" y="83" width="10" height="10" fill="#9dbfe6" opacity="0.99"/>
+<rect x="458" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="469" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<rect x="480" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="491" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<rect x="502" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="513" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<rect x="524" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="535" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<rect x="546" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.8200000000000001"/>
+<rect x="557" y="94" width="10" height="10" fill="#9dbfe6" opacity="0.48"/>
+<text x="458" y="153" font-family="system-ui,sans-serif" font-size="15" font-weight="700" text-anchor="start" fill="#102a43">Fᵀ: gene loadings</text>
+<rect x="721" y="72" width="10" height="10" fill="#f3d084" opacity="0.48"/>
+<rect x="732" y="72" width="10" height="10" fill="#f3d084" opacity="0.8200000000000001"/>
+<rect x="721" y="83" width="10" height="10" fill="#f3d084" opacity="0.65"/>
+<rect x="732" y="83" width="10" height="10" fill="#f3d084" opacity="0.99"/>
+<rect x="721" y="94" width="10" height="10" fill="#f3d084" opacity="0.8200000000000001"/>
+<rect x="732" y="94" width="10" height="10" fill="#f3d084" opacity="0.48"/>
+<rect x="721" y="105" width="10" height="10" fill="#f3d084" opacity="0.99"/>
+<rect x="732" y="105" width="10" height="10" fill="#f3d084" opacity="0.65"/>
+<rect x="721" y="116" width="10" height="10" fill="#f3d084" opacity="0.48"/>
+<rect x="732" y="116" width="10" height="10" fill="#f3d084" opacity="0.8200000000000001"/>
+<text x="721" y="153" font-family="system-ui,sans-serif" font-size="15" font-weight="700" text-anchor="start" fill="#102a43">(t, δ): same patients</text>
+<text x="220" y="107" font-family="system-ui,sans-serif" font-size="28" font-weight="400" text-anchor="start" fill="#102a43">≈</text>
+<text x="392" y="107" font-family="system-ui,sans-serif" font-size="26" font-weight="400" text-anchor="start" fill="#102a43">×</text>
+<text x="620" y="104" font-family="system-ui,sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#102a43">paired with</text>
+<text x="64" y="181" font-family="system-ui,sans-serif" font-size="16" font-weight="400" text-anchor="start" fill="#102a43">Rows represent patients. Each patient contributes a molecular profile and an observed time and event indicator.</text>
+<rect x="18" y="205" width="1104" height="162" rx="12" fill="white" stroke="#b4c7da"/>
+<text x="34" y="232" font-family="system-ui,sans-serif" font-size="19" font-weight="700" text-anchor="start" fill="#102a43">A  Historical single-modality YFB benchmark</text>
+<rect x="34" y="247" width="244" height="80" rx="8" fill="#e7f1fc"/>
+<text x="156" y="269" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Expression</text>
+<text x="156" y="292" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Y · n patients × p genes</text>
+<text x="156" y="313" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Training molecular profiles</text>
+<path d="M280 287h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="305" y="247" width="244" height="80" rx="8" fill="#e7f5ed"/>
+<text x="427" y="269" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">EBMF reconstruction</text>
+<text x="427" y="292" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Y ≈ LFᵀ</text>
+<text x="427" y="313" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">L: n × K   F: p × K</text>
+<path d="M551 287h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="576" y="247" width="244" height="80" rx="8" fill="#fff2d9"/>
+<text x="698" y="269" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Cox predictor</text>
+<text x="698" y="292" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">η = Zβ, Z from Y and F</text>
+<text x="698" y="313" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">β: K survival coefficients</text>
+<path d="M844 287h-21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="847" y="247" width="244" height="80" rx="8" fill="#eeeafa"/>
+<text x="969" y="269" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Survival observations</text>
+<text x="969" y="292" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">(tᵢ, δᵢ) · n paired outcomes</text>
+<text x="969" y="313" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Cox risk sets inform β</text>
+<text x="34" y="352" font-family="system-ui,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#102a43">Feedback into F is off (α_F = 0). The same patients contribute molecular profiles and survival observations.</text>
+<rect x="18" y="383" width="1104" height="162" rx="12" fill="white" stroke="#b4c7da"/>
+<text x="34" y="410" font-family="system-ui,sans-serif" font-size="19" font-weight="700" text-anchor="start" fill="#102a43">B  Target single-modality method</text>
+<rect x="34" y="425" width="244" height="80" rx="8" fill="#e7f1fc"/>
+<text x="156" y="447" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Molecular term</text>
+<text x="156" y="470" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Fit reconstruction LFᵀ</text>
+<text x="156" y="491" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Gene-wise noise precision τ</text>
+<path d="M280 465h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="305" y="425" width="244" height="80" rx="8" fill="#e7f5ed"/>
+<text x="427" y="447" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Prior and posterior</text>
+<text x="427" y="470" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Estimate moments of L, F, β</text>
+<text x="427" y="491" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Carry posterior variances</text>
+<path d="M551 465h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="576" y="425" width="244" height="80" rx="8" fill="#fff2d9"/>
+<text x="698" y="447" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Cox term</text>
+<text x="698" y="470" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">YFB: η = Z(F)β</text>
+<text x="698" y="491" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">LB alternative: η = Lβ</text>
+<path d="M822 465h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="847" y="425" width="244" height="80" rx="8" fill="#eeeafa"/>
+<text x="969" y="447" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Supervised updates</text>
+<text x="969" y="470" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">YFB: feedback to F</text>
+<text x="969" y="491" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">LB: direct feedback to L</text>
+<path d="M970 506v7H430v-7" fill="none" stroke="#395775" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+<text x="34" y="530" font-family="system-ui,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#102a43">Goal: the survival term changes the molecular representation while preserving recovery, calibration and convergence.</text>
+<rect x="18" y="561" width="1104" height="162" rx="12" fill="white" stroke="#b4c7da"/>
+<text x="34" y="588" font-family="system-ui,sans-serif" font-size="19" font-weight="700" text-anchor="start" fill="#102a43">C  Multimodal extension with modality-specific priors</text>
+<rect x="34" y="603" width="244" height="80" rx="8" fill="#e7f1fc"/>
+<text x="156" y="625" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Paired modalities</text>
+<text x="156" y="648" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Y¹: expression, n × p₁</text>
+<text x="156" y="669" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Y²: methylation, n × p₂</text>
+<path d="M280 643h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="305" y="603" width="244" height="80" rx="8" fill="#e7f5ed"/>
+<text x="427" y="625" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Shared patient factors</text>
+<text x="427" y="648" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Yᵐ ≈ L(Fᵐ)ᵀ</text>
+<text x="427" y="669" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">One L across modalities</text>
+<path d="M551 643h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="576" y="603" width="244" height="80" rx="8" fill="#fff2d9"/>
+<text x="698" y="625" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Modality loadings</text>
+<text x="698" y="648" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Fᵐ: pₘ × K</text>
+<text x="698" y="669" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Prior and noise by modality</text>
+<path d="M822 643h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="847" y="603" width="244" height="80" rx="8" fill="#eeeafa"/>
+<text x="969" y="625" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Joint survival model</text>
+<text x="969" y="648" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Combine modality projections</text>
+<text x="969" y="669" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">One risk score per patient</text>
+<text x="34" y="708" font-family="system-ui,sans-serif" font-size="15" font-weight="600" text-anchor="start" fill="#102a43">M = 1 is the single-modality case. Evaluate the same supervision gate before adopting a unified fitter.</text>
+</svg>
