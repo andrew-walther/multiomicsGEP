@@ -17,22 +17,21 @@ Figures come from `tools/make_figures.R` and `tools/make_diagrams.py`.
 
 ## Structure and timing
 
-Slide timings come from each script's word count at 140 words per minute, rounded up to
-the next quarter minute.
+Slide timings come from each script's word count at 140 words per minute, rounded to the
+nearest quarter minute.
 
 | Section | Slides | Minutes |
 |---|---|---|
-| Title and outline | 1–2 | 1.0 |
-| 1. Introduction | 3–6 | 3.0 |
-| 2. Methods | 7–13 | 5.5 |
-| 3. Results (simulation and PDAC application) | 14–23 | 7.0 |
-| 4. Discussion | 24–26 | 1.75 |
-| Main body | 1–26 | 18.25 (2,120 words, about 15 minutes read straight through) |
+| Title and outline | 1–2 | 0.5 |
+| 1. Introduction | 3–6 | 3.25 |
+| 2. Methods | 7–13 | 7.25 |
+| 3. Results (simulation and PDAC application) | 14–23 | 8.25 |
+| 4. Discussion | 24–26 | 2.25 |
+| Main body | 1–26 | 21.5 (2,988 words) |
 | Backup | B1–B23 | as needed |
 
-The script reads in about 15 minutes. Time spent on the equations, figures and
-questions during the talk brings it toward 20. If the part should fill 25 minutes, the
-methods and results scripts are where to add.
+The target is about 20 minutes, running a little long if needed (author, 2026-11-03).
+Pauses on the equations and figures will add to the read-aloud time.
 
 ## Author decisions (2026-11-03)
 
@@ -72,7 +71,6 @@ methods and results scripts are where to add.
 
 ## Open items
 
-- The script runs short of 20 minutes (see the timing table).
 - Slides 12 and 23 leave space at the bottom and could take larger text.
 
 ## Sources
@@ -103,42 +101,42 @@ methods and results scripts are where to add.
 - Figure: none
 - Slide text: Survival-supervised Bayesian matrix factorization identifies prognostic molecular programs Andrew J Walther Department of Biostatistics, University of North Carolina at Chapel Hill Prelim Part III · December 7, 2026
 - Notes: My third project is a model that finds gene expression programs in pancreatic tumors and relates them to patient survival in one fit. The method is still being finished, so I'll show what is built and validated, and then what remains.
-- Time: 0.5
+- Time: 0.25
 - Carry-over: talk-only
 
 ### 2. Outline
 - Figure: none
 - Slide text: • Introduction Pancreatic cancer, two-step analyses of expression and survival, and the gap this project addresses • Methods The joint model, its priors and fitting, the finalized model, and the extension to several data types • Results Simulation, and validation in five external pancreatic cancer cohorts with biological interpretation • Discussion Summary, limitations, and remaining work
 - Notes: I'll start with the clinical problem and how it is usually analyzed, then the model, then results in simulation and in pancreatic cancer data. I'll end with the limitations and the work left before the final exam.
-- Time: 0.5
+- Time: 0.25
 - Carry-over: talk-only
 
 ### 3. Pancreatic cancer is lethal, and tumors differ in ways that predict survival
 - Figure: none
 - Slide text: A lethal cancer 13.7% Five-year relative survival for pancreatic cancer (SEER, diagnoses 2016–2022) Tumors differ Expression separates basal-like and classical tumors, and basal-like tumors have shorter survival A bulk sample also carries signal from the stroma and immune cells around the tumor Goal: find expression programs that predict survival and can score a new patient from their expression alone SEER Cancer …
-- Notes: Pancreatic ductal adenocarcinoma, PDAC, has a five-year survival of about fourteen percent. Earlier work found that tumor expression splits into a basal-like and a classical subtype, and patients with basal-like tumors die sooner. A bulk tumor sample also contains stroma and immune cells, so its expression mixes several sources. The goal of this project is to find the expression programs that matter for survival and to score a new patient with them using nothing but that patient's expression.
+- Notes: Pancreatic ductal adenocarcinoma, PDAC, has a five-year survival of about fourteen percent. Earlier work found that tumor expression splits into a basal-like and a classical subtype, and patients with basal-like tumors die sooner. A bulk tumor sample also contains stroma and immune cells, so its expression mixes several sources. The goal of this project is to find the expression programs that matter for survival and to score a new patient with them using nothing but that patient's expression. Moffitt and colleagues found these subtypes by factorizing bulk tumor expression, separating tumor programs from stromal programs. So any method that finds programs in bulk expression has to handle tumor, stroma and immune signal at the same time.
 - Time: 0.75
 - Carry-over: prelim
 
 ### 4. The usual analysis finds programs first and tests survival afterward
 - Figure: diagram_two_step_vs_joint.png
 - Slide text: A program that explains little expression variance but predicts survival can be missed, because cell-composition variation dominates an expression-only fit The Cox step treats estimated scores as known, so its standard errors leave out the uncertainty in the scores
-- Notes: The usual pipeline has two steps. First a matrix factorization finds programs in the expression matrix, and then a Cox model tests the program scores against survival. Survival never touches the first step, and that has two consequences. A program that explains only a little expression variance can be lost, even if it predicts survival well, because large sources of variation such as cell composition dominate the factorization. And the Cox step treats the estimated scores as if they were measured exactly, so its standard errors are too small. A joint fit estimates both pieces together.
-- Time: 0.75
+- Notes: The usual pipeline has two steps. First a matrix factorization finds programs in the expression matrix, and then a Cox model tests the program scores against survival. Survival never touches the first step, and that has two consequences. A program that explains only a little expression variance can be lost, even if it predicts survival well, because large sources of variation such as cell composition dominate the factorization. And the Cox step treats the estimated scores as if they were measured exactly, so its standard errors are too small. A joint fit estimates both pieces together. Picture a program that explains one percent of the expression variance but doubles the hazard. An expression-only factorization has little reason to keep it, and the Cox step can only test the programs it is given.
+- Time: 1
 - Carry-over: prelim
 
 ### 5. Existing methods each cover part of the problem
 - Figure: none
 - Slide text: Survival-supervised NMF DeSurv (Young et al.): survival guides which programs are found. Penalized point estimates, with the rank and the strength of supervision tuned by cross-validation Methylation and survival, gene by gene iBAG (Wang et al. 2013): splits each gene's expression into a part explained by its promoter methylation and the rest, and relates both to survival in an accelerated failure time model …
-- Notes: Several methods cover pieces of this. Survival-supervised nonnegative matrix factorization from our group lets survival guide which programs are found, but it reports point estimates and tunes its rank and the strength of supervision by cross-validation. iBAG links methylation and expression to survival, but one gene at a time rather than through programs. MOFA and iCluster find factors shared across data types, but they ignore survival. None of them learns programs across data types with survival guiding them, carries uncertainty through, and estimates how many programs there are.
-- Time: 0.75
+- Notes: Several methods cover pieces of this. Survival-supervised nonnegative matrix factorization from our group lets survival guide which programs are found, but it reports point estimates and tunes its rank and the strength of supervision by cross-validation. iBAG links methylation and expression to survival, but one gene at a time rather than through programs. MOFA and iCluster find factors shared across data types, but they ignore survival. None of them learns programs across data types with survival guiding them, carries uncertainty through, and estimates how many programs there are. DeSurv is the closest to our approach, and we use its gene screening rule so the two can be compared on the same genes. What we add is a Bayesian version: posterior distributions instead of point estimates, and shrinkage instead of cross-validation to set the number of programs.
+- Time: 1
 - Carry-over: prelim
 
 ### 6. Project aims
 - Figure: none
 - Slide text: Aim 1. Joint model A Bayesian model of expression and survival that can find low-variance prognostic programs, reports uncertainty, and shrinks programs it does not need Aim 2. PDAC validation Validate the model in external pancreatic cancer cohorts and characterize its programs biologically Aim 3. Several data types Extend the model to expression and methylation together, so that methylation changes can be …
 - Notes: The project has three aims. The first is the joint model itself: it should find programs that predict survival even when they explain little expression variance, report uncertainty, and decide how many programs to keep. The second is to validate it in external pancreatic cancer cohorts and interpret its programs. The third is to extend it to several data types, so that a program can include both genes and methylation sites.
-- Time: 0.75
+- Time: 0.5
 - Carry-over: prelim
 
 
@@ -147,50 +145,50 @@ methods and results scripts are where to add.
 ### 7. Each patient contributes an expression profile and a survival outcome
 - Figure: diagram_notation.png
 - Slide text: Y n × p expression, patients by genes (tᵢ, δᵢ) observed time and event indicator L n × K program activity of each patient F p × K gene loadings, one column per program Zᵢₖ patient i's expression projected onto program k's normalized loading βₖ log hazard ratio of program k $$\eta_i = \sum_{k=1}^K Z_{ik}\,\beta_k \qquad\text{(risk score)}$$
-- Notes: Here is the notation. Y has a row for each patient and a column for each gene, and each patient also has a survival time and an event indicator. We approximate Y as L times F transpose with K programs. A column of F is a program, its weight on each gene, and a column of L gives how active that program is in each patient. The risk score projects a patient's expression onto each program's loading column, scaled to unit length, and multiplies by a coefficient beta, which is a log hazard ratio. Because the score uses expression and loadings only, a new patient can be scored without fitting anything.
+- Notes: Here is the notation. Y has a row for each patient and a column for each gene, and each patient also has a survival time and an event indicator. We approximate Y as L times F transpose with K programs. A column of F is a program, its weight on each gene, and a column of L gives how active that program is in each patient. The risk score projects a patient's expression onto each program's loading column, scaled to unit length, and multiplies by a coefficient beta, which is a log hazard ratio. Because the score uses expression and loadings only, a new patient can be scored without fitting anything. One detail matters for later. The score uses the projection of expression onto F, not the activities L, and because F sits inside the risk score, survival information can flow back into the loadings.
 - Time: 1
 - Carry-over: prelim
 
 ### 8. The joint model adds a Cox partial likelihood to a matrix factorization
 - Figure: none
 - Slide text: $$y_{ij}=\sum_{k=1}^K L_{ik}F_{jk}+e_{ij},\quad e_{ij}\sim N(0,\tau_j^{-1}) \qquad\quad h_i(t)=h_0(t)\exp(\eta_i),\quad \eta = Y_c F D\,\beta$$ $$\begin{aligned}\mathcal J(q)={}&\lambda_G\,E_q\big[\log p(Y\mid L,F,\tau)\big]+\gamma\,E_q\big[\ell_{\mathrm{Cox}}(\eta)\big]\\&-\mathrm{KL}(q_L\Vert g_L)-\mathrm{KL}(q_F\Vert g_F)-\mathrm{KL}(q_\beta\Vert g_\beta)\end{aligned}$$ $q = q_L\,q_F\,q_\beta$ is a mean-field …
-- Notes: The model has two parts. The expression part is a Gaussian factorization with a separate noise precision for each gene. The survival part is a Cox model whose linear predictor is the projection score times beta. We fit a variational approximation q by maximizing this objective: the expected expression log-likelihood, plus the expected Cox log partial likelihood, minus a Kullback-Leibler penalty for each block of parameters. The weights lambda G and gamma set how much the expression data and the survival data count. The loadings F appear in both terms, and that shared F is how survival can shape the programs.
-- Time: 0.75
+- Notes: The model has two parts. The expression part is a Gaussian factorization with a separate noise precision for each gene. The survival part is a Cox model whose linear predictor is the projection score times beta. We fit a variational approximation q by maximizing this objective: the expected expression log-likelihood, plus the expected Cox log partial likelihood, minus a Kullback-Leibler penalty for each block of parameters. The weights lambda G and gamma set how much the expression data and the survival data count. The loadings F appear in both terms, and that shared F is how survival can shape the programs. Two special cases help to read it. With gamma equal to zero this is an ordinary empirical Bayes matrix factorization, and with F held fixed it is a Bayesian Cox model on projected scores. The joint model sits between the two, and the weights decide where.
+- Time: 1
 - Carry-over: prelim
 
 ### 9. Empirical Bayes priors let the data decide how much to shrink
 - Figure: none
 - Slide text: $$L_{ik}\sim(1-\pi_{Lk})\,\delta_0+\pi_{Lk}\,\mathrm{Exp}(\lambda_{Lk}) \qquad F_{jk}\sim(1-\pi_{Fk})\,\delta_0+\pi_{Fk}\,\mathrm{Exp}(\lambda_{Fk})$$ $$\beta_k\sim(1-\pi_\beta)\,\delta_0+\pi_\beta\,N(0,\sigma^2_\beta)$$ Nonnegative, sparse programs Point-exponential priors on activities and loadings: a point mass at zero mixed with an exponential Survival effects can be zero Point-normal prior on β in the …
-- Notes: The activities and loadings get point-exponential priors: a point mass at zero mixed with an exponential, so they are nonnegative and sparse. The survival coefficients get a point-normal prior, which lets a program have no survival effect at all. The model fitted so far used a plain normal prior on beta instead. In each case the prior's parameters are estimated from the data, program by program, which is what makes this empirical Bayes. The point masses are also how the model decides how many programs it needs.
-- Time: 0.75
+- Notes: The activities and loadings get point-exponential priors: a point mass at zero mixed with an exponential, so they are nonnegative and sparse. The survival coefficients get a point-normal prior, which lets a program have no survival effect at all. The model fitted so far used a plain normal prior on beta instead. In each case the prior's parameters are estimated from the data, program by program, which is what makes this empirical Bayes. The point masses are also how the model decides how many programs it needs. Empirical Bayes matters here because there are thousands of loadings and only a few hundred patients. Estimating the prior from all the genes in a program borrows strength across genes, so each loading is shrunk by an amount the data choose rather than a penalty we tune.
+- Time: 1
 - Carry-over: prelim
 
 ### 10. The model is fitted by coordinate ascent, starting with too many programs
 - Figure: diagram_fitting.png
 - Slide text: Each update is an empirical Bayes normal-means problem: the data give an estimate and its precision, and the prior shrinks it The direction of the risk score is fixed once, from the training data
-- Notes: We fit the model by coordinate ascent variational inference. The Cox term is not quadratic, so at the start of each sweep it is replaced by a weighted least squares approximation around the current risk score. Then each program is updated in turn, its coefficient, its activities and its loadings, and the noise precisions are updated at the end of the sweep. We start with more programs than we expect and let the priors remove the ones that are not needed. The sign of the risk score is fixed once from the training data.
-- Time: 0.75
+- Notes: We fit the model by coordinate ascent variational inference. The Cox term is not quadratic, so at the start of each sweep it is replaced by a weighted least squares approximation around the current risk score. Then each program is updated in turn, its coefficient, its activities and its loadings, and the noise precisions are updated at the end of the sweep. We start with more programs than we expect and let the priors remove the ones that are not needed. The sign of the risk score is fixed once from the training data. Each update has a closed form: the data give an estimate and a standard error for one parameter, and the fitted prior shrinks it. The working approximation keeps each patient's Cox score exact but replaces the full curvature, which couples patients through their risk sets, with a diagonal one. That is what allows one coordinate at a time, and the equations are in a backup slide.
+- Time: 1.25
 - Carry-over: prelim
 
 ### 11. A new patient's risk score needs only their expression
 - Figure: diagram_prediction.png
 - Slide text: No patient-level parameters are refitted, so training and validation patients are scored with the same formula The direction of the score is set in training, before any validation outcome is seen
-- Notes: To score a patient in a new cohort, we restrict to the training genes, standardize within that cohort, project onto the fitted loadings and multiply by the fitted coefficients. Nothing about the new patient is estimated. That keeps validation clean, because the same formula is used for training and test patients.
+- Notes: To score a patient in a new cohort, we restrict to the training genes, standardize within that cohort, project onto the fitted loadings and multiply by the fitted coefficients. Nothing about the new patient is estimated. That keeps validation clean, because the same formula is used for training and test patients. Two-step methods also score new patients by projection, so differences in validation come from the fitted loadings and coefficients, not from the scoring rule.
 - Time: 0.5
 - Carry-over: prelim
 
 ### 12. So far survival sets the coefficients but not the loadings
 - Figure: none
 - Slide text: Model fitted so far Survival sets β, but F is updated from expression only Genes standardized to mean 0 and SD 1 within cohort, although the loadings are nonnegative Normal prior on β, with the projection scores held fixed in the β update Finalized model The survival term enters the loading update Obstacle: with about 2,000 genes, the expression term outweighs the survival term in each loading update Plan: …
-- Notes: The model fitted so far is a step short of the full proposal. Survival sets the coefficients, but the loadings are updated from expression only, so its programs are expression programs that survival then weights. It also standardized each gene, which gives negative values, while the loadings are nonnegative, and that mismatch will be removed. The finalized model lets the survival term into the loading update. The obstacle is scale: with about two thousand genes, the expression part of each loading update outweighs the survival part, so survival barely moves the loadings. The plan is to rebalance the two weights and to accept the result only if it passes the simulation test I'll show in the results. If that fails, the fallback builds the risk score on patient activities instead.
-- Time: 1
+- Notes: The model fitted so far is a step short of the full proposal. Survival sets the coefficients, but the loadings are updated from expression only, so its programs are expression programs that survival then weights. It also standardized each gene, which gives negative values, while the loadings are nonnegative, and that mismatch will be removed. The finalized model lets the survival term into the loading update. The obstacle is scale: with about two thousand genes, the expression part of each loading update outweighs the survival part, so survival barely moves the loadings. The plan is to rebalance the two weights and to accept the result only if it passes the simulation test I'll show in the results. If that fails, the fallback builds the risk score on patient activities instead. To make the scale problem concrete, the precision of each loading update has an expression part and a survival part. At fifty genes the survival part is most of it, and at about two thousand genes it is roughly a millionth of the total. Multiplying the survival weight by ten thousand makes the fit unstable, so the plan rebalances from the expression side instead.
+- Time: 1.5
 - Carry-over: prelim
 
 ### 13. The extension to several data types shares patient activities across them
 - Figure: diagram_multi_data.png
 - Slide text: $$Y^{(m)}\approx \mathbf 1\mu^{(m)\top}+L\,F^{(m)\top},\quad m=1,\dots,M$$ $$\eta=\Big(\textstyle\sum_m Y^{(m)}F^{(m)}D^{(m)}\Big)\beta$$ Each data type has its own loading prior family and noise precisions, for example a sparser prior for many methylation sites $M=1$ gives the single data type model One program can load on genes and methylation sites together
-- Notes: The extension keeps one matrix of patient activities and gives each data type its own loadings. Each data type also gets its own prior family and noise levels, which matters because there are many more methylation sites than genes and most of them should have zero weight. The risk score sums the projections over data types, and with one data type it is exactly the model I just described. The point of the extension is that one program can include genes and methylation sites at once. A derivation exists, and implementing it is part of the remaining work.
-- Time: 0.75
+- Notes: The extension keeps one matrix of patient activities and gives each data type its own loadings. Each data type also gets its own prior family and noise levels, which matters because there are many more methylation sites than genes and most of them should have zero weight. The risk score sums the projections over data types, and with one data type it is exactly the model I just described. The point of the extension is that one program can include genes and methylation sites at once. A derivation exists, and implementing it is part of the remaining work. Cohorts and data types enter differently: more patients add rows of L, and more data types add blocks of F. Each feature also gets an intercept, which keeps spare programs from absorbing feature means, a problem we saw in an earlier version.
+- Time: 1
 - Carry-over: prelim
 
 
@@ -199,71 +197,71 @@ methods and results scripts are where to add.
 ### 14. Simulation: two cohorts with shared and cohort-specific programs
 - Figure: none
 - Slide text: Data Two cohorts of 150 patients, 1,000 genes, true rank 6 True loadings taken from a factorization of the real training data Survival Weibull proportional hazards from the shared programs, β = 1.5, −1.2, 0.8, −0.5 30% censoring, 75 test patients per dataset Settings All shared, shared plus cohort-specific, nothing shared Starting ranks 2, 3, 4, 6, 12, 20, with 15 datasets each Comparison: a two-step fit, the …
-- Notes: The first simulation has two cohorts of 150 patients and a thousand genes. The true loadings come from a factorization of the real data, so the programs look like real expression programs. Survival depends on the shared programs. Three scenarios change how many programs the cohorts share, and each is fitted at six starting ranks with fifteen datasets per setting. The comparison is a two-step fit, the factorization followed by an ordinary Cox model.
+- Notes: The first simulation has two cohorts of 150 patients and a thousand genes. The true loadings come from a factorization of the real data, so the programs look like real expression programs. Survival depends on the shared programs. Three scenarios change how many programs the cohorts share, and each is fitted at six starting ranks with fifteen datasets per setting. The comparison is a two-step fit, the factorization followed by an ordinary Cox model. Starting rank means the number of programs a fit begins with, before shrinkage, and the true rank is six.
 - Time: 0.75
 - Carry-over: prelim
 
 ### 15. The joint fit predicts better than the two-step fit when cohorts have their own programs
 - Figure: single_sim_delta.png
 - Slide text: Shared plus cohort-specific: C higher by 0.10–0.16 from a starting rank of 3 All shared: about 0.02 higher from a starting rank of 6, slightly lower at 3–4 Nothing shared: within about 0.01 Survival did not shape the loadings in either arm, so the gain comes from the priors and the shrunken survival step
-- Notes: Each bar is the joint fit's held-out concordance minus the two-step fit's. When each cohort has programs of its own, the joint fit is ahead by 0.10 to 0.16 from a starting rank of three. When every program is shared it is ahead by about 0.02 once the starting rank reaches six. With no survival signal the two are the same, as they should be. In these fits survival did not shape the loadings either, so the gain comes from the priors and the shrinkage of the survival coefficients.
-- Time: 0.75
+- Notes: Each bar is the joint fit's held-out concordance minus the two-step fit's. When each cohort has programs of its own, the joint fit is ahead by 0.10 to 0.16 from a starting rank of three. When every program is shared it is ahead by about 0.02 once the starting rank reaches six. With no survival signal the two are the same, as they should be. In these fits survival did not shape the loadings either, so the gain comes from the priors and the shrinkage of the survival coefficients. The two-step arm here uses an unpenalized Cox step, so part of the gain is shrinkage that a penalized two-step model would also get. That is why the PDAC comparison uses a penalized two-step model as well.
+- Time: 1
 - Carry-over: prelim
 
 ### 16. Starting with too few programs merges true programs, and starting with too many does not
 - Figure: none
 - Slide text: Starting ranks 2–4 7 of 27 estimated programs were merges of two true programs Starting ranks 6, 12, 20 0 of 114 estimated programs were merges With cohort-specific coefficients, the cohort carrying a survival effect was identified in 15 of 20 cases at a starting rank of 6 and 17 of 20 at 12 Working rule: start high and let the priors shrink the extra programs
-- Notes: Starting below the true rank forces true programs together: seven of 27 estimated programs matched two true programs at once. At or above the true rank there were no merges in 114 programs. The model also attributed a survival effect to the right cohort in most cases. So the working rule is to start with too many programs and let the priors shrink the extras.
+- Notes: Starting below the true rank forces true programs together: seven of 27 estimated programs matched two true programs at once. At or above the true rank there were no merges in 114 programs. The model also attributed a survival effect to the right cohort in most cases. So the working rule is to start with too many programs and let the priors shrink the extras. On the real data we followed this rule: we started at seven programs, kept four, and three shrank to zero.
 - Time: 0.5
 - Carry-over: prelim
 
 ### 17. The finalized model will be judged on a planted low-variance program
 - Figure: none
 - Slide text: Design One planted program explains under 1% of expression variance but has a strong survival effect 400 training patients, several noise levels, 50 and 2,000 genes The same data fitted without survival feedback for comparison The model passes only if it finds the planted program: loading correlation ≥ 0.7, correct direction, survival effect distinguishable from zero flags no spurious survival programs converges …
-- Notes: The first simulation could not test supervision, because survival never shaped the loadings, and this test is built for that. One planted program explains less than one percent of expression variance but strongly predicts survival, exactly the kind of program a two-step analysis misses. The finalized model passes only if it finds that program in the right direction, does not call other programs prognostic, and converges, at both fifty and two thousand genes. The same data are fitted without survival feedback for comparison. Runs are in progress, and the current numbers are in the backup slides.
-- Time: 0.75
+- Notes: The first simulation could not test supervision, because survival never shaped the loadings, and this test is built for that. One planted program explains less than one percent of expression variance but strongly predicts survival, exactly the kind of program a two-step analysis misses. The finalized model passes only if it finds that program in the right direction, does not call other programs prognostic, and converges, at both fifty and two thousand genes. The same data are fitted without survival feedback for comparison. Runs are in progress, and the current numbers are in the backup slides. The variance share is set by rescaling the planted program's activities, so the same survival effect sits on a weaker and weaker expression signal across settings. Recovery is judged from the posterior of the coefficient, so a program has to be both found and called prognostic.
+- Time: 1
 - Carry-over: prelim
 
 ### 18. PDAC application: train on two cohorts, validate on five
 - Figure: real_data_workflow_single.png
 - Slide text: Training: TCGA (n = 144) and CPTAC (n = 129), RNA-seq, 2,064 genes after screening each cohort for mean and variance, starting rank 7 Validation: Dijk, Moffitt, PACA-AU microarray, PACA-AU RNA-seq and Puleo (616 records), with every choice fixed from training
-- Notes: For the application we trained on two RNA-seq cohorts, TCGA and CPTAC, 273 patients in total, using 2,064 genes that passed a mean and variance screen in both. We then scored five external cohorts across microarray and RNA-seq platforms. Everything, including the direction of the risk score, was fixed from training before any validation outcome was used.
-- Time: 0.5
+- Notes: For the application we trained on two RNA-seq cohorts, TCGA and CPTAC, 273 patients in total, using 2,064 genes that passed a mean and variance screen in both. We then scored five external cohorts across microarray and RNA-seq platforms. Everything, including the direction of the risk score, was fixed from training before any validation outcome was used. The external cohorts differ in platform, size and death rate, from 52 to 288 patients, which is a fairly hard test for a model trained on RNA-seq.
+- Time: 0.75
 - Carry-over: prelim
 
 ### 19. External concordance matches a rank-matched two-step model
 - Figure: external_c_forest.png
 - Slide text: | Model | Mean external C | |---|---| | Joint model | 0.627 | | Two-step, 7 programs | 0.623 | | Two-step, 40 programs, LASSO Cox | 0.601 | Difference from the 7-program model: 0.011 (95% CI −0.013 to 0.033) Difference from the 40-program model: 0.026 (0.0002 to 0.050) Lines are 95% bootstrap intervals for the joint model
-- Notes: Across the five external cohorts the mean concordance was 0.627. A two-step model with the same seven programs reached 0.623, and the difference is well inside its confidence interval. Against an independently tuned two-step model with forty programs and a lasso Cox step, the joint model was ahead by 0.026, with an interval that just excludes zero. In short, prediction is comparable to a well-chosen two-step analysis. That is expected here, because survival did not shape these loadings.
-- Time: 0.75
+- Notes: Across the five external cohorts the mean concordance was 0.627. A two-step model with the same seven programs reached 0.623, and the difference is well inside its confidence interval. Against an independently tuned two-step model with forty programs and a lasso Cox step, the joint model was ahead by 0.026, with an interval that just excludes zero. In short, prediction is comparable to a well-chosen two-step analysis. That is expected here, because survival did not shape these loadings. The rank-matched model was ahead in both PACA-AU series and behind in Dijk, so no single cohort decides the comparison. The bootstrap resamples records rather than donors, so with the shared PACA-AU donors these intervals are somewhat too narrow.
+- Time: 1
 - Carry-over: prelim
 
 ### 20. Predicted risk separates survival in every external cohort
 - Figure: km_risk_external.png
 - Slide text: The lowest third of predicted risk had the best survival in all five cohorts Log-rank p < 0.0001 (Puleo), 0.0005 (Dijk), 0.021 (PACA-AU RNA-seq), 0.075 (PACA-AU microarray), 0.17 (Moffitt)
-- Notes: Splitting each external cohort into thirds of predicted risk, the low-risk third had the best survival every time. The separation is significant in three of the five cohorts. Moffitt, the weakest, also had the lowest concordance.
+- Notes: Splitting each external cohort into thirds of predicted risk, the low-risk third had the best survival every time. The separation is significant in three of the five cohorts. Moffitt, the weakest, also had the lowest concordance. The cut points are thirds within each cohort, and no validation outcome was used to set them.
 - Time: 0.5
 - Carry-over: prelim
 
 ### 21. Two programs match the basal-like and classical subtypes
 - Figure: km_programs_external.png
 - Slide text: Program 7: shorter survival Glycolysis (GAPDH, ENO1, LDHA), integrin and growth-factor receptor genes (ITGA3, MET) Basal-like gene list enriched (adjusted p = 0.0006), correlation 0.58 with PurIST basal-like probability Program 3: longer survival Epithelial and secretory genes Correlation −0.58 with PurIST, classical signature hazard ratio below 1 in all five cohorts External tertiles: p
-- Notes: Two of the retained programs carry the survival signal. Program 7 is associated with shorter survival. Its top genes are glycolysis genes and integrin and growth-factor receptor genes, it is enriched for the published basal-like gene list, and it correlates with the PurIST basal-like classifier. Program 3 is associated with longer survival and lines up with the classical subtype. In the external cohorts, patients in the top third of Program 7 had the shortest survival and those in the top third of Program 3 the longest. These programs were found from expression, so they reproduce the known subtype axis rather than discover a new one.
+- Notes: Two of the retained programs carry the survival signal. Program 7 is associated with shorter survival. Its top genes are glycolysis genes and integrin and growth-factor receptor genes, it is enriched for the published basal-like gene list, and it correlates with the PurIST basal-like classifier. Program 3 is associated with longer survival and lines up with the classical subtype. In the external cohorts, patients in the top third of Program 7 had the shortest survival and those in the top third of Program 3 the longest. These programs were found from expression, so they reproduce the known subtype axis rather than discover a new one. PurIST is a published single-sample subtype classifier from our group, so its agreement is an outside check on the subtype label. Joint coefficients can change sign when correlated programs are in the model together, so the adverse and protective labels come from each program's own survival association.
 - Time: 1
 - Carry-over: prelim
 
 ### 22. The other programs describe stroma and immune cells
 - Figure: programs_heatmap.png
 - Slide text: Program 5: fibroblast and collagen genes (COL1A2, COL3A1, SPARC), led by epithelial-to-mesenchymal transition (adjusted p = 0.0005) Program 6: lymphoid genes (IKZF1, IL10RA) with vascular and basement-membrane genes (COL14A1, TNXB) Neither predicts survival in the external cohorts Together the four programs correspond to the published tumor, stromal and immune factors, with stroma and immune cells split apart …
-- Notes: The other two programs explain expression without a survival association. Program 5 is the stroma, dominated by collagen and fibroblast genes. Program 6 combines lymphoid immune genes with vascular genes. Neither is prognostic in the external cohorts. Together the four programs match the tumor, stromal and immune factors reported for pancreatic cancer, with the stroma and immune cells separated. One caution: with cohort-specific coefficients, Program 3's protective effect comes almost entirely from CPTAC.
+- Notes: The other two programs explain expression without a survival association. Program 5 is the stroma, dominated by collagen and fibroblast genes. Program 6 combines lymphoid immune genes with vascular genes. Neither is prognostic in the external cohorts. Together the four programs match the tumor, stromal and immune factors reported for pancreatic cancer, with the stroma and immune cells separated. One caution: with cohort-specific coefficients, Program 3's protective effect comes almost entirely from CPTAC. The stromal program leans weakly toward basal-like, with a correlation of 0.30, and its mesenchymal signature is not consistently prognostic in the external cohorts. The immune program is not correlated with the subtype axis at all.
 - Time: 0.75
 - Carry-over: prelim
 
 ### 23. What the finalized and multi-data-type models are designed to show
 - Figure: none
 - Slide text: Survival-guided programs Programs that predict survival even when they explain little expression variance Test Planted-program simulation, then training cross-validation in PDAC against the two-step model Uncertainty carried through Uncertainty in the programs reflected in the survival coefficients Test Interval coverage of β in simulation Methylation linked to expression Programs that load on genes and CpG sites …
-- Notes: This slide is about results we expect rather than results we have. First, programs shaped by survival, tested by the planted-program simulation and then by cross-validation in the training cohorts. Second, uncertainty in the programs carried into the survival coefficients, checked by interval coverage in simulation. Third, programs that include both genes and methylation sites. Mapping those sites to genes and promoters would show which program genes are regulated through methylation, which is useful even if concordance barely changes. Fourth, a number of programs chosen without looking at the validation cohorts.
-- Time: 0.75
+- Notes: This slide is about results we expect rather than results we have. First, programs shaped by survival, tested by the planted-program simulation and then by cross-validation in the training cohorts. Second, uncertainty in the programs carried into the survival coefficients, checked by interval coverage in simulation. Third, programs that include both genes and methylation sites. Mapping those sites to genes and promoters would show which program genes are regulated through methylation, which is useful even if concordance barely changes. Fourth, a number of programs chosen without looking at the validation cohorts. For methylation, array probes can be mapped to genes and promoter regions with the standard annotation, which is how a methylation loading becomes a statement about a gene. Each of these has a test that could fail, and that is how the remaining work is set up.
+- Time: 1
 - Carry-over: prelim
 
 
@@ -272,22 +270,22 @@ methods and results scripts are where to add.
 ### 24. Summary
 - Figure: none
 - Slide text: A joint Bayesian model of expression and survival scores new patients from expression alone The fitted version, with expression-only loadings, reached a mean external C of 0.627 in five cohorts, similar to a rank-matched two-step model It recovers the basal-like and classical axis and separate stromal and immune programs In simulation, starting with too many programs avoids merging true programs
-- Notes: To summarize, the model fits expression and survival together and scores new patients from expression alone. The version fitted so far validates in five external cohorts at about the level of a well-matched two-step analysis. It recovers the main subtype axis and separates stroma from immune cells. The simulations support starting with many programs and letting the priors shrink them.
+- Notes: To summarize, the model fits expression and survival together and scores new patients from expression alone. The version fitted so far validates in five external cohorts at about the level of a well-matched two-step analysis. It recovers the main subtype axis and separates stroma from immune cells. The simulations support starting with many programs and letting the priors shrink them. What is not shown yet is the central claim of the proposal, that survival can shape the programs themselves.
 - Time: 0.5
 - Carry-over: prelim
 
 ### 25. Limitations
 - Figure: none
 - Slide text: In the fitted model, survival does not shape the programs Prediction is comparable to a two-step model, not better Genes were standardized to mean 0 while the loadings are nonnegative The starting rank of 7 was chosen partly from validation performance The two PACA-AU series share 47 donors, so the 616 external records represent 568 people Not yet compared with DeSurv, PurIST, elastic-net Cox or clinical covariates
-- Notes: The main limitation is the one I've repeated: in the fitted model survival does not shape the programs, so the benefit of supervision is not shown yet on real data. Prediction is comparable to two-step analysis, not better. The data scaling is inconsistent with nonnegative loadings. The starting rank used validation performance. Two external series share donors, so pooled intervals are optimistic. And several comparators are still missing.
-- Time: 0.5
+- Notes: The main limitation is the one I've repeated: in the fitted model survival does not shape the programs, so the benefit of supervision is not shown yet on real data. Prediction is comparable to two-step analysis, not better. The data scaling is inconsistent with nonnegative loadings. The starting rank used validation performance. Two external series share donors, so pooled intervals are optimistic. And several comparators are still missing. The rank and donor issues have direct fixes: choose the rank inside training cross-validation only, and keep one record per donor or resample donors.
+- Time: 0.75
 - Carry-over: prelim
 
 ### 26. Remaining work
 - Figure: none
 - Slide text: Survival-guided loadings: rebalance the expression and survival terms, pass the planted-program test, and check training cross-validation in PDAC Model details: refit on a nonnegative data scale, and choose the number of programs without validation data Several data types: implement the model and fit matched expression and methylation (TCGA training, ICGC validation) Biology: complete the characterization, with …
-- Notes: Here is what remains before the final exam. First and most important, get survival to shape the loadings and confirm it with the simulation test and with cross-validation in the training data. Then refit on a nonnegative scale and choose the number of programs without the validation cohorts. Next, implement the extension to expression and methylation and fit it to matched TCGA and ICGC data. Alongside that, finish the biological characterization and the wider comparison with other methods. The model then goes into an R package, and the manuscript will regenerate its results from that package.
-- Time: 0.75
+- Notes: Here is what remains before the final exam. First and most important, get survival to shape the loadings and confirm it with the simulation test and with cross-validation in the training data. Then refit on a nonnegative scale and choose the number of programs without the validation cohorts. Next, implement the extension to expression and methylation and fit it to matched TCGA and ICGC data. Alongside that, finish the biological characterization and the wider comparison with other methods. The model then goes into an R package, and the manuscript will regenerate its results from that package. The survival work comes first because the package, the extension to several data types and the manuscript all depend on a single-modality model that passes its test.
+- Time: 1
 - Carry-over: prelim
 
 
