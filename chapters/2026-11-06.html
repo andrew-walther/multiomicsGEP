@@ -410,6 +410,20 @@ window.Quarto = {
 </tbody>
 </table>
 <p>At noise 1.00, the joint mean C uses 19 defined values. One replicate had undefined validation C. The feedback-off reference is historical YFB with a fitted survival coefficient and no survival feedback into the gene weights. The joint arm also changes initialization and priors. This simulation supports low-variance program recovery under the tested design. The later larger-feature evaluation failed its combined recovery, false-active and convergence gate.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/planted-loading-recovery.png" class="img-fluid figure-img"></p>
+<figcaption>Loading correlation with the planted program across replicates. Filled points also have the correct survival direction.</figcaption>
+</figure>
+</div>
+<p>The recovery plot shows one near miss at low noise and a wider gap for the other supervised failures. At high noise, the single missed program had a loading correlation of about 0.23.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/planted-matched-comparators.png" class="img-fluid figure-img"></p>
+<figcaption>Planted-program loading matches and held-out concordance for five methods on the same 40 simulated datasets. Vertical marks show means and counts show defined values.</figcaption>
+</figure>
+</div>
+<p>In the matched comparator rerun, none of the four comparator methods met its recovery criterion at either noise level. EBMF alone selects its closest loading by correlation with the planted program and has no risk score. The two-step methods select a program by absolute Cox z-statistic and also require the correct survival direction for recovery. At high noise, EBMF followed by lasso Cox had defined concordance in 6 of 20 datasets. Its plotted mean describes those six datasets.</p>
 <p>The close PDAC program matches are consistent with weak effective survival feedback. The prediction comparison alone cannot establish that explanation. The existing training-only weight grid found that higher weights can destabilize the fit, so recovery, false activity and convergence all matter when evaluating a stronger feedback setting.</p>
 <p><strong>Expression and methylation extension.</strong> First verify that the multimodal fitter at <code>M = 1</code> reproduces the single-modality reference under matched settings. For <code>M = 2</code>, use shared patient scores and separate expression and methylation loadings, feature precisions, and loading priors. The existing implementation sums the modality projections before computing the Cox predictor <span class="math inline">\(\eta = (\sum_{m=1}^{M} Y^{(m)} F^{(m)})\beta\)</span>. Check each block’s contribution to the combined score and validate prediction on patients with matched modalities, using training-only choices for priors and rank.</p>
 
