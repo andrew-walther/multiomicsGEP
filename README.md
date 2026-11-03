@@ -286,3 +286,5 @@ The script needs the local PDAC training data and the saved benchmark fits.
 
 Run `Rscript docs/progress_book/figures/plot_planted_yfb.R` to regenerate
 the simulation figure from the saved replicate table.
+Run `Rscript docs/progress_book/figures/plot_planted_yfb_comparators.R`
+to regenerate the loading-recovery and matched-comparator figures.

@@ -164,3 +164,6 @@ alignment with the saved fits. Keep patient-level inputs and outputs out of Git.
 Regenerate the November 6 planted-factor simulation figure with
 `Rscript docs/progress_book/figures/plot_planted_yfb.R`. The plot reports
 all replicates for recovery and only defined values for concordance.
+Use `Rscript docs/progress_book/figures/plot_planted_yfb_comparators.R`
+to rebuild the loading-recovery and matched-comparator figures from the
+saved synthetic replicates.

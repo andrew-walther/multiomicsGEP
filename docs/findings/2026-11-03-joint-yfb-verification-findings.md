@@ -61,6 +61,22 @@ The results show recovery under this strong planted survival signal.
 The later larger-feature evaluation did not meet its combined recovery,
 false-active and convergence gate.
 
+![Loading correlation with the planted program across replicates. Filled points also have the correct survival direction. ](../progress_book/figures/2026-11-06/planted-loading-recovery.png)
+
+The recovery plot shows one near miss at low noise and a wider
+gap for the other supervised failures. At high noise, the single missed
+program had a loading correlation of about 0.23.
+
+![Planted-program loading matches and held-out concordance for five methods on the same 40 simulated datasets. Vertical marks show means and counts show defined values.](../progress_book/figures/2026-11-06/planted-matched-comparators.png)
+
+In the matched comparator rerun, none of the four comparator methods
+met its recovery criterion at either noise level. EBMF alone selects
+its closest loading by correlation with the planted program and has no
+risk score. The two-step methods select a program by absolute Cox
+z-statistic and also require the correct survival direction for recovery.
+At high noise, EBMF followed by lasso Cox had defined concordance in
+6 of 20 datasets. Its plotted mean describes those six datasets.
+
 ## What to verify next
 
 The close PDAC matches make weak effective feedback plausible, but the
