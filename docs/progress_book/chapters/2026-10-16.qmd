@@ -1,3 +1,8 @@
+---
+aliases:
+  - 2026-10-15.html
+---
+
 # October 16, 2026
 
 ## Executive summary
@@ -126,3 +131,5 @@ prognostic roles; fewer programs alone are not evidence of a better model.
 An initial prior-consistency repair improves local prior updates, but its
 fitted outputs still move beyond the existing stability diagnostic when the
 stopping rule triggers. No new supervised configuration is adopted.
+
+{{< include _2026-10-15-methods-record.qmd >}}

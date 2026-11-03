@@ -21,3 +21,15 @@ S1–S10. Its categories identify evidence to obtain for the final method,
 including null controls, factor correspondence, cohort-level associations
 and sensitivity. The checklist is a proposed inventory of deliverables
 rather than a new registered experimental design.
+
+## Independent biostatistics and genomics review
+
+A reviewer unfamiliar with the project checked the chapter against the
+fitters, prediction and manuscript evidence, simulation registration and
+diagnostic outputs. The chapter now distinguishes two-step coefficient
+selection from changing the learned factors. It documents the scope of
+historical external rank selection, the shared donors across series, and the
+registered acceptance criteria. It also distinguishes the experimental
+preprocessing and guarded criterion from the historical prediction workflow.
+The canonical fit's recovery in one weak-signal simulation cell is reported
+as a positive control for that design.

@@ -147,3 +147,7 @@ Maintain the tracker’s Completed Results checklist alongside saved evidence.
 Count a checked diagnostic as a completed result while keeping its acceptance
 verdict explicit. Update the displayed checklist count when adding or
 changing items.
+
+The October methods development record is included in the October 16 chapter
+from `docs/progress_book/chapters/_2026-10-15-methods-record.qmd`. Keep the
+October 15 public URL as an alias when regenerating the book.

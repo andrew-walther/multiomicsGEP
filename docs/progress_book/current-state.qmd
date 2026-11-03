@@ -12,7 +12,7 @@ respond reliably to survival while preserving interpretable molecular programs.
 | Next | Independent supervision review | Review the registered results before merging the experimental fitter |
 | Conditional | LB with fold-in prediction | Investigate if the YFB route stalls |
 | Conditional | Unified multimodal model | Use insights from modality-specific priors or shared factors if they solve supervision at M = 1 |
-| Conditional | R package | Start after single-modality acceptance |
+| Conditional | R package | Start after the simulation gate and PDAC training cross-validation pass |
 
 ## Model architecture
 
@@ -32,6 +32,28 @@ S1–S3 motivate separating convergence, recovery and held-out performance in
 the evidence section. The diagrams depict this project's EBMF implementations
 and research goals. [DeSurv reproduction materials](https://github.com/rashidlab/DeSurv-paper).
 
+### Two-step versus joint fitting
+
+![Two-step EBMF followed by Cox compared with proposed joint EBMF and Cox. The dashed arrow indicates survival feedback during factor learning.](figures/two-step-vs-joint.svg)
+
+In the two-step baseline, EBMF learns molecular factors from expression.
+Cox regression then estimates coefficients for expression projected onto those
+fixed loadings. Coefficient shrinkage can select scores for prediction while
+the factor loadings stay fixed. In the proposed joint model, Cox information
+enters the factor updates themselves. YFB targets the feature loadings through
+the expression projection. LB supplies direct survival information to the
+patient scores, with an indirect effect on loadings through reconstruction.
+For LB prediction, estimate a new patient’s activities from expression
+with the training loadings fixed. Joint updates can change which programs
+are recovered at a fixed starting rank.
+
+The historical YFB benchmark had zero survival feedback into the loadings.
+It uses its own priors and selection procedure, so it is distinct from the
+two-step comparator. Its external discrimination establishes a predictive reference. Testing the
+value of joint supervision requires matched two-step and joint fits with the
+same training splits and held-out evaluation, plus planted-factor recovery,
+false activity and convergence in simulation.
+
 ## Fitting and prediction
 
 ![The variational objective and one sweep of the experimental YFB fitter.](figures/variational-updates.svg)
@@ -48,6 +70,11 @@ Y_{ij}\mid L,F,\tau_j\sim
 \qquad
 h_i(t)=h_{0,s_i}(t)\exp(\eta_i).
 $$
+
+The experimental reconstruction uses nonnegative expression on its fitted
+scale. For raw input, the fitter divides by within-cohort feature standard
+deviations without centering the reconstruction. It centers the expression
+only for the Cox projection.
 
 Here $s_i$ is the patient's stratum, or a common stratum for an unstratified
 fit. With observed time $t_i$ and event indicator $d_i$, the Breslow Cox log
@@ -109,17 +136,21 @@ $$
 The $w_i$ are the diagonal working curvatures. The Gaussian expectation
 uses posterior moments of both $L$ and $F$. This is a Cox working
 approximation, with a separate bound-based acceptance criterion in guarded
-runs. The sweep computes Cox working quantities, updates $L,F,\beta$ by
+runs. The bound holds with the projection scale fixed. Recomputing that scale
+between sweeps changes the criterion and limits what acceptance guarantees. The sweep computes Cox working quantities, updates $L,F,\beta$ by
 factor, canonicalizes the factor scales and updates free precision.
 The frozen historical benchmark used zero loading feedback ($\alpha_F=0$)
-while still fitting survival coefficients. The planned S-9 genomic weighting
-change is a separate experiment.
+while still fitting survival coefficients. S-9 is planned. It would hold the Cox weight at one and reduce the molecular
+weight to test whether survival can influence loadings without the coefficient
+overconfidence seen with large Cox weights. The design calls for a fixed-noise
+pilot, a null check, and the original acceptance gate.
 
 ![YFB held-out prediction from feature alignment through C-index.](figures/held-out-prediction.svg)
 
 Training fixes the loading matrix, its column norms where used, and survival
 coefficients. Held-out expression is aligned to the training feature space
-under the benchmark preprocessing contract. The projection gives a risk
+under the benchmark preprocessing contract, including within-cohort
+standardization and the training loading norms where used. The projection gives a risk
 score for each patient. Concordance evaluates the ordering of comparable
 observed survival pairs using the training-fixed risk orientation.
 
@@ -127,9 +158,28 @@ observed survival pairs using the training-fixed risk orientation.
 
 | Result | What it establishes |
 |---|---|
-| Historical YFB mean external C-index 0.627 across five series | Discrimination using the frozen predictive benchmark with zero loading feedback |
+| Historical YFB mean Harrell C-index 0.627 across five PDAC series (range 0.549–0.657) | Predictive benchmark with zero loading feedback. The principal two-step comparator averaged 0.601 and the rank-matched comparator 0.623. |
 | Attempt 7 completed 360 fits, 153 nonconverged | The corrected shared-loading design failed the registered supervision gate |
-| S-8 fixed noise prevented the tested explosions | The targeted controls identified a numerical mechanism. No case passed the screening criteria. |
+| S-8 fixed noise prevented runaway residual growth in the tested designs | None of 12 fits passed the screen. One guarded fit converged and recovered the planted factor, with two false-active factors. |
+
+The external rank sweep informed the choice of starting rank seven, and some PACA-AU
+donors recur across series. The benchmark comparisons are descriptive and
+cannot isolate the effect of survival feedback.
+
+The registered simulation gate requires, at 2,000 features, at least three
+additional recoveries per ten paired datasets relative to the unsupervised
+fit in at least two variance cells, mean false-active count at most one, and at least 90% convergence.
+None of the tested joint weighting arms qualified. Recovery requires a match to the planted loading,
+an active survival coefficient and the correct sign. A false-active factor
+is an unmatched survival-active factor. In the weakest 2,000-feature cell,
+the existing canonical comparison recovered the planted program and
+converged in all ten replicates, with one false-active factor on average.
+That cell shows recovery was possible under the design.
+
+The separate S-8 Gaussian reference flagged
+about 6.9 of seven truly null coefficients at a large likelihood weight,
+even with exact coefficient inference. This isolates a weighting issue in
+the Gaussian diagnostic.
 
 See the [October 30 chapter](chapters/2026-10-30.qmd) for saved tables and
 diagnostic plots.

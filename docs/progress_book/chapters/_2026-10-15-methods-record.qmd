@@ -1,17 +1,16 @@
-# Methods development record: survival supervision (October 2026)
+## Methods development record: survival supervision (October 2026)
 
 ::: {.callout-note title="Purpose and reading guide"}
-This chapter is a chronological methods-development record: why the
+This section is a chronological methods-development record: why the
 survival-supervised loading updates changed, what each experiment tested,
 and which attempts failed. It supports the mathematical/software audit;
 it is not the concise advisor-meeting update or a validated final method.
-Read the [October16 meeting summary](2026-10-16.qmd) for progress since
-October2. Sections below describe their own checkpoints; later failures
+See the meeting summary above for progress since October 2. Sections below describe their own checkpoints; later failures
 supersede early statements of universal convergence. The approved benchmark
 still uses $\alpha_F=0$, and no supervised replacement is adopted.
 :::
 
-## Executive summary {.unnumbered}
+### Executive summary {.unnumbered}
 
 1. **Test bed.** A planted prognostic program that explains 0.27% (noise multiplier 0.25) or
    0.02% (noise 1) of expression variance, alongside two non-prognostic programs that carry the
@@ -28,7 +27,7 @@ still uses $\alpha_F=0$, and no supervised replacement is adopted.
 5. **Recovery is still low:** 1/20 seeds at noise 0.25 and 6/20 at noise 1, against the 80%
    threshold. This is the starting point for supervised initialization and the β prior (C3–C4).
 
-## Test bed
+### Test bed
 
 Data come from the multimodal simulation's low-variance prognostic scenario, expression block only
 (n = 120 training and 120 validation patients, p = 50 genes, 3 true programs). Program 3 has score
@@ -41,7 +40,7 @@ The fits use a point-Laplace prior on L and F. The recommended point-exponential
 to zero programs on this centered data in 6 of 10 seeds: centered scores are signed, and a
 nonnegative score prior cannot represent them.
 
-## Diagnostics of the earlier F update (C1)
+### Diagnostics of the earlier F update (C1)
 
 | Arm | Recovered (of 10) | Median \|cor\| with planted | Null survival-active / fit | Converged | Validation C |
 |---|---|---|---|---|---|
@@ -67,7 +66,7 @@ The diagnostics answer the four questions from the plan:
   survival weight also inflates the denominator of the relative-change test, so fits can stop
   early.
 
-## Scale canonicalization and the corrected update (C2)
+### Scale canonicalization and the corrected update (C2)
 
 Each program is rescaled to unit SD of its training score after every iteration; β̃_k is then a log
 hazard ratio per SD. α_F is dropped: every survival term carries one weight w_S, and w_S = 1 is the
@@ -94,7 +93,7 @@ programs dominate the factorization and the planted program is found once.
 The null survival-active rate rises by 0.15 and 0.50 per fit over α_F = 0. The second is at the
 limit of the +0.5 margin.
 
-## Supervised initialization and the β prior (C3 + C4)
+### Supervised initialization and the β prior (C3 + C4)
 
 Every arm uses the canonical configuration with w_S = 1. Program K starts from the null-model Cox
 score direction $Y^\top u_0$, where $u_0$ are the martingale residuals of the null model. The shared
@@ -124,7 +123,7 @@ and about 84 events, the survival data do not determine the direction well enoug
 at the lower noise level, by this or any other method. Whether to keep this test bed, calibrate it,
 or set the threshold relative to the survival-only reference is open; C5 waits on that decision.
 
-## Calibrated test bed
+### Calibrated test bed
 
 The test bed was recalibrated so that the survival data identify the planted direction. The rule
 was fixed in advance: the smallest training size, then the smallest planted coefficient, at which a
@@ -158,7 +157,7 @@ every simulation criterion:
 The normal-prior warm-up arm also passes, with higher recovery but more false positives. The
 real-data check (lower 95% limit of ΔC against α_F = 0 above −0.02) comes next.
 
-## Real data: external validation of the supervised model
+### Real data: external validation of the supervised model
 
 The selected configuration was refitted on the reported training data (TCGA + CPTAC, K = 7) and
 scored on the five external cohorts. It is compared with the reported α_F = 0 model.
@@ -179,7 +178,7 @@ criterion, a lower 95% limit above −0.02, fails by 0.009. The point estimate i
 cohorts the interval is about ±0.027 wide, so the criterion requires a gain of about +0.007 to pass.
 The supervised model keeps three survival-active programs where the unsupervised fit keeps one.
 
-## Multimodal model with survival supervision
+### Multimodal model with survival supervision
 
 The supervised start and the shared point-Laplace prior on β were carried into the multimodal model
 (expression + methylation), which already had the exact loading update, the scale
@@ -196,7 +195,7 @@ With supervision, the multimodal model recovers the planted program in 90% and 1
 keeps exactly the three true programs (two that explain the variance and one that explains
 survival), and has fewer false prognostic programs.
 
-## Open: single-modality convergence and the choice of number of programs
+### Open: single-modality convergence and the choice of number of programs
 
 - After an error in the monitored objective was fixed, the selected single-modality configuration
   converges in 19 of 20 fits at each noise level. The two exceptions oscillate stably
@@ -206,7 +205,7 @@ survival), and has fewer false prognostic programs.
 
 The rule for the number of programs is the next decision.
 
-## Protected pruning and starting rank
+### Protected pruning and starting rank
 
 The protected-pruning adoption assessment could not be completed as specified: the multimodal
 fitter's convergence flag refers to reconstruction/predictor changes, whereas the fixed rule
@@ -220,7 +219,7 @@ The opt-in implementation and fixed runners are retained on `m5/k-selection` for
 The default-fit comparisons against `feature/supervised-F` preserve the full fitted objects
 and pruning sequences.
 
-## Comparators on the calibrated planted bed
+### Comparators on the calibrated planted bed
 
 The fixed 20-seed comparison completed at noise 0.25. Recovery is 17/20 for the selected
 supervised model and 0/20 for EBMF alone, EBMF–Cox, EBMF–lasso-Cox and PCA–Cox. Mean validation
@@ -233,7 +232,7 @@ selected subset and do not support a full-seed comparison. Raw rows, failure mes
 actual denominators and defined-score counts are in
 `results/benchmark_sim/outputs/supervision_comparators/`. No DeSurv arm was available.
 
-## The constant two-step multimodal C-index
+### The constant two-step multimodal C-index
 
 The greedy ceilings 6, 7 and 8 all yield the same six-factor EBMF fit: loadings, coefficients
 and training risks are identical. Thus all-donor C = 0.418 and primary-PDAC C = 0.424 repeat
@@ -264,7 +263,7 @@ The full suite passes 549 tests. Results, warning and donor-consistency records 
 `results/multimodal_real/outputs/supervised/`.
 
 
-## Robustness and comparator follow-up
+### Robustness and comparator follow-up
 
 The five-prompt evidence, independent branch commits and limitations are gathered
 in [the consolidated report](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-10-15-m6-m7-summary.md).
@@ -304,7 +303,7 @@ counts and summary arithmetic were independently checked; the current runner
 parses and passes 550 tests. No rerun or tuning was attempted. This execution
 anomaly is documented in the report and `outputs/supervised_robustness/execution_status.md`.
 
-## DeSurv comparison prerequisite
+### DeSurv comparison prerequisite
 
 The head-to-head comparison stopped before fitting because no installed or vendored DeSurv
 implementation was available. The authors provide a companion-package repository, but it was
@@ -313,7 +312,7 @@ See `results/benchmark_sim/outputs/desurv_h2h/BLOCKED.md` for searched locations
 to resume. The protected-pruning assessment did not authorize a configuration change; K remains 7.
 
 
-## Protected-pruning reassessment (2026-10-16)
+### Protected-pruning reassessment (2026-10-16)
 
 Andrew clarified that protection requires positive posterior SD and that each
 model is judged by its own convergence rule. The dead-program boundary is fixed
@@ -321,7 +320,7 @@ and tested without changing default fits. The complete rank panel is registered
 before execution in `docs/plans/2026-10-16-round2-attempts-log.md`; no empirical result or
 new configuration is claimed yet. The benchmark snapshot is unchanged.
 
-## Single-modality pruning loses a protected direction during refitting
+### Single-modality pruning loses a protected direction during refitting
 
 A pre-registered observation of the first prescribed simulation seed uses the
 unchanged selected protected model. It records every nullcheck state/gain without
@@ -345,7 +344,7 @@ K = 7/no-pruning is the approved fallback for subsequent feature sensitivity whi
 supervised K selection continues. See attempts4–5 in the Round2 attempt history.
 
 
-## Completed protected-pruning panel: recovery, rank and convergence
+### Completed protected-pruning panel: recovery, rank and convergence
 
 The process exited 0 after 93.23 minutes with 800 unique cells, zero errors and zero
 warnings. Every original reference/selected/protected row is retained in
@@ -397,9 +396,9 @@ training-only collapse diagnosis. MM's current failures are rank/convergence,
 not a failed recovery criterion; do not tune1.96, rank 3 or the output tolerance.
 
 
-## Full posterior pruning-refit assessment
+### Full posterior pruning-refit assessment
 
-### Task1-5 completed: full-state refits improve recovery but are not adopted
+#### Task1-5 completed: full-state refits improve recovery but are not adopted
 
 All 160 new fits completed with zero execution errors or warnings. The comparison
 retains all 160 original reference and 160 mean-only protected rows. Full-state
@@ -435,7 +434,7 @@ for Task5. Continue Task2's separate multimodal diagnosis and prescribed ladder.
 No external data were scored or used for this assessment.
 
 
-## Task2-1 completed TCGA diagnosis (2026-10-15)
+### Task2-1 completed TCGA diagnosis (2026-10-15)
 
 Commit `ccebdf8` preceded all ten fits; its full suite passed584/0. The process
 completed with exit0, ten status checkpoints, no errors or warnings. Single
@@ -494,7 +493,7 @@ its required simulation/CV evaluation has not yet been performed. Those
 unrun parts must not be described as completed. Continue the prescribed
 ladder with a committed design and unchanged simulation/CV criteria.
 
-## DeSurv comparison deferred for review
+### DeSurv comparison deferred for review
 
 Andrew deferred the real-data head-to-head. Pinned author software is installed
 in an isolated ignored library, and the adapter/driver/Longleaf wrappers have
@@ -504,7 +503,7 @@ software pins, exact author preprocessing/projection, and review concerns.
 Andrew also approved omitting DeSurv from the signed-Gaussian simulation panel.
 
 
-## Task4 completed five-comparator panel (2026-10-15)
+### Task4 completed five-comparator panel (2026-10-15)
 
 Pre-run commits dd11923 and d353322; full suite599/0 before each. The first
 sandbox launch failed before any dataset because a PSOCK socket could not
@@ -548,7 +547,7 @@ This completes the bounded Task4 rerun, including rank/denominator reporting.
 Task2's remedy ladder remains open and is the priority. No real-data or
 external-cohort selection occurred in this simulation task.
 
-### Multimodal framework instability in a training fold
+#### Multimodal framework instability in a training fold
 
 The historical framework's completed fold1 returns zero beta posterior means
 and second moments; C remains undefined. Folds2/3 retain a prognostic program.
@@ -569,7 +568,7 @@ It uses no external cohort, changes no prior or convergence rule, and reports
 the frozen benchmark rows alongside the repeated fold's metrics.
 
 
-### Saved framework loading-pattern comparison (descriptive, no new fit)
+#### Saved framework loading-pattern comparison (descriptive, no new fit)
 
 All comparisons use existing fits and the same frozen feature order. For
 benchmark program4 (the frozen fit's sole credible program), the largest
@@ -591,7 +590,7 @@ full-training loading matrix, an external selection criterion, or proof of
 benchmark reproducibility. No fit, score convention or model is changed.
 
 
-### Task2-2 final fixed-prior evaluation: not adopted
+#### Task2-2 final fixed-prior evaluation: not adopted
 
 The100-fit local evaluation exited0:80 simulations and20 TCGA CV fits,
 with0 fitting errors and0 nonempty warning records. All100 design keys,
@@ -636,7 +635,7 @@ reproduction; its implementation is still private and no scientific
 profiled-curvature fit has run.
 
 
-### Task2-3 result: exact reproduction; loss at outer167/inner1
+#### Task2-3 result: exact reproduction; loss at outer167/inner1
 
 The unchanged-fold trace exited0 in2142.164 seconds, with no warnings.
 All13 checks in identity.csv are TRUE: every saved posterior/prior field
@@ -672,7 +671,7 @@ framework priors/initialization and changes only the working-intercept
 profile flag; it will not combine the unresolved shared-prior scale question.
 
 
-### What the profiled-curvature implementation changes (scientific results pending)
+#### What the profiled-curvature implementation changes (scientific results pending)
 
 The helper `code/profile_cox_intercept.R` takes a numeric patient vector or
 patient-by-feature matrix and frozen nonnegative Cox weights. It subtracts
@@ -704,7 +703,7 @@ residuals, base-branch identity and full-training routing. No scientific
 profiled fit or external score has run at this checkpoint.
 
 
-## Task2-4 completed: profiled Cox curvature is not adopted (2026-10-15)
+### Task2-4 completed: profiled Cox curvature is not adopted (2026-10-15)
 
 The preregistered panel finished with exit0:102 records,92 new fits and10
 unchanged cached framework CV references, zero execution errors and zero
@@ -780,7 +779,7 @@ ignored and excluded from the commit. No push, protected-branch edit or
 merge has occurred.
 
 
-## Advisor-request audit and revised priorities after resumption
+### Advisor-request audit and revised priorities after resumption
 
 Andrew requests a direct accounting of progress against the10/2 meeting,
 including the original fixed-K sliding feature-count study up to the available
@@ -797,7 +796,7 @@ of the Task5 sequencing change before implementation; no new scientific fit
 has run. Documentation-checkpoint full suite631 passed,0 failed.
 
 
-## Advisor-facing progress account and joint-program roles
+### Advisor-facing progress account and joint-program roles
 
 The five-page report `docs/findings/2026-10-16-advisor-progress-since-10-02.pdf`
 records the evidence since10/2 and the approved revised execution order.
@@ -812,7 +811,7 @@ stability and redundancy need evaluation. No model or external score ran.
 Rendered PDF visually checked; full suite631 passed,0 failed.
 
 
-## Task5-QC1 result: full-probe methylation variability completed
+### Task5-QC1 result: full-probe methylation variability completed
 
 Preregistered in dc69f6d; serial run completed with exit0, no errors and zero
 warning records. All305492 available TCGA probes are described on the unchanged
@@ -858,7 +857,7 @@ performance, biological or supervision claim is made. Next: the fixed-K7
 expression feature-count study and its training-only factor-agreement curve.
 
 
-## Fixed-K expression curve: preflight complete, initialization decision pending
+### Fixed-K expression curve: preflight complete, initialization decision pending
 
 The common training universe contains17900 genes on273 patients. Reusing the
 existing rankings reaches2064,5001,10000 and17900 shared genes. The frozen
@@ -870,7 +869,7 @@ classified versus joint seven does not isolate the methylation contribution.
 Independent feature-manifest/agreement helpers pass nine focused checks and
 the full suite651/651. No new feature-performance result is claimed.
 
-## Full-range expression sensitivity and first CpG expansion results
+### Full-range expression sensitivity and first CpG expansion results
 
 The approved cold-primary fixed-K7/alpha_F0 expression study completes24/24
 converged fits, zero warnings/errors, through17900 common genes. Counts and
@@ -913,7 +912,7 @@ PVE or survival fractions; newer biological labels are not inferred.
 The advisor progress report contains the full benchmark-linked tables in
 HTML/PDF; the original write-up and immutable snapshot are unchanged.
 
-## CpG numeric failure reproduced; manuscript sensitivity update requested
+### CpG numeric failure reproduced; manuscript sensitivity update requested
 
 Task5-M2 repeats the unchanged25k cell after prospective commit df455e0 and
 reproduces its exact error after32.218s, zero warnings. First invalid inputs
@@ -935,7 +934,7 @@ replacement or changing the preserved benchmark tag/snapshot. Full suite
 672 passed,0 failed. Additional numeric remedies are separate prospective
 work, not inferred from this reporting authorization.
 
-## Loading-update balance and numerical-repair design
+### Loading-update balance and numerical-repair design
 
 The saved-state loading audit completes without refitting. Non-point-mass
 program median survival precision shares are6.30e-11–3.03e-7, and median
@@ -953,7 +952,7 @@ No preprocessing, prior, K, convergence cap, rule or survival weight changes.
 Fresh full suite684 passed,0 failed; no scientific M3 run before its commit.
 
 
-## Stable-arithmetic CpG checkpoint and requested pause
+### Stable-arithmetic CpG checkpoint and requested pause
 
 
 

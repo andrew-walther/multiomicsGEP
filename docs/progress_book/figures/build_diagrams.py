@@ -51,7 +51,7 @@ def diagram(filename, title, panels):
                 svg.append(f'<path d="M{x+268} {y+82}h-21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>')
             elif j < len(boxes) - 1:
                 svg.append(f'<path d="M{x+246} {y+82}h21" stroke="#395775" stroke-width="2" marker-end="url(#arrow)"/>')
-        if matrix_intro and heading.startswith("B "):
+        if filename in {"supervision-states.svg", "two-step-vs-joint.svg"} and heading.startswith("B "):
             svg.append(f'<path d="M970 {y+123}v7H430v-7" fill="none" stroke="#395775" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrow)"/>')
         label(34, y + 147, footer, 15, 600)
     (OUTPUT / filename).write_text("\n".join(svg + ["</svg>"]) + "\n", encoding="utf-8")
@@ -92,10 +92,25 @@ diagram("variational-updates.svg", "How the objective becomes a fitting algorith
     ], "Repeat until the stopping criteria are met or the fit reaches a recorded cap or failure."),
 ])
 diagram("held-out-prediction.svg", "Evaluate frozen YFB predictions on new patients", [
-    ("Training ends before held-out survival is used", [
+    ("For a fixed fit, held-out outcomes evaluate its predictions", [
         ("Align molecular inputs", "Apply benchmark preprocessing", "Match held-out genes to F"),
         ("Project new patients", "Z* = Y*F̃", "F̃ uses training norms"),
         ("Score risk", "η* = Z*β̂", "Use frozen coefficients"),
         ("Evaluate discrimination", "Compare η* with (t*, δ*)", "Compute cohort C-index"),
     ], "Held-out outcomes enter evaluation. Use the training-fixed risk orientation for concordance."),
+])
+
+diagram("two-step-vs-joint.svg", "How survival enters molecular factor learning", [
+    ("A  Two-step EBMF followed by Cox regression", [
+        ("Molecular data", "Expression Y", "Training patients"),
+        ("Fit EBMF", "Learn L and F from Y", "Fix the representation"),
+        ("Fit Cox regression", "Use fixed factor scores", "Estimate coefficients β"),
+        ("Predict risk", "Use the fixed representation", "Evaluate on held-out patients"),
+    ], "Survival outcomes enter the Cox stage. They can select score coefficients while the learned factors stay fixed."),
+    ("B  Proposed joint EBMF and Cox model", [
+        ("Paired training data", "Expression Y", "Time and event indicator"),
+        ("Molecular term", "Learn L and F from Y", "Preserve reconstruction"),
+        ("Cox survival term", "YFB uses projected scores", "LB uses patient scores"),
+        ("Joint updates", "Update factors and β", "Check recovery and stability"),
+    ], "Survival can influence the factors learned. The intended benefit still needs to pass the registered simulation gate."),
 ])
