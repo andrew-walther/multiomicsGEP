@@ -216,32 +216,26 @@ window.Quarto = {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container">
-  <a href="./chapters/2026-10-15.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Methods development record: survival supervision (October 2026)</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container">
   <a href="./chapters/2026-10-16.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container">
   <a href="./chapters/2026-10-26.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">October 26, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 26, 2026</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container">
   <a href="./chapters/2026-10-30.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">October 30, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">October 30, 2026</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container">
   <a href="./chapters/2026-11-06.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">November 6, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">November 6, 2026</span></span></a>
   </div>
 </li>
     </ul>
@@ -255,7 +249,10 @@ window.Quarto = {
 
   <ul>
   <li><a href="#research-status" id="toc-research-status" class="nav-link active" data-scroll-target="#research-status">Research status</a></li>
-  <li><a href="#model-architecture" id="toc-model-architecture" class="nav-link" data-scroll-target="#model-architecture">Model architecture</a></li>
+  <li><a href="#model-architecture" id="toc-model-architecture" class="nav-link" data-scroll-target="#model-architecture">Model architecture</a>
+  <ul class="collapse">
+  <li><a href="#two-step-versus-joint-fitting" id="toc-two-step-versus-joint-fitting" class="nav-link" data-scroll-target="#two-step-versus-joint-fitting">Two-step versus joint fitting</a></li>
+  </ul></li>
   <li><a href="#fitting-and-prediction" id="toc-fitting-and-prediction" class="nav-link" data-scroll-target="#fitting-and-prediction">Fitting and prediction</a>
   <ul class="collapse">
   <li><a href="#sampling-model-and-empirical-bayes-priors" id="toc-sampling-model-and-empirical-bayes-priors" class="nav-link" data-scroll-target="#sampling-model-and-empirical-bayes-priors">Sampling model and empirical Bayes priors</a></li>
@@ -342,7 +339,7 @@ window.Quarto = {
 <tr class="even">
 <td>Conditional</td>
 <td>R package</td>
-<td>Start after single-modality acceptance</td>
+<td>Start after the simulation gate and PDAC training cross-validation pass</td>
 </tr>
 </tbody>
 </table>
@@ -357,6 +354,17 @@ window.Quarto = {
 </div>
 <p>The historical YFB configuration estimates molecular loadings without survival feedback and uses projected expression to estimate survival coefficients. The target YFB formulation lets Cox information influence <span class="math inline">\(F\)</span>. In LB, the Cox predictor depends directly on <span class="math inline">\(L\)</span>. A unified extension uses shared patient scores and modality-specific loadings, priors, and noise. A result at <span class="math inline">\(M=1\)</span> must pass the same supervision gate before the unified fitter becomes the common implementation.</p>
 <p>The comparison draws on the visual separation of reconstruction and Cox regression in Young et al., DeSurv Figure 1. Figure 2 and supplement Figures S1–S3 motivate separating convergence, recovery and held-out performance in the evidence section. The diagrams depict this project’s EBMF implementations and research goals. <a href="https://github.com/rashidlab/DeSurv-paper">DeSurv reproduction materials</a>.</p>
+<section id="two-step-versus-joint-fitting" class="level3">
+<h3 class="anchored" data-anchor-id="two-step-versus-joint-fitting">Two-step versus joint fitting</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="figures/two-step-vs-joint.svg" class="img-fluid figure-img"></p>
+<figcaption>Two-step EBMF followed by Cox compared with proposed joint EBMF and Cox. The dashed arrow indicates survival feedback during factor learning.</figcaption>
+</figure>
+</div>
+<p>In the two-step baseline, EBMF learns molecular factors from expression. Cox regression then estimates coefficients for expression projected onto those fixed loadings. Coefficient shrinkage can select scores for prediction while the factor loadings stay fixed. In the proposed joint model, Cox information enters the factor updates themselves. YFB targets the feature loadings through the expression projection. LB supplies direct survival information to the patient scores, with an indirect effect on loadings through reconstruction. For LB prediction, estimate a new patient’s activities from expression with the training loadings fixed. Joint updates can change which programs are recovered at a fixed starting rank.</p>
+<p>The historical YFB benchmark had zero survival feedback into the loadings. It uses its own priors and selection procedure, so it is distinct from the two-step comparator. Its external discrimination establishes a predictive reference. Testing the value of joint supervision requires matched two-step and joint fits with the same training splits and held-out evaluation, plus planted-factor recovery, false activity and convergence in simulation.</p>
+</section>
 </section>
 <section id="fitting-and-prediction" class="level2">
 <h2 class="anchored" data-anchor-id="fitting-and-prediction">Fitting and prediction</h2>
@@ -375,6 +383,7 @@ Y_{ij}\mid L,F,\tau_j\sim
 \qquad
 h_i(t)=h_{0,s_i}(t)\exp(\eta_i).
 \]</span></p>
+<p>The experimental reconstruction uses nonnegative expression on its fitted scale. For raw input, the fitter divides by within-cohort feature standard deviations without centering the reconstruction. It centers the expression only for the Cox projection.</p>
 <p>Here <span class="math inline">\(s_i\)</span> is the patient’s stratum, or a common stratum for an unstratified fit. With observed time <span class="math inline">\(t_i\)</span> and event indicator <span class="math inline">\(d_i\)</span>, the Breslow Cox log partial likelihood is</p>
 <p><span class="math display">\[
 \ell_{\mathrm{Cox}}(\eta)=\sum_{i:d_i=1}
@@ -408,14 +417,14 @@ F_{jk}\mid g_{Fk}&amp;\sim g_{Fk}=(1-\pi_{Fk})\delta_0+
 -\operatorname{KL}(q_\beta\Vert G_\beta).
 \end{aligned}
 \]</span></p>
-<p>The <span class="math inline">\(w_i\)</span> are the diagonal working curvatures. The Gaussian expectation uses posterior moments of both <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span>. This is a Cox working approximation, with a separate bound-based acceptance criterion in guarded runs. The sweep computes Cox working quantities, updates <span class="math inline">\(L,F,\beta\)</span> by factor, canonicalizes the factor scales and updates free precision. The frozen historical benchmark used zero loading feedback (<span class="math inline">\(\alpha_F=0\)</span>) while still fitting survival coefficients. The planned S-9 genomic weighting change is a separate experiment.</p>
+<p>The <span class="math inline">\(w_i\)</span> are the diagonal working curvatures. The Gaussian expectation uses posterior moments of both <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span>. This is a Cox working approximation, with a separate bound-based acceptance criterion in guarded runs. The bound holds with the projection scale fixed. Recomputing that scale between sweeps changes the criterion and limits what acceptance guarantees. The sweep computes Cox working quantities, updates <span class="math inline">\(L,F,\beta\)</span> by factor, canonicalizes the factor scales and updates free precision. The frozen historical benchmark used zero loading feedback (<span class="math inline">\(\alpha_F=0\)</span>) while still fitting survival coefficients. S-9 is planned. It would hold the Cox weight at one and reduce the molecular weight to test whether survival can influence loadings without the coefficient overconfidence seen with large Cox weights. The design calls for a fixed-noise pilot, a null check, and the original acceptance gate.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="figures/held-out-prediction.svg" class="img-fluid figure-img"></p>
 <figcaption>YFB held-out prediction from feature alignment through C-index.</figcaption>
 </figure>
 </div>
-<p>Training fixes the loading matrix, its column norms where used, and survival coefficients. Held-out expression is aligned to the training feature space under the benchmark preprocessing contract. The projection gives a risk score for each patient. Concordance evaluates the ordering of comparable observed survival pairs using the training-fixed risk orientation.</p>
+<p>Training fixes the loading matrix, its column norms where used, and survival coefficients. Held-out expression is aligned to the training feature space under the benchmark preprocessing contract, including within-cohort standardization and the training loading norms where used. The projection gives a risk score for each patient. Concordance evaluates the ordering of comparable observed survival pairs using the training-fixed risk orientation.</p>
 </section>
 </section>
 <section id="evidence" class="level2">
@@ -433,19 +442,22 @@ F_{jk}\mid g_{Fk}&amp;\sim g_{Fk}=(1-\pi_{Fk})\delta_0+
 </thead>
 <tbody>
 <tr class="odd">
-<td>Historical YFB mean external C-index 0.627 across five series</td>
-<td>Discrimination using the frozen predictive benchmark with zero loading feedback</td>
+<td>Historical YFB mean Harrell C-index 0.627 across five PDAC series (range 0.549–0.657)</td>
+<td>Predictive benchmark with zero loading feedback. The principal two-step comparator averaged 0.601 and the rank-matched comparator 0.623.</td>
 </tr>
 <tr class="even">
 <td>Attempt 7 completed 360 fits, 153 nonconverged</td>
 <td>The corrected shared-loading design failed the registered supervision gate</td>
 </tr>
 <tr class="odd">
-<td>S-8 fixed noise prevented the tested explosions</td>
-<td>The targeted controls identified a numerical mechanism. No case passed the screening criteria.</td>
+<td>S-8 fixed noise prevented runaway residual growth in the tested designs</td>
+<td>None of 12 fits passed the screen. One guarded fit converged and recovered the planted factor, with two false-active factors.</td>
 </tr>
 </tbody>
 </table>
+<p>The external rank sweep informed the choice of starting rank seven, and some PACA-AU donors recur across series. The benchmark comparisons are descriptive and cannot isolate the effect of survival feedback.</p>
+<p>The registered simulation gate requires, at 2,000 features, at least three additional recoveries per ten paired datasets relative to the unsupervised fit in at least two variance cells, mean false-active count at most one, and at least 90% convergence. None of the tested joint weighting arms qualified. Recovery requires a match to the planted loading, an active survival coefficient and the correct sign. A false-active factor is an unmatched survival-active factor. In the weakest 2,000-feature cell, the existing canonical comparison recovered the planted program and converged in all ten replicates, with one false-active factor on average. That cell shows recovery was possible under the design.</p>
+<p>The separate S-8 Gaussian reference flagged about 6.9 of seven truly null coefficients at a large likelihood weight, even with exact coefficient inference. This isolates a weighting issue in the Gaussian diagnostic.</p>
 <p>See the <a href="./chapters/2026-10-30.html">October 30 chapter</a> for saved tables and diagnostic plots.</p>
 <details>
 <summary>

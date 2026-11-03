@@ -4,7 +4,7 @@
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#395775"/></marker></defs>
 <text x="24" y="37" font-family="system-ui,sans-serif" font-size="25" font-weight="700" text-anchor="start" fill="#102a43">Evaluate frozen YFB predictions on new patients</text>
 <rect x="18" y="60" width="1104" height="162" rx="12" fill="white" stroke="#b4c7da"/>
-<text x="34" y="87" font-family="system-ui,sans-serif" font-size="19" font-weight="700" text-anchor="start" fill="#102a43">Training ends before held-out survival is used</text>
+<text x="34" y="87" font-family="system-ui,sans-serif" font-size="19" font-weight="700" text-anchor="start" fill="#102a43">For a fixed fit, held-out outcomes evaluate its predictions</text>
 <rect x="34" y="102" width="244" height="80" rx="8" fill="#e7f1fc"/>
 <text x="156" y="124" font-family="system-ui,sans-serif" font-size="17" font-weight="700" text-anchor="middle" fill="#102a43">Align molecular inputs</text>
 <text x="156" y="147" font-family="system-ui,sans-serif" font-size="15" font-weight="400" text-anchor="middle" fill="#102a43">Apply benchmark preprocessing</text>
