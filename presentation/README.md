@@ -11,20 +11,38 @@ Talks for multiomicsGEP (dissertation Project 3, SSBMF).
 | `walther_lab_meeting_08_27_2026/` | Rashid lab meeting, 2026-08-27 (deck, figure scripts in `figs/`) | Most recent talk; the best starting point for content, but results have moved on since |
 | `walther_lab_meeting_12_03_2026/` | December 3 lab meeting | Placeholder. May reuse the Part III prelim deck. |
 | `resources/` | Earlier Quarto template and assets | Superseded by the prelim theme for new decks |
-| `prelim-slides/OUTLINE.md` | Placeholder outline for the prelim Part III deck | Not started |
+| `prelim-slides/` | Prelim Part III deck: `ssbmf_talk.qmd`, `OUTLINE.md`, `outline.html`, figures and build tools | Draft 1, 2026-11-03 |
 
 The lab-meeting decks use their own CSS and section dividers. They record what was shown
 at each meeting, so leave them unchanged.
 
-## Planned: Part III of the prelim deck (not started)
+## Part III of the prelim deck
 
-A ~20-minute talk on SSBMF for the prelim exam (2026-12-07). It is the third of three
-parts: Part I covers SpatialCRT spillover and Part II covers SpatialCRT incidence. The
-committee is four statisticians and one non-statistician. Part III may run shorter than
-Parts I and II, since the project is continuing work.
+A 20–25 minute talk on SSBMF for the prelim exam (2026-12-07), the third of three parts:
+Part I covers SpatialCRT spillover and Part II covers SpatialCRT incidence. The committee is
+four statisticians and one non-statistician. Draft 1 was built on 2026-11-03 from evidence
+on file that day. Slide content freezes on 2026-11-30 for practice.
 
-**Build it in `prelim-slides/` as a standalone deck first**, then copy it into
-`bios-dissertation/slides/prelim/part-3/` after Andrew approves it.
+**Rebuild** (run from the multiomicsGEP root):
+
+```bash
+Rscript presentation/prelim-slides/tools/make_figures.R
+python3 presentation/prelim-slides/tools/make_diagrams.py
+cd presentation/prelim-slides && /Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto render ssbmf_talk.qmd && cd ../..
+python3 presentation/prelim-slides/tools/outline_from_deck.py
+python3 presentation/prelim-slides/tools/build_outline_html.py
+```
+
+`make_figures.R` copies scripted figures from the writeup, Chapter 4 and the progress book
+(sources listed in the script) and draws the concordance forest plot. `make_diagrams.py`
+draws the schematic diagrams and needs Google Chrome. `OUTLINE.md` keeps its hand-written
+preamble; everything below its `SLIDES (generated)` marker comes from the deck.
+
+**Sync to bios-dissertation.** Every commit that touches `prelim-slides/` runs
+`prelim-slides/tools/sync_slides_to_prelim.sh` through the post-commit hook
+(`paper/prelim/tools/post_commit_hook.sh`). It mirrors the deck into
+`bios-dissertation/slides/prelim/part-3/` and commits it there without pushing. Edit the
+deck here, not in bios-dissertation.
 
 ### Format
 

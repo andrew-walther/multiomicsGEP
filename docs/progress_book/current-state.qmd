@@ -13,6 +13,7 @@ respond reliably to survival while preserving interpretable molecular programs.
 | Conditional | LB with fold-in prediction | Investigate if the YFB route stalls |
 | Conditional | Unified multimodal model | Use insights from modality-specific priors or shared factors if they solve supervision at M = 1 |
 | Conditional | R package | Start after the simulation gate and PDAC training cross-validation pass |
+| In progress | Prelim Part III talk | Draft deck in `presentation/prelim-slides/` (2026-11-03); content freezes 2026-11-30, exam 2026-12-07 |
 
 ## Model architecture
 
