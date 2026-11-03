@@ -5,6 +5,18 @@ Each entry records what was decided, why, what was traded away, and which files 
 
 ---
 
+## 2026-11-02 — Supervision and publication priorities
+
+Reliable survival supervision of the molecular loadings is the top priority.
+Start with the S-9 YFB test and its registered recovery, false-active and
+convergence criteria. Investigate LB with fold-in prediction if YFB stalls.
+Multimodal development is deferred except when a unified fitter run with
+M = 1 offers a concrete route to resolving supervision. The single-modality
+R package can start once the model meets its acceptance criteria.
+
+See the [roadmap](ROADMAP.md) for the three writing destinations. The October
+30 single-log decision supersedes the earlier pending preprocessing note.
+
 ## 2026-10-30 — Realignment plan approved; KL normalizer fixed; every RNA-seq cohort logged once
 
 **Decided (Andrew, with `docs/plans/2026-10-30-realignment-plan.md`).**

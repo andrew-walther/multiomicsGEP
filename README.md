@@ -39,22 +39,24 @@ through empirical Bayes priors rather than tuned penalties. The non-conjugate Co
 with a second-order Taylor approximation, and the β update accounts for
 uncertainty in the program scores (E[l²] rather than l̄²).
 
-## Current results
+## Historical predictive benchmark
 
-The recommended single-modality configuration is YFB with per-platform
+The frozen single-modality benchmark uses YFB with per-platform
 z-standardized expression and DeSurv-style gene selection (genes ranked by mean
 and variance within each platform; 2,064 genes shared across cohorts). Trained on
 273 patients (TCGA-PAAD and CPTAC-PDAC) with K = 7 initial programs, the model
 retains two prognostic programs, one associated with worse and one with better
 survival, and reaches a mean concordance of 0.627 across five held-out PDAC
-dataset series (616 records, including repeated PACA-AU donors).
+dataset series (616 records, including repeated PACA-AU donors). The benchmark
+uses `alpha_F = 0`. Learning molecular loadings that respond reliably to survival
+is the current research goal. See [current status](PROJECT_STATUS.qmd).
 
 ![Kaplan–Meier curves by within-cohort risk tertile in five external PDAC cohorts](paper/writeup/figures/km_risk_external.png)
 
 *Overall survival by within-cohort tertile of the frozen risk score in the five
 external cohorts. The model was trained on TCGA-PAAD and CPTAC-PDAC only.*
 
-**Multimodal extension (in progress).** A joint YFB model for matched gene
+**Multimodal prototype (development deferred).** A joint YFB model for matched gene
 expression and DNA methylation (TCGA training, ICGC validation) is implemented in
 `code/fit_multimodal_yfb.R` with prediction, simulation and K-selection
 utilities. Its derivation is in

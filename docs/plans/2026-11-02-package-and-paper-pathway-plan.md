@@ -82,3 +82,16 @@ up or moved. Reducing bloat means moving only what is needed, not reorganizing t
   package.
 - Producing paper results from this repository's code after the package exists. That splits
   the method into two implementations that can drift apart.
+
+## Dissertation and journal destinations
+
+The prelim chapter lives in `paper/prelim/`. The final dissertation chapter
+will live in `paper/thesis/` and be ported to bios-dissertation.
+`SSBMF-paper` builds the journal submission from package outputs.
+
+Reliable survival supervision of the molecular loadings is the top priority.
+Start with the S-9 YFB test and its registered recovery, false-active and
+convergence criteria. Investigate LB with fold-in prediction if YFB stalls.
+Multimodal development is deferred except when a unified fitter run with
+M = 1 offers a concrete route to resolving supervision. The single-modality
+R package can start once the model meets its acceptance criteria.

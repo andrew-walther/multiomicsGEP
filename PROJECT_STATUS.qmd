@@ -2,7 +2,7 @@
 title: "multiomicsGEP — Project Status"
 subtitle: "Supervised Bayesian Matrix Factorization for Joint Genomics + Survival Modelling"
 author: "Andrew Walther"
-date: "March 2026"
+date: "November 2, 2026"
 format:
   pdf:
     toc: true
@@ -18,6 +18,18 @@ execute:
   message: false
   warning: false
 ---
+
+## Current priorities
+
+Reliable survival supervision of the molecular loadings is the top priority.
+Start with the S-9 YFB test and its registered recovery, false-active and
+convergence criteria. Investigate LB with fold-in prediction if YFB stalls.
+Multimodal development is deferred except when a unified fitter run with
+M = 1 offers a concrete route to resolving supervision. The single-modality
+R package can start once the model meets its acceptance criteria.
+
+See the [roadmap](ROADMAP.md) for open tasks and completed milestones.
+The sections below record dated results and historical development notes.
 
 ## Targeted YFB mechanism tests (2026-10-30)
 
@@ -784,7 +796,7 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 
 ---
 
-## Current Status & Next Steps
+## Historical development checklist
 
 ### Completed
 
@@ -823,7 +835,7 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 - [x] results/simulation_report.qmd/.pdf: Quarto simulation report for V2 implementation
 - [x] CLAUDE.md created; PROJECT_STATUS converted to .qmd for PDF rendering
 
-### Potential Next Steps
+### Proposals at that checkpoint
 
 ::: {.callout-note}
 **List maintenance:** Mark items `[x]` when implemented and confirmed, or explicitly dropped.
