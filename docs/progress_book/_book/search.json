@@ -4,7 +4,7 @@
     "href": "index.html",
     "title": "SSBMF Progress Notebook",
     "section": "",
-    "text": "About this notebook\nRunning record of SSBMF project progress with one chapter per advisor meeting. Each chapter covers what changed in the method, what was run to validate it (on real cohorts and on simulation), whether the new results make sense, and what’s still open. Figures and tables that came up in discussion are included directly; anything that needs the full statistical detail is linked out under that chapter’s “Deep dive.”\nFor a complete session-by-session build log (every script, test, and decision), see PROJECT_STATUS.qmd at the repo root. This notebook is the meeting-facing summary, not a replacement for that log.\nChapters are listed in the sidebar in date order; click a date to jump straight to that meeting.\nThe October 30 update is the latest account of precision balance, numerical posterior checks and the registered survival-supervision decision test. Earlier chapters describe their own checkpoints. The evaluated single-modality benchmark still uses \\(\\alpha_F=0\\); a fully validated survival-supervised replacement remains an open research goal. The November 6 chapter is this week’s working chapter and is filled in as the work is done.",
+    "text": "About this notebook\nRunning record of SSBMF project progress with one chapter per advisor meeting. Each chapter covers what changed in the method, what was run to validate it (on real cohorts and on simulation), whether the new results make sense, and what’s still open. Figures and tables that came up in discussion are included directly; anything that needs the full statistical detail is linked out under that chapter’s “Deep dive.”\nFor a complete session-by-session build log (every script, test, and decision), see PROJECT_STATUS.qmd at the repo root. This notebook is the meeting-facing summary, not a replacement for that log.\nOpen the current project state for priorities, milestones and examples from the saved results.\nChapters are listed in the sidebar in date order; click a date to jump straight to that meeting.\nThe October 30 update is the latest account of precision balance, numerical posterior checks and the registered survival-supervision decision test. Earlier chapters describe their own checkpoints. The evaluated single-modality benchmark still uses \\(\\alpha_F=0\\); a fully validated survival-supervised replacement remains an open research goal. The November 6 chapter is this week’s working chapter and is filled in as the work is done.",
     "crumbs": [
       "About this notebook"
     ]
@@ -17,6 +17,16 @@
     "text": "Project synopsis\nSupervised Bayesian Matrix Factorization (SSBMF) jointly factorizes a genomics matrix (gene expression) and a patient survival outcome, so the resulting gene expression programs (GEPs) are chosen to be both genomically coherent and prognostically relevant, unlike standard unsupervised factorization (PCA, NMF), which has no reason to recover clinically meaningful structure.\n\nModel: \\(Y = LF^\\top + E\\) (genomics) coupled to a Cox proportional hazards model on survival, fit by Coordinate Ascent Variational Inference (CAVI) with Empirical Bayes Normal Means (EBNM) sub-updates for sparsity.\nCurrent recommended form: YFB (code/fit_cox_on_yf.R), \\(\\eta = (YF)\\beta\\). The survival predictor is computed directly from observed expression, avoiding train/test projection mismatch.\nData: PDAC patient cohorts spanning RNA-seq and microarray platforms (TCGA-PAAD + CPTAC training; 5 independent cohorts held out for external validation).\nResearch question: does coupling factorization to survival find real prognostic structure, and is that structure worth the added model complexity? Evaluated against three baselines: DeSurv (a published joint method), a two-step factorize-then-Cox baseline, and unsupervised EBMF.\n\nFor the full model specification and math, see PROJECT_STATUS.qmd at the repo root or the project README.md.",
     "crumbs": [
       "About this notebook"
+    ]
+  },
+  {
+    "objectID": "current-state.html",
+    "href": "current-state.html",
+    "title": "Current project state",
+    "section": "",
+    "text": "Updated November 2, 2026. The project aims to learn molecular loadings that respond reliably to survival while preserving interpretable molecular programs.\n\n\n\n\n\n\n\n\n\nPriority\nWork\nStatus\nNext checkpoint\n\n\n\n\n1\nYFB survival supervision\nOpen\nDerive and register S-9, then evaluate recovery, false activity and convergence\n\n\n2\nSupervision review\nOpen\nComplete the independent review before merging the experimental fitter\n\n\n3\nLB with fold-in prediction\nConditional\nInvestigate if the YFB route stalls\n\n\n4\nUnified multimodal fitter\nDeferred\nRevisit if running the unified model with one modality can resolve supervision\n\n\n5\nSingle-modality R package\nConditional\nStart once the single-modality acceptance criteria are met\n\n\n\n\n\nWhat has been completed\n\nThe historical YFB benchmark, single-modality expression sensitivity curve, Round2 diagnostics, and October supervision mechanism tests have completed records. The October tests isolated noise feedback and coefficient behavior. The recovery, false-active and convergence criteria remain unmet.\n\n\n\nHow YFB scores survival\n\nYFB projects observed expression onto the fitted feature loadings and uses those projected scores in the Cox predictor, \\(\\eta = (YF)\\beta\\). The frozen benchmark used \\(\\alpha_F = 0\\), so its survival coefficients quantify prognosis using molecular loadings estimated without survival feedback. S-9 investigates whether reweighting the genomics term can produce reliable supervision.\n\n\n\nSee the historical predictive result\n\nThe frozen configuration achieved mean concordance of 0.627 across five external dataset series. The curves compare within-cohort risk tertiles.\n\n\n\nOverall survival by historical risk tertile across external PDAC cohorts\n\n\n\nSee the October 30 chapter for the experimental evaluation and the roadmap for the wider backlog.",
+    "crumbs": [
+      "Current project state"
     ]
   },
   {
@@ -1264,7 +1274,7 @@
     "href": "chapters/2026-11-06.html#potential-topics",
     "title": "15  November 6, 2026",
     "section": "",
-    "text": "Rashid Lab Meeting Update (November 5th, 2026) (finalized)\nExecutive Summary\nKey Issues Resolved\nAttempts to resolve model supervision issues\nOpen Items & Questions",
+    "text": "Rashid Lab Meeting Update (November 5th, 2026) (planned)\nExecutive Summary\nKey Issues Resolved\nAttempts to resolve model supervision issues\nOpen Items & Questions",
     "crumbs": [
       "<span class='chapter-number'>15</span>  <span class='chapter-title'>November 6, 2026</span>"
     ]
