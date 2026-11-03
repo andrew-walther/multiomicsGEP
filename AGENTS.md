@@ -8,8 +8,10 @@ This file holds repository instructions.
 The current plan is [`docs/plans/2026-10-30-realignment-plan.md`](docs/plans/2026-10-30-realignment-plan.md).
 Start with its review handoff and the
 [`execution report`](docs/reviews/2026-10-30-codex-execution-report.md), then the
-October 30 progress-book chapter and issue tracker. The cleanup audit is complete;
-implementation and registered evaluation are separate from scientific adoption.
+October 30 progress-book chapter and issue tracker. The [current-state chapter](docs/progress_book/current-state.qmd) summarizes
+priorities and saved examples. Update it alongside the roadmap when the
+research state changes. The cleanup audit is complete.
+Implementation and registered evaluation are separate from scientific adoption.
 The supervision work must receive the independent review before merging.
 `rebuild/unified-ssbmf` remains an unmerged reference. Remind Andrew of the
 registered recovery/false-active/convergence gate when continuing this work.

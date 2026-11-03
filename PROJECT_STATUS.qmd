@@ -608,7 +608,7 @@ multiomicsGEP/
 |   |-- update_F.qmd/.pdf/.html      <- Companion doc for update_F.R
 |   `-- update_tau.qmd/.pdf/.html    <- Companion doc for update_tau.R
 `-- paper/
-    `-- multiomicsGEP_manuscript.qmd  <- Manuscript draft (Quarto)
+    `-- multiomicsGEP_manuscript.qmd  <- Retired Quarto scaffold
 ```
 
 ---

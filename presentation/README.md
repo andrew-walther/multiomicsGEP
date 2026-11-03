@@ -9,6 +9,7 @@ Talks for multiomicsGEP (dissertation Project 3, SSBMF).
 | `walther_lab_meeting_04_09_2026/` | Rashid lab meeting, 2026-04-09 (V1–V3 drafts and a companion handout in `Notes/`) | Past talk; reference only |
 | `walther_lab_meeting_06_18_2026/` | Rashid lab meeting, 2026-06-18 (deck, PDFs, revision notes) | Past talk; reference only |
 | `walther_lab_meeting_08_27_2026/` | Rashid lab meeting, 2026-08-27 (deck, figure scripts in `figs/`) | Most recent talk; the best starting point for content, but results have moved on since |
+| `walther_lab_meeting_12_03_2026/` | December 3 lab meeting | Placeholder. May reuse the Part III prelim deck. |
 | `resources/` | Earlier Quarto template and assets | Superseded by the prelim theme for new decks |
 | `prelim-slides/OUTLINE.md` | Placeholder outline for the prelim Part III deck | Not started |
 

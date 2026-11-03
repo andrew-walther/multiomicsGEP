@@ -161,3 +161,16 @@ and [progress-book chapter](progress_book/chapters/2026-10-30.qmd).
 The registered gate controls whether training CV may proceed.
 
 The latest approved follow-up is the [targeted YFB mechanism screen](findings/2026-10-30-yfb-targeted-diagnostics-findings.md): matched noise feedback, guarded updates and fixed-design coefficient uncertainty.
+
+## Reading copies by category
+
+| Category | Current entry point | Dated material |
+|---|---|---|
+| Project status | [Status PDF](../PROJECT_STATUS.pdf) and [progress book](progress_book/) | Advisor updates live under [progress reports](progress_report/) in date order. |
+| Research evidence | [Findings index](findings/README.md) | Reports and rendered companions are grouped by analysis date. |
+| Reviews | [Review index](reviews/) | Read completed reviews as the record of the version reviewed. |
+| Research decisions | [Active roadmap](../ROADMAP.md) | The [plans index](plans/README.md) identifies superseded plans. |
+
+Keep rendered reading copies beside their source where possible. Use the
+filename date and the category index to distinguish current, historical, and
+superseded material.

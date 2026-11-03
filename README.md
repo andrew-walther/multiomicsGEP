@@ -49,7 +49,8 @@ retains two prognostic programs, one associated with worse and one with better
 survival, and reaches a mean concordance of 0.627 across five held-out PDAC
 dataset series (616 records, including repeated PACA-AU donors). The benchmark
 uses `alpha_F = 0`. Learning molecular loadings that respond reliably to survival
-is the current research goal. See [current status](PROJECT_STATUS.qmd).
+is the current research goal. See the [status report](PROJECT_STATUS.qmd) or render the
+[progress book](docs/progress_book/) to open the interactive project-state view.
 
 ![Kaplan–Meier curves by within-cohort risk tertile in five external PDAC cohorts](paper/writeup/figures/km_risk_external.png)
 

@@ -1,6 +1,6 @@
 # Talk outline: SSBMF (prelim Part III) — placeholder
 
-Not started. This is a starting point for the Part III deck. See `README.md` for the
+Not started. This is a starting point for the Part III deck. See [the presentation guide](../README.md) for the
 format and the prelim adaptation rules.
 
 ## Starting slot list
@@ -9,8 +9,7 @@ The slot list below is copied from the prelim deck outline
 (`bios-dissertation/slides/prelim/OUTLINE.md`, "Part III · SSBMF"). Idea codes such as
 [P3-M1] point to that file's ideas bank (Part B). These are slot ideas only.
 
-Before using any slot, check its claim against the current project state: the method is
-being rebuilt as the `ssbmf` package, so results and recommended settings may change.
+Before using any slot, check its claim against the current project state: the supervision method is still under evaluation.
 Sources: `PROJECT_STATUS.qmd`, `DECISIONS.md` and `docs/plans/`.
 
 | Section | Slot | Claim (provisional) | Ideas |
