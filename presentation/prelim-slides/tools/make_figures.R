@@ -89,17 +89,17 @@ pts$arm <- factor(pts$arm, levels = c("Joint model (survival does not shape load
 dodge <- position_dodge(width = 0.6)
 p <- ggplot(pts, aes(x = c, y = label, colour = arm, shape = arm)) +
   geom_vline(xintercept = 0.5, linetype = "dashed", colour = "grey60") +
-  geom_errorbarh(aes(xmin = lo, xmax = hi), height = 0, linewidth = 0.9,
+  geom_errorbar(aes(xmin = lo, xmax = hi), width = 0, orientation = "y", linewidth = 0.9,
                  position = dodge, na.rm = TRUE) +
   geom_point(size = 3.6, position = dodge) +
   scale_colour_manual(values = c("#13294B", "#4B9CD3", "#C9A227"), name = NULL) +
   scale_shape_manual(values = c(16, 17, 15), name = NULL) +
   labs(x = "External concordance (C-index)", y = NULL) +
   coord_cartesian(xlim = c(0.45, 0.8)) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 26) +
   theme(legend.position = "bottom", legend.direction = "vertical",
         panel.grid.minor = element_blank(), panel.grid.major.y = element_blank())
-ggsave(file.path(out_dir, "external_c_forest.png"), p, width = 10, height = 7.5, dpi = 150, bg = "white")
+ggsave(file.path(out_dir, "external_c_forest.png"), p, width = 10, height = 8, dpi = 150, bg = "white")
 
 print(round(setNames(means$c, means$arm), 3))
 cat("Wrote", length(copies) + 1, "figures to", out_dir, "\n")

@@ -12,8 +12,8 @@ Then rebuild the visual page:  python3 presentation/prelim-slides/tools/build_ou
 
 Everything in OUTLINE.md above the line "<!-- SLIDES (generated) -->" is kept as
 written (preamble, timing, decisions). Below it, one "### n. title" entry per slide is
-written with Figure, Slide text (the slide's visible text, condensed), Notes (first
-sentences of the script, or the backup note), Time and Carry-over. Carry-over tags come
+written with Figure, Slide text (the slide's visible text, condensed), Notes (the full
+script, or the backup note), Time and Carry-over. Carry-over tags come
 from the CARRY dict below; a slide missing from it is reported, not silently tagged.
 """
 import html
@@ -25,8 +25,35 @@ QMD = HERE / 'ssbmf_talk.qmd'
 OUT = HERE / 'OUTLINE.md'
 MARK = '<!-- SLIDES (generated) -->'
 
-# Filled in once the deck exists; keys are each slide's data-menu-title.
-CARRY = {}
+# Keys are each main slide's data-menu-title; backup slides are tagged technical.
+CARRY = {
+    'Title': 'talk-only',
+    'Outline': 'talk-only',
+    'PDAC': 'prelim',
+    'Two-step analysis': 'prelim',
+    'Existing methods': 'prelim',
+    'Aims': 'prelim',
+    'Notation': 'prelim',
+    'Joint model': 'prelim',
+    'Priors': 'prelim',
+    'Fitting': 'prelim',
+    'Prediction': 'prelim',
+    'Fitted vs finalized': 'prelim',
+    'Several data types': 'prelim',
+    'Simulation design': 'prelim',
+    'Simulation concordance': 'prelim',
+    'Starting rank': 'prelim',
+    'Planned simulation test': 'prelim',
+    'Application pipeline': 'prelim',
+    'External concordance': 'prelim',
+    'Risk groups': 'prelim',
+    'Subtype programs': 'prelim',
+    'Tissue programs': 'prelim',
+    'Planned results': 'prelim',
+    'Summary': 'prelim',
+    'Limitations': 'prelim',
+    'Remaining work': 'prelim',
+}
 
 
 def visible_text(block):
@@ -65,7 +92,7 @@ def main():
         tm = re.match(r'\[([\d.]+) min', notes.strip())
         body = re.sub(r'^\[[^\]]*\]\s*', '', notes.strip())
         sents = [x[2:] if x.startswith('- ') else x for x in body.split('\n') if x.strip()]
-        note = ' '.join(sents[:2]) if not backup else ' '.join(sents)
+        note = ' '.join(sents)  # full script, so outline.html shows what is said
         text = visible_text(sl.split('\n', 1)[1] if '\n' in sl else '')
         if len(text) > 420:
             text = text[:417].rsplit(' ', 1)[0] + ' …'
