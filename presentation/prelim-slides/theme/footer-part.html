@@ -1,0 +1,40 @@
+<!--
+  footer-part.html: shows the current part of the talk (for example
+  "Part II · SpatialCRT: Incidence") at the right end of the footer bar,
+  next to the slide number. Included after the body by prelim-test.qmd.
+
+  How it works: a slide with a data-footer-part attribute sets the label,
+  and every later slide keeps it until another slide changes it. Set the
+  attribute on section dividers; set it to "" to clear the label (title,
+  agenda, and thank-you slides have none).
+-->
+<script>
+(function () {
+  function partFor(current) {
+    var label = "";
+    var slides = Reveal.getSlides();
+    for (var i = 0; i < slides.length; i++) {
+      if (slides[i].hasAttribute("data-footer-part")) {
+        label = slides[i].getAttribute("data-footer-part");
+      }
+      if (slides[i] === current) break;
+    }
+    return label;
+  }
+
+  function update() {
+    var footer = document.querySelector(".reveal .footer");
+    if (!footer) return;
+    var el = footer.querySelector(".footer-part");
+    if (!el) {
+      el = document.createElement("span");
+      el.className = "footer-part";
+      footer.appendChild(el);
+    }
+    el.textContent = partFor(Reveal.getCurrentSlide());
+  }
+
+  if (Reveal.isReady()) update(); else Reveal.on("ready", update);
+  Reveal.on("slidechanged", update);
+})();
+</script>
