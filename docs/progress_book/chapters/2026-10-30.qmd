@@ -79,15 +79,14 @@ The expression benchmark remains a historical predictive result, rather than
 evidence that survival learned the expression factors. Earlier diagnostic work
 and a separate unified implementation repaired individual defects but did not
 establish recovery of a weak prognostic program. The current evaluation keeps
-the projection predictor η = (YF)β and tests that missing methodological claim
-directly. A latent predictor η = Lβ, scored in new patients by fitting activities
+the projection predictor η = (YF)β and tests directly whether survival can
+guide the loadings. A latent predictor η = Lβ, scored in new patients by fitting activities
 with the loadings fixed, remains an unadopted fallback.
 
-The local development inventory is retained in full. Nothing was deleted.
+The local development inventory is retained in full.
 It contains `r nrow(branches)` entries, of which
 `r sum(branches$merged_into_main=="yes")` are already incorporated into the
-primary implementation. The table uses anonymous inventory labels so the
-meeting narrative remains about methods rather than version-control names.
+primary implementation. The table uses anonymous inventory labels.
 
 ```{r branch-inventory}
 purpose <- vapply(branches$branch,function(x) {
@@ -120,8 +119,8 @@ kable(tab,row.names=FALSE)
 
 The KL helper previously counted a shared Gaussian normalizer only once instead
 of once per patient. Exact-value tests now cover both scalar and vector
-precisions. The RNA-seq preprocessing previously logged some cohorts twice;
-each cohort is now logged once. The earlier benchmark rerun after these fixes
+precisions. The RNA-seq preprocessing previously logged some cohorts twice.
+Each cohort is now logged once. The earlier benchmark rerun after these fixes
 is reproduced below from its saved results, without another external evaluation.
 
 ```{r cleanup-table}
@@ -141,20 +140,18 @@ is `r f3(cvn(cv_new,"single","mean_C"))` with SE
 
 Comparator scoring now fixes orientation from training data. Rescoring saved
 risks changed `r sum(orient$changed)` of `r nrow(orient)` comparator values.
-Positive η denotes higher hazard. A training-concordance sign correction is a
-reporting convention rather than a further likelihood optimization, and is
-frozen for held-out patients. All `r nrow(variance)` stored coefficient
-variances in the saved single-log fit are positive; their minimum is
+Positive η denotes higher hazard. Any sign correction from training
+concordance is a reporting convention and is frozen for held-out patients. All `r nrow(variance)` stored coefficient
+variances in the saved single-log fit are positive, with a minimum of
 `r e1(min(variance$stored_variance))`. An estimated prior can still collapse
-with weak evidence, which is a different issue from incorrectly storing a
-posterior second moment.
+when the evidence is weak.
 
 ## Precision balance and the revised fitter
 
 Reconstruction precision for gene j in factor k is
 $A_{R,jk}=\tau_j\sum_i E[L_{ik}^2]$. Survival precision is
 $A_{S,jk}=\gamma E[\beta_k^2]s_k^2\sum_i w_i\tilde Y_{ij}^2$.
-Their ratio determines whether survival can move a loading. A feature/event
+Their ratio determines whether survival can move a loading. A feature or event
 weight alone does not control that ratio.
 
 This is a conditional audit at the transformed saved training state, using
@@ -202,7 +199,7 @@ planted centered variance shares
 The arms are an unsupervised factorization followed by Cox, the share-calibrated
 supervision grid, the existing canonical fitter and a training-CV Cox lasso.
 Each training dataset contains `r controls$n_train` patients and its synthetic
-validation cohort contains `r controls$n_validation`; the initial rank is
+validation cohort contains `r controls$n_validation`. The initial rank is
 `r controls$K`, with at most `r controls$max_iter` sweeps. Synthetic validation
 is independent of training. No real validation cohort is used for any choice.
 
@@ -223,19 +220,24 @@ The first attempt could not calibrate most supervised arms because dead
 columns have zero reconstruction precision. The next attempt excluded dead
 columns, but exposed posterior numerical failures. The corrected comparison
 also removes survival-score initialization from the unsupervised reference.
+
 An intermediate attempt rescales normal-means problems, checks both posterior
-moments, reduces damping and returns the last coherent fit with a failure
-reason whenever a numerical calculation fails. An exponential-posterior repair keeps the same fitted prior but cancels the
-common Gaussian term before evaluating its moments and KL. Independent
-numerical integration verifies that calculation. A constrained profile-
-likelihood fallback repairs a reproduced coefficient-prior optimizer failure
-and emits a saved warning. A later boundary correction normalizes tiny positive activities and fixes the
-otherwise free loading scale when an activity vanishes. A separate variance
-audit then found that coefficient uncertainty could disappear through
-second-moment subtraction. That invalid run was stopped with all checkpoints
-retained. The final attempt carries each variance separately and uses stable
-same-prior posterior/KL calculations throughout. No prior or likelihood weight
-was changed by these numerical corrections. A subsequent design audit found
+moments and reduces damping. When a numerical calculation fails, it returns
+the last coherent fit with a failure reason. An exponential-posterior repair
+keeps the same fitted prior but cancels the common Gaussian term before
+evaluating its moments and KL. Independent numerical integration verifies
+that calculation. A constrained profile-likelihood fallback repairs a
+reproduced coefficient-prior optimizer failure and emits a saved warning.
+A later boundary correction normalizes tiny positive activities and fixes the
+otherwise free loading scale when an activity vanishes.
+
+A separate variance audit then found that coefficient uncertainty could
+disappear through second-moment subtraction. That invalid run was stopped
+with all checkpoints retained. The final attempt carries each variance
+separately and uses stable same-prior posterior/KL calculations throughout.
+No prior or likelihood weight was changed by these numerical corrections.
+
+A subsequent design audit found
 that the generated survival direction used raw-expression units while the
 reconstruction loading used SD-divided units. The earlier grids therefore
 serve as numerical diagnostics and do not test recovery of one shared loading.
@@ -251,7 +253,7 @@ numerical failure. Its pseudo-observation is `r e1(num$x)` with SE
 `r f3(num$quadrature_variance)`. The returned normal-means second moment is
 `r f3(num$ebnm_second)`, versus `r f3(num$quadrature_second)` from integration.
 The earlier compiled result is close to the latter but also has some cancellation
-error. Substituting either result silently would conceal a numerical problem.
+error.
 
 ```{r damping-diagnosis}
 kable(damping[,c("rho","converged","recovered","false_active","sweeps","error")],row.names=FALSE)
@@ -259,13 +261,11 @@ kable(damping[,c("rho","converged","recovered","false_active","sweeps","error")]
 
 Reducing damping alone did not repair the diagnosed example before the stable
 posterior evaluation. These exploratory
-reproductions diagnose numerical behavior; they are not additional successful
-gate datasets. The objective is a diagonal-Taylor approximation with a
-sweep-fixed projection normalizer. Decreases are explicitly reported, rather
-than described as guaranteed coordinate ascent.
+reproductions diagnose numerical behavior and are not gate datasets. The objective is a diagonal-Taylor approximation with a
+sweep-fixed projection normalizer. Objective decreases are reported.
 
 The variance cells refer to raw centered expression. SD division changes
-the relative signal variance; the corresponding prepared variance shares
+the relative signal variance. The corresponding prepared variance shares
 and oracle discrimination are reported below from the generated datasets.
 
 ```{r simulation-units}
@@ -273,7 +273,7 @@ kable(aggregate(cbind(raw_share,prepared_share,training_eta_sd,oracle_C)~p+varia
 ```
 
 Matched-factor precision shares below refer to the experimental engine at
-its saved final state; inactive columns have undefined shares.
+its saved final state. Inactive columns have undefined shares.
 
 ```{r simulation-summary}
 z<-summary[order(summary$p,summary$variance,match(summary$arm,names(arm_names))),]
@@ -296,12 +296,10 @@ convergence. The supervision-grid flags require joint objective and output
 stopping. This distinction leaves the failed gate unchanged: the grid arms
 exceed the false-active budget and fail their own convergence requirements.
 
-Reported C means use converged fits with valid stored uncertainty; their
-denominators are shown explicitly. Failed states and undefined scores remain
+Reported C means use converged fits with valid stored uncertainty. Their
+denominators are shown in the table. Failed states and undefined scores remain
 in the failure inventory.
 
-A loading-recovery result alone does not establish calibrated survival
-inference or stable joint fitting. The gate keeps those requirements together.
 No real-data training CV or post-pass ablation is justified by a failed gate.
 Survival-only loading directions are reported separately: their activities
 are zero, so they predict outcome without reconstructing an expression program.
@@ -309,7 +307,7 @@ Their numerical scale is identified, but their scientific interpretation is
 an unresolved model question.
 
 The final diagnostic replays use saved weights and exactly reproduce their
-registered loading means; they are not additional gate datasets. Their
+registered loading means. Their
 coefficient and loading variances are carried separately, avoiding loss from
 subtracting large second moments.
 
@@ -327,7 +325,7 @@ The fixed cases reach a maximum expected reconstruction-loss ratio of
 precision of `r e1(min(geometry$min_tau))`. Estimated noise variances sharply
 downweight the affected features. Finite posterior moments therefore do not
 establish stable joint fitting or a faithful expression reconstruction.
-The jump table identifies the largest observed end-of-sweep changes; it
+The jump table identifies the largest observed end-of-sweep changes. It
 does not attribute the first loss to a particular within-sweep block.
 Changing the noise model or the normalized objective requires a stated
 methodological decision.
@@ -350,7 +348,7 @@ kable(preprocessing,row.names=FALSE)
 The approved preprocessing decisions are recorded separately from completed
 pipeline changes. Single logging is adopted. The existing benchmark TCGA
 expression source is retained. Training-only gene names and the per-cohort
-mean/variance screen with intersection remain primary; survival pre-screening
+mean/variance screen with intersection remain primary. Survival pre-screening
 is reserved for an ablation.
 
 For the new fitter, within-cohort division by SD preserves nonnegative
@@ -358,7 +356,7 @@ expression and centering occurs only in the projection. Validation uses its
 own within-cohort SD, so scoring requires a cohort-level distribution rather
 than a frozen transformation for a single new patient. Missing validation
 genes follow the existing intersection rule with matching loading rows removed.
-The wrapper retains the first duplicate symbol; the earlier median collapse
+The wrapper retains the first duplicate symbol. The earlier median collapse
 inside some cohort loaders remains a documented inconsistency to resolve
 when those loaders are next changed.
 
@@ -366,8 +364,7 @@ Methylation remains on the β-value scale with within-cohort KNN imputation.
 The primary validation set and the larger donor pool used for imputation must
 be distinguished. Cross-reactive and SNP probe filters are required when
 multimodal work resumes. Pooled external analyses must use unique donors with
-donor-level or cohort-stratified resampling. These decisions do not authorize
-another external analysis.
+donor-level or cohort-stratified resampling.
 
 ## How the model changed since the March derivation
 
@@ -377,15 +374,15 @@ patients, but survival can affect the factorization only through the loading
 update. The new experimental implementation makes that term explicit,
 normalizes the projection, changes prior estimation and monitors the full
 approximate objective. These changes are recorded in the decision log.
-The projection formulation remains under evaluation; the latent formulation
+The projection formulation remains under evaluation, and the latent formulation
 has not been adopted as a replacement.
 
 ## Targeted follow-up: separating noise feedback and coefficient certainty
 
 The follow-up uses `r nrow(targeted)` fits on the same fixed synthetic cases,
-with matched initial precisions. Holding τ fixed isolates noise feedback;
-guarded variants also use a fixed risk-set curvature bound and whole-sweep
-acceptance. These are mechanism tests, not additional gate datasets.
+with matched initial precisions. Holding τ fixed isolates noise feedback.
+Guarded variants also use a fixed risk-set curvature bound and whole-sweep
+acceptance. These are mechanism tests.
 
 ```{r targeted-noise}
 kable(noise_screen,row.names=FALSE,digits=4)
@@ -394,7 +391,7 @@ kable(noise_screen,row.names=FALSE,digits=4)
 Freezing precision prevents the reconstruction explosion in these cases.
 The guard also keeps reconstruction bounded. There are
 `r sum(targeted$converged)` converged fits and
-`r sum(grepl("backtrack_stalled",targeted$flags))` explicitly stalled fits;
+`r sum(grepl("backtrack_stalled",targeted$flags))` explicitly stalled fits, and
 `r sum(targeted$success)` meet all screening conditions. The converged
 recovery case still has unmatched survival-active factors.
 
@@ -426,14 +423,14 @@ kable(beta_screen[,c("design","signal","weight","method","n","mean_false",
 ```
 
 This is not full-Cox coverage validation. The weighted Gaussian target treats
-noise as smaller than the generating noise; its exact posterior is correct
+noise as smaller than the generating noise. Its exact posterior is correct
 for that target but overconfident for these generated observations. The
 result supports examining the information weight itself rather than replacing
 coefficient SDs after fitting.
 
 The guard evaluates an explicit normalized moment criterion and rejects
-non-improving proposals. Its normalization still depends on posterior means;
-no fixed-generative-model ELBO claim is established. Stalling shows that
+non-improving proposals. Its normalization still depends on posterior means,
+so it is not established as an ELBO for a fixed generative model. Stalling shows that
 F-message damping alone cannot always produce an improving whole-state step.
 Fixed τ and guarded updates remain diagnostic controls, not adopted defaults.
 The next priority is a consistent normalized update and information balance

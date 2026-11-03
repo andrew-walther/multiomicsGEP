@@ -9,9 +9,9 @@ updates maximize. All four update formulas ($\beta$, $L$, $F$, $\tau$) are provi
 **$K$ selection now uses ARD pruning plus ELBO, not cross-validated C-index (§3.1).**
 
 - Fitting at $K_{\text{init}} \in \{5,\dots,20\}$ gives a stable **2 survival-active factors for
-  every $K \ge 7$**; added capacity goes entirely to dead factors, which is due to ARD
+  every $K \ge 7$**. Added capacity goes entirely to dead factors, which is due to ARD
   (see table in §3.1).
-- $K=5$ has the best ELBO of the whole grid but generalizes far worse (C=0.596 vs. 0.627); $K=6$
+- $K=5$ has the best ELBO of the whole grid but generalizes far worse (C=0.596 vs. 0.627). $K=6$
   loses on both counts (worse ELBO than $K=7$, and C=0.597). ELBO ranks candidate $K$'s, but any
   $K$ that fails externally is excluded first.
 - **$K=7$ (2 survival-active + 2 genomics-only = 4 kept factors) selected**, with $K=9$ as a
@@ -39,8 +39,8 @@ factors together recover DeSurv's full 3-factor structure. The open question is 
 was self-directed rather than group-directed, so the approach is worth confirming before the labels
 carry into the manuscript.
 
-**Logistics.** Finalize committee (Lin, Liu, Rashid, Hudgens, Van Deinse); prelim targeted for
-end of Fall 2026; 8/27 lab meeting preparation (topic aside from project update? Semester goal setting?).
+**Logistics.** Finalize committee (Lin, Liu, Rashid, Hudgens, Van Deinse). Prelim targeted for
+end of Fall 2026. 8/27 lab meeting preparation (topic aside from project update? Semester goal setting?).
 
 **Questions**
 
@@ -52,8 +52,8 @@ end of Fall 2026; 8/27 lab meeting preparation (topic aside from project update?
 
 ## Recent Updates
 
-The 8/3 entry closed two open questions about the two survival-active gene programs (Program 7,
-adverse; Program 3, protective): they reproduce in a fully unsupervised fit (not an artifact of the
+The 8/3 entry closed two open questions about the two survival-active gene programs (Program 7 is
+adverse, Program 3 protective): they reproduce in a fully unsupervised fit (not an artifact of the
 survival term), and they independently match DeSurv's published basal-like/classical tumor axes.
 Focus then shifted toward the manuscript and toward a list of action items from that meeting. This
 section tracks each of those items, both the ones closed this cycle and the ones still open.
@@ -70,7 +70,7 @@ section tracks each of those items, both the ones closed this cycle and the ones
   April 29 through August 3 and pushed 2026-08-03.
 - **Model specification write-up**: the 8/3 notes' top immediate item ("write out current model
   form, pseudo-algorithm and major update steps") is §2 of this chapter, below.
-- **How $K=7$ was chosen, and whether that answer is trustworthy** (2026-08-19/20, this cycle;
+- **How $K=7$ was chosen, and whether that answer is trustworthy** (2026-08-19/20, this cycle,
   §3 below): $K=7$ was originally chosen by cross-validated held-out C-index, which uses the
   survival outcome to pick model structure. This was the ARD-vs-cross-validation comparison raised
   at the last meeting. Re-derived it instead from model fit alone (ELBO), cross-checked against
@@ -78,14 +78,14 @@ section tracks each of those items, both the ones closed this cycle and the ones
   number of factors is known. See §3.
 - **Factor stability across random seeds** (8/3 open item). Refitting each $K \in \{5,\dots,10\}$
   from 15 different starting points (1 SVD initialization + 14 random) converged to the same
-  best-ELBO solution every time, at every $K$; random restarts never beat the SVD initialization.
+  best-ELBO solution every time, at every $K$. Random restarts never beat the SVD initialization.
   The 2 survival-active programs are therefore not an artifact of one lucky starting point.
 
 ### Items to address
 
 - **Consistency of the 5 non-survival-active factors across the external cohorts.** Programs 3 and 7
   have been checked thoroughly (pathway enrichment, subtype correlation, DeSurv overlap, cross-cohort
-  hazard ratios); the other factors in the $K=7$ fit have not had the equivalent check.
+  hazard ratios). The other factors in the $K=7$ fit have not had the equivalent check.
 - **Aligning on the factor-biology work** (§2.5). This was pursued independently rather than at the
   group's direction, so the approach needs review even though the existing results may turn out to
   be sufficient.
@@ -98,7 +98,7 @@ section tracks each of those items, both the ones closed this cycle and the ones
 - Weekly recurring meetings (Thursdays?) and a written update each time (this book).
 - Frequent pushes to the model repository & writing in separate manuscript repo.
 - Prep for leading 8/27 lab meeting
-- The cohort-membership indicator (`cohort_id`) absorbs genomic platform offsets only; it never
+- The cohort-membership indicator (`cohort_id`) absorbs genomic platform offsets only. It never
   carries survival information, and is off by default (no observed benefit).
 
 ---
@@ -143,7 +143,7 @@ $$
 
 - $\eta_i$ is patient $i$'s linear predictor (log relative risk).
 - $\tilde\beta$ ($K \times 1$) is the survival coefficient vector: how prognostic each program is.
-- $h_0(t)$ is an unspecified baseline hazard (standard Cox); it cancels out of the partial
+- $h_0(t)$ is an unspecified baseline hazard (standard Cox). It cancels out of the partial
   likelihood and is never estimated.
 - $\beta$ acts on $Z\!F$ (data $\times$ fitted $F$), not on $L$: $L$ does not appear in the
   survival likelihood at all under YFB. This is the key structural difference from the LB
@@ -168,14 +168,14 @@ $$
   negative.
 - $g_{\tilde\beta}$: `normal` in the recommended configuration, a ridge-like shrinkage prior with
   no exact point mass at zero. A `point_normal` (spike-and-slab) alternative exists in the code but
-  collapses $\tilde\beta$ to 0 for every $K$ under cross-validation (5/28 entry); `normal`
+  collapses $\tilde\beta$ to 0 for every $K$ under cross-validation (5/28 entry). `normal`
   is the prior actually used to produce every result in this notebook.
-- $\tau_j$ has no prior in this model; it is fit by constrained maximum likelihood (Step 2 below),
+- $\tau_j$ has no prior in this model. It is fit by constrained maximum likelihood (Step 2 below),
   not a full variational treatment, so it contributes no KL term to the objective below.
 
 **Full joint likelihood.** $t = (t_1,\ldots,t_n)$ are the observed survival/censoring times and
 $\delta = (\delta_1,\ldots,\delta_n) \in \{0,1\}^n$ the event indicators ($\delta_i=1$: event
-observed; $\delta_i=0$: censored). Together these two vectors are the survival outcome. Conditional
+observed, $\delta_i=0$: censored). Together these two vectors are the survival outcome. Conditional
 on the latent variables, the genomics data and the survival outcome are independent:
 $$
 P(Y, t, \delta \mid L, F, \tilde\beta, \tau) =
@@ -195,7 +195,7 @@ best-fitting approximation to the true, intractable posterior $P(L, F, \tilde\be
 $q(L, F, \tilde\beta) = q(L)\,q(F)\,q(\tilde\beta)$, each further factorized coordinate-by-coordinate
 ($l_{ik}$, $f_{jk}$, $\tilde\beta_k$ each get their own independent posterior). They are **not** the
 priors $g_L, g_F, g_{\tilde\beta}$ above: the prior is the population-level shape estimated once per
-update from all the data; the posterior is the individual belief about one specific $l_{ik}$ (or
+update from all the data. The posterior is the individual belief about one specific $l_{ik}$ (or
 $f_{jk}$, $\tilde\beta_k$) after seeing the data, given that prior. Each posterior's mean
 $\mathbb{E}_q[\cdot]$ (written $\bar l_{ik}$, $\bar f_{jk}$, $\bar\beta_k$ below) and second moment
 $\mathbb{E}_q[\cdot^2]$ are both tracked, since they differ whenever there's posterior
@@ -215,7 +215,7 @@ The first two terms, $\mathbb{E}_q[\log P(Y\mid L,F,\tau)]$ and
 $\mathbb{E}_q[\log P(t,\delta\mid Y,F,\tilde\beta)]$, are the two log-likelihoods from above, each
 averaged over the current posteriors: how well the model fits the data. Each
 $\mathrm{KL}[q(\cdot)\,\|\,g] = \mathbb{E}_q\!\left[\log\frac{q(\cdot)}{g(\cdot)}\right]$ is the
-Kullback–Leibler divergence between a posterior and its prior; it penalizes posteriors that drift
+Kullback–Leibler divergence between a posterior and its prior. It penalizes posteriors that drift
 too far from the prior, which is what produces shrinkage. The survival log-likelihood term is not
 conjugate to a Normal prior, so it's handled by a second-order Taylor expansion around the current
 linear predictor $\hat\eta$ (a local Gaussian approximation) before the EBNM updates below can be
@@ -232,17 +232,17 @@ Each step below computes one of the coordinate posteriors defined above ($q(\til
 $q(l_{\cdot k})$, $q(f_{\cdot k})$), given the current pseudo-data from every other coordinate.
 
 **What $A$ and $B$ are.** Every EBNM update below follows the same pattern: collect a precision
-$A$ (how much information the data carries about this one coordinate; larger $A$ means a more
+$A$ (how much information the data carries about this one coordinate. Larger $A$ means a more
 confident estimate) and a numerator $B$ (a precision-weighted sum of the residual, or pseudo-data,
 relevant to that coordinate). The pair $(A,B)$ converts into a pseudo-observation $x = B/A$ with
 standard error $s = 1/\sqrt{A}$. That $(x,s)$ pair, together with the coordinate's prior family, is
 what's actually handed to the EBNM solver, which returns the fitted prior and the posterior mean and
-second moment. This structure is identical for $\beta$, $L$, and $F$ below; only what goes into $A$
+second moment. This structure is identical for $\beta$, $L$, and $F$ below. Only what goes into $A$
 and $B$ changes. All three formulas were checked line-by-line against their source derivations
 (`derivations/cox_on_YF/`) and match exactly.
 
-**Step 0: Working response.** Recompute $\tilde F$, $Z\!F = Y\tilde F$, and $\eta = Z\!F\,\tilde\beta$;
-run one step of the Cox Newton–Raphson (Taylor) expansion at $\eta$ to get the score $u$, diagonal
+**Step 0: Working response.** Recompute $\tilde F$, $Z\!F = Y\tilde F$, and $\eta = Z\!F\,\tilde\beta$.
+Run one step of the Cox Newton–Raphson (Taylor) expansion at $\eta$ to get the score $u$, diagonal
 Hessian weight $w$, and working response $z = \eta + u/w$.
 
 **Step 1: For each factor $k = 1, \dots, K$ (Gauss–Seidel: $\beta_k \to l_k \to f_k$, in order):**
@@ -261,7 +261,7 @@ Hessian weight $w$, and working response $z = \eta + u/w$.
    factor $k$'s own contribution removed, and $\alpha \in [0,1]$ (default $0.5$) is the
    genomics/survival mixing weight. $\alpha$ cancels in $x_k = B_k/A_k$ (the EBNM pseudo-observation
    is $\alpha$-independent) but not in $s_k = 1/\sqrt{A_k}$, so it still controls how strongly
-   $\beta_k$ is shrunk. Prior family: `normal` (see the priors note above; `point_normal` is
+   $\beta_k$ is shrunk. Prior family: `normal` (see the priors note above. `point_normal` is
    available but collapses to $\beta=0$ under cross-validation). *(Derivation:
    `derivations/cox_on_YF/qBeta/qBeta_YF_derivation.pdf`)*
 
@@ -281,7 +281,7 @@ Hessian weight $w$, and working response $z = \eta + u/w$.
 
 3. **$q(f_{\cdot k})$, gene-program weights.** Pure genomics at the default survival-mixing weight
    $\alpha_F = 0$ (a dual-source form exists for $\alpha_F > 0$, unused in the recommended
-   configuration; see `derivations/cox_on_YF/qF_supervised/qF_supervised_derivation.pdf` for the
+   configuration. See `derivations/cox_on_YF/qF_supervised/qF_supervised_derivation.pdf` for the
    general case):
    $$
    A_{jk} = \tau_j \sum_i \overline{l_{ik}^2}, \qquad
@@ -303,7 +303,7 @@ $$
 \sum_{k=1}^{K}\left[\overline{l_{ik}^2}\,\overline{f_{jk}^2} - \bar l_{ik}^2 \bar f_{jk}^2\right], \qquad
 \hat\tau_j = \frac{n}{\sum_i \bar R^2_{ij}}
 $$
-The bracketed term is the posterior-variance correction; it prevents $\tau$ from being systematically
+The bracketed term is the posterior-variance correction. It prevents $\tau$ from being systematically
 overestimated by ignoring uncertainty in $L$ and $F$.
 
 **Step 3: Prediction.**
@@ -316,7 +316,7 @@ $\widehat\eta = Z\!F\,\tilde\beta$ is below 0.5, flip $\tilde\beta \to -\tilde\b
 $1 - C_{\text{train}}$).
 
 *A second scalar, $\lambda$, once multiplied the survival-side precision terms in the $L$ update
-separately from $\alpha$; retired 2026-07-12 as redundant with $\alpha$ and removed from the code
+separately from $\alpha$, retired 2026-07-12 as redundant with $\alpha$ and removed from the code
 (DECISIONS.md).*
 
 ### Gene selection
@@ -344,13 +344,13 @@ Two separate decisions are involved here, and the table below only makes one of 
    using external C-index only as a floor to rule out a $K$ that fits training data best but
    generalizes worse, not as the primary selection criterion. That updated procedure re-confirms
    $K=7$ on its own terms. The table below takes this current, ARD/ELBO-validated $K=7$ fit as
-   given; it does not revisit the choice of $K$ itself.
+   given. It does not revisit the choice of $K$ itself.
 2. **Of those 7 fitted programs, which are actually prognostic, which are real biology with no
    survival link, and which are noise the model discarded?** This is what the table answers, using
    this cycle's new `classify_factors()` method (§3.1): 2 programs land in the first bucket
    (survival-active), 2 in the second (genomics-only), 3 in the third (dead).
 
-§3.1 below is where decision 1 is actually re-derived; this table only carries out decision 2 on
+§3.1 below is where decision 1 is actually re-derived. This table only carries out decision 2 on
 the result.
 
 Top genes within a program are ranked by $|\bar f_{jk}|$ (equivalently raw $\bar f_{jk}$: the
@@ -360,8 +360,8 @@ Top genes within a program are ranked by $|\bar f_{jk}|$ (equivalently raw $\bar
 |---|---|---|---|
 | 7 | Yes | Adverse | HR>1 in 5/5 external cohorts |
 | 3 | Yes | Protective | HR<1 in 5/5 external cohorts |
-| 2 of 5 remaining | No | n/a | Real gene-expression programs, not tied to survival; see §3.1 (cross-cohort consistency check still open, §1) |
-| 3 of 5 remaining | No | n/a | Fully pruned by the model (see §3.1); not a "program" to characterize |
+| 2 of 5 remaining | No | n/a | Real gene-expression programs, not tied to survival. See §3.1 (cross-cohort consistency check still open, §1) |
+| 3 of 5 remaining | No | n/a | Fully pruned by the model (see §3.1), not a "program" to characterize |
 
 $^\dagger$ Direction is read from the *marginal* survival association of each program's projection
 score (Cox on $Z\!F_{\cdot k}$ alone), not the joint model's $\tilde\beta$ sign. The two disagree for
@@ -383,10 +383,10 @@ weights: `results/benchmark_sim/outputs/pathway_enrichment/K7_kept_factors_top_g
 - Program 7's list includes several glycolysis/hypoxia genes (GAPDH, ENO1, TPI1, PGK1, LDHA,
   SLC16A3, SLC2A1) alongside genes reported elsewhere as basal-like PDAC markers (MET, ITGB4,
   LAMB3, FSCN1, S100A2). This is a pattern, not a diagnosis.
-- Program 3's list doesn't jump out the way Program 7's does; it needs the formal methods rather
+- Program 3's list doesn't jump out the way Program 7's does. It needs the formal methods rather
   than a read-off.
-- The 2 genomics-only programs: no gene list or biological characterization attempted yet (§3.4
-  flags pulling their gene lists as a follow-up).
+- The 2 genomics-only programs: not read off here. Their gene lists are in §3.4, and their
+  enrichment results are reported later in this section (see below).
 
 **Factor biology: work already done, and where it stands.** Programs 3 and 7 have been characterized
 in some depth (July 15 cycle): gene-set enrichment via fgsea/ORA against curated PDAC gene sets,
@@ -410,9 +410,9 @@ The 3 dead factors return zero enriched sets, which independently corroborates t
 genomics-only/dead split. Full detail, including the caveat above:
 
 - **Current, 4-factor scope:**
-  [`2026-08-21-pathway-enrichment-report`](../../../findings/2026-08-21-pathway-enrichment-report.html)
+  [`2026-08-21-pathway-enrichment-report`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-08-21-pathway-enrichment-report.html)
 - Superseded, 2-factor scope (Programs 3/7 findings unchanged):
-  [`2026-07-15-pathway-enrichment-report`](../../../findings/2026-07-15-pathway-enrichment-report.html)
+  [`2026-07-15-pathway-enrichment-report`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-07-15-pathway-enrichment-report.html)
 - Figures and per-program tables: `results/benchmark_sim/outputs/pathway_enrichment/`
 
 ---
@@ -437,7 +437,7 @@ program. Splitting "shrunk" gives three categories:
 
 - **survival-active**: $|\bar{\tilde\beta}_k| > 0.001$
 - **genomics-only**: not survival-active, but $\text{PVE}_k > 1\%$
-- **dead**: neither; fully pruned
+- **dead**: neither, fully pruned
 
 | $K_{\text{init}}$ | Survival-active | Genomics-only | Dead | Total kept | Mean external C |
 |---:|---:|---:|---:|---:|---:|
@@ -472,9 +472,9 @@ program. Splitting "shrunk" gives three categories:
 **Decision.** Rank candidate $K$'s by ELBO, but exclude any $K$ that fails on the external cohorts
 first. A bad external result means whatever the model is fitting internally isn't generalizable
 structure, so it shouldn't win on training-fit score alone. That excludes $K=5$/$K=6$. Of the
-remaining tie, **$K=7$ (2 survival-active + 2 genomics-only)** is kept as the simpler model; $K=9$
+remaining tie, **$K=7$ (2 survival-active + 2 genomics-only)** is kept as the simpler model. $K=9$
 (2 + 3) is recorded as a legitimate near-tied alternative. "Start as large as possible" is not
-supported here; $K$ in the 7–10 range performs best.
+supported here. $K$ in the 7–10 range performs best.
 
 ### Simulation check: the procedure over-counts survival-active factors
 
@@ -530,8 +530,9 @@ knitr::include_graphics("../figs/2026-08-21_k7_kept_factors_heatmap.png")
 
 The structure is block-diagonal: each program's top genes carry near-zero weight in the other 3,
 including the 2 genomics-only programs. Whatever biology those 2 represent is distinct from Programs
-3/7 and from each other. Neither has been run through the pathway-enrichment pipeline used on
-Programs 3/7 (§2.5); this is an open follow-up. Full gene lists with weights:
+3/7 and from each other. Both have been run through the pathway-enrichment pipeline used on
+Programs 3/7 (§2.5): Program 5 reads as desmoplastic stroma and Program 6 as immune infiltrate.
+Full gene lists with weights:
 `results/benchmark_sim/outputs/pathway_enrichment/K7_kept_factors_top_genes.csv`.
 
 ### Joint model vs. two-step baseline
@@ -573,7 +574,7 @@ Simulation is the only way to test the zero-signal condition, since real data ca
 "Signal strength" here is a multiplier ($0, 0.25, 0.5, 1, 2$) on the true survival coefficients
 used to generate each simulated patient's survival time, for the 2 simulated factors built to
 mirror Programs 3/7. Strength $0$ means those 2 factors have no true effect on survival at all
-(pure noise); strength $1$ is this project's standard "realistic magnitude" benchmark setting
+(pure noise). Strength $1$ is this project's standard "realistic magnitude" benchmark setting
 (`config/globals.yml`'s `synthetic$b_true`), not a value calibrated to match the real D4 fit's own
 $\tilde\beta$, which lives on a different, $Z\!F$-normalized scale. The other 2 simulated factors,
 built to mirror the genomics-only pair, always have a true survival coefficient of exactly 0,

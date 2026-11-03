@@ -1,3 +1,8 @@
+---
+aliases:
+  - 2026-10-15.html
+---
+
 # October 16, 2026
 
 ## Executive summary
@@ -9,13 +14,13 @@ whether molecular programs can distinguish tumor and microenvironmental
 signals while providing useful survival prediction.
 
 - **Method and prediction.** Empirical-Bayes factorization estimates patient
-  activities and molecular loadings; projection scores support prediction in
+  activities and molecular loadings, and projection scores support prediction in
   new patients. The evaluated single-block model achieves mean external
   concordance **0.627 across five cohorts (616 patients)**, versus **0.601**
   for the independently tuned factorization-then-Cox comparator.
 - **Biological interpretation.** Four retained expression programs separate
   basal-like/classical tumor signals from stromal/immune structure. These
-  annotations provide a basis for the manuscript narrative; their biological
+  annotations provide a basis for the manuscript narrative, but their biological
   interpretation remains provisional. The joint expression–methylation model
   adds molecular structure, but added predictive or biological value from
   methylation is not yet established.
@@ -36,12 +41,12 @@ signals while providing useful survival prediction.
 The feature studies now cover the full shared-gene universe and the requested
 CpG variability inventory. More genes give similar conditional prediction
 performance, but the programs change. CpG fitting exposed a numerical failure
-that is repaired experimentally; convergence remains unresolved.
+that is repaired experimentally, but convergence remains unresolved.
 
 **The benchmark is retained:** Single external C=0.627 with $\alpha_F=0$
 (survival does not guide its loading updates). The joint benchmark has ICGC
 primary C=0.685 versus C=0.676 for the expression-only framework on the
-same donors; both fits are unconverged. No fully
+same donors. Both fits are unconverged. No fully
 validated survival-supervised replacement or incremental predictive benefit
 from methylation has been established.
 
@@ -63,7 +68,7 @@ The nominal 5,000 target gives 5,001 shared genes under the unchanged ranking.
 
 Prediction stays similar across the full range: conditional CV C is about
 0.608 at 2,064 genes, 0.609 at 10,000 and 0.607 with all 17,900. The
-uncertainty intervals overlap; no new feature count was selected.
+uncertainty intervals overlap, and no new feature count was selected.
 
 **Program agreement depends on which counts are compared.** The expansion
 from 5,001 to 10,000 genes is highly consistent. Agreement is less uniform
@@ -75,7 +80,7 @@ when moving from the small screened set or to all shared genes:
 | 5,001 → 10,000 | 4 | **0.960–0.994** | **0.972** |
 | 10,000 → 17,900 | 3 | 0.737–0.915 | 0.667 |
 
-These are matched programs, not all seven starting columns; constant or
+These are matched programs, not all seven starting columns. Constant or
 unmatched programs have no defined correlation. Similar prediction can
 coexist with changes in individual programs. Screening/scaling preceded the
 folds, so this is conditional CV rather than a fully nested preprocessing
@@ -84,10 +89,10 @@ evaluation. No new external scoring was used.
 ## Increasing the number of CpGs
 
 The observed-value mean/SD inventory covers **305,492 raw probes** in 144
-TCGA patients. The unchanged model-eligible universe contains **305,352**;
-its imputation exactly reproduces the frozen 10k matrix. Within that universe,
+TCGA patients. The unchanged model-eligible universe contains **305,352**,
+and its imputation exactly reproduces the frozen 10k matrix. Within that universe,
 the mean-in-[0.1,0.9] rule retains 182,934 probes and the 95%-extreme-proportion
-rule retains 221,142. These are descriptive alternatives; no filter or SD
+rule retains 221,142. These are descriptive alternatives. No filter or SD
 cutoff has been adopted, and upstream probe-QC completeness remains unverified.
 
 ![Per-probe methylation variability before and after the descriptive filters.](../figs/2026-10-16_cpg_sd_histogram.png){fig-alt="Histograms of per-CpG standard deviation on beta and arcsine scales, including the supplied descriptive filters."}
@@ -96,13 +101,13 @@ cutoff has been adopted, and upstream probe-QC completeness remains unverified.
 |---|---:|---:|---|
 | 10,000 CpGs, original arithmetic | 0.613 | 0 | Capped at 500 |
 | 25,000 CpGs, original arithmetic | Unavailable | Unavailable | Cox risk-set underflow |
-| Same 25,000, stable log-space arithmetic | 0.984 | 7 | Capped at 500; extreme predictors |
+| Same 25,000, stable log-space arithmetic | 0.984 | 7 | Capped at 500, extreme predictors |
 
-Stable arithmetic fixes the execution error without changing the likelihood;
-it does not fix the fit. The 25k risk SD reaches about 39,086, and risk and
+Stable arithmetic fixes the execution error without changing the likelihood,
+but it does not fix the fit. The 25k risk SD reaches about 39,086, and risk and
 reconstruction still move beyond the original tolerance. Its high training C
 is not a validated gain. Four matched programs have common-probe loading
-correlation above 0.92, while three are weakly matched; risk correlation is
+correlation above 0.92, while three are weakly matched. Risk correlation is
 0.245. Both fits cap and arithmetic differs, so this is provisional agreement,
 not a clean converged feature-count comparison. Larger counts, CV, filter
 comparisons and joint curves remain open.
@@ -111,18 +116,20 @@ comparisons and joint curves remain open.
 
 | October 2 item | Current status |
 |---|---|
-| Unified write-up | Interim report delivered; final method/biology revisions remain open |
-| Gene-count sensitivity | Single training/CV curve complete; matched TCGA framework expression-only curve remains open |
-| CpG variability and feature counts | Inventory/histograms complete; count fits partial and unstable |
-| Survival-supervised programs | Experimental updates implemented; original adoption gates still fail |
-| Rank selection and large-p simulation | Pruning remedies not adopted; added-noise large-p study unrun |
+| Unified write-up | Interim report delivered, final method/biology revisions remain open |
+| Gene-count sensitivity | Single training/CV curve complete, matched TCGA framework expression-only curve remains open |
+| CpG variability and feature counts | Inventory/histograms complete, count fits partial and unstable |
+| Survival-supervised programs | Experimental updates implemented, original adoption gates still fail |
+| Rank selection and large-p simulation | Pruning remedies not adopted, added-noise large-p study unrun |
 | Multimodal contribution | Matched prediction and reproducible added biology still need validation |
 
 **Next priorities:** establish stable survival-supervised fitting, then
 complete the matched expression-only, methylation-only and joint feature
 curves. Retained programs must be justified by reproducible molecular and
-prognostic roles; fewer programs alone are not evidence of a better model.
+prognostic roles. Fewer programs alone are not evidence of a better model.
 
 An initial prior-consistency repair improves local prior updates, but its
 fitted outputs still move beyond the existing stability diagnostic when the
 stopping rule triggers. No new supervised configuration is adopted.
+
+{{< include _2026-10-15-methods-record.qmd >}}

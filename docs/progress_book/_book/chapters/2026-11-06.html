@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>15&nbsp; November 6, 2026 – SSBMF Progress Notebook</title>
+<title>14&nbsp; November 6, 2026 – SSBMF Progress Notebook</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -75,6 +75,35 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -87,7 +116,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/2026-11-06.html"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">November 6, 2026</span></a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/2026-11-06.html"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">November 6, 2026</span></a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -116,6 +145,12 @@ ul.task-list li input[type="checkbox"] {
   <div class="sidebar-item-container"> 
   <a href="../index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">About this notebook</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../current-state.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Current project state</span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -180,32 +215,26 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../chapters/2026-10-15.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Methods development record: survival supervision (October 2026)</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../chapters/2026-10-16.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../chapters/2026-10-26.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">October 26, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 26, 2026</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../chapters/2026-10-30.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">October 30, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">October 30, 2026</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../chapters/2026-11-06.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">November 6, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">November 6, 2026</span></span></a>
   </div>
 </li>
     </ul>
@@ -218,8 +247,12 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#potential-topics" id="toc-potential-topics" class="nav-link active" data-scroll-target="#potential-topics"><span class="header-section-number">15.1</span> Potential Topics</a></li>
-  <li><a href="#rashid-lab-meeting-update-november-5th-2026" id="toc-rashid-lab-meeting-update-november-5th-2026" class="nav-link" data-scroll-target="#rashid-lab-meeting-update-november-5th-2026"><span class="header-section-number">15.2</span> Rashid Lab Meeting Update (November 5th, 2026)</a></li>
+  <li><a href="#potential-topics" id="toc-potential-topics" class="nav-link active" data-scroll-target="#potential-topics"><span class="header-section-number">14.1</span> Potential Topics</a></li>
+  <li><a href="#rashid-lab-meeting-update-november-5th-2026" id="toc-rashid-lab-meeting-update-november-5th-2026" class="nav-link" data-scroll-target="#rashid-lab-meeting-update-november-5th-2026"><span class="header-section-number">14.2</span> Rashid Lab Meeting Update (November 5th, 2026)</a></li>
+  <li><a href="#joint-yfb-on-pooled-pdac" id="toc-joint-yfb-on-pooled-pdac" class="nav-link" data-scroll-target="#joint-yfb-on-pooled-pdac"><span class="header-section-number">14.3</span> Joint YFB on pooled PDAC</a>
+  <ul class="collapse">
+  <li><a href="#planted-low-variance-prognostic-program" id="toc-planted-low-variance-prognostic-program" class="nav-link" data-scroll-target="#planted-low-variance-prognostic-program"><span class="header-section-number">14.3.1</span> Planted low-variance prognostic program</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -228,7 +261,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">November 6, 2026</span></h1>
+<h1 class="title"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">November 6, 2026</span></h1>
 </div>
 
 
@@ -246,21 +279,156 @@ ul.task-list li input[type="checkbox"] {
 
 
 <p>Working chapter for the week of November 2–6. Sections are added as the work is done.</p>
-<section id="potential-topics" class="level2" data-number="15.1">
-<h2 data-number="15.1" class="anchored" data-anchor-id="potential-topics"><span class="header-section-number">15.1</span> Potential Topics</h2>
+<section id="potential-topics" class="level2" data-number="14.1">
+<h2 data-number="14.1" class="anchored" data-anchor-id="potential-topics"><span class="header-section-number">14.1</span> Potential Topics</h2>
 <ul>
-<li><strong>Rashid Lab Meeting Update (November 5th, 2026)</strong> (finalized)</li>
+<li><strong>Rashid Lab Meeting Update (November 5th, 2026)</strong> (planned)</li>
 <li>Executive Summary</li>
 <li>Key Issues Resolved</li>
 <li>Attempts to resolve model supervision issues</li>
-<li>Open Items &amp; Questions</li>
+<li>Open Items and Questions</li>
 </ul>
 </section>
-<section id="rashid-lab-meeting-update-november-5th-2026" class="level2" data-number="15.2">
-<h2 data-number="15.2" class="anchored" data-anchor-id="rashid-lab-meeting-update-november-5th-2026"><span class="header-section-number">15.2</span> Rashid Lab Meeting Update (November 5th, 2026)</h2>
+<section id="rashid-lab-meeting-update-november-5th-2026" class="level2" data-number="14.2">
+<h2 data-number="14.2" class="anchored" data-anchor-id="rashid-lab-meeting-update-november-5th-2026"><span class="header-section-number">14.2</span> Rashid Lab Meeting Update (November 5th, 2026)</h2>
 <p><em>To be filled in.</em></p>
+</section>
+<section id="joint-yfb-on-pooled-pdac" class="level2" data-number="14.3">
+<h2 data-number="14.3" class="anchored" data-anchor-id="joint-yfb-on-pooled-pdac"><span class="header-section-number">14.3</span> Joint YFB on pooled PDAC</h2>
+<p>The October canonical YFB fit used survival feedback in the gene-weight updates (<code>w_S = 1</code>) and retained two survival-active programs. We compared it with rank-7 unsupervised EBMF on the same 2,064 genes from 273 pooled TCGA and CPTAC patients. We used EBMF alone to compare programs, and EBMF followed by Cox to compare prediction.</p>
+<p>A fresh replay of the October code (<code>be57fe9</code>) reproduced the archived loadings, coefficients, and external risk scores exactly. It converged in 244 iterations. With the same historical preprocessing and gene set, the current fitter reached the 300-iteration cap. It retained nonzero coefficients (programs 2 and 3 had means +0.333 and −0.206) and averaged external C of 0.620. Applying only the later Gaussian log-normalizer correction (<code>31db892</code>) to the October code reproduced the current replay’s loadings, coefficients, and monitored objective exactly. The correction changed when the relative-objective stopping rule was satisfied. The comparison below uses the archived October fit.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/external-concordance.png" class="img-fluid figure-img"></p>
+<figcaption>External C-index for joint YFB and rank-7 EBMF followed by Cox in five PDAC cohorts.</figcaption>
+</figure>
+</div>
+<p>Across the five external cohorts, mean C was <strong>0.621</strong> for joint YFB and <strong>0.623</strong> for EBMF followed by Cox. The paired difference was <strong>−0.002</strong> (95% bootstrap interval <strong>−0.012 to +0.006</strong>). We checked that the archived survival times and event indicators matched in order and used the saved risk directions. The bootstrap resampled rows within each cohort and weighted cohorts equally. Its interval is conditional on these trained models and assumes independence across cohorts. The saved records do not contain patient identifiers for checking overlap across cohorts.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/program-correspondence.png" class="img-fluid figure-img"></p>
+<figcaption>Absolute correlations between projected program scores on the training patients. The right axis gives the variance explained by the full EBMF score span.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Joint program</th>
+<th style="text-align: right;">Cox coefficient (posterior SD)</th>
+<th style="text-align: right;">Best EBMF score correlation, absolute</th>
+<th style="text-align: right;">EBMF span R²</th>
+<th>Exploratory annotation of risk-associated genes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2</td>
+<td style="text-align: right;">+0.350 (0.086)</td>
+<td style="text-align: right;">0.993</td>
+<td style="text-align: right;">99.9999%</td>
+<td>DeSurv basal-like tumor signature, 39 of the top 100 genes</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td style="text-align: right;">−0.185 (0.075)</td>
+<td style="text-align: right;">0.975</td>
+<td style="text-align: right;">99.9997%</td>
+<td>Bailey squamous signature, 12 of the top 100 genes</td>
+</tr>
+</tbody>
+</table>
+<p>The signed gene weights also closely match the corresponding EBMF programs (Pearson correlations 0.991 and 0.976 for programs 2 and 3).</p>
+<p>The genes below are ordered by loading multiplied by the sign of the Cox coefficient. For program 3, this ranks the negative loadings toward higher predicted risk.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Program</th>
+<th>Top eight genes toward higher predicted risk</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2</td>
+<td>SLC16A3, ITGA3, LDHA, SLC2A1, ALDOA, PGK1, P4HA1, PFKP</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>NCAPD2, MT2A, RPL17, EEF1D, PEG10, ANGPTL4, MT1X, CAV1</td>
+</tr>
+</tbody>
+</table>
+<p>Program 2’s basal-like signature includes prominent glycolysis-associated weights. Program 3’s risk-associated end overlaps the Bailey squamous signature. Both overlaps passed an exploratory Benjamini–Hochberg adjustment across nine signatures and two programs, with the 2,064 training genes as background. These annotations require independent validation. The fitted shared point-Laplace prior put approximately <span class="math inline">\(5.7 \times 10^{-7}\)</span> mass on the spike. The two active labels use the posterior mean-to-SD rule, so they give no evidence that the fitted spike pruned the other coefficients.</p>
+<p><strong>Interpretation.</strong> Joint YFB learned survival-associated programs with similar observed discrimination to the two-step model. On these training patients, EBMF already represented almost all the score variation in both survival-active programs. This fit therefore gives little evidence that joint fitting recovered a low-variance prognostic score outside the EBMF span. The calibrated October simulation provides evidence for that capability under its planted design.</p>
+<section id="planted-low-variance-prognostic-program" class="level3" data-number="14.3.1">
+<h3 data-number="14.3.1" class="anchored" data-anchor-id="planted-low-variance-prognostic-program"><span class="header-section-number">14.3.1</span> Planted low-variance prognostic program</h3>
+<p>The calibrated October simulation used 400 training subjects and a strong planted survival coefficient (log-hazard coefficient 3.3). Recovery required an absolute loading correlation of at least 0.7 and the correct survival direction after sign alignment.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/planted-yfb-performance.png" class="img-fluid figure-img"></p>
+<figcaption>Recovery of the planted program and held-out C-index by simulation noise. Each point is a replicate with defined concordance.</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Noise</th>
+<th style="text-align: right;">Maximum planted expression variance share</th>
+<th style="text-align: right;">Recovery, feedback off / joint</th>
+<th style="text-align: right;">Mean validation C, off / joint</th>
+<th style="text-align: right;">Joint converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0.25</td>
+<td style="text-align: right;">0.49%</td>
+<td style="text-align: right;">1/20 / 17/20</td>
+<td style="text-align: right;">0.641 / 0.763</td>
+<td style="text-align: right;">19/20</td>
+</tr>
+<tr class="even">
+<td>1.00</td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;">1/20 / 19/20</td>
+<td style="text-align: right;">0.540 / 0.765</td>
+<td style="text-align: right;">19/20</td>
+</tr>
+</tbody>
+</table>
+<p>At noise 1.00, the joint mean C uses 19 defined values. One replicate had undefined validation C. The feedback-off reference is historical YFB with a fitted survival coefficient and no survival feedback into the gene weights. The joint arm also changes initialization and priors. This simulation supports low-variance program recovery under the tested design. The later larger-feature evaluation failed its combined recovery, false-active and convergence gate.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/planted-loading-recovery.png" class="img-fluid figure-img"></p>
+<figcaption>Loading correlation with the planted program across replicates. Filled points also have the correct survival direction.</figcaption>
+</figure>
+</div>
+<p>The recovery plot shows one near miss at low noise and a wider gap for the other supervised failures. At high noise, the single missed program had a loading correlation of about 0.23.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/planted-matched-comparators.png" class="img-fluid figure-img"></p>
+<figcaption>Planted-program loading matches and held-out concordance for five methods on the same 40 simulated datasets. Vertical marks show means and counts show defined values.</figcaption>
+</figure>
+</div>
+<p>In the matched comparator rerun, none of the four comparator methods met its recovery criterion at either noise level. EBMF alone selects its closest loading by correlation with the planted program and has no risk score. The two-step methods select a program by absolute Cox z-statistic and also require the correct survival direction for recovery. At high noise, EBMF followed by lasso Cox had defined concordance in 6 of 20 datasets. Its plotted mean describes those six datasets.</p>
+<p>The close PDAC program matches are consistent with weak effective survival feedback. The prediction comparison alone cannot establish that explanation. The existing training-only weight grid found that higher weights can destabilize the fit, so a stronger feedback setting should be evaluated on recovery, false activity and convergence together.</p>
+<p><strong>Expression and methylation extension.</strong> First verify that the multimodal fitter at <code>M = 1</code> reproduces the single-modality reference under matched settings. For <code>M = 2</code>, use shared patient scores and separate expression and methylation loadings, feature precisions, and loading priors. The existing implementation sums the modality projections before computing the Cox predictor <span class="math inline">\(\eta = (\sum_{m=1}^{M} Y^{(m)} F^{(m)})\beta\)</span>. Check each block’s contribution to the combined score and validate prediction on patients with matched modalities, using training-only choices for priors and rank.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
@@ -667,7 +835,7 @@ ul.task-list li input[type="checkbox"] {
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="../chapters/2026-10-30.html" class="pagination-link" aria-label="October 30, 2026">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">October 30, 2026</span></span>
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">October 30, 2026</span></span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">

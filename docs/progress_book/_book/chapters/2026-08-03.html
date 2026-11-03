@@ -150,6 +150,12 @@ window.Quarto = {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../current-state.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Current project state</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../chapters/2026-04-29.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">April 29, 2026</span></span></a>
   </div>
@@ -210,32 +216,26 @@ window.Quarto = {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../chapters/2026-10-15.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Methods development record: survival supervision (October 2026)</span></span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../chapters/2026-10-16.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">October 16, 2026</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../chapters/2026-10-26.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">October 26, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">October 26, 2026</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../chapters/2026-10-30.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">October 30, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">October 30, 2026</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../chapters/2026-11-06.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">November 6, 2026</span></span></a>
+ <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">November 6, 2026</span></span></a>
   </div>
 </li>
     </ul>
@@ -281,7 +281,7 @@ window.Quarto = {
 <p>No change to the recommended model this cycle. This entry adds one new check (do the same 2 programs show up without supervision at all?) and a direct comparison against DeSurv’s published gene programs, then shifts focus toward the manuscript.</p>
 <section id="method-updates" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="method-updates"><span class="header-section-number">5.1</span> Method updates</h2>
-<p>Nothing changed in the model or pipeline this cycle; this was a validation and comparison cycle building directly on 7/15.</p>
+<p>Nothing changed in the model or pipeline this cycle. This was a validation and comparison cycle building directly on 7/15.</p>
 </section>
 <section id="results-updates" class="level2" data-number="5.2">
 <h2 data-number="5.2" class="anchored" data-anchor-id="results-updates"><span class="header-section-number">5.2</span> Results updates</h2>
@@ -296,8 +296,8 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>EBMF’s own factor 1 tracks Program 3 (r = −0.72) and factor 2 tracks Program 7 (r = +0.69). Each is clearly the best match for its program among all 20 unsupervised factors. That means this 2-program structure exists in the data independent of the survival term; the survival term identifies it rather than creates it. SBMF is a supervised re-weighting of EBMF’s own factor structure: a variation on EBMF, not a separate model class that happens to also fit survival.</p>
-<p><strong>Direct comparison to DeSurv’s published gene programs:</strong> Program 7 (adverse) overlaps DeSurv’s basal-like-tumor factor at Jaccard 0.18 (hypergeometric <span class="math inline">\(p\approx3\times10^{-16}\)</span>); Program 3 (protective) overlaps DeSurv’s classical-tumor factor at Jaccard 0.13 (<span class="math inline">\(p\approx1\times10^{-7}\)</span>). Different model classes converge on the same tumor biology; that convergence is the point here, not a head-to-head performance claim. A matched, same-protocol comparison against DeSurv is still the pending next step for an actual performance claim.</p>
+<p>EBMF’s own factor 1 tracks Program 3 (r = −0.72) and factor 2 tracks Program 7 (r = +0.69). Each is clearly the best match for its program among all 20 unsupervised factors. That means this 2-program structure exists in the data independent of the survival term. The survival term identifies it rather than creates it. SBMF is a supervised re-weighting of EBMF’s own factor structure: a variation on EBMF, not a separate model class that happens to also fit survival.</p>
+<p><strong>Direct comparison to DeSurv’s published gene programs:</strong> Program 7 (adverse) overlaps DeSurv’s basal-like-tumor factor at Jaccard 0.18 (hypergeometric <span class="math inline">\(p\approx3\times10^{-16}\)</span>), and Program 3 (protective) overlaps DeSurv’s classical-tumor factor at Jaccard 0.13 (<span class="math inline">\(p\approx1\times10^{-7}\)</span>). Different model classes converge on the same tumor biology. That convergence is the point here, not a head-to-head performance claim. A matched, same-protocol comparison against DeSurv is still the pending next step for an actual performance claim.</p>
 </section>
 <section id="relevance-of-new-findings" class="level2" data-number="5.3">
 <h2 data-number="5.3" class="anchored" data-anchor-id="relevance-of-new-findings"><span class="header-section-number">5.3</span> Relevance of new findings</h2>
@@ -308,14 +308,14 @@ window.Quarto = {
 <ul>
 <li>Factor-stability across random seeds is still uncharacterized for the recommended YFB fit.</li>
 <li>Matched, same-protocol head-to-head against DeSurv (same data, same scoring). Builds directly on today’s gene-overlap comparison, but as a performance claim, not just a biology-convergence claim.</li>
-<li>Shift in focus starting now: manuscript writing (introduction and background/literature review). The companion manuscript repository is already scaffolded with an intro draft and a populated reference library; next step is to continue and expand that draft.</li>
+<li>Shift in focus starting now: manuscript writing (introduction and background/literature review). The companion manuscript repository is already scaffolded with an intro draft and a populated reference library. The next step is to continue and expand that draft.</li>
 </ul>
 </section>
 <section id="deep-dive" class="level2" data-number="5.5">
 <h2 data-number="5.5" class="anchored" data-anchor-id="deep-dive"><span class="header-section-number">5.5</span> Deep dive</h2>
 <ul>
-<li>Full write-up: <a href="../../../progress_report/2026-08-03-ssbmf-status-update.html"><code>2026-08-03-ssbmf-status-update</code></a></li>
-<li>Pathway enrichment methodology and DeSurv overlap detail: <a href="../../../findings/2026-07-15-pathway-enrichment-report.html"><code>2026-07-15-pathway-enrichment-report</code></a></li>
+<li>Full write-up: <a href="https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/progress_report/2026-08-03-ssbmf-status-update.html"><code>2026-08-03-ssbmf-status-update</code></a></li>
+<li>Pathway enrichment methodology and DeSurv overlap detail: <a href="https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-07-15-pathway-enrichment-report.html"><code>2026-07-15-pathway-enrichment-report</code></a></li>
 </ul>
 
 

@@ -9,7 +9,8 @@ YFB. It also tested DeSurv-aligned gene selection as a replacement for plain var
 - **18-configuration preprocessing benchmark (5/27).** Compared 5 preprocessing strategies (joint
   quantile normalization + rank transform, per-platform z-standardization, joint QN without rank
   transform, joint z-standardization, log-only) across LB and YFB, with and without a cohort
-  indicator, on merged TCGA+CPTAC ($n=273$, 5-fold CV, biological floor $K\geq3$).
+  indicator, on merged TCGA+CPTAC ($n=273$, 5-fold CV, biological floor $K\geq3$). YFB was not
+  run with joint QN + rank transform, so the benchmark has 18 of the 20 possible combinations.
 - **DeSurv-aligned gene selection (5/28).** Replaced variance-only gene selection with a combined
   mean+variance rank computed per-platform before normalization (DeSurv's own approach), keeping the
   top 3,000 genes per cohort (2,064 after intersection, vs. 2,000 before).
@@ -22,7 +23,7 @@ consistently recovers non-zero survival coefficients. Without it, the top singul
 merged matrix capture the RNA-seq/proteomics platform contrast rather than biology, and the survival
 update has no real biological signal to use.
 
-> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics. The platform contrast described here is a between-cohort difference between two separately processed RNA-seq datasets; see the 2026-10-16 correction entry in `DECISIONS.md`.
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics. The platform contrast described here is a between-cohort difference between two separately processed RNA-seq datasets. See the 2026-10-16 correction entry in `DECISIONS.md`.
 
 **Cohort indicator helps only in specific configurations, not universally.** It absorbs the platform offset when preprocessing
 hasn't already removed it (+0.020 for LB with joint QN, meaningfully helpful there), but is neutral
@@ -33,7 +34,7 @@ exclude it from the primary YFB configuration.
 
 **DeSurv gene selection improved external concordance in both model families:** +0.012 for YFB (D4 vs.
 the earlier per-platform-only D2), +0.006 for LB (D3 vs. D1). YFB also outperformed LB on the same
-DeSurv gene set by +0.014 (D4 vs. D3); the two effects are additive. Every one of the 5
+DeSurv gene set by +0.014 (D4 vs. D3), and the two effects are additive. Every one of the 5
 configurations tested (D1–D5) converged to exactly **2 active survival factors** regardless of how
 many factors were requested (K ranged 3–8), with one adverse-direction and one protective-direction
 program every time. The same 2-factor structure appears in every preprocessing configuration
@@ -47,8 +48,8 @@ tested, which supports it being a real property of the data rather than a fittin
 | D2 (prior baseline) | YFB | Variance only, 2,000 genes | No | 3 | 2 | 0.624 |
 | D1 (prior baseline) | LB | Variance only, 2,000 genes | No | 3 | 1 | ~0.624 |
 
-*(D4's 0.636 is the number as understood this week; a train/test preprocessing bug found later, on
-7/15, revises this down to 0.627; see that entry. Kept here as the historical record of what we
+*(D4's 0.636 is the number as understood this week. A train/test preprocessing bug found later, on
+7/15, revises this down to 0.627. See that entry. Kept here as the historical record of what we
 knew at the time.)*
 
 ## Relevance of new findings
@@ -56,8 +57,8 @@ knew at the time.)*
 This is the week the recommended configuration actually converges: **YFB, DeSurv-aligned gene
 selection, per-platform z-standardization, no cohort indicator, $K=7$.** It beats the alternatives for
 reasons we understand: platform-scale collapse avoided, gene selection matches DeSurv, YFB's exact
-scoring beats LB's OLS approximation, not because it happened to score highest in a table of 18/5
-configurations.
+scoring beats LB's OLS approximation, not because it happened to score highest in the 18-configuration
+benchmark or the 5-configuration (D1–D5) gene-selection comparison.
 
 ## Open items to address
 
@@ -65,14 +66,14 @@ configurations.
   interpretability task left before the biology story can be told.
 - Compare patient loadings on the 2 active factors to Moffitt subtype scores in TCGA to check
   concordance with classical vs. basal subtypes.
-- YFB's point-normal prior still returns C=0.5 for all K in cross-validation. Open issue; normal
+- YFB's point-normal prior still returns C=0.5 for all K in cross-validation. Open issue. Normal
   prior remains the default.
 - Cohort indicator may be worth reconsidering once training extends past 2 platforms.
 
 ## Deep dive
 
-- Preprocessing/cohort-indicator benchmark: [`2026-05-22-cohort-lmm-benchmark-report`](../../../findings/2026-05-22-cohort-lmm-benchmark-report.html)
-- DeSurv gene-selection comparison: [`2026-05-27-desurv-alignment-report`](../../../findings/2026-05-27-desurv-alignment-report.html)
-- Factor convergence/diagnostics detail: [`2026-05-27-desurv-factor-diagnostics-report`](../../../findings/2026-05-27-desurv-factor-diagnostics-report.html)
-- Original write-ups: [`2026-05-27-ssbmf-status-update`](../../../progress_report/2026-05-27-ssbmf-status-update.html),
-  [`2026-05-28-ssbmf-status-update`](../../../progress_report/2026-05-28-ssbmf-status-update.pdf)
+- Preprocessing/cohort-indicator benchmark: [`2026-05-22-cohort-lmm-benchmark-report`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-05-22-cohort-lmm-benchmark-report.html)
+- DeSurv gene-selection comparison: [`2026-05-27-desurv-alignment-report`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-05-27-desurv-alignment-report.html)
+- Factor convergence/diagnostics detail: [`2026-05-27-desurv-factor-diagnostics-report`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/findings/2026-05-27-desurv-factor-diagnostics-report.html)
+- Original write-ups: [`2026-05-27-ssbmf-status-update`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/progress_report/2026-05-27-ssbmf-status-update.html),
+  [`2026-05-28-ssbmf-status-update`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/progress_report/2026-05-28-ssbmf-status-update.pdf)

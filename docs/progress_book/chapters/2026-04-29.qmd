@@ -5,7 +5,7 @@ returning $\hat\beta_k = 0$ for every factor. It reconstructed expression fine b
 survival signal at all, so risk prediction was just a constant hazard. This entry covers the
 diagnosis and the first fix.
 
-> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics. The platform contrast described here is a between-cohort difference between two separately processed RNA-seq datasets; see the 2026-10-16 correction entry in `DECISIONS.md`.
+> Correction (2026-10-16): CPTAC is RNA-seq, not proteomics. The platform contrast described here is a between-cohort difference between two separately processed RNA-seq datasets. See the 2026-10-16 correction entry in `DECISIONS.md`.
 
 ## Method updates
 
@@ -15,8 +15,8 @@ diagnosis and the first fix.
   the shared feature set to the full 2,000.
 - **Four in-model changes ("Cluster A")**, adopted together after ruling out simpler fixes ($\lambda$
   sweeps, high $\lambda$, EBMF warm-starts all failed to rescue $\beta$): reordering the inner CAVI
-  loop so $\beta$ updates before $L$ and $F$; a short $\beta$-only burn-in; an $\alpha$ warmup
-  schedule; and `normalize_AB`, which rescales the survival precision term in the $L$-update. That
+  loop so $\beta$ updates before $L$ and $F$, a short $\beta$-only burn-in, an $\alpha$ warmup
+  schedule, and `normalize_AB`, which rescales the survival precision term in the $L$-update. That
   last one mattered most: at iteration 1 on the merged cohort, the survival term carried roughly
   $0$–$2\times10^{-4}$ of the weight of the genomics term, so survival had essentially no say in the
   loading update without it.
@@ -31,7 +31,7 @@ survival signal was present in the data.
 
 The catch: external validation got *worse* on 4 of 5 cohorts after Cluster A, relative to the
 pre-Cluster-A merged fit (Dijk 0.606 vs. 0.626, PACA-AU array 0.576 vs. 0.636, PACA-AU seq 0.629 vs.
-0.653, Puleo 0.550 vs. 0.626; only Moffitt improved, 0.541 vs. 0.529). For context, single-cohort
+0.653, Puleo 0.550 vs. 0.626. Only Moffitt improved, 0.541 vs. 0.529). For context, single-cohort
 training (no merging at all) was already reaching external C-index in the 0.60–0.63 range, so that's
 the bar merged training needs to clear.
 
@@ -54,4 +54,4 @@ structural than a tuning issue.
 
 ## Deep dive
 
-- Full write-up: [`2026-04-29-ssbmf-status-update`](../../../progress_report/2026-04-29-ssbmf-status-update.pdf)
+- Full write-up: [`2026-04-29-ssbmf-status-update`](https://github.com/andrew-walther/multiomicsGEP/blob/0e52d26f133f8293baa6393771c036fcede85435/docs/progress_report/2026-04-29-ssbmf-status-update.pdf)
