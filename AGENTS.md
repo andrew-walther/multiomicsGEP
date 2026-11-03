@@ -10,7 +10,8 @@ Start with its review handoff and the
 [`execution report`](docs/reviews/2026-10-30-codex-execution-report.md), then the
 October 30 progress-book chapter and issue tracker. The [current-state chapter](docs/progress_book/current-state.qmd) summarizes
 priorities and saved examples. Update it alongside the roadmap when the
-research state changes. The cleanup audit is complete.
+research state changes. The standalone YFB smoke test still reproduces zero coefficients and activities.
+Standalone test scripts now return a failure exit code when assertions fail.
 Implementation and registered evaluation are separate from scientific adoption.
 The supervision work must receive the independent review before merging.
 `rebuild/unified-ssbmf` remains an unmerged reference. Remind Andrew of the
@@ -50,7 +51,10 @@ R package can start once the model meets its acceptance criteria.
 - **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. The latest verified count and expected diagnostic warnings are recorded in the execution report; tests must all pass before completion.
 - **Real-data tests:** `Rscript tests/test_real_data_loading.R` — 88/88 passing (auto-skips if `PDAC_DATA_ROOT` not set).
 - **Real data:** Not in git (`**/PDAC_data/` and the local `/data/` folder of TCGA/ICGC copies are git-ignored; never commit them). Stored locally at `~/Library/CloudStorage/OneDrive-.../UNC Dissertation (Liu)/PDAC_data`. For Longleaf: `export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC`.
-- **Current model status:** Both LB (`code/fit_modular.R`, η = Lβ) and YFB (`code/fit_cox_on_yf.R`, η = (YF)β) are fully implemented. **Recommended configuration:** YFB × per-platform z-std × DeSurv gene selection × no cohort indicator, K=7 default (K selection is a two-stage ARD framework — K_init from an ELBO/BIC/log-likelihood/CV-C consensus, then `classify_factors()` shrinkage gives K_eff from that one over-specified fit), K_eff=2, mean external C≈0.627 across 5 held-out PDAC cohorts. Optional `cohort_id` (genomics offset), `strata_id` (stratified baseline hazard, off by default — performance-neutral), and `beta_cohort_id` (cohort-specific survival coefficients) parameters exist; see the Quick Reference table below. Full history, benchmark numbers, and the reasoning behind each choice live in `PROJECT_STATUS.qmd`; the dated rationale entries are in `DECISIONS.md` — read those before revisiting any of this, don't rely on this summary alone.
+- **Model entry points:** LB uses `code/fit_modular.R` (η = Lβ) and YFB uses
+  `code/fit_cox_on_yf.R` (η = (YF)β). The frozen YFB benchmark uses
+  `alpha_F = 0`. See the status report for benchmark estimates and the
+  current supervision experiments.
 - **Documentation audience:** Write ROADMAP.md, DECISIONS.md, PROJECT_STATUS.qmd, and README.md for biostatistician collaborators reading the project cold — not as implementation logs. Avoid internal session terminology (e.g. "Phase A/B/C", "Cluster A/B", "Session N") in prose descriptions; use those labels only in commit messages or as lookup keys. Describe methods and findings in terms a statistical reader would recognize: model variant, prior, training set, metric, result.
 - **No mannered prose:** Say what you mean; don't substitute metaphor or flourish for direct statement (e.g. "a dial worth turning" instead of "a parameter worth varying," "this point earns its keep" instead of "this point still matters"). Applies to all writing in this repo — reports, the progress book, plan/decision docs, commit messages, comments. When a literal phrase is available, use it.
 
@@ -83,7 +87,7 @@ the tables. E did not adopt protection or a new K. `m6/robustness` contains the
 training-only robustness runner; current findings belong in `PROJECT_STATUS.qmd`
 and `DECISIONS.md`, not this instruction file.
 
-Round 2 work is cumulative on `round2/supervised`. Its controlling specification is
+The merged Round2 diagnostics are historical evidence. Their specification is
 `docs/plans/2026-10-16-round2-handoff-plan.md`; status and attempts are in
 `docs/plans/2026-10-16-round2-return-note.md` and `docs/plans/2026-10-16-round2-attempts-log.md`.
 The benchmark tag and `results/benchmark_snapshot_2026-10-14/` are immutable.

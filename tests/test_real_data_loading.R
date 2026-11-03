@@ -478,4 +478,5 @@ if (!real_data_available) {
 # Summary
 # =============================================================================
 
-report_results("tests/test_real_data_loading.R")
+results <- report_results("tests/test_real_data_loading.R")
+if (sys.nframe() == 0L && results$failed > 0L) quit(status = 1L)

@@ -97,4 +97,5 @@ run_test("S3: max|EL| > 0.01 (no loading collapse)", {
               msg = sprintf("max|EL|=%.4f, expected > 0.01", max(abs(fit$EL))))
 })
 
-report_results("tests/test_cox_on_yf_smoke.R")
+results <- report_results("tests/test_cox_on_yf_smoke.R")
+if (sys.nframe() == 0L && results$failed > 0L) quit(status = 1L)

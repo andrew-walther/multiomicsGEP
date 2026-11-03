@@ -323,11 +323,15 @@ run_test("T7.5: plot_geneweight_heatmap fails loud if no requested genes are fou
 run_test("T7.6: plot_geneweight_heatmap runs on real top genes without error", {
   d4 <- load_d4_weights()
   top_genes <- top_n_genes_table(d4$EF, 7, d4$program_labels, n = 10)$gene
-  res <- tryCatch({
-    plot_geneweight_heatmap(d4$EF, top_genes, d4$program_labels)
-    "ok"
-  }, error = function(e) paste("error:", conditionMessage(e)))
-  assert_equal(res, "ok")
+  plot_path <- tempfile(fileext = ".pdf")
+  grDevices::pdf(plot_path)
+  tryCatch(
+    plot_geneweight_heatmap(d4$EF, top_genes, d4$program_labels),
+    finally = {
+      grDevices::dev.off()
+      unlink(plot_path)
+    }
+  )
 })
 
 run_test("T7.7: heatmap_dimensions shrinks font and grows height as gene count increases", {

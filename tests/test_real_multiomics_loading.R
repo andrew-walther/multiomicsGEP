@@ -74,4 +74,5 @@ run_test("MOReal-T7: ICGC survival agrees with PACA_AU_seq for every RNA sample"
   assert_true(identical(as.numeric(m$censored == "death"), m$event))
 })
 
-report_results("Real multi-omics data loading")
+results <- report_results("Real multi-omics data loading")
+if (sys.nframe() == 0L && results$failed > 0L) quit(status = 1L)
