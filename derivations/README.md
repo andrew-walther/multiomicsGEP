@@ -2,7 +2,7 @@
 
 Variational inference derivations for the model. The complete current
 derivations, with algorithms, are also in the appendices of the
-[project write-up](../paper/writeup/writeup.pdf).
+[project write-up](../paper/writeup/2026-10-16-writeup/writeup.pdf).
 
 ## Current
 

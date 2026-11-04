@@ -49,7 +49,7 @@ A few files still cite the old paths and were deliberately left alone:
 
 - `paper/prelim/project3-ssbmf.qmd` (a source comment). Committing it fires the
   post-commit hook that syncs Chapter 4 into bios-dissertation.
-- `paper/writeup/_process/`: drafting and review records, including
+- `paper/writeup/2026-10-16-writeup/_process/`: drafting and review records, including
   `source_inventory.csv`, that point at evidence pinned to a research commit.
 - Generated output: the progress book's `_book/` and the rendered `.html` of
   each report. They update when re-rendered.

@@ -28,7 +28,7 @@ preprocessing require a separate prospective design.
 corrects cohort accounting, qualifies repeated-donor inference and the
 historical log-transform chain, adds references/provenance, and moves detailed
 diagnostics to Appendix C. Item-level dispositions are in
-`paper/writeup/_process/Accuracy_Review_Dispositions_10_16_26.md`.
+`paper/writeup/2026-10-16-writeup/_process/Accuracy_Review_Dispositions_10_16_26.md`.
 Still requiring separate decisions: donor-aware external inference,
 evaluation of any preprocessing alternative, and complete assay/software/gene-set
 release provenance. These reporting changes do not resume fitting panels or
@@ -135,22 +135,22 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 
 - [x] **Organize the unified writeup for advisor review (2026-10-12).**
   The proposed sections, evidence assessment, figure/table plan, and 54-source
-  inventory are in `paper/writeup/_process/planning.html`, with an editable Quarto source
+  inventory are in `paper/writeup/2026-10-16-writeup/_process/planning.html`, with an editable Quarto source
   and implementation checklist alongside.
 - [x] **Check the independent planning review and finalize the handoff (2026-10-14).**
   Source-checked dispositions, characterization methods, evidence-gap requirements,
   and supervised-F revision markers are recorded in the implementation plan.
-  `paper/writeup/_process/drafting_prompt.md` assigns Claude drafting and Codex review.
+  `paper/writeup/2026-10-16-writeup/_process/drafting_prompt.md` assigns Claude drafting and Codex review.
 - [x] **Draft the unified technical report (2026-10-14).** Initial draft in
-  `paper/writeup/writeup.qmd` → HTML/PDF. Following review, the report has a
+  `paper/writeup/2026-10-16-writeup/writeup.qmd` → HTML/PDF. Following review, the report has a
   24-page main text plus derivation Appendices A–B; source inventory has 63 IDs.
 - [x] **Independent review and verification of the revised draft (2026-10-14).**
   Scientific corrections, derivations, captions and pagination verified in
-  `paper/writeup/_process/verification_round2.md`; its two minor corrections are applied.
+  `paper/writeup/2026-10-16-writeup/_process/verification_round2.md`; its two minor corrections are applied.
 - [ ] **Resolve main-text length and obtain Andrew's approval before merging
   `writeup/draft`.** The 15–20-page target remains unmet. See Prompts 3–4 in
   `docs/meetings/2026-10-02-meeting-notes-followup.md` and Task 4 in
-  `paper/writeup/_process/implementation_plan.md`.
+  `paper/writeup/2026-10-16-writeup/_process/implementation_plan.md`.
 
 - [ ] **Manuscript introduction with its own background (`paper/thesis/`)**
   `[Priority: Medium]` `[Effort: Medium]` — The prelim chapter's introduction
@@ -1037,7 +1037,7 @@ Move completed items to the [Completed](#-completed) section at the bottom.
   `docs/findings/2026-03-31-pdac-data-audit/`.
 - References were updated everywhere except `paper/prelim/project3-ssbmf.qmd`
   (to avoid firing the Chapter 4 sync to bios-dissertation),
-  `paper/writeup/_process/` records, generated HTML and the bios-dissertation
+  `paper/writeup/2026-10-16-writeup/_process/` records, generated HTML and the bios-dissertation
   repository; `docs/README.md` lists them. Relative links and `docs/...` paths
   resolve, and the test suite passes.
 - This was done on `main` only. `round2/supervised` was not merged, following

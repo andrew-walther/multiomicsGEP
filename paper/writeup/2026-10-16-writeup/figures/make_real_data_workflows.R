@@ -3,7 +3,7 @@
 # Purpose: Draw the evaluated real-data training and validation workflows.
 # Created: 2026-10-16
 # Dependencies: base R (graphics, grDevices)
-# Run: Rscript paper/writeup/figures/make_real_data_workflows.R
+# Run: Rscript paper/writeup/2026-10-16-writeup/figures/make_real_data_workflows.R
 # ============================================================
 # Cohort counts are the audited historical analysis populations, not values
 # inferred from a consortium's total enrollment. Sources: load_multiomics_data.R,
@@ -130,7 +130,7 @@ draw_workflow <- function(model) {
 # Export identical content for print and HTML ----
 # Vector PDF keeps text sharp in the manuscript; PNG avoids browser-specific
 # SVG/font behavior. Explicit devices have identical dimensions and font size.
-out_dir <- "paper/writeup/figures"
+out_dir <- "paper/writeup/2026-10-16-writeup/figures"
 for (model in c("single", "multimodal")) {
   stem <- file.path(out_dir, paste0("real_data_workflow_", model))
   pdf(paste0(stem, ".pdf"), width = 6.5, height = 5.5, pointsize = 12,
