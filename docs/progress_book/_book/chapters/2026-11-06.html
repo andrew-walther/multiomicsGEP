@@ -254,6 +254,7 @@ window.Quarto = {
   <li><a href="#planted-low-variance-prognostic-program" id="toc-planted-low-variance-prognostic-program" class="nav-link" data-scroll-target="#planted-low-variance-prognostic-program"><span class="header-section-number">14.3.1</span> Planted low-variance prognostic program</a></li>
   </ul></li>
   <li><a href="#survival-weight-at-2000-genes-simulation" id="toc-survival-weight-at-2000-genes-simulation" class="nav-link" data-scroll-target="#survival-weight-at-2000-genes-simulation"><span class="header-section-number">14.4</span> Survival weight at 2,000 genes (simulation)</a></li>
+  <li><a href="#survival-weighted-fit-on-the-training-patients" id="toc-survival-weighted-fit-on-the-training-patients" class="nav-link" data-scroll-target="#survival-weighted-fit-on-the-training-patients"><span class="header-section-number">14.5</span> Survival-weighted fit on the training patients</a></li>
   </ul>
 </nav>
     </div>
@@ -662,6 +663,169 @@ window.Quarto = {
 <p>One problem remains. At 2,000 genes the coefficients at <code>w_S = 1</code> are too large for out-of-sample risk. The median validation calibration slopes are 1.20, 0.42, 0.18 across the three cells, and no 95% interval covers the true projected coefficient. Patient ranking is unaffected, with validation C of 0.94 to 0.99. Downweighting the genomics term would raise survival’s share, and in this grid a higher share made calibration worse. The next step on calibration is to choose the power on the Cox likelihood from the data, using SafeBayes or the Holmes–Walker calibration.</p>
 <p>A rerun of the October 15 test bed at <code>w_S = 1</code> recovered the program in 18 of 20 datasets at low noise and 19 of 20 at high noise. The recovered datasets match the October 30 run. Sweep counts differ because of the later log-normalizer correction to the objective, which changes when the stopping rule fires.</p>
 <p>The real-data training CV at <code>w_S = 1</code> is registered and running. It covers the programs, cross-validated C, a feature-set-size curve from the D4 genes to all 17,900 shared genes, and a comparison with survival screening. No external cohort is scored until those choices are fixed.</p>
+</section>
+<section id="survival-weighted-fit-on-the-training-patients" class="level2" data-number="14.5">
+<h2 data-number="14.5" class="anchored" data-anchor-id="survival-weighted-fit-on-the-training-patients"><span class="header-section-number">14.5</span> Survival-weighted fit on the training patients</h2>
+<p>We fit the <code>w_S = 1</code> model on the 273 TCGA and CPTAC training patients with five-fold cross-validation, using the single-log data and no external cohort. On the 2,218 D4 genes the mean held-out C is 0.663 (SE 0.024). The two-step fit, which takes the unsupervised loadings and then fits Cox on the program scores, gives 0.652. The paired fold difference is 0.011 (SE 0.005).</p>
+<p>The loadings of the two fits are the same. On these data survival supplies about 10⁻⁸ to 10⁻⁶ of the loading precision, because the real coefficients are small and that share scales with E[β²]. The small gain comes from estimating β jointly with a shrinkage prior. In the simulation a larger fixed weight broke convergence. Getting survival to move the real-data loadings therefore needs a calibrated power on the Cox likelihood.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 7%">
+<col style="width: 36%">
+<col style="width: 35%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Program</th>
+<th style="text-align: right;">β</th>
+<th style="text-align: right;">SD</th>
+<th style="text-align: left;">Active</th>
+<th style="text-align: left;">Top genes, positive pole</th>
+<th style="text-align: left;">Top genes, negative pole</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">-0.41</td>
+<td style="text-align: right;">0.08</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">ATP2A3 ACACB METTL7A ADH1B ACSS1</td>
+<td style="text-align: left;">LOXL2 MMP14 P4HA1 LDHA SLC16A3</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.22</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">RPS7 RPL6 NCAPD2 EEF1D MT2A</td>
+<td style="text-align: left;">KIAA1211 SYTL2 CTSE TSPAN8 TOX3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.23</td>
+<td style="text-align: right;">0.08</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">UHMK1 ARHGAP5 TAOK1 RAD21 DDX21</td>
+<td style="text-align: left;">CHPF RCN3 MXRA8 LOXL1 JUND</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.15</td>
+<td style="text-align: right;">0.08</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">CTRB2 CTRB1 CPB1 REG1B CELA3A</td>
+<td style="text-align: left;">BANK1 STK17B EMB MS4A1 CD79A</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">-0.05</td>
+<td style="text-align: right;">0.06</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">ANO1 BCL9L PPL VSTM2L ALS2CL</td>
+<td style="text-align: left;">PRDX4 PPIB NUCB2 P4HB RPS18</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>A positive β means a higher program score raises the hazard. Three programs are survival-active: a hypoxia and glycolysis versus normal-pancreas axis, a ribosomal and proliferation versus classical-epithelial axis, and a third adverse program.</p>
+<p>Adding genes beyond the D4 set does not help. Mean C ranges from 0.643 to 0.663 from 2,218 to all 17,900 shared genes, and every size is within one SE of the others. The registered rule, which picks the smallest set that matches the all-genes fit, chooses D4.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/real-data-size-curve.png" class="img-fluid figure-img"></p>
+<figcaption>Held-out C against the number of input genes for the survival-weighted fit and the two-step fit.</figcaption>
+</figure>
+</div>
+<p>Screening genes on survival inside each fold before the joint fit gives no consistent gain:</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 31%">
+<col style="width: 18%">
+<col style="width: 14%">
+<col style="width: 8%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Genes</th>
+<th style="text-align: left;">Fit</th>
+<th style="text-align: right;">C, outcome-free screen</th>
+<th style="text-align: right;">C, Cox screen</th>
+<th style="text-align: right;">Difference</th>
+<th style="text-align: right;">SE</th>
+<th style="text-align: right;">Overlap</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">250</td>
+<td style="text-align: left;">w0cox</td>
+<td style="text-align: right;">0.626</td>
+<td style="text-align: right;">0.647</td>
+<td style="text-align: right;">0.021</td>
+<td style="text-align: right;">0.018</td>
+<td style="text-align: right;">0.114</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">500</td>
+<td style="text-align: left;">w0cox</td>
+<td style="text-align: right;">0.645</td>
+<td style="text-align: right;">0.650</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: right;">0.017</td>
+<td style="text-align: right;">0.224</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">w0cox</td>
+<td style="text-align: right;">0.647</td>
+<td style="text-align: right;">0.648</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: right;">0.442</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">250</td>
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.638</td>
+<td style="text-align: right;">0.641</td>
+<td style="text-align: right;">0.003</td>
+<td style="text-align: right;">0.016</td>
+<td style="text-align: right;">0.114</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">500</td>
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.637</td>
+<td style="text-align: right;">0.646</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: right;">0.224</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.643</td>
+<td style="text-align: right;">0.655</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.442</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>No screened set beats the <code>w_S = 1</code> fit on all D4 genes. With survival permuted in the simulated data, the <code>w_S = 1</code> fit has 0.1 to 0.5 false-active programs per dataset on average, below the limit of one. The fixed model for the single external scoring is therefore <code>w_S = 1</code> on the D4 genes with no survival screen.</p>
 
 
 </section>

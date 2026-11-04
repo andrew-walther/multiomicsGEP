@@ -205,3 +205,60 @@ The real-data training CV at `w_S = 1` is registered and running. It covers the
 programs, cross-validated C, a feature-set-size curve from the D4 genes to all 17,900
 shared genes, and a comparison with survival screening. No external cohort is scored
 until those choices are fixed.
+
+## Survival-weighted fit on the training patients
+
+```{r s11-setup, include=FALSE}
+S11 <- "../../../results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04"
+s11_rd <- function(f) { p <- file.path(S11, f); if (!file.exists(p)) stop("Missing saved evidence: ", p); read.csv(p) }
+s11 <- s11_rd("summary.csv"); s11_scr <- s11_rd("screen_paired.csv"); s11_prog <- s11_rd("programs_D4.csv")
+s11_null <- s11_rd("null_cells.csv")
+d4 <- s11[s11$part == "size" & s11$set == "D4", ]
+f3 <- function(x) formatC(x, format = "f", digits = 3)
+```
+
+We fit the `w_S = 1` model on the 273 TCGA and CPTAC training patients with five-fold
+cross-validation, using the single-log data and no external cohort. On the 2,218 D4 genes
+the mean held-out C is `r f3(d4$mean_C[d4$arm == "w1"])` (SE `r f3(d4$se_C[d4$arm == "w1"])`).
+The two-step fit, which takes the unsupervised loadings and then fits Cox on the program
+scores, gives `r f3(d4$mean_C[d4$arm == "w0cox"])`. The paired fold difference is 0.011
+(SE 0.005).
+
+The loadings of the two fits are the same. On these data survival supplies about 10⁻⁸ to
+10⁻⁶ of the loading precision, because the real coefficients are small and that share
+scales with E[β²]. The small gain comes from estimating β jointly with a shrinkage prior.
+In the simulation a larger fixed weight broke convergence. Getting survival to move the
+real-data loadings therefore needs a calibrated power on the Cox likelihood.
+
+```{r s11-programs}
+p <- s11_prog[s11_prog$arm == "w1" & abs(s11_prog$beta) > 1e-6, ]
+p$top_positive <- sub("^((\\S+ ){5}).*", "\\1", p$top_positive)
+p$top_negative <- sub("^((\\S+ ){5}).*", "\\1", p$top_negative)
+kable(p[order(-abs(p$z)), c("program", "beta", "beta_sd", "survival_active", "top_positive", "top_negative")],
+  row.names = FALSE, digits = 2,
+  col.names = c("Program", "β", "SD", "Active", "Top genes, positive pole", "Top genes, negative pole"))
+```
+
+A positive β means a higher program score raises the hazard. Three programs are
+survival-active: a hypoxia and glycolysis versus normal-pancreas axis, a ribosomal and
+proliferation versus classical-epithelial axis, and a third adverse program.
+
+Adding genes beyond the D4 set does not help. Mean C ranges from 0.643 to 0.663 from
+2,218 to all 17,900 shared genes, and every size is within one SE of the others. The
+registered rule, which picks the smallest set that matches the all-genes fit, chooses D4.
+
+![Held-out C against the number of input genes for the survival-weighted fit and the two-step fit.](../figures/2026-11-06/real-data-size-curve.png)
+
+Screening genes on survival inside each fold before the joint fit gives no consistent
+gain:
+
+```{r s11-screen}
+kable(s11_scr[, c("N", "arm", "C_U", "C_S", "diff_S_minus_U", "diff_se", "mean_overlap_S_in_U")],
+  row.names = FALSE, digits = 3,
+  col.names = c("Genes", "Fit", "C, outcome-free screen", "C, Cox screen", "Difference", "SE", "Overlap"))
+```
+
+No screened set beats the `w_S = 1` fit on all D4 genes. With survival permuted in the
+simulated data, the `w_S = 1` fit has `r paste(range(s11_null$n_active), collapse = " to ")`
+false-active programs per dataset on average, below the limit of one. The fixed model for
+the single external scoring is therefore `w_S = 1` on the D4 genes with no survival screen.
