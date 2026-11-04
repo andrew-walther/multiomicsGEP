@@ -2681,3 +2681,21 @@ because raising survival's share made calibration worse in this grid. Tempering 
 recovered seeds as A1; per-seed sweep differences come from the `compute_ebnm_kl` normalizer fix
 committed after A1 and were reproduced by restoring the old function. Findings:
 `docs/findings/2026-11-04-survival-weight-p2000-findings.md`.
+
+## 2026-11-04 — S-11: the survival-weighted YFB fit on the real training data (registered before execution)
+
+**Why.** S-9 passed Gate S at w_S = 1, and the 2026-11-04 decision sends a working simulation
+result to real data. Full registration: `docs/plans/2026-11-04-supervised-real-data-plan.md`.
+
+**Fixed model.** The S-9 call, `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)`, with the same fitter
+at w_S = 0 as the unsupervised-loadings comparison. Training patients only (TCGA_PAAD, CPTAC),
+single log, per-cohort z-scores of all shared genes, five folds stratified by cohort × event
+(seed 2026).
+
+**Parts.** (1) Step S3 and the feature-set-size curve: nested outcome-free mean/variance sets from
+the D4 size to all shared genes; preferred size is the smallest within one SE of the all-genes
+mean fold C whose all-patient fit matches every survival-active all-genes program at |r| ≥ 0.7.
+(2) Survival screening: U(N) versus a fold-internal stratified Cox screen S(N) of the D4 genes,
+N ∈ {250, 500, 1,000}, at w_S = 1 and 0, paired differences reported. (3) Null check: the S-7
+datasets with permuted training outcomes at w_S = 1; mean false-active at most 1 per cell.
+No external cohort is used; one external scoring of the fixed model follows Andrew's review.
