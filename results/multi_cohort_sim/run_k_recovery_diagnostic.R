@@ -28,9 +28,9 @@
 # Usage:   Rscript results/multi_cohort_sim/run_k_recovery_diagnostic.R
 # ============================================================
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -42,7 +42,7 @@ source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/select_K.R")   # classify_factors()
 
 source("results/multi_cohort_sim/generate_multicohort_data.R")
@@ -95,7 +95,7 @@ for (s in SEEDS) {
   cohort_dummy <- as.numeric(d$cohort_id) - 1   # 0/1 for cohort 2 membership
 
   # NO cohort_id fit -- reproduces Analysis B's Condition A, K_init=10, this seed.
-  fit_base <- suppressMessages(fit_cox_on_yf(
+  fit_base <- suppressMessages(fit_ssbmf_yfb(
     d$Y, d$time, d$status, K = K_INIT, max_iter = MAX_ITER, alpha = ALPHA,
     prior_beta = PRIOR_BETA, verbose = FALSE
   ))
@@ -128,7 +128,7 @@ for (s in SEEDS) {
   }
 
   # WITH cohort_id fit -- does explicit cohort correction change the count?
-  fit_cohort <- suppressMessages(fit_cox_on_yf(
+  fit_cohort <- suppressMessages(fit_ssbmf_yfb(
     d$Y, d$time, d$status, K = K_INIT, max_iter = MAX_ITER, alpha = ALPHA,
     prior_beta = PRIOR_BETA, verbose = FALSE, cohort_id = d$cohort_id
   ))

@@ -77,10 +77,10 @@ run_test('KPanel-T5: posterior-state refitting is forwarded only when requested'
   env$grid<-data.frame(seed=42L,noise=.25,K=3L,model='single',arm='protected')
   env$cfg<-list(cavi=list(max_iter=2L,tol=1e-5))
   env$out_dir<-tempfile('panel_posterior_');dir.create(file.path(env$out_dir,'cells'),recursive=TRUE)
-  original<-fit_cox_on_yf;seen<-logical()
+  original<-fit_ssbmf_yfb;seen<-logical()
   # Test the adapter separately from posterior-state fitting, covered by its
   # numerical tests. Removing the observed flag keeps this a tiny old-API fit.
-  env$fit_cox_on_yf<-function(...) {
+  env$fit_ssbmf_yfb<-function(...) {
     a<-list(...);seen<<-c(seen,isTRUE(a$prune_preserve_posterior))
     a$prune_preserve_posterior<-NULL;do.call(original,a)
   }

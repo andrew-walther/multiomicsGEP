@@ -11,21 +11,21 @@
 #' Under the Cox-on-YF reformulation (eta = ZF · beta_tilde where ZF = Y·EF_norm),
 #' prediction on new data uses the SAME formula as training. EF columns are
 #' normalized to unit L2 norm before projection, matching the normalization
-#' applied during training in fit_cox_on_yf(). EF_norms is stored in the
+#' applied during training in fit_ssbmf_yfb(). EF_norms is stored in the
 #' fitted model object ($EF_norms) and must be passed here to ensure consistency.
 #'
 #' @param Y_test   n_test × p numeric matrix: test patients' genomics data.
 #'                 Must have the same column ordering as training data (or a
 #'                 subset matched by gene index before calling).
 #' @param EF       p × K numeric matrix: posterior mean factor weights from
-#'                 fit_cox_on_yf()$EF. May be a row-subset for external validation.
-#' @param EBeta    K-vector: posterior mean survival coefficients (fit_cox_on_yf()$EBeta).
-#' @param EF_norms K-vector of column norms from training (fit_cox_on_yf()$EF_norms).
+#'                 fit_ssbmf_yfb()$EF. May be a row-subset for external validation.
+#' @param EBeta    K-vector: posterior mean survival coefficients (fit_ssbmf_yfb()$EBeta).
+#' @param EF_norms K-vector of column norms from training (fit_ssbmf_yfb()$EF_norms).
 #'                 Required for correct normalization; if NULL, EF is used as-is
 #'                 (not recommended — predictions will be on a different scale).
 #' @param cohort_id_test NULL (default), or an n_test-vector of cohort labels
 #'                 for scoring under COHORT-SPECIFIC survival coefficients
-#'                 (fit_cox_on_yf(..., beta_cohort_id = ...); `EBeta` is then
+#'                 (fit_ssbmf_yfb(..., beta_cohort_id = ...); `EBeta` is then
 #'                 the fit's K x C `$EBeta` matrix, not a K-vector). A new
 #'                 external cohort has no beta^(c) of its own, so:
 #'                   - `NULL` (the default, and the only valid choice when
@@ -39,7 +39,7 @@
 #'                     column, matched by name against
 #'                     `colnames(EBeta)`/the fit's `$beta_cohort_levels`. An
 #'                     unseen level errors loudly (matching the
-#'                     `anyNA(strata)` house style in fit_cox_on_yf.R) rather
+#'                     `anyNA(strata)` house style in fit_ssbmf_yfb.R) rather
 #'                     than silently falling back to something else -- call
 #'                     again with `cohort_id_test = NULL` and
 #'                     `EBeta = fit$EBeta_pooled` for that case instead.
@@ -52,7 +52,7 @@
 #'   $risk_scores  n_test-vector of Cox linear predictor values
 #'
 #' @examples
-#' # res <- fit_cox_on_yf(Y_train, time_train, status_train, K=5)
+#' # res <- fit_ssbmf_yfb(Y_train, time_train, status_train, K=5)
 #' # pred <- predict_cox_on_yf(Y_test, res$EF, res$EBeta, res$EF_norms)
 #' # concordance(Surv(time_test, status_test) ~ pred$risk_scores)
 #' #
@@ -78,7 +78,7 @@ predict_cox_on_yf <- function(Y_test, EF, EBeta, EF_norms = NULL, cohort_id_test
   if (use_cohort) {
     if (!is.matrix(EBeta))
       stop("cohort_id_test was supplied, so EBeta must be a K x C cohort-beta matrix ",
-           "(fit_cox_on_yf(..., beta_cohort_id = ...)$EBeta), not a K-vector.")
+           "(fit_ssbmf_yfb(..., beta_cohort_id = ...)$EBeta), not a K-vector.")
     if (nrow(EBeta) != ncol(EF))
       stop(sprintf("Dimension mismatch: EF has %d columns but EBeta has %d rows.",
                    ncol(EF), nrow(EBeta)))

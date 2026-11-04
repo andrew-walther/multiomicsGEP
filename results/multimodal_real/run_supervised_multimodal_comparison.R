@@ -56,7 +56,7 @@ run_supervised_multimodal_comparison <- function() {
   for(f in c("code/multimodal_yfb_helpers.R","code/preprocess_multimodal_yfb.R",
     "code/multimodal_yfb_updates.R","code/fit_multimodal_yfb.R",
     "code/predict_multimodal_yfb.R","code/simulate_multimodal_yfb.R")) source(f,local=.GlobalEnv)
-  tryCatch(source("code/fit_cox_on_yf.R",local=.GlobalEnv),error=function(e) {
+  tryCatch(source("code/fit_ssbmf_yfb.R",local=.GlobalEnv),error=function(e) {
     if(!grepl("!is.null(real_Y)",conditionMessage(e),fixed=TRUE))stop(e)
   })
   source("code/predict_cox_on_yf.R",local=.GlobalEnv)
@@ -94,7 +94,7 @@ run_supervised_multimodal_comparison <- function() {
         c(ctrl,list(init_supervised=TRUE,beta_prior="shared_point_laplace",beta_warmup=10L)))
       else if(method=="pruned_10_1")fit_multimodal_yfb(tr$Y,tr$time,tr$event,7L,ctrl)
       else if(method=="two_step_ebmf_cox")fit_multimodal_yfb_ebmf_cox(tr$Y,tr$time,tr$event,7L)
-      else fit_cox_on_yf(scale(tr$Y$expression),tr$time,tr$event,K=7L,
+      else fit_ssbmf_yfb(scale(tr$Y$expression),tr$time,tr$event,K=7L,
         max_iter=cfg$cavi$max_iter,tol=cfg$cavi$tol,canonicalize=TRUE,w_S=1,
         prior_LF="point_laplace",init_supervised=TRUE,beta_prior_mode="shared",
         prior_beta="point_laplace",beta_warmup=10L,verbose=FALSE)

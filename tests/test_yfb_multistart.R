@@ -1,6 +1,6 @@
 # ============================================================
 # Script:  test_yfb_multistart.R
-# Purpose: Tests for fit_cox_on_yf_multistart() (code/fit_modular_multistart.R)
+# Purpose: Tests for fit_ssbmf_yfb_multistart() (code/fit_ssbmf_multistart.R)
 # Author: Andrew Walther
 # Created: 2026-07-13
 # Usage:   Rscript tests/run_tests.R  (included via source)
@@ -11,14 +11,14 @@ if (!exists("run_test")) source("tests/test_helpers.R")
 suppressPackageStartupMessages({
   library(ebnm); library(survival)
 })
-if (!exists("fit_cox_on_yf")) {
+if (!exists("fit_ssbmf_yfb")) {
   source("code/update_beta.R"); source("code/update_L_surv_YFB.R")
   source("code/update_F_surv_YFB.R"); source("code/update_tau.R")
   source("code/compute_elbo.R")
-  suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL)))
+  suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
 }
-if (!exists("fit_cox_on_yf_multistart"))
-  source("code/fit_modular_multistart.R")
+if (!exists("fit_ssbmf_yfb_multistart"))
+  source("code/fit_ssbmf_multistart.R")
 
 cat("\n--- test_yfb_multistart.R ---\n")
 
@@ -30,7 +30,7 @@ sv  <- rbinom(n, 1, 0.6)
 
 # T1: n_init=1 returns a valid best fit
 run_test("YFB-MS-T1: n_init=1 returns valid fit", {
-  ms <- fit_cox_on_yf_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_yfb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
           n_init = 1, init_seed_base = 42)
@@ -39,13 +39,13 @@ run_test("YFB-MS-T1: n_init=1 returns valid fit", {
   assert_equal(nrow(ms$restarts), 1L, "restarts should have 1 row")
 })
 
-# T2: n_init=1 with SVD matches a direct single fit_cox_on_yf() call
+# T2: n_init=1 with SVD matches a direct single fit_ssbmf_yfb() call
 run_test("YFB-MS-T2: n_init=1 SVD matches direct single fit", {
-  ms <- fit_cox_on_yf_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_yfb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
           n_init = 1, init_seed_base = 42)
-  ref <- fit_cox_on_yf(Y, tv, sv,
+  ref <- fit_ssbmf_yfb(Y, tv, sv,
            K = K, max_iter = 15, tol = 1e-2,
            prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
            init_method = "svd", verbose = FALSE)
@@ -55,7 +55,7 @@ run_test("YFB-MS-T2: n_init=1 SVD matches direct single fit", {
 
 # T3: n_init=3 returns correctly structured output
 run_test("YFB-MS-T3: n_init=3 returns correctly structured output", {
-  ms <- fit_cox_on_yf_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_yfb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
           n_init = 3, init_seed_base = 42)
@@ -68,7 +68,7 @@ run_test("YFB-MS-T3: n_init=3 returns correctly structured output", {
 
 # T4: best_idx corresponds to highest final_elbo
 run_test("YFB-MS-T4: best_idx corresponds to highest ELBO restart", {
-  ms <- fit_cox_on_yf_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_yfb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
           n_init = 3, init_seed_base = 42)
@@ -79,7 +79,7 @@ run_test("YFB-MS-T4: best_idx corresponds to highest ELBO restart", {
 
 # T5: restarts data.frame has required columns
 run_test("YFB-MS-T5: restarts data.frame has all required columns", {
-  ms <- fit_cox_on_yf_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_yfb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
           n_init = 2, init_seed_base = 42)
@@ -94,7 +94,7 @@ run_test("YFB-MS-T5: restarts data.frame has all required columns", {
 # T6: invalid n_init raises error
 run_test("YFB-MS-T6: non-positive n_init raises error", {
   err <- tryCatch(
-    fit_cox_on_yf_multistart(Y, tv, sv,
+    fit_ssbmf_yfb_multistart(Y, tv, sv,
       K = K, max_iter = 10, tol = 1e-2, alpha = 0.5,
       sign_correction = FALSE, n_init = 0),
     error = function(e) conditionMessage(e)
@@ -104,7 +104,7 @@ run_test("YFB-MS-T6: non-positive n_init raises error", {
 
 # T7: train_cindex values are in [0, 1]
 run_test("YFB-MS-T7: train_cindex values are in [0, 1]", {
-  ms <- fit_cox_on_yf_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_yfb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
           n_init = 2, init_seed_base = 42)
@@ -117,7 +117,7 @@ run_test("YFB-MS-T7: train_cindex values are in [0, 1]", {
 # T8: train_cindex uses the Cluster B predictor Y·EF·beta (not EL·beta) --
 #     regression guard against accidentally reusing the LB formula.
 run_test("YFB-MS-T8: train_cindex matches Y-EF-beta predictor, not EL-beta", {
-  ms <- fit_cox_on_yf_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_yfb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
           n_init = 1, init_seed_base = 42)

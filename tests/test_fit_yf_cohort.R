@@ -1,7 +1,7 @@
 # =============================================================================
 # tests/test_fit_yf_cohort.R
-# Integration tests for cohort_id extension in fit_cox_on_yf().
-# Mirrors test_fit_modular_cohort.R but includes YFB-specific invariants:
+# Integration tests for cohort_id extension in fit_ssbmf_yfb().
+# Mirrors test_fit_ssbmf_lb_cohort.R but includes YFB-specific invariants:
 #   - EF_norms length == K (cohort columns must not enter ZF computation)
 #   - EBeta length == K
 # =============================================================================
@@ -27,7 +27,7 @@ local({
 # ---------------------------------------------------------------------------
 run_test("YFBCohort-T1: cohort_id=NULL gives valid output; EF_norms length K", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 5L,
                   verbose = FALSE, cohort_id = NULL)
   )
@@ -42,7 +42,7 @@ run_test("YFBCohort-T1: cohort_id=NULL gives valid output; EF_norms length K", {
 # ---------------------------------------------------------------------------
 run_test("YFBCohort-T2: cohort_id='A'/'B' returns cohort output fields", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 5L,
                   verbose = FALSE, cohort_id = .f$cohort2)
   )
@@ -57,7 +57,7 @@ run_test("YFBCohort-T2: cohort_id='A'/'B' returns cohort output fields", {
 # ---------------------------------------------------------------------------
 run_test("YFBCohort-T3: EF has K cols; EF_cohort is p x (C-1)", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 5L,
                   verbose = FALSE, cohort_id = .f$cohort2)
   )
@@ -72,7 +72,7 @@ run_test("YFBCohort-T3: EF has K cols; EF_cohort is p x (C-1)", {
 # ---------------------------------------------------------------------------
 run_test("YFBCohort-T4: EF_norms length == K (not K + C_cols)", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 5L,
                   verbose = FALSE, cohort_id = .f$cohort2)
   )
@@ -86,7 +86,7 @@ run_test("YFBCohort-T4: EF_norms length == K (not K + C_cols)", {
 # ---------------------------------------------------------------------------
 run_test("YFBCohort-T5: nlevels(cohort_id)==1 returns no cohort fields", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 5L,
                   verbose = FALSE,
                   cohort_id = rep("A", .f$n))
@@ -101,7 +101,7 @@ run_test("YFBCohort-T5: nlevels(cohort_id)==1 returns no cohort fields", {
 # ---------------------------------------------------------------------------
 run_test("YFBCohort-T6: ELBO is finite for two-cohort fit", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 8L,
                   verbose = FALSE, cohort_id = .f$cohort2)
   )
@@ -116,7 +116,7 @@ run_test("YFBCohort-T6: ELBO is finite for two-cohort fit", {
 # ---------------------------------------------------------------------------
 run_test("YFBCohort-T7: three-cohort fit: EF_cohort 2 cols; EF_norms K", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 5L,
                   verbose = FALSE, cohort_id = .f$cohort3)
   )
@@ -131,7 +131,7 @@ run_test("YFBCohort-T7: three-cohort fit: EF_cohort 2 cols; EF_norms K", {
 # ---------------------------------------------------------------------------
 run_test("YFBCohort-T8: EF2_cohort >= EF_cohort^2 everywhere", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 5L,
                   verbose = FALSE, cohort_id = .f$cohort2)
   )
@@ -146,12 +146,12 @@ run_test("YFBCohort-T8: EF2_cohort >= EF_cohort^2 everywhere", {
 # ---------------------------------------------------------------------------
 run_test("YFBCohort-T9: small sigma_F_cohort shrinks EF_cohort toward zero", {
   fit_tight <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 5L, verbose = FALSE,
                   cohort_id = .f$cohort2, sigma_F_cohort = 1e-4)
   )
   fit_loose <- suppressMessages(
-    fit_cox_on_yf(.f$Y, .f$time, .f$status,
+    fit_ssbmf_yfb(.f$Y, .f$time, .f$status,
                   K = .f$K, max_iter = 5L, verbose = FALSE,
                   cohort_id = .f$cohort2, sigma_F_cohort = 10.0)
   )
@@ -165,7 +165,7 @@ run_test("YFBCohort-T9: small sigma_F_cohort shrinks EF_cohort toward zero", {
 # Integration tests for beta_cohort_id (Stage 2, DECISIONS.md 2026-09-04) --
 # COHORT-SPECIFIC SURVIVAL COEFFICIENTS, a distinct extension from cohort_id
 # above (genomics offsets in L/F). Separate fixture, separate section: these
-# tests exercise fit_cox_on_yf()'s beta_cohort_id argument end-to-end,
+# tests exercise fit_ssbmf_yfb()'s beta_cohort_id argument end-to-end,
 # including predict_cox_on_yf()'s cohort_id_test path. Unit tests for the
 # underlying arithmetic (update_beta_cohort_k/_all, compute_pooled_beta) live
 # in tests/test_update_beta_cohort.R; these are the integration layer.
@@ -189,12 +189,12 @@ local({
 # ---------------------------------------------------------------------------
 run_test("YFBBetaCohort-T1: beta_cohort_id=NULL reproduces the fit BIT-FOR-BIT", {
   fit_ref <- suppressMessages(
-    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 15L,
+    fit_ssbmf_yfb(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 15L,
                   prior_beta = "normal", alpha = 0.5, sign_correction = TRUE,
                   verbose = FALSE)
   )
   fit_null <- suppressMessages(
-    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 15L,
+    fit_ssbmf_yfb(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 15L,
                   prior_beta = "normal", alpha = 0.5, sign_correction = TRUE,
                   verbose = FALSE, beta_cohort_id = NULL)
   )
@@ -210,7 +210,7 @@ run_test("YFBBetaCohort-T1: beta_cohort_id=NULL reproduces the fit BIT-FOR-BIT",
 # ---------------------------------------------------------------------------
 run_test("YFBBetaCohort-T2: beta_cohort_id gives a K x C EBeta and the expected extra fields", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
+    fit_ssbmf_yfb(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
                   verbose = FALSE, beta_cohort_id = .fb$cohort2)
   )
   assert_true(is.matrix(fit$EBeta), msg = "EBeta should be a matrix under beta_cohort_id")
@@ -239,7 +239,7 @@ run_test("YFBBetaCohort-T3: recovers opposite-signed survival signal across two 
   status2 <- rbinom(n2, 1, 0.85)
 
   fit <- suppressMessages(
-    fit_cox_on_yf(Y2, time2, status2, K = K2, max_iter = 60L, tol = 1e-4,
+    fit_ssbmf_yfb(Y2, time2, status2, K = K2, max_iter = 60L, tol = 1e-4,
                   prior_beta = "normal", alpha = 1.0, sign_correction = TRUE,
                   verbose = FALSE, beta_cohort_id = cohort2)
   )
@@ -257,7 +257,7 @@ run_test("YFBBetaCohort-T3: recovers opposite-signed survival signal across two 
 # ---------------------------------------------------------------------------
 run_test("YFBBetaCohort-T4: predict_cox_on_yf errors loudly on an unseen cohort level", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
+    fit_ssbmf_yfb(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
                   verbose = FALSE, beta_cohort_id = .fb$cohort2)
   )
   err <- tryCatch({
@@ -270,7 +270,7 @@ run_test("YFBBetaCohort-T4: predict_cox_on_yf errors loudly on an unseen cohort 
 
 run_test("YFBBetaCohort-T5: predict_cox_on_yf falls back to EBeta_pooled with cohort_id_test=NULL", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
+    fit_ssbmf_yfb(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
                   verbose = FALSE, beta_cohort_id = .fb$cohort2)
   )
   pred <- predict_cox_on_yf(.fb$Y[1:10, , drop = FALSE], fit$EF, fit$EBeta_pooled,
@@ -289,7 +289,7 @@ run_test("YFBBetaCohort-T5: predict_cox_on_yf falls back to EBeta_pooled with co
 
 run_test("YFBBetaCohort-T6: predict_cox_on_yf scores matched cohort levels correctly by name", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
+    fit_ssbmf_yfb(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
                   verbose = FALSE, beta_cohort_id = .fb$cohort2)
   )
   pred <- predict_cox_on_yf(.fb$Y, fit$EF, fit$EBeta, EF_norms = fit$EF_norms,
@@ -307,7 +307,7 @@ run_test("YFBBetaCohort-T6: predict_cox_on_yf scores matched cohort levels corre
 # invariance (review finding, Step 3, fixed 2026-09-04 -- see DECISIONS.md).
 #
 # Fixture below (seed=18, with a short sample()-selected data-generating
-# regime) was found by search specifically because it makes fit_cox_on_yf()'s
+# regime) was found by search specifically because it makes fit_ssbmf_yfb()'s
 # Phase C sign-check trigger a flip (a genuine, if rare, event -- most random
 # data converges beta to the correct sign on its own since beta itself is
 # unconstrained). A flip is REQUIRED to exercise this fix: without one,
@@ -335,11 +335,11 @@ local({
 
 run_test("YFBBetaCohort-T7: this fixture's Phase C sign check actually flips (fixture validity check)", {
   fit_true  <- suppressMessages(
-    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+    fit_ssbmf_yfb(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
                   verbose = FALSE, sign_correction = TRUE, beta_cohort_id = .pc$cohort2)
   )
   fit_false <- suppressMessages(
-    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+    fit_ssbmf_yfb(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
                   verbose = FALSE, sign_correction = FALSE, beta_cohort_id = .pc$cohort2)
   )
   assert_near(fit_true$EBeta, -fit_false$EBeta, tol = 1e-9,
@@ -366,11 +366,11 @@ run_test("YFBBetaCohort-T8: EBeta_pooled tracks EBeta's final orientation exactl
   # regardless of sign_correction" -- it's "EBeta_pooled is negated exactly
   # when EBeta is negated," i.e. it tracks the SAME final global sign.
   fit_true  <- suppressMessages(
-    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+    fit_ssbmf_yfb(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
                   verbose = FALSE, sign_correction = TRUE, beta_cohort_id = .pc$cohort2)
   )
   fit_false <- suppressMessages(
-    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+    fit_ssbmf_yfb(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
                   verbose = FALSE, sign_correction = FALSE, beta_cohort_id = .pc$cohort2)
   )
   # T7 already confirms this fixture makes Phase C flip (fit_true$EBeta ==
@@ -385,11 +385,11 @@ run_test("YFBBetaCohort-T9: EBeta2 is unchanged by a Phase C sign flip (E[beta^2
   # just the squared point estimate, silently discarding the posterior
   # variance. A sign flip must leave EBeta2 exactly as it was.
   fit_true  <- suppressMessages(
-    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+    fit_ssbmf_yfb(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
                   verbose = FALSE, sign_correction = TRUE, beta_cohort_id = .pc$cohort2)
   )
   fit_false <- suppressMessages(
-    fit_cox_on_yf(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
+    fit_ssbmf_yfb(.pc$Y, .pc$time, .pc$status, K = .pc$K, max_iter = .pc$max_iter,
                   verbose = FALSE, sign_correction = FALSE, beta_cohort_id = .pc$cohort2)
   )
   assert_near(fit_true$EBeta2, fit_false$EBeta2, tol = 1e-12,

@@ -1,8 +1,8 @@
 # ============================================================
 # Script:  warmstart_from_fit.R
 # Purpose: PVE-ranked column extraction for warm-starting a smaller-K refit
-#          from an already-converged, larger-K fit (fit_cox_on_yf() or
-#          fit_supervised_mf_modular() output).
+#          from an already-converged, larger-K fit (fit_ssbmf_yfb() or
+#          fit_ssbmf_lb() output).
 # Author: Andrew Walther
 # Created: 2026-07-13
 # Dependencies: none (operates on the returned fit list only)
@@ -21,10 +21,10 @@
 #'
 #' PVE for factor k is `sum(EL[,k]^2) * sum(EF[,k]^2) / ||Y||_F^2`, the same
 #' quantity CAVI itself tracks each iteration in `fit$history$factor_pve`
-#' (see code/fit_cox_on_yf.R). This function reads the LAST row of that
+#' (see code/fit_ssbmf_yfb.R). This function reads the LAST row of that
 #' matrix (the converged fit's final ranking), not the first.
 #'
-#' @param fit      A fit_cox_on_yf() or fit_supervised_mf_modular() result
+#' @param fit      A fit_ssbmf_yfb() or fit_ssbmf_lb() result
 #'                 list; must contain `$EL` (n x K_source), `$EF`
 #'                 (p x K_source), and `$history$factor_pve`
 #'                 (iterations x K_source matrix).
@@ -33,7 +33,7 @@
 #'
 #' @return list(EL_init = n x K_target matrix, EF_init = p x K_target matrix),
 #'   columns ordered by descending final-iteration PVE (most-explanatory
-#'   first). Pass directly as `fit_cox_on_yf(..., EL_init = out$EL_init,
+#'   first). Pass directly as `fit_ssbmf_yfb(..., EL_init = out$EL_init,
 #'   EF_init = out$EF_init)`.
 extract_top_k_by_pve <- function(fit, K_target) {
   K_source <- ncol(fit$EL)

@@ -20,9 +20,9 @@ suppressPackageStartupMessages({
 # Resolve repo root the same way run_ssbmf_benchmark.R does
 if (Sys.getenv("REPO_ROOT") != "") {
   setwd(Sys.getenv("REPO_ROOT"))
-} else if (file.exists("code/fit_modular.R")) {
+} else if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 

@@ -2,8 +2,8 @@
 # tests/test_normalization.R
 #
 # TDD test suite for Phase 1a objective normalization: the `norm_convention`
-# argument to fit_supervised_mf_modular() (fit_modular.R) and fit_cox_on_yf()
-# (fit_cox_on_yf.R). Verifies the divisors are computed correctly and threaded
+# argument to fit_ssbmf_lb() (fit_ssbmf_lb.R) and fit_ssbmf_yfb()
+# (fit_ssbmf_yfb.R). Verifies the divisors are computed correctly and threaded
 # through to the returned fit object, for both supported conventions:
 #   "per_p" (default) -- genomics_divisor = 1, survival_divisor = 1/p
 #                         (boosts survival by p; genomics left at its original
@@ -16,7 +16,7 @@
 # NOTE: requires ebnm and survival packages.
 # =============================================================================
 
-cat("=== T_conv: norm_convention threading (fit_supervised_mf_modular) ===\n")
+cat("=== T_conv: norm_convention threading (fit_ssbmf_lb) ===\n")
 
 run_test("T_conv.1: norm_convention='per_p' sets genomics_divisor=1, survival_divisor=1/p", {
   set.seed(2001); n <- 20; p <- 30; K <- 2
@@ -24,7 +24,7 @@ run_test("T_conv.1: norm_convention='per_p' sets genomics_divisor=1, survival_di
   time   <- rexp(n, rate = 0.05)
   status <- rbinom(n, 1, 0.7)
 
-  res <- fit_supervised_mf_modular(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
+  res <- fit_ssbmf_lb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
                                    norm_convention = "per_p", verbose = FALSE,
                                    sign_correction = FALSE)
   assert_near(res$genomics_divisor, 1,   tol = 1e-10, msg = "per_p: genomics_divisor should equal 1 (unchanged)")
@@ -37,7 +37,7 @@ run_test("T_conv.2: norm_convention='np_n' sets genomics_divisor=n*p, survival_d
   time   <- rexp(n, rate = 0.05)
   status <- rbinom(n, 1, 0.7)
 
-  res <- fit_supervised_mf_modular(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
+  res <- fit_ssbmf_lb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
                                    norm_convention = "np_n", verbose = FALSE,
                                    sign_correction = FALSE)
   assert_near(res$genomics_divisor, n * p, tol = 1e-10, msg = "np_n: genomics_divisor should equal n*p")
@@ -50,7 +50,7 @@ run_test("T_conv.3: norm_convention defaults to 'per_p'", {
   time   <- rexp(n, rate = 0.05)
   status <- rbinom(n, 1, 0.7)
 
-  res <- fit_supervised_mf_modular(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
+  res <- fit_ssbmf_lb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
                                    verbose = FALSE, sign_correction = FALSE)
   assert_near(res$genomics_divisor, 1,   tol = 1e-10, msg = "default should be per_p (genomics_divisor=1)")
   assert_near(res$survival_divisor, 1/p, tol = 1e-10, msg = "default should be per_p (survival_divisor=1/p)")
@@ -69,10 +69,10 @@ run_test("T_conv.3b: alpha=0 under per_p (genomics_divisor=1) matches an explici
   status <- rbinom(n, 1, 0.7)
 
   set.seed(5)
-  res_perp <- fit_supervised_mf_modular(Y, time, status, K = K, max_iter = 10, tol = -1,
+  res_perp <- fit_ssbmf_lb(Y, time, status, K = K, max_iter = 10, tol = -1,
                                         alpha = 0, norm_convention = "per_p",
                                         verbose = FALSE, sign_correction = FALSE)
-  # fit_supervised_mf_modular's pre-Phase-1a default behavior at alpha=0 is
+  # fit_ssbmf_lb's pre-Phase-1a default behavior at alpha=0 is
   # exactly genomics_divisor=1, which "per_p" already gives -- assert the
   # result is finite and non-degenerate (not collapsed to zero).
   assert_finite(res_perp$EL, "alpha=0 per_p: EL should be finite")
@@ -81,7 +81,7 @@ run_test("T_conv.3b: alpha=0 under per_p (genomics_divisor=1) matches an explici
               msg = "alpha=0: EBeta should be exactly 0 regardless of convention")
 })
 
-cat("\n=== T_conv: norm_convention threading (fit_cox_on_yf) ===\n")
+cat("\n=== T_conv: norm_convention threading (fit_ssbmf_yfb) ===\n")
 
 run_test("T_conv.4: YFB norm_convention='per_p' sets genomics_divisor=1, survival_divisor=1/p", {
   set.seed(2004); n <- 20; p <- 30; K <- 2
@@ -89,7 +89,7 @@ run_test("T_conv.4: YFB norm_convention='per_p' sets genomics_divisor=1, surviva
   time   <- rexp(n, rate = 0.05)
   status <- rbinom(n, 1, 0.7)
 
-  res <- fit_cox_on_yf(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
+  res <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
                        norm_convention = "per_p", verbose = FALSE,
                        sign_correction = FALSE)
   assert_near(res$genomics_divisor, 1,   tol = 1e-10, msg = "YFB per_p: genomics_divisor should equal 1")
@@ -102,7 +102,7 @@ run_test("T_conv.5: YFB norm_convention='np_n' sets genomics_divisor=n*p, surviv
   time   <- rexp(n, rate = 0.05)
   status <- rbinom(n, 1, 0.7)
 
-  res <- fit_cox_on_yf(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
+  res <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
                        norm_convention = "np_n", verbose = FALSE,
                        sign_correction = FALSE)
   assert_near(res$genomics_divisor, n * p, tol = 1e-10, msg = "YFB np_n: genomics_divisor should equal n*p")
@@ -126,11 +126,11 @@ run_test("T_conv.6: YFB EL/EF are identical under per_p vs np_n -- L/F are pure-
   # (convention-dependent) trajectory would otherwise change WHEN each run
   # stops, confounding the comparison even though EL/EF math never uses EBeta.
   set.seed(1)
-  res_perp <- fit_cox_on_yf(Y, time, status, K = K, max_iter = 6, tol = -1,
+  res_perp <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 6, tol = -1,
                             norm_convention = "per_p", verbose = FALSE,
                             sign_correction = FALSE)
   set.seed(1)
-  res_npn  <- fit_cox_on_yf(Y, time, status, K = K, max_iter = 6, tol = -1,
+  res_npn  <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 6, tol = -1,
                             norm_convention = "np_n", verbose = FALSE,
                             sign_correction = FALSE)
 
@@ -157,7 +157,7 @@ run_test("T_conv.7: LB per_p (boost-survival) avoids the L/F/beta collapse seen 
   status <- as.integer(time < stats::quantile(time, 0.7))
 
   set.seed(11)
-  res <- fit_supervised_mf_modular(Y, time, status, K = K_true, max_iter = 15, tol = 1e-6,
+  res <- fit_ssbmf_lb(Y, time, status, K = K_true, max_iter = 15, tol = 1e-6,
                                    alpha = 0.5, norm_convention = "per_p",
                                    verbose = FALSE, sign_correction = FALSE)
 
@@ -196,10 +196,10 @@ run_test("T_conv.8: YFB beta_divisor is 1 regardless of norm_convention when boo
   # the computed divisor avoids that unrelated confound entirely.
   d <- .beta_boost_fixture(5001)
 
-  res_perp <- fit_cox_on_yf(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
+  res_perp <- fit_ssbmf_yfb(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
                             norm_convention = "per_p", verbose = FALSE,
                             sign_correction = FALSE)
-  res_npn  <- fit_cox_on_yf(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
+  res_npn  <- fit_ssbmf_yfb(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
                             norm_convention = "np_n", verbose = FALSE,
                             sign_correction = FALSE)
 
@@ -210,7 +210,7 @@ run_test("T_conv.8: YFB beta_divisor is 1 regardless of norm_convention when boo
 run_test("T_conv.9: YFB boost_beta=TRUE sets beta_divisor to match survival_divisor", {
   d <- .beta_boost_fixture(5002)
 
-  res <- fit_cox_on_yf(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
+  res <- fit_ssbmf_yfb(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
                        norm_convention = "per_p", boost_beta = TRUE,
                        verbose = FALSE, sign_correction = FALSE)
 
@@ -224,11 +224,11 @@ run_test("T_conv.10: LB boost_beta defaults to FALSE and threads through the bur
   d <- .beta_boost_fixture(5003, n = 60, p = 80, K_true = 2)
 
   set.seed(1)
-  res_perp <- fit_supervised_mf_modular(d$Y, d$time, d$status, K = 2, max_iter = 10, tol = -1,
+  res_perp <- fit_ssbmf_lb(d$Y, d$time, d$status, K = 2, max_iter = 10, tol = -1,
                                         norm_convention = "per_p", verbose = FALSE,
                                         sign_correction = FALSE)
   set.seed(1)
-  res_npn  <- fit_supervised_mf_modular(d$Y, d$time, d$status, K = 2, max_iter = 10, tol = -1,
+  res_npn  <- fit_ssbmf_lb(d$Y, d$time, d$status, K = 2, max_iter = 10, tol = -1,
                                         norm_convention = "np_n", verbose = FALSE,
                                         sign_correction = FALSE)
 

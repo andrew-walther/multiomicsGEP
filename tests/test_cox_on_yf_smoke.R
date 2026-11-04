@@ -11,16 +11,16 @@
 #
 # Setup: n=120, p=200, K=5, 1 truly-active beta, SVD init, alpha_F=0
 #
-# This test FAILS until code/fit_cox_on_yf.R is created and exports
-# fit_cox_on_yf().  Run standalone with:
+# This test FAILS until code/fit_ssbmf_yfb.R is created and exports
+# fit_ssbmf_yfb().  Run standalone with:
 #   Rscript tests/test_cox_on_yf_smoke.R
 # =============================================================================
 
 source("tests/test_helpers.R")
-# fit_cox_on_yf.R has a DATA_MODE runner block that errors when real_Y is NULL.
+# fit_ssbmf_yfb.R has a DATA_MODE runner block that errors when real_Y is NULL.
 # The function definition completes before the runner fires, so tryCatch is safe.
 suppressMessages(tryCatch(
-  source("code/fit_cox_on_yf.R"),
+  source("code/fit_ssbmf_yfb.R"),
   error = function(e) invisible(NULL)
 ))
 
@@ -50,7 +50,7 @@ status     <- as.integer(raw_times <= cens_times)
 # ---------------------------------------------------------------------------
 # Fit
 # ---------------------------------------------------------------------------
-fit <- fit_cox_on_yf(Y, time, status,
+fit <- fit_ssbmf_yfb(Y, time, status,
                      K        = K,
                      max_iter = 30,
                      N_burnin = 5,
@@ -66,7 +66,7 @@ elbo <- fit$history$elbo_full
 # the natural EBeta is ~0.003-0.008.  Threshold 1e-3 confirms non-zero without
 # requiring knowledge of the ZF scale at test time.
 # ---------------------------------------------------------------------------
-run_test("S1: max|EBeta| > 1e-3 after fit_cox_on_yf() (clearly non-zero)", {
+run_test("S1: max|EBeta| > 1e-3 after fit_ssbmf_yfb() (clearly non-zero)", {
   assert_true(max(abs(fit$EBeta)) > 1e-3,
               msg = sprintf("max|EBeta|=%.6f, expected > 1e-3", max(abs(fit$EBeta))))
 })

@@ -8,9 +8,10 @@ Hyperparameters are read from `config/globals.yml`.
 
 | File | Contents |
 |------|----------|
-| `fit_cox_on_yf.R` | `fit_cox_on_yf()`: CAVI fit of the YFB model (η = (YF)β), the recommended configuration. Optional cohort offsets, stratified baseline hazard, cohort-specific β and ELBO-based program pruning |
-| `fit_modular.R` | `fit_supervised_mf_modular()`: CAVI fit of the LB model (η = Lβ) |
-| `fit_modular_multistart.R` | Multiple-initialization wrapper for the LB fit |
+| `fit_ssbmf_yfb.R` | `fit_ssbmf_yfb()`: CAVI fit of the YFB model (η = (YF)β), the recommended configuration. Optional cohort offsets, stratified baseline hazard, cohort-specific β and ELBO-based program pruning |
+| `fit_ssbmf_lb.R` | `fit_ssbmf_lb()`: CAVI fit of the LB model (η = Lβ) |
+| `fit_ssbmf_multistart.R` | Multiple-initialization wrapper for the LB fit |
+| `fit_cox_on_yf.R`, `fit_modular.R`, `fit_modular_multistart.R` | Aliases kept for historical scripts: each sources the renamed file and binds the old function name (`fit_cox_on_yf()`, `fit_supervised_mf_modular()` and the multistart wrappers). New code should not use them |
 | `deflation_init.R`, `warmstart_from_fit.R` | Initialization: deflation start, warm start of a smaller-K refit |
 
 `source()` a fitter to load its functions. Each fitter also ends in a runner
@@ -98,8 +99,8 @@ for the evaluated configurations and unresolved criteria.
 
 | Family | Fit and prediction | Dedicated updates |
 |---|---|---|
-| LB | `fit_modular.R`, `fit_modular_multistart.R`, `predict.R` | `update_L.R` and `update_F.R`. YFB also sources `update_L.R` for the reconstruction residual helper. |
-| Historical YFB | `fit_cox_on_yf.R`, `predict_cox_on_yf.R` | `update_L_surv_YFB.R`, `update_F_surv_YFB.R`, `update_beta_cohort.R` |
+| LB | `fit_ssbmf_lb.R`, `fit_ssbmf_multistart.R`, `predict.R` | `update_L.R` and `update_F.R`. YFB also sources `update_L.R` for the reconstruction residual helper. |
+| Historical YFB | `fit_ssbmf_yfb.R`, `predict_cox_on_yf.R` | `update_L_surv_YFB.R`, `update_F_surv_YFB.R`, `update_beta_cohort.R` |
 | Experimental YFB | `fit_yfb_supervised.R` | `yfb_exponential_stable.R`, `yfb_diagnostic_controls.R` and the coupled loading sweep |
 | Multimodal YFB | `fit_multimodal_yfb.R`, `predict_multimodal_yfb.R` | `preprocess_multimodal_yfb.R`, `multimodal_yfb_helpers.R`, `multimodal_yfb_updates.R`, `multimodal_yfb_sweep.cpp` |
 

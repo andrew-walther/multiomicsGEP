@@ -106,7 +106,7 @@ compute_z_no_k <- function(z, EL, EBeta, k) {
 #'                     supplied, the posterior is computed under this prior
 #'                     without re-estimating it (ebnm fix_g = TRUE). Used for a
 #'                     beta prior shared across programs and refit after each
-#'                     sweep (fit_cox_on_yf(beta_prior_mode = "shared")).
+#'                     sweep (fit_ssbmf_yfb(beta_prior_mode = "shared")).
 #'
 #' @return Named list:
 #'   $mean        -- posterior mean E_q[beta_k]

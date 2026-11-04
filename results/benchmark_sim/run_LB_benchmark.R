@@ -6,7 +6,7 @@
 #               Replaces run_cluster_a_smoke.R + run_cluster_a_external.R.
 # Author: Andrew Walther
 # Created:      2026-05-04
-# Dependencies: code/fit_modular.R, code/predict.R, code/train_test_split.R,
+# Dependencies: code/fit_ssbmf_lb.R, code/predict.R, code/train_test_split.R,
 #               code/preprocess_desurv.R, results/benchmark_sim/benchmark_helpers.R
 # Usage:        Rscript results/benchmark_sim/run_LB_benchmark.R [--quick] [--train-mode merged|tcga_only|cptac_only]
 # ============================================================
@@ -26,9 +26,9 @@ RUN_SYNTHETIC <- (TRAIN_MODE == "merged")
 
 if (Sys.getenv("REPO_ROOT") != "") {
   setwd(Sys.getenv("REPO_ROOT"))
-} else if (file.exists("code/fit_modular.R")) {
+} else if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -40,8 +40,8 @@ suppressPackageStartupMessages({
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")  # PDAC constants + load_pdac_raw + generate_synthetic_benchmark_data
-tryCatch(source("code/fit_modular.R"), error = function(e) invisible(NULL))  # fit_supervised_mf_modular
-source("code/fit_modular_multistart.R")  # fit_supervised_mf_modular_multistart
+tryCatch(source("code/fit_ssbmf_lb.R"), error = function(e) invisible(NULL))  # fit_ssbmf_lb
+source("code/fit_ssbmf_multistart.R")  # fit_ssbmf_lb_multistart
 source("code/predict.R")
 source("code/train_test_split.R")
 source("code/preprocess_desurv.R")
@@ -107,7 +107,7 @@ if (RUN_SYNTHETIC) {
 
   for (pr in PRIORS) {
     cat(sprintf("    Fitting LB synthetic — prior_beta='%s' ...\n", pr))
-    fit <- fit_supervised_mf_modular(
+    fit <- fit_ssbmf_lb(
       Y_tr, t_tr, s_tr,
       K = K_SYN, max_iter = MAX_ITER, tol = cfg$cavi$tol,
       prior_LF = "point_exponential", prior_beta = pr,
@@ -229,7 +229,7 @@ if (!pdac_available) {
       normalize_AB = NORM_AB
     )
     if (MULTISTART) {
-      ms <- do.call(fit_supervised_mf_modular_multistart,
+      ms <- do.call(fit_ssbmf_lb_multistart,
                     c(fit_args, list(n_init = N_INIT,
                                      init_seed_base = cfg$evaluation$multi_init_seed_base,
                                      beta_threshold = BETA_THRESH)))
@@ -242,7 +242,7 @@ if (!pdac_available) {
       ms$restarts$prior_beta <- pr
       restart_rows[[length(restart_rows) + 1]] <- ms$restarts
     } else {
-      fit <- do.call(fit_supervised_mf_modular, c(fit_args, list(verbose = TRUE)))
+      fit <- do.call(fit_ssbmf_lb, c(fit_args, list(verbose = TRUE)))
     }
     fit_lb[[pr]] <- list(fit = fit, train_genes = train_genes)
 

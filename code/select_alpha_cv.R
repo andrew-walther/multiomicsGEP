@@ -5,7 +5,7 @@
 #          either max-C-index or 1-SE rule selection.
 # Author: Andrew Walther
 # Created: 2026-04-23
-# Dependencies: code/fit_modular.R, code/predict.R, code/train_test_split.R
+# Dependencies: code/fit_ssbmf_lb.R, code/predict.R, code/train_test_split.R
 #               must be sourced first.
 # ============================================================
 
@@ -32,7 +32,7 @@
 #' @param K_max      integer >= 1: number of latent factors to fit in each fold
 #' @param use_1se    logical: use 1-SE rule (default TRUE)
 #' @param seed       integer random seed used for fold creation
-#' @param ...        additional arguments passed to fit_supervised_mf_modular()
+#' @param ...        additional arguments passed to fit_ssbmf_lb()
 #'
 #' @return Named list:
 #'   $alpha_opt      selected alpha
@@ -41,7 +41,7 @@
 #'   $selection_rule character: "1se" or "max"
 #'
 #' @examples
-#' # Requires fit_modular.R, predict.R, and train_test_split.R to be sourced first.
+#' # Requires fit_ssbmf_lb.R, predict.R, and train_test_split.R to be sourced first.
 #' # res <- select_alpha_cv(Y, time, status, alpha_grid = c(0.1, 0.5, 0.9), n_folds = 3, K_max = 3)
 select_alpha_cv <- function(Y, time, status,
                             alpha_grid = seq(0.1, 0.9, by = 0.1),
@@ -52,8 +52,8 @@ select_alpha_cv <- function(Y, time, status,
                             verbose    = FALSE,
                             ...) {
 
-  if (!exists("fit_supervised_mf_modular", mode = "function"))
-    stop("fit_supervised_mf_modular() must be sourced before select_alpha_cv().")
+  if (!exists("fit_ssbmf_lb", mode = "function"))
+    stop("fit_ssbmf_lb() must be sourced before select_alpha_cv().")
   if (!exists("predict_supervised_mf", mode = "function"))
     stop("predict_supervised_mf() must be sourced before select_alpha_cv().")
   if (!exists("create_stratified_folds", mode = "function"))
@@ -91,7 +91,7 @@ select_alpha_cv <- function(Y, time, status,
       test_idx  <- fold_obj$folds[[fold_id]]
       train_idx <- setdiff(seq_len(n), test_idx)
 
-      fit <- fit_supervised_mf_modular(
+      fit <- fit_ssbmf_lb(
         Y[train_idx, , drop = FALSE],
         time[train_idx],
         status[train_idx],

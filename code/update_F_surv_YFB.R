@@ -40,8 +40,8 @@
 #
 # DEPENDENCIES:
 #   ebnm  (CRAN)
-#   compute_R_k() from update_L.R (sourced by fit_cox_on_yf.R)
-#   compute_z_no_k() from update_beta.R (sourced by fit_cox_on_yf.R)
+#   compute_R_k() from update_L.R (sourced by fit_ssbmf_yfb.R)
+#   compute_z_no_k() from update_beta.R (sourced by fit_ssbmf_yfb.R)
 # =============================================================================
 
 suppressPackageStartupMessages(library(ebnm))

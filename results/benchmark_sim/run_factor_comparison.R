@@ -28,7 +28,7 @@
 # Usage:   Rscript results/benchmark_sim/run_factor_comparison.R
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(ggplot2) })

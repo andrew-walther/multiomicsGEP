@@ -10,7 +10,7 @@ source("code/simulate_multimodal_yfb.R")
 source("code/fit_multimodal_yfb.R")
 source("code/predict_multimodal_yfb.R")
 suppressMessages(tryCatch(
-  source("code/fit_cox_on_yf.R"),
+  source("code/fit_ssbmf_yfb.R"),
   error = function(e) invisible(NULL)
 ))
 source("code/predict_cox_on_yf.R")
@@ -139,7 +139,7 @@ predict_multimodal_yfb_stacked_risk_cox <- function(fit, Y) {
 fit_multimodal_yfb_single_modality <- function(Y, time, event, modality, K,
                                                control = list()) {
   if (!modality %in% names(Y)) stop("modality must be present in Y.")
-  fit <- fit_cox_on_yf(
+  fit <- fit_ssbmf_yfb(
     Y[[modality]], time, event, K = K,
     max_iter = control$max_outer %||% 100L, tol = control$tol %||% 1e-5,
     prior_LF = "point_exponential", prior_beta = "normal", verbose = FALSE

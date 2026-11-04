@@ -13,11 +13,11 @@ if (!exists("run_test")) source("tests/test_helpers.R")
 suppressPackageStartupMessages({
   library(ebnm); library(survival)
 })
-if (!exists("fit_cox_on_yf")) {
+if (!exists("fit_ssbmf_yfb")) {
   source("code/update_beta.R"); source("code/update_L_surv_YFB.R")
   source("code/update_F_surv_YFB.R"); source("code/update_tau.R")
   source("code/compute_elbo.R")
-  suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL)))
+  suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
 }
 if (!exists("predict_cox_on_yf")) source("code/predict_cox_on_yf.R")
 if (!exists("create_stratified_folds")) source("code/train_test_split.R")
@@ -91,9 +91,9 @@ run_test("CVLL-T5: leakage guard -- c_train is reproducible from TRAINING rows o
   fold_id <- 1
   test_idx  <- fold_obj$folds[[fold_id]]
   train_idx <- setdiff(seq_len(n), test_idx)
-  set.seed(3031)  # fit_cox_on_yf's SVD init is deterministic given Y, so no seed needed,
+  set.seed(3031)  # fit_ssbmf_yfb's SVD init is deterministic given Y, so no seed needed,
                    # but keep this for any future stochastic init_method default change.
-  fit <- fit_cox_on_yf(Y[train_idx, , drop = FALSE], time[train_idx], status[train_idx],
+  fit <- fit_ssbmf_yfb(Y[train_idx, , drop = FALSE], time[train_idx], status[train_idx],
                         K = K_true, max_iter = 20, tol = 1e-3,
                         prior_LF = "point_exponential", prior_beta = "normal", alpha = 0.5,
                         sign_correction = FALSE, verbose = FALSE)
@@ -288,10 +288,10 @@ run_test("CVLL-T19: strata_id is passed through to held-out scoring (isolated fr
   fold_obj  <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
   test_idx  <- fold_obj$folds[[1]]
   train_idx <- setdiff(seq_len(n), test_idx)
-  set.seed(42L)  # cv_survival_loglik() does not itself seed the fit; fit_cox_on_yf's
+  set.seed(42L)  # cv_survival_loglik() does not itself seed the fit; fit_ssbmf_yfb's
                  # CAVI loop is deterministic (SVD init, no RNG), so this is a no-op
                  # safeguard for determinism, matching how other tests in this file fit directly.
-  fit <- suppressMessages(fit_cox_on_yf(
+  fit <- suppressMessages(fit_ssbmf_yfb(
     Y[train_idx, , drop = FALSE], time[train_idx], status[train_idx], K = K_true,
     max_iter = 15, tol = 1e-3, sign_correction = FALSE, verbose = FALSE,
     strata_id = strata3[train_idx]

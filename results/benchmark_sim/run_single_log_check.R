@@ -24,7 +24,7 @@ source("results/benchmark_sim/benchmark_helpers.R")
 source("code/preprocess_desurv.R")
 source("code/train_test_split.R")
 # The legacy source defines functions before its demonstration runner stops.
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) {
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) {
   if (conditionMessage(e) != "!is.null(real_Y) is not TRUE") stop(e)
 })
 source("code/predict_cox_on_yf.R")
@@ -93,7 +93,7 @@ for (arm in names(prep)) for (fold in 0:cfg$cavi$n_cv_folds) {
   started <- proc.time()[3]
   set.seed(42L)
   ctl <- controls; ctl$sign_correction <- fold == 0L
-  fit <- do.call(fit_cox_on_yf, c(list(Y = Y[tr, , drop = FALSE], time = time[tr],
+  fit <- do.call(fit_ssbmf_yfb, c(list(Y = Y[tr, , drop = FALSE], time = time[tr],
                                       status = status[tr]), ctl))
   eta_tr <- predict_cox_on_yf(Y[tr, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
   c_tr <- harrell_c(eta_tr, time[tr], status[tr])

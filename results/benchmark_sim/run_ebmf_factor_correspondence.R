@@ -30,7 +30,7 @@
 #           from a prior run_desurv_comparison.R run)
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 source("code/pathway_enrichment.R")

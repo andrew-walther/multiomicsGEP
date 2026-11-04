@@ -40,7 +40,7 @@ load_comparator_code <- function() {
     if (is.call(e) && identical(e[[1]],as.name("<-")) && as.character(e[[2]]) %in% wanted)
       eval(e,.GlobalEnv)
   load_code()
-  if (!exists("fit_cox_on_yf")) stop("Fitter definitions unavailable")
+  if (!exists("fit_ssbmf_yfb")) stop("Fitter definitions unavailable")
   assign("N_TRAIN",400L,.GlobalEnv);assign("BETA3",3.3,.GlobalEnv)
 }
 
@@ -197,7 +197,7 @@ run_comparator_dataset <- function(seed,noise) {
   },7L)
   rows[[length(rows)+1L]] <- comparator_try_arm("supervised",{
     set.seed(seed)
-    fit <- fit_cox_on_yf(tb$Ytr,tb$ttr,tb$str,K=7L,max_iter=cfg$cavi$max_iter,
+    fit <- fit_ssbmf_yfb(tb$Ytr,tb$ttr,tb$str,K=7L,max_iter=cfg$cavi$max_iter,
       tol=cfg$cavi$tol,prior_LF="point_laplace",canonicalize=TRUE,w_S=1,
       init_supervised=TRUE,beta_prior_mode="shared",prior_beta="point_laplace",
       beta_warmup=10L,verbose=FALSE,trace_supervision=TRUE)

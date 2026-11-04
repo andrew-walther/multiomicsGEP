@@ -32,9 +32,9 @@ SEED <- 42L
 seed_flag <- which(args == "--seed")
 if (length(seed_flag) > 0) SEED <- as.integer(args[seed_flag + 1])
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -49,8 +49,8 @@ source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
 source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 
 cat("============================================================\n")
 cat(" Stage 1 Synthetic Validation — Cohort Indicator Extension\n")
@@ -209,7 +209,7 @@ results <- list()
 cat("--- Fitting LB_base ---\n")
 set.seed(SEED + 1L)
 fit_lb_base <- suppressMessages(
-  fit_supervised_mf_modular(Y_train, t_train, s_train,
+  fit_ssbmf_lb(Y_train, t_train, s_train,
                             K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
                             prior_beta = PRIOR_BETA,
                             verbose = TRUE, cohort_id = NULL)
@@ -225,7 +225,7 @@ cat(sprintf("  C-ext = %.3f | factor recovery = %.3f\n\n", c_lb_base, rec_lb_bas
 cat("--- Fitting LB_cohort ---\n")
 set.seed(SEED + 1L)
 fit_lb_coh <- suppressMessages(
-  fit_supervised_mf_modular(Y_train, t_train, s_train,
+  fit_ssbmf_lb(Y_train, t_train, s_train,
                             K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
                             prior_beta = PRIOR_BETA,
                             verbose = TRUE, cohort_id = cid_train)
@@ -246,7 +246,7 @@ cat(sprintf("  C-ext = %.3f | factor recovery = %.3f\n\n", c_lb_coh, rec_lb_coh)
 cat("--- Fitting YFB_base ---\n")
 set.seed(SEED + 1L)
 fit_yfb_base <- suppressMessages(
-  fit_cox_on_yf(Y_train, t_train, s_train,
+  fit_ssbmf_yfb(Y_train, t_train, s_train,
                 K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
                 verbose = TRUE, cohort_id = NULL)
 )
@@ -262,7 +262,7 @@ cat(sprintf("  C-ext = %.3f | factor recovery = %.3f\n\n", c_yfb_base, rec_yfb_b
 cat("--- Fitting YFB_cohort ---\n")
 set.seed(SEED + 1L)
 fit_yfb_coh <- suppressMessages(
-  fit_cox_on_yf(Y_train, t_train, s_train,
+  fit_ssbmf_yfb(Y_train, t_train, s_train,
                 K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
                 verbose = TRUE, cohort_id = cid_train)
 )
@@ -287,7 +287,7 @@ Y_train_zs <- zscore_center(Y_train, cid_train)
 Y_test_zs  <- zscore_center(Y_test,  cid_test, ref_means = train_cohort_means)
 set.seed(SEED + 1L)
 fit_zs <- suppressMessages(
-  fit_supervised_mf_modular(Y_train_zs, t_train, s_train,
+  fit_ssbmf_lb(Y_train_zs, t_train, s_train,
                             K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
                             prior_beta = PRIOR_BETA,
                             verbose = TRUE, cohort_id = NULL)

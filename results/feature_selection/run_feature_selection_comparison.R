@@ -27,7 +27,7 @@ mode <- args[1]
 cfg <- yaml::read_yaml("config/globals.yml")
 source("results/benchmark_sim/benchmark_helpers.R")
 source("code/preprocess_desurv.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) {
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) {
   if (conditionMessage(e) != "!is.null(real_Y) is not TRUE") stop(e)
 })
 source("code/predict_cox_on_yf.R")
@@ -153,7 +153,7 @@ if (mode == "cv") {
     tryCatch(withCallingHandlers({
       set.seed(42L)
       ctl <- z$controls; ctl$sign_correction <- m$fold == 0L
-      fit <- do.call(fit_cox_on_yf, c(list(Y = Y[tr, , drop = FALSE], time = z$time[tr],
+      fit <- do.call(fit_ssbmf_yfb, c(list(Y = Y[tr, , drop = FALSE], time = z$time[tr],
                                           status = z$status[tr]), ctl))
       eta_tr <- predict_cox_on_yf(Y[tr, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
       d <- training_direction(eta_tr, z$time[tr], z$status[tr])

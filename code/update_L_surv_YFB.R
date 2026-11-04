@@ -23,7 +23,7 @@
 #   Each exposes a _k() (single factor) and _all() (full loop) function.
 #
 # NOTE: compute_R_k() is defined in update_L.R (Cluster A) and re-exported from
-#       fit_cox_on_yf.R via source("code/update_L.R"). If update_L.R is not
+#       fit_ssbmf_yfb.R via source("code/update_L.R"). If update_L.R is not
 #       sourced, compute_R_k() must be available from another source.
 #
 # DEPENDENCIES:

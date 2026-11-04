@@ -69,7 +69,7 @@ load_d4_weights <- function(beta_thresh = 0.001) {
   rownames(EF) <- gene_names
 
   # Verified from the fit: which programs carry survival weight. Cohort-specific
-  # beta (fit_cox_on_yf(..., beta_cohort_id=...)) would make d4$EBeta a K x C
+  # beta (fit_ssbmf_yfb(..., beta_cohort_id=...)) would make d4$EBeta a K x C
   # matrix -- max_c |EBeta_k^(c)| per factor keeps this a K-length check, not
   # K*C. The saved D4 fit used here is never a cohort-beta fit in practice;
   # guarded defensively per DECISIONS.md 2026-09-04.

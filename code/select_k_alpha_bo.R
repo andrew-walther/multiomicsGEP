@@ -158,7 +158,7 @@ select_k_alpha_bayesopt <- function(Y, time, status,
 #' @param fit_fn        function used to refit each candidate; must accept
 #'                      (Y, time, status, K, alpha, verbose, ...) and return
 #'                      a list with an $EBeta element (default
-#'                      fit_cox_on_yf). Overridable for testing the
+#'                      fit_ssbmf_yfb). Overridable for testing the
 #'                      selection logic in isolation from CAVI's numerical
 #'                      behavior on any particular dataset.
 #' @param ...           passed through to fit_fn() (e.g. max_iter, prior_beta).
@@ -171,10 +171,10 @@ select_k_alpha_bayesopt <- function(Y, time, status,
 pick_trustworthy_bo_winner <- function(history, Y, time, status,
                                         n_candidates   = 5,
                                         beta_threshold = 0.001,
-                                        fit_fn         = fit_cox_on_yf,
+                                        fit_fn         = fit_ssbmf_yfb,
                                         ...) {
   if (!is.function(fit_fn))
-    stop("fit_fn must be a function (default fit_cox_on_yf; override only for testing).")
+    stop("fit_fn must be a function (default fit_ssbmf_yfb; override only for testing).")
   extra_args <- list(...)
   extra_args[["verbose"]] <- NULL   # this function always fits quietly
 
@@ -191,7 +191,7 @@ pick_trustworthy_bo_winner <- function(history, Y, time, status,
       extra_args
     )))
     fits[[i]]    <- fit_i
-    # Cohort-specific beta (fit_cox_on_yf(..., beta_cohort_id=...)) would make
+    # Cohort-specific beta (fit_ssbmf_yfb(..., beta_cohort_id=...)) would make
     # fit_i$EBeta a K x C matrix -- max_c |EBeta_k^(c)| per factor, so this
     # still counts K factors, not K*C entries. This BO search never tunes
     # beta_cohort_id, so ab_beta is always the plain vector case in practice;

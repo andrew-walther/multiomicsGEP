@@ -1,6 +1,6 @@
 # =============================================================================
 # tests/test_fit_yf_supervision.R
-# Tests for the survival-supervision diagnostics of fit_cox_on_yf():
+# Tests for the survival-supervision diagnostics of fit_ssbmf_yfb():
 #   - trace_supervision (opt-in per-iteration record; must not change the fit)
 #   - w_S (survival weight in the F update; w_S = 1 is the equal-weight posterior)
 # Workstream C, step C1 (docs/plans/Meeting_Notes_Followup_10_2_26.md).
@@ -23,8 +23,8 @@ strip_trace <- function(fit) { fit$history$trace <- NULL; fit }
 run_test("Supervision-T1: trace_supervision does not change the fit (alpha_F = 0.5)", {
   args <- list(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 15L,
                prior_beta = "normal", alpha_F = 0.5, verbose = FALSE)
-  off <- do.call(fit_cox_on_yf, args)
-  on  <- do.call(fit_cox_on_yf, c(args, trace_supervision = TRUE))
+  off <- do.call(fit_ssbmf_yfb, args)
+  on  <- do.call(fit_ssbmf_yfb, c(args, trace_supervision = TRUE))
   assert_true(is.null(off$history$trace), msg = "no trace when off")
   assert_true(identical(off, strip_trace(on)), msg = "fit identical apart from the trace")
   assert_true(nrow(on$history$trace$beta_mean) == on$history$n_iter,
@@ -41,7 +41,7 @@ run_test("Supervision-T1: trace_supervision does not change the fit (alpha_F = 0
 # ---------------------------------------------------------------------------
 run_test("Supervision-T2: logged survival share matches a hand computation", {
   Y <- .sv$Y; a_F <- 0.5
-  fit <- fit_cox_on_yf(Y, .sv$time, .sv$status, K = 1L, max_iter = 1L,
+  fit <- fit_ssbmf_yfb(Y, .sv$time, .sv$status, K = 1L, max_iter = 1L,
                        prior_beta = "normal", alpha_F = a_F, verbose = FALSE,
                        trace_supervision = TRUE)
   s  <- svd(Y, nu = 1, nv = 1)
@@ -93,13 +93,13 @@ run_test("Supervision-T3: w_surv = 1 equals alpha = 0.5 with doubled precisions"
 run_test("Supervision-T4: w_S = 0 reproduces alpha_F = 0; w_S = 1 differs", {
   args <- list(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 10L,
                prior_beta = "normal", verbose = FALSE)
-  base <- do.call(fit_cox_on_yf, args)
-  w0   <- do.call(fit_cox_on_yf, c(args, w_S = 0))
-  w1   <- do.call(fit_cox_on_yf, c(args, w_S = 1))
+  base <- do.call(fit_ssbmf_yfb, args)
+  w0   <- do.call(fit_ssbmf_yfb, c(args, w_S = 0))
+  w1   <- do.call(fit_ssbmf_yfb, c(args, w_S = 1))
   assert_true(identical(base$EF, w0$EF) && identical(base$EBeta, w0$EBeta),
               msg = "w_S = 0 identical to alpha_F = 0")
   assert_true(max(abs(base$EF - w1$EF)) > 1e-8, msg = "w_S = 1 moves F")
-  err <- tryCatch(fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 2L,
+  err <- tryCatch(fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 2L,
                                 w_S = -1, verbose = FALSE), error = function(e) e)
   assert_true(inherits(err, "error"), msg = "negative w_S rejected")
 })
@@ -139,8 +139,8 @@ run_test("Supervision-T6: canonical fit with w_S = 0 matches alpha_F = 0 up to s
   # wherever each monitor stops.
   args <- list(Ys, rexp(n), rbinom(n, 1, 0.7), K = 2L, max_iter = 400L, tol = 0,
                prior_LF = "point_laplace", prior_beta = "normal", verbose = FALSE)
-  leg <- do.call(fit_cox_on_yf, args)
-  can <- do.call(fit_cox_on_yf, c(args, canonicalize = TRUE, w_S = 0))
+  leg <- do.call(fit_ssbmf_yfb, args)
+  can <- do.call(fit_ssbmf_yfb, c(args, canonicalize = TRUE, w_S = 0))
   assert_true(all(colSums(leg$EF^2) > 0), msg = "both programs retained")
   r <- abs(diag(cor(leg$EF, can$EF)))
   assert_true(all(r > 0.9999), msg = sprintf("loading columns proportional (min |cor| %.5f)", min(r)))
@@ -153,7 +153,7 @@ run_test("Supervision-T6: canonical fit with w_S = 0 matches alpha_F = 0 up to s
 # predict_cox_on_yf() on the training data returns Y EF beta
 # ---------------------------------------------------------------------------
 run_test("Supervision-T7: canonical fit is self-consistent for prediction", {
-  fit <- fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 30L,
+  fit <- fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 30L,
                        prior_LF = "point_laplace", prior_beta = "normal",
                        canonicalize = TRUE, verbose = FALSE)
   live <- colSums(fit$EF^2) > 1e-12
@@ -162,7 +162,7 @@ run_test("Supervision-T7: canonical fit is self-consistent for prediction", {
   assert_true(all(fit$EF_norms == 1) && fit$w_S == 1, msg = "EF_norms = 1, default w_S = 1")
   pr <- predict_cox_on_yf(.sv$Y, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
   assert_near(pr, as.vector(.sv$Y %*% fit$EF %*% fit$EBeta), tol = 1e-10, msg = "prediction")
-  err <- tryCatch(fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 2L,
+  err <- tryCatch(fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 2L,
                                 canonicalize = TRUE, alpha_F = 0.5, verbose = FALSE),
                   error = function(e) e)
   assert_true(inherits(err, "error"), msg = "alpha_F rejected with canonicalize")
@@ -204,16 +204,16 @@ run_test("Supervision-T9: shared beta prior honors beta_prior_fix and beta_warmu
                prior_beta = "normal", canonicalize = TRUE, verbose = FALSE,
                beta_prior_mode = "shared")
   g0 <- ashr::normalmix(1, 0, 2)
-  fx <- do.call(fit_cox_on_yf, c(base, max_iter = 15L, beta_prior_init = list(g0),
+  fx <- do.call(fit_ssbmf_yfb, c(base, max_iter = 15L, beta_prior_init = list(g0),
                                  beta_prior_fix = TRUE))
   assert_true(identical(fx$g_beta, g0), msg = "fixed prior unchanged")
-  wu <- do.call(fit_cox_on_yf, c(base, max_iter = 4L, beta_prior_init = list(g0),
+  wu <- do.call(fit_ssbmf_yfb, c(base, max_iter = 4L, beta_prior_init = list(g0),
                                  beta_warmup = 4L))
   assert_true(identical(wu$g_beta, g0), msg = "prior held during the warm-up")
-  rf <- do.call(fit_cox_on_yf, c(base, max_iter = 5L, beta_prior_init = list(g0),
+  rf <- do.call(fit_ssbmf_yfb, c(base, max_iter = 5L, beta_prior_init = list(g0),
                                  beta_warmup = 4L))
   assert_true(!identical(rf$g_beta, g0), msg = "prior refit after the warm-up")
-  err <- tryCatch(fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 2L,
+  err <- tryCatch(fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 2L,
                                 beta_prior_mode = "shared", verbose = FALSE),
                   error = function(e) e)
   assert_true(inherits(err, "error"), msg = "shared prior requires canonicalize")
@@ -227,8 +227,8 @@ run_test("Supervision-T9: shared beta prior honors beta_prior_fix and beta_warmu
 run_test("Supervision-T10: init_supervised starts a program along the score direction", {
   args <- list(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 1L, prior_LF = "point_laplace",
                prior_beta = "normal", canonicalize = TRUE, verbose = FALSE)
-  sup  <- do.call(fit_cox_on_yf, c(args, init_supervised = TRUE))
-  uns  <- do.call(fit_cox_on_yf, args)
+  sup  <- do.call(fit_ssbmf_yfb, c(args, init_supervised = TRUE))
+  uns  <- do.call(fit_ssbmf_yfb, args)
   u0   <- calc_cox_taylor_yf(rep(0, .sv$n), .sv$time, .sv$status)$u
   r_s  <- abs(cor(.sv$Y %*% sup$EF[, 3], u0))
   r_u  <- max(abs(suppressWarnings(cor(.sv$Y %*% uns$EF, u0))), na.rm = TRUE)
@@ -241,7 +241,7 @@ run_test("Supervision-T10: init_supervised starts a program along the score dire
 # equals yf_canonical_elbo() at the returned moments (before Phase C)
 # ---------------------------------------------------------------------------
 run_test("Supervision-T11: canonical ELBO terms have the right sign and recompute", {
-  fit <- fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 40L,
+  fit <- fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 40L,
                        prior_LF = "point_laplace", canonicalize = TRUE,
                        sign_correction = FALSE, verbose = FALSE)
   assert_true(all(fit$neg_kl <= 1e-8), msg = "stored -KL terms are nonpositive")
@@ -258,7 +258,7 @@ run_test("Supervision-T12: prune removes empty programs and keeps the signal", {
   set.seed(21); n <- 80L; p <- 30L
   Ys <- scale(matrix(rnorm(n * 2), n, 2) %*% matrix(rnorm(2 * p), 2, p) +
               matrix(rnorm(n * p, sd = 0.7), n, p))
-  fit <- fit_cox_on_yf(Ys, rexp(n), rbinom(n, 1, 0.7), K = 5L, max_iter = 200L,
+  fit <- fit_ssbmf_yfb(Ys, rexp(n), rbinom(n, 1, 0.7), K = 5L, max_iter = 200L,
                        prior_LF = "point_laplace", canonicalize = TRUE, prune = TRUE,
                        verbose = FALSE)
   assert_true(ncol(fit$EF) == 2L, msg = sprintf("2 programs kept (got %d)", ncol(fit$EF)))
@@ -268,7 +268,7 @@ run_test("Supervision-T12: prune removes empty programs and keeps the signal", {
 
 # Protection must change the candidate set, including the literal 0 >= 0 boundary.
 run_test("Supervision-T13: protected pruning excludes credible coefficients", {
-  f <- fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 8L,
+  f <- fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 8L,
                      prior_LF = "point_laplace", canonicalize = TRUE,
                      verbose = FALSE, sign_correction = FALSE)
   f$EBeta <- c(2, 0.01, 0); f$EBeta2 <- f$EBeta^2 + c(0.01, 1, 0)
@@ -286,8 +286,8 @@ run_test("Supervision-T13: protected pruning excludes credible coefficients", {
 run_test("Supervision-T14: output convergence uses both fitted quantities", {
   a <- list(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 12L,
             prior_LF = "point_laplace", canonicalize = TRUE, verbose = FALSE)
-  el <- do.call(fit_cox_on_yf, c(a, converge_on = "elbo"))
-  ou <- do.call(fit_cox_on_yf, c(a, converge_on = "outputs"))
+  el <- do.call(fit_ssbmf_yfb, c(a, converge_on = "elbo"))
+  ou <- do.call(fit_ssbmf_yfb, c(a, converge_on = "outputs"))
   assert_true(is.logical(ou$history$outputs_converged), msg = "final output criterion recorded")
   assert_true(identical(el$history$converged, el$history$elbo_converged),
               msg = "default stopping flag remains ELBO-based")
@@ -306,8 +306,8 @@ run_test("Supervision-T15: default fits and pruning match feature/supervised-F b
     a <- list(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 12L,
               prior_LF = "point_laplace", canonicalize = TRUE, verbose = FALSE, prune = pr)
     before <- do.call(old$fit_cox_on_yf, a)
-    now <- do.call(fit_cox_on_yf, a)
-    off <- do.call(fit_cox_on_yf, c(a, prune_protect_survival = FALSE))
+    now <- do.call(fit_ssbmf_yfb, a)
+    off <- do.call(fit_ssbmf_yfb, c(a, prune_protect_survival = FALSE))
     assert_true(identical(before, now) && identical(now, off),
                 msg = "default object and explicit FALSE reproduce the baseline")
   }
@@ -317,8 +317,8 @@ run_test("Supervision-T16: output-change diagnostic agrees with two consecutive 
   a <- list(.sv$Y, .sv$time, .sv$status, K = 3L, prior_LF = "point_laplace",
             canonicalize = TRUE, verbose = FALSE, sign_correction = FALSE,
             converge_on = "elbo")
-  one <- do.call(fit_cox_on_yf, c(a, max_iter = 1L))
-  two <- do.call(fit_cox_on_yf, c(a, max_iter = 2L))
+  one <- do.call(fit_ssbmf_yfb, c(a, max_iter = 1L))
+  two <- do.call(fit_ssbmf_yfb, c(a, max_iter = 2L))
   expected <- max(multimodal_yfb_relative_change(one$EL %*% t(one$EF), two$EL %*% t(two$EF)),
     multimodal_yfb_relative_change(as.vector(.sv$Y %*% one$EF %*% one$EBeta),
                                    as.vector(.sv$Y %*% two$EF %*% two$EBeta)))
@@ -328,7 +328,7 @@ run_test("Supervision-T16: output-change diagnostic agrees with two consecutive 
 
 
 run_test("Supervision-T17: a dead program is selected for removal under protection", {
-  f <- fit_cox_on_yf(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 3L,
+  f <- fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 3L,
     prior_LF = "point_laplace", canonicalize = TRUE, verbose = FALSE)
   f$EL <- cbind(f$EL, 0); f$EL2 <- cbind(f$EL2, 0)
   f$EF <- cbind(f$EF, 0); f$EF2 <- cbind(f$EF2, 0)

@@ -34,9 +34,9 @@
 #'                Must have same number of columns (genes) and same gene
 #'                ordering as the training data used to produce EF.
 #' @param EF      numeric matrix (p × K): posterior mean factor weights
-#'                from a trained SBMF model (fit_supervised_mf_modular()$EF).
+#'                from a trained SBMF model (fit_ssbmf_lb()$EF).
 #' @param EBeta   numeric vector of length K: posterior mean survival
-#'                coefficients (fit_supervised_mf_modular()$EBeta).
+#'                coefficients (fit_ssbmf_lb()$EBeta).
 #' @param lambda  numeric scalar: ridge regularisation for (EF'EF)^{-1}.
 #'                Default 1e-8; increase if EF has near-zero singular values.
 #'
@@ -46,7 +46,7 @@
 #'
 #' @examples
 #' # After training:
-#' # res <- fit_supervised_mf_modular(Y_train, time_train, status_train, K=5)
+#' # res <- fit_ssbmf_lb(Y_train, time_train, status_train, K=5)
 #' # pred <- predict_supervised_mf(Y_test, res$EF, res$EBeta)
 #' # cindex <- concordance(Surv(time_test, status_test) ~ pred$risk_scores)
 predict_supervised_mf <- function(Y_test, EF, EBeta, lambda = 1e-8) {

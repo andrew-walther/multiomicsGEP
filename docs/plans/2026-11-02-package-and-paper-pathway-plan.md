@@ -9,7 +9,7 @@ package and the `SSBMF-paper` manuscript, and what moves, so that neither is put
 | Repository | Role | What belongs there |
 |---|---|---|
 | `multiomicsGEP` (this one) | Development workspace and lab notebook | Experiments, diagnostics, registered attempts, failed ideas, progress book. It may stay messy and is never published as is. |
-| `SSBMF` | The R package | Only code that the working method needs, with tests, help pages and a vignette. One main fitting function, `ssbmf_fit()`, plus prediction, simulation and factor-classification helpers. |
+| `SSBMF` | The R package | Only code that the working method needs, with tests, help pages and a vignette. One main fitting function (most likely the YFB model), plus prediction, simulation and factor-classification helpers. |
 | `SSBMF-paper` | The manuscript | Scripts that call the package to produce every simulation and real-data result, and a Quarto manuscript whose numbers, tables and figures are computed from those saved results. |
 
 The package never depends on the paper or on this repository. The paper depends on a pinned
@@ -28,6 +28,11 @@ results that use that piece come from the package, not from this repository's co
 Each stage starts when its trigger is met, not when the previous stage is "finished".
 
 **Stage 1. Working single-modality supervision (now, in this repository).**
+Both parameterizations stay in development until their supervision is confirmed:
+`fit_ssbmf_yfb()` (η = (YF)β, new patients scored by projection) and `fit_ssbmf_lb()` (η = Lβ,
+new patients scored by fold-in). Compare the two on the same simulations and training data, as the
+DeSurv supplement compares its parameterizations. If both work, the comparison shows the method is
+not tied to one predictor. The package then exports one function, chosen from that comparison.
 Diagnose and fix the YFB model's supervision failure. The next test is attempt S-9. Fall back to
 η = Lβ with fold-in prediction only if YFB makes no progress.
 *Trigger to move on:* a fitter passes Gate S in simulation and holds up in training
@@ -35,10 +40,12 @@ cross-validation on the PDAC data (convergence, survival-active programs that ar
 positives, no worse cross-validated C than the unsupervised fit).
 
 **Stage 2. Start the package (single modality).**
-In `SSBMF`, write `ssbmf_fit()` for one modality from the written specification. Do not copy files
-wholesale. Bring over only the update equations, the Cox working quantities, the priors and KL
+In `SSBMF`, write the single-modality fitting function from the written specification. Do not copy
+files wholesale. Bring over only the components that DECISIONS.md records as adopted, and none of the
+options that were tried and not adopted (for example `alpha_F`, cohort-specific β, burn-in, warm starts
+and the pruning variants). Bring over only the update equations, the Cox working quantities, the priors and KL
 terms, prediction, factor classification and a simulator. Add:
-- unit tests, including parity tests showing that `ssbmf_fit()` reproduces the development fitter's
+- unit tests, including parity tests showing that the package fitter reproduces the development fitter's
   results on the same simulated data;
 - help pages for exported functions and one vignette on synthetic data;
 - `R CMD check` with no errors or warnings, and a GitHub Actions workflow running it.
@@ -48,7 +55,7 @@ Tag the first usable version (v0.1.0).
 
 **Stage 3. Start the paper's simulation results.**
 In `SSBMF-paper`, install the tagged package (record versions with `renv`), and write the
-simulation scripts against `ssbmf_fit()`. Port the registered simulation designs from this
+simulation scripts against the package's fitting function. Port the registered simulation designs from this
 repository as scripts, not their old outputs. The manuscript's methods section can be written now
 from the specification.
 *Trigger to move on:* the simulation results regenerate from a clean checkout.
@@ -60,7 +67,7 @@ out at least one validation cohort from every model choice until the final claim
 
 **Stage 5. The M-modality model.**
 Develop the multimodal extension here as before, with M = 1 as the single-modality case. When it
-works, add it to `ssbmf_fit()` (for example, a list of data blocks), release a new package version,
+works, add it to the package's fitting function (for example, a list of data blocks), release a new package version,
 and rerun the paper's analyses on that version.
 
 **Stage 6. Release and submission.**

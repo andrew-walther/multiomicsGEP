@@ -1,8 +1,8 @@
 # ============================================================
 # Script:  test_deflation_init.R
 # Purpose: Tests for deflation_svd_init() (code/deflation_init.R) and its
-#          integration as init_method="deflation" in fit_supervised_mf_modular()
-#          (Cluster A / LB) and fit_cox_on_yf() (Cluster B / YFB).
+#          integration as init_method="deflation" in fit_ssbmf_lb()
+#          (Cluster A / LB) and fit_ssbmf_yfb() (Cluster B / YFB).
 # Author: Andrew Walther
 # Created: 2026-07-13
 # Usage:   Rscript tests/run_tests.R  (included via source)
@@ -14,15 +14,15 @@ suppressPackageStartupMessages({
   library(ebnm); library(survival)
 })
 if (!exists("deflation_svd_init")) source("code/deflation_init.R")
-if (!exists("fit_supervised_mf_modular")) {
+if (!exists("fit_ssbmf_lb")) {
   source("code/update_beta.R"); source("code/update_L.R")
   source("code/update_F.R");    source("code/update_tau.R")
   source("code/compute_elbo.R"); source("code/update_F_cohort.R")
-  suppressMessages(tryCatch(source("code/fit_modular.R"), error = function(e) invisible(NULL)))
+  suppressMessages(tryCatch(source("code/fit_ssbmf_lb.R"), error = function(e) invisible(NULL)))
 }
-if (!exists("fit_cox_on_yf")) {
+if (!exists("fit_ssbmf_yfb")) {
   source("code/update_L_surv_YFB.R"); source("code/update_F_surv_YFB.R")
-  suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL)))
+  suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
 }
 
 cat("\n--- test_deflation_init.R ---\n")
@@ -126,11 +126,11 @@ Y   <- matrix(abs(rnorm(n * p, mean = 3)), n, p)
 tv  <- rexp(n, 0.1)
 sv_ <- rbinom(n, 1, 0.6)
 
-# T7: fit_supervised_mf_modular(init_method="deflation") runs and returns
+# T7: fit_ssbmf_lb(init_method="deflation") runs and returns
 #     non-negative EL/EF (matching point_exponential prior convention, via
 #     this file's own pmax(.,0) transform)
 run_test("DI-T7: LB init_method='deflation' runs and returns non-negative EL/EF", {
-  fit <- fit_supervised_mf_modular(Y, tv, sv_,
+  fit <- fit_ssbmf_lb(Y, tv, sv_,
            K = K, max_iter = 10, tol = 1e-2,
            prior_LF = "point_exponential", prior_beta = "point_normal",
            alpha = 0.5, sign_correction = FALSE,
@@ -140,10 +140,10 @@ run_test("DI-T7: LB init_method='deflation' runs and returns non-negative EL/EF"
   assert_true(all(fit$EF >= 0), "LB deflation-init EF should be non-negative after pmax(.,0)")
 })
 
-# T8: fit_cox_on_yf(init_method="deflation") runs and returns non-negative
+# T8: fit_ssbmf_yfb(init_method="deflation") runs and returns non-negative
 #     EL/EF (via this file's own abs() transform)
 run_test("DI-T8: YFB init_method='deflation' runs and returns non-negative EL/EF", {
-  fit <- fit_cox_on_yf(Y, tv, sv_,
+  fit <- fit_ssbmf_yfb(Y, tv, sv_,
            K = K, max_iter = 10, tol = 1e-2,
            prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
            init_method = "deflation", verbose = FALSE)
@@ -156,11 +156,11 @@ run_test("DI-T8: YFB init_method='deflation' runs and returns non-negative EL/EF
 #     break the else-stop branch) -- regression guard for both models
 run_test("DI-T9: unknown init_method still raises an error in both models", {
   err_lb <- tryCatch(
-    fit_supervised_mf_modular(Y, tv, sv_, K = K, max_iter = 5, alpha = 0.5,
+    fit_ssbmf_lb(Y, tv, sv_, K = K, max_iter = 5, alpha = 0.5,
       sign_correction = FALSE, init_method = "bogus", verbose = FALSE),
     error = function(e) conditionMessage(e))
   err_yfb <- tryCatch(
-    fit_cox_on_yf(Y, tv, sv_, K = K, max_iter = 5, alpha = 0.5,
+    fit_ssbmf_yfb(Y, tv, sv_, K = K, max_iter = 5, alpha = 0.5,
       sign_correction = FALSE, init_method = "bogus", verbose = FALSE),
     error = function(e) conditionMessage(e))
   assert_true(is.character(err_lb), "LB should still reject an unknown init_method")

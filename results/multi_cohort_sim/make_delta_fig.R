@@ -14,7 +14,7 @@
 # Usage:   Rscript results/multi_cohort_sim/make_delta_fig.R
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(ggplot2); library(dplyr) })

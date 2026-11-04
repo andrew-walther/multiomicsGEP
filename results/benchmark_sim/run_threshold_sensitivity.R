@@ -40,7 +40,7 @@
 #          (fast -- no fitting, just re-classifying 19 cached fits over a grid)
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(survival); library(ggplot2); library(dplyr) })
@@ -51,7 +51,7 @@ source("code/update_beta.R"); source("code/update_beta_cohort.R")
 source("code/update_L.R"); source("code/update_F.R"); source("code/update_tau.R")
 source("code/compute_elbo.R"); source("code/update_F_cohort.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 source("code/select_K.R")
 

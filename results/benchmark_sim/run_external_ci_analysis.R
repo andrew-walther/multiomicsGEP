@@ -32,7 +32,7 @@
 # Usage:   Rscript results/benchmark_sim/run_external_ci_analysis.R
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages(library(survival))

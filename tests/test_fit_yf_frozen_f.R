@@ -1,7 +1,7 @@
 # =============================================================================
 # tests/test_fit_yf_frozen_f.R
 # Unit tests for the N_frozen (frozen-F β pre-conditioning) parameter in
-# fit_cox_on_yf().
+# fit_ssbmf_yfb().
 #
 # The frozen-F mechanism holds EF fixed at its SVD initialization for the first
 # N_frozen CAVI iterations, letting β and L update freely. This breaks the
@@ -28,7 +28,7 @@ local({
 # ---------------------------------------------------------------------------
 run_test("FrozenF-T1: N_frozen=0 (default) runs without error", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+    fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                   K = .ff$K, max_iter = 5L,
                   N_frozen = 0L, verbose = FALSE)
   )
@@ -43,7 +43,7 @@ run_test("FrozenF-T1: N_frozen=0 (default) runs without error", {
 # ---------------------------------------------------------------------------
 run_test("FrozenF-T2: N_frozen=3 runs and returns valid output", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+    fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                   K = .ff$K, max_iter = 10L,
                   N_frozen = 3L, verbose = FALSE)
   )
@@ -60,7 +60,7 @@ run_test("FrozenF-T2: N_frozen=3 runs and returns valid output", {
 # ---------------------------------------------------------------------------
 run_test("FrozenF-T3: ELBO is finite with N_frozen=5", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+    fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                   K = .ff$K, max_iter = 8L,
                   N_frozen = 5L, verbose = FALSE)
   )
@@ -73,7 +73,7 @@ run_test("FrozenF-T3: ELBO is finite with N_frozen=5", {
 # ---------------------------------------------------------------------------
 run_test("FrozenF-T4: N_frozen >= max_iter runs without error", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+    fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                   K = .ff$K, max_iter = 5L,
                   N_frozen = 100L, verbose = FALSE)
   )
@@ -87,7 +87,7 @@ run_test("FrozenF-T4: N_frozen >= max_iter runs without error", {
 run_test("FrozenF-T5: N_frozen=-1 raises an error", {
   caught <- tryCatch({
     suppressMessages(
-      fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+      fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                     K = .ff$K, max_iter = 3L,
                     N_frozen = -1L, verbose = FALSE)
     )
@@ -102,7 +102,7 @@ run_test("FrozenF-T5: N_frozen=-1 raises an error", {
 run_test("FrozenF-T6: N_frozen='a' raises an error", {
   caught <- tryCatch({
     suppressMessages(
-      fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+      fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                     K = .ff$K, max_iter = 3L,
                     N_frozen = "a", verbose = FALSE)
     )
@@ -117,12 +117,12 @@ run_test("FrozenF-T6: N_frozen='a' raises an error", {
 # ---------------------------------------------------------------------------
 run_test("FrozenF-T7: N_frozen=0 and N_frozen=5 produce different EF", {
   fit0 <- suppressMessages(
-    fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+    fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                   K = .ff$K, max_iter = 15L,
                   N_frozen = 0L, verbose = FALSE)
   )
   fit5 <- suppressMessages(
-    fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+    fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                   K = .ff$K, max_iter = 15L,
                   N_frozen = 5L, verbose = FALSE)
   )
@@ -141,7 +141,7 @@ run_test("FrozenF-T7: N_frozen=0 and N_frozen=5 produce different EF", {
 # ---------------------------------------------------------------------------
 run_test("FrozenF-T9: converged run must have n_iter > N_frozen", {
   fit <- suppressMessages(
-    fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+    fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                   K = .ff$K, max_iter = 60L,
                   N_frozen = 50L, verbose = FALSE)
   )
@@ -157,7 +157,7 @@ run_test("FrozenF-T9: converged run must have n_iter > N_frozen", {
 run_test("FrozenF-T8: N_frozen=3 with cohort_id runs without error", {
   cohort <- rep(c("A", "B"), each = .ff$n / 2)
   fit <- suppressMessages(
-    fit_cox_on_yf(.ff$Y, .ff$time, .ff$status,
+    fit_ssbmf_yfb(.ff$Y, .ff$time, .ff$status,
                   K = .ff$K, max_iter = 10L,
                   N_frozen = 3L, verbose = FALSE,
                   cohort_id = cohort)

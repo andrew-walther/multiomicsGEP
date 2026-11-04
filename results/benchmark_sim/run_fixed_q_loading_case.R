@@ -127,7 +127,7 @@ if(sys.nframe()==0L) {
   }
   multimodal_yfb_update_F_mk <- observed
   warnings <- character();started <- proc.time()[["elapsed"]];set.seed(20261026L)
-  fit <- tryCatch(withCallingHandlers(do.call(fit_cox_on_yf,c(list(tb$Ytr,tb$ttr,tb$str),
+  fit <- tryCatch(withCallingHandlers(do.call(fit_ssbmf_yfb,c(list(tb$Ytr,tb$ttr,tb$str),
     fixed_q_loading_case_controls())),warning=function(w)warnings<<-c(warnings,conditionMessage(w))),
     error=function(e){writeLines(conditionMessage(e),file.path(out,"error.txt"));stop(e)},
     finally={multimodal_yfb_update_F_mk<-original

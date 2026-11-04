@@ -5,7 +5,7 @@ source("code/update_beta.R"); source("code/update_beta_cohort.R")
 source("code/update_L.R"); source("code/update_F.R"); source("code/update_tau.R")
 source("code/compute_elbo.R"); source("code/update_F_cohort.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error=function(e) invisible(NULL)))
+suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error=function(e) invisible(NULL)))
 source("code/preprocess_desurv.R")
 source("code/concordance_ci.R")  # frozen_reverse_cindex()
 
@@ -19,7 +19,7 @@ pp <- preprocess_merged_cohorts(train_raw, PLATFORM_LOG_TRANSFORM[TRAIN_COHORTS]
 train_genes <- pp$gene_names
 EXTERNAL_COHORTS <- cfg$pdac$external_cohorts
 
-# frozen_cindex(): orientation frozen at fit time by fit_cox_on_yf()'s Phase C
+# frozen_cindex(): orientation frozen at fit time by fit_ssbmf_yfb()'s Phase C
 # (fixed 2026-09-04, DECISIONS.md) -- fit$EBeta/EBeta_pooled already carry the
 # correct sign, so no per-cohort max(c,1-c) re-orientation here.
 frozen_cindex <- function(risk, time, status) frozen_reverse_cindex(risk, time, status)

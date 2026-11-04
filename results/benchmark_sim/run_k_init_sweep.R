@@ -69,7 +69,7 @@ SERIAL_MODE    <- "--serial" %in% args
 k_init_arg     <- args[grepl("^--k-init=", args)]
 
 # Navigate to project root if invoked from a subdirectory
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(survival); library(parallel) })
@@ -82,8 +82,8 @@ source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
-source("code/compute_bic.R")   # compute_joint_ll_bic -- needs calc_cox_taylor_yf from fit_cox_on_yf.R
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
+source("code/compute_bic.R")   # compute_joint_ll_bic -- needs calc_cox_taylor_yf from fit_ssbmf_yfb.R
 source("code/compute_cv_loglik.R")  # cv_survival_loglik, bicv_genomics_loglik
 source("code/preprocess_desurv.R")
 source("code/select_K.R")
@@ -224,7 +224,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 }
 cat(sprintf("  %d/%d external cohorts usable\n\n", length(ext_data), length(EXTERNAL_COHORTS)))
 
-# frozen_cindex(): orientation frozen at fit time by fit_cox_on_yf()'s Phase C
+# frozen_cindex(): orientation frozen at fit time by fit_ssbmf_yfb()'s Phase C
 # (fixed 2026-09-04, DECISIONS.md) -- fit$EBeta already carries the correct
 # sign, so no per-cohort max(c,1-c) re-orientation here.
 frozen_cindex <- function(risk, time, status) frozen_reverse_cindex(risk, time, status)
@@ -246,7 +246,7 @@ run_one_K <- function(K_init, verbose_fit) {
       fit_source <- "cached"
     } else {
       set.seed(42L)  # overrides the forked child's inherited RNG stream
-      fit <- fit_cox_on_yf(
+      fit <- fit_ssbmf_yfb(
         Y_train, time_train, status_train,
         K = K_init, max_iter = MAX_ITER, alpha = ALPHA,
         prior_beta = PRIOR_BETA, verbose = verbose_fit

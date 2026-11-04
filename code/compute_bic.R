@@ -1,17 +1,17 @@
 # ============================================================
 # Script: code/compute_bic.R
 # Purpose: Joint (genomics + survival) log-likelihood and BIC for a
-#          fit_cox_on_yf() (YFB, eta = (YF)beta) model object.
+#          fit_ssbmf_yfb() (YFB, eta = (YF)beta) model object.
 # Author: Andrew Walther
 # Created: 2026-08-27
-# Dependencies: code/fit_cox_on_yf.R (must be sourced first -- provides
+# Dependencies: code/fit_ssbmf_yfb.R (must be sourced first -- provides
 #               calc_cox_taylor_yf()); no other dependency on compute_elbo.R
 #               to avoid a source cycle (compute_elbo.R is sourced BY
-#               fit_cox_on_yf.R).
+#               fit_ssbmf_yfb.R).
 # ============================================================
 
 # ------------------------------------------------------------------------------
-#' Joint log-likelihood and BIC for a fit_cox_on_yf() model
+#' Joint log-likelihood and BIC for a fit_ssbmf_yfb() model
 #'
 #' Computes an ELBO-style joint log-likelihood, combining the genomics
 #' reconstruction term already tracked during CAVI with a Cox partial
@@ -44,11 +44,11 @@
 #' `eta <- ZF %*% fit$EBeta`, then `calc_cox_taylor_yf(eta, time, status)`
 #' matches exactly what `predict_cox_on_yf()` does at test time, so this
 #' scores the model as actually deployed. `EF_norms` is floored at `1e-10`
-#' inside `fit_cox_on_yf()` (not exactly zero), so an ARD-pruned all-zero EF
+#' inside `fit_ssbmf_yfb()` (not exactly zero), so an ARD-pruned all-zero EF
 #' column divides cleanly to 0 rather than producing NaN. Before scoring,
 #' `eta` is independently re-oriented by a correct-direction
 #' (`reverse = TRUE`) concordance check -- `fit$EBeta`'s sign, as returned
-#' by `fit_cox_on_yf()`, is not a reliable hazard-direction indicator (see
+#' by `fit_ssbmf_yfb()`, is not a reliable hazard-direction indicator (see
 #' the orientation-correction comment at the "Survival term" code block
 #' below, and DECISIONS.md 2026-09-04).
 #'
@@ -60,10 +60,10 @@
 #' understate model complexity. `n + p + 1` per factor is (n loadings in
 #' EL[,k]) + (p loadings in EF[,k]) + (1 survival coefficient EBeta\[k\]).
 #'
-#' @param fit A `fit_cox_on_yf()` return object. Must contain `EF`,
+#' @param fit A `fit_ssbmf_yfb()` return object. Must contain `EF`,
 #'   `EF_norms`, `EBeta`, and `history$elbo_proxy`/`history$n_iter`.
 #' @param Y n x p genomics matrix used to fit the model (same orientation as
-#'   passed to `fit_cox_on_yf()`).
+#'   passed to `fit_ssbmf_yfb()`).
 #' @param time n-vector of observed survival/censoring times.
 #' @param status n-vector of event indicators (1 = event, 0 = censored).
 #' @param strata NULL (default), or an n-vector of stratum labels, forwarded
@@ -108,7 +108,7 @@ compute_joint_ll_bic <- function(fit, Y, time, status, strata = NULL,
                                   include_gaussian_const = TRUE) {
 
   if (!exists("calc_cox_taylor_yf")) {
-    stop("calc_cox_taylor_yf() not found -- source code/fit_cox_on_yf.R before ",
+    stop("calc_cox_taylor_yf() not found -- source code/fit_ssbmf_yfb.R before ",
          "code/compute_bic.R.")
   }
 
@@ -186,14 +186,14 @@ compute_joint_ll_bic <- function(fit, Y, time, status, strata = NULL,
     eta <- as.vector(ZF %*% fit$EBeta)
   }
 
-  # Orientation correction (DECISIONS.md 2026-09-04): fit_cox_on_yf()'s own
-  # post-loop sign-correction (fit_cox_on_yf.R, "Phase C") checks
+  # Orientation correction (DECISIONS.md 2026-09-04): fit_ssbmf_yfb()'s own
+  # post-loop sign-correction (fit_ssbmf_yfb.R, "Phase C") checks
   # concordance(Surv(time,status) ~ eta_final) WITHOUT reverse = TRUE.
   # survival::concordance()'s formula method defaults to assuming a larger
   # predictor means a LARGER (longer) response -- the opposite of a Cox risk
   # score, where a larger eta means a SHORTER survival time; the package's
   # own documentation calls this out explicitly as the one case requiring
-  # reverse = TRUE. Without it, fit_cox_on_yf()'s check is inverted, so
+  # reverse = TRUE. Without it, fit_ssbmf_yfb()'s check is inverted, so
   # fit$EBeta's returned sign is not a reliable hazard-direction indicator
   # (confirmed empirically: a fit with true training concordance ~0.90+ in
   # the correct direction reads as ~0.90+ under the UNCORRECTED check too,
@@ -207,7 +207,7 @@ compute_joint_ll_bic <- function(fit, Y, time, status, strata = NULL,
   # partial log-likelihood is not sign-invariant, so scoring an
   # anti-oriented eta as-is understates the model's genuine fit. This
   # function orients eta itself (correct-direction concordance check, using
-  # reverse = TRUE), independent of whatever fit_cox_on_yf() did, rather
+  # reverse = TRUE), independent of whatever fit_ssbmf_yfb() did, rather
   # than trusting fit$EBeta's sign.
   c_check <- tryCatch(
     as.numeric(survival::concordance(survival::Surv(time, status) ~ eta,

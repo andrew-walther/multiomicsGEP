@@ -6,7 +6,7 @@
 # Author: Andrew Walther
 # Created: 2026-10-01
 # Dependencies: survival, flashier, ebnm, yaml; code/fit_multimodal_yfb.R,
-#               code/fit_cox_on_yf.R, code/run_multimodal_yfb_simulation.R,
+#               code/fit_ssbmf_yfb.R, code/run_multimodal_yfb_simulation.R,
 #               code/load_multiomics_data.R
 # Run: Rscript results/multimodal_real/run_multimodal_real_fit.R [K ...]
 #      (default K = 5 7 10). Each K is cached in outputs/fits/.
@@ -47,9 +47,9 @@ source("code/predict_multimodal_yfb.R")
 source("code/simulate_multimodal_yfb.R")          # multimodal_yfb_survival_metrics()
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R"); source("code/compute_elbo.R")
-# fit_cox_on_yf.R ends with a runner block that errors when real_Y is NULL;
+# fit_ssbmf_yfb.R ends with a runner block that errors when real_Y is NULL;
 # the function definitions are complete before it fires (same as run_tests.R)
-suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL)))
+suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
 source("code/predict_cox_on_yf.R")
 source("code/run_multimodal_yfb_simulation.R")    # baseline fitters
 source("code/concordance_ci.R")

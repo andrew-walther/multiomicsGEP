@@ -14,8 +14,8 @@ h(t_i)  = h₀(t_i) exp(η_i)
 
 | Model | Linear predictor | Fitter | Prediction for new patients |
 |-------|------------------|--------|-----------------------------|
-| LB  | η_i = l_i β | `fit_supervised_mf_modular()` in `fit_modular.R` | `predict_supervised_mf()` in `predict.R` (projects Y_new onto F, then applies β) |
-| YFB | η_i = (y_i F) β | `fit_cox_on_yf()` in `fit_cox_on_yf.R` (recommended) | `predict_cox_on_yf()` in `predict_cox_on_yf.R`: Y_new F β, the same formula used in training |
+| LB  | η_i = l_i β | `fit_ssbmf_lb()` in `fit_ssbmf_lb.R` | `predict_supervised_mf()` in `predict.R` (projects Y_new onto F, then applies β) |
+| YFB | η_i = (y_i F) β | `fit_ssbmf_yfb()` in `fit_ssbmf_yfb.R` (recommended) | `predict_cox_on_yf()` in `predict_cox_on_yf.R`: Y_new F β, the same formula used in training |
 
 Inference is mean-field CAVI, q(L, F, β) = q(L) q(F) q(β), with τ updated in
 closed form. Each L, F and β coordinate update is an empirical Bayes normal
@@ -79,7 +79,7 @@ molecular data alone because α_F > 0 caused a feedback instability (see
 ## Fitter outputs
 
 Both fitters return `EL`, `EL2`, `EF`, `EF2`, `EBeta`, `EBeta2`, `Tau` and
-`history` (iteration count, convergence flag, objective traces). `fit_cox_on_yf()`
+`history` (iteration count, convergence flag, objective traces). `fit_ssbmf_yfb()`
 also returns `EF_norms`, which `predict_cox_on_yf()` needs to score new patients
 on the training scale.
 

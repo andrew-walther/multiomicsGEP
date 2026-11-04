@@ -150,7 +150,7 @@ cycle_snapshot <- function(frame) {
 #' not falsely presented as implemented carried priors. F priors are carried.
 #' @return Environment with rows, q/g density ledger and run(callback).
 #' @examples
-#' # audit<-cycle_observer(); fit<-audit$run(function() fit_cox_on_yf(...))
+#' # audit<-cycle_observer(); fit<-audit$run(function() fit_ssbmf_yfb(...))
 cycle_observer <- function() {
   a<-new.env(parent=environment());a$rows<-list();a$work<-NULL
   a$q<-list(L=list(),F=list(),beta=list());a$g<-a$q
@@ -253,7 +253,7 @@ cycle_observer <- function() {
   #' @param callback Zero-argument original fit invocation.
   #' @return Original fit object; aggregate rows remain in this environment.
   #' @examples
-  #' # audit$run(function() fit_cox_on_yf(...))
+  #' # audit$run(function() fit_ssbmf_yfb(...))
   a$run<-function(callback) {
     kinds<-c(update_beta_k="beta",update_L_surv_YFB_k="L",
       multimodal_yfb_update_F_mk="F",update_tau="tau",

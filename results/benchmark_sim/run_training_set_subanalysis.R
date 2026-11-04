@@ -24,7 +24,7 @@
 # Usage:   Rscript results/benchmark_sim/run_training_set_subanalysis.R
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(survival) })
@@ -35,7 +35,7 @@ source("code/update_L.R"); source("code/update_F.R"); source("code/update_tau.R"
 source("code/compute_elbo.R"); source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 source("code/select_K.R")
 source("code/concordance_ci.R")  # frozen_reverse_cindex()
@@ -44,7 +44,7 @@ K_REC <- 7L
 b <- cfg$benchmark
 EXTERNAL_COHORTS <- cfg$pdac$external_cohorts
 
-# frozen_cindex(): orientation frozen at fit time by fit_cox_on_yf()'s Phase C
+# frozen_cindex(): orientation frozen at fit time by fit_ssbmf_yfb()'s Phase C
 # (fixed 2026-09-04, DECISIONS.md) -- fit$EBeta already carries the correct
 # sign, so no per-cohort max(c,1-c) re-orientation here.
 frozen_cindex <- function(risk, time, status) frozen_reverse_cindex(risk, time, status)
@@ -62,7 +62,7 @@ run_single_cohort <- function(ds) {
   cat(sprintf("  n=%d, p=%d (own gene selection, not the pooled 2064)\n", nrow(Y_train), ncol(Y_train)))
 
   set.seed(42L)
-  fit <- fit_cox_on_yf(Y_train, raw$time, raw$status, K = K_REC, max_iter = cfg$cavi$max_iter,
+  fit <- fit_ssbmf_yfb(Y_train, raw$time, raw$status, K = K_REC, max_iter = cfg$cavi$max_iter,
                         alpha = b$alpha, prior_beta = "normal", verbose = FALSE)
   cls <- classify_factors(fit, Y_train, beta_thresh = cfg$k_selection$beta_threshold,
                            pve_thresh = cfg$k_selection$pve_threshold)

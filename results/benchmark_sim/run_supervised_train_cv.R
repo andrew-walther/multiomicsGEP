@@ -2,10 +2,10 @@
 # Script: run_supervised_train_cv.R
 # Purpose: 5-fold cross-validated C-index and partial log-likelihood on the
 #          real training data (TCGA_PAAD + CPTAC) for two survival-supervised
-#          fit_cox_on_yf() configurations: point-Laplace vs normal beta prior.
+#          fit_ssbmf_yfb() configurations: point-Laplace vs normal beta prior.
 # Author: Andrew Walther
 # Created: 2026-10-15
-# Dependencies: survival, yaml; code/fit_cox_on_yf.R, code/preprocess_desurv.R,
+# Dependencies: survival, yaml; code/fit_ssbmf_yfb.R, code/preprocess_desurv.R,
 #               code/predict_cox_on_yf.R, code/concordance_ci.R
 # Run: Rscript results/benchmark_sim/run_supervised_train_cv.R
 # ============================================================
@@ -23,7 +23,7 @@
 
 suppressPackageStartupMessages({ library(survival); library(yaml) })
 source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
-suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) NULL))
+suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
 source("code/preprocess_desurv.R")
 cfg <- yaml::read_yaml("config/globals.yml")
 source("results/benchmark_sim/benchmark_helpers.R")
@@ -66,7 +66,7 @@ configs <- list(pl = c(common, list(prior_beta = "point_laplace")),
                 normal = c(common, list(prior_beta = "normal")))
 
 #' Linear predictor eta = Y (EF / EF_norms) EBeta
-#' @param Y n x p matrix. @param fit fit_cox_on_yf() result.
+#' @param Y n x p matrix. @param fit fit_ssbmf_yfb() result.
 #' @return numeric n-vector eta (EF_norms = 1 under canonicalize = TRUE).
 eta_of <- function(Y, fit) {
   as.numeric(Y %*% sweep(fit$EF, 2, fit$EF_norms, "/") %*% fit$EBeta)
@@ -78,7 +78,7 @@ for (f in seq_len(NFOLD)) {
   te <- which(fold == f); tr <- which(fold != f)
   for (cn in names(configs)) {
     set.seed(42L); t0 <- proc.time()[["elapsed"]]
-    fit <- tryCatch(do.call(fit_cox_on_yf, c(list(Y_train[tr, , drop = FALSE],
+    fit <- tryCatch(do.call(fit_ssbmf_yfb, c(list(Y_train[tr, , drop = FALSE],
                       time_train[tr], status_train[tr]), configs[[cn]])),
                     error = function(e) { message("FIT ERROR fold ", f, " ", cn, ": ", conditionMessage(e)); NULL })
     if (is.null(fit)) {

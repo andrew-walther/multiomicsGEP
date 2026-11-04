@@ -61,7 +61,7 @@ run_test("Collapse-T4: an invalid diagnosis cell stops before fitting", {
 })
 
 run_test("Collapse-T5: Single prior trace records the actual refit and changes no fit", {
-  suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"),error=function(e) {
+  suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"),error=function(e) {
     if(!grepl("!is.null(real_Y)",conditionMessage(e),fixed=TRUE))stop(e)
   }))
   source("code/simulate_multimodal_yfb.R")
@@ -71,8 +71,8 @@ run_test("Collapse-T5: Single prior trace records the actual refit and changes n
   a <- collapse_arm_controls("single","selected")
   a$K <- 3L;a$max_iter <- 4L;a$beta_warmup <- 1L;a$tol <- 0
   b <- a;b$trace_supervision <- FALSE
-  f <- do.call(fit_cox_on_yf,c(list(scale(d$Y$expression),d$time,d$event),a))
-  off <- do.call(fit_cox_on_yf,c(list(scale(d$Y$expression),d$time,d$event),b))
+  f <- do.call(fit_ssbmf_yfb,c(list(scale(d$Y$expression),d$time,d$event),a))
+  off <- do.call(fit_ssbmf_yfb,c(list(scale(d$Y$expression),d$time,d$event),b))
   tr <- f$history$prior_trace
   assert_true(length(tr)==4L,msg="one actual shared-prior record per iteration")
   for(i in seq_along(tr)) {

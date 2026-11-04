@@ -27,7 +27,7 @@
 # Usage:   Rscript results/multi_cohort_sim/run_top2_match_diagnostic.R
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 EX_RDS <- "results/multi_cohort_sim/outputs/multicohort_sim_example.rds"

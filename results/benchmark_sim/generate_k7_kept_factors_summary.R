@@ -30,7 +30,7 @@
 # Usage:   Rscript results/benchmark_sim/generate_k7_kept_factors_summary.R
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 source("code/pathway_enrichment.R")   # load_d4_weights(), plot_geneweight_heatmap()

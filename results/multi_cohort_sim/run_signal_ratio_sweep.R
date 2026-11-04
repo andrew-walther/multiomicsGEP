@@ -27,9 +27,9 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -49,8 +49,8 @@ source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
 source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 
 source("code/preprocess_desurv.R")
 source("results/benchmark_sim/benchmark_helpers.R")
@@ -141,7 +141,7 @@ fit_arm <- function(arm, d, spl) {
 
   if (arm %in% c("YFB_base", "YFB_cohort")) {
     cid <- if (arm == "YFB_cohort") cid_tr else NULL
-    f <- suppressMessages(fit_cox_on_yf(
+    f <- suppressMessages(fit_ssbmf_yfb(
       Ytr, ttr, str_, K = K_INIT, max_iter = MAX_ITER, alpha = ALPHA,
       prior_beta = PRIOR_BETA, verbose = FALSE, cohort_id = cid))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = f$EF_norms,
@@ -149,7 +149,7 @@ fit_arm <- function(arm, d, spl) {
 
   } else {
     cid <- if (arm == "LB_cohort") cid_tr else NULL
-    f <- suppressMessages(fit_supervised_mf_modular(
+    f <- suppressMessages(fit_ssbmf_lb(
       Ytr, ttr, str_, K = K_INIT, max_iter = MAX_ITER, alpha = ALPHA,
       prior_beta = PRIOR_BETA, verbose = FALSE, cohort_id = cid))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = NULL,

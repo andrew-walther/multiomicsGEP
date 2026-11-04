@@ -25,21 +25,21 @@ source("code/compute_elbo.R")   # compute_ebnm_kl, compute_survival_elbo, comput
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
-# fit_modular.R resets DATA_MODE <- "real" and has a runner block at the bottom
+# fit_ssbmf_lb.R resets DATA_MODE <- "real" and has a runner block at the bottom
 # that errors when real_Y is NULL.  Wrap in tryCatch: the function definition
 # (lines 1-395) completes before the runner block fires, so the error is
-# harmless — fit_supervised_mf_modular() is available after this call.
+# harmless — fit_ssbmf_lb() is available after this call.
 suppressMessages(tryCatch(
-  source("code/fit_modular.R"),
+  source("code/fit_ssbmf_lb.R"),
   error = function(e) invisible(NULL)
 ))
-# fit_cox_on_yf.R has the same runner-block pattern as fit_modular.R
+# fit_ssbmf_yfb.R has the same runner-block pattern as fit_ssbmf_lb.R
 suppressMessages(tryCatch(
-  source("code/fit_cox_on_yf.R"),
+  source("code/fit_ssbmf_yfb.R"),
   error = function(e) invisible(NULL)
 ))
-source("code/compute_bic.R")    # compute_joint_ll_bic -- needs calc_cox_taylor_yf, sourced after fit_cox_on_yf.R
-source("code/compute_cv_loglik.R")  # cv_survival_loglik, bicv_genomics_loglik -- needs fit_cox_on_yf.R's helpers, sourced above
+source("code/compute_bic.R")    # compute_joint_ll_bic -- needs calc_cox_taylor_yf, sourced after fit_ssbmf_yfb.R
+source("code/compute_cv_loglik.R")  # cv_survival_loglik, bicv_genomics_loglik -- needs fit_ssbmf_yfb.R's helpers, sourced above
 source("code/predict_cox_on_yf.R")
 source("code/select_alpha_cv.R")
 source("code/preprocess_desurv.R")
@@ -81,7 +81,7 @@ test_files <- c(
   "tests/test_select_K_cv.R",
   "tests/test_select_k_alpha_bo.R",
   "tests/test_update_F_cohort.R",
-  "tests/test_fit_modular_cohort.R",
+  "tests/test_fit_ssbmf_lb_cohort.R",
   "tests/test_fit_yf_cohort.R",
   "tests/test_fit_yf_frozen_f.R",
   "tests/test_fit_yf_supervision.R",

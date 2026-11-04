@@ -13,7 +13,7 @@
 #          than evidence that a smaller, differently-structured model is
 #          genuinely preferred.
 #
-#          Method: fit_cox_on_yf_multistart() (already used for exactly
+#          Method: fit_ssbmf_yfb_multistart() (already used for exactly
 #          this purpose in run_k_parsimony_followup.R, 2026-07-13) --
 #          n_init=15 restarts per K (1 SVD + 14 random inits), best-ELBO
 #          selection -- at K in {5,6,7,8,9,10}. K=15/20 are excluded: they
@@ -36,7 +36,7 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(survival) })
@@ -49,8 +49,8 @@ source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
-source("code/fit_modular_multistart.R")   # fit_cox_on_yf_multistart()
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
+source("code/fit_ssbmf_multistart.R")   # fit_ssbmf_yfb_multistart()
 source("code/preprocess_desurv.R")
 source("code/select_K.R")                 # classify_factors()
 
@@ -116,7 +116,7 @@ restart_rows <- list()
 
 for (K in K_VALUES) {
   cat(sprintf("--- K=%d (n_init=%d) ---\n", K, N_INIT))
-  ms <- fit_cox_on_yf_multistart(
+  ms <- fit_ssbmf_yfb_multistart(
     Y_train, time_train, status_train,
     K = K, max_iter = MAX_ITER, alpha = ALPHA, prior_beta = PRIOR_BETA,
     n_init = N_INIT, init_seed_base = 42L

@@ -5,7 +5,7 @@
 #          Delta C against the reported alpha_F = 0 model (D4) above -0.02.
 # Author: Andrew Walther
 # Created: 2026-10-15
-# Dependencies: survival, ebnm, yaml; code/fit_cox_on_yf.R,
+# Dependencies: survival, ebnm, yaml; code/fit_ssbmf_yfb.R,
 #               code/preprocess_desurv.R, code/predict_cox_on_yf.R,
 #               code/concordance_ci.R
 # Run: Rscript results/benchmark_sim/run_supervised_real_check.R
@@ -17,7 +17,7 @@
 # 3000 genes per cohort, no further normalization; K = 7.
 #
 # Arms:
-#   supervised  fit_cox_on_yf(canonicalize, w_S = 1, init_supervised,
+#   supervised  fit_ssbmf_yfb(canonicalize, w_S = 1, init_supervised,
 #               shared point-Laplace beta prior, 10-iteration warm-up,
 #               point-Laplace L/F)  -- DECISIONS.md 2026-10-15
 #   alpha0_pl   alpha_F = 0 with the point-Laplace L/F prior (separates the
@@ -34,7 +34,7 @@
 
 suppressPackageStartupMessages({ library(survival); library(yaml) })
 source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
-suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) NULL))
+suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
 source("code/preprocess_desurv.R")
 cfg <- yaml::read_yaml("config/globals.yml")
 # load_pdac_raw(), PDAC_DATA_ROOT, PLATFORM_LOG_TRANSFORM (needs cfg)
@@ -70,7 +70,7 @@ arms <- list(
 )
 fits <- lapply(names(arms), function(a) {
   set.seed(42L); t0 <- proc.time()[["elapsed"]]
-  f <- do.call(fit_cox_on_yf, arms[[a]])
+  f <- do.call(fit_ssbmf_yfb, arms[[a]])
   cat(sprintf("%-10s %.0f s | converged %s in %d | beta %s\n", a,
               proc.time()[["elapsed"]] - t0, f$history$converged, f$history$n_iter,
               paste(sprintf("%+.3f", f$EBeta), collapse = " ")))

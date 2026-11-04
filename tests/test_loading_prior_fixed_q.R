@@ -126,12 +126,12 @@ run_test("FixedQ-T9: opt-in changes only prior and KL after the same sequential 
 })
 run_test("FixedQ-T10: fitter controls reject unsupported prior and damping combinations", {
   source("code/fit_multimodal_yfb.R")
-  tryCatch(source("code/fit_cox_on_yf.R"), error=function(e) {
+  tryCatch(source("code/fit_ssbmf_yfb.R"), error=function(e) {
     if (!grepl("!is.null(real_Y)",conditionMessage(e),fixed=TRUE)) stop(e)
   })
   set.seed(46); Y <- scale(matrix(rnorm(120),20,6)); dimnames(Y) <- list(paste0("s",1:20),paste0("g",1:6))
   tm <- setNames(1:20,rownames(Y)); ev <- setNames(rep(c(1,0),10),rownames(Y))
-  bad <- tryCatch(fit_cox_on_yf(Y,tm,ev,loading_prior_update="fixed_q_em",verbose=FALSE),error=identity)
+  bad <- tryCatch(fit_ssbmf_yfb(Y,tm,ev,loading_prior_update="fixed_q_em",verbose=FALSE),error=identity)
   assert_true(inherits(bad,"error") && grepl("fixed_q_em",conditionMessage(bad)))
   for (extra in list(list(damping=.5), list(prune=TRUE), list(prior_F=list(expression="normal")))) {
     ctl <- modifyList(list(loading_prior_update="fixed_q_em", max_outer=1L,
@@ -148,7 +148,7 @@ run_test("FixedQ-T11: actual Single and multimodal callers forward the opt-in on
     a <- list(...); seen <<- c(seen, a$loading_prior_update); original(...)
   }
   tryCatch({
-    fit_cox_on_yf(Y,tm,ev,K=2L,max_iter=2L,canonicalize=TRUE,prior_LF="point_laplace",
+    fit_ssbmf_yfb(Y,tm,ev,K=2L,max_iter=2L,canonicalize=TRUE,prior_LF="point_laplace",
       w_S=1,loading_prior_update="fixed_q_em",verbose=FALSE)
     ns <- length(seen); assert_true(ns > 0 && all(seen=="fixed_q_em"))
     fit_multimodal_yfb(list(expression=Y),tm,ev,2L,list(max_outer=2L,max_inner=1L,

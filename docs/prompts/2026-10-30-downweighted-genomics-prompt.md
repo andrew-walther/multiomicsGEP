@@ -26,7 +26,10 @@ Continue on `fix/yfb-supervision`. Read these first:
 
 ## What the October 15 survival-weighted fit already showed
 
-The existing fitter `fit_cox_on_yf(canonicalize = TRUE, w_S = 1)` puts a survival term into the
+(The YFB fitter was renamed from `fit_cox_on_yf()` to `fit_ssbmf_yfb()` on 2026-11-04. Earlier
+attempt-log entries and findings use the old name.)
+
+The existing fitter `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` puts a survival term into the
 gene-by-gene F update, weighted by w_S. On October 15 it showed three things:
 
 1. Survival did act on the F update, although its share of the F precision was small compared with
@@ -55,7 +58,7 @@ question is whether the fit that worked at 50 genes still recovers the program a
 ## Part A (attempt S-9): the survival-weighted fit at 2,000 genes
 
 1. **Check for prior runs.** First check whether any registered attempt already ran
-   `fit_cox_on_yf(canonicalize = TRUE, w_S = 1)` on a p = 2,000 simulation. If one did, report it
+   `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` on a p = 2,000 simulation. If one did, report it
    and say whether it settles the question.
 2. **Prepare the data for this fitter.** It expects signed, per-cohort z-scored input, while the
    S-7 grid prepares nonnegative input for the new fitter. Generate the S-7 datasets (same seeds,

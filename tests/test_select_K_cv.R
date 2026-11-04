@@ -11,13 +11,13 @@ if (!exists("run_test")) source("tests/test_helpers.R")
 suppressPackageStartupMessages({
   library(ebnm); library(survival)
 })
-if (!exists("fit_supervised_mf_modular")) {
+if (!exists("fit_ssbmf_lb")) {
   source("code/update_beta.R"); source("code/update_L.R")
   source("code/update_F.R");    source("code/update_tau.R")
   source("code/compute_elbo.R")
-  # fit_modular.R has a DATA_MODE runner block that stops when real_Y is NULL;
+  # fit_ssbmf_lb.R has a DATA_MODE runner block that stops when real_Y is NULL;
   # tryCatch ensures the function definition above the block is captured.
-  suppressMessages(tryCatch(source("code/fit_modular.R"), error = function(e) invisible(NULL)))
+  suppressMessages(tryCatch(source("code/fit_ssbmf_lb.R"), error = function(e) invisible(NULL)))
 }
 if (!exists("predict_supervised_mf"))
   source("code/predict.R")
@@ -195,12 +195,12 @@ run_test("KCV-T12: C-index values in fold_results lie in [0, 1]", {
 # ============================================================
 
 # Source YFB functions if not already available
-if (!exists("fit_cox_on_yf", mode = "function")) {
-  tryCatch(source("code/fit_cox_on_yf.R"),    error = function(e) invisible(NULL))
+if (!exists("fit_ssbmf_yfb", mode = "function")) {
+  tryCatch(source("code/fit_ssbmf_yfb.R"),    error = function(e) invisible(NULL))
   tryCatch(source("code/predict_cox_on_yf.R"), error = function(e) invisible(NULL))
 }
 
-if (exists("fit_cox_on_yf", mode = "function") &&
+if (exists("fit_ssbmf_yfb", mode = "function") &&
     exists("predict_cox_on_yf", mode = "function")) {
 
   run_test("KCV-T13: model='YFB' returns valid structure with model field", {
@@ -229,7 +229,7 @@ if (exists("fit_cox_on_yf", mode = "function") &&
   })
 
   run_test("KCV-T15: model='YFB' mean C-indices are >= 0.5 (sign correction disabled in folds)", {
-    # Before fix: fit_cox_on_yf always applied Phase C sign correction, orienting
+    # Before fix: fit_ssbmf_yfb always applied Phase C sign correction, orienting
     # EBeta so ZF·EBeta is concordant (C>0.5 on training). select_K_cv then evaluated
     # I(-risk_scores), double-flipping sign → C<0.5 in all folds.
     # After fix: sign_correction=FALSE inside folds. Raw SVD orientation keeps EBeta
@@ -259,7 +259,7 @@ if (exists("fit_cox_on_yf", mode = "function") &&
   })
 
 } else {
-  cat("  [KCV-T13, T14, T15] Skipped: fit_cox_on_yf not available\n")
+  cat("  [KCV-T13, T14, T15] Skipped: fit_ssbmf_yfb not available\n")
 }
 
 # ---------------------------------------------------------------------------
@@ -341,7 +341,7 @@ run_test("KCV-T16: cohort_id in ... is correctly row-subsetted per fold (LB)", {
   status <- rbinom(n, 1, 0.7)
   cid    <- rep(c("A", "B"), each = n / 2)   # length n — would mismatch without fix
 
-  # If cohort_id is NOT row-subsetted, fit_supervised_mf_modular sees n_fold rows in Y
+  # If cohort_id is NOT row-subsetted, fit_ssbmf_lb sees n_fold rows in Y
   # but n rows in cohort_id → error. The fix extracts cohort_id and passes
   # cohort_id[train_idx] to each fold fit.
   res <- tryCatch(

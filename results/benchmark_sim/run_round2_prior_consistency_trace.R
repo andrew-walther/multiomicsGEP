@@ -52,7 +52,7 @@ if(sys.nframe()==0L) {
   set.seed(20261026L);started <- proc.time()[["elapsed"]]
   warnings <- character()
   fit <- tryCatch(withCallingHandlers(
-    do.call(fit_cox_on_yf,c(list(tb$Ytr,tb$ttr,tb$str),a)),
+    do.call(fit_ssbmf_yfb,c(list(tb$Ytr,tb$ttr,tb$str),a)),
     warning=function(w) {
       warnings <<- c(warnings,conditionMessage(w))
     }),

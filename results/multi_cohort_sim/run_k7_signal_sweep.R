@@ -42,9 +42,9 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -56,7 +56,7 @@ source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/select_K.R")   # classify_factors()
 
 source("results/multi_cohort_sim/generate_multicohort_data.R")
@@ -122,7 +122,7 @@ F_TEMPLATES <- if (!is.null(templates)) {
 # Per-arm fit + prediction (YFB and EBMF+Cox only, both at K_INIT=7)
 # --------------------------------------------------------------------------
 fit_yfb <- function(Ytr, ttr, str_, K) {
-  f <- suppressMessages(fit_cox_on_yf(
+  f <- suppressMessages(fit_ssbmf_yfb(
     Ytr, ttr, str_, K = K, max_iter = MAX_ITER, alpha = ALPHA,
     prior_beta = PRIOR_BETA, verbose = FALSE))
   list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = f$EF_norms, n_iter = f$history$n_iter)

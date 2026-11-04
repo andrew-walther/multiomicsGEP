@@ -19,7 +19,7 @@
 #          remove both dips (best-of-15-restart ELBO should reach a
 #          solution with external C back on the K=7..20 plateau).
 #
-#          Method: fit_cox_on_yf_multistart() (same as
+#          Method: fit_ssbmf_yfb_multistart() (same as
 #          run_k_init_multistart_check.R, which did this for K in
 #          {5,6,7,8,9,10}) -- n_init=15 restarts (1 SVD + 14 random inits),
 #          best-ELBO selection -- at K_init in 10:15 (the plan's requested
@@ -32,7 +32,7 @@
 #          Same D4 preprocessing as run_k_init_sweep.R (per-platform z-std,
 #          combined_rank gene selection, top-3000 per cohort, no cohort_id).
 #          K_init values fit in parallel (mclapply); n_init=15 restarts run
-#          serially within each K's worker (fit_cox_on_yf_multistart() has
+#          serially within each K's worker (fit_ssbmf_yfb_multistart() has
 #          no internal parallelism).
 #
 #   Output: results/benchmark_sim/outputs/k_init_sweep/
@@ -49,7 +49,7 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(survival); library(parallel) })
@@ -62,8 +62,8 @@ source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
-source("code/fit_modular_multistart.R")   # fit_cox_on_yf_multistart()
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
+source("code/fit_ssbmf_multistart.R")   # fit_ssbmf_yfb_multistart()
 source("code/preprocess_desurv.R")
 source("code/select_K.R")                 # classify_factors()
 
@@ -169,7 +169,7 @@ oriented_cindex <- function(risk, time, status) {
 run_one_K <- function(K) {
   tryCatch({
     set.seed(42L)
-    ms <- fit_cox_on_yf_multistart(
+    ms <- fit_ssbmf_yfb_multistart(
       Y_train, time_train, status_train,
       K = K, max_iter = MAX_ITER, alpha = ALPHA, prior_beta = PRIOR_BETA,
       n_init = N_INIT, init_seed_base = 42L

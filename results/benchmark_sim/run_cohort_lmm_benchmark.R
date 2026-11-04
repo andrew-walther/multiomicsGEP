@@ -31,9 +31,9 @@ LOW_K_MODE <- "--low-k" %in% args
 
 if (Sys.getenv("REPO_ROOT") != "") {
   setwd(Sys.getenv("REPO_ROOT"))
-} else if (file.exists("code/fit_modular.R")) {
+} else if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -51,8 +51,8 @@ source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
 source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 
 # --------------------------------------------------------------------------
@@ -136,7 +136,7 @@ fits <- list()
 cat("--- Fitting LB_base ---\n")
 set.seed(42L)
 fits$LB_base <- suppressMessages(
-  fit_supervised_mf_modular(Y_train, time_train, status_train,
+  fit_ssbmf_lb(Y_train, time_train, status_train,
                             K        = K_LB,
                             max_iter = MAX_ITER,
                             alpha    = ALPHA,
@@ -153,7 +153,7 @@ cat(sprintf("  K_eff=%d | beta_max=%.4f | iters=%d\n\n",
 cat("--- Fitting LB_cohort ---\n")
 set.seed(42L)
 fits$LB_cohort <- suppressMessages(
-  fit_supervised_mf_modular(Y_train, time_train, status_train,
+  fit_ssbmf_lb(Y_train, time_train, status_train,
                             K        = K_LB,
                             max_iter = MAX_ITER,
                             alpha    = ALPHA,
@@ -176,7 +176,7 @@ if (!is.null(fits$LB_cohort$EF_cohort)) {
 cat("--- Fitting YFB_base ---\n")
 set.seed(42L)
 fits$YFB_base <- suppressMessages(
-  fit_cox_on_yf(Y_train, time_train, status_train,
+  fit_ssbmf_yfb(Y_train, time_train, status_train,
                 K          = K_YFB,
                 max_iter   = MAX_ITER,
                 alpha      = ALPHA,
@@ -193,7 +193,7 @@ cat(sprintf("  K_eff=%d | beta_max=%.4f | iters=%d\n\n",
 cat("--- Fitting YFB_cohort ---\n")
 set.seed(42L)
 fits$YFB_cohort <- suppressMessages(
-  fit_cox_on_yf(Y_train, time_train, status_train,
+  fit_ssbmf_yfb(Y_train, time_train, status_train,
                 K              = K_YFB,
                 max_iter       = MAX_ITER,
                 alpha          = ALPHA,

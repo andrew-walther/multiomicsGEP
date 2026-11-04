@@ -11,7 +11,7 @@
 #          gave the survival term a non-zero weight from iteration 1 and
 #          found it statistically flat vs. the alpha_F=0 baseline.
 #
-#          N_frozen and alpha_F already compose correctly in fit_cox_on_yf.R
+#          N_frozen and alpha_F already compose correctly in fit_ssbmf_yfb.R
 #          with NO code changes needed: during iter <= N_frozen, F is held
 #          fixed at its SVD init (beta and L update freely); the moment F
 #          unfreezes at iter = N_frozen+1, it immediately uses whatever
@@ -31,7 +31,7 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(survival) })
@@ -41,7 +41,7 @@ cfg <- yaml::read_yaml("config/globals.yml")
 source("results/benchmark_sim/benchmark_helpers.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/predict_cox_on_yf.R")
 source("code/preprocess_desurv.R")
 
@@ -119,7 +119,7 @@ for (gi in seq_len(nrow(grid))) {
   cat(sprintf("--- %s (N_frozen=%d, alpha_F=%.2f) ---\n", vname, nf, af))
   set.seed(42L)
   fit <- suppressMessages(
-    fit_cox_on_yf(
+    fit_ssbmf_yfb(
       Y_train, time_train, status_train,
       K = K_D4, max_iter = MAX_ITER, tol = cfg$cavi$tol,
       prior_LF = "point_exponential", prior_beta = PRIOR_BETA,

@@ -6,7 +6,7 @@
 #          for q(L), q(F), q(beta) extracted from EBNM outputs.
 # Author: Andrew Walther
 # Created: 2026-04-01
-# Dependencies: none (pure R arithmetic; sourced by fit_modular.R)
+# Dependencies: none (pure R arithmetic; sourced by fit_ssbmf_lb.R)
 # ============================================================
 
 # ==============================================================================
@@ -73,7 +73,7 @@
 #' # Scalar beta_k case
 #' compute_ebnm_kl(ebnm_log_lik = -0.5, A = 2, x = 1.0, mean_q = 0.8, second_q = 0.64)
 #'
-#' @seealso fit_modular.R (caller), derivations/MF_UpdateDerivations/
+#' @seealso fit_ssbmf_lb.R (caller), derivations/MF_UpdateDerivations/
 # ------------------------------------------------------------------------------
 compute_ebnm_kl <- function(ebnm_log_lik, A, x, mean_q, second_q) {
 
@@ -150,7 +150,7 @@ compute_ebnm_kl <- function(ebnm_log_lik, A, x, mean_q, second_q) {
 #' EL <- matrix(c(1, 2), 2, 1); EBeta <- 0.5
 #' compute_survival_elbo(-3.0, w = c(0.1, 0.2), EL, EL^2, EBeta, EBeta^2)
 #'
-#' @seealso fit_modular.R (caller), derivations/MF_UpdateDerivations/
+#' @seealso fit_ssbmf_lb.R (caller), derivations/MF_UpdateDerivations/
 # ------------------------------------------------------------------------------
 compute_survival_elbo <- function(logPL, w, EL, EL2, EBeta, EBeta2, cohort_idx = NULL) {
 
@@ -198,7 +198,7 @@ compute_survival_elbo <- function(logPL, w, EL, EL2, EBeta, EBeta2, cohort_idx =
 #'
 #' @return scalar <= 0: negative total KL summed over all genes and cohort columns
 #'
-#' @seealso update_F_cohort_all, fit_modular.R
+#' @seealso update_F_cohort_all, fit_ssbmf_lb.R
 compute_normal_kl <- function(EF_cohort, EF2_cohort, sigma_F_cohort) {
   sigma2  <- sigma_F_cohort^2
   # Posterior precision recovered from second moment and mean:  A = 1/Var = 1/(EF2 - EF^2)

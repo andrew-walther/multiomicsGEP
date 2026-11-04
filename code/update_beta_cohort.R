@@ -13,7 +13,7 @@
 #     GENOMICS reconstruction. By construction beta_cohort = 0 for those
 #     columns -- cohort membership never reaches the survival term this
 #     way. Unchanged by this file.
-#   - `strata_id` (code/fit_cox_on_yf.R's calc_cox_taylor_yf): stratified
+#   - `strata_id` (code/fit_ssbmf_yfb.R's calc_cox_taylor_yf): stratified
 #     Cox partial likelihood, i.e. a cohort-specific BASELINE HAZARD, with
 #     beta still shared across strata. Unchanged by this file.
 #   - `beta_cohort_id` (this file): cohort-specific SURVIVAL COEFFICIENTS.
@@ -21,7 +21,7 @@
 #     cohort and not another. In practice all three often share the same
 #     underlying grouping vector (e.g. dataset_labels), but they are
 #     different model components and conflating their arguments in
-#     fit_cox_on_yf() would be a mistake -- hence a third, independent
+#     fit_ssbmf_yfb() would be a mistake -- hence a third, independent
 #     argument rather than overloading cohort_id or strata_id.
 #
 # MATHEMATICAL SUMMARY:
@@ -45,7 +45,7 @@
 #
 # DESIGN PATTERN:
 #   Sibling to update_beta_all() (code/update_beta.R), which
-#   fit_cox_on_yf() does not call (it inlines the loop) -- so
+#   fit_ssbmf_yfb() does not call (it inlines the loop) -- so
 #   update_beta_all() is untouched and this file adds a parallel path
 #   used only when beta_cohort_id is supplied.
 #
@@ -110,7 +110,7 @@ compute_z_no_k_cohort <- function(z, ZF, EBeta_mat, cohort_idx, k) {
 #' @param cohort_idx  n-vector of integers in 1..C: each patient's cohort index
 #' @param C           integer: number of cohorts
 #' @param prior_family character: EBNM prior family (default "normal",
-#'                    matching fit_cox_on_yf()'s default prior_beta)
+#'                    matching fit_ssbmf_yfb()'s default prior_beta)
 #' @param alpha       numeric in [0, 1]: survival mixing weight (default 0.5)
 #' @param A_floor     numeric: minimum value for each A_k^(c) (default 1e-10)
 #' @param survival_divisor numeric: divides each A_k^(c) and B_k^(c) (default 1)
@@ -174,7 +174,7 @@ update_beta_cohort_k <- function(w, z_no_k, ZF_k, ZF2_k, cohort_idx, C,
 
 #' Update q(beta) for all K factors, cohort-specific (Gauss-Seidel CAVI loop)
 #'
-#' Sibling to update_beta_all() (code/update_beta.R), which fit_cox_on_yf()
+#' Sibling to update_beta_all() (code/update_beta.R), which fit_ssbmf_yfb()
 #' does not call (it inlines the loop) -- update_beta_all() is therefore
 #' untouched by this addition.
 #'

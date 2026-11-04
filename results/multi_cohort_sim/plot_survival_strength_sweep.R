@@ -12,9 +12,9 @@
 # Usage:   Rscript results/multi_cohort_sim/plot_survival_strength_sweep.R
 # ============================================================
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 

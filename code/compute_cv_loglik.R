@@ -20,14 +20,14 @@
 #              holding out rows and columns jointly.
 # Author: Andrew Walther
 # Created: 2026-09-04
-# Dependencies: code/fit_cox_on_yf.R (fit_cox_on_yf, calc_cox_taylor_yf),
+# Dependencies: code/fit_ssbmf_yfb.R (fit_ssbmf_yfb, calc_cox_taylor_yf),
 #               code/predict_cox_on_yf.R (predict_cox_on_yf),
 #               code/train_test_split.R (create_stratified_folds),
 #               code/update_L.R (compute_R_k),
 #               code/update_L_surv_YFB.R (update_L_surv_YFB_k),
 #               code/update_F_surv_YFB.R (update_F_surv_YFB_k),
 #               code/update_tau.R (update_tau).
-#               All must be sourced first (fit_cox_on_yf.R sources the
+#               All must be sourced first (fit_ssbmf_yfb.R sources the
 #               update_* files itself; sourcing it is sufficient).
 # ============================================================
 
@@ -69,14 +69,14 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #' `bicv_genomics_loglik()` below needs a genomics reconstruction fit on a
 #' row x column submatrix, and wants nothing from the survival side of the
 #' model. Under the Cox-on-YF (YFB) model at `alpha_F = 0` (the recommended
-#' default), `fit_cox_on_yf()`'s q(L) and q(F) updates are already pure
+#' default), `fit_ssbmf_yfb()`'s q(L) and q(F) updates are already pure
 #' genomics -- L never appears in the Cox likelihood under YFB, and F's
 #' survival term is zero-weighted at alpha_F=0 (see update_L_surv_YFB.R,
 #' update_F_surv_YFB.R). This helper reuses exactly those two update
 #' functions plus update_tau(), omitting the beta/Cox machinery entirely
-#' rather than calling fit_cox_on_yf() with a fabricated time/status vector.
+#' rather than calling fit_ssbmf_yfb() with a fabricated time/status vector.
 #'
-#' SVD initialization follows fit_cox_on_yf.R's convention: `abs()` rather
+#' SVD initialization follows fit_ssbmf_yfb.R's convention: `abs()` rather
 #' than `pmax(..., 0)`, since pmax can zero out an entire column when the
 #' SVD vector points all-negative, producing a degenerate ZF column later.
 #' Convergence is checked on the genomics elbo_proxy only (no survival term
@@ -96,7 +96,7 @@ gaussian_matrix_loglik <- function(resid, tau) {
   missing_fns <- required_fns[!vapply(required_fns, exists, logical(1), mode = "function")]
   if (length(missing_fns) > 0) {
     stop("Missing required function(s): ", paste(missing_fns, collapse = ", "),
-         ". Source code/fit_cox_on_yf.R (which sources all of them) first.")
+         ". Source code/fit_ssbmf_yfb.R (which sources all of them) first.")
   }
 
   svd_init <- svd(Y, nu = K, nv = K)
@@ -157,7 +157,7 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #' (`reverse = TRUE`) training concordance check computed ONLY on that
 #' fold's training rows: if training concordance is below 0.5, EBeta is
 #' flipped before scoring the held-out fold. `reverse = TRUE` matters here:
-#' `fit_cox_on_yf()`'s own post-loop sign rule (fit_cox_on_yf.R:705-720)
+#' `fit_ssbmf_yfb()`'s own post-loop sign rule (fit_ssbmf_yfb.R:705-720)
 #' omits it, which is inverted for a Cox risk score (see
 #' `survival::concordance()`'s own documentation and code/compute_bic.R's
 #' matching orientation-correction comment, DECISIONS.md 2026-09-04) --
@@ -183,13 +183,13 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #' @param seed     integer: fold-assignment seed (default 42, matches
 #'                 config/globals.yml cv_loglik$seed)
 #' @param max_iter,tol,prior_LF,prior_beta,alpha: forwarded to
-#'                 `fit_cox_on_yf()` for each fold's training fit.
+#'                 `fit_ssbmf_yfb()` for each fold's training fit.
 #' @param cohort_id,strata_id,beta_cohort_id NULL (default), or n-vectors
-#'                 forwarded to `fit_cox_on_yf()` -- row-subsetted to each
+#'                 forwarded to `fit_ssbmf_yfb()` -- row-subsetted to each
 #'                 fold's training indices internally (the same pattern
 #'                 `select_K.R::select_K_cv()` uses), since passing a
 #'                 full-length vector straight through would trip
-#'                 `fit_cox_on_yf()`'s own length check against the
+#'                 `fit_ssbmf_yfb()`'s own length check against the
 #'                 fold-subsetted `Y`. `strata_id` is ALSO row-subsetted to
 #'                 the test fold and passed to the held-out
 #'                 `calc_cox_taylor_yf()` call (fixed 2026-09-04, DECISIONS.md
@@ -214,7 +214,7 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #'                 against genuinely external cohorts (see
 #'                 `predict_cox_on_yf()`'s `cohort_id_test = NULL` path
 #'                 elsewhere in this project), not for an ordinary CV fold.
-#' @param ...      additional arguments forwarded to `fit_cox_on_yf()`
+#' @param ...      additional arguments forwarded to `fit_ssbmf_yfb()`
 #'                 (e.g. init_method). Do not pass K or sign_correction.
 #'
 #' @return Named list:
@@ -242,12 +242,12 @@ cv_survival_loglik <- function(Y, time, status, K,
                                 ...) {
 
   cv_scoring <- match.arg(cv_scoring)
-  required_fns <- c("fit_cox_on_yf", "predict_cox_on_yf", "calc_cox_taylor_yf",
+  required_fns <- c("fit_ssbmf_yfb", "predict_cox_on_yf", "calc_cox_taylor_yf",
                      "create_stratified_folds")
   missing_fns <- required_fns[!vapply(required_fns, exists, logical(1), mode = "function")]
   if (length(missing_fns) > 0) {
     stop("Missing required function(s): ", paste(missing_fns, collapse = ", "),
-         ". Source code/fit_cox_on_yf.R and code/train_test_split.R first.")
+         ". Source code/fit_ssbmf_yfb.R and code/train_test_split.R first.")
   }
   if (!is.matrix(Y) || !is.numeric(Y)) stop("Y must be a numeric matrix.")
   n <- nrow(Y)
@@ -274,7 +274,7 @@ cv_survival_loglik <- function(Y, time, status, K,
            beta_cohort_id = if (is.null(beta_cohort_id)) NULL else beta_cohort_id[train_idx]),
       extra
     )
-    fit <- do.call(fit_cox_on_yf, fit_args)
+    fit <- do.call(fit_ssbmf_yfb, fit_args)
     use_cohort <- !is.null(beta_cohort_id)
 
     # Orientation from TRAINING concordance only -- see roxygen leakage guard
@@ -290,7 +290,7 @@ cv_survival_loglik <- function(Y, time, status, K,
     #   - "within_cohort":     fit$EBeta (the K x C matrix), oriented via a
     #                          single GLOBAL flip decided from the pooled
     #                          training eta using each training patient's own
-    #                          known cohort column -- mirrors fit_cox_on_yf()'s
+    #                          known cohort column -- mirrors fit_ssbmf_yfb()'s
     #                          own Phase C convention (one global flip, applied
     #                          uniformly to every cohort column).
     ZF_train <- Y[train_idx, , drop = FALSE] %*% sweep(fit$EF, 2, fit$EF_norms, "/")

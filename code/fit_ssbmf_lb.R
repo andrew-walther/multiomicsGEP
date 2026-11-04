@@ -1,6 +1,6 @@
 # ==============================================================================
 # TITLE:       Supervised Bayesian Matrix Factorization — Modular V3
-# FILE:        code/fit_modular.R
+# FILE:        code/fit_ssbmf_lb.R
 # AUTHOR:      Andrew Walther
 # DATE:        March 2026
 # DERIVATIONS: derivations/MF_UpdateDerivations/archive/MF_V2_Companion.tex
@@ -8,7 +8,7 @@
 #
 # DESCRIPTION:
 #   Wraps the four modular update scripts into a single CAVI fitting function
-#   fit_supervised_mf_modular().  Implements V3 Algorithm 1: factor-wise
+#   fit_ssbmf_lb().  Implements V3 Algorithm 1: factor-wise
 #   Gauss-Seidel CAVI, updating L_k -> F_k -> beta_k for each k before
 #   advancing to k+1.
 #
@@ -34,14 +34,14 @@
 #
 # DATA_MODE:
 #   "real"       -- (default) set real_Y / real_time / real_status below, then
-#                   Rscript code/fit_modular.R
+#                   Rscript code/fit_ssbmf_lb.R
 #   "simulated"  -- run built-in DGP and print convergence diagnostics
-#                   (set DATA_MODE <- "simulated" then Rscript code/fit_modular.R)
+#                   (set DATA_MODE <- "simulated" then Rscript code/fit_ssbmf_lb.R)
 # ==============================================================================
 
 # Default: "real" — source() loads the function without side effects.
 # Change to "simulated" to run the built-in DGP validation, or
-# set real_Y/real_time/real_status and run Rscript code/fit_modular.R
+# set real_Y/real_time/real_status and run Rscript code/fit_ssbmf_lb.R
 DATA_MODE <- "real"
 
 real_Y      <- NULL
@@ -137,7 +137,7 @@ calc_cox_taylor <- function(eta, time, status, strata = NULL) {
 }
 
 # ==============================================================================
-# PART 2 — fit_supervised_mf_modular()
+# PART 2 — fit_ssbmf_lb()
 # ==============================================================================
 
 #' Fit Supervised Matrix Factorization via Modular Factor-Wise CAVI
@@ -202,7 +202,7 @@ calc_cox_taylor <- function(eta, time, status, strata = NULL) {
 #'                 scale. Only the ELBO monitor and the beta update (no bilinear
 #'                 coupling there) receive the convention's rebalancing, so LB's
 #'                 alpha-interpretability fix is partial. The recommended
-#'                 production model (YFB, fit_cox_on_yf.R) is unaffected by this
+#'                 production model (YFB, fit_ssbmf_yfb.R) is unaffected by this
 #'                 limitation: its L/F updates never touch these divisors in the
 #'                 first place (no genomics/survival competition to rebalance),
 #'                 so YFB gets the full, verified-stable treatment.
@@ -251,7 +251,7 @@ calc_cox_taylor <- function(eta, time, status, strata = NULL) {
 #'   $Tau      p-vector: noise precisions
 #'   $history  list(rmse, elbo_proxy, elbo_full, delta_L, delta_Beta,
 #'                  delta_elbo_rel, converged, n_iter)
-fit_supervised_mf_modular <- function(Y, time, status,
+fit_ssbmf_lb <- function(Y, time, status,
                                       K               = 5,
                                       max_iter        = 100,
                                       tol             = 1e-5,
@@ -822,7 +822,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
   # anti-correlated with the true survival direction, causing EL·EBeta to be
   # inversely related to risk. A global sign flip of EBeta corrects this:
   #   eta_new = EL · (-EBeta) = -(eta_original)  ⟹  C_new = 1 - C_train.
-  # This is identical in spirit to Phase C in fit_cox_on_yf.R. The fix is
+  # This is identical in spirit to Phase C in fit_ssbmf_yfb.R. The fix is
   # applied post-convergence so the CAVI path and ELBO are unaffected.
   #
   # sign_correction = FALSE during cross-validation (select_alpha_cv), because
@@ -869,7 +869,7 @@ fit_supervised_mf_modular <- function(Y, time, status,
 
 # ==============================================================================
 # PART 3 — DATA_MODE Runner Block
-# Runs only under `Rscript code/fit_modular.R`; skipped when the file is
+# Runs only under `Rscript code/fit_ssbmf_lb.R`; skipped when the file is
 # sourced (sys.nframe() > 0), so source() only defines the functions.
 # ==============================================================================
 
@@ -905,7 +905,7 @@ if (sys.nframe() == 0L && DATA_MODE == "simulated") {
   cat(sprintf("  n=%d  p=%d  K=%d  seed=42\n", n, p, K))
   cat(sprintf("  Censoring rate: %.1f%%\n\n", 100 * mean(status == 0)))
 
-  res <- fit_supervised_mf_modular(Y, time, status, K = K,
+  res <- fit_ssbmf_lb(Y, time, status, K = K,
                                    max_iter = 100, tol = 1e-3, verbose = TRUE)
 
   cat("\n=== RESULTS SUMMARY ===\n")
@@ -947,7 +947,7 @@ if (sys.nframe() == 0L && DATA_MODE == "simulated") {
     !is.null(real_time),
     !is.null(real_status)
   )
-  res <- fit_supervised_mf_modular(real_Y, real_time, real_status,
+  res <- fit_ssbmf_lb(real_Y, real_time, real_status,
                                    K = 5, max_iter = 100, tol = 1e-3,
                                    verbose = TRUE)
   cat("\n=== REAL DATA FIT ===\n")

@@ -1,8 +1,8 @@
 # =============================================================================
-# code/fit_cox_on_yf.R
+# code/fit_ssbmf_yfb.R
 # Purpose: Cluster B CAVI fitting loop — Cox-on-YF reformulation (eta = YFB)
 #
-# MODEL CHANGE VS. fit_modular.R (Cluster A — eta = LB):
+# MODEL CHANGE VS. fit_ssbmf_lb.R (Cluster A — eta = LB):
 #   Cluster A:  eta_i = l_i · beta
 #               L is latent (n×K), learned via dual-source EBNM (genomics + Cox)
 #               Training uses EBNM-shrunk E[L]; test uses OLS projection of Y_test
@@ -69,8 +69,8 @@ suppressPackageStartupMessages(
 # ------------------------------------------------------------------------------
 #' Calculate Cox Score and Diagonal Hessian (Taylor Expansion)
 #'
-#' Identical to the helper in fit_modular.R. Duplicated here so fit_cox_on_yf.R
-#' is a self-contained entry point (no hidden dependency on fit_modular.R).
+#' Identical to the helper in fit_ssbmf_lb.R. Duplicated here so fit_ssbmf_yfb.R
+#' is a self-contained entry point (no hidden dependency on fit_ssbmf_lb.R).
 #'
 #' @param eta    n-vector: current linear predictor
 #' @param time   n-vector: observed survival/censoring times
@@ -203,12 +203,12 @@ canonicalize_yf_factors <- function(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
 # ------------------------------------------------------------------------------
 #' ELBO of a canonical Cox-on-YF fit at given posterior moments
 #'
-#' The objective monitored by fit_cox_on_yf(canonicalize = TRUE):
+#' The objective monitored by fit_ssbmf_yfb(canonicalize = TRUE):
 #' E_q[log p(Y | L, F, tau)] at the optimal tau, plus w_S times the Cox term
 #' (partial log-likelihood re-expanded at E[eta], with Var(eta) from q(beta)
 #' and q(F)), plus the stored -KL terms. Used by the pruning nullcheck.
 #'
-#' @param Y,time,status,strata Data as in fit_cox_on_yf().
+#' @param Y,time,status,strata Data as in fit_ssbmf_yfb().
 #' @param EL,EL2,EF,EF2 Posterior moments (n x K, p x K).
 #' @param EBeta,EBeta2 K-vectors.
 #' @param neg_kl Sum of the stored -KL terms of the programs included.
@@ -229,7 +229,7 @@ yf_canonical_elbo <- function(Y, time, status, EL, EL2, EF, EF2, EBeta, EBeta2,
 
 #' ELBO change from removing each program (flashier-style nullcheck)
 #'
-#' @param fit A fit_cox_on_yf(canonicalize = TRUE) result (needs $neg_kl).
+#' @param fit A fit_ssbmf_yfb(canonicalize = TRUE) result (needs $neg_kl).
 #' @param Y,time,status,strata Training data.
 #' @return K-vector: ELBO(without program k) - ELBO(full). A nonnegative value
 #'   means the program does not improve the objective.
@@ -257,7 +257,7 @@ prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
 }
 
 # ==============================================================================
-# PART 2 — fit_cox_on_yf()
+# PART 2 — fit_ssbmf_yfb()
 # ==============================================================================
 
 #' Subset a canonical single-modality posterior without resetting its state
@@ -268,7 +268,7 @@ prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
 #' @examples
 #' # yf_subset_posterior_state(fit$posterior_state,c(1L,3L))
 #' @family supervised_yfb
-#' @seealso [fit_cox_on_yf()]
+#' @seealso [fit_ssbmf_yfb()]
 yf_subset_posterior_state <- function(state,keep) {
   K <- ncol(state$EL)
   if(!is.numeric(keep) || !length(keep) || anyNA(keep) || any(!is.finite(keep)) ||
@@ -302,7 +302,7 @@ yf_subset_posterior_state <- function(state,keep) {
 #' @param alpha      numeric in [0, 1]: survival mixing weight for the beta update
 #'                 (default 0.5). Note: F update always uses alpha_F=0 (see DECISIONS.md).
 #' @param norm_convention character: Phase 1a objective normalization convention
-#'                 (see DECISIONS.md and fit_modular.R). Under YFB, L and F are
+#'                 (see DECISIONS.md and fit_ssbmf_lb.R). Under YFB, L and F are
 #'                 pure-genomics with no survival competition at the default
 #'                 alpha_F=0 (unlike LB's L), so the genomics divisor does NOT
 #'                 reach update_L_surv_YFB_k/update_F_surv_YFB_k -- there is no
@@ -514,7 +514,7 @@ yf_subset_posterior_state <- function(state,keep) {
 #'   plus `$EBeta_pooled` (K-vector, for external prediction -- see
 #'   `predict_cox_on_yf()`'s `cohort_id_test` argument), `$beta_cohort_id`,
 #'   `$beta_cohort_levels`.
-fit_cox_on_yf <- function(Y, time, status,
+fit_ssbmf_yfb <- function(Y, time, status,
                            K            = 5,
                            max_iter     = 100,
                            tol          = 1e-5,
@@ -694,7 +694,7 @@ fit_cox_on_yf <- function(Y, time, status,
 
   # ---- Phase 1a objective normalization (see DECISIONS.md) -----------------
   # "per_p": boosts survival (divisor < 1 => multiplies) instead of shrinking
-  # genomics -- see fit_modular.R and DECISIONS.md 2026-07-12 for rationale.
+  # genomics -- see fit_ssbmf_lb.R and DECISIONS.md 2026-07-12 for rationale.
   norm_convention  <- match.arg(norm_convention)
   genomics_divisor <- if (norm_convention == "np_n") n * p else 1
   survival_divisor <- if (norm_convention == "np_n") n   else 1 / p
@@ -729,7 +729,7 @@ fit_cox_on_yf <- function(Y, time, status,
 
   # --------------------------------------------------------------------------
   # Cohort indicator pre-initialisation (cohort-cols-L extension)
-  # Identical logic to fit_modular.R; see that file for full commentary.
+  # Identical logic to fit_ssbmf_lb.R; see that file for full commentary.
   # --------------------------------------------------------------------------
   if (!is.null(cohort_id)) {
     cohort_id <- factor(cohort_id)
@@ -813,7 +813,7 @@ fit_cox_on_yf <- function(Y, time, status,
     EL <- cz$EL; EL2 <- cz$EL2; EF <- cz$EF; EF2 <- cz$EF2
   }
 
-  # Augment EL/EF matrices with cohort indicator columns (same as fit_modular.R).
+  # Augment EL/EF matrices with cohort indicator columns (same as fit_ssbmf_lb.R).
   if (!is.null(cohort_id) && C_cols > 0) {
     EL_aug  <- cbind(EL,  L_cohort)
     EL2_aug <- cbind(EL2, L_cohort)
@@ -1205,11 +1205,11 @@ fit_cox_on_yf <- function(Y, time, status,
     # Fail loud on divergence: a non-finite loading or coefficient otherwise
     # propagates silently (ebnm returns zeros and the fit looks converged).
     if (!all(is.finite(EF)) || !all(is.finite(EL)) || !all(is.finite(EBeta)))
-      stop(sprintf("fit_cox_on_yf() diverged at iteration %d: non-finite loadings or ",
+      stop(sprintf("fit_ssbmf_yfb() diverged at iteration %d: non-finite loadings or ",
                    iter), "survival coefficients (max |E[beta]| before failure: ",
            signif(max(abs(EBeta_old)), 3), ").")
 
-    # Cohort F update — identical block to fit_modular.R.
+    # Cohort F update — identical block to fit_ssbmf_lb.R.
     # Also frozen during the N_frozen phase to keep EF_aug fully fixed.
     if (!is.null(cohort_id) && C_cols > 0 && !freeze_F) {
       Y_hat_global <- EL %*% t(EF)
@@ -1512,7 +1512,7 @@ fit_cox_on_yf <- function(Y, time, status,
         refit_args$posterior_init <- yf_subset_posterior_state(result$posterior_state,keep)
       if (beta_prior_mode == "shared") refit_args["beta_prior_init"] <- list(g_beta)
       if (!record_output_convergence) refit_args$converge_on <- NULL
-      refit <- do.call(fit_cox_on_yf, refit_args)
+      refit <- do.call(fit_ssbmf_yfb, refit_args)
       refit$pruning <- rbind(
         data.frame(K_before = K, removed_program = drop, elbo_gain = delta[drop],
                    converged_before = history$converged),
@@ -1531,7 +1531,7 @@ fit_cox_on_yf <- function(Y, time, status,
 
 if (sys.nframe() == 0L && DATA_MODE == "real") {
   stopifnot(!is.null(real_Y), !is.null(real_time), !is.null(real_status))
-  res <- fit_cox_on_yf(real_Y, real_time, real_status,
+  res <- fit_ssbmf_yfb(real_Y, real_time, real_status,
                        K = 5, max_iter = 100, tol = 1e-3, verbose = TRUE)
   cat(sprintf("  Converged: %s | Iterations: %d\n",
               res$history$converged, res$history$n_iter))

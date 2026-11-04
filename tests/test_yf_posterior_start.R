@@ -6,14 +6,14 @@
 # Dependencies: existing fitter/test helpers, ebnm
 # ============================================================
 if(!exists("run_test"))source("tests/test_helpers.R")
-if(!exists("fit_cox_on_yf"))suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"),
+if(!exists("fit_ssbmf_yfb"))suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"),
   error=function(e) {if(!grepl("!is.null(real_Y)",conditionMessage(e),fixed=TRUE))stop(e)}))
 .ps_y <- matrix(seq_len(240)/240,40,6)+matrix(sin(seq_len(240)),40,6)
 .ps_a <- list(K=3L,max_iter=6L,canonicalize=TRUE,w_S=1,prior_LF="point_laplace",
   init_supervised=TRUE,beta_prior_mode="shared",prior_beta="point_laplace",
   beta_warmup=10L,verbose=FALSE)
 run_test("YFPosterior-T1: state extraction keeps all moments and persistent priors", {
-  f <- do.call(fit_cox_on_yf,c(list(.ps_y,1:40,rep(1,40)),.ps_a,
+  f <- do.call(fit_ssbmf_yfb,c(list(.ps_y,1:40,rep(1,40)),.ps_a,
     list(prune_preserve_posterior=TRUE)))
   s <- f$posterior_state;k <- c(3L,1L)
   x <- yf_subset_posterior_state(s,k)
@@ -24,11 +24,11 @@ run_test("YFPosterior-T1: state extraction keeps all moments and persistent prio
   assert_true(identical(x$Tau,s$Tau) && identical(x$g_beta,s$g_beta),
     msg="feature precisions and shared prior retained exactly")
   s2 <- f;s2$posterior_state <- NULL
-  ref <- do.call(fit_cox_on_yf,c(list(.ps_y,1:40,rep(1,40)),.ps_a))
+  ref <- do.call(fit_ssbmf_yfb,c(list(.ps_y,1:40,rep(1,40)),.ps_a))
   assert_true(identical(s2,ref),msg="requesting the state changes no unpruned fitted quantity")
 })
 run_test("YFPosterior-T2: first resumed update uses retained beta and loading variance", {
-  f <- do.call(fit_cox_on_yf,c(list(.ps_y,1:40,rep(1,40)),.ps_a,
+  f <- do.call(fit_ssbmf_yfb,c(list(.ps_y,1:40,rep(1,40)),.ps_a,
     list(prune_preserve_posterior=TRUE)))
   s <- f$posterior_state
   # Deliberately nonzero beta and posterior variance distinguish a real resume
@@ -43,7 +43,7 @@ run_test("YFPosterior-T2: first resumed update uses retained beta and loading va
   assign("update_beta_k",bw,envir=.GlobalEnv)
   tryCatch({
     a <- modifyList(.ps_a,list(max_iter=1L,posterior_init=s,prune_preserve_posterior=TRUE))
-    do.call(fit_cox_on_yf,c(list(.ps_y,1:40,rep(1,40)),a))
+    do.call(fit_ssbmf_yfb,c(list(.ps_y,1:40,rep(1,40)),a))
   },finally={assign("calc_cox_taylor_yf",orig_t,envir=.GlobalEnv);assign("update_beta_k",orig_b,envir=.GlobalEnv)})
   assert_near(eta0,as.vector(.ps_y%*%s$EF%*%s$EBeta),tol=1e-12,
     msg="working predictor starts from retained beta, not zero")
@@ -54,15 +54,15 @@ run_test("YFPosterior-T2: first resumed update uses retained beta and loading va
 })
 run_test("YFPosterior-T3: disabled option is identical and malformed states fail loudly", {
   a <- c(list(.ps_y,1:40,rep(1,40)),.ps_a,list(prune=TRUE))
-  x <- do.call(fit_cox_on_yf,a)
-  y <- do.call(fit_cox_on_yf,c(a,list(prune_preserve_posterior=FALSE)))
+  x <- do.call(fit_ssbmf_yfb,a)
+  y <- do.call(fit_ssbmf_yfb,c(a,list(prune_preserve_posterior=FALSE)))
   assert_true(identical(x,y),msg="explicit FALSE equals historical mean-only pruning")
-  e <- tryCatch(do.call(fit_cox_on_yf,c(a,list(posterior_init=list(EL=matrix(1,1,1))))),error=function(e)e)
+  e <- tryCatch(do.call(fit_ssbmf_yfb,c(a,list(posterior_init=list(EL=matrix(1,1,1))))),error=function(e)e)
   assert_true(inherits(e,"error"),msg="incomplete state rejected before fitting")
 })
 
 run_test("YFPosterior-T4: recursive pruning passes the exact retained state", {
-  orig_f <- fit_cox_on_yf;orig_n <- prune_yf_nullcheck
+  orig_f <- fit_ssbmf_yfb;orig_n <- prune_yf_nullcheck
   base <- do.call(orig_f,c(list(.ps_y,1:40,rep(1,40)),.ps_a,
     list(prune_preserve_posterior=TRUE)))
   st <- base$posterior_state
@@ -88,12 +88,12 @@ run_test("YFPosterior-T4: recursive pruning passes the exact retained state", {
     }
     do.call(orig_f,a)
   }
-  assign("fit_cox_on_yf",fw,envir=.GlobalEnv);assign("prune_yf_nullcheck",nw,envir=.GlobalEnv)
+  assign("fit_ssbmf_yfb",fw,envir=.GlobalEnv);assign("prune_yf_nullcheck",nw,envir=.GlobalEnv)
   tryCatch({
     a <- c(list(.ps_y,1:40,rep(1,40)),modifyList(.ps_a,list(K=4L,
       posterior_init=st,beta_prior_mode="per_program",prior_beta="normal")),
       list(prune=TRUE,prune_protect_survival=TRUE,prune_preserve_posterior=TRUE))
-    do.call(fit_cox_on_yf,a)
-  },finally={assign("fit_cox_on_yf",orig_f,envir=.GlobalEnv);assign("prune_yf_nullcheck",orig_n,envir=.GlobalEnv)})
+    do.call(fit_ssbmf_yfb,a)
+  },finally={assign("fit_ssbmf_yfb",orig_f,envir=.GlobalEnv);assign("prune_yf_nullcheck",orig_n,envir=.GlobalEnv)})
   assert_true(resumed>0L,msg="fixture actually exercises posterior-state pruning refits")
 })

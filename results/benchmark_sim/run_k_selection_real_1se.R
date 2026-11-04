@@ -26,7 +26,7 @@ OUT_DIR <- out_dir
 rows <- list()
 for (K in c(3L,5L,7L,9L,11L,13L)) for (f in 1:5) {
   tr <- which(fold!=f); te <- which(fold==f);set.seed(42)
-  fit <- fit_cox_on_yf(Y_train[tr,,drop=FALSE],time_train[tr],status_train[tr],K=K,
+  fit <- fit_ssbmf_yfb(Y_train[tr,,drop=FALSE],time_train[tr],status_train[tr],K=K,
     max_iter=cfg$cavi$max_iter,tol=cfg$cavi$tol,prior_LF="point_laplace",
     canonicalize=TRUE,w_S=1,init_supervised=TRUE,beta_prior_mode="shared",
     prior_beta="point_laplace",beta_warmup=10L,prune=TRUE,prune_protect_survival=TRUE,
@@ -44,7 +44,7 @@ best <- which.max(s$mean_C);cutoff <- s$mean_C[best]-s$SE[best]
 chosen <- min(s$K[s$mean_C>=cutoff]);s$selected <- s$K==chosen
 write.csv(s,file.path(out_dir,"real_1se_summary.csv"),row.names=FALSE)
 set.seed(42)
-fit <- fit_cox_on_yf(Y_train,time_train,status_train,K=chosen,
+fit <- fit_ssbmf_yfb(Y_train,time_train,status_train,K=chosen,
   max_iter=cfg$cavi$max_iter,tol=cfg$cavi$tol,prior_LF="point_laplace",
   canonicalize=TRUE,w_S=1,init_supervised=TRUE,beta_prior_mode="shared",
   prior_beta="point_laplace",beta_warmup=10L,prune=TRUE,prune_protect_survival=TRUE,verbose=FALSE)

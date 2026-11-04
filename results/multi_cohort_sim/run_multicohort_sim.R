@@ -43,9 +43,9 @@ args         <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE   <- "--quick" %in% args
 n_seeds_arg  <- args[grepl("^--n-seeds=", args)]
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -66,8 +66,8 @@ source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
 source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 
 # preprocessing + helpers (needed for the real-data EBMF templates)
 source("code/preprocess_desurv.R")
@@ -187,7 +187,7 @@ fit_arm <- function(arm, d, spl, K) {
   str_   <- d$status[spl$train_idx]
 
   if (arm == "YFB_base") {
-    f <- suppressMessages(fit_cox_on_yf(
+    f <- suppressMessages(fit_ssbmf_yfb(
       Ytr, ttr, str_, K = K, max_iter = MAX_ITER, alpha = ALPHA,
       prior_beta = PRIOR_BETA, verbose = FALSE, cohort_id = NULL))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = f$EF_norms,

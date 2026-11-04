@@ -1,12 +1,12 @@
 # =============================================================================
 # tests/test_elbo.R
 # Tests for compute_elbo.R (compute_ebnm_kl, compute_survival_elbo) and
-# the full ELBO integration in fit_supervised_mf_modular().
+# the full ELBO integration in fit_ssbmf_lb().
 #
 # Run via:  Rscript tests/run_tests.R
 # =============================================================================
 
-# NOTE: test_helpers.R, compute_elbo.R, and fit_modular.R are sourced by
+# NOTE: test_helpers.R, compute_elbo.R, and fit_ssbmf_lb.R are sourced by
 # run_tests.R before this file is loaded.
 
 # =============================================================================
@@ -150,7 +150,7 @@ run_test("compute_survival_elbo: uncertainty correction reduces value vs logPL",
 })
 
 # =============================================================================
-# Section 4: Full ELBO integration in fit_supervised_mf_modular
+# Section 4: Full ELBO integration in fit_ssbmf_lb
 # =============================================================================
 
 # Shared synthetic data for integration tests.
@@ -170,16 +170,16 @@ run_test("compute_survival_elbo: uncertainty correction reduces value vs logPL",
   list(Y = Y, time = time, status = status)
 })
 
-run_test("fit_supervised_mf_modular returns $history$elbo_full", {
+run_test("fit_ssbmf_lb returns $history$elbo_full", {
   d   <- .elbo_test_data
-  res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+  res <- fit_ssbmf_lb(d$Y, d$time, d$status,
                                    K = 2, max_iter = 5, verbose = FALSE)
   assert_true(!is.null(res$history$elbo_full), "elbo_full missing from history")
 })
 
 run_test("history$elbo_full has same length as history$elbo_proxy", {
   d   <- .elbo_test_data
-  res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+  res <- fit_ssbmf_lb(d$Y, d$time, d$status,
                                    K = 2, max_iter = 5, verbose = FALSE)
   assert_equal(length(res$history$elbo_full),
                length(res$history$elbo_proxy),
@@ -188,7 +188,7 @@ run_test("history$elbo_full has same length as history$elbo_proxy", {
 
 run_test("history tracks delta_L, delta_Beta, and delta_elbo_rel", {
   d   <- .elbo_test_data
-  res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+  res <- fit_ssbmf_lb(d$Y, d$time, d$status,
                                    K = 2, max_iter = 6, verbose = FALSE)
   assert_equal(length(res$history$delta_L), length(res$history$elbo_full),
                "delta_L length mismatch")
@@ -203,7 +203,7 @@ run_test("history tracks delta_L, delta_Beta, and delta_elbo_rel", {
 
 run_test("history$elbo_full is all finite", {
   d   <- .elbo_test_data
-  res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+  res <- fit_ssbmf_lb(d$Y, d$time, d$status,
                                    K = 2, max_iter = 10, verbose = FALSE)
   assert_finite(res$history$elbo_full)
 })
@@ -213,7 +213,7 @@ run_test("history$elbo_proxy unchanged after adding elbo_full", {
   # Adding full ELBO tracking must NOT alter proxy values.
   d   <- .elbo_test_data
   set.seed(99)
-  res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+  res <- fit_ssbmf_lb(d$Y, d$time, d$status,
                                    K = 2, max_iter = 8, verbose = FALSE)
   assert_finite(res$history$elbo_proxy, "proxy contains non-finite values")
   # Proxy should be negative (log-likelihood) and non-constant over iters
@@ -225,7 +225,7 @@ run_test("elbo_full is no greater than elbo_proxy when alpha=0", {
   # With alpha=0, the full ELBO reduces to the genomics proxy plus KL terms.
   # Since each KL contribution is <= 0, full ELBO must be <= proxy.
   d   <- .elbo_test_data
-  res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+  res <- fit_ssbmf_lb(d$Y, d$time, d$status,
                                    K = 2, max_iter = 8, alpha = 0,
                                    verbose = FALSE)
   last_full  <- tail(res$history$elbo_full,  1)
@@ -239,11 +239,11 @@ run_test("elbo_full uses alpha-weighted genomics and survival terms", {
   d <- .elbo_test_data
 
   set.seed(123)
-  res_gen <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+  res_gen <- fit_ssbmf_lb(d$Y, d$time, d$status,
                                        K = 2, max_iter = 1, alpha = 0,
                                        verbose = FALSE)
   set.seed(123)
-  res_surv <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+  res_surv <- fit_ssbmf_lb(d$Y, d$time, d$status,
                                         K = 2, max_iter = 1, alpha = 1,
                                         verbose = FALSE)
 
@@ -257,7 +257,7 @@ run_test("elbo_full uses alpha-weighted genomics and survival terms", {
 
 run_test("convergence uses relative ELBO change, not parameter deltas", {
   d   <- .elbo_test_data
-  res <- fit_supervised_mf_modular(d$Y, d$time, d$status,
+  res <- fit_ssbmf_lb(d$Y, d$time, d$status,
                                    K = 2, max_iter = 8, tol = 1,
                                    verbose = FALSE)
   assert_true(isTRUE(res$history$converged),

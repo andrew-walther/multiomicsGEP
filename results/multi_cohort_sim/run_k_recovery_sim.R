@@ -31,9 +31,9 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -46,7 +46,7 @@ source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 source("results/benchmark_sim/benchmark_helpers.R")
 source("code/select_K.R")   # classify_factors()
@@ -140,7 +140,7 @@ for (cond_name in names(CONDITIONS)) {
       )
 
       fit <- tryCatch(
-        suppressMessages(fit_cox_on_yf(
+        suppressMessages(fit_ssbmf_yfb(
           d$Y, d$time, d$status, K = K_init, max_iter = MAX_ITER, alpha = ALPHA,
           prior_beta = PRIOR_BETA, verbose = FALSE
         )),

@@ -17,7 +17,7 @@
 #           (run `Rscript results/benchmark_sim/run_ebmf_cox_external.R --k 7` first if missing)
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 source("code/concordance_ci.R")

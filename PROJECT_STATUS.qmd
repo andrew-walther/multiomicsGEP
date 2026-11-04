@@ -28,6 +28,10 @@ Multimodal development is deferred except when a unified fitter run with
 M = 1 offers a concrete route to resolving supervision. The single-modality
 R package can start once the model meets its acceptance criteria.
 
+The single-modality fitters were renamed on 2026-11-04: `fit_ssbmf_yfb()` (η = (YF)β, formerly
+`fit_cox_on_yf()`) and `fit_ssbmf_lb()` (η = Lβ, formerly `fit_supervised_mf_modular()`). Dated
+entries below use the old names. See the 2026-11-04 entry in [DECISIONS.md](DECISIONS.md).
+
 See the [roadmap](ROADMAP.md) for open tasks and completed milestones.
 The sections below record dated results and historical development notes.
 

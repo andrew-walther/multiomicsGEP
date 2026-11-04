@@ -28,7 +28,7 @@
 #' Return the five fixed diagnostic specifications for either model
 #' @param model Single or multimodal model name.
 #' @param arm One of selected, fixed, normal, framework, no_start.
-#' @return Arguments for fit_cox_on_yf or the multimodal control list.
+#' @return Arguments for fit_ssbmf_yfb or the multimodal control list.
 #' @examples
 #' collapse_arm_controls("multimodal", "fixed")
 collapse_arm_controls <- function(model, arm) {
@@ -111,7 +111,7 @@ run_collapse_cell <- function(i,out_dir,training_path="data/round2_tcga_training
   ans <- withCallingHandlers(tryCatch({
   source("code/fit_multimodal_yfb.R",local=.GlobalEnv)
   source("code/concordance_ci.R",local=.GlobalEnv)
-  tryCatch(source("code/fit_cox_on_yf.R",local=.GlobalEnv),error=function(e) {
+  tryCatch(source("code/fit_ssbmf_yfb.R",local=.GlobalEnv),error=function(e) {
     if(!grepl("!is.null(real_Y)",conditionMessage(e),fixed=TRUE))stop(e)
   })
   tr <- readRDS(training_path)
@@ -120,7 +120,7 @@ run_collapse_cell <- function(i,out_dir,training_path="data/round2_tcga_training
     identical(lapply(tr$Y,colnames),spec$feature_names),
     identical(names(tr$time),spec$subject_ids),identical(names(tr$event),spec$subject_ids))
     a <- collapse_arm_controls(model,arm)
-    fit <- if(model=="single")do.call(fit_cox_on_yf,c(list(scale(tr$Y$expression),tr$time,tr$event),a)) else
+    fit <- if(model=="single")do.call(fit_ssbmf_yfb,c(list(scale(tr$Y$expression),tr$time,tr$event),a)) else
       fit_multimodal_yfb(tr$Y,tr$time,tr$event,7L,a)
     saveRDS(fit,paste0(stem,".rds"))
     if(model=="multimodal") {

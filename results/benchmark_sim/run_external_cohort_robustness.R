@@ -19,7 +19,7 @@
 #          Rscript results/benchmark_sim/run_external_cohort_robustness.R
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 source("code/pathway_enrichment.R")

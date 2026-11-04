@@ -22,13 +22,13 @@ source("code/preprocess_desurv.R")
 source("code/train_test_split.R")
 # The legacy source defines functions before its demonstration runner stops.
 # Accept only that known NULL-input assertion, never suppress another error.
-tryCatch(source("code/fit_cox_on_yf.R"),error=function(e) {
+tryCatch(source("code/fit_ssbmf_yfb.R"),error=function(e) {
   if(conditionMessage(e)!="!is.null(real_Y) is not TRUE")stop(e)
 })
 source("code/predict_cox_on_yf.R")
 source("code/select_K.R")
 source("code/feature_sensitivity.R")
-stopifnot(exists("fit_cox_on_yf"),exists("calc_cox_taylor_yf"))
+stopifnot(exists("fit_ssbmf_yfb"),exists("calc_cox_taylor_yf"))
 out <- "results/benchmark_sim/outputs/feature_expansion/cold_primary"
 local <- "data/round2_feature_cold_primary.rds"
 dir.create(out,recursive=TRUE,showWarnings=FALSE)
@@ -73,7 +73,7 @@ if(mode=="prepare") {
     folds=folds,cells=cells,controls=controls),local)
   write.csv(manifest$design,file.path(out,"feature_counts.csv"),row.names=FALSE)
   write.csv(cells,file.path(out,"cells.csv"),row.names=FALSE)
-  tracked <- c("config/globals.yml","code/fit_cox_on_yf.R","code/feature_sensitivity.R",
+  tracked <- c("config/globals.yml","code/fit_ssbmf_yfb.R","code/feature_sensitivity.R",
     "code/preprocess_desurv.R","code/train_test_split.R",
     "results/benchmark_sim/run_feature_expansion.R",local)
   write.csv(data.frame(path=tracked,md5=unname(tools::md5sum(tracked))),
@@ -121,7 +121,7 @@ for(id in ids) {
   tryCatch(withCallingHandlers({
     set.seed(42L)
     controls <- z$controls;controls$sign_correction <- cell$fold==0L
-    fit <- do.call(fit_cox_on_yf,c(list(Y=Y[train,,drop=FALSE],
+    fit <- do.call(fit_ssbmf_yfb,c(list(Y=Y[train,,drop=FALSE],
       time=z$time[train],status=z$status[train]),controls))
     training <- predict_cox_on_yf(Y[train,,drop=FALSE],fit$EF,fit$EBeta,fit$EF_norms)
     # Match existing CV orientation using training outcomes only.

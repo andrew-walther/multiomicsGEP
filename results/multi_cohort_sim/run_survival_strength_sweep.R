@@ -42,9 +42,9 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -64,8 +64,8 @@ source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
 source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 
 source("code/preprocess_desurv.R")
 source("results/benchmark_sim/benchmark_helpers.R")
@@ -151,7 +151,7 @@ fit_arm <- function(arm, d, spl) {
   str_ <- d$status[spl$train_idx]
 
   if (arm == "YFB_tuned") {
-    f <- suppressMessages(fit_cox_on_yf(
+    f <- suppressMessages(fit_ssbmf_yfb(
       Ytr, ttr, str_, K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA_TUNED,
       prior_beta = PRIOR_BETA, verbose = FALSE))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = f$EF_norms, n_iter = f$history$n_iter)
@@ -160,13 +160,13 @@ fit_arm <- function(arm, d, spl) {
     # Internal control: alpha=0 should not change YFB's F at all (F is pure
     # genomics regardless of alpha under the YFB reformulation) -- verified
     # directly below (section 4b), not merely asserted.
-    f <- suppressMessages(fit_cox_on_yf(
+    f <- suppressMessages(fit_ssbmf_yfb(
       Ytr, ttr, str_, K = K_FIT, max_iter = MAX_ITER, alpha = 0,
       prior_beta = PRIOR_BETA, verbose = FALSE, sign_correction = FALSE))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = f$EF_norms, n_iter = f$history$n_iter)
 
   } else if (arm == "LB_tuned") {
-    f <- suppressMessages(fit_supervised_mf_modular(
+    f <- suppressMessages(fit_ssbmf_lb(
       Ytr, ttr, str_, K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA_TUNED,
       prior_beta = PRIOR_BETA, verbose = FALSE))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = NULL, n_iter = f$history$n_iter)
@@ -299,11 +299,11 @@ for (strength in STRENGTHS) {
     # above use natural convergence (appropriate for the C-index/recovery
     # comparison) and are NOT reused here for that reason.
     ctrl_iter <- 40L
-    f_ctrl_tuned <- suppressMessages(fit_cox_on_yf(
+    f_ctrl_tuned <- suppressMessages(fit_ssbmf_yfb(
       d$Y[spl$train_idx, , drop = FALSE], d$time[spl$train_idx], d$status[spl$train_idx],
       K = K_FIT, max_iter = ctrl_iter, tol = -1, alpha = ALPHA_TUNED,
       prior_beta = PRIOR_BETA, verbose = FALSE, sign_correction = FALSE))
-    f_ctrl_a0 <- suppressMessages(fit_cox_on_yf(
+    f_ctrl_a0 <- suppressMessages(fit_ssbmf_yfb(
       d$Y[spl$train_idx, , drop = FALSE], d$time[spl$train_idx], d$status[spl$train_idx],
       K = K_FIT, max_iter = ctrl_iter, tol = -1, alpha = 0,
       prior_beta = PRIOR_BETA, verbose = FALSE, sign_correction = FALSE))

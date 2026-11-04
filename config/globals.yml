@@ -1,7 +1,7 @@
 # ==============================================================================
 # globals.yml — multiomicsGEP
 # Purpose:   Single source of truth for hard-coded parameters across the
-#            simulation runner, fit_modular.R, and select_K.R.
+#            simulation runner, fit_ssbmf_lb.R, and select_K.R.
 #            Load with: cfg <- yaml::read_yaml("config/globals.yml")
 # ==============================================================================
 
@@ -187,7 +187,7 @@ benchmark:
                          # or F update (Cluster B, only effective when alpha_F > 0).
                          # Tried: TRUE in Cluster A smoke — mixed external results, 4/5 cohorts
                          # regressed. Keep FALSE for baseline.
-  cox_warmstart: false   # Cox-based EBeta initialization in Cluster B (fit_cox_on_yf).
+  cox_warmstart: false   # Cox-based EBeta initialization in Cluster B (fit_ssbmf_yfb).
                          # FALSE = matches Cluster A behavior (EBeta starts at 0). Toggleable
                          # for experiments; effect unclear with normal prior.
   prior_beta_compare:    # Both priors run in each benchmark for side-by-side comparison.

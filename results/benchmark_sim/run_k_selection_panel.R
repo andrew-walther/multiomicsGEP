@@ -39,7 +39,7 @@ load_panel_code <- function() {
   for (e in ex) if (is.call(e) && identical(e[[1]], as.name("<-")) &&
                     as.character(e[[2]]) %in% wanted) eval(e, .GlobalEnv)
   load_code()
-  if (!exists("fit_cox_on_yf")) stop("Single-modality fitter was not loaded")
+  if (!exists("fit_ssbmf_yfb")) stop("Single-modality fitter was not loaded")
   source("code/multimodal_yfb_helpers.R", local = .GlobalEnv)
   source("code/preprocess_multimodal_yfb.R", local = .GlobalEnv)
   source("code/fit_multimodal_yfb.R", local = .GlobalEnv)
@@ -69,7 +69,7 @@ panel_cell <- function(i,posterior_start=FALSE) {
              beta_prior_mode = "shared", prior_beta = "point_laplace", beta_warmup = 10L,
              prune = TRUE, prune_protect_survival = TRUE) else list(alpha_F = 0))
       if(posterior_start)a$prune_preserve_posterior <- TRUE
-      fit <- do.call(fit_cox_on_yf, c(list(tb$Ytr, tb$ttr, tb$str), a))
+      fit <- do.call(fit_ssbmf_yfb, c(list(tb$Ytr, tb$ttr, tb$str), a))
       sc <- score_fit(fit, tb)
       metrics <- data.frame(recovered = sc$recovered, false_active = sc$false_z,
         K_final = ncol(fit$EF), converged = fit$history$converged,

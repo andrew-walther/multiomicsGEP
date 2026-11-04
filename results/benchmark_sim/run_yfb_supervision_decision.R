@@ -11,7 +11,7 @@
 Sys.setenv(OPENBLAS_NUM_THREADS=1,OMP_NUM_THREADS=1,VECLIB_MAXIMUM_THREADS=1)
 source("code/fit_yfb_supervised.R")
 source("code/simulate_multimodal_yfb.R")
-source("code/fit_cox_on_yf.R")
+source("code/fit_ssbmf_yfb.R")
 source("code/predict_cox_on_yf.R")
 source("code/concordance_ci.R")
 
@@ -187,7 +187,7 @@ yfb_decision_task <- function(row,out,fit_rho=.2) {
     },gamma)
   }
   record("canonical_w1",{
-    f<-fit_cox_on_yf(d$Y,d$time,d$event,K=cfg$benchmark$k_merged_yfb_desurv,max_iter=cfg$cavi$max_iter,tol=cfg$cavi$tol,
+    f<-fit_ssbmf_yfb(d$Y,d$time,d$event,K=cfg$benchmark$k_merged_yfb_desurv,max_iter=cfg$cavi$max_iter,tol=cfg$cavi$tol,
       prior_LF="point_laplace",prior_beta="normal",canonicalize=TRUE,w_S=1,
       alpha=cfg$benchmark$alpha,verbose=FALSE,trace_supervision=TRUE,sign_correction=FALSE)
     list(fit=f,metrics=yfb_decision_score(f,d,TRUE))
@@ -221,7 +221,7 @@ if(sys.nframe()==0L) {
  parallel::clusterEvalQ(cl,{
    Sys.setenv(OPENBLAS_NUM_THREADS=1,OMP_NUM_THREADS=1,VECLIB_MAXIMUM_THREADS=1)
    source("code/fit_yfb_supervised.R");source("code/simulate_multimodal_yfb.R")
-   source("code/fit_cox_on_yf.R");source("code/predict_cox_on_yf.R");source("code/concordance_ci.R")
+   source("code/fit_ssbmf_yfb.R");source("code/predict_cox_on_yf.R");source("code/concordance_ci.R")
    multimodal_yfb_use_cpp();NULL
  })
  status<-parallel::parLapplyLB(cl,split(design,seq_len(nrow(design))),function(row)

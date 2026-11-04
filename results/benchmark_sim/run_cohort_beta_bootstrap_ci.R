@@ -28,7 +28,7 @@
 # Usage:   Rscript results/benchmark_sim/run_cohort_beta_bootstrap_ci.R
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(survival) })
@@ -38,7 +38,7 @@ source("code/update_beta.R"); source("code/update_beta_cohort.R")
 source("code/update_L.R"); source("code/update_F.R"); source("code/update_tau.R")
 source("code/compute_elbo.R"); source("code/update_F_cohort.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 source("code/concordance_ci.R")
 
@@ -80,7 +80,7 @@ for (ec in EXTERNAL_COHORTS) {
 # --------------------------------------------------------------------------
 # Per-cohort, per-arm risk scores. Every joint_yfb* score is
 # ZF_ext %*% fit$EBeta (or fit$EBeta_pooled), and fit$EBeta's sign is now the
-# single, frozen, training-data-only orientation decided by fit_cox_on_yf()'s
+# single, frozen, training-data-only orientation decided by fit_ssbmf_yfb()'s
 # Phase C (fixed 2026-09-04, DECISIONS.md -- correct-direction concordance,
 # reverse=TRUE) -- it must NOT be re-derived from the external cohort's own
 # outcomes below. The two-step EBMF+LASSO-Cox baseline's risk score is a

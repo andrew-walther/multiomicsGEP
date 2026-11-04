@@ -11,11 +11,11 @@ if (!exists("run_test")) source("tests/test_helpers.R")
 suppressPackageStartupMessages({
   library(ebnm); library(survival); library(rBayesianOptimization)
 })
-if (!exists("fit_cox_on_yf")) {
+if (!exists("fit_ssbmf_yfb")) {
   source("code/update_beta.R"); source("code/update_L_surv_YFB.R")
   source("code/update_F_surv_YFB.R"); source("code/update_tau.R")
   source("code/compute_elbo.R"); source("code/update_F_cohort.R")
-  suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL)))
+  suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
 }
 if (!exists("predict_cox_on_yf")) source("code/predict_cox_on_yf.R")
 if (!exists("create_stratified_folds")) source("code/train_test_split.R")
@@ -176,10 +176,10 @@ run_test("BO-T11: candidates_checked has expected columns, ordered by cv_value d
               "candidates_checked should be ordered by cv_value descending")
 })
 
-# T12: integration smoke test -- the REAL fit_cox_on_yf() default still works
+# T12: integration smoke test -- the REAL fit_ssbmf_yfb() default still works
 #      end to end (not just the stub), on a small but genuine signal DGP
 #      (same recipe as tests/test_cox_on_yf_smoke.R).
-run_test("BO-T12: real fit_cox_on_yf() default recovers a genuine top candidate", {
+run_test("BO-T12: real fit_ssbmf_yfb() default recovers a genuine top candidate", {
   set.seed(101); n3 <- 80; p3 <- 150; K3 <- 5
   beta_true <- c(0.8, rep(0, K3 - 1))
   L_true <- matrix(rnorm(n3 * K3), n3, K3)

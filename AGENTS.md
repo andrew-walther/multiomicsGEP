@@ -39,7 +39,7 @@ R package can start once the model meets its acceptance criteria.
 
 - **Deliverable and code attribution:** Do not name assistant tools or include tool-attribution lines in presentation deliverables or code. Tool names remain appropriate in explicit review handoffs. Andrew requested this on 2026-10-15; it supersedes earlier template author lines.
 
-- **Canonical CAVI loop:** `code/fit_modular.R`. `Supervised_Bayesian_MF_V2.R` is reference-only — do not extend. V1 (`code/legacy/`) — do not modify. (`full_sim/` and `modular_sim_block/` are legacy/deprecated.)
+- **Canonical CAVI loop:** `code/fit_ssbmf_lb.R`. `Supervised_Bayesian_MF_V2.R` is reference-only — do not extend. V1 (`code/legacy/`) — do not modify. (`full_sim/` and `modular_sim_block/` are legacy/deprecated.)
 - **Formal benchmark pipeline:** `results/benchmark_sim/` — alpha CV, external validation, DeSurv comparison. Exploratory/development fits lived in `results/modular_sim_factor/` (now archived to `results/legacy/modular_sim_factor/`).
 - **Modular updates:** `code/update_beta.R`, `code/update_L.R`, `code/update_F.R`, `code/update_tau.R`.
 - **Global constants:** `config/globals.yml` — all hyperparameters (lambda, alpha grid, K thresholds, DGP params). Never hardcode values defined here.
@@ -51,8 +51,8 @@ R package can start once the model meets its acceptance criteria.
 - **Tests:** Run `Rscript tests/run_tests.R` after any change to a modular update script. The latest verified count and expected diagnostic warnings are recorded in the execution report; tests must all pass before completion.
 - **Real-data tests:** `Rscript tests/test_real_data_loading.R` — 88/88 passing (auto-skips if `PDAC_DATA_ROOT` not set).
 - **Real data:** Not in git (`**/PDAC_data/` and the local `/data/` folder of TCGA/ICGC copies are git-ignored; never commit them). Stored locally at `~/Library/CloudStorage/OneDrive-.../UNC Dissertation (Liu)/PDAC_data`. For Longleaf: `export PDAC_DATA_ROOT=/proj/rashidlab/data/PDAC`.
-- **Model entry points:** LB uses `code/fit_modular.R` (η = Lβ) and YFB uses
-  `code/fit_cox_on_yf.R` (η = (YF)β). The frozen YFB benchmark uses
+- **Model entry points:** LB uses `code/fit_ssbmf_lb.R` (η = Lβ) and YFB uses
+  `code/fit_ssbmf_yfb.R` (η = (YF)β). The frozen YFB benchmark uses
   `alpha_F = 0`. See the status report for benchmark estimates and the
   current supervision experiments.
 - **Documentation audience:** Write ROADMAP.md, DECISIONS.md, PROJECT_STATUS.qmd, and README.md for biostatistician collaborators reading the project cold — not as implementation logs. Avoid internal session terminology (e.g. "Phase A/B/C", "Cluster A/B", "Session N") in prose descriptions; use those labels only in commit messages or as lookup keys. Describe methods and findings in terms a statistical reader would recognize: model variant, prior, training set, metric, result.
@@ -101,17 +101,17 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 | What | Where |
 |------|-------|
 | Code quick-reference (math ↔ R) | `code/SupervisedMF_Context.md` |
-| **Reusable CAVI fitting function** | `code/fit_modular.R` (factor-wise, canonical) |
+| **Reusable CAVI fitting function** | `code/fit_ssbmf_lb.R` (factor-wise, canonical) |
 | Hold-out prediction | `code/predict.R` — `predict_supervised_mf()` |
 | Train/test splitting | `code/train_test_split.R` — `stratified_split()` |
 | Feature selection | `code/feature_selection.R` — `cox_feature_selection()` |
 | K selection | `code/select_K.R` — `auto_prune_K()`, `select_K_cv()` |
 | Full ELBO computation | `code/compute_elbo.R` — `compute_ebnm_kl()`, `compute_survival_elbo()`, `compute_normal_kl()` |
-| Joint log-likelihood / BIC for K_init sweeps | `code/compute_bic.R` — `compute_joint_ll_bic()`; source after `fit_cox_on_yf.R` |
+| Joint log-likelihood / BIC for K_init sweeps | `code/compute_bic.R` — `compute_joint_ll_bic()`; source after `fit_ssbmf_yfb.R` |
 | Cross-validated held-out log-likelihood | `code/compute_cv_loglik.R` — `cv_survival_loglik()`, `bicv_genomics_loglik()`; companion to `compute_bic.R`, reported separately |
-| Cohort-specific survival coefficients | `code/update_beta_cohort.R` — `beta_cohort_id` argument on `fit_cox_on_yf()`. Distinct from `cohort_id` (genomics offset) and `strata_id` (baseline hazard) |
+| Cohort-specific survival coefficients | `code/update_beta_cohort.R` — `beta_cohort_id` argument on `fit_ssbmf_yfb()`. Distinct from `cohort_id` (genomics offset) and `strata_id` (baseline hazard) |
 | Cohort F update | `code/update_F_cohort.R` — `update_F_cohort_all()` (Normal conjugate) |
-| Companion doc for fit_modular.R | `docs/lb_walkthroughs/fit_modular.qmd` |
+| Companion doc for fit_ssbmf_lb.R | `docs/lb_walkthroughs/fit_modular.qmd` |
 | **LB benchmark runner** | `results/benchmark_sim/run_LB_benchmark.R` |
 | **YFB benchmark runner** | `results/benchmark_sim/run_YFB_benchmark.R` |
 | **K_init consensus sweep** | `results/benchmark_sim/run_k_init_sweep.R` — ELBO/BIC/log-likelihood/held-out-C consensus; `--reuse-cache`/`--reuse-cv-cache` |

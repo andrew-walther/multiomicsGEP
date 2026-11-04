@@ -7,15 +7,15 @@
 #   Section 1-3  calc_cox_taylor_yf(..., strata=)  (Cluster B / YFB helper)
 #   Section 4    error handling (strata length mismatch)
 #   Section 5    calc_cox_taylor(..., strata=)     (Cluster A / LB helper)
-#   Section 6    fit_cox_on_yf(..., strata_id=)    (YFB integration)
-#   Section 7    fit_supervised_mf_modular(..., strata_id=)  (LB integration)
+#   Section 6    fit_ssbmf_yfb(..., strata_id=)    (YFB integration)
+#   Section 7    fit_ssbmf_lb(..., strata_id=)  (LB integration)
 #
 # Stratified partial likelihood forms Breslow risk sets *within* each stratum;
 # the baseline hazard still cancels per-stratum, so no parametric h0 is
 # introduced (DECISIONS.md, Item 3).
 #
-# calc_cox_taylor, calc_cox_taylor_yf, fit_supervised_mf_modular, and
-# fit_cox_on_yf are all sourced by run_tests.R before this file loads.
+# calc_cox_taylor, calc_cox_taylor_yf, fit_ssbmf_lb, and
+# fit_ssbmf_yfb are all sourced by run_tests.R before this file loads.
 # =============================================================================
 
 suppressPackageStartupMessages(library(survival))
@@ -224,61 +224,61 @@ run_test("StratCox-T5b: calc_cox_taylor stratified logPL matches coxph + strata(
 })
 
 # =============================================================================
-# Section 6: fit_cox_on_yf integration (YFB)
+# Section 6: fit_ssbmf_yfb integration (YFB)
 # =============================================================================
 
-run_test("StratCox-T6: fit_cox_on_yf strata_id=rep(1,n) == strata_id=NULL (EBeta anchor)", {
+run_test("StratCox-T6: fit_ssbmf_yfb strata_id=rep(1,n) == strata_id=NULL (EBeta anchor)", {
   n <- 50L; p <- 20L; K <- 2L
   set.seed(11); Y <- matrix(rnorm(n * p), n, p)
   time <- rexp(n, 0.1); status <- rbinom(n, 1L, 0.7)
 
   set.seed(11)
-  f0 <- suppressMessages(fit_cox_on_yf(Y, time, status, K = K, max_iter = 5L,
+  f0 <- suppressMessages(fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 5L,
                                        verbose = FALSE))
   set.seed(11)
-  f1 <- suppressMessages(fit_cox_on_yf(Y, time, status, K = K, max_iter = 5L,
+  f1 <- suppressMessages(fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 5L,
                                        verbose = FALSE, strata_id = rep(1L, n)))
   assert_near(max(abs(f1$EBeta - f0$EBeta)), 0, tol = 1e-8,
               msg = "single-stratum fit must reduce to the current model")
 })
 
-run_test("StratCox-T7: fit_cox_on_yf with 2 strata runs, finite EBeta of length K", {
+run_test("StratCox-T7: fit_ssbmf_yfb with 2 strata runs, finite EBeta of length K", {
   n <- 50L; p <- 20L; K <- 2L
   set.seed(12); Y <- matrix(rnorm(n * p), n, p)
   time <- rexp(n, 0.1); status <- rbinom(n, 1L, 0.7)
   g <- rep(c("A", "B"), each = n / 2)
-  fit <- suppressMessages(fit_cox_on_yf(Y, time, status, K = K, max_iter = 5L,
+  fit <- suppressMessages(fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 5L,
                                         verbose = FALSE, strata_id = g))
   assert_length(fit$EBeta, K)
   assert_finite(fit$EBeta)
 })
 
 # =============================================================================
-# Section 7: fit_supervised_mf_modular integration (LB)
+# Section 7: fit_ssbmf_lb integration (LB)
 # =============================================================================
 
-run_test("StratCox-T8: fit_supervised_mf_modular strata_id=rep(1,n) == NULL (EBeta anchor)", {
+run_test("StratCox-T8: fit_ssbmf_lb strata_id=rep(1,n) == NULL (EBeta anchor)", {
   n <- 50L; p <- 20L; K <- 2L
   set.seed(21); Y <- matrix(rnorm(n * p), n, p)
   time <- rexp(n, 0.1); status <- rbinom(n, 1L, 0.7)
 
   set.seed(21)
-  f0 <- suppressMessages(fit_supervised_mf_modular(Y, time, status, K = K,
+  f0 <- suppressMessages(fit_ssbmf_lb(Y, time, status, K = K,
                                                    max_iter = 5L, verbose = FALSE))
   set.seed(21)
-  f1 <- suppressMessages(fit_supervised_mf_modular(Y, time, status, K = K,
+  f1 <- suppressMessages(fit_ssbmf_lb(Y, time, status, K = K,
                                                    max_iter = 5L, verbose = FALSE,
                                                    strata_id = rep(1L, n)))
   assert_near(max(abs(f1$EBeta - f0$EBeta)), 0, tol = 1e-8,
               msg = "single-stratum LB fit must reduce to the current model")
 })
 
-run_test("StratCox-T9: fit_supervised_mf_modular with 2 strata runs, finite EBeta length K", {
+run_test("StratCox-T9: fit_ssbmf_lb with 2 strata runs, finite EBeta length K", {
   n <- 50L; p <- 20L; K <- 2L
   set.seed(22); Y <- matrix(rnorm(n * p), n, p)
   time <- rexp(n, 0.1); status <- rbinom(n, 1L, 0.7)
   g <- rep(c("A", "B"), each = n / 2)
-  fit <- suppressMessages(fit_supervised_mf_modular(Y, time, status, K = K,
+  fit <- suppressMessages(fit_ssbmf_lb(Y, time, status, K = K,
                                                     max_iter = 5L, verbose = FALSE,
                                                     strata_id = g))
   assert_length(fit$EBeta, K)
@@ -308,25 +308,25 @@ run_test("StratCox-T10b: calc_cox_taylor errors on NA in strata", {
   assert_true(got, msg = "NA strata must error, not silently drop samples")
 })
 
-run_test("StratCox-T11a: fit_cox_on_yf errors on NA in strata_id", {
+run_test("StratCox-T11a: fit_ssbmf_yfb errors on NA in strata_id", {
   n <- 40L; p <- 15L; K <- 2L
   set.seed(5); Y <- matrix(rnorm(n * p), n, p)
   time <- rexp(n, 0.1); status <- rbinom(n, 1L, 0.7)
   g <- rep(c("A", "B"), each = n / 2); g[3] <- NA
   got <- tryCatch({
-    suppressMessages(fit_cox_on_yf(Y, time, status, K = K, max_iter = 2L,
+    suppressMessages(fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 2L,
                                    verbose = FALSE, strata_id = g)); FALSE
   }, error = function(e) TRUE)
   assert_true(got, msg = "NA strata_id must error before fitting")
 })
 
-run_test("StratCox-T11b: fit_supervised_mf_modular errors on NA in strata_id", {
+run_test("StratCox-T11b: fit_ssbmf_lb errors on NA in strata_id", {
   n <- 40L; p <- 15L; K <- 2L
   set.seed(6); Y <- matrix(rnorm(n * p), n, p)
   time <- rexp(n, 0.1); status <- rbinom(n, 1L, 0.7)
   g <- rep(c("A", "B"), each = n / 2); g[3] <- NA
   got <- tryCatch({
-    suppressMessages(fit_supervised_mf_modular(Y, time, status, K = K, max_iter = 2L,
+    suppressMessages(fit_ssbmf_lb(Y, time, status, K = K, max_iter = 2L,
                                                verbose = FALSE, strata_id = g)); FALSE
   }, error = function(e) TRUE)
   assert_true(got, msg = "NA strata_id must error before fitting")
@@ -364,14 +364,14 @@ run_test("StratCox-T12b: calc_cox_taylor u == coxph martingale residuals (strati
 })
 
 # =============================================================================
-# Section 13: fit_cox_on_yf() Phase C orientation fix (review finding, Step 2,
+# Section 13: fit_ssbmf_yfb() Phase C orientation fix (review finding, Step 2,
 # fixed 2026-09-04 -- see DECISIONS.md). Phase C's concordance() call now
 # passes reverse=TRUE, the correct semantics for a Cox risk score. This is
 # the single, frozen, training-data-only orientation decision for the fit --
 # no downstream evaluator may re-derive it from the data it later scores.
 # =============================================================================
 
-run_test("StratCox-T13: fit_cox_on_yf sign_correction=TRUE guarantees correct-direction training concordance >= 0.5 across seeds", {
+run_test("StratCox-T13: fit_ssbmf_yfb sign_correction=TRUE guarantees correct-direction training concordance >= 0.5 across seeds", {
   # This is exactly the property Phase C exists to guarantee. Before the
   # 2026-09-04 fix, the concordance() check omitted reverse=TRUE and was
   # therefore inverted -- a fit could converge to a genuinely anti-hazard
@@ -390,7 +390,7 @@ run_test("StratCox-T13: fit_cox_on_yf sign_correction=TRUE guarantees correct-di
 
   for (s in c(1, 2, 3, 4, 5)) {
     set.seed(s)
-    fit <- fit_cox_on_yf(Y, time, status, K = K, max_iter = 40, verbose = FALSE,
+    fit <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 40, verbose = FALSE,
                           sign_correction = TRUE)
     ZF  <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")
     eta_final <- as.vector(ZF %*% fit$EBeta)

@@ -17,9 +17,9 @@
 # Usage:   Rscript results/multi_cohort_sim/diagnose_factor_collapse.R
 # ============================================================
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -38,8 +38,8 @@ source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
 source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("results/multi_cohort_sim/generate_multicohort_data.R")
 source("results/multi_cohort_sim/sim_scoring.R")
 
@@ -63,24 +63,24 @@ for (seed in SEEDS) {
   str_ <- d$status[spl$train_idx]
 
   # Check 1: YFB tuned alpha vs. alpha=0 (survival term removed)
-  f_svd_tuned <- suppressMessages(fit_cox_on_yf(Ytr, ttr, str_, K = 4, max_iter = 300,
+  f_svd_tuned <- suppressMessages(fit_ssbmf_yfb(Ytr, ttr, str_, K = 4, max_iter = 300,
                     alpha = 0.5, prior_beta = "normal", verbose = FALSE, init_method = "svd"))
-  f_svd_a0 <- suppressMessages(fit_cox_on_yf(Ytr, ttr, str_, K = 4, max_iter = 300,
+  f_svd_a0 <- suppressMessages(fit_ssbmf_yfb(Ytr, ttr, str_, K = 4, max_iter = 300,
                     alpha = 0, prior_beta = "normal", verbose = FALSE, init_method = "svd",
                     sign_correction = FALSE))
 
   # Check 2: LB (shared update_L.R/update_F.R machinery)
-  f_lb <- suppressMessages(fit_supervised_mf_modular(Ytr, ttr, str_, K = 4, max_iter = 300,
+  f_lb <- suppressMessages(fit_ssbmf_lb(Ytr, ttr, str_, K = 4, max_iter = 300,
                     alpha = 0.5, prior_beta = "normal", verbose = FALSE))
 
   # Check 3: random init vs. SVD init (YFB, tuned alpha)
-  f_rnd_tuned <- suppressMessages(fit_cox_on_yf(Ytr, ttr, str_, K = 4, max_iter = 300,
+  f_rnd_tuned <- suppressMessages(fit_ssbmf_yfb(Ytr, ttr, str_, K = 4, max_iter = 300,
                     alpha = 0.5, prior_beta = "normal", verbose = FALSE, init_method = "random"))
 
   # Check 4: deflation init (YFB and LB, tuned alpha) -- the candidate fix
-  f_yfb_defl <- suppressMessages(fit_cox_on_yf(Ytr, ttr, str_, K = 4, max_iter = 300,
+  f_yfb_defl <- suppressMessages(fit_ssbmf_yfb(Ytr, ttr, str_, K = 4, max_iter = 300,
                     alpha = 0.5, prior_beta = "normal", verbose = FALSE, init_method = "deflation"))
-  f_lb_defl  <- suppressMessages(fit_supervised_mf_modular(Ytr, ttr, str_, K = 4, max_iter = 300,
+  f_lb_defl  <- suppressMessages(fit_ssbmf_lb(Ytr, ttr, str_, K = 4, max_iter = 300,
                     alpha = 0.5, prior_beta = "normal", verbose = FALSE, init_method = "deflation"))
 
   rows[[length(rows) + 1]] <- data.frame(

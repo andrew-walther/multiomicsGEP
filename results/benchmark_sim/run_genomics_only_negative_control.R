@@ -28,7 +28,7 @@
 # Requires: local real data (5 external cohorts) via PDAC_DATA_ROOT
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R")) setwd("../../")
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R")) setwd("../../")
 
 pdac_root <- Sys.getenv("PDAC_DATA_ROOT")
 if (nchar(pdac_root) == 0 || !dir.exists(pdac_root)) {

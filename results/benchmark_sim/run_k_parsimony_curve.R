@@ -37,7 +37,7 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(survival) })
@@ -50,8 +50,8 @@ source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 
 b <- cfg$benchmark
@@ -114,7 +114,7 @@ fits <- list()
 for (K in K_GRID) {
   cat(sprintf("--- K=%d ---\n", K))
   set.seed(42L)
-  fit <- suppressMessages(fit_cox_on_yf(
+  fit <- suppressMessages(fit_ssbmf_yfb(
     Y_train, time_train, status_train,
     K = K, max_iter = MAX_ITER, alpha = ALPHA,
     prior_beta = PRIOR_BETA, verbose = TRUE))

@@ -1,6 +1,6 @@
 # ============================================================
-# Script:  fit_modular_multistart.R
-# Purpose: Multi-initialization wrapper for fit_supervised_mf_modular().
+# Script:  fit_ssbmf_multistart.R
+# Purpose: Multi-initialization wrapper for fit_ssbmf_lb().
 #          Runs N_init restarts (restart 1 = deterministic SVD; restarts 2..N
 #          = random normal inits with reproducible seeds) and selects the fit
 #          with the highest final training ELBO.
@@ -8,12 +8,12 @@
 #          C-index would leak the validation cohort into model selection.
 # Author: Andrew Walther
 # Created: 2026-05-06
-# Dependencies: code/fit_modular.R (must be sourced before this file)
+# Dependencies: code/fit_ssbmf_lb.R (must be sourced before this file)
 # ============================================================
 
 #' Multi-Initialization Wrapper for Supervised Matrix Factorization
 #'
-#' Runs fit_supervised_mf_modular() N_init times with different initializations,
+#' Runs fit_ssbmf_lb() N_init times with different initializations,
 #' selects the best fit by final training ELBO, and returns the full restart
 #' landscape for diagnostics.
 #'
@@ -30,7 +30,7 @@
 #' @param Y           n x p genomics data matrix
 #' @param time        n-vector of survival / censoring times
 #' @param status      n-vector of event indicators (1=event, 0=censored)
-#' @param ...         Additional arguments passed to fit_supervised_mf_modular()
+#' @param ...         Additional arguments passed to fit_ssbmf_lb()
 #'                    (K, max_iter, tol, prior_LF, prior_beta, alpha,
 #'                    N_burnin, sign_correction, verbose, etc.)
 #'                    init_method is overridden internally — do not pass it.
@@ -44,7 +44,7 @@
 #'                    restart diagnostics (default 0.001).
 #'
 #' @return Named list:
-#'   $best         The fit_supervised_mf_modular() output with highest ELBO.
+#'   $best         The fit_ssbmf_lb() output with highest ELBO.
 #'   $best_idx     Integer index of the winning restart (1 = SVD init).
 #'   $restarts     data.frame with one row per restart:
 #'                   init_id, init_method, seed, final_elbo, k_eff,
@@ -52,12 +52,12 @@
 #'
 #' @examples
 #' \dontrun{
-#' ms <- fit_supervised_mf_modular_multistart(Y, time, status,
+#' ms <- fit_ssbmf_lb_multistart(Y, time, status,
 #'         K = 10, prior_beta = "point_normal", n_init = 30)
 #' best_fit  <- ms$best
 #' landscape <- ms$restarts   # ELBO and C-index for every restart
 #' }
-fit_supervised_mf_modular_multistart <- function(Y, time, status,
+fit_ssbmf_lb_multistart <- function(Y, time, status,
                                                   ...,
                                                   n_init           = 30,
                                                   init_seed_base   = 42,
@@ -73,12 +73,12 @@ fit_supervised_mf_modular_multistart <- function(Y, time, status,
 
   for (i in seq_len(n_init)) {
     if (methods[i] == "svd") {
-      fits[[i]] <- fit_supervised_mf_modular(
+      fits[[i]] <- fit_ssbmf_lb(
         Y, time, status, ..., init_method = "svd", verbose = FALSE
       )
     } else {
       set.seed(seeds[i])
-      fits[[i]] <- fit_supervised_mf_modular(
+      fits[[i]] <- fit_ssbmf_lb(
         Y, time, status, ..., init_method = "random", verbose = FALSE
       )
     }
@@ -123,19 +123,19 @@ fit_supervised_mf_modular_multistart <- function(Y, time, status,
 }
 
 # ============================================================
-# Cluster B (YFB) variant -- mirrors fit_supervised_mf_modular_multistart()
-# above for fit_cox_on_yf(). Kept in this same file (not a dedicated
-# fit_cox_on_yf_multistart.R) since the two wrappers share the identical
+# Cluster B (YFB) variant -- mirrors fit_ssbmf_lb_multistart()
+# above for fit_ssbmf_yfb(). Kept in this same file (not a dedicated
+# fit_ssbmf_yfb_multistart.R) since the two wrappers share the identical
 # restart/ELBO-selection structure and differ only in which fit function is
 # called and how train_cindex is computed from the result.
 # ============================================================
 
-#' Multi-Initialization Wrapper for fit_cox_on_yf() (Cluster B / YFB)
+#' Multi-Initialization Wrapper for fit_ssbmf_yfb() (Cluster B / YFB)
 #'
-#' Runs fit_cox_on_yf() N_init times with different initializations, selects
+#' Runs fit_ssbmf_yfb() N_init times with different initializations, selects
 #' the fit with the highest final training ELBO, and returns the full restart
 #' landscape for diagnostics -- the YFB counterpart to
-#' fit_supervised_mf_modular_multistart() above.
+#' fit_ssbmf_lb_multistart() above.
 #'
 #' Selection criterion: highest final training ELBO (same rationale as the
 #' LB version -- avoids leaking the external cohort into model selection).
@@ -143,7 +143,7 @@ fit_supervised_mf_modular_multistart <- function(Y, time, status,
 #' @param Y           n x p genomics data matrix
 #' @param time        n-vector of survival / censoring times
 #' @param status      n-vector of event indicators (1=event, 0=censored)
-#' @param ...         Additional arguments passed to fit_cox_on_yf() (K,
+#' @param ...         Additional arguments passed to fit_ssbmf_yfb() (K,
 #'                    max_iter, tol, prior_beta, alpha, sign_correction,
 #'                    verbose, etc.). init_method is overridden internally --
 #'                    do not pass it.
@@ -155,7 +155,7 @@ fit_supervised_mf_modular_multistart <- function(Y, time, status,
 #'                    restart diagnostics (default 0.001).
 #'
 #' @return Named list:
-#'   $best         The fit_cox_on_yf() output with highest ELBO.
+#'   $best         The fit_ssbmf_yfb() output with highest ELBO.
 #'   $best_idx     Integer index of the winning restart (1 = SVD init).
 #'   $restarts     data.frame with one row per restart:
 #'                   init_id, init_method, seed, final_elbo, k_eff,
@@ -165,12 +165,12 @@ fit_supervised_mf_modular_multistart <- function(Y, time, status,
 #'
 #' @examples
 #' \dontrun{
-#' ms <- fit_cox_on_yf_multistart(Y, time, status,
+#' ms <- fit_ssbmf_yfb_multistart(Y, time, status,
 #'         K = 5, prior_beta = "normal", n_init = 15)
 #' best_fit  <- ms$best
 #' landscape <- ms$restarts
 #' }
-fit_cox_on_yf_multistart <- function(Y, time, status,
+fit_ssbmf_yfb_multistart <- function(Y, time, status,
                                       ...,
                                       n_init           = 30,
                                       init_seed_base   = 42,
@@ -184,12 +184,12 @@ fit_cox_on_yf_multistart <- function(Y, time, status,
 
   for (i in seq_len(n_init)) {
     if (methods[i] == "svd") {
-      fits[[i]] <- fit_cox_on_yf(
+      fits[[i]] <- fit_ssbmf_yfb(
         Y, time, status, ..., init_method = "svd", verbose = FALSE
       )
     } else {
       set.seed(seeds[i])
-      fits[[i]] <- fit_cox_on_yf(
+      fits[[i]] <- fit_ssbmf_yfb(
         Y, time, status, ..., init_method = "random", verbose = FALSE
       )
     }
@@ -204,7 +204,7 @@ fit_cox_on_yf_multistart <- function(Y, time, status,
 
   # Build restart diagnostics data.frame. Cluster B's predictor is
   # ZF %*% beta, where ZF = Y %*% EF normalized by EF_norms (see the
-  # Phase C sign-correction block in fit_cox_on_yf.R for the same formula).
+  # Phase C sign-correction block in fit_ssbmf_yfb.R for the same formula).
   restarts <- do.call(rbind, lapply(seq_len(n_init), function(i) {
     f      <- fits[[i]]
     ebeta  <- f$EBeta

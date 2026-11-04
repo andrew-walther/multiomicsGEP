@@ -15,7 +15,7 @@
 # ============================================================
 
 suppressPackageStartupMessages({ library(survival); library(glmnet) })
-suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) NULL))
+suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
 source("code/concordance_ci.R"); source("code/simulate_multimodal_yfb.R")
 
 args    <- commandArgs(trailingOnly = TRUE)

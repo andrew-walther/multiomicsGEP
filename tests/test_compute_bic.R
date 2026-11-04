@@ -2,7 +2,7 @@
 # Script:  test_compute_bic.R
 # Purpose: Tests for compute_joint_ll_bic() (code/compute_bic.R) -- joint
 #          (genomics + survival) log-likelihood and BIC for a
-#          fit_cox_on_yf() (YFB) model.
+#          fit_ssbmf_yfb() (YFB) model.
 # Author: Andrew Walther
 # Created: 2026-08-27
 # Usage:   Rscript tests/run_tests.R  (included via source)
@@ -13,11 +13,11 @@ if (!exists("run_test")) source("tests/test_helpers.R")
 suppressPackageStartupMessages({
   library(ebnm); library(survival)
 })
-if (!exists("fit_cox_on_yf")) {
+if (!exists("fit_ssbmf_yfb")) {
   source("code/update_beta.R"); source("code/update_L_surv_YFB.R")
   source("code/update_F_surv_YFB.R"); source("code/update_tau.R")
   source("code/compute_elbo.R")
-  suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL)))
+  suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
 }
 if (!exists("compute_joint_ll_bic")) source("code/compute_bic.R")
 
@@ -32,7 +32,7 @@ Y      <- matrix(abs(rnorm(n * p, mean = 3)), n, p)
 time   <- rexp(n, 0.1)
 status <- rbinom(n, 1, 0.6)
 
-fit <- fit_cox_on_yf(Y, time, status,
+fit <- fit_ssbmf_yfb(Y, time, status,
          K = K, max_iter = 10, tol = 1e-2,
          prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
          init_method = "svd", verbose = FALSE)
@@ -59,7 +59,7 @@ run_test("BIC-T3: df is exactly K_init*(n+p+1)", {
 })
 
 run_test("BIC-T4: df(K=4) - df(K=3) == n+p+1 (df is linear in K_init)", {
-  fit4 <- fit_cox_on_yf(Y, time, status,
+  fit4 <- fit_ssbmf_yfb(Y, time, status,
             K = K + 1, max_iter = 10, tol = 1e-2,
             prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
             init_method = "svd", verbose = FALSE)
@@ -102,7 +102,7 @@ run_test("BIC-T7: survival term is NOT the stale in-loop logPL", {
   # A fit with sign_correction=TRUE (default) exercises the post-loop EBeta
   # flip path; the recomputed term must reflect the RETURNED EBeta, not
   # whatever logPL happened to be tracked mid-loop.
-  fit_sc <- fit_cox_on_yf(Y, time, status,
+  fit_sc <- fit_ssbmf_yfb(Y, time, status,
               K = K, max_iter = 10, tol = 1e-2,
               prior_beta = "normal", alpha = 0.5, sign_correction = TRUE,
               init_method = "svd", verbose = FALSE)
@@ -114,9 +114,9 @@ run_test("BIC-T7: survival term is NOT the stale in-loop logPL", {
               "survival term must match the RETURNED (post sign-correction) EBeta")
 })
 
-run_test("BIC-T16: survival term is invariant to fit_cox_on_yf()'s own (unreliable) EBeta sign", {
+run_test("BIC-T16: survival term is invariant to fit_ssbmf_yfb()'s own (unreliable) EBeta sign", {
   # Regression test for the orientation bug documented in DECISIONS.md
-  # 2026-09-04: fit_cox_on_yf()'s Phase C sign-correction omits reverse=TRUE
+  # 2026-09-04: fit_ssbmf_yfb()'s Phase C sign-correction omits reverse=TRUE
   # and can return an anti-hazard-oriented EBeta while believing it is
   # correctly oriented. compute_joint_ll_bic() must not simply trust
   # fit$EBeta's sign -- negating it should not change the reported

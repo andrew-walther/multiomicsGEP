@@ -6,7 +6,7 @@
 #          Option B: cross-validated C-index (stub for Longleaf HPC).
 # Author: Andrew Walther
 # Created: 2026-04-01
-# Dependencies: code/fit_modular.R (must be sourced first)
+# Dependencies: code/fit_ssbmf_lb.R (must be sourced first)
 # ============================================================
 
 # ============================================================
@@ -21,7 +21,7 @@
 #' posterior (which would require second moments and a larger calculation).
 #' It is a useful diagnostic but not identical to the model ELBO.
 #'
-#' @param res     list with $EL (n × K), $EF (p × K) — from fit_supervised_mf_modular()
+#' @param res     list with $EL (n × K), $EF (p × K) — from fit_ssbmf_lb()
 #' @param Y       numeric matrix (n × p) — the original data
 #'
 #' @return numeric vector of length K: PVE per factor (values in [0, 1])
@@ -58,20 +58,20 @@ compute_pve <- function(res, Y) {
 #' @param K_max      integer: maximum K to fit (default 10)
 #' @param beta_thresh  numeric: |β_k| threshold for "active" (default 0.05)
 #' @param pve_thresh   numeric: PVE_k threshold for "active" (default 0.01 = 1%)
-#' @param ...        additional arguments passed to fit_supervised_mf_modular()
+#' @param ...        additional arguments passed to fit_ssbmf_lb()
 #'
 #' @return Named list:
 #'   $K_effective   integer: number of active factors
 #'   $pve           numeric vector (K_max): PVE per factor
 #'   $beta          numeric vector (K_max): |EBeta| per factor
 #'   $active        logical vector (K_max): TRUE if factor is active
-#'   $fit           full fit object from fit_supervised_mf_modular()
+#'   $fit           full fit object from fit_ssbmf_lb()
 auto_prune_K <- function(Y, time, status, K_max = 10,
                           beta_thresh = 0.05, pve_thresh = 0.01, ...) {
 
   cat(sprintf("  [auto_prune_K] Fitting K=%d to identify active factors...\n", K_max))
 
-  fit <- fit_supervised_mf_modular(Y, time, status, K = K_max, ...)
+  fit <- fit_ssbmf_lb(Y, time, status, K = K_max, ...)
 
   pve     <- compute_pve(fit, Y)
   ab_beta <- abs(fit$EBeta)
@@ -133,10 +133,10 @@ auto_prune_K <- function(Y, time, status, K_max = 10,
 #' against, such as new simulations.
 #'
 #' @param res         list with $EL (n x K), $EF (p x K), $EBeta —
-#'                     from fit_supervised_mf_modular() or fit_cox_on_yf().
+#'                     from fit_ssbmf_lb() or fit_ssbmf_yfb().
 #'                     $EBeta is a length-K vector for a shared beta, or a
 #'                     K x C matrix under cohort-specific beta
-#'                     (fit_cox_on_yf(..., beta_cohort_id = ...) --
+#'                     (fit_ssbmf_yfb(..., beta_cohort_id = ...) --
 #'                     code/update_beta_cohort.R).
 #' @param Y           numeric matrix (n x p) — the original data
 #' @param beta_thresh numeric: |EBeta_k| threshold for "survival_active"
@@ -243,8 +243,8 @@ classify_factors <- function(res, Y,
 #' @param use_1se    logical: apply 1-SE rule (default TRUE)
 #' @param seed       integer: RNG seed for stratified fold creation (default 42)
 #' @param verbose    logical: print per-fold progress (default FALSE)
-#' @param model      character: "LB" (default, calls fit_supervised_mf_modular +
-#'                   predict_supervised_mf) or "YFB" (calls fit_cox_on_yf +
+#' @param model      character: "LB" (default, calls fit_ssbmf_lb +
+#'                   predict_supervised_mf) or "YFB" (calls fit_ssbmf_yfb +
 #'                   predict_cox_on_yf).  Both models must be sourced before
 #'                   calling; see dependency checks below.
 #' @param ...        additional arguments passed to the fitting function.
@@ -262,12 +262,12 @@ classify_factors <- function(res, Y,
 #' @examples
 #' \dontrun{
 #' # LB model
-#' source("code/fit_modular.R"); source("code/predict.R")
+#' source("code/fit_ssbmf_lb.R"); source("code/predict.R")
 #' source("code/train_test_split.R"); source("code/select_K.R")
 #' res_lb  <- select_K_cv(Y, time, status, model = "LB",
 #'                         K_grid = c(2,3,5,8,10), n_folds = 3)
 #' # YFB model
-#' source("code/fit_cox_on_yf.R"); source("code/predict_cox_on_yf.R")
+#' source("code/fit_ssbmf_yfb.R"); source("code/predict_cox_on_yf.R")
 #' res_yfb <- select_K_cv(Y, time, status, model = "YFB",
 #'                         K_grid = c(2,3,5,8,10), n_folds = 3)
 #' }
@@ -287,13 +287,13 @@ select_K_cv <- function(Y, time, status,
 
   # --- dependency checks (branch on model) ---
   if (model == "LB") {
-    if (!exists("fit_supervised_mf_modular", mode = "function"))
-      stop("fit_supervised_mf_modular() must be sourced before select_K_cv(model='LB').")
+    if (!exists("fit_ssbmf_lb", mode = "function"))
+      stop("fit_ssbmf_lb() must be sourced before select_K_cv(model='LB').")
     if (!exists("predict_supervised_mf", mode = "function"))
       stop("predict_supervised_mf() must be sourced before select_K_cv(model='LB').")
   } else {
-    if (!exists("fit_cox_on_yf", mode = "function"))
-      stop("fit_cox_on_yf() must be sourced before select_K_cv(model='YFB').")
+    if (!exists("fit_ssbmf_yfb", mode = "function"))
+      stop("fit_ssbmf_yfb() must be sourced before select_K_cv(model='YFB').")
     if (!exists("predict_cox_on_yf", mode = "function"))
       stop("predict_cox_on_yf() must be sourced before select_K_cv(model='YFB').")
   }
@@ -318,7 +318,7 @@ select_K_cv <- function(Y, time, status,
     stop("n_folds must be >= 2.")
 
   # Strip K (overridden per candidate) and sign_correction (disabled in folds
-  # for LB; not a formal arg in fit_cox_on_yf, so must be stripped for YFB too).
+  # for LB; not a formal arg in fit_ssbmf_yfb, so must be stripped for YFB too).
   extra <- list(...)
   extra[["K"]]               <- NULL
   extra[["sign_correction"]] <- NULL
@@ -360,7 +360,7 @@ select_K_cv <- function(Y, time, status,
                verbose = FALSE),
           extra_fold
         )
-        fit <- do.call(fit_supervised_mf_modular, fit_args)
+        fit <- do.call(fit_ssbmf_lb, fit_args)
 
         # Project held-out fold
         pred <- predict_supervised_mf(Y[test_idx, , drop = FALSE],
@@ -378,7 +378,7 @@ select_K_cv <- function(Y, time, status,
                verbose = FALSE),
           extra_fold
         )
-        fit <- do.call(fit_cox_on_yf, fit_args)
+        fit <- do.call(fit_ssbmf_yfb, fit_args)
 
         # Project held-out fold; pass EF_norms so column scaling is consistent
         pred <- predict_cox_on_yf(Y[test_idx, , drop = FALSE],

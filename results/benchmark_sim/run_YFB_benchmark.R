@@ -6,7 +6,7 @@
 #               Replaces run_cox_on_yf_benchmark.R.
 # Author: Andrew Walther
 # Created:      2026-05-04
-# Dependencies: code/fit_cox_on_yf.R, code/predict_cox_on_yf.R,
+# Dependencies: code/fit_ssbmf_yfb.R, code/predict_cox_on_yf.R,
 #               code/train_test_split.R, code/preprocess_desurv.R,
 #               results/benchmark_sim/benchmark_helpers.R
 # Usage:        Rscript results/benchmark_sim/run_YFB_benchmark.R [--quick] [--train-mode merged|tcga_only|cptac_only]
@@ -32,9 +32,9 @@ RUN_SYNTHETIC <- (TRAIN_MODE == "merged")
 
 if (Sys.getenv("REPO_ROOT") != "") {
   setwd(Sys.getenv("REPO_ROOT"))
-} else if (file.exists("code/fit_cox_on_yf.R")) {
+} else if (file.exists("code/fit_ssbmf_yfb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_cox_on_yf.R")) {
+} else if (file.exists("../../code/fit_ssbmf_yfb.R")) {
   setwd("../..")
 }
 
@@ -47,7 +47,7 @@ suppressPackageStartupMessages({
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")  # PDAC constants + load_pdac_raw + generate_synthetic_benchmark_data
-tryCatch(source("code/fit_cox_on_yf.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/predict_cox_on_yf.R"), error = function(e) invisible(NULL))
 
 source("code/train_test_split.R")
@@ -109,7 +109,7 @@ if (RUN_SYNTHETIC) {
 
   for (pr in PRIORS) {
     cat(sprintf("    Fitting YFB synthetic — prior_beta='%s' ...\n", pr))
-    fit <- fit_cox_on_yf(
+    fit <- fit_ssbmf_yfb(
       Y_tr, t_tr, s_tr,
       K = K_SYN, max_iter = MAX_ITER, tol = cfg$cavi$tol,
       prior_LF = "point_exponential", prior_beta = pr,
@@ -201,7 +201,7 @@ if (!pdac_available) {
   for (pr in PRIORS) {
     cat(sprintf("    Fitting YFB PDAC — prior_beta='%s' (K=%d, max_iter=%d) ...\n",
                 pr, K, MAX_ITER))
-    fit <- fit_cox_on_yf(
+    fit <- fit_ssbmf_yfb(
       Y_train, time_train, status_train,
       K = K, max_iter = MAX_ITER, tol = cfg$cavi$tol,
       prior_LF = "point_exponential", prior_beta = pr,

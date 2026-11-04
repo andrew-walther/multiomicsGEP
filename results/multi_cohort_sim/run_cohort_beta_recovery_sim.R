@@ -46,8 +46,8 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (file.exists("code/fit_modular.R")) {
-} else if (file.exists("../../code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -59,7 +59,7 @@ source("code/update_L.R"); source("code/update_F.R"); source("code/update_tau.R"
 source("code/compute_elbo.R"); source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 source("results/benchmark_sim/benchmark_helpers.R")
 source("results/multi_cohort_sim/generate_multicohort_data.R")
@@ -129,11 +129,11 @@ for (s in SEEDS) {
     cat(sprintf("--- seed %d, K_init=%d ---\n", s, K_here))
 
     fit_base <- tryCatch(
-      suppressMessages(fit_cox_on_yf(Ytr, ttr, str_, K = K_here, max_iter = MAX_ITER,
+      suppressMessages(fit_ssbmf_yfb(Ytr, ttr, str_, K = K_here, max_iter = MAX_ITER,
                                        alpha = ALPHA, prior_beta = PRIOR_BETA, verbose = FALSE)),
       error = function(e) { message("YFB_base failed: ", e$message); NULL })
     fit_bc <- tryCatch(
-      suppressMessages(fit_cox_on_yf(Ytr, ttr, str_, K = K_here, max_iter = MAX_ITER,
+      suppressMessages(fit_ssbmf_yfb(Ytr, ttr, str_, K = K_here, max_iter = MAX_ITER,
                                        alpha = ALPHA, prior_beta = PRIOR_BETA, verbose = FALSE,
                                        beta_cohort_id = cid_tr)),
       error = function(e) { message("YFB_beta_cohort failed: ", e$message); NULL })

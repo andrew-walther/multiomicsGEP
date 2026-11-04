@@ -28,8 +28,8 @@ Two linear predictors are implemented:
 
 | Model | Linear predictor | Notes |
 |-------|------------------|-------|
-| LB  | η = Lβ     | Patient scores are learned jointly with survival (`code/fit_modular.R`) |
-| YFB | η = (YF)β  | Predictor computed from the observed data and the loadings, so new patients are scored by projection without refitting L (`code/fit_cox_on_yf.R`) |
+| LB  | η = Lβ     | Patient scores are learned jointly with survival (`code/fit_ssbmf_lb.R`) |
+| YFB | η = (YF)β  | Predictor computed from the observed data and the loadings, so new patients are scored by projection without refitting L (`code/fit_ssbmf_yfb.R`) |
 
 Inference uses coordinate ascent variational inference (CAVI). Each coordinate
 update is an empirical Bayes normal means (EBNM) problem solved with the
@@ -107,7 +107,7 @@ Scripts use paths relative to the repository root; run them from there.
 ### Minimal example
 
 ```r
-source("code/fit_cox_on_yf.R")
+source("code/fit_ssbmf_yfb.R")
 source("code/predict_cox_on_yf.R")
 
 set.seed(1)
@@ -119,7 +119,7 @@ time   <- rexp(n, exp(drop(L %*% c(0.8, -0.8, 0))))
 status <- rbinom(n, 1, 0.7)
 
 train <- 1:100
-fit <- fit_cox_on_yf(Y[train, ], time[train], status[train], K = 5, verbose = FALSE)
+fit <- fit_ssbmf_yfb(Y[train, ], time[train], status[train], K = 5, verbose = FALSE)
 
 fit$EBeta   # posterior mean survival coefficients (K); unused programs shrink to 0
 fit$EF      # p × K posterior mean loadings

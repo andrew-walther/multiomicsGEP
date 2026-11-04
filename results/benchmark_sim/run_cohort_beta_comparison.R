@@ -55,7 +55,7 @@
 # Usage:   caffeinate -i Rscript results/benchmark_sim/run_cohort_beta_comparison.R
 # ============================================================
 
-if (!file.exists("code/fit_modular.R") && file.exists("../../code/fit_modular.R"))
+if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.R"))
   setwd("../../")
 
 suppressPackageStartupMessages({ library(yaml); library(survival) })
@@ -69,7 +69,7 @@ source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/compute_bic.R")
 source("code/preprocess_desurv.R")
 source("code/select_K.R")
@@ -148,7 +148,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 cat(sprintf("  %d/%d external cohorts usable\n\n", length(ext_data), length(EXTERNAL_COHORTS)))
 
 # frozen_cindex(): the orientation is decided ONCE, at fit time, by
-# fit_cox_on_yf()'s Phase C (fixed 2026-09-04, DECISIONS.md -- correct-
+# fit_ssbmf_yfb()'s Phase C (fixed 2026-09-04, DECISIONS.md -- correct-
 # direction concordance, reverse=TRUE). fit$EBeta / fit$EBeta_pooled already
 # carry that frozen sign, so external cohorts are scored as-is -- no
 # per-cohort max(c, 1-c) re-orientation from the cohort's own outcomes.
@@ -174,7 +174,7 @@ run_arm <- function(name, cohort_id = NULL, strata_id = NULL, beta_cohort_id = N
   cat(sprintf("=== Arm: %s ===\n", name))
   t0 <- proc.time()[["elapsed"]]
   set.seed(42L)
-  fit <- fit_cox_on_yf(
+  fit <- fit_ssbmf_yfb(
     Y_train, time_train, status_train,
     K = K_REC, max_iter = MAX_ITER, alpha = ALPHA, prior_beta = PRIOR_BETA,
     verbose = FALSE, cohort_id = cohort_id, strata_id = strata_id,

@@ -54,12 +54,12 @@ run_test("ComparatorRank-T5: retained-rank counts distinguish errors from zero f
 })
 run_test("ComparatorRank-T6: a supervised-arm error retains every other method", {
   load_comparator_code()
-  oldfit <- fit_cox_on_yf;oldbed <- make_testbed
+  oldfit <- fit_ssbmf_yfb;oldbed <- make_testbed
   assign("cfg",yaml::read_yaml("config/globals.yml"),.GlobalEnv)
-  assign("fit_cox_on_yf",function(...)stop("planned supervised-arm failure"),.GlobalEnv)
+  assign("fit_ssbmf_yfb",function(...)stop("planned supervised-arm failure"),.GlobalEnv)
   assign("make_testbed",function(seed,noise).rank_tb,.GlobalEnv)
   a <- tryCatch(run_comparator_dataset(1L,1),finally={
-    assign("fit_cox_on_yf",oldfit,.GlobalEnv);assign("make_testbed",oldbed,.GlobalEnv)
+    assign("fit_ssbmf_yfb",oldfit,.GlobalEnv);assign("make_testbed",oldbed,.GlobalEnv)
   })
   assert_true(nrow(a)==5L && setequal(a$method,c("ebmf_alone","ebmf_cox","ebmf_lasso_cox","pca_cox","supervised")),
     msg="all method rows survive one failed fitter")

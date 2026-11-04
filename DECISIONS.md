@@ -3,6 +3,36 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-04 — Fitters renamed after the method and the predictor
+
+**Decided (Andrew).** The two single-modality fitters are named after the method (SSBMF) and the
+linear predictor, so that the names say which model each one fits:
+
+| Old name | New name | File |
+|---|---|---|
+| `fit_cox_on_yf()` | `fit_ssbmf_yfb()` (η = (YF)β) | `code/fit_ssbmf_yfb.R` |
+| `fit_supervised_mf_modular()` | `fit_ssbmf_lb()` (η = Lβ) | `code/fit_ssbmf_lb.R` |
+| `fit_cox_on_yf_multistart()` | `fit_ssbmf_yfb_multistart()` | `code/fit_ssbmf_multistart.R` |
+| `fit_supervised_mf_modular_multistart()` | `fit_ssbmf_lb_multistart()` | `code/fit_ssbmf_multistart.R` |
+
+Live code, tests and current runners use the new names. Frozen and historical material keeps the
+old names: the 2026-10-14 benchmark snapshot, `code/legacy/`, `results/legacy/`, the `archive/`
+runner folders, presentation and dated chapter figure scripts, the test fixtures copied from
+`feature/supervised-F`, and dated plans, findings and attempt logs, which record what was run under
+the names in use then. Three alias files under the old paths (`code/fit_cox_on_yf.R`,
+`code/fit_modular.R`, `code/fit_modular_multistart.R`) source the new files and bind the old names
+to the same functions, so that material still runs. The test suite passed 749/749 before and after.
+
+**Not changed.** `fit_yfb_supervised()` (the experimental fitter from the October 30 specification)
+keeps its name, because it is a separate experiment, not one of the two candidate models.
+`predict_cox_on_yf()` and the YFB update files keep their names for now.
+
+**Package.** The eventual package exports one fitting function, most likely YFB. Both
+parameterizations stay in development until their supervision is confirmed, and a comparison of the
+two parameterizations is planned. Options that were tried and not adopted (for example `alpha_F`,
+cohort-specific β, burn-in and warm starts, and the pruning variants) stay in this repository and are
+not carried into the package.
+
 ---
 
 ## 2026-11-02 — Supervision and publication priorities

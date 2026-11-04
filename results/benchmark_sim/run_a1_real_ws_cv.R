@@ -1,11 +1,11 @@
 # ============================================================
 # Script: run_a1_real_ws_cv.R
-# Purpose: Survival weight w_S in the F update of fit_cox_on_yf() on the real
+# Purpose: Survival weight w_S in the F update of fit_ssbmf_yfb() on the real
 #          training data (TCGA_PAAD + CPTAC), 5-fold CV only: survival share of
 #          the F precision, convergence, held-out C, reconstruction loss.
 # Author: Andrew Walther
 # Created: 2026-10-30
-# Dependencies: survival, yaml, parallel; code/fit_cox_on_yf.R,
+# Dependencies: survival, yaml, parallel; code/fit_ssbmf_yfb.R,
 #               code/preprocess_desurv.R, code/predict_cox_on_yf.R,
 #               code/concordance_ci.R, results/benchmark_sim/benchmark_helpers.R
 # Run: Rscript results/benchmark_sim/run_a1_real_ws_cv.R <arm> [<arm> ...]
@@ -30,7 +30,7 @@
 
 suppressPackageStartupMessages({ library(survival); library(yaml); library(parallel) })
 source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
-suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) NULL))
+suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
 source("code/preprocess_desurv.R")
 cfg <- yaml::read_yaml("config/globals.yml")
 source("results/benchmark_sim/benchmark_helpers.R")
@@ -93,7 +93,7 @@ recon_proj <- function(Y, EF) {
 run_cell <- function(f, an) {
   te <- which(fold == f); tr <- which(fold != f)
   set.seed(42L); t0 <- proc.time()[["elapsed"]]
-  fit <- tryCatch(do.call(fit_cox_on_yf, c(list(Y_train[tr, , drop = FALSE],
+  fit <- tryCatch(do.call(fit_ssbmf_yfb, c(list(Y_train[tr, , drop = FALSE],
                     time_train[tr], status_train[tr]), common, ARMS[[an]])),
                   error = function(e) e)
   secs <- proc.time()[["elapsed"]] - t0
@@ -133,7 +133,7 @@ grid <- expand.grid(fold = seq_len(NFOLD), arm = names(ARMS), stringsAsFactors =
 load_code <- function() {
   suppressPackageStartupMessages({ library(survival); library(ebnm) })
   source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
-  suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) NULL))
+  suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
 }
 cl <- makeCluster(min(nrow(grid), 8L))
 clusterExport(cl, c("load_code", "run_cell", "recon_proj", "Y_train", "time_train",

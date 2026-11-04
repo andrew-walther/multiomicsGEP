@@ -1,6 +1,6 @@
 # ============================================================
 # Script:  test_multistart.R
-# Purpose: Tests for fit_supervised_mf_modular_multistart()
+# Purpose: Tests for fit_ssbmf_lb_multistart()
 # Author: Andrew Walther
 # Created: 2026-05-06
 # Usage:   Rscript tests/run_tests.R  (included via source)
@@ -11,13 +11,13 @@ if (!exists("run_test")) source("tests/test_helpers.R")
 suppressPackageStartupMessages({
   library(ebnm); library(survival)
 })
-if (!exists("fit_supervised_mf_modular")) {
+if (!exists("fit_ssbmf_lb")) {
   source("code/update_beta.R"); source("code/update_L.R")
   source("code/update_F.R");    source("code/update_tau.R")
-  source("code/compute_elbo.R"); source("code/fit_modular.R")
+  source("code/compute_elbo.R"); source("code/fit_ssbmf_lb.R")
 }
-if (!exists("fit_supervised_mf_modular_multistart"))
-  source("code/fit_modular_multistart.R")
+if (!exists("fit_ssbmf_lb_multistart"))
+  source("code/fit_ssbmf_multistart.R")
 
 cat("\n--- test_multistart.R ---\n")
 
@@ -29,7 +29,7 @@ sv  <- rbinom(n, 1, 0.6)
 
 # T1: n_init=1 returns a valid best fit (same as single fit)
 run_test("MS-T1: n_init=1 returns valid fit", {
-  ms <- fit_supervised_mf_modular_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_lb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_LF = "point_exponential", prior_beta = "point_normal",
           alpha = 0.5, sign_correction = FALSE,
@@ -41,12 +41,12 @@ run_test("MS-T1: n_init=1 returns valid fit", {
 
 # T2: n_init=1 with SVD produces same EBeta as direct single fit with same settings
 run_test("MS-T2: n_init=1 SVD matches direct single fit", {
-  ms <- fit_supervised_mf_modular_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_lb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_LF = "point_exponential", prior_beta = "point_normal",
           alpha = 0.5, sign_correction = FALSE,
           n_init = 1, init_seed_base = 42)
-  ref <- fit_supervised_mf_modular(Y, tv, sv,
+  ref <- fit_ssbmf_lb(Y, tv, sv,
            K = K, max_iter = 15, tol = 1e-2,
            prior_LF = "point_exponential", prior_beta = "point_normal",
            alpha = 0.5, sign_correction = FALSE,
@@ -58,7 +58,7 @@ run_test("MS-T2: n_init=1 SVD matches direct single fit", {
 
 # T3: n_init=3 returns correct structure
 run_test("MS-T3: n_init=3 returns correctly structured output", {
-  ms <- fit_supervised_mf_modular_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_lb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_LF = "point_exponential", prior_beta = "point_normal",
           alpha = 0.5, sign_correction = FALSE,
@@ -73,7 +73,7 @@ run_test("MS-T3: n_init=3 returns correctly structured output", {
 
 # T4: best_idx selects the restart with highest final_elbo
 run_test("MS-T4: best_idx corresponds to highest ELBO restart", {
-  ms <- fit_supervised_mf_modular_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_lb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_LF = "point_exponential", prior_beta = "point_normal",
           alpha = 0.5, sign_correction = FALSE,
@@ -85,7 +85,7 @@ run_test("MS-T4: best_idx corresponds to highest ELBO restart", {
 
 # T5: restarts data.frame has required columns
 run_test("MS-T5: restarts data.frame has all required columns", {
-  ms <- fit_supervised_mf_modular_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_lb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_LF = "point_exponential", prior_beta = "point_normal",
           alpha = 0.5, sign_correction = FALSE,
@@ -101,7 +101,7 @@ run_test("MS-T5: restarts data.frame has all required columns", {
 # T6: invalid n_init raises error
 run_test("MS-T6: non-positive n_init raises error", {
   err <- tryCatch(
-    fit_supervised_mf_modular_multistart(Y, tv, sv,
+    fit_ssbmf_lb_multistart(Y, tv, sv,
       K = K, max_iter = 10, tol = 1e-2, alpha = 0.5,
       sign_correction = FALSE, n_init = 0),
     error = function(e) conditionMessage(e)
@@ -111,7 +111,7 @@ run_test("MS-T6: non-positive n_init raises error", {
 
 # T7: train_cindex values are in [0, 1]
 run_test("MS-T7: train_cindex values are in [0, 1]", {
-  ms <- fit_supervised_mf_modular_multistart(Y, tv, sv,
+  ms <- fit_ssbmf_lb_multistart(Y, tv, sv,
           K = K, max_iter = 15, tol = 1e-2,
           prior_LF = "point_exponential", prior_beta = "point_normal",
           alpha = 0.5, sign_correction = FALSE,

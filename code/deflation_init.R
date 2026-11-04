@@ -4,7 +4,7 @@
 #          rank-1 SVD of Y, subtracts its contribution, takes a rank-1 SVD
 #          of the residual for factor 2, and so on through K factors.
 #          Alternative to a single batch K-factor SVD (the existing "svd"
-#          init_method in fit_modular.R / fit_cox_on_yf.R), intended to fix
+#          init_method in fit_ssbmf_lb.R / fit_ssbmf_yfb.R), intended to fix
 #          the CAVI factor-collapse failure mode documented in DECISIONS.md
 #          2026-07-12/13: batch SVD-init columns from near-tied singular
 #          values can start out nearly symmetric in amplitude, which the
@@ -26,8 +26,8 @@
 #' each factor's contribution before extracting the next.
 #'
 #' Returns the SIGNED loadings/factors -- callers apply their own
-#' non-negativity convention (`abs()` in fit_cox_on_yf.R, `pmax(.,0)` in
-#' fit_modular.R) to match their model's point_exponential-prior init,
+#' non-negativity convention (`abs()` in fit_ssbmf_yfb.R, `pmax(.,0)` in
+#' fit_ssbmf_lb.R) to match their model's point_exponential-prior init,
 #' exactly as each caller already does for its "svd" init_method. This
 #' function does not itself choose a convention, so it stays usable by both.
 #'

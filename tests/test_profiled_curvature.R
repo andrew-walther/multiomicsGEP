@@ -7,7 +7,7 @@
 # ============================================================
 if(!exists("run_test"))source("tests/test_helpers.R")
 source("code/fit_multimodal_yfb.R")
-tryCatch(source("code/fit_cox_on_yf.R"),error=function(e){
+tryCatch(source("code/fit_ssbmf_yfb.R"),error=function(e){
  if(!grepl("!is.null(real_Y)",conditionMessage(e),fixed=TRUE))stop(e)
 })
 #' Read only a named baseline fitter definition from the protected branch
@@ -126,7 +126,7 @@ run_test("ProfileCox-T7: actual single updates use centered survival design and 
     seen_F<<-TRUE;original_F(...)
   }
   tryCatch({
-    fit_cox_on_yf(Y,time,e,K=1L,max_iter=1L,prior_LF="normal",canonicalize=TRUE,
+    fit_ssbmf_yfb(Y,time,e,K=1L,max_iter=1L,prior_LF="normal",canonicalize=TRUE,
       w_S=1,profile_cox_intercept=TRUE,verbose=FALSE)
     assert_true(seen_beta&&seen_F,msg="both real updates exercised")
   },finally={
@@ -136,11 +136,11 @@ run_test("ProfileCox-T7: actual single updates use centered survival design and 
 run_test("ProfileCox-T8: single default/off objects match and unsupported modes fail", {
   set.seed(6);Y<-scale(matrix(rnorm(180),30,6));time<-1:30;e<-rep(c(1,0),15)
   args<-list(Y,time,e,K=2L,max_iter=2L,prior_LF="normal",canonicalize=TRUE,w_S=1,verbose=FALSE)
-  a<-do.call(.profile_base_single,args);b<-do.call(fit_cox_on_yf,args)
-  c<-do.call(fit_cox_on_yf,c(args,list(profile_cox_intercept=FALSE)))
+  a<-do.call(.profile_base_single,args);b<-do.call(fit_ssbmf_yfb,args)
+  c<-do.call(fit_ssbmf_yfb,c(args,list(profile_cox_intercept=FALSE)))
   assert_true(identical(a,b)&&identical(a,c),msg="base/default/off object equality")
-  assert_true(inherits(try(fit_cox_on_yf(Y,time,e,profile_cox_intercept=TRUE,verbose=FALSE),silent=TRUE),"try-error"),
+  assert_true(inherits(try(fit_ssbmf_yfb(Y,time,e,profile_cox_intercept=TRUE,verbose=FALSE),silent=TRUE),"try-error"),
     msg="legacy noncanonical path unsupported")
-  assert_true(inherits(try(do.call(fit_cox_on_yf,c(args,list(profile_cox_intercept=TRUE,beta_prior_mode="shared"))),silent=TRUE),"try-error"),
+  assert_true(inherits(try(do.call(fit_ssbmf_yfb,c(args,list(profile_cox_intercept=TRUE,beta_prior_mode="shared"))),silent=TRUE),"try-error"),
     msg="shared-prior combination unsupported")
 })

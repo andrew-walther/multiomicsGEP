@@ -1,12 +1,12 @@
 # ============================================================
 # Script: run_supervision_diagnostics.R
 # Purpose: Test bed for survival supervision of the single-modality loadings
-#          (Workstream C): does fit_cox_on_yf() recover a planted
+#          (Workstream C): does fit_ssbmf_yfb() recover a planted
 #          low-variance prognostic program, and how much does survival enter
 #          the F update?
 # Author: Andrew Walther
 # Created: 2026-10-15
-# Dependencies: survival, ebnm, parallel; code/fit_cox_on_yf.R,
+# Dependencies: survival, ebnm, parallel; code/fit_ssbmf_yfb.R,
 #               code/predict_cox_on_yf.R, code/concordance_ci.R,
 #               code/simulate_multimodal_yfb.R
 # Run: Rscript results/benchmark_sim/run_supervision_diagnostics.R <arm_set> [n_seeds] [cores] [n_train] [beta3]
@@ -35,7 +35,7 @@
 #   false_thresh  same with classify_factors()'s |E[beta_k]| > 0.001 rule
 #   c_validation  C on the validation cohort, orientation frozen at fit time
 #   n_programs    programs with nonzero loadings (||EF_k||^2 > 1e-8)
-#   converged     fit_cox_on_yf() convergence flag; runaway: max over
+#   converged     fit_ssbmf_yfb() convergence flag; runaway: max over
 #                 iterations and programs of ||F_k|| or ||L_k|| relative to the
 #                 largest program norm at iteration 1.
 #                 Under canonicalization ||F_k|| legitimately grows when a
@@ -123,7 +123,7 @@ FIT_DEFAULTS <- list(K = K_FIT, max_iter = 300L, tol = 1e-5, prior_beta = "norma
 
 load_code <- function() {
   suppressPackageStartupMessages({ library(survival); library(ebnm) })
-  suppressMessages(tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) NULL))
+  suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
   source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
   source("code/simulate_multimodal_yfb.R")
 }
@@ -215,7 +215,7 @@ score_fit <- function(fit, tb) {
 run_cell <- function(seed, arm, noise) {
   tb  <- make_testbed(seed, noise)
   t0  <- proc.time()[["elapsed"]]
-  fit <- tryCatch(do.call(fit_cox_on_yf, c(list(tb$Ytr, tb$ttr, tb$str),
+  fit <- tryCatch(do.call(fit_ssbmf_yfb, c(list(tb$Ytr, tb$ttr, tb$str),
                                            modifyList(FIT_DEFAULTS, arms[[arm]]))),
                   error = function(e) e)
   secs <- proc.time()[["elapsed"]] - t0

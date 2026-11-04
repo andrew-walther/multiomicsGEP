@@ -74,14 +74,14 @@ run_test("ProfileProtocol-T5: full-training checks use every synthetic patient a
   F <- matrix(rnorm(12*7),12,7);beta <- c(1,rep(0,6))
   had_read <- exists("readRDS",.GlobalEnv,inherits=FALSE)
   old_read <- get("readRDS",.GlobalEnv,inherits=TRUE)
-  had_fit <- exists("fit_cox_on_yf",.GlobalEnv,inherits=FALSE)
-  old_fit <- if(had_fit)get("fit_cox_on_yf",.GlobalEnv) else NULL
+  had_fit <- exists("fit_ssbmf_yfb",.GlobalEnv,inherits=FALSE)
+  old_fit <- if(had_fit)get("fit_ssbmf_yfb",.GlobalEnv) else NULL
   assign("readRDS",function(file,...) {
     if(identical(file,"data/round2_tcga_training.rds"))return(tr)
     if(grepl("benchmark_snapshot",file,fixed=TRUE))return(metadata)
     stop("Unexpected fixture input")
   },.GlobalEnv)
-  assign("fit_cox_on_yf",function(Y,time,status,...) {
+  assign("fit_ssbmf_yfb",function(Y,time,status,...) {
     args <- list(...)
     stopifnot(nrow(Y)==60L,identical(Y,scale(y)),isTRUE(args$profile_cox_intercept))
     list(EL=matrix(0,60,7),EF=F,EF_norms=rep(1,7),EBeta=beta,
@@ -91,7 +91,7 @@ run_test("ProfileProtocol-T5: full-training checks use every synthetic patient a
   out <- tempfile("full-training-routing-");dir.create(file.path(out,"cells"),recursive=TRUE)
   a <- tryCatch(fixed_prior_cell(101L,out,candidate="profiled"),finally={
     if(had_read)assign("readRDS",old_read,.GlobalEnv) else rm("readRDS",envir=.GlobalEnv)
-    if(had_fit)assign("fit_cox_on_yf",old_fit,.GlobalEnv) else rm("fit_cox_on_yf",envir=.GlobalEnv)
+    if(had_fit)assign("fit_ssbmf_yfb",old_fit,.GlobalEnv) else rm("fit_ssbmf_yfb",envir=.GlobalEnv)
   })
   expected <- frozen_reverse_cindex(as.vector(scale(y)%*%F%*%beta),tr$time,tr$event)
   assert_true(is.na(a$error) && a$kind=="training_full" && a$n_train==60L &&

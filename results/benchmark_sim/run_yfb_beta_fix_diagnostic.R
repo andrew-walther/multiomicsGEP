@@ -39,9 +39,9 @@
 args       <- commandArgs(trailingOnly = TRUE)
 QUICK_MODE <- "--quick" %in% args
 
-if (file.exists("code/fit_modular.R")) {
+if (file.exists("code/fit_ssbmf_lb.R")) {
   # already at repo root
-} else if (file.exists("../../code/fit_modular.R")) {
+} else if (file.exists("../../code/fit_ssbmf_lb.R")) {
   setwd("../..")
 }
 
@@ -59,8 +59,8 @@ source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R"); source("code/predict_cox_on_yf.R")
 source("code/select_K.R")
-tryCatch(source("code/fit_modular.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/fit_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
+tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 
 # --------------------------------------------------------------------------
@@ -221,7 +221,7 @@ for (vi in seq_along(variants)) {
 
   set.seed(42L)
   fit <- suppressMessages(
-    fit_cox_on_yf(Y_train, time_train, status_train,
+    fit_ssbmf_yfb(Y_train, time_train, status_train,
                   K             = K_cv,
                   max_iter      = MAX_ITER,
                   prior_LF      = "point_exponential",
@@ -254,7 +254,7 @@ for (vi in seq_along(variants)) {
   c_dijk <- oriented_cindex(pred_dijk$risk_scores,
                              dijk_raw$time, dijk_raw$status)
 
-  # fit_cox_on_yf does not return K_eff; derive from |EBeta| > 0.01 threshold
+  # fit_ssbmf_yfb does not return K_eff; derive from |EBeta| > 0.01 threshold
   k_eff_val <- sum(abs(fit$EBeta) > 0.01)
   beta_max_val <- if (length(fit$EBeta) > 0) max(abs(fit$EBeta)) else 0.0
 
@@ -314,7 +314,7 @@ write.csv(res_tbl,
           row.names = FALSE)
 
 # Compact RDS: save EBeta and convergence history only
-# K_eff derived from |EBeta| threshold (fit_cox_on_yf does not return K_eff)
+# K_eff derived from |EBeta| threshold (fit_ssbmf_yfb does not return K_eff)
 fits_compact <- lapply(fits, function(f)
   list(EBeta = f$EBeta, EBeta2 = f$EBeta2, EF_norms = f$EF_norms,
        K_eff = sum(abs(f$EBeta) > 0.01), history = f$history))

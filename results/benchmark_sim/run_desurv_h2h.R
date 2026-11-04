@@ -231,7 +231,7 @@ run_desurv_h2h <- function(mode="all",workers=2L) {
     iterations=length(final$lossit),nan_flag=final$nan_flag),file.path(out,"fit_status.csv"),row.names=FALSE)
   if(isTRUE(final$nan_flag) || !all(is.finite(unlist(final$loss))))stop("Final DeSurv fit is non-finite")
   source("code/preprocess_desurv.R")
-  tryCatch(source("code/fit_cox_on_yf.R"),error=function(e) {
+  tryCatch(source("code/fit_ssbmf_yfb.R"),error=function(e) {
     if(!grepl("!is.null(real_Y)",conditionMessage(e),fixed=TRUE))stop(e)
   })
   source("code/predict_cox_on_yf.R")
@@ -242,7 +242,7 @@ run_desurv_h2h <- function(mode="all",workers=2L) {
   genes <- readRDS("results/benchmark_snapshot_2026-10-14/single_modality/d4_gene_names.rds")
   stopifnot(identical(pp$gene_names,genes))
   set.seed(42)
-  single <- fit_cox_on_yf(pp$Y,time,event,K=cfg$benchmark$k_merged_yfb_desurv,
+  single <- fit_ssbmf_yfb(pp$Y,time,event,K=cfg$benchmark$k_merged_yfb_desurv,
     max_iter=cfg$cavi$max_iter,tol=cfg$cavi$tol,canonicalize=TRUE,w_S=1,
     prior_LF="point_laplace",init_supervised=TRUE,beta_prior_mode="shared",
     prior_beta="point_laplace",beta_warmup=10L,verbose=FALSE)

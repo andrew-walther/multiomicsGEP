@@ -111,9 +111,9 @@ run_test("Cycle-T7: observer preserves a complete small profiled fit", {
   a<-list(Y=Y,time=1:12,status=rep(c(1,0),6),K=2L,max_iter=3L,
     prior_LF="point_laplace",prior_beta="normal",canonicalize=TRUE,
     profile_cox_intercept=TRUE,w_S=1,verbose=FALSE)
-  set.seed(3);expected<-do.call(fit_cox_on_yf,a)
+  set.seed(3);expected<-do.call(fit_ssbmf_yfb,a)
   audit<-cycle_observer()
-  set.seed(3);got<-audit$run(function()do.call(fit_cox_on_yf,a))
+  set.seed(3);got<-audit$run(function()do.call(fit_ssbmf_yfb,a))
   assert_true(identical(got,expected),msg="all posterior fields/history unchanged")
   d<-do.call(rbind,audit$rows)
   assert_true(any(d$complete) && any(d$event=="refresh"),msg="complete-cycle coverage")

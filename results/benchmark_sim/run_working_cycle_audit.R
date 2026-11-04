@@ -32,7 +32,7 @@ if(sys.nframe()==0L) {
   out<-paths_for_attempt$out;detailed<-paths_for_attempt$detailed
   if(dir.exists(out) || file.exists(detailed))stop("Fresh audit output required")
   source_fit<-"results/benchmark_sim/outputs/round2/profiled/cells/cell_021.rds"
-  paths<-c(source_fit,"code/fit_cox_on_yf.R","code/multimodal_yfb_updates.R",
+  paths<-c(source_fit,"code/fit_ssbmf_yfb.R","code/multimodal_yfb_updates.R",
     "code/update_L_surv_YFB.R","code/update_beta.R","code/update_tau.R",
     "code/profile_cox_intercept.R","config/globals.yml",
     "results/benchmark_sim/working_cycle_audit_helpers.R",
@@ -49,7 +49,7 @@ if(sys.nframe()==0L) {
   audit<-cycle_observer();warnings<-character();started<-proc.time()[["elapsed"]]
   set.seed(20261026L)
   fit<-tryCatch(withCallingHandlers(audit$run(function()
-    do.call(fit_cox_on_yf,c(list(tb$Ytr,tb$ttr,tb$str),controls))),
+    do.call(fit_ssbmf_yfb,c(list(tb$Ytr,tb$ttr,tb$str),controls))),
     warning=function(w)warnings<<-c(warnings,conditionMessage(w))),
     error=function(e){writeLines(conditionMessage(e),file.path(out,"error.txt"));stop(e)},
     finally={

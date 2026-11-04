@@ -1,6 +1,6 @@
 # =============================================================================
-# tests/test_fit_modular_cohort.R
-# Integration tests for cohort_id extension in fit_supervised_mf_modular().
+# tests/test_fit_ssbmf_lb_cohort.R
+# Integration tests for cohort_id extension in fit_ssbmf_lb().
 # Verifies backward compatibility, output structure, dimension invariants,
 # ELBO behaviour, and shrinkage properties.
 # =============================================================================
@@ -38,7 +38,7 @@ run_test("LBCohort-T1: cohort_id=NULL ELBO matches frozen baseline", {
   status <- rbinom(n, 1, 0.7)
 
   fit <- suppressMessages(
-    fit_supervised_mf_modular(Y, time, status,
+    fit_ssbmf_lb(Y, time, status,
                               K = K, max_iter = 20L, alpha = 0.5,
                               verbose = FALSE, cohort_id = NULL)
   )
@@ -56,7 +56,7 @@ run_test("LBCohort-T1: cohort_id=NULL ELBO matches frozen baseline", {
 # ---------------------------------------------------------------------------
 run_test("LBCohort-T2: cohort_id='A'/'B' returns cohort output fields", {
   fit <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 5L,
                               verbose = FALSE, cohort_id = .e$cohort2)
   )
@@ -71,7 +71,7 @@ run_test("LBCohort-T2: cohort_id='A'/'B' returns cohort output fields", {
 # ---------------------------------------------------------------------------
 run_test("LBCohort-T3: EF has K cols; EF_cohort is p x (C-1)", {
   fit <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 5L,
                               verbose = FALSE, cohort_id = .e$cohort2)
   )
@@ -91,7 +91,7 @@ run_test("LBCohort-T3: EF has K cols; EF_cohort is p x (C-1)", {
 # ---------------------------------------------------------------------------
 run_test("LBCohort-T4: nlevels(cohort_id)==1 returns no cohort fields", {
   fit <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 5L,
                               verbose = FALSE,
                               cohort_id = rep("A", .e$n))
@@ -106,7 +106,7 @@ run_test("LBCohort-T4: nlevels(cohort_id)==1 returns no cohort fields", {
 # ---------------------------------------------------------------------------
 run_test("LBCohort-T5: ELBO is finite and has entries for each iteration", {
   fit <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 10L,
                               verbose = FALSE, cohort_id = .e$cohort2)
   )
@@ -121,7 +121,7 @@ run_test("LBCohort-T5: ELBO is finite and has entries for each iteration", {
 # ---------------------------------------------------------------------------
 run_test("LBCohort-T6: cohort KL contribution to elbo_full is <= 0", {
   fit <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 8L,
                               verbose = FALSE, cohort_id = .e$cohort2)
   )
@@ -138,7 +138,7 @@ run_test("LBCohort-T6: cohort KL contribution to elbo_full is <= 0", {
 # ---------------------------------------------------------------------------
 run_test("LBCohort-T7: EF2_cohort >= EF_cohort^2 everywhere", {
   fit <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 5L,
                               verbose = FALSE, cohort_id = .e$cohort2)
   )
@@ -153,7 +153,7 @@ run_test("LBCohort-T7: EF2_cohort >= EF_cohort^2 everywhere", {
 # ---------------------------------------------------------------------------
 run_test("LBCohort-T8: three-cohort fit returns EF_cohort with 2 columns", {
   fit <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 5L,
                               verbose = FALSE, cohort_id = .e$cohort3)
   )
@@ -168,12 +168,12 @@ run_test("LBCohort-T8: three-cohort fit returns EF_cohort with 2 columns", {
 # ---------------------------------------------------------------------------
 run_test("LBCohort-T9: small sigma_F_cohort shrinks EF_cohort toward zero", {
   fit_tight <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 5L, verbose = FALSE,
                               cohort_id = .e$cohort2, sigma_F_cohort = 1e-4)
   )
   fit_loose <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 5L, verbose = FALSE,
                               cohort_id = .e$cohort2, sigma_F_cohort = 10.0)
   )
@@ -189,13 +189,13 @@ run_test("LBCohort-T9: small sigma_F_cohort shrinks EF_cohort toward zero", {
 run_test("LBCohort-T10: character and factor cohort_id give same EF_cohort", {
   set.seed(7)
   fit_chr <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 5L, verbose = FALSE,
                               cohort_id = .e$cohort2)
   )
   set.seed(7)
   fit_fac <- suppressMessages(
-    fit_supervised_mf_modular(.e$Y, .e$time, .e$status,
+    fit_ssbmf_lb(.e$Y, .e$time, .e$status,
                               K = .e$K, max_iter = 5L, verbose = FALSE,
                               cohort_id = factor(.e$cohort2))
   )
@@ -217,7 +217,7 @@ run_test("LBCohort-T11: strong platform offset absorbed without error", {
   cid    <- rep(c("A", "B"), each = n / 2)
 
   fit <- suppressMessages(
-    fit_supervised_mf_modular(Y_off, time, status,
+    fit_ssbmf_lb(Y_off, time, status,
                               K = K, max_iter = 10L,
                               verbose = FALSE, cohort_id = cid)
   )

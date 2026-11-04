@@ -20,7 +20,7 @@ run_test('Best start is selected by ELBO, not recovery', {
  assert_true(inherits(err,'error'))
 })
 run_test('Custom supervised start matches the original score-direction construction', {
- tryCatch(source('code/fit_cox_on_yf.R'),error=function(e) {
+ tryCatch(source('code/fit_ssbmf_yfb.R'),error=function(e) {
   if(!grepl('!is.null(real_Y)',conditionMessage(e),fixed=TRUE))stop(e)
  })
  set.seed(22);Y<-scale(matrix(rnorm(60*12),60,12));tb<-list(Ytr=Y,ttr=rexp(60),str=rbinom(60,1,.7),seed=22L)
@@ -48,8 +48,8 @@ run_test('Unjittered custom start reproduces the default supervised initializati
  a<-list(Y,tb$ttr,tb$str,K=7L,max_iter=8L,canonicalize=TRUE,w_S=1,
    prior_LF='point_laplace',init_supervised=TRUE,beta_prior_mode='shared',prior_beta='point_laplace',
    beta_warmup=10L,verbose=FALSE)
- def<-do.call(fit_cox_on_yf,a)
- cus<-do.call(fit_cox_on_yf,c(a,list(init_method='custom'),make_jitter_start(tb,0L)))
+ def<-do.call(fit_ssbmf_yfb,a)
+ cus<-do.call(fit_ssbmf_yfb,c(a,list(init_method='custom'),make_jitter_start(tb,0L)))
  assert_true(identical(def$EF,cus$EF)&&identical(def$EL,cus$EL)&&identical(def$EBeta,cus$EBeta))
 })
 r<-report_results('robustness with initialization equivalence');if(r$failed)quit(status=1)

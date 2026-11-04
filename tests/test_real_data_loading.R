@@ -14,10 +14,10 @@
 source("tests/test_helpers.R")
 
 # Source the helpers defined inside the runner script.
-# fit_modular.R has a runner block that errors when DATA_MODE="real" and
+# fit_ssbmf_lb.R has a runner block that errors when DATA_MODE="real" and
 # real_Y is NULL — we suppress it the same way the runner does.
 suppressMessages(tryCatch(
-  source("code/fit_modular.R"),
+  source("code/fit_ssbmf_lb.R"),
   error = function(e) invisible(NULL)
 ))
 # Source the runner to get filter_top_genes / load_real_data / pool_datasets.
@@ -235,7 +235,7 @@ if (!real_data_available) {
   run_test("T4.1: synthetic RMSE in [0.95, 1.05]", {
     # Re-run the synthetic DGP with the canonical parameters (n=250, p=1000,
     # K=5, seed=42) and verify RMSE is near 1.0 (true noise SD).
-    # This guards against accidental changes to fit_modular.R or update_*.R
+    # This guards against accidental changes to fit_ssbmf_lb.R or update_*.R
     # that would break the benchmark results.
     set.seed(42)
     n_s <- 250; p_s <- 1000; K_s <- 5
@@ -256,7 +256,7 @@ if (!real_data_available) {
     # prior_LF = "point_normal" matches the DGP (L ~ N(0,1), both signs).
     # The default "point_exponential" constrains loadings to be non-negative,
     # which prevents recovery of this DGP and inflates RMSE to ~2.4.
-    res_s <- fit_supervised_mf_modular(Y_s, t_s, ev_s, K = K_s,
+    res_s <- fit_ssbmf_lb(Y_s, t_s, ev_s, K = K_s,
                                         max_iter = 300, tol = 1e-3,
                                         prior_LF = "point_normal",
                                         verbose = FALSE)
@@ -282,7 +282,7 @@ if (!real_data_available) {
     t_s   <- pmin(raw_t, cen_t)
     ev_s  <- as.integer(raw_t <= cen_t)
 
-    res_s <- fit_supervised_mf_modular(Y_s, t_s, ev_s, K = K_s,
+    res_s <- fit_ssbmf_lb(Y_s, t_s, ev_s, K = K_s,
                                         max_iter = 300, tol = 1e-3,
                                         prior_LF = "point_normal",
                                         verbose = FALSE)

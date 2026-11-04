@@ -33,7 +33,7 @@ trace_single_pruning <- function(Y,time,status,fit_args) {
   }
   assign("prune_yf_nullcheck",observer,envir=.GlobalEnv)
   on.exit(assign("prune_yf_nullcheck",original,envir=.GlobalEnv))
-  fit <- do.call(fit_cox_on_yf,c(list(Y,time,status),fit_args))
+  fit <- do.call(fit_ssbmf_yfb,c(list(Y,time,status),fit_args))
   list(fit=fit,stages=stages)
 }
 

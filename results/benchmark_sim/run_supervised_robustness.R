@@ -65,7 +65,7 @@ load_robustness_code <- function() {
   for(e in parse("results/benchmark_sim/run_supervision_diagnostics.R"))
     if(is.call(e)&&identical(e[[1]],as.name("<-"))&&
        as.character(e[[2]])%in%c("load_code","make_testbed","score_fit"))eval(e,.GlobalEnv)
-  load_code();if(!exists("fit_cox_on_yf"))stop("Fitter unavailable")
+  load_code();if(!exists("fit_ssbmf_yfb"))stop("Fitter unavailable")
   assign("N_TRAIN",400L,.GlobalEnv);assign("BETA3",3.3,.GlobalEnv)
 }
 
@@ -87,7 +87,7 @@ robustness_dataset <- function(seed,noise) {
       if(j%in%1:20)a<-c(a,list(init_method="custom"),make_jitter_start(tb,j))
       set.seed(seed)
       fit_warnings<-character()
-      fit<-withCallingHandlers(do.call(fit_cox_on_yf,c(list(tb$Ytr,tb$ttr,tb$str),a)),
+      fit<-withCallingHandlers(do.call(fit_ssbmf_yfb,c(list(tb$Ytr,tb$ttr,tb$str),a)),
         warning=function(w)fit_warnings<<-c(fit_warnings,conditionMessage(w)))
       sc<-score_fit(fit,tb)
       rows[[length(rows)+1L]]<-cbind(seed=seed,noise=noise,arm=arm,start=j,
@@ -168,7 +168,7 @@ run_supervised_robustness <- function(cores=6L) {
     Y<-pp$Y
     for(f in 1:5) {
       tr<-which(env$fold!=f);te<-which(env$fold==f);set.seed(42)
-      fit<-fit_cox_on_yf(Y[tr,,drop=FALSE],env$time_train[tr],env$status_train[tr],K=7L,
+      fit<-fit_ssbmf_yfb(Y[tr,,drop=FALSE],env$time_train[tr],env$status_train[tr],K=7L,
         max_iter=env$cfg$cavi$max_iter,tol=env$cfg$cavi$tol,prior_LF="point_laplace",canonicalize=TRUE,
         w_S=1,init_supervised=TRUE,beta_prior_mode="shared",prior_beta="point_laplace",beta_warmup=10L,
         verbose=FALSE)
@@ -180,7 +180,7 @@ run_supervised_robustness <- function(cores=6L) {
       write.csv(do.call(rbind,feature_rows),file.path(OUT,"feature_folds.csv"),row.names=FALSE)
     }
     set.seed(42)
-    full<-fit_cox_on_yf(Y,env$time_train,env$status_train,K=7L,
+    full<-fit_ssbmf_yfb(Y,env$time_train,env$status_train,K=7L,
       max_iter=env$cfg$cavi$max_iter,tol=env$cfg$cavi$tol,prior_LF="point_laplace",canonicalize=TRUE,
       w_S=1,init_supervised=TRUE,beta_prior_mode="shared",prior_beta="point_laplace",beta_warmup=10L,
       verbose=FALSE)
