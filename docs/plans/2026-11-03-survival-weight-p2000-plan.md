@@ -49,6 +49,17 @@ the fitter on the input it was written for and adds the weight range.
 - **Preprocessing for this fitter:** the signed per-cohort z-score. The generator's training matrix
   is X/sd within the cohort, so centering it gives the z-score; the planted direction and the
   generated risk are unchanged. The validation cohort is z-scored within itself.
+- **Why centered input for this fitter (checked 2026-11-04 against the realignment plan's Phase P
+  and the two Gemini documents).** The preferred setup for the nonnegative model is X/sd within
+  each cohort, kept nonnegative for reconstruction, with centering only inside the Cox projection
+  (Phase P item 3; Gemini guide, Issue 2 of the reconciliation list). That setup belongs to the new
+  fitter, whose point-exponential priors need nonnegative input. `fit_ssbmf_yfb()` has signed
+  point-Laplace L and F priors, no feature intercept, and uses the same matrix for reconstruction
+  and for the projection. Given uncentered input, it must spend a program on the column means.
+  Given the centered matrix, it sees what the Gemini setup's Cox projection sees, and its signed
+  reconstruction is well defined. The point-exponential prior on z-scored input collapsed in the
+  October 15 test bed, so this fitter keeps point-Laplace. The S-7 uncentered `canonical_w1`
+  result stays on record as the mismatched-input comparison.
 - **Variance share under each preprocessing**, recorded per dataset: the planted component's share
   of the centered sum of squares (what the z-scored fitter sees, equal to the S-7 prepared share)
   and its share of the uncentered sum of squares (what the nonnegative uncentered input carries).
@@ -133,6 +144,12 @@ reported, not gated.
 - **If S-9 passes:** run step S3 of the realignment plan with the passing weight (real-data
   training CV on the single-log data, no external cohort), then the null-data calibration check of
   Part B step 3.2 at that weight. Both get their own registered entries first.
+- **Feature-set size (requested 2026-11-04, following the advisor's suggestion).** If a weight
+  passes, the S3 training CV is run over a range of feature-set sizes, from 2,000 genes to the full
+  gene set. The smallest set whose training CV C and program correlations match the largest set
+  within one standard error is preferred, as the more parsimonious model. This uses training data
+  only. The earlier fixed-K feature-count curve (attempt Task5-F1) used the historical α_F = 0
+  model and is not a substitute.
 - **If S-9 fails:** run Part B (S-10, downweighted genomics) under its own registration, and
   say which failure it is meant to fix.
 
