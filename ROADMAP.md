@@ -697,6 +697,18 @@ The entries below retain dated implementation and evaluation history.
 
 ## 🧬 Model Specification
 
+- [ ] **Decide survival-active programs from the posterior inclusion probability of β_k instead of a cutoff** `[Priority: Medium]` `[Effort: Small]`
+  Raised 2026-11-04 (Andrew), as a question reviewers are likely to ask: why keep a threshold when β
+  already has a spike-and-slab (point-normal) prior? The answer now is that the point-normal
+  posterior mean of β_k shrinks toward zero for a program with no survival signal but almost never
+  equals zero, so `classify_factors()` applies a cutoff to label programs survival-active. The point-
+  normal posterior also gives each program's inclusion probability P(β_k ≠ 0 | data), which would base
+  the label on the model's own uncertainty. This only works if β is well calibrated: the October 30
+  screen found that a very large Cox weight made β overconfident (about 6.9 of 7 programs falsely
+  active). Revisit after S-9 reports β calibration across survival weights. Separately, unneeded
+  programs are dropped by an ELBO comparison with and without each program, which is a model
+  comparison rather than a cutoff but still a step after the fit.
+
 - [ ] **Test whether `alpha_F > 0` can be stabilized, to let F actually respond to survival** `[Priority: Medium]` `[Effort: Medium]`
   Raised 2026-09-04 (Andrew), following the factor-comparison finding that SSBMF's kept programs
   match EBMF's own top-5-by-variance factors, not low-variance ones. Verified directly in the code:
