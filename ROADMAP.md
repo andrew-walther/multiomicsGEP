@@ -203,6 +203,13 @@ The entries below retain dated implementation and evaluation history.
   Draft the dissertation chapter in `paper/thesis/` and arrange its transfer to
   bios-dissertation. Build the standalone journal submission in `SSBMF-paper`
   with its own background and reproducible results.
+  The journal introduction must restore the background that the prelim chapter
+  leaves to the literature review (Chapter 1, Sections 1.3.1–1.3.6), with
+  citations (keys in `paper/ssbmf-refs.bib`). PDAC subtyping and program
+  discovery: Collisson2011, Rashid2020, Brunet2004, Kotliar2019. The two-step
+  pipeline and supervised alternatives: Bair2004, Tibshirani1997, Nygard2008,
+  Simon2011. Attenuation from treating estimated scores as fixed: Prentice1982,
+  Carroll2006.
 
 - [ ] **Complete replicated K selection for matched expression/methylation YFB**
   `[Priority: High]` `[Effort: Large]` — The approved raw joint-YFB derivation,
