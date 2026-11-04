@@ -39,6 +39,7 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 | 2026-10-30 | [yfb-targeted-diagnostics-plan](2026-10-30-yfb-targeted-diagnostics-plan.md) | Matched noise-feedback, guarded-update and coefficient-uncertainty screens | complete; twelve fits and coefficient screen; no scientific adoption |
 | 2026-11-02 | [package-and-paper-pathway-plan](2026-11-02-package-and-paper-pathway-plan.md) | When and how work moves from this repository into the SSBMF package and the SSBMF-paper manuscript: roles, triggers per stage, what moves and what stays | active |
 | 2026-11-01 | [multiomicsGEP-diagnostic-and-tdd-guide](2026-11-01-multiomicsGEP-diagnostic-and-tdd-guide.md) | Gemini diagnostic guide for the YFB supervision and convergence blockers: fractional genomics likelihood with matched prior scaling, anchoring the residual precisions, a consistent normalized objective, too many survival-active factors, and a proposed test gate suite | proposal (unchecked external advice, not decisions) |
+| 2026-11-03 | [survival-weight-p2000-plan](2026-11-03-survival-weight-p2000-plan.md) | Attempt S-9: the survival-weighted YFB fit on the S-7 grid at p = 50 and 2,000 over a range of w_S, with Gate S unchanged | registered; awaiting approval to run |
 
 ## Superseded and historical plans
 

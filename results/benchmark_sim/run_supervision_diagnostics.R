@@ -90,6 +90,9 @@ ARM_SETS <- list(
   # {1, 1e2, 1e4, 1e6} x supervised start off/on, canonical exact sequential F
   # update (which includes the within-program coupling term), per-program
   # Normal beta prior. The w_S = 1 arms repeat canon_wS_1 and c3_init.
+  # S-9 replication (docs/plans/2026-11-03-survival-weight-p2000-plan.md):
+  # the A1 w_S = 1, supervised-start-off arm rerun on the current code.
+  s9_rep = list(wS_1_init0 = list(canonicalize = TRUE, w_S = 1, init_supervised = FALSE)),
   a1_ws = unlist(lapply(c(1, 1e2, 1e4, 1e6), function(ws) {
     setNames(lapply(c(FALSE, TRUE), function(init)
       list(canonicalize = TRUE, w_S = ws, init_supervised = init)),

@@ -2633,3 +2633,37 @@ large weight. No mean-field fit caps. This isolates a Gaussian working-target
 tempering mechanism, not full-Cox coverage. Final full suite: 749 passed, zero
 failed, clean exit; initial red checks are preserved. Source checkpoint0bf3740;
 full evidence and teach-back are in the targeted findings and output README.
+
+## 2026-11-04 — S-9: the survival-weighted YFB fit at 2,000 genes (registered before execution)
+
+**Question.** Does `fit_ssbmf_yfb(canonicalize = TRUE, w_S)`, which recovered the planted
+low-variance program at p = 50 on October 15, still recover it at p = 2,000, and does a larger or
+p-scaled weight change that? The controlling registration is
+`2026-11-03-survival-weight-p2000-plan.md`.
+
+**Prior run found first.** S-7 already ran this fitter at w_S = 1 (arm `canonical_w1`, registered
+in S-1 as a baseline, never reported). At p = 2,000 it recovered 10/10 in every variance cell with
+10/10 converged, against 0, 0 and 1 of 10 for the unsupervised reference, but its mean
+false-active was 1.0, 1.5 and 1.1. It received the nonnegative uncentered input prepared for the
+new fitter, not the column-centered input this fitter is documented for, so it does not settle
+the question.
+
+**Design.** The S-7 corrected shared-loading datasets (same generator and seeds 1–10,
+p ∈ {50, 2,000}, planted variance 0.25%, 1%, 5%), given to this fitter as the signed per-cohort
+z-score. Arms: w_S = 0 (same-fitter reference), w_S ∈ {1, 10, 100, 1,000, 10,000}, w_S = p/50,
+and the weight giving median survival share 0.2 at the w_S = 0 fit, fixed before fitting. Priors,
+K, sweeps, tolerance and α as in the S-7 `canonical_w1` call. Replication: the A1 calibrated bed
+(p = 50, n = 400, β₃ = 3.3, 20 seeds) at w_S = 1 must recover at least 15/20 at noise 0.25, with
+per-seed differences from the saved A1 results explained.
+
+**Metrics.** S-7/A1 recovered and false-active definitions, convergence flag, final survival
+share, validation calibration slope, coverage of the projected true coefficient, validation C,
+training five-fold CV C (share0.2 recalibrated in each fold), and the τ/β mechanism diagnostics.
+Failed fits count as non-converged, unrecovered, seven false-active.
+
+**Gate S, unchanged.** At p = 2,000 a single arm qualifies in at least two variance cells, each
+with recovery at least 3/10 above the S-7 unsupervised reference, mean false-active ≤ 1 and ≥ 90%
+convergence. Read at the best registered arm (simulation only). The CV-chosen arm per dataset is
+reported beside it, not gated. The same verdict against the w_S = 0 reference is reported; the S-7
+reference controls. A pass leads to real-data training CV (S3) and the null calibration check,
+each registered first. A failure leads to S-10. No external or real cohort is used.
