@@ -11,7 +11,7 @@ Hyperparameters are read from `config/globals.yml`.
 | `fit_ssbmf_yfb.R` | `fit_ssbmf_yfb()`: CAVI fit of the YFB model (η = (YF)β), the recommended configuration. Optional cohort offsets, stratified baseline hazard, cohort-specific β and ELBO-based program pruning |
 | `fit_ssbmf_lb.R` | `fit_ssbmf_lb()`: CAVI fit of the LB model (η = Lβ) |
 | `fit_ssbmf_multistart.R` | Multiple-initialization wrapper for the LB fit |
-| `fit_cox_on_yf.R`, `fit_modular.R`, `fit_modular_multistart.R`, `predict_cox_on_yf.R` | Aliases kept for historical scripts: each sources the renamed file and binds the old function name (`fit_cox_on_yf()`, `fit_supervised_mf_modular()`, the multistart wrappers and `predict_cox_on_yf()`). New code should not use them |
+| `fit_cox_on_yf.R`, `fit_modular.R`, `fit_modular_multistart.R`, `predict_cox_on_yf.R`, `predict.R` | Aliases kept for historical scripts: each sources the renamed file and binds the old function name (`fit_cox_on_yf()`, `fit_supervised_mf_modular()`, the multistart wrappers, `predict_cox_on_yf()` and `predict_supervised_mf()`). New code should not use them |
 | `deflation_init.R`, `warmstart_from_fit.R` | Initialization: deflation start, warm start of a smaller-K refit |
 
 `source()` a fitter to load its functions. Each fitter also ends in a runner
@@ -35,7 +35,7 @@ One file per variational factor; the fitters source these.
 | File | Contents |
 |------|----------|
 | `predict_ssbmf_yfb.R` | YFB risk scores for new patients by projection, Y_new F β |
-| `predict.R` | `predict_supervised_mf()`: LB hold-out prediction |
+| `predict_ssbmf_lb.R` | `predict_ssbmf_lb()`: LB hold-out prediction |
 | `compute_elbo.R` | Full ELBO, including EBNM and survival terms |
 | `compute_bic.R` | Joint log-likelihood and BIC across K |
 | `compute_cv_loglik.R` | Cross-validated held-out survival and genomics log-likelihood |
@@ -99,7 +99,7 @@ for the evaluated configurations and unresolved criteria.
 
 | Family | Fit and prediction | Dedicated updates |
 |---|---|---|
-| LB | `fit_ssbmf_lb.R`, `fit_ssbmf_multistart.R`, `predict.R` | `update_L.R` and `update_F.R`. YFB also sources `update_L.R` for the reconstruction residual helper. |
+| LB | `fit_ssbmf_lb.R`, `fit_ssbmf_multistart.R`, `predict_ssbmf_lb.R` | `update_L.R` and `update_F.R`. YFB also sources `update_L.R` for the reconstruction residual helper. |
 | Historical YFB | `fit_ssbmf_yfb.R`, `predict_ssbmf_yfb.R` | `update_L_surv_YFB.R`, `update_F_surv_YFB.R`, `update_beta_cohort.R` |
 | Experimental YFB | `fit_yfb_supervised.R` | `yfb_exponential_stable.R`, `yfb_diagnostic_controls.R` and the coupled loading sweep |
 | Multimodal YFB | `fit_multimodal_yfb.R`, `predict_multimodal_yfb.R` | `preprocess_multimodal_yfb.R`, `multimodal_yfb_helpers.R`, `multimodal_yfb_updates.R`, `multimodal_yfb_sweep.cpp` |

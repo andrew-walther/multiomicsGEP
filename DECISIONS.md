@@ -15,13 +15,14 @@ linear predictor, so that the names say which model each one fits:
 | `fit_cox_on_yf_multistart()` | `fit_ssbmf_yfb_multistart()` | `code/fit_ssbmf_multistart.R` |
 | `fit_supervised_mf_modular_multistart()` | `fit_ssbmf_lb_multistart()` | `code/fit_ssbmf_multistart.R` |
 | `predict_cox_on_yf()` | `predict_ssbmf_yfb()` | `code/predict_ssbmf_yfb.R` |
+| `predict_supervised_mf()` | `predict_ssbmf_lb()` | `code/predict_ssbmf_lb.R` |
 
 Live code, tests and current runners use the new names. Frozen and historical material keeps the
 old names: the 2026-10-14 benchmark snapshot, `code/legacy/`, `results/legacy/`, the `archive/`
 runner folders, presentation and dated chapter figure scripts, the test fixtures copied from
 `feature/supervised-F`, and dated plans, findings and attempt logs, which record what was run under
-the names in use then. Four alias files under the old paths (`code/fit_cox_on_yf.R`,
-`code/fit_modular.R`, `code/fit_modular_multistart.R`, `code/predict_cox_on_yf.R`) source the new files and bind the old names
+the names in use then. Five alias files under the old paths (`code/fit_cox_on_yf.R`,
+`code/fit_modular.R`, `code/fit_modular_multistart.R`, `code/predict_cox_on_yf.R`, `code/predict.R`) source the new files and bind the old names
 to the same functions, so that material still runs. The test suite passed 749/749 before and after.
 
 **Not changed.** `fit_yfb_supervised()` (the experimental fitter from the October 30 specification)

@@ -102,7 +102,7 @@ Active pointers only — completed one-off analyses and dated reports are indexe
 |------|-------|
 | Code quick-reference (math ↔ R) | `code/SupervisedMF_Context.md` |
 | **Reusable CAVI fitting function** | `code/fit_ssbmf_lb.R` (factor-wise, canonical) |
-| Hold-out prediction | `code/predict.R` — `predict_supervised_mf()` |
+| Hold-out prediction | `code/predict_ssbmf_lb.R` — `predict_ssbmf_lb()` |
 | Train/test splitting | `code/train_test_split.R` — `stratified_split()` |
 | Feature selection | `code/feature_selection.R` — `cox_feature_selection()` |
 | K selection | `code/select_K.R` — `auto_prune_K()`, `select_K_cv()` |

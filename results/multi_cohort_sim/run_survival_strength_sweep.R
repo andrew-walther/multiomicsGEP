@@ -62,7 +62,7 @@ source("code/update_tau.R")
 source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R")
+source("code/predict_ssbmf_lb.R")
 source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
@@ -218,7 +218,7 @@ predict_test <- function(arm, fit, d, spl) {
   pr <- if (grepl("^YFB", arm))
     predict_ssbmf_yfb(Yte, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)
   else
-    predict_supervised_mf(Yte, fit$EF, fit$EBeta)
+    predict_ssbmf_lb(Yte, fit$EF, fit$EBeta)
 
   list(risk = pr$risk_scores, time = tte, status = ste)
 }

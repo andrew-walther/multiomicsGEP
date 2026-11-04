@@ -19,8 +19,8 @@ if (!exists("fit_ssbmf_lb")) {
   # tryCatch ensures the function definition above the block is captured.
   suppressMessages(tryCatch(source("code/fit_ssbmf_lb.R"), error = function(e) invisible(NULL)))
 }
-if (!exists("predict_supervised_mf"))
-  source("code/predict.R")
+if (!exists("predict_ssbmf_lb"))
+  source("code/predict_ssbmf_lb.R")
 if (!exists("create_stratified_folds"))
   source("code/train_test_split.R")
 if (!exists("select_K_cv"))

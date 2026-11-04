@@ -6,7 +6,7 @@
 #               Replaces run_cluster_a_smoke.R + run_cluster_a_external.R.
 # Author: Andrew Walther
 # Created:      2026-05-04
-# Dependencies: code/fit_ssbmf_lb.R, code/predict.R, code/train_test_split.R,
+# Dependencies: code/fit_ssbmf_lb.R, code/predict_ssbmf_lb.R, code/train_test_split.R,
 #               code/preprocess_desurv.R, results/benchmark_sim/benchmark_helpers.R
 # Usage:        Rscript results/benchmark_sim/run_LB_benchmark.R [--quick] [--train-mode merged|tcga_only|cptac_only]
 # ============================================================
@@ -42,7 +42,7 @@ cfg <- yaml::read_yaml("config/globals.yml")
 source("results/benchmark_sim/benchmark_helpers.R")  # PDAC constants + load_pdac_raw + generate_synthetic_benchmark_data
 tryCatch(source("code/fit_ssbmf_lb.R"), error = function(e) invisible(NULL))  # fit_ssbmf_lb
 source("code/fit_ssbmf_multistart.R")  # fit_ssbmf_lb_multistart
-source("code/predict.R")
+source("code/predict_ssbmf_lb.R")
 source("code/train_test_split.R")
 source("code/preprocess_desurv.R")
 source("code/select_alpha_cv.R")  # select_alpha_cv() — LB-only alpha CV via 5-fold stratified CV
@@ -114,7 +114,7 @@ if (RUN_SYNTHETIC) {
       alpha = ALPHA, N_burnin = N_BURNIN,
       normalize_AB = NORM_AB, verbose = FALSE
     )
-    pred     <- predict_supervised_mf(Y_te, fit$EF, fit$EBeta)
+    pred     <- predict_ssbmf_lb(Y_te, fit$EF, fit$EBeta)
     c_idx    <- as.numeric(concordance(Surv(t_te, s_te) ~ pred$risk_scores)$concordance)
     k_eff    <- sum(abs(fit$EBeta) > BETA_THRESH)
     beta_rng <- range(fit$EBeta)
@@ -311,7 +311,7 @@ if (!pdac_available || length(fit_lb) == 0) {
         Y_ext   <- ext_pre$Y[, ext_idx, drop = FALSE]
         EF_sub  <- fit_obj$EF[tr_idx, , drop = FALSE]
 
-        pred  <- predict_supervised_mf(Y_ext, EF_sub, fit_obj$EBeta)
+        pred  <- predict_ssbmf_lb(Y_ext, EF_sub, fit_obj$EBeta)
         c_idx <- as.numeric(concordance(Surv(raw$time, raw$status) ~ pred$risk_scores)$concordance)
         cat(sprintf("    %s (n=%d, genes=%d): C-index=%.4f\n",
                     cohort, raw$n, length(common), c_idx))

@@ -37,7 +37,7 @@ source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
+source("code/predict_ssbmf_lb.R"); source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
@@ -322,7 +322,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
     EF_sub    <- fit$EF[train_idx, , drop = FALSE]
 
     pred <- if (dcfg$model == "LB")
-      predict_supervised_mf(Y_ext, EF_sub, fit$EBeta)
+      predict_ssbmf_lb(Y_ext, EF_sub, fit$EBeta)
     else
       predict_ssbmf_yfb(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
 

@@ -14,7 +14,7 @@ h(t_i)  = h₀(t_i) exp(η_i)
 
 | Model | Linear predictor | Fitter | Prediction for new patients |
 |-------|------------------|--------|-----------------------------|
-| LB  | η_i = l_i β | `fit_ssbmf_lb()` in `fit_ssbmf_lb.R` | `predict_supervised_mf()` in `predict.R` (projects Y_new onto F, then applies β) |
+| LB  | η_i = l_i β | `fit_ssbmf_lb()` in `fit_ssbmf_lb.R` | `predict_ssbmf_lb()` in `predict_ssbmf_lb.R` (projects Y_new onto F, then applies β) |
 | YFB | η_i = (y_i F) β | `fit_ssbmf_yfb()` in `fit_ssbmf_yfb.R` (recommended) | `predict_ssbmf_yfb()` in `predict_ssbmf_yfb.R`: Y_new F β, the same formula used in training |
 
 Inference is mean-field CAVI, q(L, F, β) = q(L) q(F) q(β), with τ updated in

@@ -49,7 +49,7 @@ source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R")
+source("code/predict_ssbmf_lb.R")
 source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
@@ -244,12 +244,12 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 
   # --- LB_base ---
   EF_lb_sub  <- fits$LB_base$EF[train_idx_genes, , drop = FALSE]
-  pred_lb    <- predict_supervised_mf(Y_ext, EF_lb_sub, fits$LB_base$EBeta)
+  pred_lb    <- predict_ssbmf_lb(Y_ext, EF_lb_sub, fits$LB_base$EBeta)
   c_lb       <- oriented_cindex(pred_lb$risk_scores, raw_ext$time, raw_ext$status)
 
   # --- LB_cohort ---
   EF_lbc_sub <- fits$LB_cohort$EF[train_idx_genes, , drop = FALSE]
-  pred_lbc   <- predict_supervised_mf(Y_ext, EF_lbc_sub, fits$LB_cohort$EBeta)
+  pred_lbc   <- predict_ssbmf_lb(Y_ext, EF_lbc_sub, fits$LB_cohort$EBeta)
   c_lbc      <- oriented_cindex(pred_lbc$risk_scores, raw_ext$time, raw_ext$status)
 
   # --- YFB_base ---

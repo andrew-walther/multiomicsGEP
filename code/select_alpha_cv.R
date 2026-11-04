@@ -5,7 +5,7 @@
 #          either max-C-index or 1-SE rule selection.
 # Author: Andrew Walther
 # Created: 2026-04-23
-# Dependencies: code/fit_ssbmf_lb.R, code/predict.R, code/train_test_split.R
+# Dependencies: code/fit_ssbmf_lb.R, code/predict_ssbmf_lb.R, code/train_test_split.R
 #               must be sourced first.
 # ============================================================
 
@@ -16,7 +16,7 @@
 #' Select alpha via stratified K-fold cross-validation.
 #'
 #' For each alpha in `alpha_grid`, fits the SBMF model on `n_folds - 1` folds,
-#' projects the held-out fold with `predict_supervised_mf()`, and evaluates
+#' projects the held-out fold with `predict_ssbmf_lb()`, and evaluates
 #' held-out C-index using the project convention:
 #'
 #'   concordance(Surv(time, status) ~ I(-risk_scores))
@@ -41,7 +41,7 @@
 #'   $selection_rule character: "1se" or "max"
 #'
 #' @examples
-#' # Requires fit_ssbmf_lb.R, predict.R, and train_test_split.R to be sourced first.
+#' # Requires fit_ssbmf_lb.R, predict_ssbmf_lb.R, and train_test_split.R to be sourced first.
 #' # res <- select_alpha_cv(Y, time, status, alpha_grid = c(0.1, 0.5, 0.9), n_folds = 3, K_max = 3)
 select_alpha_cv <- function(Y, time, status,
                             alpha_grid = seq(0.1, 0.9, by = 0.1),
@@ -54,8 +54,8 @@ select_alpha_cv <- function(Y, time, status,
 
   if (!exists("fit_ssbmf_lb", mode = "function"))
     stop("fit_ssbmf_lb() must be sourced before select_alpha_cv().")
-  if (!exists("predict_supervised_mf", mode = "function"))
-    stop("predict_supervised_mf() must be sourced before select_alpha_cv().")
+  if (!exists("predict_ssbmf_lb", mode = "function"))
+    stop("predict_ssbmf_lb() must be sourced before select_alpha_cv().")
   if (!exists("create_stratified_folds", mode = "function"))
     stop("create_stratified_folds() must be sourced before select_alpha_cv().")
 
@@ -102,7 +102,7 @@ select_alpha_cv <- function(Y, time, status,
         ...
       )
 
-      pred <- predict_supervised_mf(Y[test_idx, , drop = FALSE], fit$EF, fit$EBeta)
+      pred <- predict_ssbmf_lb(Y[test_idx, , drop = FALSE], fit$EF, fit$EBeta)
       cindex <- survival::concordance(
         survival::Surv(time[test_idx], status[test_idx]) ~ I(-pred$risk_scores)
       )$concordance

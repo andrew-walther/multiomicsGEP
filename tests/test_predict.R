@@ -1,6 +1,6 @@
 # ============================================================
 # tests/test_predict.R
-# Tests for predict_supervised_mf() and stratified_split()
+# Tests for predict_ssbmf_lb() and stratified_split()
 #
 # Usage: sourced by tests/run_tests.R (or standalone)
 # ============================================================
@@ -8,15 +8,15 @@
 library(survival)
 
 # Source modules under test
-source("code/predict.R")
+source("code/predict_ssbmf_lb.R")
 source("code/train_test_split.R")
 
 cat("\n========================================\n")
-cat("  Tests: predict.R + train_test_split.R\n")
+cat("  Tests: predict_ssbmf_lb.R + train_test_split.R\n")
 cat("========================================\n\n")
 
 # ==============================================================================
-# T1: predict_supervised_mf — Output Dimensions ----
+# T1: predict_ssbmf_lb — Output Dimensions ----
 # ==============================================================================
 
 cat("=== T1: Output Dimensions ===\n")
@@ -26,7 +26,7 @@ run_test("T1.1: L_test has correct dimensions (n_test x K)", {
   Y_test <- matrix(rnorm(n_test * p), n_test, p)
   EF     <- matrix(rnorm(p * K), p, K)
   EBeta  <- rnorm(K)
-  pred   <- predict_supervised_mf(Y_test, EF, EBeta)
+  pred   <- predict_ssbmf_lb(Y_test, EF, EBeta)
   # Use == not assert_equal: nrow() returns integer, n_test is double
   assert_true(nrow(pred$L_test) == n_test, msg = "nrow(L_test) != n_test")
   assert_true(ncol(pred$L_test) == K,      msg = "ncol(L_test) != K")
@@ -37,7 +37,7 @@ run_test("T1.2: risk_scores has correct length (n_test)", {
   Y_test <- matrix(rnorm(n_test * p), n_test, p)
   EF     <- matrix(rnorm(p * K), p, K)
   EBeta  <- rnorm(K)
-  pred   <- predict_supervised_mf(Y_test, EF, EBeta)
+  pred   <- predict_ssbmf_lb(Y_test, EF, EBeta)
   assert_length(pred$risk_scores, n_test)
 })
 
@@ -46,13 +46,13 @@ run_test("T1.3: Single patient prediction works (n_test = 1)", {
   Y_test <- matrix(rnorm(p), 1, p)
   EF     <- matrix(rnorm(p * K), p, K)
   EBeta  <- rnorm(K)
-  pred   <- predict_supervised_mf(Y_test, EF, EBeta)
+  pred   <- predict_ssbmf_lb(Y_test, EF, EBeta)
   assert_true(nrow(pred$L_test) == 1, msg = "nrow(L_test) != 1 for single patient")
   assert_length(pred$risk_scores, 1)
 })
 
 # ==============================================================================
-# T2: predict_supervised_mf — Consistency Checks ----
+# T2: predict_ssbmf_lb — Consistency Checks ----
 # ==============================================================================
 
 cat("\n=== T2: Consistency Checks ===\n")
@@ -66,7 +66,7 @@ run_test("T2.1: Training data projection approximately recovers in-sample risk s
   EF_true <- matrix(rnorm(p * K), p, K)
   Y <- EL_true %*% t(EF_true) + matrix(rnorm(n * p, sd = 0.5), n, p)
   EBeta <- c(1.0, -0.5, 0.3)
-  pred <- predict_supervised_mf(Y, EF_true, EBeta)
+  pred <- predict_ssbmf_lb(Y, EF_true, EBeta)
   # Check that L_test is correlated with EL_true
   cor_diag <- diag(cor(EL_true, pred$L_test))
   assert_true(all(abs(cor_diag) > 0.5),
@@ -78,7 +78,7 @@ run_test("T2.2: risk_scores = L_test %*% EBeta (exact identity)", {
   Y_test <- matrix(rnorm(n_test * p), n_test, p)
   EF     <- matrix(rnorm(p * K), p, K)
   EBeta  <- c(1, -2, 0.5, 0)
-  pred   <- predict_supervised_mf(Y_test, EF, EBeta)
+  pred   <- predict_ssbmf_lb(Y_test, EF, EBeta)
   expected <- as.vector(pred$L_test %*% EBeta)
   assert_near(pred$risk_scores, expected, tol = 1e-10)
 })
@@ -88,12 +88,12 @@ run_test("T2.3: All-zero EBeta produces all-zero risk scores", {
   Y_test <- matrix(rnorm(n_test * p), n_test, p)
   EF     <- matrix(rnorm(p * K), p, K)
   EBeta  <- rep(0, K)
-  pred   <- predict_supervised_mf(Y_test, EF, EBeta)
+  pred   <- predict_ssbmf_lb(Y_test, EF, EBeta)
   assert_near(pred$risk_scores, rep(0, n_test), tol = 1e-10)
 })
 
 # ==============================================================================
-# T3: predict_supervised_mf — Error Handling ----
+# T3: predict_ssbmf_lb — Error Handling ----
 # ==============================================================================
 
 cat("\n=== T3: Error Handling ===\n")
@@ -102,7 +102,7 @@ run_test("T3.1: Dimension mismatch Y_test cols != EF rows errors", {
   Y_test <- matrix(rnorm(10 * 50), 10, 50)
   EF     <- matrix(rnorm(60 * 3), 60, 3)  # 60 != 50
   EBeta  <- rnorm(3)
-  err <- tryCatch(predict_supervised_mf(Y_test, EF, EBeta),
+  err <- tryCatch(predict_ssbmf_lb(Y_test, EF, EBeta),
                   error = function(e) conditionMessage(e))
   assert_true(grepl("mismatch", err, ignore.case = TRUE),
     msg = "Should error on p mismatch")
@@ -113,7 +113,7 @@ run_test("T3.2: EBeta length != K errors", {
   Y_test <- matrix(rnorm(10 * p), 10, p)
   EF     <- matrix(rnorm(p * K), p, K)
   EBeta  <- rnorm(K + 1)  # length 4, not 3
-  err <- tryCatch(predict_supervised_mf(Y_test, EF, EBeta),
+  err <- tryCatch(predict_ssbmf_lb(Y_test, EF, EBeta),
                   error = function(e) conditionMessage(e))
   assert_true(grepl("mismatch", err, ignore.case = TRUE),
     msg = "Should error on K mismatch")
@@ -122,7 +122,7 @@ run_test("T3.2: EBeta length != K errors", {
 run_test("T3.3: Non-matrix Y_test errors gracefully", {
   EF <- matrix(rnorm(30), 10, 3)
   EBeta <- rnorm(3)
-  err <- tryCatch(predict_supervised_mf(c(1,2,3), EF, EBeta),
+  err <- tryCatch(predict_ssbmf_lb(c(1,2,3), EF, EBeta),
                   error = function(e) conditionMessage(e))
   assert_true(is.character(err), msg = "Should error on non-matrix input")
 })
@@ -267,4 +267,4 @@ run_test("T6.4: Errors when there are too few events for the requested folds", {
               msg = "Should error when events < n_folds")
 })
 
-report_results("predict.R + train_test_split.R")
+report_results("predict_ssbmf_lb.R + train_test_split.R")

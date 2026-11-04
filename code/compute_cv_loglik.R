@@ -10,7 +10,7 @@
 #            - bicv_genomics_loglik(): bi-cross-validated genomics
 #              log-likelihood (Owen & Perry 2009). Ordinary row-wise
 #              held-out genomics likelihood is not well-defined here --
-#              predict.R's L_test = Y_test F (F'F)+ reuses the held-out
+#              predict_ssbmf_lb.R's L_test = Y_test F (F'F)+ reuses the held-out
 #              patient's own expression to score that same patient, so the
 #              score falls monotonically in K by construction. There is
 #              also no missing-data (NA/mask) support anywhere in
@@ -367,7 +367,7 @@ cv_survival_loglik <- function(Y, time, status, K,
 #' Bi-cross-validated genomics log-likelihood (Owen & Perry 2009)
 #'
 #' Row-wise held-out genomics likelihood is not well-defined for this model:
-#' predict.R's `L_test = Y_test F (F'F)+` reconstructs a held-out patient's
+#' predict_ssbmf_lb.R's `L_test = Y_test F (F'F)+` reconstructs a held-out patient's
 #' loadings FROM that same patient's expression, so scoring Y_test against
 #' L_test F' reuses the data being scored and the apparent fit improves
 #' monotonically in K regardless of true structure. There is also no
@@ -382,7 +382,7 @@ cv_survival_loglik <- function(Y, time, status, K,
 #'      (`.fit_genomics_only()` -- no survival term at all).
 #'   2. Project held-out rows using TRAIN genes:
 #'      `L_r = Y[r, -c] EF_train (EF_train'EF_train)+` (same ridge
-#'      pseudoinverse as predict.R's predict_supervised_mf()).
+#'      pseudoinverse as predict_ssbmf_lb.R's predict_ssbmf_lb()).
 #'   3. Project held-out genes using TRAIN rows:
 #'      `F_c = (EL_train'EL_train)+ EL_train' Y[-r, c]`.
 #'   4. Estimate "training" noise precision for the held-out genes from
@@ -417,7 +417,7 @@ cv_survival_loglik <- function(Y, time, status, K,
 #' @param max_iter,tol,prior_LF: forwarded to `.fit_genomics_only()` for
 #'                    each train x train block fit.
 #' @param lambda      numeric: ridge threshold for the pseudoinverse
-#'                    projections (default 1e-8, matches predict.R's default).
+#'                    projections (default 1e-8, matches predict_ssbmf_lb.R's default).
 #'
 #' @return Named list:
 #'   $K                total (summed) held-out genomics log-likelihood

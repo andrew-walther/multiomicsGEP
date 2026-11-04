@@ -14,7 +14,7 @@
 # Output: results/benchmark_sim/outputs/K_cv/
 # Author: Andrew Walther
 # Created: 2026-05-06
-# Dependencies: code/fit_ssbmf_lb.R, code/predict.R,
+# Dependencies: code/fit_ssbmf_lb.R, code/predict_ssbmf_lb.R,
 #               code/fit_ssbmf_yfb.R, code/predict_ssbmf_yfb.R,
 #               code/train_test_split.R, code/select_K.R,
 #               code/preprocess_desurv.R,
@@ -35,7 +35,7 @@ suppressMessages(tryCatch(
   source("code/fit_ssbmf_lb.R"),
   error = function(e) invisible(NULL)
 ))
-source("code/predict.R")
+source("code/predict_ssbmf_lb.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/predict_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/train_test_split.R")

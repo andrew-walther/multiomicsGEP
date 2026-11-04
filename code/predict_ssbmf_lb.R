@@ -1,5 +1,5 @@
 # ============================================================
-# Script: predict.R
+# Script: predict_ssbmf_lb.R
 # Purpose: Project new patients into a trained SBMF factor space
 #          and compute survival risk scores for hold-out evaluation.
 # Author: Andrew Walther
@@ -8,7 +8,7 @@
 # ============================================================
 
 # ============================================================
-# predict_supervised_mf() ----
+# predict_ssbmf_lb() ----
 # ============================================================
 
 #' Project new patients into the learned factor space and compute risk scores.
@@ -47,9 +47,9 @@
 #' @examples
 #' # After training:
 #' # res <- fit_ssbmf_lb(Y_train, time_train, status_train, K=5)
-#' # pred <- predict_supervised_mf(Y_test, res$EF, res$EBeta)
+#' # pred <- predict_ssbmf_lb(Y_test, res$EF, res$EBeta)
 #' # cindex <- concordance(Surv(time_test, status_test) ~ pred$risk_scores)
-predict_supervised_mf <- function(Y_test, EF, EBeta, lambda = 1e-8) {
+predict_ssbmf_lb <- function(Y_test, EF, EBeta, lambda = 1e-8) {
 
   # --- Input validation ---
   if (!is.matrix(Y_test) || !is.numeric(Y_test))

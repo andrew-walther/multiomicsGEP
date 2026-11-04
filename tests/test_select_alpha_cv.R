@@ -9,7 +9,7 @@ library(survival)
 
 source("code/select_alpha_cv.R")
 source("code/train_test_split.R")
-source("code/predict.R")
+source("code/predict_ssbmf_lb.R")
 
 cat("\n========================================\n")
 cat("  Tests: select_alpha_cv.R\n")

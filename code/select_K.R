@@ -215,7 +215,7 @@ classify_factors <- function(res, Y,
 #'
 #' For each candidate K in K_grid, runs n_folds-fold stratified CV:
 #'   1. Fit the model on the (n_folds-1)/n_folds training portion.
-#'   2. Project the held-out fold (LB: predict_supervised_mf;
+#'   2. Project the held-out fold (LB: predict_ssbmf_lb;
 #'      YFB: predict_ssbmf_yfb).
 #'   3. Compute held-out C-index: concordance(Surv(time, status) ~ I(-risk)).
 #'
@@ -244,7 +244,7 @@ classify_factors <- function(res, Y,
 #' @param seed       integer: RNG seed for stratified fold creation (default 42)
 #' @param verbose    logical: print per-fold progress (default FALSE)
 #' @param model      character: "LB" (default, calls fit_ssbmf_lb +
-#'                   predict_supervised_mf) or "YFB" (calls fit_ssbmf_yfb +
+#'                   predict_ssbmf_lb) or "YFB" (calls fit_ssbmf_yfb +
 #'                   predict_ssbmf_yfb).  Both models must be sourced before
 #'                   calling; see dependency checks below.
 #' @param ...        additional arguments passed to the fitting function.
@@ -262,7 +262,7 @@ classify_factors <- function(res, Y,
 #' @examples
 #' \dontrun{
 #' # LB model
-#' source("code/fit_ssbmf_lb.R"); source("code/predict.R")
+#' source("code/fit_ssbmf_lb.R"); source("code/predict_ssbmf_lb.R")
 #' source("code/train_test_split.R"); source("code/select_K.R")
 #' res_lb  <- select_K_cv(Y, time, status, model = "LB",
 #'                         K_grid = c(2,3,5,8,10), n_folds = 3)
@@ -289,8 +289,8 @@ select_K_cv <- function(Y, time, status,
   if (model == "LB") {
     if (!exists("fit_ssbmf_lb", mode = "function"))
       stop("fit_ssbmf_lb() must be sourced before select_K_cv(model='LB').")
-    if (!exists("predict_supervised_mf", mode = "function"))
-      stop("predict_supervised_mf() must be sourced before select_K_cv(model='LB').")
+    if (!exists("predict_ssbmf_lb", mode = "function"))
+      stop("predict_ssbmf_lb() must be sourced before select_K_cv(model='LB').")
   } else {
     if (!exists("fit_ssbmf_yfb", mode = "function"))
       stop("fit_ssbmf_yfb() must be sourced before select_K_cv(model='YFB').")
@@ -363,7 +363,7 @@ select_K_cv <- function(Y, time, status,
         fit <- do.call(fit_ssbmf_lb, fit_args)
 
         # Project held-out fold
-        pred <- predict_supervised_mf(Y[test_idx, , drop = FALSE],
+        pred <- predict_ssbmf_lb(Y[test_idx, , drop = FALSE],
                                       fit$EF, fit$EBeta)
       } else {
         # YFB: sign_correction=FALSE — same convention as LB. Per-fold sign

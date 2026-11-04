@@ -47,7 +47,7 @@ source("code/update_tau.R")
 source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R")
+source("code/predict_ssbmf_lb.R")
 source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
@@ -214,7 +214,7 @@ fit_lb_base <- suppressMessages(
                             prior_beta = PRIOR_BETA,
                             verbose = TRUE, cohort_id = NULL)
 )
-pred_lb_base  <- predict_supervised_mf(Y_test, fit_lb_base$EF, fit_lb_base$EBeta)
+pred_lb_base  <- predict_ssbmf_lb(Y_test, fit_lb_base$EF, fit_lb_base$EBeta)
 c_lb_base     <- ext_cindex(pred_lb_base$risk_scores, t_test, s_test)
 c_lb_base     <- max(c_lb_base, 1 - c_lb_base)   # orientation-free
 rec_lb_base   <- factor_recovery(fit_lb_base$EL, L_true[train_idx, ])
@@ -235,7 +235,7 @@ EF_cohort_est <- fit_lb_coh$EF_cohort       # p x (C-1)
 L_cohort_test <- model.matrix(~ factor(cid_test,
                                        levels = levels(factor(cid_train))))[, -1, drop = FALSE]
 Y_test_adj_lb <- Y_test - L_cohort_test %*% t(EF_cohort_est)
-pred_lb_coh   <- predict_supervised_mf(Y_test_adj_lb, fit_lb_coh$EF, fit_lb_coh$EBeta)
+pred_lb_coh   <- predict_ssbmf_lb(Y_test_adj_lb, fit_lb_coh$EF, fit_lb_coh$EBeta)
 c_lb_coh      <- ext_cindex(pred_lb_coh$risk_scores, t_test, s_test)
 c_lb_coh      <- max(c_lb_coh, 1 - c_lb_coh)
 rec_lb_coh    <- factor_recovery(fit_lb_coh$EL, L_true[train_idx, ])
@@ -292,7 +292,7 @@ fit_zs <- suppressMessages(
                             prior_beta = PRIOR_BETA,
                             verbose = TRUE, cohort_id = NULL)
 )
-pred_zs   <- predict_supervised_mf(Y_test_zs, fit_zs$EF, fit_zs$EBeta)
+pred_zs   <- predict_ssbmf_lb(Y_test_zs, fit_zs$EF, fit_zs$EBeta)
 c_zs      <- ext_cindex(pred_zs$risk_scores, t_test, s_test)
 c_zs      <- max(c_zs, 1 - c_zs)
 rec_zs    <- factor_recovery(fit_zs$EL, L_true[train_idx, ])

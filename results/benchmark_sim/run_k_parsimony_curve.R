@@ -49,7 +49,7 @@ source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
+source("code/predict_ssbmf_lb.R"); source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
