@@ -3,6 +3,28 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-04 — Real-data work follows a working simulation result, not only a literal Gate S pass
+
+**Decided (Andrew).** Gate S stays as registered and is reported literally for S-9, including if it
+fails. Moving to real data does not require a literal pass. If the survival-weighted fit works in
+simulation at 2,000 genes (it recovers the planted program, converges, and its false activity and
+β calibration are close to the criteria rather than broken), the next step is the real training
+data, and tuning continues alongside. If it does not work, S-10 (downweighted genomics) comes first.
+
+**Real-data deliverables once that holds:** the programs the fit identifies; out-of-sample
+prediction C from training cross-validation; the feature-set-size curve from 2,000 genes to the
+full gene set, with per-size numbers and an elbow plot; and the survival-screening comparison
+(unsupervised screen versus the same screen plus a fold-internal Cox screen) rerun with the
+survival-weighted fit. The registered steps are in
+`docs/plans/2026-11-03-survival-weight-p2000-plan.md`.
+
+**Unchanged.** External cohorts choose nothing. They stay unscored during this work (realignment
+plan step S3), so that one untouched evaluation remains for the final claim.
+
+**Presentation.** Results from the α_F = 0 model (no survival in the loadings) are retained and
+labelled as such. Once the supervised fit is carried forward, reports present it as the preferred
+method.
+
 ## 2026-11-04 — Fitters renamed after the method and the predictor
 
 **Decided (Andrew).** The two single-modality fitters are named after the method (SSBMF) and the

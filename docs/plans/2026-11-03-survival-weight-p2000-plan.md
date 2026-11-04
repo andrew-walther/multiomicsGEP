@@ -5,6 +5,23 @@ Registered 2026-11-04, before any S-9 fit was run. The work order is
 Part A. The attempts log carries the matching S-9 entry. Nothing here changes Gate S or any S-7
 or S-8 record.
 
+## Goals and deliverables (kept current)
+
+Decision of 2026-11-04 (DECISIONS.md): Gate S is reported literally, but real-data work follows
+if the fit works in simulation, without waiting for a literal pass.
+
+1. **S-9 in simulation:** per-weight curves (recovery, false-active, survival share, β calibration,
+   convergence, validation and CV C), the Gate S verdict, and whether training CV picks the same
+   weight as the truth-based best arm.
+2. **If it works, on the real training data (no external cohort):**
+   - the programs the fit identifies, and which are survival-active;
+   - out-of-sample C from training cross-validation;
+   - the feature-set-size curve, 2,000 genes to all genes, with numbers and an elbow plot;
+   - the survival-screening comparison rerun with the survival-weighted fit.
+3. **If it does not work:** S-10 (downweighted genomics), registered first.
+4. **Reporting:** keep α_F = 0 results, labelled; present the supervised fit as preferred once it
+   is carried forward. Update the October 30 chapter, tracker, DECISIONS.md and review handoff.
+
 ## Question
 
 `fit_ssbmf_yfb(canonicalize = TRUE, w_S)` adds a Cox term to the gene-by-gene F update:
