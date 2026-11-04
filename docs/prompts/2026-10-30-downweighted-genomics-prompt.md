@@ -202,12 +202,8 @@ is reported as done while tests fail.
   ready for a separate review session.
 - Step S3 of the realignment plan (real-data training CV), which was never run because Gate S
   failed in S-7. Run it for whichever fitter passes, if one does.
-- `main` has commits that are not on this branch. Merging `main` into the branch conflicts in
-  `CLAUDE.md`, the rendered book under `docs/progress_book/_book/` and
-  `presentation/prelim-slides/OUTLINE.md`. Resolve these:
-  - keep both sets of `CLAUDE.md` instructions;
-  - regenerate `_book` by rendering, not by hand-merging HTML;
-  - take main's version of the slide outline.
+- Done on 2026-11-04: `main` was merged into this branch (656fec7). If `main` gains new commits
+  before this work finishes, merge it again and resolve any conflicts the same way.
 - Update the October 30 chapter, the issue tracker, DECISIONS.md and the plan's review handoff
   with the S-9 and S-10 results. Commit and push the branch, and do not merge into `main`.
 
