@@ -64,16 +64,32 @@ question is whether the fit that worked at 50 genes still recovers the program a
    the planted program's variance share changes under each preprocessing.
 3. **Include a replication cell.** Add the October 15 calibrated bed (p = 50, n = 400, β₃ = 3.3)
    as a replication check. It should reproduce about 17 of 20.
-4. **Arms:** w_S ∈ {1, 10, 100}. Weights up to 100 stayed stable on the real data in A1. Larger
-   weights broke convergence.
-5. **Gate S is unchanged.** At p = 2,000, a recovery gain of at least 3/10 over the unsupervised
+4. **Arms: a range of weights, reported as a curve.** The genomics likelihood has n·p terms and
+   the Cox likelihood has about one term per event, so at fixed w_S survival's share of the F
+   precision falls roughly as 1/p. Run w_S ∈ {1, 10, 100, 1,000, 10,000} and two scaled arms:
+   - w_S = p/50, which keeps the October 15 balance (w_S = 1 at p = 50) as p grows;
+   - w_S chosen so the median survival share of the F precision equals 0.2 (computed from the
+     paired unsupervised fit before the supervised run, not tuned afterwards).
+   For every arm report recovery, false-active count, survival share, β calibration, convergence
+   and validation C, and plot each against w_S. A1 found that weights above 100 broke convergence
+   with free per-gene noise, and S-8 found that fixed noise prevents the blow-up but that a very
+   large Cox weight makes β overconfident. Record non-convergence at large w_S as a result, and
+   say whether it is the τ mechanism, the β mechanism or something new.
+5. **How the weight would be chosen in practice.** Gate S is read at the best registered arm, which
+   uses the planted truth and is allowed only in simulation. Also report the arm that
+   training-data cross-validated C would pick in each cell, and whether it is the same one. On real
+   data the weight may only be chosen by training cross-validation. A prior on w_S is not a
+   substitute: w_S tempers a likelihood, so its posterior is not well defined without an extra
+   calibration rule (for example SafeBayes or the Holmes–Walker power-likelihood calibration).
+   Name that as a follow-up in the findings, do not implement it here.
+6. **Gate S is unchanged.** At p = 2,000, a recovery gain of at least 3/10 over the unsupervised
    fit in at least two variance cells, mean false-active at most 1, and at least 90% of fits
    converged.
-6. **Measure along the way:** survival's share of the F precision per fit, and how it changes from
+7. **Measure along the way:** survival's share of the F precision per fit, and how it changes from
    p = 50 to p = 2,000. If recovery drops at 2,000 genes, show whether the falling share explains it.
-7. **Register before running:** an S-9 entry in `docs/plans/2026-10-16-round2-attempts-log.md`
+8. **Register before running:** an S-9 entry in `docs/plans/2026-10-16-round2-attempts-log.md`
    and `docs/plans/2026-11-03-survival-weight-p2000-plan.md`.
-8. **If S-9 passes:**
+9. **If S-9 passes:**
    - run the realignment plan's step S3 with the passing w_S: real-data training cross-validation
      on the single-log data, training data only, no external cohort;
    - then run the null-data calibration check from Part B, step 3.2 at that w_S.
