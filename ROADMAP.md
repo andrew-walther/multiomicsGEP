@@ -147,29 +147,19 @@ Move completed items to the [Completed](#-completed) section at the bottom.
 - [x] **Independent review and verification of the revised draft (2026-10-14).**
   Scientific corrections, derivations, captions and pagination verified in
   `paper/writeup/2026-10-16-writeup/_process/verification_round2.md`; its two minor corrections are applied.
-- [ ] **Resolve main-text length and obtain Andrew's approval before merging
-  `writeup/draft`.** The 15–20-page target remains unmet. See Prompts 3–4 in
-  `docs/meetings/2026-10-02-meeting-notes-followup.md` and Task 4 in
-  `paper/writeup/2026-10-16-writeup/_process/implementation_plan.md`.
+- [x] **Approve and merge the interim writeup (2026-10-16).** The approved
+  draft was merged and is kept as `paper/writeup/2026-10-16-writeup/`. Later
+  versions go in their own dated folders, indexed in `paper/writeup/README.md`.
+  The final dissertation and journal texts remain future deliverables.
 
-- [ ] **Manuscript introduction with its own background (`paper/thesis/`)**
-  `[Priority: Medium]` `[Effort: Medium]` — The prelim chapter's introduction
-  refers to the literature review (Chapter 1, Sections 1.3.1–1.3.6) instead of
-  restating it. A journal manuscript must stand alone, so its introduction
-  should restore that background with citations: PDAC subtyping and program
-  discovery (Collisson2011, Rashid2020, Brunet2004, Kotliar2019), the two-step
-  pipeline and supervised alternatives (Bair2004, Tibshirani1997, Nygard2008,
-  Simon2011), and attenuation from treating estimated scores as fixed
-  (Prentice1982, Carroll2006). Start when the manuscript draft is set up in
-  `paper/thesis/` (authors: Walther, Liu, Rashid; Young's work is cited, and
-  she is not a coauthor for now; see DECISIONS.md 2026-10-14).
+- [ ] **Prepare the November 6 writeup version.** `paper/writeup/2026-11-06-writeup/`
+  holds only a placeholder README. Decide whether it starts from the October 16 sources or
+  a new outline, and record what changed since the October 16 version.
 
-- [ ] **Sync the manuscript to bios-dissertation (deferred 2026-10-13)**
-  Once a working manuscript exists in `paper/thesis/`, add a copy script and a
-  trigger to `paper/prelim/tools/post_commit_hook.sh` that copy its source and
-  reading PDF to `bios-dissertation/manuscripts/project3-ssbmf/` as
-  `project_3_paper.*`, like Project 2's CTJ sync. Steps:
-  `bios-dissertation/manuscripts/project3-ssbmf/README.md`.
+- [ ] **Prepare the final dissertation chapter and journal manuscript.**
+  Draft the dissertation chapter in `paper/thesis/` and arrange its transfer to
+  bios-dissertation. Build the standalone journal submission in `SSBMF-paper`
+  with its own background and reproducible results.
 
 - [ ] **Complete replicated K selection for matched expression/methylation YFB**
   `[Priority: High]` `[Effort: Large]` — The approved raw joint-YFB derivation,
