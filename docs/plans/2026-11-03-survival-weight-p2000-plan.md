@@ -150,6 +150,17 @@ reported, not gated.
   within one standard error is preferred, as the more parsimonious model. This uses training data
   only. The earlier fixed-K feature-count curve (attempt Task5-F1) used the historical α_F = 0
   model and is not a substitute.
+  Report the numbers per size (CV C ± SE, convergence, program correlations with the largest set)
+  and an elbow plot of CV C against feature-set size.
+- **Survival screening before the joint fit (requested 2026-11-04).** Rerun the October 16
+  feature-selection comparison (`docs/plans/2026-10-16-feature-selection-experiment-plan.md`,
+  runner `results/feature_selection/run_feature_selection_comparison.R`) with the passing
+  survival-weighted fit in place of the α_F = 0 fit. Arms: the unsupervised mean/variance screen
+  U(N) and the same genes followed by a fold-internal cohort-stratified Cox screen S(N), at the
+  same N grid. The Cox screen runs on fold-training patients only, so held-out patients never
+  inform it. The question is whether screening adds anything once survival already shapes the
+  loadings; the October 26 α_F = 0 results (S(N) above U(N) by 0.01–0.04 in CV C) stay on record
+  beside the new ones, labelled as the unsupervised-loadings model.
 - **If S-9 fails:** run Part B (S-10, downweighted genomics) under its own registration, and
   say which failure it is meant to fix.
 
