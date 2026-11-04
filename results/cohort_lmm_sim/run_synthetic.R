@@ -48,7 +48,7 @@ source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 
@@ -250,7 +250,7 @@ fit_yfb_base <- suppressMessages(
                 K = K_FIT, max_iter = MAX_ITER, alpha = ALPHA,
                 verbose = TRUE, cohort_id = NULL)
 )
-pred_yfb_base <- predict_cox_on_yf(Y_test, fit_yfb_base$EF, fit_yfb_base$EBeta,
+pred_yfb_base <- predict_ssbmf_yfb(Y_test, fit_yfb_base$EF, fit_yfb_base$EBeta,
                                     EF_norms = fit_yfb_base$EF_norms)
 c_yfb_base    <- ext_cindex(pred_yfb_base$risk_scores, t_test, s_test)
 c_yfb_base    <- max(c_yfb_base, 1 - c_yfb_base)
@@ -268,7 +268,7 @@ fit_yfb_coh <- suppressMessages(
 )
 EF_cohort_yfb <- fit_yfb_coh$EF_cohort
 Y_test_adj_yfb <- Y_test - L_cohort_test %*% t(EF_cohort_yfb)
-pred_yfb_coh  <- predict_cox_on_yf(Y_test_adj_yfb, fit_yfb_coh$EF, fit_yfb_coh$EBeta,
+pred_yfb_coh  <- predict_ssbmf_yfb(Y_test_adj_yfb, fit_yfb_coh$EF, fit_yfb_coh$EBeta,
                                     EF_norms = fit_yfb_coh$EF_norms)
 c_yfb_coh     <- ext_cindex(pred_yfb_coh$risk_scores, t_test, s_test)
 c_yfb_coh     <- max(c_yfb_coh, 1 - c_yfb_coh)

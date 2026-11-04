@@ -17,7 +17,7 @@ if (!exists("fit_ssbmf_yfb")) {
   source("code/compute_elbo.R"); source("code/update_F_cohort.R")
   suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
 }
-if (!exists("predict_cox_on_yf")) source("code/predict_cox_on_yf.R")
+if (!exists("predict_ssbmf_yfb")) source("code/predict_ssbmf_yfb.R")
 if (!exists("create_stratified_folds")) source("code/train_test_split.R")
 if (!exists("select_K_cv")) source("code/select_K.R")
 if (!exists("select_k_alpha_bayesopt")) source("code/select_k_alpha_bo.R")

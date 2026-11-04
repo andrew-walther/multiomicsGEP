@@ -65,7 +65,7 @@ run_test("ProfileProtocol-T4: nonconstant but noncredible training fits remain c
     msg="positive risk variance alone cannot substitute for a credible program")
 })
 run_test("ProfileProtocol-T5: full-training checks use every synthetic patient and frozen scaling", {
-  source("code/predict_cox_on_yf.R");source("code/concordance_ci.R")
+  source("code/predict_ssbmf_yfb.R");source("code/concordance_ci.R")
   set.seed(71)
   y <- matrix(rnorm(60*12),60,12,dimnames=list(paste0("s",1:60),paste0("g",1:12)))
   tr <- list(Y=list(expression=y,methylation=y/10),

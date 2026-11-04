@@ -27,7 +27,7 @@ cfg <- yaml::read_yaml("config/globals.yml")
 source("results/benchmark_sim/benchmark_helpers.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 source("code/preprocess_desurv.R")
 source("code/concordance_ci.R")   # bootstrap_concordance_diff_ci()
 
@@ -78,8 +78,8 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 
   EF5_sub <- fit5$EF[train_idx, , drop = FALSE]
   EF7_sub <- fit7$EF[train_idx, , drop = FALSE]
-  risk5 <- predict_cox_on_yf(Y_ext, EF5_sub, fit5$EBeta, EF_norms = fit5$EF_norms)$risk_scores
-  risk7 <- predict_cox_on_yf(Y_ext, EF7_sub, fit7$EBeta, EF_norms = fit7$EF_norms)$risk_scores
+  risk5 <- predict_ssbmf_yfb(Y_ext, EF5_sub, fit5$EBeta, EF_norms = fit5$EF_norms)$risk_scores
+  risk7 <- predict_ssbmf_yfb(Y_ext, EF7_sub, fit7$EBeta, EF_norms = fit7$EF_norms)$risk_scores
 
   ci <- bootstrap_concordance_diff_ci(risk5, risk7, raw_ext$time, raw_ext$status, B = 2000, seed = 1)
   cat(sprintf("  %s: diff (K5-K7) = %.4f [%.4f, %.4f]\n",

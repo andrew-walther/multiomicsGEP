@@ -25,7 +25,7 @@ source("code/train_test_split.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"),error=function(e) {
   if(conditionMessage(e)!="!is.null(real_Y) is not TRUE")stop(e)
 })
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 source("code/select_K.R")
 source("code/feature_sensitivity.R")
 stopifnot(exists("fit_ssbmf_yfb"),exists("calc_cox_taylor_yf"))
@@ -79,7 +79,7 @@ if(mode=="prepare") {
   write.csv(data.frame(path=tracked,md5=unname(tools::md5sum(tracked))),
     file.path(out,"input_hashes.csv"),row.names=FALSE)
   frozen <- readRDS("results/benchmark_snapshot_2026-10-14/single_modality/desurv_comparison_fits.rds")$D4
-  fp <- predict_cox_on_yf(baseline$Y,frozen$EF,frozen$EBeta,frozen$EF_norms)
+  fp <- predict_ssbmf_yfb(baseline$Y,frozen$EF,frozen$EBeta,frozen$EF_norms)
   # Historical D4 predates the sign fix: frozen risk=-eta (DECISIONS 2026-10-02).
   fm <- feature_survival_metrics(time,status,-fp$risk_scores)
   frozen_rows <- data.frame(source="benchmark_snapshot",p=length(frozen_genes),K=7,
@@ -123,11 +123,11 @@ for(id in ids) {
     controls <- z$controls;controls$sign_correction <- cell$fold==0L
     fit <- do.call(fit_ssbmf_yfb,c(list(Y=Y[train,,drop=FALSE],
       time=z$time[train],status=z$status[train]),controls))
-    training <- predict_cox_on_yf(Y[train,,drop=FALSE],fit$EF,fit$EBeta,fit$EF_norms)
+    training <- predict_ssbmf_yfb(Y[train,,drop=FALSE],fit$EF,fit$EBeta,fit$EF_norms)
     # Match existing CV orientation using training outcomes only.
     orientation <- feature_survival_metrics(z$time[train],z$status[train],training$risk_scores)$C
     if(cell$fold!=0L && is.finite(orientation) && orientation<.5)fit$EBeta <- -fit$EBeta
-    pred <- predict_cox_on_yf(Y[test,,drop=FALSE],fit$EF,fit$EBeta,fit$EF_norms)
+    pred <- predict_ssbmf_yfb(Y[test,,drop=FALSE],fit$EF,fit$EBeta,fit$EF_norms)
     metrics <- feature_survival_metrics(z$time[test],z$status[test],pred$risk_scores)
     classes <- classify_factors(fit,Y[train,,drop=FALSE],
       beta_thresh=cfg$k_selection$beta_threshold,pve_thresh=cfg$k_selection$pve_threshold)

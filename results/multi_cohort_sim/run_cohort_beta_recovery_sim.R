@@ -58,7 +58,7 @@ source("code/update_beta.R"); source("code/update_beta_cohort.R")
 source("code/update_L.R"); source("code/update_F.R"); source("code/update_tau.R")
 source("code/compute_elbo.R"); source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R"); source("code/predict_cox_on_yf.R")
+source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 source("results/benchmark_sim/benchmark_helpers.R")
@@ -148,10 +148,10 @@ for (s in SEEDS) {
 
     # External (held-out) C-index for both arms.
     Yte <- d$Y[spl$test_idx, , drop = FALSE]; tte <- d$time[spl$test_idx]; ste <- d$status[spl$test_idx]
-    pred_base <- predict_cox_on_yf(Yte, fit_base$EF, fit_base$EBeta, EF_norms = fit_base$EF_norms)
+    pred_base <- predict_ssbmf_yfb(Yte, fit_base$EF, fit_base$EBeta, EF_norms = fit_base$EF_norms)
     c_base <- oriented_cindex(pred_base$risk_scores, tte, ste)
     cid_te <- droplevels(d$cohort_id[spl$test_idx])
-    pred_bc <- predict_cox_on_yf(Yte, fit_bc$EF, fit_bc$EBeta, EF_norms = fit_bc$EF_norms,
+    pred_bc <- predict_ssbmf_yfb(Yte, fit_bc$EF, fit_bc$EBeta, EF_norms = fit_bc$EF_norms,
                                   cohort_id_test = cid_te)
     c_bc <- oriented_cindex(pred_bc$risk_scores, tte, ste)
 

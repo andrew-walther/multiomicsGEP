@@ -57,7 +57,7 @@ source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R"); source("code/predict_cox_on_yf.R")
+source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
 source("code/select_K.R")
 tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
@@ -249,7 +249,7 @@ for (vi in seq_along(variants)) {
   train_means_common <- colMeans(Y_train[, match(common, train_genes), drop = FALSE])
   Y_dijk_c <- sweep(Y_dijk, 2, train_means_common, "-")
 
-  pred_dijk <- predict_cox_on_yf(Y_dijk_c, ef_sub, fit$EBeta,
+  pred_dijk <- predict_ssbmf_yfb(Y_dijk_c, ef_sub, fit$EBeta,
                                   EF_norms = fit$EF_norms)
   c_dijk <- oriented_cindex(pred_dijk$risk_scores,
                              dijk_raw$time, dijk_raw$status)

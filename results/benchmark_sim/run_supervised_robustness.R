@@ -172,7 +172,7 @@ run_supervised_robustness <- function(cores=6L) {
         max_iter=env$cfg$cavi$max_iter,tol=env$cfg$cavi$tol,prior_LF="point_laplace",canonicalize=TRUE,
         w_S=1,init_supervised=TRUE,beta_prior_mode="shared",prior_beta="point_laplace",beta_warmup=10L,
         verbose=FALSE)
-      risk<-predict_cox_on_yf(Y[te,,drop=FALSE],fit$EF,fit$EBeta,EF_norms=fit$EF_norms)$risk_scores
+      risk<-predict_ssbmf_yfb(Y[te,,drop=FALSE],fit$EF,fit$EBeta,EF_norms=fit$EF_norms)$risk_scores
       sd<-sqrt(pmax(fit$EBeta2-fit$EBeta^2,0))
       feature_rows[[length(feature_rows)+1L]]<-data.frame(top_n=top,p=ncol(Y),fold=f,
         C=frozen_reverse_cindex(risk,env$time_train[te],env$status_train[te]),

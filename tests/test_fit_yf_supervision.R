@@ -150,7 +150,7 @@ run_test("Supervision-T6: canonical fit with w_S = 0 matches alpha_F = 0 up to s
 
 # ---------------------------------------------------------------------------
 # T7: canonical fit returns unit-SD projections, EF_norms = 1, and
-# predict_cox_on_yf() on the training data returns Y EF beta
+# predict_ssbmf_yfb() on the training data returns Y EF beta
 # ---------------------------------------------------------------------------
 run_test("Supervision-T7: canonical fit is self-consistent for prediction", {
   fit <- fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 30L,
@@ -160,7 +160,7 @@ run_test("Supervision-T7: canonical fit is self-consistent for prediction", {
   assert_near(apply(.sv$Y %*% fit$EF[, live, drop = FALSE], 2, sd), rep(1, sum(live)),
               tol = 1e-8, msg = "sd(Y EF_k) = 1")
   assert_true(all(fit$EF_norms == 1) && fit$w_S == 1, msg = "EF_norms = 1, default w_S = 1")
-  pr <- predict_cox_on_yf(.sv$Y, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
+  pr <- predict_ssbmf_yfb(.sv$Y, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
   assert_near(pr, as.vector(.sv$Y %*% fit$EF %*% fit$EBeta), tol = 1e-10, msg = "prediction")
   err <- tryCatch(fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 2L, max_iter = 2L,
                                 canonicalize = TRUE, alpha_F = 0.5, verbose = FALSE),

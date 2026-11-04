@@ -27,7 +27,7 @@ source("code/train_test_split.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) {
   if (conditionMessage(e) != "!is.null(real_Y) is not TRUE") stop(e)
 })
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 source("code/select_K.R")
 source("code/feature_sensitivity.R")
 library(survival)
@@ -95,10 +95,10 @@ for (arm in names(prep)) for (fold in 0:cfg$cavi$n_cv_folds) {
   ctl <- controls; ctl$sign_correction <- fold == 0L
   fit <- do.call(fit_ssbmf_yfb, c(list(Y = Y[tr, , drop = FALSE], time = time[tr],
                                       status = status[tr]), ctl))
-  eta_tr <- predict_cox_on_yf(Y[tr, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
+  eta_tr <- predict_ssbmf_yfb(Y[tr, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
   c_tr <- harrell_c(eta_tr, time[tr], status[tr])
   d <- if (is.na(c_tr)) NA_integer_ else if (c_tr >= 0.5) 1L else -1L
-  eta_te <- predict_cox_on_yf(Y[test, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
+  eta_te <- predict_ssbmf_yfb(Y[test, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
   cv_rows[[length(cv_rows) + 1]] <- data.frame(arm = arm, fold = fold,
     evaluation = if (fold == 0L) "training" else "CV",
     C = if (is.na(d)) NA_real_ else harrell_c(d * eta_te, time[test], status[test]),
@@ -140,7 +140,7 @@ for (ds in ext_cohorts) {
     common <- intersect(ff$genes, pre$gene_names)
     if (length(common) < 100) stop(sprintf("%s: only %d shared genes", ds, length(common)))
     idx <- match(common, ff$genes)
-    eta <- predict_cox_on_yf(pre$Y[, match(common, pre$gene_names), drop = FALSE],
+    eta <- predict_ssbmf_yfb(pre$Y[, match(common, pre$gene_names), drop = FALSE],
       ff$fit$EF[idx, , drop = FALSE], ff$fit$EBeta, EF_norms = ff$fit$EF_norms)$risk_scores
     scores[[arm]] <- list(risk = ff$direction * eta, n_genes = length(common))
   }

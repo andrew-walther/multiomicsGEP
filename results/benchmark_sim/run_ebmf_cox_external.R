@@ -104,7 +104,7 @@ oriented_cindex <- function(risk, time, status) {
 # --------------------------------------------------------------------------
 #' Project an expression matrix onto unit-normalised EBMF gene weights.
 #'
-#' Mirrors predict_cox_on_yf(): EF columns are scaled to unit L2 norm using the
+#' Mirrors predict_ssbmf_yfb(): EF columns are scaled to unit L2 norm using the
 #' TRAINING column norms (F_norms), so a row-subset of F for external validation
 #' stays on the training scale. Used for BOTH the training Cox fit and external
 #' scoring, guaranteeing train/test consistency.

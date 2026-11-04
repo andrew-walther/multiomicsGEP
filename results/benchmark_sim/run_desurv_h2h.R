@@ -234,7 +234,7 @@ run_desurv_h2h <- function(mode="all",workers=2L) {
   tryCatch(source("code/fit_ssbmf_yfb.R"),error=function(e) {
     if(!grepl("!is.null(real_Y)",conditionMessage(e),fixed=TRUE))stop(e)
   })
-  source("code/predict_cox_on_yf.R")
+  source("code/predict_ssbmf_yfb.R")
   pp <- preprocess_merged_cohorts(project_raw,PLATFORM_LOG_TRANSFORM[names(raw)],
     top_n=cfg$preprocessing$top_n_genes_desurv,rank_transform=FALSE,
     per_platform_standardize=TRUE,normalize_method="none",selection_per_cohort=TRUE,
@@ -260,7 +260,7 @@ run_desurv_h2h <- function(mode="all",workers=2L) {
       log_transform=PLATFORM_LOG_TRANSFORM[[co]],cohort_name=co,
       rank_transform=FALSE,per_platform_standardize=TRUE)
     common <- genes[genes %in% ve$gene_names];idx <- match(common,genes)
-    sv <- predict_cox_on_yf(ve$Y[,match(common,ve$gene_names),drop=FALSE],
+    sv <- predict_ssbmf_yfb(ve$Y[,match(common,ve$gene_names),drop=FALSE],
       single$EF[idx,,drop=FALSE],single$EBeta,EF_norms=single$EF_norms)$risk_scores
     rr <- list(DeSurv=desurv_author_risk(final,val$ex,270L),selected_single=sv,
       D4=-frozen[[co]]$risk,time=raw_val$time,event=raw_val$status)

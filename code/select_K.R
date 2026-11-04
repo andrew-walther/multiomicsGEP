@@ -216,7 +216,7 @@ classify_factors <- function(res, Y,
 #' For each candidate K in K_grid, runs n_folds-fold stratified CV:
 #'   1. Fit the model on the (n_folds-1)/n_folds training portion.
 #'   2. Project the held-out fold (LB: predict_supervised_mf;
-#'      YFB: predict_cox_on_yf).
+#'      YFB: predict_ssbmf_yfb).
 #'   3. Compute held-out C-index: concordance(Surv(time, status) ~ I(-risk)).
 #'
 #' After collecting all fold-level C-indices, summarises by mean ± SE per K.
@@ -245,7 +245,7 @@ classify_factors <- function(res, Y,
 #' @param verbose    logical: print per-fold progress (default FALSE)
 #' @param model      character: "LB" (default, calls fit_ssbmf_lb +
 #'                   predict_supervised_mf) or "YFB" (calls fit_ssbmf_yfb +
-#'                   predict_cox_on_yf).  Both models must be sourced before
+#'                   predict_ssbmf_yfb).  Both models must be sourced before
 #'                   calling; see dependency checks below.
 #' @param ...        additional arguments passed to the fitting function.
 #'                   Do NOT pass K (overridden per candidate) or sign_correction
@@ -267,7 +267,7 @@ classify_factors <- function(res, Y,
 #' res_lb  <- select_K_cv(Y, time, status, model = "LB",
 #'                         K_grid = c(2,3,5,8,10), n_folds = 3)
 #' # YFB model
-#' source("code/fit_ssbmf_yfb.R"); source("code/predict_cox_on_yf.R")
+#' source("code/fit_ssbmf_yfb.R"); source("code/predict_ssbmf_yfb.R")
 #' res_yfb <- select_K_cv(Y, time, status, model = "YFB",
 #'                         K_grid = c(2,3,5,8,10), n_folds = 3)
 #' }
@@ -294,8 +294,8 @@ select_K_cv <- function(Y, time, status,
   } else {
     if (!exists("fit_ssbmf_yfb", mode = "function"))
       stop("fit_ssbmf_yfb() must be sourced before select_K_cv(model='YFB').")
-    if (!exists("predict_cox_on_yf", mode = "function"))
-      stop("predict_cox_on_yf() must be sourced before select_K_cv(model='YFB').")
+    if (!exists("predict_ssbmf_yfb", mode = "function"))
+      stop("predict_ssbmf_yfb() must be sourced before select_K_cv(model='YFB').")
   }
   if (!exists("create_stratified_folds", mode = "function"))
     stop("create_stratified_folds() must be sourced before select_K_cv().")
@@ -381,7 +381,7 @@ select_K_cv <- function(Y, time, status,
         fit <- do.call(fit_ssbmf_yfb, fit_args)
 
         # Project held-out fold; pass EF_norms so column scaling is consistent
-        pred <- predict_cox_on_yf(Y[test_idx, , drop = FALSE],
+        pred <- predict_ssbmf_yfb(Y[test_idx, , drop = FALSE],
                                   fit$EF, fit$EBeta,
                                   EF_norms = fit$EF_norms)
       }

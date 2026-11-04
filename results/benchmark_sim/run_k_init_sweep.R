@@ -81,7 +81,7 @@ source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R"); source("code/predict_cox_on_yf.R")
+source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/compute_bic.R")   # compute_joint_ll_bic -- needs calc_cox_taylor_yf from fit_ssbmf_yfb.R
 source("code/compute_cv_loglik.R")  # cv_survival_loglik, bicv_genomics_loglik
@@ -292,7 +292,7 @@ run_one_K <- function(K_init, verbose_fit) {
     for (ext_cohort in names(ext_data)) {
       d      <- ext_data[[ext_cohort]]
       EF_sub <- fit$EF[d$train_idx, , drop = FALSE]
-      pred   <- predict_cox_on_yf(d$Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
+      pred   <- predict_ssbmf_yfb(d$Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
       cohort_c[[ext_cohort]] <- frozen_cindex(pred$risk_scores, d$time, d$status)
     }
     mean_c <- if (length(cohort_c) > 0) mean(unlist(cohort_c), na.rm = TRUE) else NA_real_

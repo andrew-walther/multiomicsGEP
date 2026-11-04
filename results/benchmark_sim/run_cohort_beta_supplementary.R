@@ -36,7 +36,7 @@ source("code/update_beta.R"); source("code/update_beta_cohort.R")
 source("code/update_L.R"); source("code/update_F.R"); source("code/update_tau.R")
 source("code/compute_elbo.R"); source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R"); source("code/predict_cox_on_yf.R")
+source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/compute_cv_loglik.R")
 source("code/preprocess_desurv.R")
@@ -83,7 +83,7 @@ score_external <- function(fit, use_pooled_beta) {
   cs <- sapply(names(ext_data), function(ec) {
     d <- ext_data[[ec]]; EF_sub <- fit$EF[d$train_idx, , drop = FALSE]
     beta <- if (use_pooled_beta) fit$EBeta_pooled else fit$EBeta
-    pred <- predict_cox_on_yf(d$Y_ext, EF_sub, beta, EF_norms = fit$EF_norms)
+    pred <- predict_ssbmf_yfb(d$Y_ext, EF_sub, beta, EF_norms = fit$EF_norms)
     frozen_cindex(pred$risk_scores, d$time, d$status)
   })
   mean(cs, na.rm = TRUE)
@@ -160,7 +160,7 @@ strata_row <- data.frame(
 )
 for (ec in EXTERNAL_COHORTS) {
   d <- ext_data[[ec]]; EF_sub <- fit_strata_only$EF[d$train_idx, , drop = FALSE]
-  pred <- predict_cox_on_yf(d$Y_ext, EF_sub, fit_strata_only$EBeta, EF_norms = fit_strata_only$EF_norms)
+  pred <- predict_ssbmf_yfb(d$Y_ext, EF_sub, fit_strata_only$EBeta, EF_norms = fit_strata_only$EF_norms)
   strata_row[[paste0("c_", ec)]] <- round(frozen_cindex(pred$risk_scores, d$time, d$status), 4)
 }
 common_cols <- intersect(names(existing), names(strata_row))

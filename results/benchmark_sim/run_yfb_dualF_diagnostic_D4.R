@@ -38,7 +38,7 @@ source("results/benchmark_sim/benchmark_helpers.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 source("code/preprocess_desurv.R")
 
 b <- cfg$benchmark
@@ -164,7 +164,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
   for (vname in names(fits)) {
     fit    <- fits[[vname]]
     EF_sub <- fit$EF[train_idx, , drop = FALSE]
-    pred   <- predict_cox_on_yf(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
+    pred   <- predict_ssbmf_yfb(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
     c_val  <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
 
     ext_rows[[length(ext_rows) + 1]] <- data.frame(

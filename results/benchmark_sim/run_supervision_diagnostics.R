@@ -7,7 +7,7 @@
 # Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: survival, ebnm, parallel; code/fit_ssbmf_yfb.R,
-#               code/predict_cox_on_yf.R, code/concordance_ci.R,
+#               code/predict_ssbmf_yfb.R, code/concordance_ci.R,
 #               code/simulate_multimodal_yfb.R
 # Run: Rscript results/benchmark_sim/run_supervision_diagnostics.R <arm_set> [n_seeds] [cores] [n_train] [beta3]
 #      n_train and beta3 (planted log hazard ratio) default to the original
@@ -124,7 +124,7 @@ FIT_DEFAULTS <- list(K = K_FIT, max_iter = 300L, tol = 1e-5, prior_beta = "norma
 load_code <- function() {
   suppressPackageStartupMessages({ library(survival); library(ebnm) })
   suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
-  source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
+  source("code/predict_ssbmf_yfb.R"); source("code/concordance_ci.R")
   source("code/simulate_multimodal_yfb.R")
 }
 
@@ -167,7 +167,7 @@ score_fit <- function(fit, tb) {
   # largest program norm at iteration 1 (a per-program ratio misfires for a
   # program that starts near zero, such as the supervised start)
   rel <- function(m) max(m, na.rm = TRUE) / max(m[1, ], 1e-12, na.rm = TRUE)
-  risk <- predict_cox_on_yf(tb$Yva, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
+  risk <- predict_ssbmf_yfb(tb$Yva, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
   elbo <- fit$history$elbo_full
   data.frame(
     pve_planted   = tb$pve3,

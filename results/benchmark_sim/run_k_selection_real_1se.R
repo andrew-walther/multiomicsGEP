@@ -31,7 +31,7 @@ for (K in c(3L,5L,7L,9L,11L,13L)) for (f in 1:5) {
     canonicalize=TRUE,w_S=1,init_supervised=TRUE,beta_prior_mode="shared",
     prior_beta="point_laplace",beta_warmup=10L,prune=TRUE,prune_protect_survival=TRUE,
     verbose=FALSE)
-  risk <- predict_cox_on_yf(Y_train[te,,drop=FALSE],fit$EF,fit$EBeta,EF_norms=fit$EF_norms)$risk_scores
+  risk <- predict_ssbmf_yfb(Y_train[te,,drop=FALSE],fit$EF,fit$EBeta,EF_norms=fit$EF_norms)$risk_scores
   rows[[length(rows)+1L]] <- data.frame(K=K,fold=f,
     C=frozen_reverse_cindex(risk,time_train[te],status_train[te]),
     K_final=ncol(fit$EF),converged=fit$history$converged)

@@ -242,7 +242,7 @@ update_beta_cohort_all <- function(w, z, ZF, EBeta_mat, cohort_idx, C,
 #' update_beta_k()'s formula applied to the full training set at the
 #' final converged ZF/w/z), then re-solves the scalar EBNM problem.
 #' This is what "the shared part of the signal" means operationally --
-#' see the roxygen on predict_cox_on_yf()'s cohort_id_test argument.
+#' see the roxygen on predict_ssbmf_yfb()'s cohort_id_test argument.
 #'
 #' @param w      n-vector: Cox neg-diagonal Hessian weights at convergence
 #' @param z      n-vector: full working response at convergence

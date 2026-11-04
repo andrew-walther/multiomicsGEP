@@ -41,7 +41,7 @@ run_test("FixedQCase-T3: independent tail integration resolves the known approxi
     msg="the diagnostic must detect the existing kernel approximation")
 })
 run_test("FixedQCase-T4: recovery preserves sign, credibility and false-program rules", {
-  source("code/predict_cox_on_yf.R");source("code/concordance_ci.R")
+  source("code/predict_ssbmf_yfb.R");source("code/concordance_ci.R")
   set.seed(19);truth <- cbind(c(1,0,0,0),c(0,1,0,0),c(1,-1,0,1))
   f <- list(EF=cbind(truth[,3],c(1,1,-1,-1)),EBeta=c(1,.3),
     EBeta2=c(1,.3)^2+.01,EF_norms=c(1,1),EL=matrix(.1,6,2),

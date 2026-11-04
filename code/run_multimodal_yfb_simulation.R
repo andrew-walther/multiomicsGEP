@@ -13,7 +13,7 @@ suppressMessages(tryCatch(
   source("code/fit_ssbmf_yfb.R"),
   error = function(e) invisible(NULL)
 ))
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 
 #' Return a correlation only when both quantities have nonzero variation
 #'
@@ -158,7 +158,7 @@ fit_multimodal_yfb_single_modality <- function(Y, time, event, modality, K,
 #' @family multimodal_yfb_simulation
 predict_multimodal_yfb_single_modality <- function(fit, Y) {
   selected <- attr(fit, "selected_modality")
-  predict_cox_on_yf(Y[[selected]], fit$EF, fit$EBeta, fit$EF_norms)
+  predict_ssbmf_yfb(Y[[selected]], fit$EF, fit$EBeta, fit$EF_norms)
 }
 
 #' Calculate recovery, sparsity, and factor-selection metrics for one fit

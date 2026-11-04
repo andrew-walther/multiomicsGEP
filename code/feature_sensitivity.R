@@ -5,7 +5,7 @@
 # Dependencies: base R; existing DeSurv preprocessing and YFB prediction
 # ============================================================
 if(!exists("select_top_variable_genes"))source("code/preprocess_desurv.R")
-if(!exists("predict_cox_on_yf"))source("code/predict_cox_on_yf.R")
+if(!exists("predict_ssbmf_yfb"))source("code/predict_ssbmf_yfb.R")
 
 # Nested feature sets ----
 
@@ -94,7 +94,7 @@ feature_cor <- function(a,b) {
 #' @examples
 #' # feature_program_agreement(old_fit,old_genes,new_fit,new_genes,old_Y,new_Y)
 #' @family feature_sensitivity
-#' @seealso feature_cor, predict_cox_on_yf
+#' @seealso feature_cor, predict_ssbmf_yfb
 feature_program_agreement <- function(old_fit,old_genes,new_fit,new_genes,old_Y,new_Y) {
   if(anyNA(old_genes) || anyNA(new_genes) || anyDuplicated(old_genes) ||
      anyDuplicated(new_genes) || length(old_genes)!=nrow(old_fit$EF) ||
@@ -109,8 +109,8 @@ feature_program_agreement <- function(old_fit,old_genes,new_fit,new_genes,old_Y,
   if(length(common)>=2L)rf <- feature_cor(
     old_fit$EF[match(common,old_genes),,drop=FALSE],
     new_fit$EF[match(common,new_genes),,drop=FALSE])
-  a <- predict_cox_on_yf(old_Y,old_fit$EF,old_fit$EBeta,old_fit$EF_norms)
-  b <- predict_cox_on_yf(new_Y,new_fit$EF,new_fit$EBeta,new_fit$EF_norms)
+  a <- predict_ssbmf_yfb(old_Y,old_fit$EF,old_fit$EBeta,old_fit$EF_norms)
+  b <- predict_ssbmf_yfb(new_Y,new_fit$EF,new_fit$EBeta,new_fit$EF_norms)
   rz <- feature_cor(a$ZF_test,b$ZF_test)
   old_units <- old_fit$EBeta*apply(a$ZF_test,2,stats::sd)
   new_units <- new_fit$EBeta*apply(b$ZF_test,2,stats::sd)

@@ -30,7 +30,7 @@ source("code/preprocess_desurv.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) {
   if (conditionMessage(e) != "!is.null(real_Y) is not TRUE") stop(e)
 })
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 source("code/select_K.R")
 source("code/feature_sensitivity.R")
 source("results/feature_selection/feature_selection_helpers.R")
@@ -155,9 +155,9 @@ if (mode == "cv") {
       ctl <- z$controls; ctl$sign_correction <- m$fold == 0L
       fit <- do.call(fit_ssbmf_yfb, c(list(Y = Y[tr, , drop = FALSE], time = z$time[tr],
                                           status = z$status[tr]), ctl))
-      eta_tr <- predict_cox_on_yf(Y[tr, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
+      eta_tr <- predict_ssbmf_yfb(Y[tr, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
       d <- training_direction(eta_tr, z$time[tr], z$status[tr])
-      eta_te <- predict_cox_on_yf(Y[test, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
+      eta_te <- predict_ssbmf_yfb(Y[test, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
       classes <- classify_factors(fit, Y[tr, , drop = FALSE],
         beta_thresh = cfg$k_selection$beta_threshold, pve_thresh = cfg$k_selection$pve_threshold)
       row$direction <- d
@@ -195,8 +195,8 @@ if (mode == "agreement") {
     f <- readRDS(file.path(out, "fits", paste0(key, ".rds")))
     new_Y <- z$Y[, match(f$genes, z$genes), drop = FALSE]
     ag <- feature_program_agreement(ref$fit, ref$genes, f$fit, f$genes, ref_Y, new_Y)
-    risk_ref <- ref$direction * predict_cox_on_yf(ref_Y, ref$fit$EF, ref$fit$EBeta, ref$fit$EF_norms)$risk_scores
-    risk_new <- f$direction * predict_cox_on_yf(new_Y, f$fit$EF, f$fit$EBeta, f$fit$EF_norms)$risk_scores
+    risk_ref <- ref$direction * predict_ssbmf_yfb(ref_Y, ref$fit$EF, ref$fit$EBeta, ref$fit$EF_norms)$risk_scores
+    risk_new <- f$direction * predict_ssbmf_yfb(new_Y, f$fit$EF, f$fit$EBeta, f$fit$EF_norms)$risk_scores
     m <- gs$manifest[key, ]
     tab <- ag$pairs
     tab$arm <- m$arm; tab$N <- m$N_requested; tab$n_genes <- m$n_genes

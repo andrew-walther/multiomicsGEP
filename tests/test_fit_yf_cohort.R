@@ -166,7 +166,7 @@ run_test("YFBCohort-T9: small sigma_F_cohort shrinks EF_cohort toward zero", {
 # COHORT-SPECIFIC SURVIVAL COEFFICIENTS, a distinct extension from cohort_id
 # above (genomics offsets in L/F). Separate fixture, separate section: these
 # tests exercise fit_ssbmf_yfb()'s beta_cohort_id argument end-to-end,
-# including predict_cox_on_yf()'s cohort_id_test path. Unit tests for the
+# including predict_ssbmf_yfb()'s cohort_id_test path. Unit tests for the
 # underlying arithmetic (update_beta_cohort_k/_all, compute_pooled_beta) live
 # in tests/test_update_beta_cohort.R; these are the integration layer.
 # =============================================================================
@@ -253,27 +253,27 @@ run_test("YFBBetaCohort-T3: recovers opposite-signed survival signal across two 
 })
 
 # ---------------------------------------------------------------------------
-# BC-INT-T4: predict_cox_on_yf() -- unseen cohort errors, NULL falls back to pooled
+# BC-INT-T4: predict_ssbmf_yfb() -- unseen cohort errors, NULL falls back to pooled
 # ---------------------------------------------------------------------------
-run_test("YFBBetaCohort-T4: predict_cox_on_yf errors loudly on an unseen cohort level", {
+run_test("YFBBetaCohort-T4: predict_ssbmf_yfb errors loudly on an unseen cohort level", {
   fit <- suppressMessages(
     fit_ssbmf_yfb(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
                   verbose = FALSE, beta_cohort_id = .fb$cohort2)
   )
   err <- tryCatch({
-    predict_cox_on_yf(.fb$Y[1:5, , drop = FALSE], fit$EF, fit$EBeta, EF_norms = fit$EF_norms,
+    predict_ssbmf_yfb(.fb$Y[1:5, , drop = FALSE], fit$EF, fit$EBeta, EF_norms = fit$EF_norms,
                        cohort_id_test = rep("UNSEEN_COHORT", 5))
     NULL
   }, error = function(e) e)
   assert_true(!is.null(err), "expected an error on an unseen cohort_id_test level")
 })
 
-run_test("YFBBetaCohort-T5: predict_cox_on_yf falls back to EBeta_pooled with cohort_id_test=NULL", {
+run_test("YFBBetaCohort-T5: predict_ssbmf_yfb falls back to EBeta_pooled with cohort_id_test=NULL", {
   fit <- suppressMessages(
     fit_ssbmf_yfb(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
                   verbose = FALSE, beta_cohort_id = .fb$cohort2)
   )
-  pred <- predict_cox_on_yf(.fb$Y[1:10, , drop = FALSE], fit$EF, fit$EBeta_pooled,
+  pred <- predict_ssbmf_yfb(.fb$Y[1:10, , drop = FALSE], fit$EF, fit$EBeta_pooled,
                              EF_norms = fit$EF_norms)
   assert_length(pred$risk_scores, 10L, "risk_scores should have length n_test")
   assert_finite(pred$risk_scores, "risk_scores must be finite")
@@ -281,25 +281,25 @@ run_test("YFBBetaCohort-T5: predict_cox_on_yf falls back to EBeta_pooled with co
   # Passing the raw K x C matrix without cohort_id_test should fail loudly
   # rather than silently misuse it.
   err <- tryCatch({
-    predict_cox_on_yf(.fb$Y[1:10, , drop = FALSE], fit$EF, fit$EBeta, EF_norms = fit$EF_norms)
+    predict_ssbmf_yfb(.fb$Y[1:10, , drop = FALSE], fit$EF, fit$EBeta, EF_norms = fit$EF_norms)
     NULL
   }, error = function(e) e)
   assert_true(!is.null(err), "expected an error passing a K x C EBeta with cohort_id_test=NULL")
 })
 
-run_test("YFBBetaCohort-T6: predict_cox_on_yf scores matched cohort levels correctly by name", {
+run_test("YFBBetaCohort-T6: predict_ssbmf_yfb scores matched cohort levels correctly by name", {
   fit <- suppressMessages(
     fit_ssbmf_yfb(.fb$Y, .fb$time, .fb$status, K = .fb$K, max_iter = 10L,
                   verbose = FALSE, beta_cohort_id = .fb$cohort2)
   )
-  pred <- predict_cox_on_yf(.fb$Y, fit$EF, fit$EBeta, EF_norms = fit$EF_norms,
+  pred <- predict_ssbmf_yfb(.fb$Y, fit$EF, fit$EBeta, EF_norms = fit$EF_norms,
                              cohort_id_test = .fb$cohort2)
   # Manually recompute risk scores by looking up each patient's own column.
   ZF_manual <- .fb$Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")
   cohort_idx <- match(.fb$cohort2, colnames(fit$EBeta))
   expected <- rowSums(ZF_manual * t(fit$EBeta)[cohort_idx, , drop = FALSE])
   assert_near(pred$risk_scores, expected, tol = 1e-8,
-              "predict_cox_on_yf's cohort-matched risk scores must match a manual per-patient lookup")
+              "predict_ssbmf_yfb's cohort-matched risk scores must match a manual per-patient lookup")
 })
 
 # =============================================================================
@@ -360,7 +360,7 @@ run_test("YFBBetaCohort-T8: EBeta_pooled tracks EBeta's final orientation exactl
   # the sweep's OUTPUT was never re-flipped to match Phase C's actual
   # decision, so EBeta_pooled stayed frozen at the pre-flip orientation while
   # EBeta itself got flipped -- an orientation MISMATCH between the two
-  # (both are used interchangeably by predict_cox_on_yf() on external
+  # (both are used interchangeably by predict_ssbmf_yfb() on external
   # cohorts, depending on whether the cohort's beta_cohort_id is known).
   # The correct invariant is therefore NOT "EBeta_pooled is identical
   # regardless of sign_correction" -- it's "EBeta_pooled is negated exactly

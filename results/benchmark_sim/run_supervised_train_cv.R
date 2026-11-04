@@ -6,7 +6,7 @@
 # Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: survival, yaml; code/fit_ssbmf_yfb.R, code/preprocess_desurv.R,
-#               code/predict_cox_on_yf.R, code/concordance_ci.R
+#               code/predict_ssbmf_yfb.R, code/concordance_ci.R
 # Run: Rscript results/benchmark_sim/run_supervised_train_cv.R
 # ============================================================
 #
@@ -22,7 +22,7 @@
 # with eta = Y %*% EF %*% EBeta from the fit on the training folds.
 
 suppressPackageStartupMessages({ library(survival); library(yaml) })
-source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
+source("code/predict_ssbmf_yfb.R"); source("code/concordance_ci.R")
 suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
 source("code/preprocess_desurv.R")
 cfg <- yaml::read_yaml("config/globals.yml")
@@ -87,7 +87,7 @@ for (f in seq_len(NFOLD)) {
       next
     }
     secs <- proc.time()[["elapsed"]] - t0
-    risk <- predict_cox_on_yf(Y_train[te, , drop = FALSE], fit$EF, fit$EBeta,
+    risk <- predict_ssbmf_yfb(Y_train[te, , drop = FALSE], fit$EF, fit$EBeta,
                               EF_norms = fit$EF_norms)$risk_scores
     oof[[cn]][te] <- risk
     C <- frozen_reverse_cindex(risk, time_train[te], status_train[te])

@@ -40,7 +40,7 @@ suppressMessages(tryCatch(
 ))
 source("code/compute_bic.R")    # compute_joint_ll_bic -- needs calc_cox_taylor_yf, sourced after fit_ssbmf_yfb.R
 source("code/compute_cv_loglik.R")  # cv_survival_loglik, bicv_genomics_loglik -- needs fit_ssbmf_yfb.R's helpers, sourced above
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 source("code/select_alpha_cv.R")
 source("code/preprocess_desurv.R")
 source("results/multi_cohort_sim/fit_pca_cox.R")

@@ -19,7 +19,7 @@ if (!exists("fit_ssbmf_yfb")) {
   source("code/compute_elbo.R")
   suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
 }
-if (!exists("predict_cox_on_yf")) source("code/predict_cox_on_yf.R")
+if (!exists("predict_ssbmf_yfb")) source("code/predict_ssbmf_yfb.R")
 if (!exists("create_stratified_folds")) source("code/train_test_split.R")
 if (!exists("cv_survival_loglik")) source("code/compute_cv_loglik.R")
 
@@ -305,7 +305,7 @@ run_test("CVLL-T19: strata_id is passed through to held-out scoring (isolated fr
   c_train   <- as.numeric(survival::concordance(
     survival::Surv(time[train_idx], status[train_idx]) ~ eta_train, reverse = TRUE)$concordance)
   EBeta_oriented <- if (is.finite(c_train) && c_train < 0.5) -fit$EBeta else fit$EBeta
-  pred <- predict_cox_on_yf(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented, EF_norms = fit$EF_norms)
+  pred <- predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented, EF_norms = fit$EF_norms)
   logpl_stratified   <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx],
                                             strata = strata3[test_idx])$logPL
   logpl_unstratified <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx])$logPL

@@ -197,11 +197,11 @@ run_test("KCV-T12: C-index values in fold_results lie in [0, 1]", {
 # Source YFB functions if not already available
 if (!exists("fit_ssbmf_yfb", mode = "function")) {
   tryCatch(source("code/fit_ssbmf_yfb.R"),    error = function(e) invisible(NULL))
-  tryCatch(source("code/predict_cox_on_yf.R"), error = function(e) invisible(NULL))
+  tryCatch(source("code/predict_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 }
 
 if (exists("fit_ssbmf_yfb", mode = "function") &&
-    exists("predict_cox_on_yf", mode = "function")) {
+    exists("predict_ssbmf_yfb", mode = "function")) {
 
   run_test("KCV-T13: model='YFB' returns valid structure with model field", {
     d <- .kcv_dat

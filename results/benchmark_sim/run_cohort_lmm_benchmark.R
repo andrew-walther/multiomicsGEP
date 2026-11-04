@@ -50,7 +50,7 @@ source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
@@ -254,13 +254,13 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 
   # --- YFB_base ---
   EF_yfb_sub  <- fits$YFB_base$EF[train_idx_genes, , drop = FALSE]
-  pred_yfb    <- predict_cox_on_yf(Y_ext, EF_yfb_sub, fits$YFB_base$EBeta,
+  pred_yfb    <- predict_ssbmf_yfb(Y_ext, EF_yfb_sub, fits$YFB_base$EBeta,
                                     EF_norms = fits$YFB_base$EF_norms)
   c_yfb       <- oriented_cindex(pred_yfb$risk_scores, raw_ext$time, raw_ext$status)
 
   # --- YFB_cohort ---
   EF_yfbc_sub <- fits$YFB_cohort$EF[train_idx_genes, , drop = FALSE]
-  pred_yfbc   <- predict_cox_on_yf(Y_ext, EF_yfbc_sub, fits$YFB_cohort$EBeta,
+  pred_yfbc   <- predict_ssbmf_yfb(Y_ext, EF_yfbc_sub, fits$YFB_cohort$EBeta,
                                     EF_norms = fits$YFB_cohort$EF_norms)
   c_yfbc      <- oriented_cindex(pred_yfbc$risk_scores, raw_ext$time, raw_ext$status)
 

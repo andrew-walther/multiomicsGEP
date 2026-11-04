@@ -19,7 +19,7 @@ for (f in c("code/multimodal_yfb_helpers.R", "code/preprocess_multimodal_yfb.R",
             "code/update_beta.R", "code/update_L.R", "code/update_F.R",
             "code/update_tau.R", "code/compute_elbo.R")) source(f)
 suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
-source("code/predict_cox_on_yf.R"); source("code/run_multimodal_yfb_simulation.R")
+source("code/predict_ssbmf_yfb.R"); source("code/run_multimodal_yfb_simulation.R")
 source("code/concordance_ci.R"); source("code/pathway_enrichment.R")
 
 out_dir <- "results/multimodal_real/outputs"

@@ -68,7 +68,7 @@ source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R"); source("code/predict_cox_on_yf.R")
+source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/compute_bic.R")
 source("code/preprocess_desurv.R")
@@ -160,7 +160,7 @@ score_external <- function(fit, use_pooled_beta) {
     d      <- ext_data[[ext_cohort]]
     EF_sub <- fit$EF[d$train_idx, , drop = FALSE]
     beta_to_use <- if (use_pooled_beta) fit$EBeta_pooled else fit$EBeta
-    pred   <- predict_cox_on_yf(d$Y_ext, EF_sub, beta_to_use, EF_norms = fit$EF_norms)
+    pred   <- predict_ssbmf_yfb(d$Y_ext, EF_sub, beta_to_use, EF_norms = fit$EF_norms)
     cohort_c[[ext_cohort]] <- frozen_cindex(pred$risk_scores, d$time, d$status)
   }
   list(cohort_c = cohort_c, mean_c = mean(unlist(cohort_c), na.rm = TRUE))

@@ -59,7 +59,7 @@ run_supervised_multimodal_comparison <- function() {
   tryCatch(source("code/fit_ssbmf_yfb.R",local=.GlobalEnv),error=function(e) {
     if(!grepl("!is.null(real_Y)",conditionMessage(e),fixed=TRUE))stop(e)
   })
-  source("code/predict_cox_on_yf.R",local=.GlobalEnv)
+  source("code/predict_ssbmf_yfb.R",local=.GlobalEnv)
   source("code/concordance_ci.R",local=.GlobalEnv)
   source("code/run_multimodal_yfb_simulation.R",local=.GlobalEnv)
   cfg<-yaml::read_yaml("config/globals.yml")
@@ -127,7 +127,7 @@ run_supervised_multimodal_comparison <- function() {
     for(cohort in c("validation_primary","validation_all")) {
       va<-d[[cohort]]
       risk<-if(method %in% c("selected_multimodal","pruned_10_1")) predict_multimodal_yfb(fit,va$Y)$risk_scores
-        else if(method=="selected_expression") predict_cox_on_yf(icgc_expression[[cohort]],fit$EF,fit$EBeta,
+        else if(method=="selected_expression") predict_ssbmf_yfb(icgc_expression[[cohort]],fit$EF,fit$EBeta,
           EF_norms=fit$EF_norms)$risk_scores else predict_multimodal_yfb_ebmf_cox(fit,va$Y)
       C<-frozen_reverse_cindex(risk,va$time,va$event)
       rows[[length(rows)+1L]]<-data.frame(method=method,cohort=cohort,n=length(risk),K_init=7L,

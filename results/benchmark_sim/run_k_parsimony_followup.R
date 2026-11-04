@@ -47,7 +47,7 @@ source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R"); source("code/predict_cox_on_yf.R")
+source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_lb.R"), error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/fit_ssbmf_multistart.R")   # fit_ssbmf_yfb_multistart()
@@ -211,7 +211,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
     for (method in names(fits[[K_key]])) {
       fit    <- fits[[K_key]][[method]]
       EF_sub <- fit$EF[train_idx, , drop = FALSE]
-      pred   <- predict_cox_on_yf(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
+      pred   <- predict_ssbmf_yfb(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
       c_val  <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
 
       results_rows[[length(results_rows) + 1]] <- data.frame(

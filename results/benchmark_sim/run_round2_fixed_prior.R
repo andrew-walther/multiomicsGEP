@@ -144,7 +144,7 @@ fixed_prior_cell <- function(i,out_dir,candidate="fixed") {
     a <- fixed_prior_controls(x$model,x$arm);set.seed(x$seed)
     if(x$model=="single") {
       fit <- do.call(fit_ssbmf_yfb,c(list(train,time,event),a))
-      risk <- predict_cox_on_yf(val,fit$EF,fit$EBeta,fit$EF_norms)$risk_scores
+      risk <- predict_ssbmf_yfb(val,fit$EF,fit$EBeta,fit$EF_norms)$risk_scores
       conv <- fit$history$converged;iters <- fit$history$n_iter
       caps <- sum(!as.logical(fit$pruning$converged_before));F <- fit$EF
     } else {

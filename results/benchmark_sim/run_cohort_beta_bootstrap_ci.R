@@ -37,7 +37,7 @@ source("results/benchmark_sim/benchmark_helpers.R")
 source("code/update_beta.R"); source("code/update_beta_cohort.R")
 source("code/update_L.R"); source("code/update_F.R"); source("code/update_tau.R")
 source("code/compute_elbo.R"); source("code/update_F_cohort.R")
-source("code/predict.R"); source("code/predict_cox_on_yf.R")
+source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/preprocess_desurv.R")
 source("code/concordance_ci.R")
@@ -96,7 +96,7 @@ score_arm <- function(fit, use_pooled_beta) {
     d <- ext_data[[ec]]
     EF_sub <- fit$EF[d$train_idx, , drop = FALSE]
     beta_to_use <- if (use_pooled_beta) fit$EBeta_pooled else fit$EBeta
-    pred <- predict_cox_on_yf(d$Y_ext, EF_sub, beta_to_use, EF_norms = fit$EF_norms)
+    pred <- predict_ssbmf_yfb(d$Y_ext, EF_sub, beta_to_use, EF_norms = fit$EF_norms)
     out[[ec]] <- list(risk = pred$risk_scores, time = d$time, status = d$status)
   }
   out

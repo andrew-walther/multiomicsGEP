@@ -65,7 +65,7 @@ source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
 source("code/predict.R")
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_lb.R"),    error = function(e) invisible(NULL))
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 
@@ -247,7 +247,7 @@ predict_test <- function(arm, fit, d, spl) {
   }
 
   # arm == "YFB_base" is the only other case now (cohort-indicator arms dropped).
-  pr <- predict_cox_on_yf(Yte, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)
+  pr <- predict_ssbmf_yfb(Yte, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)
 
   list(risk = pr$risk_scores, time = tte, status = ste,
        cohort = d$cohort_id[spl$test_idx])

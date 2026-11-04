@@ -7,7 +7,7 @@
 # Author: Andrew Walther
 # Created: 2026-10-02
 # Dependencies: survival, ggplot2, yaml; results/benchmark_sim/benchmark_helpers.R,
-#               code/preprocess_desurv.R, code/predict_cox_on_yf.R
+#               code/preprocess_desurv.R, code/predict_ssbmf_yfb.R
 # Run: PDAC_DATA_ROOT=data/PDAC_data Rscript results/benchmark_sim/make_km_figures.R
 # ============================================================
 #
@@ -25,7 +25,7 @@
 suppressPackageStartupMessages({ library(survival); library(ggplot2) })
 cfg <- yaml::read_yaml("config/globals.yml")   # benchmark_helpers.R reads cfg
 source("results/benchmark_sim/benchmark_helpers.R")
-source("code/preprocess_desurv.R"); source("code/predict_cox_on_yf.R")
+source("code/preprocess_desurv.R"); source("code/predict_ssbmf_yfb.R")
 
 # load_pdac_raw() symlinks the root into a temp dir, so it must be absolute
 pdac_root <- normalizePath(Sys.getenv("PDAC_DATA_ROOT", "data/PDAC_data"))
@@ -50,7 +50,7 @@ for (cohort in cfg$pdac$external_cohorts) {
   common <- intersect(train_genes, pre$gene_names)
   Y <- pre$Y[, match(common, pre$gene_names), drop = FALSE]
   EF <- fit$EF[match(common, train_genes), , drop = FALSE]
-  eta <- predict_cox_on_yf(Y, EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
+  eta <- predict_ssbmf_yfb(Y, EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
   # Fail loud if the rebuild does not reproduce the saved validation scores
   if (length(eta) != length(saved[[cohort]]$risk) ||
       max(abs(eta - saved[[cohort]]$risk)) > 1e-8) {

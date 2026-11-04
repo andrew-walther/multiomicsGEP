@@ -108,7 +108,7 @@ Scripts use paths relative to the repository root; run them from there.
 
 ```r
 source("code/fit_ssbmf_yfb.R")
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 
 set.seed(1)
 n <- 150; p <- 200
@@ -125,7 +125,7 @@ fit$EBeta   # posterior mean survival coefficients (K); unused programs shrink t
 fit$EF      # p × K posterior mean loadings
 
 # Score held-out patients by projection
-risk <- predict_cox_on_yf(Y[-train, ], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
+risk <- predict_ssbmf_yfb(Y[-train, ], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
 ```
 
 ### Benchmarks

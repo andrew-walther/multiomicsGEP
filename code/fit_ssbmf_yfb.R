@@ -424,7 +424,7 @@ yf_subset_posterior_state <- function(state,keep) {
 #'                 and the survival ELBO is evaluated at the end of each
 #'                 iteration. `alpha`, `norm_convention` and
 #'                 `boost_beta` are ignored. `EF_norms` is returned as 1s, so
-#'                 predict_cox_on_yf() computes Y_test EF beta. Not supported
+#'                 predict_ssbmf_yfb() computes Y_test EF beta. Not supported
 #'                 with alpha_F > 0, N_burnin > 0, cox_warmstart,
 #'                 alpha_schedule or beta_cohort_id.
 #' @param init_supervised logical (default FALSE; canonicalize = TRUE only).
@@ -512,7 +512,7 @@ yf_subset_posterior_state <- function(state,keep) {
 #'   $EL, $EL2, $EF, $EF2, $EBeta, $EBeta2, $Tau, $history. When
 #'   `beta_cohort_id` is supplied: `$EBeta`/`$EBeta2` are K x C matrices,
 #'   plus `$EBeta_pooled` (K-vector, for external prediction -- see
-#'   `predict_cox_on_yf()`'s `cohort_id_test` argument), `$beta_cohort_id`,
+#'   `predict_ssbmf_yfb()`'s `cohort_id_test` argument), `$beta_cohort_id`,
 #'   `$beta_cohort_levels`.
 fit_ssbmf_yfb <- function(Y, time, status,
                            K            = 5,
@@ -1383,7 +1383,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
   # phaseC_flipped: whether Phase C below actually negates EBeta. EBeta_pooled
   # (computed further down from the pre-Phase-C snapshot, for a reason
   # unrelated to this flag -- see its own comment) must receive the SAME
-  # final global orientation as EBeta, since predict_cox_on_yf() uses
+  # final global orientation as EBeta, since predict_ssbmf_yfb() uses
   # EBeta_pooled as a drop-in replacement for EBeta on external cohorts with
   # no beta_cohort_id of their own (2026-09-04 review finding, round 2 --
   # DECISIONS.md).
@@ -1420,7 +1420,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
   stopifnot(length(EF_norms) == K)  # guard: must be K-vector for prediction
 
   if (use_beta_cohort) {
-    # Column names are how predict_cox_on_yf() matches a test cohort's label
+    # Column names are how predict_ssbmf_yfb() matches a test cohort's label
     # against the right column of EBeta.
     colnames(EBeta)  <- beta_cohort_levels
     colnames(EBeta2) <- beta_cohort_levels
@@ -1472,7 +1472,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
     # here makes the underlying Gauss-Seidel sweep independent of
     # `sign_correction` -- but its OUTPUT must still end up on the same final
     # orientation as EBeta (Phase C's flip is applied afterward, below), since
-    # EBeta and EBeta_pooled are used interchangeably by predict_cox_on_yf()
+    # EBeta and EBeta_pooled are used interchangeably by predict_ssbmf_yfb()
     # depending on whether a test cohort's beta_cohort_id is known (2026-09-04
     # review finding, round 2 -- DECISIONS.md). See tests/test_fit_yf_cohort.R
     # for the regression test.

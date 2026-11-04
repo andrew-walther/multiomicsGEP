@@ -6,7 +6,7 @@
 #               Replaces run_cox_on_yf_benchmark.R.
 # Author: Andrew Walther
 # Created:      2026-05-04
-# Dependencies: code/fit_ssbmf_yfb.R, code/predict_cox_on_yf.R,
+# Dependencies: code/fit_ssbmf_yfb.R, code/predict_ssbmf_yfb.R,
 #               code/train_test_split.R, code/preprocess_desurv.R,
 #               results/benchmark_sim/benchmark_helpers.R
 # Usage:        Rscript results/benchmark_sim/run_YFB_benchmark.R [--quick] [--train-mode merged|tcga_only|cptac_only]
@@ -48,7 +48,7 @@ cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")  # PDAC constants + load_pdac_raw + generate_synthetic_benchmark_data
 tryCatch(source("code/fit_ssbmf_yfb.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/predict_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/predict_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 
 source("code/train_test_split.R")
 source("code/preprocess_desurv.R")
@@ -117,7 +117,7 @@ if (RUN_SYNTHETIC) {
       cox_warmstart = COX_WARMSTART, normalize_AB = NORM_AB,
       verbose = FALSE
     )
-    pred  <- predict_cox_on_yf(Y_te, fit$EF, fit$EBeta, fit$EF_norms)
+    pred  <- predict_ssbmf_yfb(Y_te, fit$EF, fit$EBeta, fit$EF_norms)
     c_idx <- as.numeric(concordance(Surv(t_te, s_te) ~ pred$risk_scores)$concordance)
     k_eff <- sum(abs(fit$EBeta) > BETA_THRESH)
     cat(sprintf("      C-index=%.4f | K_eff=%d | EBeta: %s\n",
@@ -280,7 +280,7 @@ if (!pdac_available || length(fit_yfb) == 0) {
         EF_sub  <- fit_obj$EF[tr_idx, , drop = FALSE]
 
         # Cluster B prediction: Y_ext · (EF_sub / EF_norms) · beta_tilde
-        pred  <- predict_cox_on_yf(Y_ext, EF_sub, fit_obj$EBeta, fit_obj$EF_norms)
+        pred  <- predict_ssbmf_yfb(Y_ext, EF_sub, fit_obj$EBeta, fit_obj$EF_norms)
         c_idx <- as.numeric(concordance(Surv(raw$time, raw$status) ~ pred$risk_scores)$concordance)
         cat(sprintf("    %s (n=%d, genes=%d): C-index=%.4f\n",
                     cohort, raw$n, length(common), c_idx))

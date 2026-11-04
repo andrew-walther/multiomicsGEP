@@ -4,7 +4,7 @@ source("results/benchmark_sim/benchmark_helpers.R")
 source("code/update_beta.R"); source("code/update_beta_cohort.R")
 source("code/update_L.R"); source("code/update_F.R"); source("code/update_tau.R")
 source("code/compute_elbo.R"); source("code/update_F_cohort.R")
-source("code/predict.R"); source("code/predict_cox_on_yf.R")
+source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
 suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error=function(e) invisible(NULL)))
 source("code/preprocess_desurv.R")
 source("code/concordance_ci.R")  # frozen_reverse_cindex()
@@ -43,7 +43,7 @@ for (arm in arms) {
   cs <- sapply(EXTERNAL_COHORTS, function(ec) {
     d <- ext_data[[ec]]; EF_sub <- fit$EF[d$train_idx,,drop=FALSE]
     beta <- if (use_pooled) fit$EBeta_pooled else fit$EBeta
-    pred <- predict_cox_on_yf(d$Y_ext, EF_sub, beta, EF_norms=fit$EF_norms)
+    pred <- predict_ssbmf_yfb(d$Y_ext, EF_sub, beta, EF_norms=fit$EF_norms)
     frozen_cindex(pred$risk_scores, d$time, d$status)
   })
   per_cohort_c[[arm]] <- cs

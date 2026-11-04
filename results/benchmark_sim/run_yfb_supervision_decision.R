@@ -12,7 +12,7 @@ Sys.setenv(OPENBLAS_NUM_THREADS=1,OMP_NUM_THREADS=1,VECLIB_MAXIMUM_THREADS=1)
 source("code/fit_yfb_supervised.R")
 source("code/simulate_multimodal_yfb.R")
 source("code/fit_ssbmf_yfb.R")
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 source("code/concordance_ci.R")
 
 #' Make paired expression cohorts at a fixed planted centered variance share
@@ -101,7 +101,7 @@ yfb_decision_score <- function(fit,d,canonical=FALSE) {
   sd<-sqrt(if(!is.null(fit$VBeta))fit$VBeta else pmax(fit$EBeta2-fit$EBeta^2,0))
   active<-abs(fit$EBeta)>=1.96*sd & sd>0
   matched<-abs(r[k])>=.7
-  risk<-if(canonical)predict_cox_on_yf(d$Yv,F,fit$EBeta,EF_norms=fit$EF_norms)$risk_scores else {
+  risk<-if(canonical)predict_ssbmf_yfb(d$Yv,F,fit$EBeta,EF_norms=fit$EF_norms)$risk_scores else {
     Z<-sweep(scale(d$Yv,scale=FALSE)%*%F,2,fit$s,"*")
     drop(Z%*%fit$EBeta)
   }
@@ -221,7 +221,7 @@ if(sys.nframe()==0L) {
  parallel::clusterEvalQ(cl,{
    Sys.setenv(OPENBLAS_NUM_THREADS=1,OMP_NUM_THREADS=1,VECLIB_MAXIMUM_THREADS=1)
    source("code/fit_yfb_supervised.R");source("code/simulate_multimodal_yfb.R")
-   source("code/fit_ssbmf_yfb.R");source("code/predict_cox_on_yf.R");source("code/concordance_ci.R")
+   source("code/fit_ssbmf_yfb.R");source("code/predict_ssbmf_yfb.R");source("code/concordance_ci.R")
    multimodal_yfb_use_cpp();NULL
  })
  status<-parallel::parLapplyLB(cl,split(design,seq_len(nrow(design))),function(row)

@@ -55,7 +55,7 @@ source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
 source("code/train_test_split.R")
-source("code/predict.R"); source("code/predict_cox_on_yf.R")
+source("code/predict.R"); source("code/predict_ssbmf_yfb.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/select_K.R")   # classify_factors()
 
@@ -142,7 +142,7 @@ fit_ebmf <- function(Ytr, ttr, str_, K) {
   list(EF = EF, cox_coef = cox_coef, n_iter = f$n_factors)
 }
 
-predict_yfb  <- function(fit, Yte) predict_cox_on_yf(Yte, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
+predict_yfb  <- function(fit, Yte) predict_ssbmf_yfb(Yte, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
 predict_ebmf <- function(fit, Yte) {
   if (all(is.na(fit$cox_coef))) return(rep(NA_real_, nrow(Yte)))
   cc <- fit$cox_coef; cc[is.na(cc)] <- 0

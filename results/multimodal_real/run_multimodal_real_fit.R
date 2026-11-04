@@ -50,7 +50,7 @@ source("code/update_tau.R"); source("code/compute_elbo.R")
 # fit_ssbmf_yfb.R ends with a runner block that errors when real_Y is NULL;
 # the function definitions are complete before it fires (same as run_tests.R)
 suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL)))
-source("code/predict_cox_on_yf.R")
+source("code/predict_ssbmf_yfb.R")
 source("code/run_multimodal_yfb_simulation.R")    # baseline fitters
 source("code/concordance_ci.R")
 source("code/load_multiomics_data.R")

@@ -6,7 +6,7 @@
 # Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: survival, ebnm, yaml; code/fit_ssbmf_yfb.R,
-#               code/preprocess_desurv.R, code/predict_cox_on_yf.R,
+#               code/preprocess_desurv.R, code/predict_ssbmf_yfb.R,
 #               code/concordance_ci.R
 # Run: Rscript results/benchmark_sim/run_supervised_real_check.R
 #      (PDAC_DATA_ROOT or the globals.yml default must point at the data)
@@ -33,7 +33,7 @@
 # Memory/runtime: n ~ 280, p = 3000, K = 7; a few minutes per fit on a laptop.
 
 suppressPackageStartupMessages({ library(survival); library(yaml) })
-source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
+source("code/predict_ssbmf_yfb.R"); source("code/concordance_ci.R")
 suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
 source("code/preprocess_desurv.R")
 cfg <- yaml::read_yaml("config/globals.yml")
@@ -92,7 +92,7 @@ for (co in cfg$pdac$external_cohorts) {
   idx <- match(g, d4_genes)
   stopifnot(identical(raw$time, d4_risk[[co]]$time))
   risk[[co]] <- c(lapply(fits, function(f)
-    predict_cox_on_yf(Ye, f$EF[idx, , drop = FALSE], f$EBeta, EF_norms = f$EF_norms)$risk_scores),
+    predict_ssbmf_yfb(Ye, f$EF[idx, , drop = FALSE], f$EBeta, EF_norms = f$EF_norms)$risk_scores),
     list(D4 = -d4_risk[[co]]$risk, time = raw$time, status = raw$status))
 }
 saveRDS(risk, file.path(OUT_DIR, "riskscores.rds"))

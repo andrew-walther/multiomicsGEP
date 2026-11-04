@@ -6,7 +6,7 @@
 # Author: Andrew Walther
 # Created: 2026-10-30
 # Dependencies: survival, yaml, parallel; code/fit_ssbmf_yfb.R,
-#               code/preprocess_desurv.R, code/predict_cox_on_yf.R,
+#               code/preprocess_desurv.R, code/predict_ssbmf_yfb.R,
 #               code/concordance_ci.R, results/benchmark_sim/benchmark_helpers.R
 # Run: Rscript results/benchmark_sim/run_a1_real_ws_cv.R <arm> [<arm> ...]
 #      each <arm> is w_S:init_supervised, e.g. 1:0 100:1 10000:0
@@ -29,7 +29,7 @@
 # loaded the compiled sweep and BLAS, so each worker sources the code itself.
 
 suppressPackageStartupMessages({ library(survival); library(yaml); library(parallel) })
-source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
+source("code/predict_ssbmf_yfb.R"); source("code/concordance_ci.R")
 suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
 source("code/preprocess_desurv.R")
 cfg <- yaml::read_yaml("config/globals.yml")
@@ -100,7 +100,7 @@ run_cell <- function(f, an) {
   if (inherits(fit, "error"))
     return(list(row = data.frame(fold = f, arm = an, error = conditionMessage(fit)),
                 risk = NULL, te = te))
-  risk <- predict_cox_on_yf(Y_train[te, , drop = FALSE], fit$EF, fit$EBeta,
+  risk <- predict_ssbmf_yfb(Y_train[te, , drop = FALSE], fit$EF, fit$EBeta,
                             EF_norms = fit$EF_norms)$risk_scores
   eta <- as.numeric(Y_train %*% fit$EF %*% fit$EBeta)   # EF_norms = 1 when canonical
   pl_all <- calc_cox_taylor_yf(eta, time_train, status_train)$logPL
@@ -132,7 +132,7 @@ run_cell <- function(f, an) {
 grid <- expand.grid(fold = seq_len(NFOLD), arm = names(ARMS), stringsAsFactors = FALSE)
 load_code <- function() {
   suppressPackageStartupMessages({ library(survival); library(ebnm) })
-  source("code/predict_cox_on_yf.R"); source("code/concordance_ci.R")
+  source("code/predict_ssbmf_yfb.R"); source("code/concordance_ci.R")
   suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) NULL))
 }
 cl <- makeCluster(min(nrow(grid), 8L))

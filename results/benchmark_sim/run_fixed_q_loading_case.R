@@ -65,7 +65,7 @@ fixed_q_integrated_posterior <- function(A,B,prior) {
 #' # fixed_q_case_metrics(fit,tb)
 #' @seealso [fixed_prior_cell()]
 fixed_q_case_metrics <- function(fit,tb) {
-  risk <- predict_cox_on_yf(tb$Yva,fit$EF,fit$EBeta,fit$EF_norms)$risk_scores
+  risk <- predict_ssbmf_yfb(tb$Yva,fit$EF,fit$EBeta,fit$EF_norms)$risk_scores
   rr <- suppressWarnings(cor(tb$F_true[,3],fit$EF));rr[!is.finite(rr)] <- 0
   k <- which.max(abs(rr));rho <- rr[k]
   sd_beta <- sqrt(pmax(fit$EBeta2-fit$EBeta^2,0))

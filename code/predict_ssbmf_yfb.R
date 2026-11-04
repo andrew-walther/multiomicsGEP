@@ -1,5 +1,5 @@
 # ============================================================
-# Script: predict_cox_on_yf.R
+# Script: predict_ssbmf_yfb.R
 # Purpose: Cluster B prediction — direct Y·EF projection (same formula as training)
 # Author: Andrew Walther
 # Created: 2026-05-04
@@ -53,16 +53,16 @@
 #'
 #' @examples
 #' # res <- fit_ssbmf_yfb(Y_train, time_train, status_train, K=5)
-#' # pred <- predict_cox_on_yf(Y_test, res$EF, res$EBeta, res$EF_norms)
+#' # pred <- predict_ssbmf_yfb(Y_test, res$EF, res$EBeta, res$EF_norms)
 #' # concordance(Surv(time_test, status_test) ~ pred$risk_scores)
 #' #
 #' # Cohort-specific beta, external cohort with no beta^(c) of its own:
-#' # pred <- predict_cox_on_yf(Y_ext, res$EF, res$EBeta_pooled, res$EF_norms)
+#' # pred <- predict_ssbmf_yfb(Y_ext, res$EF, res$EBeta_pooled, res$EF_norms)
 #' #
 #' # Cohort-specific beta, scoring an in-sample/matched cohort by name:
-#' # pred <- predict_cox_on_yf(Y_test, res$EF, res$EBeta, res$EF_norms,
+#' # pred <- predict_ssbmf_yfb(Y_test, res$EF, res$EBeta, res$EF_norms,
 #' #                            cohort_id_test = my_cohort_labels)
-predict_cox_on_yf <- function(Y_test, EF, EBeta, EF_norms = NULL, cohort_id_test = NULL) {
+predict_ssbmf_yfb <- function(Y_test, EF, EBeta, EF_norms = NULL, cohort_id_test = NULL) {
 
   if (!is.matrix(Y_test) || !is.numeric(Y_test))
     stop("Y_test must be a numeric matrix.")

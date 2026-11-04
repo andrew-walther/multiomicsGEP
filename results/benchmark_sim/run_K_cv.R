@@ -15,7 +15,7 @@
 # Author: Andrew Walther
 # Created: 2026-05-06
 # Dependencies: code/fit_ssbmf_lb.R, code/predict.R,
-#               code/fit_ssbmf_yfb.R, code/predict_cox_on_yf.R,
+#               code/fit_ssbmf_yfb.R, code/predict_ssbmf_yfb.R,
 #               code/train_test_split.R, code/select_K.R,
 #               code/preprocess_desurv.R,
 #               results/benchmark_sim/benchmark_helpers.R
@@ -37,7 +37,7 @@ suppressMessages(tryCatch(
 ))
 source("code/predict.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"),    error = function(e) invisible(NULL))
-tryCatch(source("code/predict_cox_on_yf.R"), error = function(e) invisible(NULL))
+tryCatch(source("code/predict_ssbmf_yfb.R"), error = function(e) invisible(NULL))
 source("code/train_test_split.R")
 source("code/select_K.R")
 source("code/preprocess_desurv.R")

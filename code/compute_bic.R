@@ -42,7 +42,7 @@
 #' `sign_correction` beta flip, so it does not correspond to the returned
 #' fit. Recomputing `ZF <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")`,
 #' `eta <- ZF %*% fit$EBeta`, then `calc_cox_taylor_yf(eta, time, status)`
-#' matches exactly what `predict_cox_on_yf()` does at test time, so this
+#' matches exactly what `predict_ssbmf_yfb()` does at test time, so this
 #' scores the model as actually deployed. `EF_norms` is floored at `1e-10`
 #' inside `fit_ssbmf_yfb()` (not exactly zero), so an ARD-pruned all-zero EF
 #' column divides cleanly to 0 rather than producing NaN. Before scoring,

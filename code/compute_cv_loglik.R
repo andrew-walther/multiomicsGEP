@@ -21,7 +21,7 @@
 # Author: Andrew Walther
 # Created: 2026-09-04
 # Dependencies: code/fit_ssbmf_yfb.R (fit_ssbmf_yfb, calc_cox_taylor_yf),
-#               code/predict_cox_on_yf.R (predict_cox_on_yf),
+#               code/predict_ssbmf_yfb.R (predict_ssbmf_yfb),
 #               code/train_test_split.R (create_stratified_folds),
 #               code/update_L.R (compute_R_k),
 #               code/update_L_surv_YFB.R (update_L_surv_YFB_k),
@@ -148,7 +148,7 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #' Answers "how well does this K generalize to held-out patients' survival
 #' outcomes," as a genuine cross-validated companion to compute_bic.R's
 #' in-sample survival term. Under YFB, eta_new = (Y_test EF) beta is the
-#' SAME formula used at training time (predict_cox_on_yf()), so held-out
+#' SAME formula used at training time (predict_ssbmf_yfb()), so held-out
 #' scoring introduces no train/test formula mismatch -- unlike the
 #' genomics side (see bicv_genomics_loglik() below).
 #'
@@ -212,7 +212,7 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #'                 `EBeta_pooled`, ignoring the test fold's own (known)
 #'                 cohort labels; this is the right question for comparing
 #'                 against genuinely external cohorts (see
-#'                 `predict_cox_on_yf()`'s `cohort_id_test = NULL` path
+#'                 `predict_ssbmf_yfb()`'s `cohort_id_test = NULL` path
 #'                 elsewhere in this project), not for an ordinary CV fold.
 #' @param ...      additional arguments forwarded to `fit_ssbmf_yfb()`
 #'                 (e.g. init_method). Do not pass K or sign_correction.
@@ -242,7 +242,7 @@ cv_survival_loglik <- function(Y, time, status, K,
                                 ...) {
 
   cv_scoring <- match.arg(cv_scoring)
-  required_fns <- c("fit_ssbmf_yfb", "predict_cox_on_yf", "calc_cox_taylor_yf",
+  required_fns <- c("fit_ssbmf_yfb", "predict_ssbmf_yfb", "calc_cox_taylor_yf",
                      "create_stratified_folds")
   missing_fns <- required_fns[!vapply(required_fns, exists, logical(1), mode = "function")]
   if (length(missing_fns) > 0) {
@@ -320,10 +320,10 @@ cv_survival_loglik <- function(Y, time, status, K,
     # cases pass a K-vector, so cohort_id_test stays NULL (its only valid
     # value for a non-matrix EBeta).
     pred <- if (use_cohort && cv_scoring == "within_cohort") {
-      predict_cox_on_yf(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
+      predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
                          EF_norms = fit$EF_norms, cohort_id_test = beta_cohort_id[test_idx])
     } else {
-      predict_cox_on_yf(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
+      predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
                          EF_norms = fit$EF_norms)
     }
     # strata_id row-subsetted to the test fold (fixed 2026-09-04, DECISIONS.md):
