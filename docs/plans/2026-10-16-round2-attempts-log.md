@@ -2699,3 +2699,12 @@ mean fold C whose all-patient fit matches every survival-active all-genes progra
 N ∈ {250, 500, 1,000}, at w_S = 1 and 0, paired differences reported. (3) Null check: the S-7
 datasets with permuted training outcomes at w_S = 1; mean false-active at most 1 per cell.
 No external cohort is used; one external scoring of the fixed model follows Andrew's review.
+
+**S-11 outcome (2026-11-04).** All 144 real-data fits and 60 null fits ran. At D4 (2,218 genes)
+the w_S = 1 fit has training CV C 0.663 (SE 0.024) and three survival-active programs. The
+w_S = 0 arm has β = 0 by construction (w_S also weights the β update under canonicalize), so the
+registered comparison was replaced by w_S = 0 loadings followed by Cox, added after registration:
+C 0.652, paired difference +0.011 (SE 0.005). Survival's share of the loading precision is 10⁻⁸
+to 10⁻⁶ on real data. Preferred size by the registered rule: D4 for both arms. Survival screening:
+S(N) − U(N) of +0.003 to +0.021, each within about one paired SE. Null check: mean false-active
+0.1 to 0.5 per cell, passes. Findings: `docs/findings/2026-11-04-supervised-real-data-findings.md`.

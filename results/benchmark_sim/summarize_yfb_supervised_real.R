@@ -25,6 +25,39 @@ m <- do.call(rbind, lapply(ck, function(x) { r <- x$metrics
   r }))
 key <- function(part, set, N, arm, fold) sprintf("%s_%s_N%d_%s_f%d", part, set, N, arm, fold)
 names(ck) <- key(m$part, m$set, m$N, m$arm, m$fold)
+
+## Two-step comparison from the w_S = 0 fits (added after registration) ----
+# Under canonicalize = TRUE, w_S also weights the Cox term of the beta update, so the w_S = 0
+# fit has beta = 0 and no risk score. The unsupervised comparison is therefore built from its
+# loadings: Cox regression of survival on the training program scores Z = Y EF (live programs),
+# then the held-out risk Z_test beta_hat. Arm label "w0cox". No refit of the factorization.
+twostep <- function(x, r) {
+  if (is.null(x$state)) return(NULL)
+  EF <- x$state$EF; live <- which(colSums(EF^2) > 1e-8)
+  Y <- z$Y[, match(x$genes, z$genes), drop = FALSE]
+  tr <- if (r$fold == 0L) seq_along(z$time) else which(z$fold != r$fold)
+  Z <- Y %*% EF[, live, drop = FALSE]
+  cf <- suppressWarnings(survival::coxph(survival::Surv(z$time[tr], z$status[tr]) ~ Z[tr, , drop = FALSE]))
+  b <- rep(0, ncol(EF)); v <- rep(0, ncol(EF))
+  b[live] <- ifelse(is.finite(coef(cf)), coef(cf), 0); v[live] <- pmax(diag(as.matrix(vcov(cf))), 0)
+  st <- x$state; st$EBeta <- b; st$EBeta2 <- b^2 + v
+  r$arm <- "w0cox"; r$n_active <- sum(abs(b) >= 1.96 * sqrt(v) & v > 0); r$max_abs_beta <- max(abs(b))
+  risk <- NULL
+  if (r$fold > 0L) {
+    risk <- drop(Y[x$te, , drop = FALSE] %*% EF %*% b); eta <- drop(Y %*% EF %*% b)
+    r$risk_sd <- sd(risk)
+    r$C <- if (sd(risk) > 1e-8) frozen_reverse_cindex(risk, z$time[x$te], z$status[x$te]) else NA_real_
+    r$cvpl <- calc_cox_taylor_yf(eta, z$time, z$status)$logPL -
+              calc_cox_taylor_yf(eta[tr], z$time[tr], z$status[tr])$logPL
+  }
+  list(metrics = r, genes = x$genes, te = x$te, risk = risk, state = st)
+}
+suppressMessages(tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) {
+  if (conditionMessage(e) != "!is.null(real_Y) is not TRUE") stop(e) }))   # calc_cox_taylor_yf
+w0i <- which(m$arm == "w0" & is.na(m$error))
+extra <- lapply(w0i, function(i) twostep(ck[[i]], m[i, ]))
+m <- rbind(m, do.call(rbind, lapply(extra, `[[`, "metrics")))
+ck <- c(ck, setNames(extra, key(m$part, m$set, m$N, m$arm, m$fold)[-seq_along(ck)]))
 write.csv(m, file.path(OUT, "fits.csv"), row.names = FALSE)
 cat("Fits read:", nrow(m), " errors:", sum(!is.na(m$error)), "\n")
 
@@ -65,7 +98,7 @@ sz <- summ[summ$part == "size", ]
 if (nrow(sz)) {
   ## Program agreement with the all-genes fit (same arm), patient-level projections ----
   big <- names(z$sets)[which.max(lengths(z$sets))]
-  agree <- do.call(rbind, lapply(unique(sz$arm), function(a) {
+  agree <- do.call(rbind, lapply(setdiff(unique(sz$arm), "w0"), function(a) {
     ref <- ck[[key("size", big, length(z$sets[[big]]), a, 0L)]]
     if (is.null(ref$state)) return(NULL)
     refY <- z$Y[, match(ref$genes, z$genes)]
@@ -89,7 +122,7 @@ if (nrow(sz)) {
   write.csv(agree, file.path(OUT, "size_agreement.csv"), row.names = FALSE)
 
   ## Registered preferred-size rule ----
-  pref <- do.call(rbind, lapply(unique(sz$arm), function(a) {
+  pref <- do.call(rbind, lapply(setdiff(unique(sz$arm), "w0"), function(a) {
     s <- sz[sz$arm == a, ]; s <- s[order(s$n_genes), ]
     ag <- agree[agree$arm == a, ]
     ok_prog <- function(set) { r <- ag[ag$set == set, ]
@@ -105,23 +138,24 @@ if (nrow(sz)) {
 
   ## Elbow plot ----
   png(file.path(OUT, "size_elbow.png"), width = 1100, height = 700, res = 130)
-  cols <- c(w1 = "#d95f02", w0 = "#7570b3")
+  cols <- c(w1 = "#d95f02", w0cox = "#7570b3")
   se0 <- ifelse(is.na(sz$se_C), 0, sz$se_C)
+  sz <- sz[sz$arm %in% names(cols), ]; se0 <- ifelse(is.na(sz$se_C), 0, sz$se_C)
   plot(NA, xlim = range(sz$n_genes), ylim = range(c(sz$mean_C - se0, sz$mean_C + se0), na.rm = TRUE),
        log = "x", xlab = "Genes in the input (log scale)", ylab = "Mean held-out C over 5 folds (± SE)",
        main = "Training CV C by feature-set size")
-  for (a in names(cols)) { s <- sz[sz$arm == a, ]; s <- s[order(s$n_genes), ]
+  for (a in names(cols)) { s <- sz[sz$arm == a & is.finite(sz$mean_C), ]; s <- s[order(s$n_genes), ]
     off <- if (a == "w1") 1.02 else 0.98
     arrows(s$n_genes * off, s$mean_C - s$se_C, s$n_genes * off, s$mean_C + s$se_C,
            angle = 90, code = 3, length = .03, col = cols[a])
     lines(s$n_genes * off, s$mean_C, type = "b", pch = 19, col = cols[a]) }
-  legend("bottomright", c("w_S = 1 (survival in the loadings)", "w_S = 0 (unsupervised loadings)"),
+  legend("bottomright", c("w_S = 1 (survival in the loadings)", "w_S = 0 loadings, then Cox (two-step)"),
          col = cols, lty = 1, pch = 19, bty = "n")
   dev.off()
 }
 
 # S3: programs of the D4 all-patient fits ----
-progs <- do.call(rbind, lapply(c("w1", "w0"), function(a) {
+progs <- do.call(rbind, lapply(c("w1", "w0cox"), function(a) {
   x <- ck[[key("size", "D4", length(z$sets$D4), a, 0L)]]
   if (is.null(x$state)) return(NULL)
   s <- x$state; sdb <- sqrt(pmax(s$EBeta2 - s$EBeta^2, 0)); alive <- colSums(s$EF^2) > 1e-8
@@ -139,7 +173,7 @@ if (!is.null(progs)) write.csv(progs, file.path(OUT, "programs_D4.csv"), row.nam
 # Survival screening ----
 sc <- summ[summ$part == "screen", ]
 if (nrow(sc)) {
-  paired <- do.call(rbind, lapply(split(sc, list(sc$N, sc$arm), drop = TRUE), function(g) {
+  paired <- do.call(rbind, lapply(split(sc[sc$arm != "w0", ], list(sc$N[sc$arm != "w0"], sc$arm[sc$arm != "w0"]), drop = TRUE), function(g) {
     N <- g$N[1]; a <- g$arm[1]
     f <- function(set) m[m$part == "screen" & m$set == set & m$N == N & m$arm == a & m$fold > 0, c("fold", "C")]
     dd <- merge(f("S"), f("U"), by = "fold", suffixes = c("_S", "_U")); dif <- dd$C_S - dd$C_U

@@ -96,7 +96,9 @@ So a p-scaled weight is not needed, and w_S = p/50 is harmful.
 
 **share0.2 arm.** The calibrated weight came out between 0.002 and 0.02, close to unsupervised.
 The w_S = 0 fit, which the registration uses to calibrate the weight, has coefficients of
-essentially zero (max |E β| = 0 to 3×10⁻⁷). The survival term in the precision is therefore
+essentially zero (max |E β| = 0 to 3×10⁻⁷). This is by construction: with `canonicalize = TRUE`,
+w_S also weights the Cox term of the β update, so w_S = 0 removes survival from β as well. The
+registration's description of this arm ("β is still fitted") was wrong. The survival term in the precision is therefore
 near zero at that state, and the solver gives a weight that does not represent the supervised
 fit. The arm is reported as registered. It recovers 2, 2 and 6 of 10 with no false activity.
 A share-targeted weight would need to be calibrated at a supervised state.

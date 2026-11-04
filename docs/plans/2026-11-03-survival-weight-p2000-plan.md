@@ -96,6 +96,9 @@ no sign correction, no supervised start.
 
 1. w_S = 0: the same fitter without survival in the F update (β is still fitted). Same-fitter
    reference, and the source of the share0.2 weight.
+   *Correction (2026-11-04, after the run):* with `canonicalize = TRUE`, w_S also multiplies the
+   Cox term of the β update (`fit_ssbmf_yfb.R`, the `update_beta_k()` call), so at w_S = 0 β is
+   not fitted from survival and stays at 0. This arm is a fully unsupervised fit with no risk score.
 2. w_S ∈ {1, 10, 100, 1,000, 10,000}.
 3. w_S = p/50: 1 at p = 50 (the w_S = 1 fit is reused, not refitted) and 40 at p = 2,000.
 4. share0.2: the w_S that makes the median survival share of the F precision equal 0.2 at the

@@ -17,6 +17,12 @@ The comparison arm is the same fitter at w_S = 0 (survival does not enter the lo
 still fitted), labelled "unsupervised loadings". It is the same-pipeline counterpart of the
 historical α_F = 0 results, which stay on record unchanged.
 
+*Correction (2026-11-04, after the run):* at w_S = 0 the canonical fitter also drops the Cox
+term from the β update, so β = 0 and the arm has no risk score (C undefined). The summarizer
+therefore adds a two-step arm, `w0cox`, not in the original registration: Cox regression of
+survival on the w_S = 0 training program scores Z = Y E[F], scored on the held-out fold. It is
+the unsupervised-loadings comparison the registration intended.
+
 ## Data
 
 - **Training patients:** TCGA_PAAD and CPTAC (`cfg$pdac$training_cohorts`). No external cohort

@@ -3,6 +3,24 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-04 — Fixed single-modality configuration from training CV (S-11)
+
+**Decided (from registered training CV; pending Andrew's review).** `fit_ssbmf_yfb(canonicalize =
+TRUE, w_S = 1)` on the D4 gene set (2,218 genes under the single log), with no survival screen.
+Training CV C 0.663 (SE 0.024), against 0.652 for unsupervised loadings followed by Cox. Larger
+gene sets do no better (0.643 to 0.657), and survival-screened sets add at most about one SE.
+
+**What this does not show.** On the real data survival supplies only 10⁻⁸ to 10⁻⁶ of the loading
+precision at w_S = 1, so the loadings match the unsupervised ones. The CV gain comes from the
+joint β update. Making survival move the real-data loadings needs a calibrated likelihood power
+(SafeBayes or Holmes–Walker), not a larger fixed weight, which broke convergence in S-9.
+
+**Correction.** Under `canonicalize = TRUE`, w_S = 0 also removes survival from the β update
+(β = 0). The S-9 and S-11 registrations described it as "β still fitted". The unsupervised
+comparison is computed from its loadings with a separate Cox fit.
+
+Findings: `docs/findings/2026-11-04-supervised-real-data-findings.md`.
+
 ## 2026-11-04 — The survival-weighted YFB fit at w_S = 1 is carried to real data
 
 **Decided.** S-9 passed Gate S at w_S = 1 with `fit_ssbmf_yfb(canonicalize = TRUE)` on z-scored
