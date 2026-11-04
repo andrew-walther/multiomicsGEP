@@ -73,6 +73,11 @@ arm_names <- c(unsupervised="Unsupervised then Cox",share0.05="Lower share grid"
   `r f3(canonical_weak$mean_false)` and `r canonical_weak$converged` converged fits.
   The corrected simulation permits recovery under that comparator.
 
+**Update, November 4.** The gate above was run on the new opt-in fitter. A later
+registered test of the canonical fitter's survival weight on the same corrected grid,
+with the centered input that fitter expects, passed the gate at weight 1. The November 6
+chapter reports it.
+
 ## Where the project stands
 
 The expression benchmark remains a historical predictive result, rather than

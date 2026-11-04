@@ -253,6 +253,7 @@ window.Quarto = {
   <ul class="collapse">
   <li><a href="#planted-low-variance-prognostic-program" id="toc-planted-low-variance-prognostic-program" class="nav-link" data-scroll-target="#planted-low-variance-prognostic-program"><span class="header-section-number">14.3.1</span> Planted low-variance prognostic program</a></li>
   </ul></li>
+  <li><a href="#survival-weight-at-2000-genes-simulation" id="toc-survival-weight-at-2000-genes-simulation" class="nav-link" data-scroll-target="#survival-weight-at-2000-genes-simulation"><span class="header-section-number">14.4</span> Survival weight at 2,000 genes (simulation)</a></li>
   </ul>
 </nav>
     </div>
@@ -426,9 +427,243 @@ window.Quarto = {
 <p>In the matched comparator rerun, none of the four comparator methods met its recovery criterion at either noise level. EBMF alone selects its closest loading by correlation with the planted program and has no risk score. The two-step methods select a program by absolute Cox z-statistic and also require the correct survival direction for recovery. At high noise, EBMF followed by lasso Cox had defined concordance in 6 of 20 datasets. Its plotted mean describes those six datasets.</p>
 <p>The close PDAC program matches are consistent with weak effective survival feedback. The prediction comparison alone cannot establish that explanation. The existing training-only weight grid found that higher weights can destabilize the fit, so a stronger feedback setting should be evaluated on recovery, false activity and convergence together.</p>
 <p><strong>Expression and methylation extension.</strong> First verify that the multimodal fitter at <code>M = 1</code> reproduces the single-modality reference under matched settings. For <code>M = 2</code>, use shared patient scores and separate expression and methylation loadings, feature precisions, and loading priors. The existing implementation sums the modality projections before computing the Cox predictor <span class="math inline">\(\eta = (\sum_{m=1}^{M} Y^{(m)} F^{(m)})\beta\)</span>. Check each block’s contribution to the combined score and validate prediction on patients with matched modalities, using training-only choices for priors and rank.</p>
-
-
 </section>
+</section>
+<section id="survival-weight-at-2000-genes-simulation" class="level2" data-number="14.4">
+<h2 data-number="14.4" class="anchored" data-anchor-id="survival-weight-at-2000-genes-simulation"><span class="header-section-number">14.4</span> Survival weight at 2,000 genes (simulation)</h2>
+<p>The October 30 gate failed for the new opt-in fitter. We then tested the canonical fitter’s survival weight <code>w_S</code> on the same corrected simulation grid. The difference from the S-7 run of that fitter is the input. The canonical fitter has signed loading priors and no gene intercept, so it now gets the per-cohort z-scored matrix instead of the nonnegative uncentered one. Weights ran from 1 to 10,000, plus <code>w_S = p/50</code> and a weight set to give survival 20% of the loading precision.</p>
+<p>At <code>w_S = 1</code> the fit passes the registered gate. At 2,000 genes it recovers the planted program in 10, 10, 10 of 10 datasets in the three variance cells, against 0, 0, 1 for the unsupervised reference. Mean false-active counts are 0.9, 0.1, 0.0, and every fit converges. On the uncentered input the same weight gave false-active counts of 1.0 to 1.5, which would have failed the gate.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 20%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 21%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Weight</th>
+<th style="text-align: right;">Planted variance</th>
+<th style="text-align: right;">Recovered</th>
+<th style="text-align: right;">Reference</th>
+<th style="text-align: right;">Mean false-active</th>
+<th style="text-align: right;">Converged</th>
+<th style="text-align: left;">Qualifies</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">w10</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.2</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w10</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.8</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">w10</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w100</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">w100</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w100</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.8</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Training cross-validation chooses <code>w_S = 1</code> in most datasets, so the weight can be set without the planted truth:</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 11%">
+<col style="width: 3%">
+<col style="width: 28%">
+<col style="width: 12%">
+<col style="width: 23%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">p</th>
+<th style="text-align: right;">variance</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: left;">arms_chosen</th>
+<th style="text-align: right;">recovered</th>
+<th style="text-align: right;">mean_false_active</th>
+<th style="text-align: right;">converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">w1:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.3</td>
+<td style="text-align: right;">9</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">w1:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">w1:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">share0.2:2 w1:8</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">w1:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.3</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">share0.2:1 w1:7 w10:2</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Larger weights hurt. At 2,000 genes no fit with <code>w_S</code> of 40 or more converges within 300 sweeps, and recovery collapses. Reconstruction stays bounded while the coefficients grow to about 25, so the failure is overconfident coefficients rather than runaway noise precision. At 50 genes every weight recovers the program, but false activity rises with the weight. Survival’s share of the loading precision at <code>w_S = 1</code> drops from about 0.8 to 1.0 at 50 genes to between 0.01 and 0.2 at 2,000 genes. Recovery does not drop with it, so the weight does not need to scale with the number of genes.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/survival-weight-curves.png" class="img-fluid figure-img"></p>
+<figcaption>Recovery, false activity, survival share, calibration, convergence and concordance against the survival weight. Solid lines are 2,000 genes and dashed lines are 50 genes.</figcaption>
+</figure>
+</div>
+<p>One problem remains. At 2,000 genes the coefficients at <code>w_S = 1</code> are too large for out-of-sample risk. The median validation calibration slopes are 1.20, 0.42, 0.18 across the three cells, and no 95% interval covers the true projected coefficient. Patient ranking is unaffected, with validation C of 0.94 to 0.99. Downweighting the genomics term would raise survival’s share, and in this grid a higher share made calibration worse. The next step on calibration is to choose the power on the Cox likelihood from the data, using SafeBayes or the Holmes–Walker calibration.</p>
+<p>A rerun of the October 15 test bed at <code>w_S = 1</code> recovered the program in 18 of 20 datasets at low noise and 19 of 20 at high noise. The recovered datasets match the October 30 run. Sweep counts differ because of the later log-normalizer correction to the objective, which changes when the stopping rule fires.</p>
+<p>The real-data training CV at <code>w_S = 1</code> is registered and running. It covers the programs, cross-validated C, a feature-set-size curve from the D4 genes to all 17,900 shared genes, and a comparison with survival screening. No external cohort is scored until those choices are fixed.</p>
+
+
 </section>
 
 </main> <!-- /main -->

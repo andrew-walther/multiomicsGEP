@@ -136,3 +136,72 @@ $\eta = (\sum_{m=1}^{M} Y^{(m)} F^{(m)})\beta$.
 Check each block's contribution to the
 combined score and validate prediction on patients with matched
 modalities, using training-only choices for priors and rank.
+
+## Survival weight at 2,000 genes (simulation)
+
+```{r s9-setup, include=FALSE}
+library(knitr)
+S9 <- "../../../results/benchmark_sim/outputs/yfb_survival_weight_2026-11-04/grid"
+s9_rd <- function(f) { p <- file.path(S9, f); if (!file.exists(p)) stop("Missing saved evidence: ", p); read.csv(p) }
+s9_cells <- s9_rd("gate_cells.csv"); s9_summ <- s9_rd("summary.csv"); s9_cv <- s9_rd("cv_chosen_cells.csv")
+w1 <- s9_cells[s9_cells$arm == "w1", ]
+w1s <- s9_summ[s9_summ$arm == "w1", ]
+```
+
+The October 30 gate failed for the new opt-in fitter. We then tested the canonical
+fitter's survival weight `w_S` on the same corrected simulation grid. The difference
+from the S-7 run of that fitter is the input. The canonical fitter has signed loading
+priors and no gene intercept, so it now gets the per-cohort z-scored matrix instead of
+the nonnegative uncentered one. Weights ran from 1 to 10,000, plus `w_S = p/50` and a
+weight set to give survival 20% of the loading precision.
+
+At `w_S = 1` the fit passes the registered gate. At 2,000 genes it recovers the
+planted program in `r paste(w1$recovered, collapse = ", ")` of 10 datasets in the
+three variance cells, against `r paste(w1$reference_recovered, collapse = ", ")` for
+the unsupervised reference. Mean false-active counts are
+`r paste(formatC(w1$mean_false_active, format = "f", digits = 1), collapse = ", ")`,
+and every fit converges. On the uncentered input the same weight gave false-active
+counts of 1.0 to 1.5, which would have failed the gate.
+
+```{r s9-gate}
+kable(s9_cells[s9_cells$arm %in% c("w1", "w10", "w100", "share0.2"),
+  c("arm", "variance", "recovered", "reference_recovered", "mean_false_active", "converged", "qualifies")],
+  row.names = FALSE, digits = 2,
+  col.names = c("Weight", "Planted variance", "Recovered", "Reference", "Mean false-active", "Converged", "Qualifies"))
+```
+
+Training cross-validation chooses `w_S = 1` in most datasets, so the weight can be set
+without the planted truth:
+
+```{r s9-cv}
+kable(s9_cv, row.names = FALSE, digits = 2)
+```
+
+Larger weights hurt. At 2,000 genes no fit with `w_S` of 40 or more converges within
+300 sweeps, and recovery collapses. Reconstruction stays bounded while the coefficients
+grow to about 25, so the failure is overconfident coefficients rather than runaway
+noise precision. At 50 genes every weight recovers the program, but false activity
+rises with the weight. Survival's share of the loading precision at `w_S = 1` drops
+from about 0.8 to 1.0 at 50 genes to between 0.01 and 0.2 at 2,000 genes. Recovery
+does not drop with it, so the weight does not need to scale with the number of genes.
+
+![Recovery, false activity, survival share, calibration, convergence and concordance against the survival weight. Solid lines are 2,000 genes and dashed lines are 50 genes.](../figures/2026-11-06/survival-weight-curves.png)
+
+One problem remains. At 2,000 genes the coefficients at `w_S = 1` are too large for
+out-of-sample risk. The median validation calibration slopes are
+`r paste(formatC(w1s$cal_slope_median[w1s$p == 2000], format = "f", digits = 2), collapse = ", ")`
+across the three cells, and no 95% interval covers the true projected coefficient.
+Patient ranking is unaffected, with validation C of 0.94 to 0.99. Downweighting the
+genomics term would raise survival's share, and in this grid a higher share made
+calibration worse. The next step on calibration is to choose the power on the Cox
+likelihood from the data, using SafeBayes or the Holmes–Walker calibration.
+
+A rerun of the October 15 test bed at `w_S = 1` recovered the program in 18 of 20
+datasets at low noise and 19 of 20 at high noise. The recovered datasets match the
+October 30 run. Sweep counts differ because of the later log-normalizer correction to
+the objective, which changes when the stopping rule fires.
+
+The real-data training CV at `w_S = 1` is registered and running. It covers the
+programs, cross-validated C, a feature-set-size curve from the D4 genes to all 17,900
+shared genes, and a comparison with survival screening. No external cohort is scored
+until those choices are fixed.
