@@ -190,8 +190,14 @@ The entries below retain dated implementation and evaluation history.
 - [x] **Independent review and verification of the revised draft (2026-10-14).**
   Scientific corrections, derivations, captions and pagination verified in
   `paper/writeup/2026-10-16-writeup/_process/verification_round2.md`; its two minor corrections are applied.
-- [x] **Approve and merge the interim writeup.** The approved draft was merged.
+- [x] **Approve and merge the interim writeup (2026-10-16).** The approved
+  draft was merged and is kept as `paper/writeup/2026-10-16-writeup/`. Later
+  versions go in their own dated folders, indexed in `paper/writeup/README.md`.
   The final dissertation and journal texts remain future deliverables.
+
+- [ ] **Prepare the November 6 writeup version.** `paper/writeup/2026-11-06-writeup/`
+  holds only a placeholder README. Decide whether it starts from the October 16 sources or
+  a new outline, and record what changed since the October 16 version.
 
 - [ ] **Prepare the final dissertation chapter and journal manuscript.**
   Draft the dissertation chapter in `paper/thesis/` and arrange its transfer to
