@@ -11,10 +11,10 @@
 #               code/preprocess_desurv.R, code/predict_cox_on_yf.R
 # Run (from the repository root; the program-curve figure needs the local
 #      held-out expression data to recompute frozen program projections):
-#   PDAC_DATA_ROOT=data/PDAC_data Rscript paper/writeup/figures/make_writeup_figures.R
+#   PDAC_DATA_ROOT=data/PDAC_data Rscript paper/writeup/2026-10-16-writeup/figures/make_writeup_figures.R
 # ============================================================
 #
-# Figures written to paper/writeup/figures/ (each as .pdf and .png):
+# Figures written to paper/writeup/2026-10-16-writeup/figures/ (each as .pdf and .png):
 #   km_risk_external       risk-score tertiles in the five held-out cohorts
 #   km_programs_external   Program 7 and Program 3 projection tertiles, pooled
 #   multimodal_share       modality share of each multimodal program's signal
@@ -30,7 +30,7 @@ cfg <- yaml::read_yaml("config/globals.yml")   # benchmark_helpers.R reads cfg
 source("results/benchmark_sim/benchmark_helpers.R")
 source("code/preprocess_desurv.R"); source("code/predict_cox_on_yf.R")
 
-out_dir <- "paper/writeup/figures"
+out_dir <- "paper/writeup/2026-10-16-writeup/figures"
 width_in <- 6.5                                 # PDF text width (letter, 1-in margins)
 
 #' Save one figure as vector PDF and 300-dpi PNG at its printed size

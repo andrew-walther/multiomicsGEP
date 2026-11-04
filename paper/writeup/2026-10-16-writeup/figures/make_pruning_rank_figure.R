@@ -8,7 +8,7 @@
 # Dependencies: ggplot2; results/benchmark_sim/outputs/multimodal_yfb_pruning/
 #               pruning_comparison.csv
 # Run (from the repository root):
-#   Rscript paper/writeup/figures/make_pruning_rank_figure.R
+#   Rscript paper/writeup/2026-10-16-writeup/figures/make_pruning_rank_figure.R
 # ============================================================
 
 suppressPackageStartupMessages(library(ggplot2))
@@ -71,7 +71,7 @@ p <- ggplot(summ, aes(K_init, mean, colour = scenario, shape = scenario)) +
         plot.background = element_rect(fill = "white", colour = NA))
 
 # Printed size (6.5 in = PDF text width): vector PDF for PDF output, 300-dpi PNG for HTML
-stem <- "paper/writeup/figures/multimodal_pruning_final_rank"
+stem <- "paper/writeup/2026-10-16-writeup/figures/multimodal_pruning_final_rank"
 ggsave(paste0(stem, ".pdf"), p, width = 6.5, height = 3.1, device = "pdf", useDingbats = FALSE)
 ggsave(paste0(stem, ".png"), p, width = 6.5, height = 3.1, dpi = 300, bg = "white")
 cat("Wrote", stem, ".pdf and .png\n")

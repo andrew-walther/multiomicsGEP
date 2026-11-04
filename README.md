@@ -52,7 +52,7 @@ uses `alpha_F = 0`. Learning molecular loadings that respond reliably to surviva
 is the current research goal. See the [status report](PROJECT_STATUS.qmd) or render the
 [progress book](docs/progress_book/) to open the interactive project-state view.
 
-![Kaplan–Meier curves by within-cohort risk tertile in five external PDAC cohorts](paper/writeup/figures/km_risk_external.png)
+![Kaplan–Meier curves by within-cohort risk tertile in five external PDAC cohorts](paper/writeup/2026-10-16-writeup/figures/km_risk_external.png)
 
 *Overall survival by within-cohort tertile of the frozen risk score in the five
 external cohorts. The model was trained on TCGA-PAAD and CPTAC-PDAC only.*
@@ -69,14 +69,14 @@ choice are in [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) and
 [`DECISIONS.md`](DECISIONS.md). Advisor-meeting updates are collected in the
 [progress notebook](https://andrew-walther.github.io/multiomicsGEP/).
 
-The [writeup](paper/writeup/writeup.qmd) includes real-data workflow diagrams
+The [writeup](paper/writeup/2026-10-16-writeup/writeup.qmd) includes real-data workflow diagrams
 separating pooled expression training/external scoring and matched TCGA
 training/ICGC validation, with distinct stage shapes and explicit design
 callouts. Rebuild these aggregate-only diagrams with
-`Rscript paper/writeup/figures/make_real_data_workflows.R`; rendering commands
-are in [the writeup README](paper/writeup/README.md).
+`Rscript paper/writeup/2026-10-16-writeup/figures/make_real_data_workflows.R`; rendering commands
+are in [the writeup README](paper/writeup/2026-10-16-writeup/README.md).
 
-The [accuracy-review tracker](paper/writeup/_process/Accuracy_Review_Dispositions_10_16_26.md)
+The [accuracy-review tracker](paper/writeup/2026-10-16-writeup/_process/Accuracy_Review_Dispositions_10_16_26.md)
 records manuscript corrections and remaining donor-dependence, historical
 preprocessing and acquisition-provenance questions. Historical estimates
 remain labelled as such; these documentation corrections do not adopt a new model.
@@ -229,7 +229,7 @@ Rscript results/benchmark_sim/plot_yfb_saved_traces.R attempt7
 
 - [Corrected CAVI derivations](derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf)
 - [Multimodal YFB derivation](derivations/multimodal_YFB/multimodal_YFB_derivation.pdf)
-- [Project write-up](paper/writeup/writeup.pdf): methods, evaluation, results and full derivations
+- [Project write-up](paper/writeup/2026-10-16-writeup/writeup.pdf): methods, evaluation, results and full derivations
 - [Progress notebook](https://andrew-walther.github.io/multiomicsGEP/)
 - [October 30 supervision execution report](docs/reviews/2026-10-30-codex-execution-report.md)
 - [Unresolved supervision problem](docs/findings/2026-10-30-yfb-supervision-problem-statement.md)
