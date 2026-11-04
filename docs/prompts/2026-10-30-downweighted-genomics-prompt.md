@@ -1,33 +1,82 @@
-# Codex prompt: register and run the downweighted-genomics test (attempt S-9)
+# Prompt: finish the supervision work on `fix/yfb-supervision` (attempts S-9 and S-10)
 
-Written 2026-10-30. Andrew approved registering this test. Numbering: S-8 is the targeted mechanism screen already in the attempts log, so this test is S-9. Paste everything below the line into
-Codex from the repository root, on branch `fix/yfb-supervision`.
+Written 2026-10-30, revised 2026-11-03. Andrew approved this work. Numbering: S-8 is the
+targeted mechanism screen already in the attempts log. This prompt registers S-9 (the existing
+survival-weighted fitter at 2,000 genes) and, only if S-9 fails, S-10 (downweighted genomics).
+It can be run in Codex or in Claude Code. Paste everything below the line from the repository
+root, on branch `fix/yfb-supervision`.
 
 ---
 
 Continue on `fix/yfb-supervision`. Read these first:
 
-- `docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md`: the results this test builds on.
-- `docs/findings/2026-10-30-yfb-supervision-problem-statement.md`: the five hypotheses.
-- `docs/plans/2026-10-30-realignment-plan.md`: the "Problems during execution" rules and Gate S.
-- `docs/prompts/2026-10-30-codex-execution-prompt.md`: the project rules and chapter rules, which
+- `docs/findings/2026-10-15-m6-m7-summary.md`, section B, and
+  `docs/plans/2026-10-16-round2-return-note.md`: the October 15 survival-weighted results.
+- `docs/findings/2026-10-30-current-method-a1.md`: the survival-weight grid.
+- `docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md` and
+  `docs/findings/2026-10-30-yfb-supervision-problem-statement.md`: what S-7 and S-8 found.
+- `docs/plans/2026-10-30-realignment-plan.md`: Gate S and the "Problems during execution" rules.
+- `docs/prompts/2026-10-30-codex-execution-prompt.md`: project rules and chapter rules, which
   still apply.
-- `docs/plans/2026-11-01-multiomicsGEP-diagnostic-and-tdd-guide.md`: a Gemini guide. Its Issue 1
-  proposes this same fractional genomics likelihood with matched prior scaling, which bears directly
-  on the KL question in Step 1.3. Issues 2–4 cover anchoring τ, a consistent normalized objective
-  and too many survival-active factors, and it ends with a test gate suite. Treat it as unchecked
-  advice: use what the derivation supports and record what you adopt or reject and why.
+- `docs/plans/2026-11-01-multiomicsGEP-diagnostic-and-tdd-guide.md`: a Gemini guide (unchecked
+  advice). Its Issue 1 proposes the downweighted genomics likelihood used in Part B.
 - `DECISIONS.md`, the July entry near "Two candidate directions were tried and empirically rejected"
   (around line 4029). Shrinking the genomics precision in the latent-L model drove L, F and β to
-  exactly zero within 2–3 iterations, because L and F co-adapt bilinearly.
+  exactly zero within 2–3 iterations.
 
-## Question
+## What the October 15 survival-weighted fit already showed
 
-The targeted diagnostics showed two things. A large Cox weight γ makes the β posterior falsely
-precise: about 6.9 of 7 null coefficients are flagged active even under exact inference. Free
-feature precisions τ_j also feed a reconstruction blow-up. The test is this: if the genomics
-likelihood is downweighted and the Cox likelihood stays at weight 1, does survival shape F while β
-stays calibrated and the fit stays bounded and converges?
+The existing fitter `fit_cox_on_yf(canonicalize = TRUE, w_S = 1)` puts a survival term into the
+gene-by-gene F update, weighted by w_S. On October 15 it showed three things:
+
+1. Survival did act on the F update, although its share of the F precision was small compared with
+   the genomics share.
+2. In simulation it recovered a low-variance prognostic program that the unsupervised methods
+   missed: 17 of 20 datasets at noise 0.25, against 0 of 20 for EBMF → Cox, EBMF → lasso-Cox and
+   PCA → Cox, with mean false-active 1.1.
+3. On the five external cohorts its C was slightly lower than the two-step method's, within the
+   margin of error: ΔC = −0.003 (95% interval −0.029 to 0.024).
+
+All of that simulation evidence is at p = 50 genes (n = 400). The A1 grid found that on the real
+training data, at about 2,000 genes, survival's share of the F precision at w_S = 1 is about
+10⁻⁶. The S-7 grid tested the new fitter at p = 2,000, but it did not include the survival-weighted
+fit as an arm, although the realignment plan listed it as a baseline. So the most direct open
+question is whether the fit that worked at 50 genes still recovers the program at 2,000.
+
+## Order of work
+
+1. **Part A (attempt S-9): the survival-weighted fit on the S-7 grid.** Do this first. It uses
+   existing code and answers the open question above.
+2. **Part B (attempt S-10): downweighted genomics.** Run it only if S-9 fails Gate S, or if S-9
+   passes but leaves a problem that the downweighted objective is derived to fix, such as β
+   calibration. Say which reason applies.
+3. **Part C: the loose ends on this branch.** Do these whatever the outcome of A and B.
+
+## Part A (attempt S-9): the survival-weighted fit at 2,000 genes
+
+1. **Check for prior runs.** First check whether any registered attempt already ran
+   `fit_cox_on_yf(canonicalize = TRUE, w_S = 1)` on a p = 2,000 simulation. If one did, report it
+   and say whether it settles the question.
+2. **Prepare the data for this fitter.** It expects signed, per-cohort z-scored input, while the
+   S-7 grid prepares nonnegative input for the new fitter. Generate the S-7 datasets (same seeds,
+   p ∈ {50, 2,000}, planted variance 0.25%, 1% and 5%, 10 datasets per cell, the same paired
+   unsupervised reference) and give each fitter the preprocessing it was written for. Record how
+   the planted program's variance share changes under each preprocessing.
+3. **Include a replication cell.** Add the October 15 calibrated bed (p = 50, n = 400, β₃ = 3.3)
+   as a replication check. It should reproduce about 17 of 20.
+4. **Arms:** w_S ∈ {1, 10, 100}. Weights up to 100 stayed stable on the real data in A1. Larger
+   weights broke convergence.
+5. **Gate S is unchanged.** At p = 2,000, a recovery gain of at least 3/10 over the unsupervised
+   fit in at least two variance cells, mean false-active at most 1, and at least 90% of fits
+   converged.
+6. **Measure along the way:** survival's share of the F precision per fit, and how it changes from
+   p = 50 to p = 2,000. If recovery drops at 2,000 genes, show whether the falling share explains it.
+7. **Register before running:** an S-9 entry in `docs/plans/2026-10-16-round2-attempts-log.md`
+   and `docs/plans/2026-11-03-survival-weight-p2000-plan.md`.
+8. **If S-9 passes:**
+   - run the realignment plan's step S3 with the passing w_S: real-data training cross-validation
+     on the single-log data, training data only, no external cohort;
+   - then run the null-data calibration check from Part B, step 3.2 at that w_S.
 
 ## How to work: root causes and tests first
 
@@ -43,7 +92,11 @@ properties before writing the implementation: the objective does not decrease, t
 exact, rescaling invariances hold, and the limiting cases (λ_G = 1; no survival signal) reduce
 to the known fits. Watch each test fail before the implementation exists, then make it pass.
 
-## Step 1. Derivation (write before any code)
+## Part B (attempt S-10): downweighted genomics
+
+Run only under the condition in "Order of work". The steps below are unchanged from the 10/30 version apart from their attempt numbers.
+
+## Part B, step 1. Derivation (write before any code)
 
 Write `derivations/yfb_downweighted_genomics/2026-10-30-downweighted-genomics-derivation.qmd`
 covering:
@@ -74,7 +127,7 @@ covering:
 
 Check the algebra numerically (finite differences of L(q) against each update) before using it.
 
-## Step 2. Implementation
+## Part B, step 2. Implementation
 
 - Add the objective as an opt-in mode of `code/fit_yfb_supervised.R`, for example
   `genomics_weight` with `cox_weight = 1`. Default results must stay unchanged; add a parity test
@@ -87,9 +140,9 @@ Check the algebra numerically (finite differences of L(q) against each update) b
 - Reuse `code/yfb_diagnostic_controls.R` (fixed τ, guard) and `code/yfb_joint_beta.R` (exact β
   reference) rather than writing new versions.
 
-## Step 3. Registration (before running anything)
+## Part B, step 3. Registration (before running anything)
 
-Add attempt **S-9** to `docs/plans/2026-10-16-round2-attempts-log.md` and write
+Add attempt **S-10** to `docs/plans/2026-10-16-round2-attempts-log.md` and write
 `docs/plans/2026-10-30-downweighted-genomics-plan.md`. Register three parts:
 
 1. **Pilot.** The three targeted cases (0.25%, 1%, 5% planted variance; p = 2,000; the same
@@ -105,16 +158,16 @@ Add attempt **S-9** to `docs/plans/2026-10-16-round2-attempts-log.md` and write
    datasets per cell; the same seeds and the unsupervised paired reference). Gate S is
    unchanged: at p = 2,000, a recovery gain of at least 3/10 over the unsupervised fit in at least
    two variance cells, mean false-active at most 1, and at least 90% of fits converged.
-   Report S-7 next to S-9.
+   Report S-7 and S-9 next to S-10.
 
-## Step 4. Run, diagnose, document
+## Part B, step 4. Run, diagnose, document
 
 - Run the pilot, then the calibration check, then the grid if the pilot passed. Use PSOCK workers,
   one BLAS thread each, in the background.
 - The diagnose-and-solve rules apply. Any fix after a failed registered run becomes a new numbered
-  attempt, S-10 and onward, registered before it is rerun. The original criterion is never edited.
+  attempt, S-11 and onward, registered before it is rerun. The original criterion is never edited.
 - If the pilot shows the July collapse, diagnose it (per-sweep ‖L‖, ‖F‖, β, the prior scales and
-  the KL terms). Try the other KL option from Step 1.3 as a registered attempt before concluding.
+  the KL terms). Try the other KL option from Part B step 1.3 as a registered attempt before concluding.
 - Write `docs/findings/2026-10-30-downweighted-genomics-findings.md`. Update the 10/30 chapter
   and its issue tracker (chapter rules: no names, no branch names, file paths or commits, and
   numbers read from saved CSVs), the attempts log, DECISIONS.md, and the plan's "Review
@@ -122,3 +175,43 @@ Add attempt **S-9** to `docs/plans/2026-10-16-round2-attempts-log.md` and write
 
 Hard limits: no external cohort informs any choice, the frozen benchmark is untouched, and nothing
 is reported as done while tests fail.
+
+## Part C: loose ends on this branch
+
+- The independent review. Fill in the realignment plan's "Review handoff" section, then run the
+  review prompt at the end of `docs/prompts/2026-10-30-codex-execution-prompt.md`, or leave it
+  ready for a separate review session.
+- Step S3 of the realignment plan (real-data training CV), which was never run because Gate S
+  failed in S-7. Run it for whichever fitter passes, if one does.
+- `main` has commits that are not on this branch. Merging `main` into the branch conflicts in
+  `CLAUDE.md`, the rendered book under `docs/progress_book/_book/` and
+  `presentation/prelim-slides/OUTLINE.md`. Resolve these:
+  - keep both sets of `CLAUDE.md` instructions;
+  - regenerate `_book` by rendering, not by hand-merging HTML;
+  - take main's version of the slide outline.
+- Update the October 30 chapter, the issue tracker, DECISIONS.md and the plan's review handoff
+  with the S-9 and S-10 results. Commit and push the branch, and do not merge into `main`.
+
+## Model routing (Claude Code only; ignore in Codex)
+
+Use Opus 5.5 as the orchestrator and Sonnet 5.5 subagents for work that does not need its
+judgment.
+
+Opus does:
+- the derivation and its algebra checks;
+- the diagnoses of failures and the choice of the next attempt;
+- registration text and gate verdicts;
+- reviews of subagent output before any claim is written down.
+
+Sonnet subagents (the Agent tool with `model: "sonnet"`) do:
+- running registered runners and the test suite in the background, and reporting exit status,
+  counts and errors;
+- turning saved outputs into the summary CSVs and tables;
+- mechanical documentation updates: README rows, attempts-log formatting, chapter tables that
+  read existing CSVs;
+- searches across the repository and its branches.
+
+Give each subagent the exact files, commands and expected output, and check its result against
+the saved files before relying on it. Never delegate a decision about the model, a gate or what
+counts as a fix.
+
