@@ -220,6 +220,8 @@ checks. The independent review verdict below remains reserved.
 | S2 | Complete corrected grid; scientific gate failed | ad331c8/28a1837; all seven attempts retained, complete-denominator tables and exact fixed-case replays |
 | Post-pass ablations | Not run: gate failed | Original conditional requirement retained |
 | S3 training CV | Not run: gate failed | No new real-data model choice or external cohort score |
+| S-9 (2026-11-04) | Gate S **passed** with the canonical fitter `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` on z-scored input | 9b73ee6; [S-9 findings](../findings/2026-11-04-survival-weight-p2000-findings.md): 10/10 recovered in each p = 2,000 cell, mean false-active ≤ 0.9, all converged; coefficients overconfident at p = 2,000 |
+| S3 via S-11 (2026-11-04) | Registered and running at w_S = 1 | 6fa15da; [S-11 registration](2026-11-04-supervised-real-data-plan.md): training CV, feature-set-size curve, survival screening, null check; no external cohort |
 | D | Updated chapter, tracker, living documents and handoff | 4bcd07f; chapter reads saved CSV/RDS evidence; full book render and final validation recorded in the report |
 
 **Decisions needed from Andrew:** resolve the inferential meaning of the Cox
@@ -231,5 +233,13 @@ contains the exact failures, equations and supporting diagnostics. No new
 model, default, rank or external selection is adopted. Independent review must
 precede any supervision merge. The reviewer section of the execution prompt
 was not executed, and its verdict is deliberately left below for that session.
+
+**Update 2026-11-04 (after this handoff).** The Gate S failure above belongs to the new opt-in
+fitter (S-1 to S-8). Attempt S-9 tested the canonical fitter's survival weight on the same
+corrected grid, with the centered input that fitter expects, and passed Gate S at w_S = 1; S-10
+was therefore not run. The post-pass ablation of S2 was written for the new fitter's hybrid start,
+damping and β prior, none of which the S-9 configuration uses, so it does not apply. The S-9 plan
+and findings, and the S-11 real-data registration, are listed in the table above. The review
+below should cover S-9 as well.
 
 **Review verdict:** (review session: findings, whether Gate S is passed, failed or not reached, and a merge / revise / stop recommendation)
