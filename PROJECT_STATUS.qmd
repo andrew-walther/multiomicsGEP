@@ -747,7 +747,7 @@ source("code/Supervised_Bayesian_MF_V2.R")
 **Modular (standalone, recommended for understanding the algorithm):**
 
 ```r
-Rscript results/run_modular_simulation.R
+Rscript results/legacy/modular_sim_block/run_modular_simulation.R
 ```
 
 Both use the same parameters (n=250, p=1000, K=5, seed=42) and produce equivalent results.
@@ -769,7 +769,7 @@ pdflatex MF_Derivations_UpdateAlgo_REVISED.tex
 pdflatex MF_V2_Companion.tex
 pdflatex MF_V2_Companion.tex   # second pass for cross-references
 
-cd derivations/qB/
+cd derivations/Modular_UpdateDerivations/qB/
 pdflatex qBeta_update_derivation.tex  # run 3x for stable bookmarks
 ```
 
@@ -809,7 +809,7 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 - [x] PROJECT_STATUS + SupervisedMF_Context.md: Project documentation
 - [x] Simulation validation: V2 runs end-to-end on synthetic data (n=250, p=1000, K=5)
 - [x] results/: Full simulation outputs -- 8 figures, 11 CSV tables, console log
-- [x] derivations/qB/qBeta_update_derivation.tex/.pdf: Self-contained q(beta) derivation (11 pages)
+- [x] derivations/Modular_UpdateDerivations/qB/qBeta_update_derivation.tex/.pdf: Self-contained q(beta) derivation (11 pages)
 - [x] code/update_beta.R: Modular beta update (`compute_z_no_k`, `update_beta_k`, `update_beta_all`)
 - [x] tests/: Test infrastructure + 24 tests for beta update (9 groups, all passing)
 - [x] demos/demo_update_beta.R: 5 interactive demos for beta update
@@ -823,16 +823,16 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 - [x] demos/demo_update_L.R: 5 demos (anatomy, signal recovery, genomics vs combined, error-in-variables, K=5)
 - [x] demos/demo_update_F.R: 5 demos (tau cancellation, sparse recovery, differential shrinkage, sparsity, K=5)
 - [x] demos/demo_update_tau.R: 5 demos (anatomy, known noise, variance correction, heteroscedastic, ELBO proxy)
-- [x] derivations/qL/qL_update_derivation.tex/.pdf: Self-contained q(L) derivation
-- [x] derivations/qF/qF_update_derivation.tex/.pdf: Self-contained q(F) derivation
-- [x] derivations/qTau/qTau_update_derivation.tex/.pdf: Self-contained q(tau) derivation
+- [x] derivations/Modular_UpdateDerivations/qL/qL_update_derivation.tex/.pdf: Self-contained q(L) derivation
+- [x] derivations/Modular_UpdateDerivations/qF/qF_update_derivation.tex/.pdf: Self-contained q(F) derivation
+- [x] derivations/Modular_UpdateDerivations/qTau/qTau_update_derivation.tex/.pdf: Self-contained q(tau) derivation
 - [x] docs/: Companion documentation for all 4 modular update scripts (.md + .pdf + .html)
 - [x] roxygen2 @export/@family/@seealso tags added to all 11 functions
 - [x] Targeted inline comments added to all 4 R scripts
 - [x] results/ reorganized: figures/{full_sim,modular_sim}/ and tables/{full_sim,modular_sim}/
-- [x] results/run_modular_simulation.R: Standalone CAVI script sourcing only the 4 modular modules
-- [x] results/modular_sim_report.qmd/.pdf: Quarto simulation report for modular implementation
-- [x] results/simulation_report.qmd/.pdf: Quarto simulation report for V2 implementation
+- [x] results/legacy/modular_sim_block/run_modular_simulation.R: Standalone CAVI script sourcing only the 4 modular modules
+- [x] results/legacy/modular_sim_block/modular_sim_report.qmd/.pdf: Quarto simulation report for modular implementation
+- [x] results/legacy/full_sim/simulation_report.qmd/.pdf: Quarto simulation report for V2 implementation
 - [x] CLAUDE.md created; PROJECT_STATUS converted to .qmd for PDF rendering
 
 ### Proposals at that checkpoint
@@ -980,7 +980,7 @@ Only remove true duplicates or items added in error.
    - T4.1: `length()` returns integer (5L != 5); fixed to `assert_length()`
    - T6.1: s_high should be < s_low (not >); larger A_k -> smaller s_k
 
-6. **Created `derivations/qB/qBeta_update_derivation.tex`** (11 pages):
+6. **Created `derivations/Modular_UpdateDerivations/qB/qBeta_update_derivation.tex`** (11 pages):
    - tcolorbox styles: derivbox (gray), correctionbox (red), ebnmbox (blue),
      verifybox (green), codebox (orange)
 
@@ -1074,19 +1074,19 @@ Only remove true duplicates or items added in error.
    - Moved existing V2 figures/CSVs into `full_sim/` subfolders
    - Updated `run_simulation.R` output paths accordingly
 
-2. **Created `results/run_modular_simulation.R`** (~340 lines):
+2. **Created `results/legacy/modular_sim_block/run_modular_simulation.R`** (~340 lines):
    - Completely standalone -- sources only the 4 modular update modules
    - `calc_cox_taylor()` copied verbatim from V2.R; no other V2 dependency
    - Block-by-type update ordering: all L -> all F -> all beta -> tau
      (vs. V2's by-factor ordering; equivalent CAVI objective)
    - Results: RMSE=0.9979, C-index=0.858, PH test p=0.44, null factor beta correctly zeroed
 
-3. **Created `results/modular_sim_report.qmd`** (863 lines):
+3. **Created `results/legacy/modular_sim_block/modular_sim_report.qmd`** (863 lines):
    - Self-contained Quarto PDF; CAVI runs inline with `#| cache: true`
    - ggplot2 figures (theme_bw), kableExtra tables, Quarto callout blocks
    - Per-figure commentary (~150--300 words each) with statistical insights
 
-4. **Created `results/simulation_report.qmd`** (786 lines):
+4. **Created `results/legacy/full_sim/simulation_report.qmd`** (786 lines):
    - Sources V2.R inline with `pdf(NULL)` + `sink()` wrappers to suppress output
 
 5. Deleted `.md` report files; `.qmd` + `.pdf` are the canonical report artifacts.
@@ -1133,7 +1133,7 @@ Only remove true duplicates or items added in error.
    - Returns `list(EL, EL2, EF, EF2, EBeta, EBeta2, Tau, history)`.
    - `history$converged`, `history$n_iter`, `history$rmse`, `history$elbo_proxy`.
 
-2. **Created `results/modular_sim_factor/run_factor_modular_simulation.R`**:
+2. **Created `results/legacy/modular_sim_factor/run_factor_modular_simulation.R`**:
    - Comprehensive analytics runner sourcing `fit_modular.R`.
    - Produces 8 figure pairs (PDF+PNG), 11 CSV tables for synthetic runs.
    - Designed for both synthetic and real-data modes (real-data support added fully
@@ -1144,7 +1144,7 @@ Only remove true duplicates or items added in error.
      Taylor linearization, convergence criterion, and comparison with block-wise runner.
 
 4. **Reorganized `results/`** into per-simulation subdirectories:
-   - `results/modular_sim_factor/synthetic/` — factor-wise CAVI report (canonical)
+   - `results/legacy/modular_sim_factor/synthetic/` — factor-wise CAVI report (canonical)
    - `results/modular_sim_block/` — block-wise modular (deprecated)
    - `results/full_sim/` — V2 monolithic
    - `results/tables/synthetic/` and `results/figures/synthetic/` for canonical outputs
@@ -1170,7 +1170,7 @@ Only remove true duplicates or items added in error.
 
 #### 10.1 — Runner extension for real data
 
-Extended `results/modular_sim_factor/run_factor_modular_simulation.R` with:
+Extended `results/legacy/modular_sim_factor/run_factor_modular_simulation.R` with:
 
 **Configuration block** (env-var overrides for scripted/Longleaf use):
 ```r
@@ -1247,7 +1247,7 @@ CPTAC required max_iter = 300 (was 100, then 250); it converged at iteration 259
 
 #### 10.5 — PDAC report
 
-`results/modular_sim_factor/PDAC/factor_modular_sim_report_PDAC.qmd` — fully
+`results/legacy/modular_sim_factor/PDAC/factor_modular_sim_report_PDAC.qmd` — fully
 standalone Quarto report rendering to PDF + HTML.
 
 **Self-contained model background:**
@@ -1392,7 +1392,7 @@ Runner updated with env-var overrides for all new parameters:
 
 #### 12.1 — Prior family comparison: run_prior_k_comparison.R
 
-New script: `results/modular_sim_factor/run_prior_k_comparison.R`.  Standalone
+New script: `results/legacy/modular_sim_factor/run_prior_k_comparison.R`.  Standalone
 (no global-variable dependencies on main runner).  For each of the 7 datasets:
 
 1. Reads existing PN K=5 holdout results from CSVs (avoids redundant refit).
@@ -1445,7 +1445,7 @@ PN K_eff vs. PN K=5 hold-out C-index improvement was positive for all cohorts
 
 #### 12.4 — PDAC report editorial review
 
-`results/modular_sim_factor/PDAC/factor_modular_sim_report_PDAC.qmd` overhauled:
+`results/legacy/modular_sim_factor/PDAC/factor_modular_sim_report_PDAC.qmd` overhauled:
 
 - **Executive Summary:** Expanded callout to cover all four key findings (convergence,
   in-sample results, prior comparison, K selection).
@@ -1563,7 +1563,7 @@ tie in 1/7.  The advantage of `point_laplace` is strongest when K is fixed at 5.
 
 #### 14.1 — Slide deck creation and revision
 
-1. Created V1 slide deck (`presentation/walther_lab_meeting_04_09_2026/V1/lab_meeting_april9_V1.qmd`) — initial draft covering model motivation, algorithm, synthetic validation, and PDAC results.
+1. Created V1 slide deck (`presentation/walther_lab_meeting_04_09_2026/V1/lab_meeting_april9.qmd`) — initial draft covering model motivation, algorithm, synthetic validation, and PDAC results.
 2. Created V2 slide deck with revised slide text, tighter layout, and updated PDAC figures (`presentation/walther_lab_meeting_04_09_2026/V2/lab_meeting_april9_V2.qmd`).
 3. Added dataset description table on the PDAC cohorts slide to orient the audience.
 
@@ -1645,7 +1645,7 @@ implementation (Phases 0–3A) followed by continued development in this session
 #### 16.4 — Benchmark runner and outputs
 
 1. Scripts moved: `run_ssbmf_benchmark.R` and `ssbmf_summary_report.qmd` now live in
-   `results/benchmark_sim/`. Old outputs archived to `results/modular_sim_factor/archive/`.
+   `results/benchmark_sim/`. Old outputs archived to `results/legacy/modular_sim_factor/archive/`.
 2. `run_ssbmf_benchmark.R` contains both synthetic benchmark (`run_ssbmf_benchmark()`) and
    PDAC cross-cohort benchmark (`run_real_data_benchmark()`).
 3. Outputs written to `results/benchmark_sim/outputs/synthetic/` and `outputs/real_data/`.
@@ -1675,7 +1675,7 @@ Added 6 new figure types to the synthetic benchmark (total: 11 figures per run):
    filtering. Combined n_train=273, event rates ~52% (TCGA) / 50% (CPTAC).
 2. 5-fold CV over 7 alpha values running on PDAC data. External cohort projections to 5 cohorts
    (Dijk, Moffitt_GEO_array, PACA_AU_array, PACA_AU_seq, Puleo_array) to follow.
-3. Summary report: `results/benchmark_sim/ssbmf_summary_report.qmd` → PDF + HTML.
+3. Summary report: `docs/findings/2026-04-29-ssbmf-summary-report.qmd` → PDF + HTML.
 
 #### 16.8 — Test suite
 
@@ -1690,7 +1690,7 @@ Report polish and prior sensitivity comparison for the DeSurv benchmark report.
 #### 17.1 — Prior sensitivity: point_normal vs. point_laplace
 
 1. Added `prior_beta` parameter to `run_ssbmf_benchmark()` and `run_real_data_benchmark()` in
-   `results/benchmark_sim/run_ssbmf_benchmark.R`. Both now accept `prior_beta = "point_normal"`
+   `results/benchmark_sim/archive/run_ssbmf_benchmark.R`. Both now accept `prior_beta = "point_normal"`
    or `"point_laplace"` and write outputs to subdirectories keyed by prior name.
 2. Ran all four PDAC benchmark combinations: `tcga_only/{point_normal, point_laplace}` and
    `cptac_only/{point_normal, point_laplace}`. Results written to
@@ -1703,7 +1703,7 @@ Report polish and prior sensitivity comparison for the DeSurv benchmark report.
 
 #### 17.2 — Report overhaul (ssbmf_summary_report.qmd)
 
-Major rewrite of `results/benchmark_sim/ssbmf_summary_report.qmd` across three rounds:
+Major rewrite of `docs/findings/2026-04-29-ssbmf-summary-report.qmd` across three rounds:
 
 **Content additions:**
 - Executive Key Findings summary section
@@ -1760,7 +1760,7 @@ both coexist. External cohorts still use v1 single-cohort preprocessing.
 
 #### 19.2 — Lambda sweep (λ ∈ {1,5,10,20} × 3 priors, merged v2)
 
-**Script:** `results/benchmark_sim/run_lambda_sweep.R`
+**Script:** `results/benchmark_sim/archive/run_lambda_sweep.R`
 **Results:** `results/benchmark_sim/outputs/real_data/lambda_sweep_summary.csv`
 
 Motivated by p/n ≈ 10 scale imbalance between genomics and survival objectives. Tested all
@@ -1777,7 +1777,7 @@ Motivated by p/n ≈ 10 scale imbalance between genomics and survival objectives
 
 #### 19.3 — EBMF diagnostic (data vs. model problem)
 
-**Script:** `results/benchmark_sim/run_ebmf_diagnostic.R`
+**Script:** `results/benchmark_sim/archive/run_ebmf_diagnostic.R`
 **Report:** `results/benchmark_sim/outputs/ebmf_diagnostic/ebmf_diagnostic_report.{pdf,html}`
 
 Ran `flashier::flash()` (K=20, var_type=2) and PCA (K=20) on the same merged v2 training
@@ -1795,7 +1795,7 @@ Top gene analysis: EBMF3/17 = exocrine pancreas markers (PTF1A, GUCA1C); EBMF4 =
 
 #### 19.4 — EBMF warm-start (root cause localization)
 
-**Script:** `results/benchmark_sim/run_ebmf_warmstart.R`
+**Script:** `results/benchmark_sim/archive/run_ebmf_warmstart.R`
 
 Two experiments to distinguish β-update bug from initialization/L-update bug.
 
@@ -1841,7 +1841,7 @@ PH diagnostics, training-mode × prior dot plot, and λ scaling sandbox evaluati
 
 #### 18.1 — Proportional hazards diagnostics
 
-1. Created `results/benchmark_sim/compute_ph_diagnostics.R`: standalone re-fit at saved
+1. Created `results/benchmark_sim/archive/compute_ph_diagnostics.R`: standalone re-fit at saved
    `alpha_opt=0.5` (TCGA-only, point_normal), runs `cox.zph()` on all 5 external cohorts, saves
    `ph_diagnostics_table.csv` to `outputs/real_data/tcga_only/point_normal/tables/`.
 2. Results: Dijk p=0.77, Moffitt p=0.72, PACA-AU array p=0.34, PACA-AU seq p=0.41 — all PASS.
@@ -1861,7 +1861,7 @@ setup chunk — no new outputs required.
 1. Added `lambda = 1.0` parameter to `update_L_k()`, `update_L_all()`, and
    `fit_supervised_mf_modular()`. λ scales both `A_surv` and `B_surv` in the L update.
    Default 1.0 is backward-compatible; all 171 tests pass unchanged.
-2. Created `results/benchmark_sim/sandbox_lambda_test.R`: tests λ∈{1, p/n=5, 2p/n=10} on the
+2. Created `results/benchmark_sim/archive/sandbox_lambda_test.R`: tests λ∈{1, p/n=5, 2p/n=10} on the
    synthetic benchmark (n=250, p=1000, K=5, seed=222).
 3. **Results:** hold-out C-index flat at ≈0.805 across all three conditions. β RMSE *worse* at
    λ=p/n (+0.25) and λ=2p/n (+0.43) than λ=1. β scale error dominated by L–β scale indeterminacy,
@@ -1956,7 +1956,7 @@ predicted Cluster B trigger (§3 row "EBeta non-zero but unstable").
   "Cluster B — Cox-on-YF reformulation" as new High-priority item.
 - `CLAUDE.md`: active debugging target updated from "β=0 on merged" to "Cluster B
   reformulation (external generalization gap)".
-- New diagnostic scripts: `results/benchmark_sim/run_cluster_a_smoke.R`,
+- New diagnostic scripts: `results/benchmark_sim/archive/run_cluster_a_smoke.R`,
   `run_cluster_a_external.R`. Outputs in
   `results/benchmark_sim/outputs/cluster_a_smoke/` and `cluster_a_external/`.
 - Branch `fix-L-update-beta-cycle` commits: `12b0424` (design doc), `55500fd` (Cluster A

@@ -736,7 +736,7 @@ The entries below retain dated implementation and evaluation history.
   A controlled sandbox (n=250, p=1000, K=5) tested λ∈{1, p/n=5, 2p/n=10}: hold-out C-index
   was flat at ≈0.805 across all conditions; β RMSE was *worse* at λ=p/n (+0.25) and λ=2p/n (+0.43).
   The dominant β scale error is L–β scale indeterminacy, not gradient imbalance. λ=1 retained.
-  *Notes: To experiment, change `cavi.lambda` in `config/globals.yml`. See `DECISIONS.md` entry 2026-04-24 for full analysis. Sandbox: `results/benchmark_sim/sandbox_lambda_test.R`.*
+  *Notes: To experiment, change `cavi.lambda` in `config/globals.yml`. See `DECISIONS.md` entry 2026-04-24 for full analysis. Sandbox: `results/benchmark_sim/archive/sandbox_lambda_test.R`.*
 
 ---
 
@@ -748,7 +748,7 @@ The entries below retain dated implementation and evaluation history.
   This tests generalisation of learned gene expression programs across platforms (RNA-seq,
   microarray) and patient populations. More training data than the current 80/20
   within-cohort split. Requires R4 (inter-dataset normalisation) as a prerequisite.
-  *Notes: `code/train_test_split.R` and `code/predict.R` are already in place for the projection step. Batch correction (ComBat or similar) not yet implemented — add to R4. See `results/modular_sim_factor/PDAC/` for current within-cohort results.*
+  *Notes: `code/train_test_split.R` and `code/predict.R` are already in place for the projection step. Batch correction (ComBat or similar) not yet implemented — add to R4. See `results/legacy/modular_sim_factor/PDAC/` for current within-cohort results.*
 
 - [x] **Inter-dataset normalisation before cohort merging** `[Priority: High]` `[Effort: Medium]` *(Complete — v2 preprocessing, 2026-04-29)*
   Before merging cohorts (required for R3), apply quantile normalisation or z-score
@@ -877,7 +877,7 @@ The entries below retain dated implementation and evaluation history.
   *Files: `code/update_tau.R`, `code/fit_modular.R`, `code/fit_cox_on_yf.R`*
 
 - [ ] **Move `load_pdac_raw` and `plot_cohort_loading_heatmap` to `code/`** `[Priority: Low]` `[Effort: Small]`
-  Both functions currently live in `results/benchmark_sim/run_ssbmf_benchmark.R` (the data-loading
+  Both functions currently live in `results/benchmark_sim/archive/run_ssbmf_benchmark.R` (the data-loading
   hub). They are general enough to belong in `code/` for reuse across runner scripts without
   sourcing the full hub. Requires updating all `source()` calls in runner scripts.
   *Notes: Do in a dedicated commit; coordinate with any active Longleaf paths.*
@@ -919,7 +919,7 @@ The entries below retain dated implementation and evaluation history.
   what is needed. Particularly valuable as the number of cohorts, conditions, and reports grows —
   currently all cohorts are re-run together even when only one has changed. Also facilitates
   Longleaf HPC submission of individual targets as SLURM jobs.
-  *Notes: Low priority — investigate feasibility and overhead before committing to a refactor. The `{targets}` package works best when the pipeline DAG is well-defined; this is approximately true for the current runner structure. See `results/modular_sim_factor/run_factor_modular_simulation.R` for the current monolithic runner.*
+  *Notes: Low priority — investigate feasibility and overhead before committing to a refactor. The `{targets}` package works best when the pipeline DAG is well-defined; this is approximately true for the current runner structure. See `results/legacy/modular_sim_factor/run_factor_modular_simulation.R` for the current monolithic runner.*
 
 - [x] **`results/` directory cleanup** `[Priority: High]` `[Effort: Small]` *(complete 2026-05-05)*
   The `results/` directory now mixes code scripts, CSV tables, PNG/PDF figures, and
@@ -930,7 +930,7 @@ The entries below retain dated implementation and evaluation history.
     scripts/        ← MOVE run_ssbmf_benchmark.R, compute_ph_diagnostics.R
     reports/        ← MOVE ssbmf_summary_report.qmd/.pdf/.html
     outputs/        ← benchmark CSVs + figures (already structured by mode/prior)
-  results/modular_sim_factor/
+  results/legacy/modular_sim_factor/
     scripts/        ← MOVE run_factor_modular_simulation.R, run_prior_k_comparison.R
     reports/        ← MOVE .qmd/.pdf/.html out of PDAC/ and synthetic/ subdirs
   ```
@@ -1033,7 +1033,7 @@ The entries below retain dated implementation and evaluation history.
 - [x] **Full ELBO tracking** — Both proxy and full ELBO (genomics + survival + KL) tracked per iteration. `code/compute_elbo.R`. *(Completed April 2026)*
 - [x] **DeSurv benchmark — synthetic + PDAC cross-cohort** — DeSurv-aligned preprocessing, alpha CV (1-SE rule), SVD pseudoinverse fix, prior sensitivity (point_normal vs point_laplace). Synthetic: supervised 0.79 > PCA 0.76. PDAC external median C-index 0.60 across 5 cohorts. *(Completed April 2026)*
 - [x] **Prior sensitivity report** — point_normal vs point_laplace compared on synthetic and all PDAC training modes. point_normal recommended as default. *(Completed April 2026)*
-- [x] **24-page DeSurv benchmark report** — `results/benchmark_sim/ssbmf_summary_report.pdf`. Includes ARD justification over ELBO K-grid-search, alpha gradient notation, per-figure takeaways, side-by-side prior comparison (Fig 19), multi-modal failure documented. *(Completed April 2026)*
+- [x] **24-page DeSurv benchmark report** — `docs/findings/2026-04-29-ssbmf-summary-report.pdf`. Includes ARD justification over ELBO K-grid-search, alpha gradient notation, per-figure takeaways, side-by-side prior comparison (Fig 19), multi-modal failure documented. *(Completed April 2026)*
 - [x] **C-index honest reporting fix** — `get_cindex_comparison()` uses model's own `EL %*% EBeta`; corrected `concordance()` direction convention. *(Completed April 2026)*
 
 ## Chapter 4 narrative revision — 2026-10-02
