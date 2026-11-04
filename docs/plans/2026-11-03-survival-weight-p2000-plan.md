@@ -10,6 +10,10 @@ or S-8 record.
 Decision of 2026-11-04 (DECISIONS.md): Gate S is reported literally, but real-data work follows
 if the fit works in simulation, without waiting for a literal pass.
 
+**Status 2026-11-04:** item 1 complete. Gate S passes at w_S = 1 and training CV picks it; see
+[the findings](../findings/2026-11-04-survival-weight-p2000-findings.md). Item 2 is next; item 3 is
+not needed.
+
 1. **S-9 in simulation:** per-weight curves (recovery, false-active, survival share, β calibration,
    convergence, validation and CV C), the Gate S verdict, and whether training CV picks the same
    weight as the truth-based best arm.

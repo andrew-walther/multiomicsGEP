@@ -2667,3 +2667,17 @@ convergence. Read at the best registered arm (simulation only). The CV-chosen ar
 reported beside it, not gated. The same verdict against the w_S = 0 reference is reported; the S-7
 reference controls. A pass leads to real-data training CV (S3) and the null calibration check,
 each registered first. A failure leads to S-10. No external or real cohort is used.
+
+**Outcome (2026-11-04).** All 480 registered fits ran. **Gate S passes at w_S = 1**: at p = 2,000
+it recovers 10/10 in each variance cell (S-7 reference 0, 0, 1), mean false-active 0.9, 0.1 and
+0.0, 30/30 converged; three of three cells qualify, and the verdict is the same against w_S = 0.
+Training CV picks w_S = 1 in 55 of 60 datasets, and the CV-chosen fits meet the same counts. No
+other arm passes. Every arm with w_S ≥ 40 at p = 2,000 hits the 300-sweep cap with |E β| up to
+26 and bounded reconstruction (the β mechanism). share0.2 calibrated to w_S ≈ 0.002–0.02 because
+the w_S = 0 fit has zero coefficients. Remaining limitation: at p = 2,000 and w_S = 1 the
+validation calibration slope is 1.20, 0.42 and 0.18, and no interval covers β*. S-10 is not run
+because raising survival's share made calibration worse in this grid. Tempering calibration
+(SafeBayes, Holmes–Walker) is the named follow-up. Replication: 18/20 and 19/20 with the same
+recovered seeds as A1; per-seed sweep differences come from the `compute_ebnm_kl` normalizer fix
+committed after A1 and were reproduced by restoring the old function. Findings:
+`docs/findings/2026-11-04-survival-weight-p2000-findings.md`.

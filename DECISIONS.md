@@ -3,6 +3,25 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-04 — The survival-weighted YFB fit at w_S = 1 is carried to real data
+
+**Decided.** S-9 passed Gate S at w_S = 1 with `fit_ssbmf_yfb(canonicalize = TRUE)` on z-scored
+input: at 2,000 genes it recovers the planted program in 10 of 10 datasets in every variance cell,
+with mean false-active at most 0.9 and every fit converged. Training CV picks the same weight in
+55 of 60 datasets. This fit, with w_S = 1, is the supervised configuration for the real-data steps.
+
+**Why not a larger or p-scaled weight.** At 2,000 genes every weight from 40 up fails to converge
+and loses the program; survival's share of the loading precision falls with p at w_S = 1, but
+recovery does not.
+
+**Traded away.** Coefficient calibration. At 2,000 genes the validation calibration slope is
+0.18 to 1.20 and no interval covers the true projected coefficient. Discrimination is unaffected.
+Coefficients and hazard ratios from these fits are not to be read as calibrated until a tempering
+calibration (SafeBayes or Holmes–Walker) is tested. S-10 (downweighted genomics) is not run,
+since raising survival's share worsened calibration in this grid.
+
+Findings: `docs/findings/2026-11-04-survival-weight-p2000-findings.md`.
+
 ## 2026-11-04 — Real-data work follows a working simulation result, not only a literal Gate S pass
 
 **Decided (Andrew).** Gate S stays as registered and is reported literally for S-9, including if it
