@@ -2,7 +2,7 @@
 
 ## Summary
 
-The single-modality model with expression only still holds the benchmark, with a mean external
+The expression-only single-modality model is still the benchmark, with a mean external
 concordance (C) of 0.627 across five cohorts. That model does not use survival to learn its
 gene loadings. Since October 16 we audited the fitting algorithm and found four problems, listed
 below. They explain why attempts to let survival guide the loadings have failed, and why the
@@ -16,18 +16,21 @@ results from this morning show that the rebuilt model fixes monotonicity and con
 step improves the objective, all 180 simulation fits converge, and on the expression data it
 matches the benchmark (mean external C 0.628 against 0.627). It still does not find a low-variance
 prognostic program more often than a two-step method, and in the joint expression and methylation
-fit the methylation data dominate and no program is prognostic. Survival's weak pull
-on the loadings is therefore a property of the model, from the relative size of the survival and
-reconstruction likelihoods, and not a coding error. Short tests on the current code continue
+fit the methylation data dominate and no program is prognostic. Survival therefore has little influence
+on the loadings because of the relative size of the survival and
+reconstruction likelihoods, not because of a coding error. Short tests on the current code continue
 alongside the rebuild. Two analyses that do not depend on a converged model are
 complete: a correction for an expression transform that was applied twice in three cohorts, which
 leaves the benchmark unchanged, and a comparison of survival-based and unsupervised gene screening
 in training cross-validation.
 
-Decisions for this meeting: how to balance survival against reconstruction, which is now the
-central question, including whether a survival weight chosen by cross-validation is acceptable;
-the criteria that define a working model; the proposed preprocessing
-alignments, and whether to score the gene-screening comparison on the external cohorts.
+Decisions for this meeting:
+
+- how to balance survival against reconstruction, which is now the
+  central question, including whether a survival weight chosen by cross-validation is acceptable
+- the criteria that define a working model
+- the proposed preprocessing alignments
+- whether to score the gene-screening comparison on the external cohorts.
 
 ## Problems found in the current fitting algorithm
 
@@ -158,7 +161,7 @@ activity correlations of 0.87 to 0.97 and loading correlations of 0.93 to 0.99, 
 scores correlate with the benchmark's at 0.96 or more. The unsupervised 251-gene fit loses both
 programs, and its risk score correlates with the benchmark's at 0.42.
 
-**What it means.** The concordance differences are within about two standard errors, so they are
+**Interpretation.** The concordance differences are within about two standard errors, so they are
 suggestive at best. The program results are clearer. A 251-gene survival screen keeps the
 benchmark's prognostic structure, and an unsupervised set of the same size does not. The screen
 supplies, through the choice of genes, the supervision that the current fitting algorithm fails to
@@ -222,14 +225,14 @@ by a Cox model on its programs.
 
 | Criterion | Result | Status |
 |---|---|---|
-| O1 Monotone objective | No decrease in any of 180 simulation fits or any real-data fit; worst change −9.9 × 10⁻¹³ | Met |
-| O2 Convergence | 180 of 180 simulation fits, every frozen real-data fit; one cross-validation fold fit stopped at 1,000 sweeps | Met |
+| O1 Monotone objective | No decrease in any of 180 simulation fits or any real-data fit, with a worst change of −9.9 × 10⁻¹³ | Met |
+| O2 Convergence | 180 of 180 simulation fits, every frozen real-data fit. One cross-validation fold fit stopped at 1,000 sweeps | Met |
 | O3 High-variance programs | 630 of 630 recovered with correlation ≥ 0.9 | Met |
 | O4 Low-variance prognostic program | At 1% of variance, found in 15 of 15 datasets by every method, so supervision adds nothing. At 0.25%, found in 2–3 of 15 against 4 of 15 for two-step | Not met |
 | O5 Expression-only real data | Mean external C 0.628 against 0.627 for the benchmark (paired donor-level difference +0.002, 95% CI −0.021 to 0.024) | Met |
 | O6 Joint real data | Both fits converge. ICGC C is 0.554 joint against 0.707 expression only (difference −0.153, 95% CI −0.266 to −0.051) | Met as defined, but the joint fit is worse |
 | O7 Coefficient intervals | 90% intervals cover the truth in 82% of fits: 85–90% with one block, 70–75% with two | Met overall |
-| O8 Package | Check passes; quickstart runs; vignettes not yet written | Partly met |
+| O8 Package | Check passes, quickstart runs, vignettes not yet written | Partly met |
 
 *Supervision is weak because of the model.* In simulation, the survival share of the
 loading-update precision for the prognostic program had medians of 10⁻⁵ to 4 × 10⁻⁴. On the real
@@ -272,11 +275,9 @@ the methylation variance and 8% of the expression variance. The expression-only 
 survival-active programs and an ICGC C of 0.707 on 50 donors. The same counting of matrix entries
 lets 10,000 CpGs outweigh 3,000 genes, now with a correct objective.
 
-**What this means.** The rebuild fixes the algorithm: the objective is a true bound, every step
-improves it, fits converge with one or two data types, and expression-only prediction matches the
-benchmark. It does not fix supervision, and the joint model is dominated by methylation. Both come
-from how the likelihood weighs survival against reconstruction and one data type against the other.
-How to set that balance is now the central question. The options still open are a survival weight
+**Remaining problems.** The rebuild does not fix supervision, and methylation
+dominates the joint model. Both problems come from how the likelihood weighs survival against reconstruction and one data type against the other.
+The options still open are a survival weight
 chosen by cross-validation (at the cost of calibrated β intervals), supervision on a smaller
 survival-screened feature set (the screening result above points this way), per-block weights for
 the joint model chosen by training cross-validation, or a methylation set reduced to the size of the

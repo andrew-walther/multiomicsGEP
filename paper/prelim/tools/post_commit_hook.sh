@@ -11,7 +11,10 @@
 # Installed as a thin shim by tools/install_hooks.sh; the shim calls this file
 # from the current worktree, so the logic stays versioned here.
 #
-# Trigger paths (relative to the multiomicsGEP root):
+# Part III slides: a commit touching presentation/prelim-slides/ also runs
+# presentation/prelim-slides/tools/sync_slides_to_prelim.sh (added 2026-11-03).
+#
+# Chapter 4 trigger paths (relative to the multiomicsGEP root):
 #   paper/prelim/project3-ssbmf.qmd
 #   paper/prelim/figures/
 #   paper/prelim/tools/
@@ -25,6 +28,30 @@ sync="$tools/sync_to_prelim.sh"
 
 # Files changed by HEAD (first parent for merges; --root for a first commit).
 changed=$(git diff-tree --no-commit-id --name-only -r --root -m --first-parent HEAD 2>/dev/null)
+
+# Part III prelim slides: mirror presentation/prelim-slides/ into
+# bios-dissertation/slides/prelim/part-3/ (added 2026-11-03). Runs before the
+# Chapter 4 check below and, like it, never blocks the commit.
+slides_sync="$root/presentation/prelim-slides/tools/sync_slides_to_prelim.sh"
+if echo "$changed" | grep -q '^presentation/prelim-slides/'; then
+  if [ -d "$(git rev-parse --git-path rebase-merge)" ] || [ -d "$(git rev-parse --git-path rebase-apply)" ]; then
+    echo "post-commit: rebase in progress; Part III slide sync skipped. Run $slides_sync afterwards." >&2
+  elif [ ! -x "$slides_sync" ]; then
+    echo "post-commit: WARNING: Part III slide sync script not found or not executable: $slides_sync" >&2
+  else
+    echo "post-commit: syncing Part III slides to bios-dissertation (log: $log) ..." >&2
+    {
+      echo "=== $(date '+%Y-%m-%d %H:%M:%S') multiomicsGEP slides $(git rev-parse --short HEAD)"
+      "$slides_sync"
+      echo "=== exit $?"
+    } >>"$log" 2>&1
+    case "$(tail -1 "$log")" in
+      "=== exit 0") echo "post-commit: $(tail -2 "$log" | head -1)" >&2 ;;
+      *) echo "post-commit: WARNING: Part III slide sync FAILED; bios-dissertation was not updated. See $log, then run $slides_sync by hand." >&2 ;;
+    esac
+  fi
+fi
+
 echo "$changed" | grep -q -E '^paper/(prelim/(project3-ssbmf\.qmd$|figures/|tools/)|ssbmf-refs\.bib$)' || exit 0
 
 sha=$(git rev-parse --short HEAD 2>/dev/null)

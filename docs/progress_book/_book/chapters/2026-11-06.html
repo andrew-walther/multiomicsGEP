@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.18">
+<meta name="generator" content="quarto-1.10.19">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -43,7 +43,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="../site_libs/bootstrap/bootstrap-93f184f27b88d8509a63edf5b6815180.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
@@ -286,7 +286,7 @@ window.Quarto = {
 <li>Executive Summary</li>
 <li>Key Issues Resolved</li>
 <li>Attempts to resolve model supervision issues</li>
-<li>Open Items &amp; Questions</li>
+<li>Open Items and Questions</li>
 </ul>
 </section>
 <section id="rashid-lab-meeting-update-november-5th-2026" class="level2" data-number="14.2">
@@ -424,7 +424,7 @@ window.Quarto = {
 </figure>
 </div>
 <p>In the matched comparator rerun, none of the four comparator methods met its recovery criterion at either noise level. EBMF alone selects its closest loading by correlation with the planted program and has no risk score. The two-step methods select a program by absolute Cox z-statistic and also require the correct survival direction for recovery. At high noise, EBMF followed by lasso Cox had defined concordance in 6 of 20 datasets. Its plotted mean describes those six datasets.</p>
-<p>The close PDAC program matches are consistent with weak effective survival feedback. The prediction comparison alone cannot establish that explanation. The existing training-only weight grid found that higher weights can destabilize the fit, so recovery, false activity and convergence all matter when evaluating a stronger feedback setting.</p>
+<p>The close PDAC program matches are consistent with weak effective survival feedback. The prediction comparison alone cannot establish that explanation. The existing training-only weight grid found that higher weights can destabilize the fit, so a stronger feedback setting should be evaluated on recovery, false activity and convergence together.</p>
 <p><strong>Expression and methylation extension.</strong> First verify that the multimodal fitter at <code>M = 1</code> reproduces the single-modality reference under matched settings. For <code>M = 2</code>, use shared patient scores and separate expression and methylation loadings, feature precisions, and loading priors. The existing implementation sums the modality projections before computing the Cox predictor <span class="math inline">\(\eta = (\sum_{m=1}^{M} Y^{(m)} F^{(m)})\beta\)</span>. Check each block’s contribution to the combined score and validate prediction on patients with matched modalities, using training-only choices for priors and rank.</p>
 
 

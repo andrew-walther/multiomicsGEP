@@ -9,7 +9,7 @@ is done.
 - Executive Summary
 - Key Issues Resolved
 - Attempts to resolve model supervision issues
-- Open Items & Questions
+- Open Items and Questions
 
 ## Rashid Lab Meeting Update (November 5th, 2026)
 
@@ -123,8 +123,8 @@ At high noise, EBMF followed by lasso Cox had defined concordance in
 The close PDAC program matches are consistent with weak effective
 survival feedback. The prediction comparison alone cannot establish
 that explanation. The existing training-only weight grid found that
-higher weights can destabilize the fit, so recovery, false activity and
-convergence all matter when evaluating a stronger feedback setting.
+higher weights can destabilize the fit, so a stronger feedback setting
+should be evaluated on recovery, false activity and convergence together.
 
 **Expression and methylation extension.** First verify that the
 multimodal fitter at `M = 1` reproduces the single-modality reference

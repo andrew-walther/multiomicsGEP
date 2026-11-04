@@ -14,7 +14,7 @@ rec_mean <- if (!is.null(desurv)) round(mean(desurv$c_index[desurv$model == "D4"
 
 Recommended model is unchanged since the 6/18 meeting: **YFB** ($\eta = (YF)\hat\beta$),
 DeSurv-aligned gene selection, $K=7$ latent programs, no cohort indicator. Nothing new to decide
-on model choice this cycle; the work below is corrections and stress-tests of that same model.
+on model choice this cycle. The work below is corrections and stress-tests of that same model.
 
 ## Method updates
 
@@ -38,7 +38,7 @@ Two things changed under the hood, neither of which changes which model we recom
 but only **2 of those 7 have a nonzero survival coefficient** ($K_{\text{eff}}=2$). Two different
 ways of checking this, warm-starting a smaller fit from the converged $K=7$ solution and a joint
 search over $K$ and $\alpha$ together, both land back on $K_{\text{eff}}=2$. $K=7$ stays the
-default because it's the one you get from a single fit with no extra steps; $K=4$ or $K=5$ get you
+default because it's the one you get from a single fit with no extra steps. $K=4$ or $K=5$ get you
 statistically the same performance but need a warm-start procedure to reach it.
 
 **Does the joint model actually need the survival coupling, or would factorizing first and fitting
@@ -81,7 +81,7 @@ if (!is.null(mc)) {
 When nothing is shared, the two approaches tie, as expected, since there's no cross-cohort structure
 for the joint model to exploit. In the realistic middle case (some factors shared, some not), the
 joint model wins, and more through **stability** than raw accuracy: the two-step baseline collapses
-outright on 2 of 5 seeds, which lowers its mean; the joint model stays stable across all 5 and also
+outright on 2 of 5 seeds, which lowers its mean. The joint model stays stable across all 5 and also
 correctly sorts which factors are shared vs. cohort-specific.
 
 **Real data.** Same recommended model, evaluated on 5 held-out PDAC cohorts it never saw during
@@ -99,22 +99,23 @@ if (!is.null(ext_ci)) {
 ```
 
 4 of 5 cohorts clear chance (CI lower bound above 0.5). Moffitt (microarray) does not (CI
-0.467–0.625). We'd flagged this qualitatively before; this is the first time it's quantified.
+0.467–0.625). We'd flagged this qualitatively before. This is the first time it's quantified.
 Against the two-step baseline on the same 5 cohorts, a paired bootstrap gives the joint model a
 significant edge pooled across all cohorts: **+0.042 (95% CI 0.013–0.071)**. Looking cohort by
 cohort, only the largest one (Puleo, $n=288$) reaches significance on its own. The other four all
 point the same direction but don't have the sample size to confirm it individually.
 
 **Biological identity of the 2 survival-active programs.** Confirmed by five independent methods
-(gene-set enrichment, PurIST subtype correlation, external hazard ratios, DeSurv gene-list overlap):
+(gene-set enrichment, its over-representation analysis cross-check, PurIST subtype
+correlation, external hazard ratios, DeSurv gene-list overlap):
 
 ```{r bio-fig, fig.cap="Enrichment of the two survival-active programs against curated PDAC gene sets."}
 knitr::include_graphics("../figs/2026-07-15_pathway_enrichment_dotplot.png")
 ```
 
-Program 7 is the adverse one (basal-like / squamous / MET-EGFR-driven); Program 3 is protective
+Program 7 is the adverse one (basal-like / squamous / MET-EGFR-driven). Program 3 is protective
 (classical / differentiated-epithelial). This is the subtype-survival axis the field already
-expects for PDAC, which is reassuring rather than novel; it tells us the model recovered something
+expects for PDAC, which is reassuring rather than novel. It tells us the model recovered something
 real, not that we've found something new.
 
 ## Relevance of new findings
@@ -134,7 +135,7 @@ claim, one way or the other.
 - The alternative parameterization (LB, $\eta = L\hat\beta$) still shows the factor-collapse
   sensitivity the recommended YFB model does not. Worth understanding why, even though it's not
   the model we're recommending.
-- A spike-and-slab prior on $\beta$ collapses under cross-validation; we're keeping the normal
+- A spike-and-slab prior on $\beta$ collapses under cross-validation. We're keeping the normal
   prior, which is the right call for now but worth a sentence of justification if asked.
 - Backlog, not yet started: automated commit review, literature database (RAG), HPC workflow
   support, and a review of how DeSurv constructs its own simulations (to make sure a future

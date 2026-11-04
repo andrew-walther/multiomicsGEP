@@ -7,7 +7,7 @@
 1. **The multimodal model now picks its own number of programs in simulation.**
    - Two fixes made this work: a per-feature intercept, and evidence-based pruning of unneeded programs.
    - From any starting rank (3–15), it returns about the true 3 programs, recovers them, and converges every time. The September version kept every starting program.
-2. **First real-data results** (train on TCGA, n = 144; validate on ICGC primary PDAC, n = 50, 30 deaths).
+2. **First real-data results** (train on TCGA, n = 144, and validate on ICGC primary PDAC, n = 50, 30 deaths).
    - At the pre-specified starting rank (7) it matches our single-modality model on the same donors: C = 0.685 vs 0.685.
    - Across other starting ranks C is lower (median 0.57).
 3. **The programs it finds are known PDAC biology:** basal-like vs classical, normal vs activated stroma, immune and exocrine.
@@ -34,7 +34,7 @@
 
 The code passes 531 tests. Key updates match the `ebnm` package and independent closed-form checks.
 
-In simulation (486 fits with a known truth of 3 programs) the recommended fit — **intercept + signed loadings + empirical-Bayes priors + evidence-based pruning** — returns about 3 programs from any starting rank. The September version kept them all:
+In simulation (486 fits with a known truth of 3 programs) the recommended fit (**intercept + signed loadings + empirical-Bayes priors + evidence-based pruning**) returns about 3 programs from any starting rank. The September version kept them all:
 
 ![Number of programs kept vs starting rank (truth = 3, dashed). Top row: each true program explains about 10% of variance. Bottom row: under 1%, where fewer can be detected.](../figs/2026-10-02_pruning_K_final.png)
 
@@ -105,7 +105,7 @@ A variant that adds a variance correction to the survival term gave identical re
 
 - At rank 5 no program is prognostic, so every patient gets the same risk score (C = 0.50).
 - At rank 15, eleven programs look prognostic but C falls. Those associations do not hold in new data.
-- Most fits stopped at the 500-iteration cap. Their risk scores had stabilized; the overall fit had not.
+- Most fits stopped at the 500-iteration cap. Their risk scores had stabilized, but the overall fit had not.
 
 ## D. Why nothing is pruned on real data
 
@@ -128,8 +128,8 @@ Change in the model's evidence if each program were removed, starting rank 7:
 
 | Program | Top genes | Methylation share | Prognostic | HR in ICGC (p) |
 |---|---|---|---|---|
-| **Basal-like vs classical** | *KRT5, KRT6A, KRT17, S100A2*; vs *CLDN18, REG4* | 4.5% | **yes** | **1.99 (0.0003)** |
-| Normal vs activated stroma | *ADH1B, C7*; vs *COL11A1, MMP11* | 1.2% | no | 0.83 (0.46) |
+| **Basal-like vs classical** | *KRT5, KRT6A, KRT17, S100A2* vs *CLDN18, REG4* | 4.5% | **yes** | **1.99 (0.0003)** |
+| Normal vs activated stroma | *ADH1B, C7* vs *COL11A1, MMP11* | 1.2% | no | 0.83 (0.46) |
 | Classical / gastric | *REG4, TFF1, CLDN18, CEACAM5* | 4.8% | no | 0.79 (0.30) |
 | Immune | *CCL19, CCL21, PTPRC, LTB* | 20.9% | no | 0.87 (0.54) |
 | Exocrine / acinar | *CTRB2, CPB1, PNLIP, PRSS1* | 9.3% | no | 1.17 (0.37) |
@@ -181,8 +181,8 @@ High Program 7 activity predicts worse survival (p < 0.0001) and high Program 3 
   - ICGC primary PDAC: 50 donors, 30 deaths (validation).
   - ICGC all donors: 67 donors, 40 deaths (sensitivity analysis).
 - **Features.**
-  - Expression: log2 scale; 3,000 genes chosen by the DeSurv rule.
-  - Methylation: beta-values; 10,000 most variable CpGs.
+  - Expression: log2 scale, 3,000 genes chosen by the DeSurv rule.
+  - Methylation: beta-values, 10,000 most variable CpGs.
   - All features chosen on TCGA only.
   - Missing CpG values (0.07%) imputed by k-nearest neighbors within each cohort.
 - **Methylation scale.** Neither the beta scale nor the arcsine transform is close to Gaussian. The arcsine transform halves the share of strongly skewed CpGs.
@@ -193,8 +193,8 @@ High Program 7 activity predicts worse survival (p < 0.0001) and high Program 3 
 
 - **The problem.** α_F = 0 keeps survival out of the program loadings, so only high-variance programs are found. The aim is to remove the weight, not to tune it.
 - **Options:**
-  - rescale programs as in the multimodal model, so the plain sum is stable;
-  - warm-start from the α_F = 0 fit;
-  - phase survival in gradually;
+  - rescale programs as in the multimodal model, so the plain sum is stable
+  - warm-start from the α_F = 0 fit
+  - phase survival in gradually
   - change the update order.
 - **Test.** Can the model recover a planted low-variance prognostic program in simulation?

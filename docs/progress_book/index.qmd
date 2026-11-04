@@ -3,23 +3,23 @@
 Running record of SSBMF project progress with one chapter per advisor meeting. Each chapter covers what changed in the method, what was run to
 validate it (on real cohorts and on simulation), whether the new results
 make sense, and what's still open. Figures and tables that came up in
-discussion are included directly; anything that needs the full statistical
+discussion are included directly. Anything that needs the full statistical
 detail is linked out under that chapter's "Deep dive."
 
 For a complete session-by-session build log (every script, test, and
 decision), see `PROJECT_STATUS.qmd` at the repo root. This notebook is the
-meeting-facing summary, not a replacement for that log.
+meeting-facing summary of that log.
 
 Open the [current project state](current-state.qmd) for priorities, milestones
 and examples from the saved results.
 
-Chapters are listed in the sidebar in date order; click a date to jump
-straight to that meeting.
+Chapters are listed in the sidebar in date order. Click a date to jump
+to that meeting.
 
 The [October 30 update](chapters/2026-10-30.qmd) is the latest account of
 precision balance, numerical posterior checks and the registered survival-supervision
 decision test. Earlier chapters describe their own checkpoints.
-The evaluated single-modality benchmark still uses $\alpha_F=0$; a fully
+The evaluated single-modality benchmark still uses $\alpha_F=0$. A fully
 validated survival-supervised replacement remains an open research goal.
 The [November 6 chapter](chapters/2026-11-06.qmd) is this week's working
 chapter and is filled in as the work is done.
@@ -29,7 +29,7 @@ chapter and is filled in as the work is done.
 Supervised Bayesian Matrix Factorization (SSBMF) jointly factorizes a genomics matrix
 (gene expression) and a patient survival outcome, so the resulting gene expression
 programs (GEPs) are chosen to be both genomically coherent *and* prognostically
-relevant, unlike standard unsupervised factorization (PCA, NMF), which has no reason
+relevant. Standard unsupervised factorization (PCA, NMF) has no reason
 to recover clinically meaningful structure.
 
 - **Model:** $Y = LF^\top + E$ (genomics) coupled to a Cox proportional hazards model
@@ -39,7 +39,7 @@ to recover clinically meaningful structure.
   survival predictor is computed directly from observed expression, avoiding train/test
   projection mismatch.
 - **Data:** PDAC patient cohorts spanning RNA-seq and microarray platforms
-  (TCGA-PAAD + CPTAC training; 5 independent cohorts held out for external validation).
+  (TCGA-PAAD and CPTAC for training, with 5 independent cohorts held out for external validation).
 - **Research question:** does coupling factorization to survival find real prognostic
   structure, and is that structure worth the added model complexity? Evaluated against
   three baselines: DeSurv (a published joint method), a two-step
