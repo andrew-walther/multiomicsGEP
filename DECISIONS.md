@@ -18,8 +18,14 @@ full gene set, with per-size numbers and an elbow plot; and the survival-screeni
 survival-weighted fit. The registered steps are in
 `docs/plans/2026-11-03-survival-weight-p2000-plan.md`.
 
-**Unchanged.** External cohorts choose nothing. They stay unscored during this work (realignment
-plan step S3), so that one untouched evaluation remains for the final claim.
+**External cohorts (amended the same day by Andrew).** External cohorts still choose nothing:
+the weight, feature-set size and screening arm are fixed by training cross-validation first.
+After that, the fixed model is scored once on the external cohorts to assess real-data
+performance, as in earlier benchmarks. This replaces the realignment plan's step S3 rule that
+kept them unscored.
+
+**Next extension.** Once these single-modality items succeed, the M-modality model is the next
+step.
 
 **Presentation.** Results from the α_F = 0 model (no survival in the loadings) are retained and
 labelled as such. Once the supervised fit is carried forward, reports present it as the preferred

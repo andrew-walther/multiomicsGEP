@@ -13,13 +13,16 @@ if the fit works in simulation, without waiting for a literal pass.
 1. **S-9 in simulation:** per-weight curves (recovery, false-active, survival share, β calibration,
    convergence, validation and CV C), the Gate S verdict, and whether training CV picks the same
    weight as the truth-based best arm.
-2. **If it works, on the real training data (no external cohort):**
+2. **If it works, on the real data:**
    - the programs the fit identifies, and which are survival-active;
    - out-of-sample C from training cross-validation;
    - the feature-set-size curve, 2,000 genes to all genes, with numbers and an elbow plot;
    - the survival-screening comparison rerun with the survival-weighted fit.
+   - after those choices are fixed by training CV, one external-cohort scoring of the fixed model
+     (assessment only; external cohorts choose nothing).
 3. **If it does not work:** S-10 (downweighted genomics), registered first.
-4. **Reporting:** keep α_F = 0 results, labelled; present the supervised fit as preferred once it
+4. **After the single-modality items succeed:** extend to the M-modality model.
+5. **Reporting:** keep α_F = 0 results, labelled; present the supervised fit as preferred once it
    is carried forward. Update the October 30 chapter, tracker, DECISIONS.md and review handoff.
 
 ## Question
