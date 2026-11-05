@@ -13,6 +13,12 @@ Paste the block below into a new Claude Code session started in
 > documents the revamp affects, and the order of work. Target: done by about 2026-11-07, so I have
 > a week to review before the 2026-11-16 prelim deadline.
 >
+> Andrew's notes on the current chapter are in plan section 0. Apply all of them:
+> - the new title;
+> - Introduction first, with no bold Summary paragraph;
+> - no bold paragraph leads (make them headings);
+> - every figure legible at printed size, rebuilt as vector PDF where fuzzy.
+>
 > Before planning, read:
 > - `AGENTS.md`, `paper/prelim/AGENTS.md` (continuing work as methodology and expected evidence,
 >   no dates), `DECISIONS.md` (entries from 2026-11-04 on), and `docs/findings/2026-11-04-*` and

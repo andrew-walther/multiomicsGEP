@@ -1,5 +1,14 @@
 # multiomicsGEP — Research Roadmap
 
+**Next after the `fix/yfb-supervision` work: Chapter 4 revamp (prelim due 2026-11-16).**
+
+- [ ] Run [the revamp plan](docs/plans/2026-11-05-chapter4-revamp-plan.md) with
+  [its session prompt](docs/plans/2026-11-05-chapter4-revamp-prompt.md). The
+  supervised w_S = 1 YFB fit is the centerpiece. The plan includes the results
+  checklist (tables, figures, biology), Andrew's notes on the title, format and
+  figure legibility, and the Chapter 1 passages to rewrite. Target: about 1–2
+  days, leaving a week for Andrew's review.
+
 **Normalized-projection supervision (2026-10-30).**
 
 The [targeted follow-up](docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md)

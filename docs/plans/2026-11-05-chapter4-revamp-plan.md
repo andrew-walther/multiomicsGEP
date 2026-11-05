@@ -14,6 +14,44 @@ the written prelim is due on 2026-11-16. Any checklist item that can't be produc
 written as planned evaluation, not left as a gap. The oral exam slides (2026-12-07) may show newer
 results than the chapter.
 
+**When to start.** After Andrew finishes the current `fix/yfb-supervision` work (S-11 to S-13
+line). ROADMAP.md lists this plan as the next item.
+
+## 0. Andrew's notes on the current chapter (2026-11-05)
+
+These are requirements for the revamp, from Andrew's read of the synced prelim PDF.
+
+- **Title.** Change it to "Survival-Supervised Bayesian Matrix Factorization for Prognostic
+  Molecular Program Discovery in Pancreatic Cancer" (YAML `title:` in `project3-ssbmf.qmd`; the
+  prelim prints it in capitals). It currently reads "... for Prognostic Gene Expression Programs in
+  Pancreatic Cancer". Also check the slide outline and the abstract fact sheet for the old title.
+- **Format.** Match Chapters 2 and 3.
+  - Open with `# Introduction`, not the bold, indented "**Summary.**" paragraph at line 42.
+    Chapters 2 and 3 have no summary section; its content moves into the Introduction.
+  - No paragraph starts with bold text anywhere. Where a bold lead names a topic, make it a
+    numbered `##`/`###` heading or, if a number would be noise, an unnumbered heading
+    (`{.unnumbered}`).
+  - Section 4.2.8 ("Remaining work", lines 137–145) is the worst case: three bold-led paragraphs.
+    Its content moves into the Methods subsections for proposed work (section 2 below).
+- **Figures.** Every figure must be clear and legible at printed size. Rebuild any figure that is
+  fuzzy. Problems in the current PDF:
+  - Fig 4.1 (`fig:km-risk`, `single_km_risk_external.png`, width 0.75): too small and fuzzy.
+  - Fig 4.2 (`fig:programs`, `single_programs_heatmap.png`, width 0.42): far too small; gene
+    names (y-axis) and program names (x-axis) can't be read.
+  - Fig 4.3 (`fig:km-programs`, `single_km_programs_external.png`, width 0.8): a bit too small
+    and hard to read.
+
+  Rules for every new or rebuilt figure:
+  - Write vector PDF from R (`ggsave(..., device = cairo_pdf)` or `pdf()`), or PNG at ≥ 300 dpi
+    only when vector isn't practical.
+  - Size the figure in R at its printed size, about 6.5 in wide for `\linewidth`, so that text is
+    ≥ 8 pt after placement. Don't shrink a large canvas with `width=0.4\linewidth`.
+  - Heatmaps with gene labels use the full text width and enough height for one readable label
+    per row. Show fewer genes per program rather than shrinking the font.
+  - Multi-panel KM plots: at most two or three panels per row at full width, with readable
+    risk-table text.
+  - Check each figure by viewing the rendered prelim PDF page, not only the image file.
+
 ## 1. Why the chapter changes
 
 The current chapter (synced 2026-10-30, about 4,860 words) presents the frozen 2026-10-14 fit with
