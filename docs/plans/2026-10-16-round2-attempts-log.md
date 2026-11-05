@@ -2731,3 +2731,19 @@ not overconfident. w_S = 10 gives 0.26, 0.71 and 1.74, and w_S ≥ 100 gives 0.0
 recovery, false activity and the CV choice are unchanged. The stated reason for not running S-10
 is withdrawn. The runner now uses exact times.
 
+
+## 2026-11-05 — S-13: survival-block-weighted objective and joint q(β) (registered before execution)
+
+**Why.** Corrected S-9: w_S = 1 is too weak at p = 2,000 (calibration slopes 1.45–3.23), and
+w_S ≥ 40 drifts: the matched program detaches from expression (survival share 1.0) and β grows
+without a plateau, as for a separating predictor. Under the current objective w_S also tempers
+β, so its prior loses weight as w_S grows. Registration:
+`docs/plans/2026-11-05-supervision-strength-plan.md` (section "Registration").
+
+**Arms.** A1: w_S multiplies the Cox term and KL(q(β)‖g_β) together, so β is untempered while F
+sees survival at weight w_S. A2: A1 with a joint Gaussian q(β) and per-program prior variances by
+type-II ML. Weights {1, 2, 5, 10, 20, 50}, chosen per dataset by five-fold CV partial
+log-likelihood. Cells: S-9 p = 2,000 cells, a weak cell (oracle C ≈ 0.68), permuted nulls.
+**Criteria:** Gate S (S-9 definition); median exact-times calibration slope in [0.8, 1.25] in ≥ 2
+of 3 S-9 cells; ≥ 9/10 converged per cell; null mean false-active ≤ 1; weak cell reported against
+the two-step fit without a threshold.

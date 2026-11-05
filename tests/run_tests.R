@@ -66,6 +66,7 @@ test_files <- c(
   "tests/test_yfb_simulation_units.R",
   "tests/test_yfb_diagnostic_controls.R",
   "tests/test_yfb_joint_beta.R",
+  "tests/test_survival_block_weight.R",
   "tests/test_update_beta_cohort.R",
   "tests/test_update_L.R",
   "tests/test_update_F.R",

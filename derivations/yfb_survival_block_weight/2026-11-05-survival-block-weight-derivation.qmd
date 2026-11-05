@@ -1,0 +1,124 @@
+---
+title: "Survival-block weighting and a joint posterior for β in the YFB fit"
+date: 2026-11-05
+format: html
+---
+
+# Setting
+
+Single modality, centered input $Y$ ($n \times p$), $K$ programs. Genomics model
+$Y = L F^\top + E$, $E_{ij} \sim N(0, \tau_j^{-1})$. Survival model: Cox partial
+likelihood with linear predictor $\eta = Z\beta$, $Z = Y F$ (canonical scale, so
+$\mathrm{sd}(Z_{\cdot k}) = 1$ after each sweep). Mean-field factors $q(L)$, $q(F)$,
+$q(\beta)$ with empirical-Bayes priors $g_L$, $g_F$, $g_\beta$. At each sweep the Cox term is
+replaced by its second-order expansion at the current $\hat\eta$ (working weights $w_i$,
+working response $z_i = \hat\eta_i + u_i / w_i$):
+
+$$\ell_{\mathrm{Cox}}(\eta) \approx \ell_{\mathrm{Cox}}(\hat\eta) - \tfrac12 \sum_i w_i (z_i - \eta_i)^2 + \text{const}.$$
+
+# Current objective (arm A0)
+
+$$\mathcal L_0(q) = \mathbb E_q \log p(Y \mid L, F, \tau) + w_S\, \mathbb E_q \ell_{\mathrm{Cox}}(Z\beta)
+ - \mathrm{KL}(q_L \| g_L) - \mathrm{KL}(q_F \| g_F) - \mathrm{KL}(q_\beta \| g_\beta).$$
+
+For $q(\beta_k)$ the relevant terms are $w_S\,\mathbb E\ell_{\mathrm{Cox}} - \mathrm{KL}(q_{\beta_k}\|g_{\beta_k})$.
+The pseudo-observation is $x_k = B_k / A_k$ with $A_k = w_S \sum_i w_i \mathbb E[Z_{ik}^2]$, so its
+noise SD is $s_k = (w_S \sum_i w_i \mathbb E Z_{ik}^2)^{-1/2}$: **the β posterior is tempered**,
+its SD falls as $w_S^{-1/2}$, and the prior's relative weight falls as $1/w_S$.
+
+# Survival-block objective (arm A1)
+
+$$\mathcal L_1(q) = \mathbb E_q \log p(Y \mid L, F, \tau) - \mathrm{KL}(q_L \| g_L) - \mathrm{KL}(q_F \| g_F)
+ + w_S \big[ \mathbb E_q \ell_{\mathrm{Cox}}(Z\beta) - \mathrm{KL}(q_\beta \| g_\beta) \big].$$
+
+**Coordinate updates.**
+
+- $q(L)$, $\tau$: $L$ and $\tau$ do not appear in the bracket, so their updates are those of
+  $\mathcal L_0$.
+- $q(F)$: the bracket depends on $F$ only through $\mathbb E \ell_{\mathrm{Cox}}$, which carries the
+  factor $w_S$ in both objectives. The update is that of $\mathcal L_0$:
+  $A_{jk} = \tau_j \sum_i \mathbb E l_{ik}^2 + w_S\, \mathbb E[\beta_k^2] \sum_i w_i y_{ij}^2$ and the
+  matching $B_{jk}$, with $\mathbb E\beta$, $\mathbb E\beta^2$ taken from the current $q(\beta)$.
+- $q(\beta)$, $g_\beta$: the terms are $w_S[\mathbb E\ell_{\mathrm{Cox}} - \mathrm{KL}(q_\beta\|g_\beta)]$. For
+  $w_S > 0$ the maximizer over $(q_\beta, g_\beta)$ does not depend on $w_S$. It is the
+  ordinary empirical-Bayes posterior under the working likelihood at weight 1:
+  $A_k = \sum_i w_i \mathbb E Z_{ik}^2$, $B_k = \sum_i w_i z^{(-k)}_i \bar Z_{ik}$.
+- **Monitor:** $\mathcal L_1 = \text{genomics} + w_S\,(\text{survival term}) + \mathrm{KL}_L + \mathrm{KL}_F + w_S\,\mathrm{KL}_\beta$
+  (KL terms stored as $-\mathrm{KL}$).
+
+**Reading.** Dividing by $w_S$, $\mathcal L_1 / w_S$ tempers the whole genomics block
+(likelihood and the $L$, $F$ priors) by $\kappa = 1/w_S$ and keeps the Cox likelihood and its
+prior at weight 1. This is a generalized-Bayes (power) posterior on the genomics block. The β
+posterior is an untempered Bayesian Cox posterior given the program scores. At $w_S = 1$,
+$\mathcal L_1 = \mathcal L_0$ and every update is identical.
+
+**What it changes.** At large $w_S$ the A0 β update becomes nearly unpenalized, which lets β
+follow a separating direction without bound and makes the 1.96-SD activity rule mechanically
+permissive. Under A1 the prior keeps full weight against the Cox likelihood at every $w_S$.
+The loading update still sees survival at weight $w_S$.
+
+# Joint Gaussian $q(\beta)$ with per-program prior variances (arm A2)
+
+Keep $\mathcal L_1$ (or $\mathcal L_0$ with likelihood weight $\omega = w_S$; under $\mathcal L_1$,
+$\omega = 1$). Replace $\prod_k q(\beta_k)$ by $q(\beta) = N_K(m, \Sigma)$ and take
+$g_\beta = \prod_k N(0, \sigma_k^2)$ (per-program Normal, as the mean-field fit uses), with
+$\sigma_k^2 \in [0, \infty)$.
+
+Under the working likelihood and mean-field $q(F)$ (so $\mathrm{Cov}_q(Z_{ik}, Z_{il}) = 0$ for
+$k \ne l$),
+
+$$\mathbb E_q\!\left[-\tfrac12 \sum_i w_i (z_i - Z_i^\top\beta)^2\right]
+ = b^\top m - \tfrac12 \operatorname{tr}\!\big(G\, (mm^\top + \Sigma)\big) + \text{const},$$
+
+with $G = \omega \sum_i w_i \,\mathbb E[Z_i Z_i^\top] = \omega\,(\bar Z^\top W \bar Z + \operatorname{diag}(\textstyle\sum_i w_i V^Z_{ik}))$
+and $b = \omega\,\bar Z^\top W z$.
+
+**q-update given $g$:** $\Sigma = (G + \Lambda)^{-1}$, $m = \Sigma b$, $\Lambda = \operatorname{diag}(\sigma_k^{-2})$.
+Programs with $\sigma_k^2 = 0$ have $q(\beta_k) = \delta_0$ and are removed from the system.
+
+**g-update (type-II maximum likelihood).** With $q$ at its optimum, the β-block ELBO equals the
+log marginal likelihood of the quadratic surrogate,
+$\tfrac12 b^\top (G+\Lambda)^{-1} b - \tfrac12\log|G+\Lambda| + \tfrac12\log|\Lambda|$. Maximizing over one
+$\alpha_k = \sigma_k^{-2}$ with the others fixed has the closed form of Tipping and Faul (2003):
+with $\Sigma_{-k}$ the posterior covariance of the other included programs,
+
+$$s_k = G_{kk} - G_{k,-k}\Sigma_{-k}G_{-k,k},\qquad q_k = b_k - G_{k,-k}\Sigma_{-k} b_{-k},$$
+
+$$\sigma_k^2 = \max\!\left(0,\; \frac{q_k^2 - s_k}{s_k^2}\right).$$
+
+Cycling over $k$ until no $\sigma_k^2$ changes gives a joint maximizer over $(q, g)$ for this
+block, so the step does not decrease the objective. **Check against the mean-field fit:** for
+$K = 1$, $s = G$, $q = b$, and $\sigma^2 = \max(0, x^2 - s_e^2)$ with $x = b/G$, $s_e^2 = 1/G$, the
+closed form of `ebnm` with the Normal family. When $G$ is diagonal the joint update equals $K$
+separate mean-field updates.
+
+**KL:** for the included set $S$, $\mathrm{KL}(N(m_S, \Sigma_S)\,\|\,N(0, D_S)) =
+\tfrac12[\operatorname{tr}(D_S^{-1}\Sigma_S) + m_S^\top D_S^{-1} m_S - |S| + \log|D_S| - \log|\Sigma_S|]$;
+excluded programs contribute 0.
+
+**F update with joint $q(\beta)$.** The expected working likelihood involves
+$\mathbb E[\beta_k\beta_l] = M_{kl}$, $M = mm^\top + \Sigma$. For loading $f_{jk}$ the signal is
+
+$$B^{\mathrm{surv}}_{jk} = \sum_i y_{ij}\, w_i \Big( m_k z_i - \sum_{l\ne k} M_{kl} \bar Z_{il} \Big)
+ - M_{kk} \sum_i w_i y_{ij} (\bar Z_{ik} - y_{ij}\bar f_{jk}),$$
+
+and the precision is $M_{kk}\sum_i w_i y_{ij}^2$, times $w_S$. Under mean-field
+$M_{kl} = m_k m_l$ and this reduces to the current update.
+
+**Survival term of the monitor:**
+$\mathbb E\ell \approx \ell(\hat\eta) - \tfrac12\sum_i w_i \operatorname{Var}_q(\eta_i)$ with
+$\operatorname{Var}_q(\eta_i) = \bar Z_i^\top \Sigma \bar Z_i + \sum_k V^Z_{ik} M_{kk}$.
+
+**Scale canonicalization** rescales program $k$ by $c_k$: $m_k \to c_k m_k$,
+$\Sigma_{kl} \to c_k c_l \Sigma_{kl}$, $\sigma_k^2 \to c_k^2 \sigma_k^2$. Since the joint update
+recomputes $(q, g)$ from the current $Z$, only $\sigma^2$ (the warm start) needs to move.
+
+# Numerical checks (in the tests)
+
+1. A1 at $w_S = 1$ reproduces A0 exactly.
+2. The joint update with $K = 1$, and with diagonal $G$, reproduces the mean-field Normal
+   `ebnm` posterior.
+3. With two nearly collinear programs, the joint marginal SDs exceed the mean-field SDs.
+4. A noise program with $q_k^2 < s_k$ gets $\sigma_k^2 = 0$ and $\beta_k \equiv 0$.
+5. The F update with $M = mm^\top + \operatorname{diag}(v)$ equals the mean-field F update.
+6. The monitor does not decrease (beyond numerical tolerance) on a small fixture for A1 and A2.

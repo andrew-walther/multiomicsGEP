@@ -1,6 +1,6 @@
 # Attempt S-13: setting the survival supervision strength without losing stability
 
-Written 2026-11-05. **Status: design for Andrew's confirmation. Nothing below has been run.**
+Written 2026-11-05. **Status: registered 2026-11-05 after Andrew's go-ahead, before any grid fit. Andrew asked that A2 run as well, so both arms run. The registration details are under "Registration" at the end.**
 Follows S-9 (corrected), S-11 and S-12. Andrew asked for survival to have real pull on the
 loadings, set from the data with as little manual tuning as possible, in a Bayesian form rather
 than a copy of DeSurv's optimizer.
@@ -70,7 +70,7 @@ Weight the whole survival block, the Cox likelihood and the β prior together:
 | A1 | survival block weighted | mean-field, untempered |
 | A2 | A1 | joint K × K Gaussian q(β) (Gemini Issue 4), so correlated program scores share uncertainty |
 
-A2 is run only if A1 still shows more than one false-active program per fit at the chosen weight.
+A2 runs alongside A1 (Andrew, 2026-11-05: run it if it is easy, for a fuller picture).
 
 ## Setting w_S from the data
 
@@ -115,3 +115,26 @@ variance is labelled a survival-only direction, not a gene program (Gemini Issue
 An arm meeting 1–4 goes to real data: refit on the D4 genes at the CV-chosen weight and report
 how far the loadings move from the unsupervised ones, survival share, programs, CV C and CV
 partial log-likelihood. External scoring then gets its own registration, as S-12 did.
+
+## Registration (2026-11-05)
+
+- **Code:** `fit_ssbmf_yfb(canonicalize = TRUE, w_S, survival_block_weight = TRUE,
+  beta_posterior = "meanfield" | "joint")`, derivation
+  `derivations/yfb_survival_block_weight/2026-11-05-survival-block-weight-derivation.qmd`, tests
+  `tests/test_survival_block_weight.R` (full suite 761/761). All other settings are the S-9 call.
+- **Runner:** `results/benchmark_sim/run_yfb_supervision_strength.R`, output
+  `results/benchmark_sim/outputs/yfb_supervision_strength_2026-11-05/`.
+- **Data:** p = 2,000, seeds 1–10. Cells: the S-9 cells (planted variance 0.25%, 1%, 5%) and the
+  weak cell (variance 1%, true predictor scaled by 0.045, giving oracle validation C ≈ 0.68; the
+  scale was set on seeds 101–112 from the generator alone, before any fit). Null: the three S-9
+  cells with training outcomes permuted (seed + 9000), full fits only.
+- **Weights:** w_S ∈ {1, 2, 5, 10, 20, 50}. Folds: five, stratified by event (seed + 7000).
+- **Selection rule:** for each dataset and arm, the weight with the largest summed five-fold CV
+  partial log-likelihood (Verweij–van Houwelingen) among weights whose five folds all fit; ties
+  go to the smaller weight. Criteria 1–5 above are read at the selected weight. Criterion 1 uses
+  the S-9 Gate S definition and the S-7 reference. Criterion 2 uses the exact-times slope.
+  Criterion 4 is read at the weight selected most often across the signal cells for that arm.
+- **Also reported, not gated:** C and slope at every weight, CV C, per-program roles (prognostic
+  program, survival-only direction, genomics-only program, inactive), how often the matched
+  program is a survival-only direction, and A1 versus A2.
+

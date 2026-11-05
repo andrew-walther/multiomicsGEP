@@ -553,7 +553,26 @@ fit_ssbmf_yfb <- function(Y, time, status,
                            posterior_init = NULL,
                            prune_preserve_posterior = FALSE,
                            profile_cox_intercept = FALSE,
-                           loading_prior_update = "historical") {
+                           loading_prior_update = "historical",
+                           survival_block_weight = FALSE,
+                           beta_posterior = c("meanfield", "joint")) {
+
+  # ---- S-13 options (derivations/yfb_survival_block_weight/) ----------------
+  # survival_block_weight = TRUE: w_S multiplies the Cox term AND KL(q(beta) || g_beta), so the
+  # beta update is the untempered empirical-Bayes posterior (Cox weight 1) while the F update
+  # still sees survival at weight w_S. At w_S = 1 the fit is unchanged.
+  # beta_posterior = "joint": q(beta) = N_K(m, Sigma) with per-program Normal prior variances
+  # set by type-II ML (update_beta_joint_ard()); F updates use E[beta_k beta_l].
+  beta_posterior <- match.arg(beta_posterior)
+  if (!is.logical(survival_block_weight) || length(survival_block_weight) != 1L ||
+      is.na(survival_block_weight)) stop("survival_block_weight must be TRUE or FALSE.")
+  if ((survival_block_weight || beta_posterior == "joint") && !canonicalize)
+    stop("survival_block_weight and beta_posterior = 'joint' require canonicalize = TRUE.")
+  if (beta_posterior == "joint" && (prior_beta != "normal" || beta_prior_mode[1] != "per_program" ||
+      !is.null(beta_cohort_id) || profile_cox_intercept || prune))
+    stop("beta_posterior = 'joint' requires per-program Normal beta, no cohort beta, no profiled ",
+         "intercept and no pruning.")
+  joint_beta <- beta_posterior == "joint"
 
   if(!is.logical(profile_cox_intercept) || length(profile_cox_intercept)!=1L ||
      is.na(profile_cox_intercept))stop("profile_cox_intercept must be TRUE or FALSE.")
@@ -960,6 +979,9 @@ fit_ssbmf_yfb <- function(Y, time, status,
   # ==========================================================================
   # Main CAVI Loop
   # ==========================================================================
+  # Joint q(beta) state (S-13): covariance, prior variances (warm start), E[beta beta']
+  EBeta_cov <- matrix(0, K, K); beta_sigma2 <- NULL; Mbeta <- matrix(0, K, K)
+  beta_lik_weight <- if (canonicalize && survival_block_weight) 1 else w_S
   for (iter in 1:max_iter) {
     if (trace_supervision && !use_beta_cohort && beta_prior_mode == "shared") {
       trace_prior_before <- g_beta
@@ -1056,11 +1078,19 @@ fit_ssbmf_yfb <- function(Y, time, status,
                                              survival_divisor = beta_divisor)
         EBeta[k, ]   <- res_beta$mean
         EBeta2[k, ]  <- res_beta$second
+      } else if (joint_beta) {
+        # Joint q(beta) given the current scores of all programs (derivation, arm A2)
+        VZ_all <- survival_Y^2 %*% pmax(EF2_aug[, 1:K, drop = FALSE] - EF_aug[, 1:K, drop = FALSE]^2, 0)
+        jb <- update_beta_joint_ard(ZF, VZ_all, w, z, weight = beta_lik_weight,
+                                    sigma2_init = beta_sigma2)
+        beta_sigma2 <- jb$sigma2; EBeta_cov <- jb$Sigma; Mbeta <- jb$M
+        EBeta <- jb$mean; EBeta2 <- diag(jb$M)
+        res_beta <- NULL
       } else {
         res_beta    <- update_beta_k(w, z_no_k, ZF[, k],
                                      if (canonicalize) ZF[, k]^2 + VZ_k else ZF[, k]^2,
                                      prior_family = prior_beta,
-                                     alpha = if (canonicalize) w_S else alpha_iter,
+                                     alpha = if (canonicalize) beta_lik_weight else alpha_iter,
                                      survival_divisor = if (canonicalize) 1 else beta_divisor,
                                      g_fixed = if (beta_prior_mode == "shared") g_beta else NULL)
         if (trace_supervision && beta_prior_mode == "shared") {
@@ -1072,9 +1102,10 @@ fit_ssbmf_yfb <- function(Y, time, status,
         EBeta2[k]   <- res_beta$second
         if (beta_prior_mode == "shared") { beta_x[k] <- res_beta$x; beta_s[k] <- res_beta$s }
       }
-      kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
-                                      res_beta$A, res_beta$x,
-                                      res_beta$mean, res_beta$second)
+      kl_beta[k]  <- if (joint_beta) jb$neg_kl / K   # joint -KL, spread so sum(kl_beta) is exact
+                     else compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
+                                          res_beta$A, res_beta$x,
+                                          res_beta$mean, res_beta$second)
 
       # ---- (b) Update q(l_k): Patient Loadings — PURE GENOMICS ----
       # L does not appear in the Cox likelihood under eta = ZF * beta_tilde.
@@ -1124,11 +1155,15 @@ fit_ssbmf_yfb <- function(Y, time, status,
                                    variance = 0, point_mass = TRUE),
                       details = list(A = A_gen + w_S * A_surv_k, B = B_gen))
         } else {
+          # Joint q(beta): signal w (E[beta_k] z - sum_{l != k} E[beta_k beta_l] Z_l)
+          h_k <- if (joint_beta)
+            w_S * w * (EBeta[k] * z - as.vector(ZF[, -k, drop = FALSE] %*% Mbeta[k, -k]))
+          else w_S * w * z_no_k
           upd <- multimodal_yfb_update_F_mk(
-            survival_Y, Tau, EL_aug[, k], EL2_aug[, k], R_k, w_S * w, w_S * w * z_no_k,
+            survival_Y, Tau, EL_aug[, k], EL2_aug[, k], R_k, w_S * w, h_k,
             as.vector(survival_Y %*% EF_aug[, k]), VZ_k, EF_aug[, k], EF2_aug[, k],
             EBeta[k], EBeta2[k], prior_F_state[[k]], prior_update = "ebnm",
-            loading_prior_update = loading_prior_update)
+            loading_prior_update = loading_prior_update, h_beta_weighted = joint_beta)
         }
         prior_F_state[[k]] <- upd$prior
         EF[, k] <- upd$EF; EF2[, k] <- upd$EF2
@@ -1248,15 +1283,21 @@ fit_ssbmf_yfb <- function(Y, time, status,
       VZ_end <- (Y^2) %*% pmax(EF2_aug[, 1:K, drop = FALSE] - EF_aug[, 1:K, drop = FALSE]^2, 0)
       tay_end <- calc_cox_taylor_yf(as.vector(ZF_end %*% EBeta), time, status,
                                     strata = strata_id)
-      compute_survival_elbo(tay_end$logPL, tay_end$w, ZF_end, ZF_end^2 + VZ_end,
-                            EBeta, EBeta2)
+      if (joint_beta) {
+        # Var(eta_i) = Zbar_i' Sigma Zbar_i + sum_k VZ_ik E[beta_k^2]
+        var_eta <- rowSums((ZF_end %*% EBeta_cov) * ZF_end) + as.vector(VZ_end %*% EBeta2)
+        tay_end$logPL - 0.5 * sum(tay_end$w * var_eta)
+      } else compute_survival_elbo(tay_end$logPL, tay_end$w, ZF_end, ZF_end^2 + VZ_end,
+                                   EBeta, EBeta2)
     } else compute_survival_elbo(
       taylor$logPL, w, ZF, ZF^2, EBeta, EBeta2,
       cohort_idx = if (use_beta_cohort) beta_cohort_idx else NULL
     )
     history$elbo_full[iter] <- if (canonicalize) {
-      # Same weighting as the updates: genomics + w_S * survival + KL terms
-      res_tau$elbo_proxy + w_S * surv_elbo + sum(kl_L) + sum(kl_F) + sum(kl_beta)
+      # Same weighting as the updates: genomics + w_S * survival + KL terms; under the
+      # survival-block weight the beta KL is also multiplied by w_S
+      res_tau$elbo_proxy + w_S * surv_elbo + sum(kl_L) + sum(kl_F) +
+        (if (survival_block_weight) w_S else 1) * sum(kl_beta)
     } else {
       (1 - alpha) * (res_tau$elbo_proxy / genomics_divisor) +
         alpha * (surv_elbo / survival_divisor) +
@@ -1279,6 +1320,12 @@ fit_ssbmf_yfb <- function(Y, time, status,
                                     prior_F = prior_F_state)
       EL <- cz$EL; EL2 <- cz$EL2; EF <- cz$EF; EF2 <- cz$EF2
       EBeta <- cz$EBeta; EBeta2 <- cz$EBeta2; prior_F_state <- cz$prior_F
+      if (joint_beta) {
+        # beta_k -> c_k beta_k: Sigma_kl -> c_k c_l Sigma_kl, sigma2_k -> c_k^2 sigma2_k
+        EBeta_cov <- EBeta_cov * tcrossprod(cz$scale)
+        Mbeta <- tcrossprod(EBeta) + EBeta_cov
+        if (!is.null(beta_sigma2)) beta_sigma2 <- beta_sigma2 * cz$scale^2
+      }
       EL_aug[, 1:K] <- EL; EL2_aug[, 1:K] <- EL2
       EF_aug[, 1:K] <- EF; EF2_aug[, 1:K] <- EF2
     }
@@ -1443,8 +1490,16 @@ fit_ssbmf_yfb <- function(Y, time, status,
     canonicalize     = canonicalize,
     w_S              = w_S,
     g_beta           = if (beta_prior_mode == "shared") g_beta else NULL,
-    neg_kl           = kl_L + kl_F + kl_beta   # per-program -KL terms (last iteration)
+    neg_kl           = kl_L + kl_F +           # per-program -KL terms (last iteration)
+                       (if (survival_block_weight) w_S else 1) * kl_beta
   )
+  # S-13 fields only when an S-13 option is on, so default fit objects are unchanged
+  if (survival_block_weight || joint_beta) {
+    result$survival_block_weight <- survival_block_weight
+    result$beta_posterior <- beta_posterior
+    result$EBeta_cov <- if (joint_beta) EBeta_cov else diag(pmax(EBeta2 - EBeta^2, 0), length(EBeta))
+    result$beta_prior_var <- if (joint_beta) beta_sigma2 else NULL
+  }
   if (!is.null(cohort_id) && C_cols > 0) {
     result$L_cohort   <- L_cohort
     result$EF_cohort  <- EF_aug[, K + seq_len(C_cols), drop = FALSE]

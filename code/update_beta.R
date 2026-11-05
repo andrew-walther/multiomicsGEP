@@ -275,3 +275,89 @@ update_beta_all <- function(w, z, EL, EL2, EBeta,
     details = details
   )
 }
+
+# ==============================================================================
+# Joint Gaussian q(beta) with per-program type-II ML prior variances (S-13, arm A2)
+# ==============================================================================
+# Derivation: derivations/yfb_survival_block_weight/2026-11-05-survival-block-weight-derivation.qmd
+
+#' Negative-free KL(q(beta) || prior) for a joint Gaussian q and independent Normal prior
+#'
+#' KL(N(m_S, Sigma_S) || N(0, D_S)) = 1/2 [tr(D_S^-1 Sigma_S) + m_S' D_S^-1 m_S - |S|
+#'   + log|D_S| - log|Sigma_S|], over the included set S = {k : sigma2_k > 0}; excluded
+#' programs have q = prior = point mass at 0 and contribute 0.
+#'
+#' @param m K-vector posterior mean. @param Sigma K x K posterior covariance.
+#' @param sigma2 K-vector prior variances (0 = excluded).
+#' @return KL divergence (nonnegative scalar).
+#' @examples
+#' beta_joint_kl(c(.5, 0), diag(c(.1, 0)), c(1, 0))
+#' @family beta_update
+#' @seealso update_beta_joint_ard
+beta_joint_kl <- function(m, Sigma, sigma2) {
+  S <- which(sigma2 > 0)
+  if (!length(S)) return(0)
+  Sg <- Sigma[S, S, drop = FALSE]; d <- sigma2[S]
+  0.5 * (sum(diag(Sg) / d) + sum(m[S]^2 / d) - length(S) + sum(log(d)) -
+         as.numeric(determinant(Sg, logarithm = TRUE)$modulus))
+}
+
+#' Joint Gaussian update of q(beta) with per-program prior variances by type-II ML
+#'
+#' Under the Cox working likelihood -1/2 sum_i w_i (z_i - Z_i' beta)^2 at weight omega and
+#' mean-field q(F) (independent program scores), the expected log-likelihood is
+#' b'm - 1/2 tr(G (mm' + Sigma)) with
+#'   G = omega [Zbar' W Zbar + diag(sum_i w_i VZ_ik)],  b = omega Zbar' W z.
+#' Given prior variances sigma2, q(beta) = N(m, Sigma), Sigma = (G + diag(1/sigma2))^-1,
+#' m = Sigma b. Each sigma2_k is then set to its conditional type-II ML value
+#' (Tipping and Faul 2003): with s_k = G_kk - G_k,-k Sigma_-k G_-k,k and
+#' q_k = b_k - G_k,-k Sigma_-k b_-k, sigma2_k = max(0, (q_k^2 - s_k) / s_k^2). Cycling until
+#' no sigma2_k changes maximizes the block objective jointly over (q, g). For K = 1 this is
+#' the Normal-family ebnm posterior with x = b/G, s^2 = 1/G.
+#'
+#' @param Zbar n x K posterior-mean program scores. @param VZ n x K score variances.
+#' @param w n-vector of Cox working weights. @param z n-vector working response.
+#' @param weight Likelihood weight omega (1 = untempered).
+#' @param sigma2_init NULL or K-vector warm start (0 = excluded).
+#' @param max_cycles Maximum coordinate cycles. @param tol Relative change tolerance.
+#' @return list(mean, Sigma, M = mm' + Sigma, sigma2, neg_kl = -KL, cycles, converged).
+#' @examples
+#' set.seed(1); Z <- matrix(rnorm(100), 50); update_beta_joint_ard(Z, Z * 0, rep(1, 50),
+#'   Z[, 1] + rnorm(50))$mean
+#' @family beta_update
+#' @seealso update_beta_k, beta_joint_kl
+update_beta_joint_ard <- function(Zbar, VZ, w, z, weight = 1, sigma2_init = NULL,
+                                  max_cycles = 200L, tol = 1e-10) {
+  K <- ncol(Zbar)
+  G <- weight * (crossprod(Zbar * w, Zbar) + diag(colSums(w * VZ), K))
+  b <- weight * as.vector(crossprod(Zbar, w * z))
+  # Start: mean-field (diagonal) type-II ML values unless warm-started
+  s2 <- if (is.null(sigma2_init)) pmax(0, (b^2 - diag(G)) / diag(G)^2) else sigma2_init
+  s2[!is.finite(s2) | s2 < 0] <- 0
+  converged <- FALSE
+  for (cyc in seq_len(max_cycles)) {
+    old <- s2
+    for (k in seq_len(K)) {
+      if (G[k, k] <= 0) { s2[k] <- 0; next }
+      S <- setdiff(which(s2 > 0), k)
+      if (length(S)) {
+        Ci <- solve(G[S, S, drop = FALSE] + diag(1 / s2[S], length(S)))
+        gk <- G[S, k]
+        sk <- G[k, k] - sum(gk * (Ci %*% gk)); qk <- b[k] - sum(gk * (Ci %*% b[S]))
+      } else { sk <- G[k, k]; qk <- b[k] }
+      s2[k] <- if (sk > 0 && qk^2 > sk) (qk^2 - sk) / sk^2 else 0
+    }
+    if (max(abs(s2 - old) / pmax(abs(old), 1e-12)) < tol || identical(s2, old)) {
+      converged <- TRUE; break
+    }
+  }
+  m <- numeric(K); Sigma <- matrix(0, K, K)
+  S <- which(s2 > 0)
+  if (length(S)) {
+    Sigma[S, S] <- solve(G[S, S, drop = FALSE] + diag(1 / s2[S], length(S)))
+    Sigma[S, S] <- (Sigma[S, S] + t(Sigma[S, S])) / 2
+    m[S] <- as.vector(Sigma[S, S, drop = FALSE] %*% b[S])
+  }
+  list(mean = m, Sigma = Sigma, M = tcrossprod(m) + Sigma, sigma2 = s2,
+       neg_kl = -beta_joint_kl(m, Sigma, s2), cycles = cyc, converged = converged)
+}

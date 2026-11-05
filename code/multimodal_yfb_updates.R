@@ -432,7 +432,11 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
                                         h_minus_k, EZ_k, VZ_k, EF_k, EF2_k,
                                         EBeta_k, EBeta2_k, prior,
                                         prior_update = "em",
-                                        loading_prior_update = "historical") {
+                                        loading_prior_update = "historical",
+                                        h_beta_weighted = FALSE) {
+  # h_beta_weighted = TRUE: h_minus_k already carries the beta moments, h = w (E[beta_k] z -
+  # sum_{l != k} E[beta_k beta_l] Z_l) (joint q(beta), S-13), so the linear survival signal is
+  # sum_yh itself rather than E[beta_k] * sum_yh. EBeta2_k must then be E[beta_k^2] = M_kk.
   if (!is.matrix(Y_m) || !is.matrix(R_mk) || !identical(dim(Y_m), dim(R_mk)) ||
       !is.numeric(Tau_m) || length(Tau_m) != ncol(Y_m) || length(EL_k) != nrow(Y_m) ||
       length(w) != nrow(Y_m) || length(h_minus_k) != nrow(Y_m) ||
@@ -473,11 +477,12 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
   sum_yh <- as.vector(crossprod(Y_m, h_minus_k))
   family_code <- match(if (is.null(prior$family)) "point_exponential" else prior$family,
                        c("point_exponential", "point_laplace", "normal")) - 1L
+  eb_lin <- if (isTRUE(h_beta_weighted)) 1 else EBeta_k   # coefficient of sum_yh in B
   if (multimodal_yfb_use_cpp()) {
     # Same loop in C++ (code/multimodal_yfb_sweep.cpp); see the R branch for the math
     res <- mmyfb_F_sweep_cpp(
       Y_m, Tau_m, sum_EL2, sum_wy2, sum_LR, sum_yh, w, EZ_new, VZ_new, EF_new, EF2_new,
-      EBeta_k, EBeta2_k, family_code, isTRUE(prior$point_mass),
+      eb_lin, EBeta2_k, family_code, isTRUE(prior$point_mass),
       prior$pi %||% NA_real_, prior$rate %||% NA_real_, prior$variance %||% NA_real_)
     EF_new <- res$EF; EF2_new <- res$EF2; EZ_new <- res$EZ; VZ_new <- res$VZ
     details <- res[c("mean", "second", "slab_prob", "x", "s2", "log_ml", "A", "B")]
@@ -490,7 +495,7 @@ multimodal_yfb_update_F_mk <- function(Y_m, Tau_m, EL_k, EL2_k, R_mk, w,
       # sum_i w_i y_ij EZ_without_j,i = sum_i w_i y_ij EZ_i - old_mean * sum_wy2[j]
       sum_wyEZ_without_j <- sum(wY[, j] * EZ_new) - old_mean * sum_wy2[j]
       A <- Tau_m[j] * sum_EL2 + EBeta2_k * sum_wy2[j]
-      B <- Tau_m[j] * sum_LR[j] + EBeta_k * sum_yh[j] - EBeta2_k * sum_wyEZ_without_j
+      B <- Tau_m[j] * sum_LR[j] + eb_lin * sum_yh[j] - EBeta2_k * sum_wyEZ_without_j
       posterior <- if (signed) {
         multimodal_yfb_signed_posterior(A, B, prior)
       } else {
