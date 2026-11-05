@@ -3,14 +3,19 @@
 Registration: [`docs/plans/2026-11-05-near-threshold-plan.md`](../plans/2026-11-05-near-threshold-plan.md).
 Runner: `results/benchmark_sim/run_yfb_near_threshold.R`, commit `bbafa4c`. Output:
 `results/benchmark_sim/outputs/yfb_near_threshold_2026-11-05/metrics.csv` (240 fits, no errors,
-all converged). Synthetic data only.
+all converged). Synthetic data only. The two-step arm was rerun with exact training times
+(`coxph(..., timefix = FALSE)`), commit noted in the attempts log; the default `timefix = TRUE`
+merges near-equal extreme times and attenuates the two-step Cox coefficients. The rerun changed
+only the strong-survival two-step slopes and false-active counts (0.1%: slope 1.25 → 1.22;
+0.2%: slope 1.53 → 1.14, false-active 1.5 → 1.8). The default-timefix checkpoints are kept in
+`fits_twostep_timefix_default/` (not in Git).
 
 ## Verdict against the registered criteria
 
 | Criterion | Result |
 |---|---|
 | Primary: A1 at w_S = 1 recovers ≥ 3 more datasets than the two-step fit in ≥ 2 of 3 strong cells, with mean false-active ≤ 1 and ≥ 9/10 converged | **Fails** (0 of 3 cells qualify) |
-| Secondary: mean paired validation C difference (A1 w_S = 1 minus two-step) positive in ≥ 2 of 3 strong cells | **Passes** (3 of 3) |
+| Secondary: mean paired validation C difference (A1 w_S = 1 minus two-step) positive in ≥ 2 of 3 strong cells | **Passes** (3 of 3; A1 has the higher C in 29 of 30 strong datasets) |
 
 The 0.05% cell has the recovery gain (5 vs 0) but a mean false-active count of 2.5. The 0.1% cell
 gains 2 (10 vs 8). The 0.2% cell gains 0 (10 vs 10).
@@ -26,11 +31,11 @@ validation C, and the slope is the median exact-times calibration slope. All 240
 | strong | 0.05% | A1 w_S = 1 | 5 | 0.62 | 2.5 | 0.800 | 0.936 | 1.58 |
 | strong | 0.05% | A1 w_S = 5 | 9 | 0.76 | 1.0 | 0.844 | 0.936 | 0.65 |
 | strong | 0.05% | A2 w_S = 1 | 5 | 0.63 | 2.4 | 0.801 | 0.936 | 1.58 |
-| strong | 0.1% | two-step | 8 | 0.73 | 2.4 | 0.861 | 0.948 | 1.25 |
+| strong | 0.1% | two-step | 8 | 0.73 | 2.4 | 0.861 | 0.948 | 1.22 |
 | strong | 0.1% | A1 w_S = 1 | 10 | 0.87 | 1.6 | 0.901 | 0.948 | 1.08 |
 | strong | 0.1% | A1 w_S = 5 | 10 | 0.77 | 1.1 | 0.873 | 0.948 | 0.27 |
 | strong | 0.1% | A2 w_S = 1 | 10 | 0.86 | 1.6 | 0.897 | 0.948 | 1.12 |
-| strong | 0.2% | two-step | 10 | 0.89 | 1.5 | 0.928 | 0.958 | 1.53 |
+| strong | 0.2% | two-step | 10 | 0.89 | 1.8 | 0.928 | 0.958 | 1.14 |
 | strong | 0.2% | A1 w_S = 1 | 10 | 0.92 | 1.0 | 0.936 | 0.958 | 1.34 |
 | strong | 0.2% | A1 w_S = 5 | 10 | 0.85 | 0.9 | 0.920 | 0.958 | 0.43 |
 | strong | 0.2% | A2 w_S = 1 | 10 | 0.92 | 1.0 | 0.936 | 0.958 | 1.31 |
@@ -54,7 +59,7 @@ which A1 at w_S = 1 has the higher C:
 |---|---|---|---|---|---|
 | strong | 0.05% | +0.156 | +0.200 | +0.157 | 10 |
 | strong | 0.1% | +0.041 | +0.013 | +0.036 | 10 |
-| strong | 0.2% | +0.008 | −0.008 | +0.008 | 10 |
+| strong | 0.2% | +0.008 | −0.008 | +0.008 | 9 |
 | realistic | 0.05% | +0.038 | +0.058 | +0.038 | 9 |
 | realistic | 0.1% | +0.008 | −0.070 | +0.008 | 8 |
 | realistic | 0.2% | +0.002 | −0.055 | +0.002 | 8 |
@@ -62,13 +67,13 @@ which A1 at w_S = 1 has the higher C:
 ## What this shows
 
 1. **Supervision helps prediction near the threshold, and the gain grows as the program weakens.**
-   With strong survival, A1 at w_S = 1 has the higher validation C in all 30 paired strong
+   With strong survival, A1 at w_S = 1 has the higher validation C in 29 of the 30 paired strong
    datasets. The gain is +0.156 at a share of 0.05%, where the two-step fit does not find the
    program at all (mean |r| 0.20), and +0.008 at 0.2%, where both fits find it.
 2. **The registered recovery criterion fails on false activity, not recovery.** In the 0.05%
    strong cell the supervised fit recovers 5 programs to the two-step fit's 0, but averages 2.5
    false-active programs. Every arm has this problem in the near-threshold cells. The two-step fit
-   averages 2.8 false actives in the same cell and 2.2 across the strong cells. When the planted
+   averages 2.8 false actives in the same cell and 2.3 across the strong cells. When the planted
    direction is only partly resolved, other programs carry part of it and become significant. The
    false-active count then measures how the direction is split across programs rather than
    spurious survival signal. The criterion was registered as written and is reported as failed.

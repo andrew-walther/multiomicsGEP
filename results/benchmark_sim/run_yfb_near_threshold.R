@@ -56,7 +56,7 @@ s14_task <- function(task, cfg) {
   r <- suppressWarnings(cor(d$truth, f$EF)); r[!is.finite(r)] <- 0; k <- which.max(abs(r))
   if (task$arm == "twostep") {
     live <- which(colSums(f$EF^2) > 1e-8); Z <- d$Ytr %*% f$EF[, live, drop = FALSE]
-    cf <- survival::coxph(survival::Surv(d$time, d$event) ~ Z)
+    cf <- survival::coxph(survival::Surv(d$time, d$event) ~ Z, control = survival::coxph.control(timefix = FALSE))
     b <- zs <- rep(0, ncol(f$EF)); b[live] <- ifelse(is.finite(coef(cf)), coef(cf), 0)
     zs[live] <- coef(cf) / sqrt(diag(as.matrix(vcov(cf))))
   } else {

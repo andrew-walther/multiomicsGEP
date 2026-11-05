@@ -1,0 +1,3 @@
+"arm","modal_weight","gate_cells","gate_pass","slope_cells","slope_pass","convergence_pass","null_max_false_active","null_pass"
+"A1",5,3,TRUE,1,FALSE,TRUE,1.1,FALSE
+"A2",2,3,TRUE,1,FALSE,TRUE,0.9,TRUE

@@ -2763,7 +2763,19 @@ false-active ≤ 1 and ≥ 9/10 converged.
 
 **Primary criterion fails** (0 of 3 strong cells). At 0.05% A1 w_S = 1 recovers 5/10 against the
 two-step fit's 0/10 but averages 2.5 false-active programs (two-step 2.8). At 0.1% the gain is 2
-(10 vs 8), and at 0.2% it is 0. **Secondary passes:** paired validation C is higher in all 30
-strong datasets (+0.156, +0.041, +0.008). A1 w_S = 5 recovers more in strong cells, but its
+(10 vs 8), and at 0.2% it is 0. **Secondary passes:** paired validation C is higher in
+strong datasets (+0.156, +0.041, +0.008; 29 of 30 after the two-step rerun with exact times). A1 w_S = 5 recovers more in strong cells, but its
 slopes are 0.04–0.65 and it loses recovery under realistic survival. A2 matches A1. Findings:
 `docs/findings/2026-11-05-near-threshold-findings.md`.
+
+## 2026-11-05 — S-13 result
+
+Neither arm passes every criterion. Gate S passes for A1 and A2 in 3 of 3 cells, but only against
+the uncentered S-7 reference: the matched two-step fit also recovers 10/10 everywhere. The median
+calibration slope at the CV-selected weight is 1.24, 1.27 and 1.45 (in band for 1 of 3 cells),
+and A1's null mean false-active is 1.1 at its modal weight of 5 (A2: 0.9 at 2). CV partial
+log-likelihood chooses w_S = 1–2 in the weak and 0.0025 cells, 5 at 0.01 and 10 at 0.05, never 20
+or 50, where full fits stop converging. The paired C difference from the two-step fit is +0.007 or
+less. A2 matches A1. **Correction:** the two-step arms of S-13 and S-14 were rerun with
+`coxph(timefix = FALSE)` on the training times. The default attenuated them (S-13 slopes 1.80,
+6.70, 12.74 → 1.16, 1.10, 0.96). Findings: `docs/findings/2026-11-05-supervision-strength-findings.md`.

@@ -3,6 +3,30 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-05 — No S-13 or S-14 configuration is adopted; CV-chosen weight is the candidate
+
+**Decided (pending Andrew's review).** Neither the survival-block weight (A1) nor the joint q(β)
+(A2) passes every S-13 criterion: calibration slopes at the CV-selected weight are 1.24 to 1.45
+in the S-9 cells (registered band 0.8 to 1.25), and A1's null false-active is 1.1 at its modal
+weight. S-14's primary recovery criterion fails in all three strong near-threshold cells, on false
+activity that the two-step fit shares. Default fitter settings are unchanged.
+
+**What the evidence supports.** Choosing w_S per dataset by five-fold CV partial log-likelihood
+under A1 is stable. It picks 1 to 10, rising with signal strength, and never a weight at which
+fits stop converging. Against the matched two-step fit, supervision gives the same recovery on
+the S-9 cells. Near the detection threshold (S-14, planted share 0.05%) it gives higher validation
+C (+0.156) and recovers the program in 5 of 10 datasets where the two-step fit finds none. The
+joint q(β) adds nothing measurable over mean-field. If Andrew agrees, the next real-data refit uses
+A1 with the CV-chosen weight, registered before it runs.
+
+**Correction.** The two-step reference's training Cox fit used `coxph`'s default tie correction,
+which attenuates it on the extreme simulated times. It was rerun with exact times in S-13 and
+S-14 (two-step slopes 0.96 to 1.16 in the S-9 cells). Earlier two-step numbers in the S-13 smoke
+notes and the S-14 plan's pilot are from the default.
+
+Findings: `docs/findings/2026-11-05-supervision-strength-findings.md`,
+`docs/findings/2026-11-05-near-threshold-findings.md`.
+
 ## 2026-11-04 — Fixed single-modality configuration from training CV (S-11)
 
 **Decided (from registered training CV; pending Andrew's review).** `fit_ssbmf_yfb(canonicalize =
