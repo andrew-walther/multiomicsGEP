@@ -78,6 +78,13 @@ s9_gate_cells <- function(m, ref) {
 
 # Main ----
 m <- s9_read(dir)
+# Calibration slopes recomputed with exact event times (recompute_s9_cal_slope.R, 2026-11-05);
+# the slopes saved by the original grid used coxph's default tie correction and are invalid.
+ex <- file.path(dir, "cal_slope_exact.csv")
+if (!file.exists(ex)) stop("Run results/benchmark_sim/recompute_s9_cal_slope.R first.")
+ex <- read.csv(ex); ex <- ex[ex$arm != "oracle", c("seed", "p", "variance", "arm", "cal_slope_exact")]
+m <- merge(m, ex, by = c("seed", "p", "variance", "arm"), all.x = TRUE, sort = FALSE)
+m$cal_slope <- m$cal_slope_exact; m$cal_slope_exact <- NULL
 design <- read.csv(file.path(dir, "design.csv"))
 ref7 <- s9_reference(design)
 ref0 <- subset(m, arm == "w0")[, c("seed", "p", "variance", "recovered")]

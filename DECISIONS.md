@@ -12,8 +12,9 @@ gene sets do no better (0.643 to 0.657), and survival-screened sets add at most 
 
 **What this does not show.** On the real data survival supplies only 10⁻⁸ to 10⁻⁶ of the loading
 precision at w_S = 1, so the loadings match the unsupervised ones. The CV gain comes from the
-joint β update. Making survival move the real-data loadings needs a calibrated likelihood power
-(SafeBayes or Holmes–Walker), not a larger fixed weight, which broke convergence in S-9.
+joint β update. Making survival move the real-data loadings needs a data-driven supervision
+strength (a calibrated likelihood power, a downweighted genomics term, or normalized loss terms as
+in DeSurv), since fixed weights of 40 or more broke convergence in S-9.
 
 **Correction.** Under `canonicalize = TRUE`, w_S = 0 also removes survival from the β update
 (β = 0). The S-9 and S-11 registrations described it as "β still fitted". The unsupervised
@@ -32,11 +33,14 @@ with mean false-active at most 0.9 and every fit converged. Training CV picks th
 and loses the program; survival's share of the loading precision falls with p at w_S = 1, but
 recovery does not.
 
-**Traded away.** Coefficient calibration. At 2,000 genes the validation calibration slope is
-0.18 to 1.20 and no interval covers the true projected coefficient. Discrimination is unaffected.
-Coefficients and hazard ratios from these fits are not to be read as calibrated until a tempering
-calibration (SafeBayes or Holmes–Walker) is tested. S-10 (downweighted genomics) is not run,
-since raising survival's share worsened calibration in this grid.
+**Traded away.** Supervision strength. *Corrected 2026-11-05 after the independent review:* with
+exact event times the validation calibration slope at w_S = 1 and 2,000 genes is 1.45 to 3.23
+(the true predictor gives about 1), so the coefficients are attenuated, not overconfident, and no
+interval covers the true projected coefficient. The first version reported 0.18 to 1.20, an
+artifact of `coxph`'s default tie correction on the extreme simulated times. w_S = 10 is closer
+to calibrated at the larger variances, and w_S ≥ 100 overfits. Discrimination is unaffected. The
+reason given for not running S-10 (a larger survival share worsened calibration) no longer holds.
+How to set the supervision strength from the data is open.
 
 Findings: `docs/findings/2026-11-04-survival-weight-p2000-findings.md`.
 

@@ -255,6 +255,7 @@ window.Quarto = {
   </ul></li>
   <li><a href="#survival-weight-at-2000-genes-simulation" id="toc-survival-weight-at-2000-genes-simulation" class="nav-link" data-scroll-target="#survival-weight-at-2000-genes-simulation"><span class="header-section-number">14.4</span> Survival weight at 2,000 genes (simulation)</a></li>
   <li><a href="#survival-weighted-fit-on-the-training-patients" id="toc-survival-weighted-fit-on-the-training-patients" class="nav-link" data-scroll-target="#survival-weighted-fit-on-the-training-patients"><span class="header-section-number">14.5</span> Survival-weighted fit on the training patients</a></li>
+  <li><a href="#external-scoring-of-the-fixed-fit" id="toc-external-scoring-of-the-fixed-fit" class="nav-link" data-scroll-target="#external-scoring-of-the-fixed-fit"><span class="header-section-number">14.6</span> External scoring of the fixed fit</a></li>
   </ul>
 </nav>
     </div>
@@ -653,21 +654,22 @@ window.Quarto = {
 </table>
 </div>
 </div>
-<p>Larger weights hurt. At 2,000 genes no fit with <code>w_S</code> of 40 or more converges within 300 sweeps, and recovery collapses. Reconstruction stays bounded while the coefficients grow to about 25, so the failure is overconfident coefficients rather than runaway noise precision. At 50 genes every weight recovers the program, but false activity rises with the weight. Survival’s share of the loading precision at <code>w_S = 1</code> drops from about 0.8 to 1.0 at 50 genes to between 0.01 and 0.2 at 2,000 genes. Recovery does not drop with it, so the weight does not need to scale with the number of genes.</p>
+<p>Larger weights hurt. At 2,000 genes no fit with <code>w_S</code> of 40 or more converges within 300 sweeps, and recovery collapses. Reconstruction stays bounded and the noise precision does not fall, so this is not the earlier reconstruction failure. Its cause is not yet identified. At 50 genes every weight recovers the program, but false activity rises with the weight. Survival’s share of the loading precision at <code>w_S = 1</code> drops from about 0.8 to 1.0 at 50 genes to between 0.01 and 0.2 at 2,000 genes. Recovery does not drop with it, so the weight does not need to scale with the number of genes.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../figures/2026-11-06/survival-weight-curves.png" class="img-fluid figure-img"></p>
 <figcaption>Recovery, false activity, survival share, calibration, convergence and concordance against the survival weight. Solid lines are 2,000 genes and dashed lines are 50 genes.</figcaption>
 </figure>
 </div>
-<p>One problem remains. At 2,000 genes the coefficients at <code>w_S = 1</code> are too large for out-of-sample risk. The median validation calibration slopes are 1.20, 0.42, 0.18 across the three cells, and no 95% interval covers the true projected coefficient. Patient ranking is unaffected, with validation C of 0.94 to 0.99. Downweighting the genomics term would raise survival’s share, and in this grid a higher share made calibration worse. The next step on calibration is to choose the power on the Cox likelihood from the data, using SafeBayes or the Holmes–Walker calibration.</p>
+<p>One problem remains, and it is the opposite of what an earlier draft of this section said. At 2,000 genes the supervision at <code>w_S = 1</code> is too weak for out-of-sample risk. The median validation calibration slopes are 1.45, 2.16, 3.23 across the three cells, against about 1 for the true predictor. A slope above 1 means the fitted risk differences are too small. The fitted risk score has a third to a half of the true predictor’s spread, and no 95% interval covers the true projected coefficient. Patient ranking is unaffected, with validation C of 0.94 to 0.99. A weight of 10 is closer to calibrated at the two larger planted variances, and weights of 100 or more overfit, with slopes near 0.1. The earlier draft computed the slope with the default tie correction of the Cox fit, which merges the extreme simulated survival times and flattened every slope, including the true predictor’s. The slopes here use exact times.</p>
+<p>The next question is therefore how to set the supervision strength from the data while keeping the fit stable. A calibrated power on the Cox likelihood (SafeBayes or the Holmes–Walker calibration), downweighting the genomics term, and normalizing the two likelihood terms as DeSurv does are the candidates.</p>
 <p>A rerun of the October 15 test bed at <code>w_S = 1</code> recovered the program in 18 of 20 datasets at low noise and 19 of 20 at high noise. The recovered datasets match the October 30 run. Sweep counts differ because of the later log-normalizer correction to the objective, which changes when the stopping rule fires.</p>
 <p>The real-data training CV at <code>w_S = 1</code> is registered and running. It covers the programs, cross-validated C, a feature-set-size curve from the D4 genes to all 17,900 shared genes, and a comparison with survival screening. No external cohort is scored until those choices are fixed.</p>
 </section>
 <section id="survival-weighted-fit-on-the-training-patients" class="level2" data-number="14.5">
 <h2 data-number="14.5" class="anchored" data-anchor-id="survival-weighted-fit-on-the-training-patients"><span class="header-section-number">14.5</span> Survival-weighted fit on the training patients</h2>
 <p>We fit the <code>w_S = 1</code> model on the 273 TCGA and CPTAC training patients with five-fold cross-validation, using the single-log data and no external cohort. On the 2,218 D4 genes the mean held-out C is 0.663 (SE 0.024). The two-step fit, which takes the unsupervised loadings and then fits Cox on the program scores, gives 0.652. The paired fold difference is 0.011 (SE 0.005).</p>
-<p>The loadings of the two fits are the same. On these data survival supplies about 10⁻⁸ to 10⁻⁶ of the loading precision, because the real coefficients are small and that share scales with E[β²]. The small gain comes from estimating β jointly with a shrinkage prior. In the simulation a larger fixed weight broke convergence. Getting survival to move the real-data loadings therefore needs a calibrated power on the Cox likelihood.</p>
+<p>The loadings of the two fits are the same. On these data survival supplies about 10⁻⁸ to 10⁻⁶ of the loading precision. The real coefficients are small, and that share scales with E[β²]. The real programs also explain much more expression variance than the simulated one, so their genomics precision is large. The small gain comes from estimating β jointly with a shrinkage prior. In the simulation, fixed weights of 40 or more broke convergence. Getting survival to move the real-data loadings therefore needs a supervision strength set from the data.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -826,6 +828,105 @@ window.Quarto = {
 </div>
 </div>
 <p>No screened set beats the <code>w_S = 1</code> fit on all D4 genes. With survival permuted in the simulated data, the <code>w_S = 1</code> fit has 0.1 to 0.5 false-active programs per dataset on average, below the limit of one. The fixed model for the single external scoring is therefore <code>w_S = 1</code> on the D4 genes with no survival screen.</p>
+</section>
+<section id="external-scoring-of-the-fixed-fit" class="level2" data-number="14.6">
+<h2 data-number="14.6" class="anchored" data-anchor-id="external-scoring-of-the-fixed-fit"><span class="header-section-number">14.6</span> External scoring of the fixed fit</h2>
+<p>The fixed <code>w_S = 1</code> fit on the D4 genes was scored once on the five external cohorts, after per-cohort z-scoring. The two-step fit was scored alongside it. Nothing was chosen from these results.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 3%">
+<col style="width: 6%">
+<col style="width: 10%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 11%">
+<col style="width: 10%">
+<col style="width: 14%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Cohort</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">Events</th>
+<th style="text-align: right;">C, w_S = 1</th>
+<th style="text-align: right;">Lower</th>
+<th style="text-align: right;">Upper</th>
+<th style="text-align: right;">C, two-step</th>
+<th style="text-align: right;">Difference</th>
+<th style="text-align: right;">Slope, w_S = 1</th>
+<th style="text-align: right;">Slope, two-step</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Dijk</td>
+<td style="text-align: right;">90</td>
+<td style="text-align: right;">81</td>
+<td style="text-align: right;">0.584</td>
+<td style="text-align: right;">0.513</td>
+<td style="text-align: right;">0.658</td>
+<td style="text-align: right;">0.567</td>
+<td style="text-align: right;">0.018</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">0.353</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Moffitt_GEO_array</td>
+<td style="text-align: right;">123</td>
+<td style="text-align: right;">83</td>
+<td style="text-align: right;">0.537</td>
+<td style="text-align: right;">0.459</td>
+<td style="text-align: right;">0.611</td>
+<td style="text-align: right;">0.531</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: right;">0.356</td>
+<td style="text-align: right;">0.276</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PACA_AU_array</td>
+<td style="text-align: right;">63</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">0.562</td>
+<td style="text-align: right;">0.751</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.782</td>
+<td style="text-align: right;">0.728</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PACA_AU_seq</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">0.681</td>
+<td style="text-align: right;">0.579</td>
+<td style="text-align: right;">0.780</td>
+<td style="text-align: right;">0.671</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: right;">1.569</td>
+<td style="text-align: right;">1.263</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Puleo_array</td>
+<td style="text-align: right;">288</td>
+<td style="text-align: right;">181</td>
+<td style="text-align: right;">0.644</td>
+<td style="text-align: right;">0.599</td>
+<td style="text-align: right;">0.686</td>
+<td style="text-align: right;">0.643</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.988</td>
+<td style="text-align: right;">0.799</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Mean external C is 0.620 for the survival-weighted fit and 0.613 for the two-step fit. The supervised fit is equal or higher in every cohort. The cohort-stratified paired difference is +0.007 (95% interval -0.002 to 0.017), about the size of the training CV difference. The earlier frozen benchmark averaged 0.627 under the older preprocessing, so performance is about the same. Calibration slopes on the external cohorts range from 0.36 to 1.57, with 0.99 in Puleo, the largest cohort, and they are closer to 1 for the supervised fit than for the two-step fit in every cohort.</p>
 
 
 </section>

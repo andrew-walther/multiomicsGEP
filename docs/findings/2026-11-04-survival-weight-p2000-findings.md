@@ -20,11 +20,17 @@ fits ran without error. No real or external cohort was used.
 - **Larger weights are worse.** At p = 2,000 every arm with w_S ≥ 40 stops at 300 sweeps without
   converging and loses the program. At p = 50 every weight recovers it, but false activity rises
   steadily with w_S.
-- **Remaining problem: coefficient calibration at p = 2,000.** At w_S = 1 the validation
-  calibration slope is 1.20, 0.42 and 0.18 (median, by planted variance), and no 95% interval
-  for the matched coefficient contains β* in any p = 2,000 fit. The ranking of patients is good
-  (validation C 0.94 to 0.99), but the size of the predicted risk differences is too large.
-  This is a tempering question, not one that downweighting genomics addresses (see below).
+- **Remaining problem: supervision too weak at p = 2,000 (corrected 2026-11-05).** With exact
+  event times, the w_S = 1 validation calibration slope is 1.45, 2.16 and 3.23 (median, by
+  planted variance), against about 1.0 for the true predictor. Slopes above 1 mean the fitted risk
+  differences are too small: the coefficients are attenuated, not overconfident. No 95% interval
+  for the matched coefficient contains β* in any p = 2,000 fit. Ranking is good (validation C 0.94
+  to 0.99). The first version of this document reported slopes of 1.20, 0.42 and 0.18 and called
+  the coefficients overconfident. That was an artifact of `coxph`'s default tie handling, which
+  merged the extreme simulated times (see the calibration section).
+- **Strength of the test bed.** The planted survival effect is far stronger than on the real data
+  (validation C 0.94 to 0.99, SD of the true predictor 9 to 26). Gate S was passed under strong
+  survival signal.
 - **Replication passes.** The October 15 bed gives 18 of 20 recovered at noise 0.25 and 19 of 20
   at noise 1, with the same recovered seeds as the October 30 run. Per-seed differences in
   sweeps and correlations are explained by an ELBO fix committed after that run.
@@ -108,37 +114,62 @@ A share-targeted weight would need to be calibrated at a supervised state.
 At p = 2,000, arms with w_S ≥ 40 reach the 300-sweep cap with max |E β| between 17 and 26
 (against 5 to 8 at w_S = 1). Reconstruction stays bounded: relative loss is at most 0.985
 against 0.979 for w_S = 0. The minimum noise precision τ_j is at least 0.92. No lost-variance
-records occurred. This is the β mechanism found in the earlier attempts (overconfident
-coefficients with bounded reconstruction), not the τ mechanism (falling τ_j with
-reconstruction loss above 1). At p = 50 the same weights converge but carry more false-active
-programs, which is the same mechanism in a milder form.
+records occurred, so the τ mechanism (falling τ_j with reconstruction loss above 1) does not
+apply. *Corrected 2026-11-05:* the first version called this the β mechanism (overconfident
+coefficients). The max |E β| of 17 to 26 is close to the true β* of 9 to 26, so the coefficients
+are not inflated relative to the truth. Two features are mechanical: under `canonicalize = TRUE`,
+w_S multiplies the Cox precision in the β update, so the posterior SD of β shrinks by 1/√w_S,
+and false-active counts at the 1.96 SD threshold rise with w_S for that reason alone. With exact
+event times the validation calibration slope at w_S ≥ 100 is 0.07 to 0.17, so these fits do
+overfit the training outcome, but the cause of non-convergence is not yet identified.
 
-## Coefficient calibration at w_S = 1
+## Coefficient calibration (corrected 2026-11-05)
 
-| p | Variance | Calibration slope (median) | β* covered | Max \|E β\| | Validation C |
-|---|---|---|---|---|---|
-| 50 | 0.25% | 1.04 | 1/10 | 3.8 | 0.902 |
-| 50 | 1% | 1.07 | 2/10 | 4.1 | 0.908 |
-| 50 | 5% | 1.07 | 3/10 | 5.5 | 0.920 |
-| 2,000 | 0.25% | 1.20 | 0/10 | 5.4 | 0.944 |
-| 2,000 | 1% | 0.42 | 0/10 | 7.3 | 0.972 |
-| 2,000 | 5% | 0.18 | 0/10 | 8.3 | 0.986 |
+The registered calibration slope is the coefficient of a Cox regression of validation survival on
+the fitted risk score. The first version computed it with `coxph`'s default `timefix = TRUE`. At
+p = 2,000 the simulated times span about 10⁻³⁸ to 10¹⁰, and the default tie correction merges the
+smallest ones (94 distinct times out of 120 in one checked dataset). That flattens every slope:
+the true predictor itself gets a slope of 0.04 to 0.27 instead of about 1. The slopes below are
+recomputed from the saved fits with `timefix = FALSE` (`grid/cal_slope_exact.csv`). C is
+unaffected. The real-data runs are unaffected, because their times are on an ordinary scale.
 
-A calibration slope below 1 means the validation risk differences are smaller than the fitted
-coefficients predict. At p = 2,000 and the two larger variances the fitted coefficient is about
-2 to 5 times too large for out-of-sample risk. The intervals are also too narrow, since none
-covers β*, and coverage is low even at p = 50. Discrimination is not affected.
+Median validation calibration slope (1 = calibrated, above 1 = risk differences too small, below
+1 = too large):
 
-**Why S-10 is not run.** The work order runs S-10 if S-9 fails Gate S, or if it passes but leaves
-a problem S-10 is derived to fix. S-10 downweights the genomics term, which raises survival's
-share of the F precision. In this grid, raising that share (by raising w_S) made calibration and
-false activity worse, not better. The remaining problem is the scale of the Cox likelihood
-relative to the posterior for β, which is what a tempering calibration addresses.
+| p | Variance | True predictor | w_S = 1 | w_S = 10 | w_S = 100 | w_S = 10,000 | Risk SD, w_S = 1 / truth |
+|---|---|---|---|---|---|---|---|
+| 50 | 0.25% | 1.05 | 1.04 | 0.88 | 0.85 | 0.85 | 3.4 / 3.6 |
+| 50 | 1% | 1.01 | 1.07 | 0.87 | 0.85 | 0.85 | 3.9 / 4.1 |
+| 50 | 5% | 0.98 | 1.07 | 0.87 | 0.85 | 0.85 | 4.9 / 5.1 |
+| 2,000 | 0.25% | 1.04 | 1.45 | 0.26 | 0.12 | 0.07 | 4.4 / 9.5 |
+| 2,000 | 1% | 0.99 | 2.16 | 0.71 | 0.17 | 0.08 | 6.3 / 15.5 |
+| 2,000 | 5% | 0.99 | 3.23 | 1.74 | 0.16 | 0.10 | 7.5 / 25.6 |
 
-**Follow-up, not implemented here.** Calibrate the Cox-likelihood weight by SafeBayes
-(Grünwald) or by the Holmes–Walker power-likelihood calibration (2017), both of which choose the
-power on the likelihood from the data. A prior on w_S does not
-substitute for this: it averages over weights, it does not calibrate the likelihood's scale.
+At p = 50, w_S = 1 is calibrated and larger weights are mildly overconfident. At p = 2,000,
+w_S = 1 is attenuated by a factor of about 1.5 to 3: its risk score has a third to a half of the
+true predictor's spread. w_S = 10 is closer to calibrated at the two larger variances, and
+w_S ≥ 100 overfits. A weight between 1 and 10, or one chosen by a calibration criterion, is
+where the supervision strength is right in this test bed.
+
+| p | Variance | β* covered (w_S = 1) | Max \|E β\| | Validation C |
+|---|---|---|---|---|
+| 50 | 0.25% | 1/10 | 3.8 | 0.902 |
+| 50 | 1% | 2/10 | 4.1 | 0.908 |
+| 50 | 5% | 3/10 | 5.5 | 0.920 |
+| 2,000 | 0.25% | 0/10 | 5.4 | 0.944 |
+| 2,000 | 1% | 0/10 | 7.3 | 0.972 |
+| 2,000 | 5% | 0/10 | 8.3 | 0.986 |
+
+The β* coverage failure is real. At p = 2,000 the median matched E β is 6.9 and 7.7 at 1% and
+5% variance, against a median β* of 16.2 and 26.0: the intervals miss because the coefficients
+are shrunk toward zero.
+
+**S-10 (corrected 2026-11-05).** The first version skipped S-10 on the grounds that raising
+survival's share made calibration worse. With the corrected slopes that reasoning does not hold:
+at p = 2,000 a moderately larger survival weight moves calibration toward 1 before overfitting
+starts. The open question is how to set the supervision strength from the data while keeping the
+fit stable. Downweighting genomics (S-10), a calibrated likelihood power (SafeBayes or
+Holmes–Walker), and loss normalization as in DeSurv are all candidates.
 
 ## Replication cell
 
@@ -173,5 +204,5 @@ Under the 2026-11-04 decision the real-data steps follow, each registered before
 3. The null-data calibration check at w_S = 1.
 4. One external-cohort scoring of the fixed model, after training CV has fixed every choice.
 
-The calibration problem above is carried as a known limitation. Real-data C is unaffected by it,
-but coefficients and hazard ratios from these fits should not be read as calibrated.
+The attenuation at p = 2,000 is carried as a known limitation: at w_S = 1 the supervision is
+weaker than the data support. Real-data C is unaffected by the slope error.

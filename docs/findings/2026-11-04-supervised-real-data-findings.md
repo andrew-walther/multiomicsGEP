@@ -10,9 +10,12 @@ per-cohort z-scores, 17,900 shared genes. No external cohort was used.
 ## Summary
 
 - **Survival barely shapes the real-data loadings at w_S = 1.** Survival's share of the loading
-  precision is about 10⁻⁸ to 10⁻⁶ on the real data, against 0.01 to 0.2 in the simulation. The
-  real coefficients are small (|E β| ≤ 0.6 per SD of the program score), and the share scales
-  with E[β²]. The w_S = 1 programs have the same top genes as the unsupervised (w_S = 0) fit.
+  precision is about 10⁻⁸ to 10⁻⁶ in the size fits (down to 10⁻¹¹ in the screening fits),
+  against 0.01 to 0.2 in the simulation. Two factors combine: the real coefficients are small
+  (|E β| ≤ 0.6 per SD of the program score) and the share scales with E[β²], and the real
+  programs are high-variance programs whose genomics precision is large, while the simulated
+  program carries 0.25% to 5% of the variance. The w_S = 1 and w_S = 0 loadings agree at
+  |r| = 1.000 for every program. The w_S = 1 programs have the same top genes as the unsupervised (w_S = 0) fit.
 - **CV C at the D4 genes (2,218): 0.663 (SE 0.024)** for the w_S = 1 fit, against 0.652 (SE
   0.026) for the two-step fit (w_S = 0 loadings, then Cox). The paired fold difference is
   +0.011 (SE 0.005). Since the loadings agree, the gain comes from the β update, not from
@@ -49,7 +52,7 @@ regression of survival on the training program scores Z = Y E[F], scored on the 
 | w_S = 0 then Cox | 0.652 (0.026) | 0.647 | −777 | 3/5 | 4 |
 
 Two w_S = 1 folds stop at the 300-sweep cap (283, 261, 300, 300 and 214 sweeps). The relative
-ELBO change was still above 10⁻⁵, and the max |E β| is 0.47. Neither the τ mechanism nor the
+ELBO change was still above 10⁻⁵, and the max |E β| is 0.46. Neither the τ mechanism nor the
 β mechanism of the simulation applies: reconstruction is bounded and the coefficients are
 small. The fit is moving slowly near its optimum.
 
@@ -67,7 +70,8 @@ means a higher score raises the hazard; top genes at each pole of the loading):
 | 6 | 0.00 | no | CD74, HLA-DRA, CD68, LAPTM5 (myeloid) | IGF1R, PBX1, LTBP4 |
 
 The two-step fit has the same programs and top genes. It also calls program 4 active
-(z = 2.3). The w_S = 1 fit's Normal β prior shrinks programs 1 and 6 to exactly zero, while
+(z = 2.3). The w_S = 1 fit's Normal β prior (one prior variance per program, estimated as max(0, x² − s²))
+shrinks programs 1 and 6 to exactly zero, while
 the unpenalized Cox fit gives them small nonzero coefficients. These biological labels come from
 the top genes only. A gene-set analysis has not been run on these programs.
 
@@ -84,7 +88,10 @@ Nested outcome-free sets by the per-cohort mean/variance rank. Mean fold C ± SE
 | 12,001 | 0.643 ± 0.037 | 0.653 ± 0.037 | −0.010 (0.003) | 5 | 0.96, 0.80 |
 | 17,900 (all) | 0.648 ± 0.038 | 0.652 ± 0.037 | −0.004 (0.004) | 5 | 1.00, 1.00 |
 
-`size_elbow.png` plots the first two columns. The curve has no elbow above the D4 size: the
+`size_elbow.png` plots the first two columns. By the CV partial log-likelihood, which the
+registration also lists, the ordering differs: the w_S = 1 value is −775.2 at D4 and −773.2 at
+5,000 genes, and the two-step value improves steadily with size (−777.1 to −772.0). The
+preferred-size rule uses C and still picks D4, but larger sets are not worse by every metric. The curve has no elbow above the D4 size: the
 smallest set does as well as any larger one, so the more parsimonious D4 set is preferred,
 which the registered rule confirms. The 5,000-gene fit matches one all-genes program at
 r = 0.69, just under the 0.7 threshold. The risk scores of every size correlate with the

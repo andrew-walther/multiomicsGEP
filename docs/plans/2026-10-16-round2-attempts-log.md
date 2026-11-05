@@ -2721,3 +2721,13 @@ per-cohort z-scoring. Orientation is frozen, and nothing is chosen from the resu
 paired difference against the two-step fit is +0.007 (95% CI −0.002 to 0.017). Calibration slopes
 are 0.36 to 1.57, with Puleo at 0.99. Findings:
 `docs/findings/2026-11-05-supervised-external-scoring-findings.md`.
+
+**S-9 correction (2026-11-05, after the independent review).** The registered calibration slope was
+computed with `coxph`'s default `timefix = TRUE`, which merges the extreme simulated times at
+p = 2,000 (the true predictor's slope came out 0.04 to 0.27). Recomputed from the saved fits with
+exact times (`recompute_s9_cal_slope.R`): the true predictor gives about 1, and w_S = 1 gives
+1.04 to 1.07 at p = 50 and 1.45, 2.16 and 3.23 at p = 2,000, so the coefficients are attenuated,
+not overconfident. w_S = 10 gives 0.26, 0.71 and 1.74, and w_S ≥ 100 gives 0.07 to 0.17. Gate S,
+recovery, false activity and the CV choice are unchanged. The stated reason for not running S-10
+is withdrawn. The runner now uses exact times.
+

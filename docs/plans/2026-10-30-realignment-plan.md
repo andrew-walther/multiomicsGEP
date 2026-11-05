@@ -220,7 +220,7 @@ checks. The independent review verdict below remains reserved.
 | S2 | Complete corrected grid; scientific gate failed | ad331c8/28a1837; all seven attempts retained, complete-denominator tables and exact fixed-case replays |
 | Post-pass ablations | Not run: gate failed | Original conditional requirement retained |
 | S3 training CV | Not run: gate failed | No new real-data model choice or external cohort score |
-| S-9 (2026-11-04) | Gate S **passed** with the canonical fitter `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` on z-scored input | 9b73ee6; [S-9 findings](../findings/2026-11-04-survival-weight-p2000-findings.md): 10/10 recovered in each p = 2,000 cell, mean false-active ≤ 0.9, all converged; coefficients overconfident at p = 2,000 |
+| S-9 (2026-11-04) | Gate S **passed** with the canonical fitter `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` on z-scored input | 9b73ee6; [S-9 findings](../findings/2026-11-04-survival-weight-p2000-findings.md): 10/10 recovered in each p = 2,000 cell, mean false-active ≤ 0.9, all converged; coefficients attenuated at p = 2,000 (slope corrected 2026-11-05) |
 | S3 via S-11 (2026-11-04) | Registered and running at w_S = 1 | 6fa15da; [S-11 registration](2026-11-04-supervised-real-data-plan.md): training CV, feature-set-size curve, survival screening, null check; no external cohort |
 | D | Updated chapter, tracker, living documents and handoff | 4bcd07f; chapter reads saved CSV/RDS evidence; full book render and final validation recorded in the report |
 

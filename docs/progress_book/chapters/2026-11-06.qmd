@@ -178,23 +178,33 @@ kable(s9_cv, row.names = FALSE, digits = 2)
 ```
 
 Larger weights hurt. At 2,000 genes no fit with `w_S` of 40 or more converges within
-300 sweeps, and recovery collapses. Reconstruction stays bounded while the coefficients
-grow to about 25, so the failure is overconfident coefficients rather than runaway
-noise precision. At 50 genes every weight recovers the program, but false activity
+300 sweeps, and recovery collapses. Reconstruction stays bounded and the noise
+precision does not fall, so this is not the earlier reconstruction failure. Its cause
+is not yet identified. At 50 genes every weight recovers the program, but false activity
 rises with the weight. Survival's share of the loading precision at `w_S = 1` drops
 from about 0.8 to 1.0 at 50 genes to between 0.01 and 0.2 at 2,000 genes. Recovery
 does not drop with it, so the weight does not need to scale with the number of genes.
 
 ![Recovery, false activity, survival share, calibration, convergence and concordance against the survival weight. Solid lines are 2,000 genes and dashed lines are 50 genes.](../figures/2026-11-06/survival-weight-curves.png)
 
-One problem remains. At 2,000 genes the coefficients at `w_S = 1` are too large for
-out-of-sample risk. The median validation calibration slopes are
+One problem remains, and it is the opposite of what an earlier draft of this section
+said. At 2,000 genes the supervision at `w_S = 1` is too weak for out-of-sample risk.
+The median validation calibration slopes are
 `r paste(formatC(w1s$cal_slope_median[w1s$p == 2000], format = "f", digits = 2), collapse = ", ")`
-across the three cells, and no 95% interval covers the true projected coefficient.
-Patient ranking is unaffected, with validation C of 0.94 to 0.99. Downweighting the
-genomics term would raise survival's share, and in this grid a higher share made
-calibration worse. The next step on calibration is to choose the power on the Cox
-likelihood from the data, using SafeBayes or the Holmes–Walker calibration.
+across the three cells, against about 1 for the true predictor. A slope above 1 means
+the fitted risk differences are too small. The fitted risk score has a third to a half
+of the true predictor's spread, and no 95% interval covers the true projected
+coefficient. Patient ranking is unaffected, with validation C of 0.94 to 0.99. A weight
+of 10 is closer to calibrated at the two larger planted variances, and weights of 100
+or more overfit, with slopes near 0.1. The earlier draft computed the slope with the
+default tie correction of the Cox fit, which merges the extreme simulated survival
+times and flattened every slope, including the true predictor's. The slopes here use
+exact times.
+
+The next question is therefore how to set the supervision strength from the data
+while keeping the fit stable. A calibrated power on the Cox likelihood (SafeBayes or
+the Holmes–Walker calibration), downweighting the genomics term, and normalizing the
+two likelihood terms as DeSurv does are the candidates.
 
 A rerun of the October 15 test bed at `w_S = 1` recovered the program in 18 of 20
 datasets at low noise and 19 of 20 at high noise. The recovered datasets match the
@@ -225,10 +235,12 @@ scores, gives `r f3(d4$mean_C[d4$arm == "w0cox"])`. The paired fold difference i
 (SE 0.005).
 
 The loadings of the two fits are the same. On these data survival supplies about 10⁻⁸ to
-10⁻⁶ of the loading precision, because the real coefficients are small and that share
-scales with E[β²]. The small gain comes from estimating β jointly with a shrinkage prior.
-In the simulation a larger fixed weight broke convergence. Getting survival to move the
-real-data loadings therefore needs a calibrated power on the Cox likelihood.
+10⁻⁶ of the loading precision. The real coefficients are small, and that share scales
+with E[β²]. The real programs also explain much more expression variance than the
+simulated one, so their genomics precision is large. The small gain comes from
+estimating β jointly with a shrinkage prior. In the simulation, fixed weights of 40 or
+more broke convergence. Getting survival to move the real-data loadings therefore needs
+a supervision strength set from the data.
 
 ```{r s11-programs}
 p <- s11_prog[s11_prog$arm == "w1" & abs(s11_prog$beta) > 1e-6, ]
@@ -262,3 +274,38 @@ No screened set beats the `w_S = 1` fit on all D4 genes. With survival permuted 
 simulated data, the `w_S = 1` fit has `r paste(range(s11_null$n_active), collapse = " to ")`
 false-active programs per dataset on average, below the limit of one. The fixed model for
 the single external scoring is therefore `w_S = 1` on the D4 genes with no survival screen.
+
+## External scoring of the fixed fit
+
+```{r s12-setup, include=FALSE}
+S12 <- "../../../results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05"
+s12 <- read.csv(file.path(S12, "external_cindex.csv"))
+s12d <- read.csv(file.path(S12, "external_paired_diff.csv"))
+```
+
+The fixed `w_S = 1` fit on the D4 genes was scored once on the five external cohorts,
+after per-cohort z-scoring. The two-step fit was scored alongside it. Nothing was
+chosen from these results.
+
+```{r s12-table}
+w <- reshape(s12[, c("cohort", "model", "n", "events", "C", "lo", "hi", "cal_slope")],
+             idvar = c("cohort", "n", "events"), timevar = "model", direction = "wide")
+w$diff <- s12d$diff[match(w$cohort, s12d$cohort)]
+kable(w[, c("cohort", "n", "events", "C.w1", "lo.w1", "hi.w1", "C.twostep", "diff", "cal_slope.w1", "cal_slope.twostep")],
+  row.names = FALSE, digits = 3,
+  col.names = c("Cohort", "n", "Events", "C, w_S = 1", "Lower", "Upper", "C, two-step",
+                "Difference", "Slope, w_S = 1", "Slope, two-step"))
+```
+
+Mean external C is `r sprintf("%.3f", mean(s12$C[s12$model == "w1"]))` for the
+survival-weighted fit and `r sprintf("%.3f", mean(s12$C[s12$model == "twostep"]))` for
+the two-step fit. The supervised fit is equal or higher in every cohort. The
+cohort-stratified paired difference is
+`r sprintf("%+.3f", s12d$diff[grepl("5 cohorts", s12d$cohort)])` (95% interval
+`r sprintf("%.3f", s12d$lo[grepl("5 cohorts", s12d$cohort)])` to
+`r sprintf("%.3f", s12d$hi[grepl("5 cohorts", s12d$cohort)])`), about the size of the
+training CV difference. The earlier frozen benchmark averaged 0.627 under the older
+preprocessing, so performance is about the same. Calibration slopes on the external
+cohorts range from 0.36 to 1.57, with 0.99 in Puleo, the largest cohort, and they are
+closer to 1 for the supervised fit than for the two-step fit in every cohort.
+

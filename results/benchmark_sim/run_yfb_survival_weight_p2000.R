@@ -131,7 +131,7 @@ s9_share_weight <- function(fit0, Y, time, event, target = 0.2) {
 #' SD > 0) and correct sign. False active: active programs other than the
 #' match. Share: final in-fit w_S A_surv / A_F median over genes, for the match
 #' and median over live programs. Calibration: validation Cox slope of the
-#' risk score (1 = calibrated, < 1 = overconfident). beta*: the coefficient of
+#' risk score with exact event times (1 = calibrated, < 1 = overconfident, > 1 = attenuated). beta*: the coefficient of
 #' the true training predictor projected on the matched Z_k; coverage asks
 #' whether E beta_k +- 1.96 SD contains it.
 #' @param fit Fit or error condition.
@@ -155,7 +155,10 @@ s9_score <- function(fit, d, Ytr, Yva) {
   active <- abs(fit$EBeta) >= 1.96 * sd & sd > 0
   live <- colSums(fit$EF^2) > 0
   risk <- predict_ssbmf_yfb(Yva, fit$EF, fit$EBeta, EF_norms = fit$EF_norms)$risk_scores
-  slope <- if (sd(risk) > 0) unname(coef(survival::coxph(survival::Surv(d$tv, d$ev) ~ risk))) else NA_real_
+  # timefix = FALSE: at p = 2,000 the simulated times span ~1e-38 to 1e10, and the default tie
+  # correction (aeqSurv) merges the smallest, flattening every slope (true predictor ~0.04).
+  slope <- if (sd(risk) > 0) unname(coef(survival::coxph(survival::Surv(d$tv, d$ev) ~ risk,
+             control = survival::coxph.control(timefix = FALSE)))) else NA_real_
   Zk <- drop(Ytr %*% fit$EF[, k])
   bstar <- if (var(Zk) > 0) cov(d$training_eta, Zk) / var(Zk) else NA_real_
   tr <- fit$history$trace
