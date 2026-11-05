@@ -2708,3 +2708,16 @@ C 0.652, paired difference +0.011 (SE 0.005). Survival's share of the loading pr
 to 10⁻⁶ on real data. Preferred size by the registered rule: D4 for both arms. Survival screening:
 S(N) − U(N) of +0.003 to +0.021, each within about one paired SE. Null check: mean false-active
 0.1 to 0.5 per cell, passes. Findings: `docs/findings/2026-11-04-supervised-real-data-findings.md`.
+
+## 2026-11-05 — S-12: one external scoring of the fixed survival-weighted YFB fit (registered before execution)
+
+**Why.** Andrew reviewed S-11 and asked for the external scoring. Registration:
+`docs/plans/2026-11-05-supervised-external-scoring-plan.md`. The saved S-11 all-patient D4 fits
+(w_S = 1, and w_S = 0 loadings followed by Cox) are scored once on the five external cohorts after
+per-cohort z-scoring. Orientation is frozen, and nothing is chosen from the results.
+
+**S-12 outcome (2026-11-05).** External C of the w_S = 1 fit: 0.584, 0.537, 0.656, 0.681 and 0.644
+(mean 0.620; the historical frozen YFB mean is 0.627 under the earlier pipeline). The cohort-stratified
+paired difference against the two-step fit is +0.007 (95% CI −0.002 to 0.017). Calibration slopes
+are 0.36 to 1.57, with Puleo at 0.99. Findings:
+`docs/findings/2026-11-05-supervised-external-scoring-findings.md`.
