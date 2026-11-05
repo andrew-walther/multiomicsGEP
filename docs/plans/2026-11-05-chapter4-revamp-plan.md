@@ -257,6 +257,10 @@ to the multiomicsGEP root and were checked on disk 2026-11-05.
   - §1.3 Summary, closing paragraph ("Chapter 4 presents this framework: a single-modality model
     with external validation ... and a multimodal extension ... with first results on real data").
     The multimodal part is now proposed work.
+  - Two optional structure changes deferred from Round 3:
+    - fold the end of §1.3.5 (the rank paragraph near line 809) into §1.3.6, which repeats it;
+    - add one opening sentence on outcome types to §1.3.8, whose method paragraphs share one
+      template.
   - The file's header comment ("Section 1.3 does not describe SSBMF's current implementation
     state") still applies. The literature-review framing about recovering low-variance programs
     must match what the supervised fit shows: survival doesn't move the real loadings yet.
