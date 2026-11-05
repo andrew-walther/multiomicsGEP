@@ -2758,3 +2758,12 @@ two seeds) showed w_S = 1 recovering programs the two-step fit misses. Registrat
 shares 0.05%, 0.1%, 0.2%; strong and realistic survival; seeds 1–10. **Primary criterion:** A1 at
 w_S = 1 recovers ≥ 3 more datasets than the two-step fit in ≥ 2 of 3 strong cells, with mean
 false-active ≤ 1 and ≥ 9/10 converged.
+
+## 2026-11-05 — S-14 result
+
+**Primary criterion fails** (0 of 3 strong cells). At 0.05% A1 w_S = 1 recovers 5/10 against the
+two-step fit's 0/10 but averages 2.5 false-active programs (two-step 2.8). At 0.1% the gain is 2
+(10 vs 8), and at 0.2% it is 0. **Secondary passes:** paired validation C is higher in all 30
+strong datasets (+0.156, +0.041, +0.008). A1 w_S = 5 recovers more in strong cells, but its
+slopes are 0.04–0.65 and it loses recovery under realistic survival. A2 matches A1. Findings:
+`docs/findings/2026-11-05-near-threshold-findings.md`.
