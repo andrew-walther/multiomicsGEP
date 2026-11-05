@@ -16,8 +16,9 @@ Paste the block below into a new Claude Code session started in
 > Andrew's notes on the current chapter are in plan section 0. Apply all of them:
 > - the new title;
 > - Introduction first, with no bold Summary paragraph;
-> - no bold paragraph leads (make them headings);
-> - every figure legible at printed size, rebuilt as vector PDF where fuzzy.
+> - no bold paragraph leads (usually plain topic sentences; a heading only where navigation needs it);
+> - completed and proposed work blended across Intro / Methods / Results (with the PDAC application) / Discussion, in connected prose rather than an outline;
+> - every figure legible at printed size, rebuilt as vector PDF where fuzzy, with a final review of all figures in the rendered prelim.
 >
 > Before planning, read:
 > - `AGENTS.md`, `paper/prelim/AGENTS.md` (continuing work as methodology and expected evidence,

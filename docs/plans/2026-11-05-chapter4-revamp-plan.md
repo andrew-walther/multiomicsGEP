@@ -25,14 +25,29 @@ These are requirements for the revamp, from Andrew's read of the synced prelim P
   Molecular Program Discovery in Pancreatic Cancer" (YAML `title:` in `project3-ssbmf.qmd`; the
   prelim prints it in capitals). It currently reads "... for Prognostic Gene Expression Programs in
   Pancreatic Cancer". Also check the slide outline and the abstract fact sheet for the old title.
-- **Format.** Match Chapters 2 and 3.
+- **Format.** Match Chapters 2 and 3: Introduction / Methods / Results (simulation, then the real
+  PDAC data application) / Discussion.
+  - Blend completed work and remaining proposed work across the whole chapter. Each section says
+    what has been done and what the full project will add.
+  - The chapter must read as connected prose with transitions between paragraphs and sections,
+    not as an outline or a set of separate paragraphs. Each paragraph should follow from the one
+    before it.
   - Open with `# Introduction`, not the bold, indented "**Summary.**" paragraph at line 42.
     Chapters 2 and 3 have no summary section; its content moves into the Introduction.
-  - No paragraph starts with bold text anywhere. Where a bold lead names a topic, make it a
-    numbered `##`/`###` heading or, if a number would be noise, an unnumbered heading
-    (`{.unnumbered}`).
-  - Section 4.2.8 ("Remaining work", lines 137–145) is the worst case: three bold-led paragraphs.
-    Its content moves into the Methods subsections for proposed work (section 2 below).
+- **No bold paragraph leads.** Bold text at the start of an indented paragraph looks out of
+  place.
+  - **Default fix:** plain text. The paragraph's first sentence names its topic, as in
+    "Survival in the single-modality loadings" (§4.2.8), which becomes an ordinary paragraph about
+    that topic.
+  - **When to use a heading:** only where the content needs one for navigation. Use a numbered
+    `###` heading, or an unnumbered one (`{.unnumbered}`) if a number would be noise.
+  - **Current places to fix:**
+    - §4.2.1 Single-modality model (line 74, "Initialization and convergence");
+    - §4.2.2 Multimodal model (line 88, "The parsimony framework");
+    - §4.2.7 Data and preprocessing (lines 129 and 131, "Single-modality application" and
+      "Multimodal application");
+    - §4.2.8 Remaining work (lines 141, 143 and 145).
+  - §4.2.8's content moves into the Methods subsections for proposed work (section 2 below).
 - **Figures.** Every figure must be clear and legible at printed size. Rebuild any figure that is
   fuzzy. Problems in the current PDF:
   - Fig 4.1 (`fig:km-risk`, `single_km_risk_external.png`, width 0.75): too small and fuzzy.
@@ -51,6 +66,10 @@ These are requirements for the revamp, from Andrew's read of the synced prelim P
   - Multi-panel KM plots: at most two or three panels per row at full width, with readable
     risk-table text.
   - Check each figure by viewing the rendered prelim PDF page, not only the image file.
+  - **Final figure review:** before the chapter goes to Andrew, review every figure in the
+    rendered prelim for legibility, size, sharpness, axis and legend labels, and caption match.
+    Most figures will be new (supervised fit), but the review covers all of them, kept or new.
+    Record the result in the checklist.
 
 ## 1. Why the chapter changes
 
