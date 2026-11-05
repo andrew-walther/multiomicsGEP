@@ -171,11 +171,51 @@ s13_design <- function(mode) {
   d[order(d$arm, -d$w_S, d$cell, d$seed), ]
 }
 
+# Two-step comparison (registered criterion 5) ----
+
+#' Two-step fit: canonical w_S = 0 loadings, then Cox on the live training program scores
+#'
+#' Recovered: best |r(truth, F_k)| >= .7, Cox Wald |z| >= 1.96 and correct sign. Validation C and
+#' the exact-times calibration slope of Yva E[F] b.
+#' @param seed Dataset seed. @param cell Cell. @param cfg Config.
+#' @return One-row data frame.
+#' @examples
+#' # s13_twostep(1, "weak", cfg)
+s13_twostep <- function(seed, cell, cfg) {
+  d <- s13_data(seed, cell)
+  f0 <- fit_ssbmf_yfb(d$Ytr, d$time, d$event, K = cfg$benchmark$k_merged_yfb_desurv,
+                      max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol, prior_LF = "point_laplace",
+                      prior_beta = "normal", canonicalize = TRUE, w_S = 0,
+                      alpha = cfg$benchmark$alpha, verbose = FALSE, sign_correction = FALSE)
+  live <- which(colSums(f0$EF^2) > 1e-8)
+  Z <- d$Ytr %*% f0$EF[, live, drop = FALSE]
+  cf <- survival::coxph(survival::Surv(d$time, d$event) ~ Z)
+  b <- rep(0, ncol(f0$EF)); b[live] <- ifelse(is.finite(coef(cf)), coef(cf), 0)
+  zst <- rep(0, ncol(f0$EF)); zst[live] <- coef(cf) / sqrt(diag(as.matrix(vcov(cf))))
+  r <- suppressWarnings(cor(d$truth, f0$EF)); r[!is.finite(r)] <- 0; k <- which.max(abs(r))
+  risk <- drop(d$Yva %*% f0$EF %*% b)
+  data.frame(seed = seed, cell = cell, cor_planted = abs(r[k]),
+             recovered = abs(r[k]) >= .7 && abs(zst[k]) >= 1.96 && b[k] * r[k] > 0,
+             false_active = sum(abs(zst[-k]) >= 1.96, na.rm = TRUE),
+             c_validation = frozen_reverse_cindex(risk, d$tv, d$ev),
+             cal_slope = unname(coef(survival::coxph(survival::Surv(d$tv, d$ev) ~ risk,
+                               control = survival::coxph.control(timefix = FALSE)))),
+             converged = f0$history$converged)
+}
+
 # Main ----
 if (sys.nframe() == 0L) {
   args <- commandArgs(TRUE)
   cores <- if (length(args) >= 1) as.integer(args[1]) else 9L
   mode  <- if (length(args) >= 2) args[2] else "grid"
+  if (mode == "twostep") {
+    source("results/benchmark_sim/run_yfb_survival_weight_p2000.R"); s9_load()
+    source("code/concordance_ci.R"); cfg <- yaml::read_yaml("config/globals.yml")
+    des <- expand.grid(seed = 1:10, cell = c("weak", "v0.0025", "v0.01", "v0.05"), stringsAsFactors = FALSE)
+    res <- do.call(rbind, lapply(seq_len(nrow(des)), function(i) s13_twostep(des$seed[i], des$cell[i], cfg)))
+    write.csv(res, file.path(S13_OUT, "twostep.csv"), row.names = FALSE); print(res)
+    quit(save = "no")
+  }
   if (mode == "smoke") S13_OUT <- file.path(S13_OUT, "smoke")
   dir.create(file.path(S13_OUT, "fits"), recursive = TRUE, showWarnings = FALSE)
   writeLines(c(system("git rev-parse HEAD", intern = TRUE), format(Sys.time()), mode),

@@ -2747,3 +2747,14 @@ log-likelihood. Cells: S-9 p = 2,000 cells, a weak cell (oracle C ≈ 0.68), per
 **Criteria:** Gate S (S-9 definition); median exact-times calibration slope in [0.8, 1.25] in ≥ 2
 of 3 S-9 cells; ≥ 9/10 converged per cell; null mean false-active ≤ 1; weak cell reported against
 the two-step fit without a threshold.
+
+## 2026-11-05 — S-14: supervision near the detection threshold (registered before execution)
+
+**Why.** The matched two-step fit recovers the planted program in every S-9 cell (10/10), so the
+S-9 Gate S gain over the uncentered S-7 reference is not a supervision effect. A masked-program
+pilot showed too-small K is not fixed by supervision; a near-threshold pilot (shares 0.05–0.1%,
+two seeds) showed w_S = 1 recovering programs the two-step fit misses. Registration:
+`docs/plans/2026-11-05-near-threshold-plan.md`. Arms: two-step, A1 w_S = 1 and 5, A2 w_S = 1;
+shares 0.05%, 0.1%, 0.2%; strong and realistic survival; seeds 1–10. **Primary criterion:** A1 at
+w_S = 1 recovers ≥ 3 more datasets than the two-step fit in ≥ 2 of 3 strong cells, with mean
+false-active ≤ 1 and ≥ 9/10 converged.

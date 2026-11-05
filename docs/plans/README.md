@@ -43,6 +43,7 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 | 2026-11-04 | [supervised-real-data-plan](2026-11-04-supervised-real-data-plan.md) | Attempt S-11: the w_S = 1 fit on the real training data (S3), feature-set-size curve, survival-screening comparison and null check | complete; see findings |
 | 2026-11-05 | [supervised-external-scoring-plan](2026-11-05-supervised-external-scoring-plan.md) | Attempt S-12: one external scoring of the fixed w_S = 1 fit and the two-step comparison | complete; see findings |
 | 2026-11-05 | [supervision-strength-plan](2026-11-05-supervision-strength-plan.md) | Attempt S-13 design: survival-block-weighted objective (untempered β), weight chosen by CV partial log-likelihood, weak-signal test bed | registered 2026-11-05; running |
+| 2026-11-05 | [near-threshold-plan](2026-11-05-near-threshold-plan.md) | Attempt S-14: supervised fit against the matched two-step fit for planted programs near the detection threshold, strong and realistic survival | registered 2026-11-05; running |
 | 2026-11-05 | [chapter4-revamp-plan](2026-11-05-chapter4-revamp-plan.md) | Revamp prelim Chapter 4 around the supervised w_S = 1 YFB fit: outline, results checklist (tables, figures, biology), affected documents | not started |
 | 2026-11-05 | [chapter4-revamp-prompt](2026-11-05-chapter4-revamp-prompt.md) | Session prompt for the Chapter 4 revamp | not started |
 
