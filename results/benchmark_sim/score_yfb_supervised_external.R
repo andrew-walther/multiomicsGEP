@@ -91,7 +91,22 @@ pooled <- function(cos, label) {
 diff <- rbind(diff, pooled(names(keep), "pooled (stratified, 5 cohorts)"),
               pooled(setdiff(names(keep), "PACA_AU_seq"), "pooled without PACA_AU_seq"))
 
+# Pooled HR per SD of the risk score (added after registration, 2026-11-05) ----
+# DeSurv's headline external metric: stratified Cox (strata = cohort) of survival on the risk
+# score divided by its pooled SD across all external patients. Descriptive only.
+pooled_hr <- do.call(rbind, lapply(c("w1", "twostep"), function(arm) {
+  df <- do.call(rbind, lapply(names(keep), function(co)
+    data.frame(time = keep[[co]]$time, event = keep[[co]]$status, cohort = co, risk = keep[[co]][[arm]])))
+  df$risk_z <- df$risk / sd(df$risk)
+  f <- summary(coxph(Surv(time, event) ~ risk_z + strata(cohort), data = df))
+  data.frame(model = arm, n = nrow(df), hr_per_sd = f$conf.int[1, "exp(coef)"],
+             lo = f$conf.int[1, "lower .95"], hi = f$conf.int[1, "upper .95"],
+             p = f$coefficients[1, "Pr(>|z|)"])
+}))
+
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
+write.csv(pooled_hr, file.path(OUT, "external_pooled_hr.csv"), row.names = FALSE)
+print(pooled_hr, digits = 3)
 write.csv(res, file.path(OUT, "external_cindex.csv"), row.names = FALSE)
 write.csv(diff, file.path(OUT, "external_paired_diff.csv"), row.names = FALSE)
 writeLines(c(system("git rev-parse HEAD", intern = TRUE), format(Sys.time()),

@@ -42,6 +42,7 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 | 2026-11-03 | [survival-weight-p2000-plan](2026-11-03-survival-weight-p2000-plan.md) | Attempt S-9: the survival-weighted YFB fit on the S-7 grid at p = 50 and 2,000 over a range of w_S, with Gate S unchanged | complete; Gate S passes at w_S = 1 |
 | 2026-11-04 | [supervised-real-data-plan](2026-11-04-supervised-real-data-plan.md) | Attempt S-11: the w_S = 1 fit on the real training data (S3), feature-set-size curve, survival-screening comparison and null check | complete; see findings |
 | 2026-11-05 | [supervised-external-scoring-plan](2026-11-05-supervised-external-scoring-plan.md) | Attempt S-12: one external scoring of the fixed w_S = 1 fit and the two-step comparison | complete; see findings |
+| 2026-11-05 | [supervision-strength-plan](2026-11-05-supervision-strength-plan.md) | Attempt S-13 design: survival-block-weighted objective (untempered β), weight chosen by CV partial log-likelihood, weak-signal test bed | design; awaiting Andrew's confirmation, not registered |
 | 2026-11-05 | [chapter4-revamp-plan](2026-11-05-chapter4-revamp-plan.md) | Revamp prelim Chapter 4 around the supervised w_S = 1 YFB fit: outline, results checklist (tables, figures, biology), affected documents | not started |
 | 2026-11-05 | [chapter4-revamp-prompt](2026-11-05-chapter4-revamp-prompt.md) | Session prompt for the Chapter 4 revamp | not started |
 

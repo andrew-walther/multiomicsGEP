@@ -37,6 +37,28 @@ PACA_AU_array and PACA_AU_seq share donors, so the pooled difference is also giv
 smaller of the two. The historical column is from `results/benchmark_snapshot_2026-10-14/` and is
 not a paired comparison.
 
+## Added after registration
+
+**Pooled hazard ratio per SD** (`external_pooled_hr.csv`), the headline external metric of the
+DeSurv paper: a Cox model stratified by cohort on the risk score divided by its SD across all 616
+external patients. The w_S = 1 fit gives 1.37 (95% CI 1.24–1.51) and the two-step fit 1.35
+(1.22–1.49). DeSurv reports 1.50 (1.31–1.72) at k = 3 on the same five cohorts with its own
+preprocessing. The intervals overlap, and the comparison is not paired.
+
+**Why the supervised fit is below the earlier benchmark in Dijk and Moffitt.** The October 26
+single-log rerun of the historical α_F = 0 fitter kept Dijk at 0.630 and Moffitt at 0.540, so
+the single-log correction is not the cause. The new fit and the two-step fit share the same
+loadings, and both are lower in Dijk (0.584 and 0.567). So the change comes from the canonical
+fitter's factorization (centered z-scored input, different scale handling), not from the
+survival weight. Every per-cohort interval overlaps the earlier value. This has not been
+investigated further.
+
+**Limits, from the October 26 review (issue 6).**
+- K = 7 was fixed in earlier work that looked at external C. So these cohorts were not fully
+  independent of every choice.
+- The bootstrap resamples records. The 47 donors shared between the PACA-AU series are counted
+  twice in the pooled numbers. The pooled difference without PACA_AU_seq is given above.
+
 ## Interpretation
 
 Externally, the fixed configuration chosen by training CV performs about as well as the
