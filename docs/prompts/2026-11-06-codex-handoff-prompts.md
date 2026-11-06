@@ -124,3 +124,78 @@ produced, keep every number computed from saved CSVs, and add S-13, S-14, S-15, 
 false-active contribution analysis from `docs/findings/2026-11-0*`. Render HTML and PDF, and
 update `paper/writeup/README.md`. List every changed file and every number with its source for
 the review.
+
+---
+
+## Prompt 6: real-data comparators (GitHub issue #6 item 7)
+
+Register before running. Write `docs/plans/2026-11-06-real-data-comparators-plan.md` (add a README
+row and an attempts-log entry in `docs/plans/2026-10-16-round2-attempts-log.md`), then implement
+and run.
+
+- **Fixed reference fits.** Do not refit them:
+  - the S-11 supervised fit (`w_S = 1`, D4 genes,
+    `results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/fits/size_D4_N2218_w1_f0.rds`);
+  - its two-step counterpart (the `w0` fit followed by Cox on the program scores).
+
+  Score both as in `results/benchmark_sim/score_yfb_supervised_external.R`.
+- **Comparators, each trained on the TCGA + CPTAC training patients only:**
+  1. PurIST as a prognostic score. PurIST calls are already used for subtype concordance:
+     `grep -rn -i purist code/ results/`.
+  2. DeSurv head to head, trained on the same training patients. Use the existing setup in
+     `results/benchmark_sim/run_desurv_comparison.R` and `code/preprocess_desurv.R`, with
+     DeSurv's own preprocessing and settings as published, chosen inside training only.
+  3. Elastic-net Cox on the D4 genes (glmnet, α and λ chosen by training CV).
+  4. A clinical-covariate Cox model, using whatever stage, grade, age and resection-margin
+     fields exist in both training and external cohorts. Report which fields were available.
+- **External evaluation.** Per-cohort C with 95% bootstrap intervals, the cohort-stratified
+  paired difference against the supervised fit with donor-level resampling (the S-12 donor
+  bootstrap in `code/concordance_ci.R`), pooled HR per SD of each risk score stratified by
+  cohort, and calibration slopes. The risk direction is fixed on training data
+  (`frozen_reverse_cindex()`).
+- **Rules.** Choose nothing from external results. Patient-level data and scores stay out of
+  Git, and only aggregate CSVs are committed. Write a findings document and its README row. List
+  every number with its source file.
+
+---
+
+## Prompt 7: DeSurv-style analyses, risk groups and program classification
+
+Register before running (`docs/plans/2026-11-06-desurv-style-analyses-plan.md`, README row,
+attempts-log entry). Use the fixed S-11 supervised fit and the two-step fit. Choose nothing from
+external results.
+
+1. **Risk groups from one training-CV cutpoint.** Standardize the risk score on training data.
+   Choose one cutpoint by training cross-validation, using the out-of-fold scores (state the
+   criterion in the plan, for example the maximally selected log-rank statistic). Apply that
+   fixed cutpoint to every external cohort. Show Kaplan–Meier curves with numbers at risk, and
+   report the high vs low HR per cohort and pooled stratified by cohort. These replace the
+   tertile groups.
+2. **Per-program forest plot.** Give the HR per SD of each active program's score in each
+   external cohort and pooled, for both the supervised fit and the two-step fit.
+3. **Adjusted HRs.** Give the risk score's HR adjusted for PurIST subtype and for DeCAF
+   (`grep -rn -i decaf`). If DeCAF calls are unavailable, say so.
+4. **High-risk-group enrichment.** Show the proportions of Basal-like (PurIST) and proCAF
+   (DeCAF) tumours in the high vs low groups, with Fisher tests.
+5. **Unsupervised model at matched and larger rank.** EBMF at K = 7 and at a larger K (for
+   example 15 and 40) followed by Cox, scored the same way.
+6. **Program classification rule.** For each active program of the supervised fit:
+   - the standardized |β| ratio to the largest program;
+   - its share of the risk-score variance;
+   - its stability across the five S-11 CV folds (active in at least 4 of 5, matched by loading
+     correlation).
+
+   The proposed rule: a main prognostic program has a ratio ≥ 0.25, a share ≥ 5% and is
+   active in ≥ 4 of 5 folds. Check the rule on the S-13 and S-14 simulation checkpoints
+   (`results/benchmark_sim/summarize_false_active_contribution.R` shows how to load them). Report
+   how often it keeps the planted program and drops false actives. Replace the 1% PVE cut for
+   "survival-only direction" with the survival share of the loading precision, and report
+   both labels.
+7. **Simulation items.** Add a mixed-signal scenario (one strong and one near-threshold
+   prognostic program plus neutral programs) and top-gene precision (the overlap of the top 50
+   genes of the matched program with the planted genes), using the S-14 generator and runner
+   pattern (`results/benchmark_sim/run_yfb_near_threshold.R`). Use exact times in every Cox
+   fit on simulated data (`coxph.control(timefix = FALSE)`).
+
+Write a findings document with figures, add its README row, and list every number with its
+source file. Patient-level outputs stay out of Git.
