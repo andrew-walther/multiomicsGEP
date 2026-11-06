@@ -76,3 +76,11 @@ This table preserves the scope of the original section plan. The numerical ledge
 | A | Model derivation | change | Short summary of the algorithm with a pointer to the full derivation PDF and `verify_derivation.R`; the October 16 Appendix A (α_F = 0 algorithm) is not reproduced | derivation PDF |
 | B | Changes since October 16 | new | Double log removed; KL normalizer fix; orientation fix in two comparator scripts; post-fit sign flip removed; exact event times in simulation slopes; multimodal moved to proposed work | DECISIONS 2026-10-30 to 2026-11-06; progress book 11/6 issue table |
 | C | Multimodal results of October 16 | carry by reference | One paragraph pointing to the circulated version's multimodal sections; no numbers repeated | `../../2026-10-16-writeup/` |
+
+## Manuscript-planning extension
+
+The expanded source reports the fixed prognostic comparisons, individual
+program evidence, and the training-cutpoint risk groups. Appendix D gives
+the per-series calibration and risk counts. The two new plots are generated
+by `ggplot2` from saved aggregate CSVs at render time. The rebuild commands
+above also apply to the expanded source.

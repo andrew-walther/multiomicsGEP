@@ -38,3 +38,13 @@ format and delegates inclusion to `knitr::include_graphics()`.
 The rendered PDF has 26 pages, as counted by `pdfinfo writeup.pdf`.
 The figure check compares the 11 numbered PDF captions and 11 embedded
 HTML SVGs against the figure labels in `writeup.qmd`.
+
+## Manuscript-planning extension
+
+| Exhibit or claim | Saved inputs |
+|---|---|
+| Expanded comparator panel and per-series calibration | `outputs/prompt6_comparators/{external,paired,pooled_hr,tuning,clinical_fields}.csv`. Equal-weight paired C and the stratified pooled HR are distinct estimands. |
+| Fixed risk thresholds, group sizes and subtype adjustment | `outputs/prompt7_desurv_style/{cutpoints,group_hr,adjusted_hr,km_monthly,at_risk}.csv`. The curves plot saved monthly estimates. Counts are joined by series, fit and month. The within-series tertile figures describe a separate analysis. |
+| Program stability and individual profiles | `outputs/prompt7_desurv_style/{program_rule,fold_matches}.csv`, together with the signed enrichment, signature concordance and external program Cox summaries listed above. The training-fold count describes activity of the matched program. |
+| Cross-design simulation figure | `outputs/yfb_supervision_strength_2026-11-05/{selected_vs_twostep,twostep}.csv`, `outputs/yfb_near_threshold_2026-11-05/metrics.csv` and `outputs/prompt7_desurv_style/mixed_simulation.csv`. Each plotted bar is a cell summary for the stated fit. Mixed-signal false activity and convergence use one row per fit, and no calibration slope was saved for that experiment. |
+| Larger-rank sensitivity | `outputs/prompt7_desurv_style/{rank_paired,rank_external}.csv`. These two-step comparisons use unpenalized Cox regression, so the primary comparison remains the rank-matched fit. |
