@@ -172,6 +172,10 @@ e_w1 <- ext[ext$model == "w1", ]; e_ts <- ext[ext$model == "twostep", ]
 pool5  <- extd[grepl("5 cohorts", extd$cohort), ]
 poolns <- extd[grepl("without", extd$cohort), ]
 ext_records <- sum(e_w1$n); ext_deaths <- sum(e_w1$events)
+donors <- read.csv("paca-au-donor-audit.csv")
+ext_people <- ext_records - donors$shared_donors - (donors$seq_records - donors$seq_donors)
+s15 <- rd("yfb_supervised_refit_2026-11-06", "verdict.csv")
+s15_curve <- rd("yfb_supervised_refit_2026-11-06", "weight_curve.csv")
 
 # ---- Pre-registered October 15 check: registered values and KL-fix rerun ----
 dc_path <- "results/benchmark_sim/outputs/supervised_real_check/delta_c.csv"
@@ -179,13 +183,16 @@ oct_reg <- rd_git("65cf90a", dc_path)
 oct_now <- rd("supervised_real_check", "delta_c.csv")
 oct_reg_m <- subset(oct_reg, cohort == "MEAN_OF_COHORTS" & arm == "supervised")
 oct_now_m <- subset(oct_now, cohort == "MEAN_OF_COHORTS" & arm == "supervised")
-oct_sim <- aggregate(recovered ~ noise, subset(rd("supervision_diagnostics", "c3c4_n400_b3.3", "results.csv"), arm == "c4_point_laplace"), sum)
+oct_cells <- subset(rd("supervision_diagnostics", "c3c4_n400_b3.3", "results.csv"),
+                    arm == "c4_point_laplace")
+oct_sim <- aggregate(recovered ~ noise, oct_cells, sum)
+oct_n <- table(oct_cells$noise)
 oct_margin <- -0.02   # registered margin on the lower 95% limit (DECISIONS 2026-10-15)
 
 # ---- Frozen alpha_F = 0 benchmark under the single log (October 26) ----
-slog   <- rd("single_log_check", "external_results.csv")
+slog   <- rd("kl_fix_rerun_2026-10-30", "external_results.csv")
 slog_m <- slog[slog$cohort == "mean", ]; slog_c <- slog[slog$cohort != "mean", ]
-slog_cv <- rd("single_log_check", "cv_summary.csv")
+slog_cv <- rd("kl_fix_rerun_2026-10-30", "cv_summary.csv")
 k7 <- subset(rd("ebmf_cox_external", "yfb_vs_ebmf_k7_matched_ci.csv"), cohort == "POOLED")
 orient <- rd("ebmf_cox_external", "2026-10-30-orientation-rescore.csv")
 k40_mean <- mean(orient$c_frozen_training[orient$arm == "ebmf_lasso_cox_k40"])
@@ -220,11 +227,6 @@ s14d <- do.call(data.frame, s14d)
 
 # Summary {.unnumbered}
 
-::: {.draft-note}
-Draft, Phase 1. The Summary is completed in Phase 2, after the simulation figures, program
-biology and the S-15 refit are in.
-:::
-
 **Aim.** Bulk pancreatic tumors mix tumor, stromal and immune signals. We ask whether a Bayesian
 matrix factorization that lets survival inform its molecular programs can find prognostic
 programs that an unsupervised factorization misses, and whether its risk score transfers to new
@@ -241,10 +243,11 @@ cross-validated concordance was `r num(cv_w1$mean_C)` for the supervised fit and
 `r num(cv_ts$mean_C)` for the two-step fit. On five external series the mean concordance was
 `r num(mean(e_w1$C))` against `r num(mean(e_ts$C))`, a pooled paired difference of
 `r sgn(pool5$diff)` (95% interval `r ci(pool5$lo, pool5$hi)`). On these data survival supplies
-less than $10^{-6}$ of the loading precision, so the supervised and unsupervised loadings are the
+at most `r sci(share_rng[2])` of the loading precision, so the supervised and unsupervised loadings are the
 same and the small gain comes from estimating the coefficients jointly under a shrinkage prior. A
-pre-registered October 15 check of an earlier supervised configuration did not meet its
-non-inferiority margin. In simulation, supervision matches the two-step fit when a prognostic
+pre-registered October 15 check of an earlier supervised configuration gave a paired
+difference of `r sgn(oct_reg_m$dC)` (95% interval `r ci(oct_reg_m$dC_lower, oct_reg_m$dC_upper)`).
+Its lower limit fell below the non-inferiority margin. In simulation, supervision matches the two-step fit when a prognostic
 program is easy to find and improves on it near the detection threshold.
 
 # Methods {#sec-methods}
@@ -329,7 +332,7 @@ $w_S$ multiplies the Cox term and the Kullback–Leibler term of $\beta$ togethe
 an ordinary Bayesian Cox fit while the loadings see survival at weight $w_S$. The weight is
 chosen for each dataset from $\{1, 2, 5, 10, 20, 50\}$ by five-fold cross-validated partial
 log-likelihood, with ties going to the smaller weight. Applying this rule to the real training
-data (study S-15) is in progress (@sec-results-s15).
+data (study S-15) is complete (@sec-results-s15).
 
 ## Earlier configuration {#sec-earlier}
 
@@ -369,8 +372,9 @@ under the single log. Each cohort is then standardized gene by gene to mean 0 an
 deviation 1.
 
 The five external series supply `r big(ext_records)` records and `r big(ext_deaths)` deaths.
-These are not counts of distinct people. The PACA-AU array and RNA-seq series share 47 donors,
-and the RNA-seq series has 52 records from 51 donors, so the external collection represents 568
+These are not counts of distinct people. The PACA-AU array and RNA-seq series share `r donors$shared_donors` donors,
+and the RNA-seq series has `r donors$seq_records` records from `r donors$seq_donors` donors,
+so the external collection represents `r ext_people`
 people if the other cohorts are distinct (counts from the October 16 accuracy review,
 `paper/writeup/2026-10-16-writeup/_process/Accuracy_Review_Dispositions_10_16_26.md`).
 
@@ -438,7 +442,7 @@ slope below 1 means they are too large. In simulation the slopes use exact event
 the default tie handling of `survival::coxph()` merges the extreme simulated times and flattens
 every slope.
 
-The external bootstrap resamples records, not donors. The 47 donors shared by the two PACA-AU
+The external bootstrap resamples records, not donors. The `r donors$shared_donors` donors shared by the two PACA-AU
 series are counted twice in a pooled estimate, so each pooled difference is also reported without
 the PACA-AU RNA-seq series. Intervals hold the fitted models fixed and do not include training
 uncertainty.
@@ -474,7 +478,7 @@ series (@tbl-external).
 
 ```{r}
 #| label: tbl-external
-#| tbl-cap: "External concordance of the fixed supervised fit and the two-step fit. Each series was scored once, after the configuration was fixed by training cross-validation. C intervals are 95% percentile bootstrap intervals over patients. The difference is supervised minus two-step on the same resamples. Pooled rows stratify by cohort. Because the PACA-AU series share 47 donors, the pooled difference is also given without the RNA-seq series. The calibration slope is the coefficient of held-out survival on the fitted risk score; 1 is calibrated."
+#| tbl-cap: "External concordance of the fixed supervised fit and the two-step fit. Each series was scored once, after the configuration was fixed by training cross-validation. C intervals are 95% percentile bootstrap intervals over patients. The difference is supervised minus two-step on the same resamples. Pooled rows stratify by cohort. Because the PACA-AU series share donors, the pooled difference is also given without the RNA-seq series. The calibration slope is the coefficient of held-out survival on the fitted risk score; 1 is calibrated."
 ord <- match(e_w1$cohort, e_ts$cohort)
 xt <- data.frame(
   Series = cohort_label[e_w1$cohort],
@@ -519,13 +523,6 @@ risk score, from a Cox model stratified by series over all `r big(exth$n[1])` re
 (`r ci(exth$lo[exth$model == "twostep"], exth$hi[exth$model == "twostep"], 2)`) for the two-step
 fit.
 
-An earlier comparison of the same kind gave a similar answer. The October joint fit, under the
-historical preprocessing and 2,064 genes, averaged C = 0.621 on the five series against 0.623 for
-a rank-7 unsupervised factorization with the flashier package followed by Cox, a paired
-difference of −0.002 (−0.012 to 0.006)
-(`docs/findings/2026-11-03-joint-yfb-verification-findings.md`). That comparison is cited from
-its findings file because its script saves no table.
-
 ::: {.draft-note}
 Phase 2: add the Chapter 4 figure of external C by series with intervals (its F4).
 :::
@@ -535,8 +532,8 @@ Phase 2: add the Chapter 4 figure of external C by series with intervals (its F4
 On October 15 an earlier supervised configuration was evaluated against a criterion fixed before
 it ran. That configuration used the same predictor with $w_S = 1$, a supervised start and a
 shared point-Laplace prior on $\beta$, on the 2,064 genes of the historical preprocessing. In
-simulation it recovered a planted low-variance prognostic program in `r oct_sim$recovered[oct_sim$noise == 0.25]` of 20 datasets at the
-lower noise level and `r oct_sim$recovered[oct_sim$noise == 1]` of 20 at the higher one. The registered real-data estimand was the mean
+simulation it recovered a planted low-variance prognostic program in `r oct_sim$recovered[oct_sim$noise == 0.25]` of `r oct_n[["0.25"]]` datasets at the
+lower noise level and `r oct_sim$recovered[oct_sim$noise == 1]` of `r oct_n[["1"]]` at the higher one. The registered real-data estimand was the mean
 over the five external series of the per-series difference in C from the frozen $\alpha_F = 0$
 benchmark, with a cohort-stratified paired bootstrap. The criterion was a lower 95% limit above
 `r num(oct_margin, 2)`.
@@ -681,12 +678,12 @@ Phase 2: add the Chapter 4 paired-concordance figure for S-14 with its caption.
 
 ## Real-data refit at the cross-validated weight {#sec-results-s15}
 
-::: {.draft-note}
-Pending. S-15 applies the cross-validated weight rule to the real training data with nested
-cross-validation (`docs/plans/2026-11-06-supervised-real-refit-plan.md`). Its findings and
-CSVs will be in `docs/findings/2026-11-06-supervised-real-refit-findings.md` and
-`results/benchmark_sim/outputs/yfb_supervised_refit_2026-11-06/`.
-:::
+On the training folds, the largest cross-validated partial log-likelihood occurred at
+$w_S = `r s15$w_star`$. Across the grid from `r min(s15_curve$w)` to `r max(s15_curve$w)`,
+the partial log-likelihood varied by `r num(diff(range(s15_curve$cvpl)), 2)`. Nested
+cross-validation gave mean C of `r num(s15$nested_mean_C)` (SE `r num(s15$nested_se_C)`).
+The registered rule retained the existing fit because the selected weight matched it.
+External scoring was limited to the previously fixed comparison in @sec-results-fair.
 
 ## The α~F~ = 0 benchmark under the single log {#sec-results-alpha0}
 
@@ -707,10 +704,10 @@ cohort logged once and nothing else changed, its mean external concordance was
 included zero, and the risk scores correlated at
 `r num(min(slog_c$risk_cor_single_frozen), 2)` or more (@tbl-alpha0). The single-log number is
 the one to compare with. It is not a paired comparison with the supervised fit of
-@sec-results-fair, which uses a different fitter, input scaling and gene set. Three of the five
-single-log training folds stopped at the sweep cap, so the single-log cross-validation estimate
-(`r num(slog_cv$mean_C[slog_cv$arm == "single"])` against
-`r num(slog_cv$mean_C[slog_cv$arm == "double"])`) is not read as a gain.
+@sec-results-fair, which uses a different fitter, input scaling and gene set. After the KL fix, all
+`r slog_cv$n_converged[slog_cv$arm == "single"]` single-log folds converged. Training
+cross-validated C was `r num(slog_cv$mean_C[slog_cv$arm == "single"])` with the single log and
+`r num(slog_cv$mean_C[slog_cv$arm == "double"])` with the double log.
 
 The October 16 writeup led with a comparison against a 40-factor unsupervised factorization
 followed by LASSO Cox (`r num(slog_m$C_frozen)` against `r num(k40_mean)`). That comparator was run only under the double log,
@@ -762,13 +759,9 @@ better. Real PDAC survival is closer to the realistic setting of S-14, where the
 
 ## Limitations {#sec-limitations}
 
-::: {.draft-note}
-Phase 1 draft. Completed after S-15.
-:::
-
 The external series are not independent of every model choice (@sec-external-uses). In
 particular the rank $K = 7$ was carried over from earlier work in which external concordance
-informed it, so no series is untouched. The bootstrap resamples records, and the 47 donors shared
+informed it, so no series is untouched. The bootstrap resamples records, and the `r donors$shared_donors` donors shared
 by the PACA-AU series enter the pooled estimates twice. Dropping the smaller series barely moves
 the pooled difference, but donor-level resampling has not been run. Two of the five supervised
 training folds stopped at the sweep cap. In simulation the coefficients at $w_S = 1$ are
@@ -778,7 +771,7 @@ attenuated at 2,000 genes, and every simulation uses one generator with ten data
 
 - **Supervision strength set from the data.** At $w_S = 1$ survival does not move the real
   loadings, and fixed weights of 40 or more broke convergence in simulation. Candidates are the
-  cross-validated weight of S-15, a calibrated power on the Cox likelihood, a downweighted
+  a calibrated power on the Cox likelihood, a downweighted
   expression term and normalized loss terms as in DeSurv.
 - **Multiple modalities.** A model with shared activities and modality-specific loadings and
   loading priors, of which the present model is the case $M = 1$. It is derived but deferred
