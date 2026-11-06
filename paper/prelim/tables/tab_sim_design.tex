@@ -1,0 +1,44 @@
+\begin{table}[!htb]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{1.72in}>{\raggedright\arraybackslash}p{1.72in}>{\raggedright\arraybackslash}p{1.72in}}
+\toprule
+ & S-9 & S-13 & S-14 \\
+\midrule
+Purpose & Test whether survival supervision recovers a planted low-variance prognostic program, and how the weight $w_S$ affects it
+ & Choose $w_S$ from the data by cross-validation and test calibration against the two-step fit
+ & Test supervision when the planted program is near the detection threshold \\
+\addlinespace
+Patients and genes & 400 training and 120 validation patients. $p = 50$ and $2{,}000$ genes.
+ & 400 training and 120 validation patients. $p = 2{,}000$.
+ & 400 training and 120 validation patients. $p = 2{,}000$. \\
+\addlinespace
+Planted program & Share of centered variance 0.25\%, 1\%, 5\%
+ & Same three shares, plus a weak-survival cell (1\%)
+ & Share 0.05\%, 0.1\%, 0.2\% \\
+\addlinespace
+Survival & Strong, with about 30\% censoring
+ & Strong and weak (oracle $C \approx 0.68$ for weak). Null fits permute training outcomes.
+ & Strong (oracle $C$ 0.94--0.96) and realistic (oracle $C$ 0.73--0.74) \\
+\addlinespace
+Weights $w_S$ & 0, 1, 10, 100, 1000, 10000, $p/50$ (40 at $p = 2{,}000$), and an arm targeting a share of 0.2
+ & 1, 2, 5, 10, 20 or 50, chosen by five-fold CV partial log-likelihood in A1 and A2
+ & 1 and 5 for A1 and 1 for A2 \\
+\addlinespace
+Comparator & Unsupervised fit ($w_S = 0$) and earlier unsupervised fit on uncentered input
+ & Two-step Cox using scores from the $w_S = 0$ loadings
+ & Two-step \\
+\addlinespace
+Datasets per cell & 10, for 60 datasets and 480 fits
+ & 10, for 480 fits with CV and 360 null fits
+ & 10, for 240 fits \\
+\addlinespace
+CV weight & $w_S = 1$ in 55/60 datasets
+ & Selected per dataset (see Table~\ref{tab:strength})
+ & Fixed weights \\
+\bottomrule
+\end{tabular}
+\caption{Designs of the three simulation studies of survival supervision. All use the same shared-loading generator and fit $K = 7$ programs. The planted program carries a small share of the variance and its coefficient sets the strength of the survival effect. A1 weights the Cox term and the KL divergence for $\beta$ by $w_S$. A2 also uses a joint Gaussian posterior for $\beta$.}
+\label{tab:sim-design}
+\end{table}

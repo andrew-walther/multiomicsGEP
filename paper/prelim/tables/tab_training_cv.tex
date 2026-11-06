@@ -1,0 +1,16 @@
+\begin{table}[!htb]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+Fit & \shortstack{Mean fold $C$\\(SE)} & \shortstack{Pooled\\out-of-fold $C$} & \shortstack{CV partial\\log-likelihood} & \shortstack{Folds\\converged} & \shortstack{Survival-active\\programs} \\
+\midrule
+$w_S = 1$ & 0.663 (0.024) & 0.663 & $-$775.2 & 3/5 & 3 \\
+Two-step & 0.652 (0.026) & 0.647 & $-$777.1 & 3/5 & 4 \\
+\midrule
+\multicolumn{6}{l}{Paired fold difference ($w_S = 1$ minus two-step) \quad $+$0.011 (SE 0.005)} \\
+\bottomrule
+\end{tabular}
+\caption{Five-fold training cross-validation on the 2,218 selected genes (273 patients, 139 events). Convergence refers to the factorization in each arm. Activity is measured in the fit to all training patients using $|E[\beta_k]| \geq 1.96$ posterior SD for $w_S = 1$ and the Wald test for the two-step fit.}
+\label{tab:training-cv}
+\end{table}

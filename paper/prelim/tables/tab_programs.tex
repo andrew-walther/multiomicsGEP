@@ -1,0 +1,20 @@
+\begin{table}[tbp]
+\centering
+\small
+\setlength{\tabcolsep}{2.5pt}
+\caption{Programs of the survival-supervised fit on the training cohorts ($n=273$). $E[\beta]$ is the posterior mean coefficient per SD of the program score $Z_k = Y\,E[F_k]$ (posterior SD in parentheses), $z = E[\beta]/\mathrm{SD}$, and a program is survival-active when $|z|\ge 1.96$. A positive $\beta$ indicates an association between a higher score and a higher hazard. Top genes are those with the largest positive and most negative loadings. The positive pole is the direction in which the score $Z_k$ increases.}
+\label{tab:programs}
+\begin{tabular}{@{}r p{1.12in} r r c p{1.3in} p{1.3in}@{}}
+\toprule
+\# & Label & $E[\beta]$ (SD) & $z$ & Active & Positive pole genes & Negative pole genes \\
+\midrule
+2 & Classical / basal-like & $-$0.41 (0.08) & $-$4.8 & yes & ATP2A3, ACACB, METTL7A, ADH1B & LOXL2, MMP14, P4HA1, LDHA \\
+3 & Proliferation / classical & 0.22 (0.07) & 3.0 & yes & RPS7, RPL6, NCAPD2, EEF1D & KIAA1211, SYTL2, CTSE, TSPAN8 \\
+5 & Mitotic / stromal signals & 0.23 (0.08) & 2.8 & yes & UHMK1, ARHGAP5, TAOK1, RAD21 & CHPF, RCN3, MXRA8, LOXL1 \\
+1 & P1 & 0.00 (0.00) & 0.0 & no & TCF4, FBN1, BNC2, GAS7 & RAB25, PKP3, GALE, RASSF7 \\
+4 & P4 & 0.15 (0.08) & 1.9 & no & CTRB2, CTRB1, CPB1, REG1B & BANK1, STK17B, EMB, MS4A1 \\
+6 & P6 & 0.00 (0.00) & 0.0 & no & IFI30, LILRB4, FCER1G, CD74 & RAP1GAP2, IGF1R, ARHGAP32, PBX1 \\
+7 & P7 & $-$0.05 (0.06) & $-$0.9 & no & ANO1, BCL9L, PPL, VSTM2L & PRDX4, PPIB, NUCB2, P4HB \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,834 @@
+"cohort","signature","n_sig","n_present","n","program","spearman_r"
+"Pooled training","Moffitt basal-like",25,24,273,1,-0.115378717461156
+"Pooled training","Moffitt basal-like",25,24,273,2,-0.708212032707524
+"Pooled training","Moffitt basal-like",25,24,273,3,0.0685503847805265
+"Pooled training","Moffitt basal-like",25,24,273,4,0.0352807883400412
+"Pooled training","Moffitt basal-like",25,24,273,5,-0.075414388102237
+"Pooled training","Moffitt basal-like",25,24,273,6,-0.137538985274065
+"Pooled training","Moffitt basal-like",25,24,273,7,0.439312136982811
+"Pooled training","Moffitt classical",25,24,273,1,-0.513763983976522
+"Pooled training","Moffitt classical",25,24,273,2,0.24807019944418
+"Pooled training","Moffitt classical",25,24,273,3,-0.760616262226395
+"Pooled training","Moffitt classical",25,24,273,4,-0.0405234525028428
+"Pooled training","Moffitt classical",25,24,273,5,0.0241077621391061
+"Pooled training","Moffitt classical",25,24,273,6,-0.141059455786807
+"Pooled training","Moffitt classical",25,24,273,7,-0.0711773198892134
+"Pooled training","Moffitt activated stroma",25,25,273,1,0.638476165311717
+"Pooled training","Moffitt activated stroma",25,25,273,2,-0.534554753962225
+"Pooled training","Moffitt activated stroma",25,25,273,3,-0.10445399383785
+"Pooled training","Moffitt activated stroma",25,25,273,4,-0.200967023530355
+"Pooled training","Moffitt activated stroma",25,25,273,5,-0.133416926568494
+"Pooled training","Moffitt activated stroma",25,25,273,6,0.171155379613946
+"Pooled training","Moffitt activated stroma",25,25,273,7,-0.0553001099372933
+"Pooled training","Moffitt normal stroma",25,23,273,1,0.661363057294788
+"Pooled training","Moffitt normal stroma",25,23,273,2,0.421327598978952
+"Pooled training","Moffitt normal stroma",25,23,273,3,0.137311915220889
+"Pooled training","Moffitt normal stroma",25,23,273,4,-0.0143278254592123
+"Pooled training","Moffitt normal stroma",25,23,273,5,-0.154818721424561
+"Pooled training","Moffitt normal stroma",25,23,273,6,0.224722089846607
+"Pooled training","Moffitt normal stroma",25,23,273,7,-0.0268957105582267
+"Pooled training","Collisson classical",22,22,273,1,-0.618501667932754
+"Pooled training","Collisson classical",22,22,273,2,-0.0313244612836712
+"Pooled training","Collisson classical",22,22,273,3,-0.793579166647007
+"Pooled training","Collisson classical",22,22,273,4,-0.127971963631045
+"Pooled training","Collisson classical",22,22,273,5,0.0949005374187856
+"Pooled training","Collisson classical",22,22,273,6,-0.195101538650272
+"Pooled training","Collisson classical",22,22,273,7,0.0209163957553824
+"Pooled training","Collisson exocrine-like",20,19,273,1,-0.0866912177560524
+"Pooled training","Collisson exocrine-like",20,19,273,2,0.506905288785924
+"Pooled training","Collisson exocrine-like",20,19,273,3,0.013430161508736
+"Pooled training","Collisson exocrine-like",20,19,273,4,0.900155233345444
+"Pooled training","Collisson exocrine-like",20,19,273,5,0.0358163197901283
+"Pooled training","Collisson exocrine-like",20,19,273,6,-0.000745497525231317
+"Pooled training","Collisson exocrine-like",20,19,273,7,-0.0776025177055662
+"Pooled training","Collisson quasi-mesenchymal",20,19,273,1,0.163541160428236
+"Pooled training","Collisson quasi-mesenchymal",20,19,273,2,-0.834363897159088
+"Pooled training","Collisson quasi-mesenchymal",20,19,273,3,0.117496071982976
+"Pooled training","Collisson quasi-mesenchymal",20,19,273,4,-0.322332133302507
+"Pooled training","Collisson quasi-mesenchymal",20,19,273,5,0.14049207555004
+"Pooled training","Collisson quasi-mesenchymal",20,19,273,6,0.0492299671131788
+"Pooled training","Collisson quasi-mesenchymal",20,19,273,7,0.0875823939907237
+"Pooled training","Bailey squamous",87,71,273,1,0.341381246490736
+"Pooled training","Bailey squamous",87,71,273,2,-0.71078293754335
+"Pooled training","Bailey squamous",87,71,273,3,0.442653900414742
+"Pooled training","Bailey squamous",87,71,273,4,-0.111053180396246
+"Pooled training","Bailey squamous",87,71,273,5,-0.130756963088436
+"Pooled training","Bailey squamous",87,71,273,6,0.0573685116944026
+"Pooled training","Bailey squamous",87,71,273,7,0.261534568908979
+"Pooled training","Bailey immunogenic",145,51,273,1,-0.11316994512572
+"Pooled training","Bailey immunogenic",145,51,273,2,0.637172724227254
+"Pooled training","Bailey immunogenic",145,51,273,3,-0.448350704683895
+"Pooled training","Bailey immunogenic",145,51,273,4,0.0354866258687641
+"Pooled training","Bailey immunogenic",145,51,273,5,0.196016896371126
+"Pooled training","Bailey immunogenic",145,51,273,6,0.188719395675171
+"Pooled training","Bailey immunogenic",145,51,273,7,-0.274345448454508
+"Pooled training","Bailey pancreatic progenitor",73,58,273,1,-0.259419573556542
+"Pooled training","Bailey pancreatic progenitor",73,58,273,2,0.448098863352191
+"Pooled training","Bailey pancreatic progenitor",73,58,273,3,-0.741682158545619
+"Pooled training","Bailey pancreatic progenitor",73,58,273,4,0.193336290158961
+"Pooled training","Bailey pancreatic progenitor",73,58,273,5,0.420096702353036
+"Pooled training","Bailey pancreatic progenitor",73,58,273,6,-0.136674939487305
+"Pooled training","Bailey pancreatic progenitor",73,58,273,7,-0.0954407872076399
+"Pooled training","Bailey ADEX",57,52,273,1,-0.00954873808029669
+"Pooled training","Bailey ADEX",57,52,273,2,0.57169987590769
+"Pooled training","Bailey ADEX",57,52,273,3,0.051491230967401
+"Pooled training","Bailey ADEX",57,52,273,4,0.893932924096084
+"Pooled training","Bailey ADEX",57,52,273,5,-0.00489350709402234
+"Pooled training","Bailey ADEX",57,52,273,6,0.0196164934249949
+"Pooled training","Bailey ADEX",57,52,273,7,-0.0186179749833679
+"Pooled training","DeSurv classical tumor",270,270,273,1,-0.0218376513996952
+"Pooled training","DeSurv classical tumor",270,270,273,2,0.527336285440622
+"Pooled training","DeSurv classical tumor",270,270,273,3,-0.544692104803741
+"Pooled training","DeSurv classical tumor",270,270,273,4,0.172792643166194
+"Pooled training","DeSurv classical tumor",270,270,273,5,-0.245556504465908
+"Pooled training","DeSurv classical tumor",270,270,273,6,0.127613959677077
+"Pooled training","DeSurv classical tumor",270,270,273,7,0.17812849451965
+"Pooled training","DeSurv stromal-immune",270,270,273,1,0.884475014037058
+"Pooled training","DeSurv stromal-immune",270,270,273,2,-0.0438481119567423
+"Pooled training","DeSurv stromal-immune",270,270,273,3,-0.0477560760407476
+"Pooled training","DeSurv stromal-immune",270,270,273,4,-0.050141786079957
+"Pooled training","DeSurv stromal-immune",270,270,273,5,0.210700366614922
+"Pooled training","DeSurv stromal-immune",270,270,273,6,0.402378160697182
+"Pooled training","DeSurv stromal-immune",270,270,273,7,-0.0218099311594374
+"Pooled training","DeSurv basal-like tumor",270,270,273,1,-0.631080759086341
+"Pooled training","DeSurv basal-like tumor",270,270,273,2,-0.541366855557495
+"Pooled training","DeSurv basal-like tumor",270,270,273,3,-0.317449832263057
+"Pooled training","DeSurv basal-like tumor",270,270,273,4,0.0251782352469343
+"Pooled training","DeSurv basal-like tumor",270,270,273,5,-0.11685083915655
+"Pooled training","DeSurv basal-like tumor",270,270,273,6,-0.1784169029768
+"Pooled training","DeSurv basal-like tumor",270,270,273,7,0.268610307682871
+"TCGA_PAAD","Moffitt basal-like",25,24,144,1,-0.234687726067036
+"TCGA_PAAD","Moffitt basal-like",25,24,144,2,-0.7157824933687
+"TCGA_PAAD","Moffitt basal-like",25,24,144,3,0.118885137850655
+"TCGA_PAAD","Moffitt basal-like",25,24,144,4,-0.0300056265573507
+"TCGA_PAAD","Moffitt basal-like",25,24,144,5,-0.102483723173378
+"TCGA_PAAD","Moffitt basal-like",25,24,144,6,-0.132031187203601
+"TCGA_PAAD","Moffitt basal-like",25,24,144,7,0.489442167028374
+"TCGA_PAAD","Moffitt classical",25,24,144,1,-0.54180130214613
+"TCGA_PAAD","Moffitt classical",25,24,144,2,0.138365083192669
+"TCGA_PAAD","Moffitt classical",25,24,144,3,-0.750602845430432
+"TCGA_PAAD","Moffitt classical",25,24,144,4,-0.0596053371915441
+"TCGA_PAAD","Moffitt classical",25,24,144,5,0.045731854352544
+"TCGA_PAAD","Moffitt classical",25,24,144,6,-0.0922031990997508
+"TCGA_PAAD","Moffitt classical",25,24,144,7,-0.0747970420384213
+"TCGA_PAAD","Moffitt activated stroma",25,25,144,1,0.641620448517
+"TCGA_PAAD","Moffitt activated stroma",25,25,144,2,-0.442950727433486
+"TCGA_PAAD","Moffitt activated stroma",25,25,144,3,-0.120910698496905
+"TCGA_PAAD","Moffitt activated stroma",25,25,144,4,-0.230134233582509
+"TCGA_PAAD","Moffitt activated stroma",25,25,144,5,-0.125331564986737
+"TCGA_PAAD","Moffitt activated stroma",25,25,144,6,0.276730166385339
+"TCGA_PAAD","Moffitt activated stroma",25,25,144,7,-0.0589020175227072
+"TCGA_PAAD","Moffitt normal stroma",25,23,144,1,0.761369664817941
+"TCGA_PAAD","Moffitt normal stroma",25,23,144,2,0.428084559119042
+"TCGA_PAAD","Moffitt normal stroma",25,23,144,3,0.192219274977896
+"TCGA_PAAD","Moffitt normal stroma",25,23,144,4,0.0106261554537417
+"TCGA_PAAD","Moffitt normal stroma",25,23,144,5,-0.0912748171368861
+"TCGA_PAAD","Moffitt normal stroma",25,23,144,6,0.413555984245639
+"TCGA_PAAD","Moffitt normal stroma",25,23,144,7,-0.150755566272808
+"TCGA_PAAD","Collisson classical",22,22,144,1,-0.678932561691182
+"TCGA_PAAD","Collisson classical",22,22,144,2,-0.114452214452214
+"TCGA_PAAD","Collisson classical",22,22,144,3,-0.746925488304799
+"TCGA_PAAD","Collisson classical",22,22,144,4,-0.11513543927337
+"TCGA_PAAD","Collisson classical",22,22,144,5,0.114387910939635
+"TCGA_PAAD","Collisson classical",22,22,144,6,-0.204854915199743
+"TCGA_PAAD","Collisson classical",22,22,144,7,0.0212040832730488
+"TCGA_PAAD","Collisson exocrine-like",20,19,144,1,-0.0255566272807652
+"TCGA_PAAD","Collisson exocrine-like",20,19,144,2,0.482951531227393
+"TCGA_PAAD","Collisson exocrine-like",20,19,144,3,-0.0288079736355598
+"TCGA_PAAD","Collisson exocrine-like",20,19,144,4,0.88524636283257
+"TCGA_PAAD","Collisson exocrine-like",20,19,144,5,0.0805079977493771
+"TCGA_PAAD","Collisson exocrine-like",20,19,144,6,0.123888754923238
+"TCGA_PAAD","Collisson exocrine-like",20,19,144,7,-0.0434129089301503
+"TCGA_PAAD","Collisson quasi-mesenchymal",20,19,144,1,0.154167671409051
+"TCGA_PAAD","Collisson quasi-mesenchymal",20,19,144,2,-0.790752351097179
+"TCGA_PAAD","Collisson quasi-mesenchymal",20,19,144,3,0.0952093883128366
+"TCGA_PAAD","Collisson quasi-mesenchymal",20,19,144,4,-0.330439675267261
+"TCGA_PAAD","Collisson quasi-mesenchymal",20,19,144,5,0.129575596816976
+"TCGA_PAAD","Collisson quasi-mesenchymal",20,19,144,6,0.0096093561610803
+"TCGA_PAAD","Collisson quasi-mesenchymal",20,19,144,7,0.171734587251829
+"TCGA_PAAD","Bailey squamous",87,71,144,1,0.316686761514348
+"TCGA_PAAD","Bailey squamous",87,71,144,2,-0.642745759987139
+"TCGA_PAAD","Bailey squamous",87,71,144,3,0.474977895667551
+"TCGA_PAAD","Bailey squamous",87,71,144,4,-0.127401334297886
+"TCGA_PAAD","Bailey squamous",87,71,144,5,-0.133550357688289
+"TCGA_PAAD","Bailey squamous",87,71,144,6,0.0351338316855558
+"TCGA_PAAD","Bailey squamous",87,71,144,7,0.315256008359457
+"TCGA_PAAD","Bailey immunogenic",145,51,144,1,-0.0116188409291858
+"TCGA_PAAD","Bailey immunogenic",145,51,144,2,0.611952415400691
+"TCGA_PAAD","Bailey immunogenic",145,51,144,3,-0.496575837955148
+"TCGA_PAAD","Bailey immunogenic",145,51,144,4,0.0909573185435254
+"TCGA_PAAD","Bailey immunogenic",145,51,144,5,0.218435013262599
+"TCGA_PAAD","Bailey immunogenic",145,51,144,6,0.245189293465156
+"TCGA_PAAD","Bailey immunogenic",145,51,144,7,-0.262418615866892
+"TCGA_PAAD","Bailey pancreatic progenitor",73,58,144,1,-0.116075878144844
+"TCGA_PAAD","Bailey pancreatic progenitor",73,58,144,2,0.427955952093883
+"TCGA_PAAD","Bailey pancreatic progenitor",73,58,144,3,-0.778048388393216
+"TCGA_PAAD","Bailey pancreatic progenitor",73,58,144,4,0.22880797363556
+"TCGA_PAAD","Bailey pancreatic progenitor",73,58,144,5,0.529205851619645
+"TCGA_PAAD","Bailey pancreatic progenitor",73,58,144,6,-0.0620247568523431
+"TCGA_PAAD","Bailey pancreatic progenitor",73,58,144,7,-0.0202033598585323
+"TCGA_PAAD","Bailey ADEX",57,52,144,1,0.0710151917048469
+"TCGA_PAAD","Bailey ADEX",57,52,144,2,0.565995498754119
+"TCGA_PAAD","Bailey ADEX",57,52,144,3,0.0379511293304397
+"TCGA_PAAD","Bailey ADEX",57,52,144,4,0.884723896792862
+"TCGA_PAAD","Bailey ADEX",57,52,144,5,0.0736034080861667
+"TCGA_PAAD","Bailey ADEX",57,52,144,6,0.161880073949039
+"TCGA_PAAD","Bailey ADEX",57,52,144,7,0.00573506952817298
+"TCGA_PAAD","DeSurv classical tumor",270,270,144,1,0.0591753074511695
+"TCGA_PAAD","DeSurv classical tumor",270,270,144,2,0.532417008279077
+"TCGA_PAAD","DeSurv classical tumor",270,270,144,3,-0.508017844224741
+"TCGA_PAAD","DeSurv classical tumor",270,270,144,4,0.238288722771481
+"TCGA_PAAD","DeSurv classical tumor",270,270,144,5,-0.143939393939394
+"TCGA_PAAD","DeSurv classical tumor",270,270,144,6,0.271662245800177
+"TCGA_PAAD","DeSurv classical tumor",270,270,144,7,0.151619644723093
+"TCGA_PAAD","DeSurv stromal-immune",270,270,144,1,0.909766095972993
+"TCGA_PAAD","DeSurv stromal-immune",270,270,144,2,0.108174584036653
+"TCGA_PAAD","DeSurv stromal-immune",270,270,144,3,-0.0678683385579937
+"TCGA_PAAD","DeSurv stromal-immune",270,270,144,4,0.00807410979824773
+"TCGA_PAAD","DeSurv stromal-immune",270,270,144,5,0.299360983843742
+"TCGA_PAAD","DeSurv stromal-immune",270,270,144,6,0.493372719234788
+"TCGA_PAAD","DeSurv stromal-immune",270,270,144,7,-0.00862872759424483
+"TCGA_PAAD","DeSurv basal-like tumor",270,270,144,1,-0.73624306727755
+"TCGA_PAAD","DeSurv basal-like tumor",270,270,144,2,-0.520946869222731
+"TCGA_PAAD","DeSurv basal-like tumor",270,270,144,3,-0.259127079816735
+"TCGA_PAAD","DeSurv basal-like tumor",270,270,144,4,0.0516236636926292
+"TCGA_PAAD","DeSurv basal-like tumor",270,270,144,5,-0.190949280604453
+"TCGA_PAAD","DeSurv basal-like tumor",270,270,144,6,-0.197363555984246
+"TCGA_PAAD","DeSurv basal-like tumor",270,270,144,7,0.30170806205289
+"TCGA_PAAD","PurIST basal probability",NA,NA,144,1,0.250845023474094
+"TCGA_PAAD","PurIST basal probability",NA,NA,144,2,-0.502150977028959
+"TCGA_PAAD","PurIST basal probability",NA,NA,144,3,0.558827182355288
+"TCGA_PAAD","PurIST basal probability",NA,NA,144,4,-0.0256867438871531
+"TCGA_PAAD","PurIST basal probability",NA,NA,144,5,-0.0211724593680273
+"TCGA_PAAD","PurIST basal probability",NA,NA,144,6,-0.0633657563669862
+"TCGA_PAAD","PurIST basal probability",NA,NA,144,7,0.315039645337203
+"CPTAC","Moffitt basal-like",25,24,129,1,0.0735744633273703
+"CPTAC","Moffitt basal-like",25,24,129,2,-0.688713103756708
+"CPTAC","Moffitt basal-like",25,24,129,3,0.0283318425760286
+"CPTAC","Moffitt basal-like",25,24,129,4,0.102744856887299
+"CPTAC","Moffitt basal-like",25,24,129,5,-0.0398032200357782
+"CPTAC","Moffitt basal-like",25,24,129,6,-0.134341457960644
+"CPTAC","Moffitt basal-like",25,24,129,7,0.388724284436494
+"CPTAC","Moffitt classical",25,24,129,1,-0.484140205724508
+"CPTAC","Moffitt classical",25,24,129,2,0.367190295169946
+"CPTAC","Moffitt classical",25,24,129,3,-0.774804338103757
+"CPTAC","Moffitt classical",25,24,129,4,-0.0132267441860465
+"CPTAC","Moffitt classical",25,24,129,5,0.0156864937388193
+"CPTAC","Moffitt classical",25,24,129,6,-0.202470930232558
+"CPTAC","Moffitt classical",25,24,129,7,-0.0637075134168158
+"CPTAC","Moffitt activated stroma",25,25,129,1,0.646997987477639
+"CPTAC","Moffitt activated stroma",25,25,129,2,-0.62684481216458
+"CPTAC","Moffitt activated stroma",25,25,129,3,-0.0844364937388193
+"CPTAC","Moffitt activated stroma",25,25,129,4,-0.172053890876565
+"CPTAC","Moffitt activated stroma",25,25,129,5,-0.162768336314848
+"CPTAC","Moffitt activated stroma",25,25,129,6,0.0547070661896243
+"CPTAC","Moffitt activated stroma",25,25,129,7,-0.0494241949910555
+"CPTAC","Moffitt normal stroma",25,23,129,1,0.486499329159213
+"CPTAC","Moffitt normal stroma",25,23,129,2,0.409615384615385
+"CPTAC","Moffitt normal stroma",25,23,129,3,0.0887969588550984
+"CPTAC","Moffitt normal stroma",25,23,129,4,-0.0598837209302326
+"CPTAC","Moffitt normal stroma",25,23,129,5,-0.249821109123435
+"CPTAC","Moffitt normal stroma",25,23,129,6,0.025033542039356
+"CPTAC","Moffitt normal stroma",25,23,129,7,0.144191636851521
+"CPTAC","Collisson classical",22,22,129,1,-0.520371198568873
+"CPTAC","Collisson classical",22,22,129,2,0.0602974060822898
+"CPTAC","Collisson classical",22,22,129,3,-0.852554785330948
+"CPTAC","Collisson classical",22,22,129,4,-0.141334973166369
+"CPTAC","Collisson classical",22,22,129,5,0.0963383273703041
+"CPTAC","Collisson classical",22,22,129,6,-0.186672629695886
+"CPTAC","Collisson classical",22,22,129,7,0.0199742844364937
+"CPTAC","Collisson exocrine-like",20,19,129,1,-0.192592799642218
+"CPTAC","Collisson exocrine-like",20,19,129,2,0.541536225402505
+"CPTAC","Collisson exocrine-like",20,19,129,3,0.066961091234347
+"CPTAC","Collisson exocrine-like",20,19,129,4,0.920298524150268
+"CPTAC","Collisson exocrine-like",20,19,129,5,-0.026570885509839
+"CPTAC","Collisson exocrine-like",20,19,129,6,-0.131127012522361
+"CPTAC","Collisson exocrine-like",20,19,129,7,-0.115982781753131
+"CPTAC","Collisson quasi-mesenchymal",20,19,129,1,0.189518112701252
+"CPTAC","Collisson quasi-mesenchymal",20,19,129,2,-0.873501788908766
+"CPTAC","Collisson quasi-mesenchymal",20,19,129,3,0.140630590339893
+"CPTAC","Collisson quasi-mesenchymal",20,19,129,4,-0.32323904293381
+"CPTAC","Collisson quasi-mesenchymal",20,19,129,5,0.142822003577818
+"CPTAC","Collisson quasi-mesenchymal",20,19,129,6,0.0784660107334526
+"CPTAC","Collisson quasi-mesenchymal",20,19,129,7,0.00693761180679785
+"CPTAC","Bailey squamous",87,71,129,1,0.397053890876565
+"CPTAC","Bailey squamous",87,71,129,2,-0.773317307692308
+"CPTAC","Bailey squamous",87,71,129,3,0.413713103756709
+"CPTAC","Bailey squamous",87,71,129,4,-0.107608452593918
+"CPTAC","Bailey squamous",87,71,129,5,-0.134866949910555
+"CPTAC","Bailey squamous",87,71,129,6,0.068599060822898
+"CPTAC","Bailey squamous",87,71,129,7,0.213372093023256
+"CPTAC","Bailey immunogenic",145,51,129,1,-0.260873211091234
+"CPTAC","Bailey immunogenic",145,51,129,2,0.64679114490161
+"CPTAC","Bailey immunogenic",145,51,129,3,-0.408145125223614
+"CPTAC","Bailey immunogenic",145,51,129,4,-0.0126900715563506
+"CPTAC","Bailey immunogenic",145,51,129,5,0.175749105545617
+"CPTAC","Bailey immunogenic",145,51,129,6,0.141558586762075
+"CPTAC","Bailey immunogenic",145,51,129,7,-0.276453488372093
+"CPTAC","Bailey pancreatic progenitor",73,58,129,1,-0.501140429338104
+"CPTAC","Bailey pancreatic progenitor",73,58,129,2,0.475810599284437
+"CPTAC","Bailey pancreatic progenitor",73,58,129,3,-0.692508944543828
+"CPTAC","Bailey pancreatic progenitor",73,58,129,4,0.169482334525939
+"CPTAC","Bailey pancreatic progenitor",73,58,129,5,0.294767441860465
+"CPTAC","Bailey pancreatic progenitor",73,58,129,6,-0.236203041144902
+"CPTAC","Bailey pancreatic progenitor",73,58,129,7,-0.190999552772809
+"CPTAC","Bailey ADEX",57,52,129,1,-0.146092352415027
+"CPTAC","Bailey ADEX",57,52,129,2,0.58336873881932
+"CPTAC","Bailey ADEX",57,52,129,3,0.0709134615384616
+"CPTAC","Bailey ADEX",57,52,129,4,0.906222048300537
+"CPTAC","Bailey ADEX",57,52,129,5,-0.106769901610018
+"CPTAC","Bailey ADEX",57,52,129,6,-0.123171958855098
+"CPTAC","Bailey ADEX",57,52,129,7,-0.0424865831842576
+"CPTAC","DeSurv classical tumor",270,270,129,1,-0.158927772808587
+"CPTAC","DeSurv classical tumor",270,270,129,2,0.523954606440072
+"CPTAC","DeSurv classical tumor",270,270,129,3,-0.587136627906977
+"CPTAC","DeSurv classical tumor",270,270,129,4,0.10119633273703
+"CPTAC","DeSurv classical tumor",270,270,129,5,-0.360230322003578
+"CPTAC","DeSurv classical tumor",270,270,129,6,-0.0184089892665474
+"CPTAC","DeSurv classical tumor",270,270,129,7,0.202364713774598
+"CPTAC","DeSurv stromal-immune",270,270,129,1,0.830864266547406
+"CPTAC","DeSurv stromal-immune",270,270,129,2,-0.238847271914132
+"CPTAC","DeSurv stromal-immune",270,270,129,3,-0.0256708407871199
+"CPTAC","DeSurv stromal-immune",270,270,129,4,-0.131205277280859
+"CPTAC","DeSurv stromal-immune",270,270,129,5,0.0859067531305904
+"CPTAC","DeSurv stromal-immune",270,270,129,6,0.281233228980322
+"CPTAC","DeSurv stromal-immune",270,270,129,7,-0.0413573345259392
+"CPTAC","DeSurv basal-like tumor",270,270,129,1,-0.452811940966011
+"CPTAC","DeSurv basal-like tumor",270,270,129,2,-0.563288237924866
+"CPTAC","DeSurv basal-like tumor",270,270,129,3,-0.393157423971378
+"CPTAC","DeSurv basal-like tumor",270,270,129,4,-0.0102582737030411
+"CPTAC","DeSurv basal-like tumor",270,270,129,5,-0.00699351520572451
+"CPTAC","DeSurv basal-like tumor",270,270,129,6,-0.157317754919499
+"CPTAC","DeSurv basal-like tumor",270,270,129,7,0.218123881932022
+"CPTAC","PurIST basal probability",NA,NA,129,1,0.301886194941108
+"CPTAC","PurIST basal probability",NA,NA,129,2,-0.720065451299465
+"CPTAC","PurIST basal probability",NA,NA,129,3,0.344413279345911
+"CPTAC","PurIST basal probability",NA,NA,129,4,-0.0829081780728187
+"CPTAC","PurIST basal probability",NA,NA,129,5,-0.0392533965749603
+"CPTAC","PurIST basal probability",NA,NA,129,6,0.0696815815709294
+"CPTAC","PurIST basal probability",NA,NA,129,7,0.270173220719717
+"Dijk","Moffitt basal-like",25,25,90,1,0.241585380911224
+"Dijk","Moffitt basal-like",25,25,90,2,-0.73249372350496
+"Dijk","Moffitt basal-like",25,25,90,3,-0.0611186566242746
+"Dijk","Moffitt basal-like",25,25,90,4,0.140618183314813
+"Dijk","Moffitt basal-like",25,25,90,5,-0.070272050047331
+"Dijk","Moffitt basal-like",25,25,90,6,0.23391365189118
+"Dijk","Moffitt basal-like",25,25,90,7,0.586302835741038
+"Dijk","Moffitt classical",25,24,90,1,-0.56292546404906
+"Dijk","Moffitt classical",25,24,90,2,0.331242540231304
+"Dijk","Moffitt classical",25,24,90,3,-0.564917479524221
+"Dijk","Moffitt classical",25,24,90,4,-0.139432851792402
+"Dijk","Moffitt classical",25,24,90,5,0.420488126106104
+"Dijk","Moffitt classical",25,24,90,6,-0.247890686092933
+"Dijk","Moffitt classical",25,24,90,7,-0.0791949623410298
+"Dijk","Moffitt activated stroma",25,25,90,1,0.76497509980656
+"Dijk","Moffitt activated stroma",25,25,90,2,-0.720706260032103
+"Dijk","Moffitt activated stroma",25,25,90,3,-0.286924311643413
+"Dijk","Moffitt activated stroma",25,25,90,4,0.0831625303535416
+"Dijk","Moffitt activated stroma",25,25,90,5,-0.189941144997325
+"Dijk","Moffitt activated stroma",25,25,90,6,0.550413631312508
+"Dijk","Moffitt activated stroma",25,25,90,7,0.478470593077335
+"Dijk","Moffitt normal stroma",25,22,90,1,0.599950611186566
+"Dijk","Moffitt normal stroma",25,22,90,2,0.0719348067662674
+"Dijk","Moffitt normal stroma",25,22,90,3,-0.224381610898465
+"Dijk","Moffitt normal stroma",25,22,90,4,0.0632753014775487
+"Dijk","Moffitt normal stroma",25,22,90,5,-0.0869160801745072
+"Dijk","Moffitt normal stroma",25,22,90,6,0.289393752315101
+"Dijk","Moffitt normal stroma",25,22,90,7,0.30266288019097
+"Dijk","Collisson classical",22,22,90,1,-0.492447627279088
+"Dijk","Collisson classical",22,22,90,2,0.0713256780672511
+"Dijk","Collisson classical",22,22,90,3,-0.684882907354817
+"Dijk","Collisson classical",22,22,90,4,-0.117257274560645
+"Dijk","Collisson classical",22,22,90,5,0.45685475573116
+"Dijk","Collisson classical",22,22,90,6,-0.178137218586657
+"Dijk","Collisson classical",22,22,90,7,0.121175453759723
+"Dijk","Collisson exocrine-like",20,20,90,1,-0.00960612421286579
+"Dijk","Collisson exocrine-like",20,20,90,2,0.442811869778162
+"Dijk","Collisson exocrine-like",20,20,90,3,-0.0275671893649422
+"Dijk","Collisson exocrine-like",20,20,90,4,0.819681442153352
+"Dijk","Collisson exocrine-like",20,20,90,5,-0.17555253735029
+"Dijk","Collisson exocrine-like",20,20,90,6,-0.0550932213853562
+"Dijk","Collisson exocrine-like",20,20,90,7,0.0102975676009384
+"Dijk","Collisson quasi-mesenchymal",20,19,90,1,0.471012882248837
+"Dijk","Collisson quasi-mesenchymal",20,19,90,2,-0.847668436432481
+"Dijk","Collisson quasi-mesenchymal",20,19,90,3,-0.311487014857801
+"Dijk","Collisson quasi-mesenchymal",20,19,90,4,-0.0372473967979586
+"Dijk","Collisson quasi-mesenchymal",20,19,90,5,0.189891756183891
+"Dijk","Collisson quasi-mesenchymal",20,19,90,6,0.518047495575585
+"Dijk","Collisson quasi-mesenchymal",20,19,90,7,0.58620405811417
+"Dijk","Bailey squamous",87,73,90,1,0.559237765979339
+"Dijk","Bailey squamous",87,73,90,2,-0.822447215705643
+"Dijk","Bailey squamous",87,73,90,3,-0.115117092645183
+"Dijk","Bailey squamous",87,73,90,4,0.0704860682388772
+"Dijk","Bailey squamous",87,73,90,5,-0.0240441206733342
+"Dijk","Bailey squamous",87,73,90,6,0.460608305552126
+"Dijk","Bailey squamous",87,73,90,7,0.628596122978145
+"Dijk","Bailey immunogenic",145,138,90,1,-0.0303658887928551
+"Dijk","Bailey immunogenic",145,138,90,2,0.175914721982138
+"Dijk","Bailey immunogenic",145,138,90,3,-0.671975964110796
+"Dijk","Bailey immunogenic",145,138,90,4,-0.0192534057702597
+"Dijk","Bailey immunogenic",145,138,90,5,0.467506276495041
+"Dijk","Bailey immunogenic",145,138,90,6,0.288241346668313
+"Dijk","Bailey immunogenic",145,138,90,7,0.223476149318846
+"Dijk","Bailey pancreatic progenitor",73,61,90,1,0.103741202617607
+"Dijk","Bailey pancreatic progenitor",73,61,90,2,-0.114409186319299
+"Dijk","Bailey pancreatic progenitor",73,61,90,3,-0.917619459192493
+"Dijk","Bailey pancreatic progenitor",73,61,90,4,0.193991027698893
+"Dijk","Bailey pancreatic progenitor",73,61,90,5,0.608906449355888
+"Dijk","Bailey pancreatic progenitor",73,61,90,6,0.274939292916821
+"Dijk","Bailey pancreatic progenitor",73,61,90,7,0.504893608264395
+"Dijk","Bailey ADEX",57,54,90,1,0.134362266946537
+"Dijk","Bailey ADEX",57,54,90,2,0.371181627361403
+"Dijk","Bailey ADEX",57,54,90,3,-0.0617771741367247
+"Dijk","Bailey ADEX",57,54,90,4,0.863324690290982
+"Dijk","Bailey ADEX",57,54,90,5,-0.212133185166893
+"Dijk","Bailey ADEX",57,54,90,6,-0.0106597522327859
+"Dijk","Bailey ADEX",57,54,90,7,0.141474256080998
+"Dijk","DeSurv classical tumor",270,267,90,1,0.246655965757089
+"Dijk","DeSurv classical tumor",270,267,90,2,0.0203728855414249
+"Dijk","DeSurv classical tumor",270,267,90,3,-0.834333456805367
+"Dijk","DeSurv classical tumor",270,267,90,4,0.286479812322509
+"Dijk","DeSurv classical tumor",270,267,90,5,0.247133390953616
+"Dijk","DeSurv classical tumor",270,267,90,6,0.289887640449438
+"Dijk","DeSurv classical tumor",270,267,90,7,0.603934642136889
+"Dijk","DeSurv stromal-immune",270,263,90,1,0.763246491336379
+"Dijk","DeSurv stromal-immune",270,263,90,2,-0.504778367699716
+"Dijk","DeSurv stromal-immune",270,263,90,3,-0.551648351648352
+"Dijk","DeSurv stromal-immune",270,263,90,4,0.164094332633658
+"Dijk","DeSurv stromal-immune",270,263,90,5,0.231180804214512
+"Dijk","DeSurv stromal-immune",270,263,90,6,0.673029592130716
+"Dijk","DeSurv stromal-immune",270,263,90,7,0.64902662880191
+"Dijk","DeSurv basal-like tumor",270,265,90,1,0.0232209737827715
+"Dijk","DeSurv basal-like tumor",270,265,90,2,-0.594731859900399
+"Dijk","DeSurv basal-like tumor",270,265,90,3,-0.6414042885953
+"Dijk","DeSurv basal-like tumor",270,265,90,4,0.1844919125818
+"Dijk","DeSurv basal-like tumor",270,265,90,5,0.116812775239742
+"Dijk","DeSurv basal-like tumor",270,265,90,6,0.222784705930773
+"Dijk","DeSurv basal-like tumor",270,265,90,7,0.642276824299296
+"Dijk","PurIST basal probability",NA,NA,90,1,0.301327573642335
+"Dijk","PurIST basal probability",NA,NA,90,2,-0.533165894940633
+"Dijk","PurIST basal probability",NA,NA,90,3,0.425043838385264
+"Dijk","PurIST basal probability",NA,NA,90,4,-0.0285907648782044
+"Dijk","PurIST basal probability",NA,NA,90,5,-0.246801789825266
+"Dijk","PurIST basal probability",NA,NA,90,6,0.0969596244040817
+"Dijk","PurIST basal probability",NA,NA,90,7,0.301344172054456
+"Moffitt_GEO_array","Moffitt basal-like",25,23,123,1,-0.245398614747649
+"Moffitt_GEO_array","Moffitt basal-like",25,23,123,2,-0.779365673085604
+"Moffitt_GEO_array","Moffitt basal-like",25,23,123,3,-0.277624434097329
+"Moffitt_GEO_array","Moffitt basal-like",25,23,123,4,-0.0513343049876823
+"Moffitt_GEO_array","Moffitt basal-like",25,23,123,5,0.0291496304703925
+"Moffitt_GEO_array","Moffitt basal-like",25,23,123,6,0.115618268821504
+"Moffitt_GEO_array","Moffitt basal-like",25,23,123,7,0.571229572687054
+"Moffitt_GEO_array","Moffitt classical",25,23,123,1,-0.577536727244586
+"Moffitt_GEO_array","Moffitt classical",25,23,123,2,-0.0835601243373618
+"Moffitt_GEO_array","Moffitt classical",25,23,123,3,-0.838393674788149
+"Moffitt_GEO_array","Moffitt classical",25,23,123,4,-0.00661025912215759
+"Moffitt_GEO_array","Moffitt classical",25,23,123,5,0.151571629412751
+"Moffitt_GEO_array","Moffitt classical",25,23,123,6,-0.0351149862635591
+"Moffitt_GEO_array","Moffitt classical",25,23,123,7,0.254233790354826
+"Moffitt_GEO_array","Moffitt activated stroma",25,25,123,1,0.599140988765784
+"Moffitt_GEO_array","Moffitt activated stroma",25,25,123,2,-0.519385794069469
+"Moffitt_GEO_array","Moffitt activated stroma",25,25,123,3,-0.226399762675575
+"Moffitt_GEO_array","Moffitt activated stroma",25,25,123,4,-0.2668416504366
+"Moffitt_GEO_array","Moffitt activated stroma",25,25,123,5,-0.292902193961125
+"Moffitt_GEO_array","Moffitt activated stroma",25,25,123,6,0.418310095316712
+"Moffitt_GEO_array","Moffitt activated stroma",25,25,123,7,-0.00257316428267403
+"Moffitt_GEO_array","Moffitt normal stroma",25,25,123,1,0.667539435838568
+"Moffitt_GEO_array","Moffitt normal stroma",25,25,123,2,0.377590899124221
+"Moffitt_GEO_array","Moffitt normal stroma",25,25,123,3,0.257297081167533
+"Moffitt_GEO_array","Moffitt normal stroma",25,25,123,4,-0.145083901923102
+"Moffitt_GEO_array","Moffitt normal stroma",25,25,123,5,-0.0076679005817028
+"Moffitt_GEO_array","Moffitt normal stroma",25,25,123,6,0.103307064271066
+"Moffitt_GEO_array","Moffitt normal stroma",25,25,123,7,-0.329281190749507
+"Moffitt_GEO_array","Collisson classical",22,22,123,1,-0.676348815312585
+"Moffitt_GEO_array","Collisson classical",22,22,123,2,-0.308824857153913
+"Moffitt_GEO_array","Collisson classical",22,22,123,3,-0.847731874991939
+"Moffitt_GEO_array","Collisson classical",22,22,123,4,-0.0523339051476184
+"Moffitt_GEO_array","Collisson classical",22,22,123,5,0.11444454476274
+"Moffitt_GEO_array","Collisson classical",22,22,123,6,-0.0557583418245605
+"Moffitt_GEO_array","Collisson classical",22,22,123,7,0.384600998310353
+"Moffitt_GEO_array","Collisson exocrine-like",20,17,123,1,-0.0523016599811688
+"Moffitt_GEO_array","Collisson exocrine-like",20,17,123,2,0.574544375798068
+"Moffitt_GEO_array","Collisson exocrine-like",20,17,123,3,0.00473359043479382
+"Moffitt_GEO_array","Collisson exocrine-like",20,17,123,4,0.861145864234951
+"Moffitt_GEO_array","Collisson exocrine-like",20,17,123,5,0.224310275889644
+"Moffitt_GEO_array","Collisson exocrine-like",20,17,123,6,0.00872554204124802
+"Moffitt_GEO_array","Collisson exocrine-like",20,17,123,7,-0.189395209658072
+"Moffitt_GEO_array","Collisson quasi-mesenchymal",20,20,123,1,0.0771368871806116
+"Moffitt_GEO_array","Collisson quasi-mesenchymal",20,20,123,2,-0.800770014574815
+"Moffitt_GEO_array","Collisson quasi-mesenchymal",20,20,123,3,-0.0382427674091654
+"Moffitt_GEO_array","Collisson quasi-mesenchymal",20,20,123,4,-0.493925010640905
+"Moffitt_GEO_array","Collisson quasi-mesenchymal",20,20,123,5,0.0742348222001522
+"Moffitt_GEO_array","Collisson quasi-mesenchymal",20,20,123,6,0.227289729269582
+"Moffitt_GEO_array","Collisson quasi-mesenchymal",20,20,123,7,0.249222891488566
+"Moffitt_GEO_array","Bailey squamous",87,74,123,1,0.371477215565387
+"Moffitt_GEO_array","Bailey squamous",87,74,123,2,-0.625079000657801
+"Moffitt_GEO_array","Bailey squamous",87,74,123,3,0.312333131263624
+"Moffitt_GEO_array","Bailey squamous",87,74,123,4,-0.312900646193136
+"Moffitt_GEO_array","Bailey squamous",87,74,123,5,-0.211412209309824
+"Moffitt_GEO_array","Bailey squamous",87,74,123,6,0.181804697475848
+"Moffitt_GEO_array","Bailey squamous",87,74,123,7,0.257239039867924
+"Moffitt_GEO_array","Bailey immunogenic",145,60,123,1,0.0987024545020701
+"Moffitt_GEO_array","Bailey immunogenic",145,60,123,2,0.445718486798829
+"Moffitt_GEO_array","Bailey immunogenic",145,60,123,3,-0.301911493467129
+"Moffitt_GEO_array","Bailey immunogenic",145,60,123,4,0.11730791554346
+"Moffitt_GEO_array","Bailey immunogenic",145,60,123,5,0.0573512530471682
+"Moffitt_GEO_array","Bailey immunogenic",145,60,123,6,0.385213656472895
+"Moffitt_GEO_array","Bailey immunogenic",145,60,123,7,-0.255697720911635
+"Moffitt_GEO_array","Bailey pancreatic progenitor",73,63,123,1,-0.176561633411152
+"Moffitt_GEO_array","Bailey pancreatic progenitor",73,63,123,2,0.215178444751132
+"Moffitt_GEO_array","Bailey pancreatic progenitor",73,63,123,3,-0.677200087706853
+"Moffitt_GEO_array","Bailey pancreatic progenitor",73,63,123,4,0.330945041338303
+"Moffitt_GEO_array","Bailey pancreatic progenitor",73,63,123,5,0.452412583353755
+"Moffitt_GEO_array","Bailey pancreatic progenitor",73,63,123,6,0.0161548283912242
+"Moffitt_GEO_array","Bailey pancreatic progenitor",73,63,123,7,-0.1473217164747
+"Moffitt_GEO_array","Bailey ADEX",57,48,123,1,-0.0449046187976422
+"Moffitt_GEO_array","Bailey ADEX",57,48,123,2,0.626762198346468
+"Moffitt_GEO_array","Bailey ADEX",57,48,123,3,0.104758096761295
+"Moffitt_GEO_array","Bailey ADEX",57,48,123,4,0.855425571706801
+"Moffitt_GEO_array","Bailey ADEX",57,48,123,5,0.139879532058144
+"Moffitt_GEO_array","Bailey ADEX",57,48,123,6,0.00178638222130503
+"Moffitt_GEO_array","Bailey ADEX",57,48,123,7,-0.135642517186674
+"Moffitt_GEO_array","DeSurv classical tumor",270,256,123,1,-0.0973868517109285
+"Moffitt_GEO_array","DeSurv classical tumor",270,256,123,2,0.162438250506249
+"Moffitt_GEO_array","DeSurv classical tumor",270,256,123,3,-0.642388206007919
+"Moffitt_GEO_array","DeSurv classical tumor",270,256,123,4,0.201216287678477
+"Moffitt_GEO_array","DeSurv classical tumor",270,256,123,5,-0.256278133907727
+"Moffitt_GEO_array","DeSurv classical tumor",270,256,123,6,0.211296126710606
+"Moffitt_GEO_array","DeSurv classical tumor",270,256,123,7,0.433078381550606
+"Moffitt_GEO_array","DeSurv stromal-immune",270,263,123,1,0.876655789297184
+"Moffitt_GEO_array","DeSurv stromal-immune",270,263,123,2,-0.100604919322594
+"Moffitt_GEO_array","DeSurv stromal-immune",270,263,123,3,0.0402677638621971
+"Moffitt_GEO_array","DeSurv stromal-immune",270,263,123,4,-0.156846938643897
+"Moffitt_GEO_array","DeSurv stromal-immune",270,263,123,5,-0.0278920689788601
+"Moffitt_GEO_array","DeSurv stromal-immune",270,263,123,6,0.538881221704866
+"Moffitt_GEO_array","DeSurv stromal-immune",270,263,123,7,-0.215081709251783
+"Moffitt_GEO_array","DeSurv basal-like tumor",270,264,123,1,-0.628277721169597
+"Moffitt_GEO_array","DeSurv basal-like tumor",270,264,123,2,-0.584772542595865
+"Moffitt_GEO_array","DeSurv basal-like tumor",270,264,123,3,-0.62878074576621
+"Moffitt_GEO_array","DeSurv basal-like tumor",270,264,123,4,0.0454463375939947
+"Moffitt_GEO_array","DeSurv basal-like tumor",270,264,123,5,-0.129773896892856
+"Moffitt_GEO_array","DeSurv basal-like tumor",270,264,123,6,-0.0760083063548774
+"Moffitt_GEO_array","DeSurv basal-like tumor",270,264,123,7,0.67808360526757
+"Moffitt_GEO_array","PurIST basal probability",NA,NA,123,1,0.0770435575572742
+"Moffitt_GEO_array","PurIST basal probability",NA,NA,123,2,-0.565217137549501
+"Moffitt_GEO_array","PurIST basal probability",NA,NA,123,3,0.297211749968731
+"Moffitt_GEO_array","PurIST basal probability",NA,NA,123,4,-0.179067303405818
+"Moffitt_GEO_array","PurIST basal probability",NA,NA,123,5,-0.155268155805582
+"Moffitt_GEO_array","PurIST basal probability",NA,NA,123,6,0.0457173785443807
+"Moffitt_GEO_array","PurIST basal probability",NA,NA,123,7,0.198360999480999
+"PACA_AU_array","Moffitt basal-like",25,25,63,1,-0.0643721198156682
+"PACA_AU_array","Moffitt basal-like",25,25,63,2,-0.761472734254992
+"PACA_AU_array","Moffitt basal-like",25,25,63,3,0.539986559139785
+"PACA_AU_array","Moffitt basal-like",25,25,63,4,0.193116359447005
+"PACA_AU_array","Moffitt basal-like",25,25,63,5,-0.0478110599078341
+"PACA_AU_array","Moffitt basal-like",25,25,63,6,-0.129032258064516
+"PACA_AU_array","Moffitt basal-like",25,25,63,7,0.563556067588326
+"PACA_AU_array","Moffitt classical",25,24,63,1,-0.49275153609831
+"PACA_AU_array","Moffitt classical",25,24,63,2,0.640216973886329
+"PACA_AU_array","Moffitt classical",25,24,63,3,-0.834245391705069
+"PACA_AU_array","Moffitt classical",25,24,63,4,-0.0130088325652842
+"PACA_AU_array","Moffitt classical",25,24,63,5,0.0481470814132104
+"PACA_AU_array","Moffitt classical",25,24,63,6,-0.189372119815668
+"PACA_AU_array","Moffitt classical",25,24,63,7,-0.234735023041475
+"PACA_AU_array","Moffitt activated stroma",25,25,63,1,0.715725806451613
+"PACA_AU_array","Moffitt activated stroma",25,25,63,2,-0.398905529953917
+"PACA_AU_array","Moffitt activated stroma",25,25,63,3,0.102726574500768
+"PACA_AU_array","Moffitt activated stroma",25,25,63,4,-0.325892857142857
+"PACA_AU_array","Moffitt activated stroma",25,25,63,5,-0.275489631336406
+"PACA_AU_array","Moffitt activated stroma",25,25,63,6,0.197964669738863
+"PACA_AU_array","Moffitt activated stroma",25,25,63,7,-0.317252304147465
+"PACA_AU_array","Moffitt normal stroma",25,23,63,1,0.652361751152074
+"PACA_AU_array","Moffitt normal stroma",25,23,63,2,0.18351574500768
+"PACA_AU_array","Moffitt normal stroma",25,23,63,3,-0.0394105222734255
+"PACA_AU_array","Moffitt normal stroma",25,23,63,4,-0.229838709677419
+"PACA_AU_array","Moffitt normal stroma",25,23,63,5,-0.218365975422427
+"PACA_AU_array","Moffitt normal stroma",25,23,63,6,0.171082949308756
+"PACA_AU_array","Moffitt normal stroma",25,23,63,7,-0.250768049155146
+"PACA_AU_array","Collisson classical",22,22,63,1,-0.599270353302611
+"PACA_AU_array","Collisson classical",22,22,63,2,0.422523041474654
+"PACA_AU_array","Collisson classical",22,22,63,3,-0.791714669738863
+"PACA_AU_array","Collisson classical",22,22,63,4,-0.0569796466973886
+"PACA_AU_array","Collisson classical",22,22,63,5,0.0564036098310292
+"PACA_AU_array","Collisson classical",22,22,63,6,-0.210013440860215
+"PACA_AU_array","Collisson classical",22,22,63,7,-0.140072964669739
+"PACA_AU_array","Collisson exocrine-like",20,20,63,1,-0.221678187403994
+"PACA_AU_array","Collisson exocrine-like",20,20,63,2,0.422043010752688
+"PACA_AU_array","Collisson exocrine-like",20,20,63,3,-0.0946620583717358
+"PACA_AU_array","Collisson exocrine-like",20,20,63,4,0.804483486943164
+"PACA_AU_array","Collisson exocrine-like",20,20,63,5,0.0270257296466974
+"PACA_AU_array","Collisson exocrine-like",20,20,63,6,-0.0822772657450077
+"PACA_AU_array","Collisson exocrine-like",20,20,63,7,0.157642089093702
+"PACA_AU_array","Collisson quasi-mesenchymal",20,20,63,1,0.332805299539171
+"PACA_AU_array","Collisson quasi-mesenchymal",20,20,63,2,-0.755040322580645
+"PACA_AU_array","Collisson quasi-mesenchymal",20,20,63,3,0.567252304147465
+"PACA_AU_array","Collisson quasi-mesenchymal",20,20,63,4,-0.240111367127496
+"PACA_AU_array","Collisson quasi-mesenchymal",20,20,63,5,0.19047619047619
+"PACA_AU_array","Collisson quasi-mesenchymal",20,20,63,6,0.100950460829493
+"PACA_AU_array","Collisson quasi-mesenchymal",20,20,63,7,0.0838613671274962
+"PACA_AU_array","Bailey squamous",87,71,63,1,0.278609831029186
+"PACA_AU_array","Bailey squamous",87,71,63,2,-0.848310291858679
+"PACA_AU_array","Bailey squamous",87,71,63,3,0.713469662058372
+"PACA_AU_array","Bailey squamous",87,71,63,4,0.0340821812596006
+"PACA_AU_array","Bailey squamous",87,71,63,5,-0.169690860215054
+"PACA_AU_array","Bailey squamous",87,71,63,6,0.0835253456221198
+"PACA_AU_array","Bailey squamous",87,71,63,7,0.455597158218126
+"PACA_AU_array","Bailey immunogenic",145,53,63,1,-0.0381624423963134
+"PACA_AU_array","Bailey immunogenic",145,53,63,2,0.758496543778802
+"PACA_AU_array","Bailey immunogenic",145,53,63,3,-0.593221966205837
+"PACA_AU_array","Bailey immunogenic",145,53,63,4,-0.172235023041475
+"PACA_AU_array","Bailey immunogenic",145,53,63,5,0.0858774961597542
+"PACA_AU_array","Bailey immunogenic",145,53,63,6,0.271073348694316
+"PACA_AU_array","Bailey immunogenic",145,53,63,7,-0.494527649769585
+"PACA_AU_array","Bailey pancreatic progenitor",73,63,63,1,-0.414506528417819
+"PACA_AU_array","Bailey pancreatic progenitor",73,63,63,2,0.672859062980031
+"PACA_AU_array","Bailey pancreatic progenitor",73,63,63,3,-0.828100998463902
+"PACA_AU_array","Bailey pancreatic progenitor",73,63,63,4,-0.00292818740399386
+"PACA_AU_array","Bailey pancreatic progenitor",73,63,63,5,0.0910618279569892
+"PACA_AU_array","Bailey pancreatic progenitor",73,63,63,6,-0.0977342549923195
+"PACA_AU_array","Bailey pancreatic progenitor",73,63,63,7,-0.295218894009217
+"PACA_AU_array","Bailey ADEX",57,54,63,1,-0.200412826420891
+"PACA_AU_array","Bailey ADEX",57,54,63,2,0.43706797235023
+"PACA_AU_array","Bailey ADEX",57,54,63,3,-0.0818452380952381
+"PACA_AU_array","Bailey ADEX",57,54,63,4,0.795794930875576
+"PACA_AU_array","Bailey ADEX",57,54,63,5,-0.0444988479262673
+"PACA_AU_array","Bailey ADEX",57,54,63,6,-0.127352150537634
+"PACA_AU_array","Bailey ADEX",57,54,63,7,0.264112903225806
+"PACA_AU_array","DeSurv classical tumor",270,266,63,1,-0.139544930875576
+"PACA_AU_array","DeSurv classical tumor",270,266,63,2,0.689420122887865
+"PACA_AU_array","DeSurv classical tumor",270,266,63,3,-0.632824500768049
+"PACA_AU_array","DeSurv classical tumor",270,266,63,4,0.169594854070661
+"PACA_AU_array","DeSurv classical tumor",270,266,63,5,-0.377688172043011
+"PACA_AU_array","DeSurv classical tumor",270,266,63,6,0.161434331797235
+"PACA_AU_array","DeSurv classical tumor",270,266,63,7,-0.0189132104454685
+"PACA_AU_array","DeSurv stromal-immune",270,268,63,1,0.927515360983103
+"PACA_AU_array","DeSurv stromal-immune",270,268,63,2,-0.0537634408602151
+"PACA_AU_array","DeSurv stromal-immune",270,268,63,3,0.134984639016897
+"PACA_AU_array","DeSurv stromal-immune",270,268,63,4,-0.248511904761905
+"PACA_AU_array","DeSurv stromal-immune",270,268,63,5,0.028081797235023
+"PACA_AU_array","DeSurv stromal-immune",270,268,63,6,0.564084101382488
+"PACA_AU_array","DeSurv stromal-immune",270,268,63,7,-0.384264592933948
+"PACA_AU_array","DeSurv basal-like tumor",270,270,63,1,-0.52457757296467
+"PACA_AU_array","DeSurv basal-like tumor",270,270,63,2,-0.383064516129032
+"PACA_AU_array","DeSurv basal-like tumor",270,270,63,3,-0.146841397849462
+"PACA_AU_array","DeSurv basal-like tumor",270,270,63,4,0.343221966205837
+"PACA_AU_array","DeSurv basal-like tumor",270,270,63,5,-0.423387096774194
+"PACA_AU_array","DeSurv basal-like tumor",270,270,63,6,-0.285186251920123
+"PACA_AU_array","DeSurv basal-like tumor",270,270,63,7,0.604358678955453
+"PACA_AU_array","PurIST basal probability",NA,NA,63,1,0.249699636659091
+"PACA_AU_array","PurIST basal probability",NA,NA,63,2,-0.638421642858347
+"PACA_AU_array","PurIST basal probability",NA,NA,63,3,0.792273401989657
+"PACA_AU_array","PurIST basal probability",NA,NA,63,4,-0.0019452521269476
+"PACA_AU_array","PurIST basal probability",NA,NA,63,5,-0.12815927324682
+"PACA_AU_array","PurIST basal probability",NA,NA,63,6,0.039612406948751
+"PACA_AU_array","PurIST basal probability",NA,NA,63,7,0.324528686009985
+"PACA_AU_seq","Moffitt basal-like",25,24,52,1,-0.0243319388713395
+"PACA_AU_seq","Moffitt basal-like",25,24,52,2,-0.775207034918467
+"PACA_AU_seq","Moffitt basal-like",25,24,52,3,0.506189703747972
+"PACA_AU_seq","Moffitt basal-like",25,24,52,4,0.263553316827457
+"PACA_AU_seq","Moffitt basal-like",25,24,52,5,-0.0379919747289337
+"PACA_AU_seq","Moffitt basal-like",25,24,52,6,-0.138307863058141
+"PACA_AU_seq","Moffitt basal-like",25,24,52,7,0.431486382651754
+"PACA_AU_seq","Moffitt classical",25,25,52,1,-0.517459233330487
+"PACA_AU_seq","Moffitt classical",25,25,52,2,0.551353197302143
+"PACA_AU_seq","Moffitt classical",25,25,52,3,-0.798855971996926
+"PACA_AU_seq","Moffitt classical",25,25,52,4,0.155895159224793
+"PACA_AU_seq","Moffitt classical",25,25,52,5,-0.0141722872022539
+"PACA_AU_seq","Moffitt classical",25,25,52,6,-0.0346623409886451
+"PACA_AU_seq","Moffitt classical",25,25,52,7,-0.27968923418424
+"PACA_AU_seq","Moffitt activated stroma",25,25,52,1,0.586100913514898
+"PACA_AU_seq","Moffitt activated stroma",25,25,52,2,-0.397763169128319
+"PACA_AU_seq","Moffitt activated stroma",25,25,52,3,0.0102450268931956
+"PACA_AU_seq","Moffitt activated stroma",25,25,52,4,-0.199436523520874
+"PACA_AU_seq","Moffitt activated stroma",25,25,52,5,-0.474771621275506
+"PACA_AU_seq","Moffitt activated stroma",25,25,52,6,0.238879877059677
+"PACA_AU_seq","Moffitt activated stroma",25,25,52,7,-0.354477930504568
+"PACA_AU_seq","Moffitt normal stroma",25,23,52,1,0.642107060531034
+"PACA_AU_seq","Moffitt normal stroma",25,23,52,2,0.212584308033809
+"PACA_AU_seq","Moffitt normal stroma",25,23,52,3,-0.153077776829164
+"PACA_AU_seq","Moffitt normal stroma",25,23,52,4,-0.214121062067788
+"PACA_AU_seq","Moffitt normal stroma",25,23,52,5,-0.251173909331512
+"PACA_AU_seq","Moffitt normal stroma",25,23,52,6,0.16238367625715
+"PACA_AU_seq","Moffitt normal stroma",25,23,52,7,-0.0474686246051396
+"PACA_AU_seq","Collisson classical",22,22,52,1,-0.615982241953385
+"PACA_AU_seq","Collisson classical",22,22,52,2,0.340391018526424
+"PACA_AU_seq","Collisson classical",22,22,52,3,-0.770255271920089
+"PACA_AU_seq","Collisson classical",22,22,52,4,0.155126782207803
+"PACA_AU_seq","Collisson classical",22,22,52,5,0.0400409801075728
+"PACA_AU_seq","Collisson classical",22,22,52,6,-0.00759839494578673
+"PACA_AU_seq","Collisson classical",22,22,52,7,-0.227524972253052
+"PACA_AU_seq","Collisson exocrine-like",20,18,52,1,-0.282762742252198
+"PACA_AU_seq","Collisson exocrine-like",20,18,52,2,0.286433876888927
+"PACA_AU_seq","Collisson exocrine-like",20,18,52,3,-0.188081618714249
+"PACA_AU_seq","Collisson exocrine-like",20,18,52,4,0.726970033296337
+"PACA_AU_seq","Collisson exocrine-like",20,18,52,5,0.249893280969863
+"PACA_AU_seq","Collisson exocrine-like",20,18,52,6,0.0549816443268163
+"PACA_AU_seq","Collisson exocrine-like",20,18,52,7,0.158114915051652
+"PACA_AU_seq","Collisson quasi-mesenchymal",20,20,52,1,0.179544096303253
+"PACA_AU_seq","Collisson quasi-mesenchymal",20,20,52,2,-0.735934431827884
+"PACA_AU_seq","Collisson quasi-mesenchymal",20,20,52,3,0.296337402885683
+"PACA_AU_seq","Collisson quasi-mesenchymal",20,20,52,4,0.0900708614360113
+"PACA_AU_seq","Collisson quasi-mesenchymal",20,20,52,5,0.100742764449757
+"PACA_AU_seq","Collisson quasi-mesenchymal",20,20,52,6,0.317168957568514
+"PACA_AU_seq","Collisson quasi-mesenchymal",20,20,52,7,-0.0193801758729617
+"PACA_AU_seq","Bailey squamous",87,71,52,1,0.315802953982754
+"PACA_AU_seq","Bailey squamous",87,71,52,2,-0.713822248783403
+"PACA_AU_seq","Bailey squamous",87,71,52,3,0.623666012123282
+"PACA_AU_seq","Bailey squamous",87,71,52,4,0.0386749765218134
+"PACA_AU_seq","Bailey squamous",87,71,52,5,0.0245880645436694
+"PACA_AU_seq","Bailey squamous",87,71,52,6,0.016221292580893
+"PACA_AU_seq","Bailey squamous",87,71,52,7,0.413642960812772
+"PACA_AU_seq","Bailey immunogenic",145,54,52,1,-0.0970716298130282
+"PACA_AU_seq","Bailey immunogenic",145,54,52,2,0.632545035430718
+"PACA_AU_seq","Bailey immunogenic",145,54,52,3,-0.597199692649193
+"PACA_AU_seq","Bailey immunogenic",145,54,52,4,-0.0275761973875181
+"PACA_AU_seq","Bailey immunogenic",145,54,52,5,0.108597285067873
+"PACA_AU_seq","Bailey immunogenic",145,54,52,6,0.406727567659865
+"PACA_AU_seq","Bailey immunogenic",145,54,52,7,-0.44113378297618
+"PACA_AU_seq","Bailey pancreatic progenitor",73,64,52,1,-0.34798941347221
+"PACA_AU_seq","Bailey pancreatic progenitor",73,64,52,2,0.574831383932383
+"PACA_AU_seq","Bailey pancreatic progenitor",73,64,52,3,-0.86058225902843
+"PACA_AU_seq","Bailey pancreatic progenitor",73,64,52,4,0.211474430120379
+"PACA_AU_seq","Bailey pancreatic progenitor",73,64,52,5,0.274310595065312
+"PACA_AU_seq","Bailey pancreatic progenitor",73,64,52,6,0.134807478869632
+"PACA_AU_seq","Bailey pancreatic progenitor",73,64,52,7,-0.0982668829505677
+"PACA_AU_seq","Bailey ADEX",57,52,52,1,-0.120464441219158
+"PACA_AU_seq","Bailey ADEX",57,52,52,2,0.263126440706907
+"PACA_AU_seq","Bailey ADEX",57,52,52,3,-0.125843080338086
+"PACA_AU_seq","Bailey ADEX",57,52,52,4,0.621104755399983
+"PACA_AU_seq","Bailey ADEX",57,52,52,5,0.198070519935115
+"PACA_AU_seq","Bailey ADEX",57,52,52,6,-0.11551267822078
+"PACA_AU_seq","Bailey ADEX",57,52,52,7,0.453086314351575
+"PACA_AU_seq","DeSurv classical tumor",270,264,52,1,-0.20976692563818
+"PACA_AU_seq","DeSurv classical tumor",270,264,52,2,0.567830615555366
+"PACA_AU_seq","DeSurv classical tumor",270,264,52,3,-0.839921454793819
+"PACA_AU_seq","DeSurv classical tumor",270,264,52,4,0.284811747630837
+"PACA_AU_seq","DeSurv classical tumor",270,264,52,5,0.0398702296593529
+"PACA_AU_seq","DeSurv classical tumor",270,264,52,6,0.168786818065397
+"PACA_AU_seq","DeSurv classical tumor",270,264,52,7,0.000939127465209596
+"PACA_AU_seq","DeSurv stromal-immune",270,265,52,1,0.676684026295569
+"PACA_AU_seq","DeSurv stromal-immune",270,265,52,2,-0.0173311704943225
+"PACA_AU_seq","DeSurv stromal-immune",270,265,52,3,-0.176982839579954
+"PACA_AU_seq","DeSurv stromal-immune",270,265,52,4,0.0316742081447964
+"PACA_AU_seq","DeSurv stromal-immune",270,265,52,5,0.182702979595321
+"PACA_AU_seq","DeSurv stromal-immune",270,265,52,6,0.598309570562623
+"PACA_AU_seq","DeSurv stromal-immune",270,265,52,7,-0.0919491163664305
+"PACA_AU_seq","DeSurv basal-like tumor",270,265,52,1,-0.487577904892
+"PACA_AU_seq","DeSurv basal-like tumor",270,265,52,2,-0.330914368650218
+"PACA_AU_seq","DeSurv basal-like tumor",270,265,52,3,-0.367540339793392
+"PACA_AU_seq","DeSurv basal-like tumor",270,265,52,4,0.504140698369333
+"PACA_AU_seq","DeSurv basal-like tumor",270,265,52,5,0.0199778024417314
+"PACA_AU_seq","DeSurv basal-like tumor",270,265,52,6,0.0332109621787757
+"PACA_AU_seq","DeSurv basal-like tumor",270,265,52,7,0.168018441048408
+"PACA_AU_seq","PurIST basal probability",NA,NA,52,1,0.255304236745282
+"PACA_AU_seq","PurIST basal probability",NA,NA,52,2,-0.588123382829533
+"PACA_AU_seq","PurIST basal probability",NA,NA,52,3,0.754024733832093
+"PACA_AU_seq","PurIST basal probability",NA,NA,52,4,-0.0057893119289652
+"PACA_AU_seq","PurIST basal probability",NA,NA,52,5,-0.168464557810804
+"PACA_AU_seq","PurIST basal probability",NA,NA,52,6,-0.0722117228391537
+"PACA_AU_seq","PurIST basal probability",NA,NA,52,7,0.289112050681606
+"Puleo_array","Moffitt basal-like",25,24,288,1,-0.151473501882819
+"Puleo_array","Moffitt basal-like",25,24,288,2,-0.708912044014162
+"Puleo_array","Moffitt basal-like",25,24,288,3,0.082856097962858
+"Puleo_array","Moffitt basal-like",25,24,288,4,0.0375483765959756
+"Puleo_array","Moffitt basal-like",25,24,288,5,-0.0414074525075454
+"Puleo_array","Moffitt basal-like",25,24,288,6,-0.14103510844797
+"Puleo_array","Moffitt basal-like",25,24,288,7,0.387250883136612
+"Puleo_array","Moffitt classical",25,24,288,1,-0.555540652415916
+"Puleo_array","Moffitt classical",25,24,288,2,0.162101784759815
+"Puleo_array","Moffitt classical",25,24,288,3,-0.766245594364001
+"Puleo_array","Moffitt classical",25,24,288,4,-0.0379562872494766
+"Puleo_array","Moffitt classical",25,24,288,5,0.190482218712449
+"Puleo_array","Moffitt classical",25,24,288,6,-0.146202311627664
+"Puleo_array","Moffitt classical",25,24,288,7,-0.0625439558893859
+"Puleo_array","Moffitt activated stroma",25,25,288,1,0.628919860627178
+"Puleo_array","Moffitt activated stroma",25,25,288,2,-0.609063352744254
+"Puleo_array","Moffitt activated stroma",25,25,288,3,-0.104174955491522
+"Puleo_array","Moffitt activated stroma",25,25,288,4,-0.283993726615467
+"Puleo_array","Moffitt activated stroma",25,25,288,5,-0.201145666300954
+"Puleo_array","Moffitt activated stroma",25,25,288,6,0.183212668137556
+"Puleo_array","Moffitt activated stroma",25,25,288,7,0.0030100993051453
+"Puleo_array","Moffitt normal stroma",25,23,288,1,0.491557957472803
+"Puleo_array","Moffitt normal stroma",25,23,288,2,0.36046592238043
+"Puleo_array","Moffitt normal stroma",25,23,288,3,0.211417780885669
+"Puleo_array","Moffitt normal stroma",25,23,288,4,-0.197093184476086
+"Puleo_array","Moffitt normal stroma",25,23,288,5,-0.25841039428684
+"Puleo_array","Moffitt normal stroma",25,23,288,6,-0.0271114902201914
+"Puleo_array","Moffitt normal stroma",25,23,288,7,-0.0826993638201335
+"Puleo_array","Collisson classical",22,22,288,1,-0.600018988944215
+"Puleo_array","Collisson classical",22,22,288,2,-0.0634200595589742
+"Puleo_array","Collisson classical",22,22,288,3,-0.831101881211595
+"Puleo_array","Collisson classical",22,22,288,4,-0.0753187932274775
+"Puleo_array","Collisson classical",22,22,288,5,0.26630688143263
+"Puleo_array","Collisson classical",22,22,288,6,-0.152436010272115
+"Puleo_array","Collisson classical",22,22,288,7,-0.0372670589039059
+"Puleo_array","Collisson exocrine-like",20,18,288,1,-0.0783459725353556
+"Puleo_array","Collisson exocrine-like",20,18,288,2,0.557471195077744
+"Puleo_array","Collisson exocrine-like",20,18,288,3,0.0835593921930322
+"Puleo_array","Collisson exocrine-like",20,18,288,4,0.791323057199924
+"Puleo_array","Collisson exocrine-like",20,18,288,5,0.0248187510298237
+"Puleo_array","Collisson exocrine-like",20,18,288,6,-0.0200810596835578
+"Puleo_array","Collisson exocrine-like",20,18,288,7,-0.0416701831378175
+"Puleo_array","Collisson quasi-mesenchymal",20,19,288,1,0.00136087433538695
+"Puleo_array","Collisson quasi-mesenchymal",20,19,288,2,-0.77026291147736
+"Puleo_array","Collisson quasi-mesenchymal",20,19,288,3,0.142589388696655
+"Puleo_array","Collisson quasi-mesenchymal",20,19,288,4,-0.325048527301882
+"Puleo_array","Collisson quasi-mesenchymal",20,19,288,5,0.215825928649796
+"Puleo_array","Collisson quasi-mesenchymal",20,19,288,6,0.0624043017493942
+"Puleo_array","Collisson quasi-mesenchymal",20,19,288,7,0.016311904962846
+"Puleo_array","Bailey squamous",87,72,288,1,0.246059542898939
+"Puleo_array","Bailey squamous",87,72,288,2,-0.693986633390803
+"Puleo_array","Bailey squamous",87,72,288,3,0.504806011357197
+"Puleo_array","Bailey squamous",87,72,288,4,-0.168421888123973
+"Puleo_array","Bailey squamous",87,72,288,5,-0.187414348809825
+"Puleo_array","Bailey squamous",87,72,288,6,0.0845751500026122
+"Puleo_array","Bailey squamous",87,72,288,7,0.202589428884897
+"Puleo_array","Bailey immunogenic",145,55,288,1,-0.115366376105679
+"Puleo_array","Bailey immunogenic",145,55,288,2,0.620525039284006
+"Puleo_array","Bailey immunogenic",145,55,288,3,-0.375032652946401
+"Puleo_array","Bailey immunogenic",145,55,288,4,0.0401169075951758
+"Puleo_array","Bailey immunogenic",145,55,288,5,0.161052369297791
+"Puleo_array","Bailey immunogenic",145,55,288,6,0.140506130716275
+"Puleo_array","Bailey immunogenic",145,55,288,7,-0.285802699846079
+"Puleo_array","Bailey pancreatic progenitor",73,64,288,1,-0.297100619300805
+"Puleo_array","Bailey pancreatic progenitor",73,64,288,2,0.193013575588054
+"Puleo_array","Bailey pancreatic progenitor",73,64,288,3,-0.775110115782324
+"Puleo_array","Bailey pancreatic progenitor",73,64,288,4,0.0668883048197758
+"Puleo_array","Bailey pancreatic progenitor",73,64,288,5,0.519879616121915
+"Puleo_array","Bailey pancreatic progenitor",73,64,288,6,-0.0109713899907165
+"Puleo_array","Bailey pancreatic progenitor",73,64,288,7,-0.20423363032444
+"Puleo_array","Bailey ADEX",57,50,288,1,-0.0680592897130158
+"Puleo_array","Bailey ADEX",57,50,288,2,0.593429624360505
+"Puleo_array","Bailey ADEX",57,50,288,3,0.209016533442645
+"Puleo_array","Bailey ADEX",57,50,288,4,0.754802997239068
+"Puleo_array","Bailey ADEX",57,50,288,5,-0.135063135727749
+"Puleo_array","Bailey ADEX",57,50,288,6,-0.0893595601798826
+"Puleo_array","Bailey ADEX",57,50,288,7,-0.00506070433912446
+"Puleo_array","DeSurv classical tumor",270,260,288,1,-0.136363225347528
+"Puleo_array","DeSurv classical tumor",270,260,288,2,0.413562627346491
+"Puleo_array","DeSurv classical tumor",270,260,288,3,-0.608121943181864
+"Puleo_array","DeSurv classical tumor",270,260,288,4,0.117494845857999
+"Puleo_array","DeSurv classical tumor",270,260,288,5,-0.150972655920331
+"Puleo_array","DeSurv classical tumor",270,260,288,6,0.135688062886561
+"Puleo_array","DeSurv classical tumor",270,260,288,7,0.128383849953181
+"Puleo_array","DeSurv stromal-immune",270,262,288,1,0.832543634383452
+"Puleo_array","DeSurv stromal-immune",270,262,288,2,-0.190079833942185
+"Puleo_array","DeSurv stromal-immune",270,262,288,3,-0.0860646267115168
+"Puleo_array","DeSurv stromal-immune",270,262,288,4,-0.215806336881955
+"Puleo_array","DeSurv stromal-immune",270,262,288,5,0.143073657009432
+"Puleo_array","DeSurv stromal-immune",270,262,288,6,0.434788549566168
+"Puleo_array","DeSurv stromal-immune",270,262,288,7,-0.0388771003379831
+"Puleo_array","DeSurv basal-like tumor",270,260,288,1,-0.52876724577923
+"Puleo_array","DeSurv basal-like tumor",270,260,288,2,-0.570561510113371
+"Puleo_array","DeSurv basal-like tumor",270,260,288,3,-0.544255794139751
+"Puleo_array","DeSurv basal-like tumor",270,260,288,4,0.0320481133629923
+"Puleo_array","DeSurv basal-like tumor",270,260,288,5,0.126657262618103
+"Puleo_array","DeSurv basal-like tumor",270,260,288,6,-0.0511681717163192
+"Puleo_array","DeSurv basal-like tumor",270,260,288,7,0.235956721282487
+"Puleo_array","PurIST basal probability",NA,NA,288,1,0.278636669054848
+"Puleo_array","PurIST basal probability",NA,NA,288,2,-0.445722467609925
+"Puleo_array","PurIST basal probability",NA,NA,288,3,0.534013382930077
+"Puleo_array","PurIST basal probability",NA,NA,288,4,0.0522262707065121
+"Puleo_array","PurIST basal probability",NA,NA,288,5,-0.139254300916189
+"Puleo_array","PurIST basal probability",NA,NA,288,6,0.0757886068280763
+"Puleo_array","PurIST basal probability",NA,NA,288,7,0.296664417532294

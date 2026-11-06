@@ -267,3 +267,12 @@ Additional multimodal analyses will examine how the number and selection of gene
 The expected additional results include a replicated multimodal simulation study, larger CpG analyses on the computing cluster, and external comparisons with expression-only models, two-step pipelines and DeSurv. Joint modeling of cohorts and modalities will be considered as a further extension. Predictive performance and biological interpretation will be evaluated separately. Methylation may improve discrimination, identify additional prognostic programs, or provide little benefit under the settings studied.
 
 \FloatBarrier
+
+## Round 3 cuts from the revised draft, November 6
+
+The independent review removed these sentences because the surrounding
+results or the next sentence gave the same information.
+
+- “Larger weights were worse.”
+- “These results do not show that supervision causes recovery.”
+- “Two further pieces of work follow from the results here.”
