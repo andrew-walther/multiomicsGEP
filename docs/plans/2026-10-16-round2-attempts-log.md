@@ -2779,3 +2779,13 @@ or 50, where full fits stop converging. The paired C difference from the two-ste
 less. A2 matches A1. **Correction:** the two-step arms of S-13 and S-14 were rerun with
 `coxph(timefix = FALSE)` on the training times. The default attenuated them (S-13 slopes 1.80,
 6.70, 12.74 → 1.16, 1.10, 0.96). Findings: `docs/findings/2026-11-05-supervision-strength-findings.md`.
+
+## 2026-11-06 — S-15: real-data refit with the CV-chosen survival weight (registered before execution)
+
+**Why.** Andrew asked for the real-data refit after reviewing S-13 and S-14. S-11 fixed w_S = 1,
+at which survival supplies 10⁻⁷–10⁻⁶ of the loading precision. In S-13 the CV rule chose 1–10.
+Registration: `docs/plans/2026-11-06-supervised-real-refit-plan.md`. A1 on the S-11 D4 training
+matrix, weights {1, 2, 5, 10, 20, 50}, weight by CV partial log-likelihood on the S-11 folds,
+nested CV for an honest C. **Adopt** w* if w* > 1, the full fit is sound, and the nested-CV C is
+≥ 0.639 (S-11 w_S = 1 C minus one SE). Then do one external scoring with the S-12 procedure. False
+activity is reported as contribution (standardized β, risk-variance share), not as a count.
