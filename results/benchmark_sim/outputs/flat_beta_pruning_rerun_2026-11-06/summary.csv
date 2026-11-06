@@ -1,0 +1,9 @@
+"model","K","noise","arm","n","errors","complete","recovered","false_active","median_K","converged","elbo_converged","outputs_converged","C","reference_false_active","reference_complete","convergence_rule","recovery_pass","false_positive_pass","convergence_pass","rank_pass"
+"single",7,0.25,"ordinary",20,0,TRUE,2,1.1,2,20,20,0,NA,1.15,TRUE,"elbo",FALSE,TRUE,TRUE,FALSE
+"single",7,0.25,"protected",20,0,TRUE,2,1.1,2,20,20,0,NA,1.15,TRUE,"elbo",FALSE,TRUE,TRUE,FALSE
+"single",7,0.25,"reference",20,0,TRUE,1,1.15,7,20,20,0,0.642968708669784,1.15,TRUE,"elbo",FALSE,TRUE,TRUE,NA
+"single",7,0.25,"unpruned",20,0,TRUE,17,1.05,7,20,20,0,0.763481514241902,1.15,TRUE,"elbo",TRUE,TRUE,TRUE,NA
+"single",7,1,"ordinary",20,0,TRUE,2,0.2,1,20,20,3,NA,0.4,TRUE,"elbo",FALSE,TRUE,TRUE,FALSE
+"single",7,1,"protected",20,0,TRUE,2,0.2,1,20,20,3,NA,0.4,TRUE,"elbo",FALSE,TRUE,TRUE,FALSE
+"single",7,1,"reference",20,0,TRUE,1,0.4,7,20,20,0,0.541085044459192,0.4,TRUE,"elbo",FALSE,TRUE,TRUE,NA
+"single",7,1,"unpruned",20,0,TRUE,19,0.35,7,20,20,0,NA,0.4,TRUE,"elbo",TRUE,TRUE,TRUE,NA

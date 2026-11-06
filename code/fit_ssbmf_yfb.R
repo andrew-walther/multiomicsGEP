@@ -1118,6 +1118,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
         if (beta_prior_mode == "shared") { beta_x[k] <- res_beta$x; beta_s[k] <- res_beta$s }
       }
       kl_beta[k]  <- if (joint_beta) jb$neg_kl / K   # joint -KL, spread so sum(kl_beta) is exact
+                     else if (!is.null(res_beta$neg_kl)) res_beta$neg_kl
                      else compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
                                           res_beta$A, res_beta$x,
                                           res_beta$mean, res_beta$second)
@@ -1237,10 +1238,13 @@ fit_ssbmf_yfb <- function(Y, time, status,
 
     # Shared beta prior: refit from the sweep's K pseudo-observations after
     # the warm-up (held fixed during the sweep, as for the loading priors)
-    if (beta_prior_mode == "shared" && !beta_prior_fix && iter > beta_warmup) {
+    # Flat β likelihoods have s = Inf and carry no prior information.
+    informative_beta <- is.finite(beta_s)
+    if (beta_prior_mode == "shared" && !beta_prior_fix && iter > beta_warmup &&
+        any(informative_beta)) {
       fit_g <- if (prior_beta == "point_normal" && !is.null(beta_slab_sd))
-        ebnm::ebnm(beta_x, beta_s, prior_family = "point_normal", scale = beta_slab_sd)
-      else ebnm::ebnm(beta_x, beta_s, prior_family = prior_beta)
+        ebnm::ebnm(beta_x[informative_beta], beta_s[informative_beta], prior_family = "point_normal", scale = beta_slab_sd)
+      else ebnm::ebnm(beta_x[informative_beta], beta_s[informative_beta], prior_family = prior_beta)
       g_beta <- fit_g$fitted_g
     }
 

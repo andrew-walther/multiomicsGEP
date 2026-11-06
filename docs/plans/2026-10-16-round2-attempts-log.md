@@ -2833,3 +2833,17 @@ flat (−775.17 at w = 1 to −775.43 at w = 50). The weights chosen in the nest
 share of the loading precision is at most 7 × 10⁻⁵ even at w_S = 50, and the loadings correlate
 1.000 with the unsupervised ones. The w = 1 fold fits reproduce S-11 exactly. Findings:
 `docs/findings/2026-11-06-supervised-real-refit-findings.md`.
+
+## 2026-11-06 — KL-2: repeat the pruning comparison after the flat β fix
+
+Registered before simulation. Repeat KL-1 with the same 160 synthetic fits,
+scoring rules and rank criterion. The canonical shared-prior fitter now
+returns the prior moments and zero β KL for exactly flat β likelihoods.
+The deletion rule and refit initialization are unchanged. See the
+[KL-2 registration](2026-11-06-flat-beta-pruning-rerun-plan.md).
+
+**Result.** All 160 synthetic fits returned without errors or fit warnings.
+At noise 0.25 and 1, unpruned recovery was 17/20 and 19/20. Each pruning arm
+recovered 2/20 at both noise levels, with median retained K = 2 and 1.
+Each arm hit one intermediate refit cap at noise 1, but all returned fits
+converged. See the [findings](../findings/2026-11-06-flat-beta-pruning-rerun-findings.md).

@@ -3,6 +3,19 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-06 — Exact β update for a flat likelihood
+
+A flat coefficient likelihood under the canonical shared prior now returns
+the prior moments and zero β KL. It contributes no information to the shared
+prior refit. This corrects the objective and moments for both pruned and
+unpruned fits. The ELBO comparison still determines whether to delete a program.
+
+KL-2 repeated the October 15 test bed at starting K = 7. Unpruned recovery
+was 17/20 and 19/20 across the two noise levels. Both pruning arms recovered
+2/20 at each level and retained median K of 2 and 1. Both failed the recovery
+and rank criteria. Keep K = 7 without pruning as the working fit. See the
+[KL-2 findings](docs/findings/2026-11-06-flat-beta-pruning-rerun-findings.md).
+
 ## 2026-11-06 — Pruning after the KL fix: still not adopted; empty-program β KL defect found
 
 **Result (attempt KL-1, issue #6 item 1).** On the October 15 test bed at starting K = 7, current
@@ -83,6 +96,20 @@ check, not a registered evaluation; the option is not adopted as a default.
 
 **Files.** `code/fit_ssbmf_yfb.R`, `code/predict_ssbmf_yfb.R`, `tests/test_projection_centering.R`
 (reference fits from the earlier fitter in `tests/fixtures/yfb-projection-centering-off-reference.rds`).
+
+## 2026-11-06 — Use the fitted projection in stratified YFB cross-validation
+
+The two YFB CV helpers use the centers estimated in the training fold.
+Stratified Harrell concordance pools comparable pairs within strata, and
+held-out partial likelihood uses separate risk sets. Centered CV requires
+training coverage for every held-out stratum. For a new stratum scored
+on its own, a fixed vector defines a common score offset.
+
+A deterministic example shows that canonicalization near the score-spread
+floor can alter the loading precision used by the dead-update rule while
+preserving reconstructed expression. Keep the rule for this change and
+review the example before registering a remedy. See the
+[stratified CV handoff](docs/reviews/2026-11-06-stratified-yfb-cv-handoff.md).
 
 ## 2026-11-06 — LB fold-in prediction; post-fit sign flip removed
 

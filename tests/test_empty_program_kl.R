@@ -3,17 +3,9 @@
 # The beta KL of an empty program (all scores zero) must be zero.
 #
 # Found in attempt KL-1 (docs/plans/2026-11-06-kl-fix-pruning-rerun-plan.md).
-# When program k has zero scores, A_k is floored at 1e-10, so the EBNM noise
-# SD is s_k = 1e5 and the likelihood for beta_k is flat. Then q(beta_k) = g and
-#   -KL(q || g) = 0.
-# ebnm 1.1.42's point-Laplace solver is inaccurate at s = 1e5 (posterior second
-# moment 65535.87 against the prior's 0.1318; log-likelihood off by ~3e-6), so
-# compute_ebnm_kl() returns -KL = +8.2e-6. prune_yf_nullcheck() then gives an
-# empty program a deletion gain of about -1e-5, and its rule max(gain) >= 0
-# keeps or removes empty programs according to the sign of that residue.
-#
-# Status: FAILS on the current code (2026-11-06). Not yet in run_tests.R, so
-# the shared suite is not broken while the fix is decided.
+# For A = B = 0 the β likelihood is flat, so q(β) = g and -KL = 0.
+# Flooring A before solving introduced artificial information and exposed
+# numerical instability in the point-Laplace solver.
 # Run: Rscript tests/test_empty_program_kl.R
 # =============================================================================
 
@@ -21,7 +13,6 @@ if (sys.nframe() == 0L) {
   suppressPackageStartupMessages(library(ebnm))
   source("tests/test_helpers.R")
   source("code/update_beta.R")
-  source("code/compute_elbo.R")
 }
 
 # Shared point-Laplace beta prior from a KL-1 fit (seed 20261016, noise 0.25):
@@ -45,10 +36,19 @@ run_test("Empty program: beta -KL is zero, never positive", {
   n <- 50
   res <- update_beta_k(w = runif(n), z_no_k = rnorm(n), EL_k = rep(0, n), EL2_k = rep(0, n),
                        prior_family = "point_laplace", alpha = 1, g_fixed = g_dead)
-  neg_kl <- compute_ebnm_kl(res$ebnm_result$log_likelihood, res$A, res$x,
-                            res$mean, res$second)
+  neg_kl <- res$neg_kl
+  assert_true(res$A == 0 && is.infinite(res$s), "flat likelihood has zero precision")
   assert_true(neg_kl <= 1e-12, sprintf("-KL = %.3e is positive (KL must be >= 0)", neg_kl))
   assert_near(neg_kl, 0, tol = 1e-9, msg = "-KL of an empty program")
+})
+
+run_test("Weak beta information still goes through EBNM below the floor", {
+  g <- ashr::normalmix(1, 0, 1)
+  res <- update_beta_k(w = 1, z_no_k = 1e-5, EL_k = 1e-6, EL2_k = 1e-12,
+                       prior_family = "normal", alpha = 1, g_fixed = g)
+  assert_near(res$mean, 1e-11 / (1 + 1e-10), tol = 1e-14,
+              msg = "positive unfloored information shifts the posterior mean")
+  assert_true(is.finite(res$s), "weak likelihood contributes to the prior fit")
 })
 
 if (sys.nframe() == 0L) {

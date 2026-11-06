@@ -116,7 +116,9 @@ compute_z_no_k <- function(z, EL, EBeta, k) {
 #'   $B           -- signal B_k = sum(w * z_no_k * EL_k)
 #'   $x           -- EBNM pseudo-obs x_k = B_k/A_k
 #'   $s           -- EBNM pseudo-noise s_k = 1/sqrt(A_k)
-#'   $ebnm_result -- raw ebnm() return object (for diagnostics)
+#'   $ebnm_result -- raw ebnm() return object, or NULL for a flat likelihood
+#'   $neg_kl      -- exact zero for a flat likelihood with a fixed prior.
+#' In this case A = 0, x = 0 (placeholder), and s = Inf.
 #'
 #' @export
 #' @family beta_update
@@ -147,7 +149,8 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
   # ------------------------------------------------------------------
   # Floor triggers when all weights are zero or all loadings are zero —
   # degenerate inputs that would otherwise cause division by zero in x_k and s_k.
-  A_k <- max(alpha * sum(w * EL2_k) / survival_divisor, A_floor)
+  A_raw <- alpha * sum(w * EL2_k) / survival_divisor
+  A_k <- max(A_raw, A_floor)
 
   # ------------------------------------------------------------------
   # Signal (B_k): weighted inner product of partial response and loading
@@ -156,6 +159,18 @@ update_beta_k <- function(w, z_no_k, EL_k, EL2_k,
   # is alpha-independent.  Only s_k = 1/sqrt(A_k) is affected by alpha.
   # ------------------------------------------------------------------
   B_k <- alpha * sum(w * z_no_k * EL_k) / survival_divisor
+
+  # A flat likelihood leaves q(β) equal to the fixed prior. Evaluate its
+  # moments directly before the floor introduces artificial information.
+  if (!is.null(g_fixed) && A_raw == 0 && B_k == 0 &&
+      inherits(g_fixed, c("normalmix", "laplacemix"))) {
+    component_var <- if (inherits(g_fixed, "laplacemix")) 2 * g_fixed$scale^2 else g_fixed$sd^2
+    beta_mean <- sum(g_fixed$pi * g_fixed$mean)
+    beta_second <- sum(g_fixed$pi * (component_var + g_fixed$mean^2))
+    beta_sd <- sqrt(sum(g_fixed$pi * (component_var + (g_fixed$mean - beta_mean)^2)))
+    return(list(mean = beta_mean, second = beta_second, sd = beta_sd,
+                A = 0, B = 0, x = 0, s = Inf, ebnm_result = NULL, neg_kl = 0))
+  }
 
   # ------------------------------------------------------------------
   # EBNM pseudo-observation and noise
