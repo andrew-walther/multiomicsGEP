@@ -194,3 +194,10 @@ For the flat β likelihood regression, run
 prior update treats exactly flat coefficient likelihoods as uninformative.
 Use the [KL-2 registration](docs/plans/2026-11-06-flat-beta-pruning-rerun-plan.md)
 to locate the repeat of the pruning comparison.
+
+
+For the supervised Chapter 4 figures, use the three rebuild commands in
+`README.md` and trace values through
+`paper/prelim/notes/chapter4-number-sources-2026-11-06.md`. The external KM
+builder consumes fixed scores under the ignored `data/` directory. Keep
+patient-level inputs and outputs there, and commit only aggregate exhibits.

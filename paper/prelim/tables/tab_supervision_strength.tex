@@ -1,0 +1,33 @@
+\begin{table}[!htb]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\multicolumn{6}{l}{\textbf{A. Weight chosen by cross-validation (S-13, A1)}} \\
+\toprule
+Cell & \shortstack{Chosen $w_S$\\(datasets)} & \shortstack{Recovered\\(of 10)} & \shortstack{False-active\\programs} & \shortstack{Validation\\$C$} & \shortstack{Calibration\\slope} \\
+\midrule
+0.25\% variance & 1 (1), 2 (9) & 10 / 10 & 0.9 / 1.7 & 0.946 / 0.939 & 1.24 / 1.16 \\
+1\% variance & 5 (10) & 10 / 10 & 0.0 / 0.9 & 0.972 / 0.972 & 1.27 / 1.10 \\
+5\% variance & 10 (10) & 10 / 10 & 0.0 / 0.2 & 0.986 / 0.986 & 1.45 / 0.96 \\
+Weak survival & 1 (8), 2 (2) & 10 / 10 & 1.2 / 0.5 & 0.671 / 0.668 & 1.05 / 1.04 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\begin{tabular}{lcccc}
+\multicolumn{5}{l}{\textbf{B. Near the detection threshold (S-14, A1 at $w_S = 1$)}} \\
+\toprule
+Survival & Planted share & \shortstack{Recovered\\(of 10)} & Validation $C$ & Oracle $C$ \\
+\midrule
+Strong & 0.05\% & 5 / 0 & 0.800 / 0.644 & 0.936 \\
+Strong & 0.1\% & 10 / 8 & 0.901 / 0.861 & 0.948 \\
+Strong & 0.2\% & 10 / 10 & 0.936 / 0.928 & 0.958 \\
+Realistic & 0.05\% & 0 / 0 & 0.630 / 0.592 & 0.740 \\
+Realistic & 0.1\% & 9 / 8 & 0.712 / 0.705 & 0.736 \\
+Realistic & 0.2\% & 10 / 10 & 0.728 / 0.727 & 0.735 \\
+\bottomrule
+\end{tabular}
+\caption{Supervised fits against the matched two-step fit in simulation (10 datasets per cell, 2,000 genes). Entries separated by a slash give the supervised fit first and the two-step fit second. Panel A counts the datasets that selected each weight by five-fold cross-validated partial log-likelihood and reports the median calibration slope. Panel B reports oracle $C$, the validation $C$ of the true predictor.}
+\label{tab:strength}
+\end{table}

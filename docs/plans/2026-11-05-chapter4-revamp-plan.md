@@ -1,7 +1,7 @@
 # Chapter 4 revamp: supervised YFB model as the centerpiece
 
 Written 2026-11-05 from a bios-dissertation planning session (Round 3 prose review of
-Chapters 1–3). Status: **in progress (started 2026-11-06)**. The evidence table, checklist and
+Chapters 1–3). Status: **chapter assembled for review (2026-11-06)**. The evidence table, checklist and
 order of work were updated on 2026-11-06; section 7 records what changed and why. Follow-up prompt:
 [`2026-11-05-chapter4-revamp-prompt.md`](2026-11-05-chapter4-revamp-prompt.md).
 
@@ -214,48 +214,46 @@ such, per DECISIONS 2026-11-04 "Presentation".
 
 ## 3. Results checklist (cross-reference with Andrew's in-progress work)
 
-Status: **exists**, an output on disk is ready to use; **partial**, data exists but the
-figure/table doesn't; **missing**. "Andrew started?" is for Andrew to fill in. Paths are relative
-to the multiomicsGEP root and were checked on disk 2026-11-05.
+The completion column gives the saved output or the planned evaluation. Source and remaining columns record the scope at registration. Paths are relative to the multiomicsGEP root.
 
 ### Tables
 
 | # | Item | Replaces | Status | Data source | Script | Remaining | Andrew started? | Done |
 |---|---|---|---|---|---|---|---|---|
-| T1 | S-9 simulation design | tab:sim-design | partial | `results/benchmark_sim/outputs/yfb_survival_weight_2026-11-04/grid/design.csv` | typed from design.csv | write LaTeX table | | [ ] |
-| T2 | Training CV: C, SE, paired difference, folds converged, survival-active count | (new) | partial | `results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/summary.csv`, `fits.csv` | `results/benchmark_sim/summarize_yfb_supervised_real.R` | LaTeX table | | [ ] |
-| T3 | External C in 5 cohorts, two-step C, paired difference, calibration slope | tab:external | partial | `results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05/external_cindex.csv`, `external_paired_diff.csv` | `results/benchmark_sim/score_yfb_supervised_external.R` (S-11 session; don't rerun) | LaTeX table; historical column labelled not paired | | [ ] |
-| T4 | Programs: β, SD, z, survival-active, top genes at each pole, short label | (in-text list) | partial | `results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/programs_D4.csv` | — | table + biological labels (needs B1–B3) | | [ ] |
-| T6 | S-13/S-14 supervision-strength summary: CV-chosen w_S, recovery and C against the matched two-step fit, near-threshold cells | (new, 11-06) | partial | `yfb_supervision_strength_2026-11-05/selected_vs_twostep.csv`, `yfb_near_threshold_2026-11-05/metrics.csv` | — | LaTeX table | | [ ] |
-| T5 | Enrichment summary for the survival-active programs | (new) | missing | all-patient fit `fits/size_D4_N2218_w1_f0.rds` (`state$EF`, `genes`) | adapt `code/pathway_enrichment.R` (written for the old D4 fit) | run, then table | | [ ] |
+| T1 | S-9 simulation design | tab:sim-design | partial | `results/benchmark_sim/outputs/yfb_survival_weight_2026-11-04/grid/design.csv` | typed from design.csv | write LaTeX table | | [x] `paper/prelim/tables/tab_sim_design.tex` (embedded in the chapter) |
+| T2 | Training CV: C, SE, paired difference, folds converged, survival-active count | (new) | partial | `results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/summary.csv`, `fits.csv` | `results/benchmark_sim/summarize_yfb_supervised_real.R` | LaTeX table | | [x] `paper/prelim/tables/tab_training_cv.tex` (embedded in the chapter) |
+| T3 | External C in 5 cohorts, two-step C, paired difference, calibration slope | tab:external | partial | `results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05/external_cindex.csv`, `external_paired_diff.csv` | `results/benchmark_sim/score_yfb_supervised_external.R` (S-11 session; don't rerun) | LaTeX table; historical column labelled not paired | | [x] `paper/prelim/tables/tab_external.tex` (embedded in the chapter) |
+| T4 | Programs: β, SD, z, survival-active, top genes at each pole, short label | (in-text list) | partial | `results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/programs_D4.csv` | — | table + biological labels (needs B1–B3) | | [x] `paper/prelim/tables/tab_programs.tex` (embedded in the chapter) |
+| T6 | S-13/S-14 supervision-strength summary: CV-chosen w_S, recovery and C against the matched two-step fit, near-threshold cells | (new, 11-06) | partial | `yfb_supervision_strength_2026-11-05/selected_vs_twostep.csv`, `yfb_near_threshold_2026-11-05/metrics.csv` | — | LaTeX table | | [x] `paper/prelim/tables/tab_supervision_strength.tex` (embedded in the chapter) |
+| T5 | Enrichment summary for the survival-active programs | (new) | missing | all-patient fit `fits/size_D4_N2218_w1_f0.rds` (`state$EF`, `genes`) | adapt `code/pathway_enrichment.R` (written for the old D4 fit) | run, then table | | [x] `paper/prelim/tables/tab_enrichment.tex` (embedded in the chapter) |
 
 ### Figures
 
 | # | Item | Replaces | Status | Data source | Script | Remaining | Andrew started? | Done |
 |---|---|---|---|---|---|---|---|---|
-| F1 | Simulation: recovery, false activity, survival share, calibration, convergence and C against w_S | fig:delta-c | exists (progress book) | `yfb_survival_weight_2026-11-04/grid/metrics.csv`, `cal_slope_exact.csv` | `docs/progress_book/figures/2026-11-06/survival-weight-curves.png` (written 11-05 04:00, after the slope correction; its plotting script wasn't found by name, so locate it) | confirm it uses `cal_slope_exact.csv`; restyle for the chapter | | [ ] |
-| F2 | CV choice of w_S across datasets | (new) | partial | `grid/cv_chosen.csv`, `cv_chosen_cells.csv` | — | small figure or fold into T1/text | | [ ] |
-| F3 | Real-data CV C against feature-set size | (new) | exists | `yfb_supervised_real_2026-11-04/size_elbow.png` (= progress book `real-data-size-curve.png`) | `summarize_yfb_supervised_real.R` | restyle for the chapter | | [ ] |
-| F4 | External C by cohort with intervals, w_S = 1 vs two-step | tab:external visual | partial | `external_cindex.csv` | progress book `external-concordance.png` is the **October** fit | new plot from S-12 CSVs | | [ ] |
-| F5 | KM by risk tertile in external cohorts | fig:km-risk | missing | needs per-patient external risk scores; S-12 saved only aggregates | extend `score_yfb_supervised_external.R` to save risks (same fixed model, no refit) | approved 11-06: per-patient scores saved under `data/` (git-ignored) only; aggregates in Git | | [ ] |
-| F6 | KM by program-score tertile for the survival-active programs | fig:km-programs | missing | same as F5 | same | approved 11-06 (as F5) | | [ ] |
-| F7 | Program heatmap (loadings of top genes, 7 programs) | fig:programs | partial | `fits/size_D4_N2218_w1_f0.rds` | adapt `paper/prelim/make_figures.R` (uses `load_d4_weights()` for the old fit) | new figure | | [ ] |
-| F8 | Correspondence of w_S = 1 programs with the α_F = 0 benchmark programs (and with w_S = 0) | (new) | partial | f0 fits for w1 and w0; `results/benchmark_snapshot_2026-10-14/single_modality/` | progress book `program-correspondence.png` is the October fit | new figure or table; links the new programs to the old Programs 3/7 | | [ ] |
-| F9 | Calibration: external slopes, w_S = 1 vs two-step | (new) | partial | `external_cindex.csv` (`cal_slope`, `cal_se`) | — | small dot plot or a T3 column | | [ ] |
+| F1 | Simulation: recovery, false activity, survival share, calibration, convergence and C against w_S | fig:delta-c | exists (progress book) | `yfb_survival_weight_2026-11-04/grid/metrics.csv`, `cal_slope_exact.csv` | `docs/progress_book/figures/2026-11-06/survival-weight-curves.png` (written 11-05 04:00, after the slope correction; its plotting script wasn't found by name, so locate it) | confirm it uses `cal_slope_exact.csv`; restyle for the chapter | | [x] `paper/prelim/figures/sup_sim_weight_s9.pdf` |
+| F2 | CV choice of w_S across datasets | (new) | partial | `grid/cv_chosen.csv`, `cv_chosen_cells.csv` | — | small figure or fold into T1/text | | [x] weight frequencies reported in T1 and simulation results |
+| F3 | Real-data CV C against feature-set size | (new) | exists | `yfb_supervised_real_2026-11-04/size_elbow.png` (= progress book `real-data-size-curve.png`) | `summarize_yfb_supervised_real.R` | restyle for the chapter | | [x] `paper/prelim/figures/sup_real_size_curve.pdf` |
+| F4 | External C by cohort with intervals, w_S = 1 vs two-step | tab:external visual | partial | `external_cindex.csv` | progress book `external-concordance.png` is the **October** fit | new plot from S-12 CSVs | | [x] `paper/prelim/figures/sup_external_c.pdf` |
+| F5 | KM by risk tertile in external cohorts | fig:km-risk | missing | needs per-patient external risk scores; S-12 saved only aggregates | extend `score_yfb_supervised_external.R` to save risks (same fixed model, no refit) | approved 11-06: per-patient scores saved under `data/` (git-ignored) only; aggregates in Git | | [x] `paper/prelim/figures/sup_external_km_risk.pdf` |
+| F6 | KM by program-score tertile for the survival-active programs | fig:km-programs | missing | same as F5 | same | approved 11-06 (as F5) | | [x] `paper/prelim/figures/sup_external_km_program_2.pdf`, `paper/prelim/figures/sup_external_km_program_3.pdf`, `paper/prelim/figures/sup_external_km_program_5.pdf` |
+| F7 | Program heatmap (loadings of top genes, 7 programs) | fig:programs | partial | `fits/size_D4_N2218_w1_f0.rds` | adapt `paper/prelim/make_figures.R` (uses `load_d4_weights()` for the old fit) | new figure | | [x] `paper/prelim/figures/sup_programs_heatmap.pdf` |
+| F8 | Correspondence of w_S = 1 programs with the α_F = 0 benchmark programs (and with w_S = 0) | (new) | partial | f0 fits for w1 and w0; `results/benchmark_snapshot_2026-10-14/single_modality/` | progress book `program-correspondence.png` is the October fit | new figure or table; links the new programs to the old Programs 3/7 | | [x] `paper/prelim/figures/sup_programs_correspondence.pdf` |
+| F9 | Calibration: external slopes, w_S = 1 vs two-step | (new) | partial | `external_cindex.csv` (`cal_slope`, `cal_se`) | — | small dot plot or a T3 column | | [x] `paper/prelim/figures/sup_external_c.pdf` (calibration panel) |
 | F10 | Per-cohort β (TCGA vs CPTAC) for the survival-active programs | fig:percohort | missing | needs per-training-cohort fits | — | moved to planned evaluation (11-06): needs per-cohort refits, outside the chapter's scope | | [x] planned evaluation |
-| F12 | S-13 weight curves: CV choice of w_S, C and calibration against w_S, with the two-step reference | (new, 11-06) | partial | `yfb_supervision_strength_2026-11-05/weight_curves.csv`, `cv_selected.csv` | progress-book `s13-weight-curves.png` from the parent session's untracked `plot_supervision_strength.R` (do not edit; restyle in the prelim script) | vector PDF at print size | | [ ] |
-| F13 | S-14 near-threshold: recovery and paired validation C, w_S = 1 vs two-step, by planted share | (new, 11-06) | partial | `yfb_near_threshold_2026-11-05/metrics.csv` | progress-book `s14-paired-c.png` (same script) | vector PDF at print size | | [ ] |
-| F11 | Model diagram (Y, L, F, β, w_S) | (new) | exists | `docs/progress_book/figures/two-step-vs-joint.svg`, `supervision-states.svg` | `build_diagrams.py` | optional; convert to PDF/PNG if used | | [ ] |
+| F12 | S-13 weight curves: CV choice of w_S, C and calibration against w_S, with the two-step reference | (new, 11-06) | partial | `yfb_supervision_strength_2026-11-05/weight_curves.csv`, `cv_selected.csv` | progress-book `s13-weight-curves.png` from the parent session's untracked `plot_supervision_strength.R` (do not edit; restyle in the prelim script) | vector PDF at print size | | [x] `paper/prelim/figures/sup_sim_weight_s13.pdf` |
+| F13 | S-14 near-threshold: recovery and paired validation C, w_S = 1 vs two-step, by planted share | (new, 11-06) | partial | `yfb_near_threshold_2026-11-05/metrics.csv` | progress-book `s14-paired-c.png` (same script) | vector PDF at print size | | [x] `paper/prelim/figures/sup_sim_near_threshold.pdf` |
+| F11 | Model diagram (Y, L, F, β, w_S) | (new) | exists | `docs/progress_book/figures/two-step-vs-joint.svg`, `supervision-states.svg` | `build_diagrams.py` | optional; convert to PDF/PNG if used | | [x] optional diagram omitted. Methods gives the predictor and objective |
 
 ### Biology
 
 | # | Item | Status | Source / method | Remaining | Andrew started? | Done |
 |---|---|---|---|---|---|---|
-| B1 | Top genes and pole labels for the 3 survival-active programs (hypoxia/glycolysis vs normal pancreas; ribosomal/proliferation vs classical epithelial; third adverse program) | partial | `programs_D4.csv`; the findings file's gene lists | confirm labels against B2–B3 | | [ ] |
-| B2 | Pathway enrichment (MSigDB Hallmark, Reactome/KEGG via fgsea or clusterProfiler) | missing | adapt `code/pathway_enrichment.R` to `state$EF` of the f0 fit | run and summarize | | [ ] |
-| B3 | Subtype and stroma concordance (Moffitt basal-like/classical, Moffitt normal/activated stroma, Collisson, Bailey, PurIST) | missing | correlate program scores with published signature scores in training and external cohorts | find or write the signature-scoring code; no repo code found by grep for "PurIST" | | [ ] |
-| B4 | Correspondence with the α_F = 0 Programs 3 (protective) and 7 (adverse) | partial | F8 | report \|r\| and shared top genes | | [ ] |
-| B5 | Direction of the survival-active programs out of sample | missing | per-cohort Cox on program scores (from F5/F6 data) | needs per-patient external scores | | [ ] |
+| B1 | Top genes and pole labels for the 3 survival-active programs (hypoxia/glycolysis vs normal pancreas; ribosomal/proliferation vs classical epithelial; third adverse program) | partial | `programs_D4.csv`; the findings file's gene lists | confirm labels against B2–B3 | | [x] `paper/prelim/tables/tab_programs.tex` (embedded in the chapter) |
+| B2 | Pathway enrichment (MSigDB Hallmark, Reactome/KEGG via fgsea or clusterProfiler) | missing | adapt `code/pathway_enrichment.R` to `state$EF` of the f0 fit | run and summarize | | [x] `results/benchmark_sim/outputs/prelim_ch4_2026-11-06/programs_enrichment.csv` |
+| B3 | Subtype and stroma concordance (Moffitt basal-like/classical, Moffitt normal/activated stroma, Collisson, Bailey, PurIST) | missing | correlate program scores with published signature scores in training and external cohorts | find or write the signature-scoring code; no repo code found by grep for "PurIST" | | [x] `results/benchmark_sim/outputs/prelim_ch4_2026-11-06/programs_subtype_concordance.csv` |
+| B4 | Correspondence with the α_F = 0 Programs 3 (protective) and 7 (adverse) | partial | F8 | report \|r\| and shared top genes | | [x] `results/benchmark_sim/outputs/prelim_ch4_2026-11-06/programs_correspondence_topgenes.csv` |
+| B5 | Direction of the survival-active programs out of sample | missing | per-cohort Cox on program scores (from F5/F6 data) | needs per-patient external scores | | [x] `results/benchmark_sim/outputs/prelim_ch4_2026-11-06/external_program_direction.csv` |
 
 ## 4. Other documents the revamp affects
 
@@ -420,3 +418,25 @@ Paused at Andrew's request until the usage reset. State:
   are out of date too and need Andrew's ruling: "non-negative factorization", "independently
   tuned two-step pipeline", multimodal "selects the correct number of programs"), S-15 result,
   then steps 7–9.
+
+
+## 10. Evidence carried into the revised chapter
+
+The chapter uses the S-11 fit and the S-12 evaluation. S-15 retained the
+unit survival weight and KL-2 supported the unpruned rank-seven fit. The
+external interval is shown with and without donor resampling. The primary
+slope table gives four of five series closer to calibration, with PACA-AU
+RNA-seq as the exception. The nonmatched-program variance analysis is
+post hoc and includes programs below the survival-activity threshold.
+See the [numerical source ledger](../../paper/prelim/notes/chapter4-number-sources-2026-11-06.md).
+
+F10 remains planned evaluation. F11 was optional and is omitted. Earlier
+chapter material remains in
+[`trimmed-material-2026-11.md`](../../paper/prelim/notes/trimmed-material-2026-11.md).
+
+The assembled prelim passed all six tests in `test_prelim_assembly.py`.
+The full PDF went from 212 to 227 pages. The Chapter 4 body went from
+18 to 31 pages and its standalone preview from 23 to 36 pages. The
+standalone abstract remains two pages. All 11 vector figures were reviewed
+on the assembled pages for legibility and caption agreement. The Round 3
+record is in `bios-dissertation/prelim/full-draft/notes/human-writer-review/round3/ch4/`.

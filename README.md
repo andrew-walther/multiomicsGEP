@@ -81,6 +81,28 @@ records manuscript corrections and remaining donor-dependence, historical
 preprocessing and acquisition-provenance questions. Historical estimates
 remain labelled as such; these documentation corrections do not adopt a new model.
 
+## Prelim Chapter 4 figures and tables
+
+The [prelim chapter](paper/prelim/project3-ssbmf.qmd) reports the fixed-rank,
+survival-weighted YFB fit and the rank-matched two-step comparison. The
+[chapter source ledger](paper/prelim/notes/chapter4-number-sources-2026-11-06.md)
+identifies each saved result. From the repository root, rebuild the exhibits
+with the commands below.
+
+```bash
+Rscript paper/prelim/make_figures_supervised_sim.R
+Rscript paper/prelim/make_figures_supervised_programs.R
+Rscript paper/prelim/make_figures_supervised_external_km.R
+```
+
+The first command reads saved aggregate CSVs. The program and KM builders also
+need the saved fits and local PDAC inputs. If the ignored external score cache
+is absent, set `PDAC_DATA_ROOT` to the local data directory and run
+`Rscript results/benchmark_sim/save_yfb_external_patient_scores.R` before the
+KM builder. The cache contains patient-level outcomes and projections and
+belongs only under the ignored `data/` directory. The chapter embeds the
+generated LaTeX tables and references the vector PDFs in `paper/prelim/figures/`.
+
 ## Getting started
 
 ### Requirements

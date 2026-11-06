@@ -3,6 +3,20 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-06 — Prelim Chapter 4 reporting model
+
+Chapter 4 presents the single-log, rank-seven, unpruned YFB fit with a unit
+survival weight, point-Laplace molecular priors and Normal coefficient
+priors. S-15 retained the weight and KL-2 supported keeping the unpruned
+working fit. The lead comparator uses the same rank and preprocessing with
+an unsupervised factorization followed by Cox regression. The chapter reports
+the October registered result, the donor-resampled external interval and
+the limited effect of survival on the observed expression loadings.
+Multimodal modeling remains proposed. The
+[revamp checklist](docs/plans/2026-11-05-chapter4-revamp-plan.md) and
+[removed chapter material](paper/prelim/notes/trimmed-material-2026-11.md)
+preserve the scope and the earlier results.
+
 ## 2026-11-06 — Exact β update for a flat likelihood
 
 A flat coefficient likelihood under the canonical shared prior now returns
