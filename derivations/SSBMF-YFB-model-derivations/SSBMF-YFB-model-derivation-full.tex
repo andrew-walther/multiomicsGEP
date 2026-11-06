@@ -1,0 +1,976 @@
+% =============================================================================
+% Supervised Bayesian Matrix Factorization, YFB parameterization
+% Full derivation and update algorithm (eta = (Y F) beta)
+% Author:  Andrew Walther
+% Date:    November 2026
+%
+% Unifies the April 2026 per-update derivations in components/ (qL_unsupervised,
+% qF_supervised, qBeta, ELBO), the October 15 canonical-scale F update
+% (components/canonical_ZF) and the November 5 survival-weight note
+% (components/survival_block_weight). Formulas are checked against
+% code/fit_ssbmf_yfb.R with canonicalize = TRUE; verify_derivation.R in this
+% folder checks the EBNM inputs numerically against the update functions.
+% =============================================================================
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+% ---- Custom commands (same conventions as the LB document) -----------------
+\newcommand{\lbar}[2]{\bar{l}_{#1#2}}
+\newcommand{\fbar}[2]{\bar{f}_{#1#2}}
+\newcommand{\zbar}[2]{\bar{z}_{#1#2}}
+\newcommand{\betabar}[1]{\bar{\beta}_{#1}}
+\newcommand{\lsec}[2]{\overline{l^2_{#1#2}}}
+\newcommand{\fsec}[2]{\overline{f^2_{#1#2}}}
+\newcommand{\zsec}[2]{\overline{z^2_{#1#2}}}
+\newcommand{\betasec}[1]{\overline{\beta^2_{#1}}}
+\newcommand{\E}{\mathbb{E}_q}
+\newcommand{\Var}{\mathrm{Var}_q}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\ws}{w_S}
+
+% ---- Coloured boxes ---------------------------------------------------------
+\newtcolorbox{ebnmbox}{breakable,
+  colback=blue!5!white, colframe=blue!40!black,
+  title=EBNM Problem, fonttitle=\bfseries\small}
+\newtcolorbox{derivbox}{breakable,
+  colback=gray!6!white, colframe=gray!50!black,
+  title=Derivation Steps, fonttitle=\bfseries\small}
+\newtcolorbox{keybox}[1][Key Point]{breakable,
+  colback=green!5!white, colframe=green!40!black,
+  title={#1}, fonttitle=\bfseries\small}
+\newtcolorbox{correctionbox}[1][Correction to the April 2026 Derivations]{breakable,
+  colback=red!5!white, colframe=red!50!black,
+  title={#1}, fonttitle=\bfseries\small}
+\newtcolorbox{codebox}[1][Implementation Note]{breakable,
+  colback=yellow!5!white, colframe=orange!50!black,
+  title={#1}, fonttitle=\bfseries\small}
+
+% ---- Document ---------------------------------------------------------------
+\title{\textbf{Supervised Bayesian Matrix Factorization}\\
+       \large YFB Parameterization, $\bm{\eta} = (YF)\bm{\beta}$:
+       Full Derivation and Update Algorithm}
+\author{Andrew Walther}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Introduction}
+% =============================================================================
+
+This document derives the coordinate-ascent variational inference (CAVI)
+algorithm for the YFB parameterization of supervised Bayesian matrix
+factorization. It follows the same path as the LB document
+(\texttt{SSBMF-LB-model-derivations/MF\_Derivations\_UpdateAlgo\_REVISED.pdf}):
+the joint model, the objective, the Taylor approximation of the Cox partial
+likelihood, one update per parameter, and a one-page algorithm summary
+(Section~\ref{sec:algorithm}).
+
+The two parameterizations differ in one place. In LB the Cox linear predictor
+is $\eta_i = \bm{l}_i^\top\bm{\beta}$, so the patient scores $L$ carry the
+survival information. In YFB the linear predictor is
+$\eta_i = \bm{y}_i^\top F\bm{\beta}$, the patient's expression profile projected
+onto the gene loadings. The gene loadings $F$ are now the parameter that appears
+in both likelihoods, and $L$ enters only the reconstruction.
+
+Every update reduces to an empirical Bayes normal means (EBNM) problem: a
+pseudo-observation $x = B/A$ with standard error $s = 1/\sqrt{A}$, where $A$
+collects the coefficients of the second moment and $B$ the coefficients of the
+first moment in the expected log-likelihood. Solving it with the \texttt{ebnm}
+package returns the posterior moments and the fitted prior.
+
+\paragraph{Configuration documented.} The derivation describes
+\texttt{fit\_ssbmf\_yfb(canonicalize = TRUE, w\_S = $w_S$)}, the configuration
+used for the supervision studies from October 2026 onward (point-Laplace priors
+on $L$ and $F$, a normal prior on each $\beta_k$). The earlier benchmark
+configuration (\texttt{alpha\_F = 0}) is the special case of
+Section~\ref{sec:historical}. Options that were tested but not adopted are in
+Appendix~\ref{app:options}. Differences from the April 2026 derivations are
+listed in Section~\ref{sec:errata}.
+
+\subsection{Update Procedure}
+
+\textbf{For} $b = 1, 2, \ldots$ until convergence:
+\begin{enumerate}
+  \item Compute the Cox Taylor working quantities $W_{ii}$ and $z_i$ at the
+        current linear predictor.
+  \item For $k = 1, \ldots, K$:
+  \begin{enumerate}
+    \item Update $q(\beta_k)$, $g(\beta_k)$ (survival term only).
+    \item Update $q(l_k)$, $g(l_k)$ (genomics term only: the standard EBMF update).
+    \item Update $q(f_k)$, $g(f_k)$ (genomics and survival terms: differs from EBMF).
+  \end{enumerate}
+  \item Update $\tau_j$ (the standard EBMF update).
+  \item Rescale each program so its training scores have unit standard
+        deviation (Section~\ref{sec:scaling}).
+\end{enumerate}
+
+% =============================================================================
+\section{Notation and Model Setup}
+% =============================================================================
+
+\subsection{Index Conventions}
+
+\begin{center}
+\begin{tabular}{cll}
+\toprule
+Symbol & Dimension & Meaning \\
+\midrule
+$n,\ p,\ K$ & scalars & patients, genes, programs (latent factors) \\
+$i,\ j,\ k$ & & patient, gene and program indices \\
+$Y$ & $n\times p$ & expression, column-centered and standardized within platform \\
+$L$ & $n\times K$ & patient scores; $l_{ik}$ = score of patient $i$ on program $k$ \\
+$F$ & $p\times K$ & gene loadings; $f_{jk}$ = loading of gene $j$ on program $k$ \\
+$Z = YF$ & $n\times K$ & program scores; $z_{ik} = \sum_j y_{ij} f_{jk}$ \\
+$\bm{\beta}$ & $K\times 1$ & Cox coefficients \\
+$\tau$ & $p\times 1$ & gene-specific noise precision \\
+$(t_i,\delta_i)$ & & survival time and event indicator \\
+$D$ & scalar & number of events, $\sum_i\delta_i$ \\
+$\ws$ & scalar & survival weight (Section~\ref{sec:elbo}) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Posterior Moment Notation}
+
+Bars denote moments under the variational posterior $q$:
+\[
+  \lbar{i}{k} = \E[l_{ik}], \qquad
+  \lsec{i}{k} = \E[l_{ik}^2] = \lbar{i}{k}^2 + \Var(l_{ik}),
+\]
+and likewise $\fbar{j}{k}$, $\fsec{j}{k}$, $\betabar{k}$, $\betasec{k}$.
+
+\subsection{The Program Scores $Z = YF$}
+
+$Z$ is not a separate parameter. It is a fixed linear function of the observed
+expression $Y$ and the loadings $F$, so its distribution under $q$ is induced by
+$q(F)$. Under the mean-field posterior the loadings are independent across genes
+and programs, which gives
+\begin{equation}\label{eq:z-moments}
+  \zbar{i}{k} = \sum_j y_{ij}\,\fbar{j}{k}, \qquad
+  V^Z_{ik} := \Var(z_{ik}) = \sum_j y_{ij}^2\,\Var(f_{jk}), \qquad
+  \zsec{i}{k} = \zbar{i}{k}^2 + V^Z_{ik},
+\end{equation}
+and $z_{ik}$ and $z_{ik'}$ are independent for $k\ne k'$.
+
+\begin{keybox}[No prior is placed on $Z$]
+The prior is on $F$. Because $Z$ is a deterministic function of $F$ given $Y$,
+its posterior moments follow from $q(F)$ through Eq.~\eqref{eq:z-moments}. The
+question of which prior is induced on $Z$ arises only in a model where $Z$
+replaces $L$ as a free parameter, and this model does not do that.
+\end{keybox}
+
+\subsection{Models}
+
+\paragraph{Genomics model.}
+\begin{equation}\label{eq:genomics}
+  Y = LF^\top + E, \qquad E_{ij}\overset{\text{ind}}{\sim}\mathcal{N}(0,\tau_j^{-1}).
+\end{equation}
+
+\paragraph{Survival model.}
+\begin{equation}\label{eq:survival}
+  h_i(t) = h_0(t)\exp(\eta_i), \qquad
+  \eta_i = \bm{y}_i^\top F\bm{\beta} = \sum_k z_{ik}\beta_k ,
+\end{equation}
+with $h_0$ unspecified and the Cox partial likelihood (Breslow handling of ties).
+$\beta_k$ is the log hazard ratio per unit of program $k$'s score; after the
+scaling of Section~\ref{sec:scaling} that unit is one training standard deviation.
+
+\paragraph{Priors.}
+\[
+  l_{ik}\overset{\text{iid}}{\sim} g_{l_k}, \qquad
+  f_{jk}\overset{\text{iid}}{\sim} g_{f_k}, \qquad
+  \beta_k \sim g_{\beta_k},
+\]
+each estimated by empirical Bayes. In the documented configuration $g_{l_k}$ and
+$g_{f_k}$ are point-Laplace (point-exponential gives nonnegative programs) and
+$g_{\beta_k}$ is $\mathcal{N}(0,\sigma_k^2)$ with $\sigma_k^2$ estimated.
+
+\paragraph{Joint likelihood.}
+\begin{equation}\label{eq:joint}
+  p(Y, t, \delta \mid L, F, \bm{\beta}, \tau)
+  = \underbrace{p(Y\mid L, F, \tau)}_{\text{genomics}}\;
+    \underbrace{p(t,\delta \mid Y, F, \bm{\beta})}_{\text{survival}} .
+\end{equation}
+The survival model conditions on the observed $Y$, which is a covariate in the
+Cox model as well as the outcome of the factorization. In LB the survival model
+conditions on the latent $L$ instead.
+
+% =============================================================================
+\section{Objective Function}\label{sec:elbo}
+% =============================================================================
+
+The objective, maximized over $q = \prod_k q_{l_k}q_{f_k}q_{\beta_k}$, the priors
+and $\tau$, is
+\begin{equation}\label{eq:elbo}
+\begin{split}
+  \mathcal{F}(q, g, \tau) ={}&
+  \E\!\left[\log p(Y\mid L,F,\tau)\right]
+  + \ws\,\E\!\left[\ell_{\text{Cox}}(YF\bm{\beta})\right]\\
+  &- \sum_k \KL(q_{l_k}\Vert g_{l_k})
+  - \sum_k \KL(q_{f_k}\Vert g_{f_k})
+  - \sum_k \KL(q_{\beta_k}\Vert g_{\beta_k}).
+\end{split}
+\end{equation}
+
+\begin{keybox}[The survival weight $w_S$]
+$\ws$ multiplies the Cox log-likelihood. At $\ws = 1$, Eq.~\eqref{eq:elbo} is the
+ordinary evidence lower bound and its maximizer approximates the Bayesian
+posterior. At $\ws \ne 1$ it is the lower bound for a power (generalized-Bayes)
+posterior in which the survival likelihood is raised to the power $\ws$. The
+genomics term keeps weight 1. The same $\ws$ appears in every update that
+involves survival and in the monitored objective. At $\ws = 0$ survival drops out
+of every update, including $\beta$ (Section~\ref{sec:historical}).
+\end{keybox}
+
+\paragraph{Genomics term.} With $\bar{R}^2_{ij} := \E[(y_{ij}-\bm{l}_i^\top\bm{f}_j)^2]$,
+\begin{gather}
+  \E[\log p(Y\mid L,F,\tau)]
+  = \sum_j\Bigl[\tfrac{n}{2}\log\tau_j - \tfrac{\tau_j}{2}\sum_i \bar{R}^2_{ij}\Bigr] + C,
+  \label{eq:gen-term}\\
+  \bar{R}^2_{ij} = \Bigl(y_{ij}-\sum_k\lbar{i}{k}\fbar{j}{k}\Bigr)^2
+   + \sum_k\bigl(\lsec{i}{k}\fsec{j}{k}-\lbar{i}{k}^2\fbar{j}{k}^2\bigr). \nonumber
+\end{gather}
+
+% =============================================================================
+\section{Taylor Approximation of the Cox Partial Likelihood}\label{sec:taylor}
+% =============================================================================
+
+The Cox partial log-likelihood $\ell(\bm\eta)$ is not conjugate to any of the
+priors. As in the LB document (Section~3, which shows every step), it is
+replaced by its second-order expansion around the current linear predictor
+$\hat{\bm\eta} = Y\bar F\bar{\bm\beta}$, keeping the diagonal of the Hessian:
+\begin{equation}\label{eq:taylor}
+  \ell(\bm\eta) \approx \ell(\hat{\bm\eta})
+  - \frac12\sum_i W_{ii}\,(z_i - \eta_i)^2 + C,
+  \qquad
+  z_i = \hat\eta_i + \frac{u_i}{W_{ii}} .
+\end{equation}
+Here $z_i$ is the working response. With $\hat\theta_i = e^{\hat\eta_i}$, risk-set
+sums $\hat S(t) = \sum_{l: t_l\ge t}\hat\theta_l$ and Breslow cumulative hazard
+$\hat H(t) = \sum_{\text{event times } s\le t} d(s)/\hat S(s)$, the score and the
+weight are
+\begin{equation}\label{eq:uW}
+  u_i = \delta_i - \hat\theta_i\hat H(t_i), \qquad
+  W_{ii} = \hat\theta_i\hat H(t_i).
+\end{equation}
+
+\begin{codebox}
+The exact diagonal of the negative Hessian is
+$\hat\theta_i\hat H(t_i) - \hat\theta_i^2\sum_{s\le t_i} d(s)/\hat S(s)^2$. The
+code (\texttt{calc\_cox\_taylor\_yf()}) drops the second term, which is small
+relative to the first when risk sets are large, and floors $W_{ii}$ at $10^{-6}$.
+Because the scores sum to zero at any $\hat{\bm\eta}$,
+$\sum_i W_{ii} = \sum_i \hat\theta_i\hat H(t_i) = D$ before the floor: the total
+survival weight equals the number of events. The expansion is computed once per
+outer iteration (Step~1 of the algorithm), as in LB.
+\end{codebox}
+
+\paragraph{Expected surrogate under $q$.} Taking expectations of Eq.~\eqref{eq:taylor},
+\begin{equation}\label{eq:surv-expect}
+  \E[\ell(\bm\eta)] \approx \ell(\hat{\bm\eta})
+  - \frac12\sum_i W_{ii}\Bigl[(z_i - \bar\eta_i)^2 + \Var(\eta_i)\Bigr] + C,
+  \qquad
+  \Var(\eta_i) = \sum_k\bigl(\zsec{i}{k}\betasec{k} - \zbar{i}{k}^2\betabar{k}^2\bigr),
+\end{equation}
+since $z_{ik}\beta_k$ are independent across $k$ under the mean-field posterior.
+
+\paragraph{Partial working response.} For program $k$, remove the other programs'
+contributions:
+\begin{equation}\label{eq:zmk}
+  z^{-k}_i = z_i - \sum_{k'\ne k}\zbar{i}{k'}\,\betabar{k'} .
+\end{equation}
+
+% =============================================================================
+\section{Update for $q(\beta_k)$: Survival Coefficients}\label{sec:beta}
+% =============================================================================
+
+Only the survival term and $\KL(q_{\beta_k}\Vert g_{\beta_k})$ involve $\beta_k$.
+
+\begin{derivbox}
+Write $\eta_i = z_{ik}\beta_k + \sum_{k'\ne k} z_{ik'}\beta_{k'}$. Keeping the
+terms of $-\tfrac12\E[(z_i-\eta_i)^2]$ that involve $\beta_k$, and using the
+independence of $\beta_k$, $z_{ik}$ and the other programs under $q$:
+\begin{align*}
+  -\tfrac12\E\bigl[(z_i - \eta_i)^2\bigr]
+  &= -\tfrac12\Bigl[\E[\beta_k^2]\,\E[z_{ik}^2]
+     - 2\,\E[\beta_k]\,\zbar{i}{k}\Bigl(z_i - \sum_{k'\ne k}\zbar{i}{k'}\betabar{k'}\Bigr)\Bigr] + C\\
+  &= -\tfrac12\,\betasec{k}\,\zsec{i}{k} + \betabar{k}\,\zbar{i}{k}\,z^{-k}_i + C .
+\end{align*}
+Multiply by $\ws W_{ii}$ and sum over $i$. The result has the form
+$-\tfrac12 A\,\E[\beta_k^2] + B\,\E[\beta_k]$, the expected log-likelihood of a
+single normal observation of $\beta_k$.
+\end{derivbox}
+
+\begin{equation}\label{eq:AB-beta}
+  A_{\beta_k} = \ws\sum_i W_{ii}\,\zsec{i}{k}, \qquad
+  B_{\beta_k} = \ws\sum_i W_{ii}\,z^{-k}_i\,\zbar{i}{k}.
+\end{equation}
+
+\begin{ebnmbox}
+\[
+  (\betabar{k},\,\betasec{k},\,\hat g_{\beta_k})
+  \;\leftarrow\; \mathrm{EBNM}\!\left(x_k = \frac{B_{\beta_k}}{A_{\beta_k}},\;
+  s_k = \frac{1}{\sqrt{A_{\beta_k}}}\right).
+\]
+$\ws$ cancels in $x_k$ and scales $s_k$ by $\ws^{-1/2}$: a larger weight narrows
+the survival likelihood for $\beta_k$ relative to its prior. The term $V^Z_{ik}$
+inside $\zsec{i}{k}$ is the error-in-variables correction for uncertainty in the
+loadings. The prior $g_{\beta_k} = \mathcal N(0,\sigma_k^2)$ is refit at every
+update from this single pseudo-observation, which gives
+$\hat\sigma_k^2 = \max(0, x_k^2 - s_k^2)$.
+\end{ebnmbox}
+
+% =============================================================================
+\section{Update for $q(l_k)$: Patient Scores}\label{sec:L}
+% =============================================================================
+
+$L$ does not appear in the Cox model, so only the genomics term and
+$\KL(q_{l_k}\Vert g_{l_k})$ involve $l_k$. With the partial residual
+\begin{equation}\label{eq:Rk}
+  R^{-k}_{ij} = y_{ij} - \sum_{k'\ne k}\lbar{i}{k'}\fbar{j}{k'},
+\end{equation}
+the terms of Eq.~\eqref{eq:gen-term} that involve $l_{ik}$ are
+\[
+  -\tfrac12\sum_j\tau_j\Bigl[\E[l_{ik}^2]\,\fsec{j}{k}
+     - 2\,\E[l_{ik}]\,R^{-k}_{ij}\fbar{j}{k}\Bigr] + C,
+\]
+which gives
+\begin{equation}\label{eq:AB-L}
+  A_{l_k} = \sum_j \tau_j\,\fsec{j}{k}\quad(\text{the same for every patient}), \qquad
+  B_{l_{ik}} = \sum_j \tau_j\,R^{-k}_{ij}\,\fbar{j}{k}.
+\end{equation}
+
+\begin{ebnmbox}
+\[
+  (\lbar{\cdot}{k},\,\lsec{\cdot}{k},\,\hat g_{l_k})
+  \;\leftarrow\; \mathrm{EBNM}\!\left(x_i = \frac{B_{l_{ik}}}{A_{l_k}},\;
+  s = \frac{1}{\sqrt{A_{l_k}}}\right), \qquad i = 1,\ldots,n .
+\]
+This is the standard EBMF update for scores. Survival reaches $L$ only through
+$F$: the current $\fbar{j}{k}$ and $\fsec{j}{k}$ carry whatever survival
+information the $F$ update put into them. $g_{l_k}$ is refit at every update.
+\end{ebnmbox}
+
+% =============================================================================
+\section{Update for $q(f_k)$: Gene Loadings}\label{sec:F}
+% =============================================================================
+
+$f_{jk}$ appears in both likelihoods: in the reconstruction through
+$\bm l_i^\top\bm f_j$, and in the Cox model through $z_{ik} = \sum_j y_{ij}f_{jk}$.
+$F$ is the dual-source parameter of YFB, as $L$ is in LB.
+
+\subsection{Genomics Contribution}
+
+The terms of Eq.~\eqref{eq:gen-term} that involve $f_{jk}$ are
+$-\tfrac{\tau_j}{2}\sum_i\bigl[\lsec{i}{k}\,\E[f_{jk}^2] - 2\,R^{-k}_{ij}\lbar{i}{k}\,\E[f_{jk}]\bigr]$,
+so
+\begin{equation}\label{eq:AB-F-gen}
+  A^{\text{gen}}_{f_{jk}} = \tau_j\sum_i\lsec{i}{k}, \qquad
+  B^{\text{gen}}_{f_{jk}} = \tau_j\sum_i R^{-k}_{ij}\,\lbar{i}{k}.
+\end{equation}
+
+\subsection{Survival Contribution}
+
+\begin{derivbox}
+Separate gene $j$ from the other genes of program $k$:
+\[
+  \eta_i = \beta_k\,y_{ij}f_{jk} + \beta_k\,s_{ij} + \eta^{-k}_i,
+  \qquad
+  s_{ij} = \sum_{j'\ne j} y_{ij'}f_{j'k},
+  \qquad
+  \eta^{-k}_i = \sum_{k'\ne k} z_{ik'}\beta_{k'} .
+\]
+Expand $-\tfrac12\E[(z_i-\eta_i)^2]$ and keep the terms that involve $f_{jk}$.
+Under the mean-field posterior $f_{jk}$, $\beta_k$, $s_{ij}$ and $\eta^{-k}_i$ are
+independent, so
+\begin{align*}
+  -\tfrac12\E\bigl[(z_i-\eta_i)^2\bigr]
+  &= -\tfrac12\Bigl[\betasec{k}\,y_{ij}^2\,\E[f_{jk}^2]
+     + 2\,\betasec{k}\,y_{ij}\,\bar s_{ij}\,\E[f_{jk}]\\
+  &\qquad\qquad + 2\,\betabar{k}\,y_{ij}\,\bar\eta^{-k}_i\,\E[f_{jk}]
+     - 2\,z_i\,\betabar{k}\,y_{ij}\,\E[f_{jk}]\Bigr] + C\\
+  &= -\tfrac12\,\betasec{k}\,y_{ij}^2\,\E[f_{jk}^2]
+     + \Bigl[\betabar{k}\,y_{ij}\,z^{-k}_i
+     - \betasec{k}\,y_{ij}\,\bar s_{ij}\Bigr]\E[f_{jk}] + C,
+\end{align*}
+using $z_i - \bar\eta^{-k}_i = z^{-k}_i$ (Eq.~\ref{eq:zmk}) and
+$\bar s_{ij} = \zbar{i}{k} - y_{ij}\fbar{j}{k}$. Multiply by $\ws W_{ii}$ and sum
+over $i$.
+\end{derivbox}
+
+\begin{equation}\label{eq:AB-F-surv}
+  A^{\text{surv}}_{f_{jk}} = \betasec{k}\sum_i W_{ii}\,y_{ij}^2, \qquad
+  B^{\text{surv}}_{f_{jk}} = \betabar{k}\sum_i W_{ii}\,y_{ij}\,z^{-k}_i
+   - \betasec{k}\sum_i W_{ii}\,y_{ij}\bigl(\zbar{i}{k} - y_{ij}\fbar{j}{k}\bigr).
+\end{equation}
+
+The first part of $B^{\text{surv}}$ is the signal: the correlation, weighted by
+$W$, between gene $j$ and the part of the working response that the other
+programs leave unexplained. The second part removes what the other genes of
+program $k$ already explain.
+
+\subsection{Combined EBNM Problem}
+
+\begin{equation}\label{eq:AB-F}
+  A_{f_{jk}} = A^{\text{gen}}_{f_{jk}} + \ws\,A^{\text{surv}}_{f_{jk}}, \qquad
+  B_{f_{jk}} = B^{\text{gen}}_{f_{jk}} + \ws\,B^{\text{surv}}_{f_{jk}}.
+\end{equation}
+
+\begin{ebnmbox}
+\[
+  (\fbar{j}{k},\,\fsec{j}{k}) \;\leftarrow\;
+  \text{posterior under } g_{f_k}\text{ for }
+  x_j = \frac{B_{f_{jk}}}{A_{f_{jk}}},\; s_j = \frac{1}{\sqrt{A_{f_{jk}}}},
+  \qquad j = 1,\ldots,p \text{ in sequence},
+\]
+then refit $\hat g_{f_k}$ by marginal likelihood from the sweep's $(x_j, s_j)$.
+\end{ebnmbox}
+
+\begin{keybox}[Why the update is a sequential sweep over genes]
+$B^{\text{surv}}_{f_{jk}}$ depends on $\fbar{j'}{k}$ for $j'\ne j$ through
+$\zbar{i}{k}$. Exact coordinate ascent therefore updates one gene at a time and
+refreshes $\zbar{\cdot}{k}$ and $V^Z_{\cdot k}$ after each gene:
+\[
+  \zbar{i}{k} \leftarrow \zbar{i}{k} + y_{ij}\bigl(\fbar{j}{k}^{\text{new}} - \fbar{j}{k}^{\text{old}}\bigr),
+  \qquad
+  V^Z_{ik} \leftarrow V^Z_{ik} + y_{ij}^2\bigl(\Var(f_{jk})^{\text{new}} - \Var(f_{jk})^{\text{old}}\bigr).
+\]
+The prior $g_{f_k}$ is held fixed during the sweep, so each gene's posterior is a
+closed-form normal-means posterior, and it is refit once the sweep ends. At
+$\ws = 0$ the coupling disappears and the sweep equals the usual parallel EBMF
+update of $f_k$.
+\end{keybox}
+
+\paragraph{Precision-weighted combination.} Because $A$ and $B$ are sums of a
+genomics and a survival part, the pseudo-observation is a precision-weighted
+average of a genomics-only estimate and a survival-only estimate:
+\begin{equation}\label{eq:F-combination}
+  x_j = \frac{A^{\text{gen}}\,x^{\text{gen}}_j + \ws A^{\text{surv}}\,x^{\text{surv}}_j}
+             {A^{\text{gen}} + \ws A^{\text{surv}}},
+  \qquad
+  x^{\text{gen}}_j = \frac{B^{\text{gen}}}{A^{\text{gen}}},\quad
+  x^{\text{surv}}_j = \frac{B^{\text{surv}}}{A^{\text{surv}}}
+\end{equation}
+(all quantities for gene $j$ and program $k$). The weight on the survival
+estimate is $\rho/(1+\rho)$ with $\rho = \ws A^{\text{surv}}/A^{\text{gen}}$.
+Section~\ref{sec:balance} works out the size of $\rho$.
+
+\begin{codebox}
+\texttt{fit\_ssbmf\_yfb()} calls \texttt{multimodal\_yfb\_update\_F\_mk()} (or its
+C++ version) with working weights $\ws W_{ii}$ and signal
+$\ws W_{ii}z^{-k}_i$, so the code computes exactly Eq.~\eqref{eq:AB-F}. A program
+with $\max_j A_{f_{jk}} < 10^{-8}$ receives no information from either likelihood.
+Its posterior would equal the prior and revive $l_k$ and $\beta_k$ from nothing,
+so the code sets $f_k = 0$ with a point-mass prior instead. This prunes the
+program while keeping $K$ columns.
+\end{codebox}
+
+% =============================================================================
+\section{Update for $\tau$: Noise Precision}\label{sec:tau}
+% =============================================================================
+
+$\tau$ appears only in the genomics term, since the Cox model uses the observed
+$Y$. Setting the derivative of Eq.~\eqref{eq:gen-term} with respect to $\tau_j$
+to zero gives the standard EBMF update
+\begin{equation}\label{eq:tau}
+  \hat\tau_j = \frac{n}{\sum_i\bar{R}^2_{ij}} ,
+\end{equation}
+with $\bar R^2_{ij}$ from Eq.~\eqref{eq:gen-term} (posterior variances included).
+
+% =============================================================================
+\section{Score Standardization}\label{sec:scaling}
+% =============================================================================
+
+For any $c_k > 0$, the substitution
+\[
+  f_{\cdot k}\to f_{\cdot k}/c_k,\qquad
+  l_{\cdot k}\to c_k\,l_{\cdot k},\qquad
+  \beta_k\to c_k\,\beta_k
+\]
+leaves $LF^\top$ and $\bm\eta = YF\bm\beta$ unchanged. The reconstruction term
+cannot fix $c_k$, but the scale of $z_{\cdot k}$ changes the size of every
+survival quantity in the updates. Left free, the scale drifted from one
+iteration to the next. This feedback caused the April 2026 instability.
+
+After initialization and at the end of every iteration, each program is
+rescaled so that its training scores have unit standard deviation:
+\begin{equation}\label{eq:scaling}
+  c_k = \mathrm{sd}_i\bigl(\zbar{i}{k}\bigr), \qquad
+  \fbar{\cdot}{k}\leftarrow\fbar{\cdot}{k}/c_k,\;
+  \fsec{\cdot}{k}\leftarrow\fsec{\cdot}{k}/c_k^2,\;
+  \lbar{\cdot}{k}\leftarrow c_k\lbar{\cdot}{k},\;
+  \lsec{\cdot}{k}\leftarrow c_k^2\lsec{\cdot}{k},\;
+  \betabar{k}\leftarrow c_k\betabar{k},\;
+  \betasec{k}\leftarrow c_k^2\betasec{k}.
+\end{equation}
+The loading prior $g_{f_k}$, which is carried across sweeps, is transformed with
+$f$ (a Laplace or exponential rate is multiplied by $c_k$, a normal variance
+divided by $c_k^2$). The priors on $L$ and $\beta$ are refit at every update and
+are scale families, so they need no transformation. A program whose scores have
+collapsed ($c_k < 10^{-6}$) is left unscaled.
+
+\begin{keybox}[What the scaling does and does not change]
+It selects one representative from a family of equivalent solutions. It changes
+neither the fitted reconstruction, the risk scores, nor the objective. It makes
+$\beta_k$ a log hazard ratio per training standard deviation of program $k$'s
+score, and it keeps the survival terms on a fixed scale between iterations. The
+code argument is \texttt{canonicalize = TRUE}. Earlier notes called the result
+the ``canonical $Z_F$''.
+\end{keybox}
+
+% =============================================================================
+\section{Initialization, Convergence, Pruning and Prediction}\label{sec:other}
+% =============================================================================
+
+\paragraph{Initialization.} $\bar L$ and $\bar F$ come from the rank-$K$ SVD of $Y$,
+$\bar L = U_K D_K^{1/2}$ and $\bar F = V_K D_K^{1/2}$ (absolute values only when the
+prior is nonnegative), with $\overline{L^2} = \bar L^2$ and $\overline{F^2} = \bar F^2$.
+Then $\bar{\bm\beta} = \bm 0$, $\hat\tau_j = 1/\widehat{\mathrm{var}}(y_{\cdot j})$, and
+the scaling of Section~\ref{sec:scaling} is applied. An optional supervised start
+(\texttt{init\_supervised = TRUE}) points program $K$ along the null-model Cox
+score direction $Y^\top\bm u_0$.
+
+\paragraph{Convergence.} The monitored objective is Eq.~\eqref{eq:elbo} evaluated
+at the end of each iteration: the genomics term Eq.~\eqref{eq:gen-term} at the
+updated $\tau$, plus $\ws$ times the survival term Eq.~\eqref{eq:surv-expect}
+re-expanded at the current $\bar{\bm\eta}$, minus the KL terms. The fit stops
+after iteration $b > 5$ when the relative change in this objective is below
+\texttt{tol}. The Taylor surrogate is re-expanded at every iteration and the
+priors are refit, so the objective is not guaranteed to increase at every step.
+
+\paragraph{Pruning (optional, \texttt{prune = TRUE}).} After convergence, for each
+program compute the change in the monitored objective when it is removed. If the
+largest change is nonnegative, remove that program and refit from the remaining
+programs' moments.
+
+\paragraph{Prediction.} For a new patient with expression $\bm y^*$, processed with
+the training transformations,
+\begin{equation}\label{eq:predict}
+  \hat\eta^* = \bm y^{*\top}\bar F\,\bar{\bm\beta} = \sum_k \bar z^*_k\,\betabar{k},
+  \qquad \bar z^*_k = \bm y^{*\top}\fbar{\cdot}{k}.
+\end{equation}
+The training and test formulas are identical. No refit or posterior for the new
+patient's scores is needed (\texttt{predict\_ssbmf\_yfb()}).
+
+% =============================================================================
+\section{Update Schedule: What Is Held Fixed, Rescaled, and Updated Together}\label{sec:schedule}
+% =============================================================================
+
+Each update maximizes $\mathcal F$ over one block with everything else held at
+its current value. The table records the block, when it is computed, and what
+it treats as fixed. Any order of exact coordinate updates is valid coordinate
+ascent. The order affects the path and possibly the stationary point reached,
+not the update formulas.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}X}
+\toprule
+Quantity & When computed & Held fixed / how updated \\
+\midrule
+$W_{ii}$, $z_i$ (Taylor) & Once, at the start of each outer iteration, at $\hat{\bm\eta} = Y\bar F\bar{\bm\beta}$ & Frozen for the whole $k$-loop, even after $\bar F$ and $\bar{\bm\beta}$ change. Re-expanded at the end of the iteration for the objective only \\
+$\bar z_{\cdot k'}$, $V^Z_{\cdot k}$ & At the start of each program $k$ & Reflect the programs already updated in this sweep (Gauss--Seidel over programs) \\
+$z^{-k}_i$ & At the start of each program $k$ & Uses current $\bar z_{\cdot k'}$ and $\betabar{k'}$ of the other programs \\
+$q(\beta_k)$ & One program at a time (scalar EBNM) & Uses the frozen $W, z$ and current $\bar Z$. Prior refit at every update (per-program mode) \\
+$q(l_k)$ & All $n$ patients together (one EBNM call) & Exact: given $F$ and $\tau$, the patients' scores are conditionally independent and share one precision. Prior refit at every update \\
+$q(f_k)$ & Genes one at a time, in order & Exact coordinate ascent: each gene sees the refreshed $\bar z_{\cdot k}$, $V^Z_{\cdot k}$. $g_{f_k}$ fixed during the sweep, refit after it \\
+Order within $k$ & $\beta_k$, then $l_k$, then $f_k$ & $f_k$ uses the new $\betabar{k}$, $\betasec{k}$ and $\bar l_{\cdot k}$. (LB uses $l_k$, $f_k$, $\beta_k$) \\
+$\tau$ & After the $k$-loop, all genes together & Closed form; genes are independent given $L$, $F$ \\
+Objective & After $\tau$ & Computed before rescaling. The rescaling leaves it unchanged \\
+Score standardization & End of every iteration (and after initialization) & All programs at once; moments and $g_{f_k}$ transformed (Section~\ref{sec:scaling}) \\
+Stopping & After rescaling & Only after iteration 5 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{keybox}[Two approximations in the schedule]
+\begin{enumerate}
+  \item The Taylor point is not refreshed inside the $k$-loop. Within an
+        iteration the updates optimize a fixed quadratic surrogate, and the
+        surrogate moves between iterations. This is the usual
+        iteratively-reweighted scheme and the reason the objective can dip.
+  \item The prior on $f_k$ is fixed during the gene sweep. Refitting it after
+        each gene would make the sweep depend on gene order. Holding it fixed
+        keeps each gene's update a closed-form posterior.
+\end{enumerate}
+\end{keybox}
+
+\newpage
+% =============================================================================
+\section{Complete Algorithm Summary}\label{sec:algorithm}
+% =============================================================================
+
+\begin{tcolorbox}[colback=gray!5, colframe=black!60,
+                  title=Supervised Matrix Factorization (YFB) --- CAVI Algorithm,
+                  fonttitle=\bfseries]
+
+\textbf{Inputs:} $Y_{n\times p}$ (centered, standardized), $(t_i,\delta_i)_{i=1}^n$,
+number of programs $K$, survival weight $\ws$ (default 1)
+
+\textbf{Initialize:} $\bar L,\bar F$ from the rank-$K$ SVD of $Y$; $\bar{\bm\beta}=\bm 0$;
+$\hat\tau_j = 1/\widehat{\mathrm{var}}(y_{\cdot j})$; rescale so $\mathrm{sd}(Y\fbar{\cdot}{k}) = 1$
+
+\medskip
+\textbf{For} $b = 1, 2, \ldots$ \textbf{until convergence:}
+
+\smallskip
+\quad\textbf{1.\ Survival working quantities} (once per outer iteration):
+\[
+  \hat{\bm\eta} = Y\bar F\bar{\bm\beta},\quad
+  (u_i, W_{ii}) = \text{CoxTaylor}(\hat{\bm\eta}, \bm t, \bm\delta),\quad
+  z_i = \hat\eta_i + u_i/W_{ii}
+\]
+
+\quad\textbf{2.\ For} $k = 1,\ldots,K$:
+\[
+  \zbar{i}{k'} = \textstyle\sum_j y_{ij}\fbar{j}{k'},\quad
+  V^Z_{ik} = \textstyle\sum_j y_{ij}^2\,\Var(f_{jk}),\quad
+  z^{-k}_i = z_i - \textstyle\sum_{k'\ne k}\zbar{i}{k'}\betabar{k'}
+\]
+
+\qquad\textbf{(a)} $q_{\beta_k}$, $g_{\beta_k}$ (survival only):
+\[
+  A = \ws\textstyle\sum_i W_{ii}(\zbar{i}{k}^2 + V^Z_{ik}),\quad
+  B = \ws\textstyle\sum_i W_{ii}\,z^{-k}_i\,\zbar{i}{k},\quad
+  (\betabar{k},\betasec{k}) \leftarrow \mathrm{EBNM}(B/A,\,1/\sqrt A)
+\]
+
+\qquad\textbf{(b)} $q_{l_k}$, $g_{l_k}$ (genomics only), with
+$R^{-k}_{ij} = y_{ij} - \sum_{k'\ne k}\lbar{i}{k'}\fbar{j}{k'}$:
+\[
+  A = \textstyle\sum_j\tau_j\fsec{j}{k},\quad
+  B_i = \textstyle\sum_j\tau_j R^{-k}_{ij}\fbar{j}{k},\quad
+  (\lbar{i}{k},\lsec{i}{k}) \leftarrow \mathrm{EBNM}(B_i/A,\,1/\sqrt A)
+\]
+
+\qquad\textbf{(c)} $q_{f_k}$ (genomics $+$ survival), genes $j = 1,\ldots,p$ in
+sequence with $g_{f_k}$ fixed:
+\begin{align*}
+  A_j &= \tau_j\textstyle\sum_i\lsec{i}{k} \;+\; \ws\,\betasec{k}\textstyle\sum_i W_{ii}y_{ij}^2\\
+  B_j &= \tau_j\textstyle\sum_i R^{-k}_{ij}\lbar{i}{k}
+     \;+\; \ws\Bigl[\betabar{k}\textstyle\sum_i W_{ii}y_{ij}z^{-k}_i
+     - \betasec{k}\textstyle\sum_i W_{ii}y_{ij}(\zbar{i}{k} - y_{ij}\fbar{j}{k})\Bigr]\\
+  &(\fbar{j}{k},\fsec{j}{k}) \leftarrow \text{posterior under } g_{f_k}
+    \text{ for } (B_j/A_j,\,1/\sqrt{A_j});\quad
+    \text{update } \zbar{\cdot}{k},\,V^Z_{\cdot k}
+\end{align*}
+\qquad\phantom{\textbf{(c)}} then refit $g_{f_k}$ from $\{(B_j/A_j,\,1/\sqrt{A_j})\}_{j=1}^p$
+
+\smallskip
+\quad\textbf{3.\ Noise precision:}
+\[
+  \bar R^2_{ij} = \Bigl(y_{ij} - \textstyle\sum_k\lbar{i}{k}\fbar{j}{k}\Bigr)^2
+  + \textstyle\sum_k\bigl(\lsec{i}{k}\fsec{j}{k} - \lbar{i}{k}^2\fbar{j}{k}^2\bigr),
+  \qquad \hat\tau_j = n\big/\textstyle\sum_i\bar R^2_{ij}
+\]
+
+\quad\textbf{4.\ Objective:} $\mathcal F$ = genomics term $+\ \ws\,\times$ survival
+term (re-expanded at $Y\bar F\bar{\bm\beta}$, with $\Var(\eta_i)$) $-$ KL terms
+
+\quad\textbf{5.\ Score standardization:} $c_k = \mathrm{sd}_i(Y\fbar{\cdot}{k})$;
+$\bar f_{\cdot k}/c_k$, $\bar l_{\cdot k}\,c_k$, $\betabar{k}\,c_k$ (second moments by $c_k^{\mp2}$); transform $g_{f_k}$
+
+\quad\textbf{6.\ Convergence:} stop when $b > 5$ and
+$|\mathcal F^{(b)} - \mathcal F^{(b-1)}|/|\mathcal F^{(b-1)}| < \text{tol}$
+
+\medskip
+\textbf{Prediction:} $\hat\eta^* = \bm y^{*\top}\bar F\bar{\bm\beta}$
+\end{tcolorbox}
+
+\paragraph{Where survival enters.}
+\begin{center}
+\begin{tabular}{lccl}
+\toprule
+Update & Genomics & Survival & EBNM input \\
+\midrule
+$q(\beta_k)$ & -- & $\ws\times$ & scalar $(x_k, s_k)$ \\
+$q(l_k)$ & \checkmark & -- & $n$-vector, common $s$ \\
+$q(f_k)$ & \checkmark & $\ws\times$ & $p$-vector, sequential over genes \\
+$\tau$ & \checkmark & -- & closed form \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =============================================================================
+\section{Balance of the Genomics and Survival Terms}\label{sec:balance}
+% =============================================================================
+
+Survival influences the factorization only through the $F$ update, and there
+only through the share of the precision it contributes. By
+Eq.~\eqref{eq:F-combination} that share is $\rho_{jk}/(1+\rho_{jk})$, with
+\begin{equation}\label{eq:rho}
+  \rho_{jk} = \frac{\ws A^{\text{surv}}_{f_{jk}}}{A^{\text{gen}}_{f_{jk}}}
+  = \frac{\ws\,\betasec{k}\sum_i W_{ii}\,y_{ij}^2}{\tau_j\sum_i\lsec{i}{k}} .
+\end{equation}
+Eq.~\eqref{eq:rho} is exact and is computed in the code
+(\texttt{trace\_supervision = TRUE}). The ratio is invariant to the scale
+substitution of Section~\ref{sec:scaling}, since numerator and denominator both
+scale by $c_k^2$. Its size can be read off approximately.
+
+\paragraph{Numerator.} With standardized expression and $W_{ii}$ not strongly
+related to $y_{ij}^2$, $\sum_i W_{ii}y_{ij}^2 \approx \sum_i W_{ii} = D$
+(Section~\ref{sec:taylor}). The numerator is about $\ws\,\betasec{k}\,D$: it
+depends on the number of events and on $\beta_k$ per standard deviation, and not
+on $p$.
+
+\paragraph{Denominator.} Let $d_k^2 = \lVert\bar l_{\cdot k}\rVert^2\lVert\bar f_{\cdot k}\rVert^2$
+be the energy of program $k$'s rank-one component and $v_k = d_k^2/(np)$ its
+share of the total variance of $Y$. When the programs are close to orthogonal
+and program $k$'s scores are dominated by signal,
+$\bar z_{\cdot k} = Y\bar f_{\cdot k} \approx \bar l_{\cdot k}\lVert\bar f_{\cdot k}\rVert^2$.
+Unit standard deviation then means
+$\lVert\bar l_{\cdot k}\rVert\,\lVert\bar f_{\cdot k}\rVert^2 \approx \sqrt n$,
+and combining with the definition of $d_k$ gives
+$\lVert\bar l_{\cdot k}\rVert^2 \approx d_k^4/n = n\,p^2 v_k^2$. Hence
+\begin{equation}\label{eq:rho-approx}
+  \rho_{jk} \;\approx\; \frac{\ws\,\betasec{k}\,(D/n)}{\tau_j\,p^2\,v_k^2}.
+\end{equation}
+
+\begin{keybox}[What Eq.~\eqref{eq:rho-approx} says]
+\begin{enumerate}
+  \item At fixed variance share, survival's precision share falls as $1/p^2$.
+        Doubling the number of genes cuts it by four.
+  \item It grows as $1/v_k^2$. Survival has the most relative influence on
+        low-variance programs, which are the programs supervision is meant to
+        find, and almost none on dominant programs.
+  \item With the PDAC training data ($p\approx 2{,}200$, $D/n\approx 0.6$,
+        $\betasec{k}\approx 0.04$, $\tau_j\approx 1.5$, $v_k\approx 0.05$) and
+        $\ws = 1$, Eq.~\eqref{eq:rho-approx} gives $\rho\approx 10^{-6}$. The
+        trace on the real data measured $10^{-8}$ to $10^{-6}$
+        (DECISIONS.md, 2026-11-04). At that level the fitted loadings equal the
+        unsupervised ones.
+  \item Matching the balance across $p$ at fixed $v_k$ needs $\ws\propto p^2$.
+        Fixed weights of 40 or more broke convergence at $p = 2{,}000$ in
+        simulation, through separation of the Cox model. The comparison document
+        (\texttt{SSBMF-LB-vs-YFB-comparison/}) discusses ways to give survival
+        more weight without that failure.
+\end{enumerate}
+The approximation assumes signal-dominated scores and near-orthogonal programs.
+For a program near the detection threshold the noise part of $Y\bar f_{\cdot k}$
+is not negligible and Eq.~\eqref{eq:rho} should be used directly.
+\end{keybox}
+
+\paragraph{Comparison with the April 2026 claim.} The April derivation
+concluded that the ratio is $O(1)$ because both precisions sum over $n$. It
+treated $\sum_i\lsec{i}{k}$ as $n$ times a fixed variance, but the size of $l_k$
+is tied to the size of $f_k$ through the reconstruction and the score scale.
+Once that link is used, the ratio carries the factor $1/(p^2v_k^2)$.
+
+% =============================================================================
+\section{Strengthening Supervision Without Breaking the Fit}\label{sec:strengthen}
+% =============================================================================
+
+Section~\ref{sec:balance} shows that at $\ws = 1$ survival has almost no pull on
+the loadings of a dominant program at $p\approx 2{,}000$. This section lists the
+ways to change the balance and what each does to the derivation. None is
+adopted.
+
+\paragraph{Why a large weight fails.} The survival-only estimate in
+Eq.~\eqref{eq:F-combination} solves, for program $k$, a weighted least squares
+problem $\beta_k Y\bm f_{\cdot k}\approx\bm z^{-k}$ with $p$ unknowns and $n$
+observations. With $p > n$ it has exact solutions: some combination of genes
+orders the training survival times perfectly. As $\rho\to\infty$ the loadings
+follow that solution, the Cox fit separates, $|\betabar{k}|$ grows without
+bound and the program detaches from expression structure. This matches the
+S-9 result that fixed weights of 40 or more lose convergence and the program.
+Any remedy has to keep the genomics term or the priors in control of the
+directions the Cox model alone cannot identify.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.3cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.2cm}}
+\toprule
+Approach & Change to the derivation & Status / risk \\
+\midrule
+Weight $\ws$ on the Cox term (current) & $\ws$ in Eqs.~\eqref{eq:AB-beta} and \eqref{eq:AB-F}; power posterior & S-9: $\ws\ge 40$ separates at $p=2{,}000$ \\
+Survival-block weight (App.~\ref{app:options}) & $\ws$ also multiplies $\KL(q_\beta\Vert g_\beta)$; $\beta$ update at weight 1 & Keeps the $\beta$ prior in force; CV choice stable (S-13), criteria not all met \\
+Choose $\ws$ from data & Same updates; $\ws$ by cross-validated partial log-likelihood, or a calibrated power (generalized Bayesian updating) & CV picks 1--10 in simulation; the candidate for the next real-data refit \\
+Divide the genomics term by $p$ & Equivalent to $\ws = p$ with the $L$, $F$ KL terms unscaled & $\rho\propto 1/p$, still falls with $p$; already inside the separating range at $p\approx 2{,}000$ \\
+Normalize both losses and mix with $\alpha$ (DeSurv) & $(1-\alpha)\cdot$genomics$/c_G + \alpha\cdot$Cox$/c_S$ equals $\ws = \tfrac{\alpha}{1-\alpha}\tfrac{c_G}{c_S}$ up to an overall scale & Same family as $\ws$; DeSurv picks $\alpha$ by CV C-index \\
+Fewer genes & $\rho\propto 1/p^2$, so a smaller gene set raises survival's share & A survival screen must sit inside CV to avoid reusing outcomes \\
+Program-specific weights $w_{S,k}$ & $w_{S,k}$ in program $k$'s $F$ and $\beta$ updates & The Cox term couples programs, so this no longer maximizes one objective; heuristic only \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{keybox}[What the balance analysis implies for the method]
+Because $\rho\propto 1/v_k^2$, a modest weight already acts on low-variance
+programs and leaves dominant programs to the genomics term. That is the regime
+where a joint fit can find what a two-step fit misses, and the near-threshold
+simulation (S-14) is where supervision showed a gain (validation C $+0.156$,
+5 of 10 recoveries against 0). Choosing $\ws$ by cross-validation targets that
+regime without moving into separation. A larger $\ws$ cannot make survival
+dominate a high-variance program without first breaking the fit.
+\end{keybox}
+
+% =============================================================================
+\section{The Historical Configuration as a Special Case}\label{sec:historical}
+% =============================================================================
+
+The benchmark fits reported through October 2026 used
+\texttt{alpha\_F = 0} with \texttt{canonicalize = FALSE}. The $F$ update then
+mixed the two sources as $(1-\alpha_F)\cdot\text{genomics} + \alpha_F\cdot\text{survival}$,
+and at $\alpha_F = 0$ the survival part has weight zero.
+
+\begin{keybox}[At $\alpha_F = 0$ the fit is a two-step method]
+With no survival term in the $F$ update, none of the $L$, $F$ or $\tau$ updates
+uses $(t,\delta)$ or $\bm\beta$. The sequence of $(q_L, q_F, \tau)$ is the one an
+unsupervised EBMF fit would produce from the same start. The $\beta$ update is
+an empirical Bayes Cox regression on the current scores. The result is
+unsupervised EBMF followed by a shrinkage Cox fit, which is why the benchmark
+results did not differ from a two-step analysis. It remains a useful comparator.
+\end{keybox}
+
+\paragraph{How the historical weights differ from $\ws$.}
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+ & Historical ($\alpha$, $\alpha_F$) & Current ($\ws$) \\
+\midrule
+$F$ update & $(1-\alpha_F)A^{\text{gen}} + \alpha_F A^{\text{surv}}$; $\alpha_F > 0$ also down-weights genomics; $B^{\text{surv}}$ incomplete & $A^{\text{gen}} + \ws A^{\text{surv}}$; genomics keeps weight 1; complete $B^{\text{surv}}$ \\
+$\beta$ update & $A_{\beta_k} = \alpha\sum_i W_{ii}\zbar{i}{k}^2\cdot p$ (\texttt{per\_p} divisor); no $V^Z$ & $A_{\beta_k} = \ws\sum_i W_{ii}\zsec{i}{k}$ \\
+Score in the Cox model & $Y\bar f_{\cdot k}/\lVert\bar f_{\cdot k}\rVert$, while the $F$ update was derived for $Y\bar f_{\cdot k}$ & $Y\bar f_{\cdot k}$ with $\mathrm{sd} = 1$ \\
+Monitored objective & genomics and survival weighted by $(1-\alpha)$ and $\alpha p$ & the same $\ws$ as the updates \\
+Range & $\alpha,\alpha_F\in[0,1]$ & $\ws\in[0,\infty)$ \\
+\bottomrule
+\end{tabularx}
+\end{center}
+In both, the weight on $\beta$ cancels in $x_k$ and only changes $s_k$. The
+historical code also flips the sign of $\bar{\bm\beta}$ after fitting if the
+training C-index is below 0.5 (\texttt{sign\_correction = TRUE}, the default).
+This is a post-processing heuristic, not part of the derivation, and the
+supervision studies set it to \texttt{FALSE}.
+
+% =============================================================================
+\section{Extension to $M$ Modalities}\label{sec:multimodal}
+% =============================================================================
+
+The single-modality model is the case $M = 1$ of a model with shared patient
+scores and modality-specific loadings (expression and methylation, for example):
+\[
+  Y_m = LF_m^\top + E_m,\quad E_{m,ij}\sim\mathcal N(0,\tau_{mj}^{-1}),\qquad
+  \eta_i = \sum_k z_{ik}\beta_k,\quad
+  Z = \sum_{m=1}^M Y_mF_m .
+\]
+The full derivation is in \texttt{SSBMF-YFB-multimodal-model-derivations/}. Every
+update keeps the form derived here:
+\begin{itemize}
+  \item $q(l_k)$: $A_{l_k} = \sum_m\sum_j\tau_{mj}\overline{f^2_{m,jk}}$ and
+        $B_{l_{ik}} = \sum_m\sum_j\tau_{mj}R^{-k}_{m,ij}\bar f_{m,jk}$. Still
+        genomics only.
+  \item $q(f_{m,k})$: Eq.~\eqref{eq:AB-F} with $Y_m$, $\tau_m$ and the joint score
+        $\bar z_{\cdot k}$, which every modality's sweep refreshes. Each $F_m$ is
+        dual-source.
+  \item $q(\beta_k)$: Eq.~\eqref{eq:AB-beta} with the joint score and
+        $V^Z_{ik} = \sum_m\sum_j y_{m,ij}^2\Var(f_{m,jk})$.
+  \item $\tau_m$: Eq.~\eqref{eq:tau} for each modality.
+  \item Score standardization: $\mathrm{sd}_i(\bar z_{ik}) = 1$ for the joint score.
+\end{itemize}
+With $M = 1$ every formula reduces to the one in this document.
+
+\paragraph{New balance questions.} The precision of $l_k$ sums over all
+$p = \sum_m p_m$ features, so the modality with more features (methylation)
+dominates the shared scores. Survival's share of each loading precision falls
+as in Eq.~\eqref{eq:rho-approx}, with the total $p$. Both point to
+modality-specific weights on the reconstruction terms, which need their own
+derivation and simulation check.
+
+\paragraph{Convergence: what failed and what has changed since.}
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}X}
+\toprule
+Earlier multimodal problem & Single-modality change that addresses it \\
+\midrule
+Scale drift along $(a_kL_k, F_{mk}/a_k, a_k\beta_k)$; latent-moment stopping rules never fired (2026-09-18) & Score standardization each iteration (already in the multimodal fitter), and a scale-invariant objective \\
+Stopping on relative change in reconstruction and predictor, with no recorded ELBO, so ELBO-based criteria could not be assessed (2026-10-15) & A monitored objective with the same weights as the updates and an ELBO stopping rule (Sections~\ref{sec:elbo}, \ref{sec:other}) \\
+Loading KL entered with the wrong sign through the shared helper (2026-10-15) & Fixed, with a test that recomputes the last objective from the returned moments \\
+Real-data fits reached the sweep cap; refitted priors could have a support incompatible with the cached posterior KL (2026-10-15) & Prior held fixed during each sweep and refit once after it; a dead-program rule replaces revived zero programs \\
+Free noise precisions ran away as reconstruction error grew (S-8) & Inputs standardized within platform; S-9 canonical fits converged in every case. A fixed or bounded $\tau$ remains a fallback \\
+Incomplete $B^{\text{surv}}$ in early single-modality code & The multimodal sweep already used the complete term; both fitters now share it \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{Recommended path.}
+\begin{enumerate}
+  \item Meet the single-modality acceptance criteria (recovery, false activity,
+        convergence, external prediction) with this algorithm.
+  \item Build one fitter for $M$ modalities whose $M = 1$ path reproduces
+        \texttt{fit\_ssbmf\_yfb(canonicalize = TRUE)} to numerical tolerance.
+        This is a direct test that the extension changes nothing for one block.
+  \item Carry over the monitored objective with $\ws$, the ELBO stopping rule, the
+        dead-program rule and the KL tests. Record the full ELBO at every
+        iteration.
+  \item Run two-modality simulations with planted programs in each modality and
+        one shared prognostic program, then derive and test modality weights if
+        methylation dominates $L$.
+\end{enumerate}
+
+% =============================================================================
+\section{Differences from the April 2026 Derivations}\label{sec:errata}
+% =============================================================================
+
+\begin{center}
+\begin{tabularx}{\textwidth}{c>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{2.4cm}}
+\toprule
+ID & Location (\texttt{components/}) & Issue and correction & Here \\
+\midrule
+Y1 & \texttt{qF\_supervised}, eq.\ BFsurv & $B^{\text{surv}}$ removed the other programs but not the other genes of program $k$. Correct term subtracts $\betasec{k}\sum_i W_{ii}y_{ij}(\zbar{i}{k}-y_{ij}\fbar{j}{k})$, and the update becomes a sequential sweep (found 2026-10-15). & Eq.~\eqref{eq:AB-F-surv} \\
+Y2 & \texttt{qF\_supervised}, eqs.\ AF, BF & Convex mixing $(1-\alpha)/\alpha$ replaced by weight $\ws$ on the Cox term; genomics weight 1. & Eq.~\eqref{eq:AB-F} \\
+Y3 & \texttt{qF\_supervised}, Sec.\ 4 & ``Scale imbalance resolved, ratio $O(1)$'' is incorrect; the ratio scales as $1/(p^2v_k^2)$. & Sec.~\ref{sec:balance} \\
+Y4 & \texttt{qF\_supervised}, Sec.\ 5 & ``EBNM shrinkage identifies the scale; no constraint needed.'' The free scale fed back into the survival terms; fixed by score standardization. & Sec.~\ref{sec:scaling} \\
+Y5 & \texttt{qBeta}, eqs.\ Abeta & Scores treated as observed: $A_{\beta_k}$ used $\zbar{i}{k}^2$. It should use $\zsec{i}{k} = \zbar{i}{k}^2 + V^Z_{ik}$. & Eq.~\eqref{eq:AB-beta} \\
+Y6 & \texttt{qBeta}, Sec.\ 2 & Cox model used $Y\bar F D^{-1}$ (unit-norm columns), off the scale the $F$ update was derived for. & Sec.~\ref{sec:scaling} \\
+Y7 & \texttt{ELBO}, term (II) & $\Var(\eta_i)$ omitted the loading-uncertainty part $V^Z_{ik}\betasec{k}$. & Eq.~\eqref{eq:surv-expect} \\
+Y8 & \texttt{ELBO} / code & Monitored objective weighted survival differently from the updates, and the loading KL entered with the wrong sign (fixed 2026-10-15). & Sec.~\ref{sec:other} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+The $q(L)$ derivation (\texttt{qL\_unsupervised}) and the $\tau$ update are
+unchanged.
+
+\appendix
+% =============================================================================
+\section{Options Tested and Not Adopted}\label{app:options}
+% =============================================================================
+
+\paragraph{Survival-block weight (\texttt{survival\_block\_weight = TRUE}).}
+$\ws$ multiplies $\KL(q_\beta\Vert g_\beta)$ as well as the Cox term:
+\[
+  \mathcal F_1 = \E[\log p(Y\mid L,F,\tau)] - \KL_L - \KL_F
+  + \ws\bigl[\E\,\ell_{\text{Cox}} - \KL(q_\beta\Vert g_\beta)\bigr].
+\]
+The $L$, $F$ and $\tau$ updates are those of Eq.~\eqref{eq:elbo}. For $\ws > 0$
+the maximizer over $(q_\beta, g_\beta)$ no longer depends on $\ws$, and the
+$\beta$ update uses weight 1 in Eq.~\eqref{eq:AB-beta}. This keeps the prior on
+$\beta$ at full weight however large $\ws$ is. In simulation (S-13), choosing
+$\ws$ by cross-validated partial log-likelihood under this objective was stable
+but did not pass all registered criteria.
+
+\paragraph{Joint Gaussian $q(\bm\beta)$ (\texttt{beta\_posterior = "joint"}).}
+Replace $\prod_k q(\beta_k)$ by $\mathcal N_K(\bm m,\Sigma)$ with
+$G = \ws\bigl(\bar Z^\top W\bar Z + \mathrm{diag}(\sum_i W_{ii}V^Z_{ik})\bigr)$,
+$\bm b = \ws\bar Z^\top W\bm z$, $\Sigma = (G+\Lambda)^{-1}$, $\bm m = \Sigma\bm b$,
+and per-program prior variances by type-II maximum likelihood. For $K = 1$ this
+equals the normal-family EBNM update. In S-13 it gave the same results as the
+mean-field update.
+
+\paragraph{Shared prior on $\bm\beta$ (\texttt{beta\_prior\_mode = "shared"}).}
+One prior $g_\beta$ for all programs, held fixed during the sweep and refit from
+the $K$ pseudo-observations after it, in place of $K$ priors each fit to one
+observation.
+
+\end{document}
