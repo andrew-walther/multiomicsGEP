@@ -52,7 +52,16 @@
 #'                 (Y_test - 1 projection_center') EF, as in training. This
 #'                 shifts every risk score by the same constant, so rankings
 #'                 and concordance are the same with or without it. For a
-#'                 row-subset of EF, subset projection_center the same way.
+#'                 row-subset of EF (genes), subset projection_center to the
+#'                 same genes (the columns of a matrix projection_center).
+#'                 A stratified fit returns a strata x p matrix (one row of
+#'                 training means per stratum); pass it with projection_strata.
+#' @param projection_strata NULL (default), or with a matrix projection_center
+#'                 an n_test-vector of training stratum labels: each patient is
+#'                 centered with their own stratum's row. Scores are comparable
+#'                 within a stratum only (stratified baselines). A cohort not
+#'                 seen in training can be scored with any fixed center vector,
+#'                 e.g. its own column means, without changing its ranking.
 #'
 #' @return Named list:
 #'   $ZF_test      n_test × K matrix of normalized projection scores
@@ -70,7 +79,7 @@
 #' # pred <- predict_ssbmf_yfb(Y_test, res$EF, res$EBeta, res$EF_norms,
 #' #                            cohort_id_test = my_cohort_labels)
 predict_ssbmf_yfb <- function(Y_test, EF, EBeta, EF_norms = NULL, cohort_id_test = NULL,
-                              projection_center = NULL) {
+                              projection_center = NULL, projection_strata = NULL) {
 
   if (!is.matrix(Y_test) || !is.numeric(Y_test))
     stop("Y_test must be a numeric matrix.")
@@ -119,7 +128,23 @@ predict_ssbmf_yfb <- function(Y_test, EF, EBeta, EF_norms = NULL, cohort_id_test
     EF <- sweep(EF, 2, EF_norms, "/")
   }
 
-  if (!is.null(projection_center)) {
+  if (!is.null(projection_strata) && !is.matrix(projection_center))
+    stop("projection_strata requires a strata x p projection_center matrix.")
+  if (is.matrix(projection_center)) {
+    if (!is.numeric(projection_center) || ncol(projection_center) != ncol(Y_test) ||
+        any(!is.finite(projection_center)) || is.null(rownames(projection_center)))
+      stop(sprintf("projection_center must be a finite numeric matrix with %d columns and stratum row names.",
+                   ncol(Y_test)))
+    if (is.null(projection_strata) || length(projection_strata) != nrow(Y_test) ||
+        anyNA(projection_strata))
+      stop("A matrix projection_center needs projection_strata: one training stratum label per test row.")
+    row_idx <- match(as.character(projection_strata), rownames(projection_center))
+    if (anyNA(row_idx))
+      stop("projection_strata contains level(s) not seen in training: ",
+           paste(unique(as.character(projection_strata)[is.na(row_idx)]), collapse = ", "),
+           ". Score that cohort with a center vector (e.g. its own column means) instead.")
+    Y_test <- Y_test - projection_center[row_idx, , drop = FALSE]
+  } else if (!is.null(projection_center)) {
     if (!is.numeric(projection_center) || length(projection_center) != ncol(Y_test) ||
         any(!is.finite(projection_center)))
       stop(sprintf("projection_center must be a finite numeric vector of length ncol(Y_test) (%d).",

@@ -43,18 +43,34 @@ on nonnegative input this term shrank every β to about 10⁻⁹; with centering
 |E[β]| up to 0.37. The derivation is the new section "Centering Only the Cox Projection" of
 `derivations/SSBMF-YFB-model-derivations/SSBMF-YFB-model-derivation-full.tex`;
 `verify_derivation.R` now checks the centered A and B terms against a brute-force expected
-objective and the code (73 checks).
+objective and the code.
 
 **Relation to `profile_cox_intercept`.** That option centers the survival design with the working
 weights at each iteration, which makes the surrogate exactly invariant to the common direction but
 changes the centering vector between iterations, so the monitored objective is not the one the
 updates climb. Here the centering is fixed and the monitor uses the same surrogate. The two are not
 combined (an explicit error), and `center_projection` also requires `canonicalize = TRUE`. It runs
-with `survival_block_weight`, `beta_posterior = "joint"`, a shared β prior and pruning. It refuses
-`strata_id`: stratified risk sets are invariant to one constant per stratum, so a global center
-leaves between-stratum mean differences for the surrogate to penalize. Centering within strata is
-the extension if the real-data fit needs a stratified baseline. ELBO values with the option on are
-not comparable with values from fits without it, because the surrogates differ.
+with `survival_block_weight`, `beta_posterior = "joint"`, a shared β prior and pruning. ELBO values
+with the option on are not comparable with values from fits without it, because the surrogates
+differ.
+
+**With `strata_id` (added the same day at Andrew's request).** Stratified risk sets make each
+stratum's partial likelihood invariant to its own constant, and a single global center would leave
+the between-stratum mean differences for the surrogate to penalize. So with `strata_id` the
+projection is centered within strata, y_i − ȳ_s(i), using fixed training means for each stratum
+(not the working weights, for the same reason as above). `$projection_center` is then a strata × p
+matrix with the stratum labels as row names. `predict_ssbmf_yfb()` takes it with a new
+`projection_strata` argument and errors on a stratum not seen in training; such a cohort can be
+scored with any fixed center, for example its own column means, without changing its ranking.
+Scores are comparable only within a stratum, as in any stratified Cox model; a pooled concordance
+across strata depends on the centering. Score standardization now uses the centered scores, so under
+strata β_k is per SD of the within-stratum centered score (without strata nothing changes, since the
+SD is shift invariant). A program that mainly separates strata, such as a cohort or platform level,
+has a small within-stratum SD and is rescaled by a large factor; the dead-program floors then act on
+the rescaled values and may not mark it dead. Watch for this in a pooled real-data fit with
+cohort strata. The derivation's new "Stratified baseline hazard" paragraph and section 7 of
+`verify_derivation.R` (88 checks in total) cover it; the option-off fixture gained a stratified
+configuration, regenerated from the commit 3c990d2 fitter.
 
 **Planted test bed (October 15 bed, X/sd input, K = 7, point-exponential L/F, point-normal β).**
 On seeds 1–6, all seven programs stayed live with or without centering, so it is the nonnegative
