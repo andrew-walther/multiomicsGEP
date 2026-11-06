@@ -3,6 +3,26 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-06 — Pruning after the KL fix: still not adopted; empty-program β KL defect found
+
+**Result (attempt KL-1, issue #6 item 1).** On the October 15 test bed at starting K = 7, current
+code with the KL fix: the selected canonical fit without pruning recovers the planted program in
+17/20 and 19/20 seeds. Ordinary and protected pruning are identical and recover 11/20 at both
+noise levels (protected was 2/20 before), with median K 7 and 6.5. Both fail recovery and rank.
+When pruning removes a program, the planted program is lost in the mean-only refit in 14 of 15
+previously recovered fits. Pruning recovers more often only because it now removes nothing in
+23 of 40 fits.
+
+**Defect found, not fixed.** An empty program's β precision is floored at 10⁻¹⁰, and ebnm's
+point-Laplace solver is inaccurate at that noise SD (10⁵). Its −KL comes out around +10⁻⁶ to
++10⁻⁵ instead of 0, so whether the nullcheck removes empty programs depends on the sign of a
+rounding residue. `tests/test_empty_program_kl.R` fails on current code. It is not in
+`tests/run_tests.R` yet. The fix (exact zero KL at the floor, or removing empty programs before
+the nullcheck) is Andrew's decision.
+
+**Unchanged.** No pruning rule, K or default is adopted. The K = 7 no-pruning configuration
+remains the working configuration. Findings: `docs/findings/2026-11-06-kl-fix-pruning-rerun-findings.md`.
+
 ## 2026-11-06 — Opt-in projection-only centering in `fit_ssbmf_yfb()`
 
 **Decided.** `fit_ssbmf_yfb(center_projection = TRUE)` (canonical path only) keeps the input
