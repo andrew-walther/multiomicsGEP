@@ -374,3 +374,8 @@ hazard-ratio and enrichment tables, KM and forest plots, and comparisons
 with unsupervised EBMF ranks. The simulation commands audit saved fits and
 run the mixed-signal comparison. See the
 [findings and source table](docs/findings/2026-11-06-desurv-style-analyses-findings.md).
+
+The November manuscript-planning writeup can be rendered from saved
+aggregate results. It includes comparator calibration, program stability,
+fixed-cutpoint risk groups and a simulation synthesis. Rebuild instructions
+are in the [November writeup README](paper/writeup/2026-11-06-writeup/README.md).

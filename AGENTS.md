@@ -212,3 +212,7 @@ the four commands in README.md and the
 The S-11 precision audit uses a final-state bound because the saved fit
 does not contain loading second moments. Keep the simulation working
 checkpoints under ignored `data/`.
+
+The November writeup's fixed-cutpoint curves and simulation synthesis are
+rendered from aggregate CSVs. Use its `NUMBER-SOURCES.md` to trace values
+and distinguish fixed training cutpoints from within-series tertiles.
