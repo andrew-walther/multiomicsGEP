@@ -218,6 +218,10 @@ The entries below retain dated implementation and evaluation history.
 - [x] **Compare LB and YFB under matched survival weights (2026-11-06).**
   `docs/findings/2026-11-06-lb-yfb-matched-comparison-findings.md`: YFB test C 0.78–0.79
   and stable across weights; LB gains at w = 1 and fails at w = 10 at the weaker signal.
+- [ ] **Registered LB vs YFB study.** Turn the exploratory comparison into a registered
+  study after the YFB supervision decision: more datasets, signal levels that include
+  near-threshold programs (as in S-14), the LB dead-program start fixed or controlled,
+  and an LB arm that separates survival weight from (1 − α) tempering.
 
 - [ ] **Prepare the November 6 writeup version.** `paper/writeup/2026-11-06-writeup/`
   holds only a placeholder README. Decide whether it starts from the October 16 sources or
