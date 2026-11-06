@@ -2810,3 +2810,17 @@ workers, run from a `git archive` of the registration commit. No code change.
 reference + 0.5; 20/20 ELBO-converged; median retained K = 3 for the pruning
 arms. Compared with the Task1-3 K = 7 rows, on current code, so differences are
 not attributed to the KL fix alone. Nothing is adopted from this run.
+
+## 2026-11-06 — KL-1 result
+
+160/160 fits, no errors or warnings, all ELBO-converged, no intermediate caps. Unpruned
+selected fit: 17/20 and 19/20 recovered (as on October 15). Ordinary and protected pruning
+are identical in every seed: 11/20 at both noise levels (October 15 protected: 2/20), median
+K 7 and 6.5. Both pruning arms fail recovery and rank and pass false-active and convergence.
+In 23 of 40 fits no deletion has gain ≥ 0, so nothing is pruned. When pruning does remove a
+program, the planted program is lost in 14 of 15 previously recovered fits, during the
+mean-only refit, as Task1-4 traced. A numerical defect decides whether pruning starts in
+many fits: an empty program's β KL is computed where ebnm's point-Laplace solver is
+inaccurate (s = 1e5), giving −KL ≈ +1e-6 to +1e-5 instead of 0. Failing test:
+`tests/test_empty_program_kl.R` (not in the suite). No fitter change. Findings:
+`docs/findings/2026-11-06-kl-fix-pruning-rerun-findings.md`.
