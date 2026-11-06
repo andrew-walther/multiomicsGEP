@@ -2789,3 +2789,24 @@ matrix, weights {1, 2, 5, 10, 20, 50}, weight by CV partial log-likelihood on th
 nested CV for an honest C. **Adopt** w* if w* > 1, the full fit is sound, and the nested-CV C is
 ≥ 0.639 (S-11 w_S = 1 C minus one SE). Then do one external scoring with the S-12 procedure. False
 activity is reported as contribution (standardized β, risk-variance share), not as a count.
+
+## 2026-11-06 — KL-1: single-modality pruning cells rerun after the KL fix (registered before execution)
+
+**Why.** Issue #6, item 1. Commit 31db892 fixed the per-patient log-normalizer in
+`compute_ebnm_kl()`, which feeds the canonical fit's stopping rule and the
+pruning nullcheck. The Task1-3 result (protected pruning recovers 2/20) and the
+earlier finding that ordinary pruning removes the planted program predate the
+fix and were never rerun. Registration:
+`docs/plans/2026-11-06-kl-fix-pruning-rerun-plan.md`.
+
+**Design.** Unchanged Task1-3 test bed and settings (seeds 20261016–20261035,
+noise 0.25 and 1, n = 400, p = 50, β₃ = 3.3, point-Laplace L/F, 300 iterations,
+tol 1e-5, ELBO stopping), starting K = 7 only. Arms: `alpha_F = 0` reference;
+selected canonical fit unpruned; with ordinary pruning; with protected pruning.
+160 fits, runner `results/benchmark_sim/run_kl_fix_pruning_rerun.R`, 4 PSOCK
+workers, run from a `git archive` of the registration commit. No code change.
+
+**Criteria (Task1-1, unchanged).** Recovery ≥ 16/20; mean false-active ≤
+reference + 0.5; 20/20 ELBO-converged; median retained K = 3 for the pruning
+arms. Compared with the Task1-3 K = 7 rows, on current code, so differences are
+not attributed to the KL fix alone. Nothing is adopted from this run.
