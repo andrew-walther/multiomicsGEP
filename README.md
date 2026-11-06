@@ -346,3 +346,13 @@ provide no information to the shared-prior refit. Run the regression with
 `Rscript tests/test_empty_program_kl.R` from the repository root. See the
 [pruning rerun plan](docs/plans/2026-11-06-flat-beta-pruning-rerun-plan.md)
 for the synthetic evaluation.
+
+### Fixed S-11 real-data comparators
+
+Run `Rscript results/benchmark_sim/run_prompt6_desurv.R 8` and then
+`Rscript results/benchmark_sim/run_prompt6_comparators.R` from the repository
+root with `PDAC_DATA_ROOT` set to the local data directory. The first command
+uses the pinned DeSurv library and saves local fit checkpoints. The second
+compares frozen S-11 reference scores with the training-only comparators and
+writes aggregate cohort estimates and paired donor-bootstrap intervals.
+See the [findings and source table](docs/findings/2026-11-06-real-data-comparators-findings.md).
