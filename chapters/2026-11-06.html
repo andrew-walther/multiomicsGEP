@@ -248,12 +248,26 @@ window.Quarto = {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#potential-topics" id="toc-potential-topics" class="nav-link active" data-scroll-target="#potential-topics"><span class="header-section-number">14.1</span> Potential Topics</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link active" data-scroll-target="#summary"><span class="header-section-number">14.1</span> Summary</a></li>
   <li><a href="#rashid-lab-meeting-update-november-5th-2026" id="toc-rashid-lab-meeting-update-november-5th-2026" class="nav-link" data-scroll-target="#rashid-lab-meeting-update-november-5th-2026"><span class="header-section-number">14.2</span> Rashid Lab Meeting Update (November 5th, 2026)</a></li>
-  <li><a href="#joint-yfb-on-pooled-pdac" id="toc-joint-yfb-on-pooled-pdac" class="nav-link" data-scroll-target="#joint-yfb-on-pooled-pdac"><span class="header-section-number">14.3</span> Joint YFB on pooled PDAC</a>
+  <li><a href="#key-issues-resolved" id="toc-key-issues-resolved" class="nav-link" data-scroll-target="#key-issues-resolved"><span class="header-section-number">14.3</span> Key issues resolved</a>
   <ul class="collapse">
-  <li><a href="#planted-low-variance-prognostic-program" id="toc-planted-low-variance-prognostic-program" class="nav-link" data-scroll-target="#planted-low-variance-prognostic-program"><span class="header-section-number">14.3.1</span> Planted low-variance prognostic program</a></li>
+  <li><a href="#derivations-reviewed-against-the-code" id="toc-derivations-reviewed-against-the-code" class="nav-link" data-scroll-target="#derivations-reviewed-against-the-code"><span class="header-section-number">14.3.1</span> Derivations reviewed against the code</a></li>
+  <li><a href="#github-issue-6-the-october-26-review" id="toc-github-issue-6-the-october-26-review" class="nav-link" data-scroll-target="#github-issue-6-the-october-26-review"><span class="header-section-number">14.3.2</span> GitHub issue #6 (the October 26 review)</a></li>
+  <li><a href="#corrections-to-the-simulation-measurements" id="toc-corrections-to-the-simulation-measurements" class="nav-link" data-scroll-target="#corrections-to-the-simulation-measurements"><span class="header-section-number">14.3.3</span> Corrections to the simulation measurements</a></li>
   </ul></li>
+  <li><a href="#attempts-to-resolve-model-supervision" id="toc-attempts-to-resolve-model-supervision" class="nav-link" data-scroll-target="#attempts-to-resolve-model-supervision"><span class="header-section-number">14.4</span> Attempts to resolve model supervision</a>
+  <ul class="collapse">
+  <li><a href="#joint-yfb-on-pooled-pdac" id="toc-joint-yfb-on-pooled-pdac" class="nav-link" data-scroll-target="#joint-yfb-on-pooled-pdac"><span class="header-section-number">14.4.1</span> Joint YFB on pooled PDAC</a></li>
+  <li><a href="#survival-weight-at-2000-genes-simulation" id="toc-survival-weight-at-2000-genes-simulation" class="nav-link" data-scroll-target="#survival-weight-at-2000-genes-simulation"><span class="header-section-number">14.4.2</span> Survival weight at 2,000 genes (simulation)</a></li>
+  <li><a href="#survival-weighted-fit-on-the-training-patients" id="toc-survival-weighted-fit-on-the-training-patients" class="nav-link" data-scroll-target="#survival-weighted-fit-on-the-training-patients"><span class="header-section-number">14.4.3</span> Survival-weighted fit on the training patients</a></li>
+  <li><a href="#external-scoring-of-the-fixed-fit" id="toc-external-scoring-of-the-fixed-fit" class="nav-link" data-scroll-target="#external-scoring-of-the-fixed-fit"><span class="header-section-number">14.4.4</span> External scoring of the fixed fit</a></li>
+  <li><a href="#choosing-the-survival-weight-by-cross-validation-simulation" id="toc-choosing-the-survival-weight-by-cross-validation-simulation" class="nav-link" data-scroll-target="#choosing-the-survival-weight-by-cross-validation-simulation"><span class="header-section-number">14.4.5</span> Choosing the survival weight by cross-validation (simulation)</a></li>
+  <li><a href="#programs-near-the-detection-threshold-simulation" id="toc-programs-near-the-detection-threshold-simulation" class="nav-link" data-scroll-target="#programs-near-the-detection-threshold-simulation"><span class="header-section-number">14.4.6</span> Programs near the detection threshold (simulation)</a></li>
+  <li><a href="#how-much-the-false-active-programs-contribute" id="toc-how-much-the-false-active-programs-contribute" class="nav-link" data-scroll-target="#how-much-the-false-active-programs-contribute"><span class="header-section-number">14.4.7</span> How much the false-active programs contribute</a></li>
+  <li><a href="#real-data-refit-with-the-survival-weight-chosen-by-cross-validation" id="toc-real-data-refit-with-the-survival-weight-chosen-by-cross-validation" class="nav-link" data-scroll-target="#real-data-refit-with-the-survival-weight-chosen-by-cross-validation"><span class="header-section-number">14.4.8</span> Real-data refit with the survival weight chosen by cross-validation</a></li>
+  </ul></li>
+  <li><a href="#open-items-and-questions" id="toc-open-items-and-questions" class="nav-link" data-scroll-target="#open-items-and-questions"><span class="header-section-number">14.5</span> Open items and questions</a></li>
   </ul>
 </nav>
     </div>
@@ -279,23 +293,119 @@ window.Quarto = {
 </header>
 
 
-<p>Working chapter for the week of November 2–6. Sections are added as the work is done.</p>
-<section id="potential-topics" class="level2" data-number="14.1">
-<h2 data-number="14.1" class="anchored" data-anchor-id="potential-topics"><span class="header-section-number">14.1</span> Potential Topics</h2>
+<p>This chapter covers the week of November 2–6. It starts with a summary, then the issues that were resolved (the derivation review and the October 26 review in GitHub issue #6), then the supervision experiments in order, and ends with open items.</p>
+<section id="summary" class="level2" data-number="14.1">
+<h2 data-number="14.1" class="anchored" data-anchor-id="summary"><span class="header-section-number">14.1</span> Summary</h2>
 <ul>
-<li><strong>Rashid Lab Meeting Update (November 5th, 2026)</strong> (planned)</li>
-<li>Executive Summary</li>
-<li>Key Issues Resolved</li>
-<li>Attempts to resolve model supervision issues</li>
-<li>Open Items and Questions</li>
+<li><strong>The derivations now match the code.</strong> The YFB and LB derivations were rewritten as single documents, checked term by term against the update functions, and compared side by side. The review found and fixed a sign-check bug in LB, removed the post-fit sign flip from both fitters, and added fold-in prediction for LB.</li>
+<li><strong>Supervision helps where it should.</strong> In simulation, the supervised fit matches the two-step fit (unsupervised loadings followed by a Cox model) when a prognostic program is easy to find, and beats it near the detection threshold. At a planted share of 0.05%, validation C is 0.156 higher and the program is recovered in 5 of 10 datasets, against none for the two-step fit.</li>
+<li><strong>The survival weight can be chosen from the data.</strong> Five-fold cross-validated partial log-likelihood picks a weight between 1 and 10 that rises with signal strength. It never picks a weight at which the fit stops converging.</li>
+<li><strong>On the real data the survival weight does not matter between 1 and 50.</strong> Cross-validation picks <code>w_S = 1</code>, so the real-data model is unchanged. Even at 50, survival supplies less than 10⁻⁴ of the loading precision.</li>
+<li><strong>False-active programs do not affect prediction.</strong> Where the planted program is recovered, the other active programs carry at most 1.3% of the risk-score variance.</li>
+<li><strong>Two measurement errors were found and corrected.</strong> The calibration slopes in the simulations, and the two-step comparison fits, had used the default tie handling of the Cox fit. That merges the extreme simulated survival times. Every number below uses exact times.</li>
 </ul>
 </section>
 <section id="rashid-lab-meeting-update-november-5th-2026" class="level2" data-number="14.2">
 <h2 data-number="14.2" class="anchored" data-anchor-id="rashid-lab-meeting-update-november-5th-2026"><span class="header-section-number">14.2</span> Rashid Lab Meeting Update (November 5th, 2026)</h2>
 <p><em>To be filled in.</em></p>
 </section>
-<section id="joint-yfb-on-pooled-pdac" class="level2" data-number="14.3">
-<h2 data-number="14.3" class="anchored" data-anchor-id="joint-yfb-on-pooled-pdac"><span class="header-section-number">14.3</span> Joint YFB on pooled PDAC</h2>
+<section id="key-issues-resolved" class="level2" data-number="14.3">
+<h2 data-number="14.3" class="anchored" data-anchor-id="key-issues-resolved"><span class="header-section-number">14.3</span> Key issues resolved</h2>
+<section id="derivations-reviewed-against-the-code" class="level3" data-number="14.3.1">
+<h3 data-number="14.3.1" class="anchored" data-anchor-id="derivations-reviewed-against-the-code"><span class="header-section-number">14.3.1</span> Derivations reviewed against the code</h3>
+<p>The model derivations had been spread over pieces written between March and October. Some of those pieces disagreed with each other or with the code. This week they were reorganized and checked.</p>
+<ul>
+<li><strong>Folder layout.</strong> <code>derivations/</code> is now organized by model: <code>SSBMF-YFB-model-derivations/</code>, <code>SSBMF-LB-model-derivations/</code>, <code>SSBMF-YFB-multimodal-model-derivations/</code>, <code>SSBMF-LB-vs-YFB-comparison/</code> and <code>early-work/</code>. <code>derivations/README.md</code> maps the old names to the new ones.</li>
+<li><strong>One YFB derivation.</strong> <code>SSBMF-YFB-model-derivation-full.tex</code> derives the whole model in one place:
+<ul>
+<li>the objective with the survival weight and the Cox approximation;</li>
+<li>every update;</li>
+<li>initialization, convergence, pruning and prediction;</li>
+<li>the balance between expression and survival information in the loading update;</li>
+<li>an errata table against the April pieces.</li>
+</ul>
+<code>verify_derivation.R</code> checks each update’s terms against a brute-force evaluation of the objective and against the code (47 checks, now 73 with projection centering). The April formulas for two survival terms fail these checks, as expected.</li>
+<li><strong>LB and YFB side by side.</strong> <code>SSBMF-LB-vs-YFB-comparison.tex</code> sets the two models’ updates next to each other. It shows how the survival share of the loading update scales with the number of genes and with a program’s variance share, and it compares both with DeSurv. Its recommendation is to keep YFB as the primary model, because new patients are scored exactly by projection, and to keep LB as an alternative.</li>
+<li><strong>LB fixes.</strong> The LB post-fit sign check used the concordance in the wrong direction, so it flipped 8 of 8 correctly oriented fits and discarded the variance of β. It is fixed, and saved LB risk scores from earlier default runs have the opposite sign. The post-fit sign flip was then removed from both fitters. A converged fit is already oriented, so a flip could only hide a failed fit.</li>
+<li><strong>LB fold-in prediction.</strong> New patients’ LB loadings are now estimated with the training update minus the survival term (<code>predict_ssbmf_lb_foldin()</code>), following Yusha’s note. In eight simulated splits it recovered test loadings better than least-squares projection (mean |r| 0.949 against 0.909).</li>
+<li><strong>Matched LB and YFB comparison (exploratory).</strong> On 12 small planted datasets at matched survival weights, YFB reached test C 0.78–0.79 against an oracle of 0.790. LB reached 0.72–0.76 at the lower weight and lost at least one planted program in every fit (<code>docs/findings/2026-11-06-lb-yfb-matched-comparison-findings.md</code>).</li>
+<li><strong>New opt-in derivations.</strong> The survival-block weight and the joint posterior for β are derived in <code>components/survival_block_weight/</code>. Projection-only centering, which lets the model take nonnegative input with centering only inside the Cox projection, is a new section of the full YFB derivation. With <code>strata_id</code> it centers within each cohort, since the stratified Cox likelihood ignores a per-cohort constant. All three are opt-in and leave the default fit unchanged.</li>
+</ul>
+</section>
+<section id="github-issue-6-the-october-26-review" class="level3" data-number="14.3.2">
+<h3 data-number="14.3.2" class="anchored" data-anchor-id="github-issue-6-the-october-26-review"><span class="header-section-number">14.3.2</span> GitHub issue #6 (the October 26 review)</h3>
+<p>Naim’s review listed eight items. The table gives their state on <code>fix/yfb-supervision</code>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Item</th>
+<th>State</th>
+<th>What was done, or what is left</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1. KL normalizer in the loading update</td>
+<td>Fixed in the code (<code>31db892</code>, exact-KL test). Rerun on 11/6 (KL-1, <code>0fb8aba</code>): without pruning the fit recovers the planted program in 17 and 19 of 20 datasets, as before. With pruning, ordinary or protected, it recovers 11 of 20.</td>
+<td>Pruning still loses the planted program. KL-1 found that an empty program’s KL term came out slightly positive instead of zero. That was fixed (<code>f3263d6</code>), and the repeat (KL-2) makes it plain: with pruning the fit recovers the program in only 2 of 20 datasets, against 17 and 19 without. The working fit stays at K = 7 without pruning (<code>docs/findings/2026-11-06-flat-beta-pruning-rerun-findings.md</code>).</td>
+</tr>
+<tr class="even">
+<td>2. Double log₂ on RNA-seq</td>
+<td>Fixed (<code>6a0b96f</code>). Single-log refit: external C 0.625 against 0.627, and 5 of 5 CV folds converge instead of 2.</td>
+<td>The circulated writeup still shows double-log numbers. The next writeup uses single-log numbers throughout.</td>
+</tr>
+<tr class="odd">
+<td>3. BO-T12 collapse on Linux</td>
+<td>Open. Not reproducible on macOS.</td>
+<td>Needs a Linux run (Longleaf, or Docker, which is not installed here).</td>
+</tr>
+<tr class="even">
+<td>4. Report the October 15 null result</td>
+<td>Recorded in DECISIONS.md, not yet in a writeup.</td>
+<td>Goes into the next writeup and the revised prelim Chapter 4.</td>
+</tr>
+<tr class="odd">
+<td>5. Fair comparison and risk orientation</td>
+<td>Orientation fixed in both named scripts (<code>b85d390</code>). No reported C value changed.</td>
+<td>The other runners that oriented with <code>max(C, 1 − C)</code> were fixed on 11/6 (<code>ea142a6</code>). Rescoring from saved scores reproduced every number that could be checked, including the rank-matched pooled ΔC of 0.0105 (−0.0125 to 0.0329) (<code>docs/findings/2026-11-06-orientation-audit.md</code>). The next writeup leads with this rank-7 comparison.</td>
+</tr>
+<tr class="even">
+<td>6. External-cohort uses and shared donors</td>
+<td>Done on 11/6 (<code>356347f</code>). Every decision that looked at external outcomes is listed with its record (<code>docs/findings/2026-11-06-external-cohort-uses.md</code>). Resampling donors instead of records leaves the S-12 pooled gain at +0.007 with interval −0.003 to +0.017, which still includes zero.</td>
+<td>Keep one cohort untouched by any future choice.</td>
+</tr>
+<tr class="odd">
+<td>7. Comparators (PurIST, DeSurv, elastic-net Cox, clinical)</td>
+<td>Open.</td>
+<td>A real-data comparator runner, next after the supervision decision.</td>
+</tr>
+<tr class="even">
+<td>8. Reproducible writeup</td>
+<td>Test baselines are stored as fixtures (<code>1703bc6</code>).</td>
+<td>The 11/6 writeup now computes its numbers from saved CSVs (<code>41c457c</code>), as this chapter’s new sections do. The fits still need to be stored on Longleaf with the path recorded.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="corrections-to-the-simulation-measurements" class="level3" data-number="14.3.3">
+<h3 data-number="14.3.3" class="anchored" data-anchor-id="corrections-to-the-simulation-measurements"><span class="header-section-number">14.3.3</span> Corrections to the simulation measurements</h3>
+<p>Two numbers in last week’s simulations were wrong for the same reason. <code>survival::coxph()</code> merges survival times that are equal to within a small tolerance. The simulated times span many orders of magnitude, so near-equal times were treated as ties.</p>
+<ul>
+<li><strong>Validation calibration slopes in S-9.</strong> These were reported as 0.18 to 1.20. With exact times they are 1.45 to 3.23, so the supervised coefficients were attenuated, not overconfident.</li>
+<li><strong>The two-step comparison fits in S-13 and S-14.</strong> Their training Cox fits were attenuated, which gave slopes of up to 12.7. With exact times the slopes are 0.96 to 1.16. The S-14 verdict did not change.</li>
+</ul>
+<p>All simulation runners now use exact times.</p>
+</section>
+</section>
+<section id="attempts-to-resolve-model-supervision" class="level2" data-number="14.4">
+<h2 data-number="14.4" class="anchored" data-anchor-id="attempts-to-resolve-model-supervision"><span class="header-section-number">14.4</span> Attempts to resolve model supervision</h2>
+<section id="joint-yfb-on-pooled-pdac" class="level3" data-number="14.4.1">
+<h3 data-number="14.4.1" class="anchored" data-anchor-id="joint-yfb-on-pooled-pdac"><span class="header-section-number">14.4.1</span> Joint YFB on pooled PDAC</h3>
 <p>The October canonical YFB fit used survival feedback in the gene-weight updates (<code>w_S = 1</code>) and retained two survival-active programs. We compared it with rank-7 unsupervised EBMF on the same 2,064 genes from 273 pooled TCGA and CPTAC patients. We used EBMF alone to compare programs, and EBMF followed by Cox to compare prediction.</p>
 <p>A fresh replay of the October code (<code>be57fe9</code>) reproduced the archived loadings, coefficients, and external risk scores exactly. It converged in 244 iterations. With the same historical preprocessing and gene set, the current fitter reached the 300-iteration cap. It retained nonzero coefficients (programs 2 and 3 had means +0.333 and −0.206) and averaged external C of 0.620. Applying only the later Gaussian log-normalizer correction (<code>31db892</code>) to the October code reproduced the current replay’s loadings, coefficients, and monitored objective exactly. The correction changed when the relative-objective stopping rule was satisfied. The comparison below uses the archived October fit.</p>
 <div class="quarto-figure quarto-figure-center">
@@ -367,8 +477,8 @@ window.Quarto = {
 </table>
 <p>Program 2’s basal-like signature includes prominent glycolysis-associated weights. Program 3’s risk-associated end overlaps the Bailey squamous signature. Both overlaps passed an exploratory Benjamini–Hochberg adjustment across nine signatures and two programs, with the 2,064 training genes as background. These annotations require independent validation. The fitted shared point-Laplace prior put approximately <span class="math inline">\(5.7 \times 10^{-7}\)</span> mass on the spike. The two active labels use the posterior mean-to-SD rule, so they give no evidence that the fitted spike pruned the other coefficients.</p>
 <p><strong>Interpretation.</strong> Joint YFB learned survival-associated programs with similar observed discrimination to the two-step model. On these training patients, EBMF already represented almost all the score variation in both survival-active programs. This fit therefore gives little evidence that joint fitting recovered a low-variance prognostic score outside the EBMF span. The calibrated October simulation provides evidence for that capability under its planted design.</p>
-<section id="planted-low-variance-prognostic-program" class="level3" data-number="14.3.1">
-<h3 data-number="14.3.1" class="anchored" data-anchor-id="planted-low-variance-prognostic-program"><span class="header-section-number">14.3.1</span> Planted low-variance prognostic program</h3>
+<section id="planted-low-variance-prognostic-program" class="level4" data-number="14.4.1.1">
+<h4 data-number="14.4.1.1" class="anchored" data-anchor-id="planted-low-variance-prognostic-program"><span class="header-section-number">14.4.1.1</span> Planted low-variance prognostic program</h4>
 <p>The calibrated October simulation used 400 training subjects and a strong planted survival coefficient (log-hazard coefficient 3.3). Recovery required an absolute loading correlation of at least 0.7 and the correct survival direction after sign alignment.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -427,9 +537,997 @@ window.Quarto = {
 <p>In the matched comparator rerun, none of the four comparator methods met its recovery criterion at either noise level. EBMF alone selects its closest loading by correlation with the planted program and has no risk score. The two-step methods select a program by absolute Cox z-statistic and also require the correct survival direction for recovery. At high noise, EBMF followed by lasso Cox had defined concordance in 6 of 20 datasets. Its plotted mean describes those six datasets.</p>
 <p>The close PDAC program matches are consistent with weak effective survival feedback. The prediction comparison alone cannot establish that explanation. The existing training-only weight grid found that higher weights can destabilize the fit, so a stronger feedback setting should be evaluated on recovery, false activity and convergence together.</p>
 <p><strong>Expression and methylation extension.</strong> First verify that the multimodal fitter at <code>M = 1</code> reproduces the single-modality reference under matched settings. For <code>M = 2</code>, use shared patient scores and separate expression and methylation loadings, feature precisions, and loading priors. The existing implementation sums the modality projections before computing the Cox predictor <span class="math inline">\(\eta = (\sum_{m=1}^{M} Y^{(m)} F^{(m)})\beta\)</span>. Check each block’s contribution to the combined score and validate prediction on patients with matched modalities, using training-only choices for priors and rank.</p>
-
-
 </section>
+</section>
+<section id="survival-weight-at-2000-genes-simulation" class="level3" data-number="14.4.2">
+<h3 data-number="14.4.2" class="anchored" data-anchor-id="survival-weight-at-2000-genes-simulation"><span class="header-section-number">14.4.2</span> Survival weight at 2,000 genes (simulation)</h3>
+<p>The October 30 gate failed for the new opt-in fitter. We then tested the canonical fitter’s survival weight <code>w_S</code> on the same corrected simulation grid. The difference from the S-7 run of that fitter is the input. The canonical fitter has signed loading priors and no gene intercept, so it now gets the per-cohort z-scored matrix instead of the nonnegative uncentered one. Weights ran from 1 to 10,000, plus <code>w_S = p/50</code> and a weight set to give survival 20% of the loading precision.</p>
+<p>At <code>w_S = 1</code> the fit passes the registered gate. At 2,000 genes it recovers the planted program in 10, 10, 10 of 10 datasets in the three variance cells, against 0, 0, 1 for the unsupervised reference. Mean false-active counts are 0.9, 0.1, 0.0, and every fit converges. On the uncentered input the same weight gave false-active counts of 1.0 to 1.5, which would have failed the gate.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 20%">
+<col style="width: 11%">
+<col style="width: 11%">
+<col style="width: 21%">
+<col style="width: 11%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Weight</th>
+<th style="text-align: right;">Planted variance</th>
+<th style="text-align: right;">Recovered</th>
+<th style="text-align: right;">Reference</th>
+<th style="text-align: right;">Mean false-active</th>
+<th style="text-align: right;">Converged</th>
+<th style="text-align: left;">Qualifies</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">share0.2</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">w10</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.2</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w10</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.8</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">w10</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">TRUE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w100</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">w100</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">w100</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1.8</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Training cross-validation chooses <code>w_S = 1</code> in most datasets, so the weight can be set without the planted truth:</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 11%">
+<col style="width: 3%">
+<col style="width: 28%">
+<col style="width: 12%">
+<col style="width: 23%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">p</th>
+<th style="text-align: right;">variance</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: left;">arms_chosen</th>
+<th style="text-align: right;">recovered</th>
+<th style="text-align: right;">mean_false_active</th>
+<th style="text-align: right;">converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">w1:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.3</td>
+<td style="text-align: right;">9</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">w1:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">w1:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">share0.2:2 w1:8</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">w1:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.3</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: left;">share0.2:1 w1:7 w10:2</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">10</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Larger weights hurt. At 2,000 genes no fit with <code>w_S</code> of 40 or more converges within 300 sweeps, and recovery collapses. Reconstruction stays bounded and the noise precision does not fall, so this is not the earlier reconstruction failure. Its cause is not yet identified. At 50 genes every weight recovers the program, but false activity rises with the weight. Survival’s share of the loading precision at <code>w_S = 1</code> drops from about 0.8 to 1.0 at 50 genes to between 0.01 and 0.2 at 2,000 genes. Recovery does not drop with it, so the weight does not need to scale with the number of genes.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/survival-weight-curves.png" class="img-fluid figure-img"></p>
+<figcaption>Recovery, false activity, survival share, calibration, convergence and concordance against the survival weight. Solid lines are 2,000 genes and dashed lines are 50 genes.</figcaption>
+</figure>
+</div>
+<p>One problem remains, and it is the opposite of what an earlier draft of this section said. At 2,000 genes the supervision at <code>w_S = 1</code> is too weak for out-of-sample risk. The median validation calibration slopes are 1.45, 2.16, 3.23 across the three cells, against about 1 for the true predictor. A slope above 1 means the fitted risk differences are too small. The fitted risk score has a third to a half of the true predictor’s spread, and no 95% interval covers the true projected coefficient. Patient ranking is unaffected, with validation C of 0.94 to 0.99. A weight of 10 is closer to calibrated at the two larger planted variances, and weights of 100 or more overfit, with slopes near 0.1. The earlier draft computed the slope with the default tie correction of the Cox fit, which merges the extreme simulated survival times and flattened every slope, including the true predictor’s. The slopes here use exact times.</p>
+<p>The next question is therefore how to set the supervision strength from the data while keeping the fit stable. A calibrated power on the Cox likelihood (SafeBayes or the Holmes–Walker calibration), downweighting the genomics term, and normalizing the two likelihood terms as DeSurv does are the candidates.</p>
+<p>A rerun of the October 15 test bed at <code>w_S = 1</code> recovered the program in 18 of 20 datasets at low noise and 19 of 20 at high noise. The recovered datasets match the October 30 run. Sweep counts differ because of the later log-normalizer correction to the objective, which changes when the stopping rule fires.</p>
+<p>The real-data training CV at <code>w_S = 1</code> is registered and running. It covers the programs, cross-validated C, a feature-set-size curve from the D4 genes to all 17,900 shared genes, and a comparison with survival screening. No external cohort is scored until those choices are fixed.</p>
+</section>
+<section id="survival-weighted-fit-on-the-training-patients" class="level3" data-number="14.4.3">
+<h3 data-number="14.4.3" class="anchored" data-anchor-id="survival-weighted-fit-on-the-training-patients"><span class="header-section-number">14.4.3</span> Survival-weighted fit on the training patients</h3>
+<p>We fit the <code>w_S = 1</code> model on the 273 TCGA and CPTAC training patients with five-fold cross-validation, using the single-log data and no external cohort. On the 2,218 D4 genes the mean held-out C is 0.663 (SE 0.024). The two-step fit, which takes the unsupervised loadings and then fits Cox on the program scores, gives 0.652. The paired fold difference is 0.011 (SE 0.005).</p>
+<p>The loadings of the two fits are the same. On these data survival supplies about 10⁻⁸ to 10⁻⁶ of the loading precision. The real coefficients are small, and that share scales with E[β²]. The real programs also explain much more expression variance than the simulated one, so their genomics precision is large. The small gain comes from estimating β jointly with a shrinkage prior. In the simulation, fixed weights of 40 or more broke convergence. Getting survival to move the real-data loadings therefore needs a supervision strength set from the data.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 7%">
+<col style="width: 36%">
+<col style="width: 35%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Program</th>
+<th style="text-align: right;">β</th>
+<th style="text-align: right;">SD</th>
+<th style="text-align: left;">Active</th>
+<th style="text-align: left;">Top genes, positive pole</th>
+<th style="text-align: left;">Top genes, negative pole</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">-0.41</td>
+<td style="text-align: right;">0.08</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">ATP2A3 ACACB METTL7A ADH1B ACSS1</td>
+<td style="text-align: left;">LOXL2 MMP14 P4HA1 LDHA SLC16A3</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.22</td>
+<td style="text-align: right;">0.07</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">RPS7 RPL6 NCAPD2 EEF1D MT2A</td>
+<td style="text-align: left;">KIAA1211 SYTL2 CTSE TSPAN8 TOX3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.23</td>
+<td style="text-align: right;">0.08</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">UHMK1 ARHGAP5 TAOK1 RAD21 DDX21</td>
+<td style="text-align: left;">CHPF RCN3 MXRA8 LOXL1 JUND</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.15</td>
+<td style="text-align: right;">0.08</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">CTRB2 CTRB1 CPB1 REG1B CELA3A</td>
+<td style="text-align: left;">BANK1 STK17B EMB MS4A1 CD79A</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">-0.05</td>
+<td style="text-align: right;">0.06</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">ANO1 BCL9L PPL VSTM2L ALS2CL</td>
+<td style="text-align: left;">PRDX4 PPIB NUCB2 P4HB RPS18</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>A positive β means a higher program score raises the hazard. Three programs are survival-active: a hypoxia and glycolysis versus normal-pancreas axis, a ribosomal and proliferation versus classical-epithelial axis, and a third adverse program.</p>
+<p>Adding genes beyond the D4 set does not help. Mean C ranges from 0.643 to 0.663 from 2,218 to all 17,900 shared genes, and every size is within one SE of the others. The registered rule, which picks the smallest set that matches the all-genes fit, chooses D4.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/real-data-size-curve.png" class="img-fluid figure-img"></p>
+<figcaption>Held-out C against the number of input genes for the survival-weighted fit and the two-step fit.</figcaption>
+</figure>
+</div>
+<p>Screening genes on survival inside each fold before the joint fit gives no consistent gain:</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 31%">
+<col style="width: 18%">
+<col style="width: 14%">
+<col style="width: 8%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Genes</th>
+<th style="text-align: left;">Fit</th>
+<th style="text-align: right;">C, outcome-free screen</th>
+<th style="text-align: right;">C, Cox screen</th>
+<th style="text-align: right;">Difference</th>
+<th style="text-align: right;">SE</th>
+<th style="text-align: right;">Overlap</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">250</td>
+<td style="text-align: left;">w0cox</td>
+<td style="text-align: right;">0.626</td>
+<td style="text-align: right;">0.647</td>
+<td style="text-align: right;">0.021</td>
+<td style="text-align: right;">0.018</td>
+<td style="text-align: right;">0.114</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">500</td>
+<td style="text-align: left;">w0cox</td>
+<td style="text-align: right;">0.645</td>
+<td style="text-align: right;">0.650</td>
+<td style="text-align: right;">0.004</td>
+<td style="text-align: right;">0.017</td>
+<td style="text-align: right;">0.224</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">w0cox</td>
+<td style="text-align: right;">0.647</td>
+<td style="text-align: right;">0.648</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.006</td>
+<td style="text-align: right;">0.442</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">250</td>
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.638</td>
+<td style="text-align: right;">0.641</td>
+<td style="text-align: right;">0.003</td>
+<td style="text-align: right;">0.016</td>
+<td style="text-align: right;">0.114</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">500</td>
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.637</td>
+<td style="text-align: right;">0.646</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: right;">0.224</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">w1</td>
+<td style="text-align: right;">0.643</td>
+<td style="text-align: right;">0.655</td>
+<td style="text-align: right;">0.012</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.442</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>No screened set beats the <code>w_S = 1</code> fit on all D4 genes. With survival permuted in the simulated data, the <code>w_S = 1</code> fit has 0.1 to 0.5 false-active programs per dataset on average, below the limit of one. The fixed model for the single external scoring is therefore <code>w_S = 1</code> on the D4 genes with no survival screen.</p>
+</section>
+<section id="external-scoring-of-the-fixed-fit" class="level3" data-number="14.4.4">
+<h3 data-number="14.4.4" class="anchored" data-anchor-id="external-scoring-of-the-fixed-fit"><span class="header-section-number">14.4.4</span> External scoring of the fixed fit</h3>
+<p>The fixed <code>w_S = 1</code> fit on the D4 genes was scored once on the five external cohorts, after per-cohort z-scoring. The two-step fit was scored alongside it. Nothing was chosen from these results.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 3%">
+<col style="width: 6%">
+<col style="width: 10%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 11%">
+<col style="width: 10%">
+<col style="width: 14%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Cohort</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">Events</th>
+<th style="text-align: right;">C, w_S = 1</th>
+<th style="text-align: right;">Lower</th>
+<th style="text-align: right;">Upper</th>
+<th style="text-align: right;">C, two-step</th>
+<th style="text-align: right;">Difference</th>
+<th style="text-align: right;">Slope, w_S = 1</th>
+<th style="text-align: right;">Slope, two-step</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Dijk</td>
+<td style="text-align: right;">90</td>
+<td style="text-align: right;">81</td>
+<td style="text-align: right;">0.584</td>
+<td style="text-align: right;">0.513</td>
+<td style="text-align: right;">0.658</td>
+<td style="text-align: right;">0.567</td>
+<td style="text-align: right;">0.018</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">0.353</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Moffitt_GEO_array</td>
+<td style="text-align: right;">123</td>
+<td style="text-align: right;">83</td>
+<td style="text-align: right;">0.537</td>
+<td style="text-align: right;">0.459</td>
+<td style="text-align: right;">0.611</td>
+<td style="text-align: right;">0.531</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: right;">0.356</td>
+<td style="text-align: right;">0.276</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PACA_AU_array</td>
+<td style="text-align: right;">63</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">0.562</td>
+<td style="text-align: right;">0.751</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.782</td>
+<td style="text-align: right;">0.728</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">PACA_AU_seq</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">0.681</td>
+<td style="text-align: right;">0.579</td>
+<td style="text-align: right;">0.780</td>
+<td style="text-align: right;">0.671</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: right;">1.569</td>
+<td style="text-align: right;">1.263</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Puleo_array</td>
+<td style="text-align: right;">288</td>
+<td style="text-align: right;">181</td>
+<td style="text-align: right;">0.644</td>
+<td style="text-align: right;">0.599</td>
+<td style="text-align: right;">0.686</td>
+<td style="text-align: right;">0.643</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.988</td>
+<td style="text-align: right;">0.799</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Mean external C is 0.620 for the survival-weighted fit and 0.613 for the two-step fit. The supervised fit is equal or higher in every cohort. The cohort-stratified paired difference is +0.007 (95% interval -0.002 to 0.017), about the size of the training CV difference. The earlier frozen benchmark averaged 0.627 under the older preprocessing, so performance is about the same. Calibration slopes on the external cohorts range from 0.36 to 1.57, with 0.99 in Puleo, the largest cohort, and they are closer to 1 for the supervised fit than for the two-step fit in every cohort.</p>
+</section>
+<section id="choosing-the-survival-weight-by-cross-validation-simulation" class="level3" data-number="14.4.5">
+<h3 data-number="14.4.5" class="anchored" data-anchor-id="choosing-the-survival-weight-by-cross-validation-simulation"><span class="header-section-number">14.4.5</span> Choosing the survival weight by cross-validation (simulation)</h3>
+<p>S-9 left two problems. At <code>w_S = 1</code> the coefficients were attenuated, and weights of 40 or more stopped converging. In the original objective, raising <code>w_S</code> also weakened the prior on β, because the weight multiplied the Cox term in the β update too. The survival-block weight (arm A1) applies <code>w_S</code> to the Cox term and to the β prior together. β then gets an ordinary Bayesian Cox fit while the loadings see survival at weight <code>w_S</code>. This is the same as down-weighting the expression likelihood by 1/<code>w_S</code>. Arm A2 adds a joint Gaussian posterior for β, with each program’s prior variance estimated from the data. Each dataset’s weight was chosen from {1, 2, 5, 10, 20, 50} by five-fold cross-validated partial log-likelihood on the training data.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 2%">
+<col style="width: 5%">
+<col style="width: 16%">
+<col style="width: 7%">
+<col style="width: 13%">
+<col style="width: 9%">
+<col style="width: 16%">
+<col style="width: 4%">
+<col style="width: 8%">
+<col style="width: 4%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Arm</th>
+<th style="text-align: left;">Cell</th>
+<th style="text-align: left;">Chosen weights (count)</th>
+<th style="text-align: right;">Recovered</th>
+<th style="text-align: right;">Two-step recovered</th>
+<th style="text-align: right;">False-active</th>
+<th style="text-align: right;">Two-step false-active</th>
+<th style="text-align: right;">C</th>
+<th style="text-align: right;">Two-step C</th>
+<th style="text-align: right;">Slope</th>
+<th style="text-align: right;">Two-step slope</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">A1</td>
+<td style="text-align: left;">v0.0025</td>
+<td style="text-align: left;">1:1 2:9</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">1.7</td>
+<td style="text-align: right;">0.946</td>
+<td style="text-align: right;">0.939</td>
+<td style="text-align: right;">1.240</td>
+<td style="text-align: right;">1.159</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A2</td>
+<td style="text-align: left;">v0.0025</td>
+<td style="text-align: left;">2:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.6</td>
+<td style="text-align: right;">1.7</td>
+<td style="text-align: right;">0.946</td>
+<td style="text-align: right;">0.939</td>
+<td style="text-align: right;">1.222</td>
+<td style="text-align: right;">1.159</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A1</td>
+<td style="text-align: left;">v0.01</td>
+<td style="text-align: left;">5:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">0.972</td>
+<td style="text-align: right;">0.972</td>
+<td style="text-align: right;">1.274</td>
+<td style="text-align: right;">1.097</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A2</td>
+<td style="text-align: left;">v0.01</td>
+<td style="text-align: left;">5:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">0.972</td>
+<td style="text-align: right;">0.972</td>
+<td style="text-align: right;">1.276</td>
+<td style="text-align: right;">1.097</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A1</td>
+<td style="text-align: left;">v0.05</td>
+<td style="text-align: left;">10:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.986</td>
+<td style="text-align: right;">0.986</td>
+<td style="text-align: right;">1.450</td>
+<td style="text-align: right;">0.963</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A2</td>
+<td style="text-align: left;">v0.05</td>
+<td style="text-align: left;">10:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.2</td>
+<td style="text-align: right;">0.986</td>
+<td style="text-align: right;">0.986</td>
+<td style="text-align: right;">1.449</td>
+<td style="text-align: right;">0.963</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A1</td>
+<td style="text-align: left;">weak</td>
+<td style="text-align: left;">1:8 2:2</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.2</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.671</td>
+<td style="text-align: right;">0.668</td>
+<td style="text-align: right;">1.047</td>
+<td style="text-align: right;">1.039</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A2</td>
+<td style="text-align: left;">weak</td>
+<td style="text-align: left;">1:10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.672</td>
+<td style="text-align: right;">0.668</td>
+<td style="text-align: right;">1.052</td>
+<td style="text-align: right;">1.039</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<ul>
+<li><strong>The weight choice works.</strong> The chosen weight rises with the strength of the planted program: 1 or 2 in the weak and 0.25% cells, 5 at 1%, and 10 at 5%. It never chose 20 or 50. At those weights the full fits stop converging (0 or 1 of 10 per cell).</li>
+<li><strong>Supervision matches the two-step fit on this test bed.</strong> Both recover the program in 10 of 10 datasets in every cell, and validation C differs by at most 0.007. The registered gate passed only against the older unsupervised reference, which was fitted to uncentered input. Against the matched two-step fit, the recovery gain is zero.</li>
+<li><strong>The coefficients are still slightly attenuated.</strong> Median calibration slopes at the chosen weight are 1.22 to 1.45 in the three variance cells. The registered band was 0.8 to 1.25, met in 1 of 3 cells.</li>
+<li><strong>The joint posterior for β adds nothing measurable</strong> (C within 0.004 of A1), so it stays opt-in.</li>
+</ul>
+<p>Neither arm passed every registered criterion (A1 fails the null check; A2 passes the null check), so nothing was adopted.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/s13-weight-curves.png" class="img-fluid figure-img"></p>
+<figcaption>Recovery, false activity, calibration, convergence, validation and CV C, survival share and survival-only directions against the weight. Solid lines are A1, dashed lines A2.</figcaption>
+</figure>
+</div>
+</section>
+<section id="programs-near-the-detection-threshold-simulation" class="level3" data-number="14.4.6">
+<h3 data-number="14.4.6" class="anchored" data-anchor-id="programs-near-the-detection-threshold-simulation"><span class="header-section-number">14.4.6</span> Programs near the detection threshold (simulation)</h3>
+<p>On the S-9 test bed the two-step fit already finds the planted program, so it cannot show what supervision adds. S-14 planted weaker programs, at 0.05%, 0.1% and 0.2% of expression variance, with strong survival (oracle C about 0.94) and realistic survival (oracle C about 0.74). Ten datasets per cell.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 12%">
+<col style="width: 7%">
+<col style="width: 16%">
+<col style="width: 17%">
+<col style="width: 16%">
+<col style="width: 11%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Survival</th>
+<th style="text-align: left;">Planted share</th>
+<th style="text-align: left;">Arm</th>
+<th style="text-align: right;">Recovered (of 10)</th>
+<th style="text-align: right;">Mean |r|</th>
+<th style="text-align: right;">Mean false-active</th>
+<th style="text-align: right;">Validation C</th>
+<th style="text-align: right;">Oracle C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">realistic</td>
+<td style="text-align: left;">0.05%</td>
+<td style="text-align: left;">A1_w1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.338</td>
+<td style="text-align: right;">1.9</td>
+<td style="text-align: right;">0.630</td>
+<td style="text-align: right;">0.740</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">realistic</td>
+<td style="text-align: left;">0.05%</td>
+<td style="text-align: left;">twostep</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.200</td>
+<td style="text-align: right;">1.6</td>
+<td style="text-align: right;">0.592</td>
+<td style="text-align: right;">0.740</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">realistic</td>
+<td style="text-align: left;">0.1%</td>
+<td style="text-align: left;">A1_w1</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0.773</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.712</td>
+<td style="text-align: right;">0.736</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">realistic</td>
+<td style="text-align: left;">0.1%</td>
+<td style="text-align: left;">twostep</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.730</td>
+<td style="text-align: right;">1.1</td>
+<td style="text-align: right;">0.705</td>
+<td style="text-align: right;">0.736</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">realistic</td>
+<td style="text-align: left;">0.2%</td>
+<td style="text-align: left;">A1_w1</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.896</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.728</td>
+<td style="text-align: right;">0.735</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">realistic</td>
+<td style="text-align: left;">0.2%</td>
+<td style="text-align: left;">twostep</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.893</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">0.727</td>
+<td style="text-align: right;">0.735</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">strong</td>
+<td style="text-align: left;">0.05%</td>
+<td style="text-align: left;">A1_w1</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.624</td>
+<td style="text-align: right;">2.5</td>
+<td style="text-align: right;">0.800</td>
+<td style="text-align: right;">0.936</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">strong</td>
+<td style="text-align: left;">0.05%</td>
+<td style="text-align: left;">twostep</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.200</td>
+<td style="text-align: right;">2.8</td>
+<td style="text-align: right;">0.644</td>
+<td style="text-align: right;">0.936</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">strong</td>
+<td style="text-align: left;">0.1%</td>
+<td style="text-align: left;">A1_w1</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.867</td>
+<td style="text-align: right;">1.6</td>
+<td style="text-align: right;">0.901</td>
+<td style="text-align: right;">0.948</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">strong</td>
+<td style="text-align: left;">0.1%</td>
+<td style="text-align: left;">twostep</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.730</td>
+<td style="text-align: right;">2.4</td>
+<td style="text-align: right;">0.861</td>
+<td style="text-align: right;">0.948</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">strong</td>
+<td style="text-align: left;">0.2%</td>
+<td style="text-align: left;">A1_w1</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.922</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">0.936</td>
+<td style="text-align: right;">0.958</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">strong</td>
+<td style="text-align: left;">0.2%</td>
+<td style="text-align: left;">twostep</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0.893</td>
+<td style="text-align: right;">1.8</td>
+<td style="text-align: right;">0.928</td>
+<td style="text-align: right;">0.958</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../figures/2026-11-06/s14-paired-c.png" class="img-fluid figure-img"></p>
+<figcaption>Validation C of the supervised fit (w_S = 1) against the two-step fit, one point per dataset.</figcaption>
+</figure>
+</div>
+<p>With strong survival, the supervised fit has the higher validation C in 29 of 30 datasets. The gain grows as the program gets weaker: +0.156 at 0.05%, +0.041 at 0.1% and +0.008 at 0.2%. At 0.05% it recovers the program in 5 of 10 datasets, where the two-step fit recovers none. With realistic survival the two fits are within 0.01 of each other at 0.1% and 0.2%, and neither recovers the 0.05% program. This is the regime the joint model is for. It needs enough survival information, and the gain on real PDAC data, where survival information is closer to the realistic setting, will be modest.</p>
+<p>The registered recovery criterion failed because it limited the mean false-active count to 1. The two-step fit fails it too, and the next section shows these programs barely matter for prediction. A fixed weight of 5 recovered more in the strong cells but overfit (slopes 0.04 to 0.65) and lost the program under realistic survival. The weight has to come from the data.</p>
+</section>
+<section id="how-much-the-false-active-programs-contribute" class="level3" data-number="14.4.7">
+<h3 data-number="14.4.7" class="anchored" data-anchor-id="how-much-the-false-active-programs-contribute"><span class="header-section-number">14.4.7</span> How much the false-active programs contribute</h3>
+<p>A false-active program is one whose coefficient is more than 1.96 posterior SDs from zero but that does not match the planted program. To see whether they matter, each validation risk score was split into the matched program’s part and the rest. The standardized coefficient is the log hazard ratio per SD of a program’s score.</p>
+<ul>
+<li><strong>Where the planted program is recovered,</strong> the other active programs carry at most 1.3% of the risk-score variance. Their standardized coefficients are about 0.1 to 0.3, against 1 to 17 for the matched program, and removing them changes validation C by at most 0.008 (S-13 maximum 0.008).</li>
+<li><strong>Where the program is only partly found</strong> (0.05% share), the other programs carry 9% to 69% of the risk-score variance and add to C. They hold pieces of the planted direction. The split is much larger for the two-step fit (69%) than for the supervised fit (8.7%).</li>
+</ul>
+<p>For prediction the false actives are negligible. For biology they need filtering. Only programs with a large standardized coefficient relative to the strongest one should be named as prognostic. A rule that combines that ratio, the share of risk-score variance and stability across folds is being tested.</p>
+</section>
+<section id="real-data-refit-with-the-survival-weight-chosen-by-cross-validation" class="level3" data-number="14.4.8">
+<h3 data-number="14.4.8" class="anchored" data-anchor-id="real-data-refit-with-the-survival-weight-chosen-by-cross-validation"><span class="header-section-number">14.4.8</span> Real-data refit with the survival weight chosen by cross-validation</h3>
+<p>The same weight choice was applied to the 273 training patients, with weights from 1 to 50 and the S-11 folds. A nested cross-validation repeated the choice inside each training split, to give an honest estimate of the whole procedure.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 27%">
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 17%">
+<col style="width: 38%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">w_S</th>
+<th style="text-align: right;">CV partial log-likelihood</th>
+<th style="text-align: right;">CV C</th>
+<th style="text-align: right;">SE</th>
+<th style="text-align: right;">Folds converged</th>
+<th style="text-align: right;">Survival share of loading precision</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-775.168</td>
+<td style="text-align: right;">0.663</td>
+<td style="text-align: right;">0.024</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1.170e-06</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">-775.179</td>
+<td style="text-align: right;">0.663</td>
+<td style="text-align: right;">0.025</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2.340e-06</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">-775.213</td>
+<td style="text-align: right;">0.661</td>
+<td style="text-align: right;">0.025</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">5.910e-06</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">-775.244</td>
+<td style="text-align: right;">0.661</td>
+<td style="text-align: right;">0.025</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1.200e-05</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">-775.380</td>
+<td style="text-align: right;">0.659</td>
+<td style="text-align: right;">0.026</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">2.490e-05</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">-775.429</td>
+<td style="text-align: right;">0.653</td>
+<td style="text-align: right;">0.028</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">7.257e-05</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The chosen weight is 1. The curve is flat, changing by 0.26 out of 775 across a fifty-fold range of weights, so the weights chosen inside the nested splits vary (5, 2, 50, 1, 10). The nested C is 0.656 (SE 0.027). By the registered rule nothing changes. The <code>w_S = 1</code> fit and its external scoring stand.</p>
+<p>The reason is the scale of the real data. Survival’s share of the loading precision grows in proportion to the weight but is still below 10⁻⁴ at 50, and every program’s loadings correlate 1.000 with the unsupervised ones. Reaching a share near 0.1 would need a weight of order 10⁴, the same order as DeSurv’s weighting, and in simulation weights of 40 or more stopped converging. On these data the supervised model’s gain comes from fitting β jointly, not from moving the gene programs.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 6%">
+<col style="width: 8%">
+<col style="width: 6%">
+<col style="width: 8%">
+<col style="width: 17%">
+<col style="width: 23%">
+<col style="width: 19%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Program</th>
+<th style="text-align: right;">PVE</th>
+<th style="text-align: right;">β</th>
+<th style="text-align: right;">SD</th>
+<th style="text-align: left;">Active</th>
+<th style="text-align: right;">Standardized β</th>
+<th style="text-align: right;">Risk-variance share</th>
+<th style="text-align: right;">Ratio to largest</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.106</td>
+<td style="text-align: right;">-0.405</td>
+<td style="text-align: right;">0.084</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">0.405</td>
+<td style="text-align: right;">0.713</td>
+<td style="text-align: right;">1.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.065</td>
+<td style="text-align: right;">0.218</td>
+<td style="text-align: right;">0.073</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">0.218</td>
+<td style="text-align: right;">0.206</td>
+<td style="text-align: right;">0.538</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.051</td>
+<td style="text-align: right;">0.154</td>
+<td style="text-align: right;">0.082</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: right;">0.154</td>
+<td style="text-align: right;">0.103</td>
+<td style="text-align: right;">0.380</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.038</td>
+<td style="text-align: right;">0.230</td>
+<td style="text-align: right;">0.082</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">0.230</td>
+<td style="text-align: right;">0.230</td>
+<td style="text-align: right;">0.568</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The three active programs have standardized coefficients of 0.41, 0.22 and 0.23. All three have at least half the effect of the largest program and carry at least 20% of the risk-score variance. The inactive program 4 (standardized coefficient 0.15) is the borderline case for the proposed rule.</p>
+</section>
+</section>
+<section id="open-items-and-questions" class="level2" data-number="14.5">
+<h2 data-number="14.5" class="anchored" data-anchor-id="open-items-and-questions"><span class="header-section-number">14.5</span> Open items and questions</h2>
+<ul>
+<li><strong>Stronger supervision on real data.</strong> Moving the real-data loadings needs weights near 10⁴. That first needs the fit to stay stable at large weights, the problem S-9 found and did not solve.</li>
+<li><strong>Classifying programs for the biology.</strong> The proposed rule (standardized coefficient ratio, risk-variance share, stability across folds) needs its fold-stability part computed and a check on the simulations.</li>
+<li><strong>Pruning.</strong> With the empty-program KL fixed, pruning removes the planted program in nearly every dataset. The working fit stays at K = 7 without pruning. Whether a different deletion rule can work is a separate question.</li>
+<li><strong>Issue #6.</strong> Still open: comparators (item 7), the writeup and prelim text for items 2, 4 and 5, storing the fits (item 8), and the Linux check (item 3).</li>
+<li><strong>Matched LB and YFB study.</strong> It now has the nonnegative input it needs, with projection-only centering (including within strata).</li>
+<li><strong>Writing.</strong> The prelim Chapter 4 revision and the 11/6 writeup are in progress.</li>
+</ul>
+
+
 </section>
 
 </main> <!-- /main -->
