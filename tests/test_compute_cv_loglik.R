@@ -307,4 +307,39 @@ run_test("CVLL-T19: strata_id is passed through to held-out scoring (isolated fr
               "cv_survival_loglik()'s recorded fold-1 logPL must match the STRATIFIED held-out recomputation")
 })
 
+run_test("CVLL-T20: centered stratified YFB uses training means and within-stratum concordance", local({
+  g <- rep(c("A", "B"), each = n / 2)
+  x <- Y
+  x[g == "B", ] <- x[g == "B", ] + 10
+  te <- create_stratified_folds(status, n_folds = 4L, seed = 42L)$folds[[1]]
+  tr <- setdiff(seq_len(n), te)
+  f <- fit_ssbmf_yfb(x[tr, , drop = FALSE], time[tr], status[tr], K = K_true,
+                     max_iter = 5L, canonicalize = TRUE, center_projection = TRUE,
+                     strata_id = g[tr], verbose = FALSE)
+  EF <- sweep(f$EF, 2, f$EF_norms, "/")
+  train_score <- as.vector((x[tr, ] - f$projection_center[g[tr], ]) %*% EF %*% f$EBeta)
+  test_score <- as.vector((x[te, ] - f$projection_center[g[te], ]) %*% EF %*% f$EBeta)
+  df <- data.frame(time = time[tr], status = status[tr], score = train_score, g = g[tr])
+  expected_c <- concordance(Surv(time, status) ~ score + strata(g), data = df,
+                            reverse = TRUE)$concordance
+  expected_pl <- calc_cox_taylor_yf(test_score, time[te], status[te], strata = g[te])$logPL
+
+  # The likelihood is invariant to the shift, so inspect the predictions as well.
+  seen_score <- NULL
+  predict_original <- predict_ssbmf_yfb
+  predict_ssbmf_yfb <- function(Y_test, ...) {
+    pred <- predict_original(Y_test, ...)
+    if (identical(Y_test, x[te, , drop = FALSE])) seen_score <<- pred$risk_scores
+    pred
+  }
+  cv <- cv_survival_loglik
+  environment(cv) <- environment()
+  res <- cv(x, time, status, K_true, n_folds = 4L, max_iter = 5L, strata_id = g,
+            canonicalize = TRUE, center_projection = TRUE)
+  assert_near(res$fold_results$c_train[1], expected_c, tol = 1e-12)
+  assert_near(res$fold_results$logPL[1], expected_pl, tol = 1e-10)
+  assert_near(seen_score, test_score, tol = 1e-12,
+              "The held-out projection must use the training centers")
+}))
+
 report_results("test_compute_cv_loglik.R")

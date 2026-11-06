@@ -44,6 +44,15 @@ the bootstrap yields an interval that still includes zero. The
 [external-cohort audit](docs/findings/2026-11-06-external-cohort-uses.md)
 records the decision history and both intervals.
 
+## Stratified projection centering in cross-validation (2026-11-06)
+
+The rank and survival-likelihood CV helpers use each training fold's
+projection centers and evaluate concordance within strata. The
+[stratified CV handoff](docs/reviews/2026-11-06-stratified-yfb-cv-handoff.md)
+records the checks and a numerical example showing how near-zero
+within-stratum spread can affect the precision floor. A pruning rule change
+remains a separate research decision.
+
 ## Projection-only centering for nonnegative input (2026-11-06)
 
 `fit_ssbmf_yfb()` has an opt-in `center_projection = TRUE` (canonical fits only). The

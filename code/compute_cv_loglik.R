@@ -157,7 +157,10 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #' below 0.5; that flip was removed with the fitters' sign correction
 #' (DECISIONS.md), since CAVI fits beta to the Cox likelihood and a flip
 #' would score a different model from the one fitted. `c_train` still reports
-#' each fold's training concordance (`reverse = TRUE`) as a diagnostic.
+#' each fold's training concordance (`reverse = TRUE`) as a diagnostic,
+#' using only within-stratum pairs when strata_id is supplied.
+#' Projection centering uses means from the training fold. With a center
+#' matrix, each held-out stratum must appear in that fold's training rows.
 #'
 #' \strong{Risk-set size.} Each fold's partial log-likelihood is computed
 #' within that fold's own risk sets, so `logPL` here is not on the same
@@ -245,6 +248,9 @@ cv_survival_loglik <- function(Y, time, status, K,
   if (length(time) != n)   stop(sprintf("time must have length %d (nrow(Y)).", n))
   if (length(status) != n) stop(sprintf("status must have length %d (nrow(Y)).", n))
 
+  if (!is.null(strata_id) && (length(strata_id) != n || anyNA(strata_id)))
+    stop("strata_id must have length nrow(Y) and no NA.")
+
   extra <- list(...)
 
   fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
@@ -254,60 +260,48 @@ cv_survival_loglik <- function(Y, time, status, K,
     test_idx  <- fold_obj$folds[[fold_id]]
     train_idx <- setdiff(seq_len(n), test_idx)
 
+    strata_train <- strata_id[train_idx]
+    strata_test <- strata_id[test_idx]
     fit_args <- c(
       list(Y = Y[train_idx, , drop = FALSE], time = time[train_idx], status = status[train_idx],
            K = K, max_iter = max_iter, tol = tol,
            prior_LF = prior_LF, prior_beta = prior_beta, alpha = alpha,
            verbose = FALSE,
            cohort_id      = if (is.null(cohort_id)) NULL else cohort_id[train_idx],
-           strata_id      = if (is.null(strata_id)) NULL else strata_id[train_idx],
+           strata_id      = strata_train,
            beta_cohort_id = if (is.null(beta_cohort_id)) NULL else beta_cohort_id[train_idx]),
       extra
     )
     fit <- do.call(fit_ssbmf_yfb, fit_args)
     use_cohort <- !is.null(beta_cohort_id)
 
-    # Coefficients used to score the held-out fold, by cv_scoring (see its
-    # @param above): not use_cohort -> fit$EBeta (K-vector); "unseen_cohort"
-    # -> fit$EBeta_pooled, ignoring the fold's cohort labels; "within_cohort"
-    # -> fit$EBeta (K x C), each patient scored with their own cohort column.
-    # eta_train feeds only the c_train diagnostic.
-    ZF_train <- Y[train_idx, , drop = FALSE] %*% sweep(fit$EF, 2, fit$EF_norms, "/")
-    if (!use_cohort) {
-      EBeta_score <- fit$EBeta
-      eta_train <- as.vector(ZF_train %*% fit$EBeta)
-    } else if (cv_scoring == "unseen_cohort") {
-      EBeta_score <- fit$EBeta_pooled
-      eta_train <- as.vector(ZF_train %*% fit$EBeta_pooled)
-    } else {  # within_cohort
-      EBeta_score <- fit$EBeta
-      train_cohort_idx <- match(beta_cohort_id[train_idx], colnames(fit$EBeta))
-      eta_train <- rowSums(ZF_train * t(fit$EBeta)[train_cohort_idx, , drop = FALSE])
-    }
-    c_train   <- tryCatch(
-      as.numeric(survival::concordance(
-        survival::Surv(time[train_idx], status[train_idx]) ~ eta_train, reverse = TRUE
-      )$concordance),
-      error = function(e) NA_real_
-    )
+    # A cohort-specific beta uses the patient's fitted coefficient column.
+    # The unseen-cohort scoring mode uses the pooled beta instead.
+    within_cohort <- use_cohort && cv_scoring == "within_cohort"
+    EBeta_score <- if (use_cohort && !within_cohort) fit$EBeta_pooled else fit$EBeta
+    center <- fit$projection_center
+    eta_train <- predict_ssbmf_yfb(
+      Y[train_idx, , drop = FALSE], fit$EF, EBeta_score, EF_norms = fit$EF_norms,
+      cohort_id_test = if (within_cohort) beta_cohort_id[train_idx],
+      projection_center = center, projection_strata = if (is.matrix(center)) strata_train
+    )$risk_scores
+    c_train <- tryCatch({
+      outcome <- survival::Surv(time[train_idx], status[train_idx])
+      if (is.null(strata_train)) {
+        as.numeric(survival::concordance(outcome ~ eta_train, reverse = TRUE)$concordance)
+      } else {
+        as.numeric(survival::concordancefit(outcome, eta_train, strata = strata_train,
+                                            reverse = TRUE)$concordance)
+      }
+    }, error = function(e) NA_real_)
 
-    # Held-out scoring: eta_new = (Y_test EF) beta -- exact YFB prediction
-    # formula. "within_cohort" scores each test patient with their own
-    # (held-out but known) cohort's column via cohort_id_test; the other two
-    # cases pass a K-vector, so cohort_id_test stays NULL (its only valid
-    # value for a non-matrix EBeta).
-    pred <- if (use_cohort && cv_scoring == "within_cohort") {
-      predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_score,
-                         EF_norms = fit$EF_norms, cohort_id_test = beta_cohort_id[test_idx])
-    } else {
-      predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_score,
-                         EF_norms = fit$EF_norms)
-    }
-    # strata_id row-subsetted to the test fold (fixed 2026-09-04, DECISIONS.md):
-    # a model fit under stratified risk sets must be scored under stratified
-    # risk sets, not one pooled risk set.
+    pred <- predict_ssbmf_yfb(
+      Y[test_idx, , drop = FALSE], fit$EF, EBeta_score, EF_norms = fit$EF_norms,
+      cohort_id_test = if (within_cohort) beta_cohort_id[test_idx],
+      projection_center = center, projection_strata = if (is.matrix(center)) strata_test
+    )
     surv <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx],
-                                strata = if (is.null(strata_id)) NULL else strata_id[test_idx])
+                              strata = strata_test)
 
     n_event_test <- sum(status[test_idx] == 1)
     fold_rows[[fold_id]] <- data.frame(

@@ -78,6 +78,10 @@
 #' # Cohort-specific beta, scoring an in-sample/matched cohort by name:
 #' # pred <- predict_ssbmf_yfb(Y_test, res$EF, res$EBeta, res$EF_norms,
 #' #                            cohort_id_test = my_cohort_labels)
+#' #
+#' # New stratum scored on its own with a fixed zero center:
+#' # pred <- predict_ssbmf_yfb(Y_ext, res$EF, res$EBeta, res$EF_norms,
+#' #                            projection_center = rep(0, ncol(Y_ext)))
 predict_ssbmf_yfb <- function(Y_test, EF, EBeta, EF_norms = NULL, cohort_id_test = NULL,
                               projection_center = NULL, projection_strata = NULL) {
 
