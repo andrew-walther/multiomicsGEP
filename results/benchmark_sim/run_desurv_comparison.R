@@ -33,6 +33,7 @@ suppressPackageStartupMessages({ library(yaml); library(survival) })
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")
+source("code/concordance_ci.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
@@ -153,15 +154,6 @@ set_key <- function(yml_path, key, value) {
   lines[idx[1]] <- sub(pattern, paste0("\\1", value), lines[idx[1]])
   writeLines(lines, yml_path)
   invisible(NULL)
-}
-
-# --------------------------------------------------------------------------
-# Helper: oriented C-index
-# --------------------------------------------------------------------------
-
-oriented_cindex <- function(risk, time, status) {
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
 }
 
 # --------------------------------------------------------------------------
@@ -325,7 +317,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
     else
       predict_ssbmf_yfb(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
 
-    c_val <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
+    c_val <- frozen_reverse_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
 
     if (is.null(risk_cache[[dcfg$id]])) risk_cache[[dcfg$id]] <- list()
     risk_cache[[dcfg$id]][[ext_cohort]] <- list(
@@ -366,6 +358,9 @@ saveRDS(fits, file.path(OUT_DIR, "desurv_comparison_fits.rds"))
 
 # Per-model, per-cohort {risk, time, status}, for post-hoc bootstrap CI / paired-
 # comparison analysis (results/benchmark_sim/run_external_ci_analysis.R).
+for (model in names(risk_cache)) {
+  attr(risk_cache[[model]], "score_direction") <- "higher_hazard"
+}
 saveRDS(risk_cache, file.path(OUT_DIR, "desurv_comparison_riskscores.rds"))
 
 cat(sprintf("\n=== Results saved: %s ===\n\n", out_csv))

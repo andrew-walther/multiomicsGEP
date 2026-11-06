@@ -149,11 +149,11 @@ for (s in SEEDS) {
     # External (held-out) C-index for both arms.
     Yte <- d$Y[spl$test_idx, , drop = FALSE]; tte <- d$time[spl$test_idx]; ste <- d$status[spl$test_idx]
     pred_base <- predict_ssbmf_yfb(Yte, fit_base$EF, fit_base$EBeta, EF_norms = fit_base$EF_norms)
-    c_base <- oriented_cindex(pred_base$risk_scores, tte, ste)
+    c_base <- heldout_cindex(pred_base$risk_scores, tte, ste)
     cid_te <- droplevels(d$cohort_id[spl$test_idx])
     pred_bc <- predict_ssbmf_yfb(Yte, fit_bc$EF, fit_bc$EBeta, EF_norms = fit_bc$EF_norms,
                                   cohort_id_test = cid_te)
-    c_bc <- oriented_cindex(pred_bc$risk_scores, tte, ste)
+    c_bc <- heldout_cindex(pred_bc$risk_scores, tte, ste)
 
     results_rows[[length(results_rows) + 1]] <- data.frame(
       seed = s, K_init = K_here,

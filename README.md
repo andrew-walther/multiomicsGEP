@@ -288,3 +288,13 @@ Run `Rscript docs/progress_book/figures/plot_planted_yfb.R` to regenerate
 the simulation figure from the saved replicate table.
 Run `Rscript docs/progress_book/figures/plot_planted_yfb_comparators.R`
 to regenerate the loading-recovery and matched-comparator figures.
+
+### Risk direction in validation
+
+Validation runners evaluate Cox scores in the direction fixed before scoring.
+For the saved historical rank-matched comparison, run
+`Rscript results/benchmark_sim/run_yfb_vs_ebmf_k7_matched_ci.R` from the
+repository root with the local risk-score caches. It writes an aggregate
+rescore CSV beside the original table. The
+[orientation audit](docs/findings/2026-11-06-orientation-audit.md) describes
+which historical scores need a sign change.

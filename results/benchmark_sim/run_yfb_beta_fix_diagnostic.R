@@ -53,6 +53,7 @@ suppressPackageStartupMessages({
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")
+source("code/concordance_ci.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
@@ -108,15 +109,6 @@ n_cptac      <- train_raw$CPTAC$n
 cat(sprintf("  Training: n=%d (TCGA=%d, CPTAC=%d), p=%d, events=%d (%.0f%% censored)\n\n",
             nrow(Y_train), n_tcga, n_cptac, ncol(Y_train),
             sum(status_train), 100 * mean(status_train == 0)))
-
-# --------------------------------------------------------------------------
-# Helper: oriented C-index
-# --------------------------------------------------------------------------
-
-oriented_cindex <- function(risk, time, status) {
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
-}
 
 # --------------------------------------------------------------------------
 # 2. K-CV on merged data (reference variant: V1, cox_warmstart=TRUE)
@@ -238,7 +230,7 @@ for (vi in seq_along(variants)) {
   # --- training concordance ---
   zf_train  <- Y_train %*% (fit$EF / pmax(fit$EF_norms, 1e-10))
   eta_train <- as.vector(zf_train %*% fit$EBeta)
-  c_train   <- oriented_cindex(eta_train, time_train, status_train)
+  c_train   <- frozen_reverse_cindex(eta_train, time_train, status_train)
 
   # --- external validation on Dijk ---
   # Subset EF to common genes (same gene order as dijk raw)
@@ -251,7 +243,7 @@ for (vi in seq_along(variants)) {
 
   pred_dijk <- predict_ssbmf_yfb(Y_dijk_c, ef_sub, fit$EBeta,
                                   EF_norms = fit$EF_norms)
-  c_dijk <- oriented_cindex(pred_dijk$risk_scores,
+  c_dijk <- frozen_reverse_cindex(pred_dijk$risk_scores,
                              dijk_raw$time, dijk_raw$status)
 
   # fit_ssbmf_yfb does not return K_eff; derive from |EBeta| > 0.01 threshold

@@ -43,6 +43,7 @@ if (length(missing_keys) > 0) {
 }
 
 source("results/benchmark_sim/benchmark_helpers.R")
+source("code/concordance_ci.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
@@ -108,15 +109,6 @@ MODEL_CONFIGS <- list(
   list(id="M17", model="YFB", per_plat=FALSE, norm="none",     rank=FALSE, cohort=FALSE, k_key="k_merged_yfb_logonly"),
   list(id="M18", model="YFB", per_plat=FALSE, norm="none",     rank=FALSE, cohort=TRUE,  k_key="k_merged_yfb_logonly")
 )
-
-# --------------------------------------------------------------------------
-# Helper: oriented C-index
-# --------------------------------------------------------------------------
-
-oriented_cindex <- function(risk, time, status) {
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
-}
 
 # --------------------------------------------------------------------------
 # 3. Preprocess training data — cache by (per_plat, norm, rank) combo
@@ -218,7 +210,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
     else
       predict_ssbmf_yfb(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
 
-    c_val <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
+    c_val <- frozen_reverse_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
 
     results_rows[[length(results_rows) + 1]] <- data.frame(
       model      = mcfg$id,

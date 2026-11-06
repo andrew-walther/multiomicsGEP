@@ -9,8 +9,10 @@
 #
 # Author: Andrew Walther
 # Created: 2026-06-14
-# Dependencies: base R (stats::cor)
+# Dependencies: survival, code/concordance_ci.R
 # ============================================================
+
+source("code/concordance_ci.R")
 
 # match_factors ----
 #' Greedy best-|correlation| matching of estimated to true gene programs.
@@ -127,21 +129,15 @@ beta_recovery <- function(EBeta, match, true_labels, thresh) {
   )
 }
 
-# oriented_cindex ----
-#' Orientation-free held-out concordance, max(C, 1 - C).
-#'
-#' Matches the convention in run_synthetic.R: the sign of the risk score is
-#' resolved by taking the better of the two orientations, so a correctly-fit but
-#' sign-flipped predictor is not penalised.
-#'
-#' @param risk   n_test vector of risk scores (higher = worse prognosis).
-#' @param time   n_test survival/censoring times.
-#' @param status n_test event indicators.
-#' @return scalar C-index in [0.5, 1].
+# heldout_cindex ----
+#' Score held-out Cox risk in its fitted direction.
+#' @param risk Numeric vector of Cox linear predictors.
+#' @param time,status Held-out follow-up and event indicators.
+#' @return Numeric concordance. A constant score has concordance 0.5.
+#' @examples
+#' heldout_cindex(c(3, 2, 1), 1:3, rep(1, 3))
 #' @family multicohort-sim
-oriented_cindex <- function(risk, time, status) {
+heldout_cindex <- function(risk, time, status) {
   if (all(is.na(risk)) || sd(risk) < 1e-12) return(0.5)
-  cc <- as.numeric(survival::concordance(
-    survival::Surv(time, status) ~ risk)$concordance)
-  max(cc, 1 - cc)
+  frozen_reverse_cindex(risk, time, status)
 }

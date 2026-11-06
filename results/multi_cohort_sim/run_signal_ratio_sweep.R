@@ -208,7 +208,7 @@ for (a_sp in A_SPECIFIC_GRID) {
       sa   <- specificity_accuracy(est, mf$match, d$factor_labels)
       br   <- beta_recovery(fit$EBeta, mf$match, d$factor_labels, BETA_THRESH)
       pred <- predict_test(arm, fit, d, spl)
-      ci   <- oriented_cindex(pred$risk, pred$time, pred$status)
+      ci   <- heldout_cindex(pred$risk, pred$time, pred$status)
 
       is_sh <- d$factor_labels == "shared"
       rows[[length(rows) + 1]] <- data.frame(

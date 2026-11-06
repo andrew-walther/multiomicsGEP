@@ -170,3 +170,8 @@ all replicates for recovery and only defined values for concordance.
 Use `Rscript docs/progress_book/figures/plot_planted_yfb_comparators.R`
 to rebuild the loading-recovery and matched-comparator figures from the
 saved synthetic replicates.
+
+Evaluate held-out Cox scores with `frozen_reverse_cindex()`. Historical caches
+can store good-prognosis scores. Use the documented cache direction or recover
+it on training data before evaluating held-out outcomes. See the
+[orientation audit](docs/findings/2026-11-06-orientation-audit.md).

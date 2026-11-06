@@ -271,7 +271,7 @@ for (strength in STRENGTHS) {
 
       mf   <- match_factors(fit$EF, d$F_true)
       pred <- predict_test(arm, fit, d, spl)
-      ci   <- if (is.null(pred)) NA_real_ else oriented_cindex(pred$risk, pred$time, pred$status)
+      ci   <- if (is.null(pred)) NA_real_ else heldout_cindex(pred$risk, pred$time, pred$status)
 
       rows[[length(rows) + 1]] <- data.frame(
         scenario      = scen_name,

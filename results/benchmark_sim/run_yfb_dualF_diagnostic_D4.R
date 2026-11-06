@@ -35,6 +35,7 @@ suppressPackageStartupMessages({ library(yaml); library(survival) })
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")
+source("code/concordance_ci.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 tryCatch(source("code/fit_ssbmf_yfb.R"), error = function(e) invisible(NULL))
@@ -62,11 +63,6 @@ cat("=== YFB Dual-Source F Diagnostic (D4 preprocessing, alpha_F sweep) ===\n")
 cat(sprintf("    K=%d (fixed, from globals.yml k_merged_yfb_desurv) | alpha=%.2f | max_iter=%d\n",
             K_D4, ALPHA, MAX_ITER))
 cat(sprintf("    alpha_F grid: %s\n\n", paste(ALPHA_F_GRID, collapse = ", ")))
-
-oriented_cindex <- function(risk, time, status) {
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
-}
 
 # --------------------------------------------------------------------------
 # 1. Load + preprocess training data (D4: per-platform z-std, combined_rank,
@@ -165,7 +161,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
     fit    <- fits[[vname]]
     EF_sub <- fit$EF[train_idx, , drop = FALSE]
     pred   <- predict_ssbmf_yfb(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
-    c_val  <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
+    c_val  <- frozen_reverse_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
 
     ext_rows[[length(ext_rows) + 1]] <- data.frame(
       variant = vname, cohort = ext_cohort, c_index = round(c_val, 4),
