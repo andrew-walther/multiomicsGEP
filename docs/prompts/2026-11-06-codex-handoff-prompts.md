@@ -75,3 +75,52 @@ use the pattern (for example `results/benchmark_sim/run_desurv_comparison.R:164`
    `external_paired_diff_donor.csv` next to the S-12 outputs. Report the new interval beside
    the record-level one.
 3. Do not choose anything from these results. Add a findings README row. Commit and push.
+
+---
+
+## Prompt 4: finish the prelim Chapter 4 revamp
+
+Continue the prelim Chapter 4 (SSBMF) revamp from where it paused. Read, in order:
+- `docs/plans/2026-11-05-chapter4-revamp-prompt.md`;
+- `docs/plans/2026-11-05-chapter4-revamp-plan.md`, especially section 0 (Andrew's notes on title,
+  format, flow and figures) and section 9 (the pause point and what is next);
+- `git log --oneline -10 -- paper/prelim docs/plans/2026-11-05-chapter4-revamp-plan.md`.
+
+The untracked `paper/prelim/make_figures_supervised_programs.R` and `make_figures_supervised_sim.R`
+were left unverified when the work paused. Check them before using them.
+
+The evidence has changed since the draft:
+- S-15 (`docs/findings/2026-11-06-supervised-real-refit-findings.md`) kept w_S = 1 on real data.
+  The CV curve is flat, and survival's share of the loading precision is below 10⁻⁴ even at
+  w_S = 50.
+- KL-2 (`docs/findings/2026-11-06-flat-beta-pruning-rerun-findings.md`) shows pruning removes the
+  planted program, so the working fit is K = 7 unpruned.
+- The donor-level interval for S-12 is −0.003 to +0.017
+  (`docs/findings/2026-11-06-external-cohort-uses.md`).
+- The 11/6 progress-book chapter (`docs/progress_book/chapters/2026-11-06.qmd`) summarizes all of
+  this.
+
+Andrew's decisions (2026-11-06):
+- The plan is pre-approved.
+- Per-patient external risk scores may be saved under `data/` (git-ignored), never committed.
+- The prelim abstract may be updated, but only the supervision sentence or sentences, framed as
+  progress on a stated limitation.
+- Issue #6 items 4 and 5 apply. State the pre-registered October 15 null result (ΔC = −0.003,
+  −0.029 to 0.024), and lead with the rank-7 EBMF + Cox comparison.
+
+Finish the checklist rows, the figures and tables (every number traced to a file), the prelim
+rebuild with `test_prelim_assembly.py` passing (report page counts), the Round 3 review and the
+ROADMAP and DECISIONS updates in both repos. Then answer "Is this completely done?" with the
+completeness list from the prompt file. A reviewer will do the final human-writer pass, so list
+every changed file.
+
+---
+
+## Prompt 5: finish the 11/6 writeup (after Prompt 4)
+
+Finish `paper/writeup/2026-11-06-writeup/` from the plan in its README (phase 1 was done in
+`41c457c` and `356347f`). Fill the Chapter 4 figure placeholders with the figures Prompt 4
+produced, keep every number computed from saved CSVs, and add S-13, S-14, S-15, KL-2 and the
+false-active contribution analysis from `docs/findings/2026-11-0*`. Render HTML and PDF, and
+update `paper/writeup/README.md`. List every changed file and every number with its source for
+the review.
