@@ -266,6 +266,7 @@ window.Quarto = {
   <li><a href="#programs-near-the-detection-threshold-simulation" id="toc-programs-near-the-detection-threshold-simulation" class="nav-link" data-scroll-target="#programs-near-the-detection-threshold-simulation"><span class="header-section-number">14.4.6</span> Programs near the detection threshold (simulation)</a></li>
   <li><a href="#how-much-the-false-active-programs-contribute" id="toc-how-much-the-false-active-programs-contribute" class="nav-link" data-scroll-target="#how-much-the-false-active-programs-contribute"><span class="header-section-number">14.4.7</span> How much the false-active programs contribute</a></li>
   <li><a href="#real-data-refit-with-the-survival-weight-chosen-by-cross-validation" id="toc-real-data-refit-with-the-survival-weight-chosen-by-cross-validation" class="nav-link" data-scroll-target="#real-data-refit-with-the-survival-weight-chosen-by-cross-validation"><span class="header-section-number">14.4.8</span> Real-data refit with the survival weight chosen by cross-validation</a></li>
+  <li><a href="#real-data-comparators-and-desurv-style-analyses" id="toc-real-data-comparators-and-desurv-style-analyses" class="nav-link" data-scroll-target="#real-data-comparators-and-desurv-style-analyses"><span class="header-section-number">14.4.9</span> Real-data comparators and DeSurv-style analyses</a></li>
   </ul></li>
   <li><a href="#open-items-and-questions" id="toc-open-items-and-questions" class="nav-link" data-scroll-target="#open-items-and-questions"><span class="header-section-number">14.5</span> Open items and questions</a></li>
   </ul>
@@ -302,6 +303,7 @@ window.Quarto = {
 <li><strong>The survival weight can be chosen from the data.</strong> Five-fold cross-validated partial log-likelihood picks a weight between 1 and 10 that rises with signal strength. It never picks a weight at which the fit stops converging.</li>
 <li><strong>On the real data the survival weight does not matter between 1 and 50.</strong> Cross-validation picks <code>w_S = 1</code>, so the real-data model is unchanged. Even at 50, survival supplies less than 10⁻⁴ of the loading precision.</li>
 <li><strong>False-active programs do not affect prediction.</strong> Where the planted program is recovered, the other active programs carry at most 1.3% of the risk-score variance.</li>
+<li><strong>No difference was detected between the supervised fit and DeSurv or elastic-net Cox on the external cohorts.</strong> All comparators were trained on the same 273 patients. The paired differences in C against both are small, and their donor-bootstrap intervals include zero. A proposed classification rule names programs 2 and 3, but its simulation support is incomplete.</li>
 <li><strong>Two measurement errors were found and corrected.</strong> The calibration slopes in the simulations, and the two-step comparison fits, had used the default tie handling of the Cox fit. That merges the extreme simulated survival times. Every number below uses exact times.</li>
 </ul>
 </section>
@@ -1515,16 +1517,207 @@ window.Quarto = {
 </div>
 <p>The three active programs have standardized coefficients of 0.41, 0.22 and 0.23. All three have at least half the effect of the largest program and carry at least 20% of the risk-score variance. The inactive program 4 (standardized coefficient 0.15) is the borderline case for the proposed rule.</p>
 </section>
+<section id="real-data-comparators-and-desurv-style-analyses" class="level3" data-number="14.4.9">
+<h3 data-number="14.4.9" class="anchored" data-anchor-id="real-data-comparators-and-desurv-style-analyses"><span class="header-section-number">14.4.9</span> Real-data comparators and DeSurv-style analyses</h3>
+<p>Both analyses were registered before they were run (<a href="../../plans/2026-11-06-real-data-comparators-plan.md">comparators plan</a>, <a href="../../plans/2026-11-06-desurv-style-analyses-plan.md">DeSurv-style plan</a>). Every comparator was trained on the 273 TCGA and CPTAC patients only, and each score’s direction was fixed on training data. The fixed S-11 supervised fit and its two-step counterpart were not refitted. Details are in the <a href="../../findings/2026-11-06-real-data-comparators-findings.md">comparator findings</a> and the <a href="../../findings/2026-11-06-desurv-style-analyses-findings.md">DeSurv-style findings</a>.</p>
+<p><strong>Comparators.</strong> DeSurv used the authors’ code, preprocessing and published settings (rank 3, chosen by the authors on the same two training cohorts), with 100 starts. The registration had named a new training-only search, so this is a deviation. The elastic-net Cox model on the D4 genes chose α = 0 (ridge) by training CV on the S-11 folds. The α = 0.75 and lasso paths hit glmnet’s iteration limit at small λ, which may have favoured the ridge choice. PurIST entered as its training-fitted Cox score. No clinical model was fitted, because no stage, grade, age or margin field is recorded in all seven cohorts.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 15%">
+<col style="width: 35%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Model</th>
+<th style="text-align: left;">Mean C (5 cohorts)</th>
+<th style="text-align: left;">Pooled HR per SD (95% donor-clustered CI)</th>
+<th style="text-align: left;">Supervised minus model (95% donor CI)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Supervised (w_S = 1)</td>
+<td style="text-align: left;">0.620</td>
+<td style="text-align: left;">1.37 (1.22 to 1.53)</td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Two-step</td>
+<td style="text-align: left;">0.613</td>
+<td style="text-align: left;">1.35 (1.21 to 1.51)</td>
+<td style="text-align: left;">0.007 (-0.003 to 0.017)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">PurIST</td>
+<td style="text-align: left;">0.599</td>
+<td style="text-align: left;">1.25 (1.13 to 1.38)</td>
+<td style="text-align: left;">0.021 (-0.013 to 0.057)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Elastic-net Cox (D4)</td>
+<td style="text-align: left;">0.619</td>
+<td style="text-align: left;">1.34 (1.20 to 1.49)</td>
+<td style="text-align: left;">0.001 (-0.015 to 0.018)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">DeSurv</td>
+<td style="text-align: left;">0.614</td>
+<td style="text-align: left;">1.43 (1.25 to 1.64)</td>
+<td style="text-align: left;">0.007 (-0.017 to 0.030)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The supervised fit’s concordance is within noise of DeSurv and of the elastic-net Cox model. Every paired interval includes zero. The comparison is on 616 external records from 568 donors, resampled by donor. It shows no loss against these models and no established gain.</p>
+<p><strong>Risk groups.</strong> One cutpoint per score was chosen on the out-of-fold training scores (maximally selected log-rank, at least 20% per group) and applied unchanged to every external cohort. The cutpoints were -0.046 (supervised) and 0.526 (two-step) training SDs. The pooled high-versus-low HRs were 1.52 and 1.69 (cohort-stratified, with donor-clustered intervals in the findings). The two HRs are not comparable. The supervised cutpoint puts 297 of 616 external records in the high-risk group, and the two-step cutpoint puts 144. A smaller, more extreme high-risk group gives a larger HR even when two scores rank patients equally well, as the continuous HRs above show. In every cohort the high-risk group held more Basal-like (PurIST) and more permCAF (DeCAF) tumours. The supervised score kept a pooled HR of 1.48 per training SD after adjusting for PurIST subtype and 1.40 after adjusting for DeCAF.</p>
+<p><strong>Larger unsupervised ranks.</strong> EBMF with Cox regression on its program scores gave supervised-minus-EBMF differences of 0.007, 0.045, 0.040 at ranks 7, 15 and 40. The rank-7 interval includes zero. At ranks 15 and 40 the unpenalized Cox step overfits (external calibration slopes 0.10 to 0.49), so those differences describe that pipeline rather than the information in a larger factorization.</p>
+<p><strong>Program classification rule.</strong> A main prognostic program needs a standardized coefficient at least 0.25 of the largest, at least 5% of the (signed) risk-score variance and activity in at least four of the five S-11 folds.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 13%">
+<col style="width: 17%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 4%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">Program</th>
+<th style="text-align: left;">Active</th>
+<th style="text-align: left;">Ratio to largest</th>
+<th style="text-align: left;">Signed variance share</th>
+<th style="text-align: right;">Active folds</th>
+<th style="text-align: left;">Main program</th>
+<th style="text-align: left;">PVE</th>
+<th style="text-align: left;">Survival precision share (upper bound)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">1.00</td>
+<td style="text-align: left;">0.632</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">0.106</td>
+<td style="text-align: left;">7.9e-07</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">0.54</td>
+<td style="text-align: left;">0.179</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">0.065</td>
+<td style="text-align: left;">6.3e-07</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">0.38</td>
+<td style="text-align: left;">-0.010</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">0.051</td>
+<td style="text-align: left;">5.4e-07</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">0.57</td>
+<td style="text-align: left;">0.202</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">0.038</td>
+<td style="text-align: left;">2.1e-06</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">0.12</td>
+<td style="text-align: left;">-0.003</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: left;">0.027</td>
+<td style="text-align: left;">3.4e-07</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Programs 2 and 3 meet the rule. Program 5 meets the coefficient and variance thresholds but is active in only three folds. No program is survival-dominated: the upper bound on survival’s share of the loading precision is below 10⁻⁵ for every program. The old label (active with PVE below 1%) also marks none. In the saved simulation fits the coefficient-and-share part of the rule kept the planted program in all 80 S-13 fits and rejected 35 of 36 false-active directions. In the S-14 two-step fits it rejected only 61 of 128 false-active directions, and the supervised S-14 fits could not be checked. The fold-stability part could not be checked in any simulation.</p>
+<p><strong>Mixed-signal simulation.</strong> One strong and one near-threshold prognostic program were planted together at 2,000 genes (10 datasets per arm).</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 28%">
+<col style="width: 24%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Arm</th>
+<th style="text-align: left;">Near-threshold recovered</th>
+<th style="text-align: left;">Top-50 gene precision</th>
+<th style="text-align: left;">Validation C</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Two-step</td>
+<td style="text-align: left;">9/10</td>
+<td style="text-align: left;">0.826</td>
+<td style="text-align: left;">0.731</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Supervised, w_S = 1</td>
+<td style="text-align: left;">9/10</td>
+<td style="text-align: left;">0.858</td>
+<td style="text-align: left;">0.735</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Supervised, joint β, w_S = 1</td>
+<td style="text-align: left;">9/10</td>
+<td style="text-align: left;">0.860</td>
+<td style="text-align: left;">0.734</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Supervised, w_S = 5</td>
+<td style="text-align: left;">2/10</td>
+<td style="text-align: left;">0.346</td>
+<td style="text-align: left;">0.667</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>All arms recovered the strong program in every dataset. At <code>w_S = 1</code> the supervised and two-step fits recovered the near-threshold program equally often. A fixed <code>w_S = 5</code> lost it in most datasets and had lower validation C, This compares two fixed weights and does not test the cross-validated choice.</p>
+</section>
 </section>
 <section id="open-items-and-questions" class="level2" data-number="14.5">
 <h2 data-number="14.5" class="anchored" data-anchor-id="open-items-and-questions"><span class="header-section-number">14.5</span> Open items and questions</h2>
 <ul>
 <li><strong>Stronger supervision on real data.</strong> Moving the real-data loadings needs weights near 10⁴. That first needs the fit to stay stable at large weights, the problem S-9 found and did not solve.</li>
-<li><strong>Classifying programs for the biology.</strong> The proposed rule (standardized coefficient ratio, risk-variance share, stability across folds) needs its fold-stability part computed and a check on the simulations.</li>
+<li><strong>Classifying programs for the biology.</strong> The rule names programs 2 and 3 on real data. Its fold-stability part has not been checked in simulation, because the saved simulation fits have no fold-level program identities.</li>
+<li><strong>Unequal risk groups.</strong> The registered cutpoints give high-risk groups of different sizes, so group HRs cannot rank the two scores. Continuous HRs and paired C are the comparison.</li>
 <li><strong>Pruning.</strong> With the empty-program KL fixed, pruning removes the planted program in nearly every dataset. The working fit stays at K = 7 without pruning. Whether a different deletion rule can work is a separate question.</li>
-<li><strong>Issue #6.</strong> Still open: comparators (item 7), the writeup and prelim text for items 2, 4 and 5, storing the fits (item 8), and the Linux check (item 3).</li>
+<li><strong>Issue #6.</strong> The comparators (item 7) and the writeup and prelim text (items 2, 4 and 5) are done. Still open: storing the fits (item 8) and the Linux check (item 3). A clinical-covariate model was not possible under the registered rule.</li>
 <li><strong>Matched LB and YFB study.</strong> It now has the nonnegative input it needs, with projection-only centering (including within strata).</li>
-<li><strong>Writing.</strong> The prelim Chapter 4 revision and the 11/6 writeup are in progress.</li>
+<li><strong>Writing.</strong> The prelim Chapter 4 revision and the 11/6 writeup are complete and include these comparisons.</li>
 </ul>
 
 
