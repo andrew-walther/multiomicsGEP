@@ -98,7 +98,8 @@ fit_ssbmf_lb_multistart <- function(Y, time, status,
     el     <- f$EL
     eta    <- el %*% ebeta
     c_train <- tryCatch(
-      as.numeric(survival::concordance(survival::Surv(time, status) ~ eta)$concordance),
+      as.numeric(survival::concordance(survival::Surv(time, status) ~ eta,
+                                        reverse = TRUE)$concordance),  # Cox direction
       error = function(e) NA_real_
     )
     data.frame(
@@ -211,7 +212,8 @@ fit_ssbmf_yfb_multistart <- function(Y, time, status,
     ZF     <- Y %*% sweep(f$EF, 2, f$EF_norms, "/")
     eta    <- as.vector(ZF %*% ebeta)
     c_train <- tryCatch(
-      as.numeric(survival::concordance(survival::Surv(time, status) ~ eta)$concordance),
+      as.numeric(survival::concordance(survival::Surv(time, status) ~ eta,
+                                        reverse = TRUE)$concordance),  # Cox direction
       error = function(e) NA_real_
     )
     data.frame(

@@ -3,6 +3,25 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-06 — LB sign check uses the Cox direction and keeps Var(β)
+
+**Decided.** `fit_ssbmf_lb()`'s post-convergence sign check (`sign_correction = TRUE`, the
+default) now computes training concordance with `reverse = TRUE`, as `fit_ssbmf_yfb()` has done
+since 2026-09-04. Without it, `survival::concordance()` treats a larger risk score as longer
+survival, so the check flipped every correctly oriented fit (8 of 8 in the LB review simulation).
+A flip now negates `EBeta` only. The old code also set `EBeta2 <- EBeta^2`, which discarded the
+posterior variance even though E[(−β)²] = E[β²].
+
+**Downstream.** `run_LB_benchmark.R` and the `train_cindex` diagnostic in
+`fit_ssbmf_multistart.R` computed C without `reverse = TRUE`, which cancelled the inversion for
+LB. Both now use it, so their reported C-indices are unchanged. The YFB multistart diagnostic had
+the same omission against an already-corrected fitter and reported 1 − C. It is fixed in the same
+line. CV runners (`sign_correction = FALSE`, `I(-risk)`) and runners that report max(C, 1 − C)
+are unaffected. LB risk scores and `EBeta` saved by earlier default runs have the opposite sign
+and should be negated before use; the frozen benchmark snapshot is not modified.
+
+Test: `tests/test_lb_sign_correction.R` (fails on the old check, passes on the new one).
+
 ## 2026-11-05 — No S-13 or S-14 configuration is adopted; CV-chosen weight is the candidate
 
 **Decided (pending Andrew's review).** Neither the survival-block weight (A1) nor the joint q(β)

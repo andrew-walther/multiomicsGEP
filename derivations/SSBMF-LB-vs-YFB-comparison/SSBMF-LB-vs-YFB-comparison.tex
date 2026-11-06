@@ -79,7 +79,8 @@ Cox model. They differ in the linear predictor:
         the frozen training priors. It worked in a small simulation, but it
         cannot reproduce the survival contribution to the training scores.
   \item \textbf{LB code.} The LB fitter runs and its test suite passes, but its
-        default sign check inverts correctly oriented fits (Section~\ref{sec:lbcode}).
+        default sign check inverted correctly oriented fits. This was fixed on
+        2026-11-06 (Section~\ref{sec:lbcode}).
 \end{enumerate}
 
 % =============================================================================
@@ -356,7 +357,7 @@ March derivation. The update formulas, the update order and the once-per-iterati
 Taylor expansion agree. The full test suite passed (761 of 761), as did the LB
 subset (228 of 228). In simulation all 40 fits converged in 6--88 iterations.
 
-\begin{issuebox}[Sign check inverts correctly oriented fits]
+\begin{issuebox}[Sign check inverted correctly oriented fits (fixed 2026-11-06)]
 After convergence, \texttt{fit\_ssbmf\_lb()} flips $\bar{\bm\beta}$ when the training
 concordance is below 0.5 (\texttt{sign\_correction = TRUE}, the default). It calls
 \texttt{concordance(Surv(time, status) \textasciitilde{} eta\_train)} without
@@ -367,9 +368,13 @@ C 0.21--0.38, against 0.62--0.79 without the flip). The YFB fitter was corrected
 for this on 2026-09-04, but LB was not. The flip also sets
 \texttt{EBeta2 <- EBeta\^{}2}, which discards the posterior variance, although a
 sign change leaves the second moment unchanged. A global flip of $\bm\beta$ alone is
-not a symmetry of the model in any case. The fix is to remove the flip, or at
-least to add \texttt{reverse = TRUE} and keep \texttt{EBeta2}. Runners that orient
-LB scores downstream need checking at the same time.
+not a symmetry of the model in any case. The check now uses
+\texttt{reverse = TRUE} and keeps \texttt{EBeta2}
+(\texttt{tests/test\_lb\_sign\_correction.R}). The LB benchmark runner and the
+multistart diagnostic had computed C without \texttt{reverse = TRUE}, which cancelled
+the inversion; both were corrected with it, so their reported C-indices are
+unchanged. Saved LB risk scores and \texttt{EBeta} from earlier runs with the
+default have the opposite sign.
 \end{issuebox}
 
 \begin{center}
@@ -396,7 +401,7 @@ Collapsed programs & -- & all 40 fits had at least one program with $\bar L$ and
  & LB & YFB \\
 \midrule
 Strengths & Outcome kept out of the expression model; each score has its own survival information; the March derivation is checked & Exact risk scores by projection; no train/test gap; same structure as DeSurv; supervision acts on the gene programs that are reported \\
-Weaknesses & New patients need fold-in; train/test gap grows with supervision strength; sign bug; collapsed programs & $Y$ used as outcome and covariate; survival weight falls as $1/p^2$; no convergence at large weights \\
+Weaknesses & New patients need fold-in; train/test gap grows with supervision strength; collapsed programs & $Y$ used as outcome and covariate; survival weight falls as $1/p^2$; no convergence at large weights \\
 Current status & runs; supervision weak; no gain over two-step in simulation & supervision effective near the detection threshold (S-14); weight choice by CV is the open step \\
 \bottomrule
 \end{tabularx}
@@ -407,7 +412,7 @@ Current status & runs; supervision weak; no gain over two-step in simulation & s
   \item Keep YFB as the primary model. Its exact projection scoring matches the
         goal of external prediction, and its open problem, how much weight to
         give survival, has a data-driven answer under test (CV-chosen $\ws$).
-  \item Keep LB as an alternative parameterization. Fix the sign check, store
+  \item Keep LB as an alternative parameterization. With the sign check fixed, store
         $\hat g_{l_k}$ and add fold-in prediction. Then both models can be run on
         the same simulations and compared under matched weights.
   \item Report supervision strength with the measured precision share $\rho$ for

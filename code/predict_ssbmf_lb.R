@@ -48,7 +48,7 @@
 #' # After training:
 #' # res <- fit_ssbmf_lb(Y_train, time_train, status_train, K=5)
 #' # pred <- predict_ssbmf_lb(Y_test, res$EF, res$EBeta)
-#' # cindex <- concordance(Surv(time_test, status_test) ~ pred$risk_scores)
+#' # cindex <- concordance(Surv(time_test, status_test) ~ pred$risk_scores, reverse = TRUE)
 predict_ssbmf_lb <- function(Y_test, EF, EBeta, lambda = 1e-8) {
 
   # --- Input validation ---

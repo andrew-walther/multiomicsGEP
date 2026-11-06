@@ -115,7 +115,7 @@ if (RUN_SYNTHETIC) {
       normalize_AB = NORM_AB, verbose = FALSE
     )
     pred     <- predict_ssbmf_lb(Y_te, fit$EF, fit$EBeta)
-    c_idx    <- as.numeric(concordance(Surv(t_te, s_te) ~ pred$risk_scores)$concordance)
+    c_idx    <- as.numeric(concordance(Surv(t_te, s_te) ~ pred$risk_scores, reverse = TRUE)$concordance)
     k_eff    <- sum(abs(fit$EBeta) > BETA_THRESH)
     beta_rng <- range(fit$EBeta)
     cat(sprintf("      C-index=%.4f | K_eff=%d | EBeta range [%.3e, %.3e]\n",
@@ -312,7 +312,7 @@ if (!pdac_available || length(fit_lb) == 0) {
         EF_sub  <- fit_obj$EF[tr_idx, , drop = FALSE]
 
         pred  <- predict_ssbmf_lb(Y_ext, EF_sub, fit_obj$EBeta)
-        c_idx <- as.numeric(concordance(Surv(raw$time, raw$status) ~ pred$risk_scores)$concordance)
+        c_idx <- as.numeric(concordance(Surv(raw$time, raw$status) ~ pred$risk_scores, reverse = TRUE)$concordance)
         cat(sprintf("    %s (n=%d, genes=%d): C-index=%.4f\n",
                     cohort, raw$n, length(common), c_idx))
         riskscores_rows[[length(riskscores_rows) + 1]] <- data.frame(

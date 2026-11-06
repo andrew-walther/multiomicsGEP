@@ -125,7 +125,8 @@ run_test("YFB-MS-T8: train_cindex matches Y-EF-beta predictor, not EL-beta", {
   ZF  <- Y %*% sweep(f$EF, 2, f$EF_norms, "/")
   eta_correct <- as.vector(ZF %*% f$EBeta)
   eta_wrong   <- as.vector(f$EL %*% f$EBeta)
-  c_correct <- as.numeric(concordance(Surv(tv, sv) ~ eta_correct)$concordance)
+  # Cox direction (reverse = TRUE), matching the diagnostic since 2026-11-06
+  c_correct <- as.numeric(concordance(Surv(tv, sv) ~ eta_correct, reverse = TRUE)$concordance)
   reported  <- ms$restarts$train_cindex[1]
   assert_near(reported, round(c_correct, 4), tol = 1e-4,
               "reported train_cindex should match the ZF-based (not EL-based) predictor")

@@ -828,17 +828,23 @@ fit_ssbmf_lb <- function(Y, time, status,
   # sign_correction = FALSE during cross-validation (select_alpha_cv), because
   # per-fold sign flips would introduce fold-to-fold inconsistency and corrupt
   # alpha selection. CV already handles sign via I(-pred$risk_scores).
+  #
+  # Fixed 2026-11-06 (DECISIONS.md same date), matching the 2026-09-04 YFB fix:
+  #   (1) reverse = TRUE. concordance(Surv ~ x) treats larger x as LONGER
+  #       survival; eta is a Cox risk score (larger eta = shorter survival).
+  #       Without it the check flipped correctly oriented fits.
+  #   (2) EBeta2 is kept. E[(-beta)^2] = E[beta^2], so a flip changes only the
+  #       mean; the old EBeta2 <- EBeta^2 discarded Var(beta).
   if (sign_correction) {
     eta_train <- as.vector(EL %*% EBeta)
     c_train   <- as.numeric(
-      concordance(Surv(time, status) ~ eta_train)$concordance
+      concordance(Surv(time, status) ~ eta_train, reverse = TRUE)$concordance
     )
     if (c_train < 0.5) {
       if (verbose) {
         cat(sprintf("    [Phase C] Training C=%.4f < 0.5 — flipping EBeta sign\n", c_train))
       }
-      EBeta  <- -EBeta
-      EBeta2 <- EBeta^2
+      EBeta <- -EBeta   # EBeta2 unchanged: the second moment is sign-invariant
     }
   }
 
