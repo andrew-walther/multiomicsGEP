@@ -2847,3 +2847,9 @@ At noise 0.25 and 1, unpruned recovery was 17/20 and 19/20. Each pruning arm
 recovered 2/20 at both noise levels, with median retained K = 2 and 1.
 Each arm hit one intermediate refit cap at noise 1, but all returned fits
 converged. See the [findings](../findings/2026-11-06-flat-beta-pruning-rerun-findings.md).
+
+## 2026-11-06 — Prompt 6 real-data comparators
+
+[Registration](2026-11-06-real-data-comparators-plan.md). Freeze the S-11
+references and fit comparators on TCGA and CPTAC. Evaluate paired differences
+on common external rows with S-12 donor resampling. No external selection.
