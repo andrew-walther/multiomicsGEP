@@ -1338,3 +1338,11 @@ versus reference300 cap, yet max relative output movement is.01915 versus
 checks pass. Planted recovery/false-active count are unchanged; no gain or
 configuration adopted. Stop before expansion and review stopping/objective
 consistency; detailed result is in fixed_q_seed26/VALIDITY.md and the attempt log.
+
+### Fixed S-11 comparator and program analyses
+
+The [real-data comparators](docs/findings/2026-11-06-real-data-comparators-findings.md)
+and [risk-group and program analyses](docs/findings/2026-11-06-desurv-style-analyses-findings.md)
+are available for independent review on `fix/yfb-supervision`. The
+registered recovery, false-activity and convergence criteria still govern
+adoption of survival supervision.

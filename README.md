@@ -356,3 +356,21 @@ uses the pinned DeSurv library and saves local fit checkpoints. The second
 compares frozen S-11 reference scores with the training-only comparators and
 writes aggregate cohort estimates and paired donor-bootstrap intervals.
 See the [findings and source table](docs/findings/2026-11-06-real-data-comparators-findings.md).
+
+### Fixed S-11 risk groups and program analyses
+
+With the same local data and checkpoints, run these commands from the
+repository root:
+
+```sh
+Rscript results/benchmark_sim/run_prompt7_real.R
+Rscript results/benchmark_sim/run_prompt7_ebmf.R
+Rscript results/benchmark_sim/run_prompt7_simulation.R
+Rscript results/benchmark_sim/run_prompt7_simulation.R mixed
+```
+
+The real-data commands produce training-defined risk groups, external
+hazard-ratio and enrichment tables, KM and forest plots, and comparisons
+with unsupervised EBMF ranks. The simulation commands audit saved fits and
+run the mixed-signal comparison. See the
+[findings and source table](docs/findings/2026-11-06-desurv-style-analyses-findings.md).
