@@ -294,15 +294,10 @@ window.Quarto = {
 </header>
 
 
-<p>Updated November 3, 2026. The project aims to learn molecular loadings that respond reliably to survival while preserving interpretable molecular programs.</p>
+<p>Updated November 6, 2026. The project aims to learn molecular loadings that respond reliably to survival while preserving interpretable molecular programs.</p>
 <section id="research-status" class="level2">
 <h2 class="anchored" data-anchor-id="research-status">Research status</h2>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Stage</th>
@@ -317,31 +312,36 @@ window.Quarto = {
 <td>Historical external prediction benchmark and dated findings</td>
 </tr>
 <tr class="even">
-<td>In progress</td>
-<td>Resolve survival supervision</td>
-<td>Derive and register S-9, then assess recovery, false activity and convergence</td>
+<td>Done</td>
+<td>Supervision strength and weight choice (S-9 to S-15)</td>
+<td>CV chooses <code>w_S</code>. Supervision helps near the detection threshold, and the real-data weight stays at 1. See the <a href="./chapters/2026-11-06.html">November 6 chapter</a></td>
 </tr>
 <tr class="odd">
-<td>Next</td>
-<td>Independent supervision review</td>
-<td>Review the registered results before merging the experimental fitter</td>
+<td>In progress</td>
+<td>Stronger supervision on real data</td>
+<td>Keep the fit stable at weights near 10⁴, where survival would move the real-data loadings</td>
 </tr>
 <tr class="even">
+<td>Next</td>
+<td>Registered LB vs YFB study and real-data comparators</td>
+<td>Nonnegative input with projection-only centering. PurIST, DeSurv, elastic-net and clinical comparators (issue #6 item 7)</td>
+</tr>
+<tr class="odd">
 <td>Conditional</td>
 <td>LB with fold-in prediction</td>
 <td>Investigate if the YFB route stalls</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Conditional</td>
 <td>Unified multimodal model</td>
 <td>Use insights from modality-specific priors or shared factors if they solve supervision at M = 1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Conditional</td>
 <td>R package</td>
 <td>Start after the simulation gate and PDAC training cross-validation pass</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>In progress</td>
 <td>Prelim Part III talk</td>
 <td>Draft deck in <code>presentation/prelim-slides/</code> (2026-11-03). Content freezes 2026-11-30, exam 2026-12-07</td>
@@ -479,17 +479,17 @@ Inspect the fixed diagnostic replays
 </section>
 <section id="completed-results" class="level2">
 <h2 class="anchored" data-anchor-id="completed-results">Completed Results</h2>
-<progress value="9" max="23" aria-label="Evidence items completed">
-9 of 23
+<progress value="10" max="23" aria-label="Evidence items completed">
+10 of 23
 </progress>
-<p><strong>9 of 23 evidence items documented.</strong> Each line of this checklist counts once. Checked historical or diagnostic items have a saved result, even when it was negative. Open items describe evidence still needed for the survival-supervised method. Publication readiness depends on the supervision gate and the final evidence, not on this count.</p>
+<p><strong>10 of 23 evidence items documented.</strong> Each line of this checklist counts once. Checked historical or diagnostic items have a saved result, even when it was negative. Open items describe evidence still needed for the survival-supervised method. Publication readiness depends on the supervision gate and the final evidence, not on this count.</p>
 <p><strong>Re-verification required.</strong> Many checked results use the historical <span class="math inline">\(\alpha_F=0\)</span> fit, which turns off survival feedback into the molecular loadings. Once a supervised fit passes the registered gate, re-verify the completed results against that fit before carrying them forward as evidence for the final method.</p>
 <section id="methodology" class="level3">
 <h3 class="anchored" data-anchor-id="methodology">Methodology</h3>
 <ul class="task-list">
 <li><label><input type="checkbox" checked="">Document LB and YFB predictors, model updates, and the historical benchmark.</label></li>
 <li><label><input type="checkbox" checked="">Audit precision balance, posterior variance, and numerical failure modes with registered mechanism tests. See the <a href="./chapters/2026-10-30.html">October 30 findings</a>.</label></li>
-<li><label><input type="checkbox">Register and pass a loading-supervision test with recovery, false-active, and convergence criteria. S-9 is the next experiment.</label></li>
+<li><label><input type="checkbox" checked="">Register loading-supervision tests with recovery, false-active, and convergence criteria (S-9, S-13, S-14). No arm passed every criterion. Supervision matches the two-step fit on easy programs and beats it near the detection threshold. See the <a href="./chapters/2026-11-06.html">November 6 chapter</a>.</label></li>
 <li><label><input type="checkbox">Establish a reproducible final fitting specification with preprocessing, rank and weight selection inside training, failure handling, and independent review.</label></li>
 </ul>
 </section>
@@ -499,7 +499,7 @@ Inspect the fixed diagnostic replays
 <li><label><input type="checkbox" checked="">Complete the corrected shared-loading grid and report recovery, false activity, and nonconvergence. The gate failed.</label></li>
 <li><label><input type="checkbox" checked="">Complete matched mechanism diagnostics with fixed and adaptive noise and explicit stall reporting. See the <a href="./chapters/2026-10-30.html">October 30 evidence</a>.</label></li>
 <li><label><input type="checkbox">Show final-method recovery and held-out discrimination under strong, weak, and mixed prognostic signals against matched unsupervised and survival baselines. Include rank recovery and replicate uncertainty.</label></li>
-<li><label><input type="checkbox">Verify null false activity, convergence across seeds, and stability across restarts. Use a null design with zero survival signal.</label></li>
+<li><label><input type="checkbox">Verify null false activity, convergence across seeds, and stability across restarts. Use a null design with zero survival signal. Partly done: S-11 and S-13 permuted-survival nulls (0.2 to 1.1 false actives per dataset).</label></li>
 </ul>
 </section>
 <section id="real-data-application" class="level3">

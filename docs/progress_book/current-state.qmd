@@ -1,6 +1,6 @@
 # Current project state {.unnumbered}
 
-Updated November 3, 2026. The project aims to learn molecular loadings that
+Updated November 6, 2026. The project aims to learn molecular loadings that
 respond reliably to survival while preserving interpretable molecular programs.
 
 ## Research status
@@ -8,8 +8,9 @@ respond reliably to survival while preserving interpretable molecular programs.
 | Stage | Work | Evidence or next checkpoint |
 |---|---|---|
 | Done | Historical benchmark, expression sensitivity, Round2 diagnostics | Historical external prediction benchmark and dated findings |
-| In progress | Resolve survival supervision | Derive and register S-9, then assess recovery, false activity and convergence |
-| Next | Independent supervision review | Review the registered results before merging the experimental fitter |
+| Done | Supervision strength and weight choice (S-9 to S-15) | CV chooses `w_S`. Supervision helps near the detection threshold, and the real-data weight stays at 1. See the [November 6 chapter](chapters/2026-11-06.qmd) |
+| In progress | Stronger supervision on real data | Keep the fit stable at weights near 10⁴, where survival would move the real-data loadings |
+| Next | Registered LB vs YFB study and real-data comparators | Nonnegative input with projection-only centering. PurIST, DeSurv, elastic-net and clinical comparators (issue #6 item 7) |
 | Conditional | LB with fold-in prediction | Investigate if the YFB route stalls |
 | Conditional | Unified multimodal model | Use insights from modality-specific priors or shared factors if they solve supervision at M = 1 |
 | Conditional | R package | Start after the simulation gate and PDAC training cross-validation pass |
@@ -197,9 +198,9 @@ Read the October 30 chapter for the normalization and the replay conditions.
 
 ## Completed Results
 
-<progress value="9" max="23" aria-label="Evidence items completed">9 of 23</progress>
+<progress value="10" max="23" aria-label="Evidence items completed">10 of 23</progress>
 
-**9 of 23 evidence items documented.** Each line of this checklist counts once.
+**10 of 23 evidence items documented.** Each line of this checklist counts once.
 Checked historical or diagnostic items have a saved result, even when it was
 negative. Open items describe evidence still needed for the survival-supervised
 method. Publication readiness depends on the supervision gate and the final
@@ -215,7 +216,7 @@ for the final method.
 
 - [x] Document LB and YFB predictors, model updates, and the historical benchmark.
 - [x] Audit precision balance, posterior variance, and numerical failure modes with registered mechanism tests. See the [October 30 findings](chapters/2026-10-30.qmd).
-- [ ] Register and pass a loading-supervision test with recovery, false-active, and convergence criteria. S-9 is the next experiment.
+- [x] Register loading-supervision tests with recovery, false-active, and convergence criteria (S-9, S-13, S-14). No arm passed every criterion. Supervision matches the two-step fit on easy programs and beats it near the detection threshold. See the [November 6 chapter](chapters/2026-11-06.qmd).
 - [ ] Establish a reproducible final fitting specification with preprocessing, rank and weight selection inside training, failure handling, and independent review.
 
 ### Simulation
@@ -223,7 +224,7 @@ for the final method.
 - [x] Complete the corrected shared-loading grid and report recovery, false activity, and nonconvergence. The gate failed.
 - [x] Complete matched mechanism diagnostics with fixed and adaptive noise and explicit stall reporting. See the [October 30 evidence](chapters/2026-10-30.qmd).
 - [ ] Show final-method recovery and held-out discrimination under strong, weak, and mixed prognostic signals against matched unsupervised and survival baselines. Include rank recovery and replicate uncertainty.
-- [ ] Verify null false activity, convergence across seeds, and stability across restarts. Use a null design with zero survival signal.
+- [ ] Verify null false activity, convergence across seeds, and stability across restarts. Use a null design with zero survival signal. Partly done: S-11 and S-13 permuted-survival nulls (0.2 to 1.1 false actives per dataset).
 
 ### Real-data application
 

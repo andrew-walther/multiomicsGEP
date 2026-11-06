@@ -2,7 +2,7 @@
 title: "multiomicsGEP — Project Status"
 subtitle: "Supervised Bayesian Matrix Factorization for Joint Genomics + Survival Modelling"
 author: "Andrew Walther"
-date: "November 2, 2026"
+date: "November 6, 2026"
 format:
   pdf:
     toc: true
@@ -21,12 +21,36 @@ execute:
 
 ## Current priorities
 
-Reliable survival supervision of the molecular loadings is the top priority.
-Start with the S-9 YFB test and its registered recovery, false-active and
-convergence criteria. Investigate LB with fold-in prediction if YFB stalls.
-Multimodal development is deferred except when a unified fitter run with
-M = 1 offers a concrete route to resolving supervision. The single-modality
-R package can start once the model meets its acceptance criteria.
+The working single-modality model is `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)` on the
+2,218 D4 genes, at K = 7 without pruning. S-13 to S-15 (below) show that the survival weight
+can be chosen by cross-validation and that supervision helps near the detection threshold.
+On real data, CV keeps `w_S = 1`, and survival does not move the loadings in the tested range.
+The open methods problem is stability at weights large enough to move real-data loadings
+(about 10⁴). After that come the registered LB vs YFB study on the nonnegative input and the
+real-data comparators of GitHub issue #6 item 7. Multimodal development stays deferred.
+
+## Supervision strength, near-threshold recovery and the real-data weight (2026-11-05 to 11-06)
+
+- **S-13.** Choosing `w_S` by five-fold CV partial log-likelihood, under the survival-block
+  weight, picks 1 to 10, rising with signal strength. It never picks a weight at which the
+  fits stop converging. On the S-9 test bed supervision matches the two-step fit, and no arm
+  passed every registered criterion
+  ([findings](docs/findings/2026-11-05-supervision-strength-findings.md)).
+- **S-14.** Near the detection threshold (a planted share of 0.05%, strong survival), the
+  supervised fit raises validation C by 0.156 and recovers the program in 5 of 10 datasets,
+  against none for the two-step fit. Under realistic survival strength the gain is small
+  ([findings](docs/findings/2026-11-05-near-threshold-findings.md)).
+- **False-active programs** carry at most 1.3% of the risk-score variance where the program is
+  recovered. They are judged by contribution, not count (Andrew, 2026-11-06).
+- **S-15.** On the training data the CV curve is flat from `w_S` = 1 to 50, so `w_S = 1` stands,
+  with nested C 0.656. Survival's share of the loading precision stays below 10⁻⁴
+  ([findings](docs/findings/2026-11-06-supervised-real-refit-findings.md)).
+- **KL-1 and KL-2.** With the KL fixes in place, pruning still removes the planted program
+  (2 of 20 recovered), so the working fit is unpruned
+  ([findings](docs/findings/2026-11-06-flat-beta-pruning-rerun-findings.md)).
+- **Measurement correction.** Cox fits on the simulated times now use exact times
+  (`timefix = FALSE`). The default had attenuated the S-9 calibration slopes and the S-13 and
+  S-14 two-step comparison fits.
 
 The single-modality fitters were renamed on 2026-11-04: `fit_ssbmf_yfb()` (η = (YF)β, formerly
 `fit_cox_on_yf()`) and `fit_ssbmf_lb()` (η = Lβ, formerly `fit_supervised_mf_modular()`). Dated
