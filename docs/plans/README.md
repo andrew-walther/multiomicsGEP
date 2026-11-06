@@ -68,3 +68,4 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 | 2026-10-22 | [unified-method-rebuild-plan](2026-10-22-unified-method-rebuild-plan.md) | Gated rebuild of the method from a written specification as the `ssbmf` R package | historical reference |
 | 2026-10-26 | [parallel-work-sessions-plan](2026-10-26-parallel-work-sessions-plan.md) | Coordinates work on the current method (session A) with the rebuild (session B); round2 merge and the 10/26 meeting deliverables | superseded by the October 30 realignment |
 | 2026-11-06 | [real-data-comparators-plan](2026-11-06-real-data-comparators-plan.md) | Fixed S-11/S-12 references and four training-only prognostic comparators | registered |
+| 2026-11-06 | [desurv-style-analyses-plan](2026-11-06-desurv-style-analyses-plan.md) | Fixed risk groups, program classification, rank comparisons and mixed-signal simulation | registered |
