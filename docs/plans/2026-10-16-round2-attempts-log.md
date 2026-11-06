@@ -2853,3 +2853,10 @@ converged. See the [findings](../findings/2026-11-06-flat-beta-pruning-rerun-fin
 [Registration](2026-11-06-real-data-comparators-plan.md). Freeze the S-11
 references and fit comparators on TCGA and CPTAC. Evaluate paired differences
 on common external rows with S-12 donor resampling. No external selection.
+
+## 2026-11-06 — Prompt 7 DeSurv-style analyses
+
+[Registration](2026-11-06-desurv-style-analyses-plan.md). Freeze training-CV
+risk cutpoints and the program rule. Evaluate the fixed models and three
+unsupervised ranks, audit saved synthetic fits, and run the mixed-signal
+simulation with exact Cox times. No external selection.
