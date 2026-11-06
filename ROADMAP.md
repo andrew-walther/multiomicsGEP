@@ -218,6 +218,25 @@ The entries below retain dated implementation and evaluation history.
 - [x] **Compare LB and YFB under matched survival weights (2026-11-06).**
   `docs/findings/2026-11-06-lb-yfb-matched-comparison-findings.md`: YFB test C 0.78–0.79
   and stable across weights; LB gains at w = 1 and fails at w = 10 at the weaker signal.
+- [x] **Choose the survival weight from the data and test supervision near the detection
+  threshold (S-13 to S-15, 2026-11-05/06).** CV partial log-likelihood picks `w_S`. Supervision
+  beats the two-step fit near the threshold (S-14), and the real-data weight stays at 1 (S-15).
+  Findings in `docs/findings/2026-11-05-*` and `2026-11-06-supervised-real-refit-findings.md`.
+- [x] **Rerun pruning after the KL fixes (KL-1, KL-2, 2026-11-06).** Pruning still removes the
+  planted program, so the working fit is K = 7 unpruned.
+- [ ] **Keep the fit stable at large survival weights.** Real-data loadings move only at
+  `w_S` near 10⁴ (S-15), and fits above about 40 stop converging (S-9, S-13). This is the main
+  open methods problem.
+- [ ] **Real-data comparators (issue #6 item 7) and DeSurv-style analyses.** PurIST as a
+  prognostic comparator, DeSurv head to head, elastic-net Cox on genes, a clinical-covariate
+  model, a per-program forest plot, HRs adjusted for PurIST and DeCAF, high-risk-group subtype
+  enrichment, risk groups from one training-CV cutpoint, top-gene precision, the unsupervised
+  model at matched and larger rank, and a program classification rule (coefficient ratio,
+  risk-variance share, fold stability).
+- [ ] **Later:** a deletion rule that keeps the planted program, multi-cohort (`strata_id`,
+  per-cohort τ), the Linux check and Longleaf storage of the fits (issue #6 items 3 and 8), and
+  the M-modality extension.
+
 - [ ] **Registered LB vs YFB study.** Turn the exploratory comparison into a registered
   study after the YFB supervision decision: more datasets, signal levels that include
   near-threshold programs (as in S-14), the LB dead-program start fixed or controlled,
@@ -232,9 +251,9 @@ The entries below retain dated implementation and evaluation history.
   point-Laplace priors. Include the
   real PDAC training data and external validation cohorts alongside the simulations.
 
-- [ ] **Prepare the November 6 writeup version.** `paper/writeup/2026-11-06-writeup/`
-  holds only a placeholder README. Decide whether it starts from the October 16 sources or
-  a new outline, and record what changed since the October 16 version.
+- [ ] **Finish the November 6 writeup version.** The preparation phase is done (`41c457c`,
+  numbers computed from saved CSVs). It is being finished together with the prelim Chapter 4
+  revision (`docs/prompts/2026-11-06-codex-handoff-prompts.md`, prompts 4 and 5).
 
 - [ ] **Prepare the final dissertation chapter and journal manuscript.**
   Draft the dissertation chapter in `paper/thesis/` and arrange its transfer to
