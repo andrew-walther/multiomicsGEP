@@ -215,8 +215,9 @@ The entries below retain dated implementation and evaluation history.
   concordance with `reverse = TRUE` and keeps `EBeta2` on a flip.
 - [x] **Add LB fold-in prediction (2026-11-06).** `fit_ssbmf_lb()` stores the fitted
   score priors; `predict_ssbmf_lb_foldin()` scores new patients under them.
-- [ ] **Compare LB and YFB under matched survival weights.** Use fold-in for LB test
-  scores. Lower priority than the YFB supervision decision.
+- [x] **Compare LB and YFB under matched survival weights (2026-11-06).**
+  `docs/findings/2026-11-06-lb-yfb-matched-comparison-findings.md`: YFB test C 0.78–0.79
+  and stable across weights; LB gains at w = 1 and fails at w = 10 at the weaker signal.
 
 - [ ] **Prepare the November 6 writeup version.** `paper/writeup/2026-11-06-writeup/`
   holds only a placeholder README. Decide whether it starts from the October 16 sources or

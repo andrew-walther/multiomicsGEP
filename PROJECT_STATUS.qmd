@@ -57,13 +57,17 @@ The LB fitter runs and its tests pass, but its default sign check
 (`sign_correction = TRUE`) calls `concordance()` without `reverse = TRUE` and
 inverted correctly oriented fits (8 of 8 in a small simulation) and reset
 `EBeta2` to `EBeta^2`. Both were fixed on 2026-11-06 (DECISIONS.md, same date);
-saved LB risk scores and `EBeta` from earlier default runs have the opposite sign. `sign_correction`
-now defaults to `FALSE` in both fitters, since a converged fit is already oriented.
+saved LB risk scores and `EBeta` from earlier default runs have the opposite sign. The post-fit
+sign flip and its `sign_correction` argument were then removed from both fitters, since a
+converged fit is already oriented.
 LB fold-in prediction is implemented (`predict_ssbmf_lb_foldin()`, 2026-11-06): the
 fit stores its fitted score priors, and new-patient scores are the training L update
 without the survival term. In eight simulated splits, fold-in recovered test scores
 better than least-squares projection (mean |r| 0.949 against 0.909) with similar test
-C (0.734 against 0.727).
+C (0.734 against 0.727). At matched survival weights on the same simulations
+(`docs/findings/2026-11-06-lb-yfb-matched-comparison-findings.md`), YFB reached test C
+0.78–0.79 (oracle 0.790) at every weight. LB reached 0.72–0.76 at w = 1, with more
+variation across seeds, and at w = 10 lost most programs at the weaker signal.
 
 ## Targeted YFB mechanism tests (2026-10-30)
 
