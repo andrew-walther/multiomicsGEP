@@ -40,8 +40,10 @@ real-data comparators of GitHub issue #6 item 7. Multimodal development stays de
   supervised fit raises validation C by 0.156 and recovers the program in 5 of 10 datasets,
   against none for the two-step fit. Under realistic survival strength the gain is small
   ([findings](docs/findings/2026-11-05-near-threshold-findings.md)).
-- **False-active programs** carry at most 1.3% of the risk-score variance where the program is
-  recovered. They are judged by contribution, not count (Andrew, 2026-11-06).
+- **Post hoc contribution analysis.** At the two larger S-14 planted shares, the unit-weight fit
+  had a median nonmatched-to-full score variance ratio of at most 1.3%. This calculation
+  includes nonmatched programs below the activity threshold. The registered count and the
+  descriptive contribution measure answer different questions.
 - **S-15.** On the training data the CV curve is flat from `w_S` = 1 to 50, so `w_S = 1` stands,
   with nested C 0.656. Survival's share of the loading precision stays below 10⁻⁴
   ([findings](docs/findings/2026-11-06-supervised-real-refit-findings.md)).
@@ -58,6 +60,14 @@ entries below use the old names. See the 2026-11-04 entry in [DECISIONS.md](DECI
 
 See the [roadmap](ROADMAP.md) for open tasks and completed milestones.
 The sections below record dated results and historical development notes.
+
+## November 6 project writeup
+
+The [November writeup](paper/writeup/2026-11-06-writeup/README.md) reports the
+rank-matched real-data comparison, the October registered check, S-13 through
+S-15, KL-2 and the program analyses. The rendered HTML and PDF reuse the
+revised prelim Chapter 4 figures. Numerical provenance is available in the
+[writeup ledger](paper/writeup/2026-11-06-writeup/NUMBER-SOURCES.md).
 
 ## External-cohort dependence and development use (2026-11-06)
 
