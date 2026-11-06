@@ -38,19 +38,28 @@ prompt7_cutpoint <- function(risk, time, event) {
 #' @examples
 #' # prompt7_hr(dat, FALSE)
 prompt7_hr <- function(dat, pooled, adjusted = FALSE) {
+  # Review addition: pooled fits add cluster(donor) for a robust interval,
+  # because 47 PACA-AU donors contribute records from both assays. The
+  # registered model-based interval (lo, hi) is unchanged.
   formula <- reformulate(c("x", if (adjusted) "subtype",
-                           if (pooled) "strata(cohort)"), "Surv(time, event)")
+                           if (pooled) c("strata(cohort)", "cluster(donor)")), "Surv(time, event)")
   output <- data.frame(n = nrow(dat), events = sum(dat$event), hr = NA_real_,
-                       lo = NA_real_, hi = NA_real_, p = NA_real_, status = "unestimable")
+                       lo = NA_real_, hi = NA_real_, p = NA_real_,
+                       donor_lo = NA_real_, donor_hi = NA_real_, status = "unestimable")
   if (length(unique(dat$x)) < 2L || sum(dat$event) < 2L ||
       (adjusted && length(unique(dat$subtype)) < 2L)) return(output)
   warnings <- character()
   fit <- withCallingHandlers(coxph(formula, data = dat, na.action = na.fail),
     warning = function(w) warnings <<- c(warnings, conditionMessage(w)))
-  s <- summary(fit)
   if (is.finite(coef(fit)["x"]) && !length(warnings)) {
-    output[1, c("hr", "lo", "hi", "p")] <- c(s$conf.int["x", c(1, 3, 4)],
-                                            s$coefficients["x", 5])
+    b <- coef(fit)[["x"]]
+    se <- sqrt((if (pooled) fit$naive.var else vcov(fit))[1, 1])
+    output[1, c("hr", "lo", "hi", "p")] <- c(exp(b), exp(b + c(-1, 1) * qnorm(.975) * se),
+                                            2 * pnorm(-abs(b / se)))
+    if (pooled) {
+      rse <- sqrt(vcov(fit)[1, 1])
+      output[1, c("donor_lo", "donor_hi")] <- exp(b + c(-1, 1) * qnorm(.975) * rse)
+    }
     output$status <- "ok"
   }
   if (length(warnings)) output$status <- paste(warnings, collapse = " | ")
@@ -157,7 +166,7 @@ if (sys.nframe() == 0L) {
       risk <- (prompt6_risk(e$Y, d)[[arm]] - train_mu) / train_sd
       data.frame(time = e$time, event = e$status, cohort = co, risk = risk,
         high = as.integer(risk > cutoff$cutpoint[cutoff$model == arm]),
-        e$meta[, c("PurIST", "DeCAF")])
+        e$meta[, c("PurIST", "DeCAF", "donor")])
     }))
     P <- do.call(rbind, lapply(external, function(e) e$Y %*% F))
     for (co in c(cohorts, "pooled")) {

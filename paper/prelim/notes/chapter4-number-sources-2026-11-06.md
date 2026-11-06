@@ -56,6 +56,27 @@ and distinguishes the two external resampling units.
   Displaying the curves through 60 months does not truncate the Cox
   analyses. Public outputs are curves, counts at risk and aggregate HRs.
 
+## Comparators, risk groups and program rule (added 2026-11-06 review)
+
+Tables `tab_comparators.tex` and `tab_program_rule.tex` are written by
+`Rscript paper/prelim/make_tables_comparators.R` and pasted into the chapter.
+Text values come from the same files under `results/benchmark_sim/outputs/`:
+
+- Mean C, paired differences, pooled HRs and donor-clustered intervals:
+  `prompt6_comparators/external.csv`, `paired.csv`, `pooled_hr.csv`; ranks
+  15 and 40 from `prompt7_desurv_style/rank_external.csv`, `rank_paired.csv`,
+  `rank_pooled_hr.csv`. Ridge selection: `prompt6_comparators/tuning.csv`.
+- Cutpoints −0.046 and 0.526: `prompt7_desurv_style/cutpoints.csv`. Group HRs
+  1.52 (1.24 to 1.87), 1.69 (1.32 to 2.16) and group sizes 297 and 144:
+  `group_hr.csv` (donor-clustered limits). Unadjusted 1.51 and adjusted 1.48
+  and 1.40: `adjusted_hr.csv`. Subtype proportions: `enrichment.csv`.
+- Program rule and the 2.1e-6 bound: `program_rule.csv`, `fold_matches.csv`.
+  Simulation checks 80/80, 35/36 and 61/128: `s13_rule.csv`, `s14_rule.csv`
+  (two-step rows). Mixed-signal 9/10 and 2/10: `mixed_simulation.csv`.
+- Supervised and two-step pooled donor-clustered intervals 1.22 to 1.53 and
+  1.21 to 1.51, and DeSurv 1.43 (1.25 to 1.64): `prompt6_comparators/pooled_hr.csv`.
+- 139 training deaths: `yfb_supervised_real_2026-11-04/folds.csv`.
+
 ## Build and review counts
 
 Page counts are from `pdfinfo` and the Chapter 4 and Appendix A boundaries

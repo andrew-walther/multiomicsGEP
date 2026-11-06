@@ -7,7 +7,9 @@ coefficients were reconstructed from the fixed unsupervised program scores.
 
 The clinical comparison requires covariates that can be harmonized across
 the training data and every external cohort. None of the requested fields
-met that requirement. The field audit preserves the original source column
+met that requirement. Age was recorded in both training cohorts and three of
+the five external cohorts, and margin in four of seven cohorts, so a model on
+a subset of cohorts was possible but outside the registered rule. The field audit preserves the original source column
 names. For example, Puleo's FFPE block age is not patient age, and Moffitt's
 T, N and M columns are component categories rather than an overall stage.
 
@@ -22,7 +24,10 @@ Rscript results/benchmark_sim/run_prompt6_desurv.R 8
 Rscript results/benchmark_sim/run_prompt6_comparators.R
 ```
 
-The first command uses the authors' reported training settings, their
+The first command uses the authors' reported training settings (rank 3 and
+the published α, λ and ν, which the authors selected on these two training
+cohorts; the training-only Bayesian optimization in `run_desurv_h2h.R` was not
+rerun), their
 preprocessing, independent seed fits, and a consensus initialization for
 the final fit. Its checkpoints stay under ignored `data/prompt6_desurv/`.
 The second command fits the PurIST probability Cox model and cross-validates
@@ -50,7 +55,8 @@ scaling uses the pooled external score SD as a descriptive unit.
 ## Results
 
 The paired external analysis used 616 records from 568 donors in each
-contrast. Every interval includes zero.
+contrast. The 48 repeated records are the 47 donors measured on both PACA-AU
+assays and one donor with two RNA-seq samples. Every interval includes zero.
 
 | Comparator | Supervised minus comparator C | 95% donor bootstrap interval |
 |---|---:|---:|
@@ -73,3 +79,28 @@ training matrix, so its CV objective is conditional on that preprocessing.
 The external cohorts have a history of project development use, described
 in the [external-cohort audit](2026-11-06-external-cohort-uses.md). The new
 comparisons are descriptive and the intervals do not establish equivalence.
+
+## Review notes (2026-11-06)
+
+An independent rerun of `run_prompt6_comparators.R` reproduced every committed
+CSV exactly. The ridge penalty selected by cross-validation lies inside the
+λ path (position 36 of 100), so the elastic-net choice is not a boundary
+solution. The glmnet iteration warnings at α ≥ 0.75 (`tuning.csv`) affect only the smallest penalties of those paths, but they may have favoured the ridge choice. The field table originally listed TCGA margin as unavailable,
+although TCGA records `Residual.tumor`. The table and runner were corrected.
+The exclusion of the clinical arm is unchanged because neither margin nor any
+other field is available in all seven cohorts.
+
+The pooled HRs in the registered analysis treat all 616 records as
+independent, although 47 donors contribute a record from each PACA-AU assay.
+The runner now also reports a robust interval clustered on donor
+(`donors`, `donor_lo`, `donor_hi` in `pooled_hr.csv`). The point estimates
+and the registered model-based intervals are unchanged, and the clustered
+intervals are slightly wider. For the supervised score the HR is 1.37 with a
+model-based interval of 1.24 to 1.51 and a donor-clustered interval of 1.22
+to 1.53.
+
+The DeSurv arm deviates from plan item 3, which named the training-only
+tuning workflow. It used the settings the authors selected on the same 273
+training patients with their own folds, not a new search on the S-11 folds.
+The per-cohort C intervals resample records. This matters only for PACA-AU
+RNA-seq, where 52 records come from 51 donors.

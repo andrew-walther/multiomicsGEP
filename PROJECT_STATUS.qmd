@@ -25,9 +25,34 @@ The working single-modality model is `fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1
 2,218 D4 genes, at K = 7 without pruning. S-13 to S-15 (below) show that the survival weight
 can be chosen by cross-validation and that supervision helps near the detection threshold.
 On real data, CV keeps `w_S = 1`, and survival does not move the loadings in the tested range.
-The open methods problem is stability at weights large enough to move real-data loadings
-(about 10⁴). After that come the registered LB vs YFB study on the nonnegative input and the
-real-data comparators of GitHub issue #6 item 7. Multimodal development stays deferred.
+Against DeSurv and D4 elastic-net Cox trained on the same 273 patients, the fixed fit's
+external concordance is within noise (paired differences 0.007 and 0.001, donor-bootstrap
+intervals including zero). A proposed classification rule names programs 2 and 3, but its
+simulation support is incomplete. The open methods problem is stability at weights large enough to
+move real-data loadings (about 10⁴). After that comes the registered LB vs YFB study on the
+nonnegative input. Multimodal development stays deferred.
+
+## Real-data comparators, risk groups and program classification (2026-11-06)
+
+- **Comparators.** Mean external C over the five series: supervised 0.620, elastic-net Cox
+  0.619, DeSurv 0.614, two-step 0.613, PurIST 0.599. Supervised minus DeSurv 0.0069 (−0.0166
+  to 0.0300), minus elastic net 0.0015 (−0.0146 to 0.0180), on 616 records from 568 donors.
+  No clinical model, because no field is recorded in all seven cohorts
+  ([findings](docs/findings/2026-11-06-real-data-comparators-findings.md)).
+- **Risk groups.** Out-of-fold training cutpoints −0.046 (supervised) and 0.526 (two-step)
+  training SDs. Pooled high-versus-low HRs 1.52 and 1.69, which are not comparable because
+  the high-risk groups hold 297 and 144 of 616 records. Continuous pooled HRs are 1.37 and
+  1.35 per SD. The supervised score keeps an HR of 1.48 per training SD after adjusting for
+  PurIST and 1.40 after adjusting for DeCAF.
+- **Program rule.** Programs 2 and 3 are main prognostic programs. Program 5 is active in
+  three of five folds. Survival supplies at most 2.1 × 10⁻⁶ of any program's loading
+  precision. The rule rejected 35 of 36 S-13 false actives but 61 of 128 in the S-14
+  two-step fits.
+- **Larger EBMF ranks and the mixed-signal simulation.** EBMF at ranks 15 and 40 with
+  unpenalized Cox overfits (calibration slopes 0.10 to 0.49). With one strong and one
+  near-threshold program, `w_S = 1` and two-step each recover the weak program in 9 of 10
+  datasets and `w_S = 5` in 2 of 10
+  ([findings](docs/findings/2026-11-06-desurv-style-analyses-findings.md)).
 
 ## Supervision strength, near-threshold recovery and the real-data weight (2026-11-05 to 11-06)
 
