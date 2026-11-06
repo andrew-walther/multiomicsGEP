@@ -8,7 +8,7 @@
 #          run_desurv_comparison.R (YFB, D4) and
 #          run_ebmf_cox_external.R --k 7 (the new K=7-matched EBMF+Cox run).
 #
-#   Output: results/benchmark_sim/outputs/ebmf_cox_external/yfb_vs_ebmf_k7_matched_ci.csv
+#   Output: results/benchmark_sim/outputs/ebmf_cox_external/2026-11-06-yfb-vs-ebmf-k7-orientation-rescore.csv
 #
 # Author: Andrew Walther
 # Created: 2026-08-20
@@ -23,6 +23,9 @@ if (!file.exists("code/fit_ssbmf_lb.R") && file.exists("../../code/fit_ssbmf_lb.
 source("code/concordance_ci.R")
 
 d4   <- readRDS("results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_riskscores.rds")[["D4"]]
+# The frozen historical D4 cache stores good-prognosis scores (DECISIONS,
+# 2026-10-02). Fresh caches explicitly record the Cox risk direction.
+flip_d4 <- !identical(attr(d4, "score_direction"), "higher_hazard")
 ebmf <- readRDS("results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_external_riskscores_k7.rds")
 
 cohorts <- names(d4)
@@ -30,9 +33,10 @@ rows <- list()
 pooled_risk_yfb <- pooled_risk_ebmf <- pooled_time <- pooled_status <- c()
 
 for (co in cohorts) {
-  stopifnot(identical(d4[[co]]$time, ebmf[[co]]$time))
+  stopifnot(identical(d4[[co]]$time, ebmf[[co]]$time),
+            identical(d4[[co]]$status, ebmf[[co]]$status))
   ci <- bootstrap_concordance_diff_ci(d4[[co]]$risk, ebmf[[co]]$risk, d4[[co]]$time, d4[[co]]$status,
-                                       B = 2000, seed = 1)
+                                       B = 2000, seed = 1, flip_a = flip_d4, flip_b = FALSE)
   cat(sprintf("%-20s n=%d diff(YFB-EBMF_K7)=%.4f [%.4f, %.4f] sig=%s\n",
               co, d4[[co]]$n, ci$estimate, ci$lower, ci$upper, ci$significant))
 
@@ -49,7 +53,7 @@ for (co in cohorts) {
 }
 
 ci_pooled <- bootstrap_concordance_diff_ci(pooled_risk_yfb, pooled_risk_ebmf, pooled_time, pooled_status,
-                                            B = 2000, seed = 1)
+                                            B = 2000, seed = 1, flip_a = flip_d4, flip_b = FALSE)
 cat(sprintf("\nPOOLED (n=%d): diff(YFB-EBMF_K7)=%.4f [%.4f, %.4f] sig=%s\n",
             length(pooled_time), ci_pooled$estimate, ci_pooled$lower, ci_pooled$upper, ci_pooled$significant))
 
@@ -60,6 +64,6 @@ rows[[length(rows) + 1]] <- data.frame(
 )
 
 results <- do.call(rbind, rows)
-out_csv <- "results/benchmark_sim/outputs/ebmf_cox_external/yfb_vs_ebmf_k7_matched_ci.csv"
+out_csv <- "results/benchmark_sim/outputs/ebmf_cox_external/2026-11-06-yfb-vs-ebmf-k7-orientation-rescore.csv"
 write.csv(results, out_csv, row.names = FALSE)
 cat(sprintf("\nResults saved: %s\n", out_csv))

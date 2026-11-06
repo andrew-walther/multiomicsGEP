@@ -43,8 +43,7 @@ frozen_reverse_cindex <- function(risk, time, status) {
 #'   concordance each time, returning a percentile CI. The risk score's
 #'   orientation ("higher = worse prognosis") is fixed **once**, from the
 #'   full sample, using this project's existing oriented-concordance
-#'   convention (\code{max(c, 1-c)}; see \code{oriented_cindex()} in
-#'   \code{results/benchmark_sim/run_desurv_comparison.R}); individual
+#'   convention (\code{max(c, 1-c)}); individual
 #'   bootstrap replicates are NOT re-oriented. Re-orienting every replicate
 #'   would force every resample's concordance to be $\ge 0.5$ by
 #'   construction, which upward-biases the CI for a weak or null signal.

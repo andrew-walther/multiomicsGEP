@@ -40,6 +40,7 @@ if (file.exists("code/fit_ssbmf_lb.R")) {
 
 suppressPackageStartupMessages(library(survival))
 
+source("code/concordance_ci.R")
 source("code/update_beta.R")
 source("code/update_L.R")
 source("code/update_F.R")
@@ -167,14 +168,6 @@ cid_test  <- cohort_id[test_idx]
 cat(sprintf("Split: n_train=%d, n_test=%d | train events=%d, test events=%d\n\n",
             length(train_idx), length(test_idx), sum(s_train), sum(s_test)))
 
-# --------------------------------------------------------------------------
-# 3. Helper: compute external C-index via concordance()
-# --------------------------------------------------------------------------
-ext_cindex <- function(risk_scores, t_test, s_test) {
-  # concordance() maximises over orientation; we fix sign via negation convention
-  as.numeric(concordance(Surv(t_test, s_test) ~ risk_scores)$concordance)
-}
-
 # Helper: factor recovery — for each non-degenerate estimated L column, find
 # the highest absolute Pearson correlation with any true L column.
 # Returns NA if all estimated columns are zero (collapsed factors).
@@ -215,8 +208,7 @@ fit_lb_base <- suppressMessages(
                             verbose = TRUE, cohort_id = NULL)
 )
 pred_lb_base  <- predict_ssbmf_lb(Y_test, fit_lb_base$EF, fit_lb_base$EBeta)
-c_lb_base     <- ext_cindex(pred_lb_base$risk_scores, t_test, s_test)
-c_lb_base     <- max(c_lb_base, 1 - c_lb_base)   # orientation-free
+c_lb_base     <- frozen_reverse_cindex(pred_lb_base$risk_scores, t_test, s_test)
 rec_lb_base   <- factor_recovery(fit_lb_base$EL, L_true[train_idx, ])
 results$LB_base <- list(c_ext = c_lb_base, recovery = rec_lb_base)
 cat(sprintf("  C-ext = %.3f | factor recovery = %.3f\n\n", c_lb_base, rec_lb_base))
@@ -236,8 +228,7 @@ L_cohort_test <- model.matrix(~ factor(cid_test,
                                        levels = levels(factor(cid_train))))[, -1, drop = FALSE]
 Y_test_adj_lb <- Y_test - L_cohort_test %*% t(EF_cohort_est)
 pred_lb_coh   <- predict_ssbmf_lb(Y_test_adj_lb, fit_lb_coh$EF, fit_lb_coh$EBeta)
-c_lb_coh      <- ext_cindex(pred_lb_coh$risk_scores, t_test, s_test)
-c_lb_coh      <- max(c_lb_coh, 1 - c_lb_coh)
+c_lb_coh      <- frozen_reverse_cindex(pred_lb_coh$risk_scores, t_test, s_test)
 rec_lb_coh    <- factor_recovery(fit_lb_coh$EL, L_true[train_idx, ])
 results$LB_cohort <- list(c_ext = c_lb_coh, recovery = rec_lb_coh)
 cat(sprintf("  C-ext = %.3f | factor recovery = %.3f\n\n", c_lb_coh, rec_lb_coh))
@@ -252,8 +243,7 @@ fit_yfb_base <- suppressMessages(
 )
 pred_yfb_base <- predict_ssbmf_yfb(Y_test, fit_yfb_base$EF, fit_yfb_base$EBeta,
                                     EF_norms = fit_yfb_base$EF_norms)
-c_yfb_base    <- ext_cindex(pred_yfb_base$risk_scores, t_test, s_test)
-c_yfb_base    <- max(c_yfb_base, 1 - c_yfb_base)
+c_yfb_base    <- frozen_reverse_cindex(pred_yfb_base$risk_scores, t_test, s_test)
 rec_yfb_base  <- factor_recovery(fit_yfb_base$EL, L_true[train_idx, ])
 results$YFB_base <- list(c_ext = c_yfb_base, recovery = rec_yfb_base)
 cat(sprintf("  C-ext = %.3f | factor recovery = %.3f\n\n", c_yfb_base, rec_yfb_base))
@@ -270,8 +260,7 @@ EF_cohort_yfb <- fit_yfb_coh$EF_cohort
 Y_test_adj_yfb <- Y_test - L_cohort_test %*% t(EF_cohort_yfb)
 pred_yfb_coh  <- predict_ssbmf_yfb(Y_test_adj_yfb, fit_yfb_coh$EF, fit_yfb_coh$EBeta,
                                     EF_norms = fit_yfb_coh$EF_norms)
-c_yfb_coh     <- ext_cindex(pred_yfb_coh$risk_scores, t_test, s_test)
-c_yfb_coh     <- max(c_yfb_coh, 1 - c_yfb_coh)
+c_yfb_coh     <- frozen_reverse_cindex(pred_yfb_coh$risk_scores, t_test, s_test)
 rec_yfb_coh   <- factor_recovery(fit_yfb_coh$EL, L_true[train_idx, ])
 results$YFB_cohort <- list(c_ext = c_yfb_coh, recovery = rec_yfb_coh)
 cat(sprintf("  C-ext = %.3f | factor recovery = %.3f\n\n", c_yfb_coh, rec_yfb_coh))
@@ -293,8 +282,7 @@ fit_zs <- suppressMessages(
                             verbose = TRUE, cohort_id = NULL)
 )
 pred_zs   <- predict_ssbmf_lb(Y_test_zs, fit_zs$EF, fit_zs$EBeta)
-c_zs      <- ext_cindex(pred_zs$risk_scores, t_test, s_test)
-c_zs      <- max(c_zs, 1 - c_zs)
+c_zs      <- frozen_reverse_cindex(pred_zs$risk_scores, t_test, s_test)
 rec_zs    <- factor_recovery(fit_zs$EL, L_true[train_idx, ])
 results$zscore <- list(c_ext = c_zs, recovery = rec_zs)
 cat(sprintf("  C-ext = %.3f | factor recovery = %.3f\n\n", c_zs, rec_zs))

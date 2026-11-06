@@ -51,11 +51,11 @@ YFB_MODEL <- "D4"  # recommended configuration
 # Previously flip = NULL chose each cohort's orientation from that cohort's own
 # outcomes (circular). Both conventions give identical numbers here because
 # every cohort agrees in direction; the frozen one is the correct statement.
-FLIP_YFB  <- TRUE
 FLIP_EBMF <- FALSE
 OUT_DIR   <- "results/benchmark_sim/outputs/desurv_comparison"
 
 yfb_scores  <- readRDS(file.path(OUT_DIR, "desurv_comparison_riskscores.rds"))[[YFB_MODEL]]
+FLIP_YFB <- !identical(attr(yfb_scores, "score_direction"), "higher_hazard")
 ebmf_scores <- readRDS("results/benchmark_sim/outputs/ebmf_cox_external/ebmf_cox_external_riskscores.rds")
 
 cohorts <- intersect(names(yfb_scores), names(ebmf_scores))

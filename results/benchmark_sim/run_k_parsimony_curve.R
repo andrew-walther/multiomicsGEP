@@ -45,6 +45,7 @@ suppressPackageStartupMessages({ library(yaml); library(survival) })
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")
+source("code/concordance_ci.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
@@ -100,11 +101,6 @@ Y_train    <- pp$Y
 train_genes <- pp$gene_names
 cat(sprintf("  n=%d, p=%d\n\n", nrow(Y_train), ncol(Y_train)))
 
-oriented_cindex <- function(risk, time, status) {
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
-}
-
 # --------------------------------------------------------------------------
 # 2. Fit YFB at each K in the grid
 # --------------------------------------------------------------------------
@@ -157,7 +153,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
     fit    <- fits[[as.character(K)]]
     EF_sub <- fit$EF[train_idx, , drop = FALSE]
     pred   <- predict_ssbmf_yfb(Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
-    c_val  <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
+    c_val  <- frozen_reverse_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
 
     results_rows[[length(results_rows) + 1]] <- data.frame(
       K              = K,

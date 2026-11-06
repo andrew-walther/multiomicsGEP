@@ -56,6 +56,15 @@ pp <- preprocess_merged_cohorts(
   selection_method         = "combined_rank"
 )
 train_genes <- pp$gene_names
+# Cached fits may predate the sign correction. Freeze each direction using
+# the reconstructed training data before projecting onto external cohorts.
+train_time <- unlist(lapply(train_raw, `[[`, "time"), use.names = FALSE)
+train_status <- unlist(lapply(train_raw, `[[`, "status"), use.names = FALSE)
+train_risk5 <- predict_ssbmf_yfb(pp$Y, fit5$EF, fit5$EBeta, EF_norms = fit5$EF_norms)$risk_scores
+train_risk7 <- predict_ssbmf_yfb(pp$Y, fit7$EF, fit7$EBeta, EF_norms = fit7$EF_norms)$risk_scores
+flip5 <- frozen_reverse_cindex(train_risk5, train_time, train_status) < 0.5
+flip7 <- frozen_reverse_cindex(train_risk7, train_time, train_status) < 0.5
+stopifnot(!is.na(flip5), !is.na(flip7))
 
 # --------------------------------------------------------------------------
 # 2. External cohorts: compute risk scores for both fits, per cohort
@@ -81,7 +90,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
   risk5 <- predict_ssbmf_yfb(Y_ext, EF5_sub, fit5$EBeta, EF_norms = fit5$EF_norms)$risk_scores
   risk7 <- predict_ssbmf_yfb(Y_ext, EF7_sub, fit7$EBeta, EF_norms = fit7$EF_norms)$risk_scores
 
-  ci <- bootstrap_concordance_diff_ci(risk5, risk7, raw_ext$time, raw_ext$status, B = 2000, seed = 1)
+  ci <- bootstrap_concordance_diff_ci(risk5, risk7, raw_ext$time, raw_ext$status, B = 2000, seed = 1, flip_a = flip5, flip_b = flip7)
   cat(sprintf("  %s: diff (K5-K7) = %.4f [%.4f, %.4f]\n",
               ext_cohort, ci$estimate, ci$lower, ci$upper))
 
@@ -102,7 +111,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 # 3. Pooled (all 5 cohorts stacked) comparison
 # --------------------------------------------------------------------------
 ci_pooled <- bootstrap_concordance_diff_ci(pooled_risk5, pooled_risk7, pooled_time, pooled_status,
-                                            B = 2000, seed = 1)
+                                            B = 2000, seed = 1, flip_a = flip5, flip_b = flip7)
 cat(sprintf("\nPooled (n=%d): diff (K5-K7) = %.4f [%.4f, %.4f]\n",
             length(pooled_time), ci_pooled$estimate, ci_pooled$lower, ci_pooled$upper))
 

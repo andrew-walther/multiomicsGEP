@@ -45,6 +45,7 @@ suppressPackageStartupMessages({
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")
+source("code/concordance_ci.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
@@ -121,11 +122,6 @@ cat(sprintf("  Events: %d / %d (%.1f%% censored)\n\n",
 # --------------------------------------------------------------------------
 # Helper: compute oriented C-index (max of c, 1-c)
 # --------------------------------------------------------------------------
-oriented_cindex <- function(risk, time, status) {
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
-}
-
 # --------------------------------------------------------------------------
 # 2. Fit all four models
 # --------------------------------------------------------------------------
@@ -245,24 +241,24 @@ for (ext_cohort in EXTERNAL_COHORTS) {
   # --- LB_base ---
   EF_lb_sub  <- fits$LB_base$EF[train_idx_genes, , drop = FALSE]
   pred_lb    <- predict_ssbmf_lb(Y_ext, EF_lb_sub, fits$LB_base$EBeta)
-  c_lb       <- oriented_cindex(pred_lb$risk_scores, raw_ext$time, raw_ext$status)
+  c_lb       <- frozen_reverse_cindex(pred_lb$risk_scores, raw_ext$time, raw_ext$status)
 
   # --- LB_cohort ---
   EF_lbc_sub <- fits$LB_cohort$EF[train_idx_genes, , drop = FALSE]
   pred_lbc   <- predict_ssbmf_lb(Y_ext, EF_lbc_sub, fits$LB_cohort$EBeta)
-  c_lbc      <- oriented_cindex(pred_lbc$risk_scores, raw_ext$time, raw_ext$status)
+  c_lbc      <- frozen_reverse_cindex(pred_lbc$risk_scores, raw_ext$time, raw_ext$status)
 
   # --- YFB_base ---
   EF_yfb_sub  <- fits$YFB_base$EF[train_idx_genes, , drop = FALSE]
   pred_yfb    <- predict_ssbmf_yfb(Y_ext, EF_yfb_sub, fits$YFB_base$EBeta,
                                     EF_norms = fits$YFB_base$EF_norms)
-  c_yfb       <- oriented_cindex(pred_yfb$risk_scores, raw_ext$time, raw_ext$status)
+  c_yfb       <- frozen_reverse_cindex(pred_yfb$risk_scores, raw_ext$time, raw_ext$status)
 
   # --- YFB_cohort ---
   EF_yfbc_sub <- fits$YFB_cohort$EF[train_idx_genes, , drop = FALSE]
   pred_yfbc   <- predict_ssbmf_yfb(Y_ext, EF_yfbc_sub, fits$YFB_cohort$EBeta,
                                     EF_norms = fits$YFB_cohort$EF_norms)
-  c_yfbc      <- oriented_cindex(pred_yfbc$risk_scores, raw_ext$time, raw_ext$status)
+  c_yfbc      <- frozen_reverse_cindex(pred_yfbc$risk_scores, raw_ext$time, raw_ext$status)
 
   cat(sprintf(
     "    %-22s | LB_base=%.3f  LB_cohort=%.3f  YFB_base=%.3f  YFB_cohort=%.3f\n",
@@ -295,7 +291,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 results_df <- do.call(rbind, results_rows)
 
 cat("\n============================================================\n")
-cat(" Stage 2 Results — External C-index (oriented)\n")
+cat(" Stage 2 Results — External C-index (frozen direction)\n")
 cat("============================================================\n")
 
 # Wide format: one row per cohort, 4 model columns

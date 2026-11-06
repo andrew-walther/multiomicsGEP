@@ -197,7 +197,7 @@ for (strength in STRENGTHS) {
     fit_fair <- tryCatch(fit_ebmf_fair(Ytr, ttr, str_tr),
                          error = function(e) { message("EBMF_fair failed: ", e$message); NULL })
     if (!is.null(fit_fair)) {
-      c_fair <- oriented_cindex(predict_ebmf(fit_fair, Yte), tte, ste_te)
+      c_fair <- heldout_cindex(predict_ebmf(fit_fair, Yte), tte, ste_te)
       rows[[length(rows) + 1]] <- data.frame(
         strength = strength, seed = s, arm = "EBMF_fair", K_fit = K_FAIR, c_index = c_fair,
         k_survival_active = NA_integer_, k_genomics_only = NA_integer_,
@@ -220,7 +220,7 @@ for (strength in STRENGTHS) {
 
       if (!is.null(fit_y)) {
         cls <- classify_factors(fit_y, Ytr, beta_thresh = BETA_THRESH, pve_thresh = PVE_THRESH)
-        c_yfb <- oriented_cindex(predict_yfb(fit_y, Yte), tte, ste_te)
+        c_yfb <- heldout_cindex(predict_yfb(fit_y, Yte), tte, ste_te)
         rows[[length(rows) + 1]] <- data.frame(
           strength = strength, seed = s, arm = paste0("YFB_", tag), K_fit = K, c_index = c_yfb,
           k_survival_active = sum(cls$category == "survival_active"),
@@ -229,7 +229,7 @@ for (strength in STRENGTHS) {
         )
       }
       if (!is.null(fit_e)) {
-        c_ebmf <- oriented_cindex(predict_ebmf(fit_e, Yte), tte, ste_te)
+        c_ebmf <- heldout_cindex(predict_ebmf(fit_e, Yte), tte, ste_te)
         rows[[length(rows) + 1]] <- data.frame(
           strength = strength, seed = s, arm = paste0("EBMF_", tag), K_fit = K, c_index = c_ebmf,
           k_survival_active = NA_integer_, k_genomics_only = NA_integer_,

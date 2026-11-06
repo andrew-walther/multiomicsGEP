@@ -700,24 +700,10 @@ score_leading_edge_signature <- function(Y, gene_names, leading_edge_genes) {
   list(score = rowMeans(Z), n_genes_used = length(present), missing_genes = missing)
 }
 
-#' Cox model of survival on a single signature score, plus an oriented C-index.
+#' Cox association and apparent concordance of a signature within one cohort.
 #'
-#' survival::concordance() treats a HIGHER predictor as predicting LONGER
-#' survival by default (verified empirically: an unambiguously high-risk
-#' synthetic score gave C-index ~0.01 unnegated vs ~0.99 negated). A fixed
-#' negation is wrong here because this function is called for both Adverse
-#' (higher score = higher risk) and Protective (higher score = lower risk)
-#' program signatures -- negating unconditionally silently reports the
-#' *wrong-direction* C-index for the Protective case (caught in code review:
-#' a constructed strong, significant protective signature, HR=0.25,
-#' p=1e-18, reported cindex=0.22, i.e. "worse than chance", when its true
-#' discriminative accuracy in the correct direction is 1-0.22=0.78).
-#'
-#' Matches this project's existing oriented_cindex() convention (used in
-#' run_desurv_comparison.R, run_k_parsimony_curve.R, and 6 other benchmark
-#' scripts): report max(c_raw, 1-c_raw), the C-index in whichever direction
-#' is more discriminative, which sidesteps needing to know a priori which
-#' sign convention a given score/program follows.
+#' The coefficient and concordance describe the same cohort. The fitted Cox
+#' model supplies the coefficient direction for this descriptive analysis.
 #'
 #' @param score  numeric vector, length n (signature score per patient)
 #' @param time   numeric vector, length n
@@ -726,11 +712,10 @@ score_leading_edge_signature <- function(Y, gene_names, leading_edge_genes) {
 cohort_signature_cox <- function(score, time, status) {
   fit <- survival::coxph(survival::Surv(time, status) ~ score)
   s <- summary(fit)
-  c_raw <- as.numeric(survival::concordance(survival::Surv(time, status) ~ score)$concordance)
   list(
     HR = unname(exp(coef(fit))),
     p = unname(s$coefficients[1, "Pr(>|z|)"]),
-    cindex = max(c_raw, 1 - c_raw),
+    cindex = unname(s$concordance[["C"]]),
     n = length(score)
   )
 }

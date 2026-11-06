@@ -42,6 +42,7 @@ suppressPackageStartupMessages({
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")
+source("code/concordance_ci.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
@@ -101,11 +102,6 @@ pp <- preprocess_merged_cohorts(
 Y_train     <- pp$Y
 train_genes <- pp$gene_names
 cat(sprintf("  n=%d, p=%d\n\n", nrow(Y_train), ncol(Y_train)))
-
-oriented_cindex <- function(risk, time, status) {
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
-}
 
 # --------------------------------------------------------------------------
 # 2. Joint (K, alpha) Bayesian optimization
@@ -201,7 +197,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 
   EF_sub <- fit_bo$EF[train_idx, , drop = FALSE]
   pred   <- predict_ssbmf_yfb(Y_ext, EF_sub, fit_bo$EBeta, EF_norms = fit_bo$EF_norms)
-  c_val  <- oriented_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
+  c_val  <- frozen_reverse_cindex(pred$risk_scores, raw_ext$time, raw_ext$status)
 
   results_rows[[length(results_rows) + 1]] <- data.frame(
     K = K_bo, alpha = round(alpha_bo, 4), cohort = ext_cohort, c_index = round(c_val, 4),

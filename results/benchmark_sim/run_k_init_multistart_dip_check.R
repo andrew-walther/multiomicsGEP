@@ -57,6 +57,7 @@ suppressPackageStartupMessages({ library(yaml); library(survival); library(paral
 cfg <- yaml::read_yaml("config/globals.yml")
 
 source("results/benchmark_sim/benchmark_helpers.R")
+source("code/concordance_ci.R")
 source("code/update_beta.R"); source("code/update_L.R"); source("code/update_F.R")
 source("code/update_tau.R");  source("code/compute_elbo.R")
 source("code/update_F_cohort.R")
@@ -156,12 +157,6 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 }
 cat(sprintf("  %d/%d external cohorts usable\n\n", length(ext_data), length(EXTERNAL_COHORTS)))
 
-oriented_cindex <- function(risk, time, status) {
-  if (sd(risk) == 0) return(NA_real_)
-  c_raw <- as.numeric(concordance(Surv(time, status) ~ risk)$concordance)
-  max(c_raw, 1 - c_raw)
-}
-
 # --------------------------------------------------------------------------
 # 3. Per-K worker: multistart fit, external scoring, factor classification.
 # --------------------------------------------------------------------------
@@ -182,7 +177,7 @@ run_one_K <- function(K) {
       d      <- ext_data[[ext_cohort]]
       EF_sub <- fit$EF[d$train_idx, , drop = FALSE]
       pred   <- predict_ssbmf_yfb(d$Y_ext, EF_sub, fit$EBeta, EF_norms = fit$EF_norms)
-      cohort_c[[ext_cohort]] <- oriented_cindex(pred$risk_scores, d$time, d$status)
+      cohort_c[[ext_cohort]] <- frozen_reverse_cindex(pred$risk_scores, d$time, d$status)
     }
     mean_c <- if (length(cohort_c) > 0) mean(unlist(cohort_c), na.rm = TRUE) else NA_real_
 

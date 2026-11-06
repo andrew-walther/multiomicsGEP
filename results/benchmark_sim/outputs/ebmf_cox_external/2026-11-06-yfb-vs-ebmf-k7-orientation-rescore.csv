@@ -1,0 +1,7 @@
+"cohort","n","diff_estimate","diff_lower","diff_upper","significant"
+"Dijk",90,0.0578,-0.0052,0.1205,FALSE
+"Moffitt_GEO_array",123,0.0081,-0.0655,0.0822,FALSE
+"PACA_AU_array",63,-0.0169,-0.0786,0.05,FALSE
+"PACA_AU_seq",52,-0.0325,-0.1018,0.0366,FALSE
+"Puleo_array",288,0.0019,-0.0303,0.0356,FALSE
+"POOLED",616,0.0105,-0.0125,0.0329,FALSE

@@ -24,7 +24,7 @@
 #          Metrics: shared/specific factor recovery (|cor| of gene programs),
 #          specificity-classification accuracy, β recovery (TP/FP prognostic
 #          rates, using the same |β|>0.001 ARD threshold as the real-data
-#          procedure), and orientation-free held-out C-index.
+#          procedure), and held-out C-index in the fitted direction.
 #
 #          Output: results/multi_cohort_sim/outputs/
 #            multicohort_sim_results.csv   (one row per scenario × K_init × arm × seed)
@@ -295,7 +295,7 @@ for (sc in names(SCENARIOS)) {
         br   <- beta_recovery(fit$EBeta, mf$match, d$factor_labels, BETA_THRESH)
         pred <- predict_test(arm, fit, d, spl)
         ci   <- if (is.null(pred)) NA_real_
-                else oriented_cindex(pred$risk, pred$time, pred$status)
+                else heldout_cindex(pred$risk, pred$time, pred$status)
 
         is_sh <- d$factor_labels == "shared"
         REC_CUT <- 0.7   # |cor| above which a true factor counts as "recovered"
