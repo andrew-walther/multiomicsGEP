@@ -950,7 +950,7 @@ often. A fixed $w_S = 5$ lost it in most datasets and had lower validation C.
 
 ### Recovery across simulation designs {#sec-recovery-synthesis}
 
-The matched two-step fit recovered the planted program in the representative S-13 cell. The largest unit-weight recovery difference in S-14 occurred at the smallest planted share with strong survival. In the mixed-signal simulation, the two unit-weight fits had the same near-threshold recovery as the two-step fit. @fig-recovery-synthesis shows the accompanying differences in false activity, convergence and calibration. On PDAC data the loading agreement and the small Cox contribution to loading precision are consistent with an effect through the coefficient fit (@sec-results-loadings).
+The matched two-step fit recovered the planted program in the representative S-13 cell. The largest unit-weight recovery difference in S-14 favoured the supervised fit and occurred at the smallest planted share with strong survival (@tbl-s14). In the mixed-signal simulation, the two unit-weight fits had the same near-threshold recovery as the two-step fit. @fig-recovery-synthesis shows the accompanying differences in false activity, convergence and calibration. On PDAC data the loading agreement and the small Cox contribution to loading precision are consistent with an effect through the coefficient fit (@sec-results-loadings).
 
 ```{r}
 #| label: fig-recovery-synthesis
@@ -1121,7 +1121,11 @@ direction (@tbl-external-program).
 
 Program 5 had an adverse full-fit coefficient and enrichment for mitotic and
 stromal-immune signatures. It was active in `r p7r$active_folds[p7r$program == 5]`
-training folds, and the external directions vary across series. Its biological
+training folds. Its pooled external HR per training SD was
+`r p5 <- subset(rd("prompt7_desurv_style", "program_hr.csv"), model == "w1" & program == 5); num(p5$hr[p5$cohort == "pooled"], 2)`
+(donor-clustered 95% CI `r ci(p5$donor_lo[p5$cohort == "pooled"], p5$donor_hi[p5$cohort == "pooled"], 2)`),
+opposite in direction to its training coefficient, and `r sum(p5$hr[p5$cohort != "pooled"] < 1)` of the
+`r sum(p5$cohort != "pooled")` series had HRs below one. Its biological
 interpretation is exploratory. The retention rule in @sec-program-stability reflects
 that instability.
 
