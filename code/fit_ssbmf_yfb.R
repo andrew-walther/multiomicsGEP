@@ -469,8 +469,11 @@ yf_subset_posterior_state <- function(state,keep) {
 #'                 Projection"). Every survival term (beta and F updates,
 #'                 monitored ELBO, pruning, output convergence) uses the centered
 #'                 matrix. The fit returns `projection_center` = ybar; pass it to
-#'                 predict_ssbmf_yfb(). Not combined with profile_cox_intercept
-#'                 or strata_id. The monitored ELBO uses a different surrogate
+#'                 predict_ssbmf_yfb(). With strata_id the centering is within
+#'                 strata (each stratum's partial likelihood is invariant to its
+#'                 own constant): y_i - ybar_s(i), and `projection_center` is a
+#'                 strata x p matrix with the stratum labels as row names. Not
+#'                 combined with profile_cox_intercept. The monitored ELBO uses a different surrogate
 #'                 than with the option off, so ELBO values are not comparable
 #'                 between the two settings.
 #' @param beta_cohort_id NULL (default) or an n-vector of cohort labels for
@@ -575,11 +578,6 @@ fit_ssbmf_yfb <- function(Y, time, status,
       is.na(center_projection)) stop("center_projection must be TRUE or FALSE.")
   if (center_projection && !canonicalize)
     stop("center_projection = TRUE requires canonicalize = TRUE.")
-  # Stratified risk sets are invariant to one constant per stratum, so a single
-  # global center leaves between-stratum mean differences in the surrogate;
-  # within-stratum centering is not implemented yet.
-  if (center_projection && !is.null(strata_id))
-    stop("center_projection = TRUE is not implemented with strata_id.")
   if (center_projection && profile_cox_intercept)
     stop("center_projection and profile_cox_intercept both center the survival design; ",
          "use one of them.")
@@ -589,9 +587,23 @@ fit_ssbmf_yfb <- function(Y, time, status,
   # Design of the Cox projection: Y itself unless center_projection = TRUE, in
   # which case Y - 1 ybar' with the training column means (fixed for the fit).
   # The reconstruction always uses Y. With the option off this is the same
-  # object as Y, so the default path is unchanged.
-  projection_center <- if (center_projection) colMeans(Y) else NULL
-  projection_Y <- if (center_projection) sweep(Y, 2, projection_center) else Y
+  # object as Y, so the default path is unchanged. With strata_id the Cox risk
+  # sets are formed within strata, and each stratum's partial likelihood is
+  # invariant to its own constant, so Y is centered within strata: row i minus
+  # its stratum's training means (derivation, Eq. center-strata).
+  projection_center <- NULL
+  projection_Y <- Y
+  if (center_projection && is.null(strata_id)) {
+    projection_center <- colMeans(Y)
+    projection_Y <- sweep(Y, 2, projection_center)
+  } else if (center_projection) {
+    if (length(strata_id) != n || anyNA(strata_id))
+      stop("strata_id must have length nrow(Y) (", n, ") and no NA.")
+    stratum <- factor(strata_id)
+    projection_center <- rowsum(Y, stratum) / as.vector(table(stratum))
+    rownames(projection_center) <- levels(stratum)
+    projection_Y <- Y - projection_center[as.integer(stratum), , drop = FALSE]
+  }
   if(!is.logical(prune_preserve_posterior) || length(prune_preserve_posterior)!=1L ||
      is.na(prune_preserve_posterior))stop("prune_preserve_posterior must be TRUE or FALSE.")
   if(prune_preserve_posterior || !is.null(posterior_init)) {
@@ -829,7 +841,9 @@ fit_ssbmf_yfb <- function(Y, time, status,
 
   if (canonicalize && is.null(posterior_init)) {
     # Start every program at sd(Y EF_k) = 1 so beta starts on its final scale.
-    cz <- canonicalize_yf_factors(Y, EL, EL2, EF, EF2, rep(0, K), rep(0, K), K)
+    # Standardize the scores the Cox model uses (projection_Y is Y unless
+    # center_projection; centering changes the SD only through strata)
+    cz <- canonicalize_yf_factors(projection_Y, EL, EL2, EF, EF2, rep(0, K), rep(0, K), K)
     EL <- cz$EL; EL2 <- cz$EL2; EF <- cz$EF; EF2 <- cz$EF2
   }
 
@@ -1214,7 +1228,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
       if (trace_supervision) {
         history$trace$beta_mean[iter, k]   <- EBeta[k]
         history$trace$beta_second[iter, k] <- EBeta2[k]
-        history$trace$sd_YF[iter, k]       <- stats::sd(as.vector(Y %*% EF[, k]))
+        history$trace$sd_YF[iter, k]       <- stats::sd(as.vector(projection_Y %*% EF[, k]))
         history$trace$norm_F[iter, k]      <- sqrt(sum(EF[, k]^2))
         history$trace$norm_L[iter, k]      <- sqrt(sum(EL[, k]^2))
       }
@@ -1317,7 +1331,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
     # Leaves L F', eta and the ELBO unchanged; fixes sd(Y EF_k) = 1 for the
     # next iteration's ZF.
     if (canonicalize) {
-      cz <- canonicalize_yf_factors(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
+      cz <- canonicalize_yf_factors(projection_Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
                                     prior_F = prior_F_state)
       EL <- cz$EL; EL2 <- cz$EL2; EF <- cz$EF; EF2 <- cz$EF2
       EBeta <- cz$EBeta; EBeta2 <- cz$EBeta2; prior_F_state <- cz$prior_F

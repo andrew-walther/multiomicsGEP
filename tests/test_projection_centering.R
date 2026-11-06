@@ -52,6 +52,7 @@ pc_reference_calls <- function() {
     shared_prune        = c(canon, list(beta_prior_mode = "shared", prune = TRUE)),
     profiled            = c(canon, list(profile_cox_intercept = TRUE)),
     output_rule         = c(canon, list(converge_on = "outputs")),
+    stratified          = c(canon, list(strata_id = rep(1:2, length.out = 60))),
     exponential_nonneg  = c(base, list(canonicalize = TRUE, prior_LF = "point_exponential",
                                        prior_beta = "point_normal", nonnegative = TRUE))
   )
@@ -103,8 +104,8 @@ run_test("Projection centering: invalid values and unsupported combinations stop
   e <- tryCatch(f(canonicalize = TRUE, prior_LF = "point_laplace", prior_beta = "normal",
                   center_projection = TRUE, profile_cox_intercept = TRUE), error = conditionMessage)
   assert_true(grepl("profile_cox_intercept", e), e)
-  e <- tryCatch(f(canonicalize = TRUE, center_projection = TRUE,
-                  strata_id = rep(1:2, length.out = nrow(d$Y))), error = conditionMessage)
+  e <- tryCatch(f(canonicalize = TRUE, center_projection = TRUE, strata_id = rep(1:2, 3)),
+                error = conditionMessage)
   assert_true(grepl("strata_id", e), e)
 }))
 
@@ -116,12 +117,12 @@ run_test("Projection centering: invalid values and unsupported combinations stop
 #' @return The fit.
 #' @examples
 #' # pc_frozen_fit(d$Y, d, EF0, TRUE)
-pc_frozen_fit <- function(Y, d, EF0, center) {
+pc_frozen_fit <- function(Y, d, EF0, center, strata = NULL) {
   EL0 <- Y %*% EF0 / sum(EF0^2)
   fit_ssbmf_yfb(Y, d$time, d$status, K = ncol(EF0), max_iter = 6, tol = 1e-12,
                 prior_LF = "point_exponential", prior_beta = "normal", canonicalize = TRUE,
                 EL_init = EL0, EF_init = EF0, N_frozen = 6, center_projection = center,
-                verbose = FALSE)
+                strata_id = strata, trace_supervision = TRUE, verbose = FALSE)
 }
 
 run_test("Projection centering: a constant added to one gene leaves the Cox projection unchanged", local({
@@ -165,6 +166,76 @@ run_test("Projection centering: training risk is Yc E[F] E[beta] and differs fro
   ru <- predict_ssbmf_yfb(d$Y, f$EF, f$EBeta, f$EF_norms)$risk_scores
   assert_near(mean(rc), 0, 1e-10, "centered training risk has mean zero")
   assert_near(ru - rc, rep(sum(colMeans(d$Y) * (f$EF %*% f$EBeta)), nrow(d$Y)), 1e-10)
+}))
+
+## Stratified baseline hazard: centering within strata ----
+
+run_test("Projection centering with strata: centered within each stratum, and a per-stratum constant leaves the Cox projection unchanged", local({
+  d <- pc_fixture(28, n = 80, nonnegative = TRUE)
+  g <- rep(c("a", "b"), length.out = nrow(d$Y))
+  Y <- d$Y; Y[g == "b", ] <- Y[g == "b", ] + 1          # strata differ in level
+  set.seed(1); EF0 <- matrix(rexp(ncol(Y) * 2), ncol(Y), 2)
+  a <- pc_frozen_fit(Y, d, EF0, TRUE, g)
+  means <- rbind(a = colMeans(Y[g == "a", ]), b = colMeans(Y[g == "b", ]))
+  assert_near(a$projection_center, means, 1e-14)
+  assert_equal(rownames(a$projection_center), c("a", "b"))
+  # Gene 5 shifted by 4 in stratum b only: same beta posterior when centered within strata
+  Ys <- Y; Ys[g == "b", 5] <- Ys[g == "b", 5] + 4
+  b <- pc_frozen_fit(Ys, d, EF0, TRUE, g)
+  assert_near(a$EBeta, b$EBeta, 1e-10); assert_near(a$EBeta2, b$EBeta2, 1e-10)
+  # Scores are standardized on the centered projection from the start (initial scaling)
+  assert_near(a$history$trace$sd_YF[1, ], rep(1, 2), 1e-10)
+  # Training risk is the within-stratum centered projection; scores move within a stratum
+  # only by a constant when a different row of means is used
+  Yc <- Y - means[g, ]
+  r <- predict_ssbmf_yfb(Y, a$EF, a$EBeta, a$EF_norms, projection_center = a$projection_center,
+                         projection_strata = g)$risk_scores
+  assert_near(r, as.vector(Yc %*% a$EF %*% a$EBeta), 1e-10)
+  r_a <- predict_ssbmf_yfb(Y[g == "b", ], a$EF, a$EBeta, a$EF_norms,
+                           projection_center = a$projection_center["a", ])$risk_scores
+  assert_near(r_a - r[g == "b"], rep(r_a[1] - r[g == "b"][1], sum(g == "b")), 1e-10)
+  e <- tryCatch(predict_ssbmf_yfb(Y, a$EF, a$EBeta, a$EF_norms, projection_center = a$projection_center,
+                                  projection_strata = rep("c", nrow(Y))), error = conditionMessage)
+  assert_true(grepl("not seen in training", e), e)
+  # Negative control: one global center leaves the between-stratum shift in the survival term
+  surv <- function(Yd, Ys) yf_canonical_elbo(Yd, d$time, d$status, a$EL, a$EL2, a$EF, a$EF2,
+    a$EBeta, a$EBeta2, 0, 1, strata = g, survival_Y = Ys) -
+    update_tau(Yd, a$EL, a$EL2, a$EF, a$EF2)$elbo_proxy
+  Ysc <- Ys - rbind(a = colMeans(Ys[g == "a", ]), b = colMeans(Ys[g == "b", ]))[g, ]
+  assert_near(surv(Y, Yc), surv(Ys, Ysc), 1e-8)
+  glob <- function(M) sweep(M, 2, colMeans(M))
+  assert_true(abs(surv(Y, glob(Y)) - surv(Ys, glob(Ys))) > 1e-3, "global centering depends on the shift")
+}))
+
+run_test("Projection centering with strata: the monitored ELBO and the pruning check use the within-stratum centered projection", local({
+  d <- pc_fixture(30, n = 80, nonnegative = TRUE)
+  g <- rep(1:2, length.out = nrow(d$Y))
+  Y <- d$Y; Y[g == 2, ] <- Y[g == 2, ] + 1               # strata differ in level
+  seen <- NULL
+  real_nullcheck <- prune_yf_nullcheck
+  # Record what the pruning check receives (pruning rarely fires on a small fixture)
+  assign("prune_yf_nullcheck", function(fit, Y, time, status, strata = NULL,
+                                        protect_survival = FALSE, survival_Y = Y) {
+    seen <<- list(Y = Y, survival_Y = survival_Y, strata = strata)
+    rep(-1, ncol(fit$EF))
+  }, envir = globalenv())
+  on.exit(assign("prune_yf_nullcheck", real_nullcheck, envir = globalenv()))
+  set.seed(7)
+  f <- fit_ssbmf_yfb(Y, d$time, d$status, K = 2, max_iter = 8, tol = 1e-12, strata_id = g,
+                     prior_LF = "point_exponential", prior_beta = "point_normal",
+                     canonicalize = TRUE, center_projection = TRUE, prune = TRUE, verbose = FALSE)
+  Yc <- Y - f$projection_center[g, ]
+  assert_near(seen$survival_Y, Yc, 1e-14); assert_near(seen$Y, Y, 0)
+  assert_equal(seen$strata, g)
+  # Survival part of the monitored objective, recomputed from the returned state
+  surv <- function(Ys) yf_canonical_elbo(Y, d$time, d$status, f$EL, f$EL2, f$EF, f$EF2, f$EBeta,
+    f$EBeta2, 0, f$w_S, strata = g, survival_Y = Ys) - update_tau(Y, f$EL, f$EL2, f$EF, f$EF2)$elbo_proxy
+  monitored <- tail(f$history$elbo_full, 1) - update_tau(Y, f$EL, f$EL2, f$EF, f$EF2)$elbo_proxy -
+    sum(f$neg_kl)
+  assert_true(max(abs(f$EBeta)) > 0.5, "coefficients are live")
+  assert_near(surv(Yc), monitored, 1e-6)
+  assert_true(abs(surv(sweep(Y, 2, colMeans(Y))) - monitored) > 1e-3,
+              "global centering gives a different survival term")
 }))
 
 ## Compatibility with the other opt-in controls ----

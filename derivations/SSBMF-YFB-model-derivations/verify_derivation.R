@@ -301,6 +301,57 @@ results[nrow(results) + 1, ] <- list(
   abs(A_unc + Tau[j] * sum(EL2[, 1]) - A_cen) > 1e-3 * abs(A_cen),
   abs(A_unc + Tau[j] * sum(EL2[, 1]) - A_cen))
 
+# 7. Projection centering within strata (Eq. center-strata) ----
+
+g <- rep(1:2, length.out = n)                                    # two strata
+Yn_s <- Yn; Yn_s[g == 2, ] <- Yn_s[g == 2, ] + 1.5               # stratum 2 shifted up
+ybar_s <- rowsum(Yn_s, g) / as.vector(table(g))
+Ycs <- Yn_s - ybar_s[g, ]
+eta_s <- as.vector(Yn_s %*% EF %*% EB); eta_cs <- as.vector(Ycs %*% EF %*% EB)
+check_close("within-stratum centering moves eta by one constant per stratum",
+            eta_s - eta_cs, as.vector(ybar_s %*% EF %*% EB)[g])
+tay_s <- calc_cox_taylor_yf(eta_s, time, status, strata = g)
+tay_cs <- calc_cox_taylor_yf(eta_cs, time, status, strata = g)
+check_close("stratified: same partial log-likelihood, u and W under within-stratum centering",
+            c(tay_cs$logPL, tay_cs$u, tay_cs$w), c(tay_s$logPL, tay_s$u, tay_s$w))
+Ws <- tay_cs$w; zs <- eta_cs + tay_cs$u / Ws
+obj_s <- function(...) expected_objective_sep(..., Yg = Yn_s, Ys = Ycs, W = Ws, z = zs)
+
+for (k in 1:K) {
+  Zb <- Ycs %*% EF; VZ <- Ycs^2 %*% (EF2 - EF^2)
+  z_mk <- zs - as.vector(Zb[, -k, drop = FALSE] %*% EB[-k])
+  A_doc <- w_S * sum(Ws * (Zb[, k]^2 + VZ[, k])); B_doc <- w_S * sum(Ws * z_mk * Zb[, k])
+  bf <- brute_AB(function(m, s2) { b <- EB; b2 <- EB2; b[k] <- m; b2[k] <- s2
+                                   obj_s(EL, EL2, EF, EF2, b, b2) })
+  check_close(sprintf("stratified centered beta_%d: document A and B match the expected objective", k),
+              c(A_doc, B_doc), unname(bf))
+  for (j in c(1, p)) {
+    R_k <- Yn_s - EL[, -k, drop = FALSE] %*% t(EF[, -k, drop = FALSE]); y <- Ycs[, j]
+    AB <- c(Tau[j] * sum(EL2[, k]) + w_S * EB2[k] * sum(Ws * y^2),
+            Tau[j] * sum(R_k[, j] * EL[, k]) +
+              w_S * (EB[k] * sum(Ws * y * z_mk) - EB2[k] * sum(Ws * y * (Zb[, k] - y * EF[j, k]))))
+    bf <- brute_AB(function(m, s2) { Fm <- EF; F2 <- EF2; Fm[j, k] <- m; F2[j, k] <- s2
+                                     obj_s(EL, EL2, Fm, F2, EB, EB2) })
+    check_close(sprintf("stratified centered f_%d,%d: document A and B match the expected objective",
+                        j, k), AB, unname(bf))
+  }
+}
+
+Ysh <- Yn_s; Ysh[g == 1, 9] <- Ysh[g == 1, 9] + 5               # constant within stratum 1 only
+ybar_sh <- rowsum(Ysh, g) / as.vector(table(g))
+check_close("a constant added to gene j within one stratum leaves the centered design unchanged",
+            Ysh - ybar_sh[g, ], Ycs)
+u0s <- calc_cox_taylor_yf(rep(0, n), time, status, strata = g)$u
+check_close("stratified supervised start: Y'u0 equals Yc'u0", crossprod(Yn_s, u0s), crossprod(Ycs, u0s))
+## Global centering under strata leaves the between-stratum term (Eq. center-split, by stratum)
+Ycg <- sweep(Yn_s, 2, colMeans(Yn_s)); dlt <- (ybar_s - matrix(colMeans(Yn_s), 2, p, byrow = TRUE))[g, 9]
+check_close("global centering under strata splits into within-stratum and between-stratum terms",
+            sum(Ws * Ycg[, 9]^2),
+            sum(Ws * Ycs[, 9]^2) + 2 * sum(Ws * dlt * Ycs[, 9]) + sum(Ws * dlt^2))
+results[nrow(results) + 1, ] <- list(
+  "negative control: global centering under strata keeps a between-stratum precision term",
+  sum(Ws * dlt^2) > 1e-3 * sum(Ws * Ycs[, 9]^2), sum(Ws * dlt^2))
+
 # Report ----
 
 print(results, row.names = FALSE, digits = 3)

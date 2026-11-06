@@ -45,8 +45,8 @@ approximation that grows with the squared feature means and, on uncentered input
 survival coefficients to zero. On the October 15 planted test bed with point-exponential L and F,
 X/sd input kept all seven programs live. Without centering no program was survival-active in 6
 seeds. With centering one or two were, but the active program matched the planted loadings in
-only 2 of 6 seeds (best correlation 0.08–0.84 overall). The option does not yet support a
-stratified baseline hazard. Defaults are unchanged. This prepares the YFB arm of the registered LB vs
+only 2 of 6 seeds (best correlation 0.08–0.84 overall). With a stratified baseline hazard
+(`strata_id`) the projection is centered within each stratum. Defaults are unchanged. This prepares the YFB arm of the registered LB vs
 YFB study; see DECISIONS.md (same date).
 
 ## Derivation documents and LB review (2026-11-06)
@@ -59,7 +59,7 @@ derives the current YFB fit (`canonicalize = TRUE`, weight w_S) from the joint
 model to a one-page algorithm, with the balance of the genomics and survival
 precisions, an errata table for the April pieces and the path to M modalities.
 `verify_derivation.R` in the same folder checks every EBNM input against a
-brute-force expected objective and the code (73 checks, including the
+brute-force expected objective and the code (88 checks, including the
 projection-centering terms).
 [`SSBMF-LB-vs-YFB-comparison.pdf`](derivations/SSBMF-LB-vs-YFB-comparison/SSBMF-LB-vs-YFB-comparison.pdf)
 compares the two parameterizations. Survival's weight in the dual-source
