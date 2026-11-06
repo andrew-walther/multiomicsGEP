@@ -18,7 +18,7 @@ Continue on `fix/yfb-supervision`. Read these first:
 - `docs/plans/2026-10-30-realignment-plan.md`: Gate S and the "Problems during execution" rules.
 - `docs/prompts/2026-10-30-codex-execution-prompt.md`: project rules and chapter rules, which
   still apply.
-- `docs/plans/2026-11-01-multiomicsGEP-diagnostic-and-tdd-guide.md`: a Gemini guide (unchecked
+- `docs/plans/2026-11-01-gemini-multiomicsGEP-diagnostic-and-tdd-guide.md`: a Gemini guide (unchecked
   advice). Its Issue 1 proposes the downweighted genomics likelihood used in Part B.
 - `DECISIONS.md`, the July entry near "Two candidate directions were tried and empirically rejected"
   (around line 4029). Shrinking the genomics precision in the latent-L model drove L, F and β to
