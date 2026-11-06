@@ -88,12 +88,12 @@ Naim's review listed eight items. The table gives their state on `fix/yfb-superv
 
 | Item | State | What was done, or what is left |
 |---|---|---|
-| 1. KL normalizer in the loading update | Fixed in the code (`31db892`, exact-KL test). Rerun on 11/6 (KL-1, `0fb8aba`): without pruning the fit recovers the planted program in 17 and 19 of 20 datasets, as before. With pruning, ordinary or protected, it recovers 11 of 20. | Pruning still loses the planted program. KL-1 found that an empty program's KL term came out slightly positive instead of zero. That was fixed (`f3263d6`), and the repeat (KL-2) makes it plain: with pruning the fit recovers the program in only 2 of 20 datasets, against 17 and 19 without. The working fit stays at K = 7 without pruning (`docs/findings/2026-11-06-flat-beta-pruning-rerun-findings.md`). |
+| 1. KL normalizer in the loading update | Fixed in the code (`31db892`, exact-KL test). Rerun on 11/6 (first pruning simulation, `0fb8aba`): without pruning the fit recovers the planted program in 17 and 19 of 20 datasets, as before. With pruning, ordinary or protected, it recovers 11 of 20. | Pruning still loses the planted program. The first pruning simulation found that an empty program's KL term came out slightly positive instead of zero. That was fixed (`f3263d6`), and the repeat after that correction makes it plain: with pruning the fit recovers the program in only 2 of 20 datasets, against 17 and 19 without. The working fit stays at K = 7 without pruning (`docs/findings/2026-11-06-flat-beta-pruning-rerun-findings.md`). |
 | 2. Double log₂ on RNA-seq | Fixed (`6a0b96f`). Single-log refit: external C 0.625 against 0.627, and 5 of 5 CV folds converge instead of 2. | The circulated writeup still shows double-log numbers. The next writeup uses single-log numbers throughout. |
 | 3. BO-T12 collapse on Linux | Open. Not reproducible on macOS. | Needs a Linux run (Longleaf, or Docker, which is not installed here). |
 | 4. Report the October 15 null result | Recorded in DECISIONS.md, not yet in a writeup. | Goes into the next writeup and the revised prelim Chapter 4. |
 | 5. Fair comparison and risk orientation | Orientation fixed in both named scripts (`b85d390`). No reported C value changed. | The other runners that oriented with `max(C, 1 − C)` were fixed on 11/6 (`ea142a6`). Rescoring from saved scores reproduced every number that could be checked, including the rank-matched pooled ΔC of 0.0105 (−0.0125 to 0.0329) (`docs/findings/2026-11-06-orientation-audit.md`). The next writeup leads with this rank-7 comparison. |
-| 6. External-cohort uses and shared donors | Done on 11/6 (`356347f`). Every decision that looked at external outcomes is listed with its record (`docs/findings/2026-11-06-external-cohort-uses.md`). Resampling donors instead of records leaves the S-12 pooled gain at +0.007 with interval −0.003 to +0.017, which still includes zero. | Keep one cohort untouched by any future choice. |
+| 6. External-cohort uses and shared donors | Done on 11/6 (`356347f`). Every decision that looked at external outcomes is listed with its record (`docs/findings/2026-11-06-external-cohort-uses.md`). Resampling donors instead of records leaves the pooled gain in the external scoring at +0.007 with interval −0.003 to +0.017, which still includes zero. | Keep one cohort untouched by any future choice. |
 | 7. Comparators (PurIST, DeSurv, elastic-net Cox, clinical) | Open. | A real-data comparator runner, next after the supervision decision. |
 | 8. Reproducible writeup | Test baselines are stored as fixtures (`1703bc6`). | The 11/6 writeup now computes its numbers from saved CSVs (`41c457c`), as this chapter's new sections do. The fits still need to be stored on Longleaf with the path recorded. |
 
@@ -103,10 +103,10 @@ Two numbers in last week's simulations were wrong for the same reason. `survival
 merges survival times that are equal to within a small tolerance. The simulated times span many
 orders of magnitude, so near-equal times were treated as ties.
 
-- **Validation calibration slopes in S-9.** These were reported as 0.18 to 1.20. With exact
+- **Validation calibration slopes in the fixed-weight simulation.** These were reported as 0.18 to 1.20. With exact
   times they are 1.45 to 3.23, so the supervised coefficients were attenuated, not overconfident.
-- **The two-step comparison fits in S-13 and S-14.** Their training Cox fits were attenuated,
-  which gave slopes of up to 12.7. With exact times the slopes are 0.96 to 1.16. The S-14 verdict
+- **The two-step comparison fits in the cross-validated-weight and near-threshold simulations.** Their training Cox fits were attenuated,
+  which gave slopes of up to 12.7. With exact times the slopes are 0.96 to 1.16. The near-threshold verdict
   did not change.
 
 All simulation runners now use exact times.
@@ -248,7 +248,7 @@ w1s <- s9_summ[s9_summ$arm == "w1", ]
 
 The October 30 gate failed for the new opt-in fitter. We then tested the canonical
 fitter's survival weight `w_S` on the same corrected simulation grid. The difference
-from the S-7 run of that fitter is the input. The canonical fitter has signed loading
+from the earlier run of that fitter on this grid is the input. The canonical fitter has signed loading
 priors and no gene intercept, so it now gets the per-cohort z-scored matrix instead of
 the nonnegative uncentered one. Weights ran from 1 to 10,000, plus `w_S = p/50` and a
 weight set to give survival 20% of the loading precision.
@@ -262,8 +262,10 @@ and every fit converges. On the uncentered input the same weight gave false-acti
 counts of 1.0 to 1.5, which would have failed the gate.
 
 ```{r s9-gate}
-kable(s9_cells[s9_cells$arm %in% c("w1", "w10", "w100", "share0.2"),
-  c("arm", "variance", "recovered", "reference_recovered", "mean_false_active", "converged", "qualifies")],
+s9_g <- s9_cells[s9_cells$arm %in% c("w1", "w10", "w100", "share0.2"), ]
+s9_g$variance <- paste0(s9_g$variance * 100, "%")
+s9_g$arm <- c(w1 = "w_S = 1", w10 = "w_S = 10", w100 = "w_S = 100", share0.2 = "w_S giving 20% survival share")[s9_g$arm]
+kable(s9_g[, c("arm", "variance", "recovered", "reference_recovered", "mean_false_active", "converged", "qualifies")],
   row.names = FALSE, digits = 2,
   col.names = c("Weight", "Planted variance", "Recovered", "Reference", "Mean false-active", "Converged", "Qualifies"))
 ```
@@ -272,7 +274,11 @@ Training cross-validation chooses `w_S = 1` in most datasets, so the weight can 
 without the planted truth:
 
 ```{r s9-cv}
-kable(s9_cv, row.names = FALSE, digits = 2)
+s9_cv$arms_chosen <- vapply(strsplit(s9_cv$arms_chosen, " "), function(z) paste(vapply(strsplit(z, ":"), function(u)
+  paste0(c(w1 = "w_S = 1", w10 = "w_S = 10", share0.2 = "20% survival share")[u[1]], " in ", u[2]), ""), collapse = ", "), "")
+s9_cv$variance <- paste0(s9_cv$variance * 100, "%")
+kable(s9_cv, row.names = FALSE, digits = 2,
+  col.names = c("Genes", "Planted variance", "Datasets", "Weight chosen (datasets)", "Recovered", "Mean false-active", "Converged"))
 ```
 
 Larger weights hurt. At 2,000 genes no fit with `w_S` of 40 or more converges within
@@ -310,8 +316,8 @@ October 30 run. Sweep counts differ because of the later log-normalizer correcti
 the objective, which changes when the stopping rule fires.
 
 The real-data training CV at `w_S = 1` is registered and running. It covers the
-programs, cross-validated C, a feature-set-size curve from the D4 genes to all 17,900
-shared genes, and a comparison with survival screening. No external cohort is scored
+programs, cross-validated C, a feature-set-size curve from the 2,218-gene set (genes ranked by per-cohort mean and variance, chosen
+without using outcomes) to all 17,900 shared genes, and a comparison with survival screening. No external cohort is scored
 until those choices are fixed.
 
 ### Survival-weighted fit on the training patients
@@ -326,7 +332,7 @@ f3 <- function(x) formatC(x, format = "f", digits = 3)
 ```
 
 We fit the `w_S = 1` model on the 273 TCGA and CPTAC training patients with five-fold
-cross-validation, using the single-log data and no external cohort. On the 2,218 D4 genes
+cross-validation, using the single-log data and no external cohort. On the 2,218-gene set
 the mean held-out C is `r f3(d4$mean_C[d4$arm == "w1"])` (SE `r f3(d4$se_C[d4$arm == "w1"])`).
 The two-step fit, which takes the unsupervised loadings and then fits Cox on the program
 scores, gives `r f3(d4$mean_C[d4$arm == "w0cox"])`. The paired fold difference is 0.011
@@ -353,9 +359,9 @@ A positive β means a higher program score raises the hazard. Three programs are
 survival-active: a hypoxia and glycolysis versus normal-pancreas axis, a ribosomal and
 proliferation versus classical-epithelial axis, and a third adverse program.
 
-Adding genes beyond the D4 set does not help. Mean C ranges from 0.643 to 0.663 from
+Adding genes beyond the 2,218-gene set does not help. Mean C ranges from 0.643 to 0.663 from
 2,218 to all 17,900 shared genes, and every size is within one SE of the others. The
-registered rule, which picks the smallest set that matches the all-genes fit, chooses D4.
+registered rule, which picks the smallest set that matches the all-genes fit, chooses the 2,218-gene set.
 
 ![Held-out C against the number of input genes for the survival-weighted fit and the two-step fit.](../figures/2026-11-06/real-data-size-curve.png)
 
@@ -363,15 +369,16 @@ Screening genes on survival inside each fold before the joint fit gives no consi
 gain:
 
 ```{r s11-screen}
+s11_scr$arm <- c(w1 = "Supervised (w_S = 1)", w0cox = "Two-step")[s11_scr$arm]
 kable(s11_scr[, c("N", "arm", "C_U", "C_S", "diff_S_minus_U", "diff_se", "mean_overlap_S_in_U")],
   row.names = FALSE, digits = 3,
   col.names = c("Genes", "Fit", "C, outcome-free screen", "C, Cox screen", "Difference", "SE", "Overlap"))
 ```
 
-No screened set beats the `w_S = 1` fit on all D4 genes. With survival permuted in the
+No screened set beats the `w_S = 1` fit on all 2,218 genes. With survival permuted in the
 simulated data, the `w_S = 1` fit has `r paste(range(s11_null$n_active), collapse = " to ")`
 false-active programs per dataset on average, below the limit of one. The fixed model for
-the single external scoring is therefore `w_S = 1` on the D4 genes with no survival screen.
+the single external scoring is therefore `w_S = 1` on the 2,218-gene set with no survival screen.
 
 ### External scoring of the fixed fit
 
@@ -381,7 +388,7 @@ s12 <- read.csv(file.path(S12, "external_cindex.csv"))
 s12d <- read.csv(file.path(S12, "external_paired_diff.csv"))
 ```
 
-The fixed `w_S = 1` fit on the D4 genes was scored once on the five external cohorts,
+The fixed `w_S = 1` fit on the 2,218-gene set was scored once on the five external cohorts,
 after per-cohort z-scoring. The two-step fit was scored alongside it. Nothing was
 chosen from these results.
 
@@ -415,20 +422,24 @@ s13 <- read.csv(file.path(S13, "selected_vs_twostep.csv"))
 s13v <- read.csv(file.path(S13, "verdict.csv"))
 ```
 
-S-9 left two problems. At `w_S = 1` the coefficients were attenuated, and weights of 40 or more
+The fixed-weight simulation left two problems. At `w_S = 1` the coefficients were attenuated, and weights of 40 or more
 stopped converging. In the original objective, raising `w_S` also weakened the prior on β,
 because the weight multiplied the Cox term in the β update too. The survival-block weight
-(arm A1) applies `w_S` to the Cox term and to the β prior together. β then gets an ordinary
+(the block-weighted fit) applies `w_S` to the Cox term and to the KL term for β (the β prior) together. β then gets an ordinary
 Bayesian Cox fit while the loadings see survival at weight `w_S`. This is the same as down-weighting the
-expression likelihood by 1/`w_S`. Arm A2 adds a joint Gaussian posterior for β, with each
+expression likelihood by 1/`w_S`. The joint-posterior fit adds a joint Gaussian posterior for β, with each
 program's prior variance estimated from the data. Each dataset's weight was chosen from
 {1, 2, 5, 10, 20, 50} by five-fold cross-validated partial log-likelihood on the training data.
 
 ```{r s13-table}
+s13$arm <- c(A1 = "Block-weighted", A2 = "Joint-posterior")[s13$arm]
+s13$cell <- c(v0.0025 = "0.25% variance", v0.01 = "1% variance", v0.05 = "5% variance", weak = "Weak")[s13$cell]
+s13$weights <- vapply(strsplit(s13$weights, " "), function(z) paste(vapply(strsplit(z, ":"), function(u)
+  paste0("w_S = ", u[1], " in ", u[2]), ""), collapse = ", "), "")
 kable(s13[, c("arm", "cell", "weights", "recovered", "twostep_recovered", "mean_false_active",
               "twostep_false_active", "c_validation", "twostep_c", "slope_median", "twostep_slope")],
   row.names = FALSE, digits = 3,
-  col.names = c("Arm", "Cell", "Chosen weights (count)", "Recovered", "Two-step recovered",
+  col.names = c("Fit", "Planted variance", "Chosen weights (datasets)", "Recovered", "Two-step recovered",
                 "False-active", "Two-step false-active", "C", "Two-step C", "Slope", "Two-step slope"))
 ```
 
@@ -441,11 +452,11 @@ kable(s13[, c("arm", "cell", "weights", "recovered", "twostep_recovered", "mean_
   the matched two-step fit, the recovery gain is zero.
 - **The coefficients are still slightly attenuated.** Median calibration slopes at the chosen
   weight are 1.22 to 1.45 in the three variance cells. The registered band was 0.8 to 1.25, met in 1 of 3 cells.
-- **The joint posterior for β adds nothing measurable** (C within 0.004 of A1), so it stays opt-in.
+- **The joint posterior for β adds nothing measurable** (C within 0.004 of the block-weighted fit), so it stays opt-in.
 
-Neither arm passed every registered criterion (`r paste(s13v$arm, ifelse(s13v$null_pass, "passes", "fails"), "the null check", collapse = "; ")`), so nothing was adopted.
+Neither arm passed every registered criterion (`r paste(c(A1 = "the block-weighted fit", A2 = "the joint-posterior fit")[s13v$arm], ifelse(s13v$null_pass, "passes", "fails"), "the null check", collapse = "; ")`), so nothing was adopted.
 
-![Recovery, false activity, calibration, convergence, validation and CV C, survival share and survival-only directions against the weight. Solid lines are A1, dashed lines A2.](../figures/2026-11-06/s13-weight-curves.png)
+![Recovery, false activity, calibration, convergence, validation and CV C, survival share and survival-only directions against the weight. Solid lines are the block-weighted fit, dashed lines the joint-posterior fit.](../figures/2026-11-06/s13-weight-curves.png)
 
 ### Programs near the detection threshold (simulation)
 
@@ -457,17 +468,18 @@ s14a <- aggregate(cbind(recovered, abs_r, false_active, c_validation, oracle_c) 
 s14a$recovered <- s14a$recovered * 10
 ```
 
-On the S-9 test bed the two-step fit already finds the planted program, so it cannot show what
-supervision adds. S-14 planted weaker programs, at 0.05%, 0.1% and 0.2% of expression variance,
+On the fixed-weight simulation's test bed the two-step fit already finds the planted program, so it cannot show what
+supervision adds. The near-threshold simulation planted weaker programs, at 0.05%, 0.1% and 0.2% of expression variance,
 with strong survival (oracle C about 0.94) and realistic survival (oracle C about 0.74). Ten
 datasets per cell.
 
 ```{r s14-table}
 x <- s14a[s14a$arm %in% c("twostep", "A1_w1"), ]
 x <- x[order(x$strength, x$share, x$arm), ]
+x$arm <- c(twostep = "Two-step", A1_w1 = "Supervised (w_S = 1)")[x$arm]
 x$share <- paste0(x$share * 100, "%")
 kable(x, row.names = FALSE, digits = 3,
-  col.names = c("Survival", "Planted share", "Arm", "Recovered (of 10)", "Mean |r|", "Mean false-active",
+  col.names = c("Survival", "Planted share", "Fit", "Recovered (of 10)", "Mean |r|", "Mean false-active",
                 "Validation C", "Oracle C"))
 ```
 
@@ -500,7 +512,7 @@ hazard ratio per SD of a program's score.
 
 - **Where the planted program is recovered,** the other active programs carry at most 1.3% of the
   risk-score variance. Their standardized coefficients are about 0.1 to 0.3, against 1 to 17 for
-  the matched program, and removing them changes validation C by at most 0.008 (S-13 maximum
+  the matched program, and removing them changes validation C by at most 0.008 (maximum in the cross-validated-weight simulation
   `r sprintf("%.3f", max(abs(fa13$delta_c), na.rm = TRUE))`).
 - **Where the program is only partly found** (0.05% share), the other programs carry 9% to 69% of
   the risk-score variance and add to C. They hold pieces of the planted direction. The split is
@@ -520,7 +532,7 @@ s15v <- read.csv(file.path(S15, "verdict.csv")); s15p <- read.csv(file.path(S15,
 ```
 
 The same weight choice was applied to the 273 training patients, with weights from 1 to 50 and
-the S-11 folds. A nested cross-validation repeated the choice inside each training split, to give an
+the training cross-validation folds. A nested cross-validation repeated the choice inside each training split, to give an
 honest estimate of the whole procedure.
 
 ```{r s15-curve}
@@ -567,20 +579,20 @@ p7ke <- read.csv(file.path(P7, "rank_external.csv")); p7m <- read.csv(file.path(
 p7en <- read.csv(file.path(P7, "enrichment.csv")); p7a <- read.csv(file.path(P7, "adjusted_hr.csv"))
 f3 <- function(x) sprintf("%.3f", x); f2 <- function(x) sprintf("%.2f", x)
 lab <- c(w1 = "Supervised (w_S = 1)", twostep = "Two-step", PurIST = "PurIST",
-         elastic_net = "Elastic-net Cox (D4)", DeSurv = "DeSurv")
+         elastic_net = "Elastic-net Cox (2,218-gene set)", DeSurv = "DeSurv")
 ```
 
 Both analyses were registered before they were run
 ([comparators plan](../../plans/2026-11-06-real-data-comparators-plan.md),
 [DeSurv-style plan](../../plans/2026-11-06-desurv-style-analyses-plan.md)). Every comparator was
 trained on the 273 TCGA and CPTAC patients only, and each score's direction was fixed on training
-data. The fixed S-11 supervised fit and its two-step counterpart were not refitted. Details are in
+data. The fixed supervised fit from the training cross-validation and its two-step counterpart were not refitted. Details are in
 the [comparator findings](../../findings/2026-11-06-real-data-comparators-findings.md) and the
 [DeSurv-style findings](../../findings/2026-11-06-desurv-style-analyses-findings.md).
 
 **Comparators.** DeSurv used the authors' code, preprocessing and published settings (rank 3,
 chosen by the authors on the same two training cohorts), with 100 starts. The registration had named a new training-only search, so this is a deviation. The elastic-net Cox
-model on the D4 genes chose α = `r p6t$alpha[p6t$selected]` (ridge) by training CV on the S-11
+model on the 2,218-gene set chose α = `r p6t$alpha[p6t$selected]` (ridge) by training CV on the same
 folds. The α = 0.75 and lasso paths hit glmnet's iteration limit at small λ, which may have favoured the ridge choice. PurIST entered as its training-fitted Cox score. No clinical model was fitted, because no
 stage, grade, age or margin field is recorded in all seven cohorts.
 
@@ -628,7 +640,7 @@ describe that pipeline rather than the information in a larger factorization.
 
 **Program classification rule.** A main prognostic program needs a standardized coefficient at
 least 0.25 of the largest, at least 5% of the (signed) risk-score variance and activity in at
-least four of the five S-11 folds.
+least four of the five training cross-validation folds.
 
 ```{r p7-rule}
 y <- p7r[p7r$active | p7r$ratio > .1, ]
@@ -643,9 +655,9 @@ Programs 2 and 3 meet the rule. Program 5 meets the coefficient and variance thr
 active in only three folds. No program is survival-dominated: the upper bound on survival's
 share of the loading precision is below 10⁻⁵ for every program. The old label (active with PVE
 below 1%) also marks none. In the saved simulation fits the coefficient-and-share part of the
-rule kept the planted program in all 80 S-13 fits and rejected 35 of 36 false-active
-directions. In the S-14 two-step fits it rejected only 61 of 128 false-active directions, and
-the supervised S-14 fits could not be checked. The fold-stability part could not be checked in
+rule kept the planted program in all 80 fits in the cross-validated-weight simulation and rejected 35 of 36 false-active
+directions. In the near-threshold two-step fits it rejected only 61 of 128 false-active directions, and
+the supervised near-threshold fits could not be checked. The fold-stability part could not be checked in
 any simulation.
 
 **Mixed-signal simulation.** One strong and one near-threshold prognostic program were planted
@@ -669,7 +681,7 @@ datasets and had lower validation C, This compares two fixed weights and does no
 ## Open items and questions
 
 - **Stronger supervision on real data.** Moving the real-data loadings needs weights near 10⁴.
-  That first needs the fit to stay stable at large weights, the problem S-9 found and did not
+  That first needs the fit to stay stable at large weights, the problem the fixed-weight simulation found and did not
   solve.
 - **Classifying programs for the biology.** The rule names programs 2 and 3 on real data. Its
   fold-stability part has not been checked in simulation, because the saved simulation fits
