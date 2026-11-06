@@ -224,10 +224,12 @@ The entries below retain dated implementation and evaluation history.
   and an LB arm that separates survival weight from (1 − α) tempering. Align the two
   models as far as possible so that only the parameterization differs: the same
   preprocessed Y, the same priors on L and F (Andrew suggests point-exponential) and on
-  β (point-normal), and the same initialization. Nonnegative priors need nonnegative
-  input, while the current YFB configuration standardizes Y (point-Laplace), so the
-  shared preprocessing has to be chosen in the plan. Include the real PDAC training
-  data and external validation cohorts alongside the simulations.
+  β (point-normal), and the same initialization. Use the agreed nonnegative setup
+  (realignment plan, Phase P item 3; S-9 plan): X/sd within each cohort, kept
+  nonnegative for reconstruction, with centering only inside the Cox projection.
+  `fit_ssbmf_yfb()` has no projection-only centering and so takes the z-score with
+  point-Laplace priors; the YFB arm needs the projection centering first. Include the
+  real PDAC training data and external validation cohorts alongside the simulations.
 
 - [ ] **Prepare the November 6 writeup version.** `paper/writeup/2026-11-06-writeup/`
   holds only a placeholder README. Decide whether it starts from the October 16 sources or
