@@ -272,11 +272,13 @@ bootstrap_concordance_diff_ci <- function(risk_a, risk_b, time, status,
 #' # Use donor_list = list(ids_array, ids_rna) with cross-series donor IDs.
 #'
 #' @family concordance-ci
+#' @param frozen Use the frozen score helper, which marks constant risk undefined.
 #' @seealso bootstrap_concordance_diff_ci, frozen_reverse_cindex
 bootstrap_concordance_diff_ci_stratified <- function(risk_a_list, risk_b_list,
                                                        time_list, status_list,
                                                        B = 2000, seed = 1,
-                                                       conf_level = 0.95, donor_list = NULL) {
+                                                       conf_level = 0.95, donor_list = NULL,
+                                                       frozen = FALSE) {
   n_strata <- length(risk_a_list)
   if (n_strata < 1) stop("Need at least one stratum.")
   if (length(risk_b_list) != n_strata || length(time_list) != n_strata ||
@@ -297,6 +299,12 @@ bootstrap_concordance_diff_ci_stratified <- function(risk_a_list, risk_b_list,
 
   .stratum_diff <- function(s, idx = NULL) {
     if (is.null(idx)) idx <- seq_len(n_per[s])
+    if (frozen) {
+      time <- time_list[[s]][idx]
+      status <- status_list[[s]][idx]
+      return(frozen_reverse_cindex(risk_a_list[[s]][idx], time, status) -
+               frozen_reverse_cindex(risk_b_list[[s]][idx], time, status))
+    }
     ca <- as.numeric(concordance(Surv(time_list[[s]][idx], status_list[[s]][idx]) ~
                                     risk_a_list[[s]][idx], reverse = TRUE)$concordance)
     cb <- as.numeric(concordance(Surv(time_list[[s]][idx], status_list[[s]][idx]) ~

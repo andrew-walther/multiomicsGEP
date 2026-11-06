@@ -1,0 +1,75 @@
+# Real-data prognostic comparators
+
+The [registration](../plans/2026-11-06-real-data-comparators-plan.md) fixes
+the S-11 supervised and two-step references and trains the comparators on
+TCGA and CPTAC. The reference factorizations were reused. The two-step Cox
+coefficients were reconstructed from the fixed unsupervised program scores.
+
+The clinical comparison requires covariates that can be harmonized across
+the training data and every external cohort. None of the requested fields
+met that requirement. The field audit preserves the original source column
+names. For example, Puleo's FFPE block age is not patient age, and Moffitt's
+T, N and M columns are component categories rather than an overall stage.
+
+## Reproduce and trace the results
+
+From the repository root with the local S-11 inputs and the pinned DeSurv
+library installed:
+
+```sh
+export PDAC_DATA_ROOT=/absolute/path/to/PDAC_data
+Rscript results/benchmark_sim/run_prompt6_desurv.R 8
+Rscript results/benchmark_sim/run_prompt6_comparators.R
+```
+
+The first command uses the authors' reported training settings, their
+preprocessing, independent seed fits, and a consensus initialization for
+the final fit. Its checkpoints stay under ignored `data/prompt6_desurv/`.
+The second command fits the PurIST probability Cox model and cross-validates
+elastic-net Cox on the fixed D4 features and S-11 folds. It scores the
+external samples, reproduces the S-12 reference concordances and writes the
+following aggregate tables to
+[`outputs/prompt6_comparators/`](../../results/benchmark_sim/outputs/prompt6_comparators/).
+
+| File | Reported values |
+|---|---|
+| `external.csv` | Eligible, scored, dropped and event counts, per-cohort C and bootstrap limits, calibration slope and SE |
+| `paired.csv` | Supervised-minus-comparator C on common rows, eligible strata, row and donor counts, donor-bootstrap limits and replicate count |
+| `pooled_hr.csv` | Cohort-stratified HR per pooled external SD, interval, p-value and denominator |
+| `clinical_fields.csv` | Source clinical fields by cohort |
+| `training.csv` | Training denominators and fit counts by arm, excluding DeSurv |
+| `tuning.csv` | Elastic-net alpha, lambda and CV deviance by candidate |
+| `desurv_starts.csv` | One row per author seed, including convergence, errors, warnings and runtime |
+| `desurv_final.csv` | Final DeSurv training denominator, convergence and iterations |
+
+External outcomes entered only the performance and calibration analyses.
+The pooled C contrast gives each represented cohort equal weight. The paired
+bootstrap keeps the two PACA-AU assays together at the donor level. The HR
+scaling uses the pooled external score SD as a descriptive unit.
+
+## Results
+
+The paired external analysis used 616 records from 568 donors in each
+contrast. Every interval includes zero.
+
+| Comparator | Supervised minus comparator C | 95% donor bootstrap interval |
+|---|---:|---:|
+| Two-step | 0.0071 | −0.0029 to 0.0173 |
+| PurIST | 0.0211 | −0.0134 to 0.0573 |
+| Elastic net | 0.0015 | −0.0146 to 0.0180 |
+| DeSurv | 0.0069 | −0.0166 to 0.0300 |
+
+The contrast table and denominators come from `paired.csv`. DeSurv completed
+all 100 starts with no errors or convergence failures, and its final fit
+converged in 34 iterations on 273 training patients
+(`desurv_starts.csv`, `desurv_final.csv`). Elastic net selected the ridge
+endpoint (α = 0, λ = 39.4461). Some lower-penalty solutions at nonzero α hit
+the iteration limit. The candidate warnings and selected settings are in
+`tuning.csv`. All eligible patients were scored by every fitted arm
+(`training.csv`, `external.csv`). The clinical arm was excluded before fitting.
+
+The elastic-net tuning used the fixed D4 feature set and already prepared
+training matrix, so its CV objective is conditional on that preprocessing.
+The external cohorts have a history of project development use, described
+in the [external-cohort audit](2026-11-06-external-cohort-uses.md). The new
+comparisons are descriptive and the intervals do not establish equivalence.

@@ -401,7 +401,7 @@ run_test("CCI-T26: a donor shared by identical cohorts has one bootstrap multipl
   shared <- bootstrap_concordance_diff_ci_stratified(
     rep(list(a$risk_a), 2), rep(list(a$risk_b), 2),
     rep(list(a$time), 2), rep(list(a$status), 2), B = 100, seed = 8,
-    donor_list = rep(list(donors), 2)
+    donor_list = rep(list(donors), 2), frozen = TRUE
   )
   for (metric in c("estimate", "lower", "upper", "se")) {
     assert_near(shared[[metric]], one[[metric]], tol = 1e-12,

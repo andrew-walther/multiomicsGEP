@@ -1,0 +1,8 @@
+"cohort","stage","grade","age","margin"
+"TCGA_PAAD","AJCC.pathologic.tumor.stage","Grade","Age.at.initial.pathologic.diagnosis",NA
+"CPTAC","tumor_stage_pathological",NA,"age","residual_tumor"
+"Dijk",NA,"differentiation grade","age (year)",NA
+"Moffitt_GEO_array","T; N; M","Diff",NA,"Margin"
+"PACA_AU_array","AJCC.Pathology.Stage","Tumour.Grade","Age.at.Diagnosis.in.Years",NA
+"PACA_AU_seq","AJCC.Pathology.Stage","Tumour.Grade","Age.at.Diagnosis.in.Years",NA
+"Puleo_array",NA,"Characteristics.TNM.tumour.grading.",NA,"Characteristics.resection.margin."
