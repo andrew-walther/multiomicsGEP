@@ -83,8 +83,8 @@ run_test("CVLL-T4: every test patient is covered exactly once across folds", {
 
 run_test("CVLL-T5: leakage guard -- c_train is reproducible from TRAINING rows only", {
   # Refit the same folds by hand and recompute training concordance directly.
-  # If cv_survival_loglik() ever used held-out outcomes to orient EBeta, this
-  # would not match (held-out concordance differs from training concordance).
+  # c_train is a training-rows diagnostic; if it were computed from held-out
+  # outcomes it would not match.
   res <- cv_survival_loglik(Y, time, status, K = K_true, n_folds = 4, seed = 11,
                              max_iter = 20, tol = 1e-3)
   fold_obj <- create_stratified_folds(status, n_folds = 4, seed = 11)
@@ -95,8 +95,7 @@ run_test("CVLL-T5: leakage guard -- c_train is reproducible from TRAINING rows o
                    # but keep this for any future stochastic init_method default change.
   fit <- fit_ssbmf_yfb(Y[train_idx, , drop = FALSE], time[train_idx], status[train_idx],
                         K = K_true, max_iter = 20, tol = 1e-3,
-                        prior_LF = "point_exponential", prior_beta = "normal", alpha = 0.5,
-                        sign_correction = FALSE, verbose = FALSE)
+                        prior_LF = "point_exponential", prior_beta = "normal", alpha = 0.5, verbose = FALSE)
   ZF_train  <- Y[train_idx, , drop = FALSE] %*% sweep(fit$EF, 2, fit$EF_norms, "/")
   eta_train <- as.vector(ZF_train %*% fit$EBeta)
   c_train_manual <- as.numeric(concordance(Surv(time[train_idx], status[train_idx]) ~ eta_train,
@@ -293,19 +292,11 @@ run_test("CVLL-T19: strata_id is passed through to held-out scoring (isolated fr
                  # safeguard for determinism, matching how other tests in this file fit directly.
   fit <- suppressMessages(fit_ssbmf_yfb(
     Y[train_idx, , drop = FALSE], time[train_idx], status[train_idx], K = K_true,
-    max_iter = 15, tol = 1e-3, sign_correction = FALSE, verbose = FALSE,
+    max_iter = 15, tol = 1e-3, verbose = FALSE,
     strata_id = strata3[train_idx]
   ))
-  # Reproduce cv_survival_loglik()'s own (non-cohort) orientation decision
-  # exactly, so risk_scores below matches what it would have used internally
-  # -- logPL is NOT sign-invariant, so an orientation mismatch here would
-  # fail this test for a reason unrelated to the strata fix being tested.
-  ZF_train  <- Y[train_idx, , drop = FALSE] %*% sweep(fit$EF, 2, fit$EF_norms, "/")
-  eta_train <- as.vector(ZF_train %*% fit$EBeta)
-  c_train   <- as.numeric(survival::concordance(
-    survival::Surv(time[train_idx], status[train_idx]) ~ eta_train, reverse = TRUE)$concordance)
-  EBeta_oriented <- if (is.finite(c_train) && c_train < 0.5) -fit$EBeta else fit$EBeta
-  pred <- predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented, EF_norms = fit$EF_norms)
+  # cv_survival_loglik() scores the fold's fit as returned (no re-orientation).
+  pred <- predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, fit$EBeta, EF_norms = fit$EF_norms)
   logpl_stratified   <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx],
                                             strata = strata3[test_idx])$logPL
   logpl_unstratified <- calc_cox_taylor_yf(pred$risk_scores, time[test_idx], status[test_idx])$logPL

@@ -66,8 +66,7 @@ for (seed in SEEDS) {
   f_svd_tuned <- suppressMessages(fit_ssbmf_yfb(Ytr, ttr, str_, K = 4, max_iter = 300,
                     alpha = 0.5, prior_beta = "normal", verbose = FALSE, init_method = "svd"))
   f_svd_a0 <- suppressMessages(fit_ssbmf_yfb(Ytr, ttr, str_, K = 4, max_iter = 300,
-                    alpha = 0, prior_beta = "normal", verbose = FALSE, init_method = "svd",
-                    sign_correction = FALSE))
+                    alpha = 0, prior_beta = "normal", verbose = FALSE, init_method = "svd"))
 
   # Check 2: LB (shared update_L.R/update_F.R machinery)
   f_lb <- suppressMessages(fit_ssbmf_lb(Ytr, ttr, str_, K = 4, max_iter = 300,

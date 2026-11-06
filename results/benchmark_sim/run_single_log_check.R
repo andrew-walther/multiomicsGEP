@@ -92,7 +92,7 @@ for (arm in names(prep)) for (fold in 0:cfg$cavi$n_cv_folds) {
   tr <- if (fold == 0L) test else setdiff(seq_len(nrow(Y)), test)
   started <- proc.time()[3]
   set.seed(42L)
-  ctl <- controls; ctl$sign_correction <- fold == 0L
+  ctl <- controls
   fit <- do.call(fit_ssbmf_yfb, c(list(Y = Y[tr, , drop = FALSE], time = time[tr],
                                       status = status[tr]), ctl))
   eta_tr <- predict_ssbmf_yfb(Y[tr, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores

@@ -152,7 +152,7 @@ if (mode == "cv") {
       runtime_seconds = NA_real_, warnings = "", error = "")
     tryCatch(withCallingHandlers({
       set.seed(42L)
-      ctl <- z$controls; ctl$sign_correction <- m$fold == 0L
+      ctl <- z$controls
       fit <- do.call(fit_ssbmf_yfb, c(list(Y = Y[tr, , drop = FALSE], time = z$time[tr],
                                           status = z$status[tr]), ctl))
       eta_tr <- predict_ssbmf_yfb(Y[tr, , drop = FALSE], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores

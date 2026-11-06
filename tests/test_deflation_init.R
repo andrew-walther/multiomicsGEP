@@ -133,7 +133,7 @@ run_test("DI-T7: LB init_method='deflation' runs and returns non-negative EL/EF"
   fit <- fit_ssbmf_lb(Y, tv, sv_,
            K = K, max_iter = 10, tol = 1e-2,
            prior_LF = "point_exponential", prior_beta = "point_normal",
-           alpha = 0.5, sign_correction = FALSE,
+           alpha = 0.5,
            init_method = "deflation", verbose = FALSE)
   assert_true(!is.null(fit$EL), "fit should return EL")
   assert_true(all(fit$EL >= 0), "LB deflation-init EL should be non-negative after pmax(.,0)")
@@ -145,7 +145,7 @@ run_test("DI-T7: LB init_method='deflation' runs and returns non-negative EL/EF"
 run_test("DI-T8: YFB init_method='deflation' runs and returns non-negative EL/EF", {
   fit <- fit_ssbmf_yfb(Y, tv, sv_,
            K = K, max_iter = 10, tol = 1e-2,
-           prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
+           prior_beta = "normal", alpha = 0.5,
            init_method = "deflation", verbose = FALSE)
   assert_true(!is.null(fit$EL), "fit should return EL")
   assert_true(all(fit$EL >= 0), "YFB deflation-init EL should be non-negative after abs()")
@@ -156,12 +156,10 @@ run_test("DI-T8: YFB init_method='deflation' runs and returns non-negative EL/EF
 #     break the else-stop branch) -- regression guard for both models
 run_test("DI-T9: unknown init_method still raises an error in both models", {
   err_lb <- tryCatch(
-    fit_ssbmf_lb(Y, tv, sv_, K = K, max_iter = 5, alpha = 0.5,
-      sign_correction = FALSE, init_method = "bogus", verbose = FALSE),
+    fit_ssbmf_lb(Y, tv, sv_, K = K, max_iter = 5, alpha = 0.5, init_method = "bogus", verbose = FALSE),
     error = function(e) conditionMessage(e))
   err_yfb <- tryCatch(
-    fit_ssbmf_yfb(Y, tv, sv_, K = K, max_iter = 5, alpha = 0.5,
-      sign_correction = FALSE, init_method = "bogus", verbose = FALSE),
+    fit_ssbmf_yfb(Y, tv, sv_, K = K, max_iter = 5, alpha = 0.5, init_method = "bogus", verbose = FALSE),
     error = function(e) conditionMessage(e))
   assert_true(is.character(err_lb), "LB should still reject an unknown init_method")
   assert_true(is.character(err_yfb), "YFB should still reject an unknown init_method")

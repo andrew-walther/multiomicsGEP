@@ -38,19 +38,16 @@
 #'
 #' \strong{Survival term}: recomputed post-hoc, NOT read from the in-loop
 #' `history$elbo_full` survival component. The in-loop `logPL` is evaluated
-#' at the previous iterate's EF/EBeta and predates the post-loop
-#' `sign_correction` beta flip, so it does not correspond to the returned
-#' fit. Recomputing `ZF <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")`,
+#' at the previous iterate's EF/EBeta, so it does not correspond to the
+#' returned fit. Recomputing `ZF <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")`,
 #' `eta <- ZF %*% fit$EBeta`, then `calc_cox_taylor_yf(eta, time, status)`
 #' matches exactly what `predict_ssbmf_yfb()` does at test time, so this
 #' scores the model as actually deployed. `EF_norms` is floored at `1e-10`
 #' inside `fit_ssbmf_yfb()` (not exactly zero), so an ARD-pruned all-zero EF
-#' column divides cleanly to 0 rather than producing NaN. Before scoring,
-#' `eta` is independently re-oriented by a correct-direction
-#' (`reverse = TRUE`) concordance check -- `fit$EBeta`'s sign, as returned
-#' by `fit_ssbmf_yfb()`, is not a reliable hazard-direction indicator (see
-#' the orientation-correction comment at the "Survival term" code block
-#' below, and DECISIONS.md 2026-09-04).
+#' column divides cleanly to 0 rather than producing NaN. `eta` is scored as
+#' returned: until 2026-11-06 it was re-oriented here by a concordance check,
+#' a workaround for the fitter's former sign flip, removed with that flip
+#' (DECISIONS.md 2026-11-06).
 #'
 #' \strong{df}: `K_init * (n + p + 1)` -- i.e. proportional to the number of
 #' factors the CAVI loop was *initialized* with (`length(fit$EBeta)`), not
@@ -186,36 +183,7 @@ compute_joint_ll_bic <- function(fit, Y, time, status, strata = NULL,
     eta <- as.vector(ZF %*% fit$EBeta)
   }
 
-  # Orientation correction (DECISIONS.md 2026-09-04): fit_ssbmf_yfb()'s own
-  # post-loop sign-correction (fit_ssbmf_yfb.R, "Phase C") checks
-  # concordance(Surv(time,status) ~ eta_final) WITHOUT reverse = TRUE.
-  # survival::concordance()'s formula method defaults to assuming a larger
-  # predictor means a LARGER (longer) response -- the opposite of a Cox risk
-  # score, where a larger eta means a SHORTER survival time; the package's
-  # own documentation calls this out explicitly as the one case requiring
-  # reverse = TRUE. Without it, fit_ssbmf_yfb()'s check is inverted, so
-  # fit$EBeta's returned sign is not a reliable hazard-direction indicator
-  # (confirmed empirically: a fit with true training concordance ~0.90+ in
-  # the correct direction reads as ~0.90+ under the UNCORRECTED check too,
-  # so the "already fine, don't flip" branch fires when a flip was in fact
-  # needed). This is harmless for every sign-invariant metric already
-  # reported elsewhere in this project (external C-index via
-  # oriented_cindex()'s max(c, 1-c); K_eff via classify_factors()'s
-  # abs(EBeta) threshold; pathway-enrichment adverse/protective direction,
-  # which by design uses each program's marginal association, not joint
-  # beta sign -- DECISIONS.md 2026-06-16). It is NOT harmless here: Cox
-  # partial log-likelihood is not sign-invariant, so scoring an
-  # anti-oriented eta as-is understates the model's genuine fit. This
-  # function orients eta itself (correct-direction concordance check, using
-  # reverse = TRUE), independent of whatever fit_ssbmf_yfb() did, rather
-  # than trusting fit$EBeta's sign.
-  c_check <- tryCatch(
-    as.numeric(survival::concordance(survival::Surv(time, status) ~ eta,
-                                      reverse = TRUE)$concordance),
-    error = function(e) NA_real_
-  )
-  if (is.finite(c_check) && c_check < 0.5) eta <- -eta
-
+  # eta is scored as returned (no re-orientation; DECISIONS.md 2026-11-06).
   surv <- calc_cox_taylor_yf(eta, time, status, strata = strata)
   loglik_survival <- surv$logPL
   if (!is.finite(loglik_survival)) {

@@ -162,7 +162,7 @@ fit_arm <- function(arm, d, spl) {
     # directly below (section 4b), not merely asserted.
     f <- suppressMessages(fit_ssbmf_yfb(
       Ytr, ttr, str_, K = K_FIT, max_iter = MAX_ITER, alpha = 0,
-      prior_beta = PRIOR_BETA, verbose = FALSE, sign_correction = FALSE))
+      prior_beta = PRIOR_BETA, verbose = FALSE))
     list(EF = f$EF, EL = f$EL, EBeta = f$EBeta, EF_norms = f$EF_norms, n_iter = f$history$n_iter)
 
   } else if (arm == "LB_tuned") {
@@ -302,11 +302,11 @@ for (strength in STRENGTHS) {
     f_ctrl_tuned <- suppressMessages(fit_ssbmf_yfb(
       d$Y[spl$train_idx, , drop = FALSE], d$time[spl$train_idx], d$status[spl$train_idx],
       K = K_FIT, max_iter = ctrl_iter, tol = -1, alpha = ALPHA_TUNED,
-      prior_beta = PRIOR_BETA, verbose = FALSE, sign_correction = FALSE))
+      prior_beta = PRIOR_BETA, verbose = FALSE))
     f_ctrl_a0 <- suppressMessages(fit_ssbmf_yfb(
       d$Y[spl$train_idx, , drop = FALSE], d$time[spl$train_idx], d$status[spl$train_idx],
       K = K_FIT, max_iter = ctrl_iter, tol = -1, alpha = 0,
-      prior_beta = PRIOR_BETA, verbose = FALSE, sign_correction = FALSE))
+      prior_beta = PRIOR_BETA, verbose = FALSE))
     alpha_rows[[length(alpha_rows) + 1]] <- data.frame(
       scenario = scen_name, strength = strength, seed = s,
       max_abs_EF_diff = max(abs(f_ctrl_tuned$EF - f_ctrl_a0$EF)),

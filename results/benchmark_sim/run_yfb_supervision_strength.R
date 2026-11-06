@@ -84,8 +84,7 @@ s13_fit <- function(Y, time, event, w_S, beta_posterior, cfg) {
                 max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
                 prior_LF = "point_laplace", prior_beta = "normal", canonicalize = TRUE,
                 w_S = w_S, survival_block_weight = TRUE, beta_posterior = beta_posterior,
-                alpha = cfg$benchmark$alpha, verbose = FALSE, trace_supervision = TRUE,
-                sign_correction = FALSE)
+                alpha = cfg$benchmark$alpha, verbose = FALSE, trace_supervision = TRUE)
 }
 
 #' Per-program roles at a fitted state (Gemini guide, issue 5)
@@ -186,7 +185,7 @@ s13_twostep <- function(seed, cell, cfg) {
   f0 <- fit_ssbmf_yfb(d$Ytr, d$time, d$event, K = cfg$benchmark$k_merged_yfb_desurv,
                       max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol, prior_LF = "point_laplace",
                       prior_beta = "normal", canonicalize = TRUE, w_S = 0,
-                      alpha = cfg$benchmark$alpha, verbose = FALSE, sign_correction = FALSE)
+                      alpha = cfg$benchmark$alpha, verbose = FALSE)
   live <- which(colSums(f0$EF^2) > 1e-8)
   Z <- d$Ytr %*% f0$EF[, live, drop = FALSE]
   cf <- survival::coxph(survival::Surv(d$time, d$event) ~ Z, control = survival::coxph.control(timefix = FALSE))

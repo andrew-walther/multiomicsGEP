@@ -120,7 +120,7 @@ for(id in ids) {
   cat("Starting cell",id,"p",length(genes),"fold",cell$fold,"\n")
   tryCatch(withCallingHandlers({
     set.seed(42L)
-    controls <- z$controls;controls$sign_correction <- cell$fold==0L
+    controls <- z$controls
     fit <- do.call(fit_ssbmf_yfb,c(list(Y=Y[train,,drop=FALSE],
       time=z$time[train],status=z$status[train]),controls))
     training <- predict_ssbmf_yfb(Y[train,,drop=FALSE],fit$EF,fit$EBeta,fit$EF_norms)

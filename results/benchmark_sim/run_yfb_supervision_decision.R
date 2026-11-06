@@ -189,7 +189,7 @@ yfb_decision_task <- function(row,out,fit_rho=.2) {
   record("canonical_w1",{
     f<-fit_ssbmf_yfb(d$Y,d$time,d$event,K=cfg$benchmark$k_merged_yfb_desurv,max_iter=cfg$cavi$max_iter,tol=cfg$cavi$tol,
       prior_LF="point_laplace",prior_beta="normal",canonicalize=TRUE,w_S=1,
-      alpha=cfg$benchmark$alpha,verbose=FALSE,trace_supervision=TRUE,sign_correction=FALSE)
+      alpha=cfg$benchmark$alpha,verbose=FALSE,trace_supervision=TRUE)
     list(fit=f,metrics=yfb_decision_score(f,d,TRUE))
   },1)
   record("lasso",{

@@ -25,8 +25,7 @@ run_test("T_conv.1: norm_convention='per_p' sets genomics_divisor=1, survival_di
   status <- rbinom(n, 1, 0.7)
 
   res <- fit_ssbmf_lb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
-                                   norm_convention = "per_p", verbose = FALSE,
-                                   sign_correction = FALSE)
+                                   norm_convention = "per_p", verbose = FALSE)
   assert_near(res$genomics_divisor, 1,   tol = 1e-10, msg = "per_p: genomics_divisor should equal 1 (unchanged)")
   assert_near(res$survival_divisor, 1/p, tol = 1e-10, msg = "per_p: survival_divisor should equal 1/p (boosts survival by p)")
 })
@@ -38,8 +37,7 @@ run_test("T_conv.2: norm_convention='np_n' sets genomics_divisor=n*p, survival_d
   status <- rbinom(n, 1, 0.7)
 
   res <- fit_ssbmf_lb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
-                                   norm_convention = "np_n", verbose = FALSE,
-                                   sign_correction = FALSE)
+                                   norm_convention = "np_n", verbose = FALSE)
   assert_near(res$genomics_divisor, n * p, tol = 1e-10, msg = "np_n: genomics_divisor should equal n*p")
   assert_near(res$survival_divisor, n,     tol = 1e-10, msg = "np_n: survival_divisor should equal n")
 })
@@ -51,7 +49,7 @@ run_test("T_conv.3: norm_convention defaults to 'per_p'", {
   status <- rbinom(n, 1, 0.7)
 
   res <- fit_ssbmf_lb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
-                                   verbose = FALSE, sign_correction = FALSE)
+                                   verbose = FALSE)
   assert_near(res$genomics_divisor, 1,   tol = 1e-10, msg = "default should be per_p (genomics_divisor=1)")
   assert_near(res$survival_divisor, 1/p, tol = 1e-10, msg = "default should be per_p (survival_divisor=1/p)")
 })
@@ -71,7 +69,7 @@ run_test("T_conv.3b: alpha=0 under per_p (genomics_divisor=1) matches an explici
   set.seed(5)
   res_perp <- fit_ssbmf_lb(Y, time, status, K = K, max_iter = 10, tol = -1,
                                         alpha = 0, norm_convention = "per_p",
-                                        verbose = FALSE, sign_correction = FALSE)
+                                        verbose = FALSE)
   # fit_ssbmf_lb's pre-Phase-1a default behavior at alpha=0 is
   # exactly genomics_divisor=1, which "per_p" already gives -- assert the
   # result is finite and non-degenerate (not collapsed to zero).
@@ -90,8 +88,7 @@ run_test("T_conv.4: YFB norm_convention='per_p' sets genomics_divisor=1, surviva
   status <- rbinom(n, 1, 0.7)
 
   res <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
-                       norm_convention = "per_p", verbose = FALSE,
-                       sign_correction = FALSE)
+                       norm_convention = "per_p", verbose = FALSE)
   assert_near(res$genomics_divisor, 1,   tol = 1e-10, msg = "YFB per_p: genomics_divisor should equal 1")
   assert_near(res$survival_divisor, 1/p, tol = 1e-10, msg = "YFB per_p: survival_divisor should equal 1/p")
 })
@@ -103,8 +100,7 @@ run_test("T_conv.5: YFB norm_convention='np_n' sets genomics_divisor=n*p, surviv
   status <- rbinom(n, 1, 0.7)
 
   res <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 3, tol = 1e-8,
-                       norm_convention = "np_n", verbose = FALSE,
-                       sign_correction = FALSE)
+                       norm_convention = "np_n", verbose = FALSE)
   assert_near(res$genomics_divisor, n * p, tol = 1e-10, msg = "YFB np_n: genomics_divisor should equal n*p")
   assert_near(res$survival_divisor, n,     tol = 1e-10, msg = "YFB np_n: survival_divisor should equal n")
 })
@@ -127,12 +123,10 @@ run_test("T_conv.6: YFB EL/EF are identical under per_p vs np_n -- L/F are pure-
   # stops, confounding the comparison even though EL/EF math never uses EBeta.
   set.seed(1)
   res_perp <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 6, tol = -1,
-                            norm_convention = "per_p", verbose = FALSE,
-                            sign_correction = FALSE)
+                            norm_convention = "per_p", verbose = FALSE)
   set.seed(1)
   res_npn  <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 6, tol = -1,
-                            norm_convention = "np_n", verbose = FALSE,
-                            sign_correction = FALSE)
+                            norm_convention = "np_n", verbose = FALSE)
 
   assert_near(res_perp$EL, res_npn$EL, tol = 1e-8,
               msg = "YFB EL should be identical across norm_convention (pure genomics, unaffected)")
@@ -159,7 +153,7 @@ run_test("T_conv.7: LB per_p (boost-survival) avoids the L/F/beta collapse seen 
   set.seed(11)
   res <- fit_ssbmf_lb(Y, time, status, K = K_true, max_iter = 15, tol = 1e-6,
                                    alpha = 0.5, norm_convention = "per_p",
-                                   verbose = FALSE, sign_correction = FALSE)
+                                   verbose = FALSE)
 
   assert_true(max(abs(res$EL)) > 1e-3, "LB per_p: EL should not collapse to zero")
   assert_true(max(abs(res$EF)) > 1e-3, "LB per_p: EF should not collapse to zero")
@@ -197,11 +191,9 @@ run_test("T_conv.8: YFB beta_divisor is 1 regardless of norm_convention when boo
   d <- .beta_boost_fixture(5001)
 
   res_perp <- fit_ssbmf_yfb(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
-                            norm_convention = "per_p", verbose = FALSE,
-                            sign_correction = FALSE)
+                            norm_convention = "per_p", verbose = FALSE)
   res_npn  <- fit_ssbmf_yfb(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
-                            norm_convention = "np_n", verbose = FALSE,
-                            sign_correction = FALSE)
+                            norm_convention = "np_n", verbose = FALSE)
 
   assert_near(res_perp$beta_divisor, 1, tol = 1e-10, msg = "per_p: beta_divisor should be 1 (unboosted) by default")
   assert_near(res_npn$beta_divisor,  1, tol = 1e-10, msg = "np_n: beta_divisor should be 1 (unboosted) by default")
@@ -212,7 +204,7 @@ run_test("T_conv.9: YFB boost_beta=TRUE sets beta_divisor to match survival_divi
 
   res <- fit_ssbmf_yfb(d$Y, d$time, d$status, K = 3, max_iter = 2, tol = -1,
                        norm_convention = "per_p", boost_beta = TRUE,
-                       verbose = FALSE, sign_correction = FALSE)
+                       verbose = FALSE)
 
   assert_near(res$beta_divisor, res$survival_divisor, tol = 1e-10,
               msg = "boost_beta=TRUE: beta_divisor should equal survival_divisor")
@@ -225,12 +217,10 @@ run_test("T_conv.10: LB boost_beta defaults to FALSE and threads through the bur
 
   set.seed(1)
   res_perp <- fit_ssbmf_lb(d$Y, d$time, d$status, K = 2, max_iter = 10, tol = -1,
-                                        norm_convention = "per_p", verbose = FALSE,
-                                        sign_correction = FALSE)
+                                        norm_convention = "per_p", verbose = FALSE)
   set.seed(1)
   res_npn  <- fit_ssbmf_lb(d$Y, d$time, d$status, K = 2, max_iter = 10, tol = -1,
-                                        norm_convention = "np_n", verbose = FALSE,
-                                        sign_correction = FALSE)
+                                        norm_convention = "np_n", verbose = FALSE)
 
   assert_true(max(abs(res_perp$EBeta)) > 1e-4, "sanity: beta should not have collapsed to zero")
   assert_near(res_perp$EBeta, res_npn$EBeta, tol = 1e-8,

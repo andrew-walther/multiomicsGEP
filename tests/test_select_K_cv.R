@@ -229,11 +229,8 @@ if (exists("fit_ssbmf_yfb", mode = "function") &&
   })
 
   run_test("KCV-T15: model='YFB' mean C-indices are >= 0.5 (sign correction disabled in folds)", {
-    # Before fix: fit_ssbmf_yfb always applied Phase C sign correction, orienting
-    # EBeta so ZF·EBeta is concordant (C>0.5 on training). select_K_cv then evaluated
-    # I(-risk_scores), double-flipping sign → C<0.5 in all folds.
-    # After fix: sign_correction=FALSE inside folds. Raw SVD orientation keeps EBeta
-    # in the anti-concordant direction, so I(-risk_scores) yields C>=0.5.
+    # select_K_cv evaluates I(-risk_scores), i.e. larger risk = shorter survival,
+    # on fits returned without any sign flip (sign_correction removed 2026-11-06).
     # Use a high-SNR dataset (sd=0.1, beta=3, all events, n=100) so YFB reliably
     # recovers the factor in few iterations.
     d_t15 <- local({

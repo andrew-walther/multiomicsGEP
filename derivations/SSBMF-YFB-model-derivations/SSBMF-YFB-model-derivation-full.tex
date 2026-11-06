@@ -96,8 +96,8 @@ package returns the posterior moments and the fitted prior.
 \texttt{fit\_ssbmf\_yfb(canonicalize = TRUE, w\_S = $w_S$)}, the configuration
 used for the supervision studies from October 2026 onward (point-Laplace priors
 on $L$ and $F$, a normal prior on each $\beta_k$). These settings are passed
-explicitly: \texttt{prior\_LF = "point\_laplace"}, \texttt{prior\_beta = "normal"}
-and \texttt{sign\_correction = FALSE}. The earlier benchmark
+explicitly: \texttt{prior\_LF = "point\_laplace"} and
+\texttt{prior\_beta = "normal"}. The earlier benchmark
 configuration (\texttt{alpha\_F = 0}) is the special case of
 Section~\ref{sec:historical}. Options that were tested but not adopted are in
 Appendix~\ref{app:options}. Differences from the April 2026 derivations are
@@ -888,12 +888,11 @@ Range & $\alpha,\alpha_F\in[0,1]$ & $\ws\in[0,\infty)$ \\
 \end{center}
 In both, the weight on $\beta$ cancels in $x_k$ and only changes $s_k$. At $\alpha_F = 0$ the stopping iteration still depends on the
 survival-weighted objective, so the stopping point is the only place survival
-can enter. The fitter also flips the sign of $\bar{\bm\beta}$ after fitting if the
-training C-index is below 0.5 (\texttt{sign\_correction = TRUE}). This is a
-post-processing heuristic, not part of the derivation. The default has been
-\texttt{FALSE} since 2026-11-06: CAVI fits $\bm\beta$ to the Cox likelihood given
-the scores, so a converged fit is already oriented. The October canonical runners
-used the old default.
+can enter. Until 2026-11-06 the fitter could also flip the sign of
+$\bar{\bm\beta}$ after fitting when the training C-index was below 0.5
+(\texttt{sign\_correction}), a post-processing heuristic outside the derivation.
+It was removed: CAVI fits $\bm\beta$ to the Cox likelihood given the scores, so a
+converged fit is already oriented. The October canonical runners used it.
 
 % =============================================================================
 \section{Extension to $M$ Modalities}\label{sec:multimodal}

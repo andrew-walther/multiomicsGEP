@@ -224,7 +224,7 @@ for (ext_cohort in EXTERNAL_COHORTS) {
 }
 cat(sprintf("  %d/%d external cohorts usable\n\n", length(ext_data), length(EXTERNAL_COHORTS)))
 
-# frozen_cindex(): orientation frozen at fit time by fit_ssbmf_yfb()'s Phase C
+# frozen_cindex(): orientation frozen at fit time (the fitter's own; Phase C flip removed 2026-11-06)
 # (fixed 2026-09-04, DECISIONS.md) -- fit$EBeta already carries the correct
 # sign, so no per-cohort max(c,1-c) re-orientation here.
 frozen_cindex <- function(risk, time, status) frozen_reverse_cindex(risk, time, status)

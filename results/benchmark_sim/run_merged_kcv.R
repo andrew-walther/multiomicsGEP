@@ -166,8 +166,7 @@ run_kcv <- function(Y, time, status, model, label) {
     verbose    = TRUE,
     max_iter   = MAX_ITER,
     prior_beta = PRIOR_BETA,
-    alpha      = ALPHA,
-    sign_correction = FALSE
+    alpha      = ALPHA
   )
   K_1se   <- result$K_opt
   K_final <- max(K_1se, K_MIN_BIOLOGICAL)

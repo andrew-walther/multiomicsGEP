@@ -86,7 +86,7 @@ s9_fit <- function(Y, time, event, w_S, cfg) {
                 max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
                 prior_LF = "point_laplace", prior_beta = "normal", canonicalize = TRUE,
                 w_S = w_S, alpha = cfg$benchmark$alpha, verbose = FALSE,
-                trace_supervision = TRUE, sign_correction = FALSE)
+                trace_supervision = TRUE)
 }
 
 #' Per-gene loading precision terms at a fitted state

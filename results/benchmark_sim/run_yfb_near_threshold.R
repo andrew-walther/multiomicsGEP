@@ -52,7 +52,7 @@ s14_task <- function(task, cfg) {
                      max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol, prior_LF = "point_laplace",
                      prior_beta = "normal", canonicalize = TRUE, w_S = w, survival_block_weight = TRUE,
                      beta_posterior = if (task$arm == "A2_w1") "joint" else "meanfield",
-                     alpha = cfg$benchmark$alpha, verbose = FALSE, sign_correction = FALSE)
+                     alpha = cfg$benchmark$alpha, verbose = FALSE)
   r <- suppressWarnings(cor(d$truth, f$EF)); r[!is.finite(r)] <- 0; k <- which.max(abs(r))
   if (task$arm == "twostep") {
     live <- which(colSums(f$EF^2) > 1e-8); Z <- d$Ytr %*% f$EF[, live, drop = FALSE]

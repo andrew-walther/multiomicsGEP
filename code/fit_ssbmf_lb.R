@@ -269,7 +269,6 @@ fit_ssbmf_lb <- function(Y, time, status,
                                       N_burnin        = 0,
                                       alpha_schedule  = NULL,
                                       normalize_AB    = FALSE,
-                                      sign_correction = FALSE,
                                       verbose         = TRUE,
                                       cohort_id       = NULL,
                                       sigma_F_cohort  = 1.0,
@@ -825,40 +824,9 @@ fit_ssbmf_lb <- function(Y, time, status,
 
   }  # end CAVI loop
 
-  # Phase C: Check training concordance; flip EBeta sign if anti-concordant.
-  # The pmax(SVD) initialisation discards sign information: EL[:,k] may be
-  # anti-correlated with the true survival direction, causing EL·EBeta to be
-  # inversely related to risk. A global sign flip of EBeta corrects this:
-  #   eta_new = EL · (-EBeta) = -(eta_original)  ⟹  C_new = 1 - C_train.
-  # This is identical in spirit to Phase C in fit_ssbmf_yfb.R. The fix is
-  # applied post-convergence so the CAVI path and ELBO are unaffected.
-  #
-  # Default FALSE since 2026-11-06: CAVI fits beta to the Cox likelihood given
-  # L, so a converged fit is already oriented; the corrected check would fire
-  # only on a fit with training C < 0.5, and flipping would hide that failure.
-  #
-  # sign_correction = FALSE during cross-validation (select_alpha_cv), because
-  # per-fold sign flips would introduce fold-to-fold inconsistency and corrupt
-  # alpha selection. CV already handles sign via I(-pred$risk_scores).
-  #
-  # Fixed 2026-11-06 (DECISIONS.md same date), matching the 2026-09-04 YFB fix:
-  #   (1) reverse = TRUE. concordance(Surv ~ x) treats larger x as LONGER
-  #       survival; eta is a Cox risk score (larger eta = shorter survival).
-  #       Without it the check flipped correctly oriented fits.
-  #   (2) EBeta2 is kept. E[(-beta)^2] = E[beta^2], so a flip changes only the
-  #       mean; the old EBeta2 <- EBeta^2 discarded Var(beta).
-  if (sign_correction) {
-    eta_train <- as.vector(EL %*% EBeta)
-    c_train   <- as.numeric(
-      concordance(Surv(time, status) ~ eta_train, reverse = TRUE)$concordance
-    )
-    if (c_train < 0.5) {
-      if (verbose) {
-        cat(sprintf("    [Phase C] Training C=%.4f < 0.5 — flipping EBeta sign\n", c_train))
-      }
-      EBeta <- -EBeta   # EBeta2 unchanged: the second moment is sign-invariant
-    }
-  }
+  # No post-fit sign flip (sign_correction removed 2026-11-06, DECISIONS.md):
+  # CAVI fits beta to the Cox likelihood given EL, so a converged fit is
+  # already oriented, and a flip would hide a fit that is not.
 
   result <- list(
     EL     = EL,

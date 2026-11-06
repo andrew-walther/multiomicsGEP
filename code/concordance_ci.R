@@ -17,9 +17,8 @@ suppressPackageStartupMessages(library(survival))
 #'   \code{survival::concordance(..., reverse = TRUE)}. Unlike this project's
 #'   older \code{oriented_cindex()} pattern (\code{max(c_raw, 1 - c_raw)}),
 #'   this does NOT look at `time`/`status` to decide whether to flip the risk
-#'   score -- the orientation must already be fixed, at fit time, from
-#'   training data only (e.g. `fit_ssbmf_yfb()`'s Phase C sign correction,
-#'   fixed 2026-09-04 -- see DECISIONS.md). A risk score that is genuinely
+#'   score -- the orientation is the fitted model's own (the fitters apply
+#'   no post-fit flip since 2026-11-06 -- see DECISIONS.md). A risk score that is genuinely
 #'   anti-concordant on the data it is scored against will correctly report a
 #'   value below 0.5 here, rather than having that below-chance result masked
 #'   by taking the max with its complement.

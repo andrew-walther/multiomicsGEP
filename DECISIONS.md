@@ -3,7 +3,7 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
-## 2026-11-06 — LB fold-in prediction; sign correction off by default
+## 2026-11-06 — LB fold-in prediction; post-fit sign flip removed
 
 **Fold-in.** `fit_ssbmf_lb()` now returns `$foldin = list(g_L, prior_LF, alpha)`: the fitted
 loading prior from each factor's last L update, its family, and the final alpha.
@@ -20,14 +20,18 @@ made before this date lack `$foldin`. The tempering departs from Yusha's note, w
 untempered precision; the note's suggestion to refit β on genomics-only training loadings is not
 implemented. Tests: `tests/test_lb_foldin.R`.
 
-**Sign correction default.** `sign_correction` now defaults to `FALSE` in `fit_ssbmf_lb()` and
-`fit_ssbmf_yfb()`. CAVI fits β to the Cox likelihood given the scores, so a converged fit is
-already oriented, and the corrected check (below) would fire only on a fit with training C
-below 0.5, where a flip would hide the failure. Every registered supervision runner already
-passed `FALSE`. The argument is kept so existing calls still run. An independent review found no
-converged fit (36 LB fits across α and signal levels) where the corrected check would flip.
-Fits stopped at `max_iter` or using cohort-specific β can have training C below 0.5, and runners
-that rely on the default would no longer flip those.
+**Sign correction removed.** The post-fit sign flip and its `sign_correction` argument are removed
+from `fit_ssbmf_lb()` and `fit_ssbmf_yfb()` (first made default `FALSE` the same day). CAVI fits β
+to the Cox likelihood given the scores, so a converged fit is already oriented, and the corrected
+check would fire only on a fit with training C below 0.5, where a flip would hide the failure. An
+independent review found no converged fit (36 LB fits across α and signal levels) where it would
+flip. Fits stopped at `max_iter` or using cohort-specific β can have training C below 0.5; they are
+now reported as fitted. The re-orientation workarounds in `compute_joint_ll_bic()` and
+`cv_survival_loglik()`, which existed because of the flip, are removed too, so BIC and CV
+log-likelihood score the model as fitted. Callers no longer pass the argument; dated runners under
+`archive/` and `code/legacy/` are unchanged and would need it dropped to rerun. Tests that existed
+only for the flip were removed; `tests/test_lb_orientation.R` and StratCox-T13 check that converged
+fits are oriented without it.
 
 ## 2026-11-06 — LB sign check uses the Cox direction and keeps Var(β)
 

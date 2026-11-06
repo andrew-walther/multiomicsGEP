@@ -222,8 +222,7 @@ for (dcfg in DESURV_CONFIGS[3:5]) {
     max_iter   = MAX_ITER,
     prior_beta = PRIOR_BETA,
     alpha      = ALPHA,
-    cohort_id  = cid_cv,
-    sign_correction = FALSE
+    cohort_id  = cid_cv
   )
   K_opt   <- cv_res$K_opt
   K_final <- max(K_opt, K_MIN_BIOLOGICAL)

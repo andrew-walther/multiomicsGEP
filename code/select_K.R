@@ -230,10 +230,6 @@ classify_factors <- function(res, Y,
 #' On Longleaf HPC, parallelise over K values with SLURM array jobs; locally,
 #' expect ~15–30 min for n ~ 150, p = 2000, K_max = 20.
 #'
-#' sign_correction is always disabled inside CV folds (same rationale as in
-#' select_alpha_cv): fold-level sign correction produces inconsistent signs
-#' across folds and inflates apparent C-index variance.
-#'
 #' @param Y          numeric matrix (n × p)
 #' @param time       numeric vector length n: survival/censoring times
 #' @param status     integer vector length n: event indicators (1=event, 0=censored)
@@ -248,8 +244,7 @@ classify_factors <- function(res, Y,
 #'                   predict_ssbmf_yfb).  Both models must be sourced before
 #'                   calling; see dependency checks below.
 #' @param ...        additional arguments passed to the fitting function.
-#'                   Do NOT pass K (overridden per candidate) or sign_correction
-#'                   (disabled inside folds for both models).
+#'                   Do NOT pass K (overridden per candidate).
 #'
 #' @return Named list:
 #'   $K_opt         integer: selected K (1-SE rule or max)
@@ -317,11 +312,9 @@ select_K_cv <- function(Y, time, status,
   if (n_folds < 2)
     stop("n_folds must be >= 2.")
 
-  # Strip K (overridden per candidate) and sign_correction (disabled in folds
-  # for LB; not a formal arg in fit_ssbmf_yfb, so must be stripped for YFB too).
+  # Strip K (overridden per candidate).
   extra <- list(...)
   extra[["K"]]               <- NULL
-  extra[["sign_correction"]] <- NULL
   # Extract cohort_id separately — must be row-subsetted per fold.
   # Leaving it in extra would pass a full-length vector to a fold fit whose Y
   # only has n_train rows, causing a dimension mismatch.
@@ -350,13 +343,11 @@ select_K_cv <- function(Y, time, status,
 
       # --- fit on training fold ---
       if (model == "LB") {
-        # LB: sign_correction=FALSE hardcoded — consistent fold signs
         fit_args <- c(
           list(Y      = Y[train_idx, , drop = FALSE],
                time   = time[train_idx],
                status = status[train_idx],
                K      = K,
-               sign_correction = FALSE,
                verbose = FALSE),
           extra_fold
         )
@@ -366,15 +357,13 @@ select_K_cv <- function(Y, time, status,
         pred <- predict_ssbmf_lb(Y[test_idx, , drop = FALSE],
                                       fit$EF, fit$EBeta)
       } else {
-        # YFB: sign_correction=FALSE — same convention as LB. Per-fold sign
-        # flips produce orientation inconsistency across folds; concordance is
-        # evaluated via I(-pred$risk_scores) using the raw SVD orientation.
+        # Held-out concordance is evaluated via I(-pred$risk_scores): larger
+        # risk = shorter survival.
         fit_args <- c(
           list(Y      = Y[train_idx, , drop = FALSE],
                time   = time[train_idx],
                status = status[train_idx],
                K      = K,
-               sign_correction = FALSE,
                verbose = FALSE),
           extra_fold
         )

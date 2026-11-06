@@ -152,21 +152,12 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #' scoring introduces no train/test formula mismatch -- unlike the
 #' genomics side (see bicv_genomics_loglik() below).
 #'
-#' \strong{Leakage guard (orientation).} Each fold is fit with
-#' `sign_correction = FALSE`, then oriented from a correct-direction
-#' (`reverse = TRUE`) training concordance check computed ONLY on that
-#' fold's training rows: if training concordance is below 0.5, EBeta is
-#' flipped before scoring the held-out fold. `reverse = TRUE` matters here:
-#' `fit_ssbmf_yfb()`'s own post-loop sign rule (fit_ssbmf_yfb.R:705-720)
-#' omits it, which is inverted for a Cox risk score (see
-#' `survival::concordance()`'s own documentation and code/compute_bic.R's
-#' matching orientation-correction comment, DECISIONS.md 2026-09-04) --
-#' copying that rule verbatim here would silently re-introduce the same
-#' bug into a held-out metric, where it is not sign-invariant and would
-#' corrupt every score. Unlike C-index, partial log-likelihood is NOT
-#' sign-invariant, so orienting against held-out outcomes (rather than
-#' training outcomes) would leak held-out label information into the
-#' score -- hence training-only, not "no orientation at all."
+#' \strong{Orientation.} Each fold's fit is scored as returned. Until
+#' 2026-11-06 the fold's EBeta was flipped when its training concordance was
+#' below 0.5; that flip was removed with the fitters' sign correction
+#' (DECISIONS.md), since CAVI fits beta to the Cox likelihood and a flip
+#' would score a different model from the one fitted. `c_train` still reports
+#' each fold's training concordance (`reverse = TRUE`) as a diagnostic.
 #'
 #' \strong{Risk-set size.} Each fold's partial log-likelihood is computed
 #' within that fold's own risk sets, so `logPL` here is not on the same
@@ -215,7 +206,7 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #'                 `predict_ssbmf_yfb()`'s `cohort_id_test = NULL` path
 #'                 elsewhere in this project), not for an ordinary CV fold.
 #' @param ...      additional arguments forwarded to `fit_ssbmf_yfb()`
-#'                 (e.g. init_method). Do not pass K or sign_correction.
+#'                 (e.g. init_method). Do not pass K.
 #'
 #' @return Named list:
 #'   $K                     echoed input K
@@ -255,7 +246,6 @@ cv_survival_loglik <- function(Y, time, status, K,
   if (length(status) != n) stop(sprintf("status must have length %d (nrow(Y)).", n))
 
   extra <- list(...)
-  extra[["sign_correction"]] <- NULL  # this function controls orientation itself
 
   fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
 
@@ -268,7 +258,7 @@ cv_survival_loglik <- function(Y, time, status, K,
       list(Y = Y[train_idx, , drop = FALSE], time = time[train_idx], status = status[train_idx],
            K = K, max_iter = max_iter, tol = tol,
            prior_LF = prior_LF, prior_beta = prior_beta, alpha = alpha,
-           sign_correction = FALSE, verbose = FALSE,
+           verbose = FALSE,
            cohort_id      = if (is.null(cohort_id)) NULL else cohort_id[train_idx],
            strata_id      = if (is.null(strata_id)) NULL else strata_id[train_idx],
            beta_cohort_id = if (is.null(beta_cohort_id)) NULL else beta_cohort_id[train_idx]),
@@ -277,31 +267,20 @@ cv_survival_loglik <- function(Y, time, status, K,
     fit <- do.call(fit_ssbmf_yfb, fit_args)
     use_cohort <- !is.null(beta_cohort_id)
 
-    # Orientation from TRAINING concordance only -- see roxygen leakage guard
-    # above. reverse = TRUE: eta is a Cox risk score (larger eta -> shorter
-    # survival), the opposite of concordance()'s formula-method default
-    # assumption. EBeta_for_orient/eta_train/the resulting flip decision
-    # depend on cv_scoring -- see the @param cv_scoring roxygen above for why
-    # these are genuinely different questions, not interchangeable:
-    #   - not use_cohort:      unchanged (fit$EBeta, a K-vector).
-    #   - "unseen_cohort":     fit$EBeta_pooled, ignoring the fold's own
-    #                          (known) cohort labels -- the pre-2026-09-04
-    #                          behavior, unconditional on cv_scoring.
-    #   - "within_cohort":     fit$EBeta (the K x C matrix), oriented via a
-    #                          single GLOBAL flip decided from the pooled
-    #                          training eta using each training patient's own
-    #                          known cohort column -- mirrors fit_ssbmf_yfb()'s
-    #                          own Phase C convention (one global flip, applied
-    #                          uniformly to every cohort column).
+    # Coefficients used to score the held-out fold, by cv_scoring (see its
+    # @param above): not use_cohort -> fit$EBeta (K-vector); "unseen_cohort"
+    # -> fit$EBeta_pooled, ignoring the fold's cohort labels; "within_cohort"
+    # -> fit$EBeta (K x C), each patient scored with their own cohort column.
+    # eta_train feeds only the c_train diagnostic.
     ZF_train <- Y[train_idx, , drop = FALSE] %*% sweep(fit$EF, 2, fit$EF_norms, "/")
     if (!use_cohort) {
-      EBeta_for_orient <- fit$EBeta
+      EBeta_score <- fit$EBeta
       eta_train <- as.vector(ZF_train %*% fit$EBeta)
     } else if (cv_scoring == "unseen_cohort") {
-      EBeta_for_orient <- fit$EBeta_pooled
+      EBeta_score <- fit$EBeta_pooled
       eta_train <- as.vector(ZF_train %*% fit$EBeta_pooled)
     } else {  # within_cohort
-      EBeta_for_orient <- fit$EBeta
+      EBeta_score <- fit$EBeta
       train_cohort_idx <- match(beta_cohort_id[train_idx], colnames(fit$EBeta))
       eta_train <- rowSums(ZF_train * t(fit$EBeta)[train_cohort_idx, , drop = FALSE])
     }
@@ -311,8 +290,6 @@ cv_survival_loglik <- function(Y, time, status, K,
       )$concordance),
       error = function(e) NA_real_
     )
-    EBeta_oriented <- EBeta_for_orient
-    if (is.finite(c_train) && c_train < 0.5) EBeta_oriented <- -EBeta_oriented
 
     # Held-out scoring: eta_new = (Y_test EF) beta -- exact YFB prediction
     # formula. "within_cohort" scores each test patient with their own
@@ -320,10 +297,10 @@ cv_survival_loglik <- function(Y, time, status, K,
     # cases pass a K-vector, so cohort_id_test stays NULL (its only valid
     # value for a non-matrix EBeta).
     pred <- if (use_cohort && cv_scoring == "within_cohort") {
-      predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
+      predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_score,
                          EF_norms = fit$EF_norms, cohort_id_test = beta_cohort_id[test_idx])
     } else {
-      predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_oriented,
+      predict_ssbmf_yfb(Y[test_idx, , drop = FALSE], fit$EF, EBeta_score,
                          EF_norms = fit$EF_norms)
     }
     # strata_id row-subsetted to the test fold (fixed 2026-09-04, DECISIONS.md):

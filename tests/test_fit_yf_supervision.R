@@ -29,9 +29,8 @@ run_test("Supervision-T1: trace_supervision does not change the fit (alpha_F = 0
   assert_true(identical(off, strip_trace(on)), msg = "fit identical apart from the trace")
   assert_true(nrow(on$history$trace$beta_mean) == on$history$n_iter,
               msg = "trace rows truncated to n_iter")
-  assert_true(all(on$history$trace$beta_mean[on$history$n_iter, ] == on$EBeta |
-                  on$history$trace$beta_mean[on$history$n_iter, ] == -on$EBeta),
-              msg = "last traced beta equals the returned beta up to the Phase C flip")
+  assert_true(all(on$history$trace$beta_mean[on$history$n_iter, ] == on$EBeta),
+              msg = "last traced beta equals the returned beta (no post-fit flip)")
 })
 
 # ---------------------------------------------------------------------------
@@ -238,12 +237,11 @@ run_test("Supervision-T10: init_supervised starts a program along the score dire
 
 # ---------------------------------------------------------------------------
 # T11: canonical fit stores -KL terms (<= 0) and its last monitored ELBO
-# equals yf_canonical_elbo() at the returned moments (before Phase C)
+# equals yf_canonical_elbo() at the returned moments
 # ---------------------------------------------------------------------------
 run_test("Supervision-T11: canonical ELBO terms have the right sign and recompute", {
   fit <- fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 40L,
-                       prior_LF = "point_laplace", canonicalize = TRUE,
-                       sign_correction = FALSE, verbose = FALSE)
+                       prior_LF = "point_laplace", canonicalize = TRUE, verbose = FALSE)
   assert_true(all(fit$neg_kl <= 1e-8), msg = "stored -KL terms are nonpositive")
   e <- yf_canonical_elbo(.sv$Y, .sv$time, .sv$status, fit$EL, fit$EL2, fit$EF, fit$EF2,
                          fit$EBeta, fit$EBeta2, sum(fit$neg_kl), fit$w_S)
@@ -270,7 +268,7 @@ run_test("Supervision-T12: prune removes empty programs and keeps the signal", {
 run_test("Supervision-T13: protected pruning excludes credible coefficients", {
   f <- fit_ssbmf_yfb(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 8L,
                      prior_LF = "point_laplace", canonicalize = TRUE,
-                     verbose = FALSE, sign_correction = FALSE)
+                     verbose = FALSE)
   f$EBeta <- c(2, 0.01, 0); f$EBeta2 <- f$EBeta^2 + c(0.01, 1, 0)
   f$neg_kl[1] <- -1e9  # removal is ELBO-favored despite credible survival activity
   raw <- prune_yf_nullcheck(f, .sv$Y, .sv$time, .sv$status)
@@ -305,7 +303,7 @@ run_test("Supervision-T15: default fits and pruning match feature/supervised-F b
   for (pr in c(FALSE, TRUE)) {
     a <- list(.sv$Y, .sv$time, .sv$status, K = 3L, max_iter = 12L,
               prior_LF = "point_laplace", canonicalize = TRUE, verbose = FALSE, prune = pr)
-    before <- do.call(old$fit_cox_on_yf, a)
+    before <- do.call(old$fit_cox_on_yf, c(a, sign_correction = FALSE))  # baseline predates its removal
     now <- do.call(fit_ssbmf_yfb, a)
     off <- do.call(fit_ssbmf_yfb, c(a, prune_protect_survival = FALSE))
     assert_true(identical(before, now) && identical(now, off),
@@ -315,7 +313,7 @@ run_test("Supervision-T15: default fits and pruning match feature/supervised-F b
 
 run_test("Supervision-T16: output-change diagnostic agrees with two consecutive states", {
   a <- list(.sv$Y, .sv$time, .sv$status, K = 3L, prior_LF = "point_laplace",
-            canonicalize = TRUE, verbose = FALSE, sign_correction = FALSE,
+            canonicalize = TRUE, verbose = FALSE,
             converge_on = "elbo")
   one <- do.call(fit_ssbmf_yfb, c(a, max_iter = 1L))
   two <- do.call(fit_ssbmf_yfb, c(a, max_iter = 2L))

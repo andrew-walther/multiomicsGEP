@@ -76,7 +76,7 @@ test_files <- c(
   "tests/test_select_alpha_cv.R",
   "tests/test_preprocess_desurv.R",
   "tests/test_multistart.R",
-  "tests/test_lb_sign_correction.R",
+  "tests/test_lb_orientation.R",
   "tests/test_lb_foldin.R",
   "tests/test_yfb_multistart.R",
   "tests/test_warmstart_from_fit.R",

@@ -364,20 +364,12 @@ run_test("StratCox-T12b: calc_cox_taylor u == coxph martingale residuals (strati
 })
 
 # =============================================================================
-# Section 13: fit_ssbmf_yfb() Phase C orientation fix (review finding, Step 2,
-# fixed 2026-09-04 -- see DECISIONS.md). Phase C's concordance() call now
-# passes reverse=TRUE, the correct semantics for a Cox risk score. This is
-# the single, frozen, training-data-only orientation decision for the fit --
-# no downstream evaluator may re-derive it from the data it later scores.
+# Section 13: converged fit_ssbmf_yfb() fits are oriented without any
+# post-fit flip. This property justified removing sign_correction on
+# 2026-11-06 (DECISIONS.md): CAVI fits beta to the Cox likelihood given ZF.
 # =============================================================================
 
-run_test("StratCox-T13: fit_ssbmf_yfb sign_correction=TRUE guarantees correct-direction training concordance >= 0.5 across seeds", {
-  # This is exactly the property Phase C exists to guarantee. Before the
-  # 2026-09-04 fix, the concordance() check omitted reverse=TRUE and was
-  # therefore inverted -- a fit could converge to a genuinely anti-hazard
-  # orientation (true reverse-direction concordance well below 0.5) while
-  # Phase C's own (uncorrected) check read "already fine, don't flip." This
-  # test would fail under the pre-fix code for at least one of these seeds.
+run_test("StratCox-T13: a converged fit_ssbmf_yfb fit has correct-direction training concordance >= 0.5", {
   n <- 60L; p <- 15L; K <- 3L
   set.seed(202)
   L_true <- matrix(rexp(n * K, 1), n, K)
@@ -388,14 +380,12 @@ run_test("StratCox-T13: fit_ssbmf_yfb sign_correction=TRUE guarantees correct-di
   time   <- rexp(n, rate = exp(0.5 * scale(eta_true)[, 1]))
   status <- rbinom(n, 1L, 0.8)
 
-  for (s in c(1, 2, 3, 4, 5)) {
-    set.seed(s)
-    fit <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 40, verbose = FALSE,
-                          sign_correction = TRUE)
-    ZF  <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")
-    eta_final <- as.vector(ZF %*% fit$EBeta)
-    c_true <- as.numeric(concordance(Surv(time, status) ~ eta_final, reverse = TRUE)$concordance)
-    assert_true(c_true >= 0.5 - 1e-8,
-                msg = sprintf("seed %d: correct-direction training concordance below 0.5 (%.4f) -- Phase C failed to flip", s, c_true))
-  }
+  # SVD init is deterministic, so one fit suffices.
+  fit <- fit_ssbmf_yfb(Y, time, status, K = K, max_iter = 500, verbose = FALSE)
+  assert_true(isTRUE(fit$history$converged), msg = "fixture fit converged")
+  ZF  <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")
+  eta_final <- as.vector(ZF %*% fit$EBeta)
+  c_true <- as.numeric(concordance(Surv(time, status) ~ eta_final, reverse = TRUE)$concordance)
+  assert_true(c_true >= 0.5,
+              msg = sprintf("correct-direction training concordance below 0.5 (%.4f) without a flip", c_true))
 })

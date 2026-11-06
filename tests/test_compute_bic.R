@@ -34,7 +34,7 @@ status <- rbinom(n, 1, 0.6)
 
 fit <- fit_ssbmf_yfb(Y, time, status,
          K = K, max_iter = 10, tol = 1e-2,
-         prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
+         prior_beta = "normal", alpha = 0.5,
          init_method = "svd", verbose = FALSE)
 
 # ============================================================
@@ -61,7 +61,7 @@ run_test("BIC-T3: df is exactly K_init*(n+p+1)", {
 run_test("BIC-T4: df(K=4) - df(K=3) == n+p+1 (df is linear in K_init)", {
   fit4 <- fit_ssbmf_yfb(Y, time, status,
             K = K + 1, max_iter = 10, tol = 1e-2,
-            prior_beta = "normal", alpha = 0.5, sign_correction = FALSE,
+            prior_beta = "normal", alpha = 0.5,
             init_method = "svd", verbose = FALSE)
   res3 <- compute_joint_ll_bic(fit, Y, time, status)
   res4 <- compute_joint_ll_bic(fit4, Y, time, status)
@@ -78,57 +78,29 @@ run_test("BIC-T5: df is unchanged when EBeta is mostly pruned (K_init-based, not
                "df must not shrink when EBeta entries are pruned to zero")
 })
 
-#' Reorient eta exactly as compute_joint_ll_bic() now does internally
-#' (DECISIONS.md 2026-09-04): a correct-direction (reverse=TRUE) concordance
-#' check, flipping eta if below 0.5. Test oracles must apply the same
-#' reorientation to compare against compute_joint_ll_bic()'s output.
-.oriented_eta <- function(eta, time, status) {
-  c_check <- as.numeric(concordance(Surv(time, status) ~ eta, reverse = TRUE)$concordance)
-  if (is.finite(c_check) && c_check < 0.5) eta <- -eta
-  eta
-}
-
 run_test("BIC-T6: survival term matches an independent coxph() oracle", {
   res <- compute_joint_ll_bic(fit, Y, time, status)
   ZF  <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")
-  eta <- .oriented_eta(as.vector(ZF %*% fit$EBeta), time, status)
+  eta <- as.vector(ZF %*% fit$EBeta)
   oracle <- coxph(Surv(time, status) ~ offset(eta), ties = "breslow")
   assert_near(res$loglik_survival, oracle$loglik[1], tol = 1e-6,
               "survival term does not match coxph() oracle")
 })
 
-run_test("BIC-T7: survival term is NOT the stale in-loop logPL", {
-  res <- compute_joint_ll_bic(fit, Y, time, status)
-  # A fit with sign_correction=TRUE (default) exercises the post-loop EBeta
-  # flip path; the recomputed term must reflect the RETURNED EBeta, not
-  # whatever logPL happened to be tracked mid-loop.
-  fit_sc <- fit_ssbmf_yfb(Y, time, status,
-              K = K, max_iter = 10, tol = 1e-2,
-              prior_beta = "normal", alpha = 0.5, sign_correction = TRUE,
-              init_method = "svd", verbose = FALSE)
-  ZF  <- Y %*% sweep(fit_sc$EF, 2, fit_sc$EF_norms, "/")
-  eta <- .oriented_eta(as.vector(ZF %*% fit_sc$EBeta), time, status)
-  oracle <- coxph(Surv(time, status) ~ offset(eta), ties = "breslow")
-  res_sc <- compute_joint_ll_bic(fit_sc, Y, time, status)
-  assert_near(res_sc$loglik_survival, oracle$loglik[1], tol = 1e-6,
-              "survival term must match the RETURNED (post sign-correction) EBeta")
-})
-
-run_test("BIC-T16: survival term is invariant to fit_ssbmf_yfb()'s own (unreliable) EBeta sign", {
-  # Regression test for the orientation bug documented in DECISIONS.md
-  # 2026-09-04: fit_ssbmf_yfb()'s Phase C sign-correction omits reverse=TRUE
-  # and can return an anti-hazard-oriented EBeta while believing it is
-  # correctly oriented. compute_joint_ll_bic() must not simply trust
-  # fit$EBeta's sign -- negating it should not change the reported
-  # loglik_survival, because the function re-derives the correct
-  # orientation itself regardless of the input sign.
+run_test("BIC-T16: survival term scores fit$EBeta as returned (no re-orientation)", {
+  # Until 2026-11-06 compute_joint_ll_bic() re-oriented eta by a concordance
+  # check, so negating EBeta did not change the score. It now scores the
+  # fitted model: negating EBeta of a correctly oriented fit must lower it.
   res_asis    <- compute_joint_ll_bic(fit, Y, time, status)
   fit_flipped <- fit
-  fit_flipped$EBeta  <- -fit$EBeta
-  fit_flipped$EBeta2 <- fit$EBeta2  # unchanged: EBeta^2 is sign-invariant
+  fit_flipped$EBeta <- -fit$EBeta
   res_flipped <- compute_joint_ll_bic(fit_flipped, Y, time, status)
-  assert_near(res_asis$loglik_survival, res_flipped$loglik_survival, tol = 1e-8,
-              "loglik_survival must be invariant to the input EBeta's sign")
+  ZF <- Y %*% sweep(fit$EF, 2, fit$EF_norms, "/")
+  c_fit <- as.numeric(concordance(Surv(time, status) ~ as.vector(ZF %*% fit$EBeta),
+                                  reverse = TRUE)$concordance)
+  assert_true(c_fit > 0.5, "fixture fit is correctly oriented")
+  assert_true(res_flipped$loglik_survival < res_asis$loglik_survival,
+              "an anti-oriented eta must score worse")
 })
 
 run_test("BIC-T8: genomics term equals elbo_proxy[n_iter] minus the Gaussian constant", {

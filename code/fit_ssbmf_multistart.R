@@ -32,7 +32,7 @@
 #' @param status      n-vector of event indicators (1=event, 0=censored)
 #' @param ...         Additional arguments passed to fit_ssbmf_lb()
 #'                    (K, max_iter, tol, prior_LF, prior_beta, alpha,
-#'                    N_burnin, sign_correction, verbose, etc.)
+#'                    N_burnin, verbose, etc.)
 #'                    init_method is overridden internally — do not pass it.
 #' @param n_init      integer: number of random restarts (default 30).
 #'                    Restart 1 is always SVD; restarts 2..n_init are random.
@@ -145,7 +145,7 @@ fit_ssbmf_lb_multistart <- function(Y, time, status,
 #' @param time        n-vector of survival / censoring times
 #' @param status      n-vector of event indicators (1=event, 0=censored)
 #' @param ...         Additional arguments passed to fit_ssbmf_yfb() (K,
-#'                    max_iter, tol, prior_beta, alpha, sign_correction,
+#'                    max_iter, tol, prior_beta, alpha,
 #'                    verbose, etc.). init_method is overridden internally --
 #'                    do not pass it.
 #' @param n_init      integer: number of random restarts (default 30).
@@ -205,7 +205,7 @@ fit_ssbmf_yfb_multistart <- function(Y, time, status,
 
   # Build restart diagnostics data.frame. Cluster B's predictor is
   # ZF %*% beta, where ZF = Y %*% EF normalized by EF_norms (see the
-  # Phase C sign-correction block in fit_ssbmf_yfb.R for the same formula).
+  # prediction formula in predict_ssbmf_yfb.R).
   restarts <- do.call(rbind, lapply(seq_len(n_init), function(i) {
     f      <- fits[[i]]
     ebeta  <- f$EBeta

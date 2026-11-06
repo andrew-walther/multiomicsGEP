@@ -135,9 +135,9 @@ run_test("ProfileCox-T7: actual single updates use centered survival design and 
 })
 run_test("ProfileCox-T8: single default/off objects match and unsupported modes fail", {
   set.seed(6);Y<-scale(matrix(rnorm(180),30,6));time<-1:30;e<-rep(c(1,0),15)
-  # sign_correction passed explicitly: its default changed on 2026-11-06, after the baseline revision
-  args<-list(Y,time,e,K=2L,max_iter=2L,prior_LF="normal",canonicalize=TRUE,w_S=1,verbose=FALSE,sign_correction=FALSE)
-  a<-do.call(.profile_base_single,args);b<-do.call(fit_ssbmf_yfb,args)
+  args<-list(Y,time,e,K=2L,max_iter=2L,prior_LF="normal",canonicalize=TRUE,w_S=1,verbose=FALSE)
+  # The baseline revision predates the 2026-11-06 removal of sign_correction (default TRUE then)
+  a<-do.call(.profile_base_single,c(args,list(sign_correction=FALSE)));b<-do.call(fit_ssbmf_yfb,args)
   c<-do.call(fit_ssbmf_yfb,c(args,list(profile_cox_intercept=FALSE)))
   assert_true(identical(a,b)&&identical(a,c),msg="base/default/off object equality")
   assert_true(inherits(try(fit_ssbmf_yfb(Y,time,e,profile_cox_intercept=TRUE,verbose=FALSE),silent=TRUE),"try-error"),

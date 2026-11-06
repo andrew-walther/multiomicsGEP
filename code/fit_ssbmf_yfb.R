@@ -356,46 +356,6 @@ yf_subset_posterior_state <- function(state,keep) {
 #'                 pure-genomics). Forward-compatible when alpha_F > 0 is enabled.
 #' @param alpha_schedule NULL or list(warmup_iters, ramp_iters): ramp alpha from 0
 #'                 up to `alpha` over warmup+ramp iterations.
-#' @param sign_correction logical: apply post-convergence Phase C sign check — flip
-#'                 EBeta if the correct-direction (`reverse = TRUE`) training
-#'                 concordance of ZF·EBeta is < 0.5 (default FALSE since 2026-11-06;
-#'                 see DECISIONS.md). This is the
-#'                 single, frozen, training-data-only orientation decision for
-#'                 the fit: no downstream evaluator (external cohort scoring,
-#'                 bootstrap CIs, ...) may re-derive or override it from the
-#'                 data it is scoring. Set FALSE inside cross-validation folds
-#'                 so fold-to-fold EBeta orientation stays consistent; CV
-#'                 evaluates via I(-risk_scores).
-#'
-#'                 \strong{Fixed 2026-09-04 (DECISIONS.md same date; review
-#'                 finding, Step 2):} the concordance check below (search
-#'                 "Phase C") previously omitted `reverse = TRUE`. Per
-#'                 `survival::concordance()`'s own documentation, its formula
-#'                 method defaults to assuming a larger predictor means a
-#'                 LARGER (longer) response -- the opposite of a Cox risk
-#'                 score, where a larger eta means a SHORTER survival time --
-#'                 and `reverse = TRUE` is documented as required for exactly
-#'                 this case. Without it, the check was inverted: a fit with
-#'                 true (correct-direction) training concordance of 0.90+ read
-#'                 as "already fine, don't flip" under the old check, when a
-#'                 flip was in fact needed. This is now fixed in place: EBeta's
-#'                 sign for every `sign_correction = TRUE` fit changes relative
-#'                 to any fit produced before this date. Downstream consumers
-#'                 that were sign-invariant by construction (external C-index
-#'                 via the frozen-orientation `frozen_reverse_cindex()`/
-#'                 `frozen_cindex()` helpers, K_eff via `classify_factors()`'s
-#'                 `abs(EBeta)` threshold, and pathway-enrichment
-#'                 adverse/protective direction, which uses each program's
-#'                 marginal association rather than joint beta sign --
-#'                 DECISIONS.md 2026-06-16) are unaffected by the sign change
-#'                 itself, though the former two no longer need to be
-#'                 sign-invariant as a workaround -- they now trust `EBeta`'s
-#'                 sign directly. Anything that previously re-derived its own
-#'                 orientation to route around this bug --
-#'                 `code/compute_bic.R`'s `compute_joint_ll_bic()` and
-#'                 `code/compute_cv_loglik.R`'s `cv_survival_loglik()` -- keeps
-#'                 doing so (harmless now that the two agree; still correct if
-#'                 they didn't).
 #' @param verbose  Logical: print iteration logs? (default TRUE)
 #' @param w_S      NULL (default) or a nonnegative scalar survival weight for the
 #'                 F update. NULL keeps the alpha_F-weighted update. When supplied,
@@ -533,7 +493,6 @@ fit_ssbmf_yfb <- function(Y, time, status,
                            normalize_AB     = FALSE,
                            alpha_F          = 0,
                            alpha_schedule   = NULL,
-                           sign_correction  = FALSE,
                            verbose      = TRUE,
                            cohort_id       = NULL,
                            sigma_F_cohort  = 1.0,
@@ -1399,71 +1358,9 @@ fit_ssbmf_yfb <- function(Y, time, status,
 
   }  # end CAVI loop
 
-  # Coherent-state snapshot (Step 3 fix, DECISIONS.md 2026-09-04): EBeta as it
-  # stood at the end of the main loop, BEFORE Phase C's potential sign flip
-  # below. This is the same state that produced the w/z/ZF used above (Phase
-  # C never recomputes them) -- used as EBeta_pooled's init further down, so
-  # every input to that single Gauss-Seidel sweep is mutually consistent,
-  # regardless of what Phase C later decides.
-  EBeta_pre_phaseC <- EBeta
-
-  # Phase C: Check training concordance; flip EBeta sign if anti-concordant.
-  # With YFB (eta = ZF·beta), the Gram matrix EF'EF and the pmax(SVD) initialization
-  # (which discards sign information from F_true) can invert the relationship between
-  # ZF[:,k] and the true survival direction. A global sign flip of EBeta corrects this:
-  # risk_score_new = ZF * (-EBeta) = -(risk_score_original), yielding 1 - C_train.
-  # Deviation from Plan option A (PC1 correlation): training concordance check is more
-  # direct and correct for any dataset, not just synthetic.
-  #
-  # sign_correction = FALSE during cross-validation (select_K_cv), because
-  # per-fold sign flips produce fold-to-fold EBeta orientation inconsistency that
-  # inflates apparent C-index variance and corrupts K selection. CV evaluates
-  # held-out concordance via I(-pred$risk_scores), which implicitly assumes the
-  # raw SVD-initialized EBeta orientation — consistent with the LB model convention.
-  #
-  # Fixed 2026-09-04 (DECISIONS.md same date; review finding, Step 2): the
-  # concordance() call below now passes reverse = TRUE, which
-  # survival::concordance()'s own documentation requires for a Cox risk score
-  # (its formula method otherwise defaults to assuming larger eta means LONGER
-  # survival -- the opposite of hazard direction). This is the single,
-  # training-data-only orientation decision for the whole fit -- see the
-  # sign_correction roxygen param above.
-  # phaseC_flipped: whether Phase C below actually negates EBeta. EBeta_pooled
-  # (computed further down from the pre-Phase-C snapshot, for a reason
-  # unrelated to this flag -- see its own comment) must receive the SAME
-  # final global orientation as EBeta, since predict_ssbmf_yfb() uses
-  # EBeta_pooled as a drop-in replacement for EBeta on external cohorts with
-  # no beta_cohort_id of their own (2026-09-04 review finding, round 2 --
-  # DECISIONS.md).
-  phaseC_flipped <- FALSE
-  if (sign_correction) {
-    # Location 2: restrict to K global-factor columns before computing ZF_final.
-    # EF_norms was computed from EF_global (K columns) earlier in this iteration.
-    ZF_final  <- Y %*% sweep(EF_aug[, 1:K, drop = FALSE], 2, EF_norms, "/")
-    # Cohort beta: the flip decision and the flip itself are GLOBAL (computed
-    # on the pooled eta_final across all patients, applied uniformly to every
-    # cohort column) -- a per-cohort flip would break the shared F
-    # orientation, since F is common to all cohorts.
-    eta_final <- if (use_beta_cohort)
-                   rowSums(ZF_final * t(EBeta)[beta_cohort_idx, , drop = FALSE])
-                 else as.vector(ZF_final %*% EBeta)
-    c_train   <- as.numeric(
-      concordance(Surv(time, status) ~ eta_final, reverse = TRUE)$concordance
-    )
-    if (c_train < 0.5) {
-      if (verbose) {
-        cat(sprintf("    [Phase C] Training C=%.4f < 0.5 — flipping EBeta sign\n", c_train))
-      }
-      # EBeta2 (E[beta^2] = Var(beta) + E[beta]^2) is left untouched: a sign
-      # flip negates E[beta] but does not change its square, so overwriting
-      # EBeta2 with (-EBeta)^2 here (as before 2026-09-04) silently discarded
-      # the posterior variance component and replaced it with the point
-      # estimate squared -- a real bug (Step 3, review finding), fixed by
-      # simply not touching EBeta2 on a sign flip.
-      EBeta <- -EBeta
-      phaseC_flipped <- TRUE
-    }
-  }
+  # No post-fit sign flip (sign_correction removed 2026-11-06, DECISIONS.md):
+  # CAVI fits beta to the Cox likelihood given ZF, so a converged fit is
+  # already oriented, and a flip would hide a fit that is not.
 
   stopifnot(length(EF_norms) == K)  # guard: must be K-vector for prediction
 
@@ -1511,32 +1408,15 @@ fit_ssbmf_yfb <- function(Y, time, status,
     # EBeta_pooled: for external prediction, where no beta_cohort_id is
     # available (code/update_beta_cohort.R's compute_pooled_beta()).
     # Computed from POOLED PATIENT-SUMS at the final converged w/z/ZF (the
-    # last main-loop iteration's values, still in scope here) -- NOT
-    # rowMeans(EBeta), which is wrong under unequal cohort sizes.
-    #
-    # Init from rowMeans(EBeta_pre_phaseC) -- the PRE-Phase-C snapshot (Step 3
-    # fix, DECISIONS.md 2026-09-04), not the (possibly sign-flipped) final
-    # EBeta. w/z/ZF above were never touched by Phase C, so they are only
-    # mutually consistent with the pre-flip EBeta: compute_pooled_beta() is
-    # one Gauss-Seidel sweep (update_beta_all(), not iterated to convergence),
-    # and its z_no_k partial-residual computation subtracts OTHER factors'
-    # contribution using the init -- feeding it a POST-flip init while w/z/ZF
-    # reflect the PRE-flip state produced a genuinely wrong-MAGNITUDE result
-    # (not just a wrong sign; verified on the cached D4 fit: Program 7's
-    # pooled beta was 0.0404 with Phase C disabled vs. 0.0204 enabled, a 2x
-    # difference from this inconsistency alone). Using the coherent snapshot
-    # here makes the underlying Gauss-Seidel sweep independent of
-    # `sign_correction` -- but its OUTPUT must still end up on the same final
-    # orientation as EBeta (Phase C's flip is applied afterward, below), since
-    # EBeta and EBeta_pooled are used interchangeably by predict_ssbmf_yfb()
-    # depending on whether a test cohort's beta_cohort_id is known (2026-09-04
-    # review finding, round 2 -- DECISIONS.md). See tests/test_fit_yf_cohort.R
-    # for the regression test.
+    # last main-loop iteration's values, still in scope here). The result is
+    # NOT simply rowMeans(EBeta), which is wrong under unequal cohort sizes;
+    # rowMeans(EBeta) is only the starting value of the single Gauss-Seidel
+    # sweep in compute_pooled_beta(), and it is the state that produced
+    # w/z/ZF, so the sweep's inputs are consistent.
     EBeta_pooled <- compute_pooled_beta(
-      w, z, ZF, rowMeans(EBeta_pre_phaseC),
+      w, z, ZF, rowMeans(EBeta),
       prior_family = prior_beta, alpha = alpha, survival_divisor = beta_divisor
     )
-    if (phaseC_flipped) EBeta_pooled <- -EBeta_pooled
     result$EBeta_pooled <- EBeta_pooled
     result$beta_cohort_id    <- beta_cohort_id
     result$beta_cohort_levels <- beta_cohort_levels

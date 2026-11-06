@@ -33,8 +33,7 @@ sbw_fixture <- function(seed, n = 80, p = 40, b = 1.2) {
 sbw_fit <- function(d, ...) {
   set.seed(7)
   args <- modifyList(list(K = 3, max_iter = 25, tol = 1e-8, prior_LF = "point_laplace",
-                          prior_beta = "normal", canonicalize = TRUE, verbose = FALSE,
-                          sign_correction = FALSE), list(...))
+                          prior_beta = "normal", canonicalize = TRUE, verbose = FALSE), list(...))
   do.call(fit_ssbmf_yfb, c(list(d$Y, d$time, d$status), args))
 }
 
