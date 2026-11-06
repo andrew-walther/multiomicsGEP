@@ -6010,3 +6010,14 @@ Keep YFB and sparse priors, but derive a coherent information balance and
 normalized update before another full-grid claim. Do not substitute posterior
 SDs after fitting or treat guarded stalls as convergence. The original gate,
 external-data restriction and independent-review requirement remain unchanged.
+
+## 2026-11-06 — Donor sensitivity for the fixed S-12 comparison
+
+For the donor sensitivity requested in the issue #6 handoff, keep the S-12
+equal-weight mean of the within-series differences. Resample donors within
+groups defined by their observed series membership. A donor's array and
+RNA-seq records receive the same bootstrap multiplicity. This preserves the
+series-specific concordance comparisons while accounting for shared donors
+in the interval. The original record-level interval remains the registered
+analysis. See the [external-cohort audit](docs/findings/2026-11-06-external-cohort-uses.md)
+for provenance and both intervals.

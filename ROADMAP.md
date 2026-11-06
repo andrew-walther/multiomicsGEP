@@ -791,6 +791,12 @@ The entries below retain dated implementation and evaluation history.
 
 ## 🌍 Validation & Generalization
 
+- [x] **Audit external-cohort use and quantify donor dependence in S-12.** The
+  [external-cohort audit](docs/findings/2026-11-06-external-cohort-uses.md)
+  records which choices used external outcomes and compares the donor and
+  record bootstrap intervals. All five single-modality external series
+  contributed to earlier development decisions.
+
 - [x] **Cross-cohort validation: train on TCGA-only or CPTAC-only, evaluate on 5 external cohorts** `[Priority: High]` `[Effort: Medium]` *(Complete — see `results/benchmark_sim/outputs/real_data/`)*
   Merge CPTAC and TCGA_PAAD (batch-corrected) as a training set and hold out Dijk,
   Moffitt_GEO_array, PACA_AU_array, PACA_AU_seq, and Puleo_array as independent test cohorts.

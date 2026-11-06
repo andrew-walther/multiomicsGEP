@@ -392,4 +392,21 @@ run_test("CCI-T25: bootstrap_concordance_diff_ci_stratified is reproducible give
   assert_near(a$upper, b$upper, tol = 1e-12, "identical seed should give identical upper bound")
 })
 
+run_test("CCI-T26: a donor shared by identical cohorts has one bootstrap multiplicity", {
+  a <- .cci_strata[[1]]
+  donors <- seq_along(a$time)
+  one <- bootstrap_concordance_diff_ci_stratified(
+    list(a$risk_a), list(a$risk_b), list(a$time), list(a$status), B = 100, seed = 8
+  )
+  shared <- bootstrap_concordance_diff_ci_stratified(
+    rep(list(a$risk_a), 2), rep(list(a$risk_b), 2),
+    rep(list(a$time), 2), rep(list(a$status), 2), B = 100, seed = 8,
+    donor_list = rep(list(donors), 2)
+  )
+  for (metric in c("estimate", "lower", "upper", "se")) {
+    assert_near(shared[[metric]], one[[metric]], tol = 1e-12,
+                "duplicating the same donors across cohorts should preserve bootstrap variation")
+  }
+})
+
 report_results("test_concordance_ci.R")

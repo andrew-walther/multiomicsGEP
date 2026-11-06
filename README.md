@@ -298,3 +298,10 @@ repository root with the local risk-score caches. It writes an aggregate
 rescore CSV beside the original table. The
 [orientation audit](docs/findings/2026-11-06-orientation-audit.md) describes
 which historical scores need a sign change.
+
+To reproduce the S-12 donor interval from the saved S-11 checkpoints and local
+PDAC data, run `Rscript results/benchmark_sim/score_yfb_supervised_external.R --donor-only`.
+The runner uses `PDAC_DATA_ROOT` or the configured local data path and writes
+`external_paired_diff_donor.csv` beside the record-based output. The
+[external-cohort audit](docs/findings/2026-11-06-external-cohort-uses.md) describes
+the resampling and the prior development uses of these cohorts.
