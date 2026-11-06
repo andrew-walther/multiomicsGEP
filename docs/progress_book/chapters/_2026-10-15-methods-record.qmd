@@ -72,7 +72,7 @@ Each program is rescaled to unit SD of its training score after every iteration,
 hazard ratio per SD. α_F is dropped: every survival term carries one weight w_S, and w_S = 1 is the
 plain posterior. The F update now removes the other genes of the program from each gene's survival
 term and runs as a sequential sweep over genes, the same update the multimodal model uses. The
-derivation and the correction are in `derivations/cox_on_YF/canonical_ZF/`.
+derivation and the correction are in `derivations/SSBMF-YFB-model-derivations/components/canonical_ZF/`.
 
 | Arm | Noise | Recovered (of 20) | Null survival-active / fit | Converged | Validation C |
 |---|---|---|---|---|---|

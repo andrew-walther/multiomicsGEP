@@ -506,7 +506,7 @@
   git add code/fit_modular.R
   git commit -m "Add fit_supervised_mf_modular(): factor-wise CAVI loop (V3 Algorithm 1)
 
-  Implements V3 Algorithm 1 from derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_3_11_26_V3.pdf
+  Implements V3 Algorithm 1 from derivations/SSBMF-LB-model-derivations/archive/MF_Derivations_UpdateAlgo_3_11_26_V3.pdf
   using the four existing modular update functions (update_L_k, update_F_k,
   update_beta_k, update_tau).
 
@@ -566,7 +566,7 @@ The companion doc follows the exact structure and YAML of `docs/lb_walkthroughs/
 
   `code/fit_modular.R` implements the complete **Coordinate Ascent Variational Inference
   (CAVI)** loop for the Supervised Bayesian Matrix Factorization model, following **V3
-  Algorithm 1** from `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_3_11_26_V3.pdf`.
+  Algorithm 1** from `derivations/SSBMF-LB-model-derivations/archive/MF_Derivations_UpdateAlgo_3_11_26_V3.pdf`.
 
   The public function `fit_supervised_mf_modular()` ties together the four modular update
   scripts — `update_L.R`, `update_F.R`, `update_beta.R`, `update_tau.R` — into a complete
@@ -838,7 +838,7 @@ The companion doc follows the exact structure and YAML of `docs/lb_walkthroughs/
   | `docs/lb_walkthroughs/update_F.qmd` | Companion doc for $q(F)$ update |
   | `docs/lb_walkthroughs/update_beta.qmd` | Companion doc for $q(\beta)$ update |
   | `docs/lb_walkthroughs/update_tau.qmd` | Companion doc for $\tau$ update |
-  | `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_3_11_26_V3.pdf` | V3 Algorithm 1 derivation |
+  | `derivations/SSBMF-LB-model-derivations/archive/MF_Derivations_UpdateAlgo_3_11_26_V3.pdf` | V3 Algorithm 1 derivation |
   ```
 
 ---

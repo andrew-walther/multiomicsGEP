@@ -26,7 +26,7 @@
 #
 # AUTHOR:      Andrew Walther
 # DATE:        May 2026
-# DERIVATIONS: derivations/cox_on_YF/
+# DERIVATIONS: derivations/SSBMF-YFB-model-derivations/
 # =============================================================================
 
 # Default: "real" — source() loads the function without side effects.

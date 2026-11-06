@@ -3,8 +3,8 @@
 # FILE:        code/fit_ssbmf_lb.R
 # AUTHOR:      Andrew Walther
 # DATE:        March 2026
-# DERIVATIONS: derivations/MF_UpdateDerivations/archive/MF_V2_Companion.tex
-#              derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf
+# DERIVATIONS: derivations/SSBMF-LB-model-derivations/archive/MF_V2_Companion.tex
+#              derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.pdf
 #
 # DESCRIPTION:
 #   Wraps the four modular update scripts into a single CAVI fitting function

@@ -105,7 +105,7 @@ Each heading should state a finding. **These are candidates, and each one can st
   - Remaining items: ARD-type pruning or a prior on K, the full 305k-CpG fit on Longleaf, more modalities, and the journal manuscript.
 
 ### Supplement
-Full CAVI derivations (the single-modality derivation PDFs and `derivations/multimodal_YFB/`), additional simulation tables, and preprocessing details.
+Full CAVI derivations (the single-modality derivation PDFs and `derivations/SSBMF-YFB-multimodal-model-derivations/`), additional simulation tables, and preprocessing details.
 
 ## Figures and tables to plan
 1. Schematic of the model: shared L, F for each modality, and the survival link.

@@ -77,7 +77,7 @@ Pauses on the equations and figures will add to the read-aloud time.
 
 - Model and fitted configuration: `paper/writeup/writeup.qmd` (single-modality model
   section and Appendix A), `docs/progress_book/current-state.qmd`,
-  `derivations/multimodal_YFB/multimodal_YFB_derivation.qmd` (objective with all weights
+  `derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.qmd` (objective with all weights
   equal to one), `paper/prelim/project3-ssbmf.qmd` (multimodal model).
 - Simulation: `writeup.qmd` simulation designs and Figure `single_sim_delta`;
   Chapter 4 results on starting rank and cohort attribution.

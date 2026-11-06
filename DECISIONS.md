@@ -1102,7 +1102,7 @@ survival-supervision work (C3 onward). It differs from the earlier configuration
    and every iteration, with L and β̃ rescaled to match. The Cox predictor is the raw projection
    Y F β̃; β̃_k is a log hazard ratio per training SD of program k's score.
 2. **Exact F update.** The survival term of q(f_jk) now subtracts the other genes of program k
-   (`derivations/cox_on_YF/canonical_ZF/`). The earlier derivation (eq. BFsurv) removed only the
+   (`derivations/SSBMF-YFB-model-derivations/components/canonical_ZF/`). The earlier derivation (eq. BFsurv) removed only the
    other programs. Each gene then regressed the whole program-k residual on itself, and the update
    overshot by roughly the number of correlated genes. The corrected update is a sequential sweep
    over genes under a loading prior held fixed during the sweep; it reuses the multimodal model's
@@ -1160,8 +1160,8 @@ twice the vector update on the test bed.
 divergence fixes), `code/update_F_surv_YFB.R` (`w_surv`), `code/multimodal_yfb_updates.R` (prior
 boundary), `tests/test_fit_yf_supervision.R` (T1–T8),
 `results/benchmark_sim/run_supervision_diagnostics.R`,
-`derivations/cox_on_YF/canonical_ZF/canonical_ZF_exact_F_update.{qmd,pdf}`, correction box in
-`derivations/cox_on_YF/qF_supervised/qF_supervised_derivation.{tex,pdf}`.
+`derivations/SSBMF-YFB-model-derivations/components/canonical_ZF/canonical_ZF_exact_F_update.{qmd,pdf}`, correction box in
+`derivations/SSBMF-YFB-model-derivations/components/qF_supervised/qF_supervised_derivation.{tex,pdf}`.
 
 ---
 
@@ -1666,7 +1666,7 @@ empirical-Bayes loading priors by modality and factor, and feature-wise Gaussian
 residual precisions. A factor may be inactive in one modality.
 
 **Methodological deliverable.** The source and PDF in
-`derivations/multimodal_YFB/` derive the observation and survival estimation
+`derivations/SSBMF-YFB-multimodal-model-derivations/` derive the observation and survival estimation
 objectives, all parameter updates, prior estimation, and frozen external
 prediction. `verify_derivation.R` checks the algebra without implementing a
 fitter. The direct adaptation of current no-feedback YFB is distinguished from
@@ -5594,7 +5594,7 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 ## 2026-04-09 — Repository reorganisation [PENDING]
 
 - **Decision:** *Pending.* Propose a cleaner directory structure (documented in `ROADMAP.md` → Infrastructure section) but do not move any files until a dedicated refactor commit with no concurrent branch work.
-- **Reason:** The current layout has accumulated structural debt across three simulation generations: `results/full_sim/`, `results/modular_sim_block/`, and `results/modular_sim_factor/` coexist; `.qmd` reports are mixed with output tables/figures; `demos/` is a top-level sibling of `code/` rather than nested within it; `code/SupervisedMF_Context.md` is a doc file in the algorithm directory; `derivations/EBMF/` and `derivations/SurvivalMF/` are early-sketch folders now superseded by the per-update derivation subdirectories.
+- **Reason:** The current layout has accumulated structural debt across three simulation generations: `results/full_sim/`, `results/modular_sim_block/`, and `results/modular_sim_factor/` coexist; `.qmd` reports are mixed with output tables/figures; `demos/` is a top-level sibling of `code/` rather than nested within it; `code/SupervisedMF_Context.md` is a doc file in the algorithm directory; `derivations/early-work/EBMF/` and `derivations/early-work/initial-SSBMF/` are early-sketch folders now superseded by the per-update derivation subdirectories.
 - **Trade-offs:** Any file move invalidates hard-coded paths in runner scripts and `.qmd` `source()` calls — must audit before moving. Deferring keeps the repo stable while active development continues.
 - **Affected files:** `results/`, `code/`, `demos/`, `derivations/`, `.gitignore`
 
@@ -5704,7 +5704,7 @@ Fit object: results/benchmark_sim/outputs/desurv_comparison/desurv_comparison_fi
 - **Decision:** The core model posits a shared n×K loading matrix L that simultaneously factorizes the genomics matrix Y and enters the Cox proportional hazards model as the linear predictor.
 - **Reason:** A two-stage approach (first factor Y, then regress loadings on survival) does not jointly optimize the factors for survival prediction. Sharing L with a joint objective ensures the learned gene expression programs are informative for both reconstruction and prognosis.
 - **Trade-offs:** The joint objective couples genomics and survival gradients; the relative scale of the two terms is dataset-dependent and not normalized (p >> n means the genomics term dominates). This is a known limitation — adding a λ scaling parameter is an identified future direction.
-- **Affected files:** `code/fit_modular.R`, `code/update_L.R`, `code/update_beta.R`, `derivations/MF_UpdateDerivations/`
+- **Affected files:** `code/fit_modular.R`, `code/update_L.R`, `code/update_beta.R`, `derivations/SSBMF-LB-model-derivations/`
 
 
 ## 2026-10-30 — Hazard orientation and posterior coefficient uncertainty

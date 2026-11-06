@@ -5,7 +5,7 @@
 #
 # DERIVATION REFERENCE:
 #   derivations/qB/qBeta_update_derivation.tex  (self-contained)
-#   derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex
+#   derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.tex
 #   Section 6 (EBNM formulation for survival coefficients)
 #
 # MATHEMATICAL SUMMARY:
@@ -279,7 +279,7 @@ update_beta_all <- function(w, z, EL, EL2, EBeta,
 # ==============================================================================
 # Joint Gaussian q(beta) with per-program type-II ML prior variances (S-13, arm A2)
 # ==============================================================================
-# Derivation: derivations/yfb_survival_block_weight/2026-11-05-survival-block-weight-derivation.qmd
+# Derivation: derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/2026-11-05-survival-block-weight-derivation.qmd
 
 #' Negative-free KL(q(beta) || prior) for a joint Gaussian q and independent Normal prior
 #'

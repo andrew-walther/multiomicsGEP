@@ -9,4 +9,4 @@ Superseded by [`../MF_Derivations_UpdateAlgo_REVISED.pdf`](../MF_Derivations_Upd
   implementation `code/Supervised_Bayesian_MF_V2.R`, which is kept for reference
   only.
 
-Moved here from `derivations/MF_UpdateDerivations/` on 2026-10-16.
+Moved here from the parent folder on 2026-10-16.

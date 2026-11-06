@@ -165,7 +165,7 @@ presented as findings.
       m = 1..M, with a shared L, a program- and modality-specific point-Laplace prior g_{F_mk}
       fitted by empirical Bayes, and η from the stacked projections. M = 1 is the
       single-modality model. Expression and methylation are the planned case. Source:
-      `derivations/multimodal_YFB/multimodal_YFB_derivation.qmd` (+ technical notes). It's
+      `derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.qmd` (+ technical notes). It's
       written as derived but not yet implemented in this form.
    10. *Proposed:* **Rank selection.** K is fixed at 7 now. Evidence-based pruning (flashier-style)
        under the supervised objective, and the replicated K-selection criterion.

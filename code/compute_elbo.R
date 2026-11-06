@@ -26,7 +26,7 @@
 # Terms 2-5 are computed here.
 #
 # Mathematical derivation:
-#   See derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf,
+#   See derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.pdf,
 #   Section "ELBO" (Equations 189-204).
 #
 # ==============================================================================
@@ -73,7 +73,7 @@
 #' # Scalar beta_k case
 #' compute_ebnm_kl(ebnm_log_lik = -0.5, A = 2, x = 1.0, mean_q = 0.8, second_q = 0.64)
 #'
-#' @seealso fit_ssbmf_lb.R (caller), derivations/MF_UpdateDerivations/
+#' @seealso fit_ssbmf_lb.R (caller), derivations/SSBMF-LB-model-derivations/
 # ------------------------------------------------------------------------------
 compute_ebnm_kl <- function(ebnm_log_lik, A, x, mean_q, second_q) {
 
@@ -150,7 +150,7 @@ compute_ebnm_kl <- function(ebnm_log_lik, A, x, mean_q, second_q) {
 #' EL <- matrix(c(1, 2), 2, 1); EBeta <- 0.5
 #' compute_survival_elbo(-3.0, w = c(0.1, 0.2), EL, EL^2, EBeta, EBeta^2)
 #'
-#' @seealso fit_ssbmf_lb.R (caller), derivations/MF_UpdateDerivations/
+#' @seealso fit_ssbmf_lb.R (caller), derivations/SSBMF-LB-model-derivations/
 # ------------------------------------------------------------------------------
 compute_survival_elbo <- function(logPL, w, EL, EL2, EBeta, EBeta2, cohort_idx = NULL) {
 

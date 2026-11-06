@@ -251,9 +251,9 @@ Measurement scaling is separate: rescaling Y and its reconstruction loading
 by d changes raw YF by d². Keep the original preprocessing fixed; this is no
 authorization to normalize a modality or change the predictor.
 
-**Evidence anchors:** [corrected Single derivation](../../derivations/cox_on_YF/canonical_ZF/canonical_ZF_exact_F_update.qmd),
-[multimodal derivation](../../derivations/multimodal_YFB/multimodal_YFB_derivation.qmd),
-[technical notes](../../derivations/multimodal_YFB/multimodal_YFB_technical_notes.qmd)
+**Evidence anchors:** [corrected Single derivation](../../derivations/SSBMF-YFB-model-derivations/components/canonical_ZF/canonical_ZF_exact_F_update.qmd),
+[multimodal derivation](../../derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.qmd),
+[technical notes](../../derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_technical_notes.qmd)
 (Cox expansion, coupled prior estimation, KL and scale sections),
 [profile proposal](2026-10-15-round2-profiled-curvature-proposal.md),
 [arithmetic note](2026-10-15-cox-logspace-arithmetic-plan.md), and attempt-log
@@ -289,7 +289,7 @@ No new patient-level computation or scientific fit was needed for this review.
 | Longer warm-up | Untried | Warmup10 was used; no longer value tested. A tuned constant is not free: the protocol treats it as a weight requiring a prospective selection rule. |
 | Staged fit from a converged framework | Currently inapplicable to saved capped starts | Full framework and all five framework CV fits cap500. A cap cannot be relabelled convergence; no longer cap or altered stopping rule is authorized. This does not rule out staged fitting if a genuine converged start later exists. |
 | Damping beta/F updates | Untried; evidence differs by model | Single late oscillation is documented; earlier multimodal diagnostic ELBO increments were positive. Existing damping blends means and variances, not posterior densities, and carries undamped KL/prior outputs. A valid objective account is needed; no arbitrary damping value chosen. |
-| Joint/collapsed (F_k,beta_k) update | Untried | Corrected scalar F update is not a joint update. Derive in cox_on_YF and check numerically before a prospective fit. |
+| Joint/collapsed (F_k,beta_k) update | Untried | Corrected scalar F update is not a joint update. Derive in SSBMF-YFB-model-derivations and check numerically before a prospective fit. |
 | Survival weight {1,2,5,10} | Untried; last resort | Training-CV selection only after applicable preceding steps/decisions. Tiny terminal fractions do not justify promoting it. |
 | Profiled working intercept | Additional approved remedy; tried, failed adoption | Single recovery18/20,20/20; multimodal16/20,19/20. One Single simulation caps; all five multimodal CV fits and both full candidates cap. Multimodal paired gate undefined. |
 | Log-space risk-set arithmetic | Numeric repair demonstrated, opt-in | M2/M3 exact failing point repaired;25k still caps500 with riskSD39086/logPL−40177. Not a supervision remedy or default adoption. |

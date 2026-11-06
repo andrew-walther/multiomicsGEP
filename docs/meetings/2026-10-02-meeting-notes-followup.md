@@ -175,7 +175,7 @@ becomes the manuscript once a journal is chosen. Write the parts that will not c
 Sections that depend on Workstream C get placeholders, not stale numbers.
 
 **A0 (week of 10/5).** Send Yusha and Naim the multimodal derivation,
-`derivations/multimodal_YFB/multimodal_YFB_derivation.pdf` (nine pages), with
+`derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.pdf` (nine pages), with
 `multimodal_YFB_technical_notes.pdf` as the long version. Check first that it reflects the 10/1
 changes (intercept, signed F, `ebnm`, pruning); re-render if not.
 
@@ -187,14 +187,14 @@ Andrew). Use the existing `paper/ssbmf-refs.bib`.
 2. **Methods**
    - Single-modality model: η = (YF)β, priors, CAVI updates, ELBO, ARD-based K selection.
      Sources: `docs/notes/2026-05-08-yfb-derivation-notes.qmd`,
-     `derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf`,
+     `derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.pdf`,
      `docs/lb_walkthroughs/update_*.qmd`, `code/SupervisedMF_Context.md`.
    - **Survival supervision of F:** placeholder until Workstream C is done. It will contain the
      update, the scale canonicalization and whatever C3–C5b settle (β prior, joint update or weight).
    - Multiple cohorts: per-platform z-standardization; the optional `cohort_id`, `strata_id` and
      `beta_cohort_id` terms (see A3).
    - Multimodal model: shared L, modality-specific F_m, intercept, `ebnm` priors, pruning.
-     Source: `derivations/multimodal_YFB/`.
+     Source: `derivations/SSBMF-YFB-multimodal-model-derivations/`.
    - One algorithm box per model, with pseudocode.
 3. **Simulation:** single-modality benchmark, multi-cohort simulation, multimodal pruning sweep,
    recovery of a low-variance prognostic program (from C).
@@ -372,7 +372,7 @@ This is the "let the priors balance it" option the advisors proposed.
   approximation. The F_k update then gains a survival term that rewards aligning the program's
   scores with the working response, whatever β_k's sign, even while E[β̃_k] is near 0.
 - The model stays fully Bayesian with one objective. The cost is that this program's F update is
-  no longer the plain EBNM step and needs a rank-one update. Derive it in `derivations/cox_on_YF/`
+  no longer the plain EBNM step and needs a rank-one update. Derive it in `derivations/SSBMF-YFB-model-derivations/`
   and check it numerically before fitting.
 - Secondary options, if needed: damped F updates; several β updates per F update, or another
   update order.
@@ -534,7 +534,7 @@ survival and reconstruction; and an explanation of the biology of the final prog
 |---|---|---|
 | M0 | Merge `main` into `feature/supervised-F`; run the test suite and report the count | Setup |
 | M1 | C1 diagnostics: `trace_supervision`, planted low-variance test bed, three α_F arms, diagnostic note | Why supervision currently has little effect |
-| M2 | C2 scale canonicalization in `fit_cox_on_yf()`; drop α_F as a separate knob; then define ZF (normalized projection) and settle the subscript notation in `derivations/cox_on_YF/` (10/1 plan WS4.1) | α_F; ZF clarification |
+| M2 | C2 scale canonicalization in `fit_cox_on_yf()`; drop α_F as a separate knob; then define ZF (normalized projection) and settle the subscript notation in `derivations/SSBMF-YFB-model-derivations/` (10/1 plan WS4.1) | α_F; ZF clarification |
 | M3 | In the decided order: C3 supervised initialization and β prior warm-up with C4 β prior family comparison (Normal, point-Laplace, point-normal; 10/1 plan WS4.3), under equal weights; then C5 joint/collapsed (F_k, β_k) update if needed; C5b survival weight w_S only as a last resort | α_F; prior variation |
 | M4 | C6: carry the chosen method into the multimodal model | Multimodal method |
 | M5 | K selection for both models: compare the weighted ELBO with pruning by cross-validated C plus reconstruction; replicated K panels; 1-SE rule (10/1 plan WS4.7) | Parsimonious K_eff |

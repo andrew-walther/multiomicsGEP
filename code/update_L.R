@@ -5,8 +5,8 @@
 #
 # DERIVATION REFERENCE:
 #   derivations/qL/qL_update_derivation.tex  (self-contained)
-#   derivations/MF_UpdateDerivations/archive/MF_V2_Companion.tex  Section 4
-#   derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex
+#   derivations/SSBMF-LB-model-derivations/archive/MF_V2_Companion.tex  Section 4
+#   derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.tex
 #
 # MATHEMATICAL SUMMARY:
 #   l_{ik} appears in BOTH the genomics and survival likelihoods.  The

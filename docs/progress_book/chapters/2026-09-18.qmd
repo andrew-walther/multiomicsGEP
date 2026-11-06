@@ -11,7 +11,7 @@
 
 ## §1. Matched multimodal YFB implementation
 
-The new model follows the reviewed derivation in `derivations/multimodal_YFB/`.
+The new model follows the reviewed derivation in `derivations/SSBMF-YFB-multimodal-model-derivations/`.
 Production helpers, preprocessing, updates, fitting, prediction, and simulation
 live in `code/`, and focused tests live in `tests/`. The model is intentionally
 separate from the established single-mode YFB fitter.

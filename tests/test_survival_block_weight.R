@@ -7,7 +7,7 @@
 # Dependencies: ebnm, survival; code/update_beta.R, code/fit_ssbmf_yfb.R,
 #               code/multimodal_yfb_updates.R
 # ============================================================
-# Derivation: derivations/yfb_survival_block_weight/2026-11-05-survival-block-weight-derivation.qmd
+# Derivation: derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/2026-11-05-survival-block-weight-derivation.qmd
 
 ## Small canonical fixture ----
 

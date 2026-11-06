@@ -5,8 +5,8 @@
 #
 # DERIVATION REFERENCE:
 #   derivations/qTau/qTau_update_derivation.tex  (self-contained)
-#   derivations/MF_UpdateDerivations/archive/MF_V2_Companion.tex  Section 7
-#   derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex
+#   derivations/SSBMF-LB-model-derivations/archive/MF_V2_Companion.tex  Section 7
+#   derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.tex
 #
 # MATHEMATICAL SUMMARY:
 #   tau_j is the feature-specific noise precision.  Unlike L, F, and beta,

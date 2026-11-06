@@ -5,8 +5,8 @@
 #
 # DERIVATION REFERENCE:
 #   derivations/qF/qF_update_derivation.tex  (self-contained)
-#   derivations/MF_UpdateDerivations/archive/MF_V2_Companion.tex  Section 5
-#   derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.tex
+#   derivations/SSBMF-LB-model-derivations/archive/MF_V2_Companion.tex  Section 5
+#   derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.tex
 #
 # MATHEMATICAL SUMMARY:
 #   f_{jk} appears ONLY in the genomics likelihood (not survival).  The

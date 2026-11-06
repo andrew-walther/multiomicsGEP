@@ -26,7 +26,7 @@
 #
 # AUTHOR:      Andrew Walther
 # DATE:        May 2026
-# DERIVATIONS: derivations/cox_on_YF/
+# DERIVATIONS: derivations/SSBMF-YFB-model-derivations/
 # =============================================================================
 
 # Default: "real" — source() loads the function without side effects.
@@ -557,7 +557,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
                            survival_block_weight = FALSE,
                            beta_posterior = c("meanfield", "joint")) {
 
-  # ---- S-13 options (derivations/yfb_survival_block_weight/) ----------------
+  # ---- S-13 options (derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/) ----------------
   # survival_block_weight = TRUE: w_S multiplies the Cox term AND KL(q(beta) || g_beta), so the
   # beta update is the untempered empirical-Bayes posterior (Cox weight 1) while the F update
   # still sees survival at weight w_S. At w_S = 1 the fit is unchanged.

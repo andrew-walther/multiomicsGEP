@@ -150,7 +150,7 @@ Create `code/load_multiomics_data.R`, with roxygen-documented functions, to buil
 ## Workstream 4 — Single-modality YFB items still open
 1. **Clarify what ZF means in the YFB derivation (9/4, 9/18).** The code is not wrong; the derivation just never says clearly what this quantity is.
    - The derivation writes η = (Y·E[F])β̃ with raw ZF. The code uses unit-L2-normalized columns, `ZF = Y %*% EF_norm` (`fit_cox_on_yf.R:643-647`), and prediction applies the stored norms.
-   - Add a definition to `derivations/cox_on_YF/` that states Ẑ = Y F̄ D⁻¹ (the projection score, with columns normalized), and settle the subscript notation Yusha asked about.
+   - Add a definition to `derivations/SSBMF-YFB-model-derivations/` that states Ẑ = Y F̄ D⁻¹ (the projection score, with columns normalized), and settle the subscript notation Yusha asked about.
    - Write the multimodal raw-vs-normalized difference into both documents.
 2. **α / α_F, the Bayesian concern.** This is a large problem and will take time. **Before 10/2: write proposed solutions only.** Start the experiments once the multimodal model has a working prototype on real data.
    - Candidate approaches to write up, each with a mechanism and a test:
@@ -199,7 +199,7 @@ This chapter is the end-to-end progress record for both advisors. Planned sectio
    - Priors: L is shared with a point-exponential prior. Each F_m has its own prior family (point-exponential, point-Laplace or Normal). β has a Normal empirical-Bayes prior.
    - Survival: η = Σ_m Y_m F_m β, a Cox partial likelihood.
    - The factor rescaling (identifiability) step, and how K_eff is determined.
-   - Summarize from `derivations/multimodal_YFB/multimodal_YFB_derivation.qmd` and link to the full derivation rather than repeating it.
+   - Summarize from `derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.qmd` and link to the full derivation rather than repeating it.
 4. **Multimodal refinements and simulation (WS2).**
    - Prior options for F.
    - Centering.
@@ -267,7 +267,7 @@ Re-check this list before writing the 10/2 chapter, and again before the prelim.
 | Multimodal: methylation needs a different, sparser prior; matched training and validation cohorts; all factors shared; methylation and expression anti-correlated | Planned | WS1, WS2.1, WS3. The anti-correlation check is WS3.3 |
 | Yusha to share matched TCGA/ICGC data | Done | In `data/` |
 | Cohorts vs modalities: extra columns vs extra rows | Planned | Methods framing in the chapter (WS5 §3) and the proposal |
-| Derive the key multimodal equations | Done | `derivations/multimodal_YFB/` |
+| Derive the key multimodal equations | Done | `derivations/SSBMF-YFB-multimodal-model-derivations/` |
 
 ### 9/18 meeting with Yusha
 | Item | Status | Where / note |

@@ -433,8 +433,8 @@ with point-normal priors.
 
 ## Matched expression and methylation: derivation for review (2026-09-10)
 
-The [multimodal YFB mathematical proposal](derivations/multimodal_YFB/multimodal_YFB_derivation.pdf)
-and its [Quarto source](derivations/multimodal_YFB/multimodal_YFB_derivation.qmd)
+The [multimodal YFB mathematical proposal](derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.pdf)
+and its [Quarto source](derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.qmd)
 adapt the existing YFB parameterization to one training cohort with matched
 expression and methylation and one independent matched validation cohort.
 The model shares subject scores and survival coefficients, while fitting separate
@@ -443,7 +443,7 @@ loading priors and feature-wise residual precisions by modality.
 The concise nine-page proposal derives the EBMF plus survival objective and
 L/F/β/Tau updates for linear joint YFB using the diagonal Cox working approximation.
 Separate point-exponential loading priors are estimated per modality and factor.
-The [implementation specification](derivations/multimodal_YFB/multimodal_YFB_implementation.qmd)
+The [implementation specification](derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_implementation.qmd)
 maps numbered equations to proposed R updates and tests. The original extensive
 derivation remains in the same folder as technical notes. All 35 existing algebra
 checks pass, including loading interactions and posterior second moments.
@@ -560,27 +560,12 @@ multiomicsGEP/
 |   |-- update_F.R                   <- Modular q(F) update functions (pure genomics, tau cancellation)
 |   |-- update_tau.R                 <- Modular q(tau) update functions (closed-form MLE)
 |   `-- multiomicsGEP_code.Rmd       <- Earlier exploratory R Markdown notebook
-|-- derivations/
-|   |-- qB/
-|   |   |-- qBeta_update_derivation.tex  <- Full step-by-step q(beta) derivation (11 pages)
-|   |   `-- qBeta_update_derivation.pdf
-|   |-- qL/
-|   |   |-- qL_update_derivation.tex     <- Vector EBNM, dual-source (genomics+survival)
-|   |   `-- qL_update_derivation.pdf
-|   |-- qF/
-|   |   |-- qF_update_derivation.tex     <- tau cancellation property, pure genomics
-|   |   `-- qF_update_derivation.pdf
-|   |-- qTau/
-|   |   |-- qTau_update_derivation.tex   <- Closed-form MLE, variance correction
-|   |   `-- qTau_update_derivation.pdf
-|   |-- EBMF/
-|   |   `-- EBMF_Derivations*.pdf        <- Empirical Bayes MF theory notes
-|   |-- MF_UpdateDerivations/
-|   |   |-- MF_Derivations_UpdateAlgo_2_12_26.pdf  <- Reviewed draft -- HAS ERRORS (R1-R8)
-|   |   |-- MF_Derivations_UpdateAlgo_REVISED.tex/.pdf  <- Corrected (21 pages)
-|   |   `-- MF_V2_Companion.tex/.pdf    <- Math <-> code mapping (17 pages)
-|   `-- SurvivalMF/
-|       `-- *.pdf                        <- Survival + MF background notes
+|-- derivations/                     <- see derivations/README.md
+|   |-- SSBMF-LB-model-derivations/   <- LB (eta = L beta): MF_Derivations_UpdateAlgo_REVISED + modular/ + archive/
+|   |-- SSBMF-YFB-model-derivations/  <- YFB (eta = (YF) beta): full derivation + components/
+|   |-- SSBMF-YFB-multimodal-model-derivations/ <- joint expression + methylation YFB
+|   |-- SSBMF-LB-vs-YFB-comparison/   <- side-by-side comparison of the two parameterizations
+|   `-- early-work/                   <- EBMF/ and initial-SSBMF/ background notes (not implemented)
 |-- results/
 |   |-- run_simulation.R             <- Reproduce V2 simulation (8 figs, 11 CSVs)
 |   |-- run_modular_simulation.R     <- Reproduce modular simulation (standalone)
@@ -768,12 +753,12 @@ The modular script sources only the four standalone update modules; it does not 
 ### Compiling LaTeX Documents
 
 ```bash
-cd derivations/MF_UpdateDerivations/
+cd derivations/SSBMF-LB-model-derivations/
 pdflatex MF_Derivations_UpdateAlgo_REVISED.tex
 pdflatex MF_V2_Companion.tex
 pdflatex MF_V2_Companion.tex   # second pass for cross-references
 
-cd derivations/Modular_UpdateDerivations/qB/
+cd derivations/SSBMF-LB-model-derivations/modular/qB/
 pdflatex qBeta_update_derivation.tex  # run 3x for stable bookmarks
 ```
 
@@ -813,7 +798,7 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 - [x] PROJECT_STATUS + SupervisedMF_Context.md: Project documentation
 - [x] Simulation validation: V2 runs end-to-end on synthetic data (n=250, p=1000, K=5)
 - [x] results/: Full simulation outputs -- 8 figures, 11 CSV tables, console log
-- [x] derivations/Modular_UpdateDerivations/qB/qBeta_update_derivation.tex/.pdf: Self-contained q(beta) derivation (11 pages)
+- [x] derivations/SSBMF-LB-model-derivations/modular/qB/qBeta_update_derivation.tex/.pdf: Self-contained q(beta) derivation (11 pages)
 - [x] code/update_beta.R: Modular beta update (`compute_z_no_k`, `update_beta_k`, `update_beta_all`)
 - [x] tests/: Test infrastructure + 24 tests for beta update (9 groups, all passing)
 - [x] demos/demo_update_beta.R: 5 interactive demos for beta update
@@ -827,9 +812,9 @@ Rscript demos/demo_update_tau.R    # q(tau) update: 5 demos -- see variance corr
 - [x] demos/demo_update_L.R: 5 demos (anatomy, signal recovery, genomics vs combined, error-in-variables, K=5)
 - [x] demos/demo_update_F.R: 5 demos (tau cancellation, sparse recovery, differential shrinkage, sparsity, K=5)
 - [x] demos/demo_update_tau.R: 5 demos (anatomy, known noise, variance correction, heteroscedastic, ELBO proxy)
-- [x] derivations/Modular_UpdateDerivations/qL/qL_update_derivation.tex/.pdf: Self-contained q(L) derivation
-- [x] derivations/Modular_UpdateDerivations/qF/qF_update_derivation.tex/.pdf: Self-contained q(F) derivation
-- [x] derivations/Modular_UpdateDerivations/qTau/qTau_update_derivation.tex/.pdf: Self-contained q(tau) derivation
+- [x] derivations/SSBMF-LB-model-derivations/modular/qL/qL_update_derivation.tex/.pdf: Self-contained q(L) derivation
+- [x] derivations/SSBMF-LB-model-derivations/modular/qF/qF_update_derivation.tex/.pdf: Self-contained q(F) derivation
+- [x] derivations/SSBMF-LB-model-derivations/modular/qTau/qTau_update_derivation.tex/.pdf: Self-contained q(tau) derivation
 - [x] docs/: Companion documentation for all 4 modular update scripts (.md + .pdf + .html)
 - [x] roxygen2 @export/@family/@seealso tags added to all 11 functions
 - [x] Targeted inline comments added to all 4 R scripts
@@ -984,7 +969,7 @@ Only remove true duplicates or items added in error.
    - T4.1: `length()` returns integer (5L != 5); fixed to `assert_length()`
    - T6.1: s_high should be < s_low (not >); larger A_k -> smaller s_k
 
-6. **Created `derivations/Modular_UpdateDerivations/qB/qBeta_update_derivation.tex`** (11 pages):
+6. **Created `derivations/SSBMF-LB-model-derivations/modular/qB/qBeta_update_derivation.tex`** (11 pages):
    - tcolorbox styles: derivbox (gray), correctionbox (red), ebnmbox (blue),
      verifybox (green), codebox (orange)
 
@@ -1989,7 +1974,7 @@ Cox-on-YF reformulation (Cluster B) implemented and merged from branch
 - `code/fit_cox_on_yf.R` — main CAVI loop; linear predictor η = (Y·EF_norm)·β
 - `code/predict_cox_on_yf.R` — hold-out projection using stored EF_norms and EBeta
 - `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R` — YFB-specific update variants
-- `derivations/cox_on_YF/` — full parameter derivations (LaTeX)
+- `derivations/SSBMF-YFB-model-derivations/` — full parameter derivations (LaTeX)
 - Smoke test: 3/3 PASS; synthetic: C-index 0.605 vs PCA 0.471 (3 active factors)
 
 #### 21.2 — Benchmark consolidation

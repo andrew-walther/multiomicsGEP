@@ -10,7 +10,7 @@
 # in both genomics and Cox likelihoods).
 #
 # DERIVATION REFERENCE:
-#   derivations/cox_on_YF/qL_unsupervised_derivation.tex
+#   derivations/SSBMF-YFB-model-derivations/components/qL_unsupervised/qL_unsupervised_derivation.tex
 #
 # MATHEMATICAL SUMMARY:
 #   A_L = sum_j(tau_j * E[f^2_{jk}])   [scalar, same for all i]

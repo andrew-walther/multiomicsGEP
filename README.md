@@ -61,7 +61,7 @@ external cohorts. The model was trained on TCGA-PAAD and CPTAC-PDAC only.*
 expression and DNA methylation (TCGA training, ICGC validation) is implemented in
 `code/fit_multimodal_yfb.R` with prediction, simulation and K-selection
 utilities. Its derivation is in
-[`derivations/multimodal_YFB/`](derivations/multimodal_YFB/multimodal_YFB_derivation.pdf).
+[`derivations/SSBMF-YFB-multimodal-model-derivations/`](derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.pdf).
 It is not yet the production model.
 
 Development history, benchmark tables and the reasoning behind each modelling
@@ -227,8 +227,8 @@ Rscript results/benchmark_sim/plot_yfb_saved_traces.R attempt7
 
 ## Documentation
 
-- [Corrected CAVI derivations](derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf)
-- [Multimodal YFB derivation](derivations/multimodal_YFB/multimodal_YFB_derivation.pdf)
+- [Corrected CAVI derivations](derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.pdf)
+- [Multimodal YFB derivation](derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.pdf)
 - [Project write-up](paper/writeup/2026-10-16-writeup/writeup.pdf): methods, evaluation, results and full derivations
 - [Progress notebook](https://andrew-walther.github.io/multiomicsGEP/)
 - [October 30 supervision execution report](docs/reviews/2026-10-30-codex-execution-report.md)

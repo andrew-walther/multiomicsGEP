@@ -2,8 +2,8 @@
 
 A compact map from the model's notation to the R implementation. For the file
 layout see [`README.md`](README.md); for complete derivations see
-`derivations/MF_UpdateDerivations/MF_Derivations_UpdateAlgo_REVISED.pdf` (LB) and
-`derivations/cox_on_YF/` (YFB).
+`derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.pdf` (LB) and
+`derivations/SSBMF-YFB-model-derivations/` (YFB).
 
 ## Model
 

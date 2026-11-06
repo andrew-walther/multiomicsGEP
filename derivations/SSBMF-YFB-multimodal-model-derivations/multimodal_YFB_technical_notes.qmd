@@ -1451,8 +1451,8 @@ it does not approve one by implication.
 From the repository root:
 
 ```bash
-Rscript derivations/multimodal_YFB/verify_derivation.R
-quarto render derivations/multimodal_YFB/multimodal_YFB_derivation.qmd --to pdf
+Rscript derivations/SSBMF-YFB-multimodal-model-derivations/verify_derivation.R
+quarto render derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.qmd --to pdf
 ```
 
 Rendering executes the verification script and stops on a failed
@@ -1493,7 +1493,7 @@ software conventions; they are not substitutes for the derivation.
   and posterior moment outputs. Local package version inspected: 1.1.42.
 - [Quantifying the role of transcript levels in mediating DNA methylation effects on complex traits and diseases](https://www.nature.com/articles/s41467-022-35196-3)
   (Nature Communications, 2022). Biological context for the sign comparison.
-- Local mathematical references: \path{derivations/cox_on_YF/} and
+- Local mathematical references: \path{derivations/SSBMF-YFB-model-derivations/} and
   \path{docs/notes/2026-05-08-yfb-update-derivations-detailed-notes.qmd}.
   These describe earlier YFB formulas; the audit in Section 2
   identifies where they cannot be carried over unchanged.

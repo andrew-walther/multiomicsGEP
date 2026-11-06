@@ -800,5 +800,5 @@ kable(next_steps, col.names = c("Priority", "Task", "Rationale"),
 ---
 
 *Report generated from `code/Supervised_Bayesian_MF_V2.R` simulation output.*
-*Companion derivations: `derivations/MF_UpdateDerivations/MF_V2_Companion.pdf`*
+*Companion derivations: `derivations/SSBMF-LB-model-derivations/archive/MF_V2_Companion.pdf`*
 *Modular implementation report: `results/modular_sim_report.qmd`*

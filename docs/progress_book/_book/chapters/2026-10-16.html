@@ -614,7 +614,7 @@ Table&nbsp;11.1: C1 arms at noise 0.25 (oracle C 0.666).
 </section>
 <section id="scale-canonicalization-and-the-corrected-update-c2" class="level3" data-number="11.6.3">
 <h3 data-number="11.6.3" class="anchored" data-anchor-id="scale-canonicalization-and-the-corrected-update-c2"><span class="header-section-number">11.6.3</span> Scale canonicalization and the corrected update (C2)</h3>
-<p>Each program is rescaled to unit SD of its training score after every iteration, so β̃_k is a log hazard ratio per SD. α_F is dropped: every survival term carries one weight w_S, and w_S = 1 is the plain posterior. The F update now removes the other genes of the program from each gene’s survival term and runs as a sequential sweep over genes, the same update the multimodal model uses. The derivation and the correction are in <code>derivations/cox_on_YF/canonical_ZF/</code>.</p>
+<p>Each program is rescaled to unit SD of its training score after every iteration, so β̃_k is a log hazard ratio per SD. α_F is dropped: every survival term carries one weight w_S, and w_S = 1 is the plain posterior. The F update now removes the other genes of the program from each gene’s survival term and runs as a sequential sweep over genes, the same update the multimodal model uses. The derivation and the correction are in <code>derivations/SSBMF-YFB-model-derivations/components/canonical_ZF/</code>.</p>
 <div id="tbl-c2" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-c2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">

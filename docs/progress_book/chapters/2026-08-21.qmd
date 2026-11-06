@@ -153,7 +153,7 @@ $$
 
 This is the complete probabilistic model the update steps below are derived from: the two
 likelihoods, the priors on each latent variable, and the objective (the ELBO) that CAVI actually
-maximizes. Full derivation: `derivations/cox_on_YF/ELBO/ELBO_YF_derivation.pdf`.
+maximizes. Full derivation: `derivations/SSBMF-YFB-model-derivations/components/ELBO/ELBO_YF_derivation.pdf`.
 
 **Priors.** Each latent variable is given an Empirical Bayes prior. A family is chosen and the
 specific shape within that family is estimated from the data itself:
@@ -239,7 +239,7 @@ standard error $s = 1/\sqrt{A}$. That $(x,s)$ pair, together with the coordinate
 what's actually handed to the EBNM solver, which returns the fitted prior and the posterior mean and
 second moment. This structure is identical for $\beta$, $L$, and $F$ below. Only what goes into $A$
 and $B$ changes. All three formulas were checked line-by-line against their source derivations
-(`derivations/cox_on_YF/`) and match exactly.
+(`derivations/SSBMF-YFB-model-derivations/`) and match exactly.
 
 **Step 0: Working response.** Recompute $\tilde F$, $Z\!F = Y\tilde F$, and $\eta = Z\!F\,\tilde\beta$.
 Run one step of the Cox Newton–Raphson (Taylor) expansion at $\eta$ to get the score $u$, diagonal
@@ -263,7 +263,7 @@ Hessian weight $w$, and working response $z = \eta + u/w$.
    is $\alpha$-independent) but not in $s_k = 1/\sqrt{A_k}$, so it still controls how strongly
    $\beta_k$ is shrunk. Prior family: `normal` (see the priors note above. `point_normal` is
    available but collapses to $\beta=0$ under cross-validation). *(Derivation:
-   `derivations/cox_on_YF/qBeta/qBeta_YF_derivation.pdf`)*
+   `derivations/SSBMF-YFB-model-derivations/components/qBeta/qBeta_YF_derivation.pdf`)*
 
 2. **$q(l_{\cdot k})$, patient loadings, pure genomics.** $L$ carries no survival term under YFB:
    $$
@@ -277,11 +277,11 @@ Hessian weight $w$, and working response $z = \eta + u/w$.
    where $R^{-k} = Y - \bar L\bar F^\top + \bar l_{\cdot k}\bar f_{\cdot k}^\top$ is the genomics
    residual with factor $k$ added back in. Prior family: `point_exponential` (one-sided, non-negative
    weights, no "depletion" side). *(Derivation:
-   `derivations/cox_on_YF/qL_unsupervised/qL_unsupervised_derivation.pdf`)*
+   `derivations/SSBMF-YFB-model-derivations/components/qL_unsupervised/qL_unsupervised_derivation.pdf`)*
 
 3. **$q(f_{\cdot k})$, gene-program weights.** Pure genomics at the default survival-mixing weight
    $\alpha_F = 0$ (a dual-source form exists for $\alpha_F > 0$, unused in the recommended
-   configuration. See `derivations/cox_on_YF/qF_supervised/qF_supervised_derivation.pdf` for the
+   configuration. See `derivations/SSBMF-YFB-model-derivations/components/qF_supervised/qF_supervised_derivation.pdf` for the
    general case):
    $$
    A_{jk} = \tau_j \sum_i \overline{l_{ik}^2}, \qquad

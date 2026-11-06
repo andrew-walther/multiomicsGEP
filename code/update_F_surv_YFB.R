@@ -21,7 +21,7 @@
 #   5. Train/test consistency preserved: prediction still uses Y_test·EF·β̃
 #
 # DERIVATION REFERENCE:
-#   derivations/cox_on_YF/qF_supervised_derivation.tex  (dual-source derivation)
+#   derivations/SSBMF-YFB-model-derivations/components/qF_supervised/qF_supervised_derivation.tex  (dual-source derivation)
 #   DECISIONS.md 2026-04-30  (alpha_F=0 rationale)
 #
 # MATHEMATICAL SUMMARY (dual-source, alpha_F > 0 case):

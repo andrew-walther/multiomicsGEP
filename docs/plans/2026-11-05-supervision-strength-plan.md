@@ -60,7 +60,7 @@ Weight the whole survival block, the Cox likelihood and the β prior together:
 - **Code change.** Opt-in argument (for example `survival_block_weight = TRUE`) in
   `fit_ssbmf_yfb()` under `canonicalize = TRUE`: the β update receives Cox weight 1, and the
   objective multiplies KL(β) by w_S. Defaults unchanged. Derivation written first
-  (`derivations/yfb_survival_block_weight/`), then tests, then code.
+  (`derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/`), then tests, then code.
 
 ## Arms
 
@@ -120,7 +120,7 @@ partial log-likelihood. External scoring then gets its own registration, as S-12
 
 - **Code:** `fit_ssbmf_yfb(canonicalize = TRUE, w_S, survival_block_weight = TRUE,
   beta_posterior = "meanfield" | "joint")`, derivation
-  `derivations/yfb_survival_block_weight/2026-11-05-survival-block-weight-derivation.qmd`, tests
+  `derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/2026-11-05-survival-block-weight-derivation.qmd`, tests
   `tests/test_survival_block_weight.R` (full suite 761/761). All other settings are the S-9 call.
 - **Runner:** `results/benchmark_sim/run_yfb_supervision_strength.R`, output
   `results/benchmark_sim/outputs/yfb_supervision_strength_2026-11-05/`.

@@ -975,8 +975,8 @@ The entries below retain dated implementation and evaluation history.
   docs/                     ← companion .qmd/.pdf/.html (already clean)
     context/                ← MOVE code/SupervisedMF_Context.md, docs/findings/2026-03-31-pdac-data-audit/PDAC_data_audit.qmd here
   derivations/              ← mathematical derivations (already clean per-update)
-    archive/                ← MOVE derivations/EBMF/, derivations/SurvivalMF/ early sketches
-                               MOVE dated .tex drafts from MF_UpdateDerivations/ (keep only REVISED + Companion)
+    archive/                ← MOVE derivations/early-work/EBMF/, derivations/early-work/initial-SSBMF/ early sketches
+                               MOVE dated .tex drafts from SSBMF-LB-model-derivations/ (keep only REVISED + Companion)
   results/
     reports/                ← MOVE .qmd/.pdf/.html report files out of modular_sim_factor/
     figures/                ← figures by cohort (already structured)
@@ -1001,7 +1001,7 @@ The entries below retain dated implementation and evaluation history.
   modality-specific empirical-Bayes loading priors, feature-wise precision updates,
   Cox survival updates, prior-hyperparameter derivations, prediction rules, and
   explicit weighting/normalization comparisons are documented in
-  `derivations/multimodal_YFB/multimodal_YFB_derivation.{qmd,pdf}`.
+  `derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.{qmd,pdf}`.
   Base-R numerical checks accompany the derivation. This completes document
   preparation, not advisor approval or model implementation. *(2026-09-10)*
 
@@ -1050,7 +1050,7 @@ The entries below retain dated implementation and evaluation history.
   projected onto the factor space, eliminating the train/test mismatch where training used
   EBNM-shrunk loadings but prediction used OLS-projected loadings. Implementation: `code/fit_cox_on_yf.R`,
   `code/predict_cox_on_yf.R`, `code/update_L_surv_YFB.R`, `code/update_F_surv_YFB.R`,
-  derivations in `derivations/cox_on_YF/`. Synthetic: C-index 0.605 vs PCA 0.471 (3 active factors).
+  derivations in `derivations/SSBMF-YFB-model-derivations/`. Synthetic: C-index 0.605 vs PCA 0.471 (3 active factors).
   Full PDAC benchmark comparison in `docs/findings/2026-05-05-ssbmf-summary-report.pdf`.
 - [x] **Core modular CAVI implementation** — `code/fit_modular.R` with four independently-tested update modules. 171/171 tests passing. *(Completed March 2026)*
 - [x] **Hold-out prediction pipeline** — `code/predict.R` (`predict_supervised_mf()`), `code/train_test_split.R` (`stratified_split()`). 80/20 stratified hold-out. *(Completed March 2026)*

@@ -106,7 +106,7 @@ The chapter is not ready to present as written, for four reasons.
 - *Fix:* "Risk tertiles are ordered as expected in all five cohorts; log-rank p < 0.05 in three (Puleo, Dijk, PACA-AU seq), p = 0.075 in PACA-AU array and p = 0.17 in Moffitt." First check by eye that the curves are in fact ordered in all five.
 
 **10. The cited derivation does not contain the new framework.**
-- *Location:* line 49, "Every update equation is in `derivations/multimodal_YFB/multimodal_YFB_derivation.pdf`."
+- *Location:* line 49, "Every update equation is in `derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.pdf`."
 - *Problem:* the derivation `.qmd` has no intercept μ_m, no point-Laplace prior, no ELBO and no pruning or nullcheck. A search for "intercept", "laplace", "ELBO" and "prun" finds 0 matches. Those pieces exist only in code comments and DECISIONS.md (2026-10-01).
 - *Fix:* "The base updates are in …; the intercept, signed priors, ELBO and pruning are documented in DECISIONS.md (2026-10-01) and `code/fit_multimodal_yfb.R`, and will be added to the derivation."
 

@@ -121,7 +121,7 @@ decides which rungs apply:
    survival supervision from that warm start.
 3. Damping of the β and F updates (`control$damping` exists), if the cap is caused by oscillation.
 4. A joint or collapsed (F_k, β_k) update for the supervised program (Workstream C5): derive it in
-   `derivations/cox_on_YF/`, check it numerically, then fit.
+   `derivations/SSBMF-YFB-model-derivations/`, check it numerically, then fit.
 5. Last resort: a survival weight w_S chosen by training-CV C from {1, 2, 5, 10} (C5b).
 
 **Remedy ladder for Task 1 (K selection),** if the adoption rule fails:
