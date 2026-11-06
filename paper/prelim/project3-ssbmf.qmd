@@ -347,13 +347,13 @@ The supervised calibration slopes ranged from 0.36 to 1.57 and were closer to on
 \end{figure}
 ```
 
-The Kaplan--Meier curves describe prognosis across within-series tertiles of the fixed risk score (Figure \ref{fig:km-risk}). Tertiles are descriptive groups defined from the score distributions. The cutpoints vary by series.
+Figure \ref{fig:km-risk} shows the validation series split by one cutpoint chosen on the out-of-fold training scores and applied unchanged in every series (@sec-comparators). The high-versus-low hazard ratio was above one in every series, from 1.06 (0.69 to 1.63) in Moffitt to 3.53 (1.63 to 7.67) in PACA-AU RNA-seq.
 
 ```{=latex}
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=\linewidth]{figures/sup_external_km_risk.pdf}
-\caption{Kaplan--Meier curves by within-series tertile of the frozen supervised risk score. The numbers at risk are shown below each panel. Curves are displayed through 60 months.}\label{fig:km-risk}
+\includegraphics[width=\linewidth]{figures/sup_external_km_fixed.pdf}
+\caption{Kaplan--Meier curves for the frozen supervised risk score split at the training cutpoint ($-0.046$ training SD). Panel titles give the high-versus-low hazard ratio with its Wald interval. Curves are monthly estimates through 60 months, with numbers at risk every 12 months below each panel.}\label{fig:km-risk}
 \end{figure}
 ```
 
@@ -551,7 +551,7 @@ Historical analyses used the external panel to inform rank, preprocessing, the l
 
 ## Continuing work
 
-We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-choose-weight). Each will be judged against the registered simulation criteria and against training cross-validation on PDAC, and any configuration adopted on the training data will be scored once externally. The extension to several data types (@sec-mmodal) will start from a fitter that reproduces the current model for one modality. We will also assess rank selection under the supervised objective (@sec-rank). The remaining comparison (@sec-comparators) will place the method against the $L\beta$ parameterization. The Kaplan--Meier figures will be redrawn with the fixed training cutpoint in place of within-cohort tertiles. We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
+We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-choose-weight). Each will be judged against the registered simulation criteria and against training cross-validation on PDAC, and any configuration adopted on the training data will be scored once externally. The extension to several data types (@sec-mmodal) will start from a fitter that reproduces the current model for one modality. We will also assess rank selection under the supervised objective (@sec-rank). The remaining comparison (@sec-comparators) will place the method against the $L\beta$ parameterization.  We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
 
 \FloatBarrier
 
