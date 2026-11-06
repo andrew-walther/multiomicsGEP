@@ -2824,3 +2824,12 @@ many fits: an empty program's β KL is computed where ebnm's point-Laplace solve
 inaccurate (s = 1e5), giving −KL ≈ +1e-6 to +1e-5 instead of 0. Failing test:
 `tests/test_empty_program_kl.R` (not in the suite). No fitter change. Findings:
 `docs/findings/2026-11-06-kl-fix-pruning-rerun-findings.md`.
+
+## 2026-11-06 — S-15 result
+
+w* = 1, so nothing is adopted and the S-11/S-12 model stands. The CV partial log-likelihood is
+flat (−775.17 at w = 1 to −775.43 at w = 50). The weights chosen in the nested folds were 5, 2,
+50, 1 and 10, and the nested mean C is 0.656 (SE 0.027) against 0.663 at w_S = 1. Survival's
+share of the loading precision is at most 7 × 10⁻⁵ even at w_S = 50, and the loadings correlate
+1.000 with the unsupervised ones. The w = 1 fold fits reproduce S-11 exactly. Findings:
+`docs/findings/2026-11-06-supervised-real-refit-findings.md`.

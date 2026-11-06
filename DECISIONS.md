@@ -117,6 +117,21 @@ and should be negated before use; the frozen benchmark snapshot is not modified.
 
 Test: `tests/test_lb_sign_correction.R` (fails on the old check, passes on the new one).
 
+## 2026-11-06 — The real-data fit stays at w_S = 1 (S-15)
+
+**Decided by the registered rule.** CV partial log-likelihood over w_S in {1, ..., 50} picks 1 on
+the training data, so the S-11 fit and its S-12 external scoring stand. The curve is flat
+(a change of 0.26 out of 775). Survival's share of the loading precision stays below 10⁻⁴ even at
+w_S = 50, and the loadings equal the unsupervised ones.
+
+**Consequence.** On real PDAC data the supervised model's gain comes from the joint β fit, not
+from moving the loadings. Moving the loadings would take weights near DeSurv's scale (about 10⁴),
+which first needs the large-weight stability work. False-active programs are judged by their
+contribution (standardized coefficient and risk-variance share), following Andrew's 2026-11-06
+guidance, not by their count.
+
+Findings: `docs/findings/2026-11-06-supervised-real-refit-findings.md`.
+
 ## 2026-11-05 — No S-13 or S-14 configuration is adopted; CV-chosen weight is the candidate
 
 **Decided (pending Andrew's review).** Neither the survival-block weight (A1) nor the joint q(β)
