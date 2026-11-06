@@ -108,3 +108,24 @@ was applied to the S-14 two-step arm.
 - The S-9 cells are not a regime where supervision is needed for recovery. S-14 tests weaker
   planted programs.
 - The two-step false-active count uses Cox Wald tests. The supervised arms use 1.96 posterior SDs.
+
+## Added 2026-11-06: how much the false-active programs contribute
+
+This analysis is descriptive and post hoc, from `results/benchmark_sim/summarize_false_active_contribution.R`
+(output `false_active_contribution.csv`). It changes no registered verdict. For each CV-selected
+fit, it splits the validation risk score into the matched program's part and the rest, and it
+reports standardized coefficients (log hazard ratio per training SD of the program score).
+
+| Arm | Cell | Mean FA | Risk-score variance from other actives (median) | Std. \|β\| matched (median) | Largest std. \|β\| among false actives (median) | C change from removing them |
+|---|---|---|---|---|---|---|
+| A1 | 0.0025 | 0.9 | < 0.1% | 6.0 | 0.13 | −0.001 |
+| A2 | 0.0025 | 0.6 | < 0.1% | 6.1 | 0.07 | 0.000 |
+| A1 | weak | 1.2 | 0.8% | 0.74 | 0.13 | 0.000 |
+| A2 | weak | 0.9 | 0.7% | 0.74 | 0.11 | +0.002 |
+
+The 0.01 and 0.05 cells have no false actives. Where they occur, the false-active programs have
+coefficients about one fifth to one fiftieth of the matched program's, carry under 1% of the
+risk-score variance, and change validation C by at most 0.002. For prediction they are
+negligible. The registered false-active count does not measure this, so future registrations
+should bound the contribution (risk-variance share or standardized coefficient) as well as the
+count.

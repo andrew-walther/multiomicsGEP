@@ -99,3 +99,37 @@ which A1 at w_S = 1 has the higher C:
   arms use 1.96 posterior SDs. The two rules are not the same test.
 - The realistic-survival rescaling was calibrated from the generator alone (seeds 101–106). No
   registered fit informed it.
+
+## Added 2026-11-06: how much the other programs contribute
+
+This analysis is descriptive and post hoc, from `results/benchmark_sim/summarize_false_active_contribution.R`
+(output `false_active_contribution.csv`). Activity is not stored in the S-14 checkpoints, so every
+program other than the matched one is counted, active or not. Standardized |β| is the log hazard
+ratio per training SD of the program score. ΔC is the validation C of the full risk score minus
+that of the matched program alone.
+
+| Survival | Share | Arm | Mean FA | Risk variance from other programs (median) | Std. \|β\| matched (median) | Largest other std. \|β\| (median) | ΔC |
+|---|---|---|---|---|---|---|---|
+| strong | 0.05% | two-step | 2.8 | 69% | 0.41 | 0.24 | +0.022 |
+| strong | 0.05% | A1 w_S = 1 | 2.5 | 8.7% | 1.84 | 0.33 | +0.012 |
+| strong | 0.1% | two-step | 2.4 | 1.4% | 2.80 | 0.27 | +0.008 |
+| strong | 0.1% | A1 w_S = 1 | 1.6 | 0.5% | 3.76 | 0.23 | +0.005 |
+| strong | 0.2% | two-step | 1.8 | 0.4% | 5.02 | 0.24 | +0.003 |
+| strong | 0.2% | A1 w_S = 1 | 1.0 | 0.1% | 4.79 | 0.16 | +0.001 |
+| realistic | 0.05% | two-step | 1.6 | 57% | 0.29 | 0.16 | +0.004 |
+| realistic | 0.05% | A1 w_S = 1 | 1.9 | 39% | 0.49 | 0.19 | +0.013 |
+| realistic | 0.1% | A1 w_S = 1 | 1.0 | 1.3% | 1.05 | 0.14 | +0.004 |
+| realistic | 0.2% | A1 w_S = 1 | 0.5 | 0.6% | 1.08 | 0.08 | 0.000 |
+
+All arms and cells are in the CSV. Two cases differ:
+
+- **Where the program is resolved (0.1% and 0.2%).** The other programs carry at most 1.3% of the
+  risk-score variance, and removing them changes C by at most 0.008. Their counts fail the
+  registered criterion, but they barely affect the risk score.
+- **Where the program is only partly resolved (0.05%).** The other programs carry 9% to 69% of the
+  risk-score variance and add to C. They are not noise. They hold pieces of the planted
+  direction that the matched program missed, and the split is much larger for the two-step fit
+  (69%) than for the supervised fit (8.7%) with strong survival.
+
+The registered criterion counts both cases the same way. For prediction, the first case is
+negligible and the second is part of the signal.
