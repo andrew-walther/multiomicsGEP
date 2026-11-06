@@ -46,6 +46,13 @@
 #'                 Appended after `EF_norms` (not inserted earlier) so every
 #'                 existing positional caller (`select_K.R`, `select_alpha_cv.R`)
 #'                 is unaffected.
+#' @param projection_center NULL (default) or the p-vector of training column
+#'                 means returned by fit_ssbmf_yfb(center_projection = TRUE)
+#'                 as `$projection_center`. When supplied, the projection is
+#'                 (Y_test - 1 projection_center') EF, as in training. This
+#'                 shifts every risk score by the same constant, so rankings
+#'                 and concordance are the same with or without it. For a
+#'                 row-subset of EF, subset projection_center the same way.
 #'
 #' @return Named list:
 #'   $ZF_test      n_test × K matrix of normalized projection scores
@@ -62,7 +69,8 @@
 #' # Cohort-specific beta, scoring an in-sample/matched cohort by name:
 #' # pred <- predict_ssbmf_yfb(Y_test, res$EF, res$EBeta, res$EF_norms,
 #' #                            cohort_id_test = my_cohort_labels)
-predict_ssbmf_yfb <- function(Y_test, EF, EBeta, EF_norms = NULL, cohort_id_test = NULL) {
+predict_ssbmf_yfb <- function(Y_test, EF, EBeta, EF_norms = NULL, cohort_id_test = NULL,
+                              projection_center = NULL) {
 
   if (!is.matrix(Y_test) || !is.numeric(Y_test))
     stop("Y_test must be a numeric matrix.")
@@ -109,6 +117,14 @@ predict_ssbmf_yfb <- function(Y_test, EF, EBeta, EF_norms = NULL, cohort_id_test
       stop(sprintf("EF_norms length (%d) must match ncol(EF) (%d).",
                    length(EF_norms), ncol(EF)))
     EF <- sweep(EF, 2, EF_norms, "/")
+  }
+
+  if (!is.null(projection_center)) {
+    if (!is.numeric(projection_center) || length(projection_center) != ncol(Y_test) ||
+        any(!is.finite(projection_center)))
+      stop(sprintf("projection_center must be a finite numeric vector of length ncol(Y_test) (%d).",
+                   ncol(Y_test)))
+    Y_test <- sweep(Y_test, 2, projection_center)
   }
 
   ZF_test <- Y_test %*% EF

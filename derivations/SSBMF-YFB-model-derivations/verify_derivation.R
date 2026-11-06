@@ -196,6 +196,111 @@ rho <- function(EL2, EF, EB2) outer(1 / Tau, w_S * EB2 / colSums(EL2)) * as.vect
 check_close("precision share rho is invariant to the rescaling", rho(cz$EL2, cz$EF, cz$EBeta2),
             rho(EL2, EF, EB2))
 
+# 6. Projection-only centering (Section "Centering Only the Cox Projection") ----
+# Nonnegative uncentered input: genomics uses Yn, survival uses Yc = Yn - 1 ybar'.
+
+Yn <- abs(Y) + 3                                  # nonnegative, column means near 3.8
+ybar <- colMeans(Yn); Yc <- sweep(Yn, 2, ybar)
+
+## Eq. center-exact and center-uW: the partial likelihood, u and W are shift invariant
+eta_n <- as.vector(Yn %*% EF %*% EB); eta_c <- as.vector(Yc %*% EF %*% EB)
+check_close("centering moves eta by one constant", eta_n - eta_c,
+            rep(sum(ybar * (EF %*% EB)), n))
+tay_n <- calc_cox_taylor_yf(eta_n, time, status); tay_c <- calc_cox_taylor_yf(eta_c, time, status)
+check_close("centered projection: same partial log-likelihood", tay_c$logPL, tay_n$logPL)
+check_close("centered projection: same Cox scores u", tay_c$u, tay_n$u)
+check_close("centered projection: same Cox weights W", tay_c$w, tay_n$w)
+Wc <- tay_c$w; zc <- eta_c + tay_c$u / Wc
+
+#' Expected objective with separate genomics and survival designs
+#'
+#' Same form as expected_objective(): genomics on Yg, w_S times the expected
+#' Taylor surrogate with program scores Ys F, at fixed working (W, z).
+#' @param Yg,Ys Genomics and survival design matrices.
+#' @param W,z Working weights and response.
+#' @return Scalar objective (KL terms excluded).
+#' @examples
+#' expected_objective_sep(EL, EL2, EF, EF2, EB, EB2, Yn, Yc, Wc, zc)
+expected_objective_sep <- function(EL, EL2, EF, EF2, EB, EB2, Yg, Ys, W, z) {
+  R2 <- (Yg - EL %*% t(EF))^2 + EL2 %*% t(EF2) - EL^2 %*% t(EF^2)
+  gen <- -0.5 * sum(sweep(R2, 2, Tau, "*"))
+  Zb <- Ys %*% EF
+  EZ2 <- Zb^2 + Ys^2 %*% (EF2 - EF^2)
+  eta <- as.vector(Zb %*% EB)
+  var_eta <- as.vector(EZ2 %*% EB2 - Zb^2 %*% EB^2)
+  gen + w_S * (-0.5 * sum(W * ((z - eta)^2 + var_eta)))
+}
+obj_c <- function(...) expected_objective_sep(..., Yg = Yn, Ys = Yc, W = Wc, z = zc)
+
+## Eq. center-AB-beta
+for (k in 1:K) {
+  Zb <- Yc %*% EF; VZ <- Yc^2 %*% (EF2 - EF^2)
+  z_mk <- zc - as.vector(Zb[, -k, drop = FALSE] %*% EB[-k])
+  A_doc <- w_S * sum(Wc * (Zb[, k]^2 + VZ[, k])); B_doc <- w_S * sum(Wc * z_mk * Zb[, k])
+  bf <- brute_AB(function(m, s2) { b <- EB; b2 <- EB2; b[k] <- m; b2[k] <- s2
+                                   obj_c(EL, EL2, EF, EF2, b, b2) })
+  check_close(sprintf("centered beta_%d: document A and B match the expected objective", k),
+              c(A_doc, B_doc), unname(bf))
+  code <- update_beta_k(Wc, compute_z_no_k(zc, Zb, EB, k), Zb[, k], Zb[, k]^2 + VZ[, k],
+                        prior_family = "normal", alpha = w_S, survival_divisor = 1)
+  check_close(sprintf("centered beta_%d: update_beta_k() A and B", k), c(code$A, code$B),
+              c(A_doc, B_doc))
+}
+
+## Eq. center-AB-F (genomics terms on Yn, survival terms on Yc)
+doc_AB_F_c <- function(EL, EL2, EF, EF2, j, k) {
+  R_k <- Yn - EL[, -k, drop = FALSE] %*% t(EF[, -k, drop = FALSE])
+  Zb <- Yc %*% EF
+  z_mk <- zc - as.vector(Zb[, -k, drop = FALSE] %*% EB[-k])
+  y <- Yc[, j]
+  c(Tau[j] * sum(EL2[, k]) + w_S * EB2[k] * sum(Wc * y^2),
+    Tau[j] * sum(R_k[, j] * EL[, k]) +
+      w_S * (EB[k] * sum(Wc * y * z_mk) - EB2[k] * sum(Wc * y * (Zb[, k] - y * EF[j, k]))))
+}
+for (k in 1:K) for (j in c(1, 9, p)) {
+  bf <- brute_AB(function(m, s2) { Fm <- EF; F2 <- EF2; Fm[j, k] <- m; F2[j, k] <- s2
+                                   obj_c(EL, EL2, Fm, F2, EB, EB2) })
+  check_close(sprintf("centered f_%d,%d: document A and B match the expected objective", j, k),
+              doc_AB_F_c(EL, EL2, EF, EF2, j, k), unname(bf))
+}
+for (k in 1:K) {             # the sweep the fitter runs, with survival_Y = Yc
+  R_k <- Yn - EL[, -k, drop = FALSE] %*% t(EF[, -k, drop = FALSE])
+  Zb <- Yc %*% EF; VZ_k <- as.vector(Yc^2 %*% (EF2[, k] - EF[, k]^2))
+  z_mk <- zc - as.vector(Zb[, -k, drop = FALSE] %*% EB[-k])
+  A_gen <- Tau * sum(EL2[, k]); B_gen <- Tau * as.vector(crossprod(R_k, EL[, k]))
+  prior <- multimodal_yfb_fit_signed_prior(B_gen / A_gen, 1 / A_gen, "point_laplace")
+  upd <- multimodal_yfb_update_F_mk(Yc, Tau, EL[, k], EL2[, k], R_k, w_S * Wc, w_S * Wc * z_mk,
+                                    Zb[, k], VZ_k, EF[, k], EF2[, k], EB[k], EB2[k], prior,
+                                    prior_update = "ebnm")
+  Fs <- EF; F2s <- EF2; AB <- matrix(NA, p, 2)
+  for (j in 1:p) {
+    AB[j, ] <- doc_AB_F_c(EL, EL2, Fs, F2s, j, k)
+    Fs[j, k] <- upd$details$mean[j]; F2s[j, k] <- upd$details$second[j]
+  }
+  check_close(sprintf("centered f_%d: sequential sweep A and B (all genes)", k),
+              cbind(upd$details$A, upd$details$B), AB)
+}
+
+## Eq. center-split, and property 1: a constant added to one gene changes no survival term
+j <- 9
+check_close("survival precision splits as in Eq. center-split",
+            sum(Wc * Yn[, j]^2),
+            sum(Wc * Yc[, j]^2) + 2 * ybar[j] * sum(Wc * Yc[, j]) + ybar[j]^2 * sum(Wc))
+Yshift <- Yn; Yshift[, j] <- Yshift[, j] + 5
+check_close("a constant added to gene j leaves the centered design unchanged",
+            sweep(Yshift, 2, colMeans(Yshift)), Yc)
+
+## Property 3: the null-model score direction is the same under either design
+u0 <- calc_cox_taylor_yf(rep(0, n), time, status)$u
+check_close("supervised start: Y'u0 equals Yc'u0", crossprod(Yn, u0), crossprod(Yc, u0))
+
+## Negative control: the uncentered survival precision includes the ybar^2 D term
+A_unc <- w_S * EB2[1] * sum(Wc * Yn[, j]^2); A_cen <- doc_AB_F_c(EL, EL2, EF, EF2, j, 1)[1]
+results[nrow(results) + 1, ] <- list(
+  "negative control: uncentered survival A for f_jk disagrees with the centered derivation",
+  abs(A_unc + Tau[j] * sum(EL2[, 1]) - A_cen) > 1e-3 * abs(A_cen),
+  abs(A_unc + Tau[j] * sum(EL2[, 1]) - A_cen))
+
 # Report ----
 
 print(results, row.names = FALSE, digits = 3)

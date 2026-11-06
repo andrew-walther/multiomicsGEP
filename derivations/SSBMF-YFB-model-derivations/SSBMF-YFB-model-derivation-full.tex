@@ -145,6 +145,7 @@ $\ws$ & scalar & survival weight (Section~\ref{sec:elbo}) \\
 \bottomrule
 \end{tabular}
 \end{center}
+Section~\ref{sec:center} gives the opt-in variant for nonnegative, uncentered $Y$.
 
 \subsection{Posterior Moment Notation}
 
@@ -540,6 +541,131 @@ score, and it keeps the floors, thresholds and stopping rule on a fixed scale. T
 code argument is \texttt{canonicalize = TRUE}. Earlier notes called the result
 the ``canonical $Z_F$''.
 \end{keybox}
+
+% =============================================================================
+\section{Centering Only the Cox Projection (Opt-In)}\label{sec:center}
+% =============================================================================
+
+Sections~\ref{sec:elbo}--\ref{sec:scaling} assume that $Y$ is column-centered.
+A nonnegative model (point-exponential $g_{l_k}$ and $g_{f_k}$) needs
+nonnegative input instead. The agreed input for that model is expression
+divided by its within-cohort standard deviation, $Y = X/\mathrm{sd}$, which is
+nonnegative but not centered. This section keeps $Y$ uncentered in the
+reconstruction and centers it only inside the Cox projection. The code
+argument is \texttt{center\_projection = TRUE} (with \texttt{canonicalize = TRUE}).
+
+\paragraph{Definition.} Let $\bar{\bm y} = n^{-1}Y^\top\bm 1$ be the training
+column means, fixed before fitting, and $Y^c = Y - \bm 1\bar{\bm y}^\top$, so
+$y^c_{ij} = y_{ij} - \bar y_j$. The genomics model Eq.~\eqref{eq:genomics} is
+unchanged and uses $Y$. The Cox predictor uses the centered program scores
+\begin{equation}\label{eq:center-eta}
+  \eta^c_i = (\bm y_i - \bar{\bm y})^\top F\bm\beta = \sum_k z^c_{ik}\beta_k,
+  \qquad z^c_{ik} = \sum_j y^c_{ij} f_{jk}.
+\end{equation}
+
+\paragraph{The exact model does not change.} Write $c = \bar{\bm y}^\top F\bm\beta$,
+a scalar that depends on $F$ and $\bm\beta$ but not on $i$. Then
+$\bm\eta^c = \bm\eta - c\,\bm 1$ with $\bm\eta = YF\bm\beta$. The Cox partial
+likelihood is invariant to adding one constant to every predictor (the factor
+$e^{c}$ cancels between each event's numerator and its risk-set sum), so
+\begin{equation}\label{eq:center-exact}
+  \ell(\bm\eta^c) = \ell(\bm\eta)\quad\text{for every } F,\bm\beta,
+  \qquad\text{hence}\qquad
+  \E[\ell(Y^cF\bm\beta)] = \E[\ell(YF\bm\beta)]
+\end{equation}
+for every $q$, including the random shift $c$. The joint likelihood
+Eq.~\eqref{eq:joint} and the exact objective Eq.~\eqref{eq:elbo} are the same
+under either projection. Only the second-order surrogate of
+Section~\ref{sec:taylor} differs.
+
+\paragraph{The working quantities do not change.} At $\hat{\bm\eta}^c = \hat{\bm\eta} - \hat c\,\bm 1$,
+every $\hat\theta_i$ and every risk-set sum $\hat S(t)$ is multiplied by
+$e^{-\hat c}$, so $\hat H(t)$ is multiplied by $e^{\hat c}$ and the products in
+Eq.~\eqref{eq:uW} are unchanged:
+\begin{equation}\label{eq:center-uW}
+  u^c_i = u_i, \qquad W^c_{ii} = W_{ii}, \qquad z^{\text{work},c}_i = z_i - \hat c .
+\end{equation}
+(The floor on $W_{ii}$ acts on the same values.) The working response moves by the
+same constant as the predictor.
+
+\paragraph{Why the surrogate differs.} The exact negative Hessian of $\ell$
+annihilates $\bm 1$, because $\ell(\bm\eta + a\bm 1) = \ell(\bm\eta)$. The diagonal
+matrix $W$ in Eq.~\eqref{eq:taylor} does not: it assigns the common direction the
+curvature $\bm 1^\top W\bm 1 = \sum_i W_{ii}$, which equals $D$ when no weight is
+floored (Section~\ref{sec:taylor}). Uncertainty or movement in
+the common component $\bar{\bm y}^\top F\bm\beta$ is therefore penalized by the
+surrogate although the partial likelihood ignores it. For gene $j$ the survival
+precision of Eq.~\eqref{eq:AB-F-surv} splits as
+\begin{equation}\label{eq:center-split}
+  \sum_i W_{ii}\,y_{ij}^2
+  = \sum_i W_{ii}\,(y^c_{ij})^2 + 2\,\bar y_j\sum_i W_{ii}\,y^c_{ij} + \bar y_j^{\,2}\,D .
+\end{equation}
+For centered input $\bar y_j = 0$ and only the first term remains. For $X/\mathrm{sd}$
+input $\bar y_j$ is the feature's mean in standard-deviation units (about 3 in
+the planted test bed), and the last term ($D$ up to the floor), which carries no information
+about survival, dominates. The same term inflates $V^Z_{ik}$ and $\zsec{i}{k}$ in the
+$\beta$ update.
+
+\paragraph{Updates.} The derivations of Sections~\ref{sec:beta} and~\ref{sec:F}
+go through with $y_{ij}$ replaced by $y^c_{ij}$ in every survival term and
+nowhere else. With
+$\bar z^c_{ik} = \sum_j y^c_{ij}\fbar{j}{k}$,
+$V^{Z,c}_{ik} = \sum_j (y^c_{ij})^2\Var(f_{jk})$ and
+$z^{-k,c}_i = (z_i - \hat c) - \sum_{k'\ne k}\bar z^c_{ik'}\betabar{k'}$,
+\begin{gather}
+  A_{\beta_k} = \ws\sum_i W_{ii}\bigl((\bar z^c_{ik})^2 + V^{Z,c}_{ik}\bigr), \qquad
+  B_{\beta_k} = \ws\sum_i W_{ii}\,z^{-k,c}_i\,\bar z^c_{ik}, \label{eq:center-AB-beta}\\
+  A^{\text{surv}}_{f_{jk}} = \betasec{k}\sum_i W_{ii}\,(y^c_{ij})^2, \qquad
+  B^{\text{surv}}_{f_{jk}} = \betabar{k}\sum_i W_{ii}\,y^c_{ij}\,z^{-k,c}_i
+   - \betasec{k}\sum_i W_{ii}\,y^c_{ij}\bigl(\bar z^c_{ik} - y^c_{ij}\fbar{j}{k}\bigr).
+   \label{eq:center-AB-F}
+\end{gather}
+The genomics terms Eq.~\eqref{eq:AB-F-gen}, the $L$ update Eq.~\eqref{eq:AB-L} and
+the $\tau$ update use the uncentered $Y$, as before. The monitored survival term
+is $\ell(\bar{\bm\eta}^c) - \tfrac12\sum_i W_{ii}\Var(\eta^c_i)$, and pruning
+evaluates the same expression. The score standardization of
+Section~\ref{sec:scaling} is unaffected, because
+$\mathrm{sd}_i(\bar z^c_{ik}) = \mathrm{sd}_i(\bar z_{ik})$.
+
+\begin{keybox}[Properties used as tests]
+\begin{enumerate}
+\item Adding a constant $a_j$ to gene $j$ leaves $Y^c$, and therefore every
+survival quantity above, exactly unchanged. Only the reconstruction sees the
+shift.
+\item With the option off, $Y^c$ is replaced by $Y$ and every formula is that of
+Sections~\ref{sec:beta}--\ref{sec:F}.
+\item The supervised start of Section~\ref{sec:other} is unchanged, because the
+null-model scores sum to zero: $Y^\top\bm u_0 = (Y^c)^\top\bm u_0$.
+\end{enumerate}
+\end{keybox}
+
+\paragraph{Scope.} The monitored objective under this option is the exact objective
+with a different surrogate, so its values are not comparable with those of a fit
+without centering (for example when choosing $K$ or an option by the ELBO). With
+a stratified baseline hazard the partial likelihood is invariant to one constant
+per stratum, and a global $\bar{\bm y}$ leaves the between-stratum mean differences
+in $Y^c$ for the surrogate to penalize, by the mechanism of
+Eq.~\eqref{eq:center-split}. Centering within strata would remove them (and keep
+Property~3, since $\bm u_0$ sums to zero within each stratum). It is not implemented,
+and the code refuses \texttt{center\_projection} with \texttt{strata\_id}.
+
+\paragraph{Prediction.} A new patient's risk score is
+$\hat\eta^* = (\bm y^* - \bar{\bm y})^\top\bar F\bar{\bm\beta}$, with the training
+means $\bar{\bm y}$ (returned as \texttt{projection\_center}). It differs from
+Eq.~\eqref{eq:predict} by the same constant $\bar{\bm y}^\top\bar F\bar{\bm\beta}$
+for every patient, so rankings, concordance and hazard ratios between patients
+are the same under either formula.
+
+\paragraph{Relation to the profiled Cox intercept.} The opt-in
+\texttt{profile\_cox\_intercept} centers the survival design with the working
+weights at each iteration, $Y - \bm 1(W\bm 1)^\top Y/D$. That makes the surrogate
+exactly invariant to the common direction, but its centering changes with $W$,
+so the objective it climbs is not the one the fitter monitors. Here the centering
+vector is fixed, the updates and the monitored objective use the same surrogate,
+and a weighted common component $\sum_i W_{ii}\,y^c_{ij}/D$ remains. That
+component is of the order of the feature's standard deviation rather than its
+mean. Weighted centering of $Y^c$ equals weighted centering of $Y$, so the two
+options are not combined.
 
 % =============================================================================
 \section{Initialization, Convergence, Pruning and Prediction}\label{sec:other}

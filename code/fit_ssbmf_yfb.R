@@ -213,16 +213,19 @@ canonicalize_yf_factors <- function(Y, EL, EL2, EF, EF2, EBeta, EBeta2, K,
 #' @param EBeta,EBeta2 K-vectors.
 #' @param neg_kl Sum of the stored -KL terms of the programs included.
 #' @param w_S Survival weight.
+#' @param survival_Y Design of the Cox projection (default Y). A fit with
+#'   center_projection = TRUE passes the column-centered training matrix here,
+#'   while the genomics term keeps Y.
 #' @return Scalar ELBO.
 #' @family F_surv_YFB_update
 #' @examples
 #' # Used internally by prune_yf_nullcheck().
 yf_canonical_elbo <- function(Y, time, status, EL, EL2, EF, EF2, EBeta, EBeta2,
-                              neg_kl, w_S = 1, strata = NULL) {
+                              neg_kl, w_S = 1, strata = NULL, survival_Y = Y) {
   genomics <- update_tau(Y, EL, EL2, EF, EF2)$elbo_proxy
   if (ncol(EF) == 0) return(genomics + neg_kl)
-  ZF <- Y %*% EF
-  VZ <- (Y^2) %*% pmax(EF2 - EF^2, 0)
+  ZF <- survival_Y %*% EF
+  VZ <- (survival_Y^2) %*% pmax(EF2 - EF^2, 0)
   tay <- calc_cox_taylor_yf(as.vector(ZF %*% EBeta), time, status, strata = strata)
   genomics + w_S * compute_survival_elbo(tay$logPL, tay$w, ZF, ZF^2 + VZ, EBeta, EBeta2) + neg_kl
 }
@@ -231,6 +234,7 @@ yf_canonical_elbo <- function(Y, time, status, EL, EL2, EF, EF2, EBeta, EBeta2,
 #'
 #' @param fit A fit_ssbmf_yfb(canonicalize = TRUE) result (needs $neg_kl).
 #' @param Y,time,status,strata Training data.
+#' @param survival_Y Design of the Cox projection (default Y); see yf_canonical_elbo().
 #' @return K-vector: ELBO(without program k) - ELBO(full). A nonnegative value
 #'   means the program does not improve the objective.
 #' @family F_surv_YFB_update
@@ -238,11 +242,11 @@ yf_canonical_elbo <- function(Y, time, status, EL, EL2, EF, EF2, EBeta, EBeta2,
 #' @param protect_survival Protect coefficients satisfying |Eβ| >= 1.96 SD(β) and SD(β)>0.
 #' # delta <- prune_yf_nullcheck(fit, Y, time, status)
 prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
-                                protect_survival = FALSE) {
+                                protect_survival = FALSE, survival_Y = Y) {
   K <- ncol(fit$EF)
   nk <- fit$neg_kl
   full <- yf_canonical_elbo(Y, time, status, fit$EL, fit$EL2, fit$EF, fit$EF2,
-                            fit$EBeta, fit$EBeta2, sum(nk), fit$w_S, strata)
+                            fit$EBeta, fit$EBeta2, sum(nk), fit$w_S, strata, survival_Y)
   vapply(seq_len(K), function(k) {
     # A dead zero-variance coefficient must remain removable.
     beta_sd <- sqrt(pmax(fit$EBeta2[k] - fit$EBeta[k]^2, 0))
@@ -252,7 +256,7 @@ prune_yf_nullcheck <- function(fit, Y, time, status, strata = NULL,
     yf_canonical_elbo(Y, time, status, fit$EL[, keep, drop = FALSE],
                       fit$EL2[, keep, drop = FALSE], fit$EF[, keep, drop = FALSE],
                       fit$EF2[, keep, drop = FALSE], fit$EBeta[keep], fit$EBeta2[keep],
-                      sum(nk[keep]), fit$w_S, strata) - full
+                      sum(nk[keep]), fit$w_S, strata, survival_Y) - full
   }, numeric(1))
 }
 
@@ -291,7 +295,8 @@ yf_subset_posterior_state <- function(state,keep) {
 #' Factor-wise Gauss-Seidel CAVI, updating beta_k -> L_k -> F_k for each k
 #' before advancing to k+1, then updating Tau once per outer iteration.
 #'
-#' @param Y        n x p genomics data matrix (should be column-centered)
+#' @param Y        n x p genomics data matrix (should be column-centered, unless
+#'                 center_projection = TRUE, which takes nonnegative uncentered input)
 #' @param time     n-vector of survival / censoring times
 #' @param status   n-vector of event indicators (1=event, 0=censored)
 #' @param K        Number of latent factors (default 5)
@@ -451,6 +456,23 @@ yf_subset_posterior_state <- function(state,keep) {
 #'                 and ||EL_k||. Here (w_gen, w_surv) = (1 - alpha_F, alpha_F), or
 #'                 (1, w_S) when w_S is supplied. The fit itself is unchanged.
 #'
+#' @param center_projection logical (default FALSE; canonicalize = TRUE only).
+#'                 TRUE centers Y inside the Cox projection only: the survival
+#'                 predictor is (Y - 1 ybar') E[F] beta with ybar the training
+#'                 column means, while the reconstruction Y ~ L F' keeps the
+#'                 uncentered Y. For nonnegative input (X/sd within cohort) with
+#'                 point-exponential L and F. The Cox partial likelihood is
+#'                 unchanged by the centering; it removes the common component
+#'                 ybar' F beta from the second-order surrogate, which would
+#'                 otherwise add sum_i W_i ybar_j^2 to every gene's survival
+#'                 precision (derivation, Section "Centering Only the Cox
+#'                 Projection"). Every survival term (beta and F updates,
+#'                 monitored ELBO, pruning, output convergence) uses the centered
+#'                 matrix. The fit returns `projection_center` = ybar; pass it to
+#'                 predict_ssbmf_yfb(). Not combined with profile_cox_intercept
+#'                 or strata_id. The monitored ELBO uses a different surrogate
+#'                 than with the option off, so ELBO values are not comparable
+#'                 between the two settings.
 #' @param beta_cohort_id NULL (default) or an n-vector of cohort labels for
 #'                 COHORT-SPECIFIC SURVIVAL COEFFICIENTS beta_k^{c(i)}
 #'                 (code/update_beta_cohort.R). A third, independent grouping
@@ -515,7 +537,8 @@ fit_ssbmf_yfb <- function(Y, time, status,
                            profile_cox_intercept = FALSE,
                            loading_prior_update = "historical",
                            survival_block_weight = FALSE,
-                           beta_posterior = c("meanfield", "joint")) {
+                           beta_posterior = c("meanfield", "joint"),
+                           center_projection = FALSE) {
 
   # ---- S-13 options (derivations/SSBMF-YFB-model-derivations/components/survival_block_weight/) ----------------
   # survival_block_weight = TRUE: w_S multiplies the Cox term AND KL(q(beta) || g_beta), so the
@@ -548,9 +571,27 @@ fit_ssbmf_yfb <- function(Y, time, status,
        prior_beta != "normal" || !is.null(cohort_id) || !is.null(strata_id) ||
        !is.null(beta_cohort_id) || prune))
     stop("fixed_q_em requires canonical point-Laplace F, per-program Normal beta, no cohort/strata effects or pruning.")
+  if (!is.logical(center_projection) || length(center_projection) != 1L ||
+      is.na(center_projection)) stop("center_projection must be TRUE or FALSE.")
+  if (center_projection && !canonicalize)
+    stop("center_projection = TRUE requires canonicalize = TRUE.")
+  # Stratified risk sets are invariant to one constant per stratum, so a single
+  # global center leaves between-stratum mean differences in the surrogate;
+  # within-stratum centering is not implemented yet.
+  if (center_projection && !is.null(strata_id))
+    stop("center_projection = TRUE is not implemented with strata_id.")
+  if (center_projection && profile_cox_intercept)
+    stop("center_projection and profile_cox_intercept both center the survival design; ",
+         "use one of them.")
   record_output_convergence <- !missing(converge_on)
   call_args <- mget(names(formals(sys.function())), envir = environment())
   n <- nrow(Y); p <- ncol(Y)
+  # Design of the Cox projection: Y itself unless center_projection = TRUE, in
+  # which case Y - 1 ybar' with the training column means (fixed for the fit).
+  # The reconstruction always uses Y. With the option off this is the same
+  # object as Y, so the default path is unchanged.
+  projection_center <- if (center_projection) colMeans(Y) else NULL
+  projection_Y <- if (center_projection) sweep(Y, 2, projection_center) else Y
   if(!is.logical(prune_preserve_posterior) || length(prune_preserve_posterior)!=1L ||
      is.na(prune_preserve_posterior))stop("prune_preserve_posterior must be TRUE or FALSE.")
   if(prune_preserve_posterior || !is.null(posterior_init)) {
@@ -950,7 +991,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
 
     if (record_output_convergence) {
       old_reconstruction <- EL %*% t(EF)
-      old_eta_outputs <- as.vector(Y %*% EF %*% EBeta)
+      old_eta_outputs <- as.vector(projection_Y %*% EF %*% EBeta)
     }
     EL_old    <- EL
     EBeta_old <- EBeta
@@ -988,13 +1029,13 @@ fit_ssbmf_yfb <- function(Y, time, status,
     EF_norms  <- if (canonicalize) rep(1, K)             # canonical: ZF = Y EF
                  else sqrt(colSums(EF_global^2) + 1e-10)   # K-vector
     EF_norm   <- sweep(EF_global, 2, EF_norms, "/")    # p x K, unit-norm columns
-    ZF        <- Y %*% EF_norm                         # n x K: normalized projection scores
+    ZF        <- projection_Y %*% EF_norm              # n x K: normalized projection scores
     eta    <- if (use_beta_cohort) rowSums(ZF * t(EBeta)[beta_cohort_idx, , drop = FALSE])
               else as.vector(ZF %*% EBeta)           # eta = ZF * beta_tilde (or beta_tilde^{c(i)})
     taylor <- calc_cox_taylor_yf(eta, time, status, strata = strata_id)
     z      <- eta + taylor$u / taylor$w    # working response z_i
     w      <- taylor$w                     # W_{ii} diagonal Hessian weights
-    survival_Y <- if(profile_cox_intercept)profile_cox_center(Y,w) else Y
+    survival_Y <- if(profile_cox_intercept)profile_cox_center(Y,w) else projection_Y
     if(profile_cox_intercept)
       z <- profile_cox_center(eta,w) + taylor$u/w
     YtWY_diag <- as.vector(t(Y^2) %*% w)  # p-vector: diag(Y'diag(w)Y)
@@ -1239,8 +1280,8 @@ fit_ssbmf_yfb <- function(Y, time, status,
     surv_elbo <- if (canonicalize) {
       # End-of-iteration objective: Cox partial log-likelihood re-expanded at
       # the current predictor, with Var(eta) from q(beta) and q(F)
-      ZF_end <- Y %*% EF_aug[, 1:K, drop = FALSE]
-      VZ_end <- (Y^2) %*% pmax(EF2_aug[, 1:K, drop = FALSE] - EF_aug[, 1:K, drop = FALSE]^2, 0)
+      ZF_end <- projection_Y %*% EF_aug[, 1:K, drop = FALSE]
+      VZ_end <- (projection_Y^2) %*% pmax(EF2_aug[, 1:K, drop = FALSE] - EF_aug[, 1:K, drop = FALSE]^2, 0)
       tay_end <- calc_cox_taylor_yf(as.vector(ZF_end %*% EBeta), time, status,
                                     strata = strata_id)
       if (joint_beta) {
@@ -1297,7 +1338,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
       reconstruction_change <- multimodal_yfb_relative_change(
         old_reconstruction, EL %*% t(EF))
       eta_change <- multimodal_yfb_relative_change(old_eta_outputs,
-        as.vector(Y %*% EF %*% EBeta))
+        as.vector(projection_Y %*% EF %*% EBeta))
       if (iter == 1L) history$output_change <- numeric(max_iter)
       history$output_change[iter] <- max(reconstruction_change, eta_change)
       history$outputs_converged <- history$output_change[iter] < 1e-4
@@ -1429,6 +1470,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
   }
 
   if(profile_cox_intercept)result$profile_cox_intercept <- TRUE
+  if (center_projection) result$projection_center <- projection_center
   if(identical(loading_prior_update,"fixed_q_em"))
     result$loading_prior_update <- loading_prior_update
 
@@ -1436,7 +1478,8 @@ fit_ssbmf_yfb <- function(Y, time, status,
   # most, if any removal does not lower it, and refit from a warm start.
   if (prune && K > 1) {
     delta <- prune_yf_nullcheck(result, Y, time, status, strata = strata_id,
-                                protect_survival = prune_protect_survival)
+                                protect_survival = prune_protect_survival,
+                                survival_Y = projection_Y)
     if (max(delta) >= 0) {
       drop <- which.max(delta); keep <- setdiff(seq_len(K), drop)
       refit_args <- modifyList(call_args, list(

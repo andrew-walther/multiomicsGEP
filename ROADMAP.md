@@ -227,8 +227,9 @@ The entries below retain dated implementation and evaluation history.
   β (point-normal), and the same initialization. Use the agreed nonnegative setup
   (realignment plan, Phase P item 3; S-9 plan): X/sd within each cohort, kept
   nonnegative for reconstruction, with centering only inside the Cox projection.
-  `fit_ssbmf_yfb()` has no projection-only centering and so takes the z-score with
-  point-Laplace priors; the YFB arm needs the projection centering first. Include the
+  `fit_ssbmf_yfb(center_projection = TRUE)` provides the projection-only centering
+  (2026-11-06, DECISIONS.md); before it the YFB arm took the z-score with
+  point-Laplace priors. Include the
   real PDAC training data and external validation cohorts alongside the simulations.
 
 - [ ] **Prepare the November 6 writeup version.** `paper/writeup/2026-11-06-writeup/`

@@ -8,7 +8,7 @@ Hyperparameters are read from `config/globals.yml`.
 
 | File | Contents |
 |------|----------|
-| `fit_ssbmf_yfb.R` | `fit_ssbmf_yfb()`: CAVI fit of the YFB model (η = (YF)β), the recommended configuration. Optional cohort offsets, stratified baseline hazard, cohort-specific β and ELBO-based program pruning |
+| `fit_ssbmf_yfb.R` | `fit_ssbmf_yfb()`: CAVI fit of the YFB model (η = (YF)β), the recommended configuration. Optional cohort offsets, stratified baseline hazard, cohort-specific β, ELBO-based program pruning, and projection-only centering for nonnegative input (`center_projection`) |
 | `fit_ssbmf_lb.R` | `fit_ssbmf_lb()`: CAVI fit of the LB model (η = Lβ) |
 | `fit_ssbmf_multistart.R` | Multiple-initialization wrapper for the LB fit |
 | `fit_cox_on_yf.R`, `fit_modular.R`, `fit_modular_multistart.R`, `predict_cox_on_yf.R`, `predict.R` | Aliases kept for historical scripts: each sources the renamed file and binds the old function name (`fit_cox_on_yf()`, `fit_supervised_mf_modular()`, the multistart wrappers, `predict_cox_on_yf()` and `predict_supervised_mf()`). New code should not use them |

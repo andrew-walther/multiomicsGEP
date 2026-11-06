@@ -3,6 +3,51 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-06 — Opt-in projection-only centering in `fit_ssbmf_yfb()`
+
+**Decided.** `fit_ssbmf_yfb(center_projection = TRUE)` (canonical path only) keeps the input
+uncentered in the reconstruction Y ≈ LF' and centers it only inside the Cox projection:
+η = (Y − 1ȳ')E[F]β with ȳ the training column means, fixed for the fit. This is the realignment
+plan's Phase P item 3, for nonnegative X/sd input with point-exponential L and F and a
+point-normal β. Every survival term (β and F updates, monitored ELBO, pruning, output
+convergence) uses the centered matrix; the genomics, L and τ terms use Y. The fit returns
+`$projection_center` = ȳ, and `predict_ssbmf_yfb()` takes it as the new appended argument
+`projection_center`. The default is FALSE and the default path is unchanged bit for bit.
+
+**Why.** The exact Cox partial likelihood, its Breslow score and its working weights do not change
+when the same constant is added to every predictor, so the centering leaves the model and the exact
+objective unchanged. The diagonal second-order surrogate the updates use does change: it assigns
+the common direction curvature D (the number of events), so on uncentered input every gene's
+survival precision gains ȳ_j² D, which carries no survival information. In a frozen-loading check
+on nonnegative input this term shrank every β to about 10⁻⁹; with centering the same fit has
+|E[β]| up to 0.37. The derivation is the new section "Centering Only the Cox Projection" of
+`derivations/SSBMF-YFB-model-derivations/SSBMF-YFB-model-derivation-full.tex`;
+`verify_derivation.R` now checks the centered A and B terms against a brute-force expected
+objective and the code (73 checks).
+
+**Relation to `profile_cox_intercept`.** That option centers the survival design with the working
+weights at each iteration, which makes the surrogate exactly invariant to the common direction but
+changes the centering vector between iterations, so the monitored objective is not the one the
+updates climb. Here the centering is fixed and the monitor uses the same surrogate. The two are not
+combined (an explicit error), and `center_projection` also requires `canonicalize = TRUE`. It runs
+with `survival_block_weight`, `beta_posterior = "joint"`, a shared β prior and pruning. It refuses
+`strata_id`: stratified risk sets are invariant to one constant per stratum, so a global center
+leaves between-stratum mean differences for the surrogate to penalize. Centering within strata is
+the extension if the real-data fit needs a stratified baseline. ELBO values with the option on are
+not comparable with values from fits without it, because the surrogates differ.
+
+**Planted test bed (October 15 bed, X/sd input, K = 7, point-exponential L/F, point-normal β).**
+On seeds 1–6, all seven programs stayed live with or without centering, so it is the nonnegative
+input, not the centering, that avoids the collapse seen on z-scored input (on seeds 1–3 the
+z-scored input left 1, 1 and 0 live programs). Without centering no program was survival-active in
+any seed; with centering one or two programs were active in every seed. The active program matched
+the planted loadings in seeds 1 and 3 (correlation 0.84 and 0.66); in the other seeds it did not, so
+those are false-active. Loading recovery was weak either way (best correlation 0.08–0.84). This is a development
+check, not a registered evaluation; the option is not adopted as a default.
+
+**Files.** `code/fit_ssbmf_yfb.R`, `code/predict_ssbmf_yfb.R`, `tests/test_projection_centering.R`
+(reference fits from the earlier fitter in `tests/fixtures/yfb-projection-centering-off-reference.rds`).
+
 ## 2026-11-06 — LB fold-in prediction; post-fit sign flip removed
 
 **Fold-in.** `fit_ssbmf_lb()` now returns `$foldin = list(g_L, prior_LF, alpha)`: the fitted
