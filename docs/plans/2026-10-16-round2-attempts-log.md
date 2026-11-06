@@ -2860,3 +2860,13 @@ on common external rows with S-12 donor resampling. No external selection.
 risk cutpoints and the program rule. Evaluate the fixed models and three
 unsupervised ranks, audit saved synthetic fits, and run the mixed-signal
 simulation with exact Cox times. No external selection.
+
+## 2026-11-06 — Prompt 6 and Prompt 7 outcomes
+
+The [comparator findings](../findings/2026-11-06-real-data-comparators-findings.md)
+record the fixed-reference comparison and the clinical field audit. The
+[DeSurv-style findings](../findings/2026-11-06-desurv-style-analyses-findings.md)
+record the risk groups, program analyses, rank comparison and simulation.
+The full program rule could not be checked on the saved simulation
+checkpoints. Rank 40 returned scores with an iteration-limit warning.
+No model or rank was adopted.

@@ -205,3 +205,10 @@ patient-level inputs and outputs there, and commit only aggregate exhibits.
 For the fixed S-11 real-data comparators, use the two commands in README.md
 and the [aggregate source table](docs/findings/2026-11-06-real-data-comparators-findings.md).
 Keep the DeSurv fit checkpoints under ignored `data/`.
+
+For the S-11 risk groups, EBMF rank comparison and program-rule audit, use
+the four commands in README.md and the
+[review handoff](docs/reviews/2026-11-06-comparator-and-program-review-handoff.md).
+The S-11 precision audit uses a final-state bound because the saved fit
+does not contain loading second moments. Keep the simulation working
+checkpoints under ignored `data/`.
