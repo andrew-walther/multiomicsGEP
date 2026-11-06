@@ -35,6 +35,15 @@ entries below use the old names. See the 2026-11-04 entry in [DECISIONS.md](DECI
 See the [roadmap](ROADMAP.md) for open tasks and completed milestones.
 The sections below record dated results and historical development notes.
 
+## External-cohort dependence and development use (2026-11-06)
+
+The five external PDAC series all contributed to earlier development
+comparisons. The S-12 paired difference uses the fixed supervised and
+rank-matched two-step fits. Keeping each PACA-AU donor's records together in
+the bootstrap yields an interval that still includes zero. The
+[external-cohort audit](docs/findings/2026-11-06-external-cohort-uses.md)
+records the decision history and both intervals.
+
 ## Projection-only centering for nonnegative input (2026-11-06)
 
 `fit_ssbmf_yfb()` has an opt-in `center_projection = TRUE` (canonical fits only). The

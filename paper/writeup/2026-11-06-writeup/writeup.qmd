@@ -167,6 +167,7 @@ sizes <- subset(s11_sum, part == "size" & arm %in% c("w1", "w0cox"))
 # ---- External scoring of the fixed fit (S-12) ----
 ext  <- rd("yfb_supervised_external_2026-11-05", "external_cindex.csv")
 extd <- rd("yfb_supervised_external_2026-11-05", "external_paired_diff.csv")
+pool_donor <- rd("yfb_supervised_external_2026-11-05", "external_paired_diff_donor.csv")
 exth <- rd("yfb_supervised_external_2026-11-05", "external_pooled_hr.csv")
 e_w1 <- ext[ext$model == "w1", ]; e_ts <- ext[ext$model == "twostep", ]
 pool5  <- extd[grepl("5 cohorts", extd$cohort), ]
@@ -404,7 +405,9 @@ from choices made with external concordance. No external series is untouched by 
 and the external results in this writeup are development-informed, not independent validation.
 The training cross-validation of @sec-results-fair fixed only the survival weight, the gene-set
 size and the screening arm, within this inherited setup. Holding back one cohort from every
-remaining choice is listed under continuing work.
+remaining choice is listed under continuing work. The dated external-cohort
+audit (`docs/findings/2026-11-06-external-cohort-uses.md`) documents earlier decisions and
+distinguishes them from subsequent evaluation.
 
 ## Simulation designs {#sec-sim-designs}
 
@@ -442,10 +445,10 @@ slope below 1 means they are too large. In simulation the slopes use exact event
 the default tie handling of `survival::coxph()` merges the extreme simulated times and flattens
 every slope.
 
-The external bootstrap resamples records, not donors. The `r donors$shared_donors` donors shared by the two PACA-AU
-series are counted twice in a pooled estimate, so each pooled difference is also reported without
-the PACA-AU RNA-seq series. Intervals hold the fitted models fixed and do not include training
-uncertainty.
+The original external bootstrap resamples records within series. The donor sensitivity
+resamples each donor together with every observed record, so the `r donors$shared_donors`
+donors shared by the two PACA-AU series move together. Both pooled intervals use the same
+equal-weight mean of the within-series differences.
 
 # Results {#sec-results}
 
@@ -478,7 +481,7 @@ series (@tbl-external).
 
 ```{r}
 #| label: tbl-external
-#| tbl-cap: "External concordance of the fixed supervised fit and the two-step fit. Each series was scored once, after the configuration was fixed by training cross-validation. C intervals are 95% percentile bootstrap intervals over patients. The difference is supervised minus two-step on the same resamples. Pooled rows stratify by cohort. Because the PACA-AU series share donors, the pooled difference is also given without the RNA-seq series. The calibration slope is the coefficient of held-out survival on the fitted risk score; 1 is calibrated."
+#| tbl-cap: "External concordance of the fixed supervised fit and the two-step fit. Each series was scored once, after the configuration was fixed by training cross-validation. C intervals are 95% percentile bootstrap intervals over patients. The difference is supervised minus two-step on the same resamples. The pooled comparison reports intervals from resampling records and resampling donors, plus a sensitivity excluding PACA-AU RNA-seq. The calibration slope is the coefficient of held-out survival on the fitted risk score; 1 is calibrated."
 ord <- match(e_w1$cohort, e_ts$cohort)
 xt <- data.frame(
   Series = cohort_label[e_w1$cohort],
@@ -492,8 +495,12 @@ xt <- rbind(xt,
   data.frame(Series = "Mean of five series", `C, supervised (95% CI)` = num(mean(e_w1$C)),
              `C, two-step` = num(mean(e_ts$C)), `Difference (95% CI)` = "",
              `Slope, supervised` = "", `Slope, two-step` = "", check.names = FALSE),
-  data.frame(Series = "Pooled, stratified", `C, supervised (95% CI)` = "", `C, two-step` = "",
+  data.frame(Series = "Pooled, record bootstrap", `C, supervised (95% CI)` = "", `C, two-step` = "",
              `Difference (95% CI)` = paste0(sgn(pool5$diff), " (", ci(pool5$lo, pool5$hi), ")"),
+             `Slope, supervised` = "", `Slope, two-step` = "", check.names = FALSE),
+  data.frame(Series = "Pooled, donor bootstrap", `C, supervised (95% CI)` = "", `C, two-step` = "",
+             `Difference (95% CI)` = paste0(sgn(pool_donor$diff), " (",
+               ci(pool_donor$lo, pool_donor$hi), ")"),
              `Slope, supervised` = "", `Slope, two-step` = "", check.names = FALSE),
   data.frame(Series = "Pooled, without PACA-AU RNA-seq", `C, supervised (95% CI)` = "",
              `C, two-step` = "",
@@ -505,7 +512,8 @@ kable(xt, row.names = FALSE)
 The supervised fit scored equal to or higher than the two-step fit in every series. Its mean
 external concordance was `r num(mean(e_w1$C))` and the two-step fit's `r num(mean(e_ts$C))`. The
 pooled paired difference was `r sgn(pool5$diff)` (95% interval `r ci(pool5$lo, pool5$hi)`), and
-`r sgn(poolns$diff)` (`r ci(poolns$lo, poolns$hi)`) without the PACA-AU RNA-seq series. Both
+`r sgn(poolns$diff)` (`r ci(poolns$lo, poolns$hi)`) without the PACA-AU RNA-seq series. The
+donor bootstrap interval is `r ci(pool_donor$lo, pool_donor$hi)` for the full panel. All pooled
 intervals include zero. The difference is about the size of the training cross-validation
 difference. Dijk and Moffitt were the weakest series for both fits, as they were for every
 earlier model.
@@ -761,9 +769,9 @@ better. Real PDAC survival is closer to the realistic setting of S-14, where the
 
 The external series are not independent of every model choice (@sec-external-uses). In
 particular the rank $K = 7$ was carried over from earlier work in which external concordance
-informed it, so no series is untouched. The bootstrap resamples records, and the `r donors$shared_donors` donors shared
-by the PACA-AU series enter the pooled estimates twice. Dropping the smaller series barely moves
-the pooled difference, but donor-level resampling has not been run. Two of the five supervised
+informed it, so no series is untouched. The PACA-AU array and RNA-seq records both contribute to
+the pooled estimate. The donor bootstrap accounts for their shared donors in the interval while
+retaining both series in the estimand. Two of the five supervised
 training folds stopped at the sweep cap. In simulation the coefficients at $w_S = 1$ are
 attenuated at 2,000 genes, and every simulation uses one generator with ten datasets per cell.
 

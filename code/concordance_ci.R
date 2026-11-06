@@ -259,17 +259,24 @@ bootstrap_concordance_diff_ci <- function(risk_a, risk_b, time, status,
 #'   four lists). Risk scores are scored AS-IS (frozen orientation,
 #'   equivalent to \code{bootstrap_concordance_diff_ci(..., flip_a = FALSE,
 #'   flip_b = FALSE)}) -- no per-stratum or per-replicate re-orientation.
+#' @param donor_list Optional list of donor identifiers aligned with the
+#'   risk and outcome lists. Use the same identifier for all records from
+#'   one donor, including across strata. Donors are resampled within groups
+#'   defined by their set of observed strata, and all their records travel
+#'   together. The point estimate still weights strata equally.
 #' @param B,seed,conf_level as in \code{bootstrap_concordance_diff_ci()}.
 #'
 #' @return A list with `estimate`, `lower`, `upper`, `se`, `B`,
 #'   `significant`, and `n_strata` (number of strata actually used).
+#' @examples
+#' # Use donor_list = list(ids_array, ids_rna) with cross-series donor IDs.
 #'
 #' @family concordance-ci
 #' @seealso bootstrap_concordance_diff_ci, frozen_reverse_cindex
 bootstrap_concordance_diff_ci_stratified <- function(risk_a_list, risk_b_list,
                                                        time_list, status_list,
                                                        B = 2000, seed = 1,
-                                                       conf_level = 0.95) {
+                                                       conf_level = 0.95, donor_list = NULL) {
   n_strata <- length(risk_a_list)
   if (n_strata < 1) stop("Need at least one stratum.")
   if (length(risk_b_list) != n_strata || length(time_list) != n_strata ||
@@ -298,12 +305,36 @@ bootstrap_concordance_diff_ci_stratified <- function(risk_a_list, risk_b_list,
   }
   estimate <- mean(vapply(seq_len(n_strata), .stratum_diff, numeric(1)))
 
+  if (!is.null(donor_list)) {
+    if (!is.list(donor_list) || !identical(as.integer(lengths(donor_list)), as.integer(n_per)) ||
+        anyNA(unlist(donor_list)) || any(!nzchar(unlist(donor_list))))
+      stop("Donor IDs must be present and aligned with the strata.")
+
+    # Keep each cohort's mix of shared and cohort-specific donors fixed.
+    donors <- unique(as.character(unlist(donor_list, use.names = FALSE)))
+    stratum_rows <- lapply(donor_list, function(ids) split(seq_along(ids), as.character(ids)))
+    membership <- vapply(donors, function(id) {
+      paste(which(vapply(stratum_rows, function(rows) id %in% names(rows), logical(1))),
+            collapse = ",")
+    }, character(1))
+    donor_groups <- split(donors, membership)
+  }
+
   set.seed(seed)
   boot_diff <- numeric(B)
   for (b in seq_len(B)) {
+    if (!is.null(donor_list)) {
+      drawn <- unlist(lapply(donor_groups, function(ids) {
+        ids[sample.int(length(ids), length(ids), replace = TRUE)]
+      }), use.names = FALSE)
+    }
     per_stratum <- numeric(n_strata)
     for (s in seq_len(n_strata)) {
-      idx <- sample.int(n_per[s], n_per[s], replace = TRUE)
+      idx <- if (is.null(donor_list)) {
+        sample.int(n_per[s], n_per[s], replace = TRUE)
+      } else {
+        unlist(stratum_rows[[s]][drawn], use.names = FALSE)
+      }
       if (sum(status_list[[s]][idx]) < 2)
         stop(sprintf(
           "Bootstrap replicate %d/%d, stratum %d has fewer than 2 events after resampling ",
