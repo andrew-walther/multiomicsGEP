@@ -48,7 +48,7 @@ rk <- rd("prompt7_desurv_style", "rank_paired.csv")
 rke <- rd("prompt7_desurv_style", "rank_external.csv")
 rkh <- rd("prompt7_desurv_style", "rank_pooled_hr.csv")
 lab <- c(w1 = "Supervised ($w_S = 1$)", twostep = "Two-step (rank-7 EBMF + Cox)",
-         DeSurv = "DeSurv", elastic_net = "Elastic-net Cox (D4 genes)", PurIST = "PurIST",
+         DeSurv = "DeSurv", elastic_net = "Elastic-net Cox (2,218 genes)", PurIST = "PurIST",
          EBMF_15 = "EBMF rank 15 + Cox", EBMF_40 = "EBMF rank 40 + Cox")
 allE <- rbind(e[, c("model", "C", "cal_slope")], rke[grepl("EBMF_(15|40)", rke$model), c("model", "C", "cal_slope")])
 allH <- rbind(hr[, c("model", "hr", "donor_lo", "donor_hi")],

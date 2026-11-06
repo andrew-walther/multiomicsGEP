@@ -185,12 +185,12 @@ make_f12 <- function() {
   check("weights 20/50 never selected", sum(cnt$Freq[cnt$w_S >= 20]), 0, 0)
 
   brk <- ws; xs <- scale_x_log10(breaks = brk, labels = brk)
-  leg <- scale_colour_manual(values = c("Supervised, A1" = COL_SUP, "Two-step (same data)" = COL_TWO), name = NULL)
+  leg <- scale_colour_manual(values = c("Supervised, block-weighted fit" = COL_SUP, "Two-step (same data)" = COL_TWO), name = NULL)
   row <- function(ycol, refcol, ylab, top = FALSE, bottom = FALSE, logy = FALSE, ylim = NULL, h1 = FALSE) {
     p <- ggplot(wc, aes(w_S, .data[[ycol]])) +
       geom_hline(data = ref, aes(yintercept = .data[[refcol]], colour = "Two-step (same data)"), linewidth = 0.6) +
       (if (h1) geom_hline(yintercept = 1, linetype = "dashed", colour = "grey30", linewidth = 0.35)) +
-      geom_line(aes(colour = "Supervised, A1"), linewidth = 0.6) + geom_point(aes(colour = "Supervised, A1"), size = 1.6) +
+      geom_line(aes(colour = "Supervised, block-weighted fit"), linewidth = 0.6) + geom_point(aes(colour = "Supervised, block-weighted fit"), size = 1.6) +
       facet_wrap(~cell, nrow = 1, scales = if (logy || !is.null(ylim)) "fixed" else "free_y") + xs + leg + labs(y = ylab) + theme_prelim()
     if (logy) p <- p + scale_y_log10(breaks = c(0.03, 0.1, 0.3, 1, 3), limits = c(0.012, 4))
     if (!is.null(ylim)) p <- p + scale_y_continuous(limits = ylim, breaks = seq(0, 10, 5))
