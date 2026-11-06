@@ -395,3 +395,28 @@ the real-data loadings. What changed:
 8. Round 3 human-writer review: writer subagent with the round 3 brief, one or two independent
    reviewers, apply, report.
 9. ROADMAP and DECISIONS in both repos.
+
+## 9. Paused 2026-11-06 about 04:35 (usage limit), where to resume
+
+Paused at Andrew's request until the usage reset. State:
+
+- **Done:** step 1 (this plan update, commit `f97cfc6`); step 3 (outgoing text in
+  `paper/prelim/notes/trimmed-material-2026-11.md`); Chapter 1 passages rewritten in
+  bios-dissertation (`prelim/literature-review/draft/literature-review-draft.qmd`, cut text in its
+  `trimmed-material.md`), including Round 3 structural notes 1 and 2. The β update was checked:
+  the canonical path uses E[z²] = z̄² + V^Z (`code/fit_ssbmf_yfb.R` line ~1106), so loading
+  uncertainty does enter the coefficients.
+- **Chapter draft:** full first draft of every section in
+  `paper/prelim/notes/chapter4-revamp-draft-2026-11-06.qmd` (body only; the YAML header with the
+  new title still has to be put on). Placeholders to fill: `%%TABLE-T1%%`, `%%TABLE-T6%%`,
+  `%%TABLE-T2%%`, `%%TABLE-T3%%`, `%%S15%%`, `%%KM-RISK%%`, `%%PROGRAMS%%`. Not yet run through the
+  human-writer pass or a number check.
+- **Stopped mid-way (subagents killed, output unverified, not committed):**
+  `paper/prelim/make_figures_supervised_sim.R`, `paper/prelim/make_figures_supervised_programs.R`,
+  `results/benchmark_sim/save_yfb_external_patient_scores.R`, and
+  `results/benchmark_sim/outputs/prelim_ch4_2026-11-06/`. Check, finish or redo step 2 from these.
+- **Next:** step 2 (figures/tables, checklist ticks), fill the draft, abstract supervision sentence
+  (only the final Chapter 4 sentence of `abstract-text.qmd`; other Chapter 4 abstract sentences
+  are out of date too and need Andrew's ruling: "non-negative factorization", "independently
+  tuned two-step pipeline", multimodal "selects the correct number of programs"), S-15 result,
+  then steps 7–9.
