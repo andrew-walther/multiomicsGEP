@@ -1,0 +1,419 @@
+% =============================================================================
+% Supervised Bayesian Matrix Factorization: LB and YFB parameterizations compared
+% Author:  Andrew Walther
+% Date:    November 2026
+%
+% Companion to SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED and
+% SSBMF-YFB-model-derivations/SSBMF-YFB-model-derivation-full. The LB code review
+% and the fold-in experiment were run on 2026-11-06 with small synthetic data
+% (n = 200 training / 100 test, p = 400, K = 4, four seeds at two signal levels).
+% =============================================================================
+
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+\newcommand{\E}{\mathbb{E}_q}
+\newcommand{\Var}{\mathrm{Var}_q}
+\newcommand{\ws}{w_S}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\newtcolorbox{keybox}[1][Key Point]{breakable,
+  colback=green!5!white, colframe=green!40!black,
+  title={#1}, fonttitle=\bfseries\small}
+\newtcolorbox{issuebox}[1][Issue]{breakable,
+  colback=red!5!white, colframe=red!50!black,
+  title={#1}, fonttitle=\bfseries\small}
+
+\title{\textbf{Supervised Bayesian Matrix Factorization}\\
+       \large The LB and YFB Parameterizations Compared:\\
+       Derivations, Supervision Strength and Prediction}
+\author{Andrew Walther}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+% =============================================================================
+\section{Summary}
+% =============================================================================
+
+Both models factor expression as $Y = LF^\top + E$ and link survival through a
+Cox model. They differ in the linear predictor:
+\[
+  \text{LB: } \eta_i = \bm l_i^\top\bm\beta
+  \qquad\text{vs.}\qquad
+  \text{YFB: } \eta_i = \bm y_i^\top F\bm\beta .
+\]
+\begin{enumerate}
+  \item \textbf{Which parameter survival supervises.} In LB the patient scores $L$
+        appear in both likelihoods. In YFB the gene loadings $F$ do. In each
+        model the other factor matrix is updated exactly as in unsupervised
+        EBMF.
+  \item \textbf{Whether survival supervises the factorization.} In both models
+        it does in principle, through the dual-source update. In the YFB
+        benchmark configuration used through October 2026
+        (\texttt{alpha\_F = 0}) it did not: that configuration is unsupervised
+        EBMF followed by a shrinkage Cox fit. The current YFB configuration
+        (\texttt{canonicalize = TRUE}, weight $\ws$) restores the survival term in
+        the $F$ update.
+  \item \textbf{How strongly.} Survival's share of the dual-source precision
+        falls with the number of genes in both models, roughly as $1/(pv_k)$ in
+        LB and $1/(pv_k)^2$ in YFB, where $v_k$ is the program's variance
+        share. In both it is largest for low-variance programs. At
+        $p\approx 2{,}000$ and equal weights it is negligible for dominant
+        programs. The share is a weight, not the size of the change: the
+        relative change it makes in a loading falls roughly as $1/p$ in both.
+  \item \textbf{Prediction.} YFB scores a new patient exactly by projection,
+        $\hat\eta^* = \bm y^{*\top}\bar F\bar{\bm\beta}$. LB needs the new patient's
+        scores $\bm l^*$. Yusha's fold-in gives them as an EBNM posterior under
+        the frozen training priors. It worked in a small simulation, but it
+        cannot reproduce the survival contribution to the training scores.
+  \item \textbf{LB code.} The LB fitter runs and its test suite passes, but its
+        default sign check inverts correctly oriented fits (Section~\ref{sec:lbcode}).
+\end{enumerate}
+
+% =============================================================================
+\section{The Two Models Side by Side}
+% =============================================================================
+
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.3cm}LL}
+\toprule
+ & LB & YFB \\
+\midrule
+Genomics model & $Y = LF^\top + E$ & $Y = LF^\top + E$ \\
+Linear predictor & $\eta_i = \sum_k l_{ik}\beta_k$ & $\eta_i = \sum_k z_{ik}\beta_k$, $z_{ik} = \sum_j y_{ij}f_{jk}$ \\
+Survival conditions on & latent scores $L$ & observed $Y$ through the loadings $F$ \\
+Joint likelihood & $p(Y\mid L,F,\tau)\,p(t,\delta\mid L,\bm\beta)$ & $p(Y\mid L,F,\tau)\,p(t,\delta\mid Y,F,\bm\beta)$ \\
+Dual-source parameter & $L$ ($n\times K$) & $F$ ($p\times K$) \\
+Genomics-only parameter & $F$ & $L$ \\
+Coefficient interpretation & log HR per unit of score $l_k$ & log HR per training SD of score $z_k$ \\
+New patient & needs $\bm l^*$: fold-in or projection & $\hat\eta^* = \bm y^{*\top}\bar F\bar{\bm\beta}$, exact \\
+Scale fixed by & EBNM priors only & score standardization, $\mathrm{sd}(z_{\cdot k}) = 1$ \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{The structural point.} In LB, survival and expression are
+conditionally independent given $L$: both are noisy readouts of the same latent
+patient state. In YFB, survival is modeled given the measured expression, and
+the loadings play two roles: they define programs that reconstruct $Y$ and they
+define the risk score. LB keeps the outcome out of the expression side of the
+model but has to infer $\bm l^*$ for a new patient. YFB gives exact risk scores
+but uses $Y$ both as an outcome and as a covariate.
+
+% =============================================================================
+\section{Updates Side by Side}
+% =============================================================================
+
+Notation follows the two derivation documents: bars are posterior moments,
+$R^{-k}$ the reconstruction residual without program $k$, $W_{ii}$ and $z_i$ the
+Cox working weight and response, $z^{-k}_i$ the working response without the
+other programs, and $\ws$ the survival weight ($\ws = 1$ in the LB derivation).
+Every update is $\mathrm{EBNM}(x = B/A,\ s = 1/\sqrt A)$.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{1.4cm}LL}
+\toprule
+ & LB & YFB \\
+\midrule
+$q(l_{ik})$ &
+$A = \sum_j\tau_j\overline{f^2_{jk}} + \ws W_{ii}\overline{\beta^2_k}$\newline
+$B = \sum_j\tau_jR^{-k}_{ij}\bar f_{jk} + \ws W_{ii}z^{-k}_i\bar\beta_k$ &
+$A = \sum_j\tau_j\overline{f^2_{jk}}$\newline
+$B = \sum_j\tau_jR^{-k}_{ij}\bar f_{jk}$ \\
+$q(f_{jk})$ &
+$A = \tau_j\sum_i\overline{l^2_{ik}}$\newline
+$B = \tau_j\sum_iR^{-k}_{ij}\bar l_{ik}$ &
+$A = \tau_j\sum_i\overline{l^2_{ik}} + \ws\overline{\beta^2_k}\sum_iW_{ii}y_{ij}^2$\newline
+$B = \tau_j\sum_iR^{-k}_{ij}\bar l_{ik} + \ws\bigl[\bar\beta_k\sum_iW_{ii}y_{ij}z^{-k}_i$\newline
+$\quad - \overline{\beta^2_k}\sum_iW_{ii}y_{ij}(\bar z_{ik} - y_{ij}\bar f_{jk})\bigr]$\newline
+(sequential over genes) \\
+$q(\beta_k)$ &
+$A = \ws\sum_iW_{ii}\overline{l^2_{ik}}$\newline
+$B = \ws\sum_iW_{ii}z^{-k}_i\bar l_{ik}$ &
+$A = \ws\sum_iW_{ii}(\bar z_{ik}^2 + V^Z_{ik})$\newline
+$B = \ws\sum_iW_{ii}z^{-k}_i\bar z_{ik}$ \\
+$\tau_j$ & $n/\sum_i\bar R^2_{ij}$ & $n/\sum_i\bar R^2_{ij}$ \\
+Order & $l_k$, $f_k$, $\beta_k$ per $k$; then $\tau$ & $\beta_k$, $l_k$, $f_k$ per $k$; then $\tau$; rescale \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{What changed from the March LB derivation.} Moving from LB to YFB
+(i) removes the survival term from the $L$ update, (ii) adds one to the $F$
+update, which makes that update a sequential sweep over genes because the score
+$\bar z_{\cdot k}$ couples the genes, (iii) replaces $\bar l_{ik}$ by the score
+$\bar z_{ik}$ in the $\beta$ update, with $V^Z_{ik}$ playing the role of
+$\Var(l_{ik})$, (iv) adds score standardization, and (v) replaces the latent
+scores by a projection at prediction. The Taylor expansion, the EBNM reduction
+and the $\tau$ update are unchanged. The March derivation is correct for LB.
+The YFB derivation document lists the corrections made to the April YFB pieces.
+
+% =============================================================================
+\section{Where the Balance Between Genomics and Survival Comes From}\label{sec:balance}
+% =============================================================================
+
+Survival influences the factorization only through the dual-source update, and
+there only through its share of the precision,
+$\rho = \ws A^{\text{surv}}/A^{\text{gen}}$. The pseudo-observation is the
+precision-weighted average of the genomics-only and survival-only estimates,
+with weight $\rho/(1+\rho)$ on survival.
+
+\paragraph{LB, patient score $l_{ik}$.}
+\[
+  \rho^{\text{LB}}_{ik} = \frac{\ws W_{ii}\overline{\beta^2_k}}{\sum_j\tau_j\overline{f^2_{jk}}} .
+\]
+Fix the scale so that $\sum_i\bar l_{ik}^2\approx n$. With $d_k^2 = \lVert\bar l_{\cdot k}\rVert^2\lVert\bar f_{\cdot k}\rVert^2 = npv_k$
+we get $\lVert\bar f_{\cdot k}\rVert^2\approx pv_k$. With $W_{ii}$ averaging $D/n$,
+\[
+  \rho^{\text{LB}} \approx \frac{\ws\overline{\beta^2_k}\,(D/n)}{\bar\tau\,p\,v_k}.
+\]
+
+\paragraph{YFB, gene loading $f_{jk}$.} From the YFB derivation (Section on
+balance),
+\[
+  \rho^{\text{YFB}}_{jk} = \frac{\ws\overline{\beta^2_k}\sum_iW_{ii}y_{ij}^2}{\tau_j\sum_i\overline{l^2_{ik}}}
+  \approx \frac{\ws\overline{\beta^2_k}\,(D/n)}{\tau_j\,p^2v_k^2}.
+\]
+Both ratios are unchanged by the scale symmetry, and $\beta_k$ is per SD of the
+score in each. They depend on $n$ only through the event fraction $D/n$.
+
+\begin{keybox}[Reading the two ratios]
+\begin{itemize}
+  \item Both fall with $p$. The YFB weight falls faster, as $1/p^2$ against $1/p$,
+        because in YFB a unit-SD score $Y\bm f_k$ forces small loadings and large
+        patient scores, and the genomics precision of $f_{jk}$ grows with
+        $\lVert\bm l_k\rVert^2$. The loadings themselves are also small, of order
+        $1/(p\sqrt{v_k})$, while the survival-only estimate does not shrink with $p$,
+        so the relative change survival makes in a YFB loading falls roughly as
+        $1/p$, the same order as in LB.
+  \item Both rise as the program's variance share $v_k$ falls, more steeply in
+        YFB. Supervision acts mostly on weak programs in both models.
+  \item The LB form is the ``survival cannot compete'' imbalance found in
+        spring 2026 ($\rho\approx 1/(p\bar\tau)$ when the other factors are of
+        order one). The April YFB note claimed the ratio becomes $O(1)$ in YFB.
+        That claim was wrong.
+\end{itemize}
+\end{keybox}
+
+\paragraph{Measured shares (context).}
+\begin{center}
+\small
+\begin{tabular}{llll}
+\toprule
+Model & Setting & Survival share & Source \\
+\midrule
+YFB & sim., $p = 50$, planted & 0.79--1.00 & S-9 findings \\
+YFB & sim., $p = 2{,}000$, planted & 0.01--0.20 & S-9 findings \\
+YFB & PDAC training, $p\approx 2{,}200$ & $10^{-8}$ to $10^{-6}$ & DECISIONS.md 2026-11-04 \\
+\bottomrule
+\end{tabular}
+\end{center}
+In the S-9 simulation the share was 0.20, 0.05 and 0.01 for planted variances
+of 0.25\%, 1\% and 5\% at $p = 2{,}000$, the ordering the ratios predict. The S-9 trace records
+$\rho/(1+\rho)$. The LB simulation of 2026-11-06 showed no gain from supervision
+over a two-step Cox fit on the fitted scores, consistent with a small share.
+
+\paragraph{Does weighting help?} A weight changes the fitted factors only if it
+moves $\rho$ to order one for some program. In YFB that happens first for
+low-variance programs, and the near-threshold simulation (S-14) is where
+supervision outperformed two-step fitting. For dominant programs the weight
+needed exceeds the range where the fit stays stable.
+
+% =============================================================================
+\section{What Happens When Survival Is Given More Weight}\label{sec:upweight}
+% =============================================================================
+
+The two models fail differently under a large weight.
+
+\begin{itemize}
+  \item \textbf{YFB.} The survival-only estimate of $\bm f_k$ is a weighted least
+        squares fit of $\bm z^{-k}$ on $Y$ with $p > n$ unknowns, so it has exact
+        solutions. As $\rho$ grows, the loadings can follow a gene combination
+        that orders the training times perfectly. S-9 lost convergence and the
+        program at $\ws\ge 40$ with $p = 2{,}000$, but its coefficients stayed near
+        their true values, so separation is a hypothesis and the cause has not
+        been identified.
+  \item \textbf{LB.} Each patient's score $l_{ik}$ has its own survival
+        pseudo-observation. Earlier attempts to strengthen it failed:
+        multiplying the survival term of the $L$ update by $p$ diverged, and
+        dividing the genomics term by $p$ collapsed $L$ and $F$ to zero
+        (DECISIONS.md, 2026-07-12). At a weight that does converge, each training
+        score moves toward its own outcome. The training scores then carry
+        outcome information that a new patient's scores cannot have, because the
+        new patient has no outcome (Section~\ref{sec:prediction}), and training
+        performance overstates test performance.
+\end{itemize}
+
+\paragraph{Options for both models} (details and status in the YFB derivation,
+Section ``Strengthening Supervision''):
+\begin{enumerate}
+  \item Choose the weight from data by cross-validated partial
+        log-likelihood. In YFB this picked $\ws$ between 1 and 10 in simulation
+        and never a non-converging weight (S-13).
+  \item Keep the prior on $\bm\beta$ at full weight while the likelihood weight
+        rises (the survival-block objective). This limits the coefficient
+        blow-up that comes with separation.
+  \item Normalize the two losses and mix them with $\alpha$, as DeSurv does, with
+        $\alpha$ chosen by cross-validated C-index. In the Bayesian objective
+        this is the same as a data-chosen $\ws$.
+  \item Divide the genomics term by $p$. Multiplied through by $p$, this is
+        $\ws = p$ with every KL term also multiplied by $p$. In LB it collapsed $L$
+        and $F$ to zero. In YFB it leaves a $1/p$ dependence, and $\ws\approx 2{,}000$
+        is far beyond the weights that converged.
+  \item Reduce $p$ (a smaller gene set) to raise every program's share. Any
+        outcome-based screen has to be repeated inside cross-validation.
+\end{enumerate}
+
+\begin{keybox}[DeSurv for comparison]
+DeSurv minimizes $(1-\alpha)L_{\text{NMF}}(W,H) - \alpha L_{\text{Cox}}(W,\bm\beta)$
+with scores $Z = W^\top X$. The survival gradient acts on the gene programs $W$,
+and $H$ enters only the reconstruction. Structurally this is the YFB
+parameterization: $W$ plays the role of $F$ and $H$ that of $L$. DeSurv selects
+$(k,\alpha,\lambda)$ by Bayesian optimization of the cross-validated C-index. It
+selected $\alpha = 0.334$ in PDAC, and its survival signal concentrated in one
+program with 7\% of the variance. The differences from YFB are the penalized
+point estimates in place of empirical-Bayes posteriors, and a tuned survival
+weight in place of $\ws = 1$. The comparison suggests that a data-chosen
+survival weight, not a different parameterization, is the main step still
+missing in YFB.
+\end{keybox}
+
+% =============================================================================
+\section{Prediction for a New Patient}\label{sec:prediction}
+% =============================================================================
+
+\paragraph{YFB.} $\hat\eta^* = \sum_k(\bm y^{*\top}\bar{\bm f}_k)\bar\beta_k$. Training and
+test use the same formula.
+
+\paragraph{LB, current code.} \texttt{predict\_ssbmf\_lb()} computes the
+least-squares projection $\bm l^* = (\bar F^\top\bar F)^{+}\bar F^\top\bm y^*$ and
+$\hat\eta^* = \bm l^{*\top}\bar{\bm\beta}$. It uses posterior means only and ignores
+$\tau$, the loading variances and the prior $g_l$, so it can return negative
+scores under a nonnegative prior.
+
+\paragraph{LB, fold-in (Yusha, 2026-10-30).} Freeze $q(F)$, $\tau$, $q(\bm\beta)$ and
+the fitted priors $\hat g_{l_k}$. For the new patient, maximize the objective over
+$q(\bm l^*)$ alone. The patient has no outcome, so only the genomics term enters:
+\[
+  A^*_k = \sum_j\tau_j\overline{f^2_{jk}}, \qquad
+  B^*_k = \sum_j\tau_j\Bigl(y^*_j - \sum_{k'\ne k}\bar l^*_{k'}\bar f_{jk'}\Bigr)\bar f_{jk},
+  \qquad
+  q(l^*_k) \propto \mathcal N\bigl(B^*_k/A^*_k;\ l^*_k,\ 1/A^*_k\bigr)\,\hat g_{l_k}(l^*_k),
+\]
+cycling over $k$ until the moments stop changing. Each step is a closed-form
+normal-means posterior under a fixed prior, as in the second stage of EBNM. No
+refit is needed.
+
+\paragraph{Experiment (2026-11-06).} The fit object does not store $\hat g_{l_k}$,
+so the priors were recovered by evaluating one more $L$ step at the final state.
+Fold-in then used \texttt{ebnm(..., g\_init = g, fix\_g = TRUE)} and converged in
+6--10 sweeps. Over eight train/test splits:
+\begin{itemize}
+  \item Test scores against the true scores: fold-in was closer in 8 of 8 splits
+        (mean $|r|$ 0.735--0.746 against 0.677--0.723 at the stronger signal).
+  \item Test C-index: fold-in and projection were tied within seed noise
+        (differences from $-0.017$ to $+0.035$).
+  \item Folding in the training patients reproduced their fitted scores to
+        within 0.7--2.1\% (column correlations 1.00). The difference is the
+        survival contribution the training scores received, which was small
+        here.
+\end{itemize}
+
+\begin{keybox}[The trade-off fold-in exposes]
+Fold-in is the right way to score a new patient under LB, and it avoids
+double use of the outcome. Its gap from the training scores, however, equals
+the survival contribution to those scores. When supervision is weak the gap is
+negligible, and so is supervision. When supervision is strong the training
+scores move toward outcomes that fold-in cannot use, and training fit
+overstates test performance. YFB has no such gap, since its risk score is a
+function of $\bm y$ alone.
+\end{keybox}
+
+\paragraph{Building fold-in into LB.} Store $\hat g_{l_k}$ (and the weight used) in
+the fit object at the last $L$ update, and add a fold-in function beside
+\texttt{predict\_ssbmf\_lb()}. This is a small change. Fold-in inherits any
+program that collapsed during fitting.
+
+% =============================================================================
+\section{LB Implementation Review}\label{sec:lbcode}
+% =============================================================================
+
+\texttt{code/fit\_ssbmf\_lb.R} and its update functions were compared with the
+March derivation. The update formulas, the update order and the once-per-iteration
+Taylor expansion agree. The full test suite passed (761 of 761), as did the LB
+subset (228 of 228). In simulation all 40 fits converged in 6--88 iterations.
+
+\begin{issuebox}[Sign check inverts correctly oriented fits]
+After convergence, \texttt{fit\_ssbmf\_lb()} flips $\bar{\bm\beta}$ when the training
+concordance is below 0.5 (\texttt{sign\_correction = TRUE}, the default). It calls
+\texttt{concordance(Surv(time, status) \textasciitilde{} eta\_train)} without
+\texttt{reverse = TRUE}. \texttt{survival::concordance} then treats larger $\eta$ as
+longer survival, so a correctly oriented Cox risk score reads below 0.5 and is
+flipped. In the simulation, 8 of 8 default fits ended with inverted risk (training
+C 0.21--0.38, against 0.62--0.79 without the flip). The YFB fitter was corrected
+for this on 2026-09-04, but LB was not. The flip also sets
+\texttt{EBeta2 <- EBeta\^{}2}, which discards the posterior variance, although a
+sign change leaves the second moment unchanged. A global flip of $\bm\beta$ alone is
+not a symmetry of the model in any case. The fix is to remove the flip, or at
+least to add \texttt{reverse = TRUE} and keep \texttt{EBeta2}. Runners that orient
+LB scores downstream need checking at the same time.
+\end{issuebox}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.2cm}LL}
+\toprule
+Item & Derivation & Code \\
+\midrule
+Survival weight & none (weight 1) & genomics scaled by $1-\alpha$ and survival by $\alpha$ (default 0.5). At $\alpha = 0.5$ this tempers both likelihoods equally, which changes $s$ but not $x$ in the $L$ update. Other values act as a survival weight $\alpha/(1-\alpha)$ plus tempering. No $\alpha$ reproduces the derivation \\
+Cox weight $W_{ii}$ & exact diagonal & $\hat\theta_i\hat H(t_i)$, which drops a small term and is never below the exact value (same as YFB) \\
+Convergence & change in $\bar L$, $\bar\beta$ & relative ELBO change; the monitored ELBO multiplies the survival term by $p$ (\texttt{norm\_convention = "per\_p"}), which the updates do not \\
+Orthogonalization & a note describes an SVD rotation every 10 iterations & not in the current code; the note is out of date \\
+Collapsed programs & -- & all 40 fits had at least one program with $\bar L$ and $\bar F$ exactly zero (two in 3 fits), likely from the \texttt{pmax(., 0)} SVD start under the nonnegative prior. There is no pruning inside the fitter \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =============================================================================
+\section{Strengths, Weaknesses and Recommendation}
+% =============================================================================
+
+\begin{center}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{2.6cm}LL}
+\toprule
+ & LB & YFB \\
+\midrule
+Strengths & Outcome kept out of the expression model; each score has its own survival information; the March derivation is checked & Exact risk scores by projection; no train/test gap; same structure as DeSurv; supervision acts on the gene programs that are reported \\
+Weaknesses & New patients need fold-in; train/test gap grows with supervision strength; sign bug; collapsed programs & $Y$ used as outcome and covariate; survival weight falls as $1/p^2$; no convergence at large weights \\
+Current status & runs; supervision weak; no gain over two-step in simulation & supervision effective near the detection threshold (S-14); weight choice by CV is the open step \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{keybox}[Recommendation]
+\begin{enumerate}
+  \item Keep YFB as the primary model. Its exact projection scoring matches the
+        goal of external prediction, and its open problem, how much weight to
+        give survival, has a data-driven answer under test (CV-chosen $\ws$).
+  \item Keep LB as an alternative parameterization. Fix the sign check, store
+        $\hat g_{l_k}$ and add fold-in prediction. Then both models can be run on
+        the same simulations and compared under matched weights.
+  \item Report supervision strength with the measured precision share $\rho$ for
+        every fit, so that a supervised result can be told apart from a two-step
+        one.
+\end{enumerate}
+\end{keybox}
+
+\end{document}

@@ -95,7 +95,9 @@ package returns the posterior moments and the fitted prior.
 \paragraph{Configuration documented.} The derivation describes
 \texttt{fit\_ssbmf\_yfb(canonicalize = TRUE, w\_S = $w_S$)}, the configuration
 used for the supervision studies from October 2026 onward (point-Laplace priors
-on $L$ and $F$, a normal prior on each $\beta_k$). The earlier benchmark
+on $L$ and $F$, a normal prior on each $\beta_k$). These settings are passed
+explicitly: \texttt{prior\_LF = "point\_laplace"}, \texttt{prior\_beta = "normal"}
+and \texttt{sign\_correction = FALSE}. The earlier benchmark
 configuration (\texttt{alpha\_F = 0}) is the special case of
 Section~\ref{sec:historical}. Options that were tested but not adopted are in
 Appendix~\ref{app:options}. Differences from the April 2026 derivations are
@@ -451,8 +453,8 @@ refreshes $\zbar{\cdot}{k}$ and $V^Z_{\cdot k}$ after each gene:
 \]
 The prior $g_{f_k}$ is held fixed during the sweep, so each gene's posterior is a
 closed-form normal-means posterior, and it is refit once the sweep ends. At
-$\ws = 0$ the coupling disappears and the sweep equals the usual parallel EBMF
-update of $f_k$.
+$\ws = 0$ the genes decouple and the result no longer depends on the order of
+the sweep.
 \end{keybox}
 
 \paragraph{Precision-weighted combination.} Because $A$ and $B$ are sums of a
@@ -501,10 +503,17 @@ For any $c_k > 0$, the substitution
   l_{\cdot k}\to c_k\,l_{\cdot k},\qquad
   \beta_k\to c_k\,\beta_k
 \]
-leaves $LF^\top$ and $\bm\eta = YF\bm\beta$ unchanged. The reconstruction term
-cannot fix $c_k$, but the scale of $z_{\cdot k}$ changes the size of every
-survival quantity in the updates. Left free, the scale drifted from one
-iteration to the next. This feedback caused the April 2026 instability.
+leaves $LF^\top$ and $\bm\eta = YF\bm\beta$ unchanged. Neither likelihood fixes
+$c_k$. When the priors refit at each update are scale families and $g_{f_k}$ is
+transformed with $f$, every update is equivariant under this substitution, so in
+exact arithmetic the free scale changes neither $LF^\top$, $\bm\eta$ nor the
+objective. It still matters in practice. The absolute floors and thresholds in
+the code ($10^{-8}$, $10^{-6}$), a shared or fixed prior on $\beta$, and the
+stopping rule all act on one particular scale. Before October 2026 the Cox model
+also used the normalized score $Y\bar f_{\cdot k}/\lVert\bar f_{\cdot k}\rVert$ while
+the $F$ update was derived for $Y\bar f_{\cdot k}$ (erratum Y6), which made the
+survival terms depend on $\lVert\bar f_{\cdot k}\rVert$. That mismatch, rather than
+the free scale alone, is the most likely source of the April 2026 instability.
 
 After initialization and at the end of every iteration, each program is
 rescaled so that its training scores have unit standard deviation:
@@ -527,7 +536,7 @@ collapsed ($c_k < 10^{-6}$) is left unscaled.
 It selects one representative from a family of equivalent solutions. It changes
 neither the fitted reconstruction, the risk scores, nor the objective. It makes
 $\beta_k$ a log hazard ratio per training standard deviation of program $k$'s
-score, and it keeps the survival terms on a fixed scale between iterations. The
+score, and it keeps the floors, thresholds and stopping rule on a fixed scale. The
 code argument is \texttt{canonicalize = TRUE}. Earlier notes called the result
 the ``canonical $Z_F$''.
 \end{keybox}
@@ -546,16 +555,20 @@ score direction $Y^\top\bm u_0$.
 
 \paragraph{Convergence.} The monitored objective is Eq.~\eqref{eq:elbo} evaluated
 at the end of each iteration: the genomics term Eq.~\eqref{eq:gen-term} at the
-updated $\tau$, plus $\ws$ times the survival term Eq.~\eqref{eq:surv-expect}
-re-expanded at the current $\bar{\bm\eta}$, minus the KL terms. The fit stops
+updated $\tau$, plus $\ws$ times the survival term
+$\ell(\bar{\bm\eta}) - \tfrac12\sum_iW_{ii}\Var(\eta_i)$, with $W$ recomputed at the
+current $\bar{\bm\eta}$, minus the KL terms. (The constant $C$ in
+Eq.~\eqref{eq:surv-expect} changes between iterations, so the monitor uses this
+explicit form.) The fit stops
 after iteration $b > 5$ when the relative change in this objective is below
-\texttt{tol}. The Taylor surrogate is re-expanded at every iteration and the
+\texttt{tol} (defaults \texttt{tol = 1e-5}, \texttt{max\_iter = 100}). The Taylor surrogate is re-expanded at every iteration and the
 priors are refit, so the objective is not guaranteed to increase at every step.
 
 \paragraph{Pruning (optional, \texttt{prune = TRUE}).} After convergence, for each
 program compute the change in the monitored objective when it is removed. If the
 largest change is nonnegative, remove that program and refit from the remaining
-programs' moments.
+programs' moments. The check repeats on the refit until no removal raises the
+objective.
 
 \paragraph{Prediction.} For a new patient with expression $\bm y^*$, processed with
 the training transformations,
@@ -586,7 +599,7 @@ $\bar z_{\cdot k'}$, $V^Z_{\cdot k}$ & At the start of each program $k$ & Reflec
 $z^{-k}_i$ & At the start of each program $k$ & Uses current $\bar z_{\cdot k'}$ and $\betabar{k'}$ of the other programs \\
 $q(\beta_k)$ & One program at a time (scalar EBNM) & Uses the frozen $W, z$ and current $\bar Z$. Prior refit at every update (per-program mode) \\
 $q(l_k)$ & All $n$ patients together (one EBNM call) & Exact: given $F$ and $\tau$, the patients' scores are conditionally independent and share one precision. Prior refit at every update \\
-$q(f_k)$ & Genes one at a time, in order & Exact coordinate ascent: each gene sees the refreshed $\bar z_{\cdot k}$, $V^Z_{\cdot k}$. $g_{f_k}$ fixed during the sweep, refit after it \\
+$q(f_k)$ & Genes one at a time, in order & Coordinate ascent in $q$ given the fixed prior: each gene sees the refreshed $\bar z_{\cdot k}$, $V^Z_{\cdot k}$. $g_{f_k}$ fixed during the sweep, refit after it \\
 Order within $k$ & $\beta_k$, then $l_k$, then $f_k$ & $f_k$ uses the new $\betabar{k}$, $\betasec{k}$ and $\bar l_{\cdot k}$. (LB uses $l_k$, $f_k$, $\beta_k$) \\
 $\tau$ & After the $k$-loop, all genes together & Closed form; genes are independent given $L$, $F$ \\
 Objective & After $\tau$ & Computed before rescaling. The rescaling leaves it unchanged \\
@@ -596,7 +609,7 @@ Stopping & After rescaling & Only after iteration 5 \\
 \end{tabularx}
 \end{center}
 
-\begin{keybox}[Two approximations in the schedule]
+\begin{keybox}[Three approximations in the schedule]
 \begin{enumerate}
   \item The Taylor point is not refreshed inside the $k$-loop. Within an
         iteration the updates optimize a fixed quadratic surrogate, and the
@@ -605,6 +618,12 @@ Stopping & After rescaling & Only after iteration 5 \\
   \item The prior on $f_k$ is fixed during the gene sweep. Refitting it after
         each gene would make the sweep depend on gene order. Holding it fixed
         keeps each gene's update a closed-form posterior.
+  \item The refit of $g_{f_k}$ after the sweep maximizes the marginal likelihood
+        of the sweep's pseudo-observations without recomputing $q(f_k)$. That is
+        not the prior that maximizes $\mathcal F$ for the fixed $q$ (the opt-in
+        \texttt{loading\_prior\_update = "fixed\_q\_em"} does that), and it is not
+        the joint EBNM solve of standard EBMF. The first prior of each program
+        comes from the genomics-only pseudo-observations.
 \end{enumerate}
 \end{keybox}
 
@@ -690,6 +709,7 @@ $|\mathcal F^{(b)} - \mathcal F^{(b-1)}|/|\mathcal F^{(b-1)}| < \text{tol}$
 \textbf{Prediction:} $\hat\eta^* = \bm y^{*\top}\bar F\bar{\bm\beta}$
 \end{tcolorbox}
 
+\newpage
 \paragraph{Where survival enters.}
 \begin{center}
 \begin{tabular}{lccl}
@@ -718,7 +738,7 @@ Eq.~\eqref{eq:F-combination} that share is $\rho_{jk}/(1+\rho_{jk})$, with
 Eq.~\eqref{eq:rho} is exact and is computed in the code
 (\texttt{trace\_supervision = TRUE}). The ratio is invariant to the scale
 substitution of Section~\ref{sec:scaling}, since numerator and denominator both
-scale by $c_k^2$. Its size can be read off approximately.
+scale by $c_k^2$. Its size can be estimated approximately.
 
 \paragraph{Numerator.} With standardized expression and $W_{ii}$ not strongly
 related to $y_{ij}^2$, $\sum_i W_{ii}y_{ij}^2 \approx \sum_i W_{ii} = D$
@@ -741,20 +761,27 @@ $\lVert\bar l_{\cdot k}\rVert^2 \approx d_k^4/n = n\,p^2 v_k^2$. Hence
 
 \begin{keybox}[What Eq.~\eqref{eq:rho-approx} says]
 \begin{enumerate}
-  \item At fixed variance share, survival's precision share falls as $1/p^2$.
-        Doubling the number of genes cuts it by four.
-  \item It grows as $1/v_k^2$. Survival has the most relative influence on
-        low-variance programs, which are the programs supervision is meant to
-        find, and almost none on dominant programs.
-  \item With the PDAC training data ($p\approx 2{,}200$, $D/n\approx 0.6$,
-        $\betasec{k}\approx 0.04$, $\tau_j\approx 1.5$, $v_k\approx 0.05$) and
+  \item At fixed variance share, survival's precision share falls steeply with
+        $p$, as $1/p^2$ in the approximation. In the S-9 simulation at $\ws = 1$,
+        $\rho$ for the planted program fell about 190- to 2{,}000-fold from $p = 50$ to
+        $p = 2{,}000$ (median shares $\rho/(1+\rho)$ of 0.79--1.00 against
+        0.01--0.20).
+  \item It grows as the program's variance share falls: as $1/v_k^2$ for
+        signal-dominated programs, more slowly near the detection threshold,
+        where noise enters the scores. At $p = 2{,}000$ the measured share was
+        0.20, 0.05 and 0.01 for planted variances of 0.25\%, 1\% and 5\%.
+        Survival has the most relative influence on low-variance programs, which
+        are the programs supervision is meant to find, and almost none on
+        dominant programs.
+  \item With the PDAC training data ($p\approx 2{,}200$, $D/n = 139/273\approx 0.51$,
+        and illustrative values $\betasec{k}\approx 0.04$, $\tau_j\approx 1.5$, $v_k\approx 0.05$) and
         $\ws = 1$, Eq.~\eqref{eq:rho-approx} gives $\rho\approx 10^{-6}$. The
         trace on the real data measured $10^{-8}$ to $10^{-6}$
         (DECISIONS.md, 2026-11-04). At that level the fitted loadings equal the
         unsupervised ones.
   \item Matching the balance across $p$ at fixed $v_k$ needs $\ws\propto p^2$.
-        Fixed weights of 40 or more broke convergence at $p = 2{,}000$ in
-        simulation, through separation of the Cox model. The comparison document
+        Fixed weights of 40 or more did not converge at $p = 2{,}000$ in
+        simulation (S-9). The cause has not been identified. The comparison document
         (\texttt{SSBMF-LB-vs-YFB-comparison/}) discusses ways to give survival
         more weight without that failure.
 \end{enumerate}
@@ -762,6 +789,15 @@ The approximation assumes signal-dominated scores and near-orthogonal programs.
 For a program near the detection threshold the noise part of $Y\bar f_{\cdot k}$
 is not negligible and Eq.~\eqref{eq:rho} should be used directly.
 \end{keybox}
+
+\paragraph{The share is a weight, not the size of the change.} $\rho$ is the weight
+on the survival-only estimate in Eq.~\eqref{eq:F-combination}. Under unit-SD scores
+the loadings themselves are small (for dense loadings $|\bar f_{jk}|$ is of order
+$1/(p\sqrt{v_k})$), while the survival-only estimate $x^{\text{surv}}_j$ does not
+shrink with $p$. The relative change in a loading is therefore of order
+$\rho\,p\sqrt{v_k}$, which falls roughly as $1/p$, as in LB. The trace option
+records $\rho/(1+\rho)$ (\texttt{shareA}) and also the share of the signal $B$ that
+comes from survival (\texttt{shareB}), which measures the influence more directly.
 
 \paragraph{Comparison with the April 2026 claim.} The April derivation
 concluded that the ratio is $O(1)$ because both precisions sum over $n$. It
@@ -773,19 +809,21 @@ Once that link is used, the ratio carries the factor $1/(p^2v_k^2)$.
 \section{Strengthening Supervision Without Breaking the Fit}\label{sec:strengthen}
 % =============================================================================
 
-Section~\ref{sec:balance} shows that at $\ws = 1$ survival has almost no pull on
+Section~\ref{sec:balance} shows that at $\ws = 1$ survival has almost no effect on
 the loadings of a dominant program at $p\approx 2{,}000$. This section lists the
 ways to change the balance and what each does to the derivation. None is
 adopted.
 
-\paragraph{Why a large weight fails.} The survival-only estimate in
+\paragraph{Why a large weight may fail.} The survival-only estimate in
 Eq.~\eqref{eq:F-combination} solves, for program $k$, a weighted least squares
 problem $\beta_k Y\bm f_{\cdot k}\approx\bm z^{-k}$ with $p$ unknowns and $n$
 observations. With $p > n$ it has exact solutions: some combination of genes
 orders the training survival times perfectly. As $\rho\to\infty$ the loadings
-follow that solution, the Cox fit separates, $|\betabar{k}|$ grows without
-bound and the program detaches from expression structure. This matches the
-S-9 result that fixed weights of 40 or more lose convergence and the program.
+can follow such a solution, the Cox fit can separate, and the program then no
+longer reflects expression structure. This is a hypothesis. In S-9 the fits at
+$\ws\ge 40$ did not converge and lost the program, but their largest $|\betabar{k}|$
+was 17--26, close to the true values of 9--26, so they did not show runaway
+coefficients, and the cause of non-convergence has not been identified.
 Any remedy has to keep the genomics term or the priors in control of the
 directions the Cox model alone cannot identify.
 
@@ -794,11 +832,11 @@ directions the Cox model alone cannot identify.
 \toprule
 Approach & Change to the derivation & Status / risk \\
 \midrule
-Weight $\ws$ on the Cox term (current) & $\ws$ in Eqs.~\eqref{eq:AB-beta} and \eqref{eq:AB-F}; power posterior & S-9: $\ws\ge 40$ separates at $p=2{,}000$ \\
-Survival-block weight (App.~\ref{app:options}) & $\ws$ also multiplies $\KL(q_\beta\Vert g_\beta)$; $\beta$ update at weight 1 & Keeps the $\beta$ prior in force; CV choice stable (S-13), criteria not all met \\
+Weight $\ws$ on the Cox term (current) & $\ws$ in Eqs.~\eqref{eq:AB-beta} and \eqref{eq:AB-F}; power posterior & S-9: $\ws\ge 40$ did not converge at $p=2{,}000$ \\
+Survival-block weight (App.~\ref{app:options}) & $\ws$ also multiplies $\KL(q_\beta\Vert g_\beta)$; $\beta$ update at weight 1 & Keeps the $\beta$ prior at full weight; CV choice stable (S-13), criteria not all met \\
 Choose $\ws$ from data & Same updates; $\ws$ by cross-validated partial log-likelihood, or a calibrated power (generalized Bayesian updating) & CV picks 1--10 in simulation; the candidate for the next real-data refit \\
-Divide the genomics term by $p$ & Equivalent to $\ws = p$ with the $L$, $F$ KL terms unscaled & $\rho\propto 1/p$, still falls with $p$; already inside the separating range at $p\approx 2{,}000$ \\
-Normalize both losses and mix with $\alpha$ (DeSurv) & $(1-\alpha)\cdot$genomics$/c_G + \alpha\cdot$Cox$/c_S$ equals $\ws = \tfrac{\alpha}{1-\alpha}\tfrac{c_G}{c_S}$ up to an overall scale & Same family as $\ws$; DeSurv picks $\alpha$ by CV C-index \\
+Divide the genomics term by $p$ & Multiplying through by $p$ gives $\ws = p$ with every KL term also multiplied by $p$: a tempered objective, not the same posterior & $\rho\propto 1/p$, still falls with $p$; beyond the weights that converged at $p\approx 2{,}000$; in LB it collapsed $L$ and $F$ (DECISIONS.md 2026-07-12) \\
+Normalize both losses and mix with $\alpha$ (DeSurv) & $(1-\alpha)\cdot$genomics$/c_G + \alpha\cdot$Cox$/c_S$, multiplied by $c_G/(1-\alpha)$, gives $\ws = \tfrac{\alpha}{1-\alpha}\tfrac{c_G}{c_S}$; in a Bayesian objective the KL terms are then rescaled too & Same family as $\ws$; DeSurv picks $\alpha$ by CV C-index \\
 Fewer genes & $\rho\propto 1/p^2$, so a smaller gene set raises survival's share & A survival screen must sit inside CV to avoid reusing outcomes \\
 Program-specific weights $w_{S,k}$ & $w_{S,k}$ in program $k$'s $F$ and $\beta$ updates & The Cox term couples programs, so this no longer maximizes one objective; heuristic only \\
 \bottomrule
@@ -812,7 +850,8 @@ where a joint fit can find what a two-step fit misses, and the near-threshold
 simulation (S-14) is where supervision showed a gain (validation C $+0.156$,
 5 of 10 recoveries against 0). Choosing $\ws$ by cross-validation targets that
 regime without moving into separation. A larger $\ws$ cannot make survival
-dominate a high-variance program without first breaking the fit.
+dominate a high-variance program within the range of weights where fits have
+converged.
 \end{keybox}
 
 % =============================================================================
@@ -840,18 +879,20 @@ results did not differ from a two-step analysis. It remains a useful comparator.
  & Historical ($\alpha$, $\alpha_F$) & Current ($\ws$) \\
 \midrule
 $F$ update & $(1-\alpha_F)A^{\text{gen}} + \alpha_F A^{\text{surv}}$; $\alpha_F > 0$ also down-weights genomics; $B^{\text{surv}}$ incomplete & $A^{\text{gen}} + \ws A^{\text{surv}}$; genomics keeps weight 1; complete $B^{\text{surv}}$ \\
-$\beta$ update & $A_{\beta_k} = \alpha\sum_i W_{ii}\zbar{i}{k}^2\cdot p$ (\texttt{per\_p} divisor); no $V^Z$ & $A_{\beta_k} = \ws\sum_i W_{ii}\zsec{i}{k}$ \\
+$\beta$ update & $A_{\beta_k} = \alpha\sum_i W_{ii}\zbar{i}{k}^2$; no $V^Z$ (the \texttt{per\_p} setting changed only the monitored objective) & $A_{\beta_k} = \ws\sum_i W_{ii}\zsec{i}{k}$ \\
 Score in the Cox model & $Y\bar f_{\cdot k}/\lVert\bar f_{\cdot k}\rVert$, while the $F$ update was derived for $Y\bar f_{\cdot k}$ & $Y\bar f_{\cdot k}$ with $\mathrm{sd} = 1$ \\
 Monitored objective & genomics and survival weighted by $(1-\alpha)$ and $\alpha p$ & the same $\ws$ as the updates \\
 Range & $\alpha,\alpha_F\in[0,1]$ & $\ws\in[0,\infty)$ \\
 \bottomrule
 \end{tabularx}
 \end{center}
-In both, the weight on $\beta$ cancels in $x_k$ and only changes $s_k$. The
-historical code also flips the sign of $\bar{\bm\beta}$ after fitting if the
-training C-index is below 0.5 (\texttt{sign\_correction = TRUE}, the default).
-This is a post-processing heuristic, not part of the derivation, and the
-supervision studies set it to \texttt{FALSE}.
+In both, the weight on $\beta$ cancels in $x_k$ and only changes $s_k$. At $\alpha_F = 0$ the stopping iteration still depends on the
+survival-weighted objective, so the stopping point is the only place survival
+can enter. The fitter also flips the sign of $\bar{\bm\beta}$ after fitting if the
+training C-index is below 0.5 (\texttt{sign\_correction = TRUE}, still the default
+with \texttt{canonicalize = TRUE}). This is a post-processing heuristic, not part
+of the derivation. The November supervision runners set it to \texttt{FALSE}; the
+October canonical runners did not.
 
 % =============================================================================
 \section{Extension to $M$ Modalities}\label{sec:multimodal}
@@ -897,7 +938,7 @@ Scale drift along $(a_kL_k, F_{mk}/a_k, a_k\beta_k)$; latent-moment stopping rul
 Stopping on relative change in reconstruction and predictor, with no recorded ELBO, so ELBO-based criteria could not be assessed (2026-10-15) & A monitored objective with the same weights as the updates and an ELBO stopping rule (Sections~\ref{sec:elbo}, \ref{sec:other}) \\
 Loading KL entered with the wrong sign through the shared helper (2026-10-15) & Fixed, with a test that recomputes the last objective from the returned moments \\
 Real-data fits reached the sweep cap; refitted priors could have a support incompatible with the cached posterior KL (2026-10-15) & Prior held fixed during each sweep and refit once after it; a dead-program rule replaces revived zero programs \\
-Free noise precisions ran away as reconstruction error grew (S-8) & Inputs standardized within platform; S-9 canonical fits converged in every case. A fixed or bounded $\tau$ remains a fallback \\
+Free noise precisions ran away as reconstruction error grew (S-8) & Inputs standardized within platform; every $\ws = 1$ fit at $p = 2{,}000$ converged in S-9. A fixed or bounded $\tau$ remains a fallback \\
 Incomplete $B^{\text{surv}}$ in early single-modality code & The multimodal sweep already used the complete term; both fitters now share it \\
 \bottomrule
 \end{tabularx}
@@ -930,7 +971,7 @@ ID & Location (\texttt{components/}) & Issue and correction & Here \\
 Y1 & \texttt{qF\_supervised}, eq.\ BFsurv & $B^{\text{surv}}$ removed the other programs but not the other genes of program $k$. Correct term subtracts $\betasec{k}\sum_i W_{ii}y_{ij}(\zbar{i}{k}-y_{ij}\fbar{j}{k})$, and the update becomes a sequential sweep (found 2026-10-15). & Eq.~\eqref{eq:AB-F-surv} \\
 Y2 & \texttt{qF\_supervised}, eqs.\ AF, BF & Convex mixing $(1-\alpha)/\alpha$ replaced by weight $\ws$ on the Cox term; genomics weight 1. & Eq.~\eqref{eq:AB-F} \\
 Y3 & \texttt{qF\_supervised}, Sec.\ 4 & ``Scale imbalance resolved, ratio $O(1)$'' is incorrect; the ratio scales as $1/(p^2v_k^2)$. & Sec.~\ref{sec:balance} \\
-Y4 & \texttt{qF\_supervised}, Sec.\ 5 & ``EBNM shrinkage identifies the scale; no constraint needed.'' The free scale fed back into the survival terms; fixed by score standardization. & Sec.~\ref{sec:scaling} \\
+Y4 & \texttt{qF\_supervised}, Sec.\ 5 & ``EBNM shrinkage identifies the scale; no constraint needed.'' The scale is not identified. Score standardization fixes a representative, makes $\beta_k$ per SD, and keeps floors and thresholds on a fixed scale. & Sec.~\ref{sec:scaling} \\
 Y5 & \texttt{qBeta}, eqs.\ Abeta & Scores treated as observed: $A_{\beta_k}$ used $\zbar{i}{k}^2$. It should use $\zsec{i}{k} = \zbar{i}{k}^2 + V^Z_{ik}$. & Eq.~\eqref{eq:AB-beta} \\
 Y6 & \texttt{qBeta}, Sec.\ 2 & Cox model used $Y\bar F D^{-1}$ (unit-norm columns), off the scale the $F$ update was derived for. & Sec.~\ref{sec:scaling} \\
 Y7 & \texttt{ELBO}, term (II) & $\Var(\eta_i)$ omitted the loading-uncertainty part $V^Z_{ik}\betasec{k}$. & Eq.~\eqref{eq:surv-expect} \\
@@ -967,6 +1008,13 @@ $\bm b = \ws\bar Z^\top W\bm z$, $\Sigma = (G+\Lambda)^{-1}$, $\bm m = \Sigma\bm
 and per-program prior variances by type-II maximum likelihood. For $K = 1$ this
 equals the normal-family EBNM update. In S-13 it gave the same results as the
 mean-field update.
+
+\sloppy
+\paragraph{Other opt-in controls.} Fixed-posterior loading-prior updates
+(\texttt{loading\_prior\_update} \texttt{= "fixed\_q\_em"}), a profiled Cox intercept
+(\texttt{profile\_cox\_intercept}), and fixed or guarded noise precisions (S-8)
+were tested in October 2026 and not adopted. Their registrations and results are
+in the attempts log,\\ \texttt{docs/plans/2026-10-16-round2-attempts-log.md}.
 
 \paragraph{Shared prior on $\bm\beta$ (\texttt{beta\_prior\_mode = "shared"}).}
 One prior $g_\beta$ for all programs, held fixed during the sweep and refit from

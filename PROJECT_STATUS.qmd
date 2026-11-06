@@ -35,6 +35,32 @@ entries below use the old names. See the 2026-11-04 entry in [DECISIONS.md](DECI
 See the [roadmap](ROADMAP.md) for open tasks and completed milestones.
 The sections below record dated results and historical development notes.
 
+## Derivation documents and LB review (2026-11-06)
+
+`derivations/` is now organized by model (`SSBMF-LB-model-derivations/`,
+`SSBMF-YFB-model-derivations/`, `SSBMF-YFB-multimodal-model-derivations/`,
+`early-work/`); its README maps the old folder names.
+[`SSBMF-YFB-model-derivation-full.pdf`](derivations/SSBMF-YFB-model-derivations/SSBMF-YFB-model-derivation-full.pdf)
+derives the current YFB fit (`canonicalize = TRUE`, weight w_S) from the joint
+model to a one-page algorithm, with the balance of the genomics and survival
+precisions, an errata table for the April pieces and the path to M modalities.
+`verify_derivation.R` in the same folder checks every EBNM input against a
+brute-force expected objective and the code (47 checks).
+[`SSBMF-LB-vs-YFB-comparison.pdf`](derivations/SSBMF-LB-vs-YFB-comparison/SSBMF-LB-vs-YFB-comparison.pdf)
+compares the two parameterizations. Survival's weight in the dual-source
+update falls roughly as 1/(p v) in LB and 1/(p v)^2 in YFB, where v is the
+program's variance share. The relative change it makes in a loading falls
+roughly as 1/p in both, and is largest for low-variance programs. The `alpha_F = 0` benchmark configuration is
+unsupervised EBMF followed by a shrinkage Cox fit.
+
+The LB fitter runs and its tests pass, but its default sign check
+(`sign_correction = TRUE`) calls `concordance()` without `reverse = TRUE` and
+inverts correctly oriented fits (8 of 8 in a small simulation). It also resets
+`EBeta2` to `EBeta^2`. Not yet fixed. Yusha's fold-in prediction for LB worked
+in the same simulation: test scores were closer to the truth than the current
+least-squares projection in 8 of 8 splits, with test C-index tied. The fit
+object would need to store the fitted score priors.
+
 ## Targeted YFB mechanism tests (2026-10-30)
 
 Twelve matched synthetic fits separate adaptive noise feedback from guarded

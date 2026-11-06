@@ -208,6 +208,15 @@ The entries below retain dated implementation and evaluation history.
   versions go in their own dated folders, indexed in `paper/writeup/README.md`.
   The final dissertation and journal texts remain future deliverables.
 
+- [x] **Unified YFB derivation and LB vs YFB comparison (2026-11-06).** Advisor-facing
+  documents in `derivations/SSBMF-YFB-model-derivations/` and
+  `derivations/SSBMF-LB-vs-YFB-comparison/`; `derivations/` reorganized by model.
+- [ ] **Fix the LB sign check and add fold-in prediction.** `fit_ssbmf_lb()` inverts
+  correctly oriented fits (`concordance()` without `reverse = TRUE`) and resets `EBeta2`.
+  Store the fitted score priors and add a fold-in predictor beside `predict_ssbmf_lb()`,
+  so LB and YFB can be compared under matched survival weights. Check runners that orient
+  LB risk scores before changing the default.
+
 - [ ] **Prepare the November 6 writeup version.** `paper/writeup/2026-11-06-writeup/`
   holds only a placeholder README. Decide whether it starts from the October 16 sources or
   a new outline, and record what changed since the October 16 version.
