@@ -12,4 +12,4 @@ scripts and drafting records render from that folder alone.
 | Date | Folder | Contents | Status |
 |------|--------|----------|--------|
 | 2026-10-16 | [`2026-10-16-writeup/`](2026-10-16-writeup/README.md) | First full write-up: methods, evaluation, results, biological findings, discussion, with derivations in the appendices | Circulated; record of the project as of October 16 |
-| 2026-11-06 | [`2026-11-06-writeup/`](2026-11-06-writeup/README.md) | Next version | Not started |
+| 2026-11-06 | [`2026-11-06-writeup/`](2026-11-06-writeup/README.md) | Next version: supervised YFB fit, fair rank-7 comparison, October 15 null result, external-cohort uses | In progress |
