@@ -46,6 +46,7 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 | 2026-11-05 | [near-threshold-plan](2026-11-05-near-threshold-plan.md) | Attempt S-14: supervised fit against the matched two-step fit for planted programs near the detection threshold, strong and realistic survival | complete 2026-11-05; see findings |
 | 2026-11-06 | [supervised-real-refit-plan](2026-11-06-supervised-real-refit-plan.md) | Attempt S-15: real-data A1 fit with w_S chosen by five-fold CV partial log-likelihood, nested-CV estimate, adoption rule and conditional external scoring | complete 2026-11-06; w* = 1, not adopted |
 | 2026-11-06 | [kl-fix-pruning-rerun-plan](2026-11-06-kl-fix-pruning-rerun-plan.md) | Attempt KL-1 (issue #6 item 1): October 15 single-modality K_init = 7 cells rerun after the KL fix, with pruning off, ordinary and protected | complete 2026-11-06; see findings |
+| 2026-11-06 | [Flat β pruning rerun](2026-11-06-flat-beta-pruning-rerun-plan.md) | Repeat KL-1 after fixing the flat β likelihood | complete |
 | 2026-11-05 | [chapter4-revamp-plan](2026-11-05-chapter4-revamp-plan.md) | Revamp prelim Chapter 4 around the supervised w_S = 1 YFB fit: outline, results checklist (tables, figures, biology), affected documents | not started |
 | 2026-11-05 | [chapter4-revamp-prompt](2026-11-05-chapter4-revamp-prompt.md) | Session prompt for the Chapter 4 revamp | not started |
 

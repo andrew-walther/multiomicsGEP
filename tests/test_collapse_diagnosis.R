@@ -79,7 +79,10 @@ run_test("Collapse-T5: Single prior trace records the actual refit and changes n
     z <- tr[[i]]
     assert_near(z$A,1/z$s^2,tol=1e-10,msg="actual coefficient precision and noise agree")
     if(i>1L) {
-      expected <- ebnm::ebnm(z$x,z$s,prior_family="point_laplace")$fitted_g
+      informative <- is.finite(z$s)
+      expected <- if (any(informative))
+        ebnm::ebnm(z$x[informative], z$s[informative], prior_family = "point_laplace")$fitted_g
+      else z$prior_before
       assert_true(identical(z$prior_after,expected),msg="recorded prior is the actual refit")
       assert_true(identical(z$prior_before,tr[[i-1L]]$prior_after),msg="recorded prior is used by the next sweep")
     }

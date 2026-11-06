@@ -1,0 +1,36 @@
+  model K noise       arm  n errors complete recovered false_active median_K
+ single 7  0.25  ordinary 20      0     TRUE         2         1.10        2
+ single 7  0.25 protected 20      0     TRUE         2         1.10        2
+ single 7  0.25 reference 20      0     TRUE         1         1.15        7
+ single 7  0.25  unpruned 20      0     TRUE        17         1.05        7
+ single 7  1.00  ordinary 20      0     TRUE         2         0.20        1
+ single 7  1.00 protected 20      0     TRUE         2         0.20        1
+ single 7  1.00 reference 20      0     TRUE         1         0.40        7
+ single 7  1.00  unpruned 20      0     TRUE        19         0.35        7
+ converged elbo_converged outputs_converged         C reference_false_active
+        20             20                 0        NA                   1.15
+        20             20                 0        NA                   1.15
+        20             20                 0 0.6429687                   1.15
+        20             20                 0 0.7634815                   1.15
+        20             20                 3        NA                   0.40
+        20             20                 3        NA                   0.40
+        20             20                 0 0.5410850                   0.40
+        20             20                 0        NA                   0.40
+ reference_complete convergence_rule recovery_pass false_positive_pass
+               TRUE             elbo         FALSE                TRUE
+               TRUE             elbo         FALSE                TRUE
+               TRUE             elbo         FALSE                TRUE
+               TRUE             elbo          TRUE                TRUE
+               TRUE             elbo         FALSE                TRUE
+               TRUE             elbo         FALSE                TRUE
+               TRUE             elbo         FALSE                TRUE
+               TRUE             elbo          TRUE                TRUE
+ convergence_pass rank_pass
+             TRUE     FALSE
+             TRUE     FALSE
+             TRUE        NA
+             TRUE        NA
+             TRUE     FALSE
+             TRUE     FALSE
+             TRUE        NA
+             TRUE        NA

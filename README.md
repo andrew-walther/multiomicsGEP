@@ -225,6 +225,16 @@ Rscript results/benchmark_sim/diagnose_yfb_saved_geometry.R attempt7
 Rscript results/benchmark_sim/plot_yfb_saved_traces.R attempt7
 ```
 
+### Stratified YFB cross-validation
+
+For canonical YFB with projection centering, pass `strata_id`,
+`canonicalize = TRUE`, and `center_projection = TRUE` to
+`select_K_cv(model = "YFB", ...)` or `cv_survival_loglik()`. Each fold uses its
+training means and within-stratum risk comparisons. Each held-out stratum
+must be represented in that fold's training data. To score a previously
+unseen stratum on its own, call `predict_ssbmf_yfb()` with a fixed vector
+such as `projection_center = rep(0, ncol(Y_ext))`.
+
 ## Documentation
 
 - [Corrected CAVI derivations](derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.pdf)
@@ -305,3 +315,12 @@ The runner uses `PDAC_DATA_ROOT` or the configured local data path and writes
 `external_paired_diff_donor.csv` beside the record-based output. The
 [external-cohort audit](docs/findings/2026-11-06-external-cohort-uses.md) describes
 the resampling and the prior development uses of these cohorts.
+
+### Flat β likelihoods in canonical YFB
+
+With a shared normal, point-normal, or point-Laplace β prior, a flat coefficient
+likelihood returns the prior moments and contributes zero β KL. These likelihoods
+provide no information to the shared-prior refit. Run the regression with
+`Rscript tests/test_empty_program_kl.R` from the repository root. See the
+[pruning rerun plan](docs/plans/2026-11-06-flat-beta-pruning-rerun-plan.md)
+for the synthetic evaluation.
