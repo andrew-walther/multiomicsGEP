@@ -3,6 +3,32 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-06 — LB fold-in prediction; sign correction off by default
+
+**Fold-in.** `fit_ssbmf_lb()` now returns `$foldin = list(g_L, prior_LF, alpha)`: the fitted
+loading prior from each factor's last L update, its family, and the final alpha.
+`predict_ssbmf_lb_foldin()` computes a new patient's loadings as that L update without the
+survival term, under the frozen priors, factors and noise precisions (Yusha's note,
+`docs/notes/2026-10-30-yusha-MF_NewPatient_FoldIn.pdf`). The genomics precision keeps the
+training (1 − α) tempering, so new and training loadings are shrunk on the same scale and β
+applies to both. The tempering leaves the pseudo-observation unchanged and widens its noise.
+In eight simulated splits (n = 200/100, p = 400, K = 4, α = 0.5), tempered fold-in reproduced
+the training loadings within 0.4% on average (1.4% untempered). It recovered test loadings
+better than least-squares projection (mean |r| 0.949 against 0.909), with test C 0.734 against
+0.727. `predict_ssbmf_lb()` is unchanged. Fold-in does not support cohort-offset fits, and fits
+made before this date lack `$foldin`. The tempering departs from Yusha's note, which uses the
+untempered precision; the note's suggestion to refit β on genomics-only training loadings is not
+implemented. Tests: `tests/test_lb_foldin.R`.
+
+**Sign correction default.** `sign_correction` now defaults to `FALSE` in `fit_ssbmf_lb()` and
+`fit_ssbmf_yfb()`. CAVI fits β to the Cox likelihood given the scores, so a converged fit is
+already oriented, and the corrected check (below) would fire only on a fit with training C
+below 0.5, where a flip would hide the failure. Every registered supervision runner already
+passed `FALSE`. The argument is kept so existing calls still run. An independent review found no
+converged fit (36 LB fits across α and signal levels) where the corrected check would flip.
+Fits stopped at `max_iter` or using cohort-specific β can have training C below 0.5, and runners
+that rely on the default would no longer flip those.
+
 ## 2026-11-06 — LB sign check uses the Cox direction and keeps Var(β)
 
 **Decided.** `fit_ssbmf_lb()`'s post-convergence sign check (`sign_correction = TRUE`, the

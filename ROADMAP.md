@@ -213,9 +213,10 @@ The entries below retain dated implementation and evaluation history.
   `derivations/SSBMF-LB-vs-YFB-comparison/`; `derivations/` reorganized by model.
 - [x] **Fix the LB sign check (2026-11-06).** `fit_ssbmf_lb()` now checks training
   concordance with `reverse = TRUE` and keeps `EBeta2` on a flip.
-- [ ] **Add LB fold-in prediction.** Store the fitted score priors and add a fold-in
-  predictor beside `predict_ssbmf_lb()`, so LB and YFB can be compared under matched
-  survival weights.
+- [x] **Add LB fold-in prediction (2026-11-06).** `fit_ssbmf_lb()` stores the fitted
+  score priors; `predict_ssbmf_lb_foldin()` scores new patients under them.
+- [ ] **Compare LB and YFB under matched survival weights.** Use fold-in for LB test
+  scores. Lower priority than the YFB supervision decision.
 
 - [ ] **Prepare the November 6 writeup version.** `paper/writeup/2026-11-06-writeup/`
   holds only a placeholder README. Decide whether it starts from the October 16 sources or

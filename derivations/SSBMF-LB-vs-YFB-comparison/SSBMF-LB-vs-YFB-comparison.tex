@@ -343,10 +343,18 @@ overstates test performance. YFB has no such gap, since its risk score is a
 function of $\bm y$ alone.
 \end{keybox}
 
-\paragraph{Building fold-in into LB.} Store $\hat g_{l_k}$ (and the weight used) in
-the fit object at the last $L$ update, and add a fold-in function beside
-\texttt{predict\_ssbmf\_lb()}. This is a small change. Fold-in inherits any
-program that collapsed during fitting.
+\paragraph{Fold-in in the LB code (2026-11-06).} \texttt{fit\_ssbmf\_lb()} now stores
+$\hat g_{l_k}$, the prior family and the final $\alpha$, and
+\texttt{predict\_ssbmf\_lb\_foldin()} scores new patients. One change from the note:
+the training $L$ update tempers the genomics precision by $(1-\alpha)$, so the code
+uses $A^*_k = (1-\alpha)\sum_j\tau_j\overline{f^2_{jk}}$ (and the same factor in
+$B^*_k$). The pseudo-observation $B^*_k/A^*_k$ is unchanged and its noise grows by
+$1/\sqrt{1-\alpha}$, which puts new and training scores under the same shrinkage. In
+eight new splits at $\alpha = 0.5$, the tempered version reproduced the training
+scores within 0.4\% on average (1.4\% untempered). It recovered test scores better
+than projection (mean $|r|$ 0.949 against 0.909), with test C 0.734 against 0.727.
+Fold-in inherits any program that collapsed during fitting, and the note's
+suggestion to refit $\bm\beta$ on genomics-only training scores is not implemented.
 
 % =============================================================================
 \section{LB Implementation Review}\label{sec:lbcode}
@@ -359,7 +367,7 @@ subset (228 of 228). In simulation all 40 fits converged in 6--88 iterations.
 
 \begin{issuebox}[Sign check inverted correctly oriented fits (fixed 2026-11-06)]
 After convergence, \texttt{fit\_ssbmf\_lb()} flips $\bar{\bm\beta}$ when the training
-concordance is below 0.5 (\texttt{sign\_correction = TRUE}, the default). It calls
+concordance is below 0.5 (\texttt{sign\_correction = TRUE}, then the default). It calls
 \texttt{concordance(Surv(time, status) \textasciitilde{} eta\_train)} without
 \texttt{reverse = TRUE}. \texttt{survival::concordance} then treats larger $\eta$ as
 longer survival, so a correctly oriented Cox risk score reads below 0.5 and is
@@ -374,7 +382,8 @@ not a symmetry of the model in any case. The check now uses
 multistart diagnostic had computed C without \texttt{reverse = TRUE}, which cancelled
 the inversion; both were corrected with it, so their reported C-indices are
 unchanged. Saved LB risk scores and \texttt{EBeta} from earlier runs with the
-default have the opposite sign.
+default have the opposite sign. Because a converged CAVI fit is already
+oriented, the default is now \texttt{sign\_correction = FALSE} in both fitters.
 \end{issuebox}
 
 \begin{center}
@@ -412,8 +421,8 @@ Current status & runs; supervision weak; no gain over two-step in simulation & s
   \item Keep YFB as the primary model. Its exact projection scoring matches the
         goal of external prediction, and its open problem, how much weight to
         give survival, has a data-driven answer under test (CV-chosen $\ws$).
-  \item Keep LB as an alternative parameterization. With the sign check fixed, store
-        $\hat g_{l_k}$ and add fold-in prediction. Then both models can be run on
+  \item Keep LB as an alternative parameterization. With the sign check fixed and
+        fold-in implemented, both models can be run on
         the same simulations and compared under matched weights.
   \item Report supervision strength with the measured precision share $\rho$ for
         every fit, so that a supervised result can be told apart from a two-step

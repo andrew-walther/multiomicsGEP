@@ -358,7 +358,8 @@ yf_subset_posterior_state <- function(state,keep) {
 #'                 up to `alpha` over warmup+ramp iterations.
 #' @param sign_correction logical: apply post-convergence Phase C sign check — flip
 #'                 EBeta if the correct-direction (`reverse = TRUE`) training
-#'                 concordance of ZF·EBeta is < 0.5 (default TRUE). This is the
+#'                 concordance of ZF·EBeta is < 0.5 (default FALSE since 2026-11-06;
+#'                 see DECISIONS.md). This is the
 #'                 single, frozen, training-data-only orientation decision for
 #'                 the fit: no downstream evaluator (external cohort scoring,
 #'                 bootstrap CIs, ...) may re-derive or override it from the
@@ -532,7 +533,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
                            normalize_AB     = FALSE,
                            alpha_F          = 0,
                            alpha_schedule   = NULL,
-                           sign_correction  = TRUE,
+                           sign_correction  = FALSE,
                            verbose      = TRUE,
                            cohort_id       = NULL,
                            sigma_F_cohort  = 1.0,

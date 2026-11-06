@@ -889,10 +889,11 @@ Range & $\alpha,\alpha_F\in[0,1]$ & $\ws\in[0,\infty)$ \\
 In both, the weight on $\beta$ cancels in $x_k$ and only changes $s_k$. At $\alpha_F = 0$ the stopping iteration still depends on the
 survival-weighted objective, so the stopping point is the only place survival
 can enter. The fitter also flips the sign of $\bar{\bm\beta}$ after fitting if the
-training C-index is below 0.5 (\texttt{sign\_correction = TRUE}, still the default
-with \texttt{canonicalize = TRUE}). This is a post-processing heuristic, not part
-of the derivation. The November supervision runners set it to \texttt{FALSE}; the
-October canonical runners did not.
+training C-index is below 0.5 (\texttt{sign\_correction = TRUE}). This is a
+post-processing heuristic, not part of the derivation. The default has been
+\texttt{FALSE} since 2026-11-06: CAVI fits $\bm\beta$ to the Cox likelihood given
+the scores, so a converged fit is already oriented. The October canonical runners
+used the old default.
 
 % =============================================================================
 \section{Extension to $M$ Modalities}\label{sec:multimodal}

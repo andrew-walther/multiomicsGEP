@@ -249,6 +249,9 @@ calc_cox_taylor <- function(eta, time, status, strata = NULL) {
 #'   $EBeta    K-vector: posterior means of survival coefficients
 #'   $EBeta2   K-vector: posterior second moments of survival coefficients
 #'   $Tau      p-vector: noise precisions
+#'   $foldin   list(g_L, prior_LF, alpha): fitted loading priors (one ebnm
+#'             fitted_g per factor), their family, and the alpha of the final
+#'             L update; used by predict_ssbmf_lb_foldin()
 #'   $history  list(rmse, elbo_proxy, elbo_full, delta_L, delta_Beta,
 #'                  delta_elbo_rel, converged, n_iter)
 fit_ssbmf_lb <- function(Y, time, status,
@@ -266,7 +269,7 @@ fit_ssbmf_lb <- function(Y, time, status,
                                       N_burnin        = 0,
                                       alpha_schedule  = NULL,
                                       normalize_AB    = FALSE,
-                                      sign_correction = TRUE,
+                                      sign_correction = FALSE,
                                       verbose         = TRUE,
                                       cohort_id       = NULL,
                                       sigma_F_cohort  = 1.0,
@@ -555,6 +558,10 @@ fit_ssbmf_lb <- function(Y, time, status,
   # ==========================================================================
   # Main CAVI Loop — V3 Algorithm 1
   # ==========================================================================
+  # Fitted loading priors g_{L,k} from the latest L update, kept for fold-in
+  # prediction of new patients (predict_ssbmf_lb_foldin()).
+  g_L <- vector("list", K)
+
   for (iter in 1:max_iter) {
 
     EL_old    <- EL
@@ -671,6 +678,7 @@ fit_ssbmf_lb <- function(Y, time, status,
                              normalize_AB = normalize_AB)
       EL[, k]      <- res_L$mean
       EL2[, k]     <- res_L$second
+      g_L[[k]]     <- res_L$ebnm_result$fitted_g
       EL_aug[, k]  <- res_L$mean    # keep augmented matrix in sync
       EL2_aug[, k] <- res_L$second
       kl_L[k]  <- compute_ebnm_kl(res_L$ebnm_result$log_likelihood,
@@ -825,6 +833,10 @@ fit_ssbmf_lb <- function(Y, time, status,
   # This is identical in spirit to Phase C in fit_ssbmf_yfb.R. The fix is
   # applied post-convergence so the CAVI path and ELBO are unaffected.
   #
+  # Default FALSE since 2026-11-06: CAVI fits beta to the Cox likelihood given
+  # L, so a converged fit is already oriented; the corrected check would fire
+  # only on a fit with training C < 0.5, and flipping would hide that failure.
+  #
   # sign_correction = FALSE during cross-validation (select_alpha_cv), because
   # per-fold sign flips would introduce fold-to-fold inconsistency and corrupt
   # alpha selection. CV already handles sign via I(-pred$risk_scores).
@@ -860,7 +872,10 @@ fit_ssbmf_lb <- function(Y, time, status,
     norm_convention  = norm_convention,
     genomics_divisor = genomics_divisor,
     survival_divisor = survival_divisor,
-    beta_divisor     = beta_divisor
+    beta_divisor     = beta_divisor,
+    # Inputs for fold-in prediction: the fitted loading priors, their family,
+    # and the alpha of the final L update (it tempers the genomics precision).
+    foldin = list(g_L = g_L, prior_LF = prior_LF, alpha = alpha_iter)
   )
   # Expose cohort fields when the extension is active.
   # Global EL/EF (K-factor only) are unchanged for backward compatibility.
