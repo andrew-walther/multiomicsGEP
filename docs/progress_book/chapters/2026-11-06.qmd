@@ -1,34 +1,76 @@
 # November 6, 2026
 
-This chapter covers the week of November 2–6. It starts with a summary, then the issues that
+This chapter covers the week of November 2–6. It starts with an executive summary, then the issues that
 were resolved (the derivation review and the October 26 review in GitHub issue #6), then the
 supervision experiments in order, and ends with open items.
 
-## Summary
+## Executive summary
 
-- **The derivations now match the code.** The YFB and LB derivations were rewritten as single
-  documents, checked term by term against the update functions, and compared side by side. The
-  review found and fixed a sign-check bug in LB, removed the post-fit sign flip from both
-  fitters, and added fold-in prediction for LB.
-- **Supervision helps where it should.** In simulation, the supervised fit matches the two-step
-  fit (unsupervised loadings followed by a Cox model) when a prognostic program is easy to find,
-  and beats it near the detection threshold. At a planted share of 0.05%, validation C is 0.156
-  higher and the program is recovered in 5 of 10 datasets, against none for the two-step fit.
-- **The survival weight can be chosen from the data.** Five-fold cross-validated partial
-  log-likelihood picks a weight between 1 and 10 that rises with signal strength. It never picks
-  a weight at which the fit stops converging.
-- **On the real data the survival weight does not matter between 1 and 50.** Cross-validation
-  picks `w_S = 1`, so the real-data model is unchanged. Even at 50, survival supplies less than
-  10⁻⁴ of the loading precision.
-- **False-active programs do not affect prediction.** Where the planted program is recovered,
-  the other active programs carry at most 1.3% of the risk-score variance.
-- **No difference was detected between the supervised fit and DeSurv or elastic-net Cox on the external cohorts.** All
-  comparators were trained on the same 273 patients. The paired differences in C against both are small,
-  and their donor-bootstrap intervals include zero. A
-  proposed classification rule names programs 2 and 3, but its simulation support is incomplete.
-- **Two measurement errors were found and corrected.** The calibration slopes in the
-  simulations, and the two-step comparison fits, had used the default tie handling of the Cox
-  fit. That merges the extreme simulated survival times. Every number below uses exact times.
+**Where things stand.** The working model is the supervised YFB fit with survival weight
+`w_S = 1` on the 2,218-gene set, seven programs, and no pruning. Its derivation now matches the
+code. On five external PDAC cohorts it predicts as well as the best alternatives we tested,
+including DeSurv, with no significant difference in either direction. In simulation, supervision
+earns its place near the detection threshold, where it finds prognostic programs that the
+two-step approach misses. On the real data, survival still does not change the gene programs.
+
+**Key progress this week**
+
+1. **The model is now documented correctly.** The YFB and LB derivations were rewritten as
+   single documents and checked term by term against the code (88 numerical checks). Writing
+   them found and fixed a sign bug in LB. It also led to removing a post-fit sign flip that could
+   hide failed fits, and to adding fold-in prediction for LB.
+2. **Supervision helps where it is supposed to.** When a prognostic program is too weak for the
+   factorization to find on its own (0.05% of expression variance), the supervised fit recovers
+   it in 5 of 10 simulated datasets, against 0 for the two-step fit, and validation C is 0.156
+   higher. Where the program is easy to find, the two approaches tie.
+3. **The survival weight is chosen from the data.** Cross-validation picks a weight between 1
+   and 10 in simulation, larger when the signal is stronger. It never picks a weight at which
+   the fit breaks. On the real data the curve is flat from 1 to 50, so the weight stays at 1.
+4. **The supervised model holds up against the comparators.** The table below gives external
+   results for scores trained on the same 273 patients. Every paired interval includes zero.
+
+   | Model | Mean external C | Supervised minus model (95% donor-bootstrap CI) |
+   |---|---|---|
+   | Supervised YFB (`w_S = 1`) | 0.620 | |
+   | Elastic-net Cox on genes | 0.619 | +0.001 (−0.015 to +0.018) |
+   | DeSurv | 0.614 | +0.007 (−0.017 to +0.030) |
+   | Two-step (unsupervised programs, then Cox) | 0.613 | +0.007 (−0.003 to +0.017) |
+   | PurIST subtype score | 0.599 | +0.021 (−0.013 to +0.057) |
+
+5. **Review issue #6 is nearly closed.** Six of the eight items are resolved:
+   - the KL bug, followed by pruning reruns;
+   - the double log;
+   - risk direction fixed on training data in every runner;
+   - external-cohort uses listed, with donor-level resampling;
+   - the comparators;
+   - writeup numbers computed from saved results.
+
+   The Linux check and storing the fits on Longleaf remain.
+6. **Risk groups and programs are now reported in a transferable way.** One cutpoint, chosen on
+   the training patients, splits every external cohort into high and low risk. The high-risk
+   group is richer in Basal-like and permCAF tumours in every cohort. A rule that combines effect
+   size, share of the risk score and stability across folds names two main prognostic programs.
+   False-active programs carry at most 1.3% of the risk score where the true program is found.
+7. **Deliverables are updated, and the branch is merged into main:**
+   - the revised prelim Chapter 4 (229-page prelim, assembly tests passing);
+   - the November 6 writeup;
+   - this chapter;
+   - the status documents.
+
+**What did not work, and what is next**
+
+- **Pruning.** Even with the bug fixed, pruning removes the planted program (2 of 20 recovered),
+  so the model keeps all seven programs.
+- **Stronger supervision.** Survival would only move the real-data gene programs at weights near
+  10⁴, the scale DeSurv uses. Above about 40 the fit stops converging, so keeping it stable at
+  large weights is the main open methods problem.
+- **Measurement errors.** Two errors in last week's simulation numbers came from the default tie
+  handling in the Cox fit. They are corrected throughout.
+- **Next:**
+  - large-weight stability;
+  - a registered LB vs YFB comparison on the nonnegative input, which projection-only centering
+    now allows;
+  - completing the simulation check of the program rule.
 
 ## Rashid Lab Meeting Update (November 5th, 2026)
 
@@ -676,7 +718,7 @@ kable(data.frame(Arm = c("Two-step", "Supervised, w_S = 1", "Supervised, joint �
 
 All arms recovered the strong program in every dataset. At `w_S = 1` the supervised and two-step
 fits recovered the near-threshold program equally often. A fixed `w_S = 5` lost it in most
-datasets and had lower validation C, This compares two fixed weights and does not test the cross-validated choice.
+datasets and had lower validation C. This compares two fixed weights and does not test the cross-validated choice.
 
 ## Open items and questions
 
