@@ -141,9 +141,14 @@ prompt6_evaluate <- function(external) {
       a <- do.call(rbind, pooled)
       a$risk_z <- a$risk / sd(a$risk)
       m <- summary(coxph(Surv(time, event) ~ risk_z + strata(cohort), data = a))
+      # Review addition: robust (sandwich) SE clustered on donor, because the
+      # 47 PACA-AU donors measured on both assays enter the pooled fit twice.
+      rc <- coxph(Surv(time, event) ~ risk_z + strata(cohort) + cluster(donor), data = a)
+      rse <- sqrt(vcov(rc)[1, 1])
       hr[[model]] <- data.frame(model = model, n = nrow(a), events = sum(a$event),
         hr = m$conf.int[1, 1], lo = m$conf.int[1, 3], hi = m$conf.int[1, 4],
-        p = m$coefficients[1, 5])
+        p = m$coefficients[1, 5], donors = length(unique(a$donor)),
+        donor_lo = exp(coef(rc) - qnorm(.975) * rse), donor_hi = exp(coef(rc) + qnorm(.975) * rse))
     }
   }
   list(external = do.call(rbind, by_cohort), paired = do.call(rbind, pairs),
@@ -209,7 +214,7 @@ if (sys.nframe() == 0L) {
               "Characteristics.TNM.tumour.grading."),
     age = c("Age.at.initial.pathologic.diagnosis", "age", "age (year)", NA,
             "Age.at.Diagnosis.in.Years", "Age.at.Diagnosis.in.Years", NA),
-    margin = c(NA, "residual_tumor", NA, "Margin", NA, NA,
+    margin = c("Residual.tumor", "residual_tumor", NA, "Margin", NA, NA,
                "Characteristics.resection.margin."))
   for (i in seq_len(nrow(clinical))) {
     fields <- unlist(clinical[i, -1], use.names = FALSE)

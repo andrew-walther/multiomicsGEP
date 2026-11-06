@@ -3,6 +3,27 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-06 — Comparators, risk groups and program classification
+
+The fixed S-11 supervised fit is reported against DeSurv (authors' code and
+published settings), D4 elastic-net Cox, PurIST and rank-7, 15 and 40 EBMF
+with Cox, all trained on the same 273 patients. Its external concordance is
+within noise of DeSurv and elastic-net Cox, so the comparison supports no
+loss and no gain. Risk groups use one out-of-fold training cutpoint per score.
+Group HRs from different cutpoints are not used to rank scores, because the
+high-risk groups differ in size (297 against 144 of 616 records). Pooled Cox
+intervals are reported with donor clustering in addition to the registered
+model-based intervals, because 47 PACA-AU donors appear in both assays. A
+main prognostic program needs a coefficient ratio of at least 0.25, a signed
+risk-variance share of at least 5% and activity in four of five folds.
+Programs 2 and 3 qualify. Program 5 does not, being active in three folds.
+The rule rejected 35 of 36 false actives in S-13 but 61 of 128 in the S-14
+two-step fits, so it is used descriptively until its fold-stability part is
+checked in simulation. No clinical comparator was fitted, because no field
+is recorded in all seven cohorts. See the
+[comparator findings](docs/findings/2026-11-06-real-data-comparators-findings.md)
+and [DeSurv-style findings](docs/findings/2026-11-06-desurv-style-analyses-findings.md).
+
 ## 2026-11-06 — Prelim Chapter 4 reporting model
 
 Chapter 4 presents the single-log, rank-seven, unpruned YFB fit with a unit

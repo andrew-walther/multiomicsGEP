@@ -49,9 +49,9 @@ This chapter develops survival-supervised Bayesian matrix factorization (SSBMF),
 
 The earlier SSBMF model set the survival contribution to the loading update to zero. A configuration that included survival in that update was evaluated in a pre-registered October 15 check. Its mean difference in external concordance against the earlier model was $\Delta C=-0.003$ (95% CI $-0.029$ to $0.024$). The interval crossed the registered margin of $-0.02$, so the check did not establish noninferiority or a gain in concordance.
 
-We derived and checked the variational algorithm, then used simulations to examine recovery of a low-variance prognostic program, false activity, calibration and convergence. In two PDAC training cohorts we used cross-validation to compare survival weights and feature sets. We evaluated the fixed model in five external series against rank-matched empirical Bayes matrix factorization (EBMF) followed by Cox regression. External concordance was similar, and calibration slopes were closer to one in four of the five series. At $w_S=1$, the estimated loadings were essentially identical, so the observed differences are attributable to the coefficient fit. The near-threshold simulations show a setting where survival can improve recovery.
+We derived and checked the variational algorithm, then used simulations to examine recovery of a low-variance prognostic program, false activity, calibration and convergence. In two PDAC training cohorts we used cross-validation to compare survival weights and feature sets. We evaluated the fixed model in five external series against rank-matched empirical Bayes matrix factorization (EBMF) followed by Cox regression. External concordance was similar, and calibration slopes were closer to one in four of the five series. DeSurv and an elastic-net Cox model trained on the same patients performed similarly. At $w_S=1$ the supervised and unsupervised loadings correlated 1.000, so the differences come from the joint coefficient update. In simulations with a very low-variance planted program, survival improved recovery.
 
-The remaining aims are to choose a supervision strength that improves program recovery when the signal supports it, to extend the model to expression and DNA methylation with separate loading priors, and to select rank from the data.
+We next aim to choose a supervision strength that improves program recovery when the signal supports it, to extend the model to expression and DNA methylation with separate loading priors, and to select rank from the data.
 
 # Methods
 
@@ -170,11 +170,13 @@ The derivation identifies a balance problem the single-modality model does not h
 
 ## Proposed rank selection {#sec-rank}
 
-The working fit uses $K=7$ without pruning. In the KL-2 simulation, after correcting the treatment of a flat coefficient likelihood, unpruned fits recovered the planted program in 17 of 20 and 19 of 20 datasets across the two noise levels. Ordinary and protected ELBO pruning each recovered 2 of 20 at both levels and retained median ranks of two and one. Both failed the registered recovery and rank criteria. We will evaluate rank selection under the supervised objective with replicated training cross-validation and assess whether the final rank varies by at most one across starting ranks while retaining planted prognostic programs.
+The working fit uses $K=7$ without pruning. In a simulation run after correcting the treatment of a flat coefficient likelihood, unpruned fits recovered the planted program in 17 of 20 and 19 of 20 datasets across the two noise levels. Ordinary and protected ELBO pruning each recovered 2 of 20 at both levels and retained median ranks of two and one. Both failed the registered recovery and rank criteria. We will evaluate rank selection under the supervised objective with replicated training cross-validation and assess whether the final rank varies by at most one across starting ranks while retaining planted prognostic programs.
 
-## Comparisons still to run {#sec-comparators}
+## Comparators, risk groups and program classification {#sec-comparators}
 
-We plan to compare SSBMF with DeSurv using the same training data, gene set and validation cohorts. It was deferred in October 2026 because DeSurv's software and preprocessing had to be pinned to the authors' version first. In a registered comparison we will test YFB against the $\eta=L\beta$ parameterization. The latter estimates each new patient's scores by fold-in under the frozen priors. Simpler prognostic comparators will include PurIST [@Rashid2020], an elastic-net Cox model on genes [@Simon2011], and a model with clinical covariates.
+Every comparator was trained on the same 273 training patients, and each score's direction was fixed on the training data. DeSurv used the authors' software, preprocessing and published settings (rank 3), which the authors selected on the same two training cohorts [@Young2026]. An elastic-net Cox model on the D4 genes [@Simon2011] chose its mixing and penalty parameters by cross-validation on the training folds. PurIST [@Rashid2020] entered as a Cox model on its basal-like probability. A clinical model was planned, but no stage, grade, age or margin field is recorded in both training cohorts and all five validation series, so it was not fitted. Unsupervised EBMF at ranks 7, 15 and 40 followed by Cox regression tested whether a larger unsupervised rank would close any gap. Pooled hazard ratios are per SD of each score from Cox models stratified by series, with robust intervals clustered on donor.
+
+For risk groups, one cutpoint per score maximized the log-rank statistic on the out-of-fold training scores, with at least 20% of patients in each group, and was applied unchanged in every validation series. A program was called a main prognostic program when its standardized coefficient was at least 0.25 of the largest, its signed share of the risk-score variance, $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$, was at least 5%, and it was survival-active in at least four of the five training folds after matching loadings with absolute correlation at least 0.7. These rules were registered before they were applied. A registered comparison with the $\eta=L\beta$ parameterization, which estimates each new patient's scores by fold-in under the frozen priors, remains to be run.
 
 # Results
 
@@ -182,7 +184,7 @@ We plan to compare SSBMF with DeSurv using the same training data, gene set and 
 
 With 2,000 genes and $w_S=1$, the survival-weighted fit recovered the planted program in 10 of 10 datasets in each of the three variance cells, with a mean of 0.9, 0.1 and 0.0 false-active programs, and every fit converged (Figure \ref{fig:sim-s9}). Five-fold training cross-validation chose $w_S=1$ in 55 of 60 datasets. The other choices were the weight targeting a survival precision share of 0.2 in three datasets and $w_S=10$ in two. Every fit with $w_S\ge40$ stopped at 300 sweeps without converging, and recovery fell in most cells. With 50 genes, all fixed positive weights recovered the program, and false activity rose with weight. The share-targeted arm did not recover the program. The cause of non-convergence at large weights has not been found. In those fits the largest $|E\beta_k|$ ranged from 17 to 26. The SD of the true predictor ranged from 9 to 26.
 
-At 2,000 genes, the fitted risks at $w_S=1$ were attenuated. The median validation calibration slope was 1.45, 2.16 and 3.23 across the three variance cells, against about 1 for the true predictor. A slope above 1 means that the fitted risk differences are too small. Validation concordance ranged from 0.94 to 0.99. The survival share of the planted program's loading precision explains part of this. At $w_S=1$ it fell from 0.79–1.00 with 50 genes to 0.01–0.20 with 2,000.
+At 2,000 genes, the fitted risks at $w_S=1$ were attenuated. The median validation calibration slope was 1.45, 2.16 and 3.23 across the three variance cells, against about 1 for the true predictor. A slope above 1 means that the fitted risks are shrunk toward zero. Validation concordance ranged from 0.94 to 0.99. The survival share of the planted program's loading precision explains part of this. At $w_S=1$ it fell from 0.79–1.00 with 50 genes to 0.01–0.20 with 2,000.
 
 ```{=latex}
 \begin{figure}[!htb]
@@ -192,7 +194,7 @@ At 2,000 genes, the fitted risks at $w_S=1$ were attenuated. The median validati
 \end{figure}
 ```
 
-The matched two-step fit uses the $w_S=0$ loadings and also recovers the planted program in 10 of 10 datasets in every one of these cells (Table \ref{tab:strength}). The registered criterion compared against an earlier unsupervised fit on uncentered input, which recovered 0 or 1 of 10, so it measured the effect of centering as well as supervision. The supervised fits at $w_S=1$ converged with few false-active programs.
+The matched two-step fit uses the $w_S=0$ loadings and also recovers the planted program in 10 of 10 datasets in every one of these cells (Table \ref{tab:strength}). The preregistered comparison used an earlier unsupervised fit on uncentered input, which recovered 0 or 1 of 10, so it confounded centering with supervision. The supervised fits at $w_S=1$ converged with few false-active programs.
 
 When the weight was chosen for each dataset by cross-validated partial log-likelihood (Figure \ref{fig:sim-s13}), the chosen weight grew with the strength of the planted program: 1 or 2 in the weakest cells, 5 at 1% variance and 10 at 5%. The rule never chose 20 or 50, the weights at which fits stopped converging. At the chosen weight, recovery equalled the two-step fit's in every cell. Validation concordance was equal in the two stronger cells and higher by 0.003 to 0.007 in the two weakest, and false activity was lower than the two-step fit's in the stronger cells. The coefficients stayed attenuated, with median slopes of 1.24 to 1.45 in the three strong-survival cells, compared with 0.96 to 1.16 for two-step. Neither variant met every registered criterion. Both failed the calibration band, and the block-weight variant had a null false-active rate of 1.1 at its most often chosen weight against a limit of 1. The joint posterior for $\beta$ gave the same recoveries and concordance as the factorized one, to within 0.004.
 
@@ -250,7 +252,7 @@ Supervision changed discovery only near the detection threshold (Figure \ref{fig
 \end{figure}
 ```
 
-We also examined the combined contribution of the nonmatched programs, including those below the activity threshold. In the S-14 cells with planted shares of 0.1% and 0.2%, the median ratio of nonmatched to total risk-score variance reached 1.3% at $w_S=1$. Removing the nonmatched programs changed mean concordance by at most 0.008 across the supervised and two-step arms in these cells. At 0.05% planted share the median ratios ranged from 8.7% to 68.8%. With strong survival they were 8.7% for the supervised fit and 68.8% for two-step. These post hoc comparisons describe predictive contributions, separate from the registered count of false-active programs.
+We also examined the combined contribution of the nonmatched programs, including those below the activity threshold. In the S-14 cells with planted shares of 0.1% and 0.2%, the median ratio of nonmatched to total risk-score variance reached 1.3% at $w_S=1$. Removing the nonmatched programs changed mean concordance by at most 0.008 across the supervised and two-step arms in these cells. At 0.05% planted share the median ratios ranged from 8.7% to 68.8%. With strong survival they were 8.7% for the supervised fit and 68.8% for two-step. These post hoc comparisons describe predictive contributions, separate from the registered count of false-active programs. In a simulation that planted one strong and one near-threshold prognostic program together, the supervised fit at $w_S=1$ and the two-step fit each recovered the near-threshold program in 9 of 10 datasets, while a fixed $w_S=5$ recovered it in 2.
 
 The planned evaluation will compare the calibrated alternatives in @sec-choose-weight on the same grid and add cells with more realistic survival effects.
 
@@ -289,11 +291,11 @@ The 2,218-gene set was preferred by the registered rule (Figure \ref{fig:size-cu
 \end{figure}
 ```
 
-The S-15 refit selected $w_S=1$ by training cross-validated partial log-likelihood. The criterion changed from $-775.168$ at weight one to $-775.429$ at weight 50. Nested cross-validation gave $C=0.656$ (SE 0.027), compared with 0.663 at the fixed weight. At weight 50, survival supplied a median of $7.3\times10^{-5}$ of the loading precision for active programs, and the loadings still agreed with those of the unsupervised fit to the reported precision. The registered rule retained the existing fit and its external evaluation.
+A refit that chose the weight by training cross-validated partial log-likelihood on these patients, over weights from 1 to 50, selected $w_S=1$. The curve was flat. The criterion changed from $-775.168$ at weight one to $-775.429$ at weight 50. Nested cross-validation gave $C=0.656$ (SE 0.027), compared with 0.663 at the fixed weight. At weight 50, survival supplied a median of $7.3\times10^{-5}$ of the loading precision for active programs, and the loadings still agreed with those of the unsupervised fit to the reported precision. The registered rule retained the existing fit and its external evaluation.
 
 ## External validation {#sec-res-external}
 
-In the five held-out cohorts the supervised fit's concordance was 0.584 in Dijk, 0.537 in Moffitt, 0.656 in PACA-AU array, 0.681 in PACA-AU RNA-seq and 0.644 in Puleo, a mean of 0.620 (Table \ref{tab:external}, Figure \ref{fig:external}). It was equal to or higher than the two-step fit in every cohort. The equal-weight pooled difference was 0.007 (95% record-bootstrap CI $-0.002$ to $0.017$, donor-bootstrap CI $-0.003$ to $0.017$). Excluding PACA-AU RNA-seq gave 0.006 ($-0.003$ to $0.016$). Each interval includes zero. A Cox model stratified by cohort gave a hazard ratio of 1.37 (1.24 to 1.51) per standard deviation of the supervised risk score, and 1.35 (1.22 to 1.49) for the two-step score. DeSurv reports 1.50 (1.31 to 1.72) on the same five cohorts with its own preprocessing and rank [@Young2026]. The DeSurv estimate is an unpaired historical reference.
+In the five held-out cohorts the supervised fit's concordance was 0.584 in Dijk, 0.537 in Moffitt, 0.656 in PACA-AU array, 0.681 in PACA-AU RNA-seq and 0.644 in Puleo, a mean of 0.620 (Table \ref{tab:external}, Figure \ref{fig:external}). It was equal to or higher than the two-step fit in every cohort. The equal-weight pooled difference was 0.007 (95% record-bootstrap CI $-0.002$ to $0.017$, donor-bootstrap CI $-0.003$ to $0.017$). Excluding PACA-AU RNA-seq gave 0.006 ($-0.003$ to $0.016$). Each interval includes zero. A Cox model stratified by cohort gave a hazard ratio of 1.37 (1.24 to 1.51) per standard deviation of the supervised risk score, and 1.35 (1.22 to 1.49) for the two-step score. With robust intervals clustered on donor these become 1.22 to 1.53 and 1.21 to 1.51. DeSurv refitted on the same training patients gave 1.43 (1.25 to 1.64), against 1.50 (1.31 to 1.72) in its publication [@Young2026].
 
 ```{=latex}
 \begin{table}[!htb]
@@ -357,11 +359,60 @@ The Kaplan--Meier curves describe prognosis across within-series tertiles of the
 
 In the earlier benchmark the rank-seven EBMF fit followed by unpenalized Cox regression was the rank-matched reference. The pooled difference for historical YFB against that comparator was 0.011 (95% CI $-0.013$ to $0.033$). The historical fit averaged $C=0.627$ and its single-log refit averaged $C=0.625$. These results use different fitted models and gene sets from the November comparison.
 
+## Comparison with other prognostic models {#sec-res-comparators}
+
+The supervised fit's validation concordance was within noise of DeSurv and of the elastic-net Cox model trained on the same patients (Table \ref{tab:comparators}). The mean concordance over the five series was 0.620 for the supervised fit, 0.614 for DeSurv and 0.619 for elastic-net Cox. The paired differences were 0.007 ($-0.017$ to 0.030) against DeSurv and 0.001 ($-0.015$ to 0.018) against elastic-net Cox. The intervals against DeSurv, elastic-net Cox, PurIST and the two-step fit included zero. The elastic-net model selected the ridge penalty. PurIST alone had a mean concordance of 0.599. EBMF followed by Cox regression did worse at ranks 15 and 40 than at rank 7, with calibration slopes of 0.10 to 0.49 that show the unpenalized Cox step overfitting with 139 training deaths.
+
+```{=latex}
+\begin{table}[!htb]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccc}
+\toprule
+Model & Mean $C$ & \shortstack{Calibration\\slope range} & \shortstack{HR per SD\\(95\% CI)} & \shortstack{Supervised minus\\model (95\% CI)} \\
+\midrule
+Supervised ($w_S = 1$) & 0.620 & 0.36 to 1.57 & 1.37 (1.22, 1.53) &  \\
+Two-step (rank-7 EBMF + Cox) & 0.613 & 0.28 to 1.26 & 1.35 (1.21, 1.51) & $+$0.007 ($-$0.003, 0.017) \\
+DeSurv & 0.614 & 0.45 to 0.67 & 1.43 (1.25, 1.64) & $+$0.007 ($-$0.017, 0.030) \\
+Elastic-net Cox (D4 genes) & 0.619 & 0.49 to 1.29 & 1.34 (1.20, 1.49) & $+$0.001 ($-$0.015, 0.018) \\
+PurIST & 0.599 & 0.20 to 0.98 & 1.25 (1.13, 1.38) & $+$0.021 ($-$0.013, 0.057) \\
+EBMF rank 15 + Cox & 0.575 & 0.10 to 0.49 & 1.16 (1.04, 1.29) & $+$0.045 (0.021, 0.071) \\
+EBMF rank 40 + Cox & 0.581 & 0.10 to 0.31 & 1.16 (1.05, 1.29) & $+$0.040 (0.008, 0.074) \\
+\bottomrule
+\end{tabular}
+\caption{Fixed supervised fit and comparators trained on the same 273 patients, scored in the five validation series (616 records from 568 donors). Mean $C$ is the equal-weight mean over series. The hazard ratio is per pooled SD of each score from a Cox model stratified by series, with a robust interval clustered on donor. The difference in $C$ is averaged over series with a donor-bootstrap interval (2000 replicates).}
+\label{tab:comparators}
+\end{table}
+```
+
+The training cutpoint was $-0.046$ SD for the supervised score and 0.526 SD for the two-step score. Applied unchanged in the validation series, it gave pooled high-versus-low hazard ratios of 1.52 (1.24 to 1.87) and 1.69 (1.32 to 2.16). The two estimates are not comparable, because the supervised cutpoint placed 297 of 616 validation records in the high-risk group and the two-step cutpoint placed 144. A smaller and more extreme high-risk group gives a larger hazard ratio when two scores rank patients equally well. In every series the supervised high-risk group held a larger proportion of Basal-like tumours by PurIST and of permissive CAF (permCAF) tumours by DeCAF. The supervised score's pooled hazard ratio per training SD was 1.51 unadjusted, 1.48 after adjusting for PurIST subtype and 1.40 after adjusting for DeCAF subtype.
+
 \FloatBarrier
 
 ## Programs {#sec-res-programs}
 
-Three fitted programs were survival-active. Program 2 was protective at its positive pole ($E[\beta]=-0.405$), while the positive poles of Programs 3 and 5 were adverse (0.218 and 0.230). Table \ref{tab:programs} gives the coefficient estimates and the genes at both poles. Figure \ref{fig:programs} shows how the same genes load across the fitted programs.
+Three fitted programs were survival-active. Program 2 was protective at its positive pole ($E[\beta]=-0.405$), while the positive poles of Programs 3 and 5 were adverse (0.218 and 0.230). Table \ref{tab:programs} gives the coefficient estimates and the genes at both poles. Programs 2 and 3 met the registered classification rule (Table \ref{tab:program-rule}). Program 5 met the coefficient and variance thresholds but was survival-active in only three of the five training folds. Survival supplied at most $2.1\times10^{-6}$ of any program's loading precision, so no program is survival-dominated. In saved simulation fits the coefficient and variance parts of the rule kept the planted program in all 80 S-13 fits and rejected 35 of 36 false-active directions, but rejected only 61 of 128 in the two-step S-14 fits. The fold-stability part was not checked in simulation.
+
+```{=latex}
+\begin{table}[!htb]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+Program & Active & \shortstack{Coefficient\\ratio} & \shortstack{Signed share of\\risk variance} & \shortstack{Active\\folds (of 5)} & \shortstack{Main\\program} \\
+\midrule
+2 & Yes & 1.00 & 0.632 & 5 & Yes \\
+3 & Yes & 0.54 & 0.179 & 4 & Yes \\
+4 & No & 0.38 & $-$0.010 & 0 & No \\
+5 & Yes & 0.57 & 0.202 & 3 & No \\
+7 & No & 0.12 & $-$0.003 & 1 & No \\
+\bottomrule
+\end{tabular}
+\caption{Program classification on the supervised training fit. The coefficient ratio is $|E\beta_k|\,\mathrm{SD}(YE[F_k])$ relative to the largest program. The signed share is $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$ and sums to one over programs. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. A main program needs a ratio of at least 0.25, a share of at least 5\% and at least four active folds. Programs with ratio below 0.1 and no activity are omitted.}
+\label{tab:program-rule}
+\end{table}
+``` Figure \ref{fig:programs} shows how the same genes load across the fitted programs.
 
 ```{=latex}
 \begin{table}[tbp]
@@ -496,11 +547,11 @@ A registered comparison with $\eta=L\beta$ will evaluate recovery and out-of-sam
 
 ## Limitations
 
-Historical analyses used the external panel to inform rank, preprocessing, the loading supervision weight $\alpha_F$, the number of frozen-loading sweeps and comparator configuration. No series in this panel is untouched. The donor bootstrap accounts for repeated donors while leaving the pooled estimand conditional on the observed series. Some training folds stopped at the sweep limit. The simulations use a single generator, and the strongest simulated survival signals exceed those observed in the real data.
+Historical analyses used the external panel to inform rank, preprocessing, the loading supervision weight $\alpha_F$, the number of frozen-loading sweeps and comparator configuration. No series in this panel is untouched. The donor bootstrap and the donor-clustered hazard-ratio intervals account for repeated donors while leaving the pooled estimand conditional on the observed series. DeSurv used its published settings rather than a new search on our training folds. Some training folds stopped at the sweep limit. The simulations use a single generator, and the strongest simulated survival signals exceed those observed in the real data.
 
 ## Continuing work
 
-We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-choose-weight). Each will be judged against the registered simulation criteria and against training cross-validation on PDAC, and any configuration adopted on the training data will be scored once externally. The extension to several data types (@sec-mmodal) will start from a fitter that reproduces the current model for one modality. We will also assess rank selection under the supervised objective (@sec-rank). The remaining comparisons (@sec-comparators) will place the method against DeSurv, the $L\beta$ parameterization and simpler prognostic models. Fixed thresholds from the training risk scale would let us assess whether the risk groups transfer across platforms. The current curves use within-cohort tertiles. We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
+We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-choose-weight). Each will be judged against the registered simulation criteria and against training cross-validation on PDAC, and any configuration adopted on the training data will be scored once externally. The extension to several data types (@sec-mmodal) will start from a fitter that reproduces the current model for one modality. We will also assess rank selection under the supervised objective (@sec-rank). The remaining comparison (@sec-comparators) will place the method against the $L\beta$ parameterization. The Kaplan--Meier figures will be redrawn with the fixed training cutpoint in place of within-cohort tertiles. We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
 
 \FloatBarrier
 

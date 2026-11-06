@@ -1,0 +1,20 @@
+\begin{table}[!htb]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcccc}
+\toprule
+Model & Mean $C$ & \shortstack{Calibration\\slope range} & \shortstack{HR per SD\\(95\% CI)} & \shortstack{Supervised minus\\model (95\% CI)} \\
+\midrule
+Supervised ($w_S = 1$) & 0.620 & 0.36 to 1.57 & 1.37 (1.22, 1.53) &  \\
+Two-step (rank-7 EBMF + Cox) & 0.613 & 0.28 to 1.26 & 1.35 (1.21, 1.51) & $+$0.007 ($-$0.003, 0.017) \\
+DeSurv & 0.614 & 0.45 to 0.67 & 1.43 (1.25, 1.64) & $+$0.007 ($-$0.017, 0.030) \\
+Elastic-net Cox (D4 genes) & 0.619 & 0.49 to 1.29 & 1.34 (1.20, 1.49) & $+$0.001 ($-$0.015, 0.018) \\
+PurIST & 0.599 & 0.20 to 0.98 & 1.25 (1.13, 1.38) & $+$0.021 ($-$0.013, 0.057) \\
+EBMF rank 15 + Cox & 0.575 & 0.10 to 0.49 & 1.16 (1.04, 1.29) & $+$0.045 (0.021, 0.071) \\
+EBMF rank 40 + Cox & 0.581 & 0.10 to 0.31 & 1.16 (1.05, 1.29) & $+$0.040 (0.008, 0.074) \\
+\bottomrule
+\end{tabular}
+\caption{Fixed supervised fit and comparators trained on the same 273 patients, scored in the five validation series (616 records from 568 donors). Mean $C$ is the equal-weight mean over series. The hazard ratio is per pooled SD of each score from a Cox model stratified by series, with a robust interval clustered on donor. The difference in $C$ is averaged over series with a donor-bootstrap interval (2000 replicates).}
+\label{tab:comparators}
+\end{table}

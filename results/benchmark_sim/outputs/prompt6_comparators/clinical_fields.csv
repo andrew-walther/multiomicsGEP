@@ -1,5 +1,5 @@
 "cohort","stage","grade","age","margin"
-"TCGA_PAAD","AJCC.pathologic.tumor.stage","Grade","Age.at.initial.pathologic.diagnosis",NA
+"TCGA_PAAD","AJCC.pathologic.tumor.stage","Grade","Age.at.initial.pathologic.diagnosis","Residual.tumor"
 "CPTAC","tumor_stage_pathological",NA,"age","residual_tumor"
 "Dijk",NA,"differentiation grade","age (year)",NA
 "Moffitt_GEO_array","T; N; M","Diff",NA,"Margin"

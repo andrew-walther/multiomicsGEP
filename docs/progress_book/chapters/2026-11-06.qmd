@@ -22,6 +22,10 @@ supervision experiments in order, and ends with open items.
   10⁻⁴ of the loading precision.
 - **False-active programs do not affect prediction.** Where the planted program is recovered,
   the other active programs carry at most 1.3% of the risk-score variance.
+- **No difference was detected between the supervised fit and DeSurv or elastic-net Cox on the external cohorts.** All
+  comparators were trained on the same 273 patients. The paired differences in C against both are small,
+  and their donor-bootstrap intervals include zero. A
+  proposed classification rule names programs 2 and 3, but its simulation support is incomplete.
 - **Two measurement errors were found and corrected.** The calibration slopes in the
   simulations, and the two-step comparison fits, had used the default tie handling of the Cox
   fit. That merges the extreme simulated survival times. Every number below uses exact times.
@@ -550,19 +554,135 @@ The three active programs have standardized coefficients of 0.41, 0.22 and 0.23.
 at least half the effect of the largest program and carry at least 20% of the risk-score variance. The
 inactive program 4 (standardized coefficient 0.15) is the borderline case for the proposed rule.
 
+### Real-data comparators and DeSurv-style analyses
+
+```{r p67-setup, include=FALSE}
+P6 <- "../../../results/benchmark_sim/outputs/prompt6_comparators"
+P7 <- "../../../results/benchmark_sim/outputs/prompt7_desurv_style"
+p6e <- read.csv(file.path(P6, "external.csv")); p6p <- read.csv(file.path(P6, "paired.csv"))
+p6h <- read.csv(file.path(P6, "pooled_hr.csv")); p6t <- read.csv(file.path(P6, "tuning.csv"))
+p7c <- read.csv(file.path(P7, "cutpoints.csv")); p7g <- read.csv(file.path(P7, "group_hr.csv"))
+p7r <- read.csv(file.path(P7, "program_rule.csv")); p7k <- read.csv(file.path(P7, "rank_paired.csv"))
+p7ke <- read.csv(file.path(P7, "rank_external.csv")); p7m <- read.csv(file.path(P7, "mixed_simulation.csv"))
+p7en <- read.csv(file.path(P7, "enrichment.csv")); p7a <- read.csv(file.path(P7, "adjusted_hr.csv"))
+f3 <- function(x) sprintf("%.3f", x); f2 <- function(x) sprintf("%.2f", x)
+lab <- c(w1 = "Supervised (w_S = 1)", twostep = "Two-step", PurIST = "PurIST",
+         elastic_net = "Elastic-net Cox (D4)", DeSurv = "DeSurv")
+```
+
+Both analyses were registered before they were run
+([comparators plan](../../plans/2026-11-06-real-data-comparators-plan.md),
+[DeSurv-style plan](../../plans/2026-11-06-desurv-style-analyses-plan.md)). Every comparator was
+trained on the 273 TCGA and CPTAC patients only, and each score's direction was fixed on training
+data. The fixed S-11 supervised fit and its two-step counterpart were not refitted. Details are in
+the [comparator findings](../../findings/2026-11-06-real-data-comparators-findings.md) and the
+[DeSurv-style findings](../../findings/2026-11-06-desurv-style-analyses-findings.md).
+
+**Comparators.** DeSurv used the authors' code, preprocessing and published settings (rank 3,
+chosen by the authors on the same two training cohorts), with 100 starts. The registration had named a new training-only search, so this is a deviation. The elastic-net Cox
+model on the D4 genes chose α = `r p6t$alpha[p6t$selected]` (ridge) by training CV on the S-11
+folds. The α = 0.75 and lasso paths hit glmnet's iteration limit at small λ, which may have favoured the ridge choice. PurIST entered as its training-fitted Cox score. No clinical model was fitted, because no
+stage, grade, age or margin field is recorded in all seven cohorts.
+
+```{r p6-table}
+x <- aggregate(C ~ model, p6e[p6e$model %in% names(lab), ], mean)
+x <- merge(x, setNames(p6h[, c("model", "hr", "donor_lo", "donor_hi")], c("model", "hr", "lo", "hi")), by = "model")
+x <- merge(x, p6p[, c("model", "diff", "lo", "hi")], by = "model", all.x = TRUE,
+           suffixes = c("_hr", "_d"))
+x <- x[match(names(lab), x$model), ]
+kable(data.frame(Model = lab[x$model], `Mean C (5 cohorts)` = f3(x$C),
+  `Pooled HR per SD (95% donor-clustered CI)` = sprintf("%s (%s to %s)", f2(x$hr), f2(x$lo_hr), f2(x$hi_hr)),
+  `Supervised minus model (95% donor CI)` = ifelse(is.na(x$diff), "",
+    sprintf("%s (%s to %s)", f3(x$diff), f3(x$lo_d), f3(x$hi_d))), check.names = FALSE),
+  row.names = FALSE)
+```
+
+The supervised fit's concordance is within noise of DeSurv and of the elastic-net Cox model.
+Every paired interval includes zero. The comparison is on 616 external records from 568 donors,
+resampled by donor. It shows no loss against these models and no established gain.
+
+**Risk groups.** One cutpoint per score was chosen on the out-of-fold training scores
+(maximally selected log-rank, at least 20% per group) and applied unchanged to every external
+cohort. The cutpoints were `r f3(p7c$cutpoint[p7c$model == "w1"])` (supervised) and
+`r f3(p7c$cutpoint[p7c$model == "twostep"])` (two-step) training SDs. The pooled high-versus-low
+HRs were `r f2(p7g$hr[p7g$model == "w1" & p7g$cohort == "pooled"])` and
+`r f2(p7g$hr[p7g$model == "twostep" & p7g$cohort == "pooled"])` (cohort-stratified, with
+donor-clustered intervals in the findings). The two HRs are not comparable.
+The supervised cutpoint puts `r p7g$high[p7g$model == "w1" & p7g$cohort == "pooled"]` of 616
+external records in the high-risk group, and the two-step cutpoint puts
+`r p7g$high[p7g$model == "twostep" & p7g$cohort == "pooled"]`. A smaller, more extreme
+high-risk group gives a larger HR even when two scores rank patients equally well, as the
+continuous HRs above show. In every cohort the high-risk group held more Basal-like (PurIST) and
+more permCAF (DeCAF) tumours. The supervised score kept a pooled HR of
+`r f2(p7a$hr[p7a$model == "w1" & p7a$cohort == "pooled" & p7a$subtype == "PurIST" & p7a$adjusted])`
+per training SD after adjusting for PurIST subtype and
+`r f2(p7a$hr[p7a$model == "w1" & p7a$cohort == "pooled" & p7a$subtype == "DeCAF" & p7a$adjusted])`
+after adjusting for DeCAF.
+
+**Larger unsupervised ranks.** EBMF with Cox regression on its program scores gave supervised-minus-EBMF
+differences of `r paste(f3(p7k$diff), collapse = ", ")` at ranks 7, 15 and 40. The rank-7
+interval includes zero. At ranks 15 and 40 the unpenalized Cox step overfits (external
+calibration slopes `r f2(min(p7ke$cal_slope[p7ke$model %in% c("EBMF_15", "EBMF_40")]))` to
+`r f2(max(p7ke$cal_slope[p7ke$model %in% c("EBMF_15", "EBMF_40")]))`), so those differences
+describe that pipeline rather than the information in a larger factorization.
+
+**Program classification rule.** A main prognostic program needs a standardized coefficient at
+least 0.25 of the largest, at least 5% of the (signed) risk-score variance and activity in at
+least four of the five S-11 folds.
+
+```{r p7-rule}
+y <- p7r[p7r$active | p7r$ratio > .1, ]
+kable(data.frame(Program = y$program, Active = y$active, `Ratio to largest` = f2(y$ratio),
+  `Signed variance share` = f3(y$variance_share), `Active folds` = y$active_folds,
+  `Main program` = y$main, PVE = f3(y$pve),
+  `Survival precision share (upper bound)` = sprintf("%.1e", y$precision_share_upper),
+  check.names = FALSE), row.names = FALSE)
+```
+
+Programs 2 and 3 meet the rule. Program 5 meets the coefficient and variance thresholds but is
+active in only three folds. No program is survival-dominated: the upper bound on survival's
+share of the loading precision is below 10⁻⁵ for every program. The old label (active with PVE
+below 1%) also marks none. In the saved simulation fits the coefficient-and-share part of the
+rule kept the planted program in all 80 S-13 fits and rejected 35 of 36 false-active
+directions. In the S-14 two-step fits it rejected only 61 of 128 false-active directions, and
+the supervised S-14 fits could not be checked. The fold-stability part could not be checked in
+any simulation.
+
+**Mixed-signal simulation.** One strong and one near-threshold prognostic program were planted
+together at 2,000 genes (10 datasets per arm).
+
+```{r p7-mixed}
+m <- p7m[p7m$direction == "near_threshold", ]
+z <- do.call(rbind, lapply(split(m, m$arm), function(a) data.frame(arm = a$arm[1],
+  rec = sum(a$recovered), n = nrow(a), prec = mean(a$top50_precision), C = mean(a$C))))
+z <- z[match(c("twostep", "A1_w1", "A2_w1", "A1_w5"), z$arm), ]
+kable(data.frame(Arm = c("Two-step", "Supervised, w_S = 1", "Supervised, joint β, w_S = 1",
+  "Supervised, w_S = 5"), `Near-threshold recovered` = paste0(z$rec, "/", z$n),
+  `Top-50 gene precision` = f3(z$prec), `Validation C` = f3(z$C), check.names = FALSE),
+  row.names = FALSE)
+```
+
+All arms recovered the strong program in every dataset. At `w_S = 1` the supervised and two-step
+fits recovered the near-threshold program equally often. A fixed `w_S = 5` lost it in most
+datasets and had lower validation C, This compares two fixed weights and does not test the cross-validated choice.
+
 ## Open items and questions
 
 - **Stronger supervision on real data.** Moving the real-data loadings needs weights near 10⁴.
   That first needs the fit to stay stable at large weights, the problem S-9 found and did not
   solve.
-- **Classifying programs for the biology.** The proposed rule (standardized coefficient ratio,
-  risk-variance share, stability across folds) needs its fold-stability part computed and a
-  check on the simulations.
+- **Classifying programs for the biology.** The rule names programs 2 and 3 on real data. Its
+  fold-stability part has not been checked in simulation, because the saved simulation fits
+  have no fold-level program identities.
+- **Unequal risk groups.** The registered cutpoints give high-risk groups of different sizes, so
+  group HRs cannot rank the two scores. Continuous HRs and paired C are the comparison.
 - **Pruning.** With the empty-program KL fixed, pruning removes the planted program in nearly every
   dataset. The working fit stays at K = 7 without pruning. Whether a different deletion rule can
   work is a separate question.
-- **Issue #6.** Still open: comparators (item 7), the writeup and prelim text for items 2, 4
-  and 5, storing the fits (item 8), and the Linux check (item 3).
+- **Issue #6.** The comparators (item 7) and the writeup and prelim text (items 2, 4 and 5) are
+  done. Still open: storing the fits (item 8) and the Linux check (item 3). A clinical-covariate
+  model was not possible under the registered rule.
 - **Matched LB and YFB study.** It now has the nonnegative input it needs, with projection-only
   centering (including within strata).
-- **Writing.** The prelim Chapter 4 revision and the 11/6 writeup are in progress.
+- **Writing.** The prelim Chapter 4 revision and the 11/6 writeup are complete and include
+  these comparisons.

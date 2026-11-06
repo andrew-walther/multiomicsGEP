@@ -1343,6 +1343,18 @@ consistency; detailed result is in fixed_q_seed26/VALIDITY.md and the attempt lo
 
 The [real-data comparators](docs/findings/2026-11-06-real-data-comparators-findings.md)
 and [risk-group and program analyses](docs/findings/2026-11-06-desurv-style-analyses-findings.md)
-are available for independent review on `fix/yfb-supervision`. The
-registered recovery, false-activity and convergence criteria still govern
-adoption of survival supervision.
+were reviewed independently on 2026-11-06. Every committed aggregate was reproduced
+by rerunning the runners. The review added donor-clustered intervals for pooled HRs and
+corrected the TCGA margin field. The results are in the November 6 progress-book chapter,
+prelim Chapter 4 and the 11/6 writeup. The supervised fit performs like DeSurv and
+elastic-net Cox trained on the same patients, and the proposed classification rule names
+programs 2 and 3 (simulation support incomplete). The registered recovery, false-activity and convergence criteria
+still govern adoption of survival supervision.
+
+- [x] Real-data comparators (GitHub issue #6 item 7). A clinical model was not
+  possible under the registered rule.
+- [ ] Redraw the Chapter 4 Kaplan–Meier figures with the fixed training cutpoint
+  instead of within-cohort tertiles.
+- [ ] Check the fold-stability part of the program rule in simulation (needs
+  fold-level program identities in the simulation checkpoints).
+- [ ] Registered LB versus YFB comparison with fold-in prediction.

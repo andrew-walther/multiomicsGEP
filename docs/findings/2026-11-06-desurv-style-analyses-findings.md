@@ -132,3 +132,53 @@ contrasts were 0.0067 (95% donor bootstrap interval −0.0032 to 0.0168),
 issued a maximum-iteration warning and its results are reported as
 returned (`rank_ebmf_fits.csv`). None of the rank fits threw an error and
 no scored patients were dropped. These comparisons do not select a rank.
+
+## Review notes (2026-11-06)
+
+- **The two group HRs are not comparable.** The OOF cutpoints place 123 of
+  273 training patients (45%) in the supervised high-risk group and 68 of
+  273 (25%) in the two-step high-risk group. Externally the high groups are
+  297 of 616 (48%) and 144 of 616 (23%). A smaller, more extreme high group
+  gives a larger high-versus-low HR even when the scores rank patients
+  equally well. The continuous pooled HRs per pooled external SD are 1.37
+  and 1.35 (`prompt6_comparators/pooled_hr.csv`), and the paired C
+  difference is 0.007 (−0.003 to 0.017). The group HRs of 1.52 and 1.69 do
+  not show that either score separates patients better.
+- **The larger-rank EBMF comparators use unpenalized Cox regression on 15 and
+  40 program scores** fitted to 273 patients with 139 events, as the task
+  specified. Their external calibration slopes, 0.10 to 0.49
+  (`rank_external.csv`), show overfitting of the Cox step. The significant
+  supervised-minus-EBMF differences at ranks 15 and 40 therefore describe
+  this two-step pipeline as specified, not the information in a larger
+  unsupervised factorization. The rank-7 contrast, 0.0067 (−0.0032 to
+  0.0168), is the matched comparison.
+- **Program numbering** refers to the S-11 full fit
+  `size_D4_N2218_w1_f0.rds`. The S-15 program table
+  (`yfb_supervised_refit_2026-11-06/programs_full_fit.csv`) uses the same fit
+  and numbering. Its `risk_var_share` column is the unsigned variance of each
+  component divided by the score variance (0.713, 0.206 and 0.230 for
+  programs 2, 3 and 5). The signed shares registered here are 0.632, 0.179
+  and 0.202 and sum to one over all programs.
+- **Preprocessing inside the OOF cutpoint.** The OOF scores use the S-11
+  training matrix, whose per-cohort gene standardization used all training
+  patients, including each held-out fold. This matches the S-11 CV design.
+  It does not use outcomes, so its effect on the cutpoint is expected to be
+  small.
+- The mixed-signal validation matrices are standardized with their own
+  means and SDs, as in the S-14 generator.
+- **Donor clustering.** Every pooled Cox fit (`group_hr.csv`,
+  `program_hr.csv`, `adjusted_hr.csv`, `rank_pooled_hr.csv`) now adds
+  `cluster(donor)` and reports the robust interval as `donor_lo` and
+  `donor_hi`. The registered estimates and model-based intervals are
+  unchanged to 10⁻¹⁵. The pooled high-versus-low HRs become 1.52 (1.24 to
+  1.87) and 1.69 (1.32 to 2.16).
+- **The rule rejects false actives poorly in the S-14 two-step fits.** It
+  rejected 61 of 128 (48%). The supervised S-14 checkpoints lack posterior
+  SDs, so false-active rejection is untested there. Only S-13 (35 of 36)
+  supports the claim that the rule drops false actives.
+- **Mixed-signal reporting.** `false_active` is a per-fit count repeated on
+  both direction rows. Mean false-active counts per fit were 1.1 in every
+  arm except A1 at weight 5 (1.3). The mean top-50 precision includes rows
+  whose best match has |r| below 0.7.
+- Some cells of `at_risk.csv` hold four or five patients. They are counts
+  at fixed months, not individual records.
