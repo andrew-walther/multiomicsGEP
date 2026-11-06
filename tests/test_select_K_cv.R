@@ -356,3 +356,23 @@ run_test("KCV-T16: cohort_id in ... is correctly row-subsetted per fold (LB)", {
   assert_true(is.data.frame(res$cv_table),
               msg = "cv_table should be a data.frame when cohort_id is supplied")
 })
+
+run_test("KCV-T20: centered stratified YFB ranks K using only within-stratum pairs", {
+  d <- .kcv_dat
+  g <- rep(c("A", "B"), each = nrow(d$Y) / 2)
+  d$Y[g == "B", ] <- d$Y[g == "B", ] + 10
+  folds <- create_stratified_folds(d$status, n_folds = 3L, seed = 42L)$folds
+  res <- select_K_cv(d$Y, d$time, d$status, K_grid = 2L, n_folds = 3L, model = "YFB",
+                     max_iter = 5L, canonicalize = TRUE, center_projection = TRUE, strata_id = g)
+  expected <- vapply(folds, function(te) {
+    tr <- setdiff(seq_len(nrow(d$Y)), te)
+    f <- fit_ssbmf_yfb(d$Y[tr, , drop = FALSE], d$time[tr], d$status[tr], K = 2L,
+                       max_iter = 5L, canonicalize = TRUE, center_projection = TRUE,
+                       strata_id = g[tr], verbose = FALSE)
+    yc <- d$Y[te, , drop = FALSE] - f$projection_center[g[te], , drop = FALSE]
+    score <- drop(yc %*% sweep(f$EF, 2, f$EF_norms, "/") %*% f$EBeta)
+    df <- data.frame(time = d$time[te], status = d$status[te], score = score, g = g[te])
+    concordance(Surv(time, status) ~ score + strata(g), data = df, reverse = TRUE)$concordance
+  }, numeric(1))
+  assert_near(res$fold_results$cindex, expected, tol = 1e-12)
+})

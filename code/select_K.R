@@ -244,7 +244,10 @@ classify_factors <- function(res, Y,
 #'                   predict_ssbmf_yfb).  Both models must be sourced before
 #'                   calling; see dependency checks below.
 #' @param ...        additional arguments passed to the fitting function.
-#'                   Do NOT pass K (overridden per candidate).
+#'                   Do NOT pass K (overridden per candidate). For YFB,
+#'                   strata_id is subsetted by fold, and concordance uses
+#'                   within-stratum pairs. With center_projection = TRUE,
+#'                   held-out strata must be present in the training fold.
 #'
 #' @return Named list:
 #'   $K_opt         integer: selected K (1-SE rule or max)
@@ -320,6 +323,13 @@ select_K_cv <- function(Y, time, status,
   # only has n_train rows, causing a dimension mismatch.
   cohort_id_full <- extra[["cohort_id"]]
   extra[["cohort_id"]] <- NULL
+  strata_full <- NULL
+  if (model == "YFB") {
+    strata_full <- extra[["strata_id"]]
+    extra[["strata_id"]] <- NULL
+    if (!is.null(strata_full) && (length(strata_full) != n || anyNA(strata_full)))
+      stop("strata_id must have length nrow(Y) and no NA.")
+  }
 
   # --- create stratified folds once (shared across all K) ---
   fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
@@ -340,6 +350,10 @@ select_K_cv <- function(Y, time, status,
       extra_fold <- extra
       if (!is.null(cohort_id_full))
         extra_fold[["cohort_id"]] <- cohort_id_full[train_idx]
+
+      if (!is.null(strata_full))
+        extra_fold[["strata_id"]] <- strata_full[train_idx]
+      strata_test <- strata_full[test_idx]
 
       # --- fit on training fold ---
       if (model == "LB") {
@@ -372,15 +386,20 @@ select_K_cv <- function(Y, time, status,
         # Project held-out fold; pass EF_norms so column scaling is consistent
         pred <- predict_ssbmf_yfb(Y[test_idx, , drop = FALSE],
                                   fit$EF, fit$EBeta,
-                                  EF_norms = fit$EF_norms)
+                                  EF_norms = fit$EF_norms,
+                                  projection_center = fit$projection_center,
+                                  projection_strata = if (is.matrix(fit$projection_center)) strata_test)
       }
 
-      cindex <- tryCatch(
-        as.numeric(survival::concordance(
-          survival::Surv(time[test_idx], status[test_idx]) ~ I(-pred$risk_scores)
-        )$concordance),
-        error = function(e) NA_real_
-      )
+      cindex <- tryCatch({
+        outcome <- survival::Surv(time[test_idx], status[test_idx])
+        if (is.null(strata_test)) {
+          as.numeric(survival::concordance(outcome ~ I(-pred$risk_scores))$concordance)
+        } else {
+          as.numeric(survival::concordancefit(outcome, pred$risk_scores, strata = strata_test,
+                                              reverse = TRUE)$concordance)
+        }
+      }, error = function(e) NA_real_)
 
       if (verbose)
         cat(sprintf("    fold %d/%d: n_train=%d, n_test=%d, C=%.3f\n",

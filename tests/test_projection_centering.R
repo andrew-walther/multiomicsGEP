@@ -194,6 +194,13 @@ run_test("Projection centering with strata: centered within each stratum, and a 
   r_a <- predict_ssbmf_yfb(Y[g == "b", ], a$EF, a$EBeta, a$EF_norms,
                            projection_center = a$projection_center["a", ])$risk_scores
   assert_near(r_a - r[g == "b"], rep(r_a[1] - r[g == "b"][1], sum(g == "b")), 1e-10)
+  new_Y <- Y[g == "b", , drop = FALSE]
+  r_zero <- predict_ssbmf_yfb(new_Y, a$EF, a$EBeta, a$EF_norms,
+                              projection_center = rep(0, ncol(new_Y)))$risk_scores
+  r_mean <- predict_ssbmf_yfb(new_Y, a$EF, a$EBeta, a$EF_norms,
+                              projection_center = colMeans(new_Y))$risk_scores
+  assert_near(r_zero - r_mean, rep(r_zero[1] - r_mean[1], nrow(new_Y)), 1e-10)
+  assert_equal(order(r_zero), order(r_mean))
   e <- tryCatch(predict_ssbmf_yfb(Y, a$EF, a$EBeta, a$EF_norms, projection_center = a$projection_center,
                                   projection_strata = rep("c", nrow(Y))), error = conditionMessage)
   assert_true(grepl("not seen in training", e), e)
