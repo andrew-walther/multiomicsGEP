@@ -727,8 +727,9 @@ datasets and had lower validation C. This compares two fixed weights and does no
 - **Classifying programs for the biology.** The rule names programs 2 and 3 on real data. Its
   fold-stability part has not been checked in simulation, because the saved simulation fits
   have no fold-level program identities.
-- **Unequal risk groups.** The training cutpoints give high-risk groups of different sizes, so
-  group HRs cannot rank the two scores. Continuous HRs and paired C are the comparison.
+- **Unequal risk groups.** Each model's risk score is split into high and low risk at one
+  cutpoint chosen on the training patients' cross-validated risk scores. The two models'
+  cutpoints give high-risk groups of different sizes, so group HRs cannot rank the two scores. Continuous HRs and paired C are the comparison.
 - **Pruning.** With the empty-program KL fixed, pruning removes the planted program in nearly every
   dataset. The working fit stays at K = 7 without pruning. Whether a different deletion rule can
   work is a separate question.
