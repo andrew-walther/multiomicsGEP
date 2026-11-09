@@ -1,0 +1,26 @@
+# November 13, 2026
+
+This chapter covers the week of November 9–13. The plan for the week is
+[`docs/plans/2026-11-09-week-plan.md`](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/plans/2026-11-09-week-plan.md).
+Sections are filled in as each result is reviewed.
+
+## Executive summary
+
+To be written once the week's results are reviewed.
+
+## Tuning on training data only
+
+External cohorts now score a fixed model and are not used to choose between models or
+settings, following the protocol DeSurv used on the same cohorts.
+
+## Priors on the loadings and scores
+
+## Prior on the survival coefficients
+
+## Methylation alone
+
+## LB and YFB compared
+
+## Earlier choices redone on training data
+
+## Open items

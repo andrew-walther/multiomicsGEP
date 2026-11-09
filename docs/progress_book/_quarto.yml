@@ -25,6 +25,7 @@ book:
     - chapters/2026-10-26.qmd
     - chapters/2026-10-30.qmd
     - chapters/2026-11-06.qmd
+    - chapters/2026-11-13.qmd
 
 format:
   html:

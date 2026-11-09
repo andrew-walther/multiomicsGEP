@@ -7,7 +7,9 @@ methylation alone and the LB vs YFB study, then the M-modality fitter. It replac
 planned LB vs YFB study and the multimodal items below. External cohorts are now for
 validation scoring only (DECISIONS.md, 2026-11-09). Task F redoes the gene screen, input
 scaling and rank on training CV, and task G designs a results list that rebuilds when the
-model changes. The plan also lists every open plan with its status.
+model changes. Results freeze on 11/12. The November 13 progress-book chapter, writeup
+version and prelim Chapter 4 update are due 11/13. The plan also lists every open plan
+with its status.
 
 **Prelim Chapter 4 (2026-11-06).**
 
@@ -17,6 +19,9 @@ model changes. The plan also lists every open plan with its status.
   rank-matched comparison and treats multimodal modeling as proposed work.
 - [ ] Author review of the assembled prelim. Future analyses include
   cohort-specific coefficients, supervision strength and rank selection.
+  Submission is due Sunday 2026-11-15 at 11:59 pm. Changes to the chapter stop on
+  2026-11-13 so Andrew can review over the weekend (schedule in the
+  [week plan](docs/plans/2026-11-09-week-plan.md)).
 
 **Normalized-projection supervision (2026-10-30).**
 
