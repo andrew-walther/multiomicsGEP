@@ -719,7 +719,7 @@ All arms recovered the strong program in every dataset. At `w_S = 1` the supervi
 fits recovered the near-threshold program equally often. A fixed `w_S = 5` lost it in most
 datasets and had lower validation C. This compares two fixed weights and does not test the cross-validated choice.
 
-## Open items and questions
+## Open items and planned next steps
 
 - **Stronger supervision on real data.** Moving the real-data loadings needs weights near 10⁴.
   That first needs the fit to stay stable at large weights, the problem the fixed-weight simulation found and did not
@@ -727,7 +727,7 @@ datasets and had lower validation C. This compares two fixed weights and does no
 - **Classifying programs for the biology.** The rule names programs 2 and 3 on real data. Its
   fold-stability part has not been checked in simulation, because the saved simulation fits
   have no fold-level program identities.
-- **Unequal risk groups.** The registered cutpoints give high-risk groups of different sizes, so
+- **Unequal risk groups.** The training cutpoints give high-risk groups of different sizes, so
   group HRs cannot rank the two scores. Continuous HRs and paired C are the comparison.
 - **Pruning.** With the empty-program KL fixed, pruning removes the planted program in nearly every
   dataset. The working fit stays at K = 7 without pruning. Whether a different deletion rule can
@@ -736,9 +736,6 @@ datasets and had lower validation C. This compares two fixed weights and does no
   Still open: storing the fits (item 8), the Linux check (item 3) and a clinical model on the
   cohorts that record age or resection margin (item 7).
 - **Writing.** The 11/6 writeup is complete and includes these comparisons.
-
-### Next steps agreed with Yusha (November 6)
-
 - **Compare the LB and YFB models directly.** Fit both on the same training patients and compare
   validation C, the learned programs (loading correlations) and the two Cox linear predictors,
   using fold-in prediction for LB. The study now has the nonnegative input it needs, with
