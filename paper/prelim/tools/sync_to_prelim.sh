@@ -105,6 +105,10 @@ if [ "$NO_RENDER" -eq 0 ]; then
   TINYTEX_BIN="$(ls -d "$HOME"/Library/TinyTeX/bin/* 2>/dev/null | head -1)"
   [ -n "$TINYTEX_BIN" ] || fail "TinyTeX not found under ~/Library/TinyTeX/bin"
   export PATH="$TINYTEX_BIN:$PATH"
+  # Remove LaTeX byproducts left by other compilers (e.g. an editor's preview build).
+  # A stale .aux from a different LaTeX run can stop the Quarto render.
+  rm -f "$DRAFT_DIR"/*.aux "$DRAFT_DIR"/*.toc "$DRAFT_DIR"/*.fls "$DRAFT_DIR"/*.fdb_latexmk \
+        "$DRAFT_DIR"/*.synctex.gz "$DRAFT_DIR"/*.out
   RENDER_LOG="$(mktemp -t sync_to_prelim_render)"
   if ! (cd "$DRAFT_DIR" && "$QUARTO" render project3-ssbmf-draft.qmd) >"$RENDER_LOG" 2>&1; then
     tail -40 "$RENDER_LOG" >&2
