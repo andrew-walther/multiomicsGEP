@@ -4,8 +4,10 @@
 tasks: the L/F prior comparison (point-exponential on nonnegative input with
 `center_projection = TRUE` against the current point-Laplace fit), then the β prior, then
 methylation alone and the LB vs YFB study, then the M-modality fitter. It replaces the
-planned LB vs YFB study and the multimodal items below. This week's work uses the
-training patients only, with cohort strata, and lists every open plan with its status.
+planned LB vs YFB study and the multimodal items below. External cohorts are now for
+validation scoring only (DECISIONS.md, 2026-11-09). Task F redoes the gene screen, input
+scaling and rank on training CV, and task G designs a results list that rebuilds when the
+model changes. The plan also lists every open plan with its status.
 
 **Prelim Chapter 4 (2026-11-06).**
 

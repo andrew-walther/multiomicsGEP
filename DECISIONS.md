@@ -3,6 +3,30 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-09 — External cohorts are for validation scoring only; choices use training CV
+
+**Decided (Andrew).** Every modeling choice, from preprocessing and gene screening to
+priors, rank, survival weight and comparator tuning, is made by simulation and by five-fold
+cross-validation on the 273 TCGA and CPTAC training patients, or the matched TCGA patients
+for methylation. No portion of the training data is held out. Folds are balanced by cohort
+and event, and a step with its own tuning inside the fit uses nested CV. The five external
+expression series (Dijk, Moffitt, PACA-AU array, PACA-AU RNA-seq, Puleo) and the matched
+ICGC methylation set only score a model that is already fixed. Their results can be
+presented but never choose between models or settings. Pooled TCGA and CPTAC fits use
+cohort strata (`strata_id = cohort`), since the two cohorts differ.
+
+**Why.** This is the protocol DeSurv used on the same seven cohorts (Young et al., PNAS
+2026, Methods C and SI Appendix sections 5, 6, 8 and 14). Several earlier choices here used
+external concordance ([external-cohort audit](docs/findings/2026-11-06-external-cohort-uses.md)),
+so the external estimates are no longer independent of those choices. A held-out portion of
+the training data was considered and rejected: at about 55 patients it would estimate C
+with an SE near 0.05, against arm differences of 0.002 to 0.01.
+
+**Consequences.** The choices that still shape the working model and used external outcomes
+(the D4 gene screen, per-cohort standardization, and keeping K = 7) are redone on training
+CV in task F of the [November 9 week plan](docs/plans/2026-11-09-week-plan.md). Earlier
+external results stay on record, labeled with the model state that produced them.
+
 ## 2026-11-06 — Comparators, risk groups and program classification
 
 The fixed S-11 supervised fit is reported against DeSurv (authors' code and
