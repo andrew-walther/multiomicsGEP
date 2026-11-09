@@ -2,7 +2,7 @@
 
 ## Scope
 
-This follows commit `37a22c1`, which added within-stratum projection centering
+This follows commit `a463eea`, which added within-stratum projection centering
 to the canonical YFB fitter. The CV changes use its returned training means.
 Stratified concordance uses Harrell's within-stratum comparable pairs, pooled
 by pair counts. Held-out partial likelihood continues to use each held-out
@@ -34,7 +34,7 @@ different strata are outside this interpretation.
 and zero failures in the shared checkout, including the concurrent flat-β
 tests. The suite emitted the bounded-β profile-likelihood fallback warning.
 Both unstratified CV helpers returned identical results to their versions at
-`356347f` on the synthetic rank-CV fixture. Both centered helpers also
+`f5b91e0` on the synthetic rank-CV fixture. Both centered helpers also
 raised the unknown-stratum error in a singleton-stratum check. The tests
 compare predictions and concordance values because partial likelihood alone
 cannot detect omission of a within-stratum shift.

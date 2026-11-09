@@ -119,7 +119,7 @@ every changed file.
 ## Prompt 5: finish the 11/6 writeup (after Prompt 4)
 
 Finish `paper/writeup/2026-11-06-writeup/` from the plan in its README (phase 1 was done in
-`41c457c` and `356347f`). Fill the Chapter 4 figure placeholders with the figures Prompt 4
+`53b8aaa` and `f5b91e0`). Fill the Chapter 4 figure placeholders with the figures Prompt 4
 produced, keep every number computed from saved CSVs, and add S-13, S-14, S-15, KL-2 and the
 false-active contribution analysis from `docs/findings/2026-11-0*`. Render HTML and PDF, and
 update `paper/writeup/README.md`. List every changed file and every number with its source for

@@ -398,7 +398,7 @@ the real-data loadings. What changed:
 
 Paused at Andrew's request until the usage reset. State:
 
-- **Done:** step 1 (this plan update, commit `f97cfc6`); step 3 (outgoing text in
+- **Done:** step 1 (this plan update, commit `cc025b8`); step 3 (outgoing text in
   `paper/prelim/notes/trimmed-material-2026-11.md`); Chapter 1 passages rewritten in
   bios-dissertation (`prelim/literature-review/draft/literature-review-draft.qmd`, cut text in its
   `trimmed-material.md`), including Round 3 structural notes 1 and 2. The β update was checked:

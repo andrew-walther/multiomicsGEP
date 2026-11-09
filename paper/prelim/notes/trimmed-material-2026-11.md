@@ -2,7 +2,7 @@
 
 Written 2026-11-06. The revamp (plan: `docs/plans/2026-11-05-chapter4-revamp-plan.md`) makes the
 survival-weighted YFB fit the chapter's centerpiece. The text below is the chapter as it stood
-before the revamp (`paper/prelim/project3-ssbmf.qmd` at commit `f97cfc6`, body from the old bold
+before the revamp (`paper/prelim/project3-ssbmf.qmd` at commit `cc025b8`, body from the old bold
 Summary paragraph to the end of the Discussion). Nothing here is deleted from the record.
 
 ## What left the chapter, and why

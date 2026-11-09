@@ -54,7 +54,7 @@ the informative entries in its trace.
 
 The design, one row per fit, summary and run log are in
 `results/benchmark_sim/outputs/flat_beta_pruning_rerun_2026-11-06/`.
-The source snapshot used base `356347f` plus the two-file fitter patch
+The source snapshot used base `f5b91e0` plus the two-file fitter patch
 recorded in `provenance.txt`. This comparison uses current branch code,
 which includes changes since KL-1. The result supports retaining the K = 7
 unpruned working fit. Full-state refitting was outside this registration.

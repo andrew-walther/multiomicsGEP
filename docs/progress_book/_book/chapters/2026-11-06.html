@@ -267,7 +267,10 @@ window.Quarto = {
   <li><a href="#real-data-refit-with-the-survival-weight-chosen-by-cross-validation" id="toc-real-data-refit-with-the-survival-weight-chosen-by-cross-validation" class="nav-link" data-scroll-target="#real-data-refit-with-the-survival-weight-chosen-by-cross-validation"><span class="header-section-number">14.4.8</span> Real-data refit with the survival weight chosen by cross-validation</a></li>
   <li><a href="#real-data-comparators-and-desurv-style-analyses" id="toc-real-data-comparators-and-desurv-style-analyses" class="nav-link" data-scroll-target="#real-data-comparators-and-desurv-style-analyses"><span class="header-section-number">14.4.9</span> Real-data comparators and DeSurv-style analyses</a></li>
   </ul></li>
-  <li><a href="#open-items-and-questions" id="toc-open-items-and-questions" class="nav-link" data-scroll-target="#open-items-and-questions"><span class="header-section-number">14.5</span> Open items and questions</a></li>
+  <li><a href="#open-items-and-questions" id="toc-open-items-and-questions" class="nav-link" data-scroll-target="#open-items-and-questions"><span class="header-section-number">14.5</span> Open items and questions</a>
+  <ul class="collapse">
+  <li><a href="#next-steps-agreed-with-yusha-november-6" id="toc-next-steps-agreed-with-yusha-november-6" class="nav-link" data-scroll-target="#next-steps-agreed-with-yusha-november-6"><span class="header-section-number">14.5.1</span> Next steps agreed with Yusha (November 6)</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -357,7 +360,6 @@ window.Quarto = {
 <li><p><strong>Risk groups and programs are now reported in a transferable way.</strong> One cutpoint, chosen on the training patients, splits every external cohort into high and low risk. The high-risk group is richer in Basal-like and permCAF tumours in every cohort. A rule that combines effect size, share of the risk score and stability across folds names two main prognostic programs. False-active programs carry at most 1.3% of the risk score where the true program is found.</p></li>
 <li><p><strong>Deliverables are updated, and the branch is merged into main:</strong></p>
 <ul>
-<li>the revised prelim Chapter 4 (229-page prelim, assembly tests passing);</li>
 <li>the November 6 writeup;</li>
 <li>this chapter;</li>
 <li>the status documents.</li>
@@ -422,8 +424,8 @@ window.Quarto = {
 <tbody>
 <tr class="odd">
 <td>1. KL normalizer in the loading update</td>
-<td>Fixed in the code (<code>31db892</code>, exact-KL test). Rerun on 11/6 (first pruning simulation, <code>0fb8aba</code>): without pruning the fit recovers the planted program in 17 and 19 of 20 datasets, as before. With pruning, ordinary or protected, it recovers 11 of 20.</td>
-<td>Pruning still loses the planted program. The first pruning simulation found that an empty program’s KL term came out slightly positive instead of zero. That was fixed (<code>f3263d6</code>), and the repeat after that correction makes it plain: with pruning the fit recovers the program in only 2 of 20 datasets, against 17 and 19 without. The working fit stays at K = 7 without pruning (<code>docs/findings/2026-11-06-flat-beta-pruning-rerun-findings.md</code>).</td>
+<td>Fixed in the code (<code>31db892</code>, exact-KL test). Rerun on 11/6 (first pruning simulation, <code>b825142</code>): without pruning the fit recovers the planted program in 17 and 19 of 20 datasets, as before. With pruning, ordinary or protected, it recovers 11 of 20.</td>
+<td>Pruning still loses the planted program. The first pruning simulation found that an empty program’s KL term came out slightly positive instead of zero. That was fixed (<code>90963f3</code>), and the repeat after that correction makes it plain: with pruning the fit recovers the program in only 2 of 20 datasets, against 17 and 19 without. The working fit stays at K = 7 without pruning (<code>docs/findings/2026-11-06-flat-beta-pruning-rerun-findings.md</code>).</td>
 </tr>
 <tr class="even">
 <td>2. Double log₂ on RNA-seq</td>
@@ -437,28 +439,28 @@ window.Quarto = {
 </tr>
 <tr class="even">
 <td>4. Report the October 15 null result</td>
-<td>Recorded in DECISIONS.md, not yet in a writeup.</td>
-<td>Goes into the next writeup and the revised prelim Chapter 4.</td>
+<td>Done. The 11/6 writeup reports it alongside the current supervised fit.</td>
+<td>None.</td>
 </tr>
 <tr class="odd">
 <td>5. Fair comparison and risk orientation</td>
 <td>Orientation fixed in both named scripts (<code>b85d390</code>). No reported C value changed.</td>
-<td>The other runners that oriented with <code>max(C, 1 − C)</code> were fixed on 11/6 (<code>ea142a6</code>). Rescoring from saved scores reproduced every number that could be checked, including the rank-matched pooled ΔC of 0.0105 (−0.0125 to 0.0329) (<code>docs/findings/2026-11-06-orientation-audit.md</code>). The next writeup leads with this rank-7 comparison.</td>
+<td>The other runners that oriented with <code>max(C, 1 − C)</code> were fixed on 11/6 (<code>b6ef631</code>). Rescoring from saved scores reproduced every number that could be checked, including the rank-matched pooled ΔC of 0.0105 (−0.0125 to 0.0329) (<code>docs/findings/2026-11-06-orientation-audit.md</code>). The next writeup leads with this rank-7 comparison.</td>
 </tr>
 <tr class="even">
 <td>6. External-cohort uses and shared donors</td>
-<td>Done on 11/6 (<code>356347f</code>). Every decision that looked at external outcomes is listed with its record (<code>docs/findings/2026-11-06-external-cohort-uses.md</code>). Resampling donors instead of records leaves the pooled gain in the external scoring at +0.007 with interval −0.003 to +0.017, which still includes zero.</td>
+<td>Done on 11/6 (<code>f5b91e0</code>). Every decision that looked at external outcomes is listed with its record (<code>docs/findings/2026-11-06-external-cohort-uses.md</code>). Resampling donors instead of records leaves the pooled gain in the external scoring at +0.007 with interval −0.003 to +0.017, which still includes zero.</td>
 <td>Keep one cohort untouched by any future choice.</td>
 </tr>
 <tr class="odd">
 <td>7. Comparators (PurIST, DeSurv, elastic-net Cox, clinical)</td>
-<td>Open.</td>
-<td>A real-data comparator runner, next after the supervision decision.</td>
+<td>Done on 11/6 except the clinical model (see the comparator section below).</td>
+<td>A clinical model on the subsets of cohorts that record age or resection margin.</td>
 </tr>
 <tr class="even">
 <td>8. Reproducible writeup</td>
 <td>Test baselines are stored as fixtures (<code>1703bc6</code>).</td>
-<td>The 11/6 writeup now computes its numbers from saved CSVs (<code>41c457c</code>), as this chapter’s new sections do. The fits still need to be stored on Longleaf with the path recorded.</td>
+<td>The 11/6 writeup now computes its numbers from saved CSVs (<code>53b8aaa</code>), as this chapter’s new sections do. The fits still need to be stored on Longleaf with the path recorded.</td>
 </tr>
 </tbody>
 </table>
@@ -1784,12 +1786,19 @@ window.Quarto = {
 <li><strong>Classifying programs for the biology.</strong> The rule names programs 2 and 3 on real data. Its fold-stability part has not been checked in simulation, because the saved simulation fits have no fold-level program identities.</li>
 <li><strong>Unequal risk groups.</strong> The registered cutpoints give high-risk groups of different sizes, so group HRs cannot rank the two scores. Continuous HRs and paired C are the comparison.</li>
 <li><strong>Pruning.</strong> With the empty-program KL fixed, pruning removes the planted program in nearly every dataset. The working fit stays at K = 7 without pruning. Whether a different deletion rule can work is a separate question.</li>
-<li><strong>Issue #6.</strong> The comparators (item 7) and the writeup and prelim text (items 2, 4 and 5) are done. Still open: storing the fits (item 8) and the Linux check (item 3). A clinical-covariate model was not possible under the registered rule.</li>
-<li><strong>Matched LB and YFB study.</strong> It now has the nonnegative input it needs, with projection-only centering (including within strata).</li>
-<li><strong>Writing.</strong> The prelim Chapter 4 revision and the 11/6 writeup are complete and include these comparisons.</li>
+<li><strong>Issue #6.</strong> The comparators (item 7) and the writeup text (items 2, 4 and 5) are done. Still open: storing the fits (item 8), the Linux check (item 3) and a clinical model on the cohorts that record age or resection margin (item 7).</li>
+<li><strong>Writing.</strong> The 11/6 writeup is complete and includes these comparisons.</li>
+</ul>
+<section id="next-steps-agreed-with-yusha-november-6" class="level3" data-number="14.5.1">
+<h3 data-number="14.5.1" class="anchored" data-anchor-id="next-steps-agreed-with-yusha-november-6"><span class="header-section-number">14.5.1</span> Next steps agreed with Yusha (November 6)</h3>
+<ul>
+<li><strong>Compare the LB and YFB models directly.</strong> Fit both on the same training patients and compare validation C, the learned programs (loading correlations) and the two Cox linear predictors, using fold-in prediction for LB. The study now has the nonnegative input it needs, with projection-only centering (including within strata).</li>
+<li><strong>Fit the single-modality model to methylation as well as expression.</strong> Programs that appear in the methylation fit but not the expression fit would show what a second data type adds, which is the motivation for the multimodal model.</li>
+<li><strong>Continue the multimodal extension</strong> with a separate loading prior for each data type.</li>
 </ul>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

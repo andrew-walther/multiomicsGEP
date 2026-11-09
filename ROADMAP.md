@@ -251,7 +251,7 @@ The entries below retain dated implementation and evaluation history.
   point-Laplace priors. Include the
   real PDAC training data and external validation cohorts alongside the simulations.
 
-- [ ] **Finish the November 6 writeup version.** The preparation phase is done (`41c457c`,
+- [ ] **Finish the November 6 writeup version.** The preparation phase is done (`53b8aaa`,
   numbers computed from saved CSVs). It is being finished together with the prelim Chapter 4
   revision (`docs/prompts/2026-11-06-codex-handoff-prompts.md`, prompts 4 and 5).
 

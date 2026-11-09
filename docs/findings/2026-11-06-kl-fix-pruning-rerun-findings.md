@@ -1,9 +1,9 @@
 # Single-modality pruning after the KL fix (attempt KL-1)
 
 Issue #6, item 1. Registration: [`2026-11-06-kl-fix-pruning-rerun-plan.md`](../plans/2026-11-06-kl-fix-pruning-rerun-plan.md),
-commit f8e7eab. Outputs: `results/benchmark_sim/outputs/kl_fix_pruning_rerun_2026-11-06/`
+commit 0aad350. Outputs: `results/benchmark_sim/outputs/kl_fix_pruning_rerun_2026-11-06/`
 (`results.csv`, `summary.csv`, one CSV per fit in `cells/`). Runner:
-`results/benchmark_sim/run_kl_fix_pruning_rerun.R`, run from a `git archive` of f8e7eab with
+`results/benchmark_sim/run_kl_fix_pruning_rerun.R`, run from a `git archive` of 0aad350 with
 4 PSOCK workers.
 
 ## Summary
