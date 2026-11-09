@@ -12,7 +12,8 @@ for methylation. No portion of the training data is held out. Folds are balanced
 and event, and a step with its own tuning inside the fit uses nested CV. The five external
 expression series (Dijk, Moffitt, PACA-AU array, PACA-AU RNA-seq, Puleo) and the matched
 ICGC methylation set only score a model that is already fixed. Their results can be
-presented but never choose between models or settings. Pooled TCGA and CPTAC fits use
+presented, and scoring can be run at any time for reporting, but external results never
+choose between models or settings. Pooled TCGA and CPTAC fits use
 cohort strata (`strata_id = cohort`), since the two cohorts differ.
 
 **Why.** This is the protocol DeSurv used on the same seven cohorts (Young et al., PNAS
@@ -36,7 +37,7 @@ within noise of DeSurv and elastic-net Cox, so the comparison supports no
 loss and no gain. Risk groups use one out-of-fold training cutpoint per score.
 Group HRs from different cutpoints are not used to rank scores, because the
 high-risk groups differ in size (297 against 144 of 616 records). Pooled Cox
-intervals are reported with donor clustering in addition to the registered
+intervals are reported with donor clustering in addition to the planned
 model-based intervals, because 47 PACA-AU donors appear in both assays. A
 main prognostic program needs a coefficient ratio of at least 0.25, a signed
 risk-variance share of at least 5% and activity in four of five folds.
@@ -55,7 +56,7 @@ survival weight, point-Laplace molecular priors and Normal coefficient
 priors. S-15 retained the weight and KL-2 supported keeping the unpruned
 working fit. The lead comparator uses the same rank and preprocessing with
 an unsupervised factorization followed by Cox regression. The chapter reports
-the October registered result, the donor-resampled external interval and
+the October result planned before running, the donor-resampled external interval and
 the limited effect of survival on the observed expression loadings.
 Multimodal modeling remains proposed. The
 [revamp checklist](docs/plans/2026-11-05-chapter4-revamp-plan.md) and
@@ -151,7 +152,7 @@ z-scored input left 1, 1 and 0 live programs). Without centering no program was 
 any seed; with centering one or two programs were active in every seed. The active program matched
 the planted loadings in seeds 1 and 3 (correlation 0.84 and 0.66); in the other seeds it did not, so
 those are false-active. Loading recovery was weak either way (best correlation 0.08–0.84). This is a development
-check, not a registered evaluation; the option is not adopted as a default.
+check, not an evaluation planned before running; the option is not adopted as a default.
 
 **Files.** `code/fit_ssbmf_yfb.R`, `code/predict_ssbmf_yfb.R`, `tests/test_projection_centering.R`
 (reference fits from the earlier fitter in `tests/fixtures/yfb-projection-centering-off-reference.rds`).
@@ -167,7 +168,7 @@ on its own, a fixed vector defines a common score offset.
 A deterministic example shows that canonicalization near the score-spread
 floor can alter the loading precision used by the dead-update rule while
 preserving reconstructed expression. Keep the rule for this change and
-review the example before registering a remedy. See the
+review the example before planning a remedy. See the
 [stratified CV handoff](docs/reviews/2026-11-06-stratified-yfb-cv-handoff.md).
 
 ## 2026-11-06 — LB fold-in prediction; post-fit sign flip removed
@@ -221,7 +222,7 @@ Test: `tests/test_lb_sign_correction.R` (fails on the old check, passes on the n
 
 ## 2026-11-06 — The real-data fit stays at w_S = 1 (S-15)
 
-**Decided by the registered rule.** CV partial log-likelihood over w_S in {1, ..., 50} picks 1 on
+**Decided by the rule planned before running.** CV partial log-likelihood over w_S in {1, ..., 50} picks 1 on
 the training data, so the S-11 fit and its S-12 external scoring stand. The curve is flat
 (a change of 0.26 out of 775). Survival's share of the loading precision stays below 10⁻⁴ even at
 w_S = 50, and the loadings equal the unsupervised ones.
@@ -238,7 +239,7 @@ Findings: `docs/findings/2026-11-06-supervised-real-refit-findings.md`.
 
 **Decided (pending Andrew's review).** Neither the survival-block weight (A1) nor the joint q(β)
 (A2) passes every S-13 criterion: calibration slopes at the CV-selected weight are 1.24 to 1.45
-in the S-9 cells (registered band 0.8 to 1.25), and A1's null false-active is 1.1 at its modal
+in the S-9 cells (planned band 0.8 to 1.25), and A1's null false-active is 1.1 at its modal
 weight. S-14's primary recovery criterion fails in all three strong near-threshold cells, on false
 activity that the two-step fit shares. Default fitter settings are unchanged.
 
@@ -248,7 +249,7 @@ fits stop converging. Against the matched two-step fit, supervision gives the sa
 the S-9 cells. Near the detection threshold (S-14, planted share 0.05%) it gives higher validation
 C (+0.156) and recovers the program in 5 of 10 datasets where the two-step fit finds none. The
 joint q(β) adds nothing measurable over mean-field. If Andrew agrees, the next real-data refit uses
-A1 with the CV-chosen weight, registered before it runs.
+A1 with the CV-chosen weight, planned before it runs.
 
 **Correction.** The two-step reference's training Cox fit used `coxph`'s default tie correction,
 which attenuates it on the extreme simulated times. It was rerun with exact times in S-13 and
@@ -260,7 +261,7 @@ Findings: `docs/findings/2026-11-05-supervision-strength-findings.md`,
 
 ## 2026-11-04 — Fixed single-modality configuration from training CV (S-11)
 
-**Decided (from registered training CV; pending Andrew's review).** `fit_ssbmf_yfb(canonicalize =
+**Decided (from training CV planned before running; pending Andrew's review).** `fit_ssbmf_yfb(canonicalize =
 TRUE, w_S = 1)` on the D4 gene set (2,218 genes under the single log), with no survival screen.
 Training CV C 0.663 (SE 0.024), against 0.652 for unsupervised loadings followed by Cox. Larger
 gene sets do no better (0.643 to 0.657), and survival-screened sets add at most about one SE.
@@ -272,7 +273,7 @@ strength (a calibrated likelihood power, a downweighted genomics term, or normal
 in DeSurv), since fixed weights of 40 or more broke convergence in S-9.
 
 **Correction.** Under `canonicalize = TRUE`, w_S = 0 also removes survival from the β update
-(β = 0). The S-9 and S-11 registrations described it as "β still fitted". The unsupervised
+(β = 0). The S-9 and S-11 plans described it as "β still fitted". The unsupervised
 comparison is computed from its loadings with a separate Cox fit.
 
 Findings: `docs/findings/2026-11-04-supervised-real-data-findings.md`.
@@ -301,7 +302,7 @@ Findings: `docs/findings/2026-11-04-survival-weight-p2000-findings.md`.
 
 ## 2026-11-04 — Real-data work follows a working simulation result, not only a literal Gate S pass
 
-**Decided (Andrew).** Gate S stays as registered and is reported literally for S-9, including if it
+**Decided (Andrew).** Gate S stays as planned before running and is reported literally for S-9, including if it
 fails. Moving to real data does not require a literal pass. If the survival-weighted fit works in
 simulation at 2,000 genes (it recovers the planted program, converges, and its false activity and
 β calibration are close to the criteria rather than broken), the next step is the real training
@@ -311,7 +312,7 @@ data, and tuning continues alongside. If it does not work, S-10 (downweighted ge
 prediction C from training cross-validation; the feature-set-size curve from 2,000 genes to the
 full gene set, with per-size numbers and an elbow plot; and the survival-screening comparison
 (unsupervised screen versus the same screen plus a fold-internal Cox screen) rerun with the
-survival-weighted fit. The registered steps are in
+survival-weighted fit. The planned steps are in
 `docs/plans/2026-11-03-survival-weight-p2000-plan.md`.
 
 **External cohorts (amended the same day by Andrew).** External cohorts still choose nothing:
@@ -364,7 +365,7 @@ not carried into the package.
 ## 2026-11-02 — Supervision and publication priorities
 
 Reliable survival supervision of the molecular loadings is the top priority.
-Start with the S-9 YFB test and its registered recovery, false-active and
+Start with the S-9 YFB test and its planned recovery, false-active and
 convergence criteria. Investigate LB with fold-in prediction if YFB stalls.
 Multimodal development is deferred except when a unified fitter run with
 M = 1 offers a concrete route to resolving supervision. The single-modality
@@ -508,7 +509,7 @@ No exactly duplicated test bodies or safe semantic deletion was established;
 retain tests/evidence and recommend separate lossless trace compression with
 consumer/provenance checks. No cleanup or history rewrite executed.
 
-Resume only the proposed fixed-q Single cell021 mechanism check, registered
+Resume only the proposed fixed-q Single cell021 mechanism check, planned
 as Task2-9 before execution. Four density/control/recovery checks and full
 suite710/0 pass. No new default, bed, criterion or external score. Do not
 expand automatically from its outcome.
@@ -650,7 +651,7 @@ finding, not an adopted repair or established explanation for real-data collapse
 
 ## 2026-10-15 — Complete descriptive CpG variability; retain existing feature rules
 
-The preregistered Task5-QC1 describes305492 TCGA probes on144 unchanged
+The pre-planned Task5-QC1 describes305492 TCGA probes on144 unchanged
 training patients without imputation or outcome use. Mean-beta and
 extreme-proportion rules retain182996 and221222 probes. The mean rule
 would exclude10 currently screened probes. Median beta SD .0600 over all
@@ -743,7 +744,7 @@ The already undefined reference fold remains NA, so the paired-CV criterion
 cannot pass without a separate decision; no rule is changed here.
 
 The implementation and fixed102-record evaluation (92 new fits,10 cached
-references) are preregistered before execution. Scientific results are pending.
+references) are planned before execution. Scientific results are pending.
 The proposal records the derivation, supported cases and mathematical limits.
 
 ## 2026-10-15 — Do not adopt the fixed shared beta prior after the full evaluation
@@ -786,7 +787,7 @@ Protection now requires positive posterior SD as well as |Eβ|≥1.96 SD(β), so
 point-mass-zero programs remain eligible for ELBO pruning. Single-modality fits
 are assessed under their ELBO rule; multimodal fits under their established
 output-change rule. These corrections implement Andrew's decision, not a new
-selection threshold. The complete rank panel is pre-registered in
+selection threshold. The complete rank panel is planned in
 `docs/plans/2026-10-16-round2-attempts-log.md`. No adoption is claimed before its results;
 the interim-writeup benchmark and fitting defaults remain unchanged.
 
@@ -805,7 +806,7 @@ sandbox/socket failure preceding the successful retry are in the Round2 handoff.
 
 ## 2026-10-15 — Diagnose absorbing shared prior; retain the benchmark
 
-The ten pre-registered TCGA contrasts completed without errors/warnings.
+The ten pre-planned TCGA contrasts completed without errors/warnings.
 Selected multimodal slab probability becomes0 at outer99/inner1, followed by
 permanent zero beta moments from inner2. Without supervised initialization the
 same sequence occurs at outer54/inner3–4. Fixed starting Laplace and shared
@@ -853,7 +854,7 @@ no fitting default or stopping criterion changes. Full and centered molecular
 prediction changes diagnose intercept allocation, rather than replace the
 established raw-output stopping rule. Small tests verify diagnostic identity.
 
-The ten fixed TCGA-only contrasts and their hypothesis checks are registered
+The ten fixed TCGA-only contrasts and their hypothesis checks are planned
 before fitting in `docs/plans/2026-10-16-round2-attempts-log.md`. The unchanged imputed
 training cache extraction is explicitly authorized by Andrew. No external
 outcomes or scores choose a remedy. This decision authorizes diagnosis only;
@@ -903,7 +904,7 @@ remedy beyond the Round2 handoff's listed K-selection ladder. Do not change a
 threshold, criterion, simulation bed or fitting default. This authorizes a test,
 not adoption or benchmark replacement.
 
-The pre-registered first-seed case trace identifies a refit loss: at noise .25,
+The pre-planned first-seed case trace identifies a refit loss: at noise .25,
 the K = 7 planted program is credibly prognostic and protected (loading |cor| .896),
 a different program is deleted, and the K = 6 refit loses recovery (best |cor| .391).
 The shared beta prior remains nondegenerate. At noise 1 the signal survives but
@@ -3404,7 +3405,7 @@ report rebuilt. Neither finding changed any reported number; both are documentat
 386/386 before the two review-driven test additions above).
 
 **Files:** `code/concordance_ci.R` (new; degenerate-resample guard added post-review),
-`tests/test_concordance_ci.R` (new, TDD, 18/18), `tests/run_tests.R` (registered),
+`tests/test_concordance_ci.R` (new, TDD, 18/18), `tests/run_tests.R` (added to the runner),
 `results/benchmark_sim/run_desurv_comparison.R` (added risk-score caching),
 `results/benchmark_sim/run_ebmf_cox_external.R` (added risk-score caching; re-run — refreshed stale
 output), `results/benchmark_sim/run_external_ci_analysis.R` (new),
@@ -5994,7 +5995,7 @@ scales, so the projection scaling remains fixed during the gene-wise sweep.
 
 The analytical and direct-sum training precision audit confirms that the simple
 feature/event γ does not ensure substantial loading supervision. Use the
-registered median-precision-share targets instead. DeSurv's installed revision
+planned median-precision-share targets instead. DeSurv's installed revision
 cc9d4c2486b3125704ab71eea61f35e040a40080 normalizes squared reconstruction by
 2‖X‖², and Cox log likelihood by 2/N_event, scales Cox gradients relative to
 reconstruction gradients, clamps multiplicative loading ratios to [0.2,5], and
@@ -6005,7 +6006,7 @@ Source: https://github.com/rashidlab/DeSurv/blob/cc9d4c2486b3125704ab71eea61f35e
 A smoke test exposed point-mass columns: the compiled sweep intentionally has
 no pseudo-observation for a fully dead prior. Keep q=g=δ₀ and KL=0 directly,
 instead of passing its undefined pseudo-observation back to ebnm. This is a
-boundary-case implementation correction, made before the registered run.
+boundary-case implementation correction, made before the planned run.
 
 ## 2026-10-30 — Stable evaluation of the point-exponential EBNM posterior
 
@@ -6023,7 +6024,7 @@ kernel is unchanged; the stable kernel is isolated to the opt-in fitter.
 Bounded coefficient prior fitting keeps the same parameter space. A saved
 line-search failure is handled by a profile-likelihood search with a warning;
 failed fallback remains a diagnosed fit failure. Original simulation results
-are not replaced; attempt S-4 is registered before execution.
+are not replaced; attempt S-4 is planned before execution.
 
 
 ## 2026-10-30 — Canonical boundary cases and explicit posterior variances
@@ -6050,7 +6051,7 @@ are formed from squared means plus the separate variance.
 
 The fifth driver was stopped after a completed checkpoint showed lost
 coefficient variance. Preserve all saved and unstarted records explicitly.
-The sixth attempt is separately registered with the original arms and gate.
+The sixth attempt is separately planned with the original arms and gate.
 No invalid uncertainty calculation can be counted as a valid gate fit.
 
 ### 2026-10-30 — use one prepared loading in the simulation's reconstruction and risk
@@ -6058,7 +6059,7 @@ No invalid uncertainty calculation can be counted as a valid gate fit.
 The first six supervision grids incorrectly combined a raw-expression risk
 direction with an SD-transformed reconstruction loading. Retain them as
 numerical/design diagnostics rather than a valid shared-loading recovery test.
-The seventh registration uses F/SD_train in both components, normalizing that
+The seventh planned attempt uses F/SD_train in both components, normalizing that
 direction only for Cox coefficient units and retaining the training direction
 for validation. Preserve the original raw variance cells and the gate; save
 prepared variance shares and oracle discrimination explicitly. This correction
@@ -6104,6 +6105,6 @@ equal-weight mean of the within-series differences. Resample donors within
 groups defined by their observed series membership. A donor's array and
 RNA-seq records receive the same bootstrap multiplicity. This preserves the
 series-specific concordance comparisons while accounting for shared donors
-in the interval. The original record-level interval remains the registered
+in the interval. The original record-level interval remains the planned
 analysis. See the [external-cohort audit](docs/findings/2026-11-06-external-cohort-uses.md)
 for provenance and both intervals.

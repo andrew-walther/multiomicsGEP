@@ -105,7 +105,7 @@ Keep the fitter and pruning rule as written for this follow-up. Review the CV
 integration and the deliberate missing-stratum error first. For the numerical
 issue, the next scientific decision is how to separate an estimable
 genomics-only program from a collapsed program in a way that is robust to
-factor scaling. An eventual change needs a registered evaluation of planted
+factor scaling. An eventual change needs an evaluation, planned before running, of planted
 recovery, false-active programs and convergence, and should preserve genuine
 genomics-only structure. This diagnostic supplies a reproducible edge case
 for that evaluation.
