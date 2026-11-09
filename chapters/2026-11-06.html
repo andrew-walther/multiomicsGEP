@@ -268,10 +268,7 @@ window.Quarto = {
   <li><a href="#real-data-refit-with-the-survival-weight-chosen-by-cross-validation" id="toc-real-data-refit-with-the-survival-weight-chosen-by-cross-validation" class="nav-link" data-scroll-target="#real-data-refit-with-the-survival-weight-chosen-by-cross-validation"><span class="header-section-number">14.4.8</span> Real-data refit with the survival weight chosen by cross-validation</a></li>
   <li><a href="#real-data-comparators-and-desurv-style-analyses" id="toc-real-data-comparators-and-desurv-style-analyses" class="nav-link" data-scroll-target="#real-data-comparators-and-desurv-style-analyses"><span class="header-section-number">14.4.9</span> Real-data comparators and DeSurv-style analyses</a></li>
   </ul></li>
-  <li><a href="#open-items-and-questions" id="toc-open-items-and-questions" class="nav-link" data-scroll-target="#open-items-and-questions"><span class="header-section-number">14.5</span> Open items and questions</a>
-  <ul class="collapse">
-  <li><a href="#next-steps-agreed-with-yusha-november-6" id="toc-next-steps-agreed-with-yusha-november-6" class="nav-link" data-scroll-target="#next-steps-agreed-with-yusha-november-6"><span class="header-section-number">14.5.1</span> Next steps agreed with Yusha (November 6)</a></li>
-  </ul></li>
+  <li><a href="#open-items-and-planned-next-steps" id="toc-open-items-and-planned-next-steps" class="nav-link" data-scroll-target="#open-items-and-planned-next-steps"><span class="header-section-number">14.5</span> Open items and planned next steps</a></li>
   </ul>
 </nav>
     </div>
@@ -1780,26 +1777,21 @@ window.Quarto = {
 <p>All arms recovered the strong program in every dataset. At <code>w_S = 1</code> the supervised and two-step fits recovered the near-threshold program equally often. A fixed <code>w_S = 5</code> lost it in most datasets and had lower validation C. This compares two fixed weights and does not test the cross-validated choice.</p>
 </section>
 </section>
-<section id="open-items-and-questions" class="level2" data-number="14.5">
-<h2 data-number="14.5" class="anchored" data-anchor-id="open-items-and-questions"><span class="header-section-number">14.5</span> Open items and questions</h2>
+<section id="open-items-and-planned-next-steps" class="level2" data-number="14.5">
+<h2 data-number="14.5" class="anchored" data-anchor-id="open-items-and-planned-next-steps"><span class="header-section-number">14.5</span> Open items and planned next steps</h2>
 <ul>
 <li><strong>Stronger supervision on real data.</strong> Moving the real-data loadings needs weights near 10⁴. That first needs the fit to stay stable at large weights, the problem the fixed-weight simulation found and did not solve.</li>
 <li><strong>Classifying programs for the biology.</strong> The rule names programs 2 and 3 on real data. Its fold-stability part has not been checked in simulation, because the saved simulation fits have no fold-level program identities.</li>
-<li><strong>Unequal risk groups.</strong> The registered cutpoints give high-risk groups of different sizes, so group HRs cannot rank the two scores. Continuous HRs and paired C are the comparison.</li>
+<li><strong>Unequal risk groups.</strong> The training cutpoints give high-risk groups of different sizes, so group HRs cannot rank the two scores. Continuous HRs and paired C are the comparison.</li>
 <li><strong>Pruning.</strong> With the empty-program KL fixed, pruning removes the planted program in nearly every dataset. The working fit stays at K = 7 without pruning. Whether a different deletion rule can work is a separate question.</li>
 <li><strong>Issue #6.</strong> The comparators (item 7) and the writeup text (items 2, 4 and 5) are done. Still open: storing the fits (item 8), the Linux check (item 3) and a clinical model on the cohorts that record age or resection margin (item 7).</li>
 <li><strong>Writing.</strong> The 11/6 writeup is complete and includes these comparisons.</li>
-</ul>
-<section id="next-steps-agreed-with-yusha-november-6" class="level3" data-number="14.5.1">
-<h3 data-number="14.5.1" class="anchored" data-anchor-id="next-steps-agreed-with-yusha-november-6"><span class="header-section-number">14.5.1</span> Next steps agreed with Yusha (November 6)</h3>
-<ul>
 <li><strong>Compare the LB and YFB models directly.</strong> Fit both on the same training patients and compare validation C, the learned programs (loading correlations) and the two Cox linear predictors, using fold-in prediction for LB. The study now has the nonnegative input it needs, with projection-only centering (including within strata).</li>
 <li><strong>Fit the single-modality model to methylation as well as expression.</strong> Programs that appear in the methylation fit but not the expression fit would show what a second data type adds, which is the motivation for the multimodal model.</li>
 <li><strong>Continue the multimodal extension</strong> with a separate loading prior for each data type.</li>
 </ul>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
