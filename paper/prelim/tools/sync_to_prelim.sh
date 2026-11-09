@@ -105,12 +105,21 @@ if [ "$NO_RENDER" -eq 0 ]; then
   TINYTEX_BIN="$(ls -d "$HOME"/Library/TinyTeX/bin/* 2>/dev/null | head -1)"
   [ -n "$TINYTEX_BIN" ] || fail "TinyTeX not found under ~/Library/TinyTeX/bin"
   export PATH="$TINYTEX_BIN:$PATH"
-  # Remove LaTeX byproducts left by other compilers (e.g. an editor's preview build).
-  # A stale .aux from a different LaTeX run can stop the Quarto render.
-  rm -f "$DRAFT_DIR"/*.aux "$DRAFT_DIR"/*.toc "$DRAFT_DIR"/*.fls "$DRAFT_DIR"/*.fdb_latexmk \
-        "$DRAFT_DIR"/*.synctex.gz "$DRAFT_DIR"/*.out
+  # Render in a temporary copy of the draft folder, then copy back only the .tex
+  # and PDF. An editor previewing the draft .tex (e.g. Lattice) compiles in the
+  # real draft folder; rendering elsewhere keeps the two LaTeX runs from writing
+  # the same .aux/.pdf files at once. The copy keeps the draft's relative paths
+  # (../../../references.bib, ../../../../templates/...) by linking those in.
+  RENDER_ROOT="$(mktemp -d -t sync_to_prelim_root)"
+  RENDER_DIR="$RENDER_ROOT/prelim/project-proposals/project3-ssbmf/draft"
+  mkdir -p "$RENDER_DIR"
+  ln -s "$BIOS/prelim/references.bib" "$RENDER_ROOT/prelim/references.bib"
+  ln -s "$BIOS/templates" "$RENDER_ROOT/templates"
+  cp -R "$DRAFT_DIR/project3-ssbmf-draft.qmd" "$DRAFT_DIR/bios-prelim.cls" "$RENDER_DIR/"
+  if [ -d "$DRAFT_DIR/figures" ]; then cp -R "$DRAFT_DIR/figures" "$RENDER_DIR/"; fi
   RENDER_LOG="$(mktemp -t sync_to_prelim_render)"
-  if ! (cd "$DRAFT_DIR" && "$QUARTO" render project3-ssbmf-draft.qmd) >"$RENDER_LOG" 2>&1; then
+  if ! (cd "$RENDER_DIR" && "$QUARTO" render project3-ssbmf-draft.qmd) >"$RENDER_LOG" 2>&1; then
+    rm -rf "$RENDER_ROOT"
     tail -40 "$RENDER_LOG" >&2
     fail "quarto render failed (full log: $RENDER_LOG); nothing committed"
   fi
@@ -118,6 +127,8 @@ if [ "$NO_RENDER" -eq 0 ]; then
   if grep -i -E 'citeproc: reference .* not found|unable to resolve|undefined references|Reference .* undefined|Citation .* undefined' "$RENDER_LOG" >&2; then
     fail "render reported unresolved citations or references (log: $RENDER_LOG); nothing committed"
   fi
+  cp "$RENDER_DIR/project3-ssbmf-draft.tex" "$RENDER_DIR/project3-ssbmf-draft.pdf" "$DRAFT_DIR/"
+  rm -rf "$RENDER_ROOT"
   PDF="$DRAFT_DIR/project3-ssbmf-draft.pdf"
   if command -v pdftotext >/dev/null 2>&1; then
     n_qq="$(pdftotext "$PDF" - | grep -c '??' || true)"
