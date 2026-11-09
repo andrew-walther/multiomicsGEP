@@ -179,7 +179,7 @@ if [ "$HAVE_PDF" -eq 1 ]; then
 fi
 BIOS_COMMIT="no commit (nothing changed)$PDF_NOTE"
 if ! git -C "$BIOS" diff --cached --quiet -- "${PATHS[@]}"; then
-  git -C "$BIOS" commit -q -m "Sync Chapter 4 from multiomicsGEP $SHA" -- "${PATHS[@]}"
+  PRELIM_SYNC=1 git -C "$BIOS" commit -q -m "Sync Chapter 4 from multiomicsGEP $SHA" -- "${PATHS[@]}"
   # Belt and braces: the commit must touch nothing outside the target dir.
   outside="$(git -C "$BIOS" show --name-only --format= HEAD | grep -v "^$TARGET_REL/" || true)"
   [ -z "$outside" ] || fail "commit $(git -C "$BIOS" rev-parse --short HEAD) touched paths outside $TARGET_REL: $outside"
