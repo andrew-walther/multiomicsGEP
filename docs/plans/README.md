@@ -49,6 +49,7 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 | 2026-11-06 | [Flat β pruning rerun](2026-11-06-flat-beta-pruning-rerun-plan.md) | Repeat KL-1 after fixing the flat β likelihood | complete |
 | 2026-11-05 | [chapter4-revamp-plan](2026-11-05-chapter4-revamp-plan.md) | Revamp prelim Chapter 4 around the supervised w_S = 1 YFB fit: outline, results checklist (tables, figures, biology), affected documents | not started |
 | 2026-11-05 | [chapter4-revamp-prompt](2026-11-05-chapter4-revamp-prompt.md) | Session prompt for the Chapter 4 revamp | not started |
+| 2026-11-09 | [week-plan](2026-11-09-week-plan.md) | Week of 11/9: L/F prior (point-exponential vs point-Laplace), β prior, methylation alone, M-modality fitter, LB vs YFB with fold-in; Puleo held out; inventory of open plans | active; nothing run yet |
 
 ## Superseded and historical plans
 

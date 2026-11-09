@@ -1,5 +1,12 @@
 # multiomicsGEP — Research Roadmap
 
+**Week of 2026-11-09.** The [week plan](docs/plans/2026-11-09-week-plan.md) orders five
+tasks: the L/F prior comparison (point-exponential on nonnegative input with
+`center_projection = TRUE` against the current point-Laplace fit), then the β prior, then
+methylation alone and the LB vs YFB study, then the M-modality fitter. It replaces the
+planned LB vs YFB study and the multimodal items below, keeps Puleo out of every new
+choice, and lists every open plan with its status.
+
 **Prelim Chapter 4 (2026-11-06).**
 
 - [x] Revise the chapter around the survival-weighted YFB fit. The
