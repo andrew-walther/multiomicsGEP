@@ -164,7 +164,7 @@ The single-modality model is the case $M=1$ of a model for $M$ matched data type
 $$
 \mathbf{Y}_m = \mathbf{L}\mathbf{F}_m^\top + \mathbf{E}_m,\qquad E_{m,ij}\sim N(0,\tau_{mj}^{-1}),\qquad \eta_i=\sum_k z_{ik}\beta_k,\qquad \mathbf{Z}=\sum_{m=1}^M \mathbf{Y}_m\mathbf{F}_m .
 $$
-Each program has a separate point-Laplace prior $g_{\mathbf{F}_{mk}}$ for each modality. Estimating the priors by empirical Bayes allows a sparser prior for the much larger set of methylation sites. Every update keeps the single-modality form. The score update sums the expression terms over modalities, each $\mathbf{F}_m$ update uses the joint score, and the coefficient update uses the joint score with its variance summed over modalities. With $M=1$ every formula reduces to the one above.
+Each program has a separate point-Laplace prior $g_{\mathbf{f}_{mk}}$ for each modality. Estimating the priors by empirical Bayes allows a sparser prior for the much larger set of methylation sites. Every update keeps the single-modality form. The score update sums the expression terms over modalities, each $\mathbf{F}_m$ update uses the joint score, and the coefficient update uses the joint score with its variance summed over modalities. With $M=1$ every formula reduces to the one above.
 
 The derivation identifies a balance problem the single-modality model does not have. The precision of the shared scores sums over all features, so the modality with more features, methylation in the planned application, would dominate $\mathbf{L}$, and the survival share falls with the total number of features. Modality-specific weights on the reconstruction terms may therefore be needed. They will be derived and checked in simulation before any real-data fit. We will implement the model in one fitter and check that its $M=1$ case reproduces the single-modality fit to numerical tolerance. We will evaluate the extension in two-modality simulations with modality-specific programs and one shared prognostic program. The planned application uses matched TCGA expression and methylation with validation in ICGC PACA-AU. We will test whether adding methylation improves external concordance over an expression-only fit. The criterion is a positive paired difference with an interval that excludes zero. We will also assess whether adding methylation identifies a prognostic program missed by the expression-only fit.
 
@@ -397,7 +397,7 @@ Three fitted programs were survival-active. Program 2 was protective at its posi
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\caption[Program classification on the supervised training fit]{Program classification on the supervised training fit. The coefficient ratio is $|E\beta_k|\,\mathrm{SD}(\mathbf{Y}E[\mathbf{F}_k])$ relative to the largest program. The signed share is $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$ and sums to one over programs. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. A main program needs a ratio of at least 0.25, a share of at least 5\% and at least four active folds. Programs with ratio below 0.1 and no activity are omitted.}
+\caption[Program classification on the supervised training fit]{Program classification on the supervised training fit. The coefficient ratio is $|E\beta_k|\,\mathrm{SD}(\mathbf{Y}E[\mathbf{f}_k])$ relative to the largest program. The signed share is $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$ and sums to one over programs. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. A main program needs a ratio of at least 0.25, a share of at least 5\% and at least four active folds. Programs with ratio below 0.1 and no activity are omitted.}
 \label{tab:program-rule}
 \small
 \begin{tabular}{lccccc}
@@ -422,7 +422,7 @@ Figure \ref{fig:programs} shows how the same genes load across the fitted progra
 \centering
 \small
 \setlength{\tabcolsep}{2.5pt}
-\caption[Programs of the survival-supervised fit on the training cohorts ($n=273$)]{Programs of the survival-supervised fit on the training cohorts ($n=273$). $E[\beta]$ is the posterior mean coefficient per SD of the program score $\mathbf{Z}_k = \mathbf{Y}\,E[\mathbf{F}_k]$ (posterior SD in parentheses), $z = E[\beta]/\mathrm{SD}$, and a program is survival-active when $|z|\ge 1.96$. A positive $\beta$ indicates an association between a higher score and a higher hazard. Top genes are those with the largest positive and most negative loadings. The positive pole is the direction in which the score $\mathbf{Z}_k$ increases.}
+\caption[Programs of the survival-supervised fit on the training cohorts ($n=273$)]{Programs of the survival-supervised fit on the training cohorts ($n=273$). $E[\beta]$ is the posterior mean coefficient per SD of the program score $\mathbf{z}_k = \mathbf{Y}\,E[\mathbf{f}_k]$ (posterior SD in parentheses), $z = E[\beta]/\mathrm{SD}$, and a program is survival-active when $|z|\ge 1.96$. A positive $\beta$ indicates an association between a higher score and a higher hazard. Top genes are those with the largest positive and most negative loadings. The positive pole is the direction in which the score $\mathbf{z}_k$ increases.}
 \label{tab:programs}
 \begin{tabular}{@{}r p{1.12in} r r c p{1.3in} p{1.3in}@{}}
 \toprule
