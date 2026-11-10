@@ -12,6 +12,14 @@ suppressPackageStartupMessages({
 })
 source("code/concordance_ci.R")
 
+## cairo_pdf embeds fonts but needs the cairo shared library (it fails to load without XQuartz's X11 libs).
+## capabilities("cairo") can report TRUE when the library cannot load, so test by opening a device.
+CAIRO_OK <- tryCatch({ f <- tempfile(fileext = ".pdf"); suppressWarnings(cairo_pdf(f)); dev.off(); file.exists(f) },
+                     error = function(e) FALSE, warning = function(w) FALSE)
+if (!CAIRO_OK) warning("cairo_pdf unavailable: figures are written with pdf() and their fonts are NOT embedded",
+                       call. = FALSE)
+PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else function(filename, ...) grDevices::pdf(file = filename, ..., useDingbats = FALSE)
+
 # Saved evidence and score validation ----
 s11_dir <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04"
 s12_dir <- "results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05"
@@ -118,8 +126,11 @@ plot_tertiles <- function(score_name, direction, filename) {
     theme(panel.grid = element_blank(), axis.text.x = element_blank(),
           axis.title.x = element_text(margin = margin(t = 3)), legend.position = "bottom",
           strip.text = element_text(face = "bold", size = 9),
+          axis.text.y = element_text(size = 8), legend.text = element_text(size = 8.5),
+          legend.title = element_text(size = 8.5),
           panel.spacing = grid::unit(9, "pt"))
-  ggsave(file.path(figure_dir, filename), p, width = 6.5, height = 6.6, device = "pdf", useDingbats = FALSE)
+  # PDF_DEVICE is cairo_pdf (embeds fonts) when available; all figure text is at least 8 pt at the printed width (6.5 in)
+  ggsave(file.path(figure_dir, filename), p, width = 6.5, height = 6.6, device = PDF_DEVICE)
   invisible(p)
 }
 

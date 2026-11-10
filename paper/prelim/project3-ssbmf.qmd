@@ -69,7 +69,7 @@ Here $z_{ik}$ is patient $i$'s expression projected onto program $k$'s loadings,
 
 Every entry of $L$ and of $F$ has a point-Laplace prior, a mixture of a point mass at zero and a Laplace distribution, with its mixing proportion and scale estimated by empirical Bayes for each program [@Willwerscheid2025]. The prior lets a loading be exactly zero and lets a whole program shrink to zero. Each coefficient has a Normal prior $\beta_k\sim N(0,\sigma_k^2)$ with $\sigma_k^2$ estimated. $Z$ has no prior of its own: it is a fixed function of the observed $Y$ and the loadings, so its posterior moments follow from those of $F$. The objective combines the expression likelihood and the Cox partial likelihood conditional on $Y$.
 
-## Survival weight and objective {#sec-weight}
+## Survival Weight and Objective {#sec-weight}
 
 The model is fitted by maximizing an evidence lower bound (ELBO) over a factorized posterior $q=\prod_k q(l_k)\,q(f_k)\,q(\beta_k)$, the priors and $\tau$:
 $$
@@ -81,7 +81,7 @@ Rescaling a program's scores, loadings and coefficient together leaves the likel
 
 Survival enters the factorization through the loading update. The Cox term contributes to both the precision and the linear term of that update. We use the fraction of loading precision due to the Cox term, called the survival share, to compare the relative information in the two likelihoods. The derivation shows that it grows with $w_S$, with the squared coefficient and with the number of events, and falls roughly as $1/p^2$ for a program of fixed variance share and as the square of that variance share. Survival therefore has the most influence on low-variance programs, which are the ones supervision is meant to find, and almost none on dominant programs.
 
-## Variational inference {#sec-vi}
+## Variational Inference {#sec-vi}
 
 The Cox partial log-likelihood is not conjugate to any prior. At each sweep it is replaced by a second-order expansion around the current linear predictor, keeping the diagonal of the Hessian, so that each update has the form of a normal-means problem solved with the ebnm package [@Willwerscheid2025]. Taking expectations under $q$, the expansion contributes the variance of $\eta_i$ as well as its mean. The coefficient update uses the posterior second moment of each score, $E[z_{ik}^2]=\bar z_{ik}^2+\sum_j y_{ij}^2\operatorname{Var}(f_{jk})$, rather than its plug-in square. The second term propagates loading uncertainty into the variational coefficient update. The loading update has an expression part and a survival part. The survival part adds $w_S$ times the Cox curvature to each loading's precision, and genes are updated one at a time so that each sees the scores refreshed by the genes before it.
 
@@ -89,7 +89,7 @@ One sweep updates the Taylor expansion, then for each program the coefficient, t
 
 A nonempty program is called survival-active when its coefficient has positive posterior SD and $|E\beta_k|/\mathrm{SD}(\beta_k)\ge1.96$. In simulation, recovery requires an absolute loading correlation of at least 0.7, an active coefficient and the correct coefficient sign after aligning the loadings. A survival-active program that matches no planted prognostic program counts as false-active. A count of false-active programs does not say how much they affect the risk score. We therefore also report their share of the variance of the risk score and their standardized coefficients.
 
-## Choosing the survival weight {#sec-choose-weight}
+## Choosing the Survival Weight {#sec-choose-weight}
 
 The real-data comparison uses $w_S=1$, which performed best in the first simulation study and was retained after five-fold cross-validation on the PDAC training data (@sec-res-cv). That choice keeps the coefficient update at its Bayesian weight, but it leaves the survival share on real data very small (@sec-res-cv). A larger fixed weight is not a solution, since fixed weights of 40 or more did not converge with 2,000 genes in simulation (@sec-res-sim).
 
@@ -97,17 +97,19 @@ We have tested one way of setting the weight from the data. In a variant of the 
 
 We will compare this rule with two alternatives for choosing the weight. The first calibrates the power on the partial likelihood. SafeBayes chooses the power that minimizes a sequential predictive loss [@Grunwald2017], and Holmes and Walker match the expected information in the power posterior to that of a correctly specified model [@HolmesWalker2017]. The second divides each loss by a normalizing constant and mixes them with one parameter, as DeSurv does for its reconstruction and Cox losses [@Young2026]. Expressed in the units of our objective, this rule sets the relative survival weight and also rescales the KL terms. Each candidate will be judged on the simulation grid of @sec-sim-design and on training cross-validation, with criteria registered before any fit. A candidate must recover planted programs at least as often as the matched two-step fit, with a mean of at most one false-active program per evaluation cell. The protocol will also register a bound on the risk-score contribution from nonmatched programs. The median calibration slope must lie between 0.8 and 1.25 in at least two of three variance cells, and at least 9 of 10 fits must converge in each cell. On the real data, it must not lower cross-validated concordance by more than one standard error relative to $w_S=1$. The recovery, false-activity, calibration and convergence criteria follow the completed simulations. The contribution criterion is proposed.
 
-## Prediction in new cohorts {#sec-prediction}
+## Prediction in New Cohorts {#sec-prediction}
 
 The fixed-model comparison fixed the survival weight, feature-set arm and survival-screen arm from training data. The preprocessing recipe, the 2,218-gene set and the rank came from earlier analyses that used external concordance. Validation cohorts are log-transformed once where needed, standardized within their own cohort and restricted to the training genes. Genes missing from a cohort are left out of the projection. The risk score is $\eta = Y_{\text{new}}E[F]E[\beta]$ with the loadings and coefficients frozen at their training values, and its direction is fixed by the training fit before any validation outcome is seen.
 
-## Simulation studies {#sec-sim-design}
+## Simulation Studies {#sec-sim-design}
 
 Three simulation studies were registered before they were run (Table \ref{tab:sim-design}). All use the same generator: three true programs, the third of which is prognostic and carries a small, set share of the expression variance, with Weibull survival times and about 30% censoring. Every fit starts from rank seven. The first study (the fixed-weight simulation) asks whether the survival-weighted fit recovers the planted program at 50 and 2,000 genes across a wide grid of fixed weights. The second (the cross-validated-weight simulation) chooses the weight by cross-validation and compares the result with the matched two-step fit, and also runs permuted-survival null datasets. The third (the near-threshold simulation) lowers the planted share toward the detection threshold, where an unsupervised factorization starts to miss the program, and compares strong survival with a weaker, realistic survival signal.
 
 ```{=latex}
 \begin{table}[!htb]
 \centering
+\caption[Designs of the three simulation studies of survival supervision]{Designs of the three simulation studies of survival supervision. All use the same shared-loading generator and fit $K = 7$ programs. The planted program carries a small share of the variance and its coefficient sets the strength of the survival effect. The block-weighted fit multiplies both the Cox term and the KL divergence for $\beta$ by $w_S$. The joint-posterior fit is block-weighted and also uses a joint Gaussian posterior for $\beta$.}
+\label{tab:sim-design}
 \small
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{>{\raggedright\arraybackslash}p{0.82in}>{\raggedright\arraybackslash}p{1.72in}>{\raggedright\arraybackslash}p{1.72in}>{\raggedright\arraybackslash}p{1.72in}}
@@ -147,18 +149,16 @@ CV weight & $w_S = 1$ in 55/60 datasets
  & Fixed weights \\
 \bottomrule
 \end{tabular}
-\caption{Designs of the three simulation studies of survival supervision. All use the same shared-loading generator and fit $K = 7$ programs. The planted program carries a small share of the variance and its coefficient sets the strength of the survival effect. The block-weighted fit multiplies both the Cox term and the KL divergence for $\beta$ by $w_S$. The joint-posterior fit is block-weighted and also uses a joint Gaussian posterior for $\beta$.}
-\label{tab:sim-design}
 \end{table}
 ```
 
-## PDAC data and evaluation {#sec-data}
+## PDAC Data and Evaluation {#sec-data}
 
 The model is trained on TCGA-PAAD (144 patients) and CPTAC (129) [@Raphael2017; @Cao2021], with 139 deaths among the 273 patients. The five held-out cohorts contain 616 records from 568 donors. They are Dijk [@Dijk2020], Moffitt GEO array [@Moffitt2015], PACA-AU array and PACA-AU RNA-seq [@Bailey2016], and Puleo array [@Puleo2018]. Every RNA-seq cohort is log-transformed once. Expression is standardized within each cohort. The gene-set procedure ranks genes by their expression mean and variance in each training cohort and intersects the top 3,000 per cohort, leaving 2,218 genes [@Young2026]. No survival screen is applied. The rank is fixed at $K=7$, the rank of the earlier benchmark.
 
 The configuration was chosen by five-fold cross-validation on the training patients, stratified by cohort and event status. This covered the survival weight, the number of genes (from 2,218 to all 17,900 shared genes) and the effect of applying a survival screen inside each fold. After that the fixed model was scored once in each validation cohort, and nothing was chosen from the validation results. External discrimination is Harrell's concordance [@Harrell1982] with percentile bootstrap intervals [@EfronTibshirani1993]. Differences between the supervised and two-step fits use a paired bootstrap within each cohort (2,000 replicates), pooled across cohorts by equally weighting the series-specific differences. A donor bootstrap keeps records from the same donor together while preserving the within-series concordance comparisons. Calibration is the slope of a Cox model of validation survival on the risk score, so a slope of 1 means the training coefficients have the right size. The PACA-AU array and RNA-seq series share 47 donors, and the RNA-seq series contains a repeated donor. We also report the pooled difference after excluding that series.
 
-## Proposed extension to several data types {#sec-mmodal}
+## Proposed Extension to Several Data Types {#sec-mmodal}
 
 The single-modality model is the case $M=1$ of a model for $M$ matched data types with shared patient scores and modality-specific loadings:
 $$
@@ -168,11 +168,11 @@ Each program has a separate point-Laplace prior $g_{F_{mk}}$ for each modality. 
 
 The derivation identifies a balance problem the single-modality model does not have. The precision of the shared scores sums over all features, so the modality with more features, methylation in the planned application, would dominate $L$, and the survival share falls with the total number of features. Modality-specific weights on the reconstruction terms may therefore be needed. They will be derived and checked in simulation before any real-data fit. We will implement the model in one fitter and check that its $M=1$ case reproduces the single-modality fit to numerical tolerance. We will evaluate the extension in two-modality simulations with modality-specific programs and one shared prognostic program. The planned application uses matched TCGA expression and methylation with validation in ICGC PACA-AU. We will test whether adding methylation improves external concordance over an expression-only fit. The criterion is a positive paired difference with an interval that excludes zero. We will also assess whether adding methylation identifies a prognostic program missed by the expression-only fit.
 
-## Proposed rank selection {#sec-rank}
+## Proposed Rank Selection {#sec-rank}
 
 The working fit uses $K=7$ without pruning. In a simulation run after correcting the treatment of a flat coefficient likelihood, unpruned fits recovered the planted program in 17 of 20 and 19 of 20 datasets across the two noise levels. Ordinary and protected ELBO pruning each recovered 2 of 20 at both levels and retained median ranks of two and one. Both failed the registered recovery and rank criteria. We will evaluate rank selection under the supervised objective with replicated training cross-validation and assess whether the final rank varies by at most one across starting ranks while retaining planted prognostic programs.
 
-## Comparators, risk groups and program classification {#sec-comparators}
+## Comparators, Risk Groups and Program Classification {#sec-comparators}
 
 Every comparator was trained on the same 273 training patients, and each score's direction was fixed on the training data. DeSurv used the authors' software, preprocessing and published settings (rank 3), which the authors selected on the same two training cohorts [@Young2026]. An elastic-net Cox model on the 2,218 genes [@Simon2011] chose its mixing and penalty parameters by cross-validation on the training folds. PurIST [@Rashid2020] entered as a Cox model on its basal-like probability. A clinical model was planned, but no stage, grade, age or margin field is recorded in both training cohorts and all five validation series, so it was not fitted. Unsupervised EBMF at ranks 7, 15 and 40 followed by Cox regression tested whether a larger unsupervised rank would close any gap. Pooled hazard ratios are per SD of each score from Cox models stratified by series, with robust intervals clustered on donor.
 
@@ -180,7 +180,7 @@ For risk groups, one cutpoint per score maximized the log-rank statistic on the 
 
 # Results
 
-## Survival weight in simulation {#sec-res-sim}
+## Survival Weight in Simulation {#sec-res-sim}
 
 With 2,000 genes and $w_S=1$, the survival-weighted fit recovered the planted program in 10 of 10 datasets in each of the three variance cells, with a mean of 0.9, 0.1 and 0.0 false-active programs, and every fit converged (Figure \ref{fig:sim-s9}). Five-fold training cross-validation chose $w_S=1$ in 55 of 60 datasets. The other choices were the weight targeting a survival precision share of 0.2 in three datasets and $w_S=10$ in two. Every fit with $w_S\ge40$ stopped at 300 sweeps without converging, and recovery fell in most cells. With 50 genes, all fixed positive weights recovered the program, and false activity rose with weight. The share-targeted arm did not recover the program. The cause of non-convergence at large weights has not been found. In those fits the largest $|E\beta_k|$ ranged from 17 to 26. The SD of the true predictor ranged from 9 to 26.
 
@@ -190,7 +190,7 @@ At 2,000 genes, the fitted risks at $w_S=1$ were attenuated. The median validati
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_sim_weight_s9.pdf}
-\caption{Survival-weighted fit with 2,000 genes against the survival weight $w_S$ (the fixed-weight simulation): recovery of the planted program, mean number of false-active programs, median exact-time validation calibration slope, converged fits, median survival share of matched loading precision and mean validation concordance. Curves are grouped by the planted program's share of expression variance. Ten datasets per cell.}\label{fig:sim-s9}
+\caption[Survival-weighted fit with 2,000 genes against the survival weight $w_S$ (the fixed-weight simulation)]{Survival-weighted fit with 2,000 genes against the survival weight $w_S$ (the fixed-weight simulation): recovery of the planted program, mean number of false-active programs, median exact-time validation calibration slope, converged fits, median survival share of matched loading precision and mean validation concordance. Curves are grouped by the planted program's share of expression variance. Ten datasets per cell.}\label{fig:sim-s9}
 \end{figure}
 ```
 
@@ -202,17 +202,19 @@ When the weight was chosen for each dataset by cross-validated partial log-likel
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_sim_weight_s13.pdf}
-\caption{Survival weight chosen by cross-validated partial log-likelihood (the cross-validated-weight simulation, block-weighted fit): validation concordance, median calibration slope and converged fits against $w_S$, with the matched two-step fit as reference and the weights chosen by cross-validation marked. The concordance axis range varies by cell. Ten datasets per cell.}\label{fig:sim-s13}
+\caption[Survival weight chosen by cross-validated partial log-likelihood (the cross-validated-weight simulation, block-weighted fit)]{Survival weight chosen by cross-validated partial log-likelihood (the cross-validated-weight simulation, block-weighted fit): validation concordance, median calibration slope and converged fits against $w_S$, with the matched two-step fit as reference and the weights chosen by cross-validation marked. The concordance axis range varies by cell. Ten datasets per cell.}\label{fig:sim-s13}
 \end{figure}
 ```
 
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lccccc}
-\multicolumn{6}{l}{\textbf{A. Weight chosen by cross-validation (cross-validated-weight simulation, block-weighted fit)}} \\
+\caption[Supervised fits against the matched two-step fit in simulation (10 datasets per cell, 2,000 genes)]{Supervised fits against the matched two-step fit in simulation (10 datasets per cell, 2,000 genes). Entries separated by a slash give the supervised fit first and the two-step fit second. Panel A counts the datasets that selected each weight by five-fold cross-validated partial log-likelihood and reports the median calibration slope. Panel B reports oracle $C$, the validation $C$ of the true predictor.}
+\label{tab:strength}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\par\medskip{\raggedright\textbf{A. Weight chosen by cross-validation (cross-validated-weight simulation, block-weighted fit)}\par}\smallskip
+\begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}ccccc@{}}
 \toprule
 Cell & \shortstack{Chosen $w_S$\\(datasets)} & \shortstack{Recovered\\(of 10)} & \shortstack{False-active\\programs} & \shortstack{Validation\\$C$} & \shortstack{Calibration\\slope} \\
 \midrule
@@ -221,11 +223,11 @@ Cell & \shortstack{Chosen $w_S$\\(datasets)} & \shortstack{Recovered\\(of 10)} &
 5\% variance & 10 (10) & 10 / 10 & 0.0 / 0.2 & 0.986 / 0.986 & 1.45 / 0.96 \\
 Weak survival & 1 (8), 2 (2) & 10 / 10 & 1.2 / 0.5 & 0.671 / 0.668 & 1.05 / 1.04 \\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 
 \medskip
-\begin{tabular}{lcccc}
-\multicolumn{5}{l}{\textbf{B. Near the detection threshold (near-threshold simulation, block-weighted fit at $w_S = 1$)}} \\
+{\raggedright\textbf{B. Near the detection threshold (near-threshold simulation, block-weighted fit at $w_S = 1$)}\par}\smallskip
+\begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}cccc@{}}
 \toprule
 Survival & Planted share & \shortstack{Recovered\\(of 10)} & Validation $C$ & Oracle $C$ \\
 \midrule
@@ -236,9 +238,7 @@ Realistic & 0.05\% & 0 / 0 & 0.630 / 0.592 & 0.740 \\
 Realistic & 0.1\% & 9 / 8 & 0.712 / 0.705 & 0.736 \\
 Realistic & 0.2\% & 10 / 10 & 0.728 / 0.727 & 0.735 \\
 \bottomrule
-\end{tabular}
-\caption{Supervised fits against the matched two-step fit in simulation (10 datasets per cell, 2,000 genes). Entries separated by a slash give the supervised fit first and the two-step fit second. Panel A counts the datasets that selected each weight by five-fold cross-validated partial log-likelihood and reports the median calibration slope. Panel B reports oracle $C$, the validation $C$ of the true predictor.}
-\label{tab:strength}
+\end{tabular*}
 \end{table}
 ```
 
@@ -248,7 +248,7 @@ Supervision changed discovery only near the detection threshold (Figure \ref{fig
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_sim_near_threshold.pdf}
-\caption{Supervision near the detection threshold (the near-threshold simulation): recovery under each fit and paired validation concordance differences for $w_S=1$ against the matched two-step fit. Points show individual datasets and diamonds show cell means for the paired differences. Ten datasets per cell.}\label{fig:sim-s14}
+\caption[Supervision near the detection threshold (the near-threshold simulation)]{Supervision near the detection threshold (the near-threshold simulation): recovery under each fit and paired validation concordance differences for $w_S=1$ against the matched two-step fit. Points show individual datasets and diamonds show cell means for the paired differences. Ten datasets per cell.}\label{fig:sim-s14}
 \end{figure}
 ```
 
@@ -256,13 +256,15 @@ We also examined the combined contribution of the nonmatched programs, including
 
 The planned evaluation will compare the calibrated alternatives in @sec-choose-weight on the same grid and add cells with more realistic survival effects.
 
-## Training cross-validation on PDAC {#sec-res-cv}
+## Training Cross-Validation on PDAC {#sec-res-cv}
 
 On the PDAC training data the supervised fit had a cross-validated concordance of 0.663 (SE 0.024), against 0.652 (SE 0.026) for the two-step fit, a paired difference of 0.011 (SE 0.005) (Table \ref{tab:training-cv}). Three programs were survival-active in the all-patient fit. Two of the five supervised fold fits stopped at the 300-sweep limit with the ELBO still changing by more than $10^{-5}$, but with small coefficients (largest $|E\beta|$ 0.46) and no sign of the instability seen at large weights in simulation.
 
 ```{=latex}
 \begin{table}[!htb]
 \centering
+\caption[Five-fold training cross-validation on the 2,218 selected genes (273 patients, 139 events)]{Five-fold training cross-validation on the 2,218 selected genes (273 patients, 139 events). Convergence refers to the factorization in each arm. Activity is measured in the fit to all training patients using $|E[\beta_k]| \geq 1.96$ posterior SD for $w_S = 1$ and the Wald test for the two-step fit.}
+\label{tab:training-cv}
 \small
 \begin{tabular}{lccccc}
 \toprule
@@ -274,8 +276,6 @@ Two-step & 0.652 (0.026) & 0.647 & $-$777.1 & 3/5 & 4 \\
 \multicolumn{6}{l}{Paired fold difference ($w_S = 1$ minus two-step) \quad $+$0.011 (SE 0.005)} \\
 \bottomrule
 \end{tabular}
-\caption{Five-fold training cross-validation on the 2,218 selected genes (273 patients, 139 events). Convergence refers to the factorization in each arm. Activity is measured in the fit to all training patients using $|E[\beta_k]| \geq 1.96$ posterior SD for $w_S = 1$ and the Wald test for the two-step fit.}
-\label{tab:training-cv}
 \end{table}
 ```
 
@@ -287,23 +287,25 @@ The 2,218-gene set was preferred by the registered rule (Figure \ref{fig:size-cu
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_real_size_curve.pdf}
-\caption{Five-fold cross-validated concordance on the PDAC training cohorts (mean $\pm$ 1 SE over folds) against the number of genes, for the supervised fit ($w_S=1$) and the two-step fit.}\label{fig:size-curve}
+\caption[Five-fold cross-validated concordance on the PDAC training cohorts against the number of genes]{Five-fold cross-validated concordance on the PDAC training cohorts (mean $\pm$ 1 SE over folds) against the number of genes, for the supervised fit ($w_S=1$) and the two-step fit.}\label{fig:size-curve}
 \end{figure}
 ```
 
 A refit that chose the weight by training cross-validated partial log-likelihood on these patients, over weights from 1 to 50, selected $w_S=1$. The curve was flat. The criterion changed from $-775.168$ at weight one to $-775.429$ at weight 50. Nested cross-validation gave $C=0.656$ (SE 0.027), compared with 0.663 at the fixed weight. At weight 50, survival supplied a median of $7.3\times10^{-5}$ of the loading precision for active programs, and the loadings still agreed with those of the unsupervised fit to the reported precision. The registered rule retained the existing fit and its external evaluation.
 
-## External validation {#sec-res-external}
+## External Validation {#sec-res-external}
 
 In the five held-out cohorts the supervised fit's concordance was 0.584 in Dijk, 0.537 in Moffitt, 0.656 in PACA-AU array, 0.681 in PACA-AU RNA-seq and 0.644 in Puleo, a mean of 0.620 (Table \ref{tab:external}, Figure \ref{fig:external}). It was equal to or higher than the two-step fit in every cohort. The equal-weight pooled difference was 0.007 (95% record-bootstrap CI $-0.002$ to $0.017$, donor-bootstrap CI $-0.003$ to $0.017$). Excluding PACA-AU RNA-seq gave 0.006 ($-0.003$ to $0.016$). Each interval includes zero. A Cox model stratified by cohort gave a hazard ratio of 1.37 (1.24 to 1.51) per standard deviation of the supervised risk score, and 1.35 (1.22 to 1.49) for the two-step score. With robust intervals clustered on donor these become 1.22 to 1.53 and 1.21 to 1.51. DeSurv refitted on the same training patients gave 1.43 (1.25 to 1.64), against 1.50 (1.31 to 1.72) in its publication [@Young2026].
 
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\small
+\caption[External scoring of the fixed fits]{External scoring of the fixed fits. The paired difference is $w_S = 1$ minus two-step. Pooled concordance uses pairs within series. The donor bootstrap resamples shared PACA-AU donors jointly. The last pooled row excludes PACA-AU RNA-seq. Calibration slopes come from a Cox regression of survival on the risk score. A slope of 1 indicates calibration. Historical $C$ is descriptive because the frozen benchmark used different preprocessing.}
+\label{tab:external}
+\footnotesize
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{lccccc}
-\multicolumn{6}{l}{\textbf{A. External concordance}} \\
+\par\medskip{\raggedright\textbf{A. External concordance}\par}\smallskip
+\begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}ccccc@{}}
 \toprule
 Cohort & $n$ (events) & $w_S = 1$ (95\% CI) & Two-step & \shortstack{Paired difference\\(95\% CI)} & \shortstack{Historical\\$C$} \\
 \midrule
@@ -317,11 +319,11 @@ Puleo (array) & 288 (181) & 0.644 (0.599, 0.686) & 0.643 & $+$0.001 ($-$0.007, 0
 \multicolumn{4}{l}{Pooled, donors} & $+$0.007 ($-$0.003, 0.017) & \\
 \multicolumn{4}{l}{Pooled without PACA-AU (RNA-seq)} & $+$0.006 ($-$0.003, 0.016) & \\
 \bottomrule
-\end{tabular}
+\end{tabular*}
 
 \medskip
-\begin{tabular}{lcc}
-\multicolumn{3}{l}{\textbf{B. Calibration slopes}} \\
+{\raggedright\textbf{B. Calibration slopes}\par}\smallskip
+\begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}cc@{}}
 \toprule
 Cohort & $w_S = 1$ (SE) & Two-step (SE) \\
 \midrule
@@ -331,9 +333,7 @@ PACA-AU (array) & 0.78 (0.33) & 0.73 (0.30) \\
 PACA-AU (RNA-seq) & 1.57 (0.43) & 1.26 (0.37) \\
 Puleo (array) & 0.99 (0.20) & 0.80 (0.17) \\
 \bottomrule
-\end{tabular}
-\caption{External scoring of the fixed fits. The paired difference is $w_S = 1$ minus two-step. Pooled concordance uses pairs within series. The donor bootstrap resamples shared PACA-AU donors jointly. The last pooled row excludes PACA-AU RNA-seq. Calibration slopes come from a Cox regression of survival on the risk score. A slope of 1 indicates calibration. Historical $C$ is descriptive because the frozen benchmark used different preprocessing.}
-\label{tab:external}
+\end{tabular*}
 \end{table}
 ```
 
@@ -343,7 +343,7 @@ The supervised calibration slopes ranged from 0.36 to 1.57 and were closer to on
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_c.pdf}
-\caption{External concordance (95\% bootstrap interval) and calibration slope ($\pm$ 1.96 SE) of the frozen supervised fit ($w_S=1$) and the two-step fit in the five held-out cohorts. A calibration slope of 1 means the training coefficients have the right size.}\label{fig:external}
+\caption[External concordance and calibration slope of the frozen supervised fit and the two-step fit in the five held-out cohorts]{External concordance (95\% bootstrap interval) and calibration slope ($\pm$ 1.96 SE) of the frozen supervised fit ($w_S=1$) and the two-step fit in the five held-out cohorts. A calibration slope of 1 means the training coefficients have the right size.}\label{fig:external}
 \end{figure}
 ```
 
@@ -353,19 +353,21 @@ Figure \ref{fig:km-risk} shows the validation series split by one cutpoint chose
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_km_fixed.pdf}
-\caption{Kaplan--Meier curves for the frozen supervised risk score split at the training cutpoint ($-0.046$ training SD). Panel titles give the high-versus-low hazard ratio with its Wald interval. Curves are monthly estimates through 60 months, with numbers at risk every 12 months below each panel.}\label{fig:km-risk}
+\caption[Kaplan--Meier curves for the frozen supervised risk score split at the training cutpoint]{Kaplan--Meier curves for the frozen supervised risk score split at the training cutpoint ($-0.046$ training SD). Panel titles give the high-versus-low hazard ratio with its Wald interval. Curves are monthly estimates through 60 months, with numbers at risk every 12 months below each panel.}\label{fig:km-risk}
 \end{figure}
 ```
 
 In the earlier benchmark the rank-seven EBMF fit followed by unpenalized Cox regression was the rank-matched reference. The pooled difference for historical YFB against that comparator was 0.011 (95% CI $-0.013$ to $0.033$). The historical fit averaged $C=0.627$ and its single-log refit averaged $C=0.625$. These results use different fitted models and gene sets from the fixed-model comparison.
 
-## Comparison with other prognostic models {#sec-res-comparators}
+## Comparison With Other Prognostic Models {#sec-res-comparators}
 
 The supervised fit's validation concordance was within noise of DeSurv and of the elastic-net Cox model trained on the same patients (Table \ref{tab:comparators}). The mean concordance over the five series was 0.620 for the supervised fit, 0.614 for DeSurv and 0.619 for elastic-net Cox. The paired differences were 0.007 ($-0.017$ to 0.030) against DeSurv and 0.001 ($-0.015$ to 0.018) against elastic-net Cox. The intervals against DeSurv, elastic-net Cox, PurIST and the two-step fit included zero. The elastic-net model selected the ridge penalty. PurIST alone had a mean concordance of 0.599. EBMF followed by Cox regression did worse at ranks 15 and 40 than at rank 7, with calibration slopes of 0.10 to 0.49 that show the unpenalized Cox step overfitting with 139 training deaths.
 
 ```{=latex}
 \begin{table}[!htb]
 \centering
+\caption[Fixed supervised fit and comparators trained on the same 273 patients, scored in the five validation series (616 records from 568 donors)]{Fixed supervised fit and comparators trained on the same 273 patients, scored in the five validation series (616 records from 568 donors). Mean $C$ is the equal-weight mean over series. The hazard ratio is per pooled SD of each score from a Cox model stratified by series, with a robust interval clustered on donor. The difference in $C$ is averaged over series with a donor-bootstrap interval (2000 replicates).}
+\label{tab:comparators}
 \small
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{lcccc}
@@ -381,8 +383,6 @@ EBMF rank 15 + Cox & 0.575 & 0.10 to 0.49 & 1.16 (1.04, 1.29) & $+$0.045 (0.021,
 EBMF rank 40 + Cox & 0.581 & 0.10 to 0.31 & 1.16 (1.05, 1.29) & $+$0.040 (0.008, 0.074) \\
 \bottomrule
 \end{tabular}
-\caption{Fixed supervised fit and comparators trained on the same 273 patients, scored in the five validation series (616 records from 568 donors). Mean $C$ is the equal-weight mean over series. The hazard ratio is per pooled SD of each score from a Cox model stratified by series, with a robust interval clustered on donor. The difference in $C$ is averaged over series with a donor-bootstrap interval (2000 replicates).}
-\label{tab:comparators}
 \end{table}
 ```
 
@@ -397,6 +397,8 @@ Three fitted programs were survival-active. Program 2 was protective at its posi
 ```{=latex}
 \begin{table}[!htb]
 \centering
+\caption[Program classification on the supervised training fit]{Program classification on the supervised training fit. The coefficient ratio is $|E\beta_k|\,\mathrm{SD}(YE[F_k])$ relative to the largest program. The signed share is $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$ and sums to one over programs. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. A main program needs a ratio of at least 0.25, a share of at least 5\% and at least four active folds. Programs with ratio below 0.1 and no activity are omitted.}
+\label{tab:program-rule}
 \small
 \begin{tabular}{lccccc}
 \toprule
@@ -409,17 +411,18 @@ Program & Active & \shortstack{Coefficient\\ratio} & \shortstack{Signed share of
 7 & No & 0.12 & $-$0.003 & 1 & No \\
 \bottomrule
 \end{tabular}
-\caption{Program classification on the supervised training fit. The coefficient ratio is $|E\beta_k|\,\mathrm{SD}(YE[F_k])$ relative to the largest program. The signed share is $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$ and sums to one over programs. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. A main program needs a ratio of at least 0.25, a share of at least 5\% and at least four active folds. Programs with ratio below 0.1 and no activity are omitted.}
-\label{tab:program-rule}
 \end{table}
-``` Figure \ref{fig:programs} shows how the same genes load across the fitted programs.
+```
+
+Figure \ref{fig:programs} shows how the same genes load across the fitted programs.
+
 
 ```{=latex}
 \begin{table}[tbp]
 \centering
 \small
 \setlength{\tabcolsep}{2.5pt}
-\caption{Programs of the survival-supervised fit on the training cohorts ($n=273$). $E[\beta]$ is the posterior mean coefficient per SD of the program score $Z_k = Y\,E[F_k]$ (posterior SD in parentheses), $z = E[\beta]/\mathrm{SD}$, and a program is survival-active when $|z|\ge 1.96$. A positive $\beta$ indicates an association between a higher score and a higher hazard. Top genes are those with the largest positive and most negative loadings. The positive pole is the direction in which the score $Z_k$ increases.}
+\caption[Programs of the survival-supervised fit on the training cohorts ($n=273$)]{Programs of the survival-supervised fit on the training cohorts ($n=273$). $E[\beta]$ is the posterior mean coefficient per SD of the program score $Z_k = Y\,E[F_k]$ (posterior SD in parentheses), $z = E[\beta]/\mathrm{SD}$, and a program is survival-active when $|z|\ge 1.96$. A positive $\beta$ indicates an association between a higher score and a higher hazard. Top genes are those with the largest positive and most negative loadings. The positive pole is the direction in which the score $Z_k$ increases.}
 \label{tab:programs}
 \begin{tabular}{@{}r p{1.12in} r r c p{1.3in} p{1.3in}@{}}
 \toprule
@@ -441,7 +444,7 @@ Program & Active & \shortstack{Coefficient\\ratio} & \shortstack{Signed share of
 \begin{table}[tbp]
 \centering
 \small
-\caption{Two gene sets with the smallest adjusted $p$-values at each pole of the survival-active programs. Enrichment was computed on signed loadings over the 2,218 modeled genes. The test included MSigDB Hallmark, Reactome, KEGG and published PDAC sets. Benjamini--Hochberg adjustment was applied within program. Positive normalized enrichment scores (NES) indicate the positive pole.}
+\caption[Two gene sets with the smallest adjusted $p$-values at each pole of the survival-active programs]{Two gene sets with the smallest adjusted $p$-values at each pole of the survival-active programs. Enrichment was computed on signed loadings over the 2,218 modeled genes. The test included MSigDB Hallmark, Reactome, KEGG and published PDAC sets. Benjamini--Hochberg adjustment was applied within program. Positive normalized enrichment scores (NES) indicate the positive pole.}
 \label{tab:enrichment}
 \begin{tabular}{@{}r c p{2.6in} l r r@{}}
 \toprule
@@ -476,7 +479,7 @@ Signature scores provide another comparison with published PDAC subtypes and str
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_programs_heatmap.pdf}
-\caption{Scaled loadings of the selected genes across the fitted programs. Rows are grouped by the program and pole used to select the genes. Each loading is divided by the largest absolute loading in its program. Asterisks indicate survival-active programs.}\label{fig:programs}
+\caption[Scaled loadings of the selected genes across the fitted programs]{Scaled loadings of the selected genes across the fitted programs. Rows are grouped by the program and pole used to select the genes. Each loading is divided by the largest absolute loading in its program. Asterisks indicate survival-active programs.}\label{fig:programs}
 \end{figure}
 ```
 
@@ -484,14 +487,14 @@ Signature scores provide another comparison with published PDAC subtypes and str
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_programs_correspondence.pdf}
-\caption{Pearson correlations of loadings with the unsupervised fit (absolute correlations on the 2,218-gene set) and with the historical $\alpha_F=0$ fit (signed correlations on shared genes). Gray cells denote undefined correlations for zero historical loading columns.}\label{fig:program-correspondence}
+\caption[Pearson correlations of loadings with the unsupervised fit and with the historical $\alpha_F=0$ fit]{Pearson correlations of loadings with the unsupervised fit (absolute correlations on the 2,218-gene set) and with the historical $\alpha_F=0$ fit (signed correlations on shared genes). Gray cells denote undefined correlations for zero historical loading columns.}\label{fig:program-correspondence}
 \end{figure}
 ```
 
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\caption{External associations of the survival-active programs. Values are hazard ratios and 95\% Wald intervals per cohort-specific standard deviation of each program score from separate Cox fits. The training direction comes from the fitted coefficient. These are descriptive, unadjusted associations.}
+\caption[External associations of the survival-active programs]{External associations of the survival-active programs. Values are hazard ratios and 95\% Wald intervals per cohort-specific standard deviation of each program score from separate Cox fits. The training direction comes from the fitted coefficient. These are descriptive, unadjusted associations.}
 \label{tab:external-program-direction}
 \begin{tabular}{lrrr}
 \toprule
@@ -513,7 +516,7 @@ Training direction & Protective & Adverse & Adverse \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_km_program_2.pdf}
-\caption{Kaplan--Meier curves for Program 2 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-2}
+\caption[Kaplan--Meier curves for Program 2 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 2 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-2}
 \end{figure}
 ```
 
@@ -521,7 +524,7 @@ Training direction & Protective & Adverse & Adverse \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_km_program_3.pdf}
-\caption{Kaplan--Meier curves for Program 3 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-3}
+\caption[Kaplan--Meier curves for Program 3 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 3 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-3}
 \end{figure}
 ```
 
@@ -529,7 +532,7 @@ Training direction & Protective & Adverse & Adverse \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_km_program_5.pdf}
-\caption{Kaplan--Meier curves for Program 5 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-5}
+\caption[Kaplan--Meier curves for Program 5 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 5 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-5}
 \end{figure}
 ```
 
@@ -537,7 +540,7 @@ Training direction & Protective & Adverse & Adverse \\
 
 # Discussion
 
-## Loading and coefficient estimates
+## Loading and Coefficient Estimates
 
 The main change in the PDAC application was in the coefficient update. The joint fit propagates posterior loading uncertainty and shrinks the coefficients, and the slope comparison varies by series. The supervised and two-step loadings agreed to the reported precision. The observed differences therefore cannot establish improved molecular program discovery on these data.
 
@@ -549,7 +552,7 @@ A registered comparison with $\eta=L\beta$ will evaluate recovery and out-of-sam
 
 Historical analyses used the external panel to inform rank, preprocessing, the loading supervision weight $\alpha_F$, the number of frozen-loading sweeps and comparator configuration. No series in this panel is untouched. The donor bootstrap and the donor-clustered hazard-ratio intervals account for repeated donors while leaving the pooled estimand conditional on the observed series. DeSurv used its published settings rather than a new search on our training folds. Some training folds stopped at the sweep limit. The simulations use a single generator, and the strongest simulated survival signals exceed those observed in the real data.
 
-## Continuing work
+## Continuing Work
 
 We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-choose-weight). Each will be judged against the registered simulation criteria and against training cross-validation on PDAC, and any configuration adopted on the training data will be scored once externally. The extension to several data types (@sec-mmodal) will start from a fitter that reproduces the current model for one modality. We will also assess rank selection under the supervised objective (@sec-rank). The remaining comparison (@sec-comparators) will place the method against the $L\beta$ parameterization.  We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
 

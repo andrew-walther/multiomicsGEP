@@ -37,6 +37,8 @@ FIG_W     <- 6.5         # printed width in inches
 
 # Theme and helpers ----
 #' Common theme: theme_bw with all text at least 8 pt at printed size.
+#' The x-axis title omits the w_S subscript because plotmath draws subscripts at about 70% size (6 pt);
+#' the figure captions define w_S.
 #' @return A ggplot2 theme object.
 theme_prelim <- function() {
   theme_bw(base_size = 9) +
@@ -49,15 +51,18 @@ theme_prelim <- function() {
           panel.grid.minor = element_blank(), plot.margin = margin(3, 5, 3, 3))
 }
 
-## cairo_pdf needs the cairo shared library, which fails to load on some installs (missing X11 libs)
+## cairo_pdf embeds fonts but needs the cairo shared library (it fails to load without XQuartz's X11 libs).
+## capabilities("cairo") can report TRUE when the library cannot load, so test by opening a device.
 CAIRO_OK <- tryCatch({ f <- tempfile(fileext = ".pdf"); suppressWarnings(cairo_pdf(f)); dev.off(); file.exists(f) },
                      error = function(e) FALSE, warning = function(w) FALSE)
+if (!CAIRO_OK) warning("cairo_pdf unavailable: figures are written with pdf() and their fonts are NOT embedded",
+                       call. = FALSE)
+PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else function(filename, ...) grDevices::pdf(file = filename, ..., useDingbats = FALSE)
 #' Save a figure as vector PDF at printed size.
 #' @param p ggplot/patchwork object. @param name file name. @param h height in inches.
 save_fig <- function(p, name, h) {
-  # cairo_pdf where the cairo library loads; plain pdf() (also vector, base-14 fonts) otherwise
-  dev <- if (CAIRO_OK) cairo_pdf else grDevices::pdf
-  ggsave(file.path(FIG_DIR, name), p, width = FIG_W, height = h, device = dev)
+  # cairo_pdf (fonts embedded) where the cairo library loads; plain pdf() otherwise, with the warning above
+  ggsave(file.path(FIG_DIR, name), p, width = FIG_W, height = h, device = PDF_DEVICE)
   cat("Wrote", file.path(FIG_DIR, name), sprintf("(%.1f x %.1f in)\n", FIG_W, h))
 }
 
@@ -132,7 +137,7 @@ make_f1 <- function() {
       scale_x_log10(breaks = brk, labels = lab, limits = c(0.22, 14000)) +
       scale_colour_manual(values = COL_CELL, name = "Planted variance") +
       scale_shape_manual(values = c(16, 17, 15), name = "Planted variance") +
-      labs(x = expression(paste("Survival weight ", w[S])), y = ylab) + theme_prelim()
+      labs(x = "Survival weight", y = ylab) + theme_prelim()
   }
   pA <- base("Planted program recovered (of 10)", "recovered") + scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2))
   pB <- base("Mean false-active programs", "fa")
@@ -194,7 +199,7 @@ make_f12 <- function() {
       facet_wrap(~cell, nrow = 1, scales = if (logy || !is.null(ylim)) "fixed" else "free_y") + xs + leg + labs(y = ylab) + theme_prelim()
     if (logy) p <- p + scale_y_log10(breaks = c(0.03, 0.1, 0.3, 1, 3), limits = c(0.012, 4))
     if (!is.null(ylim)) p <- p + scale_y_continuous(limits = ylim, breaks = seq(0, 10, 5))
-    p + labs(x = if (bottom) expression(paste("Survival weight ", w[S])) else NULL) +
+    p + labs(x = if (bottom) "Survival weight" else NULL) +
       theme(axis.text.x = if (bottom) element_text() else element_blank(),
             axis.ticks.x = if (bottom) element_line() else element_blank(),
             strip.text = if (top) element_text(size = 8.5) else element_blank(),
@@ -206,7 +211,7 @@ make_f12 <- function() {
   p4 <- ggplot(cnt, aes(w_S, Freq)) +
     geom_col(fill = COL_SUP, alpha = 0.55, width = 0.12, colour = NA) + facet_wrap(~cell, nrow = 1) +
     scale_x_log10(breaks = brk, labels = brk) + scale_y_continuous(limits = c(0, 10.5), breaks = seq(0, 10, 5)) +
-    labs(x = expression(paste("Survival weight ", w[S])), y = "Chosen by CV (of 10)") + theme_prelim() +
+    labs(x = "Survival weight", y = "Chosen by CV (of 10)") + theme_prelim() +
     theme(strip.text = element_blank(), strip.background = element_blank())
   p <- (p1 / p2 / p3 / p4) + plot_layout(guides = "collect", heights = c(1, 1, 0.8, 0.8)) &
     theme(legend.position = "bottom")

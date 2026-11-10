@@ -13,6 +13,14 @@
 
 suppressPackageStartupMessages(library(ggplot2))
 
+## cairo_pdf embeds fonts but needs the cairo shared library (it fails to load without XQuartz's X11 libs).
+## capabilities("cairo") can report TRUE when the library cannot load, so test by opening a device.
+CAIRO_OK <- tryCatch({ f <- tempfile(fileext = ".pdf"); suppressWarnings(cairo_pdf(f)); dev.off(); file.exists(f) },
+                     error = function(e) FALSE, warning = function(w) FALSE)
+if (!CAIRO_OK) warning("cairo_pdf unavailable: figures are written with pdf() and their fonts are NOT embedded",
+                       call. = FALSE)
+PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else function(filename, ...) grDevices::pdf(file = filename, ..., useDingbats = FALSE)
+
 out7 <- "results/benchmark_sim/outputs/prompt7_desurv_style"
 figure_dir <- "paper/prelim/figures"
 
@@ -73,7 +81,10 @@ p <- ggplot(km, aes(month, survival, colour = group, linetype = group)) +
   theme(panel.grid = element_blank(), axis.text.x = element_blank(),
         axis.title.x = element_text(margin = margin(t = 3)), legend.position = "bottom",
         strip.text = element_text(face = "bold", size = 9),
+        axis.text.y = element_text(size = 8), legend.text = element_text(size = 8.5),
+        legend.title = element_text(size = 8.5),
         panel.spacing = grid::unit(9, "pt"))
+# PDF_DEVICE is cairo_pdf (embeds fonts) when available; all figure text is at least 8 pt at the printed width (6.5 in)
 ggsave(file.path(figure_dir, "sup_external_km_fixed.pdf"), p, width = 6.5, height = 6.6,
-       device = "pdf", useDingbats = FALSE)
+       device = PDF_DEVICE)
 cat("Wrote sup_external_km_fixed.pdf\n")

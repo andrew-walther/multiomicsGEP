@@ -28,6 +28,14 @@ source("code/preprocess_desurv.R")
 source("code/predict_ssbmf_yfb.R")
 set.seed(20261106)
 
+## cairo_pdf embeds fonts but needs the cairo shared library (it fails to load without XQuartz's X11 libs).
+## capabilities("cairo") can report TRUE when the library cannot load, so test by opening a device.
+CAIRO_OK <- tryCatch({ f <- tempfile(fileext = ".pdf"); suppressWarnings(cairo_pdf(f)); dev.off(); file.exists(f) },
+                     error = function(e) FALSE, warning = function(w) FALSE)
+if (!CAIRO_OK) warning("cairo_pdf unavailable: figures are written with pdf() and their fonts are NOT embedded",
+                       call. = FALSE)
+PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else function(filename, ...) grDevices::pdf(file = filename, ..., useDingbats = FALSE)
+
 # Settings ----
 FIT_SUP   <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/fits/size_D4_N2218_w1_f0.rds"
 FIT_UNSUP <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/fits/size_D4_N2218_w0_f0.rds"
@@ -209,7 +217,7 @@ p1 <- ggplot(long, aes(program, key, fill = w)) +
         legend.title = element_text(size = 8.5), legend.text = element_text(size = 8.5),
         legend.key.width = unit(0.35, "in"), legend.key.height = unit(0.12, "in"))
 ggsave(file.path(FIG_DIR, "sup_programs_heatmap.pdf"), p1, width = 6.5, height = 7.7,
-       device = grDevices::pdf, useDingbats = FALSE)
+       device = PDF_DEVICE)
 
 # Figure F8: correspondence ----
 #' Plot a matrix of loading correlations against another fit.
@@ -238,7 +246,7 @@ pa <- tile(Ra, "Two-step program", "Supervised program", FALSE)
 pb <- tile(Rb, "Historical benchmark program", NULL, TRUE)
 ggsave(file.path(FIG_DIR, "sup_programs_correspondence.pdf"),
        (pa | pb) + plot_layout(widths = c(1, 1)) + plot_annotation(tag_levels = "A"),
-       width = 6.5, height = 3.2, device = grDevices::pdf, useDingbats = FALSE)
+       width = 6.5, height = 3.2, device = PDF_DEVICE)
 
 # Table T4 ----
 act_txt <- ifelse(prog$active, "yes", "no")
