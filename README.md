@@ -1,132 +1,36 @@
 # multiomicsGEP
 
-**Survival-Supervised Bayesian Matrix Factorization for Prognostic Molecular Programs in Pancreatic Cancer**
+Survival-supervised Bayesian matrix factorization for prognostic molecular
+programs in pancreatic cancer.
 
-## Overview
+The model represents a patient-by-feature molecular matrix as Y ≈ LFᵀ and
+links the programs to survival through a Cox proportional hazards model.
+L contains patient activities, F contains feature loadings, β contains survival
+coefficients, and τ contains feature-specific noise precisions. Empirical Bayes
+priors learn sparsity and shrinkage through coordinate ascent variational inference.
 
-This project develops a supervised Bayesian matrix factorization model that
-decomposes a high-dimensional molecular matrix (gene expression, and in an
-extension DNA methylation) while jointly modelling patient survival with a Cox
-proportional hazards model.
-
-Unsupervised factorizations such as PCA or NMF recover the structure that explains
-the most molecular variance, which need not be the structure that predicts
-outcome. Adding a survival likelihood to the factorization targets latent
-programs that are both molecularly coherent and prognostic.
-
-```
-Y (n×p) = L (n×K) F' (K×p) + E          matrix factorization (molecular data)
-h(t_i)  = h₀(t_i) exp(η_i)              Cox proportional hazards (survival)
-```
-
-- **L**: patient scores on each latent program
-- **F**: feature (gene) loadings that define each program
-- **β**: survival coefficient of each program
-- **τ**: feature-specific noise precision
-
-Two linear predictors are implemented:
-
-| Model | Linear predictor | Notes |
-|-------|------------------|-------|
-| LB  | η = Lβ     | Patient scores are learned jointly with survival (`code/fit_ssbmf_lb.R`) |
-| YFB | η = (YF)β  | Predictor computed from the observed data and the loadings, so new patients are scored by projection without refitting L (`code/fit_ssbmf_yfb.R`) |
-
-Inference uses coordinate ascent variational inference (CAVI). Each coordinate
-update is an empirical Bayes normal means (EBNM) problem solved with the
-[`ebnm`](https://cran.r-project.org/package=ebnm) package, so sparsity in the
-loadings and shrinkage of the survival coefficients are learned from the data
-through empirical Bayes priors rather than tuned penalties. The non-conjugate Cox likelihood is handled
-with a second-order Taylor approximation, and the β update accounts for
-uncertainty in the program scores (E[l²] rather than l̄²).
-
-## Historical predictive benchmark
-
-The frozen single-modality benchmark uses YFB with per-platform
-z-standardized expression and DeSurv-style gene selection (genes ranked by mean
-and variance within each platform; 2,064 genes shared across cohorts). Trained on
-273 patients (TCGA-PAAD and CPTAC-PDAC) with K = 7 initial programs, the model
-retains two prognostic programs, one associated with worse and one with better
-survival, and reaches a mean concordance of 0.627 across five held-out PDAC
-dataset series (616 records, including repeated PACA-AU donors). The benchmark
-uses `alpha_F = 0`. Learning molecular loadings that respond reliably to survival
-is the current research goal. See the [status report](PROJECT_STATUS.qmd) or render the
-[progress book](docs/progress_book/) to open the interactive project-state view.
-
-![Kaplan–Meier curves by within-cohort risk tertile in five external PDAC cohorts](paper/writeup/2026-10-16-writeup/figures/km_risk_external.png)
-
-*Overall survival by within-cohort tertile of the frozen risk score in the five
-external cohorts. The model was trained on TCGA-PAAD and CPTAC-PDAC only.*
-
-**Multimodal prototype (development deferred).** A joint YFB model for matched gene
-expression and DNA methylation (TCGA training, ICGC validation) is implemented in
-`code/fit_multimodal_yfb.R` with prediction, simulation and K-selection
-utilities. Its derivation is in
-[`derivations/SSBMF-YFB-multimodal-model-derivations/`](derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.pdf).
-It is not yet the production model.
-
-Development history, benchmark tables and the reasoning behind each modelling
-choice are in [`PROJECT_STATUS.qmd`](PROJECT_STATUS.qmd) and
-[`DECISIONS.md`](DECISIONS.md). Advisor-meeting updates are collected in the
-[progress notebook](https://andrew-walther.github.io/multiomicsGEP/).
-
-The [writeup](paper/writeup/2026-10-16-writeup/writeup.qmd) includes real-data workflow diagrams
-separating pooled expression training/external scoring and matched TCGA
-training/ICGC validation, with distinct stage shapes and explicit design
-callouts. Rebuild these aggregate-only diagrams with
-`Rscript paper/writeup/2026-10-16-writeup/figures/make_real_data_workflows.R`; rendering commands
-are in [the writeup README](paper/writeup/2026-10-16-writeup/README.md).
-
-The [accuracy-review tracker](paper/writeup/2026-10-16-writeup/_process/Accuracy_Review_Dispositions_10_16_26.md)
-records manuscript corrections and remaining donor-dependence, historical
-preprocessing and acquisition-provenance questions. Historical estimates
-remain labelled as such; these documentation corrections do not adopt a new model.
-
-## Prelim Chapter 4 figures and tables
-
-The [prelim chapter](paper/prelim/project3-ssbmf.qmd) reports the fixed-rank,
-survival-weighted YFB fit and the rank-matched two-step comparison. The
-[chapter source ledger](paper/prelim/notes/chapter4-number-sources-2026-11-06.md)
-identifies each saved result. From the repository root, rebuild the exhibits
-with the commands below.
-
-```bash
-Rscript paper/prelim/make_figures_supervised_sim.R
-Rscript paper/prelim/make_figures_supervised_programs.R
-Rscript paper/prelim/make_figures_supervised_external_km.R
-```
-
-The first command reads saved aggregate CSVs. The program and KM builders also
-need the saved fits and local PDAC inputs. If the ignored external score cache
-is absent, set `PDAC_DATA_ROOT` to the local data directory and run
-`Rscript results/benchmark_sim/save_yfb_external_patient_scores.R` before the
-KM builder. The cache contains patient-level outcomes and projections and
-belongs only under the ignored `data/` directory. The chapter embeds the
-generated LaTeX tables and references the vector PDFs in `paper/prelim/figures/`.
+Two predictors are available: **YFB**, η = (YF)β, scores new patients by direct
+projection, and **LB**, η = Lβ, uses latent activities. Expression is the current
+single-modality application. A joint expression and methylation model is in development.
 
 ## Getting started
 
-### Requirements
-
-R (developed with R 4.5). The core model needs
+Developed with R 4.5. Install the core dependencies, then run code from the
+repository root:
 
 ```r
 install.packages(c("survival", "ebnm", "yaml"))
 ```
 
-Other analyses need further packages:
+Rcpp and a C++ compiler accelerate the loading sweep. A base R fallback is
+available. See the [code guide](code/README.md#dependencies) for analysis dependencies.
+Patient data are not distributed with the repository. Real-data runners read
+cohorts from `PDAC_DATA_ROOT`.
 
-| Use | Packages |
-|-----|----------|
-| Multimodal model | `Rcpp` (with a C++ compiler); Bioconductor `impute` for the methylation loader |
-| Comparators and tuning | `flashier`, `glmnet`, `rBayesianOptimization`, `GPfit` |
-| Pathway analysis and figures | `fgsea`, `msigdbr`, `ggplot2`, `pheatmap`; Bioconductor `clusterProfiler` |
-| Optional quantile normalization | Bioconductor `preprocessCore` |
+### Fit and predict
 
-Install Bioconductor packages with `BiocManager::install()`.
-
-Scripts use paths relative to the repository root; run them from there.
-
-### Minimal example
+This small synthetic example uses signed point-Laplace molecular priors and
+a Normal prior on survival coefficients. It illustrates fitting and prediction.
 
 ```r
 source("code/fit_ssbmf_yfb.R")
@@ -136,246 +40,68 @@ set.seed(1)
 n <- 150; p <- 200
 L <- matrix(rexp(n * 3), n, 3)
 F <- matrix(rexp(p * 3) * rbinom(p * 3, 1, 0.2), p, 3)
-Y <- scale(L %*% t(F) + matrix(rnorm(n * p), n, p))
-time   <- rexp(n, exp(drop(L %*% c(0.8, -0.8, 0))))
+Y <- L %*% t(F) + matrix(rnorm(n * p), n, p)
+time <- rexp(n, exp(drop(L %*% c(0.8, -0.8, 0))))
 status <- rbinom(n, 1, 0.7)
 
 train <- 1:100
-fit <- fit_ssbmf_yfb(Y[train, ], time[train], status[train], K = 5, verbose = FALSE)
+Y_train <- scale(Y[train, ])
+Y_test <- scale(Y[-train, ], center = attr(Y_train, "scaled:center"),
+                scale = attr(Y_train, "scaled:scale"))
+fit <- fit_ssbmf_yfb(
+  Y_train, time[train], status[train], K = 5,
+  canonicalize = TRUE, w_S = 1,
+  prior_LF = "point_laplace", prior_beta = "normal", verbose = FALSE
+)
 
-fit$EBeta   # posterior mean survival coefficients (K); unused programs shrink to 0
-fit$EF      # p × K posterior mean loadings
-
-# Score held-out patients by projection
-risk <- predict_ssbmf_yfb(Y[-train, ], fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
+fit$history$converged  # check before interpreting a fit
+head(fit$EF)           # p × K posterior mean loadings
+fit$EBeta              # K posterior mean survival coefficients
+risk <- predict_ssbmf_yfb(Y_test, fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
 ```
 
-### Benchmarks
+`risk` has one Cox score per held-out patient. Higher scores indicate shorter
+survival. The example applies training means and SDs to the held-out matrix.
+The [code guide](code/README.md) describes other priors, prediction and stratified CV.
 
-```bash
-Rscript results/benchmark_sim/run_YFB_benchmark.R   # YFB (recommended)
-Rscript results/benchmark_sim/run_LB_benchmark.R    # LB
-```
+Run the regression suite with:
 
-Outputs are written to `results/benchmark_sim/outputs/`. Hyperparameters and
-simulation settings are read from `config/globals.yml`.
-
-### Tests
-
-```bash
+```sh
 Rscript tests/run_tests.R
 ```
 
-### Data
+## Selected findings
 
-Every cohort is bulk tumour gene expression, measured by RNA-seq or microarray.
-Patient data are not distributed with this repository. Scripts read the PDAC
-cohorts from the directory in `PDAC_DATA_ROOT`. Sample sizes and censoring are
-for the patients used in the analysis.
+The reported expression fit uses 2,218 genes from 273 TCGA and CPTAC patients.
+Its mean external concordance is 0.620 across five dataset series, compared
+with 0.613 for the rank-matched two-step fit. The donor-bootstrap interval
+for the paired difference includes zero. In a simulation with weak molecular
+signal and strong survival effects, supervision improved prediction near the
+detection threshold. It barely changes real-data loadings at the selected weight. See the [status report](PROJECT_STATUS.qmd)
+for the findings and their limits. The earlier benchmark and its estimates
+remain documented as historical results.
 
-| Cohort | Expression platform | n | Censored | Role |
-|--------|---------------------|---|----------|------|
-| TCGA-PAAD | RNA-seq | 144 | 48% | Training |
-| CPTAC-PDAC | RNA-seq | 129 | 50% | Training |
-| Dijk | RNA-seq | 90 | 10% | External validation |
-| Moffitt | Microarray | 123 | 33% | External validation |
-| PACA-AU (array) | Microarray | 63 | 40% | External validation |
-| PACA-AU (RNA-seq) | RNA-seq | 52 | 40% | External validation |
-| Puleo | Microarray | 288 | 37% | External validation |
+## Repository and documentation
 
-The multimodal analysis uses matched TCGA and ICGC expression and methylation,
-assembled by `code/load_multiomics_data.R`.
+| Path | Contents |
+|---|---|
+| [code/](code/README.md) | Fitters, prediction, preprocessing and model selection |
+| [config/globals.yml](config/globals.yml) | Hyperparameters and simulation settings |
+| [tests/](tests/) | Regression tests |
+| [results/](results/README.md) | Analysis runners, saved outputs and rebuild commands |
+| [derivations/](derivations/README.md) | Full model derivations and algebra checks |
+| [docs/](docs/README.md) | Plans, findings, reviews and progress-book source |
+| [paper/](paper/writeup/README.md) | Writeup versions and manuscript material |
+| [presentation/](presentation/) | Meeting slides |
+| [longleaf_setup/](longleaf_setup/) | UNC Longleaf setup and SLURM scripts |
 
-## Repository structure
+Read the [progress notebook](https://andrew-walther.github.io/multiomicsGEP/),
+[project status](PROJECT_STATUS.qmd), [decisions](DECISIONS.md) and
+[roadmap](ROADMAP.md) for the research record and continuing work.
+The [prelim Chapter 4 source ledger](paper/prelim/notes/chapter4-number-sources-2026-11-06.md)
+includes its exhibit rebuild commands.
 
-```
-multiomicsGEP/
-├── code/            model implementation (see code/README.md)
-├── config/          globals.yml: hyperparameters and simulation settings
-├── tests/           test suite (run_tests.R)
-├── results/         benchmark and real-data analysis runners and outputs
-├── derivations/     variational update derivations
-├── docs/            update walkthroughs, progress notebook, plans and reports
-├── paper/           write-up (see paper/writeup/README.md) and manuscript sources
-├── presentation/    lab-meeting slides
-├── longleaf_setup/  SLURM scripts for the UNC Longleaf cluster
-├── PROJECT_STATUS.qmd   full project documentation and development log
-├── DECISIONS.md         dated modelling and analysis decisions
-└── ROADMAP.md           priorities and completed milestones
-```
+## License and author
 
-## Experimental normalized-projection fitter
-
-The corrected scientific gate failed. This implementation remains experimental;
-see the execution report before running another study.
-
-The hazard-orientation and posterior-variance regression checks are included in
-`Rscript tests/run_tests.R`. Positive Cox risk denotes shorter survival; any
-training-based reporting orientation is frozen for held-out evaluation.
-
-The experimental normalized-projection fitter is `code/fit_yfb_supervised.R`.
-It accepts a named list containing one nonnegative patient-by-gene matrix and
-survival times/events, scales genes by within-cohort SD, and returns posterior
-moments, factor roles, per-sweep diagnostics and explicit failure flags. It is
-opt-in and has not replaced the benchmark model. Example after sourcing it:
-`fit_yfb_supervised(list(expression = X), time, event, K = 7, gamma = 10)`.
-Run its registered simulation with
-`Rscript results/benchmark_sim/run_yfb_supervision_decision.R 4 10 attempt7`,
-then summarize with
-`Rscript results/benchmark_sim/summarize_yfb_supervision.R attempt1 attempt2 attempt3 attempt4 attempt5 attempt6 attempt7`.
-Existing checkpoints are reused; use only the registered attempt's code revision.
-Never commit the patient-level training cache generated by the precision audit.
-
-The opt-in fitter returns explicit posterior variances `VBeta`, `VL`, and `VF`.
-Use `sqrt(fit$VBeta)` for coefficient SD: it retains small variances when the
-means are large. Second moments remain available for update formulas.
-The registered gate, original failures and all numerical refinements are
-recorded in the October 30 execution report; this fitter remains unadopted.
-
-The corrected shared-loading simulation is attempt 7: Cox risk and
-reconstruction use the same training-SD-transformed loading. Earlier attempts
-remain numerical diagnostics. Its `simulation_units.csv` reports both raw and
-prepared variance shares; validation retains the training loading direction.
-
-
-The fixed diagnostic replays stop if their loading means differ from the
-registered checkpoints. Rebuild their tables and figure in this order:
-
-```bash
-Rscript results/benchmark_sim/run_yfb_saved_fit_diagnostics.R attempt7
-Rscript results/benchmark_sim/diagnose_yfb_saved_geometry.R attempt7
-Rscript results/benchmark_sim/plot_yfb_saved_traces.R attempt7
-```
-
-### Stratified YFB cross-validation
-
-For canonical YFB with projection centering, pass `strata_id`,
-`canonicalize = TRUE`, and `center_projection = TRUE` to
-`select_K_cv(model = "YFB", ...)` or `cv_survival_loglik()`. Each fold uses its
-training means and within-stratum risk comparisons. Each held-out stratum
-must be represented in that fold's training data. To score a previously
-unseen stratum on its own, call `predict_ssbmf_yfb()` with a fixed vector
-such as `projection_center = rep(0, ncol(Y_ext))`.
-
-## Documentation
-
-- [Corrected CAVI derivations](derivations/SSBMF-LB-model-derivations/MF_Derivations_UpdateAlgo_REVISED.pdf)
-- [Multimodal YFB derivation](derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.pdf)
-- [Project write-up](paper/writeup/2026-10-16-writeup/writeup.pdf): methods, evaluation, results and full derivations
-- [Progress notebook](https://andrew-walther.github.io/multiomicsGEP/)
-- [October 30 supervision execution report](docs/reviews/2026-10-30-codex-execution-report.md)
-- [Unresolved supervision problem](docs/findings/2026-10-30-yfb-supervision-problem-statement.md)
-
-## License
-
-MIT (see [`LICENSE`](LICENSE)). The PDAC, TCGA and ICGC data are not included and
-remain under their own terms of use.
-
-## Author
-
-Andrew Walther
-
-## Targeted YFB diagnostics
-
-The experimental fitter additionally accepts `tau_init`, `tau_fixed=TRUE`, and
-`guard=TRUE`. Fixed τ isolates noise feedback. The guard uses a fixed Cox
-curvature bound and checks the same normalized moment criterion after every
-candidate sweep, restoring all moments, priors and KL terms on rejection.
-`backtrack_stalled` is a failure, not convergence. These options do not change
-default numerical results and are not adopted scientific defaults.
-
-Run the registered small screen with
-`Rscript results/benchmark_sim/run_yfb_targeted_diagnostics.R` and the separate
-Gaussian-working-likelihood uncertainty experiment with
-`Rscript results/benchmark_sim/run_yfb_beta_uncertainty_screen.R`.
-Existing checkpoints are retained; the coefficient screen refuses overwrite.
-`code/yfb_joint_beta.R` is an exact fixed-design reference, not a joint β
-update integrated into the YFB fitter. It must not be presented as full-Cox
-coverage validation. The registration is
-[the targeted diagnostic plan](docs/plans/2026-10-30-yfb-targeted-diagnostics-plan.md).
-
-Results, derivation and complete failure inventory: [targeted findings](docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md). Fixed τ stabilizes the tested reconstructions; supervision remains unresolved.
-
-The [project tracker](docs/progress_book/current-state.qmd) includes the three
-model states, fitting and held-out prediction diagrams, and open decisions
-that are updated through the project chat. Rebuild the SVGs with
-`python3 docs/progress_book/figures/build_diagrams.py`, then render the
-progress book using RStudio Quarto.
-
-The tracker’s **Completed Results** section distinguishes saved historical and
-diagnostic findings from evidence still needed for the final supervised method.
-
-The tracker compares the sequential two-step fit and proposed joint YFB fit
-using matrix diagrams and separate arrows for molecular and survival inputs.
-The October methods development record is available within the October 16
-progress-book chapter.
-
-The November 6 progress notebook compares the saved October supervised YFB
-fit with rank-7 EBMF and EBMF followed by Cox. From the repository root, run
-`Rscript docs/progress_book/figures/verify_october_yfb.R` to regenerate its
-aggregate figures and print the paired concordance and program summaries.
-The script needs the local PDAC training data and the saved benchmark fits.
-
-Run `Rscript docs/progress_book/figures/plot_planted_yfb.R` to regenerate
-the simulation figure from the saved replicate table.
-Run `Rscript docs/progress_book/figures/plot_planted_yfb_comparators.R`
-to regenerate the loading-recovery and matched-comparator figures.
-
-### Risk direction in validation
-
-Validation runners evaluate Cox scores in the direction fixed before scoring.
-For the saved historical rank-matched comparison, run
-`Rscript results/benchmark_sim/run_yfb_vs_ebmf_k7_matched_ci.R` from the
-repository root with the local risk-score caches. It writes an aggregate
-rescore CSV beside the original table. The
-[orientation audit](docs/findings/2026-11-06-orientation-audit.md) describes
-which historical scores need a sign change.
-
-To reproduce the S-12 donor interval from the saved S-11 checkpoints and local
-PDAC data, run `Rscript results/benchmark_sim/score_yfb_supervised_external.R --donor-only`.
-The runner uses `PDAC_DATA_ROOT` or the configured local data path and writes
-`external_paired_diff_donor.csv` beside the record-based output. The
-[external-cohort audit](docs/findings/2026-11-06-external-cohort-uses.md) describes
-the resampling and the prior development uses of these cohorts.
-
-### Flat β likelihoods in canonical YFB
-
-With a shared normal, point-normal, or point-Laplace β prior, a flat coefficient
-likelihood returns the prior moments and contributes zero β KL. These likelihoods
-provide no information to the shared-prior refit. Run the regression with
-`Rscript tests/test_empty_program_kl.R` from the repository root. See the
-[pruning rerun plan](docs/plans/2026-11-06-flat-beta-pruning-rerun-plan.md)
-for the synthetic evaluation.
-
-### Fixed S-11 real-data comparators
-
-Run `Rscript results/benchmark_sim/run_prompt6_desurv.R 8` and then
-`Rscript results/benchmark_sim/run_prompt6_comparators.R` from the repository
-root with `PDAC_DATA_ROOT` set to the local data directory. The first command
-uses the pinned DeSurv library and saves local fit checkpoints. The second
-compares frozen S-11 reference scores with the training-only comparators and
-writes aggregate cohort estimates and paired donor-bootstrap intervals.
-See the [findings and source table](docs/findings/2026-11-06-real-data-comparators-findings.md).
-
-### Fixed S-11 risk groups and program analyses
-
-With the same local data and checkpoints, run these commands from the
-repository root:
-
-```sh
-Rscript results/benchmark_sim/run_prompt7_real.R
-Rscript results/benchmark_sim/run_prompt7_ebmf.R
-Rscript results/benchmark_sim/run_prompt7_simulation.R
-Rscript results/benchmark_sim/run_prompt7_simulation.R mixed
-```
-
-The real-data commands produce training-defined risk groups, external
-hazard-ratio and enrichment tables, KM and forest plots, and comparisons
-with unsupervised EBMF ranks. The simulation commands audit saved fits and
-run the mixed-signal comparison. See the
-[findings and source table](docs/findings/2026-11-06-desurv-style-analyses-findings.md).
-
-The November manuscript-planning writeup can be rendered from saved
-aggregate results. It includes comparator calibration, program stability,
-fixed-cutpoint risk groups and a simulation synthesis. Rebuild instructions
-are in the [November writeup README](paper/writeup/2026-11-06-writeup/README.md).
+[MIT](LICENSE). Patient data remain under their own terms of use.
+Author: Andrew Walther.

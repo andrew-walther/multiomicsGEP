@@ -114,3 +114,59 @@ Start a physical split by extracting and testing the shared reconstruction
 residual helper. Align the Cox calculations only after comparing tie and
 stratum handling, extreme predictors, and benchmark parity. Keep the current
 entry paths callable during any directory migration.
+
+## Dependencies
+
+The core single-modality fit uses `survival` and `ebnm`. Analysis runners also
+use `yaml` to read `config/globals.yml`. Rcpp and a C++ compiler provide the
+compiled canonical loading sweep. If unavailable, the fitter warns and uses
+the base R loop. Set `options(multimodal_yfb.engine = "R")` to select it explicitly.
+
+| Use | Packages |
+|---|---|
+| Multimodal model and methylation loading | `Rcpp` with a C++ compiler, Bioconductor `impute` |
+| Comparators and tuning | `flashier`, `glmnet`, `rBayesianOptimization`, `GPfit` |
+| Pathway analysis and figures | `fgsea`, `msigdbr`, `ggplot2`, `pheatmap`, Bioconductor `clusterProfiler` |
+| Optional quantile normalization | Bioconductor `preprocessCore` |
+
+Install Bioconductor packages with `BiocManager::install()`.
+
+## Stratified YFB cross-validation
+
+For canonical YFB with projection centering, pass `strata_id`,
+`canonicalize = TRUE`, and `center_projection = TRUE` to
+`select_K_cv(model = "YFB", ...)` or `cv_survival_loglik()`. Each fold uses its
+training means and within-stratum risk comparisons. Each held-out stratum
+must be represented in that fold's training data. To score a previously
+unseen stratum on its own, call `predict_ssbmf_yfb()` with a fixed vector
+such as `projection_center = rep(0, ncol(Y_ext))`.
+See the [review handoff](../docs/reviews/2026-11-06-stratified-yfb-cv-handoff.md)
+for regression checks and the separate canonical scaling diagnostic.
+
+## Experimental normalized-projection interface
+
+The experimental `fit_yfb_supervised()` takes a named list containing one
+nonnegative patient-by-gene matrix plus survival times and events. It scales
+genes by within-cohort SD and returns posterior moments, factor roles,
+per-sweep diagnostics and explicit failure flags. After sourcing its file,
+the interface is `fit_yfb_supervised(list(expression = X), time, event, K = 7, gamma = 10)`.
+This example documents an experimental interface, not an adopted configuration.
+
+The returned `VBeta`, `VL` and `VF` fields store variances explicitly.
+Use `sqrt(fit$VBeta)` for coefficient SD to retain small variances when means
+are large. Second moments remain available for the update formulas.
+
+The opt-in controls `tau_init`, `tau_fixed = TRUE` and `guard = TRUE` isolate
+noise feedback and enable guarded sweeps. The guard uses a fixed Cox curvature
+bound and restores all moments, priors and KL terms on rejection.
+`backtrack_stalled` is a failure, not convergence. These controls preserve
+default numerical results and are not adopted scientific defaults.
+`yfb_joint_beta.R` is an exact fixed-Gaussian-design reference, not a joint
+coefficient update integrated into this experimental fitter or full-Cox
+coverage validation. The canonical fitter's separate joint Gaussian option
+is documented in its derivation.
+
+The [targeted findings](../docs/findings/2026-10-30-yfb-targeted-diagnostics-findings.md)
+report partial stabilization with fixed noise and no complete screening success.
+The [results guide](../results/README.md#historical-supervision-diagnostics)
+retains the registered commands and checkpoint restrictions.

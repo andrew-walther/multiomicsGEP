@@ -196,18 +196,18 @@ Use the [KL-2 registration](docs/plans/2026-11-06-flat-beta-pruning-rerun-plan.m
 to locate the repeat of the pruning comparison.
 
 
-For the supervised Chapter 4 figures, use the three rebuild commands in
-`README.md` and trace values through
-`paper/prelim/notes/chapter4-number-sources-2026-11-06.md`. The external KM
+For the supervised Chapter 4 figures, use the three rebuild commands and
+source ledger in `paper/prelim/notes/chapter4-number-sources-2026-11-06.md`. The external KM
 builder consumes fixed scores under the ignored `data/` directory. Keep
 patient-level inputs and outputs there, and commit only aggregate exhibits.
 
-For the fixed S-11 real-data comparators, use the two commands in README.md
-and the [aggregate source table](docs/findings/2026-11-06-real-data-comparators-findings.md).
+For the fixed S-11 real-data comparators, use the two commands and
+[aggregate source table](docs/findings/2026-11-06-real-data-comparators-findings.md).
 Keep the DeSurv fit checkpoints under ignored `data/`.
 
 For the S-11 risk groups, EBMF rank comparison and program-rule audit, use
-the four commands in README.md and the
+the four commands in
+[the findings note](docs/findings/2026-11-06-desurv-style-analyses-findings.md) and the
 [review handoff](docs/reviews/2026-11-06-comparator-and-program-review-handoff.md).
 The S-11 precision audit uses a final-state bound because the saved fit
 does not contain loading second moments. Keep the simulation working

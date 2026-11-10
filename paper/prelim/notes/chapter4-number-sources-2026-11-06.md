@@ -5,6 +5,24 @@ The paths headed `outputs/` below are relative to
 follow the builders listed below. The chapter preserves the frozen comparisons
 and distinguishes the two external resampling units.
 
+## Rebuild the figures and tables
+
+Run from the repository root:
+
+```sh
+Rscript paper/prelim/make_figures_supervised_sim.R
+Rscript paper/prelim/make_figures_supervised_programs.R
+Rscript paper/prelim/make_figures_supervised_external_km.R
+```
+
+The simulation builder reads saved aggregate CSVs. The program and KM builders
+also need saved fits and local PDAC inputs. If the ignored external score cache
+is absent, set `PDAC_DATA_ROOT` and run
+`Rscript results/benchmark_sim/save_yfb_external_patient_scores.R` before the KM
+builder. This cache contains patient-level outcomes and projections and belongs
+under ignored `data/`. The chapter embeds generated LaTeX tables and references
+vector PDFs in `paper/prelim/figures/`. The ledger below identifies the sources.
+
 | Location | Numbers reported | Source |
 |---|---|---|
 | Introduction | Five-year pancreatic cancer relative survival, 13.7%; October 15 paired difference −0.003, interval −0.029 to 0.024, margin −0.02 | `SEER2026` in `paper/ssbmf-refs.bib`; `outputs/supervised_real_check/delta_c.csv` at commit `65cf90a`; October 15 entry in `DECISIONS.md` |
