@@ -11,6 +11,32 @@ model changes. Results freeze on 11/12. The November 13 progress-book chapter, w
 version and prelim Chapter 4 update are due 11/13. The plan also lists every open plan
 with its status.
 
+**Candidates retained from the Gemini usefulness review (2026-11-10).**
+The [idea table and short list](docs/findings/2026-11-10-gemini-advice-findings.md)
+record source checks and prior tests. These are follow-up candidates, not adopted
+methods or additional arms in this week's fixed A/B comparisons.
+
+- [ ] If the PE comparison reveals prior-step convergence failures, derive a
+  point-exponential fixed-q prior update with KL evaluated against the stored
+  posterior. The current fixed-q option supports point-Laplace only.
+- [ ] For loading-growth instability, distinguish fixed training-only τ from
+  bounded adaptive τ. Retain the October 30 fixed-noise evidence and require a
+  new registration before evaluating a changed precision model.
+- [ ] Derive genomics tempering with Cox weight one and explicit weights on
+  every KL term. Resolve the factor n between the two specifications and
+  compare its target with the tested survival-block objective before fitting.
+- [ ] If β collapse persists after B, derive a regularized nonzero Normal prior
+  variance with the hyperprior included in the objective and its scale stated.
+  Correct the inverse-Gamma MAP formula before evaluation. If A documents an
+  initialization failure, separately register paired positive/negative Cox-score
+  starts with identical starts across comparator arms.
+
+For task D, retain rescaling tests for all held priors, joint covariance and KL,
+and assess modality precision and score contributions before choosing weights.
+The existing multi-cohort τ item includes cohort-indexed reconstruction updates
+and heterogeneous-noise tests. The biology follow-up includes CpG annotation
+release, promoter/enhancer mapping rules and cross-modality program comparisons.
+
 **Prelim Chapter 4 (2026-11-06).**
 
 - [x] Revise the chapter around the survival-weighted YFB fit. The

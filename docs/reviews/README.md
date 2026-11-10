@@ -14,3 +14,5 @@ Reports from independent reviewers, and external advice recorded as received.
 | 2026-10-30 | [codex-execution-report](2026-10-30-codex-execution-report.md) | Execution coverage, numerical diagnoses, registered gate evidence and teach-back for normalized YF supervision | execution handoff; independent review pending |
 | 2026-11-06 | [stratified-yfb-cv-handoff](2026-11-06-stratified-yfb-cv-handoff.md) | Fold-wise projection centering, within-stratum scoring and the canonical scaling diagnostic | implementation handoff for independent review |
 | 2026-11-06 | [Comparator and program review handoff](2026-11-06-comparator-and-program-review-handoff.md) | Independent checks and review priorities for Prompts 6 and 7 | independent review pending |
+| 2026-11-10 | [Gemini end-to-end specification](2026-11-10-gemini-end-to-end-spec.md) | October 30 external advice, copied verbatim for the usefulness review | external advice, not adopted |
+| 2026-11-10 | [Gemini revised end-to-end specification](2026-11-10-gemini-end-to-end-v2-spec.md) | Revised October 30 external advice, copied verbatim for the usefulness review | external advice, not adopted |
