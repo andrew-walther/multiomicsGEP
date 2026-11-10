@@ -1,7 +1,7 @@
 # ============================================================
 # Script: test_profiled_curvature.R
 # Purpose: Verify the opt-in profiled Cox quadratic and unchanged default fits.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: existing test helpers and fitters, ebnm
 # ============================================================

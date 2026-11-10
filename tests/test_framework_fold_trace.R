@@ -1,7 +1,7 @@
 # ============================================================
 # Script: test_framework_fold_trace.R
 # Purpose: Verify unchanged framework settings and detection of coefficient extinction/revival.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: existing test helpers and diagnostic runner
 # ============================================================

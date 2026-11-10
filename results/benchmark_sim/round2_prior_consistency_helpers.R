@@ -1,7 +1,7 @@
 # ============================================================
 # Script: round2_prior_consistency_helpers.R
 # Purpose: Audit expected prior log densities without changing fitted posteriors.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: base R and existing truncated-Normal moment helper
 # ============================================================

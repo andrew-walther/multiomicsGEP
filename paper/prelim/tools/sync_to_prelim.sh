@@ -4,7 +4,7 @@
 # Purpose: Regenerate bios-dissertation's Chapter 4 draft from
 #          project3-ssbmf.qmd (the ONLY file anyone edits), render it,
 #          and commit the generated copy in bios-dissertation.
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-09-25
 # Dependencies: bash, git, python3 (stdlib only), RStudio's bundled Quarto,
 #               TinyTeX

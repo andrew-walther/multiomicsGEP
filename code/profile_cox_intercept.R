@@ -1,7 +1,7 @@
 # ============================================================
 # Script: profile_cox_intercept.R
 # Purpose: Profile the arbitrary constant predictor from a frozen Cox working quadratic.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: base R
 # ============================================================

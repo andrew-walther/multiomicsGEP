@@ -1,7 +1,7 @@
 # ============================================================
 # Script: run_framework_fold_trace.R
 # Purpose: Trace the unchanged TCGA framework fold1 that loses every survival coefficient.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: existing R1 runner, ebnm, yaml, survival
 # ============================================================

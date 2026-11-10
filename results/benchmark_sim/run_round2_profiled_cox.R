@@ -1,7 +1,7 @@
 # ============================================================
 # Script: run_round2_profiled_cox.R
 # Purpose: Evaluate the approved opt-in profiled Cox curvature without external selection.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: existing fixed-design runner and opt-in weighted-centering helper
 # Run: Rscript results/benchmark_sim/run_round2_profiled_cox.R [cores|prepare|finalize]

@@ -1,7 +1,7 @@
 # ============================================================
 # Script: run_round2_prior_consistency_trace.R
 # Purpose: Audit loading-prior KL consistency in an unchanged completed Single simulation.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: existing fixed-panel modules and prior-consistency helpers
 # ============================================================

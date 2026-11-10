@@ -1,7 +1,7 @@
 # ============================================================
 # Script: summarize_cpg_variability.R
 # Purpose: Describe full-TCGA probe variability without selecting a model or filter.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: base R, ggplot2, yaml (existing project dependencies)
 # ============================================================

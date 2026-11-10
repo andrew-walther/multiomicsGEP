@@ -1,7 +1,7 @@
 # ============================================================
 # Script: test_prior_consistency.R
 # Purpose: Check posterior absolute moments and KL changes when a molecular prior is refitted.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: existing test helpers, base R, molecular updates
 # ============================================================

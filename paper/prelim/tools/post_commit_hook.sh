@@ -4,7 +4,7 @@
 # Purpose: multiomicsGEP post-commit logic. If HEAD touched the Chapter 4
 #          sources, run sync_to_prelim.sh. Never blocks, fails, or undoes the
 #          multiomicsGEP commit (the commit already exists when this runs).
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-02
 # Dependencies: POSIX sh, git
 # ============================================================

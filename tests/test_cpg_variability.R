@@ -1,7 +1,7 @@
 # ============================================================
 # Script: test_cpg_variability.R
 # Purpose: Verify observed-value CpG moments, descriptive filters and plot counts.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: base R, existing test helpers, ggplot2
 # ============================================================

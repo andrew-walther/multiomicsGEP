@@ -3,7 +3,7 @@
 # Script: install_hooks.sh
 # Purpose: Install multiomicsGEP's post-commit hook, which keeps
 #          bios-dissertation's Chapter 4 in sync (tools/post_commit_hook.sh).
-# Author: Claude Code (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-02
 # Dependencies: bash, git
 # ============================================================

@@ -1,7 +1,7 @@
 # ============================================================
 # Script: test_profiled_protocol.R
 # Purpose: Verify profiled-curvature design, reference reuse and complete training checks.
-# Author: Codex (reviewed by Andrew Walther)
+# Author: Andrew Walther
 # Created: 2026-10-15
 # Dependencies: existing test helpers and fixed-prior runner
 # ============================================================
