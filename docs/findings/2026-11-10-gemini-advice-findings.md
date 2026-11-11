@@ -98,7 +98,7 @@ These are algebra and source checks, not new fitted experiments.
 
 ## Verification
 
-Both specification copies were compared byte for byte with their sources. All local links in this note resolve, and all ten original files remain present. An independent review checked the screenshot coverage, dispositions and consequential algebra/code claims. Its correction to the description of the first file's ending and its suggested decision-log citation were incorporated. No code was modified and no model fits or test suite were run for this documentation review.
+Both specification copies were compared byte for byte with their sources. All local links in this note resolve, and all ten original files were present at the time of the November 10 review. An independent review checked the screenshot coverage, dispositions and consequential algebra/code claims. Its correction to the description of the first file's ending and its suggested decision-log citation were incorporated. No code was modified and no model fits or test suite were run for this documentation review.
 
 ## Ideas worth acting on
 
@@ -109,4 +109,4 @@ Both specification copies were compared byte for byte with their sources. All lo
 5. **ROADMAP: regularized nonzero β variance and paired positive/negative Cox starts.** These are conditional follow-ups to documented collapse, with corrected hyperprior algebra and separate evaluations after the fixed A/B comparisons.
 6. **Existing tasks: finish the planned prior/PIP, cohort-noise and biological checks.** A/B retain the nonnegative and sparse-prior ideas. D and the existing per-cohort τ and biology items retain information that concordance alone would miss.
 
-The source folder remains intact. Item 00 is **awaiting Andrew's approval** after review of this table and short list. Andrew will delete the folder himself. No analysis task, fitter change or new scientific default is authorized by these assignments.
+Andrew approved closing item 00 and deleting the source folder on November 11. Both preserved specifications were verified byte for byte against the originals, and the folder contained exactly the ten reviewed files. The source folder was then deleted at Andrew's request. The idea table, short list and both specifications remain in the repository. No analysis task, fitter change or new scientific default is authorized by these assignments.
