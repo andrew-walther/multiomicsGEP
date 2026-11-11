@@ -12,7 +12,11 @@ argument so that choosing a split does not silently select a molecular offset,
 Cox stratum or cohort-specific coefficient model. The generator rejects a split
 that omits a cohort from any training complement. It does not search alternative
 sparse allocations. Fitting, prediction and scoring formulas are unchanged.
-The independent review of `68e3646` remains open and will also cover this change.
+The [combined independent review](docs/reviews/2026-11-11-stratified-cv-independent-review.md)
+of `68e3646` and this change was approved on November 11, with 62 focused tests
+and additional center, prediction, missing-stratum and compatibility checks
+passing. No implementation defect was found. The scale-robust dead-program
+rule remains an open scientific decision and is not changed by this review.
 
 ## 2026-11-11 — Results rebuild design delivered for review
 

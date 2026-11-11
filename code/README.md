@@ -186,8 +186,9 @@ fitting and scoring logic are unchanged.
 The new fold checks are in `tests/test_cohort_folds.R`, run directly with
 `Rscript tests/test_cohort_folds.R` or as part of `Rscript tests/run_tests.R`.
 They inspect training row identities through each direct helper, including both
-rank-CV model paths. The independent review of the earlier stratified CV change
-(`68e3646`) remains open.
+rank-CV model paths. The [combined independent review](../docs/reviews/2026-11-11-stratified-cv-independent-review.md)
+of `68e3646` and the fold-option change was approved on November 11, with
+62 focused tests and separate prediction/compatibility checks passing.
 
 ## Experimental normalized-projection interface
 

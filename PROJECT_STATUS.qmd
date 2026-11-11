@@ -40,8 +40,11 @@ row-wise genomics bi-CV. Each returned training fold retains every supplied
 cohort. Sparse allocations that lose a cohort fail explicitly. Event-only
 defaults, model settings and saved results are unchanged. The
 [code guide](code/README.md#cohort-and-event-folds) documents the interface and
-limits. The independent review of commit `68e3646` remains open, including the
-new fold option for the external reviewer. No analysis task was started.
+limits. The [combined independent review](docs/reviews/2026-11-11-stratified-cv-independent-review.md)
+of `68e3646` and the new fold option was approved on November 11. All 62 focused
+tests and separate center, risk-vector, missing-stratum and compatibility checks
+passed. The scale-robust dead-program rule remains a separate open decision.
+No analysis task was started.
 `Rscript tests/run_tests.R` passed 794 tests with zero failures. The targeted
 fold checks passed 11/11. The suite emitted a bounded-β profile-likelihood
 fallback warning.

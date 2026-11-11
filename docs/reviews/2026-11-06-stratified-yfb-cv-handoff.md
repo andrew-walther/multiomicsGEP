@@ -1,5 +1,9 @@
 # Stratified YFB cross-validation review handoff
 
+Reviewed November 11: the [combined independent review](2026-11-11-stratified-cv-independent-review.md)
+approves the CV changes and new cohort/event fold option. This handoff preserves
+the original implementation context. Its scaling-rule decision remains open.
+
 ## Scope
 
 This follows commit `a463eea`, which added within-stratum projection centering

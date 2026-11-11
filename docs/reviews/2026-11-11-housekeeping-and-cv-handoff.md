@@ -2,9 +2,11 @@
 
 Date: 2026-11-11. Author: Andrew Walther.
 
-The requested housekeeping, G design and item 0's code portion are complete on
-main. Item 0 remains unchecked because the independent review of `68e3646` and
-the new fold option is still open. No analysis task A to F was started. No
+The requested housekeeping, G design and item 0 are complete on main. After
+this handoff was first published, Andrew authorized the [combined independent
+CV review](2026-11-11-stratified-cv-independent-review.md). It approved `68e3646`
+and the new fold option on November 11. All 62 focused tests and additional
+independent checks passed. No analysis task A to F was started. No
 results folders were moved and no scientific default or saved result changed.
 
 ## Work and commits
@@ -43,7 +45,7 @@ actual training row IDs used by each direct helper, including both rank-CV model
 paths. The full suite emitted a warning that the bounded β optimizer used its
 profile-likelihood fallback, plus zero-factor diagnostic messages. No failure was
 suppressed. A fresh review of the new option found no actionable defect. This
-bounded check does not close or substitute for the requested independent review.
+bounded check was followed by the separately authorized combined review linked above.
 
 ## Gemini ideas retained for future consideration
 
@@ -61,8 +63,11 @@ rules. Implementing the pipeline, moving runners/results or selecting an externa
 checkpoint archive needs a later approved task. The broader cleanup of
 PROJECT_STATUS.qmd, DECISIONS.md and ROADMAP.md remains on the ROADMAP.
 
-The independent reviewer should review `68e3646` together with `dbb4113`.
-No review of `68e3646` was written in this work. Item 0's review box stays open.
+The combined review of `68e3646` and `dbb4113` is complete. No defects required
+code changes. The scale-robust dead-program rule remains a scientific follow-up,
+not a blocker for the reviewed CV integration. G now explicitly specifies local
+execution, an extensible result catalog and clean-checkout reproduction. Its
+implementation and any physical results migration remain separate tasks.
 
 The platform-normalization archive is local only because it contains unpublished
 patient risk-score history. Its tag and verified, restoration-tested bundle are
