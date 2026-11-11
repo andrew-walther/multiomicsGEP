@@ -3,6 +3,16 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-11 — Results rebuild design delivered for review
+
+The [G design](docs/plans/2026-11-11-results-rebuild-design.md) proposes an
+explicit result register, a small `targets` pilot, immutable run manifests and
+one reviewed current-release index. It maps all 204 inventoried scripts to
+proposed roles and preserves historical records. This records a proposal, not
+adoption of a workflow dependency or approval to relocate results. The pilot,
+core release scope and durable private archive destination await Andrew's review.
+Current production paths and model settings are unchanged.
+
 ## 2026-11-09 — External cohorts are for validation scoring only; choices use training CV
 
 **Decided (Andrew).** Every modeling choice, from preprocessing and gene screening to

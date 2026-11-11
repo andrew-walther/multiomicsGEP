@@ -1034,6 +1034,11 @@ The entries below retain dated implementation and evaluation history.
   before deciding — do not commit patient-level data without confirming it's permitted.
 
 - [ ] **Investigate {targets} workflow for pipeline reproducibility** `[Priority: Low]` `[Effort: Medium]`
+  The [November 11 design](docs/plans/2026-11-11-results-rebuild-design.md) and
+  [204-script disposition proposal](docs/plans/2026-11-11-results-rebuild-script-dispositions.csv)
+  complete week-plan G as a design deliverable. A small synthetic pilot, manifest
+  contract, core families and private archive destination await Andrew's approval.
+  No pipeline was installed and no results were moved or rerun.
   Adopt the R `targets` package to manage computational dependencies across the pipeline (data
   loading → fitting → tables → figures → reports). Tracks which outputs are stale and re-runs only
   what is needed. Particularly valuable as the number of cohorts, conditions, and reports grows —
