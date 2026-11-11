@@ -39,7 +39,7 @@ endorsement of a historical model.
 | Project history, choices and advisor progress | Entry-page links retained to PROJECT_STATUS.qmd, DECISIONS.md, ROADMAP.md and the published progress notebook. |
 | October writeup workflow diagrams and rebuild command | Confirmed in the [October writeup README](../../paper/writeup/2026-10-16-writeup/README.md#rebuilding-figures). Added a results-guide pointer. The circulated version was not edited. |
 | Accuracy-review dispositions and remaining inference/provenance questions | Confirmed in the [accuracy dispositions](../../paper/writeup/2026-10-16-writeup/_process/Accuracy_Review_Dispositions_10_16_26.md) and October writeup README. Retained a results-guide pointer. |
-| Prelim Chapter 4 exhibit commands, required fits/local data, external cache and output locations | Moved the three commands and cache instructions to the [Chapter 4 source ledger](../../paper/prelim/notes/chapter4-number-sources-2026-11-06.md#rebuild-the-figures-and-tables). One entry-page link remains. |
+| Prelim Chapter 4 exhibit commands, required fits/local data, external cache and output locations | Moved the three commands and cache instructions to the [Chapter 4 source ledger](../../paper/prelim/notes/chapter4-number-sources-2026-11-06.md#rebuild-the-figures-and-tables). The entry-page link was subsequently removed at Andrew's request on November 11. The rebuild instructions remain in the ledger. |
 | Installation, core R requirements, root-relative execution | Kept in the entry page. |
 | Optional analysis packages and Bioconductor installation | Moved the package table to the [code guide](../../code/README.md#dependencies). Clarified that Rcpp accelerates the canonical loading sweep and that a base R fallback exists. |
 | Minimal fit-and-predict example | Retained and updated to explicitly select canonical YFB with point-Laplace molecular priors and Normal β. Standardization now uses training means/SDs for the held-out matrix. The convergence field is `fit$history$converged`. |
@@ -103,8 +103,8 @@ No dependency or production function was added.
 
 ## Verification
 
-The entry page has 107 lines and about 580 words, compared with 381 lines
-before cleanup. It contains no internal study identifiers. Local Markdown links,
+The initial cleanup reduced the entry page to 107 lines and about 580 words,
+compared with 381 lines before cleanup. It contains no internal study identifiers. Local Markdown links,
 retained script paths and removal destinations were checked. The example was
 executed as a documentation smoke check and compared against direct Y_test F β
 projection. It converged in 31 iterations and returned 50 finite, nonconstant
@@ -112,3 +112,21 @@ held-out scores. The direct-projection identity passed. The full R suite was
 not rerun for this documentation-only change. Independent review checked the
 plan, full diff, retention ledger, quick-start API, selected findings, local links
 and Markdown anchors. It found no actionable issues. No patient data or research analysis was run.
+
+## Author feedback, November 11
+
+Andrew requested numerical definitions of weak molecular signal, strong survival
+effects and the detection threshold. The README now reports the planted raw
+centered-variance shares, mean oracle concordance and observed two-step recovery
+counts. It also gives the unit-weight supervised prediction/recovery result and
+the failed false-active criterion. These values come from the existing
+[near-threshold findings](2026-11-05-near-threshold-findings.md) and saved
+`yfb_near_threshold_2026-11-05/metrics.csv`. The generator confirms that the target
+variance share precedes feature standardization. The transition is specific to
+this generator, rather than an estimated universal detection threshold.
+
+The prelim source-ledger link was removed from the entry page. The ledger and
+its rebuild instructions remain available at their existing location. The
+progress notebook, project status, decisions and roadmap links now form a
+bulleted documentation list. The quick-start code and scientific results were
+not changed, and no fits were run for this prose revision.

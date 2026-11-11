@@ -75,11 +75,22 @@ Rscript tests/run_tests.R
 The reported expression fit uses 2,218 genes from 273 TCGA and CPTAC patients.
 Its mean external concordance is 0.620 across five dataset series, compared
 with 0.613 for the rank-matched two-step fit. The donor-bootstrap interval
-for the paired difference includes zero. In a simulation with weak molecular
-signal and strong survival effects, supervision improved prediction near the
-detection threshold. It barely changes real-data loadings at the selected weight. See the [status report](PROJECT_STATUS.qmd)
-for the findings and their limits. The earlier benchmark and its estimates
-remain documented as historical results.
+for the paired difference includes zero. On real data, survival supervision
+barely changes the loadings at the selected weight. The earlier benchmark
+and its estimates remain documented as historical results.
+
+In simulations with 2,000 genes, the planted prognostic program explained
+0.05%–0.2% of centered molecular variance before gene standardization. Strong
+survival effects gave mean oracle concordance of 0.936–0.958, using the true
+generating risk score. The two-step fit recovered the program in 0/10 datasets
+at 0.05%, 8/10 at 0.1% and 10/10 at 0.2%. These counts locate the empirical
+recovery transition in this generator. Recovery required loading correlation
+|r| ≥ 0.7, survival activity and the correct coefficient sign. At 0.05%, the
+supervised fit at unit survival weight increased mean validation concordance
+from 0.644 to 0.800 and recovered the program in 5/10 datasets. It still
+averaged 2.5 false-active programs and failed the registered recovery criterion.
+See the [simulation findings](docs/findings/2026-11-05-near-threshold-findings.md)
+for the full comparison and limits.
 
 ## Repository and documentation
 
@@ -95,11 +106,12 @@ remain documented as historical results.
 | [presentation/](presentation/) | Meeting slides |
 | [longleaf_setup/](longleaf_setup/) | UNC Longleaf setup and SLURM scripts |
 
-Read the [progress notebook](https://andrew-walther.github.io/multiomicsGEP/),
-[project status](PROJECT_STATUS.qmd), [decisions](DECISIONS.md) and
-[roadmap](ROADMAP.md) for the research record and continuing work.
-The [prelim Chapter 4 source ledger](paper/prelim/notes/chapter4-number-sources-2026-11-06.md)
-includes its exhibit rebuild commands.
+Documentation:
+
+- [Progress notebook](https://andrew-walther.github.io/multiomicsGEP/)
+- [Project status](PROJECT_STATUS.qmd)
+- [Decisions](DECISIONS.md)
+- [Roadmap](ROADMAP.md)
 
 ## License and author
 
