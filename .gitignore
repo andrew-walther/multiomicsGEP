@@ -50,3 +50,7 @@ results/benchmark_sim/outputs/round2/*/folds.csv
 
 # Patient-level training cache from the October 30 precision audit (never commit).
 results/benchmark_sim/outputs/yfb_supervision_2026-10-30/training_only.rds
+
+# Local synthetic results-rebuild pilot dependencies, cache and generated runs.
+/results/pilot/library/
+/results/pilot/local/

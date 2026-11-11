@@ -8,6 +8,7 @@ Current priorities are maintained in the [roadmap](../../ROADMAP.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-11 | [local-results-pilot-plan](2026-11-11-local-results-pilot-plan.md) | Authorized local synthetic targets pilot, extensibility and freshness/reproduction acceptance checks | implementation in progress |
 | 2026-11-11 | [results-rebuild-design](2026-11-11-results-rebuild-design.md) | Local-first extensible result collection, dependency tracking, clean-checkout reproduction, provenance, proposed layout and checkpoint retention, built on 0b | design for Andrew's review; no implementation or moves |
 | 2026-11-11 | [results-rebuild-script-dispositions](2026-11-11-results-rebuild-script-dispositions.csv) | Proposed current, historical or retired role for all 204 inventoried scripts | proposed mapping accompanying G; not migration authorization |
 | 2026-03-25 | [fit-modular-design-spec](2026-03-25-fit-modular-design-spec.md) | Design for `fit_modular.R` (factor-wise CAVI) and its companion walkthrough | complete |
