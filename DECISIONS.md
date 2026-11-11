@@ -23,6 +23,11 @@ proposed roles and preserves historical records. This records a proposal, not
 adoption of a workflow dependency or approval to relocate results. The pilot,
 core release scope and durable private archive destination await Andrew's review.
 Current production paths and model settings are unchanged.
+Andrew's follow-up sets local execution as the default. Longleaf is optional
+and requires a separate decision and setup guidance. The revised proposal adds
+an extensible artifact catalog, explicit per-arm provenance for comparisons and
+clean-checkout reproduction checks. This clarifies the intended implementation
+without starting it or relocating the current results tree.
 
 ## 2026-11-09 — External cohorts are for validation scoring only; choices use training CV
 

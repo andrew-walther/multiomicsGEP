@@ -1033,18 +1033,19 @@ The entries below retain dated implementation and evaluation history.
   to OneDrive? Weigh data size, licensing/PHI concerns (this is patient data), and reproducibility
   before deciding — do not commit patient-level data without confirming it's permitted.
 
-- [ ] **Investigate {targets} workflow for pipeline reproducibility** `[Priority: Low]` `[Effort: Medium]`
+- [ ] **Implement a local-first, versioned results workflow after design approval.**
   The [November 11 design](docs/plans/2026-11-11-results-rebuild-design.md) and
   [204-script disposition proposal](docs/plans/2026-11-11-results-rebuild-script-dispositions.csv)
-  complete week-plan G as a design deliverable. A small synthetic pilot, manifest
-  contract, core families and private archive destination await Andrew's approval.
-  No pipeline was installed and no results were moved or rerun.
-  Adopt the R `targets` package to manage computational dependencies across the pipeline (data
-  loading → fitting → tables → figures → reports). Tracks which outputs are stale and re-runs only
-  what is needed. Particularly valuable as the number of cohorts, conditions, and reports grows —
-  currently all cohorts are re-run together even when only one has changed. Also facilitates
-  Longleaf HPC submission of individual targets as SLURM jobs.
-  *Notes: Low priority — investigate feasibility and overhead before committing to a refactor. The `{targets}` package works best when the pipeline DAG is well-defined; this is approximately true for the current runner structure. See `results/legacy/modular_sim_factor/run_factor_modular_simulation.R` for the current monolithic runner.*
+  complete week-plan G as a design deliverable. Start with a small local
+  synthetic pilot that tracks dependencies and verifies clean-checkout
+  reproduction. Provide a catalog for choosing current figures/tables and allow
+  new LB/YFB, methylation and multimodal families to be registered independently.
+  Model changes flag affected outputs as stale. Only an explicit rebuild launches
+  fits. Measure time and peak resident memory before increasing local concurrency.
+  Longleaf is optional and needs Andrew's approval and setup guidance.
+  Pilot implementation, core release scope, physical migration and private archive
+  storage remain separate decisions. No pipeline was installed and no results
+  were moved or rerun. Historical evidence stays preserved.
 
 - [x] **`results/` directory cleanup** `[Priority: High]` `[Effort: Small]` *(complete 2026-05-05)*
   The `results/` directory now mixes code scripts, CSV tables, PNG/PDF figures, and
