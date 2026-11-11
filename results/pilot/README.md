@@ -110,7 +110,7 @@ script requires setup because it runs the actual target graph.
 | `pilot_runtime()` | Verify visible raw package versions and return package/R/platform provenance. Raw version strings preserve CRAN's hyphenated versions. |
 | `pilot_source_state()` / `pilot_context()` | Read Git state and declared file hashes, then derive the run identity and manifest fields. No fit is run. |
 | `pilot_simulate()` | Turn fixture settings into standardized train/test matrices and survival vectors. Only training means/SDs standardize test rows. |
-| `pilot_fit()` | Pass explicit settings and training rows to the canonical fitter, rejecting capped/nonfinite fits. Returns the existing fit structure. |
+| `pilot_fit()` / `pilot_fit_process()` | Isolate the canonical fit in a clean local subprocess and pass explicit settings and training rows to the canonical fitter, rejecting capped/nonfinite fits. Returns the existing fit structure. |
 | `pilot_prediction_summary()` / `pilot_input_summary()` | Convert the fit/input objects into aggregate metric/value data frames for the two families. |
 | `pilot_finalize()` / `pilot_artifacts()` | Finalize immutable files, make a base-R PDF and write adjacent provenance. Fail on conflicting content. |
 | `pilot_release()` / `pilot_catalog()` | Finalize a complete pilot manifest/catalog and local pointer, or refuse to read stale/missing/changed artifacts. |
@@ -122,3 +122,8 @@ for readable configuration/manifests, `digest` for a run identity, `targets`
 for dependency tracking and its existing `callr` dependency to isolate the
 canonical fit process. The canonical fitter supplies its existing statistical
 packages. No new fitting algorithm or scientific comparison is introduced.
+
+
+The [verification findings](../../docs/findings/2026-11-11-local-results-pilot-findings.md)
+record the 14 workflow checks, 801-test suite, clean-checkout reproduction and
+[approved independent review](../../docs/reviews/2026-11-11-local-results-pilot-review.md).

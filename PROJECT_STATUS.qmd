@@ -40,6 +40,9 @@ and PDF figures, and a freshness-checked catalog. It uses local serial jobs,
 with the fitter isolated in a fresh R subprocess. Existing scientific result
 folders, model settings and production reports are unchanged. Expansion to the
 week's analysis families and physical reorganization remain later tasks.
+The [verification findings](docs/findings/2026-11-11-local-results-pilot-findings.md)
+record 14 passing workflow checks, 801 passing full-suite tests and a successful
+clean-checkout setup/build/catalog run with identical aggregate CSVs.
 
 ## Cohort-balanced CV folds (2026-11-11)
 

@@ -2,12 +2,15 @@
 
 Date: 2026-11-11. Author: Andrew Walther.
 
-Status: design for Andrew's review. No pipeline is implemented, no dependency is
-installed, no result is regenerated and no existing result or runner is moved.
-Completing G means delivering this design, not approving or executing the cleanup.
+Status: full-workflow design. At G delivery no pipeline was implemented and no
+result or runner was moved. Andrew subsequently authorized the
+[small local software pilot](../../results/pilot/README.md), now implemented and
+[verified](../findings/2026-11-11-local-results-pilot-findings.md). Full scientific
+workflow implementation and physical migration remain separate tasks.
+Completing G meant delivering the design, not executing the cleanup.
 Revised November 11 after Andrew's feedback: local execution is the default,
 the collection must accept new studies, and external reproduction is an explicit
-acceptance criterion. These clarifications do not install or run the pipeline.
+acceptance criterion. These design clarifications did not themselves install or run a pipeline.
 
 ## Problem and recommendation
 
@@ -314,7 +317,10 @@ validation for model choice. Nothing in this design starts tasks A to F.
 
 ## Implementation acceptance and decisions for Andrew
 
-After design approval, implement a bounded pilot in a separate task:
+The bounded pilot was authorized and completed in a separate task. Its
+[verification findings](../findings/2026-11-11-local-results-pilot-findings.md)
+record the implemented subset of the acceptance contract below. Real-data
+families, scientific promotion and physical migration remain later work:
 
 1. Register one synthetic simulation, a fit, an aggregate table and an exhibit.
    Run locally and reproduce from a clean checkout with the documented setup.
@@ -338,14 +344,15 @@ After design approval, implement a bounded pilot in a separate task:
    entries, model-variant labels and freshness checks. This tests extensibility
    before adding this week's larger comparison or multimodal studies.
 
-Andrew's remaining decisions are whether to approve the `targets` pilot and
-manifest/layout proposal, which conditional families must be present in the
-first complete release, and where durable private archives will live. The default
+Andrew approved the bounded `targets` pilot, which is now complete. Remaining
+decisions are the scope and manifest/layout contract for the first scientific
+release, which conditional families it must include, and where durable private
+archives will live. The default
 recommendation is the expression model's simulation, training CV, final fit,
 external scores, fixed comparators and associated exhibits. Biology is required
 when making current biology claims. Multimodal/LB expansion and new sensitivity
-studies remain gated by their own task approvals. No implementation decision is
-required while Andrew reviews this design.
+studies remain gated by their own task approvals. Full scientific implementation
+and migration are not started by completion of the software pilot.
 
 
 ## Design verification
@@ -361,5 +368,5 @@ archive migration or model change was executed for this design.
 A second independent review checked the local-first and extensibility revision
 against Andrew's feedback and the historical runtime entries. Its clarification
 that methylation timing came from the historical framework was incorporated.
-The design remains unimplemented. Local execution is the agreed default, with
+The full design is not implemented by the bounded pilot. Local execution remains the default, with
 any later Longleaf use requiring a separate decision and practical guidance.

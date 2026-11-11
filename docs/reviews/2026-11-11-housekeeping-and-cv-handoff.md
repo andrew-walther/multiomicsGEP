@@ -20,6 +20,24 @@ results folders were moved and no scientific default or saved result changed.
 | G Design only | [Rebuild design](../plans/2026-11-11-results-rebuild-design.md), with proposed roles for all 204 scripts. Independently reviewed, delivered for Andrew's consideration. | `7db86ef`, `86ee3ead` |
 | 0 Code only | [Cohort/event fold generator](../../code/train_test_split.R), four direct CV helper functions and [targeted tests](../../tests/test_cohort_folds.R). | `dbb4113`, `debe6e0`; combined review `681ce91c` |
 
+## Added local pilot and final handoff
+
+Andrew subsequently authorized a small implementation beyond G's design.
+`9613ab6` registers its scope and `cc11b34` implements it. The
+[pilot guide](../../results/pilot/README.md) gives setup/build/status/catalog
+commands. The [findings](../findings/2026-11-11-local-results-pilot-findings.md)
+record 14 workflow checks, 801 passing full-suite tests and successful
+clean-checkout setup/build/catalog execution. Both aggregate CSVs reproduced
+byte for byte under the tested environment. The independent software review
+approved the pilot after correcting the CLI/environment issues it exposed.
+
+The six original items and this added pilot are complete. This is ready to hand
+off. The next owner has a tested synthetic workflow to extend, not a migrated
+scientific results collection. No analysis task A to F or results relocation was
+started. Follow the week plan and obtain Andrew's approval for the next scoped
+analysis or workflow extension. The full results migration and private archive
+destination remain later decisions.
+
 ## Fold option and verification
 
 Use `cohort_id = cohort` with `create_stratified_folds()`, or

@@ -7,6 +7,7 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-11 | [local-results-pilot-findings](2026-11-11-local-results-pilot-findings.md) | Local synthetic workflow, 14 acceptance checks, 801-test suite and clean-checkout reproduction | complete software pilot; scientific migration remains future work |
 | 2026-03-31 | [pdac-data-audit/](2026-03-31-pdac-data-audit/PDAC_data_audit.qmd) | The seven PDAC expression cohorts (platform, survival, censoring, file layout) and whether the loader handles them | complete (corrected 2026-10-16: CPTAC is RNA-seq) |
 | 2026-04-29 | [ssbmf-summary-report](2026-04-29-ssbmf-summary-report.qmd) | Simulation validation and DeSurv-matched PDAC benchmark of the original LB model | superseded by 2026-05-05 |
 | 2026-05-05 | [ssbmf-summary-report](2026-05-05-ssbmf-summary-report.qmd) | LB versus YFB re-benchmark after the first round of fixes | superseded by 2026-05-06 |

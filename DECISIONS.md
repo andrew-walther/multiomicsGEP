@@ -15,6 +15,9 @@ helpers otherwise mutate the dependency-tracking environment. This is process
 isolation, not a new fitter or parallel fitting policy. Exact package versions
 are locked and missing versions install only in a local ignored library.
 The pilot does not promote a scientific release or move historical results.
+The [verification findings](docs/findings/2026-11-11-local-results-pilot-findings.md)
+record the independent 14-check approval, 801-test suite and clean-checkout
+reproduction. This accepts the bounded software pilot, not the full migration.
 
 ## 2026-11-11 — Opt-in cohort/event folds for existing CV helpers
 

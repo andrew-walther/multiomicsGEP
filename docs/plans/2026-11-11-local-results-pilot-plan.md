@@ -45,5 +45,9 @@ prelim or paper as method-performance evidence.
 
 ## Progress
 
-- [ ] Implementation, acceptance checks, independent review and handoff update.
-  - Implementation and independent 14-check acceptance run complete. Clean-checkout verification and final full-suite rerun are in progress.
+- [x] Implementation, acceptance checks, independent review and handoff update.
+  `cc11b34`: [implementation](../../results/pilot/README.md),
+  [verification findings](../findings/2026-11-11-local-results-pilot-findings.md)
+  and [independent review](../reviews/2026-11-11-local-results-pilot-review.md).
+  All 14 workflow checks and 801 full-suite tests passed. A clean checkout's
+  documented setup/build/catalog commands passed and both aggregate CSVs matched.

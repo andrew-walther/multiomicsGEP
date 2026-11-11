@@ -1036,16 +1036,17 @@ The entries below retain dated implementation and evaluation history.
 - [ ] **Implement a local-first, versioned results workflow after design approval.**
   The [November 11 design](docs/plans/2026-11-11-results-rebuild-design.md) and
   [204-script disposition proposal](docs/plans/2026-11-11-results-rebuild-script-dispositions.csv)
-  complete week-plan G as a design deliverable. Start with a small local
-  synthetic pilot that tracks dependencies and verifies clean-checkout
-  reproduction. Provide a catalog for choosing current figures/tables and allow
+  complete week-plan G as a design deliverable. The
+  [small local software pilot](results/pilot/README.md) is implemented in
+  `cc11b34`, with [14 workflow checks, 801 tests and clean-checkout verification](docs/findings/2026-11-11-local-results-pilot-findings.md).
+  The full scientific workflow remains open. Provide a catalog for choosing current figures/tables and allow
   new LB/YFB, methylation and multimodal families to be registered independently.
   Model changes flag affected outputs as stale. Only an explicit rebuild launches
   fits. Measure time and peak resident memory before increasing local concurrency.
   Longleaf is optional and needs Andrew's approval and setup guidance.
   Pilot implementation, core release scope, physical migration and private archive
-  storage remain separate decisions. No pipeline was installed and no results
-  were moved or rerun. Historical evidence stays preserved.
+  storage remain separate decisions. Only the synthetic software pilot was built.
+  Historical results remain in place and were not rerun.
 
 - [x] **`results/` directory cleanup** `[Priority: High]` `[Effort: Small]` *(complete 2026-05-05)*
   The `results/` directory now mixes code scripts, CSV tables, PNG/PDF figures, and
