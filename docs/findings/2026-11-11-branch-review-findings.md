@@ -4,7 +4,7 @@ Date: 2026-11-11
 
 Author: Andrew Walther
 
-This is a proposed disposition, pending Andrew’s approval. No branch or tag was changed. The snapshot compares all refs with main at `47690aa2d519d82015748b59b1775664f5e53fc8`. It covers 35 local branches and 17 origin-tracking branches in 38 rows. A live `git ls-remote --heads origin` check confirmed that all 17 remote names and tips match the tracking snapshot. The initial query failed on DNS, but the subsequent live check succeeded. Recheck remote tips immediately before any cleanup.
+Andrew approved the revised dispositions on November 11. Cleanup is complete, as recorded in the closeout below. The table preserves the pre-cleanup review snapshot and its original proposals. The snapshot compares all refs with main at `47690aa2d519d82015748b59b1775664f5e53fc8`. It covers 35 local branches and 17 origin-tracking branches in 38 rows. A live `git ls-remote --heads origin` check confirmed that all 17 remote names and tips match the tracking snapshot. The initial query failed on DNS, but the subsequent live check succeeded. Recheck remote tips immediately before any cleanup.
 
 Each row lists every local and remote-tracking branch ref, combining matching names only when their tips match. Dates are tip committer dates. “Ahead” counts commits reachable from the ref but not main. Zero means its tip is an ancestor of main, not that its scientific conclusions were adopted. References list exact branch-name mentions in DECISIONS.md (D), AGENTS.md (A), and ROADMAP.md (R). Other evidence is summarized in the purpose column. Where only a tip subject is given, no associated plan or decision was established in this review. Delete means propose deleting the named refs only after approval. Keep-reference means first preserve unique history under an approved archive tag. Unfinished means retain the branch while its remaining use is decided.
 
@@ -160,7 +160,7 @@ in the 38 rows and match their pinned tips and ahead counts. Its request to
 qualify old branch instructions in historical prompts/plans was addressed with
 the routing notes. The live remote heads were checked separately against the
 17 tracking refs. No branch cleanup, archive tag or branch deletion was performed.
-The table is awaiting Andrew's approval.
+Andrew subsequently approved the revised dispositions recorded below.
 
 ## Slide-draft comparison after Andrew's clarification
 
@@ -175,5 +175,76 @@ and author-header corrections. No missing slide content was established.
 The proposed disposition is therefore keep-reference until an archive tag is
 approved, then delete the old branch refs. This would preserve the side history
 without reverting newer paths or tools. No merge, tag or deletion was performed.
-Andrew's goal of having the draft on main is already met. The full branch table
-still awaits approval.
+Andrew's goal of having the draft on main is already met. He subsequently approved
+archiving the drafting history and deleting the branch refs.
+
+
+## Approved cleanup and preservation, November 11
+
+Andrew approved deletion of fully merged branches, preservation of the two May
+experiments and slide-draft history under archive tags, and retention of the
+standalone package-style rebuild. The original proposal to archive and remove
+`rebuild/unified-ssbmf` was replaced by keeping both branch refs for possible
+future R-package work. No experimental code was merged.
+
+The cleanup removed 33 local and 14 remote branch names. Local branches are now
+`main` and `rebuild/unified-ssbmf`. Remote branches are `main`, `gh-pages` and
+`rebuild/unified-ssbmf`. Every deleted merged tip was checked as an ancestor of
+main. The remaining deleted tips are preserved as follows:
+
+| Former branch | Preserved tip | Archive tag | Storage |
+|---|---|---|---|
+| `phase1-platform-norm` | `3f10a1b451925e40b090e4ebc555d4b046ba18bd` | `archive/phase1-platform-norm-2026-11-11` | Local tag and verified bundle, not pushed |
+| `phase2-init-constraints` | `9460bf8c3ff106b26be96923856a4b1e9c800ba1` | `archive/phase2-init-constraints-2026-11-11` | Local and origin tags |
+| `prelim/part3-slides` | `b80991d3218e3de54eea513187b6c07040912b85` | `archive/prelim-part3-slides-2026-11-11` | Local and origin tags |
+
+The platform-normalization history contains unpublished patient risk-score
+objects. It was preserved locally without uploading that history. The complete
+Git bundle is `.git/branch-archives/phase1-platform-norm-2026-11-11.bundle`,
+with SHA-256 `78745ec102a991d80e41615edb52ede253e0d304ce279cfbbfcd755c95184e93`.
+`git bundle verify` passed. A bare clone of the bundle in a temporary directory
+restored the exact archived tip, then the temporary clone was removed. This
+backup resides on the same computer, so it is
+not an independent off-machine backup. The tag protects the commits from normal
+Git garbage collection.
+
+The May normalization branch contains two unique commits with diagnostic code,
+outputs and decision wording. Main already contains the principal preprocessing
+flags and a historical decision, but does not contain every diagnostic artifact.
+The initialization branch contains one unique commit with code, tests and a
+six-condition synthetic sweep. Its saved concordances are 0.8582 for the
+baseline, 0.5400 for loading-column normalization, 0.7976 for factor-column
+normalization, and 0.5000 for each input-normalized condition. These are results
+from that historical test bed, not an evaluation under the current fitter.
+Main's May 6 initialization entry describes different variants and is not a
+complete record of this branch's experiment. The archive preserves the actual
+code and evidence without adopting its options or replacing that historical entry.
+
+The two slide outline files on main already use the existing derivation path
+`derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.qmd`.
+Both paths were checked against the filesystem. No correction was needed on
+main, and no obsolete path was merged. The archive tag retains the old drafting
+history, while current slide content stays on main.
+
+The existing worktree `.claude/worktrees/elegant-swartz-4351c5` was attached to
+`fix/current-method`. It was detached at its unchanged commit `bde88ff8` before
+removing that branch name. Its untracked `data` entry and 847 ignored paths,
+including fit checkpoints, were preserved. The worktree was not removed.
+
+Immediately before deletion, live remote tips were checked against the approved
+snapshot. Remote deletions and publication of the two tags used one atomic push
+with an exact-tip lease for each deleted branch. The publishing branch had
+advanced to `358446a0` and was left untouched. A subsequent live check confirmed
+exactly the three retained remote branches and both published archive tips.
+All deleted local and remote tips were checked for reachability through main or
+the corresponding archive tag. No results, patient files or model code changed.
+G remains the next item, to begin only after Andrew's go-ahead.
+
+
+Independent closeout review checked all 33 deleted local tips and 14 deleted
+remote snapshot tips for preservation, the three local archive-tag targets,
+the bundle checksum and verification, the retained local branches, the detached
+worktree and the findings index. The review requested replacing the earlier
+pending-approval checklist note. That note was updated to record approval and
+the completed cleanup, with the completion commit recorded in the checklist.
+The live remote verification was performed separately as described above.

@@ -52,4 +52,4 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 | 2026-11-11 | [Result-script inventory](2026-11-11-results-scripts-inventory.csv) | 204 scripts with inputs, outputs, retention roles, consumers and source-line evidence | static inventory |
 | 2026-11-11 | [Result-folder inventory](2026-11-11-results-folders-inventory.csv) | 251 tracked/ignored result locations and candidate writers | static inventory |
 | 2026-11-11 | [Report-source inventory](2026-11-11-results-report-consumers.csv) | All 82 tracked Quarto/R Markdown sources and detected result references | static inventory |
-| 2026-11-11 | [branch-review-findings](2026-11-11-branch-review-findings.md) | Complete branch table, unique histories, slide-draft comparison and corrected branch pointers | awaiting Andrew's approval; no branches changed |
+| 2026-11-11 | [branch-review-findings](2026-11-11-branch-review-findings.md) | Complete branch table, unique histories, slide-draft comparison and corrected branch pointers | complete; approved cleanup, preserved tips and retained rebuild branch documented |
