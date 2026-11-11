@@ -4,6 +4,7 @@ Reports from independent reviewers, and external advice recorded as received.
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-11 | [local-results-pilot-review](2026-11-11-local-results-pilot-review.md) | Independent software review of the local synthetic results workflow, artifact safety and rebuild checks | approved software pilot; 14 acceptance checks passed; full-suite/clean-checkout evidence recorded separately |
 | 2026-11-11 | [stratified-cv-independent-review](2026-11-11-stratified-cv-independent-review.md) | Combined independent review of fold-wise centers, within-stratum scoring, missing-stratum errors and cohort/event folds | approved; 62 focused tests and independent checks passed; item 0 complete |
 | 2026-11-11 | [housekeeping-and-cv-handoff](2026-11-11-housekeeping-and-cv-handoff.md) | Completed housekeeping and G design, fold-option commits, 794-test result, Gemini follow-ups and remaining approvals/review | complete handoff; CV review subsequently approved on November 11 |
 | 2026-09-04 | [progress-notebook-review](2026-09-04-progress-notebook-review.md) | Correctness review of the 9/4 chapter: sign orientation, Breslow ties, bootstrap scope, held-out scoring | complete (acted on in [the fix plan](../plans/2026-09-04-review-findings-fix-plan.md)) |

@@ -73,6 +73,10 @@ Run the regression suite with:
 Rscript tests/run_tests.R
 ```
 
+A [small local results pilot](results/pilot/README.md) demonstrates synthetic
+result rebuilding, versioned artifacts and freshness checks. It does not rebuild
+the historical analyses.
+
 ## Selected findings
 
 The reported expression fit uses 2,218 genes from 273 TCGA and CPTAC patients.

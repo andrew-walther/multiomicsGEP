@@ -3,6 +3,19 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-11 — A bounded local results pilot
+
+Andrew authorized the first synthetic pilot of the
+[results-rebuild design](docs/plans/2026-11-11-results-rebuild-design.md).
+It uses `targets` with explicitly versioned source/configuration inputs,
+immutable aggregate outputs and a catalog that rejects stale results.
+A second family demonstrates extensibility without changing the first.
+The canonical fit runs in a fresh local R subprocess because its compiled
+helpers otherwise mutate the dependency-tracking environment. This is process
+isolation, not a new fitter or parallel fitting policy. Exact package versions
+are locked and missing versions install only in a local ignored library.
+The pilot does not promote a scientific release or move historical results.
+
 ## 2026-11-11 — Opt-in cohort/event folds for existing CV helpers
 
 The fold option implements the November 9 training-CV decision without changing

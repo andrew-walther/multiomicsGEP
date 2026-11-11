@@ -12,10 +12,15 @@ maps result scripts, saved locations and report references. It records historica
 path mismatches and unresolved writers. The results-rebuild design will use this
 inventory before any folder move or runner consolidation.
 
+The [local pilot](pilot/README.md) implements a small synthetic dependency graph,
+versioned outputs and a freshness-checked catalog. Use its explicit setup/build
+commands. Existing scientific results remain in their original locations.
+
 ## Layout
 
 | Folder | Contents |
 |--------|----------|
+| `pilot/` | Small local synthetic software workflow; generated runs and cache are ignored |
 | `benchmark_sim/` | Single-modality benchmark and follow-up analyses on simulated and PDAC data; outputs in `benchmark_sim/outputs/<analysis>/` |
 | `multimodal_real/` | Expression + methylation fits on matched TCGA/ICGC data; outputs in `multimodal_real/outputs/` |
 | `multi_cohort_sim/` | Simulation of shared and cohort-specific programs across cohorts |

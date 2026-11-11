@@ -36,10 +36,14 @@ or a migration of the existing results tree.
 
 No external data, new model comparison, scientific acceptance decision, Longleaf
 job, production publication, old-output deletion or folder relocation is allowed.
-The pilot runs locally with one worker. Larger releases, checkpoint archival and
+The pilot runs locally with one job at a time. The canonical fit uses a fresh
+local R subprocess to isolate its compiled-helper and RNG side effects from the
+dependency graph. This execution adjustment was made during verification,
+without changing the fitting algorithm or settings. Larger releases, checkpoint archival and
 migration remain later tasks. Its demonstration figures must not enter the
 prelim or paper as method-performance evidence.
 
 ## Progress
 
 - [ ] Implementation, acceptance checks, independent review and handoff update.
+  - Implementation and independent 14-check acceptance run complete. Clean-checkout verification and final full-suite rerun are in progress.

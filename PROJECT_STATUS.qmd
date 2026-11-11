@@ -32,6 +32,15 @@ simulation support is incomplete. The open methods problem is stability at weigh
 move real-data loadings (about 10⁴). After that comes the registered LB vs YFB study on the
 nonnegative input. Multimodal development stays deferred.
 
+## Local results workflow pilot (2026-11-11)
+
+A [small local software pilot](results/pilot/README.md) implements a synthetic
+fixture, a canonical YFB fit, two aggregate result families, versioned tables
+and PDF figures, and a freshness-checked catalog. It uses local serial jobs,
+with the fitter isolated in a fresh R subprocess. Existing scientific result
+folders, model settings and production reports are unchanged. Expansion to the
+week's analysis families and physical reorganization remain later tasks.
+
 ## Cohort-balanced CV folds (2026-11-11)
 
 The fold generator now offers opt-in joint cohort/event balancing. Pass

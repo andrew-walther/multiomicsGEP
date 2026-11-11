@@ -1,0 +1,10 @@
+# Synthetic software checks only, not scientific performance evidence.
+families:
+  prediction:
+    title: Synthetic prediction software check
+    command: pilot_prediction_summary(model_fit, simulation)
+    figure_metric: heldout_concordance
+  input_audit:
+    title: Synthetic input software check
+    command: pilot_input_summary(simulation)
+    figure_metric: training_event_fraction

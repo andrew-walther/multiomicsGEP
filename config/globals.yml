@@ -227,3 +227,22 @@ evaluation:
   holdout_seed: 42       # seed for stratified_split()
   n_init: 1              # >1 activates multi-init with best-ELBO selection
   multi_init_seed_base: 42  # set.seed(multi_init_seed_base + init_i) for each init
+
+# Software-only local results pilot, reusing the README synthetic example.
+# These settings do not replace the scientific benchmark or real-data model.
+results_pilot:
+  fixture:
+    seed: 1
+    n_total: 150
+    n_train: 100
+    p: 200
+    k_true: 3
+    loading_probability: 0.2
+    noise_sd: 1
+    beta: [0.8, -0.8, 0]
+    event_probability: 0.7
+  model:
+    canonicalize: true
+    w_S: 1
+    prior_LF: point_laplace
+    prior_beta: normal
