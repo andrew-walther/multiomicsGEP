@@ -1,5 +1,9 @@
 # Handoff prompts for 2026-11-06 (usage-limit window)
 
+> Branch routing updated 2026-11-11: `fix/yfb-supervision` was merged into
+> `main` on November 9. Use `main` for new work. Branch instructions below
+> preserve the original execution context.
+
 Three independent tasks. Run them one at a time, in this checkout on branch `fix/yfb-supervision`.
 Other sessions may be working in this folder, so commit only the files you changed, never stash,
 reset or switch branches, and do not merge into main. Follow AGENTS.md: no tool attribution in

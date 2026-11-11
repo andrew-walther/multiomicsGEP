@@ -1,5 +1,9 @@
 # Chapter 4 revamp: supervised YFB model as the centerpiece
 
+> Branch routing updated 2026-11-11: `fix/yfb-supervision` was merged into
+> `main` on November 9. Use `main` for new work. Branch instructions below
+> preserve the original execution context.
+
 Written 2026-11-05 from a bios-dissertation planning session (Round 3 prose review of
 Chapters 1–3). Status: **chapter assembled for review (2026-11-06)**. The evidence table, checklist and
 order of work were updated on 2026-11-06; section 7 records what changed and why. Follow-up prompt:

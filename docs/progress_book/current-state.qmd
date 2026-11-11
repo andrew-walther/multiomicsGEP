@@ -271,7 +271,7 @@ external dataset series. The curves compare within-cohort risk tertiles.
 </details>
 
 See the [October 30 chapter](chapters/2026-10-30.qmd) for the experimental
-evaluation and the [roadmap](https://github.com/andrew-walther/multiomicsGEP/blob/fix/yfb-supervision/ROADMAP.md)
+evaluation and the [roadmap](https://github.com/andrew-walther/multiomicsGEP/blob/main/ROADMAP.md)
 for the wider backlog.
 
 ## Open decisions

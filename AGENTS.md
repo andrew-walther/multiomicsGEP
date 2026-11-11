@@ -43,7 +43,7 @@ R package can start once the model meets its acceptance criteria.
 - **Formal benchmark pipeline:** `results/benchmark_sim/` — alpha CV, external validation, DeSurv comparison. Exploratory/development fits lived in `results/modular_sim_factor/` (now archived to `results/legacy/modular_sim_factor/`).
 - **Modular updates:** `code/update_beta.R`, `code/update_L.R`, `code/update_F.R`, `code/update_tau.R`.
 - **Global constants:** `config/globals.yml` — all hyperparameters (lambda, alpha grid, K thresholds, DGP params). Never hardcode values defined here.
-- **Multimodal YFB proposal:** `derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.{qmd,pdf}` contains the concise nine-page linear joint-YFB derivation; `multimodal_YFB_implementation.qmd` in the same directory specifies future R code, and `multimodal_YFB_technical_notes.{qmd,pdf}` preserves the extensive version; `verify_derivation.R` checks the algebra without fitting a model. Read it before multimodal work. An isolated implementation exists on the `codex/multimodal-yfb` branch (`code/*multimodal_yfb*.R`: fitter, updates, prediction, simulation, K-selection runner, with tests); it is work in progress, not the production single-modality model, and its defaults are not approved. Current status and review decisions belong in `PROJECT_STATUS.qmd` and `DECISIONS.md`.
+- **Multimodal YFB proposal:** `derivations/SSBMF-YFB-multimodal-model-derivations/multimodal_YFB_derivation.{qmd,pdf}` contains the concise nine-page linear joint-YFB derivation; `multimodal_YFB_implementation.qmd` in the same directory specifies future R code, and `multimodal_YFB_technical_notes.{qmd,pdf}` preserves the extensive version; `verify_derivation.R` checks the algebra without fitting a model. Read it before multimodal work. The isolated implementation from `codex/multimodal-yfb` is merged into `main` (`code/*multimodal_yfb*.R`: fitter, updates, prediction, simulation, K-selection runner, with tests); it is work in progress, not the production single-modality model, and its defaults are not approved. Current status and review decisions belong in `PROJECT_STATUS.qmd` and `DECISIONS.md`.
 - **No status duplication in instructions:** Do not maintain a second copy of project status here — update `PROJECT_STATUS.qmd` instead.
 - **Where documents go:** `docs/` type folders — `plans/`, `findings/`, `reviews/`, `prompts/`, `meetings/`, `notes/` — named `YYYY-MM-DD-topic-type.ext` (all hyphens, date first, the day it was written). No archive folder: mark a replaced document superseded in its folder's README. Add a row (date, link, purpose, status) to that README for every new document. See `docs/README.md`.
 - **Living documents:** Update `DECISIONS.md` when making any architectural choice (algorithm variant, hyperparameter decision, design tradeoff). Update `ROADMAP.md` when completing a milestone or identifying a new priority.
@@ -59,11 +59,11 @@ R package can start once the model meets its acceptance criteria.
 - **No mannered prose:** Say what you mean; don't substitute metaphor or flourish for direct statement (e.g. "a dial worth turning" instead of "a parameter worth varying," "this point earns its keep" instead of "this point still matters"). Applies to all writing in this repo — reports, the progress book, plan/decision docs, commit messages, comments. When a literal phrase is available, use it.
 - **Punctuation in prose:** In the progress book and reports, avoid semicolons and em or en dashes used as punctuation unless they make the sentence clearer. A period, a comma, or two sentences usually read better. Dashes in numeric ranges (Figures 2–4) and compound names (Kullback–Leibler) are fine. When drafting or revising a progress-book chapter, apply the `human-writer` skill.
 
-- **Protected-pruning evaluation:** opt-in changes and fixed runners are on `m5/k-selection`; adoption was blocked. The controlling fallback decision is recorded at the top of `DECISIONS.md`.
+- **Protected-pruning evaluation:** the opt-in changes and fixed runners from `m5/k-selection` are merged into `main`; adoption was blocked. The controlling fallback decision is recorded at the top of `DECISIONS.md`.
 
-- **Planted comparator evaluation:** runner and partial tables are on `m7/sim-comparators`; see the 2026-10-15 decision for the zero/one-factor EBMF blocker and incomplete high-noise denominator.
+- **Planted comparator evaluation:** the runner and partial tables from `m7/sim-comparators` are merged into `main`; see the 2026-10-15 decision for the zero/one-factor EBMF blocker and incomplete high-noise denominator.
 
-- **Multimodal comparator audit:** `results/multimodal_real/run_supervised_multimodal_comparison.R` records actual two-step ranks and the fixed four-arm evaluation on `m7/multimodal-comparators`; see the dated progress-book and decision entries for results.
+- **Multimodal comparator audit:** `results/multimodal_real/run_supervised_multimodal_comparison.R` records actual two-step ranks and the fixed four-arm evaluation from `m7/multimodal-comparators`, now merged into `main`; see the dated progress-book and decision entries for results.
 
 ## Stratified YFB scoring
 
@@ -92,8 +92,8 @@ new preprocessing fits or external model selection.
 
 The five-prompt branch/results index is
 `docs/findings/2026-10-15-m6-m7-summary.md`; read its limitations before using
-the tables. E did not adopt protection or a new K. `m6/robustness` contains the
-training-only robustness runner; current findings belong in `PROJECT_STATUS.qmd`
+the tables. E did not adopt protection or a new K. The training-only robustness runner
+`results/benchmark_sim/run_supervised_robustness.R` from `m6/robustness` is merged into `main`; current findings belong in `PROJECT_STATUS.qmd`
 and `DECISIONS.md`, not this instruction file.
 
 The merged Round2 diagnostics are historical evidence. Their specification is

@@ -1,5 +1,9 @@
 # Prompt: finish the supervision work on `fix/yfb-supervision` (attempts S-9 and S-10)
 
+> Branch routing updated 2026-11-11: `fix/yfb-supervision` was merged into
+> `main` on November 9. Use `main` for new work. Branch instructions below
+> preserve the original execution context.
+
 Written 2026-10-30, revised 2026-11-03. Andrew approved this work. Numbering: S-8 is the
 targeted mechanism screen already in the attempts log. This prompt registers S-9 (the existing
 survival-weighted fitter at 2,000 genes) and, only if S-9 fails, S-10 (downweighted genomics).

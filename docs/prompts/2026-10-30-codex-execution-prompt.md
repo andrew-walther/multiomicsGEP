@@ -1,5 +1,9 @@
 # Codex execution prompt: 10/30 realignment plan
 
+> Branch routing updated 2026-11-11: `fix/yfb-supervision` was merged into
+> `main` on November 9. Use `main` for new work. Branch instructions below
+> preserve the original execution context.
+
 Written 2026-10-30. Paste this into Codex from the repository root.
 
 ---

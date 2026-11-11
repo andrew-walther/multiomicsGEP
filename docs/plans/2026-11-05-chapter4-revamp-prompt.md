@@ -1,5 +1,9 @@
 # Follow-up prompt: Chapter 4 revamp (supervised YFB model)
 
+> Branch routing updated 2026-11-11: `fix/yfb-supervision` was merged into
+> `main` on November 9. Use `main` for new work. Branch instructions below
+> preserve the original execution context.
+
 Paste the block below into a new Claude Code session started in
 `~/GithubProjects/multiomicsGEP` (branch `fix/yfb-supervision`).
 
