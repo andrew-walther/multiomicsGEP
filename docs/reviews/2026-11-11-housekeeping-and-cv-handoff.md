@@ -1,0 +1,71 @@
+# Housekeeping and CV fold-option handoff
+
+Date: 2026-11-11. Author: Andrew Walther.
+
+The requested housekeeping, G design and item 0's code portion are complete on
+main. Item 0 remains unchecked because the independent review of `68e3646` and
+the new fold option is still open. No analysis task A to F was started. No
+results folders were moved and no scientific default or saved result changed.
+
+## Work and commits
+
+| Item | Delivered evidence | Work commits, followed by checklist commits where separate |
+|---|---|---|
+| 00 Gemini review | [33-idea table and actionable short list](../findings/2026-11-10-gemini-advice-findings.md), two preserved specifications in this folder. Source folder deleted after Andrew approved closure. | `3f03cf5b`, `ae79b19a`; approved closeout `1e2c73af`, `47690aa2` |
+| 0a README cleanup | [README](../../README.md), [retention ledger](../findings/2026-11-10-readme-cleanup-findings.md), quantified simulation statement and simplified documentation links. Andrew accepted it. | `789d38c4`, `904ca349`; feedback `961365cf`, `71750325`; acceptance/deferred document revamp `83f13932` |
+| 0b Inventory | [Findings and three indexed tables](../findings/2026-11-11-results-inventory-findings.md): 204 scripts, 251 locations and 82 report sources. Independently reviewed. | `728d0678`, `1a6188de` |
+| 0c Branch review and cleanup | [Approved table and preservation record](../findings/2026-11-11-branch-review-findings.md). Removed 33 local and 14 remote branch names. Retained main, publishing branch gh-pages and standalone rebuild/unified-ssbmf. | Review `8746bab`, `a23cdbc`; cleanup `fc8cd2c8`, `0a44c84a` |
+| G Design only | [Rebuild design](../plans/2026-11-11-results-rebuild-design.md), with proposed roles for all 204 scripts. Independently reviewed, delivered for Andrew's consideration. | `7db86ef`, `86ee3ead` |
+| 0 Code only | [Cohort/event fold generator](../../code/train_test_split.R), four direct CV helper functions and [targeted tests](../../tests/test_cohort_folds.R). | `dbb4113`, `debe6e0` |
+
+## Fold option and verification
+
+Use `cohort_id = cohort` with `create_stratified_folds()`, or
+`fold_cohort_id = cohort` with `select_K_cv()`, `select_alpha_cv()`,
+`cv_survival_loglik()` or `bicv_genomics_loglik()`. The latter uses the option
+only for row folds. This split label is separate from molecular offsets,
+Cox strata and cohort-specific coefficients. Those still need their own arguments.
+
+The generator shuffles within joint cohort/event cells and assigns them
+round-robin, continuing across cohorts within each event status. It checks that
+every training complement contains all supplied cohorts. NULL retains the exact
+event-only default. A sparse allocation can error even when a different design
+would work, and events are not guaranteed within every cohort of each held-out
+fold. No alternative-allocation search was added. Inputs, outputs, design choices
+and a function-by-function explanation are in the
+[code guide](../../code/README.md#cohort-and-event-folds).
+
+`Rscript tests/run_tests.R` completed with exit status 0: **794 passed, 0 failed**.
+The 11 new targeted checks also passed standalone and were independently rerun.
+They check exact partitions, cohort/event balance, training-cohort coverage,
+reproducibility, unchanged historical assignments, invalid/sparse labels and the
+actual training row IDs used by each direct helper, including both rank-CV model
+paths. The full suite emitted a warning that the bounded β optimizer used its
+profile-likelihood fallback, plus zero-factor diagnostic messages. No failure was
+suppressed. A fresh review of the new option found no actionable defect. This
+bounded check does not close or substitute for the requested independent review.
+
+## Gemini ideas retained for future consideration
+
+- Test multimodal scale invariance, modality balance and consistent prior/KL rescaling.
+- Derive a coherent point-exponential fixed-q prior update if the planned prior comparison exposes convergence failures.
+- Distinguish anchored fixed residual precision from bounded adaptive precision in instability studies.
+- Register genomics tempering with Cox weight one only after settling the objective and KL weights.
+- Consider regularized nonzero β variance and paired positive/negative Cox starts for documented collapse.
+- Retain the planned prior/PIP, cohort-noise and biological checks. None of these suggestions is newly adopted or authorized for analysis here.
+
+## Left for Andrew and the independent reviewer
+
+Andrew can review G's proposed pilot, core release families, layout and retention
+rules. Implementing the pipeline, moving runners/results or selecting an external
+checkpoint archive needs a later approved task. The broader cleanup of
+PROJECT_STATUS.qmd, DECISIONS.md and ROADMAP.md remains on the ROADMAP.
+
+The independent reviewer should review `68e3646` together with `dbb4113`.
+No review of `68e3646` was written in this work. Item 0's review box stays open.
+
+The platform-normalization archive is local only because it contains unpublished
+patient risk-score history. Its tag and verified, restoration-tested bundle are
+recorded in the branch closeout. It has no independent off-machine backup from
+this cleanup. The attached old worktree and its untracked/ignored data remain
+intact at detached commit `bde88ff8`. No worktree was removed.
