@@ -7,6 +7,11 @@ include aggregate tables, figures, synthetic checkpoints, and seven legacy
 individual risk-score CSVs. Confirm redistribution permissions for the legacy
 exports before reusing them in a new release.
 
+The [November 11 inventory](../docs/findings/2026-11-11-results-inventory-findings.md)
+maps result scripts, saved locations and report references. It records historical
+path mismatches and unresolved writers. The results-rebuild design will use this
+inventory before any folder move or runner consolidation.
+
 ## Layout
 
 | Folder | Contents |

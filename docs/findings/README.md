@@ -48,3 +48,7 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 | 2026-11-06 | [DeSurv-style analyses findings](2026-11-06-desurv-style-analyses-findings.md) | Frozen risk groups, subtype and program HRs, rank comparisons, and mixed-signal simulation | complete with checkpoint limitations |
 | 2026-11-10 | [Gemini advice findings](2026-11-10-gemini-advice-findings.md) | Usefulness review of both specifications and eight screenshots, with evidence and assigned follow-up | complete; approved November 11; source folder deleted after preservation checks |
 | 2026-11-10 | [README cleanup findings](2026-11-10-readme-cleanup-findings.md) | Content-retention ledger, DeSurv examples and verification of the shortened entry page | complete; independently reviewed |
+| 2026-11-11 | [Results inventory findings](2026-11-11-results-inventory-findings.md) | Result families, nine-folder summary, scope, cleanup opportunities and limits for G | complete; independently reviewed |
+| 2026-11-11 | [Result-script inventory](2026-11-11-results-scripts-inventory.csv) | 204 scripts with inputs, outputs, retention roles, consumers and source-line evidence | static inventory |
+| 2026-11-11 | [Result-folder inventory](2026-11-11-results-folders-inventory.csv) | 251 tracked/ignored result locations and candidate writers | static inventory |
+| 2026-11-11 | [Report-source inventory](2026-11-11-results-report-consumers.csv) | All 82 tracked Quarto/R Markdown sources and detected result references | static inventory |
