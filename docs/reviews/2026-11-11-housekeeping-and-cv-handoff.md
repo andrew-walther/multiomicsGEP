@@ -18,7 +18,7 @@ results folders were moved and no scientific default or saved result changed.
 | 0b Inventory | [Findings and three indexed tables](../findings/2026-11-11-results-inventory-findings.md): 204 scripts, 251 locations and 82 report sources. Independently reviewed. | `728d0678`, `1a6188de` |
 | 0c Branch review and cleanup | [Approved table and preservation record](../findings/2026-11-11-branch-review-findings.md). Removed 33 local and 14 remote branch names. Retained main, publishing branch gh-pages and standalone rebuild/unified-ssbmf. | Review `8746bab`, `a23cdbc`; cleanup `fc8cd2c8`, `0a44c84a` |
 | G Design only | [Rebuild design](../plans/2026-11-11-results-rebuild-design.md), with proposed roles for all 204 scripts. Independently reviewed, delivered for Andrew's consideration. | `7db86ef`, `86ee3ead` |
-| 0 Code only | [Cohort/event fold generator](../../code/train_test_split.R), four direct CV helper functions and [targeted tests](../../tests/test_cohort_folds.R). | `dbb4113`, `debe6e0` |
+| 0 Code only | [Cohort/event fold generator](../../code/train_test_split.R), four direct CV helper functions and [targeted tests](../../tests/test_cohort_folds.R). | `dbb4113`, `debe6e0`; combined review `681ce91c` |
 
 ## Fold option and verification
 
