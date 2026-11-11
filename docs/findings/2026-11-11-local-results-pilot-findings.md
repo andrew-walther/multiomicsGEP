@@ -86,3 +86,10 @@ A fresh closeout review checked these counts and source commits against the
 captured verification logs. Its stale-status findings were corrected in the
 week checklist, plans index and full-workflow design, so the completed pilot is
 now clearly distinguished from the future scientific implementation/migration.
+
+
+One final restricted-tool-sandbox check failed during package loading with
+OpenMP error 179, reporting inability to open shared memory. The same unchanged
+build, catalog and status commands then passed outside that sandbox, with the
+fit cached. This observed execution-environment limit required no R package,
+model or pipeline code change. It is recorded for future tool-based execution.
