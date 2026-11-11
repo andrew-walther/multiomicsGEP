@@ -11,6 +11,12 @@ model changes. Results freeze on 11/12. The November 13 progress-book chapter, w
 version and prelim Chapter 4 update are due 11/13. The plan also lists every open plan
 with its status.
 
+- [ ] **Reorganize PROJECT_STATUS.qmd, DECISIONS.md and ROADMAP.md.**
+  Requested by Andrew on 2026-11-11, deferred beyond the current housekeeping.
+  Plan a substantial cleanup so current state, active priorities and dated
+  decisions are easy to find. Remove duplication, identify superseded entries
+  and improve navigation while preserving historical evidence and links.
+
 **Candidates retained from the Gemini usefulness review (2026-11-10).**
 The [idea table and short list](docs/findings/2026-11-10-gemini-advice-findings.md)
 record source checks and prior tests. These are follow-up candidates, not adopted
