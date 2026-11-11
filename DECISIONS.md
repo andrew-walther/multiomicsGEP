@@ -3,6 +3,17 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-11 — Opt-in cohort/event folds for existing CV helpers
+
+The fold option implements the November 9 training-CV decision without changing
+historical event-only defaults. `cohort_id` on `create_stratified_folds()` controls
+joint cohort/event balancing. `fold_cohort_id` on its CV callers is a separate
+argument so that choosing a split does not silently select a molecular offset,
+Cox stratum or cohort-specific coefficient model. The generator rejects a split
+that omits a cohort from any training complement. It does not search alternative
+sparse allocations. Fitting, prediction and scoring formulas are unchanged.
+The independent review of `68e3646` remains open and will also cover this change.
+
 ## 2026-11-11 — Results rebuild design delivered for review
 
 The [G design](docs/plans/2026-11-11-results-rebuild-design.md) proposes an

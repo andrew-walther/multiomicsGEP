@@ -270,6 +270,12 @@ classify_factors <- function(res, Y,
 #'                         K_grid = c(2,3,5,8,10), n_folds = 3)
 #' }
 #'
+#' @param fold_cohort_id Optional cohort-label vector, length n with no missing
+#'   values, used only to balance folds jointly by cohort and event. NULL retains
+#'   event-only folds. This does not set cohort_id, strata_id or beta_cohort_id
+#'   in the fitter. See create_stratified_folds() for sparse-cohort errors.
+#' @family cross-validation
+#' @seealso create_stratified_folds
 #' @seealso \code{\link{auto_prune_K}} for a cheaper single-fit alternative.
 select_K_cv <- function(Y, time, status,
                          K_grid   = c(2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 15L, 20L),
@@ -278,6 +284,7 @@ select_K_cv <- function(Y, time, status,
                          seed     = 42L,
                          verbose  = FALSE,
                          model    = "LB",
+                         fold_cohort_id = NULL,
                          ...) {
 
   # --- model validation ---
@@ -332,7 +339,8 @@ select_K_cv <- function(Y, time, status,
   }
 
   # --- create stratified folds once (shared across all K) ---
-  fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
+  fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed,
+                                     cohort_id = fold_cohort_id)
 
   n_combos  <- length(K_grid) * n_folds
   fold_rows <- vector("list", n_combos)

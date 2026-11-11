@@ -32,6 +32,20 @@ simulation support is incomplete. The open methods problem is stability at weigh
 move real-data loadings (about 10⁴). After that comes the registered LB vs YFB study on the
 nonnegative input. Multimodal development stays deferred.
 
+## Cohort-balanced CV folds (2026-11-11)
+
+The fold generator now offers opt-in joint cohort/event balancing. Pass
+`fold_cohort_id = cohort` to rank CV, alpha CV, survival log-likelihood CV or
+row-wise genomics bi-CV. Each returned training fold retains every supplied
+cohort. Sparse allocations that lose a cohort fail explicitly. Event-only
+defaults, model settings and saved results are unchanged. The
+[code guide](code/README.md#cohort-and-event-folds) documents the interface and
+limits. The independent review of commit `68e3646` remains open, including the
+new fold option for the external reviewer. No analysis task was started.
+`Rscript tests/run_tests.R` passed 794 tests with zero failures. The targeted
+fold checks passed 11/11. The suite emitted a bounded-β profile-likelihood
+fallback warning.
+
 ## Real-data comparators, risk groups and program classification (2026-11-06)
 
 - **Comparators.** Mean external C over the five series: supervised 0.620, elastic-net Cox

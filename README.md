@@ -64,6 +64,9 @@ risk <- predict_ssbmf_yfb(Y_test, fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
 survival. The example applies training means and SDs to the held-out matrix.
 The [code guide](code/README.md) describes other priors, prediction and stratified CV.
 
+For pooled-cohort CV, use `fold_cohort_id = cohort` in the CV helpers to balance
+cohort and event jointly. See the [fold example](code/README.md#cohort-and-event-folds).
+
 Run the regression suite with:
 
 ```sh

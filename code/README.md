@@ -55,7 +55,7 @@ One file per variational factor; the fitters source these.
 |------|----------|
 | `preprocess_desurv.R` | DeSurv-style gene selection and per-platform standardization across cohorts |
 | `feature_selection.R` | `cox_feature_selection()`: univariate Cox screening |
-| `train_test_split.R` | `stratified_split()`: event-stratified train/test split |
+| `train_test_split.R` | `stratified_split()`: event-stratified train/test split; `create_stratified_folds()`: event-only or joint cohort/event CV folds |
 | `load_multiomics_data.R` | `build_multiomics_cohorts()`: matched TCGA/ICGC expression, methylation and survival |
 
 ## Multimodal YFB (expression + methylation, in progress)
@@ -142,6 +142,52 @@ unseen stratum on its own, call `predict_ssbmf_yfb()` with a fixed vector
 such as `projection_center = rep(0, ncol(Y_ext))`.
 See the [review handoff](../docs/reviews/2026-11-06-stratified-yfb-cv-handoff.md)
 for regression checks and the separate canonical scaling diagnostic.
+
+### Cohort-and-event folds
+
+Source `code/train_test_split.R`, then create held-out row indices with:
+
+```r
+folds <- create_stratified_folds(status, n_folds = 5, seed = 42,
+                                  cohort_id = cohort)
+```
+
+`status` is a length-n 0/1 vector and `cohort` is a length-n vector without
+missing labels. The result contains a list of held-out row vectors (`folds`),
+a length-n assignment vector (`fold_id`) and event rates by fold. Patients occur
+exactly once in the held-out partition. Training rows are its complement.
+
+Within each event status, the function shuffles each cohort's patients and
+continues round-robin assignment across cohorts. Each joint cell and pooled
+status count differs by at most one between folds. It checks that every training
+complement retains every cohort. With tiny cohorts it errors if this allocation
+loses a cohort, even if another fold design might succeed. It does not search for
+a feasible split or guarantee an event in every cohort of every held-out fold.
+The original requirement for at least `n_folds` total events and censored patients
+still applies. Supplying NULL preserves the historical event-only assignment.
+All allocation uses base R. `sample.int()` shuffles positions safely even when
+a cohort/event cell contains a single patient.
+
+Pass `fold_cohort_id = cohort` to `select_K_cv()`, `select_alpha_cv()`,
+`cv_survival_loglik()` or `bicv_genomics_loglik()` to use this option. The latter
+applies it to row folds only. The Bayesian-optimization helpers forward it through
+`...` to rank CV. This argument controls only the split. Continue to specify
+`strata_id`, molecular `cohort_id` or `beta_cohort_id` separately where appropriate.
+All candidates in one CV call use the same split. The helpers' return formats,
+fitting and scoring logic are unchanged.
+
+| Helper | Purpose and returned evidence |
+|---|---|
+| `select_K_cv()` | Compare candidate ranks on shared folds. Returns the selected rank, CV summary and per-fold concordances. |
+| `select_alpha_cv()` | Compare candidate mixing weights on shared folds. Returns the selected weight, CV summary and per-fold concordances. |
+| `cv_survival_loglik()` | Evaluate a fixed rank with held-out Cox partial likelihood. Returns per-fold scores and their totals and summaries. |
+| `bicv_genomics_loglik()` | Hold out both row and feature blocks for genomic reconstruction scoring. Returns per-block log-likelihoods, their total and the scored cell count. |
+
+The new fold checks are in `tests/test_cohort_folds.R`, run directly with
+`Rscript tests/test_cohort_folds.R` or as part of `Rscript tests/run_tests.R`.
+They inspect training row identities through each direct helper, including both
+rank-CV model paths. The independent review of the earlier stratified CV change
+(`68e3646`) remains open.
 
 ## Experimental normalized-projection interface
 

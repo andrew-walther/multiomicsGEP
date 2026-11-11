@@ -102,10 +102,17 @@ stratified_split <- function(status, test_frac = 0.2, seed = 42) {
 #' 1. Separate indices into events and censored groups
 #' 2. Shuffle each group independently with the same seed
 #' 3. Distribute each shuffled group round-robin across folds
+#' With cohort_id, shuffle within joint cohort/event cells instead and continue
+#' allocation across cohorts within each status. Sparse cohorts can be rejected
+#' even if a different allocation could work. No automatic search is attempted.
 #'
 #' @param status   integer vector of length n: event indicators (1 = event, 0 = censored)
 #' @param n_folds  integer >= 2: number of folds (default 5)
 #' @param seed     integer: random seed for reproducibility (default 42)
+#' @param cohort_id Optional vector of cohort labels, length n with no missing
+#'   values. NULL preserves event-only folds. Otherwise balance each cohort/event
+#'   cell across folds and require every training complement to retain all cohorts.
+#'   Sparse cells are allowed, but an allocation losing a training cohort errors.
 #'
 #' @return Named list:
 #'   $folds              list of length n_folds; each element is a sorted integer vector
@@ -117,7 +124,11 @@ stratified_split <- function(status, test_frac = 0.2, seed = 42) {
 #' status <- c(rep(1, 10), rep(0, 10))
 #' fd <- create_stratified_folds(status, n_folds = 5, seed = 1)
 #' lengths(fd$folds)
-create_stratified_folds <- function(status, n_folds = 5, seed = 42) {
+#' fd <- create_stratified_folds(status, 5, 1, cohort_id = rep(c("A", "B"), 10))
+#' @family cross-validation
+#' @seealso select_K_cv, select_alpha_cv, cv_survival_loglik, bicv_genomics_loglik
+create_stratified_folds <- function(status, n_folds = 5, seed = 42,
+                                    cohort_id = NULL) {
 
   n <- length(status)
   if (n < 4)
@@ -140,20 +151,52 @@ create_stratified_folds <- function(status, n_folds = 5, seed = 42) {
                  n_folds, length(censored)))
   }
 
-  set.seed(seed)
-  events   <- sample(events, length(events))
-  censored <- sample(censored, length(censored))
-
   folds <- vector("list", n_folds)
   for (k in seq_len(n_folds)) folds[[k]] <- integer(0)
 
-  for (i in seq_along(events)) {
-    fold_k <- ((i - 1L) %% n_folds) + 1L
-    folds[[fold_k]] <- c(folds[[fold_k]], events[i])
-  }
-  for (i in seq_along(censored)) {
-    fold_k <- ((i - 1L) %% n_folds) + 1L
-    folds[[fold_k]] <- c(folds[[fold_k]], censored[i])
+  if (!is.null(cohort_id) &&
+      (!is.atomic(cohort_id) || !is.null(dim(cohort_id)) ||
+       length(cohort_id) != n || anyNA(cohort_id)))
+    stop("cohort_id must be a vector of length status with no missing values.")
+
+  set.seed(seed)
+  if (is.null(cohort_id)) {
+    # Keep the historical shuffle and assignment exactly for existing callers.
+    events   <- sample(events, length(events))
+    censored <- sample(censored, length(censored))
+    for (i in seq_along(events)) {
+      fold_k <- ((i - 1L) %% n_folds) + 1L
+      folds[[fold_k]] <- c(folds[[fold_k]], events[i])
+    }
+    for (i in seq_along(censored)) {
+      fold_k <- ((i - 1L) %% n_folds) + 1L
+      folds[[fold_k]] <- c(folds[[fold_k]], censored[i])
+    }
+  } else {
+    cohort_id <- as.character(cohort_id)
+    # Continue round-robin allocation across cohorts within each event status.
+    # Each joint cell and each pooled status differ by at most one across folds.
+    # sample.int avoids sample(single_index)'s special 1:index behavior in R.
+    for (st in c(1L, 0L)) {
+      offset <- 0L
+      for (co in unique(cohort_id)) {
+        idx <- which(cohort_id == co & status == st)
+        if (!length(idx)) next
+        idx <- idx[sample.int(length(idx))]
+        assignment <- ((seq_along(idx) - 1L + offset) %% n_folds) + 1L
+        for (k in seq_len(n_folds))
+          folds[[k]] <- c(folds[[k]], idx[assignment == k])
+        offset <- (offset + length(idx)) %% n_folds
+      }
+    }
+    # Cohort/event balance alone cannot ensure training coverage for tiny cohorts.
+    # Do not return a split that would lose a Cox stratum or coefficient cohort.
+    for (k in seq_len(n_folds)) {
+      missing <- setdiff(unique(cohort_id), cohort_id[setdiff(seq_len(n), folds[[k]])])
+      if (length(missing))
+        stop(sprintf("Cohort(s) %s absent from training fold %d; this sparse dataset needs a different fold design.",
+                     paste(missing, collapse = ", "), k))
+    }
   }
 
   fold_id <- integer(n)

@@ -211,6 +211,12 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #' @param ...      additional arguments forwarded to `fit_ssbmf_yfb()`
 #'                 (e.g. init_method). Do not pass K.
 #'
+#' @param fold_cohort_id Optional cohort-label vector, length n with no missing
+#'   values, used only to balance folds jointly by cohort and event. NULL retains
+#'   event-only folds. This does not set cohort_id, strata_id or beta_cohort_id
+#'   in the fitter. See create_stratified_folds() for sparse-cohort errors.
+#' @family cross-validation
+#' @seealso create_stratified_folds
 #' @return Named list:
 #'   $K                     echoed input K
 #'   $cv_scoring            echoed input cv_scoring, or NA_character_ when
@@ -221,6 +227,9 @@ gaussian_matrix_loglik <- function(resid, tau) {
 #'   $total_events          sum of held-out event counts across folds
 #'   $mean_logPL_per_event  total_logPL / total_events
 #'   $sd_logPL, $se_logPL   spread of per-fold logPL across folds
+#' @examples
+#' # After sourcing the YFB fitter, prediction and split modules:
+#' # cv_survival_loglik(Y, time, status, K = 7, fold_cohort_id = cohort)
 cv_survival_loglik <- function(Y, time, status, K,
                                 n_folds  = 5L,
                                 seed     = 42L,
@@ -233,6 +242,7 @@ cv_survival_loglik <- function(Y, time, status, K,
                                 strata_id       = NULL,
                                 beta_cohort_id  = NULL,
                                 cv_scoring      = c("within_cohort", "unseen_cohort"),
+                                fold_cohort_id = NULL,
                                 ...) {
 
   cv_scoring <- match.arg(cv_scoring)
@@ -253,7 +263,8 @@ cv_survival_loglik <- function(Y, time, status, K,
 
   extra <- list(...)
 
-  fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
+  fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed,
+                                     cohort_id = fold_cohort_id)
 
   fold_rows <- vector("list", n_folds)
   for (fold_id in seq_len(n_folds)) {
@@ -390,12 +401,21 @@ cv_survival_loglik <- function(Y, time, status, K,
 #' @param lambda      numeric: ridge threshold for the pseudoinverse
 #'                    projections (default 1e-8, matches predict_ssbmf_lb.R's default).
 #'
+#' @param fold_cohort_id Optional cohort-label vector, length n with no missing
+#'   values, used only to balance folds jointly by cohort and event. NULL retains
+#'   event-only folds. This does not set cohort_id, strata_id or beta_cohort_id
+#'   in the fitter. See create_stratified_folds() for sparse-cohort errors.
+#' @family cross-validation
+#' @seealso create_stratified_folds
 #' @return Named list:
 #'   $K                total (summed) held-out genomics log-likelihood
 #'   $block_results    data.frame: row_fold, col_fold, n_test_rows,
 #'                     n_test_cols, block_loglik
 #'   $total_loglik     sum of block_loglik across all blocks (all n*p cells)
 #'   $n_cells_scored   sanity check: should equal n*p
+#' @examples
+#' # After sourcing the YFB and split modules:
+#' # bicv_genomics_loglik(Y, status, K = 7, fold_cohort_id = cohort)
 bicv_genomics_loglik <- function(Y, status, K,
                                   n_row_folds = 5L,
                                   n_col_folds = 5L,
@@ -403,7 +423,8 @@ bicv_genomics_loglik <- function(Y, status, K,
                                   max_iter    = 100,
                                   tol         = 1e-5,
                                   prior_LF    = "point_exponential",
-                                  lambda      = 1e-8) {
+                                  lambda      = 1e-8,
+                                  fold_cohort_id = NULL) {
 
   if (!exists("create_stratified_folds", mode = "function"))
     stop("create_stratified_folds() must be sourced (code/train_test_split.R) first.")
@@ -412,7 +433,8 @@ bicv_genomics_loglik <- function(Y, status, K,
   n <- nrow(Y); p <- ncol(Y)
   tau_floor <- 1e-8  # matches update_tau.R's default
 
-  row_fold_obj <- create_stratified_folds(status, n_folds = n_row_folds, seed = seed)
+  row_fold_obj <- create_stratified_folds(status, n_folds = n_row_folds, seed = seed,
+                                         cohort_id = fold_cohort_id)
   set.seed(seed)
   col_fold_id <- sample(rep_len(seq_len(n_col_folds), p))
 

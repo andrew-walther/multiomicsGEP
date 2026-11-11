@@ -34,6 +34,12 @@
 #' @param seed       integer random seed used for fold creation
 #' @param ...        additional arguments passed to fit_ssbmf_lb()
 #'
+#' @param fold_cohort_id Optional cohort-label vector, length n with no missing
+#'   values, used only to balance folds jointly by cohort and event. NULL retains
+#'   event-only folds. This does not set cohort_id, strata_id or beta_cohort_id
+#'   in the fitter. See create_stratified_folds() for sparse-cohort errors.
+#' @family cross-validation
+#' @seealso create_stratified_folds
 #' @return Named list:
 #'   $alpha_opt      selected alpha
 #'   $cv_table       data.frame with alpha, mean_cindex, se_cindex, n_folds
@@ -50,6 +56,7 @@ select_alpha_cv <- function(Y, time, status,
                             use_1se    = TRUE,
                             seed       = 42,
                             verbose    = FALSE,
+                            fold_cohort_id = NULL,
                             ...) {
 
   if (!exists("fit_ssbmf_lb", mode = "function"))
@@ -81,7 +88,8 @@ select_alpha_cv <- function(Y, time, status,
   n_folds    <- as.integer(n_folds)
   K_max      <- as.integer(K_max)
 
-  fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed)
+  fold_obj <- create_stratified_folds(status, n_folds = n_folds, seed = seed,
+                                     cohort_id = fold_cohort_id)
 
   fold_rows <- vector("list", length(alpha_grid) * n_folds)
   row_idx <- 1L

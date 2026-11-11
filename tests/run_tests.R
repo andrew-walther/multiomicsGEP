@@ -74,6 +74,7 @@ test_files <- c(
   "tests/test_update_F.R",
   "tests/test_update_tau.R",
   "tests/test_predict.R",
+  "tests/test_cohort_folds.R",
   "tests/test_elbo.R",
   "tests/test_select_alpha_cv.R",
   "tests/test_preprocess_desurv.R",
