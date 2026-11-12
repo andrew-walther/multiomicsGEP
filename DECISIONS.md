@@ -36,7 +36,8 @@ methylation dominating L, and only after their own derivation.
 
 **Files.** The week plan's Task D notes, and Part 2 of
 [the Codex follow-up prompt](docs/prompts/2026-11-12-codex-d-e-followup-prompt.md). That
-part runs only after Part 1's E fits finish, because both use `code/fit_ssbmf_yfb.R`.
+part may write its tests at any time. It edits `code/fit_ssbmf_yfb.R` only after Part 1's
+E fits have finished, because those fits use the same file.
 
 ## 2026-11-12 — Task F: training CV keeps D4 and the z-score input, and selects K = 5
 
