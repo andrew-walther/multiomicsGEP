@@ -34,17 +34,12 @@ Status (2026-11-06): revamped around the survival-weighted YFB fit
 (docs/plans/2026-11-05-chapter4-revamp-plan.md). Material removed in the
 revamp is in notes/trimmed-material-2026-11.md.
 
-Update (2026-11-12): history wording removed, training-only tuning protocol and
-pooled training fit stated (@sec-tuning), and the November 9-13 comparisons
-added as proposed work (@sec-model-checks, @sec-mmodal, @sec-rank,
-@sec-comparators). HTML comments marked "RESULT" show where each result goes
-once it is reviewed. Chapter numbers stay those of the reported fit.
-- Figures and tables: make_figures_supervised_sim.R,
-  make_figures_supervised_external_km.R, make_figures_supervised_programs.R.
-- Every number traces to a findings file or output named in the plan's
-  evidence table and checklist.
-- Prelim author: Andrew J Walther. Planned manuscript authors: Andrew J Walther,
-  Amber Young, Yusha Liu, Naim Rashid.
+Update (2026-11-12, later): the working model is rank 5. Headline training-CV,
+external and program numbers are rank 5 (sources: docs/findings/2026-11-12-lb-yfb-study-findings.md,
+results/benchmark_sim/outputs/lb_yfb_training_2026-11-12/ and lb_yfb_external_2026-11-12/).
+Results that exist only at rank 7 are labeled "rank 7". Methylation alone (rank 5):
+docs/findings/2026-11-12-methylation-single-modality-findings.md. The one-fitter
+(several data types) results are still in progress.
 -->
 
 # Introduction {#sec-intro}
@@ -115,7 +110,7 @@ We will compare this rule with two alternatives for choosing the weight. The fir
 
 ## Prediction in New Cohorts {#sec-prediction}
 
-The survival weight, the gene-set size and the survival-screen arm of the reported fit were chosen by training cross-validation (@sec-tuning). Validation cohorts are log-transformed once where needed, standardized within their own cohort and restricted to the training genes. Genes missing from a cohort are left out of the projection. The risk score is $\boldsymbol{\eta} = \mathbf{Y}_{\text{new}}E[\mathbf{F}]E[\boldsymbol{\beta}]$ with the loadings and coefficients frozen at their training values, and its direction is fixed by the training fit before any validation outcome is seen.
+The survival weight, the gene set, the input scaling and the rank were chosen by training cross-validation (@sec-tuning and @sec-rank). Validation cohorts are log-transformed once where needed, standardized within their own cohort and restricted to the training genes. Genes missing from a cohort are set to zero after standardization within that cohort, so they add nothing to the projection. The risk score is $\boldsymbol{\eta} = \mathbf{Y}_{\text{new}}E[\mathbf{F}]E[\boldsymbol{\beta}]$ with the loadings and coefficients frozen at their training values, and its direction is fixed by the training fit before any validation outcome is seen.
 
 ## Simulation Studies {#sec-sim-design}
 
@@ -170,15 +165,15 @@ CV weight & $w_S = 1$ in 55/60 datasets
 
 ## PDAC Data and Evaluation {#sec-data}
 
-The model is trained on TCGA-PAAD (144 patients) and CPTAC (129) [@Raphael2017; @Cao2021], with 139 deaths among the 273 patients. The five held-out cohorts contain 616 records from 568 donors. They are Dijk [@Dijk2020], Moffitt GEO array [@Moffitt2015], PACA-AU array and PACA-AU RNA-seq [@Bailey2016], and Puleo array [@Puleo2018]. Every RNA-seq cohort is log-transformed once. Expression is standardized within each cohort. Genes are selected with a procedure adapted from @Young2026. In each training cohort, genes are ranked by expression mean and by variance, and the 3,000 genes with the smallest sum of the two ranks are kept. Intersecting the two cohorts' sets leaves 2,218 genes. No survival screen is applied. The reported fit has rank $K=7$ without pruning (@sec-rank).
+The model is trained on TCGA-PAAD (144 patients) and CPTAC (129) [@Raphael2017; @Cao2021], with 139 deaths among the 273 patients. The five held-out cohorts contain 616 records from 568 donors. They are Dijk [@Dijk2020], Moffitt GEO array [@Moffitt2015], PACA-AU array and PACA-AU RNA-seq [@Bailey2016], and Puleo array [@Puleo2018]. Every RNA-seq cohort is log-transformed once. Expression is standardized within each cohort. Genes are selected with a procedure adapted from @Young2026. In each training cohort, genes are ranked by expression mean and by variance, and the 3,000 genes with the smallest sum of the two ranks are kept. Intersecting the two cohorts' sets leaves 2,218 genes. No survival screen is applied. The working model has rank $K=5$ without pruning, chosen by training cross-validation (@sec-rank). Some results were computed for an earlier fit at rank 7, before the rank was chosen, and are labeled with that rank.
 
 The model is fitted to the 273 training patients pooled, after expression is standardized within each cohort. The pooled fit has one baseline hazard and no cohort strata. A version that stratifies the baseline hazard by cohort is implemented but has not yet been evaluated on these data. External discrimination is Harrell's concordance [@Harrell1982] with percentile bootstrap intervals [@EfronTibshirani1993]. Differences between the supervised and two-step fits use a paired bootstrap within each cohort (2,000 replicates), pooled across cohorts by equally weighting the series-specific differences. A donor bootstrap keeps records from the same donor together while preserving the within-series concordance comparisons. Calibration is the slope of a Cox model of validation survival on the risk score. A slope of 1 means the training coefficients predict hazard differences of the observed size, a slope below 1 means they overstate them, and a slope above 1 means they shrink them toward zero. The PACA-AU array and RNA-seq series share 47 donors, and the RNA-seq series contains a repeated donor. We also report the pooled difference after excluding that series.
 
 ## Tuning Protocol {#sec-tuning}
 
-From now on, every modeling choice, from preprocessing and gene screening to the priors, the rank, the survival weight and the tuning of comparators, is made by simulation and by five-fold cross-validation on the 273 training patients. The folds are balanced by cohort and event status, so every training fold contains both cohorts. No part of the training data is held out as a separate test set. In training cross-validation the concordance had a standard error of 0.024 across five folds, so one fold of about 55 patients estimates concordance with a standard deviation near 0.05. A 20% hold-out would therefore be too noisy to separate settings whose concordance differs by 0.01 or less, and it would remove a fifth of the patients from every fit. A paired comparison counts as close when the difference is within one standard error of the paired fold differences. In that case five-fold cross-validation is repeated with four more random partitions of the patients into folds. The five validation series and the matched methylation validation set only score a model that is already fixed. Their results are reported, but they are never used to choose between models or settings. DeSurv used the same protocol on the same training and validation cohorts: it chose every hyperparameter by five-fold cross-validation in the training data and scored the validation cohorts once with the final model, apart from sensitivity analyses reported after selection [@Young2026].
+From now on, every modeling choice, from preprocessing and gene screening to the priors, the rank, the survival weight and the tuning of comparators, is made by simulation and by five-fold cross-validation on the 273 training patients. The folds are balanced by cohort and event status, so every training fold contains both cohorts. No part of the training data is held out as a separate test set. In training cross-validation at rank 7 the concordance had a standard error of 0.024 across five folds, so one fold of about 55 patients estimates concordance with a standard deviation near 0.05. A 20% hold-out would therefore be too noisy to separate settings whose concordance differs by 0.01 or less, and it would remove a fifth of the patients from every fit. A paired comparison counts as close when the difference is within one standard error of the paired fold differences. In that case five-fold cross-validation is repeated with four more random partitions of the patients into folds. The five validation series and the matched methylation validation set only score a model that is already fixed. Their results are reported, but they are never used to choose between models or settings. DeSurv used the same protocol on the same training and validation cohorts: it chose every hyperparameter by five-fold cross-validation in the training data and scored the validation cohorts once with the final model, apart from sensitivity analyses reported after selection [@Young2026].
 
-For the reported fit, training cross-validation chose the survival weight, the number of genes (from 2,218 to all 17,900 genes shared by the two cohorts) and whether to screen genes for a survival association inside each fold. It also compared the gene screen, the input scaling and the rank with alternatives (@sec-rank). The validation series were scored once after the fit was fixed. The DeSurv comparator used its published settings rather than a new search on our folds (@sec-comparators).
+At rank 7, training cross-validation chose the survival weight, the number of genes (from 2,218 to all 17,900 genes shared by the two cohorts) and whether to screen genes for a survival association inside each fold. It also compared the gene screen, the input scaling and the rank with alternatives (@sec-rank). The validation series were scored once after the fit was fixed. The DeSurv comparator used its published settings rather than a new search on our folds (@sec-comparators).
 
 ## Gene Screen, Input Scaling and Rank {#sec-rank}
 
@@ -200,11 +195,10 @@ Each program has a separate point-Laplace prior $g_{\mathbf{f}_{mk}}$ for each m
 
 The derivation identifies a balance problem the single-modality model does not have. The precision of the shared scores sums over all features, so the modality with more features, methylation in the planned application, would dominate $\mathbf{L}$, and the survival share falls with the total number of features. Modality-specific weights on the reconstruction terms may therefore be needed. They will be derived and checked in simulation before any real-data fit.
 
-Before the joint fit, we will fit the single-modality model to methylation alone on the TCGA patients with matched expression and methylation, about 150 patients. Methylation at each CpG site is measured as the methylated fraction, between 0 and 1. Sites whose mean fraction on these patients lies between 0.1 and 0.9 are eligible, which removes sites that are almost always methylated or almost always unmethylated and leaves 182,934. These are ranked by variance, and the model is fitted to the top 10,000, 25,000, 50,000 and 100,000 sites and to all eligible sites, under both prior setups of @sec-model-checks with a Normal coefficient prior. Neither screen uses outcomes. The comparator is the expression fit on the same patients and folds. A methylation program counts as not seen in expression when its patient scores correlate below 0.5 in absolute value with every expression program and it is survival-active in the full fit and in at least three of the five training folds. With about 150 patients the cross-validated concordance will be noisy, so this comparison is descriptive. A full fit at each number of sites is timed first, and cross-validation runs only for the numbers at which the fit converges. If a sparse coefficient prior replaces the Normal prior, the methylation fits will be repeated under it. Methylation programs with survival signal that expression lacks would motivate the joint model. If there are none, the case for the joint model rests on interpretation.
+Before the joint fit, we fitted the single-modality model at rank 5 to methylation alone on the 144 TCGA patients with matched expression, methylation and survival (75 deaths). Methylation at each CpG site is measured as the methylated fraction, between 0 and 1. Sites whose mean fraction on these patients lies between 0.1 and 0.9 are eligible, which removes sites that are almost always methylated or almost always unmethylated and leaves 182,934. These are ranked by variance, and the model was fitted to the top 10,000, 25,000, 50,000 and 100,000 sites and to all eligible sites, under both prior setups of @sec-model-checks with a Normal coefficient prior. Neither screen uses outcomes, and both were computed, with imputation of missing values, before the patients were split into folds. The comparator is the expression fit on the same patients and five folds. A methylation program counts as not seen in expression when its patient scores correlate below 0.5 in absolute value with every expression program and it is survival-active in the full fit and in at least three of the five training folds. With 144 patients the cross-validated concordance is noisy, so this comparison is descriptive. Cross-validation was run only for the numbers of sites at which the full fit converged. Methylation programs with survival signal that expression lacks would motivate the joint model. If there are none, the case for the joint model rests on interpretation.
 
 We will implement the model in one fitter and check that its $M=1$ case reproduces the single-modality fit: the posterior means of the scores, loadings and coefficients and the final ELBO must agree to a relative tolerance of $10^{-6}$ on two test datasets, one of them with cohort strata. We will evaluate the extension in two-modality simulations with modality-specific programs and one shared prognostic program. These simulations will show how often the joint fit recovers the shared program and whether it converges. The simulations will also show whether methylation, with many more features, dominates the shared scores. The planned application fits expression alone, methylation alone and both on the matched TCGA patients with the same five folds, with validation in ICGC PACA-AU. The fixed joint and expression-only fits will be scored once in the ICGC set. We will also assess whether adding methylation identifies a prognostic program missed by the expression-only fit.
 
-<!-- RESULT (methylation alone): convergence and fit time at each CpG count under both setups, CV C against expression on the same patients, number of methylation programs not seen in expression, ICGC scores of the fixed fits. -->
 <!-- RESULT (one fitter for M data types): M = 1 agreement (largest relative difference), KL helper check, two-modality simulation recovery / false-active / convergence, descriptive real-data CV C for expression, methylation and both. -->
 
 ## Comparators, Risk Groups and Program Classification {#sec-comparators}
@@ -213,9 +207,7 @@ Every comparator was trained on the same 273 training patients, and each score's
 
 For risk groups, one cutpoint per score maximized the log-rank statistic on the out-of-fold training scores, with at least 20% of patients in each group, and was applied unchanged in every validation series. A program was called a main prognostic program when its standardized coefficient was at least 0.25 of the largest, its signed share of the risk-score variance, $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$, was at least 5%, and it was survival-active in at least four of the five training folds after matching loadings with absolute correlation at least 0.7.
 
-A comparison with the $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$ parameterization remains to be run. In that model the risk score uses each patient's latent program scores, estimated from all programs at once, and a new patient's scores are estimated by fold-in under the frozen priors. Because $\mathbf{Y}\approx\mathbf{L}\mathbf{F}^\top$, the projection score satisfies $\mathbf{Y}\mathbf{F}\approx\mathbf{L}(\mathbf{F}^\top\mathbf{F})$ up to noise. It mixes the latent scores through the overlap between programs, and the two scores agree only when the programs share no genes. Both models will get the same input matrix, priors, starting values, rank and folds, so only the parameterization of the hazard differs. Held-out training folds are scored by fold-in for the latent-score model and by projection for ours, the same contrast as in an external cohort. We will compare recovery, false activity, convergence and validation concordance in simulation, cross-validated concordance on the training data, the genes of the fitted programs, and the correlations between the two risk scores and between matched program scores. A model that recovers the planted program less often or fails to converge where the other succeeds will not be carried forward.
-
-<!-- RESULT (latent-score versus projection parameterization): simulation recovery / false-active / convergence / validation C per cell for both, paired training CV C difference with SE, top-gene overlap of programs, correlation of the two linear predictors and of matched program scores, external scores of both fixed fits (descriptive). -->
+We compared the projection score with the $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$ parameterization at rank 5. In that model the risk score uses each patient's latent program scores, estimated from all programs at once, and a new patient's scores are estimated by fold-in under the frozen priors. Because $\mathbf{Y}\approx\mathbf{L}\mathbf{F}^\top$, the projection score satisfies $\mathbf{Y}\mathbf{F}\approx\mathbf{L}(\mathbf{F}^\top\mathbf{F})$ up to noise. It mixes the latent scores through the overlap between programs, and the two scores agree, up to scale, when the loadings are orthogonal, for example when the programs share no genes. Both models got the same input matrix, priors, starting values, rank and folds, so only the parameterization of the hazard differs. Held-out training folds are scored by fold-in for the latent-score model and by projection for ours, the same contrast as in an external cohort. We compared recovery, survival-active programs that match no planted program, convergence and validation concordance in simulation at $w_S=1$ and 10, cross-validated concordance on the training data, the genes of the fitted programs, the correlation between the two risk scores, and concordance in the validation series.
 
 # Results {#sec-results}
 
@@ -295,16 +287,16 @@ We also examined the combined contribution of the nonmatched programs, including
 
 The planned evaluation will compare the alternative weights of @sec-choose-weight on the same grid and add cells with more realistic survival effects.
 
-<!-- RESULT slot (simulation): the parameterization comparison of @sec-comparators report their simulation cells here once reviewed. Keep the numbers above, which come from the reported fit's settings. -->
 
 ## Training Cross-Validation on PDAC {#sec-res-cv}
 
-On the PDAC training data the supervised fit had a cross-validated concordance of 0.663 (SE 0.024), against 0.652 (SE 0.026) for the two-step fit, a paired difference of 0.011 (SE 0.005) (Table \ref{tab:training-cv}). Three programs were survival-active in the all-patient fit. Two of the five supervised fold fits stopped at the 300-sweep limit with the ELBO still changing by more than $10^{-5}$, but with small coefficients (largest $|E\beta|$ 0.46) and no sign of the instability seen at large weights in simulation.
+At rank 5, the working model had a mean within-cohort cross-validated concordance of 0.655 (SE 0.029), with every fold fit converged, and Programs 2, 4 and 5 were survival-active in the fit to all training patients (@sec-res-programs). The comparison with the two-step fit was made at rank 7. There the supervised fit had a mean fold concordance of 0.663 (SE 0.024), against 0.652 (SE 0.026) for the two-step fit, a paired difference of 0.011 (SE 0.005) (Table \ref{tab:training-cv}). Three programs were survival-active in the rank-7 fit to all patients. Two of its five fold fits stopped at the 300-sweep limit with the ELBO still changing by more than $10^{-5}$, but with small coefficients (largest $|E\beta|$ 0.46) and no sign of the instability seen at large weights in simulation.
 
+<!-- K5-EXHIBIT 1 tab:training-cv and the precision-share / loading-agreement paragraph: rank-7 version shown until the K = 5 exhibit from results/benchmark_sim/outputs/k5_working_2026-11-12/ arrives. -->
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\caption[Five-fold training cross-validation on the 2,218 selected genes (273 patients, 139 events)]{Five-fold training cross-validation on the 2,218 selected genes (273 patients, 139 events). Convergence refers to the factorization in each arm. Activity is measured in the fit to all training patients using $|E[\beta_k]| \geq 1.96$ posterior SD for $w_S = 1$ and the Wald test for the two-step fit.}
+\caption[Five-fold training cross-validation on the 2,218 selected genes (273 patients, 139 events)]{Five-fold training cross-validation on the 2,218 selected genes (273 patients, 139 events). Convergence refers to the factorization in each arm. Activity is measured in the fit to all training patients using $|E[\beta_k]| \geq 1.96$ posterior SD for $w_S = 1$ and the Wald test for the two-step fit. Rank 7.}
 \label{tab:training-cv}
 \small
 \begin{tabular}{lccccc}
@@ -320,34 +312,36 @@ Two-step & 0.652 (0.026) & 0.647 & $-$777.1 & 3/5 & 4 \\
 \end{table}
 ```
 
-Survival did not change the loadings. Its share of the loading precision was $10^{-8}$ to $10^{-6}$, against 0.01 to 0.2 in the 2,000-gene simulation, and the supervised and unsupervised loadings agreed at $|r|=1.000$ for every program. Two features of the real data combine to make the share this small. The real coefficients are small, at most 0.6 per standard deviation of the score, and the share scales with $E[\beta_k^2]$. The real programs are also high-variance programs with a large expression precision, whereas the simulated program carried 0.25% to 5% of the variance. The concordance difference therefore reflects the joint coefficient update with its Normal shrinkage prior.
+Survival did not change the loadings at rank 7. Its share of the loading precision was $10^{-8}$ to $10^{-6}$, against 0.01 to 0.2 in the 2,000-gene simulation, and the supervised and unsupervised loadings agreed at $|r|=1.000$ for every program. Two features of the real data combine to make the share this small. The real coefficients are small, at most 0.6 per standard deviation of the score, and the share scales with $E[\beta_k^2]$. The real programs are also high-variance programs with a large expression precision, whereas the simulated program carried 0.25% to 5% of the variance. The concordance difference therefore reflects the joint coefficient update with its Normal shrinkage prior.
 
-Training cross-validation identified the 2,218-gene set as optimal (Figure \ref{fig:size-curve}). Supervised concordance fell from 0.663 at 2,218 genes to between 0.643 and 0.648 at 8,000 genes and above, while the two-step fit stayed between 0.650 and 0.653, so the supervised fit's advantage reversed above 5,000 genes. All sizes were within one standard error of one another. By cross-validated partial log-likelihood the ordering differed slightly, so larger sets are not worse by every measure. Screening genes for a univariate survival association inside each fold gave gains of 0.003 to 0.012 over an outcome-free set of the same size, each within about one paired standard error, and no screened set beat the full 2,218-gene fit. On permuted-survival datasets the fit at $w_S=1$ produced 0.1 to 0.5 false-active programs per cell.
+At rank 7, training cross-validation identified the 2,218-gene set as optimal (Figure \ref{fig:size-curve}). Supervised concordance fell from 0.663 at 2,218 genes to between 0.643 and 0.648 at 8,000 genes and above, while the two-step fit stayed between 0.650 and 0.653, so the supervised fit's advantage reversed above 5,000 genes. All sizes were within one standard error of one another. By cross-validated partial log-likelihood the ordering differed slightly, so larger sets are not worse by every measure. Screening genes for a univariate survival association inside each fold gave gains of 0.003 to 0.012 over an outcome-free set of the same size, each within about one paired standard error, and no screened set beat the full 2,218-gene fit. On permuted-survival datasets the fit at $w_S=1$ produced 0.1 to 0.5 false-active programs per cell.
 
+<!-- K5-EXHIBIT 2 fig:size-curve and the screening text: rank-7 version shown until the K = 5 exhibit from results/benchmark_sim/outputs/k5_working_2026-11-12/ arrives. -->
 ```{=latex}
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_real_size_curve.pdf}
-\caption[Five-fold cross-validated concordance on the PDAC training cohorts against the number of genes]{Five-fold cross-validated concordance on the PDAC training cohorts (mean $\pm$ 1 SE over folds) against the number of genes, for the supervised fit ($w_S=1$) and the two-step fit.}\label{fig:size-curve}
+\caption[Five-fold cross-validated concordance on the PDAC training cohorts against the number of genes]{Five-fold cross-validated concordance on the PDAC training cohorts (mean $\pm$ 1 SE over folds) against the number of genes, for the supervised fit ($w_S=1$) and the two-step fit. Rank 7.}\label{fig:size-curve}
 \end{figure}
 ```
 
-A refit that chose the weight by training cross-validated partial log-likelihood on these patients, over weights from 1 to 50, selected $w_S=1$. The curve was flat. The cross-validated partial log-likelihood changed from $-775.168$ at weight one to $-775.429$ at weight 50. Nested cross-validation gave $C=0.656$ (SE 0.027), compared with 0.663 at the fixed weight. At weight 50, survival supplied a median of $7.3\times10^{-5}$ of the loading precision for active programs, and the loadings still agreed with those of the unsupervised fit to the reported precision. The model therefore keeps $w_S=1$.
+<!-- K5-EXHIBIT 3 survival-weight refit text, to be replaced at K = 5 -->
+At rank 7, a refit that chose the weight by training cross-validated partial log-likelihood on these patients, over weights from 1 to 50, selected $w_S=1$. The curve was flat. The cross-validated partial log-likelihood changed from $-775.168$ at weight one to $-775.429$ at weight 50. Nested cross-validation gave $C=0.656$ (SE 0.027), compared with 0.663 at the fixed weight. At weight 50, survival supplied a median of $7.3\times10^{-5}$ of the loading precision for active programs, and the loadings still agreed with those of the unsupervised fit to the reported precision. The model therefore keeps $w_S=1$.
 
-Training cross-validation also supported the gene screen and the input scaling of the reported fit (Table \ref{tab:inputs-rank}). In concordance within cohort, the alternative preprocessing was lower by 0.012 (paired SE 0.014), division by the within-cohort standard deviation by 0.020 (SE 0.007) and the rank transform by 0.017 (SE 0.009). Across ranks, concordance was flat from $K=5$ to 12, between 0.649 and 0.666, and lower from $K=2$ to 4, between 0.611 and 0.620. The one-standard-error rule selected $K=5$. Its concordance was 0.003 below that of $K=7$ (paired SE 0.007), all five of its fold fits converged against three at $K=7$, and three programs were survival-active in the full fit at every rank from 5 to 8. Every column kept nonzero loadings at every rank, so the priors did not remove programs. The rule picks the smallest rank on the plateau and does not show that $K=5$ predicts better than $K=7$. Because these comparisons are close, we repeated the five-fold cross-validation with four more random partitions of the patients. Averaged over the five partitions, the one-standard-error rule again selected $K=5$, with concordance 0.643 against a best of 0.651 at $K=12$. Four of the five partitions selected $K=5$ on their own and one selected $K=10$. $K=5$ converged in all 25 fold fits, against 18 at $K=7$. The alternative preprocessing was 0.002 lower on average (SE 0.008), so the gene screen also stays. The working model now uses $K=5$, and the results in this chapter come from the reported $K=7$ fit. The five programs at $K=5$ match Programs 1 to 5 of the reported fit, with score correlations of 0.92 to 0.995, and the two programs dropped were not survival-active. Programs 2 and 5 stay survival-active. Programs 3 and 4 lie near the 1.96 threshold in both fits: Program 3 falls below it at $K=5$ ($z$ from 3.0 to 1.5) and Program 4 rises above it ($z$ from 1.9 to 2.4). The program classification of @sec-res-programs will therefore be repeated at $K=5$.
+Training cross-validation also supported the gene screen and the input scaling (Table \ref{tab:inputs-rank}). In concordance within cohort at rank 7, the alternative preprocessing was lower by 0.012 (paired SE 0.014), division by the within-cohort standard deviation by 0.020 (SE 0.007) and the rank transform by 0.017 (SE 0.009). Across ranks, concordance was flat from $K=5$ to 12, between 0.649 and 0.666, and lower from $K=2$ to 4, between 0.611 and 0.620. The one-standard-error rule selected $K=5$. Its concordance was 0.003 below that of $K=7$ (paired SE 0.007), all five of its fold fits converged against three at $K=7$, and three programs were survival-active in the full fit at every rank from 5 to 8. Every column kept nonzero loadings at every rank, so the priors did not remove programs. The rule picks the smallest rank on the plateau and does not show that $K=5$ predicts better than $K=7$. Because these comparisons are close, we repeated the five-fold cross-validation with four more random partitions of the patients. Averaged over the five partitions, the one-standard-error rule again selected $K=5$, with concordance 0.643 against a best of 0.651 at $K=12$. Four of the five partitions selected $K=5$ on their own and one selected $K=10$. $K=5$ converged in all 25 fold fits, against 18 at $K=7$. The alternative preprocessing was 0.002 lower on average (SE 0.008), so the gene screen also stays. The working model therefore uses $K=5$. Its five programs match Programs 1 to 5 of the rank-7 fit, with score correlations of 0.92 to 0.995, and the two rank-7 programs it drops were not survival-active. Programs 2 and 5 are survival-active at both ranks. Programs 3 and 4 lie near the 1.96 threshold: Program 3 falls below it at $K=5$ ($z$ from 3.0 to 1.5) and Program 4 rises above it ($z$ from 1.9 to 2.4).
 
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\caption[Training cross-validation of the gene screen, input scaling and rank]{Training cross-validation of the gene screen, input scaling and rank (273 patients, five folds). Concordance counts only pairs of patients from the same cohort, so the reported fit's value differs from the mean fold concordance in Table \ref{tab:training-cv}. Differences are paired over folds. Convergence is within 300 sweeps. Survival-active programs are counted in the fit to all training patients. Panel A uses $K = 7$. Panel B uses the current screen and z-scores.}
+\caption[Training cross-validation of the gene screen, input scaling and rank]{Training cross-validation of the gene screen, input scaling and rank (273 patients, five folds). Concordance counts only pairs of patients from the same cohort, so the rank-7 value differs from the mean fold concordance in Table \ref{tab:training-cv}. Differences are paired over folds. Convergence is within 300 sweeps. Survival-active programs are counted in the fit to all training patients. Panel A uses $K = 7$. Panel B uses the current screen and z-scores.}
 \label{tab:inputs-rank}
 \small
 \par\medskip{\raggedright\textbf{A. Gene screen and input scaling}\par}\smallskip
 \begin{tabular*}{\linewidth}{@{}l@{\extracolsep{\fill}}cccc@{}}
 \toprule
-Input & Genes & Mean $C$ (SE) & \shortstack{Difference from\\reported fit (SE)} & \shortstack{Folds\\converged} \\
+Input & Genes & Mean $C$ (SE) & \shortstack{Difference from\\current input (SE)} & \shortstack{Folds\\converged} \\
 \midrule
-Current screen, z-scores (reported fit) & 2,218 & 0.658 (0.026) & & 3/5 \\
+Current screen, z-scores & 2,218 & 0.658 (0.026) & & 3/5 \\
 Variance screen after quantile normalization & 2,000 & 0.646 (0.030) & $-$0.012 (0.014) & 5/5 \\
 Current screen, divided by SD & 2,218 & 0.638 (0.023) & $-$0.020 (0.007) & 5/5 \\
 Current screen, ranks then z-scores & 2,218 & 0.641 (0.022) & $-$0.017 (0.009) & 5/5 \\
@@ -376,18 +370,42 @@ $K$ & Mean $C$ (SE) & \shortstack{Difference from\\$K = 7$ (SE)} & \shortstack{F
 \end{table}
 ```
 
-No alternative prior improved on the reported fit. A point-exponential prior on the scores and loadings, fitted to nonnegative input, lowered within-cohort cross-validated concordance from 0.658 to between 0.573 and 0.635 across four input setups, and at most one of five folds converged. Shared point-Laplace, point-normal and Normal coefficient priors gave within-cohort concordance of 0.649 to 0.656, against 0.658 for the Normal prior, with nearly the same simulation results. The reported fit therefore keeps its priors. Appendices \ref{app:lf-prior} and \ref{app:beta-prior} give the comparisons.
-
-<!-- RESULT slot (training CV): within-cohort CV concordance of the prior, coefficient-prior, gene-screen, input-scaling and rank comparisons, and the latent-score parameterization, each against the reported fit on the same folds. If any comparison changes the working model, describe the change as the next step and keep the reported fit's numbers in this chapter. -->
+No alternative prior improved on the point-Laplace and Normal priors. A point-exponential prior on the scores and loadings, fitted to nonnegative input, lowered within-cohort cross-validated concordance at rank 7 from 0.658 to between 0.573 and 0.635 across four input setups, and at most one of five folds converged. At rank 5 it gave 0.519 against 0.655. Shared point-Laplace, point-normal and Normal coefficient priors gave within-cohort concordance of 0.649 to 0.656 at rank 7, against 0.658 for the Normal prior, with nearly the same simulation results, and 0.648 to 0.649 at rank 5, against 0.655. The working model therefore keeps them. Appendices \ref{app:lf-prior} and \ref{app:beta-prior} give the comparisons.
 
 ## External Validation {#sec-res-external}
 
-In the five held-out cohorts the supervised fit's concordance was 0.584 in Dijk, 0.537 in Moffitt, 0.656 in PACA-AU array, 0.681 in PACA-AU RNA-seq and 0.644 in Puleo, a mean of 0.620 (Table \ref{tab:external}, Figure \ref{fig:external}). It was equal to or higher than the two-step fit in every cohort. The equal-weight pooled difference was 0.007 (95% record-bootstrap CI $-0.002$ to $0.017$, donor-bootstrap CI $-0.003$ to $0.017$). Excluding PACA-AU RNA-seq gave 0.006 ($-0.003$ to $0.016$). Each interval includes zero. A Cox model stratified by cohort gave a hazard ratio of 1.37 (1.24 to 1.51) per standard deviation of the supervised risk score, and 1.35 (1.22 to 1.49) for the two-step score. With robust intervals clustered on donor these become 1.22 to 1.53 and 1.21 to 1.51. DeSurv refitted on the same training patients gave 1.43 (1.25 to 1.64), against 1.50 (1.31 to 1.72) in the original analysis [@Young2026].
+At rank 5, the working model's concordance in the five held-out cohorts was 0.599 in Dijk, 0.538 in Moffitt, 0.664 in PACA-AU array, 0.704 in PACA-AU RNA-seq and 0.645 in Puleo (Table \ref{tab:external-k5}). The equal-weight mean over the series was 0.630 (95% donor-bootstrap interval 0.587 to 0.670), and the mean weighted by the number of comparable patient pairs was 0.628 (0.596 to 0.662). Genes absent from a series were set to zero after standardization within that series. The comparisons with the two-step fit, calibration slopes, hazard ratios and risk groups below were computed for the rank-7 fit and have not yet been repeated at rank 5.
 
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\caption[External scoring of the fixed fits]{External scoring of the fixed fits. The paired difference is $w_S = 1$ minus two-step. Pooled concordance uses pairs within series. The donor bootstrap resamples shared PACA-AU donors jointly. The last pooled row excludes PACA-AU RNA-seq. Calibration slopes come from a Cox regression of survival on the risk score. A slope of 1 indicates calibration.}
+\caption[External concordance of the working model at rank 5]{External concordance of the working model at rank 5 ($w_S = 1$, 2,218 genes), scored once in each validation series with no refitting. Intervals are 95\% percentile bootstrap intervals over records within each series. Pooled intervals resample donors, keeping both PACA-AU assays of a donor together.}
+\label{tab:external-k5}
+\small
+\begin{tabular}{lccc}
+\toprule
+Series & $n$ (events) & Genes missing & $C$ (95\% CI) \\
+\midrule
+Dijk & 90 (81) & 30 & 0.599 (0.530, 0.667) \\
+Moffitt (array) & 123 (83) & 71 & 0.538 (0.458, 0.608) \\
+PACA-AU (array) & 63 (38) & 13 & 0.664 (0.573, 0.756) \\
+PACA-AU (RNA-seq) & 52 (31) & 27 & 0.704 (0.596, 0.806) \\
+Puleo (array) & 288 (181) & 82 & 0.645 (0.600, 0.687) \\
+\midrule
+Equal-weight mean & & & 0.630 (0.587, 0.670) \\
+Pair-weighted mean & & & 0.628 (0.596, 0.662) \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
+
+At rank 7, the supervised fit's concordance was 0.584 in Dijk, 0.537 in Moffitt, 0.656 in PACA-AU array, 0.681 in PACA-AU RNA-seq and 0.644 in Puleo, a mean of 0.620 (Table \ref{tab:external}, Figure \ref{fig:external}). It was equal to or higher than the two-step fit in every cohort. The equal-weight pooled difference was 0.007 (95% record-bootstrap CI $-0.002$ to $0.017$, donor-bootstrap CI $-0.003$ to $0.017$). Excluding PACA-AU RNA-seq gave 0.006 ($-0.003$ to $0.016$). Each interval includes zero. A Cox model stratified by cohort gave a hazard ratio of 1.37 (1.24 to 1.51) per standard deviation of the supervised risk score, and 1.35 (1.22 to 1.49) for the two-step score. With robust intervals clustered on donor these become 1.22 to 1.53 and 1.21 to 1.51. DeSurv refitted on the same training patients gave 1.43 (1.25 to 1.64), against 1.50 (1.31 to 1.72) in the original analysis [@Young2026].
+
+<!-- K5-EXHIBIT 4 tab:external, fig:external (paired differences, record/donor CIs, slopes, pooled HR): rank-7 version shown until the K = 5 exhibit from results/benchmark_sim/outputs/k5_working_2026-11-12/ arrives. -->
+```{=latex}
+\begin{table}[!htb]
+\centering
+\caption[External scoring of the fixed fits]{External scoring of the fixed fits. The paired difference is $w_S = 1$ minus two-step. Pooled concordance uses pairs within series. The donor bootstrap resamples shared PACA-AU donors jointly. The last pooled row excludes PACA-AU RNA-seq. Calibration slopes come from a Cox regression of survival on the risk score. A slope of 1 indicates calibration. Rank 7.}
 \label{tab:external}
 \footnotesize
 \setlength{\tabcolsep}{3pt}
@@ -426,42 +444,43 @@ Puleo (array) & 0.99 (0.20) & 0.80 (0.17) \\
 
 The supervised calibration slopes ranged from 0.36 to 1.57 and were closer to one in four series. In Puleo, the slope was 0.99 (SE 0.20) against 0.80 for two-step. In PACA-AU RNA-seq, the slope increased from 1.26 to 1.57, indicating greater attenuation after shrinkage.
 
-<!-- RESULT slot (external): if the working model changes, its single external scoring is reported here, labeled as a different fitted model from the one in Table tab:external. -->
-
 ```{=latex}
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_c.pdf}
-\caption[External concordance and calibration slope of the frozen supervised fit and the two-step fit in the five held-out cohorts]{External concordance (95\% bootstrap interval) and calibration slope ($\pm$ 1.96 SE) of the frozen supervised fit ($w_S=1$) and the two-step fit in the five held-out cohorts. A calibration slope of 1 means the training coefficients predict hazard differences of the observed size.}\label{fig:external}
+\caption[External concordance and calibration slope of the rank-7 supervised fit and the two-step fit in the five held-out cohorts]{External concordance (95\% bootstrap interval) and calibration slope ($\pm$ 1.96 SE) of the fixed rank-7 supervised fit ($w_S=1$) and the two-step fit in the five held-out cohorts. A calibration slope of 1 means the training coefficients predict hazard differences of the observed size.}\label{fig:external}
 \end{figure}
 ```
 
-Figure \ref{fig:km-risk} shows the validation series split by one cutpoint chosen on the out-of-fold training scores and applied unchanged in every series (@sec-comparators). The high-versus-low hazard ratio was above one in every series, from 1.06 (0.69 to 1.63) in Moffitt to 3.53 (1.63 to 7.67) in PACA-AU RNA-seq.
+Figure \ref{fig:km-risk} shows the validation series split by the rank-7 risk score at one cutpoint chosen on the out-of-fold training scores and applied unchanged in every series (@sec-comparators). The high-versus-low hazard ratio was above one in every series, from 1.06 (0.69 to 1.63) in Moffitt to 3.53 (1.63 to 7.67) in PACA-AU RNA-seq.
 
+<!-- K5-EXHIBIT 5 fig:km-risk and risk-group text: rank-7 version shown until the K = 5 exhibit from results/benchmark_sim/outputs/k5_working_2026-11-12/ arrives. -->
 ```{=latex}
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_km_fixed.pdf}
-\caption[Kaplan--Meier curves for the frozen supervised risk score split at the training cutpoint]{Kaplan--Meier curves for the frozen supervised risk score split at the training cutpoint ($-0.046$ training SD). Panel titles give the high-versus-low hazard ratio with its Wald interval. Curves are monthly estimates through 60 months, with numbers at risk every 12 months below each panel.}\label{fig:km-risk}
+\caption[Kaplan--Meier curves for the rank-7 supervised risk score split at the training cutpoint]{Kaplan--Meier curves for the fixed rank-7 supervised risk score split at the training cutpoint ($-0.046$ training SD). Panel titles give the high-versus-low hazard ratio with its Wald interval. Curves are monthly estimates through 60 months, with numbers at risk every 12 months below each panel.}\label{fig:km-risk}
 \end{figure}
 ```
 
 ## Comparison With Other Prognostic Models {#sec-res-comparators}
 
-The supervised fit's validation concordance was within noise of DeSurv and of the elastic-net Cox model trained on the same patients (Table \ref{tab:comparators}). The mean concordance over the five series was 0.620 for the supervised fit, 0.614 for DeSurv and 0.619 for elastic-net Cox. The paired differences were 0.007 ($-0.017$ to 0.030) against DeSurv and 0.001 ($-0.015$ to 0.018) against elastic-net Cox. The intervals against DeSurv, elastic-net Cox, PurIST and the two-step fit included zero. The elastic-net model selected the ridge penalty. PurIST alone had a mean concordance of 0.599. EBMF followed by Cox regression did worse at ranks 15 and 40 than at rank 7, with calibration slopes of 0.10 to 0.49 that show the unpenalized Cox step overfitting with 139 training deaths.
+The working model's mean concordance over the five series was 0.630 at rank 5, against 0.614 for DeSurv and 0.619 for elastic-net Cox trained on the same patients (Table \ref{tab:comparators}). The paired comparisons were made with the rank-7 fit, whose mean concordance was 0.620. The paired differences were 0.007 ($-0.017$ to 0.030) against DeSurv and 0.001 ($-0.015$ to 0.018) against elastic-net Cox. The intervals against DeSurv, elastic-net Cox, PurIST and the two-step fit included zero. The elastic-net model selected the ridge penalty. PurIST alone had a mean concordance of 0.599. EBMF followed by Cox regression did worse at ranks 15 and 40 than at rank 7, with calibration slopes of 0.10 to 0.49 that show the unpenalized Cox step overfitting with 139 training deaths.
 
+<!-- K5-EXHIBIT 6 tab:comparators supervised and two-step rows and paired differences: rank-7 version shown until the K = 5 exhibit from results/benchmark_sim/outputs/k5_working_2026-11-12/ arrives. -->
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\caption[Fixed supervised fit and comparators trained on the same 273 patients, scored in the five validation series (616 records from 568 donors)]{Fixed supervised fit and comparators trained on the same 273 patients, scored in the five validation series (616 records from 568 donors). Mean $C$ is the equal-weight mean over series. The hazard ratio is per pooled SD of each score from a Cox model stratified by series, with a robust interval clustered on donor. The difference in $C$ is averaged over series with a donor-bootstrap interval (2000 replicates).}
+\caption[Fixed supervised fit and comparators trained on the same 273 patients, scored in the five validation series (616 records from 568 donors)]{Fixed supervised fit and comparators trained on the same 273 patients, scored in the five validation series (616 records from 568 donors). Mean $C$ is the equal-weight mean over series. The hazard ratio is per pooled SD of each score from a Cox model stratified by series, with a robust interval clustered on donor. The difference in $C$ is averaged over series with a donor-bootstrap interval (2000 replicates). Calibration slopes, hazard ratios and paired differences were computed for the rank-7 fit and are not yet available at rank 5.}
 \label{tab:comparators}
 \small
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{lcccc}
 \toprule
-Model & Mean $C$ & \shortstack{Calibration\\slope range} & \shortstack{HR per SD\\(95\% CI)} & \shortstack{Supervised minus\\model (95\% CI)} \\
+Model & Mean $C$ & \shortstack{Calibration\\slope range} & \shortstack{HR per SD\\(95\% CI)} & \shortstack{Rank 7 minus\\model (95\% CI)} \\
 \midrule
-Supervised ($w_S = 1$) & 0.620 & 0.36 to 1.57 & 1.37 (1.22, 1.53) &  \\
+Supervised ($w_S = 1$), rank 5 & 0.630 & -- & -- & -- \\
+Supervised ($w_S = 1$), rank 7 & 0.620 & 0.36 to 1.57 & 1.37 (1.22, 1.53) &  \\
 Two-step (rank-7 EBMF + Cox) & 0.613 & 0.28 to 1.26 & 1.35 (1.21, 1.51) & $+$0.007 ($-$0.003, 0.017) \\
 DeSurv & 0.614 & 0.45 to 0.67 & 1.43 (1.25, 1.64) & $+$0.007 ($-$0.017, 0.030) \\
 Elastic-net Cox (2,218 genes) & 0.619 & 0.49 to 1.29 & 1.34 (1.20, 1.49) & $+$0.001 ($-$0.015, 0.018) \\
@@ -473,18 +492,27 @@ EBMF rank 40 + Cox & 0.581 & 0.10 to 0.31 & 1.16 (1.05, 1.29) & $+$0.040 (0.008,
 \end{table}
 ```
 
-The training cutpoint was $-0.046$ SD for the supervised score and 0.526 SD for the two-step score. Applied unchanged in the validation series, it gave pooled high-versus-low hazard ratios of 1.52 (1.24 to 1.87) and 1.69 (1.32 to 2.16). The two estimates are not comparable, because the supervised cutpoint placed 297 of 616 validation records in the high-risk group and the two-step cutpoint placed 144. A smaller and more extreme high-risk group gives a larger hazard ratio when two scores rank patients equally well. In every series the supervised high-risk group held a larger proportion of Basal-like tumours by PurIST and of permissive CAF (permCAF) tumours by DeCAF. The supervised score's pooled hazard ratio per training SD was 1.51 unadjusted, 1.48 after adjusting for PurIST subtype and 1.40 after adjusting for DeCAF subtype.
+At rank 7, the training cutpoint was $-0.046$ SD for the supervised score and 0.526 SD for the two-step score. Applied unchanged in the validation series, it gave pooled high-versus-low hazard ratios of 1.52 (1.24 to 1.87) and 1.69 (1.32 to 2.16). The two estimates are not comparable, because the supervised cutpoint placed 297 of 616 validation records in the high-risk group and the two-step cutpoint placed 144. A smaller and more extreme high-risk group gives a larger hazard ratio when two scores rank patients equally well. In every series the supervised high-risk group held a larger proportion of Basal-like tumours by PurIST and of permissive CAF (permCAF) tumours by DeCAF. The supervised score's pooled hazard ratio per training SD was 1.51 unadjusted, 1.48 after adjusting for PurIST subtype and 1.40 after adjusting for DeCAF subtype.
+
+## Latent-Score and Projection Parameterizations {#sec-res-lb}
+
+The two parameterizations gave nearly the same model on the training data. At rank 5 the latent-score model had a mean within-cohort cross-validated concordance of 0.652 and the projection model 0.655, a paired difference of 0.003 (SE 0.004). Every fold fit converged in both. The two fitted risk scores correlated 0.998, and each pair of corresponding programs had the same 20 genes with the largest loadings. The same three programs were survival-active in both. In the validation series the two models had pair-weighted mean concordance of 0.627 and 0.628, a difference of 0.001 (95% donor-bootstrap interval $-0.002$ to 0.005).
+
+In simulation, recovery was similar except near the detection threshold. At $w_S=1$ both recovered the planted program in every dataset of the three variance cells of the fixed-weight study, and near the detection threshold the latent-score model recovered it in 5 of 10 datasets and the projection model in 4. At $w_S=1$ the latent-score model marked more programs survival-active that matched no planted program, a mean of 1.2 to 1.8 per fit in the three variance cells against 0.0 to 0.9 for the projection model. At $w_S=10$ both marked few such programs, and near the detection threshold the latent-score model recovered the planted program in 7 of 10 datasets and the projection model in 3. The simulation run reported numerical warnings whose messages were not saved, which limits what these runs show about numerical stability.
+
+We keep the projection model. It predicts as well as the latent-score model, in the three variance cells it produced fewer survival-active programs without a planted match at the survival weight used on the real data, though near the detection threshold it produced more (2.9 per fit against 1.4), and it scores a new patient directly from measured expression without fold-in. The two models also differ in what a coefficient means. In the latent-score model, $\exp(\beta_k)$ is the hazard ratio per unit of latent program activity, given the other programs. In the projection model it is the hazard ratio per standard deviation of the projection score, a weighted sum of gene levels. Because $\mathbf{Y}\mathbf{F}\approx\mathbf{L}(\mathbf{F}^\top\mathbf{F})$, the projection mixes the latent activities of programs that share genes. On these data the two were nearly equal, with correlations of 0.985 to 0.999 between each latent score and its projection.
 
 \FloatBarrier
 
 ## Programs {#sec-res-programs}
 
-Three fitted programs were survival-active. Program 2 was protective at its positive pole ($E[\beta]=-0.405$), while the positive poles of Programs 3 and 5 were adverse (0.218 and 0.230). Table \ref{tab:programs} gives the coefficient estimates and the genes at both poles. Programs 2 and 3 were classified as main prognostic programs (Table \ref{tab:program-rule}). Program 5 met the coefficient and variance thresholds but was survival-active in only three of the five training folds. Survival supplied at most $2.1\times10^{-6}$ of any program's loading precision, so no program is survival-dominated. In saved simulation fits the coefficient and variance parts of the rule kept the planted program in all 80 cross-validated-weight fits and rejected 35 of 36 false-active directions, but rejected only 61 of 128 in the two-step near-threshold fits. The fold-stability part was not checked in simulation.
+In the working model at rank 5, three programs were survival-active. Program 2 was protective at its positive pole ($E[\beta]=-0.372$), while the positive poles of Programs 4 and 5 were adverse (0.209 and 0.230). Table \ref{tab:programs} gives the coefficient estimates and the genes at both poles. Program 4 is made up of acinar enzyme genes. The labels of Programs 2 and 5 come from the enrichment of the matching rank-7 programs. Program 3 had a positive coefficient (0.101) below the activity threshold, and Program 1 a coefficient of zero. The rank-5 programs correspond to Programs 1 to 5 of the rank-7 fit, and the analyses in the rest of this section, the program classification, enrichment, signature correlations and external program associations, were computed for that rank-7 fit. At rank 7, Programs 2 and 3 were classified as main prognostic programs (Table \ref{tab:program-rule}). Program 5 met the coefficient and variance thresholds but was survival-active in only three of the five training folds. Survival supplied at most $2.1\times10^{-6}$ of any program's loading precision, so no program is survival-dominated. In saved simulation fits the coefficient and variance parts of the rule kept the planted program in all 80 cross-validated-weight fits and rejected 35 of 36 false-active directions, but rejected only 61 of 128 in the two-step near-threshold fits. The fold-stability part was not checked in simulation.
 
+<!-- K5-EXHIBIT 7 tab:program-rule: rank-7 version shown until the K = 5 exhibit from results/benchmark_sim/outputs/k5_working_2026-11-12/ arrives. -->
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\caption[Program classification on the supervised training fit]{Program classification on the supervised training fit. The coefficient ratio is $|E\beta_k|\,\mathrm{SD}(\mathbf{Y}E[\mathbf{f}_k])$ relative to the largest program. The signed share is $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$ and sums to one over programs. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. A main program needs a ratio of at least 0.25, a share of at least 5\% and at least four active folds. Programs with ratio below 0.1 and no activity are omitted.}
+\caption[Program classification on the supervised training fit]{Program classification on the supervised training fit. The coefficient ratio is $|E\beta_k|\,\mathrm{SD}(\mathbf{Y}E[\mathbf{f}_k])$ relative to the largest program. The signed share is $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$ and sums to one over programs. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. A main program needs a ratio of at least 0.25, a share of at least 5\% and at least four active folds. Programs with ratio below 0.1 and no activity are omitted. Rank 7.}
 \label{tab:program-rule}
 \small
 \begin{tabular}{lccccc}
@@ -501,7 +529,7 @@ Program & Active & \shortstack{Coefficient\\ratio} & \shortstack{Signed share of
 \end{table}
 ```
 
-Figure \ref{fig:programs} shows how the same genes load across the fitted programs.
+Figure \ref{fig:programs} shows how the selected genes of the rank-7 programs load across that fit.
 
 
 ```{=latex}
@@ -509,29 +537,28 @@ Figure \ref{fig:programs} shows how the same genes load across the fitted progra
 \centering
 \small
 \setlength{\tabcolsep}{2.5pt}
-\caption[Programs of the survival-supervised fit on the training cohorts ($n=273$)]{Programs of the survival-supervised fit on the training cohorts ($n=273$). $E[\beta]$ is the posterior mean coefficient per SD of the program score $\mathbf{z}_k = \mathbf{Y}\,E[\mathbf{f}_k]$ (posterior SD in parentheses), $z = E[\beta]/\mathrm{SD}$, and a program is survival-active when $|z|\ge 1.96$. A positive $\beta$ indicates an association between a higher score and a higher hazard. Top genes are those with the largest positive and most negative loadings. The positive pole is the direction in which the score $\mathbf{z}_k$ increases.}
+\caption[Programs of the working model on the training cohorts ($n=273$, rank 5)]{Programs of the working model on the training cohorts ($n=273$, rank 5). $E[\beta]$ is the posterior mean coefficient per SD of the program score $\mathbf{z}_k = \mathbf{Y}\,E[\mathbf{f}_k]$ (posterior SD in parentheses), $z = E[\beta]/\mathrm{SD}$, and a program is survival-active when $|z|\ge 1.96$. A positive $\beta$ indicates an association between a higher score and a higher hazard. Pole genes are the four largest loadings of each sign among the program's 20 largest absolute loadings. A dash means no loading of that sign is among them. Labels for Programs 2 and 5 come from the rank-7 enrichment of the matching programs.}
 \label{tab:programs}
 \begin{tabular}{@{}r p{1.12in} r r c p{1.3in} p{1.3in}@{}}
 \toprule
 \# & Label & $E[\beta]$ (SD) & $z$ & Active & Positive pole genes & Negative pole genes \\
 \midrule
-2 & Classical / basal-like & $-$0.41 (0.08) & $-$4.8 & yes & ATP2A3, ACACB, METTL7A, ADH1B & LOXL2, MMP14, P4HA1, LDHA \\
-3 & Proliferation / classical & 0.22 (0.07) & 3.0 & yes & RPS7, RPL6, NCAPD2, EEF1D & KIAA1211, SYTL2, CTSE, TSPAN8 \\
-5 & Mitotic / stromal signals & 0.23 (0.08) & 2.8 & yes & UHMK1, ARHGAP5, TAOK1, RAD21 & CHPF, RCN3, MXRA8, LOXL1 \\
-1 & P1 & 0.00 (0.00) & 0.0 & no & TCF4, FBN1, BNC2, GAS7 & RAB25, PKP3, GALE, RASSF7 \\
-4 & P4 & 0.15 (0.08) & 1.9 & no & CTRB2, CTRB1, CPB1, REG1B & BANK1, STK17B, EMB, MS4A1 \\
-6 & P6 & 0.00 (0.00) & 0.0 & no & IFI30, LILRB4, FCER1G, CD74 & RAP1GAP2, IGF1R, ARHGAP32, PBX1 \\
-7 & P7 & $-$0.05 (0.06) & $-$0.9 & no & ANO1, BCL9L, PPL, VSTM2L & PRDX4, PPIB, NUCB2, P4HB \\
+2 & Classical / basal-like & $-$0.37 (0.08) & $-$4.5 & yes & METTL7A, ATP2A3, ACACB, PDCD4 & LOXL2, MMP14, LDHA, P4HA1 \\
+4 & Exocrine (acinar) & 0.21 (0.09) & 2.4 & yes & SERPINA5, CTRB2, CPB1, REG1B & -- \\
+5 & Mitotic / stromal signals & 0.23 (0.08) & 2.8 & yes & UHMK1, ARHGAP5, RAD21, PRKDC & RCN3, CHPF, MXRA8, LOXL1 \\
+1 & P1 & 0.00 (0.00) & 0.0 & no & ZEB2, MYO5A, CCDC80, TCF4 & -- \\
+3 & P3 & 0.10 (0.07) & 1.5 & no & -- & KIAA1211, SYTL2, PLS1, CORIN \\
 \bottomrule
 \end{tabular}
 \end{table}
 ```
 
+<!-- K5-EXHIBIT 8 tab:enrichment, fig:programs and signature/PurIST correlations: rank-7 version shown until the K = 5 exhibit from results/benchmark_sim/outputs/k5_working_2026-11-12/ arrives. -->
 ```{=latex}
 \begin{table}[tbp]
 \centering
 \small
-\caption[Two gene sets with the smallest adjusted $p$-values at each pole of the survival-active programs]{Two gene sets with the smallest adjusted $p$-values at each pole of the survival-active programs. Enrichment was computed on signed loadings over the 2,218 modeled genes. The test included MSigDB Hallmark, Reactome, KEGG and published PDAC sets. Benjamini--Hochberg adjustment was applied within program. Positive normalized enrichment scores (NES) indicate the positive pole.}
+\caption[Two gene sets with the smallest adjusted $p$-values at each pole of the survival-active programs]{Two gene sets with the smallest adjusted $p$-values at each pole of the survival-active programs. Enrichment was computed on signed loadings over the 2,218 modeled genes. The test included MSigDB Hallmark, Reactome, KEGG and published PDAC sets. Benjamini--Hochberg adjustment was applied within program. Positive normalized enrichment scores (NES) indicate the positive pole. Rank-7 fit.}
 \label{tab:enrichment}
 \begin{tabular}{@{}r c p{2.6in} l r r@{}}
 \toprule
@@ -556,7 +583,7 @@ Program & Pole & Gene set & Collection & NES & adj.\ $p$ \\
 
 At the protective pole of Program 2, the largest loadings included genes associated with exocrine and classical epithelial expression. Its adverse pole included \textit{LDHA}, \textit{PGK1} and \textit{SLC16A3}, consistent with the hypoxia and glycolysis enrichment in the full gene-set results. Program 3's adverse pole included ribosomal and proliferation-associated genes, with classical epithelial genes at the other pole. Program 5 showed mitotic and stromal or immune signatures, with a less specific subtype interpretation. Two of Program 3’s enriched Reactome sets are named for influenza and share leading ribosomal genes (Table \ref{tab:enrichment}).
 
-Separate external Cox regressions estimated protective associations for Program 2 in all five series. The estimates were adverse for Program 3 in four series and for Program 5 in two (Table \ref{tab:external-program-direction}). These regressions are unadjusted, so their directions need not agree with the coefficients from the joint training fit. The corresponding Kaplan--Meier curves (Figures \ref{fig:km-program-2} to \ref{fig:km-program-5}) group patients by the training coefficient's risk direction. Cohort-specific coefficient fits in TCGA-PAAD and CPTAC remain part of the planned evaluation.
+For the rank-7 fit, separate external Cox regressions estimated protective associations for Program 2 in all five series. The estimates were adverse for Program 3 in four series and for Program 5 in two (Table \ref{tab:external-program-direction}). These regressions are unadjusted, so their directions need not agree with the coefficients from the joint training fit. The corresponding Kaplan--Meier curves (Figures \ref{fig:km-program-2} to \ref{fig:km-program-5}) group patients by the training coefficient's risk direction. Cohort-specific coefficient fits in TCGA-PAAD and CPTAC remain part of the planned evaluation.
 
 Signature scores provide another comparison with published PDAC subtypes and stromal signatures. We averaged the available standardized genes in each published signature within each cohort and correlated those scores with fixed program scores. Program 2 correlated negatively with the Moffitt basal-like signature in pooled training data ($\rho=-0.71$) and across external series ($-0.78$ to $-0.71$). Program 3 correlated negatively with the Moffitt classical signature ($\rho=-0.76$ in training, $-0.84$ to $-0.57$ externally). Program 5's correlations with the DeSurv stromal-immune signature were weaker ($\rho=0.21$ in training, $-0.03$ to $0.23$ externally), so its enrichment gives limited evidence of a reproducible stromal association. Correlations with the saved PurIST basal-like probabilities agreed with the broad subtype directions. Across the external series, the correlations were $-0.64$ to $-0.45$ for Program 2, 0.30 to 0.79 for Program 3, and $-0.25$ to $-0.13$ for Program 5.
 
@@ -564,14 +591,15 @@ Signature scores provide another comparison with published PDAC subtypes and str
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_programs_heatmap.pdf}
-\caption[Scaled loadings of the selected genes across the fitted programs]{Scaled loadings of the selected genes across the fitted programs. Rows are grouped by the program and pole used to select the genes. Each loading is divided by the largest absolute loading in its program. Asterisks indicate survival-active programs.}\label{fig:programs}
+\caption[Scaled loadings of the selected genes across the fitted programs]{Scaled loadings of the selected genes across the fitted programs. Rows are grouped by the program and pole used to select the genes. Each loading is divided by the largest absolute loading in its program. Asterisks indicate survival-active programs. Rank-7 fit.}\label{fig:programs}
 \end{figure}
 ```
 
+<!-- K5-EXHIBIT 9 tab:external-program-direction and per-program KM figures (active programs 2, 4, 5): rank-7 version shown until the K = 5 exhibit from results/benchmark_sim/outputs/k5_working_2026-11-12/ arrives. -->
 ```{=latex}
 \begin{table}[!htb]
 \centering
-\caption[External associations of the survival-active programs]{External associations of the survival-active programs. Values are hazard ratios and 95\% Wald intervals per cohort-specific standard deviation of each program score from separate Cox fits. The training direction comes from the fitted coefficient. These are descriptive, unadjusted associations.}
+\caption[External associations of the survival-active programs]{External associations of the survival-active programs. Values are hazard ratios and 95\% Wald intervals per cohort-specific standard deviation of each program score from separate Cox fits. The training direction comes from the fitted coefficient. These are descriptive, unadjusted associations. Rank-7 fit.}
 \label{tab:external-program-direction}
 \begin{tabular}{lrrr}
 \toprule
@@ -593,7 +621,7 @@ Training direction & Protective & Adverse & Adverse \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_km_program_2.pdf}
-\caption[Kaplan--Meier curves for Program 2 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 2 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-2}
+\caption[Kaplan--Meier curves for Program 2 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 2 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months. Rank-7 fit.}\label{fig:km-program-2}
 \end{figure}
 ```
 
@@ -601,7 +629,7 @@ Training direction & Protective & Adverse & Adverse \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_km_program_3.pdf}
-\caption[Kaplan--Meier curves for Program 3 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 3 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-3}
+\caption[Kaplan--Meier curves for Program 3 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 3 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months. Rank-7 fit.}\label{fig:km-program-3}
 \end{figure}
 ```
 
@@ -609,9 +637,13 @@ Training direction & Protective & Adverse & Adverse \\
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\linewidth]{figures/sup_external_km_program_5.pdf}
-\caption[Kaplan--Meier curves for Program 5 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 5 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months.}\label{fig:km-program-5}
+\caption[Kaplan--Meier curves for Program 5 by within-series tertile of the program score oriented by its training coefficient]{Kaplan--Meier curves for Program 5 by within-series tertile of the program score oriented by its training coefficient. The high tertile corresponds to the adverse training direction. Numbers at risk are shown below the curves, which are displayed through 60 months. Rank-7 fit.}\label{fig:km-program-5}
 \end{figure}
 ```
+
+## Methylation Alone {#sec-res-meth}
+
+Methylation alone predicted survival less well than expression on the same 144 patients. With point-Laplace priors, mean cross-validated concordance was 0.50 to 0.55 across the five numbers of CpG sites, against 0.591 for expression on the same folds. With point-exponential priors, the full fits at 10,000 to 50,000 sites did not converge within 300 sweeps, so only 100,000 and all sites were cross-validated, giving 0.539 and 0.512 against 0.622 for expression. Concordance in single folds ranged from 0.30 to 0.71, so these differences are imprecise. Every full fit kept five programs with nonzero loadings. No methylation program was survival-active in the full fit and in at least three of the five folds while correlating below 0.5 with every expression program. Of the 57 fits, 12 reached the 300-sweep limit, including 8 of the 12 expression fits, so the expression comparison rests mostly on unconverged fits. The fixed methylation fits have not yet been scored in the ICGC set. On these data methylation alone does not show prognostic programs that expression misses.
 
 \FloatBarrier
 
@@ -619,19 +651,19 @@ Training direction & Protective & Adverse & Adverse \\
 
 ## Loading and Coefficient Estimates
 
-The main change in the PDAC application was in the coefficient update. The joint fit propagates posterior loading uncertainty and shrinks the coefficients, and the slope comparison varies by series. The supervised and two-step loadings agreed to the reported precision. The observed differences therefore cannot establish improved molecular program discovery on these data.
+At rank 7, the main change in the PDAC application was in the coefficient update. The joint fit propagates posterior loading uncertainty and shrinks the coefficients, and the slope comparison varies by series. The supervised and two-step loadings agreed to the reported precision. The observed differences therefore cannot establish improved molecular program discovery on these data.
 
 The simulations show where supervised discovery can help and how far the current model gets there. A small survival weight acts mostly on low-variance programs, since the survival share grows as a program's variance share falls. Near the detection threshold the supervised fit found programs the two-step fit missed and predicted much better when survival was strong. When the planted program was easy to find, or survival was as weak as on the real data, the two fits were nearly the same. A larger fixed weight moved the loadings in strong-survival settings but overfit in realistic ones and failed to converge with 2,000 genes. Choosing the weight by cross-validated partial log-likelihood avoided those weights and adapted to the signal, but it left the coefficients attenuated in the strong-survival cells. That combination makes a data-driven weight the main open problem of the project.
 
-A comparison with $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$ on identical input will evaluate recovery and out-of-sample prediction together, and it will say what a hazard ratio per unit of each score means (@sec-comparators).
+Placing the latent scores in the Cox model, $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$, gave nearly the same programs and predictions on these data, so the projection score costs nothing in accuracy and avoids fold-in for new patients (@sec-res-lb). Methylation alone predicted less well than expression and showed no program that expression misses (@sec-res-meth), so the case for the joint model currently rests on interpretation.
 
 ## Limitations
 
-Training cross-validation supports the gene screen and the input scaling of the reported fit and places its rank on the flat part of the cross-validation curve. Comparisons on the five validation series had informed these choices earlier, so those series are not untouched by development. The rank and screen comparisons were repeated over five random partitions of the same 273 patients. That shows the choices do not depend on how patients are assigned to folds, but it does not measure sampling variability. The reported fit pools the two training cohorts with one baseline hazard, so it does not model a difference in baseline hazard between TCGA-PAAD and CPTAC. The donor bootstrap and the donor-clustered hazard-ratio intervals account for repeated donors while leaving the pooled estimand conditional on the observed series. DeSurv used its reported settings rather than a new search on our training folds. Some training folds stopped at the sweep limit. The simulations use a single generator, and the strongest simulated survival signals exceed those observed in the real data.
+Several results were computed for a rank-7 fit and have not yet been repeated for the rank-5 working model: the comparison with the two-step fit, calibration slopes, hazard ratios, risk groups, the paired comparator differences, the program classification, enrichment, signature correlations and the external program associations. The rank-5 programs correspond closely to rank-7 Programs 1 to 5, but the survival-active label of Programs 3 and 4 differs between the two ranks. Training cross-validation supports the gene screen and the input scaling. Comparisons on the five validation series had informed these choices earlier, so those series are not untouched by development. The rank and screen comparisons were repeated over five random partitions of the same 273 patients. That shows the choices do not depend on how patients are assigned to folds, but it does not measure sampling variability. The reported fit pools the two training cohorts with one baseline hazard, so it does not model a difference in baseline hazard between TCGA-PAAD and CPTAC. The donor bootstrap and the donor-clustered hazard-ratio intervals account for repeated donors while leaving the pooled estimand conditional on the observed series. DeSurv used its reported settings rather than a new search on our training folds. Some training folds stopped at the sweep limit. The simulations use a single generator, and the strongest simulated survival signals exceed those observed in the real data.
 
 ## Continuing Work
 
-We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-choose-weight). Each will be compared in simulation and in training cross-validation on PDAC. The working model now uses the rank chosen by training cross-validation, $K=5$. It will be scored once in the validation series, and its programs will be classified again, since the survival-active label of Programs 3 and 4 differs between the two ranks. Methylation will first be fitted alone, and the extension to several data types (@sec-mmodal) will start from a fitter that reproduces the current model for one modality. The comparison with the $\mathbf{L}\boldsymbol{\beta}$ parameterization (@sec-comparators) will show how the two risk scores differ in prediction and in meaning. We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
+We will develop a data-driven survival weight that lets survival affect the loadings where the data support it. Candidates are the cross-validated weight already tested, a calibrated power on the partial likelihood, and normalized loss terms (@sec-choose-weight). Each will be compared in simulation and in training cross-validation on PDAC. The rank-7 analyses listed above will be repeated for the rank-5 working model. The extension to several data types (@sec-mmodal) will start from a fitter that reproduces the current model for one modality. We will release the selected model as an R package with a single fitting function and use it to regenerate the manuscript results.
 
 \FloatBarrier
 
@@ -641,7 +673,7 @@ We will develop a data-driven survival weight that lets survival affect the load
 
 ## Priors on the Scores and Loadings
 
-\label{app:lf-prior}A point-exponential prior on $\mathbf{L}$ and $\mathbf{F}$ keeps every score and loading nonnegative, as in a nonnegative matrix factorization such as DeSurv. Tables \ref{tab:lf-prior-sim} and \ref{tab:lf-prior-real} compare it with the point-Laplace prior of the reported fit in simulation and in five-fold training cross-validation. The point-exponential fits need nonnegative input and a centered Cox projection, and three of the inputs remove or absorb the difference in mean expression between the two training cohorts. In simulation the point-exponential prior recovered the planted program as often as point-Laplace. Point-exponential fits also marked more programs survival-active that matched no planted program. Such programs are expected, and where their size was measured their coefficients were mostly a tenth to a quarter of the planted program's. The difference appeared on the training data, where the point-exponential prior lowered concordance by 0.023 to 0.085 under every input, and at most one of five folds converged. At the rank chosen by cross-validation, $K=5$, the point-exponential prior gave 0.519 against 0.655. Apart from that check, both comparisons in this appendix use rank 7, the rank of the reported fit. The reported fit keeps the point-Laplace prior.
+\label{app:lf-prior}A point-exponential prior on $\mathbf{L}$ and $\mathbf{F}$ keeps every score and loading nonnegative, as in a nonnegative matrix factorization such as DeSurv. Tables \ref{tab:lf-prior-sim} and \ref{tab:lf-prior-real} compare it with the point-Laplace prior in simulation and in five-fold training cross-validation. The point-exponential fits need nonnegative input and a centered Cox projection, and three of the inputs remove or absorb the difference in mean expression between the two training cohorts. In simulation the point-exponential prior recovered the planted program as often as point-Laplace. Point-exponential fits also marked more programs survival-active that matched no planted program. Such programs are expected, and where their size was measured their coefficients were mostly a tenth to a quarter of the planted program's. The difference appeared on the training data, where the point-exponential prior lowered concordance by 0.023 to 0.085 under every input, and at most one of five folds converged. At the rank chosen by cross-validation, $K=5$, the point-exponential prior gave 0.519 against 0.655. Apart from that check, both comparisons in this appendix use rank 7, the rank in use before training cross-validation selected rank 5. The working model keeps the point-Laplace prior.
 
 ```{=latex}
 \begin{table}[!htb]
@@ -685,7 +717,7 @@ Point-exponential, within-patient ranks & 0.615 & $-$0.043 (0.016) & 0/5 & 2 & 1
 
 ## Prior on the Survival Coefficients
 
-\label{app:beta-prior}A sparse coefficient prior can set a program's coefficient exactly to zero, and the point-normal prior gives each program a posterior probability of a nonzero coefficient that could replace the activity threshold. Table \ref{tab:beta-prior} compares the Normal prior of the reported fit with point-Laplace and point-normal priors shared across programs, and with a shared Normal prior that separates sharing from sparsity. The four priors gave nearly the same fits. Concordance differed by at most 0.009, and recovery, calibration slopes and the counts of survival-active programs were nearly the same. On the training data the point-normal inclusion probabilities were 0.94 to 1.00 for all seven programs, so they did not identify the survival-active programs. The reported fit keeps the Normal prior.
+\label{app:beta-prior}A sparse coefficient prior can set a program's coefficient exactly to zero, and the point-normal prior gives each program a posterior probability of a nonzero coefficient that could replace the activity threshold. Table \ref{tab:beta-prior} compares the Normal prior of the reported fit with point-Laplace and point-normal priors shared across programs, and with a shared Normal prior that separates sharing from sparsity. At rank 7 the four priors gave nearly the same fits. Concordance differed by at most 0.009, and recovery, calibration slopes and the counts of survival-active programs were nearly the same. On the training data the point-normal inclusion probabilities were 0.94 to 1.00 for all seven programs, so they did not identify the survival-active programs. At rank 5 the three shared priors gave within-cohort concordance of 0.648 to 0.649, against 0.655 for the Normal prior. The working model keeps the Normal prior.
 
 ```{=latex}
 \begin{table}[!htb]
