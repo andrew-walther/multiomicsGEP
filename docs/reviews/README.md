@@ -4,6 +4,7 @@ Reports from independent reviewers, and external advice recorded as received.
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-12 | [task-f-independent-review](2026-11-12-task-f-independent-review.md) | Independent preprocessing, paired-CV and rank-rule audit with two exact fit reruns | saved choices reproduced; repeat seeds pending; summary completeness fix proposed; arm-isolation guard added concurrently |
 | 2026-11-11 | [local-results-pilot-review](2026-11-11-local-results-pilot-review.md) | Independent software review of the local synthetic results workflow, artifact safety and rebuild checks | approved software pilot; 14 acceptance checks passed; full-suite/clean-checkout evidence recorded separately |
 | 2026-11-11 | [stratified-cv-independent-review](2026-11-11-stratified-cv-independent-review.md) | Combined independent review of fold-wise centers, within-stratum scoring, missing-stratum errors and cohort/event folds | approved; 62 focused tests and independent checks passed; item 0 complete |
 | 2026-11-11 | [housekeeping-and-cv-handoff](2026-11-11-housekeeping-and-cv-handoff.md) | Completed housekeeping, combined CV review and local pilot, 801-test suite, Gemini follow-ups and remaining scientific-workflow scope | complete handoff; CV review subsequently approved on November 11 |
