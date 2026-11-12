@@ -310,3 +310,28 @@ solver rather than the variational fit, and that "series" was unclear. Old text:
 > It is fitted by variational inference [@Wang2021; @Blei2017; @Willwerscheid2025] and uses the molecular data alone.
 
 > ... and scored once in five external series that were not used to choose the survival weight.
+
+## 2026-11-11 — DeSurv cited as Amber Young's dissertation
+
+Reason: Andrew decided to cite the published UNC dissertation (Chapter 2 is
+DeSurv; doi:10.17615/jcm5-0a36, Carolina Digital Repository) instead of the
+journal paper still under review. Every sentence citing Young2026 in Chapters 1
+and 4 was checked against the dissertation text. The dissertation reports 1,970
+genes after its filter; 2,218 is our count on our preprocessing
+(notes/chapter4-number-sources-2026-11-06.md), so the sentence now separates the
+two. Old bib entry and sentences:
+
+    @unpublished{Young2026,
+      author = {Young, Amber M. and Yurovsky, Alisa and Peng, Xianlu Laura and Yeh, Jen Jen and Li, Didong and Rashid, Naim U.},
+      title = {Survival-guided matrix factorization identifies reproducible prognostic programs in pancreatic cancer},
+      note = {Manuscript submitted for publication},
+      year = {2026}
+    }
+
+> ... and intersects the top 3,000 per cohort, leaving 2,218 genes [@Young2026].
+
+> DeSurv used the authors' software, preprocessing and published settings (rank 3) ...
+
+> DeSurv used its published settings rather than a new search on our training folds.
+
+> ... against 1.50 (1.31 to 1.72) in its publication [@Young2026].
