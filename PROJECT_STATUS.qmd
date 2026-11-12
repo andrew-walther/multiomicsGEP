@@ -40,8 +40,7 @@ comparable pairs within each series, is 0.628 (donor-bootstrap interval 0.596 to
 Results reported earlier at K = 7 keep that label.
 
 **Open priorities.** The [ROADMAP](ROADMAP.md) lists them in order: a fit stratified by
-cohort, the rerun of the M-modality simulation and its real-data step, the methylation
-follow-ups, a dead-program rule that does not depend on scale, the false-activity
+cohort, the rerun of the M-modality simulation and its real-data step, a dead-program rule that does not depend on scale, the false-activity
 criterion in the near-threshold cell, and a recheck of the program classification at
 K = 5. The open methods problem from November 6 remains: fits are not stable at survival
 weights large enough to move real-data loadings (about 10⁴).
@@ -55,7 +54,7 @@ below give the numbers.
 |---|---|---|---|
 | A | Point-exponential L and F on nonnegative input, against point-Laplace | Point-Laplace stays. Point-exponential fails false activity and CV (0.573 against 0.658), and its programs track cohort. A follow-up that removed the cohort mean difference also failed. | complete, independently reviewed ([findings](docs/findings/2026-11-12-lf-prior-comparison-findings.md), [follow-up](docs/findings/2026-11-12-lf-prior-followup-findings.md)) |
 | B | Shared sparse β priors against per-program Normal β | Normal β stays, at K = 7 and K = 5. | complete, independently reviewed ([findings](docs/findings/2026-11-12-beta-prior-comparison-findings.md)) |
-| C | Methylation alone at 10k to 182,934 CpGs | Methylation CV concordance 0.50 to 0.55 against 0.59 for expression, and no methylation-only program. Descriptive. | complete at K = 5, numbers verified from the saved CSVs, no independent review, follow-up running ([findings](docs/findings/2026-11-12-methylation-single-modality-findings.md)) |
+| C | Methylation alone at 10k to 182,934 CpGs | At K = 5, methylation CV concordance 0.50 to 0.55 against 0.582 for converged PL expression. Zero prognostic methylation-only programs, 19/35 descriptive factor instances meet specificity. | complete at K = 5, including expression restarts and independently reviewed characterization ([findings](docs/findings/2026-11-12-methylation-single-modality-findings.md)) |
 | D | M-modality fitter as feature groups in `fit_ssbmf_yfb()` | Fitter implemented and matches the single-modality fit exactly. The registered two-modality simulation failed every cell. | open: rerun with the empty-block fix underway ([findings](docs/findings/2026-11-12-feature-group-fitter-findings.md)) |
 | E | LB with fold-in against YFB, same input | YFB stays. LB fails false activity in all three S-9 cells. On real data the two give the same programs and concordance. | complete, independently reviewed ([findings](docs/findings/2026-11-12-lb-yfb-study-findings.md)) |
 | F | Gene screen, input scaling and rank from training CV | The 2,218-gene screen and per-cohort z-score stay. K = 5 by the one-SE rule, also on four more fold partitions. | complete, independently reviewed ([findings](docs/findings/2026-11-12-training-cv-redo-findings.md)) |
@@ -85,12 +84,27 @@ contains zero. See the [findings](docs/findings/2026-11-12-lb-yfb-study-findings
 
 ## Methylation alone (2026-11-12)
 
-At K = 5 on the 144 matched TCGA patients, methylation alone predicted worse than
-expression at every CpG count from 10k to all 182,934 eligible sites (point-Laplace CV concordance 0.50
-to 0.55 against 0.59; point-exponential 0.51 to 0.54 against 0.62), and no methylation
-program carried survival signal that expression lacked. The comparison is descriptive. Of
-57 fits, 12 reached the iteration cap, including 8 of the 12 expression fits, so most
-paired differences use capped expression states. See the
+At K = 5 on the 144 matched TCGA patients, methylation-only mean CV concordance
+is 0.502 to 0.545 for point-Laplace and 0.512 to 0.539 for point-exponential.
+After the approved K = 5 expression restarts, the converged expression references
+are 0.582311 and 0.620214. All eight K = 5 restarts converged by sweep 438 with
+exact 300-sweep ELBO-prefix reproduction. At K = 5, all seven completed
+methylation comparisons remain lower, and no factor meets the earlier
+prognostic methylation-only rule. At K = 5, three smaller point-exponential
+methylation full fits and one 100k point-exponential fold remain capped.
+
+A separate descriptive K = 5 characterization identifies 19 of 35 factor-at-count
+instances as methylation-specific under fixed correlation, fold-stability and
+recurrence thresholds, without requiring survival activity. The K = 5 modalities
+still share score-space directions, with first canonical correlations of 0.903
+to 0.921. At K = 5, 6,952 of 9,086 promoter CpG–D4-gene pairs have negative
+Spearman correlation, and local ABSOLUTE purity correlations use 143 patients.
+At K = 5, 18 enrichment rows remain undefined among 2,475, with 19 numerical
+warnings retained. The K = 5 results are descriptive at n = 144 with pre-fold
+screening/imputation and a 2,218-gene D4 universe. At K = 5, 10k CpGs with
+point-Laplace is recommended for a future authorized joint fit, not adopted.
+The K = 5 follow-up is independently reviewed (`ba5e6a1f`), with 849 full-suite
+tests and 30 focused assertions passing. See the K = 5
 [findings](docs/findings/2026-11-12-methylation-single-modality-findings.md).
 
 ## Training-CV redo of screen, scaling and rank (2026-11-12)
