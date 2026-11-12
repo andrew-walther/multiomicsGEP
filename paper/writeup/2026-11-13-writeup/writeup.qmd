@@ -807,8 +807,8 @@ from 7 to `r tcv_K`. No alternative screen or scaling was better than the curren
 within-cohort concordance. Concordance was flat from $K = `r tcv_K`$ to `r max(tcv_k$K)` and
 lower below $K = `r tcv_K`$, and the one-standard-error rule selected $K = `r tcv_K`$
 (@sec-results-rank). The external results in this version come from the $K = 7$ fit, which lies
-on the flat part of the curve. The working model now uses $K = `r tcv_K`$, adopted from one run of five-fold
-cross-validation. At that rank the
+on the flat part of the curve. The working model now uses $K = `r tcv_K`$, which the rule also selected when the
+cross-validation was repeated over five random partitions of the patients. At that rank the
 point-exponential prior on expression divided by its within-cohort standard deviation still
 loses to the point-Laplace prior ([Appendix D](#sec-appendix-d)). An independent review on
 November 12, 2026, confirmed these comparisons.
@@ -1107,7 +1107,13 @@ programs at every rank from `r min(tcv_flat)` to `r max(tcv_flat)`. Every column
 loadings at every rank, so the priors did not remove programs. The paired differences are much
 more precise than the fold standard error used by the rule, and on that scale ranks
 `r min(tcv_flat)` to `r max(tcv_flat)` cannot be told apart. The rule picks the smallest rank on
-the plateau. It does not show that $K = `r tcv_K`$ predicts better than $K = 7$. The external
+the plateau. It does not show that $K = `r tcv_K`$ predicts better than $K = 7$. Because these
+comparisons are close, the five-fold cross-validation was repeated with four more random
+partitions of the patients. Averaged over the five partitions, the rule again selected
+$K = 5$ (concordance 0.643, against a best of 0.651 at $K = 12$). Four of the five partitions
+selected $K = 5$ on their own and one selected $K = 10$. $K = 5$ converged in all 25 fold fits,
+against 18 at $K = 7$. The alternative screen was 0.002 lower on average (SE 0.008), so the
+screen also stays. The external
 results in this version come from the $K = 7$ fit, and the working model now uses
 $K = `r tcv_K`$. Its five programs match Programs 1 to 5 of the $K = 7$ fit, with score
 correlations of 0.92 to 0.995, and the two programs dropped were not survival-active.
@@ -1532,10 +1538,9 @@ external series informed at least one of the choices recorded in the audit
 (@sec-external-uses). Training cross-validation now supports the screen and the scaling and
 places rank 7 on the flat part of its concordance curve (@sec-results-rank). Because the
 external series informed these choices first, the external results still describe a model
-whose setup those cohorts helped choose. The training comparison used one run of five-fold cross-validation, that is, one random
-partition of the patients into folds. Close comparisons are repeated with more random partitions,
-and the plateau from $K = `r tcv_K`$ to `r max(tcv_k$K)` and the screen comparison are that case. The
-repetition with four more random partitions was running on November 12. The PACA-AU array and RNA-seq records both contribute to
+whose setup those cohorts helped choose. The rank and screen comparisons were repeated over five random partitions of the same
+273 patients. That shows the choices do not depend on how patients are assigned to folds,
+but it does not measure sampling variability. The PACA-AU array and RNA-seq records both contribute to
 the pooled estimate. The donor bootstrap and the donor-clustered HR intervals account for their shared donors
 while retaining both series in the estimand. DeSurv used its published settings rather than a
 new search on our training folds. `r nrow(ff) - cv_conv` of `r nrow(ff)` supervised training folds stopped at the sweep cap. In simulation the coefficients at $w_S = 1$ are

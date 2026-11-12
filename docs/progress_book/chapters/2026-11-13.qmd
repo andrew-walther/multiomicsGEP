@@ -408,13 +408,19 @@ threshold is 0.639 and the smallest K above it is 5. K = 5 is 0.003 below K = 7 
 0.007), converges in all five folds against three at K = 7, and has three survival-active
 programs, as do K = 6 to 8. Every column keeps nonzero loadings at every K. On paired
 differences K = 5 to 8 are indistinguishable, so the rule picks the smallest rank on the
-plateau rather than showing that K = 5 predicts better. The comparison used one run of five-fold CV, that is, one random partition of the patients
-into folds. This plateau is the case where the protocol repeats the five-fold CV with four
-more random partitions. That repetition, for K = 5 against 7 and for the screen comparison, was running on November 12.
+plateau rather than showing that K = 5 predicts better.
+
+Because these comparisons are close, the five-fold CV was repeated with four more random
+partitions of the patients. Averaged over the five partitions, the one-SE rule again selects
+K = 5 (0.643, against a best of 0.651 at K = 12). Four of the five partitions select K = 5 on
+their own and one selects K = 10. K = 2 to 4 are lower in every partition. K = 5 converges in
+all 25 fold fits, K = 7 in 18 and K = 12 in 1. D2 is 0.002 lower than D4 on average (SE
+0.008), so D4 stays. The partitions reuse the same 273 patients, so they show that the choices
+do not depend on the fold assignment, not how much they would vary in new samples.
 K = 6 to 12 do not converge in every fold (K = 6 in 4 of 5).
 At K = 5 the point-exponential prior still loses (0.519 against 0.655).
 
-Andrew adopted K = 5 for the working model on November 12 from this one run of five-fold CV (new key
+Andrew adopted K = 5 for the working model on November 12, and the repeated partitions support it (new key
 `benchmark$k_working_yfb: 5` in `config/globals.yml`, while the historical key stays 7).
 Results already reported at K = 7, including the November external scores and this week's
 prior comparisons, stay on record labeled with K = 7.
