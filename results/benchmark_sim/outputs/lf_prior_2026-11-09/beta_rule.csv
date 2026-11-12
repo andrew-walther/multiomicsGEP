@@ -1,0 +1,3 @@
+"arm","prior","a_all_cells","a_cells_failed","a_without_s14","b_slope_closer_cells","b_pass","c_diff","c_se","c_pass","all_beta_zero_real","mean_false_active_all_cells","qualifies","qualifies_without_s14","normal_meets_false_active_all_cells","normal_s14_false_active"
+"B_PLAP","shared point-Laplace",FALSE,"s14_0.05pct",TRUE,2,TRUE,-0.00845044458847395,0.00221178490666256,FALSE,FALSE,0.9,FALSE,FALSE,FALSE,3
+"B_PN","shared point-normal",FALSE,"s14_0.05pct",TRUE,2,TRUE,-0.00170464135021098,0.00361003939193605,TRUE,FALSE,0.95,FALSE,TRUE,FALSE,3

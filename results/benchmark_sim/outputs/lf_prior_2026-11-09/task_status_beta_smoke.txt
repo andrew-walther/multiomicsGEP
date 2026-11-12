@@ -1,0 +1,9 @@
+real_B_PLAP_f1 ok 101s
+real_B_PN_f1 ok 101s
+real_B_NSH_f1 ok 101s
+sim_s9_1pct_s01_B_PLAP ok 17s
+sim_s14_0.05pct_s01_B_PLAP ok 11s
+sim_s9_1pct_s01_B_PN ok 16s
+sim_s14_0.05pct_s01_B_PN ok 13s
+sim_s9_1pct_s01_B_NSH ok 17s
+sim_s14_0.05pct_s01_B_NSH ok 12s

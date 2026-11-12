@@ -41,6 +41,8 @@ S11_IN    <- "data/yfb_supervised_real_2026-11-04.rds"        # S-11 prepared da
 S11_FITS  <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/fits"
 S9_GRID   <- "results/benchmark_sim/outputs/yfb_survival_weight_2026-11-04/grid"
 S14_FITS  <- "results/benchmark_sim/outputs/yfb_near_threshold_2026-11-05/fits"
+BETA_ARMS <- c(B_PLAP = "shared point-Laplace", B_PN = "shared point-normal",
+               B_NSH = "shared Normal (reference)")   # task B arms; Normal per-program = A's PL
 SIM_CELLS <- data.frame(cell = c("s9_0.25pct", "s9_1pct", "s9_5pct", "s14_0.05pct"),
                         share = c(.0025, .01, .05, .0005),
                         source = c("s9", "s9", "s9", "s14"), stringsAsFactors = FALSE)
@@ -79,12 +81,41 @@ lfp_load <- function() {
 #' # lfp_fit(Y, time, status, "PE", cfg)
 lfp_fit <- function(Y, time, status, arm, cfg) {
   pe <- arm %in% c("PE", "RANK")
+  # Task B arms: the PL call with one beta prior shared across the K programs.
+  beta <- switch(arm, B_PLAP = "point_laplace", B_PN = "point_normal", B_NSH = "normal", "normal")
+  shared <- arm %in% names(BETA_ARMS)
   fit_ssbmf_yfb(Y, time, status, K = cfg$benchmark$k_merged_yfb_desurv,
                 max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
                 prior_LF = if (pe) "point_exponential" else "point_laplace",
-                prior_beta = "normal", canonicalize = TRUE, w_S = 1,
+                prior_beta = beta, beta_prior_mode = if (shared) "shared" else "per_program",
+                canonicalize = TRUE, w_S = 1,
                 alpha = cfg$benchmark$alpha, verbose = FALSE, trace_supervision = TRUE,
                 center_projection = pe)
+}
+
+#' Posterior inclusion probability of each program's beta under a point-normal prior
+#'
+#' At the final sweep each program's beta posterior is the EBNM posterior for the
+#' pseudo-observation x_k ~ N(beta_k, s_k^2) under g = pi0 delta_0 + (1 - pi0) N(0, sigma^2):
+#' PIP_k = (1 - pi0) N(x_k; 0, sigma^2 + s_k^2) /
+#'         [pi0 N(x_k; 0, s_k^2) + (1 - pi0) N(x_k; 0, sigma^2 + s_k^2)].
+#' Uses the prior in force during that sweep (prior_before). Flat programs (s = Inf) get NA.
+#' @param fit fit_ssbmf_yfb() result with beta_prior_mode = "shared", trace_supervision = TRUE.
+#' @return K-vector of PIPs, or NULL if the fit has no point-normal prior trace.
+#' @examples
+#' # lfp_pip(fit)
+lfp_pip <- function(fit) {
+  tr <- Filter(Negate(is.null), fit$history$prior_trace)
+  if (!length(tr)) return(NULL)
+  last <- tr[[length(tr)]]; g <- last$prior_before
+  if (!inherits(g, "normalmix") || length(g$pi) != 2) return(NULL)
+  i0 <- which(g$sd == 0); i1 <- which(g$sd > 0)
+  if (length(i0) != 1 || length(i1) != 1) return(NULL)
+  x <- last$x; s <- last$s
+  out <- rep(NA_real_, length(x)); ok <- is.finite(s)
+  l0 <- g$pi[i0] * dnorm(x[ok], 0, s[ok]); l1 <- g$pi[i1] * dnorm(x[ok], 0, sqrt(g$sd[i1]^2 + s[ok]^2))
+  out[ok] <- l1 / (l0 + l1)
+  out
 }
 
 #' Run an expression, capturing warnings and errors instead of stopping
@@ -147,7 +178,7 @@ lfp_sim_task <- function(task, cfg) {
   path <- file.path(PRIV, "sim", paste0(key, ".rds"))
   if (file.exists(path)) return(paste(key, "done earlier"))
   d <- lfp_sim_data(task, task$seed)
-  pl <- task$arm == "PL"
+  pl <- task$arm != "PE"   # PL and every task B arm use the z-scored input
   Ytr <- if (pl) s9_zscore(d$Y) else d$Y
   Yva <- if (pl) s9_zscore(d$Yv) else d$Yv
   set.seed(task$seed + 42L)
@@ -156,10 +187,12 @@ lfp_sim_task <- function(task, cfg) {
   live <- if (inherits(run$value, "error")) NA_integer_ else sum(colSums(run$value$EF^2) > 1e-8)
   row <- cbind(task[c("cell", "share", "seed", "arm")], m, n_alive = live,
                fit_sec = run$seconds, warnings = run$warnings)
-  if (pl) { sv <- lfp_saved_pl(task, task$seed); if (!is.null(sv)) row <- cbind(row, sv) }
+  if (task$arm == "PL") { sv <- lfp_saved_pl(task, task$seed); if (!is.null(sv)) row <- cbind(row, sv) }
   st <- if (inherits(run$value, "error")) NULL else
     run$value[c("EF", "EBeta", "EBeta2", "EF_norms", "Tau")]
-  saveRDS(list(metrics = row, state = st), path)
+  pip <- if (inherits(run$value, "error")) NULL else lfp_pip(run$value)
+  if (!is.null(pip)) row$pip <- paste(signif(pip, 4), collapse = ";")
+  saveRDS(list(metrics = row, state = st, pip = pip), path)
   sprintf("%s ok %.0fs", key, run$seconds)
 }
 
@@ -258,7 +291,7 @@ lfp_real_task <- function(task, z, cfg) {
   key <- sprintf("real_%s_f%d", task$arm, task$fold)
   path <- file.path(PRIV, "real", paste0(key, ".rds"))
   if (file.exists(path)) return(paste(key, "done earlier"))
-  Y <- z$Y[[task$arm]]
+  Y <- z$Y[[if (task$arm %in% names(BETA_ARMS)) "PL" else task$arm]]
   te <- which(z$fold == task$fold)
   tr <- if (task$fold == 0L) seq_along(z$time) else which(z$fold != task$fold)
   set.seed(42L)
@@ -282,6 +315,7 @@ lfp_real_task <- function(task, z, cfg) {
     n_nonzero_genes = colSums(abs(fit$EF) > 1e-8),
     cor_mean_expr = apply(Ztr, 2, safe_cor, b = meanexpr),
     cor_cohort = apply(Ztr, 2, safe_cor, b = tcga))
+  pip <- lfp_pip(fit); prog$pip <- if (is.null(pip)) NA_real_ else pip
   row <- cbind(row, data.frame(converged = isTRUE(fit$history$converged), n_iter = fit$history$n_iter,
     n_alive = sum(alive), n_active = sum(active), max_abs_beta = max(abs(fit$EBeta)),
     max_abs_cor_mean_expr = suppressWarnings(max(abs(prog$cor_mean_expr[alive]), na.rm = TRUE)),
@@ -312,7 +346,14 @@ lfp_real_task <- function(task, z, cfg) {
 #' @return list(real, sim) of design data frames.
 #' @examples
 #' lfp_design(TRUE)
-lfp_design <- function(smoke = FALSE) {
+lfp_design <- function(smoke = FALSE, part = "lf") {
+  if (part == "beta") {
+    b <- names(BETA_ARMS)
+    if (smoke) return(list(real = data.frame(arm = b, fold = 1L, stringsAsFactors = FALSE),
+      sim = merge(cbind(SIM_CELLS[c(2, 4), ], seed = 1L), data.frame(arm = b))))
+    return(list(real = expand.grid(arm = b, fold = 0:5, stringsAsFactors = FALSE),
+                sim = merge(merge(SIM_CELLS, data.frame(seed = 1:10)), data.frame(arm = b))))
+  }
   arms_real <- c("PL", "PE", "RANK")
   if (smoke) return(list(real = data.frame(arm = arms_real, fold = 1L, stringsAsFactors = FALSE),
     sim = merge(cbind(SIM_CELLS[2, ], seed = 1L), data.frame(arm = c("PL", "PE")))))
@@ -334,7 +375,7 @@ lfp_run <- function(design, cores) {
   cl <- parallel::makePSOCKcluster(cores, outfile = file.path(PRIV, "workers.log"))
   on.exit(parallel::stopCluster(cl))
   parallel::clusterExport(cl, c("OUT", "PRIV", "REAL_IN", "S9_GRID", "S14_FITS", "SIM_CELLS",
-    "lfp_load", "lfp_fit", "lfp_try", "lfp_sim_data", "lfp_saved_pl", "lfp_sim_task",
+    "BETA_ARMS", "lfp_load", "lfp_fit", "lfp_pip", "lfp_try", "lfp_sim_data", "lfp_saved_pl", "lfp_sim_task",
     "lfp_concordance", "lfp_real_task"))
   parallel::clusterEvalQ(cl, { Sys.setenv(OPENBLAS_NUM_THREADS = 1, OMP_NUM_THREADS = 1,
     VECLIB_MAXIMUM_THREADS = 1); lfp_load(); cfg <- yaml::read_yaml("config/globals.yml")
@@ -459,6 +500,96 @@ lfp_summary <- function() {
   invisible(NULL)
 }
 
+#' Bind data frames whose columns differ, filling missing columns with NA
+#' @param xs List of data frames. @return One data frame with the union of columns.
+#' @examples
+#' lfp_bind(list(data.frame(a = 1), data.frame(a = 2, b = 3)))
+lfp_bind <- function(xs) {
+  xs <- Filter(Negate(is.null), xs); cols <- unique(unlist(lapply(xs, names)))
+  do.call(rbind, lapply(xs, function(x) { for (nm in setdiff(cols, names(x))) x[[nm]] <- NA; x[cols] }))
+}
+
+#' Task B summary: beta-prior arms against the per-program Normal working model
+#'
+#' Normal is A's PL arm (same checkpoints). Rule (registered): a sparse prior replaces Normal
+#' if (a) recovery >= Normal's minus 1, mean false-active <= 1 and >= 9/10 converged in every
+#' cell; (b) median calibration slope closer to 1 than Normal's in >= 2 of 4 cells; (c) mean
+#' within-cohort CV C not lower than Normal's by more than one SE of the paired difference.
+#' Missing fits count as failures. Also reports how the S-14 cell alone affects (a), and
+#' whether Normal itself would meet A's false-activity limit there.
+#' @return NULL; writes beta_*.csv to OUT.
+#' @examples
+#' # lfp_summary_beta()
+lfp_summary_beta <- function() {
+  arms <- c("PL", names(BETA_ARMS))
+  label <- c(PL = "Normal (per program)", BETA_ARMS)
+  rd <- function(dir) lapply(list.files(file.path(PRIV, dir), full.names = TRUE, pattern = "rds$"), readRDS)
+  sim <- lfp_bind(lapply(rd("sim"), `[[`, "metrics"))
+  des <- merge(merge(SIM_CELLS[c("cell")], data.frame(seed = 1:10)), data.frame(arm = arms))
+  sim <- merge(des, sim[sim$arm %in% arms, ], all.x = TRUE)
+  sim$missing <- is.na(sim$converged)
+  sim$recovered[sim$missing] <- FALSE; sim$converged[sim$missing] <- FALSE
+  sim$false_active[sim$missing] <- 7L
+  sim$prior <- label[sim$arm]
+  write.csv(sim, file.path(OUT, "beta_sim_fits.csv"), row.names = FALSE)
+  cells <- do.call(rbind, lapply(split(sim, list(sim$cell, sim$arm), drop = TRUE), function(s)
+    data.frame(cell = s$cell[1], arm = s$arm[1], prior = s$prior[1], n = nrow(s),
+      recovered = sum(s$recovered), mean_false_active = mean(s$false_active),
+      converged = sum(s$converged), median_cor = median(s$cor_planted, na.rm = TRUE),
+      median_c_validation = median(s$c_validation, na.rm = TRUE),
+      median_cal_slope = median(s$cal_slope, na.rm = TRUE),
+      all_beta_zero = sum(s$max_beta < 1e-8, na.rm = TRUE), missing = sum(s$missing))))
+  write.csv(cells, file.path(OUT, "beta_sim_cells.csv"), row.names = FALSE)
+
+  real <- Filter(function(x) x$metrics$arm %in% arms, rd("real"))
+  rf <- lfp_bind(lapply(real, `[[`, "metrics"))
+  rf <- merge(expand.grid(arm = arms, fold = 0:5, stringsAsFactors = FALSE), rf, all.x = TRUE)
+  rf$converged[is.na(rf$converged)] <- FALSE
+  write.csv(rf[setdiff(names(rf), "warnings")], file.path(OUT, "beta_real_fits.csv"), row.names = FALSE)
+  progs <- lfp_bind(lapply(real, `[[`, "programs"))
+  write.csv(progs, file.path(OUT, "beta_real_programs.csv"), row.names = FALSE)
+  cv <- rf[rf$fold > 0, ]
+  paired <- do.call(rbind, lapply(names(BETA_ARMS), function(a) {
+    x <- merge(cv[cv$arm == a, c("fold", "C_within", "C_pooled", "converged", "n_active")],
+               cv[cv$arm == "PL", c("fold", "C_within", "C_pooled", "converged", "n_active")],
+               by = "fold", suffixes = c("", "_N"))
+    dd <- x$C_within - x$C_within_N; dp <- x$C_pooled - x$C_pooled_N
+    data.frame(arm = a, prior = label[a], n_folds = sum(is.finite(dd)),
+      mean_C_within = mean(x$C_within), mean_C_within_Normal = mean(x$C_within_N),
+      diff_within = mean(dd), se_within = sd(dd) / sqrt(sum(is.finite(dd))),
+      mean_C_pooled = mean(x$C_pooled), diff_pooled = mean(dp),
+      se_pooled = sd(dp) / sqrt(sum(is.finite(dp))), folds_converged = sum(x$converged),
+      mean_active = mean(x$n_active), mean_active_Normal = mean(x$n_active_N),
+      folds_all_beta_zero = sum(x$n_active == 0))
+  }))
+  write.csv(paired, file.path(OUT, "beta_real_paired.csv"), row.names = FALSE)
+
+  nor <- cells[cells$arm == "PL", ]
+  rule <- do.call(rbind, lapply(names(BETA_ARMS)[1:2], function(a) {
+    ce <- merge(cells[cells$arm == a, ], nor, by = "cell", suffixes = c("", "_N"))
+    p <- paired[paired$arm == a, ]
+    a_cell <- ce$recovered >= ce$recovered_N - 1 & ce$mean_false_active <= 1 & ce$converged >= 9
+    slope_closer <- abs(ce$median_cal_slope - 1) < abs(ce$median_cal_slope_N - 1)
+    non_s14 <- ce$cell != "s14_0.05pct"
+    data.frame(arm = a, prior = label[a],
+      a_all_cells = all(a_cell), a_cells_failed = paste(ce$cell[!a_cell], collapse = ";"),
+      a_without_s14 = all(a_cell[non_s14]),
+      b_slope_closer_cells = sum(slope_closer), b_pass = sum(slope_closer) >= 2,
+      c_diff = p$diff_within, c_se = p$se_within, c_pass = isTRUE(p$diff_within >= -p$se_within),
+      all_beta_zero_real = p$folds_all_beta_zero == p$n_folds,
+      mean_false_active_all_cells = mean(ce$mean_false_active),
+      qualifies = all(a_cell) && sum(slope_closer) >= 2 && isTRUE(p$diff_within >= -p$se_within) &&
+                  p$folds_all_beta_zero < p$n_folds,
+      qualifies_without_s14 = all(a_cell[non_s14]) && sum(slope_closer) >= 2 &&
+                              isTRUE(p$diff_within >= -p$se_within) && p$folds_all_beta_zero < p$n_folds)
+  }))
+  rule$normal_meets_false_active_all_cells <- all(nor$mean_false_active <= 1)
+  rule$normal_s14_false_active <- nor$mean_false_active[nor$cell == "s14_0.05pct"]
+  write.csv(rule, file.path(OUT, "beta_rule.csv"), row.names = FALSE)
+  print(cells[order(cells$cell, cells$arm), ]); print(paired); print(rule)
+  invisible(NULL)
+}
+
 # Main ----
 if (sys.nframe() == 0L) {
   args <- commandArgs(TRUE); mode <- args[1]
@@ -471,5 +602,13 @@ if (sys.nframe() == 0L) {
     st <- lfp_run(lfp_design(mode == "smoke"), cores)
     writeLines(st, file.path(OUT, sprintf("task_status_%s.txt", mode))); print(st)
   }
+  if (mode %in% c("beta_smoke", "beta_grid")) {
+    dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
+    writeLines(c(system("git rev-parse HEAD", intern = TRUE), format(Sys.time()), mode),
+               file.path(OUT, sprintf("provenance_%s.txt", mode)))
+    st <- lfp_run(lfp_design(mode == "beta_smoke", "beta"), cores)
+    writeLines(st, file.path(OUT, sprintf("task_status_%s.txt", mode))); print(st)
+  }
   if (mode == "summary") { lfp_load(); lfp_summary() }
+  if (mode == "beta_summary") { lfp_load(); lfp_summary_beta() }
 }

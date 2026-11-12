@@ -2978,3 +2978,13 @@ false-active coefficients are acceptable, so false-active programs are also desc
 their |β| relative to the matched program; that description is a post-result judgment, not
 a change to criterion 2. Adoption, if either setup qualifies, needs a DECISIONS.md entry by
 Andrew.
+
+## 2026-11-12 — B result
+
+138/138 new fits without errors or warnings. Neither sparse prior qualifies: both fail
+false activity in the S-14 cell (shared point-Laplace 3.3, shared point-normal 3.5; Normal
+3.0), and shared point-Laplace fails CV (−0.008, SE 0.002). Shared point-normal would
+qualify without the S-14 cell (CV −0.002, SE 0.004; calibration part passed by slope
+differences of 0.03 and 0.0003). Normal β stays. Real-data point-normal inclusion
+probabilities 0.94 to 1.00 in the full fit. Findings:
+`docs/findings/2026-11-12-beta-prior-comparison-findings.md`.

@@ -3,6 +3,23 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-12 — Task B: Normal β stays
+
+Task B compared the working model's per-program Normal β with shared point-Laplace,
+shared point-normal and (as a reference) shared Normal priors, under point-Laplace L and F
+on z-scored input, in A's four simulation cells and five pooled training folds. Applying
+the registered rule literally, neither sparse prior qualifies. Both fail A's
+false-activity limit in the S-14 near-threshold cell (3.3 and 3.5 false-active programs per
+fit, limit 1), and shared point-Laplace also loses on CV (within-cohort C 0.649 against
+0.658, difference −0.008, SE 0.002). Shared point-normal would qualify without the S-14
+cell (CV difference −0.002, SE 0.004), but Normal itself averages 3.0 false-active
+programs there, and the calibration part was decided by slope differences of 0.03 and
+0.0003. The four priors give nearly the same fits. On real data the shared point-normal
+inclusion probabilities are 0.94 to 1.00 for all seven programs in the full fit, so they
+do not support replacing the 1.96-SD activity rule. Per-program Normal β is kept. Task C
+needs no rerun on account of B. Findings:
+[docs/findings/2026-11-12-beta-prior-comparison-findings.md](docs/findings/2026-11-12-beta-prior-comparison-findings.md).
+
 ## 2026-11-12 — Correction: the working model uses Normal β, which no comparison chose
 
 The 2026-10-15 entry says "the point-Laplace β choice stands". That comparison used a

@@ -32,6 +32,14 @@ simulation support is incomplete. The open methods problem is stability at weigh
 move real-data loadings (about 10⁴). After that comes the registered LB vs YFB study, now on the
 z-scored input, since task A (2026-11-12) kept point-Laplace L and F priors. Multimodal development stays deferred.
 
+## β prior comparison (2026-11-12)
+
+Task B kept per-program Normal β. Shared point-Laplace and point-normal priors gave
+nearly the same fits. Neither met the false-activity limit in the near-threshold
+simulation cell, which Normal also exceeds, and point-Laplace lost 0.008 in within-cohort
+CV concordance. Point-normal inclusion probabilities on real data were near 1 for almost
+every program. See the [findings](docs/findings/2026-11-12-beta-prior-comparison-findings.md).
+
 ## L and F prior comparison (2026-11-12)
 
 Task A kept point-Laplace priors on L and F. Point-exponential priors on nonnegative X/sd
