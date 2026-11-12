@@ -99,6 +99,13 @@ The scorer uses the dated private checkpoint and writes aggregate external
 concordance tables, including donor-aware pooled intervals. Existing output
 directories are never overwritten.
 
+After both study modes finish, rebuild their aggregate summaries with
+`Rscript results/benchmark_sim/summarize_lb_yfb_study.R --date=2026-11-12`.
+It reads the saved checkpoints, applies the registered simulation gate and
+writes program-activity, gene-overlap and score-correlation tables without
+refitting either model.
+
+
 
 The [methylation-only study runner](results/multimodal_real/run_methylation_single_modality.R)
 compares five CpG counts with expression on matched TCGA patients at the fixed
