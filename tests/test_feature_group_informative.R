@@ -53,8 +53,14 @@ run_test("Informative simulation: both true survival programs are scored separat
   assert_equal(out$matched_program2, 1L)
   assert_equal(out$false_active, 1L)
   fit$EBeta[1] <- -2
-  assert_false(fgsim_recovery_two(fit, g,
-    rep(c("expression", "methylation"), each = 3), 1.96)$recovered2)
+  wrong <- fgsim_recovery_two(fit, g,
+    rep(c("expression", "methylation"), each = 3), 1.96)
+  assert_false(wrong$recovered2)
+  assert_equal(wrong$false_active, 1L)
+  collision <- fgsim_recovery_two(fit, cbind(g[, 1], g[, 1]),
+    rep(c("expression", "methylation"), each = 3), 1.96)
+  assert_true(collision$match_collision)
+  assert_equal(collision$false_active, 2L)
 })
 
 run_test("Informative simulation: separation is assessed only where expression passes", {
