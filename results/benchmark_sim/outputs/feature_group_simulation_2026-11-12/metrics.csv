@@ -1,0 +1,81 @@
+"seed","feature_ratio","methylation_active_fraction","arm","p_expression","p_methylation","K","error","recovered","matched_program","loading_correlation","false_active","converged","n_iter","c_validation","elbo","elapsed_seconds","n_warnings"
+1,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,2.931,0
+1,1,0.15,"pooled",50,50,5,"",FALSE,4,0.357203070011822,2,TRUE,16,0.536282103546678,-6250.62680847044,0.38,0
+2,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.217000000000001,0
+2,1,0.15,"pooled",50,50,5,"",TRUE,5,0.739638111845782,0,TRUE,25,0.732218458933108,-6232.77122404107,0.492999999999999,0
+3,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.11,0
+3,1,0.15,"pooled",50,50,5,"",FALSE,2,0.241637110992276,1,TRUE,18,0.634187394800823,-6238.801258526,0.355,0
+4,1,0.15,"grouped",50,50,5,"",FALSE,2,0.117886083777498,1,TRUE,24,0.491806515301086,-6210.5990261658,0.71,0
+4,1,0.15,"pooled",50,50,5,"",FALSE,2,0.119203835850511,1,TRUE,20,0.487857847976308,-6210.05097095685,0.404,0
+5,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.15,0
+5,1,0.15,"pooled",50,50,5,"",TRUE,5,0.889359694178939,0,TRUE,31,0.696578569965171,-6242.68693550187,0.605,0
+6,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.0999999999999996,0
+6,1,0.15,"pooled",50,50,5,"",FALSE,4,0.112590145954528,0,TRUE,12,0.601923788383278,-6269.0042417457,0.239,0
+7,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.109,0
+7,1,0.15,"pooled",50,50,5,"",FALSE,1,0.0698108746341268,0,TRUE,17,0.520057601316602,-6246.29805437524,0.324,0
+8,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.122999999999999,0
+8,1,0.15,"pooled",50,50,5,"",FALSE,1,0.123946848627559,2,TRUE,23,0.555378802942931,-6240.2872445758,0.448,0
+9,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.177999999999999,0
+9,1,0.15,"pooled",50,50,5,"",FALSE,3,0.323145235031798,2,TRUE,20,0.552581664910432,-6249.6881300173,0.377000000000001,0
+10,1,0.15,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.851999999999999,0
+10,1,0.15,"pooled",50,50,5,"",FALSE,1,0.084354776832086,0,TRUE,27,0.52990264255911,-6254.49346100366,0.536000000000001,0
+1,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.128,0
+1,1,0.03,"pooled",50,50,5,"",FALSE,5,0.0816978707702593,0,TRUE,34,0.531642960214389,-6271.94953096689,0.680000000000001,0
+2,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.118,0
+2,1,0.03,"pooled",50,50,5,"",FALSE,4,0.266029805348289,3,TRUE,25,0.602851750891172,-6258.67031341001,0.44,0
+3,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.151999999999999,0
+3,1,0.03,"pooled",50,50,5,"",TRUE,5,0.991691099809775,0,TRUE,44,0.902249134948097,-6201.22679124405,0.840999999999999,0
+4,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.097999999999999,0
+4,1,0.03,"pooled",50,50,5,"",FALSE,5,0.218581207439781,2,TRUE,21,0.60015993602559,-6278.25314633517,0.399000000000001,0
+5,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.127000000000001,0
+5,1,0.03,"pooled",50,50,5,"",TRUE,3,0.833301961517184,1,TRUE,19,0.73733660130719,-6178.23083484693,0.343,0
+6,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.25,0
+6,1,0.03,"pooled",50,50,5,"",FALSE,2,0.617703416335771,1,TRUE,21,0.66171310629515,-6252.14519609171,0.408999999999999,0
+7,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.105,0
+7,1,0.03,"pooled",50,50,5,"",TRUE,2,0.80352450248073,0,TRUE,19,0.74829198130169,-6233.98187578724,0.35,0
+8,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.151,0
+8,1,0.03,"pooled",50,50,5,"",TRUE,4,0.926890382707689,1,TRUE,33,0.781987814166032,-6241.77489565232,0.646000000000001,0
+9,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.129999999999999,0
+9,1,0.03,"pooled",50,50,5,"",FALSE,4,0.0318058869373277,0,TRUE,23,0.487259167184587,-6275.40429465469,0.472999999999999,0
+10,1,0.03,"grouped",50,50,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.211000000000002,0
+10,1,0.03,"pooled",50,50,5,"",FALSE,3,0.120663284248537,1,TRUE,19,0.523535457348407,-6238.98602072795,0.362000000000002,0
+1,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.18,0
+1,5,0.15,"pooled",50,250,5,"",FALSE,3,0.128907540483988,1,TRUE,17,0.604162415833503,-18116.083674,0.449000000000002,0
+2,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.16,0
+2,5,0.15,"pooled",50,250,5,"",FALSE,5,0.13177514635763,1,TRUE,26,0.507894736842105,-18193.4988602448,0.728999999999999,0
+3,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.359999999999999,0
+3,5,0.15,"pooled",50,250,5,"",FALSE,5,0.100709951282772,2,TRUE,23,0.519492631971647,-18189.7097342311,0.591000000000001,0
+4,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.791,0
+4,5,0.15,"pooled",50,250,5,"",FALSE,1,0.181418089486707,1,TRUE,36,0.540698772426818,-18199.8501647055,0.951999999999998,0
+5,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.18,0
+5,5,0.15,"pooled",50,250,5,"",FALSE,5,0.0706860701628727,0,TRUE,28,0.557090060299553,-18159.5024067638,0.719000000000001,0
+6,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.231999999999999,0
+6,5,0.15,"pooled",50,250,5,"",FALSE,3,0.0563335200530123,0,TRUE,16,0.524151696606786,-18052.6251224112,0.526,0
+7,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.257999999999999,0
+7,5,0.15,"pooled",50,250,5,"",FALSE,2,0.0598089638106123,1,TRUE,25,0.529756097560976,-18182.097279239,0.609000000000002,0
+8,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.244000000000003,0
+8,5,0.15,"pooled",50,250,5,"",FALSE,5,0.126821864201516,1,TRUE,25,0.523011707710941,-18120.7871682278,0.605999999999998,0
+9,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.221,0
+9,5,0.15,"pooled",50,250,5,"",FALSE,3,0.272254846859024,1,TRUE,26,0.631396022398146,-18149.8934967208,0.703999999999997,0
+10,5,0.15,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.422000000000001,0
+10,5,0.15,"pooled",50,250,5,"",FALSE,4,0.124162832710428,0,TRUE,36,0.504577822990844,-18116.409079452,0.963999999999999,0
+1,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.212999999999997,0
+1,5,0.03,"pooled",50,250,5,"",FALSE,4,0.144380717906911,2,TRUE,32,0.539424770103698,-18161.2516327328,0.868000000000002,0
+2,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.672999999999998,0
+2,5,0.03,"pooled",50,250,5,"",FALSE,3,0.611758151445576,2,TRUE,31,0.70275332459262,-18168.0348091703,0.850999999999999,0
+3,5,0.03,"grouped",50,250,5,"",FALSE,4,0.13547268760541,1,TRUE,35,0.598576649355645,-18150.99648978,1.497,0
+3,5,0.03,"pooled",50,250,5,"",FALSE,5,0.113317535079854,2,TRUE,30,0.576457010963647,-18165.3674392725,0.738999999999997,0
+4,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.189,0
+4,5,0.03,"pooled",50,250,5,"",FALSE,3,0.0460983903671414,0,TRUE,32,0.564670050761421,-18157.9631291926,0.849000000000004,0
+5,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,1.155,0
+5,5,0.03,"pooled",50,250,5,"",FALSE,1,0.102623833008895,1,TRUE,27,0.58825854912038,-18164.1201349741,0.681999999999995,0
+6,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.134999999999998,0
+6,5,0.03,"pooled",50,250,5,"",FALSE,4,0.0625031935736757,0,TRUE,22,0.512730121425774,-18067.6680602978,0.635000000000005,0
+7,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.152999999999999,0
+7,5,0.03,"pooled",50,250,5,"",FALSE,5,0.143838371585606,0,TRUE,15,0.526895119418484,-18222.1445387053,0.417999999999999,0
+8,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.255000000000003,0
+8,5,0.03,"pooled",50,250,5,"",FALSE,2,0.0927576149589903,0,TRUE,25,0.443856794141579,-18156.0485833115,0.714999999999996,0
+9,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.255000000000003,0
+9,5,0.03,"pooled",50,250,5,"",FALSE,5,0.0916684873374649,1,TRUE,26,0.502578914792655,-18157.182021187,0.768000000000001,0
+10,5,0.03,"grouped",50,250,5,"Nonfinite feature_group F KL: the refitted prior is incompatible with its sweep posterior.",FALSE,NA,NA,NA,FALSE,NA,NA,NA,0.113,0
+10,5,0.03,"pooled",50,250,5,"",FALSE,3,0.0561348167286707,0,TRUE,58,0.514005602240896,-18181.0404267242,1.519,0

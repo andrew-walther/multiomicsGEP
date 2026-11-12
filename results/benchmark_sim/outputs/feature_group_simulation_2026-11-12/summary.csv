@@ -1,0 +1,9 @@
+"feature_ratio","methylation_active_fraction","arm","seeds","failed","recovered","mean_false_active","converged","c_defined","mean_c","passed"
+1,0.03,"grouped",10,10,0,NA,0,0,NA,FALSE
+5,0.03,"grouped",10,9,0,NA,1,1,0.598576649355645,FALSE
+1,0.15,"grouped",10,9,0,NA,1,1,0.491806515301086,FALSE
+5,0.15,"grouped",10,10,0,NA,0,0,NA,FALSE
+1,0.03,"pooled",10,0,4,0.9,10,10,0.65770279096823,FALSE
+5,0.03,"pooled",10,0,0,0.8,10,10,0.547163025756115,FALSE
+1,0.15,"pooled",10,0,2,0.8,10,10,0.584696887533444,FALSE
+5,0.15,"pooled",10,0,0,0.8,10,10,0.544223196464132,FALSE
