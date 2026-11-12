@@ -2999,3 +2999,38 @@ point-exponential programs (|r| ≥ 0.9999) and make 3 or 4 of them survival-act
 Within-cohort C is 0.628 (−0.030, SE 0.015), and no fold converges. False-active
 coefficients in the shifted z-score simulation are mostly 0.1 to 0.3 of the matched
 program's |β| (largest 0.51). Findings: `docs/findings/2026-11-12-lf-prior-followup-findings.md`.
+
+## 2026-11-12 — F: training-CV redo of the gene screen, input scaling and rank (registered before execution)
+
+Task F of the [November 9 week plan](2026-11-09-week-plan.md), under the settled model:
+point-Laplace L and F, per-program Normal β, `canonicalize = TRUE`, `w_S = 1`, pooled
+TCGA and CPTAC training, no strata, no pruning. All comparisons use the S-11 five folds
+(cohort × event, seed 2026) so that every arm is paired with task A's point-Laplace fits,
+and within-cohort concordance is the primary metric. Runner:
+`results/benchmark_sim/run_training_cv_redo.R`; outputs under
+`results/benchmark_sim/outputs/training_cv_redo_2026-11-12/`.
+
+1. **Gene screen.** D1 to D5 of 2026-05-27 were model × preprocessing configurations.
+   Under the YFB model without a cohort indicator, two screens remain: D2 (per-cohort
+   z-score, quantile normalization of the merged matrix, top 2,000 by variance after
+   normalization) and D4 (per-cohort combined mean and variance rank, top 3,000 per
+   cohort, intersection, then per-cohort z-score; the current 2,218 genes). D1 and D3 are
+   the LB model (task E) and D5 adds a cohort indicator (replaced by the cohort decision).
+   Both screens are outcome-free and computed once on all 273 patients. K = 7.
+2. **Input scaling.** On the chosen screen: per-cohort z-score (current), X/sd within cohort
+   with `center_projection = TRUE`, and within-patient ranks followed by per-cohort
+   z-score. All point-Laplace. The rank-transform point-exponential arm is already
+   reported in A and is not refitted. K = 7.
+3. **Rank.** K = 2 to 12 on the chosen screen and scaling. With pruning set aside, this
+   chooses the fitted rank K_init. The number of programs with nonzero loadings and
+   survival-active programs is reported at each K. `select_K_cv()` is not used: it scores
+   pooled concordance and would need `strata_id` in the fit to score within-cohort pairs,
+   and it returns only the chosen K.
+
+**Selection rules (fixed before fitting).** For the screen and the scaling, the current
+choice is kept unless an alternative's mean within-cohort CV C exceeds it by more than one
+SE of the paired fold difference. For K, the one-SE rule: the smallest K whose mean
+within-cohort C is at least the best mean minus the SE of the fold C at the best K. If the
+screen or K changes, A's point-exponential vs point-Laplace real-data CV is rerun once at
+the new setting. Pooled concordance and held-out partial log-likelihood are reported
+beside the primary metric.
