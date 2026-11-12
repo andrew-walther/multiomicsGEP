@@ -343,3 +343,34 @@ preprocessing differs (single log and per-cohort standardization, no rank
 transform), so the retained genes are not DeSurv's set. Old text:
 
 > The gene-set procedure ranks genes by their expression mean and variance in each training cohort and intersects the top 3,000 per cohort [@Young2026]. On our preprocessed data this leaves 2,218 genes.
+
+## 2026-11-12 — History wording removed from the body; training-only protocol added
+
+Reason: the 2026-11-11 follow-up asked for the remaining history wording to be
+removed, and the week plan (`docs/plans/2026-11-09-week-plan.md`) asked for the
+training-only tuning protocol and the November 9–13 comparisons as proposed
+work. The external-informed origin of the gene screen, scaling and rank is now
+stated once, in the Tuning Protocol section and the Limitations. Removed text:
+
+> The fixed-model comparison fixed the survival weight, feature-set arm and survival-screen arm from training data. The preprocessing recipe, the 2,218-gene set and the rank came from earlier analyses that used external concordance.
+
+> The rank is fixed at $K=7$, the rank of the earlier benchmark.
+
+> The configuration was chosen by five-fold cross-validation on the training patients, stratified by cohort and event status. This covered the survival weight, the number of genes (from 2,218 to all 17,900 shared genes) and the effect of applying a survival screen inside each fold. After that the fixed model was scored once in each validation cohort, and nothing was chosen from the validation results.
+
+> The preregistered comparison used an earlier unsupervised fit on uncentered input, which recovered 0 or 1 of 10, so it confounded centering with supervision.
+
+Simulation design table, comparator row: "and earlier unsupervised fit on uncentered input".
+
+> We will evaluate rank selection under the supervised objective with replicated training cross-validation and assess whether the final rank varies by at most one across starting ranks while retaining planted prognostic programs.
+
+> A registered comparison with the $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$ parameterization, which estimates each new patient's scores by fold-in under the frozen priors, remains to be run.
+
+> A registered comparison with $\boldsymbol{\eta}=\mathbf{L}\boldsymbol{\beta}$ will evaluate recovery and out-of-sample prediction together. In that model, a new patient's scores are estimated by fold-in under the frozen priors (@sec-comparators).
+
+> Historical analyses used the external panel to inform rank, preprocessing, the loading supervision weight $\alpha_F$, the number of frozen-loading sweeps and comparator configuration. No series in this panel is untouched.
+
+Still in the body and left for Andrew to decide: the "Historical C" column of the
+external table, the paragraph comparing with the earlier rank-seven benchmark in
+External Validation, and the loading correspondence with the historical
+$\alpha_F = 0$ fit in Programs. These report results rather than history wording.
