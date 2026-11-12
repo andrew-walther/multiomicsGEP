@@ -5,6 +5,7 @@ Paste-in prompts, briefs and session handoffs.
 | Date | Document | Purpose | Status |
 |---|---|---|---|
 | 2026-11-12 | [codex-d-e-followup-prompt](2026-11-12-codex-d-e-followup-prompt.md) | Codex follow-up: E fixes and fits (priors settled, conditional on F keeping D4 and K = 7); D fitter work keyed by Andrew's option (generalize `fit_ssbmf_yfb()`, extend or rewrite the multimodal fitter) | active; D option pending |
+| 2026-11-12 | [codex-d-finish-prompt](2026-11-12-codex-d-finish-prompt.md) | Finishes task D: survival regenerated from the standardized data so recovery has one target, grouped vs pooled F priors with equal and unequal modality sparsity (80 fits), then the descriptive matched-TCGA comparison | active |
 | 2026-11-12 | [codex-k5-reruns-prompt](2026-11-12-codex-k5-reruns-prompt.md) | One Codex session, two parts in order: task B real-data CV at K = 5, then task C's expression comparator (and qualifying methylation counts) at K = 5 after C's K = 7 runs finish | active |
 | 2026-11-12 | [codex-task-f-review-prompt](2026-11-12-codex-task-f-review-prompt.md) | Codex independent review of task F (screen, scaling, rank by training CV) | active |
 | 2026-11-12 | [codex-task-b-review-prompt](2026-11-12-codex-task-b-review-prompt.md) | Codex independent review of task B (β prior): rule recomputed, inclusion probabilities checked, two reruns | active |
