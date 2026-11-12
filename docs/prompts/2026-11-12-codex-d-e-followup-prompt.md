@@ -31,13 +31,13 @@ entries at the top of DECISIONS.md.
 - K = 7 (`cfg$benchmark$k_merged_yfb_desurv`), the config's `max_iter` and `tol`, no
   pruning.
 - Genes: the current D4 set in the prepared input.
+- Training w_S = 1 (S-15). Simulation w_S ∈ {1, 10}.
+- Folds: the five saved S-11 folds stored in `data/lf_prior_real_2026-11-12.rds`.
 
 **Conditional on task F.** Task F (gene screen, scaling, rank) is running now and may
 change the gene set or K. These fits are valid for D4 and K = 7 only. Before starting,
 check the top of DECISIONS.md for a task F entry. If F has changed the gene set or K,
 stop and ask Andrew instead of running.
-- Training w_S = 1 (S-15). Simulation w_S ∈ {1, 10}.
-- Folds: the five saved S-11 folds stored in `data/lf_prior_real_2026-11-12.rds`.
 
 **Step 1. Fixes before any scientific fit** (code in `code/lb_yfb_study.R` and
 `results/benchmark_sim/run_lb_yfb_study.R`, tests in `tests/test_lb_yfb_study*.R`):
