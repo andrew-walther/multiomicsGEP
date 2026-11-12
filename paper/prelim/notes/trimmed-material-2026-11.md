@@ -335,3 +335,11 @@ two. Old bib entry and sentences:
 > DeSurv used its published settings rather than a new search on our training folds.
 
 > ... against 1.50 (1.31 to 1.72) in its publication [@Young2026].
+
+## 2026-11-11 — Gene-set sentence says "adapted from" DeSurv
+
+Reason: our filter follows DeSurv's combined mean/variance rank but our
+preprocessing differs (single log and per-cohort standardization, no rank
+transform), so the retained genes are not DeSurv's set. Old text:
+
+> The gene-set procedure ranks genes by their expression mean and variance in each training cohort and intersects the top 3,000 per cohort [@Young2026]. On our preprocessed data this leaves 2,218 genes.
