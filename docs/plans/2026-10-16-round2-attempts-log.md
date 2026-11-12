@@ -2957,3 +2957,24 @@ the one with fewer false-active programs is chosen. Otherwise Normal stays. A po
 fit that sets every β to zero on the training data counts as a failure. The rule is
 applied literally. Normal itself averages 3.0 false-active programs in the S-14 cell, and
 the findings will report whether that cell decides the verdict.
+
+## 2026-11-12 — A2: point-exponential with cohort differences removed (registered before execution)
+
+Follow-up to A, requested by Andrew after A's result. A's point-exponential programs
+tracked TCGA versus CPTAC because X/sd keeps each cohort's mean level. Two setups test
+whether removing that difference lets point-exponential compete. Both use point-exponential
+L and F, Normal β (per program), K = 7, `canonicalize = TRUE`, `w_S = 1`, the S-11 folds and
+A's metrics, with point-Laplace on z-scores (A's PL arm, reused) as the comparison.
+
+1. **Shifted z-score.** The per-cohort z-scores plus one constant per gene, equal in both
+   cohorts, chosen so the smallest value over the 273 training patients is 0 (outcome-free,
+   computed once). Pooled, `center_projection = TRUE`, no strata. Also fitted in A's four
+   simulation cells (the z-scored synthetic data shifted the same way).
+2. **X/sd with cohort strata.** A's PE input with `strata_id = cohort`, which centers the
+   projection within cohort and gives each cohort its own baseline hazard. Real data only.
+
+A's four criteria are reported for each setup. As stated by Andrew on 2026-11-12, small
+false-active coefficients are acceptable, so false-active programs are also described by
+their |β| relative to the matched program; that description is a post-result judgment, not
+a change to criterion 2. Adoption, if either setup qualifies, needs a DECISIONS.md entry by
+Andrew.
