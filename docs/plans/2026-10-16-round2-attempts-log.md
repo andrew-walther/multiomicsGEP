@@ -3128,6 +3128,12 @@ K = 5 limitations: n = 144, pre-fold screening/imputation, 2,218 D4 genes,
 descriptive specificity does not imply separation from expression score space,
 and no external scoring or adoption. K = 5 10k PL is recommended for a future
 authorized joint fit, not selected as a joint optimum.
+Verification (2026-11-12, `99849528`): all numbers reproduce. Regressing each
+methylation factor on all five expression factors gives R² < 0.25 for 12 of the 19
+specific factors and ≥ 0.5 for three, so the pairwise rule overstates separation. The
+clearest methylation-specific factor is PL factor 2 at 100k and all CpGs (R² 0.06,
+0.04). The specific factor at 10k has R² 0.43, so the CpG count for a joint fit remains
+open.
 
 K = 5 verification: 849 full-suite tests passed, zero failed; focused tests
 15 + 15 assertions passed. Independent recomputation verified all paired stats,

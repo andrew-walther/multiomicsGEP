@@ -109,6 +109,12 @@ PE methylation full fits and one 100k PE fold remain capped. The K = 5 results
 remain descriptive at n = 144 with pre-fold screening/imputation and a 2,218-gene
 D4 universe. At K = 5, 10k CpGs with point-Laplace is a recommendation for a future
 authorized joint fit, not an adopted count. No new setting is adopted.
+Verification (2026-11-12, `99849528`): all numbers reproduce. Regressing each
+methylation factor on all five expression factors gives R² < 0.25 for 12 of the 19
+specific factors and ≥ 0.5 for three, so the pairwise rule overstates separation. The
+clearest methylation-specific factor is PL factor 2 at 100k and all CpGs (R² 0.06,
+0.04). The specific factor at 10k has R² 0.43, so the CpG count for a joint fit remains
+open.
 
 ## 2026-11-12 — Task F: training CV keeps D4 and the z-score input, and selects K = 5
 
