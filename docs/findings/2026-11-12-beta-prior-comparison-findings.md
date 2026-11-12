@@ -250,7 +250,7 @@ point-Laplace had 0.648599, a paired difference of −0.006021 with SE 0.004924.
 Shared point-normal had 0.647783, a difference of −0.006837 with SE 0.006578.
 Both fail the registered CV criterion, although point-normal is close to
 the boundary. Simulation criteria were not rerun at K = 5. Normal β stays.
-The K = 7 results remain labeled and preserved. The methylation/expression
-K = 5 rerun is paused pending confirmation that the separate K = 7 study
-has finished. Its findings still says “in progress.” No shared status file
-was edited by this rerun.
+The K = 7 results remain labeled and preserved. The matched methylation/expression
+K = 5 follow-up is now complete, as reported in the
+[methylation findings](2026-11-12-methylation-single-modality-findings.md).
+No shared status file was edited by this rerun.

@@ -83,7 +83,8 @@ c_launch <- function(modality, count, arm, fold) {
   calls[[length(calls) + 1L]] <<- data.frame(modality, count, arm, fold)
   data.frame(modality, count, arm, fold, K = 5L, status = "converged", converged = TRUE,
     seconds = if (count >= 50000L) 2000 else 60,
-    process_seconds = if (count >= 50000L) 2000 else 60, C = .5 + fold / 100,
+    process_seconds = if (count >= 50000L) 2000 else 60,
+    C = .5 + fold / 100 + if (arm == "PE") .05 else 0,
     nonzero = 5, survival_active = if (arm == "PL") 2 else 0)
 }
 #' Map jobs sequentially to keep mock state in this process
@@ -100,7 +101,7 @@ tryCatch({
   jobs <- do.call(rbind, calls)
   stopifnot(nrow(jobs) == 12L, !anyDuplicated(jobs), all(jobs$modality == "expression"))
   ex <- read.csv(file.path(C_OUT, "expression_summary.csv"))
-  stopifnot(all(abs(ex$mean_C - .53) < 1e-12), all(ex$converged_folds == 5),
+  stopifnot(all(abs(ex$mean_C - c(.53, .58)) < 1e-12), all(ex$converged_folds == 5),
     ex$full_survival_active[ex$arm == "PL"] == 2)
   # All full fits run, but counts whose two-setup CV projection exceeds 3h do not.
   saveRDS(list(counts = c(10000L, 25000L, 50000L, 100000L, 182934L)),

@@ -2,14 +2,20 @@
 
 Date: 2026-11-12. Author: Andrew Walther.
 
-**Status: stopped at Andrew's request on November 12 to prioritize K = 5.**
+**K = 5 result.** The full sweep and timing-eligible CV are complete. Mean
+methylation concordance is below matched expression in all seven completed
+comparisons. No PL program meets the methylation-only rule. Formal PE
+classification is unassessable because the expression PE full fit capped.
+These are descriptive results from 144 patients, not a model adoption decision.
+
+**K = 7 status: stopped at Andrew's request on November 12 to prioritize K = 5.**
 No K = 7 process remains active. Nine methylation full fits completed, six
 converged and three capped. The final all-CpG PE fit was interrupted after
 46.0 minutes without a final checkpoint. Expression fits, official CV and ICGC
 scoring were not run. The approved 600-iteration check is deferred.
 
-**K = 5 follow-up:** the expression reference is complete. The expanded
-methylation full-fit sweep and timing-eligible CV are in progress below.
+**K = 5 follow-up:** all 57 scheduled full/CV fits are saved. Of these,
+45 converged and 12 capped. There were no fitting errors or fit warnings.
 
 **Scientific conclusion for the stopped K = 7 run:** this partial run establishes computing cost and
 full-fit diagnostics only. It does not answer relative predictive performance
@@ -423,6 +429,65 @@ not a guarantee that actual CV will finish within three hours. The scheduled
 work comprises 25 PL folds and ten PE folds, with no PE CV at 10k, 25k or
 50k because those full fits capped.
 
+### Paired CV results at K = 5
+
+All 35 scheduled methylation CV fits completed, with 34 converged and one
+capped at 100k PE. Every scheduled fold has defined concordance. The three
+smaller PE setups received no CV because their full fits capped. No fold
+was dropped from a reported five-fold mean or paired SE.
+
+| CpGs | Setup | Mean CV C | Difference from expression (paired SE) | Converged CV folds | Methylation-only programs |
+|---:|:---|---:|---:|:---|:---|
+| 10,000 | PL | 0.545 | −0.046 (0.041) | 5/5 | 0 |
+| 25,000 | PL | 0.504 | −0.088 (0.038) | 5/5 | 0 |
+| 50,000 | PL | 0.511 | −0.080 (0.044) | 5/5 | 0 |
+| 100,000 | PL | 0.502 | −0.089 (0.038) | 5/5 | 0 |
+| 182,934 | PL | 0.520 | −0.071 (0.038) | 5/5 | 0 |
+| 10,000 | PE | not run | not run | not run | not assessed |
+| 25,000 | PE | not run | not run | not run | not assessed |
+| 50,000 | PE | not run | not run | not run | not assessed |
+| 100,000 | PE | 0.539 | −0.083 (0.053) | 4/5 | not assessed |
+| 182,934 | PE | 0.512 | −0.111 (0.052) | 5/5 | not assessed |
+
+The matched expression references are PL C = 0.591 and PE C = 0.622. Only
+two PL expression folds and one PE expression fold converged, so the paired
+comparisons include predictions from capped expression states.
+They describe this run rather than the prediction of fully converged models.
+The SE is the sample SD of the five fold differences divided by √5.
+
+No evaluated methylation setup has a higher mean CV C than its expression
+reference. The estimates remain noisy at n = 144. This comparison does not
+rule out useful methylation information in a different model or establish
+that a multimodal model would fail. No rank, prior or CpG count is adopted
+from these results.
+
+K = 7 has no official CV or expression fits, so a paired K = 5 versus K = 7
+CV comparison is unavailable. The full-fit comparison above preserves the
+actual historical results rather than imputing missing K = 7 estimates.
+
+The actual selected CV process times, summed across folds and setups, were
+0.061, 0.182, 0.596, 1.348 and 2.255 hours at 10k, 25k, 50k, 100k and all
+CpGs. Smaller counts include PL only. The all-CpG two-setup CV completed
+below its 2.964-hour projection. These summed process times do not assume
+parallel speedup.
+
+### Methylation-only program check
+
+No PL program meets the methylation-only rule at K = 5. The only
+survival-active PL full-fit program is program 5 at 10k CpGs, with
+E[β] = 0.2639 and posterior SD 0.1313. It is active in only one of the five
+converged matched folds, below the required three. Its largest absolute score
+correlation with an expression program is 0.5957, above the required limit
+of 0.5. It fails both conditions. The smallest matched full-to-fold score
+correlation is 0.2122, so program correspondence is weak in at least one fold.
+The other PL full fits have no survival-active programs.
+
+The converged PE full fits at 100k and all CpGs also have no survival-active
+programs. Formal PE methylation-only classification remains undefined because
+the expression PE full fit capped. The three smaller methylation PE full fits
+also capped and received no CV. These unassessed cases are kept separate from
+the zero qualifying-program count in the assessable PL comparisons.
+
 ### Rebuild commands and implementation
 
 From the repository root:
@@ -484,6 +549,59 @@ written to `results/multimodal_real/outputs/methylation_single_modality_2026-11-
 
 The full regression suite passed 819 tests with zero failures. The focused
 rank-five rerun, original helper and iteration-extension tests also passed.
-Independent review found no blocker in the final expanded sweep and confirmed
-that the frozen child fitting functions match the reviewed implementation.
-The methylation sweep remains in progress at this checkpoint.
+The rerun fixture uses different PL and PE mean concordances, so a constant
+summary cannot satisfy the numerical check. Independent code review found no
+blocker in the expanded sweep and confirmed that the frozen child fitting
+functions match the reviewed implementation.
+
+The completed run exited with status zero. The final checkpoint audit verified
+57 distinct fits, all saved features and fold indices, rank five, risk scores
+from the stored program projections, every held-out concordance recomputed
+under the frozen Cox direction, the paired means and SEs, and the program rule.
+It also verified the actual-time eligibility screen and complete scheduled CV
+coverage. It found no fitting errors or fit warnings. The 12 capped fits are
+eight expression fits and four methylation fits, including three methylation
+full fits and one methylation CV fold.
+
+Aggregate evidence is in `full_fits.csv`, `cv_fits.csv`, `cv_summary.csv`,
+`programs.csv`, `fold_program_matching.csv` and `checkpoint_audit.csv` under
+`K05/`. `rank_comparison_full.csv` combines shared columns of the preserved
+K = 7 and K = 5 full-fit tables. `rerun_input_hashes.csv` records the saved
+design and parent runner hashes. No patient-level inputs, fits or scores were
+committed. No ICGC scoring was run in this follow-up.
+
+Independent final review found no substantive issue or blocker. It recomputed
+all 45 held-out concordances, the seven paired means and SEs, and every
+full-to-fold program assignment by independently enumerating the 120 possible
+rank-five permutations. It confirmed the program classifications, timing
+screen, source and input integrity, K = 7 preservation and aggregate-only
+outputs. The review used saved fits and process measurements rather than
+refitting models or remeasuring runtime and memory.
+
+## Text for the shared status files (K = 5)
+
+**Attempts log:** the matched-TCGA methylation comparison was repeated at K = 5
+on the same 144 patients, 75 events, five saved folds and 182,934 eligible
+probes. Andrew expanded the stopped K = 7 handoff to full fits at all five
+CpG counts, followed by the original per-count three-hour CV screen using
+measured K = 5 timings. All ten methylation full fits completed, with seven
+converged and three capped. All counts passed the timing screen. The 35
+scheduled methylation CV fits completed, with 34 converged and one capped.
+The expression reference contributed 12 fits. All 57 fits were audited, with
+no fit errors or warnings. The source snapshot and K = 7 results were preserved.
+
+**Findings:** mean PL methylation CV C was 0.545, 0.504, 0.511, 0.502 and
+0.520 across increasing counts, against 0.591 for expression. PE was 0.539
+at 100k and 0.512 at all CpGs, against 0.622 for expression. The paired SEs
+and convergence limits are in the findings table. No PL program met the
+methylation-only rule. The sole survival-active PL full-fit program, 10k
+program 5, was active in only one fold and correlated 0.596 with expression.
+PE full fits at the two CV-eligible setups had no survival-active programs,
+and formal uniqueness assessment is undefined because expression PE capped.
+
+**DECISIONS:** no model, prior or CpG count is adopted from this descriptive
+comparison. Normal β remains the specified prior. Expression convergence,
+pre-fold screening and imputation, and the small matched sample limit the
+interpretation. Reliable supervision still requires the registered recovery,
+false-active-program and convergence gate. Shared status files and the
+deferred K = 7 iteration-extension study were not changed.
