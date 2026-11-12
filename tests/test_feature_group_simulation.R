@@ -110,6 +110,68 @@ run_test("Feature-group simulation: arm inputs reject any changed data or initia
   }
 })
 
+#' Build a small prepared data set for arm-input regression checks.
+#' @return Prepared synthetic training and validation inputs.
+#' @examples
+#' \dontrun{fgsim_test_inputs()}
+fgsim_test_inputs <- function() {
+  data <- simulate_multimodal_yfb_data("low_variance_prognostic_factor",
+    n_train = 20L, n_validation = 12L, p_expression = 8L,
+    p_methylation = 10L, seed = 19L, truncate = FALSE)
+  fgsim_prepare(data, 19L)
+}
+
+run_test("Feature-group simulation: arms share joint starts and true risk", {
+  x <- fgsim_test_inputs()
+  arms <- fgsim_arm_inputs(x, 2L)
+  joint <- arms$grouped
+  expression <- arms$expression_only
+  idx <- which(x$groups == "expression")
+  assert_equal(joint, arms$pooled)
+  assert_equal(expression$Y, joint$Y[, idx, drop = FALSE])
+  assert_equal(expression$Y_validation, joint$Y_validation[, idx, drop = FALSE])
+  assert_equal(expression$EL_init, joint$EL_init)
+  assert_equal(expression$EF_init, joint$EF_init[idx, , drop = FALSE])
+  assert_equal(expression$training_center, joint$training_center[idx])
+  assert_equal(expression$groups, joint$groups[idx])
+  assert_near(as.vector(expression$g), as.vector(joint$g[idx] /
+    sqrt(sum(joint$g[idx]^2))), 1e-12)
+  assert_near(sqrt(sum(expression$g^2)), 1, 1e-12)
+  assert_near(joint$EL_init %*% t(joint$EF_init),
+    svd(x$Y, nu = 2L, nv = 2L)$u[, 1:2, drop = FALSE] %*%
+      diag(svd(x$Y, nu = 2L, nv = 2L)$d[1:2]) %*%
+      t(svd(x$Y, nu = 2L, nv = 2L)$v[, 1:2, drop = FALSE]), 1e-10)
+  expected <- frozen_reverse_cindex(x$eta_validation, x$time_validation,
+                                    x$event_validation)
+  for (arm in arms) {
+    assert_equal(arm$eta, x$eta)
+    assert_equal(arm$eta_validation, x$eta_validation)
+    assert_equal(fgsim_true_risk(arm), expected)
+  }
+  fgsim_assert_expression_inputs(joint, expression)
+})
+
+run_test("Feature-group simulation: true-risk concordance uses frozen validation risk", {
+  x <- fgsim_test_inputs()
+  expected <- frozen_reverse_cindex(x$eta_validation, x$time_validation,
+                                    x$event_validation)
+  assert_equal(fgsim_true_risk(x), expected)
+})
+
+run_test("Feature-group simulation: expression arm rejects mismatched inputs", {
+  arms <- fgsim_arm_inputs(fgsim_test_inputs(), 2L)
+  for (field in c("Y", "Y_validation", "time", "event", "time_validation",
+                  "event_validation", "EL_init", "EF_init", "training_center",
+                  "g", "groups", "eta", "eta_validation")) {
+    bad <- arms$expression_only
+    if (field == "groups") bad[[field]][1] <- "methylation" else
+      bad[[field]][1] <- bad[[field]][1] + 1
+    err <- tryCatch({ fgsim_assert_expression_inputs(arms$grouped, bad); NULL },
+                    error = identity)
+    assert_true(inherits(err, "error"), paste("changed", field, "must fail"))
+  }
+})
+
 run_test("Feature-group simulation: recovery uses signed match and posterior variance", {
   g <- c(0, 1, 2, 3, 4, 6)
   groups <- rep(c("rna", "meth"), each = 3)
@@ -139,13 +201,18 @@ run_test("Feature-group simulation: failed fits remain in gate denominator", {
   metrics <- data.frame(feature_ratio = rep(1, 10), methylation_active_fraction = rep(0.03, 10),
     arm = rep("grouped", 10), recovered = c(rep(TRUE, 8), FALSE, FALSE),
     false_active = c(rep(1, 9), NA), converged = c(rep(TRUE, 9), FALSE),
-    c_validation = c(rep(0.6, 8), NA, NA), error = c(rep("", 9), "failed"))
+    c_validation = c(rep(0.6, 8), NA, NA),
+    c_true_risk = c(rep(0.7, 9), NA), empty_blocks = c(rep(1L, 9), NA),
+    error = c(rep("", 9), "failed"))
   summary <- fgsim_gate(metrics)
   assert_equal(nrow(summary), 1L)
   assert_equal(summary$recovered, 8L)
   assert_equal(summary$converged, 9L)
   assert_equal(summary$c_defined, 8L)
   assert_near(summary$mean_c, 0.6, 1e-12)
+  assert_equal(summary$true_c_defined, 9L)
+  assert_near(summary$mean_true_c, 0.7, 1e-12)
+  assert_equal(summary$total_empty_blocks, 9L)
   assert_false(summary$passed)
   metrics$error[10] <- ""
   metrics$false_active[10] <- 1
@@ -165,7 +232,10 @@ run_test("Feature-group simulation: selection follows registered stop and compar
   assert_true(selected$step4_allowed)
   summary$passed <- c(FALSE, TRUE, FALSE, TRUE)
   selected <- fgsim_select(summary)
-  assert_false(selected$step4_allowed)
+  assert_equal(selected$selected_prior, "pooled")
+  assert_true(selected$step4_allowed)
+  summary$passed <- rep(FALSE, 4)
+  assert_false(fgsim_select(summary)$step4_allowed)
 })
 
 run_test("Feature-group simulation: grouped fits expose K priors per modality", {

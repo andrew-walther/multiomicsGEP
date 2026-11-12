@@ -358,6 +358,89 @@ run_test("Feature groups: unsupported posterior restart and pruning stop explici
   }
 })
 
+# Empty modality blocks ----
+
+#' A one-program fixture with signal only in expression
+#' @return Data and fixed fit controls for a real empty-block fit.
+#' @examples
+#' # fg_fit(fg_empty_fixture(), list(feature_group = rep(c("empty", "signal"), each = 12)))
+fg_empty_fixture <- function() {
+  set.seed(5112)
+  n <- 48L
+  l <- seq(-2, 2, length.out = n)
+  signal <- outer(l, seq(-2, 2, length.out = 12)) + matrix(rnorm(n * 12, sd = 0.05), n)
+  Y <- cbind(matrix(0, n, 12), signal)
+  event <- rexp(n, exp(0.4 * l)); censor <- rexp(n, 0.3)
+  list(Y = Y, time = pmin(event, censor), status = as.numeric(event <= censor),
+    args = list(K = 1L, max_iter = 1L, tol = 1e-12, prior_LF = "point_laplace",
+                prior_beta = "normal", canonicalize = TRUE, w_S = 1, verbose = FALSE))
+}
+
+run_test("Feature groups: empty modality retains the live program and a finite objective", {
+  d <- fg_empty_fixture()
+  observed <- fg_observe(d, rep(c("empty", "signal"), each = 12))
+  fit <- observed$fit
+  assert_true(all(fit$EF[1:12, 1] == 0))
+  assert_true(all(fit$EF2[1:12, 1] == 0))
+  assert_true(isTRUE(fit$prior_F$empty[[1]]$point_mass))
+  assert_true(any(fit$EF[13:24, 1] != 0))
+  assert_true(fit$empty_blocks["empty", 1] > 0)
+  assert_equal(fit$empty_blocks["signal", 1], 0L)
+  # Zero first and second moments imply q is exactly delta_0, so its KL to
+  # the returned delta_0 prior is independently zero.
+  assert_length(observed$calls, 2L)
+  scale <- tail(observed$scales, 1)[[1]]$scale
+  live_kl <- fg_loading_kl(observed$calls[[2]], fit$prior_F$signal[[1]], scale[1])
+  neg_kl <- sum(observed$kls) - live_kl
+  assert_near(sum(fit$neg_kl), neg_kl, 1e-8)
+  objective <- yf_canonical_elbo(d$Y, d$time, d$status, fit$EL, fit$EL2,
+    fit$EF, fit$EF2, fit$EBeta, fit$EBeta2, neg_kl = neg_kl, w_S = 1)
+  assert_near(tail(fit$history$elbo_full, 1), objective, 1e-7)
+})
+
+run_test("Feature groups: a refitted empty block removes the returned sweep moments", {
+  # A weak, nonzero pseudo-signal refits to delta_0 even though the incoming
+  # continuous slab gives a posterior with positive mean and variance.
+  n <- 20L; l <- seq(-1, 1, length.out = n)
+  Y <- cbind(outer(l, rep(0.01, 6)), outer(l, seq(2, 4, length.out = 6)))
+  groups <- list(empty = 1:6, signal = 7:12)
+  prior <- list(family = "point_laplace", pi = 0.5, rate = 2, point_mass = FALSE)
+  original <- multimodal_yfb_update_F_mk
+  calls <- list()
+  observer <- new.env(parent = environment(yf_update_F_groups))
+  #' Observe a real block sweep without altering its arithmetic
+  #' @param ... Original sweep arguments.
+  #' @return Original sweep result.
+  #' @examples
+  #' # Used by the local grouped updater below.
+  observer$multimodal_yfb_update_F_mk <- function(...) {
+    args <- as.list(match.call(original, expand.dots = TRUE))[-1L]
+    args <- lapply(args, eval, envir = parent.frame())
+    result <- original(...)
+    calls[[length(calls) + 1L]] <<- list(args = args, result = result)
+    result
+  }
+  updater <- yf_update_F_groups; environment(updater) <- observer
+  result <- updater(Y, rep(1, 12), l, l^2 + 0.1, Y, Y, rep(0, n),
+    rep(0, n), rep(0.3, 12), rep(0.2, 12), 0, 0,
+    list(empty = prior, signal = prior), groups, "point_laplace")
+  first <- calls[[1]]$result
+  assert_true(isTRUE(first$prior$point_mass), "the real refit must exercise collapse")
+  assert_true(any(first$EF2 > 0), "the sweep posterior must have mass to remove")
+  assert_true(any(first$EF != 0), "stale mean removal must be detectable")
+  assert_true(all(result$EF[1:6] == 0) && all(result$EF2[1:6] == 0))
+  assert_true(any(result$EF[7:12] != 0))
+  assert_equal(result$empty_blocks["empty"], c(empty = 1L))
+  expected_mean <- drop(Y[, 7:12] %*% rep(0.3, 6))
+  expected_variance <- drop(Y[, 7:12]^2 %*% rep(0.2 - 0.3^2, 6))
+  assert_near(calls[[2]]$args$EZ_k, expected_mean, 1e-12)
+  assert_near(calls[[2]]$args$VZ_k, expected_variance, 1e-12)
+  assert_near(result$EZ, drop(Y %*% result$EF), 1e-12)
+  assert_near(result$VZ, drop(Y^2 %*% pmax(result$EF2 - result$EF^2, 0)), 1e-12)
+  # The empty block adds zero, and the live block retains its corrected KL.
+  assert_near(result$kl, yf_group_loading_kl(calls[[2]]$result, prior), 1e-10)
+})
+
 if (sys.nframe() == 0L) {
   results <- report_results("Feature-group YFB")
   if (results$failed > 0L) quit(status = 1L)
