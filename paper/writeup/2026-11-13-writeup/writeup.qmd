@@ -547,8 +547,8 @@ training data (@sec-results-s15).
 
 The gene screen and the input scaling were compared with alternatives by five-fold training
 cross-validation on the folds of @sec-results-fair, using concordance within cohort. The current
-screen is the 2,218-gene set described in @sec-data. The alternative screen z-scores each cohort,
-quantile-normalizes the merged matrix and keeps the 2,000 genes of largest variance. Neither
+screen is the 2,218-gene set described in @sec-data. The alternative is a different preprocessing configuration, not
+only a different ranking rule. It z-scores each cohort, quantile-normalizes the merged matrix and keeps the 2,000 genes of largest variance. Neither
 screen uses outcomes, so each was computed once on all training patients, as in DeSurv. The
 alternative scalings divide each gene by its within-cohort standard deviation, with the Cox
 projection centered, or apply the within-patient rank transform of DeSurv followed by z-scores
@@ -699,8 +699,8 @@ point-exponential prior recovered the planted program at least as often, but it 
 fit in every cell, against a limit of one. In training cross-validation its within-cohort
 concordance was `r num(min(lf_real[pe_alt, "C"]))` to `r num(max(lf_real[pe_alt, "C"]))` across
 four input setups, against `r num(lf_real["PL", "C"])` for the current model, and no setup
-converged in more than `r max(lf_real[pe_alt, "conv"])` of 5 folds. These comparisons were
-awaiting independent review on November 12. Tables and details are in [Appendix D](#sec-appendix-d).
+converged in more than `r max(lf_real[pe_alt, "conv"])` of 5 folds. An independent review on
+November 12 confirmed these comparisons. Tables and details are in [Appendix D](#sec-appendix-d).
 
 ## Prior on the survival coefficients {#sec-week-beta}
 
@@ -811,10 +811,11 @@ from 7 to `r tcv_K`. No alternative screen or scaling was better than the curren
 within-cohort concordance. Concordance was flat from $K = `r tcv_K`$ to `r max(tcv_k$K)` and
 lower below $K = `r tcv_K`$, and the one-standard-error rule selected $K = `r tcv_K`$
 (@sec-results-rank). The external results in this version come from the $K = 7$ fit, which lies
-on the flat part of the curve. The working model now uses $K = `r tcv_K`$. At that rank the
+on the flat part of the curve. The working model now uses $K = `r tcv_K`$, adopted on one fold
+split. At that rank the
 point-exponential prior on expression divided by its within-cohort standard deviation still
-loses to the point-Laplace prior ([Appendix D](#sec-appendix-d)). These comparisons were awaiting independent
-review on November 12, 2026.
+loses to the point-Laplace prior ([Appendix D](#sec-appendix-d)). An independent review on
+November 12, 2026, confirmed these comparisons.
 
 ## External scoring of the fixed working model {#sec-week-external}
 
@@ -1117,12 +1118,12 @@ $K = `r tcv_K`$. Its five programs match Programs 1 to 5 of the $K = 7$ fit, wit
 correlations of 0.92 to 0.995, and the two programs dropped were not survival-active.
 Programs 2 and 5 stay survival-active. Programs 3 and 4 lie near the 1.96 threshold in both
 fits: Program 3 falls below it at $K = 5$ ($z$ from 3.0 to 1.5) and Program 4 rises above it
-($z$ from 1.9 to 2.4). The program classification is therefore repeated at $K = 5$. These
-comparisons were awaiting independent review on November 12, 2026.
+($z$ from 1.9 to 2.4). The program classification is therefore repeated at $K = 5$. An independent review on November 12, 2026,
+confirmed these comparisons.
 
 ```{r}
 #| label: tbl-inputs
-#| tbl-cap: "Training cross-validation of the gene screen and input scaling at rank 7 (five folds). Concordance counts only pairs of patients from the same cohort, so the reported fit's value differs from the mean fold concordance in @tbl-cv. Differences are paired over folds. Convergence is within 300 sweeps. Awaiting independent review on November 12, 2026."
+#| tbl-cap: "Training cross-validation of the gene screen and input scaling at rank 7 (five folds). Concordance counts only pairs of patients from the same cohort, so the reported fit's value differs from the mean fold concordance in @tbl-cv. Differences are paired over folds. Convergence is within 300 sweeps. Independently reviewed on November 12, 2026."
 kable(data.frame(Input = unname(tcv_inputs), Genes = big(tcv_genes),
   `Mean C (SE)` = paste0(num(tcv_in[, "mean"]), " (", num(tcv_in[, "se"]), ")"),
   `Difference from reported fit (SE)` = c("", paste0(sgn(tcv_in[tcv_alt, "diff"]), " (",
@@ -1133,7 +1134,7 @@ kable(data.frame(Input = unname(tcv_inputs), Genes = big(tcv_genes),
 
 ```{r}
 #| label: tbl-rank
-#| tbl-cap: "Training cross-validation of the rank on the current screen with z-scores within cohort (five folds). Concordance counts only pairs within cohort. Differences from K = 7 are paired over folds. Convergence is within 300 sweeps. Survival-active programs are counted in the fit to all training patients. The one-standard-error rule selects the smallest K whose mean C reaches the best mean minus its SE. Awaiting independent review on November 12, 2026."
+#| tbl-cap: "Training cross-validation of the rank on the current screen with z-scores within cohort (five folds). Concordance counts only pairs within cohort. Differences from K = 7 are paired over folds. Convergence is within 300 sweeps. Survival-active programs are counted in the fit to all training patients. The one-standard-error rule selects the smallest K whose mean C reaches the best mean minus its SE. Independently reviewed on November 12, 2026."
 kable(data.frame(K = tcv_k$K,
   `Mean C (SE)` = paste0(num(tcv_k$mean_C_within), " (", num(tcv_k$se_C_within), ")"),
   `Difference from K = 7 (SE)` = ifelse(tcv_k$K == 7, "",
@@ -1538,8 +1539,8 @@ places rank 7 on the flat part of its concordance curve (@sec-results-rank). Bec
 external series informed these choices first, the external results still describe a model
 whose setup those cohorts helped choose. The training comparison used one split into
 folds. The registered protocol repeats the split with more seeds when comparisons are close,
-and the plateau from $K = `r tcv_K`$ to `r max(tcv_k$K)` is that case, but the repetition was
-not run. The PACA-AU array and RNA-seq records both contribute to
+and the plateau from $K = `r tcv_K`$ to `r max(tcv_k$K)` and the screen comparison are that case. The
+repetition with four more seeds was running on November 12. The PACA-AU array and RNA-seq records both contribute to
 the pooled estimate. The donor bootstrap and the donor-clustered HR intervals account for their shared donors
 while retaining both series in the estimand. DeSurv used its published settings rather than a
 new search on our training folds. `r nrow(ff) - cv_conv` of `r nrow(ff)` supervised training folds stopped at the sweep cap. In simulation the coefficients at $w_S = 1$ are
@@ -1651,8 +1652,9 @@ kable(wide_risk, row.names = FALSE)
 
 # Appendix D. Sensitivity to the priors {#sec-appendix-d .unnumbered}
 
-These two comparisons were completed on November 12, 2026, and were awaiting independent review
-on that date. Their registered criteria and full results are in
+These two comparisons were completed and independently reviewed on November 12, 2026. Both
+use rank 7, the rank of the reported fit, and are comparisons between priors, not tests of
+each prior against an absolute standard. Their registered criteria and full results are in
 `docs/findings/2026-11-12-lf-prior-comparison-findings.md`,
 `docs/findings/2026-11-12-lf-prior-followup-findings.md` and
 `docs/findings/2026-11-12-beta-prior-comparison-findings.md`.
@@ -1682,7 +1684,7 @@ had at most `r lf_pl_big_max` in any fit. Near the threshold both priors exceede
 
 ```{r}
 #| label: tbl-lf-prior-sim
-#| tbl-cap: "Point-Laplace and point-exponential priors on the scores and loadings in simulation at 2,000 genes. Entries give point-Laplace first and point-exponential second. Recovered and converged are counts of datasets. False-active is the mean number of false-active programs per fit. Validation C and the calibration slope are medians over datasets. The 0.05% cell is the strong-survival cell of the near-threshold simulation. Awaiting independent review on November 12, 2026."
+#| tbl-cap: "Point-Laplace and point-exponential priors on the scores and loadings in simulation at 2,000 genes. Entries give point-Laplace first and point-exponential second. Recovered and converged are counts of datasets. False-active is the mean number of false-active programs per fit. Validation C and the calibration slope are medians over datasets. The 0.05% cell is the strong-survival cell of the near-threshold simulation. Independently reviewed on November 12, 2026."
 pair_cell <- function(a, b, d) paste(num(a, d), num(b, d), sep = " / ")
 kable(data.frame(`Planted share` = unname(cell_share),
   Recovered = paste(lf_pl$recovered, lf_pe$recovered, sep = " / "),
@@ -1702,7 +1704,9 @@ deviation of 1. In every fold one program's scores correlated at least
 membership, and no program was survival-active. Three further setups removed or absorbed that
 difference. Cohort strata center the projection and the baseline hazard within each cohort. A
 shifted z-score adds to each gene's z-scores a constant equal to minus their minimum over the
-`r prior_n_train` patients, so the input is nonnegative and both cohorts have the same gene means.
+`r prior_n_train` patients, so the input is nonnegative and both cohorts have the same gene means. The shift constants use
+all training patients, held-out folds included, and they enter the reconstruction, so a refitted
+model can change with them.
 The within-patient rank transform used by DeSurv ranks the genes within each patient and divides
 each gene's ranks by their within-cohort standard deviation. Each setup recovered part of the
 lost concordance, but all stayed below point-Laplace by more than one standard error, and no
@@ -1712,14 +1716,17 @@ unshifted point-exponential fit, with `r num(min(lf_sz$mean_false_active), 1)` t
 `r num(max(lf_sz$mean_false_active), 1)` false-active programs per fit. Under strata the programs
 still correlate `r num(lf_real["PES", "cohort_cor"])` with cohort membership, so they still
 separate the two cohorts, and the strata absorb that offset only in the survival model. The
-point-Laplace prior is kept. At rank `r tcv_K`, the rank selected in @sec-results-rank, the
+programs keep the loading directions of the unstratified fit, with larger column norms. The
+point-Laplace prior is kept as the better of the two. It is not free of the same problems:
+near the detection threshold it averaged 3.0 false-active programs per fit, and it converged
+in 3 of 5 training folds. At rank `r tcv_K`, the rank selected in @sec-results-rank, the
 point-exponential prior on expression divided by its within-cohort standard deviation gave
 within-cohort concordance `r num(tcv_a$mean_C_within_PE)` against
 `r num(tcv_a$mean_C_within_PL)` for point-Laplace.
 
 ```{r}
 #| label: tbl-lf-prior-real
-#| tbl-cap: "Priors on the scores and loadings in five-fold training cross-validation. Concordance counts only pairs of patients from the same cohort. The difference from the current model is paired over folds, with its standard error. Convergence is within 300 sweeps. Survival-active programs are the range over folds. Cohort correlation is the largest absolute correlation of a program's training scores with cohort membership over folds. Under strata the cohort offset is absorbed by the stratified baseline hazard. Awaiting independent review on November 12, 2026."
+#| tbl-cap: "Priors on the scores and loadings in five-fold training cross-validation. Concordance counts only pairs of patients from the same cohort. The difference from the current model is paired over folds, with its standard error. Convergence is within 300 sweeps. Survival-active programs are the range over folds. Cohort correlation is the largest absolute correlation of a program's training scores with cohort membership over folds. Under strata the cohort offset is absorbed by the stratified baseline hazard. Independently reviewed on November 12, 2026."
 lf_lab <- c(PL = "Point-Laplace, z-scores within cohort (current model)",
             PE = "Point-exponential, divided by within-cohort SD",
             PES = "Point-exponential, divided by within-cohort SD, cohort strata",
@@ -1770,7 +1777,7 @@ program alone when that program was clear. Near the threshold it was
 
 ```{r}
 #| label: tbl-beta-prior
-#| tbl-cap: "Coefficient priors in simulation at 2,000 genes and in five-fold training cross-validation. Point-Laplace priors on the scores and loadings throughout. Simulation entries give the planted programs recovered and the mean number of false-active programs per fit. Every simulated fit converged. Training concordance counts pairs within cohort, and the difference from the Normal prior is paired over folds. Awaiting independent review on November 12, 2026."
+#| tbl-cap: "Coefficient priors in simulation at 2,000 genes and in five-fold training cross-validation. Point-Laplace priors on the scores and loadings throughout. Simulation entries give the planted programs recovered and the mean number of false-active programs per fit. Every simulated fit converged. Training concordance counts pairs within cohort, and the difference from the Normal prior is paired over folds. Independently reviewed on November 12, 2026."
 stopifnot(isTRUE(all.equal(b_cells$B_PN$mean_false_active[2], b_cells$B_PLAP$mean_false_active[2])),
           isTRUE(all.equal(b_pn_incl[["s9_1pct"]], b_pn_incl[["s9_5pct"]])))
 sim_rows <- t(sapply(names(b_arms), function(a)
