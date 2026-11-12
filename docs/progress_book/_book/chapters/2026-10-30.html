@@ -238,6 +238,12 @@ window.Quarto = {
  <span class="menu-text"><span class="chapter-number">14</span>&nbsp; <span class="chapter-title">November 6, 2026</span></span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/2026-11-13.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">15</span>&nbsp; <span class="chapter-title">November 13, 2026</span></span></a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -291,6 +297,7 @@ window.Quarto = {
 <li><p><strong>The registered supervision gate failed.</strong> Recovery, false survival activity and convergence are evaluated together, even when a loading resembles the planted program. Real-data model selection remains conditional on passing the simulation gate. No new external cohort was scored.</p></li>
 <li><p><strong>The existing comparator provides a recovery control.</strong> In the weakest large-feature cell it recovers the planted program in 10 datasets, with mean false-active count 1.000 and 10 converged fits. The corrected simulation permits recovery under that comparator.</p></li>
 </ul>
+<p><strong>Update, November 4.</strong> The gate above was run on the new opt-in fitter. A later registered test of the canonical fitter’s survival weight on the same corrected grid, with the centered input that fitter expects, passed the gate at weight 1. The November 6 chapter reports it.</p>
 </section>
 <section id="where-the-project-stands" class="level2" data-number="13.2">
 <h2 data-number="13.2" class="anchored" data-anchor-id="where-the-project-stands"><span class="header-section-number">13.2</span> Where the project stands</h2>
@@ -566,13 +573,13 @@ window.Quarto = {
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <colgroup>
-<col style="width: 1%">
-<col style="width: 3%">
-<col style="width: 22%">
-<col style="width: 27%">
+<col style="width: 0%">
+<col style="width: 2%">
+<col style="width: 19%">
 <col style="width: 23%">
-<col style="width: 14%">
-<col style="width: 7%">
+<col style="width: 20%">
+<col style="width: 22%">
+<col style="width: 10%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -592,8 +599,8 @@ window.Quarto = {
 <td style="text-align: left;">Survival does not shape the gene loadings F; the fitted model behaves as matrix factorization followed by Cox.</td>
 <td style="text-align: left;">Reconstruction precision sums over n×p entries and Cox over the events, so survival supplies 10^-6 to 10^-4 of the loading precision on real data. Weighting survival up to an equal share (about 10^4) breaks convergence in the current code.</td>
 <td style="text-align: left;">Scale the Cox working weights by a balance factor γ and add the pieces that should keep a strongly weighted fit stable: damping, a non-collapsing β prior, a survival-informed start, sparse nonnegative priors.</td>
-<td style="text-align: left;">partial stability improvement in targeted cases; scientific recovery/false-active gate unresolved</td>
-<td style="text-align: left;">Registered simulation summaries and gate tables</td>
+<td style="text-align: left;">resolved in simulation (2026-11-04): the canonical fitter at survival weight 1 on centered input passes the registered gate at 2,000 genes; real-data training CV registered</td>
+<td style="text-align: left;">Registered simulation summaries and gate tables; survival-weight grid gate and summary tables (2026-11-04)</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">1</td>
@@ -655,8 +662,8 @@ window.Quarto = {
 <td style="text-align: left;">Large survival weights can make several unmatched factors appear prognostic.</td>
 <td style="text-align: left;">Large likelihood weights increase conditional coefficient precision; mixed and survival-only directions may appear active without recovered expression programs.</td>
 <td style="text-align: left;">Assess the registered false-active criterion; a different uncertainty model requires a new statistical decision.</td>
-<td style="text-align: left;">large-weight false activity reproduced under exact Gaussian working posterior; weighting decision remains</td>
-<td style="text-align: left;">Paired recovery and false-active tables</td>
+<td style="text-align: left;">at weight 1, mean false-active is at most 0.9 at 2,000 genes; weights of 10 and above raise false activity, and coefficients at weight 1 are overconfident (calibration slope 0.18 to 1.20); tempering calibration is the open follow-up</td>
+<td style="text-align: left;">Paired recovery and false-active tables; survival-weight grid calibration table (2026-11-04)</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">1</td>

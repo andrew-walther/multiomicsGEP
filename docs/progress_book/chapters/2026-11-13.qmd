@@ -2,25 +2,354 @@
 
 This chapter covers the week of November 9–13. The plan for the week is
 [`docs/plans/2026-11-09-week-plan.md`](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/plans/2026-11-09-week-plan.md).
-Sections are filled in as each result is reviewed.
+It starts with the decision to use the external cohorts only for scoring and the two
+design decisions of November 12, then the housekeeping completed early in the week, then
+the six analyses in the order they decide the working model. Each analysis section gives
+its question and design. Results are added once they are independently reviewed, and
+until then the section is marked in progress.
 
 ## Executive summary
 
 To be written once the week's results are reviewed.
 
-## Tuning on training data only
+<!-- RESULT (executive summary): working model at the end of the week (L/F prior, beta prior,
+gene screen, input scaling, rank), whether any of A, B or F changed it, and the one external
+scoring of the fixed model. -->
 
-External cohorts now score a fixed model and are not used to choose between models or
-settings, following the protocol DeSurv used on the same cohorts.
+## External cohorts are used only to score a fixed model
+
+On November 9 Andrew decided that every modeling choice is made by simulation and by
+five-fold cross-validation on the 273 TCGA and CPTAC training patients, or on the matched
+TCGA patients for methylation. This covers preprocessing, gene screening, priors, rank,
+survival weight and the tuning of comparators. The five external expression series (Dijk,
+Moffitt, PACA-AU array, PACA-AU RNA-seq and Puleo) and the matched ICGC methylation set
+only score a model that is already fixed. Their results can be presented, but they never
+choose between models or settings.
+
+Several earlier choices did use external outcomes, as listed in the
+[external-cohort audit](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-06-external-cohort-uses.md).
+Three of them still shape the working model: the gene screen (D4, chosen on external
+concordance in May), per-cohort standardization without a rank transform (May), and the
+rank of seven (first chosen by training CV, later kept partly on external concordance in
+July and August). These three are redone on training data this week. The other listed
+choices, such as the historical β prior, cohort indicators and the loading supervision
+weight α~F~, have since been replaced by choices made on training data or by simulation.
+
+External scoring can be run at any time for reporting, since it never feeds back into a
+choice. This week it runs once, after the methods work, on the working model as fixed by
+the prior comparisons and the training-CV redo, so that the writeup and Chapter 4 report
+simulation, training CV and external results for the same model.
+
+**No held-out portion of the training data.** A fixed hold-out would act as a sealed test
+set, but it would be too small to be useful. In the November 4 training CV the fold
+concordances had an SE of 0.024, which implies a standard deviation of about 0.05 for one
+fold of about 55 patients. A 20% hold-out would estimate concordance with about that SE,
+while the differences between the settings compared this week have been 0.002 to 0.01, and
+it would remove a fifth of the patients from every fit. Choices therefore use five-fold CV
+on all 273 patients, with folds balanced by cohort and event. A paired comparison counts as
+close when the difference is within one SE, and the split is then repeated with four more
+seeds.
+
+### How DeSurv used the same cohorts
+
+DeSurv (Young et al. 2026) trained on TCGA and CPTAC pooled and chose every hyperparameter
+(rank k, α, λ, ξ and the number of top genes) by maximizing five-fold cross-validated
+concordance inside the training data, with the one-SE rule for k. It states that no
+validation cohort data were used at any stage of tuning, and it held out no part of the
+training data. Its folds are described only as dividing subjects into folds, so whether
+they were balanced by cohort is not stated. The five external cohorts were used once, to
+score the final model by projection, with the external data standardized by the training
+mean and SD. Pooled external Cox models and log-rank tests were stratified by dataset. Two
+external analyses over a grid were run after selection and reported as sensitivity
+analyses, not used for choice: a table of adjusted external p-values over k and α, and the
+external concordance curve over k. The risk-group cutpoint was chosen by training CV and
+applied unchanged to the external cohorts. Our November external comparisons followed the
+same pattern, so this week's rule matches DeSurv's protocol.
+
+## Decisions of November 12
+
+**Pooled training data without strata.** The week plan had the prior comparison fit both
+arms with cohort strata, which give TCGA and CPTAC separate baseline hazards and center the
+Cox projection within cohort. Stratified fitting was added on November 6 but has not been
+evaluated on real data, while the working model and every current result built on it pool
+the 273 patients after z-scoring each cohort. To avoid taking on that risk this week,
+Andrew decided that the prior comparison fits both arms pooled, without strata. The
+point-Laplace arm is then the working model itself. The point-exponential arm keeps each
+cohort's mean level, so part of a patient's score could reflect cohort membership. To keep
+that from raising its apparent accuracy, the primary CV metric for both arms is
+within-cohort concordance, which counts only TCGA–TCGA and CPTAC–CPTAC pairs and pools them
+by pair count. Pooled concordance is reported beside it, and each program's correlation
+with the cohort label is recorded. A stratified version of the model is a later follow-up.
+
+**Which CpG sites enter the methylation fit.** The 10,000-CpG screen used so far was a
+prototype setting, not a decision. Eligible sites are those with mean methylation level
+between 0.1 and 0.9 on the TCGA training patients, 182,934 of the 305,352 probes, which
+removes sites that are almost always methylated or almost always unmethylated. Within that
+set, sites are ranked by variance, and the study fits the top 10,000, 25,000, 50,000 and
+100,000 and all 182,934. Both screens use no outcomes and are computed once before the
+folds. Each count is fitted under both prior setups of the prior comparison, with a Normal
+β prior. A full fit at each count is timed first, and five-fold CV runs only for counts
+that converge.
+
+Both decisions are recorded in
+[DECISIONS.md](https://github.com/andrew-walther/multiomicsGEP/blob/main/DECISIONS.md)
+under November 12.
+
+## Completed this week
+
+These items were finished and independently reviewed between November 10 and 11. Their
+commits and the evidence for each are in the
+[housekeeping handoff](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/reviews/2026-11-11-housekeeping-and-cv-handoff.md).
+
+- **Review of the October 30 Gemini material.** Every issue, diagnosis and suggestion in
+  the two specifications and eight screenshots was listed once, with the problem it bears
+  on, what the project already did about that problem, and whether the idea adds anything
+  ([findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-10-gemini-advice-findings.md)).
+  The table has 33 ideas. None is adopted. The ideas kept for later are tests of
+  scale invariance and modality balance in the multimodal fit, a coherent fixed-posterior
+  update for the point-exponential prior if that prior fails to converge, and a
+  distinction between anchored and bounded residual precision in instability studies. The
+  two specifications are preserved in `docs/reviews/`, and the source folder was deleted
+  with Andrew's approval.
+- **README.** The top-level README was shortened to 107 lines with no internal study
+  labels. Every removed topic is recorded in a
+  [content ledger](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-10-readme-cleanup-findings.md)
+  with where it now lives.
+- **Inventory of scripts and results.** 204 scripts, 251 result and exhibit locations and
+  82 Quarto and R Markdown sources are listed with what each produces and where
+  ([findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-11-results-inventory-findings.md)).
+- **Branch cleanup.** After Andrew approved the table, 33 local and 14 remote branch names
+  were removed. Every tip is preserved on `main` or under an archive tag. `main`, the
+  publishing branch and the standalone rebuild branch remain
+  ([findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-11-branch-review-findings.md)).
+- **Cross-validation folds balanced by cohort and event.** The fold generator and four CV
+  helpers can now balance folds by cohort as well as event status, with a check that every
+  training fold contains both cohorts. An independent review approved this option and the
+  earlier change that scores concordance within strata using each training fold's
+  projection centers
+  ([review](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/reviews/2026-11-11-stratified-cv-independent-review.md)).
+  The full test suite passed with 801 tests after the later pilot.
+- **Design for keeping results current, and a local pilot.** The
+  [design note](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/plans/2026-11-11-results-rebuild-design.md)
+  proposes that every result come from runner scripts that call the same fit and predict
+  functions, with each output recording the commit and fitter options that produced it,
+  and reruns writing to new dated folders instead of overwriting. It assigns each of the
+  204 scripts a proposed role. A small pilot on synthetic data tested the workflow: a clean
+  checkout set up, built and cataloged the results, both aggregate tables reproduced byte
+  for byte, and an unchanged rebuild skipped every step
+  ([findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-11-local-results-pilot-findings.md)).
+- **Early benchmark files moved to an archive folder.** 110 early figures and 157 tables
+  moved to `results/history/early-benchmarks/`, with a manifest of all 267 files and
+  matching hashes before and after
+  ([findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-11-early-benchmark-migration-findings.md)).
+  Current results and checkpoints did not move.
 
 ## Priors on the loadings and scores
 
+**Question.** On nonnegative input with the Cox projection centered, does a
+point-exponential prior on L and F recover a planted prognostic program, with controlled
+false activity and convergence, at least as well as the current point-Laplace fit on
+z-scored input? On the training data, does it predict as well under cross-validation?
+
+**Why it was reopened.** The project set out to fit a nonnegative factorization, as DeSurv
+does, so that each program is an additive set of genes and each patient a nonnegative mix
+of programs. Point-Laplace replaced point-exponential on October 15 because, on z-scored
+input, the point-exponential fit collapsed to zero programs in 6 of 10 test datasets. The
+November 6 option that centers only the Cox projection keeps the input nonnegative and
+removes the term that shrank β to zero, so a like-for-like comparison is now possible.
+
+**Design.** Both arms use the canonical fitter with `w_S = 1`, a Normal β prior, K = 7, no
+pruning, at most 300 sweeps and tolerance 10^−5^. The point-Laplace arm is the working
+model on z-scores within cohort. The point-exponential arm divides each gene by its
+within-cohort SD without centering and centers the Cox projection. The simulation uses the
+three planted variance shares of the fixed-weight study (0.25%, 1% and 5%) and the
+near-threshold cell (0.05% with strong survival), 10 datasets each, with planted L and F
+drawn from exponential distributions so the truth favors neither prior. The training data
+use the five cohort- and event-balanced folds, pooled without strata.
+
+**Decision rule.** Point-exponential is adopted only if, in every cell, its recovery is at
+least point-Laplace's minus one of ten, it averages at most one false-active program per
+fit, and at least 9 of 10 fits converge, and if its within-cohort CV concordance is no
+lower than point-Laplace's by more than one SE of the paired difference, with every fold
+converged.
+
+**Result.** In progress.
+
+<!-- RESULT (L/F priors): recovery, mean false-active and converged counts per cell for each
+arm; mean within-cohort and pooled CV C per arm, paired difference with SE, folds converged,
+survival-active programs, program correlation with the cohort label; decision. Source:
+docs/findings/2026-11-12-lf-prior-comparison-findings.md once independently reviewed. -->
+
 ## Prior on the survival coefficients
+
+**Question.** Under the L/F prior chosen above, should the working model use a Normal,
+point-Laplace or point-normal prior on β?
+
+**Background.** The October 15 training CV compared point-Laplace with Normal only (mean C
+0.651 and 0.653) and concluded that the point-Laplace choice stood. The November 4 fit then
+used Normal, and the working model has used it since without a decision entry. A dated
+correction is needed whatever the result. Point-normal set every β to zero before scores
+were standardized, which may no longer happen now that β is on the standardized-score
+scale.
+
+**Design.** Three arms that differ only in the β prior, with the same simulation cells and
+training folds as the L/F comparison. For point-normal, each program's posterior inclusion
+probability is recorded, since replacing the activity cutoff with that probability depends
+on it.
+
+**Decision rule.** A sparse prior replaces Normal if it meets the L/F comparison's recovery,
+false-activity and convergence rules in every cell, has a validation calibration slope
+closer to 1 than Normal in at least two of the four cells, and has CV concordance no lower
+than Normal's by more than one SE. If both sparse priors qualify, the one with fewer
+false-active programs is chosen. A fit that sets every β to zero is reported as a failure.
+
+**Result.** In progress.
+
+<!-- RESULT (beta prior): per-cell recovery, false-active, convergence and calibration slope
+for the three arms; paired CV C differences with SE; survival-active counts; point-normal
+inclusion probabilities; decision and the DECISIONS.md correction. -->
 
 ## Methylation alone
 
+**Question.** Fitted to methylation alone, does the single-modality model find prognostic
+programs that the expression fit does not? Such programs would motivate the multimodal
+model. If methylation adds nothing, the case for the multimodal model rests on
+interpretation.
+
+**Design.** The matched TCGA patients with expression, methylation and survival (up to 150
+before survival filtering), with the CpG sites described under the November 12 decisions.
+Each CpG count is fitted under both prior setups with a Normal β prior. The comparator is an
+expression fit with the D4 genes on the same patients and folds. A methylation program
+counts as new if its patient scores correlate below 0.5 in absolute value with every
+expression program and it is survival-active in the full fit and in at least three of five
+folds. The fixed fits are scored once on ICGC.
+
+**Decision rule.** None. The fit should converge in the full fit and in at least four of
+five folds. With about 150 patients the CV estimates are noisy, so the concordance
+comparison is descriptive. Earlier methylation-only fits under the old multimodal fitter
+reached the sweep limit at 10,000 CpGs and failed at 25,000. If this fit also fails to
+converge, the failure is reported and the fits are saved for later diagnosis.
+
+**Result.** In progress.
+
+<!-- RESULT (methylation alone): fit time and convergence at each count and setup; CV C for
+methylation and for expression on the same patients; number of methylation-only programs;
+ICGC scores of the fixed fits. -->
+
+## One fitter for several data types
+
+**Question.** Can one fitter with shared scores L and a separate loading matrix F~m~ and
+prior for each data type fit expression alone, methylation alone or both, and so replace
+the single-modality fitter? Does the joint fit add prognostic or interpretive information
+over each data type alone?
+
+**Design.**
+
+1. The fitter's M = 1 path must reproduce the single-modality canonical fit. The test was
+   written before the code and does not depend on the prior comparisons.
+2. The multimodal fitter's KL helpers are checked against the two November 6 KL fixes (the
+   scalar-precision normalizer and the exactly flat β likelihood), or replaced with the
+   shared helpers.
+3. A two-modality simulation plants programs in each data type and one shared prognostic
+   program, and checks whether methylation, with more features, dominates L.
+4. On the matched TCGA patients, expression alone, methylation alone and both are fitted
+   with the same folds as the methylation-alone study.
+
+**Decision rule.** Step 1 passes if E[L], E[F], E[β] and the final ELBO agree with the
+single-modality fit to a relative tolerance of 10^−6^ on two fixtures, one of them
+stratified. Step 3 requires recovery of the shared program in at least 8 of 10 seeds, a
+mean of at most one false-active program and at least 9 of 10 converged fits. Step 4 is
+descriptive.
+
+**Result.** In progress.
+
+<!-- RESULT (M-modality fitter): step 1 largest relative difference per quantity and fixture;
+step 2 outcome; step 3 recovery, false-active and convergence; step 4 CV C for the three fits
+and programs that appear only in the joint fit. -->
+
 ## LB and YFB compared
+
+**Question.** With the same input and priors, how do the two survival parameterizations
+differ in prediction and in what their programs mean? LB puts the latent scores in the
+hazard, η = Lβ. YFB puts the projection of the data on the loadings in the hazard,
+η = (YF)β.
+
+**Interpretation to aim for.** DeSurv factors X ≈ WH with nonnegative gene weights W and
+scores a patient by Z = W′X, a weighted sum of gene levels. In YFB, F plays the role of W
+and YF is that projection score. In LB, L is the factor-model score itself, the posterior
+of each patient's program activity given all programs at once. Since Y ≈ LF′, YF ≈ L(F′F)
+up to noise, so YF mixes the latent scores through the overlap between programs, and the
+two coincide only when programs share no genes. A new patient needs only Y~new~F under YFB,
+but LB has to solve for L~new~ under the stored priors (fold-in).
+
+**Design.** Both models get the identical input matrix, priors, starting values, K = 7 and
+folds. The runner builds the input once, passes the same object to both fitters, and stops
+if the two inputs differ. The simulation uses the prior-comparison cells and the November 6
+matched-comparison settings at w = 1 and 10. On the training data, LB's held-out folds are
+scored by fold-in and YFB's by projection, the same contrast as on an external cohort.
+Program content is compared from one fit per model on all 273 patients: top genes, overlap
+with each other and with DeSurv's programs, and the correlation between L~k~ and (YF)~k~.
+The two fixed models are scored on the five external series as a description.
+
+**Decision rule.** Descriptive, unless one model fails the recovery, false-activity or
+convergence rule in a cell where the other passes. The failing model is then not carried
+forward.
+
+**Result.** In progress.
+
+<!-- RESULT (LB vs YFB): simulation recovery, false-active, convergence and validation C per
+cell; paired training CV C difference with SE; program overlap; correlation of the two linear
+predictors and of matched program scores; external scores of both fixed fits; the
+interpretation paragraph. -->
 
 ## Earlier choices redone on training data
 
+**Question.** Do the gene screen, the input scaling and the rank still hold when they are
+chosen from training data alone?
+
+**Design.**
+
+1. **Gene screen.** The D1 to D5 screens are compared by five-fold training CV. They use no
+   outcomes, so each is computed once on all 273 patients before the folds, as DeSurv did.
+2. **Input scaling.** z-scores within cohort, X/sd within cohort and DeSurv's
+   within-patient rank transform are compared under the chosen prior. One further arm,
+   added on November 11, keeps the factorization nonnegative: genes are ranked within each
+   patient, each gene's ranks are divided by their within-cohort SD, and the fit uses
+   point-exponential priors with the Cox projection centered. It is compared with the
+   current z-scored point-Laplace input.
+3. **Rank.** K = 2 to 12 by five-fold training CV with the one-SE rule, as DeSurv chose its
+   rank. Without pruning the fit keeps every column, so CV chooses the fitted rank. The
+   number of programs with nonzero loadings and of survival-active programs is reported at
+   each K.
+
+**Decision rule.** Descriptive. Each choice is reported with its CV curve and the one-SE
+selection. A choice that changes is adopted for new work and recorded in DECISIONS.md. If
+the screen or K changes, the L/F prior comparison's training CV is rerun once at the new
+setting. Results already reported, such as the November external scores, stay on record
+labeled with the model state that produced them.
+
+**Result.** In progress.
+
+<!-- RESULT (training-CV redo): gene screen CV C per screen with SE and one-SE choice; input
+scaling CV C per input with SE, live and survival-active programs, convergence, mean-level
+check, and the rank-transform point-exponential arm; rank CV curve over K = 2 to 12 with
+nonzero and survival-active counts and the one-SE choice; any DECISIONS.md change. -->
+
+## External scoring of the fixed working model
+
+Planned once the prior comparisons and the training-CV redo have fixed the working model.
+
+<!-- RESULT (external scoring): model state scored (priors, screen, scaling, K), C per series
+with intervals, pooled paired difference against the two-step fit with record and donor
+intervals, calibration slopes. -->
+
 ## Open items
+
+- Independent review of every result before it enters this chapter, Chapter 4 or the
+  writeup.
+- A stratified version of the model, with a scale-robust rule that tells a genomics-only
+  program from a collapsed one.
+- Pruning stays set aside. The full-posterior pruning rerun is revisited only if the
+  CV-chosen rank is unstable across folds or seeds.
+- Stable fits at large survival weights remain the main methods problem and are not part
+  of this week.
