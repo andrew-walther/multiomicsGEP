@@ -493,8 +493,11 @@ meth_aud  <- rdm("checkpoint_audit.csv")
 meth_cv   <- rdm("cv_summary.csv")
 meth_full <- rdm("full_fits.csv")
 meth_cvf  <- rdm("cv_fits.csv")
-meth_prog <- rdm("programs.csv")
+meth_prog <- rdm("programs_iteration1000.csv")
 meth_expr <- rdm("expression_summary.csv")
+# Expression fits that stopped at 300 sweeps were restarted with a 1,000-sweep limit.
+meth_x1k  <- rdm("expression_iteration1000.csv")
+meth_cv1k <- rdm("cv_summary_iteration1000.csv")
 meth_all  <- rbind(meth_full, meth_cvf)
 stopifnot(nrow(meth_aud) == 1, meth_aud$K == 5, all(meth_all$K == 5),
           nrow(meth_all) == meth_aud$checkpoints_checked,
@@ -509,6 +512,47 @@ meth_min <- function(a) meth_full$process_seconds[meth_full$modality == "methyla
 meth_pe_capped <- meth_full$count[meth_full$modality == "methylation" & meth_full$arm == "PE" & !meth_full$converged]
 meth_act <- subset(meth_prog, full_survival_active)
 stopifnot(nrow(meth_act) == 1)
+# 1,000-sweep expression reference: every fit converges, the rerun fits reproduce
+# their first 300 ELBO values, and the fold means match the CV summary.
+meth_rr <- subset(meth_x1k, rerun)
+meth_x1k_C <- tapply(meth_x1k$C[meth_x1k$fold > 0], meth_x1k$arm[meth_x1k$fold > 0], mean)
+stopifnot(nrow(meth_x1k) == nrow(meth_ex), all(meth_x1k$status == "converged"),
+          all(meth_x1k$warning_count == 0), all(meth_rr$baseline_status == "capped"),
+          nrow(meth_rr) == sum(!meth_ex$converged), all(meth_rr$prefix_relative_elbo_error == 0),
+          all(meth_cv1k$expression_converged_folds == 5),
+          all(abs(meth_cv1k$expression_mean_C_1000 - meth_x1k_C[meth_cv1k$arm]) < 1e-12),
+          all(meth_cv1k$methylation_mean_C == meth_cv$mean_C, na.rm = TRUE),
+          !any(meth_prog$methylation_only, na.rm = TRUE))
+meth_xC  <- tapply(meth_cv1k$expression_mean_C_1000, meth_cv1k$arm, unique)
+meth_ok1 <- subset(meth_cv1k, !is.na(mean_difference_1000))
+meth_d   <- function(a) -meth_ok1$mean_difference_1000[meth_ok1$arm == a]
+
+## Methylation programs compared with expression programs ----
+rdc <- function(f) rdm(file.path("factor_characterization", f))
+meth_cca <- rdc("canonical_correlations.csv")
+meth_fst <- rdc("factor_stability.csv")
+meth_r2  <- rdc("joint_expression_r2.csv")
+meth_pur <- subset(rdc("purity_correlations.csv"), modality == "methylation")
+meth_gsa <- rdc("fgsea_by_factor.csv")
+meth_pcg <- rdc("promoter_cpg_gene_correlations.csv")
+meth_ovl <- rdc("cross_modality_overlap.csv")
+meth_ccr <- function(d) range(meth_cca$canonical_correlation[meth_cca$dimension == d])
+meth_spec <- subset(meth_fst, methylation_specific)
+meth_r2s  <- subset(meth_r2, methylation_specific)
+# Clearest methylation-specific program: point-Laplace program 2 at 100,000 and all CpGs.
+meth_clr  <- subset(meth_r2, arm == "PL" & factor == 2 & count >= 100000)
+meth_clr_gs <- subset(meth_gsa, modality == "methylation" & arm == "PL" & factor == 2 &
+                        count == 100000 & collection == "Hallmark")
+meth_clr_gs <- meth_clr_gs[order(meth_clr_gs$pval), "set"][1:2]
+meth_pur_top <- meth_pur[which.max(meth_pur$abs_correlation), ]
+stopifnot(nrow(meth_fst) == 35, nrow(meth_r2) == 35, nrow(meth_ovl) == 35,
+          identical(meth_r2$methylation_specific, meth_fst$methylation_specific),
+          nrow(meth_clr) == 2, all(meth_clr$methylation_specific),
+          setequal(meth_r2s$count[meth_r2s$R2 < 0.25], c(100000, meth_cpg)),
+          meth_clr_gs == c("HALLMARK_ALLOGRAFT_REJECTION", "HALLMARK_TNFA_SIGNALING_VIA_NFKB"),
+          nrow(meth_pcg) == unique(meth_ovl$all_promoter_pairs),
+          abs(mean(meth_pcg$spearman_r < 0) - unique(meth_ovl$all_fraction_negative)) < 1e-6,
+          !any(meth_ovl$p_upper < 0.05 / nrow(meth_ovl)))
 ```
 
 ```{=latex}
@@ -570,7 +614,9 @@ within cohort, and the one-standard-error rule selects rank `r tcv_K` (@sec-resu
 rank `r tcv_K` the projection model and the latent-score model predicted equally well in
 training and external data, and the projection model is kept (@sec-week-lb). Methylation alone,
 on `r meth_aud$n` matched TCGA patients, predicted survival less well than expression on the
-same patients and found no program that the expression fit lacks (@sec-week-methylation). The
+same patients and found no survival-active program that the expression fit lacks. Its
+programs share two strong directions with the expression programs, and a few recurring
+programs are specific to methylation (@sec-week-methylation). The
 fitter for several data types is in progress, and its results appear as marked placeholders in
 @sec-week-multimodal.
 
@@ -863,30 +909,33 @@ CpGs. Neither step uses outcomes. With `r meth_aud$n` patients the comparison is
 
 ```{r}
 #| label: tbl-methylation
-#| tbl-cap: "Methylation alone at rank 5 on the matched TCGA patients, five-fold cross-validation. The expression row of each setup uses the 2,218 genes on the same patients and folds. Full fit gives whether the fit to all patients converged within 300 sweeps, with its number of sweeps. For methylation, cross-validation was run only when the full fit converged. Concordance counts all pairs of these patients. The difference is methylation minus expression in the same setup, paired over folds, with its standard error."
+#| tbl-cap: "Methylation alone at rank 5 on the matched TCGA patients, five-fold cross-validation. The expression row of each setup uses the 2,218 genes on the same patients and folds. Full fit gives whether the fit to all patients converged, with its number of sweeps. Methylation fits stopped at 300 sweeps and expression fits at 1,000. For methylation, cross-validation was run only when the full fit converged. Concordance counts all pairs of these patients. The difference is methylation minus expression in the same setup, paired over folds, with its standard error."
 setup_lab <- c(PL = "z-scores, point-Laplace", PE = "Divided by SD, point-exponential")
 mf <- meth_full[order(match(meth_full$arm, names(setup_lab)), meth_full$modality != "expression", meth_full$count), ]
-mc <- meth_cv[match(paste(mf$arm, mf$count), paste(meth_cv$arm, meth_cv$count)), ]
-me <- meth_expr[match(mf$arm, meth_expr$arm), ]
+mc <- meth_cv1k[match(paste(mf$arm, mf$count), paste(meth_cv1k$arm, meth_cv1k$count)), ]
+mx <- subset(meth_x1k, fold == 0)[match(mf$arm, subset(meth_x1k, fold == 0)$arm), ]
 is_ex <- mf$modality == "expression"
 kable(data.frame(Setup = unname(setup_lab[mf$arm]),
   Data = ifelse(is_ex, "Expression, 2,218 genes", paste0("Methylation, ", big(mf$count), " CpGs")),
-  `Full fit` = paste0(ifelse(mf$converged, "Converged", "Reached cap"), " (", mf$iterations, ")"),
-  `Folds converged` = ifelse(is_ex, paste0(me$converged_folds, "/5"),
-                             ifelse(is.na(mc$mean_C), "Not run", paste0(mc$converged_folds, "/5"))),
-  `Mean C` = ifelse(is_ex, num(me$mean_C), ifelse(is.na(mc$mean_C), "", num(mc$mean_C))),
-  `Difference (SE)` = ifelse(is_ex | is.na(mc$mean_C), "",
-                             paste0(sgn(mc$mean_difference), " (", num(mc$paired_SE), ")")),
+  `Full fit` = ifelse(is_ex, paste0("Converged (", mx$iterations, ")"),
+                      paste0(ifelse(mf$converged, "Converged", "Reached cap"), " (", mf$iterations, ")")),
+  `Folds converged` = ifelse(is_ex, "5/5",
+                             ifelse(is.na(mc$methylation_mean_C), "Not run",
+                                    paste0(meth_cv$converged_folds[match(paste(mf$arm, mf$count), paste(meth_cv$arm, meth_cv$count))], "/5"))),
+  `Mean C` = ifelse(is_ex, num(meth_xC[mf$arm]), ifelse(is.na(mc$methylation_mean_C), "", num(mc$methylation_mean_C))),
+  `Difference (SE)` = ifelse(is_ex | is.na(mc$methylation_mean_C), "",
+                             paste0(sgn(mc$mean_difference_1000), " (", num(mc$paired_SE_1000), ")")),
   check.names = FALSE), row.names = FALSE, align = "llcccc")
 ```
 
 **Result.** Methylation alone predicted survival less well than expression on the same
-patients and found no program that the expression fit lacks (@tbl-methylation). All
-`r nrow(meth_all)` fits ran without errors or warnings, and `r sum(meth_all$converged)`
-converged within 300 sweeps. Of the `r sum(!meth_all$converged)` that reached the cap,
-`r sum(!meth_ex$converged)` were among the `r nrow(meth_ex)` expression fits. The
-point-exponential methylation full fits reached the cap at
-`r andj(big(sort(meth_pe_capped)))` CpGs, so those counts were not
+patients and found no survival-active program that the expression fit lacks
+(@tbl-methylation). All `r nrow(meth_all)` fits ran without errors or warnings. The
+`r nrow(meth_rr)` expression fits that stopped at 300 sweeps were restarted from the same
+initialization with a 1,000-sweep limit. All converged, in `r min(meth_rr$iterations)` to
+`r max(meth_rr$iterations)` sweeps, and reproduced their first 300 ELBO values exactly, so
+every expression fit now converges. The point-exponential methylation full fits reached the
+300-sweep cap at `r paste(paste(big(sort(meth_pe_capped))[-length(meth_pe_capped)], collapse = ", "), "and", big(max(meth_pe_capped)))` CpGs, so those counts were not
 cross-validated, and `r sum(meth_cvm$converged)` of the `r nrow(meth_cvm)` methylation fold fits
 converged. A full fit took `r num(min(meth_min("PL")), 1)` to `r num(max(meth_min("PL")), 1)`
 minutes with the point-Laplace setup and `r num(min(meth_min("PE")), 1)` to
@@ -894,13 +943,13 @@ minutes with the point-Laplace setup and `r num(min(meth_min("PE")), 1)` to
 number of CpGs.
 
 Mean cross-validated concordance of methylation alone was `r num(min(meth_ok$mean_C))` to
-`r num(max(meth_ok$mean_C))` across counts and setups, against
-`r num(meth_expr$mean_C[meth_expr$arm == "PL"])` for expression with the point-Laplace setup
-and `r num(meth_expr$mean_C[meth_expr$arm == "PE"])` with the point-exponential setup. Both
-expression values come mostly from fits that reached the cap. Methylation was below expression
-in every comparison, by `r num(min(-meth_ok$mean_difference))` to
-`r num(max(-meth_ok$mean_difference))`, with paired standard errors of
-`r num(min(meth_ok$paired_SE))` to `r num(max(meth_ok$paired_SE))`. Single folds ranged from
+`r num(max(meth_ok$mean_C))` across counts and setups, against `r num(meth_xC[["PL"]])` for
+expression with the point-Laplace setup and `r num(meth_xC[["PE"]])` with the
+point-exponential setup. Methylation was below expression in all `r nrow(meth_ok1)`
+comparisons, by `r num(min(meth_d("PL")))` to `r num(max(meth_d("PL")))` with the
+point-Laplace setup and by `r andj(num(sort(meth_d("PE"))))` with the point-exponential setup.
+The paired standard errors were `r num(min(meth_ok1$paired_SE_1000))` to
+`r num(max(meth_ok1$paired_SE_1000))`. Single methylation folds ranged from
 `r num(min(meth_cvm$C), 2)` to `r num(max(meth_cvm$C), 2)`.
 
 Every full fit kept `r tcv_K` programs with nonzero loadings. With the point-Laplace setup the
@@ -909,8 +958,45 @@ only survival-active methylation program was Program `r meth_act$program` at
 `r num(meth_act$beta_sd)`). It was survival-active in `r meth_act$active_converged_folds` of 5
 folds, and its scores correlated `r num(meth_act$max_abs_expression_r)` with an expression
 program, so it does not count as a program unseen in expression. Neither converged
-point-exponential full fit had a survival-active program. The fixed methylation and expression
-models were not scored in the matched ICGC methylation set.
+point-exponential full fit had a survival-active program.
+
+**Methylation programs compared with expression programs.** We then compared the patient
+scores of each methylation fit with those of the expression fit in the same setup, without
+regard to survival. The two sets of scores share two strong directions. Across the
+`r length(unique(paste(meth_cca$arm, meth_cca$count)))` comparisons the first two canonical
+correlations were `r num(meth_ccr(1)[1], 2)` to `r num(meth_ccr(1)[2], 2)` and
+`r num(meth_ccr(2)[1], 2)` to `r num(meth_ccr(2)[2], 2)`, and the fifth was
+`r num(meth_ccr(5)[1], 2)` to `r num(meth_ccr(5)[2], 2)`. We called a methylation program
+methylation-specific if its scores correlated below 0.5 with every expression program, it was
+matched in at least three folds and it recurred at another CpG count. By this descriptive rule
+`r nrow(meth_spec)` of the `r nrow(meth_fst)` program fits were methylation-specific,
+`r sum(meth_spec$arm == "PL")` with point-Laplace and `r sum(meth_spec$arm == "PE")` with
+point-exponential. These are a few programs seen at several counts, not `r nrow(meth_spec)`
+separate programs. Regressing each one on all five expression program scores gave $R^2$ below
+0.25 for `r sum(meth_r2s$R2 < 0.25)` of the `r nrow(meth_r2s)`, all at 100,000 or all CpGs,
+and above 0.5 for
+`r sum(meth_r2s$R2 > 0.5)`, which are mostly combinations of expression programs. The clearest
+methylation-specific program is point-Laplace Program 2 at 100,000 and at all CpGs ($R^2$
+`r num(meth_clr$R2[meth_clr$count == 100000], 2)` and
+`r num(meth_clr$R2[meth_clr$count == meth_cpg], 2)`). At 100,000 CpGs its strongest Hallmark
+associations were allograft rejection and TNF-α signaling, which suggests an immune component.
+The gene-set analysis covers only the 2,218 genes. The methylation program most related to
+purity, point-Laplace Program `r meth_pur_top$factor`, correlated up to
+`r num(meth_pur_top$abs_correlation, 2)` in absolute value with ABSOLUTE tumor purity
+(`r meth_pur_top$n_complete` of `r meth_aud$n` patients), and its closest expression program
+is Program `r unique(meth_fst$closest_expression_factor[meth_fst$arm == meth_pur_top$arm & meth_fst$factor == meth_pur_top$factor])`.
+
+Of the `r big(nrow(meth_pcg))` pairs of a promoter CpG and one of the 2,218 genes,
+`r num(100 * mean(meth_pcg$spearman_r < 0), 1)`% had a negative Spearman correlation between
+methylation and expression. These correlations are not adjusted for purity. The top 100 CpGs
+of a methylation program rarely annotate to the top 100 genes of its closest expression
+program (`r min(meth_ovl$observed)` to `r max(meth_ovl$observed)` of 100), and no comparison
+was significant after a Bonferroni correction over the `r nrow(meth_ovl)` comparisons.
+
+The fixed methylation and expression models were not scored in the matched ICGC methylation
+set. The CpG count for a joint fit is open. Prediction was best at 10,000 CpGs with the
+point-Laplace setup, but the clearly methylation-specific programs appear only at 100,000 and
+all CpGs. With `r meth_aud$n` patients these comparisons are descriptive.
 
 ## One fitter for several data types {#sec-week-multimodal}
 
@@ -1878,7 +1964,8 @@ In the simulation cells with consistent recovery, the two-step fit already recov
 prognostic program. The near-threshold simulations isolated a setting where supervision
 could change discovery. Recovery and concordance improved when survival was strong, while
 the differences were smaller at realistic survival strength. Methylation alone, on the matched
-TCGA patients, predicted survival less well than expression and added no program.
+TCGA patients, predicted survival less well than expression and added no survival-active
+program, although a few of its programs are not explained by the expression programs.
 
 ## Limitations {#sec-limitations}
 
@@ -1899,8 +1986,8 @@ estimand. DeSurv used its published settings rather than a new search on our tra
 cap, while all five converged at rank `r tcv_K`. In simulation the coefficients at $w_S = 1$ are
 attenuated at the larger gene count. These studies use a common simulation generator. The
 simulation comparing the two survival links issued R warnings whose messages were not saved.
-The methylation comparison has `r meth_aud$n` patients, screened and imputed its CpGs before the
-folds were split, and most of its expression reference fits reached the sweep cap.
+The methylation comparison has `r meth_aud$n` patients and screened and imputed its CpGs before
+the folds were split. Its CpG–gene correlations are not adjusted for purity.
 
 ## Continuing work {#sec-continuing}
 
@@ -1979,7 +2066,9 @@ the expected objective.
   replaced by the simulation, training and external results and by an interpretation of the
   two links. The projection model is kept.
 - **Methylation alone.** The placeholders of @sec-week-methylation are replaced by the rank-5
-  results on the matched TCGA patients.
+  results on the matched TCGA patients. The expression reference uses fits rerun with a
+  1,000-sweep limit, all of which converged, and the section adds a comparison of the
+  methylation and expression programs.
 - **External scoring.** The placeholder of @sec-week-external is replaced by a pointer to the
   rank-5 external results.
 - **Gene set name.** The text names the gene set by its size and selection rule only.
