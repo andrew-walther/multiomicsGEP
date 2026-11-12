@@ -276,3 +276,25 @@ results or the next sentence gave the same information.
 - “Larger weights were worse.”
 - “These results do not show that supervision causes recovery.”
 - “Two further pieces of work follow from the results here.”
+
+## 2026-11-11 — Introduction rewritten
+
+Andrew: the introduction must read like a journal-paper introduction (literature, gap, aims, current and planned contributions, outline), with no results, no dates, no account of past model iterations and no callbacks to the literature review. Removed: the pre-registered check of a loading-supervised configuration against the superseded alpha_F = 0 model (outdated, since the revamp replaced that comparator; numbers sourced in `chapter4-number-sources-2026-11-06.md`), the results summary (every claim in it is already in Results) and the "Section 1.3" references. The full introduction as it stood before:
+
+> # Introduction {#sec-intro}
+> 
+> Five-year relative survival for pancreatic cancer is 13.7% in the Surveillance, Epidemiology, and End Results registry [@SEER2026]. In pancreatic ductal adenocarcinoma (PDAC), expression data can help identify molecular programs associated with survival. Section 1.3 of the literature review describes two limitations of the usual analysis of prognostic tumor and stromal programs. An unsupervised factorization identifies the programs before testing their associations with survival. A program that predicts survival but explains little expression variation can be missed, because cell-composition variation dominates an expression-only fit (Section 1.3.2). The Cox model also treats the estimated program scores as if they were measured without error. This can bias the coefficients, and second-step standard errors omit the uncertainty from estimating the scores (Section 1.3.3). DeSurv lets survival guide discovery, but it reports penalized point estimates and tunes its rank and supervision strength by cross-validation [@Young2026].
+> 
+> This chapter develops survival-supervised Bayesian matrix factorization (SSBMF), which jointly fits an empirical-Bayes factorization of expression and a Cox model. Each patient's risk score is a weighted sum of their expression projected onto the program loadings, so a new patient's risk is computed from their measurements alone. Because the loadings appear in both the factorization and the risk score, survival can in principle change which programs are found. A survival weight $w_S$ sets the weight of the Cox likelihood relative to the expression likelihood. Posterior inference for the survival coefficients accounts for uncertainty in the loadings.
+> 
+> The earlier SSBMF model set the survival contribution to the loading update to zero. A configuration that included survival in that update was evaluated in a pre-registered October 15 check. Its mean difference in external concordance against the earlier model was $\Delta C=-0.003$ (95% CI $-0.029$ to $0.024$). The interval crossed the registered margin of $-0.02$, so the check did not establish noninferiority or a gain in concordance.
+> 
+> We derived and checked the variational algorithm, then used simulations to examine recovery of a low-variance prognostic program, false activity, calibration and convergence. In two PDAC training cohorts we used cross-validation to compare survival weights and feature sets. We evaluated the fixed model in five external series against rank-matched empirical Bayes matrix factorization (EBMF) followed by Cox regression. External concordance was similar, and calibration slopes were closer to one in four of the five series. DeSurv and an elastic-net Cox model trained on the same patients performed similarly. At $w_S=1$ the supervised and unsupervised loadings correlated 1.000, so the differences come from the joint coefficient update. In simulations with a very low-variance planted program, survival improved recovery.
+> 
+> We next aim to choose a supervision strength that improves program recovery when the signal supports it, to extend the model to expression and DNA methylation with separate loading priors, and to select rank from the data.
+> 
+
+### Follow-ups for the body revamp (2026-11-11)
+
+- History wording remains in the body: "earlier analyses" (Prediction in New Cohorts), "earlier unsupervised fit" (simulation results) and the alpha_F mention in Limitations. Present the current method and results only.
+- After the Methods/Results revamp, recheck the Introduction's current-versus-planned contributions and its outline paragraph against the new section structure.

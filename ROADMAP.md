@@ -43,6 +43,8 @@ The existing multi-cohort τ item includes cohort-indexed reconstruction updates
 and heterogeneous-noise tests. The biology follow-up includes CpG annotation
 release, promoter/enhancer mapping rules and cross-modality program comparisons.
 
+**Prelim Chapter 4 Introduction (2026-11-11).** Rewritten as a journal-paper introduction: Background & Motivation (literature, gap, question) and Aims & Contributions (aims, current and planned contributions, outline). No results, dates or literature-review callbacks. Old text and follow-ups for the body revamp are in `paper/prelim/notes/trimmed-material-2026-11.md`.
+
 **Prelim Chapter 4 (2026-11-06).**
 
 - [x] Revise the chapter around the survival-weighted YFB fit. The
