@@ -56,6 +56,8 @@ reached within-cohort CV C 0.635 against 0.658 (difference −0.023, SE 0.008, 1
 converged), with 2.8 to 4.4 false-active programs per fit in simulation. Cohort strata on
 X/sd kept the cohort-separating programs, made 3 or 4 of them survival-active, and reached
 0.628 (−0.030, SE 0.015, 0/5 folds converged). Point-Laplace on per-cohort z-scores stays.
+Andrew (2026-11-12): task A and A2 are informative negative results to report, probably as
+supplementary or appendix material.
 Findings: [docs/findings/2026-11-12-lf-prior-followup-findings.md](docs/findings/2026-11-12-lf-prior-followup-findings.md).
 
 ## 2026-11-12 — Task A fits pooled training data; methylation study design for task C
