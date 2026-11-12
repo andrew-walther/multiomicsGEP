@@ -71,6 +71,7 @@ test_files <- c(
   "tests/test_projection_centering.R",
   "tests/test_feature_groups_yfb.R",
   "tests/test_feature_group_simulation.R",
+  "tests/test_feature_group_informative.R",
   "tests/test_multimodal_tcga_comparison.R",
   "tests/test_update_beta_cohort.R",
   "tests/test_update_L.R",
