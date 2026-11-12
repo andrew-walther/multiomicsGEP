@@ -4,8 +4,12 @@ Date: 2026-11-12. Author: Andrew Walther.
 
 **K = 5 result.** The full sweep and timing-eligible CV are complete. Mean
 methylation concordance is below matched expression in all seven completed
-comparisons. No PL program meets the methylation-only rule. Formal PE
-classification is unassessable because the expression PE full fit capped.
+comparisons. No PL program meets the methylation-only rule. No PE program can
+meet it either, because neither converged PE methylation full fit (100k, all
+CpGs) has a survival-active program. Only the expression-correlation step of the
+PE rule is unassessable, because the expression PE full fit capped. Of the 57
+fits, 12 capped, including 8 of the 12 expression fits, so the paired
+differences use capped expression states in most folds.
 These are descriptive results from 144 patients, not a model adoption decision.
 
 **K = 7 status: stopped at Andrew's request on November 12 to prioritize K = 5.**
@@ -58,7 +62,7 @@ The fit uses seven columns without pruning, canonicalization, unit survival
 weight and Normal β. The iteration cap, tolerance and alpha come from
 `config/globals.yml`. No failed fit is tuned.
 
-## Full-fit results
+## Full-fit results (K = 7)
 
 <!-- FULL-FIT-RESULTS -->
 The original 300-iteration results are preserved below. Counts from capped
@@ -324,7 +328,7 @@ waiting for or treating absent K = 7 fold results as completed. The saved
 full-fit timing/convergence table is available for revising that scope. No
 K = 5 fit was launched or modified by this session.
 
-## Text for the shared status files
+## Text for the shared status files (K = 7, superseded by the K = 5 text below)
 
 **Attempts log:** the registered K = 7 methylation-only comparison verified
 182,934 eligible probes on 144 matched TCGA patients and 75 events. Nine full
@@ -484,9 +488,19 @@ The other PL full fits have no survival-active programs.
 
 The converged PE full fits at 100k and all CpGs also have no survival-active
 programs. Formal PE methylation-only classification remains undefined because
-the expression PE full fit capped. The three smaller methylation PE full fits
-also capped and received no CV. These unassessed cases are kept separate from
-the zero qualifying-program count in the assessable PL comparisons.
+the expression PE full fit capped. That limit affects only the
+expression-correlation condition. The rule also requires full-fit survival
+activity, which neither converged PE full fit has, so no PE program at 100k or
+all CpGs could qualify whatever the expression fit. The three smaller
+methylation PE full fits capped and received no CV, so they remain
+unassessed. These cases are kept separate from the zero qualifying-program
+count in the assessable PL comparisons.
+
+In the two folds where the PL expression fit converged (folds 2 and 5),
+methylation PL concordance was below expression at every CpG count except
+10k in fold 2 (0.708 against 0.685). Fold-level concordance varies widely,
+from 0.30 to 0.71 for methylation, with fold 5 low for both modalities. This
+check is descriptive and was not registered.
 
 ### Rebuild commands and implementation
 
