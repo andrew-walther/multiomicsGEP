@@ -1,0 +1,6 @@
+"K","arm","reference","count","best_factor","best_abs_r","second_factor","second_abs_r","R2_on_all_factors"
+5,"PL","factor 2 at 100,000",10000,2,0.607,4,0.587,0.8
+5,"PL","factor 2 at 100,000",25000,2,0.641,3,0.384,0.912
+5,"PL","factor 2 at 100,000",50000,2,0.894,4,0.206,0.974
+5,"PL","factor 2 at 100,000",1e+05,2,1,5,0.376,1
+5,"PL","factor 2 at 100,000",182934,2,0.963,4,0.346,0.939

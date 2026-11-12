@@ -985,6 +985,33 @@ transition set has 159 genes in the 2,218-gene universe and is the leading set f
 26 of 35 methylation factors and 7 of 10 expression factors, so it mainly indicates
 correlation with stromal genes.
 
+### Is the methylation-specific factor present at 10k CpGs?
+
+Point-Laplace factor 2 at 100k was tracked across the other point-Laplace full fits by
+correlating its patient scores with each factor at each count, and by regressing it on
+all five factors of each fit (`factor_characterization/cross_count_tracking.csv`):
+
+| CpGs | Best single factor, abs(r) | Second factor, abs(r) | R² on all five factors |
+|---:|---|---|---:|
+| 10,000 | 2, 0.607 | 4, 0.587 | 0.800 |
+| 25,000 | 2, 0.641 | 3, 0.384 | 0.912 |
+| 50,000 | 2, 0.894 | 4, 0.206 | 0.974 |
+| 182,934 | 2, 0.963 | 4, 0.346 | 0.939 |
+
+The 10k fit contains most of this signal (R² 0.80), but split across factors 2 and 4,
+each of which also carries structure shared with expression (their R² on the expression
+factors are 0.52 and 0.43). From 50k upward the signal forms one factor that is largely
+separate from expression (R² on the expression factors 0.25 at 50k, 0.06 at 100k and 0.04
+at all CpGs). So the 10k fit already brings in methylation information that expression
+lacks, but it does not isolate it as a single program. This check is descriptive and
+in-sample on the same 144 patients.
+
+On this basis Andrew chose (2026-11-12) to report both counts: 10k for prediction and as
+the first joint fit, and 100k for the methylation-specific factor. The joint fit at 10k
+should be checked for whether its scores recover this factor's direction. If they do
+not, a 100k joint fit follows, after the grouped-prior balance check, because 100k CpGs
+against 2,218 genes gives methylation about 45 times the features of expression.
+
 ## Text for the documents
 
 All results are at rank K = 5 on the 144 TCGA patients with matched expression,
@@ -1027,6 +1054,13 @@ signaling, which suggests an immune component. The most purity-related methylati
 factor (point-Laplace factor 1) correlates up to 0.87 with ABSOLUTE purity (143 of 144
 patients) and overlaps expression factor 1.
 
+**The methylation-specific factor at 10k CpGs.** The 10k fit carries most of the same
+signal (its five factors explain 80% of the variance of the 100k factor's scores), but
+split across two factors that also share structure with expression. The signal forms a
+single factor separate from expression from 50k CpGs upward, and it recurs almost
+unchanged with all CpGs (r = 0.96). So even at 10k, methylation brings in information
+that expression lacks, though it is not isolated as one program until larger counts.
+
 **CpG–gene associations.** Of 9,086 pairs of a promoter CpG and one of the 2,218
 genes, 76.5% have negative Spearman correlation between methylation and expression,
 3,001 are below −0.3 and 949 below −0.5. These are not adjusted for purity. The top
@@ -1038,16 +1072,15 @@ none survives a Bonferroni correction over 35.
 preceded the fold split. Gene-set analysis is limited to the 2,218 genes, where the
 epithelial–mesenchymal transition set (159 genes) leads for most factors in both data
 types. 18 of 2,475 enrichment rows are undefined. No ICGC scoring was run, and no
-rank, setup, prior or CpG count is adopted. Codex recommended 10k CpGs under
-point-Laplace as a first count for a joint fit because it predicts best and is
-cheapest, but the clearly methylation-specific factors appear only at 100k and all
-CpGs. The choice of count is open.
+rank, setup or prior is adopted. Both CpG counts are reported: 10k CpGs under
+point-Laplace predicts best alone and is the first count for the joint fit, and 100k
+shows the methylation-specific factor most clearly.
 
 **Sources.** `results/multimodal_real/outputs/methylation_single_modality_2026-11-12/K05/`:
 `expression_iteration1000.csv`, `cv_summary_iteration1000.csv`,
 `programs_iteration1000.csv`, and under `factor_characterization/`:
 `score_correlations.csv`, `canonical_correlations.csv`, `factor_stability.csv`,
-`joint_expression_r2.csv`, `top_cpgs_annotated.csv`, `annotation_enrichment.csv`,
+`joint_expression_r2.csv`, `cross_count_tracking.csv`, `top_cpgs_annotated.csv`, `annotation_enrichment.csv`,
 `fgsea_by_factor.csv`, `promoter_cpg_gene_correlations.csv`,
 `cross_modality_overlap.csv`, `purity_correlations.csv`, `analysis_warnings.csv`.
 Patient-level inputs, scores and fits remain in ignored private storage.
