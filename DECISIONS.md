@@ -91,6 +91,25 @@ The K = 7 run was stopped at Andrew's request to prioritize K = 5, and its compl
 fits are preserved. No ICGC scoring was run. Findings:
 [docs/findings/2026-11-12-methylation-single-modality-findings.md](docs/findings/2026-11-12-methylation-single-modality-findings.md).
 
+
+**K = 5 descriptive follow-up (`ba5e6a1f`).** All eight capped K = 5 expression fits
+converged in 305 to 438 sweeps under the approved 1,000-sweep cap, with exact
+300-sweep ELBO-prefix reproduction. K = 5 expression mean CV C is now 0.582311
+for point-Laplace and 0.620214 for point-exponential. All seven K = 5 methylation
+comparisons remain lower, and zero K = 5 programs meet the prognostic
+methylation-only rule. The PE expression-correlation step at K = 5 is now assessed.
+A separate K = 5 descriptive rule identifies 19 of 35 factor-at-count instances
+as methylation-specific, using fixed correlation, fold-stability and cross-count
+recurrence thresholds without survival activity. At K = 5, the first canonical
+correlations of 0.903 to 0.921 still indicate substantial shared score structure.
+K = 5 annotation, D4 enrichment and promoter-pair summaries are available, with
+ABSOLUTE purity correlations on 143 patients. At K = 5, 18 of 2,475 enrichment rows
+are undefined and 19 numerical warnings are retained. At K = 5, the three smaller
+PE methylation full fits and one 100k PE fold remain capped. The K = 5 results
+remain descriptive at n = 144 with pre-fold screening/imputation and a 2,218-gene
+D4 universe. At K = 5, 10k CpGs with point-Laplace is a recommendation for a future
+authorized joint fit, not an adopted count. No new setting is adopted.
+
 ## 2026-11-12 — Task F: training CV keeps D4 and the z-score input, and selects K = 5
 
 Task F redid, on the 273 training patients alone, the three choices that external
