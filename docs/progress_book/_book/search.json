@@ -1204,7 +1204,7 @@
     "href": "chapters/2026-11-13.html#open-items",
     "title": "15  November 13, 2026",
     "section": "15.12 Open items",
-    "text": "15.12 Open items\n\nIndependent review of every result before it enters this chapter, Chapter 4 or the writeup.\nA stratified version of the model, with a scale-robust rule that tells a genomics-only program from a collapsed one.\nPruning stays set aside. The full-posterior pruning rerun is revisited only if the CV-chosen rank is unstable across folds or seeds.\nStable fits at large survival weights remain the main methods problem and are not part of this week.",
+    "text": "15.12 Open items\n\nRerun every reported result at K = 5, the rank adopted from training CV: training CV and the two-step comparison, external scoring and calibration, comparators, risk groups, the program classification, enrichment and signature correlations, and their figures in Chapter 4 and the writeup. Until then those results are labeled as the K = 7 fit.\nIndependent review of every result before it enters this chapter, Chapter 4 or the writeup.\nA stratified version of the model, with a scale-robust rule that tells a genomics-only program from a collapsed one.\nPruning stays set aside. The full-posterior pruning rerun is revisited only if the CV-chosen rank is unstable across folds or seeds.\nStable fits at large survival weights remain the main methods problem and are not part of this week.",
     "crumbs": [
       "<span class='chapter-number'>15</span>  <span class='chapter-title'>November 13, 2026</span>"
     ]
