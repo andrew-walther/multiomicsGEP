@@ -9,8 +9,8 @@ of the [week plan](../plans/2026-11-09-week-plan.md). Part 1 runs E's fits. Part
 fitter work for the option Andrew chooses. Run Part 1 first, or run Parts 1 and 2 in
 two separate Codex sessions, because they touch different files.
 
-**Before pasting:** fill the β prior blank in Part 1 and delete the Part 2 options
-Andrew did not choose.
+**Before pasting:** delete the Part 2 options Andrew did not choose. Part 1's priors are
+settled (A `bdbd9989`, A2 `b37783c7`, B `b0c73b1c`).
 
 ---
 
@@ -27,10 +27,15 @@ entries at the top of DECISIONS.md.
 - Input: the z-scored D4 genes, pooled TCGA + CPTAC, no `strata_id` and no
   `center_projection`. Scaling is learned on each training fold.
 - L and F prior: `point_laplace` (task A).
-- β prior: **`E_PRIOR_BETA=________`** ← *Andrew fills this in. Task B (`b0c73b1c`)
-  kept per-program Normal, which is `normal` in this runner.*
+- β prior: per-program Normal (task B, `b0c73b1c`), which is `normal` in this runner.
 - K = 7 (`cfg$benchmark$k_merged_yfb_desurv`), the config's `max_iter` and `tol`, no
   pruning.
+- Genes: the current D4 set in the prepared input.
+
+**Conditional on task F.** Task F (gene screen, scaling, rank) is running now and may
+change the gene set or K. These fits are valid for D4 and K = 7 only. Before starting,
+check the top of DECISIONS.md for a task F entry. If F has changed the gene set or K,
+stop and ask Andrew instead of running.
 - Training w_S = 1 (S-15). Simulation w_S ∈ {1, 10}.
 - Folds: the five saved S-11 folds stored in `data/lf_prior_real_2026-11-12.rds`.
 
@@ -59,7 +64,7 @@ after the other.
 export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 E_SCALING=zscore
 E_PRIOR_LF=point_laplace
-E_PRIOR_BETA=________   # from the blank above
+E_PRIOR_BETA=normal     # per-program Normal (task B)
 RUN_DATE=$(date +%Y-%m-%d)
 
 nohup Rscript results/benchmark_sim/run_lb_yfb_study.R \
