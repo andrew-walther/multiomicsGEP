@@ -275,10 +275,10 @@ ul.task-list li input[type="checkbox"] {
 <ol type="1">
 <li><strong>Priors.</strong> Point-exponential priors on L and F, which would give a nonnegative factorization, predicted worse on the training data (within-cohort C 0.573 to 0.635 against 0.658 at K = 7) and rarely converged, even with the cohort difference removed. The four β priors gave nearly the same fits, so Normal β stays.</li>
 <li><strong>Gene screen, scaling and rank.</strong> Training CV keeps the 2,218-gene screen and z-scores. Concordance is flat from K = 5 to 12, and the one-SE rule picks K = 5 in each of five fold partitions but one.</li>
-<li><strong>The K = 5 model.</strong> Within-cohort CV C is 0.655 and every fold converges. Programs 2 (protective), 4 and 5 (adverse) are survival-active. Externally the equal-series mean C is 0.630 (0.587 to 0.670).</li>
+<li><strong>The K = 5 model.</strong> Within-cohort CV C is 0.655 and every fold converges. Programs 2 (protective), 4 and 5 (adverse) are survival-active, and only Program 2 is a main program. Externally the equal-series mean C is 0.630 (0.587 to 0.670). At K = 5 the supervised and two-step fits perform the same (training CV +0.004, external −0.001).</li>
 <li><strong>LB and YFB.</strong> On the real data the two give the same programs and nearly the same risk scores (r = 0.998, CV C 0.652 and 0.655). YFB is kept: in simulation LB marks more unmatched programs survival-active at w_S = 1 in the three variance cells, and YFB scores new patients without fold-in.</li>
 <li><strong>Methylation alone.</strong> Methylation predicts worse than expression on the same 144 patients (CV C 0.50 to 0.55 against 0.58) and shows no survival-active program that expression lacks, though some methylation programs are not explained by expression.</li>
-<li><strong>Still in progress.</strong> The fitter for several data types, and the K = 5 versions of the two-step comparison, calibration, risk groups and program biology.</li>
+<li><strong>Still in progress.</strong> The fitter for several data types and the K = 5 survival-weight refit.</li>
 </ol>
 </section>
 <section id="external-cohorts-are-used-only-to-score-a-fixed-model" class="level2" data-number="15.2">
@@ -712,12 +712,13 @@ and programs that appear only in the joint fit. -->
 </tr>
 </tbody>
 </table>
-<p>The equal-series mean is 0.630 (donor-bootstrap interval 0.587 to 0.670) and the pair-weighted mean 0.628 (0.596 to 0.662), against 0.620 for the K = 7 fit. The comparison with the two-step fit, calibration slopes, hazard ratios and risk groups have not been recomputed at K = 5.</p>
+<p>The equal-series mean is 0.630 (donor-bootstrap interval 0.587 to 0.670) and the pair-weighted mean 0.628 (0.596 to 0.662), against 0.620 for the K = 7 fit.</p>
+<p>The other exhibits that came from the K = 7 fit were rebuilt at K = 5 (<a href="{G}docs/findings/2026-11-12-k5-exhibits-findings.md">findings</a>). At K = 5 the supervised and two-step fits perform the same: the training CV difference is +0.004 (SE 0.004, 0.660 against 0.656 on all pairs) and the external pooled difference is −0.001 (donor interval −0.010 to 0.008), where K = 7 gave +0.011 and +0.007. Every fold converges in both arms. The hazard ratio per SD is 1.39 (1.26 to 1.53) against 1.40 for two-step, and the supervised calibration slopes range from 0.35 to 1.85. The gene-count curve is level from 2,218 to about 8,000 genes in both arms and lower above. The training cutpoint moves to 0.618 SD, putting 128 of 616 external records in the high-risk group (pooled HR 1.69, 1.34 to 2.14). Only Program 2 meets the main-program rule. Program 4 has acinar genes at its adverse pole and B-cell and interferon genes at the other, and its external direction agrees with training in all five series. The supervised score’s mean C exceeds DeSurv’s by 0.016 (−0.009 to 0.043) and elastic-net Cox’s by 0.011 (−0.008 to 0.031). The survival-weight refit at K = 5 is still running.</p>
 </section>
 <section id="open-items" class="level2" data-number="15.12">
 <h2 data-number="15.12" class="anchored" data-anchor-id="open-items"><span class="header-section-number">15.12</span> Open items</h2>
 <ul>
-<li>Rerun the remaining results at K = 5, the rank adopted from training CV. Training CV, external concordance and the program coefficients are done at K = 5. Still at K = 7: the two-step comparison, calibration slopes, hazard ratios, risk groups, comparator paired differences, the program classification, enrichment, signature correlations, external program associations and their figures in Chapter 4 and the writeup. Until then those results are labeled with K = 7.</li>
+<li>The survival-weight refit at K = 5 is still running. Every other K = 7 exhibit has been rebuilt at K = 5.</li>
 <li>Independent review of every result before it enters this chapter, Chapter 4 or the writeup.</li>
 <li>A stratified version of the model, with a scale-robust rule that tells a genomics-only program from a collapsed one.</li>
 <li>Pruning stays set aside. The full-posterior pruning rerun is revisited only if the CV-chosen rank is unstable across folds or seeds.</li>
