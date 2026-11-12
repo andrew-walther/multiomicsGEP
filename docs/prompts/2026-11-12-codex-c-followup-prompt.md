@@ -139,7 +139,7 @@ Use the saved posterior means. Do not refit any full fit.
      pairs.
    - For each matched methylation–expression factor pair (highest |r|), count how many of
      the methylation factor's top-100 CpGs are annotated to genes among the expression
-     factor's top 100 genes by |E[L]|. Compare that count with a permutation null (1,000
+     factor's top 100 genes by |E[F]| (gene loadings, `EF`). Compare that count with a permutation null (1,000
      random draws of 100 eligible CpGs, seeded).
 5. **Tumor purity.** Methylation factors often reflect purity or immune infiltration.
    - Look in `PDAC_DATA_ROOT` for TCGA PAAD purity estimates (ABSOLUTE or the TCGA PAAD
