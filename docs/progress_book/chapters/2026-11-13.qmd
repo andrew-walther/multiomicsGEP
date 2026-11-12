@@ -10,11 +10,31 @@ until then the section is marked in progress.
 
 ## Executive summary
 
-To be written once the week's results are reviewed.
+**Where things stand.** The working model is YFB with point-Laplace priors on L and F, a
+Normal prior on β, z-scores within cohort on 2,218 genes, pooled TCGA and CPTAC training,
+w_S = 1 and K = 5. Every one of these choices now rests on simulation and five-fold training
+cross-validation alone. The external cohorts only score the fixed model.
 
-<!-- RESULT (executive summary): working model at the end of the week (L/F prior, beta prior,
-gene screen, input scaling, rank), whether any of A, B or F changed it, and the one external
-scoring of the fixed model. -->
+**This week's results**
+
+1. **Priors.** Point-exponential priors on L and F, which would give a nonnegative
+   factorization, predicted worse on the training data (within-cohort C 0.573 to 0.635
+   against 0.658 at K = 7) and rarely converged, even with the cohort difference removed.
+   The four β priors gave nearly the same fits, so Normal β stays.
+2. **Gene screen, scaling and rank.** Training CV keeps the 2,218-gene screen and z-scores.
+   Concordance is flat from K = 5 to 12, and the one-SE rule picks K = 5 in each of five fold
+   partitions but one.
+3. **The K = 5 model.** Within-cohort CV C is 0.655 and every fold converges. Programs 2
+   (protective), 4 and 5 (adverse) are survival-active. Externally the equal-series mean C is
+   0.630 (0.587 to 0.670).
+4. **LB and YFB.** On the real data the two give the same programs and nearly the same
+   risk scores (r = 0.998, CV C 0.652 and 0.655). YFB is kept: in simulation LB marks more
+   unmatched programs survival-active at w_S = 1 in the three variance cells, and YFB scores new patients without fold-in.
+5. **Methylation alone.** Methylation predicts worse than expression on the same 144
+   patients (CV C 0.50 to 0.55 against 0.59) and shows no prognostic program that expression
+   lacks.
+6. **Still in progress.** The fitter for several data types, and the K = 5 versions of the
+   two-step comparison, calibration, risk groups and program biology.
 
 ## External cohorts are used only to score a fixed model
 
@@ -28,9 +48,9 @@ choose between models or settings.
 
 Several earlier choices did use external outcomes, as listed in the
 [external-cohort audit](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-06-external-cohort-uses.md).
-Three of them still shape the working model: the gene screen (the 2,218-gene screen that
-ranks genes by mean and variance in each training cohort and intersects the two sets, called
-D4, chosen on external concordance in May), per-cohort standardization without a rank transform (May), and the
+Three of them still shape the working model: the gene screen (2,218 genes: after a single log transform,
+the top 3,000 genes per cohort by combined mean and variance rank, intersected across TCGA and
+CPTAC, chosen on external concordance in May), per-cohort standardization without a rank transform (May), and the
 rank of seven (first chosen by training CV, later kept partly on external concordance in
 July and August). These three are redone on training data this week. Of the other listed
 choices, the loading supervision weight α~F~ was replaced by the survival weight w_S, chosen
@@ -275,7 +295,7 @@ interpretation.
 before survival filtering), with the CpG sites described under the November 12 decisions.
 Each CpG count is fitted under both prior setups with a Normal β prior. If the β-prior
 comparison adopts a sparse prior, the methylation fits are repeated under it. The comparator is an
-expression fit with the D4 genes on the same patients and folds. A methylation program
+expression fit with the 2,218 genes on the same patients and folds. A methylation program
 counts as new if its patient scores correlate below 0.5 in absolute value with every
 expression program and it is survival-active in the full fit and in at least three of five
 folds. The fixed fits are scored once on ICGC.
@@ -286,11 +306,30 @@ comparison is descriptive. Earlier methylation-only fits under the old multimoda
 reached the sweep limit at 10,000 CpGs and failed at 25,000. If this fit also fails to
 converge, the failure is reported and the fits are saved for later diagnosis.
 
-**Result.** In progress.
+**Result.** Methylation alone predicts survival less well than expression on the same
+patients, and it shows no prognostic program that expression lacks. Details are in the
+[findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-methylation-single-modality-findings.md) (section
+"Rerun at K = 5"). The run used K = 5, 144 matched TCGA patients (75 events) and five
+event-balanced folds. CpG screening and imputation happen before the folds are split.
 
-<!-- RESULT (methylation alone): fit time and convergence at each count and setup; CV C for
-methylation and for expression on the same patients; number of methylation-only programs;
-ICGC scores of the fixed fits. -->
+| Setup | CpGs | Mean CV C | Methylation − expression (paired SE) |
+|---|---|---|---|
+| Point-Laplace, z-scores | 10k | 0.545 | −0.046 (0.041) |
+| Point-Laplace, z-scores | 25k | 0.504 | −0.088 (0.038) |
+| Point-Laplace, z-scores | 50k | 0.511 | −0.080 (0.044) |
+| Point-Laplace, z-scores | 100k | 0.502 | −0.089 (0.038) |
+| Point-Laplace, z-scores | all 182,934 | 0.520 | −0.071 (0.038) |
+| Point-exponential, X/sd | 100k | 0.539 | −0.083 (0.053) |
+| Point-exponential, X/sd | all 182,934 | 0.512 | −0.111 (0.052) |
+
+The expression reference is 0.591 under point-Laplace and 0.622 under point-exponential.
+Fold-level C ranges from 0.30 to 0.71. Of 57 fits, 45 converged and 12 reached the 300-sweep
+cap, including 8 of the 12 expression fits, so the expression reference comes mostly from
+capped fits. The point-exponential full fits at 10k to 50k CpGs capped and were not
+cross-validated. Every full fit keeps five programs. No methylation program is
+survival-active in the full fit and in at least three folds while correlating below 0.5
+with every expression program. The fixed fits have not been scored on ICGC. The comparison is
+descriptive at n = 144.
 
 ## One fitter for several data types
 
@@ -338,7 +377,7 @@ up to noise, so YF mixes the latent scores through the overlap between programs,
 two coincide only when programs share no genes. A new patient needs only Y~new~F under YFB,
 but LB has to solve for L~new~ under the stored priors (fold-in).
 
-**Design.** Both models get the identical input matrix, priors, starting values, K = 7 and
+**Design.** Both models get the identical input matrix, priors, starting values, K = 5 and
 folds. The runner builds the input once, passes the same object to both fitters, and stops
 if the two inputs differ. The simulation uses the prior-comparison cells and the November 6
 matched-comparison settings at w = 1 and 10. On the training data, LB's held-out folds are
@@ -351,12 +390,49 @@ The two fixed models are scored on the five external series as a description.
 convergence rule in a cell where the other passes. The failing model is then not carried
 forward.
 
-**Result.** In progress.
+**Result.** YFB is carried forward. The two give nearly the same model on the real data,
+and in simulation at w_S = 1 LB marks more programs survival-active that match no planted
+program in the three variance cells (near the threshold YFB marks more). Details are in the
+[findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-lb-yfb-study-findings.md).
 
-<!-- RESULT (LB vs YFB): simulation recovery, false-active, convergence and validation C per
-cell; paired training CV C difference with SE; program overlap; correlation of the two linear
-predictors and of matched program scores; external scores of both fixed fits; the
-interpretation paragraph. -->
+| Simulation cell (w_S = 1) | Recovered, LB / YFB | Mean false-active, LB / YFB |
+|---|---|---|
+| 0.05% (near threshold) | 5 / 4 | 1.4 / 2.9 |
+| 0.25% | 10 / 10 | 1.8 / 0.9 |
+| 1% | 10 / 10 | 1.5 / 0.1 |
+| 5% | 10 / 10 | 1.2 / 0.0 |
+
+At w_S = 10 both mark few such programs in the three variance cells, and near the threshold
+LB recovers the planted program in 7 of 10 datasets against 3 for YFB. All of these fits
+converged. The simulation process reported at least 50 warnings whose messages were not saved,
+a limit on what the run shows about numerical stability.
+
+On the 273 training patients at K = 5, mean within-cohort CV concordance is 0.652 for LB with
+fold-in and 0.655 for YFB with projection (paired difference 0.003, SE 0.004), and every fold
+converged. The two full-data risk scores correlate 0.998. Each pair of corresponding programs
+has the same 20 top genes, and programs 2, 4 and 5 are survival-active in both. On the five
+external series the pair-weighted mean C is 0.627 for LB and 0.628 for YFB (difference 0.001,
+donor-bootstrap interval −0.002 to 0.005).
+
+### What the two scores mean
+
+LB models the hazard through the latent program activities, η = Lβ. L is the posterior
+activity of each program given the factor model and all other programs, so exp(β~k~) is the
+hazard ratio per unit of latent activity, holding the other activities fixed. A new patient
+has no fitted L, so LB estimates it by fold-in under the stored priors and noise precisions,
+without using any outcome.
+
+YFB models the hazard through the projection of the data on the loadings, η = (YF)β. YF is a
+weighted sum of the standardized gene levels, the same kind of score DeSurv uses (Z = W′X),
+so exp(β~k~) is the hazard ratio per SD of that projection. A new patient's score is
+Y~new~F, with no fold-in.
+
+The two are linked through the factor model. Since Y ≈ LF′, the projection is YF ≈ L(F′F)
+up to noise, so each projection mixes the latent activities of programs that share genes, and
+the two scores coincide only when programs share no genes. On these data the overlap is
+small: each program's latent score correlates 0.985 to 0.999 with its projection, which is
+why the two models predict alike. Their coefficients still use different units, so an LB
+hazard ratio and a YFB hazard ratio for the same program are not directly comparable.
 
 ## Earlier choices redone on training data
 
@@ -365,8 +441,8 @@ chosen from training data alone?
 
 **Design.**
 
-1. **Gene screen.** Five outcome-free screens (D1 to D5 in the May comparison, including the
-   current 2,218-gene screen D4) are compared by five-fold training CV. They use no
+1. **Gene screen.** The outcome-free screens of the May comparison, including the
+   current 2,218-gene screen, are compared by five-fold training CV. They use no
    outcomes, so each is computed once on all 273 patients before the folds, as DeSurv did.
 2. **Input scaling.** z-scores within cohort, X/sd within cohort and DeSurv's
    within-patient rank transform are compared under the chosen prior. One further arm,
@@ -391,16 +467,16 @@ labeled with the model state that produced them.
 and the training cross-validation results of Chapter 4.
 
 Of the May screens, only two remain once the LB-model and cohort-indicator variants are
-dropped: the current D4 screen and D2 (z-score each cohort, quantile-normalize the merged
-matrix, top 2,000 genes by variance). The two differ in their whole preprocessing, not only in
+dropped: the current 2,218-gene screen and a variance screen after quantile normalization
+(z-score each cohort, quantile-normalize the merged matrix, top 2,000 genes by variance). The two differ in their whole preprocessing, not only in
 the ranking rule. At K = 7, within-cohort concordance:
 
 | Input | Mean C (SE) | Difference from current (paired SE) | Folds converged |
 |---|---|---|---|
-| D4 screen, z-scores (current) | 0.658 (0.026) | | 3/5 |
-| D2 screen | 0.646 (0.030) | −0.012 (0.014) | 5/5 |
-| D4, X/sd with centered projection | 0.638 (0.023) | −0.020 (0.007) | 5/5 |
-| D4, within-patient ranks then z-scores | 0.641 (0.022) | −0.017 (0.009) | 5/5 |
+| 2,218 genes, z-scores (current) | 0.658 (0.026) | | 3/5 |
+| Variance screen after quantile normalization, 2,000 genes | 0.646 (0.030) | −0.012 (0.014) | 5/5 |
+| 2,218 genes, X/sd with centered projection | 0.638 (0.023) | −0.020 (0.007) | 5/5 |
+| 2,218 genes, within-patient ranks then z-scores | 0.641 (0.022) | −0.017 (0.009) | 5/5 |
 
 For the rank, CV concordance is flat from K = 5 to 12 (0.649 to 0.666) and lower from
 K = 2 to 4 (0.611 to 0.620). The best mean is at K = 10 (0.666, SE 0.027), so the one-SE
@@ -414,8 +490,8 @@ Because these comparisons are close, the five-fold CV was repeated with four mor
 partitions of the patients. Averaged over the five partitions, the one-SE rule again selects
 K = 5 (0.643, against a best of 0.651 at K = 12). Four of the five partitions select K = 5 on
 their own and one selects K = 10. K = 2 to 4 are lower in every partition. K = 5 converges in
-all 25 fold fits, K = 7 in 18 and K = 12 in 1. D2 is 0.002 lower than D4 on average (SE
-0.008), so D4 stays. The partitions reuse the same 273 patients, so they show that the choices
+all 25 fold fits, K = 7 in 18 and K = 12 in 1. The variance screen is 0.002 lower than the current screen on
+average (SE 0.008), so the 2,218-gene screen stays. The partitions reuse the same 273 patients, so they show that the choices
 do not depend on the fold assignment, not how much they would vary in new samples.
 K = 6 to 12 do not converge in every fold (K = 6 in 4 of 5).
 At K = 5 the point-exponential prior still loses (0.519 against 0.655).
@@ -435,18 +511,32 @@ rule that named programs 2 and 3 needs rechecking at K = 5.
 
 ## External scoring of the fixed working model
 
-Planned once the prior comparisons and the training-CV redo have fixed the working model.
+The working model at K = 5 (YFB, point-Laplace priors on L and F, Normal β, 2,218 genes,
+z-scores within cohort, pooled training, w_S = 1) was scored once on the five external series,
+as the YFB arm of the LB and YFB comparison. Genes missing from a series are set to zero after
+standardization within that series.
 
-<!-- RESULT (external scoring): model state scored (priors, screen, scaling, K), C per series
-with intervals, pooled paired difference against the two-step fit with record and donor
-intervals, calibration slopes. -->
+| Series | Records (events) | Missing genes | C (95% CI) |
+|---|---|---|---|
+| Dijk | 90 (81) | 30 | 0.599 (0.530, 0.667) |
+| Moffitt array | 123 (83) | 71 | 0.538 (0.458, 0.608) |
+| PACA-AU array | 63 (38) | 13 | 0.664 (0.573, 0.756) |
+| PACA-AU RNA-seq | 52 (31) | 27 | 0.704 (0.596, 0.806) |
+| Puleo array | 288 (181) | 82 | 0.645 (0.600, 0.687) |
+
+The equal-series mean is 0.630 (donor-bootstrap interval 0.587 to 0.670) and the
+pair-weighted mean 0.628 (0.596 to 0.662), against 0.620 for the K = 7 fit. The comparison
+with the two-step fit, calibration slopes, hazard ratios and risk groups have not been
+recomputed at K = 5.
 
 ## Open items
 
-- Rerun every reported result at K = 5, the rank adopted from training CV: training CV
-  and the two-step comparison, external scoring and calibration, comparators, risk groups,
-  the program classification, enrichment and signature correlations, and their figures in
-  Chapter 4 and the writeup. Until then those results are labeled as the K = 7 fit.
+- Rerun the remaining results at K = 5, the rank adopted from training CV. Training CV,
+  external concordance and the program coefficients are done at K = 5. Still at K = 7: the
+  two-step comparison, calibration slopes, hazard ratios, risk groups, comparator paired
+  differences, the program classification, enrichment, signature correlations, external
+  program associations and their figures in Chapter 4 and the writeup. Until then those
+  results are labeled with K = 7.
 - Independent review of every result before it enters this chapter, Chapter 4 or the
   writeup.
 - A stratified version of the model, with a scale-robust rule that tells a genomics-only
