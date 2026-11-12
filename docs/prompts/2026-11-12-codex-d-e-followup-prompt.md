@@ -5,16 +5,18 @@ Date: 2026-11-12. Author: Andrew Walther.
 This follows Prompt 2 of the [C, D and E prompts](2026-11-12-codex-c-d-e-prompts.md).
 That prompt produced `2bfd61b5` (D steps 1 and 2) and `153ac5ea` (E code). An
 independent review of both is recorded in the 2026-11-12 notes under Task D and Task E
-of the [week plan](../plans/2026-11-09-week-plan.md). Part 1 runs E's fits. Part 2 is the D
-fitter work for the option Andrew chooses. Run Part 1 first, or run Parts 1 and 2 in
-two separate Codex sessions, because they touch different files.
+of the [week plan](../plans/2026-11-09-week-plan.md). Part 1 runs E's fits and external
+scoring. Part 2 is the D fitter, built the way Andrew chose on 2026-11-12: generalize
+`fit_ssbmf_yfb()` with feature groups. Parts 1 and 2 touch different files, so they can run
+in two separate Codex sessions at the same time. Each is pasted on its own with the
+shared rules at the end.
 
-**Before pasting:** delete the Part 2 options Andrew did not choose. Part 1's priors are
-settled (A `bdbd9989`, A2 `b37783c7`, B `b0c73b1c`).
+The settled choices are point-Laplace L and F (A `bdbd9989`, A2 `b37783c7`), per-program
+Normal β (B `b0c73b1c`), and D4 genes, the per-cohort z-score and K = 5 (F `6bc2980f`).
 
 ---
 
-## Part 1: Task E fixes and fits
+## Part 1: Task E fixes, fits and external scoring
 
 Work in `~/GithubProjects/multiomicsGEP` on `main`. Do not create a worktree or change
 branches. Read AGENTS.md. Then read these sections of the week plan: "Reporting rules for
@@ -28,16 +30,16 @@ entries at the top of DECISIONS.md.
   `center_projection`. Scaling is learned on each training fold.
 - L and F prior: `point_laplace` (task A).
 - β prior: per-program Normal (task B, `b0c73b1c`), which is `normal` in this runner.
-- K = 7 (`cfg$benchmark$k_merged_yfb_desurv`), the config's `max_iter` and `tol`, no
-  pruning.
-- Genes: the current D4 set in the prepared input.
+- K = 5, the rank task F adopted for new work (`6bc2980f`). The runner currently reads
+  K from `cfg$benchmark$k_merged_yfb_desurv` (7), which stays unchanged because historical
+  runners use it. Add a `--K` option instead (fix 5 below). Use the config's `max_iter`
+  and `tol`, and no pruning.
+- Genes: the D4 set in the prepared input (kept by task F).
 - Training w_S = 1 (S-15). Simulation w_S ∈ {1, 10}.
 - Folds: the five saved S-11 folds stored in `data/lf_prior_real_2026-11-12.rds`.
 
-**Conditional on task F.** Task F (gene screen, scaling, rank) is running now and may
-change the gene set or K. These fits are valid for D4 and K = 7 only. Before starting,
-check the top of DECISIONS.md for a task F entry. If F has changed the gene set or K,
-stop and ask Andrew instead of running.
+Results reported at K = 7 elsewhere stay on record under that label. E's results are
+labeled K = 5.
 
 **Step 1. Fixes before any scientific fit** (code in `code/lb_yfb_study.R` and
 `results/benchmark_sim/run_lb_yfb_study.R`, tests in `tests/test_lb_yfb_study*.R`):
@@ -52,7 +54,9 @@ stop and ask Andrew instead of running.
    the findings and ask before keeping it.
 4. Assert that YFB's recorded starting state equals the supplied common start, as is
    already done for LB. Make the mutation check fail when the YFB start is altered.
-5. Run the two focused test files, then `Rscript tests/run_tests.R` (816 before this
+5. Add a `--K` runner option (default: the config value) that sets the fitted rank in
+   all modes, and record it in `settings.txt`. Test that the setting is recorded.
+6. Run the two focused test files, then `Rscript tests/run_tests.R` (816 before this
    change). Commit with a detailed message and push before fitting.
 
 **Step 2. Fits.** Run the two modes at the same time as two separate background
@@ -69,13 +73,13 @@ RUN_DATE=$(date +%Y-%m-%d)
 
 nohup Rscript results/benchmark_sim/run_lb_yfb_study.R \
   --mode=simulation --scaling="$E_SCALING" \
-  --prior_LF="$E_PRIOR_LF" --prior_beta="$E_PRIOR_BETA" \
+  --prior_LF="$E_PRIOR_LF" --prior_beta="$E_PRIOR_BETA" --K=5 \
   --out=results/benchmark_sim/outputs/lb_yfb_simulation_$RUN_DATE \
   > data/lb_yfb_simulation_$RUN_DATE.log 2>&1 &
 
 nohup Rscript results/benchmark_sim/run_lb_yfb_study.R \
   --mode=training --scaling="$E_SCALING" \
-  --prior_LF="$E_PRIOR_LF" --prior_beta="$E_PRIOR_BETA" --w_S=1 \
+  --prior_LF="$E_PRIOR_LF" --prior_beta="$E_PRIOR_BETA" --w_S=1 --K=5 \
   --input=data/lf_prior_real_2026-11-12.rds \
   --out=results/benchmark_sim/outputs/lb_yfb_training_$RUN_DATE \
   > data/lb_yfb_training_$RUN_DATE.log 2>&1 &
@@ -115,18 +119,45 @@ to `docs/findings/README.md`). Report:
    plan, "Interpretation to aim for").
 5. Limits: the w = 10 cells use survival block weighting, which is not the historical
    S-9/S-14 weighting at w ≠ 1. Fold-internal z-scoring means CV C does not exactly
-   reproduce S-11. External scoring is not part of this prompt.
+   reproduce S-11. All results are at K = 5, not the K = 7 of S-11 and task A.
+6. External scoring (Step 4 below): each model's C in each external series, the pooled
+   values, and their paired difference.
 
-Commit only the aggregate CSVs and settings under the two output folders, the code and
-test changes, and the findings note. Patient-level fits and scores stay under ignored
-`data/`.
+**Step 4. External scoring, descriptive.** The plan scores the two fixed full-data
+models once on the five external series. This decides nothing in task E. Write
+`results/benchmark_sim/score_lb_yfb_external.R`, modelled on
+`results/benchmark_sim/score_yfb_supervised_external.R` (S-12). Read
+`docs/findings/2026-11-05-supervised-external-scoring-findings.md` and
+`docs/findings/2026-11-06-orientation-audit.md` first.
+
+- Models: the LB and YFB full-data fits from the training run's private checkpoint. No
+  refitting and no tuning.
+- Inputs: each external series prepared exactly as in S-12. That means the D4 genes,
+  z-scored within the series, with missing genes set to 0. Report the missing-gene count
+  per series.
+- Scores: LB by `predict_ssbmf_lb_foldin()`, YFB by `predict_ssbmf_yfb()` with the training
+  projection center and normalization. Both keep the Cox orientation (larger means higher
+  hazard). Never flip a score on external outcomes.
+- Report each series' C with its CI from `code/concordance_ci.R`, the paired YFB − LB
+  difference per series, and the pooled stratified values. Give the pooled interval with
+  PACA-AU donors kept together, using the same donor bootstrap and 47-donor overlap check
+  as S-12.
+- As a check, correlate the YFB full-data fit's external scores with the saved S-12
+  working-model scores, if those are available as aggregates. They are not the same
+  model: K differs and the start is the common SVD start.
+
+Write only aggregate rows, under `results/benchmark_sim/outputs/lb_yfb_external_<run date>/`.
+
+Commit only the aggregate CSVs and settings under the output folders, the code and test
+changes, and the findings note. Patient-level fits and scores stay under ignored `data/`.
 
 **Done when.** The fixes are tested and pushed, both modes have finished (or stopped with
-explicit failures), and the findings note with all five items is pushed.
+explicit failures), external scoring is done, and the findings note with all six items is
+pushed.
 
 ---
 
-## Part 2: Task D fitter (option-keyed; keep only Andrew's choice)
+## Part 2: Task D fitter, generalizing `fit_ssbmf_yfb()` (chosen by Andrew, 2026-11-12)
 
 Read the "Task D" section of the week plan, including its 2026-11-12 notes, and the
 [M = 1 findings](../findings/2026-11-12-multimodal-m1-equivalence-findings.md). Also read
@@ -134,9 +165,20 @@ the "Extension to M Modalities" section of
 `derivations/SSBMF-YFB-model-derivations/SSBMF-YFB-model-derivation-full.tex`. The
 working configuration is the S-11 call in
 `results/benchmark_sim/run_yfb_supervised_real.R` (`s11_fit`): point-Laplace L and F,
-z-scored input, `canonicalize = TRUE`, w_S = 1, per-program Normal β, pooled.
+z-scored input, `canonicalize = TRUE`, w_S = 1, per-program Normal β, pooled, at K = 5
+(task F) rather than S-11's K = 7.
 
-### Option C (recommended): generalize `fit_ssbmf_yfb()` with feature groups
+Work in `~/GithubProjects/multiomicsGEP` on `main`. Do not create a worktree or change
+branches. Read AGENTS.md first.
+
+**Why this design.** The older multimodal fitter predates the single-modality changes:
+point-Laplace L, canonicalization, w_S, the ELBO stopping rule and the dead-program rule.
+Andrew chose to bring the multimodal model up to date by extending the single-modality
+fitter instead of repairing the older one. The step-1 test changes accordingly. M = 1
+reproduces `fit_ssbmf_yfb()` exactly, by construction. The M > 1 formulas are then checked
+by the per-group prior, objective and prediction tests below and by the step-3 simulation.
+`code/fit_multimodal_yfb.R` stays in the repository as historical, unchanged. Its raw-scale
+intercept, damping, compiled sweep and chunked τ are not carried over.
 
 The derivation's model (shared L, F_m per modality, feature-specific τ_m,
 Z = Σ_m Y_m F_m) is the single-modality model fitted to the column-concatenated
@@ -162,7 +204,7 @@ program) pair. The A_l, B_l, Z, V^Z and τ formulas are already sums over featur
    `code/fit_multimodal_yfb.R`. It becomes historical.
 3. Step 3 simulation: write `results/benchmark_sim/run_feature_group_simulation.R` with
    the `low_variance_prognostic_factor` scenario of `code/simulate_multimodal_yfb.R`,
-   seeds 1–10. z-score each modality on training rows and fit with the working
+   seeds 1–10, K = 5. z-score each modality on training rows and fit with the working
    configuration and `feature_group`. Report recovery of the shared prognostic program
    (≥ 8/10), mean false-active programs (≤ 1), convergence (≥ 9/10), and, as a check of
    methylation dominance, each modality's share of the L precision Σ_j τ_mj E[f²_mjk].
@@ -170,34 +212,15 @@ program) pair. The A_l, B_l, Z, V^Z and τ formulas are already sums over featur
    derivation first, so do not add them. Report dominance if it appears.
 4. Step 4 (only if task C's matched-patient preparation exists and step 3 passed): five-fold
    CV with task C's folds for expression alone, methylation alone (10k CpGs) and both.
-   Report the CV C and the programs that appear only in the joint fit. This is descriptive.
+   Use K = 5. Report the CV C and the programs that appear only in the joint fit. This is descriptive.
 
 **Done when.** The tests pass, the full suite passes, step 3 is reported against its
 criteria, and step 4 is either reported or marked not run with the reason. Findings go in
 `docs/findings/<date>-feature-group-fitter-findings.md`.
 
-### Option A: extend `code/fit_multimodal_yfb.R` to mirror the single sweep
-
-Add point-Laplace L, `strata_id` risk sets, `center_projection`, w_S with block
-weighting, the β → L → F order per program with canonicalization after the sweep, a
-`posterior_init` that is shared with `fit_ssbmf_yfb()`, the full-ELBO stopping rule, the
-dead-program rule, and one KL sign convention. Then rewrite the M = 1 test: same start,
-fixed sweep count (`tol = 0`), all multimodal defaults pinned, the working configuration
-plus one stratified fixture, and the same objective on both sides at relative tolerance
-10⁻⁶. **Done when** both fixtures pass and the full suite passes. Steps 3 and 4 then
-follow as in Option C.
-
-### Option B: shared sweep extracted from `fit_ssbmf_yfb()`
-
-Refactor the single-modality iteration into sweep functions that take a list of
-modality blocks. Have both `fit_ssbmf_yfb()` and a new multimodal entry point call them.
-Prove before anything else that `fit_ssbmf_yfb()` is unchanged: the full suite plus
-reproduction of the saved S-9, S-14 and S-11 refits. **Done when** those hold, the M = 1
-test passes as in Option A, and steps 3 and 4 follow.
-
 ---
 
-## Rules for both parts
+## Rules for both parts (paste with either part)
 
 - Script headers and roxygen per AGENTS.md, author Andrew Walther, no tool names.
 - Do not edit DECISIONS.md, PROJECT_STATUS.qmd, ROADMAP.md, the week plan or
