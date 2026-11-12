@@ -55,7 +55,10 @@ on record and are labeled with that rank. Task A's prior choice holds at K = 5
 (point-exponential 0.519 against 0.655). **Andrew adopted K = 5 the same day.** New work
 reads the new key `benchmark$k_working_yfb: 5`, and `k_merged_yfb_desurv` stays 7 so historical runners
 reproduce. In the K = 5 full fit, programs 2 (protective), 4 and 5 (adverse) are
-survival-active. At K = 7 the active set was 2, 3 and 5. Programs 3 and 4 sit near the
+survival-active. At K = 7 the active set was 2, 3 and 5. **Repeat splits (registered,
+seeds 2027 to 2030):** the one-SE rule on the curve averaged over five splits selects K = 5
+again (K = 5 in four of five splits individually, K = 10 in one), and D2 − D4 averages −0.002
+(SE 0.008), so D4 stays. K = 5 converges in 25 of 25 folds, K = 7 in 18. Programs 3 and 4 sit near the
 activity threshold in both fits. Findings:
 [docs/findings/2026-11-12-training-cv-redo-findings.md](docs/findings/2026-11-12-training-cv-redo-findings.md).
 

@@ -3070,3 +3070,13 @@ unless D2 is better by more than one SE. Rank: (i) the one-SE choice within each
 splits, using as SE the average of the five splits' fold SEs at the best K. K = 5 is
 reported as stable if (ii) selects 5. Any different result is reported to Andrew, who
 adopted K = 5.
+
+## 2026-11-12 — F repeat splits result
+
+240/240 fits without errors. Rank: the one-SE choice is K = 5 in splits 2026, 2027, 2029 and
+2030 and K = 10 in 2028. On the curve averaged over the five splits (best K = 12, 0.651;
+threshold 0.627) the rule selects K = 5 (0.643), so K = 5 is stable by the registered
+definition. Mean C 0.610 to 0.618 at K = 2 to 4, 0.643 to 0.651 at K = 5 to 12. Folds
+converged: 25/25 at K = 5, 18/25 at K = 7, 1/25 at K = 12. Screen: D2 − D4 −0.002 (SE
+0.008), D2 better in 1 of 5 splits; D4 stays. Findings section "Repeat splits" in
+`docs/findings/2026-11-12-training-cv-redo-findings.md`.

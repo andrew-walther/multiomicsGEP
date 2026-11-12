@@ -91,6 +91,24 @@ f_fit <- function(Y, time, status, K, center, cfg, prior_LF = "point_laplace",
                 center_projection = center)
 }
 
+#' Five folds balanced by cohort and event, built exactly as the S-11 folds
+#'
+#' For each cohort x event cell, in order of first appearance, assign folds 1..5 round-robin
+#' to a random permutation. Seed 2026 reproduces the S-11 folds.
+#' @param seed RNG seed. @param cohort,status Cohort labels and event indicators.
+#' @return Integer fold vector.
+#' @examples
+#' # f_folds(2027, z$cohort, z$status)
+f_folds <- function(seed, cohort, status) {
+  set.seed(seed)
+  fold <- integer(length(status))
+  for (co in unique(cohort)) for (st in unique(status)) {
+    idx <- which(cohort == co & status == st)
+    if (length(idx)) fold[idx] <- sample(rep(seq_len(5L), length.out = length(idx)))
+  }
+  fold
+}
+
 #' Fit and score one (part, input, K, fold) task; fold 0 is the full-data fit
 #'
 #' Same metrics as task A: convergence, programs with nonzero loadings, survival-active
@@ -104,10 +122,14 @@ f_fit <- function(Y, time, status, K, center, cfg, prior_LF = "point_laplace",
 #' @examples
 #' # f_task(task, z, cfg)
 f_task <- function(task, z, cfg) {
+  seeded <- !is.null(task$seed) && !is.na(task$seed)
   key <- sprintf("%s_%s_K%02d_f%d", task$part, task$input, task$K, task$fold)
-  path <- file.path(F_PRIV, paste0(key, ".rds"))
+  if (seeded) key <- sprintf("%s_s%d", key, task$seed)
+  path <- file.path(if (seeded) file.path(F_PRIV, "seeds") else F_PRIV, paste0(key, ".rds"))
   if (file.exists(path)) return(paste(key, "done earlier"))
   Y <- z$Y[[task$input]]
+  # Repeat splits replace the S-11 folds with a new cohort x event assignment.
+  if (seeded) z$fold <- f_folds(task$seed, z$cohort, z$status)
   te <- which(z$fold == task$fold)
   tr <- if (task$fold == 0L) seq_along(z$time) else which(z$fold != task$fold)
   set.seed(42L)
@@ -176,7 +198,7 @@ f_run <- function(design, cores) {
   dir.create(F_OUT, recursive = TRUE, showWarnings = FALSE)
   cl <- parallel::makePSOCKcluster(cores, outfile = file.path(F_PRIV, "workers.log"))
   on.exit(parallel::stopCluster(cl))
-  parallel::clusterExport(cl, c("F_PRIV", "F_IN", "f_fit", "f_task"))
+  parallel::clusterExport(cl, c("F_PRIV", "F_IN", "f_fit", "f_task", "f_folds"))
   parallel::clusterEvalQ(cl, { Sys.setenv(OPENBLAS_NUM_THREADS = 1, OMP_NUM_THREADS = 1,
     VECLIB_MAXIMUM_THREADS = 1); source("results/benchmark_sim/run_lf_prior_comparison.R")
     lfp_load(); cfg <- yaml::read_yaml("config/globals.yml"); z <- readRDS(F_IN); NULL })
@@ -329,6 +351,55 @@ f_b_summary <- function(K) {
   invisible(out)
 }
 
+#' Summarize the repeat splits with the seed-2026 fits under the registered rules
+#'
+#' Screen: mean paired D2 - D4 over the five splits, SE = SD of split-level means / sqrt(5).
+#' Rank: (i) one-SE choice within each split; (ii) one-SE rule on the split-averaged curve,
+#' SE = mean over splits of the fold SE at the best K. Stops if any split lacks a fold.
+#' @return NULL; writes seeds_curves.csv, seeds_k_choice.csv, seeds_k_average.csv and seeds_screen.csv.
+#' @examples
+#' # f_summary_seeds()
+f_summary_seeds <- function() {
+  files <- list.files(file.path(F_PRIV, "seeds"), pattern = "rds$")
+  sd_ <- lfp_bind(lapply(files, function(f) { m <- readRDS(file.path(F_PRIV, "seeds", f))$metrics
+    m$seed <- as.integer(sub(".*_s([0-9]+)\\.rds$", "\\1", f)); m }))
+  base <- read.csv(file.path(F_OUT, "fits.csv"))
+  base <- base[base$fold > 0 & ((base$input == "D4_Z") | (base$input == "D2_Z" & base$K == 7)), ]
+  base$seed <- 2026L
+  cols <- c("seed", "input", "K", "fold", "C_within", "converged", "n_active")
+  all <- rbind(base[cols], sd_[cols])
+  for (sdv in unique(all$seed)) for (k in c(2:12)) for (inp in c("D4_Z", if (k == 7) "D2_Z")) {
+    f <- all$fold[all$seed == sdv & all$K == k & all$input == inp]
+    if (!identical(sort(as.integer(f)), 1:5) ||
+        any(!is.finite(all$C_within[all$seed == sdv & all$K == k & all$input == inp])))
+      stop(sprintf("Incomplete repeat split: seed %d, %s, K = %d", sdv, inp, k))
+  }
+  cur <- do.call(rbind, lapply(split(all, list(all$seed, all$input, all$K), drop = TRUE), function(s)
+    data.frame(seed = s$seed[1], input = s$input[1], K = s$K[1], mean_C = mean(s$C_within),
+               se_C = sd(s$C_within) / sqrt(nrow(s)), folds_converged = sum(s$converged),
+               mean_active = mean(s$n_active))))
+  write.csv(cur[order(cur$input, cur$seed, cur$K), ], file.path(F_OUT, "seeds_curves.csv"), row.names = FALSE)
+  k4 <- cur[cur$input == "D4_Z", ]
+  choice <- do.call(rbind, lapply(split(k4, k4$seed), function(s) { s <- s[order(s$K), ]
+    b <- which.max(s$mean_C); thr <- s$mean_C[b] - s$se_C[b]
+    data.frame(seed = s$seed[1], best_K = s$K[b], threshold = thr, one_se_K = min(s$K[s$mean_C >= thr])) }))
+  write.csv(choice, file.path(F_OUT, "seeds_k_choice.csv"), row.names = FALSE)
+  avg <- do.call(rbind, lapply(split(k4, k4$K), function(s) data.frame(K = s$K[1],
+    mean_C = mean(s$mean_C), mean_fold_se = mean(s$se_C), sd_split_means = sd(s$mean_C),
+    folds_converged = sum(s$folds_converged))))
+  avg <- avg[order(avg$K), ]; b <- which.max(avg$mean_C); thr <- avg$mean_C[b] - avg$mean_fold_se[b]
+  avg$selected <- avg$K == min(avg$K[avg$mean_C >= thr]); avg$threshold <- thr
+  scr <- merge(cur[cur$input == "D2_Z", c("seed", "mean_C")], k4[k4$K == 7, c("seed", "mean_C")],
+               by = "seed", suffixes = c("_D2", "_D4"))
+  dd <- scr$mean_C_D2 - scr$mean_C_D4
+  out <- list(avg = avg, screen = data.frame(n_splits = nrow(scr), mean_diff_D2_minus_D4 = mean(dd),
+    se = sd(dd) / sqrt(nrow(scr)), D2_better_in_splits = sum(dd > 0), D4_stays = !(mean(dd) > sd(dd) / sqrt(nrow(scr)))))
+  write.csv(avg, file.path(F_OUT, "seeds_k_average.csv"), row.names = FALSE)
+  write.csv(out$screen, file.path(F_OUT, "seeds_screen.csv"), row.names = FALSE)
+  print(choice); print(avg); print(out$screen)
+  invisible(NULL)
+}
+
 # Main ----
 if (sys.nframe() == 0L) {
   args <- commandArgs(TRUE); mode <- args[1]
@@ -359,5 +430,19 @@ if (sys.nframe() == 0L) {
     if (any(grepl("ERROR", st, fixed = TRUE))) stop("Task B rerun contains failed fits")
     f_b_summary(k)
   }
+  if (mode == "seeds") {
+    # Registered repeat splits (attempts log, "F repeat splits"): D2 and D4 at K = 7 and D4 at
+    # K = 2..12, folds 1..5, seeds 2027-2030.
+    z0 <- readRDS(F_IN)
+    stopifnot(identical(f_folds(2026L, z0$cohort, z0$status), as.integer(z0$fold)))
+    dir.create(file.path(F_PRIV, "seeds"), recursive = TRUE, showWarnings = FALSE)
+    d <- rbind(expand.grid(part = "seeds", input = "D2_Z", K = 7L, fold = 1:5, seed = 2027:2030,
+                           stringsAsFactors = FALSE),
+               expand.grid(part = "seeds", input = "D4_Z", K = K_GRID, fold = 1:5, seed = 2027:2030,
+                           stringsAsFactors = FALSE))
+    st <- f_run(d[order(-d$K), ], cores)
+    writeLines(st, file.path(F_OUT, "task_status_seeds.txt")); print(table(grepl(" ok | done earlier", st)))
+  }
+  if (mode == "seeds_summary") { lfp_load(); f_summary_seeds() }
   if (mode == "summary") { lfp_load(); f_summary() }
 }

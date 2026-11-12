@@ -122,6 +122,39 @@ and 4: at K = 7 the active set is {2, 3, 5}, at K = 5 it is {2, 4, 5}. Both are 
 Interpretations that rely on program 3 being survival-active, such as the
 program-classification rule that names programs 2 and 3, need rechecking at K = 5.
 
+## Repeat splits (four more fold seeds)
+
+Registered before fitting (attempts log, "F repeat splits"). The five-fold split was
+repeated with seeds 2027 to 2030, built the same way as the S-11 folds, for the two close
+comparisons: D2 and D4 at K = 7, and D4 at K = 2 to 12. All 240 fits returned without
+errors. With the original split (seed 2026), that makes five splits and 25 folds per arm.
+
+**Rank.** The one-SE choice within each split is K = 5 in four splits (2026, 2027, 2029,
+2030) and K = 10 in one (2028). Averaged over the five splits:
+
+| K | Mean within-cohort C | Mean fold SE | SD of the five split means | Folds converged (of 25) |
+|---|---|---|---|---|
+| 2 | 0.610 | 0.025 | 0.011 | 25 |
+| 3 | 0.614 | 0.023 | 0.011 | 25 |
+| 4 | 0.618 | 0.028 | 0.004 | 25 |
+| **5** | **0.643** | 0.027 | 0.009 | 25 |
+| 6 | 0.648 | 0.027 | 0.012 | 23 |
+| 7 | 0.644 | 0.028 | 0.012 | 18 |
+| 8 | 0.646 | 0.028 | 0.009 | 13 |
+| 9 | 0.645 | 0.029 | 0.005 | 9 |
+| 10 | 0.649 | 0.029 | 0.013 | 6 |
+| 11 | 0.650 | 0.026 | 0.014 | 3 |
+| 12 | 0.651 | 0.025 | 0.018 | 1 |
+
+The best average is at K = 12 (0.651), the threshold is 0.627, and the rule on the averaged
+curve selects **K = 5**, as registered for calling K = 5 stable. The shape repeats in every
+split: K = 2 to 4 lower by about 0.03, then a plateau from K = 5. Convergence falls steadily
+above K = 5. K = 5 converges in all 25 folds, K = 7 in 18 and K = 12 in 1.
+
+**Gene screen.** Over the five splits D2 minus D4 is −0.002 (SE 0.008), and D2 is better in
+one split of five. D4 stays. The single-split difference (−0.012) was larger than the
+average.
+
 ## Task A rerun at K = 5
 
 | Arm | Mean within-cohort C | Difference (SE) | Folds converged | Survival-active per fold | Max \|cor\| with cohort |
@@ -145,11 +178,10 @@ Task A's criterion 4 fails again, so point-Laplace stays at the new rank.
 
 ## Limits
 
-- One fold split (seed 2026). The week plan asks for four more fold seeds when a paired
-  difference is within one SE. That applies to D2 vs D4 (−0.012, SE 0.014) and to K = 5
-  vs 7 (−0.003, SE 0.007), and it was not run. Task F is therefore incomplete against that
-  part of the plan. The K = 5 adoption is Andrew's decision on one split, not evidence that
-  the choice is stable across splits.
+- The four extra fold seeds the week plan asks for were added after the review (section
+  "Repeat splits"). K = 5 is selected on the curve averaged over five splits and in four of
+  the five splits individually. The splits share all 273 patients, so they measure
+  sensitivity to the fold assignment, not sampling variability.
 - K = 6 to 12 do not converge in every fold within 300 sweeps (K = 6 in 4 of 5). Their concordance is taken
   from the state at the cap.
 - The screen comparison covers the two screens left after removing model and cohort-indicator
