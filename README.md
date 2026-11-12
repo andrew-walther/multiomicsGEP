@@ -208,3 +208,16 @@ then `Rscript results/multimodal_real/run_methylation_single_modality.R sweep --
 The `K05/` directories keep its private checkpoints and aggregate results separate
 from the stopped K = 7 study. The [methylation findings](docs/findings/2026-11-12-methylation-single-modality-findings.md)
 explain the revised timing screen, scope and rebuild commands.
+
+For the approved K = 5 expression convergence follow-up, run
+`OMP_NUM_THREADS=1 Rscript results/multimodal_real/run_expression_iteration_extension_k5.R run`.
+The eight capped K = 5 expression fits restart with a 1,000-sweep cap in the private
+`K05/iteration1000/` directory. Their first 300 ELBO values must reproduce before use.
+The new K = 5 aggregate tables preserve the original 300-sweep results.
+Then run `Rscript results/multimodal_real/characterize_methylation_factors_k5.R` to
+describe saved K = 5 factors, CpG annotations, D4 expression enrichment and local
+ABSOLUTE purity associations. It reads the approved 450K annotation package from
+the ignored `K05/R-library/` directory and writes aggregate CSVs under
+`K05/factor_characterization/`. No external scores or model adoption are involved.
+The K = 5 synthetic checks are `tests/test_expression_iteration_extension_k5.R`
+and `tests/test_methylation_factor_characterization_k5.R`.

@@ -2,7 +2,15 @@
 
 Date: 2026-11-12. Author: Andrew Walther.
 
-**K = 5 result.** The full sweep and timing-eligible CV are complete. Mean
+**K = 5 follow-up.** All eight capped expression fits converged after the approved
+1,000-sweep extension. K = 5 expression mean CV C is now 0.582311 for PL and
+0.620214 for PE, and methylation remains lower in all seven completed comparisons.
+No K = 5 prognostic methylation-only program qualifies. The descriptive K = 5
+analysis identifies 19 of 35 factor-at-count instances as methylation-specific
+under the fixed correlation, stability and recurrence thresholds. These K = 5
+results, purity associations and caveats appear in the final follow-up section.
+
+**K = 5 result at the original 300-sweep cap.** The full sweep and timing-eligible CV are complete. Mean
 methylation concordance is below matched expression in all seven completed
 comparisons. No PL program meets the methylation-only rule. No PE program can
 meet it either, because neither converged PE methylation full fit (100k, all
@@ -619,3 +627,379 @@ pre-fold screening and imputation, and the small matched sample limit the
 interpretation. Reliable supervision still requires the registered recovery,
 false-active-program and convergence gate. Shared status files and the
 deferred K = 7 iteration-extension study were not changed.
+
+
+## K = 5 expression reruns and factor characterization
+
+### Fixed K = 5 descriptive rules before examining results
+
+At K = 5, a methylation factor is called methylation-specific only when all three
+conditions hold: its largest absolute correlation with any expression factor in the
+same setup is below 0.5, its one-to-one matched full-to-fold correlation is at least
+0.5 in at least three converged CV folds, and its largest absolute correlation with
+a full-fit factor at another CpG count in the same setup is at least 0.7. These
+thresholds are fixed before this follow-up's results are inspected. At K = 5, this
+descriptive definition does not require survival activity and does not replace the
+earlier methylation-only prognostic-program rule.
+
+At K = 5, the eight capped expression fits restart from the original initialization
+with a 1,000-sweep cap. Every earlier ELBO value must reproduce within relative
+error 10⁻¹⁰ before a refit is used. At K = 5, all other frozen model settings and
+the saved 144-patient design remain unchanged. The K = 5 characterization uses saved
+posterior means, the 2,218-gene D4 expression universe, and no external outcomes.
+
+### K = 5 expression convergence and paired CV
+
+At K = 5, all eight expression restarts converged in 305 to 438 sweeps. The first
+300 ELBO values reproduced exactly for every K = 5 restart, with maximum relative
+error zero. At K = 5, every final relative ELBO change was below the fixed tolerance
+10⁻⁵, and no restart produced a fitting warning or error. Four already-converged
+K = 5 fits were reused unchanged, so both K = 5 expression references now have a
+converged full fit and five converged CV folds.
+
+| K | Setup | Fold, 0 = full | Sweeps | Final relative change | Risk r with 300 sweeps | Minimum matched program abs(r) | CV C, 300 | CV C, extended |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| 5 | PL | 1 | 404 | 9.8416936e-06 | 0.945589 | 0.950295 | 0.694690 | 0.650442 |
+| 5 | PL | 3 | 326 | 9.9699771e-06 | 0.998764 | 0.999014 | 0.552124 | 0.552124 |
+| 5 | PL | 4 | 305 | 9.9465965e-06 | 0.999999 | 0.999934 | 0.593750 | 0.593750 |
+| 5 | PE | 0 | 438 | 9.9789158e-06 | 0.999976 | 0.996190 | NA | NA |
+| 5 | PE | 1 | 389 | 9.9097006e-06 | 0.999531 | 0.997946 | 0.663717 | 0.650442 |
+| 5 | PE | 3 | 393 | 9.9620203e-06 | 0.999857 | 0.997882 | 0.563707 | 0.571429 |
+| 5 | PE | 4 | 328 | 9.9545094e-06 | 0.999923 | 0.999653 | 0.629464 | 0.629464 |
+| 5 | PE | 5 | 404 | 9.9751311e-06 | 0.995155 | 0.998895 | 0.611399 | 0.606218 |
+
+At K = 5, the point-Laplace expression mean CV C changed from 0.59116016 to
+0.58231061, and the point-exponential expression mean changed from 0.62236103 to
+0.62021429. The K = 5 point-Laplace fold 1 change accounts for the point-Laplace mean
+change. K = 5 risk-score correlations can remain high while individual comparable
+pairs change order, so convergence alone does not imply identical concordance.
+
+| K | Setup | CpGs | Methylation mean C | Paired Δ at 300 sweeps | SE at 300 | Paired Δ after extension | SE after extension |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 5 | PL | 10,000 | 0.545442 | -0.045718 | 0.040687 | -0.036869 | 0.039548 |
+| 5 | PL | 25,000 | 0.503502 | -0.087658 | 0.037697 | -0.078808 | 0.037648 |
+| 5 | PL | 50,000 | 0.511267 | -0.079893 | 0.044426 | -0.071043 | 0.044876 |
+| 5 | PL | 100,000 | 0.502136 | -0.089025 | 0.038474 | -0.080175 | 0.035598 |
+| 5 | PL | 182,934 | 0.519814 | -0.071346 | 0.038021 | -0.062497 | 0.032802 |
+| 5 | PE | 100,000 | 0.539498 | -0.082863 | 0.053348 | -0.080716 | 0.052502 |
+| 5 | PE | 182,934 | 0.511707 | -0.110654 | 0.052326 | -0.108507 | 0.051225 |
+
+At K = 5, Δ is methylation minus expression on the same five folds and SE is the
+sample SD of those five differences divided by √5. All seven completed K = 5
+methylation comparisons remain lower than expression. At K = 5, the 10k, 25k and
+50k point-exponential full methylation fits remain capped at 300 sweeps and have
+no CV. The K = 5 100k point-exponential methylation CV still contains one capped fold.
+The K = 5 extension changes expression only, and preserves every 300-sweep table.
+
+At K = 5, the point-exponential expression full fit converged at sweep 438, so the
+expression-correlation step of the earlier prognostic-program rule is now assessable
+for both converged point-exponential methylation full fits. Neither K = 5 fit has a
+survival-active program, and neither can meet that rule regardless of correlation.
+Across all 35 K = 5 full-fit methylation factors, zero meet the prognostic-program
+rule. See `expression_iteration1000.csv`, `expression_iteration1000_programs.csv`,
+`cv_summary_iteration1000.csv` and `programs_iteration1000.csv` under the K05 output
+directory for the K = 5 fit-level and per-program values.
+
+### K = 5 factor overlap, annotation and expression biology
+
+At K = 5, 19 of the 35 methylation factors meet the fixed descriptive specificity
+rule: nine point-Laplace factors and all ten point-exponential factors. These K = 5
+counts include recurring factors at different CpG counts and are not counts of
+19 independent biological processes. At K = 5, low pairwise correlations with
+individual expression factors do not establish separation from every linear
+combination of expression factors. The K = 5 canonical correlations quantify that
+distinction. Across the seven K = 5 comparisons, the first canonical correlation
+is 0.903 to 0.921 and the second is 0.849 to 0.877, while the fifth is 0.002 to
+0.174. At K = 5, the modalities share some score directions and have other directions
+with little observed linear overlap. These K = 5 correlations are descriptive
+within the same 144 patients, without held-out validation of factor identity.
+
+At K = 5, the annotation package is
+`IlluminaHumanMethylation450kanno.ilmn12.hg19` version 0.6.1. All 182,934 eligible
+K = 5 CpGs were found in its hg19 annotation. At K = 5, each factor's top 100 CpGs
+are ranked by the absolute posterior mean gene-feature loading `EF`. The analogous
+K = 5 expression top-100 genes also use `EF`, as Andrew clarified. In the saved
+K = 5 model, `EL` is a 144-patient loading matrix and `EF` is a feature-by-five
+loading matrix. At K = 5, multi-gene annotation entries remain separate gene-region
+records, while annotation fractions and CpG-overlap counts count each CpG once.
+
+At K = 5, the eligible-CpG background is 20.91% island, 25.73% shore, 10.53%
+shelf and 42.84% open sea, with 32.89% promoter and 41.30% gene-body annotation.
+At K = 5, top-100 island fractions range from 0% to 70% for point-Laplace and
+0% to 35% for point-exponential, while promoter fractions range from 11% to 59%
+and 13% to 38%, respectively. The K = 5 factors therefore differ substantially
+in genomic context rather than following a single common annotation profile.
+
+The K = 5 table below reports every methylation factor. At K = 5, stability is the
+number of converged matched folds with |r| ≥ 0.5, recurrence is the largest |r|
+with a factor at another CpG count in the same setup, and specific applies the
+three fixed conditions. At K = 5, the annotation column gives the most frequent
+island category and the promoter fraction among the top 100 CpGs. The K = 5
+Hallmark column gives the smallest adjusted p-value within that factor's Hallmark
+analysis, with signed NES and q. All K = 5 purity correlations use ABSOLUTE purity
+on 143 complete patients because one of the 144 estimates is missing.
+
+| K | Setup | Methylation factor at CpGs | Closest expression factor, abs(r) | Stable folds | Recurrence | Specific | Top-CpG annotation | Leading Hallmark, NES, q | Purity abs(r) |
+|---|---|---|---|---:|---:|---|---|---|---:|
+| 5 | PL | factor 1 at 10,000 | 1, 0.653 | 5 | 0.993 | no | island 68%, promoter 59% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.19, 1.9e-06 | 0.749 |
+| 5 | PL | factor 2 at 10,000 | 1, 0.548 | 5 | 0.835 | no | open sea 81%, promoter 25% | ALLOGRAFT_REJECTION, 2.55, 3.2e-08 | 0.707 |
+| 5 | PL | factor 3 at 10,000 | 1, 0.583 | 5 | 0.967 | no | open sea 58%, promoter 39% | EPITHELIAL_MESENCHYMAL_TRANSITION, 3.11, 2.3e-24 | 0.507 |
+| 5 | PL | factor 4 at 10,000 | 2, 0.436 | 5 | 0.837 | yes | open sea 64%, promoter 22% | EPITHELIAL_MESENCHYMAL_TRANSITION, 3.17, 6.7e-25 | 0.107 |
+| 5 | PL | factor 5 at 10,000 | 2, 0.596 | 4 | 0.873 | no | open sea 71%, promoter 19% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.45, 9.3e-29 | 0.089 |
+| 5 | PL | factor 1 at 25,000 | 1, 0.698 | 5 | 0.997 | no | island 69%, promoter 47% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.21, 5.3e-07 | 0.799 |
+| 5 | PL | factor 2 at 25,000 | 1, 0.573 | 5 | 0.904 | no | open sea 65%, promoter 27% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.44, 5.9e-11 | 0.595 |
+| 5 | PL | factor 3 at 25,000 | 4, 0.726 | 5 | 0.844 | no | open sea 69%, promoter 39% | EPITHELIAL_MESENCHYMAL_TRANSITION, 3.11, 6.2e-24 | 0.179 |
+| 5 | PL | factor 4 at 25,000 | 2, 0.436 | 4 | 0.948 | yes | open sea 67%, promoter 29% | EPITHELIAL_MESENCHYMAL_TRANSITION, -2.23, 6.1e-14 | 0.063 |
+| 5 | PL | factor 5 at 25,000 | 3, 0.519 | 4 | 0.910 | no | open sea 67%, promoter 29% | EPITHELIAL_MESENCHYMAL_TRANSITION, -2.97, 9.5e-19 | 0.316 |
+| 5 | PL | factor 1 at 50,000 | 1, 0.721 | 5 | 0.997 | no | island 70%, promoter 47% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.21, 4.7e-07 | 0.829 |
+| 5 | PL | factor 2 at 50,000 | 1, 0.414 | 5 | 0.904 | yes | open sea 57%, promoter 12% | ALLOGRAFT_REJECTION, 2.52, 1.4e-09 | 0.480 |
+| 5 | PL | factor 3 at 50,000 | 4, 0.710 | 5 | 0.977 | no | open sea 68%, promoter 39% | EPITHELIAL_MESENCHYMAL_TRANSITION, 3.28, 2.5e-26 | 0.236 |
+| 5 | PL | factor 4 at 50,000 | 2, 0.401 | 5 | 0.948 | yes | open sea 72%, promoter 31% | EPITHELIAL_MESENCHYMAL_TRANSITION, -2.13, 1.5e-08 | 0.198 |
+| 5 | PL | factor 5 at 50,000 | 1, 0.489 | 5 | 0.910 | yes | open sea 67%, promoter 23% | EPITHELIAL_MESENCHYMAL_TRANSITION, 3.41, 4.8e-27 | 0.370 |
+| 5 | PL | factor 1 at 100,000 | 1, 0.748 | 5 | 0.994 | no | island 68%, promoter 44% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.22, 2.8e-07 | 0.861 |
+| 5 | PL | factor 2 at 100,000 | 1, 0.125 | 5 | 0.963 | yes | open sea 54%, promoter 11% | ALLOGRAFT_REJECTION, 2.12, 3.8e-05 | 0.198 |
+| 5 | PL | factor 3 at 100,000 | 4, 0.684 | 5 | 0.977 | no | open sea 67%, promoter 44% | EPITHELIAL_MESENCHYMAL_TRANSITION, 3.14, 1.6e-23 | 0.319 |
+| 5 | PL | factor 4 at 100,000 | 2, 0.546 | 5 | 0.929 | no | open sea 73%, promoter 30% | EPITHELIAL_MESENCHYMAL_TRANSITION, -2.40, 1.3e-11 | 0.268 |
+| 5 | PL | factor 5 at 100,000 | 1, 0.359 | 3 | 0.968 | yes | open sea 72%, promoter 22% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.21, 1.1e-09 | 0.202 |
+| 5 | PL | factor 1 at 182,934 | 1, 0.774 | 5 | 0.992 | no | island 45%, promoter 43% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.27, 3e-08 | 0.872 |
+| 5 | PL | factor 2 at 182,934 | 2, 0.096 | 5 | 0.963 | yes | open sea 55%, promoter 16% | TNFA_SIGNALING_VIA_NFKB, 1.91, 9.4e-05 | 0.150 |
+| 5 | PL | factor 3 at 182,934 | 4, 0.759 | 5 | 0.965 | no | open sea 69%, promoter 37% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.95, 1.2e-19 | 0.151 |
+| 5 | PL | factor 4 at 182,934 | 1, 0.288 | 5 | 0.968 | yes | open sea 75%, promoter 24% | EPITHELIAL_MESENCHYMAL_TRANSITION, -1.97, 6.5e-06 | 0.160 |
+| 5 | PL | factor 5 at 182,934 | 2, 0.581 | 5 | 0.929 | no | open sea 75%, promoter 23% | EPITHELIAL_MESENCHYMAL_TRANSITION, 2.76, 5.7e-32 | 0.048 |
+| 5 | PE | factor 1 at 100,000 | 2, 0.267 | 4 | 0.872 | yes | open sea 76%, promoter 26% | ALLOGRAFT_REJECTION, 2.17, 2.5e-05 | 0.248 |
+| 5 | PE | factor 2 at 100,000 | 4, 0.406 | 4 | 0.975 | yes | open sea 41%, promoter 31% | EPITHELIAL_MESENCHYMAL_TRANSITION, -2.81, 6e-15 | 0.506 |
+| 5 | PE | factor 3 at 100,000 | 4, 0.434 | 4 | 0.941 | yes | open sea 55%, promoter 38% | ALLOGRAFT_REJECTION, 2.69, 1.1e-10 | 0.575 |
+| 5 | PE | factor 4 at 100,000 | 3, 0.404 | 4 | 0.941 | yes | open sea 71%, promoter 23% | EPITHELIAL_MESENCHYMAL_TRANSITION, -2.53, 1e-11 | 0.298 |
+| 5 | PE | factor 5 at 100,000 | 4, 0.269 | 4 | 0.907 | yes | open sea 46%, promoter 31% | GLYCOLYSIS, 2.38, 1.9e-06 | 0.503 |
+| 5 | PE | factor 1 at 182,934 | 4, 0.175 | 5 | 0.830 | yes | open sea 51%, promoter 13% | TNFA_SIGNALING_VIA_NFKB, 1.72, 0.0036 | 0.113 |
+| 5 | PE | factor 2 at 182,934 | 4, 0.396 | 5 | 0.975 | yes | island 35%, promoter 30% | EPITHELIAL_MESENCHYMAL_TRANSITION, -2.72, 3.3e-13 | 0.443 |
+| 5 | PE | factor 3 at 182,934 | 5, 0.253 | 5 | 0.941 | yes | open sea 34%, promoter 13% | ALLOGRAFT_REJECTION, 2.54, 1.3e-09 | 0.402 |
+| 5 | PE | factor 4 at 182,934 | 3, 0.359 | 5 | 0.941 | yes | open sea 59%, promoter 31% | EPITHELIAL_MESENCHYMAL_TRANSITION, -2.61, 1.3e-12 | 0.214 |
+| 5 | PE | factor 5 at 182,934 | 4, 0.296 | 5 | 0.870 | yes | open sea 47%, promoter 22% | EPITHELIAL_MESENCHYMAL_TRANSITION, -2.69, 1.4e-13 | 0.396 |
+
+At K = 5, the expression factors receive the same D4 gene-score correlation and
+Hallmark analysis, allowing direct descriptive comparison:
+
+| K | Setup | Expression factor | Leading Hallmark | NES | q | Purity abs(r) |
+|---|---|---:|---|---:|---:|---:|
+| 5 | PL | 1 | EPITHELIAL_MESENCHYMAL_TRANSITION | 2.68 | 1e-14 | 0.734 |
+| 5 | PL | 2 | EPITHELIAL_MESENCHYMAL_TRANSITION | 3.08 | 4e-32 | 0.118 |
+| 5 | PL | 3 | MYC_TARGETS_V1 | 2.62 | 1.6e-05 | 0.231 |
+| 5 | PL | 4 | APICAL_JUNCTION | -2.12 | 0.00032 | 0.267 |
+| 5 | PL | 5 | EPITHELIAL_MESENCHYMAL_TRANSITION | -2.24 | 5.7e-26 | 0.278 |
+| 5 | PE | 1 | EPITHELIAL_MESENCHYMAL_TRANSITION | 2.25 | 7.2e-17 | 0.181 |
+| 5 | PE | 2 | EPITHELIAL_MESENCHYMAL_TRANSITION | 2.16 | 1.1e-17 | 0.505 |
+| 5 | PE | 3 | INTERFERON_ALPHA_RESPONSE | -1.87 | 0.015 | 0.224 |
+| 5 | PE | 4 | EPITHELIAL_MESENCHYMAL_TRANSITION | -2.48 | 3.2e-10 | 0.499 |
+| 5 | PE | 5 | EPITHELIAL_MESENCHYMAL_TRANSITION | 2.18 | 2.1e-13 | 0.379 |
+
+At K = 5, fgsea ranks the Pearson correlation of each factor's saved canonical
+YF score with each of the 2,218 D4 genes. At K = 5, the Hallmark and PDAC
+collections include retained Moffitt, Bailey and DeSurv sets. Each K = 5 gene set
+is intersected with the D4 universe before testing, with the existing helper's
+size limits of 10 to 500 genes. At K = 5, adjusted p-values apply within a factor
+and collection, not across the complete analysis. The D4 universe and DeSurv
+gene sets come from related expression preprocessing, so K = 5 enrichment is
+not independent validation of a subtype or a causal mechanism. At K = 5, score
+correlations with purity support a mixture-composition interpretation for some
+factors, but do not identify a cell type or establish a tumor-intrinsic mechanism.
+
+### K = 5 CpG–gene associations and overlap
+
+At K = 5, the eligible universe contains 9,086 unique promoter CpG–D4-gene pairs.
+Of these K = 5 pairs, 6,952 have negative Spearman correlation, a fraction of
+0.76513317. At K = 5, 3,001 pairs are below −0.3 and 949 are below −0.5.
+The strongest negative K = 5 pairs include cg25373430–GJB5, ρ = −0.864842,
+cg02430183–WNK2, ρ = −0.819448, and cg03449125–CAPN5, ρ = −0.813785.
+At K = 5, these are cross-patient associations after the saved imputation,
+without adjustment for purity, multiple testing or potential confounding.
+
+At K = 5, overlap of a methylation factor's top 100 CpGs with annotations to its
+closest expression factor's top 100 genes ranges from zero to four CpGs. The
+K = 5 null draws 100 CpGs without replacement from all 182,934 eligible CpGs,
+1,000 times with seed 2026. Four K = 5 comparisons have unadjusted upper-tail
+Monte Carlo p < 0.05: point-Laplace factor 5 at 10k, factor 4 at 25k, factor 5
+at 25k, and factor 5 at all CpGs. The K = 5 observed counts are three, three,
+three and four, with p = 0.039960, 0.039960, 0.009990 and 0.005994. None passes
+a Bonferroni threshold of 0.05/35. At K = 5, the CpG annotation overlap therefore
+does not establish gene-level correspondence beyond this descriptive screen.
+
+At K = 5, `cross_modality_overlap.csv` also reports each factor's promoter-pair
+count, negative fraction and counts below −0.3 and −0.5 against the complete
+promoter-pair background. At K = 5, all 9,086 pair-level correlations appear in
+`promoter_cpg_gene_correlations.csv`. Both are aggregate per-pair or per-factor
+outputs, with no patient values.
+
+### K = 5 implementation and rebuild explanation
+
+At K = 5, `results/multimodal_real/run_expression_iteration_extension_k5.R` exists
+to distinguish a capped numerical iterate from a converged expression reference.
+Its K = 5 `e5_prepare()` block verifies the original source manifest, copies the
+frozen source and design, and checks that only `cavi$max_iter` becomes 1000.
+At K = 5, `e5_runner()` selects rank five through the existing `c_set_rank(5)`
+mechanism and redirects private checkpoints to `iteration1000/`. At K = 5,
+`e5_worker()` calls the unchanged fitter, which resets seed 42, and `e5_prefix()`
+requires the saved ELBO prefix to reproduce before accepting the new posterior.
+At K = 5, `e5_run()` launches batches of at most three child R processes and stops
+after a batch if any child fails. At K = 5, `e5_summary()` reuses the four
+converged fits, evaluates held-out scores with `frozen_reverse_cindex()`, and uses
+`e5_paired()` to retain all five paired differences in the SE calculation.
+
+At K = 5, the extension inputs are private saved fits and the frozen design, and
+its outputs are eight new private fit checkpoints plus aggregate diagnostics,
+matched program correlations, CV summaries and updated prognostic-program flags.
+At K = 5, missing or nonfinite ELBO values, changed source hashes or any config
+change beyond the cap are hard failures. At K = 5, this is a restart from the
+original seed, not a posterior warm start. The K = 5 R implementation uses
+`parallel::mclapply()` only to launch independent child processes, and `yaml` to
+read and verify the configuration. No file under `code/` or the live global
+configuration was changed by this follow-up.
+
+At K = 5, `results/multimodal_real/characterize_methylation_factors_k5.R` reads
+saved full-fit posterior means and the original fold-matching table without
+refitting a model. Its K = 5 `classify_specific()` applies the three fixed
+thresholds, `expand_annotation()` preserves aligned multi-gene and gene-region
+annotations, and `overlap_permutation()` counts unique CpGs under a seeded
+1,000-draw null. At K = 5, `safe_cor()` permits an undefined correlation for a
+constant factor rather than inventing a value, and `island_class()` maps the
+Illumina island labels to island, shore, shelf or open sea. At K = 5,
+`characterize_k5()` checks feature and patient alignment, assembles the aggregate
+outputs, and aligns local ABSOLUTE purity by unique saved sample ID.
+
+At K = 5, the characterization inputs are seven converged methylation full fits,
+two converged expression full fits, the saved 144-patient design and fold matches,
+the approved hg19 annotation, the existing gene sets and local purity metadata.
+At K = 5, the outputs are factor-level, CpG-annotation-level and CpG–gene-pair-level
+CSV rows with no patient values. At K = 5, Pearson correlations describe factor
+scores and gene-expression rankings, while Spearman correlations describe
+promoter CpG–gene pairs. At K = 5, base R `cancor()` compares the two five-dimensional
+score spaces, and the existing `run_fgsea_program()` uses signed rankings with
+`scoreType = "std"` and seed 2026. At K = 5, promoter and gene-body categories can
+overlap for a CpG with several annotations, and small D4 gene-set intersections
+can be excluded by the existing fgsea size limits. The K = 5 annotation package
+is installed in ignored `data/`, and package versions and input hashes are saved
+alongside the aggregate characterization.
+
+At K = 5, rebuild from the repository root with:
+
+```sh
+OMP_NUM_THREADS=1 Rscript results/multimodal_real/run_expression_iteration_extension_k5.R run
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 Rscript results/multimodal_real/characterize_methylation_factors_k5.R
+Rscript tests/test_expression_iteration_extension_k5.R
+Rscript tests/test_methylation_factor_characterization_k5.R
+Rscript tests/run_tests.R
+```
+
+### K = 5 recommendation for a future joint fit
+
+At K = 5, the recommended first CpG count for a future authorized joint fit is
+10,000 with the point-Laplace setup. At K = 5, its full methylation fit and all
+five CV folds converge, it already contains a stable recurrent descriptively
+specific factor, and it has the highest methylation-only mean CV C among the
+tested counts. At K = 5, larger counts add computational cost without improving
+this marginal prediction comparison. This K = 5 recommendation does not establish
+the best count for joint prediction, and it does not authorize a joint fit or
+adopt a count. At K = 5, the point-exponential full fits at 10k, 25k and 50k remain
+nonconverged, so the same recommendation does not extend to that setup.
+
+### K = 5 enrichment warnings and numerical limits
+
+At K = 5, the analysis writes all 2,475 factor-by-gene-set rows, including 18
+rows with undefined NES, p-value and adjusted p-value because the fgsea simple
+permutation calculation had unbalanced positive and negative gene statistics.
+At K = 5, the 19 contextual warning records also include warnings about
+overestimated p-values and the default 10⁻⁵⁰ p-value floor. These K = 5 warnings
+are retained in `factor_characterization/analysis_warnings.csv`, and the
+settings were not tuned to remove them. At K = 5, undefined rows are not counted
+as evidence of enrichment or absence of enrichment. At K = 5, factor-specific
+promoter-pair subsets can contain zero pairs, in which case their negative
+fraction is undefined and their denominator is reported explicitly.
+
+### K = 5 verification and independent review
+
+At K = 5, `Rscript tests/run_tests.R` finishes with 849 passed and zero failed.
+An earlier K = 5 full-suite run had 842 passed and five failures in concurrently
+modified feature-group simulation tests. After that separate work was committed
+in `a0bdb81d`, the full suite passed. The K = 5 verification log retains the
+reported bounded-β profile-likelihood fallback diagnostic warning.
+
+At K = 5, the focused extension and characterization tests each pass 15 assertions.
+The K = 5 extension tests check matching and changed ELBO prefixes, a short or
+nonfinite trajectory, cap-only configuration copying, preserved design contents
+and paired means and SEs that change when the inputs change. The K = 5
+characterization tests check planted shared and methylation-specific factors,
+threshold boundaries, multi-gene annotations and seeded nonconstant permutation
+results.
+
+At K = 5, a fresh independent reviewer recomputed all expression concordances and
+paired statistics from the private checkpoints, all 175 score correlations, all
+35 canonical correlations using a separate QR/SVD calculation, and all 175 fold
+assignments and 35 specificity calls. The K = 5 review also verified all top-100
+CpG sets and annotations, all 9,086 promoter-pair correlations, all 35 overlap
+nulls and all 45 factor-purity correlations. At K = 5, all 2,475 pathway sizes
+were checked and 330 representative enrichment rows reproduced, including
+undefined results. No substantive K = 5 numerical or code blocker was found.
+The K = 5 review identified unescaped absolute-correlation symbols in table
+headers, which were corrected.
+
+## Text for the documents
+
+At K = 5 on the 144 matched TCGA patients, all eight capped expression fits
+converged after restarting with an approved 1,000-sweep cap. At K = 5, convergence
+occurred in 305 to 438 sweeps, every first-300-sweep ELBO prefix reproduced
+exactly, and no expression restart raised a fitting error or warning. At K = 5,
+the expression mean CV concordance changed from 0.59116016 to 0.58231061 for
+point-Laplace and from 0.62236103 to 0.62021429 for point-exponential. At K = 5,
+both expression full fits and all ten expression CV folds now converge.
+
+At K = 5, point-Laplace methylation mean CV concordance is 0.54544204, 0.50350214,
+0.51126748, 0.50213560 and 0.51981370 at 10k, 25k, 50k, 100k and all 182,934
+eligible CpGs. At K = 5, the corresponding paired methylation-minus-expression
+differences are −0.03686857, −0.07880847, −0.07104313, −0.08017500 and −0.06249690,
+with paired SEs 0.03954779, 0.03764808, 0.04487644, 0.03559844 and 0.03280247.
+At K = 5, point-exponential methylation mean CV concordance is 0.53949843 at
+100k and 0.51170733 at all CpGs, with paired differences −0.08071587 and
+−0.10850696 and SEs 0.05250160 and 0.05122491. At K = 5, the 10k, 25k and 50k
+point-exponential methylation full fits still cap at 300 sweeps and have no CV,
+and one 100k point-exponential methylation fold still caps at 300. At K = 5,
+all seven completed methylation comparisons remain lower than expression.
+
+At K = 5, zero methylation factors meet the earlier prognostic methylation-only
+rule. At K = 5, a separate descriptive rule without survival activity identifies
+19 of 35 factor-at-count instances as methylation-specific, nine point-Laplace
+and ten point-exponential. The K = 5 rule requires max expression-factor |r| < 0.5,
+matched |r| ≥ 0.5 in at least three converged folds, and recurrence |r| ≥ 0.7 at
+another CpG count in the same setup. At K = 5, these are recurring factor
+instances rather than 19 independent biological programs, and first canonical
+correlations of 0.903 to 0.921 show substantial shared linear score structure.
+
+At K = 5, 6,952 of 9,086 unique promoter CpG–D4-gene pairs have negative Spearman
+correlation, a fraction of 0.76513317. At K = 5, 3,001 pairs are below −0.3 and
+949 are below −0.5. At K = 5, local ABSOLUTE purity is available for 143 of 144
+patients, and methylation-factor absolute correlations with purity reach 0.871691
+for point-Laplace and 0.575476 for point-exponential. At K = 5, four top-CpG versus
+top-expression-gene overlap tests have unadjusted permutation p < 0.05, but none
+passes 0.05/35. At K = 5, the enrichment output retains 18 undefined rows among
+2,475 and records 19 contextual numerical warnings.
+
+At K = 5, these results are descriptive, with n = 144, pre-fold CpG screening and
+imputation, a restricted 2,218-gene D4 universe, one missing purity estimate and
+the remaining capped methylation fits described above. At K = 5, enrichment does
+not independently establish subtype identity or a causal mechanism. At K = 5,
+no rank, setup, prior or CpG count is adopted, and no ICGC scoring was performed.
+At K = 5, 10,000 CpGs with point-Laplace is recommended as a computationally
+manageable starting count for a future authorized joint fit, rather than as an
+established optimal joint count.
+
+The K = 5 aggregate directory is
+`results/multimodal_real/outputs/methylation_single_modality_2026-11-12/K05/`.
+The K = 5 expression and paired-CV sources are `expression_iteration1000.csv`,
+`expression_iteration1000_programs.csv`, `cv_summary_iteration1000.csv` and
+`programs_iteration1000.csv`. The K = 5 descriptive sources in its
+`factor_characterization/` subdirectory are `score_correlations.csv`,
+`canonical_correlations.csv`, `factor_stability.csv`, `top_cpgs_annotated.csv`,
+`annotation_enrichment.csv`, `fgsea_by_factor.csv`,
+`promoter_cpg_gene_correlations.csv`, `cross_modality_overlap.csv`,
+`purity_correlations.csv`, `analysis_warnings.csv`, `package_versions.csv` and
+`input_hashes.csv`. At K = 5, all patient-level inputs, scores and fits remain
+in ignored private storage.
