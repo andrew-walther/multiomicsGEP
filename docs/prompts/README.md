@@ -4,6 +4,7 @@ Paste-in prompts, briefs and session handoffs.
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-12 | [codex-d-e-followup-prompt](2026-11-12-codex-d-e-followup-prompt.md) | Codex follow-up: E fixes and fits once the β prior is filled in; D fitter work keyed by Andrew's option (generalize `fit_ssbmf_yfb()`, extend or rewrite the multimodal fitter) | active; D option pending |
 | 2026-11-12 | [codex-task-b-review-prompt](2026-11-12-codex-task-b-review-prompt.md) | Codex independent review of task B (β prior): rule recomputed, inclusion probabilities checked, two reruns | active |
 | 2026-11-12 | [codex-task-a-review-prompt](2026-11-12-codex-task-a-review-prompt.md) | Codex independent review of task A (L/F priors): code, outputs and criteria recomputed without reading the conclusions first | active |
 | 2026-11-12 | [codex-c-d-e-prompts](2026-11-12-codex-c-d-e-prompts.md) | Two concurrent Codex prompts: task C methylation CpG-count study; task D steps 1–2 then task E code | active |
