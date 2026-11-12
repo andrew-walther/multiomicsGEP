@@ -28,12 +28,14 @@ choose between models or settings.
 
 Several earlier choices did use external outcomes, as listed in the
 [external-cohort audit](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-06-external-cohort-uses.md).
-Three of them still shape the working model: the gene screen (D4, chosen on external
-concordance in May), per-cohort standardization without a rank transform (May), and the
+Three of them still shape the working model: the gene screen (the 2,218-gene screen that
+ranks genes by mean and variance in each training cohort and intersects the two sets, called
+D4, chosen on external concordance in May), per-cohort standardization without a rank transform (May), and the
 rank of seven (first chosen by training CV, later kept partly on external concordance in
-July and August). These three are redone on training data this week. The other listed
-choices, such as the historical β prior, cohort indicators and the loading supervision
-weight α~F~, have since been replaced by choices made on training data or by simulation.
+July and August). These three are redone on training data this week. Of the other listed
+choices, the loading supervision weight α~F~ was replaced by the survival weight w_S, chosen
+by training CV. The β prior is compared again this week. Cohort indicators were dropped in
+favor of cohort strata, which have not yet been evaluated on real data.
 
 External scoring can be run at any time for reporting, since it never feeds back into a
 choice. This week it runs once, after the methods work, on the working model as fixed by
@@ -41,7 +43,7 @@ the prior comparisons and the training-CV redo, so that the writeup and Chapter 
 simulation, training CV and external results for the same model.
 
 **No held-out portion of the training data.** A fixed hold-out would act as a sealed test
-set, but it would be too small to be useful. In the November 4 training CV the fold
+set, but it would be too small to be useful. In the training CV of the fit of November 4 the fold
 concordances had an SE of 0.024, which implies a standard deviation of about 0.05 for one
 fold of about 55 patients. A 20% hold-out would estimate concordance with about that SE,
 while the differences between the settings compared this week have been 0.002 to 0.01, and
@@ -101,7 +103,7 @@ These items were finished and independently reviewed between November 10 and 11.
 commits and the evidence for each are in the
 [housekeeping handoff](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/reviews/2026-11-11-housekeeping-and-cv-handoff.md).
 
-- **Review of the October 30 Gemini material.** Every issue, diagnosis and suggestion in
+- **Review of an external issues-and-solutions specification (October 30).** Every issue, diagnosis and suggestion in
   the two specifications and eight screenshots was listed once, with the problem it bears
   on, what the project already did about that problem, and whether the idea adds anything
   ([findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-10-gemini-advice-findings.md)).
@@ -218,7 +220,8 @@ interpretation.
 
 **Design.** The matched TCGA patients with expression, methylation and survival (up to 150
 before survival filtering), with the CpG sites described under the November 12 decisions.
-Each CpG count is fitted under both prior setups with a Normal β prior. The comparator is an
+Each CpG count is fitted under both prior setups with a Normal β prior. If the β-prior
+comparison adopts a sparse prior, the methylation fits are repeated under it. The comparator is an
 expression fit with the D4 genes on the same patients and folds. A methylation program
 counts as new if its patient scores correlate below 0.5 in absolute value with every
 expression program and it is survival-active in the full fit and in at least three of five
@@ -309,7 +312,8 @@ chosen from training data alone?
 
 **Design.**
 
-1. **Gene screen.** The D1 to D5 screens are compared by five-fold training CV. They use no
+1. **Gene screen.** Five outcome-free screens (D1 to D5 in the May comparison, including the
+   current 2,218-gene screen D4) are compared by five-fold training CV. They use no
    outcomes, so each is computed once on all 273 patients before the folds, as DeSurv did.
 2. **Input scaling.** z-scores within cohort, X/sd within cohort and DeSurv's
    within-patient rank transform are compared under the chosen prior. One further arm,
