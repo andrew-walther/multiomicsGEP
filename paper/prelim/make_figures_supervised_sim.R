@@ -632,4 +632,5 @@ cat("\n=== Check summary ===\n")
 if (length(MISMATCHES)) {
   stop("Saved results differ from the checked findings:\n", paste0("  ", MISMATCHES, collapse = "\n"), call. = FALSE)
 }
-cat("All checked values match the findings files.\n")
+if (SIM) cat("All checked values match the findings files.\n") else
+  cat(sprintf("K = %d: values were not checked against the K = 7 findings.\n", exhibit_k()))
