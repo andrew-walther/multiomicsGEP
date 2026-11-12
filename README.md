@@ -132,6 +132,14 @@ Documentation:
 - [Decisions](DECISIONS.md)
 - [Roadmap](ROADMAP.md)
 
+## Feature-group fitter tests
+
+Run `OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 Rscript tests/test_feature_groups_yfb.R`
+for the proposed feature-group extension. These tests currently include seven
+expected failures before implementation and are not yet in the master runner.
+The [findings](docs/findings/2026-11-12-feature-group-fitter-findings.md) describe
+the frozen baselines and the required wait for Part 1's committed results.
+
 ## License and author
 
 [MIT](LICENSE). Patient data remain under their own terms of use.
