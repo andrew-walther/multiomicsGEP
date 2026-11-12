@@ -93,6 +93,13 @@ For the registered K = 5 comparison, pass `--K=5 --w_S=1` with
 records rank and survival weight in `settings.txt`, and reports held-out
 concordance and comparable-pair counts for each cohort.
 
+Score the saved full-data pair with
+`Rscript results/benchmark_sim/score_lb_yfb_external.R` after training finishes.
+The scorer uses the dated private checkpoint and writes aggregate external
+concordance tables, including donor-aware pooled intervals. Existing output
+directories are never overwritten.
+
+
 ## Selected findings
 
 The reported expression fit uses 2,218 genes from 273 TCGA and CPTAC patients.

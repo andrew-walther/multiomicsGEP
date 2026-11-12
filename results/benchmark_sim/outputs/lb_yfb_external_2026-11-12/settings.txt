@@ -1,0 +1,6 @@
+checkpoint=data/lb_yfb_study_lb_yfb_training_2026-11-12/patient_level.rds
+input=data/lf_prior_real_2026-11-12.rds
+B=2000
+shared_paca_au_donors=47
+s12_score_correlation=unavailable_aggregate_scores
+git_head=04949c7174bebd5ffaa08214f0275f0b428a55c8
