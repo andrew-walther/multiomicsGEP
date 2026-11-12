@@ -7,6 +7,7 @@ status updates are in [`../progress_report/`](../progress_report/README.md).
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-12 | [lb-yfb-study-code-findings](2026-11-12-lb-yfb-study-code-findings.md) | Matched-input pooled five-fold LB fold-in and YFB projection code, configurable runner and regression checks | code independently reviewed; scientific fits wait for fixed priors |
 | 2026-11-12 | [multimodal-m1-equivalence-findings](2026-11-12-multimodal-m1-equivalence-findings.md) | One-modality acceptance test, fitter differences and November 6 KL carryover | equivalence blocked pending design; KL fixes independently reviewed |
 | 2026-11-12 | [lf-prior-comparison-findings](2026-11-12-lf-prior-comparison-findings.md) | Task A: point-exponential vs point-Laplace L/F priors, simulation and pooled training CV, plus the rank-transform arm | complete; point-Laplace stays (PE fails false activity and CV concordance) |
 | 2026-11-11 | [early-benchmark-migration-findings](2026-11-11-early-benchmark-migration-findings.md) | Approved preservation-first archive move of 267 early figure/table artifacts and source-path updates | complete; hashes preserved, 801 tests and independent review passed |

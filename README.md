@@ -84,6 +84,11 @@ the historical analyses.
 Early benchmark tables and figures are preserved in the
 [history archive](results/history/early-benchmarks/README.md).
 
+The [matched LB/YFB runner](results/benchmark_sim/run_lb_yfb_study.R) compares
+LB fold-in with YFB projection using identical inputs and five training folds.
+Its [code findings and run commands](docs/findings/2026-11-12-lb-yfb-study-code-findings.md)
+describe the explicit prior/scaling arguments, synthetic smoke mode and private checkpoints.
+
 ## Selected findings
 
 The reported expression fit uses 2,218 genes from 273 TCGA and CPTAC patients.

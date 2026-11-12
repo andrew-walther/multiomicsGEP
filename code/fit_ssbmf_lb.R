@@ -173,6 +173,12 @@ calc_cox_taylor <- function(eta, time, status, strata = NULL) {
 #'                 Default "point_normal" — sparse, allows positive and negative
 #'                 coefficients (prognostic direction not constrained).
 #'                 Also accepts "point_laplace" for heavier-tailed sparsity.
+#' @param w_S NULL for historical alpha weighting. A positive value selects
+#'   untempered genomics and w_S times the survival block, including beta KL.
+#'   The beta coordinate is untempered, matching YFB survival_block_weight.
+#'   This opt-in study mode rejects schedules, normalized A/B and beta boosting.
+#' @param EBeta_init NULL for the historical Cox warm start, or a finite K-vector
+#'   of initial coefficient means. Second moments start at squared means.
 #' @param alpha      numeric in [0, 1]: survival/genomics mixing weight passed to
 #'                 update_L_k(), update_F_k(), and update_beta_k() at every iteration.
 #'                 Controls the relative emphasis of the survival likelihood vs.
@@ -272,9 +278,23 @@ fit_ssbmf_lb <- function(Y, time, status,
                                       verbose         = TRUE,
                                       cohort_id       = NULL,
                                       sigma_F_cohort  = 1.0,
-                                      strata_id       = NULL) {
+                                      strata_id       = NULL,
+                                      w_S             = NULL,
+                                      EBeta_init      = NULL) {
 
   n <- nrow(Y); p <- ncol(Y)
+  study_weight <- !is.null(w_S)
+  if (study_weight) {
+    if (!is.numeric(w_S) || length(w_S) != 1L || !is.finite(w_S) || w_S <= 0)
+      stop("w_S must be NULL or a positive finite scalar.")
+    if (!is.null(alpha_schedule) || normalize_AB || boost_beta || N_burnin > 0)
+      stop("w_S mode requires no alpha schedule, normalized A/B, beta boost or burn-in.")
+    # Alpha is irrelevant in this mode. Fold-in uses untempered genomics.
+    alpha <- 0
+  }
+  if (!is.null(EBeta_init) &&
+      (!is.numeric(EBeta_init) || length(EBeta_init) != K || any(!is.finite(EBeta_init))))
+    stop("EBeta_init must be a finite numeric K-vector.")
 
   if (!is.numeric(alpha) || length(alpha) != 1 || !is.finite(alpha) ||
       alpha < 0 || alpha > 1) {
@@ -471,7 +491,7 @@ fit_ssbmf_lb <- function(Y, time, status,
   colnames(df_cox) <- paste0("L", 1:K)
   df_cox$time   <- time
   df_cox$status <- status
-  cox_init <- tryCatch(
+  cox_init <- if (!is.null(EBeta_init)) NULL else tryCatch(
     coxph(as.formula("Surv(time, status) ~ ."), data = df_cox, x = FALSE),
     error = function(e) NULL
   )
@@ -482,6 +502,7 @@ fit_ssbmf_lb <- function(Y, time, status,
   } else {
     EBeta <- rep(0, K)
   }
+  if (!is.null(EBeta_init)) EBeta <- EBeta_init
   EBeta2 <- EBeta^2      # zero variance initially; updated at first EBNM call
 
   # ---- Instrumentation [§4.1 of docs/plans/2026-04-29-beta-zero-fix-design-spec.md] -----------
@@ -532,6 +553,10 @@ fit_ssbmf_lb <- function(Y, time, status,
   # Column-specific noise precision from sample variance of each column of Y.
   Tau <- 1.0 / pmax(apply(Y, 2, var), 1e-8)   # p-vector
   y_frob2 <- sum(Y^2)
+  if (study_weight) initial_state <- list(
+    EL = EL, EL2 = EL2, EF = EF, EF2 = EF2, EBeta = EBeta,
+    EBeta2 = EBeta2, Tau = Tau, prior_F = vector("list", K), g_beta = NULL)
+
 
   # History tracking
   history <- list(
@@ -673,7 +698,11 @@ fit_ssbmf_lb <- function(Y, time, status,
       # by this either way, since its L/F updates never touch these divisors.
       # ----------------------------------------------------------------------
       res_L   <- update_L_k(Tau, EF_aug[, k], EF2_aug[, k], w, EBeta[k], EBeta2[k],
-                             R_k, z_no_k, prior_family = prior_LF, alpha = alpha_iter,
+                             R_k, z_no_k, prior_family = prior_LF,
+                             alpha = if (study_weight) 0.5 else alpha_iter,
+                             # 0.5 / 0.5 = 1 for genomics; 0.5 / (0.5/w_S) = w_S.
+                             genomics_divisor = if (study_weight) 0.5 else 1,
+                             survival_divisor = if (study_weight) 0.5 / w_S else 1,
                              normalize_AB = normalize_AB)
       EL[, k]      <- res_L$mean
       EL2[, k]     <- res_L$second
@@ -694,7 +723,7 @@ fit_ssbmf_lb <- function(Y, time, status,
       # ----------------------------------------------------------------------
       R_k   <- compute_R_k(Y, EL_aug, EF_aug, k)
       res_F <- update_F_k(Tau, EL_aug[, k], EL2_aug[, k], R_k,
-                          prior_family = prior_LF, alpha = alpha_iter)
+                          prior_family = prior_LF, alpha = if (study_weight) 0 else alpha_iter)
       EF[, k]      <- res_F$mean
       EF2[, k]     <- res_F$second
       EF_aug[, k]  <- res_F$mean    # keep augmented matrix in sync
@@ -710,11 +739,12 @@ fit_ssbmf_lb <- function(Y, time, status,
       # depends directly on EL, so using the freshest EL matters here.
       # ----------------------------------------------------------------------
       res_beta    <- update_beta_k(w, z_no_k, EL[, k], EL2[, k],
-                                   prior_family = prior_beta, alpha = alpha_iter,
-                                   survival_divisor = beta_divisor)
+                                   prior_family = prior_beta, alpha = if (study_weight) 1 else alpha_iter,
+                                   survival_divisor = if (study_weight) 1 else beta_divisor)
       EBeta[k]    <- res_beta$mean
       EBeta2[k]   <- res_beta$second
-      kl_beta[k]  <- compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
+      kl_beta[k]  <- if (!is.null(res_beta$neg_kl)) res_beta$neg_kl else
+        compute_ebnm_kl(res_beta$ebnm_result$log_likelihood,
                                       res_beta$A, res_beta$x,
                                       res_beta$mean, res_beta$second)
 
@@ -753,11 +783,23 @@ fit_ssbmf_lb <- function(Y, time, status,
     # Full ELBO = (1-alpha)*genomics + alpha*survival + KL divergences.
     # surv_elbo: E_q[log PL(t,delta|L,beta)] via 2nd-order Taylor at eta_0.
     # kl_*: E_q[log g(theta)] - E_q[log q(theta)] for each factor (each <= 0).
+    if (study_weight) {
+      # Monitor the current posterior, as canonical YFB does, rather than the
+      # Taylor expansion at the previous sweep's means.
+      taylor <- calc_cox_taylor(as.vector(EL %*% EBeta), time, status, strata = strata_id)
+      w <- taylor$w
+    }
     surv_elbo               <- compute_survival_elbo(taylor$logPL, w,
                                                      EL, EL2, EBeta, EBeta2)
     history$elbo_full[iter] <- (1 - alpha) * (res_tau$elbo_proxy / genomics_divisor) +
                                alpha * (surv_elbo / survival_divisor) +
                                sum(kl_L) + sum(kl_F) + sum(kl_beta)
+    if (study_weight) {
+      # G + w_S {S - KL_beta} - KL_L - KL_F. Beta's likelihood and
+      # KL receive the same multiplier, so its update has unit precision weight.
+      history$elbo_full[iter] <- res_tau$elbo_proxy +
+        w_S * (surv_elbo + sum(kl_beta)) + sum(kl_L) + sum(kl_F)
+    }
     # compute_normal_kl returns a NEGATIVE value (-KL <= 0); adding it
     # correctly penalises the ELBO.  Never subtract — that double-negates.
     if (!is.null(cohort_id) && C_cols > 0) {
@@ -845,6 +887,12 @@ fit_ssbmf_lb <- function(Y, time, status,
     # and the alpha of the final L update (it tempers the genomics precision).
     foldin = list(g_L = g_L, prior_LF = prior_LF, alpha = alpha_iter)
   )
+  if (study_weight) {
+    result$w_S <- w_S
+    result$genomics_divisor <- result$survival_divisor <- result$beta_divisor <- 1
+    result$initial_state <- initial_state
+    result$neg_kl <- list(L = kl_L, F = kl_F, beta = kl_beta)
+  }
   # Expose cohort fields when the extension is active.
   # Global EL/EF (K-factor only) are unchanged for backward compatibility.
   if (!is.null(cohort_id) && C_cols > 0) {

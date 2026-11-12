@@ -82,6 +82,8 @@ test_files <- c(
   "tests/test_multistart.R",
   "tests/test_lb_orientation.R",
   "tests/test_lb_foldin.R",
+  "tests/test_lb_yfb_study.R",
+  "tests/test_lb_yfb_study_runner.R",
   "tests/test_yfb_multistart.R",
   "tests/test_warmstart_from_fit.R",
   "tests/test_deflation_init.R",
