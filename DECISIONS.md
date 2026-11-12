@@ -3,6 +3,33 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-12 — Task E: YFB stays the working parameterization; LB is not carried forward
+
+**Decided.** The survival predictor stays η = (YF)β (YFB). LB (η = Lβ, scored on new
+patients by fold-in) is not carried forward.
+
+**Why.** This follows the one rule registered for the comparison: a model that fails the
+recovery (≥ 8/10), false-activity (mean ≤ 1) or convergence (≥ 9/10) criterion in a
+simulation cell where the other passes is dropped. Both models were fitted from the same
+start on the same input (K = 5, D4 genes, per-cohort z-scores, point-Laplace L and F,
+per-program Normal β, pooled, no strata). At w_S = 1, LB's mean false activity was 1.8,
+1.5 and 1.2 in the three S-9 cells, where YFB's was 0.9, 0.1 and 0.0. No cell had YFB
+failing where LB passed.
+
+**Traded away.** Nothing is lost on the real data. The two models give the same programs
+(identical top-20 gene sets, fitted predictors correlated 0.998). Training-CV within-cohort
+C was 0.652 for LB and 0.655 for YFB (difference 0.003, SE 0.004), and the external
+donor-bootstrap interval for the difference contains zero. LB's coefficients have the
+simpler reading (hazard ratio per unit latent program activity). YFB's are per unit
+normalized molecular projection. Neither model passes the near-threshold S-14 cell, so
+this decision does not establish recovery there. Seven matched-generator fits at w_S = 10
+hit the iteration cap, and the run's warning messages were not saved.
+
+**Files.** [Findings](docs/findings/2026-11-12-lb-yfb-study-findings.md), `code/lb_yfb_study.R`,
+`results/benchmark_sim/run_lb_yfb_study.R`, `summarize_lb_yfb_study.R` and
+`score_lb_yfb_external.R` in `results/benchmark_sim/`, aggregate outputs under
+`results/benchmark_sim/outputs/lb_yfb_*_2026-11-12/`.
+
 ## 2026-11-12 — Task D: the M-modality fitter generalizes `fit_ssbmf_yfb()` (Andrew)
 
 **Decided.** The fitter for M data types is built by adding a feature-group argument
