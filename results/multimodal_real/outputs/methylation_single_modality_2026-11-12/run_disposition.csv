@@ -1,0 +1,6 @@
+K,stage,status,detail
+7,methylation_full,stopped_by_user,Nine completed: six converged and three capped; final all-CpG PE interrupted
+7,expression_full,not_run,Stopped before expression stage
+7,official_CV,not_run,No official CV checkpoints; 2000-CpG one-fold smoke only
+7,external_scoring,not_run,No fixed-model ICGC scores produced
+7,600_iteration_diagnostic,deferred_by_user,Prepared and synthetically tested; prioritize K=5

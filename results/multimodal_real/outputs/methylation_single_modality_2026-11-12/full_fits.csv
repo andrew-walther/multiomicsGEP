@@ -1,0 +1,11 @@
+modality,count,arm,fold,n_features,status,converged,iterations,seconds,nonzero,survival_active,C,error,peak_rss_MiB,process_seconds,memory_measured,warning_count,K,timing_is_partial
+methylation,10000,PL,0,10000,converged,TRUE,123,66.15,7,0,NA,NA,1421.859375,70.69,TRUE,0,7,FALSE
+methylation,10000,PE,0,10000,converged,TRUE,284,122.269,7,0,NA,NA,1156.4375,127.49,TRUE,0,7,FALSE
+methylation,25000,PL,0,25000,converged,TRUE,113,236.216,7,0,NA,NA,1463.65625,240.52,TRUE,0,7,FALSE
+methylation,25000,PE,0,25000,converged,TRUE,288,960.258,7,0,NA,NA,1393.90625,968.22,TRUE,0,7,FALSE
+methylation,50000,PL,0,50000,capped,FALSE,300,767.649,7,0,NA,NA,2271.96875,772.4,TRUE,0,7,FALSE
+methylation,50000,PE,0,50000,capped,FALSE,300,976.659,7,0,NA,NA,2147.671875,981.54,TRUE,0,7,FALSE
+methylation,100000,PL,0,100000,converged,TRUE,150,890.321,7,1,NA,NA,3303.15625,898.92,TRUE,0,7,FALSE
+methylation,100000,PE,0,100000,capped,FALSE,300,1326.829,7,2,NA,NA,3248.0625,1331.81,TRUE,0,7,FALSE
+methylation,182934,PL,0,182934,converged,TRUE,113,1124.713,7,0,NA,NA,3852.0625,1130.12,TRUE,0,7,FALSE
+methylation,182934,PE,0,182934,stopped_by_user,FALSE,NA,NA,NA,NA,NA,Interrupted at Andrew request to prioritize K=5; no final fit checkpoint,4282.25,2761.28,TRUE,NA,7,TRUE

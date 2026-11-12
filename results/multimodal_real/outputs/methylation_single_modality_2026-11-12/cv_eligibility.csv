@@ -1,0 +1,6 @@
+count,projected_both_setups_CV_seconds,PL_converged,PE_converged,timing_eligible,K,projection_is_lower_bound
+10000,990.9,TRUE,TRUE,TRUE,7,FALSE
+25000,6043.7,TRUE,TRUE,TRUE,7,FALSE
+50000,8769.7,FALSE,FALSE,TRUE,7,FALSE
+100000,11153.65,TRUE,FALSE,FALSE,7,FALSE
+182934,19457.0,TRUE,FALSE,FALSE,7,TRUE

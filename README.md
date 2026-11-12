@@ -100,6 +100,12 @@ concordance tables, including donor-aware pooled intervals. Existing output
 directories are never overwritten.
 
 
+The [methylation-only study runner](results/multimodal_real/run_methylation_single_modality.R)
+compares five CpG counts with expression on matched TCGA patients at the fixed
+historical rank of seven. Andrew stopped this run to prioritize rank five.
+Completed checkpoints are preserved. See the [study note](docs/findings/2026-11-12-methylation-single-modality-findings.md)
+for the partial results, private checkpoints, commands and K = 5 handoff.
+
 ## Selected findings
 
 The reported expression fit uses 2,218 genes from 273 TCGA and CPTAC patients.

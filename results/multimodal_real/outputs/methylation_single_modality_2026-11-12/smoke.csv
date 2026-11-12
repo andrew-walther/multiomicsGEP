@@ -1,0 +1,3 @@
+modality,count,arm,fold,n_features,status,converged,iterations,seconds,nonzero,survival_active,C,error,peak_rss_MiB,process_seconds,memory_measured,warning_count,K
+methylation,2000,PL,1,2000,converged,TRUE,61,7.092,7,0,0.615044247787611,NA,1067.828125,11.68,TRUE,0,7
+methylation,2000,PE,1,2000,converged,TRUE,185,16.127,7,0,0.570796460176991,NA,1175.125,20.07,TRUE,0,7
