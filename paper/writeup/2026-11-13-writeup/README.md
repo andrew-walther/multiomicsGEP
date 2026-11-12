@@ -1,19 +1,25 @@
 # paper/writeup/2026-11-13-writeup/
 
-Version of the project writeup dated November 13, 2026. **Draft. The two prior comparisons of November 9–13 are reported
-in Appendix D. The training cross-validation of the gene screen, input scaling and rank is
-reported in the main text. The other results of that week are pending.** The previous version is [`../2026-11-06-writeup/`](../2026-11-06-writeup/README.md),
-which is not edited.
+Version of the project writeup dated November 13, 2026. **Draft. The analyses of November 9–13
+are reported except the fitter for several data types, which is in progress.** The previous
+version is [`../2026-11-06-writeup/`](../2026-11-06-writeup/README.md), which is not edited.
 
-This version presents the current model, the supervised YFB fit ($w_S$ = 1, 2,218 genes,
-rank 7), and compares it only with external benchmarks: the rank-matched two-step fit (EBMF at
-$w_S$ = 0, then Cox), EBMF at ranks 15 and 40 followed by Cox, DeSurv, elastic-net Cox and
-PurIST. It states the rule that the external cohorts only score a model fixed on training data,
-names every model by its configuration, and adds a section with marked placeholders for the
-analyses of November 9–13. Comparisons with earlier versions of our own model (the October 15
-supervision check, the $\alpha_F$ = 0 benchmark and its single-log refit, the 40-factor LASSO
-comparator, historical loading matches, the table of past external-cohort uses and the earlier
-multimodal appendix) are removed. No retained number from the November 6 version has changed.
+This version presents the working model, the supervised YFB fit ($w_S$ = 1, 2,218 genes,
+rank 5), with its training cross-validation, survival-active programs and external
+concordance. Results that exist only for the earlier rank-7 fit (the two-step comparison,
+calibration slopes, hazard ratios, risk groups, comparator differences and the program
+analyses) are kept with "rank 7" in their captions and prose, and each is preceded in the
+source by an HTML comment `<!-- K5-EXHIBIT: ... -->` so it can be replaced by its rank-5
+version. The model is compared only with external benchmarks: the rank-matched two-step fit
+(EBMF at $w_S$ = 0, then Cox), EBMF at ranks 15 and 40 followed by Cox, DeSurv, elastic-net
+Cox and PurIST. The external cohorts only score a model fixed on training data, and every
+model is named by its configuration. The week's section reports the two prior comparisons,
+methylation alone, the comparison of survival through the latent scores or the projection
+and the training cross-validation of the gene screen, input scaling and rank. Comparisons
+with earlier versions of our own model (the October 15 supervision check, the $\alpha_F$ = 0
+benchmark and its single-log refit, the 40-factor LASSO comparator, historical loading
+matches, the table of past external-cohort uses and the earlier multimodal appendix) are
+removed. No retained number from the November 6 version has changed.
 The [initial plan](_process/plan.md) describes the November 6 version and is kept for reference.
 
 ## Reproducibility
@@ -53,11 +59,11 @@ November 6 version remains the circulated record.
 | Part | Content |
 |---|---|
 | Summary | Aim, model, training and external comparison with the two-step fit, other comparators, simulation results |
-| 1 Methods | Notation, model, fitting and prediction, the two-step comparator, choice of the survival weight, choice of the gene screen, input scaling and rank, the model behind the external results |
+| 1 Methods | Notation, model, fitting and prediction, the two-step comparator, choice of the survival weight, choice of the gene screen, input scaling and rank, the rank-5 working model and the rank-7 fit behind the remaining results |
 | 2 Evaluation | Data, uses of the external cohorts, simulation designs, metrics |
-| 3 Work of November 9–13 | Registered analyses of the week: outcomes of the two prior comparisons and of the training cross-validation of the screen, scaling and rank, result placeholders C1 to E4 and EXT for the rest |
-| 4 Results | Supervised fit against the rank-7 two-step fit, real-data loadings, the three simulation studies, the weight refit, training cross-validation of the gene screen, input scaling and rank (rank 5 selected for the next fit), pruning, comparison with other prognostic models, risk groups, program stability, mixed-signal and cross-design simulations |
-| 5 Programs | Programs of the supervised fit, enrichment and published signatures, individual programs, external associations and Kaplan–Meier curves |
+| 3 Work of November 9–13 | Analyses of the week: the two prior comparisons, methylation alone at rank 5, survival through the latent scores or the projection at rank 5, training cross-validation of the screen, scaling and rank, external scoring of the working model, and placeholders for the fitter for several data types |
+| 4 Results | The rank-5 working model (training CV, programs, external concordance), supervised fit against the rank-7 two-step fit, real-data loadings, the three simulation studies, the weight refit, training cross-validation of the gene screen, input scaling and rank (rank 5 selected for the next fit), pruning, comparison with other prognostic models, risk groups, program stability, mixed-signal and cross-design simulations |
+| 5 Programs | Programs of the rank-7 supervised fit and their correspondence with the rank-5 programs, enrichment and published signatures, individual programs, external associations and Kaplan–Meier curves |
 | 6 Discussion | Interpretation, limitations, continuing work |
 | Appendix A | Summary of the model derivation |
 | Appendix B | Changes since the November 6 version |
