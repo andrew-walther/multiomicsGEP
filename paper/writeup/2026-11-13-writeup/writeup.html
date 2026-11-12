@@ -2366,7 +2366,8 @@ window.Quarto = {
   <li><a href="#sec-fitting" id="toc-sec-fitting" class="nav-link" data-scroll-target="#sec-fitting"><span class="header-section-number">1.3</span> Fitting and prediction</a></li>
   <li><a href="#sec-two-step" id="toc-sec-two-step" class="nav-link" data-scroll-target="#sec-two-step"><span class="header-section-number">1.4</span> The two-step comparator</a></li>
   <li><a href="#sec-weight" id="toc-sec-weight" class="nav-link" data-scroll-target="#sec-weight"><span class="header-section-number">1.5</span> Choosing the survival weight</a></li>
-  <li><a href="#sec-model-states" id="toc-sec-model-states" class="nav-link" data-scroll-target="#sec-model-states"><span class="header-section-number">1.6</span> The model behind the external results</a></li>
+  <li><a href="#sec-rank" id="toc-sec-rank" class="nav-link" data-scroll-target="#sec-rank"><span class="header-section-number">1.6</span> Choosing the gene screen, input scaling and rank</a></li>
+  <li><a href="#sec-model-states" id="toc-sec-model-states" class="nav-link" data-scroll-target="#sec-model-states"><span class="header-section-number">1.7</span> The model behind the external results</a></li>
   </ul></li>
   <li><a href="#sec-evaluation" id="toc-sec-evaluation" class="nav-link" data-scroll-target="#sec-evaluation"><span class="header-section-number">2</span> Evaluation</a>
   <ul class="collapse">
@@ -2392,8 +2393,9 @@ window.Quarto = {
   <li><a href="#sec-results-weight" id="toc-sec-results-weight" class="nav-link" data-scroll-target="#sec-results-weight"><span class="header-section-number">4.3</span> Simulation: supervision strength and the weight choice</a></li>
   <li><a href="#sec-results-threshold" id="toc-sec-results-threshold" class="nav-link" data-scroll-target="#sec-results-threshold"><span class="header-section-number">4.4</span> Simulation: programs near the detection threshold</a></li>
   <li><a href="#sec-results-s15" id="toc-sec-results-s15" class="nav-link" data-scroll-target="#sec-results-s15"><span class="header-section-number">4.5</span> Real-data refit at the cross-validated weight</a></li>
-  <li><a href="#sec-results-pruning" id="toc-sec-results-pruning" class="nav-link" data-scroll-target="#sec-results-pruning"><span class="header-section-number">4.6</span> Rank and ELBO pruning</a></li>
-  <li><a href="#sec-results-comparators" id="toc-sec-results-comparators" class="nav-link" data-scroll-target="#sec-results-comparators"><span class="header-section-number">4.7</span> Comparison with other prognostic models</a></li>
+  <li><a href="#sec-results-rank" id="toc-sec-results-rank" class="nav-link" data-scroll-target="#sec-results-rank"><span class="header-section-number">4.6</span> Gene screen, input scaling and rank in training cross-validation</a></li>
+  <li><a href="#sec-results-pruning" id="toc-sec-results-pruning" class="nav-link" data-scroll-target="#sec-results-pruning"><span class="header-section-number">4.7</span> Rank and ELBO pruning</a></li>
+  <li><a href="#sec-results-comparators" id="toc-sec-results-comparators" class="nav-link" data-scroll-target="#sec-results-comparators"><span class="header-section-number">4.8</span> Comparison with other prognostic models</a></li>
   </ul></li>
   <li><a href="#sec-biology" id="toc-sec-biology" class="nav-link" data-scroll-target="#sec-biology"><span class="header-section-number">5</span> Programs of the supervised fit</a>
   <ul class="collapse">
@@ -2456,9 +2458,9 @@ window.Quarto = {
 <h1 class="unnumbered">Summary</h1>
 <p><strong>Aim.</strong> Bulk pancreatic tumors mix tumor, stromal and immune signals. We ask whether a Bayesian matrix factorization that lets survival inform its molecular programs can find prognostic programs that an unsupervised factorization misses, and whether its risk score transfers to new cohorts.</p>
 <p><strong>Method.</strong> The model factorizes expression into patient activities and gene loadings and links survival through a Cox model on the projection of each patient’s expression onto the loadings. A survival weight <span class="math inline">\(w_S\)</span> sets how much the Cox partial likelihood is weighted relative to the expression likelihood. The primary comparator uses the same factorization at the same rank fitted without survival, followed by a Cox model on its program scores.</p>
-<p><strong>Results.</strong> On 273 training patients, five-fold cross-validated concordance was 0.663 for the supervised fit and 0.652 for the two-step fit. The external results in this version come from the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) and its two-step comparator (<a href="#sec-model-states" class="quarto-xref">Section 1.6</a>). Scored once on 5 external series, their mean concordance was 0.620 against 0.613, a pooled paired difference of +0.007 (95% donor-bootstrap interval −0.003 to 0.017). Across the gene sets, the median survival share of the loading precision of the nonempty programs was at most <span class="math inline">\(8 \times 10^{-7}\)</span>, and the supervised and unsupervised loadings correlate at 1.000. The difference is consistent with joint coefficient estimation under a shrinkage prior. That explanation was not tested separately. Against DeSurv, elastic-net Cox and PurIST, all trained on the same patients, every paired difference in mean external concordance had a 95% interval that included zero (<a href="#sec-results-comparators" class="quarto-xref">Section 4.7</a>). In simulation, supervision matches the two-step fit when a prognostic program is easy to find. Supervision improved recovery near the detection threshold under strong survival. Choosing the weight by cross-validated partial log-likelihood on the training data kept <span class="math inline">\(w_S = 1\)</span>, and the fit keeps all 7 programs because ELBO pruning failed its simulation criteria.</p>
-<p><strong>External cohorts.</strong> Every modeling choice is made by simulation and five-fold cross-validation on the 273 TCGA and CPTAC training patients. This covers preprocessing, gene screening, priors, rank, survival weight and comparator tuning. The five external expression series and the matched ICGC methylation set only score a model that is already fixed. The gene screen, the per-cohort standardization and rank 7 were set before this rule, using external concordance, and are being reselected on training cross-validation (<a href="#sec-week" class="quarto-xref">Section 3</a>).</p>
-<p><strong>Work of November 9–13.</strong> The analyses of this week compare priors on the loadings and the survival coefficients, fit methylation alone, test one fitter for several data types, compare two ways of linking survival to the programs, and reselect the gene screen, input scaling and rank on training data. The two prior comparisons are complete. The current model keeps point-Laplace priors on the scores and loadings and a Normal prior on each survival coefficient (<a href="#sec-appendix-d">Appendix D</a>). The other results are in progress or pending review and appear as marked placeholders in <a href="#sec-week" class="quarto-xref">Section 3</a>.</p>
+<p><strong>Results.</strong> On 273 training patients, five-fold cross-validated concordance was 0.663 for the supervised fit and 0.652 for the two-step fit. The external results in this version come from the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) and its two-step comparator (<a href="#sec-model-states" class="quarto-xref">Section 1.7</a>). Scored once on 5 external series, their mean concordance was 0.620 against 0.613, a pooled paired difference of +0.007 (95% donor-bootstrap interval −0.003 to 0.017). Across the gene sets, the median survival share of the loading precision of the nonempty programs was at most <span class="math inline">\(8 \times 10^{-7}\)</span>, and the supervised and unsupervised loadings correlate at 1.000. The difference is consistent with joint coefficient estimation under a shrinkage prior. That explanation was not tested separately. Against DeSurv, elastic-net Cox and PurIST, all trained on the same patients, every paired difference in mean external concordance had a 95% interval that included zero (<a href="#sec-results-comparators" class="quarto-xref">Section 4.8</a>). In simulation, supervision matches the two-step fit when a prognostic program is easy to find. Supervision improved recovery near the detection threshold under strong survival. Choosing the weight by cross-validated partial log-likelihood on the training data kept <span class="math inline">\(w_S = 1\)</span>, and the fit keeps all 7 programs because ELBO pruning failed its simulation criteria.</p>
+<p><strong>External cohorts.</strong> Every modeling choice is made by simulation and five-fold cross-validation on the 273 TCGA and CPTAC training patients. This covers preprocessing, gene screening, priors, rank, survival weight and comparator tuning. The five external expression series and the matched ICGC methylation set only score a model that is already fixed. The gene screen, the per-cohort standardization and rank 7 were set before this rule, using external concordance. Training cross-validation has since kept the screen and the standardization and selects rank 5 for the next fit (<a href="#sec-results-rank" class="quarto-xref">Section 4.6</a>).</p>
+<p><strong>Work of November 9–13.</strong> The analyses of this week compare priors on the loadings and the survival coefficients, fit methylation alone, test one fitter for several data types, compare two ways of linking survival to the programs, and reselect the gene screen, input scaling and rank on training data. The two prior comparisons and the training cross-validation of the screen, scaling and rank are complete. The current model keeps point-Laplace priors on the scores and loadings and a Normal prior on each survival coefficient (<a href="#sec-appendix-d">Appendix D</a>). It also keeps the gene screen and the z-scores within cohort, and the one-standard-error rule selects rank 5 (<a href="#sec-results-rank" class="quarto-xref">Section 4.6</a>). The other results are in progress or pending review and appear as marked placeholders in <a href="#sec-week" class="quarto-xref">Section 3</a>.</p>
 </section>
 <section id="sec-methods" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Methods</h1>
@@ -2481,7 +2483,7 @@ E_q \log p(Y \mid L, F, \tau) \;+\; w_S\, E_q \log \mathrm{PL}(\beta, F) \;-\; \
 </section>
 <section id="sec-fitting" class="level2" data-number="1.3">
 <h2 data-number="1.3" class="anchored" data-anchor-id="sec-fitting"><span class="header-section-number">1.3</span> Fitting and prediction</h2>
-<p>Each sweep re-expands the Cox partial likelihood to second order around the current <span class="math inline">\(\bar\eta\)</span>, with the predictor’s variance taken from <span class="math inline">\(q(\beta)\)</span> and <span class="math inline">\(q(F)\)</span>. It then updates, one program at a time, the coefficient, the activities and the loadings. The loading update uses the reconstruction residual and the weighted Cox contribution to its precision and linear term. Each sweep ends by updating the noise precisions and rescaling the programs. The fit starts from the singular value decomposition of <span class="math inline">\(Y\)</span> and stops when the relative change in the objective falls below <span class="math inline">\(10^{-5}\)</span> or after 300 sweeps. The working fit is unpruned at rank 7 (<a href="#sec-results-pruning" class="quarto-xref">Section 4.6</a>).</p>
+<p>Each sweep re-expands the Cox partial likelihood to second order around the current <span class="math inline">\(\bar\eta\)</span>, with the predictor’s variance taken from <span class="math inline">\(q(\beta)\)</span> and <span class="math inline">\(q(F)\)</span>. It then updates, one program at a time, the coefficient, the activities and the loadings. The loading update uses the reconstruction residual and the weighted Cox contribution to its precision and linear term. Each sweep ends by updating the noise precisions and rescaling the programs. The fit starts from the singular value decomposition of <span class="math inline">\(Y\)</span> and stops when the relative change in the objective falls below <span class="math inline">\(10^{-5}\)</span> or after 300 sweeps. The working fit is unpruned at rank 7 (<a href="#sec-results-pruning" class="quarto-xref">Section 4.7</a>).</p>
 <p>New cohorts are standardized gene by gene within cohort and scored on the training genes they measure. The direction of the risk score is the one the fit learns from training survival. There is no post-fit sign correction: a fit oriented the wrong way would have training concordance below 0.5 and is reported as fitted.</p>
 </section>
 <section id="sec-two-step" class="level2" data-number="1.4">
@@ -2492,9 +2494,14 @@ E_q \log p(Y \mid L, F, \tau) \;+\; w_S\, E_q \log \mathrm{PL}(\beta, F) \;-\; \
 <h2 data-number="1.5" class="anchored" data-anchor-id="sec-weight"><span class="header-section-number">1.5</span> Choosing the survival weight</h2>
 <p>The real-data fit uses <span class="math inline">\(w_S = 1\)</span>, fixed by five-fold training cross-validation (<a href="#sec-results-fair" class="quarto-xref">Section 4.1</a>). Two refinements were tested in simulation. In the survival-block form, <span class="math inline">\(w_S\)</span> multiplies the Cox term and the Kullback–Leibler term of <span class="math inline">\(\beta\)</span> together, so <span class="math inline">\(\beta\)</span> gets an ordinary Bayesian Cox fit while the loadings see survival at weight <span class="math inline">\(w_S\)</span>. The weight is chosen for each dataset from <span class="math inline">\(\{1, 2, 5, 10, 20, 50\}\)</span> by five-fold cross-validated partial log-likelihood, with ties going to the smaller weight. The same rule was applied to the real training data (<a href="#sec-results-s15" class="quarto-xref">Section 4.5</a>).</p>
 </section>
-<section id="sec-model-states" class="level2" data-number="1.6">
-<h2 data-number="1.6" class="anchored" data-anchor-id="sec-model-states"><span class="header-section-number">1.6</span> The model behind the external results</h2>
-<p>Every external result in this version comes from the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) or its two-step comparator, and each external table and figure names its model in the caption. The supervised fit is <code>fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)</code> on the 2,218-gene set, with every RNA-seq cohort logged once and z-scored gene by gene within cohort, rank 7 without pruning, point-Laplace priors on <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> and a Normal prior on <span class="math inline">\(\beta\)</span>. The two-step comparator uses the same input and rank at <span class="math inline">\(w_S = 0\)</span>, followed by an unpenalized Cox fit (<a href="#sec-two-step" class="quarto-xref">Section 1.4</a>). The survival weight, the gene-set size and the choice not to screen genes on survival were fixed by training cross-validation. The gene screen, the input scaling and the rank were set earlier with external concordance (<a href="#sec-external-uses" class="quarto-xref">Section 2.2</a>). If the analyses of <a href="#sec-week" class="quarto-xref">Section 3</a> change the model, the results below keep this label, and the new model is scored once after it is fixed (<a href="#sec-week-external" class="quarto-xref">Section 3.7</a>).</p>
+<section id="sec-rank" class="level2" data-number="1.6">
+<h2 data-number="1.6" class="anchored" data-anchor-id="sec-rank"><span class="header-section-number">1.6</span> Choosing the gene screen, input scaling and rank</h2>
+<p>The gene screen and the input scaling were compared with alternatives by five-fold training cross-validation on the folds of <a href="#sec-results-fair" class="quarto-xref">Section 4.1</a>, using concordance within cohort. The current screen is the 2,218-gene set described in <a href="#sec-data" class="quarto-xref">Section 2.1</a>. The alternative screen z-scores each cohort, quantile-normalizes the merged matrix and keeps the 2,000 genes of largest variance. Neither screen uses outcomes, so each was computed once on all training patients, as in DeSurv. The alternative scalings divide each gene by its within-cohort standard deviation, with the Cox projection centered, or apply the within-patient rank transform of DeSurv followed by z-scores within cohort <span class="citation" data-cites="Young2026">(<a href="#ref-Young2026" role="doc-biblioref">Young et al. 2026</a>)</span>. The current choice was kept unless an alternative was better by more than one standard error of the paired fold difference.</p>
+<p>The rank is not chosen by ELBO pruning, which failed its simulation criteria (<a href="#sec-results-pruning" class="quarto-xref">Section 4.7</a>). We chose it as DeSurv did, by training cross-validation with the one-standard-error rule <span class="citation" data-cites="Young2026">(<a href="#ref-Young2026" role="doc-biblioref">Young et al. 2026</a>)</span>. The rule takes the smallest <span class="math inline">\(K\)</span> from 2 to 12 whose mean concordance is at least the best mean minus the standard error of the fold concordances at the best <span class="math inline">\(K\)</span>. Without pruning the fit keeps every column it starts with, so cross-validation chooses the fitted rank. Both rules were registered before any fit.</p>
+</section>
+<section id="sec-model-states" class="level2" data-number="1.7">
+<h2 data-number="1.7" class="anchored" data-anchor-id="sec-model-states"><span class="header-section-number">1.7</span> The model behind the external results</h2>
+<p>Every external result in this version comes from the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) or its two-step comparator, and each external table and figure names its model in the caption. The supervised fit is <code>fit_ssbmf_yfb(canonicalize = TRUE, w_S = 1)</code> on the 2,218-gene set, with every RNA-seq cohort logged once and z-scored gene by gene within cohort, rank 7 without pruning, point-Laplace priors on <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> and a Normal prior on <span class="math inline">\(\beta\)</span>. The two-step comparator uses the same input and rank at <span class="math inline">\(w_S = 0\)</span>, followed by an unpenalized Cox fit (<a href="#sec-two-step" class="quarto-xref">Section 1.4</a>). The survival weight, the gene-set size and the choice not to screen genes on survival were fixed by training cross-validation. The gene screen, the input scaling and the rank were set earlier with external concordance (<a href="#sec-external-uses" class="quarto-xref">Section 2.2</a>). Training cross-validation has since kept the screen and the scaling and placed rank 7 on the flat part of its concordance curve, where the one-standard-error rule selects rank 5 for the next fit (<a href="#sec-results-rank" class="quarto-xref">Section 4.6</a>). If the analyses of <a href="#sec-week" class="quarto-xref">Section 3</a> change the model, the results below keep this label, and the new model is scored once after it is fixed (<a href="#sec-week-external" class="quarto-xref">Section 3.7</a>).</p>
 </section>
 </section>
 <section id="sec-evaluation" class="level1" data-number="2">
@@ -2597,7 +2604,7 @@ Table 1: Training and validation cohorts. Patient and death counts are read fro
 </section>
 <section id="sec-external-uses" class="level2" data-number="2.2">
 <h2 data-number="2.2" class="anchored" data-anchor-id="sec-external-uses"><span class="header-section-number">2.2</span> Uses of the external cohorts</h2>
-<p>Every modeling choice is made by simulation and by five-fold cross-validation on the 273 TCGA and CPTAC training patients. This includes preprocessing, gene screening, the priors, the rank, the survival weight and the tuning of comparators. The five external expression series (Dijk, Moffitt, PACA-AU array, PACA-AU RNA-seq and Puleo) and the matched ICGC methylation set only score a model after it is fixed. Their results are reported, but they never choose between models or settings. The DeSurv comparator used its published settings rather than a new search on our folds. The gene screen, the per-cohort standardization without a rank transform and rank 7 of the current model were set before this rule, using external concordance, and are being reselected on training cross-validation (<a href="#sec-week-redo" class="quarto-xref">Section 3.6</a>). The audit in <code>docs/findings/2026-11-06-external-cohort-uses.md</code> records which earlier choices used which series.</p>
+<p>Every modeling choice is made by simulation and by five-fold cross-validation on the 273 TCGA and CPTAC training patients. This includes preprocessing, gene screening, the priors, the rank, the survival weight and the tuning of comparators. The five external expression series (Dijk, Moffitt, PACA-AU array, PACA-AU RNA-seq and Puleo) and the matched ICGC methylation set only score a model after it is fixed. Their results are reported, but they never choose between models or settings. The DeSurv comparator used its published settings rather than a new search on our folds. The gene screen, the per-cohort standardization without a rank transform and rank 7 of the current model were set before this rule, using external concordance. They have since been redone by training cross-validation (<a href="#sec-rank" class="quarto-xref">Section 1.6</a>, <a href="#sec-results-rank" class="quarto-xref">Section 4.6</a>). The audit in <code>docs/findings/2026-11-06-external-cohort-uses.md</code> records which earlier choices used which series.</p>
 <p>The rule follows the protocol DeSurv used on the same cohorts <span class="citation" data-cites="Young2026">(<a href="#ref-Young2026" role="doc-biblioref">Young et al. 2026</a>)</span>. DeSurv was trained on TCGA and CPTAC pooled. Every hyperparameter was chosen by five-fold cross-validation on the training data, with the one-standard-error rule for the rank, and the external cohorts were scored once with the final model. No portion of the training data is held out here either. With 273 patients, a held-out fifth would estimate concordance with a standard error near 0.05, larger than the differences between the settings being compared.</p>
 </section>
 <section id="sec-sim-designs" class="level2" data-number="2.3">
@@ -2618,7 +2625,7 @@ Table 1: Training and validation cohorts. Patient and death counts are read fro
 </section>
 <section id="sec-week" class="level1" data-number="3">
 <h1 data-number="3"><span class="header-section-number">3</span> Work of November 9–13</h1>
-<p>This section lists the analyses planned for the week of November 9. Each was registered, with its criteria, before any fit. The two prior comparisons are complete and their results are given below. The other analyses are in progress or pending review, so their subsections give the question and a marked placeholder for the result. Unless a subsection says otherwise, the simulation cells are the three planted variance shares of the fixed-weight simulation (0.25%, 1% and 5% at 2,000 genes) and the near-threshold cell with a 0.05% share and strong survival. The real-data comparisons use the five training folds of <a href="#sec-results-fair" class="quarto-xref">Section 4.1</a>, balanced by cohort and event. All fits keep rank 7 and the unit survival weight unless the subsection varies them. None of these analyses uses an external cohort to make a choice.</p>
+<p>This section lists the analyses planned for the week of November 9. Each was registered, with its criteria, before any fit. The two prior comparisons and the training cross-validation of the gene screen, input scaling and rank are complete, and their results are given below. The other analyses are in progress or pending review, so their subsections give the question and a marked placeholder for the result. Unless a subsection says otherwise, the simulation cells are the three planted variance shares of the fixed-weight simulation (0.25%, 1% and 5% at 2,000 genes) and the near-threshold cell with a 0.05% share and strong survival. The real-data comparisons use the five training folds of <a href="#sec-results-fair" class="quarto-xref">Section 4.1</a>, balanced by cohort and event. All fits keep rank 7 and the unit survival weight unless the subsection varies them. None of these analyses uses an external cohort to make a choice.</p>
 <section id="sec-week-lf" class="level2" data-number="3.1">
 <h2 data-number="3.1" class="anchored" data-anchor-id="sec-week-lf"><span class="header-section-number">3.1</span> Priors on the scores and loadings</h2>
 <p>A nonnegative factorization, as in DeSurv, makes each program an additive set of genes. This comparison asks whether point-exponential priors on <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> recover a planted prognostic program as well as the working point-Laplace fit, with false activity and convergence under control, and whether they predict as well under training cross-validation. The point-exponential fit takes nonnegative input, each gene divided by its within-cohort standard deviation without centering, and centers the program scores that enter the Cox model. The point-Laplace fit takes the working z-scored input. Both arms are fitted to the pooled training data without cohort strata. Within-cohort concordance is the primary cross-validation metric, with pooled concordance reported beside it.</p>
@@ -2691,23 +2698,8 @@ Note
 </section>
 <section id="sec-week-redo" class="level2" data-number="3.6">
 <h2 data-number="3.6" class="anchored" data-anchor-id="sec-week-redo"><span class="header-section-number">3.6</span> Training cross-validation of the gene screen, input scaling and rank</h2>
-<p>Three choices of the current model were set with external concordance (<a href="#sec-external-uses" class="quarto-xref">Section 2.2</a>). Each is redone here by five-fold training cross-validation. Five outcome-free gene screens, labeled D1 to D5, are compared. D4 is the 2,218-gene screen of the working model. The input scalings compared are within-cohort z-scores, division by the within-cohort standard deviation, and a within-patient rank transform. One further fixed arm ranks genes within each patient, divides each gene by its within-cohort standard deviation and uses point-exponential priors. The rank is selected over <span class="math inline">\(K = 2, \dots, 12\)</span> by the one-standard-error rule, with the number of programs with nonzero loadings and of survival-active programs reported at each <span class="math inline">\(K\)</span>.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>Result pending.</strong> [RESULT F1: cross-validated concordance of gene screens D1 to D5 and the screen selected.]</p>
-<p>[RESULT F2: cross-validated concordance of the input scalings, including the rank-transform point-exponential arm, and the scaling selected.]</p>
-<p>[RESULT F3: cross-validated concordance over <span class="math inline">\(K = 2, \dots, 12\)</span>, the rank chosen by the one-standard-error rule, and the numbers of nonzero and survival-active programs at each <span class="math inline">\(K\)</span>.]</p>
-<p>[RESULT F4: which inherited choices changed, and the resulting working model.]</p>
-</div>
-</div>
+<p>Three choices of the current model were set with external concordance (<a href="#sec-external-uses" class="quarto-xref">Section 2.2</a>). Each is redone here by five-fold training cross-validation, as described in <a href="#sec-rank" class="quarto-xref">Section 1.6</a>. Two outcome-free gene screens are compared: the current 2,218-gene screen and a variance screen after quantile normalization. The input scalings compared are z-scores within cohort, division by the within-cohort standard deviation, and a within-patient rank transform followed by z-scores. The rank is selected over <span class="math inline">\(K = 2, \dots, 12\)</span> by the one-standard-error rule, with the number of programs with nonzero loadings and of survival-active programs reported at each <span class="math inline">\(K\)</span>.</p>
+<p><strong>Result.</strong> The current screen and the z-scores within cohort are kept, and the rank changes from 7 to 5. No alternative screen or scaling was better than the current input in within-cohort concordance. Concordance was flat from <span class="math inline">\(K = 5\)</span> to 12 and lower below <span class="math inline">\(K = 5\)</span>, and the one-standard-error rule selected <span class="math inline">\(K = 5\)</span> (<a href="#sec-results-rank" class="quarto-xref">Section 4.6</a>). The external results in this version come from the <span class="math inline">\(K = 7\)</span> fit, which lies on the flat part of the curve. The next fit uses <span class="math inline">\(K = 5\)</span>. At that rank the point-exponential prior on expression divided by its within-cohort standard deviation still loses to the point-Laplace prior (<a href="#sec-appendix-d">Appendix D</a>). These comparisons were awaiting independent review on November 12, 2026.</p>
 </section>
 <section id="sec-week-external" class="level2" data-number="3.7">
 <h2 data-number="3.7" class="anchored" data-anchor-id="sec-week-external"><span class="header-section-number">3.7</span> External scoring of the fixed working model</h2>
@@ -2783,7 +2775,7 @@ Table 2: Five-fold training cross-validation on the 2,218-gene set (single log)
 </div>
 </div>
 <p>On the training patients, the supervised fit had mean fold concordance 0.663 against 0.652 for the two-step fit (<a href="#tbl-cv" class="quarto-xref">Table 2</a>). The paired fold difference was +0.011 (SE 0.005). In 2 of the five folds the supervised fit reached the 300-sweep cap with the objective still changing slowly. Their coefficients were small, and no coefficient or noise precision was growing, so these folds showed no sign of divergence.</p>
-<p>This configuration (<span class="math inline">\(w_S = 1\)</span>, the 2,218-gene set, no survival screen) was fixed from these training results before any external cohort was scored. It was then scored once on the five external series (<a href="#tbl-external" class="quarto-xref">Table 3</a>). This is the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) of <a href="#sec-model-states" class="quarto-xref">Section 1.6</a>. Every external result in this section comes from it and its two-step comparator.</p>
+<p>This configuration (<span class="math inline">\(w_S = 1\)</span>, the 2,218-gene set, no survival screen) was fixed from these training results before any external cohort was scored. It was then scored once on the five external series (<a href="#tbl-external" class="quarto-xref">Table 3</a>). This is the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) of <a href="#sec-model-states" class="quarto-xref">Section 1.7</a>. Every external result in this section comes from it and its two-step comparator.</p>
 <div class="cell">
 <div id="tbl-external" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -3335,14 +3327,203 @@ Table 7: Training cross-validation of the survival-block weight. The precision 
 </div>
 </div>
 </section>
-<section id="sec-results-pruning" class="level2" data-number="4.6">
-<h2 data-number="4.6" class="anchored" data-anchor-id="sec-results-pruning"><span class="header-section-number">4.6</span> Rank and ELBO pruning</h2>
-<p>The pruning simulation asks whether ELBO pruning recovers the planted program and the true rank. For a flat coefficient likelihood the coefficient update returns the prior moments and an exact zero coefficient KL. Ordinary and protected pruning both failed the registered recovery and rank criteria (<a href="#tbl-kl2" class="quarto-xref">Table 8</a>), so the fit retains all 7 starting columns.</p>
+<section id="sec-results-rank" class="level2" data-number="4.6">
+<h2 data-number="4.6" class="anchored" data-anchor-id="sec-results-rank"><span class="header-section-number">4.6</span> Gene screen, input scaling and rank in training cross-validation</h2>
+<p>Training cross-validation supported the gene screen and the input scaling of the reported fit (<a href="#tbl-inputs" class="quarto-xref">Table 8</a>). In concordance within cohort, the alternative screen was lower by 0.012 (paired SE 0.014), division by the within-cohort standard deviation by 0.020 (SE 0.007) and the rank transform by 0.017 (SE 0.009). No alternative was better, so the current screen and the z-scores within cohort stay. Each alternative converged in more folds than the current input.</p>
+<p>Across ranks, concordance was flat from <span class="math inline">\(K = 5\)</span> to 12, between 0.649 and 0.666, and lower from <span class="math inline">\(K = 2\)</span> to 4, between 0.611 and 0.620 (<a href="#tbl-rank" class="quarto-xref">Table 9</a>). The best mean was at <span class="math inline">\(K = 10\)</span> (0.666, SE 0.027), so the threshold was 0.639 and the one-standard-error rule selected <span class="math inline">\(K = 5\)</span>. Its concordance was 0.003 below that of <span class="math inline">\(K = 7\)</span> (paired SE 0.007). Every fold fit at <span class="math inline">\(K = 5\)</span> converged, against 3 of 5 at <span class="math inline">\(K = 7\)</span>, and the full fit had 3 survival-active programs at every rank from 5 to 8. Every column kept nonzero loadings at every rank, so the priors did not remove programs. The paired differences are much more precise than the fold standard error used by the rule, and on that scale ranks 5 to 8 cannot be told apart. The rule picks the smallest rank on the plateau. It does not show that <span class="math inline">\(K = 5\)</span> predicts better than <span class="math inline">\(K = 7\)</span>. The external results in this version come from the <span class="math inline">\(K = 7\)</span> fit, and the next fit uses <span class="math inline">\(K = 5\)</span>. These comparisons were awaiting independent review on November 12, 2026.</p>
+<div class="cell">
+<div id="tbl-inputs" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-inputs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 8: Training cross-validation of the gene screen and input scaling at rank 7 (five folds). Concordance counts only pairs of patients from the same cohort, so the reported fit’s value differs from the mean fold concordance in <a href="#tbl-cv" class="quarto-xref">Table 2</a>. Differences are paired over folds. Convergence is within 300 sweeps. Awaiting independent review on November 12, 2026.
+</figcaption>
+<div aria-describedby="tbl-inputs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="cell caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 48%">
+<col style="width: 4%">
+<col style="width: 10%">
+<col style="width: 24%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Input</th>
+<th style="text-align: center;">Genes</th>
+<th style="text-align: center;">Mean C (SE)</th>
+<th style="text-align: center;">Difference from reported fit (SE)</th>
+<th style="text-align: center;">Folds converged</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Current screen, z-scores within cohort (reported fit)</td>
+<td style="text-align: center;">2,218</td>
+<td style="text-align: center;">0.658 (0.026)</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">3/5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Variance screen after quantile normalization, z-scores within cohort</td>
+<td style="text-align: center;">2,000</td>
+<td style="text-align: center;">0.646 (0.030)</td>
+<td style="text-align: center;">−0.012 (0.014)</td>
+<td style="text-align: center;">5/5</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Current screen, divided by within-cohort SD</td>
+<td style="text-align: center;">2,218</td>
+<td style="text-align: center;">0.638 (0.023)</td>
+<td style="text-align: center;">−0.020 (0.007)</td>
+<td style="text-align: center;">5/5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Current screen, within-patient ranks then z-scores</td>
+<td style="text-align: center;">2,218</td>
+<td style="text-align: center;">0.641 (0.022)</td>
+<td style="text-align: center;">−0.017 (0.009)</td>
+<td style="text-align: center;">5/5</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div class="cell">
+<div id="tbl-rank" class="cell quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-rank-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table 9: Training cross-validation of the rank on the current screen with z-scores within cohort (five folds). Concordance counts only pairs within cohort. Differences from K = 7 are paired over folds. Convergence is within 300 sweeps. Survival-active programs are counted in the fit to all training patients. The one-standard-error rule selects the smallest K whose mean C reaches the best mean minus its SE. Awaiting independent review on November 12, 2026.
+</figcaption>
+<div aria-describedby="tbl-rank-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output-display">
+<table class="cell caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 3%">
+<col style="width: 14%">
+<col style="width: 27%">
+<col style="width: 16%">
+<col style="width: 25%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: center;">K</th>
+<th style="text-align: center;">Mean C (SE)</th>
+<th style="text-align: center;">Difference from K = 7 (SE)</th>
+<th style="text-align: center;">Folds converged</th>
+<th style="text-align: center;">Survival-active programs</th>
+<th style="text-align: center;">Selected</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">0.611 (0.022)</td>
+<td style="text-align: center;">−0.047 (0.009)</td>
+<td style="text-align: center;">5/5</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">0.617 (0.019)</td>
+<td style="text-align: center;">−0.040 (0.010)</td>
+<td style="text-align: center;">5/5</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">0.620 (0.024)</td>
+<td style="text-align: center;">−0.038 (0.009)</td>
+<td style="text-align: center;">5/5</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">0.655 (0.029)</td>
+<td style="text-align: center;">−0.003 (0.007)</td>
+<td style="text-align: center;">5/5</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">One-SE rule</td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">0.659 (0.022)</td>
+<td style="text-align: center;">+0.001 (0.005)</td>
+<td style="text-align: center;">4/5</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">0.658 (0.026)</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;">3/5</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">8</td>
+<td style="text-align: center;">0.656 (0.027)</td>
+<td style="text-align: center;">−0.001 (0.003)</td>
+<td style="text-align: center;">3/5</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">0.649 (0.022)</td>
+<td style="text-align: center;">−0.009 (0.005)</td>
+<td style="text-align: center;">2/5</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">0.666 (0.027)</td>
+<td style="text-align: center;">+0.008 (0.004)</td>
+<td style="text-align: center;">2/5</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">11</td>
+<td style="text-align: center;">0.661 (0.021)</td>
+<td style="text-align: center;">+0.003 (0.007)</td>
+<td style="text-align: center;">1/5</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: center;">12</td>
+<td style="text-align: center;">0.654 (0.020)</td>
+<td style="text-align: center;">−0.004 (0.007)</td>
+<td style="text-align: center;">0/5</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="sec-results-pruning" class="level2" data-number="4.7">
+<h2 data-number="4.7" class="anchored" data-anchor-id="sec-results-pruning"><span class="header-section-number">4.7</span> Rank and ELBO pruning</h2>
+<p>The pruning simulation asks whether ELBO pruning recovers the planted program and the true rank. For a flat coefficient likelihood the coefficient update returns the prior moments and an exact zero coefficient KL. Ordinary and protected pruning both failed the registered recovery and rank criteria (<a href="#tbl-kl2" class="quarto-xref">Table 10</a>), so the fit retains all 7 starting columns.</p>
 <div class="cell">
 <div id="tbl-kl2" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-kl2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 8: Pruning simulation. Converged counts returned fits that met the registered relative-ELBO rule. Outputs stable counts fits whose last-sweep change in the reconstruction and risk score was below 10^-4, a secondary diagnostic outside the registered rule. The saved summary gives the count of planted-program recoveries and the median retained rank.
+Table 10: Pruning simulation. Converged counts returned fits that met the registered relative-ELBO rule. Outputs stable counts fits whose last-sweep change in the reconstruction and risk score was below 10^-4, a secondary diagnostic outside the registered rule. The saved summary gives the count of planted-program recoveries and the median retained rank.
 </figcaption>
 <div aria-describedby="tbl-kl2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -3448,14 +3629,14 @@ Table 8: Pruning simulation. Converged counts returned fits that met the regist
 </div>
 </div>
 </section>
-<section id="sec-results-comparators" class="level2" data-number="4.7">
-<h2 data-number="4.7" class="anchored" data-anchor-id="sec-results-comparators"><span class="header-section-number">4.7</span> Comparison with other prognostic models</h2>
-<p>Both comparisons were registered before they were run. The supervised and two-step scores in this section are those of the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) (<a href="#sec-model-states" class="quarto-xref">Section 1.6</a>). Every comparator was trained on the 273 training patients only, and each score’s direction was fixed on the training data. DeSurv used the authors’ code, preprocessing and published settings (rank 3), which the authors selected on the same training cohorts <span class="citation" data-cites="Young2026">(<a href="#ref-Young2026" role="doc-biblioref">Young et al. 2026</a>)</span>. The elastic-net Cox model on the 2,218-gene set chose <span class="math inline">\(\alpha = 0\)</span> by cross-validation on the training folds. The α = 0.75 and lasso paths reached glmnet’s iteration limit at small penalties. PurIST entered as a Cox model on its basal-like probability <span class="citation" data-cites="Rashid2020">(<a href="#ref-Rashid2020" role="doc-biblioref">Rashid et al. 2020</a>)</span>. No clinical model was fitted, because no stage, grade, age or margin field is recorded in both training cohorts and all five external series.</p>
+<section id="sec-results-comparators" class="level2" data-number="4.8">
+<h2 data-number="4.8" class="anchored" data-anchor-id="sec-results-comparators"><span class="header-section-number">4.8</span> Comparison with other prognostic models</h2>
+<p>Both comparisons were registered before they were run. The supervised and two-step scores in this section are those of the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) (<a href="#sec-model-states" class="quarto-xref">Section 1.7</a>). Every comparator was trained on the 273 training patients only, and each score’s direction was fixed on the training data. DeSurv used the authors’ code, preprocessing and published settings (rank 3), which the authors selected on the same training cohorts <span class="citation" data-cites="Young2026">(<a href="#ref-Young2026" role="doc-biblioref">Young et al. 2026</a>)</span>. The elastic-net Cox model on the 2,218-gene set chose <span class="math inline">\(\alpha = 0\)</span> by cross-validation on the training folds. The α = 0.75 and lasso paths reached glmnet’s iteration limit at small penalties. PurIST entered as a Cox model on its basal-like probability <span class="citation" data-cites="Rashid2020">(<a href="#ref-Rashid2020" role="doc-biblioref">Rashid et al. 2020</a>)</span>. No clinical model was fitted, because no stage, grade, age or margin field is recorded in both training cohorts and all five external series.</p>
 <div class="cell">
 <div id="tbl-comparators" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-comparators-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 9: External performance of the fixed supervised fit and comparators trained on the same patients. Mean C is the equal-weight mean over the five series. The HR is per pooled external SD from a Cox model stratified by series, with a robust interval clustered on donor. The difference is supervised minus comparator C, averaged over series, with a 95% donor-bootstrap interval. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7) and its two-step comparator. PurIST, elastic-net Cox and DeSurv are separate comparators trained on the same patients.
+Table 11: External performance of the fixed supervised fit and comparators trained on the same patients. Mean C is the equal-weight mean over the five series. The HR is per pooled external SD from a Cox model stratified by series, with a robust interval clustered on donor. The difference is supervised minus comparator C, averaged over series, with a 95% donor-bootstrap interval. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7) and its two-step comparator. PurIST, elastic-net Cox and DeSurv are separate comparators trained on the same patients.
 </figcaption>
 <div aria-describedby="tbl-comparators-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -3512,9 +3693,9 @@ Table 9: External performance of the fixed supervised fit and comparators train
 </figure>
 </div>
 </div>
-<p>Every paired concordance interval included zero (<a href="#tbl-comparators" class="quarto-xref">Table 9</a>). Unsupervised EBMF followed by Cox regression gave differences, supervised fit minus EBMF, of +0.007, +0.045, +0.040 at ranks 7, 15 and 40. At ranks 15 and 40 the unpenalized Cox step overfit, with external calibration slopes of 0.10 to 0.49, so those differences describe that pipeline rather than the information in a larger factorization.</p>
-<section id="sec-fixed-risk-groups" class="level3" data-number="4.7.1">
-<h3 data-number="4.7.1" class="anchored" data-anchor-id="sec-fixed-risk-groups"><span class="header-section-number">4.7.1</span> Risk groups from training cutpoints</h3>
+<p>Every paired concordance interval included zero (<a href="#tbl-comparators" class="quarto-xref">Table 11</a>). Unsupervised EBMF followed by Cox regression gave differences, supervised fit minus EBMF, of +0.007, +0.045, +0.040 at ranks 7, 15 and 40. At ranks 15 and 40 the unpenalized Cox step overfit, with external calibration slopes of 0.10 to 0.49, so those differences describe that pipeline rather than the information in a larger factorization.</p>
+<section id="sec-fixed-risk-groups" class="level3" data-number="4.8.1">
+<h3 data-number="4.8.1" class="anchored" data-anchor-id="sec-fixed-risk-groups"><span class="header-section-number">4.8.1</span> Risk groups from training cutpoints</h3>
 <p>One cutpoint per score maximized the log-rank statistic on the out-of-fold training scores, with at least 20% of patients per group. It was applied unchanged in every external series. The cutpoints were −0.046 training SDs for the supervised score and 0.526 for the two-step score. The pooled high-versus-low HRs were 1.52 (1.24 to 1.87) and 1.69 (1.32 to 2.16). They are not comparable, because the supervised cutpoint places 297 of 616 external records in the high-risk group and the two-step cutpoint places 144. A smaller, more extreme group gives a larger HR at equal ranking ability. After adjusting for PurIST subtype the supervised score’s pooled HR per training SD was 1.48, and after adjusting for DeCAF it was 1.40. <a href="#fig-fixed-risk" class="quarto-xref">Figure 6</a> displays the groups formed by the training cutpoints. The program section also gives within-series tertiles as a separate description of ranking. The out-of-fold scores used the feature matrix of the training fit, whose per-cohort scaling included held-out training-fold expression. The cutpoint search used the pooled out-of-fold training scores and their outcomes.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -3532,14 +3713,14 @@ Figure 6: External Kaplan–Meier estimates by fixed training cutpoint. Each mo
 </div>
 <p>These fixed groups and the subtype-adjusted associations are exploratory. Differences between high-versus-low hazard ratios also reflect differences in the patients assigned to each group.</p>
 </section>
-<section id="sec-program-stability" class="level3" data-number="4.7.2">
-<h3 data-number="4.7.2" class="anchored" data-anchor-id="sec-program-stability"><span class="header-section-number">4.7.2</span> Program stability in training folds</h3>
+<section id="sec-program-stability" class="level3" data-number="4.8.2">
+<h3 data-number="4.8.2" class="anchored" data-anchor-id="sec-program-stability"><span class="header-section-number">4.8.2</span> Program stability in training folds</h3>
 <p>A main prognostic program was defined before the analysis by a standardized coefficient at least 0.25 of the largest, at least 5% of the signed risk-score variance and survival activity in at least four of the five training folds.</p>
 <div class="cell">
 <div id="tbl-program-rule" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-program-rule-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 10: Program classification rule on the supervised training fit. The ratio is |β_k| SD(Y F_k) relative to the largest program. The signed share is Cov(η_k, η)/Var(η). Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. The precision share is an upper bound on survival’s median share of the loading precision.
+Table 12: Program classification rule on the supervised training fit. The ratio is |β_k| SD(Y F_k) relative to the largest program. The signed share is Cov(η_k, η)/Var(η). Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. The precision share is an upper bound on survival’s median share of the loading precision.
 </figcaption>
 <div aria-describedby="tbl-program-rule-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -3619,14 +3800,14 @@ Table 10: Program classification rule on the supervised training fit. The ratio
 </div>
 <p>Programs 2 and 3 met the rule. Program 5 met the coefficient and share thresholds but was active in only 3 folds. In the saved fits of the cross-validated-weight simulation the coefficient-and-share part kept the planted program in 80 of 80 fits and rejected 35 of 36 false-active directions. In the two-step fits of the near-threshold simulation it rejected 61 of 128. The fold-stability part could not be checked in simulation.</p>
 </section>
-<section id="sec-mixed-signal" class="level3" data-number="4.7.3">
-<h3 data-number="4.7.3" class="anchored" data-anchor-id="sec-mixed-signal"><span class="header-section-number">4.7.3</span> Mixed-signal simulation</h3>
+<section id="sec-mixed-signal" class="level3" data-number="4.8.3">
+<h3 data-number="4.8.3" class="anchored" data-anchor-id="sec-mixed-signal"><span class="header-section-number">4.8.3</span> Mixed-signal simulation</h3>
 <p>A simulation planted one strong and one near-threshold prognostic program with equal standardized effects at 2,000 genes.</p>
 <div class="cell">
 <div id="tbl-mixed" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-mixed-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 11: Mixed-signal simulation, ten datasets per arm. All fits converged and every arm recovered the strong program in every dataset. Precision is the fraction of the 50 genes with the largest absolute fitted loading on the matched program that lie in the planted support. The mean includes datasets whose best match has absolute correlation below 0.7.
+Table 13: Mixed-signal simulation, ten datasets per arm. All fits converged and every arm recovered the strong program in every dataset. Precision is the fraction of the 50 genes with the largest absolute fitted loading on the matched program that lie in the planted support. The mean includes datasets whose best match has absolute correlation below 0.7.
 </figcaption>
 <div aria-describedby="tbl-mixed-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -3679,8 +3860,8 @@ Table 11: Mixed-signal simulation, ten datasets per arm. All fits converged and
 </div>
 <p>At <span class="math inline">\(w_S = 1\)</span> the supervised and two-step fits recovered the near-threshold program equally often. A fixed <span class="math inline">\(w_S = 5\)</span> lost it in most datasets and had lower validation C.</p>
 </section>
-<section id="sec-recovery-synthesis" class="level3" data-number="4.7.4">
-<h3 data-number="4.7.4" class="anchored" data-anchor-id="sec-recovery-synthesis"><span class="header-section-number">4.7.4</span> Recovery across simulation designs</h3>
+<section id="sec-recovery-synthesis" class="level3" data-number="4.8.4">
+<h3 data-number="4.8.4" class="anchored" data-anchor-id="sec-recovery-synthesis"><span class="header-section-number">4.8.4</span> Recovery across simulation designs</h3>
 <p>The matched two-step fit recovered the planted program in the representative cell of the cross-validated-weight simulation. The largest unit-weight recovery difference in the near-threshold simulation favoured the supervised fit and occurred at the smallest planted share with strong survival (<a href="#tbl-s14" class="quarto-xref">Table 6</a>). In the mixed-signal simulation, the two unit-weight fits had the same near-threshold recovery as the two-step fit. <a href="#fig-recovery-synthesis" class="quarto-xref">Figure 7</a> shows the accompanying differences in false activity, convergence and calibration. On PDAC data the loading agreement and the small Cox contribution to loading precision are consistent with an effect through the coefficient fit (<a href="#sec-results-loadings" class="quarto-xref">Section 4.2</a>).</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -3701,12 +3882,12 @@ Figure 7: Matched simulation results. The cross-validated-weight simulation pan
 </section>
 <section id="sec-biology" class="level1" data-number="5">
 <h1 data-number="5"><span class="header-section-number">5</span> Programs of the supervised fit</h1>
-<p>The programs in this section are those of the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) (<a href="#sec-model-states" class="quarto-xref">Section 1.6</a>), and every external association reported here comes from that model. The joint fit retained 7 programs. Of those, 3 were survival-active (<a href="#tbl-programs" class="quarto-xref">Table 12</a>). Program 2 had a protective coefficient at its positive pole, where the leading genes included classical epithelial and exocrine markers. Its negative pole included hypoxia and glycolysis genes. Program 3 had an adverse coefficient at its ribosomal and proliferative pole. Program 5 also had an adverse coefficient, with enrichment of mitotic and stromal-immune signatures.</p>
+<p>The programs in this section are those of the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) (<a href="#sec-model-states" class="quarto-xref">Section 1.7</a>), and every external association reported here comes from that model. The joint fit retained 7 programs. Of those, 3 were survival-active (<a href="#tbl-programs" class="quarto-xref">Table 14</a>). Program 2 had a protective coefficient at its positive pole, where the leading genes included classical epithelial and exocrine markers. Its negative pole included hypoxia and glycolysis genes. Program 3 had an adverse coefficient at its ribosomal and proliferative pole. Program 5 also had an adverse coefficient, with enrichment of mitotic and stromal-immune signatures.</p>
 <div class="cell">
 <div id="tbl-programs" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-programs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 12: Programs of the supervised training fit. Coefficients are log hazard ratios per SD of the program score, with posterior SDs in parentheses. The positive and negative poles list the genes with the largest signed loadings in each direction.
+Table 14: Programs of the supervised training fit. Coefficients are log hazard ratios per SD of the program score, with posterior SDs in parentheses. The positive and negative poles list the genes with the largest signed loadings in each direction.
 </figcaption>
 <div aria-describedby="tbl-programs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -3800,12 +3981,12 @@ Figure 8: Scaled loadings of selected genes across the fitted programs. Asteris
 </div>
 <section id="sec-program-interpretation" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="sec-program-interpretation"><span class="header-section-number">5.1</span> Enrichment and published signatures</h2>
-<p>Enrichment was calculated on signed loadings among the modeled genes. The leading sets are in <a href="#tbl-enrichment" class="quarto-xref">Table 13</a>. Program 3’s influenza-labeled sets share leading ribosomal genes in the saved enrichment results.</p>
+<p>Enrichment was calculated on signed loadings among the modeled genes. The leading sets are in <a href="#tbl-enrichment" class="quarto-xref">Table 15</a>. Program 3’s influenza-labeled sets share leading ribosomal genes in the saved enrichment results.</p>
 <div class="cell">
 <div id="tbl-enrichment" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-enrichment-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 13: Leading enrichment at each pole of the survival-active programs. NES denotes normalized enrichment score. The p-values are adjusted within program.
+Table 15: Leading enrichment at each pole of the survival-active programs. NES denotes normalized enrichment score. The p-values are adjusted within program.
 </figcaption>
 <div aria-describedby="tbl-enrichment-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -3876,12 +4057,12 @@ Table 13: Leading enrichment at each pole of the survival-active programs. NES 
 </figure>
 </div>
 </div>
-<p>5 Reactome p-values were unestimable and are retained as missing in the source CSV. Spearman correlations with published signatures were computed within series using the available standardized expression genes. In the pooled training data, Programs 2 and 3 were inversely associated with the Moffitt basal-like and classical signatures, respectively. The corresponding external ranges are in <a href="#tbl-signatures" class="quarto-xref">Table 14</a>. Correlations between Program 5 and the stromal-immune signature were weaker. These descriptive associations characterize fixed programs.</p>
+<p>5 Reactome p-values were unestimable and are retained as missing in the source CSV. Spearman correlations with published signatures were computed within series using the available standardized expression genes. In the pooled training data, Programs 2 and 3 were inversely associated with the Moffitt basal-like and classical signatures, respectively. The corresponding external ranges are in <a href="#tbl-signatures" class="quarto-xref">Table 16</a>. Correlations between Program 5 and the stromal-immune signature were weaker. These descriptive associations characterize fixed programs.</p>
 <div class="cell">
 <div id="tbl-signatures" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-signatures-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 14: Spearman correlations with selected subtype and stromal signatures. The external interval is the range of point estimates across series. PurIST uses the saved basal-like probabilities. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7).
+Table 16: Spearman correlations with selected subtype and stromal signatures. The external interval is the range of point estimates across series. PurIST uses the saved basal-like probabilities. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7).
 </figcaption>
 <div aria-describedby="tbl-signatures-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -3936,8 +4117,8 @@ Table 14: Spearman correlations with selected subtype and stromal signatures. T
 <section id="sec-program-profiles" class="level2" data-number="5.2">
 <h2 data-number="5.2" class="anchored" data-anchor-id="sec-program-profiles"><span class="header-section-number">5.2</span> Evidence for the individual programs</h2>
 <p>Program 2 combines the clearest external direction agreement with survival activity in 5 training folds. Its protective pole is associated with classical epithelial and exocrine expression. Its adverse pole includes hypoxia and glycolysis genes. The separate external Cox estimates agree in direction with its training coefficient across all scored series.</p>
-<p>Program 3 was active in 4 training folds. Its adverse pole includes ribosomal and proliferative genes, and its opposite pole correlates with the classical signature. The unadjusted external estimates generally follow the training direction (<a href="#tbl-external-program" class="quarto-xref">Table 15</a>).</p>
-<p>Program 5 had an adverse full-fit coefficient and enrichment for mitotic and stromal-immune signatures. It was active in 3 training folds. Its pooled external HR per training SD was 0.87 (donor-clustered 95% CI 0.76 to 1.00), opposite in direction to its training coefficient, and 3 of the 5 series had HRs below one. Its biological interpretation is exploratory. The retention rule in <a href="#sec-program-stability" class="quarto-xref">Section 4.7.2</a> reflects that instability.</p>
+<p>Program 3 was active in 4 training folds. Its adverse pole includes ribosomal and proliferative genes, and its opposite pole correlates with the classical signature. The unadjusted external estimates generally follow the training direction (<a href="#tbl-external-program" class="quarto-xref">Table 17</a>).</p>
+<p>Program 5 had an adverse full-fit coefficient and enrichment for mitotic and stromal-immune signatures. It was active in 3 training folds. Its pooled external HR per training SD was 0.87 (donor-clustered 95% CI 0.76 to 1.00), opposite in direction to its training coefficient, and 3 of the 5 series had HRs below one. Its biological interpretation is exploratory. The retention rule in <a href="#sec-program-stability" class="quarto-xref">Section 4.8.2</a> reflects that instability.</p>
 </section>
 <section id="sec-program-external" class="level2" data-number="5.3">
 <h2 data-number="5.3" class="anchored" data-anchor-id="sec-program-external"><span class="header-section-number">5.3</span> External program associations and risk groups</h2>
@@ -3946,7 +4127,7 @@ Table 14: Spearman correlations with selected subtype and stromal signatures. T
 <div id="tbl-external-program" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-external-program-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 15: External program associations from separate Cox regressions. Entries are hazard ratios and Wald intervals per SD of the program score within series. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7).
+Table 17: External program associations from separate Cox regressions. Entries are hazard ratios and Wald intervals per SD of the program score within series. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7).
 </figcaption>
 <div aria-describedby="tbl-external-program-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -4071,12 +4252,12 @@ Figure 12: External Kaplan–Meier curves by tertile of the Program 5 score ori
 </section>
 <section id="sec-limitations" class="level2" data-number="6.2">
 <h2 data-number="6.2" class="anchored" data-anchor-id="sec-limitations"><span class="header-section-number">6.2</span> Limitations</h2>
-<p>The gene screen, the input scaling and the rank of the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) were chosen with external concordance before the training-only rule, and every external series informed at least one of the choices recorded in the audit (<a href="#sec-external-uses" class="quarto-xref">Section 2.2</a>). The external results in this version therefore describe a model whose setup was partly chosen on the same cohorts. These choices are being reselected on training data (<a href="#sec-week-redo" class="quarto-xref">Section 3.6</a>). The PACA-AU array and RNA-seq records both contribute to the pooled estimate. The donor bootstrap and the donor-clustered HR intervals account for their shared donors while retaining both series in the estimand. DeSurv used its published settings rather than a new search on our training folds. 2 of 5 supervised training folds stopped at the sweep cap. In simulation the coefficients at <span class="math inline">\(w_S = 1\)</span> are attenuated at the larger gene count. These studies use a common simulation generator.</p>
+<p>The gene screen, the input scaling and the rank of the supervised YFB fit (<span class="math inline">\(w_S = 1\)</span>, 2,218 genes, rank 7) were chosen with external concordance before the training-only rule, and every external series informed at least one of the choices recorded in the audit (<a href="#sec-external-uses" class="quarto-xref">Section 2.2</a>). Training cross-validation now supports the screen and the scaling and places rank 7 on the flat part of its concordance curve (<a href="#sec-results-rank" class="quarto-xref">Section 4.6</a>). Because the external series informed these choices first, the external results still describe a model whose setup those cohorts helped choose. The training comparison used one split into folds. The registered protocol repeats the split with more seeds when comparisons are close, and the plateau from <span class="math inline">\(K = 5\)</span> to 12 is that case, but the repetition was not run. The PACA-AU array and RNA-seq records both contribute to the pooled estimate. The donor bootstrap and the donor-clustered HR intervals account for their shared donors while retaining both series in the estimand. DeSurv used its published settings rather than a new search on our training folds. 2 of 5 supervised training folds stopped at the sweep cap. In simulation the coefficients at <span class="math inline">\(w_S = 1\)</span> are attenuated at the larger gene count. These studies use a common simulation generator.</p>
 </section>
 <section id="sec-continuing" class="level2" data-number="6.3">
 <h2 data-number="6.3" class="anchored" data-anchor-id="sec-continuing"><span class="header-section-number">6.3</span> Continuing work</h2>
 <p>Proposed supervision weights include a calibrated power on the Cox partial likelihood, downweighting expression and normalizing the likelihood terms. Each would be assessed for recovery, calibration, false activity and convergence before application to the real data.</p>
-<p>The analyses of <a href="#sec-week" class="quarto-xref">Section 3</a> compare priors on the loadings and the coefficients, fit methylation alone, test a fitter for several data types with shared activities and separate loading priors, compare the model with the <span class="math inline">\(\eta = L\beta\)</span> parameterization, and reselect the gene screen, input scaling and rank on training data. Once their results are reviewed, the working model is fixed on training data and scored once on the external cohorts (<a href="#sec-week-external" class="quarto-xref">Section 3.7</a>). Every later choice follows the training-only rule of <a href="#sec-external-uses" class="quarto-xref">Section 2.2</a>.</p>
+<p>The analyses of <a href="#sec-week" class="quarto-xref">Section 3</a> compare priors on the loadings and the coefficients, fit methylation alone, test a fitter for several data types with shared activities and separate loading priors, and compare the model with the <span class="math inline">\(\eta = L\beta\)</span> parameterization. The next fit uses rank 5, selected by the one-standard-error rule (<a href="#sec-results-rank" class="quarto-xref">Section 4.6</a>). Once the results of <a href="#sec-week" class="quarto-xref">Section 3</a> are reviewed, the working model is fixed on training data and scored once on the external cohorts (<a href="#sec-week-external" class="quarto-xref">Section 3.7</a>). Every later choice follows the training-only rule of <a href="#sec-external-uses" class="quarto-xref">Section 2.2</a>.</p>
 <div style="page-break-after: always;"></div>
 </section>
 </section>
@@ -4096,9 +4277,10 @@ Figure 12: External Kaplan–Meier curves by tertile of the Program 5 score ori
 <h1 class="unnumbered">Appendix B. Changes since the November 6 version</h1>
 <ul>
 <li><strong>External cohorts.</strong> The external cohorts only score fixed models. Every modeling choice is made by simulation and training cross-validation (<a href="#sec-external-uses" class="quarto-xref">Section 2.2</a>).</li>
-<li><strong>Model names.</strong> The model behind the external results is named by its configuration, and every external table and figure names it in the caption (<a href="#sec-model-states" class="quarto-xref">Section 1.6</a>).</li>
+<li><strong>Model names.</strong> The model behind the external results is named by its configuration, and every external table and figure names it in the caption (<a href="#sec-model-states" class="quarto-xref">Section 1.7</a>).</li>
 <li><strong>Historical comparisons removed.</strong> This version compares the current model only with the rank-matched two-step fit, EBMF at ranks 15 and 40 followed by Cox, DeSurv, elastic-net Cox and PurIST. Removed: the pre-registered October 15 supervision check, the <span class="math inline">\(\alpha_F = 0\)</span> benchmark and its single-log refit, the 40-factor LASSO comparator, the matches with historical loadings, the table of past external-cohort uses and the earlier multimodal appendix.</li>
 <li><strong>Work of November 9–13.</strong> <a href="#sec-week" class="quarto-xref">Section 3</a> describes the week’s analyses with placeholders for their results.</li>
+<li><strong>Gene screen, input scaling and rank.</strong> New subsections in the Methods (<a href="#sec-rank" class="quarto-xref">Section 1.6</a>) and the Results (<a href="#sec-results-rank" class="quarto-xref">Section 4.6</a>) report the training cross-validation of these three choices. It keeps the screen and the scaling and selects rank 5 for the next fit. Its result replaces the four placeholders of <a href="#sec-week-redo" class="quarto-xref">Section 3.6</a>, and the Summary, Limitations and Continuing work describe it.</li>
 <li><strong>Prior sensitivity.</strong> The comparisons of priors on the scores and loadings and on the survival coefficients are complete. Their results replace two placeholders in <a href="#sec-week" class="quarto-xref">Section 3</a>, and <a href="#sec-appendix-d">Appendix D</a> gives the tables.</li>
 </ul>
 <p>No number retained from the November 6 version has changed.</p>
@@ -4110,7 +4292,7 @@ Figure 12: External Kaplan–Meier curves by tertile of the Program 5 score ori
 <div id="tbl-comparator-series" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-comparator-series-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 16: External discrimination and calibration by series. Concordance intervals are the saved series-level bootstrap intervals. Calibration is the Cox slope with its standard error. The paired donor-level comparison appears in the main text. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7) and its two-step comparator. PurIST, elastic-net Cox and DeSurv are separate comparators trained on the same patients.
+Table 18: External discrimination and calibration by series. Concordance intervals are the saved series-level bootstrap intervals. Calibration is the Cox slope with its standard error. The paired donor-level comparison appears in the main text. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7) and its two-step comparator. PurIST, elastic-net Cox and DeSurv are separate comparators trained on the same patients.
 </figcaption>
 <div aria-describedby="tbl-comparator-series-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -4345,7 +4527,7 @@ Table 16: External discrimination and calibration by series. Concordance interv
 <div id="tbl-fixed-risk-counts" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-fixed-risk-counts-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 17: Numbers at risk for the fixed-cutpoint curves. Entries are low-risk / high-risk counts by time in months. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7) and its two-step comparator.
+Table 19: Numbers at risk for the fixed-cutpoint curves. Entries are low-risk / high-risk counts by time in months. Model: supervised YFB fit (w_S = 1, 2,218 genes, rank 7) and its two-step comparator.
 </figcaption>
 <div aria-describedby="tbl-fixed-risk-counts-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -4488,12 +4670,12 @@ Table 17: Numbers at risk for the fixed-cutpoint curves. Entries are low-risk /
 <section id="priors-on-the-scores-and-loadings" class="level2 unnumbered">
 <h2 class="unnumbered anchored" data-anchor-id="priors-on-the-scores-and-loadings">Priors on the scores and loadings</h2>
 <p>The current model uses point-Laplace priors on <span class="math inline">\(L\)</span> and <span class="math inline">\(F\)</span> with expression z-scored within each cohort. The alternative is a point-exponential prior, which keeps every score and loading nonnegative, as in a nonnegative matrix factorization. It needs nonnegative input, so expression is divided by each gene’s within-cohort standard deviation without centering, and the Cox projection is centered on the training data. Everything else is the current model’s: <span class="math inline">\(w_S = 1\)</span>, a Normal coefficient prior, <span class="math inline">\(K = 7\)</span> without pruning, at most 300 sweeps and tolerance <span class="math inline">\(10^{-5}\)</span>. The simulation uses the three variance cells of the fixed-weight simulation at 2,000 genes and the strong-survival cell of the near-threshold simulation at a planted share of 0.05%, with 10 datasets each. The planted scores and loadings are exponential, so the truth favors neither prior. The training comparison uses the five folds of <a href="#sec-results-fair" class="quarto-xref">Section 4.1</a> on the pooled 273 patients and counts only pairs of patients from the same cohort.</p>
-<p>In simulation the point-exponential prior recovered the planted program as often as point-Laplace, and more often near the detection threshold (8 against 5 of 10), and every fit converged (<a href="#tbl-lf-prior-sim" class="quarto-xref">Table 18</a>). The point-exponential prior also marked several other programs survival-active in every cell, with means of 2.6 to 4.3 false-active programs per fit against a limit of one. At planted shares of 1% and above, every point-exponential fit had at least 2 false-active programs, while point-Laplace had at most 1 in any fit. Near the threshold both priors exceeded the limit.</p>
+<p>In simulation the point-exponential prior recovered the planted program as often as point-Laplace, and more often near the detection threshold (8 against 5 of 10), and every fit converged (<a href="#tbl-lf-prior-sim" class="quarto-xref">Table 20</a>). The point-exponential prior also marked several other programs survival-active in every cell, with means of 2.6 to 4.3 false-active programs per fit against a limit of one. At planted shares of 1% and above, every point-exponential fit had at least 2 false-active programs, while point-Laplace had at most 1 in any fit. Near the threshold both priors exceeded the limit.</p>
 <div class="cell">
 <div id="tbl-lf-prior-sim" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-lf-prior-sim-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 18: Point-Laplace and point-exponential priors on the scores and loadings in simulation at 2,000 genes. Entries give point-Laplace first and point-exponential second. Recovered and converged are counts of datasets. False-active is the mean number of false-active programs per fit. Validation C and the calibration slope are medians over datasets. The 0.05% cell is the strong-survival cell of the near-threshold simulation. Awaiting independent review on November 12, 2026.
+Table 20: Point-Laplace and point-exponential priors on the scores and loadings in simulation at 2,000 genes. Entries give point-Laplace first and point-exponential second. Recovered and converged are counts of datasets. False-active is the mean number of false-active programs per fit. Validation C and the calibration slope are medians over datasets. The 0.05% cell is the strong-survival cell of the near-threshold simulation. Awaiting independent review on November 12, 2026.
 </figcaption>
 <div aria-describedby="tbl-lf-prior-sim-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -4556,12 +4738,12 @@ Table 18: Point-Laplace and point-exponential priors on the scores and loadings
 </figure>
 </div>
 </div>
-<p>On the training data the point-exponential fit lost concordance and described the difference between the cohorts (<a href="#tbl-lf-prior-real" class="quarto-xref">Table 19</a>). Dividing by the within-cohort standard deviation keeps each cohort’s mean level. The median gene mean was 11.0 in TCGA-PAAD and 15.5 in CPTAC, against a within-cohort standard deviation of 1. In every fold one program’s scores correlated at least 0.998 with cohort membership, and no program was survival-active. Three further setups removed or absorbed that difference. Cohort strata center the projection and the baseline hazard within each cohort. A shifted z-score adds to each gene’s z-scores a constant equal to minus their minimum over the 273 patients, so the input is nonnegative and both cohorts have the same gene means. The within-patient rank transform used by DeSurv ranks the genes within each patient and divides each gene’s ranks by their within-cohort standard deviation. Each setup recovered part of the lost concordance, but all stayed below point-Laplace by more than one standard error, and no setup converged in more than 1 of 5 folds within 300 sweeps. The shifted z-score removed the association with cohort, but in simulation it behaved like the unshifted point-exponential fit, with 2.8 to 4.4 false-active programs per fit. Under strata the programs still correlate 0.998 with cohort membership, so they still separate the two cohorts, and the strata absorb that offset only in the survival model. The point-Laplace prior is kept.</p>
+<p>On the training data the point-exponential fit lost concordance and described the difference between the cohorts (<a href="#tbl-lf-prior-real" class="quarto-xref">Table 21</a>). Dividing by the within-cohort standard deviation keeps each cohort’s mean level. The median gene mean was 11.0 in TCGA-PAAD and 15.5 in CPTAC, against a within-cohort standard deviation of 1. In every fold one program’s scores correlated at least 0.998 with cohort membership, and no program was survival-active. Three further setups removed or absorbed that difference. Cohort strata center the projection and the baseline hazard within each cohort. A shifted z-score adds to each gene’s z-scores a constant equal to minus their minimum over the 273 patients, so the input is nonnegative and both cohorts have the same gene means. The within-patient rank transform used by DeSurv ranks the genes within each patient and divides each gene’s ranks by their within-cohort standard deviation. Each setup recovered part of the lost concordance, but all stayed below point-Laplace by more than one standard error, and no setup converged in more than 1 of 5 folds within 300 sweeps. The shifted z-score removed the association with cohort, but in simulation it behaved like the unshifted point-exponential fit, with 2.8 to 4.4 false-active programs per fit. Under strata the programs still correlate 0.998 with cohort membership, so they still separate the two cohorts, and the strata absorb that offset only in the survival model. The point-Laplace prior is kept. At rank 5, the rank selected in <a href="#sec-results-rank" class="quarto-xref">Section 4.6</a>, the point-exponential prior on expression divided by its within-cohort standard deviation gave within-cohort concordance 0.519 against 0.655 for point-Laplace.</p>
 <div class="cell">
 <div id="tbl-lf-prior-real" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-lf-prior-real-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 19: Priors on the scores and loadings in five-fold training cross-validation. Concordance counts only pairs of patients from the same cohort. The difference from the current model is paired over folds, with its standard error. Convergence is within 300 sweeps. Survival-active programs are the range over folds. Cohort correlation is the largest absolute correlation of a program’s training scores with cohort membership over folds. Under strata the cohort offset is absorbed by the stratified baseline hazard. Awaiting independent review on November 12, 2026.
+Table 21: Priors on the scores and loadings in five-fold training cross-validation. Concordance counts only pairs of patients from the same cohort. The difference from the current model is paired over folds, with its standard error. Convergence is within 300 sweeps. Survival-active programs are the range over folds. Cohort correlation is the largest absolute correlation of a program’s training scores with cohort membership over folds. Under strata the cohort offset is absorbed by the stratified baseline hazard. Awaiting independent review on November 12, 2026.
 </figcaption>
 <div aria-describedby="tbl-lf-prior-real-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
@@ -4636,12 +4818,12 @@ Table 19: Priors on the scores and loadings in five-fold training cross-validat
 <section id="prior-on-the-survival-coefficients" class="level2 unnumbered">
 <h2 class="unnumbered anchored" data-anchor-id="prior-on-the-survival-coefficients">Prior on the survival coefficients</h2>
 <p>The current model gives each coefficient its own Normal prior. The alternatives are a point-Laplace and a point-normal prior, either of which can set a coefficient exactly to zero. A prior with a point mass cannot be estimated from one coefficient, so both are shared across the seven programs. A shared Normal prior separates the effect of sharing from that of sparsity. All other settings, the simulation cells and the folds are those of the comparison above, with point-Laplace priors on the scores and loadings.</p>
-<p>The four priors gave nearly the same fits (<a href="#tbl-beta-prior" class="quarto-xref">Table 20</a>). The sparse priors lowered false activity slightly where the planted program was clear, to 0.3 against 0.9 at a share of 0.25%. Near the detection threshold the four priors averaged 3.0 to 4.1 false-active programs per fit, so neither sparse prior met the false-activity limit, which the Normal prior also fails in that cell. Median calibration slopes differed by at most 0.03 between priors outside the 5% cell. In training cross-validation the shared point-Laplace prior lowered concordance by 0.008 (SE 0.002), and the shared point-normal prior by 0.002 (SE 0.004). Under the shared point-normal prior, the posterior probability that a coefficient is nonzero was between 0.94 and 1.00 for all seven programs in the full training fit, so it did not single out the 3 survival-active programs. In simulation the mean number of programs per fit with an inclusion probability above 0.5 was 1.3 at a share of 0.25% and 1.0 at the larger shares, so the prior picked out the planted program alone when that program was clear. Near the threshold it was 4.2. The Normal prior is kept.</p>
+<p>The four priors gave nearly the same fits (<a href="#tbl-beta-prior" class="quarto-xref">Table 22</a>). The sparse priors lowered false activity slightly where the planted program was clear, to 0.3 against 0.9 at a share of 0.25%. Near the detection threshold the four priors averaged 3.0 to 4.1 false-active programs per fit, so neither sparse prior met the false-activity limit, which the Normal prior also fails in that cell. Median calibration slopes differed by at most 0.03 between priors outside the 5% cell. In training cross-validation the shared point-Laplace prior lowered concordance by 0.008 (SE 0.002), and the shared point-normal prior by 0.002 (SE 0.004). Under the shared point-normal prior, the posterior probability that a coefficient is nonzero was between 0.94 and 1.00 for all seven programs in the full training fit, so it did not single out the 3 survival-active programs. In simulation the mean number of programs per fit with an inclusion probability above 0.5 was 1.3 at a share of 0.25% and 1.0 at the larger shares, so the prior picked out the planted program alone when that program was clear. Near the threshold it was 4.2. The Normal prior is kept.</p>
 <div class="cell">
 <div id="tbl-beta-prior" class="cell quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-beta-prior-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Table 20: Coefficient priors in simulation at 2,000 genes and in five-fold training cross-validation. Point-Laplace priors on the scores and loadings throughout. Simulation entries give the planted programs recovered and the mean number of false-active programs per fit. Every simulated fit converged. Training concordance counts pairs within cohort, and the difference from the Normal prior is paired over folds. Awaiting independent review on November 12, 2026.
+Table 22: Coefficient priors in simulation at 2,000 genes and in five-fold training cross-validation. Point-Laplace priors on the scores and loadings throughout. Simulation entries give the planted programs recovered and the mean number of false-active programs per fit. Every simulated fit converged. Training concordance counts pairs within cohort, and the difference from the Normal prior is paired over folds. Awaiting independent review on November 12, 2026.
 </figcaption>
 <div aria-describedby="tbl-beta-prior-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">

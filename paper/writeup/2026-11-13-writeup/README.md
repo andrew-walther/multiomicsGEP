@@ -1,7 +1,8 @@
 # paper/writeup/2026-11-13-writeup/
 
 Version of the project writeup dated November 13, 2026. **Draft. The two prior comparisons of November 9–13 are reported
-in Appendix D. The other results of that week are pending.** The previous version is [`../2026-11-06-writeup/`](../2026-11-06-writeup/README.md),
+in Appendix D. The training cross-validation of the gene screen, input scaling and rank is
+reported in the main text. The other results of that week are pending.** The previous version is [`../2026-11-06-writeup/`](../2026-11-06-writeup/README.md),
 which is not edited.
 
 This version presents the current model, the supervised YFB fit ($w_S$ = 1, 2,218 genes,
@@ -52,10 +53,10 @@ November 6 version remains the circulated record.
 | Part | Content |
 |---|---|
 | Summary | Aim, model, training and external comparison with the two-step fit, other comparators, simulation results |
-| 1 Methods | Notation, model, fitting and prediction, the two-step comparator, choice of the survival weight, the model behind the external results |
+| 1 Methods | Notation, model, fitting and prediction, the two-step comparator, choice of the survival weight, choice of the gene screen, input scaling and rank, the model behind the external results |
 | 2 Evaluation | Data, uses of the external cohorts, simulation designs, metrics |
-| 3 Work of November 9–13 | Registered analyses of the week: outcomes of the two prior comparisons, result placeholders C1 to F4 and EXT for the rest |
-| 4 Results | Supervised fit against the rank-7 two-step fit, real-data loadings, the three simulation studies, the weight refit, pruning, comparison with other prognostic models, risk groups, program stability, mixed-signal and cross-design simulations |
+| 3 Work of November 9–13 | Registered analyses of the week: outcomes of the two prior comparisons and of the training cross-validation of the screen, scaling and rank, result placeholders C1 to E4 and EXT for the rest |
+| 4 Results | Supervised fit against the rank-7 two-step fit, real-data loadings, the three simulation studies, the weight refit, training cross-validation of the gene screen, input scaling and rank (rank 5 selected for the next fit), pruning, comparison with other prognostic models, risk groups, program stability, mixed-signal and cross-design simulations |
 | 5 Programs | Programs of the supervised fit, enrichment and published signatures, individual programs, external associations and Kaplan–Meier curves |
 | 6 Discussion | Interpretation, limitations, continuing work |
 | Appendix A | Summary of the model derivation |

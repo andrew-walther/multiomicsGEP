@@ -336,6 +336,74 @@ b_pn_split <- strsplit(b_pn_fits$pip, ";")
 stopifnot(all(sapply(b_pn_split, function(z) sum(z == "NA")) == 7 - b_pn_fits$n_alive))
 b_pn_fits$n_incl <- sapply(b_pn_split, function(z) sum(as.numeric(z[z != "NA"]) > 0.5))
 b_pn_incl <- tapply(b_pn_fits$n_incl, b_pn_fits$cell, mean)[prior_cells]
+
+# ---- Training CV of the gene screen, input scaling and rank ----
+# Input codes in the CSVs: D4_Z = current 2,218-gene screen, z-scores within cohort;
+# D2_Z = variance screen after quantile normalization; D4_XSD = current screen divided
+# by the within-cohort SD; D4_RANKZ = within-patient ranks, then z-scores within cohort.
+# The D4_Z rows at K = 7 (part "reference") are the point-Laplace fits of the prior
+# comparison. Fold 0 is the full training fit. C counts pairs within cohort.
+tcv <- "training_cv_redo_2026-11-12"
+tcv_fits   <- rd(tcv, "fits.csv")
+tcv_k      <- rd(tcv, "k_curve.csv")
+tcv_pair   <- rd(tcv, "paired.csv")
+tcv_choice <- rd(tcv, "choices.csv")
+tcv_a      <- rd(tcv, "a_rerun_paired.csv")
+stopifnot(all(is.na(tcv_fits$error)), identical(as.integer(tcv_k$K), 2:12),
+          all(tcv_k$n_folds == 5))
+# Recompute each arm's fold mean, fold SE, paired difference from the K = 7 reference
+# (paired SE over folds) and convergence count from the fold-level file.
+tcv_cv  <- subset(tcv_fits, fold > 0)
+tcv_ref <- subset(tcv_cv, input == "D4_Z" & K == 7)
+tcv_arm <- function(inp, k) {
+  a <- subset(tcv_cv, input == inp & K == k)
+  a <- a[match(tcv_ref$fold, a$fold), ]
+  stopifnot(nrow(a) == 5, !anyNA(a$fold))
+  d <- a$C_within - tcv_ref$C_within
+  c(mean = mean(a$C_within), se = sd(a$C_within) / sqrt(5),
+    diff = mean(d), se_diff = sd(d) / sqrt(5), conv = sum(a$converged))
+}
+tcv_rank <- t(sapply(tcv_k$K, function(k) tcv_arm("D4_Z", k)))
+tcv_full <- subset(tcv_fits, fold == 0 & input == "D4_Z")
+stopifnot(isTRUE(all.equal(unname(tcv_rank[, "mean"]), tcv_k$mean_C_within)),
+          isTRUE(all.equal(unname(tcv_rank[, "se"]), tcv_k$se_C_within)),
+          isTRUE(all.equal(unname(tcv_rank[, "diff"]), tcv_k$diff_vs_K7)),
+          isTRUE(all.equal(unname(tcv_rank[, "se_diff"]), tcv_k$se_diff_vs_K7)),
+          all(tcv_rank[, "conv"] == tcv_k$folds_converged),
+          all(tcv_full$n_active[match(tcv_k$K, tcv_full$K)] == tcv_k$full_active),
+          # Every column keeps nonzero loadings at every rank, in every fit.
+          all(subset(tcv_fits, input == "D4_Z")$n_alive == subset(tcv_fits, input == "D4_Z")$K),
+          # The K = 7 reference equals the point-Laplace arm of the prior comparison.
+          isTRUE(all.equal(unname(tcv_rank[tcv_k$K == 7, "mean"]), lf_real["PL", "C"])))
+# One-SE rule: smallest K whose mean C is at least the best mean minus that K's fold SE.
+tcv_best <- tcv_k[which.max(tcv_k$mean_C_within), ]
+tcv_thr  <- tcv_best$mean_C_within - tcv_best$se_C_within
+tcv_K    <- min(tcv_k$K[tcv_k$mean_C_within >= tcv_thr])
+stopifnot(tcv_K == tcv_k$K[tcv_k$selected], tcv_best$K == tcv_k$K[tcv_k$best],
+          isTRUE(all.equal(tcv_thr, unique(tcv_k$threshold_1se))),
+          tcv_choice$selected[tcv_choice$choice == "rank K"] == as.character(tcv_K))
+tcv_plateau <- range(tcv_k$mean_C_within[tcv_k$K >= tcv_K])
+tcv_low     <- range(tcv_k$mean_C_within[tcv_k$K < tcv_K])
+tcv_r <- function(k, col) tcv_rank[tcv_k$K == k, col]
+# Gene screen and input scaling at K = 7: keep the current input unless an alternative
+# is better by more than one paired SE.
+tcv_inputs <- c(D4_Z = "Current screen, z-scores within cohort (reported fit)",
+                D2_Z = "Variance screen after quantile normalization, z-scores within cohort",
+                D4_XSD = "Current screen, divided by within-cohort SD",
+                D4_RANKZ = "Current screen, within-patient ranks then z-scores")
+tcv_in <- t(sapply(names(tcv_inputs), function(i) tcv_arm(i, 7)))
+tcv_genes <- sapply(names(tcv_inputs), function(i) unique(tcv_fits$n_genes[tcv_fits$input == i]))
+tcv_alt <- names(tcv_inputs)[-1]
+stopifnot(isTRUE(all.equal(unname(tcv_in[tcv_alt, "diff"]), tcv_pair$diff_within[match(tcv_alt, tcv_pair$input)])),
+          isTRUE(all.equal(unname(tcv_in[tcv_alt, "se_diff"]), tcv_pair$se_within[match(tcv_alt, tcv_pair$input)])),
+          !any(tcv_pair$replaces_current), all(tcv_pair$diff_within <= tcv_pair$se_within),
+          all(tcv_choice$selected[1:2] == tcv_choice$current[1:2]),
+          is.numeric(tcv_genes), tcv_genes[["D4_Z"]] == 2218)
+# Point-exponential on X/sd against point-Laplace on z-scores at the selected rank.
+tcv_a_pe <- subset(tcv_fits, part == "a_rerun" & fold > 0)
+stopifnot(nrow(tcv_a) == 1, tcv_a$K == tcv_K, nrow(tcv_a_pe) == 5,
+          isTRUE(all.equal(tcv_a$mean_C_within_PL, unname(tcv_r(tcv_K, "mean")))),
+          isTRUE(all.equal(tcv_a$mean_C_within_PE, mean(tcv_a_pe$C_within))))
 ```
 
 ```{=latex}
@@ -377,16 +445,20 @@ cross-validation on the `r train_n[["TCGA_PAAD"]] + train_n[["CPTAC"]]` TCGA and
 patients. This covers preprocessing, gene screening, priors, rank, survival weight and
 comparator tuning. The five external expression series and the matched ICGC methylation set
 only score a model that is already fixed. The gene screen, the per-cohort standardization and
-rank 7 were set before this rule, using external concordance, and are being reselected on
-training cross-validation (@sec-week).
+rank 7 were set before this rule, using external concordance. Training cross-validation has
+since kept the screen and the standardization and selects rank `r tcv_K` for the next fit
+(@sec-results-rank).
 
 **Work of November 9–13.** The analyses of this week compare priors on the loadings and the
 survival coefficients, fit methylation alone, test one fitter for several data types, compare
 two ways of linking survival to the programs, and reselect the gene screen, input scaling and
 rank on training data.
-The two prior comparisons are complete. The current model keeps point-Laplace priors on the
-scores and loadings and a Normal prior on each survival coefficient ([Appendix D](#sec-appendix-d)). The other
-results are in progress or pending review and appear as marked placeholders in @sec-week.
+The two prior comparisons and the training cross-validation of the screen, scaling and rank
+are complete. The current model keeps point-Laplace priors on the scores and loadings and a
+Normal prior on each survival coefficient ([Appendix D](#sec-appendix-d)). It also keeps the
+gene screen and the z-scores within cohort, and the one-standard-error rule selects rank
+`r tcv_K` (@sec-results-rank). The other results are in progress or pending review and appear
+as marked placeholders in @sec-week.
 
 # Methods {#sec-methods}
 
@@ -471,6 +543,25 @@ chosen for each dataset from $\{1, 2, 5, 10, 20, 50\}$ by five-fold cross-valida
 log-likelihood, with ties going to the smaller weight. The same rule was applied to the real
 training data (@sec-results-s15).
 
+## Choosing the gene screen, input scaling and rank {#sec-rank}
+
+The gene screen and the input scaling were compared with alternatives by five-fold training
+cross-validation on the folds of @sec-results-fair, using concordance within cohort. The current
+screen is the 2,218-gene set described in @sec-data. The alternative screen z-scores each cohort,
+quantile-normalizes the merged matrix and keeps the 2,000 genes of largest variance. Neither
+screen uses outcomes, so each was computed once on all training patients, as in DeSurv. The
+alternative scalings divide each gene by its within-cohort standard deviation, with the Cox
+projection centered, or apply the within-patient rank transform of DeSurv followed by z-scores
+within cohort [@Young2026]. The current choice was kept unless an alternative was better by more
+than one standard error of the paired fold difference.
+
+The rank is not chosen by ELBO pruning, which failed its simulation criteria
+(@sec-results-pruning). We chose it as DeSurv did, by training cross-validation with the
+one-standard-error rule [@Young2026]. The rule takes the smallest $K$ from 2 to 12 whose mean
+concordance is at least the best mean minus the standard error of the fold concordances at the
+best $K$. Without pruning the fit keeps every column it starts with, so cross-validation chooses
+the fitted rank. Both rules were registered before any fit.
+
 ## The model behind the external results {#sec-model-states}
 
 Every external result in this version comes from the supervised YFB fit ($w_S = 1$, 2,218 genes,
@@ -481,7 +572,10 @@ without pruning, point-Laplace priors on $L$ and $F$ and a Normal prior on $\bet
 comparator uses the same input and rank at $w_S = 0$, followed by an unpenalized Cox fit
 (@sec-two-step). The survival weight, the gene-set size and the choice not to screen genes on
 survival were fixed by training cross-validation. The gene screen, the input scaling and the
-rank were set earlier with external concordance (@sec-external-uses). If the analyses of
+rank were set earlier with external concordance (@sec-external-uses). Training
+cross-validation has since kept the screen and the scaling and placed rank 7 on the flat part
+of its concordance curve, where the one-standard-error rule selects rank `r tcv_K` for the
+next fit (@sec-results-rank). If the analyses of
 @sec-week change the model, the results below keep this label, and the new model is scored once
 after it is fixed (@sec-week-external).
 
@@ -527,8 +621,8 @@ and Puleo) and the matched ICGC methylation set only score a model after it is f
 results are reported, but they never choose between models or settings. The DeSurv comparator
 used its published settings rather than a new search on our folds. The gene screen, the
 per-cohort standardization without a rank transform and rank 7 of the current model were set
-before this rule, using external concordance, and are being reselected on training
-cross-validation (@sec-week-redo). The audit in `docs/findings/2026-11-06-external-cohort-uses.md`
+before this rule, using external concordance. They have since been redone by training
+cross-validation (@sec-rank, @sec-results-rank). The audit in `docs/findings/2026-11-06-external-cohort-uses.md`
 records which earlier choices used which series.
 
 The rule follows the protocol DeSurv used on the same cohorts [@Young2026]. DeSurv was trained on
@@ -577,8 +671,8 @@ equal-weight mean of the within-series differences.
 # Work of November 9–13 {#sec-week}
 
 This section lists the analyses planned for the week of November 9. Each was registered, with its
-criteria, before any fit. The two prior comparisons are complete and their results are given
-below. The other analyses are in progress or pending review, so their subsections give the
+criteria, before any fit. The two prior comparisons and the training cross-validation of the
+gene screen, input scaling and rank are complete, and their results are given below. The other analyses are in progress or pending review, so their subsections give the
 question and a marked placeholder for the result. Unless a subsection says otherwise, the simulation cells
 are the three planted variance shares of the fixed-weight simulation (0.25%, 1% and 5% at
 2,000 genes) and the near-threshold cell with a 0.05% share and strong survival. The real-data
@@ -705,28 +799,22 @@ overlap and the correlation between $L_k$ and $(YF)_k$.]
 ## Training cross-validation of the gene screen, input scaling and rank {#sec-week-redo}
 
 Three choices of the current model were set with external concordance (@sec-external-uses).
-Each is redone here by
-five-fold training cross-validation. Five outcome-free gene screens, labeled D1 to D5, are
-compared. D4 is the 2,218-gene screen of the working model. The input scalings compared are within-cohort z-scores, division by the
-within-cohort standard deviation, and a within-patient rank transform. One further fixed arm
-ranks genes within each patient, divides each gene by its within-cohort standard deviation and
-uses point-exponential priors. The rank is selected over $K = 2, \dots, 12$ by the
-one-standard-error rule, with the number of programs with nonzero loadings and of
-survival-active programs reported at each $K$.
+Each is redone here by five-fold training cross-validation, as described in @sec-rank. Two
+outcome-free gene screens are compared: the current 2,218-gene screen and a variance screen
+after quantile normalization. The input scalings compared are z-scores within cohort, division
+by the within-cohort standard deviation, and a within-patient rank transform followed by
+z-scores. The rank is selected over $K = 2, \dots, 12$ by the one-standard-error rule, with the
+number of programs with nonzero loadings and of survival-active programs reported at each $K$.
 
-::: {.callout-note}
-**Result pending.** [RESULT F1: cross-validated concordance of gene screens D1 to D5 and the
-screen selected.]
-
-[RESULT F2: cross-validated concordance of the input scalings, including the rank-transform
-point-exponential arm, and the scaling selected.]
-
-[RESULT F3: cross-validated concordance over $K = 2, \dots, 12$, the rank chosen by the
-one-standard-error rule, and the numbers of nonzero and survival-active programs at each
-$K$.]
-
-[RESULT F4: which inherited choices changed, and the resulting working model.]
-:::
+**Result.** The current screen and the z-scores within cohort are kept, and the rank changes
+from 7 to `r tcv_K`. No alternative screen or scaling was better than the current input in
+within-cohort concordance. Concordance was flat from $K = `r tcv_K`$ to `r max(tcv_k$K)` and
+lower below $K = `r tcv_K`$, and the one-standard-error rule selected $K = `r tcv_K`$
+(@sec-results-rank). The external results in this version come from the $K = 7$ fit, which lies
+on the flat part of the curve. The next fit uses $K = `r tcv_K`$. At that rank the
+point-exponential prior on expression divided by its within-cohort standard deviation still
+loses to the point-Laplace prior ([Appendix D](#sec-appendix-d)). These comparisons were awaiting independent
+review on November 12, 2026.
 
 ## External scoring of the fixed working model {#sec-week-external}
 
@@ -990,6 +1078,65 @@ kable(data.frame(Weight = s15_curve$w, `CV partial log-likelihood` = num(s15_cur
   `Folds converged` = paste0(s15_curve$folds_converged, "/", s15_curve$folds_ok),
   `Survival precision share` = formatC(s15_curve$share_active_median, format = "e", digits = 2),
   check.names = FALSE), row.names = FALSE)
+```
+
+## Gene screen, input scaling and rank in training cross-validation {#sec-results-rank}
+
+```{r}
+# Ranks the paired comparison cannot separate from K = 7, and the full-fit active count there.
+tcv_flat <- tcv_k$K[tcv_k$K >= tcv_K & tcv_k$K <= 8]
+tcv_flat_active <- unique(tcv_k$full_active[tcv_k$K %in% tcv_flat])
+stopifnot(length(tcv_flat_active) == 1, tcv_r(tcv_K, "conv") == 5,
+          all(abs(tcv_k$diff_vs_K7[tcv_k$K %in% tcv_flat]) <= tcv_k$se_diff_vs_K7[tcv_k$K %in% tcv_flat] |
+              tcv_k$K[tcv_k$K %in% tcv_flat] == 7))
+```
+
+Training cross-validation supported the gene screen and the input scaling of the reported fit
+(@tbl-inputs). In concordance within cohort, the alternative screen was lower by
+`r num(-tcv_in["D2_Z", "diff"])` (paired SE `r num(tcv_in["D2_Z", "se_diff"])`), division by the within-cohort standard deviation by
+`r num(-tcv_in["D4_XSD", "diff"])` (SE `r num(tcv_in["D4_XSD", "se_diff"])`) and the rank
+transform by `r num(-tcv_in["D4_RANKZ", "diff"])` (SE `r num(tcv_in["D4_RANKZ", "se_diff"])`).
+No alternative was better, so the current screen and the z-scores within cohort stay. Each
+alternative converged in more folds than the current input.
+
+Across ranks, concordance was flat from $K = `r tcv_K`$ to `r max(tcv_k$K)`, between
+`r num(tcv_plateau[1])` and `r num(tcv_plateau[2])`, and lower from $K = `r min(tcv_k$K)`$ to
+`r tcv_K - 1`, between `r num(tcv_low[1])` and `r num(tcv_low[2])` (@tbl-rank). The best mean
+was at $K = `r tcv_best$K`$ (`r num(tcv_best$mean_C_within)`, SE `r num(tcv_best$se_C_within)`),
+so the threshold was `r num(tcv_thr)` and the one-standard-error rule selected $K = `r tcv_K`$.
+Its concordance was `r num(-tcv_r(tcv_K, "diff"))` below that of $K = 7$ (paired SE
+`r num(tcv_r(tcv_K, "se_diff"))`). Every fold fit at $K = `r tcv_K`$ converged,
+against `r tcv_r(7, "conv")` of 5 at $K = 7$, and the full fit had `r tcv_flat_active` survival-active
+programs at every rank from `r min(tcv_flat)` to `r max(tcv_flat)`. Every column kept nonzero
+loadings at every rank, so the priors did not remove programs. The paired differences are much
+more precise than the fold standard error used by the rule, and on that scale ranks
+`r min(tcv_flat)` to `r max(tcv_flat)` cannot be told apart. The rule picks the smallest rank on
+the plateau. It does not show that $K = `r tcv_K`$ predicts better than $K = 7$. The external
+results in this version come from the $K = 7$ fit, and the next fit uses $K = `r tcv_K`$. These
+comparisons were awaiting independent review on November 12, 2026.
+
+```{r}
+#| label: tbl-inputs
+#| tbl-cap: "Training cross-validation of the gene screen and input scaling at rank 7 (five folds). Concordance counts only pairs of patients from the same cohort, so the reported fit's value differs from the mean fold concordance in @tbl-cv. Differences are paired over folds. Convergence is within 300 sweeps. Awaiting independent review on November 12, 2026."
+kable(data.frame(Input = unname(tcv_inputs), Genes = big(tcv_genes),
+  `Mean C (SE)` = paste0(num(tcv_in[, "mean"]), " (", num(tcv_in[, "se"]), ")"),
+  `Difference from reported fit (SE)` = c("", paste0(sgn(tcv_in[tcv_alt, "diff"]), " (",
+                                                     num(tcv_in[tcv_alt, "se_diff"]), ")")),
+  `Folds converged` = paste0(tcv_in[, "conv"], "/5"), check.names = FALSE),
+  row.names = FALSE, align = "lcccc")
+```
+
+```{r}
+#| label: tbl-rank
+#| tbl-cap: "Training cross-validation of the rank on the current screen with z-scores within cohort (five folds). Concordance counts only pairs within cohort. Differences from K = 7 are paired over folds. Convergence is within 300 sweeps. Survival-active programs are counted in the fit to all training patients. The one-standard-error rule selects the smallest K whose mean C reaches the best mean minus its SE. Awaiting independent review on November 12, 2026."
+kable(data.frame(K = tcv_k$K,
+  `Mean C (SE)` = paste0(num(tcv_k$mean_C_within), " (", num(tcv_k$se_C_within), ")"),
+  `Difference from K = 7 (SE)` = ifelse(tcv_k$K == 7, "",
+    paste0(sgn(tcv_k$diff_vs_K7), " (", num(tcv_k$se_diff_vs_K7), ")")),
+  `Folds converged` = paste0(tcv_k$folds_converged, "/5"),
+  `Survival-active programs` = tcv_k$full_active,
+  Selected = ifelse(tcv_k$K == tcv_K, "One-SE rule", ""), check.names = FALSE),
+  row.names = FALSE, align = "cccccc")
 ```
 
 ## Rank and ELBO pruning {#sec-results-pruning}
@@ -1381,9 +1528,13 @@ the differences were smaller at realistic survival strength.
 The gene screen, the input scaling and the rank of the supervised YFB fit ($w_S = 1$, 2,218
 genes, rank 7) were chosen with external concordance before the training-only rule, and every
 external series informed at least one of the choices recorded in the audit
-(@sec-external-uses). The external results in this version therefore describe a model whose
-setup was partly chosen on the same cohorts. These choices are being reselected on training
-data (@sec-week-redo). The PACA-AU array and RNA-seq records both contribute to
+(@sec-external-uses). Training cross-validation now supports the screen and the scaling and
+places rank 7 on the flat part of its concordance curve (@sec-results-rank). Because the
+external series informed these choices first, the external results still describe a model
+whose setup those cohorts helped choose. The training comparison used one split into
+folds. The registered protocol repeats the split with more seeds when comparisons are close,
+and the plateau from $K = `r tcv_K`$ to `r max(tcv_k$K)` is that case, but the repetition was
+not run. The PACA-AU array and RNA-seq records both contribute to
 the pooled estimate. The donor bootstrap and the donor-clustered HR intervals account for their shared donors
 while retaining both series in the estimand. DeSurv used its published settings rather than a
 new search on our training folds. `r nrow(ff) - cv_conv` of `r nrow(ff)` supervised training folds stopped at the sweep cap. In simulation the coefficients at $w_S = 1$ are
@@ -1397,10 +1548,10 @@ recovery, calibration, false activity and convergence before application to the 
 
 The analyses of @sec-week compare priors on the loadings and the coefficients, fit methylation
 alone, test a fitter for several data types with shared activities and separate loading priors,
-compare the model with the $\eta = L\beta$ parameterization, and reselect the gene screen,
-input scaling and rank on training data. Once their results are reviewed, the
-working model is fixed on training data and scored once on the external cohorts
-(@sec-week-external). Every later choice follows the training-only rule of
+and compare the model with the $\eta = L\beta$ parameterization. The next fit uses rank
+`r tcv_K`, selected by the one-standard-error rule (@sec-results-rank). Once the results of
+@sec-week are reviewed, the working model is fixed on training data and scored once on the
+external cohorts (@sec-week-external). Every later choice follows the training-only rule of
 @sec-external-uses.
 
 {{< pagebreak >}}
@@ -1446,6 +1597,10 @@ the expected objective.
   appendix.
 - **Work of November 9–13.** @sec-week describes the week's analyses with placeholders for
   their results.
+- **Gene screen, input scaling and rank.** New subsections in the Methods (@sec-rank) and the
+  Results (@sec-results-rank) report the training cross-validation of these three choices. It keeps the screen and the scaling and selects rank `r tcv_K` for the next fit. Its result
+  replaces the four placeholders of @sec-week-redo, and the Summary, Limitations and Continuing
+  work describe it.
 - **Prior sensitivity.** The comparisons of priors on the scores and loadings and on the
   survival coefficients are complete. Their results replace two placeholders in @sec-week, and
   [Appendix D](#sec-appendix-d) gives the tables.
@@ -1552,7 +1707,10 @@ unshifted point-exponential fit, with `r num(min(lf_sz$mean_false_active), 1)` t
 `r num(max(lf_sz$mean_false_active), 1)` false-active programs per fit. Under strata the programs
 still correlate `r num(lf_real["PES", "cohort_cor"])` with cohort membership, so they still
 separate the two cohorts, and the strata absorb that offset only in the survival model. The
-point-Laplace prior is kept.
+point-Laplace prior is kept. At rank `r tcv_K`, the rank selected in @sec-results-rank, the
+point-exponential prior on expression divided by its within-cohort standard deviation gave
+within-cohort concordance `r num(tcv_a$mean_C_within_PE)` against
+`r num(tcv_a$mean_C_within_PL)` for point-Laplace.
 
 ```{r}
 #| label: tbl-lf-prior-real
