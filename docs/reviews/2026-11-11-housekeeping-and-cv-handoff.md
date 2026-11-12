@@ -11,6 +11,8 @@ results folders were moved and no scientific default or saved result changed.
 
 ## Current continuation prompt and results navigation
 
+Completed in `9ed706a`, with independent review and local-link verification.
+
 Use the [November 11 continuation prompt](../prompts/2026-11-11-week-plan-continuation-prompt.md)
 for the next session. It identifies completed work and leaves decisions on the
 scope and location of A to F to Andrew's discussion with the next owner.
