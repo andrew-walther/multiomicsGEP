@@ -1,0 +1,9 @@
+"setup","criterion","detail","pass"
+"SZ","1 recovery >= PL - 1 in every cell","s14_0.05pct 6 vs 5; s9_0.25pct 10 vs 10; s9_1pct 10 vs 10; s9_5pct 10 vs 10",TRUE
+"SZ","2 mean false-active <= 1 in every cell","s14_0.05pct 2.80; s9_0.25pct 3.10; s9_1pct 4.10; s9_5pct 4.40",FALSE
+"SZ","3 >= 9/10 converged in every cell","s14_0.05pct 10/10; s9_0.25pct 10/10; s9_1pct 10/10; s9_5pct 10/10",TRUE
+"SZ","4 CV within-cohort C not lower than PL by > 1 SE; all folds converge","diff -0.0227, SE 0.0079, folds converged 1/5",FALSE
+"PES","1 recovery >= PL - 1 in every cell","s14_0.05pct 8 vs 5; s9_0.25pct 10 vs 10; s9_1pct 10 vs 10; s9_5pct 10 vs 10 (A's PE fits: one stratum)",TRUE
+"PES","2 mean false-active <= 1 in every cell","s14_0.05pct 2.60; s9_0.25pct 3.00; s9_1pct 4.00; s9_5pct 4.30 (A's PE fits: one stratum)",FALSE
+"PES","3 >= 9/10 converged in every cell","s14_0.05pct 10/10; s9_0.25pct 10/10; s9_1pct 10/10; s9_5pct 10/10 (A's PE fits: one stratum)",TRUE
+"PES","4 CV within-cohort C not lower than PL by > 1 SE; all folds converge","diff -0.0296, SE 0.0153, folds converged 0/5",FALSE

@@ -1,0 +1,3 @@
+real_SZ_f1 ok 166s
+real_PES_f1 ok 165s
+sim_s9_1pct_s01_SZ ok 24s
