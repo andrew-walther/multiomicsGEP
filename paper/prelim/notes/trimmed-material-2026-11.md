@@ -374,3 +374,15 @@ Still in the body and left for Andrew to decide: the "Historical C" column of th
 external table, the paragraph comparing with the earlier rank-seven benchmark in
 External Validation, and the loading correspondence with the historical
 $\alpha_F = 0$ fit in Programs. These report results rather than history wording.
+
+## 2026-11-12 — Results from the earlier α_F = 0 model removed; prior comparisons recast as sensitivity analyses
+
+Andrew: the chapter presents the current model against external benchmarks (EBMF, EBMF followed by Cox,
+DeSurv and others), not against earlier iterations of the model, and it names the priors it uses, with
+prior comparisons as supplementary material. Removed:
+
+- The "Historical C" column of Table `tab:external` (0.6345, 0.5486, 0.6483, 0.6573, 0.6447) and the caption sentence "Historical $C$ is descriptive because the frozen benchmark used different preprocessing."
+- > In the earlier benchmark the rank-seven EBMF fit followed by unpenalized Cox regression was the rank-matched reference. The pooled difference for historical YFB against that comparator was 0.011 (95% CI $-0.013$ to $0.033$). The historical fit averaged $C=0.627$ and its single-log refit averaged $C=0.625$. These results use different fitted models and gene sets from the fixed-model comparison.
+- > The loadings matched the $w_S=0$ fit across all 2,218 genes (Figure \ref{fig:program-correspondence}). Across the 1,985 genes shared with the historical $\alpha_F=0$ fit, Program 2 matched historical Program 7 at $|r|=0.623$ and Program 3 matched historical Program 3 at $|r|=0.649$. Both pairs had opposite loading signs. The matched poles shared nine and three of their top 25 genes, respectively. Program 5's best historical match had $|r|=0.180$.
+- Figure `fig:program-correspondence` (`figures/sup_programs_correspondence.pdf`, still produced by `make_figures_supervised_programs.R`). The agreement with the $w_S = 0$ loadings is already stated in the training cross-validation results.
+- The section "Proposed Comparison of Priors and Inputs", with its adoption rules for the point-exponential L/F prior and the sparse β priors, replaced by the shorter "Sensitivity to Priors and Input Processing". The full rules are in `docs/plans/2026-11-09-week-plan.md`.
