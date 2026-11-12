@@ -1,0 +1,13 @@
+mode=simulation
+scaling=zscore
+prior_LF=point_laplace
+prior_beta=normal
+out=results/benchmark_sim/outputs/lb_yfb_simulation_2026-11-12
+input=data/lf_prior_real_2026-11-12.rds
+w_S=1,10
+K=5
+max_iter=300
+tol=1e-05
+git_head=fadc276105b1b9e6a3644f515777897d39c7dd2b
+git_status= M README.md| M results/benchmark_sim/run_training_cv_redo.R|?? docs/findings/2026-11-12-methylation-single-modality-findings.md|?? results/benchmark_sim/score_lb_yfb_external.R|?? results/benchmark_sim/summarize_lb_yfb_study.R|?? results/multimodal_real/outputs/methylation_single_modality_2026-11-12/|?? results/multimodal_real/run_methylation_iteration_extension.R|?? results/multimodal_real/run_methylation_single_modality.R|?? tests/test_lb_yfb_external.R|?? tests/test_lb_yfb_study_summary.R|?? tests/test_methylation_iteration_extension.R|?? tests/test_methylation_single_modality.R
+source_md5=code/fit_ssbmf_lb.R 1c4390072f6ebab149f776dd951a7ffa|code/fit_ssbmf_yfb.R 274aa18e2f433eba780fb05878428e6f|code/predict_ssbmf_lb.R b5a7da87157444e6f13256ce32b0d8c7|code/predict_ssbmf_yfb.R 588fa74fa91bb3fa405ab22a14ced9d5|code/train_test_split.R 54aedfbee4de1de325e99a809dfce716|code/concordance_ci.R d8378f5ae0dc4557832f32b91bc277c0|code/lb_yfb_study.R 1950147d13f8d6917e8f41db01a7c80d|results/benchmark_sim/run_yfb_supervision_decision.R 4b3a2df678226d6739a19413cbfdb49b|code/simulate_multimodal_yfb.R c988318ab42a91663fb47a3ce9c674d2|code/fit_yfb_supervised.R 710f868aac6314a3ed5e61b932a8995e
