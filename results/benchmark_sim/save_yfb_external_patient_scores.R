@@ -15,12 +15,14 @@
 suppressPackageStartupMessages({ library(survival); library(yaml) })
 
 # Parameters ----
-S11 <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04"
+source("results/benchmark_sim/exhibit_rank.R")   # EXHIBIT_K: cache the scores of another rank
+S11 <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04", "s11")
 FIT_W1 <- file.path(S11, "fits", "size_D4_N2218_w1_f0.rds")
 FIT_W0 <- file.path(S11, "fits", "size_D4_N2218_w0_f0.rds")
 TRAIN <- "data/yfb_supervised_real_2026-11-04.rds"
-CINDEX_REF <- "results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05/external_cindex.csv"
-OUT_RDS <- "data/yfb_external_patient_scores_ws1.rds"
+CINDEX_REF <- file.path(exhibit_out("results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05",
+                                    "s12"), "external_cindex.csv")
+OUT_RDS <- exhibit_data("data/yfb_external_patient_scores_ws1.rds", "external_patient_scores_ws1.rds")
 
 cfg <- yaml::read_yaml("config/globals.yml")
 source("results/benchmark_sim/benchmark_helpers.R")

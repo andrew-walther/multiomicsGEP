@@ -1,0 +1,12 @@
+size_D4_N2218_w0_f0 ok 16s
+size_D4_N2218_w0_f1 ok 15s
+size_D4_N2218_w0_f2 ok 33s
+size_D4_N2218_w0_f3 ok 27s
+size_D4_N2218_w0_f4 ok 13s
+size_D4_N2218_w0_f5 ok 11s
+size_D4_N2218_w1_f0 ok 11s
+size_D4_N2218_w1_f1 ok 10s
+size_D4_N2218_w1_f2 ok 27s
+size_D4_N2218_w1_f3 ok 23s
+size_D4_N2218_w1_f4 ok 12s
+size_D4_N2218_w1_f5 ok 9s

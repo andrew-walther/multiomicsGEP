@@ -10,6 +10,10 @@ source("results/benchmark_sim/run_prompt6_desurv.R")
 source("code/preprocess_desurv.R")
 source("code/predict_ssbmf_yfb.R")
 source("code/concordance_ci.R")
+source("results/benchmark_sim/exhibit_rank.R")   # EXHIBIT_K: compare the fits of another rank
+P6_S11 <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04", "s11")
+P6_S12 <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05", "s12")
+P6_OUT <- exhibit_out("results/benchmark_sim/outputs/prompt6_comparators", "prompt6_comparators")
 
 #' Load the fixed S-11 models and their training design.
 #' @param fold 0 for the full fit, or the S-11 validation fold number.
@@ -19,7 +23,7 @@ source("code/concordance_ci.R")
 prompt6_reference <- function(fold = 0L) {
   d <- readRDS("data/yfb_supervised_real_2026-11-04.rds")
   fits <- lapply(1:0, function(w) readRDS(file.path(
-    "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/fits",
+    P6_S11, "fits",
     sprintf("size_D4_N2218_w%d_f%d.rds", w, fold))))
   stopifnot(identical(fits[[1]]$genes, fits[[2]]$genes))
   genes <- fits[[1]]$genes
@@ -201,8 +205,7 @@ if (sys.nframe() == 0L) {
   stopifnot(length(intersect(external$PACA_AU_array$meta$donor,
                              external$PACA_AU_seq$meta$donor)) == 47L)
   result <- prompt6_evaluate(external)
-  prior <- read.csv(paste0("results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05/",
-                           "external_cindex.csv"))
+  prior <- read.csv(file.path(P6_S12, "external_cindex.csv"))
   actual <- result$external[result$external$model %in% c("w1", "twostep"), ]
   check <- merge(actual, prior, by = c("cohort", "model"))
   stopifnot(nrow(check) == 10L, all(check$n.x == check$n.y),
@@ -236,7 +239,7 @@ if (sys.nframe() == 0L) {
     result$desurv_final <- data.frame(n = nrow(d$Y), converged = desurv$convergence,
       iterations = length(desurv$lossit), nan_flag = desurv$nan_flag)
   }
-  out <- if (partial) "data/prompt6_partial" else "results/benchmark_sim/outputs/prompt6_comparators"
+  out <- if (partial) "data/prompt6_partial" else P6_OUT
   dir.create(out, recursive = TRUE, showWarnings = FALSE)
   for (nm in names(result))
     write.csv(result[[nm]], file.path(out, paste0(nm, ".csv")), row.names = FALSE)

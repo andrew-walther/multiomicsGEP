@@ -20,8 +20,9 @@ source("code/preprocess_desurv.R"); source("code/predict_ssbmf_yfb.R"); source("
 donor_only <- "--donor-only" %in% commandArgs(trailingOnly = TRUE)
 if (!dir.exists(PDAC_DATA_ROOT)) stop("PDAC_DATA_ROOT must point to local PDAC data.")
 
-S11  <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04"
-OUT  <- "results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05"
+source("results/benchmark_sim/exhibit_rank.R")   # EXHIBIT_K: score the fits of another rank
+S11  <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04", "s11")
+OUT  <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05", "s12")
 z    <- readRDS("data/yfb_supervised_real_2026-11-04.rds")   # training matrix (local only)
 w1   <- readRDS(file.path(S11, "fits", "size_D4_N2218_w1_f0.rds"))
 w0   <- readRDS(file.path(S11, "fits", "size_D4_N2218_w0_f0.rds"))

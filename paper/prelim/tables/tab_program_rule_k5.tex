@@ -1,0 +1,16 @@
+\begin{table}[!htb]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+Program & Active & \shortstack{Coefficient\\ratio} & \shortstack{Signed share of\\risk variance} & \shortstack{Active\\folds (of 5)} & \shortstack{Main\\program} \\
+\midrule
+2 & Yes & 1.00 & 0.591 & 5 & Yes \\
+3 & No & 0.27 & 0.034 & 3 & No \\
+4 & Yes & 0.56 & 0.141 & 3 & No \\
+5 & Yes & 0.62 & 0.234 & 2 & No \\
+\bottomrule
+\end{tabular}
+\caption{Program classification on the supervised training fit. The coefficient ratio is $|E\beta_k|\,\mathrm{SD}(YE[F_k])$ relative to the largest program. The signed share is $\mathrm{Cov}(\eta_k,\eta)/\mathrm{Var}(\eta)$ and sums to one over programs. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. A main program needs a ratio of at least 0.25, a share of at least 5\% and at least four active folds. Programs with ratio below 0.1 and no activity are omitted.}
+\label{tab:program-rule}
+\end{table}

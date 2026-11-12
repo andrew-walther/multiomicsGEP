@@ -23,7 +23,11 @@
 # per worker.
 
 Sys.setenv(OPENBLAS_NUM_THREADS = 1, OMP_NUM_THREADS = 1, VECLIB_MAXIMUM_THREADS = 1)
-OUT   <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04"
+# EXHIBIT_K (results/benchmark_sim/exhibit_rank.R) reruns at another rank into a separate
+# folder; unset, the rank and paths are the historical K = 7 ones. The prepared input LOCAL
+# does not depend on K and is shared.
+source("results/benchmark_sim/exhibit_rank.R")
+OUT   <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04", "s11")
 LOCAL <- "data/yfb_supervised_real_2026-11-04.rds"
 SIZE_TARGETS <- c(3000L, 5000L, 8000L, 12000L)   # between the D4 size and all shared genes
 SCREEN_N     <- c(250L, 500L, 1000L)
@@ -56,7 +60,7 @@ s11_load <- function() {
 #' @examples
 #' # s11_fit(Y, time, status, 1, cfg)
 s11_fit <- function(Y, time, status, w_S, cfg) {
-  fit_ssbmf_yfb(Y, time, status, K = cfg$benchmark$k_merged_yfb_desurv,
+  fit_ssbmf_yfb(Y, time, status, K = exhibit_fit_k(cfg),
                 max_iter = cfg$cavi$max_iter, tol = cfg$cavi$tol,
                 prior_LF = "point_laplace", prior_beta = "normal", canonicalize = TRUE,
                 w_S = w_S, alpha = cfg$benchmark$alpha, verbose = FALSE,
@@ -190,11 +194,14 @@ s11_task <- function(task, z, cfg) {
 }
 
 #' Design rows for the size or screen part
-#' @param part "size" or "screen". @param z Prepared data.
+#' @param part "size", "screen" or "d4" (the size part restricted to the D4 set, used to
+#'   fit the reported 2,218-gene model first when rerunning at another rank).
+#' @param z Prepared data.
 #' @return Data frame of tasks, largest gene sets first.
 #' @examples
 #' # s11_design("size", z)
 s11_design <- function(part, z) {
+  if (part == "d4") return(subset(s11_design("size", z), set == "D4"))
   sets <- if (part == "size") data.frame(set = names(z$sets), N = lengths(z$sets))
           else expand.grid(set = c("U", "S"), N = SCREEN_N, stringsAsFactors = FALSE)
   d <- merge(merge(sets, data.frame(arm = names(ARMS_WS))), data.frame(fold = 0:NFOLD))
@@ -229,12 +236,15 @@ if (sys.nframe() == 0L) {
   mode <- args[1]; cores <- if (length(args) > 1) as.integer(args[2]) else 8L
   dir.create(file.path(OUT, "fits"), recursive = TRUE, showWarnings = FALSE)
   if (mode == "prepare") { s11_prepare(); quit(save = "no") }
-  if (mode %in% c("size", "screen")) {
+  if (mode %in% c("size", "screen", "d4")) {
     z <- readRDS(LOCAL); cfg <- yaml::read_yaml("config/globals.yml")
+    writeLines(c(sprintf("K = %d (EXHIBIT_K = '%s')", exhibit_fit_k(cfg), Sys.getenv("EXHIBIT_K")),
+                 system("git rev-parse HEAD", intern = TRUE), format(Sys.time())),
+               file.path(OUT, sprintf("settings_%s.txt", mode)))
     design <- s11_design(mode, z)
     cl <- parallel::makePSOCKcluster(cores, outfile = file.path(OUT, sprintf("workers_%s.log", mode)))
     parallel::clusterExport(cl, c("OUT", "LOCAL", "ARMS_WS", "NFOLD", "s11_load", "s11_fit",
-                                  "s11_genes", "s11_task"))
+                                  "s11_genes", "s11_task", "exhibit_k", "exhibit_fit_k"))
     parallel::clusterEvalQ(cl, { Sys.setenv(OPENBLAS_NUM_THREADS = 1, OMP_NUM_THREADS = 1,
       VECLIB_MAXIMUM_THREADS = 1); s11_load(); z <- readRDS(LOCAL)
       cfg <- yaml::read_yaml("config/globals.yml"); NULL })

@@ -1,0 +1,6 @@
+"model","eligible","n","n_cv","final_new"
+"w1",273,273,0,0
+"twostep",273,273,0,1
+"PurIST",273,273,0,1
+"elastic_net",273,273,25,5
+"clinical",273,0,0,0

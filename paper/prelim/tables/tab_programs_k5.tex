@@ -1,0 +1,18 @@
+\begin{table}[tbp]
+\centering
+\small
+\setlength{\tabcolsep}{2.5pt}
+\caption{Programs of the survival-supervised fit on the training cohorts ($n=273$). $E[\beta]$ is the posterior mean coefficient per SD of the program score $Z_k = Y\,E[F_k]$ (posterior SD in parentheses), $z = E[\beta]/\mathrm{SD}$, and a program is survival-active when $|z|\ge 1.96$. A positive $\beta$ indicates an association between a higher score and a higher hazard. Top genes are those with the largest positive and most negative loadings. The positive pole is the direction in which the score $Z_k$ increases.}
+\label{tab:programs}
+\begin{tabular}{@{}r p{1.12in} r r c p{1.3in} p{1.3in}@{}}
+\toprule
+\# & Label & $E[\beta]$ (SD) & $z$ & Active & Positive pole genes & Negative pole genes \\
+\midrule
+2 & P2 & $-$0.37 (0.08) & $-$4.5 & yes & METTL7A, ATP2A3, ACACB, PDCD4 & LOXL2, MMP14, LDHA, P4HA1 \\
+4 & P4 & 0.21 (0.09) & 2.4 & yes & SERPINA5, CTRB2, CPB1, REG1B & SLAMF6, BANK1, AKNA, EMB \\
+5 & P5 & 0.23 (0.08) & 2.8 & yes & UHMK1, ARHGAP5, RAD21, PRKDC & RCN3, CHPF, MXRA8, LOXL1 \\
+1 & P1 & 0.00 (0.00) & 0.0 & no & ZEB2, MYO5A, CCDC80, TCF4 & RAB25, AP1M2, PKP3, LAD1 \\
+3 & P3 & 0.10 (0.07) & 1.5 & no & RPS7, RPL6, RPS2, EEF1D & KIAA1211, SYTL2, PLS1, CORIN \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,37 @@
+\begin{table}[!htb]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lccccc}
+\multicolumn{6}{l}{\textbf{A. External concordance}} \\
+\toprule
+Cohort & $n$ (events) & $w_S = 1$ (95\% CI) & Two-step & \shortstack{Paired difference\\(95\% CI)} & \shortstack{Historical\\$C$} \\
+\midrule
+Dijk & 90 (81) & 0.599 (0.530, 0.667) & 0.599 & 0.000 ($-$0.018, 0.020) & 0.6345 \\
+Moffitt (array) & 123 (83) & 0.538 (0.458, 0.608) & 0.538 & 0.000 ($-$0.024, 0.023) & 0.5486 \\
+PACA-AU (array) & 63 (38) & 0.664 (0.573, 0.756) & 0.666 & $-$0.001 ($-$0.021, 0.016) & 0.6483 \\
+PACA-AU (RNA-seq) & 52 (31) & 0.704 (0.596, 0.806) & 0.699 & $+$0.006 ($-$0.014, 0.026) & 0.6573 \\
+Puleo (array) & 288 (181) & 0.645 (0.600, 0.687) & 0.651 & $-$0.007 ($-$0.017, 0.003) & 0.6447 \\
+\midrule
+\multicolumn{4}{l}{Pooled, records} & $-$0.001 ($-$0.009, 0.007) & \\
+\multicolumn{4}{l}{Pooled, donors} & $-$0.001 ($-$0.010, 0.008) & \\
+\multicolumn{4}{l}{Pooled without PACA-AU (RNA-seq)} & $-$0.002 ($-$0.011, 0.007) & \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\begin{tabular}{lcc}
+\multicolumn{3}{l}{\textbf{B. Calibration slopes}} \\
+\toprule
+Cohort & $w_S = 1$ (SE) & Two-step (SE) \\
+\midrule
+Dijk & 0.74 (0.38) & 0.68 (0.33) \\
+Moffitt (array) & 0.35 (0.36) & 0.33 (0.34) \\
+PACA-AU (array) & 0.83 (0.35) & 0.74 (0.30) \\
+PACA-AU (RNA-seq) & 1.85 (0.48) & 1.60 (0.41) \\
+Puleo (array) & 1.07 (0.21) & 0.97 (0.19) \\
+\bottomrule
+\end{tabular}
+\caption{External scoring of the fixed fits. The paired difference is $w_S = 1$ minus two-step. Pooled concordance uses pairs within series. The donor bootstrap resamples shared PACA-AU donors jointly. The last pooled row excludes PACA-AU RNA-seq. Calibration slopes come from a Cox regression of survival on the risk score. A slope of 1 indicates calibration. Historical $C$ is descriptive because the frozen benchmark used different preprocessing.}
+\label{tab:external}
+\end{table}

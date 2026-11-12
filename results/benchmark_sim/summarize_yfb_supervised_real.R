@@ -14,7 +14,8 @@
 
 suppressPackageStartupMessages(library(survival))
 source("code/concordance_ci.R"); source("code/predict_ssbmf_yfb.R"); source("code/feature_sensitivity.R")
-OUT   <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04"
+source("results/benchmark_sim/exhibit_rank.R")   # EXHIBIT_K: rerun folder at another rank
+OUT   <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04", "s11")
 LOCAL <- "data/yfb_supervised_real_2026-11-04.rds"
 z <- readRDS(LOCAL)
 ck <- lapply(list.files(file.path(OUT, "fits"), full.names = TRUE), readRDS)
@@ -95,7 +96,7 @@ write.csv(summ, file.path(OUT, "summary.csv"), row.names = FALSE)
 
 # Feature-set size ----
 sz <- summ[summ$part == "size", ]
-if (nrow(sz)) {
+if (nrow(sz) && length(unique(sz$set)) > 1L) {   # the curve needs more than the D4 set alone
   ## Program agreement with the all-genes fit (same arm), patient-level projections ----
   big <- names(z$sets)[which.max(lengths(z$sets))]
   agree <- do.call(rbind, lapply(setdiff(unique(sz$arm), "w0"), function(a) {

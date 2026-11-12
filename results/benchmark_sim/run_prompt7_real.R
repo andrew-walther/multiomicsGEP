@@ -8,7 +8,7 @@
 source("results/benchmark_sim/run_prompt6_comparators.R")
 source("code/fit_ssbmf_yfb.R")
 source("code/simulate_multimodal_yfb.R")
-OUT7 <- "results/benchmark_sim/outputs/prompt7_desurv_style"
+OUT7 <- exhibit_out("results/benchmark_sim/outputs/prompt7_desurv_style", "prompt7_desurv_style")  # EXHIBIT_K
 
 #' Derive one maximally separated cutoff from standardized OOF training scores.
 #' @param risk,time,event OOF score and aligned training survival vectors.

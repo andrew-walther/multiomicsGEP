@@ -8,7 +8,8 @@
 source("results/benchmark_sim/run_prompt6_comparators.R")
 if (sys.nframe() == 0L) {
   d <- prompt6_reference()
-  ranks <- c(7L, 15L, 40L)
+  # Rank-matched EBMF first (historical 7; the EXHIBIT_K rank when set), then 15 and 40.
+  ranks <- c(if (is.na(exhibit_k())) 7L else exhibit_k(), 15L, 40L)
   fit <- parallel::mclapply(ranks, function(k) {
     set.seed(42L)
     notices <- character()
@@ -24,7 +25,8 @@ if (sys.nframe() == 0L) {
     error = function(e) list(error = conditionMessage(e)))
     fit$warnings <- paste(unique(notices), collapse = " | ")
     fit
-  }, mc.cores = length(ranks), mc.set.seed = FALSE)
+  }, mc.cores = getOption("mc.cores", length(ranks)),   # MC_CORES env caps workers
+  mc.set.seed = FALSE)
   stopifnot(all(vapply(fit, is.list, logical(1))))
   names(fit) <- paste0("EBMF_", ranks)
   status <- do.call(rbind, lapply(seq_along(fit), function(i) {
@@ -42,7 +44,7 @@ if (sys.nframe() == 0L) {
     x
   }), cos)
   ans <- c(prompt6_evaluate(ext), list(ebmf_fits = status))
-  out <- "results/benchmark_sim/outputs/prompt7_desurv_style"
+  out <- exhibit_out("results/benchmark_sim/outputs/prompt7_desurv_style", "prompt7_desurv_style")
   dir.create(out, recursive = TRUE, showWarnings = FALSE)
   for (nm in names(ans)) write.csv(ans[[nm]], file.path(out, paste0("rank_", nm, ".csv")), row.names = FALSE)
 }

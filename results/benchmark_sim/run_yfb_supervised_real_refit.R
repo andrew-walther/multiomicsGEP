@@ -23,10 +23,11 @@
 # finished fits. Memory: 273 x 2,218 doubles (~5 MB) per worker.
 
 Sys.setenv(OPENBLAS_NUM_THREADS = 1, OMP_NUM_THREADS = 1, VECLIB_MAXIMUM_THREADS = 1)
-S15_OUT <- "results/benchmark_sim/outputs/yfb_supervised_refit_2026-11-06"
-S15_W   <- c(1, 2, 5, 10, 20, 50)
-S15_S11 <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04"
 source("results/benchmark_sim/run_yfb_supervised_real.R")   # s11_load, LOCAL, NFOLD (main guarded)
+# EXHIBIT_K (exhibit_rank.R, sourced above) reruns at another rank into a separate folder.
+S15_OUT <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_refit_2026-11-06", "s15")
+S15_W   <- c(1, 2, 5, 10, 20, 50)
+S15_S11 <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04", "s11")
 
 #' Load code as s11_load(), then re-source the fitter and predictor from the committed snapshot
 #'
@@ -84,7 +85,7 @@ s15_task <- function(task, d, cfg) {
   E <- if (task$i > 0L) U[fi[U] == task$i] else if (task$o > 0L) which(d$outer == task$o) else integer(0)
   set.seed(42L); t0 <- proc.time()[["elapsed"]]
   fit <- tryCatch(fit_ssbmf_yfb(d$Y[Tr, , drop = FALSE], d$time[Tr], d$status[Tr],
-                    K = cfg$benchmark$k_merged_yfb_desurv, max_iter = cfg$cavi$max_iter,
+                    K = exhibit_fit_k(cfg), max_iter = cfg$cavi$max_iter,
                     tol = cfg$cavi$tol, prior_LF = "point_laplace", prior_beta = "normal",
                     canonicalize = TRUE, survival_block_weight = TRUE, w_S = task$w,
                     alpha = cfg$benchmark$alpha, verbose = FALSE, trace_supervision = TRUE),
@@ -182,11 +183,21 @@ s15_summary <- function() {
   wstar <- s15_choose(m, 0)
   full <- m[m$o == 0 & m$i == 0 & m$w == wstar, ]
   nested_C <- mean(nest$C, na.rm = TRUE); nested_se <- sd(nest$C, na.rm = TRUE) / sqrt(NFOLD)
+  # Registered S-11 references (K = 7); at another rank they are read from that rank's S-11
+  # summary (mean fold C and its SE of the D4 w_S = 1 and two-step arms).
+  ref <- c(w1 = 0.663, twostep = 0.652, se = 0.024)
+  if (!is.na(exhibit_k())) {
+    sm <- read.csv(file.path(S15_S11, "summary.csv"))
+    sm <- sm[sm$part == "size" & sm$set == "D4", ]
+    ref <- c(w1 = sm$mean_C[sm$arm == "w1"], twostep = sm$mean_C[sm$arm == "w0cox"],
+             se = sm$se_C[sm$arm == "w1"])
+    stopifnot(length(ref) == 3L, all(is.finite(ref)))
+  }
   verdict <- data.frame(w_star = wstar, nested_mean_C = nested_C, nested_se_C = nested_se,
-    s11_w1_C = 0.663, s11_twostep_C = 0.652, threshold = 0.663 - 0.024,
+    s11_w1_C = ref[["w1"]], s11_twostep_C = ref[["twostep"]], threshold = ref[["w1"]] - ref[["se"]],
     full_fit_ok = nrow(full) == 1 && is.na(full$error) &&
       (isTRUE(full$converged) || full$max_rel_elbo_decrease <= 1e-6),
-    nested_ok = nested_C >= 0.663 - 0.024)
+    nested_ok = nested_C >= ref[["w1"]] - ref[["se"]])
   verdict$adopt <- verdict$w_star > 1 && verdict$full_fit_ok && verdict$nested_ok
   write.csv(verdict, file.path(S15_OUT, "verdict.csv"), row.names = FALSE)
   print(verdict)
@@ -225,7 +236,7 @@ if (sys.nframe() == 0L) {
     design <- design[order(-design$w, design$o, design$i), ]   # slow large weights first
     cl <- parallel::makePSOCKcluster(cores, outfile = file.path(S15_OUT, "workers.log"))
     parallel::clusterExport(cl, c("S15_OUT", "LOCAL", "NFOLD", "s11_load", "s15_load", "s15_data",
-                                  "s15_task", "snap"), envir = environment())
+                                  "s15_task", "snap", "exhibit_k", "exhibit_fit_k"), envir = environment())
     parallel::clusterEvalQ(cl, { Sys.setenv(OPENBLAS_NUM_THREADS = 1, OMP_NUM_THREADS = 1,
       VECLIB_MAXIMUM_THREADS = 1); s15_load(snap); d <- s15_data()
       cfg <- yaml::read_yaml("config/globals.yml"); NULL })
