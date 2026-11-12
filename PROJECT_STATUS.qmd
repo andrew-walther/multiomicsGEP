@@ -35,9 +35,11 @@ z-scored input, since task A (2026-11-12) kept point-Laplace L and F priors. Mul
 ## Methylation alone (2026-11-12)
 
 At K = 5 on the 144 matched TCGA patients, methylation alone predicted worse than
-expression at every CpG count from 10k to all 182,934 eligible sites (CV concordance 0.50
-to 0.55 against 0.59), and no methylation program carried survival signal that expression
-lacked. The comparison is descriptive. See the
+expression at every CpG count from 10k to all 182,934 eligible sites (point-Laplace CV concordance 0.50
+to 0.55 against 0.59; point-exponential 0.51 to 0.54 against 0.62), and no methylation
+program carried survival signal that expression lacked. The comparison is descriptive. Of
+57 fits, 12 reached the iteration cap, including 8 of the 12 expression fits, so most
+paired differences use capped expression states. See the
 [findings](docs/findings/2026-11-12-methylation-single-modality-findings.md).
 
 ## Training-CV redo of screen, scaling and rank (2026-11-12)

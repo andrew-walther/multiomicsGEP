@@ -3095,9 +3095,12 @@ simulation parts were not rerun. Normal β stays. `b_rerun_paired.csv` in
 144 matched TCGA patients, 75 events, five saved folds, 182,934 eligible CpGs. K = 7 run
 stopped at Andrew's request after nine full fits; K = 5 completed instead: ten methylation
 full fits (seven converged, three capped), 35 methylation CV fits (34 converged), 12
-expression fits; 57 fits, no errors or warnings. Mean point-Laplace methylation CV C 0.545,
+expression fits (four converged, eight capped); 57 fits, 45 converged, 12 capped, no errors
+or warnings. Mean point-Laplace methylation CV C 0.545,
 0.504, 0.511, 0.502, 0.520 (10k to all) against 0.591 for expression; point-exponential
 0.539 (100k) and 0.512 (all) against 0.622. No point-Laplace program met the
-methylation-only rule; point-exponential classification undefined (expression full fit
-capped). Descriptive; nothing adopted; no ICGC scoring. Findings:
+methylation-only rule. No point-exponential program can meet it (neither converged PE
+methylation full fit is survival-active); only its expression-correlation step is
+unassessed, because the expression PE full fit capped. Paired SEs 0.038 to 0.053; most
+expression folds capped. Descriptive; nothing adopted; no ICGC scoring. Findings:
 `docs/findings/2026-11-12-methylation-single-modality-findings.md`.
