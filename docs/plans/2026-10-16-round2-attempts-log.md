@@ -2925,3 +2925,35 @@ fold). Point-Laplace stays. Rank-transform arm, descriptive: 0.615, difference �
 S-11 fits; five S-14 false-active counts differ by one only because S-14's scoring
 excluded the best program when it did not match. Findings:
 `docs/findings/2026-11-12-lf-prior-comparison-findings.md`.
+
+## 2026-11-12 — B: β prior (registered before execution)
+
+Task B of the [November 9 week plan](2026-11-09-week-plan.md), under A's result:
+point-Laplace L and F on z-scored input, pooled, no strata. Same runner
+(`results/benchmark_sim/run_lf_prior_comparison.R`, part `beta`), same four simulation
+cells and the same five real folds as A.
+
+**Arms.** All use the A PL call except the β prior.
+1. Normal (working model): per-program Normal prior. A's PL fits are reused unchanged.
+2. Point-Laplace: one point-Laplace prior shared across the K programs
+   (`beta_prior_mode = "shared"`).
+3. Point-normal: one point-normal prior shared across the K programs.
+4. Shared Normal (reference, descriptive): one Normal prior shared across programs.
+
+The sparse priors are shared because a per-program prior is fitted to a single
+pseudo-observation, which a two-parameter point-mass prior cannot estimate. The
+2026-10-15 comparison used the shared point-Laplace prior. Arm 4 separates the effect of
+sharing from the effect of sparsity. No warm-up or supervised start, as in the working call.
+
+**Recorded.** As in A. For point-normal, each program's posterior inclusion probability
+at the final sweep, from the prior used in that sweep and the program's pseudo-observation.
+
+**Rule.** A sparse prior replaces Normal if it (a) meets A's recovery (at least Normal's
+minus 1 of 10), false-activity (mean at most 1) and convergence (at least 9 of 10)
+criteria in every cell, (b) has median validation calibration slope closer to 1 than
+Normal in at least two of the four cells, and (c) has mean within-cohort CV concordance
+no lower than Normal's by more than one SE of the paired fold difference. If both qualify,
+the one with fewer false-active programs is chosen. Otherwise Normal stays. A point-normal
+fit that sets every β to zero on the training data counts as a failure. The rule is
+applied literally. Normal itself averages 3.0 false-active programs in the S-14 cell, and
+the findings will report whether that cell decides the verdict.

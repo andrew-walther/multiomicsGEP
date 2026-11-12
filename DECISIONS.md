@@ -3,6 +3,16 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-12 — Correction: the working model uses Normal β, which no comparison chose
+
+The 2026-10-15 entry says "the point-Laplace β choice stands". That comparison used a
+shared point-Laplace β prior. The S-11 runner (`results/benchmark_sim/run_yfb_supervised_real.R`,
+`s11_fit`, 2026-11-04) then used `prior_beta = "normal"` with the default per-program prior,
+and every later working-model result (S-12 to S-15, task A) inherits it. No comparison
+chose Normal, and no decision entry recorded the switch. This entry supersedes the
+2026-10-15 line for the working model. Task B (registered 2026-11-12) compares Normal,
+point-Laplace and point-normal β and records the decision.
+
 ## 2026-11-12 — Task A: point-Laplace L and F priors stay
 
 Task A compared point-exponential L and F on nonnegative X/sd input
@@ -208,7 +218,8 @@ remains the working configuration. Findings: `docs/findings/2026-11-06-kl-fix-pr
 uncentered in the reconstruction Y ≈ LF' and centers it only inside the Cox projection:
 η = (Y − 1ȳ')E[F]β with ȳ the training column means, fixed for the fit. This is the realignment
 plan's Phase P item 3, for nonnegative X/sd input with point-exponential L and F and a
-point-normal β. Every survival term (β and F updates, monitored ELBO, pruning, output
+point-normal β (the β prior is now decided by task B; see the 2026-11-12 β entries). Every
+survival term (β and F updates, monitored ELBO, pruning, output
 convergence) uses the centered matrix; the genomics, L and τ terms use Y. The fit returns
 `$projection_center` = ȳ, and `predict_ssbmf_yfb()` takes it as the new appended argument
 `projection_center`. The default is FALSE and the default path is unchanged bit for bit.
