@@ -176,10 +176,8 @@ lower than point-Laplace's by more than one SE of the paired difference, with ev
 converged.
 
 **Result.** Point-Laplace stays. An [independent review](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/reviews/2026-11-12-task-a-independent-review.md)
-on November 12 agreed with the decision. Keeping point-Laplace is a comparison result, not a
-pass of an absolute standard: point-Laplace itself averages 3.0 false-active programs in the
-near-threshold cell and converges in 3 of 5 training folds. Both this comparison and the
-β-prior comparison use K = 7. Details are in the
+on November 12 agreed with the decision. Both this comparison and the β-prior comparison use
+K = 7. Details are in the
 [findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-lf-prior-comparison-findings.md)
 and Appendix C of Chapter 4.
 
@@ -191,9 +189,11 @@ and Appendix C of Chapter 4.
 | 5% | 10 / 10 | 0.0 / 4.3 | 10 / 10 |
 
 In simulation the point-exponential fit (PE) recovers the planted program as often as the
-point-Laplace fit (PL), and more often near the threshold, but it marks two to four other
-programs survival-active in every cell, against a limit of one. On the training data it
-does worse:
+point-Laplace fit (PL), and more often near the threshold, and it marks two to four other
+programs survival-active per fit. Such programs are expected, and where their size was
+measured (the shifted-input fits below) their coefficients were mostly a tenth to a quarter of
+the planted program's, so they are not the reason point-exponential loses. The training data
+are:
 
 | Prior and input | Mean within-cohort C | Difference from PL (SE) | Folds converged | Largest program correlation with cohort |
 |---|---|---|---|---|
@@ -212,8 +212,7 @@ with equal cohort means. The shift constants come from all 273 patients, held-ou
 included, and enter the reconstruction, so a refitted model can change with them. Under
 strata the programs keep the loading directions of the unstratified point-exponential fit,
 with larger column norms. Both recover part of the lost concordance but stay more than one
-SE below point-Laplace, and the shifted input still gives 2.8 to 4.4 false-active programs
-per fit in simulation. Point-exponential is not competitive on these data even with the
+SE below point-Laplace, and at most one of five folds converges. Point-exponential is not competitive on these data even with the
 cohort difference removed.
 
 
@@ -241,9 +240,7 @@ than Normal's by more than one SE. If both sparse priors qualify, the one with f
 false-active programs is chosen. A fit that sets every β to zero is reported as a failure.
 
 **Result.** Normal stays, and the choice makes little difference. An
-[independent review](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/reviews/2026-11-12-task-b-independent-review.md) on November 12 agreed. Neither
-sparse prior qualifies under the registered rule, even with the near-threshold cell removed
-from both parts of it. Details are in the
+[independent review](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/reviews/2026-11-12-task-b-independent-review.md) on November 12 agreed. Details are in the
 [findings](https://github.com/andrew-walther/multiomicsGEP/blob/main/docs/findings/2026-11-12-beta-prior-comparison-findings.md)
 and Appendix C of Chapter 4.
 
@@ -259,8 +256,7 @@ shared across the seven programs. A shared Normal arm separates sharing from spa
 
 The sparse priors lower false activity a little where the planted program is clear (0.3
 against 0.9 at the 0.25% share). Near the threshold every prior has three to four
-false-active programs per fit, so neither sparse prior meets the limit, which Normal also
-misses there. Calibration slopes differ by at most 0.03. On the real data the shared
+such programs per fit. Calibration slopes differ by at most 0.03. On the real data the shared
 point-normal prior gives inclusion probabilities of 0.94 to 1.00 for all seven programs, so
 it does not single out the three survival-active ones, and replacing the 1.96-SD activity
 rule with inclusion probabilities is not supported. The working model's earlier record said
@@ -412,13 +408,13 @@ threshold is 0.639 and the smallest K above it is 5. K = 5 is 0.003 below K = 7 
 0.007), converges in all five folds against three at K = 7, and has three survival-active
 programs, as do K = 6 to 8. Every column keeps nonzero loadings at every K. On paired
 differences K = 5 to 8 are indistinguishable, so the rule picks the smallest rank on the
-plateau rather than showing that K = 5 predicts better. The comparison used one fold split,
-and this plateau is the case where the protocol repeats the split with four more seeds. That
-repetition, for K = 5 against 7 and for the screen comparison, was running on November 12.
+plateau rather than showing that K = 5 predicts better. The comparison used one run of five-fold CV, that is, one random partition of the patients
+into folds. This plateau is the case where the protocol repeats the five-fold CV with four
+more random partitions. That repetition, for K = 5 against 7 and for the screen comparison, was running on November 12.
 K = 6 to 12 do not converge in every fold (K = 6 in 4 of 5).
 At K = 5 the point-exponential prior still loses (0.519 against 0.655).
 
-Andrew adopted K = 5 for the working model on November 12 on this one split (new key
+Andrew adopted K = 5 for the working model on November 12 from this one run of five-fold CV (new key
 `benchmark$k_working_yfb: 5` in `config/globals.yml`, while the historical key stays 7).
 Results already reported at K = 7, including the November external scores and this week's
 prior comparisons, stay on record labeled with K = 7.
