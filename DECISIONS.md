@@ -71,13 +71,21 @@ E fits have finished, because those fits use the same file.
 Methylation alone was fitted on the 144 matched TCGA patients (75 events) at K = 5, the
 adopted rank, at 10k, 25k, 50k, 100k and all 182,934 eligible CpGs (mean β in [0.1, 0.9]),
 under both setups, with Normal β and the expression fit on the same patients and folds as
-the comparator. All 57 fits completed without errors. Mean point-Laplace methylation CV
+the comparator. All 57 fits completed without errors; 45 converged and 12 reached the
+300-sweep cap (8 of the 12 expression fits, 3 point-exponential methylation full fits and
+1 methylation fold). Mean point-Laplace methylation CV
 concordance was 0.545, 0.504, 0.511, 0.502 and 0.520 across increasing counts, against
-0.591 for expression. Point-exponential was 0.539 (100k) and 0.512 (all), against 0.622
-for expression. No point-Laplace methylation program met the methylation-only rule. The
-only survival-active one (10k, program 5) was active in one fold and correlated 0.596 with
-an expression program. The point-exponential classification is undefined because the
-expression point-exponential full fit reached the sweep cap. Nothing is adopted. The
+0.591 for expression (paired differences −0.046 to −0.089, SEs 0.038 to 0.044).
+Point-exponential was 0.539 (100k) and 0.512 (all), against 0.622 for expression
+(−0.083, SE 0.053; −0.111, SE 0.052). The expression fit converged in only 2 of 5
+point-Laplace folds and 1 of 5 point-exponential folds, so most paired differences use
+capped expression states. No point-Laplace methylation program met the methylation-only
+rule. The only survival-active one (10k, program 5) was active in one fold and correlated
+0.596 with an expression program. No point-exponential program can meet the rule either:
+neither converged point-exponential methylation full fit has a survival-active program.
+Only the expression-correlation step is unassessed, because the expression
+point-exponential full fit capped. Normal β was fixed before task B, and B retained it
+(including at K = 5), so C needs no rerun on that account. Nothing is adopted. The
 comparison is descriptive at n = 144, and it uses pre-fold CpG screening and imputation.
 The K = 7 run was stopped at Andrew's request to prioritize K = 5, and its completed full
 fits are preserved. No ICGC scoring was run. Findings:
