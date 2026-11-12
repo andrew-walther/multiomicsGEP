@@ -4,6 +4,7 @@ Paste-in prompts, briefs and session handoffs.
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-12 | [codex-task-b-review-prompt](2026-11-12-codex-task-b-review-prompt.md) | Codex independent review of task B (β prior): rule recomputed, inclusion probabilities checked, two reruns | active |
 | 2026-11-12 | [codex-task-a-review-prompt](2026-11-12-codex-task-a-review-prompt.md) | Codex independent review of task A (L/F priors): code, outputs and criteria recomputed without reading the conclusions first | active |
 | 2026-11-12 | [codex-c-d-e-prompts](2026-11-12-codex-c-d-e-prompts.md) | Two concurrent Codex prompts: task C methylation CpG-count study; task D steps 1–2 then task E code | active |
 | 2026-11-11 | [week-plan-continuation-prompt](2026-11-11-week-plan-continuation-prompt.md) | Current paste-ready handoff after housekeeping, CV review and local pilot; discuss A–F and later migration before execution | active continuation prompt |
