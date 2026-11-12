@@ -7,20 +7,48 @@ include aggregate tables, figures, synthetic checkpoints, and seven legacy
 individual risk-score CSVs. Confirm redistribution permissions for the legacy
 exports before reusing them in a new release.
 
-The [November 11 inventory](../docs/findings/2026-11-11-results-inventory-findings.md)
-maps result scripts, saved locations and report references. It records historical
-path mismatches and unresolved writers. The results-rebuild design will use this
-inventory before any folder move or runner consolidation.
+## Start with the right collection
 
-The [local pilot](pilot/README.md) implements a small synthetic dependency graph,
-versioned outputs and a freshness-checked catalog. Use its explicit setup/build
-commands. Existing scientific results remain in their original locations.
+| Collection | Start here | Meaning |
+|---|---|---|
+| Local rebuild software | [Pilot guide](pilot/README.md) | Tested synthetic workflow with versioned outputs and freshness checks. Its figures are software demonstrations. |
+| Current reported evidence | [November result families below](#november-reported-result-families) | Saved evidence behind the current reports, labeled with its original model state. Not an automatically rebuilt scientific release. |
+| Frozen benchmark | [October 14 snapshot](benchmark_snapshot_2026-10-14/README.md) | Immutable historical reference. |
+| Historical studies and tools | [History index](history/README.md) | Navigation to existing locations, registrations and preservation rules. Not a default execution list. |
+
+The [November 11 inventory](../docs/findings/2026-11-11-results-inventory-findings.md)
+maps scripts, saved locations and report references. It records path mismatches
+and unresolved writers. The [rebuild design](../docs/plans/2026-11-11-results-rebuild-design.md)
+and [migration proposal](../docs/findings/2026-11-11-results-navigation-findings.md)
+build on it. Existing scientific files remain in their original locations.
+
+## November reported result families
+
+These links locate saved November evidence. Consult the findings for the exact
+model, settings and limitations. A model update does not make these old numbers
+current automatically. No scientific runner in this table is authorized to rerun
+by being linked here.
+
+| Family | Saved aggregates | Findings and source record |
+|---|---|---|
+| Expression fit, feature counts and screening | [November 4 fit](benchmark_sim/outputs/yfb_supervised_real_2026-11-04/) | [Real-data findings](../docs/findings/2026-11-04-supervised-real-data-findings.md) |
+| Fixed-model external scoring | [November 5 scoring](benchmark_sim/outputs/yfb_supervised_external_2026-11-05/) | [External scoring findings](../docs/findings/2026-11-05-supervised-external-scoring-findings.md) |
+| Training-selected survival weight | [November 6 refit](benchmark_sim/outputs/yfb_supervised_refit_2026-11-06/) | [Refit findings](../docs/findings/2026-11-06-supervised-real-refit-findings.md) |
+| Supervision-strength simulation | [Saved strength outputs](benchmark_sim/outputs/yfb_supervision_strength_2026-11-05/) | [Strength findings](../docs/findings/2026-11-05-supervision-strength-findings.md) |
+| Near-threshold simulation | [Saved recovery outputs](benchmark_sim/outputs/yfb_near_threshold_2026-11-05/) | [Near-threshold findings](../docs/findings/2026-11-05-near-threshold-findings.md) |
+| Fixed real-data comparators | [Comparator aggregates](benchmark_sim/outputs/prompt6_comparators/) | [Comparator findings](../docs/findings/2026-11-06-real-data-comparators-findings.md) |
+| Fixed risk groups and program rules | [Program/risk-group aggregates](benchmark_sim/outputs/prompt7_desurv_style/) | [Analysis findings](../docs/findings/2026-11-06-desurv-style-analyses-findings.md) |
+
+Use the linked findings to reach the relevant progress-book, writeup and prelim
+builders. Keep patient-level fits/scores private. The full result catalog will
+be populated as scientific families are ported into the tested workflow.
 
 ## Layout
 
 | Folder | Contents |
 |--------|----------|
 | `pilot/` | Small local synthetic software workflow; generated runs and cache are ignored |
+| `history/` | Index only, linking historical files at their existing locations |
 | `benchmark_sim/` | Single-modality benchmark and follow-up analyses on simulated and PDAC data; outputs in `benchmark_sim/outputs/<analysis>/` |
 | `multimodal_real/` | Expression + methylation fits on matched TCGA/ICGC data; outputs in `multimodal_real/outputs/` |
 | `multi_cohort_sim/` | Simulation of shared and cohort-specific programs across cohorts |
@@ -29,7 +57,7 @@ commands. Existing scientific results remain in their original locations.
 | `figures/`, `tables/` | Per-cohort outputs from the May 2026 analyses |
 | `legacy/`, `benchmark_sim/archive/` | Retired runners and outputs, kept for reference and not re-run |
 
-## Main entry points
+## Historical runners and supporting tools
 
 **Benchmark**
 
@@ -65,14 +93,14 @@ commands. Existing scientific results remain in their original locations.
 | `multimodal_real/summarize_multimodal_real.R` | Tables and figures from the saved fits |
 | `benchmark_sim/run_multimodal_pruning_comparison.R` | Simulation comparison of multimodal fitting variants |
 
-The remaining scripts in `benchmark_sim/` and `multimodal_real/` are diagnostic
-and sensitivity studies. Each one's design and outcome is recorded in
+Other scripts in `benchmark_sim/` and `multimodal_real/` include diagnostics,
+sensitivity studies and supporting tools. Their designs and outcomes are recorded in
 `docs/plans/2026-10-16-round2-attempts-log.md`, `DECISIONS.md` or the dated reports in
 `docs/findings/`; read the record before re-running one. Most refuse to overwrite
 existing outputs.
 
-`.slurm` files submit the larger runners as job arrays on UNC Longleaf; see
-`longleaf_setup/README.md`.
+Historical `.slurm` files are retained for Longleaf job arrays. New work is
+local-first. Cluster use needs a separate decision and setup guidance.
 
 ## Expression cohort reference
 

@@ -1047,6 +1047,9 @@ The entries below retain dated implementation and evaluation history.
   Pilot implementation, core release scope, physical migration and private archive
   storage remain separate decisions. Only the synthetic software pilot was built.
   Historical results remain in place and were not rerun.
+  [Results navigation](results/README.md) and the [history index](results/history/README.md)
+  now organize existing paths. The [267-file first migration proposal](docs/findings/2026-11-11-results-navigation-findings.md)
+  awaits Andrew's approval before physical moves or executable path changes.
 
 - [x] **`results/` directory cleanup** `[Priority: High]` `[Effort: Small]` *(complete 2026-05-05)*
   The `results/` directory now mixes code scripts, CSV tables, PNG/PDF figures, and

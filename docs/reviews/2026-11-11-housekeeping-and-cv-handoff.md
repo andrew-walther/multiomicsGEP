@@ -9,6 +9,18 @@ and the new fold option on November 11. All 62 focused tests and additional
 independent checks passed. No analysis task A to F was started. No
 results folders were moved and no scientific default or saved result changed.
 
+## Current continuation prompt and results navigation
+
+Use the [November 11 continuation prompt](../prompts/2026-11-11-week-plan-continuation-prompt.md)
+for the next session. It identifies completed work and leaves decisions on the
+scope and location of A to F to Andrew's discussion with the next owner.
+The [results index](../../results/README.md) now separates the pilot, reported
+November evidence, frozen benchmark and historical studies. The
+[history index](../../results/history/README.md) links existing paths in place.
+The [first physical migration proposal](../findings/2026-11-11-results-navigation-findings.md)
+covers early figures and tables only and still needs approval. No result files
+have moved.
+
 ## Work and commits
 
 | Item | Delivered evidence | Work commits, followed by checklist commits where separate |
@@ -84,8 +96,8 @@ PROJECT_STATUS.qmd, DECISIONS.md and ROADMAP.md remains on the ROADMAP.
 The combined review of `68e3646` and `dbb4113` is complete. No defects required
 code changes. The scale-robust dead-program rule remains a scientific follow-up,
 not a blocker for the reviewed CV integration. G now explicitly specifies local
-execution, an extensible result catalog and clean-checkout reproduction. Its
-implementation and any physical results migration remain separate tasks.
+execution, an extensible result catalog and clean-checkout reproduction. Full scientific workflow implementation and physical results migration remain
+separate tasks.
 
 The platform-normalization archive is local only because it contains unpublished
 patient risk-score history. Its tag and verified, restoration-tested bundle are
