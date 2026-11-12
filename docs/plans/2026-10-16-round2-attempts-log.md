@@ -3025,7 +3025,8 @@ and within-cohort concordance is the primary metric. Runner:
    chooses the fitted rank K_init. The number of programs with nonzero loadings and
    survival-active programs is reported at each K. `select_K_cv()` is not used: it scores
    pooled concordance and would need `strata_id` in the fit to score within-cohort pairs,
-   and it returns only the chosen K.
+   and it returns only the chosen K. (Corrected after review: it also returns its CV table
+   and fold results; the operative reason is that its pairs follow the fit's `strata_id`.)
 
 **Selection rules (fixed before fitting).** For the screen and the scaling, the current
 choice is kept unless an alternative's mean within-cohort CV C exceeds it by more than one
@@ -3046,3 +3047,10 @@ every K; survival-active programs in the full fit rise from 1 (K = 2) to 3 (K = 
 and 4 (K = 9 to 12). Task A rerun at K = 5: point-exponential 0.519 against point-Laplace 0.655 (−0.135,
 SE 0.021), 0/5 converged; point-Laplace holds. Findings:
 `docs/findings/2026-11-12-training-cv-redo-findings.md`.
+
+**Correction to the B result (2026-11-12, after the independent review).** The "without the
+S-14 cell" statement above kept S-14's calibration result in part (b). With S-14 removed
+from both parts, part (b) holds in only one cell (1%), so neither sparse prior qualifies.
+Shared point-normal qualifies only if S-14 is exempted from part (a) alone. The real-data
+all-zero check now tests the coefficients (largest |E[β]| below 10⁻⁸) instead of the
+survival-active count; no fold has every coefficient zero. The decision is unchanged.

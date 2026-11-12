@@ -52,10 +52,8 @@ for new work. K = 5 and K = 7 differ by −0.003 (paired SE 0.007), and K = 5 co
 all five folds where K = 7 converges in three. The external C screens of July and August
 that supported K = 7 are no longer used for selection. Results reported at K = 7 stay
 on record and are labeled with that rank. Task A's prior choice holds at K = 5
-(point-exponential 0.519 against 0.655). `config/globals.yml` is not changed:
-`k_merged_yfb_desurv` drives historical runners, so whether to add a new key or change
-that one is left to Andrew. **Andrew adopted K = 5 the same day.** New work reads the new
-key `benchmark$k_working_yfb: 5`, and `k_merged_yfb_desurv` stays 7 so historical runners
+(point-exponential 0.519 against 0.655). **Andrew adopted K = 5 the same day.** New work
+reads the new key `benchmark$k_working_yfb: 5`, and `k_merged_yfb_desurv` stays 7 so historical runners
 reproduce. In the K = 5 full fit, programs 2 (protective), 4 and 5 (adverse) are
 survival-active. At K = 7 the active set was 2, 3 and 5. Programs 3 and 4 sit near the
 activity threshold in both fits. Findings:
@@ -69,10 +67,13 @@ on z-scored input, in A's four simulation cells and five pooled training folds. 
 the registered rule literally, neither sparse prior qualifies. Both fail A's
 false-activity limit in the S-14 near-threshold cell (3.3 and 3.5 false-active programs per
 fit, limit 1), and shared point-Laplace also loses on CV (within-cohort C 0.649 against
-0.658, difference −0.008, SE 0.002). Shared point-normal would qualify without the S-14
-cell (CV difference −0.002, SE 0.004), but Normal itself averages 3.0 false-active
-programs there, and the calibration part was decided by slope differences of 0.03 and
-0.0003. The four priors give nearly the same fits. On real data the shared point-normal
+0.658, difference −0.008, SE 0.002). Removing the S-14 cell from the rule does not change
+the verdict, because the calibration part then holds in only one cell. Shared point-normal
+qualifies only if S-14 is exempted from false activity while its calibration difference
+(0.03) is kept, with CV difference −0.002 (SE 0.004). Normal itself averages 3.0
+false-active programs in the S-14 cell. (Corrected after the independent review, which
+found that an earlier version of this entry kept S-14 in the calibration count when
+reporting the "without S-14" case.) The four priors give nearly the same fits. On real data the shared point-normal
 inclusion probabilities are 0.94 to 1.00 for all seven programs in the full fit, so they
 do not support replacing the 1.96-SD activity rule. Per-program Normal β is kept. Task C
 needs no rerun on account of B. Findings:

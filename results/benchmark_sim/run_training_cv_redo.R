@@ -209,6 +209,16 @@ f_summary <- function() {
             "C_TCGA", "C_CPTAC", "cvpl_pooled", "fit_sec", "error")
   write.csv(all[intersect(keep, names(all))], file.path(F_OUT, "fits.csv"), row.names = FALSE)
   cv <- all[all$fold > 0, ]; full <- all[all$fold == 0, ]
+  # Every registered (input, K) must have folds 1 to 5 exactly once with finite concordance,
+  # and its full-data fit; otherwise a choice could be made from fewer folds. Fail loudly.
+  need <- unique(rbind(f_design()[c("input", "K")], data.frame(input = "D4_Z", K = 7L)))
+  for (i in seq_len(nrow(need))) {
+    s <- cv[cv$input == need$input[i] & cv$K == need$K[i], ]
+    if (!identical(sort(as.integer(s$fold)), 1:5) || any(!is.finite(s$C_within)) ||
+        sum(full$input == need$input[i] & full$K == need$K[i]) != 1L)
+      stop(sprintf("Incomplete fits for input %s, K = %d: need folds 0 to 5 once with finite C",
+                   need$input[i], need$K[i]))
+  }
   curve <- do.call(rbind, lapply(split(cv, list(cv$input, cv$K), drop = TRUE), function(s)
     data.frame(input = s$input[1], K = s$K[1], n_folds = sum(is.finite(s$C_within)),
       mean_C_within = mean(s$C_within), se_C_within = sd(s$C_within) / sqrt(nrow(s)),

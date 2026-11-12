@@ -131,6 +131,17 @@ simulation cell and in real-data concordance and convergence.
   Their reported concordance is from the state at the cap.
 - No external cohort was used.
 
+## Independent review
+
+[Reviewed 2026-11-12](../reviews/2026-11-12-task-a-independent-review.md) (`3ff618fc`). The
+review recomputed all four criteria from the fit rows, rescored all saved simulation states
+and reran two fits from scratch (one PE simulation fit, one PE real fold), which matched
+exactly. It agrees with the decision. It adds two points that apply here: keeping
+point-Laplace is a comparison result, not evidence that point-Laplace passes an absolute
+acceptance gate (its S-14 false activity is 3.0 and 3 of 5 real folds converge), and this is
+the registered K = 7 comparison, not a new evaluation at the adopted K = 5. The full-data
+point-Laplace fit is now included in `pl_s11_reuse_check.csv`.
+
 ## Text for the shared status files
 
 Recorded by this session in DECISIONS.md, PROJECT_STATUS.qmd and the week-plan checklist.

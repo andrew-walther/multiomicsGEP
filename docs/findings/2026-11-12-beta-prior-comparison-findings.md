@@ -6,10 +6,12 @@ Date: 2026-11-12. Author: Andrew Walther.
 meets A's false-activity limit in the S-14 near-threshold cell: shared point-Laplace
 averages 3.3 false-active programs per fit there, shared point-normal 3.5, and the limit
 is 1. Shared point-Laplace also loses on training CV, with within-cohort C 0.649 against
-0.658 (paired difference −0.008, SE 0.002). Shared point-normal would qualify if the S-14
-cell were left out. Its CV difference is −0.002 (SE 0.004). But Normal itself averages 3.0
-false-active programs in that cell, so in this cell the criterion is one that the working
-model also fails. In practice the four priors give nearly the same fits. The C values
+0.658 (paired difference −0.008, SE 0.002). Removing the S-14 cell from the rule does not
+change the verdict. Without it, the sparse priors improve calibration in only one of the
+three remaining cells, so part (b) fails. Shared point-normal qualifies only if S-14 is
+exempted from the false-activity part while its calibration result is kept. Its CV
+difference is −0.002 (SE 0.004). Normal itself averages 3.0 false-active programs in the
+S-14 cell, so in that cell the criterion is one that the working model also fails. In practice the four priors give nearly the same fits. The C values
 differ in the third decimal, and the shared point-normal prior keeps most programs
 (inclusion probabilities near 1 on real data).
 
@@ -98,16 +100,20 @@ as included. They do not reproduce the three-program survival-active set.
 | (a) A's recovery, false-activity and convergence criteria in every cell | fails S-14 (false-active 3.3) | fails S-14 (false-active 3.5; recovery 4 vs 5 is within the margin) |
 | (a) without the S-14 cell | passes | passes |
 | (b) calibration slope closer to 1 in ≥ 2 cells | 2 cells (S-14, 1%) | 2 cells (S-14, 1%) |
+| (b) without the S-14 cell | 1 cell (1%), fails | 1 cell (1%), fails |
 | (c) within-cohort CV C not lower by more than 1 SE | fails (−0.008, SE 0.002) | passes (−0.002, SE 0.004) |
 | Qualifies | no | no |
-| Would qualify without S-14 | no | yes |
+| Qualifies with S-14 removed from (a) and (b) | no | no |
+| Qualifies with S-14 exempted from (a) only | no | yes |
 
 **Is the S-14 criterion binding?** Yes, and the baseline fails it too. Normal averages
 3.0 false-active programs in the S-14 cell, so a sparse prior is held to a limit there
-that the current model does not meet. Under the literal rule, Normal stays. Had the S-14
-cell been dropped, point-normal would have replaced Normal on the strength of a
-calibration criterion decided by differences of 0.03 and 0.0003 and a CV difference of
-−0.002. That would not be a substantive improvement. Andrew's view (2026-11-12) is that
+that the current model does not meet. Under the literal rule, Normal stays. Dropping the
+S-14 cell entirely does not change that, because part (b) then fails: the only remaining
+cell where the sparse priors are closer to 1 is the 1% cell, by 0.0003. Point-normal would
+replace Normal only under a mixed sensitivity that exempts S-14 from false activity but
+keeps its calibration difference of 0.03. Even then, the CV difference is −0.002.
+That would not be a substantive improvement. Andrew's view (2026-11-12) is that
 small false-active coefficients are acceptable. Either way, the practical difference
 between the priors is negligible.
 
@@ -128,6 +134,18 @@ between the priors is negligible.
   15 shared point-Laplace configuration used a supervised start and a 10-sweep warm-up.
 - The calibration criterion is decided by very small differences.
 - No external cohort was used.
+
+## Independent review
+
+[Reviewed 2026-11-12](../reviews/2026-11-12-task-b-independent-review.md) (`b4dc665e`). Two
+fresh fits matched exactly, and the inclusion probabilities were verified. The review agrees
+that Normal β stays. It found two errors, both corrected: the "without S-14" sensitivity had
+kept S-14's calibration result (with S-14 removed from both parts, neither sparse prior
+qualifies), and the real-data all-zero check had counted survival-active programs instead of
+testing the coefficients (no fold has every coefficient zero). `beta_rule.csv` and
+`beta_real_paired.csv` were regenerated. Future point-normal checkpoints should keep the
+final sweep's prior and pseudo-observations so the inclusion probabilities can be audited
+without refitting.
 
 ## Text for the shared status files
 

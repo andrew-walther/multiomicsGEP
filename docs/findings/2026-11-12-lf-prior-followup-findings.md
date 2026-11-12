@@ -48,9 +48,11 @@ held-out folds included, as registered.
 
 **Real data.** The 273 TCGA and CPTAC training patients, the 2,218 D4 genes and the five S-11
 folds, as in task A, plus a full-data fit for each setup. Held-out risk is
-Y[test] E[F] E[β] in the setup's own input. A per-gene constant moves every held-out score by
-the same amount, and a per-cohort offset does not change within-cohort pairs, so the primary
-metric, within-cohort concordance, is unaffected by either. PES scores keep each cohort's
+Y[test] E[F] E[β] in the setup's own input. For a fixed fitted model, a per-gene constant
+moves every held-out score by the same amount, and a per-cohort offset does not change
+within-cohort pairs, so neither changes within-cohort concordance of that model. This
+invariance is for fixed F and β only: the shift also enters the reconstruction and the
+start of the fit, so it can change the fitted factorization itself. PES scores keep each cohort's
 offset, so its pooled concordance (mean 0.564) is not interpreted.
 
 **Simulation.** SZ only, in task A's four cells (10 seeds each). The synthetic training
@@ -175,7 +177,11 @@ literal rule, SZ concordance is 2.9 SEs below point-Laplace, and the folds do no
 ## Limits
 
 - The SZ shift constants use all 273 patients, held-out folds included, as registered. They
-  depend on expression only, and a per-gene constant does not change held-out concordance.
+  use expression only, not outcomes. A common shift cannot change the concordance of a
+  fixed fitted model, but because the constants enter the reconstruction, held-out
+  expression contributes to the fitted factorization. The reported CV is the registered
+  comparison with globally computed preprocessing, not a fold-refitted pipeline. The same
+  applies to the per-cohort standardization and gene screen inherited from S-11.
 - The 300-sweep cap is reached in 4 of 5 SZ folds and in every PES fold. Concordance is from
   the state at the cap. The full-data fits also reach the cap.
 - PES has no simulation fits of its own. Its criteria 1 to 3 come from task A's PE fits,
@@ -187,6 +193,16 @@ literal rule, SZ concordance is 2.9 SEs below point-Laplace, and the folds do no
 - Point-Laplace itself converges in 3 of 5 folds, so it would not meet the convergence half of
   criterion 4 either.
 - No external cohort was used.
+
+## Independent review
+
+[Reviewed 2026-11-12](../reviews/2026-11-12-task-a-independent-review.md) (`3ff618fc`), with
+task A. Recomputed criteria and two fresh fits (one SZ simulation fit, one PES real fold)
+matched exactly, and neither setup qualifies. Corrections made after the review: the
+shift-invariance statements now hold only for a fixed fitted model, because the all-patient
+shift constants enter the reconstruction. PE and PES share loading directions but differ in
+column norms, so they are not the same fitted model. The summary now stops if the cached
+task A reference is incomplete.
 
 ## Text for the shared status files
 

@@ -403,7 +403,9 @@ lfp_run <- function(design, cores) {
 #' # lfp_summary()
 lfp_summary <- function() {
   rd <- function(dir) lapply(list.files(file.path(PRIV, dir), full.names = TRUE, pattern = "rds$"), readRDS)
-  sim <- do.call(rbind, lapply(rd("sim"), function(x) {
+  # lfp_bind: task B checkpoints in the same folder carry an extra pip column; the merge
+  # with the A design below keeps only A's arms.
+  sim <- lfp_bind(lapply(rd("sim"), function(x) {
     m <- x$metrics; for (nm in c("saved_recovered", "saved_false_active", "saved_c_validation"))
       if (is.null(m[[nm]])) m[[nm]] <- NA; m }))
   des <- lfp_design()$sim
@@ -429,7 +431,7 @@ lfp_summary <- function() {
     c_new = pl$c_validation, c_saved = pl$saved_c_validation),
     file.path(OUT, "pl_reuse_check.csv"), row.names = FALSE)
 
-  real <- rd("real")
+  real <- Filter(function(x) x$metrics$arm %in% c("PL", "PE", "RANK"), rd("real"))
   rf <- do.call(rbind, lapply(real, function(x) { m <- x$metrics
     for (nm in c("C_within", "C_pooled", "C_TCGA", "C_CPTAC", "cvpl_pooled", "cvpl_within", "risk_sd",
                  "n_iter", "n_alive", "n_active", "max_abs_beta", "max_abs_cor_mean_expr",
@@ -463,7 +465,7 @@ lfp_summary <- function() {
       folds_converged_PL = sum(x$converged_PL))
   }))
   write.csv(paired, file.path(OUT, "real_paired.csv"), row.names = FALSE)
-  if (!is.null(s11)) write.csv(merge(cv[cv$arm == "PL", c("fold", "C_pooled", "converged", "n_active", "n_alive")],
+  if (!is.null(s11)) write.csv(merge(rf[rf$arm == "PL", c("fold", "C_pooled", "converged", "n_active", "n_alive")],
     s11, all = TRUE), file.path(OUT, "pl_s11_reuse_check.csv"), row.names = FALSE)
   # Top-100 gene overlap of each full-data program with every program of the current S-11 fit
   cur <- readRDS(file.path(S11_FITS, "size_D4_N2218_w1_f0.rds"))
@@ -550,7 +552,7 @@ lfp_summary_beta <- function() {
   write.csv(progs, file.path(OUT, "beta_real_programs.csv"), row.names = FALSE)
   cv <- rf[rf$fold > 0, ]
   paired <- do.call(rbind, lapply(names(BETA_ARMS), function(a) {
-    x <- merge(cv[cv$arm == a, c("fold", "C_within", "C_pooled", "converged", "n_active")],
+    x <- merge(cv[cv$arm == a, c("fold", "C_within", "C_pooled", "converged", "n_active", "max_abs_beta")],
                cv[cv$arm == "PL", c("fold", "C_within", "C_pooled", "converged", "n_active")],
                by = "fold", suffixes = c("", "_N"))
     dd <- x$C_within - x$C_within_N; dp <- x$C_pooled - x$C_pooled_N
@@ -560,7 +562,8 @@ lfp_summary_beta <- function() {
       mean_C_pooled = mean(x$C_pooled), diff_pooled = mean(dp),
       se_pooled = sd(dp) / sqrt(sum(is.finite(dp))), folds_converged = sum(x$converged),
       mean_active = mean(x$n_active), mean_active_Normal = mean(x$n_active_N),
-      folds_all_beta_zero = sum(x$n_active == 0))
+      folds_no_active = sum(x$n_active == 0),
+      folds_all_beta_zero = sum(x$max_abs_beta < 1e-8))   # every E[beta_k] numerically zero
   }))
   write.csv(paired, file.path(OUT, "beta_real_paired.csv"), row.names = FALSE)
 
@@ -580,7 +583,12 @@ lfp_summary_beta <- function() {
       mean_false_active_all_cells = mean(ce$mean_false_active),
       qualifies = all(a_cell) && sum(slope_closer) >= 2 && isTRUE(p$diff_within >= -p$se_within) &&
                   p$folds_all_beta_zero < p$n_folds,
-      qualifies_without_s14 = all(a_cell[non_s14]) && sum(slope_closer) >= 2 &&
+      b_slope_closer_cells_without_s14 = sum(slope_closer[non_s14]),
+      # Sensitivity 1: remove the S-14 cell from parts (a) and (b), keeping the two-cell threshold.
+      qualifies_without_s14 = all(a_cell[non_s14]) && sum(slope_closer[non_s14]) >= 2 &&
+                              isTRUE(p$diff_within >= -p$se_within) && p$folds_all_beta_zero < p$n_folds,
+      # Sensitivity 2: exempt S-14 from part (a) only, keeping its calibration result in (b).
+      qualifies_s14_exempt_a_only = all(a_cell[non_s14]) && sum(slope_closer) >= 2 &&
                               isTRUE(p$diff_within >= -p$se_within) && p$folds_all_beta_zero < p$n_folds)
   }))
   rule$normal_meets_false_active_all_cells <- all(nor$mean_false_active <= 1)

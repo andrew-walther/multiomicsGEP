@@ -34,12 +34,15 @@ cohorts were not used.
   cohort, intersection (2,218 genes), per-cohort z-score. The two sets share 258 genes.
   D1 and D3 are the LB model (task E), and D5 adds a cohort indicator, which the cohort
   decision replaced. Both screens are outcome-free and computed once on all 273 patients.
+  D2 and D4 differ in normalization as well as in gene ranking, so this compares two whole
+  preprocessing configurations, not the ranking rule alone.
 - **Input scaling.** On D4, under point-Laplace: per-cohort z-score (current), X/sd within
   cohort with a centered projection, and within-patient ranks followed by per-cohort
   z-score. The rank-transform point-exponential arm is reported in task A.
-- **Rank.** K = 2 to 12 on D4 with the z-score input. `select_K_cv()` was not used. It
-  scores pooled concordance, would need `strata_id` in the fit to score within-cohort
-  pairs, and returns only the chosen K.
+- **Rank.** K = 2 to 12 on D4 with the z-score input. `select_K_cv()` was not used. Its
+  concordance groups pairs by the fit's `strata_id`, so scoring within-cohort pairs would
+  require a stratified fit, while task F fits pooled. (It does return its CV table and fold
+  results as well as the chosen K.)
 
 **Rules, fixed before fitting.** For the screen and the scaling, the current choice is kept
 unless an alternative is better by more than one SE of the paired fold difference. For K,
@@ -90,7 +93,7 @@ the cohort label.
 
 **How decisive is K = 5?** The one-SE rule uses the SE of the fold concordances (0.027),
 which includes fold-to-fold variation shared by every K. Paired differences are much more
-precise (SE about 0.005), and on that scale K = 5 to 8 are indistinguishable while K = 2
+precise (SE about 0.005), and on that scale K = 5 to 8 are not distinguished on this split while K = 2
 to 4 are clearly worse. K = 10 is 0.008 above K = 7 (paired SE 0.004). DeSurv used the
 same unpaired one-SE rule. The rule picks the smallest rank on the plateau. It does not
 show that K = 5 predicts better than K = 7.
@@ -142,12 +145,25 @@ Task A's criterion 4 fails again, so point-Laplace stays at the new rank.
 
 ## Limits
 
-- One fold split (seed 2026). The plan's repetition with four more seeds when comparisons
-  are close was not run. The K = 5 to 12 plateau is exactly that case.
-- K = 7 to 12 do not converge in every fold within 300 sweeps. Their concordance is taken
+- One fold split (seed 2026). The week plan asks for four more fold seeds when a paired
+  difference is within one SE. That applies to D2 vs D4 (−0.012, SE 0.014) and to K = 5
+  vs 7 (−0.003, SE 0.007), and it was not run. Task F is therefore incomplete against that
+  part of the plan. The K = 5 adoption is Andrew's decision on one split, not evidence that
+  the choice is stable across splits.
+- K = 6 to 12 do not converge in every fold within 300 sweeps (K = 6 in 4 of 5). Their concordance is taken
   from the state at the cap.
 - The screen comparison covers the two screens left after removing model and cohort-indicator
   variants. The gene-set sizes and survival screens compared in S-11 were not redone.
+
+## Independent review
+
+[Reviewed 2026-11-12](../reviews/2026-11-12-task-f-independent-review.md) (`6cc60b3f`). The D2
+and D4 inputs were rebuilt from raw data and matched exactly, two fresh fits matched, and the
+three choices follow the registered rules. The review notes that the plan's four extra fold
+seeds were not run for the close comparisons (D2 vs D4, K = 5 vs 7). Its other corrections
+are applied: the reason for not using `select_K_cv()`, D2 vs D4 as whole preprocessing
+configurations, the K = 6 convergence limit, and an explicit completeness check in the
+summary that stops if any registered fit or fold is missing.
 
 ## Text for the shared status files
 

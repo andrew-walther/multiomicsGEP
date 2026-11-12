@@ -317,6 +317,13 @@ a2_summary <- function() {
       max_rel_beta_false = suppressWarnings(max(s$max_rel_beta_false, na.rm = TRUE)),
       mean_rel_beta_false = mean(s$mean_rel_beta_false, na.rm = TRUE))))
   a_cells <- read.csv(file.path(A_OUT, "sim_cells.csv"))
+  # The cached task A reference must hold every registered cell once per arm with 10 fits;
+  # an incomplete file would otherwise drop a cell from criteria 1 to 3 in the join below.
+  for (a in c("PL", "PE")) {
+    ac <- a_cells[a_cells$arm == a, ]
+    if (!setequal(ac$cell, SIM_CELLS$cell) || anyDuplicated(ac$cell) || any(ac$n != 10))
+      stop("Task A reference sim_cells.csv is incomplete or duplicated for arm ", a)
+  }
   all_cells <- lfp_bind(list(cells, a_cells[a_cells$arm %in% c("PL", "PE"), ]))
   write.csv(all_cells[order(all_cells$cell, all_cells$arm), ], file.path(OUT2, "a2_sim_cells.csv"),
             row.names = FALSE)
@@ -333,6 +340,11 @@ a2_summary <- function() {
   write.csv(wc, file.path(OUT2, "a2_real_within_cohort_cor.csv"), row.names = FALSE)
   a_real <- read.csv(file.path(A_OUT, "real_fits.csv"))
   a_cv <- a_real[a_real$fold > 0, ]
+  for (a in c("PL", "PE")) {
+    f <- a_cv$fold[a_cv$arm == a]
+    if (!identical(sort(f), 1:5) || any(!is.finite(a_cv$C_within[a_cv$arm == a])))
+      stop("Task A reference real_fits.csv must hold folds 1 to 5 once with finite C for arm ", a)
+  }
   cv <- rf[rf$fold > 0, ]
   paired <- do.call(rbind, lapply(c("SZ", "PES"), function(s) do.call(rbind, lapply(c("PL", "PE"),
     function(a) a2_paired(cv[cv$setup == s, ], a_cv[a_cv$arm == a, ], a)))))
