@@ -170,14 +170,20 @@ Run `OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 Rscript tests/te
 for the focused tests, also registered in the full suite. The
 [findings](docs/findings/2026-11-12-feature-group-fitter-findings.md) explain
 supported options and KL accounting. The registered simulation compares grouped
-and pooled F priors at 50:50 and 50:250 expression:methylation features, with
+and pooled F priors, plus an expression-only diagnostic, at 50:50 and 50:250
+expression:methylation features, with
 15% or 3% nonzero methylation loadings. It regenerates survival from the
 standardized reconstruction direction and preserves the original training risk SD.
-Run the eight-fit smoke check with
+A refitted point-mass prior empties that modality-program block and contributes
+zero loading KL. Grouped fits return a modality-by-program `empty_blocks` count
+matrix, including repeated resets of an already empty block. Other nonfinite KL
+errors remain explicit. The rerun also reports validation C for the true risk.
+Run the twelve-fit smoke check with
 `OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 Rscript results/benchmark_sim/run_feature_group_simulation.R --smoke`.
-Omit `--smoke` for the fixed 80-fit study. Each command refuses to overwrite
+Omit `--smoke` for the fixed 120-fit rerun. Each command refuses to overwrite
 its dated output directory. Fits stay under ignored `data/`, while aggregate
-results are written under `results/benchmark_sim/outputs/feature_group_simulation_2026-11-12`.
+results are written under `results/benchmark_sim/outputs/feature_group_simulation_2026-11-12_rerun`.
+The original 80-fit output directories are preserved.
 Use `Rscript tests/test_feature_group_simulation.R` for its focused regression checks.
 
 ## License and author

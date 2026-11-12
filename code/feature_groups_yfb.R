@@ -103,7 +103,8 @@ yf_group_loading_kl <- function(update, old) {
 #' @param groups Named index list from yf_feature_groups().
 #' @param family Loading prior family.
 #' @param h_beta_weighted Whether h_minus_k already includes beta moments.
-#' @return Combined moments, group priors, summed positive KL and A/B diagnostics.
+#' @return Combined moments, joint EZ/VZ, group priors, summed positive KL,
+#'   A/B diagnostics and named counts of refitted point-mass block resets.
 #' @examples
 #' # Called by fit_ssbmf_yfb() for explicit multiple feature groups.
 #' @family F_surv_YFB_update
@@ -116,6 +117,7 @@ yf_update_F_groups <- function(Y, Tau, EL_k, EL2_k, R_k, survival_Y, w,
   A_gen <- Tau * sum(EL2_k)
   B_gen <- Tau * as.vector(crossprod(R_k, EL_k))
   A <- B <- numeric(ncol(Y)); kl <- 0
+  empty_blocks <- stats::setNames(integer(length(groups)), names(groups))
   if (is.null(priors)) priors <- stats::setNames(vector("list", length(groups)), names(groups))
   for (g in names(groups)) {
     j <- groups[[g]]
@@ -143,13 +145,26 @@ yf_update_F_groups <- function(Y, Tau, EL_k, EL2_k, R_k, survival_Y, w,
         EF_k = EF_k[j], EF2_k = EF2_k[j], EBeta_k = EBeta_k,
         EBeta2_k = EBeta2_k, prior = priors[[g]], prior_update = "ebnm",
         h_beta_weighted = h_beta_weighted)
-      kl <- kl + yf_group_loading_kl(update, priors[[g]])
+      if (isTRUE(update$prior$point_mass)) {
+        # A refitted delta_0 prior makes this modality-program block empty.
+        # Remove the moments JUST returned by the sweep, whose EZ/VZ already
+        # include them. Removing the incoming moments would leave stale joint
+        # projections for the next modality. q = g = delta_0 gives KL = 0.
+        update$EZ <- update$EZ - as.vector(survival_Y[, j, drop = FALSE] %*% update$EF)
+        update$VZ <- pmax(update$VZ - as.vector(survival_Y[, j, drop = FALSE]^2 %*%
+          pmax(update$EF2 - update$EF^2, 0)), 0)
+        update$EF[] <- update$EF2[] <- 0
+        empty_blocks[g] <- empty_blocks[g] + 1L
+      } else {
+        # All other support/numerical failures remain explicit errors.
+        kl <- kl + yf_group_loading_kl(update, priors[[g]])
+      }
       EF_k[j] <- update$EF; EF2_k[j] <- update$EF2
       EZ <- update$EZ; VZ <- update$VZ
       priors[[g]] <- update$prior
       A[j] <- update$details$A; B[j] <- update$details$B
     }
   }
-  list(EF = EF_k, EF2 = EF2_k, prior = priors, kl = kl,
-       details = list(A = A, B = B))
+  list(EF = EF_k, EF2 = EF2_k, prior = priors, kl = kl, EZ = EZ, VZ = VZ,
+       empty_blocks = empty_blocks, details = list(A = A, B = B))
 }

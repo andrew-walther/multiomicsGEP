@@ -494,6 +494,9 @@ yf_subset_posterior_state <- function(state,keep) {
 #'                 the unchanged numerical path. Multiple groups fit one F prior
 #'                 per group and program while keeping joint Z = sum_m Y_m F_m.
 #'                 Returns prior_F[[group]][[program]] and feature_group.
+#'                 Canonical grouped fits also return empty_blocks, a modality
+#'                 by program matrix counting refitted point-mass block resets,
+#'                 including repeated resets of an already empty block.
 #'                 Cohort offsets are unsupported. Multiple groups also reject
 #'                 pruning, posterior restarts, frozen F and fixed_q_em.
 #' @param beta_cohort_id NULL (default) or an n-vector of cohort labels for
@@ -606,6 +609,8 @@ fit_ssbmf_yfb <- function(Y, time, status,
   call_args <- mget(names(formals(sys.function())), envir = environment())
   n <- nrow(Y); p <- ncol(Y)
   groups <- yf_feature_groups(feature_group, p)
+  if (!is.null(groups)) empty_blocks <- matrix(0L, length(groups), K,
+    dimnames = list(names(groups), paste0("program", seq_len(K))))
   F_group_priors <- if (!is.null(groups)) vector("list", K) else NULL
   if (!is.null(feature_group) && !is.null(cohort_id))
     stop("feature_group does not support cohort_id offsets.")
@@ -1203,6 +1208,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
           upd <- yf_update_F_groups(Y, Tau, EL_aug[, k], EL2_aug[, k], R_k,
             survival_Y, w_S * w, h_k, EF_aug[, k], EF2_aug[, k], EBeta[k], EBeta2[k],
             prior_F_state[[k]], groups, prior_LF, h_beta_weighted = joint_beta)
+          empty_blocks[, k] <- empty_blocks[, k] + upd$empty_blocks
         } else if (max(A_gen + w_S * A_surv_k) < 1e-8) {
           # Dead program: neither likelihood carries information about F_k.
           # With the prior held fixed, its posterior would equal the prior
@@ -1539,6 +1545,7 @@ fit_ssbmf_yfb <- function(Y, time, status,
   if (center_projection) result$projection_center <- projection_center
   if (!is.null(groups)) {
     result$feature_group <- as.character(feature_group)
+    if (canonicalize) result$empty_blocks <- empty_blocks
     result$prior_F <- stats::setNames(lapply(names(groups), function(g) {
       if (canonicalize) lapply(prior_F_state, function(pk) pk[[g]]) else
         lapply(seq_len(K), function(k) F_group_priors[[k]][[g]])

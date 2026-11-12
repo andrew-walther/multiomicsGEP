@@ -1,0 +1,35 @@
+registration=docs/prompts/2026-11-12-codex-d-rerun-prompt.md
+seeds=1
+scenario=low_variance_prognostic_factor
+feature_ratios=50:50,50:250
+methylation_active_fraction=0.15,0.03
+expression_active_fraction=generator default 0.15
+arms=grouped,pooled,expression_only
+generator=defaults (120 training, 120 validation, noise_scale=1, truncate=TRUE)
+scaling=training-only z-score within modality
+truth=g=unit stacked D^-1 F[,3]
+eta=centered standardized X times g times a; a preserves original training eta SD
+survival_seed_offset=12000
+initialization=joint signed SVD; expression-only uses matching F rows and same L
+true_risk_C=frozen validation C of the joint eta used to draw all outcomes
+expression_truth=expression part of joint g renormalized to unit norm
+empty_blocks=all refitted point-mass block resets, including repeated empty resets
+prior_LF=point_laplace
+prior_beta=normal per-program
+canonicalize=TRUE
+w_S=1
+prune=FALSE
+strata_id=NULL
+center_projection=FALSE
+workers=1
+K=5
+max_iter=300
+tol=1e-05
+alpha=0.5
+activity_z=1.96
+recovery=abs(cor(g,F_k))>=0.7 and active and beta_k*cor(g,F_k)>0
+false_active=active programs other than a recovered match
+gate=recovery>=8/10; mean false_active<=1; converged>=9/10; no failed fits
+selection=grouped unless pooled passes a cell grouped fails; selected arm must pass a cell
+prior_pi=slab probability; reported point_mass_weight=1-pi
+objectives=historical pooled incoming-prior KL vs grouped returned-prior KL; not comparable

@@ -104,6 +104,59 @@ fgsim_assert_inputs <- function(a, b) {
   invisible(TRUE)
 }
 
+#' Build the paired joint arms and their expression-only diagnostic
+#' @param x Prepared joint matrices, truth and survival outcomes.
+#' @param K Number of common signed-SVD starting programs.
+#' @return Three input lists. Expression uses matching rows of the joint F start.
+#' @examples
+#' # inputs <- fgsim_arm_inputs(fgsim_prepare(data, 1), 5)
+fgsim_arm_inputs <- function(x, K) {
+  s <- svd(x$Y, nu = K, nv = K)
+  x$EL_init <- s$u %*% diag(sqrt(s$d[seq_len(K)]), K)
+  x$EF_init <- s$v %*% diag(sqrt(s$d[seq_len(K)]), K)
+  j <- which(x$groups == "expression")
+  expression <- x
+  expression$Y <- x$Y[, j, drop = FALSE]
+  expression$Y_validation <- x$Y_validation[, j, drop = FALSE]
+  expression$EF_init <- x$EF_init[j, , drop = FALSE]
+  expression$training_center <- x$training_center[j]
+  expression$g <- x$g[j] / sqrt(sum(x$g[j]^2))
+  expression$groups <- x$groups[j]
+  expression$scaled <- lapply(x$scaled, function(blocks) blocks["expression"])
+  list(grouped = x, pooled = x, expression_only = expression)
+}
+
+#' Require the expression arm to use joint survival and matching molecular inputs
+#' @param joint Prepared concatenated input with common starting matrices.
+#' @param expression Expression-only input.
+#' @return Invisible TRUE, or an error identifying a mismatched field.
+#' @examples
+#' # fgsim_assert_expression_inputs(inputs$grouped, inputs$expression_only)
+fgsim_assert_expression_inputs <- function(joint, expression) {
+  j <- which(joint$groups == "expression")
+  expected <- list(Y = joint$Y[, j, drop = FALSE],
+    Y_validation = joint$Y_validation[, j, drop = FALSE],
+    EF_init = joint$EF_init[j, , drop = FALSE], EL_init = joint$EL_init,
+    training_center = joint$training_center[j], groups = joint$groups[j],
+    g = joint$g[j] / sqrt(sum(joint$g[j]^2)))
+  for (field in c("time", "event", "time_validation", "event_validation", "eta", "eta_validation"))
+    expected[[field]] <- joint[[field]]
+  for (field in names(expected)) {
+    if (is.null(expression[[field]]) || !identical(expression[[field]], expected[[field]]))
+      stop("Expression arm input differs: ", field)
+  }
+  invisible(TRUE)
+}
+
+#' Evaluate the known risk used to draw validation outcomes without reorientation
+#' @param x Prepared input containing eta_validation and validation outcomes.
+#' @return Validation concordance, or NA if the true predictor is constant.
+#' @examples
+#' # fgsim_true_risk(inputs$grouped)
+fgsim_true_risk <- function(x) {
+  frozen_reverse_cindex(x$eta_validation, x$time_validation, x$event_validation)
+}
+
 #' Require a separate F prior per modality and program
 #' @param fit Grouped fit object.
 #' @param K Registered program count.
@@ -165,7 +218,7 @@ fgsim_fit <- function(inputs, groups, cfg) {
 #' @param z_threshold Configured coefficient activity threshold.
 #' @return Recovery, matched program, false activity, program and block tables.
 #' @examples
-#' # fgsim_recovery(fit, x$g, x$groups, 1.96)
+#' # fgsim_recovery(fit, arm_x$g, arm_x$groups, 1.96)
 fgsim_recovery <- function(fit, g, groups, z_threshold) {
   correlation <- vapply(seq_len(ncol(fit$EF)), function(k) {
     if (stats::sd(fit$EF[, k]) > 0) stats::cor(g, fit$EF[, k]) else NA_real_
@@ -203,6 +256,10 @@ fgsim_gate <- function(metrics) {
     data.frame(x[1, c("feature_ratio", "methylation_active_fraction", "arm")],
       seeds = nrow(x), failed = sum(nzchar(x$error)), recovered = sum(x$recovered),
       mean_false_active = false, converged = sum(x$converged),
+      total_empty_blocks = sum(x$empty_blocks, na.rm = TRUE),
+      empty_blocks_defined = sum(!is.na(x$empty_blocks)),
+      true_c_defined = sum(is.finite(x$c_true_risk)),
+      mean_true_c = if (any(is.finite(x$c_true_risk))) mean(x$c_true_risk[is.finite(x$c_true_risk)]) else NA_real_,
       c_defined = sum(is.finite(x$c_validation)),
       mean_c = if (any(is.finite(x$c_validation))) mean(x$c_validation[is.finite(x$c_validation)]) else NA_real_,
       passed = nrow(x) == 10L && !any(nzchar(x$error)) && sum(x$recovered) >= 8L &&
@@ -210,7 +267,7 @@ fgsim_gate <- function(metrics) {
   }))
 }
 
-#' Apply the registered prior selection and all-grouped-fail stop rule
+#' Apply the rerun prior preference and selected-arm gate rule
 #' @param summary Cell/arm gate table.
 #' @return Selected prior, step4_allowed and a reason for the decision.
 #' @examples
@@ -227,14 +284,14 @@ fgsim_select <- function(summary) {
   pooled <- pooled[match(key(grouped), key(pooled)), ]
   if (anyNA(pooled$passed)) stop("Missing paired arm gate.")
   selected <- if (any(pooled$passed & !grouped$passed)) "pooled" else "grouped"
-  allowed <- any(grouped$passed) && any(summary$passed[summary$arm == selected])
+  allowed <- any(summary$passed[summary$arm == selected])
   list(selected_prior = selected, step4_allowed = allowed,
-    reason = if (!any(grouped$passed)) "Grouped fails every cell: stop before step 4."
+    reason = if (!allowed) "Selected prior passes no cell: stop before step 4."
       else if (selected == "pooled") "Pooled passes a cell where grouped fails."
-      else "No cell passes pooled while failing grouped.")
+      else "Grouped passes a cell; no cell passes pooled while failing grouped.")
 }
 
-#' Fit both prior arms on one shared seed/cell and save private synthetic fits
+#' Fit three registered arms on one shared seed/cell and save private synthetic fits
 #' @param seed Simulation seed, 1 through 10.
 #' @param ratio Methylation/expression feature ratio, 1 or 5.
 #' @param fraction Methylation nonzero loading fraction, 0.15 or 0.03.
@@ -250,29 +307,29 @@ fgsim_one <- function(seed, ratio, fraction, cfg, private) {
     methylation_active_fraction = fraction)
   x <- fgsim_prepare(data, seed)
   K <- cfg$benchmark$k_working_yfb
-  s <- svd(x$Y, nu = K, nv = K)
-  x$EL_init <- s$u %*% diag(sqrt(s$d[seq_len(K)]), K)
-  x$EF_init <- s$v %*% diag(sqrt(s$d[seq_len(K)]), K)
-  inputs <- list(grouped = x, pooled = x)
+  inputs <- fgsim_arm_inputs(x, K)
   fgsim_assert_inputs(inputs$grouped, inputs$pooled)
+  fgsim_assert_expression_inputs(inputs$grouped, inputs$expression_only)
+  c_true <- fgsim_true_risk(x)
   results <- list()
   for (arm in names(inputs)) {
+    arm_x <- inputs[[arm]]
     warnings <- character()
     start <- proc.time()[["elapsed"]]
     base <- data.frame(seed = seed, feature_ratio = ratio,
       methylation_active_fraction = fraction, arm = arm,
       p_expression = p, p_methylation = p * ratio, K = K)
     result <- tryCatch(withCallingHandlers({
-      answer <- fgsim_fit(inputs[[arm]], if (arm == "grouped") x$groups else NULL, cfg)
+      answer <- fgsim_fit(arm_x, if (arm == "grouped") arm_x$groups else NULL, cfg)
       fit <- answer$fit
-      recovery <- fgsim_recovery(fit, x$g, x$groups, cfg$multimodal_yfb$prognostic_z_threshold)
-      precision <- fgsim_precision(fit, x$groups)
-      precision$feature_share <- ifelse(precision$modality == "expression", 1, ratio) / (1 + ratio)
+      recovery <- fgsim_recovery(fit, arm_x$g, arm_x$groups, cfg$multimodal_yfb$prognostic_z_threshold)
+      precision <- fgsim_precision(fit, arm_x$groups)
+      precision$feature_share <- vapply(precision$modality, function(m) mean(arm_x$groups == m), numeric(1))
       precision$live <- colSums(fit$EF^2)[precision$program] > 0
       precision$matched <- precision$program == recovery$matched_program
       precision$dominant <- precision$share > precision$feature_share
       prior_rows <- do.call(rbind, lapply(seq_len(K), function(k) {
-        do.call(rbind, lapply(unique(x$groups), function(m) {
+        do.call(rbind, lapply(unique(arm_x$groups), function(m) {
           prior <- if (arm == "grouped") answer$priors[[m]][[k]] else answer$priors[[k]]
           if (is.null(prior$pi)) stop("Missing final fitted F prior.")
           data.frame(program = k, modality = m, prior_scope = if (arm == "grouped") m else "pooled",
@@ -281,17 +338,23 @@ fgsim_one <- function(seed, ratio, fraction, cfg, private) {
             true_nonzero_fraction = mean(data$truth$F[[m]][, 3] != 0))
         }))
       }))
-      score <- predict_ssbmf_yfb(x$Y_validation, fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
+      score <- predict_ssbmf_yfb(arm_x$Y_validation, fit$EF, fit$EBeta, fit$EF_norms)$risk_scores
       c_index <- frozen_reverse_cindex(score, x$time_validation, x$event_validation)
       # Private checkpoints retain the common input and the returned moments.
-      saveRDS(list(fit = fit, priors = answer$priors, data = data, inputs = x),
+      saveRDS(list(fit = fit, priors = answer$priors, data = data, inputs = arm_x),
         file.path(private, sprintf("ratio%d_fraction%s_seed%d_%s.rds", ratio, fraction, seed, arm)))
       list(metrics = cbind(base, data.frame(error = "", recovered = recovery$recovered,
         matched_program = recovery$matched_program, loading_correlation = recovery$loading_correlation,
+        expression_loading_correlation = recovery$blocks$correlation[recovery$blocks$modality == "expression"],
+        empty_blocks = if (is.null(fit$empty_blocks)) 0L else sum(fit$empty_blocks),
         false_active = recovery$false_active, converged = isTRUE(fit$history$converged),
         n_iter = fit$history$n_iter, c_validation = c_index,
         elbo = tail(fit$history$elbo_full, 1))),
         programs = recovery$programs, blocks = recovery$blocks,
+        empty_blocks = if (!is.null(fit$empty_blocks))
+          data.frame(modality = rep(rownames(fit$empty_blocks), times = K),
+            program = rep(seq_len(K), each = nrow(fit$empty_blocks)),
+            events = as.vector(fit$empty_blocks)) else NULL,
         precision = precision, priors = prior_rows)
     }, warning = function(w) {
       warnings <<- c(warnings, conditionMessage(w))
@@ -299,11 +362,13 @@ fgsim_one <- function(seed, ratio, fraction, cfg, private) {
       invokeRestart("muffleWarning")
     }), error = function(e) list(metrics = cbind(base, data.frame(error = conditionMessage(e),
       recovered = FALSE, matched_program = NA_integer_, loading_correlation = NA_real_,
+      expression_loading_correlation = NA_real_, empty_blocks = NA_integer_,
       false_active = NA_integer_, converged = FALSE, n_iter = NA_integer_,
       c_validation = NA_real_, elbo = NA_real_))))
-    for (type in c("programs", "blocks", "precision", "priors")) {
+    for (type in c("programs", "blocks", "precision", "priors", "empty_blocks")) {
       if (!is.null(result[[type]])) result[[type]] <- cbind(base[rep(1, nrow(result[[type]])), ], result[[type]])
     }
+    result$metrics$c_true_risk <- c_true
     result$metrics$elapsed_seconds <- proc.time()[["elapsed"]] - start
     result$metrics$n_warnings <- length(warnings)
     result$warnings <- if (length(warnings)) cbind(base[rep(1, length(warnings)), ],
@@ -314,14 +379,15 @@ fgsim_one <- function(seed, ratio, fraction, cfg, private) {
     flush.console()
     results[[arm]] <- result
   }
-  # Recheck after both calls so accidental input mutation also fails loudly.
+  # Recheck after all three calls so accidental input mutation also fails loudly.
   fgsim_assert_inputs(inputs$grouped, inputs$pooled)
-  lapply(c("metrics", "programs", "blocks", "precision", "priors", "warnings"), function(type)
+  fgsim_assert_expression_inputs(inputs$grouped, inputs$expression_only)
+  lapply(c("metrics", "programs", "blocks", "precision", "priors", "empty_blocks", "warnings"), function(type)
     do.call(rbind, lapply(results, `[[`, type))) |>
-    stats::setNames(c("metrics", "programs", "blocks", "precision", "priors", "warnings"))
+    stats::setNames(c("metrics", "programs", "blocks", "precision", "priors", "empty_blocks", "warnings"))
 }
 
-#' Run the registered 80 fits, or an eight-fit smoke check, sequentially
+#' Run the registered 120 fits, or a twelve-fit smoke check, sequentially
 #' @param out Aggregate output directory, which must not exist.
 #' @param private Ignored checkpoint directory, which must not exist.
 #' @param seeds 1:10 for the study, or 1 for the smoke check.
@@ -342,14 +408,17 @@ fgsim_run <- function(out, private, seeds = 1:10) {
     "results/benchmark_sim/run_feature_group_simulation.R")
   write.csv(data.frame(path = sources, md5 = unname(tools::md5sum(sources))),
     file.path(out, "source_hashes.csv"), row.names = FALSE)
-  writeLines(c("registration=docs/prompts/2026-11-12-codex-d-finish-prompt.md",
+  writeLines(c("registration=docs/prompts/2026-11-12-codex-d-rerun-prompt.md",
     paste0("seeds=", paste(seeds, collapse = ",")), "scenario=low_variance_prognostic_factor",
     "feature_ratios=50:50,50:250", "methylation_active_fraction=0.15,0.03",
-    "expression_active_fraction=generator default 0.15", "arms=grouped,pooled",
+    "expression_active_fraction=generator default 0.15", "arms=grouped,pooled,expression_only",
     "generator=defaults (120 training, 120 validation, noise_scale=1, truncate=TRUE)",
     "scaling=training-only z-score within modality", "truth=g=unit stacked D^-1 F[,3]",
     "eta=centered standardized X times g times a; a preserves original training eta SD",
-    "survival_seed_offset=12000", "initialization=identical common signed SVD matrices",
+    "survival_seed_offset=12000", "initialization=joint signed SVD; expression-only uses matching F rows and same L",
+    "true_risk_C=frozen validation C of the joint eta used to draw all outcomes",
+    "expression_truth=expression part of joint g renormalized to unit norm",
+    "empty_blocks=all refitted point-mass block resets, including repeated empty resets",
     "prior_LF=point_laplace", "prior_beta=normal per-program", "canonicalize=TRUE",
     "w_S=1", "prune=FALSE", "strata_id=NULL", "center_projection=FALSE", "workers=1",
     paste0("K=", cfg$benchmark$k_working_yfb), paste0("max_iter=", cfg$cavi$max_iter),
@@ -358,14 +427,14 @@ fgsim_run <- function(out, private, seeds = 1:10) {
     "recovery=abs(cor(g,F_k))>=0.7 and active and beta_k*cor(g,F_k)>0",
     "false_active=active programs other than a recovered match",
     "gate=recovery>=8/10; mean false_active<=1; converged>=9/10; no failed fits",
-    "selection=grouped unless pooled passes a cell grouped fails; stop if grouped fails all",
+    "selection=grouped unless pooled passes a cell grouped fails; selected arm must pass a cell",
     "prior_pi=slab probability; reported point_mass_weight=1-pi",
     "objectives=historical pooled incoming-prior KL vs grouped returned-prior KL; not comparable"),
     file.path(out, "settings.txt"))
   results <- list()
   for (ratio in c(1L, 5L)) for (fraction in c(0.15, 0.03)) for (seed in seeds) {
     results[[length(results) + 1L]] <- fgsim_one(seed, ratio, fraction, cfg, private)
-    for (type in c("metrics", "programs", "blocks", "precision", "priors", "warnings")) {
+    for (type in c("metrics", "programs", "blocks", "precision", "priors", "empty_blocks", "warnings")) {
       rows <- do.call(rbind, lapply(results, `[[`, type))
       if (!is.null(rows)) write.csv(rows, file.path(out, paste0(type, ".csv")), row.names = FALSE)
     }
@@ -381,7 +450,7 @@ fgsim_run <- function(out, private, seeds = 1:10) {
 
 if (sys.nframe() == 0L) {
   smoke <- "--smoke" %in% commandArgs(trailingOnly = TRUE)
-  suffix <- if (smoke) "2026-11-12_smoke" else "2026-11-12"
+  suffix <- if (smoke) "2026-11-12_rerun_smoke" else "2026-11-12_rerun"
   fgsim_run(paste0("results/benchmark_sim/outputs/feature_group_simulation_", suffix),
     paste0("data/feature_group_simulation_", suffix), seeds = if (smoke) 1L else 1:10)
 }
