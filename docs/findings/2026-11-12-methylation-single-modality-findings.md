@@ -8,15 +8,18 @@ converged and three capped. The final all-CpG PE fit was interrupted after
 46.0 minutes without a final checkpoint. Expression fits, official CV and ICGC
 scoring were not run. The approved 600-iteration check is deferred.
 
-**Scientific conclusion:** this partial run establishes computing cost and
+**K = 5 follow-up:** the expression reference is complete. The expanded
+methylation full-fit sweep and timing-eligible CV are in progress below.
+
+**Scientific conclusion for the stopped K = 7 run:** this partial run establishes computing cost and
 full-fit diagnostics only. It does not answer relative predictive performance
 or identify validated methylation-only prognostic programs.
 
 ## Question and design
 
 This is the fixed **K = 7** diagnostic study. The working rank has since changed
-to **K = 5**. Its matched methylation and expression rerun belongs to a separate
-session and is not included in the results here.
+to **K = 5**. Its matched methylation and expression follow-up is reported below under
+“Rerun at K = 5.”
 
 This study asks whether methylation alone identifies survival-active programs
 that the expression fit does not, and how concordance and computing cost change
@@ -254,8 +257,8 @@ recording and resumption without a memory log.
 
 This study was specified with Normal β while task B was pending. The
 [β-prior comparison](2026-11-12-beta-prior-comparison-findings.md) has since
-retained Normal, including its real-data K = 5 rerun. The present study remains
-at K = 7 and does not establish performance at the updated working rank. The
+retained Normal, including its real-data K = 5 rerun. The original results remain
+at K = 7. The updated working-rank comparison is reported below. The
 registered recovery, false-active-program and convergence gate remains
 necessary for scientific adoption. This descriptive comparison does not adopt
 a model or alter that gate.
@@ -333,3 +336,114 @@ must account for the absence of completed K = 7 CV. Normal β was fixed before
 task B and has since been retained by that comparison.
 
 Shared status files were not edited by this session.
+
+## Rerun at K = 5
+
+The K = 7 run above was stopped at Andrew's request. This follow-up uses
+K = 5, preserving the K = 7 checkpoints and aggregate results. The same
+144 matched TCGA patients, D4 genes, eligible probe ranking and saved folds
+are reused. Full fits and each training fold retain the original scaling,
+prior, initialization, iteration cap and scoring definitions.
+
+### Revised scope and computing screen
+
+No official K = 7 methylation CV completed before the stop request. The
+original K = 5 prompt's completed-CV prerequisite therefore yields no eligible
+methylation count. Andrew subsequently requested K = 5 full fits through
+50k, 100k and all eligible CpGs, followed by the three-hour CV screen. The
+resumed scope is therefore all five original CpG counts at K = 5, alongside
+the complete matched expression reference. This is a change to the execution
+protocol, not a completed-CV claim about K = 7.
+
+The full fits run serially in increasing CpG count. The original computing
+rule is then applied to measured K = 5 process times. For each count, five
+times the sum of its PL and PE full-fit process times projects the combined
+five-fold CV cost. Both setups contribute to that timing screen. CV runs
+only for converged full-fit setups at a count whose projection is at most
+three hours. A cap is a failure to converge, rather than an invitation to
+change the iteration budget. The approved K = 7 iteration extension remains
+deferred. No K = 5 extension is included.
+
+### Matched expression reference
+
+All 12 expression fits are saved, with no fitting errors or fit warnings.
+PL converged in its full fit and two of five folds. PE's full fit and four
+folds reached the fixed 300-iteration cap. Concordance from capped states
+remains labeled as such and does not establish convergence.
+
+| K | Setup | Mean CV C | Defined CV folds | Converged CV folds | Mean nonzero programs | Mean survival-active | Full status | Full nonzero | Full survival-active |
+|---|---|---|---|---|---|---|---|---|---|
+| 5 | PL | 0.591160 | 5/5 | 2/5 | 5 | 1 | converged | 5 | 1 |
+| 5 | PE | 0.622361 | 5/5 | 1/5 | 5 | 1 | capped | 5 | 1 |
+| 7 | PL | not run | 0/5 | not available | not available | not available | not run | not available | not available |
+| 7 | PE | not run | 0/5 | not available | not available | not available | not run | not available | not available |
+
+These estimates describe the matched TCGA subset, not the pooled TCGA+CPTAC
+sample used in the β-prior comparison. The higher PE concordance does not
+make it a converged solution. Its capped full fit also prevents an assessable
+PE methylation-only program classification under the registered rule.
+
+### Rebuild commands and implementation
+
+From the repository root:
+
+```sh
+OMP_NUM_THREADS=1 Rscript results/multimodal_real/run_methylation_single_modality.R rerun --K=5
+OMP_NUM_THREADS=1 Rscript results/multimodal_real/run_methylation_single_modality.R sweep --K=5
+Rscript tests/test_methylation_k5_rerun.R
+```
+
+The first command completes the 12 expression fits. The second resumes those
+checkpoints and runs the full methylation sweep with the measured-time CV
+screen. Each full count has both setups. Every model process uses one numerical
+thread, with at most three concurrent CV fits. Full methylation fits and CV
+at 100k/all CpGs run serially. Neither command performs external scoring or
+model selection.
+
+- `c_set_rank()` takes an optional integer K. The historical default remains
+  `benchmark$k_merged_yfb_desurv`, which is still seven. K = 5 selects separate
+  `K05/` directories beneath the private and aggregate study directories. The
+  private design is linked to the original and its hash must agree, preserving
+  the patient order, screening and folds.
+- For this separate rank, `c_freeze()` copies the original hash-verified model
+  code and config, together with the runner. The historical config remains
+  unchanged. Its source revision and copied source hashes are written beside
+  the K = 5 aggregates. The actual child runner is immutable, including its
+  rank-aware fitting entry point. Later parent-orchestration edits do not
+  change it. Concurrent fitter edits in other sessions cannot enter these
+  comparisons.
+- `c_launch()` passes `--K=5` to each fresh child. `c_one()` uses that explicit
+  rank while retaining the saved model settings. Private checkpoints contain
+  posterior fits, scaling vectors and patient scores. Aggregate metric rows
+  carry the actual fitted rank. Resume reads only the selected rank's directory.
+- `c_rerun()` takes no arguments and completes the matched expression reference.
+  It verifies complete, unique coverage of the ten held-out jobs and retains
+  failed or undefined results explicitly. `expression_summary.csv` reports
+  full-fit and fold program counts, mean CV C and convergence. `sweep` reuses
+  `c_run()` for the original five-count design and actual-time CV screen, then
+  calls `c_summary()` without external scoring. Failed fits cause a nonzero
+  exit after aggregate diagnostics are saved.
+- `c_summary()` uses the existing one-to-one assignment of full and fold
+  programs by absolute score correlation. A methylation-only program must
+  satisfy the full-fit activity criterion, remain active in at least three
+  converged matched folds, and have maximum absolute expression-program
+  correlation below 0.5. Classification is undefined when the required full
+  fits or fold coverage do not support assessment. Constant scores cannot
+  substantiate a program match.
+- `tests/test_methylation_k5_rerun.R` uses temporary synthetic files to verify
+  rank isolation, frozen-source integrity, child rank propagation, all-count
+  full-fit coverage, measured-time CV gating, unique fold coverage and
+  expression summaries. It starts no model fits. The original helper and
+  iteration-extension tests also pass. Base R handles file and matrix
+  operations, yaml reads the established config, and parallel orchestrates
+  fresh children.
+
+Patient-level K = 5 outputs remain under ignored
+`data/methylation_single_modality_2026-11-12/K05/`. Only aggregate CSVs are
+written to `results/multimodal_real/outputs/methylation_single_modality_2026-11-12/K05/`.
+
+The full regression suite passed 819 tests with zero failures. The focused
+rank-five rerun, original helper and iteration-extension tests also passed.
+Independent review found no blocker in the final expanded sweep and confirmed
+that the frozen child fitting functions match the reviewed implementation.
+The methylation sweep remains in progress at this checkpoint.

@@ -6,6 +6,8 @@
 # Dependencies: survival, ebnm, yaml, Rcpp, parallel, impute; existing YFB/data helpers
 # ============================================================
 # Run from the repository root: Rscript <this script> prepare|smoke|run|summary
+# Working-rank expression first: Rscript <this script> rerun --K=5
+# Then all CpG counts: Rscript <this script> sweep --K=5
 # Registration: docs/prompts/2026-11-12-codex-c-d-e-prompts.md, Prompt 1.
 # Patient matrices, checkpoints and scores remain under ignored data/.
 # At most three concurrent fit processes, each with one BLAS/OpenMP thread.
@@ -15,6 +17,33 @@ Sys.setenv(OMP_NUM_THREADS = 1, OPENBLAS_NUM_THREADS = 1, VECLIB_MAXIMUM_THREADS
 C_LOCAL <- "data/methylation_single_modality_2026-11-12"
 C_OUT <- "results/multimodal_real/outputs/methylation_single_modality_2026-11-12"
 C_SCRIPT <- "results/multimodal_real/run_methylation_single_modality.R"
+C_BASE_LOCAL <- C_LOCAL
+C_BASE_OUT <- C_OUT
+C_K <- NULL
+
+#' Select an isolated rank without changing the historical config key
+#' @param K Positive integer rank; NULL keeps the historical directory/default.
+#' @return NULL invisibly; sets rank-specific private and aggregate paths.
+#' @examples
+#' # c_set_rank(5)
+c_set_rank <- function(K = NULL) {
+  historical <- yaml::read_yaml("config/globals.yml")$benchmark$k_merged_yfb_desurv
+  if (is.null(K)) K <- historical
+  stopifnot(length(K) == 1L, is.finite(K), K > 0L, K == as.integer(K))
+  C_K <<- as.integer(K)
+  C_LOCAL <<- if (K == historical) C_BASE_LOCAL else file.path(C_BASE_LOCAL, sprintf("K%02d", K))
+  C_OUT <<- if (K == historical) C_BASE_OUT else file.path(C_BASE_OUT, sprintf("K%02d", K))
+  dir.create(C_LOCAL, recursive = TRUE, showWarnings = FALSE)
+  dir.create(C_OUT, recursive = TRUE, showWarnings = FALSE)
+  if (K != historical) {
+    design <- file.path(C_LOCAL, "design.rds")
+    original <- normalizePath(file.path(C_BASE_LOCAL, "design.rds"), mustWork = TRUE)
+    if (!file.exists(design) && !file.symlink(original, design)) stop("Could not link frozen design.")
+    if (!identical(unname(tools::md5sum(design)), unname(tools::md5sum(original))))
+      stop("Rank-specific design differs from the registered design.")
+  }
+  invisible(NULL)
+}
 
 # Pure analysis helpers ----
 
@@ -172,6 +201,14 @@ c_freeze <- function() {
     return(invisible(NULL))
   }
   dir.create(snapshot, recursive = TRUE)
+  if (!is.null(C_K) && C_LOCAL != C_BASE_LOCAL) {
+    baseline <- file.path(C_BASE_LOCAL, "source")
+    hashes <- read.csv(file.path(C_BASE_OUT, "source_hashes.csv"), stringsAsFactors = FALSE)
+    if (!identical(unname(tools::md5sum(file.path(baseline, hashes$path))), hashes$md5))
+      stop("Historical source snapshot differs from its manifest.")
+    if (!all(file.copy(file.path(baseline, c("code", "config")), snapshot, recursive = TRUE)))
+      stop("Could not copy historical model dependencies.")
+  } else {
   archive <- file.path(snapshot, "dependencies.tar")
   status <- system2("git", c("archive", "--format=tar",
     paste0("--output=", shQuote(archive)), "HEAD", "code", "config"))
@@ -179,9 +216,12 @@ c_freeze <- function() {
   status <- system2("tar", c("-xf", shQuote(archive), "-C", shQuote(snapshot)))
   if (status != 0L) stop("Could not extract frozen model dependencies.")
   unlink(archive)
+  }
   if (!file.copy(C_SCRIPT, file.path(snapshot, "runner.R"))) stop("Could not freeze runner.")
-  write.csv(data.frame(revision = system2("git", c("rev-parse", "HEAD"), stdout = TRUE)),
-            file.path(C_OUT, "source_revision.csv"), row.names = FALSE)
+  revision <- if (!is.null(C_K) && C_LOCAL != C_BASE_LOCAL)
+    read.csv(file.path(C_BASE_OUT, "source_revision.csv"))$revision else
+    system2("git", c("rev-parse", "HEAD"), stdout = TRUE)
+  write.csv(data.frame(revision = revision), file.path(C_OUT, "source_revision.csv"), row.names = FALSE)
   packages <- c("survival", "ebnm", "yaml", "Rcpp", "impute")
   versions <- sapply(packages, utils::packageVersion, simplify = FALSE)
   write.csv(data.frame(package = packages, version = unlist(lapply(versions, as.character))),
@@ -235,7 +275,7 @@ c_one <- function(modality, count, arm, fold) {
     scaling <- c_scale(raw[tr, , drop = FALSE], arm)
     set.seed(42L)
     fit <- fit_ssbmf_yfb(scaling$Y, z$time[tr], z$event[tr],
-      K = cfg$benchmark$k_merged_yfb_desurv, max_iter = cfg$cavi$max_iter,
+      K = if (is.null(C_K)) cfg$benchmark$k_merged_yfb_desurv else C_K, max_iter = cfg$cavi$max_iter,
       tol = cfg$cavi$tol, prior_LF = if (arm == "PL") "point_laplace" else "point_exponential",
       prior_beta = "normal", canonicalize = TRUE, w_S = 1,
       alpha = cfg$benchmark$alpha, center_projection = arm == "PE", prune = FALSE,
@@ -282,7 +322,8 @@ c_launch <- function(modality, count, arm, fold) {
     # macOS time -l reports maximum resident set size in bytes.
     launch_start <- proc.time()[["elapsed"]]
     status <- system2("/usr/bin/time", c("-l", shQuote(file.path(R.home("bin"), "Rscript")),
-      shQuote(file.path(C_LOCAL, "source/runner.R")), "one", modality, count, arm, fold), stdout = log, stderr = log)
+      shQuote(file.path(C_LOCAL, "source/runner.R")), "one", modality, count, arm, fold,
+      if (!is.null(C_K)) paste0("--K=", C_K)), stdout = log, stderr = log)
     if (status != 0L || !file.exists(path)) {
       error <- paste("Child exit", status, "for", key, "see private log", log)
       message(error)
@@ -304,7 +345,7 @@ c_launch <- function(modality, count, arm, fold) {
   a$row$memory_measured <- is.finite(a$row$peak_rss_MiB)
   a$row$warning_count <- length(a$warnings)
   config_path <- file.path(C_LOCAL, "source/config/globals.yml")
-  a$row$K <- if (!is.null(a$fit)) ncol(a$fit$EF) else if (file.exists(config_path))
+  a$row$K <- if (!is.null(a$fit)) ncol(a$fit$EF) else if (!is.null(C_K)) C_K else if (file.exists(config_path))
     yaml::read_yaml(config_path)$benchmark$k_merged_yfb_desurv else NA_integer_
   a$row
 }
@@ -377,7 +418,7 @@ c_summary <- function() {
   z <- readRDS(file.path(C_LOCAL, "design.rds"))
   cv <- read.csv(file.path(C_OUT, "cv_fits.csv"))
   eligibility <- read.csv(file.path(C_OUT, "cv_eligibility.csv"))
-  K <- yaml::read_yaml(file.path(C_LOCAL, "source/config/globals.yml"))$benchmark$k_merged_yfb_desurv
+  K <- if (is.null(C_K)) yaml::read_yaml(file.path(C_LOCAL, "source/config/globals.yml"))$benchmark$k_merged_yfb_desurv else C_K
   for (name in c("full_fits.csv", "cv_fits.csv", "smoke.csv")) {
     path <- file.path(C_OUT, name)
     if (file.exists(path)) {
@@ -488,7 +529,7 @@ c_external <- function() {
     }
     for (population in c("primary_PDAC", "all_matched_sensitivity")) {
       keep <- if (population == "primary_PDAC") which(ext$clinical$primary_pdac) else seq_along(ext$time)
-      rows[[length(rows) + 1L]] <- data.frame(K = cfg$benchmark$k_merged_yfb_desurv, modality = task$modality,
+      rows[[length(rows) + 1L]] <- data.frame(K = if (is.null(C_K)) cfg$benchmark$k_merged_yfb_desurv else C_K, modality = task$modality,
         count = task$count, arm = task$arm, population = population,
         n = length(keep), events = sum(ext$event[keep]), full_status = task$status,
         full_converged = task$converged, full_iterations = task$iterations,
@@ -501,11 +542,48 @@ c_external <- function() {
   invisible(NULL)
 }
 
+#' Complete the matched expression reference before the methylation sweep
+#' @return NULL invisibly; full/CV fit rows and aggregate expression summaries.
+#' @examples
+#' # c_set_rank(5); c_rerun()
+c_rerun <- function() {
+  stopifnot(!is.null(C_K), C_LOCAL != C_BASE_LOCAL)
+  c_freeze()
+  full <- lapply(c("PL", "PE"), function(a) c_launch("expression", 2218L, a, 0L))
+  tasks <- expand.grid(modality = "expression", count = 2218L, arm = c("PL", "PE"),
+                       fold = 1:5, stringsAsFactors = FALSE)
+  write.csv(do.call(rbind, full), file.path(C_OUT, "full_fits.csv"), row.names = FALSE)
+  cv <- parallel::mclapply(split(tasks, seq_len(nrow(tasks))), function(t)
+    c_launch(t$modality, t$count, t$arm, t$fold), mc.cores = 3L, mc.preschedule = FALSE)
+  if (any(!vapply(cv, function(x) is.data.frame(x) && nrow(x) == 1L, logical(1))))
+    stop("Missing/failed CV worker result; inspect private logs.")
+  cv <- do.call(rbind, cv)
+  keys <- with(cv, paste(modality, count, arm, fold))
+  if (anyDuplicated(keys) || !setequal(keys, with(tasks, paste(modality, count, arm, fold))))
+    stop("CV coverage differs from the rerun task list.")
+  write.csv(cv, file.path(C_OUT, "cv_fits.csv"), row.names = FALSE)
+  summary <- do.call(rbind, lapply(c("PL", "PE"), function(a) {
+    rows <- cv[cv$arm == a, ]; f <- full[[match(a, c("PL", "PE"))]]
+    data.frame(K = C_K, arm = a, mean_C = if (all(is.finite(rows$C))) mean(rows$C) else NA_real_,
+      defined_folds = sum(is.finite(rows$C)), converged_folds = sum(rows$converged),
+      mean_nonzero = mean(rows$nonzero), mean_survival_active = mean(rows$survival_active),
+      full_status = f$status, full_nonzero = f$nonzero, full_survival_active = f$survival_active)
+  }))
+  write.csv(summary, file.path(C_OUT, "expression_summary.csv"), row.names = FALSE)
+  if (any(c(vapply(full, function(r) r$status == "failed", logical(1)), cv$status == "failed")))
+    stop("Rerun contains failed fits; aggregate diagnostics were saved.")
+  invisible(NULL)
+}
+
 # Main ----
 if (sys.nframe() == 0L) {
   dir.create(C_LOCAL, recursive = TRUE, showWarnings = FALSE)
   dir.create(C_OUT, recursive = TRUE, showWarnings = FALSE)
   args <- commandArgs(TRUE)
+  rank_arg <- grep("^--K=", args, value = TRUE)
+  stopifnot(length(rank_arg) <= 1L)
+  if (length(rank_arg)) c_set_rank(as.numeric(sub("^--K=", "", rank_arg)))
+  args <- args[!grepl("^--K=", args)]
   mode <- args[1]
   if (mode == "prepare") c_prepare()
   else if (mode == "one") c_one(args[2], as.integer(args[3]), args[4], as.integer(args[5]))
@@ -515,6 +593,14 @@ if (sys.nframe() == 0L) {
     write.csv(do.call(rbind, rows), file.path(C_OUT, "smoke.csv"), row.names = FALSE)
     if (any(vapply(rows, function(r) r$status == "failed", logical(1)))) stop("Smoke fit failed.")
   } else if (mode == "run") { c_freeze(); c_run(); c_summary(); c_external() }
+  else if (mode == "rerun") c_rerun()
+  else if (mode == "sweep") {
+    # Explicit rank required. The historical stopped study cannot resume here.
+    stopifnot(!is.null(C_K), C_LOCAL != C_BASE_LOCAL)
+    c_freeze(); c_run(); c_summary()
+    rows <- rbind(read.csv(file.path(C_OUT, "full_fits.csv")), read.csv(file.path(C_OUT, "cv_fits.csv")))
+    if (any(rows$status == "failed")) stop("Sweep contains failed fits; inspect aggregate diagnostics.")
+  }
   else if (mode == "summary") { c_summary(); c_external() }
-  else stop("Use prepare, smoke, run, or summary.")
+  else stop("Use prepare, smoke, run, summary, rerun --K=5, or sweep --K=5.")
 }

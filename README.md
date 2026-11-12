@@ -172,3 +172,10 @@ Patient-level checkpoints remain under ignored `data/`. The aggregate
 `b_rerun_paired.csv` and the [β-prior findings](docs/findings/2026-11-12-beta-prior-comparison-findings.md)
 record paired concordance differences and the registered one-SE CV criterion.
 Run `Rscript tests/test_training_cv_brerun.R` for its synthetic regression checks.
+
+For the matched-TCGA expression and methylation comparison at K = 5, use
+`Rscript results/multimodal_real/run_methylation_single_modality.R rerun --K=5`,
+then `Rscript results/multimodal_real/run_methylation_single_modality.R sweep --K=5`.
+The `K05/` directories keep its private checkpoints and aggregate results separate
+from the stopped K = 7 study. The [methylation findings](docs/findings/2026-11-12-methylation-single-modality-findings.md)
+explain the revised timing screen, scope and rebuild commands.

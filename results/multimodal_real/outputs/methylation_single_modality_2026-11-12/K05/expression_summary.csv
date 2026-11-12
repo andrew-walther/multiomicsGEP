@@ -1,0 +1,3 @@
+"K","arm","mean_C","defined_folds","converged_folds","mean_nonzero","mean_survival_active","full_status","full_nonzero","full_survival_active"
+5,"PL",0.591160163253393,5,2,5,1,"converged",5,1
+5,"PE",0.622361029165846,5,1,5,1,"capped",5,1
