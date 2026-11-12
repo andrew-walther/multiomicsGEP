@@ -4,6 +4,7 @@ Reports from independent reviewers, and external advice recorded as received.
 
 | Date | Document | Purpose | Status |
 |---|---|---|---|
+| 2026-11-12 | [task-a-independent-review](2026-11-12-task-a-independent-review.md) | Independent audit of L/F prior comparisons A and A2, criteria, saved scoring and four fresh fits | PL retention supported; neither A2 setup qualifies; SZ preprocessing claim needs qualification |
 | 2026-11-12 | [task-f-independent-review](2026-11-12-task-f-independent-review.md) | Independent preprocessing, paired-CV and rank-rule audit with two exact fit reruns | saved choices reproduced; repeat seeds pending; summary completeness fix proposed; arm-isolation guard added concurrently |
 | 2026-11-12 | [task-b-independent-review](2026-11-12-task-b-independent-review.md) | Audit of β-prior registration, rule, inclusion probabilities and two scratch reruns | Normal decision supported; S-14 sensitivity reporting correction required; reruns reproduce saved fits |
 | 2026-11-11 | [local-results-pilot-review](2026-11-11-local-results-pilot-review.md) | Independent software review of the local synthetic results workflow, artifact safety and rebuild checks | approved software pilot; 14 acceptance checks passed; full-suite/clean-checkout evidence recorded separately |
