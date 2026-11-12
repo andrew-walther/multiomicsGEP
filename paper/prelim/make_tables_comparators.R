@@ -9,8 +9,13 @@
 # Inputs are the committed aggregate outputs of run_prompt6_comparators.R,
 # run_prompt7_real.R and run_prompt7_ebmf.R. No patient-level data are read.
 
-OUT <- "results/benchmark_sim/outputs"
+# EXHIBIT_K (results/benchmark_sim/exhibit_rank.R) reads the comparator outputs of another
+# rank and writes "_k<K>" table files. Unset, the paths and labels are the historical ones.
+source("results/benchmark_sim/exhibit_rank.R")
+OUT <- exhibit_root("results/benchmark_sim/outputs")
 TAB <- "paper/prelim/tables"
+SFX <- exhibit_suffix()
+K_TWOSTEP <- if (is.na(exhibit_k())) 7L else exhibit_k()
 
 #' Read a saved aggregate CSV, failing loudly when it is missing.
 #' @param ... Path components below the outputs directory.
@@ -47,7 +52,8 @@ hr <- rd("prompt6_comparators", "pooled_hr.csv")
 rk <- rd("prompt7_desurv_style", "rank_paired.csv")
 rke <- rd("prompt7_desurv_style", "rank_external.csv")
 rkh <- rd("prompt7_desurv_style", "rank_pooled_hr.csv")
-lab <- c(w1 = "Supervised ($w_S = 1$)", twostep = "Two-step (rank-7 EBMF + Cox)",
+lab <- c(w1 = "Supervised ($w_S = 1$)",
+         twostep = sprintf("Two-step (rank-%d EBMF + Cox)", K_TWOSTEP),
          DeSurv = "DeSurv", elastic_net = "Elastic-net Cox (2,218 genes)", PurIST = "PurIST",
          EBMF_15 = "EBMF rank 15 + Cox", EBMF_40 = "EBMF rank 40 + Cox")
 allE <- rbind(e[, c("model", "C", "cal_slope")], rke[grepl("EBMF_(15|40)", rke$model), c("model", "C", "cal_slope")])
@@ -72,7 +78,7 @@ tex <- c("\\begin{table}[!htb]", "\\centering", "\\small", "\\setlength{\\tabcol
   sprintf("\\caption{Fixed supervised fit and comparators trained on the same %d patients, scored in the five validation series (%d records from %d donors). Mean $C$ is the equal-weight mean over series. The hazard ratio is per pooled SD of each score from a Cox model stratified by series, with a robust interval clustered on donor. The difference in $C$ is averaged over series with a donor-bootstrap interval (%d replicates).}",
     273L, pr$n[1], pr$donors[1], pr$B[1]),
   "\\label{tab:comparators}", "\\end{table}")
-writeLines(tex, file.path(TAB, "tab_comparators.tex"))
+writeLines(tex, file.path(TAB, paste0("tab_comparators", SFX, ".tex")))
 
 # Program rule table ----
 r <- rd("prompt7_desurv_style", "program_rule.csv")
@@ -84,5 +90,5 @@ tex <- c("\\begin{table}[!htb]", "\\centering", "\\small", "\\begin{tabular}{lcc
   "\\midrule", rows, "\\bottomrule", "\\end{tabular}",
   "\\caption{Program classification on the supervised training fit. The coefficient ratio is $|E\\beta_k|\\,\\mathrm{SD}(YE[F_k])$ relative to the largest program. The signed share is $\\mathrm{Cov}(\\eta_k,\\eta)/\\mathrm{Var}(\\eta)$ and sums to one over programs. Active folds count training folds in which a loading matched with absolute correlation at least 0.7 was survival-active. A main program needs a ratio of at least 0.25, a share of at least 5\\% and at least four active folds. Programs with ratio below 0.1 and no activity are omitted.}",
   "\\label{tab:program-rule}", "\\end{table}")
-writeLines(tex, file.path(TAB, "tab_program_rule.tex"))
+writeLines(tex, file.path(TAB, paste0("tab_program_rule", SFX, ".tex")))
 cat("Wrote tab_comparators.tex and tab_program_rule.tex\n")

@@ -37,13 +37,19 @@ if (!CAIRO_OK) warning("cairo_pdf unavailable: figures are written with pdf() an
 PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else function(filename, ...) grDevices::pdf(file = filename, ..., useDingbats = FALSE)
 
 # Settings ----
-FIT_SUP   <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/fits/size_D4_N2218_w1_f0.rds"
-FIT_UNSUP <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/fits/size_D4_N2218_w0_f0.rds"
+# EXHIBIT_K (results/benchmark_sim/exhibit_rank.R) rebuilds these exhibits from the fits of
+# another rank: aggregates go to that rank's folder and figure and table files get a "_k<K>"
+# suffix next to the historical ones. Unset, every path below is the historical K = 7 one.
+source("results/benchmark_sim/exhibit_rank.R")
+S11_DIR   <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04", "s11")
+SFX       <- exhibit_suffix()
+FIT_SUP   <- file.path(S11_DIR, "fits", "size_D4_N2218_w1_f0.rds")
+FIT_UNSUP <- file.path(S11_DIR, "fits", "size_D4_N2218_w0_f0.rds")
 TRAIN_RDS <- "data/yfb_supervised_real_2026-11-04.rds"          # not in git
 GENESETS  <- "results/benchmark_sim/outputs/pathway_enrichment/pdac_genesets.rds"
 BENCHMARK <- "results/benchmark_snapshot_2026-10-14/single_modality"
 CMB_RDATA <- file.path(PDAC_DATA_ROOT, "original", "cmbSubtypes.RData")
-OUT_DIR   <- "results/benchmark_sim/outputs/prelim_ch4_2026-11-06"
+OUT_DIR   <- exhibit_out("results/benchmark_sim/outputs/prelim_ch4_2026-11-06", "prelim_ch4")
 FIG_DIR   <- "paper/prelim/figures"
 TAB_DIR   <- "paper/prelim/tables"
 N_POLE    <- 4L      # genes per pole in the table
@@ -55,6 +61,8 @@ for (d in c(OUT_DIR, FIG_DIR, TAB_DIR)) dir.create(d, showWarnings = FALSE, recu
 # Training gene-set and signature results motivate these descriptive labels.
 LABELS <- c("P1", "Classical / basal-like", "Proliferation / classical",
             "P4", "Mitotic / stromal signals", "P6", "P7")
+# At another rank the descriptive labels are not yet assigned: programs are named P1..PK.
+if (!is.na(exhibit_k())) LABELS <- sprintf("P%d", seq_len(exhibit_k()))
 
 # Helpers ----
 
@@ -117,7 +125,7 @@ stopifnot(all(bsd > 0))
 prog <- data.frame(program = seq_len(K), beta = beta, beta_sd = bsd, z = beta / bsd,
                    short = LABELS)
 prog$active <- abs(prog$z) >= Z_ACTIVE
-ref <- read.csv("results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04/programs_D4.csv")
+ref <- read.csv(file.path(S11_DIR, "programs_D4.csv"))
 ref <- ref[ref$arm == "w1", ]
 stopifnot(identical(ref$program, prog$program), all(abs(ref$beta - prog$beta) < 1e-8),
           all(abs(ref$beta_sd - prog$beta_sd) < 1e-8), identical(ref$survival_active, prog$active))
@@ -216,7 +224,7 @@ p1 <- ggplot(long, aes(program, key, fill = w)) +
         panel.spacing.y = unit(4, "pt"), legend.position = "bottom",
         legend.title = element_text(size = 8.5), legend.text = element_text(size = 8.5),
         legend.key.width = unit(0.35, "in"), legend.key.height = unit(0.12, "in"))
-ggsave(file.path(FIG_DIR, "sup_programs_heatmap.pdf"), p1, width = 6.5, height = 7.7,
+ggsave(file.path(FIG_DIR, paste0("sup_programs_heatmap", SFX, ".pdf")), p1, width = 6.5, height = 7.7,
        device = PDF_DEVICE)
 
 # Figure F8: correspondence ----
@@ -244,7 +252,7 @@ tile <- function(R, xl, yl, lab_sign) {
 }
 pa <- tile(Ra, "Two-step program", "Supervised program", FALSE)
 pb <- tile(Rb, "Historical benchmark program", NULL, TRUE)
-ggsave(file.path(FIG_DIR, "sup_programs_correspondence.pdf"),
+ggsave(file.path(FIG_DIR, paste0("sup_programs_correspondence", SFX, ".pdf")),
        (pa | pb) + plot_layout(widths = c(1, 1)) + plot_annotation(tag_levels = "A"),
        width = 6.5, height = 3.2, device = PDF_DEVICE)
 
@@ -265,7 +273,7 @@ tex <- c("\\begin{table}[tbp]", "\\centering", "\\small", "\\setlength{\\tabcols
   "\\begin{tabular}{@{}r p{1.12in} r r c p{1.3in} p{1.3in}@{}}", "\\toprule",
   "\\# & Label & $E[\\beta]$ (SD) & $z$ & Active & Positive pole genes & Negative pole genes \\\\",
   "\\midrule", rowsT, "\\bottomrule", "\\end{tabular}", "\\end{table}")
-writeLines(tex, file.path(TAB_DIR, "tab_programs.tex"))
+writeLines(tex, file.path(TAB_DIR, paste0("tab_programs", SFX, ".tex")))
 
 # Table T5 ----
 topE <- do.call(rbind, lapply(which(prog$active), function(k) {
@@ -282,7 +290,7 @@ texE <- c("\\begin{table}[tbp]", "\\centering", "\\small",
   "\\label{tab:enrichment}", "\\begin{tabular}{@{}r c p{2.6in} l r r@{}}", "\\toprule",
   "Program & Pole & Gene set & Collection & NES & adj.\\ $p$ \\\\", "\\midrule", rowsE,
   "\\bottomrule", "\\end{tabular}", "\\end{table}")
-writeLines(texE, file.path(TAB_DIR, "tab_enrichment.tex"))
+writeLines(texE, file.path(TAB_DIR, paste0("tab_enrichment", SFX, ".tex")))
 # Subtype and stroma concordance (B3) ----
 e <- new.env()
 load(CMB_RDATA, envir = e)

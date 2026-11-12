@@ -21,7 +21,10 @@ if (!CAIRO_OK) warning("cairo_pdf unavailable: figures are written with pdf() an
                        call. = FALSE)
 PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else function(filename, ...) grDevices::pdf(file = filename, ..., useDingbats = FALSE)
 
-out7 <- "results/benchmark_sim/outputs/prompt7_desurv_style"
+# EXHIBIT_K (results/benchmark_sim/exhibit_rank.R) reads the risk groups of another rank
+# (cutpoint chosen on that rank's out-of-fold training scores) and writes a "_k<K>" file.
+source("results/benchmark_sim/exhibit_rank.R")
+out7 <- exhibit_out("results/benchmark_sim/outputs/prompt7_desurv_style", "prompt7_desurv_style")
 figure_dir <- "paper/prelim/figures"
 
 #' Read a saved aggregate CSV, failing loudly when it is missing.
@@ -85,6 +88,6 @@ p <- ggplot(km, aes(month, survival, colour = group, linetype = group)) +
         legend.title = element_text(size = 8.5),
         panel.spacing = grid::unit(9, "pt"))
 # PDF_DEVICE is cairo_pdf (embeds fonts) when available; all figure text is at least 8 pt at the printed width (6.5 in)
-ggsave(file.path(figure_dir, "sup_external_km_fixed.pdf"), p, width = 6.5, height = 6.6,
-       device = PDF_DEVICE)
-cat("Wrote sup_external_km_fixed.pdf\n")
+fig_name <- paste0("sup_external_km_fixed", exhibit_suffix(), ".pdf")
+ggsave(file.path(figure_dir, fig_name), p, width = 6.5, height = 6.6, device = PDF_DEVICE)
+cat("Wrote", fig_name, "\n")

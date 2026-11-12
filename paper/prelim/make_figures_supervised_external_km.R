@@ -21,12 +21,17 @@ if (!CAIRO_OK) warning("cairo_pdf unavailable: figures are written with pdf() an
 PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else function(filename, ...) grDevices::pdf(file = filename, ..., useDingbats = FALSE)
 
 # Saved evidence and score validation ----
-s11_dir <- "results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04"
-s12_dir <- "results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05"
-out_dir <- "results/benchmark_sim/outputs/prelim_ch4_2026-11-06"
+# EXHIBIT_K (results/benchmark_sim/exhibit_rank.R) reads the scores of another rank, writes
+# aggregates to that rank's folder and adds a "_k<K>" suffix to figure and table files.
+# Unset, every path is the historical K = 7 one.
+source("results/benchmark_sim/exhibit_rank.R")
+s11_dir <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_real_2026-11-04", "s11")
+s12_dir <- exhibit_out("results/benchmark_sim/outputs/yfb_supervised_external_2026-11-05", "s12")
+out_dir <- exhibit_out("results/benchmark_sim/outputs/prelim_ch4_2026-11-06", "prelim_ch4")
 figure_dir <- "paper/prelim/figures"
 table_dir <- "paper/prelim/tables"
-score_file <- "data/yfb_external_patient_scores_ws1.rds"
+sfx <- exhibit_suffix()
+score_file <- exhibit_data("data/yfb_external_patient_scores_ws1.rds", "external_patient_scores_ws1.rds")
 if (!file.exists(score_file)) {
   stop("Missing ignored score cache. Run results/benchmark_sim/save_yfb_external_patient_scores.R.")
 }
@@ -130,7 +135,7 @@ plot_tertiles <- function(score_name, direction, filename) {
           legend.title = element_text(size = 8.5),
           panel.spacing = grid::unit(9, "pt"))
   # PDF_DEVICE is cairo_pdf (embeds fonts) when available; all figure text is at least 8 pt at the printed width (6.5 in)
-  ggsave(file.path(figure_dir, filename), p, width = 6.5, height = 6.6, device = PDF_DEVICE)
+  ggsave(file.path(figure_dir, sub("\\.pdf$", paste0(sfx, ".pdf"), filename)), p, width = 6.5, height = 6.6, device = PDF_DEVICE)
   invisible(p)
 }
 
@@ -168,7 +173,7 @@ for (cohort in names(cohort_names)) {
 }
 sign_words <- ifelse(beta[programs$program] > 0, "Adverse", "Protective")
 training_row <- paste(c("Training direction", sign_words), collapse = " & ")
-table_path <- file.path(table_dir, "tab_external_program_direction.tex")
+table_path <- file.path(table_dir, paste0("tab_external_program_direction", sfx, ".tex"))
 writeLines(c("\\begin{table}[!htb]", "\\centering",
   "\\caption{External associations of the survival-active programs. Values are hazard ratios and 95\\% Wald intervals per cohort-specific standard deviation of each program score from separate Cox fits. The training direction comes from the fitted coefficient. These are descriptive, unadjusted associations.}",
   "\\label{tab:external-program-direction}", "\\begin{tabular}{lrrr}", "\\toprule",

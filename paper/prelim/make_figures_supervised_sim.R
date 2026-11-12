@@ -20,8 +20,14 @@ S14_DIR <- file.path(OUT, "yfb_near_threshold_2026-11-05")
 
 ## Real-data inputs: the only section that changes if the real-data model is refitted (S-15).
 ## To switch, change these two folder variables (file names are assumed unchanged).
-REAL_DIR     <- file.path(OUT, "yfb_supervised_real_2026-11-04")
-EXTERNAL_DIR <- file.path(OUT, "yfb_supervised_external_2026-11-05")
+## EXHIBIT_K (results/benchmark_sim/exhibit_rank.R) rebuilds only the real-data figures and
+## tables from the fits of another rank, writing "_k<K>" files next to the historical ones.
+## The simulation exhibits are not rank-dependent and are not rebuilt in that mode, and the
+## numbers checked against the K = 7 findings are skipped. Unset, nothing changes.
+source("results/benchmark_sim/exhibit_rank.R")
+SFX          <- exhibit_suffix()
+REAL_DIR     <- exhibit_out(file.path(OUT, "yfb_supervised_real_2026-11-04"), "s11")
+EXTERNAL_DIR <- exhibit_out(file.path(OUT, "yfb_supervised_external_2026-11-05"), "s12")
 
 FIG_DIR <- "paper/prelim/figures"
 TAB_DIR <- "paper/prelim/tables"
@@ -62,6 +68,7 @@ PDF_DEVICE <- if (CAIRO_OK) cairo_pdf else function(filename, ...) grDevices::pd
 #' @param p ggplot/patchwork object. @param name file name. @param h height in inches.
 save_fig <- function(p, name, h) {
   # cairo_pdf (fonts embedded) where the cairo library loads; plain pdf() otherwise, with the warning above
+  name <- sub("\\.pdf$", paste0(SFX, ".pdf"), name)
   ggsave(file.path(FIG_DIR, name), p, width = FIG_W, height = h, device = PDF_DEVICE)
   cat("Wrote", file.path(FIG_DIR, name), sprintf("(%.1f x %.1f in)\n", FIG_W, h))
 }
@@ -72,6 +79,9 @@ save_fig <- function(p, name, h) {
 #' @param tol absolute tolerance (default half a unit in the last quoted digit).
 MISMATCHES <- character(0)
 check <- function(label, got, expect, tol = 0.0051) {
+  if (!is.na(exhibit_k())) {   # expected values are the K = 7 findings
+    cat(sprintf("  [not checked, K = %d] %-46s csv %9.4f\n", exhibit_k(), label, got)); return(invisible())
+  }
   ok <- isTRUE(abs(got - expect) <= tol)
   if (!ok) MISMATCHES <<- c(MISMATCHES, sprintf("%s: csv %.4f vs findings %.4f", label, got, expect))
   cat(sprintf("  [%s] %-58s csv %9.4f | findings %9.4f\n", if (ok) "ok" else "MISMATCH", label, got, expect))
@@ -369,6 +379,7 @@ fci <- function(est, lo, hi, d = 3, plus = FALSE) sprintf("%s (%s, %s)", fn(est,
 #' @param body tabular code. @param caption caption text. @param label label.
 write_table <- function(file, body, caption, label) {
   txt <- paste0("\\begin{table}[!htb]\n\\centering\n\\small\n", body, "\n\\caption{", caption, "}\n\\label{", label, "}\n\\end{table}")
+  file <- sub("\\.tex$", paste0(SFX, ".tex"), file)
   writeLines(txt, file.path(TAB_DIR, file)); cat("Wrote", file.path(TAB_DIR, file), "\n")
 }
 
@@ -608,12 +619,15 @@ Survival & Planted share & \\shortstack{Recovered\\\\(of 10)} & Validation $C$ &
 }
 
 # Run ----
+SIM <- is.na(exhibit_k())   # simulation exhibits only in the historical (unset) mode
 cat("=== Simulation figures ===\n")
-make_f1(); make_f12(); make_f13()
+if (SIM) { make_f1(); make_f12(); make_f13() }
 cat("\n=== Real-data figures and tables (REAL_DIR =", REAL_DIR, "; EXTERNAL_DIR =", EXTERNAL_DIR, ") ===\n")
 make_f3(); make_ext()
 cat("\n=== Tables ===\n")
-make_t1(); make_t2(); make_t3(); make_t6()
+if (SIM) make_t1()
+make_t2(); make_t3()
+if (SIM) make_t6()
 cat("\n=== Check summary ===\n")
 if (length(MISMATCHES)) {
   stop("Saved results differ from the checked findings:\n", paste0("  ", MISMATCHES, collapse = "\n"), call. = FALSE)
