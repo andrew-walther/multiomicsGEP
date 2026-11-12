@@ -3,6 +3,31 @@
 Architectural and analytical decisions made during development, in reverse chronological order.
 Each entry records what was decided, why, what was traded away, and which files implement it.
 
+## 2026-11-12 — Task D: run the matched-TCGA comparison without a passing simulation gate (Andrew)
+
+**Decided.** The descriptive matched-TCGA comparison of task D runs now: expression alone,
+methylation alone, and both with grouped and pooled F priors, on task C's 144 patients and
+folds. It is labelled as not validated by simulation. In parallel, the simulation is
+repeated on the `both_informative` scenario, where the prognostic programs have the usual
+activity scale.
+
+**Why.** The registered rule stopped the TCGA step until the selected prior passed the
+simulation gate. After the grouped-prior crash was fixed (an F block whose refitted prior
+is a point mass is now set to zero), all 120 rerun fits converged, but no arm recovered the
+prognostic program in 8 of 10 seeds in any cell. That includes the expression-only fit,
+which is the single-modality model. The true-risk C was about 0.78, so the survival signal
+existed. The `low_variance_prognostic_factor` scenario at 120 training patients cannot
+separate the priors, so the gate measured the scenario rather than the multimodal model.
+The prelim chapter's changes stop on November 13.
+
+**Traded away.** The TCGA results carry no simulation support for the grouped prior, so
+they describe the joint fit and do not adopt it. Separate priors will count as supported
+only if the `both_informative` rerun separates the arms (expression alone passes) and
+grouped does at least as well as pooled there.
+
+**Files.** [D next-steps prompt](docs/prompts/2026-11-12-codex-d-next-prompt.md),
+[feature-group findings](docs/findings/2026-11-12-feature-group-fitter-findings.md).
+
 ## 2026-11-12 — Task E: YFB stays the working parameterization; LB is not carried forward
 
 **Decided.** The survival predictor stays η = (YF)β (YFB). LB (η = Lβ, scored on new
